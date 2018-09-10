@@ -1,0 +1,60 @@
+{:paths ["resources" "src"]
+ :deps {org.clojure/clojure {:mvn/version "1.10.0-alpha6"}
+
+        #_CLI
+        org.clojure/tools.cli {:mvn/version "0.3.7"}
+
+        #_"NLP/text processing"
+        com.ibm.icu/icu4j {:mvn/version "62.1"}
+        clj-mecab {:mvn/version "0.4.19"}
+        corpus-utils {:mvn/version "0.2.11-geeebf73-dirty"}
+
+        #_"Datasource processing"
+        org.apache.commons/commons-compress {:mvn/version "1.18"}
+        org.clojure/data.csv {:mvn/version "0.1.4"}
+        clojure.java-time {:mvn/version "0.3.2"}
+        org.flatland/ordered {:mvn/version "1.5.6"}
+        instaparse {:mvn/version "1.4.9"}
+        ;; datascript {:mvn/version "0.16.6"}
+        ;; com.rpl/specter {:mvn/version "1.1.1"}
+        expound {:mvn/version "0.7.1"}
+        camel-snake-kebab {:mvn/version "0.4.0"}
+
+        #_"XML processing"
+        me.raynes/fs {:mvn/version "1.4.6" :exclusions [org.apache.commons/commons-compress]}
+        org.clojure/data.xml {:mvn/version "0.2.0-alpha5"}
+        tolitius/xml-in {:mvn/version "0.1.0"}
+
+        #_"Versioning"
+        clj-jgit {:mvn/version "0.9.1-SNAPSHOT" :exclusions [org.eclipse.jgit/org.eclipse.jgit]}
+        org.eclipse.jgit/org.eclipse.jgit {:mvn/version "4.11.1.201807311124-r"}
+        juji/editscript {:mvn/version "0.3.2" :exclusions [org.clojure/test.check]}
+
+        #_"RDF/OWL processing"
+        arachne-framework/aristotle {:git/url "https://github.com/arachne-framework/aristotle"
+                                     :sha "b2ceb528543beb67ce1a3ada5a2a1fd61078c8c5"
+                                     :exclusions [org.apache.jena/apache-jena-libs]}
+        org.apache.jena/apache-jena-libs {:mvn/version "3.8.0" :extension "pom"}
+        ;; adalab/triple-loader {:mvn/version "0.2.3"}
+        ;; org.eclipse.rdf4j/rdf4j-runtime {:mvn/version "2.4.0-M1"}
+        uk.org.russet/tawny-owl {:mvn/version "2.0.0"}
+        net.sourceforge.owlapi/owlapi-distribution {:mvn/version "5.1.7"}
+
+        #_Overrides
+        com.google.inject/guice {:mvn/version "4.2.0"}
+
+        #_"Java >= 11 workaround"
+        com.sun.xml.bind/jaxb-impl {:mvn/version "2.3.0.1"}
+        com.sun.xml.bind/jaxb-core {:mvn/version "2.3.0.1"}
+        org.glassfish.jaxb/jaxb-runtime {:mvn/version "2.3.0.1"}}
+ :aliases
+ {:test {:extra-paths ["test"]
+         :extra-deps {org.clojure/test.check {:mvn/version "RELEASE"}
+                      orchestra {:mvn/version "2018.08.19-1"}
+                      specviz {:mvn/version "0.2.3"}}}
+  :runner
+  {:extra-deps {com.cognitect/test-runner
+                {:git/url "https://github.com/cognitect-labs/test-runner"
+                 :sha "028a6d41ac9ac5d5c405dfc38e4da6b4cc1255d5"}}
+   :main-opts ["-m" "cognitect.test-runner"
+               "-d" "test"]}}}

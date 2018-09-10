@@ -1,0 +1,319 @@
+Start
+  = Block+
+
+String
+  = Char+
+
+<Char>
+  = !'\n' !'［＃' !'※［＃' !( '〔' LatinChar ) !'《' !'》' !'｜' #'.' / KanjiGaiji / NonKanjiGaiji / Kanbun
+
+Kanji
+  = #'[\u3400-\u9FCB\uF900-\uFAD9仝〆○々]'
+  / KanjiGaiji
+
+Kana
+  = #'[ぁ-んァ-ヶ゛-ゞ・-ヾ]'
+  / '／″＼'
+  / '／＼'
+
+KanjiGaiji
+  = '※［＃二の字点、1-2-22］'
+  / <'※［＃「'> AnnString <'］'>
+  / <'※［＃二の字点、'> AnnString <'］'>
+  / <'※［＃濁点付き二の字点、'> AnnString <'］'>
+
+NonKanjiGaiji
+  = <'※［＃'> !'「' AnnString <'］'>
+
+Kanbun
+  = KuntenOkuri? Kaeriten
+  / KuntenOkuri
+
+KuntenOkuri
+  = <'［＃（'> (Kanji / Kana)+ <'）］'>
+
+Kaeriten
+  = <'［＃'> (KaeriJunjoen KaeriReten? / KaeriReten) <'］'>
+
+KaeriJunjoen
+  = #'[一二三四上中下天地人甲乙丙丁]'
+
+KaeriReten
+  = 'レ'
+
+LatinChar
+  = #'[a-zA-Zα-ρσ-ωΑ-ΡΣ-ΩА-яЁё]'
+
+GeneralString
+  = (
+      ((String / LatinString) QuoteAnn* GeneralRuby? QuoteAnn*)
+      / (DefRuby QuoteAnn*)
+    )+
+
+AnnString
+  = <(!'］' Char)+>
+
+QuoteString
+  = <(
+    (QuoteChar+ / LatinString) QuoteAnn* GeneralRuby? QuoteAnn*
+    / DefRuby QuoteAnn*
+  )+>
+
+QuoteChar
+  = <(!'」は' !'」の' !'」に' !'」］' Char)>
+
+QuoteAnn
+  = ModifierAnn
+  / OriginalAnn
+  / TypistAnn
+
+RubyAnn
+  = RubyModifierAnn
+  / RubyOriginalAnn
+  / RubyTypistAnn
+
+ModifierAnn
+  = <'［＃「'> QuoteString <'」'> Modifier <'］'>
+
+RubyModifierAnn
+  = <'［＃ルビの「'> QuoteString <'」'> Modifier <'］'>
+
+OriginalAnn
+  = <'［＃「'> QuoteString <'」'> <'の左'?> <'に「'> QuoteString <'」の注記］'>
+
+RubyOriginalAnn
+  = <'［＃ルビの「'> QuoteString <'」'> <'の左'?> <'に「'> QuoteString <'」の注記］'>
+
+TypistAnn
+  = <'［＃「'> QuoteString <'」は'> TeihonAnn <'］'>
+
+RubyTypistAnn
+  = <'［＃ルビの「'> QuoteString <'」は'> TeihonAnn <'］'>
+
+TeihonAnn
+  = <'底本では「'> QuoteString <'」'>
+  / 'ママ'
+
+Modifier
+  = 'に' Em
+  / 'の' LeftEm
+  / 'の' LeftRuby
+  / 'は' Jitai
+  / 'は' CharSize
+
+Em
+  = '二重'? ('傍線' / '波線' / '破線' / '鎖線')
+  / '傍点'
+  / '白ゴマ傍点'
+  / '丸傍点'
+  / '白丸傍点'
+  / '×傍点'
+  / '黒三角傍点'
+  / '白三角傍点'
+  / '二重丸傍点'
+  / '蛇の目傍点'
+  / '白四角傍点'
+
+LeftEm
+  = <'左に'> Em
+
+LeftRuby
+  = <'左に「'> QuoteString <'」のルビ'>
+
+Jitai
+  = Heading
+  / KeiKakomi
+  / '太字'
+  / '斜体'
+  / '分数'
+  / '上付き小文字'
+  / '下付き小文字'
+  / '篆書体'
+  / '小書き'
+  / '行右小書き'
+  / '行左小書き'
+  / '横組み'
+  / '縦中横'
+  / '合字'
+  / 'ローマ数字'
+
+Heading
+  = ('窓' / '同行')? ('大' / '中' / '小') '見出し'
+
+KeiKakomi
+  = '二重'? '罫囲み'
+
+CharSize
+  = Number '段階' (('大きな' / '小さな') '文字')
+
+Number
+  = #'[0-9]+'
+  / #'[０-９]+'
+  / #'[一二三四五六七八九十]'
+
+GeneralRuby
+  = GeneralRuby2 RubyAnn*
+
+DefRuby
+  = DefRuby2 RubyAnn*
+
+<GeneralRuby2>
+  = <'《'> String <'》'>
+
+DefRuby2
+  = <'｜'> (String / LatinString) QuoteAnn* <'《'> String <'》'>
+
+LatinString
+  = <'〔'> LatinChar (LatinChar / #'[!-~]' / QuoteAnn)+ <'〕'>
+
+Line
+  = (GeneralAnn / GeneralString)+
+
+GeneralAnn
+  = KakomiAnn
+  / Warichu
+  / ChiyoseAnn
+  / Figure
+  / TeihonTypistAnn
+
+KakomiAnn
+  = <'［＃'> ((Em / LeftEm / Jitai) / CharSize) <'］'>
+    GeneralString
+    <'［＃'> (Em / LeftEm / Jitai / CharSizeEnd) <'終わり］'>
+
+Warichu
+  = <'［＃割り注］'>
+    (Newline / GeneralString)+
+    <'［＃割り注終わり］'>
+
+Newline
+  = <'［＃改行］'>
+
+CharSizeEnd
+  = '大きな文字'
+  / '小さな文字'
+
+ChiyoseAnn
+  = Chiyori
+  / Chitsuki
+  / Chiyose
+
+Chiyori
+  = <'［＃下げて、地より'> Number <'字あきで］'>
+
+Chiyose
+  = <'［＃地から'> Number <'字上げ］'>
+
+Chitsuki
+  = <'［＃地付き］'>
+
+Figure
+  = <'［＃'> FigureAnn <('(' / '（')> FileName '.png' FigureSize? <(')' / '）')> <'入る］'>
+
+FigureAnn
+  = (!'(' !'（' Char)+
+
+FileName
+  = (!'.png' Char)+
+
+FigureSize
+  = <'、横'> Number <'×縦'> Number
+
+TeihonTypistAnn
+  = <'［＃底本では'> AnnString <'］'>
+
+Block
+  = (
+    PageDef
+    / ParaIndent
+    / ParaDef
+    / Para
+  ) <'［＃本文終わり］'?>
+
+Block2
+  = PageDef
+  / ParaDef
+  / Para
+
+Block3
+  = ParaIndent
+  / ParaDef
+  / Para
+
+Para
+  = Indent? Line? '\n'
+
+Indent
+  = <'［＃'> Number <'字下げ］'>
+
+PageDef
+  = Centering
+  / ClearAnn
+
+Centering
+  = <'［＃ページの左右中央］'> '\n' Block3* <'［＃改ページ］'> '\n'
+
+ClearAnn
+  = <('［＃改丁］' / '［＃改ページ］')> '\n'
+
+ParaDef
+  = (
+    ParaJizume
+    / ParaChitsuki
+    / ParaNegativeIndent
+    / ClearColumn
+    / ParaJitai
+    / ParaLargeChar
+    / ParaSmallChar
+    / Column
+  ) '\n'
+
+ClearColumn
+  = <'［＃改段］'>
+
+ParaIndent
+  = ParaIndent2 + IndentEnd '\n'
+
+ParaIndent2
+  = (
+    NewlineTentsuki
+    / LeftIndent
+    / IndentBegin
+    / IndentBegin2
+  ) '\n' Block2*
+
+NewlineTentsuki
+  = <'［＃ここから改行天付き、折り返して'> Number <'字下げ］'>
+
+LeftIndent
+  = <'［＃天から'> Number <'字下げ］'>
+
+IndentBegin
+  = <'［＃ここから'> Number <'字下げ］'>
+
+IndentBegin2
+  = <'［＃ここから'> Number <'字下げ、折り返して'> Number <'字下げ］'>
+
+IndentEnd
+  = <'［＃ここで字下げ終わり］'>
+
+ParaJizume
+  = <'［＃ここから'> Number <'字詰め］\n'> Block* <'［＃ここで字詰め終わり］'>
+
+ParaChitsuki
+  = <'［＃ここから地付き］\n'> Block* <'［＃ここで地付き終わり］'>
+
+ParaNegativeIndent
+  = <'［＃ここから地から'> Number <'字上げ］\n'> Block* <'［＃ここで字上げ終わり］'>
+
+ParaJitai
+  = <'［＃ここから'> Jitai <'］\n'> Block* <'［＃ここで'> Jitai <'終わり］'>
+
+ParaLargeChar
+  = <'［＃ここから'> Number <'段階大きな文字］\n'> Block* <'［＃ここで大きな文字終わり］'>
+
+ParaSmallChar
+  = <'［＃ここから'> Number <'段階小さな文字］\n'> Block* <'［＃ここで小さな文字終わり］'>
+
+Column
+  = <'［＃ここから'> Number <'段組み'> <'、段間に罫'?> <'］\n'> Block* <'［＃ここで段組み終わり］'>

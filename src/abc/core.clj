@@ -12,7 +12,7 @@
             [clojure.tools.cli :refer [parse-opts]]))
 
 (def cli-options
-  [["-i" "--input AOZORA_BUNKO_GIT_REPO" "Path locally cloned https://github.com/aozorabunko/aozorabunko repo"
+  [["-i" "--input AOZORA_BUNKO_GIT_REPO" "Path to locally cloned https://github.com/aozorabunko/aozorabunko repo"
     :default "../aozorabunko"]
    ["-o" "--output OUTPUT_DIR" "Path to repository to commit data to"
     :default "../aozora-bunko-tei"]

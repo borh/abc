@@ -56,7 +56,12 @@
   (when-not (fs/directory? output)
     (fs/mkdir output))
   (let [ttl-file-path (fs/file output "aozora-bunko.ttl")]
-    (db/save-graph! ttl-file-path (db/to-graph (db/to-triples (load/aozora-bunko-db input))))))
+    (db/save-graph! ttl-file-path
+                    (->> input
+                         load/aozora-bunko-db
+                         load/aozora-bunko-db-coll
+                         db/to-triples
+                         db/to-graph))))
 
 (defn -main [& args]
   (let [{:keys [options exit-message ok?]} (validate-args args)]

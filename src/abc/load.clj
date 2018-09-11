@@ -115,7 +115,7 @@
   :ret (s/nilable string?))
 (defn extract-text [resource]
   (if-let [{:keys [abc.aozora/url abc.aozora/encoding]} resource]
-    (aozora-bunko-text (web-to-git url "../../Dependencies/aozorabunko") encoding)))
+    (aozora-bunko-text (web-to-git url config/aozora-bunko-path) encoding)))
 
 (s/fdef extract-texts
   :args (s/cat :entities :abc.aozora/db-map))

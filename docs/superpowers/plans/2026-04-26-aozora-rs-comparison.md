@@ -4,9 +4,9 @@
 
 **Goal:** Add the next parser adapter (`aozora-rs`) and produce a measured, reproducible comparison against the existing `aozora2` adapter on the full readable Aozora Bunko corpus.
 
-**Architecture:** Implement `aozora-rs-adapter` as an external Rust adapter, matching the existing adapter contract: stdin source bytes, `--mode aat`, `--mode html`, and `--version`. The adapter must derive AAT from `aozora-rs-core` tokenizer/scopenizer/retokenizer output, not from the shared regex projection used by the first validation adapter. Add a small `ab-compare` workspace crate that compares two sets of `ab-check` reports first; normalized AAT tree diff is explicitly out of scope for this increment and should be a follow-up once both adapters preserve structurally meaningful AAT artifacts.
+**Architecture:** Implement `aozora-rs-adapter` as an external Rust adapter, matching the existing adapter contract for `--mode aat` and `--version`; `--mode html` returns a clear unsupported error in this increment. The adapter must derive AAT from `aozora-rs-core` tokenizer/scopenizer/retokenizer output, not from the shared regex projection used by the first validation adapter. Add a small `ab-compare` workspace crate that compares two sets of `ab-check` reports first; normalized AAT tree diff is explicitly out of scope for this increment and should be a follow-up once both adapters preserve structurally meaningful AAT artifacts.
 
-**Tech Stack:** Rust 2024, `clap`, `anyhow`, `serde_json`, `encoding_rs`, `sha2`, `rayon`, `walkdir`, `criterion`; local path dependencies on `references/parsers/aozora-rs/aozora-rs/aozora-rs-core` and `references/parsers/aozora-rs/aozora-rs/aozora-rs-xhtml` at commit `dd380ee639ca317ac9092ef2ba554acdf70e3c8d`.
+**Tech Stack:** Rust 2024, `clap`, `anyhow`, `serde_json`, `encoding_rs`, `sha2`, `rayon`, `walkdir`, `criterion`; local path dependency on `references/parsers/aozora-rs/aozora-rs/aozora-rs-core` at commit `dd380ee639ca317ac9092ef2ba554acdf70e3c8d`.
 
 ---
 
@@ -71,13 +71,12 @@ license = "MIT OR Apache-2.0"
 [dependencies]
 anyhow = "1.0"
 aozora-rs-core = { path = "../../references/parsers/aozora-rs/aozora-rs/aozora-rs-core" }
-aozora-rs-xhtml = { path = "../../references/parsers/aozora-rs/aozora-rs/aozora-rs-xhtml" }
 clap = { version = "4.5", features = ["derive"] }
 encoding_rs = "0.8"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 sha2 = "0.10"
-winnow = "0.7"
+winnow = "=0.7.14"
 
 [dev-dependencies]
 criterion = "0.8"
@@ -138,13 +137,11 @@ Expected: FAIL because `aat_json_from_bytes` does not exist yet.
 Create `adapters/aozora-rs/src/lib.rs`:
 
 ```rust
-use anyhow::Result;
+use anyhow::{Result, anyhow, bail};
 use aozora_rs_core::{
     Break, Deco, Retokenized, parse_meta, retokenize, scopenize, tokenize,
 };
-use aozora_rs_xhtml::retokenized_to_xhtml;
 use encoding_rs::SHIFT_JIS;
-use serde::Serialize;
 use serde_json::json;
 use sha2::{Digest, Sha256};
 use winnow::LocatingSlice;
@@ -161,17 +158,8 @@ pub struct DecodedSource {
 
 #[derive(Debug)]
 struct ParsedSource<'a> {
-    body: &'a str,
     retokenized: Vec<Retokenized<'a>>,
     warnings: Vec<String>,
-}
-
-#[derive(Debug, Serialize)]
-struct Span {
-    line_start: usize,
-    line_end: usize,
-    byte_start: usize,
-    byte_end: usize,
 }
 
 pub fn decode_source_bytes(bytes: &[u8]) -> Result<DecodedSource> {
@@ -212,20 +200,8 @@ pub fn aat_json_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
     Ok(out)
 }
 
-pub fn html_from_bytes(bytes: &[u8]) -> Result<String> {
-    let decoded = decode_source_bytes(bytes)?;
-    let parsed = parse_with_aozora_rs(&decoded.text)?;
-    let warning_count = parsed.warnings.len();
-    let xhtml = retokenized_to_xhtml(parsed.retokenized);
-    let mut pages = xhtml.xhtmls.into_iter().collect::<Vec<_>>();
-    pages.sort_by_key(|(page_id, _)| *page_id);
-    let mut out = format!("<!-- warnings:{warning_count} -->\n");
-    for (page_id, page) in pages {
-        out.push_str(&format!("<!-- page:{page_id} -->\n"));
-        out.push_str(&page);
-        out.push('\n');
-    }
-    Ok(out)
+pub fn html_from_bytes(_bytes: &[u8]) -> Result<String> {
+    bail!("aozora-rs-adapter --mode html is intentionally deferred to the render-diff phase")
 }
 
 fn parse_with_aozora_rs(text: &str) -> Result<ParsedSource<'_>> {
@@ -236,14 +212,14 @@ fn parse_with_aozora_rs(text: &str) -> Result<ParsedSource<'_>> {
     }
 
     let mut input = LocatingSlice::new(body);
-    let tokenized = tokenize(&mut input)?;
+    let tokenized =
+        tokenize(&mut input).map_err(|()| anyhow!("aozora-rs-core tokenize failed"))?;
     let ((scopenized, flat_tokens), scopenize_errors) = scopenize(tokenized).into_tuple();
     let (retokenized, retokenize_errors) = retokenize(flat_tokens, scopenized).into_tuple();
     warnings.extend(scopenize_errors.into_iter().map(|error| error.to_string()));
     warnings.extend(retokenize_errors.into_iter().map(|error| error.to_string()));
 
     Ok(ParsedSource {
-        body,
         retokenized,
         warnings,
     })
@@ -253,24 +229,20 @@ fn build_aat(decoded: &DecodedSource, parsed: &ParsedSource<'_>) -> serde_json::
     json!({
         "version": 1,
         "work_id": "stdin",
-        "blocks": [
-            {
-                "kind": "paragraph",
-                "content": retokenized_to_aat_content(&parsed.retokenized)
-            }
-        ],
+        "blocks": retokenized_to_aat_blocks(&parsed.retokenized),
         "meta": {
             "adapter": "aozora-rs",
             "adapter_version": VERSION,
             "source_encoding": decoded.encoding,
             "source_hash": decoded.source_hash,
-            "parse_complete": parsed.warnings.is_empty(),
+            "parse_complete": true,
             "warnings": parsed.warnings.iter().map(|message| json!({ "message": message })).collect::<Vec<_>>()
         }
     })
 }
 
-fn retokenized_to_aat_content(tokens: &[Retokenized<'_>]) -> Vec<serde_json::Value> {
+fn retokenized_to_aat_blocks(tokens: &[Retokenized<'_>]) -> Vec<serde_json::Value> {
+    let mut blocks = Vec::new();
     let mut content = Vec::new();
     let mut idx = 0;
     while idx < tokens.len() {
@@ -279,10 +251,11 @@ fn retokenized_to_aat_content(tokens: &[Retokenized<'_>]) -> Vec<serde_json::Val
             Retokenized::Odoriji(odoriji) => push_text(&mut content, &odoriji.to_string()),
             Retokenized::Kunten(kunten) => push_text(&mut content, kunten),
             Retokenized::Okurigana(okurigana) => push_text(&mut content, okurigana),
-            Retokenized::Break(Break::BreakLine) => push_text(&mut content, "\n"),
-            Retokenized::Break(_) => push_text(&mut content, "\n"),
+            Retokenized::Break(Break::BreakLine) => flush_paragraph(&mut blocks, &mut content),
+            Retokenized::Break(_) => flush_paragraph(&mut blocks, &mut content),
             Retokenized::Figure(figure) => content.push(json!({
                 "kind": "gaiji",
+                "x-description-format": "aozora-rs-core Figure Display output; original gaiji notation is not preserved by Figure",
                 "description": figure.to_string(),
                 "resolved": "",
                 "jis_code": null,
@@ -300,13 +273,42 @@ fn retokenized_to_aat_content(tokens: &[Retokenized<'_>]) -> Vec<serde_json::Val
                 idx = next_idx;
                 continue;
             }
+            Retokenized::DecoBegin(Deco::AHead | Deco::BHead | Deco::CHead) => {
+                flush_paragraph(&mut blocks, &mut content);
+                let deco = match &tokens[idx] {
+                    Retokenized::DecoBegin(deco) => deco,
+                    _ => unreachable!(),
+                };
+                let (value, next_idx) = collect_decorated_visible_text(tokens, idx + 1, |candidate| {
+                    matches!(
+                        (deco, candidate),
+                        (Deco::AHead, Deco::AHead)
+                            | (Deco::BHead, Deco::BHead)
+                            | (Deco::CHead, Deco::CHead)
+                    )
+                });
+                let level = match deco {
+                    Deco::AHead => 1,
+                    Deco::BHead => 2,
+                    Deco::CHead => 3,
+                    _ => unreachable!(),
+                };
+                blocks.push(json!({
+                    "kind": "heading",
+                    "level": level,
+                    "style": format!("{deco:?}"),
+                    "content": [{"kind": "text", "value": value}]
+                }));
+                idx = next_idx;
+                continue;
+            }
             Retokenized::DecoBegin(deco) => {
                 let (value, next_idx) = collect_decorated_visible_text(tokens, idx + 1, |candidate| {
-                    std::mem::discriminant(candidate) == std::mem::discriminant(deco)
+                    same_deco_kind(candidate, deco)
                 });
                 content.push(json!({
                     "kind": "style",
-                    "style_type": format!("{deco:?}"),
+                    "style_type": stable_style_type(deco),
                     "content": [{"kind": "text", "value": value}]
                 }));
                 idx = next_idx;
@@ -316,7 +318,11 @@ fn retokenized_to_aat_content(tokens: &[Retokenized<'_>]) -> Vec<serde_json::Val
         }
         idx += 1;
     }
-    content
+    flush_paragraph(&mut blocks, &mut content);
+    if blocks.is_empty() {
+        blocks.push(json!({ "kind": "paragraph", "content": [] }));
+    }
+    blocks
 }
 
 fn collect_decorated_visible_text(
@@ -345,6 +351,64 @@ fn collect_decorated_visible_text(
     (value, idx)
 }
 
+fn flush_paragraph(blocks: &mut Vec<serde_json::Value>, content: &mut Vec<serde_json::Value>) {
+    if content.is_empty() {
+        return;
+    }
+    blocks.push(json!({
+        "kind": "paragraph",
+        "content": std::mem::take(content)
+    }));
+}
+
+fn same_deco_kind(a: &Deco<'_>, b: &Deco<'_>) -> bool {
+    matches!(
+        (a, b),
+        (Deco::Bold, Deco::Bold)
+            | (Deco::Italic, Deco::Italic)
+            | (Deco::Bosen(_), Deco::Bosen(_))
+            | (Deco::Boten(_), Deco::Boten(_))
+            | (Deco::Indent(_), Deco::Indent(_))
+            | (Deco::Hanging(_), Deco::Hanging(_))
+            | (Deco::Grounded, Deco::Grounded)
+            | (Deco::LowFlying(_), Deco::LowFlying(_))
+            | (Deco::HinV, Deco::HinV)
+            | (Deco::Mama, Deco::Mama)
+            | (Deco::Smaller(_), Deco::Smaller(_))
+            | (Deco::Bigger(_), Deco::Bigger(_))
+            | (Deco::VHCentre, Deco::VHCentre)
+            | (Deco::Warichu, Deco::Warichu)
+            | (Deco::HorizontalLayout, Deco::HorizontalLayout)
+            | (Deco::Kerning(_), Deco::Kerning(_))
+            | (Deco::Sub, Deco::Sub)
+            | (Deco::Sup, Deco::Sup)
+    )
+}
+
+fn stable_style_type(deco: &Deco<'_>) -> &'static str {
+    match deco {
+        Deco::Bold => "bold",
+        Deco::Italic => "italic",
+        Deco::Bosen(_) => "bosen",
+        Deco::Boten(_) => "boten",
+        Deco::Indent(_) => "indent",
+        Deco::Hanging(_) => "hanging",
+        Deco::Grounded => "grounded",
+        Deco::LowFlying(_) => "low_flying",
+        Deco::HinV => "tcy",
+        Deco::Mama => "mama",
+        Deco::Smaller(_) => "smaller",
+        Deco::Bigger(_) => "bigger",
+        Deco::VHCentre => "vh_centre",
+        Deco::Warichu => "warichu",
+        Deco::HorizontalLayout => "horizontal_layout",
+        Deco::Kerning(_) => "kerning",
+        Deco::Sub => "sub",
+        Deco::Sup => "sup",
+        Deco::Ruby(_) | Deco::AHead | Deco::BHead | Deco::CHead => "handled_elsewhere",
+    }
+}
+
 fn push_text(content: &mut Vec<serde_json::Value>, value: &str) {
     if value.is_empty() {
         return;
@@ -360,6 +424,12 @@ fn hex_sha256(bytes: &[u8]) -> String {
 ```
 
 This intentionally uses `aozora-rs-core` parser output for AAT generation. The mapping is still conservative, but a zero-difference result now means both parsers passed the same validation properties, not that two copies of the same regex projection agreed.
+
+Known gaps for this first mapper:
+
+- `Figure` nodes do not preserve the original `［＃...］` notation, so their AAT `gaiji.description` uses `aozora-rs-core`'s parsed display text and carries `x-description-format`.
+- Non-heading layout decorations such as indent, hanging, grounded, and warichu are emitted as inline `style` containers. Full block-container mapping is a follow-up after this comparison runner is in place.
+- Encoding/hash helpers are duplicated from `aozora2-adapter` for now. Extract a shared adapter helper crate after both adapters are stable enough to reveal the right boundary.
 
 - [ ] **Step 4: Implement the CLI**
 
@@ -584,7 +654,10 @@ fn batch_can_write_adapter_aat_outputs() {
     let corpus = temp.path().join("corpus");
     let files = corpus.join("cards/000001/files/1_ruby_1");
     std::fs::create_dir_all(&files).unwrap();
-    std::fs::write(files.join("1_ruby_1.txt"), "吾輩《わがはい》は猫である。").unwrap();
+    std::fs::write(
+        files.join("1_ruby_1.txt"),
+        "タイトル\n著者\n-------------------------------------------------------\n凡例\n-------------------------------------------------------\n吾輩《わがはい》は猫である。",
+    ).unwrap();
 
     let index = temp.path().join("index.json");
     std::fs::write(&index, r#"{
@@ -816,11 +889,43 @@ fn compares_two_report_sets() {
     assert_eq!(summary["result_differences"][0]["property"], "schema_valid");
 }
 
+#[test]
+fn preserves_duplicate_work_ids_with_filename_suffix() {
+    let temp = tempfile::tempdir().unwrap();
+    let a = temp.path().join("a");
+    let b = temp.path().join("b");
+    std::fs::create_dir_all(&a).unwrap();
+    std::fs::create_dir_all(&b).unwrap();
+
+    std::fs::write(a.join("000001-first.json"), report_for_work("aozora2", "000001_1", true)).unwrap();
+    std::fs::write(a.join("000001-second.json"), report_for_work("aozora2", "000001_1", true)).unwrap();
+    std::fs::write(b.join("000001-first.json"), report_for_work("aozora-rs", "000001_1", true)).unwrap();
+    std::fs::write(b.join("000001-second.json"), report_for_work("aozora-rs", "000001_1", true)).unwrap();
+
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_ab-compare"))
+        .arg("--reports-a").arg(&a)
+        .arg("--reports-b").arg(&b)
+        .arg("--output").arg(temp.path().join("duplicates.json"))
+        .output()
+        .unwrap();
+
+    assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+    let summary: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(temp.path().join("duplicates.json")).unwrap()).unwrap();
+    assert_eq!(summary["common_reports"], 2);
+    assert_eq!(summary["only_a"], 0);
+    assert_eq!(summary["only_b"], 0);
+}
+
 fn report(adapter: &str, pass: bool) -> String {
+    report_for_work(adapter, "000001_1", pass)
+}
+
+fn report_for_work(adapter: &str, work_id: &str, pass: bool) -> String {
     format!(r#"{{
       "adapter": "{adapter}",
       "adapter_version": "test",
-      "work_id": "000001_1",
+      "work_id": "{work_id}",
       "results": {{
         "schema_valid": {{
           "pass": {pass},
@@ -1200,17 +1305,13 @@ Fix adapter schema, decoding, parser invocation, or timeout defects until no fai
 
 - [ ] **Step 3: Record the baseline**
 
-Copy the summary into a dated tracked baseline:
+Copy the summary into a dated tracked baseline and add the host note reproducibly:
 
 ```bash
-cp /tmp/ab-validator-compare-current/summary.json \
-  benchmarks/baselines/$(date +%Y-%m-%d)-parser-comparison.json
-```
-
-Open the file and add:
-
-```json
-"host_note": "Local development machine baseline; compare relative changes on the same machine."
+baseline="benchmarks/baselines/$(date +%Y-%m-%d)-parser-comparison.json"
+jq '. + {
+  host_note: "Local development machine baseline; compare relative changes on the same machine."
+}' /tmp/ab-validator-compare-current/summary.json > "$baseline"
 ```
 
 - [ ] **Step 4: Final verification**

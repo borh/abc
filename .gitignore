@@ -1,5 +1,7 @@
 # Local research corpora and parser checkouts
 references/
 .direnv/
+target/
+adapters/*/target/
 result
 result-*

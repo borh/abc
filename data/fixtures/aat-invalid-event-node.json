@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "work_id": "bad",
+  "blocks": [{ "kind": "block_start" }],
+  "meta": {
+    "adapter": "fixture",
+    "adapter_version": "0.0.0",
+    "source_encoding": "utf-8",
+    "source_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "parse_complete": true,
+    "warnings": []
+  }
+}

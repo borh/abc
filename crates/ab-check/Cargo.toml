@@ -1,0 +1,28 @@
+[package]
+name = "ab-check"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+encoding_rs.workspace = true
+jsonschema.workspace = true
+rayon.workspace = true
+regex.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+unicode-normalization.workspace = true
+
+[dev-dependencies]
+criterion.workspace = true
+
+[[bench]]
+name = "aat_json_io"
+harness = false
+
+[[bench]]
+name = "check_properties"
+harness = false

@@ -246,7 +246,10 @@
               src = source;
               cargoLock.lockFile = ./Cargo.lock;
 
-              nativeBuildInputs = [ pkgs.pkg-config ];
+              nativeBuildInputs = [
+                pkgs.pkg-config
+                pkgs.python3
+              ];
 
               buildInputs =
                 [ ]
@@ -282,7 +285,10 @@
               src = source;
               cargoLock.lockFile = ./Cargo.lock;
 
-              nativeBuildInputs = [ pkgs.pkg-config ];
+              nativeBuildInputs = [
+                pkgs.pkg-config
+                pkgs.python3
+              ];
 
               buildInputs =
                 [ ]

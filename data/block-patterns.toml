@@ -1,0 +1,24 @@
+[[blocks]]
+name = "jisage_block"
+start = '［＃ここから[０-９\d]+字下げ］'
+end = '［＃ここで字下げ終わり］'
+
+[[blocks]]
+name = "quote_block"
+start = '［＃ここから引用］'
+end = '［＃ここで引用終わり］'
+
+[[blocks]]
+name = "keigakomi_block"
+start = '［＃ここから罫囲み］'
+end = '［＃ここで罫囲み終わり］'
+
+[[blocks]]
+name = "yokogumi_block"
+start = '［＃ここから横組み］'
+end = '［＃ここで横組み終わり］'
+
+[[blocks]]
+name = "caption_block"
+start = '［＃ここからキャプション］'
+end = '［＃ここでキャプション終わり］'

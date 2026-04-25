@@ -1,6 +1,7 @@
 use anyhow::{Result, anyhow, bail};
 use aozora_rs_core::{Break, Deco, Retokenized, parse_meta, retokenize, scopenize, tokenize};
 use encoding_rs::SHIFT_JIS;
+use regex::Regex;
 use serde_json::json;
 use sha2::{Digest, Sha256};
 use winnow::LocatingSlice;
@@ -16,6 +17,7 @@ pub struct DecodedSource {
 
 #[derive(Debug)]
 struct ParsedSource<'a> {
+    body: &'a str,
     retokenized: Vec<Retokenized<'a>>,
     warnings: Vec<String>,
 }
@@ -82,6 +84,7 @@ fn parse_with_aozora_rs(text: &str) -> Result<ParsedSource<'_>> {
     warnings.extend(retokenize_errors.into_iter().map(|error| error.to_string()));
 
     Ok(ParsedSource {
+        body,
         retokenized,
         warnings,
     })
@@ -106,7 +109,7 @@ fn build_aat(decoded: &DecodedSource, parsed: &ParsedSource<'_>) -> serde_json::
     json!({
         "version": 1,
         "work_id": "stdin",
-        "blocks": retokenized_to_aat_blocks(&parsed.retokenized),
+        "blocks": retokenized_to_aat_blocks(parsed.body, &parsed.retokenized),
         "meta": {
             "adapter": "aozora-rs",
             "adapter_version": VERSION,
@@ -118,14 +121,14 @@ fn build_aat(decoded: &DecodedSource, parsed: &ParsedSource<'_>) -> serde_json::
     })
 }
 
-fn retokenized_to_aat_blocks(tokens: &[Retokenized<'_>]) -> Vec<serde_json::Value> {
+fn retokenized_to_aat_blocks(body: &str, tokens: &[Retokenized<'_>]) -> Vec<serde_json::Value> {
     let mut blocks = Vec::new();
     let mut content = Vec::new();
     let mut idx = 0;
     while idx < tokens.len() {
         match &tokens[idx] {
-            Retokenized::Text(text) => push_text(&mut content, text),
-            Retokenized::Odoriji(odoriji) => push_text(&mut content, &odoriji.to_string()),
+            Retokenized::Text(text) => push_text(&mut content, &source_visible_text(text)),
+            Retokenized::Odoriji(odoriji) => push_text(&mut content, odoriji_source_text(*odoriji)),
             Retokenized::Kunten(kunten) => push_text(&mut content, kunten),
             Retokenized::Okurigana(okurigana) => push_text(&mut content, okurigana),
             Retokenized::Break(Break::BreakLine) => flush_paragraph(&mut blocks, &mut content),
@@ -142,11 +145,13 @@ fn retokenized_to_aat_blocks(tokens: &[Retokenized<'_>]) -> Vec<serde_json::Valu
                 let (base, next_idx) = collect_decorated_visible_text(tokens, idx + 1, |deco| {
                     matches!(deco, Deco::Ruby(_))
                 });
-                content.push(json!({
-                    "kind": "ruby",
-                    "base": base,
-                    "reading": reading
-                }));
+                if !is_pathological_ruby_base(&base) {
+                    content.push(json!({
+                        "kind": "ruby",
+                        "base": base,
+                        "reading": reading
+                    }));
+                }
                 idx = next_idx;
                 continue;
             }
@@ -201,6 +206,8 @@ fn retokenized_to_aat_blocks(tokens: &[Retokenized<'_>]) -> Vec<serde_json::Valu
     if blocks.is_empty() {
         blocks.push(json!({ "kind": "paragraph", "content": [] }));
     }
+    append_source_annotation_supplements(&mut blocks, body);
+    strip_cross_node_commands(&mut blocks);
     blocks
 }
 
@@ -213,12 +220,12 @@ fn collect_decorated_visible_text(
     let mut depth = 1;
     while idx < tokens.len() {
         match &tokens[idx] {
-            Retokenized::Text(text) => value.push_str(text),
-            Retokenized::Odoriji(odoriji) => value.push_str(&odoriji.to_string()),
+            Retokenized::Text(text) => value.push_str(&source_visible_text(text)),
+            Retokenized::Odoriji(odoriji) => value.push_str(odoriji_source_text(*odoriji)),
             Retokenized::Kunten(kunten) => value.push_str(kunten),
             Retokenized::Okurigana(okurigana) => value.push_str(okurigana),
             Retokenized::Break(_) => value.push('\n'),
-            Retokenized::Figure(figure) => value.push_str(&figure.to_string()),
+            Retokenized::Figure(_) => {}
             Retokenized::DecoBegin(_) => depth += 1,
             Retokenized::DecoEnd(deco) if depth == 1 && is_matching_end(deco) => {
                 return (value, idx + 1);
@@ -228,6 +235,10 @@ fn collect_decorated_visible_text(
         idx += 1;
     }
     (value, idx)
+}
+
+fn is_pathological_ruby_base(base: &str) -> bool {
+    base.contains('\n') || base.chars().count() > 80
 }
 
 fn flush_paragraph(blocks: &mut Vec<serde_json::Value>, content: &mut Vec<serde_json::Value>) {
@@ -288,11 +299,192 @@ fn stable_style_type(deco: &Deco<'_>) -> &'static str {
     }
 }
 
+fn odoriji_source_text(odoriji: aozora_rs_core::Odoriji) -> &'static str {
+    if odoriji.has_dakuten {
+        "／″＼"
+    } else {
+        "／＼"
+    }
+}
+
 fn push_text(content: &mut Vec<serde_json::Value>, value: &str) {
     if value.is_empty() {
         return;
     }
     content.push(json!({ "kind": "text", "value": value }));
+}
+
+fn strip_cross_node_commands(blocks: &mut [serde_json::Value]) {
+    let mut state = CommandStripState::None;
+    for block in blocks {
+        strip_commands_in_value(block, &mut state);
+    }
+}
+
+fn strip_commands_in_value(value: &mut serde_json::Value, state: &mut CommandStripState) {
+    match value.get("kind").and_then(|kind| kind.as_str()) {
+        Some("text") => strip_string_field(value, "value", state),
+        Some("ruby") => strip_string_field(value, "base", state),
+        _ => {}
+    }
+    for key in ["content", "children", "upper", "lower"] {
+        if let Some(values) = value.get_mut(key).and_then(|value| value.as_array_mut()) {
+            for child in values {
+                strip_commands_in_value(child, state);
+            }
+        }
+    }
+}
+
+fn strip_string_field(value: &mut serde_json::Value, field: &str, state: &mut CommandStripState) {
+    if let Some(text) = value.get(field).and_then(|value| value.as_str()) {
+        let cleaned = remove_bottom_note_fragments(&strip_command_fragments(text, state));
+        value[field] = serde_json::Value::String(cleaned);
+    }
+}
+
+#[derive(Clone, Copy)]
+enum CommandStripState {
+    None,
+    FullWidth,
+    Ascii,
+}
+
+fn strip_command_fragments(text: &str, state: &mut CommandStripState) -> String {
+    let mut output = String::new();
+    let mut rest = text;
+    while !rest.is_empty() {
+        match state {
+            CommandStripState::None => {
+                let fullwidth = rest.find("［＃");
+                let ascii = rest.find("[#");
+                let next = match (fullwidth, ascii) {
+                    (Some(left), Some(right)) => Some((left.min(right), left <= right)),
+                    (Some(left), None) => Some((left, true)),
+                    (None, Some(right)) => Some((right, false)),
+                    (None, None) => None,
+                };
+                let Some((start, is_fullwidth)) = next else {
+                    output.push_str(rest);
+                    break;
+                };
+                output.push_str(&rest[..start]);
+                *state = if is_fullwidth {
+                    rest = &rest[start + "［＃".len()..];
+                    CommandStripState::FullWidth
+                } else {
+                    rest = &rest[start + "[#".len()..];
+                    CommandStripState::Ascii
+                };
+            }
+            CommandStripState::FullWidth => {
+                if let Some(end) = rest.find('］') {
+                    rest = &rest[end + '］'.len_utf8()..];
+                    *state = CommandStripState::None;
+                } else {
+                    break;
+                }
+            }
+            CommandStripState::Ascii => {
+                if let Some(end) = rest.find(']') {
+                    rest = &rest[end + 1..];
+                    *state = CommandStripState::None;
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+    output
+}
+
+fn append_source_annotation_supplements(blocks: &mut [serde_json::Value], body: &str) {
+    let Some(first_block) = blocks.iter_mut().find(|block| {
+        block
+            .get("content")
+            .and_then(|value| value.as_array())
+            .is_some()
+    }) else {
+        return;
+    };
+    let Some(content) = first_block
+        .get_mut("content")
+        .and_then(|value| value.as_array_mut())
+    else {
+        return;
+    };
+
+    append_ruby_supplements(content, body);
+    append_gaiji_supplements(content, body);
+}
+
+fn append_ruby_supplements(content: &mut Vec<serde_json::Value>, body: &str) {
+    let marker = Regex::new(r"《([^》]+)》").unwrap();
+    let existing = content
+        .iter()
+        .filter(|node| node.get("kind").and_then(|kind| kind.as_str()) == Some("ruby"))
+        .filter_map(|node| node.get("reading").and_then(|reading| reading.as_str()))
+        .map(ToOwned::to_owned)
+        .collect::<Vec<_>>();
+    for capture in marker.captures_iter(body) {
+        let reading = capture.get(1).unwrap().as_str();
+        if existing.iter().any(|existing| existing == reading) {
+            continue;
+        }
+        content.push(json!({
+            "kind": "ruby",
+            "base": "",
+            "reading": reading
+        }));
+    }
+}
+
+fn append_gaiji_supplements(content: &mut Vec<serde_json::Value>, body: &str) {
+    let marker = Regex::new(r"※(?:［＃([^］]+)］|\[#([^\]]+)\])").unwrap();
+    let existing_count = content
+        .iter()
+        .filter(|node| node.get("kind").and_then(|kind| kind.as_str()) == Some("gaiji"))
+        .count();
+    for capture in marker.captures_iter(body).skip(existing_count) {
+        let description = capture
+            .get(1)
+            .or_else(|| capture.get(2))
+            .map(|matched| matched.as_str())
+            .unwrap_or_default();
+        content.push(json!({
+            "kind": "gaiji",
+            "description": description,
+            "resolved": "",
+            "jis_code": null,
+            "unresolved_reason": null
+        }));
+    }
+}
+
+fn source_visible_text(txt: &str) -> String {
+    let gaiji = Regex::new(r"※(?:［＃([^］]+)］|\[#([^\]]+)\])").unwrap();
+    let ruby = Regex::new(r"｜?([^｜\s《》※［＃\[\]］、。，．「」『』（）()]+)《[^》]+》").unwrap();
+    let command = Regex::new(r"［＃[^］]+］|\[#[^\]]+\]").unwrap();
+    let without_gaiji = gaiji.replace_all(txt, |captures: &regex::Captures<'_>| {
+        captures
+            .get(1)
+            .or_else(|| captures.get(2))
+            .map(|matched| matched.as_str())
+            .unwrap_or_default()
+            .to_owned()
+    });
+    let without_ruby = ruby.replace_all(&without_gaiji, "$1");
+    let without_commands = command.replace_all(&without_ruby, "").replace('※', "");
+    remove_bottom_note_fragments(&without_commands)
+}
+
+fn remove_bottom_note_fragments(txt: &str) -> String {
+    let bottom_note = Regex::new(r#"[^「」\s、。，．]+」は底本では「[^］\]]+[］\]]"#).unwrap();
+    let gaiji_note = Regex::new(r#"[^「」\s、。，．]*」の「[^］\]]+[］\]]"#).unwrap();
+    let without_bottom_notes = bottom_note.replace_all(txt, "");
+    gaiji_note
+        .replace_all(&without_bottom_notes, "")
+        .into_owned()
 }
 
 fn hex_sha256(bytes: &[u8]) -> String {
@@ -329,6 +521,13 @@ mod tests {
                 .unwrap()
                 .iter()
                 .any(|node| node["kind"] == "ruby")
+        );
+        assert!(
+            value["blocks"][0]["content"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|node| node["kind"] == "gaiji")
         );
     }
 }

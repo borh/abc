@@ -12,6 +12,8 @@ cargo bench -p ab-check --bench check_properties
 
 cd adapters/aozora2
 cargo bench --bench adapter_bench
+
+cargo bench --manifest-path adapters/aozora-rs/Cargo.toml --bench adapter_bench
 ```
 
 Set `AB_CORPUS=references/aozorabunko` when running `index_build` to benchmark
@@ -61,3 +63,30 @@ index `corpus_hash` matches the sample `corpus_hash` before reporting numbers.
 
 JSON remains the canonical adapter and report format unless parse, serialize,
 and schema validation exceed 15% of end-to-end batch runtime on `mixed-100`.
+
+## Adapter Smoke Validation
+
+Before comparing parser adapters, build the adapter and run a corpus-backed
+sample through `ab-check`:
+
+```bash
+cargo build --release --manifest-path adapters/aozora-rs/Cargo.toml
+cargo run --release -p ab-index -- \
+  --corpus references/aozorabunko \
+  --output /tmp/ab-validator-aozora-rs-sample/index.json
+jq '[.works[] | select((.features | index("ruby")) or (.features | index("gaiji")) or (.features | index("jisage_line"))) | .id][0:100]' \
+  /tmp/ab-validator-aozora-rs-sample/index.json \
+  > /tmp/ab-validator-aozora-rs-sample/work-ids.json
+cargo run --release -p ab-check -- \
+  --index /tmp/ab-validator-aozora-rs-sample/index.json \
+  --corpus references/aozorabunko \
+  --work-ids /tmp/ab-validator-aozora-rs-sample/work-ids.json \
+  --adapter adapters/aozora-rs/target/release/aozora-rs-adapter \
+  --output /tmp/ab-validator-aozora-rs-sample/reports \
+  --jobs 16 \
+  --per-work-timeout 30s
+```
+
+The current aozora-rs smoke sample produced 101 reports from the first 100
+selected work IDs because the corpus index contains duplicate IDs for alternate
+source files. All properties passed.

@@ -137,7 +137,7 @@ fn follows_gaiji_marker(line: &str, offset: usize) -> bool {
             .is_some_and(|start| before[start..].ends_with(']'))
 }
 
-fn body_text(text: &str) -> &str {
+pub fn body_text(text: &str) -> &str {
     let mut separator_count = 0;
     let mut body_start = 0;
     let mut offset = 0;
@@ -262,7 +262,7 @@ fn inside_editor_note(line: &str, offset: usize) -> bool {
         || ascii_start.is_some_and(|start| ascii_end.is_none_or(|end| end < start))
 }
 
-fn source_visible_text(txt: &str) -> String {
+pub fn source_visible_text(txt: &str) -> String {
     let gaiji = Regex::new(r"※(?:［＃([^］]+)］|\[#([^\]]+)\])").unwrap();
     let ruby = Regex::new(r"｜?([^｜\s《》※［＃\[\]］、。，．「」『』（）()]+)《[^》]+》").unwrap();
     let command = Regex::new(r"［＃[^］]+］|\[#[^\]]+\]").unwrap();

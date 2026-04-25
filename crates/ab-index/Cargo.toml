@@ -18,3 +18,10 @@ sha2.workspace = true
 toml.workspace = true
 walkdir.workspace = true
 zip.workspace = true
+
+[dev-dependencies]
+criterion.workspace = true
+
+[[bench]]
+name = "index_build"
+harness = false

@@ -28,6 +28,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "clap",
+ "criterion",
  "encoding_rs",
  "flate2",
  "rayon",

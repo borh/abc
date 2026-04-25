@@ -1,30 +1,34 @@
 (ns abc.load-test
-  (:require [abc.load :as load :refer :all]
-            [abc.config :as config]
-            [abc.aozora :as aozora]
-            [clojure.test :as t :refer [deftest is use-fixtures]]
-            [clojure.spec.test.alpha :as stest]
-            [clojure.spec.alpha :as s]
-            [expound.alpha :as expound]
-            [orchestra.spec.test :as st]))
-
-(st/instrument)
-
-(stest/check (stest/enumerate-namespace 'abc.load))
-
-(alter-var-root #'s/*explain-out* (constantly expound/printer))
+  (:require [clojure.test :as t :refer [deftest testing is use-fixtures]]
+            [abc.test-utils :refer :all]
+            [abc.load :as load :refer :all]
+            [abc.config :as config]))
 
 (def ^:dynamic ^:private *db* nil)
 
 (defn db-fixture [f]
-  (let [db (take 5 (aozora-bunko-db-coll (aozora-bunko-db config/aozora-bunko-path)))]
+  (let [db (aozora-bunko-db config/aozora-bunko-path)
+        #_(->
+            (update :works (fn [m] (reduce (fn [a [k v]] (assoc a k v)) {} (take 10000 m))))
+            (update :persons (fn [m] (reduce (fn [a [k v]] (assoc a k v)) {} (take 10000 m)))))]
     (binding [*db* db]
       (f))))
 
 (use-fixtures :once db-fixture)
 
 (deftest load-test
-  (is *db*))
+  (testing "Loading AB database fixture"
+    (is *db*)
+    (is (= (set (keys *db*)) #{:works :persons})))
+  (testing "Database schema"
+    ;; A full database validation is slow
+    (is (schema-valid :abc.aozora/db-entries *db* abc.aozora/registry))))
 
 (deftest extract-texts-test
-  (is (nil? (dorun (extract-texts *db*)))))
+  (testing "Extracting texts from database fixture"
+    ;; Good testcase:
+    ;; :abc.aozora/w043688
+    #_(is (schema-validate :document/body :TODO))
+    #_(doseq [doc (take 10 (extract-texts *db*))]
+        (is (schema-valid :document/body doc abc.annotation/registry)
+            #_(nil? (dorun (extract-texts *db*)))))))

@@ -20,7 +20,7 @@
    ["-h" "--help"]])
 
 (defn usage [options-summary]
-  (->> ["Natsume Server"
+  (->> ["Aozora Bunko Converter"
         ""
         "Usage: clojure -m abc.core [options]"
         ""
@@ -56,7 +56,7 @@
   (when-not (fs/directory? output)
     (fs/mkdir output))
   (let [ttl-file-path (fs/file output "aozora-bunko.ttl")]
-    (db/save-graph! ttl-file-path
+    #_(db/save-graph! ttl-file-path
                     (->> input
                          load/aozora-bunko-db
                          load/aozora-bunko-db-coll
@@ -69,3 +69,5 @@
     (if exit-message
       (exit (if ok? 0 1) exit-message)
       (run options))))
+
+(set! *warn-on-reflection* true)

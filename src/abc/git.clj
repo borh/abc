@@ -1,7 +1,7 @@
 (ns abc.git
-  (:require [clj-jgit.porcelain :refer :all
-             #_[load-repo git-init git-pull git-log git-blame git-add-and-commit
-                git-status git-tag-create git-tag-list]]
+  (:require [clj-jgit.porcelain :as git :refer
+             [load-repo git-init git-pull git-log git-blame git-add git-commit
+              git-status git-tag-create git-tag-list]]
             [clojure.spec.alpha :as s]
             [abc.config :refer [aozora-bunko-path repo-path]])
   (:import [java.util Date]
@@ -14,7 +14,7 @@
 (defn load-repo-git []
   (try (load-repo repo-path)
        (catch java.io.FileNotFoundException e
-         (git-init repo-path))))
+         (git-init :dir repo-path))))
 
 (def ^:dynamic ^:private *ab-repo* (load-aozora-bunko-git))
 (def ^:dynamic ^:private *repo* (load-repo-git))
@@ -42,9 +42,10 @@
 (defn current-commit [^Git repo]
   (git-log repo))
 
-(defn commit-tei [msg]
-  (git-add-and-commit *repo* msg)
-  (git-tag-create *repo* ))
+(defn commit-tei [file msg]
+  (git-add *repo* file)
+  (git-commit *repo* file msg)
+  (git-tag-create *repo* msg))
 
 ;; Time travel
 
@@ -64,6 +65,14 @@
        (take-while (fn [commit]
                      #_(println (compare from-time (get-commit-date commit)))
                      (neg? (compare from-time (get-commit-date commit)))))))
+
+
+;; https://chris.beams.io/posts/git-commit/
+;;
+(defn to-conventional-commit
+  "https://www.conventionalcommits.org/en/v1.0.0-beta.3/"
+  [msg]
+  )
 
 (comment
   ;; Look into custom formatters: word formatters

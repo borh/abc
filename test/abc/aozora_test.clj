@@ -1,24 +1,17 @@
 (ns abc.aozora-test
   (:require [abc.aozora :as aozora :refer :all]
             [clojure.test :as t :refer [deftest is use-fixtures]]
-            [clojure.spec.test.alpha :as stest]
-            [clojure.spec.alpha :as s]
-            [expound.alpha :as expound]
-            [orchestra.spec.test :as st]))
+            [malli.core :as m]
+            [malli.generator :as mg]))
 
-(alter-var-root #'s/*explain-out* (constantly expound/printer))
-
-(st/instrument)
-
-(stest/check (stest/enumerate-namespace 'abc.aozora))
-
-(def ^:dynamic ^:private *entities* nil)
+(def ^:dynamic ^:private *example-entity* nil)
 
 (defn fixture [f]
-  (binding [*entities* (ffirst (s/exercise :abc.aozora/entity-coll))]
+  (binding [*example-entity* (mg/generate [:schema {:registry registry}
+                                           :abc.aozora/entity-map])]
     (f)))
 
 (use-fixtures :once fixture)
 
 (deftest entity-test
-  (is *entities*))
+  (is *example-entity*))

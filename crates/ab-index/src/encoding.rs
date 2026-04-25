@@ -1,4 +1,4 @@
-use anyhow::{Result, bail};
+use anyhow::Result;
 use encoding_rs::SHIFT_JIS;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -31,13 +31,15 @@ pub fn decode_source_bytes(bytes: &[u8]) -> Result<DecodedSource> {
     }
 
     let (cow, _, had_errors) = SHIFT_JIS.decode(bytes);
-    if had_errors {
-        bail!("source is neither valid UTF-8 nor decodable Windows-31J");
-    }
 
     Ok(DecodedSource {
         text: cow.into_owned(),
-        encoding: "windows-31j".to_owned(),
+        encoding: if had_errors {
+            "windows-31j-lossy"
+        } else {
+            "windows-31j"
+        }
+        .to_owned(),
         raw_sha256,
     })
 }
@@ -65,5 +67,12 @@ mod tests {
         let decoded = decode_source_bytes(&bytes).unwrap();
         assert_eq!(decoded.text, "吾輩");
         assert_eq!(decoded.encoding, "windows-31j");
+    }
+
+    #[test]
+    fn decodes_windows_31j_lossy_like_reference_parsers() {
+        let decoded = decode_source_bytes(&[0x82, 0xa0, 0xff]).unwrap();
+        assert_eq!(decoded.text, "あ�");
+        assert_eq!(decoded.encoding, "windows-31j-lossy");
     }
 }

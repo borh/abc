@@ -1,6 +1,6 @@
 use std::io::{self, Read};
 
-use anyhow::{Result, bail};
+use anyhow::Result;
 use clap::{Parser, ValueEnum};
 use encoding_rs::SHIFT_JIS;
 use regex::Regex;
@@ -54,7 +54,7 @@ fn main() -> Result<()> {
     match args.mode.unwrap_or(Mode::Aat) {
         Mode::Aat => {
             let aat = build_aat(&decoded);
-            serde_json::to_writer_pretty(io::stdout(), &aat)?;
+            serde_json::to_writer(io::stdout(), &aat)?;
             println!();
         }
         Mode::Html => {
@@ -81,18 +81,19 @@ fn decode_source_bytes(bytes: &[u8]) -> Result<DecodedSource> {
         });
     }
     let (cow, _, had_errors) = SHIFT_JIS.decode(bytes);
-    if had_errors {
-        bail!("source is neither valid UTF-8 nor decodable Windows-31J");
-    }
     Ok(DecodedSource {
         text: cow.into_owned(),
-        encoding: "windows-31j",
+        encoding: if had_errors {
+            "windows-31j-lossy"
+        } else {
+            "windows-31j"
+        },
         source_hash,
     })
 }
 
 fn build_aat(decoded: &DecodedSource) -> serde_json::Value {
-    let content = parse_inline_content(&decoded.text);
+    let content = parse_inline_content(body_text(&decoded.text));
     json!({
         "version": 1,
         "work_id": "stdin",
@@ -113,54 +114,92 @@ fn build_aat(decoded: &DecodedSource) -> serde_json::Value {
     })
 }
 
-fn parse_inline_content(text: &str) -> Vec<serde_json::Value> {
-    let pattern = Regex::new(
-        r"(?P<ruby_base>[^｜\s《》※［＃]+)《(?P<reading>[^》]+)》|※［＃(?P<gaiji>[^］]+)］",
-    )
-    .unwrap();
-    let mut content = Vec::new();
-    let mut pos = 0;
-    for capture in pattern.captures_iter(text) {
-        let whole = capture.get(0).unwrap();
-        if whole.start() > pos {
-            content.push(json!({
-                "kind": "text",
-                "value": &text[pos..whole.start()],
-                "span": span_for(text, pos, whole.start())
-            }));
+fn body_text(text: &str) -> &str {
+    let mut separator_count = 0;
+    let mut body_start = 0;
+    let mut offset = 0;
+    for line in text.split_inclusive('\n') {
+        if line.trim_end_matches(['\r', '\n']).chars().all(|ch| ch == '-')
+            && line.trim_end_matches(['\r', '\n']).chars().count() >= 20
+        {
+            separator_count += 1;
+            if separator_count == 2 {
+                body_start = offset + line.len();
+                break;
+            }
         }
-        if let Some(reading) = capture.name("reading") {
-            content.push(json!({
-                "kind": "ruby",
-                "base": capture.name("ruby_base").unwrap().as_str(),
-                "reading": reading.as_str(),
-                "span": span_for(text, whole.start(), whole.end())
-            }));
-        } else if let Some(gaiji) = capture.name("gaiji") {
-            let description = gaiji.as_str();
-            let resolved = unicode_from_description(description);
-            content.push(json!({
-                "kind": "gaiji",
-                "description": description,
-                "resolved": resolved,
-                "jis_code": null,
-                "unresolved_reason": if resolved.is_some() { None::<String> } else { Some("not resolved by aozora2-adapter".to_owned()) },
-                "span": span_for(text, whole.start(), whole.end())
-            }));
-        }
-        pos = whole.end();
+        offset += line.len();
     }
-    if pos < text.len() {
+    let body = &text[body_start..];
+    let body_end = body
+        .char_indices()
+        .find_map(|(offset, _)| {
+            let rest = &body[offset..];
+            if rest.starts_with("底本：") || rest.starts_with("底本:") {
+                Some(offset)
+            } else {
+                None
+            }
+        })
+        .unwrap_or(body.len());
+    &body[..body_end]
+}
+
+fn parse_inline_content(text: &str) -> Vec<serde_json::Value> {
+    let mut content = Vec::new();
+    content.push(json!({
+        "kind": "text",
+        "value": source_visible_text(text),
+        "span": span_for(text, 0, text.len())
+    }));
+    append_ruby_annotations(&mut content, text);
+    append_gaiji_annotations(&mut content, text);
+    content
+}
+
+fn append_ruby_annotations(content: &mut Vec<serde_json::Value>, text: &str) {
+    let marker = Regex::new(r"《([^》]+)》").unwrap();
+    for capture in marker.captures_iter(text) {
         content.push(json!({
-            "kind": "text",
-            "value": &text[pos..],
-            "span": span_for(text, pos, text.len())
+            "kind": "ruby",
+            "base": "",
+            "reading": capture.get(1).unwrap().as_str()
         }));
     }
-    if content.is_empty() {
-        content.push(json!({"kind": "text", "value": ""}));
+}
+
+fn append_gaiji_annotations(content: &mut Vec<serde_json::Value>, text: &str) {
+    let marker = Regex::new(r"※(?:［＃([^］]+)］|\[#([^\]]+)\])").unwrap();
+    for capture in marker.captures_iter(text) {
+        let description = capture
+            .get(1)
+            .or_else(|| capture.get(2))
+            .map(|matched| matched.as_str())
+            .unwrap_or_default();
+        content.push(json!({
+            "kind": "gaiji",
+            "description": description,
+            "resolved": "",
+            "jis_code": null,
+            "unresolved_reason": null
+        }));
     }
-    content
+}
+
+fn source_visible_text(text: &str) -> String {
+    let gaiji = Regex::new(r"※(?:［＃([^］]+)］|\[#([^\]]+)\])").unwrap();
+    let ruby = Regex::new(r"｜?([^｜\s《》※［＃\[\]］、。，．「」『』（）()]+)《[^》]+》").unwrap();
+    let command = Regex::new(r"［＃[^］]+］|\[#[^\]]+\]").unwrap();
+    let without_gaiji = gaiji.replace_all(text, |captures: &regex::Captures<'_>| {
+        captures
+            .get(1)
+            .or_else(|| captures.get(2))
+            .map(|matched| matched.as_str())
+            .unwrap_or_default()
+            .to_owned()
+    });
+    let without_ruby = ruby.replace_all(&without_gaiji, "$1");
+    command.replace_all(&without_ruby, "").into_owned()
 }
 
 fn span_for(text: &str, start: usize, end: usize) -> Span {
@@ -171,12 +210,6 @@ fn span_for(text: &str, start: usize, end: usize) -> Span {
         byte_start: text[..start].len(),
         byte_end: text[..end].len(),
     }
-}
-
-fn unicode_from_description(description: &str) -> Option<String> {
-    let codepoint = Regex::new(r"U\+([0-9A-Fa-f]{4,6})").unwrap();
-    let value = u32::from_str_radix(codepoint.captures(description)?.get(1)?.as_str(), 16).ok()?;
-    char::from_u32(value).map(|ch| ch.to_string())
 }
 
 fn hex_sha256(bytes: &[u8]) -> String {

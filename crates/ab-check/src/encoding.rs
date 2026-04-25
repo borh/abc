@@ -1,4 +1,4 @@
-use anyhow::{Result, bail};
+use anyhow::Result;
 use encoding_rs::SHIFT_JIS;
 use sha2::{Digest, Sha256};
 
@@ -29,12 +29,14 @@ pub fn decode_source_bytes(bytes: &[u8]) -> Result<DecodedSource> {
     }
 
     let (cow, _, had_errors) = SHIFT_JIS.decode(bytes);
-    if had_errors {
-        bail!("source is neither valid UTF-8 nor decodable Windows-31J");
-    }
     Ok(DecodedSource {
         text: cow.into_owned(),
-        encoding: "windows-31j".to_owned(),
+        encoding: if had_errors {
+            "windows-31j-lossy"
+        } else {
+            "windows-31j"
+        }
+        .to_owned(),
         raw_sha256,
     })
 }

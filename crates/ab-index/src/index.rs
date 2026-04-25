@@ -1,15 +1,18 @@
 use std::{
     collections::BTreeMap,
     fs,
+    io::Read,
     path::{Path, PathBuf},
 };
 
 use anyhow::{Context, Result};
 use chrono::{SecondsFormat, Utc};
+use flate2::read::DeflateDecoder;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use walkdir::WalkDir;
+use zip::{CompressionMethod, ZipArchive};
 
 use crate::{
     encoding::{decode_source_bytes, hex_sha256},
@@ -43,11 +46,17 @@ struct ScannedWork {
     file_sha256: String,
 }
 
+#[derive(Debug, Clone)]
+enum SourceFile {
+    Plain(PathBuf),
+    Zip { archive: PathBuf, entry: String },
+}
+
 pub fn build_index(corpus_root: &Path, detector: &FeatureDetector) -> Result<Index> {
-    let txt_files = collect_txt_files(corpus_root)?;
-    let mut scanned = txt_files
+    let sources = collect_source_files(corpus_root)?;
+    let mut scanned = sources
         .par_iter()
-        .map(|path| scan_work(corpus_root, path, detector))
+        .map(|source| scan_work(corpus_root, source, detector))
         .collect::<Result<Vec<_>>>()?;
 
     scanned.sort_by(|a, b| a.entry.txt_path.cmp(&b.entry.txt_path));
@@ -143,8 +152,8 @@ pub fn sample(index: &Index, limit: usize, features: &[String]) -> Vec<String> {
     ids
 }
 
-fn collect_txt_files(corpus_root: &Path) -> Result<Vec<PathBuf>> {
-    let mut paths = Vec::new();
+fn collect_source_files(corpus_root: &Path) -> Result<Vec<SourceFile>> {
+    let mut sources = Vec::new();
     for entry in WalkDir::new(corpus_root)
         .follow_links(false)
         .into_iter()
@@ -155,18 +164,40 @@ fn collect_txt_files(corpus_root: &Path) -> Result<Vec<PathBuf>> {
             continue;
         }
         let path = entry.path();
-        if path
+        if is_text_file(path) {
+            if is_zip_file(path)? {
+                push_zip_sources(&mut sources, path);
+            } else {
+                sources.push(SourceFile::Plain(path.to_owned()));
+            }
+        } else if path
             .extension()
-            .is_some_and(|ext| ext.eq_ignore_ascii_case("txt"))
-            && path
-                .file_name()
-                .is_some_and(|name| !name.to_string_lossy().eq_ignore_ascii_case("README.txt"))
+            .is_some_and(|ext| ext.eq_ignore_ascii_case("zip"))
         {
-            paths.push(path.to_owned());
+            push_zip_sources(&mut sources, path);
         }
     }
-    paths.sort();
-    Ok(paths)
+    sources.sort_by_key(|source| source_index_path(source, corpus_root));
+    Ok(sources)
+}
+
+fn push_zip_sources(sources: &mut Vec<SourceFile>, path: &Path) {
+    match zip_text_entries(path) {
+        Ok(entries) => {
+            for entry in entries {
+                sources.push(SourceFile::Zip {
+                    archive: path.to_owned(),
+                    entry,
+                });
+            }
+        }
+        Err(error) => {
+            eprintln!(
+                "warning: skipping unreadable zip {}: {error:#}",
+                path.display()
+            );
+        }
+    }
 }
 
 fn is_hidden(path: &Path) -> bool {
@@ -174,9 +205,16 @@ fn is_hidden(path: &Path) -> bool {
         .is_some_and(|name| name.to_string_lossy().starts_with('.'))
 }
 
-fn scan_work(corpus_root: &Path, path: &Path, detector: &FeatureDetector) -> Result<ScannedWork> {
-    let bytes = fs::read(path).with_context(|| format!("failed to read {}", path.display()))?;
-    let decoded = decode_source_bytes(&bytes)?;
+fn scan_work(
+    corpus_root: &Path,
+    source: &SourceFile,
+    detector: &FeatureDetector,
+) -> Result<ScannedWork> {
+    let source_path = source_index_path(source, corpus_root);
+    let bytes = read_source_bytes(source)
+        .with_context(|| format!("failed to read indexed source {source_path}"))?;
+    let decoded = decode_source_bytes(&bytes)
+        .with_context(|| format!("failed to decode indexed source {source_path}"))?;
     let feature_lines = detector
         .detect(&decoded.text)
         .into_iter()
@@ -184,12 +222,9 @@ fn scan_work(corpus_root: &Path, path: &Path, detector: &FeatureDetector) -> Res
     let mut features = feature_lines.keys().cloned().collect::<Vec<_>>();
     features.sort();
 
-    let rel = path
-        .strip_prefix(corpus_root)
-        .with_context(|| format!("{} is outside corpus root", path.display()))?;
-    let txt_path = normalize_relative_path(rel);
-    let html_path = find_html_sibling(path, corpus_root)?;
-    let id = work_id_from_relative(rel);
+    let txt_path = source_path;
+    let html_path = find_html_sibling(source_container_path(source), corpus_root)?;
+    let id = work_id_from_index_path(&txt_path);
 
     Ok(ScannedWork {
         entry: WorkEntry {
@@ -202,6 +237,143 @@ fn scan_work(corpus_root: &Path, path: &Path, detector: &FeatureDetector) -> Res
         file_size: bytes.len() as u64,
         file_sha256: hex_sha256(&bytes),
     })
+}
+
+fn is_text_file(path: &Path) -> bool {
+    path.extension()
+        .is_some_and(|ext| ext.eq_ignore_ascii_case("txt"))
+        && path
+            .file_name()
+            .is_some_and(|name| !name.to_string_lossy().eq_ignore_ascii_case("README.txt"))
+}
+
+fn is_zip_file(path: &Path) -> Result<bool> {
+    let mut file =
+        fs::File::open(path).with_context(|| format!("failed to open {}", path.display()))?;
+    let mut magic = [0; 4];
+    match file.read_exact(&mut magic) {
+        Ok(()) => Ok(magic == [0x50, 0x4b, 0x03, 0x04]),
+        Err(error) if error.kind() == std::io::ErrorKind::UnexpectedEof => Ok(false),
+        Err(error) => Err(error).with_context(|| format!("failed to read {}", path.display())),
+    }
+}
+
+fn zip_text_entries(path: &Path) -> Result<Vec<String>> {
+    let file =
+        fs::File::open(path).with_context(|| format!("failed to open {}", path.display()))?;
+    let mut archive =
+        ZipArchive::new(file).with_context(|| format!("failed to read zip {}", path.display()))?;
+    for idx in 0..archive.len() {
+        let file = archive
+            .by_index_raw(idx)
+            .with_context(|| format!("failed to read zip entry {idx} in {}", path.display()))?;
+        let name = file.name();
+        if is_zip_text_entry(name) && !file.is_dir() {
+            return Ok(vec![name.to_owned()]);
+        }
+    }
+    Ok(Vec::new())
+}
+
+fn read_source_bytes(source: &SourceFile) -> Result<Vec<u8>> {
+    match source {
+        SourceFile::Plain(path) => {
+            fs::read(path).with_context(|| format!("failed to read {}", path.display()))
+        }
+        SourceFile::Zip { archive, entry } => {
+            let file = fs::File::open(archive)
+                .with_context(|| format!("failed to open {}", archive.display()))?;
+            let mut archive_reader = ZipArchive::new(file)
+                .with_context(|| format!("failed to read zip {}", archive.display()))?;
+            for idx in 0..archive_reader.len() {
+                let mut zipped = archive_reader.by_index_raw(idx).with_context(|| {
+                    format!("failed to read zip entry {idx} in {}", archive.display())
+                })?;
+                if zipped.name() == entry {
+                    return read_zip_entry_bytes(&mut zipped, archive, entry);
+                }
+            }
+            anyhow::bail!("zip entry {entry} not found in {}", archive.display())
+        }
+    }
+}
+
+fn is_zip_text_entry(name: &str) -> bool {
+    !name.starts_with("__MACOSX/")
+        && !name.ends_with('/')
+        && !Path::new(name).file_name().is_some_and(|file_name| {
+            file_name
+                .to_string_lossy()
+                .eq_ignore_ascii_case("README.txt")
+        })
+        && Path::new(name)
+            .extension()
+            .is_some_and(|ext| ext.eq_ignore_ascii_case("txt"))
+}
+
+fn read_zip_entry_bytes(
+    entry: &mut zip::read::ZipFile<'_>,
+    archive: &Path,
+    entry_name: &str,
+) -> Result<Vec<u8>> {
+    if entry.encrypted() {
+        anyhow::bail!(
+            "encrypted zip entry {entry_name} is not supported in {}",
+            archive.display()
+        );
+    }
+
+    let mut compressed = Vec::new();
+    entry.read_to_end(&mut compressed).with_context(|| {
+        format!(
+            "failed to read zip entry {entry_name} in {}",
+            archive.display()
+        )
+    })?;
+
+    match entry.compression() {
+        CompressionMethod::Stored => Ok(compressed),
+        CompressionMethod::Deflated => {
+            let mut decoder = DeflateDecoder::new(&compressed[..]);
+            let mut out = Vec::new();
+            decoder.read_to_end(&mut out).with_context(|| {
+                format!(
+                    "failed to deflate zip entry {entry_name} in {}",
+                    archive.display()
+                )
+            })?;
+            Ok(out)
+        }
+        method => {
+            anyhow::bail!(
+                "unsupported zip compression method {method:?} for {entry_name} in {}",
+                archive.display()
+            )
+        }
+    }
+}
+
+fn source_container_path(source: &SourceFile) -> &Path {
+    match source {
+        SourceFile::Plain(path) => path,
+        SourceFile::Zip { archive, .. } => archive,
+    }
+}
+
+fn source_index_path(source: &SourceFile, corpus_root: &Path) -> String {
+    match source {
+        SourceFile::Plain(path) => path
+            .strip_prefix(corpus_root)
+            .map(normalize_relative_path)
+            .unwrap_or_else(|_| path.to_string_lossy().into_owned()),
+        SourceFile::Zip { archive, entry } => {
+            let archive_path = archive
+                .strip_prefix(corpus_root)
+                .map(normalize_relative_path)
+                .unwrap_or_else(|_| archive.to_string_lossy().into_owned());
+            format!("{archive_path}::{entry}")
+        }
+    }
 }
 
 fn find_html_sibling(path: &Path, corpus_root: &Path) -> Result<Option<String>> {
@@ -221,21 +393,24 @@ fn find_html_sibling(path: &Path, corpus_root: &Path) -> Result<Option<String>> 
     Ok(None)
 }
 
-fn work_id_from_relative(path: &Path) -> String {
-    let parts = path
-        .components()
-        .filter_map(|component| component.as_os_str().to_str())
-        .collect::<Vec<_>>();
+fn work_id_from_index_path(path: &str) -> String {
+    let source_path = path.split_once("::").map_or(path, |(archive, _)| archive);
+    let parts = source_path.split('/').collect::<Vec<_>>();
 
     if let Some(cards_pos) = parts.iter().position(|part| *part == "cards")
         && let (Some(card), Some(file_dir)) = (parts.get(cards_pos + 1), parts.get(cards_pos + 3))
         && parts.get(cards_pos + 2) == Some(&"files")
     {
-        let file = file_dir.split('_').next().unwrap_or(file_dir);
+        let file_name = file_dir
+            .strip_suffix(".zip")
+            .or_else(|| file_dir.strip_suffix(".txt"))
+            .unwrap_or(file_dir);
+        let file = file_name.split('_').next().unwrap_or(file_name);
         return format!("{card}_{file}");
     }
 
-    path.file_stem()
+    Path::new(source_path)
+        .file_stem()
         .and_then(|stem| stem.to_str())
         .unwrap_or("unknown")
         .chars()
@@ -271,7 +446,11 @@ mod tests {
     #[test]
     fn parses_work_id_from_aozora_path() {
         assert_eq!(
-            work_id_from_relative(Path::new("cards/000148/files/799_ruby_19091/test.txt")),
+            work_id_from_index_path("cards/000148/files/799_ruby_19091/test.txt"),
+            "000148_799"
+        );
+        assert_eq!(
+            work_id_from_index_path("cards/000148/files/799_ruby_19091.zip::799_ruby_19091.txt"),
             "000148_799"
         );
     }

@@ -16,6 +16,7 @@ chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4.5", features = ["derive"] }
 criterion = "0.8"
 encoding_rs = "0.8"
+flate2 = "1.0"
 jsonschema = "0.46"
 rayon = "1.10"
 regex = "1.10"
@@ -26,3 +27,4 @@ tl = "0.7"
 toml = "0.8"
 unicode-normalization = "0.1"
 walkdir = "2.5"
+zip = { version = "2.4", default-features = false, features = ["deflate"] }

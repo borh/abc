@@ -1,7 +1,7 @@
 use std::{
     collections::BTreeMap,
     fs,
-    io::Write,
+    io::{Read, Write},
     path::{Path, PathBuf},
     process::{Command, Stdio},
     sync::Arc,
@@ -10,13 +10,15 @@ use std::{
 };
 
 use anyhow::{Context, Result, bail};
+use flate2::read::DeflateDecoder;
 use jsonschema::Validator;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
+use zip::{CompressionMethod, ZipArchive};
 
 use crate::{
-    encoding::decode_source_bytes,
+    encoding::{decode_source_bytes, hex_sha256},
     properties::{PropertyViolation, builtin_properties},
 };
 
@@ -183,6 +185,9 @@ pub fn run_batch(options: BatchOptions<'_>) -> Result<()> {
         .works
         .into_iter()
         .filter(|work| {
+            if explicit_ids.is_none() && options.features.is_empty() {
+                return true;
+            }
             explicit_ids
                 .as_ref()
                 .is_some_and(|ids| ids.contains(&work.id))
@@ -196,6 +201,12 @@ pub fn run_batch(options: BatchOptions<'_>) -> Result<()> {
 
     let adapter_path = discover_adapter(options.adapter)?;
     let adapter_version = adapter_version(&adapter_path)?;
+    let adapter_output_name = sanitize_filename(
+        adapter_path
+            .file_stem()
+            .and_then(|name| name.to_str())
+            .unwrap_or(options.adapter),
+    );
     let validator = Arc::new(schema_validator()?);
     let pool = rayon::ThreadPoolBuilder::new()
         .num_threads(options.jobs)
@@ -203,19 +214,19 @@ pub fn run_batch(options: BatchOptions<'_>) -> Result<()> {
 
     pool.install(|| {
         works.par_iter().try_for_each(|work| -> Result<()> {
-            let txt_path = options.corpus_root.join(&work.txt_path);
             let report = invoke_and_check(
                 &adapter_path,
                 &adapter_version,
-                &txt_path,
+                options.corpus_root,
+                &work.txt_path,
                 &work.id,
                 options.timeout,
                 &validator,
             )?;
             let out = options
                 .output_dir
-                .join(options.adapter)
-                .join(format!("{}.json", sanitize_filename(&work.id)));
+                .join(&adapter_output_name)
+                .join(report_filename(work));
             if let Some(parent) = out.parent() {
                 fs::create_dir_all(parent)?;
             }
@@ -241,12 +252,13 @@ pub fn write_report(report: &CheckReport, output: Option<&Path>) -> Result<()> {
 fn invoke_and_check(
     adapter_path: &Path,
     adapter_version: &str,
-    txt_path: &Path,
+    corpus_root: &Path,
+    indexed_txt_path: &str,
     work_id: &str,
     timeout: Duration,
     validator: &Validator,
 ) -> Result<CheckReport> {
-    let txt_bytes = fs::read(txt_path)?;
+    let txt_bytes = read_indexed_source_bytes(corpus_root, indexed_txt_path)?;
     let decoded = decode_source_bytes(&txt_bytes)?;
     let mut child = Command::new(adapter_path)
         .arg("--mode")
@@ -255,15 +267,39 @@ fn invoke_and_check(
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()?;
-    child.stdin.take().unwrap().write_all(&txt_bytes)?;
+    let mut stdout = child
+        .stdout
+        .take()
+        .context("adapter stdout was not piped")?;
+    let mut stderr = child
+        .stderr
+        .take()
+        .context("adapter stderr was not piped")?;
+    let stdout_reader = thread::spawn(move || {
+        let mut bytes = Vec::new();
+        stdout.read_to_end(&mut bytes).map(|_| bytes)
+    });
+    let stderr_reader = thread::spawn(move || {
+        let mut bytes = Vec::new();
+        stderr.read_to_end(&mut bytes).map(|_| bytes)
+    });
+
+    {
+        let mut stdin = child.stdin.take().context("adapter stdin was not piped")?;
+        stdin.write_all(&txt_bytes)?;
+    }
 
     let start = Instant::now();
     loop {
-        if child.try_wait()?.is_some() {
-            let output = child.wait_with_output()?;
-            return match output.status.code() {
+        if let Some(status) = child.try_wait()? {
+            let stdout = join_reader(stdout_reader, "stdout")?;
+            let stderr = join_reader(stderr_reader, "stderr")?;
+            return match status.code() {
                 Some(0) | Some(2) => {
-                    let mut aat: Value = serde_json::from_slice(&output.stdout)?;
+                    let mut aat: Value = serde_json::from_slice(&stdout)?;
+                    if let Some(root) = aat.as_object_mut() {
+                        root.insert("work_id".to_owned(), Value::String(work_id.to_owned()));
+                    }
                     if let Some(meta) = aat.get_mut("meta").and_then(Value::as_object_mut) {
                         meta.insert(
                             "adapter_version".to_owned(),
@@ -277,7 +313,7 @@ fn invoke_and_check(
                     adapter_version,
                     work_id,
                     "fatal_error",
-                    &String::from_utf8_lossy(&output.stderr),
+                    &String::from_utf8_lossy(&stderr),
                 )),
                 code => Ok(adapter_error_report(
                     adapter_path,
@@ -290,6 +326,9 @@ fn invoke_and_check(
         }
         if start.elapsed() > timeout {
             let _ = child.kill();
+            let _ = child.wait();
+            let _ = join_reader(stdout_reader, "stdout");
+            let _ = join_reader(stderr_reader, "stderr");
             return Ok(adapter_error_report(
                 adapter_path,
                 adapter_version,
@@ -300,6 +339,71 @@ fn invoke_and_check(
         }
         thread::sleep(Duration::from_millis(20));
     }
+}
+
+fn join_reader(
+    reader: thread::JoinHandle<std::io::Result<Vec<u8>>>,
+    stream_name: &str,
+) -> Result<Vec<u8>> {
+    reader
+        .join()
+        .map_err(|_| anyhow::anyhow!("adapter {stream_name} reader thread panicked"))?
+        .with_context(|| format!("failed to read adapter {stream_name}"))
+}
+
+fn read_indexed_source_bytes(corpus_root: &Path, indexed_path: &str) -> Result<Vec<u8>> {
+    if let Some((archive_path, entry_name)) = indexed_path.split_once("::") {
+        return read_zip_entry_bytes(&corpus_root.join(archive_path), entry_name);
+    }
+    let path = corpus_root.join(indexed_path);
+    fs::read(&path).with_context(|| format!("failed to read {}", path.display()))
+}
+
+fn read_zip_entry_bytes(archive: &Path, entry_name: &str) -> Result<Vec<u8>> {
+    let file =
+        fs::File::open(archive).with_context(|| format!("failed to open {}", archive.display()))?;
+    let mut archive_reader = ZipArchive::new(file)
+        .with_context(|| format!("failed to read zip {}", archive.display()))?;
+    for idx in 0..archive_reader.len() {
+        let mut entry = archive_reader
+            .by_index_raw(idx)
+            .with_context(|| format!("failed to read zip entry {idx} in {}", archive.display()))?;
+        if entry.name() != entry_name {
+            continue;
+        }
+        if entry.encrypted() {
+            bail!(
+                "encrypted zip entry {entry_name} is not supported in {}",
+                archive.display()
+            );
+        }
+        let mut compressed = Vec::new();
+        entry.read_to_end(&mut compressed).with_context(|| {
+            format!(
+                "failed to read zip entry {entry_name} in {}",
+                archive.display()
+            )
+        })?;
+        return match entry.compression() {
+            CompressionMethod::Stored => Ok(compressed),
+            CompressionMethod::Deflated => {
+                let mut decoder = DeflateDecoder::new(&compressed[..]);
+                let mut out = Vec::new();
+                decoder.read_to_end(&mut out).with_context(|| {
+                    format!(
+                        "failed to deflate zip entry {entry_name} in {}",
+                        archive.display()
+                    )
+                })?;
+                Ok(out)
+            }
+            method => bail!(
+                "unsupported zip compression method {method:?} for {entry_name} in {}",
+                archive.display()
+            ),
+        };
+    }
+    bail!("zip entry {entry_name} not found in {}", archive.display())
 }
 
 fn adapter_error_report(
@@ -378,6 +482,11 @@ fn sanitize_filename(name: &str) -> String {
             }
         })
         .collect()
+}
+
+fn report_filename(work: &IndexWork) -> String {
+    let path_hash = hex_sha256(work.txt_path.as_bytes());
+    format!("{}-{}.json", sanitize_filename(&work.id), &path_hash[..12])
 }
 
 fn default_confidence(name: &str) -> &'static str {

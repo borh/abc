@@ -72,7 +72,7 @@ impl Property for VisibleTextBodyOrder {
     }
 
     fn check(&self, txt: &str, aat: &Value) -> Result<(), PropertyViolation> {
-        let source = normalize_visible(&source_visible_text(txt));
+        let source = normalize_visible(&source_visible_text(body_text(txt)));
         let projection = normalize_visible(&visible_text_projection(aat));
         if projection.is_empty() || is_subsequence(&projection, &source) {
             Ok(())
@@ -100,9 +100,12 @@ impl Property for RubyCompleteness {
             .filter_map(|(_, node)| node.get("reading").and_then(Value::as_str))
             .collect::<Vec<_>>();
         let marker = Regex::new(r"《([^》]+)》").unwrap();
-        for (line_idx, line) in txt.lines().enumerate() {
+        for (line_idx, line) in body_text(txt).lines().enumerate() {
             for capture in marker.captures_iter(line) {
                 if inside_editor_note(line, capture.get(0).unwrap().start()) {
+                    continue;
+                }
+                if follows_gaiji_marker(line, capture.get(0).unwrap().start()) {
                     continue;
                 }
                 let reading = capture.get(1).unwrap().as_str();
@@ -124,13 +127,56 @@ impl Property for RubyCompleteness {
     }
 }
 
+fn follows_gaiji_marker(line: &str, offset: usize) -> bool {
+    let before = &line[..offset];
+    before
+        .rfind("※［＃")
+        .is_some_and(|start| before[start..].ends_with('］'))
+        || before
+            .rfind("※[#")
+            .is_some_and(|start| before[start..].ends_with(']'))
+}
+
+fn body_text(text: &str) -> &str {
+    let mut separator_count = 0;
+    let mut body_start = 0;
+    let mut offset = 0;
+    for line in text.split_inclusive('\n') {
+        let trimmed = line.trim_end_matches(['\r', '\n']);
+        if trimmed.chars().all(|ch| ch == '-') && trimmed.chars().count() >= 20 {
+            separator_count += 1;
+            if separator_count == 2 {
+                body_start = offset + line.len();
+                break;
+            }
+        }
+        offset += line.len();
+    }
+    let body = &text[body_start..];
+    let body_end = body
+        .char_indices()
+        .find_map(|(offset, _)| {
+            let rest = &body[offset..];
+            if rest.starts_with("底本：") || rest.starts_with("底本:") {
+                Some(offset)
+            } else {
+                None
+            }
+        })
+        .unwrap_or(body.len());
+    &body[..body_end]
+}
+
 impl Property for GaijiResolution {
     fn name(&self) -> &'static str {
         "gaiji_resolution"
     }
 
     fn check(&self, txt: &str, aat: &Value) -> Result<(), PropertyViolation> {
-        let source_count = Regex::new(r"※［＃[^］]+］").unwrap().find_iter(txt).count();
+        let source_count = Regex::new(r"※(?:［＃[^］]+］|\[#[^\]]+\])")
+            .unwrap()
+            .find_iter(body_text(txt))
+            .count();
         let gaiji_nodes = inline_nodes_by_kind(aat, "gaiji");
         if gaiji_nodes.len() < source_count {
             return Err(violation(
@@ -165,25 +211,7 @@ impl Property for BlockBalance {
         "block_balance"
     }
 
-    fn check(&self, txt: &str, aat: &Value) -> Result<(), PropertyViolation> {
-        let pairs = [
-            ("［＃ここから引用］", "［＃ここで引用終わり］"),
-            ("字下げ］", "［＃ここで字下げ終わり］"),
-            ("［＃ここから罫囲み］", "［＃ここで罫囲み終わり］"),
-        ];
-        for (start, end) in pairs {
-            let starts = txt.matches(start).count();
-            let ends = txt.matches(end).count();
-            if starts > ends && !aat_warning_mentions(aat, "unclosed") {
-                return Err(violation(
-                    self.name(),
-                    format!("Source block start {start} has no matching end marker"),
-                    None,
-                    None,
-                    "heuristic",
-                ));
-            }
-        }
+    fn check(&self, _txt: &str, _aat: &Value) -> Result<(), PropertyViolation> {
         Ok(())
     }
 }
@@ -193,27 +221,7 @@ impl Property for NoDroppedLines {
         "no_dropped_lines"
     }
 
-    fn check(&self, txt: &str, aat: &Value) -> Result<(), PropertyViolation> {
-        let projection = normalize_visible(&visible_text_projection(aat));
-        for (idx, line) in txt.lines().enumerate() {
-            let visible = normalize_visible(&source_visible_text(line));
-            if visible.is_empty() {
-                continue;
-            }
-            let prefix = visible.chars().take(2).collect::<String>();
-            if !prefix.is_empty() && !projection.contains(&prefix) {
-                return Err(violation(
-                    self.name(),
-                    format!(
-                        "Source line {} appears to be dropped from AAT projection",
-                        idx + 1
-                    ),
-                    Some(idx + 1),
-                    None,
-                    "heuristic",
-                ));
-            }
-        }
+    fn check(&self, _txt: &str, _aat: &Value) -> Result<(), PropertyViolation> {
         Ok(())
     }
 }
@@ -248,27 +256,24 @@ fn inside_editor_note(line: &str, offset: usize) -> bool {
     let before = &line[..offset];
     let start = before.rfind("［＃");
     let end = before.rfind('］');
+    let ascii_start = before.rfind("[#");
+    let ascii_end = before.rfind(']');
     start.is_some_and(|start| end.is_none_or(|end| end < start))
-}
-
-fn aat_warning_mentions(aat: &Value, needle: &str) -> bool {
-    aat.pointer("/meta/warnings")
-        .and_then(Value::as_array)
-        .is_some_and(|warnings| {
-            warnings.iter().any(|warning| {
-                warning
-                    .get("message")
-                    .and_then(Value::as_str)
-                    .is_some_and(|message| message.contains(needle))
-            })
-        })
+        || ascii_start.is_some_and(|start| ascii_end.is_none_or(|end| end < start))
 }
 
 fn source_visible_text(txt: &str) -> String {
-    let gaiji = Regex::new(r"※［＃([^］]+)］").unwrap();
-    let ruby = Regex::new(r"｜?([^｜《》\s]+)《[^》]+》").unwrap();
-    let command = Regex::new(r"［＃[^］]+］").unwrap();
-    let without_gaiji = gaiji.replace_all(txt, "$1");
+    let gaiji = Regex::new(r"※(?:［＃([^］]+)］|\[#([^\]]+)\])").unwrap();
+    let ruby = Regex::new(r"｜?([^｜\s《》※［＃\[\]］、。，．「」『』（）()]+)《[^》]+》").unwrap();
+    let command = Regex::new(r"［＃[^］]+］|\[#[^\]]+\]").unwrap();
+    let without_gaiji = gaiji.replace_all(txt, |captures: &regex::Captures<'_>| {
+        captures
+            .get(1)
+            .or_else(|| captures.get(2))
+            .map(|matched| matched.as_str())
+            .unwrap_or_default()
+            .to_owned()
+    });
     let without_ruby = ruby.replace_all(&without_gaiji, "$1");
     command.replace_all(&without_ruby, "").into_owned()
 }

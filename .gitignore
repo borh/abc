@@ -20,3 +20,5 @@ pom.xml.asc
 /*.xml
 /*.txt
 /*.zip
+/references/
+/docs/

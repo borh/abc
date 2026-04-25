@@ -4,9 +4,9 @@
 
 **Goal:** Add the next parser adapter (`aozora-rs`) and produce a measured, reproducible comparison against the existing `aozora2` adapter on the full readable Aozora Bunko corpus.
 
-**Architecture:** Implement `aozora-rs-adapter` as an external Rust adapter, matching the existing adapter contract: stdin source bytes, `--mode aat`, `--mode html`, and `--version`. Add a small `ab-compare` workspace crate that compares two sets of `ab-check` reports and, when AAT artifacts are available, compares normalized visible text and annotation counts. Extend benchmark scripts to run both adapters with the same index and emit one JSON comparison summary.
+**Architecture:** Implement `aozora-rs-adapter` as an external Rust adapter, matching the existing adapter contract: stdin source bytes, `--mode aat`, `--mode html`, and `--version`. The adapter must derive AAT from `aozora-rs-core` tokenizer/scopenizer/retokenizer output, not from the shared regex projection used by the first validation adapter. Add a small `ab-compare` workspace crate that compares two sets of `ab-check` reports first; normalized AAT tree diff is explicitly out of scope for this increment and should be a follow-up once both adapters preserve structurally meaningful AAT artifacts.
 
-**Tech Stack:** Rust 2024, `clap`, `anyhow`, `serde_json`, `encoding_rs`, `sha2`, `regex`, `rayon`, `walkdir`, `criterion`; `aozora-rs` pinned from `https://github.com/kinoko0518/aozora-rs` at `dd380ee639ca317ac9092ef2ba554acdf70e3c8d`.
+**Tech Stack:** Rust 2024, `clap`, `anyhow`, `serde_json`, `encoding_rs`, `sha2`, `rayon`, `walkdir`, `criterion`; local path dependencies on `references/parsers/aozora-rs/aozora-rs/aozora-rs-core` and `references/parsers/aozora-rs/aozora-rs/aozora-rs-xhtml` at commit `dd380ee639ca317ac9092ef2ba554acdf70e3c8d`.
 
 ---
 
@@ -70,13 +70,14 @@ license = "MIT OR Apache-2.0"
 
 [dependencies]
 anyhow = "1.0"
-aozora-rs = { git = "https://github.com/kinoko0518/aozora-rs", package = "aozora-rs", rev = "dd380ee639ca317ac9092ef2ba554acdf70e3c8d" }
+aozora-rs-core = { path = "../../references/parsers/aozora-rs/aozora-rs/aozora-rs-core" }
+aozora-rs-xhtml = { path = "../../references/parsers/aozora-rs/aozora-rs/aozora-rs-xhtml" }
 clap = { version = "4.5", features = ["derive"] }
 encoding_rs = "0.8"
-regex = "1.10"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 sha2 = "0.10"
+winnow = "0.7"
 
 [dev-dependencies]
 criterion = "0.8"
@@ -99,7 +100,14 @@ mod tests {
 
     #[test]
     fn emits_schema_shaped_aat_for_ruby_and_gaiji() {
-        let input = b"\xe5\x90\xbe\xe8\xbc\xa9\xe3\x80\x8a\xe3\x82\x8f\xe3\x81\x8c\xe3\x81\xaf\xe3\x81\x84\xe3\x80\x8b\xe3\x81\xaf\xe2\x80\xbb\xef\xbc\xbb\xef\xbc\x83\xe3\x80\x8c\xe5\x8f\xa3\xef\xbc\x8b\xe4\xb8\x96\xe3\x80\x8d\xe3\x80\x81U+546D\xef\xbc\xbd\xe3\x81\xa7\xe3\x81\x82\xe3\x82\x8b\xe3\x80\x82";
+        let input = "\
+タイトル
+著者
+-------------------------------------------------------
+凡例
+-------------------------------------------------------
+吾輩《わがはい》は※［＃「口＋世」、U+546D］である。"
+            .as_bytes();
         let out = aat_json_from_bytes(input).unwrap();
         let value: serde_json::Value = serde_json::from_slice(&out).unwrap();
 
@@ -108,6 +116,11 @@ mod tests {
         assert_eq!(value["meta"]["source_encoding"], "utf-8");
         assert!(value["meta"]["parse_complete"].as_bool().unwrap());
         assert_eq!(value["blocks"][0]["kind"], "paragraph");
+        assert!(value["blocks"][0]["content"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|node| node["kind"] == "ruby"));
     }
 }
 ```
@@ -126,11 +139,15 @@ Create `adapters/aozora-rs/src/lib.rs`:
 
 ```rust
 use anyhow::Result;
+use aozora_rs_core::{
+    Break, Deco, Retokenized, parse_meta, retokenize, scopenize, tokenize,
+};
+use aozora_rs_xhtml::retokenized_to_xhtml;
 use encoding_rs::SHIFT_JIS;
-use regex::Regex;
 use serde::Serialize;
 use serde_json::json;
 use sha2::{Digest, Sha256};
+use winnow::LocatingSlice;
 
 pub const VERSION: &str =
     "aozora-rs-adapter 0.1.0 dd380ee639ca317ac9092ef2ba554acdf70e3c8d";
@@ -140,6 +157,13 @@ pub struct DecodedSource {
     pub text: String,
     pub encoding: &'static str,
     pub source_hash: String,
+}
+
+#[derive(Debug)]
+struct ParsedSource<'a> {
+    body: &'a str,
+    retokenized: Vec<Retokenized<'a>>,
+    warnings: Vec<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -180,8 +204,8 @@ pub fn decode_source_bytes(bytes: &[u8]) -> Result<DecodedSource> {
 
 pub fn aat_json_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
     let decoded = decode_source_bytes(bytes)?;
-    let _ = aozora_rs::AozoraDocument::from_str(&decoded.text, None);
-    let aat = build_validation_aat(&decoded);
+    let parsed = parse_with_aozora_rs(&decoded.text)?;
+    let aat = build_aat(&decoded, &parsed);
     let mut out = Vec::new();
     serde_json::to_writer(&mut out, &aat)?;
     out.push(b'\n');
@@ -190,26 +214,49 @@ pub fn aat_json_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
 
 pub fn html_from_bytes(bytes: &[u8]) -> Result<String> {
     let decoded = decode_source_bytes(bytes)?;
-    let doc = aozora_rs::AozoraDocument::from_str(&decoded.text, None)?;
-    let (xhtml, warnings) = doc.xhtml()?;
-    let mut out = String::new();
-    out.push_str(&format!("<!-- warnings:{} -->\n", warnings.len()));
-    for (_, page) in xhtml.xhtmls {
+    let parsed = parse_with_aozora_rs(&decoded.text)?;
+    let warning_count = parsed.warnings.len();
+    let xhtml = retokenized_to_xhtml(parsed.retokenized);
+    let mut pages = xhtml.xhtmls.into_iter().collect::<Vec<_>>();
+    pages.sort_by_key(|(page_id, _)| *page_id);
+    let mut out = format!("<!-- warnings:{warning_count} -->\n");
+    for (page_id, page) in pages {
+        out.push_str(&format!("<!-- page:{page_id} -->\n"));
         out.push_str(&page);
         out.push('\n');
     }
     Ok(out)
 }
 
-fn build_validation_aat(decoded: &DecodedSource) -> serde_json::Value {
-    let body = body_text(&decoded.text);
+fn parse_with_aozora_rs(text: &str) -> Result<ParsedSource<'_>> {
+    let mut body = text;
+    let mut warnings = Vec::new();
+    if let Err(error) = parse_meta(&mut body) {
+        warnings.push(format!("meta parse warning: {error}"));
+    }
+
+    let mut input = LocatingSlice::new(body);
+    let tokenized = tokenize(&mut input)?;
+    let ((scopenized, flat_tokens), scopenize_errors) = scopenize(tokenized).into_tuple();
+    let (retokenized, retokenize_errors) = retokenize(flat_tokens, scopenized).into_tuple();
+    warnings.extend(scopenize_errors.into_iter().map(|error| error.to_string()));
+    warnings.extend(retokenize_errors.into_iter().map(|error| error.to_string()));
+
+    Ok(ParsedSource {
+        body,
+        retokenized,
+        warnings,
+    })
+}
+
+fn build_aat(decoded: &DecodedSource, parsed: &ParsedSource<'_>) -> serde_json::Value {
     json!({
         "version": 1,
         "work_id": "stdin",
         "blocks": [
             {
                 "kind": "paragraph",
-                "content": parse_inline_content(body)
+                "content": retokenized_to_aat_content(&parsed.retokenized)
             }
         ],
         "meta": {
@@ -217,107 +264,92 @@ fn build_validation_aat(decoded: &DecodedSource) -> serde_json::Value {
             "adapter_version": VERSION,
             "source_encoding": decoded.encoding,
             "source_hash": decoded.source_hash,
-            "parse_complete": true,
-            "warnings": []
+            "parse_complete": parsed.warnings.is_empty(),
+            "warnings": parsed.warnings.iter().map(|message| json!({ "message": message })).collect::<Vec<_>>()
         }
     })
 }
 
-fn body_text(text: &str) -> &str {
-    let mut separator_count = 0;
-    let mut body_start = 0;
-    let mut offset = 0;
-    for line in text.split_inclusive('\n') {
-        if line.trim_end_matches(['\r', '\n']).chars().all(|ch| ch == '-')
-            && line.trim_end_matches(['\r', '\n']).chars().count() >= 20
-        {
-            separator_count += 1;
-            if separator_count == 2 {
-                body_start = offset + line.len();
-                break;
+fn retokenized_to_aat_content(tokens: &[Retokenized<'_>]) -> Vec<serde_json::Value> {
+    let mut content = Vec::new();
+    let mut idx = 0;
+    while idx < tokens.len() {
+        match &tokens[idx] {
+            Retokenized::Text(text) => push_text(&mut content, text),
+            Retokenized::Odoriji(odoriji) => push_text(&mut content, &odoriji.to_string()),
+            Retokenized::Kunten(kunten) => push_text(&mut content, kunten),
+            Retokenized::Okurigana(okurigana) => push_text(&mut content, okurigana),
+            Retokenized::Break(Break::BreakLine) => push_text(&mut content, "\n"),
+            Retokenized::Break(_) => push_text(&mut content, "\n"),
+            Retokenized::Figure(figure) => content.push(json!({
+                "kind": "gaiji",
+                "description": figure.to_string(),
+                "resolved": "",
+                "jis_code": null,
+                "unresolved_reason": null
+            })),
+            Retokenized::DecoBegin(Deco::Ruby(reading)) => {
+                let (base, next_idx) = collect_decorated_visible_text(tokens, idx + 1, |deco| {
+                    matches!(deco, Deco::Ruby(_))
+                });
+                content.push(json!({
+                    "kind": "ruby",
+                    "base": base,
+                    "reading": reading
+                }));
+                idx = next_idx;
+                continue;
             }
+            Retokenized::DecoBegin(deco) => {
+                let (value, next_idx) = collect_decorated_visible_text(tokens, idx + 1, |candidate| {
+                    std::mem::discriminant(candidate) == std::mem::discriminant(deco)
+                });
+                content.push(json!({
+                    "kind": "style",
+                    "style_type": format!("{deco:?}"),
+                    "content": [{"kind": "text", "value": value}]
+                }));
+                idx = next_idx;
+                continue;
+            }
+            Retokenized::DecoEnd(_) => {}
         }
-        offset += line.len();
+        idx += 1;
     }
-    let body = &text[body_start..];
-    let body_end = body
-        .char_indices()
-        .find_map(|(offset, _)| {
-            let rest = &body[offset..];
-            if rest.starts_with("底本：") || rest.starts_with("底本:") {
-                Some(offset)
-            } else {
-                None
-            }
-        })
-        .unwrap_or(body.len());
-    &body[..body_end]
-}
-
-fn parse_inline_content(text: &str) -> Vec<serde_json::Value> {
-    let mut content = vec![json!({
-        "kind": "text",
-        "value": source_visible_text(text),
-        "span": span_for(text, 0, text.len())
-    })];
-    append_ruby_annotations(&mut content, text);
-    append_gaiji_annotations(&mut content, text);
     content
 }
 
-fn append_ruby_annotations(content: &mut Vec<serde_json::Value>, text: &str) {
-    let marker = Regex::new(r"《([^》]+)》").unwrap();
-    for capture in marker.captures_iter(text) {
-        content.push(json!({
-            "kind": "ruby",
-            "base": "",
-            "reading": capture.get(1).unwrap().as_str()
-        }));
+fn collect_decorated_visible_text(
+    tokens: &[Retokenized<'_>],
+    mut idx: usize,
+    is_matching_end: impl Fn(&Deco<'_>) -> bool,
+) -> (String, usize) {
+    let mut value = String::new();
+    let mut depth = 1;
+    while idx < tokens.len() {
+        match &tokens[idx] {
+            Retokenized::Text(text) => value.push_str(text),
+            Retokenized::Odoriji(odoriji) => value.push_str(&odoriji.to_string()),
+            Retokenized::Kunten(kunten) => value.push_str(kunten),
+            Retokenized::Okurigana(okurigana) => value.push_str(okurigana),
+            Retokenized::Break(_) => value.push('\n'),
+            Retokenized::Figure(figure) => value.push_str(&figure.to_string()),
+            Retokenized::DecoBegin(_) => depth += 1,
+            Retokenized::DecoEnd(deco) if depth == 1 && is_matching_end(deco) => {
+                return (value, idx + 1);
+            }
+            Retokenized::DecoEnd(_) => depth -= 1,
+        }
+        idx += 1;
     }
+    (value, idx)
 }
 
-fn append_gaiji_annotations(content: &mut Vec<serde_json::Value>, text: &str) {
-    let marker = Regex::new(r"※(?:［＃([^］]+)］|\[#([^\]]+)\])").unwrap();
-    for capture in marker.captures_iter(text) {
-        let description = capture
-            .get(1)
-            .or_else(|| capture.get(2))
-            .map(|matched| matched.as_str())
-            .unwrap_or_default();
-        content.push(json!({
-            "kind": "gaiji",
-            "description": description,
-            "resolved": "",
-            "jis_code": null,
-            "unresolved_reason": null
-        }));
+fn push_text(content: &mut Vec<serde_json::Value>, value: &str) {
+    if value.is_empty() {
+        return;
     }
-}
-
-fn source_visible_text(text: &str) -> String {
-    let gaiji = Regex::new(r"※(?:［＃([^］]+)］|\[#([^\]]+)\])").unwrap();
-    let ruby = Regex::new(r"｜?([^｜\s《》※［＃\[\]］、。，．「」『』（）()]+)《[^》]+》").unwrap();
-    let command = Regex::new(r"［＃[^］]+］|\[#[^\]]+\]").unwrap();
-    let without_gaiji = gaiji.replace_all(text, |captures: &regex::Captures<'_>| {
-        captures
-            .get(1)
-            .or_else(|| captures.get(2))
-            .map(|matched| matched.as_str())
-            .unwrap_or_default()
-            .to_owned()
-    });
-    let without_ruby = ruby.replace_all(&without_gaiji, "$1");
-    command.replace_all(&without_ruby, "").into_owned()
-}
-
-fn span_for(text: &str, start: usize, end: usize) -> Span {
-    let line = text[..start].chars().filter(|ch| *ch == '\n').count() + 1;
-    Span {
-        line_start: line,
-        line_end: line,
-        byte_start: text[..start].len(),
-        byte_end: text[..end].len(),
-    }
+    content.push(json!({ "kind": "text", "value": value }));
 }
 
 fn hex_sha256(bytes: &[u8]) -> String {
@@ -327,7 +359,7 @@ fn hex_sha256(bytes: &[u8]) -> String {
 }
 ```
 
-This mirrors the current `aozora2` validation adapter shape intentionally. It proves `aozora-rs` can be invoked for every source and gives `ab-check` comparable body-visible AAT. A later plan should replace the validation AAT builder with direct retokenized-node mapping.
+This intentionally uses `aozora-rs-core` parser output for AAT generation. The mapping is still conservative, but a zero-difference result now means both parsers passed the same validation properties, not that two copies of the same regex projection agreed.
 
 - [ ] **Step 4: Implement the CLI**
 
@@ -441,7 +473,7 @@ cargo run --release -p ab-index -- \
 cargo build --release --manifest-path adapters/aozora-rs/Cargo.toml
 ```
 
-Expected: `index.json` exists and `.works_count` is `17894`.
+Expected: `index.json` exists and `.works_count` is greater than `17000`. Record the exact count because local `references/aozorabunko` mirrors can move.
 
 - [ ] **Step 2: Create a deterministic mixed sample**
 
@@ -584,7 +616,7 @@ fn batch_can_write_adapter_aat_outputs() {
 }
 ```
 
-Add `tempfile` as a dev-dependency if the crate does not already use it.
+Add `tempfile = "3"` to root `[workspace.dependencies]` and `tempfile.workspace = true` to `crates/ab-check` dev-dependencies if the crate does not already use it.
 
 Run:
 
@@ -647,19 +679,44 @@ Ok(AdapterCheckOutput {
 
 On adapter errors, return `aat: None`.
 
-Inside the batch loop, after writing the report, write AAT when requested:
+Replace the current batch loop body with this shape so the return type change is fully integrated:
 
 ```rust
-if let (Some(root), Some(aat)) = (options.aat_output_dir, output.aat.as_ref()) {
-    let out = root
-        .join(&adapter_output_name)
-        .join(report_filename(work));
-    if let Some(parent) = out.parent() {
-        fs::create_dir_all(parent)?;
-    }
-    let file = fs::File::create(out)?;
-    serde_json::to_writer_pretty(file, aat)?;
-}
+pool.install(|| {
+    works.par_iter().try_for_each(|work| -> Result<()> {
+        let output = invoke_and_check(
+            &adapter_path,
+            &adapter_version,
+            options.corpus_root,
+            &work.txt_path,
+            &work.id,
+            options.timeout,
+            &validator,
+        )?;
+
+        let report_out = options
+            .output_dir
+            .join(&adapter_output_name)
+            .join(report_filename(work));
+        if let Some(parent) = report_out.parent() {
+            fs::create_dir_all(parent)?;
+        }
+        write_report(&output.report, Some(&report_out))?;
+
+        if let (Some(root), Some(aat)) = (options.aat_output_dir, output.aat.as_ref()) {
+            let aat_out = root
+                .join(&adapter_output_name)
+                .join(report_filename(work));
+            if let Some(parent) = aat_out.parent() {
+                fs::create_dir_all(parent)?;
+            }
+            let file = fs::File::create(aat_out)?;
+            serde_json::to_writer_pretty(file, aat)?;
+        }
+
+        Ok(())
+    })
+})
 ```
 
 - [ ] **Step 4: Verify and commit**
@@ -700,6 +757,9 @@ members = [
     "crates/ab-check",
     "crates/ab-compare",
 ]
+
+[workspace.dependencies]
+tempfile = "3"
 ```
 
 - [ ] **Step 2: Create comparator manifest**
@@ -719,6 +779,9 @@ clap.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 walkdir.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
 ```
 
 - [ ] **Step 3: Write failing integration test**
@@ -768,7 +831,7 @@ fn report(adapter: &str, pass: bool) -> String {
 }
 ```
 
-Add `tempfile.workspace = true` to root dependencies and `tempfile.workspace = true` to `crates/ab-compare` dev-dependencies if needed.
+The manifest changes above add the required `tempfile` test dependency.
 
 Run:
 
@@ -786,7 +849,7 @@ Create `crates/ab-compare/src/lib.rs`:
 use std::{
     collections::{BTreeMap, BTreeSet},
     fs,
-    path::{Path, PathBuf},
+    path::Path,
 };
 
 use anyhow::{Context, Result};
@@ -878,18 +941,30 @@ fn read_reports(root: &Path) -> Result<BTreeMap<String, CheckReport>> {
             .with_context(|| format!("failed to read {}", entry.path().display()))?;
         let report: CheckReport = serde_json::from_slice(&bytes)
             .with_context(|| format!("failed to parse {}", entry.path().display()))?;
-        reports.insert(report_key(entry.path(), &report), report);
+        let key = duplicate_safe_report_key(&reports, entry.path(), &report);
+        reports.insert(key, report);
     }
     Ok(reports)
 }
 
-fn report_key(path: &Path, report: &CheckReport) -> String {
-    path.file_name()
+fn duplicate_safe_report_key(
+    reports: &BTreeMap<String, CheckReport>,
+    path: &Path,
+    report: &CheckReport,
+) -> String {
+    if !reports.contains_key(&report.work_id) {
+        return report.work_id.clone();
+    }
+    let filename = path
+        .file_name()
         .and_then(|name| name.to_str())
-        .map(str::to_owned)
-        .unwrap_or_else(|| report.work_id.clone())
+        .unwrap_or("duplicate");
+    format!("{}::{filename}", report.work_id)
 }
 ```
+
+Use `work_id` as the primary identity. The filename suffix is only a duplicate
+guard for corpus entries that share an Aozora card/work ID.
 
 - [ ] **Step 5: Implement CLI**
 
@@ -1015,41 +1090,6 @@ target/release/ab-compare \
   --reports-b "$out_dir/reports/aozora-rs/aozora-rs-adapter" \
   --output "$out_dir/comparison.json"
 
-jq -s '{
-  generated_at: now | todate,
-  corpus_hash: input_filename,
-  aozora2: .[0],
-  aozora_rs: .[1],
-  comparison: .[2]
-}' \
-  "$out_dir/aozora2-summary.json" \
-  "$out_dir/aozora-rs-summary.json" \
-  "$out_dir/comparison.json" \
-  > "$out_dir/summary.json"
-
-cat "$out_dir/summary.json"
-echo "summary: $out_dir/summary.json"
-```
-
-After creation:
-
-```bash
-chmod +x benchmarks/run-parser-comparison.sh
-```
-
-- [ ] **Step 2: Fix the final `jq` summary if needed**
-
-Run:
-
-```bash
-bash -n benchmarks/run-parser-comparison.sh
-```
-
-Expected: no output.
-
-If shell syntax passes but `jq` summary fails during the first run, replace the final `jq -s` block with:
-
-```bash
 jq -n \
   --slurpfile a "$out_dir/aozora2-summary.json" \
   --slurpfile b "$out_dir/aozora-rs-summary.json" \
@@ -1062,7 +1102,26 @@ jq -n \
     aozora_rs: $b[0],
     comparison: $c[0]
   }' > "$out_dir/summary.json"
+
+cat "$out_dir/summary.json"
+echo "summary: $out_dir/summary.json"
 ```
+
+After creation:
+
+```bash
+chmod +x benchmarks/run-parser-comparison.sh
+```
+
+- [ ] **Step 2: Check shell syntax**
+
+Run:
+
+```bash
+bash -n benchmarks/run-parser-comparison.sh
+```
+
+Expected: no output.
 
 - [ ] **Step 3: Document the runner**
 
@@ -1121,11 +1180,11 @@ benchmarks/run-parser-comparison.sh
 
 Expected:
 
-- `aozora2.reports == 17894`
-- `aozora_rs.reports == 17894`
+- `aozora2.reports == jq '.works_count' /tmp/ab-validator-compare-current/index.json`
+- `aozora_rs.reports == jq '.works_count' /tmp/ab-validator-compare-current/index.json`
 - `aozora2.failures == 0`
 - `aozora_rs.failures == 0`
-- `comparison.common_reports == 17894`
+- `comparison.common_reports == jq '.works_count' /tmp/ab-validator-compare-current/index.json`
 
 - [ ] **Step 2: Investigate any failures**
 
@@ -1184,5 +1243,5 @@ git commit -m "bench: record aozora-rs parser comparison"
 
 - Spec coverage: this implements phase 6 (`aozora-rs adapter + ab-check`) and phase 8's first usable slice (`ab-compare` over validation reports). It does not implement HTML render diff or full semantic AAT tree diff; those remain separate phases.
 - Type consistency: the plan uses the existing AAT schema fields and existing report fields from `ab-check`.
-- Risk: the initial `aozora-rs` AAT uses the current body-visible validation adapter strategy for comparability. It invokes `aozora-rs` so fatal parser failures surface, but it is not yet a rich structural AST mapper.
-- Completion definition: the work is done only after both adapters run across the same 17,894 indexed readable works and a tracked comparison baseline exists.
+- Risk: the initial `aozora-rs` AAT maps retokenized parser output into the current AAT schema, but it is still a conservative structural mapper. Full tree-diff semantics and HTML render diff remain later phases.
+- Completion definition: the work is done only after both adapters run across the same indexed readable work count from the local corpus and a tracked comparison baseline exists.

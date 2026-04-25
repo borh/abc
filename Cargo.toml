@@ -2,6 +2,7 @@
 members = [
     "crates/ab-index",
     "crates/ab-check",
+    "crates/ab-compare",
 ]
 resolver = "2"
 

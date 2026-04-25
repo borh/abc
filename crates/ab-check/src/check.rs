@@ -65,8 +65,15 @@ pub struct BatchOptions<'a> {
     pub work_ids_path: Option<&'a Path>,
     pub adapter: &'a str,
     pub output_dir: &'a Path,
+    pub aat_output_dir: Option<&'a Path>,
     pub jobs: usize,
     pub timeout: Duration,
+}
+
+#[derive(Debug)]
+struct AdapterCheckOutput {
+    report: CheckReport,
+    aat: Option<Value>,
 }
 
 pub fn schema_validator() -> Result<Validator> {
@@ -214,7 +221,7 @@ pub fn run_batch(options: BatchOptions<'_>) -> Result<()> {
 
     pool.install(|| {
         works.par_iter().try_for_each(|work| -> Result<()> {
-            let report = invoke_and_check(
+            let checked = invoke_and_check(
                 &adapter_path,
                 &adapter_version,
                 options.corpus_root,
@@ -230,7 +237,18 @@ pub fn run_batch(options: BatchOptions<'_>) -> Result<()> {
             if let Some(parent) = out.parent() {
                 fs::create_dir_all(parent)?;
             }
-            write_report(&report, Some(&out))
+            write_report(&checked.report, Some(&out))?;
+            if let (Some(aat_output_dir), Some(aat)) = (options.aat_output_dir, checked.aat) {
+                let aat_path = aat_output_dir
+                    .join(&adapter_output_name)
+                    .join(report_filename(work));
+                if let Some(parent) = aat_path.parent() {
+                    fs::create_dir_all(parent)?;
+                }
+                let file = fs::File::create(aat_path)?;
+                serde_json::to_writer_pretty(file, &aat)?;
+            }
+            Ok(())
         })
     })
 }
@@ -257,7 +275,7 @@ fn invoke_and_check(
     work_id: &str,
     timeout: Duration,
     validator: &Validator,
-) -> Result<CheckReport> {
+) -> Result<AdapterCheckOutput> {
     let txt_bytes = read_indexed_source_bytes(corpus_root, indexed_txt_path)?;
     let decoded = decode_source_bytes(&txt_bytes)?;
     let mut child = Command::new(adapter_path)
@@ -306,22 +324,32 @@ fn invoke_and_check(
                             Value::String(adapter_version.to_owned()),
                         );
                     }
-                    Ok(check_value(&decoded.text, &aat, validator))
+                    let report = check_value(&decoded.text, &aat, validator);
+                    Ok(AdapterCheckOutput {
+                        report,
+                        aat: Some(aat),
+                    })
                 }
-                Some(1) => Ok(adapter_error_report(
-                    adapter_path,
-                    adapter_version,
-                    work_id,
-                    "fatal_error",
-                    &String::from_utf8_lossy(&stderr),
-                )),
-                code => Ok(adapter_error_report(
-                    adapter_path,
-                    adapter_version,
-                    work_id,
-                    "adapter_protocol_error",
-                    &format!("unexpected exit code {code:?}"),
-                )),
+                Some(1) => Ok(AdapterCheckOutput {
+                    report: adapter_error_report(
+                        adapter_path,
+                        adapter_version,
+                        work_id,
+                        "fatal_error",
+                        &String::from_utf8_lossy(&stderr),
+                    ),
+                    aat: None,
+                }),
+                code => Ok(AdapterCheckOutput {
+                    report: adapter_error_report(
+                        adapter_path,
+                        adapter_version,
+                        work_id,
+                        "adapter_protocol_error",
+                        &format!("unexpected exit code {code:?}"),
+                    ),
+                    aat: None,
+                }),
             };
         }
         if start.elapsed() > timeout {
@@ -329,13 +357,16 @@ fn invoke_and_check(
             let _ = child.wait();
             let _ = join_reader(stdout_reader, "stdout");
             let _ = join_reader(stderr_reader, "stderr");
-            return Ok(adapter_error_report(
-                adapter_path,
-                adapter_version,
-                work_id,
-                "adapter_timeout",
-                "adapter timed out",
-            ));
+            return Ok(AdapterCheckOutput {
+                report: adapter_error_report(
+                    adapter_path,
+                    adapter_version,
+                    work_id,
+                    "adapter_timeout",
+                    "adapter timed out",
+                ),
+                aat: None,
+            });
         }
         thread::sleep(Duration::from_millis(20));
     }

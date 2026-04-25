@@ -17,6 +17,9 @@ struct Args {
     output: Option<PathBuf>,
 
     #[arg(long)]
+    aat_output: Option<PathBuf>,
+
+    #[arg(long)]
     index: Option<PathBuf>,
 
     #[arg(long)]
@@ -56,6 +59,7 @@ fn main() -> Result<()> {
             work_ids_path: args.work_ids.as_deref(),
             adapter,
             output_dir: output,
+            aat_output_dir: args.aat_output.as_deref(),
             jobs: args.jobs,
             timeout: parse_duration(&args.per_work_timeout)?,
         })?;

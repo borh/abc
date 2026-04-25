@@ -71,3 +71,61 @@ fn duplicate_ruby_base_fails_visible_projection() {
     let report: serde_json::Value = serde_json::from_slice(&check.stdout).unwrap();
     assert_eq!(report["results"]["visible_text_body_order"]["pass"], false);
 }
+
+#[test]
+fn batch_mode_can_persist_mutated_aat_output() {
+    let manifest = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let adapter = manifest.join("../../adapters/test-adapter/test-adapter");
+    let temp = tempfile::tempdir().unwrap();
+    let corpus = temp.path().join("corpus");
+    fs::create_dir(&corpus).unwrap();
+    fs::write(corpus.join("1_ruby_1.txt"), "吾輩《わがはい》は猫である。").unwrap();
+    let index = temp.path().join("index.json");
+    fs::write(
+        &index,
+        r#"{"works":[{"id":"000001_1","txt_path":"1_ruby_1.txt","features":["ruby"]}]}"#,
+    )
+    .unwrap();
+    let reports = temp.path().join("reports");
+    let aat_output = temp.path().join("aat");
+
+    let check = Command::new(env!("CARGO_BIN_EXE_ab-check"))
+        .arg("--index")
+        .arg(&index)
+        .arg("--corpus")
+        .arg(&corpus)
+        .arg("--adapter")
+        .arg(&adapter)
+        .arg("--output")
+        .arg(&reports)
+        .arg("--aat-output")
+        .arg(&aat_output)
+        .output()
+        .unwrap();
+    assert!(
+        check.status.success(),
+        "{}",
+        String::from_utf8_lossy(&check.stderr)
+    );
+
+    let report_path = only_json_file(&reports.join("test-adapter"));
+    let aat_path = only_json_file(&aat_output.join("test-adapter"));
+    assert!(report_path.exists());
+    assert!(aat_path.exists());
+    let persisted_aat: Value = serde_json::from_slice(&fs::read(aat_path).unwrap()).unwrap();
+    assert_eq!(persisted_aat["work_id"], "000001_1");
+    assert_eq!(
+        persisted_aat["meta"]["adapter_version"],
+        "test-adapter 0.0.1 test"
+    );
+}
+
+fn only_json_file(dir: &Path) -> std::path::PathBuf {
+    let files = fs::read_dir(dir)
+        .unwrap()
+        .map(|entry| entry.unwrap().path())
+        .filter(|path| path.extension().and_then(|extension| extension.to_str()) == Some("json"))
+        .collect::<Vec<_>>();
+    assert_eq!(files.len(), 1);
+    files.into_iter().next().unwrap()
+}

@@ -1,111 +1,79 @@
-{:paths    ["resources" "src"]
- :jvm-opts ["--add-opens" "java.base/java.util.concurrent=ALL-UNNAMED"] ;; Crux issue: https://github.com/juxt/crux/issues/1462
- :deps     {org.clojure/clojure                        {:mvn/version "1.11.2"}
+{:paths ["resources" "src"]
+ :jvm-opts ["--add-opens" "java.base/java.util.concurrent=ALL-UNNAMED"]
 
-            #_"CLI"
-            org.clojure/tools.cli                      {:mvn/version "1.1.230"}
+ :deps
+ {org.clojure/clojure                        {:mvn/version "1.12.4"}
+  org.clojure/tools.cli                      {:mvn/version "1.4.256"}
 
-            #_"Logging"
-            com.taoensso/timbre                        {:mvn/version "6.5.0"}
+  com.taoensso/timbre                        {:mvn/version "6.8.0"}
 
-            #_"NLP/text processing"
-            clj-commons/fs                             {:mvn/version "1.6.311"}
-            babashka/fs                                {:mvn/version "0.5.20"}
-            com.ibm.icu/icu4j                          {:mvn/version "74.2"}
-            clj-mecab/clj-mecab                        {:mvn/version "1.0.102"}
-            corpus-utils/corpus-utils                  {:local/root "../corpus-utils" #_:mvn/version #_"0.3.9"}
-            clj-antlr/clj-antlr                        {:mvn/version "0.2.13"
-                                                        :exclusions  [org.antlr/antlr4
-                                                                      org.antlr/antlr4-runtime]}
-            org.antlr/antlr4                           {:mvn/version "4.13.1"}
-            org.antlr/antlr4-runtime                   {:mvn/version "4.13.1"}
+  clj-commons/fs                             {:mvn/version "1.6.312"}
+  babashka/fs                                {:mvn/version "0.5.33"}
+  com.ibm.icu/icu4j                          {:mvn/version "78.3"}
+  clj-mecab/clj-mecab                        {:mvn/version "1.0.102"}
+  corpus-utils/corpus-utils                  {:local/root "../corpus-utils"}
+  clj-antlr/clj-antlr                        {:mvn/version "0.2.14"
+                                              :exclusions [org.antlr/antlr4
+                                                           org.antlr/antlr4-runtime]}
+  org.antlr/antlr4                           {:mvn/version "4.13.2"}
+  org.antlr/antlr4-runtime                   {:mvn/version "4.13.2"}
 
-            #_"Datasource processing"
-            org.apache.commons/commons-compress        {:mvn/version "1.26.1"}
-            com.cnuernber/charred                      {:mvn/version "1.034"}
-            org.clojure/data.csv                       {:mvn/version "1.1.0"}
-            clojure.java-time/clojure.java-time        {:mvn/version "1.4.2"}
-            org.flatland/ordered                       {:mvn/version "1.15.11"}
-            lambdaisland/regal                         {:mvn/version "0.0.143"}
-            org.clojure/core.match                     {:mvn/version "1.1.0"}
-            ;; instaparse                                 {:mvn/version "1.4.10"}
-            ;; datascript {:mvn/version "0.16.6"}
-            ;; com.rpl/specter {:mvn/version "1.1.1"}
-            metosin/malli                              {:mvn/version "0.15.0"}
-            setzer22/malli-instrument                  {:git/url "https://github.com/setzer22/malli-instrument.git"
-                                                        :sha     "521fa83ad1a6da8d79f5a2f4ce86351a3d117d14"}
-            expound/expound                            {:mvn/version "0.9.0"}
-            camel-snake-kebab/camel-snake-kebab        {:mvn/version "0.4.3"}
-            parallel/parallel                          {:mvn/version "0.10"}
-            net.cgrand/xforms                          {:mvn/version "0.19.6"}
-            com.climate/claypoole                      {:mvn/version "1.1.4"}
-            org.clojure/core.async                     {:mvn/version "1.6.681"}
-            babashka/process                           {:mvn/version "0.5.22"}
+  org.apache.commons/commons-compress        {:mvn/version "1.28.0"}
+  com.cnuernber/charred                      {:mvn/version "1.038"}
+  org.clojure/data.csv                       {:mvn/version "1.1.1"}
+  clojure.java-time/clojure.java-time        {:mvn/version "1.4.3"}
+  org.flatland/ordered                       {:mvn/version "1.15.12"}
+  lambdaisland/regal                         {:mvn/version "0.1.175"}
+  org.clojure/core.match                     {:mvn/version "1.1.1"}
+  metosin/malli                              {:mvn/version "0.20.1"}
+  setzer22/malli-instrument                  {:git/url "https://github.com/setzer22/malli-instrument.git"
+                                              :sha "521fa83ad1a6da8d79f5a2f4ce86351a3d117d14"}
+  expound/expound                            {:mvn/version "0.9.0"}
+  camel-snake-kebab/camel-snake-kebab        {:mvn/version "0.4.3"}
+  parallel/parallel                          {:mvn/version "0.10"}
+  net.cgrand/xforms                          {:mvn/version "0.19.6"}
+  com.climate/claypoole                      {:mvn/version "1.1.4"}
+  org.clojure/core.async                     {:mvn/version "1.9.865"}
+  babashka/process                           {:mvn/version "0.6.25"}
 
-            #_"XML processing"
-            org.clojure/data.xml                       {:mvn/version "0.2.0-alpha9"}
-            tolitius/xml-in                            {:mvn/version "0.1.1"}
-            org.relaxng/jing                           {:mvn/version "20220510"}
-            #_"Web"
-            ;; TODO implement
-            ;; girouette/girouette                        {:mvn/version "0.0.10"}
-            ;; lilactown/helix                            {:mvn/version "0.1.8"}
-            ;; refx.core                                  {:git/url "https://github.com/ferdinand-beyer/refx.git"
-            ;;                                             :git/sha "bdfbb4401a2fcc1258ecc3544e0e290548fc3ea3"
-            ;;                                             :deps/root "core"}
+  org.clojure/data.xml                       {:mvn/version "0.2.0-alpha11"}
+  tolitius/xml-in                            {:mvn/version "0.1.1"}
+  org.relaxng/jing                           {:mvn/version "20241231"}
 
-            #_"Versioning"
-            clj-jgit/clj-jgit                          {:mvn/version "1.0.2" :exclusions [org.eclipse.jgit/org.eclipse.jgit.gpg.bc]}
-            juji/editscript                            {:mvn/version "0.6.3" :exclusions [org.clojure/test.check]}
+  clj-jgit/clj-jgit                          {:mvn/version "1.1.0"
+                                              :exclusions [org.eclipse.jgit/org.eclipse.jgit.gpg.bc]}
+  juji/editscript                            {:mvn/version "0.7.0"
+                                              :exclusions [org.clojure/test.check]}
 
-            #_"RDF/OWL processing"
-            com.yetanalytics/flint                     {:mvn/version "0.3.0"}
-            #_arachne-framework/aristotle                #_{:git/url    "https://github.com/arachne-framework/aristotle"
-                                                            :sha        "7b93e62abc45c82c75d5cf6c0ae2c0e21a233e81"
-                                                            :exclusions [org.apache.jena/apache-jena-libs]}
-            #_org.apache.jena/apache-jena-libs           #_{:mvn/version "3.17.0" :extension "pom"}
-            ;; adalab/triple-loader {:mvn/version "0.2.3"}
-            ;; org.eclipse.rdf4j/rdf4j-runtime {:mvn/version "2.4.0-M1"}
-            uk.org.russet/tawny-owl                    {:mvn/version "2.3.3"}
-            net.sourceforge.owlapi/owlapi-distribution {:mvn/version "4.5.26"} #_{:mvn/version "4.5.17"}
+  com.yetanalytics/flint                     {:mvn/version "0.3.0"}
+  uk.org.russet/tawny-owl                    {:mvn/version "2.3.3"}
+  net.sourceforge.owlapi/owlapi-distribution {:mvn/version "5.5.1"}
 
-            #_"DB"
-            ;; --add-opens java.base/java.util.concurrent=ALL-UNNAMED
-            com.xtdb/xtdb-core                         {:mvn/version "1.24.3"}
-            com.xtdb/xtdb-rocksdb                      {:mvn/version "1.24.3"}
+  com.xtdb/xtdb-core                         {:mvn/version "1.24.5"}
+  com.xtdb/xtdb-rocksdb                      {:mvn/version "1.24.5"}
 
-            #_"Overrides"
-            com.google.inject/guice                    {:mvn/version "7.0.0"}
+  com.google.inject/guice                    {:mvn/version "7.0.0"}
+  com.sun.xml.bind/jaxb-impl                 {:mvn/version "4.0.7"}
+  com.sun.xml.bind/jaxb-core                 {:mvn/version "4.0.7"}
+  org.glassfish.jaxb/jaxb-runtime            {:mvn/version "4.0.7"}}
 
-            #_"Java >= 11 workaround"
-            com.sun.xml.bind/jaxb-impl                 {:mvn/version "4.0.5"}
-            com.sun.xml.bind/jaxb-core                 {:mvn/version "4.0.5"}
-            org.glassfish.jaxb/jaxb-runtime            {:mvn/version "4.0.5"}}
  :aliases
- {:test          {:extra-paths ["test"]
-                  :extra-deps  {org.clojure/test.check {:mvn/version "1.1.1"}
-                                          ;; TODO https://github.com/totakke/libra
-                                orchestra/orchestra    {:mvn/version "2021.01.01-1"}
-                                specviz/specviz        {:mvn/version "0.2.4"}}}
-  :kaocha        {:extra-deps {lambdaisland/kaocha {:mvn/version "1.88.1376"}}}
-            ;; :runner        {:extra-deps {com.cognitect/test-runner
-            ;;                              {:git/url "https://github.com/cognitect-labs/test-runner"
-            ;;                               :sha     "6ec7f8eef509cd14d831e8cc16e856b31327a862"}}
-            ;;                 :main-opts  ["-m" "cognitect.test-runner"
-            ;;                              "-d" "test"]}
-  :metav         {:extra-deps {metav/metav {:mvn/version "1.6.7"}}}
+ {:test {:extra-paths ["test"]
+         :extra-deps {org.clojure/test.check {:mvn/version "1.1.3"}
+                      orchestra/orchestra    {:mvn/version "2021.01.01-1"}
+                      specviz/specviz        {:mvn/version "0.2.4"}}}
+  :kaocha {:extra-deps {lambdaisland/kaocha {:mvn/version "1.91.1392"}}}
+  :metav {:extra-deps {metav/metav {:mvn/version "1.6.7"}}}
   :artifact-name {:extra-deps {metav/metav {:mvn/version "1.6.7"}}
-                  :main-opts  ["-m" "metav.display"]}
-  :release       {:extra-deps {metav/metav {:mvn/version "1.6.7"}}
-                  :main-opts  ["-m" "metav.release"]}
-  :spit          {:extra-deps {metav/metav {:mvn/version "1.6.7"}}
-                  :main-opts  ["-m" "metav.spit"
-                               "--output-dir" "src"
-                               "--namespace" "metav.meta"
-                               "--formats" "clj"]}
-  :abc/validate-design-bundle
-  {:main-opts ["-m" "abc.tools.validate-design-bundle"]}
-  :abc/materialize-import
-  {:main-opts ["-m" "abc.tools.materialize-import"]}
-  :update        {:deps      {com.github.liquidz/antq {:mvn/version "2.11.1276"}}
-                  :main-opts ["-m" "antq.core"]}}}
+                  :main-opts ["-m" "metav.display"]}
+  :release {:extra-deps {metav/metav {:mvn/version "1.6.7"}}
+            :main-opts ["-m" "metav.release"]}
+  :spit {:extra-deps {metav/metav {:mvn/version "1.6.7"}}
+         :main-opts ["-m" "metav.spit"
+                     "--output-dir" "src"
+                     "--namespace" "metav.meta"
+                     "--formats" "clj"]}
+  :abc/validate-design-bundle {:main-opts ["-m" "abc.tools.validate-design-bundle"]}
+  :abc/materialize-import {:main-opts ["-m" "abc.tools.materialize-import"]}
+  :update {:deps {com.github.liquidz/antq {:mvn/version "2.11.1276"}}
+           :main-opts ["-m" "antq.core"]}}}

@@ -49,10 +49,10 @@ struct AatMetrics {
     parser_nodes: usize,
     #[serde(default)]
     parser_normalized_nodes: usize,
-    #[serde(default)]
-    regex_supplement_nodes: usize,
-    #[serde(default)]
-    regex_fallback_nodes: usize,
+    #[serde(default, alias = "regex_supplement_nodes")]
+    source_supplement_nodes: usize,
+    #[serde(default, alias = "regex_fallback_nodes")]
+    source_fallback_nodes: usize,
     fallback_used: bool,
 }
 
@@ -149,9 +149,9 @@ fn node_counts(metrics: &AatMetrics) -> BTreeMap<String, usize> {
             metrics.parser_normalized_nodes,
         ),
         (
-            "regex_supplement".to_owned(),
-            metrics.regex_supplement_nodes,
+            "source_supplement".to_owned(),
+            metrics.source_supplement_nodes,
         ),
-        ("regex_fallback".to_owned(), metrics.regex_fallback_nodes),
+        ("source_fallback".to_owned(), metrics.source_fallback_nodes),
     ])
 }

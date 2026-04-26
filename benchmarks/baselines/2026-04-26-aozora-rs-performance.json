@@ -1,15 +1,15 @@
 {
-  "generated_at": "2026-04-26T09:16:43Z",
+  "generated_at": "2026-04-26T09:35:56Z",
   "corpus_hash": "sha256:25f5edcfab0f7b856cb24e5088de6ab68a61359eabfddb4b3add92049b09ce67",
   "aozora2": {
     "name": "aozora2",
-    "seconds": 17.905760,
+    "seconds": 16.463221,
     "reports": 17894,
-    "failures": 0
+    "failures": 581
   },
   "aozora_rs": {
     "name": "aozora-rs",
-    "seconds": 43.376098,
+    "seconds": 36.763413,
     "reports": 17894,
     "failures": 0
   },
@@ -19,347 +19,3834 @@
     "common_reports": 17894,
     "only_a": 0,
     "only_b": 0,
-    "result_differences": []
+    "result_differences": [
+      {
+        "work_id": "000006_1869",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000009_43028",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000019_42383",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000019_4376",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000022_42254",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000023_1699",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000025_56503",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000026_50255",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000026_50257",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000026_51311",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000026_51334",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000027_1463",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000027_221",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000027_2427",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000034_519",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000034_56908",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000035_244",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000035_24457",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000035_299",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000038_322",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000038_42200",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000040_46354",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000040_47288",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000040_47289",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000040_732",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000042_2345",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000042_2461",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000042_2501",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000042_2510",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000042_42768",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000042_43083",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000048_4266",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000048_43464",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000050_33204",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000050_363",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000050_3648",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000050_4561",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000050_48397",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000050_55401",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000051_1437",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000051_1438",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000051_1450",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000051_1452",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000051_2710",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000051_3508",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000051_4331",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000051_43788",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000051_60584",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000051_62060",
+        "property": "ruby_completeness",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000051_62060",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000058_371",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000058_371",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000061_377",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000061_396",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000061_510",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000064_390",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000064_56042",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000064_56880",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000065_393",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000065_393",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000065_393",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000067_1789",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000067_47566",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000067_48341",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000067_859",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000072_864",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000074_431",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000074_431",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000076_43035",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000081_4418",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000081_4421",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000081_4422",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000081_4427",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000081_4441",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000081_4442",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000081_4468",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000081_454",
+        "property": "ruby_completeness",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000081_454",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000081_455",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000081_460",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000081_47027",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000082_1001",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000082_1020",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000082_1056",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000082_1299",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000082_2416",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000082_45457",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000082_45483",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000082_48024",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000082_48035",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000082_480",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000082_480",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000082_976",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000083_43270",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000091_522",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000093_1916",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000093_2537",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000093_2538",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000093_2539",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000093_2540",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000093_2541",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000093_2542",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000093_4790",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000093_525",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000093_525",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000093_526",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000093_527",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000093_52937",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000094_1871",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000096_2093",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000096_2120",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000096_2142",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000096_2145",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000096_916",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000096_939",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000106_2415",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000106_4631",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000106_4986",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000106_52390",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000106_56563",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000106_56857",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000111_565",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000113_4325",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000113_4327",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000118_57473",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000118_613",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000118_614",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000118_616",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000119_1737",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000119_1738",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000119_24438",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000119_4336",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000120_1393",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000121_60573",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000124_1315",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000124_651",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000124_655",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000124_658",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000124_661",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000125_43418",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000125_45231",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000129_2058",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000129_2084",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000129_58983",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000129_677",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000129_682",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000134_46180",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000134_46181",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000146_48368",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000146_48509",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000146_49148",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000146_49266",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000146_49605",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000146_49783",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000148_56923",
+        "property": "ruby_completeness",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000148_56923",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000148_764",
+        "property": "ruby_completeness",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000148_764",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000148_776",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000148_779",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000148_789",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000150_46615",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000150_46618",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000150_52090",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000154_4923",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000156_1465",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000156_4155",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000156_49181",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000158_838",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000158_838",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000158_838",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000159_858",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000160_1255",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000160_2714",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000160_2714",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000160_3349",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000162_2636",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000179_943",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000182_1755",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000183_4650",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000183_52785",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000183_52801",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000183_52837",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000183_52851",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000214_48874",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000216_60583",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000218_4868",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000221_1860",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000221_4460",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000236_1259",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000236_1264",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000236_2606",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000236_4300",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000237_48358",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000239_51134",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000241_53034",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000243_1328",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000249_49655",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000250_43688",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000250_4644",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000255_1404",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000255_1405",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000255_3042",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000255_43659",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000255_43661",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000255_43662",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000255_45395",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000255_45546",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000255_47055",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000255_47102",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000255_49836",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000258_52949",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000258_52950",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000259_3553",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000262_45693",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000263_53817",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000269_1543",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000271_1556",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000272_4372",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000279_1704",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000280_1706",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000280_48204",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000281_1710",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000281_1712",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000281_3595",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000281_3596",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000281_3598",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000281_3603",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000281_43263",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000281_43264",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000281_55280",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000283_4507",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000284_1735",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000284_2252",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000290_45670",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000296_43029",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000304_1877",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000304_46492",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000305_1897",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000305_2534",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000305_43051",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000305_46490",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000305_50394",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000305_57876",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000310_1911",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000311_15982",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000311_1979",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000311_2795",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000311_2803",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000311_2823",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000311_2921",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000311_2964",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000311_3028",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000311_3149",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000311_33187",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000311_33188",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000311_33189",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000311_33190",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000311_7908",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000311_7910",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000320_2168",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000320_43481",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000326_59610",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000344_50305",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000372_2587",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000372_2612",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000372_42345",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000372_42810",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000372_44907",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000372_4707",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000488_52714",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000565_48686",
+        "property": "ruby_completeness",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000565_48686",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000565_51949",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000595_46166",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000603_52230",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000726_47625",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000765_3055",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000788_54343",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000799_60993",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000805_46651",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000810_52355",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000874_3397",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000879_1131",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000879_1133",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000879_24452",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000879_24455",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000879_26",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000879_3738",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000879_3745",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000879_3780",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000879_43364",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000879_46227",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000879_4872",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000879_49",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000879_51217",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000879_60574",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000885_2165",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000888_33206",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000888_51163",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000906_42425",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000906_42553",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000908_52031",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000908_52148",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000910_60326",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000922_45642",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000923_47845",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000933_18392",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000933_18393",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000933_18403",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000933_47023",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000933_47174",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000933_47175",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000933_47176",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000933_47177",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000933_47180",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000933_47188",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000933_47200",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000933_47202",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000933_47550",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000933_47707",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000933_47789",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000933_47827",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000941_49442",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000961_42184",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000961_4820",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000963_43126",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000981_3646",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000989_1488",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000989_1489",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000989_1490",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000989_2577",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000989_2614",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000989_352",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000989_42687",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000989_4298",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000989_43874",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "000997_359",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001017_47291",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001021_49370",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001021_50119",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001025_50909",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001030_47924",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001030_4816",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001044_57302",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001051_4939",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001055_47091",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001059_5082",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001065_18361",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001066_57340",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001066_57401",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001091_46344",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001094_42600",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001094_42602",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001094_42603",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001095_45746",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001095_45819",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001095_45838",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001095_45865",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001095_56816",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001096_43554",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001096_43672",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001097_42923",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001097_43785",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001099_46996",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001111_42789",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001123_42930",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001124_42934",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001124_43414",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001142_46471",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001143_43422",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001146_43511",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001146_43516",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001146_43520",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001149_45455",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001151_59165",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001153_43571",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001154_43582",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001154_44315",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001154_44318",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001154_44335",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001154_44373",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001154_44496",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001154_44521",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001154_44564",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001154_44612",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001154_44618",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001154_44709",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001154_44710",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001154_44810",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001154_44833",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001154_44840",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001154_44864",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001166_43833",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001166_43877",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001166_60626",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001191_55276",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001205_46158",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001224_46088",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001224_46090",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001224_46104",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001224_46117",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001224_46145",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001224_47491",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001224_47497",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001224_47500",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001224_51847",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001234_46340",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001237_46346",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001248_46804",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001266_46820",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001266_51368",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001266_56695",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001271_60609",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001277_58703",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001289_47146",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001292_47160",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001293_48573",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001308_50066",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001310_47741",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001310_51363",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001310_55510",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001312_47644",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001312_49301",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001313_47598",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001313_47599",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001313_47601",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001313_47743",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001313_47771",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001313_47773",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001313_47781",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001313_47782",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001313_49302",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001322_47978",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001331_48284",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001341_58169",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001341_58863",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001341_60709",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001344_49803",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001344_49809",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001344_53101",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001344_54437",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001344_54441",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001344_54855",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001344_54856",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001344_54858",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001369_49622",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001369_51204",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001373_56262",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001373_56263",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001380_57354",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001383_56869",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001383_56873",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001383_57394",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001383_57416",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001383_58918",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001383_59511",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001393_50710",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001393_55880",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001393_57320",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001393_60551",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001395_49891",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001395_49905",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001395_51364",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001402_49946",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001421_50424",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001428_50328",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001467_50730",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001468_50749",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001468_50750",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001468_51160",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001476_51155",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001492_51195",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001499_52184",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001518_51731",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001520_54957",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001520_56522",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001529_50685",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001535_53738",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001538_60192",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001538_60358",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001555_54846",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001558_52690",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001558_52691",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001558_52692",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001558_52693",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001562_52400",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001562_52403",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001562_52412",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001562_52413",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001562_52414",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001562_52425",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001562_52427",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001562_52429",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001562_56146",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001566_52946",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001566_53104",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001566_55742",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001566_57903",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001566_58544",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001569_52468",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001569_57860",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001574_52529",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001579_53947",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001579_54831",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001659_55134",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001670_54635",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001670_55088",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001670_55679",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001670_56124",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001670_56130",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001670_56382",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001674_54899",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001687_54927",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001692_55719",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001692_56660",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001692_59888",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001699_57254",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001699_57255",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001699_57341",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001699_57341",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001699_57342",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001699_57474",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001699_57858",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001699_57859",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001699_62061",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001721_55278",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001748_55796",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001750_55807",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001753_55844",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001758_55978",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001763_58577",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001763_60325",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001776_56238",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001776_56239",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001779_57502",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001779_57517",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001790_56572",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001798_56634",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001823_57023",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001832_57179",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001835_57257",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001847_57347",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001859_57396",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001866_57499",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001869_57755",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001869_57808",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001869_59009",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001870_57496",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001870_57972",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001875_59896",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001882_57998",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001882_58029",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001882_58064",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001882_58275",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001884_58010",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001885_59516",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001908_58142",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001930_58400",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001930_58401",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001951_58701",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001952_58702",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001954_58704",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001961_58832",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001968_59453",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "001977_60828",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "002009_59176",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "002010_59177",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "002010_59178",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "002010_60081",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "002035_59406",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "002035_59407",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "002035_59408",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "002035_59517",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "002035_61389",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "002035_61559",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "002036_59409",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "002130_60082",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "002130_60178",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "002168_51895",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      },
+      {
+        "work_id": "JISTABLE",
+        "property": "visible_text_body_order",
+        "a_pass": false,
+        "b_pass": true
+      }
+    ]
   },
   "aozora_rs_metrics": {
     "adapter": "aozora-rs",
     "works": 17894,
     "fallbacks": 578,
     "stage_totals_ms": {
-      "aat_build": 6384.734293999957,
-      "body_selection": 613.3141360000054,
-      "decode": 2358.040474999996,
-      "fallback_build": 1483.6234339999999,
-      "projection_check": 7108.040055000016,
-      "retokenize": 2530.7124150000514,
-      "scopenize": 1475.5015900000071,
-      "tokenize": 8886.268560000002
+      "aat_build": 6566.512700000029,
+      "body_selection": 623.2663240000028,
+      "decode": 2264.9054029999897,
+      "fallback_build": 1585.9770850000002,
+      "projection_check": 6163.403664999993,
+      "retokenize": 2340.7203360000267,
+      "scopenize": 1352.2631210000027,
+      "tokenize": 8734.196682000005
     },
     "node_totals": {
-      "parser": 5895989,
+      "parser": 5895228,
       "parser_normalized": 4496850,
-      "regex_fallback": 578,
-      "regex_supplement": 1428023
+      "source_fallback": 578,
+      "source_supplement": 1426923
     },
     "slowest_works": [
       {
         "work_id": "001529_50685",
-        "total_ms": 340.15862699999997,
+        "total_ms": 338.989008,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 32.186946,
-          "body_selection": 2.432931,
-          "decode": 9.782023,
-          "fallback_build": 34.20555,
+          "aat_build": 35.315507000000004,
+          "body_selection": 1.525197,
+          "decode": 6.710794,
+          "fallback_build": 37.685497,
           "projection_check": 0.0,
-          "retokenize": 41.428734,
-          "scopenize": 17.426911999999998,
-          "tokenize": 202.695531
+          "retokenize": 33.70975,
+          "scopenize": 15.777079999999998,
+          "tokenize": 208.265183
         }
       },
       {
         "work_id": "001518_51731",
-        "total_ms": 266.094991,
+        "total_ms": 229.849254,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 5.190559,
-          "body_selection": 0.445657,
-          "decode": 1.502248,
-          "fallback_build": 4.320756,
+          "aat_build": 3.920318,
+          "body_selection": 3.487861,
+          "decode": 1.432569,
+          "fallback_build": 3.1650530000000003,
           "projection_check": 0.0,
-          "retokenize": 5.124549,
-          "scopenize": 2.57427,
-          "tokenize": 246.936952
+          "retokenize": 4.377173,
+          "scopenize": 1.7144359999999998,
+          "tokenize": 211.751844
         }
       },
       {
         "work_id": "000311_2012",
-        "total_ms": 216.57600599999998,
+        "total_ms": 227.507984,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 9.939432,
-          "body_selection": 2.140043,
-          "decode": 6.610717999999999,
-          "fallback_build": 13.735112,
+          "aat_build": 11.98432,
+          "body_selection": 2.516339,
+          "decode": 6.917953,
+          "fallback_build": 20.055084,
           "projection_check": 0.0,
-          "retokenize": 3.030896,
-          "scopenize": 1.5216679999999998,
-          "tokenize": 179.59813699999998
+          "retokenize": 3.049025,
+          "scopenize": 1.594117,
+          "tokenize": 181.391146
         }
       },
       {
         "work_id": "000810_52355",
-        "total_ms": 188.731404,
+        "total_ms": 174.555723,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 3.411093,
-          "body_selection": 0.257508,
-          "decode": 1.35535,
-          "fallback_build": 4.2830960000000005,
+          "aat_build": 2.789237,
+          "body_selection": 0.264287,
+          "decode": 1.2739699999999998,
+          "fallback_build": 3.0447349999999997,
           "projection_check": 0.0,
-          "retokenize": 1.883955,
-          "scopenize": 0.8430930000000001,
-          "tokenize": 176.697309
-        }
-      },
-      {
-        "work_id": "001562_56145",
-        "total_ms": 131.03017599999998,
-        "dominant_stage": "aat_build",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 31.944097999999997,
-          "body_selection": 1.789646,
-          "decode": 5.510826,
-          "fallback_build": 21.774318,
-          "projection_check": 0.0,
-          "retokenize": 22.373224,
-          "scopenize": 17.873299,
-          "tokenize": 29.764764999999997
+          "retokenize": 1.361208,
+          "scopenize": 0.603935,
+          "tokenize": 165.218351
         }
       },
       {
         "work_id": "001562_56146",
-        "total_ms": 126.85352900000001,
+        "total_ms": 124.712245,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 24.419918,
-          "body_selection": 2.039433,
-          "decode": 6.615698,
-          "fallback_build": 20.21654,
+          "aat_build": 26.548799,
+          "body_selection": 2.263901,
+          "decode": 8.660618,
+          "fallback_build": 22.725902,
           "projection_check": 0.0,
-          "retokenize": 17.873929,
-          "scopenize": 7.156264,
-          "tokenize": 48.531747
-        }
-      },
-      {
-        "work_id": "000077_1323",
-        "total_ms": 124.27766199999999,
-        "dominant_stage": "tokenize",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 6.977125,
-          "body_selection": 0.725225,
-          "decode": 2.376431,
-          "fallback_build": 8.333014,
-          "projection_check": 0.0,
-          "retokenize": 17.725751000000002,
-          "scopenize": 8.762031,
-          "tokenize": 79.378085
-        }
-      },
-      {
-        "work_id": "000118_1745",
-        "total_ms": 120.304581,
-        "dominant_stage": "tokenize",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 10.348689,
-          "body_selection": 1.1094119999999998,
-          "decode": 3.491272,
-          "fallback_build": 14.511535,
-          "projection_check": 0.0,
-          "retokenize": 30.681147999999997,
-          "scopenize": 13.421434,
-          "tokenize": 46.741091
-        }
-      },
-      {
-        "work_id": "001185_45210",
-        "total_ms": 118.27815000000001,
-        "dominant_stage": "tokenize",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 2.337522,
-          "body_selection": 0.386877,
-          "decode": 1.490258,
-          "fallback_build": 3.912159,
-          "projection_check": 0.0,
-          "retokenize": 1.717236,
-          "scopenize": 0.872393,
-          "tokenize": 107.561705
+          "retokenize": 17.451615,
+          "scopenize": 7.107061,
+          "tokenize": 39.954349
         }
       },
       {
         "work_id": "001034_4823",
-        "total_ms": 110.45301899999998,
+        "total_ms": 119.231301,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 12.217553,
-          "body_selection": 0.6395949999999999,
-          "decode": 1.982864,
-          "fallback_build": 7.437901999999999,
+          "aat_build": 15.173394,
+          "body_selection": 0.7103539999999999,
+          "decode": 1.903804,
+          "fallback_build": 9.855008,
           "projection_check": 0.0,
-          "retokenize": 13.461374,
-          "scopenize": 6.238971,
-          "tokenize": 68.47475999999999
-        }
-      },
-      {
-        "work_id": "000255_45395",
-        "total_ms": 101.62155,
-        "dominant_stage": "tokenize",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 2.378601,
-          "body_selection": 0.410087,
-          "decode": 2.059314,
-          "fallback_build": 3.888569,
-          "projection_check": 0.0,
-          "retokenize": 1.687137,
-          "scopenize": 0.6833549999999999,
-          "tokenize": 90.514487
-        }
-      },
-      {
-        "work_id": "000148_761",
-        "total_ms": 94.38477599999999,
-        "dominant_stage": "tokenize",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 9.265107,
-          "body_selection": 0.5928249999999999,
-          "decode": 1.975235,
-          "fallback_build": 5.883843,
-          "projection_check": 0.0,
-          "retokenize": 4.527344,
-          "scopenize": 2.237593,
-          "tokenize": 69.902829
-        }
-      },
-      {
-        "work_id": "000148_58842",
-        "total_ms": 93.068417,
-        "dominant_stage": "tokenize",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 3.760621,
-          "body_selection": 0.531226,
-          "decode": 1.878595,
-          "fallback_build": 5.359638,
-          "projection_check": 0.0,
-          "retokenize": 8.87268,
-          "scopenize": 2.902327,
-          "tokenize": 69.76333
+          "retokenize": 15.044846,
+          "scopenize": 5.7325919999999995,
+          "tokenize": 70.81130300000001
         }
       },
       {
         "work_id": "001341_51302",
-        "total_ms": 88.614673,
+        "total_ms": 116.655783,
         "dominant_stage": "tokenize",
         "fallback_used": false,
         "stages_ms": {
-          "aat_build": 0.389637,
-          "body_selection": 0.082559,
-          "decode": 0.295798,
+          "aat_build": 0.5536760000000001,
+          "body_selection": 0.094529,
+          "decode": 0.307208,
           "fallback_build": 0.0,
-          "projection_check": 0.699915,
-          "retokenize": 0.133699,
-          "scopenize": 0.121199,
-          "tokenize": 86.891866
+          "projection_check": 1.050381,
+          "retokenize": 0.144478,
+          "scopenize": 0.10856,
+          "tokenize": 114.396951
         }
       },
       {
-        "work_id": "001750_57299",
-        "total_ms": 84.67788300000001,
-        "dominant_stage": "tokenize",
-        "fallback_used": false,
-        "stages_ms": {
-          "aat_build": 1.895525,
-          "body_selection": 0.31678799999999996,
-          "decode": 1.025961,
-          "fallback_build": 0.0,
-          "projection_check": 2.5169900000000003,
-          "retokenize": 1.898555,
-          "scopenize": 0.7873939999999999,
-          "tokenize": 76.23667
-        }
-      },
-      {
-        "work_id": "001161_43624",
-        "total_ms": 80.47085700000001,
+        "work_id": "001185_45210",
+        "total_ms": 115.89802900000001,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 3.2433050000000003,
-          "body_selection": 0.598805,
-          "decode": 1.950315,
-          "fallback_build": 2.9841059999999997,
+          "aat_build": 3.147884,
+          "body_selection": 0.801303,
+          "decode": 2.125892,
+          "fallback_build": 3.142444,
           "projection_check": 0.0,
-          "retokenize": 1.234961,
-          "scopenize": 0.772904,
-          "tokenize": 69.68646100000001
+          "retokenize": 1.296749,
+          "scopenize": 0.880893,
+          "tokenize": 104.502864
+        }
+      },
+      {
+        "work_id": "000077_1323",
+        "total_ms": 115.488333,
+        "dominant_stage": "tokenize",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 5.145608,
+          "body_selection": 0.853773,
+          "decode": 2.43417,
+          "fallback_build": 6.569635,
+          "projection_check": 0.0,
+          "retokenize": 13.083992,
+          "scopenize": 7.398778,
+          "tokenize": 80.002377
+        }
+      },
+      {
+        "work_id": "000118_1745",
+        "total_ms": 106.755155,
+        "dominant_stage": "tokenize",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 6.931303,
+          "body_selection": 1.301309,
+          "decode": 3.5629709999999997,
+          "fallback_build": 13.947654,
+          "projection_check": 0.0,
+          "retokenize": 27.284664,
+          "scopenize": 12.117349,
+          "tokenize": 41.609905000000005
+        }
+      },
+      {
+        "work_id": "000255_45395",
+        "total_ms": 102.997196,
+        "dominant_stage": "tokenize",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 4.553292,
+          "body_selection": 0.808493,
+          "decode": 2.317541,
+          "fallback_build": 4.380904,
+          "projection_check": 0.0,
+          "retokenize": 1.894085,
+          "scopenize": 0.913062,
+          "tokenize": 88.129819
+        }
+      },
+      {
+        "work_id": "001562_56145",
+        "total_ms": 96.06831400000002,
+        "dominant_stage": "aat_build",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 29.159718,
+          "body_selection": 1.977634,
+          "decode": 5.256027,
+          "fallback_build": 17.082039,
+          "projection_check": 0.0,
+          "retokenize": 17.962801,
+          "scopenize": 7.358399,
+          "tokenize": 17.271696
+        }
+      },
+      {
+        "work_id": "000148_761",
+        "total_ms": 91.164834,
+        "dominant_stage": "tokenize",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 9.087535,
+          "body_selection": 0.680375,
+          "decode": 1.997653,
+          "fallback_build": 5.298366,
+          "projection_check": 0.0,
+          "retokenize": 3.960847,
+          "scopenize": 2.43611,
+          "tokenize": 67.703948
         }
       },
       {
         "work_id": "000148_1746",
-        "total_ms": 77.692997,
+        "total_ms": 85.122254,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 2.469531,
-          "body_selection": 0.606085,
-          "decode": 2.124153,
-          "fallback_build": 4.3482449999999995,
+          "aat_build": 3.66774,
+          "body_selection": 0.652784,
+          "decode": 1.984014,
+          "fallback_build": 4.878219,
           "projection_check": 0.0,
-          "retokenize": 6.5733880000000005,
-          "scopenize": 3.3077240000000003,
-          "tokenize": 58.263871
+          "retokenize": 7.154111,
+          "scopenize": 4.098256,
+          "tokenize": 62.68713
         }
       },
       {
-        "work_id": "000148_56923",
-        "total_ms": 75.942622,
+        "work_id": "001750_57299",
+        "total_ms": 84.363381,
+        "dominant_stage": "tokenize",
+        "fallback_used": false,
+        "stages_ms": {
+          "aat_build": 2.37709,
+          "body_selection": 0.355827,
+          "decode": 0.775464,
+          "fallback_build": 0.0,
+          "projection_check": 2.563019,
+          "retokenize": 1.751775,
+          "scopenize": 0.771884,
+          "tokenize": 75.768322
+        }
+      },
+      {
+        "work_id": "000148_58842",
+        "total_ms": 83.70817500000001,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 5.836554,
-          "body_selection": 0.7449340000000001,
-          "decode": 2.312532,
-          "fallback_build": 10.17173,
+          "aat_build": 3.5337799999999997,
+          "body_selection": 0.5763349999999999,
+          "decode": 1.744895,
+          "fallback_build": 5.780632,
           "projection_check": 0.0,
-          "retokenize": 23.778733,
-          "scopenize": 7.803678,
-          "tokenize": 25.294461
+          "retokenize": 6.277038,
+          "scopenize": 2.859176,
+          "tokenize": 62.936319000000005
+        }
+      },
+      {
+        "work_id": "000989_350",
+        "total_ms": 81.05820800000001,
+        "dominant_stage": "tokenize",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 6.915733,
+          "body_selection": 0.717374,
+          "decode": 2.208931,
+          "fallback_build": 5.034987999999999,
+          "projection_check": 0.0,
+          "retokenize": 4.87073,
+          "scopenize": 2.763877,
+          "tokenize": 58.546575
+        }
+      },
+      {
+        "work_id": "001161_43624",
+        "total_ms": 78.26802099999999,
+        "dominant_stage": "tokenize",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 3.65027,
+          "body_selection": 0.652134,
+          "decode": 1.950564,
+          "fallback_build": 2.3433,
+          "projection_check": 0.0,
+          "retokenize": 1.19684,
+          "scopenize": 0.7552439999999999,
+          "tokenize": 67.719669
         }
       },
       {
         "work_id": "000148_789",
-        "total_ms": 73.14542399999999,
+        "total_ms": 74.302094,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 11.681088,
-          "body_selection": 0.913532,
-          "decode": 3.025097,
-          "fallback_build": 5.979793,
+          "aat_build": 12.03376,
+          "body_selection": 0.982062,
+          "decode": 2.824917,
+          "fallback_build": 10.001337,
           "projection_check": 0.0,
-          "retokenize": 5.269138,
-          "scopenize": 1.928525,
-          "tokenize": 44.348251
+          "retokenize": 4.856540000000001,
+          "scopenize": 2.500339,
+          "tokenize": 41.103139
         }
       },
       {
-        "work_id": "000129_2084",
-        "total_ms": 70.157407,
+        "work_id": "001341_55302",
+        "total_ms": 72.717427,
         "dominant_stage": "tokenize",
-        "fallback_used": true,
+        "fallback_used": false,
         "stages_ms": {
-          "aat_build": 10.939293,
-          "body_selection": 0.757514,
-          "decode": 3.82673,
-          "fallback_build": 8.835121,
-          "projection_check": 0.0,
-          "retokenize": 3.356534,
-          "scopenize": 2.7240979999999997,
-          "tokenize": 39.718117
+          "aat_build": 0.270047,
+          "body_selection": 0.03658,
+          "decode": 0.171609,
+          "fallback_build": 0.0,
+          "projection_check": 0.365967,
+          "retokenize": 0.07938,
+          "scopenize": 0.06420899999999999,
+          "tokenize": 71.729635
         }
       }
     ]
@@ -373,18 +3860,18 @@
     "normalized_visible_text_difference_count": 2543,
     "same_visible_structural_difference_count": 343,
     "semantic_hash_difference_counts": {
-      "gaiji_descriptions": 356,
-      "ruby_readings": 4508
+      "gaiji_descriptions": 481,
+      "ruby_readings": 4609
     },
     "semantic_summary_hash_difference_counts": {
-      "summary:gaiji.marker": 5781,
-      "summary:ruby.basic": 14426
+      "summary:gaiji.marker": 5773,
+      "summary:ruby.basic": 14424
     },
     "normalized_visible_difference_buckets": {
-      "visible_and_gaiji_descriptions": 34,
-      "visible_and_gaiji_descriptions+ruby_readings": 107,
-      "visible_and_ruby_readings": 755,
-      "visible_only": 1647
+      "visible_and_gaiji_descriptions": 53,
+      "visible_and_gaiji_descriptions+ruby_readings": 125,
+      "visible_and_ruby_readings": 782,
+      "visible_only": 1583
     },
     "a_semantic_totals": {
       "block:paragraph": 17894,
@@ -396,17 +3883,17 @@
     "b_semantic_totals": {
       "block:heading": 35047,
       "block:paragraph": 2262855,
-      "gaiji_unresolved": 57849,
+      "gaiji_unresolved": 57510,
       "heading_level:1": 3004,
       "heading_level:2": 30507,
       "heading_level:3": 1536,
-      "inline:gaiji": 57849,
-      "inline:ruby": 3465616,
+      "inline:gaiji": 57510,
+      "inline:ruby": 3464855,
       "inline:style": 149942,
       "inline:text": 4682417,
       "provenance:parser_normalized": 4496850,
-      "provenance:regex_fallback": 578,
-      "provenance:regex_supplement": 1428023
+      "provenance:source_fallback": 578,
+      "provenance:source_supplement": 1426923
     },
     "structural_differences": [
       {
@@ -414,7 +3901,7 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:051ff28a7cc5e1f78c3763d1fa8009a6ca97a07dd9646452e244d477dc521906",
-        "b_structure_hash": "sha256:ad14d8e2cfcfe8befe03d3be7b7d8b245c217ceba1219b3084699cccd07f7dd2",
+        "b_structure_hash": "sha256:ab006f2f7f76014827c65222420636f1a44791eb296db1265896a86aa61a1a26",
         "a_visible_hash": "sha256:87966d1b7301e28ef79517aa588283d1e8cac8298e2759c05cbbe58376266e8c",
         "b_visible_hash": "sha256:81c54d3e4bc2d6461517a230db25a00b4c013af4b3749fe61a2b439d4c34a981",
         "a_normalized_visible_hash": "sha256:cd6df4691ad07866ffd0d08a7cb2687d70267191d13d3b77cb5d324f04ef7b82",
@@ -451,7 +3938,7 @@
           "inline:style": 1,
           "inline:text": 217,
           "provenance:parser_normalized": 216,
-          "provenance:regex_supplement": 6
+          "provenance:source_supplement": 6
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:7d742dd3a6bf9cae9e26086aafc9eaace0aee370f33df8084cfdfd1281dee79f",
@@ -467,8 +3954,8 @@
         },
         "a_semantic_summary_hashes": {},
         "b_semantic_summary_hashes": {
-          "summary:gaiji.marker": "sha256:03ebe387714b7ea2c15f6b91cac2b2d68ae77eede25273fc7c022102ee8ee701",
-          "summary:ruby.basic": "sha256:8e187f46c097bd3d8f9795789ee98ba18a017cf999a43b4f269a10a20293cb14"
+          "summary:gaiji.marker": "sha256:fea6d098a11e56495e4280bef776c0770bfab91b1c37d5690af09b45ec5f3266",
+          "summary:ruby.basic": "sha256:74e8f01b6c69c591bd8c9951261d018b90dbff14360cc78542273c53d1f1f19e"
         },
         "semantic_summary_hashes_differ": {
           "summary:gaiji.marker": true,
@@ -482,7 +3969,7 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": true,
         "a_structure_hash": "sha256:209552e95288fa8c6bd79df19221bfc7e825d92d56042b138875d72df4910700",
-        "b_structure_hash": "sha256:2e20f1299f515733cf382d663cfae65e80cde572594d282c53fc22c07acd250a",
+        "b_structure_hash": "sha256:4098ae6bb77452c36b888617cd3cd98524d106df796fc6bcad18d9fab084ba18",
         "a_visible_hash": "sha256:305f2cd59d2dd49f5d56bb560742dda84edd235f5ee82e27937c45500731fa7f",
         "b_visible_hash": "sha256:1431bd704699a80c5f84e99ddd69c4f550e349248c966bea6fce6d1fe4bde8a4",
         "a_normalized_visible_hash": "sha256:30e7ab49dba61bfaaf39790cbdfa9396d4e27279264339da4983a4a502beea11",
@@ -516,7 +4003,7 @@
           "inline:style": 13,
           "inline:text": 762,
           "provenance:parser_normalized": 742,
-          "provenance:regex_supplement": 803
+          "provenance:source_supplement": 803
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -532,7 +4019,7 @@
         },
         "a_semantic_summary_hashes": {},
         "b_semantic_summary_hashes": {
-          "summary:ruby.basic": "sha256:7ec9a3432ea93f748ee0fd507c39aa1721f7115da4bbb8a46dfae05ff4c2beec"
+          "summary:ruby.basic": "sha256:0b2e540006e0738d832c76568fd200f8231e7d8a335fda46b6b3aeb080f75b08"
         },
         "semantic_summary_hashes_differ": {
           "summary:ruby.basic": true
@@ -720,7 +4207,7 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:a20d8ef1583276683b673d22bed2080fef9b637e67364fecd677158038311007",
-        "b_structure_hash": "sha256:e1507c0fa10da5b2fb9e516427f7c1cd5258052b889b5b34f50a69cf0d695ae1",
+        "b_structure_hash": "sha256:96a82f2cced0f48f09cfeb3ab2665aa73eb01cfa013978a907b9e5390d2a2bdc",
         "a_visible_hash": "sha256:d4ddf8f9ecb1c5c8f7a58cc98d3b7a3a796da31a816a312b0675d9a8835eee6f",
         "b_visible_hash": "sha256:b351c05d4bbd6b74a85cf3170ff16cd2e0d7e971088343fa6f604e985bc05e33",
         "a_normalized_visible_hash": "sha256:7cf43faef19431738dd1092bd559ab42bf79cf01ba575989f443930f5cab4b0c",
@@ -757,7 +4244,7 @@
           "inline:style": 2,
           "inline:text": 59,
           "provenance:parser_normalized": 57,
-          "provenance:regex_supplement": 1
+          "provenance:source_supplement": 1
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:276f78a15ca57c8740ff5677caaa6639ce61c6ef669fbd138e5b0af005003ee3",
@@ -773,7 +4260,7 @@
         },
         "a_semantic_summary_hashes": {},
         "b_semantic_summary_hashes": {
-          "summary:gaiji.marker": "sha256:191bf7a861c16e95a16f8efd47e848a396c7ff3b77728f7854fa5eed5a5d297a",
+          "summary:gaiji.marker": "sha256:e2ed6df2196c0e318619e7960055b3672eef128a75a360c476891e993348b8c7",
           "summary:ruby.basic": "sha256:57a5be3dea747d3d1b8c7962318708cf8d5df6babe240ebbce2bfe446e0122c5"
         },
         "semantic_summary_hashes_differ": {
@@ -788,7 +4275,7 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": true,
         "a_structure_hash": "sha256:bf6b9e1cd06cf84448a9e90cb42d59039e3935b9c7d981b4d1105ea9223e0d21",
-        "b_structure_hash": "sha256:f17444a090157e7974e00b91fdf8fbc7e21e88043a7efd5c50469da43a2ba039",
+        "b_structure_hash": "sha256:94b5c49f414e20b0f6e871529d7829f070ea7836404077253d2396cb4eeee10e",
         "a_visible_hash": "sha256:57c6b1ae9b884b36163a94137e6bda0b8da00f49dd940cb7d07cb34a40345a38",
         "b_visible_hash": "sha256:5a59e64a6a0e9de68afbef52d5aa9770dcb07a481ab182992cad14e6cb5f008b",
         "a_normalized_visible_hash": "sha256:9855ed346c42973c3f421a5cfd63f1d593cb57b6a1e3525f5c052d42e8051a79",
@@ -806,7 +4293,7 @@
         },
         "b_inline_kinds": {
           "gaiji": 72,
-          "ruby": 3989,
+          "ruby": 3987,
           "style": 5,
           "text": 2506
         },
@@ -821,11 +4308,11 @@
           "block:paragraph": 381,
           "gaiji_unresolved": 72,
           "inline:gaiji": 72,
-          "inline:ruby": 3989,
+          "inline:ruby": 3987,
           "inline:style": 5,
           "inline:text": 2506,
           "provenance:parser_normalized": 2501,
-          "provenance:regex_supplement": 1893
+          "provenance:source_supplement": 1891
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:ec29effe7c3c37c60152af9bf2283468f0d5c38565fe6dc258419380dfb5e90e",
@@ -833,7 +4320,7 @@
         },
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:ec29effe7c3c37c60152af9bf2283468f0d5c38565fe6dc258419380dfb5e90e",
-          "ruby_readings": "sha256:7d03bb196ea17c94275bb0b8cc5179971b6fdbecd4ed92222c9e20e853df98df"
+          "ruby_readings": "sha256:864716dd8b4e010aab32a31d119e698de9455bdd601e08fca355bff8d853590e"
         },
         "semantic_hashes_differ": {
           "gaiji_descriptions": false,
@@ -841,8 +4328,8 @@
         },
         "a_semantic_summary_hashes": {},
         "b_semantic_summary_hashes": {
-          "summary:gaiji.marker": "sha256:6412fcd15202194c07a87262a9d8de778ce285fe18015c5a0819a5fafd1193f0",
-          "summary:ruby.basic": "sha256:ab3247ae7ecad933a2b95b9e58eabaf413a8e6c2faf2f571a113343cbe9d1e5f"
+          "summary:gaiji.marker": "sha256:f99d61c5591462aa5c9a85f0e71a02e8af195837ba1ba1c674cfe8092f91d4e2",
+          "summary:ruby.basic": "sha256:fc497ae5ed687e1c1c00c6cefdeb6df8054daa6a5e416e6a00314530927dae49"
         },
         "semantic_summary_hashes_differ": {
           "summary:gaiji.marker": true,
@@ -860,7 +4347,7 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": true,
         "a_structure_hash": "sha256:f43e5b437f5e5a1968ef0422b8d102a342bfd0438bfab6fadda9938c77307432",
-        "b_structure_hash": "sha256:fbc4fbe1c0c8aa7916688feed685880646a3d4716cc6b6a4efc6ae215b80d6b8",
+        "b_structure_hash": "sha256:01e3a20f237f51876ff1e56f04e1eb13191772cf2480b745c5473e893151465e",
         "a_visible_hash": "sha256:6ce4f98b39f1d325f6f1209e47fa3b2b8b53f8bf813f2903416296a6f9ba095f",
         "b_visible_hash": "sha256:4f6c312e5a7111ff4a75a2cc08dc03066e81f5a84cef373c90722892cf867bd5",
         "a_normalized_visible_hash": "sha256:dbc0d9952e1fb76d1e946252fdcc56c21b7dd127bfb654ec221ed28d0908cf25",
@@ -895,7 +4382,7 @@
           "inline:ruby": 2787,
           "inline:text": 588,
           "provenance:parser_normalized": 588,
-          "provenance:regex_supplement": 2303
+          "provenance:source_supplement": 2303
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:241aac2ec0892bca679325494b285c396591daca065dd0f36a3a2ba382ebae75",
@@ -911,8 +4398,8 @@
         },
         "a_semantic_summary_hashes": {},
         "b_semantic_summary_hashes": {
-          "summary:gaiji.marker": "sha256:13afffad324ceb431a4306a3074c7bd7cd9dd5e2cf71d2987ace7af9531f91c6",
-          "summary:ruby.basic": "sha256:6cefc72d11a2860be42a4381eb04ea81ababf0cd4deea325edf15d08d4ebc346"
+          "summary:gaiji.marker": "sha256:31e43f2a55bd449446dbf8c4570e6bfd29015b9811f544db5eb2c139f4e514ab",
+          "summary:ruby.basic": "sha256:df9220ff0a32b348c26d543d30042ac0eb1176ef7a6fa8697822bf68787dac3b"
         },
         "semantic_summary_hashes_differ": {
           "summary:gaiji.marker": true,
@@ -1048,7 +4535,7 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:3961e99f3784baad984d6e7752c8563ab3e6d873557ff55cdcb171ded3abf60c",
-        "b_structure_hash": "sha256:a8294667aa5f91048c780e560deef1e1a9eda9c4f2805d6dd0c8e21e357cc3d0",
+        "b_structure_hash": "sha256:f2c99a6749f5330c577db71163dced15fa6f049d8523b51ddb3bd3ed339332fd",
         "a_visible_hash": "sha256:4d929896023f74b428b3379a38e519620cd359d7fdeb0fe0183e39ae082cca35",
         "b_visible_hash": "sha256:3a61ec02cd3f419b0cda7c7e5db5203755682999d34df185f4e271d59f62e9a2",
         "a_normalized_visible_hash": "sha256:08c0209b267ca9d3db5775afc250623aec86c37032bde7ea6b5d74d92f9e9cfd",
@@ -1085,7 +4572,7 @@
           "inline:style": 5,
           "inline:text": 179,
           "provenance:parser_normalized": 174,
-          "provenance:regex_supplement": 1
+          "provenance:source_supplement": 1
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:f96147ffbd68b82a456bf8eb5741fc2579e37ced221c901193dd50662941d96a",
@@ -1101,7 +4588,7 @@
         },
         "a_semantic_summary_hashes": {},
         "b_semantic_summary_hashes": {
-          "summary:gaiji.marker": "sha256:c99afc30690f3ea07cbdc6378a04945b70e2109801f4580c4ad4111feb60c8fe",
+          "summary:gaiji.marker": "sha256:1235847462c73698d7e91f2be21c0b2b6a4657b1a2729cda8968993e1b95e473",
           "summary:ruby.basic": "sha256:fce6c8d01f1ff7960a00fd150628e1b323fa72fe3b14b604021d388d81499cd1"
         },
         "semantic_summary_hashes_differ": {
@@ -1116,7 +4603,7 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:d3c626911deb0e1b25c8fb702d3a6509094571e5855b272e9072bf1b9c1d68d5",
-        "b_structure_hash": "sha256:1bc55739e4a7f54ebad23302e47c402d4318fcefdf964e479d28ccd80fa63d35",
+        "b_structure_hash": "sha256:fb4c4d7890d11bb55d7ea39cf0d0739cfbc46668ca06f45438e0c6f2e251ffd3",
         "a_visible_hash": "sha256:b170ad56d25018a441086424523601d1bede426c00340fb213051e8445d0cca2",
         "b_visible_hash": "sha256:777001f711a06e6d3e6a571f33fa7569c62a7067957efd6abcb13e1c7e485f31",
         "a_normalized_visible_hash": "sha256:400b37133f5852730b1b477da1d2d8d292c89ccf0d04ddd221e25d8cd324881c",
@@ -1153,7 +4640,7 @@
           "inline:style": 1,
           "inline:text": 59,
           "provenance:parser_normalized": 58,
-          "provenance:regex_supplement": 2
+          "provenance:source_supplement": 2
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:8a700c92b9b79364d8ad4a9f3779fe6b8fe8e85c19e0c6dc2981f46aeaff5749",
@@ -1169,7 +4656,7 @@
         },
         "a_semantic_summary_hashes": {},
         "b_semantic_summary_hashes": {
-          "summary:gaiji.marker": "sha256:c25fbcdca90e4f365bb8aff856e70168aa1e9c7b962bcf9a1b9688f428b782ea",
+          "summary:gaiji.marker": "sha256:da36bd169cff96c74d91a29741d6806873f1f1feaa2c84eb4da2dbc4b46addd0",
           "summary:ruby.basic": "sha256:a698eb0f0ff2a2df18f80a7001570838d4c2aadb44a5eeaeb87ed7168357e9c2"
         },
         "semantic_summary_hashes_differ": {
@@ -1184,7 +4671,7 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:c96808f57e1ed3c1e9dd2830b008c657cf29e02510aa00c887f42a1a60677802",
-        "b_structure_hash": "sha256:d9aa52ee64fcab3b8bc8b7835a7009941ef5bfcc68ae5bf712b03dee5cd3167d",
+        "b_structure_hash": "sha256:5b6156995c46e08ce52131112b83551c24f242319539968b0ee630c634c102a7",
         "a_visible_hash": "sha256:7cb4a2ea34e062135fa4b03b9b9b80711db833959e4f270261d0e51f113d4dd1",
         "b_visible_hash": "sha256:355088ed1f0df81fb7ea6f21d1b2542306220b8b2da655d7221952407178eb59",
         "a_normalized_visible_hash": "sha256:e82e27088dd00cdf52c32401e2baab92615e77905f61e5403be3bbff69ebf8c1",
@@ -1219,7 +4706,7 @@
           "inline:ruby": 2,
           "inline:text": 56,
           "provenance:parser_normalized": 56,
-          "provenance:regex_supplement": 2
+          "provenance:source_supplement": 2
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:5e54b76c7c61358d09c3004ceace729736ad3d79b017c3541de6f6a4fd2efb23",
@@ -1235,7 +4722,7 @@
         },
         "a_semantic_summary_hashes": {},
         "b_semantic_summary_hashes": {
-          "summary:gaiji.marker": "sha256:353c8e0a9d6cf46c0c311eb0048fc974baeeb725cb5352418b35e1dca75337c9",
+          "summary:gaiji.marker": "sha256:51ee1f1f87349347e3a6e48f084b64ac9976d82648207444860b6de4374344af",
           "summary:ruby.basic": "sha256:9aac0f15e60eef1db0356aaff2b1bb756ba9e66ac632820dbdd76bb9921e267e"
         },
         "semantic_summary_hashes_differ": {
@@ -1250,7 +4737,7 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:5ed466432f1b00ac501762db8735644048f94f20ab6bccec0de1de58cf7d6960",
-        "b_structure_hash": "sha256:c1aa16adab20be15b044615c2ebd999c7d8f05f561d4e66f79a2276927e5f55e",
+        "b_structure_hash": "sha256:c3ab8235f489e2f70986c2c73b56502785168916e704878658b4b77193abca13",
         "a_visible_hash": "sha256:52807ae6aacac39dcd3918655b6a586411a3e182121ae9802f00b82e04e8770f",
         "b_visible_hash": "sha256:fafdd7d6e046ed73ad5bd8e8af04b745c1bdff7d6b8df067d6e7b18ee4e422f4",
         "a_normalized_visible_hash": "sha256:625feb59909175cbc844d679ecf5d0e174688206d86109b1d2a2844ebbbe1e17",
@@ -1287,7 +4774,7 @@
           "inline:style": 1,
           "inline:text": 80,
           "provenance:parser_normalized": 79,
-          "provenance:regex_supplement": 1
+          "provenance:source_supplement": 1
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:33e33ce0c5dd84fe520273d99fa38a3c7f3c5359a927602826a49bc0f5b4fd68",
@@ -1303,7 +4790,7 @@
         },
         "a_semantic_summary_hashes": {},
         "b_semantic_summary_hashes": {
-          "summary:gaiji.marker": "sha256:55bb33143738337eb3d90fba29d72c252afb0f16ad206ac8ee50c4e3e623cfc8",
+          "summary:gaiji.marker": "sha256:e36c29a9c9ad4359023266c409912caf769ff1a72b3b2982a081329843a2f375",
           "summary:ruby.basic": "sha256:33bba529946959e6afe0f0afb5e868eb20e04fdd9a4d22bdddab54c25146162b"
         },
         "semantic_summary_hashes_differ": {
@@ -1426,7 +4913,7 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:09031fd1c6215e9581a3b7fca54ead311a7f085fda1f28e4fd96ff0dbe19a2f1",
-        "b_structure_hash": "sha256:f58a53e258295fbf2b5c39b36d816a584e5b602db0fa3aa55580765de462e780",
+        "b_structure_hash": "sha256:402a5df9f9423c0b7966eb43cca89a4981986de57f55dbe9884fc714987fe1bd",
         "a_visible_hash": "sha256:13f76e3b5e25756ca2240e4849e48438089d4426ed1f3e1a5116937b0aa4b48f",
         "b_visible_hash": "sha256:9017f3f0dd49ca4c8dd9e2bd05b7fef1602e64f7510487ac46c2f6f8ccefc727",
         "a_normalized_visible_hash": "sha256:103e60723b3585dcf842d99edca9817621409c4482fa7943147f9e53ea0ce970",
@@ -1466,7 +4953,7 @@
           "inline:style": 7,
           "inline:text": 101,
           "provenance:parser_normalized": 92,
-          "provenance:regex_supplement": 11
+          "provenance:source_supplement": 11
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:e254309349e65a57dae04b8582f0b3a9651b957f5e27938f2b6ce13474e75fca",
@@ -1482,8 +4969,8 @@
         },
         "a_semantic_summary_hashes": {},
         "b_semantic_summary_hashes": {
-          "summary:gaiji.marker": "sha256:510348c21be91938052999f6934a49ca39f7c4d045d48d75bd8b2455a3752cbe",
-          "summary:ruby.basic": "sha256:150a7d8832fdea0269b22be66ed7ea3d2e9b9442c29b87633a21adb4cec2d01e"
+          "summary:gaiji.marker": "sha256:86ed006542d713d64505265fc5d38dea4fa7d02ec02306dc77d0662248b76876",
+          "summary:ruby.basic": "sha256:3c1ddc5c6a72c7130a308cec5f6afd0de9be6fb3431083726e0b8e397b9ecba2"
         },
         "semantic_summary_hashes_differ": {
           "summary:gaiji.marker": true,
@@ -1556,7 +5043,7 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:3b6efd4c545d869dbffd1000d4ad408390f58de897fc43bb942012e5bdbad244",
-        "b_structure_hash": "sha256:03b5cfb1b7912e6d0324c3feaedcd13ae837e8cb654d487da21535a23503f2bf",
+        "b_structure_hash": "sha256:3b300ecd12e17f80cc7ba286cd4866056fb210c16d61d8c535f85bf04c1a519d",
         "a_visible_hash": "sha256:64fe4e1c82b9f7acf718f3df08d74f672a0fac024ba7b8d881b6f46a03a642b1",
         "b_visible_hash": "sha256:1b680f8cdd0e6356ec7a30873f7723ba36b0eb6ed1b5c1ba11dae8d8a8f51b1a",
         "a_normalized_visible_hash": "sha256:fa369f45b5614903dce83337fe08f5e72c30cb850f9d21bf12c910ffe94c7363",
@@ -1593,7 +5080,7 @@
           "inline:style": 4,
           "inline:text": 297,
           "provenance:parser_normalized": 293,
-          "provenance:regex_supplement": 6
+          "provenance:source_supplement": 6
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:99855ddfa66d5a04ac8da6d485ebc6f00997f4a173139f60a0182b6f7b486700",
@@ -1609,8 +5096,8 @@
         },
         "a_semantic_summary_hashes": {},
         "b_semantic_summary_hashes": {
-          "summary:gaiji.marker": "sha256:ed7c1bcfd13caca68e2469a9f080d3339a7b69ce5406226e1d8cd1847dae5c44",
-          "summary:ruby.basic": "sha256:c6fd3423261ab62f4432bac3b5c5f3a83eed4387456a3b1d666e7d1218890069"
+          "summary:gaiji.marker": "sha256:b46c153a1b673099a1f21fad1e1cbd13ea518a04b1d14144bc4a4ba9186c70c9",
+          "summary:ruby.basic": "sha256:798667e9e2851718377c5cea22c70960bf9aefc0c5bac11513e1bc23f42b6f46"
         },
         "semantic_summary_hashes_differ": {
           "summary:gaiji.marker": true,
@@ -1624,7 +5111,7 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:284267717eb9325202586b8d010fe1ad7123cf14cdf4d3562dedab5a42463bec",
-        "b_structure_hash": "sha256:a9d3adbb406ae02e45bac1c783de4952db9be0e421287657a40962b0965ebe72",
+        "b_structure_hash": "sha256:e953dad8b8ce1df1b2f76f98cb635464213c2c0c302cfe1cc2784a820ca2ee8d",
         "a_visible_hash": "sha256:aa1f2dbe71ac7b034b481c186bdfaab48eea6063a0432ec1f5db875dbe95c591",
         "b_visible_hash": "sha256:b6e6f72e7717a237e33b740c00a35d329b9c63f5cefa9a3fd3ff319315025d58",
         "a_normalized_visible_hash": "sha256:b9059e61b6f2ddd4b84010eba428076fb8153d942f320143dfa9565eaf32d1ce",
@@ -1664,7 +5151,7 @@
           "inline:style": 7,
           "inline:text": 294,
           "provenance:parser_normalized": 280,
-          "provenance:regex_supplement": 7
+          "provenance:source_supplement": 7
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:f1024156717b773811ada9b360bdd7a575458c7083bf3f0beb676ec499cfdd38",
@@ -1680,8 +5167,8 @@
         },
         "a_semantic_summary_hashes": {},
         "b_semantic_summary_hashes": {
-          "summary:gaiji.marker": "sha256:2745780271865a3f61c9bfb65f5a17330a21c30b44fa5cbecf3f4bef8216ed68",
-          "summary:ruby.basic": "sha256:3b6858a8aef432518b0a1b9ff075d090883df2eb1808f16882e22c08c2dc6c79"
+          "summary:gaiji.marker": "sha256:c28d57377018447e9d26e6466ac28aad0b21bdccde0b678a8d372e84aad44038",
+          "summary:ruby.basic": "sha256:6267276ce791c054337393bdc45abd03a6d2c348e5a87cb54e293537f8ac0dcc"
         },
         "semantic_summary_hashes_differ": {
           "summary:gaiji.marker": true,
@@ -1695,7 +5182,7 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:7b2c30a3138501c3c5c224a8df8298f94efb7826b0f606b0254dd62a03ec80f4",
-        "b_structure_hash": "sha256:8338043634925f153ffffa8e8523a91f0a4cc46290e4fa1b6cb0f3632bd40576",
+        "b_structure_hash": "sha256:9d71ed258d34ded0ca955e681dd3964e17439754987603f76c126b56485f1a2b",
         "a_visible_hash": "sha256:9bd75b07196c512b8ddfb8f224d8389fe6f07bcb518873d192535c2eb499cb46",
         "b_visible_hash": "sha256:e731c362d8151659171a0064a3ed8980adfb91d2f7993e6680b70cb562b59c54",
         "a_normalized_visible_hash": "sha256:36f2ecf1f29ec0a14645370a87ea11f3d327cc056e16ad23a0c999bdd2a7af31",
@@ -1732,7 +5219,7 @@
           "inline:style": 1,
           "inline:text": 49,
           "provenance:parser_normalized": 48,
-          "provenance:regex_supplement": 1
+          "provenance:source_supplement": 1
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:fd957271691811049d95702466e9832bdfdbb22ef8e8f5d06f4d04a2802f902b",
@@ -1748,7 +5235,7 @@
         },
         "a_semantic_summary_hashes": {},
         "b_semantic_summary_hashes": {
-          "summary:gaiji.marker": "sha256:9483c61603450b0e7ed4514cb3e2cff96cbabe5a4c365f2302de1983fad277e2",
+          "summary:gaiji.marker": "sha256:e613bc2963d231f8482573d3e0f8736b061399886c1500879fe66362ff6f4803",
           "summary:ruby.basic": "sha256:1ea731603ebafd378c86dafe8d787bf3ca15e4e8df2abb9bfdf4c764a8671e06"
         },
         "semantic_summary_hashes_differ": {
@@ -1881,7 +5368,7 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:947fe6cce97e6aa652066e389a4966c3c05be9f3af209262600b1369b4aae6fe",
-        "b_structure_hash": "sha256:63f961cfa0faef1d117b4b5328fad0b6571cd3c1d71de9c6f03829eab06a42db",
+        "b_structure_hash": "sha256:ba163ab957d1040dd34370347f5e33010f4aeb4d868a7c388f890d6cdf9b3fd5",
         "a_visible_hash": "sha256:394bfcca75b8b9901681d1542fb27126807af464bd0f0f684301256f7551c12d",
         "b_visible_hash": "sha256:08fa8c4956d67ee995a7750816c4043047cd089426228409e5378970627e9664",
         "a_normalized_visible_hash": "sha256:6ef7700b5a68e9103f74d651f223679621076fd4c790cd752f5783a7630af8c5",
@@ -1921,7 +5408,7 @@
           "inline:style": 11,
           "inline:text": 1749,
           "provenance:parser_normalized": 1723,
-          "provenance:regex_supplement": 40
+          "provenance:source_supplement": 40
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:329fd9518c34c23d8011d2e6e27250be0aa2897536a16445d784bb4cde2381ce",
@@ -1937,8 +5424,8 @@
         },
         "a_semantic_summary_hashes": {},
         "b_semantic_summary_hashes": {
-          "summary:gaiji.marker": "sha256:793acefcba1585417bb0ac31b1c315725a1ade25ee874bc87ec6f2a1bc1f27ef",
-          "summary:ruby.basic": "sha256:02e1b77c509884c89e3790a5c09a386c3e8db6c4b91587c5fb2f3a5b4df763d3"
+          "summary:gaiji.marker": "sha256:6cd914bc3d0135efa6508cdda012f7228e5ddbac5cfaea567953c86c870b2270",
+          "summary:ruby.basic": "sha256:f968fe2d547a54cd3fdcdbbae7fb60acdd85cb85a8b24025793b25207baba3ee"
         },
         "semantic_summary_hashes_differ": {
           "summary:gaiji.marker": true,
@@ -1952,7 +5439,7 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:43e4c2985e00da254a8fdbaac9c10419e5db9dc5af31d5af9c0d4baa97600e37",
-        "b_structure_hash": "sha256:99b8e8b5f932ab86917fe3f6c77dd69d0df2cc1ccaf6a59ac21f1225e9e35f57",
+        "b_structure_hash": "sha256:ce0b0276498be70e27f6131dc82d0dcdc152af13c808fd0944361600bf9734d7",
         "a_visible_hash": "sha256:42c1cfd90342bc6303d0d25cf54f0199cfb35c24533a1bed197ceeb50001ba70",
         "b_visible_hash": "sha256:01aa0fd5dec584c15070c08b8523e134c6e23c228a6ce9a5da32ddb8e4053f45",
         "a_normalized_visible_hash": "sha256:92ed1e59b9250b8c002421a566e571e3af5cb9df559d77f78853f5427bf35725",
@@ -1989,7 +5476,7 @@
           "inline:style": 3,
           "inline:text": 196,
           "provenance:parser_normalized": 193,
-          "provenance:regex_supplement": 2
+          "provenance:source_supplement": 2
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:f1a241504f8f2a7af8cb5adef22ef3a45c917d307ee69555f6c9436f6469176a",
@@ -2005,7 +5492,7 @@
         },
         "a_semantic_summary_hashes": {},
         "b_semantic_summary_hashes": {
-          "summary:gaiji.marker": "sha256:8f9233ded180ae51fbdb9fffed573ff0e9649e4424f081b9cc33d8b569c61df0",
+          "summary:gaiji.marker": "sha256:38dbbbc382ffde7b3c1d7b06725e850cede7cb60caba1801fd9a07f56df74968",
           "summary:ruby.basic": "sha256:86e5a8689d37cc3d5ed97dbc29192bbdd310147440bd038c7d41a714c306becf"
         },
         "semantic_summary_hashes_differ": {
@@ -2020,7 +5507,7 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:eb10480eff64b1b2c74294c824c51d8b81b07d7d025196579f21e174714460d7",
-        "b_structure_hash": "sha256:4b81a65fbc7d406ad01f8ea1c55d8ba39260f203e45c03e264a67d1014ce0599",
+        "b_structure_hash": "sha256:7d427d6dc249af7e60df1340b80b3a2fd81987af0372733ec3a18b406be7fad6",
         "a_visible_hash": "sha256:995e6ff4a8d2873ae71fcc8ac08b4e2888bfbfbab1dbdcbda5bf4bc6908bc676",
         "b_visible_hash": "sha256:cd5c585385562d6717f5ff1a3346feb64dea143f7deb1e8497c06d09952213fc",
         "a_normalized_visible_hash": "sha256:0f8e8c454d27550027279d9e4d84ebbed9f8299f59fcd5a96c9f7b9edd5e7d89",
@@ -2057,7 +5544,7 @@
           "inline:style": 1,
           "inline:text": 222,
           "provenance:parser_normalized": 221,
-          "provenance:regex_supplement": 7
+          "provenance:source_supplement": 7
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:1ed6f1b5c009ad18c4236e011897ab9628704d70e795e13e4484312ee58127bb",
@@ -2073,8 +5560,8 @@
         },
         "a_semantic_summary_hashes": {},
         "b_semantic_summary_hashes": {
-          "summary:gaiji.marker": "sha256:189488060ac355caa9772244ced36dd9b656aa76a22da66bcd1970131128af05",
-          "summary:ruby.basic": "sha256:06e5576d873b04c5702e4f52ca0eb909056f93828d39f111f572547ed132941b"
+          "summary:gaiji.marker": "sha256:a9c16e7d812dac87983a962968db251842603bb1567e6ef7093b3edaa9df43e9",
+          "summary:ruby.basic": "sha256:579d715f65eb82cc6b75553840648dd712c557b4953a9529c162c1f26aab9082"
         },
         "semantic_summary_hashes_differ": {
           "summary:gaiji.marker": true,
@@ -2147,7 +5634,7 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:d958317d14370511b60ea56e37ebfd962c35c942d01cd84c6d513755692702a6",
-        "b_structure_hash": "sha256:f44893827fbd059ac1c4b0b3c0309c08a454d16972e371fce26c66ef6c5ece31",
+        "b_structure_hash": "sha256:8111ee4dbaa2b4f3d88de61aa17f8339a8d6319ae7c800dc7a7cd483fc7b495d",
         "a_visible_hash": "sha256:8cf56c7827651598f96359575d1d0951f871572998394242b850473ec086d227",
         "b_visible_hash": "sha256:6c77e05636410c3ca4e2ae76e8a4efc7d6362a76a690027be5946fc35713ffbb",
         "a_normalized_visible_hash": "sha256:e8f63bb95f90f04979375bd4914702a8da392ddebd53e3342f13a0b4fc70a29b",
@@ -2184,7 +5671,7 @@
           "inline:style": 8,
           "inline:text": 251,
           "provenance:parser_normalized": 243,
-          "provenance:regex_supplement": 3
+          "provenance:source_supplement": 3
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:fd7152e504a35569df3924782a325b9b7925cfd0dd952b94017fb39c9d92a39a",
@@ -2200,7 +5687,7 @@
         },
         "a_semantic_summary_hashes": {},
         "b_semantic_summary_hashes": {
-          "summary:gaiji.marker": "sha256:5c506b232628dd8b80b6075036f03af572008f4cc479c0ae75f84e253f1b5a78",
+          "summary:gaiji.marker": "sha256:a42074d77d2ee5e9af59a94f4d3aa6205a8a49b328c4a595ce1bc472f0903297",
           "summary:ruby.basic": "sha256:b8f6dd38fa2b4b5c05e77513264893aecd95159bb318a64e916e41a656ccf466"
         },
         "semantic_summary_hashes_differ": {
@@ -2274,7 +5761,7 @@
         "visible_text_differs": false,
         "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:7fd317a2ae31b956013df473c4626d260662825bb9dfd4afe126744d5248e48b",
-        "b_structure_hash": "sha256:e27238a833ec6fec6a7d95a2413a1392f512b19100816c85d24dbb5352632039",
+        "b_structure_hash": "sha256:25cd6d755d9ab5197a223a92e365d2660801bd3e9fb80d215ce0960f9da7ec5d",
         "a_visible_hash": "sha256:a9a2faf128953b0c3e6d6a9adc722209df095ac4713173195eb791f31090d7b1",
         "b_visible_hash": "sha256:a9a2faf128953b0c3e6d6a9adc722209df095ac4713173195eb791f31090d7b1",
         "a_normalized_visible_hash": "sha256:88e6361cad0e7c5bdbd7d778f0e24efbe6db77cd707f592e7525c6bc66596ebe",
@@ -2308,8 +5795,8 @@
           "inline:gaiji": 70,
           "inline:ruby": 127,
           "inline:text": 1,
-          "provenance:regex_fallback": 1,
-          "provenance:regex_supplement": 197
+          "provenance:source_fallback": 1,
+          "provenance:source_supplement": 197
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:e7d594399400715903cc5d6364a672509daf4e1b9e64374ae0a4cc5e8f0d162f",
@@ -2325,8 +5812,8 @@
         },
         "a_semantic_summary_hashes": {},
         "b_semantic_summary_hashes": {
-          "summary:gaiji.marker": "sha256:e6d4a51dbe3e79cad6993b77af86d336003e611082a908140f8e9c9fd9063d84",
-          "summary:ruby.basic": "sha256:8b8b9ace1b2a882ec073d9a1952287dcb528e5beaa9b533d8b9e1d1bfd2bbd3f"
+          "summary:gaiji.marker": "sha256:6a4898b8f0e85869d3b193667e67428566346cd038f87657a22bf81e608879f0",
+          "summary:ruby.basic": "sha256:dceb0d018b3877d3314b84b8763de5846be697093233c29cf6c9aad7e7d38ea8"
         },
         "semantic_summary_hashes_differ": {
           "summary:gaiji.marker": true,
@@ -2576,7 +6063,7 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:c6c046c5054f929da6218e8926bcf5ad033c829f77cdbca38dbfea8777a336c5",
-        "b_structure_hash": "sha256:bfae4cf56a62be568e349b46c07985c5f20078e3cffc6edb4e21168d5725663e",
+        "b_structure_hash": "sha256:eac0734e071440d0b8cf0abb94d3321eb482a55bb74c0bfd44aeb19fe7c207e4",
         "a_visible_hash": "sha256:e5235fa4a210b40adc74152d6cf1fcf716cf14232876635582c5ef7e53f9f4f2",
         "b_visible_hash": "sha256:2d26931a29891c07f6776a90dad60bb2175d6f592ec02e7aac17e1c5f75b21b1",
         "a_normalized_visible_hash": "sha256:94e34c15afbc3f2e93bbedb0acaf5802f7fe3c70903f3ecca68a60238f6c6d46",
@@ -2607,7 +6094,7 @@
           "inline:style": 3,
           "inline:text": 442,
           "provenance:parser_normalized": 439,
-          "provenance:regex_supplement": 7
+          "provenance:source_supplement": 7
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -2623,7 +6110,7 @@
         },
         "a_semantic_summary_hashes": {},
         "b_semantic_summary_hashes": {
-          "summary:ruby.basic": "sha256:fcb5cf535bbb8c5be55ffc702e0bdb3a1f88dee50960dc7bcc27f88b41e23b97"
+          "summary:ruby.basic": "sha256:d2d3653d24ab0ec915a07a733c458eb9797baeace38f76d5b04cb417534f579b"
         },
         "semantic_summary_hashes_differ": {
           "summary:ruby.basic": true
@@ -2636,7 +6123,7 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": true,
         "a_structure_hash": "sha256:566d6d3d94304a1afacdc23c54416fa892d45036b567b2b138aaf4c774ee4c37",
-        "b_structure_hash": "sha256:dc9c7f8c7c99ac9d03714850eaef014f1bd01e138e22b6ddbb0fcd26b3460cc1",
+        "b_structure_hash": "sha256:c17a1678a1d0048856493e5562d0514e241d145669af8b2d128109174dbe4542",
         "a_visible_hash": "sha256:bbbc978d937f1a4fbfedca34319225a6fe3b0d1d08a21e9857207011e1576aae",
         "b_visible_hash": "sha256:a9d88c2ac5d68cc0e0074184b30ea4598b6b01e40a1b942d0b2edbbbd2efb1d1",
         "a_normalized_visible_hash": "sha256:451a31c121a726230df5c1e9931aabb9aa246d12f094052b93bf766ee3e87d67",
@@ -2673,7 +6160,7 @@
           "inline:style": 5,
           "inline:text": 426,
           "provenance:parser_normalized": 421,
-          "provenance:regex_supplement": 2
+          "provenance:source_supplement": 2
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:c4a28e5d73100726fadf83d1e925ea5951c6d9fac1b8ca4a8509395ca7ebb75b",
@@ -2689,8 +6176,8 @@
         },
         "a_semantic_summary_hashes": {},
         "b_semantic_summary_hashes": {
-          "summary:gaiji.marker": "sha256:bbc1e198d0ec63eb98e491db6066e1b89532b82bc64e7d5f625772da4fda0a7b",
-          "summary:ruby.basic": "sha256:efa21f01ab8c001e52d9a70e18cd89592e697c6b81eae3aaf10f64f32c2d8574"
+          "summary:gaiji.marker": "sha256:e80d80cbbce75fde603b14aa70d0b1fdd09289a5783b7e4677080389cf9cea35",
+          "summary:ruby.basic": "sha256:fa74155c1316b90e0212ee5f5a29ae41fd4069bf9af24d9207d2355f092c9535"
         },
         "semantic_summary_hashes_differ": {
           "summary:gaiji.marker": true,
@@ -2708,7 +6195,7 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:faf713054c1986f08a5b036a5c375d74533aa18a9f44df541a75e6996f5ea07b",
-        "b_structure_hash": "sha256:d32939d6dd4e98d54197acd65008ad4991b986901adc745c56e565dd24785301",
+        "b_structure_hash": "sha256:02dd588039338de98aa6855e21d204212bc15c5bba9d75f545683cb7e09efe1e",
         "a_visible_hash": "sha256:d4f087542456be4c05e5d6e757075b24038f86baf62a7eb49765c6e22e3f4c1b",
         "b_visible_hash": "sha256:6e047187b6239fc54bb899543ce45710a494fd70a1bf228ba524e8fcaccee7da",
         "a_normalized_visible_hash": "sha256:4182234bcb98ffc28002d52b719c918857fa24a12f64e430f54bc0ee9909cd17",
@@ -2742,7 +6229,7 @@
           "inline:style": 11,
           "inline:text": 261,
           "provenance:parser_normalized": 246,
-          "provenance:regex_supplement": 4
+          "provenance:source_supplement": 4
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -2758,7 +6245,7 @@
         },
         "a_semantic_summary_hashes": {},
         "b_semantic_summary_hashes": {
-          "summary:ruby.basic": "sha256:7d02a9d3adb35d89627ee24aab5b1dc0a4f1d88abd3e906477166b2bfa67b703"
+          "summary:ruby.basic": "sha256:9a2e810a6be6e4d0c5b2fc3296a6aea04224e04f85102e388fd24a8334805955"
         },
         "semantic_summary_hashes_differ": {
           "summary:ruby.basic": true
@@ -2771,7 +6258,7 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:a1668b58d652063c42d3b24e495aa2cbc052be8cb423015446b9c60221975b6a",
-        "b_structure_hash": "sha256:586a74118529121c1618af9bf6a30e010cbba0ee0c60ee996e8a40a7880e30fd",
+        "b_structure_hash": "sha256:83e6738274e06feacc4d0ecc920013ec9b45678dec655ca69d3490fd8002ff9a",
         "a_visible_hash": "sha256:700cb5653cbcafa46347928b7f1c2d869693139ffaef5ab5d141588eff7e62de",
         "b_visible_hash": "sha256:49e905e4e6077e7652e5d9f8ae4444365548b96db93f434f9412ed4826b22daf",
         "a_normalized_visible_hash": "sha256:596f720c5c98fb03d7b332dacd0ccdd9293e9d43a828d84a86174174794676f0",
@@ -2802,7 +6289,7 @@
           "inline:style": 2,
           "inline:text": 425,
           "provenance:parser_normalized": 423,
-          "provenance:regex_supplement": 3
+          "provenance:source_supplement": 3
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -2818,7 +6305,7 @@
         },
         "a_semantic_summary_hashes": {},
         "b_semantic_summary_hashes": {
-          "summary:ruby.basic": "sha256:8bdc120bce207fda0e0a326ca874b67cf860a2c4178e0fdcc114509acea9a912"
+          "summary:ruby.basic": "sha256:86dd98c73877a2d09298cb54ab6502ca77a72e787287c0b090225da41d5ffa17"
         },
         "semantic_summary_hashes_differ": {
           "summary:ruby.basic": true
@@ -2831,7 +6318,7 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:de1f99b2d6497de4f51408ae45ff5c1600f4eff1e7cfc799236dee51f6475a76",
-        "b_structure_hash": "sha256:738273075f33e22c4ba3b05139edbfafb683efa3e3766ce1589247a5512b6027",
+        "b_structure_hash": "sha256:905578aad0c8be37c7bdb9f63c883f45091e928b08e7f2d6530dad65d0b0d6ef",
         "a_visible_hash": "sha256:0d87b07754efe115ad4915b0b1571915a3990d03b17adc746764877708f4770b",
         "b_visible_hash": "sha256:67281e3a5c65a163630de2c8bf256b448029418537818faf1c8caa929f8fb057",
         "a_normalized_visible_hash": "sha256:902c3df30001b2b9bfcb1e8113afc06abaa9c0227327ccdb11d6dcb6ca4b8644",
@@ -2862,7 +6349,7 @@
           "inline:style": 5,
           "inline:text": 391,
           "provenance:parser_normalized": 386,
-          "provenance:regex_supplement": 1
+          "provenance:source_supplement": 1
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -2878,7 +6365,7 @@
         },
         "a_semantic_summary_hashes": {},
         "b_semantic_summary_hashes": {
-          "summary:ruby.basic": "sha256:b3f20db417810e963208eb87538b01b3f9fc927f80781798b3a7c98d83c0e834"
+          "summary:ruby.basic": "sha256:f4fbcb274572a1d6ed8c7c8e03eed3aeb8cd03460382a95084065d6e044e0e08"
         },
         "semantic_summary_hashes_differ": {
           "summary:ruby.basic": true
@@ -2891,7 +6378,7 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:dee12b26c5de15bbb31b484b78e84ab4164635a8caa2c14e8e3b55cb9daeca09",
-        "b_structure_hash": "sha256:7ba29a7a5ffe247bc9a2437e6f3c8abbd9f700c32dcdec44e535daea9f38a770",
+        "b_structure_hash": "sha256:853ffed30df036baadfb1d98753edc91be79d8cabcd5e3317f12d6822cd7fa3b",
         "a_visible_hash": "sha256:08916cfe0a0b4a6f99cc2a54afa6bab53c4c76c140121ae8984d49eab7652aef",
         "b_visible_hash": "sha256:d26ef2363103b05b49ebe98235cef4a422585653717c4e2370aa9434e1e9914e",
         "a_normalized_visible_hash": "sha256:9b126e14491e2cd338a46d963efc63a5f93fc2d399aabc05c48033d314134df1",
@@ -2922,7 +6409,7 @@
           "inline:style": 11,
           "inline:text": 250,
           "provenance:parser_normalized": 239,
-          "provenance:regex_supplement": 32
+          "provenance:source_supplement": 32
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -2938,7 +6425,7 @@
         },
         "a_semantic_summary_hashes": {},
         "b_semantic_summary_hashes": {
-          "summary:ruby.basic": "sha256:9946c9ba736c64525fca9e5e7dc65de9aca7f13d085b7008e888befdab7a96c9"
+          "summary:ruby.basic": "sha256:7d7813b825f67be09b93d7a06c7c294819fb00ab0480b4d29d01b4d4b13e5a01"
         },
         "semantic_summary_hashes_differ": {
           "summary:ruby.basic": true
@@ -2951,7 +6438,7 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": true,
         "a_structure_hash": "sha256:d98e55e2b34ca491370e8c3ca09b815626685abef88fd98760ace21efe6ef6da",
-        "b_structure_hash": "sha256:47f7f7d1aa4f82a66a699c6fbd4de1c64ccdfb927ce5d4f982733b7a7c4163cb",
+        "b_structure_hash": "sha256:4622e8daf2e34ebf107d0b464ea156c95515f790cad200580d7ba7d2e09b6c2b",
         "a_visible_hash": "sha256:8f9a8f8dc5caf1bd980940c11e1b56b2e024c98b8104bd5782c1fc54471f5bdb",
         "b_visible_hash": "sha256:0ea745bff04b9629b8a293959ce182f7c8f97f165b5c1e16cecfd4cb8db5f44c",
         "a_normalized_visible_hash": "sha256:fa1e41803158798cfcc0b07d4848dc2dc13213aa8e0823fa039181325b35ef96",
@@ -2986,7 +6473,7 @@
           "inline:ruby": 143,
           "inline:text": 327,
           "provenance:parser_normalized": 327,
-          "provenance:regex_supplement": 12
+          "provenance:source_supplement": 12
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:de8b0489fe2d3f48c12771931c4ac03bbc613255f0de1b14c087110e191c814f",
@@ -3002,8 +6489,8 @@
         },
         "a_semantic_summary_hashes": {},
         "b_semantic_summary_hashes": {
-          "summary:gaiji.marker": "sha256:12777376f7eba1a7061f2d3ff1af829fa30a181e86d6d91a246f32845964d177",
-          "summary:ruby.basic": "sha256:24db367b89c2c5cbcebb8f6a22f043d984d173265c862264c40420e347011601"
+          "summary:gaiji.marker": "sha256:30330ecd5756130aa82389ef74a5136759c130f876173474d3e1b93cc58ab5ed",
+          "summary:ruby.basic": "sha256:6ff1b67d26e34e711ada789f71c7ef059a594def13ff288213b3cb8ed7709b87"
         },
         "semantic_summary_hashes_differ": {
           "summary:gaiji.marker": true,
@@ -3021,7 +6508,7 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:4c83d03c13e8dafd589de0b6cdf6af45b2484dba3f8bb3ca7b69cc7011c9db0a",
-        "b_structure_hash": "sha256:66b7b1444da0df956b2bf0801ac3a71fdca39615e2a68ad00d59c994e1f38abf",
+        "b_structure_hash": "sha256:ee9d166857e5b38c37ea946d3936516bbb19a957be36173674e95f6b3642b599",
         "a_visible_hash": "sha256:986e664c9bbac2a6bbc6088597b547f9274c5a8c0c2d1b8f07f6c5f68b9d928a",
         "b_visible_hash": "sha256:a4857b7818d1de88c8bfea35e873840cca62f20081816ea01a724595d5bed5a3",
         "a_normalized_visible_hash": "sha256:6e17c795880d6962fdd342399cacaed7d482f3b10d50810161febe94bc261026",
@@ -3052,7 +6539,7 @@
           "inline:style": 3,
           "inline:text": 334,
           "provenance:parser_normalized": 331,
-          "provenance:regex_supplement": 4
+          "provenance:source_supplement": 4
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -3068,7 +6555,7 @@
         },
         "a_semantic_summary_hashes": {},
         "b_semantic_summary_hashes": {
-          "summary:ruby.basic": "sha256:27990cdfa69d397057bc52946f6e9712fe346e6126a0d911b63490da6de785e1"
+          "summary:ruby.basic": "sha256:817f08ab4066312279ad18e3621e8daacae0131432ea7a64ca1045dc95647a5c"
         },
         "semantic_summary_hashes_differ": {
           "summary:ruby.basic": true
@@ -3140,7 +6627,7 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:da4f5d363e8acf2e53b192d07432439c3a19595595f703e4b9d282cb060e9475",
-        "b_structure_hash": "sha256:11a04cfcb3e5e01fe708d1095b87e7a540136bd174d44f1c01e885d67d15fb09",
+        "b_structure_hash": "sha256:516710bb0f4416bf72ed11c090ac31d2bc8773365f0984c9b6762a9d162b0903",
         "a_visible_hash": "sha256:624dd0f2eead3aee46de4148a9615ab43f7865321ae1181e6d99e167d055058e",
         "b_visible_hash": "sha256:13f959bb047cec849084a242d59ec9046370dfecf3e7ea20405658b5a48b8b86",
         "a_normalized_visible_hash": "sha256:00cc09d9388a6bf431f5c7fc8d5a09cd365aa5d97f974421edc2f8dedafd07fc",
@@ -3177,7 +6664,7 @@
           "inline:style": 6,
           "inline:text": 473,
           "provenance:parser_normalized": 467,
-          "provenance:regex_supplement": 3
+          "provenance:source_supplement": 3
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:b51076c90b13a137741b83b1189e0aa200faed55cc9b6dd1f645ba1c1a145409",
@@ -3193,8 +6680,8 @@
         },
         "a_semantic_summary_hashes": {},
         "b_semantic_summary_hashes": {
-          "summary:gaiji.marker": "sha256:f6c9e69340ceca75ab952539550290c558079a8c4caaf0fce7c53ee77860939c",
-          "summary:ruby.basic": "sha256:165c394fe7e0272f9d1a430fcee6861d247a617722fa6fc18f80f5811378dae9"
+          "summary:gaiji.marker": "sha256:f6cdecd836c93dacab6f4fe5643c21b6c459c8865273156217af5977ef671d4a",
+          "summary:ruby.basic": "sha256:770f16761583ad5385922e2c6302cf60659a3fe796d36a51cb127ac6ceb8e076"
         },
         "semantic_summary_hashes_differ": {
           "summary:gaiji.marker": true,
@@ -3464,7 +6951,7 @@
         "visible_text_differs": false,
         "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:37bf524ec3fadcbf70527558305bd295b47e11b36251cb6e8433e29469583756",
-        "b_structure_hash": "sha256:3f252d55a8c47f000322cc2f1e2efb3944cae7073a31999e8d6c01a1d1b67045",
+        "b_structure_hash": "sha256:d1a75553f453f825b326a2eee7c7a1376c0fcb983aa7aaec35577b1b262cb2f9",
         "a_visible_hash": "sha256:13bed62a2ae5e49f8b7a5c6d72fcb454463571c638af1a515dd14b5520dee8d9",
         "b_visible_hash": "sha256:13bed62a2ae5e49f8b7a5c6d72fcb454463571c638af1a515dd14b5520dee8d9",
         "a_normalized_visible_hash": "sha256:a54aead971789ce4936494f096b19acbe128e99143de947110ae1d1cd1e64b98",
@@ -3498,7 +6985,7 @@
           "inline:style": 1,
           "inline:text": 196,
           "provenance:parser_normalized": 195,
-          "provenance:regex_supplement": 1
+          "provenance:source_supplement": 1
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -3515,7 +7002,7 @@
         "a_semantic_summary_hashes": {},
         "b_semantic_summary_hashes": {
           "summary:gaiji.marker": "sha256:e510a4c3ae3278a9145ba32d3c54d7063dc123920acd12665be5135eeb354055",
-          "summary:ruby.basic": "sha256:38131d29f981c226557dc2c5f9ad5f28d4d9492e4a48cf1bd8a2ef28ef477077"
+          "summary:ruby.basic": "sha256:710a0a27c987922d95a49470b7bf07abfd2f5408299c258a5c6e97dc23626718"
         },
         "semantic_summary_hashes_differ": {
           "summary:gaiji.marker": true,
@@ -3529,7 +7016,7 @@
         "visible_text_differs": false,
         "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:105edc5084cd58d3b359daeef23b84872c56fef0fb0a00baa390a070ea459aa4",
-        "b_structure_hash": "sha256:1c6755f2fd0f6aa3a252394cf2592e2892d45aefd3c8b28b39b5219b501e1cb4",
+        "b_structure_hash": "sha256:598a8573bc4921105f9c036c7b9c4417c5b3ed9cd4fc0b4f8050967ee2559f86",
         "a_visible_hash": "sha256:b71175d2bfd425567d9da159f73a76d6ac8c292099fbec8535be0a0516858069",
         "b_visible_hash": "sha256:b71175d2bfd425567d9da159f73a76d6ac8c292099fbec8535be0a0516858069",
         "a_normalized_visible_hash": "sha256:58e258a457f3d0002376b26d3276ecaa01900b2abb72067166e71355c6774b16",
@@ -3563,7 +7050,7 @@
           "inline:style": 3,
           "inline:text": 172,
           "provenance:parser_normalized": 169,
-          "provenance:regex_supplement": 2
+          "provenance:source_supplement": 2
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -3580,7 +7067,7 @@
         "a_semantic_summary_hashes": {},
         "b_semantic_summary_hashes": {
           "summary:gaiji.marker": "sha256:0fa119624a47d42c5608463d2fe6c215117e0062e3103be14ff60dbb9c745f0d",
-          "summary:ruby.basic": "sha256:152532395fd86b8b2adaa0a255481b22bb60c455eec580081b8a02c4068c6722"
+          "summary:ruby.basic": "sha256:1c64c03642ba5c1541320b764496e83ee69be152680a96a3febb3b220476a4fe"
         },
         "semantic_summary_hashes_differ": {
           "summary:gaiji.marker": true,

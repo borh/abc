@@ -96,8 +96,8 @@
         "retokenized_count",
         "parser_nodes",
         "parser_normalized_nodes",
-        "regex_supplement_nodes",
-        "regex_fallback_nodes",
+        "source_supplement_nodes",
+        "source_fallback_nodes",
         "fallback_used",
         "fallback_reason"
       ],
@@ -119,8 +119,8 @@
         "retokenized_count": { "type": "integer", "minimum": 0 },
         "parser_nodes": { "type": "integer", "minimum": 0 },
         "parser_normalized_nodes": { "type": "integer", "minimum": 0 },
-        "regex_supplement_nodes": { "type": "integer", "minimum": 0 },
-        "regex_fallback_nodes": { "type": "integer", "minimum": 0 },
+        "source_supplement_nodes": { "type": "integer", "minimum": 0 },
+        "source_fallback_nodes": { "type": "integer", "minimum": 0 },
         "fallback_used": { "type": "boolean" },
         "fallback_reason": { "enum": ["none", "projection_mismatch", "large_body"] }
       }

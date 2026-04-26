@@ -56,8 +56,8 @@ pub struct AdapterMetrics {
     pub retokenized_count: usize,
     pub parser_nodes: usize,
     pub parser_normalized_nodes: usize,
-    pub regex_supplement_nodes: usize,
-    pub regex_fallback_nodes: usize,
+    pub source_supplement_nodes: usize,
+    pub source_fallback_nodes: usize,
     pub fallback: FallbackDecision,
 }
 
@@ -97,8 +97,8 @@ impl AdapterMetrics {
             retokenized_count: parts.retokenized_count,
             parser_nodes: parts.provenance.parser,
             parser_normalized_nodes: parts.provenance.parser_normalized,
-            regex_supplement_nodes: parts.provenance.regex_supplement,
-            regex_fallback_nodes: parts.provenance.regex_fallback,
+            source_supplement_nodes: parts.provenance.source_supplement,
+            source_fallback_nodes: parts.provenance.source_fallback,
             fallback: parts.fallback,
         }
     }
@@ -121,8 +121,8 @@ impl AdapterMetrics {
             "retokenized_count": self.retokenized_count,
             "parser_nodes": self.parser_nodes,
             "parser_normalized_nodes": self.parser_normalized_nodes,
-            "regex_supplement_nodes": self.regex_supplement_nodes,
-            "regex_fallback_nodes": self.regex_fallback_nodes,
+            "source_supplement_nodes": self.source_supplement_nodes,
+            "source_fallback_nodes": self.source_fallback_nodes,
             "fallback_used": self.fallback.used,
             "fallback_reason": self.fallback.reason,
         })
@@ -176,8 +176,8 @@ mod tests {
             retokenized_count: 14,
             parser_nodes: 15,
             parser_normalized_nodes: 16,
-            regex_supplement_nodes: 17,
-            regex_fallback_nodes: 18,
+            source_supplement_nodes: 17,
+            source_fallback_nodes: 18,
             fallback: FallbackDecision {
                 used: true,
                 reason: FallbackReason::ProjectionMismatch,
@@ -188,6 +188,6 @@ mod tests {
             metrics.to_json()["parse_body_strategy"],
             "separator_fallback"
         );
-        assert_eq!(metrics.to_json()["regex_supplement_nodes"], 17);
+        assert_eq!(metrics.to_json()["source_supplement_nodes"], 17);
     }
 }

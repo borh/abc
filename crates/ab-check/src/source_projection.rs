@@ -1,16 +1,5 @@
-use regex::Regex;
-
 pub fn comparison_lossy_body(txt: &str) -> String {
-    let gaiji = Regex::new(r"※(?:［＃([^］]+)］|\[#([^\]]+)\])").unwrap();
-    let explicit_ruby = Regex::new(r"｜([^《》\r\n]+)《[^》]+》").unwrap();
-    let ruby = Regex::new(r"｜?([^｜\s《》※［＃\[\]］、。，．「」『』（）()]+)《[^》]+》").unwrap();
-    let orphan_ruby = Regex::new(r"《[^》]+》").unwrap();
-    let command = Regex::new(r"［＃[^］]+］|\[#[^\]]+\]").unwrap();
-    let without_gaiji = gaiji.replace_all(txt, "");
-    let without_explicit_ruby = explicit_ruby.replace_all(&without_gaiji, "$1");
-    let without_ruby = ruby.replace_all(&without_explicit_ruby, "$1");
-    let without_orphan_ruby = orphan_ruby.replace_all(&without_ruby, "");
-    command.replace_all(&without_orphan_ruby, "").into_owned()
+    ab_source_syntax::comparison_lossy_body(txt).into_owned()
 }
 
 #[cfg(test)]
@@ -38,5 +27,23 @@ mod tests {
             comparison_lossy_body("ことを、※［＃「口＋愛」、第3水準1-15-23］《おくび》にも");
 
         assert_eq!(visible, "ことを、にも");
+    }
+
+    #[test]
+    fn comparison_lossy_body_removes_nested_gaiji_in_command() {
+        let visible = comparison_lossy_body(
+            "豌豆《ゑんどう》［＃「豌豆」は底本では「※［＃「足＋宛」、第3水準1-92-36］豆」］の大さ",
+        );
+
+        assert_eq!(visible, "豌豆の大さ");
+    }
+
+    #[test]
+    fn comparison_lossy_body_removes_unmatched_ruby_delimiters() {
+        let visible = comparison_lossy_body(
+            "今日｜民族観念［＃「民族観念」に傍点］と呼ぶ。悲憤｜慷慨《こうがい》も知悉《ちしつ》した",
+        );
+
+        assert_eq!(visible, "今日民族観念と呼ぶ。悲憤慷慨も知悉した");
     }
 }

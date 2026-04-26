@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "crates/ab-source-syntax",
     "crates/ab-ir",
     "crates/ab-index",
     "crates/ab-check",
@@ -20,6 +21,7 @@ license = "MIT OR Apache-2.0"
 [workspace.dependencies]
 anyhow = "1.0"
 ab-ir = { path = "crates/ab-ir" }
+ab-source-syntax = { path = "crates/ab-source-syntax" }
 chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4.5", features = ["derive"] }
 criterion = "0.8"

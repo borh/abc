@@ -8,7 +8,6 @@ mod metrics;
 mod parser;
 mod projection;
 mod source;
-mod source_syntax;
 
 use metrics::{AdapterMetrics, AdapterMetricsParts, FallbackDecision, FallbackReason};
 use parser::ParsedSource;
@@ -176,7 +175,7 @@ mod tests {
         assert!(metrics["tokenized_count"].as_u64().unwrap() > 0);
         assert!(metrics["retokenized_count"].as_u64().unwrap() > 0);
         assert!(metrics["parser_normalized_nodes"].as_u64().unwrap() > 0);
-        assert!(metrics["regex_supplement_nodes"].as_u64().unwrap() > 0);
+        assert!(metrics["source_supplement_nodes"].as_u64().unwrap() > 0);
         assert!(
             value["meta"]["semantic_summary"]["syntax"]
                 .as_object()

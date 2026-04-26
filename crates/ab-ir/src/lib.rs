@@ -95,8 +95,8 @@ pub enum RubyPlacement {
 pub enum Provenance {
     Parser,
     ParserNormalized,
-    RegexSupplement,
-    RegexFallback,
+    SourceSupplement,
+    SourceFallback,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -108,8 +108,8 @@ pub struct ProjectedText {
 pub struct ProvenanceCounts {
     pub parser: usize,
     pub parser_normalized: usize,
-    pub regex_supplement: usize,
-    pub regex_fallback: usize,
+    pub source_supplement: usize,
+    pub source_fallback: usize,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -421,8 +421,8 @@ fn collect_provenance(value: &Inline, counts: &mut ProvenanceCounts) {
     match inline_provenance(value) {
         Provenance::Parser => counts.parser += 1,
         Provenance::ParserNormalized => counts.parser_normalized += 1,
-        Provenance::RegexSupplement => counts.regex_supplement += 1,
-        Provenance::RegexFallback => counts.regex_fallback += 1,
+        Provenance::SourceSupplement => counts.source_supplement += 1,
+        Provenance::SourceFallback => counts.source_fallback += 1,
     }
     if let Inline::Style { content, .. } = value {
         for child in content {
@@ -464,8 +464,8 @@ impl Provenance {
         match self {
             Self::Parser => "parser",
             Self::ParserNormalized => "parser_normalized",
-            Self::RegexSupplement => "regex_supplement",
-            Self::RegexFallback => "regex_fallback",
+            Self::SourceSupplement => "source_supplement",
+            Self::SourceFallback => "source_fallback",
         }
     }
 }
@@ -769,13 +769,13 @@ mod tests {
             content: vec![Inline::ruby_with_provenance(
                 "",
                 "わがはい",
-                Provenance::RegexSupplement,
+                Provenance::SourceSupplement,
             )],
         }];
 
         let json = blocks_to_aat_json(&blocks);
 
-        assert_eq!(json[0]["content"][0]["x-provenance"], "regex_supplement");
-        assert_eq!(provenance_counts(&blocks).regex_supplement, 1);
+        assert_eq!(json[0]["content"][0]["x-provenance"], "source_supplement");
+        assert_eq!(provenance_counts(&blocks).source_supplement, 1);
     }
 }

@@ -1,5 +1,4 @@
 use anyhow::Result;
-use regex::Regex;
 use serde::Serialize;
 use serde_json::Value;
 use unicode_normalization::UnicodeNormalization;
@@ -100,42 +99,24 @@ impl Property for RubyCompleteness {
             .iter()
             .filter_map(|(_, node)| node.get("reading").and_then(Value::as_str))
             .collect::<Vec<_>>();
-        let marker = Regex::new(r"《([^》]+)》").unwrap();
-        for (line_idx, line) in body_text(txt).lines().enumerate() {
-            for capture in marker.captures_iter(line) {
-                if inside_editor_note(line, capture.get(0).unwrap().start()) {
-                    continue;
-                }
-                if follows_gaiji_marker(line, capture.get(0).unwrap().start()) {
-                    continue;
-                }
-                let reading = capture.get(1).unwrap().as_str();
-                if !readings.contains(&reading) {
-                    return Err(violation(
-                        self.name(),
-                        format!(
-                            "Ruby marker on line {} has no corresponding AAT ruby node",
-                            line_idx + 1
-                        ),
-                        Some(line_idx + 1),
-                        None,
-                        "heuristic",
-                    ));
-                }
+        let annotations = ab_source_syntax::source_annotations_for_validation(body_text(txt));
+        for marker in annotations.ruby_readings {
+            let reading = marker.value;
+            if !readings.contains(&reading) {
+                return Err(violation(
+                    self.name(),
+                    format!(
+                        "Ruby marker on line {} has no corresponding AAT ruby node",
+                        marker.line
+                    ),
+                    Some(marker.line),
+                    None,
+                    "heuristic",
+                ));
             }
         }
         Ok(())
     }
-}
-
-fn follows_gaiji_marker(line: &str, offset: usize) -> bool {
-    let before = &line[..offset];
-    before
-        .rfind("※［＃")
-        .is_some_and(|start| before[start..].ends_with('］'))
-        || before
-            .rfind("※[#")
-            .is_some_and(|start| before[start..].ends_with(']'))
 }
 
 pub fn body_text(text: &str) -> &str {
@@ -174,10 +155,9 @@ impl Property for GaijiResolution {
     }
 
     fn check(&self, txt: &str, aat: &Value) -> Result<(), PropertyViolation> {
-        let source_count = Regex::new(r"※(?:［＃[^］]+］|\[#[^\]]+\])")
-            .unwrap()
-            .find_iter(body_text(txt))
-            .count();
+        let source_count = ab_source_syntax::source_annotations_for_validation(body_text(txt))
+            .gaiji_descriptions
+            .len();
         let gaiji_nodes = inline_nodes_by_kind(aat, "gaiji");
         if gaiji_nodes.len() < source_count {
             return Err(violation(
@@ -253,16 +233,6 @@ fn violation(
     }
 }
 
-fn inside_editor_note(line: &str, offset: usize) -> bool {
-    let before = &line[..offset];
-    let start = before.rfind("［＃");
-    let end = before.rfind('］');
-    let ascii_start = before.rfind("[#");
-    let ascii_end = before.rfind(']');
-    start.is_some_and(|start| end.is_none_or(|end| end < start))
-        || ascii_start.is_some_and(|start| ascii_end.is_none_or(|end| end < start))
-}
-
 pub fn source_visible_text(txt: &str) -> String {
     // Compatibility wrapper for existing callers. New code should use
     // source_projection::comparison_lossy_body so the lossy semantics are named.
@@ -312,5 +282,18 @@ mod tests {
             source_visible_text("ことを、※［＃「口＋愛」、第3水準1-15-23］《おくび》にも");
 
         assert_eq!(visible, "ことを、にも");
+    }
+
+    #[test]
+    fn gaiji_resolution_ignores_gaiji_examples_inside_command_notes() {
+        let txt = "豌豆《ゑんどう》［＃「豌豆」は底本では「※［＃「足＋宛」、第3水準1-92-36］豆」］";
+        let aat = serde_json::json!({
+            "blocks": [{
+                "kind": "paragraph",
+                "content": [{"kind": "text", "value": "豌豆"}]
+            }]
+        });
+
+        assert!(GaijiResolution.check(txt, &aat).is_ok());
     }
 }

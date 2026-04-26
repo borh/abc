@@ -106,8 +106,8 @@ fn summarizes_aat_metrics() {
               "fallback_build_ms": 0.0,
               "parser_nodes": 13,
               "parser_normalized_nodes": 14,
-              "regex_supplement_nodes": 15,
-              "regex_fallback_nodes": 16,
+              "source_supplement_nodes": 15,
+              "source_fallback_nodes": 16,
               "fallback_used": false,
               "fallback_reason": "none"
             }
@@ -121,8 +121,8 @@ fn summarizes_aat_metrics() {
     assert_eq!(summary.works, 1);
     assert_eq!(summary.fallbacks, 0);
     assert_eq!(summary.stage_totals_ms["tokenize"], 3.0);
-    assert_eq!(summary.node_totals["regex_supplement"], 15);
-    assert_eq!(summary.node_totals["regex_fallback"], 16);
+    assert_eq!(summary.node_totals["source_supplement"], 15);
+    assert_eq!(summary.node_totals["source_fallback"], 16);
     assert_eq!(summary.slowest_works[0].work_id, "one");
     assert_eq!(summary.slowest_works[0].stages_ms["projection_check"], 7.0);
 }
@@ -208,8 +208,8 @@ fn records_ruby_gaiji_and_provenance_semantics() {
           "blocks": [
             {"kind": "paragraph", "content": [
               {"kind": "text", "value": "吾輩", "x-provenance": "parser_normalized"},
-              {"kind": "ruby", "base": "", "reading": "われ", "x-provenance": "regex_supplement"},
-              {"kind": "gaiji", "description": "「口＋世」、U+546D", "resolved": "", "x-provenance": "regex_supplement"}
+              {"kind": "ruby", "base": "", "reading": "われ", "x-provenance": "source_supplement"},
+              {"kind": "gaiji", "description": "「口＋世」、U+546D", "resolved": "", "x-provenance": "source_supplement"}
             ]}
           ],
           "meta": {"adapter": "b"}
@@ -221,7 +221,7 @@ fn records_ruby_gaiji_and_provenance_semantics() {
     assert_eq!(summary.common_aat, 1);
     assert_eq!(summary.structural_differences.len(), 1);
     assert_eq!(summary.a_semantic_totals["inline:ruby"], 1);
-    assert_eq!(summary.b_semantic_totals["provenance:regex_supplement"], 2);
+    assert_eq!(summary.b_semantic_totals["provenance:source_supplement"], 2);
     assert_eq!(
         summary.structural_differences[0].b_semantic_counts["provenance:parser_normalized"],
         1

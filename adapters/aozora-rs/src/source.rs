@@ -7,8 +7,6 @@ use anyhow::Result;
 use encoding_rs::SHIFT_JIS;
 use sha2::{Digest, Sha256};
 
-use crate::source_syntax;
-
 #[derive(Debug)]
 pub struct DecodedSource {
     pub text: String,
@@ -119,11 +117,11 @@ pub(crate) fn starts_with_separator(text: &str) -> bool {
 }
 
 pub(crate) fn source_visible_text(txt: &str) -> Cow<'_, str> {
-    source_syntax::project_lossy_visible_text(txt)
+    ab_source_syntax::comparison_lossy_body(txt)
 }
 
 pub(crate) fn remove_bottom_note_fragments(txt: &str) -> String {
-    source_syntax::remove_bottom_note_fragments(txt)
+    ab_source_syntax::remove_bottom_note_fragments(txt)
 }
 
 fn hex_sha256(bytes: &[u8]) -> String {

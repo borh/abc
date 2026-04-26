@@ -5,13 +5,13 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
+ab-source-syntax.workspace = true
 anyhow.workspace = true
 clap.workspace = true
 encoding_rs.workspace = true
 flate2.workspace = true
 jsonschema.workspace = true
 rayon.workspace = true
-regex.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true

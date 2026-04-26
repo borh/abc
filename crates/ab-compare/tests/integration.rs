@@ -106,12 +106,14 @@ fn summarizes_aat_metrics() {
               "aat_build_ms": 6.0,
               "projection_check_ms": 7.0,
               "fallback_build_ms": 0.0,
+              "source_bytes": 1234,
+              "validation_body_bytes": 1000,
               "parser_nodes": 13,
               "parser_normalized_nodes": 14,
               "source_supplement_nodes": 15,
               "source_fallback_nodes": 16,
-              "fallback_used": false,
-              "fallback_reason": "none"
+              "fallback_used": true,
+              "fallback_reason": "large_body"
             }
           }
         }"#,
@@ -121,7 +123,8 @@ fn summarizes_aat_metrics() {
     let summary = ab_compare::metrics::summarize_aat_metrics(root).unwrap();
     assert_eq!(summary.adapter, "aozora-rs");
     assert_eq!(summary.works, 1);
-    assert_eq!(summary.fallbacks, 0);
+    assert_eq!(summary.fallbacks, 1);
+    assert_eq!(summary.fallback_reason_counts["large_body"], 1);
     assert_eq!(summary.stage_totals_ms["tokenize"], 3.0);
     assert_eq!(summary.node_totals["source_supplement"], 15);
     assert_eq!(summary.node_totals["source_fallback"], 16);
@@ -131,6 +134,15 @@ fn summarizes_aat_metrics() {
     assert_eq!(summary.source_supplement_hotspots[0].nodes, 15);
     assert_eq!(summary.source_fallback_hotspots[0].work_id, "one");
     assert_eq!(summary.source_fallback_hotspots[0].nodes, 16);
+    assert_eq!(summary.fallback_hotspots[0].work_id, "one");
+    assert_eq!(summary.fallback_hotspots[0].reason, "large_body");
+    assert_eq!(summary.fallback_hotspots[0].source_bytes, 1234);
+    assert_eq!(summary.fallback_hotspots[0].validation_body_bytes, 1000);
+    assert_eq!(summary.fallback_hotspots[0].parser_nodes, 13);
+    assert_eq!(
+        summary.fallback_hotspots[0].dominant_stage,
+        "projection_check"
+    );
 }
 
 #[test]
@@ -186,6 +198,7 @@ fn triage_report_buckets_differences_by_feature_and_metrics() {
         works: 2,
         fallbacks: 1,
         stage_totals_ms: BTreeMap::new(),
+        fallback_reason_counts: BTreeMap::from([("projection_mismatch".to_owned(), 1)]),
         node_totals: BTreeMap::from([
             ("source_supplement".to_owned(), 12),
             ("source_fallback".to_owned(), 1),
@@ -204,6 +217,18 @@ fn triage_report_buckets_differences_by_feature_and_metrics() {
             total_ms: 11.0,
             fallback_used: true,
             stages_ms: BTreeMap::new(),
+        }],
+        fallback_hotspots: vec![ab_compare::metrics::FallbackHotspot {
+            work_id: "two".to_owned(),
+            reason: "projection_mismatch".to_owned(),
+            source_bytes: 2048,
+            validation_body_bytes: 1024,
+            parser_nodes: 20,
+            parser_normalized_nodes: 3,
+            source_fallback_nodes: 1,
+            total_ms: 11.0,
+            dominant_stage: "fallback_build".to_owned(),
+            stages_ms: BTreeMap::from([("fallback_build".to_owned(), 8.0)]),
         }],
     };
 
@@ -226,6 +251,17 @@ fn triage_report_buckets_differences_by_feature_and_metrics() {
         1
     );
     assert_eq!(report.fallbacks.as_ref().unwrap().works, 1);
+    assert_eq!(
+        report.fallbacks.as_ref().unwrap().by_reason["projection_mismatch"],
+        1
+    );
+    let fallback = &report.fallbacks.as_ref().unwrap().hotspots[0];
+    assert_eq!(fallback.work_id, "two");
+    assert_eq!(fallback.reason, "projection_mismatch");
+    assert_eq!(fallback.features, vec!["jisage_block"]);
+    assert_eq!(fallback.source_bytes, 2048);
+    assert_eq!(fallback.parser_nodes, 20);
+    assert_eq!(fallback.dominant_stage, "fallback_build");
     assert_eq!(report.source_supplements.as_ref().unwrap().total_nodes, 12);
 }
 

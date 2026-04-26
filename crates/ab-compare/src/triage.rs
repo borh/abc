@@ -47,7 +47,8 @@ pub struct SemanticSummaryTriage {
 pub struct FallbackTriage {
     pub works: usize,
     pub source_fallback_nodes: usize,
-    pub hotspots: Vec<Hotspot>,
+    pub by_reason: BTreeMap<String, usize>,
+    pub hotspots: Vec<FallbackHotspot>,
 }
 
 #[derive(Debug, Serialize)]
@@ -62,6 +63,21 @@ pub struct Hotspot {
     pub nodes: usize,
     pub total_ms: f64,
     pub fallback_used: bool,
+}
+
+#[derive(Debug, Serialize)]
+pub struct FallbackHotspot {
+    pub work_id: String,
+    pub reason: String,
+    pub features: Vec<String>,
+    pub source_bytes: usize,
+    pub validation_body_bytes: usize,
+    pub parser_nodes: usize,
+    pub parser_normalized_nodes: usize,
+    pub source_fallback_nodes: usize,
+    pub total_ms: f64,
+    pub dominant_stage: String,
+    pub stages_ms: BTreeMap<String, f64>,
 }
 
 pub fn build_triage_report(
@@ -101,14 +117,27 @@ pub fn build_triage_report(
     let fallbacks = metrics.map(|metrics| FallbackTriage {
         works: metrics.fallbacks,
         source_fallback_nodes: *metrics.node_totals.get("source_fallback").unwrap_or(&0),
+        by_reason: metrics.fallback_reason_counts.clone(),
         hotspots: metrics
-            .source_fallback_hotspots
+            .fallback_hotspots
             .iter()
-            .map(|work| Hotspot {
+            .map(|work| FallbackHotspot {
                 work_id: work.work_id.clone(),
-                nodes: work.nodes,
+                reason: work.reason.clone(),
+                features: features
+                    .get(&work.work_id)
+                    .cloned()
+                    .unwrap_or_else(|| BTreeSet::from(["unindexed".to_owned()]))
+                    .into_iter()
+                    .collect(),
+                source_bytes: work.source_bytes,
+                validation_body_bytes: work.validation_body_bytes,
+                parser_nodes: work.parser_nodes,
+                parser_normalized_nodes: work.parser_normalized_nodes,
+                source_fallback_nodes: work.source_fallback_nodes,
                 total_ms: work.total_ms,
-                fallback_used: work.fallback_used,
+                dominant_stage: work.dominant_stage.clone(),
+                stages_ms: work.stages_ms.clone(),
             })
             .collect(),
     });

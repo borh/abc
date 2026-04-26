@@ -1,15 +1,15 @@
 {
-  "generated_at": "2026-04-26T12:56:02Z",
+  "generated_at": "2026-04-26T13:13:04Z",
   "corpus_hash": "sha256:25f5edcfab0f7b856cb24e5088de6ab68a61359eabfddb4b3add92049b09ce67",
   "aozora2": {
     "name": "aozora2",
-    "seconds": 16.838867,
+    "seconds": 16.865934,
     "reports": 17894,
     "failures": 385
   },
   "aozora_rs": {
     "name": "aozora-rs",
-    "seconds": 33.796086,
+    "seconds": 35.534298,
     "reports": 17894,
     "failures": 0
   },
@@ -2336,15 +2336,20 @@
     "adapter": "aozora-rs",
     "works": 17894,
     "fallbacks": 6870,
+    "fallback_reason_counts": {
+      "large_body": 271,
+      "projection_mismatch": 24,
+      "source_supplement_hotspot": 6575
+    },
     "stage_totals_ms": {
-      "aat_build": 7434.517424999991,
-      "body_selection": 539.0283439999988,
-      "decode": 2248.5127649999986,
-      "fallback_build": 8344.559207000035,
-      "projection_check": 2218.458669999995,
-      "retokenize": 2351.887969000027,
-      "scopenize": 1360.9076790000001,
-      "tokenize": 8091.607528999997
+      "aat_build": 7507.017909000026,
+      "body_selection": 538.4407619999997,
+      "decode": 2265.6427610000105,
+      "fallback_build": 8388.432771000016,
+      "projection_check": 2255.3776670000166,
+      "retokenize": 2343.3915020000313,
+      "scopenize": 1366.974168000003,
+      "tokenize": 8174.232650000031
     },
     "node_totals": {
       "parser": 1358303,
@@ -2355,322 +2360,322 @@
     "slowest_works": [
       {
         "work_id": "001529_50685",
-        "total_ms": 365.307269,
+        "total_ms": 392.32036000000005,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 52.626253,
-          "body_selection": 2.160281,
-          "decode": 8.35804,
-          "fallback_build": 59.507175,
+          "aat_build": 49.981889,
+          "body_selection": 2.26145,
+          "decode": 8.720305,
+          "fallback_build": 73.979943,
           "projection_check": 0.0,
-          "retokenize": 44.072535,
-          "scopenize": 14.929334,
-          "tokenize": 183.653651
+          "retokenize": 46.580109,
+          "scopenize": 22.137659,
+          "tokenize": 188.659005
         }
       },
       {
         "work_id": "001518_51731",
-        "total_ms": 215.92483700000003,
+        "total_ms": 231.569885,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 5.339914,
-          "body_selection": 0.240208,
-          "decode": 1.287689,
-          "fallback_build": 9.370421,
+          "aat_build": 5.9330490000000005,
+          "body_selection": 0.402347,
+          "decode": 1.4738170000000002,
+          "fallback_build": 8.665236,
           "projection_check": 0.0,
-          "retokenize": 3.2028529999999997,
-          "scopenize": 1.705715,
-          "tokenize": 194.778037
+          "retokenize": 4.5538799999999995,
+          "scopenize": 2.39691,
+          "tokenize": 208.144646
         }
       },
       {
         "work_id": "000311_2012",
-        "total_ms": 198.865892,
+        "total_ms": 213.49684000000002,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 9.944685,
-          "body_selection": 1.902024,
-          "decode": 6.501925000000001,
-          "fallback_build": 33.372977,
+          "aat_build": 14.667204,
+          "body_selection": 1.14472,
+          "decode": 6.261816,
+          "fallback_build": 30.15328,
           "projection_check": 0.0,
-          "retokenize": 2.266111,
-          "scopenize": 1.17732,
-          "tokenize": 143.70085
+          "retokenize": 3.113463,
+          "scopenize": 1.527917,
+          "tokenize": 156.62844
         }
       },
       {
         "work_id": "000810_52355",
-        "total_ms": 157.933579,
+        "total_ms": 172.87545,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 3.2047030000000003,
-          "body_selection": 0.255297,
-          "decode": 1.25542,
-          "fallback_build": 7.533846,
+          "aat_build": 3.1253029999999997,
+          "body_selection": 0.457946,
+          "decode": 1.668815,
+          "fallback_build": 9.366639,
           "projection_check": 0.0,
-          "retokenize": 1.5934160000000002,
-          "scopenize": 0.614765,
-          "tokenize": 143.476132
+          "retokenize": 1.397868,
+          "scopenize": 0.625485,
+          "tokenize": 156.233394
         }
       },
       {
         "work_id": "000118_1745",
-        "total_ms": 151.14471799999998,
-        "dominant_stage": "fallback_build",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 12.783652,
-          "body_selection": 1.833414,
-          "decode": 4.166675,
-          "fallback_build": 47.502527,
-          "projection_check": 0.0,
-          "retokenize": 30.64011,
-          "scopenize": 13.110819,
-          "tokenize": 41.107521
-        }
-      },
-      {
-        "work_id": "001562_56146",
-        "total_ms": 133.548386,
-        "dominant_stage": "fallback_build",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 25.591793000000003,
-          "body_selection": 1.105681,
-          "decode": 6.335915999999999,
-          "fallback_build": 44.238924,
-          "projection_check": 0.0,
-          "retokenize": 16.499579999999998,
-          "scopenize": 7.260078,
-          "tokenize": 32.516414
-        }
-      },
-      {
-        "work_id": "000077_1323",
-        "total_ms": 128.144563,
+        "total_ms": 142.397193,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 7.314768,
-          "body_selection": 0.657344,
-          "decode": 2.310391,
-          "fallback_build": 24.422193,
+          "aat_build": 11.868258,
+          "body_selection": 1.031761,
+          "decode": 3.595839,
+          "fallback_build": 40.464521000000005,
           "projection_check": 0.0,
-          "retokenize": 12.432345,
-          "scopenize": 7.617515,
-          "tokenize": 73.390007
-        }
-      },
-      {
-        "work_id": "000148_761",
-        "total_ms": 124.87098999999999,
-        "dominant_stage": "tokenize",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 7.861894,
-          "body_selection": 0.548696,
-          "decode": 1.994753,
-          "fallback_build": 9.011563,
-          "projection_check": 0.0,
-          "retokenize": 3.5708990000000003,
-          "scopenize": 1.745715,
-          "tokenize": 100.13747
-        }
-      },
-      {
-        "work_id": "001562_56145",
-        "total_ms": 118.801241,
-        "dominant_stage": "aat_build",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 33.971891,
-          "body_selection": 1.6212959999999998,
-          "decode": 5.3753150000000005,
-          "fallback_build": 33.294567,
-          "projection_check": 0.0,
-          "retokenize": 17.870548,
-          "scopenize": 9.852227,
-          "tokenize": 16.815397
+          "retokenize": 30.15624,
+          "scopenize": 12.972619,
+          "tokenize": 42.307955
         }
       },
       {
         "work_id": "001185_45210",
-        "total_ms": 115.94857599999999,
+        "total_ms": 136.190757,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 3.342822,
-          "body_selection": 0.395237,
-          "decode": 1.547287,
-          "fallback_build": 6.105658,
+          "aat_build": 5.001986,
+          "body_selection": 0.6263249999999999,
+          "decode": 2.002163,
+          "fallback_build": 9.002253,
           "projection_check": 0.0,
-          "retokenize": 1.771935,
-          "scopenize": 1.09934,
-          "tokenize": 101.686297
+          "retokenize": 2.27224,
+          "scopenize": 1.17092,
+          "tokenize": 116.11487
         }
       },
       {
-        "work_id": "001034_4823",
-        "total_ms": 111.71103199999999,
+        "work_id": "000077_1323",
+        "total_ms": 132.515898,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 10.952037,
-          "body_selection": 0.544706,
-          "decode": 1.881454,
-          "fallback_build": 17.66419,
+          "aat_build": 8.804523999999999,
+          "body_selection": 0.404376,
+          "decode": 2.254151,
+          "fallback_build": 24.652527,
           "projection_check": 0.0,
-          "retokenize": 11.74035,
-          "scopenize": 4.71502,
-          "tokenize": 64.213275
+          "retokenize": 16.516008,
+          "scopenize": 7.316297,
+          "tokenize": 72.568015
         }
       },
       {
-        "work_id": "001341_51302",
-        "total_ms": 102.320302,
+        "work_id": "001562_56146",
+        "total_ms": 128.939231,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 0.6202449999999999,
-          "body_selection": 0.075219,
-          "decode": 0.285328,
-          "fallback_build": 1.15839,
+          "aat_build": 22.255339,
+          "body_selection": 1.779625,
+          "decode": 6.524414,
+          "fallback_build": 36.031470000000006,
           "projection_check": 0.0,
-          "retokenize": 0.136879,
-          "scopenize": 0.114979,
-          "tokenize": 99.929262
+          "retokenize": 15.1308,
+          "scopenize": 7.247088,
+          "tokenize": 39.970495
+        }
+      },
+      {
+        "work_id": "001562_56145",
+        "total_ms": 118.584778,
+        "dominant_stage": "fallback_build",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 29.001389999999997,
+          "body_selection": 1.550567,
+          "decode": 5.228595,
+          "fallback_build": 35.735022,
+          "projection_check": 0.0,
+          "retokenize": 20.649342,
+          "scopenize": 10.109673,
+          "tokenize": 16.310188999999998
         }
       },
       {
         "work_id": "000255_45395",
-        "total_ms": 93.1173,
+        "total_ms": 106.246135,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 3.484391,
-          "body_selection": 0.365967,
-          "decode": 1.697906,
-          "fallback_build": 7.634555000000001,
+          "aat_build": 3.408281,
+          "body_selection": 0.638535,
+          "decode": 2.259121,
+          "fallback_build": 7.768763,
           "projection_check": 0.0,
-          "retokenize": 1.672856,
-          "scopenize": 0.742193,
-          "tokenize": 77.519432
+          "retokenize": 1.710025,
+          "scopenize": 0.805963,
+          "tokenize": 89.655447
         }
       },
       {
-        "work_id": "000148_56923",
-        "total_ms": 91.215026,
-        "dominant_stage": "fallback_build",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 7.326858,
-          "body_selection": 0.4069759999999999,
-          "decode": 2.286041,
-          "fallback_build": 28.744995999999997,
-          "projection_check": 0.0,
-          "retokenize": 20.336957,
-          "scopenize": 9.303611,
-          "tokenize": 22.809587
-        }
-      },
-      {
-        "work_id": "000148_58842",
-        "total_ms": 88.000503,
+        "work_id": "001034_4823",
+        "total_ms": 101.34902699999999,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 4.321422999999999,
-          "body_selection": 0.5441050000000001,
-          "decode": 1.764395,
-          "fallback_build": 13.607185,
+          "aat_build": 11.097335,
+          "body_selection": 0.5893349999999999,
+          "decode": 1.947013,
+          "fallback_build": 15.782364,
           "projection_check": 0.0,
-          "retokenize": 6.029948999999999,
-          "scopenize": 2.857155,
-          "tokenize": 58.876290999999995
+          "retokenize": 10.941006,
+          "scopenize": 4.735139,
+          "tokenize": 56.256834999999995
         }
       },
       {
-        "work_id": "000129_2084",
-        "total_ms": 83.631351,
+        "work_id": "001341_51302",
+        "total_ms": 96.878886,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 18.574983,
-          "body_selection": 0.945252,
-          "decode": 4.077484999999999,
-          "fallback_build": 17.471542,
+          "aat_build": 0.443506,
+          "body_selection": 0.0468,
+          "decode": 0.242158,
+          "fallback_build": 0.784174,
           "projection_check": 0.0,
-          "retokenize": 4.086026,
-          "scopenize": 2.113642,
-          "tokenize": 36.362421
+          "retokenize": 0.108589,
+          "scopenize": 0.091249,
+          "tokenize": 95.16241
+        }
+      },
+      {
+        "work_id": "000148_761",
+        "total_ms": 95.102301,
+        "dominant_stage": "tokenize",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 11.081234,
+          "body_selection": 0.527875,
+          "decode": 1.962494,
+          "fallback_build": 12.866749,
+          "projection_check": 0.0,
+          "retokenize": 4.68527,
+          "scopenize": 2.442529,
+          "tokenize": 61.53615
         }
       },
       {
         "work_id": "001750_57299",
-        "total_ms": 81.908435,
+        "total_ms": 91.258756,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 2.117562,
-          "body_selection": 0.172028,
-          "decode": 0.818983,
-          "fallback_build": 3.394372,
+          "aat_build": 2.767257,
+          "body_selection": 0.295157,
+          "decode": 4.085435,
+          "fallback_build": 5.347785,
           "projection_check": 0.0,
-          "retokenize": 1.402778,
-          "scopenize": 0.556075,
-          "tokenize": 73.446637
+          "retokenize": 1.985823,
+          "scopenize": 0.826303,
+          "tokenize": 75.950996
         }
       },
       {
-        "work_id": "001161_43624",
-        "total_ms": 80.453077,
+        "work_id": "000129_2084",
+        "total_ms": 90.848616,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 4.368892,
-          "body_selection": 0.512645,
-          "decode": 1.931204,
-          "fallback_build": 6.538704999999999,
+          "aat_build": 21.152287,
+          "body_selection": 1.219819,
+          "decode": 4.625330000000001,
+          "fallback_build": 17.036633,
           "projection_check": 0.0,
-          "retokenize": 1.1944,
-          "scopenize": 0.730804,
-          "tokenize": 65.17642699999999
+          "retokenize": 4.391832,
+          "scopenize": 2.9311749999999996,
+          "tokenize": 39.49154
         }
       },
       {
-        "work_id": "000050_43467",
-        "total_ms": 79.728433,
+        "work_id": "000255_47055",
+        "total_ms": 90.469562,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 9.903216,
-          "body_selection": 0.31616700000000003,
-          "decode": 1.11954,
-          "fallback_build": 13.122879,
+          "aat_build": 11.112165,
+          "body_selection": 0.938931,
+          "decode": 3.331742,
+          "fallback_build": 21.460405,
           "projection_check": 0.0,
-          "retokenize": 8.956174,
-          "scopenize": 4.530211,
-          "tokenize": 41.780246
+          "retokenize": 4.458902,
+          "scopenize": 2.022763,
+          "tokenize": 47.144654
+        }
+      },
+      {
+        "work_id": "000148_58842",
+        "total_ms": 89.108213,
+        "dominant_stage": "tokenize",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 4.503301,
+          "body_selection": 0.481986,
+          "decode": 1.871084,
+          "fallback_build": 11.739019,
+          "projection_check": 0.0,
+          "retokenize": 6.5891530000000005,
+          "scopenize": 2.970445,
+          "tokenize": 60.953225
+        }
+      },
+      {
+        "work_id": "000148_56923",
+        "total_ms": 88.352659,
+        "dominant_stage": "fallback_build",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 7.905382,
+          "body_selection": 0.616335,
+          "decode": 1.927333,
+          "fallback_build": 29.972842,
+          "projection_check": 0.0,
+          "retokenize": 20.526983,
+          "scopenize": 6.866011,
+          "tokenize": 20.537773
+        }
+      },
+      {
+        "work_id": "000148_782",
+        "total_ms": 87.567166,
+        "dominant_stage": "tokenize",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 17.003134,
+          "body_selection": 0.843643,
+          "decode": 2.818086,
+          "fallback_build": 19.032916,
+          "projection_check": 0.0,
+          "retokenize": 5.493082,
+          "scopenize": 2.889805,
+          "tokenize": 39.4865
         }
       },
       {
         "work_id": "000148_1746",
-        "total_ms": 78.954209,
+        "total_ms": 87.21187900000001,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 3.368631,
-          "body_selection": 0.530565,
-          "decode": 2.008913,
-          "fallback_build": 12.249406,
+          "aat_build": 5.213085,
+          "body_selection": 0.541966,
+          "decode": 2.0392219999999996,
+          "fallback_build": 11.493931,
           "projection_check": 0.0,
-          "retokenize": 7.371747,
-          "scopenize": 3.223233,
-          "tokenize": 50.201714
+          "retokenize": 7.390927,
+          "scopenize": 3.322021,
+          "tokenize": 57.210727000000006
         }
       }
     ],
@@ -2679,321 +2684,743 @@
       {
         "work_id": "001529_50685",
         "nodes": 162441,
-        "total_ms": 365.307269,
+        "total_ms": 392.32036000000005,
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 52.626253,
-          "body_selection": 2.160281,
-          "decode": 8.35804,
-          "fallback_build": 59.507175,
+          "aat_build": 49.981889,
+          "body_selection": 2.26145,
+          "decode": 8.720305,
+          "fallback_build": 73.979943,
           "projection_check": 0.0,
-          "retokenize": 44.072535,
-          "scopenize": 14.929334,
-          "tokenize": 183.653651
+          "retokenize": 46.580109,
+          "scopenize": 22.137659,
+          "tokenize": 188.659005
         }
       },
       {
         "work_id": "000118_1745",
         "nodes": 121193,
-        "total_ms": 151.14471799999998,
+        "total_ms": 142.397193,
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 12.783652,
-          "body_selection": 1.833414,
-          "decode": 4.166675,
-          "fallback_build": 47.502527,
+          "aat_build": 11.868258,
+          "body_selection": 1.031761,
+          "decode": 3.595839,
+          "fallback_build": 40.464521000000005,
           "projection_check": 0.0,
-          "retokenize": 30.64011,
-          "scopenize": 13.110819,
-          "tokenize": 41.107521
+          "retokenize": 30.15624,
+          "scopenize": 12.972619,
+          "tokenize": 42.307955
         }
       },
       {
         "work_id": "001562_56145",
         "nodes": 88671,
-        "total_ms": 118.801241,
+        "total_ms": 118.584778,
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 33.971891,
-          "body_selection": 1.6212959999999998,
-          "decode": 5.3753150000000005,
-          "fallback_build": 33.294567,
+          "aat_build": 29.001389999999997,
+          "body_selection": 1.550567,
+          "decode": 5.228595,
+          "fallback_build": 35.735022,
           "projection_check": 0.0,
-          "retokenize": 17.870548,
-          "scopenize": 9.852227,
-          "tokenize": 16.815397
+          "retokenize": 20.649342,
+          "scopenize": 10.109673,
+          "tokenize": 16.310188999999998
         }
       },
       {
         "work_id": "000148_56923",
         "nodes": 81294,
-        "total_ms": 91.215026,
+        "total_ms": 88.352659,
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 7.326858,
-          "body_selection": 0.4069759999999999,
-          "decode": 2.286041,
-          "fallback_build": 28.744995999999997,
+          "aat_build": 7.905382,
+          "body_selection": 0.616335,
+          "decode": 1.927333,
+          "fallback_build": 29.972842,
           "projection_check": 0.0,
-          "retokenize": 20.336957,
-          "scopenize": 9.303611,
-          "tokenize": 22.809587
+          "retokenize": 20.526983,
+          "scopenize": 6.866011,
+          "tokenize": 20.537773
         }
       },
       {
         "work_id": "000077_1323",
         "nodes": 73801,
-        "total_ms": 128.144563,
+        "total_ms": 132.515898,
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 7.314768,
-          "body_selection": 0.657344,
-          "decode": 2.310391,
-          "fallback_build": 24.422193,
+          "aat_build": 8.804523999999999,
+          "body_selection": 0.404376,
+          "decode": 2.254151,
+          "fallback_build": 24.652527,
           "projection_check": 0.0,
-          "retokenize": 12.432345,
-          "scopenize": 7.617515,
-          "tokenize": 73.390007
+          "retokenize": 16.516008,
+          "scopenize": 7.316297,
+          "tokenize": 72.568015
         }
       },
       {
         "work_id": "001562_56146",
         "nodes": 60923,
-        "total_ms": 133.548386,
+        "total_ms": 128.939231,
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 25.591793000000003,
-          "body_selection": 1.105681,
-          "decode": 6.335915999999999,
-          "fallback_build": 44.238924,
+          "aat_build": 22.255339,
+          "body_selection": 1.779625,
+          "decode": 6.524414,
+          "fallback_build": 36.031470000000006,
           "projection_check": 0.0,
-          "retokenize": 16.499579999999998,
-          "scopenize": 7.260078,
-          "tokenize": 32.516414
+          "retokenize": 15.1308,
+          "scopenize": 7.247088,
+          "tokenize": 39.970495
         }
       },
       {
         "work_id": "001034_4823",
         "nodes": 59093,
-        "total_ms": 111.71103199999999,
+        "total_ms": 101.34902699999999,
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 10.952037,
-          "body_selection": 0.544706,
-          "decode": 1.881454,
-          "fallback_build": 17.66419,
+          "aat_build": 11.097335,
+          "body_selection": 0.5893349999999999,
+          "decode": 1.947013,
+          "fallback_build": 15.782364,
           "projection_check": 0.0,
-          "retokenize": 11.74035,
-          "scopenize": 4.71502,
-          "tokenize": 64.213275
+          "retokenize": 10.941006,
+          "scopenize": 4.735139,
+          "tokenize": 56.256834999999995
         }
       },
       {
         "work_id": "000091_522",
         "nodes": 46911,
-        "total_ms": 60.06119199999999,
+        "total_ms": 62.690489,
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 9.740248,
-          "body_selection": 0.443496,
-          "decode": 2.119723,
-          "fallback_build": 14.17745,
+          "aat_build": 10.107173,
+          "body_selection": 0.472066,
+          "decode": 2.31963,
+          "fallback_build": 14.790132,
           "projection_check": 0.0,
-          "retokenize": 6.977451,
-          "scopenize": 3.49809,
-          "tokenize": 23.104733999999997
+          "retokenize": 5.865309,
+          "scopenize": 4.257884,
+          "tokenize": 24.878295
         }
       },
       {
         "work_id": "000148_1746",
         "nodes": 41794,
-        "total_ms": 78.954209,
+        "total_ms": 87.21187900000001,
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 3.368631,
-          "body_selection": 0.530565,
-          "decode": 2.008913,
-          "fallback_build": 12.249406,
+          "aat_build": 5.213085,
+          "body_selection": 0.541966,
+          "decode": 2.0392219999999996,
+          "fallback_build": 11.493931,
           "projection_check": 0.0,
-          "retokenize": 7.371747,
-          "scopenize": 3.223233,
-          "tokenize": 50.201714
+          "retokenize": 7.390927,
+          "scopenize": 3.322021,
+          "tokenize": 57.210727000000006
         }
       },
       {
         "work_id": "001562_33224",
         "nodes": 41504,
-        "total_ms": 70.804258,
+        "total_ms": 77.438573,
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 13.875172,
-          "body_selection": 1.455988,
-          "decode": 5.117266,
-          "fallback_build": 23.264012,
+          "aat_build": 20.943889,
+          "body_selection": 0.892772,
+          "decode": 4.028215,
+          "fallback_build": 29.435797,
           "projection_check": 0.0,
-          "retokenize": 12.472224,
-          "scopenize": 5.357235,
-          "tokenize": 9.262361
+          "retokenize": 10.41625,
+          "scopenize": 4.206384,
+          "tokenize": 7.515266
         }
       },
       {
         "work_id": "000050_43467",
         "nodes": 39369,
-        "total_ms": 79.728433,
+        "total_ms": 60.891196,
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 9.903216,
-          "body_selection": 0.31616700000000003,
-          "decode": 1.11954,
-          "fallback_build": 13.122879,
+          "aat_build": 8.313199000000001,
+          "body_selection": 0.175418,
+          "decode": 0.7855540000000001,
+          "fallback_build": 9.157851,
           "projection_check": 0.0,
-          "retokenize": 8.956174,
-          "scopenize": 4.530211,
-          "tokenize": 41.780246
+          "retokenize": 5.512042,
+          "scopenize": 3.47627,
+          "tokenize": 33.470862
         }
       },
       {
         "work_id": "000296_1864",
         "nodes": 38068,
-        "total_ms": 54.858444000000006,
+        "total_ms": 65.40591599999999,
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 6.227677,
-          "body_selection": 0.344877,
-          "decode": 2.123402,
-          "fallback_build": 11.963249,
+          "aat_build": 6.925071,
+          "body_selection": 0.371617,
+          "decode": 1.886233,
+          "fallback_build": 13.192416,
           "projection_check": 0.0,
-          "retokenize": 5.707531,
-          "scopenize": 3.452971,
-          "tokenize": 25.038737
+          "retokenize": 7.480345,
+          "scopenize": 4.242304,
+          "tokenize": 31.30793
         }
       },
       {
         "work_id": "000279_1704",
         "nodes": 37016,
-        "total_ms": 41.962182999999996,
+        "total_ms": 42.798162000000005,
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 3.826417,
-          "body_selection": 0.465036,
-          "decode": 2.27968,
-          "fallback_build": 16.736898,
+          "aat_build": 3.650018,
+          "body_selection": 0.435716,
+          "decode": 2.233251,
+          "fallback_build": 16.32054,
           "projection_check": 0.0,
-          "retokenize": 5.458074,
-          "scopenize": 2.9114850000000003,
-          "tokenize": 10.284593
+          "retokenize": 5.924279,
+          "scopenize": 2.920615,
+          "tokenize": 11.313743
         }
       },
       {
         "work_id": "001930_58400",
         "nodes": 35608,
-        "total_ms": 38.136376,
+        "total_ms": 32.51095,
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 8.22223,
-          "body_selection": 0.305637,
-          "decode": 1.399968,
-          "fallback_build": 16.338112,
+          "aat_build": 7.188598,
+          "body_selection": 0.291547,
+          "decode": 1.390448,
+          "fallback_build": 12.160305,
           "projection_check": 0.0,
-          "retokenize": 3.924396,
-          "scopenize": 1.18005,
-          "tokenize": 6.765982999999999
+          "retokenize": 3.55721,
+          "scopenize": 1.256119,
+          "tokenize": 6.666723
         }
       },
       {
         "work_id": "001393_49853",
         "nodes": 33160,
-        "total_ms": 41.648257,
+        "total_ms": 35.051568,
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 7.694815,
-          "body_selection": 0.282937,
-          "decode": 3.234583,
-          "fallback_build": 11.337074,
+          "aat_build": 7.454446,
+          "body_selection": 0.178939,
+          "decode": 0.752653,
+          "fallback_build": 10.075713,
           "projection_check": 0.0,
-          "retokenize": 8.971974000000001,
-          "scopenize": 3.223202,
-          "tokenize": 6.903671999999999
+          "retokenize": 7.105519,
+          "scopenize": 3.3445609999999997,
+          "tokenize": 6.139737
         }
       },
       {
         "work_id": "000264_42773",
         "nodes": 31051,
-        "total_ms": 26.862452,
+        "total_ms": 32.320981,
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 2.5059790000000004,
-          "body_selection": 0.177088,
-          "decode": 0.7929029999999999,
-          "fallback_build": 8.26915,
+          "aat_build": 2.836395,
+          "body_selection": 0.29773700000000003,
+          "decode": 1.058021,
+          "fallback_build": 9.193091,
           "projection_check": 0.0,
-          "retokenize": 6.966581000000001,
-          "scopenize": 2.445279,
-          "tokenize": 5.705471999999999
+          "retokenize": 8.604316,
+          "scopenize": 3.062273,
+          "tokenize": 7.269148
         }
       },
       {
         "work_id": "000320_2168",
         "nodes": 30268,
-        "total_ms": 45.150807,
+        "total_ms": 39.282581,
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 4.601131,
-          "body_selection": 0.502455,
-          "decode": 2.015143,
-          "fallback_build": 15.31641,
+          "aat_build": 5.0476160000000005,
+          "body_selection": 0.5237959999999999,
+          "decode": 2.0641320000000003,
+          "fallback_build": 10.44648,
           "projection_check": 0.0,
-          "retokenize": 5.962969999999999,
-          "scopenize": 3.114323,
-          "tokenize": 13.638375
+          "retokenize": 5.118406,
+          "scopenize": 2.35773,
+          "tokenize": 13.724421
         }
       },
       {
         "work_id": "001261_46687",
         "nodes": 29649,
-        "total_ms": 29.095423999999994,
+        "total_ms": 31.986855,
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 8.076962,
-          "body_selection": 0.29267699999999996,
-          "decode": 0.969332,
-          "fallback_build": 8.640117,
+          "aat_build": 8.288378000000002,
+          "body_selection": 0.179419,
+          "decode": 0.736404,
+          "fallback_build": 9.913115,
           "projection_check": 0.0,
-          "retokenize": 3.728719,
-          "scopenize": 2.179491,
-          "tokenize": 5.208126
+          "retokenize": 5.88571,
+          "scopenize": 2.8573549999999996,
+          "tokenize": 4.126474
         }
       },
       {
         "work_id": "001054_18371",
         "nodes": 29351,
-        "total_ms": 34.704585,
+        "total_ms": 33.162374,
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 7.144619,
-          "body_selection": 0.192458,
-          "decode": 0.770354,
-          "fallback_build": 13.168218,
+          "aat_build": 6.243946,
+          "body_selection": 0.327947,
+          "decode": 1.09531,
+          "fallback_build": 11.60165,
           "projection_check": 0.0,
-          "retokenize": 6.8502220000000005,
-          "scopenize": 2.648297,
-          "tokenize": 3.930417
+          "retokenize": 5.955799000000001,
+          "scopenize": 2.961525,
+          "tokenize": 4.976197
         }
       },
       {
         "work_id": "001562_57875",
         "nodes": 29059,
-        "total_ms": 70.01905599999999,
+        "total_ms": 71.668523,
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 12.501394,
-          "body_selection": 1.428398,
-          "decode": 5.062397,
-          "fallback_build": 28.992514,
+          "aat_build": 12.174565,
+          "body_selection": 1.510147,
+          "decode": 5.226235,
+          "fallback_build": 28.490755,
           "projection_check": 0.0,
-          "retokenize": 9.078623,
-          "scopenize": 4.0102660000000006,
-          "tokenize": 8.945464
+          "retokenize": 9.633367,
+          "scopenize": 4.222763,
+          "tokenize": 10.410691
+        }
+      }
+    ],
+    "fallback_hotspots": [
+      {
+        "work_id": "001529_50685",
+        "reason": "large_body",
+        "source_bytes": 2116173,
+        "validation_body_bytes": 3156475,
+        "parser_nodes": 0,
+        "parser_normalized_nodes": 0,
+        "source_fallback_nodes": 162441,
+        "total_ms": 392.32036000000005,
+        "dominant_stage": "tokenize",
+        "stages_ms": {
+          "aat_build": 49.981889,
+          "body_selection": 2.26145,
+          "decode": 8.720305,
+          "fallback_build": 73.979943,
+          "projection_check": 0.0,
+          "retokenize": 46.580109,
+          "scopenize": 22.137659,
+          "tokenize": 188.659005
+        }
+      },
+      {
+        "work_id": "000118_1745",
+        "reason": "large_body",
+        "source_bytes": 955261,
+        "validation_body_bytes": 1421389,
+        "parser_nodes": 0,
+        "parser_normalized_nodes": 0,
+        "source_fallback_nodes": 121193,
+        "total_ms": 142.397193,
+        "dominant_stage": "tokenize",
+        "stages_ms": {
+          "aat_build": 11.868258,
+          "body_selection": 1.031761,
+          "decode": 3.595839,
+          "fallback_build": 40.464521000000005,
+          "projection_check": 0.0,
+          "retokenize": 30.15624,
+          "scopenize": 12.972619,
+          "tokenize": 42.307955
+        }
+      },
+      {
+        "work_id": "001562_56145",
+        "reason": "large_body",
+        "source_bytes": 1433847,
+        "validation_body_bytes": 2136400,
+        "parser_nodes": 0,
+        "parser_normalized_nodes": 0,
+        "source_fallback_nodes": 88671,
+        "total_ms": 118.584778,
+        "dominant_stage": "fallback_build",
+        "stages_ms": {
+          "aat_build": 29.001389999999997,
+          "body_selection": 1.550567,
+          "decode": 5.228595,
+          "fallback_build": 35.735022,
+          "projection_check": 0.0,
+          "retokenize": 20.649342,
+          "scopenize": 10.109673,
+          "tokenize": 16.310188999999998
+        }
+      },
+      {
+        "work_id": "000148_56923",
+        "reason": "large_body",
+        "source_bytes": 598006,
+        "validation_body_bytes": 893748,
+        "parser_nodes": 0,
+        "parser_normalized_nodes": 0,
+        "source_fallback_nodes": 81294,
+        "total_ms": 88.352659,
+        "dominant_stage": "fallback_build",
+        "stages_ms": {
+          "aat_build": 7.905382,
+          "body_selection": 0.616335,
+          "decode": 1.927333,
+          "fallback_build": 29.972842,
+          "projection_check": 0.0,
+          "retokenize": 20.526983,
+          "scopenize": 6.866011,
+          "tokenize": 20.537773
+        }
+      },
+      {
+        "work_id": "000077_1323",
+        "reason": "large_body",
+        "source_bytes": 601369,
+        "validation_body_bytes": 897469,
+        "parser_nodes": 0,
+        "parser_normalized_nodes": 0,
+        "source_fallback_nodes": 73801,
+        "total_ms": 132.515898,
+        "dominant_stage": "tokenize",
+        "stages_ms": {
+          "aat_build": 8.804523999999999,
+          "body_selection": 0.404376,
+          "decode": 2.254151,
+          "fallback_build": 24.652527,
+          "projection_check": 0.0,
+          "retokenize": 16.516008,
+          "scopenize": 7.316297,
+          "tokenize": 72.568015
+        }
+      },
+      {
+        "work_id": "001562_56146",
+        "reason": "large_body",
+        "source_bytes": 1676607,
+        "validation_body_bytes": 2496163,
+        "parser_nodes": 0,
+        "parser_normalized_nodes": 0,
+        "source_fallback_nodes": 60923,
+        "total_ms": 128.939231,
+        "dominant_stage": "tokenize",
+        "stages_ms": {
+          "aat_build": 22.255339,
+          "body_selection": 1.779625,
+          "decode": 6.524414,
+          "fallback_build": 36.031470000000006,
+          "projection_check": 0.0,
+          "retokenize": 15.1308,
+          "scopenize": 7.247088,
+          "tokenize": 39.970495
+        }
+      },
+      {
+        "work_id": "001034_4823",
+        "reason": "large_body",
+        "source_bytes": 530136,
+        "validation_body_bytes": 791891,
+        "parser_nodes": 0,
+        "parser_normalized_nodes": 0,
+        "source_fallback_nodes": 59093,
+        "total_ms": 101.34902699999999,
+        "dominant_stage": "tokenize",
+        "stages_ms": {
+          "aat_build": 11.097335,
+          "body_selection": 0.5893349999999999,
+          "decode": 1.947013,
+          "fallback_build": 15.782364,
+          "projection_check": 0.0,
+          "retokenize": 10.941006,
+          "scopenize": 4.735139,
+          "tokenize": 56.256834999999995
+        }
+      },
+      {
+        "work_id": "000091_522",
+        "reason": "large_body",
+        "source_bytes": 709274,
+        "validation_body_bytes": 1056965,
+        "parser_nodes": 0,
+        "parser_normalized_nodes": 0,
+        "source_fallback_nodes": 46911,
+        "total_ms": 62.690489,
+        "dominant_stage": "tokenize",
+        "stages_ms": {
+          "aat_build": 10.107173,
+          "body_selection": 0.472066,
+          "decode": 2.31963,
+          "fallback_build": 14.790132,
+          "projection_check": 0.0,
+          "retokenize": 5.865309,
+          "scopenize": 4.257884,
+          "tokenize": 24.878295
+        }
+      },
+      {
+        "work_id": "000148_1746",
+        "reason": "large_body",
+        "source_bytes": 492642,
+        "validation_body_bytes": 734924,
+        "parser_nodes": 0,
+        "parser_normalized_nodes": 0,
+        "source_fallback_nodes": 41794,
+        "total_ms": 87.21187900000001,
+        "dominant_stage": "tokenize",
+        "stages_ms": {
+          "aat_build": 5.213085,
+          "body_selection": 0.541966,
+          "decode": 2.0392219999999996,
+          "fallback_build": 11.493931,
+          "projection_check": 0.0,
+          "retokenize": 7.390927,
+          "scopenize": 3.322021,
+          "tokenize": 57.210727000000006
+        }
+      },
+      {
+        "work_id": "001562_33224",
+        "reason": "large_body",
+        "source_bytes": 1347264,
+        "validation_body_bytes": 2003901,
+        "parser_nodes": 0,
+        "parser_normalized_nodes": 0,
+        "source_fallback_nodes": 41504,
+        "total_ms": 77.438573,
+        "dominant_stage": "fallback_build",
+        "stages_ms": {
+          "aat_build": 20.943889,
+          "body_selection": 0.892772,
+          "decode": 4.028215,
+          "fallback_build": 29.435797,
+          "projection_check": 0.0,
+          "retokenize": 10.41625,
+          "scopenize": 4.206384,
+          "tokenize": 7.515266
+        }
+      },
+      {
+        "work_id": "000050_43467",
+        "reason": "source_supplement_hotspot",
+        "source_bytes": 284831,
+        "validation_body_bytes": 423436,
+        "parser_nodes": 0,
+        "parser_normalized_nodes": 0,
+        "source_fallback_nodes": 39369,
+        "total_ms": 60.891196,
+        "dominant_stage": "tokenize",
+        "stages_ms": {
+          "aat_build": 8.313199000000001,
+          "body_selection": 0.175418,
+          "decode": 0.7855540000000001,
+          "fallback_build": 9.157851,
+          "projection_check": 0.0,
+          "retokenize": 5.512042,
+          "scopenize": 3.47627,
+          "tokenize": 33.470862
+        }
+      },
+      {
+        "work_id": "000296_1864",
+        "reason": "large_body",
+        "source_bytes": 574879,
+        "validation_body_bytes": 858163,
+        "parser_nodes": 0,
+        "parser_normalized_nodes": 0,
+        "source_fallback_nodes": 38068,
+        "total_ms": 65.40591599999999,
+        "dominant_stage": "tokenize",
+        "stages_ms": {
+          "aat_build": 6.925071,
+          "body_selection": 0.371617,
+          "decode": 1.886233,
+          "fallback_build": 13.192416,
+          "projection_check": 0.0,
+          "retokenize": 7.480345,
+          "scopenize": 4.242304,
+          "tokenize": 31.30793
+        }
+      },
+      {
+        "work_id": "000279_1704",
+        "reason": "large_body",
+        "source_bytes": 702823,
+        "validation_body_bytes": 1048188,
+        "parser_nodes": 0,
+        "parser_normalized_nodes": 0,
+        "source_fallback_nodes": 37016,
+        "total_ms": 42.798162000000005,
+        "dominant_stage": "fallback_build",
+        "stages_ms": {
+          "aat_build": 3.650018,
+          "body_selection": 0.435716,
+          "decode": 2.233251,
+          "fallback_build": 16.32054,
+          "projection_check": 0.0,
+          "retokenize": 5.924279,
+          "scopenize": 2.920615,
+          "tokenize": 11.313743
+        }
+      },
+      {
+        "work_id": "001930_58400",
+        "reason": "large_body",
+        "source_bytes": 466639,
+        "validation_body_bytes": 691997,
+        "parser_nodes": 0,
+        "parser_normalized_nodes": 0,
+        "source_fallback_nodes": 35608,
+        "total_ms": 32.51095,
+        "dominant_stage": "fallback_build",
+        "stages_ms": {
+          "aat_build": 7.188598,
+          "body_selection": 0.291547,
+          "decode": 1.390448,
+          "fallback_build": 12.160305,
+          "projection_check": 0.0,
+          "retokenize": 3.55721,
+          "scopenize": 1.256119,
+          "tokenize": 6.666723
+        }
+      },
+      {
+        "work_id": "001393_49853",
+        "reason": "source_supplement_hotspot",
+        "source_bytes": 271746,
+        "validation_body_bytes": 400958,
+        "parser_nodes": 0,
+        "parser_normalized_nodes": 0,
+        "source_fallback_nodes": 33160,
+        "total_ms": 35.051568,
+        "dominant_stage": "fallback_build",
+        "stages_ms": {
+          "aat_build": 7.454446,
+          "body_selection": 0.178939,
+          "decode": 0.752653,
+          "fallback_build": 10.075713,
+          "projection_check": 0.0,
+          "retokenize": 7.105519,
+          "scopenize": 3.3445609999999997,
+          "tokenize": 6.139737
+        }
+      },
+      {
+        "work_id": "000264_42773",
+        "reason": "source_supplement_hotspot",
+        "source_bytes": 278145,
+        "validation_body_bytes": 413399,
+        "parser_nodes": 0,
+        "parser_normalized_nodes": 0,
+        "source_fallback_nodes": 31051,
+        "total_ms": 32.320981,
+        "dominant_stage": "fallback_build",
+        "stages_ms": {
+          "aat_build": 2.836395,
+          "body_selection": 0.29773700000000003,
+          "decode": 1.058021,
+          "fallback_build": 9.193091,
+          "projection_check": 0.0,
+          "retokenize": 8.604316,
+          "scopenize": 3.062273,
+          "tokenize": 7.269148
+        }
+      },
+      {
+        "work_id": "000320_2168",
+        "reason": "large_body",
+        "source_bytes": 483412,
+        "validation_body_bytes": 718262,
+        "parser_nodes": 0,
+        "parser_normalized_nodes": 0,
+        "source_fallback_nodes": 30268,
+        "total_ms": 39.282581,
+        "dominant_stage": "tokenize",
+        "stages_ms": {
+          "aat_build": 5.0476160000000005,
+          "body_selection": 0.5237959999999999,
+          "decode": 2.0641320000000003,
+          "fallback_build": 10.44648,
+          "projection_check": 0.0,
+          "retokenize": 5.118406,
+          "scopenize": 2.35773,
+          "tokenize": 13.724421
+        }
+      },
+      {
+        "work_id": "001261_46687",
+        "reason": "source_supplement_hotspot",
+        "source_bytes": 262434,
+        "validation_body_bytes": 390470,
+        "parser_nodes": 0,
+        "parser_normalized_nodes": 0,
+        "source_fallback_nodes": 29649,
+        "total_ms": 31.986855,
+        "dominant_stage": "fallback_build",
+        "stages_ms": {
+          "aat_build": 8.288378000000002,
+          "body_selection": 0.179419,
+          "decode": 0.736404,
+          "fallback_build": 9.913115,
+          "projection_check": 0.0,
+          "retokenize": 5.88571,
+          "scopenize": 2.8573549999999996,
+          "tokenize": 4.126474
+        }
+      },
+      {
+        "work_id": "001054_18371",
+        "reason": "source_supplement_hotspot",
+        "source_bytes": 297971,
+        "validation_body_bytes": 443539,
+        "parser_nodes": 0,
+        "parser_normalized_nodes": 0,
+        "source_fallback_nodes": 29351,
+        "total_ms": 33.162374,
+        "dominant_stage": "fallback_build",
+        "stages_ms": {
+          "aat_build": 6.243946,
+          "body_selection": 0.327947,
+          "decode": 1.09531,
+          "fallback_build": 11.60165,
+          "projection_check": 0.0,
+          "retokenize": 5.955799000000001,
+          "scopenize": 2.961525,
+          "tokenize": 4.976197
+        }
+      },
+      {
+        "work_id": "001562_57875",
+        "reason": "large_body",
+        "source_bytes": 1298242,
+        "validation_body_bytes": 1930580,
+        "parser_nodes": 0,
+        "parser_normalized_nodes": 0,
+        "source_fallback_nodes": 29059,
+        "total_ms": 71.668523,
+        "dominant_stage": "fallback_build",
+        "stages_ms": {
+          "aat_build": 12.174565,
+          "body_selection": 1.510147,
+          "decode": 5.226235,
+          "fallback_build": 28.490755,
+          "projection_check": 0.0,
+          "retokenize": 9.633367,
+          "scopenize": 4.222763,
+          "tokenize": 10.410691
         }
       }
     ]
@@ -7118,126 +7545,706 @@
     "fallbacks": {
       "works": 6870,
       "source_fallback_nodes": 7946429,
+      "by_reason": {
+        "large_body": 271,
+        "projection_mismatch": 24,
+        "source_supplement_hotspot": 6575
+      },
       "hotspots": [
         {
           "work_id": "001529_50685",
-          "nodes": 162441,
-          "total_ms": 365.307269,
-          "fallback_used": true
+          "reason": "large_body",
+          "features": [
+            "boten",
+            "dakuten",
+            "editor_note",
+            "emphasis_start_end",
+            "external_link",
+            "gaiji",
+            "jisage_block",
+            "jisage_line",
+            "midashi",
+            "page_break",
+            "ruby",
+            "ruby_prefix",
+            "unicode_codepoint",
+            "warigaki"
+          ],
+          "source_bytes": 2116173,
+          "validation_body_bytes": 3156475,
+          "parser_nodes": 0,
+          "parser_normalized_nodes": 0,
+          "source_fallback_nodes": 162441,
+          "total_ms": 392.32036000000005,
+          "dominant_stage": "tokenize",
+          "stages_ms": {
+            "aat_build": 49.981889,
+            "body_selection": 2.26145,
+            "decode": 8.720305,
+            "fallback_build": 73.979943,
+            "projection_check": 0.0,
+            "retokenize": 46.580109,
+            "scopenize": 22.137659,
+            "tokenize": 188.659005
+          }
         },
         {
           "work_id": "000118_1745",
-          "nodes": 121193,
-          "total_ms": 151.14471799999998,
-          "fallback_used": true
+          "reason": "large_body",
+          "features": [
+            "boten",
+            "dakuten",
+            "editor_note",
+            "external_link",
+            "gaiji",
+            "jisage_line",
+            "midashi",
+            "ruby",
+            "ruby_prefix",
+            "unicode_codepoint"
+          ],
+          "source_bytes": 955261,
+          "validation_body_bytes": 1421389,
+          "parser_nodes": 0,
+          "parser_normalized_nodes": 0,
+          "source_fallback_nodes": 121193,
+          "total_ms": 142.397193,
+          "dominant_stage": "tokenize",
+          "stages_ms": {
+            "aat_build": 11.868258,
+            "body_selection": 1.031761,
+            "decode": 3.595839,
+            "fallback_build": 40.464521000000005,
+            "projection_check": 0.0,
+            "retokenize": 30.15624,
+            "scopenize": 12.972619,
+            "tokenize": 42.307955
+          }
         },
         {
           "work_id": "001562_56145",
-          "nodes": 88671,
-          "total_ms": 118.801241,
-          "fallback_used": true
+          "reason": "large_body",
+          "features": [
+            "boten",
+            "editor_note",
+            "emphasis_start_end",
+            "external_link",
+            "gaiji",
+            "jisage_block",
+            "jisage_line",
+            "midashi",
+            "ruby",
+            "ruby_prefix"
+          ],
+          "source_bytes": 1433847,
+          "validation_body_bytes": 2136400,
+          "parser_nodes": 0,
+          "parser_normalized_nodes": 0,
+          "source_fallback_nodes": 88671,
+          "total_ms": 118.584778,
+          "dominant_stage": "fallback_build",
+          "stages_ms": {
+            "aat_build": 29.001389999999997,
+            "body_selection": 1.550567,
+            "decode": 5.228595,
+            "fallback_build": 35.735022,
+            "projection_check": 0.0,
+            "retokenize": 20.649342,
+            "scopenize": 10.109673,
+            "tokenize": 16.310188999999998
+          }
         },
         {
           "work_id": "000148_56923",
-          "nodes": 81294,
-          "total_ms": 91.215026,
-          "fallback_used": true
+          "reason": "large_body",
+          "features": [
+            "boten",
+            "dakuten",
+            "editor_note",
+            "external_link",
+            "gaiji",
+            "jisage_line",
+            "midashi",
+            "ruby",
+            "ruby_prefix"
+          ],
+          "source_bytes": 598006,
+          "validation_body_bytes": 893748,
+          "parser_nodes": 0,
+          "parser_normalized_nodes": 0,
+          "source_fallback_nodes": 81294,
+          "total_ms": 88.352659,
+          "dominant_stage": "fallback_build",
+          "stages_ms": {
+            "aat_build": 7.905382,
+            "body_selection": 0.616335,
+            "decode": 1.927333,
+            "fallback_build": 29.972842,
+            "projection_check": 0.0,
+            "retokenize": 20.526983,
+            "scopenize": 6.866011,
+            "tokenize": 20.537773
+          }
         },
         {
           "work_id": "000077_1323",
-          "nodes": 73801,
-          "total_ms": 128.144563,
-          "fallback_used": true
+          "reason": "large_body",
+          "features": [
+            "bosen",
+            "boten",
+            "dakuten",
+            "editor_note",
+            "emphasis_start_end",
+            "external_link",
+            "gaiji",
+            "jisage_block",
+            "page_break",
+            "ruby",
+            "ruby_prefix",
+            "sesame",
+            "warigaki"
+          ],
+          "source_bytes": 601369,
+          "validation_body_bytes": 897469,
+          "parser_nodes": 0,
+          "parser_normalized_nodes": 0,
+          "source_fallback_nodes": 73801,
+          "total_ms": 132.515898,
+          "dominant_stage": "tokenize",
+          "stages_ms": {
+            "aat_build": 8.804523999999999,
+            "body_selection": 0.404376,
+            "decode": 2.254151,
+            "fallback_build": 24.652527,
+            "projection_check": 0.0,
+            "retokenize": 16.516008,
+            "scopenize": 7.316297,
+            "tokenize": 72.568015
+          }
         },
         {
           "work_id": "001562_56146",
-          "nodes": 60923,
-          "total_ms": 133.548386,
-          "fallback_used": true
+          "reason": "large_body",
+          "features": [
+            "boten",
+            "editor_note",
+            "emphasis_start_end",
+            "external_link",
+            "gaiji",
+            "jisage_block",
+            "jisage_line",
+            "ruby",
+            "ruby_prefix",
+            "unicode_codepoint"
+          ],
+          "source_bytes": 1676607,
+          "validation_body_bytes": 2496163,
+          "parser_nodes": 0,
+          "parser_normalized_nodes": 0,
+          "source_fallback_nodes": 60923,
+          "total_ms": 128.939231,
+          "dominant_stage": "tokenize",
+          "stages_ms": {
+            "aat_build": 22.255339,
+            "body_selection": 1.779625,
+            "decode": 6.524414,
+            "fallback_build": 36.031470000000006,
+            "projection_check": 0.0,
+            "retokenize": 15.1308,
+            "scopenize": 7.247088,
+            "tokenize": 39.970495
+          }
         },
         {
           "work_id": "001034_4823",
-          "nodes": 59093,
-          "total_ms": 111.71103199999999,
-          "fallback_used": true
+          "reason": "large_body",
+          "features": [
+            "boten",
+            "editor_note",
+            "emphasis_start_end",
+            "external_link",
+            "gaiji",
+            "jisage_line",
+            "midashi",
+            "page_break",
+            "ruby",
+            "ruby_prefix",
+            "yokogumi"
+          ],
+          "source_bytes": 530136,
+          "validation_body_bytes": 791891,
+          "parser_nodes": 0,
+          "parser_normalized_nodes": 0,
+          "source_fallback_nodes": 59093,
+          "total_ms": 101.34902699999999,
+          "dominant_stage": "tokenize",
+          "stages_ms": {
+            "aat_build": 11.097335,
+            "body_selection": 0.5893349999999999,
+            "decode": 1.947013,
+            "fallback_build": 15.782364,
+            "projection_check": 0.0,
+            "retokenize": 10.941006,
+            "scopenize": 4.735139,
+            "tokenize": 56.256834999999995
+          }
         },
         {
           "work_id": "000091_522",
-          "nodes": 46911,
-          "total_ms": 60.06119199999999,
-          "fallback_used": true
+          "reason": "large_body",
+          "features": [
+            "boten",
+            "editor_note",
+            "emphasis_start_end",
+            "external_link",
+            "gaiji",
+            "jisage_block",
+            "jisage_line",
+            "midashi",
+            "page_break",
+            "ruby",
+            "ruby_prefix",
+            "unicode_codepoint"
+          ],
+          "source_bytes": 709274,
+          "validation_body_bytes": 1056965,
+          "parser_nodes": 0,
+          "parser_normalized_nodes": 0,
+          "source_fallback_nodes": 46911,
+          "total_ms": 62.690489,
+          "dominant_stage": "tokenize",
+          "stages_ms": {
+            "aat_build": 10.107173,
+            "body_selection": 0.472066,
+            "decode": 2.31963,
+            "fallback_build": 14.790132,
+            "projection_check": 0.0,
+            "retokenize": 5.865309,
+            "scopenize": 4.257884,
+            "tokenize": 24.878295
+          }
         },
         {
           "work_id": "000148_1746",
-          "nodes": 41794,
-          "total_ms": 78.954209,
-          "fallback_used": true
+          "reason": "large_body",
+          "features": [
+            "boten",
+            "dakuten",
+            "editor_note",
+            "external_link",
+            "gaiji",
+            "jisage_line",
+            "midashi",
+            "ruby",
+            "ruby_prefix",
+            "unicode_codepoint"
+          ],
+          "source_bytes": 492642,
+          "validation_body_bytes": 734924,
+          "parser_nodes": 0,
+          "parser_normalized_nodes": 0,
+          "source_fallback_nodes": 41794,
+          "total_ms": 87.21187900000001,
+          "dominant_stage": "tokenize",
+          "stages_ms": {
+            "aat_build": 5.213085,
+            "body_selection": 0.541966,
+            "decode": 2.0392219999999996,
+            "fallback_build": 11.493931,
+            "projection_check": 0.0,
+            "retokenize": 7.390927,
+            "scopenize": 3.322021,
+            "tokenize": 57.210727000000006
+          }
         },
         {
           "work_id": "001562_33224",
-          "nodes": 41504,
-          "total_ms": 70.804258,
-          "fallback_used": true
+          "reason": "large_body",
+          "features": [
+            "boten",
+            "editor_note",
+            "emphasis_start_end",
+            "external_link",
+            "gaiji",
+            "jisage_block",
+            "jisage_line",
+            "midashi",
+            "page_break",
+            "ruby",
+            "ruby_prefix"
+          ],
+          "source_bytes": 1347264,
+          "validation_body_bytes": 2003901,
+          "parser_nodes": 0,
+          "parser_normalized_nodes": 0,
+          "source_fallback_nodes": 41504,
+          "total_ms": 77.438573,
+          "dominant_stage": "fallback_build",
+          "stages_ms": {
+            "aat_build": 20.943889,
+            "body_selection": 0.892772,
+            "decode": 4.028215,
+            "fallback_build": 29.435797,
+            "projection_check": 0.0,
+            "retokenize": 10.41625,
+            "scopenize": 4.206384,
+            "tokenize": 7.515266
+          }
         },
         {
           "work_id": "000050_43467",
-          "nodes": 39369,
-          "total_ms": 79.728433,
-          "fallback_used": true
+          "reason": "source_supplement_hotspot",
+          "features": [
+            "dakuten",
+            "editor_note",
+            "external_link",
+            "gaiji",
+            "jisage_line",
+            "midashi",
+            "ruby",
+            "ruby_prefix",
+            "unicode_codepoint"
+          ],
+          "source_bytes": 284831,
+          "validation_body_bytes": 423436,
+          "parser_nodes": 0,
+          "parser_normalized_nodes": 0,
+          "source_fallback_nodes": 39369,
+          "total_ms": 60.891196,
+          "dominant_stage": "tokenize",
+          "stages_ms": {
+            "aat_build": 8.313199000000001,
+            "body_selection": 0.175418,
+            "decode": 0.7855540000000001,
+            "fallback_build": 9.157851,
+            "projection_check": 0.0,
+            "retokenize": 5.512042,
+            "scopenize": 3.47627,
+            "tokenize": 33.470862
+          }
         },
         {
           "work_id": "000296_1864",
-          "nodes": 38068,
-          "total_ms": 54.858444000000006,
-          "fallback_used": true
+          "reason": "large_body",
+          "features": [
+            "dakuten",
+            "editor_note",
+            "emphasis_start_end",
+            "external_link",
+            "gaiji",
+            "italic",
+            "jisage_block",
+            "jisage_line",
+            "midashi",
+            "page_break",
+            "ruby",
+            "ruby_prefix",
+            "sesame",
+            "unicode_codepoint",
+            "warigaki"
+          ],
+          "source_bytes": 574879,
+          "validation_body_bytes": 858163,
+          "parser_nodes": 0,
+          "parser_normalized_nodes": 0,
+          "source_fallback_nodes": 38068,
+          "total_ms": 65.40591599999999,
+          "dominant_stage": "tokenize",
+          "stages_ms": {
+            "aat_build": 6.925071,
+            "body_selection": 0.371617,
+            "decode": 1.886233,
+            "fallback_build": 13.192416,
+            "projection_check": 0.0,
+            "retokenize": 7.480345,
+            "scopenize": 4.242304,
+            "tokenize": 31.30793
+          }
         },
         {
           "work_id": "000279_1704",
-          "nodes": 37016,
-          "total_ms": 41.962182999999996,
-          "fallback_used": true
+          "reason": "large_body",
+          "features": [
+            "bold",
+            "bosen",
+            "caption",
+            "dakuten",
+            "editor_note",
+            "emphasis_start_end",
+            "external_link",
+            "gaiji",
+            "jisage_block",
+            "jisage_line",
+            "midashi",
+            "page_break",
+            "ruby",
+            "ruby_prefix",
+            "unicode_codepoint",
+            "warigaki"
+          ],
+          "source_bytes": 702823,
+          "validation_body_bytes": 1048188,
+          "parser_nodes": 0,
+          "parser_normalized_nodes": 0,
+          "source_fallback_nodes": 37016,
+          "total_ms": 42.798162000000005,
+          "dominant_stage": "fallback_build",
+          "stages_ms": {
+            "aat_build": 3.650018,
+            "body_selection": 0.435716,
+            "decode": 2.233251,
+            "fallback_build": 16.32054,
+            "projection_check": 0.0,
+            "retokenize": 5.924279,
+            "scopenize": 2.920615,
+            "tokenize": 11.313743
+          }
         },
         {
           "work_id": "001930_58400",
-          "nodes": 35608,
-          "total_ms": 38.136376,
-          "fallback_used": true
+          "reason": "large_body",
+          "features": [
+            "caption",
+            "dakuten",
+            "editor_note",
+            "emphasis_start_end",
+            "external_link",
+            "gaiji",
+            "jisage_block",
+            "jisage_line",
+            "left_ruby",
+            "midashi",
+            "page_break",
+            "ruby",
+            "ruby_prefix",
+            "tcy",
+            "unicode_codepoint",
+            "warigaki"
+          ],
+          "source_bytes": 466639,
+          "validation_body_bytes": 691997,
+          "parser_nodes": 0,
+          "parser_normalized_nodes": 0,
+          "source_fallback_nodes": 35608,
+          "total_ms": 32.51095,
+          "dominant_stage": "fallback_build",
+          "stages_ms": {
+            "aat_build": 7.188598,
+            "body_selection": 0.291547,
+            "decode": 1.390448,
+            "fallback_build": 12.160305,
+            "projection_check": 0.0,
+            "retokenize": 3.55721,
+            "scopenize": 1.256119,
+            "tokenize": 6.666723
+          }
         },
         {
           "work_id": "001393_49853",
-          "nodes": 33160,
-          "total_ms": 41.648257,
-          "fallback_used": true
+          "reason": "source_supplement_hotspot",
+          "features": [
+            "boten",
+            "caption",
+            "dakuten",
+            "editor_note",
+            "emphasis_start_end",
+            "external_link",
+            "gaiji",
+            "jisage_block",
+            "jisage_line",
+            "midashi",
+            "page_break",
+            "ruby",
+            "ruby_prefix",
+            "unicode_codepoint"
+          ],
+          "source_bytes": 271746,
+          "validation_body_bytes": 400958,
+          "parser_nodes": 0,
+          "parser_normalized_nodes": 0,
+          "source_fallback_nodes": 33160,
+          "total_ms": 35.051568,
+          "dominant_stage": "fallback_build",
+          "stages_ms": {
+            "aat_build": 7.454446,
+            "body_selection": 0.178939,
+            "decode": 0.752653,
+            "fallback_build": 10.075713,
+            "projection_check": 0.0,
+            "retokenize": 7.105519,
+            "scopenize": 3.3445609999999997,
+            "tokenize": 6.139737
+          }
         },
         {
           "work_id": "000264_42773",
-          "nodes": 31051,
-          "total_ms": 26.862452,
-          "fallback_used": true
+          "reason": "source_supplement_hotspot",
+          "features": [
+            "boten",
+            "dakuten",
+            "editor_note",
+            "emphasis_start_end",
+            "external_link",
+            "gaiji",
+            "jisage_block",
+            "jisage_line",
+            "midashi",
+            "page_break",
+            "ruby",
+            "ruby_prefix",
+            "yokogumi"
+          ],
+          "source_bytes": 278145,
+          "validation_body_bytes": 413399,
+          "parser_nodes": 0,
+          "parser_normalized_nodes": 0,
+          "source_fallback_nodes": 31051,
+          "total_ms": 32.320981,
+          "dominant_stage": "fallback_build",
+          "stages_ms": {
+            "aat_build": 2.836395,
+            "body_selection": 0.29773700000000003,
+            "decode": 1.058021,
+            "fallback_build": 9.193091,
+            "projection_check": 0.0,
+            "retokenize": 8.604316,
+            "scopenize": 3.062273,
+            "tokenize": 7.269148
+          }
         },
         {
           "work_id": "000320_2168",
-          "nodes": 30268,
-          "total_ms": 45.150807,
-          "fallback_used": true
+          "reason": "large_body",
+          "features": [
+            "boten",
+            "dakuten",
+            "editor_note",
+            "emphasis_start_end",
+            "external_link",
+            "gaiji",
+            "jisage_block",
+            "jisage_line",
+            "midashi",
+            "ruby",
+            "ruby_prefix",
+            "unicode_codepoint",
+            "yokogumi"
+          ],
+          "source_bytes": 483412,
+          "validation_body_bytes": 718262,
+          "parser_nodes": 0,
+          "parser_normalized_nodes": 0,
+          "source_fallback_nodes": 30268,
+          "total_ms": 39.282581,
+          "dominant_stage": "tokenize",
+          "stages_ms": {
+            "aat_build": 5.0476160000000005,
+            "body_selection": 0.5237959999999999,
+            "decode": 2.0641320000000003,
+            "fallback_build": 10.44648,
+            "projection_check": 0.0,
+            "retokenize": 5.118406,
+            "scopenize": 2.35773,
+            "tokenize": 13.724421
+          }
         },
         {
           "work_id": "001261_46687",
-          "nodes": 29649,
-          "total_ms": 29.095423999999994,
-          "fallback_used": true
+          "reason": "source_supplement_hotspot",
+          "features": [
+            "boten",
+            "editor_note",
+            "external_link",
+            "gaiji",
+            "ruby",
+            "ruby_prefix"
+          ],
+          "source_bytes": 262434,
+          "validation_body_bytes": 390470,
+          "parser_nodes": 0,
+          "parser_normalized_nodes": 0,
+          "source_fallback_nodes": 29649,
+          "total_ms": 31.986855,
+          "dominant_stage": "fallback_build",
+          "stages_ms": {
+            "aat_build": 8.288378000000002,
+            "body_selection": 0.179419,
+            "decode": 0.736404,
+            "fallback_build": 9.913115,
+            "projection_check": 0.0,
+            "retokenize": 5.88571,
+            "scopenize": 2.8573549999999996,
+            "tokenize": 4.126474
+          }
         },
         {
           "work_id": "001054_18371",
-          "nodes": 29351,
-          "total_ms": 34.704585,
-          "fallback_used": true
+          "reason": "source_supplement_hotspot",
+          "features": [
+            "boten",
+            "caption",
+            "dakuten",
+            "editor_note",
+            "emphasis_start_end",
+            "external_link",
+            "gaiji",
+            "jisage_line",
+            "midashi",
+            "page_break",
+            "ruby",
+            "ruby_prefix",
+            "tcy"
+          ],
+          "source_bytes": 297971,
+          "validation_body_bytes": 443539,
+          "parser_nodes": 0,
+          "parser_normalized_nodes": 0,
+          "source_fallback_nodes": 29351,
+          "total_ms": 33.162374,
+          "dominant_stage": "fallback_build",
+          "stages_ms": {
+            "aat_build": 6.243946,
+            "body_selection": 0.327947,
+            "decode": 1.09531,
+            "fallback_build": 11.60165,
+            "projection_check": 0.0,
+            "retokenize": 5.955799000000001,
+            "scopenize": 2.961525,
+            "tokenize": 4.976197
+          }
         },
         {
           "work_id": "001562_57875",
-          "nodes": 29059,
-          "total_ms": 70.01905599999999,
-          "fallback_used": true
+          "reason": "large_body",
+          "features": [
+            "boten",
+            "editor_note",
+            "emphasis_start_end",
+            "external_link",
+            "gaiji",
+            "jisage_block",
+            "jisage_line",
+            "midashi",
+            "ruby",
+            "ruby_prefix"
+          ],
+          "source_bytes": 1298242,
+          "validation_body_bytes": 1930580,
+          "parser_nodes": 0,
+          "parser_normalized_nodes": 0,
+          "source_fallback_nodes": 29059,
+          "total_ms": 71.668523,
+          "dominant_stage": "fallback_build",
+          "stages_ms": {
+            "aat_build": 12.174565,
+            "body_selection": 1.510147,
+            "decode": 5.226235,
+            "fallback_build": 28.490755,
+            "projection_check": 0.0,
+            "retokenize": 9.633367,
+            "scopenize": 4.222763,
+            "tokenize": 10.410691
+          }
         }
       ]
     },

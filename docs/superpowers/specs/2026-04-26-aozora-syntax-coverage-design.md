@@ -355,8 +355,11 @@ data/aozora-syntax-coverage.toml
 
 Each row represents one syntax feature or feature family. The field name
 `reference_sources` is used instead of `official_sources` because rows may cite
-official Aozora Bunko rules, corpus-derived evidence, and local non-GPL project
-docs. GPL parser implementation tables are excluded from this field.
+official Aozora Bunko rules, corpus-derived evidence, and compatible local
+project docs. MIT, Apache, BSD, public-domain, and similarly permissive sources
+may be reused when the row or companion documentation records the source and
+license. GPL parser implementation tables are excluded from this field unless
+the same material is independently available under a compatible license.
 
 ```toml
 [[syntax]]
@@ -383,7 +386,7 @@ Required fields:
 |-------|---------|
 | `id` | Stable syntax identifier such as `gaiji.jis_code` |
 | `category` | `inline_annotation`, `block`, `layout`, `glyph`, `metadata`, etc. |
-| `reference_sources` | Local official docs, parser reference tables, or corpus-derived evidence |
+| `reference_sources` | Local official docs, permissively licensed parser reference tables, or corpus-derived evidence |
 | `source_examples` | Minimal examples, preferably real corpus examples |
 | `source_patterns` | Detection patterns for routing, not parser grammar |
 | `ir_nodes` | Parser-neutral IR node kinds required to preserve semantics |

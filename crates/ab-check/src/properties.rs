@@ -5,6 +5,7 @@ use serde_json::Value;
 use unicode_normalization::UnicodeNormalization;
 
 use crate::aat::{inline_nodes_by_kind, visible_text_projection};
+use crate::source_projection;
 
 pub trait Property {
     fn name(&self) -> &'static str;
@@ -72,7 +73,7 @@ impl Property for VisibleTextBodyOrder {
     }
 
     fn check(&self, txt: &str, aat: &Value) -> Result<(), PropertyViolation> {
-        let source = normalize_visible(&source_visible_text(body_text(txt)));
+        let source = normalize_visible(&source_projection::comparison_lossy_body(body_text(txt)));
         let projection = normalize_visible(&visible_text_projection(aat));
         if projection.is_empty() || is_subsequence(&projection, &source) {
             Ok(())
@@ -263,16 +264,9 @@ fn inside_editor_note(line: &str, offset: usize) -> bool {
 }
 
 pub fn source_visible_text(txt: &str) -> String {
-    let gaiji = Regex::new(r"※(?:［＃([^］]+)］|\[#([^\]]+)\])").unwrap();
-    let explicit_ruby = Regex::new(r"｜([^《》\r\n]+)《[^》]+》").unwrap();
-    let ruby = Regex::new(r"｜?([^｜\s《》※［＃\[\]］、。，．「」『』（）()]+)《[^》]+》").unwrap();
-    let orphan_ruby = Regex::new(r"《[^》]+》").unwrap();
-    let command = Regex::new(r"［＃[^］]+］|\[#[^\]]+\]").unwrap();
-    let without_gaiji = gaiji.replace_all(txt, "");
-    let without_explicit_ruby = explicit_ruby.replace_all(&without_gaiji, "$1");
-    let without_ruby = ruby.replace_all(&without_explicit_ruby, "$1");
-    let without_orphan_ruby = orphan_ruby.replace_all(&without_ruby, "");
-    command.replace_all(&without_orphan_ruby, "").into_owned()
+    // Compatibility wrapper for existing callers. New code should use
+    // source_projection::comparison_lossy_body so the lossy semantics are named.
+    source_projection::comparison_lossy_body(txt)
 }
 
 fn normalize_visible(value: &str) -> String {
@@ -314,7 +308,8 @@ mod tests {
 
     #[test]
     fn source_visible_text_removes_orphan_ruby_after_unresolved_gaiji() {
-        let visible = source_visible_text("ことを、※［＃「口＋愛」、第3水準1-15-23］《おくび》にも");
+        let visible =
+            source_visible_text("ことを、※［＃「口＋愛」、第3水準1-15-23］《おくび》にも");
 
         assert_eq!(visible, "ことを、にも");
     }

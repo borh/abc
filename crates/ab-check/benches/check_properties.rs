@@ -32,7 +32,7 @@ fn large_matching_aat(txt: &str) -> Value {
                 "content": [
                     {
                         "kind": "text",
-                        "value": ab_check::properties::source_visible_text(ab_check::properties::body_text(txt))
+                        "value": ab_check::source_projection::comparison_lossy_body(ab_check::properties::body_text(txt))
                     }
                 ]
             }

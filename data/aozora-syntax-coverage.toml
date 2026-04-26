@@ -5,7 +5,6 @@ category = "inline_annotation"
 feature_keys = ["ruby", "ruby_prefix", "left_ruby"]
 reference_sources = [
   "references/aozorabunko/rules/kijyunn.html",
-  "references/parsers/AozoraEpub3-JDK21/chuki_tag.txt",
 ]
 source_examples = ["吾輩《わがはい》", "｜あのひと《...》", "［＃「左」の左に「ひだり」のルビ］"]
 source_patterns = ['《[^》]+》', '｜[^《\n]+《[^》]+》', '［＃「[^」]+」の左に「[^」]+」のルビ］']
@@ -26,7 +25,6 @@ category = "glyph"
 feature_keys = ["gaiji", "unicode_codepoint", "jis_code", "dakuten"]
 reference_sources = [
   "references/aozorabunko/rules/kijyunn.html",
-  "references/parsers/AozoraEpub3-JDK21/chuki_tag.txt",
 ]
 source_examples = ["※［＃「口＋世」、U+546D］", "※［＃小書き片仮名ン、237-11］"]
 source_patterns = ['※［＃[^］]+］', 'U\+[0-9A-Fa-f]{4,6}', '[0-9A-Fa-f]{1,2}-[0-9A-Fa-f]{4}', '濁点付き|半濁点付き']
@@ -47,7 +45,6 @@ category = "inline_annotation"
 feature_keys = ["gaiji", "ruby"]
 reference_sources = [
   "references/aozorabunko/rules/kijyunn.html",
-  "references/parsers/AozoraEpub3-JDK21/chuki_tag.txt",
 ]
 source_examples = ["※［＃「口＋愛」、第3水準1-15-23］《おくび》"]
 source_patterns = ['※［＃[^］]+］《[^》]+》']
@@ -68,7 +65,6 @@ category = "block"
 feature_keys = ["midashi"]
 reference_sources = [
   "references/aozorabunko/rules/kijyunn.html",
-  "references/parsers/AozoraEpub3-JDK21/chuki_tag.txt",
 ]
 source_examples = ["［＃大見出し］", "［＃「見出し」は中見出し］"]
 source_patterns = ['［＃「[^」]+」は[大中小]見出し］|［＃[大中小]見出し］']
@@ -89,7 +85,6 @@ category = "inline_annotation"
 feature_keys = ["boten", "bosen", "bold", "italic", "sesame"]
 reference_sources = [
   "references/aozorabunko/rules/kijyunn.html",
-  "references/parsers/AozoraEpub3-JDK21/chuki_tag.txt",
 ]
 source_examples = ["［＃「語」に傍点］", "［＃太字］", "［＃白ゴマ傍点］"]
 source_patterns = ['［＃「[^」]+」に傍点］|［＃傍点］', '［＃「[^」]+」に傍線］|［＃傍線］', '［＃「[^」]+」は太字］|［＃太字］', '［＃「[^」]+」は斜体］|［＃斜体］', '白ゴマ傍点|黒ゴマ傍点|丸傍点']
@@ -110,7 +105,6 @@ category = "layout"
 feature_keys = ["jisage_line", "jisage_block", "chitsuki"]
 reference_sources = [
   "references/aozorabunko/rules/kijyunn.html",
-  "references/parsers/AozoraEpub3-JDK21/chuki_tag.txt",
 ]
 source_examples = ["［＃２字下げ］", "［＃ここから２字下げ］", "［＃地付き］"]
 source_patterns = ['［＃[０-９0-9]+字下げ］', '［＃ここから[０-９0-9]+字下げ］', '［＃地付き］|［＃[０-９0-9]+字上げ］']
@@ -131,7 +125,6 @@ category = "inline_annotation"
 feature_keys = ["warigaki"]
 reference_sources = [
   "references/aozorabunko/rules/kijyunn.html",
-  "references/parsers/AozoraEpub3-JDK21/chuki_tag.txt",
 ]
 source_examples = ["［＃割り注］", "［＃ここから割り注］"]
 source_patterns = ['［＃割り注］|［＃ここから割り注］']
@@ -152,7 +145,6 @@ category = "media"
 feature_keys = ["image", "caption"]
 reference_sources = [
   "references/aozorabunko/rules/kijyunn.html",
-  "references/parsers/AozoraEpub3-JDK21/chuki_tag.txt",
 ]
 source_examples = ["［＃（fig.png）入る］", "［＃キャプション］"]
 source_patterns = ['［＃（?[^］\n]+\.(png|jpg|jpeg|gif)）?入る］', '［＃キャプション］|［＃ここからキャプション］']
@@ -173,7 +165,6 @@ category = "milestone"
 feature_keys = ["page_break", "line_break"]
 reference_sources = [
   "references/aozorabunko/rules/kijyunn.html",
-  "references/parsers/AozoraEpub3-JDK21/chuki_tag.txt",
 ]
 source_examples = ["［＃改ページ］", "［＃改行］"]
 source_patterns = ['［＃改ページ］|［＃ページの左右中央］', '［＃改行］']

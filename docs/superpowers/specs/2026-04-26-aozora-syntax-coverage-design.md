@@ -12,7 +12,6 @@ The essential artifact is a syntax coverage matrix derived from:
 - `docs/superpowers/specs/2026-04-25-parser-validation-harness-design.md`
 - `docs/superpowers/specs/2026-04-26-parser-neutral-ir-design.md`
 - `references/aozorabunko/rules/*.html`
-- `references/parsers/AozoraEpub3-JDK21/chuki_*.txt`
 - observed corpus feature inventory from `ab-index`
 
 The matrix is both a design artifact and a test-routing artifact. It says what
@@ -74,6 +73,12 @@ projection policy, and validation policy. During migration:
 The existing parser-neutral IR design remains valid for its broad goal: move
 adapter output into typed values before projection. This design refines that goal
 by making ruby bases, gaiji subtypes, and named projections explicit.
+
+`references/parsers/AozoraEpub3-JDK21/chuki_*.txt` is GPLv3 project material in
+the local parser reference tree. It may be useful for private inspection while
+understanding that parser, but it must not be used as a checked-in source for
+the syntax matrix or copied into project data. Treat AozoraEpub3 as a parser
+under comparison, not as a syntax authority.
 
 ## Current Problem
 
@@ -349,16 +354,15 @@ data/aozora-syntax-coverage.toml
 ```
 
 Each row represents one syntax feature or feature family. The field name
-`reference_sources` is used instead of `official_sources` because some useful
-tables, such as AozoraEpub3 `chuki_*.txt`, are parser references rather than
-official Aozora Bunko rules.
+`reference_sources` is used instead of `official_sources` because rows may cite
+official Aozora Bunko rules, corpus-derived evidence, and local non-GPL project
+docs. GPL parser implementation tables are excluded from this field.
 
 ```toml
 [[syntax]]
 id = "ruby.explicit_base"
 category = "inline_annotation"
 reference_sources = [
-  "references/parsers/AozoraEpub3-JDK21/chuki_tag.txt",
   "references/aozorabunko/rules/kijyunn.html"
 ]
 source_examples = ["｜あのひと《...》"]
@@ -530,7 +534,7 @@ Recommended direction:
 ## Data Flow
 
 ```text
-Official rules + chuki tables + current feature patterns
+Official rules + corpus evidence + current feature patterns
   -> syntax coverage matrix
 
 Corpus source

@@ -122,7 +122,7 @@ criterion = "0.8" # use as dev-dependency in crates that define benches
 
 - [ ] **Step 2: Create `data/feature-patterns.toml`**
 
-Derive patterns from `references/parsers/AozoraEpub3-JDK21/chuki_tag.txt` and the PARSER_REPORT feature taxonomy. Each feature needs:
+Derive patterns from official Aozora Bunko annotation guidance, observed corpus examples, and the PARSER_REPORT feature taxonomy. Do not use GPL parser implementation tables as checked-in source material. Each feature needs:
 - A unique name (e.g., `ruby`, `boten`, `jisage_line`)
 - A regex pattern that matches the markup in `.txt` files
 - A human-readable description

@@ -123,7 +123,7 @@ Before we can validate any parser, we need to know which works exercise which fe
 
 ### Feature Detection
 
-Features are detected via regex patterns stored in `data/feature-patterns.toml`. The pattern set is derived from `chuki_tag.txt` and the official annotation guide. Each feature has:
+Features are detected via regex patterns stored in `data/feature-patterns.toml`. The pattern set is derived from official Aozora Bunko annotation guidance and observed corpus examples; GPL parser implementation tables are not used as checked-in source material. Each feature has:
 
 ```toml
 [features.ruby]
@@ -391,7 +391,7 @@ The MVP does not claim full text preservation for all works. It uses this proper
 
 ### Block Marker Definitions
 
-`block_balance` is driven by `data/block-patterns.toml`, not ad hoc regexes inside `ab-check`. The file contains named start/end pairs derived from `chuki_tag.txt`, for example:
+`block_balance` is driven by `data/block-patterns.toml`, not ad hoc regexes inside `ab-check`. The file contains named start/end pairs derived from official Aozora Bunko annotation guidance and observed corpus examples, for example:
 
 ```toml
 [[blocks]]

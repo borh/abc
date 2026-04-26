@@ -105,6 +105,7 @@ dependencies = [
  "clap",
  "criterion",
  "encoding_rs",
+ "gaiji-chuki-parser",
  "serde",
  "serde_json",
  "sha2",
@@ -360,6 +361,13 @@ name = "find-msvc-tools"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5baebc0774151f905a1a2cc41989300b1e6fbb29aff0ceffa1064fdd3088d582"
+
+[[package]]
+name = "gaiji-chuki-parser"
+version = "0.1.0"
+dependencies = [
+ "winnow",
+]
 
 [[package]]
 name = "generic-array"

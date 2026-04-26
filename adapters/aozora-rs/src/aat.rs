@@ -1,7 +1,8 @@
 use std::{borrow::Cow, collections::HashSet, time::Instant};
 
-use ab_ir::{Block, Inline, ProjectedText, Provenance, RubyPlacement};
+use ab_ir::{Block, GaijiKind, GaijiRef, Inline, ProjectedText, Provenance, RubyPlacement};
 use aozora_rs_core::{Break, Deco, Retokenized};
+use winnow::Parser;
 
 use crate::{
     metrics::FallbackDecision,
@@ -410,7 +411,23 @@ fn append_source_annotation_supplements(blocks: &mut [Block], body: &str) {
         markers.ruby_readings.iter().map(|marker| marker.value),
         &existing_ruby_readings,
     );
-    append_gaiji_supplements(
+    insert_gaiji_supplements(content, body, existing_gaiji_count);
+}
+
+fn append_legacy_source_annotation_supplements(blocks: &mut [Block], body: &str) {
+    let existing_ruby_readings = ruby_readings_in_blocks(blocks);
+    let existing_gaiji_count = gaiji_count_in_blocks(blocks);
+    let markers = ab_source_syntax::source_annotations(body);
+    let Some(first_block) = blocks.first_mut() else {
+        return;
+    };
+    let content = ab_ir::block_content_mut(first_block);
+    append_ruby_supplements(
+        content,
+        markers.ruby_readings.iter().map(|marker| marker.value),
+        &existing_ruby_readings,
+    );
+    append_unresolved_gaiji_supplements(
         content,
         markers.gaiji_descriptions.iter().map(|marker| marker.value),
         existing_gaiji_count,
@@ -434,7 +451,7 @@ fn legacy_source_visible_fallback_blocks(body: &str, source_visible: String) -> 
             Provenance::SourceFallback,
         )],
     }];
-    append_source_annotation_supplements(&mut blocks, body);
+    append_legacy_source_annotation_supplements(&mut blocks, body);
     blocks
 }
 
@@ -448,12 +465,7 @@ fn structured_source_fallback_blocks(body: &str) -> Vec<Block> {
                 last_gaiji_end = None;
             }
             ab_source_syntax::SourceEventKind::Gaiji { description } => {
-                content.push(Inline::gaiji_with_provenance(
-                    description,
-                    "",
-                    None,
-                    Provenance::SourceFallback,
-                ));
+                content.push(gaiji_inline(description, Provenance::SourceFallback));
                 last_gaiji_end = Some(event.span.end);
             }
             ab_source_syntax::SourceEventKind::Ruby {
@@ -698,15 +710,120 @@ fn append_ruby_supplements(
     }
 }
 
-fn append_gaiji_supplements(
+fn insert_gaiji_supplements(content: &mut Vec<Inline>, body: &str, existing_count: usize) {
+    let mut seen = 0;
+    let mut inserted = 0;
+    for event in ab_source_syntax::source_events(body) {
+        let ab_source_syntax::SourceEventKind::Gaiji { description } = event.kind else {
+            continue;
+        };
+        if seen < existing_count {
+            seen += 1;
+            continue;
+        }
+        let prefix = source_visible_text(&body[..event.span.start]);
+        let gaiji = gaiji_inline(description, Provenance::ParserNormalized);
+        insert_inline_at_visible_len(content, prefix.len(), gaiji);
+        inserted += 1;
+        seen += 1;
+    }
+    let markers = ab_source_syntax::source_annotations(body);
+    append_unresolved_gaiji_supplements(
+        content,
+        markers.gaiji_descriptions.iter().map(|marker| marker.value),
+        existing_count + inserted,
+    );
+}
+
+fn gaiji_inline(description: &str, provenance: Provenance) -> Inline {
+    parsed_gaiji(description, provenance).unwrap_or_else(|| {
+        let fallback_provenance = if provenance == Provenance::ParserNormalized {
+            Provenance::SourceSupplement
+        } else {
+            provenance
+        };
+        Inline::gaiji_with_provenance(description, "", None, fallback_provenance)
+    })
+}
+
+fn parsed_gaiji(description: &str, provenance: Provenance) -> Option<Inline> {
+    let mut input = description;
+    let parsed = gaiji_chuki_parser::parse_tag.parse_next(&mut input).ok()?;
+    if !input.is_empty() {
+        return None;
+    }
+
+    let (kind, resolved) = if let Some(unicode) = parsed.unicode {
+        let values = unicode.chars().collect::<Vec<_>>();
+        let kind = match values.as_slice() {
+            [value] => GaijiKind::UnicodeCodepoint { value: *value },
+            _ => GaijiKind::UnicodeSequence {
+                values: values.clone(),
+            },
+        };
+        (kind, Some(String::new()))
+    } else if let Some((plane, row, cell)) = parsed.sjis {
+        (
+            GaijiKind::JisCode {
+                plane: Some(plane),
+                row,
+                cell,
+            },
+            Some(String::new()),
+        )
+    } else {
+        return None;
+    };
+
+    Some(Inline::gaiji_ref(GaijiRef {
+        source: format!("※［＃{description}］"),
+        description: description.to_owned(),
+        description_format: Some("aozora-gaiji-tag".to_owned()),
+        kind,
+        resolved,
+        provenance,
+    }))
+}
+
+fn insert_inline_at_visible_len(content: &mut Vec<Inline>, target: usize, node: Inline) {
+    let mut visible_len = 0;
+    let mut idx = 0;
+    while idx < content.len() {
+        let node_len = inline_visible_len(&content[idx]);
+        if visible_len + node_len < target {
+            visible_len += node_len;
+            idx += 1;
+            continue;
+        }
+        if visible_len + node_len == target {
+            content.insert(idx + 1, node);
+            return;
+        }
+        if let Inline::Text { value, provenance } = &mut content[idx] {
+            let split_at = target - visible_len;
+            if value.is_char_boundary(split_at) {
+                let trailing = value.split_off(split_at);
+                let provenance = *provenance;
+                content.insert(idx + 1, node);
+                if !trailing.is_empty() {
+                    content.insert(idx + 2, Inline::text_with_provenance(trailing, provenance));
+                }
+                return;
+            }
+        }
+        break;
+    }
+    content.push(node);
+}
+
+fn append_unresolved_gaiji_supplements(
     content: &mut Vec<Inline>,
     descriptions: impl IntoIterator<Item = impl AsRef<str>>,
     existing_count: usize,
 ) {
     for description in descriptions.into_iter().skip(existing_count) {
-        let description = description.as_ref();
         content.push(Inline::gaiji_with_provenance(
-            description,
+            description.as_ref(),
             "",
             None,
             Provenance::SourceSupplement,
@@ -946,7 +1063,7 @@ mod tests {
     }
 
     #[test]
-    fn source_annotation_supplements_are_marked_as_source_derived() {
+    fn source_annotation_supplements_keep_ruby_source_derived() {
         let mut blocks = vec![Block::Paragraph { content: vec![] }];
 
         append_source_annotation_supplements(
@@ -955,7 +1072,65 @@ mod tests {
         );
 
         let counts = ab_ir::provenance_counts(&blocks);
-        assert_eq!(counts.source_supplement, 2);
+        assert_eq!(counts.source_supplement, 1);
+        assert_eq!(counts.parser_normalized, 1);
+    }
+
+    #[test]
+    fn source_annotation_supplements_parse_unicode_gaiji_as_parser_normalized() {
+        let mut blocks = vec![Block::Paragraph { content: vec![] }];
+
+        append_source_annotation_supplements(&mut blocks, "※［＃「口＋世」、U+546D］");
+
+        let counts = ab_ir::provenance_counts(&blocks);
+        assert_eq!(counts.source_supplement, 0);
+        assert_eq!(counts.parser_normalized, 1);
+        let json = ab_ir::blocks_to_aat_json(&blocks);
+        assert_eq!(json[0]["content"][0]["kind"], "gaiji");
+        assert_eq!(json[0]["content"][0]["description"], "「口＋世」、U+546D");
+        assert_eq!(json[0]["content"][0]["resolved"], "");
+    }
+
+    #[test]
+    fn source_annotation_supplements_parse_jis_gaiji_as_invisible_parser_normalized() {
+        let mut blocks = vec![Block::Paragraph { content: vec![] }];
+
+        append_source_annotation_supplements(
+            &mut blocks,
+            "※［＃「二点しんにょう＋官」、第3水準1-92-56］",
+        );
+
+        let counts = ab_ir::provenance_counts(&blocks);
+        assert_eq!(counts.source_supplement, 0);
+        assert_eq!(counts.parser_normalized, 1);
+        let json = ab_ir::blocks_to_aat_json(&blocks);
+        assert_eq!(json[0]["content"][0]["kind"], "gaiji");
+        assert_eq!(
+            json[0]["content"][0]["description"],
+            "「二点しんにょう＋官」、第3水準1-92-56"
+        );
+        assert_eq!(json[0]["content"][0]["resolved"], "");
+    }
+
+    #[test]
+    fn source_annotation_supplements_keep_gaiji_inside_ruby_reading_as_invisible_metadata() {
+        let mut blocks = vec![Block::Paragraph {
+            content: vec![Inline::ruby(
+                "淡絹",
+                "※［＃濁点付き片仮名ヱ、1-7-84］エル",
+            )],
+        }];
+
+        append_source_annotation_supplements(
+            &mut blocks,
+            "淡絹《※［＃濁点付き片仮名ヱ、1-7-84］エル》",
+        );
+
+        let counts = ab_ir::provenance_counts(&blocks);
+        assert_eq!(counts.source_supplement, 1);
+        let json = ab_ir::blocks_to_aat_json(&blocks);
+        assert_eq!(json[0]["content"][1]["kind"], "gaiji");
+        assert_eq!(json[0]["content"][1]["resolved"], "");
     }
 
     #[test]

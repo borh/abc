@@ -175,7 +175,8 @@ mod tests {
         assert_eq!(metrics["source_bytes"], input.len());
         assert!(metrics["tokenized_count"].as_u64().unwrap() > 0);
         assert!(metrics["retokenized_count"].as_u64().unwrap() > 0);
-        assert!(metrics["source_supplement_nodes"].as_u64().unwrap() > 0);
+        assert_eq!(metrics["source_supplement_nodes"], 0);
+        assert!(metrics["parser_normalized_nodes"].as_u64().unwrap() > 0);
         assert_eq!(metrics["source_fallback_nodes"], 0);
         assert!(
             value["meta"]["semantic_summary"]["syntax"]
@@ -297,7 +298,7 @@ mod tests {
     }
 
     #[test]
-    fn source_supplements_do_not_force_whole_work_fallback() {
+    fn parser_normalized_gaiji_does_not_force_whole_work_fallback() {
         let input = "\
 タイトル
 著者
@@ -313,7 +314,8 @@ mod tests {
         assert_eq!(metrics["fallback_used"], false);
         assert_eq!(metrics["fallback_reason"], "none");
         assert!(metrics["parser_nodes"].as_u64().unwrap() > 0);
-        assert!(metrics["source_supplement_nodes"].as_u64().unwrap() > 0);
+        assert_eq!(metrics["source_supplement_nodes"], 0);
+        assert!(metrics["parser_normalized_nodes"].as_u64().unwrap() > 0);
         assert_eq!(metrics["source_fallback_nodes"], 0);
     }
 }

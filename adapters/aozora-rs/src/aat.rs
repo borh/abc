@@ -1,6 +1,6 @@
 use std::{borrow::Cow, collections::HashSet, time::Instant};
 
-use ab_ir::{Block, Inline, ProjectedText, Provenance};
+use ab_ir::{Block, Inline, ProjectedText, Provenance, RubyPlacement};
 use aozora_rs_core::{Break, Deco, Retokenized};
 
 use crate::{
@@ -408,6 +408,14 @@ fn append_source_annotation_supplements(blocks: &mut [Block], body: &str) {
 }
 
 fn source_visible_fallback_blocks(body: &str, source_visible: String) -> Vec<Block> {
+    let blocks = structured_source_fallback_blocks(body);
+    if ab_ir::visible_projection(&blocks).visible_text == source_visible {
+        return blocks;
+    }
+    legacy_source_visible_fallback_blocks(body, source_visible)
+}
+
+fn legacy_source_visible_fallback_blocks(body: &str, source_visible: String) -> Vec<Block> {
     let mut blocks = vec![Block::Paragraph {
         content: vec![Inline::text_with_provenance(
             source_visible,
@@ -416,6 +424,269 @@ fn source_visible_fallback_blocks(body: &str, source_visible: String) -> Vec<Blo
     }];
     append_source_annotation_supplements(&mut blocks, body);
     blocks
+}
+
+fn structured_source_fallback_blocks(body: &str) -> Vec<Block> {
+    let mut content = Vec::new();
+    let mut offset = 0;
+    let mut last_gaiji_end = None;
+    while offset < body.len() {
+        let rest = &body[offset..];
+        if rest.starts_with("※［＃") {
+            let content_start = offset + "※［＃".len();
+            if let Some(content_end) = fallback_marker_end_on_same_line(body, content_start, '］')
+            {
+                content.push(Inline::gaiji_with_provenance(
+                    &body[content_start..content_end],
+                    "",
+                    None,
+                    Provenance::SourceFallback,
+                ));
+                offset = content_end + '］'.len_utf8();
+                last_gaiji_end = Some(offset);
+                continue;
+            }
+        }
+        if rest.starts_with("※[#") {
+            let content_start = offset + "※[#".len();
+            if let Some(content_end) = fallback_marker_end_on_same_line(body, content_start, ']') {
+                content.push(Inline::gaiji_with_provenance(
+                    &body[content_start..content_end],
+                    "",
+                    None,
+                    Provenance::SourceFallback,
+                ));
+                offset = content_end + 1;
+                last_gaiji_end = Some(offset);
+                continue;
+            }
+        }
+        if rest.starts_with("［＃") {
+            let content_start = offset + "［＃".len();
+            if let Some(end) = fallback_command_end_on_same_line(body, content_start, '］') {
+                offset = end + '］'.len_utf8();
+                last_gaiji_end = None;
+                continue;
+            }
+        }
+        if rest.starts_with("[#") {
+            let content_start = offset + "[#".len();
+            if let Some(end) = fallback_command_end_on_same_line(body, content_start, ']') {
+                offset = end + 1;
+                last_gaiji_end = None;
+                continue;
+            }
+        }
+        if rest.starts_with('｜') {
+            let base_start = offset + '｜'.len_utf8();
+            if let Some((base_end, reading_start, reading_end, marker_end)) =
+                explicit_source_ruby_bounds(body, base_start)
+            {
+                let base_source = &body[base_start..base_end];
+                let base = source_visible_text(base_source).into_owned();
+                push_source_fallback_ruby(
+                    &mut content,
+                    base,
+                    base_source,
+                    &body[reading_start..reading_end],
+                );
+                offset = marker_end;
+                last_gaiji_end = None;
+                continue;
+            }
+        }
+        if rest.starts_with('《') {
+            let reading_start = offset + '《'.len_utf8();
+            if let Some(reading_end) = fallback_marker_end_on_same_line(body, reading_start, '》')
+            {
+                if last_gaiji_end != Some(offset) {
+                    let base = take_implicit_ruby_base(&mut content);
+                    push_source_fallback_ruby(
+                        &mut content,
+                        base,
+                        "",
+                        &body[reading_start..reading_end],
+                    );
+                }
+                offset = reading_end + '》'.len_utf8();
+                last_gaiji_end = None;
+                continue;
+            }
+        }
+
+        let ch = rest.chars().next().expect("non-empty rest has a char");
+        if ch != '※' && ch != '｜' {
+            push_source_fallback_text(&mut content, ch.encode_utf8(&mut [0; 4]));
+        }
+        offset += ch.len_utf8();
+        last_gaiji_end = None;
+    }
+
+    vec![Block::Paragraph { content }]
+}
+
+fn push_source_fallback_ruby(
+    content: &mut Vec<Inline>,
+    base: String,
+    base_source: &str,
+    reading: &str,
+) {
+    let base = if base.is_empty() {
+        Vec::new()
+    } else {
+        vec![Inline::text_with_provenance(
+            base,
+            Provenance::SourceFallback,
+        )]
+    };
+    content.push(Inline::ruby_with_base_and_provenance(
+        base,
+        reading,
+        RubyPlacement::Right,
+        Provenance::SourceFallback,
+    ));
+    for marker in ab_source_syntax::source_annotations(base_source)
+        .gaiji_descriptions
+        .into_iter()
+        .chain(ab_source_syntax::source_annotations(reading).gaiji_descriptions)
+    {
+        content.push(Inline::gaiji_with_provenance(
+            marker.value,
+            "",
+            None,
+            Provenance::SourceFallback,
+        ));
+    }
+}
+
+fn push_source_fallback_text(content: &mut Vec<Inline>, text: &str) {
+    if let Some(Inline::Text { value, provenance }) = content.last_mut()
+        && *provenance == Provenance::SourceFallback
+    {
+        value.push_str(text);
+        return;
+    }
+    content.push(Inline::text_with_provenance(
+        text,
+        Provenance::SourceFallback,
+    ));
+}
+
+fn take_implicit_ruby_base(content: &mut Vec<Inline>) -> String {
+    let Some(Inline::Text { value, .. }) = content.last_mut() else {
+        return String::new();
+    };
+    let start = value
+        .char_indices()
+        .rev()
+        .find_map(|(offset, ch)| implicit_ruby_boundary(ch).then_some(offset + ch.len_utf8()))
+        .unwrap_or(0);
+    let base = value.split_off(start);
+    if value.is_empty() {
+        content.pop();
+    }
+    base
+}
+
+fn implicit_ruby_boundary(ch: char) -> bool {
+    ch.is_whitespace()
+        || matches!(
+            ch,
+            '｜' | '《'
+                | '》'
+                | '※'
+                | '［'
+                | '＃'
+                | '['
+                | '#'
+                | ']'
+                | '］'
+                | '、'
+                | '。'
+                | '，'
+                | '．'
+                | '「'
+                | '」'
+                | '『'
+                | '』'
+                | '（'
+                | '）'
+                | '('
+                | ')'
+        )
+}
+
+fn explicit_source_ruby_bounds(
+    txt: &str,
+    base_start: usize,
+) -> Option<(usize, usize, usize, usize)> {
+    let base_end = txt[base_start..]
+        .find('《')
+        .map(|offset| base_start + offset)?;
+    if txt[base_start..base_end]
+        .chars()
+        .any(|ch| matches!(ch, '\r' | '\n' | '》'))
+    {
+        return None;
+    }
+    let reading_start = base_end + '《'.len_utf8();
+    let reading_end = fallback_marker_end_on_same_line(txt, reading_start, '》')?;
+    Some((
+        base_end,
+        reading_start,
+        reading_end,
+        reading_end + '》'.len_utf8(),
+    ))
+}
+
+fn fallback_marker_end_on_same_line(
+    text: &str,
+    content_start: usize,
+    end_marker: char,
+) -> Option<usize> {
+    for (offset, ch) in text[content_start..].char_indices() {
+        if ch == end_marker {
+            return Some(content_start + offset);
+        }
+        if matches!(ch, '\r' | '\n') {
+            return None;
+        }
+    }
+    None
+}
+
+fn fallback_command_end_on_same_line(
+    text: &str,
+    content_start: usize,
+    end_marker: char,
+) -> Option<usize> {
+    let mut offset = content_start;
+    while offset < text.len() {
+        let rest = &text[offset..];
+        if rest.starts_with("※［＃") {
+            let nested_start = offset + "※［＃".len();
+            if let Some(end) = fallback_marker_end_on_same_line(text, nested_start, '］') {
+                offset = end + '］'.len_utf8();
+                continue;
+            }
+        }
+        if rest.starts_with("※[#") {
+            let nested_start = offset + "※[#".len();
+            if let Some(end) = fallback_marker_end_on_same_line(text, nested_start, ']') {
+                offset = end + 1;
+                continue;
+            }
+        }
+        let ch = rest.chars().next().expect("non-empty rest has a char");
+        if ch == end_marker {
+            return Some(offset);
+        }
+        if matches!(ch, '\r' | '\n') {
+            return None;
+        }
+        offset += ch.len_utf8();
+    }
+    None
 }
 
 fn append_ruby_supplements(
@@ -546,6 +817,68 @@ mod tests {
     }
 
     #[test]
+    fn fallback_blocks_preserve_source_markers_in_place_without_supplements() {
+        let body = "吾輩《わがはい》は※［＃「口＋世」、U+546D］である。";
+        let (blocks, projected) = build_fallback(body);
+        let counts = ab_ir::provenance_counts(&blocks);
+        let json = ab_ir::blocks_to_aat_json(&blocks);
+
+        assert_eq!(projected.visible_text, "吾輩はである。");
+        assert_eq!(counts.source_supplement, 0);
+        assert_eq!(json[0]["content"][0]["kind"], "ruby");
+        assert_eq!(json[0]["content"][0]["base"], "吾輩");
+        assert_eq!(json[0]["content"][0]["reading"], "わがはい");
+        assert_eq!(json[0]["content"][2]["kind"], "gaiji");
+        assert_eq!(json[0]["content"][2]["description"], "「口＋世」、U+546D");
+        assert_eq!(json[0]["content"][2]["x-provenance"], "source_fallback");
+    }
+
+    #[test]
+    fn fallback_blocks_do_not_emit_orphan_ruby_after_unresolved_gaiji() {
+        let body = "ことを、※［＃「口＋愛」、第3水準1-15-23］《おくび》にも";
+        let (blocks, projected) = build_fallback(body);
+        let json = ab_ir::blocks_to_aat_json(&blocks);
+        let content = json[0]["content"].as_array().unwrap();
+
+        assert_eq!(projected.visible_text, "ことを、にも");
+        assert!(content.iter().any(|node| node["kind"] == "gaiji"));
+        assert!(!content.iter().any(|node| node["reading"] == "おくび"));
+    }
+
+    #[test]
+    fn fallback_blocks_preserve_gaiji_markers_inside_ruby_readings() {
+        let body = "淡絹《※［＃濁点付き片仮名ヱ、1-7-84］エル》";
+        let (blocks, projected) = build_fallback(body);
+        let json = ab_ir::blocks_to_aat_json(&blocks);
+        let content = json[0]["content"].as_array().unwrap();
+
+        assert_eq!(projected.visible_text, "淡絹");
+        assert!(content.iter().any(|node| node["kind"] == "ruby"));
+        assert!(content.iter().any(|node| {
+            node["kind"] == "gaiji" && node["description"] == "濁点付き片仮名ヱ、1-7-84"
+        }));
+        assert_eq!(ab_ir::provenance_counts(&blocks).source_supplement, 0);
+    }
+
+    #[test]
+    fn fallback_blocks_preserve_gaiji_markers_inside_explicit_ruby_bases() {
+        let body = "木部｜孤※［＃「筑」の「凡」に代えて「卩」、第3水準1-89-60］《こきょう》";
+        let (blocks, projected) = build_fallback(body);
+        let json = ab_ir::blocks_to_aat_json(&blocks);
+        let content = json[0]["content"].as_array().unwrap();
+
+        assert_eq!(projected.visible_text, "木部孤");
+        assert!(content.iter().any(|node| {
+            node["kind"] == "ruby" && node["base"] == "孤" && node["reading"] == "こきょう"
+        }));
+        assert!(content.iter().any(|node| {
+            node["kind"] == "gaiji"
+                && node["description"] == "「筑」の「凡」に代えて「卩」、第3水準1-89-60"
+        }));
+        assert_eq!(ab_ir::provenance_counts(&blocks).source_supplement, 0);
+    }
+
+    #[test]
     fn fallback_blocks_can_reuse_source_visible_text() {
         let body = "吾輩《わがはい》は猫である。";
         let source_visible = source_visible_text(body).into_owned();
@@ -554,7 +887,8 @@ mod tests {
 
         assert!(matches!(blocks[0], Block::Paragraph { .. }));
         assert_eq!(projected.visible_text, "吾輩は猫である。");
-        assert_eq!(ab_ir::provenance_counts(&blocks).source_fallback, 1);
+        assert!(ab_ir::provenance_counts(&blocks).source_fallback > 0);
+        assert_eq!(ab_ir::provenance_counts(&blocks).source_supplement, 0);
     }
 
     #[test]

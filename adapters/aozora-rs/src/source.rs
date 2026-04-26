@@ -1,13 +1,13 @@
 use std::{
     borrow::Cow,
-    sync::OnceLock,
     time::{Duration, Instant},
 };
 
 use anyhow::Result;
 use encoding_rs::SHIFT_JIS;
-use regex::Regex;
 use sha2::{Digest, Sha256};
+
+use crate::source_syntax;
 
 #[derive(Debug)]
 pub struct DecodedSource {
@@ -119,71 +119,11 @@ pub(crate) fn starts_with_separator(text: &str) -> bool {
 }
 
 pub(crate) fn source_visible_text(txt: &str) -> Cow<'_, str> {
-    if !needs_source_visible_normalization(txt) {
-        return Cow::Borrowed(txt);
-    }
-    let without_gaiji = gaiji_regex().replace_all(txt, "");
-    let without_explicit_ruby = explicit_ruby_regex().replace_all(&without_gaiji, "$1");
-    let without_ruby = ruby_regex().replace_all(&without_explicit_ruby, "$1");
-    let without_orphan_ruby = orphan_ruby_regex().replace_all(&without_ruby, "");
-    let without_commands = command_regex()
-        .replace_all(&without_orphan_ruby, "")
-        .replace('※', "");
-    Cow::Owned(remove_bottom_note_fragments(&without_commands))
-}
-
-fn needs_source_visible_normalization(txt: &str) -> bool {
-    txt.find(['※', '《', '｜', '［', '[', '」']).is_some()
+    source_syntax::project_lossy_visible_text(txt)
 }
 
 pub(crate) fn remove_bottom_note_fragments(txt: &str) -> String {
-    let without_bottom_notes = bottom_note_regex().replace_all(txt, "");
-    let without_gaiji_notes = gaiji_note_regex().replace_all(&without_bottom_notes, "");
-    mama_note_regex()
-        .replace_all(&without_gaiji_notes, "")
-        .into_owned()
-}
-
-fn gaiji_regex() -> &'static Regex {
-    static REGEX: OnceLock<Regex> = OnceLock::new();
-    REGEX.get_or_init(|| Regex::new(r"※(?:［＃([^］]+)］|\[#([^\]]+)\])").unwrap())
-}
-
-fn ruby_regex() -> &'static Regex {
-    static REGEX: OnceLock<Regex> = OnceLock::new();
-    REGEX.get_or_init(|| {
-        Regex::new(r"｜?([^｜\s《》※［＃\[\]］、。，．「」『』（）()]+)《[^》]+》").unwrap()
-    })
-}
-
-fn explicit_ruby_regex() -> &'static Regex {
-    static REGEX: OnceLock<Regex> = OnceLock::new();
-    REGEX.get_or_init(|| Regex::new(r"｜([^《》\r\n]+)《[^》]+》").unwrap())
-}
-
-fn orphan_ruby_regex() -> &'static Regex {
-    static REGEX: OnceLock<Regex> = OnceLock::new();
-    REGEX.get_or_init(|| Regex::new(r"《[^》]+》").unwrap())
-}
-
-fn command_regex() -> &'static Regex {
-    static REGEX: OnceLock<Regex> = OnceLock::new();
-    REGEX.get_or_init(|| Regex::new(r"［＃[^］]+］|\[#[^\]]+\]").unwrap())
-}
-
-fn bottom_note_regex() -> &'static Regex {
-    static REGEX: OnceLock<Regex> = OnceLock::new();
-    REGEX.get_or_init(|| Regex::new(r#"[^「」\s、。，．]+」は底本では「[^］\]]+[］\]]"#).unwrap())
-}
-
-fn gaiji_note_regex() -> &'static Regex {
-    static REGEX: OnceLock<Regex> = OnceLock::new();
-    REGEX.get_or_init(|| Regex::new(r#"[^「」\s、。，．]*」の「[^］\]]+[］\]]"#).unwrap())
-}
-
-fn mama_note_regex() -> &'static Regex {
-    static REGEX: OnceLock<Regex> = OnceLock::new();
-    REGEX.get_or_init(|| Regex::new(r#"[^「」\s、。，．]{1,80}」はママ[］\]]"#).unwrap())
+    source_syntax::remove_bottom_note_fragments(txt)
 }
 
 fn hex_sha256(bytes: &[u8]) -> String {

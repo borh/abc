@@ -8,6 +8,7 @@ mod metrics;
 mod parser;
 mod projection;
 mod source;
+mod source_syntax;
 
 use metrics::{AdapterMetrics, AdapterMetricsParts, FallbackDecision, FallbackReason};
 use parser::ParsedSource;

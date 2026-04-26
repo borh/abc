@@ -673,6 +673,18 @@ mod tests {
     }
 
     #[test]
+    fn fallback_blocks_remove_jis_gaiji_markers_from_large_body_projection() {
+        let mut body =
+            "この卷見※［＃「二点しんにょう＋官」、第3水準1-92-56］すべきもの\n".repeat(10_000);
+        body.push_str("終わり");
+
+        let (_blocks, projected) = build_fallback(&body);
+
+        assert!(!projected.visible_text.contains("二点しんにょう"));
+        assert!(projected.visible_text.contains("この卷見すべきもの"));
+    }
+
+    #[test]
     fn source_annotation_supplements_are_marked_as_regex_derived() {
         let mut blocks = vec![Block::Paragraph { content: vec![] }];
 

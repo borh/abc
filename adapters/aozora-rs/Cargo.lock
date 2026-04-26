@@ -100,7 +100,6 @@ dependencies = [
  "clap",
  "criterion",
  "encoding_rs",
- "regex",
  "serde",
  "serde_json",
  "sha2",

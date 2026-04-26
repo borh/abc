@@ -50,85 +50,48 @@ pub struct AdapterMetrics {
     pub fallback_build: Duration,
     pub source_bytes: usize,
     pub validation_body_bytes: usize,
+    pub parse_body_strategy: &'static str,
     pub parser_body_bytes: usize,
     pub tokenized_count: usize,
     pub retokenized_count: usize,
     pub fallback: FallbackDecision,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct StageTiming {
-    pub stage: &'static str,
-    pub elapsed: Duration,
+#[derive(Debug, Clone)]
+pub struct AdapterMetricsParts<'a> {
+    pub decoded: &'a crate::source::DecodedSource,
+    pub decode: Duration,
+    pub body: &'a crate::source::BodySelection<'a>,
+    pub parse: crate::parser::ParseTimings,
+    pub aat: crate::aat::AatBuildTimings,
+    pub projection_check: Duration,
+    pub fallback_build: Duration,
+    pub parse_body_strategy: crate::parser::ParseBodyStrategy,
+    pub parser_body_bytes: usize,
+    pub tokenized_count: usize,
+    pub retokenized_count: usize,
+    pub fallback: FallbackDecision,
 }
 
 impl AdapterMetrics {
-    pub fn from_parts(
-        decoded: &crate::source::DecodedSource,
-        decode: Duration,
-        body: &crate::source::BodySelection<'_>,
-        parse: crate::parser::ParseTimings,
-        aat: crate::aat::AatBuildTimings,
-        projection_check: Duration,
-        fallback_build: Duration,
-        parser_body_bytes: usize,
-        tokenized_count: usize,
-        retokenized_count: usize,
-        fallback: FallbackDecision,
-    ) -> Self {
+    pub fn from_parts(parts: AdapterMetricsParts<'_>) -> Self {
         Self {
-            decode,
-            body_selection: parse.body_selection,
-            tokenize: parse.tokenize,
-            scopenize: parse.scopenize,
-            retokenize: parse.retokenize,
-            aat_build: aat.build,
-            projection_check,
-            fallback_build,
-            source_bytes: decoded.source_bytes,
-            validation_body_bytes: body.validation_body.len(),
-            parser_body_bytes,
-            tokenized_count,
-            retokenized_count,
-            fallback,
+            decode: parts.decode,
+            body_selection: parts.parse.body_selection,
+            tokenize: parts.parse.tokenize,
+            scopenize: parts.parse.scopenize,
+            retokenize: parts.parse.retokenize,
+            aat_build: parts.aat.build,
+            projection_check: parts.projection_check,
+            fallback_build: parts.fallback_build,
+            source_bytes: parts.decoded.source_bytes,
+            validation_body_bytes: parts.body.validation_body.len(),
+            parse_body_strategy: parse_body_strategy_name(parts.parse_body_strategy),
+            parser_body_bytes: parts.parser_body_bytes,
+            tokenized_count: parts.tokenized_count,
+            retokenized_count: parts.retokenized_count,
+            fallback: parts.fallback,
         }
-    }
-
-    pub fn stages(&self) -> Vec<StageTiming> {
-        vec![
-            StageTiming {
-                stage: "decode",
-                elapsed: self.decode,
-            },
-            StageTiming {
-                stage: "body_selection",
-                elapsed: self.body_selection,
-            },
-            StageTiming {
-                stage: "tokenize",
-                elapsed: self.tokenize,
-            },
-            StageTiming {
-                stage: "scopenize",
-                elapsed: self.scopenize,
-            },
-            StageTiming {
-                stage: "retokenize",
-                elapsed: self.retokenize,
-            },
-            StageTiming {
-                stage: "aat_build",
-                elapsed: self.aat_build,
-            },
-            StageTiming {
-                stage: "projection_check",
-                elapsed: self.projection_check,
-            },
-            StageTiming {
-                stage: "fallback_build",
-                elapsed: self.fallback_build,
-            },
-        ]
     }
 
     pub fn to_json(&self) -> serde_json::Value {
@@ -143,6 +106,7 @@ impl AdapterMetrics {
             "fallback_build_ms": ms(self.fallback_build),
             "source_bytes": self.source_bytes,
             "validation_body_bytes": self.validation_body_bytes,
+            "parse_body_strategy": self.parse_body_strategy,
             "parser_body_bytes": self.parser_body_bytes,
             "tokenized_count": self.tokenized_count,
             "retokenized_count": self.retokenized_count,
@@ -156,10 +120,16 @@ fn ms(duration: Duration) -> f64 {
     duration.as_secs_f64() * 1000.0
 }
 
+fn parse_body_strategy_name(strategy: crate::parser::ParseBodyStrategy) -> &'static str {
+    match strategy {
+        crate::parser::ParseBodyStrategy::ParserMeta => "parser_meta",
+        crate::parser::ParseBodyStrategy::SeparatorFallback => "separator_fallback",
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::time::Duration;
 
     #[test]
     fn fallback_reason_serializes_as_plain_string() {
@@ -175,18 +145,19 @@ mod tests {
     }
 
     #[test]
-    fn adapter_metrics_exposes_ordered_stages() {
+    fn adapter_metrics_serializes_parse_body_strategy() {
         let metrics = AdapterMetrics {
-            decode: Duration::from_millis(1),
-            body_selection: Duration::from_millis(2),
-            tokenize: Duration::from_millis(3),
-            scopenize: Duration::from_millis(4),
-            retokenize: Duration::from_millis(5),
-            aat_build: Duration::from_millis(6),
-            projection_check: Duration::from_millis(7),
-            fallback_build: Duration::from_millis(8),
+            decode: Duration::ZERO,
+            body_selection: Duration::ZERO,
+            tokenize: Duration::ZERO,
+            scopenize: Duration::ZERO,
+            retokenize: Duration::ZERO,
+            aat_build: Duration::ZERO,
+            projection_check: Duration::ZERO,
+            fallback_build: Duration::ZERO,
             source_bytes: 10,
             validation_body_bytes: 11,
+            parse_body_strategy: "separator_fallback",
             parser_body_bytes: 12,
             tokenized_count: 13,
             retokenized_count: 14,
@@ -196,12 +167,9 @@ mod tests {
             },
         };
 
-        let stages = metrics.stages();
-        assert_eq!(stages.first().unwrap().stage, "decode");
-        assert_eq!(stages.last().unwrap().stage, "fallback_build");
         assert_eq!(
-            stages.iter().map(|stage| stage.elapsed).sum::<Duration>(),
-            Duration::from_millis(36)
+            metrics.to_json()["parse_body_strategy"],
+            "separator_fallback"
         );
     }
 }

@@ -9,7 +9,7 @@ mod parser;
 mod projection;
 mod source;
 
-use metrics::{AdapterMetrics, FallbackDecision, FallbackReason};
+use metrics::{AdapterMetrics, AdapterMetricsParts, FallbackDecision, FallbackReason};
 use parser::ParsedSource;
 pub use source::{DecodedSource, decode_source_bytes};
 
@@ -22,19 +22,20 @@ pub fn aat_json_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
     let selection = source::select_body(&decoded);
     let parsed = parser::parse_with_aozora_rs(selection)?;
     let (result, projection_check, fallback_build) = build_aat_result(&parsed);
-    let metrics = AdapterMetrics::from_parts(
-        &decoded,
+    let metrics = AdapterMetrics::from_parts(AdapterMetricsParts {
+        decoded: &decoded,
         decode,
-        &parsed.body,
-        parsed.timings,
-        result.timings,
+        body: &parsed.body,
+        parse: parsed.timings,
+        aat: result.timings,
         projection_check,
         fallback_build,
-        parsed.parse_body.parser_body.len(),
-        parsed.tokenized_count,
-        parsed.retokenized_count,
-        result.fallback.clone(),
-    );
+        parse_body_strategy: parsed.parse_body.strategy,
+        parser_body_bytes: parsed.parse_body.parser_body.len(),
+        tokenized_count: parsed.tokenized_count,
+        retokenized_count: parsed.retokenized_count,
+        fallback: result.fallback.clone(),
+    });
     let aat = build_aat(&decoded, &parsed.warnings, &result, metrics.to_json());
     let mut out = Vec::new();
     serde_json::to_writer(&mut out, &aat)?;
@@ -89,22 +90,20 @@ fn build_aat_result(parsed: &ParsedSource<'_>) -> (aat::AatBuildResult, Duration
     };
 
     let mut fallback_build = Duration::ZERO;
-    let (blocks, projected) = if fallback.used {
+    let blocks = if fallback.used {
         let fallback_start = Instant::now();
-        let built = aat::build_fallback(parsed.body.validation_body);
+        let (blocks, _) = aat::build_fallback(parsed.body.validation_body);
         fallback_build = fallback_start.elapsed();
-        built
+        blocks
     } else {
-        (initial.blocks, initial.projected)
+        initial.blocks
     };
 
     (
         aat::AatBuildResult {
             blocks,
-            projected,
             fallback,
             timings: initial.timings,
-            projection,
         },
         projection_check,
         fallback_build,
@@ -178,19 +177,20 @@ mod tests {
         };
 
         let (result, projection_check, fallback_build) = build_aat_result(&parsed);
-        let metrics = AdapterMetrics::from_parts(
-            &decoded,
-            Duration::ZERO,
-            &parsed.body,
-            parsed.timings,
-            result.timings,
+        let metrics = AdapterMetrics::from_parts(AdapterMetricsParts {
+            decoded: &decoded,
+            decode: Duration::ZERO,
+            body: &parsed.body,
+            parse: parsed.timings,
+            aat: result.timings,
             projection_check,
             fallback_build,
-            parsed.parse_body.parser_body.len(),
-            parsed.tokenized_count,
-            parsed.retokenized_count,
-            result.fallback.clone(),
-        );
+            parse_body_strategy: parsed.parse_body.strategy,
+            parser_body_bytes: parsed.parse_body.parser_body.len(),
+            tokenized_count: parsed.tokenized_count,
+            retokenized_count: parsed.retokenized_count,
+            fallback: result.fallback.clone(),
+        });
         let value = build_aat(&decoded, &parsed.warnings, &result, metrics.to_json());
 
         assert_eq!(value["meta"]["metrics"]["fallback_used"], true);

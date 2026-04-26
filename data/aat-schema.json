@@ -74,6 +74,7 @@
         "fallback_build_ms": { "type": "number", "minimum": 0 },
         "source_bytes": { "type": "integer", "minimum": 0 },
         "validation_body_bytes": { "type": "integer", "minimum": 0 },
+        "parse_body_strategy": { "enum": ["parser_meta", "separator_fallback"] },
         "parser_body_bytes": { "type": "integer", "minimum": 0 },
         "tokenized_count": { "type": "integer", "minimum": 0 },
         "retokenized_count": { "type": "integer", "minimum": 0 },

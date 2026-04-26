@@ -54,6 +54,7 @@ fn aat_schema_accepts_adapter_metrics_metadata() {
                 "fallback_build_ms": 0.0,
                 "source_bytes": 8,
                 "validation_body_bytes": 9,
+                "parse_body_strategy": "separator_fallback",
                 "parser_body_bytes": 10,
                 "tokenized_count": 11,
                 "retokenized_count": 12,

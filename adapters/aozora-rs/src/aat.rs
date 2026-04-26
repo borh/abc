@@ -7,7 +7,6 @@ use serde_json::json;
 use crate::{
     metrics::FallbackDecision,
     parser::ParsedSource,
-    projection::ProjectionSummary,
     source::{remove_bottom_note_fragments, source_visible_text},
 };
 
@@ -56,10 +55,8 @@ pub struct InitialAatBuildResult {
 #[derive(Debug, Clone)]
 pub struct AatBuildResult {
     pub blocks: Vec<AatBlock>,
-    pub projected: ProjectedText,
     pub fallback: FallbackDecision,
     pub timings: AatBuildTimings,
-    pub projection: ProjectionSummary,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -1,8 +1,9 @@
-use std::{fs, io::Write, path::Path, process::Command};
+use std::{collections::BTreeSet, fs, io::Write, path::Path, process::Command};
 
 use ab_index::{
     features::FeatureDetector,
     index::{build_index, query_all, query_any, sample},
+    syntax_coverage::{SyntaxCoverage, SyntaxStatus},
 };
 
 #[test]
@@ -137,6 +138,71 @@ fn skips_unreadable_zip_artifacts() {
     assert_eq!(index.works_count, 0);
 
     let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn syntax_coverage_matrix_declares_priority_one_rows() {
+    let matrix = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../data/aozora-syntax-coverage.toml")
+        .canonicalize()
+        .unwrap();
+    let coverage = SyntaxCoverage::from_toml(&matrix).unwrap();
+    let priority_one = coverage
+        .rows()
+        .iter()
+        .filter(|row| row.priority == 1)
+        .map(|row| row.id.as_str())
+        .collect::<BTreeSet<_>>();
+
+    assert_eq!(
+        priority_one,
+        BTreeSet::from([
+            "break.page_line",
+            "emphasis.basic",
+            "figure.image_caption",
+            "gaiji.marker",
+            "gaiji_ruby.inline_base",
+            "heading.basic",
+            "indentation.basic",
+            "ruby.basic",
+            "warichu.basic",
+        ])
+    );
+}
+
+#[test]
+fn syntax_coverage_feature_keys_exist_in_feature_patterns() {
+    let matrix = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../data/aozora-syntax-coverage.toml")
+        .canonicalize()
+        .unwrap();
+    let patterns = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../data/feature-patterns.toml")
+        .canonicalize()
+        .unwrap();
+    let coverage = SyntaxCoverage::from_toml(&matrix).unwrap();
+    let detector = FeatureDetector::from_toml(&patterns).unwrap();
+    let feature_names = detector
+        .feature_names()
+        .into_iter()
+        .collect::<BTreeSet<_>>();
+
+    for row in coverage.rows().iter().filter(|row| row.priority == 1) {
+        assert_eq!(row.status, SyntaxStatus::Partial);
+        assert!(
+            !row.feature_keys.is_empty(),
+            "{} should map to at least one feature key",
+            row.id
+        );
+        for key in &row.feature_keys {
+            assert!(
+                feature_names.contains(key.as_str()),
+                "{} maps to unknown feature key {}",
+                row.id,
+                key
+            );
+        }
+    }
 }
 
 fn write_zip_text(path: &Path, name: &str, text: &str) {

@@ -1,0 +1,188 @@
+[[syntax]]
+id = "ruby.basic"
+priority = 1
+category = "inline_annotation"
+feature_keys = ["ruby", "ruby_prefix", "left_ruby"]
+reference_sources = [
+  "references/aozorabunko/rules/kijyunn.html",
+  "references/parsers/AozoraEpub3-JDK21/chuki_tag.txt",
+]
+source_examples = ["吾輩《わがはい》", "｜あのひと《...》", "［＃「左」の左に「ひだり」のルビ］"]
+source_patterns = ['《[^》]+》', '｜[^《\n]+《[^》]+》', '［＃「[^」]+」の左に「[^」]+」のルビ］']
+ir_nodes = ["Inline::Ruby"]
+aat_nodes = ["ruby"]
+tei_projection = "ruby/rb/rt"
+plaintext_projection = "base_only"
+comparison_projection = "base_only"
+validation_properties = ["ruby_completeness", "semantic_ruby_sequence"]
+adapter_expectations = ["preserve reading", "preserve base order", "distinguish left placement"]
+status = "partial"
+status_reason = "current ab-ir and AAT use a flat ruby base string"
+
+[[syntax]]
+id = "gaiji.marker"
+priority = 1
+category = "glyph"
+feature_keys = ["gaiji", "unicode_codepoint", "jis_code", "dakuten"]
+reference_sources = [
+  "references/aozorabunko/rules/kijyunn.html",
+  "references/parsers/AozoraEpub3-JDK21/chuki_tag.txt",
+]
+source_examples = ["※［＃「口＋世」、U+546D］", "※［＃小書き片仮名ン、237-11］"]
+source_patterns = ['※［＃[^］]+］', 'U\+[0-9A-Fa-f]{4,6}', '[0-9A-Fa-f]{1,2}-[0-9A-Fa-f]{4}', '濁点付き|半濁点付き']
+ir_nodes = ["Inline::GaijiRef", "GaijiKind"]
+aat_nodes = ["gaiji"]
+tei_projection = "g with charDecl or external character reference"
+plaintext_projection = "resolved_character_or_drop"
+comparison_projection = "resolved_character_or_drop"
+validation_properties = ["gaiji_resolution", "semantic_gaiji_sequence", "gaiji_resolution_quality"]
+adapter_expectations = ["preserve source marker", "classify gaiji kind", "report unresolved reason"]
+status = "partial"
+status_reason = "current ab-ir stores gaiji as description plus resolved string without typed kind"
+
+[[syntax]]
+id = "gaiji_ruby.inline_base"
+priority = 1
+category = "inline_annotation"
+feature_keys = ["gaiji", "ruby"]
+reference_sources = [
+  "references/aozorabunko/rules/kijyunn.html",
+  "references/parsers/AozoraEpub3-JDK21/chuki_tag.txt",
+]
+source_examples = ["※［＃「口＋愛」、第3水準1-15-23］《おくび》"]
+source_patterns = ['※［＃[^］]+］《[^》]+》']
+ir_nodes = ["Inline::Ruby", "Inline::GaijiRef"]
+aat_nodes = ["gaiji", "ruby"]
+tei_projection = "ruby/rb/g/rt"
+plaintext_projection = "resolved_base_or_drop_with_attached_reading"
+comparison_projection = "resolved_base_or_drop_with_attached_reading"
+validation_properties = ["semantic_ruby_sequence", "semantic_gaiji_sequence", "gaiji_resolution_quality"]
+adapter_expectations = ["preserve ruby relationship in IR", "do not emit orphan ruby when AAT cannot represent unresolved base"]
+status = "partial"
+status_reason = "current AAT cannot represent a structured ruby base"
+
+[[syntax]]
+id = "heading.basic"
+priority = 1
+category = "block"
+feature_keys = ["midashi"]
+reference_sources = [
+  "references/aozorabunko/rules/kijyunn.html",
+  "references/parsers/AozoraEpub3-JDK21/chuki_tag.txt",
+]
+source_examples = ["［＃大見出し］", "［＃「見出し」は中見出し］"]
+source_patterns = ['［＃「[^」]+」は[大中小]見出し］|［＃[大中小]見出し］']
+ir_nodes = ["Block::Heading"]
+aat_nodes = ["heading"]
+tei_projection = "head"
+plaintext_projection = "heading_text"
+comparison_projection = "heading_text"
+validation_properties = ["heading_level_consistency", "heading_structure"]
+adapter_expectations = ["preserve heading level", "preserve heading text order"]
+status = "partial"
+status_reason = "heading validation is currently shallow"
+
+[[syntax]]
+id = "emphasis.basic"
+priority = 1
+category = "inline_annotation"
+feature_keys = ["boten", "bosen", "bold", "italic", "sesame"]
+reference_sources = [
+  "references/aozorabunko/rules/kijyunn.html",
+  "references/parsers/AozoraEpub3-JDK21/chuki_tag.txt",
+]
+source_examples = ["［＃「語」に傍点］", "［＃太字］", "［＃白ゴマ傍点］"]
+source_patterns = ['［＃「[^」]+」に傍点］|［＃傍点］', '［＃「[^」]+」に傍線］|［＃傍線］', '［＃「[^」]+」は太字］|［＃太字］', '［＃「[^」]+」は斜体］|［＃斜体］', '白ゴマ傍点|黒ゴマ傍点|丸傍点']
+ir_nodes = ["Inline::Style"]
+aat_nodes = ["style"]
+tei_projection = "hi with rendition"
+plaintext_projection = "content_only"
+comparison_projection = "content_only"
+validation_properties = ["style_scope_balance"]
+adapter_expectations = ["preserve style variant", "preserve style scope"]
+status = "partial"
+status_reason = "style variants are not yet matrix-keyed in validation reports"
+
+[[syntax]]
+id = "indentation.basic"
+priority = 1
+category = "layout"
+feature_keys = ["jisage_line", "jisage_block", "chitsuki"]
+reference_sources = [
+  "references/aozorabunko/rules/kijyunn.html",
+  "references/parsers/AozoraEpub3-JDK21/chuki_tag.txt",
+]
+source_examples = ["［＃２字下げ］", "［＃ここから２字下げ］", "［＃地付き］"]
+source_patterns = ['［＃[０-９0-9]+字下げ］', '［＃ここから[０-９0-9]+字下げ］', '［＃地付き］|［＃[０-９0-9]+字上げ］']
+ir_nodes = ["Block::Layout"]
+aat_nodes = ["style"]
+tei_projection = "p or lg with rend/layout attributes"
+plaintext_projection = "content_only"
+comparison_projection = "content_only"
+validation_properties = ["block_scope_balance"]
+adapter_expectations = ["preserve indentation magnitude", "preserve block scope"]
+status = "partial"
+status_reason = "current IR lacks first-class layout nodes"
+
+[[syntax]]
+id = "warichu.basic"
+priority = 1
+category = "inline_annotation"
+feature_keys = ["warigaki"]
+reference_sources = [
+  "references/aozorabunko/rules/kijyunn.html",
+  "references/parsers/AozoraEpub3-JDK21/chuki_tag.txt",
+]
+source_examples = ["［＃割り注］", "［＃ここから割り注］"]
+source_patterns = ['［＃割り注］|［＃ここから割り注］']
+ir_nodes = ["Inline::Warichu", "Block::Warichu"]
+aat_nodes = ["style"]
+tei_projection = "note or seg with rendition"
+plaintext_projection = "content_only"
+comparison_projection = "content_only"
+validation_properties = ["style_scope_balance"]
+adapter_expectations = ["preserve warichu content", "preserve inline or block scope"]
+status = "partial"
+status_reason = "current IR lacks warichu-specific nodes"
+
+[[syntax]]
+id = "figure.image_caption"
+priority = 1
+category = "media"
+feature_keys = ["image", "caption"]
+reference_sources = [
+  "references/aozorabunko/rules/kijyunn.html",
+  "references/parsers/AozoraEpub3-JDK21/chuki_tag.txt",
+]
+source_examples = ["［＃（fig.png）入る］", "［＃キャプション］"]
+source_patterns = ['［＃（?[^］\n]+\.(png|jpg|jpeg|gif)）?入る］', '［＃キャプション］|［＃ここからキャプション］']
+ir_nodes = ["Block::Figure", "Inline::Caption"]
+aat_nodes = ["gaiji", "caption"]
+tei_projection = "figure/graphic/head"
+plaintext_projection = "caption_only"
+comparison_projection = "caption_only"
+validation_properties = ["figure_caption_integrity"]
+adapter_expectations = ["preserve image path", "preserve caption relationship"]
+status = "partial"
+status_reason = "current AAT uses lossy figure representation in some adapters"
+
+[[syntax]]
+id = "break.page_line"
+priority = 1
+category = "milestone"
+feature_keys = ["page_break", "line_break"]
+reference_sources = [
+  "references/aozorabunko/rules/kijyunn.html",
+  "references/parsers/AozoraEpub3-JDK21/chuki_tag.txt",
+]
+source_examples = ["［＃改ページ］", "［＃改行］"]
+source_patterns = ['［＃改ページ］|［＃ページの左右中央］', '［＃改行］']
+ir_nodes = ["Inline::Break", "Block::Milestone"]
+aat_nodes = ["text"]
+tei_projection = "pb/lb"
+plaintext_projection = "newline_or_drop"
+comparison_projection = "whitespace_normalized"
+validation_properties = ["block_scope_balance"]
+adapter_expectations = ["preserve break order", "distinguish page and line breaks"]
+status = "partial"
+status_reason = "current AAT projection flattens many breaks into text or whitespace"

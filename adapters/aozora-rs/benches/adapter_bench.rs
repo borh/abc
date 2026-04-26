@@ -1,5 +1,6 @@
 use aozora_rs_adapter::aat_json_from_bytes;
 use criterion::{Criterion, criterion_group, criterion_main};
+use std::time::Duration;
 
 fn bench_adapter_aat(c: &mut Criterion) {
     let input = large_aozora_text();
@@ -11,7 +12,7 @@ fn bench_adapter_aat(c: &mut Criterion) {
 fn large_aozora_text() -> String {
     let mut text =
         String::from("タイトル\n著者\n--------------------\n凡例\n--------------------\n");
-    for idx in 0..20_000 {
+    for idx in 0..200 {
         text.push_str(&format!(
             "吾輩《わがはい》は※［＃「口＋世」、U+546D］である。第{idx}行。\n"
         ));
@@ -20,5 +21,12 @@ fn large_aozora_text() -> String {
     text
 }
 
-criterion_group!(benches, bench_adapter_aat);
+criterion_group! {
+    name = benches;
+    config = Criterion::default()
+        .sample_size(10)
+        .warm_up_time(Duration::from_millis(500))
+        .measurement_time(Duration::from_secs(5));
+    targets = bench_adapter_aat
+}
 criterion_main!(benches);

@@ -92,6 +92,7 @@ dependencies = [
  "criterion",
  "encoding_rs",
  "regex",
+ "serde",
  "serde_json",
  "sha2",
  "winnow",

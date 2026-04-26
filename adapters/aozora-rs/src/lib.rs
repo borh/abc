@@ -6,6 +6,8 @@ use serde_json::json;
 use sha2::{Digest, Sha256};
 use winnow::LocatingSlice;
 
+mod metrics;
+
 pub const VERSION: &str = "aozora-rs-adapter 0.1.0 dd380ee639ca317ac9092ef2ba554acdf70e3c8d";
 
 #[derive(Debug)]

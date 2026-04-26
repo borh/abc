@@ -1,6 +1,55 @@
 use std::borrow::Cow;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SourceSpan {
+    pub start: usize,
+    pub end: usize,
+    pub line: usize,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SourceEvent<'a> {
+    pub span: SourceSpan,
+    pub kind: SourceEventKind<'a>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SourceEventKind<'a> {
+    Text(&'a str),
+    Ruby {
+        base_source: Option<&'a str>,
+        reading: &'a str,
+    },
+    Gaiji {
+        description: &'a str,
+    },
+    Command {
+        body: &'a str,
+    },
+    EditorialNote {
+        raw: &'a str,
+        kind: EditorialNoteKind<'a>,
+    },
+    SegmentBoundary {
+        kind: SegmentBoundaryKind,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum EditorialNoteKind<'a> {
+    RubyCorrection {
+        target_reading: &'a str,
+        source_reading: &'a str,
+    },
+    BottomTextCorrection,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SegmentBoundaryKind {
+    TerminalProvenanceNote,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct LocatedMarker<'a> {
     pub value: &'a str,
     pub byte_offset: usize,
@@ -19,66 +68,210 @@ pub fn comparison_lossy_body(txt: &str) -> Cow<'_, str> {
     }
 
     let mut out = String::with_capacity(txt.len());
+    for event in source_events(txt) {
+        match event.kind {
+            SourceEventKind::Text(value) => out.push_str(value),
+            SourceEventKind::Ruby {
+                base_source: Some(base),
+                ..
+            } => out.push_str(&comparison_lossy_body(base)),
+            SourceEventKind::Ruby {
+                base_source: None, ..
+            }
+            | SourceEventKind::Gaiji { .. }
+            | SourceEventKind::Command { .. }
+            | SourceEventKind::SegmentBoundary { .. } => {}
+            SourceEventKind::EditorialNote {
+                kind: EditorialNoteKind::BottomTextCorrection,
+                ..
+            } => trim_note_prefix(&mut out),
+            SourceEventKind::EditorialNote { .. } => {}
+        }
+    }
+
+    Cow::Owned(remove_bottom_note_fragments(&out))
+}
+
+pub fn source_events(txt: &str) -> Vec<SourceEvent<'_>> {
+    let mut events = Vec::new();
     let mut offset = 0;
+    let mut text_start = 0;
+    let mut text_start_line = 1;
+    let mut line = 1;
     while offset < txt.len() {
         let rest = &txt[offset..];
 
+        if let Some(note_end) = bottom_text_correction_note_end(txt, offset) {
+            push_text_event(txt, &mut events, &mut text_start, text_start_line, offset);
+            events.push(SourceEvent {
+                span: span_for(offset, note_end, line),
+                kind: SourceEventKind::EditorialNote {
+                    raw: &txt[offset..note_end],
+                    kind: EditorialNoteKind::BottomTextCorrection,
+                },
+            });
+            offset = note_end;
+            text_start = offset;
+            text_start_line = line;
+            continue;
+        }
+        if let Some((note_end, target, source)) = ruby_correction_note_bounds(txt, offset) {
+            push_text_event(txt, &mut events, &mut text_start, text_start_line, offset);
+            events.push(SourceEvent {
+                span: span_for(offset, note_end, line),
+                kind: SourceEventKind::EditorialNote {
+                    raw: &txt[offset..note_end],
+                    kind: EditorialNoteKind::RubyCorrection {
+                        target_reading: target,
+                        source_reading: source,
+                    },
+                },
+            });
+            offset = note_end;
+            text_start = offset;
+            text_start_line = line;
+            continue;
+        }
+        if let Some(note_end) = terminal_provenance_note_end(txt, offset) {
+            push_text_event(txt, &mut events, &mut text_start, text_start_line, offset);
+            events.push(SourceEvent {
+                span: span_for(offset, note_end, line),
+                kind: SourceEventKind::SegmentBoundary {
+                    kind: SegmentBoundaryKind::TerminalProvenanceNote,
+                },
+            });
+            offset = note_end;
+            text_start = offset;
+            text_start_line = line;
+            continue;
+        }
         if rest.starts_with("※［＃") {
             let content_start = offset + "※［＃".len();
-            if let Some(end) = marker_end_on_same_line(txt, content_start, '］') {
-                offset = end + '］'.len_utf8();
-            } else {
-                offset += '※'.len_utf8();
+            if let Some(content_end) = marker_end_on_same_line(txt, content_start, '］') {
+                let marker_end = content_end + '］'.len_utf8();
+                push_text_event(txt, &mut events, &mut text_start, text_start_line, offset);
+                events.push(SourceEvent {
+                    span: span_for(offset, marker_end, line),
+                    kind: SourceEventKind::Gaiji {
+                        description: &txt[content_start..content_end],
+                    },
+                });
+                offset = marker_end;
+                text_start = offset;
+                text_start_line = line;
+                continue;
             }
-            continue;
         }
         if rest.starts_with("※[#") {
             let content_start = offset + "※[#".len();
-            if let Some(end) = marker_end_on_same_line(txt, content_start, ']') {
-                offset = end + 1;
-            } else {
-                offset += '※'.len_utf8();
+            if let Some(content_end) = marker_end_on_same_line(txt, content_start, ']') {
+                let marker_end = content_end + 1;
+                push_text_event(txt, &mut events, &mut text_start, text_start_line, offset);
+                events.push(SourceEvent {
+                    span: span_for(offset, marker_end, line),
+                    kind: SourceEventKind::Gaiji {
+                        description: &txt[content_start..content_end],
+                    },
+                });
+                offset = marker_end;
+                text_start = offset;
+                text_start_line = line;
+                continue;
             }
-            continue;
         }
         if rest.starts_with("［＃") {
             let content_start = offset + "［＃".len();
-            if let Some(end) = command_end_on_same_line(txt, content_start, '］') {
-                offset = end + '］'.len_utf8();
+            if let Some(content_end) = command_end_on_same_line(txt, content_start, '］') {
+                let marker_end = content_end + '］'.len_utf8();
+                push_text_event(txt, &mut events, &mut text_start, text_start_line, offset);
+                events.push(SourceEvent {
+                    span: span_for(offset, marker_end, line),
+                    kind: SourceEventKind::Command {
+                        body: &txt[content_start..content_end],
+                    },
+                });
+                offset = marker_end;
+                text_start = offset;
+                text_start_line = line;
                 continue;
             }
         }
         if rest.starts_with("[#") {
             let content_start = offset + "[#".len();
-            if let Some(end) = command_end_on_same_line(txt, content_start, ']') {
-                offset = end + 1;
+            if let Some(content_end) = command_end_on_same_line(txt, content_start, ']') {
+                let marker_end = content_end + 1;
+                push_text_event(txt, &mut events, &mut text_start, text_start_line, offset);
+                events.push(SourceEvent {
+                    span: span_for(offset, marker_end, line),
+                    kind: SourceEventKind::Command {
+                        body: &txt[content_start..content_end],
+                    },
+                });
+                offset = marker_end;
+                text_start = offset;
+                text_start_line = line;
                 continue;
             }
         }
         if rest.starts_with('｜') {
             let base_start = offset + '｜'.len_utf8();
-            if let Some((base_end, reading_end)) = explicit_ruby_bounds(txt, base_start) {
-                out.push_str(&comparison_lossy_body(&txt[base_start..base_end]));
-                offset = reading_end;
+            if let Some((base_end, reading_start, reading_end, marker_end)) =
+                explicit_ruby_bounds(txt, base_start)
+            {
+                push_text_event(txt, &mut events, &mut text_start, text_start_line, offset);
+                events.push(SourceEvent {
+                    span: span_for(offset, marker_end, line),
+                    kind: SourceEventKind::Ruby {
+                        base_source: Some(&txt[base_start..base_end]),
+                        reading: &txt[reading_start..reading_end],
+                    },
+                });
+                offset = marker_end;
+                text_start = offset;
+                text_start_line = line;
                 continue;
             }
         }
         if rest.starts_with('《') {
             let reading_start = offset + '《'.len_utf8();
-            if let Some(end) = marker_end_on_same_line(txt, reading_start, '》') {
-                offset = end + '》'.len_utf8();
+            if let Some(reading_end) = marker_end_on_same_line(txt, reading_start, '》') {
+                let marker_end = reading_end + '》'.len_utf8();
+                push_text_event(txt, &mut events, &mut text_start, text_start_line, offset);
+                events.push(SourceEvent {
+                    span: span_for(offset, marker_end, line),
+                    kind: SourceEventKind::Ruby {
+                        base_source: None,
+                        reading: &txt[reading_start..reading_end],
+                    },
+                });
+                offset = marker_end;
+                text_start = offset;
+                text_start_line = line;
                 continue;
             }
         }
 
         let ch = rest.chars().next().expect("non-empty rest has a char");
-        if ch != '※' && ch != '｜' {
-            out.push(ch);
+        if matches!(ch, '※' | '｜') {
+            push_text_event(txt, &mut events, &mut text_start, text_start_line, offset);
+            offset += ch.len_utf8();
+            text_start = offset;
+            text_start_line = line;
+        } else {
+            offset += ch.len_utf8();
+            if ch == '\n' {
+                line += 1;
+            }
         }
-        offset += ch.len_utf8();
     }
-
-    Cow::Owned(remove_bottom_note_fragments(&out))
+    push_text_event(
+        txt,
+        &mut events,
+        &mut text_start,
+        text_start_line,
+        txt.len(),
+    );
+    events
 }
 
 pub fn remove_bottom_note_fragments(txt: &str) -> String {
@@ -146,100 +339,42 @@ pub fn gaiji_marker_count(body: &str) -> usize {
 
 fn collect_source_annotations(body: &str, skip_gaiji_orphan_ruby: bool) -> SourceAnnotations<'_> {
     let mut annotations = SourceAnnotations::default();
-    let mut base_offset = 0;
-    for (line_idx, line) in body.split_inclusive('\n').enumerate() {
-        collect_line_annotations(
-            line,
-            base_offset,
-            line_idx + 1,
-            skip_gaiji_orphan_ruby,
-            &mut annotations,
-        );
-        base_offset += line.len();
-    }
-    annotations
-}
-
-fn collect_line_annotations<'a>(
-    line: &'a str,
-    base_offset: usize,
-    line_number: usize,
-    skip_gaiji_orphan_ruby: bool,
-    annotations: &mut SourceAnnotations<'a>,
-) {
-    let mut offset = 0;
     let mut last_gaiji_end = None;
-    while offset < line.len() {
-        let rest = &line[offset..];
-        if rest.starts_with("※［＃") {
-            let content_start = offset + "※［＃".len();
-            if let Some(content_end) = marker_end_on_same_line(line, content_start, '］') {
+    for event in source_events(body) {
+        match event.kind {
+            SourceEventKind::Gaiji { description } => {
                 annotations.gaiji_descriptions.push(LocatedMarker {
-                    value: &line[content_start..content_end],
-                    byte_offset: base_offset + offset,
-                    line: line_number,
+                    value: description,
+                    byte_offset: event.span.start,
+                    line: event.span.line,
                 });
-                offset = content_end + '］'.len_utf8();
-                last_gaiji_end = Some(offset);
-                continue;
+                last_gaiji_end = Some(event.span.end);
             }
-        }
-        if rest.starts_with("※[#") {
-            let content_start = offset + "※[#".len();
-            if let Some(content_end) = marker_end_on_same_line(line, content_start, ']') {
-                annotations.gaiji_descriptions.push(LocatedMarker {
-                    value: &line[content_start..content_end],
-                    byte_offset: base_offset + offset,
-                    line: line_number,
-                });
-                offset = content_end + 1;
-                last_gaiji_end = Some(offset);
-                continue;
-            }
-        }
-        if rest.starts_with("［＃") {
-            let content_start = offset + "［＃".len();
-            if let Some(end) = command_end_on_same_line(line, content_start, '］') {
-                offset = end + '］'.len_utf8();
-                last_gaiji_end = None;
-                continue;
-            }
-        }
-        if rest.starts_with("[#") {
-            let content_start = offset + "[#".len();
-            if let Some(end) = command_end_on_same_line(line, content_start, ']') {
-                offset = end + 1;
-                last_gaiji_end = None;
-                continue;
-            }
-        }
-        if rest.starts_with('《') {
-            let content_start = offset + '《'.len_utf8();
-            if let Some(content_end) = marker_end_on_same_line(line, content_start, '》') {
-                if !(skip_gaiji_orphan_ruby && last_gaiji_end == Some(offset)) {
-                    let reading = &line[content_start..content_end];
+            SourceEventKind::Ruby { reading, .. } => {
+                if !(skip_gaiji_orphan_ruby && last_gaiji_end == Some(event.span.start)) {
                     annotations.ruby_readings.push(LocatedMarker {
                         value: reading,
-                        byte_offset: base_offset + offset,
-                        line: line_number,
+                        byte_offset: event.span.start,
+                        line: event.span.line,
                     });
                     collect_gaiji_markers(
                         reading,
-                        base_offset + content_start,
-                        line_number,
-                        annotations,
+                        event.span.start + '《'.len_utf8(),
+                        event.span.line,
+                        &mut annotations,
                     );
                 }
-                offset = content_end + '》'.len_utf8();
                 last_gaiji_end = None;
-                continue;
+            }
+            SourceEventKind::Text(_)
+            | SourceEventKind::Command { .. }
+            | SourceEventKind::EditorialNote { .. }
+            | SourceEventKind::SegmentBoundary { .. } => {
+                last_gaiji_end = None;
             }
         }
-
-        let ch = rest.chars().next().expect("non-empty rest has a char");
-        offset += ch.len_utf8();
-        last_gaiji_end = None;
     }
+    annotations
 }
 
 fn collect_gaiji_markers<'a>(
@@ -284,7 +419,7 @@ fn needs_lossy_projection(txt: &str) -> bool {
     txt.find(['※', '《', '｜', '［', '[', '」']).is_some()
 }
 
-fn explicit_ruby_bounds(txt: &str, base_start: usize) -> Option<(usize, usize)> {
+fn explicit_ruby_bounds(txt: &str, base_start: usize) -> Option<(usize, usize, usize, usize)> {
     let base_end = txt[base_start..]
         .find('《')
         .map(|offset| base_start + offset)?;
@@ -297,7 +432,91 @@ fn explicit_ruby_bounds(txt: &str, base_start: usize) -> Option<(usize, usize)> 
     }
     let reading_start = base_end + '《'.len_utf8();
     let reading_end = marker_end_on_same_line(txt, reading_start, '》')?;
-    Some((base_end, reading_end + '》'.len_utf8()))
+    Some((
+        base_end,
+        reading_start,
+        reading_end,
+        reading_end + '》'.len_utf8(),
+    ))
+}
+
+fn push_text_event<'a>(
+    txt: &'a str,
+    events: &mut Vec<SourceEvent<'a>>,
+    text_start: &mut usize,
+    line: usize,
+    text_end: usize,
+) {
+    if *text_start >= text_end {
+        return;
+    }
+    events.push(SourceEvent {
+        span: span_for(*text_start, text_end, line),
+        kind: SourceEventKind::Text(&txt[*text_start..text_end]),
+    });
+}
+
+fn span_for(start: usize, end: usize, line: usize) -> SourceSpan {
+    SourceSpan { start, end, line }
+}
+
+fn ruby_correction_note_bounds(txt: &str, offset: usize) -> Option<(usize, &str, &str)> {
+    let rest = &txt[offset..];
+    let prefix = "［ルビの「";
+    if !rest.starts_with(prefix) {
+        return None;
+    }
+    let target_start = offset + prefix.len();
+    let separator = "」は底本では「";
+    let target_end = txt[target_start..]
+        .find(separator)
+        .map(|inner| target_start + inner)?;
+    if txt[target_start..target_end]
+        .chars()
+        .any(|ch| matches!(ch, '\r' | '\n'))
+    {
+        return None;
+    }
+    let source_start = target_end + separator.len();
+    let suffix = "」］";
+    let source_end = txt[source_start..]
+        .find(suffix)
+        .map(|inner| source_start + inner)?;
+    if txt[source_start..source_end]
+        .chars()
+        .any(|ch| matches!(ch, '\r' | '\n'))
+    {
+        return None;
+    }
+    Some((
+        source_end + suffix.len(),
+        &txt[target_start..target_end],
+        &txt[source_start..source_end],
+    ))
+}
+
+fn bottom_text_correction_note_end(txt: &str, offset: usize) -> Option<usize> {
+    ["」は底本では「", "」はママ"]
+        .iter()
+        .any(|prefix| txt[offset..].starts_with(prefix))
+        .then(|| skip_until_any_bracket(txt, offset))
+}
+
+fn terminal_provenance_note_end(txt: &str, offset: usize) -> Option<usize> {
+    let rest = &txt[offset..];
+    let prefix = "［＃地付き］（";
+    if !rest.starts_with(prefix) {
+        return None;
+    }
+    let note_content_start = offset + prefix.len();
+    let note_content_end = marker_end_on_same_line(txt, note_content_start, '）')?;
+    let note_end = note_content_end + '）'.len_utf8();
+    let after = txt[note_end..].trim_start_matches(['\r', '\n', ' ', '　', '\t']);
+    if after.starts_with("底本：") {
+        Some(note_end)
+    } else {
+        None
+    }
 }
 
 fn marker_end_on_same_line(text: &str, content_start: usize, end_marker: char) -> Option<usize> {
@@ -528,6 +747,60 @@ mod tests {
 
         assert!(markers.ruby_readings.is_empty());
         assert_eq!(markers.gaiji_descriptions.len(), 1);
+    }
+
+    #[test]
+    fn source_events_classify_non_hash_ruby_correction_notes() {
+        let events = source_events(
+            "『断頭台《ラギュイヨチーン》［ルビの「ラギュイヨチーン」は底本では「ラギュイヨケーン」］』",
+        );
+
+        assert!(events.iter().any(|event| matches!(
+            event.kind,
+            SourceEventKind::EditorialNote {
+                kind: EditorialNoteKind::RubyCorrection {
+                    target_reading: "ラギュイヨチーン",
+                    source_reading: "ラギュイヨケーン",
+                },
+                ..
+            }
+        )));
+        assert_eq!(
+            comparison_lossy_body(
+                "『断頭台《ラギュイヨチーン》［ルビの「ラギュイヨチーン」は底本では「ラギュイヨケーン」］』"
+            ),
+            "『断頭台』"
+        );
+    }
+
+    #[test]
+    fn source_events_classify_bottom_text_correction_notes() {
+        let events = source_events("豌豆《ゑんどう》「豌豆」は底本では「跣豆」］の大さ");
+
+        assert!(events.iter().any(|event| matches!(
+            event.kind,
+            SourceEventKind::EditorialNote {
+                kind: EditorialNoteKind::BottomTextCorrection,
+                ..
+            }
+        )));
+    }
+
+    #[test]
+    fn source_events_classify_terminal_provenance_notes_before_colophon() {
+        let body = "私のお話は之で終りといたします。［＃地付き］（昭和九年十一月十五日ラジオ放送の遺稿より）\n\n底本：「ある英語教師の思い出」";
+        let events = source_events(body);
+
+        assert!(events.iter().any(|event| matches!(
+            event.kind,
+            SourceEventKind::SegmentBoundary {
+                kind: SegmentBoundaryKind::TerminalProvenanceNote
+            }
+        )));
+        assert_eq!(
+            comparison_lossy_body(body),
+            "私のお話は之で終りといたします。\n\n底本：「ある英語教師の思い出」"
+        );
     }
 
     #[test]

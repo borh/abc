@@ -440,114 +440,61 @@ fn legacy_source_visible_fallback_blocks(body: &str, source_visible: String) -> 
 
 fn structured_source_fallback_blocks(body: &str) -> Vec<Block> {
     let mut content = Vec::new();
-    let mut offset = 0;
     let mut last_gaiji_end = None;
-    while offset < body.len() {
-        let rest = &body[offset..];
-        if let Some(prefix_len) = fallback_bottom_note_fragment_prefix_len(rest) {
-            trim_source_fallback_note_prefix(&mut content);
-            offset += prefix_len;
-            offset = fallback_skip_until_any_bracket(body, offset);
-            last_gaiji_end = None;
-            continue;
-        }
-        if rest.starts_with("※［＃") {
-            let content_start = offset + "※［＃".len();
-            if let Some(content_end) = fallback_marker_end_on_same_line(body, content_start, '］')
-            {
+    for event in ab_source_syntax::source_events(body) {
+        match event.kind {
+            ab_source_syntax::SourceEventKind::Text(text) => {
+                push_source_fallback_text(&mut content, text);
+                last_gaiji_end = None;
+            }
+            ab_source_syntax::SourceEventKind::Gaiji { description } => {
                 content.push(Inline::gaiji_with_provenance(
-                    &body[content_start..content_end],
+                    description,
                     "",
                     None,
                     Provenance::SourceFallback,
                 ));
-                offset = content_end + '］'.len_utf8();
-                last_gaiji_end = Some(offset);
-                continue;
+                last_gaiji_end = Some(event.span.end);
             }
-        }
-        if rest.starts_with("※[#") {
-            let content_start = offset + "※[#".len();
-            if let Some(content_end) = fallback_marker_end_on_same_line(body, content_start, ']') {
-                content.push(Inline::gaiji_with_provenance(
-                    &body[content_start..content_end],
-                    "",
-                    None,
-                    Provenance::SourceFallback,
-                ));
-                offset = content_end + 1;
-                last_gaiji_end = Some(offset);
-                continue;
-            }
-        }
-        if rest.starts_with("［＃") {
-            let content_start = offset + "［＃".len();
-            if let Some(end) = fallback_command_end_on_same_line(body, content_start, '］') {
-                offset = end + '］'.len_utf8();
-                last_gaiji_end = None;
-                continue;
-            }
-        }
-        if rest.starts_with("[#") {
-            let content_start = offset + "[#".len();
-            if let Some(end) = fallback_command_end_on_same_line(body, content_start, ']') {
-                offset = end + 1;
-                last_gaiji_end = None;
-                continue;
-            }
-        }
-        if rest.starts_with('｜') {
-            let base_start = offset + '｜'.len_utf8();
-            if let Some((base_end, reading_start, reading_end, marker_end)) =
-                explicit_source_ruby_bounds(body, base_start)
-            {
-                let base_source = &body[base_start..base_end];
+            ab_source_syntax::SourceEventKind::Ruby {
+                base_source: Some(base_source),
+                reading,
+            } => {
                 let base = source_visible_text(base_source).into_owned();
                 push_source_fallback_ruby(
                     &mut content,
                     base,
                     base_source,
-                    &body[reading_start..reading_end],
+                    reading,
                 );
-                offset = marker_end;
                 last_gaiji_end = None;
-                continue;
             }
-        }
-        if rest.starts_with('《') {
-            let reading_start = offset + '《'.len_utf8();
-            if let Some(reading_end) = fallback_marker_end_on_same_line(body, reading_start, '》')
-            {
-                if last_gaiji_end != Some(offset) {
+            ab_source_syntax::SourceEventKind::Ruby {
+                base_source: None,
+                reading,
+            } => {
+                if last_gaiji_end != Some(event.span.start) {
                     let base = take_implicit_ruby_base(&mut content);
-                    push_source_fallback_ruby(
-                        &mut content,
-                        base,
-                        "",
-                        &body[reading_start..reading_end],
-                    );
+                    push_source_fallback_ruby(&mut content, base, "", reading);
                 }
-                offset = reading_end + '》'.len_utf8();
                 last_gaiji_end = None;
-                continue;
+            }
+            ab_source_syntax::SourceEventKind::EditorialNote {
+                kind: ab_source_syntax::EditorialNoteKind::BottomTextCorrection,
+                ..
+            } => {
+                trim_source_fallback_note_prefix(&mut content);
+                last_gaiji_end = None;
+            }
+            ab_source_syntax::SourceEventKind::Command { .. }
+            | ab_source_syntax::SourceEventKind::EditorialNote { .. }
+            | ab_source_syntax::SourceEventKind::SegmentBoundary { .. } => {
+                last_gaiji_end = None;
             }
         }
-
-        let ch = rest.chars().next().expect("non-empty rest has a char");
-        if ch != '※' && ch != '｜' {
-            push_source_fallback_text(&mut content, ch.encode_utf8(&mut [0; 4]));
-        }
-        offset += ch.len_utf8();
-        last_gaiji_end = None;
     }
 
     vec![Block::Paragraph { content }]
-}
-
-fn fallback_bottom_note_fragment_prefix_len(rest: &str) -> Option<usize> {
-    ["」は底本では「", "」はママ"]
-        .iter()
-        .find_map(|prefix| rest.starts_with(prefix).then_some(prefix.len()))
 }
 
 fn trim_source_fallback_note_prefix(content: &mut Vec<Inline>) {
@@ -642,19 +589,6 @@ fn inline_visible_len(node: &Inline) -> usize {
     }
 }
 
-fn fallback_skip_until_any_bracket(text: &str, offset: usize) -> usize {
-    let rest = &text[offset..];
-    let fullwidth = rest.find('］');
-    let ascii = rest.find(']');
-    match (fullwidth, ascii) {
-        (Some(left), Some(right)) if left <= right => offset + left + '］'.len_utf8(),
-        (Some(_), Some(right)) => offset + right + 1,
-        (Some(left), None) => offset + left + '］'.len_utf8(),
-        (None, Some(right)) => offset + right + 1,
-        (None, None) => text.len(),
-    }
-}
-
 fn push_source_fallback_ruby(
     content: &mut Vec<Inline>,
     base: String,
@@ -744,93 +678,6 @@ fn implicit_ruby_boundary(ch: char) -> bool {
                 | '('
                 | ')'
         )
-}
-
-fn explicit_source_ruby_bounds(
-    txt: &str,
-    base_start: usize,
-) -> Option<(usize, usize, usize, usize)> {
-    let base_end = txt[base_start..]
-        .find('《')
-        .map(|offset| base_start + offset)?;
-    if txt[base_start..base_end]
-        .chars()
-        .any(|ch| matches!(ch, '\r' | '\n' | '》'))
-    {
-        return None;
-    }
-    let reading_start = base_end + '《'.len_utf8();
-    let reading_end = fallback_marker_end_on_same_line(txt, reading_start, '》')?;
-    Some((
-        base_end,
-        reading_start,
-        reading_end,
-        reading_end + '》'.len_utf8(),
-    ))
-}
-
-fn fallback_marker_end_on_same_line(
-    text: &str,
-    content_start: usize,
-    end_marker: char,
-) -> Option<usize> {
-    for (offset, ch) in text[content_start..].char_indices() {
-        if ch == end_marker {
-            return Some(content_start + offset);
-        }
-        if matches!(ch, '\r' | '\n') {
-            return None;
-        }
-    }
-    None
-}
-
-fn fallback_command_end_on_same_line(
-    text: &str,
-    content_start: usize,
-    end_marker: char,
-) -> Option<usize> {
-    let mut offset = content_start;
-    while offset < text.len() {
-        let rest = &text[offset..];
-        if rest.starts_with("※［＃") {
-            let nested_start = offset + "※［＃".len();
-            if let Some(end) = fallback_marker_end_on_same_line(text, nested_start, '］') {
-                offset = end + '］'.len_utf8();
-                continue;
-            }
-        }
-        if rest.starts_with("※[#") {
-            let nested_start = offset + "※[#".len();
-            if let Some(end) = fallback_marker_end_on_same_line(text, nested_start, ']') {
-                offset = end + 1;
-                continue;
-            }
-        }
-        if rest.starts_with("［＃") {
-            let nested_start = offset + "［＃".len();
-            if let Some(end) = fallback_command_end_on_same_line(text, nested_start, '］') {
-                offset = end + '］'.len_utf8();
-                continue;
-            }
-        }
-        if rest.starts_with("[#") {
-            let nested_start = offset + "[#".len();
-            if let Some(end) = fallback_command_end_on_same_line(text, nested_start, ']') {
-                offset = end + 1;
-                continue;
-            }
-        }
-        let ch = rest.chars().next().expect("non-empty rest has a char");
-        if ch == end_marker {
-            return Some(offset);
-        }
-        if matches!(ch, '\r' | '\n') {
-            return None;
-        }
-        offset += ch.len_utf8();
-    }
-    None
 }
 
 fn append_ruby_supplements(
@@ -1039,6 +886,37 @@ mod tests {
         let projected = ab_ir::visible_projection(&blocks);
 
         assert_eq!(projected.visible_text, "アヌンチヤタありて");
+        assert_eq!(ab_ir::provenance_counts(&blocks).source_supplement, 0);
+    }
+
+    #[test]
+    fn fallback_blocks_model_non_hash_ruby_correction_notes_without_supplements() {
+        let body =
+            "『断頭台《ラギュイヨチーン》［ルビの「ラギュイヨチーン」は底本では「ラギュイヨケーン」］』";
+
+        let (blocks, projected) = build_fallback(body);
+        let json = ab_ir::blocks_to_aat_json(&blocks);
+        let content = json[0]["content"].as_array().unwrap();
+
+        assert_eq!(projected.visible_text, "『断頭台』");
+        assert!(content.iter().any(|node| {
+            node["kind"] == "ruby"
+                && node["base"] == "断頭台"
+                && node["reading"] == "ラギュイヨチーン"
+        }));
+        assert_eq!(ab_ir::provenance_counts(&blocks).source_supplement, 0);
+    }
+
+    #[test]
+    fn fallback_blocks_drop_terminal_provenance_note_before_colophon() {
+        let body = "私のお話は之で終りといたします。［＃地付き］（昭和九年十一月十五日ラジオ放送の遺稿より）\n\n底本：「ある英語教師の思い出」";
+
+        let (blocks, projected) = build_fallback(body);
+
+        assert_eq!(
+            projected.visible_text,
+            "私のお話は之で終りといたします。\n\n底本：「ある英語教師の思い出」"
+        );
         assert_eq!(ab_ir::provenance_counts(&blocks).source_supplement, 0);
     }
 

@@ -115,6 +115,23 @@ pub struct ParsedSource<'a> {
     pub timings: ParseTimings,
 }
 
+pub enum AatBlock {
+    Paragraph { content: Vec<AatInline> },
+    Heading { level: u8, content: Vec<AatInline> },
+}
+
+pub enum AatInline {
+    Text(String),
+    Ruby { base: String, reading: String },
+    Gaiji { description: String },
+    Style { style_type: String, content: Vec<AatInline> },
+    LineBreak,
+}
+
+pub struct ProjectedText {
+    pub visible_text: String,
+}
+
 pub struct ParseTimings {
     pub body_selection: Duration,
     pub tokenize: Duration,
@@ -123,21 +140,20 @@ pub struct ParseTimings {
 }
 
 pub struct InitialAatBuildResult {
-    pub blocks: Vec<serde_json::Value>,
+    pub blocks: Vec<AatBlock>,
+    pub projected: ProjectedText,
     pub timings: AatBuildTimings,
 }
 
 pub struct AatBuildResult {
-    pub blocks: Vec<serde_json::Value>,
+    pub blocks: Vec<AatBlock>,
+    pub projected: ProjectedText,
     pub fallback: FallbackDecision,
-    pub timings: AatBuildTimings,
     pub projection: ProjectionSummary,
 }
 
 pub struct AatBuildTimings {
     pub build: Duration,
-    pub projection_check: Duration,
-    pub fallback_build: Duration,
 }
 
 pub struct ProjectionSummary {
@@ -155,6 +171,7 @@ pub struct AdapterMetrics {
     pub aat_build: Duration,
     pub projection_check: Duration,
     pub fallback_build: Duration,
+    pub root_construct: Duration,
     pub source_bytes: usize,
     pub validation_body_bytes: usize,
     pub parser_body_bytes: usize,
@@ -228,12 +245,17 @@ Refactor `adapters/aozora-rs` into these modules:
 
 - `src/aat.rs`
   - Converts `ParsedSource` into a typed `InitialAatBuildResult`.
-  - Builds block values, not the final AAT root.
+  - Builds typed internal `AatBlock` and `AatInline` values, not
+    `serde_json::Value`.
   - Builds fallback blocks when the orchestrator selects a fallback path.
+  - Serializes typed blocks to AAT JSON only when the orchestrator assembles the
+    final adapter response.
 
 - `src/projection.rs`
   - Owns source-visible text normalization, visible projection, note stripping,
     and subsequence checks.
+  - Accepts `(validation_body: &str, projected_visible_text: &str)` and returns
+    `ProjectionSummary`; it does not inspect `AatBlock` shape or parse JSON.
   - Exposes pure functions that accept values and return values.
 
 - `src/metrics.rs`
@@ -241,6 +263,10 @@ Refactor `adapters/aozora-rs` into these modules:
     `MetricsSummary`.
   - Uses `std::time::Duration` internally and converts durations to millisecond
     `f64` fields only at JSON boundaries.
+  - Provides `AdapterMetrics::from_parts(decoded, body, parse, aat,
+    projection_check, fallback_build, root_construct, fallback)` and
+    `AdapterMetrics::stages()` helpers so the orchestrator does not manually
+    field-copy timings.
   - Provides aggregation helpers used by the comparison runner.
 
 The internal data flow should be:
@@ -250,9 +276,9 @@ bytes
   -> DecodedSource
   -> BodySelection { parser_body, validation_body, strategy }
   -> ParsedSource { retokenized, warnings, counts, parse timings }
-  -> InitialAatBuildResult { blocks, build timings }
+  -> InitialAatBuildResult { blocks, projected text, build timings }
   -> ProjectionSummary from projection::check(...)
-  -> final AatBuildResult { blocks, fallback, projection summary }
+  -> final AatBuildResult { blocks, projected text, fallback, projection summary }
   -> AAT JSON { blocks, meta.metrics, meta.warnings }
 ```
 
@@ -261,6 +287,12 @@ The orchestrator calls `projection::check(...)` after `aat::build_initial(...)`.
 applies, the orchestrator asks `aat.rs` to build fallback blocks and records the
 fallback decision. This keeps projection validation composable and independently
 testable.
+
+`fallback_build` is measured only when `aat::build_fallback(...)` is actually
+called. If an optimization pre-computes source-visible text for potential
+fallback reuse, that cost belongs to the phase that performs the work:
+`projection_check` for validation/source-visible preparation, or `aat_build`
+for parser-derived projection preparation.
 
 ## Metrics Model
 
@@ -281,6 +313,8 @@ Required fields:
       "retokenize_ms": 0.0,
       "aat_build_ms": 0.0,
       "projection_check_ms": 0.0,
+      "fallback_build_ms": 0.0,
+      "aat_root_ms": 0.0,
       "source_bytes": 0,
       "validation_body_bytes": 0,
       "parser_body_bytes": 0,
@@ -307,6 +341,8 @@ when AAT files are persisted.
 The Rust enum includes `Other(String)` so profiling can surface new recovery
 causes without changing the wire shape. A new named enum variant should be added
 only when a test demonstrates the reason with a real or synthetic fixture.
+`Other("reason_name")` must serialize as the plain string `"reason_name"`, not
+as an object.
 
 ## Performance Measurement
 
@@ -319,11 +355,15 @@ The comparison runner should add a post-processing step that reads persisted
   "works": 17894,
   "fallbacks": 0,
   "stage_totals_ms": {
+    "decode": 0.0,
+    "body_selection": 0.0,
     "tokenize": 0.0,
     "scopenize": 0.0,
     "retokenize": 0.0,
     "aat_build": 0.0,
     "projection_check": 0.0,
+    "fallback_build": 0.0,
+    "aat_root": 0.0,
     "aat_artifact_write": 0.0
   },
   "slowest_works": [
@@ -340,6 +380,8 @@ The comparison runner should add a post-processing step that reads persisted
         "retokenize": 0.0,
         "aat_build": 0.0,
         "projection_check": 0.0,
+        "fallback_build": 0.0,
+        "aat_root": 0.0,
         "aat_artifact_write": 0.0
       }
     }
@@ -349,6 +391,10 @@ The comparison runner should add a post-processing step that reads persisted
 
 The summary should be committed only for stable full-corpus baseline runs, not
 for every local profiling experiment.
+
+`aat_artifact_write_ms` is runner-owned. It is present only in summaries that
+persist AAT artifacts; otherwise it should be omitted or recorded as zero by a
+documented runner option.
 
 ## Performance Hypotheses
 
@@ -399,6 +445,8 @@ Add focused tests before implementation:
   `fallback_reason="projection_mismatch"`.
 - Large-body fallback records `fallback_reason="large_body"` without requiring a
   multi-megabyte test fixture.
+- `FallbackReason::Other("synthetic_reason")` serializes as the plain string
+  `"synthetic_reason"`.
 - Stage timing fields are present and numeric.
 - Full-corpus runner summaries include aggregate `aozora-rs` metric totals.
 - The top slow works summary includes full per-stage timing breakdowns, not only

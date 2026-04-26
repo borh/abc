@@ -106,5 +106,7 @@
                                "--formats" "clj"]}
   :abc/validate-design-bundle
   {:main-opts ["-m" "abc.tools.validate-design-bundle"]}
+  :abc/materialize-import
+  {:main-opts ["-m" "abc.tools.materialize-import"]}
   :update        {:deps      {com.github.liquidz/antq {:mvn/version "2.11.1276"}}
                   :main-opts ["-m" "antq.core"]}}}

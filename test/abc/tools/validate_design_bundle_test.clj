@@ -1,5 +1,6 @@
 (ns abc.tools.validate-design-bundle-test
-  (:require [abc.tools.validate-design-bundle :as validate]
+  (:require [abc.tools.files :as files]
+            [abc.tools.validate-design-bundle :as validate]
             [clojure.test :refer [deftest is testing]]))
 
 (deftest sha256-file-test
@@ -7,7 +8,7 @@
     (try
       (spit file "abc")
       (is (= "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
-             (validate/sha256-file file)))
+             (files/sha256-file file)))
       (finally
         (.delete file)))))
 
@@ -16,7 +17,7 @@
     (try
       (spit file "{\"a\":1}\n\n{\"b\":2}\n")
       (is (= [{"a" 1} {"b" 2}]
-             (validate/read-json-lines file)))
+             (files/read-json-lines file)))
       (finally
         (.delete file)))))
 
@@ -46,15 +47,16 @@
           {"producer" "ab-validator"
            "producer_version" "0.0.0"
            "work_id" "fixture"
-           "work_content_hash" (validate/example-hash "01")
-           "parser_build_hash" (validate/example-hash "02")
-           "parser_config_hash" (validate/example-hash "03")
-           "parser_ir_schema_hash" (validate/example-hash "04")
-           "warning_sidecar_hash" (validate/example-hash "05")
-           "run_summary_hash" (validate/example-hash "06")
-           "comparison_report_hash" (validate/example-hash "07")}))))
+           "work_content_hash" (files/example-hash "01")
+           "parser_build_hash" (files/example-hash "02")
+           "parser_config_hash" (files/example-hash "03")
+           "parser_ir_schema_hash" (files/example-hash "04")
+           "diagnostic_schema_hash" (files/example-hash "08")
+           "warning_sidecar_hash" (files/example-hash "05")
+           "run_summary_hash" (files/example-hash "06")
+           "comparison_report_hash" (files/example-hash "07")}))))
   (testing "reports missing keys"
-    (is (= ["ab-validator manifest inputs missing keys: comparison_report_hash, parser_build_hash, parser_config_hash, parser_ir_schema_hash, producer_version, run_summary_hash, warning_sidecar_hash, work_content_hash, work_id"]
+    (is (= ["ab-validator manifest inputs missing keys: comparison_report_hash, diagnostic_schema_hash, parser_build_hash, parser_config_hash, parser_ir_schema_hash, producer_version, run_summary_hash, warning_sidecar_hash, work_content_hash, work_id"]
            (validate/manifest-input-errors {"producer" "ab-validator"}))))
   (testing "reports invalid hash values"
     (is (= ["ab-validator manifest input work_content_hash is not a sha256 hash: nope"]
@@ -63,12 +65,13 @@
              "producer_version" "0.0.0"
              "work_id" "fixture"
              "work_content_hash" "nope"
-             "parser_build_hash" (validate/example-hash "02")
-             "parser_config_hash" (validate/example-hash "03")
-             "parser_ir_schema_hash" (validate/example-hash "04")
-             "warning_sidecar_hash" (validate/example-hash "05")
-             "run_summary_hash" (validate/example-hash "06")
-             "comparison_report_hash" (validate/example-hash "07")})))))
+             "parser_build_hash" (files/example-hash "02")
+             "parser_config_hash" (files/example-hash "03")
+             "parser_ir_schema_hash" (files/example-hash "04")
+             "diagnostic_schema_hash" (files/example-hash "08")
+             "warning_sidecar_hash" (files/example-hash "05")
+             "run_summary_hash" (files/example-hash "06")
+             "comparison_report_hash" (files/example-hash "07")})))))
 
 (deftest comparison-report-errors-test
   (is (empty?

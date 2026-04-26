@@ -22,6 +22,7 @@ bound the choices.
 | Design validation ADR | `docs/adr/0006-v0-design-bundle-validation.md` | Define the local/CI smoke validation command | Keeps validation repository-local and parser-free |
 | ab-validator boundary ADR | `docs/adr/0007-external-parser-validation-boundary.md` | Keep parser comparison in `../ab-validator` | Defines imported output bundle contract |
 | ABC tools runtime ADR | `docs/adr/0008-abc-tools-runtime.md` | Move pipeline tooling into Clojure commands exposed by Nix | Keeps Bash as compatibility wrappers only |
+| Imported materialization ADR | `docs/adr/0009-imported-output-materialization.md` | Turn imported parser output into ABC manifests | Generates parser IR and warning manifests from fixture input |
 | Manifest schema | `schemas/manifest.schema.json` | Canonical JSON contract for success and failure manifests | Draft 2020-12 schema validates example manifests |
 | Parser IR schema | `schemas/parser-ir.schema.json` | Language-neutral parser boundary | Covers spans, ruby, gaiji, notes, warnings, errors |
 | Manifest SHACL | `schemas/manifest.shacl.ttl` | RDF/PROV-O publication view check | Requires artifact, status, activity, and derivation links |

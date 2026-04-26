@@ -12,7 +12,9 @@ ABC consumes a file bundle exported by `ab-validator`:
 - `comparison-report.json`: parser comparison summary. This is advisory for
   ABC v0 and not identity-bearing.
 - `manifest-inputs.json`: hashes and labels ABC needs to construct artifact
-  manifests.
+  manifests. It must include distinct `parser_ir_schema_hash` and
+  `diagnostic_schema_hash` values so parser IR and warning artifacts have
+  distinct output format identities.
 
 The fixture in `examples/ab-validator-output/` is the current contract example.
 It is checked by `bin/validate-design-bundle.sh`, but the script does not run

@@ -1,44 +1,9 @@
 (ns abc.tools.validate-design-bundle
-  (:require [charred.api :as json]
-            [clojure.java.io :as io]
+  (:require [abc.tools.files :as files]
+            [abc.tools.materialize-import :as materialize]
+            [charred.api :as json]
             [clojure.set :as set]
-            [clojure.string :as string])
-  (:import [java.security MessageDigest]))
-
-(def hash-pattern #"^sha256:[0-9a-f]{64}$")
-
-(defn repo-root []
-  (.getCanonicalFile (io/file ".")))
-
-(defn path [& segments]
-  (apply io/file (repo-root) segments))
-
-(defn read-json [file]
-  (json/read-json (io/file file)))
-
-(defn read-json-lines [file]
-  (->> (string/split-lines (slurp (io/file file)))
-       (remove string/blank?)
-       (mapv json/read-json)))
-
-(defn bytes->hex [bytes]
-  (apply str (map #(format "%02x" (bit-and % 0xff)) bytes)))
-
-(defn sha256-file [file]
-  (with-open [in (io/input-stream (io/file file))]
-    (let [digest (MessageDigest/getInstance "SHA-256")
-          buffer (byte-array 8192)]
-      (loop []
-        (let [n (.read in buffer)]
-          (when (pos? n)
-            (.update digest buffer 0 n)
-            (recur))))
-      (bytes->hex (.digest digest)))))
-
-(defn example-hash [suffix]
-  (str "sha256:"
-       (apply str (repeat (- 64 (count suffix)) "0"))
-       suffix))
+            [clojure.string :as string]))
 
 (def required-manifest-input-keys
   #{"producer"
@@ -48,6 +13,7 @@
     "parser_build_hash"
     "parser_config_hash"
     "parser_ir_schema_hash"
+    "diagnostic_schema_hash"
     "warning_sidecar_hash"
     "run_summary_hash"
     "comparison_report_hash"})
@@ -61,7 +27,7 @@
         hash-errors (for [[k v] (sort-by key manifest-inputs)
                           :when (string/ends-with? k "_hash")
                           :when (not (and (string? v)
-                                          (re-matches hash-pattern v)))]
+                                          (re-matches files/hash-pattern v)))]
                       (str "ab-validator manifest input " k
                            " is not a sha256 hash: " v))]
     (vec (concat (when missing-error [missing-error])
@@ -100,7 +66,7 @@
                       {:command command
                        :exit-code exit-code})))))
 
-(defn validate-json-schemas! []
+(defn validate-json-schemas! [extra-manifest-paths]
   (run-command!
    "python" "-"
    (str
@@ -121,7 +87,7 @@
     "    'examples/v0/example-work/source.manifest.json',\n"
     "    'examples/v0/example-work/manifest.json',\n"
     "    'examples/v0/example-work/failure-manifest.example.json',\n"
-    "]:\n"
+    "] + " (pr-str (vec (map str extra-manifest-paths))) ":\n"
     "    manifest_validator.validate(load_json(path))\n"
     "for path in [\n"
     "    'examples/v0/example-work/parser-ir.json',\n"
@@ -160,22 +126,22 @@
 (defn validate-ab-validator-output! []
   (check-errors!
    (manifest-input-errors
-    (read-json (path "examples" "ab-validator-output" "manifest-inputs.json"))))
+    (files/read-json (files/path "examples" "ab-validator-output" "manifest-inputs.json"))))
   (check-errors!
    (run-summary-errors
-    (read-json-lines (path "examples" "ab-validator-output" "run-summary.jsonl"))))
+    (files/read-json-lines (files/path "examples" "ab-validator-output" "run-summary.jsonl"))))
   (check-errors!
    (comparison-report-errors
-    (read-json (path "examples" "ab-validator-output" "comparison-report.json")))))
+    (files/read-json (files/path "examples" "ab-validator-output" "comparison-report.json")))))
 
 (defn validate-canonicalization! []
   (let [expected "9d49ff018a43ac2b24323276424cc325e3a5d0a22716144c8800f9fec0911f0a"
-        actual (sha256-file (path "fixtures" "canonicalization"
-                                  "manifest-identity-object.canonical.json"))
-        array-a (sha256-file (path "fixtures" "canonicalization"
-                                   "array-ordering-negative-a.json"))
-        array-b (sha256-file (path "fixtures" "canonicalization"
-                                   "array-ordering-negative-b.json"))]
+        actual (files/sha256-file (files/path "fixtures" "canonicalization"
+                                              "manifest-identity-object.canonical.json"))
+        array-a (files/sha256-file (files/path "fixtures" "canonicalization"
+                                               "array-ordering-negative-a.json"))
+        array-b (files/sha256-file (files/path "fixtures" "canonicalization"
+                                               "array-ordering-negative-b.json"))]
     (when-not (= expected actual)
       (throw (ex-info "canonical identity fixture hash mismatch"
                       {:expected expected
@@ -194,22 +160,35 @@
                 "--output" "/tmp/abc-changelog-check.md"))
 
 (defn validate-design-bundle! []
-  (println "==> Validating JSON schemas and examples")
-  (validate-json-schemas!)
-  (println "json schema validation ok")
-  (println "==> Checking imported ab-validator output")
-  (validate-ab-validator-output!)
-  (println "ab-validator output ok")
-  (println "==> Checking canonicalization fixtures")
-  (validate-canonicalization!)
-  (println "canonicalization fixtures ok")
-  (println "==> Checking XML fixtures")
-  (validate-xml!)
-  (println "xml fixtures ok")
-  (println "==> Checking git-cliff configuration")
-  (validate-git-cliff!)
-  (println "git-cliff config ok")
-  (println "design bundle validation ok"))
+  (let [materialized-dir (.toFile (java.nio.file.Files/createTempDirectory
+                                   "abc-materialized-import"
+                                   (make-array java.nio.file.attribute.FileAttribute 0)))]
+    (try
+      (println "==> Materializing imported ab-validator output")
+      (let [materialized (materialize/materialize-import!
+                          {:input-dir (files/path "examples" "ab-validator-output")
+                           :output-dir materialized-dir
+                           :generated-at materialize/default-generated-at})]
+        (println "materialized import ok")
+        (println "==> Validating JSON schemas and examples")
+        (validate-json-schemas! (vals materialized))
+        (println "json schema validation ok"))
+      (println "==> Checking imported ab-validator output")
+      (validate-ab-validator-output!)
+      (println "ab-validator output ok")
+      (println "==> Checking canonicalization fixtures")
+      (validate-canonicalization!)
+      (println "canonicalization fixtures ok")
+      (println "==> Checking XML fixtures")
+      (validate-xml!)
+      (println "xml fixtures ok")
+      (println "==> Checking git-cliff configuration")
+      (validate-git-cliff!)
+      (println "git-cliff config ok")
+      (println "design bundle validation ok")
+      (finally
+        (doseq [file (reverse (file-seq materialized-dir))]
+          (.delete file))))))
 
 (defn -main [& _args]
   (try

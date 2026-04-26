@@ -50,6 +50,16 @@
             );
             meta.description = "Validate ABC v0 design-bundle schemas and fixtures";
           };
+
+          materialize-import = {
+            type = "app";
+            program = toString (
+              pkgs.writeShellScript "abc-materialize-import" ''
+                exec ${pkgs.clojure}/bin/clojure -M:abc/materialize-import "$@"
+              ''
+            );
+            meta.description = "Materialize imported ab-validator output as ABC manifests";
+          };
         }
       );
 

@@ -88,12 +88,11 @@ fn retokenized_to_aat_blocks(tokens: &[Retokenized<'_>]) -> Vec<Block> {
                 ),
             )),
             Retokenized::DecoBegin(Deco::Ruby(reading)) => {
-                let (base, next_idx) = collect_decorated_visible_text(tokens, idx + 1, |deco| {
-                    matches!(deco, Deco::Ruby(_))
-                });
-                if !is_pathological_ruby_base(&base) {
-                    content.push(Inline::ruby(base, *reading));
-                }
+                let (base, next_idx) =
+                    collect_decorated_content(tokens, idx + 1, false, &|deco| {
+                        matches!(deco, Deco::Ruby(_))
+                    });
+                push_ruby_inline(&mut content, base, reading, Provenance::Parser);
                 idx = next_idx;
                 continue;
             }
@@ -103,8 +102,8 @@ fn retokenized_to_aat_blocks(tokens: &[Retokenized<'_>]) -> Vec<Block> {
                     Retokenized::DecoBegin(deco) => deco,
                     _ => unreachable!(),
                 };
-                let (value, next_idx) =
-                    collect_decorated_visible_text(tokens, idx + 1, |candidate| {
+                let (heading_content, next_idx) =
+                    collect_decorated_content(tokens, idx + 1, false, &|candidate| {
                         matches!(
                             (deco, candidate),
                             (Deco::AHead, Deco::AHead)
@@ -121,17 +120,17 @@ fn retokenized_to_aat_blocks(tokens: &[Retokenized<'_>]) -> Vec<Block> {
                 blocks.push(Block::Heading {
                     level,
                     style: stable_style_type(deco),
-                    content: vec![Inline::text(value)],
+                    content: heading_content,
                 });
                 idx = next_idx;
                 continue;
             }
             Retokenized::DecoBegin(deco) => {
-                let (value, next_idx) =
-                    collect_decorated_visible_text(tokens, idx + 1, |candidate| {
+                let (inner, next_idx) =
+                    collect_decorated_content(tokens, idx + 1, false, &|candidate| {
                         same_deco_kind(candidate, deco)
                     });
-                content.push(Inline::style(stable_style_type(deco), vec![Inline::text(value)]));
+                content.push(Inline::style(stable_style_type(deco), inner));
                 idx = next_idx;
                 continue;
             }
@@ -146,33 +145,86 @@ fn retokenized_to_aat_blocks(tokens: &[Retokenized<'_>]) -> Vec<Block> {
     blocks
 }
 
-fn collect_decorated_visible_text(
-    tokens: &[Retokenized<'_>],
+fn collect_decorated_content<'a>(
+    tokens: &[Retokenized<'a>],
     mut idx: usize,
-    is_matching_end: impl Fn(&Deco<'_>) -> bool,
-) -> (String, usize) {
-    let mut value = String::new();
-    let mut depth = 1;
+    preserve_styles: bool,
+    is_matching_end: &dyn Fn(&Deco<'a>) -> bool,
+) -> (Vec<Inline>, usize) {
+    let mut content = Vec::new();
     while idx < tokens.len() {
         match &tokens[idx] {
-            Retokenized::Text(text) => value.push_str(&source_visible_text(text)),
-            Retokenized::Odoriji(odoriji) => value.push_str(odoriji_source_text(*odoriji)),
+            Retokenized::Text(text) => push_text(&mut content, &source_visible_text(text)),
+            Retokenized::Odoriji(odoriji) => push_text(&mut content, odoriji_source_text(*odoriji)),
             Retokenized::Kunten(_) | Retokenized::Okurigana(_) => {}
-            Retokenized::Break(_) => value.push('\n'),
-            Retokenized::Figure(_) => {}
-            Retokenized::DecoBegin(_) => depth += 1,
-            Retokenized::DecoEnd(deco) if depth == 1 && is_matching_end(deco) => {
-                return (value, idx + 1);
+            Retokenized::Break(_) => push_text(&mut content, "\n"),
+            Retokenized::Figure(figure) => content.push(Inline::gaiji(
+                figure.to_string(),
+                "",
+                Some(
+                    "aozora-rs-core Figure Display output; original gaiji notation is not preserved by Figure",
+                ),
+            )),
+            Retokenized::DecoBegin(Deco::Ruby(reading)) => {
+                let (base, next_idx) =
+                    collect_decorated_content(tokens, idx + 1, false, &|deco| {
+                        matches!(deco, Deco::Ruby(_))
+                    });
+                push_ruby_inline(&mut content, base, reading, Provenance::Parser);
+                idx = next_idx;
+                continue;
             }
-            Retokenized::DecoEnd(_) => depth -= 1,
+            Retokenized::DecoBegin(deco) => {
+                let (inner, next_idx) =
+                    collect_decorated_content(tokens, idx + 1, false, &|candidate| {
+                        same_deco_kind(candidate, deco)
+                    });
+                if preserve_styles {
+                    content.push(Inline::style(stable_style_type(deco), inner));
+                } else {
+                    content.extend(inner);
+                }
+                idx = next_idx;
+                continue;
+            }
+            Retokenized::DecoEnd(deco) if is_matching_end(deco) => {
+                return (content, idx + 1);
+            }
+            Retokenized::DecoEnd(_) => {}
         }
         idx += 1;
     }
-    (value, idx)
+    (content, idx)
+}
+
+fn push_ruby_inline(
+    content: &mut Vec<Inline>,
+    base: Vec<Inline>,
+    reading: &str,
+    provenance: Provenance,
+) {
+    if contains_ruby_inline(&base) {
+        content.extend(base);
+    } else if !is_pathological_ruby_base(&inline_visible_text(&base)) {
+        content.push(Inline::ruby_with_base_and_provenance(
+            base,
+            reading,
+            RubyPlacement::Right,
+            provenance,
+        ));
+    }
 }
 
 fn is_pathological_ruby_base(base: &str) -> bool {
     base.contains('\n') || base.chars().count() > 80
+}
+
+fn contains_ruby_inline(content: &[Inline]) -> bool {
+    content.iter().any(|node| match node {
+        Inline::Ruby { .. } => true,
+        Inline::Style { content, .. } => contains_ruby_inline(content),
+        Inline::Text { .. } | Inline::GaijiRef(_) => false,
+    })
 }
 
 fn flush_paragraph(blocks: &mut Vec<Block>, content: &mut Vec<Inline>) {
@@ -1089,7 +1141,6 @@ mod tests {
             elapsed: Duration::ZERO,
         })
         .unwrap();
-
         let built = build_initial(&parsed);
         assert!(matches!(built.blocks[0], Block::Paragraph { .. }));
         assert!(built.projected.visible_text.contains("吾輩"));
@@ -1343,6 +1394,46 @@ mod tests {
     }
 
     #[test]
+    fn build_initial_preserves_nested_ruby_inside_decorated_scope() {
+        let body = "［＃ここから１字下げ］吾輩《わがはい》は猫《ねこ》。［＃ここで字下げ終わり］\n";
+        let parsed = parse_with_aozora_rs(BodySelection {
+            validation_body: body,
+            found_separators: false,
+            elapsed: Duration::ZERO,
+        })
+        .unwrap();
+
+        let built = build_initial(&parsed);
+        let counts = ab_ir::provenance_counts(&built.blocks);
+        let json = ab_ir::blocks_to_aat_json(&built.blocks);
+
+        assert_eq!(built.projected.visible_text, "吾輩は猫。");
+        assert_eq!(counts.source_supplement, 0);
+        assert!(json_has_ruby(&json[0], "吾輩", "わがはい"));
+        assert!(json_has_ruby(&json[0], "猫", "ねこ"));
+    }
+
+    #[test]
+    fn retokenized_blocks_flatten_nested_non_ruby_styles() {
+        let tokens = vec![
+            Retokenized::DecoBegin(Deco::Bold),
+            Retokenized::DecoBegin(Deco::Italic),
+            Retokenized::Text("吾輩"),
+            Retokenized::DecoEnd(Deco::Italic),
+            Retokenized::DecoEnd(Deco::Bold),
+        ];
+
+        let blocks = retokenized_to_aat_blocks(&tokens);
+        let json = ab_ir::blocks_to_aat_json(&blocks);
+        let style = &json[0]["content"][0];
+
+        assert_eq!(style["kind"], "style");
+        assert_eq!(style["style_type"], "bold");
+        assert_eq!(style["content"][0]["kind"], "text");
+        assert!(!json_has_nested_style(style));
+    }
+
+    #[test]
     fn source_annotation_supplements_parse_unicode_gaiji_as_parser_normalized() {
         let mut blocks = vec![Block::Paragraph { content: vec![] }];
 
@@ -1525,5 +1616,31 @@ mod tests {
             vec!["ぼうぜん", "つぎ"]
         );
         assert!(markers.gaiji_descriptions.is_empty());
+    }
+
+    fn json_has_ruby(value: &serde_json::Value, base: &str, reading: &str) -> bool {
+        match value {
+            serde_json::Value::Object(object) => {
+                if object.get("kind").and_then(serde_json::Value::as_str) == Some("ruby")
+                    && object.get("base").and_then(serde_json::Value::as_str) == Some(base)
+                    && object.get("reading").and_then(serde_json::Value::as_str) == Some(reading)
+                {
+                    return true;
+                }
+                object.values().any(|child| json_has_ruby(child, base, reading))
+            }
+            serde_json::Value::Array(values) => {
+                values.iter().any(|child| json_has_ruby(child, base, reading))
+            }
+            _ => false,
+        }
+    }
+
+    fn json_has_nested_style(style: &serde_json::Value) -> bool {
+        style["content"].as_array().is_some_and(|children| {
+            children.iter().any(|child| {
+                child["kind"] == "style" || json_has_nested_style(child)
+            })
+        })
     }
 }

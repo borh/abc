@@ -1,4 +1,4 @@
-use std::time::Instant;
+use std::{sync::OnceLock, time::Instant};
 
 use aozora_rs_core::{Break, Deco, Retokenized};
 use regex::Regex;
@@ -505,7 +505,6 @@ fn collect_visible_projection(value: &AatInline, out: &mut String) {
 }
 
 fn append_ruby_supplements(content: &mut Vec<AatInline>, body: &str) {
-    let marker = Regex::new(r"《([^》]+)》").unwrap();
     let existing = content
         .iter()
         .filter_map(|node| match node {
@@ -513,7 +512,7 @@ fn append_ruby_supplements(content: &mut Vec<AatInline>, body: &str) {
             _ => None,
         })
         .collect::<Vec<_>>();
-    for capture in marker.captures_iter(body) {
+    for capture in ruby_marker_regex().captures_iter(body) {
         let reading = capture.get(1).unwrap().as_str();
         if existing.iter().any(|existing| existing == reading) {
             continue;
@@ -526,12 +525,14 @@ fn append_ruby_supplements(content: &mut Vec<AatInline>, body: &str) {
 }
 
 fn append_gaiji_supplements(content: &mut Vec<AatInline>, body: &str) {
-    let marker = Regex::new(r"※(?:［＃([^］]+)］|\[#([^\]]+)\])").unwrap();
     let existing_count = content
         .iter()
         .filter(|node| matches!(node, AatInline::Gaiji { .. }))
         .count();
-    for capture in marker.captures_iter(body).skip(existing_count) {
+    for capture in gaiji_marker_regex()
+        .captures_iter(body)
+        .skip(existing_count)
+    {
         let description = capture
             .get(1)
             .or_else(|| capture.get(2))
@@ -543,6 +544,16 @@ fn append_gaiji_supplements(content: &mut Vec<AatInline>, body: &str) {
             description_format: None,
         });
     }
+}
+
+fn ruby_marker_regex() -> &'static Regex {
+    static REGEX: OnceLock<Regex> = OnceLock::new();
+    REGEX.get_or_init(|| Regex::new(r"《([^》]+)》").unwrap())
+}
+
+fn gaiji_marker_regex() -> &'static Regex {
+    static REGEX: OnceLock<Regex> = OnceLock::new();
+    REGEX.get_or_init(|| Regex::new(r"※(?:［＃([^］]+)］|\[#([^\]]+)\])").unwrap())
 }
 
 fn block_content(block: &AatBlock) -> &[AatInline] {

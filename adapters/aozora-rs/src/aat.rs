@@ -58,6 +58,16 @@ pub fn build_fallback_from_source_visible(
     (blocks, projected)
 }
 
+pub fn blocks_cover_validation_annotations(body: &str, blocks: &[Block]) -> bool {
+    let annotations = ab_source_syntax::source_annotations_for_validation(body);
+    let readings = ruby_readings_in_blocks(blocks);
+    annotations
+        .ruby_readings
+        .iter()
+        .all(|marker| readings.contains(marker.value))
+        && gaiji_count_in_blocks(blocks) >= annotations.gaiji_descriptions.len()
+}
+
 fn retokenized_to_aat_blocks(tokens: &[Retokenized<'_>]) -> Vec<Block> {
     let mut blocks = Vec::new();
     let mut content = Vec::new();
@@ -409,7 +419,9 @@ fn append_source_annotation_supplements(blocks: &mut [Block], body: &str) {
 
 fn source_visible_fallback_blocks(body: &str, source_visible: String) -> Vec<Block> {
     let blocks = structured_source_fallback_blocks(body);
-    if ab_ir::visible_projection(&blocks).visible_text == source_visible {
+    if ab_ir::visible_projection(&blocks).visible_text == source_visible
+        && blocks_cover_validation_annotations(body, &blocks)
+    {
         return blocks;
     }
     legacy_source_visible_fallback_blocks(body, source_visible)
@@ -432,6 +444,13 @@ fn structured_source_fallback_blocks(body: &str) -> Vec<Block> {
     let mut last_gaiji_end = None;
     while offset < body.len() {
         let rest = &body[offset..];
+        if let Some(prefix_len) = fallback_bottom_note_fragment_prefix_len(rest) {
+            trim_source_fallback_note_prefix(&mut content);
+            offset += prefix_len;
+            offset = fallback_skip_until_any_bracket(body, offset);
+            last_gaiji_end = None;
+            continue;
+        }
         if rest.starts_with("※［＃") {
             let content_start = offset + "※［＃".len();
             if let Some(content_end) = fallback_marker_end_on_same_line(body, content_start, '］')
@@ -523,6 +542,117 @@ fn structured_source_fallback_blocks(body: &str) -> Vec<Block> {
     }
 
     vec![Block::Paragraph { content }]
+}
+
+fn fallback_bottom_note_fragment_prefix_len(rest: &str) -> Option<usize> {
+    ["」は底本では「", "」の「", "」はママ"]
+        .iter()
+        .find_map(|prefix| rest.starts_with(prefix).then_some(prefix.len()))
+}
+
+fn trim_source_fallback_note_prefix(content: &mut Vec<Inline>) {
+    let visible = inline_visible_text(content);
+    let Some(target) = note_prefix_trim_len(&visible) else {
+        return;
+    };
+    truncate_inline_content_to_visible_len(content, target);
+}
+
+fn note_prefix_trim_len(visible: &str) -> Option<usize> {
+    let close_quote = visible.rfind('「')?;
+    let prefix = &visible[..close_quote];
+    prefix
+        .char_indices()
+        .rev()
+        .find_map(|(offset, ch)| is_note_boundary(ch).then_some(offset + ch.len_utf8()))
+        .or(Some(0))
+}
+
+fn is_note_boundary(ch: char) -> bool {
+    ch.is_whitespace() || matches!(ch, '、' | '。' | '，' | '．')
+}
+
+fn truncate_inline_content_to_visible_len(content: &mut Vec<Inline>, target: usize) {
+    let mut visible_len = 0;
+    let mut idx = 0;
+    while idx < content.len() {
+        let node_visible_len = inline_visible_len(&content[idx]);
+        if visible_len + node_visible_len < target {
+            visible_len += node_visible_len;
+            idx += 1;
+            continue;
+        }
+        if visible_len + node_visible_len == target {
+            content.truncate(idx + 1);
+            return;
+        }
+        match &mut content[idx] {
+            Inline::Text { value, .. } => {
+                let keep = target - visible_len;
+                value.truncate(keep);
+                if value.is_empty() {
+                    content.truncate(idx);
+                } else {
+                    content.truncate(idx + 1);
+                }
+            }
+            Inline::Ruby { base, .. } | Inline::Style { content: base, .. } => {
+                truncate_inline_content_to_visible_len(base, target - visible_len);
+                content.truncate(idx + 1);
+            }
+            Inline::GaijiRef(_) => {
+                content.truncate(idx);
+            }
+        }
+        return;
+    }
+}
+
+fn inline_visible_text(content: &[Inline]) -> String {
+    let mut visible = String::new();
+    for node in content {
+        push_inline_visible_text(node, &mut visible);
+    }
+    visible
+}
+
+fn push_inline_visible_text(node: &Inline, visible: &mut String) {
+    match node {
+        Inline::Text { value, .. } => visible.push_str(value),
+        Inline::Ruby { base, .. } | Inline::Style { content: base, .. } => {
+            for child in base {
+                push_inline_visible_text(child, visible);
+            }
+        }
+        Inline::GaijiRef(gaiji) => {
+            if let Some(resolved) = &gaiji.resolved {
+                visible.push_str(resolved);
+            }
+        }
+    }
+}
+
+fn inline_visible_len(node: &Inline) -> usize {
+    match node {
+        Inline::Text { value, .. } => value.len(),
+        Inline::Ruby { base, .. } | Inline::Style { content: base, .. } => {
+            base.iter().map(inline_visible_len).sum()
+        }
+        Inline::GaijiRef(gaiji) => gaiji.resolved.as_ref().map_or(0, String::len),
+    }
+}
+
+fn fallback_skip_until_any_bracket(text: &str, offset: usize) -> usize {
+    let rest = &text[offset..];
+    let fullwidth = rest.find('］');
+    let ascii = rest.find(']');
+    match (fullwidth, ascii) {
+        (Some(left), Some(right)) if left <= right => offset + left + '］'.len_utf8(),
+        (Some(_), Some(right)) => offset + right + 1,
+        (Some(left), None) => offset + left + '］'.len_utf8(),
+        (None, Some(right)) => offset + right + 1,
+        (None, None) => text.len(),
+    }
 }
 
 fn push_source_fallback_ruby(
@@ -876,6 +1006,31 @@ mod tests {
                 && node["description"] == "「筑」の「凡」に代えて「卩」、第3水準1-89-60"
         }));
         assert_eq!(ab_ir::provenance_counts(&blocks).source_supplement, 0);
+    }
+
+    #[test]
+    fn fallback_blocks_trim_malformed_bottom_note_fragments() {
+        let body = "前文。\n評に曰く百圓［は＃「百圓は」はママ］密かに続く。";
+        let (blocks, projected) = build_fallback(body);
+
+        assert_eq!(projected.visible_text, "前文。\n密かに続く。");
+        assert_eq!(source_visible_text(body), "前文。\n密かに続く。");
+        assert_eq!(ab_ir::provenance_counts(&blocks).source_supplement, 0);
+    }
+
+    #[test]
+    fn fallback_blocks_use_legacy_supplements_when_structured_drops_validation_ruby() {
+        let body = "軌［＃「軌」に「（ママ）」の注記］り［＃「軌［＃「軌」に「（ママ）」の注記］り」は底本では「軌《きし》り」］";
+        let (blocks, _projected) = build_fallback(body);
+        let json = ab_ir::blocks_to_aat_json(&blocks);
+        let content = json[0]["content"].as_array().unwrap();
+
+        assert!(content.iter().any(|node| {
+            node["kind"] == "ruby"
+                && node["reading"] == "きし"
+                && node["x-provenance"] == "source_supplement"
+        }));
+        assert!(ab_ir::provenance_counts(&blocks).source_supplement > 0);
     }
 
     #[test]

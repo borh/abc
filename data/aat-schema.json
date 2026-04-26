@@ -122,7 +122,14 @@
         "source_supplement_nodes": { "type": "integer", "minimum": 0 },
         "source_fallback_nodes": { "type": "integer", "minimum": 0 },
         "fallback_used": { "type": "boolean" },
-        "fallback_reason": { "enum": ["none", "projection_mismatch", "large_body"] }
+        "fallback_reason": {
+          "enum": [
+            "none",
+            "projection_mismatch",
+            "large_body",
+            "source_supplement_hotspot"
+          ]
+        }
       }
     },
     "warning": {

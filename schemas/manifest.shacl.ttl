@@ -1,0 +1,81 @@
+@prefix abc: <https://example.org/abc/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+abc:ArtifactShape
+  a sh:NodeShape ;
+  sh:targetClass prov:Entity ;
+  sh:property [
+    sh:path abc:artifactId ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+    sh:pattern "^sha256:[0-9a-f]{64}$"
+  ] ;
+  sh:property [
+    sh:path abc:schemaHash ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+    sh:pattern "^sha256:[0-9a-f]{64}$"
+  ] ;
+  sh:or (
+    [
+      sh:property [
+        sh:path abc:contentHash ;
+        sh:minCount 1 ;
+        sh:datatype xsd:string ;
+        sh:pattern "^sha256:[0-9a-f]{64}$"
+      ]
+    ]
+    [
+      sh:class abc:FailureArtifact ;
+      sh:property [
+        sh:path abc:hasErrorArtifact ;
+        sh:minCount 1
+      ]
+    ]
+  ) ;
+  sh:property [
+    sh:path abc:validationStatus ;
+    sh:minCount 1 ;
+    sh:in ("not-run" "passed" "warning" "failed")
+  ] ;
+  sh:property [
+    sh:path dcterms:format ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string
+  ] ;
+  sh:property [
+    sh:path prov:wasGeneratedBy ;
+    sh:minCount 1 ;
+    sh:class prov:Activity
+  ] ;
+  sh:property [
+    sh:path prov:wasDerivedFrom ;
+    sh:minCount 1
+  ] .
+
+abc:ActivityShape
+  a sh:NodeShape ;
+  sh:targetClass prov:Activity ;
+  sh:property [
+    sh:path prov:used ;
+    sh:minCount 1
+  ] ;
+  sh:property [
+    sh:path prov:qualifiedAssociation ;
+    sh:minCount 1
+  ] .
+
+abc:FailureShape
+  a sh:NodeShape ;
+  sh:targetClass abc:FailureArtifact ;
+  sh:property [
+    sh:path abc:validationStatus ;
+    sh:hasValue "failed"
+  ] ;
+  sh:property [
+    sh:path abc:hasErrorArtifact ;
+    sh:minCount 1
+  ] .

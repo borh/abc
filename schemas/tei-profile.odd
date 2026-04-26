@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+  <teiHeader>
+    <fileDesc>
+      <titleStmt>
+        <title>ABC Minimal Aozora TEI Profile v0</title>
+      </titleStmt>
+      <editionStmt>
+        <edition>Draft v0 targeting TEI P5 4.11.0-era ruby support.</edition>
+      </editionStmt>
+      <publicationStmt>
+        <p>Draft profile stub for ABC v0 design bundle.</p>
+      </publicationStmt>
+      <sourceDesc>
+        <p>Derived from the ABC high-level architecture note v0.5.</p>
+      </sourceDesc>
+    </fileDesc>
+  </teiHeader>
+  <text>
+    <body>
+      <schemaSpec ident="abc-aozora-minimal" start="TEI">
+        <moduleRef key="tei"/>
+        <moduleRef key="header"/>
+        <moduleRef key="core"/>
+        <moduleRef key="textstructure"/>
+        <moduleRef key="namesdates"/>
+        <moduleRef key="transcr"/>
+        <moduleRef key="figures"/>
+        <elementSpec ident="ruby" mode="change" module="core">
+          <remarks>
+            <p>
+              Aozora ruby must preserve base text, reading, source span, and
+              whether the base scope was explicit, inferred, grouped,
+              mid-word, or ambiguous in the parser IR.
+            </p>
+          </remarks>
+        </elementSpec>
+        <elementSpec ident="rb" mode="change" module="core">
+          <remarks>
+            <p>Ruby base text is represented with native TEI ruby support.</p>
+          </remarks>
+        </elementSpec>
+        <elementSpec ident="rt" mode="change" module="core">
+          <remarks>
+            <p>Ruby reading text is represented with native TEI ruby support.</p>
+          </remarks>
+        </elementSpec>
+        <elementSpec ident="g" mode="change" module="transcr">
+          <remarks>
+            <p>
+              Aozora gaiji output must preserve the original marker and link to
+              the resolution policy used to choose Unicode, IVS, glyph, or
+              unresolved fallback output.
+            </p>
+          </remarks>
+        </elementSpec>
+        <elementSpec ident="char" mode="change" module="transcr">
+          <remarks>
+            <p>
+              Character declarations should document unresolved or custom
+              external-character mappings needed by Aozora source notation.
+            </p>
+          </remarks>
+        </elementSpec>
+        <remarks>
+          <p>
+            This stub records the v0 profile intent: preserve Aozora source
+            transcription, native TEI ruby elements, gaiji/glyph policy, source
+            metadata, and validation hooks. It is not a complete ODD.
+          </p>
+          <p>
+            Divergence from TEI-EAJ draft guidance must be documented in this
+            profile before publication.
+          </p>
+        </remarks>
+      </schemaSpec>
+    </body>
+  </text>
+</TEI>

@@ -103,4 +103,6 @@
                   :main-opts  ["-m" "metav.spit"
                                "--output-dir" "src"
                                "--namespace" "metav.meta"
-                               "--formats" "clj"]}}}
+                               "--formats" "clj"]}
+  :update        {:deps      {com.github.liquidz/antq {:mvn/version "2.11.1276"}}
+                  :main-opts ["-m" "antq.core"]}}}

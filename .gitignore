@@ -21,8 +21,26 @@ pom.xml.asc
 /*.txt
 /*.zip
 /references/
-/docs/
-/doc/
 .direnv/
 .lsp/
 .clj-kondo/
+
+# Local/generated corpus and conversion artifacts
+/cache-old/
+/dist-new/
+/gen/
+/projectFilesBackup/
+/aozora_lod_data/
+/aozora_lod_data.zip
+/canopy/
+/extern/
+/tmp.*
+/data/dev/
+/data/test/
+/old-build-boot
+
+# Generated parser outputs
+/resources/*.interp
+/resources/*.tokens
+/resources/*Lexer.java
+/resources/*Parser.java

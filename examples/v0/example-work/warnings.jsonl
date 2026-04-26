@@ -1,0 +1,1 @@
+{"severity":"warning","code":"UNRESOLVED_GAIJI","message":"Gaiji marker could not be resolved to Unicode.","span":{"start":8,"end":16,"line":1,"column":9},"construct":"gaiji","recovery":"Preserved raw marker and image fallback."}

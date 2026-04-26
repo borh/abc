@@ -1,0 +1,9 @@
+{
+  "validator": "design-fixture",
+  "validator_build_hash": null,
+  "schema_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "validated_artifact": "sha256:0202020202020202020202020202020202020202020202020202020202020202",
+  "status": "passed",
+  "errors": [],
+  "warnings": []
+}

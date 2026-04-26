@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+  <teiHeader>
+    <fileDesc>
+      <titleStmt>
+        <title>Example Work Fixture</title>
+      </titleStmt>
+      <publicationStmt>
+        <p>ABC v0 design fixture; not real Aozora output.</p>
+      </publicationStmt>
+      <sourceDesc>
+        <p>Derived from example parser IR fixture.</p>
+      </sourceDesc>
+    </fileDesc>
+    <encodingDesc>
+      <charDecl>
+        <char xml:id="example-gaiji">
+          <charName>Example unresolved Aozora gaiji fixture</charName>
+          <desc>Design fixture for preserving an unresolved gaiji marker.</desc>
+        </char>
+      </charDecl>
+    </encodingDesc>
+  </teiHeader>
+  <text>
+    <body>
+      <div>
+        <head>一</head>
+        <p>吾輩<ruby><rb>猫</rb><rt>ねこ</rt></ruby><g ref="#example-gaiji"/></p>
+      </div>
+    </body>
+  </text>
+</TEI>

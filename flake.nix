@@ -47,6 +47,7 @@
               jdk21
               mecab
               unidic
+              libxml2
             ];
 
             LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
@@ -58,10 +59,12 @@
             MECAB_DICDIR = mecabDicDir;
 
             shellHook = ''
-              export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath [
-                mecab
-                pkgs.systemd
-              ]}:''${LD_LIBRARY_PATH:-}"
+              export LD_LIBRARY_PATH="${
+                pkgs.lib.makeLibraryPath [
+                  mecab
+                  pkgs.systemd
+                ]
+              }:''${LD_LIBRARY_PATH:-}"
               export MECABRC="${mecab}/etc/mecabrc"
               export MECAB_DICDIR="${mecabDicDir}"
             '';

@@ -1,0 +1,39 @@
+@prefix abc: <https://example.org/abc/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+abc:artifact-sha256-0202020202020202020202020202020202020202020202020202020202020202
+  a prov:Entity ;
+  abc:artifactId "sha256:0202020202020202020202020202020202020202020202020202020202020202" ;
+  abc:schemaHash "sha256:2222222222222222222222222222222222222222222222222222222222222222" ;
+  abc:contentHash "sha256:0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c" ;
+  abc:validationStatus "warning" ;
+  dcterms:format "application/tei+xml" ;
+  prov:generatedAtTime "2026-04-26T00:00:00Z"^^xsd:dateTime ;
+  prov:wasGeneratedBy abc:activity-parse-and-render-example ;
+  prov:wasDerivedFrom abc:artifact-sha256-0101010101010101010101010101010101010101010101010101010101010101 ;
+  abc:hasWarningArtifact abc:artifact-sha256-9999999999999999999999999999999999999999999999999999999999999999 .
+
+abc:activity-parse-and-render-example
+  a prov:Activity ;
+  prov:used abc:artifact-sha256-4444444444444444444444444444444444444444444444444444444444444444 ;
+  prov:used abc:artifact-sha256-5555555555555555555555555555555555555555555555555555555555555555 ;
+  prov:used abc:artifact-sha256-6666666666666666666666666666666666666666666666666666666666666666 ;
+  prov:used abc:artifact-sha256-7777777777777777777777777777777777777777777777777777777777777777 ;
+  prov:used abc:artifact-sha256-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb ;
+  prov:qualifiedAssociation [
+    a prov:Association ;
+    prov:agent abc:abc-v0-design-bundle ;
+    prov:hadPlan abc:artifact-sha256-eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+  ] .
+
+abc:artifact-sha256-9999999999999999999999999999999999999999999999999999999999999999
+  a prov:Entity ;
+  dcterms:format "application/jsonl" ;
+  abc:artifactId "sha256:9999999999999999999999999999999999999999999999999999999999999999" ;
+  abc:schemaHash "sha256:2222222222222222222222222222222222222222222222222222222222222222" ;
+  abc:contentHash "sha256:9999999999999999999999999999999999999999999999999999999999999999" ;
+  abc:validationStatus "passed" ;
+  prov:wasGeneratedBy abc:activity-parse-and-render-example ;
+  prov:wasDerivedFrom abc:artifact-sha256-0101010101010101010101010101010101010101010101010101010101010101 .

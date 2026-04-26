@@ -1,0 +1,301 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/abc/schemas/parser-ir.schema.json",
+  "title": "ABC Parser IR",
+  "type": "object",
+  "required": ["schema_id", "schema_hash", "source", "nodes", "warnings", "errors"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_id": { "type": "string" },
+    "schema_hash": { "$ref": "#/$defs/hash" },
+    "source": {
+      "type": "object",
+      "required": ["work_content_hash", "encoding", "normalization"],
+      "additionalProperties": false,
+      "properties": {
+        "work_content_hash": { "$ref": "#/$defs/hash" },
+        "source_path": { "type": ["string", "null"] },
+        "encoding": { "type": "string", "enum": ["Shift_JIS", "UTF-8", "EUC-JP", "unknown"] },
+        "normalization": { "type": "string", "enum": ["source", "NFC", "NFKC"] }
+      }
+    },
+    "nodes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/node" }
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/diagnostic" }
+    },
+    "errors": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/diagnostic" }
+    }
+  },
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "span": {
+      "type": "object",
+      "$comment": "end must be greater than or equal to start; JSON Schema cannot compare sibling numeric values portably without a non-standard extension.",
+      "required": ["start", "end"],
+      "additionalProperties": false,
+      "properties": {
+        "start": { "type": "integer", "minimum": 0 },
+        "end": { "type": "integer", "minimum": 0 },
+        "line": { "type": ["integer", "null"], "minimum": 1 },
+        "column": { "type": ["integer", "null"], "minimum": 1 }
+      }
+    },
+    "baseNode": {
+      "type": "object",
+      "required": ["type", "span"],
+      "properties": {
+        "type": { "type": "string" },
+        "span": { "$ref": "#/$defs/span" }
+      }
+    },
+    "node": {
+      "oneOf": [
+        { "$ref": "#/$defs/textNode" },
+        { "$ref": "#/$defs/rubyNode" },
+        { "$ref": "#/$defs/gaijiNode" },
+        { "$ref": "#/$defs/editorNoteNode" },
+        { "$ref": "#/$defs/emphasisNode" },
+        { "$ref": "#/$defs/headingNode" },
+        { "$ref": "#/$defs/indentationNode" },
+        { "$ref": "#/$defs/pageBreakNode" },
+        { "$ref": "#/$defs/imageNode" },
+        { "$ref": "#/$defs/captionNode" },
+        { "$ref": "#/$defs/quoteNode" }
+      ]
+    },
+    "textNode": {
+      "allOf": [
+        { "$ref": "#/$defs/baseNode" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "span", "text"],
+          "properties": {
+            "type": { "const": "text" },
+            "span": { "$ref": "#/$defs/span" },
+            "text": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "rubyNode": {
+      "allOf": [
+        { "$ref": "#/$defs/baseNode" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "span", "ruby"],
+          "properties": {
+            "type": { "const": "ruby" },
+            "span": { "$ref": "#/$defs/span" },
+            "ruby": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["base", "reading", "scope"],
+              "properties": {
+                "base": { "type": "string" },
+                "reading": { "type": "string" },
+                "scope": { "type": "string", "enum": ["explicit", "inferred", "group", "mid-word", "ambiguous"] }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "gaijiNode": {
+      "allOf": [
+        { "$ref": "#/$defs/baseNode" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "span", "gaiji"],
+          "properties": {
+            "type": { "const": "gaiji" },
+            "span": { "$ref": "#/$defs/span" },
+            "gaiji": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["raw_marker", "resolved"],
+              "properties": {
+                "raw_marker": { "type": "string" },
+                "reference": { "type": ["string", "null"] },
+                "unicode": { "type": ["string", "null"] },
+                "ivs": { "type": ["string", "null"] },
+                "image_or_glyph_fallback": { "type": ["string", "null"] },
+                "resolved": { "type": "boolean" }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "editorNoteNode": {
+      "allOf": [
+        { "$ref": "#/$defs/baseNode" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "span", "note"],
+          "properties": {
+            "type": { "const": "editor-note" },
+            "span": { "$ref": "#/$defs/span" },
+            "note": { "$ref": "#/$defs/note" }
+          }
+        }
+      ]
+    },
+    "emphasisNode": {
+      "allOf": [
+        { "$ref": "#/$defs/baseNode" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "span", "text", "style"],
+          "properties": {
+            "type": { "const": "emphasis" },
+            "span": { "$ref": "#/$defs/span" },
+            "text": { "type": "string" },
+            "style": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "headingNode": {
+      "allOf": [
+        { "$ref": "#/$defs/baseNode" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "span", "text", "level"],
+          "properties": {
+            "type": { "const": "heading" },
+            "span": { "$ref": "#/$defs/span" },
+            "text": { "type": "string" },
+            "level": { "type": "integer", "minimum": 1, "maximum": 6 }
+          }
+        }
+      ]
+    },
+    "indentationNode": {
+      "allOf": [
+        { "$ref": "#/$defs/baseNode" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "span", "depth"],
+          "properties": {
+            "type": { "const": "indentation" },
+            "span": { "$ref": "#/$defs/span" },
+            "depth": { "type": "integer", "minimum": 0 },
+            "text": { "type": ["string", "null"] }
+          }
+        }
+      ]
+    },
+    "pageBreakNode": {
+      "allOf": [
+        { "$ref": "#/$defs/baseNode" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "span", "marker"],
+          "properties": {
+            "type": { "const": "page-break" },
+            "span": { "$ref": "#/$defs/span" },
+            "marker": { "type": "string" },
+            "page_number": { "type": ["integer", "null"], "minimum": 1 }
+          }
+        }
+      ]
+    },
+    "imageNode": {
+      "allOf": [
+        { "$ref": "#/$defs/baseNode" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "span", "src"],
+          "properties": {
+            "type": { "const": "image" },
+            "span": { "$ref": "#/$defs/span" },
+            "src": { "type": "string" },
+            "alt": { "type": ["string", "null"] },
+            "path_hint": { "type": ["string", "null"] }
+          }
+        }
+      ]
+    },
+    "captionNode": {
+      "allOf": [
+        { "$ref": "#/$defs/baseNode" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "span", "text"],
+          "properties": {
+            "type": { "const": "caption" },
+            "span": { "$ref": "#/$defs/span" },
+            "text": { "type": "string" },
+            "target": { "type": ["string", "null"] }
+          }
+        }
+      ]
+    },
+    "quoteNode": {
+      "allOf": [
+        { "$ref": "#/$defs/baseNode" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "span", "marker_type"],
+          "properties": {
+            "type": { "const": "quote" },
+            "span": { "$ref": "#/$defs/span" },
+            "marker_type": { "type": "string", "enum": ["open", "close", "inline", "unknown"] },
+            "nesting_level": { "type": ["integer", "null"], "minimum": 0 },
+            "text": { "type": ["string", "null"] }
+          }
+        }
+      ]
+    },
+    "note": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["raw", "category"],
+      "properties": {
+        "raw": { "type": "string" },
+        "category": {
+          "type": "string",
+          "enum": ["emphasis", "heading", "indentation", "page-break", "image", "caption", "external-character", "accent-mark", "ruby", "misc"]
+        }
+      }
+    },
+    "diagnostic": {
+      "type": "object",
+      "required": ["severity", "code", "message"],
+      "additionalProperties": false,
+      "properties": {
+        "severity": { "type": "string", "enum": ["fatal", "error", "warning", "info"] },
+        "code": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]+$" },
+        "message": { "type": "string" },
+        "span": {
+          "anyOf": [
+            { "$ref": "#/$defs/span" },
+            { "type": "null" }
+          ]
+        },
+        "construct": { "type": ["string", "null"] },
+        "recovery": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

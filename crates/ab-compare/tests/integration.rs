@@ -84,6 +84,43 @@ fn preserves_duplicate_work_ids_with_filename_suffix() {
     assert_eq!(summary["only_b"], 0);
 }
 
+#[test]
+fn summarizes_aat_metrics() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path();
+    std::fs::create_dir_all(root.join("aozora-rs-adapter")).unwrap();
+    std::fs::write(
+        root.join("aozora-rs-adapter/one.aat.json"),
+        r#"{
+          "work_id": "one",
+          "meta": {
+            "adapter": "aozora-rs",
+            "metrics": {
+              "decode_ms": 1.0,
+              "body_selection_ms": 2.0,
+              "tokenize_ms": 3.0,
+              "scopenize_ms": 4.0,
+              "retokenize_ms": 5.0,
+              "aat_build_ms": 6.0,
+              "projection_check_ms": 7.0,
+              "fallback_build_ms": 0.0,
+              "fallback_used": false,
+              "fallback_reason": "none"
+            }
+          }
+        }"#,
+    )
+    .unwrap();
+
+    let summary = ab_compare::metrics::summarize_aat_metrics(root).unwrap();
+    assert_eq!(summary.adapter, "aozora-rs");
+    assert_eq!(summary.works, 1);
+    assert_eq!(summary.fallbacks, 0);
+    assert_eq!(summary.stage_totals_ms["tokenize"], 3.0);
+    assert_eq!(summary.slowest_works[0].work_id, "one");
+    assert_eq!(summary.slowest_works[0].stages_ms["projection_check"], 7.0);
+}
+
 fn report(adapter: &str, pass: bool) -> String {
     report_for_work(adapter, "000001_1", pass)
 }

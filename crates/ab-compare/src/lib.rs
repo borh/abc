@@ -8,6 +8,8 @@ use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use walkdir::WalkDir;
 
+pub mod metrics;
+
 #[derive(Debug, Deserialize)]
 pub struct CheckReport {
     pub adapter: String,

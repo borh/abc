@@ -1,5 +1,8 @@
 use serde_json::json;
 
+mod semantic_summary;
+pub use semantic_summary::{SemanticSummary, SemanticSummaryNode, SourceSpan, semantic_summary};
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Block {
     Paragraph {
@@ -706,6 +709,58 @@ mod tests {
             "gaiji_ruby.unresolved_base"
         );
         assert!(projection.warnings[0].message.contains("おくび"));
+    }
+
+    #[test]
+    fn semantic_summary_records_ruby_gaiji_gaiji_ruby_and_projection_warnings() {
+        let blocks = vec![Block::Paragraph {
+            content: vec![
+                Inline::ruby("吾輩", "わがはい"),
+                Inline::ruby_with_base(
+                    vec![Inline::gaiji_ref(GaijiRef {
+                        source: "※［＃「口＋愛」、第3水準1-15-23］".to_owned(),
+                        description: "「口＋愛」、第3水準1-15-23".to_owned(),
+                        description_format: None,
+                        kind: GaijiKind::JisLevel {
+                            level: 3,
+                            row: 15,
+                            cell: 23,
+                        },
+                        resolved: None,
+                        provenance: Provenance::Parser,
+                    })],
+                    "おくび",
+                    RubyPlacement::Right,
+                ),
+            ],
+        }];
+        let projection = blocks_to_aat_projection(&blocks);
+
+        let summary = semantic_summary(&blocks, &projection.warnings);
+
+        assert_eq!(summary.syntax["ruby.basic"].len(), 2);
+        assert_eq!(summary.syntax["ruby.basic"][0].kind, "ruby");
+        assert_eq!(summary.syntax["ruby.basic"][0].value["reading"], "わがはい");
+        assert_eq!(summary.syntax["ruby.basic"][0].provenance, "parser");
+        assert_eq!(summary.syntax["gaiji.marker"].len(), 1);
+        assert_eq!(
+            summary.syntax["gaiji.marker"][0].value["description"],
+            "「口＋愛」、第3水準1-15-23"
+        );
+        assert_eq!(summary.syntax["gaiji_ruby.inline_base"].len(), 1);
+        assert_eq!(
+            summary.syntax["gaiji_ruby.inline_base"][0].value["reading"],
+            "おくび"
+        );
+        assert_eq!(summary.syntax["projection.warning"].len(), 1);
+        assert_eq!(
+            summary.syntax["projection.warning"][0].value["syntax_id"],
+            "gaiji_ruby.unresolved_base"
+        );
+        assert_eq!(
+            summary.syntax["projection.warning"][0].provenance,
+            "projection"
+        );
     }
 
     #[test]

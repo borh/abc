@@ -39,7 +39,46 @@
         "source_encoding": { "enum": ["utf-8", "utf-8-bom", "windows-31j", "windows-31j-lossy"] },
         "source_hash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
         "parse_complete": { "type": "boolean" },
-        "warnings": { "type": "array", "items": { "$ref": "#/$defs/warning" } }
+        "warnings": { "type": "array", "items": { "$ref": "#/$defs/warning" } },
+        "metrics": { "$ref": "#/$defs/metrics" }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "required": [
+        "decode_ms",
+        "body_selection_ms",
+        "tokenize_ms",
+        "scopenize_ms",
+        "retokenize_ms",
+        "aat_build_ms",
+        "projection_check_ms",
+        "fallback_build_ms",
+        "source_bytes",
+        "validation_body_bytes",
+        "parser_body_bytes",
+        "tokenized_count",
+        "retokenized_count",
+        "fallback_used",
+        "fallback_reason"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "decode_ms": { "type": "number", "minimum": 0 },
+        "body_selection_ms": { "type": "number", "minimum": 0 },
+        "tokenize_ms": { "type": "number", "minimum": 0 },
+        "scopenize_ms": { "type": "number", "minimum": 0 },
+        "retokenize_ms": { "type": "number", "minimum": 0 },
+        "aat_build_ms": { "type": "number", "minimum": 0 },
+        "projection_check_ms": { "type": "number", "minimum": 0 },
+        "fallback_build_ms": { "type": "number", "minimum": 0 },
+        "source_bytes": { "type": "integer", "minimum": 0 },
+        "validation_body_bytes": { "type": "integer", "minimum": 0 },
+        "parser_body_bytes": { "type": "integer", "minimum": 0 },
+        "tokenized_count": { "type": "integer", "minimum": 0 },
+        "retokenized_count": { "type": "integer", "minimum": 0 },
+        "fallback_used": { "type": "boolean" },
+        "fallback_reason": { "enum": ["none", "projection_mismatch", "large_body"] }
       }
     },
     "warning": {

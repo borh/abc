@@ -64,19 +64,28 @@ run_adapter aozora-rs "$repo_root/adapters/aozora-rs/target/release/aozora-rs-ad
 target/release/ab-compare \
   --reports-a "$out_dir/reports/aozora2/aozora2-adapter" \
   --reports-b "$out_dir/reports/aozora-rs/aozora-rs-adapter" \
+  --aats-a "$out_dir/aats/aozora2/aozora2-adapter" \
+  --aats-b "$out_dir/aats/aozora-rs/aozora-rs-adapter" \
+  --aat-diff-output "$out_dir/aat-structure-comparison.json" \
+  --metrics-root "$out_dir/aats/aozora-rs/aozora-rs-adapter" \
+  --metrics-output "$out_dir/aozora-rs-metrics-summary.json" \
   --output "$out_dir/comparison.json"
 
 jq -n \
   --slurpfile a "$out_dir/aozora2-summary.json" \
   --slurpfile b "$out_dir/aozora-rs-summary.json" \
   --slurpfile c "$out_dir/comparison.json" \
+  --slurpfile metrics "$out_dir/aozora-rs-metrics-summary.json" \
+  --slurpfile aatdiff "$out_dir/aat-structure-comparison.json" \
   --arg corpus_hash "$(jq -r '.corpus_hash' "$out_dir/index.json")" \
   '{
     generated_at: now | todate,
     corpus_hash: $corpus_hash,
     aozora2: $a[0],
     aozora_rs: $b[0],
-    comparison: $c[0]
+    comparison: $c[0],
+    aozora_rs_metrics: $metrics[0],
+    aat_structure_comparison: $aatdiff[0]
   }' > "$out_dir/summary.json"
 
 cat "$out_dir/summary.json"

@@ -4,7 +4,7 @@
 
 **Goal:** Refactor the existing `aozora-rs` adapter into measured, composable phases, then use those measurements to make at least one evidence-backed performance improvement while preserving full-corpus validation results.
 
-**Architecture:** Keep the external adapter protocol stable. Split `adapters/aozora-rs/src/lib.rs` into source decoding, parser invocation, typed AAT construction, projection checking, and metrics modules. The orchestrator in `lib.rs` owns phase sequencing, fallback decisions, root JSON construction, and orchestration-owned timings.
+**Architecture:** Keep the external adapter protocol stable. Split `adapters/aozora-rs/src/lib.rs` into source decoding, parser invocation, typed AAT construction, projection checking, and metrics modules. The orchestrator in `lib.rs` owns phase sequencing, fallback decisions, root JSON construction, and the projection/fallback timings it directly measures.
 
 **Tech Stack:** Rust 2024, `aozora-rs-core`, `serde_json`, `regex`, `criterion`, `ab-check`, `ab-compare`, Bash benchmark scripts, Aozora Bunko corpus in `references/aozorabunko`.
 
@@ -16,15 +16,16 @@
   - Keep public API: `VERSION`, `decode_source_bytes`, `aat_json_from_bytes`, `html_from_bytes`.
   - Orchestrate decode -> body selection -> parse -> typed AAT build -> projection -> fallback -> metrics -> root JSON serialization.
 - Create: `adapters/aozora-rs/src/source.rs`
-  - Own `DecodedSource`, `BodySelection`, `BodySelectionStrategy`, source decoding, separator-body extraction, colophon trimming, and source-visible normalization helpers.
+  - Own `DecodedSource`, `BodySelection`, source decoding, separator-body extraction, colophon trimming, and source-visible normalization helpers.
+  - Add `DecodedSource::source_bytes` as an intentional public field used by metrics.
 - Create: `adapters/aozora-rs/src/parser.rs`
-  - Own `ParsedSource`, `ParseTimings`, and `parse_with_aozora_rs`.
+  - Own `ParsedSource`, `ParseTimings`, `ParseBodyDecision`, `ParseBodyStrategy`, and `parse_with_aozora_rs`.
 - Create: `adapters/aozora-rs/src/aat.rs`
   - Own `AatBlock`, `AatInline`, `ProjectedText`, `InitialAatBuildResult`, `AatBuildResult`, `AatBuildTimings`, fallback block construction, typed-to-JSON conversion, and retokenized-to-AAT mapping.
 - Create: `adapters/aozora-rs/src/projection.rs`
   - Own `ProjectionSummary`, `check`, visible normalization, and subsequence testing.
 - Create: `adapters/aozora-rs/src/metrics.rs`
-  - Own `AdapterMetrics`, `OrchestrationTimings`, `FallbackDecision`, `FallbackReason`, `StageTiming`, JSON metadata conversion, and summary aggregation types.
+  - Own `AdapterMetrics`, `FallbackDecision`, `FallbackReason`, `StageTiming`, JSON metadata conversion, and summary aggregation types.
 - Create: `crates/ab-compare/src/metrics.rs`
   - Own reading AAT metric artifacts and aggregating summary JSON for one adapter.
 - Modify: `crates/ab-compare/src/lib.rs`
@@ -37,6 +38,37 @@
   - Generate `aozora-rs-metrics-summary.json` and include it in final `summary.json`.
 - Modify: `adapters/aozora-rs/benches/adapter_bench.rs`
   - Keep current large synthetic benchmark and add smaller phase-sensitive benchmark inputs if metrics show a useful split.
+
+## Task 0: Record Pre-Refactor Baseline
+
+**Files:**
+- Create: `benchmarks/baselines/2026-04-26-aozora-rs-pre-refactor.json`
+
+- [ ] **Step 1: Run the existing full-corpus comparison before code changes**
+
+Run:
+
+```bash
+AB_BENCH_OUT=/tmp/ab-validator-compare-pre-refactor benchmarks/run-parser-comparison.sh
+```
+
+Expected:
+- `aozora2.reports == 17894`
+- `aozora2.failures == 0`
+- `aozora_rs.reports == 17894`
+- `aozora_rs.failures == 0`
+- `comparison.common_reports == 17894`
+- `comparison.result_differences == []`
+
+- [ ] **Step 2: Commit the pre-refactor baseline**
+
+Run:
+
+```bash
+cp /tmp/ab-validator-compare-pre-refactor/summary.json benchmarks/baselines/2026-04-26-aozora-rs-pre-refactor.json
+git add benchmarks/baselines/2026-04-26-aozora-rs-pre-refactor.json
+git commit -m "bench: record aozora-rs pre-refactor baseline (task 0)"
+```
 
 ## Task 1: Establish Metrics Types and Serialization
 
@@ -66,10 +98,6 @@ mod tests {
             serde_json::to_value(FallbackReason::LargeBody).unwrap(),
             "large_body"
         );
-        assert_eq!(
-            serde_json::to_value(FallbackReason::Other("synthetic_reason".to_owned())).unwrap(),
-            "synthetic_reason"
-        );
     }
 
     #[test]
@@ -83,7 +111,6 @@ mod tests {
             aat_build: Duration::from_millis(6),
             projection_check: Duration::from_millis(7),
             fallback_build: Duration::from_millis(8),
-            root_construct: Duration::from_millis(9),
             source_bytes: 10,
             validation_body_bytes: 11,
             parser_body_bytes: 12,
@@ -97,8 +124,8 @@ mod tests {
 
         let stages = metrics.stages();
         assert_eq!(stages.first().unwrap().stage, "decode");
-        assert_eq!(stages.last().unwrap().stage, "aat_root");
-        assert_eq!(stages.iter().map(|stage| stage.elapsed).sum::<Duration>(), Duration::from_millis(45));
+        assert_eq!(stages.last().unwrap().stage, "fallback_build");
+        assert_eq!(stages.iter().map(|stage| stage.elapsed).sum::<Duration>(), Duration::from_millis(36));
     }
 }
 ```
@@ -149,7 +176,6 @@ pub enum FallbackReason {
     None,
     ProjectionMismatch,
     LargeBody,
-    Other(String),
 }
 
 impl Serialize for FallbackReason {
@@ -161,24 +187,6 @@ impl Serialize for FallbackReason {
             Self::None => serializer.serialize_str("none"),
             Self::ProjectionMismatch => serializer.serialize_str("projection_mismatch"),
             Self::LargeBody => serializer.serialize_str("large_body"),
-            Self::Other(reason) => serializer.serialize_str(reason),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct OrchestrationTimings {
-    pub projection_check: Duration,
-    pub fallback_build: Duration,
-    pub root_construct: Duration,
-}
-
-impl OrchestrationTimings {
-    pub fn empty() -> Self {
-        Self {
-            projection_check: Duration::ZERO,
-            fallback_build: Duration::ZERO,
-            root_construct: Duration::ZERO,
         }
     }
 }
@@ -193,7 +201,6 @@ pub struct AdapterMetrics {
     pub aat_build: Duration,
     pub projection_check: Duration,
     pub fallback_build: Duration,
-    pub root_construct: Duration,
     pub source_bytes: usize,
     pub validation_body_bytes: usize,
     pub parser_body_bytes: usize,
@@ -219,7 +226,6 @@ impl AdapterMetrics {
             StageTiming { stage: "aat_build", elapsed: self.aat_build },
             StageTiming { stage: "projection_check", elapsed: self.projection_check },
             StageTiming { stage: "fallback_build", elapsed: self.fallback_build },
-            StageTiming { stage: "aat_root", elapsed: self.root_construct },
         ]
     }
 
@@ -233,7 +239,6 @@ impl AdapterMetrics {
             "aat_build_ms": ms(self.aat_build),
             "projection_check_ms": ms(self.projection_check),
             "fallback_build_ms": ms(self.fallback_build),
-            "aat_root_ms": ms(self.root_construct),
             "source_bytes": self.source_bytes,
             "validation_body_bytes": self.validation_body_bytes,
             "parser_body_bytes": self.parser_body_bytes,
@@ -270,7 +275,7 @@ Expected: PASS.
 
 ```bash
 git add adapters/aozora-rs/Cargo.toml adapters/aozora-rs/src/lib.rs adapters/aozora-rs/src/metrics.rs
-git commit -m "refactor: add aozora-rs adapter metrics types"
+git commit -m "refactor: add aozora-rs adapter metrics types (task 1)"
 ```
 
 ## Task 2: Extract Source Decoding and Body Selection
@@ -298,7 +303,7 @@ mod tests {
     }
 
     #[test]
-    fn selects_parser_and_validation_bodies_from_separators() {
+    fn selects_validation_body_from_separators() {
         let text = "題名\n著者\n--------------------\n凡例\n--------------------\n本文\n底本：x\n";
         let decoded = DecodedSource {
             text: text.to_owned(),
@@ -309,8 +314,6 @@ mod tests {
 
         let selection = select_body(&decoded);
         assert_eq!(selection.validation_body, "本文\n");
-        assert_eq!(selection.parser_body, "本文\n");
-        assert_eq!(selection.strategy, BodySelectionStrategy::SeparatorFallback);
     }
 }
 ```
@@ -333,7 +336,7 @@ Expected: FAIL because `source.rs` contains tests referencing missing items.
 
 - [ ] **Step 3: Move source code from `lib.rs` into `source.rs`**
 
-Implement `source.rs` by moving and adapting existing `DecodedSource`, `decode_source_bytes`, `trim_colophon`, `body_text`, `starts_with_separator`, `source_visible_text`, `remove_bottom_note_fragments`, and `hex_sha256`. Add:
+Implement `source.rs` by moving and adapting existing `DecodedSource`, `decode_source_bytes`, `trim_colophon`, `body_text`, `starts_with_separator`, `source_visible_text`, `remove_bottom_note_fragments`, and `hex_sha256`. `DecodedSource::source_bytes` is a deliberate public-field addition for metrics; update all struct literals in tests and adapter internals. Add:
 
 ```rust
 use anyhow::Result;
@@ -350,17 +353,9 @@ pub struct DecodedSource {
     pub source_bytes: usize,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum BodySelectionStrategy {
-    ParserMeta,
-    SeparatorFallback,
-}
-
 #[derive(Debug, Clone, Copy)]
 pub struct BodySelection<'a> {
-    pub parser_body: &'a str,
     pub validation_body: &'a str,
-    pub strategy: BodySelectionStrategy,
     pub elapsed: Duration,
 }
 
@@ -395,9 +390,7 @@ pub fn select_body(decoded: &DecodedSource) -> BodySelection<'_> {
     let start = Instant::now();
     let validation_body = trim_colophon(body_text(&decoded.text));
     BodySelection {
-        parser_body: validation_body,
         validation_body,
-        strategy: BodySelectionStrategy::SeparatorFallback,
         elapsed: start.elapsed(),
     }
 }
@@ -437,7 +430,7 @@ Expected: PASS.
 
 ```bash
 git add adapters/aozora-rs/src/lib.rs adapters/aozora-rs/src/source.rs
-git commit -m "refactor: extract aozora-rs source handling"
+git commit -m "refactor: extract aozora-rs source handling (task 2)"
 ```
 
 ## Task 3: Extract Parser Invocation and Parse Timings
@@ -455,21 +448,21 @@ Create `adapters/aozora-rs/src/parser.rs` with:
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::source::{BodySelection, BodySelectionStrategy};
+    use crate::source::BodySelection;
     use std::time::Duration;
 
     #[test]
     fn parses_ruby_and_records_counts_and_timings() {
         let body = "吾輩《わがはい》は猫である。\n";
         let selection = BodySelection {
-            parser_body: body,
             validation_body: body,
-            strategy: BodySelectionStrategy::SeparatorFallback,
             elapsed: Duration::ZERO,
         };
 
         let parsed = parse_with_aozora_rs(selection).unwrap();
         assert_eq!(parsed.body.validation_body, body);
+        assert_eq!(parsed.parse_body.parser_body, body);
+        assert_eq!(parsed.parse_body.strategy, ParseBodyStrategy::SeparatorFallback);
         assert!(parsed.tokenized_count > 0);
         assert!(parsed.retokenized_count > 0);
         assert!(parsed.timings.tokenize >= Duration::ZERO);
@@ -506,11 +499,24 @@ use anyhow::{anyhow, Result};
 use aozora_rs_core::{parse_meta, retokenize, scopenize, tokenize, Retokenized};
 use winnow::LocatingSlice;
 
-use crate::source::{starts_with_separator, trim_colophon, BodySelection, BodySelectionStrategy};
+use crate::source::{starts_with_separator, trim_colophon, BodySelection};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ParseBodyStrategy {
+    ParserMeta,
+    SeparatorFallback,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct ParseBodyDecision<'a> {
+    pub parser_body: &'a str,
+    pub strategy: ParseBodyStrategy,
+}
 
 #[derive(Debug)]
 pub struct ParsedSource<'a> {
     pub body: BodySelection<'a>,
+    pub parse_body: ParseBodyDecision<'a>,
     pub retokenized: Vec<Retokenized<'a>>,
     pub warnings: Vec<String>,
     pub tokenized_count: usize,
@@ -526,9 +532,9 @@ pub struct ParseTimings {
     pub retokenize: Duration,
 }
 
-pub fn parse_with_aozora_rs(mut body: BodySelection<'_>) -> Result<ParsedSource<'_>> {
+pub fn parse_with_aozora_rs(body: BodySelection<'_>) -> Result<ParsedSource<'_>> {
     let mut warnings = Vec::new();
-    let mut parsed_body = body.parser_body;
+    let mut parsed_body = body.validation_body;
     let meta_ok = match parse_meta(&mut parsed_body) {
         Ok(_) => true,
         Err(error) => {
@@ -537,13 +543,20 @@ pub fn parse_with_aozora_rs(mut body: BodySelection<'_>) -> Result<ParsedSource<
         }
     };
     let parsed_body = trim_colophon(parsed_body);
-    if meta_ok && !starts_with_separator(parsed_body) {
-        body.parser_body = parsed_body;
-        body.strategy = BodySelectionStrategy::ParserMeta;
-    }
+    let parse_body = if meta_ok && !starts_with_separator(parsed_body) {
+        ParseBodyDecision {
+            parser_body: parsed_body,
+            strategy: ParseBodyStrategy::ParserMeta,
+        }
+    } else {
+        ParseBodyDecision {
+            parser_body: body.validation_body,
+            strategy: ParseBodyStrategy::SeparatorFallback,
+        }
+    };
 
     let tokenize_start = Instant::now();
-    let mut input = LocatingSlice::new(body.parser_body);
+    let mut input = LocatingSlice::new(parse_body.parser_body);
     let tokenized = tokenize(&mut input).map_err(|()| anyhow!("aozora-rs-core tokenize failed"))?;
     let tokenize = tokenize_start.elapsed();
     let tokenized_count = tokenized.len();
@@ -562,6 +575,7 @@ pub fn parse_with_aozora_rs(mut body: BodySelection<'_>) -> Result<ParsedSource<
 
     Ok(ParsedSource {
         body,
+        parse_body,
         retokenized,
         warnings,
         tokenized_count,
@@ -608,16 +622,68 @@ Expected: PASS.
 
 ```bash
 git add adapters/aozora-rs/src/lib.rs adapters/aozora-rs/src/parser.rs adapters/aozora-rs/src/source.rs
-git commit -m "refactor: extract aozora-rs parser phase"
+git commit -m "refactor: extract aozora-rs parser phase (task 3)"
 ```
 
 ## Task 4: Extract Typed AAT Construction
 
 **Files:**
 - Create: `adapters/aozora-rs/src/aat.rs`
+- Create: `adapters/aozora-rs/tests/golden.rs`
+- Create: `adapters/aozora-rs/tests/fixtures/ruby_gaiji.txt`
+- Create: `adapters/aozora-rs/tests/fixtures/ruby_gaiji.aat.json`
 - Modify: `adapters/aozora-rs/src/lib.rs`
 
-- [ ] **Step 1: Write failing AAT tests**
+- [ ] **Step 1: Create a golden-master fixture before the typed refactor**
+
+Run:
+
+```bash
+mkdir -p adapters/aozora-rs/tests/fixtures
+cat > adapters/aozora-rs/tests/fixtures/ruby_gaiji.txt <<'EOF'
+タイトル
+著者
+-------------------------------------------------------
+凡例
+-------------------------------------------------------
+吾輩《わがはい》は※［＃「口＋世」、U+546D］である。
+底本：テスト
+EOF
+cargo run --manifest-path adapters/aozora-rs/Cargo.toml -- --mode aat \
+  < adapters/aozora-rs/tests/fixtures/ruby_gaiji.txt \
+  > adapters/aozora-rs/tests/fixtures/ruby_gaiji.aat.json
+```
+
+Expected: `ruby_gaiji.aat.json` contains one valid AAT JSON object generated by the pre-refactor adapter.
+
+- [ ] **Step 2: Add a golden-master regression test and verify it passes before the refactor**
+
+Create `adapters/aozora-rs/tests/golden.rs`:
+
+```rust
+use aozora_rs_adapter::aat_json_from_bytes;
+
+#[test]
+fn preserves_ruby_gaiji_fixture_output() {
+    let input = include_bytes!("fixtures/ruby_gaiji.txt");
+    let mut expected: serde_json::Value =
+        serde_json::from_slice(include_bytes!("fixtures/ruby_gaiji.aat.json")).unwrap();
+    let mut actual: serde_json::Value = serde_json::from_slice(&aat_json_from_bytes(input).unwrap()).unwrap();
+    expected["meta"].as_object_mut().unwrap().remove("metrics");
+    actual["meta"].as_object_mut().unwrap().remove("metrics");
+    assert_eq!(actual, expected);
+}
+```
+
+Run:
+
+```bash
+cargo test --manifest-path adapters/aozora-rs/Cargo.toml preserves_ruby_gaiji_fixture_output
+```
+
+Expected: PASS before any typed-AAT changes.
+
+- [ ] **Step 3: Write failing AAT unit tests**
 
 Create `adapters/aozora-rs/src/aat.rs` with:
 
@@ -626,16 +692,14 @@ Create `adapters/aozora-rs/src/aat.rs` with:
 mod tests {
     use super::*;
     use crate::parser::parse_with_aozora_rs;
-    use crate::source::{BodySelection, BodySelectionStrategy};
+    use crate::source::BodySelection;
     use std::time::Duration;
 
     #[test]
     fn builds_typed_blocks_and_projected_text() {
         let body = "吾輩《わがはい》は猫である。\n";
         let parsed = parse_with_aozora_rs(BodySelection {
-            parser_body: body,
             validation_body: body,
-            strategy: BodySelectionStrategy::SeparatorFallback,
             elapsed: Duration::ZERO,
         })
         .unwrap();
@@ -669,7 +733,7 @@ Also add this module declaration to `adapters/aozora-rs/src/lib.rs`:
 mod aat;
 ```
 
-- [ ] **Step 2: Run AAT tests to verify failure**
+- [ ] **Step 4: Run AAT tests to verify failure**
 
 Run:
 
@@ -679,7 +743,7 @@ cargo test --manifest-path adapters/aozora-rs/Cargo.toml aat
 
 Expected: FAIL because AAT types/functions are not implemented.
 
-- [ ] **Step 3: Implement typed AAT module**
+- [ ] **Step 5: Implement typed AAT module**
 
 Move retokenized mapping helpers from `lib.rs` into `aat.rs`. Replace `serde_json::Value` during construction with:
 
@@ -746,7 +810,21 @@ Port the existing logic as directly as possible:
 - `build_fallback` returns a single paragraph containing `source_visible_text(body)` plus ruby/gaiji supplements.
 - `ProjectedText` is computed from typed blocks, not from JSON.
 
-- [ ] **Step 4: Wire `lib.rs` to use typed AAT construction without changing output**
+Use this mapping as the implementation contract:
+
+| Source item | Typed representation | JSON representation |
+| --- | --- | --- |
+| `Retokenized::Text(text)` | `AatInline::Text(source_visible_text(text))` | `{ "kind": "text", "value": ... }` |
+| `Retokenized::Odoriji(_)` | `AatInline::Text(odoriji_source_text(...))` | `{ "kind": "text", "value": ... }` |
+| `Retokenized::Figure(figure)` | `AatInline::Gaiji { description: figure.to_string(), resolved: "", description_format: Some(...) }` | existing gaiji object including `x-description-format` |
+| `Deco::Ruby(reading)` | `AatInline::Ruby { base, reading }` unless pathological | `{ "kind": "ruby", "base": ..., "reading": ... }` |
+| `Deco::AHead/BHead/CHead` | `AatBlock::Heading { level: 1/2/3, style, content }` | existing heading object |
+| other `DecoBegin` | `AatInline::Style { style_type, content }` | existing style object |
+| `Break(_)` | paragraph flush | paragraph boundary |
+
+`AatInline::Style` may contain nested `AatInline` values, but the first implementation may preserve the existing flattened behavior by collecting decorated visible text into one `AatInline::Text` child.
+
+- [ ] **Step 6: Wire `lib.rs` to use typed AAT construction without changing output**
 
 Add to `lib.rs`:
 
@@ -756,7 +834,7 @@ mod aat;
 
 Temporarily construct the root using `aat::blocks_to_json(&built.blocks)` and the existing metadata. Do not add metrics yet.
 
-- [ ] **Step 5: Run tests**
+- [ ] **Step 7: Run tests**
 
 Run:
 
@@ -765,12 +843,13 @@ cargo test --manifest-path adapters/aozora-rs/Cargo.toml
 ```
 
 Expected: PASS.
+The golden-master test must still pass; this is the Task 4 gate.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
-git add adapters/aozora-rs/src/lib.rs adapters/aozora-rs/src/aat.rs
-git commit -m "refactor: build typed aozora-rs AAT blocks"
+git add adapters/aozora-rs/src/lib.rs adapters/aozora-rs/src/aat.rs adapters/aozora-rs/tests/golden.rs adapters/aozora-rs/tests/fixtures
+git commit -m "refactor: build typed aozora-rs AAT blocks (task 4)"
 ```
 
 ## Task 5: Extract Projection Checking and Explicit Fallback Decisions
@@ -877,23 +956,18 @@ let (blocks, projected) = if fallback.used {
 
 Assemble `AatBuildResult` with `timings: initial.timings` and `projection`.
 
-- [ ] **Step 5: Add fallback metadata test**
+- [ ] **Step 5: Add direct fallback block test**
 
-Add to `adapters/aozora-rs/src/lib.rs` tests:
+Add to `adapters/aozora-rs/src/aat.rs` tests:
 
 ```rust
 #[test]
-fn fallback_is_reported_in_metrics_for_large_body() {
-    let mut body = String::new();
-    body.push_str("題名\n著者\n--------------------\n凡例\n--------------------\n");
-    body.push_str(&"本文\n".repeat(130_000));
-    body.push_str("底本：x\n");
-
-    let out = aat_json_from_bytes(body.as_bytes()).unwrap();
-    let value: serde_json::Value = serde_json::from_slice(&out).unwrap();
-    assert_eq!(value["meta"]["metrics"]["fallback_used"], true);
-    assert_eq!(value["meta"]["metrics"]["fallback_reason"], "large_body");
-    assert_eq!(value["meta"]["parse_complete"], true);
+fn fallback_blocks_use_source_visible_text() {
+    let (blocks, projected) = build_fallback("吾輩《わがはい》は※［＃「口＋世」、U+546D］である。");
+    assert!(matches!(blocks[0], AatBlock::Paragraph { .. }));
+    assert!(projected.visible_text.contains("吾輩"));
+    assert!(projected.visible_text.contains("「口＋世」、U+546D"));
+    assert!(!projected.visible_text.contains("わがはい"));
 }
 ```
 
@@ -911,7 +985,7 @@ Expected: PASS.
 
 ```bash
 git add adapters/aozora-rs/src/lib.rs adapters/aozora-rs/src/aat.rs adapters/aozora-rs/src/projection.rs
-git commit -m "refactor: make aozora-rs projection fallback explicit"
+git commit -m "refactor: make aozora-rs projection fallback explicit (task 5)"
 ```
 
 ## Task 6: Add Adapter Metrics to AAT Metadata
@@ -935,7 +1009,6 @@ assert!(metrics["retokenize_ms"].as_f64().unwrap() >= 0.0);
 assert!(metrics["aat_build_ms"].as_f64().unwrap() >= 0.0);
 assert!(metrics["projection_check_ms"].as_f64().unwrap() >= 0.0);
 assert!(metrics["fallback_build_ms"].as_f64().unwrap() >= 0.0);
-assert!(metrics["aat_root_ms"].as_f64().unwrap() >= 0.0);
 assert_eq!(metrics["fallback_used"], false);
 assert_eq!(metrics["fallback_reason"], "none");
 assert_eq!(metrics["source_bytes"], input.len());
@@ -965,7 +1038,9 @@ impl AdapterMetrics {
         body: &crate::source::BodySelection<'_>,
         parse: crate::parser::ParseTimings,
         aat: crate::aat::AatBuildTimings,
-        orchestration: OrchestrationTimings,
+        projection_check: Duration,
+        fallback_build: Duration,
+        parser_body_bytes: usize,
         tokenized_count: usize,
         retokenized_count: usize,
         fallback: FallbackDecision,
@@ -977,12 +1052,11 @@ impl AdapterMetrics {
             scopenize: parse.scopenize,
             retokenize: parse.retokenize,
             aat_build: aat.build,
-            projection_check: orchestration.projection_check,
-            fallback_build: orchestration.fallback_build,
-            root_construct: orchestration.root_construct,
+            projection_check,
+            fallback_build,
             source_bytes: decoded.source_bytes,
             validation_body_bytes: body.validation_body.len(),
-            parser_body_bytes: body.parser_body.len(),
+            parser_body_bytes,
             tokenized_count,
             retokenized_count,
             fallback,
@@ -991,7 +1065,7 @@ impl AdapterMetrics {
 }
 ```
 
-- [ ] **Step 4: Measure decode and root construction in `lib.rs`**
+- [ ] **Step 4: Measure decode, projection, and fallback in `lib.rs`**
 
 Update `aat_json_from_bytes`:
 
@@ -1000,25 +1074,20 @@ let decode_start = Instant::now();
 let decoded = decode_source_bytes(bytes)?;
 let decode = decode_start.elapsed();
 ...
-let root_start = Instant::now();
 let metrics = AdapterMetrics::from_parts(
     &decoded,
     decode,
     &parsed.body,
     parsed.timings,
     result.timings,
-    OrchestrationTimings {
-        projection_check,
-        fallback_build,
-        root_construct: Duration::ZERO,
-    },
+    projection_check,
+    fallback_build,
+    parsed.parse_body.parser_body.len(),
     parsed.tokenized_count,
     parsed.retokenized_count,
     result.fallback.clone(),
 );
-let mut aat = build_root_json(&decoded, &parsed.warnings, &result, metrics.to_json());
-let root_construct = root_start.elapsed();
-aat["meta"]["metrics"]["aat_root_ms"] = serde_json::Value::from(root_construct.as_secs_f64() * 1000.0);
+let aat = build_root_json(&decoded, &parsed.warnings, &result, metrics.to_json());
 ```
 
 Keep root construction localized in a helper:
@@ -1030,6 +1099,24 @@ fn build_root_json(
     result: &aat::AatBuildResult,
     metrics: serde_json::Value,
 ) -> serde_json::Value
+```
+
+Add this large-body metadata test to `adapters/aozora-rs/src/lib.rs`:
+
+```rust
+#[test]
+fn fallback_is_reported_in_metrics_for_large_body() {
+    let mut body = String::new();
+    body.push_str("題名\n著者\n--------------------\n凡例\n--------------------\n");
+    body.push_str(&"本文\n".repeat(130_000));
+    body.push_str("底本：x\n");
+
+    let out = aat_json_from_bytes(body.as_bytes()).unwrap();
+    let value: serde_json::Value = serde_json::from_slice(&out).unwrap();
+    assert_eq!(value["meta"]["metrics"]["fallback_used"], true);
+    assert_eq!(value["meta"]["metrics"]["fallback_reason"], "large_body");
+    assert_eq!(value["meta"]["parse_complete"], true);
+}
 ```
 
 - [ ] **Step 5: Run tests**
@@ -1046,7 +1133,7 @@ Expected: PASS.
 
 ```bash
 git add adapters/aozora-rs/src/lib.rs adapters/aozora-rs/src/metrics.rs adapters/aozora-rs/src/parser.rs
-git commit -m "feat: emit aozora-rs adapter metrics"
+git commit -m "feat: emit aozora-rs adapter metrics (task 6)"
 ```
 
 ## Task 7: Aggregate Metrics in `ab-compare`
@@ -1056,6 +1143,8 @@ git commit -m "feat: emit aozora-rs adapter metrics"
 - Modify: `crates/ab-compare/src/lib.rs`
 - Modify: `crates/ab-compare/src/main.rs`
 - Modify: `crates/ab-compare/tests/integration.rs`
+
+This aggregation intentionally reads AAT artifacts, not `ab-check` reports. It is generic over any adapter that emits the required `meta.metrics` fields; missing or malformed metrics should be an error, not silently skipped.
 
 - [ ] **Step 1: Write failing aggregation test**
 
@@ -1082,7 +1171,6 @@ fn summarizes_aat_metrics() {
               "aat_build_ms": 6.0,
               "projection_check_ms": 7.0,
               "fallback_build_ms": 0.0,
-              "aat_root_ms": 8.0,
               "fallback_used": false,
               "fallback_reason": "none"
             }
@@ -1097,7 +1185,7 @@ fn summarizes_aat_metrics() {
     assert_eq!(summary.fallbacks, 0);
     assert_eq!(summary.stage_totals_ms["tokenize"], 3.0);
     assert_eq!(summary.slowest_works[0].work_id, "one");
-    assert_eq!(summary.slowest_works[0].stages_ms["aat_root"], 8.0);
+    assert_eq!(summary.slowest_works[0].stages_ms["projection_check"], 7.0);
 }
 ```
 
@@ -1162,7 +1250,6 @@ struct AatMetrics {
     aat_build_ms: f64,
     projection_check_ms: f64,
     fallback_build_ms: f64,
-    aat_root_ms: f64,
     fallback_used: bool,
 }
 
@@ -1212,6 +1299,7 @@ pub fn summarize_aat_metrics(root: &Path) -> Result<MetricsSummary> {
 
     slowest_works.sort_by(|a, b| b.total_ms.total_cmp(&a.total_ms));
     slowest_works.truncate(20);
+    anyhow::ensure!(works > 0, "no AAT metric JSON files found under {}", root.display());
     Ok(MetricsSummary {
         adapter,
         works,
@@ -1231,7 +1319,6 @@ fn stages(metrics: &AatMetrics) -> BTreeMap<String, f64> {
         ("aat_build".to_owned(), metrics.aat_build_ms),
         ("projection_check".to_owned(), metrics.projection_check_ms),
         ("fallback_build".to_owned(), metrics.fallback_build_ms),
-        ("aat_root".to_owned(), metrics.aat_root_ms),
     ])
 }
 ```
@@ -1282,7 +1369,7 @@ Expected: PASS.
 
 ```bash
 git add crates/ab-compare/src/lib.rs crates/ab-compare/src/main.rs crates/ab-compare/src/metrics.rs crates/ab-compare/tests/integration.rs
-git commit -m "feat: summarize adapter AAT metrics"
+git commit -m "feat: summarize adapter AAT metrics (task 7)"
 ```
 
 ## Task 8: Update Benchmark Runner and Measure Baseline
@@ -1342,7 +1429,7 @@ Expected: script completes; `/tmp/ab-validator-compare-smoke/summary.json` conta
 
 ```bash
 git add benchmarks/run-parser-comparison.sh
-git commit -m "bench: include aozora-rs metrics summary"
+git commit -m "bench: include aozora-rs metrics summary (task 8)"
 ```
 
 ## Task 9: Profile and Implement One Evidence-Backed Optimization
@@ -1377,16 +1464,32 @@ Expected:
 - `comparison.result_differences == []`
 - `aozora_rs_metrics.stage_totals_ms` identifies the dominant stage.
 
-- [ ] **Step 3: Choose one optimization from the measured dominant adapter-owned stage**
+- [ ] **Step 3: Verify schema stability after the refactor**
+
+Compare AAT artifacts from the pre-refactor and metrics runs for the golden fixture and, when both full AAT directories are available, the full corpus:
+
+```bash
+diff -ur \
+  /tmp/ab-validator-compare-pre-refactor/aats/aozora-rs/aozora-rs-adapter \
+  /tmp/ab-validator-compare-metrics/aats/aozora-rs/aozora-rs-adapter
+```
+
+Expected: differences are limited to the newly added `meta.metrics` object. Validation reports must remain unchanged by `ab-compare`.
+
+- [ ] **Step 4: Choose one optimization from the measured dominant adapter-owned stage**
 
 Use this decision table:
 
-- If `projection_check` is dominant outside `aozora-rs-core`, optimize `projection::is_subsequence` by scanning normalized source once and early-returning when the projected text is empty or longer than source.
-- If `aat_build` is dominant, remove repeated regex construction by replacing local `Regex::new(...).unwrap()` calls with `std::sync::OnceLock<Regex>` statics in `source.rs` and `aat.rs`.
-- If `fallback_build` is non-zero for many works, reuse the source-visible string computed during `projection::check` by returning it in `ProjectionSummary` or a separate value only if this does not force long-lived borrow chains.
-- If at least 90% of runtime is `tokenize + scopenize + retokenize`, do not replace parser internals in this phase; record that result and focus the code-quality refactor as the deliverable.
+- Define total measured time as the sum of `aozora_rs_metrics.stage_totals_ms`.
+- Define core parser time as `tokenize + scopenize + retokenize`.
+- Define adapter-owned time as total measured time minus core parser time.
+- If core parser time is at least 90% of total measured time, do not replace parser internals in this phase; the deliverable is the refactor, metrics, and evidence that the remaining bottleneck is inside `aozora-rs-core`.
+- Otherwise, a stage is dominant if it is at least 30% of adapter-owned time.
+- If `projection_check` is dominant, optimize `projection::is_subsequence` by scanning normalized source once and early-returning when the projected text is empty or longer than source.
+- If `aat_build` is dominant, first confirm repeated regex construction with a benchmark or profiler sample, then replace local `Regex::new(...).unwrap()` calls with `std::sync::OnceLock<Regex>` statics in `source.rs` and `aat.rs`.
+- If `fallback_build` is dominant or non-zero for more than 1% of works, reuse the source-visible string computed during `projection::check` by returning it in a separate value only if this does not force long-lived borrow chains.
 
-- [ ] **Step 4: Write a focused failing benchmark or test for the chosen optimization**
+- [ ] **Step 5: Write a focused failing benchmark or test for the chosen optimization**
 
 For repeated regex construction, add to `adapters/aozora-rs/src/source.rs`:
 
@@ -1413,7 +1516,7 @@ fn projection_rejects_when_projected_text_is_longer_than_source() {
 }
 ```
 
-- [ ] **Step 5: Implement only the measured optimization**
+- [ ] **Step 6: Implement only the measured optimization**
 
 For regex construction, use `OnceLock`:
 
@@ -1447,7 +1550,7 @@ if projected_visible_chars > source_visible_chars {
 }
 ```
 
-- [ ] **Step 6: Run focused tests and benchmark**
+- [ ] **Step 7: Run focused tests and benchmark**
 
 Run:
 
@@ -1456,9 +1559,9 @@ cargo test --manifest-path adapters/aozora-rs/Cargo.toml
 cargo bench --manifest-path adapters/aozora-rs/Cargo.toml --bench adapter_bench
 ```
 
-Expected: tests pass and benchmark does not regress materially.
+Expected: tests pass. The benchmark median for `aozora_rs_adapter_aat_json_large` is not more than 5% slower than the Task 9 Step 1 pre-optimization run.
 
-- [ ] **Step 7: Run full-corpus validation again**
+- [ ] **Step 8: Run full-corpus validation again**
 
 Run:
 
@@ -1470,9 +1573,9 @@ Expected:
 - `aozora_rs.reports == 17894`
 - `aozora_rs.failures == 0`
 - `comparison.result_differences == []`
-- Runtime is at least 25% lower than 1690.014773 seconds, or metrics show at least 90% of remaining time inside `tokenize + scopenize + retokenize`.
+- Runtime is at least 25% lower than 1690.014773 seconds, or metrics show at least 90% of remaining measured time inside `tokenize + scopenize + retokenize`.
 
-- [ ] **Step 8: Commit optimization and baseline**
+- [ ] **Step 9: Commit optimization and baseline**
 
 If the run is stable, copy `/tmp/ab-validator-compare-optimized/summary.json` to a new baseline path such as:
 
@@ -1484,7 +1587,7 @@ Then commit:
 
 ```bash
 git add adapters/aozora-rs/src benchmarks/baselines/2026-04-26-aozora-rs-performance.json
-git commit -m "perf: optimize measured aozora-rs adapter stage"
+git commit -m "perf: optimize measured aozora-rs adapter stage (task 9)"
 ```
 
 ## Task 10: Final Verification and Hickey/Rust Review

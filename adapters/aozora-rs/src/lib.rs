@@ -54,18 +54,32 @@ fn build_aat(
     result: &aat::AatBuildResult,
     metrics: serde_json::Value,
 ) -> serde_json::Value {
+    let projection = ab_ir::blocks_to_aat_projection(&result.blocks);
+    let semantic_summary = ab_ir::semantic_summary(&result.blocks, &projection.warnings);
+    let mut warnings = warnings
+        .iter()
+        .map(|message| json!({ "message": message }))
+        .collect::<Vec<_>>();
+    warnings.extend(projection.warnings.iter().map(|warning| {
+        json!({
+            "message": warning.message,
+            "path": warning.syntax_id
+        })
+    }));
+
     json!({
         "version": 1,
         "work_id": "stdin",
-        "blocks": ab_ir::blocks_to_aat_json(&result.blocks),
+        "blocks": projection.blocks,
         "meta": {
             "adapter": "aozora-rs",
             "adapter_version": VERSION,
             "source_encoding": decoded.encoding,
             "source_hash": decoded.source_hash,
             "parse_complete": true,
-            "warnings": warnings.iter().map(|message| json!({ "message": message })).collect::<Vec<_>>(),
-            "metrics": metrics
+            "warnings": warnings,
+            "metrics": metrics,
+            "semantic_summary": semantic_summary
         }
     })
 }
@@ -148,6 +162,18 @@ mod tests {
         assert!(metrics["retokenized_count"].as_u64().unwrap() > 0);
         assert!(metrics["parser_normalized_nodes"].as_u64().unwrap() > 0);
         assert!(metrics["regex_supplement_nodes"].as_u64().unwrap() > 0);
+        assert!(
+            value["meta"]["semantic_summary"]["syntax"]
+                .as_object()
+                .unwrap()
+                .contains_key("ruby.basic")
+        );
+        assert!(
+            value["meta"]["semantic_summary"]["syntax"]
+                .as_object()
+                .unwrap()
+                .contains_key("gaiji.marker")
+        );
         assert_eq!(value["blocks"][0]["kind"], "paragraph");
         assert!(
             value["blocks"][0]["content"]

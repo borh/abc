@@ -247,7 +247,8 @@ mod tests {
 
     #[test]
     fn source_visible_text_removes_orphan_ruby_after_unresolved_gaiji() {
-        let visible = source_visible_text("ことを、※［＃「口＋愛」、第3水準1-15-23］《おくび》にも");
+        let visible =
+            source_visible_text("ことを、※［＃「口＋愛」、第3水準1-15-23］《おくび》にも");
 
         assert_eq!(visible, "ことを、にも");
     }

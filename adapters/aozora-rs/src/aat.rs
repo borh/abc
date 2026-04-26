@@ -244,13 +244,17 @@ fn strip_cross_node_commands(blocks: &mut [Block]) {
 fn strip_commands_in_inline(value: &mut Inline, state: &mut CommandStripState) {
     match value {
         Inline::Text { value, .. } => strip_string(value, state),
-        Inline::Ruby { base, .. } => strip_string(base, state),
+        Inline::Ruby { base, .. } => {
+            for child in base {
+                strip_commands_in_inline(child, state);
+            }
+        }
         Inline::Style { content, .. } => {
             for child in content {
                 strip_commands_in_inline(child, state);
             }
         }
-        Inline::Gaiji { .. } => {}
+        Inline::GaijiRef(_) => {}
     }
 }
 
@@ -435,7 +439,8 @@ fn collect_ruby_readings(node: &Inline, readings: &mut HashSet<String>) {
                 collect_ruby_readings(child, readings);
             }
         }
-        Inline::Text { .. } | Inline::Gaiji { .. } => {}
+        Inline::GaijiRef(_) => {}
+        Inline::Text { .. } => {}
     }
 }
 
@@ -451,9 +456,10 @@ fn gaiji_count_in_blocks(blocks: &[Block]) -> usize {
 
 fn gaiji_count_in_inline(node: &Inline) -> usize {
     match node {
-        Inline::Gaiji { .. } => 1,
+        Inline::GaijiRef(_) => 1,
         Inline::Style { content, .. } => content.iter().map(gaiji_count_in_inline).sum(),
-        Inline::Text { .. } | Inline::Ruby { .. } => 0,
+        Inline::Ruby { base, .. } => base.iter().map(gaiji_count_in_inline).sum(),
+        Inline::Text { .. } => 0,
     }
 }
 

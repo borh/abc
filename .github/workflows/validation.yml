@@ -1,0 +1,27 @@
+name: Validation
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  design-bundle:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: cachix/install-nix-action@v31
+
+      - name: Stub local-only flake input
+        run: |
+          mkdir -p /tmp/abc-empty-local-pkgs
+          cat > /tmp/abc-empty-local-pkgs/default.nix <<'NIX'
+          { pkgs ? null }:
+          {}
+          NIX
+
+      - name: Validate design bundle
+        run: |
+          nix develop .#validation \
+            --override-input local-pkgs path:/tmp/abc-empty-local-pkgs \
+            -c bin/validate-design-bundle.sh

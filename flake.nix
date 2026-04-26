@@ -38,16 +38,22 @@
           });
           unidic = pkgs.unidic-cwj;
           mecabDicDir = "${unidic}/share/mecab/dic/unidic-cwj";
+          python = pkgs.python3.withPackages (pythonPackages: [
+            pythonPackages.jsonschema
+          ]);
         in
         {
           default = pkgs.mkShell {
             packages = with pkgs; [
               clojure
               git
+              git-cliff
               jdk21
+              jq
               mecab
               unidic
               libxml2
+              python
             ];
 
             LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
@@ -68,6 +74,16 @@
               export MECABRC="${mecab}/etc/mecabrc"
               export MECAB_DICDIR="${mecabDicDir}"
             '';
+          };
+
+          validation = pkgs.mkShell {
+            packages = [
+              pkgs.git
+              pkgs.git-cliff
+              pkgs.jq
+              pkgs.libxml2
+              python
+            ];
           };
         }
       );

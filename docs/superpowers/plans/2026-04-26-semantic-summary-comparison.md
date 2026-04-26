@@ -53,6 +53,11 @@ pub struct SourceSpan {
 }
 ```
 
+`SourceSpan` uses byte offsets into the decoded UTF-8 source text. Spans are
+optional because current synthetic IR values do not carry source locations.
+`provenance` is mandatory for a uniform JSON contract, but some rows are not
+parser-originated; projection warnings should use `"projection"`.
+
 `projection.warning` entries use `kind: "projection_warning"` and store the original `ProjectionWarning.syntax_id` inside `value.syntax_id`. This keeps the high-level bucket stable while preserving the specific warning ID.
 
 - [ ] **Step 2: Verify red**
@@ -108,7 +113,9 @@ Hashing strategy:
 - For each key under `meta.semantic_summary.syntax`, serialize that key's JSON value with `serde_json::to_vec`.
 - Hash each value independently.
 - Store hashes under `summary:{syntax_id}`, for example `summary:ruby.basic`.
-- Merge these namespaced hashes into existing semantic hash comparison so `semantic_hash_difference_counts` can report both existing AAT-derived hashes and summary-derived hashes.
+- Do not merge summary-derived hashes into existing AAT-derived `semantic_hashes` or bucket logic. `semantic_hash_difference_counts` and `normalized_visible_difference_buckets` keep their current meaning and remain based on AAT-derived hashes only.
+
+`serde_json::to_vec` is deterministic for a `serde_json::Value` in memory, but it is not a full semantic canonicalization layer. Spurious differences from null-vs-absent or semantically equivalent shapes are accepted in this increment; canonical summary normalization is future work.
 
 Additive output fields:
 
@@ -126,7 +133,7 @@ pub struct AatStructuralDifference {
 }
 ```
 
-The existing `semantic_hash_difference_counts` should also receive namespaced `summary:*` entries so current bucket logic can classify visible differences using one combined semantic difference set.
+The `ab-compare` binary serializes `AatCompareSummary` directly, so these fields are an additive CLI JSON output change. Existing fields and bucket names remain unchanged.
 
 - [ ] **Step 4: Verify and commit**
 
@@ -148,7 +155,6 @@ Run:
 cargo check -p ab-ir -p ab-compare
 cargo test -p ab-ir -p ab-compare
 cargo test -p ab-index -p ab-check
-cargo fmt --all
 cargo fmt --all -- --check
 git status --short
 ```

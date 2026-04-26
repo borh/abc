@@ -14,7 +14,6 @@ use parser::ParsedSource;
 pub use source::{DecodedSource, decode_source_bytes};
 
 pub const VERSION: &str = "aozora-rs-adapter 0.1.0 dd380ee639ca317ac9092ef2ba554acdf70e3c8d";
-const SOURCE_SUPPLEMENT_FALLBACK_THRESHOLD: usize = 0;
 
 pub fn aat_json_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
     let decode_start = Instant::now();
@@ -89,30 +88,6 @@ fn build_aat_result(parsed: &ParsedSource<'_>) -> (aat::AatBuildResult, Duration
     let initial = aat::build_initial(parsed);
     let large_body = parsed.body.validation_body.len() > 500_000;
     let mut projection_check = Duration::ZERO;
-    let source_supplement_hotspot = ab_ir::provenance_counts(&initial.blocks).source_supplement
-        > SOURCE_SUPPLEMENT_FALLBACK_THRESHOLD;
-    if !large_body && source_supplement_hotspot {
-        let fallback_start = Instant::now();
-        let (blocks, _) = aat::build_fallback(parsed.body.validation_body);
-        let fallback_build = fallback_start.elapsed();
-        let fallback_provenance = ab_ir::provenance_counts(&blocks);
-        if fallback_provenance.source_supplement == 0
-            && aat::blocks_cover_validation_annotations(parsed.body.validation_body, &blocks)
-        {
-            return (
-                aat::AatBuildResult {
-                    blocks,
-                    fallback: FallbackDecision {
-                        used: true,
-                        reason: FallbackReason::SourceSupplementHotspot,
-                    },
-                    timings: initial.timings,
-                },
-                projection_check,
-                fallback_build,
-            );
-        }
-    }
 
     let (fallback, source_visible_for_fallback) = if large_body {
         (
@@ -195,13 +170,13 @@ mod tests {
         assert!(metrics["aat_build_ms"].as_f64().unwrap() >= 0.0);
         assert!(metrics["projection_check_ms"].as_f64().unwrap() >= 0.0);
         assert!(metrics["fallback_build_ms"].as_f64().unwrap() >= 0.0);
-        assert_eq!(metrics["fallback_used"], true);
-        assert_eq!(metrics["fallback_reason"], "source_supplement_hotspot");
+        assert_eq!(metrics["fallback_used"], false);
+        assert_eq!(metrics["fallback_reason"], "none");
         assert_eq!(metrics["source_bytes"], input.len());
         assert!(metrics["tokenized_count"].as_u64().unwrap() > 0);
         assert!(metrics["retokenized_count"].as_u64().unwrap() > 0);
-        assert_eq!(metrics["source_supplement_nodes"], 0);
-        assert!(metrics["source_fallback_nodes"].as_u64().unwrap() > 0);
+        assert!(metrics["source_supplement_nodes"].as_u64().unwrap() > 0);
+        assert_eq!(metrics["source_fallback_nodes"], 0);
         assert!(
             value["meta"]["semantic_summary"]["syntax"]
                 .as_object()
@@ -271,7 +246,7 @@ mod tests {
     }
 
     #[test]
-    fn fallback_is_reported_for_source_supplement_hotspots() {
+    fn fallback_is_reported_for_empty_parser_projection() {
         let body = "侍童《こしゃう》。\n".to_owned();
         let decoded = decode_source_bytes(body.as_bytes()).unwrap();
         let selection = source::BodySelection {
@@ -316,8 +291,29 @@ mod tests {
         let value = metrics.to_json();
 
         assert_eq!(value["fallback_used"], true);
-        assert_eq!(value["fallback_reason"], "source_supplement_hotspot");
+        assert_eq!(value["fallback_reason"], "projection_mismatch");
         assert_eq!(value["source_supplement_nodes"], 0);
         assert!(value["source_fallback_nodes"].as_u64().unwrap() > 0);
+    }
+
+    #[test]
+    fn source_supplements_do_not_force_whole_work_fallback() {
+        let input = "\
+タイトル
+著者
+-------------------------------------------------------
+凡例
+-------------------------------------------------------
+吾輩《わがはい》は※［＃「口＋世」、U+546D］である。"
+            .as_bytes();
+        let out = aat_json_from_bytes(input).unwrap();
+        let value: serde_json::Value = serde_json::from_slice(&out).unwrap();
+        let metrics = &value["meta"]["metrics"];
+
+        assert_eq!(metrics["fallback_used"], false);
+        assert_eq!(metrics["fallback_reason"], "none");
+        assert!(metrics["parser_nodes"].as_u64().unwrap() > 0);
+        assert!(metrics["source_supplement_nodes"].as_u64().unwrap() > 0);
+        assert_eq!(metrics["source_fallback_nodes"], 0);
     }
 }

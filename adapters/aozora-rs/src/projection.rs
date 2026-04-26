@@ -11,7 +11,7 @@ pub fn check(validation_body: &str, projected_visible_text: &str) -> ProjectionS
     let source_visible_chars = normalized_char_count(source_visible_text.as_ref());
     let projected_visible_chars = normalized_char_count(projected_visible_text);
     let in_source_order = if projected_visible_chars == 0 {
-        true
+        source_visible_chars == 0
     } else if projected_visible_chars > source_visible_chars {
         false
     } else {
@@ -117,6 +117,16 @@ mod tests {
         assert!(!summary.in_source_order);
         assert!(summary.projected_visible_chars > summary.source_visible_chars);
         assert_eq!(summary.source_visible_text.as_deref(), Some("短い本文"));
+    }
+
+    #[test]
+    fn rejects_empty_projection_for_nonempty_source() {
+        let summary = check("本文", "");
+
+        assert!(!summary.in_source_order);
+        assert_eq!(summary.projected_visible_chars, 0);
+        assert!(summary.source_visible_chars > 0);
+        assert_eq!(summary.source_visible_text.as_deref(), Some("本文"));
     }
 
     #[test]

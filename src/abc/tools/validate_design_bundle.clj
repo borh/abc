@@ -2,6 +2,7 @@
   (:require [abc.tools.files :as files]
             [abc.tools.materialize-import :as materialize]
             [charred.api :as json]
+            [clojure.java.io :as io]
             [clojure.set :as set]
             [clojure.string :as string]))
 
@@ -123,6 +124,24 @@
     (throw (ex-info (string/join "\n" errors)
                     {:errors errors}))))
 
+(def materialized-fixture-paths
+  {"parser-ir.manifest.json" (io/file "examples" "materialized-import" "parser-ir.manifest.json")
+   "warnings.manifest.json" (io/file "examples" "materialized-import" "warnings.manifest.json")})
+
+(defn file-bytes [file]
+  (java.nio.file.Files/readAllBytes (.toPath (io/file file))))
+
+(defn same-file-bytes? [left right]
+  (java.util.Arrays/equals (file-bytes left) (file-bytes right)))
+
+(defn validate-materialized-fixtures! [materialized-dir]
+  (doseq [[name fixture-file] materialized-fixture-paths
+          :let [generated-file (io/file materialized-dir name)]]
+    (when-not (same-file-bytes? fixture-file generated-file)
+      (throw (ex-info (str "materialized fixture differs: " name)
+                      {:fixture (str fixture-file)
+                       :generated (str generated-file)})))))
+
 (defn validate-ab-validator-output! []
   (check-errors!
    (manifest-input-errors
@@ -171,8 +190,12 @@
                            :generated-at materialize/default-generated-at})]
         (println "materialized import ok")
         (println "==> Validating JSON schemas and examples")
-        (validate-json-schemas! (vals materialized))
-        (println "json schema validation ok"))
+        (validate-json-schemas! (concat (vals materialized)
+                                        (vals materialized-fixture-paths)))
+        (println "json schema validation ok")
+        (println "==> Comparing materialized import fixtures")
+        (validate-materialized-fixtures! materialized-dir)
+        (println "materialized import fixtures ok"))
       (println "==> Checking imported ab-validator output")
       (validate-ab-validator-output!)
       (println "ab-validator output ok")

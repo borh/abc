@@ -266,11 +266,13 @@ pub fn source_visible_text(txt: &str) -> String {
     let gaiji = Regex::new(r"※(?:［＃([^］]+)］|\[#([^\]]+)\])").unwrap();
     let explicit_ruby = Regex::new(r"｜([^《》\r\n]+)《[^》]+》").unwrap();
     let ruby = Regex::new(r"｜?([^｜\s《》※［＃\[\]］、。，．「」『』（）()]+)《[^》]+》").unwrap();
+    let orphan_ruby = Regex::new(r"《[^》]+》").unwrap();
     let command = Regex::new(r"［＃[^］]+］|\[#[^\]]+\]").unwrap();
     let without_gaiji = gaiji.replace_all(txt, "");
     let without_explicit_ruby = explicit_ruby.replace_all(&without_gaiji, "$1");
     let without_ruby = ruby.replace_all(&without_explicit_ruby, "$1");
-    command.replace_all(&without_ruby, "").into_owned()
+    let without_orphan_ruby = orphan_ruby.replace_all(&without_ruby, "");
+    command.replace_all(&without_orphan_ruby, "").into_owned()
 }
 
 fn normalize_visible(value: &str) -> String {
@@ -308,5 +310,12 @@ mod tests {
         let visible = source_visible_text("――『｜あのひとにとって、わたし《ルビ》はなんだろう？」");
 
         assert_eq!(visible, "――『あのひとにとって、わたしはなんだろう？」");
+    }
+
+    #[test]
+    fn source_visible_text_removes_orphan_ruby_after_unresolved_gaiji() {
+        let visible = source_visible_text("ことを、※［＃「口＋愛」、第3水準1-15-23］《おくび》にも");
+
+        assert_eq!(visible, "ことを、にも");
     }
 }

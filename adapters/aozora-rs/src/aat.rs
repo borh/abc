@@ -397,7 +397,10 @@ fn append_ruby_supplements(content: &mut Vec<Inline>, body: &str, existing: &Has
 }
 
 fn append_gaiji_supplements(content: &mut Vec<Inline>, body: &str, existing_count: usize) {
-    for capture in gaiji_marker_regex().captures_iter(body).skip(existing_count) {
+    for capture in gaiji_marker_regex()
+        .captures_iter(body)
+        .skip(existing_count)
+    {
         let description = capture
             .get(1)
             .or_else(|| capture.get(2))
@@ -508,7 +511,7 @@ mod tests {
         assert!(matches!(blocks[0], Block::Paragraph { .. }));
         let visible = source_visible_text(body);
         assert!(projected.visible_text.contains("吾輩"));
-        assert!(visible.contains("「口＋世」、U+546D"));
+        assert!(!visible.contains("「口＋世」、U+546D"));
         assert!(!projected.visible_text.contains("わがはい"));
         assert!(ab_ir::provenance_counts(&blocks).regex_fallback > 0);
     }

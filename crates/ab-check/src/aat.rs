@@ -154,3 +154,25 @@ fn collect_inline_kind<'a>(
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn visible_projection_excludes_unresolved_gaiji_descriptions() {
+        let aat = json!({
+            "blocks": [{
+                "kind": "paragraph",
+                "content": [
+                    {"kind": "text", "value": "二二"},
+                    {"kind": "gaiji", "description": "小書き片仮名ン、237-11", "resolved": ""},
+                    {"kind": "text", "value": "が四"}
+                ]
+            }]
+        });
+
+        assert_eq!(visible_text_projection(&aat), "二二が四");
+    }
+}

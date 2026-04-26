@@ -118,14 +118,7 @@ pub(crate) fn starts_with_separator(text: &str) -> bool {
 }
 
 pub(crate) fn source_visible_text(txt: &str) -> String {
-    let without_gaiji = gaiji_regex().replace_all(txt, |captures: &regex::Captures<'_>| {
-        captures
-            .get(1)
-            .or_else(|| captures.get(2))
-            .map(|matched| matched.as_str())
-            .unwrap_or_default()
-            .to_owned()
-    });
+    let without_gaiji = gaiji_regex().replace_all(txt, "");
     let without_ruby = ruby_regex().replace_all(&without_gaiji, "$1");
     let without_commands = command_regex()
         .replace_all(&without_ruby, "")
@@ -227,7 +220,7 @@ mod tests {
             let visible =
                 source_visible_text("吾輩《わがはい》は※［＃「口＋世」、U+546D］［＃ここは注記］");
             assert!(visible.contains("吾輩"));
-            assert!(visible.contains("「口＋世」、U+546D"));
+            assert!(!visible.contains("「口＋世」、U+546D"));
             assert!(!visible.contains("わがはい"));
             assert!(!visible.contains("ここは注記"));
         }

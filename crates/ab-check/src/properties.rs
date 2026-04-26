@@ -266,14 +266,7 @@ pub fn source_visible_text(txt: &str) -> String {
     let gaiji = Regex::new(r"※(?:［＃([^］]+)］|\[#([^\]]+)\])").unwrap();
     let ruby = Regex::new(r"｜?([^｜\s《》※［＃\[\]］、。，．「」『』（）()]+)《[^》]+》").unwrap();
     let command = Regex::new(r"［＃[^］]+］|\[#[^\]]+\]").unwrap();
-    let without_gaiji = gaiji.replace_all(txt, |captures: &regex::Captures<'_>| {
-        captures
-            .get(1)
-            .or_else(|| captures.get(2))
-            .map(|matched| matched.as_str())
-            .unwrap_or_default()
-            .to_owned()
-    });
+    let without_gaiji = gaiji.replace_all(txt, "");
     let without_ruby = ruby.replace_all(&without_gaiji, "$1");
     command.replace_all(&without_ruby, "").into_owned()
 }
@@ -295,4 +288,16 @@ fn is_subsequence(needle: &str, haystack: &str) -> bool {
         }
     }
     true
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn source_visible_text_excludes_unresolved_gaiji_descriptions() {
+        let visible = source_visible_text("二二※［＃小書き片仮名ン、237-11］が四");
+
+        assert_eq!(visible, "二二が四");
+    }
 }

@@ -86,7 +86,10 @@ pub fn body_text(text: &str) -> &str {
     let mut body_start = 0;
     let mut offset = 0;
     for line in text.split_inclusive('\n') {
-        if line.trim_end_matches(['\r', '\n']).chars().all(|ch| ch == '-')
+        if line
+            .trim_end_matches(['\r', '\n'])
+            .chars()
+            .all(|ch| ch == '-')
             && line.trim_end_matches(['\r', '\n']).chars().count() >= 20
         {
             separator_count += 1;
@@ -157,14 +160,7 @@ pub fn source_visible_text(text: &str) -> String {
     let gaiji = Regex::new(r"※(?:［＃([^］]+)］|\[#([^\]]+)\])").unwrap();
     let ruby = Regex::new(r"｜?([^｜\s《》※［＃\[\]］、。，．「」『』（）()]+)《[^》]+》").unwrap();
     let command = Regex::new(r"［＃[^］]+］|\[#[^\]]+\]").unwrap();
-    let without_gaiji = gaiji.replace_all(text, |captures: &regex::Captures<'_>| {
-        captures
-            .get(1)
-            .or_else(|| captures.get(2))
-            .map(|matched| matched.as_str())
-            .unwrap_or_default()
-            .to_owned()
-    });
+    let without_gaiji = gaiji.replace_all(text, "");
     let without_ruby = ruby.replace_all(&without_gaiji, "$1");
     command.replace_all(&without_ruby, "").into_owned()
 }
@@ -191,4 +187,16 @@ pub fn html_escape(value: &str) -> String {
         .replace('<', "&lt;")
         .replace('>', "&gt;")
         .replace('"', "&quot;")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn source_visible_text_excludes_unresolved_gaiji_descriptions() {
+        let visible = source_visible_text("二二※［＃小書き片仮名ン、237-11］が四");
+
+        assert_eq!(visible, "二二が四");
+    }
 }

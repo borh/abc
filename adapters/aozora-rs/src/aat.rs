@@ -7,6 +7,7 @@ use serde_json::json;
 use crate::{
     metrics::FallbackDecision,
     parser::ParsedSource,
+    projection::ProjectionSummary,
     source::{remove_bottom_note_fragments, source_visible_text},
 };
 
@@ -58,6 +59,7 @@ pub struct AatBuildResult {
     pub projected: ProjectedText,
     pub fallback: FallbackDecision,
     pub timings: AatBuildTimings,
+    pub projection: ProjectionSummary,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -71,9 +73,6 @@ pub fn build_initial(parsed: &ParsedSource<'_>) -> InitialAatBuildResult {
     let mut blocks = retokenized_to_aat_blocks(&parsed.retokenized);
     append_source_annotation_supplements(&mut blocks, body);
     strip_cross_node_commands(&mut blocks);
-    if body.len() > 500_000 || !visible_projection_is_in_source_order(&blocks, body) {
-        blocks = source_visible_fallback_blocks(body);
-    }
     let projected = ProjectedText {
         visible_text: visible_projection(&blocks),
     };
@@ -482,15 +481,6 @@ fn source_visible_fallback_blocks(body: &str) -> Vec<AatBlock> {
     blocks
 }
 
-fn visible_projection_is_in_source_order(blocks: &[AatBlock], body: &str) -> bool {
-    let projection = normalize_visible(&visible_projection(blocks));
-    if projection.is_empty() {
-        return true;
-    }
-    let source = normalize_visible(&source_visible_text(body));
-    is_subsequence(&projection, &source)
-}
-
 fn visible_projection(blocks: &[AatBlock]) -> String {
     let mut out = String::new();
     for block in blocks {
@@ -512,20 +502,6 @@ fn collect_visible_projection(value: &AatInline, out: &mut String) {
             }
         }
     }
-}
-
-fn normalize_visible(value: &str) -> String {
-    value.split_whitespace().collect::<Vec<_>>().join(" ")
-}
-
-fn is_subsequence(needle: &str, haystack: &str) -> bool {
-    let mut haystack = haystack.chars();
-    for ch in needle.chars() {
-        if !haystack.any(|candidate| candidate == ch) {
-            return false;
-        }
-    }
-    true
 }
 
 fn append_ruby_supplements(content: &mut Vec<AatInline>, body: &str) {

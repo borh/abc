@@ -480,6 +480,85 @@ fn unresolved_gaiji_description_is_semantic_not_visible_text() {
     assert_eq!(summary.a_semantic_totals["gaiji_unresolved"], 1);
 }
 
+#[test]
+fn detects_semantic_summary_differences_when_blocks_match() {
+    let temp = tempfile::tempdir().unwrap();
+    let a = temp.path().join("a");
+    let b = temp.path().join("b");
+    std::fs::create_dir_all(&a).unwrap();
+    std::fs::create_dir_all(&b).unwrap();
+
+    std::fs::write(
+        a.join("one.json"),
+        aat_with_semantic_summary("one", "わがはい"),
+    )
+    .unwrap();
+    std::fs::write(b.join("one.json"), aat_with_semantic_summary("one", "われ")).unwrap();
+
+    let summary = ab_compare::aat_diff::compare_aat_dirs(&a, &b).unwrap();
+
+    assert_eq!(summary.common_aat, 1);
+    assert_eq!(
+        summary.semantic_summary_hash_difference_counts["summary:ruby.basic"],
+        1
+    );
+    assert_eq!(summary.structural_differences.len(), 1);
+    assert_eq!(
+        summary.structural_differences[0]
+            .a_semantic_summary_hashes
+            .len(),
+        1
+    );
+    assert!(summary.structural_differences[0].semantic_summary_hashes_differ["summary:ruby.basic"]);
+    assert!(summary.semantic_hash_difference_counts.is_empty());
+}
+
+#[test]
+fn missing_semantic_summaries_compare_like_existing_aat() {
+    let temp = tempfile::tempdir().unwrap();
+    let a = temp.path().join("a");
+    let b = temp.path().join("b");
+    std::fs::create_dir_all(&a).unwrap();
+    std::fs::create_dir_all(&b).unwrap();
+
+    std::fs::write(a.join("one.json"), aat_for_work("one", "本文")).unwrap();
+    std::fs::write(b.join("one.json"), aat_for_work("one", "本文")).unwrap();
+
+    let summary = ab_compare::aat_diff::compare_aat_dirs(&a, &b).unwrap();
+
+    assert_eq!(summary.common_aat, 1);
+    assert_eq!(summary.structural_difference_count, 0);
+    assert!(summary.semantic_summary_hash_difference_counts.is_empty());
+}
+
+#[test]
+fn malformed_semantic_summary_is_ignored() {
+    let temp = tempfile::tempdir().unwrap();
+    let a = temp.path().join("a");
+    let b = temp.path().join("b");
+    std::fs::create_dir_all(&a).unwrap();
+    std::fs::create_dir_all(&b).unwrap();
+
+    std::fs::write(
+        a.join("one.json"),
+        r#"{
+          "work_id": "one",
+          "blocks": [
+            {"kind": "paragraph", "content": [{"kind": "text", "value": "本文"}]}
+          ],
+          "meta": {"adapter": "a", "semantic_summary": "bad"}
+        }"#,
+    )
+    .unwrap();
+    std::fs::write(b.join("one.json"), aat_for_work("one", "本文")).unwrap();
+
+    let summary = ab_compare::aat_diff::compare_aat_dirs(&a, &b).unwrap();
+
+    assert_eq!(summary.common_aat, 1);
+    assert_eq!(summary.structural_difference_count, 0);
+    assert!(summary.semantic_summary_hash_difference_counts.is_empty());
+}
+
 fn report(adapter: &str, pass: bool) -> String {
     report_for_work(adapter, "000001_1", pass)
 }
@@ -508,6 +587,31 @@ fn aat_for_work(work_id: &str, text: &str) -> String {
     {{"kind": "paragraph", "content": [{{"kind": "text", "value": "{text}"}}]}}
   ],
   "meta": {{"adapter": "test"}}
+}}"#
+    )
+}
+
+fn aat_with_semantic_summary(work_id: &str, reading: &str) -> String {
+    format!(
+        r#"{{
+  "work_id": "{work_id}",
+  "blocks": [
+    {{"kind": "paragraph", "content": [{{"kind": "text", "value": "本文"}}]}}
+  ],
+  "meta": {{
+    "adapter": "test",
+    "semantic_summary": {{
+      "syntax": {{
+        "ruby.basic": [
+          {{
+            "kind": "ruby",
+            "value": {{"base_projection": "吾輩", "reading": "{reading}", "placement": "right"}},
+            "provenance": "parser"
+          }}
+        ]
+      }}
+    }}
+  }}
 }}"#
     )
 }

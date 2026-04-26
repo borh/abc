@@ -20,6 +20,7 @@ pub struct AatCompareSummary {
     pub normalized_visible_text_difference_count: usize,
     pub same_visible_structural_difference_count: usize,
     pub semantic_hash_difference_counts: BTreeMap<String, usize>,
+    pub semantic_summary_hash_difference_counts: BTreeMap<String, usize>,
     pub normalized_visible_difference_buckets: BTreeMap<String, usize>,
     pub a_semantic_totals: BTreeMap<String, usize>,
     pub b_semantic_totals: BTreeMap<String, usize>,
@@ -46,6 +47,9 @@ pub struct AatStructuralDifference {
     pub a_semantic_hashes: BTreeMap<String, String>,
     pub b_semantic_hashes: BTreeMap<String, String>,
     pub semantic_hashes_differ: BTreeMap<String, bool>,
+    pub a_semantic_summary_hashes: BTreeMap<String, String>,
+    pub b_semantic_summary_hashes: BTreeMap<String, String>,
+    pub semantic_summary_hashes_differ: BTreeMap<String, bool>,
     pub normalized_visible_difference_bucket: Option<String>,
     pub normalized_visible_first_difference: Option<VisibleTextDifference>,
 }
@@ -61,6 +65,7 @@ pub struct VisibleTextDifference {
 struct AatRoot {
     work_id: String,
     blocks: Value,
+    meta: Option<Value>,
 }
 
 #[derive(Debug)]
@@ -75,6 +80,7 @@ struct AatSummary {
     semantic_totals: BTreeMap<String, usize>,
     semantic_counts: BTreeMap<String, usize>,
     semantic_hashes: BTreeMap<String, String>,
+    semantic_summary_hashes: BTreeMap<String, String>,
 }
 
 pub fn compare_aat_dirs(a: &Path, b: &Path) -> Result<AatCompareSummary> {
@@ -99,18 +105,30 @@ pub fn compare_aat_dirs_with_limit(
     let mut normalized_visible_text_difference_count = 0usize;
     let mut same_visible_structural_difference_count = 0usize;
     let mut semantic_hash_difference_counts = BTreeMap::new();
+    let mut semantic_summary_hash_difference_counts = BTreeMap::new();
     let mut normalized_visible_difference_buckets = BTreeMap::new();
 
     for key in &common {
         let left = &a[key];
         let right = &b[key];
         let semantic_hashes_differ = semantic_hash_differences(left, right);
+        let semantic_summary_hashes_differ = semantic_summary_hash_differences(left, right);
         for (name, differs) in &semantic_hashes_differ {
             if *differs {
                 increment(&mut semantic_hash_difference_counts, name.clone());
             }
         }
-        if left.structure_hash != right.structure_hash || left.visible_hash != right.visible_hash {
+        for (name, differs) in &semantic_summary_hashes_differ {
+            if *differs {
+                increment(&mut semantic_summary_hash_difference_counts, name.clone());
+            }
+        }
+        if left.structure_hash != right.structure_hash
+            || left.visible_hash != right.visible_hash
+            || semantic_summary_hashes_differ
+                .values()
+                .any(|differs| *differs)
+        {
             structural_difference_count += 1;
             if left.visible_hash != right.visible_hash {
                 visible_text_difference_count += 1;
@@ -153,6 +171,9 @@ pub fn compare_aat_dirs_with_limit(
                 a_semantic_hashes: left.semantic_hashes.clone(),
                 b_semantic_hashes: right.semantic_hashes.clone(),
                 semantic_hashes_differ,
+                a_semantic_summary_hashes: left.semantic_summary_hashes.clone(),
+                b_semantic_summary_hashes: right.semantic_summary_hashes.clone(),
+                semantic_summary_hashes_differ,
                 normalized_visible_difference_bucket,
                 normalized_visible_first_difference,
             });
@@ -168,6 +189,7 @@ pub fn compare_aat_dirs_with_limit(
         normalized_visible_text_difference_count,
         same_visible_structural_difference_count,
         semantic_hash_difference_counts,
+        semantic_summary_hash_difference_counts,
         normalized_visible_difference_buckets,
         a_semantic_totals,
         b_semantic_totals,
@@ -252,6 +274,7 @@ fn summarize(root: AatRoot) -> Result<AatSummary> {
         semantic_totals,
         semantic_counts,
         semantic_hashes: semantic_sequences.into_hashes(),
+        semantic_summary_hashes: semantic_summary_hashes(root.meta.as_ref())?,
     })
 }
 
@@ -449,6 +472,42 @@ fn semantic_hash_differences(left: &AatSummary, right: &AatSummary) -> BTreeMap<
             (key, differs)
         })
         .collect()
+}
+
+fn semantic_summary_hash_differences(
+    left: &AatSummary,
+    right: &AatSummary,
+) -> BTreeMap<String, bool> {
+    let keys = left
+        .semantic_summary_hashes
+        .keys()
+        .chain(right.semantic_summary_hashes.keys())
+        .cloned()
+        .collect::<BTreeSet<_>>();
+    keys.into_iter()
+        .map(|key| {
+            let differs =
+                left.semantic_summary_hashes.get(&key) != right.semantic_summary_hashes.get(&key);
+            (key, differs)
+        })
+        .collect()
+}
+
+fn semantic_summary_hashes(meta: Option<&Value>) -> Result<BTreeMap<String, String>> {
+    let Some(syntax) = meta
+        .and_then(|meta| meta.get("semantic_summary"))
+        .and_then(|summary| summary.get("syntax"))
+        .and_then(Value::as_object)
+    else {
+        return Ok(BTreeMap::new());
+    };
+
+    let mut out = BTreeMap::new();
+    for (syntax_id, value) in syntax {
+        let bytes = serde_json::to_vec(value)?;
+        out.insert(format!("summary:{syntax_id}"), hash_bytes(&bytes));
+    }
+    Ok(out)
 }
 
 fn normalized_visible_difference_bucket(semantic_hashes_differ: &BTreeMap<String, bool>) -> String {

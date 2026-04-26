@@ -63,6 +63,37 @@ pub struct StageTiming {
 }
 
 impl AdapterMetrics {
+    pub fn from_parts(
+        decoded: &crate::source::DecodedSource,
+        decode: Duration,
+        body: &crate::source::BodySelection<'_>,
+        parse: crate::parser::ParseTimings,
+        aat: crate::aat::AatBuildTimings,
+        projection_check: Duration,
+        fallback_build: Duration,
+        parser_body_bytes: usize,
+        tokenized_count: usize,
+        retokenized_count: usize,
+        fallback: FallbackDecision,
+    ) -> Self {
+        Self {
+            decode,
+            body_selection: parse.body_selection,
+            tokenize: parse.tokenize,
+            scopenize: parse.scopenize,
+            retokenize: parse.retokenize,
+            aat_build: aat.build,
+            projection_check,
+            fallback_build,
+            source_bytes: decoded.source_bytes,
+            validation_body_bytes: body.validation_body.len(),
+            parser_body_bytes,
+            tokenized_count,
+            retokenized_count,
+            fallback,
+        }
+    }
+
     pub fn stages(&self) -> Vec<StageTiming> {
         vec![
             StageTiming {

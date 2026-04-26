@@ -170,7 +170,70 @@ fn detects_aat_structural_differences_when_reports_match() {
         summary.structural_differences[0].b_block_kinds["heading"],
         1
     );
+    assert_eq!(summary.a_semantic_totals["block:paragraph"], 1);
+    assert_eq!(summary.b_semantic_totals["block:heading"], 1);
+    assert_eq!(
+        summary.structural_differences[0].b_semantic_counts["heading_level:1"],
+        1
+    );
     assert!(!summary.structural_differences[0].visible_text_differs);
+}
+
+#[test]
+fn records_ruby_gaiji_and_provenance_semantics() {
+    let temp = tempfile::tempdir().unwrap();
+    let a = temp.path().join("a");
+    let b = temp.path().join("b");
+    std::fs::create_dir_all(&a).unwrap();
+    std::fs::create_dir_all(&b).unwrap();
+
+    std::fs::write(
+        a.join("one.json"),
+        r#"{
+          "work_id": "one",
+          "blocks": [
+            {"kind": "paragraph", "content": [
+              {"kind": "ruby", "base": "吾輩", "reading": "わがはい"},
+              {"kind": "gaiji", "description": "「口＋世」、U+546D", "resolved": ""}
+            ]}
+          ],
+          "meta": {"adapter": "a"}
+        }"#,
+    )
+    .unwrap();
+    std::fs::write(
+        b.join("one.json"),
+        r#"{
+          "work_id": "one",
+          "blocks": [
+            {"kind": "paragraph", "content": [
+              {"kind": "text", "value": "吾輩", "x-provenance": "parser_normalized"},
+              {"kind": "ruby", "base": "", "reading": "わがはい", "x-provenance": "regex_supplement"},
+              {"kind": "gaiji", "description": "「口＋世」、U+546D", "resolved": "", "x-provenance": "regex_supplement"}
+            ]}
+          ],
+          "meta": {"adapter": "b"}
+        }"#,
+    )
+    .unwrap();
+
+    let summary = ab_compare::aat_diff::compare_aat_dirs(&a, &b).unwrap();
+    assert_eq!(summary.common_aat, 1);
+    assert_eq!(summary.structural_differences.len(), 1);
+    assert_eq!(summary.a_semantic_totals["inline:ruby"], 1);
+    assert_eq!(summary.b_semantic_totals["provenance:regex_supplement"], 2);
+    assert_eq!(
+        summary.structural_differences[0].a_semantic_counts["ruby_reading:わがはい"],
+        1
+    );
+    assert_eq!(
+        summary.structural_differences[0].b_semantic_counts["provenance:parser_normalized"],
+        1
+    );
+    assert_eq!(
+        summary.structural_differences[0].b_semantic_counts["gaiji_unresolved"],
+        1
+    );
 }
 
 #[test]

@@ -15,6 +15,8 @@ pub struct AatCompareSummary {
     pub common_aat: usize,
     pub only_a: usize,
     pub only_b: usize,
+    pub a_semantic_totals: BTreeMap<String, usize>,
+    pub b_semantic_totals: BTreeMap<String, usize>,
     pub structural_differences: Vec<AatStructuralDifference>,
 }
 
@@ -30,6 +32,8 @@ pub struct AatStructuralDifference {
     pub b_block_kinds: BTreeMap<String, usize>,
     pub a_inline_kinds: BTreeMap<String, usize>,
     pub b_inline_kinds: BTreeMap<String, usize>,
+    pub a_semantic_counts: BTreeMap<String, usize>,
+    pub b_semantic_counts: BTreeMap<String, usize>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -45,6 +49,8 @@ struct AatSummary {
     visible_hash: String,
     block_kinds: BTreeMap<String, usize>,
     inline_kinds: BTreeMap<String, usize>,
+    semantic_totals: BTreeMap<String, usize>,
+    semantic_counts: BTreeMap<String, usize>,
 }
 
 pub fn compare_aat_dirs(a: &Path, b: &Path) -> Result<AatCompareSummary> {
@@ -53,6 +59,8 @@ pub fn compare_aat_dirs(a: &Path, b: &Path) -> Result<AatCompareSummary> {
     let keys_a = a.keys().cloned().collect::<BTreeSet<_>>();
     let keys_b = b.keys().cloned().collect::<BTreeSet<_>>();
     let common = keys_a.intersection(&keys_b).cloned().collect::<Vec<_>>();
+    let a_semantic_totals = semantic_totals(a.values());
+    let b_semantic_totals = semantic_totals(b.values());
     let mut structural_differences = Vec::new();
 
     for key in &common {
@@ -70,6 +78,8 @@ pub fn compare_aat_dirs(a: &Path, b: &Path) -> Result<AatCompareSummary> {
                 b_block_kinds: right.block_kinds.clone(),
                 a_inline_kinds: left.inline_kinds.clone(),
                 b_inline_kinds: right.inline_kinds.clone(),
+                a_semantic_counts: left.semantic_counts.clone(),
+                b_semantic_counts: right.semantic_counts.clone(),
             });
         }
     }
@@ -78,6 +88,8 @@ pub fn compare_aat_dirs(a: &Path, b: &Path) -> Result<AatCompareSummary> {
         common_aat: common.len(),
         only_a: keys_a.difference(&keys_b).count(),
         only_b: keys_b.difference(&keys_a).count(),
+        a_semantic_totals,
+        b_semantic_totals,
         structural_differences,
     })
 }
@@ -134,11 +146,15 @@ fn summarize(root: AatRoot) -> Result<AatSummary> {
     let structure_hash = hash_json(&root.blocks)?;
     let mut block_kinds = BTreeMap::new();
     let mut inline_kinds = BTreeMap::new();
+    let mut semantic_totals = BTreeMap::new();
+    let mut semantic_counts = BTreeMap::new();
     let mut visible = String::new();
     collect_blocks(
         &root.blocks,
         &mut block_kinds,
         &mut inline_kinds,
+        &mut semantic_totals,
+        &mut semantic_counts,
         &mut visible,
     );
     Ok(AatSummary {
@@ -147,6 +163,8 @@ fn summarize(root: AatRoot) -> Result<AatSummary> {
         visible_hash: hash_bytes(visible.as_bytes()),
         block_kinds,
         inline_kinds,
+        semantic_totals,
+        semantic_counts,
     })
 }
 
@@ -154,6 +172,8 @@ fn collect_blocks(
     blocks: &Value,
     block_kinds: &mut BTreeMap<String, usize>,
     inline_kinds: &mut BTreeMap<String, usize>,
+    semantic_totals: &mut BTreeMap<String, usize>,
+    semantic_counts: &mut BTreeMap<String, usize>,
     visible: &mut String,
 ) {
     let Some(blocks) = blocks.as_array() else {
@@ -163,14 +183,32 @@ fn collect_blocks(
     for block in blocks {
         if let Some(kind) = kind(block) {
             *block_kinds.entry(kind.to_owned()).or_insert(0) += 1;
+            count_both(semantic_totals, semantic_counts, format!("block:{kind}"));
+            if kind == "heading" {
+                if let Some(level) = block.get("level").and_then(Value::as_u64) {
+                    count_both(
+                        semantic_totals,
+                        semantic_counts,
+                        format!("heading_level:{level}"),
+                    );
+                }
+            }
         }
-        collect_inline_containers(block, inline_kinds, visible);
+        collect_inline_containers(
+            block,
+            inline_kinds,
+            semantic_totals,
+            semantic_counts,
+            visible,
+        );
     }
 }
 
 fn collect_inline_containers(
     value: &Value,
     inline_kinds: &mut BTreeMap<String, usize>,
+    semantic_totals: &mut BTreeMap<String, usize>,
+    semantic_counts: &mut BTreeMap<String, usize>,
     visible: &mut String,
 ) {
     for field in ["content", "children", "upper", "lower"] {
@@ -178,7 +216,13 @@ fn collect_inline_containers(
             continue;
         };
         for node in nodes {
-            collect_inline_node(node, inline_kinds, visible);
+            collect_inline_node(
+                node,
+                inline_kinds,
+                semantic_totals,
+                semantic_counts,
+                visible,
+            );
         }
     }
 }
@@ -186,12 +230,22 @@ fn collect_inline_containers(
 fn collect_inline_node(
     node: &Value,
     inline_kinds: &mut BTreeMap<String, usize>,
+    semantic_totals: &mut BTreeMap<String, usize>,
+    semantic_counts: &mut BTreeMap<String, usize>,
     visible: &mut String,
 ) {
     let Some(kind) = kind(node) else {
         return;
     };
     *inline_kinds.entry(kind.to_owned()).or_insert(0) += 1;
+    count_both(semantic_totals, semantic_counts, format!("inline:{kind}"));
+    if let Some(provenance) = node.get("x-provenance").and_then(Value::as_str) {
+        count_both(
+            semantic_totals,
+            semantic_counts,
+            format!("provenance:{provenance}"),
+        );
+    }
 
     match kind {
         "text" => {
@@ -203,20 +257,65 @@ fn collect_inline_node(
             if let Some(base) = node.get("base").and_then(Value::as_str) {
                 visible.push_str(base);
             }
+            if let Some(reading) = node.get("reading").and_then(Value::as_str) {
+                increment(semantic_counts, format!("ruby_reading:{reading}"));
+            }
         }
         "gaiji" => {
             let resolved = node.get("resolved").and_then(Value::as_str).unwrap_or("");
             if resolved.is_empty() {
+                count_both(
+                    semantic_totals,
+                    semantic_counts,
+                    "gaiji_unresolved".to_owned(),
+                );
                 if let Some(description) = node.get("description").and_then(Value::as_str) {
                     visible.push_str(description);
+                    increment(semantic_counts, format!("gaiji_description:{description}"));
                 }
             } else {
+                count_both(
+                    semantic_totals,
+                    semantic_counts,
+                    "gaiji_resolved".to_owned(),
+                );
                 visible.push_str(resolved);
             }
         }
         _ => {}
     }
-    collect_inline_containers(node, inline_kinds, visible);
+    collect_inline_containers(
+        node,
+        inline_kinds,
+        semantic_totals,
+        semantic_counts,
+        visible,
+    );
+}
+
+fn semantic_totals<'a>(
+    summaries: impl IntoIterator<Item = &'a AatSummary>,
+) -> BTreeMap<String, usize> {
+    let mut out = BTreeMap::new();
+    for summary in summaries {
+        for (key, value) in &summary.semantic_totals {
+            *out.entry(key.clone()).or_insert(0) += value;
+        }
+    }
+    out
+}
+
+fn count_both(
+    totals: &mut BTreeMap<String, usize>,
+    details: &mut BTreeMap<String, usize>,
+    key: String,
+) {
+    increment(totals, key.clone());
+    increment(details, key);
+}
+
+fn increment(counts: &mut BTreeMap<String, usize>, key: String) {
+    *counts.entry(key).or_insert(0) += 1;
 }
 
 fn kind(value: &Value) -> Option<&str> {

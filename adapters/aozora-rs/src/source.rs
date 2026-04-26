@@ -19,6 +19,7 @@ pub struct DecodedSource {
 #[derive(Debug, Clone, Copy)]
 pub struct BodySelection<'a> {
     pub validation_body: &'a str,
+    pub found_separators: bool,
     pub elapsed: Duration,
 }
 
@@ -55,9 +56,11 @@ pub fn decode_source_bytes(bytes: &[u8]) -> Result<DecodedSource> {
 
 pub fn select_body(decoded: &DecodedSource) -> BodySelection<'_> {
     let start = Instant::now();
-    let validation_body = trim_colophon(body_text(&decoded.text));
+    let body = body_text(&decoded.text);
+    let validation_body = trim_colophon(body.text);
     BodySelection {
         validation_body,
+        found_separators: body.found_separators,
         elapsed: start.elapsed(),
     }
 }
@@ -77,9 +80,15 @@ pub(crate) fn trim_colophon(body: &str) -> &str {
     &body[..body_end]
 }
 
-pub(crate) fn body_text(text: &str) -> &str {
+pub(crate) struct BodyText<'a> {
+    pub text: &'a str,
+    pub found_separators: bool,
+}
+
+pub(crate) fn body_text(text: &str) -> BodyText<'_> {
     let mut separator_count = 0;
     let mut body_start = 0;
+    let mut found_separators = false;
     let mut offset = 0;
     for line in text.split_inclusive('\n') {
         let trimmed = line.trim_end_matches(['\r', '\n']);
@@ -87,12 +96,16 @@ pub(crate) fn body_text(text: &str) -> &str {
             separator_count += 1;
             if separator_count == 2 {
                 body_start = offset + line.len();
+                found_separators = true;
                 break;
             }
         }
         offset += line.len();
     }
-    &text[body_start..]
+    BodyText {
+        text: &text[body_start..],
+        found_separators,
+    }
 }
 
 pub(crate) fn starts_with_separator(text: &str) -> bool {
@@ -191,6 +204,21 @@ mod tests {
 
         let selection = select_body(&decoded);
         assert_eq!(selection.validation_body, "本文\n");
+        assert!(selection.found_separators);
+    }
+
+    #[test]
+    fn reports_when_body_separators_are_missing() {
+        let decoded = DecodedSource {
+            text: "題名\n著者\n本文\n".to_owned(),
+            encoding: "utf-8",
+            source_hash: "sha256:test".to_owned(),
+            source_bytes: 20,
+        };
+
+        let selection = select_body(&decoded);
+        assert_eq!(selection.validation_body, "題名\n著者\n本文\n");
+        assert!(!selection.found_separators);
     }
 
     #[test]

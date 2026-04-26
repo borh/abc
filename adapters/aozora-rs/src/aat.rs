@@ -478,6 +478,7 @@ mod tests {
         let body = "吾輩《わがはい》は猫である。\n";
         let parsed = parse_with_aozora_rs(BodySelection {
             validation_body: body,
+            found_separators: false,
             elapsed: Duration::ZERO,
         })
         .unwrap();

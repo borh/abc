@@ -1,15 +1,15 @@
 {
-  "generated_at": "2026-04-26T04:40:32Z",
+  "generated_at": "2026-04-26T04:45:38Z",
   "corpus_hash": "sha256:25f5edcfab0f7b856cb24e5088de6ab68a61359eabfddb4b3add92049b09ce67",
   "aozora2": {
     "name": "aozora2",
-    "seconds": 17.616564,
+    "seconds": 18.622834,
     "reports": 17894,
     "failures": 0
   },
   "aozora_rs": {
     "name": "aozora-rs",
-    "seconds": 28.654124,
+    "seconds": 26.126588,
     "reports": 17894,
     "failures": 0
   },
@@ -24,342 +24,342 @@
   "aozora_rs_metrics": {
     "adapter": "aozora-rs",
     "works": 17894,
-    "fallbacks": 360,
+    "fallbacks": 362,
     "stage_totals_ms": {
-      "aat_build": 42856.7447520001,
-      "body_selection": 539.7793739999988,
-      "decode": 2223.677325000005,
-      "fallback_build": 2902.6826739999983,
-      "projection_check": 12727.038482000029,
-      "retokenize": 2275.2437840000184,
-      "scopenize": 1323.2215869999968,
-      "tokenize": 8123.249452999974
+      "aat_build": 43305.11488300002,
+      "body_selection": 515.5664059999992,
+      "decode": 2251.805161000001,
+      "fallback_build": 2851.537816999999,
+      "projection_check": 12794.606451000076,
+      "retokenize": 2292.8349300000086,
+      "scopenize": 1326.5148990000032,
+      "tokenize": 7977.419350999988
     },
     "node_totals": {
-      "parser": 2439635,
-      "parser_normalized": 4544771,
-      "regex_fallback": 360,
-      "regex_supplement": 1427436
+      "parser": 2480774,
+      "parser_normalized": 4603824,
+      "regex_fallback": 362,
+      "regex_supplement": 1400735
     },
     "slowest_works": [
       {
         "work_id": "001529_50685",
-        "total_ms": 604.403448,
+        "total_ms": 566.038684,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 139.394476,
-          "body_selection": 1.363999,
-          "decode": 6.8422350000000005,
-          "fallback_build": 115.479599,
-          "projection_check": 82.77942300000001,
-          "retokenize": 46.162148,
-          "scopenize": 20.944471,
-          "tokenize": 191.437097
+          "aat_build": 105.966856,
+          "body_selection": 2.399899,
+          "decode": 7.117528,
+          "fallback_build": 116.631653,
+          "projection_check": 87.733965,
+          "retokenize": 42.683848000000005,
+          "scopenize": 16.453526,
+          "tokenize": 187.051409
         }
       },
       {
         "work_id": "000311_2012",
-        "total_ms": 249.09097200000002,
+        "total_ms": 249.571483,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 13.286943,
-          "body_selection": 2.154962,
-          "decode": 6.141501,
-          "fallback_build": 33.067412999999995,
-          "projection_check": 34.74166,
-          "retokenize": 2.51227,
-          "scopenize": 1.18892,
-          "tokenize": 155.99730300000002
-        }
-      },
-      {
-        "work_id": "000118_1745",
-        "total_ms": 249.05900199999996,
-        "dominant_stage": "aat_build",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 58.054552,
-          "body_selection": 0.598885,
-          "decode": 3.188794,
-          "fallback_build": 52.755294,
-          "projection_check": 42.528928,
-          "retokenize": 33.799118,
-          "scopenize": 15.274747,
-          "tokenize": 42.858684
+          "aat_build": 17.163781,
+          "body_selection": 1.880184,
+          "decode": 6.476163,
+          "fallback_build": 32.255689,
+          "projection_check": 36.714749,
+          "retokenize": 3.047883,
+          "scopenize": 1.221939,
+          "tokenize": 150.811095
         }
       },
       {
         "work_id": "001518_51731",
-        "total_ms": 228.827935,
+        "total_ms": 234.857212,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 11.408958,
-          "body_selection": 0.231168,
-          "decode": 1.313269,
-          "fallback_build": 10.125239,
-          "projection_check": 7.723908,
-          "retokenize": 3.543531,
-          "scopenize": 1.755096,
-          "tokenize": 192.726766
+          "aat_build": 13.186646,
+          "body_selection": 0.235768,
+          "decode": 1.13047,
+          "fallback_build": 11.891927,
+          "projection_check": 10.086311,
+          "retokenize": 3.4601699999999997,
+          "scopenize": 2.240771,
+          "tokenize": 192.625149
+        }
+      },
+      {
+        "work_id": "000118_1745",
+        "total_ms": 230.14015300000003,
+        "dominant_stage": "fallback_build",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 48.298519,
+          "body_selection": 0.677944,
+          "decode": 3.410481,
+          "fallback_build": 58.745408,
+          "projection_check": 36.751309000000006,
+          "retokenize": 30.522063,
+          "scopenize": 13.452913,
+          "tokenize": 38.281516
         }
       },
       {
         "work_id": "001562_56145",
-        "total_ms": 225.82961000000003,
+        "total_ms": 225.097378,
         "dominant_stage": "aat_build",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 74.34814100000001,
-          "body_selection": 1.854065,
-          "decode": 5.737324,
-          "fallback_build": 60.379094,
-          "projection_check": 44.434650999999995,
-          "retokenize": 16.275029,
-          "scopenize": 8.537461,
-          "tokenize": 14.263845
-        }
-      },
-      {
-        "work_id": "001562_56146",
-        "total_ms": 224.48605999999995,
-        "dominant_stage": "aat_build",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 57.07685,
-          "body_selection": 1.15956,
-          "decode": 5.321497,
-          "fallback_build": 50.084467,
-          "projection_check": 49.118624,
-          "retokenize": 14.940899,
-          "scopenize": 7.111733,
-          "tokenize": 39.67243
+          "aat_build": 93.577604,
+          "body_selection": 0.924252,
+          "decode": 3.895396,
+          "fallback_build": 42.211652,
+          "projection_check": 37.451274,
+          "retokenize": 22.036338,
+          "scopenize": 10.847175,
+          "tokenize": 14.153687
         }
       },
       {
         "work_id": "000810_52355",
-        "total_ms": 181.77568499999998,
+        "total_ms": 208.566783,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 6.924984,
-          "body_selection": 0.271098,
-          "decode": 1.29845,
-          "fallback_build": 8.61345,
-          "projection_check": 8.954248,
-          "retokenize": 1.486998,
-          "scopenize": 0.615425,
-          "tokenize": 153.611032
+          "aat_build": 8.465206,
+          "body_selection": 0.265348,
+          "decode": 1.291828,
+          "fallback_build": 11.772078,
+          "projection_check": 13.275094,
+          "retokenize": 1.916643,
+          "scopenize": 0.816693,
+          "tokenize": 170.763893
         }
       },
       {
         "work_id": "000077_1323",
-        "total_ms": 174.349264,
+        "total_ms": 199.908416,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 39.309633,
-          "body_selection": 0.375227,
-          "decode": 1.740926,
-          "fallback_build": 26.178179,
-          "projection_check": 20.209407,
-          "retokenize": 14.672212,
-          "scopenize": 6.680006,
-          "tokenize": 65.183674
+          "aat_build": 46.608533,
+          "body_selection": 0.382757,
+          "decode": 1.706175,
+          "fallback_build": 31.066289,
+          "projection_check": 26.176412,
+          "retokenize": 12.60533,
+          "scopenize": 8.186699,
+          "tokenize": 73.176221
         }
       },
       {
         "work_id": "001034_4823",
-        "total_ms": 166.61771600000003,
+        "total_ms": 188.742786,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 36.054750000000006,
-          "body_selection": 0.6242949999999999,
-          "decode": 1.931704,
-          "fallback_build": 25.529804,
-          "projection_check": 20.978361,
-          "retokenize": 13.178323,
-          "scopenize": 5.407747,
-          "tokenize": 62.912732
+          "aat_build": 46.897292,
+          "body_selection": 0.582235,
+          "decode": 1.961863,
+          "fallback_build": 25.661936,
+          "projection_check": 28.447832,
+          "retokenize": 12.316363,
+          "scopenize": 4.62434,
+          "tokenize": 68.25092500000001
         }
       },
       {
-        "work_id": "001185_45210",
-        "total_ms": 148.260324,
-        "dominant_stage": "tokenize",
+        "work_id": "001562_56146",
+        "total_ms": 185.217165,
+        "dominant_stage": "aat_build",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 8.272064,
-          "body_selection": 0.728454,
-          "decode": 2.097333,
-          "fallback_build": 6.118939999999999,
-          "projection_check": 9.173616,
-          "retokenize": 1.744885,
-          "scopenize": 0.868253,
-          "tokenize": 119.256779
+          "aat_build": 44.600271,
+          "body_selection": 1.948963,
+          "decode": 5.3796230000000005,
+          "fallback_build": 39.762234,
+          "projection_check": 38.944390000000006,
+          "retokenize": 15.422955,
+          "scopenize": 5.185925,
+          "tokenize": 33.972804000000004
         }
       },
       {
         "work_id": "000148_56923",
-        "total_ms": 146.127154,
+        "total_ms": 169.11737599999998,
         "dominant_stage": "aat_build",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 39.645781,
-          "body_selection": 0.691875,
-          "decode": 2.2623919999999997,
-          "fallback_build": 28.113033,
-          "projection_check": 30.997971,
-          "retokenize": 16.417147,
-          "scopenize": 8.68408,
-          "tokenize": 19.314874999999997
+          "aat_build": 47.985432,
+          "body_selection": 0.657824,
+          "decode": 2.2682800000000003,
+          "fallback_build": 31.937772,
+          "projection_check": 32.978342,
+          "retokenize": 20.365292,
+          "scopenize": 9.545747,
+          "tokenize": 23.378687
         }
       },
       {
-        "work_id": "000255_45395",
-        "total_ms": 143.241095,
+        "work_id": "001185_45210",
+        "total_ms": 143.206362,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 9.660762,
-          "body_selection": 0.764853,
-          "decode": 2.433771,
-          "fallback_build": 12.423869,
-          "projection_check": 13.514012,
-          "retokenize": 2.41521,
-          "scopenize": 1.104091,
-          "tokenize": 100.924527
+          "aat_build": 8.438196999999999,
+          "body_selection": 0.6806540000000001,
+          "decode": 2.1142909999999997,
+          "fallback_build": 6.310065,
+          "projection_check": 8.917842,
+          "retokenize": 1.748985,
+          "scopenize": 1.015681,
+          "tokenize": 113.980647
+        }
+      },
+      {
+        "work_id": "000148_1746",
+        "total_ms": 125.47116699999998,
+        "dominant_stage": "tokenize",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 17.223229999999997,
+          "body_selection": 0.543656,
+          "decode": 2.0653020000000004,
+          "fallback_build": 15.008559,
+          "projection_check": 18.580708,
+          "retokenize": 8.742564,
+          "scopenize": 4.651879,
+          "tokenize": 58.655269
         }
       },
       {
         "work_id": "001562_33224",
-        "total_ms": 139.985071,
-        "dominant_stage": "projection_check",
+        "total_ms": 121.114884,
+        "dominant_stage": "aat_build",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 36.930733,
-          "body_selection": 0.918232,
-          "decode": 4.096317,
-          "fallback_build": 38.869396,
-          "projection_check": 39.543561,
-          "retokenize": 6.657716,
-          "scopenize": 5.5488550000000005,
-          "tokenize": 7.420261
-        }
-      },
-      {
-        "work_id": "000091_522",
-        "total_ms": 132.929317,
-        "dominant_stage": "tokenize",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 29.165384999999997,
-          "body_selection": 0.881892,
-          "decode": 3.003046,
-          "fallback_build": 30.359685,
-          "projection_check": 23.138183,
-          "retokenize": 8.934038,
-          "scopenize": 5.101029,
-          "tokenize": 32.346059000000004
+          "aat_build": 34.868986,
+          "body_selection": 0.863042,
+          "decode": 4.169894,
+          "fallback_build": 30.624073000000003,
+          "projection_check": 31.032769,
+          "retokenize": 7.577624,
+          "scopenize": 5.063225999999999,
+          "tokenize": 6.9152700000000005
         }
       },
       {
         "work_id": "000129_2084",
-        "total_ms": 126.11632300000002,
+        "total_ms": 119.87885400000002,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 24.427013,
-          "body_selection": 0.752044,
-          "decode": 3.73949,
-          "fallback_build": 24.477323,
-          "projection_check": 26.621815,
-          "retokenize": 3.68725,
-          "scopenize": 2.3913599999999997,
-          "tokenize": 40.020028
+          "aat_build": 23.750633,
+          "body_selection": 0.717834,
+          "decode": 3.641908,
+          "fallback_build": 24.869753000000003,
+          "projection_check": 26.782746,
+          "retokenize": 3.4316899999999997,
+          "scopenize": 2.28875,
+          "tokenize": 34.395540000000004
+        }
+      },
+      {
+        "work_id": "000255_45395",
+        "total_ms": 119.76946600000001,
+        "dominant_stage": "tokenize",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 9.328469,
+          "body_selection": 0.375247,
+          "decode": 1.733755,
+          "fallback_build": 10.520699,
+          "projection_check": 12.51902,
+          "retokenize": 2.27903,
+          "scopenize": 1.10365,
+          "tokenize": 81.90959600000001
+        }
+      },
+      {
+        "work_id": "000091_522",
+        "total_ms": 111.01217100000001,
+        "dominant_stage": "aat_build",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 27.478631,
+          "body_selection": 0.461577,
+          "decode": 2.2333499999999997,
+          "fallback_build": 21.965328,
+          "projection_check": 21.301404,
+          "retokenize": 8.595545,
+          "scopenize": 3.741607,
+          "tokenize": 25.234729
         }
       },
       {
         "work_id": "000148_782",
-        "total_ms": 121.09760400000002,
-        "dominant_stage": "tokenize",
+        "total_ms": 109.959072,
+        "dominant_stage": "aat_build",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 32.24738,
-          "body_selection": 0.945973,
-          "decode": 2.951936,
-          "fallback_build": 20.118047,
-          "projection_check": 21.944874,
-          "retokenize": 5.3997660000000005,
-          "scopenize": 2.7837970000000003,
-          "tokenize": 34.705830999999996
+          "aat_build": 32.414707,
+          "body_selection": 0.505236,
+          "decode": 2.907614,
+          "fallback_build": 19.366541,
+          "projection_check": 18.207132,
+          "retokenize": 5.151865,
+          "scopenize": 2.873465,
+          "tokenize": 28.532512
         }
       },
       {
-        "work_id": "001562_57875",
-        "total_ms": 118.483884,
-        "dominant_stage": "fallback_build",
+        "work_id": "000148_789",
+        "total_ms": 109.564725,
+        "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 28.504761,
-          "body_selection": 1.578017,
-          "decode": 5.133498,
-          "fallback_build": 31.319368,
-          "projection_check": 28.41671,
-          "retokenize": 10.306436,
-          "scopenize": 4.0940780000000006,
-          "tokenize": 9.131016
+          "aat_build": 24.951612,
+          "body_selection": 0.816893,
+          "decode": 3.030543,
+          "fallback_build": 21.247674,
+          "projection_check": 16.731545,
+          "retokenize": 3.873767,
+          "scopenize": 1.903613,
+          "tokenize": 37.009078
         }
       },
       {
         "work_id": "000148_761",
-        "total_ms": 117.251844,
+        "total_ms": 108.756703,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 15.735943,
-          "body_selection": 0.589345,
-          "decode": 1.9533240000000005,
-          "fallback_build": 11.283079,
-          "projection_check": 13.302803,
-          "retokenize": 4.453154,
-          "scopenize": 2.48506,
-          "tokenize": 67.44913600000001
+          "aat_build": 18.29429,
+          "body_selection": 0.324077,
+          "decode": 1.537577,
+          "fallback_build": 11.315611,
+          "projection_check": 12.371973,
+          "retokenize": 3.971186,
+          "scopenize": 1.750405,
+          "tokenize": 59.191584
         }
       },
       {
-        "work_id": "000989_350",
-        "total_ms": 111.52350100000001,
+        "work_id": "000255_47055",
+        "total_ms": 108.383215,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 22.658477,
-          "body_selection": 0.615455,
-          "decode": 2.205403,
-          "fallback_build": 13.907438,
-          "projection_check": 12.482349,
-          "retokenize": 6.0784009999999995,
-          "scopenize": 2.828687,
-          "tokenize": 50.747291
-        }
-      },
-      {
-        "work_id": "000148_58842",
-        "total_ms": 111.01810499999999,
-        "dominant_stage": "tokenize",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 13.66197,
-          "body_selection": 0.270818,
-          "decode": 1.354329,
-          "fallback_build": 15.939521,
-          "projection_check": 14.146836,
-          "retokenize": 6.577147,
-          "scopenize": 2.920536,
-          "tokenize": 56.146948
+          "aat_build": 20.333032,
+          "body_selection": 0.642724,
+          "decode": 3.2603020000000003,
+          "fallback_build": 20.65693,
+          "projection_check": 21.700641,
+          "retokenize": 4.59983,
+          "scopenize": 2.092692,
+          "tokenize": 35.097063999999996
         }
       }
     ]
@@ -369,9 +369,9 @@
     "only_a": 0,
     "only_b": 0,
     "structural_difference_count": 17894,
-    "visible_text_difference_count": 17625,
-    "normalized_visible_text_difference_count": 17026,
-    "same_visible_structural_difference_count": 269,
+    "visible_text_difference_count": 17547,
+    "normalized_visible_text_difference_count": 6606,
+    "same_visible_structural_difference_count": 347,
     "a_semantic_totals": {
       "block:paragraph": 17894,
       "gaiji_unresolved": 55809,
@@ -380,19 +380,19 @@
       "inline:text": 17894
     },
     "b_semantic_totals": {
-      "block:heading": 36081,
-      "block:paragraph": 2310379,
-      "gaiji_unresolved": 57920,
-      "heading_level:1": 3024,
-      "heading_level:2": 31014,
-      "heading_level:3": 2043,
-      "inline:gaiji": 57920,
-      "inline:ruby": 3457020,
-      "inline:style": 158025,
-      "inline:text": 4739237,
-      "provenance:parser_normalized": 4544771,
-      "provenance:regex_fallback": 360,
-      "provenance:regex_supplement": 1427436
+      "block:heading": 38714,
+      "block:paragraph": 2332149,
+      "gaiji_unresolved": 57976,
+      "heading_level:1": 3226,
+      "heading_level:2": 33441,
+      "heading_level:3": 2047,
+      "inline:gaiji": 57976,
+      "inline:ruby": 3465825,
+      "inline:style": 159497,
+      "inline:text": 4802397,
+      "provenance:parser_normalized": 4603824,
+      "provenance:regex_fallback": 362,
+      "provenance:regex_supplement": 1400735
     },
     "structural_differences": [
       {
@@ -400,9 +400,9 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": true,
         "a_structure_hash": "sha256:1607e9872cb2644d1411d0fe290bb3345827a859ac4286dbac28e7eac5d7f957",
-        "b_structure_hash": "sha256:cc4980cbe9794f51b65ab8394624a8265eea455581d9a0706ae0424a246062f8",
+        "b_structure_hash": "sha256:66b041a7f277a7d2c9dcd6ad03f38e6a150f93c1bcbd05dad9615517f5126d55",
         "a_visible_hash": "sha256:b588b8ae994e03c2defc9377c4c6a0270e88c7544d6a7050b254214946ac322a",
-        "b_visible_hash": "sha256:c9d5126943949540cb51b28fea4353c2b4d0b836485ab316d3ec9566964e65ad",
+        "b_visible_hash": "sha256:81c54d3e4bc2d6461517a230db25a00b4c013af4b3749fe61a2b439d4c34a981",
         "a_normalized_visible_hash": "sha256:844b00da5b71806547a22ad03faabe78485bcdcc4147fc7a16e0e9287485b8d5",
         "b_normalized_visible_hash": "sha256:cd6df4691ad07866ffd0d08a7cb2687d70267191d13d3b77cb5d324f04ef7b82",
         "a_block_kinds": {
@@ -419,7 +419,8 @@
         "b_inline_kinds": {
           "gaiji": 2,
           "ruby": 137,
-          "text": 218
+          "style": 1,
+          "text": 217
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -433,9 +434,10 @@
           "gaiji_unresolved": 2,
           "inline:gaiji": 2,
           "inline:ruby": 137,
-          "inline:text": 218,
-          "provenance:parser_normalized": 218,
-          "provenance:regex_supplement": 4
+          "inline:style": 1,
+          "inline:text": 217,
+          "provenance:parser_normalized": 216,
+          "provenance:regex_supplement": 6
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:7d742dd3a6bf9cae9e26086aafc9eaace0aee370f33df8084cfdfd1281dee79f",
@@ -451,9 +453,9 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": true,
         "a_structure_hash": "sha256:b12c0f5a90c8b02e189cb2c914ab9f8b364077c28900933acc603b4822196813",
-        "b_structure_hash": "sha256:0aa64ec926453b07d41aa6e1aef015a9c331c1814edcdbc2abb48d20033eb44b",
+        "b_structure_hash": "sha256:0822e234c4280dd14d7e3a48e52056bacc2688e1ad1452b62037e034908c06bf",
         "a_visible_hash": "sha256:0e01521e64d4926d3c0f832c0780c3db366ec7b3b435364767b9ecd2e0a91573",
-        "b_visible_hash": "sha256:2e3eae943472a94acf8c25c7ec79d9281b843407299cbef87756ce7c70ffc91c",
+        "b_visible_hash": "sha256:1431bd704699a80c5f84e99ddd69c4f550e349248c966bea6fce6d1fe4bde8a4",
         "a_normalized_visible_hash": "sha256:cf0c293fa6b20faaf89b4aa6262baf2e079b12d771a89a163ef42c6202755e26",
         "b_normalized_visible_hash": "sha256:f0e5f405698e84ba116184c2bc22267f9e138f729561b5311c6afafbbed6b414",
         "a_block_kinds": {
@@ -461,7 +463,7 @@
         },
         "b_block_kinds": {
           "heading": 7,
-          "paragraph": 174
+          "paragraph": 176
         },
         "a_inline_kinds": {
           "ruby": 2164,
@@ -469,8 +471,8 @@
         },
         "b_inline_kinds": {
           "ruby": 1361,
-          "style": 12,
-          "text": 760
+          "style": 13,
+          "text": 762
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -479,12 +481,12 @@
         },
         "b_semantic_counts": {
           "block:heading": 7,
-          "block:paragraph": 174,
+          "block:paragraph": 176,
           "heading_level:2": 7,
           "inline:ruby": 1361,
-          "inline:style": 12,
-          "inline:text": 760,
-          "provenance:parser_normalized": 741,
+          "inline:style": 13,
+          "inline:text": 762,
+          "provenance:parser_normalized": 742,
           "provenance:regex_supplement": 803
         },
         "a_semantic_hashes": {
@@ -499,18 +501,18 @@
       {
         "work_id": "000005_55215",
         "visible_text_differs": true,
-        "normalized_visible_text_differs": true,
+        "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:2a2b15bd277e94750f75c6b1911d368a97aced2bcd425c7142eefba9d5f4e362",
-        "b_structure_hash": "sha256:386a0d18ce44a036a07a176fa787b4294d15f72dca3390152eec535293cd8bfe",
+        "b_structure_hash": "sha256:8d5e2c21cee390f46e666c38e43adcb422eded6d3514e9199058ee885a75fd8d",
         "a_visible_hash": "sha256:925ee44110c575c88ac554df014ffe98d3aecf4b79a01b9ed411bde8423f4827",
-        "b_visible_hash": "sha256:9df5148e3aa2a67ea92ff0c71691024dba5d12e79f557d6cca116218b4c403e1",
+        "b_visible_hash": "sha256:c663dd78a08f6950917a090e86da57a78c41a771bfdc0396cbf173f09252f735",
         "a_normalized_visible_hash": "sha256:0876194eb89545920839ab1297853978648ca64c1d9dd29c545c4597d80e570c",
-        "b_normalized_visible_hash": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "b_normalized_visible_hash": "sha256:0876194eb89545920839ab1297853978648ca64c1d9dd29c545c4597d80e570c",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 3
+          "paragraph": 5
         },
         "a_inline_kinds": {
           "ruby": 3,
@@ -518,7 +520,7 @@
         },
         "b_inline_kinds": {
           "ruby": 3,
-          "text": 3
+          "text": 8
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -526,11 +528,10 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 3,
+          "block:paragraph": 5,
           "inline:ruby": 3,
-          "inline:text": 3,
-          "provenance:parser_normalized": 3,
-          "provenance:regex_supplement": 3
+          "inline:text": 8,
+          "provenance:parser_normalized": 8
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -544,18 +545,18 @@
       {
         "work_id": "000005_55216",
         "visible_text_differs": true,
-        "normalized_visible_text_differs": true,
+        "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:1b62b6acffa2bbf504351ecf0a704ae8f37d296e989da3fc6e9fe744770002c0",
-        "b_structure_hash": "sha256:99108cec36ec902ead06e5f333069a9b4ce7f9e41b63a70c136e55f3a3469d9f",
+        "b_structure_hash": "sha256:16389260731c00d16e9e2475abd11e964a7738a643e4799b388073d8a6ebf153",
         "a_visible_hash": "sha256:65712e14d6a06747495e3623a4e41abeb7911666cff9c0466fb3647d2be7d340",
-        "b_visible_hash": "sha256:a44e68dda9a8dca8afd6db22b9661de960508e34537a39634a2c014f1745ec59",
+        "b_visible_hash": "sha256:e37beedef60b05e940420259bbf70967f272ce8c303a8ae0514fd0d6b1627f0a",
         "a_normalized_visible_hash": "sha256:371922ba879bad8a1f9abacfeba6c56e471d5be476c268831ab48169a02f7c2e",
-        "b_normalized_visible_hash": "sha256:1146826c9afdb403a915da58378d87165cc6186544304c9d9f2ff5d523ca8ff8",
+        "b_normalized_visible_hash": "sha256:371922ba879bad8a1f9abacfeba6c56e471d5be476c268831ab48169a02f7c2e",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 8
+          "paragraph": 10
         },
         "a_inline_kinds": {
           "ruby": 7,
@@ -563,7 +564,7 @@
         },
         "b_inline_kinds": {
           "ruby": 7,
-          "text": 12
+          "text": 17
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -571,11 +572,10 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 8,
+          "block:paragraph": 10,
           "inline:ruby": 7,
-          "inline:text": 12,
-          "provenance:parser_normalized": 12,
-          "provenance:regex_supplement": 3
+          "inline:text": 17,
+          "provenance:parser_normalized": 17
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -583,24 +583,24 @@
         },
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-          "ruby_readings": "sha256:ea4d421d9db544fd3d618fbadc353e2b54cba95a840336de0b71d15207042d77"
+          "ruby_readings": "sha256:1f4a5f2140b85377c936734dfdd72f3a6a40fb3a024b27155afa21c5779df51d"
         }
       },
       {
         "work_id": "000005_55217",
         "visible_text_differs": true,
-        "normalized_visible_text_differs": true,
+        "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:15808fd1562649aa1d39c940d0e19ea5739e189e2c6e334ab855d92d634b7d17",
-        "b_structure_hash": "sha256:e7d9639283f03aed5ac80c155c2574c3179b315727b79c7d2cfb9326ecd406e1",
+        "b_structure_hash": "sha256:47057e60db94e08ea641284d79055d3fd668e042d9816c0b5ea3bba551a56ac7",
         "a_visible_hash": "sha256:79ef9f51c7b6ac825a9612f12bd8bd8078baf2f75cd3b16cb4b95cbd6512de54",
-        "b_visible_hash": "sha256:f011607ea666ace2b9d4d97c7f785c424e08e453ce6c98caabcc65f1f5b0ef6e",
+        "b_visible_hash": "sha256:5d825b35a173540f87047e6d1f2f60f44d25f8f94b6f1428d786c1ff81b57bc5",
         "a_normalized_visible_hash": "sha256:ec4a40cc7804798f4c65cc0337918ec14e9463c47abe2ad47705a89e471102d3",
-        "b_normalized_visible_hash": "sha256:4d0175220a94c333e60d70be70f3f50aed0d709da2ee47a3f756af6945603c03",
+        "b_normalized_visible_hash": "sha256:ec4a40cc7804798f4c65cc0337918ec14e9463c47abe2ad47705a89e471102d3",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 8
+          "paragraph": 10
         },
         "a_inline_kinds": {
           "ruby": 9,
@@ -608,7 +608,7 @@
         },
         "b_inline_kinds": {
           "ruby": 9,
-          "text": 17
+          "text": 20
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -616,11 +616,10 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 8,
+          "block:paragraph": 10,
           "inline:ruby": 9,
-          "inline:text": 17,
-          "provenance:parser_normalized": 17,
-          "provenance:regex_supplement": 1
+          "inline:text": 20,
+          "provenance:parser_normalized": 20
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -628,7 +627,7 @@
         },
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-          "ruby_readings": "sha256:a1cd75e36c70baf41d97defa84e11704d535edf5ec9bfc2082de6f75d3d29982"
+          "ruby_readings": "sha256:6ed900dcc945b17c3d47f50128bcce58fcb4f100b2103e284b01c70291f3180c"
         }
       },
       {
@@ -636,9 +635,9 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": true,
         "a_structure_hash": "sha256:bdc295618addf0375e181b94ab9dd00812397b00afe92d968e0434b249c8b328",
-        "b_structure_hash": "sha256:f994067a35a4a03a87e421be2eb849a78059411af5a8291c56a537e650fd88b5",
+        "b_structure_hash": "sha256:950d195a1ce7375caf0c4d7cadd9642edecc263498dafd339f9d3e5ffa844a13",
         "a_visible_hash": "sha256:ff676a4ce8e9bc85eef6654186e9d104ea3c2c1546f5a2a1d105037a4813a6dc",
-        "b_visible_hash": "sha256:2681b795cbf98b813d6d080669b553fbd251f34c40916c4e61b24a1d9ac9647f",
+        "b_visible_hash": "sha256:b351c05d4bbd6b74a85cf3170ff16cd2e0d7e971088343fa6f604e985bc05e33",
         "a_normalized_visible_hash": "sha256:bd640dbbc73ff722d48d43dcd4d0036f52aedbbbe607e76173dbaecc8c88b892",
         "b_normalized_visible_hash": "sha256:7cf43faef19431738dd1092bd559ab42bf79cf01ba575989f443930f5cab4b0c",
         "a_block_kinds": {
@@ -655,8 +654,8 @@
         "b_inline_kinds": {
           "gaiji": 1,
           "ruby": 41,
-          "style": 1,
-          "text": 58
+          "style": 2,
+          "text": 59
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -670,8 +669,8 @@
           "gaiji_unresolved": 1,
           "inline:gaiji": 1,
           "inline:ruby": 41,
-          "inline:style": 1,
-          "inline:text": 58,
+          "inline:style": 2,
+          "inline:text": 59,
           "provenance:parser_normalized": 57,
           "provenance:regex_supplement": 1
         },
@@ -689,16 +688,16 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": true,
         "a_structure_hash": "sha256:6b092c6df5db718c2177f0db55d0d64f48624e092e05389a6f81ae47b6774329",
-        "b_structure_hash": "sha256:ac1eaec5717b99d67cbecda13a89c752558317c602791b1fce60bdf933a52ee3",
+        "b_structure_hash": "sha256:249642c65c29587c3be9dd11928df7fd118bf20c1ca5b30972a6e7b99c451b37",
         "a_visible_hash": "sha256:b807c15684567873c8d793f2dc3eb8111938bde9cc4c09c02175cd7a5558f771",
-        "b_visible_hash": "sha256:2b49450c3ed930b007eaedd33602af0b919cb91ded073122d73ed716d77adbdf",
+        "b_visible_hash": "sha256:5a59e64a6a0e9de68afbef52d5aa9770dcb07a481ab182992cad14e6cb5f008b",
         "a_normalized_visible_hash": "sha256:3b3fa345c7858e16cbd575a0ae4a72fd88f89e3a1c0a5eab03d75ea276387cbf",
-        "b_normalized_visible_hash": "sha256:3825e2ac395ca77bc6c6933c893708ca5663b781dcc151bb61dac9c81e74586a",
+        "b_normalized_visible_hash": "sha256:ddf54e37dda94b722308ae9b76fb6f565c4fc8d0ed8287e8b68c7e729ae0ceb9",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 379
+          "paragraph": 381
         },
         "a_inline_kinds": {
           "gaiji": 72,
@@ -709,7 +708,7 @@
           "gaiji": 72,
           "ruby": 3989,
           "style": 5,
-          "text": 2504
+          "text": 2506
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -719,13 +718,13 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 379,
+          "block:paragraph": 381,
           "gaiji_unresolved": 72,
           "inline:gaiji": 72,
           "inline:ruby": 3989,
           "inline:style": 5,
-          "inline:text": 2504,
-          "provenance:parser_normalized": 2499,
+          "inline:text": 2506,
+          "provenance:parser_normalized": 2501,
           "provenance:regex_supplement": 1893
         },
         "a_semantic_hashes": {
@@ -742,16 +741,16 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": true,
         "a_structure_hash": "sha256:e358a33b2774712baf78fce2dfa055d0955ce628d8010c8b44684d00cb1a486d",
-        "b_structure_hash": "sha256:64d4c76f9d5038ae295bed689c5cc721f519108a520d350d57186168eb64d19b",
+        "b_structure_hash": "sha256:faa2f57a16b458f15ee5c39f781d9cc1890f4d9e2aac6a4d71378cf690154723",
         "a_visible_hash": "sha256:6b6ec4086b7a7e990f7fab360923800ece856e166655e18df93f37673866fd18",
-        "b_visible_hash": "sha256:a8edc8254924e595eeb5468979b7d1f099010582655c5b23465c5d4cd7174ded",
+        "b_visible_hash": "sha256:4f6c312e5a7111ff4a75a2cc08dc03066e81f5a84cef373c90722892cf867bd5",
         "a_normalized_visible_hash": "sha256:24c8bddd744b6b378d9a3d252f3a87e996deb3df036a4decf7bb95c38206d13e",
-        "b_normalized_visible_hash": "sha256:230c97cab5ef6668508ccd56dc07ead11ba529233ccfae90614589e7e9c04f49",
+        "b_normalized_visible_hash": "sha256:939bf53ad372004236e3539bfe0b0960c9e050c111b9ea856a373b4169f80e8d",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 88
+          "paragraph": 90
         },
         "a_inline_kinds": {
           "gaiji": 23,
@@ -761,7 +760,7 @@
         "b_inline_kinds": {
           "gaiji": 23,
           "ruby": 2787,
-          "text": 586
+          "text": 588
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -771,12 +770,12 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 88,
+          "block:paragraph": 90,
           "gaiji_unresolved": 23,
           "inline:gaiji": 23,
           "inline:ruby": 2787,
-          "inline:text": 586,
-          "provenance:parser_normalized": 586,
+          "inline:text": 588,
+          "provenance:parser_normalized": 588,
           "provenance:regex_supplement": 2303
         },
         "a_semantic_hashes": {
@@ -791,18 +790,18 @@
       {
         "work_id": "000006_3311",
         "visible_text_differs": true,
-        "normalized_visible_text_differs": true,
+        "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:515e4f4977c83a55fd59e88a7c4b940de843489f634431725a4d8476bbbd333f",
-        "b_structure_hash": "sha256:b6907307ffc21d7985cf386c79eefc38c09baaaf731ca6d15f05788e8b076b39",
+        "b_structure_hash": "sha256:5b5c92a16747b36162a180326ed9d478a0ec14be1bac7a5af92cb1746f39e704",
         "a_visible_hash": "sha256:c4470f8986a249e5c896b8f8f25b2c5bba847b35a963c8415a7868c829e7ba85",
-        "b_visible_hash": "sha256:21d7fc8a93b8455fdef42dd3998c278a1326df39c2614d12d1e616d7e630be42",
+        "b_visible_hash": "sha256:c9f91bbf217c522103c4e2166d6b450f103a573e3cf29eb6381646987dcf5855",
         "a_normalized_visible_hash": "sha256:d8c790244102dc474beb85c564509555e800df7966b1319d3aa89198def45df0",
-        "b_normalized_visible_hash": "sha256:cdae3416e7e3b68253acf6461c31c0cd056cb7c4b559ae8d0a58fb060d9d5ddb",
+        "b_normalized_visible_hash": "sha256:d8c790244102dc474beb85c564509555e800df7966b1319d3aa89198def45df0",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 15
+          "paragraph": 17
         },
         "a_inline_kinds": {
           "ruby": 1,
@@ -811,7 +810,7 @@
         "b_inline_kinds": {
           "ruby": 1,
           "style": 6,
-          "text": 21
+          "text": 23
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -819,11 +818,11 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 15,
+          "block:paragraph": 17,
           "inline:ruby": 1,
           "inline:style": 6,
-          "inline:text": 21,
-          "provenance:parser_normalized": 15
+          "inline:text": 23,
+          "provenance:parser_normalized": 17
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -837,18 +836,18 @@
       {
         "work_id": "000006_382",
         "visible_text_differs": true,
-        "normalized_visible_text_differs": true,
+        "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:0339cd321fd833944ef039f9eaf4aee30c6ccafad2e6566974ebd90acba3812e",
-        "b_structure_hash": "sha256:e70bf6244fd6658630f608f564462474cee40db0aeaf365b04c928563a320bd3",
+        "b_structure_hash": "sha256:6792a2cd67f9f4e9924ee906895abc36b68d86ae851908e2afb1c1def2951441",
         "a_visible_hash": "sha256:8925f6bc13316fbab38fe2a5d42414ee3d34cd0a5b8e1c009b73bcaa3bf65c0d",
-        "b_visible_hash": "sha256:de22557331370a709cc77d833dd9ec1c7343068f73d7a75cad3741b410bfd680",
+        "b_visible_hash": "sha256:ee5d9c6f2b87f3f0807e93eaa26ff3d3d08a1f25972bd63145f9641742f6f9b0",
         "a_normalized_visible_hash": "sha256:86e9b6e5597c7a81675f38cc37073329aed217f0fc01834a133644d3f88c4ab9",
-        "b_normalized_visible_hash": "sha256:d09af987a29433c06b861193ca3ddb028f31e00a44a1e8305960fe6ea8ce2660",
+        "b_normalized_visible_hash": "sha256:86e9b6e5597c7a81675f38cc37073329aed217f0fc01834a133644d3f88c4ab9",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 15
+          "paragraph": 17
         },
         "a_inline_kinds": {
           "ruby": 81,
@@ -857,7 +856,7 @@
         "b_inline_kinds": {
           "ruby": 81,
           "style": 6,
-          "text": 104
+          "text": 108
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -865,12 +864,11 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 15,
+          "block:paragraph": 17,
           "inline:ruby": 81,
           "inline:style": 6,
-          "inline:text": 104,
-          "provenance:parser_normalized": 98,
-          "provenance:regex_supplement": 2
+          "inline:text": 108,
+          "provenance:parser_normalized": 102
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -878,24 +876,24 @@
         },
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-          "ruby_readings": "sha256:d7ca3b8e22102729c32d99dc8ffc4505f79d33a90c91b9f3d0c9c499a0adb178"
+          "ruby_readings": "sha256:745c4eca7dd486586c5bd666bf0f560ccb9720ea82fb339f34f86d81c7ff19ee"
         }
       },
       {
         "work_id": "000006_383",
         "visible_text_differs": true,
-        "normalized_visible_text_differs": true,
+        "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:cd7af52f9da843401d1a9a8310c8de5b99034e4b21f6bbd189b644d3900a0731",
-        "b_structure_hash": "sha256:fef3bb3b268e1f5a610b9b6572dc72d683aba111c1074ec05a7836b13cc31db9",
+        "b_structure_hash": "sha256:c0ac488b1084c0c95fa2d57bd663233a511335b8b5d5fb6448db40b52e2515b5",
         "a_visible_hash": "sha256:713ad5a736a396e09c416436da65c693ad5f1ee3afd135d9ec8dcce89d95a73c",
-        "b_visible_hash": "sha256:122c65b6405157e68e796a21c385e47daa9a360d839517bfdd463bedd5aa2001",
+        "b_visible_hash": "sha256:9f79d7dfc84c3a3e5a5ca2682b65208bf40ea462da7c277db4c72db618e42d7a",
         "a_normalized_visible_hash": "sha256:309272350b0c64675f9916f997adbfce79170fb936b8de159e06517b3ddd860a",
-        "b_normalized_visible_hash": "sha256:0d1572923776cd694d93a03885aad7cfef522f385bc9a9babda5c506dc157bf5",
+        "b_normalized_visible_hash": "sha256:309272350b0c64675f9916f997adbfce79170fb936b8de159e06517b3ddd860a",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 33
+          "paragraph": 35
         },
         "a_inline_kinds": {
           "gaiji": 1,
@@ -904,9 +902,9 @@
         },
         "b_inline_kinds": {
           "gaiji": 1,
-          "ruby": 137,
+          "ruby": 138,
           "style": 5,
-          "text": 175
+          "text": 179
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -916,14 +914,14 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 33,
+          "block:paragraph": 35,
           "gaiji_unresolved": 1,
           "inline:gaiji": 1,
-          "inline:ruby": 137,
+          "inline:ruby": 138,
           "inline:style": 5,
-          "inline:text": 175,
-          "provenance:parser_normalized": 170,
-          "provenance:regex_supplement": 2
+          "inline:text": 179,
+          "provenance:parser_normalized": 174,
+          "provenance:regex_supplement": 1
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:f96147ffbd68b82a456bf8eb5741fc2579e37ced221c901193dd50662941d96a",
@@ -931,7 +929,7 @@
         },
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:f96147ffbd68b82a456bf8eb5741fc2579e37ced221c901193dd50662941d96a",
-          "ruby_readings": "sha256:d2c5a9b97a404464fcef6e5a15baa27ab1e1d7a4e8c07d97fc2b3038754c30ef"
+          "ruby_readings": "sha256:b1a18d9c177fcf069504405a0f06a0f252eadcaddbcd6b0d1f40d6cce362920d"
         }
       },
       {
@@ -939,16 +937,16 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": true,
         "a_structure_hash": "sha256:01a3cfce986e5d5ba942ef0adf6a01a174c42ff7dc095c58185634481028e810",
-        "b_structure_hash": "sha256:c826d07b1f0c7d71c81036f5c09ee90c5ece1983865a3cd95dac70cce5796fb6",
+        "b_structure_hash": "sha256:7f0acb8e8356c7f361a57add723bf9964233099deaa99d87cca3463b1ab571ad",
         "a_visible_hash": "sha256:cd818af0812c974d0b57b9ade38dba7d25a2c9309f810c00ab6691d5c52c3249",
-        "b_visible_hash": "sha256:4833f6a79675fb41b8a0d6232b3fe3ff53c0844e976ff1edc2d801e652b11e9c",
+        "b_visible_hash": "sha256:777001f711a06e6d3e6a571f33fa7569c62a7067957efd6abcb13e1c7e485f31",
         "a_normalized_visible_hash": "sha256:b3bbeb5cbe2edbe14cef53bf35cfc42155301a92d82c3e595231c63c1f2e9682",
-        "b_normalized_visible_hash": "sha256:940f4a43ea307ad44326d5886d44f6a84c39491c1220285e1d729f758df72a6d",
+        "b_normalized_visible_hash": "sha256:400b37133f5852730b1b477da1d2d8d292c89ccf0d04ddd221e25d8cd324881c",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 18
+          "paragraph": 20
         },
         "a_inline_kinds": {
           "gaiji": 2,
@@ -959,7 +957,7 @@
           "gaiji": 2,
           "ruby": 39,
           "style": 1,
-          "text": 54
+          "text": 59
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -969,14 +967,14 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 18,
+          "block:paragraph": 20,
           "gaiji_unresolved": 2,
           "inline:gaiji": 2,
           "inline:ruby": 39,
           "inline:style": 1,
-          "inline:text": 54,
-          "provenance:parser_normalized": 53,
-          "provenance:regex_supplement": 5
+          "inline:text": 59,
+          "provenance:parser_normalized": 58,
+          "provenance:regex_supplement": 2
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:8a700c92b9b79364d8ad4a9f3779fe6b8fe8e85c19e0c6dc2981f46aeaff5749",
@@ -984,7 +982,7 @@
         },
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:8a700c92b9b79364d8ad4a9f3779fe6b8fe8e85c19e0c6dc2981f46aeaff5749",
-          "ruby_readings": "sha256:87fe107a999e082068a45ca8384d92e0b17d9346d1610e6ca0850842d6a778be"
+          "ruby_readings": "sha256:3fb997dca12a5857a7fecfabcfb90147c983471fc270226f1710e892f47b3d8c"
         }
       },
       {
@@ -992,16 +990,16 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": true,
         "a_structure_hash": "sha256:e77402dfdb9ac923e68ff434fd48707ae8355f90aca59f5c6caf6fbfd288bfb7",
-        "b_structure_hash": "sha256:a725ccb4404941e6f428732cb10d43dd6770823c96758a4374821a8524770c7d",
+        "b_structure_hash": "sha256:6ecb6b2570ec74222c3eff24a1919eecd0c6cad809cce6292d85b6f0b5f26cd3",
         "a_visible_hash": "sha256:f70ef61c692ad6435eaa938d1c74f9d3293cc119bae9b86b9b4aa009792af25b",
-        "b_visible_hash": "sha256:041edbc6cea79929701185e309456861e4ac279bb939247165c77f45ba5f4154",
+        "b_visible_hash": "sha256:cf5c41d5ec2f77b3e4ec74258839a661c4b1d1fc6dbeff786938fd36c84c2701",
         "a_normalized_visible_hash": "sha256:fd816a374537d3cdd6990062ae8187beb0c9c1383f0d9abd139f5412ebc53fb9",
-        "b_normalized_visible_hash": "sha256:a47af2e442ba20c7b08e2a4fdaf7010dcb8f60f76c12e373a6ada784fd9382fd",
+        "b_normalized_visible_hash": "sha256:10d8f47cf41f5a1a8c24a855be4ba9316deb6a0f9eca5d2c361e4aff955b452a",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 36
+          "paragraph": 38
         },
         "a_inline_kinds": {
           "gaiji": 2,
@@ -1011,7 +1009,7 @@
         "b_inline_kinds": {
           "gaiji": 2,
           "ruby": 2,
-          "text": 49
+          "text": 56
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -1021,13 +1019,13 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 36,
+          "block:paragraph": 38,
           "gaiji_unresolved": 2,
           "inline:gaiji": 2,
           "inline:ruby": 2,
-          "inline:text": 49,
-          "provenance:parser_normalized": 49,
-          "provenance:regex_supplement": 3
+          "inline:text": 56,
+          "provenance:parser_normalized": 56,
+          "provenance:regex_supplement": 2
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:5e54b76c7c61358d09c3004ceace729736ad3d79b017c3541de6f6a4fd2efb23",
@@ -1043,16 +1041,16 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": true,
         "a_structure_hash": "sha256:5b12ec9a0edb8854697b9dbb9cf4a71d9889e5e040b4f4898f0206e80e788d85",
-        "b_structure_hash": "sha256:0cce67651776629dab1522034b81b166756a0913276e098aefa7e4992decbff4",
+        "b_structure_hash": "sha256:5f712d20ad63398c8a5e57ff593905a11b89060dec0b597a5b4af99531421e66",
         "a_visible_hash": "sha256:01c47660f1b43eaeecfc09631699427d4a45ab36ff17b80f8907e229a880aca8",
-        "b_visible_hash": "sha256:7f6c7161daf3da732a3151a04a5946c678ace20dd99b02bbf8cffc938c7dafdb",
+        "b_visible_hash": "sha256:fafdd7d6e046ed73ad5bd8e8af04b745c1bdff7d6b8df067d6e7b18ee4e422f4",
         "a_normalized_visible_hash": "sha256:d3cc03c3bc71499b30885f19b8b29e3709e820aac9273f4a802d1caa7db93bf7",
-        "b_normalized_visible_hash": "sha256:1c94fa744bbbfc97a20810dce87b4f8acb1739c538fc7d2b61688dad76a968c6",
+        "b_normalized_visible_hash": "sha256:625feb59909175cbc844d679ecf5d0e174688206d86109b1d2a2844ebbbe1e17",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 6
+          "paragraph": 8
         },
         "a_inline_kinds": {
           "gaiji": 1,
@@ -1061,9 +1059,9 @@
         },
         "b_inline_kinds": {
           "gaiji": 1,
-          "ruby": 52,
+          "ruby": 55,
           "style": 1,
-          "text": 46
+          "text": 80
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -1073,14 +1071,14 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 6,
+          "block:paragraph": 8,
           "gaiji_unresolved": 1,
           "inline:gaiji": 1,
-          "inline:ruby": 52,
+          "inline:ruby": 55,
           "inline:style": 1,
-          "inline:text": 46,
-          "provenance:parser_normalized": 45,
-          "provenance:regex_supplement": 26
+          "inline:text": 80,
+          "provenance:parser_normalized": 79,
+          "provenance:regex_supplement": 1
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:33e33ce0c5dd84fe520273d99fa38a3c7f3c5359a927602826a49bc0f5b4fd68",
@@ -1088,39 +1086,39 @@
         },
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:33e33ce0c5dd84fe520273d99fa38a3c7f3c5359a927602826a49bc0f5b4fd68",
-          "ruby_readings": "sha256:811181e979efb4240a022bab4788776be9875ba38fcf2d79dac19b7f6a620bef"
+          "ruby_readings": "sha256:48edd9eb55c32bbc359caa833783b3db3c016bdfbf17950fdd91d63011699a8f"
         }
       },
       {
         "work_id": "000006_47064",
         "visible_text_differs": true,
-        "normalized_visible_text_differs": true,
+        "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:8ef2dbd95be5bc4b7caf22daf6f9ad0e4e8f928ae15cd4f3030661b58a16f53f",
-        "b_structure_hash": "sha256:88edf6f040055cd2b636d14b8343779c0c18e4d7c9aef996dc1dcd617d43f78e",
+        "b_structure_hash": "sha256:44d8493d30e5c256bd93cf36877de3d9c13cf2ef02d7811204f57864a1549192",
         "a_visible_hash": "sha256:ce50f31747f620781f789d4d3822755f2fa26700c0f66b21f94157fd2e117395",
-        "b_visible_hash": "sha256:27739fd4cdc3b9bc685d71e8be56565e0ae9f59c76aeafb45909563cb4658258",
+        "b_visible_hash": "sha256:c2f79e547238065b78d91b7aa3a09214587ce9ff06a539be68d9466c642cc365",
         "a_normalized_visible_hash": "sha256:0076dcd5df372fad24e0e1e82254a28837ac0dcd754651217841ba0276270087",
-        "b_normalized_visible_hash": "sha256:7e84f0f7e18ee7b03d4c30a7dc52beacc9cc8cde296aeb9b913a5ef420e32734",
+        "b_normalized_visible_hash": "sha256:0076dcd5df372fad24e0e1e82254a28837ac0dcd754651217841ba0276270087",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 202
+          "paragraph": 204
         },
         "a_inline_kinds": {
           "text": 1
         },
         "b_inline_kinds": {
-          "text": 204
+          "text": 206
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 202,
-          "inline:text": 204,
-          "provenance:parser_normalized": 204
+          "block:paragraph": 204,
+          "inline:text": 206,
+          "provenance:parser_normalized": 206
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -1134,18 +1132,18 @@
       {
         "work_id": "000006_58810",
         "visible_text_differs": true,
-        "normalized_visible_text_differs": true,
+        "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:e1f9d319d63fddeddf97012b9f05da0f4bd1f2efaeeed8139b4b25d213e62c74",
-        "b_structure_hash": "sha256:f8918134d0fdcdd97659631629b187652ded6d4cb29d3a9e57167d960267a6a4",
+        "b_structure_hash": "sha256:6aa2bb0f4eb6889a763c8a57e4c23415951dd1ee737be3a576bc1819ca10b18f",
         "a_visible_hash": "sha256:6a77ff5b682264652981dda5fb0c292470fcb9f0e658878581f9e1880b64e4a8",
-        "b_visible_hash": "sha256:8379684283c941a94bd8a61487b1a3244cbbb5610eae8c373e0daaefa8c4c4fc",
+        "b_visible_hash": "sha256:9222348d174e83440ea02742c863c152b3ddaa546a112a06c06afea7420a9a4f",
         "a_normalized_visible_hash": "sha256:4bbd3f48f48eac4e22f580e24176c58ca5a650885f5dc1a1a1e0553df0938a2a",
-        "b_normalized_visible_hash": "sha256:63bccb50c5f3c4271cd4a7cbb6aaa476ca62666fac46b4d9833b9c11040f623a",
+        "b_normalized_visible_hash": "sha256:4bbd3f48f48eac4e22f580e24176c58ca5a650885f5dc1a1a1e0553df0938a2a",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 12
+          "paragraph": 14
         },
         "a_inline_kinds": {
           "ruby": 70,
@@ -1154,7 +1152,7 @@
         "b_inline_kinds": {
           "ruby": 70,
           "style": 1,
-          "text": 83
+          "text": 90
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -1162,12 +1160,11 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 12,
+          "block:paragraph": 14,
           "inline:ruby": 70,
           "inline:style": 1,
-          "inline:text": 83,
-          "provenance:parser_normalized": 82,
-          "provenance:regex_supplement": 5
+          "inline:text": 90,
+          "provenance:parser_normalized": 89
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -1175,7 +1172,7 @@
         },
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-          "ruby_readings": "sha256:8c9159ab99c60537d9a6eb51a983fd6e8c0a74ab4cb0430874780d5dc0b078e2"
+          "ruby_readings": "sha256:77ea63ace99b9afdd8695d3628b26f98e237a8fb793b2f810f5c173be91f75eb"
         }
       },
       {
@@ -1183,17 +1180,17 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": true,
         "a_structure_hash": "sha256:4aa96a170b4907d7e8d21db87538b74642f47d71197ea9d5e9e6ceddbde2d82c",
-        "b_structure_hash": "sha256:1efed1b31c3309cddaf115d56c960191254ecc4c6e204dbfd15da6dacd053ce6",
+        "b_structure_hash": "sha256:a808163ca968819a43182f9f55ccde028a7b28c9d155a1eb50b9580705b466d6",
         "a_visible_hash": "sha256:f7dcafa9b3602442e338dc0064eb14b51625a02c10fca2adef6663e6d2ec697c",
-        "b_visible_hash": "sha256:6ff45a02cd3ef7a90dfe28ccab6dbc89cec0af7212c73957ff71d5f0a7ac714a",
+        "b_visible_hash": "sha256:9017f3f0dd49ca4c8dd9e2bd05b7fef1602e64f7510487ac46c2f6f8ccefc727",
         "a_normalized_visible_hash": "sha256:86cf5950abfe25b171b4b23d46c435841a3217b831411bc0b7855f57b02d1d65",
-        "b_normalized_visible_hash": "sha256:bbaa3b8c9d2ffa911fd02c99e2495a5ad46a0af06492256b4434955d11c45885",
+        "b_normalized_visible_hash": "sha256:103e60723b3585dcf842d99edca9817621409c4482fa7943147f9e53ea0ce970",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "heading": 1,
-          "paragraph": 28
+          "heading": 2,
+          "paragraph": 29
         },
         "a_inline_kinds": {
           "gaiji": 2,
@@ -1204,7 +1201,7 @@
           "gaiji": 2,
           "ruby": 61,
           "style": 7,
-          "text": 99
+          "text": 101
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -1214,15 +1211,15 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:heading": 1,
-          "block:paragraph": 28,
+          "block:heading": 2,
+          "block:paragraph": 29,
           "gaiji_unresolved": 2,
-          "heading_level:2": 1,
+          "heading_level:2": 2,
           "inline:gaiji": 2,
           "inline:ruby": 61,
           "inline:style": 7,
-          "inline:text": 99,
-          "provenance:parser_normalized": 91,
+          "inline:text": 101,
+          "provenance:parser_normalized": 92,
           "provenance:regex_supplement": 11
         },
         "a_semantic_hashes": {
@@ -1237,18 +1234,18 @@
       {
         "work_id": "000006_901",
         "visible_text_differs": true,
-        "normalized_visible_text_differs": true,
+        "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:224deae90ff6e314602fa5719809853e34c5180e8c6962e8345f8670dd438968",
-        "b_structure_hash": "sha256:5a99b6c6adb24a6196c7c73649fd3b61a0ac04a9db857d7d701b9ddfd30593cd",
+        "b_structure_hash": "sha256:f8915fb928bda9d80a08040165fb8a7e8c4cbd6f5a1eebd259a6d8bb1162e402",
         "a_visible_hash": "sha256:75bef6275968204545ef6c78715435fca25c385d8cecfe39ab19424043e23bca",
-        "b_visible_hash": "sha256:61d1cac753cc56f98461bf6a667f4254e02f97a406273cccccd0fbd465bc3a58",
+        "b_visible_hash": "sha256:81b0fc4c735bdc477a8b3ca12c31d18f78eed8675ae9c0fc9ddb949a5d630fb3",
         "a_normalized_visible_hash": "sha256:13621658834b03fbe03c8aba7c9a5f790f9c0c145f908ac3ee93f6c89e73a1c5",
-        "b_normalized_visible_hash": "sha256:5ed90dca2ccf9d639593567a1c98d9bfba8635305494a9798ea76fcb87b02c5e",
+        "b_normalized_visible_hash": "sha256:13621658834b03fbe03c8aba7c9a5f790f9c0c145f908ac3ee93f6c89e73a1c5",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 12
+          "paragraph": 14
         },
         "a_inline_kinds": {
           "ruby": 5,
@@ -1257,7 +1254,7 @@
         "b_inline_kinds": {
           "ruby": 5,
           "style": 1,
-          "text": 18
+          "text": 21
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -1265,12 +1262,11 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 12,
+          "block:paragraph": 14,
           "inline:ruby": 5,
           "inline:style": 1,
-          "inline:text": 18,
-          "provenance:parser_normalized": 17,
-          "provenance:regex_supplement": 1
+          "inline:text": 21,
+          "provenance:parser_normalized": 20
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -1286,16 +1282,16 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": true,
         "a_structure_hash": "sha256:4c14259e076d87967da3527c8fb6f41b63dde5d75cdb5a0a32eea203c38ee3a3",
-        "b_structure_hash": "sha256:a940cf1bf57ea34582310c146b222005c1919c4ad508ca37aa257bdceece8ca6",
+        "b_structure_hash": "sha256:eb0104f6cc6cec5cf99aa98dc5785153a5bb3fa8350cf761412908cf9cfd801d",
         "a_visible_hash": "sha256:5b70c80b7ec6d3f6b5cb89b13c16a40ad8efbac7fa678198cd90d157ffc06943",
-        "b_visible_hash": "sha256:632ce862990964f128c860e782cdbb43d927567be4e30bc6c6155215727f7707",
+        "b_visible_hash": "sha256:1b680f8cdd0e6356ec7a30873f7723ba36b0eb6ed1b5c1ba11dae8d8a8f51b1a",
         "a_normalized_visible_hash": "sha256:28065b539f78aaca5b7e471e700ddaa3bbd7117a226cff84d5bcf93718982acc",
-        "b_normalized_visible_hash": "sha256:e5f54106eadbd64e02234e571023b55c9ef2c48b668379c9489ed59800b4b010",
+        "b_normalized_visible_hash": "sha256:fa369f45b5614903dce83337fe08f5e72c30cb850f9d21bf12c910ffe94c7363",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 237
+          "paragraph": 239
         },
         "a_inline_kinds": {
           "gaiji": 5,
@@ -1306,7 +1302,7 @@
           "gaiji": 5,
           "ruby": 41,
           "style": 4,
-          "text": 295
+          "text": 297
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -1316,13 +1312,13 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 237,
+          "block:paragraph": 239,
           "gaiji_unresolved": 5,
           "inline:gaiji": 5,
           "inline:ruby": 41,
           "inline:style": 4,
-          "inline:text": 295,
-          "provenance:parser_normalized": 291,
+          "inline:text": 297,
+          "provenance:parser_normalized": 293,
           "provenance:regex_supplement": 6
         },
         "a_semantic_hashes": {
@@ -1339,17 +1335,17 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": true,
         "a_structure_hash": "sha256:8d1b5d190de180b8add340d2f061c16feb0a5f72e8363eeededf3b9d99461330",
-        "b_structure_hash": "sha256:261c5a3f26901069a04f47e4de67a2a8ef476262d172acb1c908edfc560443d4",
+        "b_structure_hash": "sha256:ab6c21a325d451944f10135e6e32e650ced28b4bfc928343e083c13603a9769c",
         "a_visible_hash": "sha256:25b1536ce32a794d444e416515540dda33a6664c130cb18f173c824314e939da",
-        "b_visible_hash": "sha256:b45b7ce793d32630520deff3c6d9b2c69724bb6be5383a64bc5a9940d3aba934",
+        "b_visible_hash": "sha256:b6e6f72e7717a237e33b740c00a35d329b9c63f5cefa9a3fd3ff319315025d58",
         "a_normalized_visible_hash": "sha256:9441fe5a01326a97fa96646e4e585470f12c566b997651d62bb0e35604a7589a",
-        "b_normalized_visible_hash": "sha256:1bb650053ffc0d51e3aa9007eb0a152f564c45bfd356cdfbf112e789c0b038b3",
+        "b_normalized_visible_hash": "sha256:b9059e61b6f2ddd4b84010eba428076fb8153d942f320143dfa9565eaf32d1ce",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "heading": 6,
-          "paragraph": 226
+          "heading": 7,
+          "paragraph": 227
         },
         "a_inline_kinds": {
           "gaiji": 6,
@@ -1360,7 +1356,7 @@
           "gaiji": 6,
           "ruby": 40,
           "style": 7,
-          "text": 292
+          "text": 294
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -1370,15 +1366,15 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:heading": 6,
-          "block:paragraph": 226,
+          "block:heading": 7,
+          "block:paragraph": 227,
           "gaiji_unresolved": 6,
-          "heading_level:2": 6,
+          "heading_level:2": 7,
           "inline:gaiji": 6,
           "inline:ruby": 40,
           "inline:style": 7,
-          "inline:text": 292,
-          "provenance:parser_normalized": 279,
+          "inline:text": 294,
+          "provenance:parser_normalized": 280,
           "provenance:regex_supplement": 7
         },
         "a_semantic_hashes": {
@@ -1395,16 +1391,16 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": true,
         "a_structure_hash": "sha256:8a10597b526a6ccde1c6ed8e2e36e239b0d96ab637bdf6c64dda70bb7f81810f",
-        "b_structure_hash": "sha256:65f916d97bf73ba8aefcb2ebd8cf64dd6b227ab236ec4df71798a299be43f82e",
+        "b_structure_hash": "sha256:4e3d723e60bc79f19c38976e01be31cd6190603f3899e874d7b428f05b6903b6",
         "a_visible_hash": "sha256:ae204f37cb9506f38ab9cdb7959b9710fddb8511eb4e4b5ea3e0213db79c48b6",
-        "b_visible_hash": "sha256:b61d2bb5a748c017cea85f5480fb2210f650cd8dcae8c6d57f1c783afbd251b9",
+        "b_visible_hash": "sha256:e731c362d8151659171a0064a3ed8980adfb91d2f7993e6680b70cb562b59c54",
         "a_normalized_visible_hash": "sha256:997940f9bfcdad87c08c41697c91201a43d2fd687e41bf81a4b15d04eb86192d",
-        "b_normalized_visible_hash": "sha256:510537e55a11a3757547d47c456abe423ac2fc7ba150b9884ac3c14b00636983",
+        "b_normalized_visible_hash": "sha256:36f2ecf1f29ec0a14645370a87ea11f3d327cc056e16ad23a0c999bdd2a7af31",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 34
+          "paragraph": 36
         },
         "a_inline_kinds": {
           "gaiji": 1,
@@ -1415,7 +1411,7 @@
           "gaiji": 1,
           "ruby": 10,
           "style": 1,
-          "text": 45
+          "text": 49
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -1425,14 +1421,14 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 34,
+          "block:paragraph": 36,
           "gaiji_unresolved": 1,
           "inline:gaiji": 1,
           "inline:ruby": 10,
           "inline:style": 1,
-          "inline:text": 45,
-          "provenance:parser_normalized": 44,
-          "provenance:regex_supplement": 3
+          "inline:text": 49,
+          "provenance:parser_normalized": 48,
+          "provenance:regex_supplement": 1
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:fd957271691811049d95702466e9832bdfdbb22ef8e8f5d06f4d04a2802f902b",
@@ -1446,18 +1442,18 @@
       {
         "work_id": "000008_2688",
         "visible_text_differs": true,
-        "normalized_visible_text_differs": true,
+        "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:ff0f34b3c978fdaed3b1884c3a0365091b1c552fb3cfd9e93ac8969c8cc01a04",
-        "b_structure_hash": "sha256:740837fa298d21abf81c1abf521e5ffc659dc1835f8f777a5333d238ce979036",
+        "b_structure_hash": "sha256:2ffe1e7e76e4b4a46a4cd5eeb88b6803ce8b0d57554bbc6b549bff7fbe941564",
         "a_visible_hash": "sha256:16492e39c8bac292045334b903c1e77f27e4c5c898ab8627189c316964a58379",
-        "b_visible_hash": "sha256:ec3e5a98413aa0d5d4ee524bc726c99e2abafb95fbec9b03120f5d2c8cd48017",
+        "b_visible_hash": "sha256:612746a7de56f143a50f1ed0311f9baa5a27a4b67358e20f10ff4af556d90868",
         "a_normalized_visible_hash": "sha256:fe282b670573021bfd76c5bbefaa1f8bcffdad95f097b42f7a86850865cd648b",
-        "b_normalized_visible_hash": "sha256:c4e8045b977bf1ca66d4514b2e4807ecc477a54a70c8924c761840ae668385c5",
+        "b_normalized_visible_hash": "sha256:fe282b670573021bfd76c5bbefaa1f8bcffdad95f097b42f7a86850865cd648b",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 60
+          "paragraph": 62
         },
         "a_inline_kinds": {
           "ruby": 52,
@@ -1466,7 +1462,7 @@
         "b_inline_kinds": {
           "ruby": 52,
           "style": 1,
-          "text": 111
+          "text": 116
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -1474,12 +1470,11 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 60,
+          "block:paragraph": 62,
           "inline:ruby": 52,
           "inline:style": 1,
-          "inline:text": 111,
-          "provenance:parser_normalized": 110,
-          "provenance:regex_supplement": 3
+          "inline:text": 116,
+          "provenance:parser_normalized": 115
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -1493,18 +1488,18 @@
       {
         "work_id": "000008_407",
         "visible_text_differs": true,
-        "normalized_visible_text_differs": true,
+        "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:5abcad7822d014f403697e565087ccf78646acd2880d4c8ffd332fb70efd927f",
-        "b_structure_hash": "sha256:33471da5b47f0044af01a2f89fbd475b663df5b1a53d0e1c6e02e490adb8521c",
+        "b_structure_hash": "sha256:4605e788fb68548ff16e67a49b3b64ccb6d746775a1157c2b566cd13a0f4660d",
         "a_visible_hash": "sha256:68743d2f2e573dd71cddea95409dc2065d45b0678b5b510040d45fdeb1d55fda",
-        "b_visible_hash": "sha256:eaf01ec9335f1d5bf0fc8e59f6b9a1645101687f3759d92537d5ed7d16829cb3",
+        "b_visible_hash": "sha256:a807bb9b614d684f0dd2b981e57f279d4d1803179dc04b98c1e900e73c4c37ba",
         "a_normalized_visible_hash": "sha256:1e20412027bca1b0e43b552660a7f0e407d952d7a9e900377d7caab8eead12b8",
-        "b_normalized_visible_hash": "sha256:b9d10e87eeda9b3a94ce4fb88c027f7e07348dc3076deef7de5d5fa7a13843a2",
+        "b_normalized_visible_hash": "sha256:1e20412027bca1b0e43b552660a7f0e407d952d7a9e900377d7caab8eead12b8",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 19
+          "paragraph": 21
         },
         "a_inline_kinds": {
           "ruby": 17,
@@ -1513,7 +1508,7 @@
         "b_inline_kinds": {
           "ruby": 17,
           "style": 2,
-          "text": 27
+          "text": 40
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -1521,12 +1516,11 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 19,
+          "block:paragraph": 21,
           "inline:ruby": 17,
           "inline:style": 2,
-          "inline:text": 27,
-          "provenance:parser_normalized": 25,
-          "provenance:regex_supplement": 11
+          "inline:text": 40,
+          "provenance:parser_normalized": 38
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -1534,7 +1528,7 @@
         },
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-          "ruby_readings": "sha256:bd0f8f5e4092c4f6509662a3619956c7d48af1737eae07d7284f6f0d4f1025b4"
+          "ruby_readings": "sha256:865736d2f5b534b3e3fa10d37281b19e9236930e36e6af0a42e6b22847db72b9"
         }
       },
       {
@@ -1542,17 +1536,17 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": true,
         "a_structure_hash": "sha256:0072c52a8ef2821f1845a5c5dbc3b5e869e875c4fb6a31419194abd21c3caff6",
-        "b_structure_hash": "sha256:424bd9b6bec9ee57120076401729c3b85039f3339e511dff29fbe691867befcb",
+        "b_structure_hash": "sha256:cd9999e924f28efa44b2992e94bed0e7c0b0974f95fc0255664b6502218c6eb6",
         "a_visible_hash": "sha256:2c3efe3b959dca4f3ff0fb3e702779c5a0990aba80bb3bc0381f9e9ec6c1f4b8",
-        "b_visible_hash": "sha256:41b2ba6f54bc23553d90582551876f5032b2d17b20e6f950f3532228824320b8",
+        "b_visible_hash": "sha256:08fa8c4956d67ee995a7750816c4043047cd089426228409e5378970627e9664",
         "a_normalized_visible_hash": "sha256:bbe77c7209379d7c3c0a34c2e000e8ac4fd4b488b9b14189e6b8f72196f293a7",
-        "b_normalized_visible_hash": "sha256:eeeb1094aacf47ed4208976496734dbec92a7602701acf6ee0884be7666ebf5c",
+        "b_normalized_visible_hash": "sha256:6ef7700b5a68e9103f74d651f223679621076fd4c790cd752f5783a7630af8c5",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "heading": 14,
-          "paragraph": 1548
+          "heading": 15,
+          "paragraph": 1549
         },
         "a_inline_kinds": {
           "gaiji": 39,
@@ -1563,7 +1557,7 @@
           "gaiji": 39,
           "ruby": 117,
           "style": 11,
-          "text": 1747
+          "text": 1749
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -1573,15 +1567,15 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:heading": 14,
-          "block:paragraph": 1548,
+          "block:heading": 15,
+          "block:paragraph": 1549,
           "gaiji_unresolved": 39,
-          "heading_level:2": 14,
+          "heading_level:2": 15,
           "inline:gaiji": 39,
           "inline:ruby": 117,
           "inline:style": 11,
-          "inline:text": 1747,
-          "provenance:parser_normalized": 1722,
+          "inline:text": 1749,
+          "provenance:parser_normalized": 1723,
           "provenance:regex_supplement": 40
         },
         "a_semantic_hashes": {
@@ -1598,16 +1592,16 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": true,
         "a_structure_hash": "sha256:ad16b348c55510edab15c26e614365d27dca77df523f8feb2df636cac635dcbb",
-        "b_structure_hash": "sha256:35c370349f6e5551712bfc3a514aee101189e459446127ae5c1b24ad598fd8dd",
+        "b_structure_hash": "sha256:1ea005ea4179951685ea0e401bd4ea9a8a6f81bcb11617a944d070c2cba3f46e",
         "a_visible_hash": "sha256:004cc46492313bab748e4d5d28eb1dd1a6a1afdd425fe96733dc8a9b23ba1301",
-        "b_visible_hash": "sha256:b54c4a3e44b38e5efce5c90ce5add9ab186a5d9d797cc3a7f7c6d4cacbb1f54f",
+        "b_visible_hash": "sha256:01aa0fd5dec584c15070c08b8523e134c6e23c228a6ce9a5da32ddb8e4053f45",
         "a_normalized_visible_hash": "sha256:5b042527697e1c756f02e8384cacdb0f439491da220ee393fab5fe854933d57a",
-        "b_normalized_visible_hash": "sha256:dedf898dd36701b7c95ecc8b622e76a768b26e79adc2b1cf62a63a2c54ff94fc",
+        "b_normalized_visible_hash": "sha256:92ed1e59b9250b8c002421a566e571e3af5cb9df559d77f78853f5427bf35725",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 178
+          "paragraph": 180
         },
         "a_inline_kinds": {
           "gaiji": 2,
@@ -1618,7 +1612,7 @@
           "gaiji": 2,
           "ruby": 7,
           "style": 3,
-          "text": 194
+          "text": 196
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -1628,13 +1622,13 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 178,
+          "block:paragraph": 180,
           "gaiji_unresolved": 2,
           "inline:gaiji": 2,
           "inline:ruby": 7,
           "inline:style": 3,
-          "inline:text": 194,
-          "provenance:parser_normalized": 191,
+          "inline:text": 196,
+          "provenance:parser_normalized": 193,
           "provenance:regex_supplement": 2
         },
         "a_semantic_hashes": {
@@ -1651,16 +1645,16 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": true,
         "a_structure_hash": "sha256:7ec265c27cfc9dabb245a8c2b67249e030f663fbb881e51fd8ee03229a7dafa0",
-        "b_structure_hash": "sha256:8d016dae3b4010a9fddadf53463a312351bc0589dccb52df47324c9ee362263e",
+        "b_structure_hash": "sha256:88b0190ac6439034857dfdbe2df3a3f12286a7653b9b749f61220373bac99237",
         "a_visible_hash": "sha256:cab6ee839c79316f0fbc62f5e7efeb0a9ba1228ac3d6ce45d5470d87b800050c",
-        "b_visible_hash": "sha256:41f2f6fb6b328fa49c65f31fdb7810facadacfe02bb26aa243f3cc1461e2a668",
+        "b_visible_hash": "sha256:cd5c585385562d6717f5ff1a3346feb64dea143f7deb1e8497c06d09952213fc",
         "a_normalized_visible_hash": "sha256:18af8beb55491cb8c6e499e0651f14270cb819bc013edee9238311e8274cb200",
-        "b_normalized_visible_hash": "sha256:0ac08fbac3308143d4bada369b3ca898e899e17451be5374be5de2eefe68a65f",
+        "b_normalized_visible_hash": "sha256:0f8e8c454d27550027279d9e4d84ebbed9f8299f59fcd5a96c9f7b9edd5e7d89",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 198
+          "paragraph": 200
         },
         "a_inline_kinds": {
           "gaiji": 4,
@@ -1671,7 +1665,7 @@
           "gaiji": 4,
           "ruby": 20,
           "style": 1,
-          "text": 220
+          "text": 222
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -1681,13 +1675,13 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 198,
+          "block:paragraph": 200,
           "gaiji_unresolved": 4,
           "inline:gaiji": 4,
           "inline:ruby": 20,
           "inline:style": 1,
-          "inline:text": 220,
-          "provenance:parser_normalized": 219,
+          "inline:text": 222,
+          "provenance:parser_normalized": 221,
           "provenance:regex_supplement": 7
         },
         "a_semantic_hashes": {
@@ -1702,18 +1696,18 @@
       {
         "work_id": "000008_47382",
         "visible_text_differs": true,
-        "normalized_visible_text_differs": true,
+        "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:ba5ec53a264443771a1c17daf3cd28b36e5284a589d46ff63d6a59808a6383a8",
-        "b_structure_hash": "sha256:923d37cfb434a10ff80ca1bb677ca985d53547b7e2099c0779ef5c9aae2a75e1",
+        "b_structure_hash": "sha256:cc03d0388721ab7678d202acf436f72d113fb5b810f97cdc280908469ab12705",
         "a_visible_hash": "sha256:9c775985e5ac72f0a5b640f70145aac33b1416dedffd5a1e5c1df58b8cefc21a",
-        "b_visible_hash": "sha256:a4216e59275c0af7cecd8de0c93ffeb8a9fe57f638d568ca398e123b15931509",
+        "b_visible_hash": "sha256:c39b7a1db9b26b657d21e2065b20b629af7193cfe41815e151a71f8c1bff8098",
         "a_normalized_visible_hash": "sha256:2bf55e0456218715c9f4edef985957689c318e2fa51a85ab38d9883590272155",
-        "b_normalized_visible_hash": "sha256:a97267b787c993a4ba01665fbb8453f9830f82ab9ae72bdfce527d93b49b91b0",
+        "b_normalized_visible_hash": "sha256:2bf55e0456218715c9f4edef985957689c318e2fa51a85ab38d9883590272155",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 107
+          "paragraph": 109
         },
         "a_inline_kinds": {
           "ruby": 11,
@@ -1722,7 +1716,7 @@
         "b_inline_kinds": {
           "ruby": 11,
           "style": 2,
-          "text": 152
+          "text": 156
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -1730,12 +1724,11 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 107,
+          "block:paragraph": 109,
           "inline:ruby": 11,
           "inline:style": 2,
-          "inline:text": 152,
-          "provenance:parser_normalized": 150,
-          "provenance:regex_supplement": 2
+          "inline:text": 156,
+          "provenance:parser_normalized": 154
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -1743,7 +1736,7 @@
         },
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-          "ruby_readings": "sha256:c455c867578facd9e48072fe62bab1e7a9a3523f8ae194ea49e2f8ef50bbce1c"
+          "ruby_readings": "sha256:62de5707e77bb3d5b6288b617c6db16f65d24a64bd20a106c44da4705a5bd08c"
         }
       },
       {
@@ -1751,16 +1744,16 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": true,
         "a_structure_hash": "sha256:6c2fef2af713a1dd2d9c26d54305ad2211ea008c253065e9ccd50232798a7102",
-        "b_structure_hash": "sha256:01416b7c428c41e3094d73b1641b0070f86c99d4018b21d704d1fd183970f7e5",
+        "b_structure_hash": "sha256:7034da4b7d1f20760423100c603aa9502bfea699141b6340cfb6a90306ca938f",
         "a_visible_hash": "sha256:92b9d86dd88c90e07bf94efdba2e1399e26af02b1a6bc09fb6d5bbb9ec77bae6",
-        "b_visible_hash": "sha256:11cad8463359177bf11fb6f4765e1648bbe105ab1e6b46a520f68d362bf2b8ca",
+        "b_visible_hash": "sha256:6c77e05636410c3ca4e2ae76e8a4efc7d6362a76a690027be5946fc35713ffbb",
         "a_normalized_visible_hash": "sha256:b560108f185c2c3ae96ab203f4a17b14bce80af23fc494242b7f26c4f1828513",
-        "b_normalized_visible_hash": "sha256:59129777b152258360c1c700253d08108eede6f17052e4e509147cbc5e75efa4",
+        "b_normalized_visible_hash": "sha256:e8f63bb95f90f04979375bd4914702a8da392ddebd53e3342f13a0b4fc70a29b",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 186
+          "paragraph": 188
         },
         "a_inline_kinds": {
           "gaiji": 3,
@@ -1771,7 +1764,7 @@
           "gaiji": 3,
           "ruby": 21,
           "style": 8,
-          "text": 249
+          "text": 251
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -1781,13 +1774,13 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 186,
+          "block:paragraph": 188,
           "gaiji_unresolved": 3,
           "inline:gaiji": 3,
           "inline:ruby": 21,
           "inline:style": 8,
-          "inline:text": 249,
-          "provenance:parser_normalized": 241,
+          "inline:text": 251,
+          "provenance:parser_normalized": 243,
           "provenance:regex_supplement": 3
         },
         "a_semantic_hashes": {
@@ -1802,18 +1795,18 @@
       {
         "work_id": "000008_47384",
         "visible_text_differs": true,
-        "normalized_visible_text_differs": true,
+        "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:7a006cb85413027ee2a44b1cf3e0122b61d4405381c5e9e91e8f356abe3dddf3",
-        "b_structure_hash": "sha256:aefb3afca2c7f6043bd8804eec05fbd899e45317a8730fb910286dd43bc9ba50",
+        "b_structure_hash": "sha256:3dd3f055032fd27fde31efbfbbdaceceaf4a5dcf12af60b9f94fdfbba43e42c2",
         "a_visible_hash": "sha256:0c2db0ee613925d94c772fd4217e216584f005be8e3fedfed105de58aff0103e",
-        "b_visible_hash": "sha256:331fd5edd670bee0b24ce7edf92aa777e643e0cdad774f8d69c452adb76e8221",
+        "b_visible_hash": "sha256:27b8d20ba0f76a0d81a1f9f8628b7dbcf227f133edb8692ad4e026fae583bd89",
         "a_normalized_visible_hash": "sha256:21819c197e75d409814090cb06cb60c23152e1b192fb90246b309e192bd5c2a5",
-        "b_normalized_visible_hash": "sha256:d5469ebb983149390ba21a3cc60473c7b6bd60b53fda04fa6e8b44341d29ddc8",
+        "b_normalized_visible_hash": "sha256:21819c197e75d409814090cb06cb60c23152e1b192fb90246b309e192bd5c2a5",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 282
+          "paragraph": 284
         },
         "a_inline_kinds": {
           "ruby": 22,
@@ -1822,7 +1815,7 @@
         "b_inline_kinds": {
           "ruby": 22,
           "style": 6,
-          "text": 314
+          "text": 316
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -1830,11 +1823,11 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 282,
+          "block:paragraph": 284,
           "inline:ruby": 22,
           "inline:style": 6,
-          "inline:text": 314,
-          "provenance:parser_normalized": 308
+          "inline:text": 316,
+          "provenance:parser_normalized": 310
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -1899,35 +1892,35 @@
       {
         "work_id": "000008_58922",
         "visible_text_differs": true,
-        "normalized_visible_text_differs": true,
+        "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:d1b7096a2b41e540f1bdb92d3cc1cd28334262fbe49ebb9f86ad500998bb2748",
-        "b_structure_hash": "sha256:b610304df2ab765c613f8f0ef535e42926bd6288d1c8b30e7bd3e704752ac178",
+        "b_structure_hash": "sha256:e77f60c14c1cf23d0de7afef95193ea430700492df99fc75df8b216606da4789",
         "a_visible_hash": "sha256:07db3b684fe0f1b8411b9a718ec6a5bf9fef245bf854d3e235195d596d20b54d",
-        "b_visible_hash": "sha256:2448a828473d24ac57f2ef811cff886b4443559a88c419dd3a8ea20fc1466e41",
+        "b_visible_hash": "sha256:e83d83c173ba6ee71d41ad43123edf04f0a7f11aa65b87be7e58c08e8b60ca42",
         "a_normalized_visible_hash": "sha256:980d4c5e29512749545e31760f6dde8fb5aa902fb1ab9187d96290ab536b0a26",
-        "b_normalized_visible_hash": "sha256:bcf3730ac7e78851723c97aeca2d8ba620b46e18cd8b7df7c1f3019bd1c60717",
+        "b_normalized_visible_hash": "sha256:980d4c5e29512749545e31760f6dde8fb5aa902fb1ab9187d96290ab536b0a26",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 8
+          "paragraph": 10
         },
         "a_inline_kinds": {
           "text": 1
         },
         "b_inline_kinds": {
           "style": 3,
-          "text": 14
+          "text": 16
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 8,
+          "block:paragraph": 10,
           "inline:style": 3,
-          "inline:text": 14,
-          "provenance:parser_normalized": 11
+          "inline:text": 16,
+          "provenance:parser_normalized": 13
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -1941,18 +1934,18 @@
       {
         "work_id": "000008_697",
         "visible_text_differs": true,
-        "normalized_visible_text_differs": true,
+        "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:9c3b7f2b5382749b22e7a5e5fcf122a0c17e28003712abc1c272b978da605a56",
-        "b_structure_hash": "sha256:a23eb794d849a00bb695b2d0ae5046b9f5c53b99214a0b4b0ac53f7be20886ac",
+        "b_structure_hash": "sha256:7ab848025c233589ea112850c7ee9bba945a41b7ebf2d4b8cbbcc58343e3ad91",
         "a_visible_hash": "sha256:010820d5de16ddd5d03d9fbf268a565b53e674d72bac9241cac89c27a438de78",
-        "b_visible_hash": "sha256:5d433b53a39829f13f601c8a3211ef3f31edae42d7358b42a9a7fd01bcef7653",
+        "b_visible_hash": "sha256:7547b24625c63012f99a55c355b59371266f10d38819e509e243829c472df8fe",
         "a_normalized_visible_hash": "sha256:5a373553e0c235538cd0e6b33db83486d7497b93b2c7fa9b047d4013ad30ebb3",
-        "b_normalized_visible_hash": "sha256:632b3b230adc2ad6b3e1b27b5f30ad25016c7346fc0f91bf1af9d5d3055781a7",
+        "b_normalized_visible_hash": "sha256:5a373553e0c235538cd0e6b33db83486d7497b93b2c7fa9b047d4013ad30ebb3",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 189
+          "paragraph": 191
         },
         "a_inline_kinds": {
           "ruby": 329,
@@ -1961,7 +1954,7 @@
         "b_inline_kinds": {
           "ruby": 329,
           "style": 7,
-          "text": 532
+          "text": 534
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -1969,11 +1962,11 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 189,
+          "block:paragraph": 191,
           "inline:ruby": 329,
           "inline:style": 7,
-          "inline:text": 532,
-          "provenance:parser_normalized": 525
+          "inline:text": 534,
+          "provenance:parser_normalized": 527
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -1987,18 +1980,18 @@
       {
         "work_id": "000008_7",
         "visible_text_differs": true,
-        "normalized_visible_text_differs": true,
+        "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:9cfdb66ec6113a44ce3c14ccf6f29bfa38133cd47d20596447be40eea8eb8bd8",
-        "b_structure_hash": "sha256:caf706a94b28a7cdc8ceb5162252a2370f541558c2e4c6951315d18b0d10f586",
+        "b_structure_hash": "sha256:4bbbf56bcffe85d2f3fff938e495e41cc7ccb8a08d12ba65d206b2754f562279",
         "a_visible_hash": "sha256:09e40d6e5216973ec30b86646c4f1858ef38f9de0906a6ccfe37ec2242beade7",
-        "b_visible_hash": "sha256:5ce41411b8aeca885d3166d10f0f446eab6d3fdcdf7b105231fd76b7f3780aff",
+        "b_visible_hash": "sha256:a5bf7dca85d2b61e2f13945977de5c1f26a0bebbf4a986c427e9d4d85b04b153",
         "a_normalized_visible_hash": "sha256:b38a7d724bd06b030ab92885bd7802d85d2be6f007b8a1e9ba20758452b58c1a",
-        "b_normalized_visible_hash": "sha256:55dfd73b925ce81cd2e9c2608061c75123774bd4a621ab8ec3e23d09527851a1",
+        "b_normalized_visible_hash": "sha256:b38a7d724bd06b030ab92885bd7802d85d2be6f007b8a1e9ba20758452b58c1a",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 35
+          "paragraph": 37
         },
         "a_inline_kinds": {
           "ruby": 45,
@@ -2007,7 +2000,7 @@
         "b_inline_kinds": {
           "ruby": 45,
           "style": 1,
-          "text": 80
+          "text": 82
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -2015,11 +2008,11 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 35,
+          "block:paragraph": 37,
           "inline:ruby": 45,
           "inline:style": 1,
-          "inline:text": 80,
-          "provenance:parser_normalized": 79
+          "inline:text": 82,
+          "provenance:parser_normalized": 81
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -2032,20 +2025,20 @@
       },
       {
         "work_id": "000009_226",
-        "visible_text_differs": true,
-        "normalized_visible_text_differs": true,
+        "visible_text_differs": false,
+        "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:0a2dec8977cc3157d3fffe2b75eb55ade48bbfb698c0ee597116e902a7747543",
-        "b_structure_hash": "sha256:036d66cc44286b9e30605bac6760de6ee149c6b00010c88eaac9490b4ec2d88d",
+        "b_structure_hash": "sha256:1ee993bb23dc90ad99f48ce2f3d631cceb85b4ad35e0f2047abf8990d1580d28",
         "a_visible_hash": "sha256:071b1d889aa32e2c5768b4c3519705906888b0a0333d25a2d4eac4b9d66dc1b4",
-        "b_visible_hash": "sha256:8f905e39b692f5d0839f1eb95d9338b846f4db3a0af23810996cdf7d3a8d5173",
+        "b_visible_hash": "sha256:071b1d889aa32e2c5768b4c3519705906888b0a0333d25a2d4eac4b9d66dc1b4",
         "a_normalized_visible_hash": "sha256:cc3cb1a8143766c8de5f49252c0b4f5bafc6f523a004abaddf862eafc36dc4ee",
-        "b_normalized_visible_hash": "sha256:e8acfc72977fa4b894003caee4ca32893a304217758c15565f942f04db41e531",
+        "b_normalized_visible_hash": "sha256:cc3cb1a8143766c8de5f49252c0b4f5bafc6f523a004abaddf862eafc36dc4ee",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "heading": 2,
-          "paragraph": 290
+          "heading": 3,
+          "paragraph": 291
         },
         "a_inline_kinds": {
           "ruby": 5,
@@ -2055,7 +2048,7 @@
           "gaiji": 10,
           "ruby": 5,
           "style": 4,
-          "text": 299
+          "text": 301
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -2063,15 +2056,15 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:heading": 2,
-          "block:paragraph": 290,
+          "block:heading": 3,
+          "block:paragraph": 291,
           "gaiji_unresolved": 10,
-          "heading_level:2": 2,
+          "heading_level:2": 3,
           "inline:gaiji": 10,
           "inline:ruby": 5,
           "inline:style": 4,
-          "inline:text": 299,
-          "provenance:parser_normalized": 293
+          "inline:text": 301,
+          "provenance:parser_normalized": 294
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -2085,18 +2078,18 @@
       {
         "work_id": "000009_42929",
         "visible_text_differs": true,
-        "normalized_visible_text_differs": true,
+        "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:c6c046c5054f929da6218e8926bcf5ad033c829f77cdbca38dbfea8777a336c5",
-        "b_structure_hash": "sha256:29cce5672c417a5cfdc84f0db7c90e7bb8d10d9031baba5834f7a8bd0a945549",
+        "b_structure_hash": "sha256:580f0a8a3a686496e8ed0d6e2e93251f6a010216aea13e2474a984b4004ba1b8",
         "a_visible_hash": "sha256:e5235fa4a210b40adc74152d6cf1fcf716cf14232876635582c5ef7e53f9f4f2",
-        "b_visible_hash": "sha256:241fdde2aa18da8aaf63be202fdd54714944735f29d8bb465ab603965b1b4bd1",
+        "b_visible_hash": "sha256:2d26931a29891c07f6776a90dad60bb2175d6f592ec02e7aac17e1c5f75b21b1",
         "a_normalized_visible_hash": "sha256:94e34c15afbc3f2e93bbedb0acaf5802f7fe3c70903f3ecca68a60238f6c6d46",
-        "b_normalized_visible_hash": "sha256:c2e8ce677b0749745d7b48e96ba251376c5e54c5d88f6ca62dc53305e3279af4",
+        "b_normalized_visible_hash": "sha256:94e34c15afbc3f2e93bbedb0acaf5802f7fe3c70903f3ecca68a60238f6c6d46",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 326
+          "paragraph": 328
         },
         "a_inline_kinds": {
           "ruby": 113,
@@ -2105,7 +2098,7 @@
         "b_inline_kinds": {
           "ruby": 110,
           "style": 3,
-          "text": 439
+          "text": 442
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -2113,12 +2106,12 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 326,
+          "block:paragraph": 328,
           "inline:ruby": 110,
           "inline:style": 3,
-          "inline:text": 439,
-          "provenance:parser_normalized": 436,
-          "provenance:regex_supplement": 8
+          "inline:text": 442,
+          "provenance:parser_normalized": 439,
+          "provenance:regex_supplement": 7
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -2126,7 +2119,7 @@
         },
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-          "ruby_readings": "sha256:0700610287ed3ee084ffcc3ef7257e6c921cd07c4aafa944e832ef36ad9046f0"
+          "ruby_readings": "sha256:0f16dc20e16a899831ad9c847ec963ce06fa25284242d845b3ac28a60a68ffb2"
         }
       },
       {
@@ -2134,16 +2127,16 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": true,
         "a_structure_hash": "sha256:d19834689f9d0a3ed44f4a523d5d02a460639d0eb090576007dd0376ffa90a78",
-        "b_structure_hash": "sha256:05c986bf618d712ec6446ad8cd5b0f139a671fe96726a92cd71a3d9a7cb51eaa",
+        "b_structure_hash": "sha256:bf288bbdedc16eaac67b8242aa2cd88a61c2751545eea79144504a92f6fc73ad",
         "a_visible_hash": "sha256:7f6cd488505f4e9f9e41e0ed63505dc3f6513ac697904d5dc7e8a42a6d0fd51c",
-        "b_visible_hash": "sha256:4b44cbe7112d825a9944c59f8a8fa20b1e948ced5d47629ddcb64dbce1f640cf",
+        "b_visible_hash": "sha256:a9d88c2ac5d68cc0e0074184b30ea4598b6b01e40a1b942d0b2edbbbd2efb1d1",
         "a_normalized_visible_hash": "sha256:1f99531110da66481b0b836e66bc974e54981e17513655e40eca6eec6ac40f98",
-        "b_normalized_visible_hash": "sha256:e6d2006dd36606ae65601469b8c9447c82460ddd298d7c7b589d51aa779a7407",
+        "b_normalized_visible_hash": "sha256:fbad568b1657c9c4fd84c21c199b4e6684a1aa63e4c3a97dd315363a46cab1b1",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 244
+          "paragraph": 246
         },
         "a_inline_kinds": {
           "gaiji": 1,
@@ -2152,9 +2145,9 @@
         },
         "b_inline_kinds": {
           "gaiji": 1,
-          "ruby": 166,
+          "ruby": 167,
           "style": 5,
-          "text": 422
+          "text": 426
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -2164,14 +2157,14 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 244,
+          "block:paragraph": 246,
           "gaiji_unresolved": 1,
           "inline:gaiji": 1,
-          "inline:ruby": 166,
+          "inline:ruby": 167,
           "inline:style": 5,
-          "inline:text": 422,
-          "provenance:parser_normalized": 417,
-          "provenance:regex_supplement": 3
+          "inline:text": 426,
+          "provenance:parser_normalized": 421,
+          "provenance:regex_supplement": 2
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:c4a28e5d73100726fadf83d1e925ea5951c6d9fac1b8ca4a8509395ca7ebb75b",
@@ -2179,25 +2172,25 @@
         },
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:c4a28e5d73100726fadf83d1e925ea5951c6d9fac1b8ca4a8509395ca7ebb75b",
-          "ruby_readings": "sha256:1b70703ad80004f1fb7f6b6bfc6e1ee37610892353743fb89f1a53718cc33f2e"
+          "ruby_readings": "sha256:b19f7a2490a29b174bb557651ea75183b023d60ff52b4cb3dfb25f0db9100cf6"
         }
       },
       {
         "work_id": "000009_43056",
         "visible_text_differs": true,
-        "normalized_visible_text_differs": true,
+        "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:faf713054c1986f08a5b036a5c375d74533aa18a9f44df541a75e6996f5ea07b",
-        "b_structure_hash": "sha256:c744fbd6865fc988a9174d281418e3486acc565a331b0746e12fdf72252228cc",
+        "b_structure_hash": "sha256:c3cc9324a649d82bf99c69ab08e5ae6059322606dac63ad9e382d32da085b110",
         "a_visible_hash": "sha256:d4f087542456be4c05e5d6e757075b24038f86baf62a7eb49765c6e22e3f4c1b",
-        "b_visible_hash": "sha256:8a3c1ec5abfe22e27250f0b1045efd80365c462f5a0d12ff28213bceb7f6e717",
+        "b_visible_hash": "sha256:6e047187b6239fc54bb899543ce45710a494fd70a1bf228ba524e8fcaccee7da",
         "a_normalized_visible_hash": "sha256:4182234bcb98ffc28002d52b719c918857fa24a12f64e430f54bc0ee9909cd17",
-        "b_normalized_visible_hash": "sha256:ccdde5933028e783b128a58033883cc5eacb9d5dc6ebc1f614819069a6b0428a",
+        "b_normalized_visible_hash": "sha256:4182234bcb98ffc28002d52b719c918857fa24a12f64e430f54bc0ee9909cd17",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "heading": 3,
-          "paragraph": 77
+          "heading": 4,
+          "paragraph": 78
         },
         "a_inline_kinds": {
           "ruby": 176,
@@ -2206,7 +2199,7 @@
         "b_inline_kinds": {
           "ruby": 171,
           "style": 11,
-          "text": 259
+          "text": 261
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -2214,13 +2207,13 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:heading": 3,
-          "block:paragraph": 77,
-          "heading_level:2": 3,
+          "block:heading": 4,
+          "block:paragraph": 78,
+          "heading_level:2": 4,
           "inline:ruby": 171,
           "inline:style": 11,
-          "inline:text": 259,
-          "provenance:parser_normalized": 245,
+          "inline:text": 261,
+          "provenance:parser_normalized": 246,
           "provenance:regex_supplement": 4
         },
         "a_semantic_hashes": {
@@ -2235,18 +2228,18 @@
       {
         "work_id": "000009_43471",
         "visible_text_differs": true,
-        "normalized_visible_text_differs": true,
+        "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:a1668b58d652063c42d3b24e495aa2cbc052be8cb423015446b9c60221975b6a",
-        "b_structure_hash": "sha256:be2ea38cb22a2b1e6a9b7253a523d64446413ce270dc3aff9d6ea6e0d693ce4d",
+        "b_structure_hash": "sha256:616e9efecd89f0c5b8e08c941a8d9f47c4c51ac976ea0b49834f20186e1734d5",
         "a_visible_hash": "sha256:700cb5653cbcafa46347928b7f1c2d869693139ffaef5ab5d141588eff7e62de",
-        "b_visible_hash": "sha256:23c0e892eb6fa325ecd04c734c11d00457a5c03333cdf8bc8c5e003806f02fff",
+        "b_visible_hash": "sha256:49e905e4e6077e7652e5d9f8ae4444365548b96db93f434f9412ed4826b22daf",
         "a_normalized_visible_hash": "sha256:596f720c5c98fb03d7b332dacd0ccdd9293e9d43a828d84a86174174794676f0",
-        "b_normalized_visible_hash": "sha256:8479fa780c501d296f7797239e8f1d86a0f42907855abbe2f5e437ac9a36038b",
+        "b_normalized_visible_hash": "sha256:596f720c5c98fb03d7b332dacd0ccdd9293e9d43a828d84a86174174794676f0",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 176
+          "paragraph": 178
         },
         "a_inline_kinds": {
           "ruby": 249,
@@ -2255,7 +2248,7 @@
         "b_inline_kinds": {
           "ruby": 248,
           "style": 2,
-          "text": 423
+          "text": 425
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -2263,11 +2256,11 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 176,
+          "block:paragraph": 178,
           "inline:ruby": 248,
           "inline:style": 2,
-          "inline:text": 423,
-          "provenance:parser_normalized": 421,
+          "inline:text": 425,
+          "provenance:parser_normalized": 423,
           "provenance:regex_supplement": 3
         },
         "a_semantic_hashes": {
@@ -2282,18 +2275,18 @@
       {
         "work_id": "000009_43497",
         "visible_text_differs": true,
-        "normalized_visible_text_differs": true,
+        "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:de1f99b2d6497de4f51408ae45ff5c1600f4eff1e7cfc799236dee51f6475a76",
-        "b_structure_hash": "sha256:3f2699406509d60d4975bdddfdffa249025ba24de5ac46767ece1ce169546ced",
+        "b_structure_hash": "sha256:6fcc07c231e7ce5b83dbdbfd5b04f141a2011b89e3f57bfc77e8dbfc3930e029",
         "a_visible_hash": "sha256:0d87b07754efe115ad4915b0b1571915a3990d03b17adc746764877708f4770b",
-        "b_visible_hash": "sha256:1cf4f69a66a5d52bf50197dd07e5016ffb6558bf4cda72f644fdc6dd01b1f978",
+        "b_visible_hash": "sha256:67281e3a5c65a163630de2c8bf256b448029418537818faf1c8caa929f8fb057",
         "a_normalized_visible_hash": "sha256:902c3df30001b2b9bfcb1e8113afc06abaa9c0227327ccdb11d6dcb6ca4b8644",
-        "b_normalized_visible_hash": "sha256:a1e336fd05ffb5586c1ffa7989766bb4ef54c818db15827c3f333c032d9c9751",
+        "b_normalized_visible_hash": "sha256:902c3df30001b2b9bfcb1e8113afc06abaa9c0227327ccdb11d6dcb6ca4b8644",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 325
+          "paragraph": 327
         },
         "a_inline_kinds": {
           "ruby": 53,
@@ -2302,7 +2295,7 @@
         "b_inline_kinds": {
           "ruby": 51,
           "style": 5,
-          "text": 388
+          "text": 391
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -2310,12 +2303,12 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 325,
+          "block:paragraph": 327,
           "inline:ruby": 51,
           "inline:style": 5,
-          "inline:text": 388,
-          "provenance:parser_normalized": 383,
-          "provenance:regex_supplement": 2
+          "inline:text": 391,
+          "provenance:parser_normalized": 386,
+          "provenance:regex_supplement": 1
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -2323,24 +2316,24 @@
         },
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-          "ruby_readings": "sha256:cd92c6941a5aad5cb089df6a682b5a880b100fea79aa90ff67a789150483f1fc"
+          "ruby_readings": "sha256:a661ffc8558e6552fa8abd013f8f9f5fc2da79b1c53ba70312166f4be61c2207"
         }
       },
       {
         "work_id": "000009_43498",
         "visible_text_differs": true,
-        "normalized_visible_text_differs": true,
+        "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:dee12b26c5de15bbb31b484b78e84ab4164635a8caa2c14e8e3b55cb9daeca09",
-        "b_structure_hash": "sha256:2a6622b5a49668830860e61285a4822421e57580ca98368545a35c39d74fac09",
+        "b_structure_hash": "sha256:4443a7a5fa0a8381cba77391d34ba74aff318455e0657036b11c6e1663544110",
         "a_visible_hash": "sha256:08916cfe0a0b4a6f99cc2a54afa6bab53c4c76c140121ae8984d49eab7652aef",
-        "b_visible_hash": "sha256:227642928d8d2f20636054362834db218a05acccad3dae282ae24ec29010361f",
+        "b_visible_hash": "sha256:d26ef2363103b05b49ebe98235cef4a422585653717c4e2370aa9434e1e9914e",
         "a_normalized_visible_hash": "sha256:9b126e14491e2cd338a46d963efc63a5f93fc2d399aabc05c48033d314134df1",
-        "b_normalized_visible_hash": "sha256:50d3dc184e061b2f3da3dbea3321514893ec8d249b2d0ea89e7f10994567c2eb",
+        "b_normalized_visible_hash": "sha256:9b126e14491e2cd338a46d963efc63a5f93fc2d399aabc05c48033d314134df1",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 191
+          "paragraph": 193
         },
         "a_inline_kinds": {
           "ruby": 70,
@@ -2349,7 +2342,7 @@
         "b_inline_kinds": {
           "ruby": 66,
           "style": 11,
-          "text": 248
+          "text": 250
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -2357,11 +2350,11 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 191,
+          "block:paragraph": 193,
           "inline:ruby": 66,
           "inline:style": 11,
-          "inline:text": 248,
-          "provenance:parser_normalized": 237,
+          "inline:text": 250,
+          "provenance:parser_normalized": 239,
           "provenance:regex_supplement": 32
         },
         "a_semantic_hashes": {
@@ -2378,16 +2371,16 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": true,
         "a_structure_hash": "sha256:1700cfd20138a7cf82693c9185f85f335e6a49cf876a92945c7328605c940558",
-        "b_structure_hash": "sha256:61929b702c4cf8f933447f9ecff5768ca1d344ae2acb5566460e2ffb6f9b16d1",
+        "b_structure_hash": "sha256:86a44c2831973e4af3816a1fd08b71107c30fcea91853898e47697d3de69f1d1",
         "a_visible_hash": "sha256:b2c18902481e4aadfe4350588919958b9738dbbf0c18df3a71e381d6521ef722",
-        "b_visible_hash": "sha256:8ca7dfe32f18b640b18fdc301d66591237c724d7d5272be0eba9999b17b8fef2",
+        "b_visible_hash": "sha256:0ea745bff04b9629b8a293959ce182f7c8f97f165b5c1e16cecfd4cb8db5f44c",
         "a_normalized_visible_hash": "sha256:aed7755e2f11e06dc7e0e94126fe4999ba93710dd8cf307542cba3336fa857a3",
-        "b_normalized_visible_hash": "sha256:29612e3d394078413efe42724e48dbcdbd5643a335defed7867760cd55dc12a8",
+        "b_normalized_visible_hash": "sha256:d6a8fd70b7a908ad39515b8855a6a289e6bf4da202dd442bfc34b05d394503f6",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 184
+          "paragraph": 186
         },
         "a_inline_kinds": {
           "gaiji": 3,
@@ -2397,7 +2390,7 @@
         "b_inline_kinds": {
           "gaiji": 3,
           "ruby": 143,
-          "text": 324
+          "text": 327
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -2407,12 +2400,12 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 184,
+          "block:paragraph": 186,
           "gaiji_unresolved": 3,
           "inline:gaiji": 3,
           "inline:ruby": 143,
-          "inline:text": 324,
-          "provenance:parser_normalized": 324,
+          "inline:text": 327,
+          "provenance:parser_normalized": 327,
           "provenance:regex_supplement": 12
         },
         "a_semantic_hashes": {
@@ -2421,24 +2414,24 @@
         },
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:de8b0489fe2d3f48c12771931c4ac03bbc613255f0de1b14c087110e191c814f",
-          "ruby_readings": "sha256:4be61b1882c5433388c0f9344db3e90fface929b5a9c4f9f8880c16929bbd469"
+          "ruby_readings": "sha256:63e8680dca719a8f8da0a186d72cbf2a61efddf2669ae501006e302c6d69235a"
         }
       },
       {
         "work_id": "000009_43523",
         "visible_text_differs": true,
-        "normalized_visible_text_differs": true,
+        "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:4c83d03c13e8dafd589de0b6cdf6af45b2484dba3f8bb3ca7b69cc7011c9db0a",
-        "b_structure_hash": "sha256:5ad55bb62941fae186d7b9beb7cee37c46907ddb12b8b431fbc13ab63580e3be",
+        "b_structure_hash": "sha256:043b8eb806a1e470cc856fc2facb603ee1f9deadfdc6ebedb7e212cf37e4e053",
         "a_visible_hash": "sha256:986e664c9bbac2a6bbc6088597b547f9274c5a8c0c2d1b8f07f6c5f68b9d928a",
-        "b_visible_hash": "sha256:e3d91cf41856534c9bd60f84e72a823b4888000e0476e334fb7a95bb6fb9d18c",
+        "b_visible_hash": "sha256:a4857b7818d1de88c8bfea35e873840cca62f20081816ea01a724595d5bed5a3",
         "a_normalized_visible_hash": "sha256:6e17c795880d6962fdd342399cacaed7d482f3b10d50810161febe94bc261026",
-        "b_normalized_visible_hash": "sha256:363c288b93a99111beb2538bf3365d412a4f0c7856e2b9a29133fe2e986c817b",
+        "b_normalized_visible_hash": "sha256:6e17c795880d6962fdd342399cacaed7d482f3b10d50810161febe94bc261026",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 233
+          "paragraph": 235
         },
         "a_inline_kinds": {
           "ruby": 96,
@@ -2447,7 +2440,7 @@
         "b_inline_kinds": {
           "ruby": 96,
           "style": 3,
-          "text": 332
+          "text": 334
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -2455,11 +2448,11 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 233,
+          "block:paragraph": 235,
           "inline:ruby": 96,
           "inline:style": 3,
-          "inline:text": 332,
-          "provenance:parser_normalized": 329,
+          "inline:text": 334,
+          "provenance:parser_normalized": 331,
           "provenance:regex_supplement": 4
         },
         "a_semantic_hashes": {
@@ -2468,24 +2461,24 @@
         },
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-          "ruby_readings": "sha256:a419cb9c4e7d244610b07de52d12572451a7dd4646fbad81fc64b68198d2e173"
+          "ruby_readings": "sha256:d257a7ae182ddbce7f9aa778adc0bd089f830539f5d5d54353a44a0d9ccf108d"
         }
       },
       {
         "work_id": "000009_43524",
         "visible_text_differs": true,
-        "normalized_visible_text_differs": true,
+        "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:7fea6db5c01405544ef238e106f79145697779d17f6ce04908c7d2ffd98ad291",
-        "b_structure_hash": "sha256:80d2b27e68d776cbe5c5363ad686f538a7785b8397d42b55c067b3e1f27ce33d",
+        "b_structure_hash": "sha256:a6027e24073147b767fd9647aab715c91556ca8648ad6fc205254d1938706389",
         "a_visible_hash": "sha256:48ef89f621fc6496d0a234cc104476088cc8c21b19a033ef255fccf157cd87f2",
-        "b_visible_hash": "sha256:6da4c6cb755a233bcdb313e37d5c5bdd09fa005dddb1a02fa8746b307145d285",
+        "b_visible_hash": "sha256:1709783d5ed892c423e008a6609efc9edbb520f715be3b3e780d1d859eb164b2",
         "a_normalized_visible_hash": "sha256:20b932bd09183535663b28b0a5b5c592d86cd662eca26f02479329f8d344224d",
-        "b_normalized_visible_hash": "sha256:db3d18a4a699baba5d207f169e5489151cc5a33eb3e019448e511df8596cde98",
+        "b_normalized_visible_hash": "sha256:20b932bd09183535663b28b0a5b5c592d86cd662eca26f02479329f8d344224d",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 322
+          "paragraph": 324
         },
         "a_inline_kinds": {
           "ruby": 34,
@@ -2494,7 +2487,7 @@
         "b_inline_kinds": {
           "ruby": 34,
           "style": 3,
-          "text": 364
+          "text": 366
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -2502,11 +2495,11 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 322,
+          "block:paragraph": 324,
           "inline:ruby": 34,
           "inline:style": 3,
-          "inline:text": 364,
-          "provenance:parser_normalized": 361
+          "inline:text": 366,
+          "provenance:parser_normalized": 363
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -2522,16 +2515,16 @@
         "visible_text_differs": true,
         "normalized_visible_text_differs": true,
         "a_structure_hash": "sha256:82e907ad9da3fefd006d402ed47ceee7d4423509f496235c4618bfd9639a905d",
-        "b_structure_hash": "sha256:3ebaf5cc5601e37672e8384616159762f307f5dcc0b7c149f7f664337517e175",
+        "b_structure_hash": "sha256:9a99f9d9b561a19a62da1f9eb489a9d06ca833ee200c492223110e0bb6868469",
         "a_visible_hash": "sha256:df9d91782b6083b04e53b89a5c14f36ade62836b737bc63ecf39ccfac3c0ecd1",
-        "b_visible_hash": "sha256:f87f7ae2b969a52308fb3346d258b8de12b27dde5ba0d8731ba24971579481ac",
+        "b_visible_hash": "sha256:13f959bb047cec849084a242d59ec9046370dfecf3e7ea20405658b5a48b8b86",
         "a_normalized_visible_hash": "sha256:9b97d9267f7502212ea9295f755446221e713fdd74b91a2dce6265fe7ad5cc79",
-        "b_normalized_visible_hash": "sha256:b7068bf6cff1f831a6bc99417ae2a211ce8420aefc0c8b8ae8f3cdceaeaf6dd0",
+        "b_normalized_visible_hash": "sha256:00cc09d9388a6bf431f5c7fc8d5a09cd365aa5d97f974421edc2f8dedafd07fc",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 317
+          "paragraph": 319
         },
         "a_inline_kinds": {
           "gaiji": 2,
@@ -2542,7 +2535,7 @@
           "gaiji": 2,
           "ruby": 142,
           "style": 6,
-          "text": 470
+          "text": 473
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -2552,14 +2545,14 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 317,
+          "block:paragraph": 319,
           "gaiji_unresolved": 2,
           "inline:gaiji": 2,
           "inline:ruby": 142,
           "inline:style": 6,
-          "inline:text": 470,
-          "provenance:parser_normalized": 464,
-          "provenance:regex_supplement": 4
+          "inline:text": 473,
+          "provenance:parser_normalized": 467,
+          "provenance:regex_supplement": 3
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:b51076c90b13a137741b83b1189e0aa200faed55cc9b6dd1f645ba1c1a145409",
@@ -2567,24 +2560,24 @@
         },
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:b51076c90b13a137741b83b1189e0aa200faed55cc9b6dd1f645ba1c1a145409",
-          "ruby_readings": "sha256:c00aaea25f74b8837504322c7e228e9ca8e8935af8832c8150c4a24858f352ea"
+          "ruby_readings": "sha256:3d7734e069f27f9c43d9a8a33a8734d7576a8b8d72173e2da0fa65ca43b30954"
         }
       },
       {
         "work_id": "000009_50711",
-        "visible_text_differs": true,
-        "normalized_visible_text_differs": true,
+        "visible_text_differs": false,
+        "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:f008e30cb84d616d09254b44c79cb7d1f22e0d00bf74cee40002b1357ce569c1",
-        "b_structure_hash": "sha256:f9c776fa47fe309a486a1f458cfda7f8c03a3753fa638a3a66bd1b3372f269f6",
+        "b_structure_hash": "sha256:b8b955bb35ed483766ce4a6ec0d2425dbdca5ecf31808554728fb6ff1531d603",
         "a_visible_hash": "sha256:15e0933c30255e1814e9fecaf65b0aef86ed9a1d6e7d66196ce1e49e26ede3ef",
-        "b_visible_hash": "sha256:cb4cc1b3f6d81170386e7d0e3547fe6b4b57f596f5df289426e05d029163cc65",
+        "b_visible_hash": "sha256:15e0933c30255e1814e9fecaf65b0aef86ed9a1d6e7d66196ce1e49e26ede3ef",
         "a_normalized_visible_hash": "sha256:d96a762c631f3177fe2a4e19e7c766b7514593e4e3765f89b8c411673ced0f0d",
-        "b_normalized_visible_hash": "sha256:34d9b45eb601c23315c9e325102846feb270ea71e5627ae89bab9baa6afd0097",
+        "b_normalized_visible_hash": "sha256:d96a762c631f3177fe2a4e19e7c766b7514593e4e3765f89b8c411673ced0f0d",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 233
+          "paragraph": 235
         },
         "a_inline_kinds": {
           "ruby": 11,
@@ -2594,7 +2587,7 @@
           "gaiji": 8,
           "ruby": 11,
           "style": 2,
-          "text": 246
+          "text": 248
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -2602,13 +2595,13 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 233,
+          "block:paragraph": 235,
           "gaiji_unresolved": 8,
           "inline:gaiji": 8,
           "inline:ruby": 11,
           "inline:style": 2,
-          "inline:text": 246,
-          "provenance:parser_normalized": 244
+          "inline:text": 248,
+          "provenance:parser_normalized": 246
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -2621,19 +2614,19 @@
       },
       {
         "work_id": "000009_50712",
-        "visible_text_differs": true,
-        "normalized_visible_text_differs": true,
+        "visible_text_differs": false,
+        "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:1f9abf84a17ef6b5638f3c3453619ace05bfb3bd683437eca90854b201bb7560",
-        "b_structure_hash": "sha256:4ce6f7897e4d1ac2eed5f4a940650f88aff5c7051972b076967699ea04c20cd1",
+        "b_structure_hash": "sha256:bcbe3dec91a3250930cd7c63fc847089bd4c679ffe8a582414513115518c9020",
         "a_visible_hash": "sha256:edd476c4b2131db1cbda367a324545a5776d61b28d1207faac67425668f9b25c",
-        "b_visible_hash": "sha256:6efa38fd0bca058a98fad6fd8f76b0014fa9472bdf93144b204fa1f309b5f85c",
+        "b_visible_hash": "sha256:edd476c4b2131db1cbda367a324545a5776d61b28d1207faac67425668f9b25c",
         "a_normalized_visible_hash": "sha256:a4ba1199b4d7e0423cbdfa9a30f2e9fb50f52f42c037cadf5a5952ec6e312900",
-        "b_normalized_visible_hash": "sha256:d1add11fe544b18a0993fcc5253fc34f6cfcb9497de6fbad4d6a8d994226025f",
+        "b_normalized_visible_hash": "sha256:a4ba1199b4d7e0423cbdfa9a30f2e9fb50f52f42c037cadf5a5952ec6e312900",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 241
+          "paragraph": 243
         },
         "a_inline_kinds": {
           "ruby": 28,
@@ -2643,7 +2636,7 @@
           "gaiji": 10,
           "ruby": 28,
           "style": 2,
-          "text": 268
+          "text": 272
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -2651,14 +2644,13 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 241,
+          "block:paragraph": 243,
           "gaiji_unresolved": 10,
           "inline:gaiji": 10,
           "inline:ruby": 28,
           "inline:style": 2,
-          "inline:text": 268,
-          "provenance:parser_normalized": 266,
-          "provenance:regex_supplement": 2
+          "inline:text": 272,
+          "provenance:parser_normalized": 270
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -2671,19 +2663,19 @@
       },
       {
         "work_id": "000009_50713",
-        "visible_text_differs": true,
-        "normalized_visible_text_differs": true,
+        "visible_text_differs": false,
+        "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:7f9218bc5f2b56c3ab88d6f2659997390dc125623b581d8357335388e77a1945",
-        "b_structure_hash": "sha256:86afc6a58fd4e5821e30827d3f67729e09fa51eea5c5ab647ce1962a2da4af9b",
+        "b_structure_hash": "sha256:5132664b8268a659adbf710cebe4019d58461d4331e4cb322e082bc77e2b3f30",
         "a_visible_hash": "sha256:986d8d5bd728cc21ca9935b62c4b38ba00cb725abd888eb8e9d41a5f4ff4bdae",
-        "b_visible_hash": "sha256:98db4ba6db7ce0f33c4976139dffc29f55562313dcb9115f076ad2355297e90a",
+        "b_visible_hash": "sha256:986d8d5bd728cc21ca9935b62c4b38ba00cb725abd888eb8e9d41a5f4ff4bdae",
         "a_normalized_visible_hash": "sha256:de5a9ad6493714cb65f621b78fc4e41622c89f6ccdbb7667ba841c3cd1e8e6e7",
-        "b_normalized_visible_hash": "sha256:163a84950da4dbb7dc5d130066187bd00b85820ae7fb81b70ebda4db10bc4092",
+        "b_normalized_visible_hash": "sha256:de5a9ad6493714cb65f621b78fc4e41622c89f6ccdbb7667ba841c3cd1e8e6e7",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 237
+          "paragraph": 239
         },
         "a_inline_kinds": {
           "ruby": 6,
@@ -2693,7 +2685,7 @@
           "gaiji": 10,
           "ruby": 6,
           "style": 6,
-          "text": 245
+          "text": 248
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -2701,14 +2693,13 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 237,
+          "block:paragraph": 239,
           "gaiji_unresolved": 10,
           "inline:gaiji": 10,
           "inline:ruby": 6,
           "inline:style": 6,
-          "inline:text": 245,
-          "provenance:parser_normalized": 239,
-          "provenance:regex_supplement": 1
+          "inline:text": 248,
+          "provenance:parser_normalized": 242
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -2721,19 +2712,19 @@
       },
       {
         "work_id": "000009_50714",
-        "visible_text_differs": true,
+        "visible_text_differs": false,
         "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:f0628a32e3186e656fb37e6bbd21872a6237551ed59aa7e4f71f68f7eb0128ef",
-        "b_structure_hash": "sha256:85c21e002cf08a4cf3c5ad462732c9f5f54d80ffd5b263a96ba205495600c695",
+        "b_structure_hash": "sha256:bcf7dfc779e421adaf44538c5b3c84e1dff87086a766dd5efd32458a3efb3971",
         "a_visible_hash": "sha256:1d4960a44ac9c170181a6771492d0218039400a5fc12f44bdc140926e2aafc9d",
-        "b_visible_hash": "sha256:5913c4249ca877a08f0c058248debc5425768f27f57c3120b017e9268913fb89",
+        "b_visible_hash": "sha256:1d4960a44ac9c170181a6771492d0218039400a5fc12f44bdc140926e2aafc9d",
         "a_normalized_visible_hash": "sha256:82c99561e0415b313249e70e94bb8a658b6ec3f87ec63513b75435cf1cd94d49",
         "b_normalized_visible_hash": "sha256:82c99561e0415b313249e70e94bb8a658b6ec3f87ec63513b75435cf1cd94d49",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 170
+          "paragraph": 172
         },
         "a_inline_kinds": {
           "ruby": 9,
@@ -2743,7 +2734,7 @@
           "gaiji": 7,
           "ruby": 9,
           "style": 1,
-          "text": 180
+          "text": 182
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -2751,13 +2742,13 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 170,
+          "block:paragraph": 172,
           "gaiji_unresolved": 7,
           "inline:gaiji": 7,
           "inline:ruby": 9,
           "inline:style": 1,
-          "inline:text": 180,
-          "provenance:parser_normalized": 179
+          "inline:text": 182,
+          "provenance:parser_normalized": 181
         },
         "a_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -2770,19 +2761,19 @@
       },
       {
         "work_id": "000009_50715",
-        "visible_text_differs": true,
-        "normalized_visible_text_differs": true,
+        "visible_text_differs": false,
+        "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:37bf524ec3fadcbf70527558305bd295b47e11b36251cb6e8433e29469583756",
-        "b_structure_hash": "sha256:2e1e5311cae228f6e9ea946a1c9e1d9e1805f7fc1eff28e6cb78cd13531b3d06",
+        "b_structure_hash": "sha256:832b6d95f0642650c9ce09d0889bad7ce8ba2e09d2b80b7967a9522dca6c51d9",
         "a_visible_hash": "sha256:13bed62a2ae5e49f8b7a5c6d72fcb454463571c638af1a515dd14b5520dee8d9",
-        "b_visible_hash": "sha256:a1d52f70d5f87d8733e997131535a19280e92ed75c131b44655143ca3dc2136b",
+        "b_visible_hash": "sha256:13bed62a2ae5e49f8b7a5c6d72fcb454463571c638af1a515dd14b5520dee8d9",
         "a_normalized_visible_hash": "sha256:a54aead971789ce4936494f096b19acbe128e99143de947110ae1d1cd1e64b98",
-        "b_normalized_visible_hash": "sha256:27538556c6682663029465216612ccec345148bf593e086c2d88408c67e79a20",
+        "b_normalized_visible_hash": "sha256:a54aead971789ce4936494f096b19acbe128e99143de947110ae1d1cd1e64b98",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 192
+          "paragraph": 194
         },
         "a_inline_kinds": {
           "ruby": 2,
@@ -2792,7 +2783,7 @@
           "gaiji": 7,
           "ruby": 2,
           "style": 1,
-          "text": 194
+          "text": 196
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -2800,13 +2791,13 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 192,
+          "block:paragraph": 194,
           "gaiji_unresolved": 7,
           "inline:gaiji": 7,
           "inline:ruby": 2,
           "inline:style": 1,
-          "inline:text": 194,
-          "provenance:parser_normalized": 193,
+          "inline:text": 196,
+          "provenance:parser_normalized": 195,
           "provenance:regex_supplement": 1
         },
         "a_semantic_hashes": {
@@ -2820,19 +2811,19 @@
       },
       {
         "work_id": "000009_50716",
-        "visible_text_differs": true,
-        "normalized_visible_text_differs": true,
+        "visible_text_differs": false,
+        "normalized_visible_text_differs": false,
         "a_structure_hash": "sha256:105edc5084cd58d3b359daeef23b84872c56fef0fb0a00baa390a070ea459aa4",
-        "b_structure_hash": "sha256:a4d1dc9ef1da81669dec961bd48037446bb19a5644016845d90b5c956a60463c",
+        "b_structure_hash": "sha256:acc7293e9edc602d00f2ff19eb2d79ea08443dfef08d206ab1569d00b7524796",
         "a_visible_hash": "sha256:b71175d2bfd425567d9da159f73a76d6ac8c292099fbec8535be0a0516858069",
-        "b_visible_hash": "sha256:c2920a55be106761800d24974297e2e75afb25e20520fdda84fb73bcb6604181",
+        "b_visible_hash": "sha256:b71175d2bfd425567d9da159f73a76d6ac8c292099fbec8535be0a0516858069",
         "a_normalized_visible_hash": "sha256:58e258a457f3d0002376b26d3276ecaa01900b2abb72067166e71355c6774b16",
-        "b_normalized_visible_hash": "sha256:dd57afa4f15c4b618e4f97d4820b1e9c9adba7d86e73ae3dbc9847a70d04bd2b",
+        "b_normalized_visible_hash": "sha256:58e258a457f3d0002376b26d3276ecaa01900b2abb72067166e71355c6774b16",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 162
+          "paragraph": 164
         },
         "a_inline_kinds": {
           "ruby": 7,
@@ -2842,7 +2833,7 @@
           "gaiji": 7,
           "ruby": 7,
           "style": 3,
-          "text": 170
+          "text": 172
         },
         "a_semantic_counts": {
           "block:paragraph": 1,
@@ -2850,13 +2841,13 @@
           "inline:text": 1
         },
         "b_semantic_counts": {
-          "block:paragraph": 162,
+          "block:paragraph": 164,
           "gaiji_unresolved": 7,
           "inline:gaiji": 7,
           "inline:ruby": 7,
           "inline:style": 3,
-          "inline:text": 170,
-          "provenance:parser_normalized": 167,
+          "inline:text": 172,
+          "provenance:parser_normalized": 169,
           "provenance:regex_supplement": 2
         },
         "a_semantic_hashes": {

@@ -171,11 +171,13 @@ mod tests {
         let decoded = decode_source_bytes(large_body.as_bytes()).unwrap();
         let mut parsed = parser::parse_with_aozora_rs(source::BodySelection {
             validation_body: "本文\n",
+            found_separators: true,
             elapsed: Duration::ZERO,
         })
         .unwrap();
         parsed.body = source::BodySelection {
             validation_body: &large_body,
+            found_separators: true,
             elapsed: Duration::ZERO,
         };
 

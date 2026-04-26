@@ -39,24 +39,31 @@ pub struct ParseTimings {
 
 pub fn parse_with_aozora_rs(body: BodySelection<'_>) -> Result<ParsedSource<'_>> {
     let mut warnings = Vec::new();
-    let mut parsed_body = body.validation_body;
-    let meta_ok = match parse_meta(&mut parsed_body) {
-        Ok(_) => true,
-        Err(error) => {
-            warnings.push(format!("meta parse warning: {error}"));
-            false
-        }
-    };
-    let parsed_body = trim_colophon(parsed_body);
-    let parse_body = if meta_ok && !starts_with_separator(parsed_body) {
-        ParseBodyDecision {
-            parser_body: parsed_body,
-            strategy: ParseBodyStrategy::ParserMeta,
-        }
-    } else {
+    let parse_body = if body.found_separators {
         ParseBodyDecision {
             parser_body: body.validation_body,
             strategy: ParseBodyStrategy::SeparatorFallback,
+        }
+    } else {
+        let mut parsed_body = body.validation_body;
+        let meta_ok = match parse_meta(&mut parsed_body) {
+            Ok(_) => true,
+            Err(error) => {
+                warnings.push(format!("meta parse warning: {error}"));
+                false
+            }
+        };
+        let parsed_body = trim_colophon(parsed_body);
+        if meta_ok && !starts_with_separator(parsed_body) {
+            ParseBodyDecision {
+                parser_body: parsed_body,
+                strategy: ParseBodyStrategy::ParserMeta,
+            }
+        } else {
+            ParseBodyDecision {
+                parser_body: body.validation_body,
+                strategy: ParseBodyStrategy::SeparatorFallback,
+            }
         }
     };
 
@@ -109,6 +116,7 @@ mod tests {
         let body = "吾輩《わがはい》は猫である。\n";
         let selection = BodySelection {
             validation_body: body,
+            found_separators: false,
             elapsed: Duration::ZERO,
         };
 
@@ -124,5 +132,22 @@ mod tests {
         assert!(parsed.timings.tokenize >= Duration::ZERO);
         assert!(parsed.timings.scopenize >= Duration::ZERO);
         assert!(parsed.timings.retokenize >= Duration::ZERO);
+    }
+
+    #[test]
+    fn does_not_parse_meta_again_after_separator_selection() {
+        let body = "　　　　　○\n本文\n";
+        let selection = BodySelection {
+            validation_body: body,
+            found_separators: true,
+            elapsed: Duration::ZERO,
+        };
+
+        let parsed = parse_with_aozora_rs(selection).unwrap();
+        assert_eq!(parsed.parse_body.parser_body, body);
+        assert_eq!(
+            parsed.parse_body.strategy,
+            ParseBodyStrategy::SeparatorFallback
+        );
     }
 }

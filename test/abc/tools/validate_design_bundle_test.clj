@@ -83,3 +83,20 @@
          (validate/comparison-report-errors
           {"report_schema" "wrong"
            "parser_candidates" []}))))
+
+(deftest same-file-bytes-test
+  (let [dir (java.nio.file.Files/createTempDirectory
+             "abc-byte-compare"
+             (make-array java.nio.file.attribute.FileAttribute 0))
+        left (.toFile (.resolve dir "left.txt"))
+        same (.toFile (.resolve dir "same.txt"))
+        different (.toFile (.resolve dir "different.txt"))]
+    (try
+      (spit left "same\n")
+      (spit same "same\n")
+      (spit different "different\n")
+      (is (true? (validate/same-file-bytes? left same)))
+      (is (false? (validate/same-file-bytes? left different)))
+      (finally
+        (doseq [file (reverse (file-seq (.toFile dir)))]
+          (.delete file))))))

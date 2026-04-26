@@ -24,6 +24,7 @@ bound the choices.
 | ABC tools runtime ADR | `docs/adr/0008-abc-tools-runtime.md` | Move pipeline tooling into Clojure commands exposed by Nix | Keeps Bash as compatibility wrappers only |
 | Imported materialization ADR | `docs/adr/0009-imported-output-materialization.md` | Turn imported parser output into ABC manifests | Generates parser IR and warning manifests from fixture input |
 | Manifest identity hardening ADR | `docs/adr/0010-manifest-identity-hardening.md` | Tie generated identity to checked-in schema bytes | Computes manifest schema hash from `schemas/manifest.schema.json` |
+| Generated fixture policy ADR | `docs/adr/0011-generated-fixture-policy.md` | Define how generated materialized-import fixtures are checked in | Requires regeneration and byte-for-byte comparison |
 | Manifest schema | `schemas/manifest.schema.json` | Canonical JSON contract for success and failure manifests | Draft 2020-12 schema validates example manifests |
 | Parser IR schema | `schemas/parser-ir.schema.json` | Language-neutral parser boundary | Covers spans, ruby, gaiji, notes, warnings, errors |
 | Manifest SHACL | `schemas/manifest.shacl.ttl` | RDF/PROV-O publication view check | Requires artifact, status, activity, and derivation links |
@@ -36,6 +37,7 @@ bound the choices.
 | Canonicalization fixtures | `fixtures/canonicalization/` | Cross-implementation identity checks | Includes canonical identity object and expected hash policy |
 | Example bundle fixture | `examples/v0/example-work/` | Target layout for one Aozora work | Includes success and failure design fixtures |
 | ab-validator output fixture | `examples/ab-validator-output/` | Imported parser-evaluation output contract | Validates parser IR, diagnostics, run summary, and manifest inputs |
+| Materialized import fixtures | `examples/materialized-import/*.manifest.json` | Checked-in manifests generated from `examples/ab-validator-output/` | Validation regenerates and compares them byte-for-byte |
 
 ## Sequencing
 

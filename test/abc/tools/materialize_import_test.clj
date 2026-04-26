@@ -3,7 +3,9 @@
             [abc.tools.manifest :as manifest]
             [abc.tools.materialize-import :as materialize]
             [clojure.java.io :as io]
-            [clojure.test :refer [deftest is testing]]))
+            [clojure.test :refer [deftest is testing]])
+  (:import [java.nio.file Files]
+           [java.nio.file.attribute FileAttribute]))
 
 (deftest v0-identity-json-test
   (is (= "{\"a\":null,\"b\":\"x\",\"c\":\"quote\\\"slash\\\\\"}"
@@ -21,6 +23,27 @@
         artifact-id (manifest/artifact-id identity-object)]
     (is (re-matches files/hash-pattern artifact-id))
     (is (not= (get identity-object "b") artifact-id))))
+
+(deftest deterministic-json-writer-test
+  (let [dir (Files/createTempDirectory "abc-json-writer" (make-array FileAttribute 0))
+        file-a (.toFile (.resolve dir "a.json"))
+        file-b (.toFile (.resolve dir "b.json"))
+        value-a {"z" [{"b" "2" "a" "1"}]
+                 "a" {"d" "4" "c" "3"}}
+        value-b {"a" {"c" "3" "d" "4"}
+                 "z" [{"a" "1" "b" "2"}]}]
+    (try
+      (manifest/write-json-file! file-a value-a)
+      (manifest/write-json-file! file-b value-b)
+      (is (= (slurp file-a) (slurp file-b)))
+      (is (= "{\n  \"a\": \n  {\n    \"c\": \"3\",\n    \"d\": \"4\"\n  },\n  \"z\": [\n    {\n      \"a\": \"1\",\n      \"b\": \"2\"\n    }]\n}\n"
+             (slurp file-a)))
+      (finally
+        (doseq [file (reverse (file-seq (.toFile dir)))]
+          (.delete file))))))
+
+(defn file-bytes [file]
+  (Files/readAllBytes (.toPath (io/file file))))
 
 (deftest materialize-import-test
   (let [out-dir (java.nio.file.Files/createTempDirectory "abc-materialize-import" (make-array java.nio.file.attribute.FileAttribute 0))
@@ -57,6 +80,22 @@
                   (get-in warnings-manifest ["content" "content_hash"])))
         (is (not= (get parser-manifest "artifact_id")
                   (get warnings-manifest "artifact_id"))))
+      (finally
+        (doseq [file (reverse (file-seq out-file))]
+          (.delete file))))))
+
+(deftest materialized-fixture-test
+  (let [out-dir (Files/createTempDirectory "abc-materialize-fixture" (make-array FileAttribute 0))
+        out-file (.toFile out-dir)]
+    (try
+      (materialize/materialize-import!
+       {:input-dir (io/file "examples/ab-validator-output")
+        :output-dir out-file
+        :generated-at "2026-04-26T00:00:00Z"})
+      (is (= (seq (file-bytes "examples/materialized-import/parser-ir.manifest.json"))
+             (seq (file-bytes (io/file out-file "parser-ir.manifest.json")))))
+      (is (= (seq (file-bytes "examples/materialized-import/warnings.manifest.json"))
+             (seq (file-bytes (io/file out-file "warnings.manifest.json")))))
       (finally
         (doseq [file (reverse (file-seq out-file))]
           (.delete file))))))

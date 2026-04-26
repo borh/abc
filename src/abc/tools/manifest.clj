@@ -111,8 +111,26 @@
                   "notes" notes}]
     manifest))
 
+(defn stable-json-value [value]
+  (cond
+    (map? value)
+    (into (sorted-map)
+          (map (fn [[k v]]
+                 [k (stable-json-value v)]))
+          value)
+
+    (vector? value)
+    (mapv stable-json-value value)
+
+    (sequential? value)
+    (mapv stable-json-value value)
+
+    :else
+    value))
+
 (defn write-json-file! [file value]
   (io/make-parents file)
   (with-open [writer (io/writer file)]
-    (json/write-json writer value :indent-str "  "))
+    (.write writer (json/write-json-str (stable-json-value value) :indent-str "  "))
+    (.write writer "\n"))
   file)

@@ -20,6 +20,39 @@
       forAllSystems = nixpkgs.lib.genAttrs systems;
     in
     {
+      apps = forAllSystems (
+        system:
+        let
+          pkgs = import nixpkgs {
+            inherit system;
+            overlays = [
+              (final: _prev: import local-pkgs { pkgs = final; })
+            ];
+          };
+          python = pkgs.python3.withPackages (pythonPackages: [
+            pythonPackages.jsonschema
+          ]);
+        in
+        {
+          validate-design-bundle = {
+            type = "app";
+            program = toString (
+              pkgs.writeShellScript "abc-validate-design-bundle" ''
+                export PATH="${
+                  pkgs.lib.makeBinPath [
+                    pkgs.git-cliff
+                    pkgs.libxml2
+                    python
+                  ]
+                }:''${PATH:-}"
+                exec ${pkgs.clojure}/bin/clojure -M:abc/validate-design-bundle "$@"
+              ''
+            );
+            meta.description = "Validate ABC v0 design-bundle schemas and fixtures";
+          };
+        }
+      );
+
       devShells = forAllSystems (
         system:
         let

@@ -104,5 +104,7 @@
                                "--output-dir" "src"
                                "--namespace" "metav.meta"
                                "--formats" "clj"]}
+  :abc/validate-design-bundle
+  {:main-opts ["-m" "abc.tools.validate-design-bundle"]}
   :update        {:deps      {com.github.liquidz/antq {:mvn/version "2.11.1276"}}
                   :main-opts ["-m" "antq.core"]}}}

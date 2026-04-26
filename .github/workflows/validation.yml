@@ -22,6 +22,6 @@ jobs:
 
       - name: Validate design bundle
         run: |
-          nix develop .#validation \
+          nix run \
             --override-input local-pkgs path:/tmp/abc-empty-local-pkgs \
-            -c bin/validate-design-bundle.sh
+            .#validate-design-bundle

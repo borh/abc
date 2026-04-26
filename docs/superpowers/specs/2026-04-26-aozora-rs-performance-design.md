@@ -149,11 +149,18 @@ pub struct AatBuildResult {
     pub blocks: Vec<AatBlock>,
     pub projected: ProjectedText,
     pub fallback: FallbackDecision,
+    pub timings: AatBuildTimings,
     pub projection: ProjectionSummary,
 }
 
 pub struct AatBuildTimings {
     pub build: Duration,
+}
+
+pub struct OrchestrationTimings {
+    pub projection_check: Duration,
+    pub fallback_build: Duration,
+    pub root_construct: Duration,
 }
 
 pub struct ProjectionSummary {
@@ -230,6 +237,8 @@ Refactor `adapters/aozora-rs` into these modules:
     `html_from_bytes`.
   - Orchestrates decode -> parse -> build AAT -> serialize.
   - Owns no parser-stage or projection logic.
+  - Measures orchestration-owned timings: projection checking, fallback
+    construction, and final AAT root construction.
 
 - `src/source.rs`
   - Source decoding and body extraction.
@@ -264,9 +273,8 @@ Refactor `adapters/aozora-rs` into these modules:
   - Uses `std::time::Duration` internally and converts durations to millisecond
     `f64` fields only at JSON boundaries.
   - Provides `AdapterMetrics::from_parts(decoded, body, parse, aat,
-    projection_check, fallback_build, root_construct, fallback)` and
-    `AdapterMetrics::stages()` helpers so the orchestrator does not manually
-    field-copy timings.
+    orchestration)` and `AdapterMetrics::stages()` helpers so the orchestrator
+    does not manually field-copy timings.
   - Provides aggregation helpers used by the comparison runner.
 
 The internal data flow should be:
@@ -278,8 +286,8 @@ bytes
   -> ParsedSource { retokenized, warnings, counts, parse timings }
   -> InitialAatBuildResult { blocks, projected text, build timings }
   -> ProjectionSummary from projection::check(...)
-  -> final AatBuildResult { blocks, projected text, fallback, projection summary }
-  -> AAT JSON { blocks, meta.metrics, meta.warnings }
+  -> final AatBuildResult { blocks, projected text, fallback, build timings, projection summary }
+  -> AAT JSON { blocks, meta.metrics, meta.warnings } with OrchestrationTimings
 ```
 
 The orchestrator calls `projection::check(...)` after `aat::build_initial(...)`.
@@ -293,6 +301,11 @@ called. If an optimization pre-computes source-visible text for potential
 fallback reuse, that cost belongs to the phase that performs the work:
 `projection_check` for validation/source-visible preparation, or `aat_build`
 for parser-derived projection preparation.
+
+`projection_check`, `fallback_build`, and `root_construct` are measured by the
+orchestrator in `lib.rs` and stored in `OrchestrationTimings`, not returned by
+`aat.rs`. `AatBuildResult.timings` carries only the parser-to-AAT block mapping
+cost returned by `aat.rs`.
 
 ## Metrics Model
 
@@ -426,8 +439,14 @@ until a third adapter shows the shared shape.
 ## Error Handling
 
 Parser-stage failures should remain adapter fatal errors. Non-fatal scopenize
-and retokenize errors should remain warnings and should not cause
-`parse_complete=false` unless the adapter cannot produce an AAT.
+and retokenize errors should remain warnings.
+
+The existing AAT metadata includes `parse_complete`. For this adapter,
+`parse_complete` means "the adapter produced a complete validation AAT for the
+selected body." It should remain `true` when `aozora-rs-core` emits non-fatal
+warnings or when the adapter uses an explicit fallback block path. If the
+adapter cannot produce a validation AAT, it should return a fatal adapter error
+instead of returning a partial AAT with `parse_complete=false`.
 
 Fallback is not an error. It is an explicitly recorded recovery mode used when
 parser-derived visible projection cannot be reconciled with the validation

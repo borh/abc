@@ -4,7 +4,7 @@
 
 **Goal:** Migrate `ab-ir` to structured ruby bases and typed gaiji references while preserving current AAT JSON output for representable cases.
 
-**Architecture:** Keep the migration contained to `crates/ab-ir/src/lib.rs`. Public convenience constructors keep their existing names where possible, but `Inline::Ruby` changes to `base: Vec<Inline>` and `Inline::Gaiji` is replaced by `Inline::GaijiRef`. AAT projection flattens structured bases into the current AAT `ruby.base: string` where possible and exposes projection warnings for cases AAT cannot represent.
+**Architecture:** Keep the migration contained to `crates/ab-ir/src/lib.rs`. Public convenience constructors keep their existing names where possible, but `Inline::Ruby` changes to `base: Vec<Inline>` and `Inline::Gaiji` is replaced by `Inline::GaijiRef`. AAT projection flattens structured bases into the current AAT `ruby.base: string` where possible and exposes projection warnings for cases AAT cannot represent. The AAT schema is not changed: `ruby.base` remains a string, `ruby.direction` carries right/left placement, and typed `GaijiKind` details are IR-only unless flattened into existing AAT gaiji fields.
 
 **Tech Stack:** Rust 2024, `serde_json`, existing Cargo workspace.
 
@@ -32,7 +32,9 @@ Expected: fail because the typed gaiji structs do not exist.
 
 - [ ] **Step 3: Implement typed gaiji**
 
-Add `GaijiKind`, `DakutenMark`, `GaijiRef`, and `Inline::GaijiRef`. Keep `Inline::gaiji(...)` as a compatibility constructor returning `Inline::GaijiRef` with `GaijiKind::Unknown`.
+Add `GaijiKind`, `DakutenMark`, `GaijiRef`, and `Inline::GaijiRef`. Keep `Inline::gaiji(...)` as a compatibility constructor returning `Inline::GaijiRef` with `GaijiKind::Unknown`; the compatibility constructor cannot populate `GaijiRef::source` because it receives only the gaiji description, not the full `※［＃...］` marker.
+
+`GaijiKind` must cover the parser behavior dimensions recorded in `docs/superpowers/specs/2026-04-26-gaiji-resolution-comparison-notes.md`: single Unicode codepoints, Unicode sequences/IVS, JIS menkuten, composition descriptions, dakuten variants, alternative-character fallback, image fallback, and unknown gaiji.
 
 - [ ] **Step 4: Verify green and commit**
 
@@ -83,6 +85,7 @@ Add tests for:
 - simple ruby still projects to `{ "kind": "ruby", "base": "吾輩", "reading": "わがはい" }`
 - resolved gaiji ruby base projects to `ruby.base` equal to the resolved character
 - unresolved gaiji ruby base produces a gaiji node instead of an orphan ruby and returns a projection warning with syntax ID `gaiji_ruby.unresolved_base`
+- ruby placement projects to the existing AAT `direction` field as `"right"` or `"left"`
 
 - [ ] **Step 2: Verify red**
 
@@ -97,6 +100,8 @@ Expected: fail because warning-aware projection does not exist.
 - [ ] **Step 3: Implement warning-aware AAT projection**
 
 Add `AatProjection` and `ProjectionWarning`. Make `blocks_to_aat_projection` return both projected blocks and warnings. Keep `blocks_to_aat_json` as a compatibility wrapper returning only blocks.
+
+`blocks_to_aat_projection` returns only the AAT blocks array plus warnings. The full AAT document assembler remains responsible for merging `ProjectionWarning` values into `meta.warnings`, because `ab-ir` does not know `work_id`, adapter metadata, source hash, or parse completeness.
 
 - [ ] **Step 4: Verify green and commit**
 

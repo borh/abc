@@ -44,11 +44,35 @@ pub struct GaijiRef {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum GaijiKind {
-    UnicodeCodepoint { value: char },
-    JisCode { plane: Option<u8>, row: u8, cell: u8 },
-    JisLevel { level: u8, row: u8, cell: u8 },
-    Composition { description: String },
-    DakutenVariant { base: String, mark: DakutenMark },
+    UnicodeCodepoint {
+        value: char,
+    },
+    UnicodeSequence {
+        values: Vec<char>,
+    },
+    JisCode {
+        plane: Option<u8>,
+        row: u8,
+        cell: u8,
+    },
+    JisLevel {
+        level: u8,
+        row: u8,
+        cell: u8,
+    },
+    Composition {
+        description: String,
+    },
+    DakutenVariant {
+        base: String,
+        mark: DakutenMark,
+    },
+    Alternative {
+        source_kind: Box<GaijiKind>,
+    },
+    Image {
+        path: String,
+    },
     Unknown,
 }
 
@@ -83,6 +107,18 @@ pub struct ProvenanceCounts {
     pub parser_normalized: usize,
     pub regex_supplement: usize,
     pub regex_fallback: usize,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AatProjection {
+    pub blocks: Vec<serde_json::Value>,
+    pub warnings: Vec<ProjectionWarning>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProjectionWarning {
+    pub syntax_id: &'static str,
+    pub message: String,
 }
 
 impl Inline {
@@ -169,6 +205,26 @@ impl Inline {
         Self::GaijiRef(gaiji)
     }
 
+    pub fn dakuten_gaiji(
+        source: impl Into<String>,
+        description: impl Into<String>,
+        base: impl Into<String>,
+        mark: DakutenMark,
+        resolved: Option<String>,
+    ) -> Self {
+        Self::GaijiRef(GaijiRef {
+            source: source.into(),
+            description: description.into(),
+            description_format: Some("dakuten-variant".to_owned()),
+            kind: GaijiKind::DakutenVariant {
+                base: base.into(),
+                mark,
+            },
+            resolved,
+            provenance: Provenance::Parser,
+        })
+    }
+
     pub fn style(style_type: &'static str, content: Vec<Inline>) -> Self {
         Self::Style {
             style_type,
@@ -179,12 +235,17 @@ impl Inline {
 }
 
 pub fn blocks_to_aat_json(blocks: &[Block]) -> Vec<serde_json::Value> {
-    blocks
+    blocks_to_aat_projection(blocks).blocks
+}
+
+pub fn blocks_to_aat_projection(blocks: &[Block]) -> AatProjection {
+    let mut warnings = Vec::new();
+    let blocks = blocks
         .iter()
         .map(|block| match block {
             Block::Paragraph { content } => json!({
                 "kind": "paragraph",
-                "content": inline_to_aat_json(content)
+                "content": inline_to_aat_json(content, &mut warnings)
             }),
             Block::Heading {
                 level,
@@ -194,10 +255,11 @@ pub fn blocks_to_aat_json(blocks: &[Block]) -> Vec<serde_json::Value> {
                 "kind": "heading",
                 "level": level,
                 "style": style,
-                "content": inline_to_aat_json(content)
+                "content": inline_to_aat_json(content, &mut warnings)
             }),
         })
-        .collect()
+        .collect();
+    AatProjection { blocks, warnings }
 }
 
 pub fn visible_projection(blocks: &[Block]) -> ProjectedText {
@@ -210,49 +272,115 @@ pub fn visible_projection(blocks: &[Block]) -> ProjectedText {
     ProjectedText { visible_text }
 }
 
-fn inline_to_aat_json(content: &[Inline]) -> Vec<serde_json::Value> {
+fn inline_to_aat_json(
+    content: &[Inline],
+    warnings: &mut Vec<ProjectionWarning>,
+) -> Vec<serde_json::Value> {
     content
         .iter()
-        .map(|node| match node {
-            Inline::Text { value, provenance } => {
-                with_provenance(json!({ "kind": "text", "value": value }), *provenance)
-            }
-            Inline::Ruby {
-                base,
-                reading,
-                provenance,
-                ..
-            } => with_provenance(
-                json!({ "kind": "ruby", "base": inline_visible_text(base), "reading": reading }),
-                *provenance,
-            ),
-            Inline::GaijiRef(gaiji) => {
-                let mut value = json!({
-                    "kind": "gaiji",
-                    "description": gaiji.description,
-                    "resolved": gaiji.resolved,
-                    "jis_code": null,
-                    "unresolved_reason": if gaiji.resolved.is_some() { None } else { Some("unresolved") }
-                });
-                if let Some(format) = &gaiji.description_format {
-                    value["x-description-format"] = serde_json::Value::String(format.clone());
-                }
-                with_provenance(value, gaiji.provenance)
-            }
-            Inline::Style {
-                style_type,
-                content,
-                provenance,
-            } => with_provenance(
-                json!({
-                    "kind": "style",
-                    "style_type": style_type,
-                    "content": inline_to_aat_json(content)
-                }),
-                *provenance,
-            ),
-        })
+        .flat_map(|node| inline_node_to_aat_json(node, warnings))
         .collect()
+}
+
+fn inline_node_to_aat_json(
+    node: &Inline,
+    warnings: &mut Vec<ProjectionWarning>,
+) -> Vec<serde_json::Value> {
+    match node {
+        Inline::Ruby { base, reading, .. } if contains_unresolved_gaiji(base) => {
+            warnings.push(ProjectionWarning {
+                syntax_id: "gaiji_ruby.unresolved_base",
+                message: format!(
+                    "AAT cannot represent ruby reading {reading:?} over an unresolved gaiji base"
+                ),
+            });
+            inline_to_aat_json(base, warnings)
+        }
+        Inline::Ruby {
+            base,
+            reading,
+            placement,
+            provenance,
+            ..
+        } => vec![with_provenance(
+            json!({
+                "kind": "ruby",
+                "base": inline_visible_text(base),
+                "reading": reading,
+                "direction": placement.as_str(),
+            }),
+            *provenance,
+        )],
+        Inline::Text { .. } | Inline::GaijiRef(_) | Inline::Style { .. } => {
+            vec![inline_node_to_aat_json_without_warnings(node)]
+        }
+    }
+}
+
+fn inline_to_aat_json_without_warnings(content: &[Inline]) -> Vec<serde_json::Value> {
+    content
+        .iter()
+        .map(inline_node_to_aat_json_without_warnings)
+        .collect()
+}
+
+fn inline_node_to_aat_json_without_warnings(node: &Inline) -> serde_json::Value {
+    match node {
+        Inline::Text { value, provenance } => {
+            with_provenance(json!({ "kind": "text", "value": value }), *provenance)
+        }
+        Inline::Ruby {
+            base,
+            reading,
+            placement,
+            provenance,
+            ..
+        } => with_provenance(
+            json!({
+                "kind": "ruby",
+                "base": inline_visible_text(base),
+                "reading": reading,
+                "direction": placement.as_str(),
+            }),
+            *provenance,
+        ),
+        Inline::GaijiRef(gaiji) => gaiji_to_aat_json(gaiji),
+        Inline::Style {
+            style_type,
+            content,
+            provenance,
+        } => with_provenance(
+            json!({
+                "kind": "style",
+                "style_type": style_type,
+                "content": inline_to_aat_json_without_warnings(content)
+            }),
+            *provenance,
+        ),
+    }
+}
+
+fn gaiji_to_aat_json(gaiji: &GaijiRef) -> serde_json::Value {
+    let mut value = json!({
+        "kind": "gaiji",
+        "description": gaiji.description,
+        "resolved": gaiji.resolved,
+        "jis_code": null,
+        "unresolved_reason": if gaiji.resolved.is_some() { None } else { Some("unresolved") }
+    });
+    if let Some(format) = &gaiji.description_format {
+        value["x-description-format"] = serde_json::Value::String(format.clone());
+    }
+    with_provenance(value, gaiji.provenance)
+}
+
+fn contains_unresolved_gaiji(content: &[Inline]) -> bool {
+    content.iter().any(|node| match node {
+        Inline::GaijiRef(gaiji) => gaiji.resolved.is_none(),
+        Inline::Ruby { base, .. } => contains_unresolved_gaiji(base),
+        Inline::Style { content, .. } => contains_unresolved_gaiji(content),
+        Inline::Text { .. } => false,
+    })
 }
 
 fn collect_visible(value: &Inline, out: &mut String) {
@@ -339,6 +467,15 @@ impl Provenance {
     }
 }
 
+impl RubyPlacement {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Right => "right",
+            Self::Left => "left",
+        }
+    }
+}
+
 pub fn block_content(block: &Block) -> &[Inline] {
     match block {
         Block::Paragraph { content } | Block::Heading { content, .. } => content,
@@ -369,6 +506,7 @@ mod tests {
         assert_eq!(json[0]["kind"], "paragraph");
         assert_eq!(json[0]["content"][0]["kind"], "ruby");
         assert_eq!(json[0]["content"][0]["base"], "吾輩");
+        assert_eq!(json[0]["content"][0]["direction"], "right");
         assert_eq!(json[0]["content"][1]["value"], "は猫である。");
     }
 
@@ -422,6 +560,59 @@ mod tests {
     }
 
     #[test]
+    fn gaiji_kind_can_model_ivs_alternative_image_and_dakuten() {
+        let ivs = GaijiKind::UnicodeSequence {
+            values: vec!['葛', '\u{E0100}'],
+        };
+        let alternative = GaijiKind::Alternative {
+            source_kind: Box::new(GaijiKind::Composition {
+                description: "「口＋愛」".to_owned(),
+            }),
+        };
+        let image = GaijiKind::Image {
+            path: "gaiji/1-15/1-15-23.png".to_owned(),
+        };
+        let dakuten = Inline::dakuten_gaiji(
+            "※［＃濁点付きワ］",
+            "濁点付きワ",
+            "ワ",
+            DakutenMark::Voicing,
+            Some("ワ゛".to_owned()),
+        );
+
+        assert_eq!(
+            ivs,
+            GaijiKind::UnicodeSequence {
+                values: vec!['葛', '\u{E0100}']
+            }
+        );
+        assert_eq!(
+            alternative,
+            GaijiKind::Alternative {
+                source_kind: Box::new(GaijiKind::Composition {
+                    description: "「口＋愛」".to_owned()
+                })
+            }
+        );
+        assert_eq!(
+            image,
+            GaijiKind::Image {
+                path: "gaiji/1-15/1-15-23.png".to_owned()
+            }
+        );
+        assert!(matches!(
+            dakuten,
+            Inline::GaijiRef(GaijiRef {
+                kind: GaijiKind::DakutenVariant {
+                    mark: DakutenMark::Voicing,
+                    ..
+                },
+                ..
+            })
+        ));
+    }
+
+    #[test]
     fn structured_ruby_base_can_hold_resolved_gaiji() {
         let ruby = Inline::ruby_with_base(
             vec![Inline::gaiji_ref(GaijiRef {
@@ -444,11 +635,7 @@ mod tests {
 
     #[test]
     fn structured_ruby_base_records_left_placement() {
-        let ruby = Inline::ruby_with_base(
-            vec![Inline::text("左")],
-            "ひだり",
-            RubyPlacement::Left,
-        );
+        let ruby = Inline::ruby_with_base(vec![Inline::text("左")], "ひだり", RubyPlacement::Left);
 
         assert!(matches!(
             ruby,
@@ -457,6 +644,68 @@ mod tests {
                 ..
             }
         ));
+    }
+
+    #[test]
+    fn aat_projection_flattens_resolved_gaiji_ruby_base() {
+        let blocks = vec![Block::Paragraph {
+            content: vec![Inline::ruby_with_base(
+                vec![Inline::gaiji_ref(GaijiRef {
+                    source: "※［＃「口＋世」、U+546D］".to_owned(),
+                    description: "「口＋世」、U+546D".to_owned(),
+                    description_format: None,
+                    kind: GaijiKind::UnicodeCodepoint { value: '呻' },
+                    resolved: Some("呻".to_owned()),
+                    provenance: Provenance::Parser,
+                })],
+                "うめ",
+                RubyPlacement::Right,
+            )],
+        }];
+
+        let projection = blocks_to_aat_projection(&blocks);
+
+        assert!(projection.warnings.is_empty());
+        assert_eq!(projection.blocks[0]["content"][0]["kind"], "ruby");
+        assert_eq!(projection.blocks[0]["content"][0]["base"], "呻");
+        assert_eq!(projection.blocks[0]["content"][0]["reading"], "うめ");
+        assert_eq!(projection.blocks[0]["content"][0]["direction"], "right");
+    }
+
+    #[test]
+    fn aat_projection_warns_and_emits_gaiji_for_unresolved_gaiji_ruby_base() {
+        let blocks = vec![Block::Paragraph {
+            content: vec![Inline::ruby_with_base(
+                vec![Inline::gaiji_ref(GaijiRef {
+                    source: "※［＃「口＋愛」、第3水準1-15-23］".to_owned(),
+                    description: "「口＋愛」、第3水準1-15-23".to_owned(),
+                    description_format: None,
+                    kind: GaijiKind::JisLevel {
+                        level: 3,
+                        row: 15,
+                        cell: 23,
+                    },
+                    resolved: None,
+                    provenance: Provenance::Parser,
+                })],
+                "おくび",
+                RubyPlacement::Right,
+            )],
+        }];
+
+        let projection = blocks_to_aat_projection(&blocks);
+
+        assert_eq!(projection.blocks[0]["content"][0]["kind"], "gaiji");
+        assert_eq!(
+            projection.blocks[0]["content"][0]["description"],
+            "「口＋愛」、第3水準1-15-23"
+        );
+        assert_eq!(projection.warnings.len(), 1);
+        assert_eq!(
+            projection.warnings[0].syntax_id,
+            "gaiji_ruby.unresolved_base"
+        );
+        assert!(projection.warnings[0].message.contains("おくび"));
     }
 
     #[test]

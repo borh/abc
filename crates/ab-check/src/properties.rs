@@ -264,10 +264,12 @@ fn inside_editor_note(line: &str, offset: usize) -> bool {
 
 pub fn source_visible_text(txt: &str) -> String {
     let gaiji = Regex::new(r"※(?:［＃([^］]+)］|\[#([^\]]+)\])").unwrap();
+    let explicit_ruby = Regex::new(r"｜([^《》\r\n]+)《[^》]+》").unwrap();
     let ruby = Regex::new(r"｜?([^｜\s《》※［＃\[\]］、。，．「」『』（）()]+)《[^》]+》").unwrap();
     let command = Regex::new(r"［＃[^］]+］|\[#[^\]]+\]").unwrap();
     let without_gaiji = gaiji.replace_all(txt, "");
-    let without_ruby = ruby.replace_all(&without_gaiji, "$1");
+    let without_explicit_ruby = explicit_ruby.replace_all(&without_gaiji, "$1");
+    let without_ruby = ruby.replace_all(&without_explicit_ruby, "$1");
     command.replace_all(&without_ruby, "").into_owned()
 }
 
@@ -299,5 +301,12 @@ mod tests {
         let visible = source_visible_text("二二※［＃小書き片仮名ン、237-11］が四");
 
         assert_eq!(visible, "二二が四");
+    }
+
+    #[test]
+    fn source_visible_text_projects_explicit_ruby_base_without_marker() {
+        let visible = source_visible_text("――『｜あのひとにとって、わたし《ルビ》はなんだろう？」");
+
+        assert_eq!(visible, "――『あのひとにとって、わたしはなんだろう？」");
     }
 }

@@ -1,15 +1,15 @@
 {
-  "generated_at": "2026-04-26T05:10:42Z",
+  "generated_at": "2026-04-26T05:14:20Z",
   "corpus_hash": "sha256:25f5edcfab0f7b856cb24e5088de6ab68a61359eabfddb4b3add92049b09ce67",
   "aozora2": {
     "name": "aozora2",
-    "seconds": 16.974889,
+    "seconds": 17.288408,
     "reports": 17894,
     "failures": 0
   },
   "aozora_rs": {
     "name": "aozora-rs",
-    "seconds": 26.397179,
+    "seconds": 26.975981,
     "reports": 17894,
     "failures": 0
   },
@@ -26,14 +26,14 @@
     "works": 17894,
     "fallbacks": 348,
     "stage_totals_ms": {
-      "aat_build": 45727.626922999545,
-      "body_selection": 527.6144659999997,
-      "decode": 2300.9811190000046,
-      "fallback_build": 2701.061087,
-      "projection_check": 12756.342648000036,
-      "retokenize": 2491.274060000012,
-      "scopenize": 1444.5125239999982,
-      "tokenize": 8879.494707999982
+      "aat_build": 45475.05935799982,
+      "body_selection": 529.3762960000005,
+      "decode": 2267.805326999998,
+      "fallback_build": 2767.830974999997,
+      "projection_check": 12922.353025000017,
+      "retokenize": 2327.005347000023,
+      "scopenize": 1371.8791049999866,
+      "tokenize": 8766.741972999946
     },
     "node_totals": {
       "parser": 2488252,
@@ -44,322 +44,322 @@
     "slowest_works": [
       {
         "work_id": "001529_50685",
-        "total_ms": 608.739634,
+        "total_ms": 656.000945,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 119.133391,
-          "body_selection": 2.215013,
-          "decode": 9.011369,
-          "fallback_build": 117.198586,
-          "projection_check": 96.049572,
-          "retokenize": 41.364897,
-          "scopenize": 18.375507,
-          "tokenize": 205.391299
-        }
-      },
-      {
-        "work_id": "001518_51731",
-        "total_ms": 256.315083,
-        "dominant_stage": "tokenize",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 15.37487,
-          "body_selection": 0.236768,
-          "decode": 1.23291,
-          "fallback_build": 7.516672000000001,
-          "projection_check": 7.398052,
-          "retokenize": 3.447993,
-          "scopenize": 1.866746,
-          "tokenize": 219.241072
-        }
-      },
-      {
-        "work_id": "000118_1745",
-        "total_ms": 248.742579,
-        "dominant_stage": "aat_build",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 63.386605,
-          "body_selection": 1.044882,
-          "decode": 3.609452,
-          "fallback_build": 49.196926000000005,
-          "projection_check": 40.667823,
-          "retokenize": 29.4899,
-          "scopenize": 13.639804,
-          "tokenize": 47.707187
-        }
-      },
-      {
-        "work_id": "000810_52355",
-        "total_ms": 244.19559399999997,
-        "dominant_stage": "tokenize",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 17.019706999999997,
-          "body_selection": 0.267758,
-          "decode": 1.27999,
-          "fallback_build": 12.946589,
-          "projection_check": 13.350466,
-          "retokenize": 1.968174,
-          "scopenize": 0.825814,
-          "tokenize": 196.537096
-        }
-      },
-      {
-        "work_id": "000311_2012",
-        "total_ms": 233.79975599999997,
-        "dominant_stage": "tokenize",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 13.685583,
-          "body_selection": 1.193241,
-          "decode": 5.784414,
-          "fallback_build": 23.363618,
-          "projection_check": 25.786579,
-          "retokenize": 3.235215,
-          "scopenize": 1.648097,
-          "tokenize": 159.103009
-        }
-      },
-      {
-        "work_id": "000077_1323",
-        "total_ms": 213.763543,
-        "dominant_stage": "tokenize",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 41.365527,
-          "body_selection": 0.657385,
-          "decode": 2.329442,
-          "fallback_build": 39.897949,
-          "projection_check": 22.194447,
-          "retokenize": 16.61404,
-          "scopenize": 9.08106,
-          "tokenize": 81.623693
-        }
-      },
-      {
-        "work_id": "001562_56146",
-        "total_ms": 193.40201100000002,
-        "dominant_stage": "aat_build",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 56.580437999999994,
-          "body_selection": 1.135272,
-          "decode": 5.318888,
-          "fallback_build": 32.662684999999996,
-          "projection_check": 36.085809000000005,
-          "retokenize": 15.219742,
-          "scopenize": 7.1192139999999995,
-          "tokenize": 39.279963
+          "aat_build": 144.70481700000002,
+          "body_selection": 2.6561779999999997,
+          "decode": 7.934726,
+          "fallback_build": 119.973068,
+          "projection_check": 89.605544,
+          "retokenize": 48.036051,
+          "scopenize": 22.26676,
+          "tokenize": 220.82380099999995
         }
       },
       {
         "work_id": "001562_56145",
-        "total_ms": 192.499678,
+        "total_ms": 254.833595,
         "dominant_stage": "aat_build",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 62.748990000000006,
-          "body_selection": 1.364029,
-          "decode": 5.528167,
-          "fallback_build": 36.855362,
-          "projection_check": 39.71341,
-          "retokenize": 22.472705,
-          "scopenize": 7.967358000000001,
-          "tokenize": 15.849657
+          "aat_build": 101.721716,
+          "body_selection": 1.582457,
+          "decode": 5.333287,
+          "fallback_build": 45.360802,
+          "projection_check": 49.136622,
+          "retokenize": 23.852277,
+          "scopenize": 10.524204,
+          "tokenize": 17.32223
+        }
+      },
+      {
+        "work_id": "001518_51731",
+        "total_ms": 252.808232,
+        "dominant_stage": "tokenize",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 15.96194,
+          "body_selection": 0.402097,
+          "decode": 1.535717,
+          "fallback_build": 8.460212,
+          "projection_check": 8.283192999999999,
+          "retokenize": 3.415803,
+          "scopenize": 1.733175,
+          "tokenize": 213.016095
+        }
+      },
+      {
+        "work_id": "000311_2012",
+        "total_ms": 250.84720900000002,
+        "dominant_stage": "tokenize",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 19.767239999999997,
+          "body_selection": 1.865675,
+          "decode": 6.480827,
+          "fallback_build": 25.303905,
+          "projection_check": 27.967474,
+          "retokenize": 2.44727,
+          "scopenize": 1.330519,
+          "tokenize": 165.684299
+        }
+      },
+      {
+        "work_id": "000118_1745",
+        "total_ms": 243.01469200000003,
+        "dominant_stage": "aat_build",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 57.194477,
+          "body_selection": 1.038202,
+          "decode": 3.58916,
+          "fallback_build": 54.539068,
+          "projection_check": 39.316592,
+          "retokenize": 28.038793,
+          "scopenize": 13.511041,
+          "tokenize": 45.787359
+        }
+      },
+      {
+        "work_id": "000810_52355",
+        "total_ms": 222.717345,
+        "dominant_stage": "tokenize",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 10.687724,
+          "body_selection": 0.453557,
+          "decode": 1.648866,
+          "fallback_build": 9.377244,
+          "projection_check": 9.736801,
+          "retokenize": 1.442488,
+          "scopenize": 0.618065,
+          "tokenize": 188.7526
+        }
+      },
+      {
+        "work_id": "000077_1323",
+        "total_ms": 218.070645,
+        "dominant_stage": "tokenize",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 51.960640000000005,
+          "body_selection": 0.411706,
+          "decode": 2.328662,
+          "fallback_build": 33.011652000000005,
+          "projection_check": 23.197452,
+          "retokenize": 19.80461,
+          "scopenize": 9.495903,
+          "tokenize": 77.86002
+        }
+      },
+      {
+        "work_id": "001562_56146",
+        "total_ms": 200.78795300000002,
+        "dominant_stage": "aat_build",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 53.209188999999995,
+          "body_selection": 1.838195,
+          "decode": 6.7182960000000005,
+          "fallback_build": 38.156251000000005,
+          "projection_check": 39.719818,
+          "retokenize": 13.096023,
+          "scopenize": 7.380061,
+          "tokenize": 40.67012
         }
       },
       {
         "work_id": "001034_4823",
-        "total_ms": 178.19464200000002,
+        "total_ms": 189.068508,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 36.626005000000006,
-          "body_selection": 0.34194800000000003,
-          "decode": 2.225942,
-          "fallback_build": 23.419828,
-          "projection_check": 21.432202,
-          "retokenize": 17.730172,
-          "scopenize": 6.597329,
-          "tokenize": 69.821216
-        }
-      },
-      {
-        "work_id": "000148_56923",
-        "total_ms": 154.64823299999998,
-        "dominant_stage": "aat_build",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 34.924628,
-          "body_selection": 0.6023149999999999,
-          "decode": 2.165473,
-          "fallback_build": 34.264432,
-          "projection_check": 26.063007,
-          "retokenize": 22.138427,
-          "scopenize": 10.26225,
-          "tokenize": 24.227701
-        }
-      },
-      {
-        "work_id": "000129_2084",
-        "total_ms": 144.749112,
-        "dominant_stage": "tokenize",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 28.28489,
-          "body_selection": 0.744754,
-          "decode": 3.75269,
-          "fallback_build": 22.827832,
-          "projection_check": 31.683803000000005,
-          "retokenize": 4.825283,
-          "scopenize": 3.159795,
-          "tokenize": 49.470065
+          "aat_build": 46.283115,
+          "body_selection": 0.406347,
+          "decode": 2.017474,
+          "fallback_build": 29.706099,
+          "projection_check": 24.211974,
+          "retokenize": 12.653727,
+          "scopenize": 5.493436,
+          "tokenize": 68.296336
         }
       },
       {
         "work_id": "001185_45210",
-        "total_ms": 144.605544,
+        "total_ms": 143.593449,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 7.132275000000001,
-          "body_selection": 0.405856,
-          "decode": 1.580758,
-          "fallback_build": 5.965964,
-          "projection_check": 8.016207,
-          "retokenize": 1.773426,
-          "scopenize": 0.915283,
-          "tokenize": 118.815775
+          "aat_build": 7.44274,
+          "body_selection": 0.399507,
+          "decode": 1.755716,
+          "fallback_build": 6.421988,
+          "projection_check": 7.536699,
+          "retokenize": 1.934845,
+          "scopenize": 1.108801,
+          "tokenize": 116.993153
         }
       },
       {
-        "work_id": "000255_45395",
-        "total_ms": 130.66432,
-        "dominant_stage": "tokenize",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 7.434362,
-          "body_selection": 0.374817,
-          "decode": 1.733387,
-          "fallback_build": 8.497963,
-          "projection_check": 9.121079,
-          "retokenize": 1.867105,
-          "scopenize": 0.894973,
-          "tokenize": 100.740634
-        }
-      },
-      {
-        "work_id": "000989_350",
-        "total_ms": 122.096788,
-        "dominant_stage": "tokenize",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 26.235936,
-          "body_selection": 0.5895549999999999,
-          "decode": 2.3023420000000003,
-          "fallback_build": 15.111522,
-          "projection_check": 11.661879,
-          "retokenize": 7.216843,
-          "scopenize": 2.853788,
-          "tokenize": 56.124923
-        }
-      },
-      {
-        "work_id": "000296_1864",
-        "total_ms": 121.27401400000002,
+        "work_id": "000148_56923",
+        "total_ms": 137.241959,
         "dominant_stage": "aat_build",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 34.279873,
-          "body_selection": 0.346007,
-          "decode": 2.385112,
-          "fallback_build": 20.439281,
-          "projection_check": 18.776893,
-          "retokenize": 8.511243,
-          "scopenize": 3.719301,
-          "tokenize": 32.816303999999995
+          "aat_build": 32.12305,
+          "body_selection": 0.6349250000000001,
+          "decode": 1.918605,
+          "fallback_build": 27.731546,
+          "projection_check": 22.921534,
+          "retokenize": 17.981084000000003,
+          "scopenize": 9.438764,
+          "tokenize": 24.492451
         }
       },
       {
-        "work_id": "000148_761",
-        "total_ms": 120.905827,
-        "dominant_stage": "tokenize",
+        "work_id": "001562_33224",
+        "total_ms": 136.938241,
+        "dominant_stage": "aat_build",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 22.612854,
-          "body_selection": 0.532086,
-          "decode": 1.978794,
-          "fallback_build": 10.740057,
-          "projection_check": 10.22056,
-          "retokenize": 4.171017,
-          "scopenize": 2.507651,
-          "tokenize": 68.142808
+          "aat_build": 42.897363,
+          "body_selection": 1.530097,
+          "decode": 5.392986,
+          "fallback_build": 30.688041,
+          "projection_check": 31.138138,
+          "retokenize": 10.072179,
+          "scopenize": 5.3935260000000005,
+          "tokenize": 9.825911
         }
       },
       {
         "work_id": "000148_789",
-        "total_ms": 118.08492,
+        "total_ms": 131.346795,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 26.661652,
-          "body_selection": 0.806414,
-          "decode": 2.7495990000000003,
-          "fallback_build": 19.547967999999997,
-          "projection_check": 22.757752999999997,
-          "retokenize": 4.655583,
-          "scopenize": 2.060754,
-          "tokenize": 38.845197
+          "aat_build": 31.391376,
+          "body_selection": 0.8297530000000001,
+          "decode": 3.044175,
+          "fallback_build": 21.747453,
+          "projection_check": 23.231862,
+          "retokenize": 5.405756,
+          "scopenize": 2.680408,
+          "tokenize": 43.016012
+        }
+      },
+      {
+        "work_id": "000989_350",
+        "total_ms": 130.567813,
+        "dominant_stage": "tokenize",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 30.548323,
+          "body_selection": 0.342167,
+          "decode": 1.712756,
+          "fallback_build": 15.178847,
+          "projection_check": 14.663831,
+          "retokenize": 6.085440999999999,
+          "scopenize": 2.773368,
+          "tokenize": 59.26308
+        }
+      },
+      {
+        "work_id": "000296_1864",
+        "total_ms": 130.400693,
+        "dominant_stage": "aat_build",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 39.129193,
+          "body_selection": 0.618975,
+          "decode": 2.46157,
+          "fallback_build": 19.942298,
+          "projection_check": 22.115691,
+          "retokenize": 7.798627,
+          "scopenize": 4.180216,
+          "tokenize": 34.154123
+        }
+      },
+      {
+        "work_id": "000129_2084",
+        "total_ms": 128.283612,
+        "dominant_stage": "tokenize",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 24.598631,
+          "body_selection": 1.26537,
+          "decode": 4.94584,
+          "fallback_build": 22.019542,
+          "projection_check": 24.066795,
+          "retokenize": 4.863611000000001,
+          "scopenize": 3.174484,
+          "tokenize": 43.349339
+        }
+      },
+      {
+        "work_id": "000255_45395",
+        "total_ms": 125.875401,
+        "dominant_stage": "tokenize",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 9.184656,
+          "body_selection": 0.417837,
+          "decode": 1.727256,
+          "fallback_build": 8.103425,
+          "projection_check": 9.061036,
+          "retokenize": 1.774215,
+          "scopenize": 0.767564,
+          "tokenize": 94.839412
+        }
+      },
+      {
+        "work_id": "000148_761",
+        "total_ms": 123.489069,
+        "dominant_stage": "tokenize",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 20.646453,
+          "body_selection": 0.322778,
+          "decode": 1.516957,
+          "fallback_build": 16.089649,
+          "projection_check": 12.223861,
+          "retokenize": 4.012748,
+          "scopenize": 2.0270129999999997,
+          "tokenize": 66.64961
+        }
+      },
+      {
+        "work_id": "000148_782",
+        "total_ms": 121.869684,
+        "dominant_stage": "tokenize",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 33.016802999999996,
+          "body_selection": 0.940162,
+          "decode": 3.109355,
+          "fallback_build": 18.154573,
+          "projection_check": 21.759284,
+          "retokenize": 5.4785260000000005,
+          "scopenize": 2.856037,
+          "tokenize": 36.554944
         }
       },
       {
         "work_id": "001341_51302",
-        "total_ms": 115.42123,
+        "total_ms": 121.36104599999999,
         "dominant_stage": "tokenize",
         "fallback_used": false,
         "stages_ms": {
-          "aat_build": 3.310704,
-          "body_selection": 0.0463,
-          "decode": 0.225458,
+          "aat_build": 4.388305,
+          "body_selection": 0.0735,
+          "decode": 0.303207,
           "fallback_build": 0.0,
-          "projection_check": 1.349609,
-          "retokenize": 0.144659,
-          "scopenize": 0.32318800000000003,
-          "tokenize": 110.021312
-        }
-      },
-      {
-        "work_id": "000290_24376",
-        "total_ms": 112.09026500000002,
-        "dominant_stage": "tokenize",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 23.969023,
-          "body_selection": 0.865363,
-          "decode": 3.059196,
-          "fallback_build": 15.977736,
-          "projection_check": 19.14194,
-          "retokenize": 4.490485,
-          "scopenize": 1.826816,
-          "tokenize": 42.759706
-        }
-      },
-      {
-        "work_id": "000091_522",
-        "total_ms": 110.141522,
-        "dominant_stage": "tokenize",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 25.066595,
-          "body_selection": 0.740534,
-          "decode": 2.764438,
-          "fallback_build": 20.389851,
-          "projection_check": 18.03552,
-          "retokenize": 8.656341999999999,
-          "scopenize": 4.497084999999999,
-          "tokenize": 29.991157
+          "projection_check": 1.1179,
+          "retokenize": 0.121539,
+          "scopenize": 0.116009,
+          "tokenize": 115.240586
         }
       }
     ]
@@ -370,7 +370,7 @@
     "only_b": 0,
     "structural_difference_count": 17894,
     "visible_text_difference_count": 17534,
-    "normalized_visible_text_difference_count": 2808,
+    "normalized_visible_text_difference_count": 2780,
     "same_visible_structural_difference_count": 360,
     "semantic_hash_difference_counts": {
       "gaiji_descriptions": 367,
@@ -379,8 +379,8 @@
     "normalized_visible_difference_buckets": {
       "visible_and_gaiji_descriptions": 36,
       "visible_and_gaiji_descriptions+ruby_readings": 118,
-      "visible_and_ruby_readings": 1221,
-      "visible_only": 1433
+      "visible_and_ruby_readings": 1203,
+      "visible_only": 1423
     },
     "a_semantic_totals": {
       "block:paragraph": 17894,
@@ -468,11 +468,11 @@
         "work_id": "000005_53194",
         "visible_text_differs": true,
         "normalized_visible_text_differs": true,
-        "a_structure_hash": "sha256:b12c0f5a90c8b02e189cb2c914ab9f8b364077c28900933acc603b4822196813",
+        "a_structure_hash": "sha256:209552e95288fa8c6bd79df19221bfc7e825d92d56042b138875d72df4910700",
         "b_structure_hash": "sha256:0822e234c4280dd14d7e3a48e52056bacc2688e1ad1452b62037e034908c06bf",
-        "a_visible_hash": "sha256:0e01521e64d4926d3c0f832c0780c3db366ec7b3b435364767b9ecd2e0a91573",
+        "a_visible_hash": "sha256:305f2cd59d2dd49f5d56bb560742dda84edd235f5ee82e27937c45500731fa7f",
         "b_visible_hash": "sha256:1431bd704699a80c5f84e99ddd69c4f550e349248c966bea6fce6d1fe4bde8a4",
-        "a_normalized_visible_hash": "sha256:cf0c293fa6b20faaf89b4aa6262baf2e079b12d771a89a163ef42c6202755e26",
+        "a_normalized_visible_hash": "sha256:30e7ab49dba61bfaaf39790cbdfa9396d4e27279264339da4983a4a502beea11",
         "b_normalized_visible_hash": "sha256:f0e5f405698e84ba116184c2bc22267f9e138f729561b5311c6afafbbed6b414",
         "a_block_kinds": {
           "paragraph": 1
@@ -519,9 +519,9 @@
         },
         "normalized_visible_difference_bucket": "visible_and_ruby_readings",
         "normalized_visible_first_difference": {
-          "char_index": 14683,
-          "a_snippet": "がて重い物思いに沈みながら、そこを離れた。――『｜あのひとにとって、わたしはなんだろう？」とわた",
-          "b_snippet": "がて重い物思いに沈みながら、そこを離れた。――『あのひとにとって、わたしはなんだろう？」とわたし"
+          "char_index": 17604,
+          "a_snippet": "と言った。――「何をぼんやり立ってるの？ 皆さん、御紹介いたしますわ。この方はムッシュー・ヴォル",
+          "b_snippet": "と言った。――「何をぼんやり立ってるの？ 皆さん"
         }
       },
       {
@@ -737,11 +737,11 @@
         "work_id": "000006_1869",
         "visible_text_differs": true,
         "normalized_visible_text_differs": true,
-        "a_structure_hash": "sha256:60ca1cd2fbcc5fc94b53bed5dd61c07bf72a238970e8f04a92346c57661a87a5",
+        "a_structure_hash": "sha256:cd165a162505185e662b6b5603ae6b630ec3972537fa3229ea33df20a946b650",
         "b_structure_hash": "sha256:249642c65c29587c3be9dd11928df7fd118bf20c1ca5b30972a6e7b99c451b37",
-        "a_visible_hash": "sha256:cd820ec703f8e3f90524dd4fb550127fd7d6b2c86b3b045f02b130e42ff36ff9",
+        "a_visible_hash": "sha256:2b7add545bcbb8692f0a0ae8e5496eb8275f72c793281e2e40af92fe98ce1eb6",
         "b_visible_hash": "sha256:5a59e64a6a0e9de68afbef52d5aa9770dcb07a481ab182992cad14e6cb5f008b",
-        "a_normalized_visible_hash": "sha256:dc388ce308c1d8cabb7cfe7aa2093a23116a944ab42f0767a1f5dbd4c6dd29d9",
+        "a_normalized_visible_hash": "sha256:f8c66d701f3d9686740533c4463fb3ce9ca45c06da2e930bed1d782d1057a5cb",
         "b_normalized_visible_hash": "sha256:ddf54e37dda94b722308ae9b76fb6f565c4fc8d0ed8287e8b68c7e729ae0ceb9",
         "a_block_kinds": {
           "paragraph": 1
@@ -792,7 +792,7 @@
         "normalized_visible_difference_bucket": "visible_and_ruby_readings",
         "normalized_visible_first_difference": {
           "char_index": 3795,
-          "a_snippet": "ネ、お下着が格子縞の黄八丈で、お上着はパッとした｜宜引縞の糸織で、お髪は何時ものイボジリ捲きでし",
+          "a_snippet": "ネ、お下着が格子縞の黄八丈で、お上着はパッとした宜引縞の糸織で、お髪は何時ものイボジリ捲きでした",
           "b_snippet": "ネ、お下着が格子縞の黄八丈で、お上着はパッとした縞の糸織で、お髪は何時ものイボジリ捲きでしたがネ"
         }
       },

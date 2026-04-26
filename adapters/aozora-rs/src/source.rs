@@ -119,7 +119,8 @@ pub(crate) fn starts_with_separator(text: &str) -> bool {
 
 pub(crate) fn source_visible_text(txt: &str) -> String {
     let without_gaiji = gaiji_regex().replace_all(txt, "");
-    let without_ruby = ruby_regex().replace_all(&without_gaiji, "$1");
+    let without_explicit_ruby = explicit_ruby_regex().replace_all(&without_gaiji, "$1");
+    let without_ruby = ruby_regex().replace_all(&without_explicit_ruby, "$1");
     let without_commands = command_regex()
         .replace_all(&without_ruby, "")
         .replace('※', "");
@@ -144,6 +145,11 @@ fn ruby_regex() -> &'static Regex {
     REGEX.get_or_init(|| {
         Regex::new(r"｜?([^｜\s《》※［＃\[\]］、。，．「」『』（）()]+)《[^》]+》").unwrap()
     })
+}
+
+fn explicit_ruby_regex() -> &'static Regex {
+    static REGEX: OnceLock<Regex> = OnceLock::new();
+    REGEX.get_or_init(|| Regex::new(r"｜([^《》\r\n]+)《[^》]+》").unwrap())
 }
 
 fn command_regex() -> &'static Regex {
@@ -224,5 +230,12 @@ mod tests {
             assert!(!visible.contains("わがはい"));
             assert!(!visible.contains("ここは注記"));
         }
+    }
+
+    #[test]
+    fn source_visible_text_projects_explicit_ruby_base_without_marker() {
+        let visible = source_visible_text("――『｜あのひとにとって、わたし《ルビ》はなんだろう？」");
+
+        assert_eq!(visible, "――『あのひとにとって、わたしはなんだろう？」");
     }
 }

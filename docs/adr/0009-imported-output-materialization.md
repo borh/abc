@@ -18,13 +18,13 @@ content-addressed artifact records.
 Add a Clojure command:
 
 ```bash
-clojure -M:abc/materialize-import examples/ab-validator-output out/imported
+clojure -M:abc/materialize-import examples/ab-validator-output out/imported --generated-at 2026-04-26T00:00:00Z
 ```
 
 Nix exposes the same command as:
 
 ```bash
-nix run .#materialize-import -- examples/ab-validator-output out/imported
+nix run .#materialize-import -- examples/ab-validator-output out/imported --generated-at 2026-04-26T00:00:00Z
 ```
 
 The command reads:
@@ -51,18 +51,12 @@ dimensions are `null`.
 The materializer computes `artifact_id` as:
 
 ```text
-sha256(v0-identity-json(manifest_identity_object))
+sha256(RFC8785-JCS(manifest_identity_object))
 ```
 
-The v0 identity JSON implementation is intentionally narrow. It supports the
-identity-object value domain used by `schemas/manifest.schema.json`: maps with
-string keys, string hash values, and `null`. It sorts map keys
-lexicographically, emits UTF-8 JSON bytes, and escapes strings according to JSON
-rules. This is enough for the v0 manifest identity object but is not a general
-RFC 8785 implementation.
-
-A future ADR must replace this with full JCS before manifests are promoted to a
-public release format.
+The same JCS implementation is used for schema hashes and ArtifactID
+computation. Deterministic pretty JSON output for generated regression tests is
+not the ArtifactID canonicalization algorithm.
 
 ## Acceptance Criteria
 
@@ -70,6 +64,9 @@ public release format.
   `schemas/manifest.schema.json`.
 - Generated content hashes match the actual imported files.
 - Generated artifact IDs are distinct from content hashes.
+- Producer-supplied parser IR and diagnostic schema hashes match the checked-in
+  ABC schemas used for validation, unless a registered compatibility rule
+  exists.
 - The design-bundle validation command materializes the fixture into a temporary
   directory and validates the generated manifests.
 - The Bash wrapper remains a compatibility shim; Clojure owns the logic.

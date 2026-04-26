@@ -3,6 +3,7 @@
 Status: Draft
 Date: 2026-04-26
 Supersedes: none
+Amends: ADR 0006
 Source: `docs/adr/0006-v0-design-bundle-validation.md`
 
 ## Context
@@ -35,19 +36,19 @@ nix run .#validate-design-bundle
 `bin/validate-design-bundle.sh` remains as a compatibility wrapper and calls the
 Clojure entry point.
 
-For v0, the Clojure validator delegates JSON Schema Draft 2020-12 checks to the
-Python `jsonschema` package pinned in the validation dev shell. Clojure owns the
-orchestration, file selection, fixture hash checks, JSONL parsing, run-summary
-checks, and external command reporting. A future ADR may replace Python schema
-validation with a JVM library after evaluating Draft 2020-12 conformance.
+For v0, the Clojure validator performs JSON Schema Draft 2020-12 checks through
+the `org.clojars.jules_gosnell/m3` JVM library. Clojure owns orchestration, file
+selection, fixture hash checks, JSONL parsing, run-summary checks, and external
+command reporting.
 
 ## Runtime Boundaries
 
 - Clojure owns ABC command logic.
 - Nix owns dependency pinning and command exposure.
 - Bash wrappers are allowed only as thin compatibility shims.
-- Python `jsonschema`, `xmllint`, and `git-cliff` are external tools invoked by
-  the Clojure CLI until native replacements are justified.
+- `m3` owns JSON Schema validation inside the JVM.
+- `xmllint` and `git-cliff` remain external tools invoked by the Clojure CLI
+  until native replacements are justified.
 
 ## Acceptance Criteria
 

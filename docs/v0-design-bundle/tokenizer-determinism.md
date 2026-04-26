@@ -16,6 +16,8 @@ output.
 - Locale and encoding settings.
 - Thread/concurrency settings.
 - Normalization policy for input text.
+- Normalization policy hash when the policy is shared across parser, metadata,
+  TEI rendering, or tokenization stages.
 - Output format schema or descriptor hash.
 
 ## Known-Good Configuration Template
@@ -31,6 +33,7 @@ locale:
 encoding:
 threads:
 input_normalization:
+normalization_policy_hash:
 output_format_spec_hash:
 fixture_hash:
 ```
@@ -58,6 +61,12 @@ Tokenization fixtures must state whether input text and metadata strings use
 source bytes, NFC, or NFKC. Japanese names and bibliographic strings can change
 hashes under different normalization choices, so tokenizer artifacts must not
 inherit an implicit locale or Unicode normalization policy.
+
+Normalization is not only a tokenizer concern. If parser, metadata hashing, TEI
+rendering, and tokenization share a normalization policy, that policy must be a
+hash-addressed artifact and must either be included in each stage-specific
+config hash or promoted to an explicit identity dimension by a later manifest
+schema.
 
 ## Acceptance Criteria
 

@@ -18,7 +18,7 @@
     (.update digest (.getBytes s "UTF-8"))
     (bytes->hex (.digest digest))))
 
-(defn schema-file-hash [file]
+(defn file-hash [file]
   (with-open [in (io/input-stream (io/file file))]
     (let [digest (MessageDigest/getInstance "SHA-256")
           buffer (byte-array 8192)]
@@ -26,25 +26,48 @@
         (let [n (.read in buffer)]
           (when (pos? n)
             (.update digest buffer 0 n)
-            (recur))))
+              (recur))))
       (str "sha256:" (bytes->hex (.digest digest))))))
 
 (defn json-string [s]
   (json/write-json-str s))
 
-(defn v0-identity-json [value]
+(declare jcs-json)
+
+(defn jcs-object [value]
+  (str "{"
+       (->> value
+            (sort-by key)
+            (map (fn [[k v]]
+                   (when-not (string? k)
+                     (throw (ex-info "JCS object keys must be strings"
+                                     {:key k})))
+                   (str (json-string k) ":" (jcs-json v))))
+            (string/join ","))
+       "}"))
+
+(defn jcs-json [value]
   (cond
     (nil? value) "null"
+    (or (true? value) (false? value)) (if value "true" "false")
     (string? value) (json-string value)
-    (map? value) (str "{"
-                      (->> value
-                           (sort-by key)
-                           (map (fn [[k v]]
-                                  (str (json-string k) ":" (v0-identity-json v))))
-                           (string/join ","))
-                      "}")
-    :else (throw (ex-info "Unsupported canonical JSON value"
+    (number? value) (json/write-json-str value)
+    (map? value) (jcs-object value)
+    (sequential? value) (str "["
+                             (->> value
+                                  (map jcs-json)
+                                  (string/join ","))
+                             "]")
+    :else (throw (ex-info "Unsupported JCS JSON value"
                           {:value value}))))
+
+(def v0-identity-json jcs-json)
+
+(defn schema-value-hash [schema-value]
+  (str "sha256:" (sha256-string (jcs-json schema-value))))
+
+(defn schema-hash [file]
+  (schema-value-hash (json/read-json (slurp (io/file file)))))
 
 (defn artifact-id [identity-object]
   (str "sha256:" (sha256-string (v0-identity-json identity-object))))

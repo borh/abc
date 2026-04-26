@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/abc/schemas/diagnostic.schema.json",
+  "title": "ABC Parser Diagnostic",
+  "$defs": {
+    "span": {
+      "type": "object",
+      "$comment": "end must be greater than or equal to start; JSON Schema cannot compare sibling numeric values portably without a non-standard extension.",
+      "required": ["start", "end"],
+      "additionalProperties": false,
+      "properties": {
+        "start": { "type": "integer", "minimum": 0 },
+        "end": { "type": "integer", "minimum": 0 },
+        "line": { "type": ["integer", "null"], "minimum": 1 },
+        "column": { "type": ["integer", "null"], "minimum": 1 }
+      }
+    }
+  },
+  "type": "object",
+  "required": ["severity", "code", "message"],
+  "additionalProperties": false,
+  "properties": {
+    "severity": { "type": "string", "enum": ["fatal", "error", "warning", "info"] },
+    "code": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]+$" },
+    "message": { "type": "string" },
+    "span": {
+      "anyOf": [
+        { "$ref": "#/$defs/span" },
+        { "type": "null" }
+      ]
+    },
+    "construct": { "type": ["string", "null"] },
+    "recovery": { "type": ["string", "null"] }
+  }
+}

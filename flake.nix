@@ -29,9 +29,6 @@
               (final: _prev: import local-pkgs { pkgs = final; })
             ];
           };
-          python = pkgs.python3.withPackages (pythonPackages: [
-            pythonPackages.jsonschema
-          ]);
         in
         {
           validate-design-bundle = {
@@ -42,7 +39,6 @@
                   pkgs.lib.makeBinPath [
                     pkgs.git-cliff
                     pkgs.libxml2
-                    python
                   ]
                 }:''${PATH:-}"
                 exec ${pkgs.clojure}/bin/clojure -M:abc/validate-design-bundle "$@"
@@ -81,9 +77,6 @@
           });
           unidic = pkgs.unidic-cwj;
           mecabDicDir = "${unidic}/share/mecab/dic/unidic-cwj";
-          python = pkgs.python3.withPackages (pythonPackages: [
-            pythonPackages.jsonschema
-          ]);
         in
         {
           default = pkgs.mkShell {
@@ -96,7 +89,6 @@
               mecab
               unidic
               libxml2
-              python
             ];
 
             LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
@@ -125,7 +117,6 @@
               pkgs.git-cliff
               pkgs.jq
               pkgs.libxml2
-              python
             ];
           };
         }

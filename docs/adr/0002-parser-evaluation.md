@@ -31,6 +31,17 @@ Parser candidates must pass these gates before they are considered viable:
   dropped.
 - Candidate can process the smoke corpus without unacceptable fatal failures.
 
+Before comparing candidates, "unacceptable" means:
+
+- `fatal_failure_rate` is at or below the threshold recorded in the candidate
+  report for the smoke corpus.
+- `source_span_coverage` is 100% for parsed source bytes, excluding documented
+  ignored regions.
+- `unsupported_constructs` has zero silent drops.
+- every warning and error has a stable code, severity, and source span when
+  available.
+- 100% of successful parses validate against the parser IR schema.
+
 Tiebreakers:
 
 - Compatibility with `aozora2html` for comparable HTML/rendered constructs.
@@ -55,6 +66,29 @@ Measurements:
 - Source span coverage.
 - Wall-clock parse time.
 - Peak memory if the candidate reports it cheaply.
+
+Candidate reports use this minimum template:
+
+```text
+candidate_name:
+candidate_version:
+source_hash:
+license_spdx:
+redistribution_notes:
+input_corpus_hash:
+fatal_failures:
+recoverable_errors_by_code:
+warnings_by_code:
+source_span_coverage_percent:
+unsupported_constructs:
+ir_validation_pass:
+roundtrip_loss_notes:
+aozora2html_construct_comparison:
+wall_time:
+peak_rss:
+nix_packaging_status:
+recommendation:
+```
 
 ## Acceptance Criteria
 

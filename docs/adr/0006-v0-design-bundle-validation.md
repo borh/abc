@@ -19,7 +19,20 @@ materialization strategy.
 
 ## Decision
 
-Add `bin/validate-design-bundle.sh` as the v0 validation entry point.
+The canonical local and CI validation command is:
+
+```bash
+nix run .#validate-design-bundle
+```
+
+Developer direct execution is:
+
+```bash
+clojure -M:abc/validate-design-bundle
+```
+
+`bin/validate-design-bundle.sh` remains as a compatibility wrapper and
+delegates to the Clojure/Nix entry point where available.
 
 The script validates only repository-local design artifacts:
 
@@ -34,16 +47,27 @@ The script validates only repository-local design artifacts:
   well-formed XML.
 - `cliff.toml` is accepted by `git-cliff`.
 
-The validation CLI is intentionally a smoke gate. It does not prove that the
-TEI ODD generates a complete Relax NG schema, that SHACL validates the whole RDF
-view, or that any parser candidate satisfies the IR contract.
+The validation CLI is intentionally a smoke gate. It has three named levels:
+
+- `design-smoke`: repository-local schema sanity, XML well-formedness, fixture
+  hash checks, and generated fixture comparison.
+- `contract-smoke`: parser IR schema validation, diagnostic JSONL schema
+  validation, run-summary JSONL schema validation, manifest-to-RDF deterministic
+  fixture comparison, and materialized import fixture comparison.
+- `release-smoke`: TEI Relax NG validation, SHACL validation, signature
+  verification, provenance verification, and archive/mirror hash verification.
+
+The current command implements `design-smoke` and the imported-output parts of
+`contract-smoke`. It does not prove that the TEI ODD generates a complete Relax
+NG schema, that SHACL validates the whole RDF view, or that any parser candidate
+satisfies the IR contract.
 
 ## Runtime Policy
 
 The script must run inside `nix develop .#validation` using pinned dev-shell
 tools where possible. The validation dev shell provides:
 
-- Python with `jsonschema`,
+- Clojure with the `m3` JSON Schema validator,
 - `xmllint` via `libxml2`,
 - `git-cliff`,
 - `jq` for future fixture checks.
@@ -57,7 +81,7 @@ or dictionary overlays.
 
 ## CI Policy
 
-CI runs the validation CLI on push and pull request. CI should remain a smoke
+CI runs `nix run .#validate-design-bundle` on push and pull request. CI should remain a smoke
 gate, not a full corpus build:
 
 - no Aozora corpus checkout,
@@ -67,7 +91,9 @@ gate, not a full corpus build:
 
 ## Acceptance Criteria
 
-- `bin/validate-design-bundle.sh` exits `0` on the committed v0 bundle.
+- `nix run .#validate-design-bundle` exits `0` on the committed v0 bundle.
+- `bin/validate-design-bundle.sh` delegates to the supported command rather
+  than duplicating validation logic.
 - A broken example manifest causes the script to exit non-zero.
 - A canonicalization fixture hash mismatch causes the script to exit non-zero.
 - `nix flake check` succeeds after adding the validation dependencies.
@@ -75,6 +101,6 @@ gate, not a full corpus build:
 
 ## Rollback
 
-If the shell script grows beyond simple orchestration, replace it with a small
-Python or Clojure validator in a new ADR. The externally visible contract remains
-the same command path: `bin/validate-design-bundle.sh`.
+If the validation command grows beyond simple orchestration, split it into
+smaller Clojure namespaces behind the same Nix app. The externally visible
+contract remains the same command path: `nix run .#validate-design-bundle`.

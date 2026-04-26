@@ -20,8 +20,8 @@ release security profile before publication.
 
 The profile should evaluate:
 
-- SLSA level 2 as the first public-release target. SLSA level 3 should be
-  evaluated, but is not required for v0 publication.
+- SLSA v1.2 Build L2 as the first public-release target. SLSA v1.2 Build L3
+  should be evaluated, but is not required for v0 publication.
 - in-toto attestations for release provenance.
 - Sigstore/Cosign bundles for keyless signing.
 - Detached signature files for canonical JSON manifests.
@@ -48,6 +48,10 @@ The profile should evaluate:
 - Signature format, key distribution, key rotation, and revocation policy are
   documented before the first public release.
 - Consumers have a documented verification path for release manifests.
+- No public release is allowed until `docs/release-verification.md` can verify
+  manifest schema hash, artifact content hash, signature or Sigstore bundle,
+  provenance attestation subject hashes, source/archive IDs, and license
+  metadata presence.
 
 ## Rollback
 

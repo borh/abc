@@ -34,6 +34,11 @@ when evaluation overhead is higher than rebuild waste. The chosen batch rule
 must be recorded in manifest or run metadata so failures remain attributable
 to individual works.
 
+A publication manifest MUST NOT be produced from a local external corpus path
+unless the source tree is first reduced to a fixed-output/content-addressed
+snapshot whose hash is recorded. Development builds from local paths are
+explicitly impure and non-releaseable.
+
 ## Cache Tiers
 
 - Hot: local development outputs.
@@ -45,7 +50,8 @@ to individual works.
 
 - v0 example bundle can be built without evaluating the full corpus.
 - Nix evaluation for the smoke corpus completes in under 30 seconds and uses
-  under 2 GB peak memory on baseline CI hardware, or the ADR must be revised
+  under 2 GB peak memory on the recorded CI runner class, CPU, RAM, OS, Nix
+  version, cache state, and corpus fixture hash, or the ADR must be revised
   before implementation proceeds.
 - The corpus input policy names development and release modes separately.
 - Publication inputs record hashes and archive IDs where available.

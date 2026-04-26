@@ -12,6 +12,20 @@ parser labels, TEI profile names, and metadata records can change independently
 of work text. The project needs a stable identity rule that works across Rust,
 Clojure/JVM, Python, JavaScript, RDF tooling, and Nix.
 
+## Terminology Clarification
+
+In v0, `artifact_id` identifies the intended derivation coordinate: the exact
+corpus input, work content, metadata record where applicable, parser/build
+inputs, schema/profile/config inputs, and output format contract.
+
+`artifact_id` is not the byte hash of the materialized output. Output bytes are
+identified by `content.content_hash`.
+
+A release MUST NOT contain two successful manifests with the same `artifact_id`
+and different `content.content_hash` values. Such a condition is a
+reproducibility conflict and must be represented as a failed release validation
+result.
+
 ## Decision
 
 The v0 ArtifactID is:
@@ -53,9 +67,17 @@ identifies the intended output contract, such as the parser IR schema or TEI
 profile that the failed activity attempted to produce.
 
 Schema hashes are SHA-256 over a bundled JSON Schema document canonicalized
-with RFC 8785 JCS. External `$ref` resolution and default expansion do not
-occur during hash computation. If a schema is split across files, the bundled
-schema is created first and becomes the schema artifact.
+with RFC 8785 JCS. Pretty-printing, source-file whitespace, and object member
+order in the checked-in schema file do not affect the schema hash. External
+`$ref` resolution and default expansion do not occur during hash computation.
+If a schema is split across files, the bundled schema is created first and
+becomes the schema artifact.
+
+The v0 schema hash algorithm label is:
+
+```text
+sha256-rfc8785-jcs-bundled-json-schema-v0
+```
 
 ## Consequences
 
@@ -77,6 +99,10 @@ schema is created first and becomes the schema artifact.
 - Example manifests keep `artifact_id` outside `manifest_identity_object`.
 - Failure manifests include input identity, attempted recipe identity,
   validation status, and error sidecar references.
+- Given two successful manifests with identical `manifest_identity_object` and
+  different `content.content_hash`, release validation fails with a
+  reproducibility-conflict report unless a later schema explicitly marks the
+  artifact kind non-deterministic and non-releaseable.
 
 ## Rollback
 

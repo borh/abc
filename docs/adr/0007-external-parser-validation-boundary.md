@@ -26,12 +26,14 @@ internal crate/module layout.
 The stable handoff is a file bundle containing:
 
 - parser IR JSON conforming to `schemas/parser-ir.schema.json`,
-- warning/error JSON Lines where each line conforms to the parser IR
-  diagnostic shape,
+- warning/error JSON Lines where each line conforms to
+  `schemas/diagnostic.schema.json`,
 - run summary JSON Lines with `run-start`, `work-result`, and `run-complete`
-  events,
-- optional comparison report JSON,
-- manifest input hashes needed to construct ABC artifact manifests.
+  events conforming to `schemas/run-summary.schema.json`,
+- optional comparison report JSON conforming to
+  `schemas/comparison-report.schema.json`,
+- manifest input hashes conforming to `schemas/manifest-inputs.schema.json`
+  needed to construct ABC artifact manifests.
 
 `ab-validator` may use any internal parser representation. Only the exported
 bundle is part of the ABC boundary.
@@ -75,11 +77,10 @@ ABC owns:
 
 ## Acceptance Criteria
 
-- `bin/validate-design-bundle.sh` validates the imported
+- `nix run .#validate-design-bundle` validates the imported
   `examples/ab-validator-output/` fixture.
 - ABC validation does not require `../ab-validator` to exist.
-- Warning JSON Lines are checked against the same diagnostic shape used by
-  parser IR.
+- Warning JSON Lines are checked against `schemas/diagnostic.schema.json`.
 - Run summary JSON Lines are at least structurally checked for one start event,
   one complete event, and work-result entries.
 - Parser candidate execution remains outside this repository.

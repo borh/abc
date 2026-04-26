@@ -87,6 +87,9 @@ cleanup:
      `archive/` directory with a manifest of hashes.
    - Do not commit large generated snapshots unless they are deliberate small
      fixtures.
+   - Every archived generated artifact keeps a small tracked manifest recording
+     path, byte length, SHA-256, source, reason for retention, and whether it is
+     reproducible.
 
 5. **Add cleanup verification**
    - Add a script or task that validates the v0 bundle.

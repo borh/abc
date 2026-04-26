@@ -40,8 +40,9 @@ Every batch run should produce a machine-readable run summary containing:
 - tool versions.
 
 The v0 run summary format is JSON Lines: one `run-start` event, zero or more
-`work-result` events, and one `run-complete` event. A schema or fixture should
-be added when the first orchestrator script exists.
+`work-result` events, and one `run-complete` event. The minimal v0 event
+contract is `schemas/run-summary.schema.json`; future orchestrators may extend
+it only by versioning that schema.
 
 ## Retention
 
@@ -57,6 +58,9 @@ be added when the first orchestrator script exists.
 - The example bundle can be produced without a database service.
 - CI smoke corpus target runtime is under five minutes on baseline hardware.
 - Failure manifests survive even when failed outputs do not exist.
+- Failure manifests are written under the same manifest output root as
+  successful artifacts and are indexed by `artifact_id`, `work_content_hash`,
+  and failure diagnostic code where available.
 - Full-corpus storage design evaluates loose files against batched storage.
 - The operational design explicitly documents that rename-based atomic
   publishing is single-host only.

@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/abc/schemas/manifest-inputs.schema.json",
+  "title": "ABC Imported Manifest Inputs",
+  "type": "object",
+  "required": [
+    "producer",
+    "producer_version",
+    "work_id",
+    "work_content_hash",
+    "parser_build_hash",
+    "parser_config_hash",
+    "parser_ir_schema_hash",
+    "diagnostic_schema_hash",
+    "warning_sidecar_hash",
+    "run_summary_hash",
+    "comparison_report_hash"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "producer": { "type": "string", "minLength": 1 },
+    "producer_version": { "type": "string", "minLength": 1 },
+    "work_id": { "type": "string", "minLength": 1 },
+    "work_content_hash": { "$ref": "#/$defs/hash" },
+    "parser_build_hash": { "$ref": "#/$defs/hash" },
+    "parser_config_hash": { "$ref": "#/$defs/hash" },
+    "parser_ir_schema_hash": { "$ref": "#/$defs/hash" },
+    "diagnostic_schema_hash": { "$ref": "#/$defs/hash" },
+    "warning_sidecar_hash": { "$ref": "#/$defs/hash" },
+    "run_summary_hash": { "$ref": "#/$defs/hash" },
+    "comparison_report_hash": { "$ref": "#/$defs/hash" }
+  },
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+  }
+}

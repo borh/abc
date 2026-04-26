@@ -8,7 +8,8 @@ every PR without attempting a full corpus build.
 
 ## Runtime Target
 
-The default gate should run in under five minutes on baseline CI hardware. The
+The default gate should run in under five minutes on a recorded CI runner
+class, CPU, RAM, OS, Nix version, cache state, and corpus fixture hash. The
 corpus size is adjustable; start with fewer than 100 works and increase only
 when runtime remains acceptable.
 
@@ -45,17 +46,22 @@ versioned and hash-addressed input to CI.
 
 ## Versioned List Format
 
-The selected corpus list should be stored as JSON or EDN with these fields per
-entry:
+The selected corpus list should be stored as `ci-smoke-corpus.lock.json` or EDN
+with these top-level fields and entry fields:
 
 ```text
+corpus_snapshot_hash:
+list_hash:
+performance_baseline_ref:
+entries:
 work_id:
 source_path:
 aozora_snapshot_hash:
 category:
 reason:
 expected_status:
-expected_warning_codes:
+expected_diagnostics:
+expected_artifacts:
 ```
 
 The list file hash is recorded in CI run summaries and parser benchmark

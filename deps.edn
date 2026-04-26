@@ -55,7 +55,8 @@
   com.google.inject/guice                    {:mvn/version "7.0.0"}
   com.sun.xml.bind/jaxb-impl                 {:mvn/version "4.0.7"}
   com.sun.xml.bind/jaxb-core                 {:mvn/version "4.0.7"}
-  org.glassfish.jaxb/jaxb-runtime            {:mvn/version "4.0.7"}}
+  org.glassfish.jaxb/jaxb-runtime            {:mvn/version "4.0.7"}
+  org.clojars.jules_gosnell/m3               {:mvn/version "1.0.0-beta2"}}
 
  :aliases
  {:test {:extra-paths ["test"]

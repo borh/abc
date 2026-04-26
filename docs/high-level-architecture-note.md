@@ -30,14 +30,17 @@ decisions and should explicitly supersede earlier ADRs when direction changes.
 
 ## Glossary
 
-- ArtifactID: `sha256:<hex>` identifier computed from the canonical
-  `manifest_identity_object`.
+- ArtifactID: `sha256:<hex>` derivation-coordinate identifier computed from
+  the canonical `manifest_identity_object`; it is not the byte hash of the
+  materialized output.
+- Content hash: byte identity of a materialized output, recorded separately as
+  `content.content_hash`.
 - Manifest: canonical JSON record describing an artifact, its identity inputs,
   validation status, and provenance hooks.
 - `manifest_identity_object`: the JSON object whose RFC 8785 JCS bytes are
   hashed to produce the ArtifactID.
-- Schema hash: content hash of the bundled, canonical schema artifact used to
-  validate a manifest or IR document.
+- Schema hash: SHA-256 over RFC 8785 JCS bytes of the bundled schema JSON value
+  used to validate a manifest or IR document.
 - Profile hash: content hash of an output profile or format descriptor, such
   as a TEI ODD or canonical output-format specification.
 - Parser IR: language-neutral JSON interchange format emitted by, or adapted
@@ -842,11 +845,11 @@ development manifests need not be signed.
 
 Before the first public release, the project should define a security model:
 trusted publisher keys, signature format, key rotation, revocation policy, and
-how consumers verify release manifests. The security ADR should evaluate a
-target SLSA level, in-toto attestations for release provenance, and
-Sigstore/Cosign keyless signatures or bundles as an alternative to long-lived
-project keys. This is not required for local v0 experiments but should be a
-release gate.
+how consumers verify release manifests. The security ADR should evaluate SLSA
+v1.2 Build L2 as the first public-release target, evaluate Build L3, and assess
+in-toto attestations for release provenance plus Sigstore/Cosign keyless
+signatures or bundles as an alternative to long-lived project keys. This is not
+required for local v0 experiments but should be a release gate.
 
 Threat model:
 
@@ -960,9 +963,10 @@ corpus build. The default PR gate should use a small smoke corpus, roughly
 100 representative works or fewer if CI time requires it, selected to cover
 ruby scope, gaiji, editor notes, images/captions, metadata joins, validation
 failure cases, and large-work behavior. The target runtime should be under
-five minutes on baseline CI hardware; revise the corpus size against that
-constraint rather than treating 100 as fixed. The exact list should be
-versioned and hashed like other benchmark inputs.
+five minutes on a recorded CI runner class, CPU, RAM, OS, Nix version, cache
+state, and corpus fixture hash; revise the corpus size against that constraint
+rather than treating 100 as fixed. The exact list should be versioned and
+hashed like other benchmark inputs.
 
 The CI gate should run JSON Schema checks for manifests and parser IR,
 canonicalization fixtures, parser warning/error taxonomy checks, TEI validation

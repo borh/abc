@@ -1,7 +1,8 @@
 (ns abc.tools.materialize-import
   (:require [abc.tools.files :as files]
             [abc.tools.manifest :as manifest]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [clojure.tools.cli :as cli]))
 
 (def default-generated-at "2026-04-26T00:00:00Z")
 
@@ -11,7 +12,7 @@
 (defn parser-ir-manifest [input-dir manifest-inputs generated-at]
   (let [parser-ir-file (imported-file input-dir "parser-ir.json")
         warnings-file (imported-file input-dir "warnings.jsonl")
-        manifest-schema-hash (manifest/schema-file-hash "schemas/manifest.schema.json")
+        manifest-schema-hash (manifest/schema-hash "schemas/manifest.schema.json")
         identity-object (manifest/identity-object
                          manifest-inputs
                          {:manifest-schema-hash manifest-schema-hash
@@ -41,7 +42,7 @@
 
 (defn warnings-manifest [input-dir manifest-inputs generated-at]
   (let [warnings-file (imported-file input-dir "warnings.jsonl")
-        manifest-schema-hash (manifest/schema-file-hash "schemas/manifest.schema.json")
+        manifest-schema-hash (manifest/schema-hash "schemas/manifest.schema.json")
         identity-object (manifest/identity-object
                          manifest-inputs
                          {:manifest-schema-hash manifest-schema-hash
@@ -82,16 +83,27 @@
 
 (defn usage []
   (binding [*out* *err*]
-    (println "Usage: clojure -M:abc/materialize-import <input-dir> <output-dir> [generated-at]")))
+    (println "Usage: clojure -M:abc/materialize-import <input-dir> <output-dir> [--generated-at instant]")))
+
+(def cli-options
+  [[nil "--generated-at INSTANT" "UTC generation timestamp for deterministic fixtures"
+    :id :generated-at]])
 
 (defn -main [& args]
-  (let [[input-dir output-dir generated-at] args]
-    (if (and input-dir output-dir)
+  (let [{:keys [options arguments errors]} (cli/parse-opts args cli-options)
+        [input-dir output-dir positional-generated-at & extra] arguments
+        generated-at (or (:generated-at options)
+                         positional-generated-at
+                         default-generated-at)]
+    (if (or (seq errors) (nil? input-dir) (nil? output-dir) (seq extra))
+      (do
+        (doseq [error errors]
+          (binding [*out* *err*]
+            (println error)))
+        (usage)
+        (System/exit 2))
       (do
         (materialize-import! {:input-dir input-dir
                               :output-dir output-dir
-                              :generated-at (or generated-at default-generated-at)})
-        (println "materialized imported parser output to" output-dir))
-      (do
-        (usage)
-        (System/exit 2)))))
+                              :generated-at generated-at})
+        (println "materialized imported parser output to" output-dir)))))

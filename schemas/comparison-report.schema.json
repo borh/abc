@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/abc/schemas/comparison-report.schema.json",
+  "title": "ABC Parser Comparison Report",
+  "type": "object",
+  "required": ["report_schema", "run_id", "parser_candidates", "summary"],
+  "additionalProperties": false,
+  "properties": {
+    "report_schema": { "const": "abc.ab-validator-comparison.v0" },
+    "run_id": { "type": "string", "minLength": 1 },
+    "parser_candidates": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["parser_id", "parser_build_hash", "parser_config_hash"],
+        "additionalProperties": false,
+        "properties": {
+          "parser_id": { "type": "string", "minLength": 1 },
+          "parser_build_hash": { "$ref": "#/$defs/hash" },
+          "parser_config_hash": { "$ref": "#/$defs/hash" }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["works_total", "warnings_total", "errors_total"],
+      "additionalProperties": false,
+      "properties": {
+        "works_total": { "type": "integer", "minimum": 0 },
+        "warnings_total": { "type": "integer", "minimum": 0 },
+        "errors_total": { "type": "integer", "minimum": 0 }
+      }
+    }
+  },
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    }
+  }
+}

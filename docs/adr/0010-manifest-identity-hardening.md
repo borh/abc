@@ -3,6 +3,7 @@
 Status: Draft
 Date: 2026-04-26
 Supersedes: none
+Amends: ADR 0001, ADR 0009
 Source: `docs/adr/0001-manifest-identity.md` and
 `docs/adr/0009-imported-output-materialization.md`
 
@@ -13,46 +14,61 @@ imported `ab-validator` bundle. That proves the boundary, but the first
 implementation still contained two v0 shortcuts:
 
 - `manifest_schema_hash` was a fixture constant.
-- The identity canonicalization function was named as if it were general JSON
-  canonicalization.
+- The first materializer draft tied `manifest_schema_hash` to checked-in file
+  bytes, which conflicted with ADR 0001's bundled-schema JCS rule.
 
 Manifest identity is too central to leave those shortcuts hidden.
 
 ## Decision
 
-Materialized manifests compute `manifest_schema_hash` from the checked-in
-`schemas/manifest.schema.json` bytes.
+Materialized manifests compute `manifest_schema_hash` with the same algorithm
+as ADR 0001:
+
+```text
+sha256-rfc8785-jcs-bundled-json-schema-v0
+```
+
+For the current single-file schema, "bundled schema" means the parsed JSON value
+from `schemas/manifest.schema.json`. The hash is computed from the canonical
+JCS bytes of that JSON value, not from the source file bytes.
 
 Imported bundles may provide `parser_ir_schema_hash` and
 `diagnostic_schema_hash`. ABC records those supplied values because they describe
 the producer's declared output contract. The design-bundle validation command
 also records the current checked-in parser IR schema hash as diagnostic context
-through tests and validation, but it does not silently replace producer-supplied
-hashes.
+through tests and validation, but it does not silently replace
+producer-supplied hashes.
 
-The narrow identity serializer is named `v0-identity-json`, not
-`canonical-json`. It is not a full JCS/RFC 8785 implementation. It supports only
-the v0 identity-object value domain: maps with string keys, string values, and
-`null`, sorted by key.
+If a producer-supplied `parser_ir_schema_hash` or `diagnostic_schema_hash`
+differs from the hash of ABC's checked-in schema used for validation,
+validation MUST fail unless the imported bundle explicitly declares a compatible
+external schema and ABC has a registered migration/compatibility rule.
+
+ABC's v0 identity and schema hashing code uses one JCS implementation rather
+than a separate ad hoc sorted JSON writer. Deterministic pretty JSON output for
+fixtures remains a separate writer and is not the ArtifactID canonicalization
+algorithm.
 
 ## Consequences
 
-- Generated `artifact_id` values now change if `schemas/manifest.schema.json`
-  changes.
+- Generated `artifact_id` values now change when the parsed bundled schema
+  value changes.
 - Generated manifests are more defensible, because schema identity is tied to a
-  real repo artifact rather than a placeholder.
-- Full JCS remains deferred. A future public-release ADR must replace
-  `v0-identity-json` before treating generated ArtifactIDs as stable release
-  identifiers.
+  real schema artifact rather than a placeholder or pretty-printed source
+  bytes.
+- Source-file whitespace and object member order changes in
+  `schemas/manifest.schema.json` do not change `manifest_schema_hash`.
 
 ## Acceptance Criteria
 
-- Materialized manifests contain `manifest_schema_hash` equal to the SHA-256 of
-  `schemas/manifest.schema.json`.
+- Materialized manifests contain `manifest_schema_hash` equal to the
+  SHA-256/JCS hash of the bundled manifest schema JSON value.
 - Parser IR and warning materialized manifests have distinct `artifact_id`
   values.
-- Tests cover `v0-identity-json`, schema-file hashing, and generated manifest
+- Tests cover `v0-identity-json`, schema hashing, and generated manifest
   identity fields.
+- Validation fails if producer-supplied parser IR or diagnostic schema hashes
+  disagree with the checked-in ABC schemas and no compatibility rule exists.
 - `nix run .#validate-design-bundle` still validates materialized manifests.
 
 ## Rollback

@@ -1,6 +1,6 @@
 (ns abc.annotation
   (:require [malli.core :as m]
-            [corpus-utils.text :as text]
+            [abc.text :as text]
             [clj-mecab.parse :as mecab]
             [clojure.string :as str]
             [abc.aozora :as aozora]
@@ -139,7 +139,6 @@
                                [:span/char-start {:optional true} :int]
                                [:span/char-end {:optional true} :int]]})
 
-
 (defn oov? [m]                                              ;; FIXME
   (= "未知" (:mecab.features/goshu m)))
 
@@ -149,76 +148,86 @@
 (defn katakana-sentence? [s]
   (or true))
 
+(defn- resource-lines
+  [resource-name & {:keys [required?] :or {required? true}}]
+  (if-let [resource (io/resource resource-name)]
+    (with-open [f (io/reader resource)]
+      (doall (line-seq f)))
+    (if required?
+      (throw (ex-info (str "Required annotation resource is missing: " resource-name)
+                      {:resource resource-name}))
+      (do
+        (timbre/debug "Optional annotation resource is missing:" resource-name)
+        []))))
+
 ;; TODO make this deferable so only created when really needed.
 (def jis-unicode-map
   (let [hex-to-code (zipmap (map #(format "%X" %) (range 33 (+ 33 95)))
                             (map #(format "%02d" %) (range 1 95)))
-        jis-map (with-open [f (io/reader (io/resource "jisx0213-2004-std.txt"))]
-                  (into {}
-                        (comp (remove (fn [s] (= \# (first s))))
-                              (map (fn [s]
-                                     (let [[jis-field unicode-field & _] (string/split s #"\t")
-                                           [jis-standard jis-code] (string/split jis-field #"-")
-                                           men (case jis-standard "3" 1 "4" 2)
-                                           ku (hex-to-code (subs jis-code 0 2))
-                                           ten (hex-to-code (subs jis-code 2 4))
-                                           unicode-point (string/replace unicode-field "U+" "")]
-                                       (if (empty? unicode-point)
-                                         nil
-                                         (let [->unicode (fn [s] (String. (Character/toChars (Integer/parseInt s 16))))
-                                               unicode-points (string/split unicode-point #"\+")
-                                               unicode-char (apply str (map ->unicode unicode-points))
-                                               jis-string (format "%s-%s-%s" men ku ten)]
-                                           [jis-string unicode-char])))))
-                              (map identity))               ; Remove nil unicode-points.
-                        (doall (line-seq f))))]
+        jis-map (into {}
+                      (comp (remove (fn [s] (= \# (first s))))
+                            (map (fn [s]
+                                   (let [[jis-field unicode-field & _] (string/split s #"\t")
+                                         [jis-standard jis-code] (string/split jis-field #"-")
+                                         men (case jis-standard "3" 1 "4" 2)
+                                         ku (hex-to-code (subs jis-code 0 2))
+                                         ten (hex-to-code (subs jis-code 2 4))
+                                         unicode-point (string/replace unicode-field "U+" "")]
+                                     (if (empty? unicode-point)
+                                       nil
+                                       (let [->unicode (fn [s] (String. (Character/toChars (Integer/parseInt s 16))))
+                                             unicode-points (string/split unicode-point #"\+")
+                                             unicode-char (apply str (map ->unicode unicode-points))
+                                             jis-string (format "%s-%s-%s" men ku ten)]
+                                         [jis-string unicode-char])))))
+                            (map identity)) ; Remove nil unicode-points.
+                      (resource-lines "jisx0213-2004-std.txt"))]
     jis-map
     #_(merge jis-map
              (reduce
-               (fn [a [jis-string unicode-char]]
-                 (let [[men ku ten] (string/split jis-string #"-")]
-                   (if (= men "1")
-                     (assoc a (format "%s-%s" ku ten) unicode-char)
-                     a)))
-               {}
-               jis-map))))
+              (fn [a [jis-string unicode-char]]
+                (let [[men ku ten] (string/split jis-string #"-")]
+                  (if (= men "1")
+                    (assoc a (format "%s-%s" ku ten) unicode-char)
+                    a)))
+              {}
+              jis-map))))
 
 ;; We need a second mapping for gaiji not covered by above jis-map
 (def gaiji-map
   ;; TODO This file is a bit outdated, and we should just add the missing mappings where possible.
   ;; https://raw.githubusercontent.com/cjkvi/cjkvi-data/master/aozora_gaiji_chuki.txt
   ;; Note that there is a formatting error on line containing "!!!" (spaces should be replaced with \tab).
-  (with-open [f (io/reader (io/resource "aozora_gaiji_chuki.txt"))]
-    (into {}
-          (comp (remove (fn [s] (= \# (first s))))
-                (remove empty?)
-                (map (fn [s]
-                       (let [[category-type ucs ivs c gaiji-text comment] (string/split s #"\t")
-                             ;; gaiji-text includes annotation markers, so we exclude them if present to match against TEXT
-                             gaiji-text (-> gaiji-text (string/replace "※［＃" "") (string/replace "［＃" ""))
-                             gaiji-text (if (= \］ (last gaiji-text)) (subs gaiji-text 0 (dec (count gaiji-text))))]
-                         #_(when-not gaiji-text
+  (into {}
+        (comp (remove (fn [s] (= \# (first s))))
+              (remove empty?)
+              (map (fn [s]
+                     (let [[category-type ucs ivs c gaiji-text comment] (string/split s #"\t")
+                           ;; gaiji-text includes annotation markers, so we exclude them if present to match against TEXT
+                           gaiji-text (-> gaiji-text (string/replace "※［＃" "") (string/replace "［＃" ""))
+                           gaiji-text (if (= \］ (last gaiji-text)) (subs gaiji-text 0 (dec (count gaiji-text))))]
+                       #_(when-not gaiji-text
                            (timbre/error "gaiji-text" [category-type ucs ivs c gaiji-text comment]))
-                         (when (empty? c)
-                           (timbre/error "no replacement offered" [category-type ucs ivs c gaiji-text comment]))
-                         [gaiji-text
-                          (if-not (empty? c)
-                            c
-                            (cond (re-seq #"ローマ数字" gaiji-text)
-                                  (let [numeral (first (re-seq #"\d+" gaiji-text))]
-                                    (case numeral
-                                      "13" "ⅩⅢ"
-                                      "14" "ⅩⅣ"
-                                      "15" "ⅩⅤ"))
+                       (when (empty? c)
+                         (timbre/error "no replacement offered" [category-type ucs ivs c gaiji-text comment]))
+                       [gaiji-text
+                        (if-not (empty? c)
+                          c
+                          (cond (re-seq #"ローマ数字" gaiji-text)
+                                (let [numeral (first (re-seq #"\d+" gaiji-text))]
+                                  (case numeral
+                                    "13" "ⅩⅢ"
+                                    "14" "ⅩⅣ"
+                                    "15" "ⅩⅤ"))
 
-                                  (re-seq #"小書き" gaiji-text)
-                                  (subs gaiji-text (dec (dec (count gaiji-text))) (dec (count gaiji-text)))
+                                (re-seq #"小書き" gaiji-text)
+                                (subs gaiji-text (dec (dec (count gaiji-text))) (dec (count gaiji-text)))
 
-                                  (re-seq #"黒丸Ａ" gaiji-text) "🅐"
-                                  (re-seq #"黒丸Ｚ" gaiji-text) "🅩"
+                                (re-seq #"黒丸Ａ" gaiji-text) "🅐"
+                                (re-seq #"黒丸Ｚ" gaiji-text) "🅩"
 
-                                  :else nil))]))))
-          (doall (line-seq f)))))
+                                :else nil))]))))
+        (resource-lines "aozora_gaiji_chuki.txt" :required? false)))
 
 ;; Custom Aozora Bunko parser
 
@@ -368,9 +377,9 @@
 
 (defn parse-gaiji [xs]
   (let [gaiji (jis-unicode-map
-                (some (fn [s]
-                        (->> s (re-seq #"(\d-\d+-\d+|\d+-\d+)") first second #_reformat-jis))
-                      (flatten xs)))]
+               (some (fn [s]
+                       (->> s (re-seq #"(\d-\d+-\d+|\d+-\d+)") first second #_reformat-jis))
+                     (flatten xs)))]
     (if-not gaiji
       (timbre/error "Gaiji not found:" xs)
       [gaiji])))
@@ -431,25 +440,25 @@
 (defn tag-parser [ast]
   (->> ast
        (reduce
-         (fn [a x]
-           (let [tag (first x)
-                 parsed-tag (condp = tag
-                              open-gaiji (parse-gaiji x)
-                              open-anno (parse-other x tag)
-                              open-ruby (parse-ruby x (some-> a peek peek))
-                              open-quot (parse-quotation x)
-                              open-bracket (parse-other x tag)
-                              ruby-bar (parse-ruby x nil #_(some-> a peek peek))
-                              x)]
-             (cond
-               (= tag open-ruby) (conj (pop a) (assoc (peek a) (dec (count (peek a))) parsed-tag))
-               (map? parsed-tag) (conj a parsed-tag)
-               (nil? parsed-tag) a
-               (not-empty a) (if (string? (first (peek a)))
-                               (conj (pop a) (into (peek a) parsed-tag))
-                               (conj a parsed-tag))
-               :else (conj a parsed-tag))))
-         [])
+        (fn [a x]
+          (let [tag (first x)
+                parsed-tag (condp = tag
+                             open-gaiji (parse-gaiji x)
+                             open-anno (parse-other x tag)
+                             open-ruby (parse-ruby x (some-> a peek peek))
+                             open-quot (parse-quotation x)
+                             open-bracket (parse-other x tag)
+                             ruby-bar (parse-ruby x nil #_(some-> a peek peek))
+                             x)]
+            (cond
+              (= tag open-ruby) (conj (pop a) (assoc (peek a) (dec (count (peek a))) parsed-tag))
+              (map? parsed-tag) (conj a parsed-tag)
+              (nil? parsed-tag) a
+              (not-empty a) (if (string? (first (peek a)))
+                              (conj (pop a) (into (peek a) parsed-tag))
+                              (conj a parsed-tag))
+              :else (conj a parsed-tag))))
+        [])
        (mapv (fn [x]
                (if (every? string? x)
                  (string/join x)
@@ -472,35 +481,35 @@
                                        (rest ms)
                                        (nth m 5)
                                        (conj r (cond-> m
-                                                       (< i n) (assoc 5 "")
-                                                       rhs (update 0 str rhs))))
+                                                 (< i n) (assoc 5 "")
+                                                 rhs (update 0 str rhs))))
                                 r)))))]
       (when-not (empty? annotations)
         (->> annotations
              (reduce
-               (fn [v [left ruby open-sym tag close-sym right]]
-                 (if-not (= close-sym (get matching-metachars open-sym))
+              (fn [v [left ruby open-sym tag close-sym right]]
+                (if-not (= close-sym (get matching-metachars open-sym))
                    ;; If metachars do not match, discard this match
-                   (do (println :1 [open-sym close-sym (get matching-metachars open-sym)] left ruby open-sym tag close-sym right) v)
-                   (when-let [a (try (parse-annotation left ruby open-sym tag)
-                                     (catch Exception e (do (timbre/debug "Annotation parse failure: " e "in string:" s)
-                                                            nil)))]
-                     (if (= :ruby (:annotation/type a))
-                       (conj v
-                             (if ruby left (string/replace left (:annotation/target a) ""))
-                             {:sentence/fragment   (:annotation/target a)
-                              :fragment/annotation (dissoc a :annotation/target)}
-                             right)
-                       (conj v left a right)))))
-               [])
+                  (do (println :1 [open-sym close-sym (get matching-metachars open-sym)] left ruby open-sym tag close-sym right) v)
+                  (when-let [a (try (parse-annotation left ruby open-sym tag)
+                                    (catch Exception e (do (timbre/debug "Annotation parse failure: " e "in string:" s)
+                                                           nil)))]
+                    (if (= :ruby (:annotation/type a))
+                      (conj v
+                            (if ruby left (string/replace left (:annotation/target a) ""))
+                            {:sentence/fragment   (:annotation/target a)
+                             :fragment/annotation (dissoc a :annotation/target)}
+                            right)
+                      (conj v left a right)))))
+              [])
              (into [] (remove empty?))
              (reduce
-               (fn [a x]
-                 (let [prev (peek a)]
-                   (if (and (string? prev) (string? x))
-                     (conj (pop a) (str prev x))
-                     (conj a x))))
-               [])))))
+              (fn [a x]
+                (let [prev (peek a)]
+                  (if (and (string? prev) (string? x))
+                    (conj (pop a) (str prev x))
+                    (conj a x))))
+              [])))))
 
 (defn remove-aozora-formatting
   "Removes content added by the Aozora Bunko project that is not present in the original.
@@ -518,25 +527,25 @@
   (if (string? text-fragment)
     text-fragment
     (string/join
-      (map (fn [x]
-             (if (map? x)
+     (map (fn [x]
+            (if (map? x)
                ;; Only annotations with a sentence fragment are extracted
-               (if-let [y (:sentence/fragment x)]
-                 y)
-               x)) text-fragment))))
+              (if-let [y (:sentence/fragment x)]
+                y)
+              x)) text-fragment))))
 
 (defn doc->plaintext
   [doc]
   (transduce
-    (comp (mapcat :document/paragraphs)
-          (interpose "\n\n")
-          (mapcat :paragraph/sentences)
-          (interpose "\n\n")
-          (map :sentence/text)
-          (interpose "\n")
-          (map sentence->plaintext))
-    rf/str
-    doc))
+   (comp (mapcat :document/paragraphs)
+         (interpose "\n\n")
+         (mapcat :paragraph/sentences)
+         (interpose "\n\n")
+         (map :sentence/text)
+         (interpose "\n")
+         (map sentence->plaintext))
+   rf/str
+   doc))
 
 (defn parse-with-tags [sentence]
   (let [annotated-text (if-let [tagged-sentence (try (aozora-annotation->tags sentence)
@@ -573,16 +582,16 @@
    (into []
          (comp
            ;; Partition by paragraph (empty line or indented line (common in BCCWJ)).
-           (partition-by paragraph-split-fn)
-           (map (fn [paragraphs]
-                  (into []
-                        (comp (filter identity)
-                              (remove empty?)
-                              (map text/split-japanese-sentence)
-                              (map #(mapv string/trim %)))
-                        paragraphs)))
-           (remove (partial every? empty?))
-           (mapcat identity))                               ; Remove paragraph boundaries.
+          (partition-by paragraph-split-fn)
+          (map (fn [paragraphs]
+                 (into []
+                       (comp (filter identity)
+                             (remove empty?)
+                             (map text/split-japanese-sentence)
+                             (map #(mapv string/trim %)))
+                       paragraphs)))
+          (remove (partial every? empty?))
+          (mapcat identity))                               ; Remove paragraph boundaries.
          lines)))
 
 (defn parse-paragraphs [s]

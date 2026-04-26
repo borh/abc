@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.org/abc/schemas/comparison-report.schema.json",
+  "$id": "https://w3id.org/abc/schemas/comparison-report.schema.json",
   "title": "ABC Parser Comparison Report",
   "type": "object",
   "required": ["report_schema", "run_id", "parser_candidates", "summary"],

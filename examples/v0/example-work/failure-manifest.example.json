@@ -1,5 +1,5 @@
 {
-  "manifest_schema_id": "https://example.org/abc/schemas/manifest.schema.json",
+  "manifest_schema_id": "https://w3id.org/abc/schemas/manifest.schema.json",
   "artifact_id": "sha256:8888888888888888888888888888888888888888888888888888888888888888",
   "artifact_kind": "failure",
   "validation_status": "failed",
@@ -28,7 +28,7 @@
   ],
   "provenance": {
     "generated_at": "2026-04-26T00:00:00Z",
-    "activity_id": "https://example.org/abc/activity/parse-activity-example",
+    "activity_id": "https://w3id.org/abc/activity/parse-activity-example",
     "agent": "abc-parser-example",
     "plan_hash": null,
     "used": [

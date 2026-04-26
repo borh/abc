@@ -1,6 +1,6 @@
 {
-  "schema_id": "https://example.org/abc/schemas/parser-ir.schema.json",
-  "schema_hash": "sha256:a400000000000000000000000000000000000000000000000000000000000004",
+  "schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
+  "schema_hash": "sha256:13e3127fe8eaa0649f83fd5c12e11923115810b454c6d3d22996b00e1218623f",
   "source": {
     "work_content_hash": "sha256:a100000000000000000000000000000000000000000000000000000000000001",
     "source_path": "fixtures/smoke-work/fixture-0001.txt",

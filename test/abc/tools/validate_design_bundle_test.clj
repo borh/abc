@@ -28,10 +28,24 @@
           [{"event" "run-start" "run_id" "r1"}
            {"event" "work-result" "run_id" "r1"}
            {"event" "run-complete" "run_id" "r1"}]))))
-  (testing "rejects missing work result"
-    (is (= ["ab-validator run summary must include a work-result event"]
+  (testing "accepts start and complete without work results"
+    (is (empty?
+         (validate/run-summary-errors
+          [{"event" "run-start" "run_id" "r1"}
+           {"event" "run-complete" "run_id" "r1"}]))))
+  (testing "rejects mismatched run ids"
+    (is (= ["ab-validator run summary events must all use the same run_id"]
            (validate/run-summary-errors
             [{"event" "run-start" "run_id" "r1"}
+             {"event" "work-result" "run_id" "r2"}
+             {"event" "run-complete" "run_id" "r1"}]))))
+  (testing "rejects extra lifecycle events"
+    (is (= ["ab-validator run summary must contain exactly one run-start event"
+            "ab-validator run summary must contain exactly one run-complete event"]
+           (validate/run-summary-errors
+            [{"event" "run-start" "run_id" "r1"}
+             {"event" "run-start" "run_id" "r1"}
+             {"event" "run-complete" "run_id" "r1"}
              {"event" "run-complete" "run_id" "r1"}]))))
   (testing "rejects missing run id"
     (is (= ["run summary event is missing run_id: {\"event\" \"work-result\"}"]
@@ -87,10 +101,18 @@
 (deftest schema-hash-errors-test
   (is (empty?
        (validate/schema-hash-errors
-        {"parser_ir_schema_hash" "sha256:f30db6d0e30971d231fe9c5569c0c6de7e03d2756977cabf1ab24a4ea7a11916"
-         "diagnostic_schema_hash" "sha256:b1e6bce32c90ede50a28a29ffc151ca5fdeb064a77b1619a8473e4d5edd5c021"})))
-  (is (= ["ab-validator parser_ir_schema_hash sha256:0000000000000000000000000000000000000000000000000000000000000004 does not match ABC parser IR schema hash sha256:f30db6d0e30971d231fe9c5569c0c6de7e03d2756977cabf1ab24a4ea7a11916"
-          "ab-validator diagnostic_schema_hash sha256:0000000000000000000000000000000000000000000000000000000000000008 does not match ABC diagnostic schema hash sha256:b1e6bce32c90ede50a28a29ffc151ca5fdeb064a77b1619a8473e4d5edd5c021"]
+        {"parser_ir_schema_hash" "sha256:13e3127fe8eaa0649f83fd5c12e11923115810b454c6d3d22996b00e1218623f"
+         "diagnostic_schema_hash" "sha256:e21ef2abdbf64b6fc920b4ef9a3df0e426b7bcc1cad0a6bbdd654f41e8ff302d"})))
+  (is (= ["ab-validator parser_ir_schema_hash sha256:0000000000000000000000000000000000000000000000000000000000000004 does not match ABC parser IR schema hash sha256:13e3127fe8eaa0649f83fd5c12e11923115810b454c6d3d22996b00e1218623f"
+          "ab-validator diagnostic_schema_hash sha256:0000000000000000000000000000000000000000000000000000000000000008 does not match ABC diagnostic schema hash sha256:e21ef2abdbf64b6fc920b4ef9a3df0e426b7bcc1cad0a6bbdd654f41e8ff302d"]
          (validate/schema-hash-errors
           {"parser_ir_schema_hash" (files/example-hash "04")
            "diagnostic_schema_hash" (files/example-hash "08")}))))
+
+(deftest parser-ir-schema-hash-errors-test
+  (is (empty?
+       (validate/parser-ir-schema-hash-errors
+        {"schema_hash" "sha256:13e3127fe8eaa0649f83fd5c12e11923115810b454c6d3d22996b00e1218623f"})))
+  (is (= ["ab-validator parser IR schema_hash sha256:0000000000000000000000000000000000000000000000000000000000000004 does not match ABC parser IR schema hash sha256:13e3127fe8eaa0649f83fd5c12e11923115810b454c6d3d22996b00e1218623f"]
+         (validate/parser-ir-schema-hash-errors
+          {"schema_hash" (files/example-hash "04")}))))

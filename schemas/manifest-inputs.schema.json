@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.org/abc/schemas/manifest-inputs.schema.json",
+  "$id": "https://w3id.org/abc/schemas/manifest-inputs.schema.json",
   "title": "ABC Imported Manifest Inputs",
   "type": "object",
   "required": [

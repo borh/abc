@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.org/abc/schemas/parser-ir.schema.json",
+  "$id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
   "title": "ABC Parser IR",
   "type": "object",
   "required": ["schema_id", "schema_hash", "source", "nodes", "warnings", "errors"],

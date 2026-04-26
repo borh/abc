@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.org/abc/schemas/run-summary.schema.json",
+  "$id": "https://w3id.org/abc/schemas/run-summary.schema.json",
   "title": "ABC Parser Run Summary Event",
   "$defs": {
     "status": {

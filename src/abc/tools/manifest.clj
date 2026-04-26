@@ -1,76 +1,41 @@
 (ns abc.tools.manifest
-  (:require [charred.api :as json]
-            [clojure.java.io :as io]
-            [clojure.string :as string])
-  (:import [java.io StringWriter]
-           [java.security MessageDigest]))
+  (:require [abc.tools.hash :as hash]
+            [abc.tools.jcs :as jcs]
+            [abc.tools.json :as abc-json]
+            [abc.tools.schema :as schema]
+            [charred.api :as json]
+            [clojure.java.io :as io]))
 
-(def manifest-schema-id "https://example.org/abc/schemas/manifest.schema.json")
+(def manifest-schema-id "https://w3id.org/abc/schemas/manifest.schema.json")
 
 (def corpus-snapshot-hash
   "sha256:1111111111111111111111111111111111111111111111111111111111111111")
 
 (defn bytes->hex [bytes]
-  (apply str (map #(format "%02x" (bit-and % 0xff)) bytes)))
+  (hash/bytes->hex bytes))
 
 (defn sha256-string [s]
-  (let [digest (MessageDigest/getInstance "SHA-256")]
-    (.update digest (.getBytes s "UTF-8"))
-    (bytes->hex (.digest digest))))
+  (hash/sha256-string s))
 
 (defn file-hash [file]
-  (with-open [in (io/input-stream (io/file file))]
-    (let [digest (MessageDigest/getInstance "SHA-256")
-          buffer (byte-array 8192)]
-      (loop []
-        (let [n (.read in buffer)]
-          (when (pos? n)
-            (.update digest buffer 0 n)
-              (recur))))
-      (str "sha256:" (bytes->hex (.digest digest))))))
+  (hash/format-sha256 (hash/sha256-file file)))
 
 (defn json-string [s]
   (json/write-json-str s))
 
-(declare jcs-json)
-
-(defn jcs-object [value]
-  (str "{"
-       (->> value
-            (sort-by key)
-            (map (fn [[k v]]
-                   (when-not (string? k)
-                     (throw (ex-info "JCS object keys must be strings"
-                                     {:key k})))
-                   (str (json-string k) ":" (jcs-json v))))
-            (string/join ","))
-       "}"))
-
 (defn jcs-json [value]
-  (cond
-    (nil? value) "null"
-    (or (true? value) (false? value)) (if value "true" "false")
-    (string? value) (json-string value)
-    (number? value) (json/write-json-str value)
-    (map? value) (jcs-object value)
-    (sequential? value) (str "["
-                             (->> value
-                                  (map jcs-json)
-                                  (string/join ","))
-                             "]")
-    :else (throw (ex-info "Unsupported JCS JSON value"
-                          {:value value}))))
+  (jcs/canonical-json-string value))
 
 (def v0-identity-json jcs-json)
 
 (defn schema-value-hash [schema-value]
-  (str "sha256:" (sha256-string (jcs-json schema-value))))
+  (hash/format-sha256 (hash/sha256-json-jcs schema-value)))
 
 (defn schema-hash [file]
-  (schema-value-hash (json/read-json (slurp (io/file file)))))
+  (schema/schema-hash file))
 
 (defn artifact-id [identity-object]
-  (str "sha256:" (sha256-string (v0-identity-json identity-object))))
+  (hash/format-sha256 (hash/sha256-json-jcs identity-object)))
 
 (def identity-keys
   ["manifest_schema_hash"
@@ -135,25 +100,7 @@
     manifest))
 
 (defn stable-json-value [value]
-  (cond
-    (map? value)
-    (into (sorted-map)
-          (map (fn [[k v]]
-                 [k (stable-json-value v)]))
-          value)
-
-    (vector? value)
-    (mapv stable-json-value value)
-
-    (sequential? value)
-    (mapv stable-json-value value)
-
-    :else
-    value))
+  (abc-json/prepare-deterministic-json value))
 
 (defn write-json-file! [file value]
-  (io/make-parents file)
-  (with-open [writer (io/writer file)]
-    (.write writer (json/write-json-str (stable-json-value value) :indent-str "  "))
-    (.write writer "\n"))
-  file)
+  (abc-json/write-deterministic-json-file! file value))

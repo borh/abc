@@ -241,12 +241,12 @@ release metadata. For releases, the RDF view should be materialized alongside
 the JSON manifest; for local development and query services it may be generated
 on demand from the canonical JSON manifest and then indexed.
 
-Minimal Turtle sketch. The `https://example.org/abc/` namespace is a
-placeholder; publication requires an ADR or registry decision for stable
-project IRIs.
+Minimal Turtle sketch. The `https://w3id.org/abc/` namespace is the provisional
+stable project IRI base for v0 contract fixtures; publication may still require
+an ADR or registry decision before external release.
 
 ```turtle
-@prefix abc: <https://example.org/abc/> .
+@prefix abc: <https://w3id.org/abc/> .
 @prefix prov: <http://www.w3.org/ns/prov#> .
 @prefix dcterms: <http://purl.org/dc/terms/> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .

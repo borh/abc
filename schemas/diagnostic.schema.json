@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.org/abc/schemas/diagnostic.schema.json",
+  "$id": "https://w3id.org/abc/schemas/diagnostic.schema.json",
   "title": "ABC Parser Diagnostic",
   "$defs": {
     "span": {

@@ -4,7 +4,7 @@
             [clojure.set :as set]
             [clojure.data]
             [java-time :as time]
-            [corpus-utils.ndc :refer [ndc-map]]
+            [abc.ndc :refer [ndc-map]]
             [lambdaisland.regal :as regal])
   (:import [java.time LocalDate]
            [java.net URL]))
@@ -15,15 +15,15 @@
 
 (def registry
   {::date                      (m/-simple-schema
-                                 {:type            ::date
-                                  :pred            (fn [d] (instance? LocalDate d))
-                                  :type-properties {:gen/elements [(time/local-date "2010-01-01")
-                                                                   (time/local-date "2020-12-12")]}})
+                                {:type            ::date
+                                 :pred            (fn [d] (instance? LocalDate d))
+                                 :type-properties {:gen/elements [(time/local-date "2010-01-01")
+                                                                  (time/local-date "2020-12-12")]}})
    ::url                       (m/-simple-schema
-                                 {:type            ::url
-                                  :pred            (fn [u] (instance? URL u))
-                                  :type-properties {:gen/elements [(URL. "http://some.url.com/")
-                                                                   (URL. "https://some.other.url.com/with/path")]}})
+                                {:type            ::url
+                                 :pred            (fn [u] (instance? URL u))
+                                 :type-properties {:gen/elements [(URL. "http://some.url.com/")
+                                                                  (URL. "https://some.other.url.com/with/path")]}})
    :dcterms/format             [:enum "text/plain" "text/html" "text/xml"]
    ::character-set             [:enum "JIS X 0208" "Unicode"]
    ::encoding                  [:enum "SJIS" "EUC" "UTF-8"]
@@ -233,13 +233,12 @@
             (string-date-helper year month day))
           (throw (Exception. (format "%s :: %s :: %s :: %s" s match (seq s) (re-seq #"\d{3,4}.+年" s)))))))
     (catch
-      Exception
-      e
+     Exception
+     e
       (println (ex-data e)
                s
                (re-seq japanese-date-rx s)
                (re-seq #"(\d{3,4})年?([\(（][^)）]+[）\)])?年?\s?((\d{1,2})|(\d{1,2})[～、]\d{1,2})?月?((\d{1,2})日)?" s)))))
-
 
 (defn flag-to-boolean [s]
   (case s
@@ -251,12 +250,12 @@
     (let [[_ a-child? a b-child? b] match]
       (if (and a b)
         (set/union                                          ;; TODO dcndl:NDC9 (Aozora Bunko is not updated to NDC10, but maybe we could replace with LOD from Web NDL Authorities)
-          #{(cond-> {:abc.aozora.ndc/category (ndc-map a)}
-                    a-child? (assoc :abc.aozora.ndc/children true))}
-          #{(cond-> {:abc.aozora.ndc/category (ndc-map b)}
-                    b-child? (assoc :abc.aozora.ndc/children true))})
+         #{(cond-> {:abc.aozora.ndc/category (ndc-map a)}
+             a-child? (assoc :abc.aozora.ndc/children true))}
+         #{(cond-> {:abc.aozora.ndc/category (ndc-map b)}
+             b-child? (assoc :abc.aozora.ndc/children true))})
         #{(cond-> {:abc.aozora.ndc/category (ndc-map a)}
-                  a-child? (assoc :abc.aozora.ndc/children true))}))))
+            a-child? (assoc :abc.aozora.ndc/children true))}))))
 
 (m/=> to-ndc
       [:=>
@@ -306,8 +305,8 @@
 
 (defn to-subject [subj m]
   (remove-nils
-    (assoc m :rdf/about (to-id subj)
-             :xt/id (to-xtdb-id subj))))
+   (assoc m :rdf/about (to-id subj)
+          :xt/id (to-xtdb-id subj))))
 
 (defn record-to-entities [m]
   (let [g (partial get m)
@@ -325,94 +324,94 @@
         text-resource
         (if text-resource-id
           (to-subject
-            text-resource-id
-            {::url                text-resource-id
-             :dcterms/format      "text/plain"
-             ::revision-count     (to-integer (g "テキストファイル修正回数"))
-             ::character-set      (g "テキストファイル文字集合")
-             ::last-modified-date (to-date (g "テキストファイル最終更新日"))
-             ::encoding           (to-encoding (g "テキストファイル符号化方式"))}))
+           text-resource-id
+           {::url                text-resource-id
+            :dcterms/format      "text/plain"
+            ::revision-count     (to-integer (g "テキストファイル修正回数"))
+            ::character-set      (g "テキストファイル文字集合")
+            ::last-modified-date (to-date (g "テキストファイル最終更新日"))
+            ::encoding           (to-encoding (g "テキストファイル符号化方式"))}))
 
         html-resource
         (if html-resource-id
           (to-subject
-            html-resource-id
-            {::url                html-resource-id
-             :dcterms/format      "text/html"
-             ::revision-count     (to-integer (g "XHTML/HTMLファイル修正回数"))
-             ::character-set      (g "XHTML/HTMLファイル文字集合")
-             ::last-modified-date (to-date (g "XHTML/HTMLファイル最終更新日"))
-             ::encoding           (to-encoding (g "XHTML/HTMLファイル符号化方式"))}))
+           html-resource-id
+           {::url                html-resource-id
+            :dcterms/format      "text/html"
+            ::revision-count     (to-integer (g "XHTML/HTMLファイル修正回数"))
+            ::character-set      (g "XHTML/HTMLファイル文字集合")
+            ::last-modified-date (to-date (g "XHTML/HTMLファイル最終更新日"))
+            ::encoding           (to-encoding (g "XHTML/HTMLファイル符号化方式"))}))
 
         reference-1
         (if reference-1-id
           (to-subject
-            reference-1-id
-            {::title           reference-1-id
-             ::first-published (some-> (g "底本初版発行年1") aozora-to-date)
-             ::publisher       (some->> (g "底本出版社名1") to-multiple)
-             ::parent          {::title           (g "底本の親本名1")
-                                ::publishing-span (some-> (g "底本の親本初版発行年1") aozora-to-date) #_TODO
-                                ::publisher       (some->> (g "底本の親本出版社名1") to-multiple)}}))
+           reference-1-id
+           {::title           reference-1-id
+            ::first-published (some-> (g "底本初版発行年1") aozora-to-date)
+            ::publisher       (some->> (g "底本出版社名1") to-multiple)
+            ::parent          {::title           (g "底本の親本名1")
+                               ::publishing-span (some-> (g "底本の親本初版発行年1") aozora-to-date) #_TODO
+                               ::publisher       (some->> (g "底本の親本出版社名1") to-multiple)}}))
 
         reference-2
         (if reference-2-id
           (to-subject
-            reference-2-id
-            {::title           reference-2-id
-             ::first-published (some-> (g "底本初版発行年2") aozora-to-date)
-             ::publisher       (some->> (g "底本出版社名2") to-multiple)
-             ::parent          {::title           (g "底本の親本名2")
-                                ::publishing-span (some-> (g "底本の親本初版発行年2") aozora-to-date) #_TODO
-                                ::publisher       (some->> (g "底本の親本出版社名2") to-multiple)}}))
+           reference-2-id
+           {::title           reference-2-id
+            ::first-published (some-> (g "底本初版発行年2") aozora-to-date)
+            ::publisher       (some->> (g "底本出版社名2") to-multiple)
+            ::parent          {::title           (g "底本の親本名2")
+                               ::publishing-span (some-> (g "底本の親本初版発行年2") aozora-to-date) #_TODO
+                               ::publisher       (some->> (g "底本の親本出版社名2") to-multiple)}}))
 
         work
         (if work-id
           (to-subject
-            work-id
-            {::work-id                   (to-id work-id)
-             relation-kw                 [(to-id person-id)]
-             ::sources                   (cond-> []
-                                                 text-resource (conj text-resource)
-                                                 html-resource (conj html-resource))
-             ::references                (cond-> []
-                                                 reference-1 (conj reference-1)
-                                                 reference-2 (conj reference-2))
-             ::title                     (g "作品名")
-             ::transcription             (g "作品名読み")
-             ::subtitle                  (g "作品名読み")
-             ::subtitle-transcription    (g "副題読み")
-             ::original-title            (g "原題")
-             ::copyright-expired         (flag-to-boolean (g "作品著作権フラグ"))
-             ::transcriber               (g "入力者")
-             ::aozora-publishing-date    (to-date (g "公開日"))
-             ::NDC                       (some-> (g "分類番号") to-ndc)
-             ::first-published           (some-> (g "初出") aozora-to-date)
-             ::bib-resource              (to-uri (g "図書カードURL"))
-             ::orthographic-style        (g "文字遣い種別")
-             ::aozora-last-modified-date (to-date (g "最終更新日"))
-             ::revisor                   (g "校正者")
-             ::revision-source           (remove-nils-vec [(g "校正に使用した版1") (g "校正に使用した版2")])
-             ::transcription-source      (remove-nils-vec [(g "入力に使用した版1") (g "入力に使用した版2")])}))
+           work-id
+           {::work-id                   (to-id work-id)
+            relation-kw                 [(to-id person-id)]
+            ::sources                   (cond-> []
+                                          text-resource (conj text-resource)
+                                          html-resource (conj html-resource))
+            ::references                (cond-> []
+                                          reference-1 (conj reference-1)
+                                          reference-2 (conj reference-2))
+            ::title                     (g "作品名")
+            ::transcription             (g "作品名読み")
+            ::subtitle                  (g "作品名読み")
+            ::subtitle-transcription    (g "副題読み")
+            ::original-title            (g "原題")
+            ::copyright-expired         (flag-to-boolean (g "作品著作権フラグ"))
+            ::transcriber               (g "入力者")
+            ::aozora-publishing-date    (to-date (g "公開日"))
+            ::NDC                       (some-> (g "分類番号") to-ndc)
+            ::first-published           (some-> (g "初出") aozora-to-date)
+            ::bib-resource              (to-uri (g "図書カードURL"))
+            ::orthographic-style        (g "文字遣い種別")
+            ::aozora-last-modified-date (to-date (g "最終更新日"))
+            ::revisor                   (g "校正者")
+            ::revision-source           (remove-nils-vec [(g "校正に使用した版1") (g "校正に使用した版2")])
+            ::transcription-source      (remove-nils-vec [(g "入力に使用した版1") (g "入力に使用した版2")])}))
 
         person
         (if person-id
           (to-subject
-            person-id
-            {::person-id                    (to-id person-id)
-             (inverse-relation relation-kw) [(to-id work-id)]
-             ::person-copyright-expired     (flag-to-boolean (g "人物著作権フラグ")) ;; FIXME How to deal with Tsurayuki being set to false? (Because of recently published word/rendition...) Should we rather set this to a rule-based (date of death) value?
-             ::given-name                   (g "名")
-             ::given-name-romaji            (g "名ローマ字")
-             ::given-name-transcription     (g "名読み")
-             ::family-name                  (g "姓")
-             ::family-name-romaji           (g "姓ローマ字")
-             ::family-name-transcription    (g "姓読み")
-             ::date-of-death                (some-> (g "没年月日") aozora-to-date)
-             ::date-of-birth                (some-> (g "生年月日") aozora-to-date)}))]
+           person-id
+           {::person-id                    (to-id person-id)
+            (inverse-relation relation-kw) [(to-id work-id)]
+            ::person-copyright-expired     (flag-to-boolean (g "人物著作権フラグ")) ;; FIXME How to deal with Tsurayuki being set to false? (Because of recently published word/rendition...) Should we rather set this to a rule-based (date of death) value?
+            ::given-name                   (g "名")
+            ::given-name-romaji            (g "名ローマ字")
+            ::given-name-transcription     (g "名読み")
+            ::family-name                  (g "姓")
+            ::family-name-romaji           (g "姓ローマ字")
+            ::family-name-transcription    (g "姓読み")
+            ::date-of-death                (some-> (g "没年月日") aozora-to-date)
+            ::date-of-birth                (some-> (g "生年月日") aozora-to-date)}))]
     (remove-nils
-      {::work   work
-       ::person person})))
+     {::work   work
+      ::person person})))
 
 (m/=> record-to-entities
       [:=>
@@ -424,41 +423,41 @@
   person-ids, respectively."
   [entities]
   (reduce
-    (fn [a {:keys [abc.aozora/work abc.aozora/person]}]
-      (let [{:keys [#_abc.aozora/author
-                    #_abc.aozora/translator
-                    #_abc.aozora/editor
-                    #_abc.aozora/proofreader
-                    #_abc.aozora/other-author
-                    abc.aozora/work-id]} work
-            {:keys [#_abc.aozora/author-of
-                    #_abc.aozora/translator-of
-                    #_abc.aozora/editor-of
-                    #_abc.aozora/proofreader-of
-                    #_abc.aozora/other-author-of
-                    abc.aozora/person-id]} person]
-        (-> a
-            (update-in [:works work-id]
-                       (partial
-                         merge-with
-                         (fn [w _]
-                           (cond
-                             (nil? w) work
-                             (= w _) w
-                             :else ((fnil conj []) w))))
-                       work)
-            (update-in [:persons person-id]
-                       (partial
-                         merge-with
-                         (fn [p _]
-                           (cond
-                             (nil? p) person
-                             (= p _) p
-                             :else ((fnil conj []) p))))
-                       person))))
-    {:works   {}
-     :persons {}}
-    entities))
+   (fn [a {:keys [abc.aozora/work abc.aozora/person]}]
+     (let [{:keys [#_abc.aozora/author
+                   #_abc.aozora/translator
+                   #_abc.aozora/editor
+                   #_abc.aozora/proofreader
+                   #_abc.aozora/other-author
+                   abc.aozora/work-id]} work
+           {:keys [#_abc.aozora/author-of
+                   #_abc.aozora/translator-of
+                   #_abc.aozora/editor-of
+                   #_abc.aozora/proofreader-of
+                   #_abc.aozora/other-author-of
+                   abc.aozora/person-id]} person]
+       (-> a
+           (update-in [:works work-id]
+                      (partial
+                       merge-with
+                       (fn [w _]
+                         (cond
+                           (nil? w) work
+                           (= w _) w
+                           :else ((fnil conj []) w))))
+                      work)
+           (update-in [:persons person-id]
+                      (partial
+                       merge-with
+                       (fn [p _]
+                         (cond
+                           (nil? p) person
+                           (= p _) p
+                           :else ((fnil conj []) p))))
+                      person))))
+   {:works   {}
+    :persons {}}
+   entities))
 
 (m/=> merge-entities
       [:=>

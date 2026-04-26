@@ -1,11 +1,13 @@
 (ns abc.tools.validate-design-bundle
   (:require [abc.tools.files :as files]
+            [abc.tools.manifest-index :as manifest-index]
+            [abc.tools.manifest-to-rdf :as manifest-to-rdf]
             [abc.tools.manifest :as manifest]
             [abc.tools.materialize-import :as materialize]
+            [abc.tools.schema :as schema]
             [clojure.java.io :as io]
             [clojure.set :as set]
-            [clojure.string :as string]
-            [m3.json-schema :as m3]))
+            [clojure.string :as string]))
 
 (def required-manifest-input-keys
   #{"producer"
@@ -36,15 +38,24 @@
                  hash-errors))))
 
 (defn run-summary-errors [events]
-  (let [event-types (mapv #(get % "event") events)]
+  (let [event-types (mapv #(get % "event") events)
+        start-count (count (filter #{"run-start"} event-types))
+        complete-count (count (filter #{"run-complete"} event-types))
+        run-ids (->> events
+                     (keep #(get % "run_id"))
+                     set)]
     (vec
      (concat
+      (when (not= 1 start-count)
+        ["ab-validator run summary must contain exactly one run-start event"])
+      (when (not= 1 complete-count)
+        ["ab-validator run summary must contain exactly one run-complete event"])
       (when (not= ["run-start"] (subvec event-types 0 (min 1 (count event-types))))
         ["ab-validator run summary must start with run-start"])
       (when (not= ["run-complete"] (subvec event-types (max 0 (dec (count event-types)))))
         ["ab-validator run summary must end with run-complete"])
-      (when-not (some #{"work-result"} event-types)
-        ["ab-validator run summary must include a work-result event"])
+      (when (< 1 (count run-ids))
+        ["ab-validator run summary events must all use the same run_id"])
       (for [event events
             :when (not (contains? event "run_id"))]
         (str "run summary event is missing run_id: " event))))))
@@ -72,35 +83,29 @@
         [(str "ab-validator diagnostic_schema_hash " actual-diagnostic
               " does not match ABC diagnostic schema hash " expected-diagnostic)])))))
 
+(defn parser-ir-schema-hash-errors [parser-ir]
+  (let [expected-parser-ir (manifest/schema-hash "schemas/parser-ir.schema.json")
+        actual-parser-ir (get parser-ir "schema_hash")]
+    (vec
+     (when (not= expected-parser-ir actual-parser-ir)
+       [(str "ab-validator parser IR schema_hash " actual-parser-ir
+             " does not match ABC parser IR schema hash " expected-parser-ir)]))))
+
 (defn validation-errors [schema value]
-  (let [result (m3/validate schema value {:draft :draft2020-12})]
-    (when-not (:valid? result)
-      (:errors result))))
+  (schema/validation-errors schema value))
 
 (defn validate-json! [schema path]
-  (when-let [errors (validation-errors schema (files/read-json path))]
-    (throw (ex-info (str "JSON Schema validation failed: " path)
-                    {:path (str path)
-                     :errors errors}))))
+  (schema/validate-json! schema path))
 
 (defn validate-json-lines! [schema path {:keys [require-nonempty]}]
   (let [values (files/read-json-lines path)]
     (when (and require-nonempty (empty? values))
       (throw (ex-info (str path " must contain at least one JSON object")
                       {:path (str path)})))
-    (doseq [value values]
-      (when-let [errors (validation-errors schema value)]
-        (throw (ex-info (str "JSON Schema validation failed: " path)
-                        {:path (str path)
-                         :value value
-                         :errors errors}))))))
+    (schema/validate-jsonl! schema values path)))
 
 (defn schema-valid! [schema path]
-  (when-let [errors (validation-errors {"$schema" "https://json-schema.org/draft/2020-12/schema"}
-                                       schema)]
-    (throw (ex-info (str "Invalid JSON Schema: " path)
-                    {:path (str path)
-                     :errors errors}))))
+  (schema/schema-valid! schema path))
 
 (defn run-command! [& command]
   (let [process (ProcessBuilder. command)
@@ -120,22 +125,22 @@
         manifest-inputs-schema (files/read-json "schemas/manifest-inputs.schema.json")
         comparison-report-schema (files/read-json "schemas/comparison-report.schema.json")]
     (doseq [[path schema] [["schemas/manifest.schema.json" manifest-schema]
-                          ["schemas/parser-ir.schema.json" parser-ir-schema]
-                          ["schemas/diagnostic.schema.json" diagnostic-schema]
-                          ["schemas/run-summary.schema.json" run-summary-schema]
-                          ["schemas/manifest-inputs.schema.json" manifest-inputs-schema]
-                          ["schemas/comparison-report.schema.json" comparison-report-schema]]]
+                           ["schemas/parser-ir.schema.json" parser-ir-schema]
+                           ["schemas/diagnostic.schema.json" diagnostic-schema]
+                           ["schemas/run-summary.schema.json" run-summary-schema]
+                           ["schemas/manifest-inputs.schema.json" manifest-inputs-schema]
+                           ["schemas/comparison-report.schema.json" comparison-report-schema]]]
       (schema-valid! schema path))
     (doseq [path (concat ["examples/v0/example-work/source.manifest.json"
-                         "examples/v0/example-work/manifest.json"
-                         "examples/v0/example-work/failure-manifest.example.json"]
-                        extra-manifest-paths)]
+                          "examples/v0/example-work/manifest.json"
+                          "examples/v0/example-work/failure-manifest.example.json"]
+                         extra-manifest-paths)]
       (validate-json! manifest-schema path))
     (doseq [path ["examples/v0/example-work/parser-ir.json"
-                 "examples/ab-validator-output/parser-ir.json"]]
+                  "examples/ab-validator-output/parser-ir.json"]]
       (validate-json! parser-ir-schema path))
     (doseq [path ["examples/v0/example-work/warnings.jsonl"
-                 "examples/ab-validator-output/warnings.jsonl"]]
+                  "examples/ab-validator-output/warnings.jsonl"]]
       (validate-json-lines! diagnostic-schema path {:require-nonempty true}))
     (validate-json-lines! run-summary-schema
                           "examples/ab-validator-output/run-summary.jsonl"
@@ -155,7 +160,11 @@
 
 (defn validate-ab-validator-output! []
   (let [manifest-inputs (files/read-json (files/path "examples" "ab-validator-output" "manifest-inputs.json"))]
-    (check-errors! (manifest-input-errors manifest-inputs)))
+    (check-errors! (manifest-input-errors manifest-inputs))
+    (check-errors! (schema-hash-errors manifest-inputs)))
+  (check-errors!
+   (parser-ir-schema-hash-errors
+    (files/read-json (files/path "examples" "ab-validator-output" "parser-ir.json"))))
   (check-errors!
    (run-summary-errors
     (files/read-json-lines (files/path "examples" "ab-validator-output" "run-summary.jsonl"))))
@@ -201,7 +210,15 @@
         (println "materialized import ok")
         (println "==> Validating JSON schemas and examples")
         (validate-json-schemas! (vals materialized))
-        (println "json schema validation ok"))
+        (println "json schema validation ok")
+        (println "==> Checking materialized manifest index")
+        (manifest-index/validate-no-reproducibility-conflicts!
+         (manifest-index/index-manifest-files (vals materialized)))
+        (println "materialized manifest index ok")
+        (println "==> Checking materialized RDF views")
+        (doseq [manifest-path (vals materialized)]
+          (manifest-to-rdf/manifest->ttl (files/read-json manifest-path)))
+        (println "materialized RDF views ok"))
       (println "==> Checking imported ab-validator output")
       (validate-ab-validator-output!)
       (println "ab-validator output ok")

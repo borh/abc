@@ -30,7 +30,7 @@
                   "media_type" "application/jsonl"
                   "path_hint" "warnings.jsonl"}]
       :generated-at generated-at
-      :activity-id "https://example.org/abc/activity/materialize-imported-parser-ir"
+      :activity-id "https://w3id.org/abc/activity/materialize-imported-parser-ir"
       :agent "abc.tools.materialize-import"
       :plan-hash nil
       :used [(get manifest-inputs "work_content_hash")
@@ -57,7 +57,7 @@
                                  files/sha256-file)
       :sidecars []
       :generated-at generated-at
-      :activity-id "https://example.org/abc/activity/materialize-imported-warnings"
+      :activity-id "https://w3id.org/abc/activity/materialize-imported-warnings"
       :agent "abc.tools.materialize-import"
       :plan-hash nil
       :used [(get manifest-inputs "work_content_hash")

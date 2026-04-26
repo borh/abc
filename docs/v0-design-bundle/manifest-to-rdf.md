@@ -16,7 +16,7 @@ mapping implementation version must be recorded in release metadata.
 
 | JSON Field | RDF Term | Notes |
 | --- | --- | --- |
-| `artifact_id` | artifact IRI and `abc:artifactId` | Provisional IRI pattern: `https://example.org/abc/artifact/{artifact_id-with-colon-escaped}` |
+| `artifact_id` | artifact IRI and `abc:artifactId` | IRI pattern: `https://w3id.org/abc/artifact/{artifact_id-with-colon-escaped}` |
 | `artifact_kind` | `dcterms:type` | Use the JSON enum value |
 | `validation_status` | `abc:validationStatus` | Same enum as manifest schema |
 | `manifest_identity_object.manifest_schema_hash` | `abc:schemaHash` | Required on artifact entities |

@@ -1,30 +1,22 @@
-use anyhow::{Result, anyhow, bail};
-use aozora_rs_core::{Break, Deco, Retokenized, parse_meta, retokenize, scopenize, tokenize};
+use anyhow::{Result, bail};
+use aozora_rs_core::{Break, Deco, Retokenized};
 use regex::Regex;
 use serde_json::json;
-use winnow::LocatingSlice;
 
 mod metrics;
+mod parser;
 mod source;
 
+use parser::ParsedSource;
 pub use source::{DecodedSource, decode_source_bytes};
-use source::{
-    body_text, remove_bottom_note_fragments, source_visible_text, starts_with_separator,
-    trim_colophon,
-};
+use source::{remove_bottom_note_fragments, source_visible_text};
 
 pub const VERSION: &str = "aozora-rs-adapter 0.1.0 dd380ee639ca317ac9092ef2ba554acdf70e3c8d";
 
-#[derive(Debug)]
-struct ParsedSource<'a> {
-    body: &'a str,
-    retokenized: Vec<Retokenized<'a>>,
-    warnings: Vec<String>,
-}
-
 pub fn aat_json_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
     let decoded = decode_source_bytes(bytes)?;
-    let parsed = parse_with_aozora_rs(&decoded.text)?;
+    let selection = source::select_body(&decoded);
+    let parsed = parser::parse_with_aozora_rs(selection)?;
     let aat = build_aat(&decoded, &parsed);
     let mut out = Vec::new();
     serde_json::to_writer(&mut out, &aat)?;
@@ -36,47 +28,11 @@ pub fn html_from_bytes(_bytes: &[u8]) -> Result<String> {
     bail!("aozora-rs-adapter --mode html is intentionally deferred to the render-diff phase")
 }
 
-fn parse_with_aozora_rs(text: &str) -> Result<ParsedSource<'_>> {
-    let mut warnings = Vec::new();
-    let mut parsed_body = text;
-    let meta_ok = match parse_meta(&mut parsed_body) {
-        Ok(_) => true,
-        Err(error) => {
-            warnings.push(format!("meta parse warning: {error}"));
-            false
-        }
-    };
-    let parsed_body = trim_colophon(parsed_body);
-    let validation_body = trim_colophon(body_text(text));
-    let parse_body = if meta_ok && !starts_with_separator(parsed_body) {
-        parsed_body
-    } else {
-        validation_body
-    };
-
-    let mut input = LocatingSlice::new(parse_body);
-    let tokenized = tokenize(&mut input).map_err(|()| anyhow!("aozora-rs-core tokenize failed"))?;
-    let ((scopenized, flat_tokens), scopenize_errors) = scopenize(tokenized).into_tuple();
-    let (retokenized, retokenize_errors) = retokenize(flat_tokens, scopenized).into_tuple();
-    warnings.extend(
-        scopenize_errors
-            .into_iter()
-            .map(|error| format!("{error:?}")),
-    );
-    warnings.extend(retokenize_errors.into_iter().map(|error| error.to_string()));
-
-    Ok(ParsedSource {
-        body: validation_body,
-        retokenized,
-        warnings,
-    })
-}
-
 fn build_aat(decoded: &DecodedSource, parsed: &ParsedSource<'_>) -> serde_json::Value {
     json!({
         "version": 1,
         "work_id": "stdin",
-        "blocks": retokenized_to_aat_blocks(parsed.body, &parsed.retokenized),
+        "blocks": retokenized_to_aat_blocks(parsed.body.validation_body, &parsed.retokenized),
         "meta": {
             "adapter": "aozora-rs",
             "adapter_version": VERSION,

@@ -46,7 +46,15 @@ pub fn build_initial(parsed: &ParsedSource<'_>) -> InitialAatBuildResult {
 }
 
 pub fn build_fallback(body: &str) -> (Vec<Block>, ProjectedText) {
-    let blocks = source_visible_fallback_blocks(body);
+    let source_visible = source_visible_text(body).into_owned();
+    build_fallback_from_source_visible(body, source_visible)
+}
+
+pub fn build_fallback_from_source_visible(
+    body: &str,
+    source_visible: String,
+) -> (Vec<Block>, ProjectedText) {
+    let blocks = source_visible_fallback_blocks(body, source_visible);
     let projected = ab_ir::visible_projection(&blocks);
     (blocks, projected)
 }
@@ -375,10 +383,10 @@ fn append_source_annotation_supplements(blocks: &mut [Block], body: &str) {
     append_gaiji_supplements(content, body, existing_gaiji_count);
 }
 
-fn source_visible_fallback_blocks(body: &str) -> Vec<Block> {
+fn source_visible_fallback_blocks(body: &str, source_visible: String) -> Vec<Block> {
     let mut blocks = vec![Block::Paragraph {
         content: vec![Inline::text_with_provenance(
-            source_visible_text(body),
+            source_visible,
             Provenance::RegexFallback,
         )],
     }];
@@ -520,6 +528,18 @@ mod tests {
         assert!(!visible.contains("「口＋世」、U+546D"));
         assert!(!projected.visible_text.contains("わがはい"));
         assert!(ab_ir::provenance_counts(&blocks).regex_fallback > 0);
+    }
+
+    #[test]
+    fn fallback_blocks_can_reuse_source_visible_text() {
+        let body = "吾輩《わがはい》は猫である。";
+        let source_visible = source_visible_text(body).into_owned();
+
+        let (blocks, projected) = build_fallback_from_source_visible(body, source_visible);
+
+        assert!(matches!(blocks[0], Block::Paragraph { .. }));
+        assert_eq!(projected.visible_text, "吾輩は猫である。");
+        assert_eq!(ab_ir::provenance_counts(&blocks).regex_fallback, 1);
     }
 
     #[test]

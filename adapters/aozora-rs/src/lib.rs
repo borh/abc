@@ -86,28 +86,42 @@ fn build_aat(
 
 fn build_aat_result(parsed: &ParsedSource<'_>) -> (aat::AatBuildResult, Duration, Duration) {
     let initial = aat::build_initial(parsed);
-    let projection_start = Instant::now();
-    let projection =
-        projection::check(parsed.body.validation_body, &initial.projected.visible_text);
-    let projection_check = projection_start.elapsed();
-    let fallback = if parsed.body.validation_body.len() > 500_000 {
-        FallbackDecision {
-            used: true,
-            reason: FallbackReason::LargeBody,
-        }
-    } else if !projection.in_source_order {
-        FallbackDecision {
-            used: true,
-            reason: FallbackReason::ProjectionMismatch,
-        }
+    let large_body = parsed.body.validation_body.len() > 500_000;
+    let mut projection_check = Duration::ZERO;
+    let (fallback, source_visible_for_fallback) = if large_body {
+        (
+            FallbackDecision {
+                used: true,
+                reason: FallbackReason::LargeBody,
+            },
+            None,
+        )
     } else {
-        FallbackDecision::none()
+        let projection_start = Instant::now();
+        let projection =
+            projection::check(parsed.body.validation_body, &initial.projected.visible_text);
+        projection_check = projection_start.elapsed();
+        if projection.in_source_order {
+            (FallbackDecision::none(), None)
+        } else {
+            (
+                FallbackDecision {
+                    used: true,
+                    reason: FallbackReason::ProjectionMismatch,
+                },
+                projection.source_visible_text,
+            )
+        }
     };
 
     let mut fallback_build = Duration::ZERO;
     let blocks = if fallback.used {
         let fallback_start = Instant::now();
-        let (blocks, _) = aat::build_fallback(parsed.body.validation_body);
+        let (blocks, _) = if let Some(source_visible) = source_visible_for_fallback {
+            aat::build_fallback_from_source_visible(parsed.body.validation_body, source_visible)
+        } else {
+            aat::build_fallback(parsed.body.validation_body)
+        };
         fallback_build = fallback_start.elapsed();
         blocks
     } else {

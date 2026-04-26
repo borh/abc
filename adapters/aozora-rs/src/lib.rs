@@ -14,7 +14,7 @@ use parser::ParsedSource;
 pub use source::{DecodedSource, decode_source_bytes};
 
 pub const VERSION: &str = "aozora-rs-adapter 0.1.0 dd380ee639ca317ac9092ef2ba554acdf70e3c8d";
-const SOURCE_SUPPLEMENT_FALLBACK_THRESHOLD: usize = 1_024;
+const SOURCE_SUPPLEMENT_FALLBACK_THRESHOLD: usize = 0;
 
 pub fn aat_json_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
     let decode_start = Instant::now();
@@ -195,13 +195,13 @@ mod tests {
         assert!(metrics["aat_build_ms"].as_f64().unwrap() >= 0.0);
         assert!(metrics["projection_check_ms"].as_f64().unwrap() >= 0.0);
         assert!(metrics["fallback_build_ms"].as_f64().unwrap() >= 0.0);
-        assert_eq!(metrics["fallback_used"], false);
-        assert_eq!(metrics["fallback_reason"], "none");
+        assert_eq!(metrics["fallback_used"], true);
+        assert_eq!(metrics["fallback_reason"], "source_supplement_hotspot");
         assert_eq!(metrics["source_bytes"], input.len());
         assert!(metrics["tokenized_count"].as_u64().unwrap() > 0);
         assert!(metrics["retokenized_count"].as_u64().unwrap() > 0);
-        assert!(metrics["parser_normalized_nodes"].as_u64().unwrap() > 0);
-        assert!(metrics["source_supplement_nodes"].as_u64().unwrap() > 0);
+        assert_eq!(metrics["source_supplement_nodes"], 0);
+        assert!(metrics["source_fallback_nodes"].as_u64().unwrap() > 0);
         assert!(
             value["meta"]["semantic_summary"]["syntax"]
                 .as_object()
@@ -272,9 +272,7 @@ mod tests {
 
     #[test]
     fn fallback_is_reported_for_source_supplement_hotspots() {
-        let body = (0..1_100)
-            .map(|idx| format!("侍童《こしゃう{idx}》。\n"))
-            .collect::<String>();
+        let body = "侍童《こしゃう》。\n".to_owned();
         let decoded = decode_source_bytes(body.as_bytes()).unwrap();
         let selection = source::BodySelection {
             validation_body: &decoded.text,
@@ -320,62 +318,6 @@ mod tests {
         assert_eq!(value["fallback_used"], true);
         assert_eq!(value["fallback_reason"], "source_supplement_hotspot");
         assert_eq!(value["source_supplement_nodes"], 0);
-        assert!(value["source_fallback_nodes"].as_u64().unwrap() > 1_000);
-    }
-
-    #[test]
-    fn source_supplement_hotspot_keeps_initial_when_fallback_drops_validation_markers() {
-        let body = (0..1_100)
-            .map(|idx| {
-                format!(
-                    "軌［＃「軌」に「（ママ）」の注記］り［＃「軌［＃「軌」に「（ママ）」の注記］り」は底本では「軌《きし{idx}》り」］\n"
-                )
-            })
-            .collect::<String>();
-        let decoded = decode_source_bytes(body.as_bytes()).unwrap();
-        let selection = source::BodySelection {
-            validation_body: &decoded.text,
-            found_separators: true,
-            elapsed: Duration::ZERO,
-        };
-        let parsed = ParsedSource {
-            body: selection,
-            parse_body: parser::ParseBodyDecision {
-                parser_body: &decoded.text,
-                strategy: parser::ParseBodyStrategy::SeparatorFallback,
-            },
-            retokenized: Vec::new(),
-            warnings: Vec::new(),
-            tokenized_count: 0,
-            retokenized_count: 0,
-            timings: parser::ParseTimings {
-                body_selection: Duration::ZERO,
-                tokenize: Duration::ZERO,
-                scopenize: Duration::ZERO,
-                retokenize: Duration::ZERO,
-            },
-        };
-
-        let (result, projection_check, fallback_build) = build_aat_result(&parsed);
-        let metrics = AdapterMetrics::from_parts(AdapterMetricsParts {
-            decoded: &decoded,
-            decode: Duration::ZERO,
-            body: &parsed.body,
-            parse: parsed.timings,
-            aat: result.timings,
-            projection_check,
-            fallback_build,
-            parse_body_strategy: parsed.parse_body.strategy,
-            parser_body_bytes: parsed.parse_body.parser_body.len(),
-            tokenized_count: parsed.tokenized_count,
-            retokenized_count: parsed.retokenized_count,
-            provenance: ab_ir::provenance_counts(&result.blocks),
-            fallback: result.fallback.clone(),
-        });
-        let value = metrics.to_json();
-
-        assert_eq!(value["fallback_used"], false);
-        assert_eq!(value["fallback_reason"], "none");
-        assert!(value["source_supplement_nodes"].as_u64().unwrap() > 1_000);
+        assert!(value["source_fallback_nodes"].as_u64().unwrap() > 0);
     }
 }

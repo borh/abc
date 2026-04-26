@@ -96,12 +96,6 @@ pub fn remove_bottom_note_fragments(txt: &str) -> String {
             offset = skip_until_any_bracket(txt, offset);
             continue;
         }
-        if rest.starts_with("」の「") {
-            trim_note_prefix(&mut out);
-            offset += "」の「".len();
-            offset = skip_until_any_bracket(txt, offset);
-            continue;
-        }
         if rest.starts_with("」はママ") {
             trim_note_prefix(&mut out);
             offset += "」はママ".len();
@@ -336,6 +330,20 @@ fn command_end_on_same_line(text: &str, content_start: usize, end_marker: char) 
                 continue;
             }
         }
+        if rest.starts_with("［＃") {
+            let nested_start = offset + "［＃".len();
+            if let Some(end) = command_end_on_same_line(text, nested_start, '］') {
+                offset = end + '］'.len_utf8();
+                continue;
+            }
+        }
+        if rest.starts_with("[#") {
+            let nested_start = offset + "[#".len();
+            if let Some(end) = command_end_on_same_line(text, nested_start, ']') {
+                offset = end + 1;
+                continue;
+            }
+        }
 
         let ch = rest.chars().next().expect("non-empty rest has a char");
         if ch == end_marker {
@@ -434,6 +442,27 @@ mod tests {
         );
 
         assert_eq!(projected, "豌豆の大さ");
+    }
+
+    #[test]
+    fn comparison_lossy_body_preserves_quoted_title_pairs() {
+        let projected = comparison_lossy_body(
+            "斎はこれを取つて校刻した。是が「狩谷望之審定宋本」の「御注孝経」である。\n次の段。",
+        );
+
+        assert_eq!(
+            projected,
+            "斎はこれを取つて校刻した。是が「狩谷望之審定宋本」の「御注孝経」である。\n次の段。"
+        );
+    }
+
+    #[test]
+    fn comparison_lossy_body_removes_command_with_nested_commands() {
+        let projected = comparison_lossy_body(
+            "アヌンチヤタ［＃「アヌンチヤタ［＃「アヌンチヤタ」に傍線］」は底本では「アンヌチヤタ［＃「アンヌチヤタ」に傍線］」］ありて",
+        );
+
+        assert_eq!(projected, "アヌンチヤタありて");
     }
 
     #[test]

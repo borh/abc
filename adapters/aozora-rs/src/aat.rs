@@ -545,7 +545,7 @@ fn structured_source_fallback_blocks(body: &str) -> Vec<Block> {
 }
 
 fn fallback_bottom_note_fragment_prefix_len(rest: &str) -> Option<usize> {
-    ["」は底本では「", "」の「", "」はママ"]
+    ["」は底本では「", "」はママ"]
         .iter()
         .find_map(|prefix| rest.starts_with(prefix).then_some(prefix.len()))
 }
@@ -807,6 +807,20 @@ fn fallback_command_end_on_same_line(
                 continue;
             }
         }
+        if rest.starts_with("［＃") {
+            let nested_start = offset + "［＃".len();
+            if let Some(end) = fallback_command_end_on_same_line(text, nested_start, '］') {
+                offset = end + '］'.len_utf8();
+                continue;
+            }
+        }
+        if rest.starts_with("[#") {
+            let nested_start = offset + "[#".len();
+            if let Some(end) = fallback_command_end_on_same_line(text, nested_start, ']') {
+                offset = end + 1;
+                continue;
+            }
+        }
         let ch = rest.chars().next().expect("non-empty rest has a char");
         if ch == end_marker {
             return Some(offset);
@@ -1019,18 +1033,13 @@ mod tests {
     }
 
     #[test]
-    fn fallback_blocks_use_legacy_supplements_when_structured_drops_validation_ruby() {
-        let body = "軌［＃「軌」に「（ママ）」の注記］り［＃「軌［＃「軌」に「（ママ）」の注記］り」は底本では「軌《きし》り」］";
-        let (blocks, _projected) = build_fallback(body);
-        let json = ab_ir::blocks_to_aat_json(&blocks);
-        let content = json[0]["content"].as_array().unwrap();
+    fn fallback_blocks_remove_commands_with_nested_commands() {
+        let body = "アヌンチヤタ［＃「アヌンチヤタ［＃「アヌンチヤタ」に傍線］」は底本では「アンヌチヤタ［＃「アンヌチヤタ」に傍線］」］ありて";
+        let blocks = structured_source_fallback_blocks(body);
+        let projected = ab_ir::visible_projection(&blocks);
 
-        assert!(content.iter().any(|node| {
-            node["kind"] == "ruby"
-                && node["reading"] == "きし"
-                && node["x-provenance"] == "source_supplement"
-        }));
-        assert!(ab_ir::provenance_counts(&blocks).source_supplement > 0);
+        assert_eq!(projected.visible_text, "アヌンチヤタありて");
+        assert_eq!(ab_ir::provenance_counts(&blocks).source_supplement, 0);
     }
 
     #[test]

@@ -19,8 +19,9 @@ pub enum Inline {
         provenance: Provenance,
     },
     Ruby {
-        base: String,
+        base: Vec<Inline>,
         reading: String,
+        placement: RubyPlacement,
         provenance: Provenance,
     },
     GaijiRef(GaijiRef),
@@ -55,6 +56,12 @@ pub enum GaijiKind {
 pub enum DakutenMark {
     Voicing,
     SemiVoicing,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RubyPlacement {
+    Right,
+    Left,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -100,8 +107,31 @@ impl Inline {
         provenance: Provenance,
     ) -> Self {
         Self::Ruby {
-            base: base.into(),
+            base: vec![Self::text(base)],
             reading: reading.into(),
+            placement: RubyPlacement::Right,
+            provenance,
+        }
+    }
+
+    pub fn ruby_with_base(
+        base: Vec<Inline>,
+        reading: impl Into<String>,
+        placement: RubyPlacement,
+    ) -> Self {
+        Self::ruby_with_base_and_provenance(base, reading, placement, Provenance::Parser)
+    }
+
+    pub fn ruby_with_base_and_provenance(
+        base: Vec<Inline>,
+        reading: impl Into<String>,
+        placement: RubyPlacement,
+        provenance: Provenance,
+    ) -> Self {
+        Self::Ruby {
+            base,
+            reading: reading.into(),
+            placement,
             provenance,
         }
     }
@@ -191,8 +221,9 @@ fn inline_to_aat_json(content: &[Inline]) -> Vec<serde_json::Value> {
                 base,
                 reading,
                 provenance,
+                ..
             } => with_provenance(
-                json!({ "kind": "ruby", "base": base, "reading": reading }),
+                json!({ "kind": "ruby", "base": inline_visible_text(base), "reading": reading }),
                 *provenance,
             ),
             Inline::GaijiRef(gaiji) => {
@@ -227,7 +258,11 @@ fn inline_to_aat_json(content: &[Inline]) -> Vec<serde_json::Value> {
 fn collect_visible(value: &Inline, out: &mut String) {
     match value {
         Inline::Text { value, .. } => out.push_str(value),
-        Inline::Ruby { base, .. } => out.push_str(base),
+        Inline::Ruby { base, .. } => {
+            for child in base {
+                collect_visible(child, out);
+            }
+        }
         Inline::GaijiRef(gaiji) => {
             if let Some(resolved) = &gaiji.resolved {
                 out.push_str(resolved);
@@ -262,6 +297,10 @@ fn collect_provenance(value: &Inline, counts: &mut ProvenanceCounts) {
         for child in content {
             collect_provenance(child, counts);
         }
+    } else if let Inline::Ruby { base, .. } = value {
+        for child in base {
+            collect_provenance(child, counts);
+        }
     }
 }
 
@@ -272,6 +311,14 @@ fn inline_provenance(value: &Inline) -> Provenance {
         | Inline::GaijiRef(GaijiRef { provenance, .. })
         | Inline::Style { provenance, .. } => *provenance,
     }
+}
+
+fn inline_visible_text(content: &[Inline]) -> String {
+    let mut out = String::new();
+    for child in content {
+        collect_visible(child, &mut out);
+    }
+    out
 }
 
 fn with_provenance(mut value: serde_json::Value, provenance: Provenance) -> serde_json::Value {
@@ -372,6 +419,44 @@ mod tests {
                 provenance: Provenance::Parser,
             })
         );
+    }
+
+    #[test]
+    fn structured_ruby_base_can_hold_resolved_gaiji() {
+        let ruby = Inline::ruby_with_base(
+            vec![Inline::gaiji_ref(GaijiRef {
+                source: "※［＃「口＋世」、U+546D］".to_owned(),
+                description: "「口＋世」、U+546D".to_owned(),
+                description_format: Some("aozora-description".to_owned()),
+                kind: GaijiKind::UnicodeCodepoint { value: '呻' },
+                resolved: Some("呻".to_owned()),
+                provenance: Provenance::Parser,
+            })],
+            "うめ",
+            RubyPlacement::Right,
+        );
+        let blocks = vec![Block::Paragraph {
+            content: vec![ruby],
+        }];
+
+        assert_eq!(visible_projection(&blocks).visible_text, "呻");
+    }
+
+    #[test]
+    fn structured_ruby_base_records_left_placement() {
+        let ruby = Inline::ruby_with_base(
+            vec![Inline::text("左")],
+            "ひだり",
+            RubyPlacement::Left,
+        );
+
+        assert!(matches!(
+            ruby,
+            Inline::Ruby {
+                placement: RubyPlacement::Left,
+                ..
+            }
+        ));
     }
 
     #[test]

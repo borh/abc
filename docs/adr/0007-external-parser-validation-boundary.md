@@ -1,0 +1,92 @@
+# ADR 0007: External Parser Validation Boundary
+
+Status: Draft
+Date: 2026-04-26
+Supersedes: none
+Source: `docs/high-level-architecture-note.md` v0.5,
+`docs/adr/0002-parser-evaluation.md`, and `../ab-validator`
+
+## Context
+
+Parser comparison and parser-candidate execution are being developed in the
+neighboring `../ab-validator` repository. ABC should not duplicate that harness.
+ABC's responsibility is to define stable artifact contracts, manifests,
+publication formats, and reproducible pipeline boundaries.
+
+The two projects need a narrow handoff: `ab-validator` can compare candidate
+parsers and emit files, while ABC can validate and materialize those files into
+content-addressed artifacts.
+
+## Decision
+
+ABC treats `../ab-validator` as an external producer. ABC does not call
+`ab-validator` during v0 design-bundle validation and does not depend on its
+internal crate/module layout.
+
+The stable handoff is a file bundle containing:
+
+- parser IR JSON conforming to `schemas/parser-ir.schema.json`,
+- warning/error JSON Lines where each line conforms to the parser IR
+  diagnostic shape,
+- run summary JSON Lines with `run-start`, `work-result`, and `run-complete`
+  events,
+- optional comparison report JSON,
+- manifest input hashes needed to construct ABC artifact manifests.
+
+`ab-validator` may use any internal parser representation. Only the exported
+bundle is part of the ABC boundary.
+
+## Directory Convention
+
+ABC keeps an imported fixture at `examples/ab-validator-output/`. The fixture is
+not generated during validation; it is a small contract example checked into ABC
+so changes to ABC schemas reveal boundary drift early.
+
+Future generated imports should use the same shape:
+
+```text
+<bundle>/
+├── README.md
+├── manifest-inputs.json
+├── parser-ir.json
+├── warnings.jsonl
+├── run-summary.jsonl
+└── comparison-report.json
+```
+
+## Responsibilities
+
+`ab-validator` owns:
+
+- parser candidate execution,
+- parser comparison metrics,
+- corpus feature indexing,
+- parser performance measurements,
+- candidate-specific adapter code.
+
+ABC owns:
+
+- parser IR schema,
+- manifest schema,
+- content-addressed artifact identity,
+- TEI/RDF publication artifacts,
+- Nix/materialization policy,
+- validation that imported outputs match ABC contracts.
+
+## Acceptance Criteria
+
+- `bin/validate-design-bundle.sh` validates the imported
+  `examples/ab-validator-output/` fixture.
+- ABC validation does not require `../ab-validator` to exist.
+- Warning JSON Lines are checked against the same diagnostic shape used by
+  parser IR.
+- Run summary JSON Lines are at least structurally checked for one start event,
+  one complete event, and work-result entries.
+- Parser candidate execution remains outside this repository.
+
+## Rollback
+
+If `ab-validator` becomes the canonical parser implementation rather than only
+an external evaluator, promote that relationship through a new ADR. The boundary
+should still remain file-based unless there is a measured reason to link the
+projects at runtime.

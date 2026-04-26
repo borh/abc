@@ -32,7 +32,79 @@ manifest_paths = [
 for path in manifest_paths:
     manifest_validator.validate(load_json(path))
 
-parser_ir_validator.validate(load_json("examples/v0/example-work/parser-ir.json"))
+parser_ir_paths = [
+    "examples/v0/example-work/parser-ir.json",
+    "examples/ab-validator-output/parser-ir.json",
+]
+
+for path in parser_ir_paths:
+    parser_ir_validator.validate(load_json(path))
+
+diagnostic_schema = {
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$defs": parser_ir_schema["$defs"],
+    "$ref": "#/$defs/diagnostic",
+}
+Draft202012Validator.check_schema(diagnostic_schema)
+diagnostic_validator = Draft202012Validator(diagnostic_schema)
+
+for path in [
+    "examples/v0/example-work/warnings.jsonl",
+    "examples/ab-validator-output/warnings.jsonl",
+]:
+    lines = Path(path).read_text(encoding="utf-8").splitlines()
+    if not lines:
+        raise SystemExit(f"{path} must contain at least one diagnostic")
+    for line_number, line in enumerate(lines, start=1):
+        diagnostic_validator.validate(json.loads(line))
+
+summary_events = [
+    json.loads(line)
+    for line in Path("examples/ab-validator-output/run-summary.jsonl").read_text(encoding="utf-8").splitlines()
+    if line.strip()
+]
+
+event_types = [event.get("event") for event in summary_events]
+if event_types[:1] != ["run-start"]:
+    raise SystemExit("ab-validator run summary must start with run-start")
+if event_types[-1:] != ["run-complete"]:
+    raise SystemExit("ab-validator run summary must end with run-complete")
+if "work-result" not in event_types:
+    raise SystemExit("ab-validator run summary must include a work-result event")
+for event in summary_events:
+    if "run_id" not in event:
+        raise SystemExit(f"run summary event is missing run_id: {event}")
+
+manifest_inputs = load_json("examples/ab-validator-output/manifest-inputs.json")
+required_manifest_input_keys = {
+    "producer",
+    "producer_version",
+    "work_id",
+    "work_content_hash",
+    "parser_build_hash",
+    "parser_config_hash",
+    "parser_ir_schema_hash",
+    "warning_sidecar_hash",
+    "run_summary_hash",
+    "comparison_report_hash",
+}
+missing_manifest_input_keys = required_manifest_input_keys - manifest_inputs.keys()
+if missing_manifest_input_keys:
+    raise SystemExit(
+        "ab-validator manifest inputs missing keys: "
+        + ", ".join(sorted(missing_manifest_input_keys))
+    )
+
+hash_validator = Draft202012Validator(manifest_schema["$defs"]["hash"])
+for key, value in manifest_inputs.items():
+    if key.endswith("_hash"):
+        hash_validator.validate(value)
+
+comparison_report = load_json("examples/ab-validator-output/comparison-report.json")
+if comparison_report.get("report_schema") != "abc.ab-validator-comparison.v0":
+    raise SystemExit("ab-validator comparison report has an unexpected report_schema")
+if not comparison_report.get("parser_candidates"):
+    raise SystemExit("ab-validator comparison report must list parser_candidates")
 
 try:
     manifest_validator.validate({})

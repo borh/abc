@@ -1,0 +1,63 @@
+{
+  "schema_id": "https://example.org/abc/schemas/parser-ir.schema.json",
+  "schema_hash": "sha256:a400000000000000000000000000000000000000000000000000000000000004",
+  "source": {
+    "work_content_hash": "sha256:a100000000000000000000000000000000000000000000000000000000000001",
+    "source_path": "fixtures/smoke-work/fixture-0001.txt",
+    "encoding": "UTF-8",
+    "normalization": "source"
+  },
+  "nodes": [
+    {
+      "type": "heading",
+      "span": { "start": 0, "end": 4, "line": 1, "column": 1 },
+      "text": "一",
+      "level": 1
+    },
+    {
+      "type": "text",
+      "span": { "start": 5, "end": 8, "line": 2, "column": 1 },
+      "text": "吾輩"
+    },
+    {
+      "type": "ruby",
+      "span": { "start": 8, "end": 16, "line": 2, "column": 4 },
+      "ruby": {
+        "base": "猫",
+        "reading": "ねこ",
+        "scope": "explicit"
+      }
+    },
+    {
+      "type": "gaiji",
+      "span": { "start": 17, "end": 28, "line": 2, "column": 12 },
+      "gaiji": {
+        "raw_marker": "※［＃未解決外字］",
+        "reference": null,
+        "unicode": null,
+        "ivs": null,
+        "image_or_glyph_fallback": null,
+        "resolved": false
+      }
+    },
+    {
+      "type": "editor-note",
+      "span": { "start": 29, "end": 37, "line": 3, "column": 1 },
+      "note": {
+        "raw": "［＃地付き］",
+        "category": "indentation"
+      }
+    }
+  ],
+  "warnings": [
+    {
+      "severity": "warning",
+      "code": "UNRESOLVED_GAIJI",
+      "message": "Gaiji marker was preserved without Unicode resolution.",
+      "span": { "start": 17, "end": 28, "line": 2, "column": 12 },
+      "construct": "gaiji",
+      "recovery": "Preserved raw marker in parser IR."
+    }
+  ],
+  "errors": []
+}

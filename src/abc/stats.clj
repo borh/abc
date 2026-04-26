@@ -3,8 +3,7 @@
     [parallel.core :as p]
     [clojure.string :as string]
     [net.cgrand.xforms :as x]
-    [clj-mecab.parse :as mecab]
-    #_[clj-ginza.core :as ginza]))
+    [clj-mecab.parse :as mecab]))
 
 (defn yules-k
   "Measures distribution of tokens across types."
@@ -45,7 +44,6 @@
   (into {}
         (comp
           (map mecab/parse-sentence)
-          #_(map (fn [sentence] #_(ginza/text->wakati sentence))) ;; For LUW/etc.
           (x/transjuxt {:tokens           (x/reduce (fn ([] []) ([a] a) ([a x] (x/into a (:mecab.features/orth x)))))
                         :sentence-lengths (x/reduce (fn ([] []) ([a] a) ([a x] (conj a (count x)))))}))
         (string/split #"\n+" s)))

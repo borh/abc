@@ -5,11 +5,15 @@
             [clojure.java.io :as io]
             [clojure.test :refer [deftest is testing]]))
 
-(deftest canonical-json-test
+(deftest v0-identity-json-test
   (is (= "{\"a\":null,\"b\":\"x\",\"c\":\"quote\\\"slash\\\\\"}"
-         (manifest/canonical-json {"b" "x"
-                                   "a" nil
-                                   "c" "quote\"slash\\"}))))
+         (manifest/v0-identity-json {"b" "x"
+                                     "a" nil
+                                     "c" "quote\"slash\\"}))))
+
+(deftest schema-hash-test
+  (is (= (str "sha256:" (files/sha256-file "schemas/manifest.schema.json"))
+         (manifest/schema-file-hash "schemas/manifest.schema.json"))))
 
 (deftest artifact-id-test
   (let [identity-object {"b" "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
@@ -37,6 +41,12 @@
         (is (= "warnings" (get warnings-manifest "artifact_kind")))
         (is (= "warning" (get parser-manifest "validation_status")))
         (is (= "warning" (get warnings-manifest "validation_status")))
+        (is (= (manifest/schema-file-hash "schemas/manifest.schema.json")
+               (get-in parser-manifest ["manifest_identity_object" "manifest_schema_hash"])))
+        (is (= (manifest/schema-file-hash "schemas/manifest.schema.json")
+               (get-in warnings-manifest ["manifest_identity_object" "manifest_schema_hash"])))
+        (is (= (get-in parser-manifest ["manifest_identity_object" "parser_ir_schema_hash"])
+               (get-in warnings-manifest ["manifest_identity_object" "parser_ir_schema_hash"])))
         (is (= (str "sha256:" (files/sha256-file "examples/ab-validator-output/parser-ir.json"))
                (get-in parser-manifest ["content" "content_hash"])))
         (is (= (str "sha256:" (files/sha256-file "examples/ab-validator-output/warnings.jsonl"))

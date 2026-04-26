@@ -51,10 +51,10 @@ dimensions are `null`.
 The materializer computes `artifact_id` as:
 
 ```text
-sha256(canonical-json(manifest_identity_object))
+sha256(v0-identity-json(manifest_identity_object))
 ```
 
-The v0 canonical JSON implementation is intentionally narrow. It supports the
+The v0 identity JSON implementation is intentionally narrow. It supports the
 identity-object value domain used by `schemas/manifest.schema.json`: maps with
 string keys, string hash values, and `null`. It sorts map keys
 lexicographically, emits UTF-8 JSON bytes, and escapes strings according to JSON

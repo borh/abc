@@ -11,9 +11,11 @@
 (defn parser-ir-manifest [input-dir manifest-inputs generated-at]
   (let [parser-ir-file (imported-file input-dir "parser-ir.json")
         warnings-file (imported-file input-dir "warnings.jsonl")
+        manifest-schema-hash (manifest/schema-file-hash "schemas/manifest.schema.json")
         identity-object (manifest/identity-object
                          manifest-inputs
-                         (get manifest-inputs "parser_ir_schema_hash"))]
+                         {:manifest-schema-hash manifest-schema-hash
+                          :output-format-spec-hash (get manifest-inputs "parser_ir_schema_hash")})]
     (manifest/artifact-manifest
      {:artifact-kind "parser-ir"
       :validation-status "warning"
@@ -39,9 +41,11 @@
 
 (defn warnings-manifest [input-dir manifest-inputs generated-at]
   (let [warnings-file (imported-file input-dir "warnings.jsonl")
+        manifest-schema-hash (manifest/schema-file-hash "schemas/manifest.schema.json")
         identity-object (manifest/identity-object
                          manifest-inputs
-                         (get manifest-inputs "diagnostic_schema_hash"))]
+                         {:manifest-schema-hash manifest-schema-hash
+                          :output-format-spec-hash (get manifest-inputs "diagnostic_schema_hash")})]
     (manifest/artifact-manifest
      {:artifact-kind "warnings"
       :validation-status "warning"

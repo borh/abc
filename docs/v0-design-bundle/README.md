@@ -23,6 +23,7 @@ bound the choices.
 | ab-validator boundary ADR | `docs/adr/0007-external-parser-validation-boundary.md` | Keep parser comparison in `../ab-validator` | Defines imported output bundle contract |
 | ABC tools runtime ADR | `docs/adr/0008-abc-tools-runtime.md` | Move pipeline tooling into Clojure commands exposed by Nix | Keeps Bash as compatibility wrappers only |
 | Imported materialization ADR | `docs/adr/0009-imported-output-materialization.md` | Turn imported parser output into ABC manifests | Generates parser IR and warning manifests from fixture input |
+| Manifest identity hardening ADR | `docs/adr/0010-manifest-identity-hardening.md` | Tie generated identity to checked-in schema bytes | Computes manifest schema hash from `schemas/manifest.schema.json` |
 | Manifest schema | `schemas/manifest.schema.json` | Canonical JSON contract for success and failure manifests | Draft 2020-12 schema validates example manifests |
 | Parser IR schema | `schemas/parser-ir.schema.json` | Language-neutral parser boundary | Covers spans, ruby, gaiji, notes, warnings, errors |
 | Manifest SHACL | `schemas/manifest.shacl.ttl` | RDF/PROV-O publication view check | Requires artifact, status, activity, and derivation links |

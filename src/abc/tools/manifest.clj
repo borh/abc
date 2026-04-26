@@ -7,9 +7,6 @@
 
 (def manifest-schema-id "https://example.org/abc/schemas/manifest.schema.json")
 
-(def manifest-schema-hash
-  "sha256:2222222222222222222222222222222222222222222222222222222222222222")
-
 (def corpus-snapshot-hash
   "sha256:1111111111111111111111111111111111111111111111111111111111111111")
 
@@ -21,10 +18,21 @@
     (.update digest (.getBytes s "UTF-8"))
     (bytes->hex (.digest digest))))
 
+(defn schema-file-hash [file]
+  (with-open [in (io/input-stream (io/file file))]
+    (let [digest (MessageDigest/getInstance "SHA-256")
+          buffer (byte-array 8192)]
+      (loop []
+        (let [n (.read in buffer)]
+          (when (pos? n)
+            (.update digest buffer 0 n)
+            (recur))))
+      (str "sha256:" (bytes->hex (.digest digest))))))
+
 (defn json-string [s]
   (json/write-json-str s))
 
-(defn canonical-json [value]
+(defn v0-identity-json [value]
   (cond
     (nil? value) "null"
     (string? value) (json-string value)
@@ -32,14 +40,14 @@
                       (->> value
                            (sort-by key)
                            (map (fn [[k v]]
-                                  (str (json-string k) ":" (canonical-json v))))
+                                  (str (json-string k) ":" (v0-identity-json v))))
                            (string/join ","))
                       "}")
     :else (throw (ex-info "Unsupported canonical JSON value"
                           {:value value}))))
 
 (defn artifact-id [identity-object]
-  (str "sha256:" (sha256-string (canonical-json identity-object))))
+  (str "sha256:" (sha256-string (v0-identity-json identity-object))))
 
 (def identity-keys
   ["manifest_schema_hash"
@@ -55,7 +63,7 @@
    "analysis_recipe_hash"
    "output_format_spec_hash"])
 
-(defn identity-object [manifest-inputs output-format-spec-hash]
+(defn identity-object [manifest-inputs {:keys [manifest-schema-hash output-format-spec-hash]}]
   (into (sorted-map)
         (map (fn [k]
                [k (case k

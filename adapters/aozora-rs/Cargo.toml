@@ -5,6 +5,7 @@ edition = "2024"
 license = "MIT OR Apache-2.0"
 
 [dependencies]
+ab-ir = { path = "../../crates/ab-ir" }
 anyhow = "1.0"
 aozora-rs-core = { path = "../../references/parsers/aozora-rs/aozora-rs/aozora-rs-core" }
 clap = { version = "4.5", features = ["derive"] }

@@ -3,6 +3,13 @@
 version = 4
 
 [[package]]
+name = "ab-ir"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
+]
+
+[[package]]
 name = "aho-corasick"
 version = "1.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -86,6 +93,7 @@ checksum = "7f202df86484c868dbad7eaa557ef785d5c66295e41b460ef922eca0723b842c"
 name = "aozora-rs-adapter"
 version = "0.1.0"
 dependencies = [
+ "ab-ir",
  "anyhow",
  "aozora-rs-core",
  "clap",

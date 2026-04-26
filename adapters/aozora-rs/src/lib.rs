@@ -56,7 +56,7 @@ fn build_aat(
     json!({
         "version": 1,
         "work_id": "stdin",
-        "blocks": aat::blocks_to_json(&result.blocks),
+        "blocks": ab_ir::blocks_to_aat_json(&result.blocks),
         "meta": {
             "adapter": "aozora-rs",
             "adapter_version": VERSION,

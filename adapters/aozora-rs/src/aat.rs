@@ -1,8 +1,8 @@
 use std::{sync::OnceLock, time::Instant};
 
+use ab_ir::{Block, Inline, ProjectedText};
 use aozora_rs_core::{Break, Deco, Retokenized};
 use regex::Regex;
-use serde_json::json;
 
 use crate::{
     metrics::FallbackDecision,
@@ -10,51 +10,16 @@ use crate::{
     source::{remove_bottom_note_fragments, source_visible_text},
 };
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum AatBlock {
-    Paragraph {
-        content: Vec<AatInline>,
-    },
-    Heading {
-        level: u8,
-        style: &'static str,
-        content: Vec<AatInline>,
-    },
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum AatInline {
-    Text(String),
-    Ruby {
-        base: String,
-        reading: String,
-    },
-    Gaiji {
-        description: String,
-        resolved: String,
-        description_format: Option<&'static str>,
-    },
-    Style {
-        style_type: &'static str,
-        content: Vec<AatInline>,
-    },
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ProjectedText {
-    pub visible_text: String,
-}
-
 #[derive(Debug, Clone)]
 pub struct InitialAatBuildResult {
-    pub blocks: Vec<AatBlock>,
+    pub blocks: Vec<Block>,
     pub projected: ProjectedText,
     pub timings: AatBuildTimings,
 }
 
 #[derive(Debug, Clone)]
 pub struct AatBuildResult {
-    pub blocks: Vec<AatBlock>,
+    pub blocks: Vec<Block>,
     pub fallback: FallbackDecision,
     pub timings: AatBuildTimings,
 }
@@ -70,9 +35,7 @@ pub fn build_initial(parsed: &ParsedSource<'_>) -> InitialAatBuildResult {
     let mut blocks = retokenized_to_aat_blocks(&parsed.retokenized);
     append_source_annotation_supplements(&mut blocks, body);
     strip_cross_node_commands(&mut blocks);
-    let projected = ProjectedText {
-        visible_text: visible_projection(&blocks),
-    };
+    let projected = ab_ir::visible_projection(&blocks);
     InitialAatBuildResult {
         blocks,
         projected,
@@ -82,74 +45,13 @@ pub fn build_initial(parsed: &ParsedSource<'_>) -> InitialAatBuildResult {
     }
 }
 
-pub fn build_fallback(body: &str) -> (Vec<AatBlock>, ProjectedText) {
+pub fn build_fallback(body: &str) -> (Vec<Block>, ProjectedText) {
     let blocks = source_visible_fallback_blocks(body);
-    let projected = ProjectedText {
-        visible_text: visible_projection(&blocks),
-    };
+    let projected = ab_ir::visible_projection(&blocks);
     (blocks, projected)
 }
 
-pub fn blocks_to_json(blocks: &[AatBlock]) -> Vec<serde_json::Value> {
-    blocks
-        .iter()
-        .map(|block| match block {
-            AatBlock::Paragraph { content } => json!({
-                "kind": "paragraph",
-                "content": inline_to_json(content)
-            }),
-            AatBlock::Heading {
-                level,
-                style,
-                content,
-            } => json!({
-                "kind": "heading",
-                "level": level,
-                "style": style,
-                "content": inline_to_json(content)
-            }),
-        })
-        .collect()
-}
-
-fn inline_to_json(content: &[AatInline]) -> Vec<serde_json::Value> {
-    content
-        .iter()
-        .map(|node| match node {
-            AatInline::Text(value) => json!({ "kind": "text", "value": value }),
-            AatInline::Ruby { base, reading } => {
-                json!({ "kind": "ruby", "base": base, "reading": reading })
-            }
-            AatInline::Gaiji {
-                description,
-                resolved,
-                description_format,
-            } => {
-                let mut value = json!({
-                    "kind": "gaiji",
-                    "description": description,
-                    "resolved": resolved,
-                    "jis_code": null,
-                    "unresolved_reason": null
-                });
-                if let Some(format) = description_format {
-                    value["x-description-format"] = serde_json::Value::String((*format).to_owned());
-                }
-                value
-            }
-            AatInline::Style {
-                style_type,
-                content,
-            } => json!({
-                "kind": "style",
-                "style_type": style_type,
-                "content": inline_to_json(content)
-            }),
-        })
-        .collect()
-}
-
-fn retokenized_to_aat_blocks(tokens: &[Retokenized<'_>]) -> Vec<AatBlock> {
+fn retokenized_to_aat_blocks(tokens: &[Retokenized<'_>]) -> Vec<Block> {
     let mut blocks = Vec::new();
     let mut content = Vec::new();
     let mut idx = 0;
@@ -160,7 +62,7 @@ fn retokenized_to_aat_blocks(tokens: &[Retokenized<'_>]) -> Vec<AatBlock> {
             Retokenized::Kunten(_) | Retokenized::Okurigana(_) => {}
             Retokenized::Break(Break::BreakLine) => flush_paragraph(&mut blocks, &mut content),
             Retokenized::Break(_) => flush_paragraph(&mut blocks, &mut content),
-            Retokenized::Figure(figure) => content.push(AatInline::Gaiji {
+            Retokenized::Figure(figure) => content.push(Inline::Gaiji {
                 description: figure.to_string(),
                 resolved: String::new(),
                 description_format: Some(
@@ -172,7 +74,7 @@ fn retokenized_to_aat_blocks(tokens: &[Retokenized<'_>]) -> Vec<AatBlock> {
                     matches!(deco, Deco::Ruby(_))
                 });
                 if !is_pathological_ruby_base(&base) {
-                    content.push(AatInline::Ruby {
+                    content.push(Inline::Ruby {
                         base,
                         reading: (*reading).to_owned(),
                     });
@@ -201,10 +103,10 @@ fn retokenized_to_aat_blocks(tokens: &[Retokenized<'_>]) -> Vec<AatBlock> {
                     Deco::CHead => 3,
                     _ => unreachable!(),
                 };
-                blocks.push(AatBlock::Heading {
+                blocks.push(Block::Heading {
                     level,
                     style: stable_style_type(deco),
-                    content: vec![AatInline::Text(value)],
+                    content: vec![Inline::Text(value)],
                 });
                 idx = next_idx;
                 continue;
@@ -214,9 +116,9 @@ fn retokenized_to_aat_blocks(tokens: &[Retokenized<'_>]) -> Vec<AatBlock> {
                     collect_decorated_visible_text(tokens, idx + 1, |candidate| {
                         same_deco_kind(candidate, deco)
                     });
-                content.push(AatInline::Style {
+                content.push(Inline::Style {
                     style_type: stable_style_type(deco),
-                    content: vec![AatInline::Text(value)],
+                    content: vec![Inline::Text(value)],
                 });
                 idx = next_idx;
                 continue;
@@ -227,7 +129,7 @@ fn retokenized_to_aat_blocks(tokens: &[Retokenized<'_>]) -> Vec<AatBlock> {
     }
     flush_paragraph(&mut blocks, &mut content);
     if blocks.is_empty() {
-        blocks.push(AatBlock::Paragraph { content: vec![] });
+        blocks.push(Block::Paragraph { content: vec![] });
     }
     blocks
 }
@@ -261,11 +163,11 @@ fn is_pathological_ruby_base(base: &str) -> bool {
     base.contains('\n') || base.chars().count() > 80
 }
 
-fn flush_paragraph(blocks: &mut Vec<AatBlock>, content: &mut Vec<AatInline>) {
+fn flush_paragraph(blocks: &mut Vec<Block>, content: &mut Vec<Inline>) {
     if content.is_empty() {
         return;
     }
-    blocks.push(AatBlock::Paragraph {
+    blocks.push(Block::Paragraph {
         content: std::mem::take(content),
     });
 }
@@ -326,32 +228,32 @@ fn odoriji_source_text(odoriji: aozora_rs_core::Odoriji) -> &'static str {
     }
 }
 
-fn push_text(content: &mut Vec<AatInline>, value: &str) {
+fn push_text(content: &mut Vec<Inline>, value: &str) {
     if value.is_empty() {
         return;
     }
-    content.push(AatInline::Text(value.to_owned()));
+    content.push(Inline::Text(value.to_owned()));
 }
 
-fn strip_cross_node_commands(blocks: &mut [AatBlock]) {
+fn strip_cross_node_commands(blocks: &mut [Block]) {
     let mut state = CommandStripState::None;
     for block in blocks {
-        for child in block_content_mut(block) {
+        for child in ab_ir::block_content_mut(block) {
             strip_commands_in_inline(child, &mut state);
         }
     }
 }
 
-fn strip_commands_in_inline(value: &mut AatInline, state: &mut CommandStripState) {
+fn strip_commands_in_inline(value: &mut Inline, state: &mut CommandStripState) {
     match value {
-        AatInline::Text(text) => strip_string(text, state),
-        AatInline::Ruby { base, .. } => strip_string(base, state),
-        AatInline::Style { content, .. } => {
+        Inline::Text(text) => strip_string(text, state),
+        Inline::Ruby { base, .. } => strip_string(base, state),
+        Inline::Style { content, .. } => {
             for child in content {
                 strip_commands_in_inline(child, state);
             }
         }
-        AatInline::Gaiji { .. } => {}
+        Inline::Gaiji { .. } => {}
     }
 }
 
@@ -461,51 +363,28 @@ enum NoteStart {
     MamaNote,
 }
 
-fn append_source_annotation_supplements(blocks: &mut [AatBlock], body: &str) {
+fn append_source_annotation_supplements(blocks: &mut [Block], body: &str) {
     let Some(first_block) = blocks.first_mut() else {
         return;
     };
-    let content = block_content_mut(first_block);
+    let content = ab_ir::block_content_mut(first_block);
     append_ruby_supplements(content, body);
     append_gaiji_supplements(content, body);
 }
 
-fn source_visible_fallback_blocks(body: &str) -> Vec<AatBlock> {
-    let mut blocks = vec![AatBlock::Paragraph {
-        content: vec![AatInline::Text(source_visible_text(body))],
+fn source_visible_fallback_blocks(body: &str) -> Vec<Block> {
+    let mut blocks = vec![Block::Paragraph {
+        content: vec![Inline::Text(source_visible_text(body))],
     }];
     append_source_annotation_supplements(&mut blocks, body);
     blocks
 }
 
-fn visible_projection(blocks: &[AatBlock]) -> String {
-    let mut out = String::new();
-    for block in blocks {
-        for child in block_content(block) {
-            collect_visible_projection(child, &mut out);
-        }
-    }
-    out
-}
-
-fn collect_visible_projection(value: &AatInline, out: &mut String) {
-    match value {
-        AatInline::Text(value) => out.push_str(value),
-        AatInline::Ruby { base, .. } => out.push_str(base),
-        AatInline::Gaiji { resolved, .. } => out.push_str(resolved),
-        AatInline::Style { content, .. } => {
-            for child in content {
-                collect_visible_projection(child, out);
-            }
-        }
-    }
-}
-
-fn append_ruby_supplements(content: &mut Vec<AatInline>, body: &str) {
+fn append_ruby_supplements(content: &mut Vec<Inline>, body: &str) {
     let existing = content
         .iter()
         .filter_map(|node| match node {
-            AatInline::Ruby { reading, .. } => Some(reading.clone()),
+            Inline::Ruby { reading, .. } => Some(reading.clone()),
             _ => None,
         })
         .collect::<Vec<_>>();
@@ -514,17 +393,17 @@ fn append_ruby_supplements(content: &mut Vec<AatInline>, body: &str) {
         if existing.iter().any(|existing| existing == reading) {
             continue;
         }
-        content.push(AatInline::Ruby {
+        content.push(Inline::Ruby {
             base: String::new(),
             reading: reading.to_owned(),
         });
     }
 }
 
-fn append_gaiji_supplements(content: &mut Vec<AatInline>, body: &str) {
+fn append_gaiji_supplements(content: &mut Vec<Inline>, body: &str) {
     let existing_count = content
         .iter()
-        .filter(|node| matches!(node, AatInline::Gaiji { .. }))
+        .filter(|node| matches!(node, Inline::Gaiji { .. }))
         .count();
     for capture in gaiji_marker_regex()
         .captures_iter(body)
@@ -535,7 +414,7 @@ fn append_gaiji_supplements(content: &mut Vec<AatInline>, body: &str) {
             .or_else(|| capture.get(2))
             .map(|matched| matched.as_str())
             .unwrap_or_default();
-        content.push(AatInline::Gaiji {
+        content.push(Inline::Gaiji {
             description: description.to_owned(),
             resolved: String::new(),
             description_format: None,
@@ -551,18 +430,6 @@ fn ruby_marker_regex() -> &'static Regex {
 fn gaiji_marker_regex() -> &'static Regex {
     static REGEX: OnceLock<Regex> = OnceLock::new();
     REGEX.get_or_init(|| Regex::new(r"※(?:［＃([^］]+)］|\[#([^\]]+)\])").unwrap())
-}
-
-fn block_content(block: &AatBlock) -> &[AatInline] {
-    match block {
-        AatBlock::Paragraph { content } | AatBlock::Heading { content, .. } => content,
-    }
-}
-
-fn block_content_mut(block: &mut AatBlock) -> &mut Vec<AatInline> {
-    match block {
-        AatBlock::Paragraph { content } | AatBlock::Heading { content, .. } => content,
-    }
 }
 
 #[cfg(test)]
@@ -584,21 +451,21 @@ mod tests {
         .unwrap();
 
         let built = build_initial(&parsed);
-        assert!(matches!(built.blocks[0], AatBlock::Paragraph { .. }));
+        assert!(matches!(built.blocks[0], Block::Paragraph { .. }));
         assert!(built.projected.visible_text.contains("吾輩"));
         assert!(built.timings.build >= Duration::ZERO);
     }
 
     #[test]
     fn typed_blocks_serialize_to_schema_shape() {
-        let blocks = vec![AatBlock::Paragraph {
-            content: vec![AatInline::Ruby {
+        let blocks = vec![Block::Paragraph {
+            content: vec![Inline::Ruby {
                 base: "吾輩".to_owned(),
                 reading: "わがはい".to_owned(),
             }],
         }];
 
-        let json = blocks_to_json(&blocks);
+        let json = ab_ir::blocks_to_aat_json(&blocks);
         assert_eq!(json[0]["kind"], "paragraph");
         assert_eq!(json[0]["content"][0]["kind"], "ruby");
         assert_eq!(json[0]["content"][0]["base"], "吾輩");
@@ -608,7 +475,7 @@ mod tests {
     fn fallback_blocks_use_source_visible_text() {
         let body = "吾輩《わがはい》は※［＃「口＋世」、U+546D］である。";
         let (blocks, projected) = build_fallback(body);
-        assert!(matches!(blocks[0], AatBlock::Paragraph { .. }));
+        assert!(matches!(blocks[0], Block::Paragraph { .. }));
         let visible = source_visible_text(body);
         assert!(projected.visible_text.contains("吾輩"));
         assert!(visible.contains("「口＋世」、U+546D"));

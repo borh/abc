@@ -6,6 +6,11 @@ members = [
     "crates/ab-compare",
 ]
 resolver = "2"
+exclude = [
+    "adapters/aozora2",
+    "adapters/aozora-rs",
+    "references",
+]
 
 [workspace.package]
 version = "0.1.0"

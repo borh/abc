@@ -1,55 +1,25 @@
 use anyhow::{Result, anyhow, bail};
 use aozora_rs_core::{Break, Deco, Retokenized, parse_meta, retokenize, scopenize, tokenize};
-use encoding_rs::SHIFT_JIS;
 use regex::Regex;
 use serde_json::json;
-use sha2::{Digest, Sha256};
 use winnow::LocatingSlice;
 
 mod metrics;
+mod source;
+
+pub use source::{DecodedSource, decode_source_bytes};
+use source::{
+    body_text, remove_bottom_note_fragments, source_visible_text, starts_with_separator,
+    trim_colophon,
+};
 
 pub const VERSION: &str = "aozora-rs-adapter 0.1.0 dd380ee639ca317ac9092ef2ba554acdf70e3c8d";
-
-#[derive(Debug)]
-pub struct DecodedSource {
-    pub text: String,
-    pub encoding: &'static str,
-    pub source_hash: String,
-}
 
 #[derive(Debug)]
 struct ParsedSource<'a> {
     body: &'a str,
     retokenized: Vec<Retokenized<'a>>,
     warnings: Vec<String>,
-}
-
-pub fn decode_source_bytes(bytes: &[u8]) -> Result<DecodedSource> {
-    let source_hash = format!("sha256:{}", hex_sha256(bytes));
-    if bytes.starts_with(&[0xef, 0xbb, 0xbf]) {
-        return Ok(DecodedSource {
-            text: std::str::from_utf8(&bytes[3..])?.to_owned(),
-            encoding: "utf-8-bom",
-            source_hash,
-        });
-    }
-    if let Ok(text) = std::str::from_utf8(bytes) {
-        return Ok(DecodedSource {
-            text: text.to_owned(),
-            encoding: "utf-8",
-            source_hash,
-        });
-    }
-    let (cow, _, had_errors) = SHIFT_JIS.decode(bytes);
-    Ok(DecodedSource {
-        text: cow.into_owned(),
-        encoding: if had_errors {
-            "windows-31j-lossy"
-        } else {
-            "windows-31j"
-        },
-        source_hash,
-    })
 }
 
 pub fn aat_json_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
@@ -100,48 +70,6 @@ fn parse_with_aozora_rs(text: &str) -> Result<ParsedSource<'_>> {
         retokenized,
         warnings,
     })
-}
-
-fn trim_colophon(body: &str) -> &str {
-    let body_end = body
-        .char_indices()
-        .find_map(|(offset, _)| {
-            let rest = &body[offset..];
-            if rest.starts_with("底本：") || rest.starts_with("底本:") {
-                Some(offset)
-            } else {
-                None
-            }
-        })
-        .unwrap_or(body.len());
-    &body[..body_end]
-}
-
-fn body_text(text: &str) -> &str {
-    let mut separator_count = 0;
-    let mut body_start = 0;
-    let mut offset = 0;
-    for line in text.split_inclusive('\n') {
-        let trimmed = line.trim_end_matches(['\r', '\n']);
-        if trimmed.chars().all(|ch| ch == '-') && trimmed.chars().count() >= 20 {
-            separator_count += 1;
-            if separator_count == 2 {
-                body_start = offset + line.len();
-                break;
-            }
-        }
-        offset += line.len();
-    }
-    &text[body_start..]
-}
-
-fn starts_with_separator(text: &str) -> bool {
-    text.lines()
-        .find(|line| !line.trim().is_empty())
-        .is_some_and(|line| {
-            let trimmed = line.trim();
-            !trimmed.is_empty() && trimmed.chars().all(|ch| ch == '-')
-        })
 }
 
 fn build_aat(decoded: &DecodedSource, parsed: &ParsedSource<'_>) -> serde_json::Value {
@@ -626,38 +554,6 @@ fn append_gaiji_supplements(content: &mut Vec<serde_json::Value>, body: &str) {
             "unresolved_reason": null
         }));
     }
-}
-
-fn source_visible_text(txt: &str) -> String {
-    let gaiji = Regex::new(r"※(?:［＃([^］]+)］|\[#([^\]]+)\])").unwrap();
-    let ruby = Regex::new(r"｜?([^｜\s《》※［＃\[\]］、。，．「」『』（）()]+)《[^》]+》").unwrap();
-    let command = Regex::new(r"［＃[^］]+］|\[#[^\]]+\]").unwrap();
-    let without_gaiji = gaiji.replace_all(txt, |captures: &regex::Captures<'_>| {
-        captures
-            .get(1)
-            .or_else(|| captures.get(2))
-            .map(|matched| matched.as_str())
-            .unwrap_or_default()
-            .to_owned()
-    });
-    let without_ruby = ruby.replace_all(&without_gaiji, "$1");
-    let without_commands = command.replace_all(&without_ruby, "").replace('※', "");
-    remove_bottom_note_fragments(&without_commands)
-}
-
-fn remove_bottom_note_fragments(txt: &str) -> String {
-    let bottom_note = Regex::new(r#"[^「」\s、。，．]+」は底本では「[^］\]]+[］\]]"#).unwrap();
-    let gaiji_note = Regex::new(r#"[^「」\s、。，．]*」の「[^］\]]+[］\]]"#).unwrap();
-    let mama_note = Regex::new(r#"[^「」\s、。，．]{1,80}」はママ[］\]]"#).unwrap();
-    let without_bottom_notes = bottom_note.replace_all(txt, "");
-    let without_gaiji_notes = gaiji_note.replace_all(&without_bottom_notes, "");
-    mama_note.replace_all(&without_gaiji_notes, "").into_owned()
-}
-
-fn hex_sha256(bytes: &[u8]) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(bytes);
-    format!("{:x}", hasher.finalize())
 }
 
 #[cfg(test)]

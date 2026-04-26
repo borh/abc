@@ -11,11 +11,6 @@
   babashka/fs                                {:mvn/version "0.5.33"}
   com.ibm.icu/icu4j                          {:mvn/version "78.3"}
   clj-mecab/clj-mecab                        {:mvn/version "1.0.102"}
-  clj-antlr/clj-antlr                        {:mvn/version "0.2.14"
-                                              :exclusions [org.antlr/antlr4
-                                                           org.antlr/antlr4-runtime]}
-  org.antlr/antlr4                           {:mvn/version "4.13.2"}
-  org.antlr/antlr4-runtime                   {:mvn/version "4.13.2"}
 
   org.apache.commons/commons-compress        {:mvn/version "1.28.0"}
   com.cnuernber/charred                      {:mvn/version "1.038"}

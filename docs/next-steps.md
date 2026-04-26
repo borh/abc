@@ -27,7 +27,7 @@ nix run .#validate-design-bundle
 nix run .#materialize-import -- examples/ab-validator-output out/imported --generated-at 2026-04-26T00:00:00Z
 nix run .#manifest-to-rdf -- out/imported/parser-ir.manifest.json -o out/imported/parser-ir.ttl
 nix flake check
-nix run github:jlesquembre/clj-nix#deps-lock -- --deps-include nix/clj-nix-deps.edn
+bin/update-clj-nix-lock
 clojure -M:abc/validate-design-bundle
 clojure -M:abc/materialize-import examples/ab-validator-output out/imported --generated-at 2026-04-26T00:00:00Z
 clojure -M:abc/manifest-to-rdf out/imported/parser-ir.manifest.json -o out/imported/parser-ir.ttl
@@ -88,8 +88,8 @@ clojure -M:test -e '(require (quote clojure.test)
   directory, validates generated manifests, and validates the repository-local
   design bundle.
 - `nix/clj-nix-deps.edn` is the lean dependency surface for sandboxed focused
-  Clojure tests under `nix flake check`; regenerate `deps-lock.json` when it
-  changes.
+  Clojure tests under `nix flake check`; regenerate `deps-lock.json` with
+  `bin/update-clj-nix-lock` when it changes.
 
 ## Validation Rules
 

@@ -19,42 +19,28 @@
 
   org.apache.commons/commons-compress        {:mvn/version "1.28.0"}
   com.cnuernber/charred                      {:mvn/version "1.038"}
-  org.clojure/data.csv                       {:mvn/version "1.1.1"}
   clojure.java-time/clojure.java-time        {:mvn/version "1.4.3"}
-  org.flatland/ordered                       {:mvn/version "1.15.12"}
   lambdaisland/regal                         {:mvn/version "0.1.175"}
   org.clojure/core.match                     {:mvn/version "1.1.1"}
   metosin/malli                              {:mvn/version "0.20.1"}
-  setzer22/malli-instrument                  {:git/url "https://github.com/setzer22/malli-instrument.git"
-                                              :sha "521fa83ad1a6da8d79f5a2f4ce86351a3d117d14"}
   expound/expound                            {:mvn/version "0.9.0"}
   camel-snake-kebab/camel-snake-kebab        {:mvn/version "0.4.3"}
   parallel/parallel                          {:mvn/version "0.10"}
   net.cgrand/xforms                          {:mvn/version "0.19.6"}
   com.climate/claypoole                      {:mvn/version "1.1.4"}
-  org.clojure/core.async                     {:mvn/version "1.9.865"}
   babashka/process                           {:mvn/version "0.6.25"}
 
   org.clojure/data.xml                       {:mvn/version "0.2.0-alpha11"}
-  tolitius/xml-in                            {:mvn/version "0.1.1"}
-  org.relaxng/jing                           {:mvn/version "20241231"}
 
   clj-jgit/clj-jgit                          {:mvn/version "1.1.0"
                                               :exclusions [org.eclipse.jgit/org.eclipse.jgit.gpg.bc]}
-  juji/editscript                            {:mvn/version "0.7.0"
-                                              :exclusions [org.clojure/test.check]}
 
-  com.yetanalytics/flint                     {:mvn/version "0.3.0"}
   uk.org.russet/tawny-owl                    {:mvn/version "2.3.3"}
   net.sourceforge.owlapi/owlapi-distribution {:mvn/version "5.5.1"}
 
   com.xtdb/xtdb-core                         {:mvn/version "1.24.5"}
   com.xtdb/xtdb-rocksdb                      {:mvn/version "1.24.5"}
 
-  com.google.inject/guice                    {:mvn/version "7.0.0"}
-  com.sun.xml.bind/jaxb-impl                 {:mvn/version "4.0.7"}
-  com.sun.xml.bind/jaxb-core                 {:mvn/version "4.0.7"}
-  org.glassfish.jaxb/jaxb-runtime            {:mvn/version "4.0.7"}
   org.graalvm.js/js-language                 {:mvn/version "24.2.2"}
   org.clojars.jules_gosnell/m3               {:mvn/version "1.0.0-beta2"
                                               :exclusions [org.graalvm.polyglot/js

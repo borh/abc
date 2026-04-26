@@ -85,6 +85,18 @@ reference implementations include:
 - `aozora2html`: official Ruby converter to XHTML and the most important
   compatibility reference.
 - `aozora-parser.js`: PEG-based JavaScript parser and useful grammar reference.
+- `vscode-language-japanese-novel`: VSCode extension with a formal TextMate
+  grammar (`novel.tmGrammar.json`) for Aozora-like markup; useful as a lexical
+  classification reference alongside the PEG grammar.
+- `pandoc-aozora-ruby`: Haskell Pandoc filter for Aozora ruby rendering;
+  useful for comparing ruby output semantics.
+- `canopy`: Java parser generator with an Aozora grammar example; relevant
+  to maintainability and grammar-completeness evaluation.
+- `narouconv` / `novel.js`: JavaScript parser for "narou" format, which shares
+  markup conventions with Aozora Bunko; useful for cross-format comparison.
+- `aozorabunko_html` and `aozora_json_scrape`: Ruby HTML converter and metadata
+  scraper by takahashim; useful for HTML output comparison and metadata shape
+  validation.
 - Current ABC Clojure code: incomplete but useful as design evidence for
   metadata, annotation handling, plaintext extraction, tokenization, and TEI.
 
@@ -433,6 +445,9 @@ Several Aozora-specific policies need to become explicit schema/config inputs:
   reference, selected Unicode replacement, IVS information where available,
   image or glyph fallback, and unresolved status. The gaiji mapping table and
   resolution policy must be hashed as parser or rendering configuration.
+  Authoritative sources for replacement selection include the Mojikiban
+  (文字情報基盤) database and the CID NINJAL kana reference; see
+  `references/character-normalization-research.md`.
 - Ruby scope: preserve whether ruby scope was explicit with `｜`, inferred
   from preceding character classes, group ruby, mid-word ruby, nested or
   ambiguous ruby, and the exact source span used for the base text.
@@ -442,12 +457,16 @@ Several Aozora-specific policies need to become explicit schema/config inputs:
   warnings rather than discarded strings.
 - Bibliographic drift: keep Aozora work ID and person ID as source identifiers,
   but also hash the relevant metadata record used for an artifact. Metadata
-  edits should not masquerade as text edits.
+  edits should not masquerade as text edits. External bibliographic databases
+  such as JBDB (`https://jbdb.jp/`) may be used for cross-validation or
+  enrichment, but they do not replace the hashed metadata record as an identity
+  input.
 - Text normalization: record encoding, line-ending normalization, Unicode
   normalization, Japanese metadata normalization policy, and front/back matter
   policy as explicit configuration. NFC vs. NFKC choices for Japanese names
   and bibliographic strings affect `metadata_record_hash` and must not be
-  implicit.
+  implicit. Combining-dakuten kana generation and precomposed-vs.-sequence
+  policy should be documented; see `references/character-normalization-research.md`.
 
 ## TEI and XML Profile
 
@@ -522,6 +541,9 @@ Open choices:
 - PROV extensions: PROV-DICTIONARY and PROV-LINKS are W3C Notes with limited
   tooling, so treat them as exploratory only. PROV-DC mappings may help with
   Dublin Core-aligned publication metadata.
+- Ontology packaging: if ABC publishes reusable vocabulary or TEI ODD profiles,
+  evaluate distribution mechanisms such as Plow.pm or versioned Nix packages.
+  See `references/ontology-research.md`.
 
 The current Turtle output in ABC is useful but not sufficient by itself. The
 redesign needs provenance, artifact identity, and version coordinates, not
@@ -797,6 +819,9 @@ research use cases:
   recipe, and retrieval configuration.
 - Parallel corpora: source text, translated text source, sentence alignment
   algorithm, and alignment confidence.
+- Publication visualization: corpus statistics, network graphs, or narrative
+  analytics backed by reproducible artifact coordinates. Design precedents are
+  collected in `references/visualization-design-research.md`.
 
 These should not all be implemented first. They are pressure tests for whether
 the manifest is expressive enough.
@@ -911,7 +936,8 @@ into a new language-neutral model.
 The project needs separate validation loops:
 
 - Parser compatibility: compare parser output with `aozora2html`, current ABC
-  behavior, and curated tricky Aozora examples.
+  behavior, curated tricky Aozora examples, and the Himawari corpus encoding
+  where alternate markup conventions exist.
 - Parser performance: benchmark against `aozora-rs` or any adopted parser.
 - Parser warnings: compare warning sidecars across parser versions and require
   reviewed changes for new warning classes.

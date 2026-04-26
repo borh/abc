@@ -22,6 +22,7 @@ when runtime remains acceptable.
 | Images/captions | figure and caption preservation | 2 |
 | Metadata join | author/title/source/date edge cases | 3 |
 | Large work | memory and batching behavior | 1 |
+| Encoding comparison | Himawari or other alternate-encoding works | 1 |
 | Expected warnings | unsupported or ambiguous constructs | 3 |
 | Expected failures | failure manifest fixture | 1 |
 

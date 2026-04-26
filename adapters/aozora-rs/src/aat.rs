@@ -1,4 +1,4 @@
-use std::{borrow::Cow, collections::HashSet, time::Instant};
+use std::{borrow::Cow, collections::HashMap, time::Instant};
 
 use ab_ir::{Block, GaijiKind, GaijiRef, Inline, ProjectedText, Provenance, RubyPlacement};
 use aozora_rs_core::{Break, Deco, Retokenized};
@@ -61,12 +61,16 @@ pub fn build_fallback_from_source_visible(
 
 pub fn blocks_cover_validation_annotations(body: &str, blocks: &[Block]) -> bool {
     let annotations = ab_source_syntax::source_annotations_for_validation(body);
-    let readings = ruby_readings_in_blocks(blocks);
-    annotations
-        .ruby_readings
-        .iter()
-        .all(|marker| readings.contains(marker.value))
-        && gaiji_count_in_blocks(blocks) >= annotations.gaiji_descriptions.len()
+    let mut readings = ruby_readings_in_blocks(blocks);
+    for marker in &annotations.ruby_readings {
+        let remaining = readings.get_mut(marker.value);
+        if let Some(remaining) = remaining && *remaining > 0 {
+            *remaining -= 1;
+            continue;
+        }
+        return false;
+    }
+    gaiji_count_in_blocks(blocks) >= annotations.gaiji_descriptions.len()
 }
 
 fn retokenized_to_aat_blocks(tokens: &[Retokenized<'_>]) -> Vec<Block> {
@@ -451,9 +455,9 @@ enum NoteStart {
 }
 
 fn append_source_annotation_supplements(blocks: &mut [Block], body: &str) {
-    let existing_ruby_readings = ruby_readings_in_blocks(blocks);
+    let mut existing_ruby_readings = ruby_readings_in_blocks(blocks);
     let existing_gaiji_count = gaiji_count_in_blocks(blocks);
-    repair_or_supplement_source_ruby(blocks, body, &existing_ruby_readings);
+    repair_or_supplement_source_ruby(blocks, body, &mut existing_ruby_readings);
     let Some(first_block) = blocks.first_mut() else {
         return;
     };
@@ -462,7 +466,7 @@ fn append_source_annotation_supplements(blocks: &mut [Block], body: &str) {
 }
 
 fn append_legacy_source_annotation_supplements(blocks: &mut [Block], body: &str) {
-    let existing_ruby_readings = ruby_readings_in_blocks(blocks);
+    let mut existing_ruby_readings = ruby_readings_in_blocks(blocks);
     let existing_gaiji_count = gaiji_count_in_blocks(blocks);
     let markers = ab_source_syntax::source_annotations(body);
     let Some(first_block) = blocks.first_mut() else {
@@ -472,7 +476,7 @@ fn append_legacy_source_annotation_supplements(blocks: &mut [Block], body: &str)
     append_ruby_supplements(
         content,
         markers.ruby_readings.iter().map(|marker| marker.value),
-        &existing_ruby_readings,
+        &mut existing_ruby_readings,
     );
     append_unresolved_gaiji_supplements(
         content,
@@ -734,25 +738,29 @@ fn is_implicit_ruby_base_char(ch: char) -> bool {
 fn append_ruby_supplements(
     content: &mut Vec<Inline>,
     readings: impl IntoIterator<Item = impl AsRef<str>>,
-    existing: &HashSet<String>,
+    existing: &mut HashMap<String, usize>,
 ) {
     for reading in readings {
         let reading = reading.as_ref();
-        if existing.contains(reading) {
-            continue;
+        match existing.get_mut(reading) {
+            Some(count) if *count > 0 => {
+                *count -= 1;
+            }
+            _ => {
+                content.push(Inline::ruby_with_provenance(
+                    "",
+                    reading,
+                    Provenance::SourceSupplement,
+                ));
+            }
         }
-        content.push(Inline::ruby_with_provenance(
-            "",
-            reading,
-            Provenance::SourceSupplement,
-        ));
     }
 }
 
 fn repair_or_supplement_source_ruby(
     blocks: &mut [Block],
     body: &str,
-    existing: &HashSet<String>,
+    existing: &mut HashMap<String, usize>,
 ) {
     let mut last_gaiji_end = None;
     let mut search_start = 0;
@@ -767,7 +775,17 @@ fn repair_or_supplement_source_ruby(
                 reading,
             } => {
                 let base = source_event_ruby_base(body, &event, base_source);
-                if existing.contains(reading) {
+                let should_consume = existing
+                    .get_mut(reading)
+                    .is_some_and(|count| {
+                        if *count > 0 {
+                            *count -= 1;
+                            true
+                        } else {
+                            false
+                        }
+                    });
+                if should_consume {
                     last_gaiji_end = None;
                     continue;
                 }
@@ -798,7 +816,8 @@ fn repair_or_supplement_source_ruby(
         return;
     };
     let content = ab_ir::block_content_mut(first_block);
-    append_ruby_supplements(content, supplements, &HashSet::new());
+    let mut empty = HashMap::new();
+    append_ruby_supplements(content, supplements, &mut empty);
 }
 
 fn source_event_ruby_base(
@@ -1079,8 +1098,8 @@ fn append_unresolved_gaiji_supplements(
     }
 }
 
-fn ruby_readings_in_blocks(blocks: &[Block]) -> HashSet<String> {
-    let mut readings = HashSet::new();
+fn ruby_readings_in_blocks(blocks: &[Block]) -> HashMap<String, usize> {
+    let mut readings = HashMap::new();
     for block in blocks {
         for child in ab_ir::block_content(block) {
             collect_ruby_readings(child, &mut readings);
@@ -1089,10 +1108,10 @@ fn ruby_readings_in_blocks(blocks: &[Block]) -> HashSet<String> {
     readings
 }
 
-fn collect_ruby_readings(node: &Inline, readings: &mut HashSet<String>) {
+fn collect_ruby_readings(node: &Inline, readings: &mut HashMap<String, usize>) {
     match node {
         Inline::Ruby { reading, .. } => {
-            readings.insert(reading.clone());
+            *readings.entry(reading.clone()).or_insert(0) += 1;
         }
         Inline::Style { content, .. } => {
             for child in content {
@@ -1198,6 +1217,26 @@ mod tests {
         assert_eq!(projected.visible_text, "ことを、にも");
         assert!(content.iter().any(|node| node["kind"] == "gaiji"));
         assert!(!content.iter().any(|node| node["reading"] == "おくび"));
+    }
+
+    #[test]
+    fn blocks_cover_validation_annotations_respects_duplicate_ruby_occurrences() {
+        let blocks = vec![Block::Paragraph {
+            content: vec![Inline::ruby("地球", "ちきゆう")],
+        }];
+
+        assert!(blocks_cover_validation_annotations(
+            "地球《ちきゆう》。",
+            &blocks,
+        ));
+        assert!(!blocks_cover_validation_annotations(
+            "地球《まいち》は月《ちきゆう》。",
+            &blocks,
+        ));
+        assert!(!blocks_cover_validation_annotations(
+            "地球《ちきゆう》と月《ちきゆう》。",
+            &blocks,
+        ));
     }
 
     #[test]
@@ -1365,6 +1404,32 @@ mod tests {
         }));
         assert!(content.iter().any(|node| {
             node["kind"] == "ruby" && node["base"] == "通" && node["reading"] == "つう"
+        }));
+    }
+
+    #[test]
+    fn source_annotation_supplements_repair_same_reading_multiple_times() {
+        let mut blocks = vec![Block::Paragraph {
+            content: vec![
+                Inline::ruby("地球", "ちきゆう"),
+                Inline::text_with_provenance("は", Provenance::ParserNormalized),
+                Inline::text_with_provenance("月。", Provenance::ParserNormalized),
+            ],
+        }];
+
+        append_source_annotation_supplements(
+            &mut blocks,
+            "地球《ちきゆう》は月《ちきゆう》。",
+        );
+
+        let counts = ab_ir::provenance_counts(&blocks);
+        let json = ab_ir::blocks_to_aat_json(&blocks);
+        let content = json[0]["content"].as_array().unwrap();
+
+        assert_eq!(ab_ir::visible_projection(&blocks).visible_text, "地球は月。");
+        assert_eq!(counts.source_supplement, 0);
+        assert!(content.iter().any(|node| {
+            node["kind"] == "ruby" && node["base"] == "月" && node["reading"] == "ちきゆう"
         }));
     }
 

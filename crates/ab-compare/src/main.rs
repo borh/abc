@@ -33,6 +33,12 @@ struct Args {
 
     #[arg(long)]
     aat_diff_limit: Option<usize>,
+
+    #[arg(long)]
+    index: Option<PathBuf>,
+
+    #[arg(long)]
+    triage_output: Option<PathBuf>,
 }
 
 fn main() -> Result<()> {
@@ -43,6 +49,7 @@ fn main() -> Result<()> {
     }
     let file = std::fs::File::create(args.output)?;
     serde_json::to_writer_pretty(file, &summary)?;
+    let mut metrics_summary = None;
     if let Some(metrics_root) = &args.metrics_root {
         let summary = ab_compare::metrics::summarize_aat_metrics(metrics_root)?;
         if let Some(path) = &args.metrics_output {
@@ -54,7 +61,9 @@ fn main() -> Result<()> {
         } else {
             serde_json::to_writer_pretty(std::io::stdout(), &summary)?;
         }
+        metrics_summary = Some(summary);
     }
+    let mut aat_summary = None;
     if let (Some(aats_a), Some(aats_b), Some(output)) =
         (&args.aats_a, &args.aats_b, &args.aat_diff_output)
     {
@@ -65,6 +74,25 @@ fn main() -> Result<()> {
         }
         let file = std::fs::File::create(output)?;
         serde_json::to_writer_pretty(file, &summary)?;
+        aat_summary = Some(summary);
+    }
+    if let Some(output) = &args.triage_output {
+        let index_path = args
+            .index
+            .as_ref()
+            .ok_or_else(|| anyhow::anyhow!("--triage-output requires --index"))?;
+        let index: serde_json::Value = serde_json::from_slice(&std::fs::read(index_path)?)?;
+        let report = ab_compare::triage::build_triage_report(
+            &index,
+            &summary,
+            aat_summary.as_ref(),
+            metrics_summary.as_ref(),
+        );
+        if let Some(parent) = output.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        let file = std::fs::File::create(output)?;
+        serde_json::to_writer_pretty(file, &report)?;
     }
     Ok(())
 }

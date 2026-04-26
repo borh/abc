@@ -104,4 +104,8 @@ benchmarks/run-parser-comparison.sh
 ```
 
 The output directory contains the shared index, per-parser reports, persisted
-AAT artifacts, and `comparison.json` from `ab-compare`.
+AAT artifacts, `comparison.json`, `aat-structure-comparison.json`,
+`aozora-rs-metrics-summary.json`, and `triage.json` from `ab-compare`.
+`triage.json` is the first artifact to inspect after a run: it buckets result
+differences by validation property and corpus feature, records semantic-summary
+diff counts, and lists fallback/source-supplement hotspots to guide parser work.

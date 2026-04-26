@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 #[test]
 fn compares_two_report_sets() {
     let temp = tempfile::tempdir().unwrap();
@@ -125,6 +127,106 @@ fn summarizes_aat_metrics() {
     assert_eq!(summary.node_totals["source_fallback"], 16);
     assert_eq!(summary.slowest_works[0].work_id, "one");
     assert_eq!(summary.slowest_works[0].stages_ms["projection_check"], 7.0);
+    assert_eq!(summary.source_supplement_hotspots[0].work_id, "one");
+    assert_eq!(summary.source_supplement_hotspots[0].nodes, 15);
+    assert_eq!(summary.source_fallback_hotspots[0].work_id, "one");
+    assert_eq!(summary.source_fallback_hotspots[0].nodes, 16);
+}
+
+#[test]
+fn triage_report_buckets_differences_by_feature_and_metrics() {
+    let index = serde_json::json!({
+      "works_count": 2,
+      "works": [
+        {"id": "one", "features": ["ruby", "gaiji"]},
+        {"id": "two", "features": ["jisage_block"]}
+      ]
+    });
+    let comparison = ab_compare::CompareSummary {
+        adapter_a: "aozora2".to_owned(),
+        adapter_b: "aozora-rs".to_owned(),
+        common_reports: 2,
+        only_a: 0,
+        only_b: 0,
+        result_differences: vec![
+            ab_compare::ResultDifference {
+                work_id: "one".to_owned(),
+                property: "visible_text_body_order".to_owned(),
+                a_pass: false,
+                b_pass: true,
+            },
+            ab_compare::ResultDifference {
+                work_id: "two".to_owned(),
+                property: "ruby_completeness".to_owned(),
+                a_pass: false,
+                b_pass: true,
+            },
+        ],
+    };
+    let aat = ab_compare::aat_diff::AatCompareSummary {
+        common_aat: 2,
+        only_a: 0,
+        only_b: 0,
+        structural_difference_count: 1,
+        visible_text_difference_count: 0,
+        normalized_visible_text_difference_count: 0,
+        same_visible_structural_difference_count: 1,
+        semantic_hash_difference_counts: BTreeMap::new(),
+        semantic_summary_hash_difference_counts: BTreeMap::from([(
+            "summary:ruby.basic".to_owned(),
+            1,
+        )]),
+        normalized_visible_difference_buckets: BTreeMap::new(),
+        a_semantic_totals: BTreeMap::new(),
+        b_semantic_totals: BTreeMap::new(),
+        structural_differences: Vec::new(),
+    };
+    let metrics = ab_compare::metrics::MetricsSummary {
+        adapter: "aozora-rs".to_owned(),
+        works: 2,
+        fallbacks: 1,
+        stage_totals_ms: BTreeMap::new(),
+        node_totals: BTreeMap::from([
+            ("source_supplement".to_owned(), 12),
+            ("source_fallback".to_owned(), 1),
+        ]),
+        slowest_works: Vec::new(),
+        source_supplement_hotspots: vec![ab_compare::metrics::NodeHotspot {
+            work_id: "one".to_owned(),
+            nodes: 12,
+            total_ms: 9.0,
+            fallback_used: false,
+            stages_ms: BTreeMap::new(),
+        }],
+        source_fallback_hotspots: vec![ab_compare::metrics::NodeHotspot {
+            work_id: "two".to_owned(),
+            nodes: 1,
+            total_ms: 11.0,
+            fallback_used: true,
+            stages_ms: BTreeMap::new(),
+        }],
+    };
+
+    let report =
+        ab_compare::triage::build_triage_report(&index, &comparison, Some(&aat), Some(&metrics));
+
+    assert_eq!(report.adapters.a, "aozora2");
+    assert_eq!(
+        report.result_differences.by_property["visible_text_body_order"].count,
+        1
+    );
+    assert_eq!(report.result_differences.by_feature["gaiji"].count, 1);
+    assert_eq!(report.result_differences.by_feature["ruby"].count, 1);
+    assert_eq!(
+        report.result_differences.by_feature["jisage_block"].count,
+        1
+    );
+    assert_eq!(
+        report.semantic_summary.difference_counts.as_ref().unwrap()["summary:ruby.basic"],
+        1
+    );
+    assert_eq!(report.fallbacks.as_ref().unwrap().works, 1);
+    assert_eq!(report.source_supplements.as_ref().unwrap().total_nodes, 12);
 }
 
 #[test]

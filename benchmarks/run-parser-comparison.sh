@@ -71,6 +71,8 @@ target/release/ab-compare \
   --aat-diff-limit "$aat_diff_limit" \
   --metrics-root "$out_dir/aats/aozora-rs/aozora-rs-adapter" \
   --metrics-output "$out_dir/aozora-rs-metrics-summary.json" \
+  --index "$out_dir/index.json" \
+  --triage-output "$out_dir/triage.json" \
   --output "$out_dir/comparison.json"
 
 jq -n \
@@ -79,6 +81,7 @@ jq -n \
   --slurpfile c "$out_dir/comparison.json" \
   --slurpfile metrics "$out_dir/aozora-rs-metrics-summary.json" \
   --slurpfile aatdiff "$out_dir/aat-structure-comparison.json" \
+  --slurpfile triage "$out_dir/triage.json" \
   --arg corpus_hash "$(jq -r '.corpus_hash' "$out_dir/index.json")" \
   '{
     generated_at: now | todate,
@@ -87,7 +90,8 @@ jq -n \
     aozora_rs: $b[0],
     comparison: $c[0],
     aozora_rs_metrics: $metrics[0],
-    aat_structure_comparison: $aatdiff[0]
+    aat_structure_comparison: $aatdiff[0],
+    triage: $triage[0]
   }' > "$out_dir/summary.json"
 
 cat "$out_dir/summary.json"

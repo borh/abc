@@ -10,6 +10,7 @@ use walkdir::WalkDir;
 
 pub mod aat_diff;
 pub mod metrics;
+pub mod triage;
 
 #[derive(Debug, Deserialize)]
 pub struct CheckReport {

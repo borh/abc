@@ -12,6 +12,8 @@ pub struct MetricsSummary {
     pub stage_totals_ms: BTreeMap<String, f64>,
     pub node_totals: BTreeMap<String, usize>,
     pub slowest_works: Vec<SlowWork>,
+    pub source_supplement_hotspots: Vec<NodeHotspot>,
+    pub source_fallback_hotspots: Vec<NodeHotspot>,
 }
 
 #[derive(Debug, Serialize)]
@@ -19,6 +21,15 @@ pub struct SlowWork {
     pub work_id: String,
     pub total_ms: f64,
     pub dominant_stage: String,
+    pub fallback_used: bool,
+    pub stages_ms: BTreeMap<String, f64>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct NodeHotspot {
+    pub work_id: String,
+    pub nodes: usize,
+    pub total_ms: f64,
     pub fallback_used: bool,
     pub stages_ms: BTreeMap<String, f64>,
 }
@@ -63,6 +74,8 @@ pub fn summarize_aat_metrics(root: &Path) -> Result<MetricsSummary> {
     let mut stage_totals_ms = BTreeMap::new();
     let mut node_totals = BTreeMap::new();
     let mut slowest_works = Vec::new();
+    let mut source_supplement_hotspots = Vec::new();
+    let mut source_fallback_hotspots = Vec::new();
 
     for entry in WalkDir::new(root) {
         let entry = entry?;
@@ -88,25 +101,40 @@ pub fn summarize_aat_metrics(root: &Path) -> Result<MetricsSummary> {
             fallbacks += 1;
         }
 
-        let stages = stages(&root.meta.metrics);
-        for (name, value) in &stages {
+        let stage_map = stages(&root.meta.metrics);
+        for (name, value) in &stage_map {
             *stage_totals_ms.entry(name.clone()).or_insert(0.0) += value;
         }
         for (name, value) in node_counts(&root.meta.metrics) {
             *node_totals.entry(name).or_insert(0) += value;
         }
-        let total_ms = stages.values().sum();
-        let dominant_stage = stages
+        let total_ms = stage_map.values().sum();
+        let dominant_stage = stage_map
             .iter()
             .max_by(|a, b| a.1.total_cmp(b.1))
             .map(|(name, _)| name.clone())
             .unwrap_or_default();
+        let work_id = root.work_id;
         slowest_works.push(SlowWork {
-            work_id: root.work_id,
+            work_id: work_id.clone(),
             total_ms,
             dominant_stage,
             fallback_used: root.meta.metrics.fallback_used,
-            stages_ms: stages,
+            stages_ms: stage_map.clone(),
+        });
+        source_supplement_hotspots.push(NodeHotspot {
+            work_id: work_id.clone(),
+            nodes: root.meta.metrics.source_supplement_nodes,
+            total_ms,
+            fallback_used: root.meta.metrics.fallback_used,
+            stages_ms: stage_map.clone(),
+        });
+        source_fallback_hotspots.push(NodeHotspot {
+            work_id,
+            nodes: root.meta.metrics.source_fallback_nodes,
+            total_ms,
+            fallback_used: root.meta.metrics.fallback_used,
+            stages_ms: stage_map,
         });
     }
 
@@ -117,6 +145,20 @@ pub fn summarize_aat_metrics(root: &Path) -> Result<MetricsSummary> {
     );
     slowest_works.sort_by(|a, b| b.total_ms.total_cmp(&a.total_ms));
     slowest_works.truncate(20);
+    source_supplement_hotspots.sort_by(|a, b| {
+        b.nodes
+            .cmp(&a.nodes)
+            .then_with(|| b.total_ms.total_cmp(&a.total_ms))
+    });
+    source_supplement_hotspots.retain(|work| work.nodes > 0);
+    source_supplement_hotspots.truncate(20);
+    source_fallback_hotspots.sort_by(|a, b| {
+        b.nodes
+            .cmp(&a.nodes)
+            .then_with(|| b.total_ms.total_cmp(&a.total_ms))
+    });
+    source_fallback_hotspots.retain(|work| work.nodes > 0);
+    source_fallback_hotspots.truncate(20);
 
     Ok(MetricsSummary {
         adapter,
@@ -125,6 +167,8 @@ pub fn summarize_aat_metrics(root: &Path) -> Result<MetricsSummary> {
         stage_totals_ms,
         node_totals,
         slowest_works,
+        source_supplement_hotspots,
+        source_fallback_hotspots,
     })
 }
 

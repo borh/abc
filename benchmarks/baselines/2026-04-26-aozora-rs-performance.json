@@ -1,15 +1,15 @@
 {
-  "generated_at": "2026-04-26T09:35:56Z",
+  "generated_at": "2026-04-26T10:24:47Z",
   "corpus_hash": "sha256:25f5edcfab0f7b856cb24e5088de6ab68a61359eabfddb4b3add92049b09ce67",
   "aozora2": {
     "name": "aozora2",
-    "seconds": 16.463221,
+    "seconds": 16.846116,
     "reports": 17894,
     "failures": 581
   },
   "aozora_rs": {
     "name": "aozora-rs",
-    "seconds": 36.763413,
+    "seconds": 37.169093,
     "reports": 17894,
     "failures": 0
   },
@@ -3513,14 +3513,14 @@
     "works": 17894,
     "fallbacks": 578,
     "stage_totals_ms": {
-      "aat_build": 6566.512700000029,
-      "body_selection": 623.2663240000028,
-      "decode": 2264.9054029999897,
-      "fallback_build": 1585.9770850000002,
-      "projection_check": 6163.403664999993,
-      "retokenize": 2340.7203360000267,
-      "scopenize": 1352.2631210000027,
-      "tokenize": 8734.196682000005
+      "aat_build": 6706.330023999992,
+      "body_selection": 639.975578000003,
+      "decode": 2284.6903029999835,
+      "fallback_build": 1603.6245349999995,
+      "projection_check": 6303.424722999992,
+      "retokenize": 2374.625213000004,
+      "scopenize": 1378.5916270000012,
+      "tokenize": 8877.007509999918
     },
     "node_totals": {
       "parser": 5895228,
@@ -3531,322 +3531,966 @@
     "slowest_works": [
       {
         "work_id": "001529_50685",
-        "total_ms": 338.989008,
+        "total_ms": 340.855753,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 35.315507000000004,
-          "body_selection": 1.525197,
-          "decode": 6.710794,
-          "fallback_build": 37.685497,
+          "aat_build": 38.849538,
+          "body_selection": 1.317918,
+          "decode": 6.729271,
+          "fallback_build": 25.109109,
           "projection_check": 0.0,
-          "retokenize": 33.70975,
-          "scopenize": 15.777079999999998,
-          "tokenize": 208.265183
+          "retokenize": 40.451455,
+          "scopenize": 16.565454,
+          "tokenize": 211.833008
         }
       },
       {
         "work_id": "001518_51731",
-        "total_ms": 229.849254,
+        "total_ms": 262.942748,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 3.920318,
-          "body_selection": 3.487861,
-          "decode": 1.432569,
-          "fallback_build": 3.1650530000000003,
+          "aat_build": 4.914797,
+          "body_selection": 0.498346,
+          "decode": 1.477457,
+          "fallback_build": 4.55091,
           "projection_check": 0.0,
-          "retokenize": 4.377173,
-          "scopenize": 1.7144359999999998,
-          "tokenize": 211.751844
-        }
-      },
-      {
-        "work_id": "000311_2012",
-        "total_ms": 227.507984,
-        "dominant_stage": "tokenize",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 11.98432,
-          "body_selection": 2.516339,
-          "decode": 6.917953,
-          "fallback_build": 20.055084,
-          "projection_check": 0.0,
-          "retokenize": 3.049025,
-          "scopenize": 1.594117,
-          "tokenize": 181.391146
+          "retokenize": 4.439231,
+          "scopenize": 2.3469089999999997,
+          "tokenize": 244.715098
         }
       },
       {
         "work_id": "000810_52355",
-        "total_ms": 174.555723,
+        "total_ms": 192.929194,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 2.789237,
-          "body_selection": 0.264287,
-          "decode": 1.2739699999999998,
-          "fallback_build": 3.0447349999999997,
+          "aat_build": 3.246701,
+          "body_selection": 0.568815,
+          "decode": 1.705755,
+          "fallback_build": 3.940416,
           "projection_check": 0.0,
-          "retokenize": 1.361208,
-          "scopenize": 0.603935,
-          "tokenize": 165.218351
+          "retokenize": 1.806344,
+          "scopenize": 0.838212,
+          "tokenize": 180.822951
         }
       },
       {
-        "work_id": "001562_56146",
-        "total_ms": 124.712245,
+        "work_id": "000311_2012",
+        "total_ms": 192.87010300000003,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 26.548799,
-          "body_selection": 2.263901,
-          "decode": 8.660618,
-          "fallback_build": 22.725902,
+          "aat_build": 7.610893,
+          "body_selection": 2.345139,
+          "decode": 6.442354,
+          "fallback_build": 12.956156,
           "projection_check": 0.0,
-          "retokenize": 17.451615,
-          "scopenize": 7.107061,
-          "tokenize": 39.954349
-        }
-      },
-      {
-        "work_id": "001034_4823",
-        "total_ms": 119.231301,
-        "dominant_stage": "tokenize",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 15.173394,
-          "body_selection": 0.7103539999999999,
-          "decode": 1.903804,
-          "fallback_build": 9.855008,
-          "projection_check": 0.0,
-          "retokenize": 15.044846,
-          "scopenize": 5.7325919999999995,
-          "tokenize": 70.81130300000001
-        }
-      },
-      {
-        "work_id": "001341_51302",
-        "total_ms": 116.655783,
-        "dominant_stage": "tokenize",
-        "fallback_used": false,
-        "stages_ms": {
-          "aat_build": 0.5536760000000001,
-          "body_selection": 0.094529,
-          "decode": 0.307208,
-          "fallback_build": 0.0,
-          "projection_check": 1.050381,
-          "retokenize": 0.144478,
-          "scopenize": 0.10856,
-          "tokenize": 114.396951
-        }
-      },
-      {
-        "work_id": "001185_45210",
-        "total_ms": 115.89802900000001,
-        "dominant_stage": "tokenize",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 3.147884,
-          "body_selection": 0.801303,
-          "decode": 2.125892,
-          "fallback_build": 3.142444,
-          "projection_check": 0.0,
-          "retokenize": 1.296749,
-          "scopenize": 0.880893,
-          "tokenize": 104.502864
+          "retokenize": 2.1179110000000003,
+          "scopenize": 1.14213,
+          "tokenize": 160.25552000000002
         }
       },
       {
         "work_id": "000077_1323",
-        "total_ms": 115.488333,
+        "total_ms": 134.745296,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 5.145608,
-          "body_selection": 0.853773,
-          "decode": 2.43417,
-          "fallback_build": 6.569635,
+          "aat_build": 7.500424000000001,
+          "body_selection": 0.832912,
+          "decode": 2.31426,
+          "fallback_build": 9.14488,
           "projection_check": 0.0,
-          "retokenize": 13.083992,
-          "scopenize": 7.398778,
-          "tokenize": 80.002377
+          "retokenize": 17.621816,
+          "scopenize": 8.820201999999998,
+          "tokenize": 88.510802
         }
       },
       {
-        "work_id": "000118_1745",
-        "total_ms": 106.755155,
+        "work_id": "001185_45210",
+        "total_ms": 125.19506999999999,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 6.931303,
-          "body_selection": 1.301309,
-          "decode": 3.5629709999999997,
-          "fallback_build": 13.947654,
+          "aat_build": 3.761727,
+          "body_selection": 0.806993,
+          "decode": 2.076762,
+          "fallback_build": 3.1830019999999997,
           "projection_check": 0.0,
-          "retokenize": 27.284664,
-          "scopenize": 12.117349,
-          "tokenize": 41.609905000000005
+          "retokenize": 1.680645,
+          "scopenize": 0.8762530000000001,
+          "tokenize": 112.809688
         }
       },
       {
-        "work_id": "000255_45395",
-        "total_ms": 102.997196,
+        "work_id": "001562_56146",
+        "total_ms": 123.437985,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 4.553292,
-          "body_selection": 0.808493,
-          "decode": 2.317541,
-          "fallback_build": 4.380904,
+          "aat_build": 23.643252,
+          "body_selection": 2.4385980000000003,
+          "decode": 6.985019,
+          "fallback_build": 22.76276,
           "projection_check": 0.0,
-          "retokenize": 1.894085,
-          "scopenize": 0.913062,
-          "tokenize": 88.129819
-        }
-      },
-      {
-        "work_id": "001562_56145",
-        "total_ms": 96.06831400000002,
-        "dominant_stage": "aat_build",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 29.159718,
-          "body_selection": 1.977634,
-          "decode": 5.256027,
-          "fallback_build": 17.082039,
-          "projection_check": 0.0,
-          "retokenize": 17.962801,
-          "scopenize": 7.358399,
-          "tokenize": 17.271696
-        }
-      },
-      {
-        "work_id": "000148_761",
-        "total_ms": 91.164834,
-        "dominant_stage": "tokenize",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 9.087535,
-          "body_selection": 0.680375,
-          "decode": 1.997653,
-          "fallback_build": 5.298366,
-          "projection_check": 0.0,
-          "retokenize": 3.960847,
-          "scopenize": 2.43611,
-          "tokenize": 67.703948
-        }
-      },
-      {
-        "work_id": "000148_1746",
-        "total_ms": 85.122254,
-        "dominant_stage": "tokenize",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 3.66774,
-          "body_selection": 0.652784,
-          "decode": 1.984014,
-          "fallback_build": 4.878219,
-          "projection_check": 0.0,
-          "retokenize": 7.154111,
-          "scopenize": 4.098256,
-          "tokenize": 62.68713
+          "retokenize": 19.038512,
+          "scopenize": 7.436915,
+          "tokenize": 41.132929
         }
       },
       {
         "work_id": "001750_57299",
-        "total_ms": 84.363381,
+        "total_ms": 121.67942000000001,
         "dominant_stage": "tokenize",
         "fallback_used": false,
         "stages_ms": {
-          "aat_build": 2.37709,
-          "body_selection": 0.355827,
-          "decode": 0.775464,
+          "aat_build": 2.606637,
+          "body_selection": 0.389416,
+          "decode": 1.079771,
           "fallback_build": 0.0,
-          "projection_check": 2.563019,
-          "retokenize": 1.751775,
-          "scopenize": 0.771884,
-          "tokenize": 75.768322
+          "projection_check": 2.8396250000000003,
+          "retokenize": 2.106791,
+          "scopenize": 0.881713,
+          "tokenize": 111.775467
         }
       },
       {
-        "work_id": "000148_58842",
-        "total_ms": 83.70817500000001,
+        "work_id": "001341_51302",
+        "total_ms": 118.489068,
+        "dominant_stage": "tokenize",
+        "fallback_used": false,
+        "stages_ms": {
+          "aat_build": 0.552485,
+          "body_selection": 0.092989,
+          "decode": 0.301637,
+          "fallback_build": 0.0,
+          "projection_check": 1.023741,
+          "retokenize": 0.13996899999999998,
+          "scopenize": 0.132389,
+          "tokenize": 116.245858
+        }
+      },
+      {
+        "work_id": "000118_1745",
+        "total_ms": 110.489308,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 3.5337799999999997,
-          "body_selection": 0.5763349999999999,
-          "decode": 1.744895,
-          "fallback_build": 5.780632,
+          "aat_build": 8.513395,
+          "body_selection": 1.168579,
+          "decode": 3.45853,
+          "fallback_build": 11.529799,
           "projection_check": 0.0,
-          "retokenize": 6.277038,
-          "scopenize": 2.859176,
-          "tokenize": 62.936319000000005
+          "retokenize": 28.803946,
+          "scopenize": 13.320673,
+          "tokenize": 43.694386
+        }
+      },
+      {
+        "work_id": "001562_56145",
+        "total_ms": 110.45594,
+        "dominant_stage": "aat_build",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 30.954208,
+          "body_selection": 2.025392,
+          "decode": 5.329873,
+          "fallback_build": 22.888579,
+          "projection_check": 0.0,
+          "retokenize": 21.364943,
+          "scopenize": 10.25286,
+          "tokenize": 17.640085
+        }
+      },
+      {
+        "work_id": "000255_45395",
+        "total_ms": 100.630936,
+        "dominant_stage": "tokenize",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 3.644378,
+          "body_selection": 0.366827,
+          "decode": 1.715965,
+          "fallback_build": 6.2116560000000005,
+          "projection_check": 0.0,
+          "retokenize": 2.163192,
+          "scopenize": 0.7867730000000001,
+          "tokenize": 85.74214500000001
+        }
+      },
+      {
+        "work_id": "001034_4823",
+        "total_ms": 99.381096,
+        "dominant_stage": "tokenize",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 8.769043,
+          "body_selection": 0.507985,
+          "decode": 1.398738,
+          "fallback_build": 8.101799,
+          "projection_check": 0.0,
+          "retokenize": 10.069251,
+          "scopenize": 5.124295,
+          "tokenize": 65.409985
+        }
+      },
+      {
+        "work_id": "000148_761",
+        "total_ms": 93.237931,
+        "dominant_stage": "tokenize",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 10.828245,
+          "body_selection": 0.704714,
+          "decode": 1.997633,
+          "fallback_build": 6.619542,
+          "projection_check": 0.0,
+          "retokenize": 2.806675,
+          "scopenize": 1.730215,
+          "tokenize": 68.550907
         }
       },
       {
         "work_id": "000989_350",
-        "total_ms": 81.05820800000001,
+        "total_ms": 87.990876,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 6.915733,
-          "body_selection": 0.717374,
-          "decode": 2.208931,
-          "fallback_build": 5.034987999999999,
+          "aat_build": 10.014992,
+          "body_selection": 0.727564,
+          "decode": 2.1709110000000003,
+          "fallback_build": 7.764412,
           "projection_check": 0.0,
-          "retokenize": 4.87073,
-          "scopenize": 2.763877,
-          "tokenize": 58.546575
+          "retokenize": 6.011107,
+          "scopenize": 2.693126,
+          "tokenize": 58.608764
+        }
+      },
+      {
+        "work_id": "000148_58842",
+        "total_ms": 83.936141,
+        "dominant_stage": "tokenize",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 4.089574000000001,
+          "body_selection": 0.585715,
+          "decode": 1.878713,
+          "fallback_build": 6.688811,
+          "projection_check": 0.0,
+          "retokenize": 6.617162,
+          "scopenize": 2.985043,
+          "tokenize": 61.091123
+        }
+      },
+      {
+        "work_id": "000148_1746",
+        "total_ms": 81.509523,
+        "dominant_stage": "tokenize",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 3.1251819999999997,
+          "body_selection": 0.428686,
+          "decode": 1.578606,
+          "fallback_build": 5.343024,
+          "projection_check": 0.0,
+          "retokenize": 6.753521,
+          "scopenize": 3.37339,
+          "tokenize": 60.907114
         }
       },
       {
         "work_id": "001161_43624",
-        "total_ms": 78.26802099999999,
+        "total_ms": 76.62628700000002,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 3.65027,
-          "body_selection": 0.652134,
-          "decode": 1.950564,
-          "fallback_build": 2.3433,
+          "aat_build": 3.624948,
+          "body_selection": 0.346217,
+          "decode": 1.564446,
+          "fallback_build": 3.389131,
           "projection_check": 0.0,
-          "retokenize": 1.19684,
-          "scopenize": 0.7552439999999999,
-          "tokenize": 67.719669
-        }
-      },
-      {
-        "work_id": "000148_789",
-        "total_ms": 74.302094,
-        "dominant_stage": "tokenize",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 12.03376,
-          "body_selection": 0.982062,
-          "decode": 2.824917,
-          "fallback_build": 10.001337,
-          "projection_check": 0.0,
-          "retokenize": 4.856540000000001,
-          "scopenize": 2.500339,
-          "tokenize": 41.103139
+          "retokenize": 1.200579,
+          "scopenize": 0.7629429999999999,
+          "tokenize": 65.73802300000001
         }
       },
       {
         "work_id": "001341_55302",
-        "total_ms": 72.717427,
+        "total_ms": 75.945313,
         "dominant_stage": "tokenize",
         "fallback_used": false,
         "stages_ms": {
-          "aat_build": 0.270047,
-          "body_selection": 0.03658,
-          "decode": 0.171609,
+          "aat_build": 0.376677,
+          "body_selection": 0.06379,
+          "decode": 0.193548,
           "fallback_build": 0.0,
-          "projection_check": 0.365967,
-          "retokenize": 0.07938,
-          "scopenize": 0.06420899999999999,
-          "tokenize": 71.729635
+          "projection_check": 0.598435,
+          "retokenize": 0.103429,
+          "scopenize": 0.073129,
+          "tokenize": 74.536305
+        }
+      },
+      {
+        "work_id": "000129_2084",
+        "total_ms": 75.41019600000001,
+        "dominant_stage": "tokenize",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 13.498191,
+          "body_selection": 1.535257,
+          "decode": 4.780918000000001,
+          "fallback_build": 9.609505,
+          "projection_check": 0.0,
+          "retokenize": 3.3962100000000004,
+          "scopenize": 2.1138820000000003,
+          "tokenize": 40.476233
+        }
+      }
+    ],
+    "source_supplement_hotspots": [
+      {
+        "work_id": "001529_50685",
+        "nodes": 75860,
+        "total_ms": 340.855753,
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 38.849538,
+          "body_selection": 1.317918,
+          "decode": 6.729271,
+          "fallback_build": 25.109109,
+          "projection_check": 0.0,
+          "retokenize": 40.451455,
+          "scopenize": 16.565454,
+          "tokenize": 211.833008
+        }
+      },
+      {
+        "work_id": "000118_1745",
+        "nodes": 55802,
+        "total_ms": 110.489308,
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 8.513395,
+          "body_selection": 1.168579,
+          "decode": 3.45853,
+          "fallback_build": 11.529799,
+          "projection_check": 0.0,
+          "retokenize": 28.803946,
+          "scopenize": 13.320673,
+          "tokenize": 43.694386
+        }
+      },
+      {
+        "work_id": "000148_56923",
+        "nodes": 36061,
+        "total_ms": 63.426862,
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 5.787078999999999,
+          "body_selection": 0.818483,
+          "decode": 1.883344,
+          "fallback_build": 7.498324,
+          "projection_check": 0.0,
+          "retokenize": 15.751281,
+          "scopenize": 7.506813999999999,
+          "tokenize": 24.181537
+        }
+      },
+      {
+        "work_id": "001562_56145",
+        "nodes": 33279,
+        "total_ms": 110.45594,
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 30.954208,
+          "body_selection": 2.025392,
+          "decode": 5.329873,
+          "fallback_build": 22.888579,
+          "projection_check": 0.0,
+          "retokenize": 21.364943,
+          "scopenize": 10.25286,
+          "tokenize": 17.640085
+        }
+      },
+      {
+        "work_id": "000077_1323",
+        "nodes": 32499,
+        "total_ms": 134.745296,
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 7.500424000000001,
+          "body_selection": 0.832912,
+          "decode": 2.31426,
+          "fallback_build": 9.14488,
+          "projection_check": 0.0,
+          "retokenize": 17.621816,
+          "scopenize": 8.820201999999998,
+          "tokenize": 88.510802
+        }
+      },
+      {
+        "work_id": "001034_4823",
+        "nodes": 25824,
+        "total_ms": 99.381096,
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 8.769043,
+          "body_selection": 0.507985,
+          "decode": 1.398738,
+          "fallback_build": 8.101799,
+          "projection_check": 0.0,
+          "retokenize": 10.069251,
+          "scopenize": 5.124295,
+          "tokenize": 65.409985
+        }
+      },
+      {
+        "work_id": "001562_56146",
+        "nodes": 21991,
+        "total_ms": 123.437985,
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 23.643252,
+          "body_selection": 2.4385980000000003,
+          "decode": 6.985019,
+          "fallback_build": 22.76276,
+          "projection_check": 0.0,
+          "retokenize": 19.038512,
+          "scopenize": 7.436915,
+          "tokenize": 41.132929
+        }
+      },
+      {
+        "work_id": "000091_522",
+        "nodes": 18378,
+        "total_ms": 64.430082,
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 12.49186,
+          "body_selection": 0.5072460000000001,
+          "decode": 2.147531,
+          "fallback_build": 9.426737,
+          "projection_check": 0.0,
+          "retokenize": 8.262127,
+          "scopenize": 3.947725,
+          "tokenize": 27.646856
+        }
+      },
+      {
+        "work_id": "000148_1746",
+        "nodes": 16446,
+        "total_ms": 81.509523,
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 3.1251819999999997,
+          "body_selection": 0.428686,
+          "decode": 1.578606,
+          "fallback_build": 5.343024,
+          "projection_check": 0.0,
+          "retokenize": 6.753521,
+          "scopenize": 3.37339,
+          "tokenize": 60.907114
+        }
+      },
+      {
+        "work_id": "001930_58400",
+        "nodes": 15025,
+        "total_ms": 28.680858,
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 7.435265,
+          "body_selection": 0.595275,
+          "decode": 1.953042,
+          "fallback_build": 6.450893,
+          "projection_check": 0.0,
+          "retokenize": 2.7593259999999997,
+          "scopenize": 1.229889,
+          "tokenize": 8.257168
+        }
+      },
+      {
+        "work_id": "000296_1864",
+        "nodes": 14811,
+        "total_ms": 56.87692,
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 6.788889999999999,
+          "body_selection": 0.377107,
+          "decode": 2.203611,
+          "fallback_build": 5.794169,
+          "projection_check": 0.0,
+          "retokenize": 5.616021,
+          "scopenize": 4.071754,
+          "tokenize": 32.025368
+        }
+      },
+      {
+        "work_id": "001562_33224",
+        "nodes": 14690,
+        "total_ms": 59.671965,
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 14.77444,
+          "body_selection": 1.901273,
+          "decode": 4.387411,
+          "fallback_build": 17.415917,
+          "projection_check": 0.0,
+          "retokenize": 8.453126,
+          "scopenize": 3.931575,
+          "tokenize": 8.808223
+        }
+      },
+      {
+        "work_id": "000279_1704",
+        "nodes": 13997,
+        "total_ms": 41.614713,
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 4.569649999999999,
+          "body_selection": 0.931162,
+          "decode": 2.908804,
+          "fallback_build": 9.315938,
+          "projection_check": 0.0,
+          "retokenize": 7.302535,
+          "scopenize": 3.163682,
+          "tokenize": 13.422942
+        }
+      },
+      {
+        "work_id": "000264_42773",
+        "nodes": 13062,
+        "total_ms": 26.449377,
+        "fallback_used": false,
+        "stages_ms": {
+          "aat_build": 3.3834199999999996,
+          "body_selection": 0.377937,
+          "decode": 1.08671,
+          "fallback_build": 0.0,
+          "projection_check": 2.944204,
+          "retokenize": 7.616363,
+          "scopenize": 3.167502,
+          "tokenize": 7.873240999999999
+        }
+      },
+      {
+        "work_id": "000320_2168",
+        "nodes": 12127,
+        "total_ms": 36.911685,
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 4.482111000000001,
+          "body_selection": 0.647084,
+          "decode": 2.016143,
+          "fallback_build": 6.867769,
+          "projection_check": 0.0,
+          "retokenize": 5.254903,
+          "scopenize": 2.997194,
+          "tokenize": 14.646481
+        }
+      },
+      {
+        "work_id": "000148_58842",
+        "nodes": 10908,
+        "total_ms": 83.936141,
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 4.089574000000001,
+          "body_selection": 0.585715,
+          "decode": 1.878713,
+          "fallback_build": 6.688811,
+          "projection_check": 0.0,
+          "retokenize": 6.617162,
+          "scopenize": 2.985043,
+          "tokenize": 61.091123
+        }
+      },
+      {
+        "work_id": "001562_57875",
+        "nodes": 10253,
+        "total_ms": 45.858717,
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 10.508007999999998,
+          "body_selection": 1.035921,
+          "decode": 4.0386750000000005,
+          "fallback_build": 13.429962,
+          "projection_check": 0.0,
+          "retokenize": 6.479093,
+          "scopenize": 3.493129,
+          "tokenize": 6.873929
+        }
+      },
+      {
+        "work_id": "000129_2084",
+        "nodes": 9632,
+        "total_ms": 75.41019600000001,
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 13.498191,
+          "body_selection": 1.535257,
+          "decode": 4.780918000000001,
+          "fallback_build": 9.609505,
+          "projection_check": 0.0,
+          "retokenize": 3.3962100000000004,
+          "scopenize": 2.1138820000000003,
+          "tokenize": 40.476233
+        }
+      },
+      {
+        "work_id": "000989_350",
+        "nodes": 9309,
+        "total_ms": 87.990876,
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 10.014992,
+          "body_selection": 0.727564,
+          "decode": 2.1709110000000003,
+          "fallback_build": 7.764412,
+          "projection_check": 0.0,
+          "retokenize": 6.011107,
+          "scopenize": 2.693126,
+          "tokenize": 58.608764
+        }
+      },
+      {
+        "work_id": "000148_789",
+        "nodes": 9248,
+        "total_ms": 67.965393,
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 11.041203,
+          "body_selection": 0.5495260000000001,
+          "decode": 2.349469,
+          "fallback_build": 6.741131,
+          "projection_check": 0.0,
+          "retokenize": 4.245563,
+          "scopenize": 1.898413,
+          "tokenize": 41.140088
+        }
+      }
+    ],
+    "source_fallback_hotspots": [
+      {
+        "work_id": "001529_50685",
+        "nodes": 1,
+        "total_ms": 340.855753,
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 38.849538,
+          "body_selection": 1.317918,
+          "decode": 6.729271,
+          "fallback_build": 25.109109,
+          "projection_check": 0.0,
+          "retokenize": 40.451455,
+          "scopenize": 16.565454,
+          "tokenize": 211.833008
+        }
+      },
+      {
+        "work_id": "001518_51731",
+        "nodes": 1,
+        "total_ms": 262.942748,
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 4.914797,
+          "body_selection": 0.498346,
+          "decode": 1.477457,
+          "fallback_build": 4.55091,
+          "projection_check": 0.0,
+          "retokenize": 4.439231,
+          "scopenize": 2.3469089999999997,
+          "tokenize": 244.715098
+        }
+      },
+      {
+        "work_id": "000810_52355",
+        "nodes": 1,
+        "total_ms": 192.929194,
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 3.246701,
+          "body_selection": 0.568815,
+          "decode": 1.705755,
+          "fallback_build": 3.940416,
+          "projection_check": 0.0,
+          "retokenize": 1.806344,
+          "scopenize": 0.838212,
+          "tokenize": 180.822951
+        }
+      },
+      {
+        "work_id": "000311_2012",
+        "nodes": 1,
+        "total_ms": 192.87010300000003,
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 7.610893,
+          "body_selection": 2.345139,
+          "decode": 6.442354,
+          "fallback_build": 12.956156,
+          "projection_check": 0.0,
+          "retokenize": 2.1179110000000003,
+          "scopenize": 1.14213,
+          "tokenize": 160.25552000000002
+        }
+      },
+      {
+        "work_id": "000077_1323",
+        "nodes": 1,
+        "total_ms": 134.745296,
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 7.500424000000001,
+          "body_selection": 0.832912,
+          "decode": 2.31426,
+          "fallback_build": 9.14488,
+          "projection_check": 0.0,
+          "retokenize": 17.621816,
+          "scopenize": 8.820201999999998,
+          "tokenize": 88.510802
+        }
+      },
+      {
+        "work_id": "001185_45210",
+        "nodes": 1,
+        "total_ms": 125.19506999999999,
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 3.761727,
+          "body_selection": 0.806993,
+          "decode": 2.076762,
+          "fallback_build": 3.1830019999999997,
+          "projection_check": 0.0,
+          "retokenize": 1.680645,
+          "scopenize": 0.8762530000000001,
+          "tokenize": 112.809688
+        }
+      },
+      {
+        "work_id": "001562_56146",
+        "nodes": 1,
+        "total_ms": 123.437985,
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 23.643252,
+          "body_selection": 2.4385980000000003,
+          "decode": 6.985019,
+          "fallback_build": 22.76276,
+          "projection_check": 0.0,
+          "retokenize": 19.038512,
+          "scopenize": 7.436915,
+          "tokenize": 41.132929
+        }
+      },
+      {
+        "work_id": "000118_1745",
+        "nodes": 1,
+        "total_ms": 110.489308,
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 8.513395,
+          "body_selection": 1.168579,
+          "decode": 3.45853,
+          "fallback_build": 11.529799,
+          "projection_check": 0.0,
+          "retokenize": 28.803946,
+          "scopenize": 13.320673,
+          "tokenize": 43.694386
+        }
+      },
+      {
+        "work_id": "001562_56145",
+        "nodes": 1,
+        "total_ms": 110.45594,
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 30.954208,
+          "body_selection": 2.025392,
+          "decode": 5.329873,
+          "fallback_build": 22.888579,
+          "projection_check": 0.0,
+          "retokenize": 21.364943,
+          "scopenize": 10.25286,
+          "tokenize": 17.640085
+        }
+      },
+      {
+        "work_id": "000255_45395",
+        "nodes": 1,
+        "total_ms": 100.630936,
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 3.644378,
+          "body_selection": 0.366827,
+          "decode": 1.715965,
+          "fallback_build": 6.2116560000000005,
+          "projection_check": 0.0,
+          "retokenize": 2.163192,
+          "scopenize": 0.7867730000000001,
+          "tokenize": 85.74214500000001
+        }
+      },
+      {
+        "work_id": "001034_4823",
+        "nodes": 1,
+        "total_ms": 99.381096,
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 8.769043,
+          "body_selection": 0.507985,
+          "decode": 1.398738,
+          "fallback_build": 8.101799,
+          "projection_check": 0.0,
+          "retokenize": 10.069251,
+          "scopenize": 5.124295,
+          "tokenize": 65.409985
+        }
+      },
+      {
+        "work_id": "000148_761",
+        "nodes": 1,
+        "total_ms": 93.237931,
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 10.828245,
+          "body_selection": 0.704714,
+          "decode": 1.997633,
+          "fallback_build": 6.619542,
+          "projection_check": 0.0,
+          "retokenize": 2.806675,
+          "scopenize": 1.730215,
+          "tokenize": 68.550907
+        }
+      },
+      {
+        "work_id": "000989_350",
+        "nodes": 1,
+        "total_ms": 87.990876,
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 10.014992,
+          "body_selection": 0.727564,
+          "decode": 2.1709110000000003,
+          "fallback_build": 7.764412,
+          "projection_check": 0.0,
+          "retokenize": 6.011107,
+          "scopenize": 2.693126,
+          "tokenize": 58.608764
+        }
+      },
+      {
+        "work_id": "000148_58842",
+        "nodes": 1,
+        "total_ms": 83.936141,
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 4.089574000000001,
+          "body_selection": 0.585715,
+          "decode": 1.878713,
+          "fallback_build": 6.688811,
+          "projection_check": 0.0,
+          "retokenize": 6.617162,
+          "scopenize": 2.985043,
+          "tokenize": 61.091123
+        }
+      },
+      {
+        "work_id": "000148_1746",
+        "nodes": 1,
+        "total_ms": 81.509523,
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 3.1251819999999997,
+          "body_selection": 0.428686,
+          "decode": 1.578606,
+          "fallback_build": 5.343024,
+          "projection_check": 0.0,
+          "retokenize": 6.753521,
+          "scopenize": 3.37339,
+          "tokenize": 60.907114
+        }
+      },
+      {
+        "work_id": "001161_43624",
+        "nodes": 1,
+        "total_ms": 76.62628700000002,
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 3.624948,
+          "body_selection": 0.346217,
+          "decode": 1.564446,
+          "fallback_build": 3.389131,
+          "projection_check": 0.0,
+          "retokenize": 1.200579,
+          "scopenize": 0.7629429999999999,
+          "tokenize": 65.73802300000001
+        }
+      },
+      {
+        "work_id": "000129_2084",
+        "nodes": 1,
+        "total_ms": 75.41019600000001,
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 13.498191,
+          "body_selection": 1.535257,
+          "decode": 4.780918000000001,
+          "fallback_build": 9.609505,
+          "projection_check": 0.0,
+          "retokenize": 3.3962100000000004,
+          "scopenize": 2.1138820000000003,
+          "tokenize": 40.476233
+        }
+      },
+      {
+        "work_id": "000310_1911",
+        "nodes": 1,
+        "total_ms": 70.309141,
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 11.445899,
+          "body_selection": 1.07453,
+          "decode": 2.979474,
+          "fallback_build": 9.474907,
+          "projection_check": 0.0,
+          "retokenize": 4.3959410000000005,
+          "scopenize": 1.841224,
+          "tokenize": 39.097166
+        }
+      },
+      {
+        "work_id": "000290_24376",
+        "nodes": 1,
+        "total_ms": 70.163725,
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 11.148992,
+          "body_selection": 1.028471,
+          "decode": 2.935245,
+          "fallback_build": 6.129557,
+          "projection_check": 0.0,
+          "retokenize": 4.497720999999999,
+          "scopenize": 2.055032,
+          "tokenize": 42.368707
+        }
+      },
+      {
+        "work_id": "000148_789",
+        "nodes": 1,
+        "total_ms": 67.965393,
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 11.041203,
+          "body_selection": 0.5495260000000001,
+          "decode": 2.349469,
+          "fallback_build": 6.741131,
+          "projection_check": 0.0,
+          "retokenize": 4.245563,
+          "scopenize": 1.898413,
+          "tokenize": 41.140088
         }
       }
     ]
@@ -7076,6 +7720,1278 @@
         "normalized_visible_difference_bucket": null,
         "normalized_visible_first_difference": null
       }
+    ]
+  },
+  "triage": {
+    "adapters": {
+      "a": "aozora2",
+      "b": "aozora-rs"
+    },
+    "works_count": 17894,
+    "result_differences": {
+      "total": 581,
+      "by_property": {
+        "ruby_completeness": {
+          "count": 5,
+          "work_ids": [
+            "000051_62060",
+            "000081_454",
+            "000148_56923",
+            "000148_764",
+            "000565_48686"
+          ]
+        },
+        "visible_text_body_order": {
+          "count": 576,
+          "work_ids": [
+            "000006_1869",
+            "000009_43028",
+            "000019_42383",
+            "000019_4376",
+            "000022_42254",
+            "000023_1699",
+            "000025_56503",
+            "000026_50255",
+            "000026_50257",
+            "000026_51311"
+          ]
+        }
+      },
+      "by_feature": {
+        "accent": {
+          "count": 86,
+          "work_ids": [
+            "000026_50255",
+            "000042_2345",
+            "000042_42768",
+            "000042_43083",
+            "000061_377",
+            "000061_510",
+            "000065_393",
+            "000081_47027",
+            "000093_52937",
+            "000094_1871"
+          ]
+        },
+        "bold": {
+          "count": 42,
+          "work_ids": [
+            "000067_1789",
+            "000096_2093",
+            "000106_52390",
+            "000106_56563",
+            "000113_4325",
+            "000113_4327",
+            "000255_47055",
+            "000269_1543",
+            "000279_1704",
+            "000281_3595"
+          ]
+        },
+        "bosen": {
+          "count": 32,
+          "work_ids": [
+            "000006_1869",
+            "000019_4376",
+            "000061_377",
+            "000061_510",
+            "000146_49148",
+            "000279_1704",
+            "000933_18392",
+            "000933_18393",
+            "000933_18403",
+            "000933_47023"
+          ]
+        },
+        "boten": {
+          "count": 339,
+          "work_ids": [
+            "000009_43028",
+            "000019_42383",
+            "000022_42254",
+            "000023_1699",
+            "000025_56503",
+            "000026_50257",
+            "000027_1463",
+            "000027_221",
+            "000027_2427",
+            "000034_519"
+          ]
+        },
+        "caption": {
+          "count": 17,
+          "work_ids": [
+            "000255_47055",
+            "000279_1704",
+            "000320_43481",
+            "001266_46820",
+            "001266_51368",
+            "001271_60609",
+            "001341_58863",
+            "001492_51195",
+            "001520_54957",
+            "001555_54846"
+          ]
+        },
+        "chitsuki": {
+          "count": 65,
+          "work_ids": [
+            "000050_363",
+            "000061_510",
+            "000067_859",
+            "000072_864",
+            "000074_431",
+            "000081_47027",
+            "000082_48024",
+            "000082_48035",
+            "000106_56857",
+            "000121_60573"
+          ]
+        },
+        "dakuten": {
+          "count": 136,
+          "work_ids": [
+            "000019_4376",
+            "000022_42254",
+            "000042_42768",
+            "000050_48397",
+            "000051_1437",
+            "000051_1450",
+            "000051_1452",
+            "000051_2710",
+            "000051_4331",
+            "000051_43788"
+          ]
+        },
+        "editor_note": {
+          "count": 564,
+          "work_ids": [
+            "000006_1869",
+            "000009_43028",
+            "000019_42383",
+            "000019_4376",
+            "000022_42254",
+            "000023_1699",
+            "000025_56503",
+            "000026_50255",
+            "000026_50257",
+            "000026_51311"
+          ]
+        },
+        "emphasis_start_end": {
+          "count": 360,
+          "work_ids": [
+            "000006_1869",
+            "000019_42383",
+            "000019_4376",
+            "000034_56908",
+            "000035_299",
+            "000040_47288",
+            "000040_47289",
+            "000040_732",
+            "000042_2345",
+            "000042_2461"
+          ]
+        },
+        "external_link": {
+          "count": 580,
+          "work_ids": [
+            "000006_1869",
+            "000009_43028",
+            "000019_42383",
+            "000019_4376",
+            "000022_42254",
+            "000023_1699",
+            "000025_56503",
+            "000026_50255",
+            "000026_50257",
+            "000026_51311"
+          ]
+        },
+        "gaiji": {
+          "count": 420,
+          "work_ids": [
+            "000006_1869",
+            "000009_43028",
+            "000019_4376",
+            "000022_42254",
+            "000023_1699",
+            "000025_56503",
+            "000026_50257",
+            "000027_1463",
+            "000027_221",
+            "000027_2427"
+          ]
+        },
+        "image": {
+          "count": 5,
+          "work_ids": [
+            "000125_45231",
+            "000290_45670",
+            "000933_18393",
+            "001065_18361",
+            "001149_45455"
+          ]
+        },
+        "italic": {
+          "count": 27,
+          "work_ids": [
+            "000025_56503",
+            "000093_2537",
+            "000113_4325",
+            "000113_4327",
+            "000125_45231",
+            "000281_3595",
+            "000281_43264",
+            "001030_4816",
+            "001065_18361",
+            "001166_43877"
+          ]
+        },
+        "jis_code": {
+          "count": 17,
+          "work_ids": [
+            "000159_858",
+            "000281_3598",
+            "000372_4707",
+            "000788_54343",
+            "001065_18361",
+            "001091_46344",
+            "001393_57320",
+            "001393_60551",
+            "001492_51195",
+            "001574_52529"
+          ]
+        },
+        "jisage_block": {
+          "count": 330,
+          "work_ids": [
+            "000006_1869",
+            "000019_42383",
+            "000019_4376",
+            "000034_56908",
+            "000035_299",
+            "000040_47288",
+            "000040_47289",
+            "000040_732",
+            "000042_2345",
+            "000042_2461"
+          ]
+        },
+        "jisage_line": {
+          "count": 271,
+          "work_ids": [
+            "000022_42254",
+            "000023_1699",
+            "000034_519",
+            "000034_56908",
+            "000040_47289",
+            "000040_732",
+            "000042_42768",
+            "000050_4561",
+            "000050_55401",
+            "000051_2710"
+          ]
+        },
+        "keigakomi": {
+          "count": 16,
+          "work_ids": [
+            "000067_1789",
+            "000096_2093",
+            "000156_1465",
+            "000179_943",
+            "001143_43422",
+            "001312_49301",
+            "001369_51204",
+            "001383_57416",
+            "001402_49946",
+            "001468_51160"
+          ]
+        },
+        "left_ruby": {
+          "count": 6,
+          "work_ids": [
+            "000933_47550",
+            "001271_60609",
+            "001344_54856",
+            "001395_49891",
+            "001395_49905",
+            "001930_58400"
+          ]
+        },
+        "line_break": {
+          "count": 9,
+          "work_ids": [
+            "000081_47027",
+            "000799_60993",
+            "000908_52148",
+            "001142_46471",
+            "001313_47601",
+            "001344_54437",
+            "001344_54856",
+            "001383_57416",
+            "001908_58142"
+          ]
+        },
+        "midashi": {
+          "count": 286,
+          "work_ids": [
+            "000022_42254",
+            "000023_1699",
+            "000034_519",
+            "000034_56908",
+            "000040_47289",
+            "000040_732",
+            "000042_42768",
+            "000050_4561",
+            "000051_2710",
+            "000051_4331"
+          ]
+        },
+        "page_break": {
+          "count": 145,
+          "work_ids": [
+            "000006_1869",
+            "000034_56908",
+            "000050_33204",
+            "000050_4561",
+            "000051_2710",
+            "000061_510",
+            "000065_393",
+            "000067_1789",
+            "000067_47566",
+            "000072_864"
+          ]
+        },
+        "ruby": {
+          "count": 539,
+          "work_ids": [
+            "000006_1869",
+            "000009_43028",
+            "000019_42383",
+            "000019_4376",
+            "000022_42254",
+            "000023_1699",
+            "000025_56503",
+            "000026_50257",
+            "000026_51311",
+            "000026_51334"
+          ]
+        },
+        "ruby_prefix": {
+          "count": 448,
+          "work_ids": [
+            "000006_1869",
+            "000009_43028",
+            "000019_42383",
+            "000019_4376",
+            "000022_42254",
+            "000023_1699",
+            "000026_51311",
+            "000027_1463",
+            "000027_221",
+            "000027_2427"
+          ]
+        },
+        "sesame": {
+          "count": 68,
+          "work_ids": [
+            "000006_1869",
+            "000025_56503",
+            "000027_221",
+            "000034_519",
+            "000034_56908",
+            "000042_2461",
+            "000067_1789",
+            "000093_1916",
+            "000093_2537",
+            "000093_2540"
+          ]
+        },
+        "subscript": {
+          "count": 12,
+          "work_ids": [
+            "000042_2345",
+            "000051_4331",
+            "000148_789",
+            "000160_1255",
+            "000269_1543",
+            "000281_3598",
+            "000281_43263",
+            "000311_1979",
+            "001224_51847",
+            "001380_57354"
+          ]
+        },
+        "superscript": {
+          "count": 9,
+          "work_ids": [
+            "000042_43083",
+            "000106_2415",
+            "000281_3596",
+            "000281_3598",
+            "000281_3603",
+            "000311_33189",
+            "000372_42810",
+            "001428_50328",
+            "001835_57257"
+          ]
+        },
+        "tcy": {
+          "count": 91,
+          "work_ids": [
+            "000034_56908",
+            "000040_732",
+            "000042_42768",
+            "000061_377",
+            "000061_396",
+            "000061_510",
+            "000067_47566",
+            "000072_864",
+            "000093_2537",
+            "000093_525"
+          ]
+        },
+        "unicode_codepoint": {
+          "count": 122,
+          "work_ids": [
+            "000022_42254",
+            "000023_1699",
+            "000027_1463",
+            "000034_56908",
+            "000042_42768",
+            "000048_43464",
+            "000050_4561",
+            "000051_1452",
+            "000051_2710",
+            "000051_4331"
+          ]
+        },
+        "warigaki": {
+          "count": 54,
+          "work_ids": [
+            "000006_1869",
+            "000034_519",
+            "000081_47027",
+            "000093_525",
+            "000096_2093",
+            "000118_613",
+            "000118_614",
+            "000125_45231",
+            "000179_943",
+            "000243_1328"
+          ]
+        },
+        "yokogumi": {
+          "count": 52,
+          "work_ids": [
+            "000034_519",
+            "000042_42768",
+            "000042_43083",
+            "000051_4331",
+            "000061_377",
+            "000093_2537",
+            "000093_52937",
+            "000106_2415",
+            "000106_56857",
+            "000113_4325"
+          ]
+        }
+      },
+      "by_property_and_feature": {
+        "ruby_completeness:boten": {
+          "count": 1,
+          "work_ids": [
+            "000148_56923"
+          ]
+        },
+        "ruby_completeness:dakuten": {
+          "count": 3,
+          "work_ids": [
+            "000148_56923",
+            "000148_764",
+            "000565_48686"
+          ]
+        },
+        "ruby_completeness:editor_note": {
+          "count": 4,
+          "work_ids": [
+            "000051_62060",
+            "000148_56923",
+            "000148_764",
+            "000565_48686"
+          ]
+        },
+        "ruby_completeness:emphasis_start_end": {
+          "count": 1,
+          "work_ids": [
+            "000051_62060"
+          ]
+        },
+        "ruby_completeness:external_link": {
+          "count": 5,
+          "work_ids": [
+            "000051_62060",
+            "000081_454",
+            "000148_56923",
+            "000148_764",
+            "000565_48686"
+          ]
+        },
+        "ruby_completeness:gaiji": {
+          "count": 3,
+          "work_ids": [
+            "000051_62060",
+            "000148_56923",
+            "000565_48686"
+          ]
+        },
+        "ruby_completeness:jisage_line": {
+          "count": 3,
+          "work_ids": [
+            "000051_62060",
+            "000148_56923",
+            "000148_764"
+          ]
+        },
+        "ruby_completeness:midashi": {
+          "count": 3,
+          "work_ids": [
+            "000051_62060",
+            "000148_56923",
+            "000148_764"
+          ]
+        },
+        "ruby_completeness:ruby": {
+          "count": 5,
+          "work_ids": [
+            "000051_62060",
+            "000081_454",
+            "000148_56923",
+            "000148_764",
+            "000565_48686"
+          ]
+        },
+        "ruby_completeness:ruby_prefix": {
+          "count": 5,
+          "work_ids": [
+            "000051_62060",
+            "000081_454",
+            "000148_56923",
+            "000148_764",
+            "000565_48686"
+          ]
+        },
+        "ruby_completeness:unicode_codepoint": {
+          "count": 1,
+          "work_ids": [
+            "000051_62060"
+          ]
+        },
+        "visible_text_body_order:accent": {
+          "count": 86,
+          "work_ids": [
+            "000026_50255",
+            "000042_2345",
+            "000042_42768",
+            "000042_43083",
+            "000061_377",
+            "000061_510",
+            "000065_393",
+            "000081_47027",
+            "000093_52937",
+            "000094_1871"
+          ]
+        },
+        "visible_text_body_order:bold": {
+          "count": 42,
+          "work_ids": [
+            "000067_1789",
+            "000096_2093",
+            "000106_52390",
+            "000106_56563",
+            "000113_4325",
+            "000113_4327",
+            "000255_47055",
+            "000269_1543",
+            "000279_1704",
+            "000281_3595"
+          ]
+        },
+        "visible_text_body_order:bosen": {
+          "count": 32,
+          "work_ids": [
+            "000006_1869",
+            "000019_4376",
+            "000061_377",
+            "000061_510",
+            "000146_49148",
+            "000279_1704",
+            "000933_18392",
+            "000933_18393",
+            "000933_18403",
+            "000933_47023"
+          ]
+        },
+        "visible_text_body_order:boten": {
+          "count": 338,
+          "work_ids": [
+            "000009_43028",
+            "000019_42383",
+            "000022_42254",
+            "000023_1699",
+            "000025_56503",
+            "000026_50257",
+            "000027_1463",
+            "000027_221",
+            "000027_2427",
+            "000034_519"
+          ]
+        },
+        "visible_text_body_order:caption": {
+          "count": 17,
+          "work_ids": [
+            "000255_47055",
+            "000279_1704",
+            "000320_43481",
+            "001266_46820",
+            "001266_51368",
+            "001271_60609",
+            "001341_58863",
+            "001492_51195",
+            "001520_54957",
+            "001555_54846"
+          ]
+        },
+        "visible_text_body_order:chitsuki": {
+          "count": 65,
+          "work_ids": [
+            "000050_363",
+            "000061_510",
+            "000067_859",
+            "000072_864",
+            "000074_431",
+            "000081_47027",
+            "000082_48024",
+            "000082_48035",
+            "000106_56857",
+            "000121_60573"
+          ]
+        },
+        "visible_text_body_order:dakuten": {
+          "count": 133,
+          "work_ids": [
+            "000019_4376",
+            "000022_42254",
+            "000042_42768",
+            "000050_48397",
+            "000051_1437",
+            "000051_1450",
+            "000051_1452",
+            "000051_2710",
+            "000051_4331",
+            "000051_43788"
+          ]
+        },
+        "visible_text_body_order:editor_note": {
+          "count": 560,
+          "work_ids": [
+            "000006_1869",
+            "000009_43028",
+            "000019_42383",
+            "000019_4376",
+            "000022_42254",
+            "000023_1699",
+            "000025_56503",
+            "000026_50255",
+            "000026_50257",
+            "000026_51311"
+          ]
+        },
+        "visible_text_body_order:emphasis_start_end": {
+          "count": 359,
+          "work_ids": [
+            "000006_1869",
+            "000019_42383",
+            "000019_4376",
+            "000034_56908",
+            "000035_299",
+            "000040_47288",
+            "000040_47289",
+            "000040_732",
+            "000042_2345",
+            "000042_2461"
+          ]
+        },
+        "visible_text_body_order:external_link": {
+          "count": 575,
+          "work_ids": [
+            "000006_1869",
+            "000009_43028",
+            "000019_42383",
+            "000019_4376",
+            "000022_42254",
+            "000023_1699",
+            "000025_56503",
+            "000026_50255",
+            "000026_50257",
+            "000026_51311"
+          ]
+        },
+        "visible_text_body_order:gaiji": {
+          "count": 417,
+          "work_ids": [
+            "000006_1869",
+            "000009_43028",
+            "000019_4376",
+            "000022_42254",
+            "000023_1699",
+            "000025_56503",
+            "000026_50257",
+            "000027_1463",
+            "000027_221",
+            "000027_2427"
+          ]
+        },
+        "visible_text_body_order:image": {
+          "count": 5,
+          "work_ids": [
+            "000125_45231",
+            "000290_45670",
+            "000933_18393",
+            "001065_18361",
+            "001149_45455"
+          ]
+        },
+        "visible_text_body_order:italic": {
+          "count": 27,
+          "work_ids": [
+            "000025_56503",
+            "000093_2537",
+            "000113_4325",
+            "000113_4327",
+            "000125_45231",
+            "000281_3595",
+            "000281_43264",
+            "001030_4816",
+            "001065_18361",
+            "001166_43877"
+          ]
+        },
+        "visible_text_body_order:jis_code": {
+          "count": 17,
+          "work_ids": [
+            "000159_858",
+            "000281_3598",
+            "000372_4707",
+            "000788_54343",
+            "001065_18361",
+            "001091_46344",
+            "001393_57320",
+            "001393_60551",
+            "001492_51195",
+            "001574_52529"
+          ]
+        },
+        "visible_text_body_order:jisage_block": {
+          "count": 330,
+          "work_ids": [
+            "000006_1869",
+            "000019_42383",
+            "000019_4376",
+            "000034_56908",
+            "000035_299",
+            "000040_47288",
+            "000040_47289",
+            "000040_732",
+            "000042_2345",
+            "000042_2461"
+          ]
+        },
+        "visible_text_body_order:jisage_line": {
+          "count": 268,
+          "work_ids": [
+            "000022_42254",
+            "000023_1699",
+            "000034_519",
+            "000034_56908",
+            "000040_47289",
+            "000040_732",
+            "000042_42768",
+            "000050_4561",
+            "000050_55401",
+            "000051_2710"
+          ]
+        },
+        "visible_text_body_order:keigakomi": {
+          "count": 16,
+          "work_ids": [
+            "000067_1789",
+            "000096_2093",
+            "000156_1465",
+            "000179_943",
+            "001143_43422",
+            "001312_49301",
+            "001369_51204",
+            "001383_57416",
+            "001402_49946",
+            "001468_51160"
+          ]
+        },
+        "visible_text_body_order:left_ruby": {
+          "count": 6,
+          "work_ids": [
+            "000933_47550",
+            "001271_60609",
+            "001344_54856",
+            "001395_49891",
+            "001395_49905",
+            "001930_58400"
+          ]
+        },
+        "visible_text_body_order:line_break": {
+          "count": 9,
+          "work_ids": [
+            "000081_47027",
+            "000799_60993",
+            "000908_52148",
+            "001142_46471",
+            "001313_47601",
+            "001344_54437",
+            "001344_54856",
+            "001383_57416",
+            "001908_58142"
+          ]
+        },
+        "visible_text_body_order:midashi": {
+          "count": 283,
+          "work_ids": [
+            "000022_42254",
+            "000023_1699",
+            "000034_519",
+            "000034_56908",
+            "000040_47289",
+            "000040_732",
+            "000042_42768",
+            "000050_4561",
+            "000051_2710",
+            "000051_4331"
+          ]
+        },
+        "visible_text_body_order:page_break": {
+          "count": 145,
+          "work_ids": [
+            "000006_1869",
+            "000034_56908",
+            "000050_33204",
+            "000050_4561",
+            "000051_2710",
+            "000061_510",
+            "000065_393",
+            "000067_1789",
+            "000067_47566",
+            "000072_864"
+          ]
+        },
+        "visible_text_body_order:ruby": {
+          "count": 534,
+          "work_ids": [
+            "000006_1869",
+            "000009_43028",
+            "000019_42383",
+            "000019_4376",
+            "000022_42254",
+            "000023_1699",
+            "000025_56503",
+            "000026_50257",
+            "000026_51311",
+            "000026_51334"
+          ]
+        },
+        "visible_text_body_order:ruby_prefix": {
+          "count": 443,
+          "work_ids": [
+            "000006_1869",
+            "000009_43028",
+            "000019_42383",
+            "000019_4376",
+            "000022_42254",
+            "000023_1699",
+            "000026_51311",
+            "000027_1463",
+            "000027_221",
+            "000027_2427"
+          ]
+        },
+        "visible_text_body_order:sesame": {
+          "count": 68,
+          "work_ids": [
+            "000006_1869",
+            "000025_56503",
+            "000027_221",
+            "000034_519",
+            "000034_56908",
+            "000042_2461",
+            "000067_1789",
+            "000093_1916",
+            "000093_2537",
+            "000093_2540"
+          ]
+        },
+        "visible_text_body_order:subscript": {
+          "count": 12,
+          "work_ids": [
+            "000042_2345",
+            "000051_4331",
+            "000148_789",
+            "000160_1255",
+            "000269_1543",
+            "000281_3598",
+            "000281_43263",
+            "000311_1979",
+            "001224_51847",
+            "001380_57354"
+          ]
+        },
+        "visible_text_body_order:superscript": {
+          "count": 9,
+          "work_ids": [
+            "000042_43083",
+            "000106_2415",
+            "000281_3596",
+            "000281_3598",
+            "000281_3603",
+            "000311_33189",
+            "000372_42810",
+            "001428_50328",
+            "001835_57257"
+          ]
+        },
+        "visible_text_body_order:tcy": {
+          "count": 91,
+          "work_ids": [
+            "000034_56908",
+            "000040_732",
+            "000042_42768",
+            "000061_377",
+            "000061_396",
+            "000061_510",
+            "000067_47566",
+            "000072_864",
+            "000093_2537",
+            "000093_525"
+          ]
+        },
+        "visible_text_body_order:unicode_codepoint": {
+          "count": 121,
+          "work_ids": [
+            "000022_42254",
+            "000023_1699",
+            "000027_1463",
+            "000034_56908",
+            "000042_42768",
+            "000048_43464",
+            "000050_4561",
+            "000051_1452",
+            "000051_2710",
+            "000051_4331"
+          ]
+        },
+        "visible_text_body_order:warigaki": {
+          "count": 54,
+          "work_ids": [
+            "000006_1869",
+            "000034_519",
+            "000081_47027",
+            "000093_525",
+            "000096_2093",
+            "000118_613",
+            "000118_614",
+            "000125_45231",
+            "000179_943",
+            "000243_1328"
+          ]
+        },
+        "visible_text_body_order:yokogumi": {
+          "count": 52,
+          "work_ids": [
+            "000034_519",
+            "000042_42768",
+            "000042_43083",
+            "000051_4331",
+            "000061_377",
+            "000093_2537",
+            "000093_52937",
+            "000106_2415",
+            "000106_56857",
+            "000113_4325"
+          ]
+        }
+      }
+    },
+    "semantic_summary": {
+      "structural_difference_count": 17894,
+      "same_visible_structural_difference_count": 343,
+      "difference_counts": {
+        "summary:gaiji.marker": 5773,
+        "summary:ruby.basic": 14424
+      }
+    },
+    "fallbacks": {
+      "works": 578,
+      "source_fallback_nodes": 578,
+      "hotspots": [
+        {
+          "work_id": "001529_50685",
+          "nodes": 1,
+          "total_ms": 340.855753,
+          "fallback_used": true
+        },
+        {
+          "work_id": "001518_51731",
+          "nodes": 1,
+          "total_ms": 262.942748,
+          "fallback_used": true
+        },
+        {
+          "work_id": "000810_52355",
+          "nodes": 1,
+          "total_ms": 192.929194,
+          "fallback_used": true
+        },
+        {
+          "work_id": "000311_2012",
+          "nodes": 1,
+          "total_ms": 192.87010300000003,
+          "fallback_used": true
+        },
+        {
+          "work_id": "000077_1323",
+          "nodes": 1,
+          "total_ms": 134.745296,
+          "fallback_used": true
+        },
+        {
+          "work_id": "001185_45210",
+          "nodes": 1,
+          "total_ms": 125.19506999999999,
+          "fallback_used": true
+        },
+        {
+          "work_id": "001562_56146",
+          "nodes": 1,
+          "total_ms": 123.437985,
+          "fallback_used": true
+        },
+        {
+          "work_id": "000118_1745",
+          "nodes": 1,
+          "total_ms": 110.489308,
+          "fallback_used": true
+        },
+        {
+          "work_id": "001562_56145",
+          "nodes": 1,
+          "total_ms": 110.45594,
+          "fallback_used": true
+        },
+        {
+          "work_id": "000255_45395",
+          "nodes": 1,
+          "total_ms": 100.630936,
+          "fallback_used": true
+        },
+        {
+          "work_id": "001034_4823",
+          "nodes": 1,
+          "total_ms": 99.381096,
+          "fallback_used": true
+        },
+        {
+          "work_id": "000148_761",
+          "nodes": 1,
+          "total_ms": 93.237931,
+          "fallback_used": true
+        },
+        {
+          "work_id": "000989_350",
+          "nodes": 1,
+          "total_ms": 87.990876,
+          "fallback_used": true
+        },
+        {
+          "work_id": "000148_58842",
+          "nodes": 1,
+          "total_ms": 83.936141,
+          "fallback_used": true
+        },
+        {
+          "work_id": "000148_1746",
+          "nodes": 1,
+          "total_ms": 81.509523,
+          "fallback_used": true
+        },
+        {
+          "work_id": "001161_43624",
+          "nodes": 1,
+          "total_ms": 76.62628700000002,
+          "fallback_used": true
+        },
+        {
+          "work_id": "000129_2084",
+          "nodes": 1,
+          "total_ms": 75.41019600000001,
+          "fallback_used": true
+        },
+        {
+          "work_id": "000310_1911",
+          "nodes": 1,
+          "total_ms": 70.309141,
+          "fallback_used": true
+        },
+        {
+          "work_id": "000290_24376",
+          "nodes": 1,
+          "total_ms": 70.163725,
+          "fallback_used": true
+        },
+        {
+          "work_id": "000148_789",
+          "nodes": 1,
+          "total_ms": 67.965393,
+          "fallback_used": true
+        }
+      ]
+    },
+    "source_supplements": {
+      "total_nodes": 1426923,
+      "hotspots": [
+        {
+          "work_id": "001529_50685",
+          "nodes": 75860,
+          "total_ms": 340.855753,
+          "fallback_used": true
+        },
+        {
+          "work_id": "000118_1745",
+          "nodes": 55802,
+          "total_ms": 110.489308,
+          "fallback_used": true
+        },
+        {
+          "work_id": "000148_56923",
+          "nodes": 36061,
+          "total_ms": 63.426862,
+          "fallback_used": true
+        },
+        {
+          "work_id": "001562_56145",
+          "nodes": 33279,
+          "total_ms": 110.45594,
+          "fallback_used": true
+        },
+        {
+          "work_id": "000077_1323",
+          "nodes": 32499,
+          "total_ms": 134.745296,
+          "fallback_used": true
+        },
+        {
+          "work_id": "001034_4823",
+          "nodes": 25824,
+          "total_ms": 99.381096,
+          "fallback_used": true
+        },
+        {
+          "work_id": "001562_56146",
+          "nodes": 21991,
+          "total_ms": 123.437985,
+          "fallback_used": true
+        },
+        {
+          "work_id": "000091_522",
+          "nodes": 18378,
+          "total_ms": 64.430082,
+          "fallback_used": true
+        },
+        {
+          "work_id": "000148_1746",
+          "nodes": 16446,
+          "total_ms": 81.509523,
+          "fallback_used": true
+        },
+        {
+          "work_id": "001930_58400",
+          "nodes": 15025,
+          "total_ms": 28.680858,
+          "fallback_used": true
+        },
+        {
+          "work_id": "000296_1864",
+          "nodes": 14811,
+          "total_ms": 56.87692,
+          "fallback_used": true
+        },
+        {
+          "work_id": "001562_33224",
+          "nodes": 14690,
+          "total_ms": 59.671965,
+          "fallback_used": true
+        },
+        {
+          "work_id": "000279_1704",
+          "nodes": 13997,
+          "total_ms": 41.614713,
+          "fallback_used": true
+        },
+        {
+          "work_id": "000264_42773",
+          "nodes": 13062,
+          "total_ms": 26.449377,
+          "fallback_used": false
+        },
+        {
+          "work_id": "000320_2168",
+          "nodes": 12127,
+          "total_ms": 36.911685,
+          "fallback_used": true
+        },
+        {
+          "work_id": "000148_58842",
+          "nodes": 10908,
+          "total_ms": 83.936141,
+          "fallback_used": true
+        },
+        {
+          "work_id": "001562_57875",
+          "nodes": 10253,
+          "total_ms": 45.858717,
+          "fallback_used": true
+        },
+        {
+          "work_id": "000129_2084",
+          "nodes": 9632,
+          "total_ms": 75.41019600000001,
+          "fallback_used": true
+        },
+        {
+          "work_id": "000989_350",
+          "nodes": 9309,
+          "total_ms": 87.990876,
+          "fallback_used": true
+        },
+        {
+          "work_id": "000148_789",
+          "nodes": 9248,
+          "total_ms": 67.965393,
+          "fallback_used": true
+        }
+      ]
+    },
+    "recommended_next_targets": [
+      "inspect_fallback_hotspots",
+      "replace_source_supplements_with_parser_nodes",
+      "triage_semantic_summary_differences"
     ]
   }
 }

@@ -45,7 +45,16 @@ Inline::Ruby {
     placement: RubyPlacement,
     provenance: Provenance,
 }
+
+enum RubyPlacement {
+    Right,
+    Left,
+}
 ```
+
+`Right` is the normal Aozora ruby placement. `Left` covers left-side ruby
+notation such as `［＃「...」の左に「...」のルビ］`. More placement variants should
+not be added until an official rule or corpus example requires them.
 
 The existing flat `base: String` may remain temporarily in the AAT projection.
 It must not remain the canonical parser-neutral IR.
@@ -176,7 +185,12 @@ enum GaijiKind {
     JisLevel { level: u8, row: u8, cell: u8 },
     Composition { description: String },
     DakutenVariant { base: String, mark: DakutenMark },
-    Unknown { description: String },
+    Unknown,
+}
+
+enum DakutenMark {
+    Voicing,
+    SemiVoicing,
 }
 
 struct GaijiRef {
@@ -193,6 +207,8 @@ This keeps the existing `description_format` information while replacing the
 current empty-string unresolved convention with `Option<String>`. AAT can still
 project unresolved gaiji as `resolved: null` or an empty string if required by
 its schema, but `ab-ir` should not encode absence as an empty string.
+`GaijiKind::Unknown` is a unit variant because the raw description already lives
+on `GaijiRef::description`.
 
 ### 3. Projections
 
@@ -220,7 +236,8 @@ Initial `source_projection` names:
 - `source_projection::gaiji_markers`: source-side gaiji marker inventory for
   resolution and preservation checks.
 - `source_projection::command_markers`: source-side `［＃...］` command inventory
-  for syntax routing and coverage reporting.
+  for syntax routing and coverage reporting after more specific source
+  projections have claimed ruby, gaiji, and known command families.
 
 These source projections are heuristics. They may route tests and detect likely
 loss, but they are not AST truth.
@@ -233,6 +250,7 @@ plain visible-text string. Initial shape:
   "syntax": {
     "ruby.explicit_base": [
       {
+        "source_span": {"start": 1250, "end": 1268},
         "base_projection": "あのひと",
         "reading": "...",
         "placement": "right",
@@ -241,6 +259,7 @@ plain visible-text string. Initial shape:
     ],
     "gaiji.jis_level": [
       {
+        "source_span": {"start": 2042, "end": 2070},
         "source": "※［＃「口＋愛」、第3水準1-15-23］",
         "description": "「口＋愛」、第3水準1-15-23",
         "kind": "jis_level",
@@ -251,8 +270,10 @@ plain visible-text string. Initial shape:
   },
   "unmodeled": [
     {
+      "source_span": {"start": 3310, "end": 3317},
       "source": "［＃...］",
-      "reason": "syntax_id_not_modeled"
+      "status": "unknown",
+      "reason": "no_matrix_row_matched"
     }
   ]
 }
@@ -261,6 +282,18 @@ plain visible-text string. Initial shape:
 It preserves all matrix-modeled syntax needed for parser comparison. It may
 include lossy display fields such as `base_projection`, but those fields are
 derived summaries, not the canonical IR node.
+
+`source_span` is a byte range in the decoded source string. It is required when
+the parser or source projection can provide it. If an adapter cannot provide a
+span, `ab-compare` may fall back to list position within a syntax ID, but such
+diffs must be marked lower confidence. This makes node-by-node semantic diffs
+possible without pretending that aggregate counts alone prove equivalence.
+
+The `unmodeled` list should stay focused on surprises. Known gaps already
+tracked by matrix rows with `not_modeled` or `needs_research` status should be
+counted in syntax support summaries, not repeated for every occurrence unless a
+debug mode requests exhaustive output. `unmodeled.status` starts with
+`unknown` and `known_gap`.
 
 Interim AAT projection for gaiji plus ruby is intentionally lossy because AAT
 currently has `ruby.base: string`:
@@ -364,6 +397,8 @@ Required fields:
 otherwise. They are used for corpus routing and fixture discovery only. They are
 not grammar productions and must not be the source of AST truth. TOML should use
 literal strings (`'...'`) when possible so backslashes keep regex meaning.
+TOML basic strings (`"..."`) with escaped backslashes are acceptable when a
+pattern cannot be represented cleanly as a literal string.
 
 `status` values:
 
@@ -384,6 +419,36 @@ version. Machine-checkable requirements belong in `validation_properties`.
 IDs in this design. Existing property IDs may keep their current names for
 compatibility, but their docs must say which matrix IDs they cover and whether
 they are strict or heuristic.
+
+### Feature Key Mapping Notes
+
+Existing `data/feature-patterns.toml` keys are not all the same kind of thing.
+The first matrix should preserve that distinction instead of forcing a one-to-one
+mapping:
+
+- `ruby` maps to `ruby.implicit_base` and also detects readings for explicit
+  base rows.
+- `ruby_prefix` maps to `ruby.explicit_base`.
+- `left_ruby` maps to `ruby.left`.
+- `gaiji` maps to `gaiji.marker` and, when immediately followed by ruby, to
+  `gaiji_ruby.inline_base`.
+- `unicode_codepoint` and `jis_code` are substrate patterns inside gaiji
+  descriptions. They map to `gaiji.unicode_codepoint`, `gaiji.jis_code`, or
+  `gaiji.jis_level` only when attached to a gaiji marker or command.
+- `dakuten` maps to `gaiji.dakuten_variant` when it describes an external
+  character. If corpus evidence shows dakuten used as styling or emphasis, that
+  requires a separate syntax row rather than overloading the gaiji row.
+- `boten`, `bosen`, `bold`, `italic`, and `sesame` map to emphasis/style rows.
+  `sesame` is a sub-variant, not a separate top-level family.
+- `jisage_line`, `jisage_block`, and `chitsuki` map to indentation/layout rows.
+- `midashi` maps to heading rows.
+- `warigaki` maps to warichu rows.
+- `caption` and `image` map to figure/caption rows.
+- `page_break` and `line_break` map to break/milestone rows.
+- `okurigana` and `kaeriten` map to priority 2 kanbun/side-note rows.
+- `editor_note` is a residual catch-all. It should map to
+  `command.unknown_or_unmodeled` only after more specific rows have failed to
+  match.
 
 ## Initial Syntax Families
 
@@ -470,7 +535,7 @@ Official rules + chuki tables + current feature patterns
 
 Corpus source
   -> ab-index feature routing
-  -> feature keys mapped to syntax matrix IDs
+  -> syntax matrix ID resolution
 
 Parser adapter
   -> parser-native output
@@ -493,15 +558,22 @@ ab-compare
 3. Port `visible_text_body_order` documentation to say it is a heuristic,
    lossy comparison property. Keep the existing property ID until report
    compatibility is deliberately broken.
-4. Extend `ab-ir` ruby and gaiji types to support structured ruby bases and
-   typed gaiji references. Add AAT projection compatibility for the current flat
-   ruby shape.
-5. Add `ir_projection::semantic_summary` and teach `ab-compare` to diff
+4. Add `GaijiKind`, `DakutenMark`, and `GaijiRef` alongside the existing
+   `Inline::Gaiji` shape, with conversion tests and no adapter breakage.
+5. Change `Inline::Ruby.base` to `Vec<Inline>`, update constructors and pattern
+   matches, and keep AAT projection compatibility for the current flat
+   `ruby.base` shape.
+6. Replace the old `Inline::Gaiji` representation with `Inline::GaijiRef` once
+   adapters and projections have moved to typed gaiji.
+7. Add AAT projection golden tests proving structured ruby bases still produce
+   the current flat AAT JSON where AAT can represent the syntax, and observable
+   warnings where it cannot.
+8. Add `ir_projection::semantic_summary` and teach `ab-compare` to diff
    matrix-keyed semantic summaries before treating parser agreement as real AST
    agreement.
-6. Add TEI projection tests for ruby, gaiji, and gaiji+ruby before adding broad
+9. Add TEI projection tests for ruby, gaiji, and gaiji+ruby before adding broad
    TEI export.
-7. Once the matrix can drive routing, generate or retire duplicated entries in
+10. Once the matrix can drive routing, generate or retire duplicated entries in
    `feature-patterns.toml`.
 
 ## Design Constraints
@@ -525,6 +597,11 @@ ab-compare
   `feature-patterns.toml` keys.
 - The gaiji+ruby row defines different AAT, semantic summary, plaintext, and TEI
   projection behavior.
+- Migration steps 1 through 3 are complete before the structured `ab-ir`
+  migration starts.
+- Structured ruby-base migration preserves the existing flat AAT JSON shape for
+  simple ruby fixtures, including the current `projects_blocks_to_aat_json_shape`
+  coverage.
 - Current lossy comparison behavior is explicitly named as such.
 - Future parser fixes can cite syntax matrix row IDs rather than inventing
   behavior from local regex helpers.
@@ -533,9 +610,6 @@ ab-compare
 
 - This design deliberately does not decide whether the final parser is an
   existing parser, a fork, or a new parser.
-- The current `ab-ir` and AAT `ruby.base: string` shape is too weak for ruby
-  over gaiji. AAT can keep this shape for current comparison, but
-  parser-neutral IR and TEI need nested ruby bases.
 - The previous assertion that orphan ruby after unresolved gaiji projects to
   nothing is only a comparison/plaintext policy. It is not correct AST or TEI
   behavior.

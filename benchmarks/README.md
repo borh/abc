@@ -90,3 +90,17 @@ cargo run --release -p ab-check -- \
 The current aozora-rs smoke sample produced 101 reports from the first 100
 selected work IDs because the corpus index contains duplicate IDs for alternate
 source files. All properties passed.
+
+## Parser Comparison
+
+After both adapters build and pass sample validation, run:
+
+```bash
+AB_CORPUS=references/aozorabunko \
+AB_BENCH_JOBS=16 \
+AB_BENCH_OUT=/tmp/ab-validator-compare-current \
+benchmarks/run-parser-comparison.sh
+```
+
+The output directory contains the shared index, per-parser reports, persisted
+AAT artifacts, and `comparison.json` from `ab-compare`.

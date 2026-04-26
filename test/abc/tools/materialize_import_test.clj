@@ -42,6 +42,9 @@
         (doseq [file (reverse (file-seq (.toFile dir)))]
           (.delete file))))))
 
+(defn file-bytes [file]
+  (Files/readAllBytes (.toPath (io/file file))))
+
 (deftest materialize-import-test
   (let [out-dir (java.nio.file.Files/createTempDirectory "abc-materialize-import" (make-array java.nio.file.attribute.FileAttribute 0))
         out-file (.toFile out-dir)]
@@ -77,6 +80,22 @@
                   (get-in warnings-manifest ["content" "content_hash"])))
         (is (not= (get parser-manifest "artifact_id")
                   (get warnings-manifest "artifact_id"))))
+      (finally
+        (doseq [file (reverse (file-seq out-file))]
+          (.delete file))))))
+
+(deftest materialized-fixture-test
+  (let [out-dir (Files/createTempDirectory "abc-materialize-fixture" (make-array FileAttribute 0))
+        out-file (.toFile out-dir)]
+    (try
+      (materialize/materialize-import!
+       {:input-dir (io/file "examples/ab-validator-output")
+        :output-dir out-file
+        :generated-at "2026-04-26T00:00:00Z"})
+      (is (= (seq (file-bytes "examples/materialized-import/parser-ir.manifest.json"))
+             (seq (file-bytes (io/file out-file "parser-ir.manifest.json")))))
+      (is (= (seq (file-bytes "examples/materialized-import/warnings.manifest.json"))
+             (seq (file-bytes (io/file out-file "warnings.manifest.json")))))
       (finally
         (doseq [file (reverse (file-seq out-file))]
           (.delete file))))))

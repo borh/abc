@@ -15,6 +15,9 @@ pub struct AatCompareSummary {
     pub common_aat: usize,
     pub only_a: usize,
     pub only_b: usize,
+    pub structural_difference_count: usize,
+    pub visible_text_difference_count: usize,
+    pub same_visible_structural_difference_count: usize,
     pub a_semantic_totals: BTreeMap<String, usize>,
     pub b_semantic_totals: BTreeMap<String, usize>,
     pub structural_differences: Vec<AatStructuralDifference>,
@@ -34,6 +37,8 @@ pub struct AatStructuralDifference {
     pub b_inline_kinds: BTreeMap<String, usize>,
     pub a_semantic_counts: BTreeMap<String, usize>,
     pub b_semantic_counts: BTreeMap<String, usize>,
+    pub a_semantic_hashes: BTreeMap<String, String>,
+    pub b_semantic_hashes: BTreeMap<String, String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -51,9 +56,18 @@ struct AatSummary {
     inline_kinds: BTreeMap<String, usize>,
     semantic_totals: BTreeMap<String, usize>,
     semantic_counts: BTreeMap<String, usize>,
+    semantic_hashes: BTreeMap<String, String>,
 }
 
 pub fn compare_aat_dirs(a: &Path, b: &Path) -> Result<AatCompareSummary> {
+    compare_aat_dirs_with_limit(a, b, None)
+}
+
+pub fn compare_aat_dirs_with_limit(
+    a: &Path,
+    b: &Path,
+    difference_limit: Option<usize>,
+) -> Result<AatCompareSummary> {
     let a = read_aat_summaries(a)?;
     let b = read_aat_summaries(b)?;
     let keys_a = a.keys().cloned().collect::<BTreeSet<_>>();
@@ -62,11 +76,23 @@ pub fn compare_aat_dirs(a: &Path, b: &Path) -> Result<AatCompareSummary> {
     let a_semantic_totals = semantic_totals(a.values());
     let b_semantic_totals = semantic_totals(b.values());
     let mut structural_differences = Vec::new();
+    let mut structural_difference_count = 0usize;
+    let mut visible_text_difference_count = 0usize;
+    let mut same_visible_structural_difference_count = 0usize;
 
     for key in &common {
         let left = &a[key];
         let right = &b[key];
         if left.structure_hash != right.structure_hash || left.visible_hash != right.visible_hash {
+            structural_difference_count += 1;
+            if left.visible_hash != right.visible_hash {
+                visible_text_difference_count += 1;
+            } else {
+                same_visible_structural_difference_count += 1;
+            }
+            if difference_limit.is_some_and(|limit| structural_differences.len() >= limit) {
+                continue;
+            }
             structural_differences.push(AatStructuralDifference {
                 work_id: left.work_id.clone(),
                 visible_text_differs: left.visible_hash != right.visible_hash,
@@ -80,6 +106,8 @@ pub fn compare_aat_dirs(a: &Path, b: &Path) -> Result<AatCompareSummary> {
                 b_inline_kinds: right.inline_kinds.clone(),
                 a_semantic_counts: left.semantic_counts.clone(),
                 b_semantic_counts: right.semantic_counts.clone(),
+                a_semantic_hashes: left.semantic_hashes.clone(),
+                b_semantic_hashes: right.semantic_hashes.clone(),
             });
         }
     }
@@ -88,6 +116,9 @@ pub fn compare_aat_dirs(a: &Path, b: &Path) -> Result<AatCompareSummary> {
         common_aat: common.len(),
         only_a: keys_a.difference(&keys_b).count(),
         only_b: keys_b.difference(&keys_a).count(),
+        structural_difference_count,
+        visible_text_difference_count,
+        same_visible_structural_difference_count,
         a_semantic_totals,
         b_semantic_totals,
         structural_differences,
@@ -148,6 +179,7 @@ fn summarize(root: AatRoot) -> Result<AatSummary> {
     let mut inline_kinds = BTreeMap::new();
     let mut semantic_totals = BTreeMap::new();
     let mut semantic_counts = BTreeMap::new();
+    let mut semantic_sequences = SemanticSequences::default();
     let mut visible = String::new();
     collect_blocks(
         &root.blocks,
@@ -155,6 +187,7 @@ fn summarize(root: AatRoot) -> Result<AatSummary> {
         &mut inline_kinds,
         &mut semantic_totals,
         &mut semantic_counts,
+        &mut semantic_sequences,
         &mut visible,
     );
     Ok(AatSummary {
@@ -165,6 +198,7 @@ fn summarize(root: AatRoot) -> Result<AatSummary> {
         inline_kinds,
         semantic_totals,
         semantic_counts,
+        semantic_hashes: semantic_sequences.into_hashes(),
     })
 }
 
@@ -174,6 +208,7 @@ fn collect_blocks(
     inline_kinds: &mut BTreeMap<String, usize>,
     semantic_totals: &mut BTreeMap<String, usize>,
     semantic_counts: &mut BTreeMap<String, usize>,
+    semantic_sequences: &mut SemanticSequences,
     visible: &mut String,
 ) {
     let Some(blocks) = blocks.as_array() else {
@@ -184,14 +219,14 @@ fn collect_blocks(
         if let Some(kind) = kind(block) {
             *block_kinds.entry(kind.to_owned()).or_insert(0) += 1;
             count_both(semantic_totals, semantic_counts, format!("block:{kind}"));
-            if kind == "heading" {
-                if let Some(level) = block.get("level").and_then(Value::as_u64) {
-                    count_both(
-                        semantic_totals,
-                        semantic_counts,
-                        format!("heading_level:{level}"),
-                    );
-                }
+            if kind == "heading"
+                && let Some(level) = block.get("level").and_then(Value::as_u64)
+            {
+                count_both(
+                    semantic_totals,
+                    semantic_counts,
+                    format!("heading_level:{level}"),
+                );
             }
         }
         collect_inline_containers(
@@ -199,6 +234,7 @@ fn collect_blocks(
             inline_kinds,
             semantic_totals,
             semantic_counts,
+            semantic_sequences,
             visible,
         );
     }
@@ -209,6 +245,7 @@ fn collect_inline_containers(
     inline_kinds: &mut BTreeMap<String, usize>,
     semantic_totals: &mut BTreeMap<String, usize>,
     semantic_counts: &mut BTreeMap<String, usize>,
+    semantic_sequences: &mut SemanticSequences,
     visible: &mut String,
 ) {
     for field in ["content", "children", "upper", "lower"] {
@@ -221,6 +258,7 @@ fn collect_inline_containers(
                 inline_kinds,
                 semantic_totals,
                 semantic_counts,
+                semantic_sequences,
                 visible,
             );
         }
@@ -232,6 +270,7 @@ fn collect_inline_node(
     inline_kinds: &mut BTreeMap<String, usize>,
     semantic_totals: &mut BTreeMap<String, usize>,
     semantic_counts: &mut BTreeMap<String, usize>,
+    semantic_sequences: &mut SemanticSequences,
     visible: &mut String,
 ) {
     let Some(kind) = kind(node) else {
@@ -258,7 +297,7 @@ fn collect_inline_node(
                 visible.push_str(base);
             }
             if let Some(reading) = node.get("reading").and_then(Value::as_str) {
-                increment(semantic_counts, format!("ruby_reading:{reading}"));
+                semantic_sequences.ruby_readings.push(reading.to_owned());
             }
         }
         "gaiji" => {
@@ -271,7 +310,9 @@ fn collect_inline_node(
                 );
                 if let Some(description) = node.get("description").and_then(Value::as_str) {
                     visible.push_str(description);
-                    increment(semantic_counts, format!("gaiji_description:{description}"));
+                    semantic_sequences
+                        .gaiji_descriptions
+                        .push(description.to_owned());
                 }
             } else {
                 count_both(
@@ -289,8 +330,30 @@ fn collect_inline_node(
         inline_kinds,
         semantic_totals,
         semantic_counts,
+        semantic_sequences,
         visible,
     );
+}
+
+#[derive(Debug, Default)]
+struct SemanticSequences {
+    ruby_readings: Vec<String>,
+    gaiji_descriptions: Vec<String>,
+}
+
+impl SemanticSequences {
+    fn into_hashes(self) -> BTreeMap<String, String> {
+        BTreeMap::from([
+            (
+                "ruby_readings".to_owned(),
+                hash_string_sequence(&self.ruby_readings),
+            ),
+            (
+                "gaiji_descriptions".to_owned(),
+                hash_string_sequence(&self.gaiji_descriptions),
+            ),
+        ])
+    }
 }
 
 fn semantic_totals<'a>(
@@ -325,6 +388,15 @@ fn kind(value: &Value) -> Option<&str> {
 fn hash_json(value: &Value) -> Result<String> {
     let bytes = serde_json::to_vec(value)?;
     Ok(hash_bytes(&bytes))
+}
+
+fn hash_string_sequence(values: &[String]) -> String {
+    let mut hasher = Sha256::new();
+    for value in values {
+        hasher.update(value.as_bytes());
+        hasher.update([0]);
+    }
+    format!("sha256:{:x}", hasher.finalize())
 }
 
 fn hash_bytes(bytes: &[u8]) -> String {

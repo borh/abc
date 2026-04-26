@@ -208,7 +208,7 @@ fn records_ruby_gaiji_and_provenance_semantics() {
           "blocks": [
             {"kind": "paragraph", "content": [
               {"kind": "text", "value": "吾輩", "x-provenance": "parser_normalized"},
-              {"kind": "ruby", "base": "", "reading": "わがはい", "x-provenance": "regex_supplement"},
+              {"kind": "ruby", "base": "", "reading": "われ", "x-provenance": "regex_supplement"},
               {"kind": "gaiji", "description": "「口＋世」、U+546D", "resolved": "", "x-provenance": "regex_supplement"}
             ]}
           ],
@@ -223,16 +223,21 @@ fn records_ruby_gaiji_and_provenance_semantics() {
     assert_eq!(summary.a_semantic_totals["inline:ruby"], 1);
     assert_eq!(summary.b_semantic_totals["provenance:regex_supplement"], 2);
     assert_eq!(
-        summary.structural_differences[0].a_semantic_counts["ruby_reading:わがはい"],
-        1
-    );
-    assert_eq!(
         summary.structural_differences[0].b_semantic_counts["provenance:parser_normalized"],
         1
     );
     assert_eq!(
         summary.structural_differences[0].b_semantic_counts["gaiji_unresolved"],
         1
+    );
+    assert!(
+        !summary.structural_differences[0]
+            .a_semantic_counts
+            .contains_key("ruby_reading:わがはい")
+    );
+    assert_ne!(
+        summary.structural_differences[0].a_semantic_hashes["ruby_readings"],
+        summary.structural_differences[0].b_semantic_hashes["ruby_readings"]
     );
 }
 
@@ -253,6 +258,34 @@ fn preserves_duplicate_work_ids_in_aat_comparison() {
     assert_eq!(summary.common_aat, 2);
     assert_eq!(summary.only_a, 0);
     assert_eq!(summary.only_b, 0);
+}
+
+#[test]
+fn can_limit_aat_difference_samples_without_losing_counts() {
+    let temp = tempfile::tempdir().unwrap();
+    let a = temp.path().join("a");
+    let b = temp.path().join("b");
+    std::fs::create_dir_all(&a).unwrap();
+    std::fs::create_dir_all(&b).unwrap();
+
+    for work_id in ["one", "two"] {
+        std::fs::write(
+            a.join(format!("{work_id}.json")),
+            aat_for_work(work_id, "左"),
+        )
+        .unwrap();
+        std::fs::write(
+            b.join(format!("{work_id}.json")),
+            aat_for_work(work_id, "右"),
+        )
+        .unwrap();
+    }
+
+    let summary = ab_compare::aat_diff::compare_aat_dirs_with_limit(&a, &b, Some(1)).unwrap();
+    assert_eq!(summary.common_aat, 2);
+    assert_eq!(summary.structural_difference_count, 2);
+    assert_eq!(summary.visible_text_difference_count, 2);
+    assert_eq!(summary.structural_differences.len(), 1);
 }
 
 fn report(adapter: &str, pass: bool) -> String {

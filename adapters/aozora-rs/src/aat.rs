@@ -1,4 +1,4 @@
-use std::{sync::OnceLock, time::Instant};
+use std::{collections::HashSet, sync::OnceLock, time::Instant};
 
 use ab_ir::{Block, Inline, ProjectedText, Provenance};
 use aozora_rs_core::{Break, Deco, Retokenized};
@@ -361,12 +361,14 @@ enum NoteStart {
 }
 
 fn append_source_annotation_supplements(blocks: &mut [Block], body: &str) {
+    let existing_ruby_readings = ruby_readings_in_blocks(blocks);
+    let existing_gaiji_count = gaiji_count_in_blocks(blocks);
     let Some(first_block) = blocks.first_mut() else {
         return;
     };
     let content = ab_ir::block_content_mut(first_block);
-    append_ruby_supplements(content, body);
-    append_gaiji_supplements(content, body);
+    append_ruby_supplements(content, body, &existing_ruby_readings);
+    append_gaiji_supplements(content, body, existing_gaiji_count);
 }
 
 fn source_visible_fallback_blocks(body: &str) -> Vec<Block> {
@@ -380,17 +382,10 @@ fn source_visible_fallback_blocks(body: &str) -> Vec<Block> {
     blocks
 }
 
-fn append_ruby_supplements(content: &mut Vec<Inline>, body: &str) {
-    let existing = content
-        .iter()
-        .filter_map(|node| match node {
-            Inline::Ruby { reading, .. } => Some(reading.clone()),
-            _ => None,
-        })
-        .collect::<Vec<_>>();
+fn append_ruby_supplements(content: &mut Vec<Inline>, body: &str, existing: &HashSet<String>) {
     for capture in ruby_marker_regex().captures_iter(body) {
         let reading = capture.get(1).unwrap().as_str();
-        if existing.iter().any(|existing| existing == reading) {
+        if existing.contains(reading) {
             continue;
         }
         content.push(Inline::ruby_with_provenance(
@@ -401,15 +396,8 @@ fn append_ruby_supplements(content: &mut Vec<Inline>, body: &str) {
     }
 }
 
-fn append_gaiji_supplements(content: &mut Vec<Inline>, body: &str) {
-    let existing_count = content
-        .iter()
-        .filter(|node| matches!(node, Inline::Gaiji { .. }))
-        .count();
-    for capture in gaiji_marker_regex()
-        .captures_iter(body)
-        .skip(existing_count)
-    {
+fn append_gaiji_supplements(content: &mut Vec<Inline>, body: &str, existing_count: usize) {
+    for capture in gaiji_marker_regex().captures_iter(body).skip(existing_count) {
         let description = capture
             .get(1)
             .or_else(|| capture.get(2))
@@ -421,6 +409,48 @@ fn append_gaiji_supplements(content: &mut Vec<Inline>, body: &str) {
             None,
             Provenance::RegexSupplement,
         ));
+    }
+}
+
+fn ruby_readings_in_blocks(blocks: &[Block]) -> HashSet<String> {
+    let mut readings = HashSet::new();
+    for block in blocks {
+        for child in ab_ir::block_content(block) {
+            collect_ruby_readings(child, &mut readings);
+        }
+    }
+    readings
+}
+
+fn collect_ruby_readings(node: &Inline, readings: &mut HashSet<String>) {
+    match node {
+        Inline::Ruby { reading, .. } => {
+            readings.insert(reading.clone());
+        }
+        Inline::Style { content, .. } => {
+            for child in content {
+                collect_ruby_readings(child, readings);
+            }
+        }
+        Inline::Text { .. } | Inline::Gaiji { .. } => {}
+    }
+}
+
+fn gaiji_count_in_blocks(blocks: &[Block]) -> usize {
+    let mut count = 0;
+    for block in blocks {
+        for child in ab_ir::block_content(block) {
+            count += gaiji_count_in_inline(child);
+        }
+    }
+    count
+}
+
+fn gaiji_count_in_inline(node: &Inline) -> usize {
+    match node {
+        Inline::Gaiji { .. } => 1,
+        Inline::Style { content, .. } => content.iter().map(gaiji_count_in_inline).sum(),
+        Inline::Text { .. } | Inline::Ruby { .. } => 0,
     }
 }
 
@@ -493,5 +523,28 @@ mod tests {
 
         let counts = ab_ir::provenance_counts(&blocks);
         assert_eq!(counts.regex_supplement, 2);
+    }
+
+    #[test]
+    fn source_annotation_supplements_consider_all_existing_blocks() {
+        let mut blocks = vec![
+            Block::Paragraph {
+                content: vec![Inline::text("吾輩")],
+            },
+            Block::Paragraph {
+                content: vec![
+                    Inline::ruby("吾輩", "わがはい"),
+                    Inline::gaiji("「口＋世」、U+546D", "", None),
+                ],
+            },
+        ];
+
+        append_source_annotation_supplements(
+            &mut blocks,
+            "吾輩《わがはい》は※［＃「口＋世」、U+546D］である。",
+        );
+
+        let counts = ab_ir::provenance_counts(&blocks);
+        assert_eq!(counts.regex_supplement, 0);
     }
 }

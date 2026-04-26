@@ -30,6 +30,9 @@ struct Args {
 
     #[arg(long)]
     aat_diff_output: Option<PathBuf>,
+
+    #[arg(long)]
+    aat_diff_limit: Option<usize>,
 }
 
 fn main() -> Result<()> {
@@ -55,7 +58,8 @@ fn main() -> Result<()> {
     if let (Some(aats_a), Some(aats_b), Some(output)) =
         (&args.aats_a, &args.aats_b, &args.aat_diff_output)
     {
-        let summary = ab_compare::aat_diff::compare_aat_dirs(aats_a, aats_b)?;
+        let summary =
+            ab_compare::aat_diff::compare_aat_dirs_with_limit(aats_a, aats_b, args.aat_diff_limit)?;
         if let Some(parent) = output.parent() {
             std::fs::create_dir_all(parent)?;
         }

@@ -5,6 +5,7 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 corpus="${AB_CORPUS:-$repo_root/references/aozorabunko}"
 jobs="${AB_BENCH_JOBS:-$(nproc)}"
 timeout="${AB_BENCH_TIMEOUT:-600s}"
+aat_diff_limit="${AB_AAT_DIFF_LIMIT:-50}"
 out_dir="${AB_BENCH_OUT:-/tmp/ab-validator-compare-$(date -u +%Y%m%dT%H%M%SZ)}"
 
 mkdir -p "$out_dir"
@@ -67,6 +68,7 @@ target/release/ab-compare \
   --aats-a "$out_dir/aats/aozora2/aozora2-adapter" \
   --aats-b "$out_dir/aats/aozora-rs/aozora-rs-adapter" \
   --aat-diff-output "$out_dir/aat-structure-comparison.json" \
+  --aat-diff-limit "$aat_diff_limit" \
   --metrics-root "$out_dir/aats/aozora-rs/aozora-rs-adapter" \
   --metrics-output "$out_dir/aozora-rs-metrics-summary.json" \
   --output "$out_dir/comparison.json"

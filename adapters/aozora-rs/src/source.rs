@@ -1,4 +1,5 @@
 use std::{
+    borrow::Cow,
     sync::OnceLock,
     time::{Duration, Instant},
 };
@@ -117,7 +118,10 @@ pub(crate) fn starts_with_separator(text: &str) -> bool {
         })
 }
 
-pub(crate) fn source_visible_text(txt: &str) -> String {
+pub(crate) fn source_visible_text(txt: &str) -> Cow<'_, str> {
+    if !needs_source_visible_normalization(txt) {
+        return Cow::Borrowed(txt);
+    }
     let without_gaiji = gaiji_regex().replace_all(txt, "");
     let without_explicit_ruby = explicit_ruby_regex().replace_all(&without_gaiji, "$1");
     let without_ruby = ruby_regex().replace_all(&without_explicit_ruby, "$1");
@@ -125,7 +129,11 @@ pub(crate) fn source_visible_text(txt: &str) -> String {
     let without_commands = command_regex()
         .replace_all(&without_orphan_ruby, "")
         .replace('※', "");
-    remove_bottom_note_fragments(&without_commands)
+    Cow::Owned(remove_bottom_note_fragments(&without_commands))
+}
+
+fn needs_source_visible_normalization(txt: &str) -> bool {
+    txt.find(['※', '《', '｜', '［', '[', '」']).is_some()
 }
 
 pub(crate) fn remove_bottom_note_fragments(txt: &str) -> String {
@@ -239,9 +247,18 @@ mod tests {
     }
 
     #[test]
+    fn source_visible_text_borrows_marker_free_input() {
+        let visible = source_visible_text("吾輩は猫である。");
+
+        assert!(matches!(visible, std::borrow::Cow::Borrowed(_)));
+        assert_eq!(visible, "吾輩は猫である。");
+    }
+
+    #[test]
     fn source_visible_text_projects_explicit_ruby_base_without_marker() {
         let visible = source_visible_text("――『｜あのひとにとって、わたし《ルビ》はなんだろう？」");
 
+        assert!(matches!(visible, std::borrow::Cow::Owned(_)));
         assert_eq!(visible, "――『あのひとにとって、わたしはなんだろう？」");
     }
 

@@ -23,17 +23,38 @@ pub enum Inline {
         reading: String,
         provenance: Provenance,
     },
-    Gaiji {
-        description: String,
-        resolved: String,
-        description_format: Option<&'static str>,
-        provenance: Provenance,
-    },
+    GaijiRef(GaijiRef),
     Style {
         style_type: &'static str,
         content: Vec<Inline>,
         provenance: Provenance,
     },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct GaijiRef {
+    pub source: String,
+    pub description: String,
+    pub description_format: Option<String>,
+    pub kind: GaijiKind,
+    pub resolved: Option<String>,
+    pub provenance: Provenance,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum GaijiKind {
+    UnicodeCodepoint { value: char },
+    JisCode { plane: Option<u8>, row: u8, cell: u8 },
+    JisLevel { level: u8, row: u8, cell: u8 },
+    Composition { description: String },
+    DakutenVariant { base: String, mark: DakutenMark },
+    Unknown,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DakutenMark {
+    Voicing,
+    SemiVoicing,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -104,12 +125,18 @@ impl Inline {
         description_format: Option<&'static str>,
         provenance: Provenance,
     ) -> Self {
-        Self::Gaiji {
+        Self::GaijiRef(GaijiRef {
+            source: String::new(),
             description: description.into(),
-            resolved: resolved.into(),
-            description_format,
+            resolved: Some(resolved.into()),
+            description_format: description_format.map(str::to_owned),
+            kind: GaijiKind::Unknown,
             provenance,
-        }
+        })
+    }
+
+    pub fn gaiji_ref(gaiji: GaijiRef) -> Self {
+        Self::GaijiRef(gaiji)
     }
 
     pub fn style(style_type: &'static str, content: Vec<Inline>) -> Self {
@@ -168,23 +195,18 @@ fn inline_to_aat_json(content: &[Inline]) -> Vec<serde_json::Value> {
                 json!({ "kind": "ruby", "base": base, "reading": reading }),
                 *provenance,
             ),
-            Inline::Gaiji {
-                description,
-                resolved,
-                description_format,
-                provenance,
-            } => {
+            Inline::GaijiRef(gaiji) => {
                 let mut value = json!({
                     "kind": "gaiji",
-                    "description": description,
-                    "resolved": resolved,
+                    "description": gaiji.description,
+                    "resolved": gaiji.resolved,
                     "jis_code": null,
-                    "unresolved_reason": null
+                    "unresolved_reason": if gaiji.resolved.is_some() { None } else { Some("unresolved") }
                 });
-                if let Some(format) = description_format {
-                    value["x-description-format"] = serde_json::Value::String((*format).to_owned());
+                if let Some(format) = &gaiji.description_format {
+                    value["x-description-format"] = serde_json::Value::String(format.clone());
                 }
-                with_provenance(value, *provenance)
+                with_provenance(value, gaiji.provenance)
             }
             Inline::Style {
                 style_type,
@@ -206,7 +228,11 @@ fn collect_visible(value: &Inline, out: &mut String) {
     match value {
         Inline::Text { value, .. } => out.push_str(value),
         Inline::Ruby { base, .. } => out.push_str(base),
-        Inline::Gaiji { resolved, .. } => out.push_str(resolved),
+        Inline::GaijiRef(gaiji) => {
+            if let Some(resolved) = &gaiji.resolved {
+                out.push_str(resolved);
+            }
+        }
         Inline::Style { content, .. } => {
             for child in content {
                 collect_visible(child, out);
@@ -243,7 +269,7 @@ fn inline_provenance(value: &Inline) -> Provenance {
     match value {
         Inline::Text { provenance, .. }
         | Inline::Ruby { provenance, .. }
-        | Inline::Gaiji { provenance, .. }
+        | Inline::GaijiRef(GaijiRef { provenance, .. })
         | Inline::Style { provenance, .. } => *provenance,
     }
 }
@@ -309,6 +335,43 @@ mod tests {
         }];
 
         assert_eq!(visible_projection(&blocks).visible_text, "吾輩呻");
+    }
+
+    #[test]
+    fn gaiji_ref_preserves_kind_source_resolution_and_provenance() {
+        let gaiji = GaijiRef {
+            source: "※［＃「口＋愛」、第3水準1-15-23］".to_owned(),
+            description: "「口＋愛」、第3水準1-15-23".to_owned(),
+            description_format: Some("composition+jis-level".to_owned()),
+            kind: GaijiKind::JisLevel {
+                level: 3,
+                row: 15,
+                cell: 23,
+            },
+            resolved: Some("㖊".to_owned()),
+            provenance: Provenance::ParserNormalized,
+        };
+
+        let inline = Inline::gaiji_ref(gaiji.clone());
+
+        assert_eq!(inline, Inline::GaijiRef(gaiji));
+    }
+
+    #[test]
+    fn gaiji_compat_constructor_builds_unknown_gaiji_ref() {
+        let inline = Inline::gaiji("「口＋世」、U+546D", "呻", Some("aozora-description"));
+
+        assert_eq!(
+            inline,
+            Inline::GaijiRef(GaijiRef {
+                source: String::new(),
+                description: "「口＋世」、U+546D".to_owned(),
+                description_format: Some("aozora-description".to_owned()),
+                kind: GaijiKind::Unknown,
+                resolved: Some("呻".to_owned()),
+                provenance: Provenance::Parser,
+            })
+        );
     }
 
     #[test]

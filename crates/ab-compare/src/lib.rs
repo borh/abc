@@ -91,7 +91,7 @@ pub fn compare_report_dirs(a: &Path, b: &Path) -> Result<CompareSummary> {
 }
 
 fn read_reports(root: &Path) -> Result<BTreeMap<String, CheckReport>> {
-    let mut reports = BTreeMap::new();
+    let mut loaded = Vec::new();
     for entry in WalkDir::new(root) {
         let entry = entry?;
         if !entry.file_type().is_file()
@@ -106,18 +106,35 @@ fn read_reports(root: &Path) -> Result<BTreeMap<String, CheckReport>> {
             .with_context(|| format!("failed to read {}", entry.path().display()))?;
         let report: CheckReport = serde_json::from_slice(&bytes)
             .with_context(|| format!("failed to parse {}", entry.path().display()))?;
-        let key = duplicate_safe_report_key(&reports, entry.path(), &report);
+        loaded.push((entry.path().to_owned(), report));
+    }
+
+    let mut work_id_counts = BTreeMap::new();
+    for (_, report) in &loaded {
+        *work_id_counts
+            .entry(report.work_id.clone())
+            .or_insert(0usize) += 1;
+    }
+
+    let mut reports = BTreeMap::new();
+    for (path, report) in loaded {
+        let key = report_key(&work_id_counts, &path, &report);
         reports.insert(key, report);
     }
     Ok(reports)
 }
 
-fn duplicate_safe_report_key(
-    reports: &BTreeMap<String, CheckReport>,
+fn report_key(
+    work_id_counts: &BTreeMap<String, usize>,
     path: &Path,
     report: &CheckReport,
 ) -> String {
-    if !reports.contains_key(&report.work_id) {
+    if work_id_counts
+        .get(&report.work_id)
+        .copied()
+        .unwrap_or_default()
+        <= 1
+    {
         return report.work_id.clone();
     }
     let filename = path

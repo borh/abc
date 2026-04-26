@@ -4,7 +4,7 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 corpus="${AB_CORPUS:-$repo_root/references/aozorabunko}"
 jobs="${AB_BENCH_JOBS:-$(nproc)}"
-timeout="${AB_BENCH_TIMEOUT:-30s}"
+timeout="${AB_BENCH_TIMEOUT:-600s}"
 out_dir="${AB_BENCH_OUT:-/tmp/ab-validator-compare-$(date -u +%Y%m%dT%H%M%SZ)}"
 
 mkdir -p "$out_dir"

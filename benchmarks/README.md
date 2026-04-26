@@ -98,6 +98,7 @@ After both adapters build and pass sample validation, run:
 ```bash
 AB_CORPUS=references/aozorabunko \
 AB_BENCH_JOBS=16 \
+AB_BENCH_TIMEOUT=600s \
 AB_BENCH_OUT=/tmp/ab-validator-compare-current \
 benchmarks/run-parser-comparison.sh
 ```

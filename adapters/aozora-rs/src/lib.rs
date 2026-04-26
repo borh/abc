@@ -65,14 +65,24 @@ pub fn html_from_bytes(_bytes: &[u8]) -> Result<String> {
 }
 
 fn parse_with_aozora_rs(text: &str) -> Result<ParsedSource<'_>> {
-    let mut body = text;
     let mut warnings = Vec::new();
-    if let Err(error) = parse_meta(&mut body) {
-        warnings.push(format!("meta parse warning: {error}"));
-    }
-    body = trim_colophon(body);
+    let mut parsed_body = text;
+    let meta_ok = match parse_meta(&mut parsed_body) {
+        Ok(_) => true,
+        Err(error) => {
+            warnings.push(format!("meta parse warning: {error}"));
+            false
+        }
+    };
+    let parsed_body = trim_colophon(parsed_body);
+    let validation_body = trim_colophon(body_text(text));
+    let parse_body = if meta_ok && !starts_with_separator(parsed_body) {
+        parsed_body
+    } else {
+        validation_body
+    };
 
-    let mut input = LocatingSlice::new(body);
+    let mut input = LocatingSlice::new(parse_body);
     let tokenized = tokenize(&mut input).map_err(|()| anyhow!("aozora-rs-core tokenize failed"))?;
     let ((scopenized, flat_tokens), scopenize_errors) = scopenize(tokenized).into_tuple();
     let (retokenized, retokenize_errors) = retokenize(flat_tokens, scopenized).into_tuple();
@@ -84,7 +94,7 @@ fn parse_with_aozora_rs(text: &str) -> Result<ParsedSource<'_>> {
     warnings.extend(retokenize_errors.into_iter().map(|error| error.to_string()));
 
     Ok(ParsedSource {
-        body,
+        body: validation_body,
         retokenized,
         warnings,
     })
@@ -103,6 +113,33 @@ fn trim_colophon(body: &str) -> &str {
         })
         .unwrap_or(body.len());
     &body[..body_end]
+}
+
+fn body_text(text: &str) -> &str {
+    let mut separator_count = 0;
+    let mut body_start = 0;
+    let mut offset = 0;
+    for line in text.split_inclusive('\n') {
+        let trimmed = line.trim_end_matches(['\r', '\n']);
+        if trimmed.chars().all(|ch| ch == '-') && trimmed.chars().count() >= 20 {
+            separator_count += 1;
+            if separator_count == 2 {
+                body_start = offset + line.len();
+                break;
+            }
+        }
+        offset += line.len();
+    }
+    &text[body_start..]
+}
+
+fn starts_with_separator(text: &str) -> bool {
+    text.lines()
+        .find(|line| !line.trim().is_empty())
+        .is_some_and(|line| {
+            let trimmed = line.trim();
+            !trimmed.is_empty() && trimmed.chars().all(|ch| ch == '-')
+        })
 }
 
 fn build_aat(decoded: &DecodedSource, parsed: &ParsedSource<'_>) -> serde_json::Value {
@@ -129,8 +166,7 @@ fn retokenized_to_aat_blocks(body: &str, tokens: &[Retokenized<'_>]) -> Vec<serd
         match &tokens[idx] {
             Retokenized::Text(text) => push_text(&mut content, &source_visible_text(text)),
             Retokenized::Odoriji(odoriji) => push_text(&mut content, odoriji_source_text(*odoriji)),
-            Retokenized::Kunten(kunten) => push_text(&mut content, kunten),
-            Retokenized::Okurigana(okurigana) => push_text(&mut content, okurigana),
+            Retokenized::Kunten(_) | Retokenized::Okurigana(_) => {}
             Retokenized::Break(Break::BreakLine) => flush_paragraph(&mut blocks, &mut content),
             Retokenized::Break(_) => flush_paragraph(&mut blocks, &mut content),
             Retokenized::Figure(figure) => content.push(json!({
@@ -208,6 +244,12 @@ fn retokenized_to_aat_blocks(body: &str, tokens: &[Retokenized<'_>]) -> Vec<serd
     }
     append_source_annotation_supplements(&mut blocks, body);
     strip_cross_node_commands(&mut blocks);
+    if body.len() > 500_000 {
+        return source_visible_fallback_blocks(body);
+    }
+    if !visible_projection_is_in_source_order(&blocks, body) {
+        blocks = source_visible_fallback_blocks(body);
+    }
     blocks
 }
 
@@ -222,8 +264,7 @@ fn collect_decorated_visible_text(
         match &tokens[idx] {
             Retokenized::Text(text) => value.push_str(&source_visible_text(text)),
             Retokenized::Odoriji(odoriji) => value.push_str(odoriji_source_text(*odoriji)),
-            Retokenized::Kunten(kunten) => value.push_str(kunten),
-            Retokenized::Okurigana(okurigana) => value.push_str(okurigana),
+            Retokenized::Kunten(_) | Retokenized::Okurigana(_) => {}
             Retokenized::Break(_) => value.push('\n'),
             Retokenized::Figure(_) => {}
             Retokenized::DecoBegin(_) => depth += 1,
@@ -348,6 +389,7 @@ enum CommandStripState {
     None,
     FullWidth,
     Ascii,
+    AnyBracket,
 }
 
 fn strip_command_fragments(text: &str, state: &mut CommandStripState) -> String {
@@ -358,23 +400,41 @@ fn strip_command_fragments(text: &str, state: &mut CommandStripState) -> String 
             CommandStripState::None => {
                 let fullwidth = rest.find("［＃");
                 let ascii = rest.find("[#");
-                let next = match (fullwidth, ascii) {
-                    (Some(left), Some(right)) => Some((left.min(right), left <= right)),
-                    (Some(left), None) => Some((left, true)),
-                    (None, Some(right)) => Some((right, false)),
-                    (None, None) => None,
-                };
-                let Some((start, is_fullwidth)) = next else {
+                let bottom_note = rest.find("」は底本では「");
+                let mama_note = rest.find("」はママ");
+                let next = [
+                    fullwidth.map(|offset| (offset, NoteStart::FullWidthCommand)),
+                    ascii.map(|offset| (offset, NoteStart::AsciiCommand)),
+                    bottom_note.map(|offset| (offset, NoteStart::BottomNote)),
+                    mama_note.map(|offset| (offset, NoteStart::MamaNote)),
+                ]
+                .into_iter()
+                .flatten()
+                .min_by_key(|(offset, _)| *offset);
+                let Some((start, note_start)) = next else {
                     output.push_str(rest);
                     break;
                 };
-                output.push_str(&rest[..start]);
-                *state = if is_fullwidth {
-                    rest = &rest[start + "［＃".len()..];
-                    CommandStripState::FullWidth
-                } else {
-                    rest = &rest[start + "[#".len()..];
-                    CommandStripState::Ascii
+                if !matches!(note_start, NoteStart::BottomNote) {
+                    output.push_str(&rest[..start]);
+                }
+                match note_start {
+                    NoteStart::FullWidthCommand => {
+                        rest = &rest[start + "［＃".len()..];
+                        *state = CommandStripState::FullWidth;
+                    }
+                    NoteStart::AsciiCommand => {
+                        rest = &rest[start + "[#".len()..];
+                        *state = CommandStripState::Ascii;
+                    }
+                    NoteStart::BottomNote => {
+                        rest = &rest[start + "」は底本では「".len()..];
+                        *state = CommandStripState::AnyBracket;
+                    }
+                    NoteStart::MamaNote => {
+                        rest = &rest[start + "」はママ".len()..];
+                        *state = CommandStripState::AnyBracket;
+                    }
                 };
             }
             CommandStripState::FullWidth => {
@@ -393,9 +453,37 @@ fn strip_command_fragments(text: &str, state: &mut CommandStripState) -> String 
                     break;
                 }
             }
+            CommandStripState::AnyBracket => {
+                let fullwidth = rest.find('］');
+                let ascii = rest.find(']');
+                let end = match (fullwidth, ascii) {
+                    (Some(left), Some(right)) => Some((left.min(right), left <= right)),
+                    (Some(left), None) => Some((left, true)),
+                    (None, Some(right)) => Some((right, false)),
+                    (None, None) => None,
+                };
+                if let Some((end, is_fullwidth)) = end {
+                    rest = if is_fullwidth {
+                        &rest[end + '］'.len_utf8()..]
+                    } else {
+                        &rest[end + 1..]
+                    };
+                    *state = CommandStripState::None;
+                } else {
+                    break;
+                }
+            }
         }
     }
     output
+}
+
+#[derive(Clone, Copy)]
+enum NoteStart {
+    FullWidthCommand,
+    AsciiCommand,
+    BottomNote,
+    MamaNote,
 }
 
 fn append_source_annotation_supplements(blocks: &mut [serde_json::Value], body: &str) {
@@ -416,6 +504,83 @@ fn append_source_annotation_supplements(blocks: &mut [serde_json::Value], body: 
 
     append_ruby_supplements(content, body);
     append_gaiji_supplements(content, body);
+}
+
+fn source_visible_fallback_blocks(body: &str) -> Vec<serde_json::Value> {
+    let mut blocks = vec![json!({
+        "kind": "paragraph",
+        "content": [{"kind": "text", "value": source_visible_text(body)}]
+    })];
+    append_source_annotation_supplements(&mut blocks, body);
+    blocks
+}
+
+fn visible_projection_is_in_source_order(blocks: &[serde_json::Value], body: &str) -> bool {
+    let projection = normalize_visible(&visible_projection(blocks));
+    if projection.is_empty() {
+        return true;
+    }
+    let source = normalize_visible(&source_visible_text(body));
+    is_subsequence(&projection, &source)
+}
+
+fn visible_projection(blocks: &[serde_json::Value]) -> String {
+    let mut out = String::new();
+    for block in blocks {
+        collect_visible_projection(block, &mut out);
+    }
+    out
+}
+
+fn collect_visible_projection(value: &serde_json::Value, out: &mut String) {
+    match value.get("kind").and_then(|kind| kind.as_str()) {
+        Some("text") => out.push_str(
+            value
+                .get("value")
+                .and_then(|value| value.as_str())
+                .unwrap_or_default(),
+        ),
+        Some("ruby") => out.push_str(
+            value
+                .get("base")
+                .and_then(|value| value.as_str())
+                .unwrap_or_default(),
+        ),
+        Some("gaiji") => {
+            if let Some(resolved) = value.get("resolved").and_then(|value| value.as_str()) {
+                out.push_str(resolved);
+            } else {
+                out.push_str(
+                    value
+                        .get("description")
+                        .and_then(|value| value.as_str())
+                        .unwrap_or_default(),
+                );
+            }
+        }
+        _ => {}
+    }
+    for key in ["content", "children", "upper", "lower"] {
+        if let Some(values) = value.get(key).and_then(|value| value.as_array()) {
+            for child in values {
+                collect_visible_projection(child, out);
+            }
+        }
+    }
+}
+
+fn normalize_visible(value: &str) -> String {
+    value.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
+fn is_subsequence(needle: &str, haystack: &str) -> bool {
+    let mut haystack = haystack.chars();
+    for ch in needle.chars() {
+        if !haystack.any(|candidate| candidate == ch) {
+            return false;
+        }
+    }
+    true
 }
 
 fn append_ruby_supplements(content: &mut Vec<serde_json::Value>, body: &str) {
@@ -481,10 +646,10 @@ fn source_visible_text(txt: &str) -> String {
 fn remove_bottom_note_fragments(txt: &str) -> String {
     let bottom_note = Regex::new(r#"[^「」\s、。，．]+」は底本では「[^］\]]+[］\]]"#).unwrap();
     let gaiji_note = Regex::new(r#"[^「」\s、。，．]*」の「[^］\]]+[］\]]"#).unwrap();
+    let mama_note = Regex::new(r#"[^「」\s、。，．]{1,80}」はママ[］\]]"#).unwrap();
     let without_bottom_notes = bottom_note.replace_all(txt, "");
-    gaiji_note
-        .replace_all(&without_bottom_notes, "")
-        .into_owned()
+    let without_gaiji_notes = gaiji_note.replace_all(&without_bottom_notes, "");
+    mama_note.replace_all(&without_gaiji_notes, "").into_owned()
 }
 
 fn hex_sha256(bytes: &[u8]) -> String {

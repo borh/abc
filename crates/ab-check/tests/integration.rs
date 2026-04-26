@@ -1,5 +1,8 @@
 use std::{fs, path::Path, process::Command};
 
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
+
 use ab_check::check::schema_validator;
 use serde_json::Value;
 
@@ -75,8 +78,12 @@ fn duplicate_ruby_base_fails_visible_projection() {
 #[test]
 fn batch_mode_can_persist_mutated_aat_output() {
     let manifest = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let adapter = manifest.join("../../adapters/test-adapter/test-adapter");
     let temp = tempfile::tempdir().unwrap();
+    let adapter = temp.path().join("test-adapter");
+    write_portable_test_adapter(
+        &manifest.join("../../adapters/test-adapter/test-adapter"),
+        &adapter,
+    );
     let corpus = temp.path().join("corpus");
     fs::create_dir(&corpus).unwrap();
     fs::write(corpus.join("1_ruby_1.txt"), "吾輩《わがはい》は猫である。").unwrap();
@@ -118,6 +125,34 @@ fn batch_mode_can_persist_mutated_aat_output() {
         persisted_aat["meta"]["adapter_version"],
         "test-adapter 0.0.1 test"
     );
+}
+
+fn write_portable_test_adapter(source: &Path, destination: &Path) {
+    let script = fs::read_to_string(source).unwrap();
+    let bash = Command::new("bash")
+        .arg("-c")
+        .arg("command -v bash")
+        .output()
+        .ok()
+        .and_then(|output| {
+            output
+                .status
+                .success()
+                .then(|| String::from_utf8_lossy(&output.stdout).trim().to_owned())
+        })
+        .filter(|path| !path.is_empty())
+        .unwrap_or_else(|| "/usr/bin/env bash".to_owned());
+    fs::write(
+        destination,
+        script.replacen("#!/usr/bin/env bash", &format!("#!{bash}"), 1),
+    )
+    .unwrap();
+    #[cfg(unix)]
+    {
+        let mut permissions = fs::metadata(destination).unwrap().permissions();
+        permissions.set_mode(0o755);
+        fs::set_permissions(destination, permissions).unwrap();
+    }
 }
 
 fn only_json_file(dir: &Path) -> std::path::PathBuf {

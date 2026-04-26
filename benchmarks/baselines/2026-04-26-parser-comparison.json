@@ -1,0 +1,25 @@
+{
+  "generated_at": "2026-04-26T01:19:27Z",
+  "corpus_hash": "sha256:25f5edcfab0f7b856cb24e5088de6ab68a61359eabfddb4b3add92049b09ce67",
+  "aozora2": {
+    "name": "aozora2",
+    "seconds": 32.983328,
+    "reports": 17894,
+    "failures": 0
+  },
+  "aozora_rs": {
+    "name": "aozora-rs",
+    "seconds": 1690.014773,
+    "reports": 17894,
+    "failures": 0
+  },
+  "comparison": {
+    "adapter_a": "aozora2",
+    "adapter_b": "aozora-rs",
+    "common_reports": 17894,
+    "only_a": 0,
+    "only_b": 0,
+    "result_differences": []
+  },
+  "host_note": "Local development machine baseline; compare relative changes on the same machine."
+}

@@ -69,7 +69,7 @@ Generated JSON files must be written deterministically:
 - Array order is preserved, because arrays are semantic order unless a producing function sorts them before writing.
 - `manifest_identity_object` remains the only input to `artifact_id`.
 - `artifact_id` is never nested inside `manifest_identity_object`.
-- `provenance.used` and `provenance.was_derived_from` are sorted by the manifest writer before output.
+- For the current manifest writer, `provenance.used` and `provenance.was_derived_from` are sorted by `artifact-manifest` before output so their semantic order is deterministic before JSON writing.
 
 ## Consequences
 
@@ -106,7 +106,8 @@ Validation-result and query-index schemas are not part of v0. The example files 
 Run:
 
 ```bash
-git diff --check -- docs/adr/0011-generated-fixture-policy.md docs/v0-design-bundle/README.md
+git add docs/adr/0011-generated-fixture-policy.md docs/v0-design-bundle/README.md
+git diff --cached --check -- docs/adr/0011-generated-fixture-policy.md docs/v0-design-bundle/README.md
 ```
 
 Expected: no output and exit code `0`.
@@ -116,7 +117,6 @@ Expected: no output and exit code `0`.
 Run:
 
 ```bash
-git add docs/adr/0011-generated-fixture-policy.md docs/v0-design-bundle/README.md
 git commit -m "docs: define generated fixture policy"
 ```
 
@@ -194,7 +194,7 @@ In `src/abc/tools/manifest.clj`, add this function near `write-json-file!`:
     value))
 ```
 
-Replace `write-json-file!` with:
+Replace `write-json-file!` with the form below. This project's `charred.api/write-json` exposes the arglist `[output data & {:as argmap}]`, so options are passed as trailing keyword arguments:
 
 ```clojure
 (defn write-json-file! [file value]
@@ -215,12 +215,12 @@ clojure -M:test -e '(require (quote abc.tools.materialize-import-test)) (clojure
 
 Expected: `0 failures, 0 errors`.
 
-- [ ] **Step 5: Run materialization tests**
+- [ ] **Step 5: Run the Clojure test suite**
 
 Run:
 
 ```bash
-clojure -M:test -e '(require (quote abc.tools.materialize-import-test)) (clojure.test/run-tests (quote abc.tools.materialize-import-test))'
+clojure -M:test
 ```
 
 Expected: `0 failures, 0 errors`.
@@ -302,7 +302,7 @@ Expected: `0 failures, 0 errors`.
 Run:
 
 ```bash
-python - <<'PY'
+nix develop --command python - <<'PY'
 import json
 from pathlib import Path
 from jsonschema import Draft202012Validator
@@ -353,8 +353,8 @@ Add these helpers near `check-errors!`:
 
 ```clojure
 (def materialized-fixture-paths
-  {"parser-ir.manifest.json" (files/path "examples" "materialized-import" "parser-ir.manifest.json")
-   "warnings.manifest.json" (files/path "examples" "materialized-import" "warnings.manifest.json")})
+  {"parser-ir.manifest.json" (io/file "examples" "materialized-import" "parser-ir.manifest.json")
+   "warnings.manifest.json" (io/file "examples" "materialized-import" "warnings.manifest.json")})
 
 (defn file-bytes [file]
   (java.nio.file.Files/readAllBytes (.toPath (io/file file))))

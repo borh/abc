@@ -17,6 +17,7 @@ pub struct AatCompareSummary {
     pub only_b: usize,
     pub structural_difference_count: usize,
     pub visible_text_difference_count: usize,
+    pub normalized_visible_text_difference_count: usize,
     pub same_visible_structural_difference_count: usize,
     pub a_semantic_totals: BTreeMap<String, usize>,
     pub b_semantic_totals: BTreeMap<String, usize>,
@@ -27,10 +28,13 @@ pub struct AatCompareSummary {
 pub struct AatStructuralDifference {
     pub work_id: String,
     pub visible_text_differs: bool,
+    pub normalized_visible_text_differs: bool,
     pub a_structure_hash: String,
     pub b_structure_hash: String,
     pub a_visible_hash: String,
     pub b_visible_hash: String,
+    pub a_normalized_visible_hash: String,
+    pub b_normalized_visible_hash: String,
     pub a_block_kinds: BTreeMap<String, usize>,
     pub b_block_kinds: BTreeMap<String, usize>,
     pub a_inline_kinds: BTreeMap<String, usize>,
@@ -52,6 +56,7 @@ struct AatSummary {
     work_id: String,
     structure_hash: String,
     visible_hash: String,
+    normalized_visible_hash: String,
     block_kinds: BTreeMap<String, usize>,
     inline_kinds: BTreeMap<String, usize>,
     semantic_totals: BTreeMap<String, usize>,
@@ -78,6 +83,7 @@ pub fn compare_aat_dirs_with_limit(
     let mut structural_differences = Vec::new();
     let mut structural_difference_count = 0usize;
     let mut visible_text_difference_count = 0usize;
+    let mut normalized_visible_text_difference_count = 0usize;
     let mut same_visible_structural_difference_count = 0usize;
 
     for key in &common {
@@ -90,16 +96,23 @@ pub fn compare_aat_dirs_with_limit(
             } else {
                 same_visible_structural_difference_count += 1;
             }
+            if left.normalized_visible_hash != right.normalized_visible_hash {
+                normalized_visible_text_difference_count += 1;
+            }
             if difference_limit.is_some_and(|limit| structural_differences.len() >= limit) {
                 continue;
             }
             structural_differences.push(AatStructuralDifference {
                 work_id: left.work_id.clone(),
                 visible_text_differs: left.visible_hash != right.visible_hash,
+                normalized_visible_text_differs: left.normalized_visible_hash
+                    != right.normalized_visible_hash,
                 a_structure_hash: left.structure_hash.clone(),
                 b_structure_hash: right.structure_hash.clone(),
                 a_visible_hash: left.visible_hash.clone(),
                 b_visible_hash: right.visible_hash.clone(),
+                a_normalized_visible_hash: left.normalized_visible_hash.clone(),
+                b_normalized_visible_hash: right.normalized_visible_hash.clone(),
                 a_block_kinds: left.block_kinds.clone(),
                 b_block_kinds: right.block_kinds.clone(),
                 a_inline_kinds: left.inline_kinds.clone(),
@@ -118,6 +131,7 @@ pub fn compare_aat_dirs_with_limit(
         only_b: keys_b.difference(&keys_a).count(),
         structural_difference_count,
         visible_text_difference_count,
+        normalized_visible_text_difference_count,
         same_visible_structural_difference_count,
         a_semantic_totals,
         b_semantic_totals,
@@ -194,6 +208,7 @@ fn summarize(root: AatRoot) -> Result<AatSummary> {
         work_id: root.work_id,
         structure_hash,
         visible_hash: hash_bytes(visible.as_bytes()),
+        normalized_visible_hash: hash_bytes(normalize_visible(&visible).as_bytes()),
         block_kinds,
         inline_kinds,
         semantic_totals,
@@ -215,7 +230,10 @@ fn collect_blocks(
         return;
     };
 
-    for block in blocks {
+    for (idx, block) in blocks.iter().enumerate() {
+        if idx > 0 {
+            visible.push('\n');
+        }
         if let Some(kind) = kind(block) {
             *block_kinds.entry(kind.to_owned()).or_insert(0) += 1;
             count_both(semantic_totals, semantic_counts, format!("block:{kind}"));
@@ -309,7 +327,6 @@ fn collect_inline_node(
                     "gaiji_unresolved".to_owned(),
                 );
                 if let Some(description) = node.get("description").and_then(Value::as_str) {
-                    visible.push_str(description);
                     semantic_sequences
                         .gaiji_descriptions
                         .push(description.to_owned());
@@ -397,6 +414,10 @@ fn hash_string_sequence(values: &[String]) -> String {
         hasher.update([0]);
     }
     format!("sha256:{:x}", hasher.finalize())
+}
+
+fn normalize_visible(value: &str) -> String {
+    value.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
 fn hash_bytes(bytes: &[u8]) -> String {

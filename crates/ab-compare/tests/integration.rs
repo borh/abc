@@ -288,6 +288,124 @@ fn can_limit_aat_difference_samples_without_losing_counts() {
     assert_eq!(summary.structural_differences.len(), 1);
 }
 
+#[test]
+fn block_boundaries_project_as_line_breaks() {
+    let temp = tempfile::tempdir().unwrap();
+    let a = temp.path().join("a");
+    let b = temp.path().join("b");
+    std::fs::create_dir_all(&a).unwrap();
+    std::fs::create_dir_all(&b).unwrap();
+
+    std::fs::write(
+        a.join("one.json"),
+        r#"{
+          "work_id": "one",
+          "blocks": [
+            {"kind": "paragraph", "content": [{"kind": "text", "value": "上\n下"}]}
+          ],
+          "meta": {"adapter": "a"}
+        }"#,
+    )
+    .unwrap();
+    std::fs::write(
+        b.join("one.json"),
+        r#"{
+          "work_id": "one",
+          "blocks": [
+            {"kind": "paragraph", "content": [{"kind": "text", "value": "上"}]},
+            {"kind": "paragraph", "content": [{"kind": "text", "value": "下"}]}
+          ],
+          "meta": {"adapter": "b"}
+        }"#,
+    )
+    .unwrap();
+
+    let summary = ab_compare::aat_diff::compare_aat_dirs(&a, &b).unwrap();
+    assert_eq!(summary.structural_difference_count, 1);
+    assert_eq!(summary.visible_text_difference_count, 0);
+    assert_eq!(summary.normalized_visible_text_difference_count, 0);
+    assert_eq!(summary.same_visible_structural_difference_count, 1);
+}
+
+#[test]
+fn normalized_visible_text_ignores_whitespace_formatting() {
+    let temp = tempfile::tempdir().unwrap();
+    let a = temp.path().join("a");
+    let b = temp.path().join("b");
+    std::fs::create_dir_all(&a).unwrap();
+    std::fs::create_dir_all(&b).unwrap();
+
+    std::fs::write(
+        a.join("one.json"),
+        r#"{
+          "work_id": "one",
+          "blocks": [
+            {"kind": "paragraph", "content": [{"kind": "text", "value": "\r\n上  下\r\n"}]}
+          ],
+          "meta": {"adapter": "a"}
+        }"#,
+    )
+    .unwrap();
+    std::fs::write(
+        b.join("one.json"),
+        r#"{
+          "work_id": "one",
+          "blocks": [
+            {"kind": "paragraph", "content": [{"kind": "text", "value": "上\n下"}]}
+          ],
+          "meta": {"adapter": "b"}
+        }"#,
+    )
+    .unwrap();
+
+    let summary = ab_compare::aat_diff::compare_aat_dirs(&a, &b).unwrap();
+    assert_eq!(summary.structural_difference_count, 1);
+    assert_eq!(summary.visible_text_difference_count, 1);
+    assert_eq!(summary.normalized_visible_text_difference_count, 0);
+    assert!(!summary.structural_differences[0].normalized_visible_text_differs);
+}
+
+#[test]
+fn unresolved_gaiji_description_is_semantic_not_visible_text() {
+    let temp = tempfile::tempdir().unwrap();
+    let a = temp.path().join("a");
+    let b = temp.path().join("b");
+    std::fs::create_dir_all(&a).unwrap();
+    std::fs::create_dir_all(&b).unwrap();
+
+    std::fs::write(
+        a.join("one.json"),
+        r#"{
+          "work_id": "one",
+          "blocks": [
+            {"kind": "paragraph", "content": [
+              {"kind": "text", "value": "上"},
+              {"kind": "gaiji", "description": "注記", "resolved": ""},
+              {"kind": "text", "value": "下"}
+            ]}
+          ],
+          "meta": {"adapter": "a"}
+        }"#,
+    )
+    .unwrap();
+    std::fs::write(
+        b.join("one.json"),
+        r#"{
+          "work_id": "one",
+          "blocks": [
+            {"kind": "paragraph", "content": [{"kind": "text", "value": "上下"}]}
+          ],
+          "meta": {"adapter": "b"}
+        }"#,
+    )
+    .unwrap();
+
+    let summary = ab_compare::aat_diff::compare_aat_dirs(&a, &b).unwrap();
+    assert_eq!(summary.visible_text_difference_count, 0);
+    assert_eq!(summary.normalized_visible_text_difference_count, 0);
+    assert_eq!(summary.a_semantic_totals["gaiji_unresolved"], 1);
+}
+
 fn report(adapter: &str, pass: bool) -> String {
     report_for_work(adapter, "000001_1", pass)
 }

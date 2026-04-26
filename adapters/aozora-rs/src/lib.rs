@@ -34,6 +34,7 @@ pub fn aat_json_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
         parser_body_bytes: parsed.parse_body.parser_body.len(),
         tokenized_count: parsed.tokenized_count,
         retokenized_count: parsed.retokenized_count,
+        provenance: ab_ir::provenance_counts(&result.blocks),
         fallback: result.fallback.clone(),
     });
     let aat = build_aat(&decoded, &parsed.warnings, &result, metrics.to_json());
@@ -145,6 +146,8 @@ mod tests {
         assert_eq!(metrics["source_bytes"], input.len());
         assert!(metrics["tokenized_count"].as_u64().unwrap() > 0);
         assert!(metrics["retokenized_count"].as_u64().unwrap() > 0);
+        assert!(metrics["parser_normalized_nodes"].as_u64().unwrap() > 0);
+        assert!(metrics["regex_supplement_nodes"].as_u64().unwrap() > 0);
         assert_eq!(value["blocks"][0]["kind"], "paragraph");
         assert!(
             value["blocks"][0]["content"]
@@ -189,6 +192,7 @@ mod tests {
             parser_body_bytes: parsed.parse_body.parser_body.len(),
             tokenized_count: parsed.tokenized_count,
             retokenized_count: parsed.retokenized_count,
+            provenance: ab_ir::provenance_counts(&result.blocks),
             fallback: result.fallback.clone(),
         });
         let value = build_aat(&decoded, &parsed.warnings, &result, metrics.to_json());

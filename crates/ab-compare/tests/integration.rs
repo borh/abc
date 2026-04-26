@@ -104,6 +104,10 @@ fn summarizes_aat_metrics() {
               "aat_build_ms": 6.0,
               "projection_check_ms": 7.0,
               "fallback_build_ms": 0.0,
+              "parser_nodes": 13,
+              "parser_normalized_nodes": 14,
+              "regex_supplement_nodes": 15,
+              "regex_fallback_nodes": 16,
               "fallback_used": false,
               "fallback_reason": "none"
             }
@@ -117,6 +121,8 @@ fn summarizes_aat_metrics() {
     assert_eq!(summary.works, 1);
     assert_eq!(summary.fallbacks, 0);
     assert_eq!(summary.stage_totals_ms["tokenize"], 3.0);
+    assert_eq!(summary.node_totals["regex_supplement"], 15);
+    assert_eq!(summary.node_totals["regex_fallback"], 16);
     assert_eq!(summary.slowest_works[0].work_id, "one");
     assert_eq!(summary.slowest_works[0].stages_ms["projection_check"], 7.0);
 }

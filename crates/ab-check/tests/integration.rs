@@ -58,6 +58,10 @@ fn aat_schema_accepts_adapter_metrics_metadata() {
                 "parser_body_bytes": 10,
                 "tokenized_count": 11,
                 "retokenized_count": 12,
+                "parser_nodes": 13,
+                "parser_normalized_nodes": 14,
+                "regex_supplement_nodes": 15,
+                "regex_fallback_nodes": 16,
                 "fallback_used": false,
                 "fallback_reason": "none"
             }

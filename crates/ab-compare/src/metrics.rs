@@ -10,6 +10,7 @@ pub struct MetricsSummary {
     pub works: usize,
     pub fallbacks: usize,
     pub stage_totals_ms: BTreeMap<String, f64>,
+    pub node_totals: BTreeMap<String, usize>,
     pub slowest_works: Vec<SlowWork>,
 }
 
@@ -44,6 +45,14 @@ struct AatMetrics {
     aat_build_ms: f64,
     projection_check_ms: f64,
     fallback_build_ms: f64,
+    #[serde(default)]
+    parser_nodes: usize,
+    #[serde(default)]
+    parser_normalized_nodes: usize,
+    #[serde(default)]
+    regex_supplement_nodes: usize,
+    #[serde(default)]
+    regex_fallback_nodes: usize,
     fallback_used: bool,
 }
 
@@ -52,6 +61,7 @@ pub fn summarize_aat_metrics(root: &Path) -> Result<MetricsSummary> {
     let mut works = 0usize;
     let mut fallbacks = 0usize;
     let mut stage_totals_ms = BTreeMap::new();
+    let mut node_totals = BTreeMap::new();
     let mut slowest_works = Vec::new();
 
     for entry in WalkDir::new(root) {
@@ -82,6 +92,9 @@ pub fn summarize_aat_metrics(root: &Path) -> Result<MetricsSummary> {
         for (name, value) in &stages {
             *stage_totals_ms.entry(name.clone()).or_insert(0.0) += value;
         }
+        for (name, value) in node_counts(&root.meta.metrics) {
+            *node_totals.entry(name).or_insert(0) += value;
+        }
         let total_ms = stages.values().sum();
         let dominant_stage = stages
             .iter()
@@ -110,6 +123,7 @@ pub fn summarize_aat_metrics(root: &Path) -> Result<MetricsSummary> {
         works,
         fallbacks,
         stage_totals_ms,
+        node_totals,
         slowest_works,
     })
 }
@@ -124,5 +138,20 @@ fn stages(metrics: &AatMetrics) -> BTreeMap<String, f64> {
         ("aat_build".to_owned(), metrics.aat_build_ms),
         ("projection_check".to_owned(), metrics.projection_check_ms),
         ("fallback_build".to_owned(), metrics.fallback_build_ms),
+    ])
+}
+
+fn node_counts(metrics: &AatMetrics) -> BTreeMap<String, usize> {
+    BTreeMap::from([
+        ("parser".to_owned(), metrics.parser_nodes),
+        (
+            "parser_normalized".to_owned(),
+            metrics.parser_normalized_nodes,
+        ),
+        (
+            "regex_supplement".to_owned(),
+            metrics.regex_supplement_nodes,
+        ),
+        ("regex_fallback".to_owned(), metrics.regex_fallback_nodes),
     ])
 }

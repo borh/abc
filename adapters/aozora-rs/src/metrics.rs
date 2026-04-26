@@ -54,6 +54,10 @@ pub struct AdapterMetrics {
     pub parser_body_bytes: usize,
     pub tokenized_count: usize,
     pub retokenized_count: usize,
+    pub parser_nodes: usize,
+    pub parser_normalized_nodes: usize,
+    pub regex_supplement_nodes: usize,
+    pub regex_fallback_nodes: usize,
     pub fallback: FallbackDecision,
 }
 
@@ -70,6 +74,7 @@ pub struct AdapterMetricsParts<'a> {
     pub parser_body_bytes: usize,
     pub tokenized_count: usize,
     pub retokenized_count: usize,
+    pub provenance: ab_ir::ProvenanceCounts,
     pub fallback: FallbackDecision,
 }
 
@@ -90,6 +95,10 @@ impl AdapterMetrics {
             parser_body_bytes: parts.parser_body_bytes,
             tokenized_count: parts.tokenized_count,
             retokenized_count: parts.retokenized_count,
+            parser_nodes: parts.provenance.parser,
+            parser_normalized_nodes: parts.provenance.parser_normalized,
+            regex_supplement_nodes: parts.provenance.regex_supplement,
+            regex_fallback_nodes: parts.provenance.regex_fallback,
             fallback: parts.fallback,
         }
     }
@@ -110,6 +119,10 @@ impl AdapterMetrics {
             "parser_body_bytes": self.parser_body_bytes,
             "tokenized_count": self.tokenized_count,
             "retokenized_count": self.retokenized_count,
+            "parser_nodes": self.parser_nodes,
+            "parser_normalized_nodes": self.parser_normalized_nodes,
+            "regex_supplement_nodes": self.regex_supplement_nodes,
+            "regex_fallback_nodes": self.regex_fallback_nodes,
             "fallback_used": self.fallback.used,
             "fallback_reason": self.fallback.reason,
         })
@@ -161,6 +174,10 @@ mod tests {
             parser_body_bytes: 12,
             tokenized_count: 13,
             retokenized_count: 14,
+            parser_nodes: 15,
+            parser_normalized_nodes: 16,
+            regex_supplement_nodes: 17,
+            regex_fallback_nodes: 18,
             fallback: FallbackDecision {
                 used: true,
                 reason: FallbackReason::ProjectionMismatch,
@@ -171,5 +188,6 @@ mod tests {
             metrics.to_json()["parse_body_strategy"],
             "separator_fallback"
         );
+        assert_eq!(metrics.to_json()["regex_supplement_nodes"], 17);
     }
 }

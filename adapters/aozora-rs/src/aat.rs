@@ -1,6 +1,6 @@
 use std::{sync::OnceLock, time::Instant};
 
-use ab_ir::{Block, Inline, ProjectedText};
+use ab_ir::{Block, Inline, ProjectedText, Provenance};
 use aozora_rs_core::{Break, Deco, Retokenized};
 use regex::Regex;
 
@@ -62,22 +62,19 @@ fn retokenized_to_aat_blocks(tokens: &[Retokenized<'_>]) -> Vec<Block> {
             Retokenized::Kunten(_) | Retokenized::Okurigana(_) => {}
             Retokenized::Break(Break::BreakLine) => flush_paragraph(&mut blocks, &mut content),
             Retokenized::Break(_) => flush_paragraph(&mut blocks, &mut content),
-            Retokenized::Figure(figure) => content.push(Inline::Gaiji {
-                description: figure.to_string(),
-                resolved: String::new(),
-                description_format: Some(
+            Retokenized::Figure(figure) => content.push(Inline::gaiji(
+                figure.to_string(),
+                "",
+                Some(
                     "aozora-rs-core Figure Display output; original gaiji notation is not preserved by Figure",
                 ),
-            }),
+            )),
             Retokenized::DecoBegin(Deco::Ruby(reading)) => {
                 let (base, next_idx) = collect_decorated_visible_text(tokens, idx + 1, |deco| {
                     matches!(deco, Deco::Ruby(_))
                 });
                 if !is_pathological_ruby_base(&base) {
-                    content.push(Inline::Ruby {
-                        base,
-                        reading: (*reading).to_owned(),
-                    });
+                    content.push(Inline::ruby(base, *reading));
                 }
                 idx = next_idx;
                 continue;
@@ -106,7 +103,7 @@ fn retokenized_to_aat_blocks(tokens: &[Retokenized<'_>]) -> Vec<Block> {
                 blocks.push(Block::Heading {
                     level,
                     style: stable_style_type(deco),
-                    content: vec![Inline::Text(value)],
+                    content: vec![Inline::text(value)],
                 });
                 idx = next_idx;
                 continue;
@@ -116,10 +113,7 @@ fn retokenized_to_aat_blocks(tokens: &[Retokenized<'_>]) -> Vec<Block> {
                     collect_decorated_visible_text(tokens, idx + 1, |candidate| {
                         same_deco_kind(candidate, deco)
                     });
-                content.push(Inline::Style {
-                    style_type: stable_style_type(deco),
-                    content: vec![Inline::Text(value)],
-                });
+                content.push(Inline::style(stable_style_type(deco), vec![Inline::text(value)]));
                 idx = next_idx;
                 continue;
             }
@@ -232,7 +226,10 @@ fn push_text(content: &mut Vec<Inline>, value: &str) {
     if value.is_empty() {
         return;
     }
-    content.push(Inline::Text(value.to_owned()));
+    content.push(Inline::text_with_provenance(
+        value,
+        Provenance::ParserNormalized,
+    ));
 }
 
 fn strip_cross_node_commands(blocks: &mut [Block]) {
@@ -246,7 +243,7 @@ fn strip_cross_node_commands(blocks: &mut [Block]) {
 
 fn strip_commands_in_inline(value: &mut Inline, state: &mut CommandStripState) {
     match value {
-        Inline::Text(text) => strip_string(text, state),
+        Inline::Text { value, .. } => strip_string(value, state),
         Inline::Ruby { base, .. } => strip_string(base, state),
         Inline::Style { content, .. } => {
             for child in content {
@@ -374,7 +371,10 @@ fn append_source_annotation_supplements(blocks: &mut [Block], body: &str) {
 
 fn source_visible_fallback_blocks(body: &str) -> Vec<Block> {
     let mut blocks = vec![Block::Paragraph {
-        content: vec![Inline::Text(source_visible_text(body))],
+        content: vec![Inline::text_with_provenance(
+            source_visible_text(body),
+            Provenance::RegexFallback,
+        )],
     }];
     append_source_annotation_supplements(&mut blocks, body);
     blocks
@@ -393,10 +393,11 @@ fn append_ruby_supplements(content: &mut Vec<Inline>, body: &str) {
         if existing.iter().any(|existing| existing == reading) {
             continue;
         }
-        content.push(Inline::Ruby {
-            base: String::new(),
-            reading: reading.to_owned(),
-        });
+        content.push(Inline::ruby_with_provenance(
+            "",
+            reading,
+            Provenance::RegexSupplement,
+        ));
     }
 }
 
@@ -414,11 +415,12 @@ fn append_gaiji_supplements(content: &mut Vec<Inline>, body: &str) {
             .or_else(|| capture.get(2))
             .map(|matched| matched.as_str())
             .unwrap_or_default();
-        content.push(Inline::Gaiji {
-            description: description.to_owned(),
-            resolved: String::new(),
-            description_format: None,
-        });
+        content.push(Inline::gaiji_with_provenance(
+            description,
+            "",
+            None,
+            Provenance::RegexSupplement,
+        ));
     }
 }
 
@@ -459,10 +461,7 @@ mod tests {
     #[test]
     fn typed_blocks_serialize_to_schema_shape() {
         let blocks = vec![Block::Paragraph {
-            content: vec![Inline::Ruby {
-                base: "吾輩".to_owned(),
-                reading: "わがはい".to_owned(),
-            }],
+            content: vec![Inline::ruby("吾輩", "わがはい")],
         }];
 
         let json = ab_ir::blocks_to_aat_json(&blocks);
@@ -480,5 +479,19 @@ mod tests {
         assert!(projected.visible_text.contains("吾輩"));
         assert!(visible.contains("「口＋世」、U+546D"));
         assert!(!projected.visible_text.contains("わがはい"));
+        assert!(ab_ir::provenance_counts(&blocks).regex_fallback > 0);
+    }
+
+    #[test]
+    fn source_annotation_supplements_are_marked_as_regex_derived() {
+        let mut blocks = vec![Block::Paragraph { content: vec![] }];
+
+        append_source_annotation_supplements(
+            &mut blocks,
+            "吾輩《わがはい》は※［＃「口＋世」、U+546D］である。",
+        );
+
+        let counts = ab_ir::provenance_counts(&blocks);
+        assert_eq!(counts.regex_supplement, 2);
     }
 }

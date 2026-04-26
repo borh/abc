@@ -47,6 +47,14 @@ pub struct AatStructuralDifference {
     pub b_semantic_hashes: BTreeMap<String, String>,
     pub semantic_hashes_differ: BTreeMap<String, bool>,
     pub normalized_visible_difference_bucket: Option<String>,
+    pub normalized_visible_first_difference: Option<VisibleTextDifference>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct VisibleTextDifference {
+    pub char_index: usize,
+    pub a_snippet: String,
+    pub b_snippet: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -61,6 +69,7 @@ struct AatSummary {
     structure_hash: String,
     visible_hash: String,
     normalized_visible_hash: String,
+    normalized_visible: String,
     block_kinds: BTreeMap<String, usize>,
     inline_kinds: BTreeMap<String, usize>,
     semantic_totals: BTreeMap<String, usize>,
@@ -117,6 +126,10 @@ pub fn compare_aat_dirs_with_limit(
                 } else {
                     None
                 };
+            let normalized_visible_first_difference =
+                normalized_visible_difference_bucket.as_ref().and_then(|_| {
+                    first_visible_difference(&left.normalized_visible, &right.normalized_visible)
+                });
             if difference_limit.is_some_and(|limit| structural_differences.len() >= limit) {
                 continue;
             }
@@ -141,6 +154,7 @@ pub fn compare_aat_dirs_with_limit(
                 b_semantic_hashes: right.semantic_hashes.clone(),
                 semantic_hashes_differ,
                 normalized_visible_difference_bucket,
+                normalized_visible_first_difference,
             });
         }
     }
@@ -226,11 +240,13 @@ fn summarize(root: AatRoot) -> Result<AatSummary> {
         &mut semantic_sequences,
         &mut visible,
     );
+    let normalized_visible = normalize_visible(&visible);
     Ok(AatSummary {
         work_id: root.work_id,
         structure_hash,
         visible_hash: hash_bytes(visible.as_bytes()),
-        normalized_visible_hash: hash_bytes(normalize_visible(&visible).as_bytes()),
+        normalized_visible_hash: hash_bytes(normalized_visible.as_bytes()),
+        normalized_visible,
         block_kinds,
         inline_kinds,
         semantic_totals,
@@ -420,10 +436,7 @@ fn increment(counts: &mut BTreeMap<String, usize>, key: String) {
     *counts.entry(key).or_insert(0) += 1;
 }
 
-fn semantic_hash_differences(
-    left: &AatSummary,
-    right: &AatSummary,
-) -> BTreeMap<String, bool> {
+fn semantic_hash_differences(left: &AatSummary, right: &AatSummary) -> BTreeMap<String, bool> {
     let keys = left
         .semantic_hashes
         .keys()
@@ -448,6 +461,26 @@ fn normalized_visible_difference_bucket(semantic_hashes_differ: &BTreeMap<String
     } else {
         format!("visible_and_{}", differing.join("+"))
     }
+}
+
+fn first_visible_difference(left: &str, right: &str) -> Option<VisibleTextDifference> {
+    let left_chars = left.chars().collect::<Vec<_>>();
+    let right_chars = right.chars().collect::<Vec<_>>();
+    let max_common = left_chars.len().min(right_chars.len());
+    let char_index = (0..max_common)
+        .find(|idx| left_chars[*idx] != right_chars[*idx])
+        .or_else(|| (left_chars.len() != right_chars.len()).then_some(max_common))?;
+    Some(VisibleTextDifference {
+        char_index,
+        a_snippet: snippet(&left_chars, char_index),
+        b_snippet: snippet(&right_chars, char_index),
+    })
+}
+
+fn snippet(chars: &[char], center: usize) -> String {
+    let start = center.saturating_sub(24);
+    let end = chars.len().min(center + 24);
+    chars[start..end].iter().collect()
 }
 
 fn kind(value: &Value) -> Option<&str> {

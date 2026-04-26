@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-26T05:06:32Z",
+  "generated_at": "2026-04-26T05:10:42Z",
   "corpus_hash": "sha256:25f5edcfab0f7b856cb24e5088de6ab68a61359eabfddb4b3add92049b09ce67",
   "aozora2": {
     "name": "aozora2",
@@ -461,7 +461,8 @@
           "gaiji_descriptions": false,
           "ruby_readings": true
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000005_53194",
@@ -516,7 +517,12 @@
           "gaiji_descriptions": false,
           "ruby_readings": true
         },
-        "normalized_visible_difference_bucket": "visible_and_ruby_readings"
+        "normalized_visible_difference_bucket": "visible_and_ruby_readings",
+        "normalized_visible_first_difference": {
+          "char_index": 14683,
+          "a_snippet": "がて重い物思いに沈みながら、そこを離れた。――『｜あのひとにとって、わたしはなんだろう？」とわた",
+          "b_snippet": "がて重い物思いに沈みながら、そこを離れた。――『あのひとにとって、わたしはなんだろう？」とわたし"
+        }
       },
       {
         "work_id": "000005_55215",
@@ -565,7 +571,8 @@
           "gaiji_descriptions": false,
           "ruby_readings": false
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000005_55216",
@@ -614,7 +621,8 @@
           "gaiji_descriptions": false,
           "ruby_readings": false
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000005_55217",
@@ -663,7 +671,8 @@
           "gaiji_descriptions": false,
           "ruby_readings": false
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000006_1868",
@@ -721,7 +730,8 @@
           "gaiji_descriptions": false,
           "ruby_readings": false
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000006_1869",
@@ -779,7 +789,12 @@
           "gaiji_descriptions": false,
           "ruby_readings": true
         },
-        "normalized_visible_difference_bucket": "visible_and_ruby_readings"
+        "normalized_visible_difference_bucket": "visible_and_ruby_readings",
+        "normalized_visible_first_difference": {
+          "char_index": 3795,
+          "a_snippet": "ネ、お下着が格子縞の黄八丈で、お上着はパッとした｜宜引縞の糸織で、お髪は何時ものイボジリ捲きでし",
+          "b_snippet": "ネ、お下着が格子縞の黄八丈で、お上着はパッとした縞の糸織で、お髪は何時ものイボジリ捲きでしたがネ"
+        }
       },
       {
         "work_id": "000006_3310",
@@ -835,7 +850,12 @@
           "gaiji_descriptions": false,
           "ruby_readings": true
         },
-        "normalized_visible_difference_bucket": "visible_and_ruby_readings"
+        "normalized_visible_difference_bucket": "visible_and_ruby_readings",
+        "normalized_visible_first_difference": {
+          "char_index": 9267,
+          "a_snippet": "形も無くなり、其跡が Barber's Shop と白ペンキの奇抜な看板を揚げた理髪店になってい",
+          "b_snippet": "形も無くなり、其跡が Barber's Shop"
+        }
       },
       {
         "work_id": "000006_3311",
@@ -886,7 +906,8 @@
           "gaiji_descriptions": false,
           "ruby_readings": false
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000006_382",
@@ -937,7 +958,8 @@
           "gaiji_descriptions": false,
           "ruby_readings": false
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000006_383",
@@ -995,7 +1017,8 @@
           "gaiji_descriptions": false,
           "ruby_readings": false
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000006_384",
@@ -1053,7 +1076,8 @@
           "gaiji_descriptions": false,
           "ruby_readings": false
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000006_4627",
@@ -1109,7 +1133,8 @@
           "gaiji_descriptions": false,
           "ruby_readings": false
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000006_46659",
@@ -1167,7 +1192,8 @@
           "gaiji_descriptions": false,
           "ruby_readings": true
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000006_47064",
@@ -1212,7 +1238,8 @@
           "gaiji_descriptions": false,
           "ruby_readings": false
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000006_58810",
@@ -1263,7 +1290,8 @@
           "gaiji_descriptions": false,
           "ruby_readings": false
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000006_58819",
@@ -1324,7 +1352,8 @@
           "gaiji_descriptions": false,
           "ruby_readings": true
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000006_901",
@@ -1375,7 +1404,8 @@
           "gaiji_descriptions": false,
           "ruby_readings": false
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000008_1083",
@@ -1433,7 +1463,8 @@
           "gaiji_descriptions": false,
           "ruby_readings": true
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000008_1083",
@@ -1494,7 +1525,8 @@
           "gaiji_descriptions": false,
           "ruby_readings": true
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000008_18327",
@@ -1552,7 +1584,8 @@
           "gaiji_descriptions": false,
           "ruby_readings": false
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000008_2688",
@@ -1603,7 +1636,8 @@
           "gaiji_descriptions": false,
           "ruby_readings": false
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000008_407",
@@ -1654,7 +1688,8 @@
           "gaiji_descriptions": false,
           "ruby_readings": false
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000008_47357",
@@ -1715,7 +1750,8 @@
           "gaiji_descriptions": false,
           "ruby_readings": true
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000008_47361",
@@ -1773,7 +1809,8 @@
           "gaiji_descriptions": false,
           "ruby_readings": false
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000008_47374",
@@ -1831,7 +1868,8 @@
           "gaiji_descriptions": false,
           "ruby_readings": true
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000008_47382",
@@ -1882,7 +1920,8 @@
           "gaiji_descriptions": false,
           "ruby_readings": false
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000008_47383",
@@ -1940,7 +1979,8 @@
           "gaiji_descriptions": false,
           "ruby_readings": false
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000008_47384",
@@ -1991,7 +2031,8 @@
           "gaiji_descriptions": false,
           "ruby_readings": false
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000008_47386",
@@ -2047,7 +2088,8 @@
           "gaiji_descriptions": false,
           "ruby_readings": false
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000008_58922",
@@ -2094,7 +2136,8 @@
           "gaiji_descriptions": false,
           "ruby_readings": false
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000008_697",
@@ -2145,7 +2188,8 @@
           "gaiji_descriptions": false,
           "ruby_readings": false
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000008_7",
@@ -2196,7 +2240,8 @@
           "gaiji_descriptions": false,
           "ruby_readings": false
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000009_226",
@@ -2253,7 +2298,8 @@
           "gaiji_descriptions": true,
           "ruby_readings": false
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000009_42929",
@@ -2305,7 +2351,8 @@
           "gaiji_descriptions": false,
           "ruby_readings": true
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000009_43028",
@@ -2363,7 +2410,12 @@
           "gaiji_descriptions": false,
           "ruby_readings": true
         },
-        "normalized_visible_difference_bucket": "visible_and_ruby_readings"
+        "normalized_visible_difference_bucket": "visible_and_ruby_readings",
+        "normalized_visible_first_difference": {
+          "char_index": 6712,
+          "a_snippet": "ね。――ところで、その離れ家ですが、八ヶ月もの間｜空家になっていたんです。空家にしておくには本当",
+          "b_snippet": "ね。――ところで、その離れ家ですが、八ヶ月もの間 すると先週の月曜日の夕方のことでしたが、私が例"
+        }
       },
       {
         "work_id": "000009_43056",
@@ -2418,7 +2470,8 @@
           "gaiji_descriptions": false,
           "ruby_readings": true
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000009_43471",
@@ -2470,7 +2523,8 @@
           "gaiji_descriptions": false,
           "ruby_readings": true
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000009_43497",
@@ -2522,7 +2576,8 @@
           "gaiji_descriptions": false,
           "ruby_readings": true
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000009_43498",
@@ -2574,7 +2629,8 @@
           "gaiji_descriptions": false,
           "ruby_readings": true
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000009_43522",
@@ -2630,7 +2686,12 @@
           "gaiji_descriptions": false,
           "ruby_readings": true
         },
-        "normalized_visible_difference_bucket": "visible_and_ruby_readings"
+        "normalized_visible_difference_bucket": "visible_and_ruby_readings",
+        "normalized_visible_first_difference": {
+          "char_index": 10018,
+          "a_snippet": " 僕は一人の腹心の者をこしらえた、――それは弟のミクロフトであった。僕は君には大に陳謝まらなけれ",
+          "b_snippet": " 僕は一人の腹心の者をこしらえた、――それは弟の、有名な探険記を読んだかもしれないが、しかしおそ"
+        }
       },
       {
         "work_id": "000009_43523",
@@ -2682,7 +2743,8 @@
           "gaiji_descriptions": false,
           "ruby_readings": true
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000009_43524",
@@ -2733,7 +2795,8 @@
           "gaiji_descriptions": false,
           "ruby_readings": false
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000009_45340",
@@ -2791,7 +2854,12 @@
           "gaiji_descriptions": false,
           "ruby_readings": true
         },
-        "normalized_visible_difference_bucket": "visible_and_ruby_readings"
+        "normalized_visible_difference_bucket": "visible_and_ruby_readings",
+        "normalized_visible_first_difference": {
+          "char_index": 5826,
+          "a_snippet": "あった。その後二週間ばかりの間、彼はそのことを、《おくび》にも出さなかったが、ふとある日の午後、",
+          "b_snippet": "あった。その後二週間ばかりの間、彼はそのことを、にも出さなかったが、ふとある日の午後、私が外出し"
+        }
       },
       {
         "work_id": "000009_50711",
@@ -2845,7 +2913,8 @@
           "gaiji_descriptions": true,
           "ruby_readings": false
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000009_50712",
@@ -2899,7 +2968,8 @@
           "gaiji_descriptions": true,
           "ruby_readings": false
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000009_50713",
@@ -2953,7 +3023,8 @@
           "gaiji_descriptions": true,
           "ruby_readings": false
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000009_50714",
@@ -3007,7 +3078,8 @@
           "gaiji_descriptions": true,
           "ruby_readings": false
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000009_50715",
@@ -3062,7 +3134,8 @@
           "gaiji_descriptions": true,
           "ruby_readings": true
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       },
       {
         "work_id": "000009_50716",
@@ -3117,7 +3190,8 @@
           "gaiji_descriptions": true,
           "ruby_readings": true
         },
-        "normalized_visible_difference_bucket": null
+        "normalized_visible_difference_bucket": null,
+        "normalized_visible_first_difference": null
       }
     ]
   }

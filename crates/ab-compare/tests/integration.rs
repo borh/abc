@@ -375,8 +375,16 @@ fn buckets_normalized_visible_differences_by_semantic_hash_changes() {
     std::fs::create_dir_all(&a).unwrap();
     std::fs::create_dir_all(&b).unwrap();
 
-    std::fs::write(a.join("visible-only.json"), aat_for_work("visible-only", "左")).unwrap();
-    std::fs::write(b.join("visible-only.json"), aat_for_work("visible-only", "右")).unwrap();
+    std::fs::write(
+        a.join("visible-only.json"),
+        aat_for_work("visible-only", "左"),
+    )
+    .unwrap();
+    std::fs::write(
+        b.join("visible-only.json"),
+        aat_for_work("visible-only", "右"),
+    )
+    .unwrap();
     std::fs::write(
         a.join("visible-ruby.json"),
         r#"{
@@ -409,11 +417,26 @@ fn buckets_normalized_visible_differences_by_semantic_hash_changes() {
     let summary = ab_compare::aat_diff::compare_aat_dirs(&a, &b).unwrap();
 
     assert_eq!(summary.normalized_visible_text_difference_count, 2);
-    assert_eq!(summary.normalized_visible_difference_buckets["visible_only"], 1);
+    assert_eq!(
+        summary.normalized_visible_difference_buckets["visible_only"],
+        1
+    );
     assert_eq!(
         summary.normalized_visible_difference_buckets["visible_and_ruby_readings"],
         1
     );
+    let visible_only = summary
+        .structural_differences
+        .iter()
+        .find(|difference| difference.work_id == "visible-only")
+        .unwrap();
+    let first_difference = visible_only
+        .normalized_visible_first_difference
+        .as_ref()
+        .unwrap();
+    assert_eq!(first_difference.char_index, 0);
+    assert_eq!(first_difference.a_snippet, "左");
+    assert_eq!(first_difference.b_snippet, "右");
 }
 
 #[test]

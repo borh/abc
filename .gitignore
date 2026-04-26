@@ -26,18 +26,10 @@ pom.xml.asc
 .clj-kondo/
 
 # Local/generated corpus and conversion artifacts
-/cache-old/
-/dist-new/
-/gen/
-/projectFilesBackup/
-/aozora_lod_data/
-/aozora_lod_data.zip
-/canopy/
-/extern/
-/tmp.*
 /data/dev/
 /data/test/
-/old-build-boot
+
+/paper/
 
 # Generated parser outputs
 /resources/*.interp

@@ -19,6 +19,8 @@ pub struct AatCompareSummary {
     pub visible_text_difference_count: usize,
     pub normalized_visible_text_difference_count: usize,
     pub same_visible_structural_difference_count: usize,
+    pub semantic_hash_difference_counts: BTreeMap<String, usize>,
+    pub normalized_visible_difference_buckets: BTreeMap<String, usize>,
     pub a_semantic_totals: BTreeMap<String, usize>,
     pub b_semantic_totals: BTreeMap<String, usize>,
     pub structural_differences: Vec<AatStructuralDifference>,
@@ -43,6 +45,8 @@ pub struct AatStructuralDifference {
     pub b_semantic_counts: BTreeMap<String, usize>,
     pub a_semantic_hashes: BTreeMap<String, String>,
     pub b_semantic_hashes: BTreeMap<String, String>,
+    pub semantic_hashes_differ: BTreeMap<String, bool>,
+    pub normalized_visible_difference_bucket: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -85,10 +89,18 @@ pub fn compare_aat_dirs_with_limit(
     let mut visible_text_difference_count = 0usize;
     let mut normalized_visible_text_difference_count = 0usize;
     let mut same_visible_structural_difference_count = 0usize;
+    let mut semantic_hash_difference_counts = BTreeMap::new();
+    let mut normalized_visible_difference_buckets = BTreeMap::new();
 
     for key in &common {
         let left = &a[key];
         let right = &b[key];
+        let semantic_hashes_differ = semantic_hash_differences(left, right);
+        for (name, differs) in &semantic_hashes_differ {
+            if *differs {
+                increment(&mut semantic_hash_difference_counts, name.clone());
+            }
+        }
         if left.structure_hash != right.structure_hash || left.visible_hash != right.visible_hash {
             structural_difference_count += 1;
             if left.visible_hash != right.visible_hash {
@@ -96,9 +108,15 @@ pub fn compare_aat_dirs_with_limit(
             } else {
                 same_visible_structural_difference_count += 1;
             }
-            if left.normalized_visible_hash != right.normalized_visible_hash {
-                normalized_visible_text_difference_count += 1;
-            }
+            let normalized_visible_difference_bucket =
+                if left.normalized_visible_hash != right.normalized_visible_hash {
+                    normalized_visible_text_difference_count += 1;
+                    let bucket = normalized_visible_difference_bucket(&semantic_hashes_differ);
+                    increment(&mut normalized_visible_difference_buckets, bucket.clone());
+                    Some(bucket)
+                } else {
+                    None
+                };
             if difference_limit.is_some_and(|limit| structural_differences.len() >= limit) {
                 continue;
             }
@@ -121,6 +139,8 @@ pub fn compare_aat_dirs_with_limit(
                 b_semantic_counts: right.semantic_counts.clone(),
                 a_semantic_hashes: left.semantic_hashes.clone(),
                 b_semantic_hashes: right.semantic_hashes.clone(),
+                semantic_hashes_differ,
+                normalized_visible_difference_bucket,
             });
         }
     }
@@ -133,6 +153,8 @@ pub fn compare_aat_dirs_with_limit(
         visible_text_difference_count,
         normalized_visible_text_difference_count,
         same_visible_structural_difference_count,
+        semantic_hash_difference_counts,
+        normalized_visible_difference_buckets,
         a_semantic_totals,
         b_semantic_totals,
         structural_differences,
@@ -396,6 +418,36 @@ fn count_both(
 
 fn increment(counts: &mut BTreeMap<String, usize>, key: String) {
     *counts.entry(key).or_insert(0) += 1;
+}
+
+fn semantic_hash_differences(
+    left: &AatSummary,
+    right: &AatSummary,
+) -> BTreeMap<String, bool> {
+    let keys = left
+        .semantic_hashes
+        .keys()
+        .chain(right.semantic_hashes.keys())
+        .cloned()
+        .collect::<BTreeSet<_>>();
+    keys.into_iter()
+        .map(|key| {
+            let differs = left.semantic_hashes.get(&key) != right.semantic_hashes.get(&key);
+            (key, differs)
+        })
+        .collect()
+}
+
+fn normalized_visible_difference_bucket(semantic_hashes_differ: &BTreeMap<String, bool>) -> String {
+    let differing = semantic_hashes_differ
+        .iter()
+        .filter_map(|(name, differs)| differs.then_some(name.as_str()))
+        .collect::<Vec<_>>();
+    if differing.is_empty() {
+        "visible_only".to_owned()
+    } else {
+        format!("visible_and_{}", differing.join("+"))
+    }
 }
 
 fn kind(value: &Value) -> Option<&str> {

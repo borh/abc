@@ -239,6 +239,8 @@ fn records_ruby_gaiji_and_provenance_semantics() {
         summary.structural_differences[0].a_semantic_hashes["ruby_readings"],
         summary.structural_differences[0].b_semantic_hashes["ruby_readings"]
     );
+    assert_eq!(summary.semantic_hash_difference_counts["ruby_readings"], 1);
+    assert!(summary.structural_differences[0].semantic_hashes_differ["ruby_readings"]);
 }
 
 #[test]
@@ -363,6 +365,55 @@ fn normalized_visible_text_ignores_whitespace_formatting() {
     assert_eq!(summary.visible_text_difference_count, 1);
     assert_eq!(summary.normalized_visible_text_difference_count, 0);
     assert!(!summary.structural_differences[0].normalized_visible_text_differs);
+}
+
+#[test]
+fn buckets_normalized_visible_differences_by_semantic_hash_changes() {
+    let temp = tempfile::tempdir().unwrap();
+    let a = temp.path().join("a");
+    let b = temp.path().join("b");
+    std::fs::create_dir_all(&a).unwrap();
+    std::fs::create_dir_all(&b).unwrap();
+
+    std::fs::write(a.join("visible-only.json"), aat_for_work("visible-only", "左")).unwrap();
+    std::fs::write(b.join("visible-only.json"), aat_for_work("visible-only", "右")).unwrap();
+    std::fs::write(
+        a.join("visible-ruby.json"),
+        r#"{
+          "work_id": "visible-ruby",
+          "blocks": [
+            {"kind": "paragraph", "content": [
+              {"kind": "text", "value": "左"},
+              {"kind": "ruby", "base": "吾輩", "reading": "わがはい"}
+            ]}
+          ],
+          "meta": {"adapter": "a"}
+        }"#,
+    )
+    .unwrap();
+    std::fs::write(
+        b.join("visible-ruby.json"),
+        r#"{
+          "work_id": "visible-ruby",
+          "blocks": [
+            {"kind": "paragraph", "content": [
+              {"kind": "text", "value": "右"},
+              {"kind": "ruby", "base": "吾輩", "reading": "われ"}
+            ]}
+          ],
+          "meta": {"adapter": "b"}
+        }"#,
+    )
+    .unwrap();
+
+    let summary = ab_compare::aat_diff::compare_aat_dirs(&a, &b).unwrap();
+
+    assert_eq!(summary.normalized_visible_text_difference_count, 2);
+    assert_eq!(summary.normalized_visible_difference_buckets["visible_only"], 1);
+    assert_eq!(
+        summary.normalized_visible_difference_buckets["visible_and_ruby_readings"],
+        1
+    );
 }
 
 #[test]

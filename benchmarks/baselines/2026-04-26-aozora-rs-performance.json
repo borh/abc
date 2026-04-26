@@ -1,15 +1,15 @@
 {
-  "generated_at": "2026-04-26T05:01:24Z",
+  "generated_at": "2026-04-26T05:06:32Z",
   "corpus_hash": "sha256:25f5edcfab0f7b856cb24e5088de6ab68a61359eabfddb4b3add92049b09ce67",
   "aozora2": {
     "name": "aozora2",
-    "seconds": 17.081386,
+    "seconds": 16.974889,
     "reports": 17894,
     "failures": 0
   },
   "aozora_rs": {
     "name": "aozora-rs",
-    "seconds": 26.675311,
+    "seconds": 26.397179,
     "reports": 17894,
     "failures": 0
   },
@@ -26,14 +26,14 @@
     "works": 17894,
     "fallbacks": 348,
     "stage_totals_ms": {
-      "aat_build": 45209.63718000002,
-      "body_selection": 534.9382920000043,
-      "decode": 2298.894269999991,
-      "fallback_build": 2762.2487669999978,
-      "projection_check": 12805.952738999978,
-      "retokenize": 2466.1052180000206,
-      "scopenize": 1430.3341509999932,
-      "tokenize": 8804.75846100003
+      "aat_build": 45727.626922999545,
+      "body_selection": 527.6144659999997,
+      "decode": 2300.9811190000046,
+      "fallback_build": 2701.061087,
+      "projection_check": 12756.342648000036,
+      "retokenize": 2491.274060000012,
+      "scopenize": 1444.5125239999982,
+      "tokenize": 8879.494707999982
     },
     "node_totals": {
       "parser": 2488252,
@@ -44,322 +44,322 @@
     "slowest_works": [
       {
         "work_id": "001529_50685",
-        "total_ms": 575.3493520000001,
+        "total_ms": 608.739634,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 103.700546,
-          "body_selection": 1.468078,
-          "decode": 7.033111,
-          "fallback_build": 118.115325,
-          "projection_check": 84.2935,
-          "retokenize": 41.748628,
-          "scopenize": 19.559165,
-          "tokenize": 199.430999
-        }
-      },
-      {
-        "work_id": "001562_56145",
-        "total_ms": 244.82816800000003,
-        "dominant_stage": "aat_build",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 92.709039,
-          "body_selection": 1.634396,
-          "decode": 5.464044,
-          "fallback_build": 39.684695,
-          "projection_check": 51.568426,
-          "retokenize": 24.698702,
-          "scopenize": 11.118987,
-          "tokenize": 17.949879
-        }
-      },
-      {
-        "work_id": "000311_2012",
-        "total_ms": 238.316022,
-        "dominant_stage": "tokenize",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 12.726383,
-          "body_selection": 1.887764,
-          "decode": 7.339998,
-          "fallback_build": 22.993987,
-          "projection_check": 26.652855,
-          "retokenize": 3.442481,
-          "scopenize": 1.707825,
-          "tokenize": 161.564729
+          "aat_build": 119.133391,
+          "body_selection": 2.215013,
+          "decode": 9.011369,
+          "fallback_build": 117.198586,
+          "projection_check": 96.049572,
+          "retokenize": 41.364897,
+          "scopenize": 18.375507,
+          "tokenize": 205.391299
         }
       },
       {
         "work_id": "001518_51731",
-        "total_ms": 235.46724600000002,
+        "total_ms": 256.315083,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 13.04967,
-          "body_selection": 0.241468,
-          "decode": 1.1255810000000002,
-          "fallback_build": 7.222439,
-          "projection_check": 7.026831,
-          "retokenize": 3.268882,
-          "scopenize": 1.803395,
-          "tokenize": 201.72898
-        }
-      },
-      {
-        "work_id": "000077_1323",
-        "total_ms": 230.936985,
-        "dominant_stage": "tokenize",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 46.600918,
-          "body_selection": 0.639834,
-          "decode": 2.238242,
-          "fallback_build": 30.064657,
-          "projection_check": 32.679504,
-          "retokenize": 23.536692,
-          "scopenize": 8.084032,
-          "tokenize": 87.093106
+          "aat_build": 15.37487,
+          "body_selection": 0.236768,
+          "decode": 1.23291,
+          "fallback_build": 7.516672000000001,
+          "projection_check": 7.398052,
+          "retokenize": 3.447993,
+          "scopenize": 1.866746,
+          "tokenize": 219.241072
         }
       },
       {
         "work_id": "000118_1745",
-        "total_ms": 228.913791,
-        "dominant_stage": "fallback_build",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 53.107582,
-          "body_selection": 0.720664,
-          "decode": 2.913446,
-          "fallback_build": 56.454214,
-          "projection_check": 34.667428,
-          "retokenize": 28.51191,
-          "scopenize": 12.192147,
-          "tokenize": 40.3464
-        }
-      },
-      {
-        "work_id": "001562_56146",
-        "total_ms": 228.899691,
+        "total_ms": 248.742579,
         "dominant_stage": "aat_build",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 52.890044,
-          "body_selection": 1.969883,
-          "decode": 7.042460999999999,
-          "fallback_build": 35.781019,
-          "projection_check": 51.373827,
-          "retokenize": 21.496199,
-          "scopenize": 8.972924,
-          "tokenize": 49.373334
+          "aat_build": 63.386605,
+          "body_selection": 1.044882,
+          "decode": 3.609452,
+          "fallback_build": 49.196926000000005,
+          "projection_check": 40.667823,
+          "retokenize": 29.4899,
+          "scopenize": 13.639804,
+          "tokenize": 47.707187
         }
       },
       {
         "work_id": "000810_52355",
-        "total_ms": 224.75349599999998,
+        "total_ms": 244.19559399999997,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 10.226594,
-          "body_selection": 0.432636,
-          "decode": 1.693826,
-          "fallback_build": 13.06172,
-          "projection_check": 13.490016,
-          "retokenize": 1.453548,
-          "scopenize": 0.624475,
-          "tokenize": 183.770681
+          "aat_build": 17.019706999999997,
+          "body_selection": 0.267758,
+          "decode": 1.27999,
+          "fallback_build": 12.946589,
+          "projection_check": 13.350466,
+          "retokenize": 1.968174,
+          "scopenize": 0.825814,
+          "tokenize": 196.537096
         }
       },
       {
-        "work_id": "000148_56923",
-        "total_ms": 174.162063,
+        "work_id": "000311_2012",
+        "total_ms": 233.79975599999997,
+        "dominant_stage": "tokenize",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 13.685583,
+          "body_selection": 1.193241,
+          "decode": 5.784414,
+          "fallback_build": 23.363618,
+          "projection_check": 25.786579,
+          "retokenize": 3.235215,
+          "scopenize": 1.648097,
+          "tokenize": 159.103009
+        }
+      },
+      {
+        "work_id": "000077_1323",
+        "total_ms": 213.763543,
+        "dominant_stage": "tokenize",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 41.365527,
+          "body_selection": 0.657385,
+          "decode": 2.329442,
+          "fallback_build": 39.897949,
+          "projection_check": 22.194447,
+          "retokenize": 16.61404,
+          "scopenize": 9.08106,
+          "tokenize": 81.623693
+        }
+      },
+      {
+        "work_id": "001562_56146",
+        "total_ms": 193.40201100000002,
         "dominant_stage": "aat_build",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 43.325905,
-          "body_selection": 0.711584,
-          "decode": 2.36265,
-          "fallback_build": 42.079866,
-          "projection_check": 30.994009,
-          "retokenize": 20.064621,
-          "scopenize": 9.46021,
-          "tokenize": 25.163218
+          "aat_build": 56.580437999999994,
+          "body_selection": 1.135272,
+          "decode": 5.318888,
+          "fallback_build": 32.662684999999996,
+          "projection_check": 36.085809000000005,
+          "retokenize": 15.219742,
+          "scopenize": 7.1192139999999995,
+          "tokenize": 39.279963
+        }
+      },
+      {
+        "work_id": "001562_56145",
+        "total_ms": 192.499678,
+        "dominant_stage": "aat_build",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 62.748990000000006,
+          "body_selection": 1.364029,
+          "decode": 5.528167,
+          "fallback_build": 36.855362,
+          "projection_check": 39.71341,
+          "retokenize": 22.472705,
+          "scopenize": 7.967358000000001,
+          "tokenize": 15.849657
         }
       },
       {
         "work_id": "001034_4823",
-        "total_ms": 168.507811,
+        "total_ms": 178.19464200000002,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 40.099783,
-          "body_selection": 0.576575,
-          "decode": 1.961773,
-          "fallback_build": 23.594491,
-          "projection_check": 18.389975,
-          "retokenize": 11.427684,
-          "scopenize": 4.9501479999999995,
-          "tokenize": 67.507382
+          "aat_build": 36.626005000000006,
+          "body_selection": 0.34194800000000003,
+          "decode": 2.225942,
+          "fallback_build": 23.419828,
+          "projection_check": 21.432202,
+          "retokenize": 17.730172,
+          "scopenize": 6.597329,
+          "tokenize": 69.821216
         }
       },
       {
-        "work_id": "001185_45210",
-        "total_ms": 148.36096,
-        "dominant_stage": "tokenize",
+        "work_id": "000148_56923",
+        "total_ms": 154.64823299999998,
+        "dominant_stage": "aat_build",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 7.352638,
-          "body_selection": 0.630404,
-          "decode": 1.804405,
-          "fallback_build": 7.325369,
-          "projection_check": 8.938844,
-          "retokenize": 1.7632450000000002,
-          "scopenize": 0.917463,
-          "tokenize": 119.628592
+          "aat_build": 34.924628,
+          "body_selection": 0.6023149999999999,
+          "decode": 2.165473,
+          "fallback_build": 34.264432,
+          "projection_check": 26.063007,
+          "retokenize": 22.138427,
+          "scopenize": 10.26225,
+          "tokenize": 24.227701
         }
       },
       {
         "work_id": "000129_2084",
-        "total_ms": 142.712928,
+        "total_ms": 144.749112,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 32.742695000000005,
-          "body_selection": 0.762103,
-          "decode": 4.635871,
-          "fallback_build": 25.317357,
-          "projection_check": 30.098086,
-          "retokenize": 5.282275,
-          "scopenize": 3.447931,
-          "tokenize": 40.42661
+          "aat_build": 28.28489,
+          "body_selection": 0.744754,
+          "decode": 3.75269,
+          "fallback_build": 22.827832,
+          "projection_check": 31.683803000000005,
+          "retokenize": 4.825283,
+          "scopenize": 3.159795,
+          "tokenize": 49.470065
+        }
+      },
+      {
+        "work_id": "001185_45210",
+        "total_ms": 144.605544,
+        "dominant_stage": "tokenize",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 7.132275000000001,
+          "body_selection": 0.405856,
+          "decode": 1.580758,
+          "fallback_build": 5.965964,
+          "projection_check": 8.016207,
+          "retokenize": 1.773426,
+          "scopenize": 0.915283,
+          "tokenize": 118.815775
         }
       },
       {
         "work_id": "000255_45395",
-        "total_ms": 138.496223,
+        "total_ms": 130.66432,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 9.312741,
-          "body_selection": 0.6826939999999999,
-          "decode": 2.42033,
-          "fallback_build": 10.226944,
-          "projection_check": 11.446824,
-          "retokenize": 2.33369,
-          "scopenize": 1.071061,
-          "tokenize": 101.001939
+          "aat_build": 7.434362,
+          "body_selection": 0.374817,
+          "decode": 1.733387,
+          "fallback_build": 8.497963,
+          "projection_check": 9.121079,
+          "retokenize": 1.867105,
+          "scopenize": 0.894973,
+          "tokenize": 100.740634
         }
       },
       {
-        "work_id": "000148_1746",
-        "total_ms": 136.44582,
+        "work_id": "000989_350",
+        "total_ms": 122.096788,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 24.957569999999997,
-          "body_selection": 0.561455,
-          "decode": 2.063233,
-          "fallback_build": 18.129207,
-          "projection_check": 13.260058,
-          "retokenize": 8.767256,
-          "scopenize": 3.971117,
-          "tokenize": 64.735924
-        }
-      },
-      {
-        "work_id": "000148_761",
-        "total_ms": 127.612545,
-        "dominant_stage": "tokenize",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 23.362263,
-          "body_selection": 0.5554549999999999,
-          "decode": 2.035693,
-          "fallback_build": 14.161471,
-          "projection_check": 15.290271,
-          "retokenize": 3.679359,
-          "scopenize": 1.770845,
-          "tokenize": 66.757188
-        }
-      },
-      {
-        "work_id": "001562_33224",
-        "total_ms": 127.22980799999998,
-        "dominant_stage": "aat_build",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 38.645264999999995,
-          "body_selection": 1.483627,
-          "decode": 5.370425,
-          "fallback_build": 29.575441,
-          "projection_check": 27.453498,
-          "retokenize": 11.027717,
-          "scopenize": 4.844479,
-          "tokenize": 8.829356
+          "aat_build": 26.235936,
+          "body_selection": 0.5895549999999999,
+          "decode": 2.3023420000000003,
+          "fallback_build": 15.111522,
+          "projection_check": 11.661879,
+          "retokenize": 7.216843,
+          "scopenize": 2.853788,
+          "tokenize": 56.124923
         }
       },
       {
         "work_id": "000296_1864",
-        "total_ms": 125.28064400000002,
+        "total_ms": 121.27401400000002,
         "dominant_stage": "aat_build",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 35.623830000000005,
-          "body_selection": 0.602395,
-          "decode": 2.446429,
-          "fallback_build": 23.74217,
-          "projection_check": 21.019413,
-          "retokenize": 6.504405,
-          "scopenize": 3.302362,
-          "tokenize": 32.03964
+          "aat_build": 34.279873,
+          "body_selection": 0.346007,
+          "decode": 2.385112,
+          "fallback_build": 20.439281,
+          "projection_check": 18.776893,
+          "retokenize": 8.511243,
+          "scopenize": 3.719301,
+          "tokenize": 32.816303999999995
+        }
+      },
+      {
+        "work_id": "000148_761",
+        "total_ms": 120.905827,
+        "dominant_stage": "tokenize",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 22.612854,
+          "body_selection": 0.532086,
+          "decode": 1.978794,
+          "fallback_build": 10.740057,
+          "projection_check": 10.22056,
+          "retokenize": 4.171017,
+          "scopenize": 2.507651,
+          "tokenize": 68.142808
+        }
+      },
+      {
+        "work_id": "000148_789",
+        "total_ms": 118.08492,
+        "dominant_stage": "tokenize",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 26.661652,
+          "body_selection": 0.806414,
+          "decode": 2.7495990000000003,
+          "fallback_build": 19.547967999999997,
+          "projection_check": 22.757752999999997,
+          "retokenize": 4.655583,
+          "scopenize": 2.060754,
+          "tokenize": 38.845197
+        }
+      },
+      {
+        "work_id": "001341_51302",
+        "total_ms": 115.42123,
+        "dominant_stage": "tokenize",
+        "fallback_used": false,
+        "stages_ms": {
+          "aat_build": 3.310704,
+          "body_selection": 0.0463,
+          "decode": 0.225458,
+          "fallback_build": 0.0,
+          "projection_check": 1.349609,
+          "retokenize": 0.144659,
+          "scopenize": 0.32318800000000003,
+          "tokenize": 110.021312
+        }
+      },
+      {
+        "work_id": "000290_24376",
+        "total_ms": 112.09026500000002,
+        "dominant_stage": "tokenize",
+        "fallback_used": true,
+        "stages_ms": {
+          "aat_build": 23.969023,
+          "body_selection": 0.865363,
+          "decode": 3.059196,
+          "fallback_build": 15.977736,
+          "projection_check": 19.14194,
+          "retokenize": 4.490485,
+          "scopenize": 1.826816,
+          "tokenize": 42.759706
         }
       },
       {
         "work_id": "000091_522",
-        "total_ms": 123.017563,
-        "dominant_stage": "aat_build",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 29.994047,
-          "body_selection": 0.4892959999999999,
-          "decode": 3.065744,
-          "fallback_build": 26.001161,
-          "projection_check": 24.540384,
-          "retokenize": 8.442478,
-          "scopenize": 3.940727,
-          "tokenize": 26.543726
-        }
-      },
-      {
-        "work_id": "000148_58842",
-        "total_ms": 117.43207000000001,
+        "total_ms": 110.141522,
         "dominant_stage": "tokenize",
         "fallback_used": true,
         "stages_ms": {
-          "aat_build": 16.805808,
-          "body_selection": 0.454346,
-          "decode": 1.995093,
-          "fallback_build": 13.242568,
-          "projection_check": 11.740741,
-          "retokenize": 7.021761,
-          "scopenize": 3.075434,
-          "tokenize": 63.096319
-        }
-      },
-      {
-        "work_id": "000148_782",
-        "total_ms": 115.37208799999999,
-        "dominant_stage": "tokenize",
-        "fallback_used": true,
-        "stages_ms": {
-          "aat_build": 26.930623,
-          "body_selection": 4.415633000000001,
-          "decode": 2.955845,
-          "fallback_build": 17.856609,
-          "projection_check": 21.062193,
-          "retokenize": 5.666582,
-          "scopenize": 2.842886,
-          "tokenize": 33.641717
+          "aat_build": 25.066595,
+          "body_selection": 0.740534,
+          "decode": 2.764438,
+          "fallback_build": 20.389851,
+          "projection_check": 18.03552,
+          "retokenize": 8.656341999999999,
+          "scopenize": 4.497084999999999,
+          "tokenize": 29.991157
         }
       }
     ]
@@ -372,6 +372,16 @@
     "visible_text_difference_count": 17534,
     "normalized_visible_text_difference_count": 2808,
     "same_visible_structural_difference_count": 360,
+    "semantic_hash_difference_counts": {
+      "gaiji_descriptions": 367,
+      "ruby_readings": 4622
+    },
+    "normalized_visible_difference_buckets": {
+      "visible_and_gaiji_descriptions": 36,
+      "visible_and_gaiji_descriptions+ruby_readings": 118,
+      "visible_and_ruby_readings": 1221,
+      "visible_only": 1433
+    },
     "a_semantic_totals": {
       "block:paragraph": 17894,
       "gaiji_unresolved": 55809,
@@ -446,7 +456,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:7d742dd3a6bf9cae9e26086aafc9eaace0aee370f33df8084cfdfd1281dee79f",
           "ruby_readings": "sha256:abdbd5d8692c84a8c5825df60c756e8e99189b7cc5740488fef920e981f70aa8"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": true
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000005_53194",
@@ -496,7 +511,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
           "ruby_readings": "sha256:7d420b0e7d175a7a7626bd5ca6c4e60ec34431043797cb89d0926f74417bb43a"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": true
+        },
+        "normalized_visible_difference_bucket": "visible_and_ruby_readings"
       },
       {
         "work_id": "000005_55215",
@@ -540,7 +560,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
           "ruby_readings": "sha256:d5933e7db03c6714b45bf7c014098b299ccdc981f1d4a8fda4fa73f4ee5bc307"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": false
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000005_55216",
@@ -584,7 +609,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
           "ruby_readings": "sha256:1f4a5f2140b85377c936734dfdd72f3a6a40fb3a024b27155afa21c5779df51d"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": false
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000005_55217",
@@ -628,7 +658,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
           "ruby_readings": "sha256:6ed900dcc945b17c3d47f50128bcce58fcb4f100b2103e284b01c70291f3180c"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": false
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000006_1868",
@@ -681,7 +716,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:276f78a15ca57c8740ff5677caaa6639ce61c6ef669fbd138e5b0af005003ee3",
           "ruby_readings": "sha256:31897e66e2a56bf85128abc4149e785bbb0493152a23542c7e8ee72417650438"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": false
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000006_1869",
@@ -734,7 +774,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:ec29effe7c3c37c60152af9bf2283468f0d5c38565fe6dc258419380dfb5e90e",
           "ruby_readings": "sha256:7d03bb196ea17c94275bb0b8cc5179971b6fdbecd4ed92222c9e20e853df98df"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": true
+        },
+        "normalized_visible_difference_bucket": "visible_and_ruby_readings"
       },
       {
         "work_id": "000006_3310",
@@ -785,7 +830,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:241aac2ec0892bca679325494b285c396591daca065dd0f36a3a2ba382ebae75",
           "ruby_readings": "sha256:7b65f4d50b1b73baba561bb2200bdd486628de70854b90b3604ba070b9ff8f7c"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": true
+        },
+        "normalized_visible_difference_bucket": "visible_and_ruby_readings"
       },
       {
         "work_id": "000006_3311",
@@ -831,7 +881,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
           "ruby_readings": "sha256:ae8a0f41f05b6b9a7ab5c983877d4750c6e884d82116b0980bcb832ae8f9020e"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": false
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000006_382",
@@ -877,7 +932,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
           "ruby_readings": "sha256:745c4eca7dd486586c5bd666bf0f560ccb9720ea82fb339f34f86d81c7ff19ee"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": false
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000006_383",
@@ -930,7 +990,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:f96147ffbd68b82a456bf8eb5741fc2579e37ced221c901193dd50662941d96a",
           "ruby_readings": "sha256:b1a18d9c177fcf069504405a0f06a0f252eadcaddbcd6b0d1f40d6cce362920d"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": false
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000006_384",
@@ -983,7 +1048,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:8a700c92b9b79364d8ad4a9f3779fe6b8fe8e85c19e0c6dc2981f46aeaff5749",
           "ruby_readings": "sha256:3fb997dca12a5857a7fecfabcfb90147c983471fc270226f1710e892f47b3d8c"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": false
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000006_4627",
@@ -1034,7 +1104,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:5e54b76c7c61358d09c3004ceace729736ad3d79b017c3541de6f6a4fd2efb23",
           "ruby_readings": "sha256:0551334214e02d491e3f41037c9c71b0b7ed217bc6577992de022a075e3a98c9"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": false
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000006_46659",
@@ -1087,7 +1162,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:33e33ce0c5dd84fe520273d99fa38a3c7f3c5359a927602826a49bc0f5b4fd68",
           "ruby_readings": "sha256:48edd9eb55c32bbc359caa833783b3db3c016bdfbf17950fdd91d63011699a8f"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": true
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000006_47064",
@@ -1127,7 +1207,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
           "ruby_readings": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": false
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000006_58810",
@@ -1173,7 +1258,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
           "ruby_readings": "sha256:77ea63ace99b9afdd8695d3628b26f98e237a8fb793b2f810f5c173be91f75eb"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": false
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000006_58819",
@@ -1229,7 +1319,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:e254309349e65a57dae04b8582f0b3a9651b957f5e27938f2b6ce13474e75fca",
           "ruby_readings": "sha256:3af7c6e1989018971f948c8fc066e8319997260488c2a0bb00b6baeedc399b1a"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": true
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000006_901",
@@ -1275,7 +1370,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
           "ruby_readings": "sha256:25c883cb111baca7f655719461fe9efeebf15e85ae80b0f62b42c5192a249dc0"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": false
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000008_1083",
@@ -1328,7 +1428,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:99855ddfa66d5a04ac8da6d485ebc6f00997f4a173139f60a0182b6f7b486700",
           "ruby_readings": "sha256:b82b4dd035605c770accdbc091d7186bd4122f875755e7688f06fa9d0417bc4a"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": true
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000008_1083",
@@ -1384,7 +1489,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:f1024156717b773811ada9b360bdd7a575458c7083bf3f0beb676ec499cfdd38",
           "ruby_readings": "sha256:e283db64705812d9c23188016592cf546a6aefe9bd23e431faa792ae47032b5c"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": true
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000008_18327",
@@ -1437,7 +1547,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:fd957271691811049d95702466e9832bdfdbb22ef8e8f5d06f4d04a2802f902b",
           "ruby_readings": "sha256:87aa4e37094a6bd5ef34d029aa91c96326bcba07dca73e02a962fdbdd1d00a77"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": false
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000008_2688",
@@ -1483,7 +1598,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
           "ruby_readings": "sha256:a51cd822847b50cf89e97d83c838d5aa26c9edf30e7743e1cbac4742671bb415"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": false
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000008_407",
@@ -1529,7 +1649,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
           "ruby_readings": "sha256:865736d2f5b534b3e3fa10d37281b19e9236930e36e6af0a42e6b22847db72b9"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": false
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000008_47357",
@@ -1585,7 +1710,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:329fd9518c34c23d8011d2e6e27250be0aa2897536a16445d784bb4cde2381ce",
           "ruby_readings": "sha256:e6e141adf470323a6d08b532a79851e85d67b3bce454e742db6fce3813ed2695"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": true
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000008_47361",
@@ -1638,7 +1768,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:f1a241504f8f2a7af8cb5adef22ef3a45c917d307ee69555f6c9436f6469176a",
           "ruby_readings": "sha256:741441aae988b84d90f2be5e4d9ad5e4353b8781d445ad9022719030df4b68ec"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": false
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000008_47374",
@@ -1691,7 +1826,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:1ed6f1b5c009ad18c4236e011897ab9628704d70e795e13e4484312ee58127bb",
           "ruby_readings": "sha256:17c4945d8685c061226f4d38139d9ee124ebd1a6c3e0aba931470e0feebe5af1"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": true
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000008_47382",
@@ -1737,7 +1877,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
           "ruby_readings": "sha256:62de5707e77bb3d5b6288b617c6db16f65d24a64bd20a106c44da4705a5bd08c"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": false
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000008_47383",
@@ -1790,7 +1935,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:fd7152e504a35569df3924782a325b9b7925cfd0dd952b94017fb39c9d92a39a",
           "ruby_readings": "sha256:d65e13739c7734d2609c0b297aadff0dc2233eae4906d0056bda9b1c82364e4e"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": false
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000008_47384",
@@ -1836,7 +1986,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
           "ruby_readings": "sha256:c2b3096d22cde51fdbb579f2095d70e7334fd2bde89c499a12aa1681a8137a9a"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": false
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000008_47386",
@@ -1887,7 +2042,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:e7d594399400715903cc5d6364a672509daf4e1b9e64374ae0a4cc5e8f0d162f",
           "ruby_readings": "sha256:6a01e445dff3ead1fbef7e191e6f2d01df69c00111b94da903ab40199a8b85e8"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": false
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000008_58922",
@@ -1929,7 +2089,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
           "ruby_readings": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": false
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000008_697",
@@ -1975,7 +2140,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
           "ruby_readings": "sha256:80727ca04e1e798e9ab947dea32bbd0c71e0e2f22942aaefb48a85cea864b86d"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": false
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000008_7",
@@ -2021,7 +2191,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
           "ruby_readings": "sha256:c66ed8e0da9474e44912bb04c4a23da246fd3bf8e29dc81e4df6e62f64b72945"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": false
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000009_226",
@@ -2073,7 +2248,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:0c49d147883f8654dc3e209b83e07da8606da42a542bfb2f3ade736486a78373",
           "ruby_readings": "sha256:6163c6525a43f48c640a838262d1405fbcfaa97557fbe02261e5dd3767e0c32d"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": true,
+          "ruby_readings": false
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000009_42929",
@@ -2120,7 +2300,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
           "ruby_readings": "sha256:0f16dc20e16a899831ad9c847ec963ce06fa25284242d845b3ac28a60a68ffb2"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": true
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000009_43028",
@@ -2173,7 +2358,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:c4a28e5d73100726fadf83d1e925ea5951c6d9fac1b8ca4a8509395ca7ebb75b",
           "ruby_readings": "sha256:b19f7a2490a29b174bb557651ea75183b023d60ff52b4cb3dfb25f0db9100cf6"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": true
+        },
+        "normalized_visible_difference_bucket": "visible_and_ruby_readings"
       },
       {
         "work_id": "000009_43056",
@@ -2223,7 +2413,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
           "ruby_readings": "sha256:bfc5210fee30ca6c5f56520da05b82377532c83f96f44a4485703e893f7f5ef4"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": true
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000009_43471",
@@ -2270,7 +2465,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
           "ruby_readings": "sha256:4cc37662433dc8f221457f7933ca8942a22d9be271a69ed4ec41374187d73760"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": true
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000009_43497",
@@ -2317,7 +2517,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
           "ruby_readings": "sha256:a661ffc8558e6552fa8abd013f8f9f5fc2da79b1c53ba70312166f4be61c2207"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": true
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000009_43498",
@@ -2364,7 +2569,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
           "ruby_readings": "sha256:76363d9173c31a7962142cb8fa4d0695210fc62fdab37fca0a76968e152753f5"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": true
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000009_43522",
@@ -2415,7 +2625,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:de8b0489fe2d3f48c12771931c4ac03bbc613255f0de1b14c087110e191c814f",
           "ruby_readings": "sha256:63e8680dca719a8f8da0a186d72cbf2a61efddf2669ae501006e302c6d69235a"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": true
+        },
+        "normalized_visible_difference_bucket": "visible_and_ruby_readings"
       },
       {
         "work_id": "000009_43523",
@@ -2462,7 +2677,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
           "ruby_readings": "sha256:d257a7ae182ddbce7f9aa778adc0bd089f830539f5d5d54353a44a0d9ccf108d"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": true
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000009_43524",
@@ -2508,7 +2728,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
           "ruby_readings": "sha256:593e75a500a5b3d0575175aa04080ae3b4c04733ca04ab0757ea31e2bc70da4c"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": false
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000009_45340",
@@ -2561,7 +2786,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:b51076c90b13a137741b83b1189e0aa200faed55cc9b6dd1f645ba1c1a145409",
           "ruby_readings": "sha256:3d7734e069f27f9c43d9a8a33a8734d7576a8b8d72173e2da0fa65ca43b30954"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": false,
+          "ruby_readings": true
+        },
+        "normalized_visible_difference_bucket": "visible_and_ruby_readings"
       },
       {
         "work_id": "000009_50711",
@@ -2610,7 +2840,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:148c3542d3ca775c9fedfc0358b34549ee5d0d9fddb01d1c3caf5924ea211aa6",
           "ruby_readings": "sha256:224d464992cb70a4da8c813fd3c90788808b525cf02cd9f4ec6a070f50dc5e24"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": true,
+          "ruby_readings": false
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000009_50712",
@@ -2659,7 +2894,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:b860f01da3d2795b65419f525b22d693156284388f418e6715e6615a2d48dc41",
           "ruby_readings": "sha256:dff44a74c0e7f378618a32ac6d90a3017a50cc882d0164d93821fefb67330c54"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": true,
+          "ruby_readings": false
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000009_50713",
@@ -2708,7 +2948,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:567889bb78320e81139747abb99d0d072d5c6fb58b3f34018fee955d3fe30548",
           "ruby_readings": "sha256:341e76b918eb2a8045c8a8bcc2c17c6631f348ecc69005122aa98598dbc235ad"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": true,
+          "ruby_readings": false
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000009_50714",
@@ -2757,7 +3002,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:da2f7d53ef5cb218d988242657c7541884d1655875be8460177c191d5bbe4f95",
           "ruby_readings": "sha256:5f4663a49f3cec0e5e4daaa627a52a318450fa6bb411c4b00df0d0e2cd5d7bbb"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": true,
+          "ruby_readings": false
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000009_50715",
@@ -2807,7 +3057,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:674bc0f33a780d9c9a15c3bce4955fdeff0a74f1777c157d2deeaf00f20e7e48",
           "ruby_readings": "sha256:59b31704867f03f323151b2b5736121781d98eb42fb68b52247904fd4d4e4f3a"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": true,
+          "ruby_readings": true
+        },
+        "normalized_visible_difference_bucket": null
       },
       {
         "work_id": "000009_50716",
@@ -2857,7 +3112,12 @@
         "b_semantic_hashes": {
           "gaiji_descriptions": "sha256:69bc65e541a08f17f353e475f076199d0ced2cda9927d07a9f0a1bb7dea8d027",
           "ruby_readings": "sha256:e8482f62273ca45b5ca049ebfabce82335f80d1c6e8bd632947218ed51a5b278"
-        }
+        },
+        "semantic_hashes_differ": {
+          "gaiji_descriptions": true,
+          "ruby_readings": true
+        },
+        "normalized_visible_difference_bucket": null
       }
     ]
   }

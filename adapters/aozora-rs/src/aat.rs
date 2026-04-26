@@ -1,8 +1,7 @@
-use std::{collections::HashSet, sync::OnceLock, time::Instant};
+use std::{borrow::Cow, collections::HashSet, time::Instant};
 
 use ab_ir::{Block, Inline, ProjectedText, Provenance};
 use aozora_rs_core::{Break, Deco, Retokenized};
-use regex::Regex;
 
 use crate::{
     metrics::FallbackDecision,
@@ -267,7 +266,23 @@ fn strip_commands_in_inline(value: &mut Inline, state: &mut CommandStripState) {
 }
 
 fn strip_string(text: &mut String, state: &mut CommandStripState) {
-    *text = remove_bottom_note_fragments(&strip_command_fragments(text, state));
+    if let Cow::Owned(stripped) = stripped_command_fragments(text, state) {
+        *text = stripped;
+    }
+}
+
+fn stripped_command_fragments<'a>(text: &'a str, state: &mut CommandStripState) -> Cow<'a, str> {
+    if matches!(state, CommandStripState::None) && !needs_command_strip(text) {
+        return Cow::Borrowed(text);
+    }
+
+    Cow::Owned(remove_bottom_note_fragments(&strip_command_fragments(
+        text, state,
+    )))
+}
+
+fn needs_command_strip(text: &str) -> bool {
+    text.find(['［', '[', '」']).is_some()
 }
 
 #[derive(Clone, Copy)]
@@ -375,12 +390,13 @@ enum NoteStart {
 fn append_source_annotation_supplements(blocks: &mut [Block], body: &str) {
     let existing_ruby_readings = ruby_readings_in_blocks(blocks);
     let existing_gaiji_count = gaiji_count_in_blocks(blocks);
+    let markers = source_annotation_markers(body);
     let Some(first_block) = blocks.first_mut() else {
         return;
     };
     let content = ab_ir::block_content_mut(first_block);
-    append_ruby_supplements(content, body, &existing_ruby_readings);
-    append_gaiji_supplements(content, body, existing_gaiji_count);
+    append_ruby_supplements(content, markers.ruby_readings, &existing_ruby_readings);
+    append_gaiji_supplements(content, markers.gaiji_descriptions, existing_gaiji_count);
 }
 
 fn source_visible_fallback_blocks(body: &str, source_visible: String) -> Vec<Block> {
@@ -394,9 +410,12 @@ fn source_visible_fallback_blocks(body: &str, source_visible: String) -> Vec<Blo
     blocks
 }
 
-fn append_ruby_supplements(content: &mut Vec<Inline>, body: &str, existing: &HashSet<String>) {
-    for capture in ruby_marker_regex().captures_iter(body) {
-        let reading = capture.get(1).unwrap().as_str();
+fn append_ruby_supplements(
+    content: &mut Vec<Inline>,
+    readings: Vec<&str>,
+    existing: &HashSet<String>,
+) {
+    for reading in readings {
         if existing.contains(reading) {
             continue;
         }
@@ -408,16 +427,12 @@ fn append_ruby_supplements(content: &mut Vec<Inline>, body: &str, existing: &Has
     }
 }
 
-fn append_gaiji_supplements(content: &mut Vec<Inline>, body: &str, existing_count: usize) {
-    for capture in gaiji_marker_regex()
-        .captures_iter(body)
-        .skip(existing_count)
-    {
-        let description = capture
-            .get(1)
-            .or_else(|| capture.get(2))
-            .map(|matched| matched.as_str())
-            .unwrap_or_default();
+fn append_gaiji_supplements(
+    content: &mut Vec<Inline>,
+    descriptions: Vec<&str>,
+    existing_count: usize,
+) {
+    for description in descriptions.into_iter().skip(existing_count) {
         content.push(Inline::gaiji_with_provenance(
             description,
             "",
@@ -425,6 +440,131 @@ fn append_gaiji_supplements(content: &mut Vec<Inline>, body: &str, existing_coun
             Provenance::RegexSupplement,
         ));
     }
+}
+
+#[derive(Debug, Default, PartialEq, Eq)]
+struct SourceAnnotationMarkers<'a> {
+    ruby_readings: Vec<&'a str>,
+    gaiji_descriptions: Vec<&'a str>,
+}
+
+fn source_annotation_markers(body: &str) -> SourceAnnotationMarkers<'_> {
+    let mut markers = SourceAnnotationMarkers::default();
+    let mut offset = 0;
+    while offset < body.len() {
+        let Some((start, marker)) = body[offset..].char_indices().find_map(|(start, ch)| {
+            if ch == '《' {
+                Some((start, MarkerStart::Ruby))
+            } else if body[offset + start..].starts_with("※［＃") {
+                Some((start, MarkerStart::FullWidthGaiji))
+            } else if body[offset + start..].starts_with("※[#") {
+                Some((start, MarkerStart::AsciiGaiji))
+            } else {
+                None
+            }
+        }) else {
+            break;
+        };
+        offset += start;
+        match marker {
+            MarkerStart::Ruby => {
+                let content_start = offset + "《".len();
+                let Some(end) = body[content_start..].find('》') else {
+                    offset = content_start;
+                    continue;
+                };
+                let content_end = content_start + end;
+                let reading = &body[content_start..content_end];
+                markers.ruby_readings.push(reading);
+                collect_gaiji_markers(reading, &mut markers.gaiji_descriptions);
+                offset = content_end + '》'.len_utf8();
+            }
+            MarkerStart::FullWidthGaiji => {
+                let content_start = offset + "※［＃".len();
+                let Some(content_end) = marker_end_on_same_line(body, content_start, '］') else {
+                    offset = content_start;
+                    continue;
+                };
+                markers
+                    .gaiji_descriptions
+                    .push(&body[content_start..content_end]);
+                offset = content_end + '］'.len_utf8();
+            }
+            MarkerStart::AsciiGaiji => {
+                let content_start = offset + "※[#".len();
+                let Some(content_end) = marker_end_on_same_line(body, content_start, ']') else {
+                    offset = content_start;
+                    continue;
+                };
+                markers
+                    .gaiji_descriptions
+                    .push(&body[content_start..content_end]);
+                offset = content_end + 1;
+            }
+        }
+    }
+    markers
+}
+
+fn collect_gaiji_markers<'a>(text: &'a str, out: &mut Vec<&'a str>) {
+    let mut offset = 0;
+    while offset < text.len() {
+        let Some((start, marker)) = text[offset..].char_indices().find_map(|(start, ch)| {
+            if ch != '※' {
+                return None;
+            }
+            if text[offset + start..].starts_with("※［＃") {
+                Some((start, MarkerStart::FullWidthGaiji))
+            } else if text[offset + start..].starts_with("※[#") {
+                Some((start, MarkerStart::AsciiGaiji))
+            } else {
+                None
+            }
+        }) else {
+            break;
+        };
+        offset += start;
+        match marker {
+            MarkerStart::FullWidthGaiji => {
+                let content_start = offset + "※［＃".len();
+                let Some(content_end) = marker_end_on_same_line(text, content_start, '］') else {
+                    offset = content_start;
+                    continue;
+                };
+                out.push(&text[content_start..content_end]);
+                offset = content_end + '］'.len_utf8();
+            }
+            MarkerStart::AsciiGaiji => {
+                let content_start = offset + "※[#".len();
+                let Some(content_end) = marker_end_on_same_line(text, content_start, ']') else {
+                    offset = content_start;
+                    continue;
+                };
+                out.push(&text[content_start..content_end]);
+                offset = content_end + 1;
+            }
+            MarkerStart::Ruby => unreachable!("gaiji-only scan must not produce ruby markers"),
+        }
+    }
+}
+
+fn marker_end_on_same_line(text: &str, content_start: usize, end_marker: char) -> Option<usize> {
+    for (offset, ch) in text[content_start..].char_indices() {
+        if ch == end_marker {
+            return Some(content_start + offset);
+        }
+        if matches!(ch, '\r' | '\n') {
+            return None;
+        }
+    }
+    None
+}
+
+#[derive(Clone, Copy)]
+enum MarkerStart {
+    Ruby,
+    FullWidthGaiji,
+    AsciiGaiji,
 }
 
 fn ruby_readings_in_blocks(blocks: &[Block]) -> HashSet<String> {
@@ -469,16 +609,6 @@ fn gaiji_count_in_inline(node: &Inline) -> usize {
         Inline::Ruby { base, .. } => base.iter().map(gaiji_count_in_inline).sum(),
         Inline::Text { .. } => 0,
     }
-}
-
-fn ruby_marker_regex() -> &'static Regex {
-    static REGEX: OnceLock<Regex> = OnceLock::new();
-    REGEX.get_or_init(|| Regex::new(r"《([^》]+)》").unwrap())
-}
-
-fn gaiji_marker_regex() -> &'static Regex {
-    static REGEX: OnceLock<Regex> = OnceLock::new();
-    REGEX.get_or_init(|| Regex::new(r"※(?:［＃([^］]+)］|\[#([^\]]+)\])").unwrap())
 }
 
 #[cfg(test)]
@@ -576,5 +706,65 @@ mod tests {
 
         let counts = ab_ir::provenance_counts(&blocks);
         assert_eq!(counts.regex_supplement, 0);
+    }
+
+    #[test]
+    fn command_strip_borrows_marker_free_text() {
+        let mut state = CommandStripState::None;
+
+        let stripped = stripped_command_fragments("吾輩は猫である。", &mut state);
+
+        assert!(matches!(stripped, std::borrow::Cow::Borrowed(_)));
+        assert_eq!(stripped, "吾輩は猫である。");
+    }
+
+    #[test]
+    fn source_annotation_markers_collects_ruby_and_gaiji_in_one_scan() {
+        let markers = source_annotation_markers(
+            "吾輩《わがはい》は※［＃「口＋世」、U+546D］で、※[#ascii-gaiji]もある。",
+        );
+
+        assert_eq!(markers.ruby_readings, vec!["わがはい"]);
+        assert_eq!(
+            markers.gaiji_descriptions,
+            vec!["「口＋世」、U+546D", "ascii-gaiji"]
+        );
+    }
+
+    #[test]
+    fn source_annotation_markers_collects_gaiji_inside_ruby_text() {
+        let markers = source_annotation_markers("淡絹《※［＃濁点付き片仮名ヱ、1-7-84］エル》");
+
+        assert_eq!(
+            markers.ruby_readings,
+            vec!["※［＃濁点付き片仮名ヱ、1-7-84］エル"]
+        );
+        assert_eq!(markers.gaiji_descriptions, vec!["濁点付き片仮名ヱ、1-7-84"]);
+    }
+
+    #[test]
+    fn source_annotation_markers_continue_after_unclosed_gaiji_marker() {
+        let markers = source_annotation_markers("※［＃壊れた注記」然《ぼうぜん》");
+
+        assert_eq!(markers.ruby_readings, vec!["ぼうぜん"]);
+        assert!(markers.gaiji_descriptions.is_empty());
+    }
+
+    #[test]
+    fn source_annotation_markers_continue_after_unclosed_gaiji_marker_with_inner_marker() {
+        let markers = source_annotation_markers(
+            "※［＃「※」は「りっしんべん＋夢」と同義、読みは「ぼう」、第4水準2-12-81、7-5」然《ぼうぜん》",
+        );
+
+        assert_eq!(markers.ruby_readings, vec!["ぼうぜん"]);
+    }
+
+    #[test]
+    fn source_annotation_markers_do_not_let_unclosed_gaiji_cross_lines() {
+        let markers =
+            source_annotation_markers("※［＃壊れた注記」然《ぼうぜん》\n次行《つぎ》［＃注記］");
+
+        assert_eq!(markers.ruby_readings, vec!["ぼうぜん", "つぎ"]);
+        assert!(markers.gaiji_descriptions.is_empty());
     }
 }

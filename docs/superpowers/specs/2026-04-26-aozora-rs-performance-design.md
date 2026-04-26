@@ -9,6 +9,12 @@ two adapters:
 - `aozora-rs`: 17,894 reports, 0 failures, 1690.014773 seconds.
 - Comparison: 17,894 common reports, 0 result differences.
 
+The comparison result above is a validation-report comparison only. It means
+both adapters produced AATs that passed the same `ab-check` properties; it does
+not mean the adapters produced equivalent AST/AAT structures. Structural AAT
+comparison is required before using "0 differences" as evidence of parser
+semantic equivalence.
+
 The current `aozora-rs` adapter is correct by the validation harness, but it is
 too slow and the implementation is increasingly entangled. Parsing,
 body-selection, source-visible cleanup, AAT construction, fallback handling, and
@@ -41,6 +47,9 @@ The phase is complete when:
   validation failures.
 - `ab-compare` still reports 17,894 common reports, 0 only-a, 0 only-b, and 0
   result differences between `aozora2` and `aozora-rs` validation reports.
+- The comparison tooling distinguishes validation-report differences from AAT
+  structural differences and can summarize block/inline/projection differences
+  over the full corpus.
 - The `aozora-rs` adapter emits per-work metrics for decode/body selection,
   tokenize, scopenize, retokenize, AAT mapping, projection checking, fallback,
   and source sizes. Runner-side summaries add artifact write timing when they

@@ -1372,7 +1372,280 @@ git add crates/ab-compare/src/lib.rs crates/ab-compare/src/main.rs crates/ab-com
 git commit -m "feat: summarize adapter AAT metrics (task 7)"
 ```
 
-## Task 8: Update Benchmark Runner and Measure Baseline
+## Task 8: Add AAT Structural Comparison
+
+**Files:**
+- Create: `crates/ab-compare/src/aat_diff.rs`
+- Modify: `crates/ab-compare/src/lib.rs`
+- Modify: `crates/ab-compare/src/main.rs`
+- Modify: `crates/ab-compare/tests/integration.rs`
+
+This task closes the gap where `ab-compare` reports "0 differences" while only comparing validation report pass/fail results. It compares persisted AAT artifacts and reports structural/projection differences separately from validation differences.
+
+- [ ] **Step 1: Write a failing AAT structural comparison test**
+
+Add to `crates/ab-compare/tests/integration.rs`:
+
+```rust
+#[test]
+fn detects_aat_structural_differences_when_reports_match() {
+    let temp = tempfile::tempdir().unwrap();
+    let a = temp.path().join("a");
+    let b = temp.path().join("b");
+    std::fs::create_dir_all(&a).unwrap();
+    std::fs::create_dir_all(&b).unwrap();
+
+    std::fs::write(
+        a.join("one.json"),
+        r#"{
+          "work_id": "one",
+          "blocks": [
+            {"kind": "paragraph", "content": [{"kind": "text", "value": "吾輩は猫"}]}
+          ],
+          "meta": {"adapter": "a"}
+        }"#,
+    )
+    .unwrap();
+    std::fs::write(
+        b.join("one.json"),
+        r#"{
+          "work_id": "one",
+          "blocks": [
+            {"kind": "heading", "level": 1, "content": [{"kind": "text", "value": "吾輩は猫"}]}
+          ],
+          "meta": {"adapter": "b"}
+        }"#,
+    )
+    .unwrap();
+
+    let summary = ab_compare::aat_diff::compare_aat_dirs(&a, &b).unwrap();
+    assert_eq!(summary.common_aat, 1);
+    assert_eq!(summary.structural_differences.len(), 1);
+    assert_eq!(summary.structural_differences[0].work_id, "one");
+    assert_eq!(summary.structural_differences[0].a_block_kinds["paragraph"], 1);
+    assert_eq!(summary.structural_differences[0].b_block_kinds["heading"], 1);
+    assert!(!summary.structural_differences[0].visible_text_differs);
+}
+```
+
+- [ ] **Step 2: Run test to verify failure**
+
+Run:
+
+```bash
+cargo test -p ab-compare detects_aat_structural_differences_when_reports_match
+```
+
+Expected: FAIL because `ab_compare::aat_diff` does not exist.
+
+- [ ] **Step 3: Implement AAT artifact summaries**
+
+Create `crates/ab-compare/src/aat_diff.rs`:
+
+```rust
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    fs,
+    path::Path,
+};
+
+use anyhow::{Context, Result};
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use sha2::{Digest, Sha256};
+use walkdir::WalkDir;
+
+#[derive(Debug, Serialize)]
+pub struct AatCompareSummary {
+    pub common_aat: usize,
+    pub only_a: usize,
+    pub only_b: usize,
+    pub structural_differences: Vec<AatStructuralDifference>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct AatStructuralDifference {
+    pub work_id: String,
+    pub visible_text_differs: bool,
+    pub a_structure_hash: String,
+    pub b_structure_hash: String,
+    pub a_visible_hash: String,
+    pub b_visible_hash: String,
+    pub a_block_kinds: BTreeMap<String, usize>,
+    pub b_block_kinds: BTreeMap<String, usize>,
+    pub a_inline_kinds: BTreeMap<String, usize>,
+    pub b_inline_kinds: BTreeMap<String, usize>,
+}
+
+#[derive(Debug, Deserialize)]
+struct AatRoot {
+    work_id: String,
+    blocks: Value,
+}
+
+#[derive(Debug)]
+struct AatSummary {
+    work_id: String,
+    structure_hash: String,
+    visible_hash: String,
+    block_kinds: BTreeMap<String, usize>,
+    inline_kinds: BTreeMap<String, usize>,
+}
+
+pub fn compare_aat_dirs(a: &Path, b: &Path) -> Result<AatCompareSummary> {
+    let a = read_aat_summaries(a)?;
+    let b = read_aat_summaries(b)?;
+    let keys_a = a.keys().cloned().collect::<BTreeSet<_>>();
+    let keys_b = b.keys().cloned().collect::<BTreeSet<_>>();
+    let common = keys_a.intersection(&keys_b).cloned().collect::<Vec<_>>();
+    let mut structural_differences = Vec::new();
+
+    for key in &common {
+        let left = &a[key];
+        let right = &b[key];
+        if left.structure_hash != right.structure_hash || left.visible_hash != right.visible_hash {
+            structural_differences.push(AatStructuralDifference {
+                work_id: left.work_id.clone(),
+                visible_text_differs: left.visible_hash != right.visible_hash,
+                a_structure_hash: left.structure_hash.clone(),
+                b_structure_hash: right.structure_hash.clone(),
+                a_visible_hash: left.visible_hash.clone(),
+                b_visible_hash: right.visible_hash.clone(),
+                a_block_kinds: left.block_kinds.clone(),
+                b_block_kinds: right.block_kinds.clone(),
+                a_inline_kinds: left.inline_kinds.clone(),
+                b_inline_kinds: right.inline_kinds.clone(),
+            });
+        }
+    }
+
+    Ok(AatCompareSummary {
+        common_aat: common.len(),
+        only_a: keys_a.difference(&keys_b).count(),
+        only_b: keys_b.difference(&keys_a).count(),
+        structural_differences,
+    })
+}
+
+fn read_aat_summaries(root: &Path) -> Result<BTreeMap<String, AatSummary>> {
+    let mut out = BTreeMap::new();
+    for entry in WalkDir::new(root) {
+        let entry = entry?;
+        if !entry.file_type().is_file()
+            || entry.path().extension().is_none_or(|extension| extension != "json")
+        {
+            continue;
+        }
+        let bytes = fs::read(entry.path())
+            .with_context(|| format!("failed to read {}", entry.path().display()))?;
+        let root: AatRoot = serde_json::from_slice(&bytes)
+            .with_context(|| format!("failed to parse {}", entry.path().display()))?;
+        out.insert(root.work_id.clone(), summarize(root)?);
+    }
+    Ok(out)
+}
+
+fn summarize(root: AatRoot) -> Result<AatSummary> {
+    let structure_hash = hash_json(&root.blocks)?;
+    let mut block_kinds = BTreeMap::new();
+    let mut inline_kinds = BTreeMap::new();
+    let mut visible = String::new();
+    collect_blocks(&root.blocks, &mut block_kinds, &mut inline_kinds, &mut visible);
+    Ok(AatSummary {
+        work_id: root.work_id,
+        structure_hash,
+        visible_hash: hash_bytes(visible.as_bytes()),
+        block_kinds,
+        inline_kinds,
+    })
+}
+
+fn hash_json(value: &Value) -> Result<String> {
+    let bytes = serde_json::to_vec(value)?;
+    Ok(hash_bytes(&bytes))
+}
+
+fn hash_bytes(bytes: &[u8]) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(bytes);
+    format!("sha256:{:x}", hasher.finalize())
+}
+```
+
+Then implement `collect_blocks(...)` by walking `blocks` recursively:
+
+- Count block object `kind` values at the top-level `blocks` array.
+- Count inline object `kind` values inside `content`, `children`, `upper`, and `lower`.
+- Visible text rules:
+  - `text`: append `value`
+  - `ruby`: append `base`
+  - `gaiji`: append `resolved` when non-empty, otherwise `description`
+  - containers: recurse into `content`, `children`, `upper`, and `lower`
+
+- [ ] **Step 4: Add dependency and exports**
+
+The workspace already defines `sha2 = "0.10"` in `Cargo.toml`.
+
+Add to `crates/ab-compare/Cargo.toml`:
+
+```toml
+sha2.workspace = true
+```
+
+Add to `crates/ab-compare/src/lib.rs`:
+
+```rust
+pub mod aat_diff;
+```
+
+- [ ] **Step 5: Add CLI flags**
+
+In `crates/ab-compare/src/main.rs`, add optional args:
+
+```rust
+#[arg(long)]
+aats_a: Option<PathBuf>,
+
+#[arg(long)]
+aats_b: Option<PathBuf>,
+
+#[arg(long)]
+aat_diff_output: Option<PathBuf>,
+```
+
+After the report comparison output, add:
+
+```rust
+if let (Some(aats_a), Some(aats_b), Some(output)) =
+    (&args.aats_a, &args.aats_b, &args.aat_diff_output)
+{
+    let summary = ab_compare::aat_diff::compare_aat_dirs(aats_a, aats_b)?;
+    if let Some(parent) = output.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    let file = std::fs::File::create(output)?;
+    serde_json::to_writer_pretty(file, &summary)?;
+}
+```
+
+- [ ] **Step 6: Run tests**
+
+Run:
+
+```bash
+cargo test -p ab-compare
+```
+
+Expected: PASS.
+
+- [ ] **Step 7: Commit**
+
+```bash
+git add crates/ab-compare/Cargo.toml crates/ab-compare/src/lib.rs crates/ab-compare/src/main.rs crates/ab-compare/src/aat_diff.rs crates/ab-compare/tests/integration.rs
+git commit -m "feat: compare persisted AAT structure (task 8)"
+```
+
+## Task 9: Update Benchmark Runner and Measure Baseline
 
 **Files:**
 - Modify: `benchmarks/run-parser-comparison.sh`
@@ -1386,6 +1659,9 @@ After the existing `target/release/ab-compare --reports-a ...` command in `bench
 target/release/ab-compare \
   --reports-a "$out_dir/reports/aozora2/aozora2-adapter" \
   --reports-b "$out_dir/reports/aozora-rs/aozora-rs-adapter" \
+  --aats-a "$out_dir/aats/aozora2/aozora2-adapter" \
+  --aats-b "$out_dir/aats/aozora-rs/aozora-rs-adapter" \
+  --aat-diff-output "$out_dir/aat-structure-comparison.json" \
   --metrics-root "$out_dir/aats/aozora-rs/aozora-rs-adapter" \
   --metrics-output "$out_dir/aozora-rs-metrics-summary.json" \
   --output "$out_dir/comparison.json"
@@ -1397,12 +1673,14 @@ In the final `jq -n` command, add:
 
 ```bash
 --slurpfile metrics "$out_dir/aozora-rs-metrics-summary.json"
+--slurpfile aatdiff "$out_dir/aat-structure-comparison.json"
 ```
 
 and include:
 
 ```jq
-aozora_rs_metrics: $metrics[0]
+aozora_rs_metrics: $metrics[0],
+aat_structure_comparison: $aatdiff[0]
 ```
 
 - [ ] **Step 2: Run script syntax check**
@@ -1429,10 +1707,10 @@ Expected: script completes; `/tmp/ab-validator-compare-smoke/summary.json` conta
 
 ```bash
 git add benchmarks/run-parser-comparison.sh
-git commit -m "bench: include aozora-rs metrics summary (task 8)"
+git commit -m "bench: include aozora-rs metrics summary (task 9)"
 ```
 
-## Task 9: Profile and Implement One Evidence-Backed Optimization
+## Task 10: Profile and Implement One Evidence-Backed Optimization
 
 **Files:**
 - Modify: `adapters/aozora-rs/src/projection.rs` if projection dominates measured adapter-owned time.
@@ -1559,7 +1837,7 @@ cargo test --manifest-path adapters/aozora-rs/Cargo.toml
 cargo bench --manifest-path adapters/aozora-rs/Cargo.toml --bench adapter_bench
 ```
 
-Expected: tests pass. The benchmark median for `aozora_rs_adapter_aat_json_large` is not more than 5% slower than the Task 9 Step 1 pre-optimization run.
+Expected: tests pass. The benchmark median for `aozora_rs_adapter_aat_json_large` is not more than 5% slower than the Task 10 Step 1 pre-optimization run.
 
 - [ ] **Step 8: Run full-corpus validation again**
 
@@ -1587,10 +1865,10 @@ Then commit:
 
 ```bash
 git add adapters/aozora-rs/src benchmarks/baselines/2026-04-26-aozora-rs-performance.json
-git commit -m "perf: optimize measured aozora-rs adapter stage (task 9)"
+git commit -m "perf: optimize measured aozora-rs adapter stage (task 10)"
 ```
 
-## Task 10: Final Verification and Hickey/Rust Review
+## Task 11: Final Verification and Hickey/Rust Review
 
 **Files:**
 - Modify only if review finds issues.

@@ -40,7 +40,42 @@
         "source_hash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
         "parse_complete": { "type": "boolean" },
         "warnings": { "type": "array", "items": { "$ref": "#/$defs/warning" } },
-        "metrics": { "$ref": "#/$defs/metrics" }
+        "metrics": { "$ref": "#/$defs/metrics" },
+        "semantic_summary": { "$ref": "#/$defs/semantic_summary" }
+      }
+    },
+    "semantic_summary": {
+      "type": "object",
+      "required": ["syntax"],
+      "additionalProperties": false,
+      "properties": {
+        "syntax": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/semantic_summary_node" }
+          }
+        }
+      }
+    },
+    "semantic_summary_node": {
+      "type": "object",
+      "required": ["kind", "value", "provenance"],
+      "additionalProperties": false,
+      "properties": {
+        "source_span": { "$ref": "#/$defs/source_span" },
+        "kind": { "type": "string" },
+        "value": { "type": "object" },
+        "provenance": { "type": "string" }
+      }
+    },
+    "source_span": {
+      "type": "object",
+      "required": ["start", "end"],
+      "additionalProperties": false,
+      "properties": {
+        "start": { "type": "integer", "minimum": 0 },
+        "end": { "type": "integer", "minimum": 0 }
       }
     },
     "metrics": {

@@ -167,6 +167,25 @@ fn detects_aat_structural_differences_when_reports_match() {
     assert!(!summary.structural_differences[0].visible_text_differs);
 }
 
+#[test]
+fn preserves_duplicate_work_ids_in_aat_comparison() {
+    let temp = tempfile::tempdir().unwrap();
+    let a = temp.path().join("a");
+    let b = temp.path().join("b");
+    std::fs::create_dir_all(&a).unwrap();
+    std::fs::create_dir_all(&b).unwrap();
+
+    for name in ["first", "second"] {
+        std::fs::write(a.join(format!("{name}.json")), aat_for_work("same", "本文")).unwrap();
+        std::fs::write(b.join(format!("{name}.json")), aat_for_work("same", "本文")).unwrap();
+    }
+
+    let summary = ab_compare::aat_diff::compare_aat_dirs(&a, &b).unwrap();
+    assert_eq!(summary.common_aat, 2);
+    assert_eq!(summary.only_a, 0);
+    assert_eq!(summary.only_b, 0);
+}
+
 fn report(adapter: &str, pass: bool) -> String {
     report_for_work(adapter, "000001_1", pass)
 }
@@ -183,6 +202,18 @@ fn report_for_work(adapter: &str, work_id: &str, pass: bool) -> String {
       "confidence": "strict"
     }}
   }}
+}}"#
+    )
+}
+
+fn aat_for_work(work_id: &str, text: &str) -> String {
+    format!(
+        r#"{{
+  "work_id": "{work_id}",
+  "blocks": [
+    {{"kind": "paragraph", "content": [{{"kind": "text", "value": "{text}"}}]}}
+  ],
+  "meta": {{"adapter": "test"}}
 }}"#
     )
 }

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-04-26T03:29:59Z",
+  "generated_at": "2026-04-26T03:39:21Z",
   "corpus_hash": "sha256:25f5edcfab0f7b856cb24e5088de6ab68a61359eabfddb4b3add92049b09ce67",
   "aozora2": {
     "name": "aozora2",
@@ -359,11 +359,11 @@
     ]
   },
   "aat_structure_comparison": {
-    "common_aat": 17613,
+    "common_aat": 17894,
     "only_a": 0,
     "only_b": 0,
-    "structural_difference_count": 17613,
-    "visible_text_difference_count": 17348,
+    "structural_difference_count": 17894,
+    "visible_text_difference_count": 17626,
     "first_differences": [
       {
         "work_id": "000005_5",
@@ -816,28 +816,29 @@
         }
       },
       {
-        "work_id": "000008_18327",
+        "work_id": "000008_1083",
         "visible_text_differs": true,
-        "a_structure_hash": "sha256:8a10597b526a6ccde1c6ed8e2e36e239b0d96ab637bdf6c64dda70bb7f81810f",
-        "b_structure_hash": "sha256:2038379609118bef7033a5d59a2b2ffbf95c4d0300dbf225ea92477c70dada43",
-        "a_visible_hash": "sha256:6a77c0516194436d4e1e34712c974ba33960957885ef2156909050701ae35bd9",
-        "b_visible_hash": "sha256:1d4638a9061434653052b49de50f930f1056111694de9e570f00ee2dcf078489",
+        "a_structure_hash": "sha256:8d1b5d190de180b8add340d2f061c16feb0a5f72e8363eeededf3b9d99461330",
+        "b_structure_hash": "sha256:f23c2234f8dbf4636a7a374d440330b60f254d33e0e962ce802713581f3f5bf1",
+        "a_visible_hash": "sha256:3198fe708ea9b408ec87c95183e96a28572d4678e6df636473548224bfa08ecb",
+        "b_visible_hash": "sha256:09fd8524d4c4a9aeecdb51cd92f830365087d9f6262da3ea57b89eea80f3a9c7",
         "a_block_kinds": {
           "paragraph": 1
         },
         "b_block_kinds": {
-          "paragraph": 34
+          "heading": 6,
+          "paragraph": 226
         },
         "a_inline_kinds": {
-          "gaiji": 1,
-          "ruby": 10,
+          "gaiji": 6,
+          "ruby": 41,
           "text": 1
         },
         "b_inline_kinds": {
-          "gaiji": 1,
-          "ruby": 18,
-          "style": 1,
-          "text": 45
+          "gaiji": 6,
+          "ruby": 80,
+          "style": 7,
+          "text": 292
         }
       }
     ]

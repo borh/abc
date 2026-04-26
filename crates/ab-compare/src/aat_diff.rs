@@ -83,7 +83,7 @@ pub fn compare_aat_dirs(a: &Path, b: &Path) -> Result<AatCompareSummary> {
 }
 
 fn read_aat_summaries(root: &Path) -> Result<BTreeMap<String, AatSummary>> {
-    let mut out = BTreeMap::new();
+    let mut loaded = Vec::new();
     for entry in WalkDir::new(root) {
         let entry = entry?;
         if !entry.file_type().is_file()
@@ -98,9 +98,36 @@ fn read_aat_summaries(root: &Path) -> Result<BTreeMap<String, AatSummary>> {
             .with_context(|| format!("failed to read {}", entry.path().display()))?;
         let root: AatRoot = serde_json::from_slice(&bytes)
             .with_context(|| format!("failed to parse {}", entry.path().display()))?;
-        out.insert(root.work_id.clone(), summarize(root)?);
+        loaded.push((entry.path().to_owned(), root));
+    }
+
+    let mut work_id_counts = BTreeMap::new();
+    for (_, root) in &loaded {
+        *work_id_counts.entry(root.work_id.clone()).or_insert(0usize) += 1;
+    }
+
+    let mut out = BTreeMap::new();
+    for (path, root) in loaded {
+        let key = aat_key(&work_id_counts, &path, &root);
+        out.insert(key, summarize(root)?);
     }
     Ok(out)
+}
+
+fn aat_key(work_id_counts: &BTreeMap<String, usize>, path: &Path, root: &AatRoot) -> String {
+    if work_id_counts
+        .get(&root.work_id)
+        .copied()
+        .unwrap_or_default()
+        <= 1
+    {
+        return root.work_id.clone();
+    }
+    let filename = path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("duplicate");
+    format!("{}::{filename}", root.work_id)
 }
 
 fn summarize(root: AatRoot) -> Result<AatSummary> {

@@ -8,6 +8,7 @@ use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use walkdir::WalkDir;
 
+pub mod aat_diff;
 pub mod metrics;
 
 #[derive(Debug, Deserialize)]

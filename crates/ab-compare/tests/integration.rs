@@ -121,6 +121,52 @@ fn summarizes_aat_metrics() {
     assert_eq!(summary.slowest_works[0].stages_ms["projection_check"], 7.0);
 }
 
+#[test]
+fn detects_aat_structural_differences_when_reports_match() {
+    let temp = tempfile::tempdir().unwrap();
+    let a = temp.path().join("a");
+    let b = temp.path().join("b");
+    std::fs::create_dir_all(&a).unwrap();
+    std::fs::create_dir_all(&b).unwrap();
+
+    std::fs::write(
+        a.join("one.json"),
+        r#"{
+          "work_id": "one",
+          "blocks": [
+            {"kind": "paragraph", "content": [{"kind": "text", "value": "吾輩は猫"}]}
+          ],
+          "meta": {"adapter": "a"}
+        }"#,
+    )
+    .unwrap();
+    std::fs::write(
+        b.join("one.json"),
+        r#"{
+          "work_id": "one",
+          "blocks": [
+            {"kind": "heading", "level": 1, "content": [{"kind": "text", "value": "吾輩は猫"}]}
+          ],
+          "meta": {"adapter": "b"}
+        }"#,
+    )
+    .unwrap();
+
+    let summary = ab_compare::aat_diff::compare_aat_dirs(&a, &b).unwrap();
+    assert_eq!(summary.common_aat, 1);
+    assert_eq!(summary.structural_differences.len(), 1);
+    assert_eq!(summary.structural_differences[0].work_id, "one");
+    assert_eq!(
+        summary.structural_differences[0].a_block_kinds["paragraph"],
+        1
+    );
+    assert_eq!(
+        summary.structural_differences[0].b_block_kinds["heading"],
+        1
+    );
+    assert!(!summary.structural_differences[0].visible_text_differs);
+}
+
 fn report(adapter: &str, pass: bool) -> String {
     report_for_work(adapter, "000001_1", pass)
 }

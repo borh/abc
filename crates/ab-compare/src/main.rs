@@ -21,6 +21,15 @@ struct Args {
 
     #[arg(long)]
     metrics_output: Option<PathBuf>,
+
+    #[arg(long)]
+    aats_a: Option<PathBuf>,
+
+    #[arg(long)]
+    aats_b: Option<PathBuf>,
+
+    #[arg(long)]
+    aat_diff_output: Option<PathBuf>,
 }
 
 fn main() -> Result<()> {
@@ -42,6 +51,16 @@ fn main() -> Result<()> {
         } else {
             serde_json::to_writer_pretty(std::io::stdout(), &summary)?;
         }
+    }
+    if let (Some(aats_a), Some(aats_b), Some(output)) =
+        (&args.aats_a, &args.aats_b, &args.aat_diff_output)
+    {
+        let summary = ab_compare::aat_diff::compare_aat_dirs(aats_a, aats_b)?;
+        if let Some(parent) = output.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        let file = std::fs::File::create(output)?;
+        serde_json::to_writer_pretty(file, &summary)?;
     }
     Ok(())
 }

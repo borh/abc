@@ -112,7 +112,7 @@
         object-counts
         (frequencies (keep #(let [o (.getObject ^Triple %)]
                               (when (.isBlank o) o))
-                            all-triples))
+                           all-triples))
         inlineable-blanks
         (set (keep (fn [[node cnt]] (when (= cnt 1) node))
                    object-counts))
@@ -120,8 +120,8 @@
         ;; Stable sequential IDs for any remaining blank nodes
         blank-ids
         (zipmap
-          (sort-by #(.getBlankNodeLabel ^Node %) (keys object-counts))
-          (map #(str "b" %) (range)))
+         (sort-by #(.getBlankNodeLabel ^Node %) (keys object-counts))
+         (map #(str "b" %) (range)))
 
         stable-node
         (fn [^Node n]
@@ -158,16 +158,16 @@
                                           [1 uri])))
                                     (keys by-pred))
                 clauses    (mapcat
-                             (fn [pred-node]
-                               (let [objs (map #(.getObject ^Triple %)
-                                               (get by-pred pred-node))
-                                     sorted-objs (sort-by (comp string/lower-case node->ttl) objs)]
-                                 (map
-                                   (fn [obj]
-                                     (str " " (stable-pred pred-node)
-                                          " " (stable-node obj)))
-                                   sorted-objs)))
-                             preds)]
+                            (fn [pred-node]
+                              (let [objs (map #(.getObject ^Triple %)
+                                              (get by-pred pred-node))
+                                    sorted-objs (sort-by (comp string/lower-case node->ttl) objs)]
+                                (map
+                                 (fn [obj]
+                                   (str " " (stable-pred pred-node)
+                                        " " (stable-node obj)))
+                                 sorted-objs)))
+                            preds)]
             (str "["
                  (string/join " ;" clauses)
                  " ]")))
@@ -186,40 +186,40 @@
                   sorted-preds (sort-by pred-order (keys by-pred))
                   pred-clauses
                   (map-indexed
-                    (fn [pred-idx pred-node]
-                      (let [objs        (map #(.getObject ^Triple %) (get by-pred pred-node))
-                            sorted-objs (sort-by (comp string/lower-case node->ttl) objs)
-                            pred-name   (stable-pred pred-node)
-                            last-pred?  (= pred-idx (dec (count sorted-preds)))]
-                        (map-indexed
-                          (fn [obj-idx obj]
-                            (str "  " pred-name " "
-                                 (if (and (.isBlank obj) (inlineable-blanks obj))
-                                   (inline-blank obj)
-                                   (stable-node obj))
-                                 (if (and last-pred? (= obj-idx (dec (count sorted-objs))))
-                                   " ."
-                                   " ;")))
-                          sorted-objs)))
-                    sorted-preds)]
+                   (fn [pred-idx pred-node]
+                     (let [objs        (map #(.getObject ^Triple %) (get by-pred pred-node))
+                           sorted-objs (sort-by (comp string/lower-case node->ttl) objs)
+                           pred-name   (stable-pred pred-node)
+                           last-pred?  (= pred-idx (dec (count sorted-preds)))]
+                       (map-indexed
+                        (fn [obj-idx obj]
+                          (str "  " pred-name " "
+                               (if (and (.isBlank obj) (inlineable-blanks obj))
+                                 (inline-blank obj)
+                                 (stable-node obj))
+                               (if (and last-pred? (= obj-idx (dec (count sorted-objs))))
+                                 " ."
+                                 " ;")))
+                        sorted-objs)))
+                   sorted-preds)]
               (cons (stable-node subj) (apply concat pred-clauses)))))
 
         body (rest
-               (mapcat
-                 (fn [subj]
-                   (let [lines (render-subject subj)]
-                     (if lines (cons "" lines) [])))
-                 sorted-subjs))]
+              (mapcat
+               (fn [subj]
+                 (let [lines (render-subject subj)]
+                   (if lines (cons "" lines) [])))
+               sorted-subjs))]
     (string/join
-      "\n"
-      (concat
-        ["@prefix abc: <https://w3id.org/abc/> ."
-         "@prefix dcterms: <http://purl.org/dc/terms/> ."
-         "@prefix prov: <http://www.w3.org/ns/prov#> ."
-         "@prefix xsd: <http://www.w3.org/2001/XMLSchema#> ."
-         ""]
-        body
-        [""]))))
+     "\n"
+     (concat
+      ["@prefix abc: <https://w3id.org/abc/> ."
+       "@prefix dcterms: <http://purl.org/dc/terms/> ."
+       "@prefix prov: <http://www.w3.org/ns/prov#> ."
+       "@prefix xsd: <http://www.w3.org/2001/XMLSchema#> ."
+       ""]
+      body
+      [""]))))
 
 ;; ---------------------------------------------------------------------------
 ;; Timestamp -> explicit xsd:dateTime literal node
@@ -264,60 +264,70 @@
                                             #(get % "hash")
                                             #(get % "path_hint"))))
 
+         {errors-sidecars "errors"
+          other-sidecars  :other}
+         (group-by (fn [sc]
+                     (if (= "errors" (get sc "role")) "errors" :other))
+                   sidecars)
+         sidecar-iris (fn [scs]
+                        (mapv #(artifact-iri base-iri (get % "hash")) scs))
+
+         artifact-types (cond-> [:abc/Artifact :prov/Entity]
+                          failure? (conj :abc/FailureArtifact))
+
          artifact-data
          (merge
-           {:rdf/about            artifact-uri
-            :rdf/type             [:abc/Artifact :prov/Entity]
-            :abc/artifactId       artifact-id
-            :abc/artifactKind     artifact-kind
-            :abc/schemaHash       schema-hash
-            :abc/validationStatus (get manifest "validation_status")
-            :prov/generatedAtTime (->xsd-datetime generated-at)}
+          {:rdf/about            artifact-uri
+           :rdf/type             artifact-types
+           :abc/artifactId       artifact-id
+           :abc/artifactKind     artifact-kind
+           :abc/schemaHash       schema-hash
+           :abc/validationStatus (get manifest "validation_status")
+           :prov/generatedAtTime (->xsd-datetime generated-at)}
 
-           (when failure?
-             {:rdf/type :abc/FailureArtifact})
+          (when content
+            {:abc/contentHash (get content "content_hash")
+             :dcterms/format  (get content "media_type")})
 
-           (when content
-             {:abc/contentHash (get content "content_hash")
-              :dcterms/format  (get content "media_type")})
+          (when (seq derived)
+            {:prov/wasDerivedFrom derived})
 
-           (when (seq derived)
-             {:prov/wasDerivedFrom derived})
+          {:prov/wasGeneratedBy activity-uri}
 
-           {:prov/wasGeneratedBy activity-uri}
+          (when (seq other-sidecars)
+            {:abc/hasSidecar (sidecar-iris other-sidecars)})
 
-           (when (seq sidecars)
-             {:abc/hasSidecar (mapv #(artifact-iri base-iri (get % "hash"))
-                                    sidecars)}))
+          (when (seq errors-sidecars)
+            {:abc/hasErrorArtifact (sidecar-iris errors-sidecars)}))
 
          association-data
          (merge
-           {:rdf/type   :prov/Association
-            :prov/agent (agent-iri agent-str base-iri)}
-           (when plan-hash
-             {:prov/hadPlan (artifact-iri base-iri plan-hash)}))
+          {:rdf/type   :prov/Association
+           :prov/agent (agent-iri agent-str base-iri)}
+          (when plan-hash
+            {:prov/hadPlan (artifact-iri base-iri plan-hash)}))
 
          activity-data
          (merge
-           {:rdf/about                 activity-uri
-            :rdf/type                  :prov/Activity
-            :prov/qualifiedAssociation association-data}
-           (when (seq used)
-             {:prov/used used}))
+          {:rdf/about                 activity-uri
+           :rdf/type                  :prov/Activity
+           :prov/qualifiedAssociation association-data}
+          (when (seq used)
+            {:prov/used used}))
 
          sidecar-data
          (mapv
-           (fn [sc]
-             (let [sc-uri (artifact-iri base-iri (get sc "hash"))]
-               {:rdf/about           sc-uri
-                :rdf/type            :prov/Entity
-                :abc/schemaHash      schema-hash
-                :abc/sidecarRole     (get sc "role")
-                :abc/contentHash     (get sc "hash")
-                :dcterms/format      (get sc "media_type")
-                :prov/wasGeneratedBy activity-uri
-                :prov/wasDerivedFrom artifact-uri}))
-           sidecars)]
+          (fn [sc]
+            (let [sc-uri (artifact-iri base-iri (get sc "hash"))]
+              {:rdf/about           sc-uri
+               :rdf/type            :prov/Entity
+               :abc/schemaHash      schema-hash
+               :abc/sidecarRole     (get sc "role")
+               :abc/contentHash     (get sc "hash")
+               :dcterms/format      (get sc "media_type")
+               :prov/wasGeneratedBy activity-uri
+               :prov/wasDerivedFrom artifact-uri}))
+          sidecars)]
 
      (-> (aa/graph :simple)
          (aa/add artifact-data)

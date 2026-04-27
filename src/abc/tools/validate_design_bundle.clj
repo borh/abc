@@ -5,6 +5,7 @@
             [abc.tools.manifest :as manifest]
             [abc.tools.materialize-import :as materialize]
             [abc.tools.schema :as schema]
+            [abc.tools.shacl :as shacl]
             [clojure.java.io :as io]
             [clojure.set :as set]
             [clojure.string :as string]))
@@ -198,6 +199,39 @@
   (run-command! "git-cliff" "--config" "cliff.toml" "--unreleased" "--strip" "header"
                 "--output" "/tmp/abc-changelog-check.md"))
 
+;; Spec format: "<severity>: <focus> <path> — <message> (<label>)".
+;; We append "[<source>]" because the source shape IRI is high-signal
+;; for debugging and the spec did not pin punctuation, only fields.
+(defn- render-violation [{:keys [severity focus-node path message label source]}]
+  (str (or severity "Violation") ": "
+       (or focus-node "?") " "
+       (or path "")
+       (when message (str " — " message))
+       (when label (str " (" label ")"))
+       (when source (str " [" source "]"))))
+
+(defn validate-shacl!
+  "Validate every manifest in `manifest-paths` against the shapes graph.
+  Aggregates all violations and throws once at the end if any are found."
+  [shapes-graph manifest-paths]
+  (let [violations
+        (reduce
+         (fn [acc path]
+           (try
+             (let [m (files/read-json path)
+                   data (manifest-to-rdf/manifest->graph m)]
+               (shacl/validate! {:shapes-graph shapes-graph
+                                 :data-graph data
+                                 :label (str path)})
+               acc)
+             (catch clojure.lang.ExceptionInfo e
+               (into acc (:errors (ex-data e))))))
+         []
+         manifest-paths)]
+    (when (seq violations)
+      (throw (ex-info "SHACL validation failed"
+                      {:errors (mapv render-violation violations)})))))
+
 (defn validate-design-bundle! []
   (let [materialized-dir (.toFile (java.nio.file.Files/createTempDirectory
                                    "abc-materialized-import"
@@ -219,7 +253,14 @@
         (println "==> Checking materialized RDF views")
         (doseq [manifest-path (vals materialized)]
           (manifest-to-rdf/manifest->ttl (files/read-json manifest-path)))
-        (println "materialized RDF views ok"))
+        (println "materialized RDF views ok")
+        (println "==> Validating SHACL shapes")
+        (let [shapes (shacl/load-shapes-graph)
+              targets (concat (vals materialized)
+                              ["examples/v0/example-work/manifest.json"
+                               "examples/v0/example-work/failure-manifest.example.json"])]
+          (validate-shacl! shapes targets))
+        (println "shacl shapes ok"))
       (println "==> Checking imported ab-validator output")
       (validate-ab-validator-output!)
       (println "ab-validator output ok")

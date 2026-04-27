@@ -34,6 +34,10 @@
               (final: _prev: import local-pkgs { pkgs = final; })
             ];
           };
+          tei-schema = pkgs.fetchurl {
+            url = "https://www.tei-c.org/release/xml/tei/custom/schema/relaxng/tei_all.rng";
+            hash = "sha256-7MSfAMN/SQtd9xa2cuPbpjXrHknM2I+5aYWUmN9CwIQ=";
+          };
         in
         {
           validate-design-bundle = {
@@ -46,6 +50,7 @@
                     pkgs.libxml2
                   ]
                 }:''${PATH:-}"
+                export TEI_SCHEMA_PATH="${tei-schema}"
                 exec ${pkgs.clojure}/bin/clojure -M:abc/validate-design-bundle "$@"
               ''
             );

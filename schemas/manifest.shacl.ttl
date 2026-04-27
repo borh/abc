@@ -48,11 +48,7 @@ abc:ArtifactShape
       ]
     ]
     [
-      sh:class abc:FailureArtifact ;
-      sh:property [
-        sh:path abc:hasErrorArtifact ;
-        sh:minCount 1
-      ]
+      sh:class abc:FailureArtifact
     ]
   ) .
 
@@ -79,6 +75,11 @@ abc:FailureShape
     sh:path abc:hasErrorArtifact ;
     sh:minCount 1
   ] .
+
+# ArtifactShape's sh:or discriminates the artifact subtype (content+format
+# vs. FailureArtifact) but does not duplicate per-subtype property checks.
+# FailureShape above is the single source of truth for what a FailureArtifact
+# must carry.
 
 abc:SidecarShape
   a sh:NodeShape ;

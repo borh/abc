@@ -105,6 +105,14 @@
       (is (not (some #(re-find #"abc:contentHash" %) all-artifact-lines)))
       (is (not (some #(re-find #"dcterms:format" %) all-artifact-lines))))))
 
+(deftest manifest-to-rdf-matches-example-fixture-test
+  (testing "generated RDF matches canonical example-work fixture"
+    ;; NOTE: Byte-for-byte comparison is intentional to prevent drift.
+    ;; If this becomes fragile, escalate to semantic RDF comparison.
+    (let [manifest (files/read-json "examples/v0/example-work/manifest.json")
+          expected (slurp "examples/v0/example-work/manifest.ttl")]
+      (is (= expected (manifest-to-rdf/manifest->ttl manifest))))))
+
 (deftest write-ttl-file-test
   (let [dir (Files/createTempDirectory "abc-manifest-rdf" (make-array FileAttribute 0))
         output-file (io/file (.toFile dir) "manifest.ttl")]

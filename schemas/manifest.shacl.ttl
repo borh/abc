@@ -1,6 +1,10 @@
 @prefix abc: <https://w3id.org/abc/> .
+@prefix bibo: <http://purl.org/ontology/bibo/> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
 @prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
 @prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix rdag2: <http://RDVocab.info/ElementsGr2/> .
 @prefix sh: <http://www.w3.org/ns/shacl#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
@@ -99,4 +103,96 @@ abc:SidecarShape
     sh:path dcterms:format ;
     sh:minCount 1 ;
     sh:datatype xsd:string
+  ] .
+
+# Metadata-record shapes target the bibliographic-data RDF view produced
+# by abc.tools.metadata-record/record->graph. They constrain not only
+# presence but also datatype and (where the source data is enum-bound)
+# value-set membership, so identity-affecting drift in the JSON record
+# surfaces as a SHACL failure rather than passing through silently.
+
+abc:MetadataRecordWorkShape
+  a sh:NodeShape ;
+  sh:targetClass bibo:Document ;
+  sh:property [
+    sh:path dcterms:identifier ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:int
+  ] ;
+  sh:property [
+    sh:path dcterms:title ;
+    sh:minCount 1 ;
+    sh:maxCount 1
+  ] ;
+  sh:property [
+    sh:path dc:subject ;
+    sh:minCount 1
+  ] ;
+  sh:property [
+    sh:path abc:orthographicStyle ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string ;
+    sh:in ("新字新仮名" "新字旧仮名" "旧字新仮名" "旧字旧仮名" "その他")
+  ] ;
+  sh:property [
+    sh:path abc:copyrightExpired ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:boolean
+  ] ;
+  sh:property [
+    sh:path dcterms:available ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:date
+  ] ;
+  sh:property [
+    sh:path dcterms:modified ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:date
+  ] ;
+  sh:property [
+    sh:path dcterms:creator ;
+    sh:minCount 1
+  ] .
+
+abc:MetadataRecordPersonShape
+  a sh:NodeShape ;
+  sh:targetClass foaf:Person ;
+  sh:property [
+    sh:path dcterms:identifier ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:int
+  ] ;
+  sh:property [
+    sh:path foaf:familyName ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string
+  ] ;
+  sh:property [
+    sh:path foaf:givenName ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string
+  ] ;
+  sh:property [
+    sh:path foaf:name ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:string
+  ] ;
+  sh:property [
+    sh:path rdag2:dateOfBirth ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:date
+  ] ;
+  sh:property [
+    sh:path rdag2:dateOfDeath ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:date
   ] .

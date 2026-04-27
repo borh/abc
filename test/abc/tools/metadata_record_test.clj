@@ -77,6 +77,15 @@
     (let [expected (slurp "examples/v0/example-work/metadata-record.ttl")]
       (is (= expected (mr/record->ttl @example-record))))))
 
+(deftest record-graph-conforms-to-shacl-test
+  (testing "the example metadata-record's RDF graph conforms to MetadataRecordShape"
+    (let [shapes ((requiring-resolve 'abc.tools.shacl/load-shapes-graph))
+          data (mr/record->graph @example-record)]
+      (is (= :ok ((requiring-resolve 'abc.tools.shacl/validate!)
+                  {:shapes-graph shapes
+                   :data-graph data
+                   :label "metadata-record-shape-test"}))))))
+
 (deftest build-metadata-record-shape-test
   (testing "build-metadata-record produces a schema-compliant value"
     (let [work (get @example-record "work")

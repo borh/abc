@@ -1,24 +1,12 @@
 # Next Steps
 
-## Current Milestone
+## Current State
 
-The next implementation milestone is an executable v0 contract harness:
-
-> Given a checked-in imported parser-output fixture, ABC validates the boundary
-> bundle, computes stable schema and artifact identities, emits parser-IR and
-> warning manifests into temporary or caller-selected output directories, and
-> verifies deterministic regeneration without committing generated
-> `examples/**` outputs.
-
-This keeps ABC focused on its own boundary contract. Do not move next into full
-corpus processing, parser execution inside ABC, database services, RO-Crate
-packaging, tokenizer pipelines, or public release security.
-
-Generated materialized manifests are intentionally not checked in under
-`examples/materialized-import/`. They churn whenever identity inputs, schema
-hashes, generated timestamps, manifest shape, or fixture source files change.
-The reviewable contract is the source fixture plus the Clojure tests and
-`validate-design-bundle` temp-generation checks.
+The v0 contract harness milestone (archived as
+`docs/archive/2026-04-27-v0-contract-harness.md`) is complete. The
+canonical-JSON ↔ RDF/PROV-O loop is closed: every manifest produced or
+carried by the v0 fixtures is validated against
+`schemas/manifest.shacl.ttl` during `nix run .#validate-design-bundle`.
 
 ## Canonical Commands
 
@@ -28,140 +16,41 @@ nix run .#materialize-import -- examples/ab-validator-output out/imported --gene
 nix run .#manifest-to-rdf -- out/imported/parser-ir.manifest.json -o out/imported/parser-ir.ttl
 nix flake check
 bin/update-clj-nix-lock
-clojure -M:abc/validate-design-bundle
-clojure -M:abc/materialize-import examples/ab-validator-output out/imported --generated-at 2026-04-26T00:00:00Z
-clojure -M:abc/manifest-to-rdf out/imported/parser-ir.manifest.json -o out/imported/parser-ir.ttl
 ```
 
-The direct Clojure validator expects external tools such as `xmllint` and
-`git-cliff` on `PATH`. The Nix app is the portable local/CI entry point because
-it supplies those tools.
+## Candidate Next Milestones
 
-The full legacy test suite is not yet the v0 contract gate. For the executable
-contract slice, `nix flake check` runs the focused Clojure tests with a
-clj-nix dependency cache generated from `nix/clj-nix-deps.edn`. When running
-outside Nix, use the focused tool/text tests:
+In rough order of leverage, none committed:
 
-```bash
-clojure -M:test -e '(require (quote clojure.test)
-                             (quote abc.annotation-schema-test)
-                             (quote abc.text-test)
-                             (quote abc.ndc-test)
-                             (quote abc.tools.hash-test)
-                             (quote abc.tools.jcs-test)
-                             (quote abc.tools.schema-test)
-                             (quote abc.tools.manifest-index-test)
-                             (quote abc.tools.manifest-to-rdf-test)
-                             (quote abc.tools.validate-design-bundle-test)
-                             (quote abc.tools.materialize-import-test))
-                    (let [r (clojure.test/run-tests
-                             (quote abc.annotation-schema-test)
-                             (quote abc.text-test)
-                             (quote abc.ndc-test)
-                             (quote abc.tools.hash-test)
-                             (quote abc.tools.jcs-test)
-                             (quote abc.tools.schema-test)
-                             (quote abc.tools.manifest-index-test)
-                             (quote abc.tools.manifest-to-rdf-test)
-                             (quote abc.tools.validate-design-bundle-test)
-                             (quote abc.tools.materialize-import-test))]
-                      (when (pos? (+ (:fail r) (:error r)))
-                        (System/exit 1)))'
-```
+1. **Failure-manifest Turtle parity test.** Now that the failure RDF
+   mapping is exercised end-to-end, consider committing
+   `examples/v0/example-work/failure-manifest.example.ttl` plus a
+   byte-for-byte parity test (analogue of the success-case
+   `manifest-to-rdf-matches-example-fixture-test`). Deferred from the
+   2026-04-27 milestone to avoid churn during the mapping shakedown.
+2. **TEI profile + validation pipeline.** Promote
+   `schemas/tei-profile.odd` from stub to a real ODD aligned with TEI
+   P5 4.11.0 ruby support. Generate Relax NG; add Jing or `xmllint`
+   validation as a `validate-design-bundle` step. Unlocks replacing
+   the design fixtures with a real Aozora work end to end.
+3. **Parser-decision exercise (ADR 0002).** Run a candidate parser
+   (e.g. `aozora-rs`) over one Aozora work into the parser IR
+   contract. Either validates the boundary or surfaces gaps before
+   more code is written.
+4. **Tighten ArtifactShape.** The current `sh:or` in
+   `schemas/manifest.shacl.ttl` duplicates the
+   `abc:hasErrorArtifact sh:minCount 1` requirement in branch 2 and
+   in `FailureShape`. Clean up if/when shapes are revisited.
+5. **Move legacy namespaces behind clj-nix.** `abc.aozora`,
+   `abc.tei`, `abc.stats` remain outside the v0 contract gate. Decide
+   whether to bring them in or leave them dormant.
 
-## Implemented Contract Pieces
+## Done Criteria For The Closed Milestone
 
-- `abc.tools.hash` owns SHA-256 formatting, parsing, byte/string/file hashing,
-  and `sha256:<64 lowercase hex>` validation.
-- `abc.tools.jcs` owns canonical JSON bytes/strings for identity hashing.
-- `abc.tools.json` owns deterministic pretty JSON for generated fixture bytes.
-  This is separate from JCS and is not the ArtifactID canonicalization
-  algorithm.
-- `abc.tools.schema` owns schema hashing and JSON/JSONL validation through M3.
-- `abc.tools.manifest-index` owns manifest index entries and duplicate
-  ArtifactID/content-hash conflict detection.
-- `abc.tools.manifest-to-rdf` owns the deterministic v0 RDF/Turtle view and
-  exposes `clojure -M:abc/manifest-to-rdf` / `nix run .#manifest-to-rdf`.
-- `abc.tools.manifest` remains the manifest construction API and delegates hash,
-  JCS, JSON, and schema responsibilities to the focused namespaces.
-- `abc.tools.materialize-import` writes parser-IR and warnings manifests from
-  `examples/ab-validator-output/`.
-- `abc.tools.validate-design-bundle` materializes imported output into a temp
-  directory, validates generated manifests, and validates the repository-local
-  design bundle.
-- `abc.annotation.schema` owns the lightweight Malli reference contract for
-  annotation/document shapes used by future TEI XML and metadata work.
-- `nix/clj-nix-deps.edn` is the lean dependency surface for sandboxed focused
-  Clojure tests under `nix flake check`; regenerate `deps-lock.json` with
-  `bin/update-clj-nix-lock` when it changes.
-
-## Validation Rules
-
-Identity and schema hashing:
-
-- `artifact_id` is the SHA-256 hash of RFC 8785-style canonical JSON bytes for
-  `manifest_identity_object`.
-- `artifact_id` identifies the derivation coordinate, not the materialized output
-  bytes.
-- Output bytes are identified by `content.content_hash`.
-- Schema hashes are SHA-256 over canonical JSON bytes of the parsed schema value.
-  Pretty-printing, source whitespace, and object member order do not affect the
-  schema hash.
-- JSON arrays preserve order during canonicalization.
-
-Imported-output boundary:
-
-- `examples/ab-validator-output/parser-ir.json` validates against
-  `schemas/parser-ir.schema.json`.
-- `examples/ab-validator-output/warnings.jsonl` validates line-by-line against
-  `schemas/diagnostic.schema.json`.
-- `examples/ab-validator-output/run-summary.jsonl` validates line-by-line against
-  `schemas/run-summary.schema.json`.
-- `examples/ab-validator-output/manifest-inputs.json` validates against
-  `schemas/manifest-inputs.schema.json`.
-- `examples/ab-validator-output/comparison-report.json` validates against
-  `schemas/comparison-report.schema.json`.
-
-Run-summary structure:
-
-- exactly one `run-start`
-- zero or more `work-result`
-- exactly one `run-complete`
-- all events use the same `run_id`
-- each event includes `run_id`
-
-Materialized manifest behavior:
-
-- parser IR and warnings manifests have distinct `artifact_id` values.
-- `artifact_id` is distinct from `content.content_hash`.
-- `manifest_identity_object` does not include `artifact_id`.
-- `manifest_schema_hash` uses the same schema-hash rule as ADR 0001.
-- deterministic pretty JSON output is stable for repeated runs with identical
-  input and `--generated-at`.
-- producer-supplied parser IR and diagnostic schema hashes must match ABC's
-  checked-in schemas unless a future compatibility rule is registered.
-- release validation fails if successful manifests reuse one `artifact_id` with
-  more than one `content.content_hash`.
-- the deterministic RDF/Turtle view sorts provenance and sidecar data whose
-  semantic order is not meaningful.
-
-## Remaining Work After This Milestone
-
-1. Expand the manifest-to-RDF view beyond the current core entity/activity/
-   sidecar mapping if RDF publication becomes a release target.
-2. Decide whether the wider legacy dependency graph should also move behind
-   clj-nix, or remain outside the v0 contract gate until those namespaces are
-   active again.
-
-## Done Criteria For This Milestone
-
-- `nix run .#validate-design-bundle` passes.
-- `clojure -M:abc/validate-design-bundle` passes when `xmllint` and `git-cliff`
-  are on `PATH`.
-- focused `abc.tools.*` contract tests pass.
-- `nix flake check` evaluates the app/devshell surface, the lightweight
-  contract-source check, and the clj-nix-backed focused Clojure test check.
-- `nix run .#materialize-import -- examples/ab-validator-output out/imported --generated-at 2026-04-26T00:00:00Z` writes valid manifests.
-- `nix run .#manifest-to-rdf -- out/imported/parser-ir.manifest.json -o out/imported/parser-ir.ttl` writes a deterministic Turtle view.
-- repeated materialization with the same inputs and timestamp is byte-stable.
-- no generated `examples/materialized-import/**` files are committed.
+See `docs/archive/2026-04-27-v0-contract-harness.md`. Briefly:
+- `nix run .#validate-design-bundle` passes including
+  `==> Validating SHACL shapes`.
+- `nix flake check` passes including the focused-test check.
+- `examples/v0/example-work/manifest.ttl` byte-for-byte parity test
+  remains stable.
+- Failure manifest fixture exercised end to end (JSON → graph → SHACL).

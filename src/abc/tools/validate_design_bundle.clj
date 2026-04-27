@@ -9,6 +9,7 @@
    [abc.tools.manifest :as manifest]
    [abc.tools.materialize-import :as materialize]
    [abc.tools.schema :as schema]
+   [abc.tools.metadata-record :as metadata-record]
    [abc.tools.shacl :as shacl]
    [abc.tools.tei :as tei]
    [clojure.java.io :as io]
@@ -282,6 +283,52 @@
       (throw (ex-info "SHACL validation failed"
                       {:errors (mapv render-violation violations)})))))
 
+(defn validate-metadata-record!
+  "Validate the example-work metadata record:
+  1. JSON schema (contract-smoke per ADR 0006).
+  2. metadata_record_hash in manifest.json matches record-hash
+     (design-smoke).
+  3. metadata_record_schema_hash in the record matches the live
+     hash of metadata-record.schema.json (design-smoke).
+  4. record->graph + SHACL conformance (release-smoke).
+  5. record->ttl byte-for-byte against the committed fixture
+     (contract-smoke)."
+  [{:keys [record-path manifest-path schema-path ttl-path shapes-graph]}]
+  (let [record (files/read-json record-path)]
+    (metadata-record/validate! record)
+    ;; Schema-hash precondition: a stale embedded schema-hash means
+    ;; the record was generated against a different schema than the
+    ;; one currently in tree, so the downstream identity check would
+    ;; be comparing apples to oranges.
+    (let [computed-schema-hash (manifest/schema-hash schema-path)
+          expected-schema-hash (get record "metadata_record_schema_hash")]
+      (when-not (= computed-schema-hash expected-schema-hash)
+        (throw (ex-info (str "metadata_record_schema_hash mismatch: "
+                             "record has " expected-schema-hash
+                             ", live schema hash is " computed-schema-hash)
+                        {:record-path record-path
+                         :computed computed-schema-hash
+                         :expected expected-schema-hash}))))
+    (let [computed (metadata-record/record-hash record)
+          expected (get-in (files/read-json manifest-path)
+                           ["manifest_identity_object" "metadata_record_hash"])]
+      (when-not (= computed expected)
+        (throw (ex-info (str "metadata_record_hash mismatch: manifest has "
+                             expected ", record-hash computed " computed)
+                        {:record-path record-path
+                         :manifest-path manifest-path
+                         :computed computed
+                         :expected expected}))))
+    (shacl/validate! {:shapes-graph shapes-graph
+                      :data-graph (metadata-record/record->graph record)
+                      :label record-path})
+    (let [generated (metadata-record/record->ttl record)
+          expected (slurp ttl-path)]
+      (when-not (= expected generated)
+        (throw (ex-info (str "metadata-record.ttl parity mismatch with " ttl-path)
+                        {:record-path record-path
+                         :ttl-path ttl-path}))))))
+
 (defn validate-design-bundle! []
   (let [materialized-dir (.toFile (java.nio.file.Files/createTempDirectory
                                    "abc-materialized-import"
@@ -310,7 +357,16 @@
                               ["examples/v0/example-work/manifest.json"
                                "examples/v0/example-work/failure-manifest.example.json"])]
           (validate-shacl! shapes targets))
-        (tel/log! :info "shacl shapes ok"))
+        (tel/log! :info "shacl shapes ok")
+        (tel/log! :info "==> Validating metadata record")
+        (let [shapes (shacl/load-shapes-graph)]
+          (validate-metadata-record!
+           {:record-path "examples/v0/example-work/metadata-record.json"
+            :manifest-path "examples/v0/example-work/manifest.json"
+            :schema-path "schemas/metadata-record.schema.json"
+            :ttl-path "examples/v0/example-work/metadata-record.ttl"
+            :shapes-graph shapes}))
+        (tel/log! :info "metadata record ok"))
       (tel/log! :info "==> Checking imported ab-validator output")
       (validate-ab-validator-output!)
       (tel/log! :info "ab-validator output ok")

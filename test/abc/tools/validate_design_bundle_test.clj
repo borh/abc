@@ -162,6 +162,60 @@
             (str "ex-data must surface the env var name; got: "
                  (pr-str (ex-data e))))))))
 
+(deftest validate-metadata-record-smoke-test
+  (testing "validate-metadata-record! returns nil for the example fixture"
+    (let [shapes (shacl/load-shapes-graph)]
+      (is (nil? (validate/validate-metadata-record!
+                 {:record-path "examples/v0/example-work/metadata-record.json"
+                  :manifest-path "examples/v0/example-work/manifest.json"
+                  :schema-path "schemas/metadata-record.schema.json"
+                  :ttl-path "examples/v0/example-work/metadata-record.ttl"
+                  :shapes-graph shapes}))))))
+
+(deftest validate-metadata-record-hash-mismatch-test
+  (testing "validate-metadata-record! throws when the manifest's metadata_record_hash is wrong"
+    (let [shapes (shacl/load-shapes-graph)
+          tmp-manifest (java.io.File/createTempFile "abc-bad-manifest" ".json")
+          original-text (slurp "examples/v0/example-work/manifest.json")
+          ;; The current example value (set in Task 9):
+          good-hash "sha256:cbf2c3200966430af59f4974036961d57d0ea0300e1d8a1ff606ef8f632a5697"
+          bad-hash "sha256:0000000000000000000000000000000000000000000000000000000000000000"]
+      (try
+        (spit tmp-manifest (clojure.string/replace original-text good-hash bad-hash))
+        (try
+          (validate/validate-metadata-record!
+           {:record-path "examples/v0/example-work/metadata-record.json"
+            :manifest-path (str tmp-manifest)
+            :schema-path "schemas/metadata-record.schema.json"
+            :ttl-path "examples/v0/example-work/metadata-record.ttl"
+            :shapes-graph shapes})
+          (is false "expected hash-mismatch throw")
+          (catch clojure.lang.ExceptionInfo e
+            (is (re-find #"metadata_record_hash mismatch" (ex-message e)))))
+        (finally (.delete tmp-manifest))))))
+
+(deftest validate-metadata-record-schema-hash-mismatch-test
+  (testing "validate-metadata-record! throws when the record's schema-hash is stale"
+    (let [shapes (shacl/load-shapes-graph)
+          tmp-record (java.io.File/createTempFile "abc-bad-record" ".json")
+          record (files/read-json "examples/v0/example-work/metadata-record.json")
+          mutated (assoc record "metadata_record_schema_hash"
+                         "sha256:0000000000000000000000000000000000000000000000000000000000000000")]
+      (try
+        ((requiring-resolve 'abc.tools.json/write-deterministic-json-file!)
+         tmp-record mutated)
+        (try
+          (validate/validate-metadata-record!
+           {:record-path (str tmp-record)
+            :manifest-path "examples/v0/example-work/manifest.json"
+            :schema-path "schemas/metadata-record.schema.json"
+            :ttl-path "examples/v0/example-work/metadata-record.ttl"
+            :shapes-graph shapes})
+          (is false "expected schema-hash-mismatch throw")
+          (catch clojure.lang.ExceptionInfo e
+            (is (re-find #"metadata_record_schema_hash mismatch" (ex-message e)))))
+        (finally (.delete tmp-record))))))
+
 (deftest validate-tei-warning-partition-test
   (testing "validate-tei! does not throw when only warnings are present"
     (when-not (= "1" (System/getenv tei-skip-flag))

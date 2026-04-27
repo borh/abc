@@ -114,6 +114,13 @@
               export CLJ_CACHE="$TMPDIR/cp-cache"
               export GITLIBS="$HOME/.gitlibs"
 
+              # The Nix sandbox has no network access; tests that need
+              # the upstream TEI RelaxNG schema (fetched at app build
+              # time, not at test time) skip cleanly when this flag is
+              # set. End-to-end TEI validation runs via the
+              # `nix run .#validate-design-bundle` app, not here.
+              export ABC_TEI_SCHEMA_SKIP=1
+
               clojure -M:abc/focused-test
 
               mkdir -p "$out"
@@ -135,6 +142,7 @@
             test -f ${./src/abc/tools/logging.clj}
             test -f ${./src/abc/tools/manifest_to_rdf.clj}
             test -f ${./src/abc/tools/shacl.clj}
+            test -f ${./src/abc/tools/tei.clj}
             test -f ${./src/abc/tools/validate_design_bundle.clj}
             test -f ${./test/abc/tools/hash_test.clj}
             test -f ${./test/abc/tools/jcs_test.clj}
@@ -143,6 +151,7 @@
             test -f ${./test/abc/tools/manifest_to_rdf_test.clj}
             test -f ${./test/abc/tools/materialize_import_test.clj}
             test -f ${./test/abc/tools/shacl_test.clj}
+            test -f ${./test/abc/tools/tei_test.clj}
             test -f ${./test/abc/tools/validate_design_bundle_test.clj}
             test -f ${./test/abc/annotation_schema_test.clj}
             test -f ${./test/abc/text_test.clj}

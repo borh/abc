@@ -129,6 +129,12 @@
           expected (slurp "examples/v0/example-work/manifest.ttl")]
       (is (= expected (manifest-to-rdf/manifest->ttl manifest))))))
 
+(deftest manifest-to-rdf-matches-failure-fixture-test
+  (testing "generated RDF for the failure manifest matches its checked-in fixture"
+    (let [manifest (files/read-json "examples/v0/example-work/failure-manifest.example.json")
+          expected (slurp "examples/v0/example-work/failure-manifest.example.ttl")]
+      (is (= expected (manifest-to-rdf/manifest->ttl manifest))))))
+
 (deftest write-ttl-file-test
   (let [dir (Files/createTempDirectory "abc-manifest-rdf" (make-array FileAttribute 0))
         output-file (io/file (.toFile dir) "manifest.ttl")]

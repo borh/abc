@@ -77,5 +77,6 @@
   :abc/validate-design-bundle {:main-opts ["-m" "abc.tools.validate-design-bundle"]}
   :abc/materialize-import {:main-opts ["-m" "abc.tools.materialize-import"]}
   :abc/manifest-to-rdf {:main-opts ["-m" "abc.tools.manifest-to-rdf"]}
+  :abc/aozora-ingest {:main-opts ["-m" "abc.tools.aozora-ingest"]}
   :update {:deps {com.github.liquidz/antq {:mvn/version "2.11.1276"}}
            :main-opts ["-m" "antq.core"]}}}

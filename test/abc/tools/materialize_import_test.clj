@@ -2,6 +2,7 @@
   (:require [abc.tools.files :as files]
             [abc.tools.manifest :as manifest]
             [abc.tools.materialize-import :as materialize]
+            [charred.api :as json]
             [clojure.java.io :as io]
             [clojure.test :refer [deftest is testing]])
   (:import [java.nio.file Files]
@@ -82,6 +83,77 @@
       (finally
         (doseq [file (reverse (file-seq out-file))]
           (.delete file))))))
+
+(deftest materialize-derives-status-from-run-summary-test
+  (let [input-dir (Files/createTempDirectory "abc-materialize-status" (make-array FileAttribute 0))
+        out-dir (Files/createTempDirectory "abc-materialize-status-out" (make-array FileAttribute 0))
+        input-file (.toFile input-dir)
+        out-file (.toFile out-dir)]
+    (try
+      ;; Write minimal supporting files into a temp input dir
+      (spit (io/file input-file "manifest-inputs.json")
+            (charred.api/write-json-str
+             {"producer" "ab-validator"
+              "producer_version" "0.0.0"
+              "work_id" "fixture-status"
+              "corpus_snapshot_hash" "sha256:f00000000000000000000000000000000000000000000000000000000000000f"
+              "work_content_hash" "sha256:f100000000000000000000000000000000000000000000000000000000000001"
+              "parser_build_hash" "sha256:f200000000000000000000000000000000000000000000000000000000000002"
+              "parser_config_hash" "sha256:f300000000000000000000000000000000000000000000000000000000000003"
+              "parser_ir_schema_hash" "sha256:13e3127fe8eaa0649f83fd5c12e11923115810b454c6d3d22996b00e1218623f"
+              "diagnostic_schema_hash" "sha256:e21ef2abdbf64b6fc920b4ef9a3df0e426b7bcc1cad0a6bbdd654f41e8ff302d"
+              "warning_sidecar_hash" "sha256:f500000000000000000000000000000000000000000000000000000000000005"
+              "run_summary_hash" "sha256:f600000000000000000000000000000000000000000000000000000000000006"
+              "comparison_report_hash" "sha256:f700000000000000000000000000000000000000000000000000000000000007"}))
+      (spit (io/file input-file "parser-ir.json") "{}")
+      (spit (io/file input-file "warnings.jsonl") "")
+      (spit (io/file input-file "run-summary.jsonl")
+            (str "{\"event\":\"run-start\",\"run_id\":\"r1\"}\n"
+                 "{\"event\":\"run-complete\",\"run_id\":\"r1\",\"status\":\"passed\"}\n"))
+      (materialize/materialize-import!
+       {:input-dir input-file
+        :output-dir out-file
+        :generated-at "2026-04-26T00:00:00Z"})
+      (let [parser-manifest (files/read-json (io/file out-file "parser-ir.manifest.json"))
+            warnings-manifest (files/read-json (io/file out-file "warnings.manifest.json"))]
+        (is (= "passed" (get parser-manifest "validation_status")))
+        (is (= "passed" (get warnings-manifest "validation_status"))))
+      (finally
+        (doseq [f (reverse (file-seq out-file))] (.delete f))
+        (doseq [f (reverse (file-seq input-file))] (.delete f))))))
+
+(deftest materialize-falls-back-to-warning-when-run-summary-missing-test
+  (let [input-dir (Files/createTempDirectory "abc-materialize-fallback" (make-array FileAttribute 0))
+        out-dir (Files/createTempDirectory "abc-materialize-fallback-out" (make-array FileAttribute 0))
+        input-file (.toFile input-dir)
+        out-file (.toFile out-dir)]
+    (try
+      (spit (io/file input-file "manifest-inputs.json")
+            (charred.api/write-json-str
+             {"producer" "ab-validator"
+              "producer_version" "0.0.0"
+              "work_id" "fixture-fallback"
+              "corpus_snapshot_hash" "sha256:f00000000000000000000000000000000000000000000000000000000000000f"
+              "work_content_hash" "sha256:f100000000000000000000000000000000000000000000000000000000000001"
+              "parser_build_hash" "sha256:f200000000000000000000000000000000000000000000000000000000000002"
+              "parser_config_hash" "sha256:f300000000000000000000000000000000000000000000000000000000000003"
+              "parser_ir_schema_hash" "sha256:13e3127fe8eaa0649f83fd5c12e11923115810b454c6d3d22996b00e1218623f"
+              "diagnostic_schema_hash" "sha256:e21ef2abdbf64b6fc920b4ef9a3df0e426b7bcc1cad0a6bbdd654f41e8ff302d"
+              "warning_sidecar_hash" "sha256:f500000000000000000000000000000000000000000000000000000000000005"
+              "run_summary_hash" "sha256:f600000000000000000000000000000000000000000000000000000000000006"
+              "comparison_report_hash" "sha256:f700000000000000000000000000000000000000000000000000000000000007"}))
+      (spit (io/file input-file "parser-ir.json") "{}")
+      (spit (io/file input-file "warnings.jsonl") "")
+      ;; No run-summary.jsonl
+      (materialize/materialize-import!
+       {:input-dir input-file
+        :output-dir out-file
+        :generated-at "2026-04-26T00:00:00Z"})
+      (let [parser-manifest (files/read-json (io/file out-file "parser-ir.manifest.json"))]
+        (is (= "warning" (get parser-manifest "validation_status"))))
+      (finally
+        (doseq [f (reverse (file-seq out-file))] (.delete f))
+        (doseq [f (reverse (file-seq input-file))] (.delete f))))))
 
 (deftest materialized-output-is-deterministic-test
   (let [out-dir (Files/createTempDirectory "abc-materialize-fixture" (make-array FileAttribute 0))

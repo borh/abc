@@ -9,6 +9,17 @@
 (defn imported-file [input-dir name]
   (io/file input-dir name))
 
+(defn run-summary-status [input-dir]
+  ;; v0 simplification: reads entire file. TODO: stream to handle
+  ;; run summaries with thousands of work results.
+  (let [summary-file (io/file input-dir "run-summary.jsonl")
+        events (when (.exists summary-file)
+                 (files/read-json-lines summary-file))]
+    (or (some #(when (= "run-complete" (get % "event"))
+                 (get % "status"))
+              events)
+        "warning")))
+
 (defn parser-ir-manifest [input-dir manifest-inputs generated-at]
   (let [parser-ir-file (imported-file input-dir "parser-ir.json")
         warnings-file (imported-file input-dir "warnings.jsonl")
@@ -19,7 +30,7 @@
                           :output-format-spec-hash (get manifest-inputs "parser_ir_schema_hash")})]
     (manifest/artifact-manifest
      {:artifact-kind "parser-ir"
-      :validation-status "warning"
+      :validation-status (run-summary-status input-dir)
       :identity-object identity-object
       :content (manifest/content parser-ir-file
                                  "application/json"
@@ -49,7 +60,7 @@
                           :output-format-spec-hash (get manifest-inputs "diagnostic_schema_hash")})]
     (manifest/artifact-manifest
      {:artifact-kind "warnings"
-      :validation-status "warning"
+      :validation-status (run-summary-status input-dir)
       :identity-object identity-object
       :content (manifest/content warnings-file
                                  "application/jsonl"

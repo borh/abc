@@ -1,0 +1,48 @@
+{
+  "metadata_record_schema_hash": "sha256:8eaa312cf4c06a9825d035458b1b77db6bf8c784eb9d9d343d6d6fb91781cd4c",
+  "metadata_record_schema_id": "https:\/\/w3id.org\/abc\/schemas\/metadata-record.schema.json",
+  "persons": [
+    {
+      "date_of_birth": "1892-03-01",
+      "date_of_death": "1927-07-24",
+      "external_links": [],
+      "family_name": "\u82a5\u5ddd",
+      "family_name_reading": "\u3042\u304f\u305f\u304c\u308f",
+      "family_name_romaji": "Akutagawa",
+      "family_name_sort": "\u3042\u304f\u305f\u304b\u308f",
+      "given_name": "\u7adc\u4e4b\u4ecb",
+      "given_name_reading": "\u308a\u3085\u3046\u306e\u3059\u3051",
+      "given_name_romaji": "Ryunosuke",
+      "given_name_sort": "\u308a\u3086\u3046\u306e\u3059\u3051",
+      "person_copyright_expired": true,
+      "person_id": "000879",
+      "relation_to_work": "\u8457\u8005"
+    }],
+  "work": 
+  {
+    "aozora_available": "1997-10-29",
+    "aozora_modified": "2022-07-16",
+    "card_url": "https:\/\/www.aozora.gr.jp\/cards\/000879\/card127.html",
+    "copyright_expired": true,
+    "first_published": "\u300c\u5e1d\u56fd\u6587\u5b66\u300d1915\uff08\u5927\u6b634\uff09\u5e7411\u6708\u53f7",
+    "ndc": "NDC 913",
+    "original_title": null,
+    "orthographic_style": "\u65b0\u5b57\u65b0\u4eee\u540d",
+    "sort_reading": "\u3089\u3057\u3088\u3046\u3082\u3093",
+    "source_editions": [
+      {
+        "first_edition_year": "1986\uff08\u662d\u548c61\uff09\u5e749\u670824\u65e5",
+        "input_edition": "1997\uff08\u5e73\u62109\uff09\u5e744\u670815\u65e5\u7b2c14\u5237",
+        "parent_first_edition_year": "1971\uff08\u662d\u548c46\uff09\u5e743\u67085\u65e5",
+        "parent_publisher": "\u7b51\u6469\u66f8\u623f",
+        "parent_title": "\u7b51\u6469\u5168\u96c6\u985e\u805a\u3000\u82a5\u5ddd\u9f8d\u4e4b\u4ecb\u5168\u96c6\u7b2c\u4e00\u5dfb",
+        "publisher": "\u3061\u304f\u307e\u6587\u5eab\u3001\u7b51\u6469\u66f8\u623f",
+        "title": "\u82a5\u5ddd\u9f8d\u4e4b\u4ecb\u5168\u96c61"
+      }],
+    "subtitle": null,
+    "subtitle_reading": null,
+    "title": "\u7f85\u751f\u9580",
+    "title_reading": "\u3089\u3057\u3087\u3046\u3082\u3093",
+    "work_id": "000127"
+  }
+}

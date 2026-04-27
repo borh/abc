@@ -22,11 +22,13 @@ bin/update-clj-nix-lock
 
 In rough order of leverage, none committed:
 
-1. **TEI profile + validation pipeline.** Promote
-   `schemas/tei-profile.odd` from stub to a real ODD aligned with TEI
-   P5 4.11.0 ruby support. Generate Relax NG; add Jing or `xmllint`
-   validation as a `validate-design-bundle` step. Unlocks replacing
-   the design fixtures with a real Aozora work end to end.
+1. **TEI ODD promotion.** Promote `schemas/tei-profile.odd` from
+   stub to a project-specific ODD aligned with TEI P5 4.11.0 ruby
+   support. Generate a project-specific RelaxNG via `roma`/`teiroma`
+   and use it instead of `tei_all.rng` in `validate-design-bundle`.
+   v0 currently validates against full TEI; an ODD-derived schema
+   tightens what's accepted. Prerequisite for replacing the design
+   fixtures with a real Aozora work end to end.
 2. **Parser-decision exercise (ADR 0002).** Run a candidate parser
    (e.g. `aozora-rs`) over one Aozora work into the parser IR
    contract. Either validates the boundary or surfaces gaps before

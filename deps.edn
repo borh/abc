@@ -46,7 +46,9 @@
                                    :exclusions [org.apache.jena/apache-jena-libs]}
 
   org.apache.jena/jena-shacl       {:mvn/version "5.3.0"
-                                    :exclusions [org.apache.jena/apache-jena-libs]}}
+                                    :exclusions [org.apache.jena/apache-jena-libs]}
+
+  com.taoensso/telemere            {:mvn/version "1.2.1"}}
 
  :aliases
  {:test {:extra-paths ["test"]

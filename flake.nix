@@ -127,6 +127,7 @@
             test -f ${./src/abc/tools/json.clj}
             test -f ${./src/abc/tools/schema.clj}
             test -f ${./src/abc/tools/manifest_index.clj}
+            test -f ${./src/abc/tools/logging.clj}
             test -f ${./src/abc/tools/manifest_to_rdf.clj}
             test -f ${./src/abc/tools/shacl.clj}
             test -f ${./src/abc/tools/validate_design_bundle.clj}

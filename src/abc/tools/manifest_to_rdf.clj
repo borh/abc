@@ -2,11 +2,13 @@
   "Convert ABC design-bundle manifests to deterministic RDF/Turtle using
   Apache Jena (via Aristotle) for graph construction."
   (:require [abc.tools.files :as files]
+            [abc.tools.logging :as logging]
             [arachne.aristotle :as aa]
             [arachne.aristotle.registry :as reg]
             [clojure.java.io :as io]
             [clojure.string :as string]
-            [clojure.tools.cli :as cli])
+            [clojure.tools.cli :as cli]
+            [taoensso.telemere :as tel])
   (:import [org.apache.jena.datatypes.xsd XSDDatatype]
            [org.apache.jena.graph Node Triple NodeFactory]
            [java.io ByteArrayOutputStream]))
@@ -360,17 +362,16 @@
   [["-o" "--output FILE" "Output Turtle file. Defaults to stdout."]])
 
 (defn usage []
-  (binding [*out* *err*]
-    (println "Usage: clojure -M:abc/manifest-to-rdf <manifest.json> [-o output.ttl]")))
+  (tel/log! :warn "Usage: clojure -M:abc/manifest-to-rdf <manifest.json> [-o output.ttl]"))
 
 (defn -main [& args]
+  (logging/install-cli-handler!)
   (let [{:keys [options arguments errors]} (cli/parse-opts args cli-options)
         [manifest-path & extra] arguments]
     (if (or (seq errors) (nil? manifest-path) (seq extra))
       (do
         (doseq [error errors]
-          (binding [*out* *err*]
-            (println error)))
+          (tel/log! :error error))
         (usage)
         (System/exit 2))
       (let [ttl (manifest->ttl (files/read-json manifest-path))]
@@ -378,5 +379,6 @@
           (do
             (io/make-parents output)
             (spit (io/file output) ttl)
-            (println "wrote RDF Turtle view to" output))
+            (tel/log! :info (str "wrote RDF Turtle view to " output)))
+          ;; Turtle goes to stdout as primary tool output, not a log event.
           (print ttl))))))

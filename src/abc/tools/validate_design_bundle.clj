@@ -1,5 +1,6 @@
 (ns abc.tools.validate-design-bundle
   (:require [abc.tools.files :as files]
+            [abc.tools.logging :as logging]
             [abc.tools.manifest-index :as manifest-index]
             [abc.tools.manifest-to-rdf :as manifest-to-rdf]
             [abc.tools.manifest :as manifest]
@@ -8,7 +9,8 @@
             [abc.tools.shacl :as shacl]
             [clojure.java.io :as io]
             [clojure.set :as set]
-            [clojure.string :as string]))
+            [clojure.string :as string]
+            [taoensso.telemere :as tel]))
 
 (def required-manifest-input-keys
   #{"producer"
@@ -237,55 +239,54 @@
                                    "abc-materialized-import"
                                    (make-array java.nio.file.attribute.FileAttribute 0)))]
     (try
-      (println "==> Materializing imported ab-validator output")
+      (tel/log! :info "==> Materializing imported ab-validator output")
       (let [materialized (materialize/materialize-import!
                           {:input-dir (files/path "examples" "ab-validator-output")
                            :output-dir materialized-dir
                            :generated-at materialize/default-generated-at})]
-        (println "materialized import ok")
-        (println "==> Validating JSON schemas and examples")
+        (tel/log! :info "materialized import ok")
+        (tel/log! :info "==> Validating JSON schemas and examples")
         (validate-json-schemas! (vals materialized))
-        (println "json schema validation ok")
-        (println "==> Checking materialized manifest index")
+        (tel/log! :info "json schema validation ok")
+        (tel/log! :info "==> Checking materialized manifest index")
         (manifest-index/validate-no-reproducibility-conflicts!
          (manifest-index/index-manifest-files (vals materialized)))
-        (println "materialized manifest index ok")
-        (println "==> Checking materialized RDF views")
+        (tel/log! :info "materialized manifest index ok")
+        (tel/log! :info "==> Checking materialized RDF views")
         (doseq [manifest-path (vals materialized)]
           (manifest-to-rdf/manifest->ttl (files/read-json manifest-path)))
-        (println "materialized RDF views ok")
-        (println "==> Validating SHACL shapes")
+        (tel/log! :info "materialized RDF views ok")
+        (tel/log! :info "==> Validating SHACL shapes")
         (let [shapes (shacl/load-shapes-graph)
               targets (concat (vals materialized)
                               ["examples/v0/example-work/manifest.json"
                                "examples/v0/example-work/failure-manifest.example.json"])]
           (validate-shacl! shapes targets))
-        (println "shacl shapes ok"))
-      (println "==> Checking imported ab-validator output")
+        (tel/log! :info "shacl shapes ok"))
+      (tel/log! :info "==> Checking imported ab-validator output")
       (validate-ab-validator-output!)
-      (println "ab-validator output ok")
-      (println "==> Checking canonicalization fixtures")
+      (tel/log! :info "ab-validator output ok")
+      (tel/log! :info "==> Checking canonicalization fixtures")
       (validate-canonicalization!)
-      (println "canonicalization fixtures ok")
-      (println "==> Checking XML fixtures")
+      (tel/log! :info "canonicalization fixtures ok")
+      (tel/log! :info "==> Checking XML fixtures")
       (validate-xml!)
-      (println "xml fixtures ok")
-      (println "==> Checking git-cliff configuration")
+      (tel/log! :info "xml fixtures ok")
+      (tel/log! :info "==> Checking git-cliff configuration")
       (validate-git-cliff!)
-      (println "git-cliff config ok")
-      (println "design bundle validation ok")
+      (tel/log! :info "git-cliff config ok")
+      (tel/log! :info "design bundle validation ok")
       (finally
         (doseq [file (reverse (file-seq materialized-dir))]
           (.delete file))))))
 
 (defn -main [& _args]
+  (logging/install-cli-handler!)
   (try
     (validate-design-bundle!)
     (catch Throwable t
-      (binding [*out* *err*]
-        (println "design bundle validation failed")
-        (println (ex-message t))
-        (when-let [errors (:errors (ex-data t))]
-          (doseq [error errors]
-            (println "-" error))))
+      (tel/log! {:level :error :error t} "design bundle validation failed")
+      (when-let [errors (:errors (ex-data t))]
+        (doseq [error errors]
+          (tel/log! :error (str "- " error))))
       (System/exit 1))))

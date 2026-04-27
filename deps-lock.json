@@ -306,6 +306,36 @@
       "hash": "sha256-HYUY46x1MqEE5Pe+d97zfJguUwcjxr2z1ncIzOKwwsQ="
     },
     {
+      "mvn-path": "com/taoensso/encore/3.159.0/encore-3.159.0.jar",
+      "mvn-repo": "https://repo.clojars.org/",
+      "hash": "sha256-ZZKdX1mGNVpE09id8ZRPgYhlgiKE/4l4cOcvvFcyh7w="
+    },
+    {
+      "mvn-path": "com/taoensso/encore/3.159.0/encore-3.159.0.pom",
+      "mvn-repo": "https://repo.clojars.org/",
+      "hash": "sha256-BtVg+DYNR/2p9YcRJ9YeLHQ8khhhHMyM7ihicAOvkFU="
+    },
+    {
+      "mvn-path": "com/taoensso/telemere/1.2.1/telemere-1.2.1.jar",
+      "mvn-repo": "https://repo.clojars.org/",
+      "hash": "sha256-5gxj4oHgdyRDX1MnDjRFB6aGSti2X5WajNLtTT0jN/M="
+    },
+    {
+      "mvn-path": "com/taoensso/telemere/1.2.1/telemere-1.2.1.pom",
+      "mvn-repo": "https://repo.clojars.org/",
+      "hash": "sha256-cZYV6zWuND5kYlOdpTN56ihkDVWyv7OEnfoAGSYBHWA="
+    },
+    {
+      "mvn-path": "com/taoensso/truss/2.3.0/truss-2.3.0.jar",
+      "mvn-repo": "https://repo.clojars.org/",
+      "hash": "sha256-vFUc48j7IWCAhHMxOeFpqSxZexeD1I+4SnPVTxMUHHw="
+    },
+    {
+      "mvn-path": "com/taoensso/truss/2.3.0/truss-2.3.0.pom",
+      "mvn-repo": "https://repo.clojars.org/",
+      "hash": "sha256-bdr2F1AdEtYEvnXxamYBN0Hs2strnepx6JPW0b2d38M="
+    },
+    {
       "mvn-path": "com/widdindustries/cljc.java-time/0.1.21/cljc.java-time-0.1.21.jar",
       "mvn-repo": "https://repo.clojars.org/",
       "hash": "sha256-lXtJsOVXQReuQtAm7PaC6ELeTXZcn72l75QQEu6erEM="

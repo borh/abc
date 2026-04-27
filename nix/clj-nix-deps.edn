@@ -18,7 +18,8 @@
                                    :exclusions [org.apache.jena/apache-jena-libs]}
         org.arachne-framework/aristotle {:git/url "https://github.com/arachne-framework/aristotle.git"
                                          :git/sha "d7ee879945e0060dc5fcd0b8eac2e0e476d066d7"
-                                         :exclusions [org.apache.jena/apache-jena-libs]}}
+                                         :exclusions [org.apache.jena/apache-jena-libs]}
+        com.taoensso/telemere {:mvn/version "1.2.1"}}
  :aliases
  {:abc/focused-test
   {:main-opts

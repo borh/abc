@@ -155,6 +155,28 @@
         (doseq [f (reverse (file-seq out-file))] (.delete f))
         (doseq [f (reverse (file-seq input-file))] (.delete f))))))
 
+(deftest artifact-id-independent-of-generated-at-test
+  (let [out-dir (Files/createTempDirectory "abc-materialize-gen" (make-array FileAttribute 0))
+        out-file (.toFile out-dir)
+        out-dir-2 (Files/createTempDirectory "abc-materialize-gen" (make-array FileAttribute 0))
+        out-file-2 (.toFile out-dir-2)]
+    (try
+      (materialize/materialize-import!
+       {:input-dir (io/file "examples/ab-validator-output")
+        :output-dir out-file
+        :generated-at "2026-04-26T00:00:00Z"})
+      (materialize/materialize-import!
+       {:input-dir (io/file "examples/ab-validator-output")
+        :output-dir out-file-2
+        :generated-at "2026-04-27T12:34:56Z"})
+      (is (= (get (files/read-json (io/file out-file "parser-ir.manifest.json")) "artifact_id")
+             (get (files/read-json (io/file out-file-2 "parser-ir.manifest.json")) "artifact_id")))
+      (is (= (get (files/read-json (io/file out-file "warnings.manifest.json")) "artifact_id")
+             (get (files/read-json (io/file out-file-2 "warnings.manifest.json")) "artifact_id")))
+      (finally
+        (doseq [f (reverse (file-seq out-file))] (.delete f))
+        (doseq [f (reverse (file-seq out-file-2))] (.delete f))))))
+
 (deftest materialized-output-is-deterministic-test
   (let [out-dir (Files/createTempDirectory "abc-materialize-fixture" (make-array FileAttribute 0))
         out-file (.toFile out-dir)

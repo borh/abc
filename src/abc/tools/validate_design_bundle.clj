@@ -10,6 +10,7 @@
    [abc.tools.materialize-import :as materialize]
    [abc.tools.schema :as schema]
    [abc.tools.shacl :as shacl]
+   [abc.tools.tei :as tei]
    [clojure.java.io :as io]
    [clojure.set :as set]
    [clojure.string :as string]
@@ -200,6 +201,50 @@
                 "schemas/tei-profile.odd"
                 "examples/v0/example-work/tei.xml"))
 
+(defn- render-tei-violation
+  "Render a violation map to a single line. Label is supplied by the
+  harness pass per-file rather than copied into every violation map."
+  [label {:keys [severity line column message]}]
+  (let [sev (cond
+              (keyword? severity) (string/upper-case (name severity))
+              (string? severity) (string/upper-case severity)
+              :else "VIOLATION")]
+    (str sev ": " label " " (or line "?") ":" (or column "?")
+         " — " (or message "(no message)"))))
+
+(defn validate-tei!
+  "Validate every TEI document in `xml-paths` against the schema at
+  `schema-path`. Warnings are logged via Telemere but do not fail the
+  step; errors and fatals are aggregated and thrown at the end."
+  [^String schema-path xml-paths]
+  (when (or (nil? schema-path) (= "" schema-path))
+    (throw (ex-info "TEI_SCHEMA_PATH must be set. Run via `nix run .#validate-design-bundle` or export it manually before calling clojure -M:abc/validate-design-bundle."
+                    {:env-var "TEI_SCHEMA_PATH"})))
+  (let [per-file-results
+        (mapv (fn [path]
+                (let [{:keys [violations]}
+                      (tei/validate! {:schema-path schema-path
+                                      :xml-path (str path)
+                                      :label (str path)})]
+                  {:label (str path) :violations violations}))
+              xml-paths)
+        all-warnings (mapcat (fn [{:keys [label violations]}]
+                               (->> violations
+                                    (filter #(= :warning (:severity %)))
+                                    (map #(vector label %))))
+                             per-file-results)
+        all-failures (mapcat (fn [{:keys [label violations]}]
+                               (->> violations
+                                    (filter #(#{:error :fatal} (:severity %)))
+                                    (map #(vector label %))))
+                             per-file-results)]
+    (doseq [[label v] all-warnings]
+      (tel/log! :warn (render-tei-violation label v)))
+    (when (seq all-failures)
+      (throw (ex-info "TEI RelaxNG validation failed"
+                      {:errors (mapv (fn [[label v]] (render-tei-violation label v))
+                                     all-failures)})))))
+
 (defn validate-git-cliff! []
   (run-command! "git-cliff" "--config" "cliff.toml" "--unreleased" "--strip" "header"
                 "--output" "/tmp/abc-changelog-check.md"))
@@ -275,6 +320,10 @@
       (tel/log! :info "==> Checking XML fixtures")
       (validate-xml!)
       (tel/log! :info "xml fixtures ok")
+      (tel/log! :info "==> Validating TEI against P5 RelaxNG")
+      (validate-tei! (System/getenv "TEI_SCHEMA_PATH")
+                     ["examples/v0/example-work/tei.xml"])
+      (tel/log! :info "tei rng validation ok")
       (tel/log! :info "==> Checking git-cliff configuration")
       (validate-git-cliff!)
       (tel/log! :info "git-cliff config ok")

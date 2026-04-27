@@ -5,6 +5,7 @@
             ;; pulls in Jena and SSHD.
    [abc.tools.logging :as logging]
    [abc.tools.files :as files]
+   [abc.tools.rdf-prefixes :as rdf-prefixes]
    [arachne.aristotle :as aa]
    [arachne.aristotle.registry :as reg]
    [clojure.java.io :as io]
@@ -19,15 +20,8 @@
 ;; Prefix declarations
 ;; ---------------------------------------------------------------------------
 
-(defonce install-prefixes!
-  (delay
-    (reg/prefix 'abc     "https://w3id.org/abc/")
-    (reg/prefix 'dcterms "http://purl.org/dc/terms/")
-    (reg/prefix 'prov    "http://www.w3.org/ns/prov#")
-    (reg/prefix 'xsd     "http://www.w3.org/2001/XMLSchema#")))
-
 (defn- ensure-prefixes! []
-  @install-prefixes!)
+  (rdf-prefixes/ensure!))
 
 ;; ---------------------------------------------------------------------------
 ;; IRI helpers — angle-bracket strings become URI nodes in Aristotle
@@ -108,7 +102,12 @@
 ;; so we walk the graph ourselves to produce stable, canonical output.
 ;; ---------------------------------------------------------------------------
 
-(defn- graph->ttl-string [^org.apache.jena.graph.Graph graph]
+(defn graph->ttl
+  "Serialize a Jena graph to deterministic RDF/Turtle. Public so that
+  abc.tools.metadata-record/record->ttl and any future consumer can
+  compose graph builders with this serializer without re-deriving the
+  graph."
+  [^org.apache.jena.graph.Graph graph]
   (let [all-triples (iterator-seq (.find graph))
         by-subj     (group-by #(.getSubject ^Triple %) all-triples)
 
@@ -349,7 +348,7 @@
    (manifest->ttl manifest {}))
   ([manifest opts]
    (-> (manifest->graph manifest opts)
-       (graph->ttl-string))))
+       (graph->ttl))))
 
 (defn write-ttl-file! [output-file manifest]
   (io/make-parents output-file)

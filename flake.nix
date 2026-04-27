@@ -128,6 +128,7 @@
             test -f ${./src/abc/tools/schema.clj}
             test -f ${./src/abc/tools/manifest_index.clj}
             test -f ${./src/abc/tools/manifest_to_rdf.clj}
+            test -f ${./src/abc/tools/shacl.clj}
             test -f ${./src/abc/tools/validate_design_bundle.clj}
             test -f ${./test/abc/tools/hash_test.clj}
             test -f ${./test/abc/tools/jcs_test.clj}
@@ -135,6 +136,7 @@
             test -f ${./test/abc/tools/manifest_index_test.clj}
             test -f ${./test/abc/tools/manifest_to_rdf_test.clj}
             test -f ${./test/abc/tools/materialize_import_test.clj}
+            test -f ${./test/abc/tools/shacl_test.clj}
             test -f ${./test/abc/tools/validate_design_bundle_test.clj}
             test -f ${./test/abc/annotation_schema_test.clj}
             test -f ${./test/abc/text_test.clj}

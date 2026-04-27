@@ -6,7 +6,7 @@
 
 abc:ArtifactShape
   a sh:NodeShape ;
-  sh:targetClass prov:Entity ;
+  sh:targetClass abc:Artifact ;
   sh:property [
     sh:path abc:artifactId ;
     sh:minCount 1 ;
@@ -19,32 +19,10 @@ abc:ArtifactShape
     sh:datatype xsd:string ;
     sh:pattern "^sha256:[0-9a-f]{64}$"
   ] ;
-  sh:or (
-    [
-      sh:property [
-        sh:path abc:contentHash ;
-        sh:minCount 1 ;
-        sh:datatype xsd:string ;
-        sh:pattern "^sha256:[0-9a-f]{64}$"
-      ]
-    ]
-    [
-      sh:class abc:FailureArtifact ;
-      sh:property [
-        sh:path abc:hasErrorArtifact ;
-        sh:minCount 1
-      ]
-    ]
-  ) ;
   sh:property [
     sh:path abc:validationStatus ;
     sh:minCount 1 ;
     sh:in ("not-run" "passed" "warning" "failed")
-  ] ;
-  sh:property [
-    sh:path dcterms:format ;
-    sh:minCount 1 ;
-    sh:datatype xsd:string
   ] ;
   sh:property [
     sh:path prov:wasGeneratedBy ;
@@ -54,7 +32,29 @@ abc:ArtifactShape
   sh:property [
     sh:path prov:wasDerivedFrom ;
     sh:minCount 1
-  ] .
+  ] ;
+  sh:or (
+    [
+      sh:property [
+        sh:path abc:contentHash ;
+        sh:minCount 1 ;
+        sh:datatype xsd:string ;
+        sh:pattern "^sha256:[0-9a-f]{64}$"
+      ] ;
+      sh:property [
+        sh:path dcterms:format ;
+        sh:minCount 1 ;
+        sh:datatype xsd:string
+      ]
+    ]
+    [
+      sh:class abc:FailureArtifact ;
+      sh:property [
+        sh:path abc:hasErrorArtifact ;
+        sh:minCount 1
+      ]
+    ]
+  ) .
 
 abc:ActivityShape
   a sh:NodeShape ;
@@ -78,4 +78,24 @@ abc:FailureShape
   sh:property [
     sh:path abc:hasErrorArtifact ;
     sh:minCount 1
+  ] .
+
+abc:SidecarShape
+  a sh:NodeShape ;
+  sh:targetObjectsOf abc:hasSidecar ;
+  sh:property [
+    sh:path abc:sidecarRole ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string
+  ] ;
+  sh:property [
+    sh:path abc:contentHash ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+    sh:pattern "^sha256:[0-9a-f]{64}$"
+  ] ;
+  sh:property [
+    sh:path dcterms:format ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string
   ] .

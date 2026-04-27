@@ -19,6 +19,9 @@
 (defn- activity-iri [activity-id]
   (str "<" activity-id ">"))
 
+(defn- agent-iri [agent base-iri]
+  (str "<" base-iri "agent/" (string/replace agent "." "-") ">"))
+
 (defn- literal [value]
   (string/replace (json/write-json-str value) "\\/" "/"))
 
@@ -34,6 +37,8 @@
   ([manifest {:keys [base-iri] :or {base-iri default-base-iri}}]
    (let [artifact-id (get manifest "artifact_id")
          artifact (artifact-iri base-iri artifact-id)
+         artifact-kind (get manifest "artifact_kind")
+         failure? (= "failure" artifact-kind)
          content (get manifest "content")
          provenance (get manifest "provenance")
          activity-id (get provenance "activity_id")
@@ -46,25 +51,42 @@
                    sort
                    (map #(artifact-iri base-iri %)))
          sidecars (->> (get manifest "sidecars")
-                       (sort-by #(get % "hash")))
+                       (sort-by (juxt #(get % "role")
+                                      #(get % "hash")
+                                      #(get % "path_hint"))))
          sidecar-iris (map #(artifact-iri base-iri (get % "hash")) sidecars)
-         artifact-objects (concat ["a prov:Entity"]
-                                  [(str "abc:artifactId " (literal artifact-id))
-                                   (str "abc:artifactKind " (literal (get manifest "artifact_kind")))
-                                   (str "abc:contentHash " (literal (get content "content_hash")))
-                                   (str "abc:schemaHash " (literal schema-hash))
-                                   (str "abc:validationStatus " (literal (get manifest "validation_status")))
-                                   (str "dcterms:format " (literal (get content "media_type")))
-                                   (str "prov:generatedAtTime "
-                                        (literal (get provenance "generated_at"))
-                                        "^^xsd:dateTime")]
-                                  (map #(str "prov:wasDerivedFrom " %) derived)
-                                  [(str "prov:wasGeneratedBy " activity)]
-                                  (map #(str "abc:hasSidecar " %) sidecar-iris))
-         activity-objects (concat ["a prov:Activity"]
-                                  (map #(str "prov:used " %) used)
-                                  [(str "prov:wasAssociatedWith "
-                                        (literal (get provenance "agent")))])]
+         ;; Main artifact clauses
+         artifact-objects (concat
+                           (cond-> ["a abc:Artifact"
+                                    "a prov:Entity"]
+                             failure? (conj "a abc:FailureArtifact"))
+                           [(str "abc:artifactId " (literal artifact-id))
+                            (str "abc:artifactKind " (literal artifact-kind))
+                            (str "abc:schemaHash " (literal schema-hash))
+                            (str "abc:validationStatus " (literal (get manifest "validation_status")))
+                            (str "prov:generatedAtTime "
+                                 (literal (get provenance "generated_at"))
+                                 "^^xsd:dateTime")]
+                           (when content
+                             [(str "abc:contentHash " (literal (get content "content_hash")))
+                              (str "dcterms:format " (literal (get content "media_type")))])
+                           (map #(str "prov:wasDerivedFrom " %) derived)
+                           [(str "prov:wasGeneratedBy " activity)]
+                           (map #(str "abc:hasSidecar " %) sidecar-iris))
+         ;; Activity clauses: replace string-literal wasAssociatedWith
+         ;; with qualifiedAssociation blank node. v0: hadPlan omitted when nil.
+         agent-str (get provenance "agent")
+         plan-hash (get provenance "plan_hash")
+         association-body (string/join " ; "
+                                       (concat
+                                        ["a prov:Association"
+                                         (str "prov:agent " (agent-iri agent-str base-iri))]
+                                        (when plan-hash
+                                          [(str "prov:hadPlan " (artifact-iri base-iri plan-hash))])))
+         activity-clauses (concat
+                            ["a prov:Activity"]
+                            (map #(str "prov:used " %) used)
+                            [(str "prov:qualifiedAssociation [ " association-body " ]")])]
      (str
       "@prefix abc: <https://w3id.org/abc/> .\n"
       "@prefix dcterms: <http://purl.org/dc/terms/> .\n"
@@ -75,19 +97,23 @@
       (string/join "\n" (clause-lines artifact-objects))
       "\n\n"
       activity "\n"
-      (string/join "\n" (clause-lines activity-objects))
+      (string/join "\n" (clause-lines activity-clauses))
       "\n\n"
       (string/join
        "\n\n"
        (map (fn [sidecar]
-              (str (artifact-iri base-iri (get sidecar "hash")) "\n"
-                   (string/join
-                    "\n"
-                    (clause-lines
-                     ["a prov:Entity"
-                      (str "abc:sidecarRole " (literal (get sidecar "role")))
-                      (str "abc:contentHash " (literal (get sidecar "hash")))
-                      (str "dcterms:format " (literal (get sidecar "media_type")))]))))
+              (let [sidecar-iri (artifact-iri base-iri (get sidecar "hash"))]
+                (str sidecar-iri "\n"
+                     (string/join
+                      "\n"
+                      (clause-lines
+                       ["a prov:Entity"
+                        (str "abc:schemaHash " (literal schema-hash))
+                        (str "abc:sidecarRole " (literal (get sidecar "role")))
+                        (str "abc:contentHash " (literal (get sidecar "hash")))
+                        (str "dcterms:format " (literal (get sidecar "media_type")))
+                        (str "prov:wasGeneratedBy " activity)
+                        (str "prov:wasDerivedFrom " artifact)])))))
             sidecars))
       "\n"))))
 

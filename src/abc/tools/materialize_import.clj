@@ -1,6 +1,6 @@
 (ns abc.tools.materialize-import
-  (:require [abc.tools.files :as files]
-            [abc.tools.logging :as logging]
+  (:require [abc.tools.logging :as logging]
+            [abc.tools.files :as files]
             [abc.tools.manifest :as manifest]
             [clojure.java.io :as io]
             [clojure.tools.cli :as cli]

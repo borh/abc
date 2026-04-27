@@ -1,16 +1,19 @@
 (ns abc.tools.validate-design-bundle
-  (:require [abc.tools.files :as files]
-            [abc.tools.logging :as logging]
-            [abc.tools.manifest-index :as manifest-index]
-            [abc.tools.manifest-to-rdf :as manifest-to-rdf]
-            [abc.tools.manifest :as manifest]
-            [abc.tools.materialize-import :as materialize]
-            [abc.tools.schema :as schema]
-            [abc.tools.shacl :as shacl]
-            [clojure.java.io :as io]
-            [clojure.set :as set]
-            [clojure.string :as string]
-            [taoensso.telemere :as tel]))
+  (:require ;; logging first so its load-time SLF4J filter is in place
+            ;; before deps that emit chatty INFO logs (Aristotle/Jena/
+            ;; Apache SSHD) get pulled in by other requires.
+   [abc.tools.logging :as logging]
+   [abc.tools.files :as files]
+   [abc.tools.manifest-index :as manifest-index]
+   [abc.tools.manifest-to-rdf :as manifest-to-rdf]
+   [abc.tools.manifest :as manifest]
+   [abc.tools.materialize-import :as materialize]
+   [abc.tools.schema :as schema]
+   [abc.tools.shacl :as shacl]
+   [clojure.java.io :as io]
+   [clojure.set :as set]
+   [clojure.string :as string]
+   [taoensso.telemere :as tel]))
 
 (def required-manifest-input-keys
   #{"producer"

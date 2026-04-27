@@ -30,8 +30,10 @@
   clj-jgit/clj-jgit                          {:mvn/version "1.1.0"
                                               :exclusions [org.eclipse.jgit/org.eclipse.jgit.gpg.bc]}
 
-  uk.org.russet/tawny-owl                    {:mvn/version "2.3.3"}
-  net.sourceforge.owlapi/owlapi-distribution {:mvn/version "5.5.1"}
+  uk.org.russet/tawny-owl                    {:mvn/version "2.3.3"
+                                              :exclusions [org.slf4j/slf4j-nop]}
+  net.sourceforge.owlapi/owlapi-distribution {:mvn/version "5.5.1"
+                                              :exclusions [org.slf4j/slf4j-nop]}
 
   com.xtdb/xtdb-core                         {:mvn/version "1.24.5"}
   com.xtdb/xtdb-rocksdb                      {:mvn/version "1.24.5"}
@@ -39,7 +41,10 @@
   org.graalvm.js/js-language                 {:mvn/version "24.2.2"}
   org.clojars.jules_gosnell/m3               {:mvn/version "1.0.0-beta2"
                                               :exclusions [org.graalvm.polyglot/js
-                                                           org.graalvm.js/js]}
+                                                           org.graalvm.js/js
+                                                           org.slf4j/slf4j-simple
+                                                           refactor-nrepl/refactor-nrepl
+                                                           cider/cider-nrepl]}
 
   org.arachne-framework/aristotle {:git/url "https://github.com/arachne-framework/aristotle.git"
                                    :git/sha "d7ee879945e0060dc5fcd0b8eac2e0e476d066d7"
@@ -48,7 +53,8 @@
   org.apache.jena/jena-shacl       {:mvn/version "5.3.0"
                                     :exclusions [org.apache.jena/apache-jena-libs]}
 
-  com.taoensso/telemere            {:mvn/version "1.2.1"}}
+  com.taoensso/telemere            {:mvn/version "1.2.1"}
+  com.taoensso/telemere-slf4j      {:mvn/version "1.2.1"}}
 
  :aliases
  {:test {:extra-paths ["test"]

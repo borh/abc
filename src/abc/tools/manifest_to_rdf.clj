@@ -1,14 +1,16 @@
 (ns abc.tools.manifest-to-rdf
   "Convert ABC design-bundle manifests to deterministic RDF/Turtle using
   Apache Jena (via Aristotle) for graph construction."
-  (:require [abc.tools.files :as files]
-            [abc.tools.logging :as logging]
-            [arachne.aristotle :as aa]
-            [arachne.aristotle.registry :as reg]
-            [clojure.java.io :as io]
-            [clojure.string :as string]
-            [clojure.tools.cli :as cli]
-            [taoensso.telemere :as tel])
+  (:require ;; logging first to install SLF4J ns-filter before Aristotle
+            ;; pulls in Jena and SSHD.
+   [abc.tools.logging :as logging]
+   [abc.tools.files :as files]
+   [arachne.aristotle :as aa]
+   [arachne.aristotle.registry :as reg]
+   [clojure.java.io :as io]
+   [clojure.string :as string]
+   [clojure.tools.cli :as cli]
+   [taoensso.telemere :as tel])
   (:import [org.apache.jena.datatypes.xsd XSDDatatype]
            [org.apache.jena.graph Node Triple NodeFactory]
            [java.io ByteArrayOutputStream]))

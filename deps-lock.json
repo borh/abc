@@ -316,6 +316,16 @@
       "hash": "sha256-BtVg+DYNR/2p9YcRJ9YeLHQ8khhhHMyM7ihicAOvkFU="
     },
     {
+      "mvn-path": "com/taoensso/telemere-slf4j/1.2.1/telemere-slf4j-1.2.1.jar",
+      "mvn-repo": "https://repo.clojars.org/",
+      "hash": "sha256-WrfJbplCsPm+hYFH5I/qYRYAM7uzb0ud6S5DOyjD5s4="
+    },
+    {
+      "mvn-path": "com/taoensso/telemere-slf4j/1.2.1/telemere-slf4j-1.2.1.pom",
+      "mvn-repo": "https://repo.clojars.org/",
+      "hash": "sha256-Yv3Cle7MtvKqjgRY1kIUVh3VYxMiOard/+MDTnPL4wo="
+    },
+    {
       "mvn-path": "com/taoensso/telemere/1.2.1/telemere-1.2.1.jar",
       "mvn-repo": "https://repo.clojars.org/",
       "hash": "sha256-5gxj4oHgdyRDX1MnDjRFB6aGSti2X5WajNLtTT0jN/M="

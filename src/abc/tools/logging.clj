@@ -17,11 +17,24 @@
          (when err (str "\n  " (ex-message err)))
          "\n")))
 
+;; Silence noisy SLF4J sources at namespace load time. SLF4J calls are
+;; routed through Telemere (via com.taoensso/telemere-slf4j), so this
+;; ns-filter applies to logs from Apache SSHD, Apache Jena bootstrap,
+;; etc. that would otherwise pollute CLI output before -main installs
+;; the compact handler.
+(defonce ^:private filters-installed
+  (do
+    (tel/set-ns-filter! {:disallow ["org.apache.sshd.*"
+                                    "org.apache.jena.riot.system.stream.*"]
+                         :allow "*"})
+    true))
+
 (defn install-cli-handler!
   "Replace the default Telemere console handler with a compact one
   suited to CLI tools. Sync dispatch so messages flush before
   System/exit. Idempotent."
   []
+  filters-installed
   (tel/remove-handler! :default/console)
   (tel/add-handler! :abc/cli
                     (tel/handler:console

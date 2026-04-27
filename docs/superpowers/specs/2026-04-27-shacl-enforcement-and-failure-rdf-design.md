@@ -21,6 +21,7 @@ Generate-and-validate on demand only. No checked-in `failure-manifest.example.tt
 - No checked-in `failure-manifest.example.ttl` fixture, no parity test for the failure case.
 - No tightening of the JSON manifest schema to forbid `errors`-role sidecars on successful artifacts (see Cross-Layer Consistency below).
 - No post-processing `add-shacl-relations` layer that would separate mapping from SHACL-driven enrichment. Currently unnecessary: the role-specific predicate is mandated by the mapping spec, not SHACL. Revisit if SHACL-only requirements ever drive new branches in `manifest->graph`.
+- No deduplication of the `abc:hasErrorArtifact sh:minCount 1` requirement that appears in both `ArtifactShape sh:or` branch 2 and `FailureShape`. The redundancy in `schemas/manifest.shacl.ttl` is pre-existing and acts as belt-and-suspenders; tightening it is a separate shape-cleanup task.
 
 ## Architecture
 
@@ -59,8 +60,10 @@ One new behavioral change:
 
 Two existing behaviors covered by new tests (no implementation change required):
 
-- **Failure typing.** When `artifact_kind == "failure"`, the artifact node already carries `a abc:FailureArtifact` (verified at `src/abc/tools/manifest_to_rdf.clj:277`). New test asserts this; reverting that line should fail the test.
-- **Null-content branch.** When `content == null`, the artifact node already omits `abc:contentHash` and `dcterms:format` (verified at `src/abc/tools/manifest_to_rdf.clj:280`). New test asserts this.
+- **Failure typing.** When `artifact_kind == "failure"`, the artifact node already carries `a abc:FailureArtifact` via `(when failure? {:rdf/type :abc/FailureArtifact})` inside `manifest->graph`. New test asserts this; reverting that branch should fail the test.
+- **Null-content branch.** When `content == null`, the artifact node already omits `abc:contentHash` and `dcterms:format` via `(when content {...})` inside `manifest->graph`. New test asserts this.
+
+Source-line citations elsewhere in this spec are snapshot-time markers and may drift on edits; the regression-coverage tests, not the line numbers, are the load-bearing artifact.
 
 The success-case `examples/v0/example-work/manifest.ttl` byte-for-byte parity test must continue to pass after the errors-role predicate change. Since the success fixture uses a `warnings`-role sidecar (no `errors` role), the change does not affect its serialized form; this is verified empirically by the parity test, not assumed.
 
@@ -81,7 +84,7 @@ Process:
    - every materialized manifest produced earlier in this run (parser-IR, warnings)
    - `examples/v0/example-work/manifest.json`
    - `examples/v0/example-work/failure-manifest.example.json`
-4. Render any thrown `ex-info` `:errors` here as `<severity>: <focus-node> <path> — <message> (<label>)`. Surface via the existing `check-errors!` printer or an inline `doseq`.
+4. Render any thrown `ex-info` `:errors` here as one line per violation, including severity, focus node, path, message, and label. The exact punctuation is the harness's choice; this spec does not pin it. Surface via the existing `check-errors!` printer or an inline `doseq`.
 
 The shapes graph is reused for all data graphs; data graphs are constructed per-manifest and discarded.
 
@@ -113,7 +116,7 @@ Negative graphs are constructed declaratively from data via Aristotle (`aa/graph
 
 - Graph with `abc:Artifact` node missing `abc:artifactId` triggers `ArtifactShape` violation. Assert `:errors` is non-empty and at least one entry's `:source` references `ArtifactShape`.
 - Graph with `abc:FailureArtifact` node missing `abc:hasErrorArtifact` triggers `FailureShape` violation.
-- Graph with `abc:Artifact` carrying `abc:validationStatus "unknown"` (outside the `sh:in` enum) triggers `ArtifactShape` enum violation.
+- Graph with `abc:Artifact` carrying `abc:validationStatus "unknown"` (outside the `sh:in` enum) triggers `ArtifactShape` enum violation. The negative test must additionally assert that the violation's `:source` references the `validationStatus` property shape (not just any shape), so a Jena literal-form quirk that surfaces a different violation cannot mask a missing enum check.
 
 ### `test/abc/tools/manifest_to_rdf_test.clj` (extension)
 

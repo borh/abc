@@ -35,10 +35,20 @@ Top-level shape:
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://w3id.org/abc/schemas/metadata-record.schema.json",
   "title": "ABC Metadata Record",
+  "description": "Bibliographic record for one Aozora work plus embedded person records. Identity (record-hash) is SHA-256 over RFC 8785 JCS bytes of this object with source_csv_provenance dropped and persons[] sorted by person_id.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["work", "persons"],
+  "required": [
+    "metadata_record_schema_id",
+    "metadata_record_schema_hash",
+    "work",
+    "persons"
+  ],
   "properties": {
+    "metadata_record_schema_id": {
+      "const": "https://w3id.org/abc/schemas/metadata-record.schema.json"
+    },
+    "metadata_record_schema_hash": { "$ref": "#/$defs/hash" },
     "work": { "$ref": "#/$defs/work" },
     "persons": {
       "type": "array",
@@ -69,8 +79,8 @@ API:
 - `read-rows [path]` → seq of column-name-keyed maps (charred returns header + rows; this helper zips into maps).
 - `parse-work-row [row-map]` → partial metadata-record (the `work` sub-map).
 - `parse-person-row [row-map]` → person sub-document.
-- `merge-person-into-work [work-map person-maps]` → full metadata-record (one work + N persons).
-- `csv->metadata-record [{:keys [work-csv-path person-csv-paths]}]` → end-to-end convenience.
+- `build-metadata-record [{:keys [work persons]}]` → full metadata-record value (one work + N persons, persons sorted by `person_id`, schema-id and schema-hash fields populated). Pure value construction; no merge semantics.
+- `csv->metadata-record [{:keys [work-csv-path person-csv-paths]}]` → end-to-end convenience composing the parsers and `build-metadata-record`.
 
 NFC normalization is applied at `parse-*-row` boundaries to title, name, and reading fields, consistent with the existing `abc.aozora` registry's encoding policy.
 
@@ -81,9 +91,33 @@ The Aozora CSV files committed under `examples/v0/example-work/aozora-csv/` are 
 Identity, validation, and RDF mapping. API mirrors `abc.tools.manifest` and `abc.tools.manifest-to-rdf`.
 
 - `validate! [metadata-record]` — validates against `metadata-record.schema.json` via the existing `abc.tools.schema` helper. Throws on violation.
-- `record-hash [metadata-record]` → `sha256:<hex>`. Computed via `abc.tools.jcs` over the canonical JSON form of `manifest_identity_object`-equivalent content (everything except `source_csv_provenance`, which is non-identity by construction).
-- `record->graph [metadata-record]` → Aristotle/Jena graph using the vocabulary mapping defined below. The existing `references/archive/aozora_lod_data/` files are reference shapes only, not authoritative; this milestone improves on them.
-- `record->ttl [metadata-record]` → deterministic Turtle, same shape as `manifest-to-rdf/manifest->ttl`.
+- `record-hash [metadata-record]` → `sha256:<hex>`. Computed via `abc.tools.jcs` over the canonical-identity JSON form (rule below).
+- `record->graph [metadata-record]` → Aristotle/Jena graph using the vocabulary mapping defined below.
+- `graph->ttl [graph]` → deterministic Turtle. Public; reusable for any Jena graph this namespace produces. (Sister function to `manifest-to-rdf/manifest->ttl`'s currently-private `graph->ttl-string`. A small follow-on can lift that into a shared helper; not required for this milestone.)
+- `record->ttl [metadata-record]` — convenience composition: `(comp graph->ttl record->graph)`. Documented as such; not a separate code path.
+
+**Canonical-identity form for `record-hash`:**
+
+The bytes hashed are RFC 8785 JCS canonicalization of a JSON object built from the metadata record by:
+
+1. **Self-describing schema fields included.** `metadata_record_schema_id` and `metadata_record_schema_hash` (defined below) are part of identity. Schema drift therefore changes `metadata_record_hash` automatically — consistent with ADR 0010's identity-hardening principle for parser IR.
+2. **Provenance excluded.** `source_csv_provenance` is dropped before canonicalization. Keys absent from the original record are not synthesized.
+3. **Persons array sorted** by `person_id` (lexicographic ASCII compare on the string form). RFC 8785 sorts object keys but does not sort arrays; the metadata-record schema declares `persons[]` as identity-bearing with a deterministic order, so the sort happens here before JCS.
+4. **Nullable fields explicit as JSON `null`.** Optional bibliographic fields whose value isn't known carry `null`, not key-omission. Mirrors the manifest's `manifest_identity_object` rule from ADR 0001.
+5. **No defaults expanded.** JSON Schema `default` annotations are documentation; canonicalization hashes the literal record, not a default-expanded form.
+
+This rule is documented in the metadata-record schema's top-level `description` and re-asserted in `record-hash`'s docstring.
+
+**Self-describing schema fields:**
+
+Following the parser-IR convention from ADR 0010, every metadata record carries:
+
+- `metadata_record_schema_id`: the JSON Schema's `$id` (string).
+- `metadata_record_schema_hash`: SHA-256 over RFC 8785 JCS bytes of the bundled `metadata-record.schema.json` document. Same rule as `manifest_schema_hash` from ADR 0001.
+
+The fixture's values are derived at build time and asserted by the harness: any schema change drops a new hash into `metadata_record_schema_hash`, which changes `record-hash`, which (via `manifest_identity_object.metadata_record_hash`) changes the artifact identity. Schema drift propagates without an extra registry layer.
+
+**Identity cost of embedded persons.** Per Q2 (a), persons live inside the work record. A correction to a person field — e.g., a corrected birth date or romaji — produces a new `record-hash` for **every work that author appears in**. This is the right behavior for content-addressed identity (the metadata record genuinely changed) but is asymmetric with how databases would normalize the same data. Consumers that cache by `metadata_record_hash` should expect cascading invalidations on person edits. A future "separated person records" milestone can avoid the cascade, at the cost of additional manifest plumbing.
 
 **RDF vocabulary alignment.**
 
@@ -93,44 +127,44 @@ Identity, validation, and RDF mapping. API mirrors `abc.tools.manifest` and `abc
 - **Project-specific in `abc:`.** Where no clean standard exists, define the predicate under the project's own `https://w3id.org/abc/` namespace (already used for artifacts and activities). Avoid the legacy `purl.org/net/aozora/` namespace — if it turns out to be the right home for any predicate later, that's a separate vocabulary decision.
 - **Vocabulary-validation pass.** During Sequencing step 4, each proposed predicate gets a brief justification (which vocab, what the spec says it means) recorded as a comment in `src/abc/tools/metadata_record.clj`. Predicates without a clean standard mapping or a clear project rationale get pulled out and re-discussed before the parity test locks them in.
 
-**Proposed mapping (each row to be verified during implementation):**
+**Resolved mapping** (each row decided here, with rationale; no "or" deferrals):
 
 Work entity, IRI `http://www.aozora.gr.jp/cards/<6-digit-author-id>/card<work-id>.html`:
 
-| JSON field | RDF predicate | Source |
+| JSON field | RDF predicate | Rationale |
 |---|---|---|
-| (entity type) | `a bibo:Document, schema:CreativeWork` | BIBO; Schema.org |
-| `work_id` | `dcterms:identifier` (with literal datatype `abc:aozoraWorkId` if discriminator needed) | Dublin Core |
-| `title` | `dcterms:title` (blank node carrying `rdf:value` + `dcndl:transcription` for kana reading) | DC + DCNDL |
-| `alt_title` | `dcterms:alternative` | Dublin Core |
-| `ndc` | `dcterms:subject` with literal `"NDC <code>"^^dcndl:NDC` | DC + DCNDL |
-| `orthographic_style` | `abc:orthographicStyle` (project-specific; no standard) | `abc:` |
-| `copyright_expired` | `abc:copyrightExpired` (xsd:boolean; standardize-vs-bibo:status decision deferred) | `abc:` |
-| `aozora_available` | `dcterms:available` (xsd:date) | Dublin Core |
-| `aozora_modified` | `dcterms:modified` (xsd:date) | Dublin Core |
-| `author` (person ref) | `dcterms:creator` → person IRI | Dublin Core |
-| `translator/editor/reviser` | `dcterms:contributor` with `<role>` blank-node carrying the original Japanese role string in `dcterms:role` (or a project-specific `abc:relationToWork`) | DC + `abc:` |
+| (entity type) | `a bibo:Document, schema:CreativeWork` | BIBO covers bibliographic resources; Schema.org's CreativeWork is widely indexed. Both standard. |
+| `work_id` | `dcterms:identifier` + literal datatype `abc:aozoraWorkId` (xsd:int as base) | DC for the identifier predicate; the project datatype tags Aozora's specific ID space. |
+| `title` | `dcterms:title` (blank node with `rdf:value` and `abc:reading` for kana) | DC for the predicate; we use `abc:reading` rather than `dcndl:transcription` because DCNDL transcription targets full bibliographic strings, not partial title readings. |
+| `alt_title` | `dcterms:alternative` | DC. |
+| `ndc` | `dcterms:subject` with literal `"NDC <code>"^^dcndl:NDC` | DC + DCNDL datatype IRI for the NDC code. |
+| `orthographic_style` | `abc:orthographicStyle` | Project-specific; no standard exists for the 新字旧仮名 / 旧字新仮名 / etc. taxonomy. |
+| `copyright_expired` | `abc:copyrightExpired` (xsd:boolean) | Project-specific; BIBO's `:status` is too coarse. |
+| `aozora_available` | `dcterms:available` (xsd:date) | DC. |
+| `aozora_modified` | `dcterms:modified` (xsd:date) | DC. |
+| `author` (person ref) | `dcterms:creator` → person IRI | DC. |
+| `translator/editor/reviser` | `dcterms:contributor` with `dcterms:role` literal carrying the original Japanese role string | DC + DC role. The role string preserves Aozora's Japanese taxonomy without inventing a new vocabulary. |
 
 Person entity, IRI `http://www.aozora.gr.jp/index_pages/person<id>.html`:
 
-| JSON field | RDF predicate | Source |
+| JSON field | RDF predicate | Rationale |
 |---|---|---|
-| (entity type) | `a foaf:Person` | FOAF |
-| `person_id` | `dcterms:identifier` (with `abc:aozoraPersonId` discriminator if needed) | Dublin Core |
-| `family_name` (kanji) | `foaf:familyName` | FOAF |
-| `given_name` (kanji) | `foaf:givenName` | FOAF |
-| `family_name_reading` (kana) | `dcndl:transcription` on a wrapping blank node, OR project-specific `abc:familyNameReading` if DCNDL doesn't model partial transcriptions | DCNDL or `abc:` |
-| `given_name_reading` (kana) | analogous | DCNDL or `abc:` |
-| `family_name_romaji` | `schema:alternateName` with `xml:lang="ja-Latn"`, or `abc:familyNameRomaji` | Schema.org or `abc:` |
-| `given_name_romaji` | analogous | Schema.org or `abc:` |
-| `family_name_sort` | `abc:familyNameForSort` (project-specific; no standard) | `abc:` |
-| `given_name_sort` | analogous | `abc:` |
-| `date_of_birth` | `rdag2:dateOfBirth` (xsd:date) | RDA Group 2 |
-| `date_of_death` | `rdag2:dateOfDeath` (xsd:date) | RDA Group 2 |
-| `full_name` | `foaf:name` | FOAF |
-| `external_links[]` | `rdfs:seeAlso` | RDFS |
+| (entity type) | `a foaf:Person` | FOAF. |
+| `person_id` | `dcterms:identifier` + literal datatype `abc:aozoraPersonId` (xsd:int as base) | Mirrors `work_id`. |
+| `family_name` (kanji) | `foaf:familyName` | FOAF. |
+| `given_name` (kanji) | `foaf:givenName` | FOAF. |
+| `family_name_reading` (kana) | `abc:familyNameReading` | Project-specific. DCNDL transcription is for full bibliographic strings; we want a per-name-component reading. The legacy `aozora:familyNameTranscription` modeled this concept too — the choice between `aozora:` and `abc:` here is a namespace question, not a semantics one; `abc:` keeps the surface single-rooted under our control. |
+| `given_name_reading` (kana) | `abc:givenNameReading` | Same rationale as family. |
+| `family_name_romaji` | `abc:familyNameRomaji` | Project-specific. Schema.org's `alternateName` lacks the structural distinction (family vs. given) that the data carries. |
+| `given_name_romaji` | `abc:givenNameRomaji` | Same. |
+| `family_name_sort` | `abc:familyNameForSort` | Project-specific; sort keys are a search/index concern not modeled in standard vocabularies. |
+| `given_name_sort` | `abc:givenNameForSort` | Same. |
+| `date_of_birth` | `rdag2:dateOfBirth` (xsd:date) | RDA Group 2. |
+| `date_of_death` | `rdag2:dateOfDeath` (xsd:date) | RDA Group 2. |
+| `full_name` | `foaf:name` | FOAF. |
+| `external_links[]` | `rdfs:seeAlso` | RDFS. |
 
-Each "or `abc:`" row is a decision deferred to the implementation step; the choice is recorded in code with a short rationale. The `MetadataRecordShape` SHACL only enforces the predicates that survive the validation pass.
+The `MetadataRecordShape` SHACL constrains every predicate in this table that's required-or-conditional in the JSON Schema; optional predicates are unconstrained but allowed.
 
 Prefix bindings registered via Aristotle's `arachne.aristotle.registry`:
 ```
@@ -150,7 +184,21 @@ The legacy `aozora:` namespace from `references/archive/aozora_lod_data/` is **n
 
 ### `src/abc/tools/tei_header.clj` (new)
 
-Pure metadata-record → TEI `<teiHeader>` element generator returning a `clojure.data.xml`-compatible element tree. Caller serializes via the existing `abc.tools` writer or `clojure.data.xml/emit-str`.
+Pure metadata-record → TEI `<teiHeader>` data structure. Two functions, each with one job:
+
+- `build [metadata-record]` → hiccup-style nested-vector data, e.g.
+  ```clojure
+  [:teiHeader
+    [:fileDesc
+      [:titleStmt
+        [:title {:type "main", :xml/lang "ja"} "羅生門"]
+        [:title {:type "reading", :xml/lang "ja-Hira"} "らしょうもん"]
+        [:author ...]] ...] ...]
+  ```
+  No XML library coupling beyond keyword/vector convention.
+- `emit-xml [hiccup]` → XML string. Implementation uses `clojure.data.xml/emit-str` internally, but callers depend only on the input shape (hiccup) and output (string).
+
+The data shape is portable: any consumer (Clojure, ClojureScript, a Rust port, a different XML library) can serialize the same hiccup tree without re-deriving the TEI mapping. The harness's TEI step continues to operate on the serialized XML file under `examples/v0/example-work/tei.xml`.
 
 TEI-EAJ aligned (per Q4 (ii)):
 
@@ -178,20 +226,23 @@ Non-author roles emit additional `<respStmt>` blocks inside `<titleStmt>` with `
 
 New step `==> Validating metadata record` between `==> Validating SHACL shapes` and `==> Validating TEI against P5 RelaxNG`:
 
-1. Load `examples/v0/example-work/metadata-record.json` and validate it against `metadata-record.schema.json`.
-2. Compute `record-hash`. Assert it matches `manifest_identity_object.metadata_record_hash` in `examples/v0/example-work/manifest.json`.
-3. Generate the RDF graph and validate via SHACL (new `MetadataRecordShape` in `manifest.shacl.ttl` targeting `aozora:BibResource`).
-4. Assert the generated Turtle matches `examples/v0/example-work/metadata-record.ttl` byte-for-byte (parity test).
+1. Load `examples/v0/example-work/metadata-record.json` and validate it against `metadata-record.schema.json` (**contract-smoke** per ADR 0006).
+2. Compute `record-hash`. Assert it matches `manifest_identity_object.metadata_record_hash` in `examples/v0/example-work/manifest.json` (**design-smoke** — fixture hash check).
+3. Assert `metadata_record_schema_hash` in the record matches the live JCS hash of `metadata-record.schema.json` (**design-smoke** — schema hash check; same rule as ADR 0001's `manifest_schema_hash`).
+4. Generate the RDF graph and validate via SHACL (`MetadataRecordShape` targeting `bibo:Document`) (**release-smoke** per ADR 0006).
+5. Assert the generated Turtle matches `examples/v0/example-work/metadata-record.ttl` byte-for-byte (**contract-smoke** — manifest-to-RDF deterministic comparison-style).
 
-The TEI step downstream picks up the existing `examples/v0/example-work/tei.xml`. As part of this milestone, the placeholder `<teiHeader>` in that file is **replaced** by the generated TEI-EAJ-aligned header. The TEI step continues to validate it against `tei_all.rng` unchanged.
+The current harness conflates all three smoke levels into one flow; this milestone preserves that conflation. Splitting into separate `nix run` apps per level is a separate plan-able item. The annotations above are recorded so a future split is mechanical.
+
+The TEI step downstream picks up the existing `examples/v0/example-work/tei.xml`. As part of this milestone, the placeholder `<teiHeader>` in that file is **replaced** by the generated TEI-EAJ-aligned header. The TEI step continues to validate it against `tei_all.rng` unchanged (**release-smoke**).
 
 ## Data Flow
 
 ```
 Real Aozora CSV slice (committed: aozora-csv/list_inp_127.csv, list_person_879.csv)
   → abc.tools.aozora-csv/read-rows + parse-work-row + parse-person-row
-  → merge-person-into-work
-  → metadata-record map (string-keyed JSON shape)
+  → abc.tools.metadata-record/build-metadata-record
+  → metadata-record value (string-keyed JSON shape; immutable)
   → abc.tools.metadata-record/validate!         (against metadata-record.schema.json)
   → abc.tools.metadata-record/record-hash       → sha256:<hex>
   → abc.tools.metadata-record/record->graph     → SHACL validate (MetadataRecordShape)
@@ -237,7 +288,9 @@ No new Maven deps. Aristotle, Jena, charred, and the Malli/Jing stack already in
 - `validate!` rejects synthetic invalid records (missing `work_id`, bad orthographic-style enum, malformed NDC).
 - `record-hash` is deterministic across two calls.
 - `record-hash` is independent of map insertion order (JCS test, mirrors `manifest-to-rdf-is-deterministic-test`).
-- `record-hash` excludes `source_csv_provenance` from identity.
+- `record-hash` is independent of `persons[]` original insertion order (the canonical-form rule sorts by `person_id`).
+- `record-hash` excludes `source_csv_provenance` from identity. Constructed test: produce a metadata record, hash it; produce the same record with a different `source_csv_provenance` (different retrieval date and URL); assert hashes are equal.
+- `record-hash` includes `metadata_record_schema_hash` in identity. Constructed test: mutate the schema hash field, assert the resulting hash differs.
 - `record->graph` produces expected triples — assertions on `aozora:titleID`, `dc:subject`, `dcterms:creator`, `foaf:familyName`, `aozora:authorID`, `rdag2:dateOfBirth`.
 - `record->ttl` byte-for-byte matches `examples/v0/example-work/metadata-record.ttl`.
 
@@ -271,7 +324,7 @@ No new Maven deps. Aristotle, Jena, charred, and the Malli/Jing stack already in
 2. TDD `abc.tools.aozora-csv` against synthetic CSV strings (column-mapping correctness, NFC, optional-field handling).
 3. Commit the real CSV slice under `examples/v0/example-work/aozora-csv/` plus `PROVENANCE.md`. Run the ingester to produce `metadata-record.json`. Commit it.
 4. TDD `abc.tools.metadata-record` (validate!, record-hash, record->graph, record->ttl). Generate and commit `metadata-record.ttl`.
-5. Add `MetadataRecordShape` to `schemas/manifest.shacl.ttl`, only constraining predicates that survived the vocabulary-validation step inside `metadata-record.clj` (step 4). Confirm SHACL passes against the generated graph.
+5. Add `MetadataRecordShape` to `schemas/manifest.shacl.ttl` constraining the resolved vocabulary table (every required-or-conditional predicate). Confirm SHACL passes against the generated graph.
 6. TDD `abc.tools.tei-header`. Verify generated header validates via Jing.
 7. Replace the placeholder `<teiHeader>` in `examples/v0/example-work/tei.xml` with the generated bytes. Re-run the harness's TEI step.
 8. Update `examples/v0/example-work/manifest.json`'s `metadata_record_hash` to the real value. Regenerate `manifest.ttl`. Update parity tests if they're hash-sensitive.

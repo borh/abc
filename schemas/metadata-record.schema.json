@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/abc/schemas/metadata-record.schema.json",
+  "title": "ABC Metadata Record",
+  "description": "Bibliographic record for one Aozora work plus embedded person records. Identity (record-hash) is SHA-256 over RFC 8785 JCS bytes of this object with source_csv_provenance dropped and persons[] sorted by person_id (lexicographic ASCII compare). Nullable fields are explicit JSON null, not key-omission. Defaults are documentation only; canonicalization hashes the literal record.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "metadata_record_schema_id",
+    "metadata_record_schema_hash",
+    "work",
+    "persons"
+  ],
+  "properties": {
+    "metadata_record_schema_id": {
+      "const": "https://w3id.org/abc/schemas/metadata-record.schema.json"
+    },
+    "metadata_record_schema_hash": { "$ref": "#/$defs/hash" },
+    "work": { "$ref": "#/$defs/work" },
+    "persons": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/person" },
+      "uniqueItems": true,
+      "minItems": 1
+    },
+    "source_csv_provenance": { "$ref": "#/$defs/csvProvenance" }
+  },
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "nullableString": { "type": ["string", "null"] },
+    "nullableDate": {
+      "anyOf": [
+        { "type": "string", "format": "date" },
+        { "type": "null" }
+      ]
+    },
+    "work": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "work_id",
+        "title",
+        "title_reading",
+        "ndc",
+        "orthographic_style",
+        "copyright_expired",
+        "aozora_available",
+        "aozora_modified",
+        "card_url",
+        "source_editions"
+      ],
+      "properties": {
+        "work_id": { "type": "string", "pattern": "^[0-9]{6}$" },
+        "title": { "type": "string", "minLength": 1 },
+        "title_reading": { "$ref": "#/$defs/nullableString" },
+        "sort_reading": { "$ref": "#/$defs/nullableString" },
+        "subtitle": { "$ref": "#/$defs/nullableString" },
+        "subtitle_reading": { "$ref": "#/$defs/nullableString" },
+        "original_title": { "$ref": "#/$defs/nullableString" },
+        "first_published": { "$ref": "#/$defs/nullableString" },
+        "ndc": { "type": "string", "pattern": "^NDC [0-9A-Z]+$" },
+        "orthographic_style": {
+          "type": "string",
+          "enum": ["新字新仮名", "新字旧仮名", "旧字新仮名", "旧字旧仮名", "その他"]
+        },
+        "copyright_expired": { "type": "boolean" },
+        "aozora_available": { "type": "string", "format": "date" },
+        "aozora_modified": { "type": "string", "format": "date" },
+        "card_url": { "type": "string", "format": "uri" },
+        "source_editions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/sourceEdition" },
+          "minItems": 1
+        }
+      }
+    },
+    "sourceEdition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "publisher"],
+      "properties": {
+        "title": { "type": "string", "minLength": 1 },
+        "publisher": { "type": "string", "minLength": 1 },
+        "first_edition_year": { "$ref": "#/$defs/nullableString" },
+        "input_edition": { "$ref": "#/$defs/nullableString" },
+        "proof_edition": { "$ref": "#/$defs/nullableString" },
+        "parent_title": { "$ref": "#/$defs/nullableString" },
+        "parent_publisher": { "$ref": "#/$defs/nullableString" },
+        "parent_first_edition_year": { "$ref": "#/$defs/nullableString" }
+      }
+    },
+    "person": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "person_id",
+        "family_name",
+        "given_name",
+        "relation_to_work",
+        "person_copyright_expired"
+      ],
+      "properties": {
+        "person_id": { "type": "string", "pattern": "^[0-9]{6}$" },
+        "family_name": { "type": "string", "minLength": 1 },
+        "given_name": { "type": "string", "minLength": 1 },
+        "family_name_reading": { "$ref": "#/$defs/nullableString" },
+        "given_name_reading": { "$ref": "#/$defs/nullableString" },
+        "family_name_sort": { "$ref": "#/$defs/nullableString" },
+        "given_name_sort": { "$ref": "#/$defs/nullableString" },
+        "family_name_romaji": { "$ref": "#/$defs/nullableString" },
+        "given_name_romaji": { "$ref": "#/$defs/nullableString" },
+        "date_of_birth": { "$ref": "#/$defs/nullableDate" },
+        "date_of_death": { "$ref": "#/$defs/nullableDate" },
+        "person_copyright_expired": { "type": "boolean" },
+        "relation_to_work": {
+          "type": "string",
+          "enum": ["著者", "翻訳者", "編者", "校訂者", "その他"]
+        },
+        "external_links": {
+          "type": "array",
+          "items": { "type": "string", "format": "uri" },
+          "uniqueItems": true,
+          "default": []
+        }
+      }
+    },
+    "csvProvenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_url", "retrieved_at", "original_file_hash"],
+      "properties": {
+        "source_url": { "type": "string", "format": "uri" },
+        "retrieved_at": { "type": "string", "format": "date-time" },
+        "original_file_hash": { "$ref": "#/$defs/hash" }
+      }
+    }
+  }
+}

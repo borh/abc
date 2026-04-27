@@ -54,7 +54,9 @@
                                     :exclusions [org.apache.jena/apache-jena-libs]}
 
   com.taoensso/telemere            {:mvn/version "1.2.1"}
-  com.taoensso/telemere-slf4j      {:mvn/version "1.2.1"}}
+  com.taoensso/telemere-slf4j      {:mvn/version "1.2.1"}
+
+  org.relaxng/jing                 {:mvn/version "20241231"}}
 
  :aliases
  {:test {:extra-paths ["test"]

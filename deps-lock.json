@@ -461,6 +461,16 @@
       "hash": "sha256-tFTJn/nVuMaSbzEMvP2pN8PS1j0haZ6nE5dcfoRvAKI="
     },
     {
+      "mvn-path": "isorelax/isorelax/20030108/isorelax-20030108.jar",
+      "mvn-repo": "https://repo1.maven.org/maven2/",
+      "hash": "sha256-NCcVJDHPf5Z/kuaeXKwWFHxdj7S05ainL1KReI78/4w="
+    },
+    {
+      "mvn-path": "isorelax/isorelax/20030108/isorelax-20030108.pom",
+      "mvn-repo": "https://repo1.maven.org/maven2/",
+      "hash": "sha256-ug/b8qvT+5HXid/DGfVCwbiy1db042K6D5PcR79i9eY="
+    },
+    {
       "mvn-path": "jakarta/annotation/jakarta.annotation-api/2.1.1/jakarta.annotation-api-2.1.1.jar",
       "mvn-repo": "https://repo1.maven.org/maven2/",
       "hash": "sha256-X2X9r0JO7itV4diCupuzdr6T+wmze4CL5uIuiFHJCf4="
@@ -554,6 +564,16 @@
       "mvn-path": "net/java/jvnet-parent/5/jvnet-parent-5.pom",
       "mvn-repo": "https://repo1.maven.org/maven2/",
       "hash": "sha256-GvaZ+Nndq2f5oNIC+9eRXrA2Klpt/V/8VMr6NGXJywo="
+    },
+    {
+      "mvn-path": "net/sf/saxon/Saxon-HE/9.6.0-4/Saxon-HE-9.6.0-4.jar",
+      "mvn-repo": "https://repo1.maven.org/maven2/",
+      "hash": "sha256-wW6MiyS/b6Fl4B7KaSiMtkNf2TW4s19WeFjFl8yLyrQ="
+    },
+    {
+      "mvn-path": "net/sf/saxon/Saxon-HE/9.6.0-4/Saxon-HE-9.6.0-4.pom",
+      "mvn-repo": "https://repo1.maven.org/maven2/",
+      "hash": "sha256-t/yqK4yQwOrPBGivdO71cu/ehElg1JeTwyXFXgYE3Mk="
     },
     {
       "mvn-path": "nrepl/nrepl/1.3.1/nrepl-1.3.1.jar",
@@ -1429,6 +1449,16 @@
       "mvn-path": "org/ow2/ow2/1.5/ow2-1.5.pom",
       "mvn-repo": "https://repo1.maven.org/maven2/",
       "hash": "sha256-D4obEW52C4/mOJxRuE5LB6cPwRCC1Pk25FO1g91QtDs="
+    },
+    {
+      "mvn-path": "org/relaxng/jing/20241231/jing-20241231.jar",
+      "mvn-repo": "https://repo1.maven.org/maven2/",
+      "hash": "sha256-6l6QJiRNl35gfYtSIS1ocUmOzlGTn5xJ0Oeneq2REzo="
+    },
+    {
+      "mvn-path": "org/relaxng/jing/20241231/jing-20241231.pom",
+      "mvn-repo": "https://repo1.maven.org/maven2/",
+      "hash": "sha256-EBDbspUEbDqPtZPcYtF8THVjWjnJ280RYbYqOU3c3BI="
     },
     {
       "mvn-path": "org/ring-clojure/ring-core-protocols/1.14.1/ring-core-protocols-1.14.1.jar",

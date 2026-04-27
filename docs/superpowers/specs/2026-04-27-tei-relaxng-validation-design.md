@@ -30,20 +30,23 @@ Thin Jing wrapper. No project knowledge beyond loading a RelaxNG file and valida
 
 API:
 
-- `load-schema [path]` — reads the RelaxNG schema at `path` and returns a Jing `com.thaiopensource.validate.Schema`. Loaded once per harness run.
-- `validate! {:keys [schema xml-path label]}` — runs Jing against the XML file. Returns `:ok` on conformance; on non-conformance throws `ex-info` with `:errors` set to a vector of structured violation maps and `:label` echoed back.
+- `load-schema [path]` — reads the RelaxNG schema at `path` and returns a Jing `com.thaiopensource.validate.Schema`. **Pure function**; the caller holds the returned value and reuses it. The "load once per harness run" claim lives in the harness wiring (where the binding holds the schema for the loop), not in this namespace.
+- `validate! {:keys [schema xml-path label]}` — instantiates a fresh `ValidationDriver` from the schema, runs it on `xml-path`, and returns a map `{:label ..., :violations [...]}`. **Does not throw.** Severity classification is preserved on each violation; the caller decides whether warnings should fail the run.
 
 Violation map shape:
 
 ```clojure
-{:label   "examples/v0/example-work/tei.xml"
- :severity "error"   ; or "fatal" / "warning" depending on Jing's classification
+{:severity :error    ; one of :warning, :error, :fatal
  :line     18
  :column   17
  :message  "element charName: not allowed here ..."}
 ```
 
-All violations from one validation are aggregated before throwing — no fail-fast. Errors are collected via a Jing `ErrorHandler` (we implement one that pushes to a Clojure atom).
+Aggregation is per-file: all warnings, errors, and fatals from one document end up in `:violations` in the order Jing emits them. No fail-fast.
+
+**Concurrency.** Jing's `ValidationDriver` is not thread-safe; we instantiate one per call to `validate!` and the `ErrorHandler` writes to a fresh `volatile!` (not an atom — single-thread access during one validate call) used only inside that call. The harness validates files **sequentially**; if parallel validation is wanted later, each thread builds its own driver from the shared `Schema`.
+
+**Memory.** `tei_all.rng` is ~1 MB on disk; the parsed `Schema` object will be larger but constant per harness run. The harness already keeps Jena/Aristotle graphs in heap. Real cost is real but small at v0 scale; no lazy-load strategy is needed yet. Re-evaluate if/when materialized TEI artifacts grow into the hundreds.
 
 ### Schema source via Nix flake
 
@@ -56,7 +59,15 @@ tei-schema = pkgs.fetchurl {
 };
 ```
 
-Hash verified at design time against TEI P5 Release 4.11.0 (published 2026-02-18). The URL serves the current release; the pinned hash is the durable identity.
+Hash verified at design time against TEI P5 Release 4.11.0 (published 2026-02-18). The URL is unversioned (serves "current"); the pinned `hash` is the durable identity. If TEI ships a new release upstream, `pkgs.fetchurl` fails with a hash mismatch — which is the standard Nix forcing function for a deliberate version bump, not a fault. We treat that as a feature: drift is impossible without an explicit code change.
+
+**Schema refresh policy.** TEI publishes roughly quarterly. A bump is a deliberate workflow:
+
+1. Update the URL hash (and any URL change) in `flake.nix`.
+2. Re-run `nix run .#validate-design-bundle` and `nix flake check`.
+3. If the example fixture starts failing, fix the fixture and document the spec/release we moved to in the commit message.
+
+This v0 milestone does not automate refresh; an item in `docs/next-steps.md` can track it once it becomes painful.
 
 ### Wrapper-injected env var
 
@@ -73,43 +84,73 @@ tei rng validation ok
 
 Process:
 
-1. Read `TEI_SCHEMA_PATH` env var; fail loudly if missing.
-2. Load schema once via `tei/load-schema`.
-3. Validate each TEI document. v0 set: `examples/v0/example-work/tei.xml`. The validator function takes a seq of paths so future TEI artifacts slot in cleanly.
-4. Aggregate violations and surface via the existing `check-errors!` printer (which already handles `:errors` vectors of strings — we render here, mirroring the SHACL pass).
+1. Read `TEI_SCHEMA_PATH` env var. If missing, throw `ex-info` with a clear message naming the variable and the canonical `nix run` invocation. The harness's existing `-main` printer surfaces this and exits non-zero.
+2. Load the schema **once** here — `(let [schema (tei/load-schema (System/getenv "TEI_SCHEMA_PATH"))] ...)` — and reuse the binding across all paths in this step.
+3. Iterate the TEI document set sequentially: v0 is `["examples/v0/example-work/tei.xml"]`. The validator function takes a seq so future fixtures slot in cleanly.
+4. **Severity policy.** For each document, partition `:violations` by `:severity`:
+   - `:error` and `:fatal` are conformance failures and contribute to the harness step's failure set.
+   - `:warning` is logged via Telemere (`tel/log! :warn ...`) but does not fail the step. Jing emits warnings for non-conformance-affecting issues like dangling IDREFs in standalone documents; treating those as failures is wrong.
+5. **Cross-file aggregation.** The harness step accumulates failure-tier violations from every document, then renders each violation to a single line (severity, label, line:col, message) and throws once via `check-errors!` if the accumulated vector is non-empty. `check-errors!` already takes a vector of strings; the rendering happens at the harness boundary, mirroring how the SHACL pass converts violation maps to strings.
+
+The schema binding is the only "cache" — it's a local `let` in this step. The `abc.tools.tei` namespace itself is stateless.
 
 ### Fixture fix
 
-The current `examples/v0/example-work/tei.xml` contains `<charName>` inside `<char>`. TEI 4.11.0 does not define `<charName>` (likely intended `<localName>`, but the existing `<desc>` already covers the human-readable description). Drop the `<charName>` line. Verify the rest of the document — `<ruby>/<rb>/<rt>`, `<g ref="..."/>`, etc. — passes Jing.
+The current `examples/v0/example-work/tei.xml` contains a `<charName>` element inside `<char>`. **Verified against TEI P5 4.11.0** (`tei_all.rng` `<define name="char">`): the `<char>` content model is `(unicodeProp | unihanProp | localProp | mapping | figure | model.graphicLike | model.noteLike | model.descLike)*`. `<charName>` is not defined — it is invalid markup, not a typo for an existing element.
+
+The TEI-idiomatic way to attach a project-specific name to a character is `<localProp name="charName" value="..."/>`: a "local property" carries non-Unicode-standard project metadata. Replace the existing line:
+
+```xml
+<charName>Example unresolved Aozora gaiji fixture</charName>
+```
+
+with:
+
+```xml
+<localProp name="charName" value="Example unresolved Aozora gaiji fixture"/>
+```
+
+This preserves the original semantic intent (a name attached to a character entry) within the schema, rather than silently dropping it. The existing `<desc>` line stays.
+
+Other elements in the fixture — `<ruby>/<rb>/<rt>`, `<g ref="..."/>`, `<head>`, `<p>`, `<div>` — are valid in TEI 4.11.0 (TEI added native `<ruby>` in 4.2.0). The Jing pass over the fixed fixture is the authoritative check.
 
 ## Data Flow
 
 ```
-TEI XML path
-  → jing/load-schema (cached per run)
-  → tei/validate! schema xml-path
-    ↳ Jing parses and validates with our ErrorHandler
-    ↳ ErrorHandler collects violations into an atom
-  → :ok | throw ex-info {:errors [violation-maps] :label ...}
-                                            → rendered by validate-design-bundle
+TEI XML path(s) + loaded schema (held in harness binding)
+  → tei/validate! {:schema, :xml-path, :label}
+    ↳ fresh ValidationDriver per call
+    ↳ ErrorHandler writes to a per-call volatile! (single-thread)
+    ↳ returns {:label, :violations [{:severity, :line, :column, :message}, ...]}
+  → harness partitions :violations by severity
+    ↳ :warning → tel/log! :warn (does not fail step)
+    ↳ :error / :fatal → accumulate into failure vec
+  → after all files: render failure vec to strings, throw via check-errors!
+                                            → rendered by validate-design-bundle's -main
 ```
 
 ## Test Plan
 
 ### `test/abc/tools/tei_test.clj` (new)
 
+A test fixture (`use-fixtures :once`) reads `TEI_SCHEMA_PATH`; if unset, **all** tests in this namespace fail with a clear message rather than silently skipping. Skipping would let CI green-light a run where the harness contract isn't being exercised. The harness has the same loud-failure behavior; tests must mirror it, not diverge.
+
 Positive:
 
-- `validate!` returns `:ok` for `examples/v0/example-work/tei.xml` against `tei_all.rng` (test reads `TEI_SCHEMA_PATH`; if unset, the test skips with a clear message — matching the harness behavior).
+- `validate!` returns a map with empty `:violations` for `examples/v0/example-work/tei.xml` against the schema at `TEI_SCHEMA_PATH` (after the fixture fix from this spec).
 
-Negative (constructed in-test, no temp files needed if Jing accepts a string source; if it requires a file, write a temp file):
+Negative (constructed in-test by writing temp files; Jing's source API is file/InputSource based):
 
-- A TEI document missing the required `<teiHeader>` triggers a violation; `:errors` non-empty; at least one entry's `:message` references `teiHeader`.
-- A TEI document with an undefined element (`<charName>`-style) triggers a violation that mentions the offending element name.
+- A TEI document missing `<teiHeader>` produces a non-empty `:violations` vector containing an `:error`-severity entry whose `:message` references `teiHeader`.
+- A TEI document with an undefined element (`<bogusElement>`) produces a violation entry that mentions the offending element name.
+- A TEI document with a Jing-warning-tier issue (e.g., a dangling `IDREF`) produces a violation with `:severity :warning` and **does not** end up in the harness's failure set when run through the harness step. (This second assertion is in the harness extension below; the unit test here just checks severity preservation.)
 
 ### `test/abc/tools/validate_design_bundle_test.clj` (extension)
 
-A new smoke test analogous to `validate-shacl-smoke-test`: loads `TEI_SCHEMA_PATH` (skip if unset), runs `validate!` on the example fixture, asserts `:ok`. Mirrors the SHACL smoke test in style.
+Two new tests, mirroring `validate-shacl-smoke-test` plus the loud-fail contract:
+
+1. **Smoke positive.** With `TEI_SCHEMA_PATH` set (otherwise fail loudly per the namespace fixture above), the harness's TEI step returns nil for the example fixture set.
+2. **Loud-fail when env unset.** Temporarily unset `TEI_SCHEMA_PATH` (via `with-redefs` on `System/getenv` or by calling the step's helper with explicit `nil`) and assert the helper throws `ex-info` with a message naming the variable. This catches the divergence between "test skipped" (silent) and "harness fails" (loud) that would otherwise hide regressions in the loud-fail path.
 
 ## Dependencies
 
@@ -125,20 +166,21 @@ A new smoke test analogous to `validate-shacl-smoke-test`: loads `TEI_SCHEMA_PAT
 
 ## Acceptance Criteria
 
-- `clojure -M:test` passes including the new `tei-test` and the extended `validate_design_bundle_test`.
+- `clojure -M:test` passes including the new `tei-test` and the extended `validate_design_bundle_test` (including the loud-fail-when-env-unset assertion).
 - `nix run .#validate-design-bundle` prints the new `==> Validating TEI against P5 RelaxNG` step and exits 0; `examples/v0/example-work/tei.xml` validates clean.
 - `nix flake check` evaluates and the focused-test check passes with the new dependency.
-- `clojure -M:abc/validate-design-bundle` outside Nix without `TEI_SCHEMA_PATH` exits 1 with a message naming the missing env var, not a silent skip.
+- `clojure -M:abc/validate-design-bundle` outside Nix without `TEI_SCHEMA_PATH` exits 1 with a message naming the missing env var. The matching test (loud-fail extension above) covers the same code path so test and harness contracts agree.
 - Restoring the original `<charName>` line in the example fixture causes the new TEI step to fail with a violation referencing the offending element. (Proves the new check is enforced, not skipped.)
+- Injecting a Jing-warning-tier issue (e.g., a dangling `IDREF`) into the example fixture surfaces a `tel/log! :warn` line but does **not** fail the harness step. (Proves warnings are not silently elevated to failures.)
 
 ## Sequencing
 
 1. Add `org.relaxng/jing` dep, regenerate clj-nix lock.
 2. Add `tei-schema` `pkgs.fetchurl` derivation in `flake.nix` and wire `TEI_SCHEMA_PATH` into the `validate-design-bundle` wrapper script.
 3. TDD: positive test for `tei/load-schema` → minimal namespace.
-4. TDD: positive then negative tests for `tei/validate!` → wrapper around Jing's `ValidationDriver` with custom `ErrorHandler`.
-5. Fix `examples/v0/example-work/tei.xml` (remove `<charName>`) and confirm Jing passes.
-6. Wire new step into `validate-design-bundle`. Add smoke test in `validate_design_bundle_test`.
+4. TDD: positive then negative tests for `tei/validate!` (including the warning-severity preservation case) → wrapper around Jing's `ValidationDriver` with custom `ErrorHandler`.
+5. **TDD-driven fixture fix.** Write a positive test in `tei_test.clj` asserting that `examples/v0/example-work/tei.xml` validates clean. Run it: it fails on the existing `<charName>` element. Replace `<charName>` with `<localProp name="charName" value="..."/>` (per Fixture Fix above). Re-run: passes. The fixture fix is then driven by a failing test, not by manual confirmation.
+6. Wire new step into `validate-design-bundle` with the warning vs error/fatal severity policy. Add the smoke positive + loud-fail tests in `validate_design_bundle_test`.
 7. Update `flake.nix` `contract-surface` check + focused-test alias to include the new files.
 8. End-to-end verification: `nix run .#validate-design-bundle`, `nix flake check`.
 

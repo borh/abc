@@ -25,6 +25,9 @@ pom.xml.asc
 .lsp/
 .clj-kondo/
 
+# Archived superpowers plans (completed, not committed)
+docs/superpowers/plans/archive/
+
 # Local/generated corpus and conversion artifacts
 /data/dev/
 /data/test/

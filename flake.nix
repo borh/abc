@@ -76,6 +76,16 @@
             );
             meta.description = "Generate deterministic RDF/Turtle view from an ABC manifest";
           };
+
+          aozora-ingest = {
+            type = "app";
+            program = toString (
+              pkgs.writeShellScript "abc-aozora-ingest" ''
+                exec ${pkgs.clojure}/bin/clojure -M:abc/aozora-ingest "$@"
+              ''
+            );
+            meta.description = "Build a metadata-record JSON from an Aozora list_person_all_extended ZIP slice";
+          };
         }
       );
 

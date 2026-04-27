@@ -1,3 +1,15 @@
+;; RFC 8785 JCS canonicalization for structured JSON values.
+;;
+;; LIMITATION: Number canonicalization delegates to charred's json/write-json-str.
+;; RFC 8785 section 3.2.2.2 requires strict ES6 floating-point serialization
+;; (handling of -0, NaN, Infinity, scientific notation). For identity objects
+;; that contain only strings and nulls (the current v0 design), this limitation
+;; is latent. If non-integer numbers, BigDecimal, or BigInteger enter the
+;; identity object, cross-implementation hash agreement may break.
+;;
+;; Any change to canonicalization must be paired with a new manifest schema
+;; hash per ADR 0001.
+;;
 (ns abc.tools.jcs
   (:require [charred.api :as json]
             [clojure.string :as string])

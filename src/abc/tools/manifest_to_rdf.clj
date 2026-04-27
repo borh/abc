@@ -216,11 +216,7 @@
     (string/join
      "\n"
      (concat
-      ["@prefix abc: <https://w3id.org/abc/> ."
-       "@prefix dcterms: <http://purl.org/dc/terms/> ."
-       "@prefix prov: <http://www.w3.org/ns/prov#> ."
-       "@prefix xsd: <http://www.w3.org/2001/XMLSchema#> ."
-       ""]
+      (conj (rdf-prefixes/turtle-prefix-declarations) "")
       body
       [""]))))
 

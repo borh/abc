@@ -59,6 +59,24 @@
           r2 (assoc r1 "persons" (vec (reverse persons)))]
       (is (= (mr/record-hash r1) (mr/record-hash r2))))))
 
+(deftest record->graph-key-triples-test
+  (testing "record->graph emits the expected core triples"
+    (let [g (mr/record->graph @example-record)
+          triples (iterator-seq (.find g))
+          predicates (set (map #(.getURI (.getPredicate %)) triples))]
+      (is (contains? predicates "http://purl.org/dc/terms/title"))
+      (is (contains? predicates "http://purl.org/dc/terms/creator"))
+      (is (contains? predicates "http://purl.org/dc/terms/identifier"))
+      (is (contains? predicates "http://xmlns.com/foaf/0.1/familyName"))
+      (is (contains? predicates "http://xmlns.com/foaf/0.1/givenName"))
+      (is (contains? predicates "http://RDVocab.info/ElementsGr2/dateOfBirth"))
+      (is (contains? predicates "http://RDVocab.info/ElementsGr2/dateOfDeath")))))
+
+(deftest record->ttl-matches-fixture-test
+  (testing "record->ttl byte-for-byte matches the committed fixture"
+    (let [expected (slurp "examples/v0/example-work/metadata-record.ttl")]
+      (is (= expected (mr/record->ttl @example-record))))))
+
 (deftest build-metadata-record-shape-test
   (testing "build-metadata-record produces a schema-compliant value"
     (let [work (get @example-record "work")

@@ -4,19 +4,29 @@
   via delay so the registry update happens once on first reference."
   (:require [arachne.aristotle.registry :as reg]))
 
+(def prefix-bindings
+  "Ordered seq of [prefix-symbol uri] pairs used as ABC's RDF
+  vocabulary surface. Single source of truth: graph builders register
+  these via Aristotle, and serializers emit @prefix declarations from
+  the same list, so no usage can reference a prefix the header
+  doesn't declare."
+  [['abc     "https://w3id.org/abc/"]
+   ['bibo    "http://purl.org/ontology/bibo/"]
+   ['dc      "http://purl.org/dc/elements/1.1/"]
+   ['dcterms "http://purl.org/dc/terms/"]
+   ['dcndl   "http://ndl.go.jp/dcndl/terms/"]
+   ['foaf    "http://xmlns.com/foaf/0.1/"]
+   ['prov    "http://www.w3.org/ns/prov#"]
+   ['rdag2   "http://RDVocab.info/ElementsGr2/"]
+   ['rdf     "http://www.w3.org/1999/02/22-rdf-syntax-ns#"]
+   ['rdfs    "http://www.w3.org/2000/01/rdf-schema#"]
+   ['schema  "https://schema.org/"]
+   ['xsd     "http://www.w3.org/2001/XMLSchema#"]])
+
 (defonce ^:private installed
   (delay
-    (reg/prefix 'abc     "https://w3id.org/abc/")
-    (reg/prefix 'bibo    "http://purl.org/ontology/bibo/")
-    (reg/prefix 'dc      "http://purl.org/dc/elements/1.1/")
-    (reg/prefix 'dcterms "http://purl.org/dc/terms/")
-    (reg/prefix 'dcndl   "http://ndl.go.jp/dcndl/terms/")
-    (reg/prefix 'foaf    "http://xmlns.com/foaf/0.1/")
-    (reg/prefix 'prov    "http://www.w3.org/ns/prov#")
-    (reg/prefix 'rdag2   "http://RDVocab.info/ElementsGr2/")
-    (reg/prefix 'rdfs    "http://www.w3.org/2000/01/rdf-schema#")
-    (reg/prefix 'schema  "https://schema.org/")
-    (reg/prefix 'xsd     "http://www.w3.org/2001/XMLSchema#")
+    (doseq [[sym uri] prefix-bindings]
+      (reg/prefix sym uri))
     true))
 
 (defn ensure!
@@ -24,3 +34,11 @@
   Returns true on success. Safe to call repeatedly."
   []
   @installed)
+
+(defn turtle-prefix-declarations
+  "Return a vector of '@prefix p: <uri> .' declaration strings, one
+  per registered binding."
+  []
+  (mapv (fn [[sym uri]]
+          (str "@prefix " (name sym) ": <" uri "> ."))
+        prefix-bindings))

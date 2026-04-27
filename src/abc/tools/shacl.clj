@@ -19,9 +19,23 @@
        (RDFDataMgr/read model in Lang/TURTLE))
      (.getGraph model))))
 
+(defn- severity->label
+  "Render a Jena Severity into its short SHACL label. Severity#level returns
+  a Node whose URI is the SHACL severity IRI (sh:Violation, sh:Warning,
+  sh:Info); we strip to the local name."
+  [severity]
+  (when severity
+    (let [node (.level severity)
+          uri (when (and node (.isURI node)) (.getURI node))]
+      (when uri
+        (let [hash-idx (.lastIndexOf uri "#")]
+          (if (neg? hash-idx)
+            uri
+            (subs uri (inc hash-idx))))))))
+
 (defn- entry->violation
   [^ReportEntry entry label]
-  (let [severity (some-> (.severity entry) .getLocalName)
+  (let [severity (severity->label (.severity entry))
         focus    (some-> (.focusNode entry) str)
         path     (some-> (.resultPath entry) str)
         message  (.message entry)

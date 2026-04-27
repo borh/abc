@@ -138,20 +138,31 @@
             test -f ${./src/abc/tools/jcs.clj}
             test -f ${./src/abc/tools/json.clj}
             test -f ${./src/abc/tools/schema.clj}
+            test -f ${./src/abc/tools/aozora_csv.clj}
+            test -f ${./src/abc/tools/aozora_ingest.clj}
             test -f ${./src/abc/tools/manifest_index.clj}
             test -f ${./src/abc/tools/logging.clj}
             test -f ${./src/abc/tools/manifest_to_rdf.clj}
+            test -f ${./src/abc/tools/metadata_record.clj}
+            test -f ${./src/abc/tools/rdf_prefixes.clj}
             test -f ${./src/abc/tools/shacl.clj}
             test -f ${./src/abc/tools/tei.clj}
+            test -f ${./src/abc/tools/tei_header.clj}
             test -f ${./src/abc/tools/validate_design_bundle.clj}
+            test -f ${./schemas/metadata-record.schema.json}
             test -f ${./test/abc/tools/hash_test.clj}
             test -f ${./test/abc/tools/jcs_test.clj}
             test -f ${./test/abc/tools/schema_test.clj}
             test -f ${./test/abc/tools/manifest_index_test.clj}
             test -f ${./test/abc/tools/manifest_to_rdf_test.clj}
             test -f ${./test/abc/tools/materialize_import_test.clj}
+            test -f ${./test/abc/tools/aozora_csv_test.clj}
+            test -f ${./test/abc/tools/metadata_record_test.clj}
             test -f ${./test/abc/tools/shacl_test.clj}
             test -f ${./test/abc/tools/tei_test.clj}
+            test -f ${./test/abc/tools/tei_header_test.clj}
+            test -f ${./examples/v0/example-work/metadata-record.json}
+            test -f ${./examples/v0/example-work/metadata-record.ttl}
             test -f ${./test/abc/tools/validate_design_bundle_test.clj}
             test -f ${./test/abc/annotation_schema_test.clj}
             test -f ${./test/abc/text_test.clj}

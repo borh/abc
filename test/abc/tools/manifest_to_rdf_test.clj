@@ -70,10 +70,41 @@
       ;; Compare triple count and sorted subject/predicate/object strings.
       ;; Blank node identities are ignored because we compare string representations.
       (is (= (count (graph->sorted-triples
-                       (aa/read (aa/graph :simple)
-                                (io/resource "abc/tools/manifest_to_rdf/example_manifest.ttl"))))
+                     (aa/read (aa/graph :simple)
+                              (io/resource "abc/tools/manifest_to_rdf/example_manifest.ttl"))))
              (count (graph->sorted-triples actual))))
       (is (= (manifest-to-rdf/manifest->ttl example-manifest) ttl)))))
+
+(defn- artifact-uri-for [hash-value]
+  (str "https://w3id.org/abc/artifact/"
+       (string/replace hash-value ":" "-")))
+
+(defn- triples-from
+  "Triples whose subject URI matches `subject-uri`."
+  [graph subject-uri]
+  (->> (iterator-seq (.find graph))
+       (filter (fn [t] (= subject-uri (str (.getSubject t)))))))
+
+(deftest manifest-to-rdf-failure-graph-test
+  (testing "failure manifest produces a graph that satisfies the SHACL FailureShape"
+    (let [graph (manifest-to-rdf/manifest->graph failure-manifest)
+          subj (artifact-uri-for (get failure-manifest "artifact_id"))
+          ts (triples-from graph subj)
+          predicates (set (map #(.getURI (.getPredicate %)) ts))
+          types (->> ts
+                     (filter #(= "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+                                 (.getURI (.getPredicate %))))
+                     (map #(.getURI (.getObject %)))
+                     set)]
+      (is (contains? types "https://w3id.org/abc/Artifact"))
+      (is (contains? types "http://www.w3.org/ns/prov#Entity"))
+      (is (contains? types "https://w3id.org/abc/FailureArtifact"))
+      (is (contains? predicates "https://w3id.org/abc/hasErrorArtifact")
+          "errors-role sidecar must be linked via abc:hasErrorArtifact")
+      (is (not (contains? predicates "https://w3id.org/abc/contentHash"))
+          "null-content artifact must not carry abc:contentHash")
+      (is (not (contains? predicates "http://purl.org/dc/terms/format"))
+          "null-content artifact must not carry dcterms:format"))))
 
 (deftest manifest-to-rdf-failure-test
   (testing "failure artifact omits contentHash and dcterms:format"

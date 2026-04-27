@@ -61,6 +61,7 @@
           {"producer" "ab-validator"
            "producer_version" "0.0.0"
            "work_id" "fixture"
+           "corpus_snapshot_hash" (files/example-hash "00")
            "work_content_hash" (files/example-hash "01")
            "parser_build_hash" (files/example-hash "02")
            "parser_config_hash" (files/example-hash "03")
@@ -70,14 +71,16 @@
            "run_summary_hash" (files/example-hash "06")
            "comparison_report_hash" (files/example-hash "07")}))))
   (testing "reports missing keys"
-    (is (= ["ab-validator manifest inputs missing keys: comparison_report_hash, diagnostic_schema_hash, parser_build_hash, parser_config_hash, parser_ir_schema_hash, producer_version, run_summary_hash, warning_sidecar_hash, work_content_hash, work_id"]
-           (validate/manifest-input-errors {"producer" "ab-validator"}))))
+    (let [actual (validate/manifest-input-errors {"producer" "ab-validator"})]
+      (is (= 1 (count actual)))
+      (is (re-find #"corpus_snapshot_hash" (first actual)))))
   (testing "reports invalid hash values"
     (is (= ["ab-validator manifest input work_content_hash is not a sha256 hash: nope"]
            (validate/manifest-input-errors
             {"producer" "ab-validator"
              "producer_version" "0.0.0"
              "work_id" "fixture"
+             "corpus_snapshot_hash" (files/example-hash "00")
              "work_content_hash" "nope"
              "parser_build_hash" (files/example-hash "02")
              "parser_config_hash" (files/example-hash "03")

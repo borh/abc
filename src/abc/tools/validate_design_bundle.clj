@@ -13,6 +13,7 @@
   #{"producer"
     "producer_version"
     "work_id"
+    "corpus_snapshot_hash"
     "work_content_hash"
     "parser_build_hash"
     "parser_config_hash"

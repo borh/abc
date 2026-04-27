@@ -8,9 +8,6 @@
 
 (def manifest-schema-id "https://w3id.org/abc/schemas/manifest.schema.json")
 
-(def corpus-snapshot-hash
-  "sha256:1111111111111111111111111111111111111111111111111111111111111111")
-
 (defn bytes->hex [bytes]
   (hash/bytes->hex bytes))
 
@@ -56,7 +53,7 @@
         (map (fn [k]
                [k (case k
                     "manifest_schema_hash" manifest-schema-hash
-                    "corpus_snapshot_hash" (get manifest-inputs k corpus-snapshot-hash)
+                    "corpus_snapshot_hash" (get manifest-inputs k)
                     "work_content_hash" (get manifest-inputs k)
                     "metadata_record_hash" nil
                     "parser_build_hash" (get manifest-inputs k)

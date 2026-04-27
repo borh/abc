@@ -1,5 +1,7 @@
 (ns abc.tools.validate-design-bundle-test
   (:require [abc.tools.files :as files]
+            [abc.tools.manifest-to-rdf :as manifest-to-rdf]
+            [abc.tools.shacl :as shacl]
             [abc.tools.validate-design-bundle :as validate]
             [clojure.test :refer [deftest is testing]]))
 
@@ -119,3 +121,20 @@
   (is (= ["ab-validator parser IR schema_hash sha256:0000000000000000000000000000000000000000000000000000000000000004 does not match ABC parser IR schema hash sha256:13e3127fe8eaa0649f83fd5c12e11923115810b454c6d3d22996b00e1218623f"]
          (validate/parser-ir-schema-hash-errors
           {"schema_hash" (files/example-hash "04")}))))
+
+(deftest validate-shacl-smoke-test
+  (testing "validate-design-bundle SHACL pass conforms for the example success manifest"
+    (let [shapes (shacl/load-shapes-graph)
+          manifest (files/read-json "examples/v0/example-work/manifest.json")
+          data (manifest-to-rdf/manifest->graph manifest)]
+      (is (= :ok (shacl/validate! {:shapes-graph shapes
+                                   :data-graph data
+                                   :label "validate_design_bundle_test"})))))
+
+  (testing "validate-design-bundle SHACL pass conforms for the example failure manifest"
+    (let [shapes (shacl/load-shapes-graph)
+          manifest (files/read-json "examples/v0/example-work/failure-manifest.example.json")
+          data (manifest-to-rdf/manifest->graph manifest)]
+      (is (= :ok (shacl/validate! {:shapes-graph shapes
+                                   :data-graph data
+                                   :label "validate_design_bundle_test"}))))))

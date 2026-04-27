@@ -15,7 +15,7 @@
     <encodingDesc>
       <charDecl>
         <char xml:id="example-gaiji">
-          <charName>Example unresolved Aozora gaiji fixture</charName>
+          <localProp name="charName" value="Example unresolved Aozora gaiji fixture"/>
           <desc>Design fixture for preserving an unresolved gaiji marker.</desc>
         </char>
       </charDecl>

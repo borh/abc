@@ -60,3 +60,17 @@
               "every violation must use a known severity keyword"))
         (finally
           (.delete tmp))))))
+
+(deftest validate-example-fixture-test
+  (testing "examples/v0/example-work/tei.xml validates clean against tei_all.rng"
+    (let [{:keys [violations]} (tei/validate! {:schema-path @schema-path
+                                               :xml-path "examples/v0/example-work/tei.xml"
+                                               :label "example"})
+          {warnings true failures false}
+          (group-by #(= :warning (:severity %)) violations)]
+      (is (empty? failures)
+          (str "fixture must produce no error/fatal violations; got: "
+               (pr-str failures)))
+      (when (seq warnings)
+        (println "validate-example-fixture-test: schema warnings:"
+                 (pr-str warnings))))))

@@ -1,9 +1,33 @@
 (ns abc.tools.manifest-to-rdf
+  "Convert ABC design-bundle manifests to deterministic RDF/Turtle using
+  Apache Jena (via Aristotle) for graph construction."
   (:require [abc.tools.files :as files]
-            [charred.api :as json]
+            [arachne.aristotle :as aa]
+            [arachne.aristotle.registry :as reg]
             [clojure.java.io :as io]
             [clojure.string :as string]
-            [clojure.tools.cli :as cli]))
+            [clojure.tools.cli :as cli])
+  (:import [org.apache.jena.datatypes.xsd XSDDatatype]
+           [org.apache.jena.graph Node Triple NodeFactory]
+           [java.io ByteArrayOutputStream]))
+
+;; ---------------------------------------------------------------------------
+;; Prefix declarations
+;; ---------------------------------------------------------------------------
+
+(defonce install-prefixes!
+  (delay
+    (reg/prefix 'abc     "https://w3id.org/abc/")
+    (reg/prefix 'dcterms "http://purl.org/dc/terms/")
+    (reg/prefix 'prov    "http://www.w3.org/ns/prov#")
+    (reg/prefix 'xsd     "http://www.w3.org/2001/XMLSchema#")))
+
+(defn- ensure-prefixes! []
+  @install-prefixes!)
+
+;; ---------------------------------------------------------------------------
+;; IRI helpers — angle-bracket strings become URI nodes in Aristotle
+;; ---------------------------------------------------------------------------
 
 (def default-base-iri "https://w3id.org/abc/")
 
@@ -16,111 +40,311 @@
   ([base-iri hash-value]
    (str "<" base-iri "artifact/" (hash-token hash-value) ">")))
 
-(defn- activity-iri [activity-id]
-  (str "<" activity-id ">"))
-
 (defn- agent-iri [agent base-iri]
   (str "<" base-iri "agent/" (string/replace agent "." "-") ">"))
 
-(defn- literal [value]
-  (string/replace (json/write-json-str value) "\\/" "/"))
+;; ---------------------------------------------------------------------------
+;; Serializer helpers
+;; ---------------------------------------------------------------------------
 
-(defn- clause-lines [clauses]
-  (map-indexed
-   (fn [i clause]
-     (str "  " clause (if (= i (dec (count clauses))) " ." " ;")))
-   clauses))
+(def ^:private xsd-string-uri   (.getURI XSDDatatype/XSDstring))
+(def ^:private xsd-dateTime-uri (.getURI XSDDatatype/XSDdateTime))
+(def ^:private rdf-type-uri     "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
+
+(defn- kw->ttl [kw]
+  (str (namespace kw) ":" (name kw)))
+
+(defn- node->ttl [^Node node]
+  (cond
+    (.isURI node)
+    (let [uri (.getURI node)]
+      (if-let [kw (reg/kw uri)]
+        (kw->ttl kw)
+        (str "<" uri ">")))
+
+    (.isLiteral node)
+    (let [lex  (.getLiteralLexicalForm node)
+          dt   (.getLiteralDatatypeURI node)
+          lang (.getLiteralLanguage node)]
+      (cond
+        (and dt (= dt xsd-string-uri))
+        (str "\"" (string/escape lex {\" "\\\""}) "\"")
+
+        (and dt (= dt xsd-dateTime-uri))
+        (str "\"" lex "\"^^xsd:dateTime")
+
+        (seq lang)
+        (str "\"" (string/escape lex {\" "\\\""}) "\"@" lang)
+
+        dt
+        (str "\"" (string/escape lex {\" "\\\""}) "\"^^"
+             (if-let [kw (reg/kw dt)] (kw->ttl kw) (str "<" dt ">")))
+
+        :else
+        (str "\"" (string/escape lex {\" "\\\""}) "\"")))
+
+    (.isBlank node)
+    (str "_:" (.getBlankNodeLabel node))
+
+    :else
+    (str node)))
+
+(defn- predicate->ttl [^Node pred]
+  (let [uri (.getURI pred)]
+    (if (= uri rdf-type-uri)
+      "a"
+      (if-let [kw (reg/kw uri)]
+        (kw->ttl kw)
+        (str "<" uri ">")))))
+
+;; ---------------------------------------------------------------------------
+;; Deterministic Turtle serialisation
+;;
+;; Jena's default Turtle writer iteration order depends on internal hashes,
+;; so we walk the graph ourselves to produce stable, canonical output.
+;; ---------------------------------------------------------------------------
+
+(defn- graph->ttl-string [^org.apache.jena.graph.Graph graph]
+  (let [all-triples (iterator-seq (.find graph))
+        by-subj     (group-by #(.getSubject ^Triple %) all-triples)
+
+        ;; Blank nodes that are objects of exactly one triple can be inlined
+        object-counts
+        (frequencies (keep #(let [o (.getObject ^Triple %)]
+                              (when (.isBlank o) o))
+                            all-triples))
+        inlineable-blanks
+        (set (keep (fn [[node cnt]] (when (= cnt 1) node))
+                   object-counts))
+
+        ;; Stable sequential IDs for any remaining blank nodes
+        blank-ids
+        (zipmap
+          (sort-by #(.getBlankNodeLabel ^Node %) (keys object-counts))
+          (map #(str "b" %) (range)))
+
+        stable-node
+        (fn [^Node n]
+          (if (and (.isBlank n) (not (inlineable-blanks n)))
+            (str "_:" (get blank-ids n))
+            (node->ttl n)))
+
+        stable-pred predicate->ttl
+
+        subject-order
+        (fn [^Node s]
+          (cond
+            (.isBlank s)
+            [2 (get blank-ids s "")]
+            :else
+            (let [uri (.getURI s)]
+              [(cond
+                 (string/starts-with? uri (str default-base-iri "artifact/")) 0
+                 (string/starts-with? uri (str default-base-iri "activity/")) 1
+                 :else 2)
+               uri])))
+
+        sorted-subjs (sort-by subject-order (keys by-subj))
+
+        ;; Inline a blank node as [ p o ; p o ]
+        inline-blank
+        (fn [^Node bnode]
+          (let [btriples   (get by-subj bnode)
+                by-pred    (group-by #(.getPredicate ^Triple %) btriples)
+                preds      (sort-by (fn [^Node p]
+                                      (let [uri (.getURI p)]
+                                        (if (= uri rdf-type-uri)
+                                          [0 ""]
+                                          [1 uri])))
+                                    (keys by-pred))
+                clauses    (mapcat
+                             (fn [pred-node]
+                               (let [objs (map #(.getObject ^Triple %)
+                                               (get by-pred pred-node))
+                                     sorted-objs (sort-by (comp string/lower-case node->ttl) objs)]
+                                 (map
+                                   (fn [obj]
+                                     (str " " (stable-pred pred-node)
+                                          " " (stable-node obj)))
+                                   sorted-objs)))
+                             preds)]
+            (str "["
+                 (string/join " ;" clauses)
+                 " ]")))
+
+        render-subject
+        (fn [subj]
+          (if (and (.isBlank subj) (inlineable-blanks subj))
+            nil  ;; inlined elsewhere, skip standalone
+            (let [triples     (get by-subj subj)
+                  by-pred     (group-by #(.getPredicate ^Triple %) triples)
+                  pred-order  (fn [^Node p]
+                                (let [uri (.getURI p)]
+                                  (if (= uri rdf-type-uri)
+                                    [0 ""]
+                                    [1 uri])))
+                  sorted-preds (sort-by pred-order (keys by-pred))
+                  pred-clauses
+                  (map-indexed
+                    (fn [pred-idx pred-node]
+                      (let [objs        (map #(.getObject ^Triple %) (get by-pred pred-node))
+                            sorted-objs (sort-by (comp string/lower-case node->ttl) objs)
+                            pred-name   (stable-pred pred-node)
+                            last-pred?  (= pred-idx (dec (count sorted-preds)))]
+                        (map-indexed
+                          (fn [obj-idx obj]
+                            (str "  " pred-name " "
+                                 (if (and (.isBlank obj) (inlineable-blanks obj))
+                                   (inline-blank obj)
+                                   (stable-node obj))
+                                 (if (and last-pred? (= obj-idx (dec (count sorted-objs))))
+                                   " ."
+                                   " ;")))
+                          sorted-objs)))
+                    sorted-preds)]
+              (cons (stable-node subj) (apply concat pred-clauses)))))
+
+        body (rest
+               (mapcat
+                 (fn [subj]
+                   (let [lines (render-subject subj)]
+                     (if lines (cons "" lines) [])))
+                 sorted-subjs))]
+    (string/join
+      "\n"
+      (concat
+        ["@prefix abc: <https://w3id.org/abc/> ."
+         "@prefix dcterms: <http://purl.org/dc/terms/> ."
+         "@prefix prov: <http://www.w3.org/ns/prov#> ."
+         "@prefix xsd: <http://www.w3.org/2001/XMLSchema#> ."
+         ""]
+        body
+        [""]))))
+
+;; ---------------------------------------------------------------------------
+;; Timestamp -> explicit xsd:dateTime literal node
+;; ---------------------------------------------------------------------------
+
+(defn- ->xsd-datetime [iso-timestamp]
+  (NodeFactory/createLiteral iso-timestamp XSDDatatype/XSDdateTime))
+
+;; ---------------------------------------------------------------------------
+;; Manifest -> RDF graph
+;; ---------------------------------------------------------------------------
+
+(defn manifest->graph
+  "Convert a manifest (JSON parsed as string-keyed map) into an Apache Jena
+  Graph via Aristotle."
+  ([manifest]
+   (manifest->graph manifest {}))
+  ([manifest {:keys [base-iri] :or {base-iri default-base-iri}}]
+   (ensure-prefixes!)
+   (let [artifact-id    (get manifest "artifact_id")
+         artifact-kind  (get manifest "artifact_kind")
+         failure?       (= "failure" artifact-kind)
+         content        (get manifest "content")
+         provenance     (get manifest "provenance")
+         activity-id    (get provenance "activity_id")
+         schema-hash    (get-in manifest ["manifest_identity_object" "manifest_schema_hash"])
+         agent-str      (get provenance "agent")
+         plan-hash      (get provenance "plan_hash")
+         generated-at   (get provenance "generated_at")
+
+         artifact-uri   (artifact-iri base-iri artifact-id)
+         activity-uri   (str "<" activity-id ">")
+
+         derived        (->> (get provenance "was_derived_from")
+                             sort
+                             (map #(artifact-iri base-iri %)))
+         used           (->> (get provenance "used")
+                             sort
+                             (map #(artifact-iri base-iri %)))
+         sidecars       (->> (get manifest "sidecars")
+                             (sort-by (juxt #(get % "role")
+                                            #(get % "hash")
+                                            #(get % "path_hint"))))
+
+         artifact-data
+         (merge
+           {:rdf/about            artifact-uri
+            :rdf/type             [:abc/Artifact :prov/Entity]
+            :abc/artifactId       artifact-id
+            :abc/artifactKind     artifact-kind
+            :abc/schemaHash       schema-hash
+            :abc/validationStatus (get manifest "validation_status")
+            :prov/generatedAtTime (->xsd-datetime generated-at)}
+
+           (when failure?
+             {:rdf/type :abc/FailureArtifact})
+
+           (when content
+             {:abc/contentHash (get content "content_hash")
+              :dcterms/format  (get content "media_type")})
+
+           (when (seq derived)
+             {:prov/wasDerivedFrom derived})
+
+           {:prov/wasGeneratedBy activity-uri}
+
+           (when (seq sidecars)
+             {:abc/hasSidecar (mapv #(artifact-iri base-iri (get % "hash"))
+                                    sidecars)}))
+
+         association-data
+         (merge
+           {:rdf/type   :prov/Association
+            :prov/agent (agent-iri agent-str base-iri)}
+           (when plan-hash
+             {:prov/hadPlan (artifact-iri base-iri plan-hash)}))
+
+         activity-data
+         (merge
+           {:rdf/about                 activity-uri
+            :rdf/type                  :prov/Activity
+            :prov/qualifiedAssociation association-data}
+           (when (seq used)
+             {:prov/used used}))
+
+         sidecar-data
+         (mapv
+           (fn [sc]
+             (let [sc-uri (artifact-iri base-iri (get sc "hash"))]
+               {:rdf/about           sc-uri
+                :rdf/type            :prov/Entity
+                :abc/schemaHash      schema-hash
+                :abc/sidecarRole     (get sc "role")
+                :abc/contentHash     (get sc "hash")
+                :dcterms/format      (get sc "media_type")
+                :prov/wasGeneratedBy activity-uri
+                :prov/wasDerivedFrom artifact-uri}))
+           sidecars)]
+
+     (-> (aa/graph :simple)
+         (aa/add artifact-data)
+         (aa/add activity-data)
+         (aa/add sidecar-data)))))
+
+;; ---------------------------------------------------------------------------
+;; Public API
+;; ---------------------------------------------------------------------------
 
 (defn manifest->ttl
+  "Convert an ABC manifest (JSON parsed as string-keyed map) to an RDF/Turtle
+  string using Apache Jena via Aristotle."
   ([manifest]
    (manifest->ttl manifest {}))
-  ([manifest {:keys [base-iri] :or {base-iri default-base-iri}}]
-   (let [artifact-id (get manifest "artifact_id")
-         artifact (artifact-iri base-iri artifact-id)
-         artifact-kind (get manifest "artifact_kind")
-         failure? (= "failure" artifact-kind)
-         content (get manifest "content")
-         provenance (get manifest "provenance")
-         activity-id (get provenance "activity_id")
-         activity (activity-iri activity-id)
-         schema-hash (get-in manifest ["manifest_identity_object" "manifest_schema_hash"])
-         derived (->> (get provenance "was_derived_from")
-                      sort
-                      (map #(artifact-iri base-iri %)))
-         used (->> (get provenance "used")
-                   sort
-                   (map #(artifact-iri base-iri %)))
-         sidecars (->> (get manifest "sidecars")
-                       (sort-by (juxt #(get % "role")
-                                      #(get % "hash")
-                                      #(get % "path_hint"))))
-         sidecar-iris (map #(artifact-iri base-iri (get % "hash")) sidecars)
-         ;; Main artifact clauses
-         artifact-objects (concat
-                           (cond-> ["a abc:Artifact"
-                                    "a prov:Entity"]
-                             failure? (conj "a abc:FailureArtifact"))
-                           [(str "abc:artifactId " (literal artifact-id))
-                            (str "abc:artifactKind " (literal artifact-kind))
-                            (str "abc:schemaHash " (literal schema-hash))
-                            (str "abc:validationStatus " (literal (get manifest "validation_status")))
-                            (str "prov:generatedAtTime "
-                                 (literal (get provenance "generated_at"))
-                                 "^^xsd:dateTime")]
-                           (when content
-                             [(str "abc:contentHash " (literal (get content "content_hash")))
-                              (str "dcterms:format " (literal (get content "media_type")))])
-                           (map #(str "prov:wasDerivedFrom " %) derived)
-                           [(str "prov:wasGeneratedBy " activity)]
-                           (map #(str "abc:hasSidecar " %) sidecar-iris))
-         ;; Activity clauses: replace string-literal wasAssociatedWith
-         ;; with qualifiedAssociation blank node. v0: hadPlan omitted when nil.
-         agent-str (get provenance "agent")
-         plan-hash (get provenance "plan_hash")
-         association-body (string/join " ; "
-                                       (concat
-                                        ["a prov:Association"
-                                         (str "prov:agent " (agent-iri agent-str base-iri))]
-                                        (when plan-hash
-                                          [(str "prov:hadPlan " (artifact-iri base-iri plan-hash))])))
-         activity-clauses (concat
-                            ["a prov:Activity"]
-                            (map #(str "prov:used " %) used)
-                            [(str "prov:qualifiedAssociation [ " association-body " ]")])]
-     (str
-      "@prefix abc: <https://w3id.org/abc/> .\n"
-      "@prefix dcterms: <http://purl.org/dc/terms/> .\n"
-      "@prefix prov: <http://www.w3.org/ns/prov#> .\n"
-      "@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n"
-      "\n"
-      artifact "\n"
-      (string/join "\n" (clause-lines artifact-objects))
-      "\n\n"
-      activity "\n"
-      (string/join "\n" (clause-lines activity-clauses))
-      "\n\n"
-      (string/join
-       "\n\n"
-       (map (fn [sidecar]
-              (let [sidecar-iri (artifact-iri base-iri (get sidecar "hash"))]
-                (str sidecar-iri "\n"
-                     (string/join
-                      "\n"
-                      (clause-lines
-                       ["a prov:Entity"
-                        (str "abc:schemaHash " (literal schema-hash))
-                        (str "abc:sidecarRole " (literal (get sidecar "role")))
-                        (str "abc:contentHash " (literal (get sidecar "hash")))
-                        (str "dcterms:format " (literal (get sidecar "media_type")))
-                        (str "prov:wasGeneratedBy " activity)
-                        (str "prov:wasDerivedFrom " artifact)])))))
-            sidecars))
-      "\n"))))
+  ([manifest opts]
+   (-> (manifest->graph manifest opts)
+       (graph->ttl-string))))
 
 (defn write-ttl-file! [output-file manifest]
   (io/make-parents output-file)
   (spit (io/file output-file) (manifest->ttl manifest))
   output-file)
+
+;; ---------------------------------------------------------------------------
+;; CLI
+;; ---------------------------------------------------------------------------
 
 (def cli-options
   [["-o" "--output FILE" "Output Turtle file. Defaults to stdout."]])

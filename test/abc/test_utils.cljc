@@ -1,5 +1,6 @@
 (ns abc.test-utils
-  (:require [clojure.test :as t]
+  (:require [clojure.pprint :as pprint]
+            [clojure.test :as t]
             [malli.core :as m]
             [malli.error :as me]))
 
@@ -19,4 +20,4 @@
   (let [r (me/humanize (m/explain [:schema {:registry registry} s] v))]
     (if (empty? r)
       true
-      (do (clojure.pprint/pprint {:error r #_:input #_v}) false))))
+      (do (pprint/pprint {:error r #_:input #_v}) false))))

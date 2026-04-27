@@ -6,42 +6,42 @@
 <https://w3id.org/abc/artifact/sha256-0202020202020202020202020202020202020202020202020202020202020202>
   a abc:Artifact ;
   a prov:Entity ;
-  abc:artifactId "sha256:0202020202020202020202020202020202020202020202020202020202020202" ;
-  abc:artifactKind "tei" ;
-  abc:schemaHash "sha256:2222222222222222222222222222222222222222222222222222222222222222" ;
-  abc:validationStatus "warning" ;
-  prov:generatedAtTime "2026-04-26T00:00:00Z"^^xsd:dateTime ;
-  abc:contentHash "sha256:0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c" ;
   dcterms:format "application/tei+xml" ;
+  prov:generatedAtTime "2026-04-26T00:00:00Z"^^xsd:dateTime ;
   prov:wasDerivedFrom <https://w3id.org/abc/artifact/sha256-0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a> ;
   prov:wasGeneratedBy <https://w3id.org/abc/activity/parse-and-render-example> ;
+  abc:artifactId "sha256:0202020202020202020202020202020202020202020202020202020202020202" ;
+  abc:artifactKind "tei" ;
+  abc:contentHash "sha256:0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c" ;
+  abc:hasSidecar <https://w3id.org/abc/artifact/sha256-9999999999999999999999999999999999999999999999999999999999999999> ;
   abc:hasSidecar <https://w3id.org/abc/artifact/sha256-abababababababababababababababababababababababababababababababab> ;
-  abc:hasSidecar <https://w3id.org/abc/artifact/sha256-9999999999999999999999999999999999999999999999999999999999999999> .
+  abc:schemaHash "sha256:2222222222222222222222222222222222222222222222222222222222222222" ;
+  abc:validationStatus "warning" .
+
+<https://w3id.org/abc/artifact/sha256-9999999999999999999999999999999999999999999999999999999999999999>
+  a prov:Entity ;
+  dcterms:format "application/jsonl" ;
+  prov:wasDerivedFrom <https://w3id.org/abc/artifact/sha256-0202020202020202020202020202020202020202020202020202020202020202> ;
+  prov:wasGeneratedBy <https://w3id.org/abc/activity/parse-and-render-example> ;
+  abc:contentHash "sha256:9999999999999999999999999999999999999999999999999999999999999999" ;
+  abc:schemaHash "sha256:2222222222222222222222222222222222222222222222222222222222222222" ;
+  abc:sidecarRole "warnings" .
+
+<https://w3id.org/abc/artifact/sha256-abababababababababababababababababababababababababababababababab>
+  a prov:Entity ;
+  dcterms:format "application/json" ;
+  prov:wasDerivedFrom <https://w3id.org/abc/artifact/sha256-0202020202020202020202020202020202020202020202020202020202020202> ;
+  prov:wasGeneratedBy <https://w3id.org/abc/activity/parse-and-render-example> ;
+  abc:contentHash "sha256:abababababababababababababababababababababababababababababababab" ;
+  abc:schemaHash "sha256:2222222222222222222222222222222222222222222222222222222222222222" ;
+  abc:sidecarRole "validation-result" .
 
 <https://w3id.org/abc/activity/parse-and-render-example>
   a prov:Activity ;
+  prov:qualifiedAssociation [ a prov:Association ; prov:agent <https://w3id.org/abc/agent/abc-v0-design-bundle> ; prov:hadPlan <https://w3id.org/abc/artifact/sha256-eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee> ] ;
   prov:used <https://w3id.org/abc/artifact/sha256-4444444444444444444444444444444444444444444444444444444444444444> ;
   prov:used <https://w3id.org/abc/artifact/sha256-5555555555555555555555555555555555555555555555555555555555555555> ;
   prov:used <https://w3id.org/abc/artifact/sha256-6666666666666666666666666666666666666666666666666666666666666666> ;
   prov:used <https://w3id.org/abc/artifact/sha256-7777777777777777777777777777777777777777777777777777777777777777> ;
   prov:used <https://w3id.org/abc/artifact/sha256-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb> ;
-  prov:used <https://w3id.org/abc/artifact/sha256-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd> ;
-  prov:qualifiedAssociation [ a prov:Association ; prov:agent <https://w3id.org/abc/agent/abc-v0-design-bundle> ; prov:hadPlan <https://w3id.org/abc/artifact/sha256-eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee> ] .
-
-<https://w3id.org/abc/artifact/sha256-abababababababababababababababababababababababababababababababab>
-  a prov:Entity ;
-  abc:schemaHash "sha256:2222222222222222222222222222222222222222222222222222222222222222" ;
-  abc:sidecarRole "validation-result" ;
-  abc:contentHash "sha256:abababababababababababababababababababababababababababababababab" ;
-  dcterms:format "application/json" ;
-  prov:wasGeneratedBy <https://w3id.org/abc/activity/parse-and-render-example> ;
-  prov:wasDerivedFrom <https://w3id.org/abc/artifact/sha256-0202020202020202020202020202020202020202020202020202020202020202> .
-
-<https://w3id.org/abc/artifact/sha256-9999999999999999999999999999999999999999999999999999999999999999>
-  a prov:Entity ;
-  abc:schemaHash "sha256:2222222222222222222222222222222222222222222222222222222222222222" ;
-  abc:sidecarRole "warnings" ;
-  abc:contentHash "sha256:9999999999999999999999999999999999999999999999999999999999999999" ;
-  dcterms:format "application/jsonl" ;
-  prov:wasGeneratedBy <https://w3id.org/abc/activity/parse-and-render-example> ;
-  prov:wasDerivedFrom <https://w3id.org/abc/artifact/sha256-0202020202020202020202020202020202020202020202020202020202020202> .
+  prov:used <https://w3id.org/abc/artifact/sha256-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd> .

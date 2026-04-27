@@ -1,6 +1,7 @@
 (ns abc.tools.manifest-to-rdf-test
   (:require [abc.tools.files :as files]
             [abc.tools.manifest-to-rdf :as manifest-to-rdf]
+            [arachne.aristotle :as aa]
             [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.test :refer [deftest is testing]])
@@ -53,41 +54,26 @@
       (is (= (manifest-to-rdf/manifest->ttl example-manifest)
              (manifest-to-rdf/manifest->ttl reordered))))))
 
+(defn- graph->sorted-triples [graph]
+  (sort-by (fn [t] [(str (.getSubject t))
+                    (str (.getPredicate t))
+                    (str (.getObject t))])
+           (iterator-seq (.find graph))))
+
 (deftest manifest-to-rdf-output-test
-  (is (= (str "@prefix abc: <https://w3id.org/abc/> .\n"
-              "@prefix dcterms: <http://purl.org/dc/terms/> .\n"
-              "@prefix prov: <http://www.w3.org/ns/prov#> .\n"
-              "@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .\n"
-              "\n"
-              "<https://w3id.org/abc/artifact/sha256-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa>\n"
-              "  a abc:Artifact ;\n"
-              "  a prov:Entity ;\n"
-              "  abc:artifactId \"sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\" ;\n"
-              "  abc:artifactKind \"parser-ir\" ;\n"
-              "  abc:schemaHash \"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\" ;\n"
-              "  abc:validationStatus \"warning\" ;\n"
-              "  prov:generatedAtTime \"2026-04-26T00:00:00Z\"^^xsd:dateTime ;\n"
-              "  abc:contentHash \"sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\" ;\n"
-              "  dcterms:format \"application/json\" ;\n"
-              "  prov:wasDerivedFrom <https://w3id.org/abc/artifact/sha256-1111111111111111111111111111111111111111111111111111111111111111> ;\n"
-              "  prov:wasGeneratedBy <https://w3id.org/abc/activity/materialize-imported-parser-ir> ;\n"
-              "  abc:hasSidecar <https://w3id.org/abc/artifact/sha256-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd> .\n"
-              "\n"
-              "<https://w3id.org/abc/activity/materialize-imported-parser-ir>\n"
-              "  a prov:Activity ;\n"
-              "  prov:used <https://w3id.org/abc/artifact/sha256-eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee> ;\n"
-              "  prov:used <https://w3id.org/abc/artifact/sha256-ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff> ;\n"
-              "  prov:qualifiedAssociation [ a prov:Association ; prov:agent <https://w3id.org/abc/agent/abc-tools-materialize-import> ] .\n"
-              "\n"
-              "<https://w3id.org/abc/artifact/sha256-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd>\n"
-              "  a prov:Entity ;\n"
-              "  abc:schemaHash \"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\" ;\n"
-              "  abc:sidecarRole \"warnings\" ;\n"
-              "  abc:contentHash \"sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\" ;\n"
-              "  dcterms:format \"application/jsonl\" ;\n"
-              "  prov:wasGeneratedBy <https://w3id.org/abc/activity/materialize-imported-parser-ir> ;\n"
-              "  prov:wasDerivedFrom <https://w3id.org/abc/artifact/sha256-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa> .\n")
-         (manifest-to-rdf/manifest->ttl example-manifest))))
+  (testing "output contains expected triples in deterministic form"
+    (let [ttl (manifest-to-rdf/manifest->ttl example-manifest)
+          tmp (java.io.File/createTempFile "manifest" ".ttl")
+          _ (spit tmp ttl)
+          actual (aa/read (aa/graph :simple) tmp)
+          _ (.delete tmp)]
+      ;; Compare triple count and sorted subject/predicate/object strings.
+      ;; Blank node identities are ignored because we compare string representations.
+      (is (= (count (graph->sorted-triples
+                       (aa/read (aa/graph :simple)
+                                (io/resource "abc/tools/manifest_to_rdf/example_manifest.ttl"))))
+             (count (graph->sorted-triples actual))))
+      (is (= (manifest-to-rdf/manifest->ttl example-manifest) ttl)))))
 
 (deftest manifest-to-rdf-failure-test
   (testing "failure artifact omits contentHash and dcterms:format"
@@ -95,7 +81,6 @@
           lines (string/split-lines ttl)
           artifact-line "<https://w3id.org/abc/artifact/sha256-8888888888888888888888888888888888888888888888888888888888888888>"
           start-idx (.indexOf lines artifact-line)
-          ;; Collect lines from start until next subject IRI line (activity or sidecar)
           block-lines (take-while #(not (re-matches #"^\s*$" %))
                                   (drop (inc start-idx) lines))
           all-artifact-lines (into [artifact-line] block-lines)]

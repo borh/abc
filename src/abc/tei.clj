@@ -7,7 +7,7 @@
             [clojure.data.xml :as xml]
             [java-time.format :as time-format]
             [abc.aozora :as aozora]
-            [abc.annotation :as a]
+            [abc.annotation.schema :as annotation-schema]
             [java-time :as time]
             [clojure.spec.gen.alpha :as gen])
   (:import [clojure.data.xml.node Element]
@@ -146,7 +146,7 @@
 ;; <purpose type="inform" degree="medium"/>
 
 #_(s/fdef tei-quotation
-    :args (s/cat :m ::a/quotation :s string?)
+    :args (s/cat :m ::annotation-schema/quotation :s string?)
     :ret (s/tuple #{:quote :q} map?))
 (def Quotation
   [:schema [:map
@@ -200,7 +200,7 @@
 
 #_(m/=> body
         [:=>
-         [:cat [:schema {:registry abc.annotation/registry} :document/body]]
+         [:cat [:schema {:registry annotation-schema/registry} :document/body]]
          :vector])
 
 #_(s/fdef doc
@@ -219,7 +219,7 @@
         [:=>
          [:catn
           [:metadata [:schema {:registry registry} :tei/header]]
-          [:text [:schema {:registry abc.annotation/registry} :document/body]]]
+          [:text [:schema {:registry annotation-schema/registry} :document/body]]]
          #(instance? Element %)])
 
 (defn save! [path data]

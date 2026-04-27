@@ -119,6 +119,7 @@
             test -f ${./resources/abc/ndc9.edn.xz}
             test -f ${./nix/clj-nix-deps.edn}
             test -f ${./deps-lock.json}
+            test -f ${./src/abc/annotation/schema.clj}
             test -f ${./src/abc/text.clj}
             test -f ${./src/abc/ndc.clj}
             test -f ${./src/abc/tools/hash.clj}
@@ -135,6 +136,7 @@
             test -f ${./test/abc/tools/manifest_to_rdf_test.clj}
             test -f ${./test/abc/tools/materialize_import_test.clj}
             test -f ${./test/abc/tools/validate_design_bundle_test.clj}
+            test -f ${./test/abc/annotation_schema_test.clj}
             test -f ${./test/abc/text_test.clj}
             test -f ${./test/abc/ndc_test.clj}
             mkdir -p "$out"

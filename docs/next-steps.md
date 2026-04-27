@@ -44,6 +44,7 @@ outside Nix, use the focused tool/text tests:
 
 ```bash
 clojure -M:test -e '(require (quote clojure.test)
+                             (quote abc.annotation-schema-test)
                              (quote abc.text-test)
                              (quote abc.ndc-test)
                              (quote abc.tools.hash-test)
@@ -54,6 +55,7 @@ clojure -M:test -e '(require (quote clojure.test)
                              (quote abc.tools.validate-design-bundle-test)
                              (quote abc.tools.materialize-import-test))
                     (let [r (clojure.test/run-tests
+                             (quote abc.annotation-schema-test)
                              (quote abc.text-test)
                              (quote abc.ndc-test)
                              (quote abc.tools.hash-test)
@@ -87,6 +89,8 @@ clojure -M:test -e '(require (quote clojure.test)
 - `abc.tools.validate-design-bundle` materializes imported output into a temp
   directory, validates generated manifests, and validates the repository-local
   design bundle.
+- `abc.annotation.schema` owns the lightweight Malli reference contract for
+  annotation/document shapes used by future TEI XML and metadata work.
 - `nix/clj-nix-deps.edn` is the lean dependency surface for sandboxed focused
   Clojure tests under `nix flake check`; regenerate `deps-lock.json` with
   `bin/update-clj-nix-lock` when it changes.

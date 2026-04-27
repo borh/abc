@@ -39,7 +39,10 @@
   org.graalvm.js/js-language                 {:mvn/version "24.2.2"}
   org.clojars.jules_gosnell/m3               {:mvn/version "1.0.0-beta2"
                                               :exclusions [org.graalvm.polyglot/js
-                                                           org.graalvm.js/js]}}
+                                                           org.graalvm.js/js]}
+
+  org.arachne-framework/aristotle {:git/url "https://github.com/arachne-framework/aristotle.git"
+                                   :git/sha "d7ee879945e0060dc5fcd0b8eac2e0e476d066d7"}}
 
  :aliases
  {:test {:extra-paths ["test"]

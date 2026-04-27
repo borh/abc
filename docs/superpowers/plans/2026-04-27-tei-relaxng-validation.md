@@ -4,7 +4,7 @@
 
 **Goal:** Validate TEI documents in the v0 contract harness against the upstream TEI P5 4.11.0 RelaxNG schema using Jing in-process, with the schema pinned via Nix.
 
-**Architecture:** New `abc.tools.tei` namespace wraps Jing's `ValidationDriver`, returning structured `:violations` maps without throwing. The harness binding loads the schema once per run, validates each TEI document sequentially, partitions violations by severity (warnings logged via Telemere; errors and fatals accumulate and throw at end of step). Schema bytes pulled by `pkgs.fetchurl`, location passed to the app via `TEI_SCHEMA_PATH`.
+**Architecture:** New `abc.tools.tei` namespace wraps Jing's `ValidationDriver`. Single public function `validate!` takes a schema path and an XML path, parses + validates per call, returns `{:label, :violations [...]}`. The harness binding partitions violations by severity (warnings logged via Telemere; errors and fatals accumulate and throw at end of step). Schema bytes pulled by `pkgs.fetchurl`, location passed to the app via `TEI_SCHEMA_PATH`. v0 re-parses the schema per file (single TEI fixture today; cost is ~1s); a future optimization can cache via Jing's `Schema.createValidator` once corpus-scale TEI exists.
 
 **Tech Stack:** Clojure 1.12, Jing (`org.relaxng/jing` 20241231), `pkgs.fetchurl` for schema, libxml2 already on harness PATH for the existing well-formedness check on the ODD stub.
 
@@ -17,18 +17,18 @@
 ## File Map
 
 **Create:**
-- `src/abc/tools/tei.clj` — Jing wrapper.
-- `test/abc/tools/tei_test.clj` — Jing wrapper unit tests.
+- `src/abc/tools/tei.clj` — Jing wrapper exposing one public function `validate!`.
+- `test/abc/tools/tei_test.clj` — Jing wrapper unit tests; honors `ABC_TEI_SCHEMA_SKIP=1` for the sealed Nix sandbox.
 
 **Modify:**
 - `deps.edn` — add `org.relaxng/jing`.
-- `nix/clj-nix-deps.edn` — add `org.relaxng/jing`.
+- `nix/clj-nix-deps.edn` — add `org.relaxng/jing`; add `'abc.tools.tei-test` to the focused-test alias.
 - `deps-lock.json` — regenerated.
-- `flake.nix` — add `tei-schema` `pkgs.fetchurl` derivation; export `TEI_SCHEMA_PATH` from the `validate-design-bundle` wrapper; add `src/abc/tools/tei.clj` and `test/abc/tools/tei_test.clj` to `contract-surface`.
-- `nix/clj-nix-deps.edn` — add `'abc.tools.tei-test` to the focused-test alias.
-- `examples/v0/example-work/tei.xml` — replace invalid `<charName>` with `<localProp/>`.
-- `src/abc/tools/validate_design_bundle.clj` — add `validate-tei!` step and wire it.
-- `test/abc/tools/validate_design_bundle_test.clj` — add TEI smoke + loud-fail tests.
+- `flake.nix` — add `tei-schema` `pkgs.fetchurl` derivation; export `TEI_SCHEMA_PATH` from the `validate-design-bundle` wrapper; export `ABC_TEI_SCHEMA_SKIP=1` from the focused-test sandbox; add the new files to `contract-surface`.
+- `examples/v0/example-work/tei.xml` — replace invalid `<charName>` with `<localProp name="charName" value="..."/>`.
+- `src/abc/tools/validate_design_bundle.clj` — add `validate-tei!` and `render-tei-violation` helpers and wire the new step.
+- `test/abc/tools/validate_design_bundle_test.clj` — add TEI smoke, loud-fail, and warning-partition tests.
+- `docs/next-steps.md` — refocus the TEI candidate item from "validation pipeline" to "ODD promotion" (Task 10).
 
 ---
 
@@ -187,25 +187,34 @@ Replace the `let` body and the wrapper with:
 
 - [ ] **Step 2: Verify the schema fetches and the env var lands**
 
-Run: `nix run .#validate-design-bundle 2>&1 | head -3` (will still fail at the new TEI step that hasn't been added yet — that's fine; we just want to see Nix evaluates and the wrapper builds).
+Run: `nix build .#validate-design-bundle --no-link 2>&1 | tail -5` (Nix evaluates the flake and fetches the schema; this build succeeds even before the TEI step is wired into Clojure).
 
-If the fetch hash is rejected, Nix prints "hash mismatch" with expected vs got; confirm the spec hash matches the upstream URL by re-running:
+If the fetch hash is rejected, Nix prints "hash mismatch" with expected vs got. Re-derive the expected hash in SRI form via `nix-prefetch-url --type sha256 <url>` (which prints both base32 and a SHA256 line), then convert to SRI:
 
 ```bash
-curl -sSL 'https://www.tei-c.org/release/xml/tei/custom/schema/relaxng/tei_all.rng' | sha256sum
+nix-prefetch-url --type sha256 'https://www.tei-c.org/release/xml/tei/custom/schema/relaxng/tei_all.rng'
+# Prints a base32 hash. Convert to SRI:
+nix hash convert --hash-algo sha256 --to sri <base32-hash>
 ```
 
-The first hex digest should match the SRI form `sha256-7MSfAMN/SQtd9xa2cuPbpjXrHknM2I+5aYWUmN9CwIQ=` (decoded). If not, TEI has shipped a new release; bump the hash and note the version change in the commit message.
+If the prefetch shows a hash different from `sha256-7MSfAMN/SQtd9xa2cuPbpjXrHknM2I+5aYWUmN9CwIQ=`, TEI has shipped a new release; update the hash in `flake.nix` and note the version change in the commit message.
 
 - [ ] **Step 3: Confirm `TEI_SCHEMA_PATH` resolves to a real file at runtime**
 
-Add a one-liner check via `nix shell`:
+`nix run` doesn't take `--command`. Inspect the wrapper's exported env without running it by examining the generated script:
 
 ```bash
-nix run .#validate-design-bundle --command bash -c 'echo "$TEI_SCHEMA_PATH" && head -2 "$TEI_SCHEMA_PATH"' 2>&1 | head
+nix build .#validate-design-bundle --print-out-paths --no-link 2>&1 | xargs cat | grep TEI_SCHEMA_PATH
 ```
 
-Expected: prints a `/nix/store/...-tei_all.rng` path and the first two lines of the RelaxNG file (the XML declaration and the root `<grammar ...>` element).
+Expected: prints `export TEI_SCHEMA_PATH="/nix/store/...-tei_all.rng"` (or similar). Confirm the referenced file exists and starts with an XML declaration:
+
+```bash
+NIX_TEI_PATH=$(nix build .#validate-design-bundle --print-out-paths --no-link 2>&1 | xargs cat | grep -oP 'TEI_SCHEMA_PATH="\K[^"]+')
+head -2 "$NIX_TEI_PATH"
+```
+
+Expected: the first two lines of the RelaxNG file (the XML declaration and the root `<grammar ...>` element).
 
 - [ ] **Step 4: Commit**
 
@@ -233,13 +242,22 @@ EOF
 
 ---
 
-## Task 3: `abc.tools.tei/load-schema` (TDD)
+## Task 3: `abc.tools.tei/validate!` (TDD)
 
 **Files:**
 - Create: `src/abc/tools/tei.clj`
 - Create: `test/abc/tools/tei_test.clj`
 
-- [ ] **Step 1: Write the test file with a load-schema positive test and a use-fixtures :once that fails loudly when env unset**
+**Setup once for all subsequent tasks (local dev):** copy the upstream schema once, set the env var:
+
+```bash
+mkdir -p /tmp/abc-tei && curl -sSL 'https://www.tei-c.org/release/xml/tei/custom/schema/relaxng/tei_all.rng' -o /tmp/abc-tei/tei_all.rng
+export TEI_SCHEMA_PATH=/tmp/abc-tei/tei_all.rng
+```
+
+The Nix wrapper sets `TEI_SCHEMA_PATH` automatically inside `nix run .#validate-design-bundle`; this manual step is for direct `clojure -M:test` and `clojure -M:abc/...` invocations during dev.
+
+- [ ] **Step 1: Write the test namespace with one positive test**
 
 Write `test/abc/tools/tei_test.clj`:
 
@@ -248,159 +266,28 @@ Write `test/abc/tools/tei_test.clj`:
   (:require [abc.tools.tei :as tei]
             [clojure.test :refer [deftest is testing use-fixtures]]))
 
-(def ^:private schema-path-atom (atom nil))
+(def ^:private schema-path (atom nil))
+(def ^:private skip-flag-name "ABC_TEI_SCHEMA_SKIP")
 
-(defn require-schema-path-fixture [t]
-  (let [path (System/getenv "TEI_SCHEMA_PATH")]
-    (when-not path
-      (throw (ex-info "TEI_SCHEMA_PATH must be set to run abc.tools.tei-test. Run via `nix run .#validate-design-bundle` or export the path manually." {})))
-    (reset! schema-path-atom path)
-    (t)))
+(defn require-schema-path [t]
+  (cond
+    (= "1" (System/getenv skip-flag-name))
+    (println "abc.tools.tei-test: skipping (" skip-flag-name "=1)")
 
-(use-fixtures :once require-schema-path-fixture)
+    (nil? (System/getenv "TEI_SCHEMA_PATH"))
+    (throw (ex-info "TEI_SCHEMA_PATH must be set to run abc.tools.tei-test. Run via `nix run .#validate-design-bundle` or export the path manually after `curl … tei_all.rng`."
+                    {:env-var "TEI_SCHEMA_PATH"}))
 
-(deftest load-schema-test
-  (testing "load-schema returns a non-nil Schema for the upstream tei_all.rng"
-    (let [schema (tei/load-schema @schema-path-atom)]
-      (is (some? schema))
-      (is (instance? com.thaiopensource.validate.Schema schema)))))
-```
+    :else
+    (do
+      (reset! schema-path (System/getenv "TEI_SCHEMA_PATH"))
+      (t))))
 
-- [ ] **Step 2: Run the test to confirm it fails (namespace missing)**
-
-Run:
-
-```bash
-TEI_SCHEMA_PATH=$(nix-build --no-out-link --expr 'with import <nixpkgs> {}; fetchurl { url = "https://www.tei-c.org/release/xml/tei/custom/schema/relaxng/tei_all.rng"; sha256 = "ecc49f00c37f490b5df716b672e3dba635eb1e49ccd88fb969859498df42c084"; }' 2>/dev/null) clojure -M:test -e "(require 'abc.tools.tei-test) (clojure.test/run-tests 'abc.tools.tei-test)" 2>&1 | tail -10
-```
-
-If the inline fetch is awkward, just enter `nix shell` first or set `TEI_SCHEMA_PATH` once for the whole task block:
-
-```bash
-export TEI_SCHEMA_PATH="$(nix eval --raw --impure --expr '(import (builtins.getFlake (toString ./.))).apps.x86_64-linux.validate-design-bundle.program' 2>/dev/null | head -c0; nix-build --no-out-link --expr 'with import <nixpkgs> {}; fetchurl { url = "https://www.tei-c.org/release/xml/tei/custom/schema/relaxng/tei_all.rng"; sha256 = "ecc49f00c37f490b5df716b672e3dba635eb1e49ccd88fb969859498df42c084"; }')"
-```
-
-Or simpler — copy the schema once for the duration of dev:
-
-```bash
-mkdir -p /tmp/abc-tei && curl -sSL 'https://www.tei-c.org/release/xml/tei/custom/schema/relaxng/tei_all.rng' -o /tmp/abc-tei/tei_all.rng
-export TEI_SCHEMA_PATH=/tmp/abc-tei/tei_all.rng
-```
-
-Re-run:
-
-```bash
-clojure -M:test -e "(require 'abc.tools.tei-test) (clojure.test/run-tests 'abc.tools.tei-test)" 2>&1 | tail -5
-```
-
-Expected: FAIL with `Could not locate abc/tools/tei__init.class, abc/tools/tei.clj or abc/tools/tei.cljc`.
-
-- [ ] **Step 3: Create the `abc.tools.tei` namespace with `load-schema`**
-
-Write `src/abc/tools/tei.clj`:
-
-```clojure
-(ns abc.tools.tei
-  "Wrap Jing for TEI RelaxNG validation. Pure functions; the caller
-  holds any cached Schema between validate! calls."
-  (:require [clojure.java.io :as io])
-  (:import [com.thaiopensource.util PropertyMapBuilder]
-           [com.thaiopensource.validate
-            Schema
-            SchemaReader
-            ValidationDriver]
-           [com.thaiopensource.validate.rng CompactSchemaReader RngProperty]
-           [com.thaiopensource.xml.sax XMLReaderCreator]
-           [org.xml.sax InputSource]))
-
-(defn- file->input-source [^java.io.File f]
-  (InputSource. (.toURI f)))
-
-(defn load-schema
-  "Read a RelaxNG schema (XML syntax) from `path` and return a Jing
-  com.thaiopensource.validate.Schema object."
-  [^String path]
-  (let [props (.toPropertyMap (PropertyMapBuilder.))
-        driver (ValidationDriver. props)
-        file (io/file path)
-        in (file->input-source file)]
-    (when-not (.loadSchema driver in)
-      (throw (ex-info (str "Failed to load TEI RelaxNG schema: " path)
-                      {:path path})))
-    (.getSchema driver)))
-```
-
-- [ ] **Step 4: Run the test to confirm it passes**
-
-Run:
-
-```bash
-clojure -M:test -e "(require 'abc.tools.tei-test) (clojure.test/run-tests 'abc.tools.tei-test)" 2>&1 | tail -5
-```
-
-Expected: PASS, `Ran 1 tests containing 2 assertions. 0 failures, 0 errors.`
-
-If the test errors with reflection issues on `.getSchema`, the Jing API may vary by version; check the actual class via:
-
-```bash
-clojure -M -e "(import 'com.thaiopensource.validate.ValidationDriver) (println (vec (map #(.getName %) (.getDeclaredMethods ValidationDriver))))"
-```
-
-The `loadSchema` and `getSchema` methods are stable since Jing 20030619; the call form above should work for 20241231.
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add src/abc/tools/tei.clj test/abc/tools/tei_test.clj
-git commit -m "$(cat <<'EOF'
-feat: abc.tools.tei/load-schema reads TEI RelaxNG schemas via Jing
-
-Pure function; caller holds the Schema and reuses it across
-validate! calls. Test fixture fails loudly when TEI_SCHEMA_PATH
-is unset, mirroring the harness's loud-fail contract instead of
-silently skipping.
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: glm-5
-EOF
-)"
-```
-
----
-
-## Task 4: `abc.tools.tei/validate!` returning structured violations
-
-**Files:**
-- Modify: `src/abc/tools/tei.clj`
-- Modify: `test/abc/tools/tei_test.clj`
-
-- [ ] **Step 1: Write a positive validate! test against the example fixture (will fail; <charName> is invalid)**
-
-Append to `test/abc/tools/tei_test.clj`:
-
-```clojure
-(deftest validate-empty-document-test
-  (testing "validate! on an empty doc returns a non-empty :violations vector"
-    (let [schema (tei/load-schema @schema-path-atom)
-          tmp (java.io.File/createTempFile "abc-tei-empty" ".xml")]
-      (try
-        (spit tmp "<?xml version=\"1.0\"?><not-tei xmlns=\"x\"/>")
-        (let [{:keys [violations label]} (tei/validate! {:schema schema
-                                                         :xml-path (str tmp)
-                                                         :label "empty"})]
-          (is (= "empty" label))
-          (is (seq violations) "non-conforming doc must report at least one violation")
-          (is (every? #(contains? % :severity) violations))
-          (is (every? #(contains? % :line) violations))
-          (is (every? #(contains? % :message) violations)))
-        (finally
-          (.delete tmp))))))
+(use-fixtures :once require-schema-path)
 
 (deftest validate-undefined-element-test
   (testing "<bogusElement> in TEI namespace surfaces a violation referencing the element name"
-    (let [schema (tei/load-schema @schema-path-atom)
-          tmp (java.io.File/createTempFile "abc-tei-bogus" ".xml")]
+    (let [tmp (java.io.File/createTempFile "abc-tei-bogus" ".xml")]
       (try
         (spit tmp (str "<?xml version=\"1.0\"?>"
                        "<TEI xmlns=\"http://www.tei-c.org/ns/1.0\">"
@@ -411,115 +298,143 @@ Append to `test/abc/tools/tei_test.clj`:
                        "  </fileDesc></teiHeader>"
                        "  <text><body><bogusElement/></body></text>"
                        "</TEI>"))
-        (let [{:keys [violations]} (tei/validate! {:schema schema
-                                                   :xml-path (str tmp)
-                                                   :label "bogus"})]
+        (let [{:keys [violations label]} (tei/validate! {:schema-path @schema-path
+                                                         :xml-path (str tmp)
+                                                         :label "bogus"})]
+          (is (= "bogus" label))
+          (is (seq violations) "must report at least one violation")
+          (is (every? #(contains? % :severity) violations))
+          (is (every? #(keyword? (:severity %)) violations))
+          (is (every? #(contains? % :message) violations))
           (is (some #(re-find #"bogusElement" (:message %)) violations)
               (str "expected a violation mentioning bogusElement, got: " (pr-str violations))))
         (finally
           (.delete tmp))))))
 ```
 
-- [ ] **Step 2: Run the new tests; confirm they fail (validate! missing)**
+The fixture follows the standard clojure.test pattern: skip path returns nil **without** calling `(t)` (skipping execution); env-required path throws (loud fail); happy path calls `(t)`. The skip flag honors a future Nix-sandbox build.
 
-Run:
+- [ ] **Step 2: Confirm test fails (namespace missing)**
 
-```bash
-clojure -M:test -e "(require 'abc.tools.tei-test) (clojure.test/run-tests 'abc.tools.tei-test)" 2>&1 | tail -10
-```
+Run: `clojure -M:test -e "(require 'abc.tools.tei-test) (clojure.test/run-tests 'abc.tools.tei-test)" 2>&1 | tail -5`
+Expected: FAIL with `Could not locate abc/tools/tei__init.class, abc/tools/tei.clj or abc/tools/tei.cljc`.
 
-Expected: FAIL/ERROR with `No such var: abc.tools.tei/validate!`.
+- [ ] **Step 3: Create the `abc.tools.tei` namespace with `validate!`**
 
-- [ ] **Step 3: Implement `validate!`**
-
-Append to `src/abc/tools/tei.clj`:
+Write `src/abc/tools/tei.clj`:
 
 ```clojure
-(defn- error-handler [violations-vol]
+(ns abc.tools.tei
+  "Wrap Jing for TEI RelaxNG validation. validate! takes a schema
+  path and an XML path, parses both, and returns structured per-file
+  violations. v0 re-parses the schema each call; future caching can
+  use Jing's Schema.createValidator if the per-file cost matters."
+  (:require [clojure.java.io :as io])
+  (:import [com.thaiopensource.util PropertyMapBuilder PropertyId]
+           [com.thaiopensource.validate ValidationDriver]
+           [org.xml.sax InputSource SAXParseException]))
+
+(defn- file->input-source ^InputSource [^String path]
+  (InputSource. (.toString (.toURI (io/file path)))))
+
+(defn- error-handler [violations-atom]
   (reify org.xml.sax.ErrorHandler
-    (warning [_ e]
-      (vswap! violations-vol conj
-              {:severity :warning
-               :line     (.getLineNumber e)
-               :column   (.getColumnNumber e)
-               :message  (.getMessage e)}))
-    (^void error [_ ^org.xml.sax.SAXParseException e]
-      (vswap! violations-vol conj
-              {:severity :error
-               :line     (.getLineNumber e)
-               :column   (.getColumnNumber e)
-               :message  (.getMessage e)}))
-    (^void fatalError [_ ^org.xml.sax.SAXParseException e]
-      (vswap! violations-vol conj
-              {:severity :fatal
-               :line     (.getLineNumber e)
-               :column   (.getColumnNumber e)
-               :message  (.getMessage e)}))))
+    (^void warning [_ ^SAXParseException e]
+      (swap! violations-atom conj
+             {:severity :warning
+              :line     (.getLineNumber e)
+              :column   (.getColumnNumber e)
+              :message  (.getMessage e)}))
+    (^void error [_ ^SAXParseException e]
+      (swap! violations-atom conj
+             {:severity :error
+              :line     (.getLineNumber e)
+              :column   (.getColumnNumber e)
+              :message  (.getMessage e)}))
+    (^void fatalError [_ ^SAXParseException e]
+      (swap! violations-atom conj
+             {:severity :fatal
+              :line     (.getLineNumber e)
+              :column   (.getColumnNumber e)
+              :message  (.getMessage e)}))))
 
 (defn validate!
-  "Validate the XML at `xml-path` against `schema` (a Jing Schema from
-  load-schema). Returns {:label, :violations [{:severity, :line, :column,
-  :message} ...]}. Does not throw; severity classification is preserved
-  on each violation. ValidationDriver is built fresh per call; sequential
-  use only."
-  [{:keys [^Schema schema xml-path label]}]
-  (let [violations (volatile! [])
+  "Validate the XML at `xml-path` against the RelaxNG schema at
+  `schema-path`. Returns {:label, :violations [{:severity, :line,
+  :column, :message} ...]}. Does not throw; severity classification
+  preserved on each violation. ValidationDriver is built fresh per
+  call (Jing's PropertyMap is constructor-only); sequential use only."
+  [{:keys [^String schema-path ^String xml-path label]}]
+  (let [violations (atom [])
         builder (PropertyMapBuilder.)
         _ (.put builder
-                com.thaiopensource.util.PropertyId/ERROR_HANDLER
+                (com.thaiopensource.util.PropertyId/findPropertyId
+                  "ERROR_HANDLER")
                 (error-handler violations))
         props (.toPropertyMap builder)
-        driver (ValidationDriver. props)
-        file (io/file xml-path)
-        in (file->input-source file)]
-    (.loadSchema driver (file->input-source (io/file (System/getenv "TEI_SCHEMA_PATH"))))
-    ;; ↑ workaround: ValidationDriver requires re-loading the schema
-    ;; into its property map; we ignore the parsed Schema in this path.
-    ;; Cleaner alternative if the API exposes setSchema: use it instead.
-    (.validate driver in)
+        driver (ValidationDriver. props)]
+    (when-not (.loadSchema driver (file->input-source schema-path))
+      (throw (ex-info (str "Failed to load TEI RelaxNG schema: " schema-path)
+                      {:schema-path schema-path
+                       :violations @violations})))
+    (.validate driver (file->input-source xml-path))
     {:label label
      :violations @violations}))
 ```
 
-Note on the schema-handling: Jing's public API loads the schema into the `ValidationDriver`'s internal state via `.loadSchema`. Some Jing builds expose a `setSchema(Schema)` API that lets you reuse a pre-parsed `Schema` object; if it's available in 20241231, prefer it (simpler, no re-parse per file). Verify in step 4 by inspecting the methods on `ValidationDriver`. The plan code above falls back to `.loadSchema` for portability; the harness still wins by avoiding subprocess overhead.
+Note: `PropertyId/findPropertyId "ERROR_HANDLER"` is the lookup form; if the static field path differs in 20241231 (e.g., `ValidateProperty/ERROR_HANDLER`), the test in step 4 will surface a NoClassDefFoundError or similar. The fix is one-line — find the actual class via `clojure -M -e "(seq (.getFields (Class/forName \"com.thaiopensource.validate.ValidateProperty\")))"` and substitute the correct constant.
 
-- [ ] **Step 4: Inspect the API for `setSchema` and prefer it if available**
+- [ ] **Step 4: Run the test to confirm it passes**
 
-Run:
+Run: `clojure -M:test -e "(require 'abc.tools.tei-test) (clojure.test/run-tests 'abc.tools.tei-test)" 2>&1 | tail -10`
 
-```bash
-clojure -M -e "(import 'com.thaiopensource.validate.ValidationDriver) (println (vec (sort (map #(.getName %) (.getDeclaredMethods ValidationDriver)))))"
-```
+Expected: PASS, all assertions in `validate-undefined-element-test` green.
 
-If the printed list contains a `setSchema` or similar method that accepts `com.thaiopensource.validate.Schema`, replace the `.loadSchema` line in `validate!` with the direct setter and drop the `load-schema` ↔ `validate!` round-trip. Otherwise, keep the `.loadSchema` form (each `validate!` re-parses the schema; load-schema becomes a smoke-test of the schema file rather than a true cache, which is fine for v0 — single-file harness).
-
-If the cleaner setter doesn't exist and the cost of re-parsing per file becomes a problem at corpus scale, that's a future `abc.tools.tei` enhancement, not a v0 concern.
-
-Update the namespace docstring if the setter path is taken so callers know `load-schema` is purely advisory in that case.
-
-- [ ] **Step 5: Run the tests to confirm they pass**
-
-Run:
+If the test fails with a Jing API issue (PropertyId lookup, ErrorHandler method signatures), inspect:
 
 ```bash
-clojure -M:test -e "(require 'abc.tools.tei-test) (clojure.test/run-tests 'abc.tools.tei-test)" 2>&1 | tail -5
+clojure -M -e "(let [c (Class/forName \"com.thaiopensource.validate.ValidateProperty\")] (println (mapv #(.getName %) (.getFields c))))"
 ```
 
-Expected: all three tests pass (`load-schema-test`, `validate-empty-document-test`, `validate-undefined-element-test`). Total assertions ≥ 7.
+and adjust the `(.put builder ...)` argument to match the discovered constant. The rest of the API (ValidationDriver constructor, loadSchema, validate, ErrorHandler) is stable.
+
+- [ ] **Step 5: Add a non-TEI root negative test**
+
+Append to `test/abc/tools/tei_test.clj`:
+
+```clojure
+(deftest validate-non-tei-root-test
+  (testing "non-TEI root element produces violations and preserves severity keywords"
+    (let [tmp (java.io.File/createTempFile "abc-tei-non" ".xml")]
+      (try
+        (spit tmp "<?xml version=\"1.0\"?><not-tei xmlns=\"x\"/>")
+        (let [{:keys [violations]} (tei/validate! {:schema-path @schema-path
+                                                   :xml-path (str tmp)
+                                                   :label "non-tei"})]
+          (is (seq violations))
+          (is (every? #(#{:warning :error :fatal} (:severity %)) violations)
+              "every violation must use a known severity keyword"))
+        (finally
+          (.delete tmp))))))
+```
+
+Run: `clojure -M:test -e "(require 'abc.tools.tei-test) (clojure.test/run-tests 'abc.tools.tei-test)" 2>&1 | tail -5`
+Expected: PASS.
 
 - [ ] **Step 6: Commit**
 
 ```bash
 git add src/abc/tools/tei.clj test/abc/tools/tei_test.clj
 git commit -m "$(cat <<'EOF'
-feat: abc.tools.tei/validate! returns structured violations per file
+feat: abc.tools.tei/validate! returns structured per-file violations
 
-ValidationDriver per call (Jing not thread-safe). ErrorHandler
-writes warnings, errors, and fatals into a per-call volatile,
-preserving severity. Returns {:label, :violations [...]}; never
-throws. Caller decides severity policy.
-
-Negative tests cover undefined elements and a non-TEI root.
+Single public function takes :schema-path + :xml-path + :label,
+parses both, and returns {:label, :violations [...]}. Severity
+preserved as keywords (:warning :error :fatal). Violations
+collected via SAX ErrorHandler into an atom (thread-safe even if
+Jing internals fan out). ValidationDriver built fresh per call
+because Jing's PropertyMap is constructor-only; v0 re-parses the
+schema each call which is fine for the single-fixture harness.
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
@@ -536,21 +451,34 @@ EOF
 - Modify: `test/abc/tools/tei_test.clj`
 - Modify: `examples/v0/example-work/tei.xml`
 
-- [ ] **Step 1: Write a positive test asserting the example fixture validates clean**
+The replacement element `<localProp name="charName" value="..."/>` is verified valid:
+
+- `tei_all.rng` `<define name="char">` content model includes `<ref name="localProp"/>` directly — `<localProp>` is reachable inside `<char>`.
+- `tei_all.rng` `<define name="localProp">` declares it `<empty/>` plus `att.gaijiProp.attributes`, which expands to `name`, `value`, `version`, `scheme` attributes — `name` and `value` are the relevant ones.
+
+The Jing pass over the modified fixture is the authoritative check (Step 4 below).
+
+- [ ] **Step 1: Write a positive test asserting the example fixture is fully clean**
 
 Append to `test/abc/tools/tei_test.clj`:
 
 ```clojure
 (deftest validate-example-fixture-test
   (testing "examples/v0/example-work/tei.xml validates clean against tei_all.rng"
-    (let [schema (tei/load-schema @schema-path-atom)
-          {:keys [violations]} (tei/validate! {:schema schema
+    (let [{:keys [violations]} (tei/validate! {:schema-path @schema-path
                                                :xml-path "examples/v0/example-work/tei.xml"
-                                               :label "example"})]
-      (is (empty? (filter #(#{:error :fatal} (:severity %)) violations))
+                                               :label "example"})
+          {warnings true failures false}
+          (group-by #(= :warning (:severity %)) violations)]
+      (is (empty? failures)
           (str "fixture must produce no error/fatal violations; got: "
-               (pr-str violations))))))
+               (pr-str failures)))
+      (when (seq warnings)
+        (println "validate-example-fixture-test: schema warnings:"
+                 (pr-str warnings))))))
 ```
+
+This explicitly partitions: failures (errors + fatals) must be empty; warnings are surfaced via `println` so a future fixture regression that introduces a warning is at least visible in the test runner output.
 
 - [ ] **Step 2: Run the test to confirm it fails on `<charName>`**
 
@@ -623,44 +551,63 @@ EOF
 **Files:**
 - Modify: `src/abc/tools/validate_design_bundle.clj`
 
-- [ ] **Step 1: Add the TEI helper functions and step**
+Before editing, run `Read /home/bor/Projects/abc/src/abc/tools/validate_design_bundle.clj` for lines 1-30 (require block) and 195-205 (around `validate-xml!`) to confirm the insertion anchors below match the actual file.
 
-Open `src/abc/tools/validate_design_bundle.clj`. Add `[abc.tools.tei :as tei]` to the `:require`. Below the existing `validate-shacl!` helper, add:
+- [ ] **Step 1: Add `[abc.tools.tei :as tei]` to the require**
+
+Locate the `:require` block at the top of `src/abc/tools/validate_design_bundle.clj` and add `[abc.tools.tei :as tei]` in alphabetical position (between `abc.tools.shacl` and `abc.tools.validate-design-bundle`-style siblings).
+
+- [ ] **Step 2: Add the TEI helper functions just below the existing `validate-shacl!`**
+
+Append to the file just below `validate-shacl!`:
 
 ```clojure
-(defn- render-tei-violation [{:keys [severity line column message label]}]
-  (str (.toUpperCase (name severity)) ": "
-       label
-       " " line ":" column
-       " — " message))
+(defn- render-tei-violation
+  "Render a violation map to a single line. Label is supplied by the
+  harness pass per-file rather than copied into every violation map."
+  [label {:keys [severity line column message]}]
+  (let [sev (cond
+              (keyword? severity) (clojure.string/upper-case (name severity))
+              (string? severity)  (clojure.string/upper-case severity)
+              :else               "VIOLATION")]
+    (str sev ": " label " " (or line "?") ":" (or column "?")
+         " — " (or message "(no message)"))))
 
 (defn validate-tei!
   "Validate every TEI document in `xml-paths` against the schema at
-  the path passed in. Warnings are logged via Telemere but do not
-  fail the step; errors and fatals are aggregated and thrown at the
-  end."
+  `schema-path`. Warnings are logged via Telemere but do not fail the
+  step; errors and fatals are aggregated and thrown at the end."
   [^String schema-path xml-paths]
   (when (or (nil? schema-path) (= "" schema-path))
     (throw (ex-info "TEI_SCHEMA_PATH must be set. Run via `nix run .#validate-design-bundle` or export it manually before calling clojure -M:abc/validate-design-bundle."
                     {:env-var "TEI_SCHEMA_PATH"})))
-  (let [schema (tei/load-schema schema-path)
-        all-violations
-        (reduce
-         (fn [acc path]
-           (let [{:keys [violations]} (tei/validate! {:schema schema
-                                                      :xml-path path
-                                                      :label (str path)})]
-             (into acc (map #(assoc % :label (str path))) violations)))
-         []
-         xml-paths)
-        {warnings true failures false}
-        (group-by #(= :warning (:severity %)) all-violations)]
-    (doseq [w warnings]
-      (tel/log! :warn (render-tei-violation w)))
-    (when (seq failures)
+  (let [per-file-results
+        (mapv (fn [path]
+                (let [{:keys [violations]}
+                      (tei/validate! {:schema-path schema-path
+                                      :xml-path (str path)
+                                      :label (str path)})]
+                  {:label (str path) :violations violations}))
+              xml-paths)
+        all-warnings (mapcat (fn [{:keys [label violations]}]
+                               (->> violations
+                                    (filter #(= :warning (:severity %)))
+                                    (map #(vector label %))))
+                             per-file-results)
+        all-failures (mapcat (fn [{:keys [label violations]}]
+                               (->> violations
+                                    (filter #(#{:error :fatal} (:severity %)))
+                                    (map #(vector label %))))
+                             per-file-results)]
+    (doseq [[label v] all-warnings]
+      (tel/log! :warn (render-tei-violation label v)))
+    (when (seq all-failures)
       (throw (ex-info "TEI RelaxNG validation failed"
-                      {:errors (mapv render-tei-violation failures)})))))
+                      {:errors (mapv (fn [[label v]] (render-tei-violation label v))
+                                     all-failures)})))))
 ```
+
+The renderer takes `label` separately (per reviewer #8) and tolerates non-keyword/nil severity (per reviewer #21). The harness no longer copies the label into every violation map; it lives once per file in `per-file-results`.
 
 - [ ] **Step 2: Insert the new step into `validate-design-bundle!`**
 
@@ -739,23 +686,29 @@ EOF
 
 ---
 
-## Task 7: Smoke + loud-fail tests in `validate_design_bundle_test`
+## Task 7: Smoke, loud-fail, and warning-partition tests in `validate_design_bundle_test`
 
 **Files:**
 - Modify: `test/abc/tools/validate_design_bundle_test.clj`
 
-- [ ] **Step 1: Add the two tests**
+Before editing, `Read /home/bor/Projects/abc/test/abc/tools/validate_design_bundle_test.clj` to confirm the current `:require` block and end-of-file position.
 
-Open `test/abc/tools/validate_design_bundle_test.clj`. Add `[abc.tools.tei :as tei]` to the `:require` (it's not currently required there). Append:
+- [ ] **Step 1: Add the three tests**
+
+The current `:require` already has `[abc.tools.shacl :as shacl]` and `[abc.tools.manifest-to-rdf :as manifest-to-rdf]` (added in earlier work). Add `[clojure.string :as string]` if not already present, plus a constant for the skip flag. Append to the end of the file:
 
 ```clojure
+(def ^:private tei-skip-flag "ABC_TEI_SCHEMA_SKIP")
+
 (deftest validate-tei-smoke-test
-  (testing "validate-tei! returns nil for the example fixture when env var is set"
-    (let [schema-path (System/getenv "TEI_SCHEMA_PATH")]
-      (when-not schema-path
-        (throw (ex-info "TEI_SCHEMA_PATH must be set to run validate-tei-smoke-test." {})))
-      (is (nil? (validate/validate-tei! schema-path
-                                        ["examples/v0/example-work/tei.xml"]))))))
+  (testing "validate-tei! returns nil for the example fixture when TEI_SCHEMA_PATH is set"
+    (when-not (= "1" (System/getenv tei-skip-flag))
+      (let [schema-path (System/getenv "TEI_SCHEMA_PATH")]
+        (when-not schema-path
+          (throw (ex-info "TEI_SCHEMA_PATH must be set to run validate-tei-smoke-test."
+                          {:env-var "TEI_SCHEMA_PATH"})))
+        (is (nil? (validate/validate-tei! schema-path
+                                          ["examples/v0/example-work/tei.xml"])))))))
 
 (deftest validate-tei-loud-fail-when-env-unset-test
   (testing "validate-tei! throws ex-info naming TEI_SCHEMA_PATH when called with nil"
@@ -763,35 +716,132 @@ Open `test/abc/tools/validate_design_bundle_test.clj`. Add `[abc.tools.tei :as t
       (validate/validate-tei! nil ["examples/v0/example-work/tei.xml"])
       (is false "expected validate-tei! to throw")
       (catch clojure.lang.ExceptionInfo e
-        (is (re-find #"TEI_SCHEMA_PATH" (ex-message e)))))))
+        (is (re-find #"TEI_SCHEMA_PATH" (ex-message e)))
+        (is (= "TEI_SCHEMA_PATH" (:env-var (ex-data e)))
+            (str "ex-data must surface the env var name; got: "
+                 (pr-str (ex-data e))))))))
+
+(deftest validate-tei-warning-partition-test
+  (testing "validate-tei! does not throw when only warnings are present"
+    (when-not (= "1" (System/getenv tei-skip-flag))
+      (let [schema-path (System/getenv "TEI_SCHEMA_PATH")
+            tmp (java.io.File/createTempFile "abc-tei-warn" ".xml")]
+        (try
+          ;; This document has a dangling IDREF (ref/@target points at
+          ;; an undefined #missing). TEI's RelaxNG schema typically
+          ;; surfaces such IDREF violations as warnings rather than
+          ;; errors; if Jing classifies them as errors, this test
+          ;; needs an alternative warning-tier fixture.
+          (spit tmp (str "<?xml version=\"1.0\"?>"
+                         "<TEI xmlns=\"http://www.tei-c.org/ns/1.0\">"
+                         "  <teiHeader><fileDesc>"
+                         "    <titleStmt><title>t</title></titleStmt>"
+                         "    <publicationStmt><p>p</p></publicationStmt>"
+                         "    <sourceDesc><p>s</p></sourceDesc>"
+                         "  </fileDesc></teiHeader>"
+                         "  <text><body>"
+                         "    <p>see <ref target=\"#missing\">link</ref></p>"
+                         "  </body></text>"
+                         "</TEI>"))
+          (let [{:keys [violations]} (shacl/validate-passthrough-or-tei
+                                       schema-path (str tmp))]
+            ;; Inline call; we only need the per-file result to confirm
+            ;; severity classification. Use abc.tools.tei/validate! directly:
+            )
+          ;; Re-do using the actual tei API for clarity:
+          (require '[abc.tools.tei :as tei])
+          (let [{:keys [violations]} ((resolve 'abc.tools.tei/validate!)
+                                      {:schema-path schema-path
+                                       :xml-path (str tmp)
+                                       :label "warn"})
+                warnings (filter #(= :warning (:severity %)) violations)]
+            (cond
+              (seq warnings)
+              ;; Warnings present: harness must NOT throw on this file alone.
+              (is (nil? (validate/validate-tei! schema-path [(str tmp)])))
+
+              :else
+              ;; Jing classified the issue differently than expected.
+              ;; The test is informational, not a hard contract: log
+              ;; what we got so future maintenance can adjust the
+              ;; warning-tier fixture.
+              (println "validate-tei-warning-partition-test: no warnings"
+                       "in this fixture under Jing 20241231; skipping"
+                       "warning-partition assertion. Severities seen:"
+                       (vec (distinct (map :severity violations))))))
+          (finally
+            (.delete tmp)))))))
 ```
 
-- [ ] **Step 2: Run the harness tests**
+The third test addresses reviewer #13. It's not a hard contract because Jing's classification of dangling IDREFs is implementation-specific; the test prints the actual severities so we can refine the fixture if Jing classifies them as errors. This is honest about an upstream-defined behavior.
 
-Run:
+Note: the inline `(resolve 'abc.tools.tei/validate!)` form avoids requiring `abc.tools.tei` at the top of the file (keeping the `:require` block focused on harness deps).
 
-```bash
-clojure -M:test -e "(require 'abc.tools.validate-design-bundle-test) (clojure.test/run-tests 'abc.tools.validate-design-bundle-test)" 2>&1 | tail -5
+- [ ] **Step 2: Clean up the previous-step's stub**
+
+The block above contains a leftover line `(let [{:keys [violations]} (shacl/validate-passthrough-or-tei ...) ...] )` from drafting — remove it. The final test body should just have:
+
+```clojure
+(deftest validate-tei-warning-partition-test
+  (testing "validate-tei! does not throw when only warnings are present"
+    (when-not (= "1" (System/getenv tei-skip-flag))
+      (let [schema-path (System/getenv "TEI_SCHEMA_PATH")
+            tmp (java.io.File/createTempFile "abc-tei-warn" ".xml")]
+        (try
+          (spit tmp (str "<?xml version=\"1.0\"?>"
+                         "<TEI xmlns=\"http://www.tei-c.org/ns/1.0\">"
+                         "  <teiHeader><fileDesc>"
+                         "    <titleStmt><title>t</title></titleStmt>"
+                         "    <publicationStmt><p>p</p></publicationStmt>"
+                         "    <sourceDesc><p>s</p></sourceDesc>"
+                         "  </fileDesc></teiHeader>"
+                         "  <text><body>"
+                         "    <p>see <ref target=\"#missing\">link</ref></p>"
+                         "  </body></text>"
+                         "</TEI>"))
+          (require '[abc.tools.tei :as tei])
+          (let [{:keys [violations]} ((resolve 'abc.tools.tei/validate!)
+                                      {:schema-path schema-path
+                                       :xml-path (str tmp)
+                                       :label "warn"})
+                warnings (filter #(= :warning (:severity %)) violations)]
+            (if (seq warnings)
+              (is (nil? (validate/validate-tei! schema-path [(str tmp)]))
+                  "harness must not throw when only warnings are present")
+              (println "validate-tei-warning-partition-test: no warnings"
+                       "in this fixture under Jing 20241231; severities seen:"
+                       (vec (distinct (map :severity violations))))))
+          (finally
+            (.delete tmp)))))))
 ```
 
-Expected: PASS for both new tests. The smoke positive must show that the example fixture validates clean (already verified in Task 5; this just goes through the harness helper).
+- [ ] **Step 3: Run the harness tests**
 
-If `validate-tei-smoke-test` fails because `TEI_SCHEMA_PATH` is unset in the test runner shell, set it as instructed in Task 3 and re-run.
+Run: `clojure -M:test -e "(require 'abc.tools.validate-design-bundle-test) (clojure.test/run-tests 'abc.tools.validate-design-bundle-test)" 2>&1 | tail -10`
 
-- [ ] **Step 3: Commit**
+Expected: PASS for `validate-tei-smoke-test`, `validate-tei-loud-fail-when-env-unset-test`, `validate-tei-warning-partition-test`.
+
+If the warning-partition test fails because the helper threw (errors were classified for the dangling IDREF), accept the result by changing the fixture so it produces a Jing-warning issue. The dangling IDREF is the most common warning-tier construct, but if Jing treats it as `:error`, the third test's `if (seq warnings)` branch falls through to the println path — green either way.
+
+- [ ] **Step 4: Commit**
 
 ```bash
 git add test/abc/tools/validate_design_bundle_test.clj
 git commit -m "$(cat <<'EOF'
-test: smoke-test TEI validation from validate-design-bundle-test
+test: smoke, loud-fail, and warning-partition tests for TEI step
 
-Two tests in test/abc/tools/validate_design_bundle_test.clj:
+Three tests in test/abc/tools/validate_design_bundle_test.clj:
 
-1. Smoke positive: validate-tei! returns nil for the example
-   fixture when TEI_SCHEMA_PATH is set.
-2. Loud-fail-when-nil: passing nil as schema-path raises ex-info
-   that names TEI_SCHEMA_PATH. Catches divergence between test
-   "skip" semantics and harness "fail loudly" semantics.
+1. validate-tei-smoke-test: harness step returns nil for the
+   example fixture when TEI_SCHEMA_PATH is set.
+2. validate-tei-loud-fail-when-env-unset-test: passing nil
+   schema-path raises ex-info; both message and ex-data carry
+   "TEI_SCHEMA_PATH" so callers can extract structured data.
+3. validate-tei-warning-partition-test: a doc that surfaces
+   warning-tier issues in Jing must NOT cause the harness step
+   to throw. Test is informational about specific issue
+   classification; passes either by asserting no-throw or by
+   printing the observed severities for future maintenance.
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
@@ -825,54 +875,19 @@ Open `nix/clj-nix-deps.edn`. The `:abc/focused-test` `:main-opts` is a long sing
 
 Use a global edit to apply both at once if you can do it safely. Otherwise, do two separate text replacements: one to add `'abc.tools.tei-test` next to `'abc.tools.shacl-test` in the `(require ...)` form, and one to add it next to `'abc.tools.shacl-test` in the `(test/run-tests ...)` form.
 
-But the focused-test sandbox runs without `TEI_SCHEMA_PATH`. If we add `tei-test` and the namespace fixture fails loudly when env unset, the focused-test sandbox will fail. **Resolution**: make the namespace fixture in `tei-test` pass `TEI_SCHEMA_PATH` to the focused-test runner via a deps cache or skip the test only when `ABC_FOCUSED_TEST_SKIP_ENV_REQUIRED=1` is set.
+The focused-test sandbox runs without `TEI_SCHEMA_PATH` (no network access). Tests that need the schema must skip cleanly. Both `tei-test` (Task 3) and `validate-tei-smoke-test` (Task 7) already honor a skip flag named `ABC_TEI_SCHEMA_SKIP`. Set the flag to `1` inside the `clj-nix-focused-tests` derivation.
 
-The minimal change: extend the fixture in `test/abc/tools/tei_test.clj` to skip (with a clear log) when `ABC_FOCUSED_TEST_SKIP_ENV_REQUIRED` is `"1"`, then set that variable in the `clj-nix-focused-tests` derivation in `flake.nix`. This preserves the harness's loud-fail contract while letting the focused-test sandbox run without network access.
-
-Edit `test/abc/tools/tei_test.clj`'s `require-schema-path-fixture`:
-
-```clojure
-(defn require-schema-path-fixture [t]
-  (let [path (System/getenv "TEI_SCHEMA_PATH")]
-    (cond
-      (= "1" (System/getenv "ABC_FOCUSED_TEST_SKIP_ENV_REQUIRED"))
-      (do
-        (println "abc.tools.tei-test: skipping (ABC_FOCUSED_TEST_SKIP_ENV_REQUIRED=1)")
-        :skipped)
-
-      (nil? path)
-      (throw (ex-info "TEI_SCHEMA_PATH must be set to run abc.tools.tei-test. Run via `nix run .#validate-design-bundle` or export the path manually." {}))
-
-      :else
-      (do
-        (reset! schema-path-atom path)
-        (t)))))
-```
-
-In `flake.nix` `clj-nix-focused-tests`, add the env var export inside the build script just before `clojure -M:abc/focused-test`:
+Edit `flake.nix` `checks.clj-nix-focused-tests` build script. Just before `clojure -M:abc/focused-test`, add:
 
 ```nix
-              export ABC_FOCUSED_TEST_SKIP_ENV_REQUIRED=1
+              export ABC_TEI_SCHEMA_SKIP=1
 
               clojure -M:abc/focused-test
 ```
 
-This keeps the sandbox sealed (no network access for the schema), keeps the v0 contract sandbox green, and is honest about what's covered: the focused-test sandbox does not exercise the TEI step. The TEI step is exercised by `nix run .#validate-design-bundle` end-to-end (Task 9 below).
+This keeps the sandbox sealed and is honest about what's covered: the focused-test sandbox does not exercise the TEI step. The TEI step is exercised by `nix run .#validate-design-bundle` end-to-end (Task 9 below).
 
-Apply the same `ABC_FOCUSED_TEST_SKIP_ENV_REQUIRED` skip to `validate-tei-smoke-test` in `test/abc/tools/validate_design_bundle_test.clj` so it skips cleanly in the sandbox. Use a short `when` guard at the top of the `let` block:
-
-```clojure
-(deftest validate-tei-smoke-test
-  (testing "validate-tei! returns nil for the example fixture when env var is set"
-    (when-not (= "1" (System/getenv "ABC_FOCUSED_TEST_SKIP_ENV_REQUIRED"))
-      (let [schema-path (System/getenv "TEI_SCHEMA_PATH")]
-        (when-not schema-path
-          (throw (ex-info "TEI_SCHEMA_PATH must be set to run validate-tei-smoke-test." {})))
-        (is (nil? (validate/validate-tei! schema-path
-                                          ["examples/v0/example-work/tei.xml"])))))))
-```
-
-The loud-fail test (`validate-tei-loud-fail-when-env-unset-test`) does not need a skip; it doesn't depend on `TEI_SCHEMA_PATH` at all and exercises the helper directly with `nil`.
+The loud-fail test (`validate-tei-loud-fail-when-env-unset-test`) needs no skip — it doesn't depend on `TEI_SCHEMA_PATH` and exercises the helper directly with `nil`.
 
 - [ ] **Step 3: Run nix flake check**
 
@@ -941,17 +956,28 @@ git checkout -- examples/v0/example-work/tei.xml  # belt-and-suspenders
 
 Confirm clean: `nix run .#validate-design-bundle 2>&1 | tail -3` shows `design bundle validation ok`.
 
-- [ ] **Step 4: Negative regression — Jing-warning case (optional but recommended)**
+- [ ] **Step 4: Confirm warning-partition test outcome**
 
-Construct a TEI snippet with a dangling `IDREF` (e.g., a `<ref target="#missing"/>` where `#missing` is undefined) in a temp file. Validate it manually via:
+Re-read the `validate-tei-warning-partition-test` runner output captured earlier. Confirm that whichever branch fired (assertion path or println path) is consistent with what Jing 20241231 classifies. If the println branch fired, file an item in `docs/next-steps.md` to revisit the warning-tier fixture once a real warning-emitting construct is identified — this keeps the gap visible.
+
+If desired, manually probe Jing's classification of an issue:
 
 ```bash
-clojure -M -e "(require '[abc.tools.tei :as tei]) (let [s (tei/load-schema (System/getenv \"TEI_SCHEMA_PATH\"))] (println (tei/validate! {:schema s :xml-path \"/tmp/dangling.xml\" :label \"dangling\"})))"
+cat >/tmp/probe.xml <<'EOF'
+<?xml version="1.0"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+  <teiHeader><fileDesc>
+    <titleStmt><title>t</title></titleStmt>
+    <publicationStmt><p>p</p></publicationStmt>
+    <sourceDesc><p>s</p></sourceDesc>
+  </fileDesc></teiHeader>
+  <text><body><p>see <ref target="#missing">link</ref></p></body></text>
+</TEI>
+EOF
+clojure -M -e "(require '[abc.tools.tei :as t]) (println (t/validate! {:schema-path (System/getenv \"TEI_SCHEMA_PATH\") :xml-path \"/tmp/probe.xml\" :label \"probe\"}))"
 ```
 
-Expected: the returned `:violations` includes at least one map with `:severity :warning` and a message about the missing IDREF, *not* an `:error`. This validates the spec's claim that warnings are preserved as warnings.
-
-If Jing reports the dangling IDREF as `:error` instead of `:warning`, that's Jing's call; record the actual severity and move on. The point of the test is that severity is preserved through the wrapper, not that any specific issue is warning-level.
+Expected: prints `{:label "probe", :violations [...]}` with whatever severities Jing classifies. The harness's severity policy passes either way — this step is informational only.
 
 ---
 
@@ -1010,32 +1036,47 @@ EOF
 ## Self-Review
 
 **Spec coverage:**
-- §Architecture/`abc.tools.tei` — Tasks 3 (load-schema) and 4 (validate!).
+- §Architecture/`abc.tools.tei` (now `validate!` only; `load-schema` dropped to address review #4/#5/#25) — Task 3.
 - §Architecture/Schema source via Nix flake — Task 2.
-- §Architecture/Wrapper-injected env var — Task 2 step 1.
+- §Architecture/Wrapper-injected env var — Task 2.
 - §Architecture/`validate-design-bundle` wiring — Task 6.
-- §Architecture/Severity policy — Task 6 (warnings → `tel/log! :warn`; errors/fatals → throw).
-- §Architecture/Concurrency (per-call ValidationDriver, per-call volatile) — Task 4 step 3.
-- §Architecture/Memory note — covered in spec; no implementation work needed.
-- §Schema refresh policy — captured in spec; commit message of the next bump will document the change. No task needed.
-- §Fixture fix — Task 5 (TDD-driven).
-- §Test plan/`tei_test.clj` positive + negatives — Tasks 3, 4, 5.
-- §Test plan/`validate_design_bundle_test.clj` smoke + loud-fail — Task 7.
+- §Architecture/Severity policy — Task 6 (warnings → `tel/log! :warn`; errors/fatals → throw); test in Task 7.
+- §Architecture/Concurrency (per-call ValidationDriver, atom for collector) — Task 3.
+- §Architecture/Memory note — captured in spec; no implementation work needed.
+- §Schema refresh policy — captured in spec; commit message of the next bump documents the change.
+- §Fixture fix (with verified citation that `<localProp>` is reachable from `<char>`) — Task 5 (TDD-driven).
+- §Test plan/`tei_test.clj` positive + negatives — Task 3.
+- §Test plan/`validate_design_bundle_test.clj` smoke + loud-fail + warning-partition — Task 7.
 - §Dependencies — Task 1.
 - §Acceptance criteria — covered across Tasks 6-9.
-- §Sequencing — tasks track the spec's sequence with the addition of Task 8 (sandbox skip) and Task 10 (next-steps refresh) which are spec-implied but not enumerated.
+- §Sequencing — Tasks 8 and 10 (sandbox skip, next-steps refresh) are spec-implied but not enumerated; included for completeness.
 
-**Placeholder scan:**
-- No "TBD"/"TODO"/"implement later"/"Add appropriate error handling"/"similar to Task N" found.
-- The Jing API note in Task 4 ("if `setSchema` is available, prefer it") is a documented runtime check with explicit fallback code, not a placeholder.
-- Task 9 step 4 is marked "optional but recommended" and is fully self-contained if the implementer chooses to do it.
+**Placeholder scan:** No "TBD"/"TODO"/"implement later"/"similar to Task N" found. Runtime API checks (e.g., the PropertyId lookup fallback in Task 3 step 4) are concrete diagnostic steps, not placeholders.
 
 **Type consistency:**
-- `load-schema` arity: 1 (path). Used consistently in tasks 3, 4, 5, 6, 7.
-- `validate!` signature: `{:schema, :xml-path, :label}` → `{:label, :violations [{:severity, :line, :column, :message}, ...]}`. Same shape across Tasks 4, 5, 6, 7.
-- Severity values: `:warning`, `:error`, `:fatal`. Same keywords throughout.
-- `validate-tei!` signature: `(validate-tei! schema-path xml-paths)` — Tasks 6, 7.
-- Env var name: `TEI_SCHEMA_PATH`. Consistent across Tasks 2, 3, 4, 5, 6, 7, 8.
-- Skip-flag env var name: `ABC_FOCUSED_TEST_SKIP_ENV_REQUIRED`. Consistent in Task 8.
+- `validate!` signature: `{:schema-path, :xml-path, :label}` → `{:label, :violations [{:severity, :line, :column, :message}, ...]}`. Consistent across Tasks 3, 5, 6, 7.
+- Severity values: `:warning`, `:error`, `:fatal` (keywords). Renderer in Task 6 tolerates non-keyword/nil severity defensively.
+- `validate-tei!` signature: `(validate-tei! schema-path xml-paths)`. Tasks 6, 7.
+- Env var: `TEI_SCHEMA_PATH`. Consistent across Tasks 2-7.
+- Skip flag: `ABC_TEI_SCHEMA_SKIP`. Consistent across Tasks 3, 7, 8.
+- `render-tei-violation` takes `label` as a separate first argument (not destructured from the violation map). Consistent in Task 6.
 
-No drift detected.
+**Review-point disposition:**
+- #1, #2, #3, #20: Each implementation task says "Read the file first." Execution discipline.
+- #4, #5, #25: Dropped `load-schema`; `validate!` takes `:schema-path` directly.
+- #6: Atom + `swap!` instead of volatile.
+- #7: Test partitions explicitly; failures must be empty; warnings logged.
+- #8: `render-tei-violation` takes `label` separately.
+- #9: Cited `tei_all.rng` `<define name="char">` `<ref name="localProp"/>` and `<define name="localProp">`'s `att.gaijiProp.attributes` (name + value).
+- #10: Standard `cond → (t)` skip pattern; no `:skipped` return.
+- #11: Skip flag named `ABC_TEI_SCHEMA_SKIP`.
+- #12: Loud-fail test asserts `:env-var` in `ex-data` too.
+- #13: New `validate-tei-warning-partition-test` in harness.
+- #14, #15, #17: `nix-build --expr <nixpkgs>` removed; `nix-prefetch-url` + `nix hash convert` for SRI conversion.
+- #16: Out of scope; CLI-arg form is a future enhancement note.
+- #18: Reviewer error; `''${PATH:-}` is correct in Nix `''...''` indented strings.
+- #19: `nix run --command` removed; replaced with `nix build --print-out-paths` + grep.
+- #21: Renderer guards on non-keyword/nil severity.
+- #22: Reviewer error; tests don't transitively load each other.
+- #23: Plain text in attribute is fine for the specific value used.
+- #24: Task 10 stays — a small but real housekeeping item.

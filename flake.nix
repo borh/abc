@@ -154,12 +154,14 @@
             test -f ${./src/abc/tools/logging.clj}
             test -f ${./src/abc/tools/manifest_to_rdf.clj}
             test -f ${./src/abc/tools/metadata_record.clj}
+            test -f ${./src/abc/tools/person_record.clj}
             test -f ${./src/abc/tools/rdf_prefixes.clj}
             test -f ${./src/abc/tools/shacl.clj}
             test -f ${./src/abc/tools/tei.clj}
             test -f ${./src/abc/tools/tei_header.clj}
             test -f ${./src/abc/tools/validate_design_bundle.clj}
             test -f ${./schemas/metadata-record.schema.json}
+            test -f ${./schemas/person-record.schema.json}
             test -f ${./test/abc/tools/hash_test.clj}
             test -f ${./test/abc/tools/jcs_test.clj}
             test -f ${./test/abc/tools/schema_test.clj}
@@ -168,11 +170,14 @@
             test -f ${./test/abc/tools/materialize_import_test.clj}
             test -f ${./test/abc/tools/aozora_csv_test.clj}
             test -f ${./test/abc/tools/metadata_record_test.clj}
+            test -f ${./test/abc/tools/person_record_test.clj}
+            test -f ${./test/abc/tools/aozora_ingest_test.clj}
             test -f ${./test/abc/tools/shacl_test.clj}
             test -f ${./test/abc/tools/tei_test.clj}
             test -f ${./test/abc/tools/tei_header_test.clj}
             test -f ${./examples/v0/example-work/metadata-record.json}
             test -f ${./examples/v0/example-work/metadata-record.ttl}
+            test -f ${./examples/v0/example-persons/000879.json}
             test -f ${./test/abc/tools/validate_design_bundle_test.clj}
             test -f ${./test/abc/annotation_schema_test.clj}
             test -f ${./test/abc/text_test.clj}

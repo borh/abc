@@ -1,10 +1,19 @@
 # ADR 0008: ABC Tools Runtime
 
-Status: Draft
+Status: Accepted
 Date: 2026-04-26
+Accepted: 2026-04-28
 Supersedes: none
 Amends: ADR 0006
 Source: `docs/adr/0006-v0-design-bundle-validation.md`
+
+## Implementation Status
+
+Acceptance criteria satisfied as of 2026-04-28. `abc.tools.*` namespaces now
+cover validation, manifest-to-RDF, materialization, SHACL, TEI RelaxNG,
+metadata-record build/validate, TEI-header generation, and Aozora CSV
+ingestion. All entry points are exposed as Nix apps (`validate-design-bundle`,
+`materialize-import`, `manifest-to-rdf`, `aozora-ingest`).
 
 ## Context
 

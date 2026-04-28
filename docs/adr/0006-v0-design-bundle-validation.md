@@ -1,10 +1,31 @@
 # ADR 0006: v0 Design Bundle Validation CLI
 
-Status: Draft
+Status: Accepted
 Date: 2026-04-26
+Accepted: 2026-04-28
 Supersedes: none
 Source: `docs/high-level-architecture-note.md` v0.5 and
 `docs/v0-design-bundle/README.md`
+
+## Implementation Status
+
+As of 2026-04-28 the validation CLI also runs:
+
+- TEI P5 4.11.0 RelaxNG validation via Jing in-process (schema pinned through
+  `pkgs.fetchurl` and exported as `TEI_SCHEMA_PATH`). See archived plan
+  `docs/superpowers/plans/archive/2026-04-27-tei-relaxng-validation.md`.
+- SHACL validation of the RDF/PROV-O view against `schemas/manifest.shacl.ttl`
+  for every manifest the harness produces or carries as a fixture, including
+  `MetadataRecordWorkShape` / `MetadataRecordPersonShape`. See archived plan
+  `docs/superpowers/plans/archive/2026-04-27-shacl-enforcement-and-failure-rdf.md`.
+- `metadata-record` schema/identity/SHACL gate plus TEI-EAJ-aligned
+  `<teiHeader>` regeneration. See archived plan
+  `docs/superpowers/plans/archive/2026-04-27-metadata-data-model.md`.
+
+The remaining `release-smoke` items are signature verification, provenance
+verification, and archive/mirror hash verification. The TEI step still
+validates against the full `tei_all.rng`; promoting `schemas/tei-profile.odd`
+from stub to a project-specific ODD-derived schema is the next TEI step.
 
 ## Context
 
@@ -54,13 +75,16 @@ The validation CLI is intentionally a smoke gate. It has three named levels:
 - `contract-smoke`: parser IR schema validation, diagnostic JSONL schema
   validation, run-summary JSONL schema validation, manifest-to-RDF deterministic
   fixture comparison, and materialized import fixture comparison.
-- `release-smoke`: TEI Relax NG validation, SHACL validation, signature
-  verification, provenance verification, and archive/mirror hash verification.
+- `release-smoke`: signature verification, provenance verification, and
+  archive/mirror hash verification. (TEI Relax NG validation and SHACL
+  validation moved into the regular run on 2026-04-28; see Implementation
+  Status above.)
 
-The current command implements `design-smoke` and the imported-output parts of
-`contract-smoke`. It does not prove that the TEI ODD generates a complete Relax
-NG schema, that SHACL validates the whole RDF view, or that any parser candidate
-satisfies the IR contract.
+The current command implements `design-smoke`, the imported-output parts of
+`contract-smoke`, TEI RelaxNG validation against the upstream `tei_all.rng`,
+and SHACL validation of every manifest's RDF view. It does not yet prove that
+`schemas/tei-profile.odd` generates a project-specific Relax NG schema, nor
+that any parser candidate satisfies the IR contract.
 
 ## Runtime Policy
 

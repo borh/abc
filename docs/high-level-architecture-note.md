@@ -991,25 +991,35 @@ rather than as separate prose decisions:
 
 ## Suggested Next Step
 
-Produce a small v0 design bundle before wider implementation:
+Produce a small v0 design bundle before wider implementation. Status notes
+below reflect the v0 contract harness as of 2026-04-28; see ADR 0006 and the
+archived plans under `docs/superpowers/plans/archive/` for the implementing
+work.
 
 1. `manifest.schema.json`: JSON Schema for artifact manifests, including
    Draft 2020-12 schema versioning, explicit null dimensions, hashes,
    validation status, signatures placeholder, failure manifest subtype, and
-   license metadata.
+   license metadata. (Implemented; gated by `validate-design-bundle`.)
 2. `manifest.shacl.ttl`: SHACL shape for the RDF/PROV-O view of the manifest.
+   (Implemented; runs over every manifest the harness produces or carries,
+   including `MetadataRecordWorkShape` / `MetadataRecordPersonShape`.)
 3. Deterministic `manifest-to-rdf` mapping fixtures showing when the RDF view
    is materialized for releases and how it can be generated on demand in local
-   development.
+   development. (Implemented as `nix run .#manifest-to-rdf` with byte-parity
+   fixture tests.)
 4. `parser-ir.schema.json`: JSON Schema for parser IR v0, including ruby,
    gaiji, editor notes, spans, structured warning references, and error
    severity/code taxonomy.
 5. `tei-profile.odd`: minimum TEI ODD aligned with TEI P5 ruby support and
-   explicitly selected TEI-EAJ draft conventions.
+   explicitly selected TEI-EAJ draft conventions. (Stub committed; harness
+   validates TEI against upstream `tei_all.rng` via Jing in-process.
+   Promoting the ODD to drive a project-specific RelaxNG is the next TEI
+   step.)
 6. One end-to-end example artifact bundle for a single Aozora work: source
    manifest, parser IR, warning sidecar, TEI XML, validation result, RDF/PROV-O
    manifest, failure-manifest fixture or subtype example, and a small query
-   index entry.
+   index entry. (Implemented for Aozora work 000127 / 羅生門 / 芥川竜之介,
+   driven by a real CSV slice through `nix run .#aozora-ingest`.)
 7. `canonicalization-fixtures/`: small JSON, XML, and RDF examples with
    expected canonical bytes or hashes for cross-implementation identity tests.
 8. `ro-crate-evaluation.md`: decide whether ABC release bundles should be

@@ -1,9 +1,19 @@
 # ADR 0001: Manifest Identity
 
-Status: Draft
+Status: Accepted
 Date: 2026-04-26
+Accepted: 2026-04-28
 Supersedes: none
 Source: `docs/high-level-architecture-note.md` v0.5
+
+## Implementation Status
+
+Acceptance criteria satisfied as of 2026-04-28. The example-work bundle
+demonstrates a real `metadata_record_hash` (Aozora 羅生門 / 芥川竜之介), with
+schema → identity → SHACL → TEI-EAJ `<teiHeader>` covered end-to-end. Failure
+manifest fixtures and canonicalization fixtures are committed and exercised by
+`nix run .#validate-design-bundle`. See archived plan
+`docs/superpowers/plans/archive/2026-04-27-metadata-data-model.md`.
 
 ## Context
 

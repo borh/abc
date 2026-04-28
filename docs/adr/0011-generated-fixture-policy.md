@@ -1,8 +1,17 @@
 # ADR 0011: Generated Output Policy
 
 Date: 2026-04-26
-Status: Draft
+Status: Accepted
+Accepted: 2026-04-28
 Depends on: ADR 0001, ADR 0008, ADR 0009, ADR 0010
+
+## Implementation Status
+
+Acceptance criteria satisfied as of 2026-04-28. `nix run .#validate-design-bundle`
+materializes parser IR and warning manifests into a temporary directory and
+validates them; deterministic-JSON and two-run byte-identity tests live in
+`test/abc/tools/materialize_import_test.clj`. Implementation tracked in archived
+plan `docs/superpowers/plans/archive/2026-04-26-generated-fixture-policy.md`.
 
 ## Context
 

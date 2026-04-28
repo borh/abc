@@ -5,3 +5,5 @@ target/
 adapters/*/target/
 result
 result-*
+__pycache__/
+*.pyc

@@ -1,0 +1,14 @@
+[package]
+name = "ab-morph-run"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+ab-morph-analyzers.workspace = true
+ab-morph-diff.workspace = true
+ab-plaintext.workspace = true
+anyhow.workspace = true
+clap.workspace = true
+serde.workspace = true
+serde_json.workspace = true

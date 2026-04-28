@@ -114,6 +114,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "ab-morph-run"
+version = "0.1.0"
+dependencies = [
+ "ab-morph-analyzers",
+ "ab-morph-diff",
+ "ab-plaintext",
+ "anyhow",
+ "clap",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "ab-plaintext"
 version = "0.1.0"
 dependencies = [

@@ -10,6 +10,7 @@ members = [
     "crates/ab-morph-diff",
     "crates/ab-plaintext",
     "crates/ab-morph-analyzers",
+    "crates/ab-morph-run",
 ]
 resolver = "2"
 exclude = [
@@ -29,6 +30,7 @@ ab-diff-utils = { path = "crates/ab-diff-utils" }
 ab-morph-diff = { path = "crates/ab-morph-diff" }
 ab-plaintext = { path = "crates/ab-plaintext" }
 ab-morph-analyzers = { path = "crates/ab-morph-analyzers" }
+ab-morph-run = { path = "crates/ab-morph-run" }
 ab-ir = { path = "crates/ab-ir" }
 ab-source-syntax = { path = "crates/ab-source-syntax" }
 chrono = { version = "0.4", features = ["serde"] }

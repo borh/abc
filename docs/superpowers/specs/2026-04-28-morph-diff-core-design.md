@@ -30,11 +30,13 @@ Location: `crates/ab-morph-diff/`
 
 Workspace crate depending on:
 
-- `ab-diff-utils` for `FrequencyTable` and hashing helpers;
-- `anyhow` for error contexts;
 - `serde` for output serialization.
 
 No dependency on Vibrato, Sudachi, or adapter crates in this phase.
+No dependency on `anyhow` in this phase: the core crate exposes typed errors,
+and `anyhow` can wrap them later at CLI or adapter boundaries. No dependency on
+`ab-diff-utils` in this phase either, because aggregation is deferred until real
+adapter and corpus data exist.
 
 ## 3. Public Data Model
 
@@ -57,6 +59,11 @@ pub type FeatureMap = BTreeMap<FeatureKey, Option<String>>;
 
 `None` is an explicit missing value. A missing value on one side and present
 value on the other side is a real feature difference.
+
+This flat string model is a deliberate phase-1 trade-off. It fits UniDic-style
+fields and keeps the core analyzer-independent. If a later analyzer needs nested
+or repeated feature values, the adapter should initially encode stable string
+values and the model can be revisited with concrete evidence.
 
 ### 3.2 Morpheme and Analysis
 
@@ -132,10 +139,18 @@ pub enum CoverageMismatchKind {
 `text_span` uses character offsets in all public regions. Byte spans stay on
 morphemes for validation.
 
+For missing-side coverage mismatches, the missing side uses an empty range
+anchored at the next-to-be-consumed morpheme index at the start of the region.
+For example, if `from` has consumed morphemes `0..3` and `to` covers the next
+span with `to[5]`, the region uses `from_indices: 3..3` and
+`to_indices: 5..6`. Consumers must treat empty ranges as insertion/gap anchors,
+not as omitted data.
+
 ### 3.4 Feature Differences
 
 ```rust
 pub struct FeatureDiff {
+    pub region_index: usize,
     pub text_span: Range<usize>,
     pub surface: String,
     pub from_index: usize,
@@ -151,6 +166,9 @@ pub struct ChangedValue {
 ```
 
 Feature diffs are emitted only for `Region::OneToOne`.
+`region_index` points to the owning `regions` entry in `Comparison`. The other
+fields are intentionally denormalized to keep JSONL rows and future reports easy
+to consume without repeated region lookups.
 
 ### 3.5 Comparison Output
 
@@ -188,7 +206,14 @@ pub struct ComparisonStats {
 
 Boundary metrics treat `from` as reference for recall and `to` as predicted for
 precision. Empty-boundary cases produce `None` rather than inventing a perfect or
-zero score.
+zero score. If coverage mismatch regions exist, boundary metrics ignore any
+boundary whose offset lies inside a coverage mismatch span. Boundaries in
+one-to-one and segmentation regions remain comparable because both analyses
+cover the same source text there. If filtering leaves no comparable internal
+boundaries, all three boundary metric fields are `None`.
+
+The split/merge/resegment fields are redundant with `segmentation_regions`, but
+the redundancy is intentional for stable JSON output and simpler dashboards.
 
 ## 4. Module Boundaries
 
@@ -205,7 +230,8 @@ Validates one `Analysis` before comparison.
 Rules:
 
 - morphemes sorted by byte span;
-- no overlapping morphemes;
+- no overlapping morphemes: touching spans such as `0..2` followed by `2..4`
+  are valid, while `0..2` followed by `1..3` is invalid;
 - `byte_span` bounds are valid UTF-8 boundaries inside `source_text`;
 - `char_span` matches the byte span's character offsets;
 - `surface == source_text[byte_span]`;
@@ -237,6 +263,10 @@ Classification:
 - `Merge`: multiple `from` morphemes map to one `to` morpheme;
 - `Resegment`: both sides have multiple morphemes or a non-simple regrouping.
 
+The step-2 one-to-one short-circuit is correct only after validation proves
+morpheme spans within each analysis are sorted and non-overlapping. With that
+invariant, no later morpheme can also intersect the identical span.
+
 ### 4.4 `features.rs`
 
 Consumes one-to-one regions and emits feature differences.
@@ -257,25 +287,49 @@ separate function internally.
 Derives `ComparisonStats` from regions, feature diffs, and source analyses.
 
 Boundary precision/recall/F1 is based on internal morpheme boundaries only:
-exclude the outer `0` and `source_text.chars().count()` boundaries.
+exclude the outer `0` and `source_text.chars().count()` boundaries. Ignore
+boundaries inside coverage mismatch regions.
 
-### 4.6 `aggregate.rs`
+### 4.6 Deferred Aggregation Schema
 
-Provides first-pass corpus-level summaries without persistence.
+Aggregation is not part of phase 1. With no real analyzer adapters and no corpus
+volume, implementing `aggregate.rs` now would mostly freeze guesses. Phase 1
+therefore stops at deterministic per-text `Comparison` values.
 
-Minimum artifacts for this phase:
+The following schema should guide the later aggregation phase so the core output
+does not block corpus-level summaries:
 
 ```rust
-pub struct AggregateSummary {
-    pub segmentation_transformations: FrequencyTable<SegmentationKey, RegionExample>,
-    pub feature_confusions: BTreeMap<FeatureKey, FrequencyTable<FeatureConfusionKey, RegionExample>>,
+pub struct SegmentationKey {
+    pub kind: SegmentationKind,
+    pub from_surfaces: Vec<String>,
+    pub to_surfaces: Vec<String>,
+}
+
+pub struct FeatureConfusionKey {
+    pub from: Option<String>,
+    pub to: Option<String>,
+}
+
+pub struct RegionExample {
+    pub text_id: TextId,
+    pub region_index: usize,
+    pub text_span: Range<usize>,
+    pub source: String,
+    pub from_surfaces: Vec<String>,
+    pub to_surfaces: Vec<String>,
 }
 ```
 
-Keys must be structured serializable values, not formatted display strings.
+`RegionExample` deliberately does not embed full feature snapshots in this
+phase. Future aggregation can add a separate `FeatureExample` if UI/reporting
+needs complete feature maps. Example budgets should be caller-provided rather
+than hardcoded to `ab-diff-utils::DEFAULT_MAX_EXAMPLES`, so corpus runs and tests
+can use different limits deliberately.
 
-Aggregation consumes `Comparison` values. It does not call alignment or inspect
-analyzer-specific output.
+All aggregate keys must be structured serializable values, not formatted display
+strings. Future aggregation consumes `Comparison` values. It does not call
+alignment or inspect analyzer-specific output.
 
 ### 4.7 `lib.rs`
 
@@ -283,8 +337,7 @@ Re-exports the stable public API:
 
 - model types;
 - `validate_analysis`;
-- `compare_pair`;
-- aggregation summary types.
+- `compare_pair`.
 
 ## 5. Initial Public API
 
@@ -298,13 +351,39 @@ pub fn compare_pair(
 ) -> Result<Comparison, MorphDiffError>
 ```
 
-`compare_pair` validates both analyses first, then aligns, compares features,
-and derives stats.
+`compare_pair` validates both analyses first, then checks cross-analysis
+preconditions, aligns, compares features, and derives stats.
+
+Cross-analysis preconditions:
+
+- `from.text_id == to.text_id`;
+- `from.source_text == to.source_text`.
+
+Violation is a typed `MorphDiffError` variant. Identical char spans are only
+meaningful when both analyses refer to the same source string.
+
+`feature_context_keys` is a set-like input. Duplicate keys are ignored. Output
+ordering is deterministic because `same_context` is a `BTreeMap`, not the caller
+input order.
 
 Use a small typed error enum with `thiserror` or plain custom `Display` rather
 than returning stringly errors from algorithm internals. The implementation plan
-should choose the dependency based on existing workspace conventions; `anyhow`
-can wrap these errors at CLI boundaries later.
+should prefer a hand-rolled enum implementing `Display` and `std::error::Error`
+unless adding `thiserror` is already justified elsewhere.
+
+Minimum error variants:
+
+```rust
+pub enum MorphDiffError {
+    TextIdMismatch { from: TextId, to: TextId },
+    SourceTextMismatch { text_id: TextId },
+    OutOfOrderSpan { analyzer: AnalyzerId, text_id: TextId, index: usize },
+    OverlappingSpan { analyzer: AnalyzerId, text_id: TextId, previous: usize, current: usize },
+    InvalidByteSpan { analyzer: AnalyzerId, text_id: TextId, index: usize },
+    CharSpanMismatch { analyzer: AnalyzerId, text_id: TextId, index: usize },
+    SurfaceMismatch { analyzer: AnalyzerId, text_id: TextId, index: usize },
+}
+```
 
 ## 6. Testing Strategy
 
@@ -324,20 +403,31 @@ Required tests:
 - `abc` + `def` vs `ab` + `cdef` emits `Resegment`;
 - repeated surfaces align by span, not by string search;
 - multi-byte text validates byte and char spans correctly;
+- mixed Japanese and Latin text validates byte and char spans correctly;
 - out-of-order spans are rejected;
 - overlapping spans are rejected;
 - byte spans that are not UTF-8 character boundaries are rejected;
 - surface/source mismatch is rejected;
+- identical text id with differing source text is rejected;
+- differing text ids are rejected;
+- one analyzer producing zero morphemes for non-empty input yields a
+  `MissingFrom` or `MissingTo` coverage mismatch rather than a validation error;
 - one side with a gap emits coverage mismatch when the other side covers that
   span;
+- multiple segmentation regions in one sentence are emitted as separate regions;
 - segmentation region adjacent to feature-diff region stays as two regions;
 - boundary precision/recall/F1 are deterministic and exclude outer boundaries.
+- boundary precision/recall/F1 ignore boundaries inside coverage mismatch spans;
+- property tests generate sorted non-overlapping span partitions and assert that
+  output regions are sorted, non-overlapping, and do not emit feature diffs for
+  non-one-to-one regions.
 
 ## 7. Non-Goals
 
 - No Vibrato adapter in this phase.
 - No Sudachi adapter in this phase.
 - No dictionary discovery or environment-variable handling in this phase.
+- No aggregation implementation in this phase.
 - No CLI in this phase unless needed for manual debugging.
 - No multiway alignment in this phase.
 - No weighted/noisy alignment in this phase.
@@ -369,12 +459,12 @@ This design keeps four concerns separate:
 - analyzer output production;
 - span validation;
 - region alignment;
-- corpus aggregation.
+- future corpus aggregation.
 
 It deliberately chooses simple string identifiers and deterministic maps for the
 first implementation. That avoids coupling the core engine to dictionary loading,
 analyzer selection, CLI formats, or future multiway comparison.
 
 The main risk is region alignment around gaps. The implementation plan should
-therefore start with validation and small alignment fixtures before adding
-aggregation.
+therefore start with validation and small alignment fixtures, then add property
+tests before any future aggregation work.

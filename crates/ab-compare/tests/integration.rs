@@ -192,6 +192,9 @@ fn triage_report_buckets_differences_by_feature_and_metrics() {
         a_semantic_totals: BTreeMap::new(),
         b_semantic_totals: BTreeMap::new(),
         structural_differences: Vec::new(),
+        coverage_only_difference_count: 0,
+        coverage_differences: Vec::new(),
+        coverage_metrics_missing: 0,
     };
     let metrics = ab_compare::metrics::MetricsSummary {
         adapter: "aozora-rs".to_owned(),
@@ -237,13 +240,39 @@ fn triage_report_buckets_differences_by_feature_and_metrics() {
 
     assert_eq!(report.adapters.a, "aozora2");
     assert_eq!(
-        report.result_differences.by_property["visible_text_body_order"].count,
+        report
+            .result_differences
+            .by_property
+            .get(&"visible_text_body_order".to_owned())
+            .unwrap()
+            .count,
         1
     );
-    assert_eq!(report.result_differences.by_feature["gaiji"].count, 1);
-    assert_eq!(report.result_differences.by_feature["ruby"].count, 1);
     assert_eq!(
-        report.result_differences.by_feature["jisage_block"].count,
+        report
+            .result_differences
+            .by_feature
+            .get(&"gaiji".to_owned())
+            .unwrap()
+            .count,
+        1
+    );
+    assert_eq!(
+        report
+            .result_differences
+            .by_feature
+            .get(&"ruby".to_owned())
+            .unwrap()
+            .count,
+        1
+    );
+    assert_eq!(
+        report
+            .result_differences
+            .by_feature
+            .get(&"jisage_block".to_owned())
+            .unwrap()
+            .count,
         1
     );
     assert_eq!(
@@ -695,6 +724,148 @@ fn malformed_semantic_summary_is_ignored() {
     assert_eq!(summary.common_aat, 1);
     assert_eq!(summary.structural_difference_count, 0);
     assert!(summary.semantic_summary_hash_difference_counts.is_empty());
+}
+
+#[test]
+fn coverage_delta_recorded_when_fallback_differs_and_hashes_differ() {
+    let temp = tempfile::tempdir().unwrap();
+    let a = temp.path().join("a");
+    let b = temp.path().join("b");
+    std::fs::create_dir_all(&a).unwrap();
+    std::fs::create_dir_all(&b).unwrap();
+
+    std::fs::write(
+        a.join("one.json"),
+        r#"{
+          "work_id": "one",
+          "blocks": [
+            {"kind": "paragraph", "content": [{"kind": "text", "value": "左"}]}
+          ],
+          "meta": {"adapter": "a", "metrics": {"fallback_used": true, "fallback_reason": "aborted", "source_bytes": 100}}
+        }"#,
+    )
+    .unwrap();
+    std::fs::write(
+        b.join("one.json"),
+        r#"{
+          "work_id": "one",
+          "blocks": [
+            {"kind": "paragraph", "content": [{"kind": "text", "value": "右"}]}
+          ],
+          "meta": {"adapter": "b", "metrics": {"fallback_used": false, "source_bytes": 200}}
+        }"#,
+    )
+    .unwrap();
+
+    let summary = ab_compare::aat_diff::compare_aat_dirs(&a, &b).unwrap();
+
+    assert_eq!(summary.structural_difference_count, 1);
+    assert_eq!(summary.coverage_only_difference_count, 0);
+    let difference = &summary.structural_differences[0];
+    assert!(difference.visible_text_differs);
+    let coverage = difference.coverage_mismatch.as_ref().unwrap();
+    assert!(coverage.a_had_fallback);
+    assert!(!coverage.b_had_fallback);
+    assert_eq!(coverage.a_fallback_reason.as_deref(), Some("aborted"));
+    assert_eq!(coverage.b_fallback_reason, None);
+    assert_eq!(coverage.a_source_bytes, Some(100));
+    assert_eq!(coverage.b_source_bytes, Some(200));
+}
+
+#[test]
+fn coverage_only_difference_count_incremented_when_hashes_match() {
+    let temp = tempfile::tempdir().unwrap();
+    let a = temp.path().join("a");
+    let b = temp.path().join("b");
+    std::fs::create_dir_all(&a).unwrap();
+    std::fs::create_dir_all(&b).unwrap();
+
+    let a_json = serde_json::json!({
+        "meta": {
+            "adapter": "a",
+            "metrics": {"fallback_used": true, "fallback_reason": "aborted"}
+        },
+        "work_id": "one",
+        "blocks": [
+            {"kind": "paragraph", "content": [{"kind": "text", "value": "本文"}]}
+        ]
+    });
+    let b_json = serde_json::json!({
+        "meta": {
+            "adapter": "b",
+            "metrics": {"fallback_used": false}
+        },
+        "work_id": "one",
+        "blocks": [
+            {"kind": "paragraph", "content": [{"kind": "text", "value": "本文"}]}
+        ]
+    });
+
+    std::fs::write(a.join("one.json"), serde_json::to_string(&a_json).unwrap()).unwrap();
+    std::fs::write(b.join("one.json"), serde_json::to_string(&b_json).unwrap()).unwrap();
+
+    let summary = ab_compare::aat_diff::compare_aat_dirs(&a, &b).unwrap();
+
+    assert_eq!(summary.structural_difference_count, 0);
+    assert_eq!(summary.visible_text_difference_count, 0);
+    assert_eq!(summary.same_visible_structural_difference_count, 0);
+    assert_eq!(summary.coverage_only_difference_count, 1);
+    let difference = &summary.coverage_differences[0];
+    assert!(!difference.visible_text_differs);
+    assert_eq!(difference.work_id, "one");
+    assert!(difference.coverage_mismatch.is_some());
+    assert!(
+        difference
+            .coverage_mismatch
+            .as_ref()
+            .unwrap()
+            .a_had_fallback
+    );
+    assert!(
+        !difference
+            .coverage_mismatch
+            .as_ref()
+            .unwrap()
+            .b_had_fallback
+    );
+}
+
+#[test]
+fn missing_metrics_skips_coverage_comparison() {
+    let temp = tempfile::tempdir().unwrap();
+    let a = temp.path().join("a");
+    let b = temp.path().join("b");
+    std::fs::create_dir_all(&a).unwrap();
+    std::fs::create_dir_all(&b).unwrap();
+
+    std::fs::write(
+        a.join("one.json"),
+        r#"{
+          "work_id": "one",
+          "blocks": [
+            {"kind": "paragraph", "content": [{"kind": "text", "value": "本文"}]}
+          ],
+          "meta": {"adapter": "a"}
+        }"#,
+    )
+    .unwrap();
+    std::fs::write(
+        b.join("one.json"),
+        r#"{
+          "work_id": "one",
+          "blocks": [
+            {"kind": "paragraph", "content": [{"kind": "text", "value": "本文"}]}
+          ],
+          "meta": {"adapter": "b", "metrics": {"fallback_used": true, "fallback_reason": "aborted"}}
+        }"#,
+    )
+    .unwrap();
+
+    let summary = ab_compare::aat_diff::compare_aat_dirs(&a, &b).unwrap();
+
+    assert_eq!(summary.structural_difference_count, 0);
+    assert_eq!(summary.coverage_only_difference_count, 0);
+    assert!(summary.structural_differences.is_empty());
 }
 
 fn report(adapter: &str, pass: bool) -> String {

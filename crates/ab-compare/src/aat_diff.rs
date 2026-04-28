@@ -4,10 +4,12 @@ use std::{
     path::Path,
 };
 
+use ab_diff_utils::{
+    FirstDifference, first_difference, hash_bytes, hash_json, hash_string_sequence,
+};
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use sha2::{Digest, Sha256};
 use walkdir::WalkDir;
 
 #[derive(Debug, Serialize)]
@@ -25,6 +27,9 @@ pub struct AatCompareSummary {
     pub a_semantic_totals: BTreeMap<String, usize>,
     pub b_semantic_totals: BTreeMap<String, usize>,
     pub structural_differences: Vec<AatStructuralDifference>,
+    pub coverage_only_difference_count: usize,
+    pub coverage_differences: Vec<AatStructuralDifference>,
+    pub coverage_metrics_missing: usize,
 }
 
 #[derive(Debug, Serialize)]
@@ -52,6 +57,17 @@ pub struct AatStructuralDifference {
     pub semantic_summary_hashes_differ: BTreeMap<String, bool>,
     pub normalized_visible_difference_bucket: Option<String>,
     pub normalized_visible_first_difference: Option<VisibleTextDifference>,
+    pub coverage_mismatch: Option<CoverageDelta>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct CoverageDelta {
+    pub a_had_fallback: bool,
+    pub b_had_fallback: bool,
+    pub a_fallback_reason: Option<String>,
+    pub b_fallback_reason: Option<String>,
+    pub a_source_bytes: Option<usize>,
+    pub b_source_bytes: Option<usize>,
 }
 
 #[derive(Debug, Serialize)]
@@ -59,6 +75,16 @@ pub struct VisibleTextDifference {
     pub char_index: usize,
     pub a_snippet: String,
     pub b_snippet: String,
+}
+
+impl From<FirstDifference> for VisibleTextDifference {
+    fn from(diff: FirstDifference) -> Self {
+        Self {
+            char_index: diff.char_index,
+            a_snippet: diff.left_snippet,
+            b_snippet: diff.right_snippet,
+        }
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -81,6 +107,9 @@ struct AatSummary {
     semantic_counts: BTreeMap<String, usize>,
     semantic_hashes: BTreeMap<String, String>,
     semantic_summary_hashes: BTreeMap<String, String>,
+    fallback_used: Option<bool>,
+    fallback_reason: Option<String>,
+    source_bytes: Option<usize>,
 }
 
 pub fn compare_aat_dirs(a: &Path, b: &Path) -> Result<AatCompareSummary> {
@@ -104,6 +133,9 @@ pub fn compare_aat_dirs_with_limit(
     let mut visible_text_difference_count = 0usize;
     let mut normalized_visible_text_difference_count = 0usize;
     let mut same_visible_structural_difference_count = 0usize;
+    let mut coverage_only_difference_count = 0usize;
+    let mut coverage_differences = Vec::new();
+    let mut coverage_metrics_missing = 0usize;
     let mut semantic_hash_difference_counts = BTreeMap::new();
     let mut semantic_summary_hash_difference_counts = BTreeMap::new();
     let mut normalized_visible_difference_buckets = BTreeMap::new();
@@ -123,12 +155,30 @@ pub fn compare_aat_dirs_with_limit(
                 increment(&mut semantic_summary_hash_difference_counts, name.clone());
             }
         }
-        if left.structure_hash != right.structure_hash
+        let coverage_mismatch = if left.fallback_used.is_some()
+            && right.fallback_used.is_some()
+            && left.fallback_used != right.fallback_used
+        {
+            Some(CoverageDelta {
+                a_had_fallback: left.fallback_used.unwrap_or(false),
+                b_had_fallback: right.fallback_used.unwrap_or(false),
+                a_fallback_reason: left.fallback_reason.clone(),
+                b_fallback_reason: right.fallback_reason.clone(),
+                a_source_bytes: left.source_bytes,
+                b_source_bytes: right.source_bytes,
+            })
+        } else {
+            if left.fallback_used.is_none() || right.fallback_used.is_none() {
+                coverage_metrics_missing += 1;
+            }
+            None
+        };
+        let has_hash_difference = left.structure_hash != right.structure_hash
             || left.visible_hash != right.visible_hash
             || semantic_summary_hashes_differ
                 .values()
-                .any(|differs| *differs)
-        {
+                .any(|differs| *differs);
+        if has_hash_difference {
             structural_difference_count += 1;
             if left.visible_hash != right.visible_hash {
                 visible_text_difference_count += 1;
@@ -146,9 +196,12 @@ pub fn compare_aat_dirs_with_limit(
                 };
             let normalized_visible_first_difference =
                 normalized_visible_difference_bucket.as_ref().and_then(|_| {
-                    first_visible_difference(&left.normalized_visible, &right.normalized_visible)
+                    first_difference(&left.normalized_visible, &right.normalized_visible)
+                        .map(VisibleTextDifference::from)
                 });
-            if difference_limit.is_some_and(|limit| structural_differences.len() >= limit) {
+            if difference_limit.is_some_and(|limit| {
+                structural_differences.len() + coverage_differences.len() >= limit
+            }) {
                 continue;
             }
             structural_differences.push(AatStructuralDifference {
@@ -176,6 +229,40 @@ pub fn compare_aat_dirs_with_limit(
                 semantic_summary_hashes_differ,
                 normalized_visible_difference_bucket,
                 normalized_visible_first_difference,
+                coverage_mismatch,
+            });
+        } else if coverage_mismatch.is_some() {
+            coverage_only_difference_count += 1;
+            if difference_limit.is_some_and(|limit| {
+                structural_differences.len() + coverage_differences.len() >= limit
+            }) {
+                continue;
+            }
+            coverage_differences.push(AatStructuralDifference {
+                work_id: left.work_id.clone(),
+                visible_text_differs: false,
+                normalized_visible_text_differs: false,
+                a_structure_hash: left.structure_hash.clone(),
+                b_structure_hash: right.structure_hash.clone(),
+                a_visible_hash: left.visible_hash.clone(),
+                b_visible_hash: right.visible_hash.clone(),
+                a_normalized_visible_hash: left.normalized_visible_hash.clone(),
+                b_normalized_visible_hash: right.normalized_visible_hash.clone(),
+                a_block_kinds: left.block_kinds.clone(),
+                b_block_kinds: right.block_kinds.clone(),
+                a_inline_kinds: left.inline_kinds.clone(),
+                b_inline_kinds: right.inline_kinds.clone(),
+                a_semantic_counts: left.semantic_counts.clone(),
+                b_semantic_counts: right.semantic_counts.clone(),
+                a_semantic_hashes: left.semantic_hashes.clone(),
+                b_semantic_hashes: right.semantic_hashes.clone(),
+                semantic_hashes_differ,
+                a_semantic_summary_hashes: left.semantic_summary_hashes.clone(),
+                b_semantic_summary_hashes: right.semantic_summary_hashes.clone(),
+                semantic_summary_hashes_differ,
+                normalized_visible_difference_bucket: None,
+                normalized_visible_first_difference: None,
+                coverage_mismatch,
             });
         }
     }
@@ -194,6 +281,9 @@ pub fn compare_aat_dirs_with_limit(
         a_semantic_totals,
         b_semantic_totals,
         structural_differences,
+        coverage_only_difference_count,
+        coverage_differences,
+        coverage_metrics_missing,
     })
 }
 
@@ -263,6 +353,29 @@ fn summarize(root: AatRoot) -> Result<AatSummary> {
         &mut visible,
     );
     let normalized_visible = normalize_visible(&visible);
+    let (fallback_used, fallback_reason, source_bytes) = root
+        .meta
+        .as_ref()
+        .and_then(|meta| meta.get("metrics"))
+        .map(|metrics| {
+            (
+                Some(
+                    metrics
+                        .get("fallback_used")
+                        .and_then(Value::as_bool)
+                        .unwrap_or(false),
+                ),
+                metrics
+                    .get("fallback_reason")
+                    .and_then(Value::as_str)
+                    .map(str::to_owned),
+                metrics
+                    .get("source_bytes")
+                    .and_then(Value::as_u64)
+                    .map(|n| n as usize),
+            )
+        })
+        .unwrap_or((None, None, None));
     Ok(AatSummary {
         work_id: root.work_id,
         structure_hash,
@@ -275,6 +388,9 @@ fn summarize(root: AatRoot) -> Result<AatSummary> {
         semantic_counts,
         semantic_hashes: semantic_sequences.into_hashes(),
         semantic_summary_hashes: semantic_summary_hashes(root.meta.as_ref())?,
+        fallback_used,
+        fallback_reason,
+        source_bytes,
     })
 }
 
@@ -522,50 +638,10 @@ fn normalized_visible_difference_bucket(semantic_hashes_differ: &BTreeMap<String
     }
 }
 
-fn first_visible_difference(left: &str, right: &str) -> Option<VisibleTextDifference> {
-    let left_chars = left.chars().collect::<Vec<_>>();
-    let right_chars = right.chars().collect::<Vec<_>>();
-    let max_common = left_chars.len().min(right_chars.len());
-    let char_index = (0..max_common)
-        .find(|idx| left_chars[*idx] != right_chars[*idx])
-        .or_else(|| (left_chars.len() != right_chars.len()).then_some(max_common))?;
-    Some(VisibleTextDifference {
-        char_index,
-        a_snippet: snippet(&left_chars, char_index),
-        b_snippet: snippet(&right_chars, char_index),
-    })
-}
-
-fn snippet(chars: &[char], center: usize) -> String {
-    let start = center.saturating_sub(24);
-    let end = chars.len().min(center + 24);
-    chars[start..end].iter().collect()
-}
-
 fn kind(value: &Value) -> Option<&str> {
     value.get("kind").and_then(Value::as_str)
 }
 
-fn hash_json(value: &Value) -> Result<String> {
-    let bytes = serde_json::to_vec(value)?;
-    Ok(hash_bytes(&bytes))
-}
-
-fn hash_string_sequence(values: &[String]) -> String {
-    let mut hasher = Sha256::new();
-    for value in values {
-        hasher.update(value.as_bytes());
-        hasher.update([0]);
-    }
-    format!("sha256:{:x}", hasher.finalize())
-}
-
 fn normalize_visible(value: &str) -> String {
     value.split_whitespace().collect::<Vec<_>>().join(" ")
-}
-
-fn hash_bytes(bytes: &[u8]) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(bytes);
-    format!("sha256:{:x}", hasher.finalize())
 }

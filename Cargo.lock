@@ -26,11 +26,11 @@ dependencies = [
 name = "ab-compare"
 version = "0.1.0"
 dependencies = [
+ "ab-diff-utils",
  "anyhow",
  "clap",
  "serde",
  "serde_json",
- "sha2",
  "tempfile",
  "walkdir",
 ]
@@ -52,6 +52,16 @@ dependencies = [
  "toml_edit",
  "walkdir",
  "zip",
+]
+
+[[package]]
+name = "ab-diff-utils"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "serde",
+ "serde_json",
+ "sha2",
 ]
 
 [[package]]

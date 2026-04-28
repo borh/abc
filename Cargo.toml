@@ -6,6 +6,7 @@ members = [
     "crates/ab-check",
     "crates/ab-compare",
     "crates/ab-coverage",
+    "crates/ab-diff-utils",
 ]
 resolver = "2"
 exclude = [
@@ -21,6 +22,7 @@ license = "MIT OR Apache-2.0"
 
 [workspace.dependencies]
 anyhow = "1.0"
+ab-diff-utils = { path = "crates/ab-diff-utils" }
 ab-ir = { path = "crates/ab-ir" }
 ab-source-syntax = { path = "crates/ab-source-syntax" }
 chrono = { version = "0.4", features = ["serde"] }

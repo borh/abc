@@ -1,5 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
+use ab_diff_utils::FrequencyTable;
 use serde::Serialize;
 use serde_json::Value;
 
@@ -13,6 +14,7 @@ pub struct TriageReport {
     pub semantic_summary: SemanticSummaryTriage,
     pub fallbacks: Option<FallbackTriage>,
     pub source_supplements: Option<SourceSupplementTriage>,
+    pub coverage_mismatches: Option<CoverageMismatchTriage>,
     pub recommended_next_targets: Vec<String>,
 }
 
@@ -25,15 +27,15 @@ pub struct AdapterPair {
 #[derive(Debug, Serialize)]
 pub struct ResultDifferenceTriage {
     pub total: usize,
-    pub by_property: BTreeMap<String, TriageBucket>,
-    pub by_feature: BTreeMap<String, TriageBucket>,
-    pub by_property_and_feature: BTreeMap<String, TriageBucket>,
+    pub by_property: FrequencyTable<String, String>,
+    pub by_feature: FrequencyTable<String, String>,
+    pub by_property_and_feature: FrequencyTable<String, String>,
 }
 
 #[derive(Debug, Serialize)]
-pub struct TriageBucket {
+pub struct CoverageMismatchTriage {
     pub count: usize,
-    pub work_ids: Vec<String>,
+    pub by_reason: FrequencyTable<String, String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -87,22 +89,21 @@ pub fn build_triage_report(
     metrics: Option<&MetricsSummary>,
 ) -> TriageReport {
     let features = features_by_work(index);
-    let mut by_property = BTreeMap::new();
-    let mut by_feature = BTreeMap::new();
-    let mut by_property_and_feature = BTreeMap::new();
+    let mut by_property = FrequencyTable::default();
+    let mut by_feature = FrequencyTable::default();
+    let mut by_property_and_feature = FrequencyTable::default();
 
     for difference in &comparison.result_differences {
-        push_bucket(&mut by_property, &difference.property, &difference.work_id);
+        by_property.record(difference.property.clone(), difference.work_id.clone());
         let work_features = features
             .get(&difference.work_id)
             .cloned()
             .unwrap_or_else(|| BTreeSet::from(["unindexed".to_owned()]));
         for feature in work_features {
-            push_bucket(&mut by_feature, &feature, &difference.work_id);
-            push_bucket(
-                &mut by_property_and_feature,
-                &format!("{}:{feature}", difference.property),
-                &difference.work_id,
+            by_feature.record(feature.clone(), difference.work_id.clone());
+            by_property_and_feature.record(
+                format!("{}:{feature}", difference.property),
+                difference.work_id.clone(),
             );
         }
     }
@@ -154,6 +155,37 @@ pub fn build_triage_report(
             })
             .collect(),
     });
+    let coverage_mismatches = aat.and_then(|summary| {
+        let mut by_reason = FrequencyTable::new(20);
+        let mut count = 0usize;
+        for difference in summary
+            .structural_differences
+            .iter()
+            .chain(summary.coverage_differences.iter())
+        {
+            if let Some(coverage) = &difference.coverage_mismatch {
+                count += 1;
+                let reason = match (coverage.a_had_fallback, coverage.b_had_fallback) {
+                    (true, false) => coverage
+                        .a_fallback_reason
+                        .clone()
+                        .unwrap_or_else(|| "unknown".to_owned()),
+                    (false, true) => coverage
+                        .b_fallback_reason
+                        .clone()
+                        .unwrap_or_else(|| "unknown".to_owned()),
+                    (true, true) => format!(
+                        "a={}, b={}",
+                        coverage.a_fallback_reason.as_deref().unwrap_or("unknown"),
+                        coverage.b_fallback_reason.as_deref().unwrap_or("unknown"),
+                    ),
+                    (false, false) => "unknown".to_owned(),
+                };
+                by_reason.record(reason, difference.work_id.clone());
+            }
+        }
+        (count > 0).then_some(CoverageMismatchTriage { count, by_reason })
+    });
 
     TriageReport {
         adapters: AdapterPair {
@@ -173,6 +205,7 @@ pub fn build_triage_report(
         semantic_summary,
         fallbacks,
         source_supplements,
+        coverage_mismatches,
         recommended_next_targets: recommended_next_targets(aat, metrics),
     }
 }
@@ -198,17 +231,6 @@ fn features_by_work(index: &Value) -> BTreeMap<String, BTreeSet<String>> {
     features
 }
 
-fn push_bucket(buckets: &mut BTreeMap<String, TriageBucket>, key: &str, work_id: &str) {
-    let bucket = buckets.entry(key.to_owned()).or_insert(TriageBucket {
-        count: 0,
-        work_ids: Vec::new(),
-    });
-    bucket.count += 1;
-    if bucket.work_ids.len() < 10 && !bucket.work_ids.iter().any(|id| id == work_id) {
-        bucket.work_ids.push(work_id.to_owned());
-    }
-}
-
 fn recommended_next_targets(
     aat: Option<&AatCompareSummary>,
     metrics: Option<&MetricsSummary>,
@@ -227,6 +249,16 @@ fn recommended_next_targets(
         {
             targets.push("replace_source_supplements_with_parser_nodes".to_owned());
         }
+    }
+    let has_coverage_issues = aat.is_some_and(|summary| {
+        summary.coverage_only_difference_count > 0
+            || summary
+                .structural_differences
+                .iter()
+                .any(|difference| difference.coverage_mismatch.is_some())
+    });
+    if has_coverage_issues {
+        targets.push("inspect_coverage_mismatches".to_owned());
     }
     if aat.is_some_and(|summary| !summary.semantic_summary_hash_difference_counts.is_empty()) {
         targets.push("triage_semantic_summary_differences".to_owned());

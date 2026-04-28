@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
-use crate::{Block, GaijiRef, Inline, ProjectionWarning, block_content};
+use crate::{Block, BreakKind, GaijiRef, Inline, ProjectionWarning, block_content};
 
 /// Parser-neutral semantic summary serialized into AAT `meta.semantic_summary`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -33,6 +33,7 @@ pub fn semantic_summary(blocks: &[Block], warnings: &[ProjectionWarning]) -> Sem
         syntax: BTreeMap::new(),
     };
     for block in blocks {
+        collect_block(block, &mut summary);
         for child in block_content(block) {
             collect_inline(child, None, &mut summary);
         }
@@ -53,6 +54,77 @@ pub fn semantic_summary(blocks: &[Block], warnings: &[ProjectionWarning]) -> Sem
         );
     }
     summary
+}
+
+fn collect_block(block: &Block, summary: &mut SemanticSummary) {
+    match block {
+        Block::Paragraph { .. } | Block::Heading { .. } => {}
+        Block::Jisage { level, content } => {
+            push_node(
+                summary,
+                "indentation.jisage_block",
+                SemanticSummaryNode {
+                    source_span: None,
+                    kind: "jisage_block".to_owned(),
+                    value: json!({
+                        "indent": level,
+                        "text": inline_visible_text(content),
+                    }),
+                    provenance: "parser".to_owned(),
+                },
+            );
+        }
+        Block::Warichu { content } => {
+            push_node(
+                summary,
+                "warichu.basic",
+                SemanticSummaryNode {
+                    source_span: None,
+                    kind: "warichu".to_owned(),
+                    value: json!({
+                        "text": inline_visible_text(content),
+                    }),
+                    provenance: "parser".to_owned(),
+                },
+            );
+        }
+        Block::Figure { source, content } => {
+            let key = if content.is_empty() {
+                "figure.image_inline"
+            } else {
+                "figure.image_caption"
+            };
+            push_node(
+                summary,
+                key,
+                SemanticSummaryNode {
+                    source_span: None,
+                    kind: "figure".to_owned(),
+                    value: json!({
+                        "source": source,
+                        "caption": inline_visible_text(content),
+                    }),
+                    provenance: "parser".to_owned(),
+                },
+            );
+        }
+        Block::Break { kind, .. } => {
+            let key = match kind {
+                BreakKind::Page => "break.page_line",
+                BreakKind::Line => "break.line_explicit",
+            };
+            push_node(
+                summary,
+                key,
+                SemanticSummaryNode {
+                    source_span: None,
+                    kind: "break".to_owned(),
+                    value: json!({"break_kind": kind.as_str()}),
+                    provenance: "parser".to_owned(),
+                },
+            );
+        }
+    }
 }
 
 fn collect_inline(node: &Inline, ruby_reading: Option<&str>, summary: &mut SemanticSummary) {

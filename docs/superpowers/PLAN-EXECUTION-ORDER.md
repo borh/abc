@@ -39,8 +39,10 @@ These are spec-only items that are *not* covered by an active plan; revisit
 when prioritized:
 
 1. `aozora-syntax-coverage-design.md` — `ir_projection::tei` not
-   implemented; `ab-ir` lacks structured block kinds for jisage / warichu /
-   figure / break; matrix rows still `status = "partial"`.
+   implemented; matrix rows still `status = "partial"`. `ab-ir` now has
+   structured `Jisage` / `Warichu` / `Figure` / `Break` block kinds (see
+   `crates/ab-ir/src/lib.rs`); the parser-side wiring that produces these
+   from raw source is the remaining gap.
 2. `parser-validation-harness-design.md` — `ab-render-diff` crate not
    built. After the AAT-parity script lands, the pressure to build it
    eases; revisit only if AAT diffs prove insufficient.

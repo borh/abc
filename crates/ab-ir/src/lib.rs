@@ -13,6 +13,46 @@ pub enum Block {
         style: &'static str,
         content: Vec<Inline>,
     },
+    /// Indentation block (`jisage_block`). `level` is the column-count indent
+    /// applied to `content`.
+    Jisage {
+        level: u8,
+        content: Vec<Inline>,
+    },
+    /// Split-line note (warichu / warigaki). The whole inline run is treated
+    /// as the upper column; the lower column is unused for the single-line
+    /// form but the structure leaves room for splitting later.
+    Warichu {
+        content: Vec<Inline>,
+    },
+    /// Inline figure: image source plus caption inlines.
+    Figure {
+        source: String,
+        content: Vec<Inline>,
+    },
+    /// Explicit page or line break. `content` is always empty; carried so
+    /// `block_content` keeps a uniform signature.
+    Break {
+        kind: BreakKind,
+        content: Vec<Inline>,
+    },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BreakKind {
+    /// `［＃改ページ］` / `［＃ページの左右中央］`.
+    Page,
+    /// `［＃改行］`.
+    Line,
+}
+
+impl BreakKind {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            BreakKind::Page => "page",
+            BreakKind::Line => "line",
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -237,6 +277,37 @@ impl Inline {
     }
 }
 
+impl Block {
+    pub fn jisage(level: u8, content: Vec<Inline>) -> Self {
+        Self::Jisage { level, content }
+    }
+
+    pub fn warichu(content: Vec<Inline>) -> Self {
+        Self::Warichu { content }
+    }
+
+    pub fn figure(source: impl Into<String>, content: Vec<Inline>) -> Self {
+        Self::Figure {
+            source: source.into(),
+            content,
+        }
+    }
+
+    pub fn page_break() -> Self {
+        Self::Break {
+            kind: BreakKind::Page,
+            content: Vec::new(),
+        }
+    }
+
+    pub fn line_break() -> Self {
+        Self::Break {
+            kind: BreakKind::Line,
+            content: Vec::new(),
+        }
+    }
+}
+
 pub fn blocks_to_aat_json(blocks: &[Block]) -> Vec<serde_json::Value> {
     blocks_to_aat_projection(blocks).blocks
 }
@@ -259,6 +330,40 @@ pub fn blocks_to_aat_projection(blocks: &[Block]) -> AatProjection {
                 "level": level,
                 "style": style,
                 "content": inline_to_aat_json(content, &mut warnings)
+            }),
+            Block::Jisage { level, content } => json!({
+                "kind": "jisage_block",
+                "x-indent": level,
+                "children": [{
+                    "kind": "paragraph",
+                    "content": inline_to_aat_json(content, &mut warnings)
+                }]
+            }),
+            Block::Warichu { content } => json!({
+                "kind": "paragraph",
+                "x-warichu": true,
+                "content": [{
+                    "kind": "warigaki",
+                    "upper": inline_to_aat_json(content, &mut warnings),
+                    "lower": []
+                }]
+            }),
+            Block::Figure { source, content } => json!({
+                "kind": "paragraph",
+                "x-figure": true,
+                "content": std::iter::once(json!({
+                    "kind": "Image",
+                    "source": source,
+                    "description": "",
+                    "resolved": null
+                }))
+                .chain(inline_to_aat_json(content, &mut warnings))
+                .collect::<Vec<_>>()
+            }),
+            Block::Break { kind, .. } => json!({
+                "kind": "paragraph",
+                "x-break-kind": kind.as_str(),
+                "content": []
             }),
         })
         .collect();
@@ -481,13 +586,23 @@ impl RubyPlacement {
 
 pub fn block_content(block: &Block) -> &[Inline] {
     match block {
-        Block::Paragraph { content } | Block::Heading { content, .. } => content,
+        Block::Paragraph { content }
+        | Block::Heading { content, .. }
+        | Block::Jisage { content, .. }
+        | Block::Warichu { content }
+        | Block::Figure { content, .. }
+        | Block::Break { content, .. } => content,
     }
 }
 
 pub fn block_content_mut(block: &mut Block) -> &mut Vec<Inline> {
     match block {
-        Block::Paragraph { content } | Block::Heading { content, .. } => content,
+        Block::Paragraph { content }
+        | Block::Heading { content, .. }
+        | Block::Jisage { content, .. }
+        | Block::Warichu { content }
+        | Block::Figure { content, .. }
+        | Block::Break { content, .. } => content,
     }
 }
 
@@ -761,6 +876,110 @@ mod tests {
             summary.syntax["projection.warning"][0].provenance,
             "projection"
         );
+    }
+
+    #[test]
+    fn jisage_block_projects_to_jisage_block_with_x_indent() {
+        let blocks = vec![Block::jisage(3, vec![Inline::text("インデント本文")])];
+
+        let json = blocks_to_aat_json(&blocks);
+
+        assert_eq!(json[0]["kind"], "jisage_block");
+        assert_eq!(json[0]["x-indent"], 3);
+        assert_eq!(json[0]["children"][0]["kind"], "paragraph");
+        assert_eq!(
+            json[0]["children"][0]["content"][0]["value"],
+            "インデント本文"
+        );
+    }
+
+    #[test]
+    fn warichu_projects_to_paragraph_with_warigaki() {
+        let blocks = vec![Block::warichu(vec![Inline::text("注釈")])];
+
+        let json = blocks_to_aat_json(&blocks);
+
+        assert_eq!(json[0]["kind"], "paragraph");
+        assert_eq!(json[0]["x-warichu"], true);
+        assert_eq!(json[0]["content"][0]["kind"], "warigaki");
+        assert_eq!(json[0]["content"][0]["upper"][0]["value"], "注釈");
+        assert!(
+            json[0]["content"][0]["lower"]
+                .as_array()
+                .unwrap()
+                .is_empty()
+        );
+    }
+
+    #[test]
+    fn figure_projects_with_image_then_caption() {
+        let blocks = vec![Block::figure(
+            "fig01.png",
+            vec![Inline::text("キャプション")],
+        )];
+
+        let json = blocks_to_aat_json(&blocks);
+
+        assert_eq!(json[0]["kind"], "paragraph");
+        assert_eq!(json[0]["x-figure"], true);
+        assert_eq!(json[0]["content"][0]["kind"], "Image");
+        assert_eq!(json[0]["content"][0]["source"], "fig01.png");
+        assert_eq!(json[0]["content"][1]["kind"], "text");
+        assert_eq!(json[0]["content"][1]["value"], "キャプション");
+    }
+
+    #[test]
+    fn breaks_project_with_x_break_kind() {
+        let blocks = vec![Block::page_break(), Block::line_break()];
+
+        let json = blocks_to_aat_json(&blocks);
+
+        assert_eq!(json[0]["x-break-kind"], "page");
+        assert_eq!(json[1]["x-break-kind"], "line");
+        assert!(json[0]["content"].as_array().unwrap().is_empty());
+    }
+
+    #[test]
+    fn semantic_summary_records_jisage_warichu_figure_and_break() {
+        let blocks = vec![
+            Block::jisage(2, vec![Inline::text("二字下げ")]),
+            Block::warichu(vec![Inline::text("割り注")]),
+            Block::figure("fig.png", vec![Inline::text("写真")]),
+            Block::page_break(),
+            Block::line_break(),
+        ];
+
+        let summary = semantic_summary(&blocks, &[]);
+
+        assert_eq!(summary.syntax["indentation.jisage_block"].len(), 1);
+        assert_eq!(
+            summary.syntax["indentation.jisage_block"][0].value["indent"],
+            2
+        );
+        assert_eq!(
+            summary.syntax["indentation.jisage_block"][0].value["text"],
+            "二字下げ"
+        );
+        assert_eq!(summary.syntax["warichu.basic"].len(), 1);
+        assert_eq!(summary.syntax["figure.image_caption"].len(), 1);
+        assert_eq!(
+            summary.syntax["figure.image_caption"][0].value["source"],
+            "fig.png"
+        );
+        assert_eq!(summary.syntax["break.page_line"].len(), 1);
+        assert_eq!(summary.syntax["break.line_explicit"].len(), 1);
+    }
+
+    #[test]
+    fn visible_projection_walks_through_jisage_warichu_and_figure() {
+        let blocks = vec![
+            Block::jisage(1, vec![Inline::text("AA")]),
+            Block::warichu(vec![Inline::text("BB")]),
+            Block::figure("f.png", vec![Inline::text("CC")]),
+            Block::page_break(),
+        ];
+
+        assert_eq!(visible_projection(&blocks).visible_text, "AABBCC");
     }
 
     #[test]

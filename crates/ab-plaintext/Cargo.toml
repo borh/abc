@@ -1,0 +1,10 @@
+[package]
+name = "ab-plaintext"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+ab-source-syntax.workspace = true
+encoding_rs.workspace = true
+serde.workspace = true

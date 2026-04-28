@@ -1,0 +1,13 @@
+[package]
+name = "ab-morph-analyzers"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+ab-morph-diff.workspace = true
+ab-plaintext.workspace = true
+serde.workspace = true
+sudachi.workspace = true
+vibrato-rkyv.workspace = true
+zstd.workspace = true

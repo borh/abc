@@ -223,6 +223,29 @@
           ];
         };
 
+        sudachiDictionaryFullZip = pkgs.fetchurl {
+          url = "http://sudachi.s3-website-ap-northeast-1.amazonaws.com/sudachidict/sudachi-dictionary-20260116-full.zip";
+          hash = "sha256-Kh7aWgJApC9F2vgAPZffVWXF0lK7LVjnGAe7vQgvfuo=";
+        };
+
+        sudachiDictionaryFull =
+          pkgs.runCommand "sudachi-dictionary-20260116-full"
+            {
+              nativeBuildInputs = [ pkgs.unzip ];
+            }
+            ''
+                runHook preInstall
+                mkdir -p "$out/share/sudachi"
+              unzip -j ${sudachiDictionaryFullZip} '*.dic' -d "$out/share/sudachi"
+              dic="$(find "$out/share/sudachi" -maxdepth 1 -type f -name '*.dic' | head -n 1)"
+              test -n "$dic"
+              if [ "$dic" != "$out/share/sudachi/system_full.dic" ]; then
+                mv "$dic" "$out/share/sudachi/system_full.dic"
+              fi
+              ln -s system_full.dic "$out/share/sudachi/system.dic"
+              runHook postInstall
+            '';
+
         nonRustReferenceMetadata = pkgs.runCommand "reference-parser-metadata-check" { } ''
           test -f ${reference-aozora-parser-js-src}/package.json
           test -f ${reference-aozora-epub3-src}/build.gradle
@@ -335,6 +358,7 @@
           reference-aozorabunko-extractor = referenceAozorabunkoExtractor;
           reference-aozora-epub3 = referenceAozoraEpub3;
           reference-parsers = referenceParsers;
+          sudachi-dictionary-full = sudachiDictionaryFull;
         };
 
         apps.default = flake-utils.lib.mkApp {
@@ -354,6 +378,7 @@
             packages = devTools;
 
             RUST_SRC_PATH = "${rustToolchain}/lib/rustlib/src/rust/library";
+            AB_SUDACHI_DICT = "${sudachiDictionaryFull}/share/sudachi/system.dic";
 
             shellHook = ''
               export CARGO_HOME="''${CARGO_HOME:-$PWD/.cargo}"

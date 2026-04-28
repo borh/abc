@@ -724,8 +724,9 @@ Add `coverage_only_difference_count` field **at the end** of `AatCompareSummary`
     pub coverage_only_difference_count: usize,
     pub coverage_metrics_missing: usize,
 }
+```
 
-- [ ] **Step 2: Add coverage-only condition and population in `compare_aat_dirs_with_limit`**
+- [ ] **Step 2: Add coverage-only condition and population**
 
 Add initialization after existing counters:
 ```rust
@@ -753,6 +754,7 @@ Inside the `for key in &common` loop, **before** the existing structural-differe
             })
         } else {
             if left.fallback_used.is_none() || right.fallback_used.is_none() {
+                // Counts work-pairs where at least one side lacked metrics.
                 coverage_metrics_missing += 1;
             }
             None
@@ -781,7 +783,7 @@ Then replace the existing structural-difference condition `if left.structure_has
             // Stored in a separate coverage_differences vector, not mixed into
             // structural_differences, so structural_difference_count == 0 is honest.
             coverage_only_difference_count += 1;
-            if difference_limit.is_some_and(|limit| coverage_differences.len() >= limit) {
+            if difference_limit.is_some_and(|limit| structural_differences.len() + coverage_differences.len() >= limit) {
                 continue;
             }
             coverage_differences.push(AatStructuralDifference {
@@ -891,9 +893,9 @@ pub struct ResultDifferenceTriage {
 
 Replace `BTreeMap::new()` + `push_bucket` with `FrequencyTable::new(10)`:
 ```rust
-    let mut by_property = FrequencyTable::new(10);
-    let mut by_feature = FrequencyTable::new(10);
-    let mut by_property_and_feature = FrequencyTable::new(10);
+    let mut by_property = FrequencyTable::default();
+    let mut by_feature = FrequencyTable::default();
+    let mut by_property_and_feature = FrequencyTable::default();
 
     for difference in &comparison.result_differences {
         by_property.record(difference.property.clone(), difference.work_id.clone());

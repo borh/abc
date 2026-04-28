@@ -232,13 +232,18 @@ missing metrics the coverage check is skipped. The new condition adds:
 
 **Metric impact:** Coverage-only differences do NOT increment
 `structural_difference_count`, `visible_text_difference_count`, or
-`same_visible_structural_difference_count`. Instead they increment a new
-counter `coverage_only_difference_count` on `AatCompareSummary`. This keeps
-existing counter semantics stable so downstream dashboards and regression
-budgets are unaffected.
+`same_visible_structural_difference_count`. Instead they are stored in a
+separate `coverage_differences` vector and counted by a new
+`coverage_only_difference_count` counter on `AatCompareSummary`. A
+`coverage_metrics_missing` counter tracks work-pairs where at least one
+side lacked `meta.metrics` (skipping coverage comparison). The
+`difference_limit` budget is shared across both `structural_differences`
+and `coverage_differences`.
 
 ```rust
 pub coverage_only_difference_count: usize,
+pub coverage_differences: Vec<AatStructuralDifference>,
+pub coverage_metrics_missing: usize,
 ```
 
 ### 3.4 `aat_diff.rs` — Migrate to `ab-diff-utils`
@@ -285,7 +290,8 @@ pub coverage_mismatches: Option<CoverageMismatchTriage>,
 ```
 
 Populated in `build_triage_report` from `aat_summary`'s
-`structural_differences` entries that have `coverage_mismatch: Some`.
+`structural_differences` and `coverage_differences` entries that
+have `coverage_mismatch: Some`.
 
 `recommended_next_targets` gains: `"inspect_coverage_mismatches"` when
 `coverage_mismatches` has entries.
@@ -298,6 +304,17 @@ same keys as before but a different value shape (was `{count, work_ids}`,
 now `{count, examples}`). This is a breaking change to the `--triage-output`
 JSON; consumers that parse these fields must update their field name from
 `work_ids` to `examples`.
+
+**Wire-format summary** (cumulative JSON-visible changes):
+
+| Location | Change |
+|---|---|
+| `AatCompareSummary` | New fields: `coverage_only_difference_count` (u64), `coverage_differences` (vec), `coverage_metrics_missing` (u64) |
+| `AatStructuralDifference` | New optional field: `coverage_mismatch` (object or null) |
+| `ResultDifferenceTriage.by_property` | Shape: `{key: {count, examples}}` (was `{key: {count, work_ids}}`) |
+| `ResultDifferenceTriage.by_feature` | Same shape change as above |
+| `ResultDifferenceTriage.by_property_and_feature` | Same shape change as above |
+| `TriageReport` | New optional field: `coverage_mismatches` (object) |
 
 ### 3.7 `aat_diff.rs` — Remaining Internal Changes
 
@@ -371,8 +388,16 @@ Existing integration tests continue to pass — `FrequencyTable` and
 
 AAT fixtures and test data that predate `meta.metrics` will have
 `fallback_used: None` after this change — coverage comparison is skipped, no
-false positives. The migration policy is: accept the default-to-None behavior.
-No regeneration of cached AAT is required.
+false positives. The `coverage_metrics_missing` counter on `AatCompareSummary`
+will reflect how many pre-metrics files are encountered, so operators can
+assess coverage data completeness.
+
+`ab-compare` itself has no parser cache. The `ab-coverage` cache at
+`target/parser-cache/<parser>/<adapter_sha>/<input>.json` contains AAT files
+that may predate `meta.metrics`. These will produce `fallback_used: None` on
+the first run after this change. The `coverage_metrics_missing` counter will
+reflect this; a fresh cache rebuild resets it. No cache purge is required —
+the counter documents the transition.
 
 ## 6. Non-Goals
 

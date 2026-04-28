@@ -6,11 +6,11 @@ can be compared with the Rust adapters under `ab-check` / `ab-compare`.
 
 ## Pipeline
 
-`run.sh` orchestrates a three-stage pipeline:
+`aozora2html-adapter` orchestrates a three-stage pipeline:
 
 1. **Encoding shim.** `lib/aozora2html.rb:157` opens its input with
    `'rb:Shift_JIS'` regardless of `--use-unicode`, and `Jstream` requires CRLF
-   line endings. `run.sh` therefore detects encoding from raw stdin (UTF-8 BOM
+   line endings. `aozora2html-adapter` therefore detects encoding from raw stdin (UTF-8 BOM
    / UTF-8 / Shift_JIS fallback), transcodes to CP932 with `iconv` if needed,
    and rewrites line endings to CRLF before invoking Ruby.
 2. **Ruby parser.** `aozora2html --error-utf8 --use-unicode <crlf_src> <xhtml>`
@@ -23,7 +23,7 @@ can be compared with the Rust adapters under `ab-check` / `ab-compare`.
 
 ## Contract
 
-`run.sh` ↔ `adapter.py` communicate through two temp files passed as
+`aozora2html-adapter` ↔ `adapter.py` communicate through two temp files passed as
 positional arguments:
 
 - `--source <path>` — original stdin bytes, used for hashing/encoding metadata.
@@ -54,7 +54,7 @@ expected to produce metrics deltas for this adapter.
 
 ```bash
 echo "テスト\n著者\n\n-------------------------------------------------------\n凡例\n-------------------------------------------------------\n本文\n" \
-  | bash adapters/aozora2html/run.sh --mode aat
+  | adapters/aozora2html/aozora2html-adapter --mode aat
 ```
 
 ## Parser-behavior caveats

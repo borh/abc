@@ -325,14 +325,7 @@ def map_block(
         m = re.match(r"jisage_(\d+)", cls)
         if m:
             indent = int(m.group(1))
-            children: list[dict[str, Any]] = []
-            for child in el:
-                children.extend(map_block(child, warnings, summary))
-            if not children and (el.text and el.text.strip()):
-                children = [{
-                    "kind": "paragraph",
-                    "content": walk_inline_children(el, warnings, summary),
-                }]
+            children = paragraphs_from_container(el, warnings, summary)
             return [{
                 "kind": "jisage_block",
                 "children": children,
@@ -440,7 +433,15 @@ def paragraphs_from_main(
     warnings: list[dict[str, Any]],
     summary: dict[str, list[dict[str, Any]]],
 ) -> list[dict[str, Any]]:
-    """Walk main_text and split into paragraphs separated by <br/>.
+    return paragraphs_from_container(main, warnings, summary)
+
+
+def paragraphs_from_container(
+    main: etree._Element,
+    warnings: list[dict[str, Any]],
+    summary: dict[str, list[dict[str, Any]]],
+) -> list[dict[str, Any]]:
+    """Walk a flow container and split into paragraphs separated by <br/>.
 
     Aozora2html emits inline-flow content with <br/> as line breaks; runs of
     inline content between block-level children become paragraphs.
@@ -506,6 +507,8 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--source")
     parser.add_argument("--xhtml")
     parser.add_argument("--version", action="store_true")
+    parser.add_argument("--parser-failed", action="store_true")
+    parser.add_argument("--parser-error-file")
     args = parser.parse_args(argv)
 
     if args.version:
@@ -523,7 +526,33 @@ def main(argv: list[str]) -> int:
     raw = src_path.read_bytes()
     text, encoding = detect_encoding(raw)
     src_hash = source_hash(raw)
-    xhtml_bytes = xhtml_path.read_bytes()
+
+    if args.parser_failed:
+        msg = ""
+        if args.parser_error_file and Path(args.parser_error_file).exists():
+            msg = Path(args.parser_error_file).read_text(
+                encoding="utf-8", errors="replace"
+            ).strip()[:500]
+        aat = {
+            "version": 1,
+            "work_id": "stdin",
+            "blocks": [],
+            "meta": {
+                "adapter": ADAPTER_NAME,
+                "adapter_version": ADAPTER_VERSION,
+                "source_encoding": encoding,
+                "source_hash": src_hash,
+                "parse_complete": False,
+                "warnings": [{
+                    "message": f"aozora2html parser aborted: {msg}" if msg else "aozora2html parser aborted",
+                }],
+            },
+        }
+        json.dump(aat, sys.stdout, ensure_ascii=False, separators=(",", ":"))
+        sys.stdout.write("\n")
+        return 0
+
+    xhtml_bytes = xhtml_path.read_bytes() if xhtml_path.exists() else b""
 
     if args.mode == "html":
         sys.stdout.buffer.write(xhtml_bytes)

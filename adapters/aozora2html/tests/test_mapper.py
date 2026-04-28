@@ -11,7 +11,7 @@ import jsonschema
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-RUN_SH = REPO_ROOT / "adapters" / "aozora2html" / "run.sh"
+RUN_SH = REPO_ROOT / "adapters" / "aozora2html" / "aozora2html-adapter"
 FIXTURE_DIR = Path(__file__).resolve().parent / "fixtures"
 SCHEMA = json.loads((REPO_ROOT / "data" / "aat-schema.json").read_text())
 

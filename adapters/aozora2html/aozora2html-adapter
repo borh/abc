@@ -39,13 +39,26 @@ fi
 
 sed -e 's/\r$//' -e 's/$/\r/' "$sjis_src" > "$crlf_src"
 
+parser_err="$(mktemp --suffix=.err)"
+trap 'rm -f "$stdin_raw" "$crlf_src" "$xhtml" "$sjis_src" "$parser_err"' EXIT
+
+# Ruby parser may abort partway through (CRLF errors, JIS-out-of-range, etc.).
+# Capture its exit and let adapter.py emit a parse_complete=false envelope so
+# ab-check sees a valid AAT instead of empty stdout.
+parser_rc=0
 nix shell nixpkgs#ruby --command bash -lc \
   "cd '$PARSER_DIR' && \
    RUBYLIB='$PARSER_DIR/lib:$PARSER_DIR/vendor/zip/lib' \
    ./bin/aozora2html --error-utf8 --use-unicode '$crlf_src' '$xhtml'" \
-  >&2
+  >"$parser_err" 2>&1 || parser_rc=$?
+cat "$parser_err" >&2
+
+parse_complete_arg=()
+if [[ "$parser_rc" -ne 0 ]]; then
+  parse_complete_arg=(--parser-failed --parser-error-file "$parser_err")
+fi
 
 # adapter.py reads --source for hash/encoding metadata. Pass the original
 # stdin bytes so source_hash matches what other adapters see.
 exec nix-shell -p "$PY_ENV" --run \
-  "python3 '$ADAPTER_PY' --source '$stdin_raw' --xhtml '$xhtml' --mode '$mode'"
+  "python3 '$ADAPTER_PY' --source '$stdin_raw' --xhtml '$xhtml' --mode '$mode' ${parse_complete_arg[*]}"

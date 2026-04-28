@@ -92,11 +92,11 @@ evidence = "adapters/aozora2html/adapter.py:152"
 notes = ""
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 14190
+total_occurrences = 10493869
 detector_id = "ruby_basic"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["001529_50685", "000118_1745", "000148_56923", "001562_56145", "000077_1323"]
 
 [[syntax]]
 id = "gaiji.marker"
@@ -149,11 +149,11 @@ evidence = "adapters/aozora2html/adapter.py:274"
 notes = "span gaiji preserved as text, marker lost"
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 6715
+total_occurrences = 189770
 detector_id = "gaiji_marker"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["JISTABLE", "000311_2012", "000129_2084", "001161_43624", "001161_48122"]
 
 [[syntax]]
 id = "gaiji_ruby.inline_base"
@@ -206,11 +206,11 @@ evidence = "adapters/aozora2html/adapter.py:215"
 notes = ""
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 14631
+total_occurrences = 6987389
 detector_id = "gaiji_ruby_inline_base"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["001529_50685", "000118_1745", "000148_56923", "001562_56145", "000077_1323"]
 
 [[syntax]]
 id = "heading.basic"
@@ -263,11 +263,11 @@ evidence = "adapters/aozora2html/adapter.py:314"
 notes = ""
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 3643
+total_occurrences = 76796
 detector_id = "heading_basic"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["001562_33224", "001097_43785", "000286_49178", "001558_52688", "000910_60326"]
 
 [[syntax]]
 id = "emphasis.basic"
@@ -320,11 +320,11 @@ evidence = "adapters/aozora2html/adapter.py:87"
 notes = ""
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 12439
+total_occurrences = 596183
 detector_id = "emphasis_basic"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["000281_3597", "001161_43624", "001670_55342", "000281_3598", "000281_3595"]
 
 [[syntax]]
 id = "indentation.basic"
@@ -377,11 +377,11 @@ evidence = "adapters/aozora2html/adapter.py:325"
 notes = ""
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 12910
+total_occurrences = 573254
 detector_id = "indentation_basic"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["001025_50909", "000294_1858", "001670_55342", "001562_33224", "001674_54899"]
 
 [[syntax]]
 id = "warichu.basic"
@@ -434,11 +434,11 @@ evidence = "adapters/aozora2html/adapter.py:350"
 notes = "warichu content as paragraph"
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 12372
+total_occurrences = 443578
 detector_id = "warichu_basic"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["001930_58400", "001094_42603", "001930_58401", "000125_1317", "001395_49905"]
 
 [[syntax]]
 id = "figure.image_caption"
@@ -491,11 +491,11 @@ evidence = "adapters/aozora2html/adapter.py:243"
 notes = "img alt preserved, caption structure lost"
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 5546
+total_occurrences = 111637
 detector_id = "figure_image_caption"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["000311_2012", "001161_43624", "001161_48122", "000129_2084", "001764_55990"]
 
 [[syntax]]
 id = "break.page_line"
@@ -548,11 +548,11 @@ evidence = "adapters/aozora2html/adapter.py:95"
 notes = "br as raw HTML"
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 826
+total_occurrences = 7804
 detector_id = "break_page_line"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["000042_1684", "001529_546", "001670_55342", "001693_55317", "000081_47027"]
 
 # =============================================================================
 # Priority 2 rows (added 2026-04-28; sourced from references/parsers/aozora2html
@@ -609,11 +609,11 @@ evidence = "adapters/aozora2html/adapter.py:152"
 notes = "under_ruby ignored"
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 14105
+total_occurrences = 6864502
 detector_id = "ruby_double"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["001529_50685", "000118_1745", "000148_56923", "001562_56145", "000077_1323"]
 
 [[syntax]]
 id = "ruby.placement_directional"
@@ -664,11 +664,11 @@ evidence = "adapters/aozora2html/adapter.py:161"
 notes = "left/right placement mapped"
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 14106
+total_occurrences = 6864899
 detector_id = "ruby_placement_directional"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["001529_50685", "000118_1745", "000148_56923", "001562_56145", "000077_1323"]
 
 [[syntax]]
 id = "ruby.nested_forbidden"
@@ -722,7 +722,7 @@ notes = ""
 works_with_feature = 0
 total_occurrences = 0
 detector_id = "ruby_nested_forbidden"
-coverage_basis = "not_run"
+coverage_basis = "full_corpus"
 sample_works = []
 
 [[syntax]]
@@ -774,11 +774,11 @@ evidence = "adapters/aozora2html/adapter.py:1"
 notes = "chuuki table used, marker emitted separately"
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 14105
+total_occurrences = 6864514
 detector_id = "annotation_chuuki"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["001529_50685", "000118_1745", "000148_56923", "001562_56145", "000077_1323"]
 
 [[syntax]]
 id = "annotation.bouki"
@@ -829,11 +829,11 @@ evidence = "adapters/aozora2html/adapter.py:1"
 notes = "bouki markers not mapped in adapter"
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 14106
+total_occurrences = 6864629
 detector_id = "annotation_bouki"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["001529_50685", "000118_1745", "000148_56923", "001562_56145", "000077_1323"]
 
 [[syntax]]
 id = "gaiji.unicode_codepoint"
@@ -884,11 +884,11 @@ evidence = "adapters/aozora2html/adapter.py:280"
 notes = "span gaiji with resolved text"
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 5517
+total_occurrences = 113584
 detector_id = "gaiji_unicode_codepoint"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["000129_2084", "000311_2012", "001161_43624", "001161_48122", "001562_52417"]
 
 [[syntax]]
 id = "gaiji.jis_code"
@@ -939,11 +939,11 @@ evidence = "adapters/aozora2html/adapter.py:243"
 notes = "img fallback preserves alt, not code"
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 6071
+total_occurrences = 197461
 detector_id = "gaiji_jis_code"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["000129_2084", "000311_2012", "001161_43624", "001161_48122", "001562_52417"]
 
 [[syntax]]
 id = "gaiji.dakuten_katakana"
@@ -994,11 +994,11 @@ evidence = "adapters/aozora2html/adapter.py:243"
 notes = "img gaiji rendered, dakuten marker lost"
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 5513
+total_occurrences = 109860
 detector_id = "gaiji_dakuten_katakana"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["000311_2012", "001161_43624", "001161_48122", "000129_2084", "001562_52417"]
 
 [[syntax]]
 id = "gaiji.un_embed"
@@ -1049,11 +1049,11 @@ evidence = "adapters/aozora2html/adapter.py:1"
 notes = "un-embed marker not mapped"
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 5515
+total_occurrences = 109961
 detector_id = "gaiji_un_embed"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["000311_2012", "001161_43624", "001161_48122", "000129_2084", "001562_52417"]
 
 [[syntax]]
 id = "iteration.kunoji"
@@ -1104,11 +1104,11 @@ evidence = "adapters/aozora2html/adapter.py:1"
 notes = "iteration marker not in adapter"
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 7443
+total_occurrences = 190848
 detector_id = "iteration_kunoji"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["001529_50685", "000129_2084", "000118_1745", "000311_2012", "001161_43624"]
 
 [[syntax]]
 id = "accent.diacritic"
@@ -1159,11 +1159,11 @@ evidence = "adapters/aozora2html/adapter.py:243"
 notes = "accent as img, name in alt"
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 5513
+total_occurrences = 109860
 detector_id = "accent_diacritic"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["000311_2012", "001161_43624", "001161_48122", "000129_2084", "001562_52417"]
 
 [[syntax]]
 id = "kunten.kaeriten"
@@ -1214,11 +1214,11 @@ evidence = "adapters/aozora2html/adapter.py:118"
 notes = "sub.kaeriten unmapped"
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 12354
+total_occurrences = 440209
 detector_id = "kunten_kaeriten"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["001154_43848", "000281_1711", "001869_57556", "000281_3599", "000137_733"]
 
 [[syntax]]
 id = "kunten.okurigana"
@@ -1269,11 +1269,11 @@ evidence = "adapters/aozora2html/adapter.py:118"
 notes = "sup.okurigana unmapped"
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 14105
+total_occurrences = 6864502
 detector_id = "kunten_okurigana"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["001529_50685", "000118_1745", "000148_56923", "001562_56145", "000077_1323"]
 
 [[syntax]]
 id = "heading.inline_form"
@@ -1324,11 +1324,11 @@ evidence = "adapters/aozora2html/adapter.py:314"
 notes = ""
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 1212
+total_occurrences = 8505
 detector_id = "heading_inline_form"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["001670_55342", "001524_51918", "001524_51919", "001524_51920", "001524_51921"]
 
 [[syntax]]
 id = "heading.dogyo"
@@ -1379,11 +1379,11 @@ evidence = "adapters/aozora2html/adapter.py:335"
 notes = "div.o-midashi/naka-midashi/ko-midashi"
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 1339
+total_occurrences = 20102
 detector_id = "heading_dogyo"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["001402_49940", "001566_58764", "001341_51302", "001341_55302", "001341_54938"]
 
 [[syntax]]
 id = "heading.mado"
@@ -1434,11 +1434,11 @@ evidence = "adapters/aozora2html/adapter.py:335"
 notes = "div mado class mapping"
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 1207
+total_occurrences = 10165
 detector_id = "heading_mado"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["001404_49966", "000296_1864", "001520_54957", "001402_49946", "000255_47342"]
 
 [[syntax]]
 id = "decoration.boten"
@@ -1489,11 +1489,11 @@ evidence = "adapters/aozora2html/adapter.py:87"
 notes = "em class mapped to style"
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 12354
+total_occurrences = 440251
 detector_id = "decoration_boten"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["001161_43624", "000305_43619", "000048_48803", "000933_47550", "000048_45476"]
 
 [[syntax]]
 id = "decoration.bousen"
@@ -1544,11 +1544,11 @@ evidence = "adapters/aozora2html/adapter.py:87"
 notes = "em underline mapped"
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 12357
+total_occurrences = 458031
 detector_id = "decoration_bousen"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["000019_4376", "000933_47023", "001191_55276", "000933_47202", "000140_50131"]
 
 [[syntax]]
 id = "decoration.bold_italic"
@@ -1599,11 +1599,11 @@ evidence = "adapters/aozora2html/adapter.py:87"
 notes = "em futoji/shatai"
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 12354
+total_occurrences = 440426
 detector_id = "decoration_bold_italic"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["001784_56525", "000748_46576", "000035_52380", "000072_54444", "000113_4327"]
 
 [[syntax]]
 id = "decoration.font_size"
@@ -1654,11 +1654,11 @@ evidence = "adapters/aozora2html/adapter.py:87"
 notes = "em dai/sho classes"
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 12354
+total_occurrences = 440209
 detector_id = "decoration_font_size"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["001154_43848", "000281_1711", "001869_57556", "000281_3599", "000137_733"]
 
 [[syntax]]
 id = "decoration.keigakomi"
@@ -1709,11 +1709,11 @@ evidence = "adapters/aozora2html/adapter.py:87"
 notes = "keigakomi as em, structure lost"
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 12354
+total_occurrences = 440409
 detector_id = "decoration_keigakomi"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["000160_45621", "001095_42626", "001779_58486", "001095_43163", "001779_57517"]
 
 [[syntax]]
 id = "decoration.direction_override"
@@ -1764,11 +1764,11 @@ evidence = "adapters/aozora2html/adapter.py:118"
 notes = "direction override not mapped"
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 12354
+total_occurrences = 440274
 detector_id = "decoration_direction_override"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["001242_46444", "000866_3039", "001094_42603", "001467_50733", "000096_935"]
 
 [[syntax]]
 id = "indentation.jisage_block"
@@ -1819,11 +1819,11 @@ evidence = "adapters/aozora2html/adapter.py:325"
 notes = "div.jisage_N mapped"
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 12832
+total_occurrences = 484663
 detector_id = "indentation_jisage_block"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["000294_1858", "001310_51839", "001025_50909", "001310_51838", "001310_51837"]
 
 [[syntax]]
 id = "indentation.jisage_oneline"
@@ -1874,11 +1874,11 @@ evidence = "adapters/aozora2html/adapter.py:325"
 notes = "span jisage inline"
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 12354
+total_occurrences = 440211
 detector_id = "indentation_jisage_oneline"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["000284_2227", "001154_43848", "000281_1711", "001869_57556", "000281_3599"]
 
 [[syntax]]
 id = "indentation.chitsuki"
@@ -1929,11 +1929,11 @@ evidence = "adapters/aozora2html/adapter.py:1"
 notes = "chitsuki alignment preserved in style"
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 12363
+total_occurrences = 448140
 detector_id = "indentation_chitsuki"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["001025_50909", "000740_49078", "000150_46615", "000150_46616", "000150_46617"]
 
 [[syntax]]
 id = "indentation.jizume"
@@ -1984,11 +1984,11 @@ evidence = "adapters/aozora2html/adapter.py:1"
 notes = "jizume letter-spacing not mapped"
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 12354
+total_occurrences = 440209
 detector_id = "indentation_jizume"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["001154_43848", "000281_1711", "001869_57556", "000281_3599", "000137_733"]
 
 [[syntax]]
 id = "indentation.burasage"
@@ -2039,11 +2039,11 @@ evidence = "adapters/aozora2html/adapter.py:325"
 notes = "burasage div not recognized"
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 12362
+total_occurrences = 445442
 detector_id = "indentation_burasage"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["001099_46996", "001097_43785", "001402_49940", "001848_59607", "001848_59608"]
 
 [[syntax]]
 id = "layout.yokogumi"
@@ -2094,11 +2094,11 @@ evidence = "adapters/aozora2html/adapter.py:1"
 notes = "div.yokogumi layout"
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 12359
+total_occurrences = 440391
 detector_id = "layout_yokogumi"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["000096_2110", "000034_55507", "000106_49617", "000288_1760", "000121_43274"]
 
 [[syntax]]
 id = "layout.tcy"
@@ -2149,11 +2149,11 @@ evidence = "adapters/aozora2html/adapter.py:1"
 notes = "tcy marker not in adapter"
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 12354
+total_occurrences = 440210
 detector_id = "layout_tcy"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["000150_46616", "001154_43848", "000281_1711", "001869_57556", "000281_3599"]
 
 [[syntax]]
 id = "warigaki.parenthetical"
@@ -2204,11 +2204,11 @@ evidence = "adapters/aozora2html/adapter.py:87"
 notes = "warigaki as em, marker lost"
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 12355
+total_occurrences = 440210
 detector_id = "warigaki_parenthetical"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["000034_519", "001154_43848", "000281_1711", "001869_57556", "000281_3599"]
 
 [[syntax]]
 id = "caption.inline"
@@ -2259,11 +2259,11 @@ evidence = "adapters/aozora2html/adapter.py:351"
 notes = "caption in paragraph, structure lost"
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 137
+total_occurrences = 1042
 detector_id = "caption_inline"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["001574_52529", "001054_18371", "001404_49966", "000320_43481", "001492_51195"]
 
 [[syntax]]
 id = "caption.block"
@@ -2314,11 +2314,11 @@ evidence = "adapters/aozora2html/adapter.py:357"
 notes = "caption block not distinguished"
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 29
+total_occurrences = 620
 detector_id = "caption_block"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["001574_52529", "001492_51195", "001548_52232", "001054_18371", "001266_46820"]
 
 [[syntax]]
 id = "figure.image_inline"
@@ -2369,11 +2369,11 @@ evidence = "adapters/aozora2html/adapter.py:243"
 notes = "img alt preserved, inline context lost"
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 5688
+total_occurrences = 115662
 detector_id = "figure_image_inline"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["000311_2012", "001161_43624", "001161_48122", "000129_2084", "001764_55990"]
 
 [[syntax]]
 id = "editor_note.unmapped"
@@ -2424,11 +2424,11 @@ evidence = "adapters/aozora2html/adapter.py:118"
 notes = "span.notes unmapped, command syntax lost"
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 13834
+total_occurrences = 682387
 detector_id = "editor_note_unmapped"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["001670_55342", "001025_50909", "001185_45210", "001848_59607", "001764_55990"]
 
 [[syntax]]
 id = "reference.frontref"
@@ -2479,11 +2479,11 @@ evidence = "adapters/aozora2html/adapter.py:113"
 notes = "anchor kept, link structure lost"
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 12472
+total_occurrences = 444165
 detector_id = "reference_frontref"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["001404_49966", "000076_45641", "000146_44913", "002240_61619", "000908_51396"]
 
 [[syntax]]
 id = "break.line_explicit"
@@ -2534,8 +2534,8 @@ evidence = "adapters/aozora2html/adapter.py:480"
 notes = "br flushes paragraph"
 
 [syntax.corpus_prevalence]
-works_with_feature = 0
-total_occurrences = 0
+works_with_feature = 47
+total_occurrences = 165
 detector_id = "break_line_explicit"
-coverage_basis = "not_run"
-sample_works = []
+coverage_basis = "full_corpus"
+sample_works = ["002240_61619", "002177_60663", "000866_3039", "001508_51404", "000799_60993"]

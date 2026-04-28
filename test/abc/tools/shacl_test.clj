@@ -132,3 +132,21 @@
                                (not (re-find #"hasErrorArtifact|artifactId" ctx)))))
                       errors)
                 "must report a violation that specifically targets validationStatus, not hasErrorArtifact or artifactId")))))))
+
+(defn- shape-iris [shapes]
+  (let [triples (iterator-seq (.find shapes))]
+    (into #{}
+          (comp (map #(.getSubject %))
+                (filter #(.isURI %))
+                (map #(.getURI %)))
+          triples)))
+
+(deftest person-record-shape-loaded-test
+  (testing "PersonRecordShape is loaded from manifest.shacl.ttl"
+    (is (contains? (shape-iris (shacl/load-shapes-graph))
+                   "https://w3id.org/abc/PersonRecordShape"))))
+
+(deftest metadata-record-person-shape-retired-test
+  (testing "MetadataRecordPersonShape is no longer in the shapes graph"
+    (is (not (contains? (shape-iris (shacl/load-shapes-graph))
+                        "https://w3id.org/abc/MetadataRecordPersonShape")))))

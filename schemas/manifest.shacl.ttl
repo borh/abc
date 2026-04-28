@@ -159,7 +159,7 @@ abc:MetadataRecordWorkShape
     sh:minCount 1
   ] .
 
-abc:MetadataRecordPersonShape
+abc:PersonRecordShape
   a sh:NodeShape ;
   sh:targetClass foaf:Person ;
   sh:property [

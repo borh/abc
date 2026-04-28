@@ -233,6 +233,7 @@ Rules:
 - no overlapping morphemes: touching spans such as `0..2` followed by `2..4`
   are valid, while `0..2` followed by `1..3` is invalid;
 - `byte_span` bounds are valid UTF-8 boundaries inside `source_text`;
+- empty morpheme spans are invalid;
 - `char_span` matches the byte span's character offsets;
 - `surface == source_text[byte_span]`;
 - full coverage is not required, because gaps must become coverage mismatch

@@ -1158,3 +1158,15 @@ Type consistency:
 
 - `MorphDiffError`, `Comparison`, `FeatureDiff.region_index`, and all region types match the design spec.
 - Aggregation types are intentionally absent from phase-1 implementation tasks.
+
+## Review Incorporations Before Execution
+
+The execution version of this plan incorporates the follow-up review:
+
+- `OutOfOrderSpan` is reachable because validation checks sortedness against the previous start before overlap against the previous end.
+- Empty morpheme spans are rejected as `InvalidByteSpan`.
+- `align_regions`, `compare_feature_diffs`, and `derive_stats` remain `pub(crate)` implementation details, not public re-exports.
+- `compare_pair` checks `text_id` and `source_text` equality before per-analysis validation.
+- Alignment tests include mid-text gaps and an `UnequalCoverage` branch.
+- End-to-end tests include identical segmentation with identical features.
+- Property tests cover ASCII and multibyte text and assert region/stat invariants.

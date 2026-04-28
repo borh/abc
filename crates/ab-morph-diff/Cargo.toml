@@ -1,0 +1,11 @@
+[package]
+name = "ab-morph-diff"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+serde.workspace = true
+
+[dev-dependencies]
+proptest = "1.5"

@@ -1,66 +1,60 @@
 {
-  "manifest_schema_id": "https://w3id.org/abc/schemas/manifest.schema.json",
-  "artifact_id": "sha256:cd738cd3154cf80503d48c3632027fb0053eb710add6051916b4f43ac98910ff",
+  "artifact_id": "sha256:bdda3542406de4ad4ff9ecc4c4d135b67678dd1861f943debd3e6275ad325f12",
   "artifact_kind": "tei",
-  "validation_status": "warning",
-  "manifest_identity_object": {
-    "manifest_schema_hash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+  "content": 
+  {
+    "byte_length": 640,
+    "content_hash": "sha256:0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c",
+    "media_type": "application\/tei+xml",
+    "path_hint": "tei.xml"
+  },
+  "invalidated_at": null,
+  "license": 
+  {
+    "source_url": null,
+    "spdx_id": "CC0-1.0"
+  },
+  "manifest_identity_object": 
+  {
+    "analysis_recipe_hash": null,
     "corpus_snapshot_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
-    "work_content_hash": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
-    "metadata_record_hash": "sha256:cbf2c3200966430af59f4974036961d57d0ea0300e1d8a1ff606ef8f632a5697",
+    "manifest_schema_hash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+    "metadata_record_hash": "sha256:4881e186901bb9cf4e0ee7471b11a5dab90ffe75850592eca3036d0dc3d6b79a",
+    "output_format_spec_hash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
     "parser_build_hash": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
     "parser_config_hash": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
     "parser_ir_schema_hash": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
     "tei_profile_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
     "tokenizer_build_hash": null,
     "tokenizer_dictionary_hash": null,
-    "analysis_recipe_hash": null,
-    "output_format_spec_hash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+    "work_content_hash": "sha256:7777777777777777777777777777777777777777777777777777777777777777"
   },
-  "content": {
-    "content_hash": "sha256:0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c",
-    "media_type": "application/tei+xml",
-    "byte_length": 640,
-    "path_hint": "tei.xml"
+  "manifest_schema_id": "https:\/\/w3id.org\/abc\/schemas\/manifest.schema.json",
+  "notes": "Design fixture only; not a real Aozora TEI artifact.",
+  "provenance": 
+  {
+    "activity_id": "https:\/\/w3id.org\/abc\/activity\/parse-and-render-example",
+    "agent": "abc-v0-design-bundle",
+    "generated_at": "2026-04-26T00:00:00Z",
+    "plan_hash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "used": ["sha256:4444444444444444444444444444444444444444444444444444444444444444","sha256:5555555555555555555555555555555555555555555555555555555555555555","sha256:6666666666666666666666666666666666666666666666666666666666666666","sha256:7777777777777777777777777777777777777777777777777777777777777777","sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"],
+    "was_derived_from": ["sha256:0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a"]
   },
+  "replacement_reason": null,
   "sidecars": [
     {
-      "role": "warnings",
       "hash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
-      "media_type": "application/jsonl",
-      "path_hint": "warnings.jsonl"
+      "media_type": "application\/jsonl",
+      "path_hint": "warnings.jsonl",
+      "role": "warnings"
     },
     {
-      "role": "validation-result",
       "hash": "sha256:abababababababababababababababababababababababababababababababab",
-      "media_type": "application/json",
-      "path_hint": "validation.json"
-    }
-  ],
-  "provenance": {
-    "generated_at": "2026-04-26T00:00:00Z",
-    "activity_id": "https://w3id.org/abc/activity/parse-and-render-example",
-    "agent": "abc-v0-design-bundle",
-    "plan_hash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
-    "used": [
-      "sha256:4444444444444444444444444444444444444444444444444444444444444444",
-      "sha256:5555555555555555555555555555555555555555555555555555555555555555",
-      "sha256:6666666666666666666666666666666666666666666666666666666666666666",
-      "sha256:7777777777777777777777777777777777777777777777777777777777777777",
-      "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-      "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
-    ],
-    "was_derived_from": [
-      "sha256:0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a"
-    ]
-  },
-  "license": {
-    "spdx_id": "CC0-1.0",
-    "source_url": null
-  },
+      "media_type": "application\/json",
+      "path_hint": "validation.json",
+      "role": "validation-result"
+    }],
   "signatures": [],
   "superseded_by": null,
-  "invalidated_at": null,
-  "replacement_reason": null,
-  "notes": "Design fixture only; not a real Aozora TEI artifact."
+  "validation_status": "warning"
 }

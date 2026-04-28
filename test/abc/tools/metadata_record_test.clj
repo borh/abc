@@ -6,6 +6,12 @@
 (def example-record
   (delay (files/read-json "examples/v0/example-work/metadata-record.json")))
 
+(def example-person
+  (delay (files/read-json "examples/v0/example-persons/000879.json")))
+
+(def example-persons-by-id
+  (delay {"000879" @example-person}))
+
 (deftest validate-example-record-test
   (testing "the example fixture validates against the schema"
     (is (= :ok (mr/validate! @example-record)))))
@@ -52,35 +58,31 @@
                     "sha256:0000000000000000000000000000000000000000000000000000000000000000")]
       (is (not= (mr/record-hash r1) (mr/record-hash r2))))))
 
-(deftest record-hash-sorts-persons-test
-  (testing "persons[] order does not change the hash"
+(deftest record-hash-sorts-contributors-test
+  (testing "contributors[] order does not change the hash"
     (let [r1 @example-record
-          persons (get r1 "persons")
-          r2 (assoc r1 "persons" (vec (reverse persons)))]
+          contributors (get r1 "contributors")
+          r2 (assoc r1 "contributors" (vec (reverse contributors)))]
       (is (= (mr/record-hash r1) (mr/record-hash r2))))))
 
 (deftest record->graph-key-triples-test
-  (testing "record->graph emits the expected core triples"
+  (testing "record->graph emits the expected work-side triples"
     (let [g (mr/record->graph @example-record)
           triples (iterator-seq (.find g))
           predicates (set (map #(.getURI (.getPredicate %)) triples))]
       (is (contains? predicates "http://purl.org/dc/terms/title"))
       (is (contains? predicates "http://purl.org/dc/terms/creator"))
-      (is (contains? predicates "http://purl.org/dc/terms/identifier"))
-      (is (contains? predicates "http://xmlns.com/foaf/0.1/familyName"))
-      (is (contains? predicates "http://xmlns.com/foaf/0.1/givenName"))
-      (is (contains? predicates "http://RDVocab.info/ElementsGr2/dateOfBirth"))
-      (is (contains? predicates "http://RDVocab.info/ElementsGr2/dateOfDeath")))))
+      (is (contains? predicates "http://purl.org/dc/terms/identifier")))))
 
-(deftest record->ttl-matches-fixture-test
-  (testing "record->ttl byte-for-byte matches the committed fixture"
+(deftest record+persons->ttl-matches-fixture-test
+  (testing "compose-graph + ttl matches the committed metadata-record.ttl"
     (let [expected (slurp "examples/v0/example-work/metadata-record.ttl")]
-      (is (= expected (mr/record->ttl @example-record))))))
+      (is (= expected (mr/record+persons->ttl @example-record @example-persons-by-id))))))
 
 (deftest record-graph-conforms-to-shacl-test
-  (testing "the example metadata-record's RDF graph conforms to MetadataRecordShape"
+  (testing "the example record's combined RDF graph conforms to all metadata shapes"
     (let [shapes ((requiring-resolve 'abc.tools.shacl/load-shapes-graph))
-          data (mr/record->graph @example-record)]
+          data (mr/record+persons->graph @example-record @example-persons-by-id)]
       (is (= :ok ((requiring-resolve 'abc.tools.shacl/validate!)
                   {:shapes-graph shapes
                    :data-graph data
@@ -89,12 +91,41 @@
 (deftest build-metadata-record-shape-test
   (testing "build-metadata-record produces a schema-compliant value"
     (let [work (get @example-record "work")
-          persons (get @example-record "persons")
+          contributors (get @example-record "contributors")
           built (mr/build-metadata-record
                  {:work work
-                  :persons persons})]
+                  :contributors contributors})]
       (is (= :ok (mr/validate! built)))
       (is (= (get @example-record "metadata_record_schema_id")
              (get built "metadata_record_schema_id")))
       (is (= (get @example-record "metadata_record_schema_hash")
              (get built "metadata_record_schema_hash"))))))
+
+(deftest record-hash-cascades-from-person-hash-test
+  (testing "editing a person body changes its hash, which changes any work record that references it"
+    (let [work {"work_id" "000999"
+                "title" "テスト"
+                "title_reading" nil
+                "ndc" "NDC 913"
+                "orthographic_style" "新字新仮名"
+                "copyright_expired" true
+                "aozora_available" "2026-01-01"
+                "aozora_modified" "2026-01-01"
+                "card_url" "https://www.aozora.gr.jp/cards/000999/card999.html"
+                "source_editions" [{"title" "x" "publisher" "y"}]}
+          person-v1 @example-person
+          person-v2 (assoc person-v1 "family_name_romaji" "Akutagawa-changed")
+          person-hash-v1 ((requiring-resolve 'abc.tools.person-record/record-hash) person-v1)
+          person-hash-v2 ((requiring-resolve 'abc.tools.person-record/record-hash) person-v2)
+          contrib-v1 [{"person_id" "000879"
+                       "person_record_hash" person-hash-v1
+                       "relation_to_work" "著者"}]
+          contrib-v2 [{"person_id" "000879"
+                       "person_record_hash" person-hash-v2
+                       "relation_to_work" "著者"}]
+          record-v1 (mr/build-metadata-record {:work work :contributors contrib-v1})
+          record-v2 (mr/build-metadata-record {:work work :contributors contrib-v2})]
+      (is (not= person-hash-v1 person-hash-v2)
+          "person hash must change when family_name_romaji changes")
+      (is (not= (mr/record-hash record-v1) (mr/record-hash record-v2))
+          "metadata_record_hash must change when contributors[i].person_record_hash changes"))))

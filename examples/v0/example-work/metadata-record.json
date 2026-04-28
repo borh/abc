@@ -1,23 +1,12 @@
 {
-  "metadata_record_schema_hash": "sha256:8eaa312cf4c06a9825d035458b1b77db6bf8c784eb9d9d343d6d6fb91781cd4c",
-  "metadata_record_schema_id": "https:\/\/w3id.org\/abc\/schemas\/metadata-record.schema.json",
-  "persons": [
+  "contributors": [
     {
-      "date_of_birth": "1892-03-01",
-      "date_of_death": "1927-07-24",
-      "external_links": [],
-      "family_name": "\u82a5\u5ddd",
-      "family_name_reading": "\u3042\u304f\u305f\u304c\u308f",
-      "family_name_romaji": "Akutagawa",
-      "family_name_sort": "\u3042\u304f\u305f\u304b\u308f",
-      "given_name": "\u7adc\u4e4b\u4ecb",
-      "given_name_reading": "\u308a\u3085\u3046\u306e\u3059\u3051",
-      "given_name_romaji": "Ryunosuke",
-      "given_name_sort": "\u308a\u3086\u3046\u306e\u3059\u3051",
-      "person_copyright_expired": true,
       "person_id": "000879",
+      "person_record_hash": "sha256:62c1a2dd026d12b9f59f869f7d49eedb356d82569fb0c416afb0b16fd2198206",
       "relation_to_work": "\u8457\u8005"
     }],
+  "metadata_record_schema_hash": "sha256:32aca3ff821f6ac11159f7b6a16190791f0535f230f933047e821513b785fad3",
+  "metadata_record_schema_id": "https:\/\/w3id.org\/abc\/schemas\/metadata-record.schema.json",
   "work": 
   {
     "aozora_available": "1997-10-29",

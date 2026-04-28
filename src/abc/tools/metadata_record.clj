@@ -36,12 +36,12 @@
 
 (defn- canonical-identity-form
   "Returns the JSON value used as input to record-hash. Drops
-  source_csv_provenance and sorts persons[] by person_id."
+  source_csv_provenance and sorts contributors[] by person_id."
   [record]
   (-> record
       (dissoc "source_csv_provenance")
-      (update "persons" (fn [persons]
-                          (vec (sort-by #(get % "person_id") persons))))))
+      (update "contributors"
+              (fn [cs] (vec (sort-by #(get % "person_id") cs))))))
 
 (defn record-hash
   "Compute sha256:<hex> over the canonical-identity form of `record`
@@ -51,15 +51,15 @@
    (hash/sha256-json-jcs (canonical-identity-form record))))
 
 (defn build-metadata-record
-  "Construct an immutable metadata record from {:work, :persons}.
-  Populates the self-describing schema fields. Persons are sorted by
-  person_id. Caller is expected to validate! the result before
+  "Construct an immutable metadata record from {:work, :contributors}.
+  Populates the self-describing schema fields. Contributors are sorted
+  by person_id. Caller is expected to validate! the result before
   hashing or shipping."
-  [{:keys [work persons]}]
+  [{:keys [work contributors]}]
   {"metadata_record_schema_id" schema-id
    "metadata_record_schema_hash" (manifest/schema-hash schema-path)
    "work" work
-   "persons" (vec (sort-by #(get % "person_id") persons))})
+   "contributors" (vec (sort-by #(get % "person_id") contributors))})
 
 ;; ---------------------------------------------------------------------------
 ;; RDF mapping
@@ -72,8 +72,8 @@
   [card-url]
   (str "<" (string/replace card-url "https://" "http://") ">"))
 
-(defn- person-iri [person-id]
-  (str "<http://www.aozora.gr.jp/index_pages/person" person-id ".html>"))
+(defn- person-iri-bracketed [person-id]
+  (str "<" (person-record/person-iri person-id) ">"))
 
 (defn- ->date-literal [iso-date]
   (NodeFactory/createLiteral ^String iso-date XSDDatatype/XSDdate))
@@ -95,14 +95,14 @@
     (cond-> {:rdf/value (get work "title")}
       reading (assoc :abc/reading reading))))
 
-(defn- contributor-blank [person]
-  {:rdf/about (person-iri (get person "person_id"))
-   :dcterms/role (get person "relation_to_work")})
+(defn- contributor-blank [contributor]
+  {:rdf/about (person-iri-bracketed (get contributor "person_id"))
+   :dcterms/role (get contributor "relation_to_work")})
 
-(defn- work-data [work persons]
+(defn- work-data [work contributors]
   (let [iri (card-iri (get work "card_url"))
-        authors (filter #(= "著者" (get % "relation_to_work")) persons)
-        contributors (remove #(= "著者" (get % "relation_to_work")) persons)]
+        authors (filter #(= "著者" (get % "relation_to_work")) contributors)
+        others (remove #(= "著者" (get % "relation_to_work")) contributors)]
     (cond-> {:rdf/about iri
              :rdf/type [:bibo/Document :schema/CreativeWork]
              :dcterms/identifier (->int-literal (get work "work_id"))
@@ -113,26 +113,47 @@
              :dcterms/available (->date-literal (get work "aozora_available"))
              :dcterms/modified (->date-literal (get work "aozora_modified"))}
       (seq authors)
-      (assoc :dcterms/creator (mapv #(person-iri (get % "person_id")) authors))
-      (seq contributors)
-      (assoc :dcterms/contributor (mapv contributor-blank contributors)))))
+      (assoc :dcterms/creator (mapv #(person-iri-bracketed (get % "person_id")) authors))
+      (seq others)
+      (assoc :dcterms/contributor (mapv contributor-blank others)))))
 
 (defn record->graph
-  "Build a Jena graph from a metadata record using the resolved
-  vocabulary mapping (see spec §RDF vocabulary alignment). Person
-  body triples come from abc.tools.person-record/record->graph; the
-  metadata-record namespace owns work + contributor edges only."
+  "Build a Jena graph from a metadata record. Emits only work-side
+  triples plus contributor edges; person bodies come from
+  abc.tools.person-record/record->graph and are composed by
+  record+persons->graph."
   [record]
   (rdf-prefixes/ensure!)
   (let [work (get record "work")
-        persons (get record "persons")
+        contributors (get record "contributors")
         graph (aa/graph :simple)]
-    (aa/add graph (work-data work persons))
-    (doseq [p persons]
-      (GraphUtil/addInto graph (person-record/record->graph p)))
+    (aa/add graph (work-data work contributors))
     graph))
 
+(defn record+persons->graph
+  "Compose a metadata record with its resolved person bodies into a
+  single graph: work + contributor edges + each person's full body
+  triples. `persons-by-id` maps person_id → person-record map."
+  [record persons-by-id]
+  (let [graph (record->graph record)]
+    (doseq [contributor (get record "contributors")
+            :let [pid (get contributor "person_id")
+                  body (get persons-by-id pid)]]
+      (when-not body
+        (throw (ex-info (str "no resolved person body for person_id " pid)
+                        {:person-id pid
+                         :persons-by-id (vec (keys persons-by-id))})))
+      (GraphUtil/addInto graph (person-record/record->graph body)))
+    graph))
+
+(defn record+persons->ttl
+  "Convenience: compose work and persons, render Turtle."
+  [record persons-by-id]
+  (manifest-to-rdf/graph->ttl (record+persons->graph record persons-by-id)))
+
 (defn record->ttl
-  "Convenience composition: (comp manifest-to-rdf/graph->ttl record->graph)."
+  "Transitional wrapper: returns work-only TTL. Callers that need the
+  composed work + persons graph should use record+persons->ttl. This
+  function is removed once the harness migrates (Task 13)."
   [record]
   (manifest-to-rdf/graph->ttl (record->graph record)))

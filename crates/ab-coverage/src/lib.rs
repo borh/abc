@@ -4,6 +4,7 @@
 //! `docs/superpowers/specs/2026-04-28-syntax-coverage-methodology.md`.
 
 pub mod matrix;
+pub mod merge;
 pub mod schema;
 
 pub use matrix::{

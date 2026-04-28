@@ -37,6 +37,7 @@ sha2 = "0.10"
 tempfile = "3"
 tl = "0.7"
 toml = "0.8"
+toml_edit = "0.22"
 unicode-normalization = "0.1"
 walkdir = "2.5"
 zip = { version = "2.4", default-features = false, features = ["deflate"] }

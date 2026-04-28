@@ -7,6 +7,29 @@ auditing process so a future contributor can reproduce or update it.
 Companion plan: `docs/superpowers/plans/2026-04-28-syntax-coverage-report.md`.
 JSON Schema: `data/aozora-syntax-coverage.schema.json`.
 
+## Taxonomy seeding
+
+The 45 rows in the matrix were seeded from three sources, in order:
+
+1. **`references/parsers/aozora2html/lib/aozora2html/tag/*.rb`** — 37
+   Ruby tag classes drove the operational enumeration. Each class maps
+   to one or more matrix rows (sometimes collapsed: `multiline_jisage`,
+   `jisage`, and `oneline_jisage` fold into one indentation row;
+   sometimes split: `gaiji.rb` covers both `unicode_codepoint` and
+   `jis_code` sub-cases, which are separate matrix rows because they
+   differ in lossiness).
+2. **`references/parsers/aozora2html/lib/aozora2html.rb` chuuki tables**
+   — `KAERITEN_TABLE`, `KUNTEN_KAESI`, `ACCENT_TABLE`, etc. supply
+   features that have no dedicated tag class. These produced the
+   `kunten.kaeriten`, `kunten.okurigana`, and `accent.diacritic` rows.
+3. **`references/aozorabunko/rules/{kijyunn,chuuki_ichiran}.html`** —
+   spec items neither parser handles. These rows record
+   `recognition = "unrecognised"` for all three parsers — itself a
+   deliberate finding (the spec is broader than any implementation).
+
+Cross-references between rows and seed sources are recorded inline in
+each row's `evidence` field.
+
 ## Performance calibration (pilot, 2026-04-28)
 
 Pilot scope: 100 ruby-bearing works (`scratch/coverage-pilot-ids.json`,
@@ -34,6 +57,21 @@ holds with substantial headroom, so the chosen strategy is:
 
 The warm-rerun budget of "well under a minute" is met (0.3 s on the pilot;
 expected full-corpus warm rerun under 30 s).
+
+### Full-corpus run (2026-04-28)
+
+| run        | works  | wall-clock | notes                                       |
+| ---        | ---    | ---        | ---                                         |
+| cold cache | 17 613 | 1 674 s    | 28 min; 281 unreadable zips skipped         |
+| warm cache | 17 613 | 9 s        | well under the 60 s budget                  |
+
+281 corpus zips are unreadable (`No CDFH found` / `EOCD missing`); two
+aozora2html files (`JISTABLE`, `jinmeiyou_kyoyou_list`) crash the
+adapter with exit 1. Both classes of failure are recorded in
+`scratch/ab-coverage-full/cold.log` and excluded from the merged
+matrix counts. Cross-check vs `ab-index` ruby-tagged works: matrix
+14 190 vs index 14 320 (0.9 % delta, under the 1 % bug threshold;
+explained by the unreadable-zip skip).
 
 ## Cache layout
 
@@ -122,6 +160,38 @@ Encoded in `crates/ab-coverage/src/schema.rs`, asserted by
 - `recognition = "unrecognised"` ⇒ only `aat_fidelity = "synthesised"`
   or `"not_applicable"`. There is nothing to drop or lose if the
   parser never recognised the syntax.
+
+## Cross-parser findings
+
+The single biggest split is between aozora-rs and the other two: a
+large class of features that aozora2html and aozora2 both `parsed` are
+`unrecognised` by aozora-rs because its grammar is built around the
+`は` / `に` backref forms, and the corpus uses the `の` form. Examples
+(works-with-feature in parentheses):
+
+- `kunten.okurigana` (14 105), `annotation.bouki` (14 106),
+  `annotation.chuuki` (14 105), `ruby.placement_directional`
+  (14 106): aozora2/aozora2html `parsed`; aozora-rs `unrecognised`.
+- `gaiji.*` (5 500–6 700 works each): aozora2 `parsed`, aozora2html
+  `normalised` (when `--use-unicode` resolves the marker), aozora-rs
+  `unrecognised` (no gaiji handler — adapter `synthesises` from raw
+  source events instead).
+- `decoration.keigakomi`, `decoration.direction_override`,
+  `indentation.jisage_oneline`, `indentation.jizume`,
+  `layout.yokogumi`, `layout.tcy`, `warigaki.parenthetical`,
+  `kunten.kaeriten` (12 354 works each): same pattern — aozora2/
+  aozora2html `parsed`; aozora-rs `unrecognised`.
+- `ruby.double` (14 105): aozora2 / aozora-rs `normalised` — both
+  flatten the two-line ruby into separate single-ruby decorations;
+  only aozora2html keeps the double structure.
+- `iteration.kunoji` (7 443) is `unrecognised` everywhere except
+  aozora2html: a corpus-wide gap in the Rust parsers for the kunoji
+  vertical iteration mark.
+
+For a downstream consumer choosing a parser by coverage breadth on
+this corpus, aozora2html is the broadest, aozora2 a close second, and
+aozora-rs a deliberate minimum-viable subset that leans on the
+adapter for synthesis.
 
 ## Deferred work
 

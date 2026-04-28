@@ -4,6 +4,7 @@ use std::{
 };
 
 use anyhow::Result;
+use ab_source_syntax::{self, SourceAnnotationsBoth, SourceEvent};
 use encoding_rs::SHIFT_JIS;
 use sha2::{Digest, Sha256};
 
@@ -64,6 +65,27 @@ pub fn select_body(decoded: &DecodedSource) -> BodySelection<'_> {
     }
 }
 
+#[derive(Debug)]
+pub struct SourceArtifacts<'a> {
+    pub events: Vec<SourceEvent<'a>>,
+    pub source_visible: String,
+    pub annotations_both: SourceAnnotationsBoth<'a>,
+}
+
+impl<'a> SourceArtifacts<'a> {
+    pub fn collect(body: &'a str) -> Self {
+        let events = ab_source_syntax::source_events(body);
+        let source_visible = ab_source_syntax::comparison_lossy_body_from_events(&events);
+        let annotations_both = ab_source_syntax::source_annotations_both_from_events(&events);
+
+        Self {
+            events,
+            source_visible,
+            annotations_both,
+        }
+    }
+}
+
 pub(crate) fn trim_colophon(body: &str) -> &str {
     let body_end = body
         .char_indices()
@@ -117,11 +139,64 @@ pub(crate) fn starts_with_separator(text: &str) -> bool {
 }
 
 pub(crate) fn source_visible_text(txt: &str) -> Cow<'_, str> {
-    ab_source_syntax::comparison_lossy_body(txt)
+    let projected = ab_source_syntax::comparison_lossy_body(txt);
+    match projected {
+        Cow::Borrowed(text) => strip_orphaned_command_tails(text)
+            .map(Cow::Owned)
+            .unwrap_or(Cow::Borrowed(text)),
+        Cow::Owned(text) => strip_orphaned_command_tails(&text)
+            .map(Cow::Owned)
+            .unwrap_or(Cow::Owned(text)),
+    }
 }
 
-pub(crate) fn remove_bottom_note_fragments(txt: &str) -> String {
-    ab_source_syntax::remove_bottom_note_fragments(txt)
+fn strip_orphaned_command_tails(text: &str) -> Option<String> {
+    if !text.contains('」')
+        && !text.contains('］')
+        && !text.contains(']')
+        && !text.contains('［')
+        && !text.contains('[')
+    {
+        return None;
+    }
+
+    let chars: Vec<char> = text.chars().collect();
+    let mut out = String::with_capacity(text.len());
+    let mut idx = 0;
+    let mut changed = false;
+
+    while idx < chars.len() {
+        if chars[idx] == '」' {
+            let mut next = idx;
+            while next < chars.len() && chars[next] == '」' {
+                next += 1;
+            }
+            if next < chars.len() && matches!(chars[next], '］' | ']') {
+                idx = next + 1;
+                changed = true;
+                continue;
+            }
+        }
+
+        if idx + 1 < chars.len() && chars[idx] == '［' && chars[idx + 1] == '＃' {
+            if !chars[idx + 2..].contains(&'］') && !chars[idx + 2..].contains(&']') {
+                changed = true;
+                break;
+            }
+        }
+
+        if idx + 1 < chars.len() && chars[idx] == '[' && chars[idx + 1] == '#' {
+            if !chars[idx + 2..].contains(&']') {
+                changed = true;
+                break;
+            }
+        }
+
+        out.push(chars[idx]);
+        idx += 1;
+    }
+
+    if changed { Some(out) } else { None }
 }
 
 fn hex_sha256(bytes: &[u8]) -> String {
@@ -206,5 +281,40 @@ mod tests {
             source_visible_text("ことを、※［＃「口＋愛」、第3水準1-15-23］《おくび》にも");
 
         assert_eq!(visible, "ことを、にも");
+    }
+
+    #[test]
+    fn source_visible_text_strips_orphaned_closing_command_marker_tail() {
+        let visible = source_visible_text("しい」］程仲よく暮しました。");
+
+        assert_eq!(visible, "しい程仲よく暮しました。");
+    }
+
+    #[test]
+    fn source_visible_text_strips_repeated_orphaned_closing_command_marker_tail() {
+        let visible = source_visible_text("用」」］のものだから世に");
+
+        assert_eq!(visible, "用のものだから世に");
+    }
+
+    #[test]
+    fn source_visible_text_strips_orphaned_command_opening_tail() {
+        let visible = source_visible_text("用［＃「入");
+
+        assert_eq!(visible, "用");
+    }
+
+    #[test]
+    fn source_visible_text_strips_orphaned_ascii_command_opening_tail() {
+        let visible = source_visible_text("用[#入");
+
+        assert_eq!(visible, "用");
+    }
+
+    #[test]
+    fn source_visible_text_handles_ascii_close_bracket_in_same_pattern() {
+        let visible = source_visible_text("あ」]の");
+
+        assert_eq!(visible, "あの");
     }
 }

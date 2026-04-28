@@ -7,13 +7,12 @@ use winnow::Parser;
 use crate::{
     metrics::FallbackDecision,
     parser::ParsedSource,
-    source::{remove_bottom_note_fragments, source_visible_text},
+    source::source_visible_text,
 };
 
 #[derive(Debug, Clone)]
 pub struct InitialAatBuildResult {
     pub blocks: Vec<Block>,
-    pub projected: ProjectedText,
     pub timings: AatBuildTimings,
 }
 
@@ -29,42 +28,188 @@ pub struct AatBuildTimings {
     pub build: std::time::Duration,
 }
 
+#[cfg(test)]
 pub fn build_initial(parsed: &ParsedSource<'_>) -> InitialAatBuildResult {
-    let start = Instant::now();
+    let source_events = ab_source_syntax::source_events(parsed.body.validation_body);
+    build_initial_with_events(parsed, &source_events)
+}
+
+#[cfg(test)]
+pub fn build_initial_with_events<'a>(
+    parsed: &ParsedSource<'a>,
+    source_events: &[ab_source_syntax::SourceEvent<'a>],
+) -> InitialAatBuildResult {
     let body = parsed.body.validation_body;
-    let mut blocks = retokenized_to_aat_blocks(&parsed.retokenized);
-    append_source_annotation_supplements(&mut blocks, body);
+    let base = build_initial_without_source_annotations(parsed);
+    build_initial_with_existing_blocks(base, body, source_events)
+}
+
+#[cfg(test)]
+pub fn build_initial_with_existing_blocks<'a>(
+    base: InitialAatBuildResult,
+    body: &str,
+    source_events: &[ab_source_syntax::SourceEvent<'a>],
+) -> InitialAatBuildResult {
+    let annotations = ab_source_syntax::source_annotations_both_from_events(source_events);
+    build_initial_with_existing_blocks_with_annotations(base, body, source_events, &annotations)
+}
+
+pub fn build_initial_with_existing_blocks_with_annotations<'a>(
+    mut base: InitialAatBuildResult,
+    body: &str,
+    source_events: &[ab_source_syntax::SourceEvent<'a>],
+    annotations: &ab_source_syntax::SourceAnnotationsBoth<'a>,
+) -> InitialAatBuildResult {
+    let start = Instant::now();
+    let mut blocks = std::mem::take(&mut base.blocks);
+    append_source_annotation_supplements_with_events(&mut blocks, body, source_events, annotations);
     strip_cross_node_commands(&mut blocks);
-    let projected = ab_ir::visible_projection(&blocks);
     InitialAatBuildResult {
         blocks,
-        projected,
+        timings: AatBuildTimings {
+            build: base.timings.build + start.elapsed(),
+        },
+    }
+}
+
+pub fn build_initial_without_source_annotations<'a>(
+    parsed: &ParsedSource<'a>,
+) -> InitialAatBuildResult {
+    let start = Instant::now();
+    let mut blocks = retokenized_to_aat_blocks(&parsed.retokenized);
+    strip_cross_node_commands(&mut blocks);
+    InitialAatBuildResult {
+        blocks,
         timings: AatBuildTimings {
             build: start.elapsed(),
         },
     }
 }
 
-pub fn build_fallback(body: &str) -> (Vec<Block>, ProjectedText) {
-    let source_visible = source_visible_text(body).into_owned();
-    build_fallback_from_source_visible(body, source_visible)
+pub(crate) fn projected_visible_from_retokenized<'a>(
+    retokenized: &[Retokenized<'a>],
+) -> String {
+    let mut visible = String::new();
+    collect_projected_visible_text(retokenized, 0, None, &mut visible);
+    ab_source_syntax::comparison_lossy_body(&visible).into_owned()
 }
 
-pub fn build_fallback_from_source_visible(
-    body: &str,
-    source_visible: String,
+#[cfg(test)]
+pub fn build_fallback_from_events<'a>(
+    source_events: &[ab_source_syntax::SourceEvent<'a>],
+    source_visible: Option<String>,
 ) -> (Vec<Block>, ProjectedText) {
-    let blocks = source_visible_fallback_blocks(body, source_visible);
+    build_fallback_from_events_with_annotations(source_events, source_visible, None)
+}
+
+pub fn build_fallback_from_events_with_annotations<'a>(
+    source_events: &[ab_source_syntax::SourceEvent<'a>],
+    source_visible: Option<String>,
+    source_annotations_both: Option<&ab_source_syntax::SourceAnnotationsBoth<'a>>,
+) -> (Vec<Block>, ProjectedText) {
+    match source_visible {
+        Some(source_visible) => {
+            let blocks = if let Some(annotations) = source_annotations_both {
+                source_visible_fallback_blocks_with_annotations(source_visible, source_events, annotations)
+            } else {
+                source_visible_fallback_blocks_with_events(source_visible, source_events)
+            };
+            let projected = ab_ir::visible_projection(&blocks);
+            (blocks, projected)
+        }
+        None => {
+            let blocks = structured_source_fallback_blocks_with_events(source_events);
+            let projected = ab_ir::visible_projection(&blocks);
+            (blocks, projected)
+        }
+    }
+}
+
+pub fn build_fallback_without_annotations(body: &str) -> (Vec<Block>, ProjectedText) {
+    let blocks = vec![Block::Paragraph {
+        content: vec![Inline::text_with_provenance(
+            body,
+            Provenance::SourceFallback,
+        )],
+    }];
     let projected = ab_ir::visible_projection(&blocks);
     (blocks, projected)
 }
 
+fn collect_projected_visible_text<'a>(
+    tokens: &[Retokenized<'a>],
+    mut idx: usize,
+    matching_end: Option<&dyn Fn(&Deco<'a>) -> bool>,
+    visible: &mut String,
+) -> usize {
+    while idx < tokens.len() {
+        match &tokens[idx] {
+            Retokenized::Text(text) => visible.push_str(text),
+            Retokenized::Kunten(_) | Retokenized::Okurigana(_) => {}
+            Retokenized::Break(_) => visible.push('\n'),
+            Retokenized::Figure(_) => {}
+            Retokenized::DecoBegin(Deco::Ruby(_)) => {
+                idx = collect_projected_visible_text(
+                    tokens,
+                    idx + 1,
+                    Some(&|deco| matches!(deco, Deco::Ruby(_))),
+                    visible,
+                );
+                continue;
+            }
+            Retokenized::DecoBegin(deco) => {
+                idx = collect_projected_visible_text(
+                    tokens,
+                    idx + 1,
+                    Some(&|candidate| same_deco_kind(candidate, deco)),
+                    visible,
+                );
+                continue;
+            }
+            Retokenized::DecoEnd(deco) => {
+                if let Some(is_match) = matching_end && is_match(deco) {
+                    return idx + 1;
+                }
+            }
+        }
+        idx += 1;
+    }
+
+    idx
+}
+
+#[cfg(test)]
+pub fn build_fallback(body: &str) -> (Vec<Block>, ProjectedText) {
+    build_fallback_from_events(
+        &ab_source_syntax::source_events(body),
+        Some(source_visible_text(body).into_owned()),
+    )
+}
+
+#[cfg(test)]
+pub fn build_fallback_from_source_visible(
+    body: &str,
+    source_visible: String,
+) -> (Vec<Block>, ProjectedText) {
+    build_fallback_from_events(&ab_source_syntax::source_events(body), Some(source_visible))
+}
+
+#[cfg(test)]
 pub fn blocks_cover_validation_annotations(body: &str, blocks: &[Block]) -> bool {
-    let annotations = ab_source_syntax::source_annotations_for_validation(body);
+    let events = ab_source_syntax::source_events(body);
+    blocks_cover_validation_annotations_with_events(blocks, &events)
+}
+
+fn blocks_cover_validation_annotations_with_annotations(
+    annotations: &ab_source_syntax::SourceAnnotations<'_>,
+    blocks: &[Block],
+) -> bool {
     let mut readings = ruby_readings_in_blocks(blocks);
     for marker in &annotations.ruby_readings {
         let remaining = readings.get_mut(marker.value);
-        if let Some(remaining) = remaining && *remaining > 0 {
+        if let Some(remaining) = remaining
+            && *remaining > 0
+        {
             *remaining -= 1;
             continue;
         }
@@ -73,14 +218,22 @@ pub fn blocks_cover_validation_annotations(body: &str, blocks: &[Block]) -> bool
     gaiji_count_in_blocks(blocks) >= annotations.gaiji_descriptions.len()
 }
 
+#[cfg(test)]
+fn blocks_cover_validation_annotations_with_events<'a>(
+    blocks: &[Block],
+    source_events: &[ab_source_syntax::SourceEvent<'a>],
+) -> bool {
+    let annotations = ab_source_syntax::source_annotations_from_events(source_events, true);
+    blocks_cover_validation_annotations_with_annotations(&annotations, blocks)
+}
+
 fn retokenized_to_aat_blocks(tokens: &[Retokenized<'_>]) -> Vec<Block> {
     let mut blocks = Vec::new();
     let mut content = Vec::new();
     let mut idx = 0;
     while idx < tokens.len() {
         match &tokens[idx] {
-            Retokenized::Text(text) => push_text(&mut content, &source_visible_text(text)),
-            Retokenized::Odoriji(odoriji) => push_text(&mut content, odoriji_source_text(*odoriji)),
+            Retokenized::Text(text) => push_text(&mut content, text),
             Retokenized::Kunten(_) | Retokenized::Okurigana(_) => {}
             Retokenized::Break(Break::BreakLine) => flush_paragraph(&mut blocks, &mut content),
             Retokenized::Break(_) => flush_paragraph(&mut blocks, &mut content),
@@ -158,8 +311,7 @@ fn collect_decorated_content<'a>(
     let mut content = Vec::new();
     while idx < tokens.len() {
         match &tokens[idx] {
-            Retokenized::Text(text) => push_text(&mut content, &source_visible_text(text)),
-            Retokenized::Odoriji(odoriji) => push_text(&mut content, odoriji_source_text(*odoriji)),
+            Retokenized::Text(text) => push_text(&mut content, text),
             Retokenized::Kunten(_) | Retokenized::Okurigana(_) => {}
             Retokenized::Break(_) => push_text(&mut content, "\n"),
             Retokenized::Figure(figure) => content.push(Inline::gaiji(
@@ -288,14 +440,6 @@ fn stable_style_type(deco: &Deco<'_>) -> &'static str {
     }
 }
 
-fn odoriji_source_text(odoriji: aozora_rs_core::Odoriji) -> &'static str {
-    if odoriji.has_dakuten {
-        "／″＼"
-    } else {
-        "／＼"
-    }
-}
-
 fn push_text(content: &mut Vec<Inline>, value: &str) {
     if value.is_empty() {
         return;
@@ -307,168 +451,286 @@ fn push_text(content: &mut Vec<Inline>, value: &str) {
 }
 
 fn strip_cross_node_commands(blocks: &mut [Block]) {
-    let mut state = CommandStripState::None;
     for block in blocks {
+        let mut command_depth = 0usize;
+        let mut pending_split_marker = false;
         for child in ab_ir::block_content_mut(block) {
-            strip_commands_in_inline(child, &mut state);
+            strip_commands_in_inline(child, &mut command_depth, &mut pending_split_marker);
         }
     }
 }
 
-fn strip_commands_in_inline(value: &mut Inline, state: &mut CommandStripState) {
+fn strip_commands_in_inline(
+    value: &mut Inline,
+    command_depth: &mut usize,
+    pending_split_marker: &mut bool,
+) {
     match value {
-        Inline::Text { value, .. } => strip_string(value, state),
+        Inline::Text { value, .. } => {
+            strip_string(value, command_depth, pending_split_marker)
+        }
         Inline::Ruby { base, .. } => {
             for child in base {
-                strip_commands_in_inline(child, state);
+                strip_commands_in_inline(child, command_depth, pending_split_marker);
             }
         }
         Inline::Style { content, .. } => {
             for child in content {
-                strip_commands_in_inline(child, state);
+                strip_commands_in_inline(child, command_depth, pending_split_marker);
             }
         }
         Inline::GaijiRef(_) => {}
     }
 }
 
-fn strip_string(text: &mut String, state: &mut CommandStripState) {
-    if let Cow::Owned(stripped) = stripped_command_fragments(text, state) {
+fn strip_string(text: &mut String, command_depth: &mut usize, pending_split_marker: &mut bool) {
+    if *command_depth == 0 && !needs_command_strip(text) {
+        return;
+    }
+
+    let chars: Vec<char> = text.chars().collect();
+    let mut filtered = String::with_capacity(text.len());
+    let mut idx = 0usize;
+    let mut changed = false;
+
+    if *pending_split_marker && chars.len() >= 2 {
+        let starts_with_command = match (chars[0], chars[1]) {
+            ('［', '＃') | ('[', '#') => true,
+            _ => false,
+        };
+        if starts_with_command {
+            *command_depth = 1;
+            idx += 2;
+        }
+    }
+    *pending_split_marker = false;
+
+    while idx < chars.len() {
+        if *command_depth > 0 {
+            match chars[idx] {
+                '］' | ']' => {
+                    *command_depth -= 1;
+                }
+                '※' => {
+                    if idx + 2 < chars.len() && chars[idx + 1] == '[' && chars[idx + 2] == '#' {
+                        *command_depth += 1;
+                        idx += 2;
+                    }
+                    if idx + 2 < chars.len() && chars[idx + 1] == '［' && chars[idx + 2] == '＃' {
+                        *command_depth += 1;
+                        idx += 2;
+                    }
+                }
+                '［' if idx + 1 < chars.len() && chars[idx + 1] == '＃' => {
+                    *command_depth += 1;
+                    idx += 1;
+                }
+                '[' if idx + 1 < chars.len() && chars[idx + 1] == '#' => {
+                    *command_depth += 1;
+                    idx += 1;
+                }
+                _ => {}
+            }
+            changed = true;
+            idx += 1;
+            continue;
+        }
+
+        if chars[idx] == '※' {
+            if idx + 2 < chars.len() && chars[idx + 1] == '［' && chars[idx + 2] == '＃' {
+                *command_depth = 1;
+                idx += 3;
+                changed = true;
+                continue;
+            }
+            if idx + 2 < chars.len() && chars[idx + 1] == '[' && chars[idx + 2] == '#' {
+                *command_depth = 1;
+                idx += 3;
+                changed = true;
+                continue;
+            }
+            if idx + 1 == chars.len() {
+                *pending_split_marker = true;
+            }
+            changed = true;
+            idx += 1;
+            continue;
+        }
+        if idx + 1 < chars.len() && chars[idx] == '［' && chars[idx + 1] == '＃' {
+            *command_depth = 1;
+            idx += 2;
+            changed = true;
+            continue;
+        }
+        if idx + 1 < chars.len() && chars[idx] == '[' && chars[idx + 1] == '#' {
+            *command_depth = 1;
+            idx += 2;
+            changed = true;
+            continue;
+        }
+
+        if chars[idx] == '」' {
+            let mut close = idx + 1;
+            while close < chars.len() && chars[close] == '」' {
+                close += 1;
+            }
+            if close > idx + 1
+                && close < chars.len()
+                && matches!(chars[close], '］' | ']')
+            {
+                idx = close + 1;
+                changed = true;
+                continue;
+            }
+        }
+
+        filtered.push(chars[idx]);
+        idx += 1;
+    }
+
+    if !changed {
+        return;
+    }
+
+    if let Cow::Owned(stripped) = source_visible_text(&filtered) {
         *text = stripped;
+        return;
     }
-}
-
-fn stripped_command_fragments<'a>(text: &'a str, state: &mut CommandStripState) -> Cow<'a, str> {
-    if matches!(state, CommandStripState::None) && !needs_command_strip(text) {
-        return Cow::Borrowed(text);
-    }
-
-    Cow::Owned(remove_bottom_note_fragments(&strip_command_fragments(
-        text, state,
-    )))
+    *text = filtered;
 }
 
 fn needs_command_strip(text: &str) -> bool {
-    text.find(['［', '[', '」']).is_some()
+    text.find(['［', '[', '」', '※']).is_some()
 }
 
-#[derive(Clone, Copy)]
-enum CommandStripState {
-    None,
-    FullWidth,
-    Ascii,
-    AnyBracket,
-}
-
-fn strip_command_fragments(text: &str, state: &mut CommandStripState) -> String {
-    let mut output = String::new();
-    let mut rest = text;
-    while !rest.is_empty() {
-        match state {
-            CommandStripState::None => {
-                let fullwidth = rest.find("［＃");
-                let ascii = rest.find("[#");
-                let bottom_note = rest.find("」は底本では「");
-                let mama_note = rest.find("」はママ");
-                let next = [
-                    fullwidth.map(|offset| (offset, NoteStart::FullWidthCommand)),
-                    ascii.map(|offset| (offset, NoteStart::AsciiCommand)),
-                    bottom_note.map(|offset| (offset, NoteStart::BottomNote)),
-                    mama_note.map(|offset| (offset, NoteStart::MamaNote)),
-                ]
-                .into_iter()
-                .flatten()
-                .min_by_key(|(offset, _)| *offset);
-                let Some((start, note_start)) = next else {
-                    output.push_str(rest);
-                    break;
-                };
-                if !matches!(note_start, NoteStart::BottomNote) {
-                    output.push_str(&rest[..start]);
-                }
-                match note_start {
-                    NoteStart::FullWidthCommand => {
-                        rest = &rest[start + "［＃".len()..];
-                        *state = CommandStripState::FullWidth;
-                    }
-                    NoteStart::AsciiCommand => {
-                        rest = &rest[start + "[#".len()..];
-                        *state = CommandStripState::Ascii;
-                    }
-                    NoteStart::BottomNote => {
-                        rest = &rest[start + "」は底本では「".len()..];
-                        *state = CommandStripState::AnyBracket;
-                    }
-                    NoteStart::MamaNote => {
-                        rest = &rest[start + "」はママ".len()..];
-                        *state = CommandStripState::AnyBracket;
-                    }
-                };
-            }
-            CommandStripState::FullWidth => {
-                if let Some(end) = rest.find('］') {
-                    rest = &rest[end + '］'.len_utf8()..];
-                    *state = CommandStripState::None;
-                } else {
-                    break;
-                }
-            }
-            CommandStripState::Ascii => {
-                if let Some(end) = rest.find(']') {
-                    rest = &rest[end + 1..];
-                    *state = CommandStripState::None;
-                } else {
-                    break;
-                }
-            }
-            CommandStripState::AnyBracket => {
-                let fullwidth = rest.find('］');
-                let ascii = rest.find(']');
-                let end = match (fullwidth, ascii) {
-                    (Some(left), Some(right)) => Some((left.min(right), left <= right)),
-                    (Some(left), None) => Some((left, true)),
-                    (None, Some(right)) => Some((right, false)),
-                    (None, None) => None,
-                };
-                if let Some((end, is_fullwidth)) = end {
-                    rest = if is_fullwidth {
-                        &rest[end + '］'.len_utf8()..]
-                    } else {
-                        &rest[end + 1..]
-                    };
-                    *state = CommandStripState::None;
-                } else {
-                    break;
-                }
-            }
-        }
-    }
-    output
-}
-
-#[derive(Clone, Copy)]
-enum NoteStart {
-    FullWidthCommand,
-    AsciiCommand,
-    BottomNote,
-    MamaNote,
-}
-
+#[cfg(test)]
 fn append_source_annotation_supplements(blocks: &mut [Block], body: &str) {
+    let events = ab_source_syntax::source_events(body);
+    let annotations = ab_source_syntax::source_annotations_both_from_events(&events);
+    append_source_annotation_supplements_with_events(blocks, body, &events, &annotations)
+}
+
+fn append_source_annotation_supplements_with_events<'a>(
+    blocks: &mut [Block],
+    body: &str,
+    source_events: &[ab_source_syntax::SourceEvent<'a>],
+    annotations: &ab_source_syntax::SourceAnnotationsBoth<'a>,
+) {
     let mut existing_ruby_readings = ruby_readings_in_blocks(blocks);
-    let existing_gaiji_count = gaiji_count_in_blocks(blocks);
-    repair_or_supplement_source_ruby(blocks, body, &mut existing_ruby_readings);
+    let mut pending_gaiji_markers = counts_by_description(&annotations.full.gaiji_descriptions);
+    consume_existing_block_gaiji_counts(blocks, &mut pending_gaiji_markers);
+
     let Some(first_block) = blocks.first_mut() else {
         return;
     };
     let content = ab_ir::block_content_mut(first_block);
-    insert_gaiji_supplements(content, body, existing_gaiji_count);
+    let mut ruby_supplements = Vec::new();
+    let mut projected_prefix = String::new();
+    let mut last_gaiji_end = None;
+    let mut search_start = 0;
+
+    for event in source_events {
+        match &event.kind {
+            ab_source_syntax::SourceEventKind::Gaiji { description } => {
+                let mut should_insert = false;
+                if let Some(count) = pending_gaiji_markers.get_mut(description)
+                    && *count > 0
+                {
+                    *count -= 1;
+                    should_insert = true;
+                }
+                if should_insert {
+                    if let Some(count) = pending_gaiji_markers.get(description)
+                        && *count == 0
+                    {
+                        pending_gaiji_markers.remove(description);
+                    }
+                    let gaiji = gaiji_inline(description, Provenance::ParserNormalized);
+                    insert_inline_at_visible_len(content, projected_prefix.len(), gaiji);
+                }
+                last_gaiji_end = Some(event.span.end);
+            }
+            ab_source_syntax::SourceEventKind::Ruby {
+                base_source,
+                reading,
+            } => {
+                let base = source_event_ruby_base(body, event, *base_source);
+                let is_orphan = last_gaiji_end == Some(event.span.start);
+                let should_consume = existing_ruby_readings
+                    .iter_mut()
+                    .find(|(key, _)| *key == reading)
+                    .is_some_and(|(_, count)| {
+                        if *count > 0 {
+                            *count -= 1;
+                            true
+                        } else {
+                            false
+                        }
+                    });
+                if !should_consume && !is_orphan {
+                    let repaired = base.as_ref().and_then(|base| {
+                        wrap_next_text_match_in_content(content, base, reading, search_start)
+                    });
+                    if let Some(end) = repaired {
+                        search_start = end;
+                    } else {
+                        ruby_supplements.push(reading.to_owned());
+                    }
+                }
+
+                if let Some(base_source) = base_source {
+                    projected_prefix.push_str(source_visible_text(base_source).as_ref());
+                }
+                last_gaiji_end = None;
+            }
+            ab_source_syntax::SourceEventKind::Text(value) => {
+                projected_prefix.push_str(value);
+                last_gaiji_end = None;
+            }
+            ab_source_syntax::SourceEventKind::EditorialNote {
+                kind: ab_source_syntax::EditorialNoteKind::BottomTextCorrection,
+                ..
+            } => {
+                trim_note_prefix_in_projected_prefix(&mut projected_prefix);
+                last_gaiji_end = None;
+            }
+            ab_source_syntax::SourceEventKind::EditorialNote { .. }
+            | ab_source_syntax::SourceEventKind::Command { .. }
+            | ab_source_syntax::SourceEventKind::SegmentBoundary { .. } => {
+                last_gaiji_end = None;
+            }
+        }
+    }
+
+    append_ruby_supplements(content, ruby_supplements, &mut HashMap::new());
+    for marker in &annotations.full.gaiji_descriptions {
+        let mut should_append = false;
+        if let Some(count) = pending_gaiji_markers.get_mut(marker.value) {
+            if *count > 0 {
+                *count -= 1;
+                should_append = true;
+            }
+            if *count == 0 {
+                pending_gaiji_markers.remove(marker.value);
+            }
+        }
+        if should_append {
+            content.push(Inline::gaiji_with_provenance(
+                marker.value,
+                "",
+                None,
+                Provenance::SourceSupplement,
+            ));
+        }
+    }
 }
 
-fn append_legacy_source_annotation_supplements(blocks: &mut [Block], body: &str) {
+fn append_legacy_source_annotation_supplements(
+    blocks: &mut [Block],
+    markers: &ab_source_syntax::SourceAnnotations<'_>,
+) {
     let mut existing_ruby_readings = ruby_readings_in_blocks(blocks);
     let existing_gaiji_count = gaiji_count_in_blocks(blocks);
-    let markers = ab_source_syntax::source_annotations(body);
     let Some(first_block) = blocks.first_mut() else {
         return;
     };
@@ -485,31 +747,39 @@ fn append_legacy_source_annotation_supplements(blocks: &mut [Block], body: &str)
     );
 }
 
-fn source_visible_fallback_blocks(body: &str, source_visible: String) -> Vec<Block> {
-    let blocks = structured_source_fallback_blocks(body);
+fn source_visible_fallback_blocks_with_events<'a>(
+    source_visible: String,
+    source_events: &[ab_source_syntax::SourceEvent<'a>],
+) -> Vec<Block> {
+    let markers = ab_source_syntax::source_annotations_both_from_events(source_events);
+    source_visible_fallback_blocks_with_annotations(source_visible, source_events, &markers)
+}
+
+fn source_visible_fallback_blocks_with_annotations<'a>(
+    source_visible: String,
+    source_events: &[ab_source_syntax::SourceEvent<'a>],
+    markers: &ab_source_syntax::SourceAnnotationsBoth<'a>,
+) -> Vec<Block> {
+    let blocks = structured_source_fallback_blocks_with_events(source_events);
     if ab_ir::visible_projection(&blocks).visible_text == source_visible
-        && blocks_cover_validation_annotations(body, &blocks)
+        && blocks_cover_validation_annotations_with_annotations(&markers.validation, &blocks)
     {
         return blocks;
     }
-    legacy_source_visible_fallback_blocks(body, source_visible)
+    legacy_source_visible_fallback_blocks(source_visible, &markers.full)
 }
 
-fn legacy_source_visible_fallback_blocks(body: &str, source_visible: String) -> Vec<Block> {
-    let mut blocks = vec![Block::Paragraph {
-        content: vec![Inline::text_with_provenance(
-            source_visible,
-            Provenance::SourceFallback,
-        )],
-    }];
-    append_legacy_source_annotation_supplements(&mut blocks, body);
-    blocks
-}
-
+#[cfg(test)]
 fn structured_source_fallback_blocks(body: &str) -> Vec<Block> {
+    structured_source_fallback_blocks_with_events(&ab_source_syntax::source_events(body))
+}
+
+fn structured_source_fallback_blocks_with_events<'a>(
+    source_events: &[ab_source_syntax::SourceEvent<'a>],
+) -> Vec<Block> {
     let mut content = Vec::new();
     let mut last_gaiji_end = None;
-    for event in ab_source_syntax::source_events(body) {
+    for event in source_events {
         match event.kind {
             ab_source_syntax::SourceEventKind::Text(text) => {
                 push_source_fallback_text(&mut content, text);
@@ -524,12 +794,7 @@ fn structured_source_fallback_blocks(body: &str) -> Vec<Block> {
                 reading,
             } => {
                 let base = source_visible_text(base_source).into_owned();
-                push_source_fallback_ruby(
-                    &mut content,
-                    base,
-                    base_source,
-                    reading,
-                );
+                push_source_fallback_ruby(&mut content, base, base_source, reading);
                 last_gaiji_end = None;
             }
             ab_source_syntax::SourceEventKind::Ruby {
@@ -558,6 +823,20 @@ fn structured_source_fallback_blocks(body: &str) -> Vec<Block> {
     }
 
     vec![Block::Paragraph { content }]
+}
+
+fn legacy_source_visible_fallback_blocks(
+    source_visible: String,
+    markers: &ab_source_syntax::SourceAnnotations<'_>,
+) -> Vec<Block> {
+    let mut blocks = vec![Block::Paragraph {
+        content: vec![Inline::text_with_provenance(
+            source_visible,
+            Provenance::SourceFallback,
+        )],
+    }];
+    append_legacy_source_annotation_supplements(&mut blocks, markers);
+    blocks
 }
 
 fn trim_source_fallback_note_prefix(content: &mut Vec<Inline>) {
@@ -757,69 +1036,6 @@ fn append_ruby_supplements(
     }
 }
 
-fn repair_or_supplement_source_ruby(
-    blocks: &mut [Block],
-    body: &str,
-    existing: &mut HashMap<String, usize>,
-) {
-    let mut last_gaiji_end = None;
-    let mut search_start = 0;
-    let mut supplements = Vec::new();
-    for event in ab_source_syntax::source_events(body) {
-        match event.kind {
-            ab_source_syntax::SourceEventKind::Gaiji { .. } => {
-                last_gaiji_end = Some(event.span.end);
-            }
-            ab_source_syntax::SourceEventKind::Ruby {
-                base_source,
-                reading,
-            } => {
-                let base = source_event_ruby_base(body, &event, base_source);
-                let should_consume = existing
-                    .get_mut(reading)
-                    .is_some_and(|count| {
-                        if *count > 0 {
-                            *count -= 1;
-                            true
-                        } else {
-                            false
-                        }
-                    });
-                if should_consume {
-                    last_gaiji_end = None;
-                    continue;
-                }
-                if last_gaiji_end == Some(event.span.start) {
-                    last_gaiji_end = None;
-                    continue;
-                }
-                let repaired = base.as_ref().and_then(|base| {
-                    wrap_next_text_match_in_blocks(blocks, base.as_ref(), reading, search_start)
-                });
-                if let Some(end) = repaired {
-                    search_start = end;
-                } else {
-                    supplements.push(reading.to_owned());
-                }
-                last_gaiji_end = None;
-            }
-            ab_source_syntax::SourceEventKind::Text(_)
-            | ab_source_syntax::SourceEventKind::Command { .. }
-            | ab_source_syntax::SourceEventKind::EditorialNote { .. }
-            | ab_source_syntax::SourceEventKind::SegmentBoundary { .. } => {
-                last_gaiji_end = None;
-            }
-        }
-    }
-
-    let Some(first_block) = blocks.first_mut() else {
-        return;
-    };
-    let content = ab_ir::block_content_mut(first_block);
-    let mut empty = HashMap::new();
-    append_ruby_supplements(content, supplements, &mut empty);
-}
-
 fn source_event_ruby_base(
     body: &str,
     event: &ab_source_syntax::SourceEvent<'_>,
@@ -906,34 +1122,6 @@ fn wrap_text_visible_range_with_ruby(
     false
 }
 
-fn wrap_next_text_match_in_blocks(
-    blocks: &mut [Block],
-    base: &str,
-    reading: &str,
-    search_start: usize,
-) -> Option<usize> {
-    if base.is_empty() {
-        return None;
-    }
-
-    let mut visible_len = 0;
-    for block in blocks {
-        let content = ab_ir::block_content_mut(block);
-        let content_len = content.iter().map(inline_visible_len).sum::<usize>();
-        if let Some(end) = wrap_next_text_match_in_content(
-            content,
-            base,
-            reading,
-            search_start.saturating_sub(visible_len),
-        ) {
-            return Some(visible_len + end);
-        }
-        visible_len += content_len;
-    }
-
-    None
-}
-
 fn wrap_next_text_match_in_content(
     content: &mut Vec<Inline>,
     base: &str,
@@ -977,29 +1165,67 @@ fn wrap_next_text_match_in_content(
     None
 }
 
-fn insert_gaiji_supplements(content: &mut Vec<Inline>, body: &str, existing_count: usize) {
-    let mut seen = 0;
-    let mut inserted = 0;
-    for event in ab_source_syntax::source_events(body) {
-        let ab_source_syntax::SourceEventKind::Gaiji { description } = event.kind else {
-            continue;
-        };
-        if seen < existing_count {
-            seen += 1;
-            continue;
-        }
-        let prefix = source_visible_text(&body[..event.span.start]);
-        let gaiji = gaiji_inline(description, Provenance::ParserNormalized);
-        insert_inline_at_visible_len(content, prefix.len(), gaiji);
-        inserted += 1;
-        seen += 1;
+fn trim_note_prefix_in_projected_prefix(prefix: &mut String) {
+    let Some(close_quote) = prefix.rfind('「') else {
+        return;
+    };
+    let prefix_head = &prefix[..close_quote];
+    let start = prefix_head
+        .char_indices()
+        .rev()
+        .find_map(|(offset, ch)| is_note_boundary(ch).then_some(offset + ch.len_utf8()));
+    if let Some(start) = start {
+        prefix.truncate(start);
+    } else {
+        prefix.clear();
     }
-    let markers = ab_source_syntax::source_annotations(body);
-    append_unresolved_gaiji_supplements(
-        content,
-        markers.gaiji_descriptions.iter().map(|marker| marker.value),
-        existing_count + inserted,
-    );
+}
+
+fn consume_existing_block_gaiji_counts(blocks: &[Block], remaining: &mut HashMap<&str, usize>) {
+    for block in blocks {
+        for node in ab_ir::block_content(block) {
+            consume_existing_block_gaiji_counts_in_inline(node, remaining);
+        }
+    }
+}
+
+fn consume_existing_block_gaiji_counts_in_inline(
+    inline: &Inline,
+    remaining: &mut HashMap<&str, usize>,
+) {
+    match inline {
+        Inline::GaijiRef(gaiji) => {
+            if let Some(remaining_count) = remaining.get_mut(gaiji.description.as_str()) {
+                if *remaining_count > 0 {
+                    *remaining_count -= 1;
+                }
+                if *remaining_count == 0 {
+                    remaining.remove(gaiji.description.as_str());
+                }
+            }
+        }
+        Inline::Ruby { base, .. } => {
+            for child in base {
+                consume_existing_block_gaiji_counts_in_inline(child, remaining)
+            }
+        }
+        Inline::Style { content, .. } => {
+            for child in content {
+                consume_existing_block_gaiji_counts_in_inline(child, remaining)
+            }
+        }
+        Inline::Text { .. } => {}
+    }
+}
+
+fn counts_by_description<'a>(
+    markers: &[ab_source_syntax::LocatedMarker<'a>],
+) -> HashMap<&'a str, usize> {
+    let mut counts = HashMap::new();
+    for marker in markers {
+        *counts.entry(marker.value).or_insert(0) += 1;
+    }
+    counts
 }
 
 fn gaiji_inline(description: &str, provenance: Provenance) -> Inline {
@@ -1161,8 +1387,9 @@ mod tests {
         })
         .unwrap();
         let built = build_initial(&parsed);
+        let projected = ab_ir::visible_projection(&built.blocks);
         assert!(matches!(built.blocks[0], Block::Paragraph { .. }));
-        assert!(built.projected.visible_text.contains("吾輩"));
+        assert!(projected.visible_text.contains("吾輩"));
         assert!(built.timings.build >= Duration::ZERO);
     }
 
@@ -1294,8 +1521,7 @@ mod tests {
 
     #[test]
     fn fallback_blocks_model_non_hash_ruby_correction_notes_without_supplements() {
-        let body =
-            "『断頭台《ラギュイヨチーン》［ルビの「ラギュイヨチーン」は底本では「ラギュイヨケーン」］』";
+        let body = "『断頭台《ラギュイヨチーン》［ルビの「ラギュイヨチーン」は底本では「ラギュイヨケーン」］』";
 
         let (blocks, projected) = build_fallback(body);
         let json = ab_ir::blocks_to_aat_json(&blocks);
@@ -1363,7 +1589,10 @@ mod tests {
         );
 
         let counts = ab_ir::provenance_counts(&blocks);
-        assert_eq!(ab_ir::visible_projection(&blocks).visible_text, "吾輩はである。");
+        assert_eq!(
+            ab_ir::visible_projection(&blocks).visible_text,
+            "吾輩はである。"
+        );
         assert_eq!(counts.source_supplement, 0);
         assert!(counts.parser_normalized >= 2);
         let json = ab_ir::blocks_to_aat_json(&blocks);
@@ -1417,16 +1646,16 @@ mod tests {
             ],
         }];
 
-        append_source_annotation_supplements(
-            &mut blocks,
-            "地球《ちきゆう》は月《ちきゆう》。",
-        );
+        append_source_annotation_supplements(&mut blocks, "地球《ちきゆう》は月《ちきゆう》。");
 
         let counts = ab_ir::provenance_counts(&blocks);
         let json = ab_ir::blocks_to_aat_json(&blocks);
         let content = json[0]["content"].as_array().unwrap();
 
-        assert_eq!(ab_ir::visible_projection(&blocks).visible_text, "地球は月。");
+        assert_eq!(
+            ab_ir::visible_projection(&blocks).visible_text,
+            "地球は月。"
+        );
         assert_eq!(counts.source_supplement, 0);
         assert!(content.iter().any(|node| {
             node["kind"] == "ruby" && node["base"] == "月" && node["reading"] == "ちきゆう"
@@ -1451,7 +1680,10 @@ mod tests {
         let json = ab_ir::blocks_to_aat_json(&blocks);
         let style_content = json[0]["content"][0]["content"].as_array().unwrap();
 
-        assert_eq!(ab_ir::visible_projection(&blocks).visible_text, "パーリスの侍童。");
+        assert_eq!(
+            ab_ir::visible_projection(&blocks).visible_text,
+            "パーリスの侍童。"
+        );
         assert_eq!(counts.source_supplement, 0);
         assert!(style_content.iter().any(|node| {
             node["kind"] == "ruby" && node["base"] == "侍童" && node["reading"] == "こしゃう"
@@ -1472,7 +1704,8 @@ mod tests {
         let counts = ab_ir::provenance_counts(&built.blocks);
         let json = ab_ir::blocks_to_aat_json(&built.blocks);
 
-        assert_eq!(built.projected.visible_text, "吾輩は猫。");
+        let projected = ab_ir::visible_projection(&built.blocks);
+        assert_eq!(projected.visible_text, "吾輩は猫。");
         assert_eq!(counts.source_supplement, 0);
         assert!(json_has_ruby(&json[0], "吾輩", "わがはい"));
         assert!(json_has_ruby(&json[0], "猫", "ねこ"));
@@ -1537,10 +1770,7 @@ mod tests {
     #[test]
     fn source_annotation_supplements_keep_gaiji_inside_ruby_reading_as_invisible_metadata() {
         let mut blocks = vec![Block::Paragraph {
-            content: vec![Inline::ruby(
-                "淡絹",
-                "※［＃濁点付き片仮名ヱ、1-7-84］エル",
-            )],
+            content: vec![Inline::ruby("淡絹", "※［＃濁点付き片仮名ヱ、1-7-84］エル")],
         }];
 
         append_source_annotation_supplements(
@@ -1579,13 +1809,77 @@ mod tests {
     }
 
     #[test]
+    fn parser_blocks_strip_nested_bottom_note_command() {
+        let body = "野のはくちょう［＃「はくちょう」に傍点］［＃「はくちょう［＃「はくちょう」に傍点］」は底本では「はくちょ［＃「はくちょ」に傍点］う」］のむれが始まる。";
+        let parsed = parse_with_aozora_rs(BodySelection {
+            validation_body: body,
+            found_separators: false,
+            elapsed: Duration::ZERO,
+        })
+        .unwrap();
+        let (result, _, _) = crate::build_aat_result(&parsed);
+        let built = result.blocks;
+        let projected = ab_ir::visible_projection(&built);
+
+        assert!(result.fallback.used);
+        assert_eq!(
+            result.fallback.reason,
+            crate::metrics::FallbackReason::ParserFailure
+        );
+        assert_eq!(projected.visible_text, "野のはくちょうのむれが始まる。");
+        assert!(!projected.visible_text.contains("」］"));
+    }
+
+    #[test]
+    fn parser_blocks_strip_split_command_tail_across_nodes() {
+        let mut blocks = vec![Block::Paragraph {
+            content: vec![
+                Inline::text("「そりゃそういえば確にそうだが、忍術だって入"),
+                Inline::text("用［＃「入"),
+                Inline::text("用"),
+                Inline::text("用」」］のものだから世に"),
+            ],
+        }];
+
+        strip_cross_node_commands(&mut blocks);
+        let projected = ab_ir::visible_projection(&blocks).visible_text;
+
+        assert_eq!(
+            projected,
+            "「そりゃそういえば確にそうだが、忍術だって入用のものだから世に"
+        );
+        assert!(!projected.contains("」］"));
+        assert!(!projected.contains("［＃"));
+    }
+
+    #[test]
+    fn parser_blocks_strip_split_command_tail_orphan_marker() {
+        let mut blocks = vec![Block::Paragraph {
+            content: vec![
+                Inline::text("「そりゃそういえば確にそうだが、忍術だって入※"),
+                Inline::text("用のものだから世に"),
+            ],
+        }];
+
+        strip_cross_node_commands(&mut blocks);
+        let projected = ab_ir::visible_projection(&blocks).visible_text;
+
+        assert_eq!(
+            projected,
+            "「そりゃそういえば確にそうだが、忍術だって入用のものだから世に"
+        );
+        assert!(!projected.contains("※"));
+    }
+
+    #[test]
     fn command_strip_borrows_marker_free_text() {
-        let mut state = CommandStripState::None;
+        let mut text = "吾輩は猫である。".to_owned();
+        let mut depth = 0usize;
+        let mut pending_split_marker = false;
+        strip_string(&mut text, &mut depth, &mut pending_split_marker);
 
-        let stripped = stripped_command_fragments("吾輩は猫である。", &mut state);
-
-        assert!(matches!(stripped, std::borrow::Cow::Borrowed(_)));
-        assert_eq!(stripped, "吾輩は猫である。");
+        assert_eq!(text, "吾輩は猫である。");
+        assert!(!pending_split_marker);
     }
 
     #[test]
@@ -1692,20 +1986,22 @@ mod tests {
                 {
                     return true;
                 }
-                object.values().any(|child| json_has_ruby(child, base, reading))
+                object
+                    .values()
+                    .any(|child| json_has_ruby(child, base, reading))
             }
-            serde_json::Value::Array(values) => {
-                values.iter().any(|child| json_has_ruby(child, base, reading))
-            }
+            serde_json::Value::Array(values) => values
+                .iter()
+                .any(|child| json_has_ruby(child, base, reading)),
             _ => false,
         }
     }
 
     fn json_has_nested_style(style: &serde_json::Value) -> bool {
         style["content"].as_array().is_some_and(|children| {
-            children.iter().any(|child| {
-                child["kind"] == "style" || json_has_nested_style(child)
-            })
+            children
+                .iter()
+                .any(|child| child["kind"] == "style" || json_has_nested_style(child))
         })
     }
 }

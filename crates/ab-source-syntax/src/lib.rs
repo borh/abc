@@ -62,13 +62,24 @@ pub struct SourceAnnotations<'a> {
     pub gaiji_descriptions: Vec<LocatedMarker<'a>>,
 }
 
+#[derive(Debug, Default, PartialEq, Eq)]
+pub struct SourceAnnotationsBoth<'a> {
+    pub validation: SourceAnnotations<'a>,
+    pub full: SourceAnnotations<'a>,
+}
+
 pub fn comparison_lossy_body(txt: &str) -> Cow<'_, str> {
     if !needs_lossy_projection(txt) {
         return Cow::Borrowed(txt);
     }
 
-    let mut out = String::with_capacity(txt.len());
-    for event in source_events(txt) {
+    let events = source_events(txt);
+    Cow::Owned(comparison_lossy_body_from_events(&events))
+}
+
+pub fn comparison_lossy_body_from_events(events: &[SourceEvent<'_>]) -> String {
+    let mut out = String::new();
+    for event in events {
         match event.kind {
             SourceEventKind::Text(value) => out.push_str(value),
             SourceEventKind::Ruby {
@@ -89,7 +100,7 @@ pub fn comparison_lossy_body(txt: &str) -> Cow<'_, str> {
         }
     }
 
-    Cow::Owned(remove_bottom_note_fragments(&out))
+    remove_bottom_note_fragments(&out)
 }
 
 pub fn source_events(txt: &str) -> Vec<SourceEvent<'_>> {
@@ -303,45 +314,28 @@ pub fn remove_bottom_note_fragments(txt: &str) -> String {
 }
 
 pub fn source_annotations(body: &str) -> SourceAnnotations<'_> {
-    collect_source_annotations(body, false)
+    let events = source_events(body);
+    source_annotations_from_events(&events, false)
 }
 
 pub fn source_annotations_for_validation(body: &str) -> SourceAnnotations<'_> {
-    collect_source_annotations(body, true)
+    let events = source_events(body);
+    source_annotations_from_events(&events, true)
 }
 
-pub fn gaiji_marker_count(body: &str) -> usize {
-    let mut count = 0;
-    let mut offset = 0;
-    while offset < body.len() {
-        let rest = &body[offset..];
-        if rest.starts_with("※［＃") {
-            let content_start = offset + "※［＃".len();
-            if let Some(end) = marker_end_on_same_line(body, content_start, '］') {
-                count += 1;
-                offset = end + '］'.len_utf8();
-                continue;
-            }
-        }
-        if rest.starts_with("※[#") {
-            let content_start = offset + "※[#".len();
-            if let Some(end) = marker_end_on_same_line(body, content_start, ']') {
-                count += 1;
-                offset = end + 1;
-                continue;
-            }
-        }
-        let ch = rest.chars().next().expect("non-empty rest has a char");
-        offset += ch.len_utf8();
-    }
-    count
+pub fn source_annotations_both(body: &str) -> SourceAnnotationsBoth<'_> {
+    let events = source_events(body);
+    source_annotations_both_from_events(&events)
 }
 
-fn collect_source_annotations(body: &str, skip_gaiji_orphan_ruby: bool) -> SourceAnnotations<'_> {
+pub fn source_annotations_from_events<'a>(
+    events: &[SourceEvent<'a>],
+    skip_gaiji_orphan_ruby: bool,
+) -> SourceAnnotations<'a> {
     let mut annotations = SourceAnnotations::default();
     let mut last_gaiji_end = None;
-    for event in source_events(body) {
-        match event.kind {
+    for event in events {
+        match &event.kind {
             SourceEventKind::Gaiji { description } => {
                 annotations.gaiji_descriptions.push(LocatedMarker {
                     value: description,
@@ -375,6 +369,90 @@ fn collect_source_annotations(body: &str, skip_gaiji_orphan_ruby: bool) -> Sourc
         }
     }
     annotations
+}
+
+pub fn source_annotations_both_from_events<'a>(
+    events: &[SourceEvent<'a>],
+) -> SourceAnnotationsBoth<'a> {
+    let mut validation = SourceAnnotations::default();
+    let mut full = SourceAnnotations::default();
+    let mut last_gaiji_end = None;
+    for event in events {
+        match &event.kind {
+            SourceEventKind::Gaiji { description } => {
+                let marker = LocatedMarker {
+                    value: description,
+                    byte_offset: event.span.start,
+                    line: event.span.line,
+                };
+                full.gaiji_descriptions.push(marker);
+                validation.gaiji_descriptions.push(marker);
+                last_gaiji_end = Some(event.span.end);
+            }
+            SourceEventKind::Ruby { reading, .. } => {
+                let is_orphan = last_gaiji_end == Some(event.span.start);
+                if !is_orphan {
+                    validation.ruby_readings.push(LocatedMarker {
+                        value: reading,
+                        byte_offset: event.span.start,
+                        line: event.span.line,
+                    });
+                    collect_gaiji_markers(
+                        reading,
+                        event.span.start + '《'.len_utf8(),
+                        event.span.line,
+                        &mut validation,
+                    );
+                }
+                full.ruby_readings.push(LocatedMarker {
+                    value: reading,
+                    byte_offset: event.span.start,
+                    line: event.span.line,
+                });
+                collect_gaiji_markers(
+                    reading,
+                    event.span.start + '《'.len_utf8(),
+                    event.span.line,
+                    &mut full,
+                );
+                last_gaiji_end = None;
+            }
+            SourceEventKind::Text(_)
+            | SourceEventKind::Command { .. }
+            | SourceEventKind::EditorialNote { .. }
+            | SourceEventKind::SegmentBoundary { .. } => {
+                last_gaiji_end = None;
+            }
+        }
+    }
+    SourceAnnotationsBoth { validation, full }
+}
+
+pub fn gaiji_marker_count(body: &str) -> usize {
+    let mut count = 0;
+    let mut offset = 0;
+    while offset < body.len() {
+        let rest = &body[offset..];
+        if rest.starts_with("※［＃") {
+            let content_start = offset + "※［＃".len();
+            if let Some(end) = marker_end_on_same_line(body, content_start, '］') {
+                count += 1;
+                offset = end + '］'.len_utf8();
+                continue;
+            }
+        }
+        if rest.starts_with("※[#") {
+            let content_start = offset + "※[#".len();
+            if let Some(end) = marker_end_on_same_line(body, content_start, ']') {
+                count += 1;
+                offset = end + 1;
+                continue;
+            }
+        }
+        let ch = rest.chars().next().expect("non-empty rest has a char");
+        offset += ch.len_utf8();
+    }
+    count
 }
 
 fn collect_gaiji_markers<'a>(
@@ -415,7 +493,7 @@ fn collect_gaiji_markers<'a>(
     }
 }
 
-fn needs_lossy_projection(txt: &str) -> bool {
+pub fn needs_lossy_projection(txt: &str) -> bool {
     txt.find(['※', '《', '｜', '［', '[', '」']).is_some()
 }
 
@@ -622,6 +700,15 @@ mod tests {
     }
 
     #[test]
+    fn comparison_lossy_body_from_events_matches_legacy() {
+        let body = "吾輩《わがはい》は※［＃「口＋世」、U+546D］でも、末尾まで見通す。";
+        let expected = comparison_lossy_body(body).into_owned();
+        let events = source_events(body);
+
+        assert_eq!(comparison_lossy_body_from_events(&events), expected);
+    }
+
+    #[test]
     fn comparison_lossy_body_removes_ruby_gaiji_and_commands() {
         let projected =
             comparison_lossy_body("吾輩《わがはい》は※［＃「口＋世」、U+546D］［＃注記］猫");
@@ -714,6 +801,87 @@ mod tests {
                 .map(|marker| marker.value)
                 .collect::<Vec<_>>(),
             vec!["「口＋世」、U+546D", "ascii-gaiji"]
+        );
+    }
+
+    #[test]
+    fn source_annotations_both_collects_validation_and_full_variants() {
+        let markers = source_annotations_both(
+            "ことを、※［＃「口＋愛」、第3水準1-15-23］《おくび》にも※［＃「口＋世」、U+546D］",
+        );
+
+        assert_eq!(
+            markers
+                .validation
+                .ruby_readings
+                .iter()
+                .map(|marker| marker.value)
+                .collect::<Vec<_>>(),
+            Vec::<&str>::new()
+        );
+        assert_eq!(
+            markers
+                .full
+                .ruby_readings
+                .iter()
+                .map(|marker| marker.value)
+                .collect::<Vec<_>>(),
+            vec!["おくび"]
+        );
+        assert_eq!(
+            markers
+                .validation
+                .gaiji_descriptions
+                .iter()
+                .map(|marker| marker.value)
+                .collect::<Vec<_>>(),
+            vec!["「口＋愛」、第3水準1-15-23", "「口＋世」、U+546D"]
+        );
+        assert_eq!(
+            markers
+                .full
+                .gaiji_descriptions
+                .iter()
+                .map(|marker| marker.value)
+                .collect::<Vec<_>>(),
+            vec!["「口＋愛」、第3水準1-15-23", "「口＋世」、U+546D"]
+        );
+    }
+
+    #[test]
+    fn source_annotations_from_events_matches_string_scan() {
+        let body = "ことを、※［＃「口＋愛」、第3水準1-15-23］《おくび》にも※[#ascii-gaiji]もある。";
+        let by_string = source_annotations(body);
+        let events = source_events(body);
+        let by_events = source_annotations_from_events(&events, false);
+
+        assert_eq!(by_string.ruby_readings, by_events.ruby_readings);
+        assert_eq!(by_string.gaiji_descriptions, by_events.gaiji_descriptions);
+        assert_eq!(
+            source_annotations_for_validation(body),
+            source_annotations_from_events(&events, true)
+        );
+    }
+
+    #[test]
+    fn source_annotations_both_from_events_matches_string_scan() {
+        let body =
+            "ことを、※［＃「口＋愛」、第3水準1-15-23］《おくび》にも※［＃「口＋世」、U+546D］";
+        let by_string = source_annotations_both(body);
+        let by_events = source_annotations_both_from_events(&source_events(body));
+
+        assert_eq!(
+            by_string.validation.ruby_readings,
+            by_events.validation.ruby_readings
+        );
+        assert_eq!(
+            by_string.validation.gaiji_descriptions,
+            by_events.validation.gaiji_descriptions
+        );
+        assert_eq!(by_string.full.ruby_readings, by_events.full.ruby_readings);
+        assert_eq!(
+            by_string.full.gaiji_descriptions,
+            by_events.full.gaiji_descriptions
         );
     }
 

@@ -6,10 +6,10 @@ license = "MIT OR Apache-2.0"
 
 [dependencies]
 aozora-core = { git = "https://github.com/takahashim/aozora2", package = "aozora-core", rev = "93420b53c7d52579a0ca3fde466cef8ce6d89879" }
+ab-source-syntax = { path = "../../crates/ab-source-syntax" }
 anyhow = "1.0"
 clap = { version = "4.5", features = ["derive"] }
 encoding_rs = "0.8"
-regex = "1.10"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 sha2 = "0.10"

@@ -1,6 +1,6 @@
 use anyhow::Result;
 use encoding_rs::SHIFT_JIS;
-use regex::Regex;
+use ab_source_syntax as source_syntax;
 use serde::Serialize;
 use serde_json::json;
 use sha2::{Digest, Sha256};
@@ -116,57 +116,72 @@ pub fn body_text(text: &str) -> &str {
 }
 
 fn parse_inline_content(text: &str) -> Vec<serde_json::Value> {
+    let events = source_syntax::source_events(text);
+    let source_visible = source_syntax::comparison_lossy_body_from_events(&events);
     let mut content = Vec::new();
     content.push(json!({
         "kind": "text",
-        "value": source_visible_text(text),
+        "value": source_visible,
         "span": span_for(text, 0, text.len())
     }));
-    append_ruby_annotations(&mut content, text);
-    append_gaiji_annotations(&mut content, text);
+    append_source_annotations_from_events(&mut content, &events);
     content
 }
 
-fn append_ruby_annotations(content: &mut Vec<serde_json::Value>, text: &str) {
-    let marker = Regex::new(r"《([^》]+)》").unwrap();
-    for capture in marker.captures_iter(text) {
-        content.push(json!({
-            "kind": "ruby",
-            "base": "",
-            "reading": capture.get(1).unwrap().as_str()
-        }));
+fn append_source_annotations_from_events(
+    content: &mut Vec<serde_json::Value>,
+    events: &[source_syntax::SourceEvent],
+) {
+    let mut last_gaiji_end = None;
+    for event in events {
+        match event.kind {
+            source_syntax::SourceEventKind::Ruby { reading, .. } => {
+                if last_gaiji_end != Some(event.span.start) {
+                    content.push(json!({
+                        "kind": "ruby",
+                        "base": "",
+                        "reading": reading
+                    }));
+
+                    for marker in source_syntax::source_annotations(reading)
+                        .gaiji_descriptions
+                        .iter()
+                        .map(|marker| marker.value)
+                    {
+                        content.push(json!({
+                            "kind": "gaiji",
+                            "description": marker,
+                            "resolved": "",
+                            "jis_code": null,
+                            "unresolved_reason": null
+                        }));
+                    }
+                }
+                last_gaiji_end = None;
+            }
+            source_syntax::SourceEventKind::Gaiji { description } => {
+                content.push(json!({
+                    "kind": "gaiji",
+                    "description": description,
+                    "resolved": "",
+                    "jis_code": null,
+                    "unresolved_reason": null
+                }));
+                last_gaiji_end = Some(event.span.end);
+            }
+            source_syntax::SourceEventKind::Text(_)
+            | source_syntax::SourceEventKind::Command { .. }
+            | source_syntax::SourceEventKind::EditorialNote { .. }
+            | source_syntax::SourceEventKind::SegmentBoundary { .. } => {
+                last_gaiji_end = None;
+            }
+        }
     }
 }
 
-fn append_gaiji_annotations(content: &mut Vec<serde_json::Value>, text: &str) {
-    let marker = Regex::new(r"※(?:［＃([^］]+)］|\[#([^\]]+)\])").unwrap();
-    for capture in marker.captures_iter(text) {
-        let description = capture
-            .get(1)
-            .or_else(|| capture.get(2))
-            .map(|matched| matched.as_str())
-            .unwrap_or_default();
-        content.push(json!({
-            "kind": "gaiji",
-            "description": description,
-            "resolved": "",
-            "jis_code": null,
-            "unresolved_reason": null
-        }));
-    }
-}
-
-pub fn source_visible_text(text: &str) -> String {
-    let gaiji = Regex::new(r"※(?:［＃([^］]+)］|\[#([^\]]+)\])").unwrap();
-    let explicit_ruby = Regex::new(r"｜([^《》\r\n]+)《[^》]+》").unwrap();
-    let ruby = Regex::new(r"｜?([^｜\s《》※［＃\[\]］、。，．「」『』（）()]+)《[^》]+》").unwrap();
-    let orphan_ruby = Regex::new(r"《[^》]+》").unwrap();
-    let command = Regex::new(r"［＃[^］]+］|\[#[^\]]+\]").unwrap();
-    let without_gaiji = gaiji.replace_all(text, "");
-    let without_explicit_ruby = explicit_ruby.replace_all(&without_gaiji, "$1");
-    let without_ruby = ruby.replace_all(&without_explicit_ruby, "$1");
-    let without_orphan_ruby = orphan_ruby.replace_all(&without_ruby, "");
-    command.replace_all(&without_orphan_ruby, "").into_owned()
+#[cfg(test)]
+fn source_visible_text(text: &str) -> String {
+    source_syntax::comparison_lossy_body(text).into_owned()
 }
 
 fn span_for(text: &str, start: usize, end: usize) -> Span {
@@ -216,5 +231,13 @@ mod tests {
         let visible = source_visible_text("ことを、※［＃「口＋愛」、第3水準1-15-23］《おくび》にも");
 
         assert_eq!(visible, "ことを、にも");
+    }
+
+    #[test]
+    fn parse_inline_content_emits_nested_gaiji_inside_ruby_reading() {
+        let content = parse_inline_content("淡絹《※［＃濁点付き片仮名ヱ、1-7-84］エル》");
+
+        assert_eq!(content.iter().filter(|node| node["kind"] == "gaiji").count(), 1);
+        assert!(content.iter().any(|node| node["kind"] == "ruby"));
     }
 }

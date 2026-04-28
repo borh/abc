@@ -15,6 +15,7 @@ gaiji-chuki-parser = { path = "../../references/parsers/aozora-rs/aozora-rs/aozo
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 sha2 = "0.10"
+unicode-normalization = "0.1"
 winnow = "=0.7.15"
 
 [dev-dependencies]

@@ -7,8 +7,15 @@ jobs="${AB_BENCH_JOBS:-$(nproc)}"
 timeout="${AB_BENCH_TIMEOUT:-600s}"
 aat_diff_limit="${AB_AAT_DIFF_LIMIT:-50}"
 out_dir="${AB_BENCH_OUT:-/tmp/ab-validator-compare-$(date -u +%Y%m%dT%H%M%SZ)}"
+cleanup_tmp=false
+if [[ -z "${AB_BENCH_OUT+x}" ]]; then
+  cleanup_tmp=true
+fi
 
 mkdir -p "$out_dir"
+if "$cleanup_tmp"; then
+  trap 'rm -rf -- "$out_dir"' EXIT
+fi
 cd "$repo_root"
 
 cargo build --release --workspace

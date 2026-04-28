@@ -2,7 +2,7 @@ use std::time::{Duration, Instant};
 
 use anyhow::{Result, bail};
 use serde_json::json;
-
+use ab_source_syntax::SourceEvent;
 mod aat;
 mod metrics;
 mod parser;
@@ -15,7 +15,7 @@ pub use source::{DecodedSource, decode_source_bytes};
 
 const LARGE_BODY_BYTES: usize = 500_000;
 
-pub const VERSION: &str = "aozora-rs-adapter 0.1.0 dd380ee639ca317ac9092ef2ba554acdf70e3c8d";
+pub const VERSION: &str = "aozora-rs-adapter 0.1.0 2b4e8d1";
 
 pub fn aat_json_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
     let decode_start = Instant::now();
@@ -60,16 +60,8 @@ fn build_large_body_fallback_aat(
     selection: &source::BodySelection<'_>,
 ) -> serde_json::Value {
     let has_markup = ab_source_syntax::needs_lossy_projection(selection.validation_body);
-    let fallback_start = Instant::now();
-    let (blocks, _) = if has_markup {
-        aat::build_fallback_from_events(
-            &ab_source_syntax::source_events(selection.validation_body),
-            None,
-        )
-    } else {
-        aat::build_fallback_without_annotations(selection.validation_body)
-    };
-    let fallback_build = fallback_start.elapsed();
+    let (blocks, fallback_build) =
+        build_fallback_blocks(selection.validation_body, has_markup, None, None, None);
     let parse = parser::ParseTimings {
         body_selection: selection.elapsed,
         tokenize: Duration::ZERO,
@@ -145,6 +137,39 @@ fn build_aat(
     })
 }
 
+fn build_fallback_blocks(
+    validation_body: &str,
+    has_markup: bool,
+    source_events: Option<&[SourceEvent<'_>]>,
+    source_annotations_both: Option<&ab_source_syntax::SourceAnnotationsBoth<'_>>,
+    source_visible: Option<String>,
+) -> (Vec<ab_ir::Block>, Duration) {
+    let fallback_start = Instant::now();
+    let (blocks, _) = if has_markup {
+        let borrowed_events = if let Some(events) = source_events {
+            events
+        } else {
+            return {
+                let events = ab_source_syntax::source_events(validation_body);
+                let (blocks, _) = aat::build_fallback_from_events_with_annotations(
+                    &events,
+                    source_visible,
+                    None,
+                );
+                (blocks, fallback_start.elapsed())
+            };
+        };
+        aat::build_fallback_from_events_with_annotations(
+            borrowed_events,
+            source_visible,
+            source_annotations_both,
+        )
+    } else {
+        aat::build_fallback_without_annotations(validation_body)
+    };
+    (blocks, fallback_start.elapsed())
+}
+
 fn build_aat_result(parsed: &ParsedSource<'_>) -> (aat::AatBuildResult, Duration, Duration) {
     let validation_body = parsed.body.validation_body;
     let large_body = validation_body.len() > 500_000;
@@ -152,7 +177,11 @@ fn build_aat_result(parsed: &ParsedSource<'_>) -> (aat::AatBuildResult, Duration
     let parser_failed = parsed.warnings_summary.has_parser_failures();
 
     let mut projection_check = Duration::ZERO;
-    let mut source_events = None;
+    let source_artifacts: Option<source::SourceArtifacts<'_>> = if has_markup && !large_body {
+        Some(source::SourceArtifacts::collect(validation_body))
+    } else {
+        None
+    };
     let mut fallback = FallbackDecision::none();
     let mut fallback_source_visible = None;
     let mut initial = None;
@@ -167,33 +196,41 @@ fn build_aat_result(parsed: &ParsedSource<'_>) -> (aat::AatBuildResult, Duration
                     FallbackReason::ProjectionMismatch
                 },
             };
+        } else if parser_failed {
+            fallback = FallbackDecision {
+                used: true,
+                reason: FallbackReason::ParserFailure,
+            };
+            fallback_source_visible = Some(source_artifacts.as_ref().unwrap().source_visible.to_owned());
         } else {
-            let base = aat::build_initial_without_source_annotations(parsed);
-            let source_visible = ab_source_syntax::comparison_lossy_body(validation_body);
+            let source_artifacts = source_artifacts
+        .as_ref()
+        .expect("source artifacts should exist for markup validation when not using large body fallback");
+            let source_visible = &source_artifacts.source_visible;
+            let projected_visible = aat::projected_visible_from_retokenized(&parsed.retokenized);
             let projection_start = Instant::now();
-            let projection = projection::check_with_source_visible(
-                &source_visible,
-                &base.projected.visible_text,
-            );
+            let projection = projection::check_with_source_visible(source_visible, &projected_visible);
             projection_check = projection_start.elapsed();
 
-            if !projection.in_source_order {
+            if !projection.in_source_order
+                || projection.source_visible_chars != projection.projected_visible_chars
+            {
                 fallback = FallbackDecision {
                     used: true,
                     reason: FallbackReason::ProjectionMismatch,
                 };
                 fallback_source_visible = projection
                     .source_visible_text
-                    .or(Some(source_visible.into_owned()));
+                    .or_else(|| Some(source_visible.to_owned()));
             } else {
-                let events = ab_source_syntax::source_events(validation_body);
-                source_events = Some(events);
-                let built = aat::build_initial_with_existing_blocks(
+                let base = aat::build_initial_without_source_annotations(parsed);
+                let result = aat::build_initial_with_existing_blocks_with_annotations(
                     base,
                     validation_body,
-                    source_events.as_deref().expect("source events computed"),
+                    &source_artifacts.events,
+                    &source_artifacts.annotations_both,
                 );
-                initial = Some(built);
+                initial = Some(result);
             }
         }
     } else if large_body {
@@ -205,17 +242,19 @@ fn build_aat_result(parsed: &ParsedSource<'_>) -> (aat::AatBuildResult, Duration
 
     let mut fallback_build = Duration::ZERO;
     let (blocks, timings) = if fallback.used {
-        let fallback_start = Instant::now();
-        let (blocks, _) = if has_markup {
-            let source_events = source_events.unwrap_or_else(|| {
-                // Large-body fallback keeps annotations in a cheaper structured fallback mode.
-                ab_source_syntax::source_events(validation_body)
-            });
-            aat::build_fallback_from_events(&source_events, fallback_source_visible)
-        } else {
-            aat::build_fallback_without_annotations(validation_body)
-        };
-        fallback_build = fallback_start.elapsed();
+        let source_events = source_artifacts.as_ref().map(|artifacts| artifacts.events.as_slice());
+        let source_annotations_both = source_artifacts
+            .as_ref()
+            .map(|artifacts| &artifacts.annotations_both);
+        let (blocks, fallback_ms) =
+            build_fallback_blocks(
+                validation_body,
+                has_markup,
+                source_events,
+                source_annotations_both,
+                fallback_source_visible,
+            );
+        fallback_build = fallback_ms;
         (
             blocks,
             aat::AatBuildTimings {
@@ -308,6 +347,7 @@ mod tests {
                 .any(|node| node["kind"] == "gaiji")
         );
     }
+
 
     #[test]
     fn fallback_is_reported_in_metrics_for_large_body() {

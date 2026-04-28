@@ -23,6 +23,7 @@ pub enum FallbackReason {
     None,
     ProjectionMismatch,
     LargeBody,
+    ParserFailure,
 }
 
 impl Serialize for FallbackReason {
@@ -34,6 +35,7 @@ impl Serialize for FallbackReason {
             Self::None => serializer.serialize_str("none"),
             Self::ProjectionMismatch => serializer.serialize_str("projection_mismatch"),
             Self::LargeBody => serializer.serialize_str("large_body"),
+            Self::ParserFailure => serializer.serialize_str("parser_failure"),
         }
     }
 }
@@ -154,6 +156,10 @@ mod tests {
         assert_eq!(
             serde_json::to_value(FallbackReason::LargeBody).unwrap(),
             "large_body"
+        );
+        assert_eq!(
+            serde_json::to_value(FallbackReason::ParserFailure).unwrap(),
+            "parser_failure"
         );
     }
 

@@ -6,6 +6,10 @@ corpus="${AB_CORPUS:-$repo_root/references/aozorabunko}"
 jobs="${AB_BENCH_JOBS:-$(nproc)}"
 timeout="${AB_BENCH_TIMEOUT:-30s}"
 out_dir="${AB_BENCH_OUT:-/tmp/ab-validator-bench-$(date -u +%Y%m%dT%H%M%SZ)}"
+cleanup_tmp=false
+if [[ -z "${AB_BENCH_OUT+x}" ]]; then
+  cleanup_tmp=true
+fi
 
 index_path="$out_dir/index.json"
 reports_dir="$out_dir/reports"
@@ -29,6 +33,9 @@ if [[ ! -d "$corpus" ]]; then
 fi
 
 mkdir -p "$out_dir" "$reports_dir"
+if "$cleanup_tmp"; then
+  trap 'rm -rf -- "$out_dir"' EXIT
+fi
 cd "$repo_root"
 
 echo "building release workspace"

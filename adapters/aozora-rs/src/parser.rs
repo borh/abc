@@ -24,6 +24,7 @@ pub struct ParsedSource<'a> {
     pub parse_body: ParseBodyDecision<'a>,
     pub retokenized: Vec<Retokenized<'a>>,
     pub warnings: Vec<String>,
+    pub warnings_summary: ParserWarnings,
     pub tokenized_count: usize,
     pub retokenized_count: usize,
     pub timings: ParseTimings,
@@ -39,6 +40,7 @@ pub struct ParseTimings {
 
 pub fn parse_with_aozora_rs(body: BodySelection<'_>) -> Result<ParsedSource<'_>> {
     let mut warnings = Vec::new();
+    let mut warnings_summary = ParserWarnings::default();
     let parse_body = if body.found_separators {
         ParseBodyDecision {
             parser_body: body.validation_body,
@@ -50,6 +52,7 @@ pub fn parse_with_aozora_rs(body: BodySelection<'_>) -> Result<ParsedSource<'_>>
             Ok(_) => true,
             Err(error) => {
                 warnings.push(format!("meta parse warning: {error}"));
+                warnings_summary.meta_parse_warning = true;
                 false
             }
         };
@@ -82,6 +85,8 @@ pub fn parse_with_aozora_rs(body: BodySelection<'_>) -> Result<ParsedSource<'_>>
     let retokenize = retokenize_start.elapsed();
     let retokenized_count = retokenized.len();
 
+    warnings_summary.scopenize_errors = scopenize_errors.len();
+    warnings_summary.retokenize_errors = retokenize_errors.len();
     warnings.extend(
         scopenize_errors
             .into_iter()
@@ -94,6 +99,7 @@ pub fn parse_with_aozora_rs(body: BodySelection<'_>) -> Result<ParsedSource<'_>>
         parse_body,
         retokenized,
         warnings,
+        warnings_summary,
         tokenized_count,
         retokenized_count,
         timings: ParseTimings {
@@ -103,6 +109,19 @@ pub fn parse_with_aozora_rs(body: BodySelection<'_>) -> Result<ParsedSource<'_>>
             retokenize,
         },
     })
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct ParserWarnings {
+    pub meta_parse_warning: bool,
+    pub scopenize_errors: usize,
+    pub retokenize_errors: usize,
+}
+
+impl ParserWarnings {
+    pub fn has_parser_failures(&self) -> bool {
+        self.scopenize_errors > 0 || self.retokenize_errors > 0
+    }
 }
 
 #[cfg(test)]

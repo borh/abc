@@ -3,6 +3,10 @@
 version = 4
 
 [[package]]
+name = "ab-source-syntax"
+version = "0.1.0"
+
+[[package]]
 name = "adler2"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -115,12 +119,12 @@ dependencies = [
 name = "aozora2-adapter"
 version = "0.1.0"
 dependencies = [
+ "ab-source-syntax",
  "anyhow",
  "aozora-core",
  "clap",
  "criterion",
  "encoding_rs",
- "regex",
  "serde",
  "serde_json",
  "sha2",

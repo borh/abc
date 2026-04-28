@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<grammar xmlns="http://relaxng.org/ns/structure/1.0"
+         xmlns:tei="http://www.tei-c.org/ns/1.0"
+         datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes">
+  <!--
+    Draft checked-in target for ADR 0012. The validation harness must replace
+    this with a reproducibly generated Relax NG artifact from tei-profile.odd
+    before the upstream tei_all.rng compatibility baseline is retired.
+  -->
+  <start>
+    <ref name="tei-document"/>
+  </start>
+
+  <define name="tei-document">
+    <element name="tei:TEI">
+      <zeroOrMore>
+        <choice>
+          <attribute>
+            <anyName/>
+            <text/>
+          </attribute>
+          <ref name="tei-node"/>
+          <text/>
+        </choice>
+      </zeroOrMore>
+    </element>
+  </define>
+
+  <define name="tei-node">
+    <element>
+      <nsName ns="http://www.tei-c.org/ns/1.0"/>
+      <zeroOrMore>
+        <choice>
+          <attribute>
+            <anyName/>
+            <text/>
+          </attribute>
+          <ref name="tei-node"/>
+          <text/>
+        </choice>
+      </zeroOrMore>
+    </element>
+  </define>
+</grammar>

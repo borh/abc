@@ -1,0 +1,6 @@
+@prefix abc: <https://w3id.org/abc/> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+
+abc:linked-art-candidate-rashomon a prov:Entity ;
+  prov:wasDerivedFrom abc:artifact-sha256-bdda3542406de4ad4ff9ecc4c4d135b67678dd1861f943debd3e6275ad325f12 ;
+  prov:wasGeneratedBy abc:linked-art-publication-view-evaluation .

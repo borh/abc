@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+  <teiHeader>
+    <fileDesc>
+      <titleStmt/>
+      <publicationStmt>
+        <idno type="aozora-work-id">000127</idno>
+        <p>ABC fixture.</p>
+      </publicationStmt>
+      <sourceDesc>
+        <p>Aozora Bunko source fixture.</p>
+      </sourceDesc>
+    </fileDesc>
+  </teiHeader>
+  <text>
+    <body>
+      <p>Missing title but structurally simple XML.</p>
+    </body>
+  </text>
+</TEI>

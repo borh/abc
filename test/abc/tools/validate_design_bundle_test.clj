@@ -152,15 +152,61 @@
                                           ["examples/v0/example-work/tei.xml"])))))))
 
 (deftest validate-tei-loud-fail-when-env-unset-test
-  (testing "validate-tei! throws ex-info naming TEI_SCHEMA_PATH when called with nil"
+  (testing "validate-tei! throws ex-info naming the schema-path problem when called with nil"
     (try
       (validate/validate-tei! nil ["examples/v0/example-work/tei.xml"])
       (is false "expected validate-tei! to throw")
       (catch clojure.lang.ExceptionInfo e
-        (is (re-find #"TEI_SCHEMA_PATH" (ex-message e)))
-        (is (= "TEI_SCHEMA_PATH" (:env-var (ex-data e)))
-            (str "ex-data must surface the env var name; got: "
+        (is (re-find #"TEI RelaxNG schema path" (ex-message e)))
+        (is (= :missing-schema-path (:error (ex-data e)))
+            (str "ex-data must surface the schema-path error; got: "
                  (pr-str (ex-data e))))))))
+
+(deftest validate-tei-schematron-expected-findings-test
+  (testing "expected invalid fixtures fail with the requested rule IDs"
+    (is (nil? (validate/validate-tei-schematron!
+               {:schema-path "schemas/tei-profile.sch"
+                :valid-fixtures ["examples/v0/example-work/tei.xml"
+                                 "fixtures/tei/valid/rashomon-minimal.xml"
+                                 "fixtures/tei/valid/source-span-local-ref.xml"
+                                 "fixtures/tei/valid/transcription-enrichment-declared.xml"]
+                :warning-fixtures {"fixtures/tei/warnings/figure-missing-desc.xml"
+                                   #{"abc-figure-accessibility"}
+                                   "fixtures/tei/warnings/transcription-enrichment-undeclared.xml"
+                                   #{"abc-transcription-vs-annotation"}}
+                :invalid-fixtures {"fixtures/tei/invalid/missing-title.xml"
+                                   #{"abc-tei-header-title"}
+                                   "fixtures/tei/invalid/missing-source-work-id.xml"
+                                   #{"abc-tei-header-source-work-id"}
+                                   "fixtures/tei/invalid/gaiji-missing-ref.xml"
+                                   #{"abc-gaiji-reference"}
+                                   "fixtures/tei/invalid/ruby-missing-reading.xml"
+                                   #{"abc-ruby-complete"}
+                                   "fixtures/tei/invalid/source-span-external-ref.xml"
+                                   #{"abc-source-span-reference"}}})))))
+
+(deftest validate-tei-schematron-loud-fail-test
+  (testing "a fixture missing its expected finding makes the harness fail"
+    (is (thrown-with-msg?
+         clojure.lang.ExceptionInfo
+         #"missing expected Schematron rule"
+         (validate/validate-tei-schematron!
+          {:schema-path "schemas/tei-profile.sch"
+           :valid-fixtures []
+           :warning-fixtures {}
+           :invalid-fixtures {"fixtures/tei/valid/rashomon-minimal.xml"
+                              #{"abc-tei-header-title"}}})))))
+
+(deftest validate-tei-schematron-valid-fixture-loud-fail-test
+  (testing "valid fixtures must have no error findings"
+    (is (thrown-with-msg?
+         clojure.lang.ExceptionInfo
+         #"unexpected Schematron error"
+         (validate/validate-tei-schematron!
+          {:schema-path "schemas/tei-profile.sch"
+           :valid-fixtures ["fixtures/tei/invalid/missing-title.xml"]
+           :warning-fixtures {}
+           :invalid-fixtures {}})))))
 
 (def ^:private bundle-args
   {:record-path "examples/v0/example-work/metadata-record.json"

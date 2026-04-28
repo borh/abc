@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+  <teiHeader>
+    <fileDesc>
+      <titleStmt>
+        <title type="main" xml:lang="ja">羅生門</title>
+      </titleStmt>
+      <publicationStmt>
+        <idno type="aozora-work-id">000127</idno>
+        <p>ABC fixture.</p>
+      </publicationStmt>
+      <sourceDesc>
+        <p>Aozora Bunko source fixture.</p>
+      </sourceDesc>
+    </fileDesc>
+  </teiHeader>
+  <text>
+    <body>
+      <p><w>未宣言</w></p>
+    </body>
+  </text>
+</TEI>

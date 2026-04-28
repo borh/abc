@@ -1,24 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<TEI xmlns="http://www.tei-c.org/ns/1.0">
+<TEI xmlns="http://www.tei-c.org/ns/1.0"
+     xmlns:sch="http://purl.oclc.org/dsdl/schematron">
   <teiHeader>
     <fileDesc>
       <titleStmt>
-        <title>ABC Minimal Aozora TEI Profile v0</title>
+        <title>ABC Minimum Aozora TEI Profile v0</title>
       </titleStmt>
       <editionStmt>
         <edition>Draft v0 targeting TEI P5 4.11.0-era ruby support.</edition>
       </editionStmt>
       <publicationStmt>
-        <p>Draft profile stub for ABC v0 design bundle.</p>
+        <p>Draft profile contract for ABC v0 design bundle.</p>
       </publicationStmt>
       <sourceDesc>
-        <p>Derived from the ABC high-level architecture note v0.5.</p>
+        <p>Derived from the ABC high-level architecture note v0.5.1 and ADR 0012.</p>
       </sourceDesc>
     </fileDesc>
   </teiHeader>
   <text>
     <body>
-      <schemaSpec ident="abc-aozora-minimal" start="TEI">
+      <schemaSpec ident="abc-tei-v0" start="TEI">
+        <desc>ABC minimum TEI profile for Aozora Bunko-derived artifacts.</desc>
+
+        <!-- TEI modules -->
         <moduleRef key="tei"/>
         <moduleRef key="header"/>
         <moduleRef key="core"/>
@@ -26,53 +30,139 @@
         <moduleRef key="namesdates"/>
         <moduleRef key="transcr"/>
         <moduleRef key="figures"/>
+
+        <!-- Schematron constraint declarations -->
+        <constraintDecl scheme="schematron" queryBinding="xslt2">
+          <sch:ns prefix="tei" uri="http://www.tei-c.org/ns/1.0"/>
+        </constraintDecl>
+
+        <!-- Project documentation -->
+        <remarks>
+          <p>
+            This ODD is the canonical ABC v0 TEI profile contract. It must
+            generate a project-specific Relax NG schema and a project-specific
+            Schematron schema before the TEI profile is considered complete.
+          </p>
+          <p>
+            `tei_profile_hash` identifies this ODD/profile contract. Generated
+            RNG and Schematron files are derived validation artifacts; generator
+            version and stylesheet/toolchain hashes are validation-run metadata
+            unless a later ADR promotes them into profile identity.
+          </p>
+          <p>
+            Aozora ruby must preserve base text, reading, source span, and
+            whether the base scope was explicit, inferred, grouped, mid-word, or
+            ambiguous in the parser IR. Aozora gaiji output must preserve the
+            original marker and link to the resolution policy used to choose
+            Unicode, IVS, glyph, or unresolved fallback output.
+          </p>
+        </remarks>
+
+        <list>
+          <head>Initial Schematron rule inventory</head>
+          <item><label>abc-tei-header-title</label> error: every generated TEI file must have a main title in `teiHeader`.</item>
+          <item><label>abc-tei-header-source-work-id</label> error: TEI header must preserve the Aozora work ID or source identifier.</item>
+          <item><label>abc-ruby-complete</label> error: ruby structures must contain base and reading components.</item>
+          <item><label>abc-gaiji-reference</label> error: gaiji must retain original marker and either a resolved replacement or unresolved status.</item>
+          <item><label>abc-figure-accessibility</label> warning initially: figures/images should have `figDesc`, `head`, or caption mapping where available.</item>
+          <item><label>abc-source-span-reference</label> error: elements claiming source spans must point to valid span identifiers.</item>
+          <item><label>abc-transcription-vs-annotation</label> warning initially: linguistic enrichment must not be mixed into transcription unless declared.</item>
+        </list>
+
+        <!-- Element/attribute constraints and documentation anchors -->
         <elementSpec ident="ruby" mode="change" module="core">
           <remarks>
-            <p>
-              Aozora ruby must preserve base text, reading, source span, and
-              whether the base scope was explicit, inferred, grouped,
-              mid-word, or ambiguous in the parser IR.
-            </p>
-          </remarks>
-        </elementSpec>
-        <elementSpec ident="rb" mode="change" module="core">
-          <remarks>
-            <p>Ruby base text is represented with native TEI ruby support.</p>
-          </remarks>
-        </elementSpec>
-        <elementSpec ident="rt" mode="change" module="core">
-          <remarks>
-            <p>Ruby reading text is represented with native TEI ruby support.</p>
+            <p>Ruby is represented with native TEI `ruby`, `rb`, and `rt` elements.</p>
           </remarks>
         </elementSpec>
         <elementSpec ident="g" mode="change" module="transcr">
           <remarks>
-            <p>
-              Aozora gaiji output must preserve the original marker and link to
-              the resolution policy used to choose Unicode, IVS, glyph, or
-              unresolved fallback output.
-            </p>
+            <p>Gaiji uses TEI `g` with a stable declaration or resolution reference.</p>
           </remarks>
         </elementSpec>
         <elementSpec ident="char" mode="change" module="transcr">
           <remarks>
-            <p>
-              Character declarations should document unresolved or custom
-              external-character mappings needed by Aozora source notation.
-            </p>
+            <p>Character declarations document unresolved or custom external-character mappings.</p>
           </remarks>
         </elementSpec>
-        <remarks>
-          <p>
-            This stub records the v0 profile intent: preserve Aozora source
-            transcription, native TEI ruby elements, gaiji/glyph policy, source
-            metadata, and validation hooks. It is not a complete ODD.
-          </p>
-          <p>
-            Divergence from TEI-EAJ draft guidance must be documented in this
-            profile before publication.
-          </p>
-        </remarks>
+
+        <!-- Schematron constraint declarations -->
+        <constraintSpec ident="abc-tei-header-title" scheme="schematron">
+          <desc>Require a main title in generated ABC TEI headers.</desc>
+          <constraint>
+            <sch:rule context="tei:teiHeader">
+              <sch:assert test="tei:fileDesc/tei:titleStmt/tei:title[not(@type = 'sub')]">
+                ABC TEI requires a main title in teiHeader/fileDesc/titleStmt.
+              </sch:assert>
+            </sch:rule>
+          </constraint>
+        </constraintSpec>
+
+        <constraintSpec ident="abc-tei-header-source-work-id" scheme="schematron">
+          <desc>Require an Aozora work ID or source identifier in generated headers.</desc>
+          <constraint>
+            <sch:rule context="tei:teiHeader">
+              <sch:assert test=".//tei:idno[@type = ('aozora-work-id', 'source-work-id')]">
+                ABC TEI requires an Aozora work ID or source work identifier.
+              </sch:assert>
+            </sch:rule>
+          </constraint>
+        </constraintSpec>
+
+        <constraintSpec ident="abc-ruby-complete" scheme="schematron">
+          <desc>Require ruby base and reading components.</desc>
+          <constraint>
+            <sch:rule context="tei:ruby">
+              <sch:assert test="tei:rb and tei:rt">
+                ABC TEI ruby requires both rb and rt components.
+              </sch:assert>
+            </sch:rule>
+          </constraint>
+        </constraintSpec>
+
+        <constraintSpec ident="abc-gaiji-reference" scheme="schematron">
+          <desc>Require gaiji traceability and resolution status.</desc>
+          <constraint>
+            <sch:rule context="tei:g">
+              <sch:assert test="@ref or @corresp or @ana">
+                ABC TEI gaiji requires a declaration reference, source marker reference, or resolution status.
+              </sch:assert>
+            </sch:rule>
+          </constraint>
+        </constraintSpec>
+
+        <constraintSpec ident="abc-figure-accessibility" scheme="schematron">
+          <desc>Warn when a figure has no textual description.</desc>
+          <constraint>
+            <sch:rule context="tei:figure">
+              <sch:report test="not(tei:figDesc or tei:head or tei:p)">
+                ABC TEI figure should preserve a figDesc, head, or caption paragraph when available.
+              </sch:report>
+            </sch:rule>
+          </constraint>
+        </constraintSpec>
+
+        <constraintSpec ident="abc-source-span-reference" scheme="schematron">
+          <desc>Require source-span references to be local fragment identifiers.</desc>
+          <constraint>
+            <sch:rule context="*[@source]">
+              <sch:assert test="every $s in tokenize(normalize-space(@source), '\s+') satisfies starts-with($s, '#')">
+                ABC TEI source span references must point to local span identifiers.
+              </sch:assert>
+            </sch:rule>
+          </constraint>
+        </constraintSpec>
+
+        <constraintSpec ident="abc-transcription-vs-annotation" scheme="schematron">
+          <desc>Warn when linguistic enrichment appears in the transcription body without declaration.</desc>
+          <constraint>
+            <sch:rule context="tei:text//tei:w | tei:text//tei:m | tei:text//tei:pc">
+              <sch:assert test="ancestor::tei:TEI/tei:teiHeader//tei:encodingDesc//tei:tagsDecl//tei:namespace[@name = 'http://www.tei-c.org/ns/1.0']/tei:tagUsage/@gi = local-name()">
+                ABC TEI linguistic enrichment in the transcription layer must be declared in the header.
+              </sch:assert>
+            </sch:rule>
+          </constraint>
+        </constraintSpec>
       </schemaSpec>
     </body>
   </text>

@@ -2,7 +2,7 @@
 
 Date: 2026-04-26
 Status: Draft RFC
-Version: 0.5
+Version: 0.5.1
 
 This note captures a direction for ABC while the language, storage, parser,
 and pipeline choices are still open. It is intentionally high-level, but not
@@ -325,6 +325,19 @@ or releases, but it is currently an emerging research/tooling direction. The
 first v0 check should remain ordinary SHACL over the derived RDF view for a
 single artifact bundle.
 
+SHACL remains the v0 RDF validation language because the manifest publication
+view needs constraint validation with understandable reports. ShEx is recorded
+as an alternative for compact schema-like graph descriptions, recursive shape
+patterns, or external consumers that prefer ShEx. No ShEx implementation is
+required for v0, and `manifest.shacl.ttl` remains the v0 gate.
+
+Revisit ShEx when recursive graph constraints become painful in SHACL,
+external partners request ShEx, `rudof` materially simplifies validation
+tooling, or Linked Art/IIIF publication views need additional schema-like
+validation. `rudof` should be evaluated later if ABC wants a Rust-native tool
+that can work across SHACL, ShEx, DCTAP, and related validation/modeling
+formats.
+
 ## Packaging, FAIR, and Schema Evolution
 
 The canonical manifest can stay small and identity-focused while publication
@@ -501,8 +514,11 @@ The validation strategy should be explicit:
 
 - Generate or select a TEI ODD/profile.
 - Build the Relax NG schema from that profile.
+- Embed or generate ISO Schematron constraints from the same ODD/profile for
+  business rules that ordinary schema languages cannot express cleanly.
 - Validate TEI artifacts with Jing, either through the JVM API or an external
-  `jing` command.
+  `jing` command, against the project-specific Relax NG schema.
+- Validate TEI artifacts with Schematron after Relax NG validation.
 - Make validation a pipeline stage, so invalid TEI is a failed artifact rather
   than a late manual discovery.
 
@@ -523,6 +539,21 @@ the profile diverges from TEI-EAJ guidance, the divergence should be explicit
 and justified in the ODD documentation. Because TEI-EAJ guidance is still
 evolving, ABC should document the exact conventions it adopts and keep a small
 divergence/change note when upstream guidance changes.
+
+## SOTA Alignment Deltas
+
+This section records standards and practices identified during review that are
+not yet fully represented in the v0 design bundle. These are incremental
+additions to the manifest-first design, not replacements. PROV-O remains the
+artifact provenance layer. Linked Art, if adopted, is a derived
+cultural-heritage publication/profile layer.
+
+| Area | Current state | Gap | Action |
+| --- | --- | --- | --- |
+| TEI profile | ODD stub, Jing validation against upstream `tei_all.rng` | No project Schematron layer | Add Schematron constraints inside `tei-profile.odd`; generate both RNG and Schematron outputs |
+| RDF validation | SHACL for RDF/PROV-O view | ShEx/rudof not discussed | Keep SHACL for v0; document ShEx/rudof as future/alternative |
+| Cultural heritage LOD | PROV-O, DC alignment, RO-Crate evaluation | No Linked Art / CIDOC-CRM positioning | Add Linked Art evaluation ADR and JSON-LD context decision |
+| Image/facsimile interoperability | Parser IR mentions images/captions | No IIIF policy | Add IIIF applicability decision; adopt only if source images/facsimiles are in scope |
 
 ## Ontology, RDF, and Querying
 
@@ -947,8 +978,9 @@ The project needs separate validation loops:
 - Error taxonomy: require stable error codes and severity levels in parser IR
   and failure manifests, and aggregate them across benchmark corpora.
 - TEI validity: validate generated XML against the selected Relax NG schema,
-  using Jing as the baseline and any lighter validator only after fixture
-  parity is demonstrated.
+  using Jing as the baseline, then validate project Schematron rules from the
+  ODD. Any lighter validator is acceptable only after fixture parity is
+  demonstrated for both layers.
 - Manifest validity: validate canonical JSON with JSON Schema, and validate
   the derived RDF/PROV-O publication view with SHACL.
 - Incremental correctness: confirm that changing one work invalidates only
@@ -970,9 +1002,13 @@ hashed like other benchmark inputs.
 
 The CI gate should run JSON Schema checks for manifests and parser IR,
 canonicalization fixtures, parser warning/error taxonomy checks, TEI validation
-for generated samples, deterministic RDF view generation, and the generated
-manifest index. Larger parser-performance and full-corpus validation runs can
-be scheduled jobs or release-candidate gates rather than required on every PR.
+for generated samples using both ODD-derived Relax NG and Schematron,
+deterministic RDF view generation, and the generated manifest index. The
+decision artifacts for Linked Art and IIIF should be mandatory before those
+publication views become build blockers; generated Linked Art JSON-LD or IIIF
+manifests remain conditional until their ADRs are accepted. Larger
+parser-performance and full-corpus validation runs can be scheduled jobs or
+release-candidate gates rather than required on every PR.
 
 ## Near-Term Design Questions
 
@@ -983,7 +1019,7 @@ rather than as separate prose decisions:
 | --- | --- | --- |
 | What is the manifest schema? | `manifest.schema.json`, `manifest.shacl.ttl`, manifest-to-RDF fixtures | JSON validity, RDF view determinism, failure-manifest fixture |
 | What is the parser IR? | `parser-ir.schema.json`, parser evaluation ADR | IR round-trip, warning/error sidecars, source-span fixtures |
-| What is the minimum TEI profile? | `tei-profile.odd` | Relax NG validation, documented TEI-EAJ convention choices |
+| What is the minimum TEI profile? | `tei-profile.odd` | Relax NG + Schematron validation, documented TEI-EAJ convention choices |
 | Which parser path is preferred? | Parser ecosystem ADR | Must-pass criteria, benchmark corpus, compatibility review |
 | What must be queryable? | Example bundle query index, operational ADR | Coordinate lookup and provenance traversal examples |
 | What is publication-grade output? | RO-Crate evaluation, security ADR, Nix/materialization ADR | Signed/releasable bundle shape and retention policy |
@@ -1011,10 +1047,13 @@ work.
    gaiji, editor notes, spans, structured warning references, and error
    severity/code taxonomy.
 5. `tei-profile.odd`: minimum TEI ODD aligned with TEI P5 ruby support and
-   explicitly selected TEI-EAJ draft conventions. (Stub committed; harness
-   validates TEI against upstream `tei_all.rng` via Jing in-process.
-   Promoting the ODD to drive a project-specific RelaxNG is the next TEI
-   step.)
+   explicitly selected TEI-EAJ draft conventions. The next TEI step is to make
+   the ODD the canonical profile contract and derive both project Relax NG and
+   Schematron from it. `tei_profile_hash` identifies the canonical ODD/profile
+   contract; generated RNG and Schematron files are derived validation
+   artifacts. Generator version and stylesheet/toolchain hashes belong in
+   validation run metadata unless a later ADR explicitly promotes them into
+   profile identity.
 6. One end-to-end example artifact bundle for a single Aozora work: source
    manifest, parser IR, warning sidecar, TEI XML, validation result, RDF/PROV-O
    manifest, failure-manifest fixture or subtype example, and a small query
@@ -1026,12 +1065,17 @@ work.
    expressed as an RO-Crate 1.2 profile, including Detached Crates, Profile
    Crates, entity reachability rules, and which metadata belongs in RO-Crate
    vs. the canonical identity manifest.
-9. `tokenizer-determinism.md`: document known-good tokenizer configurations,
+9. `linked-art-crosswalk.md` and `json-ld-context-policy.md`: evaluate a
+   derived Linked Art-compatible JSON-LD publication view without making it a
+   competing identity system.
+10. IIIF applicability ADR: define when image/facsimile presentation is
+    required, optional, or out of scope so text-only v0 bundles remain valid.
+11. `tokenizer-determinism.md`: document known-good tokenizer configurations,
    fixture expectations, dictionary hashes, locale/encoding assumptions, and
    the rule for demoting non-deterministic tokenizers out of the Exact tier.
-10. `ci-smoke-corpus.md`: define the representative PR validation corpus,
+12. `ci-smoke-corpus.md`: define the representative PR validation corpus,
     selection rationale, expected runtime, and required checks.
-11. One ADR for parser ecosystem evaluation criteria, one ADR for Nix corpus
+13. One ADR for parser ecosystem evaluation criteria, one ADR for Nix corpus
    input/materialization policy, one ADR for supply-chain release security
    covering SLSA/in-toto/Sigstore choices, and one short operational ADR for
    runtime orchestration, concurrency, API surface, storage packing,
@@ -1065,6 +1109,10 @@ notes when it affects an adopted ADR.
 - RFC 8785 JSON Canonicalization Scheme: https://www.rfc-editor.org/rfc/rfc8785
 - JSON Schema Draft 2020-12: https://json-schema.org/draft/2020-12
 - RDF Dataset Canonicalization 1.0: https://www.w3.org/TR/rdf-canon/
+- W3C SHACL Recommendation: https://www.w3.org/TR/shacl/
+- W3C SHACL 1.2 Core draft watch item: https://www.w3.org/TR/shacl12-core/
+- Shape Expressions Language 2.1: https://shex.io/shex-semantics/
+- rudof RDF validation toolkit: https://rudof-project.github.io/rudof/
 - FAIR principles: https://www.go-fair.org/fair-principles
 - SLSA: https://slsa.dev/
 - in-toto Attestation Framework: https://github.com/in-toto/attestation
@@ -1074,8 +1122,16 @@ notes when it affects an adopted ADR.
 - Software Heritage persistent identifiers: https://docs.softwareheritage.org/devel/swh-model/persistent-identifiers.html
 - Multiformats CID: https://github.com/multiformats/cid
 - TEI P5 releases: https://tei-c.org/guidelines/p5/
+- TEI P5 ODD documentation elements: https://tei-c.org/release/doc/tei-p5-doc/en/html/TD.html
+- TEI `constraintDecl`: https://tei-c.org/release/doc/tei-p5-doc/en/html/ref-constraintDecl.html
+- TEI `constraintSpec`: https://tei-c.org/release/doc/tei-p5-doc/en/html/ref-constraintSpec.html
+- TEI `constraintSpec` examples: https://tei-c.org/release/doc/tei-p5-doc/en/html/examples-constraintSpec.html
 - TEI P5 characters, glyphs, and writing modes: https://www.tei-c.org/release/docs/tei-p5-docs/en/html/WD.html
 - TEI-EAJ jp_guidelines: https://github.com/TEI-EAJ/jp_guidelines
+- Linked Art data model: https://linked.art/model/
+- Linked Art CIDOC-CRM profile: https://linked.art/model/profile/
+- IIIF overview: https://iiif.io/
+- IIIF Presentation API 3.0: https://iiif.io/api/presentation/3.0/
 - Local parser research: `references/parser-research.md`
 - Local TEI research: `references/TEI-research.md`
 - Local Aozora research: `references/aozora-bunko-research.md`
@@ -1092,6 +1148,9 @@ notes when it affects an adopted ADR.
   deliverables, downgraded exploratory PROV/SHACL-DS items, added threat model,
   SPDX guidance, multi-host concurrency caveat, failure-manifest fixture, and
   reference archival policy.
+- 0.5.1: Added SOTA alignment deltas for Schematron, ShEx/rudof, Linked Art,
+  and IIIF; clarified that Linked Art and IIIF are derived publication views,
+  not replacements for manifest-first identity.
 - 0.4: Specified JSON Schema Draft 2020-12, added SLSA/in-toto/Sigstore
   release-security evaluation, expanded RO-Crate 1.2 evaluation, added SHACL-DS
   as a future cross-graph validation candidate, acknowledged TEI-EAJ draft

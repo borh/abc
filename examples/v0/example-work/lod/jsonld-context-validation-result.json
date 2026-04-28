@@ -1,0 +1,6 @@
+{
+  "status": "not_run",
+  "context": "../../../../contexts/abc-v0.jsonld",
+  "context_hash": null,
+  "message": "Decision artifact only. JSON-LD compaction/expansion validation is enabled after ADR 0013 acceptance."
+}

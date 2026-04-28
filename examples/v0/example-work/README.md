@@ -16,8 +16,14 @@ Files:
 - `tei.xml`: TEI output fixture.
 - `validation.json`: validation result sidecar fixture. No JSON Schema exists
   for this sidecar yet.
+- `tei-validation-result.json`: ADR 0012 TEI validation-result sidecar target
+  covering well-formedness, Relax NG, and Schematron layers.
 - `manifest.json`: TEI artifact manifest fixture.
 - `manifest.ttl`: deterministic RDF/PROV-O view fixture.
+- `lod/`: derived publication-view fixtures for PROV-O and Linked Art
+  evaluation. Linked Art is not canonical for v0.
+- `iiif/applicability.json`: ADR 0014 decision fixture recording that this
+  text-only v0 bundle does not require IIIF.
 - `query-index-entry.json`: query index fixture. No JSON Schema exists for
   this index entry yet.
 - `failure-manifest.example.json`: first-class failure manifest fixture.

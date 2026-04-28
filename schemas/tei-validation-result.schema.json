@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/abc/schemas/tei-validation-result.schema.json",
+  "title": "ABC TEI validation result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "validated_artifact",
+    "tei_profile_hash",
+    "status",
+    "layers",
+    "toolchain"
+  ],
+  "properties": {
+    "validated_artifact": {
+      "$ref": "#/$defs/hash"
+    },
+    "tei_profile_hash": {
+      "$ref": "#/$defs/hash"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["passed", "warning", "failed"]
+    },
+    "layers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["well_formed_xml", "relax_ng", "schematron"],
+      "properties": {
+        "well_formed_xml": {
+          "$ref": "#/$defs/layerResult"
+        },
+        "relax_ng": {
+          "$ref": "#/$defs/layerResult"
+        },
+        "schematron": {
+          "$ref": "#/$defs/layerResult"
+        }
+      }
+    },
+    "toolchain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["odd_path", "rng_path", "schematron_path"],
+      "properties": {
+        "odd_path": { "type": "string" },
+        "rng_path": { "type": ["string", "null"] },
+        "schematron_path": { "type": ["string", "null"] },
+        "odd_hash": { "$ref": "#/$defs/nullableHash" },
+        "rng_hash": { "$ref": "#/$defs/nullableHash" },
+        "schematron_hash": { "$ref": "#/$defs/nullableHash" },
+        "generator": { "type": ["string", "null"] },
+        "generator_build_hash": { "$ref": "#/$defs/nullableHash" }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["rule_id", "severity", "layer", "message"],
+        "properties": {
+          "rule_id": { "type": "string" },
+          "severity": { "type": "string", "enum": ["error", "warning", "info"] },
+          "layer": { "type": "string", "enum": ["well_formed_xml", "relax_ng", "schematron"] },
+          "message": { "type": "string" },
+          "location": { "type": ["string", "null"] },
+          "allowed": { "type": "boolean" }
+        }
+      },
+      "default": []
+    }
+  },
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "nullableHash": {
+      "type": ["string", "null"],
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "layerResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["passed", "warning", "failed", "not_run"]
+        },
+        "validator": { "type": ["string", "null"] },
+        "message": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

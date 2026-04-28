@@ -24,8 +24,9 @@ As of 2026-04-28 the validation CLI also runs:
 
 The remaining `release-smoke` items are signature verification, provenance
 verification, and archive/mirror hash verification. The TEI step still
-validates against the full `tei_all.rng`; promoting `schemas/tei-profile.odd`
-from stub to a project-specific ODD-derived schema is the next TEI step.
+validates against the full `tei_all.rng`; ADR 0012 supersedes that TEI profile
+stub status by requiring `schemas/tei-profile.odd` to become the source for
+both project-specific Relax NG and Schematron validation artifacts.
 
 ## Context
 
@@ -55,7 +56,19 @@ clojure -M:abc/validate-design-bundle
 `bin/validate-design-bundle.sh` remains as a compatibility wrapper and
 delegates to the Clojure/Nix entry point where available.
 
-The script validates only repository-local design artifacts:
+The script validates only repository-local design artifacts. The v0 target
+sequence is:
+
+1. Validate canonical JSON manifests with JSON Schema.
+2. Generate or verify `schemas/tei-profile.rng` from `schemas/tei-profile.odd`.
+3. Generate or verify `schemas/tei-profile.sch` from `schemas/tei-profile.odd`.
+4. Validate sample TEI with Jing against the project Relax NG schema.
+5. Validate sample TEI with Schematron.
+6. Validate derived RDF/PROV-O with SHACL.
+7. Validate example Linked Art / IIIF fixtures if their ADRs enable those
+   derived publication views.
+
+The current implementation validates:
 
 - `schemas/manifest.schema.json` is a valid JSON Schema Draft 2020-12 schema.
 - `schemas/parser-ir.schema.json` is a valid JSON Schema Draft 2020-12 schema.
@@ -66,6 +79,8 @@ The script validates only repository-local design artifacts:
 - Array-ordering negative fixtures produce different digests.
 - `schemas/tei-profile.odd` and `examples/v0/example-work/tei.xml` are
   well-formed XML.
+- `schemas/tei-profile.sch` exists as the Schematron target artifact once ADR
+  0012 is implemented by the harness.
 - `cliff.toml` is accepted by `git-cliff`.
 
 The validation CLI is intentionally a smoke gate. It has three named levels:
@@ -82,9 +97,11 @@ The validation CLI is intentionally a smoke gate. It has three named levels:
 
 The current command implements `design-smoke`, the imported-output parts of
 `contract-smoke`, TEI RelaxNG validation against the upstream `tei_all.rng`,
-and SHACL validation of every manifest's RDF view. It does not yet prove that
-`schemas/tei-profile.odd` generates a project-specific Relax NG schema, nor
-that any parser candidate satisfies the IR contract.
+and SHACL validation of every manifest's RDF view. ADR 0012 changes the TEI
+target from upstream-only Relax NG to ODD-derived Relax NG plus Schematron, but
+the harness must still prove reproducible generation before the upstream schema
+can be removed as the compatibility baseline. It does not yet prove that any
+parser candidate satisfies the IR contract.
 
 ## Runtime Policy
 
@@ -93,6 +110,8 @@ tools where possible. The validation dev shell provides:
 
 - Clojure with the `m3` JSON Schema validator,
 - `xmllint` via `libxml2`,
+- Jing for Relax NG compatibility validation,
+- an ISO Schematron-capable processor,
 - `git-cliff`,
 - `jq` for future fixture checks.
 
@@ -119,7 +138,14 @@ gate, not a full corpus build:
 - `bin/validate-design-bundle.sh` delegates to the supported command rather
   than duplicating validation logic.
 - A broken example manifest causes the script to exit non-zero.
+- A TEI fixture that passes Relax NG but violates a project Schematron rule
+  causes the script to exit non-zero and materializes a failure manifest.
+- A figure accessibility warning fixture reports the expected rule ID without
+  failing the run unless policy promotes that warning to an error.
 - A canonicalization fixture hash mismatch causes the script to exit non-zero.
+- Linked Art and IIIF decision artifacts are mandatory; generated Linked Art
+  JSON-LD and IIIF manifests are build blockers only after ADR 0013/0014 enable
+  them for the relevant fixture class.
 - `nix flake check` succeeds after adding the validation dependencies.
 - CI invokes the same script used locally.
 

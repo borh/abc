@@ -52,6 +52,23 @@ copied from the ABC manifest; if an entity cannot be reached, the ABC profile
 must define the missing relationship or leave that metadata in the canonical
 manifest only.
 
+## Relationship to Linked Art and IIIF
+
+RO-Crate packages the research object and release bundle. PROV-O describes
+artifact derivation and build provenance. Linked Art describes
+cultural-heritage entities where the mapping is clear. IIIF presents
+image/facsimile resources when applicable. The canonical ABC manifest remains
+the identity root.
+
+| Layer | Purpose | Canonical? |
+| --- | --- | ---: |
+| ABC JSON manifest | Artifact identity and reproducibility | yes |
+| PROV-O RDF | Provenance publication/query view | derived |
+| SHACL | RDF validation | validation |
+| Linked Art JSON-LD | Cultural-heritage interoperability | derived/evaluated |
+| IIIF Presentation | Image/facsimile presentation | derived/conditional |
+| RO-Crate | Release bundle packaging | derived |
+
 ## Evaluation Criteria
 
 - Can every ABC artifact manifest be referenced without changing ArtifactID?

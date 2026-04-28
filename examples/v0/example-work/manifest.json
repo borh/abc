@@ -51,7 +51,7 @@
     {
       "hash": "sha256:abababababababababababababababababababababababababababababababab",
       "media_type": "application\/json",
-      "path_hint": "validation.json",
+      "path_hint": "tei-validation-result.json",
       "role": "validation-result"
     }],
   "signatures": [],

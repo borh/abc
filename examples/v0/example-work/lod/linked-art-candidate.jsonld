@@ -1,0 +1,48 @@
+{
+  "@context": [
+    "https://linked.art/ns/v1/linked-art.json",
+    "../../../../contexts/abc-v0.jsonld"
+  ],
+  "id": "https://w3id.org/abc/example/work/000127/linked-art-candidate",
+  "type": "HumanMadeObject",
+  "_label": "羅生門 derived publication view candidate",
+  "canonicalManifest": "https://w3id.org/abc/artifact/sha256-bdda3542406de4ad4ff9ecc4c4d135b67678dd1861f943debd3e6275ad325f12",
+  "artifactId": "sha256:bdda3542406de4ad4ff9ecc4c4d135b67678dd1861f943debd3e6275ad325f12",
+  "identified_by": [
+    {
+      "type": "Name",
+      "content": "羅生門",
+      "language": [
+        {
+          "id": "http://vocab.getty.edu/aat/300388277",
+          "type": "Language",
+          "_label": "Japanese"
+        }
+      ]
+    },
+    {
+      "type": "Identifier",
+      "content": "000127",
+      "classified_as": [
+        {
+          "id": "https://w3id.org/abc/vocab#AozoraWorkId",
+          "type": "Type",
+          "_label": "Aozora work ID"
+        }
+      ]
+    }
+  ],
+  "referred_to_by": [
+    {
+      "type": "LinguisticObject",
+      "content": "Candidate Linked Art-compatible view generated from ABC metadata; not canonical for v0."
+    }
+  ],
+  "subject_of": [
+    {
+      "id": "https://www.aozora.gr.jp/cards/000879/card127.html",
+      "type": "DigitalObject",
+      "_label": "Aozora Bunko card"
+    }
+  ]
+}

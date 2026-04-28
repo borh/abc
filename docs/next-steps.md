@@ -47,16 +47,20 @@ In rough order of leverage, none committed:
    namespace question is resolved.
 3. **TEI ODD promotion.** Promote `schemas/tei-profile.odd` from
    stub to a project-specific ODD aligned with TEI P5 4.11.0 ruby
-   support. Generate a project-specific RelaxNG via `roma`/`teiroma`
-   and use it instead of `tei_all.rng` in `validate-design-bundle`.
-4. **Parser-decision exercise (ADR 0002).** Run a candidate parser
+   support. Generate project-specific Relax NG and Schematron via
+   `roma`/`teiroma` or equivalent, then use both layers in
+   `validate-design-bundle`.
+4. **Cultural-heritage publication profile.** Evaluate the derived
+   Linked Art JSON-LD crosswalk and IIIF applicability fixtures
+   without changing canonical manifest identity.
+5. **Parser-decision exercise (ADR 0002).** Run a candidate parser
    (e.g. `aozora-rs`) over one Aozora work into the parser IR
    contract. Currently parked while parser work happens in another
    project.
-5. **Person identity drift (Flavor 2).** Splits, merges, renames as
+6. **Person identity drift (Flavor 2).** Splits, merges, renames as
    PROV-style events; the separated-persons milestone scoped Flavor 1
    only.
-6. **Move legacy namespaces behind clj-nix.** `abc.aozora`,
+7. **Move legacy namespaces behind clj-nix.** `abc.aozora`,
    `abc.tei`, `abc.stats` remain outside the v0 contract gate.
 
 ## Done Criteria For The Closed Milestones

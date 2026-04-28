@@ -12,6 +12,7 @@
    [abc.tools.metadata-record :as metadata-record]
    [abc.tools.person-record :as person-record]
    [abc.tools.shacl :as shacl]
+   [abc.tools.schematron :as schematron]
    [abc.tools.tei :as tei]
    [clojure.java.io :as io]
    [clojure.set :as set]
@@ -133,13 +134,15 @@
         diagnostic-schema (files/read-json "schemas/diagnostic.schema.json")
         run-summary-schema (files/read-json "schemas/run-summary.schema.json")
         manifest-inputs-schema (files/read-json "schemas/manifest-inputs.schema.json")
-        comparison-report-schema (files/read-json "schemas/comparison-report.schema.json")]
+        comparison-report-schema (files/read-json "schemas/comparison-report.schema.json")
+        tei-validation-result-schema (files/read-json "schemas/tei-validation-result.schema.json")]
     (doseq [[path schema] [["schemas/manifest.schema.json" manifest-schema]
                            ["schemas/parser-ir.schema.json" parser-ir-schema]
                            ["schemas/diagnostic.schema.json" diagnostic-schema]
                            ["schemas/run-summary.schema.json" run-summary-schema]
                            ["schemas/manifest-inputs.schema.json" manifest-inputs-schema]
-                           ["schemas/comparison-report.schema.json" comparison-report-schema]]]
+                           ["schemas/comparison-report.schema.json" comparison-report-schema]
+                           ["schemas/tei-validation-result.schema.json" tei-validation-result-schema]]]
       (schema-valid! schema path))
     (doseq [path (concat ["examples/v0/example-work/source.manifest.json"
                           "examples/v0/example-work/manifest.json"
@@ -159,6 +162,15 @@
                     "examples/ab-validator-output/manifest-inputs.json")
     (validate-json! comparison-report-schema
                     "examples/ab-validator-output/comparison-report.json")
+    (validate-json! tei-validation-result-schema
+                    "examples/v0/example-work/tei-validation-result.json")
+    (let [manifest (files/read-json "examples/v0/example-work/manifest.json")
+          validation-sidecars (filter #(= "validation-result" (get % "role"))
+                                      (get manifest "sidecars"))]
+      (when-not (some #(= "tei-validation-result.json" (get % "path_hint"))
+                      validation-sidecars)
+        (throw (ex-info "example TEI manifest must reference tei-validation-result.json"
+                        {:manifest "examples/v0/example-work/manifest.json"}))))
     (when-not (validation-errors manifest-schema {})
       (throw (ex-info "manifest schema accepted an empty object"
                       {:schema "schemas/manifest.schema.json"})))))
@@ -201,7 +213,19 @@
 (defn validate-xml! []
   (run-command! "xmllint" "--noout"
                 "schemas/tei-profile.odd"
-                "examples/v0/example-work/tei.xml"))
+                "schemas/tei-profile.sch"
+                "schemas/tei-profile.rng"
+                "examples/v0/example-work/tei.xml"
+                "fixtures/tei/valid/rashomon-minimal.xml"
+                "fixtures/tei/valid/source-span-local-ref.xml"
+                "fixtures/tei/valid/transcription-enrichment-declared.xml"
+                "fixtures/tei/invalid/missing-title.xml"
+                "fixtures/tei/invalid/missing-source-work-id.xml"
+                "fixtures/tei/invalid/gaiji-missing-ref.xml"
+                "fixtures/tei/invalid/ruby-missing-reading.xml"
+                "fixtures/tei/invalid/source-span-external-ref.xml"
+                "fixtures/tei/warnings/figure-missing-desc.xml"
+                "fixtures/tei/warnings/transcription-enrichment-undeclared.xml"))
 
 (defn- render-tei-violation
   "Render a violation map to a single line. Label is supplied by the
@@ -220,8 +244,8 @@
   step; errors and fatals are aggregated and thrown at the end."
   [^String schema-path xml-paths]
   (when (or (nil? schema-path) (= "" schema-path))
-    (throw (ex-info "TEI_SCHEMA_PATH must be set. Run via `nix run .#validate-design-bundle` or export it manually before calling clojure -M:abc/validate-design-bundle."
-                    {:env-var "TEI_SCHEMA_PATH"})))
+    (throw (ex-info "TEI RelaxNG schema path must be set."
+                    {:error :missing-schema-path})))
   (let [per-file-results
         (mapv (fn [path]
                 (let [{:keys [violations]}
@@ -246,6 +270,67 @@
       (throw (ex-info "TEI RelaxNG validation failed"
                       {:errors (mapv (fn [[label v]] (render-tei-violation label v))
                                      all-failures)})))))
+
+(defn- schematron-error? [finding]
+  (= :error (:severity finding)))
+
+(defn- schematron-warning? [finding]
+  (= :warning (:severity finding)))
+
+(defn- rule-ids [findings]
+  (set (map :rule-id findings)))
+
+(defn- render-schematron-finding [{:keys [label rule-id severity message]}]
+  (str (string/upper-case (name severity)) ": "
+       label " " rule-id " — " message))
+
+(defn- validate-schematron-valid-fixture! [schema-path path]
+  (let [{:keys [findings]} (schematron/validate! {:schema-path schema-path
+                                                  :xml-path path
+                                                  :label path})
+        errors (filter schematron-error? findings)]
+    (when (seq errors)
+      (throw (ex-info "unexpected Schematron error in valid TEI fixture"
+                      {:fixture path
+                       :errors (mapv render-schematron-finding errors)})))))
+
+(defn- validate-schematron-warning-fixture! [schema-path path expected-rules]
+  (let [{:keys [findings]} (schematron/validate! {:schema-path schema-path
+                                                  :xml-path path
+                                                  :label path})
+        actual-warnings (rule-ids (filter schematron-warning? findings))
+        missing (set/difference expected-rules actual-warnings)
+        errors (filter schematron-error? findings)]
+    (when (seq errors)
+      (throw (ex-info "unexpected Schematron error in warning TEI fixture"
+                      {:fixture path
+                       :errors (mapv render-schematron-finding errors)})))
+    (when (seq missing)
+      (throw (ex-info "missing expected Schematron warning rule"
+                      {:fixture path
+                       :missing (sort missing)
+                       :actual (sort actual-warnings)})))))
+
+(defn- validate-schematron-invalid-fixture! [schema-path path expected-rules]
+  (let [{:keys [findings]} (schematron/validate! {:schema-path schema-path
+                                                  :xml-path path
+                                                  :label path})
+        actual-errors (rule-ids (filter schematron-error? findings))
+        missing (set/difference expected-rules actual-errors)]
+    (when (seq missing)
+      (throw (ex-info "missing expected Schematron rule"
+                      {:fixture path
+                       :missing (sort missing)
+                       :actual (sort actual-errors)})))))
+
+(defn validate-tei-schematron!
+  [{:keys [schema-path valid-fixtures warning-fixtures invalid-fixtures]}]
+  (doseq [path valid-fixtures]
+    (validate-schematron-valid-fixture! schema-path path))
+  (doseq [[path expected-rules] warning-fixtures]
+    (validate-schematron-warning-fixture! schema-path path expected-rules))
+  (doseq [[path expected-rules] invalid-fixtures]
+    (validate-schematron-invalid-fixture! schema-path path expected-rules)))
 
 (defn validate-git-cliff! []
   (run-command! "git-cliff" "--config" "cliff.toml" "--unreleased" "--strip" "header"
@@ -429,6 +514,42 @@
       (validate-tei! (System/getenv "TEI_SCHEMA_PATH")
                      ["examples/v0/example-work/tei.xml"])
       (tel/log! :info "tei rng validation ok")
+      (tel/log! :info "==> Validating TEI against project RelaxNG")
+      (validate-tei! "schemas/tei-profile.rng"
+                     ["examples/v0/example-work/tei.xml"
+                      "fixtures/tei/valid/rashomon-minimal.xml"
+                      "fixtures/tei/valid/source-span-local-ref.xml"
+                      "fixtures/tei/valid/transcription-enrichment-declared.xml"
+                      "fixtures/tei/warnings/figure-missing-desc.xml"
+                      "fixtures/tei/warnings/transcription-enrichment-undeclared.xml"
+                      "fixtures/tei/invalid/missing-title.xml"
+                      "fixtures/tei/invalid/missing-source-work-id.xml"
+                      "fixtures/tei/invalid/gaiji-missing-ref.xml"
+                      "fixtures/tei/invalid/ruby-missing-reading.xml"
+                      "fixtures/tei/invalid/source-span-external-ref.xml"])
+      (tel/log! :info "tei project rng validation ok")
+      (tel/log! :info "==> Validating TEI against project Schematron")
+      (validate-tei-schematron!
+       {:schema-path "schemas/tei-profile.sch"
+        :valid-fixtures ["examples/v0/example-work/tei.xml"
+                         "fixtures/tei/valid/rashomon-minimal.xml"
+                         "fixtures/tei/valid/source-span-local-ref.xml"
+                         "fixtures/tei/valid/transcription-enrichment-declared.xml"]
+        :warning-fixtures {"fixtures/tei/warnings/figure-missing-desc.xml"
+                           #{"abc-figure-accessibility"}
+                           "fixtures/tei/warnings/transcription-enrichment-undeclared.xml"
+                           #{"abc-transcription-vs-annotation"}}
+        :invalid-fixtures {"fixtures/tei/invalid/missing-title.xml"
+                           #{"abc-tei-header-title"}
+                           "fixtures/tei/invalid/missing-source-work-id.xml"
+                           #{"abc-tei-header-source-work-id"}
+                           "fixtures/tei/invalid/gaiji-missing-ref.xml"
+                           #{"abc-gaiji-reference"}
+                           "fixtures/tei/invalid/ruby-missing-reading.xml"
+                           #{"abc-ruby-complete"}
+                           "fixtures/tei/invalid/source-span-external-ref.xml"
+                           #{"abc-source-span-reference"}}})
+      (tel/log! :info "tei schematron validation ok")
       (tel/log! :info "==> Checking git-cliff configuration")
       (validate-git-cliff!)
       (tel/log! :info "git-cliff config ok")

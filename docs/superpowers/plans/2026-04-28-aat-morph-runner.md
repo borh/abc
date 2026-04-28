@@ -4,9 +4,9 @@
 
 **Goal:** Build a small AAT-first morph runner that converts checked AAT JSON into plaintext documents, runs selected morph analyzers, and writes analysis/comparison JSONL.
 
-**Architecture:** `ab-plaintext` gains AAT visible-text projection and `PlainTextDocument` construction. A new binary crate `ab-morph-run` reads AAT files, resolves requested analyzers through `ab-morph-analyzers`, serializes `Analysis` rows, and optionally serializes `Comparison` rows using `ab-morph-diff`.
+**Architecture:** `ab-plaintext` becomes the single owner of AAT visible-text projection. `ab-check` reuses that projection instead of maintaining a duplicate walker. A new binary crate `ab-morph-run` reads checked AAT files, resolves requested analyzers through `ab-morph-analyzers`, serializes `Analysis` rows, and optionally serializes `Comparison` rows using `ab-morph-diff`.
 
-**Tech Stack:** Rust edition 2024, `serde`, `serde_json`, `clap`, `anyhow`, `ab-plaintext`, `ab-morph-analyzers`, `ab-morph-diff`, checked AAT JSON from `ab-check --aat-output`.
+**Tech Stack:** Rust edition 2024, `serde`, `serde_json`, `clap`, `anyhow`, `ab-plaintext`, `ab-check`, `ab-morph-analyzers`, `ab-morph-diff`, checked AAT JSON from `ab-check --aat-output`.
 
 ---
 
@@ -17,6 +17,8 @@ Cargo.toml
 Cargo.lock
 crates/ab-plaintext/src/lib.rs
 crates/ab-plaintext/src/aat.rs
+crates/ab-check/Cargo.toml
+crates/ab-check/src/aat.rs
 crates/ab-morph-run/Cargo.toml
 crates/ab-morph-run/src/lib.rs
 crates/ab-morph-run/src/main.rs
@@ -24,14 +26,16 @@ crates/ab-morph-run/src/main.rs
 
 ---
 
-### Task 1: Add AAT Projection to `ab-plaintext`
+### Task 1: Move Shared AAT Projection Into `ab-plaintext`
 
 **Files:**
 - Modify: `crates/ab-plaintext/Cargo.toml`
 - Modify: `crates/ab-plaintext/src/lib.rs`
 - Create: `crates/ab-plaintext/src/aat.rs`
+- Modify: `crates/ab-check/Cargo.toml`
+- Modify: `crates/ab-check/src/aat.rs`
 
-- [ ] **Step 1: Add dependency**
+- [ ] **Step 1: Add dependencies**
 
 Add to `crates/ab-plaintext/Cargo.toml`:
 
@@ -39,7 +43,13 @@ Add to `crates/ab-plaintext/Cargo.toml`:
 serde_json.workspace = true
 ```
 
-- [ ] **Step 2: Extend public API**
+Add to `crates/ab-check/Cargo.toml`:
+
+```toml
+ab-plaintext.workspace = true
+```
+
+- [ ] **Step 2: Extend `ab-plaintext` public API**
 
 Update `crates/ab-plaintext/src/lib.rs`:
 
@@ -84,7 +94,7 @@ impl fmt::Display for PlainTextError {
 impl Error for PlainTextError {}
 ```
 
-- [ ] **Step 3: Implement AAT projection**
+- [ ] **Step 3: Implement shared projection**
 
 Create `crates/ab-plaintext/src/aat.rs`:
 
@@ -137,6 +147,8 @@ fn collect_inline(node: &Value, out: &mut String) {
         "gaiji" => {
             if let Some(resolved) = node.get("resolved").and_then(Value::as_str) {
                 out.push_str(resolved);
+            } else {
+                push_string_field(node, "description", out);
             }
         }
         "raw" => push_string_field(node, "source", out),
@@ -166,72 +178,49 @@ fn push_string_field(node: &Value, key: &str, out: &mut String) {
 }
 ```
 
-- [ ] **Step 4: Add tests**
+- [ ] **Step 4: Add projection tests**
 
-Append to `crates/ab-plaintext/src/aat.rs`:
+Append tests to `crates/ab-plaintext/src/aat.rs` covering `work_id`, text/ruby/gaiji/raw/warigaki/style projection, empty resolved gaiji, missing resolved fallback to description, and missing work id.
+
+Use this key assertion for gaiji behavior:
 
 ```rust
-#[cfg(test)]
-mod tests {
-    use serde_json::json;
+let aat = serde_json::json!({
+    "work_id": "w",
+    "blocks": [{"kind": "paragraph", "content": [
+        {"kind": "gaiji", "description": "desc", "resolved": ""},
+        {"kind": "gaiji", "description": "fallback"}
+    ]}]
+});
+assert_eq!(visible_text_projection(&aat), "fallback");
+```
 
-    use super::*;
+- [ ] **Step 5: Make `ab-check` reuse `ab-plaintext`**
 
-    #[test]
-    fn builds_document_from_work_id_and_visible_text() {
-        let aat = json!({
-            "work_id": "w1",
-            "blocks": [{"kind": "paragraph", "content": [{"kind": "text", "value": "本文"}]}]
-        });
+In `crates/ab-check/src/aat.rs`, change the existing `visible_text_projection` function body to delegate:
 
-        let doc = from_aat_value(&aat).unwrap();
-        assert_eq!(doc.text_id, "w1");
-        assert_eq!(doc.source_format, SourceFormat::AatVisibleText);
-        assert_eq!(doc.text, "本文");
-    }
-
-    #[test]
-    fn projects_nested_visible_text() {
-        let aat = json!({
-            "work_id": "w2",
-            "blocks": [{
-                "kind": "paragraph",
-                "content": [
-                    {"kind": "text", "value": "A"},
-                    {"kind": "ruby", "base": "B", "reading": "ビー"},
-                    {"kind": "gaiji", "description": "desc", "resolved": "C"},
-                    {"kind": "gaiji", "description": "unresolved", "resolved": ""},
-                    {"kind": "raw", "source": "D"},
-                    {"kind": "warigaki", "upper": [{"kind": "text", "value": "E"}], "lower": [{"kind": "text", "value": "F"}]},
-                    {"kind": "style", "content": [{"kind": "text", "value": "G"}]}
-                ]
-            }]
-        });
-
-        assert_eq!(visible_text_projection(&aat), "ABCDEFG");
-    }
-
-    #[test]
-    fn missing_work_id_is_error() {
-        let aat = json!({"blocks": []});
-        assert_eq!(from_aat_value(&aat), Err(PlainTextError::MissingAatWorkId));
-    }
+```rust
+pub fn visible_text_projection(aat: &Value) -> String {
+    ab_plaintext::visible_text_projection(aat)
 }
 ```
 
-- [ ] **Step 5: Verify and commit**
+Keep `visible_text_fragments`, `VisibleFragment`, and path/node helper functions in `ab-check` because validation still uses them.
+
+- [ ] **Step 6: Verify and commit**
 
 Run:
 
 ```bash
 cargo test -p ab-plaintext
+cargo test -p ab-check aat::tests::visible_projection_excludes_unresolved_gaiji_descriptions
 ```
 
 Commit:
 
 ```bash
-git add crates/ab-plaintext Cargo.toml Cargo.lock
-git commit -m "feat: add AAT plaintext projection"
+git add crates/ab-plaintext crates/ab-check Cargo.lock
+git commit -m "feat: share AAT visible text projection"
 ```
 
 ---
@@ -246,7 +235,7 @@ git commit -m "feat: add AAT plaintext projection"
 
 - [ ] **Step 1: Register crate**
 
-Add `"crates/ab-morph-run"` to workspace members and this dependency to `[workspace.dependencies]`:
+Add `"crates/ab-morph-run"` to workspace members and add this dependency to `[workspace.dependencies]`:
 
 ```toml
 ab-morph-run = { path = "crates/ab-morph-run" }
@@ -254,117 +243,15 @@ ab-morph-run = { path = "crates/ab-morph-run" }
 
 - [ ] **Step 2: Create manifest**
 
-Create `crates/ab-morph-run/Cargo.toml`:
-
-```toml
-[package]
-name = "ab-morph-run"
-version.workspace = true
-edition.workspace = true
-license.workspace = true
-
-[dependencies]
-ab-morph-analyzers.workspace = true
-ab-morph-diff.workspace = true
-ab-plaintext.workspace = true
-anyhow.workspace = true
-clap.workspace = true
-serde.workspace = true
-serde_json.workspace = true
-```
+Create `crates/ab-morph-run/Cargo.toml` with dependencies on `ab-morph-analyzers`, `ab-morph-diff`, `ab-plaintext`, `anyhow`, `clap`, `serde`, and `serde_json` from the workspace.
 
 - [ ] **Step 3: Add CLI wrapper**
 
-Create `crates/ab-morph-run/src/main.rs`:
+Create `crates/ab-morph-run/src/main.rs` with an `analyze-aat` subcommand accepting exactly one of `--aat` or `--aat-dir`, one or more `--analyzer`, required `--analyses-output`, and optional `--comparisons-output`.
 
-```rust
-use std::path::PathBuf;
+- [ ] **Step 4: Add skeleton validation in library**
 
-use anyhow::Result;
-use clap::{Parser, Subcommand};
-
-#[derive(Debug, Parser)]
-#[command(version, about = "Run morph analyzers over checked AAT JSON")]
-struct Args {
-    #[command(subcommand)]
-    command: Command,
-}
-
-#[derive(Debug, Subcommand)]
-enum Command {
-    AnalyzeAat {
-        #[arg(long, conflicts_with = "aat_dir")]
-        aat: Option<PathBuf>,
-        #[arg(long, conflicts_with = "aat")]
-        aat_dir: Option<PathBuf>,
-        #[arg(long, required = true)]
-        analyzer: Vec<String>,
-        #[arg(long)]
-        analyses_output: PathBuf,
-        #[arg(long)]
-        comparisons_output: Option<PathBuf>,
-    },
-}
-
-fn main() -> Result<()> {
-    let args = Args::parse();
-    match args.command {
-        Command::AnalyzeAat {
-            aat,
-            aat_dir,
-            analyzer,
-            analyses_output,
-            comparisons_output,
-        } => ab_morph_run::run_analyze_aat(
-            aat.as_deref(),
-            aat_dir.as_deref(),
-            &analyzer,
-            &analyses_output,
-            comparisons_output.as_deref(),
-        ),
-    }
-}
-```
-
-- [ ] **Step 4: Add placeholder library with argument validation**
-
-Create `crates/ab-morph-run/src/lib.rs`:
-
-```rust
-use std::path::Path;
-
-use anyhow::{Result, bail};
-
-pub fn run_analyze_aat(
-    aat: Option<&Path>,
-    aat_dir: Option<&Path>,
-    analyzer_ids: &[String],
-    _analyses_output: &Path,
-    _comparisons_output: Option<&Path>,
-) -> Result<()> {
-    if aat.is_none() == aat_dir.is_none() {
-        bail!("provide exactly one of --aat or --aat-dir");
-    }
-    if analyzer_ids.is_empty() {
-        bail!("provide at least one --analyzer");
-    }
-    Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use std::path::Path;
-
-    use super::*;
-
-    #[test]
-    fn rejects_missing_input() {
-        let err = run_analyze_aat(None, None, &["vibrato".to_owned()], Path::new("out.jsonl"), None)
-            .unwrap_err();
-        assert!(err.to_string().contains("exactly one"));
-    }
-}
-```
+Create `crates/ab-morph-run/src/lib.rs` with `run_analyze_aat(...)` that rejects missing/both inputs and empty analyzer lists.
 
 - [ ] **Step 5: Verify and commit**
 
@@ -383,60 +270,53 @@ git commit -m "feat: add morph runner CLI skeleton"
 
 ---
 
-### Task 3: Implement AAT Reading and Analysis JSONL
+### Task 3: Implement AAT Reading, Analyzer Resolution, and Analysis JSONL
 
 **Files:**
 - Modify: `crates/ab-morph-run/src/lib.rs`
 
-- [ ] **Step 1: Add row types and AAT file discovery**
+- [ ] **Step 1: Discover AAT inputs**
 
-Add serializable row structs and functions to read either one `--aat` file or all `*.json` files in `--aat-dir`, sorted by path.
+Implement `discover_aat_inputs(aat, aat_dir)`:
 
-Use this row shape:
+- single file returns that file;
+- directory returns sorted `*.json` files;
+- empty directory returns an error containing `no AAT JSON files`.
+
+- [ ] **Step 2: Parse and dedupe analyzer specs**
+
+Implement accepted CLI ids: `vibrato`, `sudachi-a`, `sudachi-b`, `sudachi-c`.
+
+Deduplicate exact duplicate CLI ids while preserving first occurrence. Unknown ids return an error containing `unknown analyzer`.
+
+- [ ] **Step 3: Resolve analyzers**
+
+Use:
+
+- `VibratoAnalyzer::unidic_cwj_default()` for `vibrato`;
+- `SudachiAnalyzer::from_dictionary_path(mode, $AB_SUDACHI_DICT)` for Sudachi ids;
+- missing `AB_SUDACHI_DICT` returns an error containing `AB_SUDACHI_DICT`.
+
+- [ ] **Step 4: Write analysis JSONL**
+
+Open `--analyses-output` with create/truncate semantics. For every AAT and analyzer, write:
 
 ```rust
 #[derive(serde::Serialize)]
 struct AnalysisRow {
-    work_id: String,
+    text_id: String,
     analyzer: String,
     analysis: ab_morph_diff::Analysis,
 }
 ```
 
-- [ ] **Step 2: Add analyzer resolution**
+The wrapper duplicates nested fields intentionally for grep-friendly JSONL.
 
-Implement `AnalyzerSpec` parsing:
+- [ ] **Step 5: Add tests without dictionaries**
 
-```rust
-enum AnalyzerSpec {
-    Vibrato,
-    Sudachi(ab_morph_analyzers::SudachiMode),
-}
-```
+Test analyzer parsing, dedupe, unknown analyzer error, empty directory error, and sorted discovery. Do not load real analyzers in unit tests.
 
-Accepted ids: `vibrato`, `sudachi-a`, `sudachi-b`, `sudachi-c`. Unknown ids return an error containing `unknown analyzer`.
-
-- [ ] **Step 3: Run analyzers and write analysis rows**
-
-For each AAT file:
-
-1. parse JSON as `serde_json::Value`;
-2. convert with `ab_plaintext::from_aat_value`;
-3. run each analyzer;
-4. write one JSON line per analysis.
-
-Use `VibratoAnalyzer::unidic_cwj_default()` for `vibrato`. Use `AB_SUDACHI_DICT` for Sudachi and fail if missing.
-
-- [ ] **Step 4: Add tests without dictionaries**
-
-Add tests for:
-
-- `parse_analyzer_spec("vibrato")` succeeds;
-- `parse_analyzer_spec("sudachi-c")` succeeds;
-- `parse_analyzer_spec("x")` errors;
-- AAT discovery sorts two files by path.
-
-- [ ] **Step 5: Verify and commit**
+- [ ] **Step 6: Verify and commit**
 
 Run:
 
@@ -460,31 +340,29 @@ git commit -m "feat: write morph analysis JSONL from AAT"
 
 - [ ] **Step 1: Add comparison rows**
 
-Use this row shape:
+Use create/truncate semantics for `--comparisons-output` when provided. Row shape:
 
 ```rust
 #[derive(serde::Serialize)]
 struct ComparisonRow {
-    work_id: String,
+    text_id: String,
     from_analyzer: String,
     to_analyzer: String,
     comparison: ab_morph_diff::Comparison,
 }
 ```
 
-- [ ] **Step 2: Emit all requested analyzer pairs**
+- [ ] **Step 2: Emit deterministic pairs**
 
-After collecting analyses for one work, if `comparisons_output` is set, call:
+For each text, compare analyses in deduplicated CLI order using all `i < j` pairs:
 
 ```rust
 ab_morph_diff::compare_pair(&analyses[i], &analyses[j], &[])
 ```
 
-for all `i < j` and write each comparison as one JSONL row.
+- [ ] **Step 3: Add valid analysis helper test**
 
-- [ ] **Step 3: Add unit helper test**
-
-Add a pure helper test that builds two tiny `Analysis` values for source text `今日` and confirms one comparison row is produced for two analyses. This test must not load dictionaries.
+Use helpers that construct valid `Analysis` values with `source_text: "今日"`, `surface: "今日"`, `byte_span: 0..6`, and `char_span: 0..2`. Confirm two analyses produce exactly one comparison row. Do not hand-wave span construction.
 
 - [ ] **Step 4: Verify and commit**
 
@@ -513,15 +391,22 @@ git commit -m "feat: write morph comparison JSONL"
 ```bash
 cargo fmt --all -- --check
 cargo test -p ab-plaintext
+cargo test -p ab-check aat
 cargo test -p ab-morph-run
 cargo check -p ab-morph-analyzers
 ```
 
 Expected: all pass.
 
-- [ ] **Step 2: Run optional dictionary-backed smoke command**
+- [ ] **Step 2: Run dictionary-backed smoke command**
 
-Use one checked AAT fixture or create a temp JSON file with a paragraph text node, then run:
+Create `/tmp/aat.json`:
+
+```json
+{"version":1,"work_id":"smoke","blocks":[{"kind":"paragraph","content":[{"kind":"text","value":"吾輩は猫である。"}]}],"meta":{"adapter":"fixture","adapter_version":"fixture","source_encoding":"utf-8","source_hash":"sha256:0000000000000000000000000000000000000000000000000000000000000000","parse_complete":true,"warnings":[]}}
+```
+
+Run:
 
 ```bash
 AB_SUDACHI_DICT="$(nix path-info .#sudachi-dictionary-full)/share/sudachi/system.dic" \
@@ -539,17 +424,17 @@ Expected: command exits 0 and both output files are non-empty.
 
 Spec coverage:
 
-- AAT-to-plaintext extraction is Task 1.
+- Shared AAT projection ownership is Task 1.
+- `ab-check` dedupe/reuse is Task 1.
 - AAT-file runner CLI is Task 2.
 - Analysis JSONL is Task 3.
 - Comparison JSONL is Task 4.
 - Validation and Nix Sudachi smoke path are Task 5.
 
-Placeholder scan:
+Ambiguity scan:
 
-- No task relies on an undefined type name without defining its shape.
-- No step says to add generic error handling without specifying the behavior.
-
-Scope check:
-
-- The plan does not invoke adapters or traverse corpus indexes. That stays in `ab-check`.
+- Gaiji missing-vs-empty `resolved` behavior is explicit.
+- Output files truncate rather than append.
+- Duplicate analyzer ids are deduped.
+- Empty AAT directories error.
+- Comparison tests require valid spans.

@@ -3,7 +3,7 @@
 Status: approved for implementation planning
 Date: 2026-04-28
 
-Scope: add the smallest executable path from existing AAT artifacts to
+Scope: add the smallest executable path from checked AAT artifacts to
 morphological analyses and pairwise morpheme comparisons. The runner consumes
 AAT JSON produced by `ab-check --aat-output`; it does not invoke parser adapters
 or read raw Aozora source files directly.
@@ -11,22 +11,17 @@ or read raw Aozora source files directly.
 ## 1. Problem
 
 The morph analyzer adapters can already turn a `PlainTextDocument` into an
-`ab_morph_diff::Analysis`, but our corpus source of truth is not a loose
-`path/to/aozora.txt`. The existing AAT pipeline already knows how to read the
-corpus index, run an adapter, validate its output, normalize `work_id`, and
-write checked AAT JSON.
+`ab_morph_diff::Analysis`, but our corpus source of truth is not a loose source
+file path. The existing AAT pipeline already knows how to read the corpus index,
+run an adapter, validate its output, normalize `work_id`, and write checked AAT
+JSON.
 
-Duplicating that adapter harness inside morph tooling would couple unrelated
-concerns:
+Duplicating that adapter harness inside morph tooling would complect unrelated
+concerns: adapter discovery, process protocol, corpus path resolution, schema
+validation, analyzer loading, and morpheme diff output.
 
-- adapter discovery and process protocol;
-- corpus/index path resolution;
-- AAT schema validation;
-- morph analyzer loading;
-- morpheme diff output.
-
-The simple boundary is: `ab-check` produces checked AAT, then morph tooling
-consumes checked AAT.
+The boundary is: `ab-check` produces checked AAT, then morph tooling consumes
+checked AAT.
 
 ## 2. Architecture
 
@@ -38,67 +33,43 @@ corpus + index
   -> comparisons.jsonl
 ```
 
-### 2.1 Existing Responsibilities
+`ab-check` remains responsible for adapter invocation, timeout handling, schema
+validation, invariant checks, `work_id` rewriting, and checked AAT output.
 
-`ab-check` remains responsible for:
-
-- reading index entries and source bytes;
-- invoking adapters with `--mode aat`;
-- enforcing timeouts;
-- validating AAT schema and invariants;
-- rewriting `work_id` to the index work id;
-- writing checked AAT JSON under `--aat-output`.
-
-`ab-morph-analyzers` remains responsible for:
-
-- loading Vibrato and Sudachi dictionaries;
-- producing `Analysis` from `PlainTextDocument`;
-- handling analyzer span reconstruction.
-
-`ab-morph-diff` remains responsible for:
-
-- comparing two `Analysis` values;
-- emitting structured regions, feature diffs, and stats.
-
-### 2.2 New Responsibilities
-
-`ab-plaintext` gains:
+`ab-plaintext` becomes the single owner of AAT visible-text projection:
 
 ```rust
 pub fn from_aat_value(aat: &serde_json::Value) -> Result<PlainTextDocument, PlainTextError>;
+pub fn visible_text_projection(aat: &serde_json::Value) -> String;
 ```
 
-This extracts:
+`ab-check` should stop owning a separate projection implementation and call
+`ab_plaintext::visible_text_projection` instead. If `ab-check` still needs
+path/node-bearing fragments, those can stay local to `ab-check`; only the plain
+string projection must be shared.
 
-- `text_id` from top-level `work_id`;
-- `text` from visible AAT projection;
-- `source_format` as `SourceFormat::AatVisibleText`.
+`ab-morph-run` reads checked AAT JSON files, converts them to
+`PlainTextDocument`, runs selected analyzers, writes `Analysis` JSONL, and
+optionally writes pairwise `Comparison` JSONL.
 
-`ab-morph-run` is a new binary crate that:
+## 3. Shared AAT Visible Text Policy
 
-- reads checked AAT JSON files from a directory or single file;
-- converts each AAT to `PlainTextDocument`;
-- runs selected analyzers;
-- writes analysis JSONL;
-- optionally writes pairwise comparison JSONL.
-
-## 3. AAT Visible Text Policy
-
-The projection must match the existing validation semantics in
-`crates/ab-check/src/aat.rs`:
+Projection semantics match current `ab-check::aat::visible_text_projection`:
 
 - `text` nodes contribute `value`;
 - `ruby` nodes contribute `base`;
-- `gaiji` nodes contribute `resolved` when it is a non-empty string;
-- unresolved `gaiji` nodes contribute an empty string, not the description;
+- `gaiji` nodes contribute `resolved` when the field is present;
+- if `resolved` is absent, `gaiji` nodes contribute `description`;
 - `raw` nodes contribute `source`;
 - `warigaki` traverses `upper` then `lower`;
 - generic inline containers traverse `content`;
 - block containers traverse `children` in order.
 
-This policy intentionally treats unresolved gaiji descriptions as markup, not as
-plaintext to tokenize. It matches the current Aozora honbun plaintext projection
-used by `ab-plaintext::from_aozora_honbun_bytes`.
+This means `resolved: ""` contributes empty text, while a missing `resolved`
+field falls back to the gaiji description. That behavior is not ideal for every
+morphological use case, but matching existing `ab-check` behavior is the
+simplest first move. A stricter projection can be added later as an explicit
+mode if corpus output shows gaiji descriptions produce noise.
 
 ## 4. CLI Shape
 
@@ -113,7 +84,7 @@ cargo run -p ab-morph-run -- analyze-aat \
   --comparisons-output artifacts/morph/comparisons.jsonl
 ```
 
-Also support a single-file input for quick debugging:
+Single-file input is also supported:
 
 ```bash
 cargo run -p ab-morph-run -- analyze-aat \
@@ -122,56 +93,72 @@ cargo run -p ab-morph-run -- analyze-aat \
   --analyses-output /tmp/analysis.jsonl
 ```
 
-Analyzer ids:
+CLI analyzer ids are request names:
 
-- `vibrato`: uses `VibratoAnalyzer::unidic_cwj_default()`;
-- `sudachi-a`: uses `SudachiAnalyzer::from_dictionary_path(SudachiMode::A, $AB_SUDACHI_DICT)`;
-- `sudachi-b`: same for mode B;
-- `sudachi-c`: same for mode C.
+- `vibrato`;
+- `sudachi-a`;
+- `sudachi-b`;
+- `sudachi-c`.
 
-Sudachi analyzers require `AB_SUDACHI_DICT`. In `nix develop`, the flake sets it
-to the reproducible Sudachi full dictionary package.
+Runtime analyzer ids in output come from the analyzer implementation, so the row
+may contain CLI id `vibrato` but emitted analyzer id
+`vibrato:unidic-cwj-202512`.
+
+Sudachi analyzers require `AB_SUDACHI_DICT`, matching the convention already used
+by `ab-morph-analyzers` ignored tests. In `nix develop`, the flake sets it to the
+reproducible Sudachi full dictionary package. The flake output
+`.#sudachi-dictionary-full` already exists and can be used by smoke tests.
 
 ## 5. Output Formats
 
+Output files are truncated/replaced on each run. The runner does not append to
+existing JSONL files.
+
 ### 5.1 Analysis JSONL
 
-One JSON object per `(work_id, analyzer)`:
+One JSON object per `(text_id, analyzer)`:
 
 ```json
-{"work_id":"wagahai","analyzer":"vibrato:unidic-cwj-202512","analysis":{}}
+{"text_id":"wagahai","analyzer":"vibrato:unidic-cwj-202512","analysis":{}}
 ```
 
-`analysis` is the existing `ab_morph_diff::Analysis` shape.
+The wrapper duplicates `analysis.text_id` and `analysis.analyzer` intentionally:
+JSONL rows remain grep-friendly without deserializing the nested analysis. This
+is a wire-format convenience, not a separate source of truth.
 
 ### 5.2 Comparison JSONL
 
-One JSON object per analyzer pair for each work:
+One JSON object per analyzer pair for each text:
 
 ```json
-{"work_id":"wagahai","from_analyzer":"vibrato:unidic-cwj-202512","to_analyzer":"sudachi-c","comparison":{}}
+{"text_id":"wagahai","from_analyzer":"vibrato:unidic-cwj-202512","to_analyzer":"sudachi-c","comparison":{}}
 ```
 
-`comparison` is the existing `ab_morph_diff::Comparison` shape.
+The wrapper duplicates `comparison.text_id`, `comparison.from_analyzer`, and
+`comparison.to_analyzer` for the same JSONL ergonomics reason.
 
-Pair order is deterministic: analyzers are compared in the order requested on
-the CLI, using all `i < j` pairs.
+Pair order is deterministic: analyzers are compared in the deduplicated order
+requested on the CLI, using all `i < j` pairs. Duplicate CLI analyzer ids are
+ignored after their first occurrence.
 
-## 6. Error Policy
+## 6. Input Edge Cases and Error Policy
 
-For the first implementation, fail fast on:
+Fail fast on:
 
 - invalid JSON;
-- missing `work_id`;
+- missing string `work_id`;
 - unknown analyzer id;
 - missing `AB_SUDACHI_DICT` when a Sudachi analyzer is requested;
 - analyzer dictionary load failure;
 - analyzer tokenization failure;
 - morpheme comparison validation failure.
 
-Fail-fast keeps the first runner simple and makes adapter/analyzer bugs visible.
-+Batch-resume and per-work error rows can be added after we inspect real corpus
-+failure modes.
+`--aat-dir` with no `*.json` files is an error. Empty output caused by an empty
+AAT text is not an error; analyzers may emit zero morphemes and comparisons will
+surface coverage behavior.
+
+Batch-resume and per-work error rows can be added after we inspect real corpus
+failure modes.
 
 ## 7. Non-Goals
 
@@ -185,44 +172,55 @@ This phase does not add:
 - Markdown or TEI export;
 - multiprocessing or rayon.
 
-Those can be layered later without changing the AAT-to-plaintext boundary.
-
 ## 8. Tests
 
 Required `ab-plaintext` tests:
 
 - extracts `work_id` as `text_id`;
 - projects text/ruby/gaiji/raw/warigaki visible text;
-- unresolved gaiji contributes empty text;
+- `resolved: ""` contributes empty text;
+- missing `resolved` falls back to `description`;
 - missing `work_id` returns `PlainTextError::MissingAatWorkId`.
+
+Required `ab-check` tests:
+
+- `ab_check::aat::visible_text_projection` delegates to `ab_plaintext` or is
+  removed from the public surface if no longer needed.
 
 Required `ab-morph-run` tests:
 
 - parses analyzer ids;
+- deduplicates duplicate analyzer ids;
 - rejects unknown analyzer ids;
+- rejects empty `--aat-dir`;
 - rejects Sudachi analyzer ids when `AB_SUDACHI_DICT` is unset;
-- writes one analysis row for a single AAT and one analyzer;
-- writes one comparison row for two analyzers using fake in-process analyzers or a unit-level helper, without requiring dictionaries.
+- helper test for comparison rows uses valid `Analysis` construction helpers
+  with correct byte spans, char spans, surfaces, and source text.
 
-Dictionary-backed end-to-end smoke tests can stay ignored and use the existing
-Vibrato symlink and Nix-provided Sudachi dictionary.
+Dictionary-backed smoke tests should use:
+
+```bash
+AB_SUDACHI_DICT="$(nix path-info .#sudachi-dictionary-full)/share/sudachi/system.dic" \
+  cargo run -p ab-morph-run -- analyze-aat \
+  --aat /tmp/aat.json \
+  --analyzer vibrato \
+  --analyzer sudachi-c \
+  --analyses-output /tmp/analyses.jsonl \
+  --comparisons-output /tmp/comparisons.jsonl
+```
 
 ## 9. Self-Review
 
 Scope check:
 
-- The design is intentionally one subsystem: checked AAT to morph artifacts.
-- It does not duplicate `ab-check` adapter execution.
-- It keeps analyzer dependencies out of `ab-plaintext`.
+- The design is one subsystem: checked AAT to morph artifacts.
+- It does not duplicate adapter execution or corpus index traversal.
+- It does not keep two separate visible-text projection implementations.
 
 Ambiguity check:
 
-- AAT projection semantics are explicit, including unresolved gaiji behavior.
-- Sudachi dictionary source is explicit through `AB_SUDACHI_DICT`.
-- Output row shapes and pair ordering are specified.
-
-Known trade-off:
-
-- The runner requires a prior `ab-check --aat-output` step. That is a deliberate
-  simplicity choice; a wrapper command can automate both steps later if the
-  two-stage workflow proves too verbose.
+- AAT projection semantics are explicit and match current `ab-check` behavior.
+- `work_id` is translated to `text_id` at the plaintext boundary; JSONL rows use
+  `text_id` consistently.
+- Output overwrite semantics, duplicate analyzers, and empty directories are
+  specified.

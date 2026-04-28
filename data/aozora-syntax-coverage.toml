@@ -62,9 +62,9 @@ status = "partial"
 status_reason = "current ab-ir and AAT use a flat ruby base string"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/parser/ruby_parser.rs:35"
+notes = "extract_ruby_base handler for ruby syntax (《》)"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -77,9 +77,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2/src/lib.rs:138"
+notes = 'adapter emits ruby AAT node (kind="ruby") with reading; parser recognises via Node::Ruby'
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -119,9 +119,9 @@ status = "partial"
 status_reason = "current ab-ir stores gaiji as description plus resolved string without typed kind"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:52"
+notes = "Node::Gaiji variant with description, unicode, jis_code fields"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -134,9 +134,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2/src/lib.rs:162"
+notes = "adapter emits gaiji AAT node from source events; parser captures structured Node::Gaiji"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -176,9 +176,9 @@ status = "partial"
 status_reason = "current AAT cannot represent a structured ruby base"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:22"
+notes = "Parser handles both ruby and gaiji nodes sequentially"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -191,9 +191,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "lossy"
+evidence = "adapters/aozora2/src/lib.rs:139"
+notes = "adapter emits ruby without structured gaiji base, reads orphan handling test at 230"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -233,9 +233,9 @@ status = "partial"
 status_reason = "heading validation is currently shallow"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:42"
+notes = "Node::Midashi variant with level and style"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -248,9 +248,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "adapter only parses inline content; block-level midashi not projected to AAT"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -290,9 +290,9 @@ status = "partial"
 status_reason = "style variants are not yet matrix-keyed in validation reports"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:32"
+notes = "Node::Style variant with style_type for boten, bousen, bold, italic"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -305,9 +305,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "adapter only parses inline content as text; styles not projected"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -347,9 +347,9 @@ status = "partial"
 status_reason = "current IR lacks first-class layout nodes"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/parser/block_parser.rs:14"
+notes = "parse_block_start handles jisage, chitsuki patterns"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -362,9 +362,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "adapter ignores block structure; no indentation in AAT output"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -404,9 +404,9 @@ status = "partial"
 status_reason = "current IR lacks warichu-specific nodes"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:110"
+notes = "Node::Warigaki with upper/lower variants"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -419,9 +419,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "warigaki nodes not projected in AAT output"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -461,9 +461,9 @@ status = "partial"
 status_reason = "current AAT uses lossy figure representation in some adapters"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/parser/content_parser.rs:8"
+notes = "try_parse_image handles caption/filename patterns"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -476,9 +476,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "image nodes not included in AAT paragraph output"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -518,9 +518,9 @@ status = "partial"
 status_reason = "current AAT projection flattens many breaks into text or whitespace"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
+recognition = "unrecognised"
 evidence = ""
-notes = ""
+notes = "No explicit page/line break handler in parser"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -533,9 +533,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
+aat_fidelity = "not_applicable"
 evidence = ""
-notes = ""
+notes = "Parser does not recognize; adapter has no projection"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -579,9 +579,9 @@ status = "needs_research"
 status_reason = "double-ruby pattern; aozora2html rearranges via rearrange_ruby"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "normalised"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/parser/ruby_parser.rs:70"
+notes = "Parser extracts ruby base but flattens nested ruby into single node"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -594,9 +594,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "lossy"
+evidence = "adapters/aozora2/src/lib.rs:141"
+notes = "adapter emits flat ruby; cannot represent nested structure"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -634,9 +634,9 @@ status = "needs_research"
 status_reason = "directional ruby placement (left/below)"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:28"
+notes = "Node::Ruby.direction field (Right or Left)"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -649,9 +649,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:141"
+notes = "AAT ruby node has no direction field; information discarded"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -689,9 +689,9 @@ status = "needs_research"
 status_reason = "aozora2html raises Aozora2Html::Error on triple-nested ruby"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "normalised"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/parser/ruby_parser.rs:98"
+notes = "Parser rejects gaiji-like nodes as ruby base; normalizes to text"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -704,9 +704,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
+aat_fidelity = "not_applicable"
 evidence = ""
-notes = ""
+notes = "Parser forbids nested structure; adapter sees normalized output"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -744,9 +744,9 @@ status = "needs_research"
 status_reason = "PAT_CHUUKI in lib/aozora2html.rb; uses ruby rearrangement"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/parser/reference_parser.rs:59"
+notes = "try_parse_annotation_ruby handles chuuki (注記) patterns"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -759,9 +759,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "annotation ruby nodes not projected to AAT"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -799,9 +799,9 @@ status = "needs_research"
 status_reason = "single-character side gloss; PAT_BOUKI in lib/aozora2html.rb"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/parser/command_parser.rs:162"
+notes = "try_parse_side_note handles bouki (傍記) patterns"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -814,9 +814,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "side note nodes not projected to AAT"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -854,9 +854,9 @@ status = "needs_research"
 status_reason = "U+ form sub-case of gaiji.marker; aozora2html uses jis2ucs.yml"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:52"
+notes = "Gaiji node unicode field stores resolved codepoint"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -869,9 +869,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2/src/lib.rs:162"
+notes = "adapter records description; resolved/unicode from parser path is dropped (description preserved)"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -909,9 +909,9 @@ status = "needs_research"
 status_reason = "JIS X 0213 code form of gaiji"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:58"
+notes = "Gaiji node jis_code field stores JIS encoding"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -924,9 +924,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "lossy"
+evidence = "adapters/aozora2/src/lib.rs:155"
+notes = "adapter sets jis_code:null in AAT despite parser capturing it"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -964,9 +964,9 @@ status = "needs_research"
 status_reason = "voiced katakana via JIS code lookup"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:174"
+notes = "Node::DakutenKatakana variant for voiced katakana"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -979,9 +979,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "dakuten katakana nodes not projected to AAT"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -1019,9 +1019,9 @@ status = "needs_research"
 status_reason = "gaiji with description but no JIS/Unicode mapping"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/parser/mod.rs:414"
+notes = "parse_gaiji_to_node handles various GaijiResult variants"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -1034,9 +1034,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "embedded gaiji metadata not in AAT output"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -1074,9 +1074,9 @@ status = "needs_research"
 status_reason = "kunoji iteration mark; aozora2html flags via @chuuki_table without inline transform"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
+recognition = "unrecognised"
 evidence = ""
-notes = ""
+notes = "No iteration mark (々、ゝ) handler in parser"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -1089,9 +1089,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
+aat_fidelity = "not_applicable"
 evidence = ""
-notes = ""
+notes = "Parser does not recognize; adapter has no projection"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -1129,9 +1129,9 @@ status = "needs_research"
 status_reason = "Latin accents via ACCENT_TABLE"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:62"
+notes = "Node::Accent variant with code, name, unicode fields"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -1144,9 +1144,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "accent nodes not projected to AAT"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -1184,9 +1184,9 @@ status = "needs_research"
 status_reason = "classical Chinese return-point marker"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:128"
+notes = "Node::Kaeriten variant for classical kaeriten marks"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -1199,9 +1199,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "kaeriten nodes not projected to AAT"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -1239,9 +1239,9 @@ status = "needs_research"
 status_reason = "kunten okurigana mark"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:131"
+notes = "Node::Okurigana variant for kunten okurigana"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -1254,9 +1254,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "okurigana nodes not projected to AAT"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -1294,9 +1294,9 @@ status = "needs_research"
 status_reason = "inline-form heading; complements heading.basic block form"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/parser/reference_parser.rs:25"
+notes = "try_parse_reference handles 「target」は見出し patterns"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -1309,9 +1309,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "inline heading nodes not projected to AAT"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -1349,9 +1349,9 @@ status = "needs_research"
 status_reason = "dogyo (same-line) heading variant"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/midashi.rs:1"
+notes = "MidashiStyle::Dogyo variant for in-line headings"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -1364,9 +1364,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "midashi styles not projected to AAT"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -1404,9 +1404,9 @@ status = "needs_research"
 status_reason = "mado (framed) heading variant"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/midashi.rs:1"
+notes = "MidashiStyle::Mado variant for windowed headings"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -1419,9 +1419,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "mado heading styles not projected to AAT"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -1459,9 +1459,9 @@ status = "needs_research"
 status_reason = "boten (emphasis dots); sub-case of emphasis.basic with variant kinds"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/style.rs:6"
+notes = "StyleType enum includes boten, white sesame dot, etc."
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -1474,9 +1474,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "boten style nodes not projected to AAT"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -1514,9 +1514,9 @@ status = "needs_research"
 status_reason = "bousen (sideline) variants"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/style.rs:29"
+notes = "StyleType variants for underline/overline (solid, double, dotted, dashed, wave)"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -1529,9 +1529,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "bousen style nodes not projected to AAT"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -1569,9 +1569,9 @@ status = "needs_research"
 status_reason = "futoji/shatai variants in MultilineStyle and inline form"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/style.rs:43"
+notes = "StyleType::Bold and StyleType::Italic variants"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -1584,9 +1584,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "bold/italic style nodes not projected to AAT"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -1624,9 +1624,9 @@ status = "needs_research"
 status_reason = "block + inline font-size adjustments"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:118"
+notes = "Node::FontSize with Dai/Sho and level (1-5)"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -1639,9 +1639,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "font size nodes not projected to AAT"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -1679,9 +1679,9 @@ status = "needs_research"
 status_reason = "rule-line box; block + inline forms"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:92"
+notes = "Node::Keigakomi variant"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -1694,9 +1694,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "keigakomi nodes not projected to AAT"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -1734,9 +1734,9 @@ status = "needs_research"
 status_reason = "boten/bousen with directional placement override"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:98"
+notes = "Node::Yokogumi variant for horizontal text override"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -1749,9 +1749,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "yokogumi nodes not projected to AAT"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -1789,9 +1789,9 @@ status = "needs_research"
 status_reason = "block-scoped indent; sub-case of indentation.basic"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/parser/block_parser.rs:11"
+notes = "parse_block_start with jisage type and width parameter"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -1804,9 +1804,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "block-level indentation not in AAT output"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -1844,9 +1844,9 @@ status = "needs_research"
 status_reason = "single-line indent variant"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/parser/block_parser.rs:115"
+notes = "try_parse_line_indent for line-level jisage"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -1859,9 +1859,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "line indentation not projected to AAT"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -1899,9 +1899,9 @@ status = "needs_research"
 status_reason = "right-alignment / jiage; not currently surfaced beyond indentation.basic"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/parser/block_parser.rs:125"
+notes = "try_parse_line_chitsuki handles baseline and offset patterns"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -1914,9 +1914,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "chitsuki baseline nodes not projected to AAT"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -1954,9 +1954,9 @@ status = "needs_research"
 status_reason = "fixed character-width block (jizume)"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/block.rs:13"
+notes = "BlockType::Jizume for character compression"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -1969,9 +1969,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "jizume block nodes not projected to AAT"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -2009,9 +2009,9 @@ status = "needs_research"
 status_reason = "hanging-indent / wrap-continuation form"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/parser/block_parser.rs:48"
+notes = "try_parse_burasage for hanging indent with wrap width"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -2024,9 +2024,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "burasage block nodes not projected to AAT"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -2064,9 +2064,9 @@ status = "needs_research"
 status_reason = "horizontal-in-vertical block + inline forms"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:98"
+notes = "Node::Yokogumi variant for horizontal text direction"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -2079,9 +2079,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "yokogumi nodes not projected to AAT"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -2119,9 +2119,9 @@ status = "needs_research"
 status_reason = "tate-chu-yoko (horizontal in vertical) inline; aozora2html emits dir=ltr span"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:86"
+notes = "Node::Tcy (vertical-to-horizontal) variant"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -2134,9 +2134,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "tcy nodes not projected to AAT"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -2174,9 +2174,9 @@ status = "needs_research"
 status_reason = "warigaki (parenthetical aside); related to but distinct from warichu"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:110"
+notes = "Node::Warigaki with upper/lower division"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -2189,9 +2189,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "warigaki nodes not projected to AAT"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -2229,9 +2229,9 @@ status = "needs_research"
 status_reason = "inline-form caption; sub-case of figure.image_caption"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:104"
+notes = "Node::Caption variant"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -2244,9 +2244,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "caption nodes not projected to AAT"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -2284,9 +2284,9 @@ status = "needs_research"
 status_reason = "block-form caption"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/parser/block_parser.rs:107"
+notes = "BlockStart/BlockEnd for caption blocks"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -2299,9 +2299,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "block-level captions not projected to AAT"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -2339,9 +2339,9 @@ status = "needs_research"
 status_reason = "inline image without caption"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:72"
+notes = "Node::Img with filename, alt, width, height"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -2354,9 +2354,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "image nodes not projected to AAT paragraph content"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -2394,9 +2394,9 @@ status = "needs_research"
 status_reason = "catch-all for ［＃...］ commands not matched by other handlers"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:151"
+notes = "Node::Note variant for editorial annotations"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -2409,9 +2409,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2/src/lib.rs:53"
+notes = "note nodes not projected to AAT"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -2449,9 +2449,9 @@ status = "needs_research"
 status_reason = "front-reference style application via PAT_FRONTREF"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "normalised"
+evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:163"
+notes = "UnresolvedReference nodes indicate forward references not yet resolved"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -2464,9 +2464,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
+aat_fidelity = "not_applicable"
 evidence = ""
-notes = ""
+notes = "Parser emits unresolved marker; adapter has no projection for references"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"
@@ -2504,9 +2504,9 @@ status = "needs_research"
 status_reason = "explicit line break; sub-case of break.page_line"
 
 [syntax.parsers.aozora2]
-recognition = "unknown"
+recognition = "unrecognised"
 evidence = ""
-notes = ""
+notes = "No explicit newline/break command handler in parser"
 
 [syntax.parsers.aozora-rs]
 recognition = "unknown"
@@ -2519,9 +2519,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2]
-aat_fidelity = "unknown"
+aat_fidelity = "not_applicable"
 evidence = ""
-notes = ""
+notes = "Parser does not recognize; adapter has no projection"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "unknown"

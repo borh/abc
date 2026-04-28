@@ -53,6 +53,7 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
+anyhow.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true
@@ -64,7 +65,10 @@ sha2.workspace = true
 pub mod first_diff;
 pub mod frequency;
 pub mod hashing;
-```
+
+pub use first_diff::{FirstDifference, first_difference};
+pub use frequency::{FrequencyEntry, FrequencyTable, DEFAULT_MAX_EXAMPLES};
+pub use hashing::{hash_bytes, hash_json, hash_string_sequence};
 
 - [ ] **Step 3: Commit**
 
@@ -99,13 +103,16 @@ pub fn hash_json(value: &Value) -> anyhow::Result<String> {
     Ok(hash_bytes(&bytes))
 }
 
-/// Hashes a sequence of strings, joining with null-byte delimiters.
-/// `hash_string_sequence(&["a", "b"])` ≠ `hash_string_sequence(&["ab"])`.
+/// Hashes a sequence of strings using length-prefixing.
+/// Each string is prefixed with its 4-byte little-endian length (u32) before
+/// hashing, so `["a", "b"]` ≠ `["ab"]` and strings containing null bytes
+/// are unambiguous.
 pub fn hash_string_sequence(values: &[String]) -> String {
     let mut hasher = Sha256::new();
     for value in values {
+        let len = value.len() as u32;
+        hasher.update(&len.to_le_bytes());
         hasher.update(value.as_bytes());
-        hasher.update([0]);
     }
     format!("sha256:{:x}", hasher.finalize())
 }
@@ -127,12 +134,16 @@ mod tests {
     }
 
     #[test]
-    fn hash_string_sequence_uses_null_delimiter() {
+    fn hash_string_sequence_uses_length_prefix_not_null_delimiter() {
         let a = hash_string_sequence(&["a".into(), "b".into()]);
         let b = hash_string_sequence(&["ab".into()]);
         assert_ne!(a, b);
-        let c = hash_string_sequence(&["a".into(), "b".into()]);
-        assert_eq!(a, c);
+        // strings containing null bytes are unambiguous with length-prefixing
+        let c = hash_string_sequence(&["a\0b".into()]);
+        let d = hash_string_sequence(&["a".into(), "b".into()]);
+        assert_ne!(c, d);
+        let e = hash_string_sequence(&["a".into(), "b".into()]);
+        assert_eq!(a, e);
     }
 }
 ```
@@ -140,7 +151,7 @@ mod tests {
 - [ ] **Step 2: Verify tests compile and pass**
 
 ```bash
-cargo test -p ab-diff-utils -- hashing
+cargo test --manifest-path crates/ab-diff-utils/Cargo.toml -- hashing
 ```
 Expected: 3 tests pass
 
@@ -234,7 +245,7 @@ mod tests {
 - [ ] **Step 2: Run tests**
 
 ```bash
-cargo test -p ab-diff-utils -- first_diff
+cargo test --manifest-path crates/ab-diff-utils/Cargo.toml -- first_diff
 ```
 Expected: 5 tests pass
 
@@ -266,8 +277,12 @@ pub const DEFAULT_MAX_EXAMPLES: usize = 10;
 /// Examples are deduplicated by equality; each unique example contributes
 /// at most once to the example list regardless of how many times it is
 /// recorded. The count always increments on every `record` call.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct FrequencyTable<K: Ord + Serialize, E: Eq + Serialize> {
+///
+/// Serializes as a flat `{"key": {"count": N, "examples": [...]}, ...}`
+/// object (the `max_examples` field is not serialized).
+#[derive(Debug, Clone)]
+pub struct FrequencyTable<K, E> {
+    #[serde(skip)]
     max_examples: usize,
     entries: BTreeMap<K, FrequencyEntry<E>>,
 }
@@ -316,6 +331,26 @@ impl<K: Ord, E: Eq> FrequencyTable<K, E> {
 
     pub fn is_empty(&self) -> bool {
         self.entries.is_empty()
+    }
+}
+
+/// Custom Serialize: emit a flat object `{"key": {"count": N, "examples": [...]}, ...}`
+/// by serializing only `entries`, skipping `max_examples`.
+impl<K: Serialize, E: Serialize> Serialize for FrequencyTable<K, E> {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        self.entries.serialize(serializer)
+    }
+}
+
+/// Custom Deserialize: read a flat `{"key": {"count": N, "examples": [...]}, ...}`
+/// object directly into `entries`, using DEFAULT_MAX_EXAMPLES for `max_examples`.
+impl<'de, K: Deserialize<'de> + Ord, E: Deserialize<'de> + Eq> Deserialize<'de> for FrequencyTable<K, E> {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let entries = BTreeMap::<K, FrequencyEntry<E>>::deserialize(deserializer)?;
+        Ok(FrequencyTable {
+            max_examples: DEFAULT_MAX_EXAMPLES,
+            entries,
+        })
     }
 }
 
@@ -394,7 +429,7 @@ mod tests {
 - [ ] **Step 2: Run tests**
 
 ```bash
-cargo test -p ab-diff-utils -- frequency
+cargo test --manifest-path crates/ab-diff-utils/Cargo.toml -- frequency
 ```
 Expected: 6 tests pass
 
@@ -508,8 +543,7 @@ use sha2::{Digest, Sha256};
 
 **Add** import at top:
 ```rust
-use ab_diff_utils::hashing::{hash_bytes, hash_json, hash_string_sequence};
-use ab_diff_utils::first_diff::first_difference;
+use ab_diff_utils::{hash_bytes, hash_json, hash_string_sequence, first_difference};
 ```
 
 **In `crates/ab-compare/Cargo.toml`**, remove `sha2` from `[dependencies]` (no longer used after extraction):
@@ -526,11 +560,11 @@ walkdir.workspace = true
 
 **Replace** the call site of `first_visible_difference` (in `compare_aat_dirs_with_limit`):
 
-Add `From` impl for `VisibleTextDifference`:
+Add `From` impl for `VisibleTextDifference` (using re-exported `FirstDifference`):
 
 ```rust
-impl From<ab_diff_utils::first_diff::FirstDifference> for VisibleTextDifference {
-    fn from(diff: ab_diff_utils::first_diff::FirstDifference) -> Self {
+impl From<ab_diff_utils::FirstDifference> for VisibleTextDifference {
+    fn from(diff: ab_diff_utils::FirstDifference) -> Self {
         VisibleTextDifference {
             char_index: diff.char_index,
             a_snippet: diff.left_snippet,
@@ -698,6 +732,7 @@ Add initialization after existing counters:
     let mut same_visible_structural_difference_count = 0usize;
     // NEW:
     let mut coverage_only_difference_count = 0usize;
+    let mut coverage_differences = Vec::new();
     let mut coverage_metrics_missing = 0usize;
 ```
 
@@ -743,13 +778,13 @@ Then replace the existing structural-difference condition `if left.structure_has
             });
         } else if coverage_mismatch.is_some() {
             // Coverage-only difference: hashes match, but fallback differs.
-            // This branch has its own scope; normalized_visible_* variables from
-            // the has_hash_difference branch are not in scope here.
+            // Stored in a separate coverage_differences vector, not mixed into
+            // structural_differences, so structural_difference_count == 0 is honest.
             coverage_only_difference_count += 1;
-            if difference_limit.is_some_and(|limit| structural_differences.len() >= limit) {
+            if difference_limit.is_some_and(|limit| coverage_differences.len() >= limit) {
                 continue;
             }
-            structural_differences.push(AatStructuralDifference {
+            coverage_differences.push(AatStructuralDifference {
                 work_id: left.work_id.clone(),
                 visible_text_differs: false,
                 normalized_visible_text_differs: false,
@@ -778,14 +813,14 @@ Then replace the existing structural-difference condition `if left.structure_has
         }
 ```
 
-Add `coverage_only_difference_count` and `coverage_metrics_missing` to the `Ok(AatCompareSummary { ... })`:
+Add `coverage_only_difference_count`, `coverage_differences`, and `coverage_metrics_missing` to the `Ok(AatCompareSummary { ... })`:
 
 ```rust
     Ok(AatCompareSummary {
         // ... existing fields ...
-        same_visible_structural_difference_count,
         structural_differences,
         coverage_only_difference_count,
+        coverage_differences,
         coverage_metrics_missing,
     })
 ```
@@ -798,6 +833,7 @@ In `tests/integration.rs`, the test `triage_report_buckets_differences_by_featur
         same_visible_structural_difference_count: 1,
         structural_differences: Vec::new(),
         coverage_only_difference_count: 0,
+        coverage_differences: Vec::new(),
         coverage_metrics_missing: 0,
 ```
 
@@ -936,20 +972,25 @@ Add field to `TriageReport`:
 After `source_supplements` construction, add:
 
 ```rust
-    let coverage_mismatches = aat.map(|summary| {
+    let coverage_mismatches = aat.and_then(|summary| {
         let mut by_reason = FrequencyTable::new(20);
         let mut count = 0usize;
-        for diff in &summary.structural_differences {
+        // Collect from both structural_differences (hash-diff entries that also
+        // carry a coverage delta) and coverage_differences (coverage-only entries).
+        for diff in summary.structural_differences.iter().chain(summary.coverage_differences.iter()) {
             if let Some(coverage) = &diff.coverage_mismatch {
                 count += 1;
+                // left.fallback_used != right.fallback_used guarantees one is true
+                // and the other false, so the (true, true) and (false, false)
+                // branches below are unreachable; they're present for exhaustiveness.
                 let reason = match (coverage.a_had_fallback, coverage.b_had_fallback) {
+                    (true, false) => coverage.a_fallback_reason.clone().unwrap_or_else(|| "unknown".into()),
+                    (false, true) => coverage.b_fallback_reason.clone().unwrap_or_else(|| "unknown".into()),
                     (true, true) => format!(
                         "a={}, b={}",
                         coverage.a_fallback_reason.as_deref().unwrap_or("unknown"),
                         coverage.b_fallback_reason.as_deref().unwrap_or("unknown"),
                     ),
-                    (true, false) => coverage.a_fallback_reason.clone().unwrap_or_else(|| "unknown".into()),
-                    (false, true) => coverage.b_fallback_reason.clone().unwrap_or_else(|| "unknown".into()),
                     (false, false) => "unknown".into(),
                 };
                 by_reason.record(reason, diff.work_id.clone());
@@ -975,10 +1016,14 @@ Add to `TriageReport` construction:
 
 - [ ] **Step 3: Update `recommended_next_targets`**
 
-Add `coverage_mismatches` logic. The function already takes `aat: Option<&AatCompareSummary>`. Add:
+Add `coverage_mismatches` check. Check both `coverage_only_difference_count > 0` and whether any structural diffs carry coverage:
 
 ```rust
-    if aat.is_some_and(|summary| summary.coverage_only_difference_count > 0) {
+    let has_coverage_issues = aat.is_some_and(|summary| {
+        summary.coverage_only_difference_count > 0
+            || summary.structural_differences.iter().any(|d| d.coverage_mismatch.is_some())
+    });
+    if has_coverage_issues {
         targets.push("inspect_coverage_mismatches".to_owned());
     }
 ```
@@ -1101,7 +1146,7 @@ fn coverage_only_difference_count_incremented_when_hashes_match() {
     assert_eq!(summary.visible_text_difference_count, 0);
     assert_eq!(summary.same_visible_structural_difference_count, 0);
     assert_eq!(summary.coverage_only_difference_count, 1);
-    let diff = &summary.structural_differences[0];
+    let diff = &summary.coverage_differences[0];
     assert!(!diff.visible_text_differs);
     assert_eq!(diff.work_id, "one");
     assert!(diff.coverage_mismatch.is_some());

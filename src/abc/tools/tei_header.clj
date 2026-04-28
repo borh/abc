@@ -64,22 +64,27 @@
 (defn- author-block [person]
   (into [:author] (person-name-block person)))
 
-(defn- resp-stmt [person]
+(defn- resp-stmt
+  "TEI <respStmt> with the role string and the person's name block."
+  [role person]
   (into [:respStmt
-         [:resp (get person "relation_to_work")]]
+         [:resp role]]
         (person-name-block person)))
 
-(defn- title-stmt [work persons]
-  (let [authors (filter #(= "著者" (get % "relation_to_work")) persons)
-        contributors (remove #(= "著者" (get % "relation_to_work")) persons)
+(defn- title-stmt
+  "Build <titleStmt>. `contributors` is a vector of
+  {:relation-to-work <role-string> :person <person-body-map>}."
+  [work contributors]
+  (let [authors (filter #(= "著者" (:relation-to-work %)) contributors)
+        others (remove #(= "著者" (:relation-to-work %)) contributors)
         title (get work "title")
         title-r (get work "title_reading")]
     (-> [:titleStmt
          [:title {:type "main" :xml/lang "ja"} title]]
         (cond-> title-r
           (conj [:title {:type "reading" :xml/lang "ja-Hira"} title-r]))
-        (into (mapv author-block authors))
-        (into (mapv resp-stmt contributors)))))
+        (into (mapv #(author-block (:person %)) authors))
+        (into (mapv #(resp-stmt (:relation-to-work %) (:person %)) others)))))
 
 (defn- publication-stmt [work]
   [:publicationStmt
@@ -102,9 +107,9 @@
   (let [editions (get work "source_editions")]
     (into [:sourceDesc] (mapv bibl-edition editions))))
 
-(defn- file-desc [work persons]
+(defn- file-desc [work contributors]
   [:fileDesc
-   (title-stmt work persons)
+   (title-stmt work contributors)
    (publication-stmt work)
    (source-desc work)])
 
@@ -125,10 +130,17 @@
 
 (defn build
   "Return a TEI <teiHeader> as hiccup-style nested vectors. Pure;
-  no clojure.data.xml coupling at this boundary."
-  [{:strs [work persons]}]
+  no clojure.data.xml coupling at this boundary.
+
+  Input shape:
+    {:work         <work map, string keys>
+     :contributors [{:relation-to-work \"...\" :person <person map, string keys>} ...]}
+
+  Role and person are kept separate at every level inside this builder;
+  the relation_to_work value never enters the person body."
+  [{:keys [work contributors]}]
   [:teiHeader
-   (file-desc work persons)
+   (file-desc work contributors)
    (encoding-desc)
    (profile-desc work)])
 

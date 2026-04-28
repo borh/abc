@@ -67,7 +67,7 @@
       (is (= "ちくま文庫、筑摩書房" (get-in work ["source_editions" 0 "publisher"]))))))
 
 (deftest parse-person-fields-test
-  (testing "parse-person-fields-from-row maps person columns + role"
+  (testing "parse-person-fields-from-row maps person columns; role is NOT in body"
     (let [row (first (ac/read-rows-from-string csv-text))
           person (ac/parse-person-fields-from-row row)]
       (is (= "000879" (get person "person_id")))
@@ -77,16 +77,27 @@
       (is (= "りゅうのすけ" (get person "given_name_reading")))
       (is (= "Akutagawa" (get person "family_name_romaji")))
       (is (= "Ryunosuke" (get person "given_name_romaji")))
-      (is (= "著者" (get person "relation_to_work")))
+      (is (not (contains? person "relation_to_work"))
+          "relation_to_work is a Work-Person edge, not a person body field")
       (is (= "1892-03-01" (get person "date_of_birth")))
       (is (= "1927-07-24" (get person "date_of_death")))
       (is (true? (get person "person_copyright_expired")))
       (is (= [] (get person "external_links"))))))
 
+(deftest parse-contributor-test
+  (testing "parse-contributor-from-row carries person_id + role only"
+    (let [row (first (ac/read-rows-from-string csv-text))]
+      (is (= {"person_id" "000879" "relation_to_work" "著者"}
+             (ac/parse-contributor-from-row row))))))
+
 (deftest build-record-fragment-test
-  (testing "build-record-fragment-from-rows produces {:work :persons} from one row"
+  (testing "build-record-fragment-from-rows returns {:work :persons-by-id :contributors}"
     (let [rows (ac/read-rows-from-string csv-text)
-          {:keys [work persons]} (ac/build-record-fragment-from-rows rows)]
-      (is (= "000127" (get work "work_id")))
-      (is (= 1 (count persons)))
-      (is (= "000879" (get (first persons) "person_id"))))))
+          frag (ac/build-record-fragment-from-rows rows)]
+      (is (= "000127" (get-in frag [:work "work_id"])))
+      (is (contains? (:persons-by-id frag) "000879"))
+      (is (= "芥川" (get-in frag [:persons-by-id "000879" "family_name"])))
+      (is (not (contains? (get-in frag [:persons-by-id "000879"])
+                          "relation_to_work")))
+      (is (= [{"person_id" "000879" "relation_to_work" "著者"}]
+             (:contributors frag))))))

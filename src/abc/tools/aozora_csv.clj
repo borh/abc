@@ -109,22 +109,43 @@
    "date_of_birth" (nullable (get row "生年月日"))
    "date_of_death" (nullable (get row "没年月日"))
    "person_copyright_expired" (parse-bool-flag (get row "人物著作権フラグ"))
-   "relation_to_work" (get row "役割フラグ")
    "external_links" []})
+
+(defn parse-contributor-from-row [row]
+  {"person_id" (get row "人物ID")
+   "relation_to_work" (get row "役割フラグ")})
 
 (defn build-record-fragment-from-rows
   "Given multiple CSV rows for the same work_id (one per author/role),
-  return a {:work, :persons} fragment. Asserts work-level fields are
-  consistent across rows; persons are sorted by person_id."
+  return {:work, :persons-by-id, :contributors}. Asserts work-level
+  fields are consistent across rows; persons-by-id is keyed by
+  person_id; contributors are sorted by person_id and de-duplicated.
+  Throws if a single person_id appears with divergent body fields."
   [rows]
   (assert (seq rows) "build-record-fragment-from-rows requires at least one row")
   (let [works (mapv parse-work-fields-from-row rows)
         work-ids (distinct (map #(get % "work_id") works))]
     (assert (= 1 (count work-ids))
             (str "rows must share work_id; got: " (vec work-ids)))
-    (let [persons (->> rows
-                       (mapv parse-person-fields-from-row)
-                       (sort-by #(get % "person_id"))
-                       vec)]
+    (let [person-bodies-by-id
+          (->> rows
+               (mapv parse-person-fields-from-row)
+               (group-by #(get % "person_id"))
+               (into {}
+                     (map (fn [[pid xs]]
+                            (let [unique (distinct xs)]
+                              (when (< 1 (count unique))
+                                (throw (ex-info
+                                        (str "person_id " pid
+                                             " has divergent bodies across CSV rows")
+                                        {:person-id pid
+                                         :bodies unique})))
+                              [pid (first unique)])))))
+          contributors (->> rows
+                            (mapv parse-contributor-from-row)
+                            distinct
+                            (sort-by #(get % "person_id"))
+                            vec)]
       {:work (first works)
-       :persons persons})))
+       :persons-by-id person-bodies-by-id
+       :contributors contributors})))

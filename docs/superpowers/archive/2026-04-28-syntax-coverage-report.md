@@ -1,8 +1,8 @@
 ---
 plan_id: "2026-04-28-syntax-coverage-report"
-status: not_started
-started:
-next_update: 2026-05-05
+status: done
+started: 2026-04-28
+next_update:
 owner: unassigned
 target_prerequisites: []
 ---
@@ -120,7 +120,7 @@ No changes to `data/aat-schema.json`. No changes to existing adapter binaries.
 
 ## Task 0: Confirm Prerequisites
 
-- [ ] **Step 1: Verify the corpus is present and indexable.**
+- [x] **Step 1: Verify the corpus is present and indexable.**
 
 ```bash
 ls references/aozorabunko/cards | wc -l
@@ -128,7 +128,7 @@ find references/aozorabunko/cards -name "*.zip" | wc -l   # ~17 887 zips
 find references/aozorabunko/cards -name "*_ruby_*.zip" | wc -l   # ~14 049
 ```
 
-- [ ] **Step 2: Verify each parser's source is reachable at the documented paths.**
+- [x] **Step 2: Verify each parser's source is reachable at the documented paths.**
 
 ```bash
 ls references/parsers/aozora2html/lib/aozora2html/tag/ | wc -l   # 37
@@ -136,7 +136,7 @@ ls references/parsers/aozora2/crates/aozora-core/src/parser/     # 7 modules + m
 ls references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/    # tokenizer, scopenizer, retokenizer dirs
 ```
 
-- [ ] **Step 3: Verify the cache directory is writable.**
+- [x] **Step 3: Verify the cache directory is writable.**
 
 Default cache root: `target/parser-cache/` (gitignored, per-checkout, wiped on `cargo clean`).
 
@@ -144,7 +144,7 @@ Default cache root: `target/parser-cache/` (gitignored, per-checkout, wiped on `
 mkdir -p target/parser-cache && touch target/parser-cache/.probe && rm target/parser-cache/.probe
 ```
 
-- [ ] **Step 4: Audit existing `ab-index` feature detectors.**
+- [x] **Step 4: Audit existing `ab-index` feature detectors.**
 
 Read `crates/ab-index/src/features.rs` (or wherever the feature flags live) and `data/feature-patterns.toml`. Record the existing flag names; Task 5's `detector_id` values will reference matrix row IDs (e.g., `ruby_basic`), not these feature flags, but rows whose detector is "count nodes of AAT kind X" can reuse the AAT post-parse without going through `ab-index` at all.
 
@@ -176,7 +176,7 @@ The 9 priority-1 rows keep their `id` values. New rows take next-available IDs i
 
 Capture the new TOML shape, the four-state and five-state enums, and the prevalence sub-table. Forbidden combinations are encoded as `oneOf`/`if-then` clauses or, more practically, asserted by a Rust validator (Task 2).
 
-- [ ] **Step 6: Commit.**
+- [x] **Step 6: Commit.**
 
 Expected: `feat(coverage): extend syntax matrix to full taxonomy` (rows + draft schema; `parsers.*` and `adapters.*` left as placeholder strings `"unknown"` to be filled by Task 3).
 
@@ -198,7 +198,7 @@ Resolve any shape changes from Task 1 (e.g., a row needed a sub-field unforeseen
 
 The test loads `data/aozora-syntax-coverage.toml`, runs `SchemaValidator::validate`, and reports row IDs of any failures. Initially it tolerates `"unknown"` placeholders; after Task 3 lands, those become forbidden.
 
-- [ ] **Step 4: Commit.**
+- [x] **Step 4: Commit.**
 
 Expected: `feat(ab-coverage): schema validator + cargo-test integration`.
 
@@ -210,17 +210,17 @@ Expected: `feat(ab-coverage): schema validator + cargo-test integration`.
 
 Recognition (read parser source) and fidelity (read adapter source + run fixtures) are both classified in this task, parser-by-parser, with one commit per parser. This avoids three-way write contention on the same TOML rows that the prior version of this plan caused.
 
-- [ ] **Step 1: Build a fixture set keyed by matrix row.**
+- [x] **Step 1: Build a fixture set keyed by matrix row.**
 
 Each row needs a minimal `.txt` source that exercises only that feature. Reuse `adapters/aozora2html/tests/fixtures/` where they overlap; add new fixtures under `crates/ab-coverage/tests/fixtures/<row_id>/source.txt`. Also keep an expected-AAT-shape file per row that the fidelity classifier checks against.
 
-- [ ] **Step 2: Classify `aozora2`.**
+- [x] **Step 2: Classify `aozora2`.**
 
   - **Recognition** — read the upstream parser at `references/parsers/aozora2/crates/aozora-core/src/parser/` (7 modules: `ruby_parser.rs`, `block_parser.rs`, `command_parser.rs`, `content_parser.rs`, `reference_parser.rs`, `reference_resolver.rs`, `utils.rs`) and the node model at `references/parsers/aozora2/crates/aozora-core/src/node/`. The earlier review made clear this parser handles substantially more than ruby/gaiji — block start/end commands, headings, font-size, style, kaeriten, okurigana, references all have dedicated modules. Cite the file:line where each row's grammar handler lives.
   - **Fidelity** — read `adapters/aozora2/src/lib.rs` (the adapter wrapper, 243 lines, calls into the upstream and projects results to AAT). Run the per-row fixtures through the built adapter binary and inspect the emitted AAT for the typed nodes the row expects. Cite the wrapper line that emits (or fails to emit) the node.
   - Commit: `feat(coverage): classify aozora2 recognition + fidelity`.
 
-- [ ] **Step 3: Classify `aozora-rs`.**
+- [x] **Step 3: Classify `aozora-rs`.**
 
   - **Recognition** — read the upstream at `references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/`:
     - `tokenizer/definition.rs` — token type enumeration
@@ -230,13 +230,13 @@ Each row needs a minimal `.txt` source that exercises only that feature. Reuse `
   - **Fidelity** — read `adapters/aozora-rs/src/aat.rs` and `adapters/aozora-rs/src/projection.rs`. Run fixtures and inspect AAT.
   - Commit: `feat(coverage): classify aozora-rs recognition + fidelity`.
 
-- [ ] **Step 4: Classify `aozora2html`.**
+- [x] **Step 4: Classify `aozora2html`.**
 
   - **Recognition** — each `tag/*.rb` class maps directly to one or more rows; chuuki tables in `lib/aozora2html.rb` cover the rest. `--use-unicode` mode forces gaiji rows to `recognition = "normalised"`, not `"parsed"`.
   - **Fidelity** — read `adapters/aozora2html/adapter.py`. Run fixtures through the wrapper script + adapter and inspect AAT. Forbidden combinations (e.g., `recognition = "normalised"` + `aat_fidelity = "synthesised"`) are valid and expected for the gaiji-marker case where the adapter would recover the discarded marker by diffing the raw source — note whether the current adapter actually does this or instead emits `aat_fidelity = "dropped"`.
   - Commit: `feat(coverage): classify aozora2html recognition + fidelity`.
 
-- [ ] **Step 5: Re-run schema validation.**
+- [x] **Step 5: Re-run schema validation.**
 
 After each commit and at the end, `cargo test -p ab-coverage` must pass with no `"unknown"` placeholders remaining in the rows that have been classified.
 
@@ -246,7 +246,7 @@ After each commit and at the end, `cargo test -p ab-coverage` must pass with no 
 
 **Files:** `crates/ab-coverage/src/{prevalence,cache,detectors}.rs`, `benchmarks/run-coverage.sh`.
 
-- [ ] **Step 1: Implement the parser-output cache with version-keyed paths.**
+- [x] **Step 1: Implement the parser-output cache with version-keyed paths.**
 
 Cache layout:
 
@@ -262,7 +262,7 @@ Stale cache from a parser code change is impossible by construction: a code chan
 
 Cache hit returns the AAT JSON; cache miss runs the adapter and writes the result.
 
-- [ ] **Step 2: Implement per-row detectors.**
+- [x] **Step 2: Implement per-row detectors.**
 
 Detectors live as small fns in `crates/ab-coverage/src/detectors/<row_id>.rs`. The matrix's `corpus_prevalence.detector_id` records the row ID (e.g., `ruby_basic`), matching the file name. Each detector takes a parsed AAT and returns an occurrence count plus the list of work IDs the feature appeared in.
 
@@ -270,11 +270,11 @@ For rows whose detector is "count nodes of AAT kind X," the implementation reuse
 
 `detector_id` naming is row-name-only (no `ab-index:` prefix), and the methodology doc lists the implementation file for each.
 
-- [ ] **Step 3: `sample_works` selection rule.**
+- [x] **Step 3: `sample_works` selection rule.**
 
 For each row, the detector keeps a max-heap of (occurrence_count, work_id) pairs and emits the top 5 at the end of the corpus pass. Ties on count are broken by lexicographic `work_id` ordering. Recorded in the methodology doc.
 
-- [ ] **Step 4: Drive the corpus pass with rayon.**
+- [x] **Step 4: Drive the corpus pass with rayon.**
 
 ```rust
 corpus.par_iter().for_each(|work| {
@@ -287,11 +287,11 @@ corpus.par_iter().for_each(|work| {
 });
 ```
 
-- [ ] **Step 5: TOML merge step.**
+- [x] **Step 5: TOML merge step.**
 
 Conservative merge: only writes `corpus_prevalence.{works_with_feature, total_occurrences, sample_works}` per row. Does not touch `parsers.*` or `adapters.*`. Preserves all existing comments and field ordering by parsing into a structure-preserving AST (use `toml_edit`, not the lossy `toml` deserializer).
 
-- [ ] **Step 6: Commit the tool (no matrix data yet).**
+- [x] **Step 6: Commit the tool (no matrix data yet).**
 
 Expected: `feat(ab-coverage): whole-corpus prevalence pipeline with versioned parser cache`.
 
@@ -303,7 +303,7 @@ Expected: `feat(ab-coverage): whole-corpus prevalence pipeline with versioned pa
 
 This task replaces the previous plan's uncalibrated `<120 s` claim. Per the review: the prevalence workload is *parse-each-work-through-each-adapter*, not the regex-based ab-index scan that hit sub-minute totals before. Per-work cost is 50–200× higher.
 
-- [ ] **Step 1: Pilot run on 100 ruby-bearing works.**
+- [x] **Step 1: Pilot run on 100 ruby-bearing works.**
 
 ```bash
 # build/refresh the index if absent
@@ -324,11 +324,11 @@ benchmarks/run-coverage.sh --corpus references/aozorabunko \
 
 Capture per-adapter median and p95 latency, total wall-clock.
 
-- [ ] **Step 2: Project full-corpus runtime.**
+- [x] **Step 2: Project full-corpus runtime.**
 
 Multiply per-adapter median by 14 049 (ruby-bearing works) for each Rust adapter; by ~14 049 for aozora2html (which is the bottleneck). Project wall-clock with rayon at `--jobs 16`.
 
-- [ ] **Step 3: Decide cold-pass strategy.**
+- [x] **Step 3: Decide cold-pass strategy.**
 
   - If projected aozora2html cold pass is under ~90 minutes wall-clock: proceed with full corpus.
   - If projected aozora2html cold pass exceeds that budget: fall back to a stratified sample (e.g., for each row, pick up to 200 works with that feature flag from `ab-index`, dedupe; cold-pass aozora2html only those works; record `corpus_prevalence.coverage_basis = "stratified_sample"` instead of `"full_corpus"` per row).
@@ -336,7 +336,7 @@ Multiply per-adapter median by 14 049 (ruby-bearing works) for each Rust adapter
 
 The decision is recorded in the methodology doc (Task 7) and reflected in the TOML by setting `corpus_prevalence.coverage_basis` per row.
 
-- [ ] **Step 4: Commit pilot artefacts (the methodology doc gains a "Performance calibration" section with measured numbers).**
+- [x] **Step 4: Commit pilot artefacts (the methodology doc gains a "Performance calibration" section with measured numbers).**
 
 Expected: `docs(coverage): pilot timing measurement and corpus strategy decision`.
 
@@ -344,7 +344,7 @@ Expected: `docs(coverage): pilot timing measurement and corpus strategy decision
 
 ## Task 6: Run on Whole Corpus and Materialise Numbers
 
-- [ ] **Step 1: Cold-cache run.**
+- [x] **Step 1: Cold-cache run.**
 
 ```bash
 benchmarks/run-coverage.sh --corpus references/aozorabunko --jobs 16
@@ -352,7 +352,7 @@ benchmarks/run-coverage.sh --corpus references/aozorabunko --jobs 16
 
 The strategy from Task 5 Step 3 is in effect (full corpus or stratified). Stderr → `scratch/ab-coverage-<timestamp>/cold.log`. Cache populated; matrix updated; `summary.json` written.
 
-- [ ] **Step 2: Warm rerun to confirm caching works.**
+- [x] **Step 2: Warm rerun to confirm caching works.**
 
 ```bash
 benchmarks/run-coverage.sh --corpus references/aozorabunko --jobs 16
@@ -360,11 +360,11 @@ benchmarks/run-coverage.sh --corpus references/aozorabunko --jobs 16
 
 Expect well under a minute. If not, the cache is broken — fix before declaring the task done.
 
-- [ ] **Step 3: Cross-check prevalence against `ab-index`.**
+- [x] **Step 3: Cross-check prevalence against `ab-index`.**
 
 For rows whose feature maps onto an existing `ab-index` flag (`feature_keys` field), compare `works_with_feature` to the index's count. Discrepancies > 1 % flag detector bugs.
 
-- [ ] **Step 4: Commit the populated matrix.**
+- [x] **Step 4: Commit the populated matrix.**
 
 Expected: `data(coverage): populate whole-corpus prevalence`.
 
@@ -374,30 +374,30 @@ Expected: `data(coverage): populate whole-corpus prevalence`.
 
 **Files:** `docs/superpowers/specs/2026-04-28-syntax-coverage-methodology.md`.
 
-- [ ] **Step 1: Document the taxonomy seeding process.** Cite which Ruby tag class / chuuki table / kijyunn section gave each row.
-- [ ] **Step 2: Document the recognition classifier.** State the file:line evidence rule used for each parser, with corrected paths (`references/parsers/aozora2/crates/aozora-core/src/parser/*`, `references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/{tokenizer,scopenizer,retokenizer}/`, `references/parsers/aozora2html/lib/aozora2html/tag/*`).
-- [ ] **Step 3: Document the fidelity classifier.** Adapter source rules; highlight the gaiji-marker `normalised` + `synthesised` case.
-- [ ] **Step 4: Document the corpus pass.** Cache layout (parser_id / adapter_sha / input_sha), detector list, rayon configuration, measured timings from Task 5, the chosen `coverage_basis` per row.
-- [ ] **Step 5: Document forbidden-combination rules and why.**
-- [ ] **Step 6: Document deferred work:** `feature-patterns.toml` reconciliation; adding `AozoraEpub3`, `aozora-parser.js`, `aozorabunko-extractor` as additional parser/adapter columns (the schema and cache already accept them).
-- [ ] **Step 7: Cross-reference findings.** Three or four largest mismatches between parsers and what they imply for downstream consumers.
-- [ ] **Step 8: Commit.** `docs(coverage): methodology document`.
+- [x] **Step 1: Document the taxonomy seeding process.** Cite which Ruby tag class / chuuki table / kijyunn section gave each row.
+- [x] **Step 2: Document the recognition classifier.** State the file:line evidence rule used for each parser, with corrected paths (`references/parsers/aozora2/crates/aozora-core/src/parser/*`, `references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/{tokenizer,scopenizer,retokenizer}/`, `references/parsers/aozora2html/lib/aozora2html/tag/*`).
+- [x] **Step 3: Document the fidelity classifier.** Adapter source rules; highlight the gaiji-marker `normalised` + `synthesised` case.
+- [x] **Step 4: Document the corpus pass.** Cache layout (parser_id / adapter_sha / input_sha), detector list, rayon configuration, measured timings from Task 5, the chosen `coverage_basis` per row.
+- [x] **Step 5: Document forbidden-combination rules and why.**
+- [x] **Step 6: Document deferred work:** `feature-patterns.toml` reconciliation; adding `AozoraEpub3`, `aozora-parser.js`, `aozorabunko-extractor` as additional parser/adapter columns (the schema and cache already accept them).
+- [x] **Step 7: Cross-reference findings.** Three or four largest mismatches between parsers and what they imply for downstream consumers.
+- [x] **Step 8: Commit.** `docs(coverage): methodology document`.
 
 ---
 
 ## Task 8: Plan Queue Maintenance
 
-- [ ] **Step 1: Refresh `docs/superpowers/PLAN-EXECUTION-ORDER.md`.**
+- [x] **Step 1: Refresh `docs/superpowers/PLAN-EXECUTION-ORDER.md`.**
 
 Move this plan to "Archived plans" after Task 9 verification passes. Mention the populated matrix and methodology doc as the durable artefacts.
 
-- [ ] **Step 2: Commit and archive.**
+- [x] **Step 2: Commit and archive.**
 
 ---
 
 ## Task 9: Final Verification
 
-- [ ] **Step 1: Workspace and adapter checks.**
+- [x] **Step 1: Workspace and adapter checks.**
 
 ```bash
 cargo fmt --all -- --check
@@ -405,22 +405,22 @@ cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
 ```
 
-- [ ] **Step 2: Schema and combination-rule validation.**
+- [x] **Step 2: Schema and combination-rule validation.**
 
 ```bash
 cargo test -p ab-coverage matrix_schema_valid
 cargo test -p ab-coverage forbidden_combinations_rejected
 ```
 
-- [ ] **Step 3: Warm-cache run completes within budget.**
+- [x] **Step 3: Warm-cache run completes within budget.**
 
 `benchmarks/run-coverage.sh --corpus references/aozorabunko --jobs 16` finishes in under a minute on warm cache.
 
-- [ ] **Step 4: Reporting completeness.**
+- [x] **Step 4: Reporting completeness.**
 
 Every `[[syntax]]` row has every `parsers.<id>.recognition` and `adapters.<id>.aat_fidelity` set to a non-`"unknown"` enum value, every row has `corpus_prevalence.coverage_basis` set, and no forbidden combinations remain.
 
-- [ ] **Step 5: Mark plan front-matter `status: done`, archive, refresh queue.**
+- [x] **Step 5: Mark plan front-matter `status: done`, archive, refresh queue.**
 
 ---
 

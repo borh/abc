@@ -13,11 +13,7 @@ All plan documents in `docs/superpowers/plans/` now use front-matter status fiel
 
 ## Active plans
 
-1. `2026-04-28-syntax-coverage-report` (active)
-   - Extends the syntax coverage matrix to the full Aozora feature set
-     with per-parser recognition state, per-adapter AAT fidelity state,
-     and whole-corpus prevalence numbers backed by a content-addressed
-     parser-output cache.
+None at the moment.
 
 ## Archived plans
 
@@ -32,6 +28,10 @@ All previously queued plans landed and were moved to
 - `2026-04-26-aozora-rs-performance`
 - `2026-04-26-aozora-syntax-coverage-increment`
 - `2026-04-28-aozora2html-adapter`
+- `2026-04-28-syntax-coverage-report` — durable artefacts:
+  the populated `data/aozora-syntax-coverage.toml` (45 rows × 3 parser
+  + 3 adapter cells, full-corpus prevalence) and
+  `docs/superpowers/specs/2026-04-28-syntax-coverage-methodology.md`.
 
 ## Open spec gaps
 

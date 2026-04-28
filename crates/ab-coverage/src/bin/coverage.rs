@@ -83,10 +83,11 @@ fn main() -> Result<()> {
                 .and_then(Value::as_str)
                 .ok_or_else(|| anyhow::anyhow!("work missing id"))?;
             let path = work
-                .get("indexed_path")
+                .get("txt_path")
+                .or_else(|| work.get("indexed_path"))
                 .or_else(|| work.get("source_path"))
                 .and_then(Value::as_str)
-                .ok_or_else(|| anyhow::anyhow!("work missing indexed_path"))?;
+                .ok_or_else(|| anyhow::anyhow!("work {id} missing txt_path"))?;
             id_to_path.insert(id.to_string(), path.to_string());
         }
     } else {

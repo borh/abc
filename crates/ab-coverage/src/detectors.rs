@@ -74,24 +74,28 @@ impl Detector {
 fn build_detector_for_row(row: &Row) -> Detector {
     let mut rules = Vec::new();
     // Default: count any AAT node whose kind matches the row's `aat_nodes`.
+    // Generic kinds like "text" / "paragraph" are dropped because they match
+    // the structural backbone of every work and would dwarf real signal; for
+    // those rows the source-side regex is the authoritative detector.
     let kinds = row
         .aat_nodes
         .iter()
         .map(|s| s.to_string())
-        .filter(|s| !s.is_empty())
+        .filter(|s| !s.is_empty() && !is_generic_aat_kind(s))
         .collect::<Vec<_>>();
     if !kinds.is_empty() {
         rules.push(Rule::AatKindCount(kinds));
     }
-    // Source-side patterns are advisory: compile and add as additional
-    // detectors when the row already declares regexes that we know are safe.
-    // Compile-failures are silently dropped; we keep the AAT-side detector.
     for pat in &row.source_patterns {
         if let Ok(re) = Regex::new(pat) {
             rules.push(Rule::SourceRegex(re));
         }
     }
     Detector { rules }
+}
+
+fn is_generic_aat_kind(kind: &str) -> bool {
+    matches!(kind, "text" | "paragraph")
 }
 
 fn count_aat_kinds(aat: &Value, kinds: &[String]) -> u64 {

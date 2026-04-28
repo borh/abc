@@ -72,8 +72,8 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/ruby.rb:11"
 notes = ""
 
 [syntax.adapters.aozora2]
@@ -87,8 +87,8 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/adapter.py:152"
 notes = ""
 
 [syntax.corpus_prevalence]
@@ -129,9 +129,9 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "normalised"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/gaiji.rb:6"
+notes = "gaiji marker resolved by --use-unicode"
 
 [syntax.adapters.aozora2]
 aat_fidelity = "preserved"
@@ -144,9 +144,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2html/adapter.py:274"
+notes = "span gaiji preserved as text, marker lost"
 
 [syntax.corpus_prevalence]
 works_with_feature = 0
@@ -186,9 +186,9 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "adapters/aozora2html/adapter.py:215"
+notes = "ruby with gaiji base"
 
 [syntax.adapters.aozora2]
 aat_fidelity = "lossy"
@@ -201,8 +201,8 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/adapter.py:215"
 notes = ""
 
 [syntax.corpus_prevalence]
@@ -243,8 +243,8 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/midashi.rb:6"
 notes = ""
 
 [syntax.adapters.aozora2]
@@ -258,8 +258,8 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/adapter.py:314"
 notes = ""
 
 [syntax.corpus_prevalence]
@@ -300,8 +300,8 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/decorate.rb:6"
 notes = ""
 
 [syntax.adapters.aozora2]
@@ -315,8 +315,8 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/adapter.py:87"
 notes = ""
 
 [syntax.corpus_prevalence]
@@ -357,8 +357,8 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/indent.rb:1"
 notes = ""
 
 [syntax.adapters.aozora2]
@@ -372,8 +372,8 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/adapter.py:325"
 notes = ""
 
 [syntax.corpus_prevalence]
@@ -414,8 +414,8 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/multiline.rb:1"
 notes = ""
 
 [syntax.adapters.aozora2]
@@ -429,9 +429,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "lossy"
+evidence = "adapters/aozora2html/adapter.py:350"
+notes = "warichu content as paragraph"
 
 [syntax.corpus_prevalence]
 works_with_feature = 0
@@ -471,8 +471,8 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/img.rb:6"
 notes = ""
 
 [syntax.adapters.aozora2]
@@ -486,9 +486,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "lossy"
+evidence = "adapters/aozora2html/adapter.py:243"
+notes = "img alt preserved, caption structure lost"
 
 [syntax.corpus_prevalence]
 works_with_feature = 0
@@ -528,8 +528,8 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html.rb:1"
 notes = ""
 
 [syntax.adapters.aozora2]
@@ -543,9 +543,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/adapter.py:95"
+notes = "br as raw HTML"
 
 [syntax.corpus_prevalence]
 works_with_feature = 0
@@ -589,9 +589,9 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/ruby.rb:43"
+notes = "double ruby validation"
 
 [syntax.adapters.aozora2]
 aat_fidelity = "lossy"
@@ -604,9 +604,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2html/adapter.py:152"
+notes = "under_ruby ignored"
 
 [syntax.corpus_prevalence]
 works_with_feature = 0
@@ -644,8 +644,8 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/ruby.rb:11"
 notes = ""
 
 [syntax.adapters.aozora2]
@@ -659,9 +659,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/adapter.py:161"
+notes = "left/right placement mapped"
 
 [syntax.corpus_prevalence]
 works_with_feature = 0
@@ -699,9 +699,9 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "aborts"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/ruby.rb:50"
+notes = "dont_use_double_ruby error"
 
 [syntax.adapters.aozora2]
 aat_fidelity = "not_applicable"
@@ -714,7 +714,7 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
+aat_fidelity = "not_applicable"
 evidence = ""
 notes = ""
 
@@ -754,9 +754,9 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html.rb:104"
+notes = "PAT_CHUUKI pattern"
 
 [syntax.adapters.aozora2]
 aat_fidelity = "dropped"
@@ -769,9 +769,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2html/adapter.py:1"
+notes = "chuuki table used, marker emitted separately"
 
 [syntax.corpus_prevalence]
 works_with_feature = 0
@@ -809,9 +809,9 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html.rb:105"
+notes = "PAT_BOUKI pattern"
 
 [syntax.adapters.aozora2]
 aat_fidelity = "dropped"
@@ -824,9 +824,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2html/adapter.py:1"
+notes = "bouki markers not mapped in adapter"
 
 [syntax.corpus_prevalence]
 works_with_feature = 0
@@ -864,9 +864,9 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "normalised"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/embed_gaiji.rb:46"
+notes = "--use-unicode mode"
 
 [syntax.adapters.aozora2]
 aat_fidelity = "preserved"
@@ -879,9 +879,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/adapter.py:280"
+notes = "span gaiji with resolved text"
 
 [syntax.corpus_prevalence]
 works_with_feature = 0
@@ -919,9 +919,9 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "normalised"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/embed_gaiji.rb:44"
+notes = "--use-jisx0213 mode"
 
 [syntax.adapters.aozora2]
 aat_fidelity = "lossy"
@@ -934,9 +934,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "lossy"
+evidence = "adapters/aozora2html/adapter.py:243"
+notes = "img fallback preserves alt, not code"
 
 [syntax.corpus_prevalence]
 works_with_feature = 0
@@ -974,8 +974,8 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/dakuten_katakana.rb:1"
 notes = ""
 
 [syntax.adapters.aozora2]
@@ -989,9 +989,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2html/adapter.py:243"
+notes = "img gaiji rendered, dakuten marker lost"
 
 [syntax.corpus_prevalence]
 works_with_feature = 0
@@ -1029,8 +1029,8 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/un_embed_gaiji.rb:1"
 notes = ""
 
 [syntax.adapters.aozora2]
@@ -1044,9 +1044,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2html/adapter.py:1"
+notes = "un-embed marker not mapped"
 
 [syntax.corpus_prevalence]
 works_with_feature = 0
@@ -1084,9 +1084,9 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html.rb:1"
+notes = "KUNOJI/NOJI constants"
 
 [syntax.adapters.aozora2]
 aat_fidelity = "not_applicable"
@@ -1099,9 +1099,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2html/adapter.py:1"
+notes = "iteration marker not in adapter"
 
 [syntax.corpus_prevalence]
 works_with_feature = 0
@@ -1139,8 +1139,8 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/accent.rb:6"
 notes = ""
 
 [syntax.adapters.aozora2]
@@ -1154,9 +1154,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "lossy"
+evidence = "adapters/aozora2html/adapter.py:243"
+notes = "accent as img, name in alt"
 
 [syntax.corpus_prevalence]
 works_with_feature = 0
@@ -1194,8 +1194,8 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/kaeriten.rb:6"
 notes = ""
 
 [syntax.adapters.aozora2]
@@ -1209,9 +1209,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2html/adapter.py:118"
+notes = "sub.kaeriten unmapped"
 
 [syntax.corpus_prevalence]
 works_with_feature = 0
@@ -1249,8 +1249,8 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/okurigana.rb:6"
 notes = ""
 
 [syntax.adapters.aozora2]
@@ -1264,9 +1264,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2html/adapter.py:118"
+notes = "sup.okurigana unmapped"
 
 [syntax.corpus_prevalence]
 works_with_feature = 0
@@ -1304,9 +1304,9 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/midashi.rb:6"
+notes = "inline midashi"
 
 [syntax.adapters.aozora2]
 aat_fidelity = "dropped"
@@ -1319,8 +1319,8 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/adapter.py:314"
 notes = ""
 
 [syntax.corpus_prevalence]
@@ -1359,9 +1359,9 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/multiline_midashi.rb:1"
+notes = "dogyo midashi"
 
 [syntax.adapters.aozora2]
 aat_fidelity = "dropped"
@@ -1374,9 +1374,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/adapter.py:335"
+notes = "div.o-midashi/naka-midashi/ko-midashi"
 
 [syntax.corpus_prevalence]
 works_with_feature = 0
@@ -1414,9 +1414,9 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/multiline_midashi.rb:1"
+notes = "mado midashi"
 
 [syntax.adapters.aozora2]
 aat_fidelity = "dropped"
@@ -1429,9 +1429,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/adapter.py:335"
+notes = "div mado class mapping"
 
 [syntax.corpus_prevalence]
 works_with_feature = 0
@@ -1469,9 +1469,9 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/decorate.rb:6"
+notes = "boten marker"
 
 [syntax.adapters.aozora2]
 aat_fidelity = "dropped"
@@ -1484,9 +1484,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/adapter.py:87"
+notes = "em class mapped to style"
 
 [syntax.corpus_prevalence]
 works_with_feature = 0
@@ -1524,9 +1524,9 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/decorate.rb:6"
+notes = "bousen marker"
 
 [syntax.adapters.aozora2]
 aat_fidelity = "dropped"
@@ -1539,9 +1539,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/adapter.py:87"
+notes = "em underline mapped"
 
 [syntax.corpus_prevalence]
 works_with_feature = 0
@@ -1579,9 +1579,9 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/decorate.rb:6"
+notes = "bold/italic markers"
 
 [syntax.adapters.aozora2]
 aat_fidelity = "dropped"
@@ -1594,9 +1594,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/adapter.py:87"
+notes = "em futoji/shatai"
 
 [syntax.corpus_prevalence]
 works_with_feature = 0
@@ -1634,9 +1634,9 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/font_size.rb:1"
+notes = "font size markers"
 
 [syntax.adapters.aozora2]
 aat_fidelity = "dropped"
@@ -1649,9 +1649,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/adapter.py:87"
+notes = "em dai/sho classes"
 
 [syntax.corpus_prevalence]
 works_with_feature = 0
@@ -1689,8 +1689,8 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/keigakomi.rb:1"
 notes = ""
 
 [syntax.adapters.aozora2]
@@ -1704,9 +1704,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "lossy"
+evidence = "adapters/aozora2html/adapter.py:87"
+notes = "keigakomi as em, structure lost"
 
 [syntax.corpus_prevalence]
 works_with_feature = 0
@@ -1744,9 +1744,9 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html.rb:49"
+notes = "PAT_DIRECTION pattern"
 
 [syntax.adapters.aozora2]
 aat_fidelity = "dropped"
@@ -1759,9 +1759,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2html/adapter.py:118"
+notes = "direction override not mapped"
 
 [syntax.corpus_prevalence]
 works_with_feature = 0
@@ -1799,8 +1799,8 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/multiline_jisage.rb:6"
 notes = ""
 
 [syntax.adapters.aozora2]
@@ -1814,9 +1814,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/adapter.py:325"
+notes = "div.jisage_N mapped"
 
 [syntax.corpus_prevalence]
 works_with_feature = 0
@@ -1854,8 +1854,8 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/oneline_jisage.rb:1"
 notes = ""
 
 [syntax.adapters.aozora2]
@@ -1869,9 +1869,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/adapter.py:325"
+notes = "span jisage inline"
 
 [syntax.corpus_prevalence]
 works_with_feature = 0
@@ -1909,8 +1909,8 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/chitsuki.rb:8"
 notes = ""
 
 [syntax.adapters.aozora2]
@@ -1924,9 +1924,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/adapter.py:1"
+notes = "chitsuki alignment preserved in style"
 
 [syntax.corpus_prevalence]
 works_with_feature = 0
@@ -1964,8 +1964,8 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/jizume.rb:1"
 notes = ""
 
 [syntax.adapters.aozora2]
@@ -1979,9 +1979,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2html/adapter.py:1"
+notes = "jizume letter-spacing not mapped"
 
 [syntax.corpus_prevalence]
 works_with_feature = 0
@@ -2019,9 +2019,9 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/oneline_indent.rb:1"
+notes = "burasage via jisage"
 
 [syntax.adapters.aozora2]
 aat_fidelity = "dropped"
@@ -2034,9 +2034,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2html/adapter.py:325"
+notes = "burasage div not recognized"
 
 [syntax.corpus_prevalence]
 works_with_feature = 0
@@ -2074,8 +2074,8 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/multiline_yokogumi.rb:6"
 notes = ""
 
 [syntax.adapters.aozora2]
@@ -2089,9 +2089,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/adapter.py:1"
+notes = "div.yokogumi layout"
 
 [syntax.corpus_prevalence]
 works_with_feature = 0
@@ -2129,9 +2129,9 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html.rb:52"
+notes = "TCY_COMMAND"
 
 [syntax.adapters.aozora2]
 aat_fidelity = "dropped"
@@ -2144,9 +2144,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2html/adapter.py:1"
+notes = "tcy marker not in adapter"
 
 [syntax.corpus_prevalence]
 works_with_feature = 0
@@ -2184,9 +2184,9 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html.rb:56"
+notes = "WARIGAKI_COMMAND"
 
 [syntax.adapters.aozora2]
 aat_fidelity = "dropped"
@@ -2199,9 +2199,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "lossy"
+evidence = "adapters/aozora2html/adapter.py:87"
+notes = "warigaki as em, marker lost"
 
 [syntax.corpus_prevalence]
 works_with_feature = 0
@@ -2239,8 +2239,8 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/inline_caption.rb:1"
 notes = ""
 
 [syntax.adapters.aozora2]
@@ -2254,9 +2254,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "lossy"
+evidence = "adapters/aozora2html/adapter.py:351"
+notes = "caption in paragraph, structure lost"
 
 [syntax.corpus_prevalence]
 works_with_feature = 0
@@ -2294,8 +2294,8 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/multiline_caption.rb:1"
 notes = ""
 
 [syntax.adapters.aozora2]
@@ -2309,9 +2309,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "lossy"
+evidence = "adapters/aozora2html/adapter.py:357"
+notes = "caption block not distinguished"
 
 [syntax.corpus_prevalence]
 works_with_feature = 0
@@ -2349,9 +2349,9 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/img.rb:6"
+notes = "inline image"
 
 [syntax.adapters.aozora2]
 aat_fidelity = "dropped"
@@ -2364,9 +2364,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "lossy"
+evidence = "adapters/aozora2html/adapter.py:243"
+notes = "img alt preserved, inline context lost"
 
 [syntax.corpus_prevalence]
 works_with_feature = 0
@@ -2404,8 +2404,8 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html/tag/editor_note.rb:6"
 notes = ""
 
 [syntax.adapters.aozora2]
@@ -2419,9 +2419,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2html/adapter.py:118"
+notes = "span.notes unmapped, command syntax lost"
 
 [syntax.corpus_prevalence]
 works_with_feature = 0
@@ -2459,9 +2459,9 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html.rb:102"
+notes = "PAT_FRONTREF pattern"
 
 [syntax.adapters.aozora2]
 aat_fidelity = "not_applicable"
@@ -2474,9 +2474,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "dropped"
+evidence = "adapters/aozora2html/adapter.py:113"
+notes = "anchor kept, link structure lost"
 
 [syntax.corpus_prevalence]
 works_with_feature = 0
@@ -2514,9 +2514,9 @@ evidence = ""
 notes = ""
 
 [syntax.parsers.aozora2html]
-recognition = "unknown"
-evidence = ""
-notes = ""
+recognition = "parsed"
+evidence = "references/parsers/aozora2html/lib/aozora2html.rb:1"
+notes = "explicit line break"
 
 [syntax.adapters.aozora2]
 aat_fidelity = "not_applicable"
@@ -2529,9 +2529,9 @@ evidence = ""
 notes = ""
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "unknown"
-evidence = ""
-notes = ""
+aat_fidelity = "preserved"
+evidence = "adapters/aozora2html/adapter.py:480"
+notes = "br flushes paragraph"
 
 [syntax.corpus_prevalence]
 works_with_feature = 0

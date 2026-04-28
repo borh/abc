@@ -259,6 +259,9 @@ use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 
+/// Default max examples per key in a FrequencyTable.
+pub const DEFAULT_MAX_EXAMPLES: usize = 10;
+
 /// A frequency table keyed by `K` with bounded example lists of type `E`.
 /// Examples are deduplicated by equality; each unique example contributes
 /// at most once to the example list regardless of how many times it is
@@ -275,7 +278,7 @@ pub struct FrequencyEntry<E> {
     pub examples: Vec<E>,
 }
 
-impl<K: Ord + Serialize, E: Eq + Serialize> FrequencyTable<K, E> {
+impl<K: Ord, E: Eq> FrequencyTable<K, E> {
     pub fn new(max_examples: usize) -> Self {
         Self {
             max_examples,
@@ -316,9 +319,9 @@ impl<K: Ord + Serialize, E: Eq + Serialize> FrequencyTable<K, E> {
     }
 }
 
-impl<K: Ord + Serialize, E: Eq + Serialize> Default for FrequencyTable<K, E> {
+impl<K: Ord, E: Eq> Default for FrequencyTable<K, E> {
     fn default() -> Self {
-        Self::new(10)
+        Self::new(DEFAULT_MAX_EXAMPLES)
     }
 }
 
@@ -485,8 +488,9 @@ git commit -m "feat(ab-compare): add ab-diff-utils dependency"
 
 **Files:**
 - Modify: `crates/ab-compare/src/aat_diff.rs`
+- Modify: `crates/ab-compare/Cargo.toml`
 
-- [ ] **Step 1: Remove private hashing and first-diff helpers, replace with imports**
+- [ ] **Step 1: Remove private hashing and first-diff helpers, replace with imports, drop sha2 dep**
 
 In `crates/ab-compare/src/aat_diff.rs`:
 
@@ -497,7 +501,7 @@ In `crates/ab-compare/src/aat_diff.rs`:
 - `fn first_visible_difference`
 - `fn snippet`
 
-**Remove** these imports:
+**Remove** this import:
 ```rust
 use sha2::{Digest, Sha256};
 ```
@@ -505,32 +509,46 @@ use sha2::{Digest, Sha256};
 **Add** import at top:
 ```rust
 use ab_diff_utils::hashing::{hash_bytes, hash_json, hash_string_sequence};
+use ab_diff_utils::first_diff::first_difference;
 ```
 
-**Replace** the call site of `first_visible_difference` (line ~151 in `compare_aat_dirs_with_limit`):
+**In `crates/ab-compare/Cargo.toml`**, remove `sha2` from `[dependencies]` (no longer used after extraction):
 
-Old:
+```toml
+[dependencies]
+ab-diff-utils.workspace = true
+anyhow.workspace = true
+clap.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+walkdir.workspace = true
+```
+
+**Replace** the call site of `first_visible_difference` (in `compare_aat_dirs_with_limit`):
+
+Add `From` impl for `VisibleTextDifference`:
+
 ```rust
-            let normalized_visible_first_difference =
-                normalized_visible_difference_bucket.as_ref().and_then(|_| {
-                    first_visible_difference(&left.normalized_visible, &right.normalized_visible)
-                });
+impl From<ab_diff_utils::first_diff::FirstDifference> for VisibleTextDifference {
+    fn from(diff: ab_diff_utils::first_diff::FirstDifference) -> Self {
+        VisibleTextDifference {
+            char_index: diff.char_index,
+            a_snippet: diff.left_snippet,
+            b_snippet: diff.right_snippet,
+        }
+    }
+}
 ```
 
-New (add `use ab_diff_utils::first_diff::first_difference;` at top, then):
+Then the call site simplifies to:
+
 ```rust
             let normalized_visible_first_difference =
                 normalized_visible_difference_bucket.as_ref().and_then(|_| {
                     first_difference(&left.normalized_visible, &right.normalized_visible)
-                        .map(|diff| VisibleTextDifference {
-                            char_index: diff.char_index,
-                            a_snippet: diff.left_snippet,
-                            b_snippet: diff.right_snippet,
-                        })
+                        .map(VisibleTextDifference::from)
                 });
 ```
-
-Note: `ab-compare`'s `VisibleTextDifference` struct has `a_snippet`/`b_snippet` field names while `ab_diff_utils::FirstDifference` uses `left_snippet`/`right_snippet`. The call site maps the field names.
 
 - [ ] **Step 2: Build and run existing tests**
 
@@ -664,14 +682,14 @@ Add `coverage_mismatch` field to `AatStructuralDifference`:
 }
 ```
 
-Add `coverage_only_difference_count` field to `AatCompareSummary`:
+Add `coverage_only_difference_count` field **at the end** of `AatCompareSummary` (after `structural_differences`). Also add `coverage_metrics_missing` to track how many work-pairs had missing metrics on one or both sides (preventing coverage comparison):
 
 ```rust
-    pub same_visible_structural_difference_count: usize,
+    pub structural_differences: Vec<AatStructuralDifference>,
     // NEW:
     pub coverage_only_difference_count: usize,
-    pub semantic_hash_difference_counts: BTreeMap<String, usize>,
-```
+    pub coverage_metrics_missing: usize,
+}
 
 - [ ] **Step 2: Add coverage-only condition and population in `compare_aat_dirs_with_limit`**
 
@@ -680,13 +698,12 @@ Add initialization after existing counters:
     let mut same_visible_structural_difference_count = 0usize;
     // NEW:
     let mut coverage_only_difference_count = 0usize;
+    let mut coverage_metrics_missing = 0usize;
 ```
 
-Inside the `for key in &common` loop, **before** the existing structural-difference condition, add coverage-only check:
+Inside the `for key in &common` loop, **before** the existing structural-difference condition, check for coverage difference. Both `coverage_only_difference_count` and `structural_difference_count` are "total observed" counters (they increment before the limit check, matching existing behavior):
 
 ```rust
-        // Check for coverage-only difference (hashes match, but fallback_used differs).
-        // Only when both sides have metrics present.
         let coverage_mismatch = if left.fallback_used.is_some()
             && right.fallback_used.is_some()
             && left.fallback_used != right.fallback_used
@@ -700,6 +717,9 @@ Inside the `for key in &common` loop, **before** the existing structural-differe
                 b_source_bytes: right.source_bytes,
             })
         } else {
+            if left.fallback_used.is_none() || right.fallback_used.is_none() {
+                coverage_metrics_missing += 1;
+            }
             None
         };
 ```
@@ -723,6 +743,8 @@ Then replace the existing structural-difference condition `if left.structure_has
             });
         } else if coverage_mismatch.is_some() {
             // Coverage-only difference: hashes match, but fallback differs.
+            // This branch has its own scope; normalized_visible_* variables from
+            // the has_hash_difference branch are not in scope here.
             coverage_only_difference_count += 1;
             if difference_limit.is_some_and(|limit| structural_differences.len() >= limit) {
                 continue;
@@ -756,26 +778,27 @@ Then replace the existing structural-difference condition `if left.structure_has
         }
 ```
 
-Add `coverage_only_difference_count` to the `Ok(AatCompareSummary { ... })`:
+Add `coverage_only_difference_count` and `coverage_metrics_missing` to the `Ok(AatCompareSummary { ... })`:
 
 ```rust
     Ok(AatCompareSummary {
         // ... existing fields ...
         same_visible_structural_difference_count,
+        structural_differences,
         coverage_only_difference_count,
-        semantic_hash_difference_counts,
-        // ...
+        coverage_metrics_missing,
     })
 ```
 
 - [ ] **Step 3: Update existing test `triage_report_buckets_differences_by_feature_and_metrics`**
 
-In `tests/integration.rs`, the test `triage_report_buckets_differences_by_feature_and_metrics` constructs an `AatCompareSummary` inline. Add the new field:
+In `tests/integration.rs`, the test `triage_report_buckets_differences_by_feature_and_metrics` constructs an `AatCompareSummary` inline. Add the new fields:
 
 ```rust
         same_visible_structural_difference_count: 1,
+        structural_differences: Vec::new(),
         coverage_only_difference_count: 0,
-        semantic_hash_difference_counts: BTreeMap::new(),
+        coverage_metrics_missing: 0,
 ```
 
 - [ ] **Step 4: Build and run tests**
@@ -854,7 +877,7 @@ Replace `BTreeMap::new()` + `push_bucket` with `FrequencyTable::new(10)`:
 
 - [ ] **Step 3: Update existing test assertions**
 
-In `tests/integration.rs`, the test `triage_report_buckets_differences_by_feature_and_metrics` accesses `by_property["visible_text_body_order"].count`. Change to use `get()`:
+In `tests/integration.rs`, the test `triage_report_buckets_differences_by_feature_and_metrics` accesses `by_property["visible_text_body_order"].count`. Change to use `get()` (the `.to_owned()` allocation on `&str` keys is test-only and negligible; triage code uses pre-owned `String` keys so no allocation occurs there):
 ```rust
     assert_eq!(
         report.result_differences.by_property.get(&"visible_text_body_order".to_owned()).unwrap().count,
@@ -919,12 +942,15 @@ After `source_supplements` construction, add:
         for diff in &summary.structural_differences {
             if let Some(coverage) = &diff.coverage_mismatch {
                 count += 1;
-                let reason = if coverage.a_had_fallback {
-                    coverage.a_fallback_reason.clone().unwrap_or_else(|| "unknown".into())
-                } else if coverage.b_had_fallback {
-                    coverage.b_fallback_reason.clone().unwrap_or_else(|| "unknown".into())
-                } else {
-                    "unknown".into()
+                let reason = match (coverage.a_had_fallback, coverage.b_had_fallback) {
+                    (true, true) => format!(
+                        "a={}, b={}",
+                        coverage.a_fallback_reason.as_deref().unwrap_or("unknown"),
+                        coverage.b_fallback_reason.as_deref().unwrap_or("unknown"),
+                    ),
+                    (true, false) => coverage.a_fallback_reason.clone().unwrap_or_else(|| "unknown".into()),
+                    (false, true) => coverage.b_fallback_reason.clone().unwrap_or_else(|| "unknown".into()),
+                    (false, false) => "unknown".into(),
                 };
                 by_reason.record(reason, diff.work_id.clone());
             }
@@ -1021,6 +1047,7 @@ fn coverage_delta_recorded_when_fallback_differs_and_hashes_differ() {
     assert_eq!(summary.structural_difference_count, 1);
     assert_eq!(summary.coverage_only_difference_count, 0);
     let diff = &summary.structural_differences[0];
+    assert!(diff.visible_text_differs);
     let coverage = diff.coverage_mismatch.as_ref().unwrap();
     assert!(coverage.a_had_fallback);
     assert!(!coverage.b_had_fallback);
@@ -1042,25 +1069,31 @@ fn coverage_only_difference_count_incremented_when_hashes_match() {
     std::fs::create_dir_all(&a).unwrap();
     std::fs::create_dir_all(&b).unwrap();
 
-    // Shared inner fields (work_id + blocks). No outer braces — format! provides them.
-    let inner = r#""work_id": "one", "blocks": [{"kind": "paragraph", "content": [{"kind": "text", "value": "本文"}]}]"#;
+    // Identical blocks; only fallback_used differs. Use serde_json::json! to avoid
+    // format-string brace-escaping foot-guns.
+    let a_json = serde_json::json!({
+        "meta": {
+            "adapter": "a",
+            "metrics": {"fallback_used": true, "fallback_reason": "aborted"}
+        },
+        "work_id": "one",
+        "blocks": [
+            {"kind": "paragraph", "content": [{"kind": "text", "value": "本文"}]}
+        ]
+    });
+    let b_json = serde_json::json!({
+        "meta": {
+            "adapter": "b",
+            "metrics": {"fallback_used": false}
+        },
+        "work_id": "one",
+        "blocks": [
+            {"kind": "paragraph", "content": [{"kind": "text", "value": "本文"}]}
+        ]
+    });
 
-    std::fs::write(
-        a.join("one.json"),
-        format!(
-            r#"{{"meta": {{"adapter": "a", "metrics": {{"fallback_used": true, "fallback_reason": "aborted"}}}}, {}}}"#,
-            inner
-        ),
-    )
-    .unwrap();
-    std::fs::write(
-        b.join("one.json"),
-        format!(
-            r#"{{"meta": {{"adapter": "b", "metrics": {{"fallback_used": false}}}}, {}}}"#,
-            inner
-        ),
-    )
-    .unwrap();
+    std::fs::write(a.join("one.json"), serde_json::to_string(&a_json).unwrap()).unwrap();
+    std::fs::write(b.join("one.json"), serde_json::to_string(&b_json).unwrap()).unwrap();
 
     let summary = ab_compare::aat_diff::compare_aat_dirs(&a, &b).unwrap();
 
@@ -1160,7 +1193,14 @@ cargo test --workspace
 ```
 Expected: all tests pass across all crates
 
-- [ ] **Step 4: Commit if any formatting/lint fixes were needed**
+- [ ] **Step 4: Doc check**
+
+```bash
+cargo doc --no-deps --workspace
+```
+Expected: no broken intra-doc links, no warnings
+
+- [ ] **Step 5: Commit if any formatting/lint fixes were needed**
 
 ```bash
 git add -u
@@ -1174,3 +1214,7 @@ git commit -m "chore: fmt and clippy fixes"
 After all tasks are complete:
 1. Update `docs/superpowers/PLAN-EXECUTION-ORDER.md` — mark this plan as archived
 2. Open spec gap: the morphological diff crate (phase two) now has `ab-diff-utils` available as a dependency with `FrequencyTable`, `FirstDifference`, and hashing helpers ready
+
+## Cache Migration Note
+
+`ab-compare` has no parser cache of its own — it reads AAT output files produced by the adapters. Pre-existing AAT files that lack `meta.metrics` will produce `fallback_used: None` after this change, which correctly skips coverage comparison (no false positives). The `coverage_metrics_missing` counter on `AatCompareSummary` tracks how many work-pairs had missing metrics, so operators can audit. No cache purge is required.

@@ -41,10 +41,17 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
+ "encoding_rs",
+ "flate2",
+ "rayon",
+ "regex",
  "serde",
  "serde_json",
+ "sha2",
  "toml",
  "toml_edit",
+ "walkdir",
+ "zip",
 ]
 
 [[package]]

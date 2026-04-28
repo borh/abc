@@ -7,11 +7,22 @@ license.workspace = true
 [dependencies]
 anyhow.workspace = true
 clap.workspace = true
+encoding_rs.workspace = true
+flate2.workspace = true
+rayon.workspace = true
+regex.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+sha2.workspace = true
 toml.workspace = true
 toml_edit.workspace = true
+walkdir.workspace = true
+zip.workspace = true
 
 [[bin]]
 name = "ab-coverage-merge"
 path = "src/bin/merge.rs"
+
+[[bin]]
+name = "ab-coverage"
+path = "src/bin/coverage.rs"

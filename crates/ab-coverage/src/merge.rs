@@ -144,10 +144,7 @@ pub fn apply_prevalence_findings(
             continue;
         };
         let table = ensure_subtable(row, "corpus_prevalence")?;
-        table.insert(
-            "works_with_feature",
-            value(prev.works_with_feature as i64),
-        );
+        table.insert("works_with_feature", value(prev.works_with_feature as i64));
         table.insert("total_occurrences", value(prev.total_occurrences as i64));
         if let Some(basis) = &prev.coverage_basis {
             table.insert("coverage_basis", value(basis.clone()));
@@ -175,4 +172,3 @@ fn ensure_subtable<'a>(row: &'a mut Table, key: &str) -> Result<&'a mut Table> {
         .and_then(|item| item.as_table_mut())
         .ok_or_else(|| anyhow!("row sub-table {key} is not a table"))
 }
-

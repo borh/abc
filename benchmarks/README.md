@@ -118,6 +118,28 @@ Output directory contains per-adapter `reports/` and `aats/`, per-pair
 - `aat_block_count_match.<pair>`, `aat_block_count_mismatch.<pair>`
 - `semantic_summary_hash_mismatch.<pair>.<syntax_id>` (per matrix row)
 
+## Syntax-Coverage Prevalence
+
+After building, run the whole-corpus prevalence pipeline:
+
+```bash
+AB_CORPUS=references/aozorabunko \
+AB_COV_PARSERS=aozora2,aozora-rs,aozora2html \
+AB_COV_JOBS=16 \
+AB_COV_TIMEOUT=180 \
+AB_COV_OUT=scratch/ab-coverage-current \
+benchmarks/run-coverage.sh
+```
+
+The runner builds release binaries, produces an `ab-index`, then runs
+`ab-coverage` against every work in the index and writes a `summary.json`
+with per-parser and aggregated `corpus_prevalence` numbers. Outputs are
+content-addressed in `target/parser-cache/<parser_id>/<adapter_sha>/`, so a
+warm rerun reuses cached AAT JSON. Set `AB_COV_NO_CACHE=1` to bypass the
+cache; set `AB_COV_MERGE=1` to merge prevalence numbers back into
+`data/aozora-syntax-coverage.toml`. Restrict the work set with
+`AB_COV_WORK_IDS=/path/to/ids.json` (a JSON array of work-id strings).
+
 ## Parser Comparison
 
 After both adapters build and pass sample validation, run:

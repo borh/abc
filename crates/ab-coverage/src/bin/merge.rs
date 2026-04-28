@@ -11,7 +11,10 @@ use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 
 #[derive(Parser, Debug)]
-#[command(version, about = "Apply classifier/prevalence findings to the syntax coverage matrix.")]
+#[command(
+    version,
+    about = "Apply classifier/prevalence findings to the syntax coverage matrix."
+)]
 struct Cli {
     #[arg(long, default_value = "data/aozora-syntax-coverage.toml")]
     matrix: PathBuf,

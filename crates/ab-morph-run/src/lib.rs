@@ -4,7 +4,7 @@ use std::io::{BufWriter, Write};
 use std::path::{Path, PathBuf};
 
 use ab_morph_analyzers::{MorphAnalyzer, SudachiAnalyzer, SudachiMode, VibratoAnalyzer};
-use ab_morph_diff::Analysis;
+use ab_morph_diff::{Analysis, Comparison, compare_pair};
 use ab_plaintext::{PlainTextDocument, from_aat_value};
 use anyhow::{Context, Result, bail};
 use serde::Serialize;
@@ -15,7 +15,7 @@ pub fn run_analyze_aat(
     aat_dir: Option<&Path>,
     analyzer_ids: &[String],
     analyses_output: &Path,
-    _comparisons_output: Option<&Path>,
+    comparisons_output: Option<&Path>,
 ) -> Result<()> {
     if aat.is_none() == aat_dir.is_none() {
         bail!("provide exactly one of --aat or --aat-dir");
@@ -33,21 +33,39 @@ pub fn run_analyze_aat(
         .with_context(|| format!("failed to create {}", analyses_output.display()))?;
     let mut analyses_writer = BufWriter::new(analyses_file);
 
+    let mut comparisons_writer = if let Some(path) = comparisons_output {
+        create_parent_dir(path)?;
+        let file = File::create(path).with_context(|| format!("failed to create {}", path.display()))?;
+        Some(BufWriter::new(file))
+    } else {
+        None
+    };
+
     for input in inputs {
         let aat = read_aat_value(&input)?;
         let document = from_aat_value(&aat)?;
+        let mut analyses = Vec::new();
+
         for analyzer in &analyzers {
             let analysis = analyzer.analyze(&document)?;
             let row = AnalysisRow {
                 text_id: analysis.text_id.clone(),
                 analyzer: analysis.analyzer.clone(),
-                analysis,
+                analysis: analysis.clone(),
             };
             write_jsonl_row(&mut analyses_writer, &row)?;
+            analyses.push(analysis);
+        }
+
+        if let Some(writer) = &mut comparisons_writer {
+            write_comparison_rows(writer, &analyses)?;
         }
     }
 
     analyses_writer.flush()?;
+    if let Some(writer) = &mut comparisons_writer {
+        writer.flush()?;
+    }
     Ok(())
 }
 
@@ -156,6 +174,30 @@ struct AnalysisRow {
     analysis: Analysis,
 }
 
+#[derive(Serialize)]
+struct ComparisonRow {
+    text_id: String,
+    from_analyzer: String,
+    to_analyzer: String,
+    comparison: Comparison,
+}
+
+fn write_comparison_rows(writer: &mut impl Write, analyses: &[Analysis]) -> Result<()> {
+    for from_index in 0..analyses.len() {
+        for to_index in (from_index + 1)..analyses.len() {
+            let comparison = compare_pair(&analyses[from_index], &analyses[to_index], &[])?;
+            let row = ComparisonRow {
+                text_id: comparison.text_id.clone(),
+                from_analyzer: comparison.from_analyzer.clone(),
+                to_analyzer: comparison.to_analyzer.clone(),
+                comparison,
+            };
+            write_jsonl_row(writer, &row)?;
+        }
+    }
+    Ok(())
+}
+
 enum LoadedAnalyzer {
     Vibrato(VibratoAnalyzer),
     Sudachi(SudachiAnalyzer),
@@ -173,6 +215,8 @@ impl LoadedAnalyzer {
 #[cfg(test)]
 mod tests {
     use std::time::{SystemTime, UNIX_EPOCH};
+
+    use ab_morph_diff::{FeatureMap, Morpheme};
 
     use super::*;
 
@@ -288,6 +332,35 @@ mod tests {
         assert!(err.to_string().contains("regular file"));
 
         let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn writes_one_comparison_row_for_two_valid_analyses() {
+        let analyses = vec![valid_analysis("from"), valid_analysis("to")];
+        let mut out = Vec::new();
+
+        write_comparison_rows(&mut out, &analyses).unwrap();
+
+        let lines = String::from_utf8(out).unwrap();
+        let rows = lines.lines().collect::<Vec<_>>();
+        assert_eq!(rows.len(), 1);
+        assert!(rows[0].contains("\"text_id\":\"t1\""));
+        assert!(rows[0].contains("\"from_analyzer\":\"from\""));
+        assert!(rows[0].contains("\"to_analyzer\":\"to\""));
+    }
+
+    fn valid_analysis(analyzer: &str) -> Analysis {
+        Analysis {
+            analyzer: analyzer.to_owned(),
+            text_id: "t1".to_owned(),
+            source_text: "今日".to_owned(),
+            morphemes: vec![Morpheme {
+                surface: "今日".to_owned(),
+                byte_span: 0..6,
+                char_span: 0..2,
+                features: FeatureMap::new(),
+            }],
+        }
     }
 
     fn temp_dir(label: &str) -> PathBuf {

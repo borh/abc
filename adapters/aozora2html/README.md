@@ -57,6 +57,41 @@ echo "テスト\n著者\n\n-----------------------------------------------------
   | bash adapters/aozora2html/run.sh --mode aat
 ```
 
+## Parser-behavior caveats
+
+Captured during fixture review (`tests/fixtures/*.xhtml`):
+
+- **Resolved gaiji become plain text.** When `--use-unicode` succeeds (e.g.
+  `※［＃「口＋世」、U+546D］` → `&#x546D;` → `吭`), the parser inlines the
+  resolved character as text and discards the marker. The adapter therefore
+  cannot emit a `gaiji.marker` semantic-summary entry for this case — the
+  Rust adapters that retain the marker in their IR will report a
+  `gaiji.marker` row that has no counterpart on this side. This is a
+  parser-side decision, not a mapping bug. `ab-compare` will see the
+  asymmetry as `summary:gaiji.marker` mismatch and that is correct
+  signal: it tells the user the two parsers chose different abstractions.
+- **Many `［＃...］` markers stay as `<span class="notes">`.** Page breaks
+  (`［＃改ページ］`), illustrations (`［＃挿絵...入る］`), and the
+  alternative-form heading marker (`［＃「タイトル」は大見出し］`) are
+  emitted by `aozora2html` as literal notes spans, not as structural blocks
+  or images. The adapter maps these to `{kind: "style", style_type:
+  "notes", content: [{kind: "text", value: "［＃...］"}]}`. They do not
+  populate matrix-keyed semantic-summary rows.
+- **Warichu is not split.** `［＃割り注］上行／下行［＃割り注終わり］`
+  comes through as a single `<span class="warichu">（上行／下行）</span>`.
+  The adapter maps this to `{kind: "style", style_type: "warichu", ...}`
+  rather than a `warigaki` block with separate `upper`/`lower` arrays. The
+  source XHTML does not encode the split, so emitting one would invent
+  data.
+- **`gaiji.marker.value.kind` is a Python-side simplification.** Rust's
+  `ab-ir` stores the full `format!("{:?}", GaijiKind)` debug string
+  (e.g. `"UnicodeCodepoint { value: '吭' }"`,
+  `"JisLevel { level: 3, row: 15, cell: 23 }"`). The adapter emits stable
+  variant names only — `"Image"`, `"UnicodeCodepoint"`, `"Unknown"` — so
+  expect `summary:gaiji.marker` value-hash mismatches against the Rust
+  adapters even when description and resolved character agree. The other
+  fields (`source`, `description`, `resolved`, `ruby_reading`) still align.
+
 ## Tests
 
 ```bash

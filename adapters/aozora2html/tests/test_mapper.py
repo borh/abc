@@ -1,4 +1,4 @@
-"""Smoke tests for the aozora2html adapter skeleton (Task 1 Step 5)."""
+"""Smoke and golden tests for the aozora2html adapter."""
 
 from __future__ import annotations
 
@@ -12,10 +12,10 @@ import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 RUN_SH = REPO_ROOT / "adapters" / "aozora2html" / "run.sh"
+FIXTURE_DIR = Path(__file__).resolve().parent / "fixtures"
 SCHEMA = json.loads((REPO_ROOT / "data" / "aat-schema.json").read_text())
 
-# Minimal aozora-bunko-format text. The header section ends at the first empty
-# line; chuuki blocks delimit the body. Transcoding to Shift_JIS happens in run.sh.
+# Minimal aozora-bunko-format text used for envelope verification.
 MINIMAL_AOZORA = (
     "テスト\n"
     "著者\n"
@@ -27,6 +27,8 @@ MINIMAL_AOZORA = (
     "底本：テスト\n"
 )
 
+FIXTURES = sorted(p.stem for p in FIXTURE_DIR.glob("*.txt"))
+
 
 def _run(stdin_bytes: bytes, *args: str) -> bytes:
     return subprocess.check_output(
@@ -35,8 +37,19 @@ def _run(stdin_bytes: bytes, *args: str) -> bytes:
     )
 
 
+def _canonicalize(aat: dict) -> dict:
+    """Strip fields that may legitimately drift between commits."""
+    out = json.loads(json.dumps(aat))
+    meta = out.get("meta", {})
+    # adapter_version embeds a git SHA; goldens should not pin it.
+    meta.pop("adapter_version", None)
+    return out
+
+
 def test_version_format() -> None:
-    out = subprocess.check_output(["bash", str(RUN_SH), "--version"], text=True).strip()
+    out = subprocess.check_output(
+        ["bash", str(RUN_SH), "--version"], text=True
+    ).strip()
     assert re.match(r"^aozora2html-adapter \d+\.\d+\.\d+ [0-9a-f]{7,40}$", out), out
 
 
@@ -47,6 +60,24 @@ def test_envelope_passes_schema() -> None:
     assert aat["meta"]["adapter"] == "aozora2html"
     assert aat["meta"]["source_encoding"] == "utf-8"
     assert aat["meta"]["source_hash"].startswith("sha256:")
+
+
+@pytest.mark.parametrize("fixture", FIXTURES)
+def test_fixture_passes_aat_schema(fixture: str) -> None:
+    txt_path = FIXTURE_DIR / f"{fixture}.txt"
+    raw = _run(txt_path.read_bytes(), "--mode", "aat")
+    aat = json.loads(raw)
+    jsonschema.validate(aat, SCHEMA)
+
+
+@pytest.mark.parametrize("fixture", FIXTURES)
+def test_fixture_matches_golden(fixture: str) -> None:
+    txt_path = FIXTURE_DIR / f"{fixture}.txt"
+    golden_path = FIXTURE_DIR / f"{fixture}.aat.json"
+    raw = _run(txt_path.read_bytes(), "--mode", "aat")
+    actual = json.loads(raw)
+    expected = json.loads(golden_path.read_text())
+    assert _canonicalize(actual) == _canonicalize(expected)
 
 
 if __name__ == "__main__":

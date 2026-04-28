@@ -45,7 +45,7 @@ Generic frequency counter with bounded example lists. Replaces
 `ab-compare::triage::push_bucket`.
 
 ```rust
-pub struct FrequencyTable<K: Ord, E: Eq + Hash> {
+pub struct FrequencyTable<K: Ord, E: Eq> {
     max_examples: usize,
     entries: BTreeMap<K, FrequencyEntry<E>>,
 }
@@ -104,9 +104,9 @@ the start of the longer string's tail.
 - `ab-compare`: `normalized_visible_first_difference` field
 - Morph spec §4.2: character-diff diagnostic tool
 
-### 2.3 `ContentHasher`
+### 2.3 Hashing Helpers
 
-Three free functions for SHA256 hashing. Extracted from
+Three free functions for SHA256 hashing in module `hashing`. Extracted from
 `ab-compare::aat_diff` private helpers.
 
 ```rust
@@ -123,40 +123,7 @@ values with null-byte delimiters before hashing (so `["a", "b"]` ≠
 - `ab-compare`: AAT structure/visible/semantic hashing
 - Morph crate: content-addressed analyzer-output cache
 
-### 2.4 `DiffRegion`
-
-Region classification enums aligned with the morpheme-diff spec §5.1.
-Generalized beyond morphemes so `ab-compare` can use the
-`CoverageMismatch` variant without depending on morphological concepts.
-
-```rust
-pub enum DiffRegion {
-    OneToOne { span: Range<usize> },
-    Segmentation { span: Range<usize>, kind: SegmentationKind },
-    CoverageMismatch { span: Range<usize>, kind: CoverageKind },
-}
-
-pub enum SegmentationKind {
-    Split,
-    Merge,
-    Resegment,
-}
-
-pub enum CoverageKind {
-    LeftOnly,
-    RightOnly,
-    Overlap,
-    OutOfOrder,
-    Unknown,
-}
-```
-
-**Consumers:**
-- Morph crate: all variants
-- `ab-compare`: `CoverageMismatch` only (Segmentation variants are
-  available but unused — acceptable since they're `pub` in a library)
-
-### 2.5 File Layout
+### 2.4 File Layout
 
 ```
 crates/ab-diff-utils/
@@ -165,9 +132,14 @@ crates/ab-diff-utils/
     ├── lib.rs          // re-exports all public items
     ├── frequency.rs    // FrequencyTable, FrequencyEntry, tests
     ├── first_diff.rs   // FirstDifference, first_difference(), tests
-    ├── hashing.rs      // hash_bytes, hash_json, hash_string_sequence, tests
-    └── diff_region.rs  // DiffRegion, SegmentationKind, CoverageKind
+    └── hashing.rs      // hash_bytes, hash_json, hash_string_sequence, tests
 ```
+
+`DiffRegion` (OneToOne / Segmentation / CoverageMismatch) is deferred to
+the morphological diff phase. The per-work coverage delta used by
+`ab-compare` (§3.3) doesn't carry source-text spans and doesn't fit the
+region-with-span model. Building `DiffRegion` without a consumer would
+produce a type whose only user can't populate it honestly.
 
 ## 3. `ab-compare` Changes
 
@@ -183,9 +155,12 @@ fields to carry coverage data from the AAT JSON `meta.metrics`:
 ```rust
 struct AatSummary {
     // ... existing fields: work_id, structure_hash, visible_hash, etc. ...
-    fallback_used: bool,
-    fallback_reason: String,
-    source_bytes: usize,
+    /// None when meta.metrics is absent from the AAT JSON (pre-metrics file
+    /// or writer bug). Some(false) when metrics are present and the parser
+    /// succeeded without fallback. Some(true) when the parser used a fallback.
+    fallback_used: Option<bool>,
+    fallback_reason: Option<String>,
+    source_bytes: Option<usize>,
 }
 ```
 
@@ -202,12 +177,12 @@ fn summarize(root: AatRoot) -> Result<AatSummary> {
         .and_then(|meta| meta.get("metrics"))
         .map(|metrics| {
             (
-                metrics.get("fallback_used").and_then(Value::as_bool).unwrap_or(false),
-                metrics.get("fallback_reason").and_then(Value::as_str).unwrap_or("").to_owned(),
-                metrics.get("source_bytes").and_then(Value::as_u64).unwrap_or(0) as usize,
+                Some(metrics.get("fallback_used").and_then(Value::as_bool).unwrap_or(false)),
+                metrics.get("fallback_reason").and_then(Value::as_str).map(str::to_owned),
+                metrics.get("source_bytes").and_then(Value::as_u64).map(|n| n as usize),
             )
         })
-        .unwrap_or_default();
+        .unwrap_or((None, None, None));
     Ok(AatSummary { /* ... existing ... */ fallback_used, fallback_reason, source_bytes })
 }
 ```
@@ -244,18 +219,27 @@ if left.structure_hash != right.structure_hash
     || semantic_summary_hashes_differ.values().any(|differs| *differs)
 ```
 
-This must expand to also trigger when **coverage differs without hash
-differences** — i.e., when one side had a fallback and the other didn't,
-even if the resulting hashes happen to match. The new condition adds:
+This expands to also trigger when **coverage differs without hash
+differences**. Coverage comparison is only performed when both sides have
+metrics present (`fallback_used` is `Some` on both); if either side is
+missing metrics the coverage check is skipped. The new condition adds:
 
 ```rust
-    || left.fallback_used != right.fallback_used
+    || (left.fallback_used.is_some()
+        && right.fallback_used.is_some()
+        && left.fallback_used != right.fallback_used)
 ```
 
-When this triggers, `structural_difference_count` increments (as before),
-and `coverage_mismatch` is populated with the `CoverageDelta`.
-`visible_text_difference_count` and `same_visible_structural_difference_count`
-do NOT increment for coverage-only differences (no hash change).
+**Metric impact:** Coverage-only differences do NOT increment
+`structural_difference_count`, `visible_text_difference_count`, or
+`same_visible_structural_difference_count`. Instead they increment a new
+counter `coverage_only_difference_count` on `AatCompareSummary`. This keeps
+existing counter semantics stable so downstream dashboards and regression
+budgets are unaffected.
+
+```rust
+pub coverage_only_difference_count: usize,
+```
 
 ### 3.4 `aat_diff.rs` — Migrate to `ab-diff-utils`
 
@@ -306,6 +290,15 @@ Populated in `build_triage_report` from `aat_summary`'s
 `recommended_next_targets` gains: `"inspect_coverage_mismatches"` when
 `coverage_mismatches` has entries.
 
+**Wire-format change:** `ResultDifferenceTriage` fields change from
+`BTreeMap<String, TriageBucket>` to `FrequencyTable<String, String>`,
+which serializes to a different JSON shape. `FrequencyTable` serializes as
+`{"key": {"count": N, "examples": [...]}, ...}` — a flat object with the
+same keys as before but a different value shape (was `{count, work_ids}`,
+now `{count, examples}`). This is a breaking change to the `--triage-output`
+JSON; consumers that parse these fields must update their field name from
+`work_ids` to `examples`.
+
 ### 3.7 `aat_diff.rs` — Remaining Internal Changes
 
 Types and functions not listed in §3.2–§3.6 (`SemanticSequences`,
@@ -338,13 +331,12 @@ changes per §3.3 and §3.4.
 ### 5.1 `ab-diff-utils` Unit Tests
 
 - `frequency.rs`: test empty table, single key multi-example, example
-  dedup, max_examples enforcement, iteration order
+  dedup, max_examples enforcement, iteration order, serialization round-trip
 - `first_diff.rs`: test identical strings (None), single-char diff,
   length-difference diff, context window bounds, and multi-byte
   character handling (e.g., `"今日"` vs `"今"` — char index 1, not
   byte index 2)
 - `hashing.rs`: test deterministic output, null-delimiter separation
-- `diff_region.rs`: enum equality and debug formatting
 
 ### 5.2 `ab-compare` Integration Tests
 
@@ -354,18 +346,33 @@ New tests in `tests/integration.rs`:
    has `fallback_used: true` with a known reason and the structure hashes
    differ. Run `compare_aat_dirs`, assert
    `structural_differences[0].coverage_mismatch` is `Some` with the expected
-   reason.
+   reason. Also assert `structural_difference_count >= 1` and
+   `coverage_only_difference_count == 0`.
 
-2. **Coverage-only difference triggers structural diff entry:** two AAT
-   fixture files with identical structure hash, visible hash, and semantic
-   summary hashes, but `fallback_used` differs (e.g., left has
-   `fallback_used: true, fallback_reason: "aborted"`, right has
-   `fallback_used: false`). Run `compare_aat_dirs`, assert
-   `structural_difference_count >= 1`, assert the entry has
+2. **Coverage-only difference tracked separately:** two AAT fixture files
+   with identical structure hash, visible hash, and semantic summary hashes,
+   but `fallback_used` differs (left: `true, "aborted"`, right: `false`).
+   Run `compare_aat_dirs`, assert `coverage_only_difference_count == 1`,
+   `structural_difference_count == 0`,
+   `visible_text_difference_count == 0`,
+   `same_visible_structural_difference_count == 0`. The entry has
    `coverage_mismatch: Some` and `visible_text_differs: false`.
+
+3. **Missing metrics skips coverage:** two AAT fixture files where one has no
+   `meta.metrics` at all and the other has `fallback_used: true`. Both have
+   identical structure/visible/semantic hashes. Run `compare_aat_dirs`,
+   assert `coverage_only_difference_count == 0` and no structural difference
+   is emitted.
 
 Existing integration tests continue to pass — `FrequencyTable` and
 `first_difference` are behavior-preserving extractions.
+
+### 5.3 Migration
+
+AAT fixtures and test data that predate `meta.metrics` will have
+`fallback_used: None` after this change — coverage comparison is skipped, no
+false positives. The migration policy is: accept the default-to-None behavior.
+No regeneration of cached AAT is required.
 
 ## 6. Non-Goals
 
@@ -377,19 +384,23 @@ Existing integration tests continue to pass — `FrequencyTable` and
 
 ## 7. Relationship to Morphological Diff Spec
 
-This extraction directly prefigures the spec's recommended pipeline
-(§10):
+This extraction provides shared primitives for the recommended pipeline
+in `docs/morpheme-diff-algorithm-spec.md`:
 
 ```
 parser adapter → validated spans → region alignment → feature comparison → artifacts → reports
 ```
 
 `ab-diff-utils` provides:
-- `DiffRegion` — the region classification vocabulary (§5.1)
-- `FrequencyTable` — the artifact data structure (§6.2–6.7)
-- `FirstDifference` — the character-diff diagnostic (§4.2)
-- `ContentHasher` — content-addressed caching for analyzer output
+- `FrequencyTable` — backing data structure for transformation tables,
+  confusion matrices, delta inventories, and concordance examples
+- `FirstDifference` — the character-diff diagnostic tool
+- Hashing helpers — content-addressed caching for analyzer output
 
-The morphological diff crate (phase two) will use all four. This
-extraction ensures the two comparison crates share a vocabulary and
+The morphological diff crate (phase two) will use all three. The
+`DiffRegion` enum (OneToOne / Segmentation / CoverageMismatch) is
+deferred to that phase since its span-keyed model doesn't fit
+`ab-compare`'s per-work coverage delta.
+
+This extraction ensures the two comparison crates share vocabulary and
 data structures without sharing a core algorithm.

@@ -154,3 +154,45 @@
         (finally
           (delete-recursive work-dir)
           (delete-recursive persons-dir))))))
+
+(deftest ingest-refresh-manifest-roundtrip-test
+  (testing "--refresh-manifest rewrites metadata_record_hash and recomputes artifact_id; re-run is byte-identical"
+    (let [work-dir (temp-dir "abc-ingest-rm-w")
+          persons-dir (temp-dir "abc-ingest-rm-p")
+          manifest-path (str (io/file work-dir "manifest.json"))]
+      (try
+        ;; Seed a manifest stub with a stale metadata_record_hash and artifact_id.
+        (require '[abc.tools.json :as j])
+        (let [seed-base (files/read-json "examples/v0/example-work/manifest.json")
+              seed (-> seed-base
+                       (assoc-in ["manifest_identity_object" "metadata_record_hash"]
+                                 "sha256:0000000000000000000000000000000000000000000000000000000000000000")
+                       (assoc "artifact_id"
+                              "sha256:0000000000000000000000000000000000000000000000000000000000000000"))]
+          ((resolve 'abc.tools.json/write-deterministic-json-file!)
+           (io/file manifest-path) seed))
+        (ingest/run-from-rows!
+         {:rows synthetic-rows-with-edition
+          :work-id "000127"
+          :output (str (io/file work-dir "metadata-record.json"))
+          :persons-output-dir (str persons-dir)
+          :refresh-manifest manifest-path})
+        (let [m (files/read-json manifest-path)
+              new-mr-hash (get-in m ["manifest_identity_object" "metadata_record_hash"])
+              new-artifact (get m "artifact_id")]
+          (is (re-matches #"^sha256:[0-9a-f]{64}$" new-mr-hash))
+          (is (re-matches #"^sha256:[0-9a-f]{64}$" new-artifact))
+          (is (not= "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+                    new-artifact)))
+        ;; Re-run is byte-identical.
+        (let [first-bytes (slurp manifest-path)]
+          (ingest/run-from-rows!
+           {:rows synthetic-rows-with-edition
+            :work-id "000127"
+            :output (str (io/file work-dir "metadata-record.json"))
+            :persons-output-dir (str persons-dir)
+            :refresh-manifest manifest-path})
+          (is (= first-bytes (slurp manifest-path))))
+        (finally
+          (delete-recursive work-dir)
+          (delete-recursive persons-dir))))))

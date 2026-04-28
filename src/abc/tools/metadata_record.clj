@@ -150,10 +150,3 @@
   "Convenience: compose work and persons, render Turtle."
   [record persons-by-id]
   (manifest-to-rdf/graph->ttl (record+persons->graph record persons-by-id)))
-
-(defn record->ttl
-  "Transitional wrapper: returns work-only TTL. Callers that need the
-  composed work + persons graph should use record+persons->ttl. This
-  function is removed once the harness migrates (Task 13)."
-  [record]
-  (manifest-to-rdf/graph->ttl (record->graph record)))

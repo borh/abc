@@ -104,7 +104,7 @@
 
 (defn graph->ttl
   "Serialize a Jena graph to deterministic RDF/Turtle. Public so that
-  abc.tools.metadata-record/record->ttl and any future consumer can
+  abc.tools.metadata-record/record+persons->ttl and any future consumer can
   compose graph builders with this serializer without re-deriving the
   graph."
   [^org.apache.jena.graph.Graph graph]

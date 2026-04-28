@@ -162,40 +162,41 @@
             (str "ex-data must surface the env var name; got: "
                  (pr-str (ex-data e))))))))
 
-(deftest validate-metadata-record-smoke-test
-  (testing "validate-metadata-record! returns nil for the example fixture"
-    (let [shapes (shacl/load-shapes-graph)]
-      (is (nil? (validate/validate-metadata-record!
-                 {:record-path "examples/v0/example-work/metadata-record.json"
-                  :manifest-path "examples/v0/example-work/manifest.json"
-                  :schema-path "schemas/metadata-record.schema.json"
-                  :ttl-path "examples/v0/example-work/metadata-record.ttl"
-                  :shapes-graph shapes}))))))
+(def ^:private bundle-args
+  {:record-path "examples/v0/example-work/metadata-record.json"
+   :manifest-path "examples/v0/example-work/manifest.json"
+   :persons-dir "examples/v0/example-persons"
+   :record-schema-path "schemas/metadata-record.schema.json"
+   :person-schema-path "schemas/person-record.schema.json"
+   :ttl-path "examples/v0/example-work/metadata-record.ttl"})
 
-(deftest validate-metadata-record-hash-mismatch-test
-  (testing "validate-metadata-record! throws when the manifest's metadata_record_hash is wrong"
+(deftest validate-metadata-bundle-smoke-test
+  (testing "validate-metadata-bundle! returns nil for the example fixture"
+    (let [shapes (shacl/load-shapes-graph)]
+      (is (nil? (validate/validate-metadata-bundle!
+                 (assoc bundle-args :shapes-graph shapes)))))))
+
+(deftest validate-metadata-bundle-hash-mismatch-test
+  (testing "validate-metadata-bundle! throws when the manifest's metadata_record_hash is wrong"
     (let [shapes (shacl/load-shapes-graph)
           tmp-manifest (java.io.File/createTempFile "abc-bad-manifest" ".json")
-          original-text (slurp "examples/v0/example-work/manifest.json")
-          ;; The current example value (set in Task 9):
-          good-hash "sha256:cbf2c3200966430af59f4974036961d57d0ea0300e1d8a1ff606ef8f632a5697"
-          bad-hash "sha256:0000000000000000000000000000000000000000000000000000000000000000"]
+          original (files/read-json "examples/v0/example-work/manifest.json")
+          mutated (assoc-in original
+                            ["manifest_identity_object" "metadata_record_hash"]
+                            "sha256:0000000000000000000000000000000000000000000000000000000000000000")]
       (try
-        (spit tmp-manifest (clojure.string/replace original-text good-hash bad-hash))
+        ((requiring-resolve 'abc.tools.json/write-deterministic-json-file!)
+         tmp-manifest mutated)
         (try
-          (validate/validate-metadata-record!
-           {:record-path "examples/v0/example-work/metadata-record.json"
-            :manifest-path (str tmp-manifest)
-            :schema-path "schemas/metadata-record.schema.json"
-            :ttl-path "examples/v0/example-work/metadata-record.ttl"
-            :shapes-graph shapes})
+          (validate/validate-metadata-bundle!
+           (assoc bundle-args :manifest-path (str tmp-manifest) :shapes-graph shapes))
           (is false "expected hash-mismatch throw")
           (catch clojure.lang.ExceptionInfo e
             (is (re-find #"metadata_record_hash mismatch" (ex-message e)))))
         (finally (.delete tmp-manifest))))))
 
-(deftest validate-metadata-record-schema-hash-mismatch-test
-  (testing "validate-metadata-record! throws when the record's schema-hash is stale"
+(deftest validate-metadata-bundle-schema-hash-mismatch-test
+  (testing "validate-metadata-bundle! throws when the record's schema-hash is stale"
     (let [shapes (shacl/load-shapes-graph)
           tmp-record (java.io.File/createTempFile "abc-bad-record" ".json")
           record (files/read-json "examples/v0/example-work/metadata-record.json")
@@ -205,16 +206,53 @@
         ((requiring-resolve 'abc.tools.json/write-deterministic-json-file!)
          tmp-record mutated)
         (try
-          (validate/validate-metadata-record!
-           {:record-path (str tmp-record)
-            :manifest-path "examples/v0/example-work/manifest.json"
-            :schema-path "schemas/metadata-record.schema.json"
-            :ttl-path "examples/v0/example-work/metadata-record.ttl"
-            :shapes-graph shapes})
+          (validate/validate-metadata-bundle!
+           (assoc bundle-args :record-path (str tmp-record) :shapes-graph shapes))
           (is false "expected schema-hash-mismatch throw")
           (catch clojure.lang.ExceptionInfo e
             (is (re-find #"metadata_record_schema_hash mismatch" (ex-message e)))))
         (finally (.delete tmp-record))))))
+
+(deftest validate-metadata-bundle-stale-contributor-hash-test
+  (testing "mutating a person file's bytes makes the harness fail with the person_id and both hashes"
+    (let [shapes (shacl/load-shapes-graph)
+          persons-dir (.toFile (java.nio.file.Files/createTempDirectory
+                                "abc-vdb-persons"
+                                (make-array java.nio.file.attribute.FileAttribute 0)))
+          orig (files/read-json "examples/v0/example-persons/000879.json")
+          mutated (assoc orig "family_name_romaji" "Akutagawa-MUTATED")]
+      (try
+        ((requiring-resolve 'abc.tools.json/write-deterministic-json-file!)
+         (java.io.File. persons-dir "000879.json") mutated)
+        (is (thrown-with-msg?
+             clojure.lang.ExceptionInfo #"000879"
+             (validate/validate-metadata-bundle!
+              (assoc bundle-args
+                     :persons-dir (str persons-dir)
+                     :shapes-graph shapes))))
+        (finally
+          (doseq [f (reverse (file-seq persons-dir))] (.delete f)))))))
+
+(deftest validate-metadata-bundle-person-schema-hash-drift-test
+  (testing "a person file with a stale embedded schema hash makes the harness fail"
+    (let [shapes (shacl/load-shapes-graph)
+          persons-dir (.toFile (java.nio.file.Files/createTempDirectory
+                                "abc-vdb-pschema"
+                                (make-array java.nio.file.attribute.FileAttribute 0)))
+          orig (files/read-json "examples/v0/example-persons/000879.json")
+          mutated (assoc orig "person_record_schema_hash"
+                         "sha256:0000000000000000000000000000000000000000000000000000000000000000")]
+      (try
+        ((requiring-resolve 'abc.tools.json/write-deterministic-json-file!)
+         (java.io.File. persons-dir "000879.json") mutated)
+        (is (thrown-with-msg?
+             clojure.lang.ExceptionInfo #"person_record_schema_hash"
+             (validate/validate-metadata-bundle!
+              (assoc bundle-args
+                     :persons-dir (str persons-dir)
+                     :shapes-graph shapes))))
+        (finally
+          (doseq [f (reverse (file-seq persons-dir))] (.delete f)))))))
 
 (deftest validate-tei-warning-partition-test
   (testing "validate-tei! does not throw when only warnings are present"

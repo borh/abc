@@ -10,6 +10,7 @@
    [abc.tools.materialize-import :as materialize]
    [abc.tools.schema :as schema]
    [abc.tools.metadata-record :as metadata-record]
+   [abc.tools.person-record :as person-record]
    [abc.tools.shacl :as shacl]
    [abc.tools.tei :as tei]
    [clojure.java.io :as io]
@@ -283,24 +284,50 @@
       (throw (ex-info "SHACL validation failed"
                       {:errors (mapv render-violation violations)})))))
 
-(defn validate-metadata-record!
-  "Validate the example-work metadata record:
-  1. JSON schema (contract-smoke per ADR 0006).
-  2. metadata_record_hash in manifest.json matches record-hash
-     (design-smoke).
-  3. metadata_record_schema_hash in the record matches the live
-     hash of metadata-record.schema.json (design-smoke).
-  4. record->graph + SHACL conformance (release-smoke).
-  5. record->ttl byte-for-byte against the committed fixture
-     (contract-smoke)."
-  [{:keys [record-path manifest-path schema-path ttl-path shapes-graph]}]
-  (let [record (files/read-json record-path)]
+(defn- validate-persons-directory!
+  "For every JSON file under `persons-dir`: load, schema-validate,
+  and verify the embedded person_record_schema_hash matches the live
+  schema's JCS hash. Returns a map person_id → person-record map."
+  [persons-dir person-schema-path]
+  (let [live-schema-hash (manifest/schema-hash person-schema-path)
+        files (->> (.listFiles (io/file persons-dir))
+                   (filter #(string/ends-with? (.getName ^java.io.File %) ".json"))
+                   sort)]
+    (into {}
+          (for [^java.io.File f files]
+            (let [record (files/read-json (str f))]
+              (person-record/validate! record)
+              (let [embedded (get record "person_record_schema_hash")]
+                (when-not (= embedded live-schema-hash)
+                  (throw (ex-info
+                          (str "person_record_schema_hash mismatch in " f
+                               ": record has " embedded
+                               ", live schema hash is " live-schema-hash)
+                          {:path (str f)
+                           :embedded embedded
+                           :live live-schema-hash}))))
+              [(get record "person_id") record])))))
+
+(defn validate-metadata-bundle!
+  "Validate the example-work metadata-record bundle:
+  1. Every person file in `persons-dir` validates against
+     person-record.schema.json + schema-hash precondition.
+  2. The work's metadata-record.json validates against
+     metadata-record.schema.json + schema-hash precondition.
+  3. Recompute metadata_record_hash; compare against the
+     `manifest_identity_object.metadata_record_hash` in manifest.json.
+  4. For every contributors[i]: recompute the referenced person's
+     person_record_hash from the on-disk file and fail if it does
+     not match contributors[i].person_record_hash.
+  5. Compose the work + persons graph; SHACL validate against shapes.
+  6. Compose work + persons → ttl; byte-equal to ttl-path."
+  [{:keys [record-path manifest-path persons-dir
+           record-schema-path person-schema-path
+           ttl-path shapes-graph]}]
+  (let [persons-by-id (validate-persons-directory! persons-dir person-schema-path)
+        record (files/read-json record-path)]
     (metadata-record/validate! record)
-    ;; Schema-hash precondition: a stale embedded schema-hash means
-    ;; the record was generated against a different schema than the
-    ;; one currently in tree, so the downstream identity check would
-    ;; be comparing apples to oranges.
-    (let [computed-schema-hash (manifest/schema-hash schema-path)
+    (let [computed-schema-hash (manifest/schema-hash record-schema-path)
           expected-schema-hash (get record "metadata_record_schema_hash")]
       (when-not (= computed-schema-hash expected-schema-hash)
         (throw (ex-info (str "metadata_record_schema_hash mismatch: "
@@ -319,10 +346,30 @@
                          :manifest-path manifest-path
                          :computed computed
                          :expected expected}))))
+    (doseq [contributor (get record "contributors")]
+      (let [pid (get contributor "person_id")
+            referenced (get contributor "person_record_hash")
+            body (get persons-by-id pid)]
+        (when-not body
+          (throw (ex-info (str "contributor " pid " has no matching file in " persons-dir)
+                          {:person-id pid
+                           :persons-dir persons-dir})))
+        (let [recomputed (person-record/record-hash body)]
+          (when-not (= referenced recomputed)
+            (throw (ex-info
+                    (str "contributor reference for person_id " pid
+                         " is stale: metadata-record references " referenced
+                         ", recomputed from " persons-dir "/" pid ".json is "
+                         recomputed)
+                    {:person-id pid
+                     :referenced referenced
+                     :recomputed recomputed
+                     :persons-dir persons-dir}))))))
     (shacl/validate! {:shapes-graph shapes-graph
-                      :data-graph (metadata-record/record->graph record)
+                      :data-graph (metadata-record/record+persons->graph
+                                   record persons-by-id)
                       :label record-path})
-    (let [generated (metadata-record/record->ttl record)
+    (let [generated (metadata-record/record+persons->ttl record persons-by-id)
           expected (slurp ttl-path)]
       (when-not (= expected generated)
         (throw (ex-info (str "metadata-record.ttl parity mismatch with " ttl-path)
@@ -358,15 +405,17 @@
                                "examples/v0/example-work/failure-manifest.example.json"])]
           (validate-shacl! shapes targets))
         (tel/log! :info "shacl shapes ok")
-        (tel/log! :info "==> Validating metadata record")
+        (tel/log! :info "==> Validating metadata record + persons bundle")
         (let [shapes (shacl/load-shapes-graph)]
-          (validate-metadata-record!
+          (validate-metadata-bundle!
            {:record-path "examples/v0/example-work/metadata-record.json"
             :manifest-path "examples/v0/example-work/manifest.json"
-            :schema-path "schemas/metadata-record.schema.json"
+            :persons-dir "examples/v0/example-persons"
+            :record-schema-path "schemas/metadata-record.schema.json"
+            :person-schema-path "schemas/person-record.schema.json"
             :ttl-path "examples/v0/example-work/metadata-record.ttl"
             :shapes-graph shapes}))
-        (tel/log! :info "metadata record ok"))
+        (tel/log! :info "metadata bundle ok"))
       (tel/log! :info "==> Checking imported ab-validator output")
       (validate-ab-validator-output!)
       (tel/log! :info "ab-validator output ok")

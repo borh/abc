@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/abc/schemas/person-record.schema.json",
+  "title": "ABC Person Record",
+  "description": "Bibliographic record for one Aozora person. Identity (person-record-hash) is SHA-256 over RFC 8785 JCS bytes of this object with source_csv_provenance dropped. Nullable fields are explicit JSON null, not key-omission. Defaults are documentation only; canonicalization hashes the literal record. The hash is not stored in the file; it lives at reference sites in metadata-record contributors[] entries.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "person_record_schema_id",
+    "person_record_schema_hash",
+    "person_id",
+    "family_name",
+    "given_name",
+    "person_copyright_expired"
+  ],
+  "properties": {
+    "person_record_schema_id": {
+      "const": "https://w3id.org/abc/schemas/person-record.schema.json"
+    },
+    "person_record_schema_hash": { "$ref": "#/$defs/hash" },
+    "person_id": { "type": "string", "pattern": "^[0-9]{6}$" },
+    "family_name": { "type": "string", "minLength": 1 },
+    "given_name": { "type": "string", "minLength": 1 },
+    "family_name_reading": { "$ref": "#/$defs/nullableString" },
+    "given_name_reading": { "$ref": "#/$defs/nullableString" },
+    "family_name_sort": { "$ref": "#/$defs/nullableString" },
+    "given_name_sort": { "$ref": "#/$defs/nullableString" },
+    "family_name_romaji": { "$ref": "#/$defs/nullableString" },
+    "given_name_romaji": { "$ref": "#/$defs/nullableString" },
+    "date_of_birth": { "$ref": "#/$defs/nullableDate" },
+    "date_of_death": { "$ref": "#/$defs/nullableDate" },
+    "person_copyright_expired": { "type": "boolean" },
+    "external_links": {
+      "type": "array",
+      "items": { "type": "string", "format": "uri" },
+      "uniqueItems": true,
+      "default": []
+    },
+    "source_csv_provenance": { "$ref": "#/$defs/csvProvenance" }
+  },
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "nullableString": { "type": ["string", "null"] },
+    "nullableDate": {
+      "anyOf": [
+        { "type": "string", "format": "date" },
+        { "type": "null" }
+      ]
+    },
+    "csvProvenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_url", "retrieved_at", "original_file_hash"],
+      "properties": {
+        "source_url": { "type": "string", "format": "uri" },
+        "retrieved_at": { "type": "string", "format": "date-time" },
+        "original_file_hash": { "$ref": "#/$defs/hash" }
+      }
+    }
+  }
+}

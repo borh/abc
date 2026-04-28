@@ -35,7 +35,8 @@ pub fn run_analyze_aat(
 
     let mut comparisons_writer = if let Some(path) = comparisons_output {
         create_parent_dir(path)?;
-        let file = File::create(path).with_context(|| format!("failed to create {}", path.display()))?;
+        let file =
+            File::create(path).with_context(|| format!("failed to create {}", path.display()))?;
         Some(BufWriter::new(file))
     } else {
         None
@@ -110,7 +111,10 @@ fn discover_aat_inputs(aat: Option<&Path>, aat_dir: Option<&Path>) -> Result<Vec
         }
         (None, Some(dir)) => {
             if !dir.is_dir() {
-                bail!("--aat-dir must point to an existing directory: {}", dir.display());
+                bail!(
+                    "--aat-dir must point to an existing directory: {}",
+                    dir.display()
+                );
             }
             let mut paths = fs::read_dir(dir)
                 .with_context(|| format!("failed to read {}", dir.display()))?
@@ -133,14 +137,16 @@ fn load_analyzers(specs: &[AnalyzerSpec]) -> Result<Vec<LoadedAnalyzer>> {
     for spec in specs {
         match spec {
             AnalyzerSpec::Vibrato => {
-                analyzers.push(LoadedAnalyzer::Vibrato(VibratoAnalyzer::unidic_cwj_default()?));
+                analyzers.push(LoadedAnalyzer::Vibrato(
+                    VibratoAnalyzer::unidic_cwj_default()?,
+                ));
             }
             AnalyzerSpec::Sudachi(mode) => {
                 let dict = std::env::var_os("AB_SUDACHI_DICT")
                     .context("AB_SUDACHI_DICT is required for Sudachi analyzers")?;
-                analyzers.push(LoadedAnalyzer::Sudachi(SudachiAnalyzer::from_dictionary_path(
-                    *mode, dict,
-                )?));
+                analyzers.push(LoadedAnalyzer::Sudachi(
+                    SudachiAnalyzer::from_dictionary_path(*mode, dict)?,
+                ));
             }
         }
     }
@@ -154,7 +160,10 @@ fn read_aat_value(path: &Path) -> Result<Value> {
 }
 
 fn create_parent_dir(path: &Path) -> Result<()> {
-    if let Some(parent) = path.parent().filter(|parent| !parent.as_os_str().is_empty()) {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
         fs::create_dir_all(parent)
             .with_context(|| format!("failed to create {}", parent.display()))?;
     }
@@ -261,7 +270,10 @@ mod tests {
 
     #[test]
     fn parses_analyzer_specs() {
-        assert_eq!(AnalyzerSpec::parse("vibrato").unwrap(), AnalyzerSpec::Vibrato);
+        assert_eq!(
+            AnalyzerSpec::parse("vibrato").unwrap(),
+            AnalyzerSpec::Vibrato
+        );
         assert_eq!(
             AnalyzerSpec::parse("sudachi-c").unwrap(),
             AnalyzerSpec::Sudachi(SudachiMode::C)
@@ -283,7 +295,10 @@ mod tests {
         ])
         .unwrap();
 
-        assert_eq!(specs, vec![AnalyzerSpec::Vibrato, AnalyzerSpec::Sudachi(SudachiMode::C)]);
+        assert_eq!(
+            specs,
+            vec![AnalyzerSpec::Vibrato, AnalyzerSpec::Sudachi(SudachiMode::C)]
+        );
     }
 
     #[test]
@@ -293,7 +308,10 @@ mod tests {
         let file = dir.join("work.json");
         fs::write(&file, "{}").unwrap();
 
-        assert_eq!(discover_aat_inputs(Some(&file), None).unwrap(), vec![file.clone()]);
+        assert_eq!(
+            discover_aat_inputs(Some(&file), None).unwrap(),
+            vec![file.clone()]
+        );
 
         let _ = fs::remove_dir_all(dir);
     }
@@ -368,6 +386,9 @@ mod tests {
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_nanos();
-        std::env::temp_dir().join(format!("ab-morph-run-{label}-{}-{unique}", std::process::id()))
+        std::env::temp_dir().join(format!(
+            "ab-morph-run-{label}-{}-{unique}",
+            std::process::id()
+        ))
     }
 }

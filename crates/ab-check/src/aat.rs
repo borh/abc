@@ -150,7 +150,6 @@ mod tests {
     use super::*;
     use serde_json::json;
 
-
     fn fragments_to_text(aat: &Value) -> String {
         visible_text_fragments(aat)
             .into_iter()
@@ -187,7 +186,10 @@ mod tests {
             }]
         });
 
-        assert_eq!(fragments_to_text(&aat), ab_plaintext::visible_text_projection(&aat));
+        assert_eq!(
+            fragments_to_text(&aat),
+            ab_plaintext::visible_text_projection(&aat)
+        );
         assert_eq!(fragments_to_text(&aat), "ABCDEFGH");
     }
 

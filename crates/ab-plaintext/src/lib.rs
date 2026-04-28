@@ -1,13 +1,13 @@
-mod aozora;
 mod aat;
+mod aozora;
 
 use std::error::Error;
 use std::fmt;
 
 use serde::Serialize;
 
-pub use aozora::from_aozora_honbun_bytes;
 pub use aat::{from_aat_value, visible_text_projection};
+pub use aozora::from_aozora_honbun_bytes;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct PlainTextDocument {

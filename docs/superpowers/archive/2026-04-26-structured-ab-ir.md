@@ -1,6 +1,15 @@
+---
+plan_id: "2026-04-26-structured-ab-ir"
+status: done
+started: 2026-04-27
+next_update: 2026-05-06
+owner: unassigned
+target_prerequisites: []
+---
+
 # Structured ab-ir Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Migrate `ab-ir` to structured ruby bases and typed gaiji references while preserving current AAT JSON output for representable cases.
 
@@ -16,11 +25,11 @@
 
 ## Task 1: Add Typed Gaiji Alongside Current Behavior
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 Add tests in `crates/ab-ir/src/lib.rs` for `GaijiKind`, `DakutenMark`, `GaijiRef`, `Inline::gaiji_ref`, and `Inline::gaiji` compatibility.
 
-- [ ] **Step 2: Verify red**
+- [x] **Step 2: Verify red**
 
 Run:
 
@@ -30,13 +39,13 @@ cargo test -p ab-ir gaiji_ref
 
 Expected: fail because the typed gaiji structs do not exist.
 
-- [ ] **Step 3: Implement typed gaiji**
+- [x] **Step 3: Implement typed gaiji**
 
 Add `GaijiKind`, `DakutenMark`, `GaijiRef`, and `Inline::GaijiRef`. Keep `Inline::gaiji(...)` as a compatibility constructor returning `Inline::GaijiRef` with `GaijiKind::Unknown`; the compatibility constructor cannot populate `GaijiRef::source` because it receives only the gaiji description, not the full `※［＃...］` marker.
 
 `GaijiKind` must cover the parser behavior dimensions recorded in `docs/superpowers/specs/2026-04-26-gaiji-resolution-comparison-notes.md`: single Unicode codepoints, Unicode sequences/IVS, JIS menkuten, composition descriptions, dakuten variants, alternative-character fallback, image fallback, and unknown gaiji.
 
-- [ ] **Step 4: Verify green and commit**
+- [x] **Step 4: Verify green and commit**
 
 Run:
 
@@ -48,11 +57,11 @@ git commit -m "feat: add typed gaiji references to ab-ir"
 
 ## Task 2: Migrate Ruby Base To Structured Inline Nodes
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 Add tests that construct ruby with a structured gaiji base and assert visible projection uses resolved gaiji text. Keep the existing `Inline::ruby("吾輩", "わがはい")` AAT JSON test unchanged.
 
-- [ ] **Step 2: Verify red**
+- [x] **Step 2: Verify red**
 
 Run:
 
@@ -62,11 +71,11 @@ cargo test -p ab-ir structured_ruby
 
 Expected: fail because `ruby_with_base` and `RubyPlacement` do not exist.
 
-- [ ] **Step 3: Implement structured ruby**
+- [x] **Step 3: Implement structured ruby**
 
 Change `Inline::Ruby` to `base: Vec<Inline>, reading: String, placement: RubyPlacement, provenance: Provenance`. Add `RubyPlacement::{Right, Left}`, `Inline::ruby_with_base`, and keep `Inline::ruby` as a text-base compatibility constructor.
 
-- [ ] **Step 4: Verify green and commit**
+- [x] **Step 4: Verify green and commit**
 
 Run:
 
@@ -78,7 +87,7 @@ git commit -m "feat: support structured ruby bases in ab-ir"
 
 ## Task 3: Preserve AAT Compatibility And Warn On Loss
 
-- [ ] **Step 1: Write failing tests**
+- [x] **Step 1: Write failing tests**
 
 Add tests for:
 
@@ -87,7 +96,7 @@ Add tests for:
 - unresolved gaiji ruby base produces a gaiji node instead of an orphan ruby and returns a projection warning with syntax ID `gaiji_ruby.unresolved_base`
 - ruby placement projects to the existing AAT `direction` field as `"right"` or `"left"`
 
-- [ ] **Step 2: Verify red**
+- [x] **Step 2: Verify red**
 
 Run:
 
@@ -97,13 +106,13 @@ cargo test -p ab-ir aat_projection
 
 Expected: fail because warning-aware projection does not exist.
 
-- [ ] **Step 3: Implement warning-aware AAT projection**
+- [x] **Step 3: Implement warning-aware AAT projection**
 
 Add `AatProjection` and `ProjectionWarning`. Make `blocks_to_aat_projection` return both projected blocks and warnings. Keep `blocks_to_aat_json` as a compatibility wrapper returning only blocks.
 
 `blocks_to_aat_projection` returns only the AAT blocks array plus warnings. The full AAT document assembler remains responsible for merging `ProjectionWarning` values into `meta.warnings`, because `ab-ir` does not know `work_id`, adapter metadata, source hash, or parse completeness.
 
-- [ ] **Step 4: Verify green and commit**
+- [x] **Step 4: Verify green and commit**
 
 Run:
 
@@ -115,7 +124,7 @@ git commit -m "feat: expose AAT projection warnings"
 
 ## Task 4: Final Verification
 
-- [ ] **Step 1: Run workspace checks**
+- [x] **Step 1: Run workspace checks**
 
 Run:
 

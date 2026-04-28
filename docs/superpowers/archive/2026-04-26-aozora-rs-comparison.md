@@ -1,6 +1,15 @@
+---
+plan_id: "2026-04-26-aozora-rs-comparison"
+status: done
+started: 2026-04-27
+next_update: 2026-05-08
+owner: unassigned
+target_prerequisites: []
+---
+
 # Aozora-rs Comparison Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Add the next parser adapter (`aozora-rs`) and produce a measured, reproducible comparison against the existing `aozora2` adapter on the full readable Aozora Bunko corpus.
 
@@ -57,7 +66,7 @@ Boundary decisions:
 - Create: `adapters/aozora-rs/src/main.rs`
 - Create: `adapters/aozora-rs/benches/adapter_bench.rs`
 
-- [ ] **Step 1: Create the adapter manifest**
+- [x] **Step 1: Create the adapter manifest**
 
 Create `adapters/aozora-rs/Cargo.toml`:
 
@@ -88,7 +97,7 @@ harness = false
 [workspace]
 ```
 
-- [ ] **Step 2: Write a failing library test for the adapter contract**
+- [x] **Step 2: Write a failing library test for the adapter contract**
 
 Add this test at the bottom of `adapters/aozora-rs/src/lib.rs` before implementation:
 
@@ -132,7 +141,7 @@ cargo test --manifest-path adapters/aozora-rs/Cargo.toml
 
 Expected: FAIL because `aat_json_from_bytes` does not exist yet.
 
-- [ ] **Step 3: Implement the minimal adapter library**
+- [x] **Step 3: Implement the minimal adapter library**
 
 Create `adapters/aozora-rs/src/lib.rs`:
 
@@ -431,7 +440,7 @@ Known gaps for this first mapper:
 - Non-heading layout decorations such as indent, hanging, grounded, and warichu are emitted as inline `style` containers. Full block-container mapping is a follow-up after this comparison runner is in place.
 - Encoding/hash helpers are duplicated from `aozora2-adapter` for now. Extract a shared adapter helper crate after both adapters are stable enough to reveal the right boundary.
 
-- [ ] **Step 4: Implement the CLI**
+- [x] **Step 4: Implement the CLI**
 
 Create `adapters/aozora-rs/src/main.rs`:
 
@@ -474,7 +483,7 @@ fn main() -> Result<()> {
 }
 ```
 
-- [ ] **Step 5: Add the real adapter benchmark**
+- [x] **Step 5: Add the real adapter benchmark**
 
 Create `adapters/aozora-rs/benches/adapter_bench.rs`:
 
@@ -504,7 +513,7 @@ criterion_group!(benches, bench_adapter_aat);
 criterion_main!(benches);
 ```
 
-- [ ] **Step 6: Verify and commit**
+- [x] **Step 6: Verify and commit**
 
 Run:
 
@@ -531,7 +540,7 @@ git commit -m "feat: add aozora-rs adapter"
 **Files:**
 - Modify: `benchmarks/README.md`
 
-- [ ] **Step 1: Build the existing index and adapter**
+- [x] **Step 1: Build the existing index and adapter**
 
 Run:
 
@@ -545,7 +554,7 @@ cargo build --release --manifest-path adapters/aozora-rs/Cargo.toml
 
 Expected: `index.json` exists and `.works_count` is greater than `17000`. Record the exact count because local `references/aozorabunko` mirrors can move.
 
-- [ ] **Step 2: Create a deterministic mixed sample**
+- [x] **Step 2: Create a deterministic mixed sample**
 
 Run:
 
@@ -564,7 +573,7 @@ jq length /tmp/ab-validator-aozora-rs-sample/work-ids.json
 # 100
 ```
 
-- [ ] **Step 3: Run `ab-check` on the sample**
+- [x] **Step 3: Run `ab-check` on the sample**
 
 Run:
 
@@ -582,7 +591,7 @@ cargo run --release -p ab-check -- \
 
 Expected: 100 report JSON files.
 
-- [ ] **Step 4: Inspect failures**
+- [x] **Step 4: Inspect failures**
 
 Run:
 
@@ -594,7 +603,7 @@ find /tmp/ab-validator-aozora-rs-sample/reports -type f -name '*.json' -print0 |
 
 Expected: no output. If failures appear, fix only adapter contract, decoding, timeout, or schema issues in this task. Do not tune comparison semantics yet.
 
-- [ ] **Step 5: Document the sample command**
+- [x] **Step 5: Document the sample command**
 
 Add to `benchmarks/README.md`:
 
@@ -616,7 +625,7 @@ cargo run --release -p ab-check -- \
 ```
 ```
 
-- [ ] **Step 6: Verify and commit**
+- [x] **Step 6: Verify and commit**
 
 Run:
 
@@ -643,7 +652,7 @@ git commit -m "test: validate aozora-rs adapter sample"
 
 `ab-compare` needs AAT outputs, not only validation reports. Add an optional `--aat-output` directory to `ab-check` batch mode.
 
-- [ ] **Step 1: Add a failing integration test**
+- [x] **Step 1: Add a failing integration test**
 
 Add to `crates/ab-check/tests/integration.rs`:
 
@@ -699,7 +708,7 @@ cargo test -p ab-check batch_can_write_adapter_aat_outputs
 
 Expected: FAIL because `--aat-output` is unknown.
 
-- [ ] **Step 2: Extend CLI args**
+- [x] **Step 2: Extend CLI args**
 
 In `crates/ab-check/src/main.rs`, add:
 
@@ -714,7 +723,7 @@ Pass it into `BatchOptions`:
 aat_output_dir: args.aat_output.as_deref(),
 ```
 
-- [ ] **Step 3: Extend `BatchOptions` and write AAT files**
+- [x] **Step 3: Extend `BatchOptions` and write AAT files**
 
 In `crates/ab-check/src/check.rs`, change `BatchOptions`:
 
@@ -792,7 +801,7 @@ pool.install(|| {
 })
 ```
 
-- [ ] **Step 4: Verify and commit**
+- [x] **Step 4: Verify and commit**
 
 Run:
 
@@ -820,7 +829,7 @@ git commit -m "feat: persist adapter AAT outputs"
 - Create: `crates/ab-compare/src/main.rs`
 - Create: `crates/ab-compare/tests/integration.rs`
 
-- [ ] **Step 1: Add workspace member**
+- [x] **Step 1: Add workspace member**
 
 In root `Cargo.toml`:
 
@@ -835,7 +844,7 @@ members = [
 tempfile = "3"
 ```
 
-- [ ] **Step 2: Create comparator manifest**
+- [x] **Step 2: Create comparator manifest**
 
 Create `crates/ab-compare/Cargo.toml`:
 
@@ -857,7 +866,7 @@ walkdir.workspace = true
 tempfile.workspace = true
 ```
 
-- [ ] **Step 3: Write failing integration test**
+- [x] **Step 3: Write failing integration test**
 
 Create `crates/ab-compare/tests/integration.rs`:
 
@@ -946,7 +955,7 @@ cargo test -p ab-compare
 
 Expected: FAIL because the crate has no implementation.
 
-- [ ] **Step 4: Implement comparison library**
+- [x] **Step 4: Implement comparison library**
 
 Create `crates/ab-compare/src/lib.rs`:
 
@@ -1071,7 +1080,7 @@ fn duplicate_safe_report_key(
 Use `work_id` as the primary identity. The filename suffix is only a duplicate
 guard for corpus entries that share an Aozora card/work ID.
 
-- [ ] **Step 5: Implement CLI**
+- [x] **Step 5: Implement CLI**
 
 Create `crates/ab-compare/src/main.rs`:
 
@@ -1107,7 +1116,7 @@ fn main() -> Result<()> {
 }
 ```
 
-- [ ] **Step 6: Verify and commit**
+- [x] **Step 6: Verify and commit**
 
 Run:
 
@@ -1133,7 +1142,7 @@ git commit -m "feat: compare parser validation reports"
 - Create: `benchmarks/run-parser-comparison.sh`
 - Modify: `benchmarks/README.md`
 
-- [ ] **Step 1: Create the comparison runner**
+- [x] **Step 1: Create the comparison runner**
 
 Create `benchmarks/run-parser-comparison.sh`:
 
@@ -1218,7 +1227,7 @@ After creation:
 chmod +x benchmarks/run-parser-comparison.sh
 ```
 
-- [ ] **Step 2: Check shell syntax**
+- [x] **Step 2: Check shell syntax**
 
 Run:
 
@@ -1228,7 +1237,7 @@ bash -n benchmarks/run-parser-comparison.sh
 
 Expected: no output.
 
-- [ ] **Step 3: Document the runner**
+- [x] **Step 3: Document the runner**
 
 Add to `benchmarks/README.md`:
 
@@ -1248,7 +1257,7 @@ The output directory contains the shared index, per-parser reports, optional
 AAT artifacts, and `comparison.json` from `ab-compare`.
 ```
 
-- [ ] **Step 4: Verify and commit**
+- [x] **Step 4: Verify and commit**
 
 Run:
 
@@ -1272,7 +1281,7 @@ git commit -m "bench: add parser comparison runner"
 **Files:**
 - Create: `benchmarks/baselines/YYYY-MM-DD-parser-comparison.json`
 
-- [ ] **Step 1: Run the full comparison**
+- [x] **Step 1: Run the full comparison**
 
 Run:
 
@@ -1291,7 +1300,7 @@ Expected:
 - `aozora_rs.failures == 0`
 - `comparison.common_reports == jq '.works_count' /tmp/ab-validator-compare-current/index.json`
 
-- [ ] **Step 2: Investigate any failures**
+- [x] **Step 2: Investigate any failures**
 
 If `aozora_rs.failures > 0`, run:
 
@@ -1303,7 +1312,7 @@ find /tmp/ab-validator-compare-current/reports/aozora-rs -type f -name '*.json' 
 
 Fix adapter schema, decoding, parser invocation, or timeout defects until no failures remain. Do not weaken shared `ab-check` properties to make one adapter pass.
 
-- [ ] **Step 3: Record the baseline**
+- [x] **Step 3: Record the baseline**
 
 Copy the summary into a dated tracked baseline and add the host note reproducibly:
 
@@ -1314,7 +1323,7 @@ jq '. + {
 }' /tmp/ab-validator-compare-current/summary.json > "$baseline"
 ```
 
-- [ ] **Step 4: Final verification**
+- [x] **Step 4: Final verification**
 
 Run:
 
@@ -1331,7 +1340,7 @@ cargo bench --manifest-path adapters/aozora-rs/Cargo.toml --no-run
 nix flake check --print-build-logs
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add benchmarks/baselines

@@ -1,6 +1,15 @@
+---
+plan_id: "2026-04-25-parser-validation-harness"
+status: done
+started: 2026-04-27
+next_update: 2026-05-11
+owner: core-team
+target_prerequisites: []
+---
+
 # Aozora Bunko Parser Validation Harness — Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Build `ab-validator` — a suite of standalone tools for evaluating Aozora Bunko parsers against the official corpus.
 
@@ -87,7 +96,7 @@ ab-validator/
 **Integration test:**
 - `cargo build` succeeds with no errors.
 
-- [ ] **Step 1: Create workspace root `Cargo.toml`**
+- [x] **[In progress • owner: core-team] Step 1: Create workspace root `Cargo.toml`**
 
 ```toml
 [workspace]
@@ -120,7 +129,7 @@ jsonschema = "0.46"
 criterion = "0.8" # use as dev-dependency in crates that define benches
 ```
 
-- [ ] **Step 2: Create `data/feature-patterns.toml`**
+- [x] **Step 2: Create `data/feature-patterns.toml`**
 
 Derive patterns from official Aozora Bunko annotation guidance, observed corpus examples, and the PARSER_REPORT feature taxonomy. Do not use GPL parser implementation tables as checked-in source material. Each feature needs:
 - A unique name (e.g., `ruby`, `boten`, `jisage_line`)
@@ -129,7 +138,7 @@ Derive patterns from official Aozora Bunko annotation guidance, observed corpus 
 
 Start with the ~35 patterns from the PARSER_REPORT's feature table (L1–L13, H1–H9, E1–E7, K1–K3, M1–M20, G1–G4, O1–O29, grouped where parsers agree on sub-variants).
 
-- [ ] **Step 3: Create `data/block-patterns.toml` and `data/body-patterns.toml`**
+- [x] **Step 3: Create `data/block-patterns.toml` and `data/body-patterns.toml`**
 
 `data/block-patterns.toml` contains named source-side block pairs:
 
@@ -153,7 +162,7 @@ end_colophon = '^底本[：:]'
 separator = '^-{20,}$'
 ```
 
-- [ ] **Step 4: Create CI workflow**
+- [x] **Step 4: Create CI workflow**
 
 `.github/workflows/ci.yml`:
 
@@ -175,7 +184,7 @@ jobs:
       - run: cd ab-validator && cargo test
 ```
 
-- [ ] **Step 5: Integration test — build succeeds**
+- [x] **Step 5: Integration test — build succeeds**
 
 ```bash
 cd ab-validator
@@ -183,7 +192,7 @@ cargo build
 ```
 Expected: `Finished dev [unoptimized + debuginfo] target(s)`
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add .
@@ -309,12 +318,12 @@ ab-index --sample 50 --features ruby,gaiji --index index.json --output sample.js
 - Run `--query ruby`, assert it returns the right work IDs.
 - Run `--sample 1 --features ruby,gaiji`, assert it returns both works.
 
-- [ ] **Step 1: Create crate structure**
-- [ ] **Step 2: Implement FeatureDetector**
-- [ ] **Step 3: Implement CorpusIndex builder**
-- [ ] **Step 4: Implement CLI**
-- [ ] **Step 5: Integration test with fixture corpus**
-- [ ] **Step 6: Commit**
+- [x] **Step 1: Create crate structure**
+- [x] **Step 2: Implement FeatureDetector**
+- [x] **Step 3: Implement CorpusIndex builder**
+- [x] **Step 4: Implement CLI**
+- [x] **Step 5: Integration test with fixture corpus**
+- [x] **Step 6: Commit**
 
 ```bash
 git add crates/ab-index
@@ -598,8 +607,8 @@ AAT JSON is the wire format between adapters and tools. Every adapter emits this
 - Validate a fixture with nested blocks, ruby, inline gaiji, raw nodes, and spans against the schema.
 - Validate that a fixture containing `{"kind": "block_start"}` fails schema validation.
 
-- [ ] **Step 1: Write schema file**
-- [ ] **Step 2: Commit**
+- [x] **Step 1: Write schema file**
+- [x] **Step 2: Commit**
 
 ```bash
 git add data/aat-schema.json
@@ -641,11 +650,11 @@ jq '.blocks[0].content[0].kind' /tmp/test.aat.json  # should output "ruby"
 jq -r '[.blocks[0].content[] | if .kind == "ruby" then .base else .value end] | join("")' /tmp/test.aat.json  # should output "吾輩は猫である。"
 ```
 
-- [ ] **Step 1: Write test-adapter executable shell script**
+- [x] **Step 1: Write test-adapter executable shell script**
 
 Make it executable: `chmod +x adapters/test-adapter/test-adapter`
-- [ ] **Step 2: Integration test — verify output shape**
-- [ ] **Step 3: Commit**
+- [x] **Step 2: Integration test — verify output shape**
+- [x] **Step 3: Commit**
 
 ```bash
 git add adapters/test-adapter
@@ -833,12 +842,12 @@ Adapter exit handling:
 - Create `fixtures/test_bad_duplicate_ruby.aat.json` where sibling text also contains the ruby base.
 - Run `ab-check --txt fixtures/test_ruby.txt --aat fixtures/test_bad_duplicate_ruby.aat.json` — assert `visible_text_body_order` fails because the projection duplicates visible text.
 
-- [ ] **Step 1: Create crate structure**
-- [ ] **Step 2: Implement Property trait + built-in properties**
-- [ ] **Step 3: Implement adapter invocation in check.rs**
-- [ ] **Step 4: Implement CLI**
-- [ ] **Step 5: Integration test with test-adapter**
-- [ ] **Step 6: Commit**
+- [x] **Step 1: Create crate structure**
+- [x] **Step 2: Implement Property trait + built-in properties**
+- [x] **Step 3: Implement adapter invocation in check.rs**
+- [x] **Step 4: Implement CLI**
+- [x] **Step 5: Integration test with test-adapter**
+- [x] **Step 6: Commit**
 
 ```bash
 git add crates/ab-check
@@ -926,10 +935,10 @@ Note: The adapter crate is **not** a workspace member (it's in `adapters/`, not 
 - Assert the output contains no `block_start` or `block_end` AAT nodes.
 - Run `ab-check` on the output — at minimum `parse_completeness` should pass.
 
-- [ ] **Step 1: Create adapter crate with git dependency**
-- [ ] **Step 2: Implement Node → AAT mapping**
-- [ ] **Step 3: Build and test against real corpus work**
-- [ ] **Step 4: Commit**
+- [x] **Step 1: Create adapter crate with git dependency**
+- [x] **Step 2: Implement Node → AAT mapping**
+- [x] **Step 3: Build and test against real corpus work**
+- [x] **Step 4: Commit**
 
 ```bash
 git add adapters/aozora2
@@ -990,12 +999,12 @@ cargo bench --bench adapter_bench
 - Run `mixed-100` once before adding a second parser adapter.
 - Record baseline results under `benchmarks/results/` when executing the implementation plan.
 
-- [ ] **Step 1: Create benchmark documentation and sample-file format**
-- [ ] **Step 2: Add `ab-check` JSON I/O benchmark**
-- [ ] **Step 3: Add `ab-check` property benchmark**
-- [ ] **Step 4: Add `aozora2` adapter benchmark**
-- [ ] **Step 5: Run tiny-fixture benchmark smoke test**
-- [ ] **Step 6: Commit**
+- [x] **Step 1: Create benchmark documentation and sample-file format**
+- [x] **Step 2: Add `ab-check` JSON I/O benchmark**
+- [x] **Step 3: Add `ab-check` property benchmark**
+- [x] **Step 4: Add `aozora2` adapter benchmark**
+- [x] **Step 5: Run tiny-fixture benchmark smoke test**
+- [x] **Step 6: Commit**
 
 ```bash
 git add benchmarks crates/ab-check/benches adapters/aozora2/benches

@@ -1,8 +1,8 @@
 ---
 plan_id: "2026-04-28-aozora2html-adapter"
-status: not_started
-started:
-next_update: 2026-05-05
+status: done
+started: 2026-04-28
+next_update:
 owner: unassigned
 target_prerequisites: []
 ---
@@ -53,7 +53,7 @@ Verified against `crates/ab-check/src/check.rs`:
 
 Quick verification before any implementation. None of these should require code changes; failures here mean the plan needs rescoping.
 
-- [ ] **Step 1: Confirm `data/aozora-syntax-coverage.toml` exists**
+- [x] **Step 1: Confirm `data/aozora-syntax-coverage.toml` exists**
 
 ```bash
 test -f data/aozora-syntax-coverage.toml && jq -r 'true' < /dev/null || echo "MATRIX MISSING"
@@ -62,7 +62,7 @@ grep -c "^\[\[syntax\]\]" data/aozora-syntax-coverage.toml
 
 Expected: file exists, several `[[syntax]]` rows present. The file is already checked in (priority-1 rows for ruby, gaiji, gaiji+ruby, headings, etc., all currently `status = "partial"`). Task 2 fixture selection cites these row IDs.
 
-- [ ] **Step 2: Confirm a usable index file exists, or note its absence**
+- [x] **Step 2: Confirm a usable index file exists, or note its absence**
 
 ```bash
 ls /tmp/ab-validator-edge-parity-*/index.json 2>/dev/null | head -1
@@ -77,7 +77,7 @@ cargo run -p ab-index -- --index /tmp/ab-index.json --sample 25 --features ruby,
 
 The plan continues to refer to "the index file" abstractly; substitute the freshly-regenerated path when needed.
 
-- [ ] **Step 3: Confirm Ruby parser invocation environment**
+- [x] **Step 3: Confirm Ruby parser invocation environment**
 
 The parity script runs:
 
@@ -109,7 +109,7 @@ Run that on `references/parsers/aozora2html/sample/*.txt` (or any small corpus w
 - Create: `adapters/aozora2html/adapter.py`
 - Create: `adapters/aozora2html/README.md`
 
-- [ ] **Step 1: Define the run.sh ↔ adapter.py protocol**
+- [x] **Step 1: Define the run.sh ↔ adapter.py protocol**
 
 Two temp files, passed as positional arguments. No JSON wrapping, no stdin multiplexing.
 
@@ -125,7 +125,7 @@ See the live implementation at `adapters/aozora2html/run.sh`. Shape:
 
 The `bash -lc` wrapper may be vestigial — if a follow-up investigation proves it unnecessary, drop it then. This plan keeps it because the parity script keeps it, and bisecting an environment-dependent failure inside an `ab-check` subprocess is slow.
 
-- [ ] **Step 2: Implement adapter.py argument parsing and version**
+- [x] **Step 2: Implement adapter.py argument parsing and version**
 
 `adapter.py` accepts:
 
@@ -138,7 +138,7 @@ For `--mode html`, copy `--xhtml` to stdout verbatim. This is the only adapter t
 
 For `--version`, print `aozora2html-adapter 0.1.0 <git-rev>` where `<git-rev>` is the short SHA of `references/parsers/aozora2html` (resolved at build time, baked into the script as a constant during initial commit; updated when the reference is bumped). Surface the same string in `meta.adapter_version`.
 
-- [ ] **Step 3: Implement encoding detection in adapter.py**
+- [x] **Step 3: Implement encoding detection in adapter.py**
 
 Reuse the test-adapter pattern (`adapters/test-adapter/test-adapter:19-26`) verbatim — it is the existing battle-tested Python implementation. Acknowledged duplication: there are now two encoding-detection implementations (Rust in `decode_source_bytes`, Python here). Extracting a shared helper is out of scope; the duplication is documented in `adapters/aozora2html/README.md` so a future refactor knows where to look.
 
@@ -154,7 +154,7 @@ else:
 source_hash = "sha256:" + hashlib.sha256(raw).hexdigest()
 ```
 
-- [ ] **Step 4: Emit a minimal valid AAT envelope**
+- [x] **Step 4: Emit a minimal valid AAT envelope**
 
 Before any XHTML mapping, return a single `paragraph` block whose `content` is `[{"kind": "text", "value": text, "span": {...}}]`. This proves the envelope is schema-valid:
 
@@ -180,7 +180,7 @@ Notes consistent with the schema (`data/aat-schema.json`):
 - `meta.metrics`: omitted. The `metrics` object requires 20+ fields tied to internal Rust adapter phases (decode_ms, tokenize_ms, etc.) that have no analogue in a Ruby+Python pipeline. The schema marks `metrics` optional, so omission is valid. Document this in `README.md` and in Task 3 — `ab-compare` should not be expected to produce metrics deltas for this adapter.
 - `meta.semantic_summary`: omitted in this step; populated in Task 2 Step 4.
 
-- [ ] **Step 5: Smoke test the contract**
+- [x] **Step 5: Smoke test the contract**
 
 Add `tests/test_mapper.py::test_version_format` and `::test_envelope_passes_schema`:
 
@@ -196,7 +196,7 @@ def test_envelope_passes_schema():
 
 These must pass before Task 2 starts.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add adapters/aozora2html/
@@ -212,7 +212,7 @@ git commit -m "feat: add aozora2html adapter skeleton"
 - Create: `adapters/aozora2html/tests/fixtures/`
 - Modify: `adapters/aozora2html/tests/test_mapper.py`
 
-- [ ] **Step 1: Capture reference XHTML for each fixture**
+- [x] **Step 1: Capture reference XHTML for each fixture**
 
 Pick one minimal `.txt` per matrix priority-1 syntax row from `data/aozora-syntax-coverage.toml`. Run the Ruby parser via the Task 0 invocation and check both `<row>.txt` and `<row>.xhtml` into `tests/fixtures/`:
 
@@ -230,7 +230,7 @@ Pick one minimal `.txt` per matrix priority-1 syntax row from `data/aozora-synta
 
 The captured XHTML is the ground truth. If the parser emits something different from what the table below predicts, trust the XHTML and update the rule.
 
-- [ ] **Step 2: Implement the XHTML → AAT mapping**
+- [x] **Step 2: Implement the XHTML → AAT mapping**
 
 `xhtml_to_blocks(xhtml: str, source_text: str) -> tuple[list[block], list[warning]]` is a stateless function. Mapping rules verified against the schema:
 
@@ -251,7 +251,7 @@ The captured XHTML is the ground truth. If the parser emits something different 
 
 Block-container kinds beyond `jisage_block`: the schema enum is `jisage_block | quote_block | keigakomi_block | yokogumi_block | caption_block`. **Non-goal for this plan:** mapping `quote_block`, `keigakomi_block`, `yokogumi_block`, `caption_block`. They are deferred unless a Task 2 Step 1 fixture reveals one. Encountered XHTML that has no rule emits `meta.warnings` plus an `x-aozora2html-unmapped: "<element-name>"` extension property on the produced node, and processing continues. This makes coverage gaps visible to `ab-compare` instead of silently lost.
 
-- [ ] **Step 3: Spans — omit them**
+- [x] **Step 3: Spans — omit them**
 
 XHTML carries no byte offsets into the source. Reconstructing them by aligning `<p>` elements with source paragraphs is fragile: the Ruby parser can drop bibliographic notes, merge consecutive blank-separated lines, or reorder content (front matter / colophon). A wrong alignment produces wrong spans for every node downstream.
 
@@ -259,7 +259,7 @@ The schema marks `span` as optional on every `block` and `inline` kind. **Omit `
 
 If a future increment needs spans, build them from a source-text scan (e.g. by finding the first occurrence of a paragraph's normalized text in the decoded source) and mark them `"x-span-confidence": "alignment_heuristic"` so consumers know the provenance.
 
-- [ ] **Step 4: Produce a semantic summary**
+- [x] **Step 4: Produce a semantic summary**
 
 `ab-compare` keys structural comparison off `meta.semantic_summary` (`crates/ab-compare/src/aat_diff.rs`). Without it, the new parity script will report "missing on side A" for every comparison, which is no more informative than the old pandoc summary.
 
@@ -321,7 +321,7 @@ Field-by-field rules verified against the Rust source:
 - If the mapper emits a `meta.warnings` entry with `syntax_id`, also emit a corresponding `projection.warning` row: `{"kind": "projection_warning", "value": {"syntax_id": "...", "message": "..."}, "provenance": "projection"}` (`semantic_summary.rs:40-54`).
 - `source_span` is optional and omitted (same reasoning as Step 3 spans).
 
-- [ ] **Step 5: Validate every fixture against the schema and the golden AAT**
+- [x] **Step 5: Validate every fixture against the schema and the golden AAT**
 
 Two test families in `tests/test_mapper.py`:
 
@@ -340,7 +340,7 @@ def test_fixture_matches_golden(fixture):
 
 The golden file is checked in alongside each fixture. Updating goldens requires reviewing the diff in the commit — this is the schema-divergence safety net the architecture section promised.
 
-- [ ] **Step 6: AAT schema changes — only if a fixture forces one**
+- [x] **Step 6: AAT schema changes — only if a fixture forces one**
 
 If a captured XHTML construct has no representation in `data/aat-schema.json` and no `x-` extension can express it cleanly, propose an additive schema change:
 
@@ -349,7 +349,7 @@ If a captured XHTML construct has no representation in `data/aat-schema.json` an
 
 Document the change in `adapters/aozora2html/README.md` with a citation to the fixture. Do not change required fields. Do not change existing enum semantics. Schema changes ripple to every adapter and to `ab-ir`, so this is a deliberate decision, not a quick patch.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add adapters/aozora2html/ data/aat-schema.json
@@ -362,7 +362,7 @@ git commit -m "feat: aozora2html XHTML to AAT mapping"
 
 The existing `ab-check` and `ab-compare` already consume any AAT-emitting adapter. Nothing in their code should need to change. This task validates that assumption end-to-end on a real sample.
 
-- [ ] **Step 1: Run `ab-check` on a small sample**
+- [x] **Step 1: Run `ab-check` on a small sample**
 
 Use the index from Task 0 Step 2 (regenerated if necessary):
 
@@ -382,7 +382,7 @@ Expected:
 - `parse_completeness` passes for every work, except for works where the Ruby parser itself reports an error (those should be a small minority; record the work IDs).
 - Heuristic properties (`ruby_completeness`, `gaiji_resolution`, `visible_text_body_order`) are allowed to fail. Failures are real parity findings, not adapter bugs.
 
-- [ ] **Step 2: Triage heuristic-property failures**
+- [x] **Step 2: Triage heuristic-property failures**
 
 Classify each failing heuristic into one of three buckets, recorded in `docs/superpowers/specs/2026-04-28-aozora2html-coverage-notes.md`:
 
@@ -390,7 +390,7 @@ Classify each failing heuristic into one of three buckets, recorded in `docs/sup
 2. **Mapper drops information that the XHTML preserves** — fix the mapper, add a fixture, re-run Step 1.
 3. **Property too strict for an HTML-derived adapter** — record as a follow-up; do not weaken the property in this plan (would invalidate existing comparison baselines).
 
-- [ ] **Step 3: Run `ab-compare` against `aozora2` and `aozora-rs`**
+- [x] **Step 3: Run `ab-compare` against `aozora2` and `aozora-rs`**
 
 ```bash
 cargo run -p ab-compare -- \
@@ -408,7 +408,7 @@ Expected: `aat_block_count_match` is non-zero on at least some works (the parser
 
 If `semantic_summary_hash_difference_counts` is empty (no overlap at all), the syntax IDs in the Python adapter's summary do not match those produced by `crates/ab-ir/src/semantic_summary.rs`. Reconcile and re-run.
 
-- [ ] **Step 4: Commit triage notes**
+- [x] **Step 4: Commit triage notes**
 
 ```bash
 git add docs/superpowers/specs/2026-04-28-aozora2html-coverage-notes.md
@@ -423,7 +423,7 @@ git commit -m "docs: aozora2html coverage triage notes"
 - Create: `benchmarks/run-aat-parity.sh`
 - Modify: `benchmarks/README.md`
 
-- [ ] **Step 1: Write the orchestration script**
+- [x] **Step 1: Write the orchestration script**
 
 `benchmarks/run-aat-parity.sh` takes `--index PATH --work-ids PATH [--sample N]` and:
 
@@ -438,7 +438,7 @@ git commit -m "docs: aozora2html coverage triage notes"
 
 The script is bash + `jq`; no Python orchestration. It must not invoke pandoc and must not normalize HTML to plain text.
 
-- [ ] **Step 2: 25-work pilot before full run**
+- [x] **Step 2: 25-work pilot before full run**
 
 ```bash
 bash benchmarks/run-aat-parity.sh --index /tmp/ab-index.json --work-ids /tmp/ab-work-ids.json --sample 25
@@ -446,11 +446,11 @@ bash benchmarks/run-aat-parity.sh --index /tmp/ab-index.json --work-ids /tmp/ab-
 
 Verify the script completes, produces `summary.json`, and that the counts are interpretable. Catch `jq`/path errors before paying full-corpus cost.
 
-- [ ] **Step 3: Document the migration in benchmarks/README.md**
+- [x] **Step 3: Document the migration in benchmarks/README.md**
 
 Add a section explaining: "The previous `/tmp/ab-validator-official-html-parity.sh` compared pandoc-of-text on both sides because no Rust adapter rendered HTML. The current `run-aat-parity.sh` compares structured AAT and parser-emitted semantic summaries, which is what the harness was designed for."
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add benchmarks/run-aat-parity.sh benchmarks/README.md
@@ -464,7 +464,7 @@ git commit -m "feat: AAT-level three-way parser parity script"
 **Files:**
 - Modify: `docs/superpowers/PLAN-EXECUTION-ORDER.md`
 
-- [ ] **Step 1: Refresh the active queue**
+- [x] **Step 1: Refresh the active queue**
 
 `PLAN-EXECUTION-ORDER.md:14-37` still lists the seven archived plans as active. Replace that section with the current state:
 
@@ -475,7 +475,7 @@ git commit -m "feat: AAT-level three-way parser parity script"
   2. `parser-validation-harness-design.md` — `ab-render-diff` crate not built. After this plan lands, the AAT-level parity script reduces the pressure to build it; revisit only when AAT diffs prove insufficient.
   3. `aozora-rs-performance-design.md` — performance phases shipped; a follow-up benchmark may be useful once aozora2html is in the comparison.
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add docs/superpowers/PLAN-EXECUTION-ORDER.md
@@ -486,7 +486,7 @@ git commit -m "docs: refresh superpowers plan queue"
 
 ## Task 6: Final Verification
 
-- [ ] **Step 1: Workspace and adapter checks**
+- [x] **Step 1: Workspace and adapter checks**
 
 ```bash
 cargo fmt --all -- --check
@@ -499,11 +499,11 @@ bash benchmarks/run-aat-parity.sh --index /tmp/ab-index.json --work-ids /tmp/ab-
 
 Expected: formatter passes, all tests pass, clippy clean, mapper fixture and schema tests pass, version string matches the regex, parity script writes a `summary.json`.
 
-- [ ] **Step 2: Schema-divergence golden gate**
+- [x] **Step 2: Schema-divergence golden gate**
 
 If `data/aat-schema.json` was modified in this plan, re-run every fixture from `adapters/aozora-rs/tests/fixtures/` and `adapters/aozora2/tests/fixtures/` against the new schema. Any pre-existing fixture that no longer validates blocks the merge — additive schema changes must remain additive in practice, not just in intent.
 
-- [ ] **Step 3: Confirm the parity result is interpretable**
+- [x] **Step 3: Confirm the parity result is interpretable**
 
 The old summary showed `aozora2_official_html_matches: 0, aozora2_official_html_mismatches: 179` — uniform failure with no signal. The new `summary.json` must show:
 

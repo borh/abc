@@ -1,6 +1,15 @@
+---
+plan_id: "2026-04-26-aozora-rs-performance"
+status: done
+started: 2026-04-27
+next_update: 2026-05-10
+owner: unassigned
+target_prerequisites: []
+---
+
 # Aozora-rs Performance Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Refactor the existing `aozora-rs` adapter into measured, composable phases, then use those measurements to make at least one evidence-backed performance improvement while preserving full-corpus validation results.
 
@@ -44,7 +53,7 @@
 **Files:**
 - Create: `benchmarks/baselines/2026-04-26-aozora-rs-pre-refactor.json`
 
-- [ ] **Step 1: Run the existing full-corpus comparison before code changes**
+- [x] **Step 1: Run the existing full-corpus comparison before code changes**
 
 Run:
 
@@ -60,7 +69,7 @@ Expected:
 - `comparison.common_reports == 17894`
 - `comparison.result_differences == []`
 
-- [ ] **Step 2: Commit the pre-refactor baseline**
+- [x] **Step 2: Commit the pre-refactor baseline**
 
 Run:
 
@@ -77,7 +86,7 @@ git commit -m "bench: record aozora-rs pre-refactor baseline (task 0)"
 - Modify: `adapters/aozora-rs/src/lib.rs`
 - Modify: `adapters/aozora-rs/Cargo.toml`
 
-- [ ] **Step 1: Write failing unit tests for fallback reason serialization and stage listing**
+- [x] **Step 1: Write failing unit tests for fallback reason serialization and stage listing**
 
 Add this test module to `adapters/aozora-rs/src/metrics.rs`:
 
@@ -130,7 +139,7 @@ mod tests {
 }
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run:
 
@@ -140,7 +149,7 @@ cargo test --manifest-path adapters/aozora-rs/Cargo.toml metrics
 
 Expected: FAIL because `metrics.rs` and its types do not exist.
 
-- [ ] **Step 3: Implement metrics types**
+- [x] **Step 3: Implement metrics types**
 
 Add this dependency to `adapters/aozora-rs/Cargo.toml`:
 
@@ -261,7 +270,7 @@ Add this line near the top of `adapters/aozora-rs/src/lib.rs`:
 mod metrics;
 ```
 
-- [ ] **Step 4: Run focused tests**
+- [x] **Step 4: Run focused tests**
 
 Run:
 
@@ -271,7 +280,7 @@ cargo test --manifest-path adapters/aozora-rs/Cargo.toml metrics
 
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add adapters/aozora-rs/Cargo.toml adapters/aozora-rs/src/lib.rs adapters/aozora-rs/src/metrics.rs
@@ -284,7 +293,7 @@ git commit -m "refactor: add aozora-rs adapter metrics types (task 1)"
 - Create: `adapters/aozora-rs/src/source.rs`
 - Modify: `adapters/aozora-rs/src/lib.rs`
 
-- [ ] **Step 1: Write failing source tests**
+- [x] **Step 1: Write failing source tests**
 
 Create `adapters/aozora-rs/src/source.rs` with only the tests first:
 
@@ -324,7 +333,7 @@ Also add this temporary module declaration to `adapters/aozora-rs/src/lib.rs` so
 mod source;
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run:
 
@@ -334,7 +343,7 @@ cargo test --manifest-path adapters/aozora-rs/Cargo.toml source
 
 Expected: FAIL because `source.rs` contains tests referencing missing items.
 
-- [ ] **Step 3: Move source code from `lib.rs` into `source.rs`**
+- [x] **Step 3: Move source code from `lib.rs` into `source.rs`**
 
 Implement `source.rs` by moving and adapting existing `DecodedSource`, `decode_source_bytes`, `trim_colophon`, `body_text`, `starts_with_separator`, `source_visible_text`, `remove_bottom_note_fragments`, and `hex_sha256`. `DecodedSource::source_bytes` is a deliberate public-field addition for metrics; update all struct literals in tests and adapter internals. Add:
 
@@ -406,7 +415,7 @@ mod source;
 pub use source::{decode_source_bytes, DecodedSource};
 ```
 
-- [ ] **Step 4: Run focused tests**
+- [x] **Step 4: Run focused tests**
 
 Run:
 
@@ -416,7 +425,7 @@ cargo test --manifest-path adapters/aozora-rs/Cargo.toml source
 
 Expected: PASS.
 
-- [ ] **Step 5: Run adapter tests**
+- [x] **Step 5: Run adapter tests**
 
 Run:
 
@@ -426,7 +435,7 @@ cargo test --manifest-path adapters/aozora-rs/Cargo.toml
 
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add adapters/aozora-rs/src/lib.rs adapters/aozora-rs/src/source.rs
@@ -440,7 +449,7 @@ git commit -m "refactor: extract aozora-rs source handling (task 2)"
 - Modify: `adapters/aozora-rs/src/lib.rs`
 - Modify: `adapters/aozora-rs/src/source.rs`
 
-- [ ] **Step 1: Write failing parser tests**
+- [x] **Step 1: Write failing parser tests**
 
 Create `adapters/aozora-rs/src/parser.rs` with:
 
@@ -478,7 +487,7 @@ Also add this module declaration to `adapters/aozora-rs/src/lib.rs`:
 mod parser;
 ```
 
-- [ ] **Step 2: Run parser tests to verify failure**
+- [x] **Step 2: Run parser tests to verify failure**
 
 Run:
 
@@ -488,7 +497,7 @@ cargo test --manifest-path adapters/aozora-rs/Cargo.toml parser
 
 Expected: FAIL because parser types/functions are not implemented.
 
-- [ ] **Step 3: Implement `parser.rs`**
+- [x] **Step 3: Implement `parser.rs`**
 
 Move `ParsedSource` and `parse_with_aozora_rs` from `lib.rs` into `parser.rs`. Use:
 
@@ -598,7 +607,7 @@ mod parser;
 
 Remove the old parser definitions/imports from `lib.rs`.
 
-- [ ] **Step 4: Run focused tests**
+- [x] **Step 4: Run focused tests**
 
 Run:
 
@@ -608,7 +617,7 @@ cargo test --manifest-path adapters/aozora-rs/Cargo.toml parser
 
 Expected: PASS.
 
-- [ ] **Step 5: Run adapter tests**
+- [x] **Step 5: Run adapter tests**
 
 Run:
 
@@ -618,7 +627,7 @@ cargo test --manifest-path adapters/aozora-rs/Cargo.toml
 
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add adapters/aozora-rs/src/lib.rs adapters/aozora-rs/src/parser.rs adapters/aozora-rs/src/source.rs
@@ -634,7 +643,7 @@ git commit -m "refactor: extract aozora-rs parser phase (task 3)"
 - Create: `adapters/aozora-rs/tests/fixtures/ruby_gaiji.aat.json`
 - Modify: `adapters/aozora-rs/src/lib.rs`
 
-- [ ] **Step 1: Create a golden-master fixture before the typed refactor**
+- [x] **Step 1: Create a golden-master fixture before the typed refactor**
 
 Run:
 
@@ -656,7 +665,7 @@ cargo run --manifest-path adapters/aozora-rs/Cargo.toml -- --mode aat \
 
 Expected: `ruby_gaiji.aat.json` contains one valid AAT JSON object generated by the pre-refactor adapter.
 
-- [ ] **Step 2: Add a golden-master regression test and verify it passes before the refactor**
+- [x] **Step 2: Add a golden-master regression test and verify it passes before the refactor**
 
 Create `adapters/aozora-rs/tests/golden.rs`:
 
@@ -683,7 +692,7 @@ cargo test --manifest-path adapters/aozora-rs/Cargo.toml preserves_ruby_gaiji_fi
 
 Expected: PASS before any typed-AAT changes.
 
-- [ ] **Step 3: Write failing AAT unit tests**
+- [x] **Step 3: Write failing AAT unit tests**
 
 Create `adapters/aozora-rs/src/aat.rs` with:
 
@@ -733,7 +742,7 @@ Also add this module declaration to `adapters/aozora-rs/src/lib.rs`:
 mod aat;
 ```
 
-- [ ] **Step 4: Run AAT tests to verify failure**
+- [x] **Step 4: Run AAT tests to verify failure**
 
 Run:
 
@@ -743,7 +752,7 @@ cargo test --manifest-path adapters/aozora-rs/Cargo.toml aat
 
 Expected: FAIL because AAT types/functions are not implemented.
 
-- [ ] **Step 5: Implement typed AAT module**
+- [x] **Step 5: Implement typed AAT module**
 
 Move retokenized mapping helpers from `lib.rs` into `aat.rs`. Replace `serde_json::Value` during construction with:
 
@@ -824,7 +833,7 @@ Use this mapping as the implementation contract:
 
 `AatInline::Style` may contain nested `AatInline` values, but the first implementation may preserve the existing flattened behavior by collecting decorated visible text into one `AatInline::Text` child.
 
-- [ ] **Step 6: Wire `lib.rs` to use typed AAT construction without changing output**
+- [x] **Step 6: Wire `lib.rs` to use typed AAT construction without changing output**
 
 Add to `lib.rs`:
 
@@ -834,7 +843,7 @@ mod aat;
 
 Temporarily construct the root using `aat::blocks_to_json(&built.blocks)` and the existing metadata. Do not add metrics yet.
 
-- [ ] **Step 7: Run tests**
+- [x] **Step 7: Run tests**
 
 Run:
 
@@ -845,7 +854,7 @@ cargo test --manifest-path adapters/aozora-rs/Cargo.toml
 Expected: PASS.
 The golden-master test must still pass; this is the Task 4 gate.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add adapters/aozora-rs/src/lib.rs adapters/aozora-rs/src/aat.rs adapters/aozora-rs/tests/golden.rs adapters/aozora-rs/tests/fixtures
@@ -859,7 +868,7 @@ git commit -m "refactor: build typed aozora-rs AAT blocks (task 4)"
 - Modify: `adapters/aozora-rs/src/aat.rs`
 - Modify: `adapters/aozora-rs/src/lib.rs`
 
-- [ ] **Step 1: Write failing projection tests**
+- [x] **Step 1: Write failing projection tests**
 
 Create `adapters/aozora-rs/src/projection.rs` with:
 
@@ -889,7 +898,7 @@ Also add this module declaration to `adapters/aozora-rs/src/lib.rs`:
 mod projection;
 ```
 
-- [ ] **Step 2: Run projection tests to verify failure**
+- [x] **Step 2: Run projection tests to verify failure**
 
 Run:
 
@@ -899,7 +908,7 @@ cargo test --manifest-path adapters/aozora-rs/Cargo.toml projection
 
 Expected: FAIL because projection functions are missing.
 
-- [ ] **Step 3: Implement projection module**
+- [x] **Step 3: Implement projection module**
 
 Move `normalize_visible` and `is_subsequence` into `projection.rs`. Use `crate::source::source_visible_text` for source-side normalization:
 
@@ -922,7 +931,7 @@ pub fn check(validation_body: &str, projected_visible_text: &str) -> ProjectionS
 }
 ```
 
-- [ ] **Step 4: Wire fallback decision in `lib.rs`**
+- [x] **Step 4: Wire fallback decision in `lib.rs`**
 
 In `aat_json_from_bytes`, use this flow:
 
@@ -956,7 +965,7 @@ let (blocks, projected) = if fallback.used {
 
 Assemble `AatBuildResult` with `timings: initial.timings` and `projection`.
 
-- [ ] **Step 5: Add direct fallback block test**
+- [x] **Step 5: Add direct fallback block test**
 
 Add to `adapters/aozora-rs/src/aat.rs` tests:
 
@@ -971,7 +980,7 @@ fn fallback_blocks_use_source_visible_text() {
 }
 ```
 
-- [ ] **Step 6: Run tests**
+- [x] **Step 6: Run tests**
 
 Run:
 
@@ -981,7 +990,7 @@ cargo test --manifest-path adapters/aozora-rs/Cargo.toml
 
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add adapters/aozora-rs/src/lib.rs adapters/aozora-rs/src/aat.rs adapters/aozora-rs/src/projection.rs
@@ -995,7 +1004,7 @@ git commit -m "refactor: make aozora-rs projection fallback explicit (task 5)"
 - Modify: `adapters/aozora-rs/src/metrics.rs`
 - Modify: `adapters/aozora-rs/src/parser.rs`
 
-- [ ] **Step 1: Write failing metadata test**
+- [x] **Step 1: Write failing metadata test**
 
 Update `emits_schema_shaped_aat_for_ruby_and_gaiji` in `lib.rs` to assert:
 
@@ -1016,7 +1025,7 @@ assert!(metrics["tokenized_count"].as_u64().unwrap() > 0);
 assert!(metrics["retokenized_count"].as_u64().unwrap() > 0);
 ```
 
-- [ ] **Step 2: Run test to verify failure**
+- [x] **Step 2: Run test to verify failure**
 
 Run:
 
@@ -1026,7 +1035,7 @@ cargo test --manifest-path adapters/aozora-rs/Cargo.toml emits_schema_shaped_aat
 
 Expected: FAIL because `meta.metrics` is not present.
 
-- [ ] **Step 3: Add `AdapterMetrics::from_parts`**
+- [x] **Step 3: Add `AdapterMetrics::from_parts`**
 
 In `metrics.rs`, implement:
 
@@ -1065,7 +1074,7 @@ impl AdapterMetrics {
 }
 ```
 
-- [ ] **Step 4: Measure decode, projection, and fallback in `lib.rs`**
+- [x] **Step 4: Measure decode, projection, and fallback in `lib.rs`**
 
 Update `aat_json_from_bytes`:
 
@@ -1119,7 +1128,7 @@ fn fallback_is_reported_in_metrics_for_large_body() {
 }
 ```
 
-- [ ] **Step 5: Run tests**
+- [x] **Step 5: Run tests**
 
 Run:
 
@@ -1129,7 +1138,7 @@ cargo test --manifest-path adapters/aozora-rs/Cargo.toml
 
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add adapters/aozora-rs/src/lib.rs adapters/aozora-rs/src/metrics.rs adapters/aozora-rs/src/parser.rs
@@ -1146,7 +1155,7 @@ git commit -m "feat: emit aozora-rs adapter metrics (task 6)"
 
 This aggregation intentionally reads AAT artifacts, not `ab-check` reports. It is generic over any adapter that emits the required `meta.metrics` fields; missing or malformed metrics should be an error, not silently skipped.
 
-- [ ] **Step 1: Write failing aggregation test**
+- [x] **Step 1: Write failing aggregation test**
 
 Add to `crates/ab-compare/tests/integration.rs`:
 
@@ -1189,7 +1198,7 @@ fn summarizes_aat_metrics() {
 }
 ```
 
-- [ ] **Step 2: Run test to verify failure**
+- [x] **Step 2: Run test to verify failure**
 
 Run:
 
@@ -1199,7 +1208,7 @@ cargo test -p ab-compare summarizes_aat_metrics
 
 Expected: FAIL because `ab_compare::metrics` does not exist.
 
-- [ ] **Step 3: Implement metrics aggregation**
+- [x] **Step 3: Implement metrics aggregation**
 
 Create `crates/ab-compare/src/metrics.rs`:
 
@@ -1323,7 +1332,7 @@ fn stages(metrics: &AatMetrics) -> BTreeMap<String, f64> {
 }
 ```
 
-- [ ] **Step 4: Export module and add CLI flags**
+- [x] **Step 4: Export module and add CLI flags**
 
 In `crates/ab-compare/src/lib.rs`:
 
@@ -1355,7 +1364,7 @@ if let Some(metrics_root) = &args.metrics_root {
 }
 ```
 
-- [ ] **Step 5: Run tests**
+- [x] **Step 5: Run tests**
 
 Run:
 
@@ -1365,7 +1374,7 @@ cargo test -p ab-compare
 
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add crates/ab-compare/src/lib.rs crates/ab-compare/src/main.rs crates/ab-compare/src/metrics.rs crates/ab-compare/tests/integration.rs
@@ -1382,7 +1391,7 @@ git commit -m "feat: summarize adapter AAT metrics (task 7)"
 
 This task closes the gap where `ab-compare` reports "0 differences" while only comparing validation report pass/fail results. It compares persisted AAT artifacts and reports structural/projection differences separately from validation differences.
 
-- [ ] **Step 1: Write a failing AAT structural comparison test**
+- [x] **Step 1: Write a failing AAT structural comparison test**
 
 Add to `crates/ab-compare/tests/integration.rs`:
 
@@ -1428,7 +1437,7 @@ fn detects_aat_structural_differences_when_reports_match() {
 }
 ```
 
-- [ ] **Step 2: Run test to verify failure**
+- [x] **Step 2: Run test to verify failure**
 
 Run:
 
@@ -1438,7 +1447,7 @@ cargo test -p ab-compare detects_aat_structural_differences_when_reports_match
 
 Expected: FAIL because `ab_compare::aat_diff` does not exist.
 
-- [ ] **Step 3: Implement AAT artifact summaries**
+- [x] **Step 3: Implement AAT artifact summaries**
 
 Create `crates/ab-compare/src/aat_diff.rs`:
 
@@ -1582,7 +1591,7 @@ Then implement `collect_blocks(...)` by walking `blocks` recursively:
   - `gaiji`: append `resolved` when non-empty, otherwise `description`
   - containers: recurse into `content`, `children`, `upper`, and `lower`
 
-- [ ] **Step 4: Add dependency and exports**
+- [x] **Step 4: Add dependency and exports**
 
 The workspace already defines `sha2 = "0.10"` in `Cargo.toml`.
 
@@ -1598,7 +1607,7 @@ Add to `crates/ab-compare/src/lib.rs`:
 pub mod aat_diff;
 ```
 
-- [ ] **Step 5: Add CLI flags**
+- [x] **Step 5: Add CLI flags**
 
 In `crates/ab-compare/src/main.rs`, add optional args:
 
@@ -1628,7 +1637,7 @@ if let (Some(aats_a), Some(aats_b), Some(output)) =
 }
 ```
 
-- [ ] **Step 6: Run tests**
+- [x] **Step 6: Run tests**
 
 Run:
 
@@ -1638,7 +1647,7 @@ cargo test -p ab-compare
 
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add crates/ab-compare/Cargo.toml crates/ab-compare/src/lib.rs crates/ab-compare/src/main.rs crates/ab-compare/src/aat_diff.rs crates/ab-compare/tests/integration.rs
@@ -1651,7 +1660,7 @@ git commit -m "feat: compare persisted AAT structure (task 8)"
 - Modify: `benchmarks/run-parser-comparison.sh`
 - Modify: `benchmarks/baselines/2026-04-26-parser-comparison.json` or add a new dated baseline file after a stable full run
 
-- [ ] **Step 1: Update runner to write metrics summary**
+- [x] **Step 1: Update runner to write metrics summary**
 
 After the existing `target/release/ab-compare --reports-a ...` command in `benchmarks/run-parser-comparison.sh`, add:
 
@@ -1683,7 +1692,7 @@ aozora_rs_metrics: $metrics[0],
 aat_structure_comparison: $aatdiff[0]
 ```
 
-- [ ] **Step 2: Run script syntax check**
+- [x] **Step 2: Run script syntax check**
 
 Run:
 
@@ -1693,7 +1702,7 @@ bash -n benchmarks/run-parser-comparison.sh
 
 Expected: no output and exit code 0.
 
-- [ ] **Step 3: Run a small corpus smoke comparison**
+- [x] **Step 3: Run a small corpus smoke comparison**
 
 Run:
 
@@ -1703,7 +1712,7 @@ AB_BENCH_OUT=/tmp/ab-validator-compare-smoke AB_BENCH_JOBS=2 AB_BENCH_TIMEOUT=12
 
 Expected: script completes; `/tmp/ab-validator-compare-smoke/summary.json` contains `aozora_rs_metrics`.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add benchmarks/run-parser-comparison.sh
@@ -1717,7 +1726,7 @@ git commit -m "bench: include aozora-rs metrics summary (task 9)"
 - Modify: `adapters/aozora-rs/src/source.rs` and `adapters/aozora-rs/src/aat.rs` if repeated regex construction dominates measured adapter-owned time.
 - Modify: `benchmarks/baselines/2026-04-26-aozora-rs-performance.json` after a stable full-corpus run.
 
-- [ ] **Step 1: Run adapter Criterion benchmark before optimization**
+- [x] **Step 1: Run adapter Criterion benchmark before optimization**
 
 Run:
 
@@ -1727,7 +1736,7 @@ cargo bench --manifest-path adapters/aozora-rs/Cargo.toml --bench adapter_bench
 
 Expected: benchmark completes and reports `aozora_rs_adapter_aat_json_large`.
 
-- [ ] **Step 2: Run full-corpus comparison with metrics**
+- [x] **Step 2: Run full-corpus comparison with metrics**
 
 Run:
 
@@ -1742,7 +1751,7 @@ Expected:
 - `comparison.result_differences == []`
 - `aozora_rs_metrics.stage_totals_ms` identifies the dominant stage.
 
-- [ ] **Step 3: Verify schema stability after the refactor**
+- [x] **Step 3: Verify schema stability after the refactor**
 
 Compare AAT artifacts from the pre-refactor and metrics runs for the golden fixture and, when both full AAT directories are available, the full corpus:
 
@@ -1754,7 +1763,7 @@ diff -ur \
 
 Expected: differences are limited to the newly added `meta.metrics` object. Validation reports must remain unchanged by `ab-compare`.
 
-- [ ] **Step 4: Choose one optimization from the measured dominant adapter-owned stage**
+- [x] **Step 4: Choose one optimization from the measured dominant adapter-owned stage**
 
 Use this decision table:
 
@@ -1767,7 +1776,7 @@ Use this decision table:
 - If `aat_build` is dominant, first confirm repeated regex construction with a benchmark or profiler sample, then replace local `Regex::new(...).unwrap()` calls with `std::sync::OnceLock<Regex>` statics in `source.rs` and `aat.rs`.
 - If `fallback_build` is dominant or non-zero for more than 1% of works, reuse the source-visible string computed during `projection::check` by returning it in a separate value only if this does not force long-lived borrow chains.
 
-- [ ] **Step 5: Write a focused failing benchmark or test for the chosen optimization**
+- [x] **Step 5: Write a focused failing benchmark or test for the chosen optimization**
 
 For repeated regex construction, add to `adapters/aozora-rs/src/source.rs`:
 
@@ -1794,7 +1803,7 @@ fn projection_rejects_when_projected_text_is_longer_than_source() {
 }
 ```
 
-- [ ] **Step 6: Implement only the measured optimization**
+- [x] **Step 6: Implement only the measured optimization**
 
 For regex construction, use `OnceLock`:
 
@@ -1828,7 +1837,7 @@ if projected_visible_chars > source_visible_chars {
 }
 ```
 
-- [ ] **Step 7: Run focused tests and benchmark**
+- [x] **Step 7: Run focused tests and benchmark**
 
 Run:
 
@@ -1839,7 +1848,7 @@ cargo bench --manifest-path adapters/aozora-rs/Cargo.toml --bench adapter_bench
 
 Expected: tests pass. The benchmark median for `aozora_rs_adapter_aat_json_large` is not more than 5% slower than the Task 10 Step 1 pre-optimization run.
 
-- [ ] **Step 8: Run full-corpus validation again**
+- [x] **Step 8: Run full-corpus validation again**
 
 Run:
 
@@ -1853,7 +1862,7 @@ Expected:
 - `comparison.result_differences == []`
 - Runtime is at least 25% lower than 1690.014773 seconds, or metrics show at least 90% of remaining measured time inside `tokenize + scopenize + retokenize`.
 
-- [ ] **Step 9: Commit optimization and baseline**
+- [x] **Step 9: Commit optimization and baseline**
 
 If the run is stable, copy `/tmp/ab-validator-compare-optimized/summary.json` to a new baseline path such as:
 
@@ -1873,7 +1882,7 @@ git commit -m "perf: optimize measured aozora-rs adapter stage (task 10)"
 **Files:**
 - Modify only if review finds issues.
 
-- [ ] **Step 1: Run formatting**
+- [x] **Step 1: Run formatting**
 
 ```bash
 cargo fmt --check
@@ -1882,7 +1891,7 @@ cargo fmt --check --manifest-path adapters/aozora-rs/Cargo.toml
 
 Expected: PASS.
 
-- [ ] **Step 2: Run tests**
+- [x] **Step 2: Run tests**
 
 ```bash
 cargo test --workspace
@@ -1891,7 +1900,7 @@ cargo test --manifest-path adapters/aozora-rs/Cargo.toml
 
 Expected: PASS.
 
-- [ ] **Step 3: Run clippy**
+- [x] **Step 3: Run clippy**
 
 ```bash
 cargo clippy --workspace --all-targets -- -D warnings
@@ -1900,7 +1909,7 @@ cargo clippy --manifest-path adapters/aozora-rs/Cargo.toml --all-targets -- -D w
 
 Expected: PASS.
 
-- [ ] **Step 4: Run benchmark compile check**
+- [x] **Step 4: Run benchmark compile check**
 
 ```bash
 cargo bench --manifest-path adapters/aozora-rs/Cargo.toml --bench adapter_bench -- --test
@@ -1908,7 +1917,7 @@ cargo bench --manifest-path adapters/aozora-rs/Cargo.toml --bench adapter_bench 
 
 Expected: PASS.
 
-- [ ] **Step 5: Run Nix verification**
+- [x] **Step 5: Run Nix verification**
 
 ```bash
 nix flake check
@@ -1916,7 +1925,7 @@ nix flake check
 
 Expected: PASS.
 
-- [ ] **Step 6: Perform Rich Hickey review**
+- [x] **Step 6: Perform Rich Hickey review**
 
 Check and record answers in the final response:
 
@@ -1927,7 +1936,7 @@ Check and record answers in the final response:
 - Fallback is represented as data in AAT metadata and aggregate summaries.
 - Any optimization is justified by metrics rather than speculation.
 
-- [ ] **Step 7: Commit any verification fixes**
+- [x] **Step 7: Commit any verification fixes**
 
 If fixes were needed:
 

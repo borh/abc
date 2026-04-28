@@ -13,13 +13,15 @@ All plan documents in `docs/superpowers/plans/` now use front-matter status fiel
 
 ## Active plans
 
-1. `2026-04-28-aozora2html-adapter` (active)
-   - Adds the official Ruby parser as a third adapter so AAT-level parity
-     replaces the broken pandoc-based parity script.
+1. `2026-04-28-syntax-coverage-report` (active)
+   - Extends the syntax coverage matrix to the full Aozora feature set
+     with per-parser recognition state, per-adapter AAT fidelity state,
+     and whole-corpus prevalence numbers backed by a content-addressed
+     parser-output cache.
 
 ## Archived plans
 
-All seven previously queued plans landed and were moved to
+All previously queued plans landed and were moved to
 `docs/superpowers/archive/`:
 
 - `2026-04-25-parser-validation-harness`
@@ -29,6 +31,7 @@ All seven previously queued plans landed and were moved to
 - `2026-04-26-aozora-rs-comparison`
 - `2026-04-26-aozora-rs-performance`
 - `2026-04-26-aozora-syntax-coverage-increment`
+- `2026-04-28-aozora2html-adapter`
 
 ## Open spec gaps
 

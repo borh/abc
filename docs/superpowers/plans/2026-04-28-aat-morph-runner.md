@@ -4,7 +4,7 @@
 
 **Goal:** Build a small AAT-first morph runner that converts checked AAT JSON into plaintext documents, runs selected morph analyzers, and writes analysis/comparison JSONL.
 
-**Architecture:** `ab-plaintext` becomes the single owner of AAT visible-text projection. `ab-check` reuses that projection instead of maintaining a duplicate walker. A new binary crate `ab-morph-run` reads checked AAT files, resolves requested analyzers through `ab-morph-analyzers`, serializes `Analysis` rows, and optionally serializes `Comparison` rows using `ab-morph-diff`.
+**Architecture:** `ab-plaintext` owns plain string AAT projection. `ab-check` keeps fragment projection for validation paths/nodes, with equivalence tests against `ab-plaintext` so the two policies cannot silently drift. A new binary crate `ab-morph-run` reads checked AAT files, resolves requested analyzers through `ab-morph-analyzers`, serializes `Analysis` rows, and optionally serializes `Comparison` rows using `ab-morph-diff`.
 
 **Tech Stack:** Rust edition 2024, `serde`, `serde_json`, `clap`, `anyhow`, `ab-plaintext`, `ab-check`, `ab-morph-analyzers`, `ab-morph-diff`, checked AAT JSON from `ab-check --aat-output`.
 
@@ -26,7 +26,7 @@ crates/ab-morph-run/src/main.rs
 
 ---
 
-### Task 1: Move Shared AAT Projection Into `ab-plaintext`
+### Task 1: Add Shared Plain AAT Projection To `ab-plaintext`
 
 **Files:**
 - Modify: `crates/ab-plaintext/Cargo.toml`
@@ -41,12 +41,6 @@ Add to `crates/ab-plaintext/Cargo.toml`:
 
 ```toml
 serde_json.workspace = true
-```
-
-Add to `crates/ab-check/Cargo.toml`:
-
-```toml
-ab-plaintext.workspace = true
 ```
 
 - [ ] **Step 2: Extend `ab-plaintext` public API**
@@ -195,17 +189,25 @@ let aat = serde_json::json!({
 assert_eq!(visible_text_projection(&aat), "fallback");
 ```
 
-- [ ] **Step 5: Make `ab-check` reuse `ab-plaintext`**
+- [ ] **Step 5: Add ab-check equivalence regression**
 
-In `crates/ab-check/src/aat.rs`, change the existing `visible_text_projection` function body to delegate:
+Keep `VisibleFragment`, `visible_text_fragments`, and the path/node helper walker in `ab-check`. Add a test fixture that reduces fragments to a string and compares it with `ab_plaintext::visible_text_projection`. The fixture must include text, ruby, raw, warigaki, `resolved: ""` gaiji, and missing-`resolved` gaiji.
+
+Reduction rule in the test:
 
 ```rust
-pub fn visible_text_projection(aat: &Value) -> String {
-    ab_plaintext::visible_text_projection(aat)
+fn fragments_to_text(aat: &serde_json::Value) -> String {
+    visible_text_fragments(aat)
+        .into_iter()
+        .map(|fragment| match fragment {
+            VisibleFragment::Text { value, .. } => value,
+            VisibleFragment::Gaiji { resolved, description, .. } => {
+                resolved.unwrap_or(description)
+            }
+        })
+        .collect()
 }
 ```
-
-Keep `visible_text_fragments`, `VisibleFragment`, and path/node helper functions in `ab-check` because validation still uses them.
 
 - [ ] **Step 6: Verify and commit**
 
@@ -213,14 +215,14 @@ Run:
 
 ```bash
 cargo test -p ab-plaintext
-cargo test -p ab-check aat::tests::visible_projection_excludes_unresolved_gaiji_descriptions
+cargo test -p ab-check aat
 ```
 
 Commit:
 
 ```bash
 git add crates/ab-plaintext crates/ab-check Cargo.lock
-git commit -m "feat: share AAT visible text projection"
+git commit -m "feat: add shared AAT plaintext projection"
 ```
 
 ---
@@ -279,6 +281,8 @@ git commit -m "feat: add morph runner CLI skeleton"
 
 Implement `discover_aat_inputs(aat, aat_dir)`:
 
+- `--aat` must be a regular file;
+- `--aat-dir` must be an existing directory;
 - single file returns that file;
 - directory returns sorted `*.json` files;
 - empty directory returns an error containing `no AAT JSON files`.
@@ -299,7 +303,7 @@ Use:
 
 - [ ] **Step 4: Write analysis JSONL**
 
-Open `--analyses-output` with create/truncate semantics. For every AAT and analyzer, write:
+Create the parent directory for `--analyses-output` if needed, then open it with create/truncate semantics. For every AAT and analyzer, write:
 
 ```rust
 #[derive(serde::Serialize)]
@@ -340,7 +344,7 @@ git commit -m "feat: write morph analysis JSONL from AAT"
 
 - [ ] **Step 1: Add comparison rows**
 
-Use create/truncate semantics for `--comparisons-output` when provided. Row shape:
+Create the parent directory for `--comparisons-output` if needed, then use create/truncate semantics when provided. Row shape:
 
 ```rust
 #[derive(serde::Serialize)]
@@ -362,7 +366,7 @@ ab_morph_diff::compare_pair(&analyses[i], &analyses[j], &[])
 
 - [ ] **Step 3: Add valid analysis helper test**
 
-Use helpers that construct valid `Analysis` values with `source_text: "今日"`, `surface: "今日"`, `byte_span: 0..6`, and `char_span: 0..2`. Confirm two analyses produce exactly one comparison row. Do not hand-wave span construction.
+Copy the shape of the existing `ab-morph-diff` test helper (`crates/ab-morph-diff/src/lib.rs`, `m()` helper) and construct valid `Analysis` values with `source_text: "今日"`, `surface: "今日"`, `byte_span: 0..6`, and `char_span: 0..2`. Confirm two analyses produce exactly one comparison row. Do not hand-wave span construction.
 
 - [ ] **Step 4: Verify and commit**
 
@@ -418,14 +422,14 @@ AB_SUDACHI_DICT="$(nix path-info .#sudachi-dictionary-full)/share/sudachi/system
   --comparisons-output /tmp/comparisons.jsonl
 ```
 
-Expected: command exits 0 and both output files are non-empty.
+Expected: command exits 0 and both output files are non-empty. This smoke input is AAT-shaped JSON, not proof of checked-ness; checked AAT is workflow guidance supplied by `ab-check --aat-output`, not a runtime contract enforced by `ab-morph-run`.
 
 ## Self-Review
 
 Spec coverage:
 
-- Shared AAT projection ownership is Task 1.
-- `ab-check` dedupe/reuse is Task 1.
+- Shared plain AAT projection ownership is Task 1.
+- `ab-check` fragment/plain projection equivalence coverage is Task 1.
 - AAT-file runner CLI is Task 2.
 - Analysis JSONL is Task 3.
 - Comparison JSONL is Task 4.

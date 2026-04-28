@@ -36,17 +36,14 @@ corpus + index
 `ab-check` remains responsible for adapter invocation, timeout handling, schema
 validation, invariant checks, `work_id` rewriting, and checked AAT output.
 
-`ab-plaintext` becomes the single owner of AAT visible-text projection:
+`ab-plaintext` owns plain string projection:
 
 ```rust
 pub fn from_aat_value(aat: &serde_json::Value) -> Result<PlainTextDocument, PlainTextError>;
 pub fn visible_text_projection(aat: &serde_json::Value) -> String;
 ```
 
-`ab-check` should stop owning a separate projection implementation and call
-`ab_plaintext::visible_text_projection` instead. If `ab-check` still needs
-path/node-bearing fragments, those can stay local to `ab-check`; only the plain
-string projection must be shared.
+`ab-check` keeps its path/node-bearing fragment projection because validation needs paths and borrowed nodes. That is an intentional split, not a second owner of plain string projection. To catch drift, `ab-check` must include regression fixtures asserting that reducing `visible_text_fragments` to a string matches `ab_plaintext::visible_text_projection`.
 
 `ab-morph-run` reads checked AAT JSON files, converts them to
 `PlainTextDocument`, runs selected analyzers, writes `Analysis` JSONL, and
@@ -108,11 +105,15 @@ Sudachi analyzers require `AB_SUDACHI_DICT`, matching the convention already use
 by `ab-morph-analyzers` ignored tests. In `nix develop`, the flake sets it to the
 reproducible Sudachi full dictionary package. The flake output
 `.#sudachi-dictionary-full` already exists and can be used by smoke tests.
+The `vibrato:unidic-cwj-202512` suffix in emitted rows comes from
+`MorphAnalyzer::analyzer_id()` and identifies the dictionary version chosen by the
+analyzer implementation.
 
 ## 5. Output Formats
 
-Output files are truncated/replaced on each run. The runner does not append to
-existing JSONL files.
+Output files are truncated/replaced on each run. Parent directories for output
+paths are created automatically. The runner does not append to existing JSONL
+files.
 
 ### 5.1 Analysis JSONL
 
@@ -124,7 +125,9 @@ One JSON object per `(text_id, analyzer)`:
 
 The wrapper duplicates `analysis.text_id` and `analysis.analyzer` intentionally:
 JSONL rows remain grep-friendly without deserializing the nested analysis. This
-is a wire-format convenience, not a separate source of truth.
+is a wire-format convenience, not a separate source of truth. Rows can be large;
+downstream tools should process the file as streaming JSONL rather than loading
+the whole file by default.
 
 ### 5.2 Comparison JSONL
 
@@ -153,7 +156,8 @@ Fail fast on:
 - analyzer tokenization failure;
 - morpheme comparison validation failure.
 
-`--aat-dir` with no `*.json` files is an error. Empty output caused by an empty
+`--aat` must point to a regular file. `--aat-dir` must point to an existing
+directory. A directory with no `*.json` files is an error. Empty output caused by an empty
 AAT text is not an error; analyzers may emit zero morphemes and comparisons will
 surface coverage behavior.
 
@@ -166,7 +170,8 @@ This phase does not add:
 
 - adapter invocation from `ab-morph-run`;
 - corpus index traversal;
-- AAT schema validation;
+- AAT schema validation; the runner accepts AAT-shaped JSON and relies on the
+  workflow, not runtime enforcement, for checked-ness;
 - aggregation dashboards;
 - HTML/CSV reports;
 - Markdown or TEI export;
@@ -184,8 +189,9 @@ Required `ab-plaintext` tests:
 
 Required `ab-check` tests:
 
-- `ab_check::aat::visible_text_projection` delegates to `ab_plaintext` or is
-  removed from the public surface if no longer needed.
+- reducing `visible_text_fragments` over fixture AAT values produces the same
+  string as `ab_plaintext::visible_text_projection`; include text, ruby, raw,
+  warigaki, empty resolved gaiji, and missing resolved gaiji cases.
 
 Required `ab-morph-run` tests:
 
@@ -215,7 +221,8 @@ Scope check:
 
 - The design is one subsystem: checked AAT to morph artifacts.
 - It does not duplicate adapter execution or corpus index traversal.
-- It does not keep two separate visible-text projection implementations.
+- It keeps one owner for plain string projection. `ab-check` retains fragment
+  projection for validation, with equivalence tests against `ab-plaintext`.
 
 Ambiguity check:
 

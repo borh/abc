@@ -85,3 +85,17 @@
   (testing "the example's embedded schema hash matches the live schema"
     (is (= (manifest/schema-hash schema-path)
            (get (example-person) "person_record_schema_hash")))))
+
+(deftest record->graph-key-triples-test
+  (testing "record->graph emits FOAF + RDA Group 2 triples for one person"
+    (let [g (pr/record->graph (example-person))
+          triples (iterator-seq (.find g))
+          predicates (set (map #(.getURI (.getPredicate %)) triples))
+          subjects (set (map #(.getURI (.getSubject %)) triples))]
+      (is (contains? subjects (pr/person-iri "000879")))
+      (is (contains? predicates "http://purl.org/dc/terms/identifier"))
+      (is (contains? predicates "http://xmlns.com/foaf/0.1/familyName"))
+      (is (contains? predicates "http://xmlns.com/foaf/0.1/givenName"))
+      (is (contains? predicates "http://xmlns.com/foaf/0.1/name"))
+      (is (contains? predicates "http://RDVocab.info/ElementsGr2/dateOfBirth"))
+      (is (contains? predicates "http://RDVocab.info/ElementsGr2/dateOfDeath")))))

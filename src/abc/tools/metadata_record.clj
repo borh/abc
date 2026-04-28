@@ -11,13 +11,14 @@
             [abc.tools.hash :as hash]
             [abc.tools.manifest :as manifest]
             [abc.tools.manifest-to-rdf :as manifest-to-rdf]
+            [abc.tools.person-record :as person-record]
             [abc.tools.rdf-prefixes :as rdf-prefixes]
             [abc.tools.schema :as schema]
             [arachne.aristotle :as aa]
             [clojure.string :as string])
   (:import [org.apache.jena.datatypes.xsd XSDDatatype]
            [org.apache.jena.datatypes BaseDatatype]
-           [org.apache.jena.graph NodeFactory]))
+           [org.apache.jena.graph GraphUtil NodeFactory]))
 
 (def schema-path "schemas/metadata-record.schema.json")
 (def schema-id "https://w3id.org/abc/schemas/metadata-record.schema.json")
@@ -89,34 +90,6 @@
 (defn- ndc-literal [ndc-string]
   (NodeFactory/createLiteral ^String ndc-string ^BaseDatatype dcndl-ndc-datatype))
 
-(defn- person-data [person]
-  (let [iri (person-iri (get person "person_id"))]
-    (cond-> {:rdf/about iri
-             :rdf/type [:foaf/Person]
-             :dcterms/identifier (->int-literal (get person "person_id"))
-             :foaf/familyName (get person "family_name")
-             :foaf/givenName (get person "given_name")
-             :foaf/name (str (get person "family_name") " "
-                             (get person "given_name"))}
-      (get person "family_name_reading")
-      (assoc :abc/familyNameReading (get person "family_name_reading"))
-      (get person "given_name_reading")
-      (assoc :abc/givenNameReading (get person "given_name_reading"))
-      (get person "family_name_sort")
-      (assoc :abc/familyNameForSort (get person "family_name_sort"))
-      (get person "given_name_sort")
-      (assoc :abc/givenNameForSort (get person "given_name_sort"))
-      (get person "family_name_romaji")
-      (assoc :abc/familyNameRomaji (get person "family_name_romaji"))
-      (get person "given_name_romaji")
-      (assoc :abc/givenNameRomaji (get person "given_name_romaji"))
-      (get person "date_of_birth")
-      (assoc :rdag2/dateOfBirth (->date-literal (get person "date_of_birth")))
-      (get person "date_of_death")
-      (assoc :rdag2/dateOfDeath (->date-literal (get person "date_of_death")))
-      (seq (get person "external_links"))
-      (assoc :rdfs/seeAlso (mapv #(str "<" % ">") (get person "external_links"))))))
-
 (defn- title-blank-node [work]
   (let [reading (get work "title_reading")]
     (cond-> {:rdf/value (get work "title")}
@@ -146,7 +119,9 @@
 
 (defn record->graph
   "Build a Jena graph from a metadata record using the resolved
-  vocabulary mapping (see spec §RDF vocabulary alignment)."
+  vocabulary mapping (see spec §RDF vocabulary alignment). Person
+  body triples come from abc.tools.person-record/record->graph; the
+  metadata-record namespace owns work + contributor edges only."
   [record]
   (rdf-prefixes/ensure!)
   (let [work (get record "work")
@@ -154,7 +129,7 @@
         graph (aa/graph :simple)]
     (aa/add graph (work-data work persons))
     (doseq [p persons]
-      (aa/add graph (person-data p)))
+      (GraphUtil/addInto graph (person-record/record->graph p)))
     graph))
 
 (defn record->ttl

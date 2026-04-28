@@ -111,9 +111,39 @@ row:
 
 A row's detector totals are the sum across both rule kinds; a row with
 neither AAT-kind nor source-pattern declarations contributes zero.
-Detector tuning per row (e.g., the current `annotation.bouki` /
-`annotation.chuuki` / `kunten.okurigana` rows share an `aat_nodes` set
-and therefore report identical counts) is a follow-up.
+
+### Per-row detector tuning
+
+Rows that share an `aat_nodes` signature (e.g., the 19 rows whose only AAT
+hook is `kind = "style"`) initially reported identical inflated counts.
+The matrix carries a `corpus_prevalence.detector_id` field per row; when
+present, the registry resolves it to a hand-written `fn(&Value) -> u64`
+in `crates/ab-coverage/src/detectors.rs` instead of the generic kind
+matcher. Source-side regexes are always added on top.
+
+Disambiguation strategies in use:
+
+- **Style group.** `style_type` attribute matching against curated lists
+  (`BOTEN_TYPES`, `BOUSEN_TYPES`, `BOLD_ITALIC_TYPES`) plus container
+  kind matching (`jisage_block`, `keigakomi_block`, `tcy`, `yokogumi`,
+  `warichu`, `warigaki`).
+- **Gaiji group.** `description` substring matching for water-level
+  references (`第3水準`/`第4水準`), explicit `jis_code` field presence,
+  Unicode `U+` markers, dakuten/half-dakuten descriptors, and
+  `resolved=null && jis_code=null` for unresolved markers.
+- **Ruby group.** `direction` attribute (`left`/`below`) for the
+  directional row; AAT-only umbrella for `ruby.basic`.
+- **Heading / caption groups.** `heading.basic` and `caption.inline`
+  count any matching kind; sub-rows fall back to source-only because the
+  inline forms (`同行`/`窓` headings, captioned blocks) carry no
+  distinguishing AAT attribute.
+
+Result: previously-identical rows now produce distinct counts. For the
+style group the 19-row span goes from a single `12 354` figure to
+`6 714` (`indentation.jisage_block`), `6 467` (`emphasis.basic`),
+`6 201` (`decoration.boten`), … down to `0` (`kunten.kaeriten`,
+source-pattern fallback). Convention: detector id is the row id with
+`.` replaced by `_`.
 
 ### Sample-works selection
 
@@ -200,10 +230,10 @@ adapter for synthesis.
   authoritative source for parser/adapter coverage; ab-index keeps
   using `feature-patterns.toml` for feature flags. A follow-up plan
   will fold the two.
-- Per-row detector functions (`detector_id` referencing a small
-  hand-written fn) where the generic AAT-kind detector over-matches.
-  The rows currently sharing identical `aat_nodes` sets are the first
-  candidates.
+- Source-pattern audit for the rows that still report `0`
+  (`kunten.kaeriten`, `kunten.okurigana`, `accent.diacritic`,
+  `ruby.double`). The disambiguation work landed; the regexes for these
+  rows now look out of step with what the corpus actually emits.
 - Adding `AozoraEpub3-JDK21`, `aozora-parser.js`, and
   `aozorabunko-extractor` as additional parser/adapter columns. The
   open-keyed schema and the per-parser cache layout already accept

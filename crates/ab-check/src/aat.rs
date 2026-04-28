@@ -16,17 +16,7 @@ pub enum VisibleFragment<'a> {
 }
 
 pub fn visible_text_projection(aat: &Value) -> String {
-    visible_text_fragments(aat)
-        .into_iter()
-        .map(|fragment| match fragment {
-            VisibleFragment::Text { value, .. } => value,
-            VisibleFragment::Gaiji {
-                resolved,
-                description,
-                ..
-            } => resolved.unwrap_or(description),
-        })
-        .collect()
+    ab_plaintext::visible_text_projection(aat)
 }
 
 pub fn visible_text_fragments<'a>(aat: &'a Value) -> Vec<VisibleFragment<'a>> {
@@ -159,6 +149,47 @@ fn collect_inline_kind<'a>(
 mod tests {
     use super::*;
     use serde_json::json;
+
+
+    fn fragments_to_text(aat: &Value) -> String {
+        visible_text_fragments(aat)
+            .into_iter()
+            .map(|fragment| match fragment {
+                VisibleFragment::Text { value, .. } => value,
+                VisibleFragment::Gaiji {
+                    resolved,
+                    description,
+                    ..
+                } => resolved.unwrap_or(description),
+            })
+            .collect()
+    }
+
+    #[test]
+    fn fragment_projection_matches_plaintext_projection() {
+        let aat = json!({
+            "blocks": [{
+                "kind": "paragraph",
+                "content": [
+                    {"kind": "text", "value": "A"},
+                    {"kind": "ruby", "base": "B", "reading": "ビー"},
+                    {"kind": "gaiji", "description": "desc", "resolved": "C"},
+                    {"kind": "gaiji", "description": "empty", "resolved": ""},
+                    {"kind": "gaiji", "description": "D"},
+                    {"kind": "raw", "source": "E"},
+                    {
+                        "kind": "warigaki",
+                        "upper": [{"kind": "text", "value": "F"}],
+                        "lower": [{"kind": "text", "value": "G"}]
+                    },
+                    {"kind": "style", "content": [{"kind": "text", "value": "H"}]}
+                ]
+            }]
+        });
+
+        assert_eq!(fragments_to_text(&aat), ab_plaintext::visible_text_projection(&aat));
+        assert_eq!(fragments_to_text(&aat), "ABCDEFGH");
+    }
 
     #[test]
     fn visible_projection_excludes_unresolved_gaiji_descriptions() {

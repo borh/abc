@@ -6,6 +6,7 @@ version = 4
 name = "ab-check"
 version = "0.1.0"
 dependencies = [
+ "ab-plaintext",
  "ab-source-syntax",
  "anyhow",
  "clap",
@@ -119,6 +120,7 @@ dependencies = [
  "ab-source-syntax",
  "encoding_rs",
  "serde",
+ "serde_json",
 ]
 
 [[package]]

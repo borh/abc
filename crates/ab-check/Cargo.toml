@@ -5,6 +5,7 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
+ab-plaintext.workspace = true
 ab-source-syntax.workspace = true
 anyhow.workspace = true
 clap.workspace = true

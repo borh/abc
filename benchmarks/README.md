@@ -91,6 +91,33 @@ The current aozora-rs smoke sample produced 101 reports from the first 100
 selected work IDs because the corpus index contains duplicate IDs for alternate
 source files. All properties passed.
 
+## Three-Way AAT Parity
+
+`run-aat-parity.sh` runs all three adapters (`aozora2`, `aozora-rs`,
+`aozora2html`) over the same work-id list and compares each pair via
+`ab-compare`. It replaces the prior `ab-validator-official-html-parity.sh`,
+which compared `pandoc`-of-text on both sides because no Rust adapter
+rendered HTML — that script reported 0/179 matches not because the parsers
+disagreed, but because the comparison was structurally broken. The new
+script compares structured AAT plus parser-emitted semantic summaries,
+which is what the harness was designed for.
+
+```bash
+benchmarks/run-aat-parity.sh \
+  --index /tmp/ab-index.json \
+  --work-ids /tmp/ab-work-ids.json \
+  --sample 25 \
+  --jobs 4
+```
+
+Output directory contains per-adapter `reports/` and `aats/`, per-pair
+`diff-*.json` and `cmp-*.json`, and a top-level `summary.json` with:
+
+- `total_works.<adapter>`
+- `schema_valid_failures.<adapter>`, `parse_complete_failures.<adapter>`
+- `aat_block_count_match.<pair>`, `aat_block_count_mismatch.<pair>`
+- `semantic_summary_hash_mismatch.<pair>.<syntax_id>` (per matrix row)
+
 ## Parser Comparison
 
 After both adapters build and pass sample validation, run:

@@ -60,7 +60,11 @@ pub struct FrequencyEntry<E> {
 
 - `new(max_examples: usize) -> Self`
 - `record(&mut self, key: K, example: E)` — increments count; pushes
-  example if below `max_examples` and not already present
+  example if below `max_examples` and the example is not already present
+  in the entry's list. Deduplication is by equality (`E: Eq`): each
+  unique example contributes at most once to the example list, regardless
+  of how many times it is recorded. The count still increments on every
+  call.
 - `get(&self, key: &K) -> Option<&FrequencyEntry<E>>`
 - `iter(&self) -> impl Iterator<Item = (&K, &FrequencyEntry<E>)>`
 - `len(&self) -> usize`
@@ -171,7 +175,44 @@ crates/ab-diff-utils/
 
 Add `ab-diff-utils = { path = "../ab-diff-utils" }` to `Cargo.toml`.
 
-### 3.2 `aat_diff.rs` — Add Coverage Delta
+### 3.2 `aat_diff.rs` — Extend AatSummary with Coverage Fields
+
+`AatSummary` (the internal struct built by `summarize()`) gains three
+fields to carry coverage data from the AAT JSON `meta.metrics`:
+
+```rust
+struct AatSummary {
+    // ... existing fields: work_id, structure_hash, visible_hash, etc. ...
+    fallback_used: bool,
+    fallback_reason: String,
+    source_bytes: usize,
+}
+```
+
+These are extracted in `summarize()` from `root.meta` (the `AatRoot.meta`
+field, typed as `Option<Value>`, already deserialized by `read_aat_summaries`).
+The extraction pattern:
+
+```rust
+fn summarize(root: AatRoot) -> Result<AatSummary> {
+    // ... existing structure/visible hashing ...
+    let (fallback_used, fallback_reason, source_bytes) = root
+        .meta
+        .as_ref()
+        .and_then(|meta| meta.get("metrics"))
+        .map(|metrics| {
+            (
+                metrics.get("fallback_used").and_then(Value::as_bool).unwrap_or(false),
+                metrics.get("fallback_reason").and_then(Value::as_str).unwrap_or("").to_owned(),
+                metrics.get("source_bytes").and_then(Value::as_u64).unwrap_or(0) as usize,
+            )
+        })
+        .unwrap_or_default();
+    Ok(AatSummary { /* ... existing ... */ fallback_used, fallback_reason, source_bytes })
+}
+```
+
+### 3.3 `aat_diff.rs` — Add CoverageDelta and Expand Difference Condition
 
 New struct:
 
@@ -194,11 +235,29 @@ Added as optional field on `AatStructuralDifference`:
 pub coverage_mismatch: Option<CoverageDelta>,
 ```
 
-Populated in `compare_aat_dirs_with_limit` when either side's
-`meta.metrics` has `fallback_used: true`. The metrics are already
-read from AAT JSON — no new parsing.
+**Condition change:** The existing condition for creating an
+`AatStructuralDifference` is:
 
-### 3.3 `aat_diff.rs` — Migrate to `ab-diff-utils`
+```rust
+if left.structure_hash != right.structure_hash
+    || left.visible_hash != right.visible_hash
+    || semantic_summary_hashes_differ.values().any(|differs| *differs)
+```
+
+This must expand to also trigger when **coverage differs without hash
+differences** — i.e., when one side had a fallback and the other didn't,
+even if the resulting hashes happen to match. The new condition adds:
+
+```rust
+    || left.fallback_used != right.fallback_used
+```
+
+When this triggers, `structural_difference_count` increments (as before),
+and `coverage_mismatch` is populated with the `CoverageDelta`.
+`visible_text_difference_count` and `same_visible_structural_difference_count`
+do NOT increment for coverage-only differences (no hash change).
+
+### 3.4 `aat_diff.rs` — Migrate to `ab-diff-utils`
 
 Remove and re-import:
 - `first_visible_difference` → use `ab_diff_utils::first_difference`
@@ -206,7 +265,7 @@ Remove and re-import:
 - `hash_bytes`, `hash_json`, `hash_string_sequence` →
   use `ab_diff_utils::{hash_bytes, hash_json, hash_string_sequence}`
 
-### 3.4 `triage.rs` — Migrate to `FrequencyTable`
+### 3.5 `triage.rs` — Migrate to `FrequencyTable`
 
 Replace `push_bucket` free function and `TriageBucket` struct with
 `FrequencyTable<String, String>` (keyed by property/feature name,
@@ -224,7 +283,7 @@ pub by_property: FrequencyTable<String, String>,
 `push_bucket(buckets, key, work_id)` call sites become
 `buckets.record(key, work_id)`.
 
-### 3.5 `triage.rs` — Add Coverage Mismatch Section
+### 3.6 `triage.rs` — Add Coverage Mismatch Section
 
 New struct:
 
@@ -247,18 +306,18 @@ Populated in `build_triage_report` from `aat_summary`'s
 `recommended_next_targets` gains: `"inspect_coverage_mismatches"` when
 `coverage_mismatches` has entries.
 
-### 3.6 `aat_diff.rs` — Internal Changes Only
+### 3.7 `aat_diff.rs` — Remaining Internal Changes
 
-The `SemanticSequences` type, `AatSummary`, `normalize_visible`,
-`kind`, `count_both`, `increment`, `semantic_hash_differences`,
-`semantic_summary_hash_differences`, `semantic_totals`,
-`normalized_visible_difference_bucket`, `collect_blocks`,
-`collect_inline_containers`, `collect_inline_node`, `summarize`,
-`read_aat_summaries`, `aat_key`, `compare_aat_dirs`,
-`compare_aat_dirs_with_limit` all remain unchanged except for the
-coverage population and import migrations listed above.
+Types and functions not listed in §3.2–§3.6 (`SemanticSequences`,
+`normalize_visible`, `kind`, `count_both`, `increment`,
+`semantic_hash_differences`, `semantic_summary_hash_differences`,
+`semantic_totals`, `normalized_visible_difference_bucket`,
+`collect_blocks`, `collect_inline_containers`, `collect_inline_node`,
+`read_aat_summaries`, `aat_key`, `compare_aat_dirs`) are unchanged.
+`AatSummary` and `summarize` change per §3.2; `compare_aat_dirs_with_limit`
+changes per §3.3 and §3.4.
 
-### 3.7 Unchanged Files
+### 3.8 Unchanged Files
 
 - `ab-compare/src/lib.rs` — re-exports unchanged
 - `ab-compare/src/main.rs` — CLI unchanged; coverage data flows through
@@ -281,16 +340,29 @@ coverage population and import migrations listed above.
 - `frequency.rs`: test empty table, single key multi-example, example
   dedup, max_examples enforcement, iteration order
 - `first_diff.rs`: test identical strings (None), single-char diff,
-  length-difference diff, context window bounds
+  length-difference diff, context window bounds, and multi-byte
+  character handling (e.g., `"今日"` vs `"今"` — char index 1, not
+  byte index 2)
 - `hashing.rs`: test deterministic output, null-delimiter separation
 - `diff_region.rs`: enum equality and debug formatting
 
 ### 5.2 `ab-compare` Integration Tests
 
-New test in `tests/integration.rs`: two AAT fixture files where one
-has `fallback_used: true` with a known reason. Run
-`compare_aat_dirs`, assert `structural_differences[0].coverage_mismatch`
-is `Some` with the expected reason.
+New tests in `tests/integration.rs`:
+
+1. **Coverage present in structural diff:** two AAT fixture files where one
+   has `fallback_used: true` with a known reason and the structure hashes
+   differ. Run `compare_aat_dirs`, assert
+   `structural_differences[0].coverage_mismatch` is `Some` with the expected
+   reason.
+
+2. **Coverage-only difference triggers structural diff entry:** two AAT
+   fixture files with identical structure hash, visible hash, and semantic
+   summary hashes, but `fallback_used` differs (e.g., left has
+   `fallback_used: true, fallback_reason: "aborted"`, right has
+   `fallback_used: false`). Run `compare_aat_dirs`, assert
+   `structural_difference_count >= 1`, assert the entry has
+   `coverage_mismatch: Some` and `visible_text_differs: false`.
 
 Existing integration tests continue to pass — `FrequencyTable` and
 `first_difference` are behavior-preserving extractions.

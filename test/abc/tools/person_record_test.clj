@@ -86,6 +86,19 @@
     (is (= (manifest/schema-hash schema-path)
            (get (example-person) "person_record_schema_hash")))))
 
+(def ^:private fixture-path "examples/v0/example-persons/000879.json")
+
+(deftest example-person-fixture-validates-test
+  (testing "examples/v0/example-persons/000879.json validates against the schema"
+    (let [record (files/read-json fixture-path)]
+      (is (= :ok (pr/validate! record))))))
+
+(deftest example-person-fixture-schema-hash-test
+  (testing "the embedded schema hash matches the live schema"
+    (let [record (files/read-json fixture-path)]
+      (is (= (manifest/schema-hash schema-path)
+             (get record "person_record_schema_hash"))))))
+
 (deftest record->graph-key-triples-test
   (testing "record->graph emits FOAF + RDA Group 2 triples for one person"
     (let [g (pr/record->graph (example-person))

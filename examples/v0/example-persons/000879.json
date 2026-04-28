@@ -1,0 +1,17 @@
+{
+  "date_of_birth": "1892-03-01",
+  "date_of_death": "1927-07-24",
+  "external_links": [],
+  "family_name": "\u82a5\u5ddd",
+  "family_name_reading": "\u3042\u304f\u305f\u304c\u308f",
+  "family_name_romaji": "Akutagawa",
+  "family_name_sort": "\u3042\u304f\u305f\u304b\u308f",
+  "given_name": "\u7adc\u4e4b\u4ecb",
+  "given_name_reading": "\u308a\u3085\u3046\u306e\u3059\u3051",
+  "given_name_romaji": "Ryunosuke",
+  "given_name_sort": "\u308a\u3086\u3046\u306e\u3059\u3051",
+  "person_copyright_expired": true,
+  "person_id": "000879",
+  "person_record_schema_hash": "sha256:44acbd4fc239d10f013f050512618df9a1ad94676bbef35e3330f8d2d1dcc95e",
+  "person_record_schema_id": "https:\/\/w3id.org\/abc\/schemas\/person-record.schema.json"
+}

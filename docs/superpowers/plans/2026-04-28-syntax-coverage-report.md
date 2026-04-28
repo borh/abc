@@ -186,15 +186,15 @@ Expected: `feat(coverage): extend syntax matrix to full taxonomy` (rows + draft 
 
 **Files:** `data/aozora-syntax-coverage.schema.json`, `crates/ab-coverage/src/schema.rs`.
 
-- [ ] **Step 1: Lock the JSON Schema after the taxonomy stabilises.**
+- [x] **Step 1: Lock the JSON Schema after the taxonomy stabilises.**
 
 Resolve any shape changes from Task 1 (e.g., a row needed a sub-field unforeseen by the initial draft).
 
-- [ ] **Step 2: Implement the Rust validator.**
+- [x] **Step 2: Implement the Rust validator.**
 
 `SchemaValidator::validate(matrix) -> Result<(), Vec<RowError>>` checks every row against the schema, then runs the forbidden-combination rules (e.g., `aborts` requires `not_applicable`).
 
-- [ ] **Step 3: Add a workspace test that runs on every `cargo test`.**
+- [x] **Step 3: Add a workspace test that runs on every `cargo test`.**
 
 The test loads `data/aozora-syntax-coverage.toml`, runs `SchemaValidator::validate`, and reports row IDs of any failures. Initially it tolerates `"unknown"` placeholders; after Task 3 lands, those become forbidden.
 

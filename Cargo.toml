@@ -5,6 +5,7 @@ members = [
     "crates/ab-index",
     "crates/ab-check",
     "crates/ab-compare",
+    "crates/ab-coverage",
 ]
 resolver = "2"
 exclude = [

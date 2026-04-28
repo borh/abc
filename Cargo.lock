@@ -36,6 +36,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "ab-coverage"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "serde",
+ "serde_json",
+ "toml",
+]
+
+[[package]]
 name = "ab-index"
 version = "0.1.0"
 dependencies = [

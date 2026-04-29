@@ -2,7 +2,7 @@
 
 Status: Active
 Date: 2026-04-28
-Updated: 2026-04-29 (ODD-derived RNG/Schematron promoted; drift gate added)
+Updated: 2026-04-29 (ODD-derived RNG/Schematron promoted; drift gate added; ten-rule baseline)
 
 ABC TEI validation has two required layers:
 
@@ -23,9 +23,12 @@ later ADR promotes them into profile identity.
 | `abc-tei-header-title` | Every generated TEI file must have a main title in `teiHeader` | error | Prevents metadata join failures from becoming valid-looking TEI |
 | `abc-tei-header-source-work-id` | TEI header must preserve the Aozora work ID or source identifier | error | Keeps TEI traceable back to source metadata |
 | `abc-ruby-complete` | Ruby structures must contain base and reading components | error | Prevents malformed ruby rendering |
+| `abc-ruby-base-non-empty` | `tei:ruby/tei:rb` must have non-empty content | error | Stops `<rb></rb><rt>x</rt>` from passing the structural ruby check |
 | `abc-gaiji-reference` | A gaiji representation must retain original marker and either a resolved replacement or unresolved status | error | Prevents silent character loss |
+| `abc-gaiji-chardecl-resolution` | Gaiji `tei:g[starts-with(@ref,'#')]` must point to a `tei:charDecl/tei:char` declaration in this document | error | Closes the dangling-gaiji-ref loophole left open by `abc-gaiji-reference`'s presence-only check |
 | `abc-figure-accessibility` | Figures/images should have `figDesc`, `head`, or caption mapping where available | warning initially | Preserves image/caption semantics |
 | `abc-source-span-reference` | Elements claiming source spans must point to valid span identifiers | error | Keeps IR to TEI traceability testable |
+| `abc-source-span-target-exists` | Each fragment id in `@source` must resolve to an `@xml:id` in this document | error | Closes the dangling-source-fragment loophole left open by the `#`-prefix-only check |
 | `abc-transcription-vs-annotation` | Linguistic enrichment must not be mixed into the transcription layer unless explicitly declared | warning initially | Keeps TEI clean for publication |
 
 ## Acceptance Criteria
@@ -47,10 +50,18 @@ that the business-rule layer catches constraints the structural schema cannot.
 | Fixture | Expected result |
 | --- | --- |
 | `fixtures/tei/valid/rashomon-minimal.xml` | Passes Relax NG and Schematron |
+| `fixtures/tei/valid/source-span-local-ref.xml` | Passes Relax NG and Schematron |
+| `fixtures/tei/valid/transcription-enrichment-declared.xml` | Passes Relax NG and Schematron |
 | `fixtures/tei/invalid/missing-title.xml` | Fails `abc-tei-header-title` |
-| `fixtures/tei/invalid/gaiji-missing-ref.xml` | Fails `abc-gaiji-reference` |
+| `fixtures/tei/invalid/missing-source-work-id.xml` | Fails `abc-tei-header-source-work-id` |
 | `fixtures/tei/invalid/ruby-missing-reading.xml` | Fails `abc-ruby-complete` |
+| `fixtures/tei/invalid/ruby-empty-base.xml` | Fails `abc-ruby-base-non-empty` |
+| `fixtures/tei/invalid/gaiji-missing-ref.xml` | Fails `abc-gaiji-reference` |
+| `fixtures/tei/invalid/gaiji-dangling-ref.xml` | Fails `abc-gaiji-chardecl-resolution` |
+| `fixtures/tei/invalid/source-span-external-ref.xml` | Fails `abc-source-span-reference` and `abc-source-span-target-exists` |
+| `fixtures/tei/invalid/source-span-dangling-ref.xml` | Fails `abc-source-span-target-exists` |
 | `fixtures/tei/warnings/figure-missing-desc.xml` | Reports `abc-figure-accessibility` |
+| `fixtures/tei/warnings/transcription-enrichment-undeclared.xml` | Reports `abc-transcription-vs-annotation` |
 
 ## Generated Artifacts and Drift Gate
 
@@ -58,9 +69,11 @@ that the business-rule layer catches constraints the structural schema cannot.
 and `schemas/tei-profile.sch` are reproducibly generated from the ODD by the
 Nix derivation `tei-profile-artifacts` (TEI Stylesheets v7.60.0 + p5subset
 4.11.0 + Saxon-HE 12.9). Build-artifact canonicalization strips generation
-timestamps, rewrites the seven ABC `constraintSpec` pattern IDs back to their
-declared idents, and drops inherited TEI built-in patterns the v0 ABC
-Schematron evaluator does not implement. To regenerate after an ODD edit:
+timestamps, rewrites the ten ABC `constraintSpec` pattern IDs back to their
+declared idents (the `abc-[a-z0-9-]+` regex requires lowercase + digits +
+hyphens — mixed-case idents fall through and get dropped by the
+inherited-pattern filter), and drops inherited TEI built-in patterns the v0
+ABC Schematron evaluator does not implement. To regenerate after an ODD edit:
 
 ```
 nix run .#regenerate-tei-profile

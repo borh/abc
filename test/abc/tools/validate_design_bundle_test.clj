@@ -215,10 +215,17 @@
                                    #{"abc-tei-header-source-work-id"}
                                    "fixtures/tei/invalid/gaiji-missing-ref.xml"
                                    #{"abc-gaiji-reference"}
+                                   "fixtures/tei/invalid/gaiji-dangling-ref.xml"
+                                   #{"abc-gaiji-chardecl-resolution"}
                                    "fixtures/tei/invalid/ruby-missing-reading.xml"
                                    #{"abc-ruby-complete"}
+                                   "fixtures/tei/invalid/ruby-empty-base.xml"
+                                   #{"abc-ruby-base-non-empty"}
                                    "fixtures/tei/invalid/source-span-external-ref.xml"
-                                   #{"abc-source-span-reference"}}})))))
+                                   #{"abc-source-span-reference"
+                                     "abc-source-span-target-exists"}
+                                   "fixtures/tei/invalid/source-span-dangling-ref.xml"
+                                   #{"abc-source-span-target-exists"}}})))))
 
 (deftest validate-tei-schematron-loud-fail-test
   (testing "a fixture missing its expected finding makes the harness fail"

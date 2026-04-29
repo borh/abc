@@ -109,3 +109,7 @@ After regenerating `scratch/morph-full-corpus/aats` from `scratch/ab-index.json`
 Total compact artifact size including manifest: 7,600,042 bytes. The run completed in 1,015 seconds with 17,894 inputs and 0 error rows.
 
 Memory sampling during the run found a low final RSS/PSS (`rss_kb=764664`, `pss_kb=762664`) but a short-lived peak around 17.16 GB RSS/PSS. This confirms compact storage is solved, while peak runtime memory still needs size-aware scheduling for unusually large works.
+
+## Workflow tooling
+
+The standard corpus workflow is documented in `docs/morph-corpus-workflow.md`. It covers checked AAT generation, compact corpus comparison, compact summary ranking, targeted full-detail reruns by `source_id`, and the `source_id` vs `text_id` grouping policy.

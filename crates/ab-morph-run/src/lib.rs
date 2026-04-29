@@ -5,6 +5,7 @@ use std::collections::BTreeSet;
 use std::fs::{self, File, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use ab_morph_analyzers::{MorphAnalyzer, SudachiAnalyzer, SudachiMode, VibratoAnalyzer};
 use ab_morph_diff::{Analysis, Comparison, compare_pair};
@@ -58,11 +59,12 @@ pub fn run_analyze_aat(
     let inputs = discover_aat_inputs(aat, aat_dir)?;
     let input_file_count = inputs.len();
     let specs = parse_analyzer_specs(analyzer_ids)?;
+    let analyzers = load_analyzers(&specs)?;
 
     if jobs > 1 {
         run_analyze_aat_parallel(
             inputs,
-            specs,
+            analyzers,
             analyses_output,
             comparisons_output,
             errors_output,
@@ -75,7 +77,7 @@ pub fn run_analyze_aat(
     } else {
         run_analyze_aat_serial(
             inputs,
-            &specs,
+            &analyzers,
             analyses_output,
             comparisons_output,
             errors_output,
@@ -107,7 +109,7 @@ pub fn run_analyze_aat(
 
 fn run_analyze_aat_serial(
     inputs: Vec<PathBuf>,
-    specs: &[AnalyzerSpec],
+    analyzers: &[Arc<LoadedAnalyzer>],
     analyses_output: &Path,
     comparisons_output: Option<&Path>,
     errors_output: Option<&Path>,
@@ -116,7 +118,6 @@ fn run_analyze_aat_serial(
     examples_output: Option<&Path>,
     max_examples_per_comparison: usize,
 ) -> Result<()> {
-    let analyzers = load_analyzers(specs)?;
     let resume_ids = if resume {
         read_resume_ids(analyses_output, errors_output, output_profile)?
     } else {
@@ -186,7 +187,7 @@ fn run_analyze_aat_serial(
         };
         let mut analyses = Vec::new();
 
-        for analyzer in &analyzers {
+        for analyzer in analyzers {
             let analysis = match analyzer.analyze(&document) {
                 Ok(analysis) => analysis,
                 Err(error) => {
@@ -260,7 +261,7 @@ fn run_analyze_aat_serial(
 #[allow(clippy::too_many_arguments)]
 fn run_analyze_aat_parallel(
     inputs: Vec<PathBuf>,
-    specs: Vec<AnalyzerSpec>,
+    analyzers: Vec<Arc<LoadedAnalyzer>>,
     analyses_output: &Path,
     comparisons_output: Option<&Path>,
     errors_output: Option<&Path>,
@@ -277,11 +278,6 @@ fn run_analyze_aat_parallel(
     };
     let inputs = filter_resume_inputs(inputs, &resume_ids, output_profile)?;
     let partitions = partition_inputs(inputs, jobs);
-    let analyzer_ids = specs
-        .iter()
-        .map(AnalyzerSpec::as_arg)
-        .map(str::to_owned)
-        .collect::<Vec<_>>();
     let temp_root = std::env::temp_dir().join(format!(
         "ab-morph-run-{}-{}",
         std::process::id(),
@@ -299,7 +295,7 @@ fn run_analyze_aat_parallel(
             if partition.is_empty() {
                 continue;
             }
-            let analyzer_ids = analyzer_ids.clone();
+            let analyzers = analyzers.clone();
             let input_dir = temp_root.join(format!("inputs-{job_index}"));
             let output_dir = temp_root.join(format!("outputs-{job_index}"));
             handles.push(scope.spawn(move || -> Result<ShardOutput> {
@@ -307,11 +303,13 @@ fn run_analyze_aat_parallel(
                     .with_context(|| format!("failed to create {}", input_dir.display()))?;
                 fs::create_dir_all(&output_dir)
                     .with_context(|| format!("failed to create {}", output_dir.display()))?;
+                let mut shard_inputs = Vec::new();
                 for input in partition {
                     let link = input_dir.join(input.file_name().ok_or_else(|| {
                         anyhow::anyhow!("missing file name for {}", input.display())
                     })?);
                     symlink_input_file(&input, &link)?;
+                    shard_inputs.push(link);
                 }
 
                 let analyses = shard_output_path(&output_dir, analyses_output, "analyses");
@@ -321,19 +319,16 @@ fn run_analyze_aat_parallel(
                     examples_output.map(|path| shard_output_path(&output_dir, path, "examples"));
                 let errors =
                     errors_output.map(|path| shard_output_path(&output_dir, path, "errors"));
-                run_analyze_aat(
-                    None,
-                    Some(&input_dir),
-                    &analyzer_ids,
+                run_analyze_aat_serial(
+                    shard_inputs,
+                    &analyzers,
                     &analyses,
                     comparisons.as_deref(),
                     errors.as_deref(),
                     false,
-                    1,
                     output_profile,
                     examples.as_deref(),
                     max_examples_per_comparison,
-                    None,
                 )?;
                 Ok(ShardOutput {
                     job_index,
@@ -509,15 +504,6 @@ enum AnalyzerSpec {
 }
 
 impl AnalyzerSpec {
-    fn as_arg(&self) -> &'static str {
-        match self {
-            Self::Vibrato => "vibrato",
-            Self::Sudachi(SudachiMode::A) => "sudachi-a",
-            Self::Sudachi(SudachiMode::B) => "sudachi-b",
-            Self::Sudachi(SudachiMode::C) => "sudachi-c",
-        }
-    }
-
     fn parse(value: &str) -> Result<Self> {
         match value {
             "vibrato" => Ok(Self::Vibrato),
@@ -572,22 +558,22 @@ fn discover_aat_inputs(aat: Option<&Path>, aat_dir: Option<&Path>) -> Result<Vec
     }
 }
 
-fn load_analyzers(specs: &[AnalyzerSpec]) -> Result<Vec<LoadedAnalyzer>> {
+fn load_analyzers(specs: &[AnalyzerSpec]) -> Result<Vec<Arc<LoadedAnalyzer>>> {
     let mut analyzers = Vec::new();
 
     for spec in specs {
         match spec {
             AnalyzerSpec::Vibrato => {
-                analyzers.push(LoadedAnalyzer::Vibrato(
+                analyzers.push(Arc::new(LoadedAnalyzer::Vibrato(
                     VibratoAnalyzer::unidic_cwj_default()?,
-                ));
+                )));
             }
             AnalyzerSpec::Sudachi(mode) => {
                 let dict = std::env::var_os("AB_SUDACHI_DICT")
                     .context("AB_SUDACHI_DICT is required for Sudachi analyzers")?;
-                analyzers.push(LoadedAnalyzer::Sudachi(
+                analyzers.push(Arc::new(LoadedAnalyzer::Sudachi(
                     SudachiAnalyzer::from_dictionary_path(*mode, dict)?,
-                ));
+                )));
             }
         }
     }

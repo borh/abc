@@ -2,7 +2,8 @@ use std::ops::Range;
 use std::path::Path;
 
 use ab_morph_diff::{
-    Analysis, ChangedValue, Comparison, CoverageMismatchKind, FeatureDiff, Region, SegmentationKind,
+    Analysis, ChangedValue, CompactComparison, CompactComparisonExample, CompactExampleKind,
+    CompactFeatureChange, Comparison, CoverageMismatchKind, FeatureDiff, Region, SegmentationKind,
 };
 use serde::{Deserialize, Serialize};
 
@@ -59,7 +60,35 @@ pub(crate) struct ComparisonSummaryRow {
 }
 
 impl ComparisonSummaryRow {
+    #[cfg(test)]
     pub(crate) fn from_comparison(source_id: String, comparison: &Comparison) -> Self {
+        let stats = &comparison.stats;
+        Self {
+            source_id,
+            text_id: comparison.text_id.clone(),
+            from_analyzer: comparison.from_analyzer.clone(),
+            to_analyzer: comparison.to_analyzer.clone(),
+            from_morphemes: stats.from_morphemes,
+            to_morphemes: stats.to_morphemes,
+            one_to_one_regions: stats.one_to_one_regions,
+            one_to_one_with_feature_differences: stats.one_to_one_with_feature_differences,
+            segmentation_regions: stats.segmentation_regions,
+            coverage_mismatch_regions: stats.coverage_mismatch_regions,
+            split_regions: stats.split_regions,
+            merge_regions: stats.merge_regions,
+            resegment_regions: stats.resegment_regions,
+            from_morphemes_in_segmentation: stats.from_morphemes_in_segmentation,
+            to_morphemes_in_segmentation: stats.to_morphemes_in_segmentation,
+            boundary_precision: stats.boundary_precision,
+            boundary_recall: stats.boundary_recall,
+            boundary_f1: stats.boundary_f1,
+        }
+    }
+
+    pub(crate) fn from_compact_comparison(
+        source_id: String,
+        comparison: &CompactComparison,
+    ) -> Self {
         let stats = &comparison.stats;
         Self {
             source_id,
@@ -84,7 +113,7 @@ impl ComparisonSummaryRow {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub(crate) struct ComparisonExampleRow {
     pub source_id: String,
     pub text_id: String,
@@ -102,7 +131,7 @@ pub(crate) struct ComparisonExampleRow {
     pub feature_changes: Option<Vec<FeatureChangeRow>>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub(crate) struct FeatureChangeRow {
     pub key: String,
     pub from: Option<String>,
@@ -175,6 +204,48 @@ pub(crate) fn example_rows_from_comparison(
     }
 
     rows
+}
+
+pub(crate) fn example_rows_from_compact_comparison(
+    source_id: String,
+    source_text: &str,
+    comparison: &CompactComparison,
+) -> Vec<ComparisonExampleRow> {
+    comparison
+        .examples
+        .iter()
+        .map(|example| {
+            example_row_from_compact_example(&source_id, source_text, comparison, example)
+        })
+        .collect()
+}
+
+fn example_row_from_compact_example(
+    source_id: &str,
+    source_text: &str,
+    comparison: &CompactComparison,
+    example: &CompactComparisonExample,
+) -> ComparisonExampleRow {
+    let byte_span = byte_span_from_char_span(source_text, &example.text_span);
+    ComparisonExampleRow {
+        source_id: source_id.to_owned(),
+        text_id: comparison.text_id.clone(),
+        from_analyzer: comparison.from_analyzer.clone(),
+        to_analyzer: comparison.to_analyzer.clone(),
+        region_index: example.region_index,
+        kind: compact_kind(example.kind).to_owned(),
+        byte_start: byte_span.start,
+        byte_end: byte_span.end,
+        char_start: example.text_span.start,
+        char_end: example.text_span.end,
+        source_excerpt: excerpt(source_text, &example.text_span),
+        from_surfaces: example.from_surfaces.clone(),
+        to_surfaces: example.to_surfaces.clone(),
+        feature_changes: example
+            .feature_changes
+            .as_ref()
+            .map(|changes| compact_feature_changes(changes)),
+    }
 }
 
 fn example_row_from_region(
@@ -269,6 +340,17 @@ fn feature_changes(
         .collect()
 }
 
+fn compact_feature_changes(changed: &[CompactFeatureChange]) -> Vec<FeatureChangeRow> {
+    changed
+        .iter()
+        .map(|value| FeatureChangeRow {
+            key: value.key.clone(),
+            from: value.from.clone(),
+            to: value.to.clone(),
+        })
+        .collect()
+}
+
 fn surfaces(analysis: Option<&Analysis>, range: Range<usize>) -> Vec<String> {
     let Some(analysis) = analysis else {
         return Vec::new();
@@ -322,13 +404,27 @@ fn coverage_kind(kind: CoverageMismatchKind) -> &'static str {
     }
 }
 
+fn compact_kind(kind: CompactExampleKind) -> &'static str {
+    match kind {
+        CompactExampleKind::Split => "split",
+        CompactExampleKind::Merge => "merge",
+        CompactExampleKind::Resegment => "resegment",
+        CompactExampleKind::CoverageMissingFrom => "coverage_missing_from",
+        CompactExampleKind::CoverageMissingTo => "coverage_missing_to",
+        CompactExampleKind::CoverageUnequal => "coverage_unequal",
+        CompactExampleKind::CoverageInvalidInput => "coverage_invalid_input",
+        CompactExampleKind::FeatureDiff => "feature_diff",
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::BTreeMap;
 
     use ab_morph_diff::{
         Analysis, ChangedValue, Comparison, ComparisonStats, FeatureDiff, FeatureMap, Morpheme,
-        Region, SegmentationDiff, SegmentationKind,
+        Region, SegmentationDiff, SegmentationKind, compare_pair_compact_with_source_text,
+        compare_pair_with_source_text,
     };
 
     use super::*;
@@ -492,6 +588,42 @@ mod tests {
         assert_eq!(rows[0].feature_changes.as_ref().unwrap()[0].key, "pos");
     }
 
+    #[test]
+    fn compact_streaming_examples_match_full_compact_examples() {
+        let source = "今日明日";
+        let from = analysis_with_morphemes(
+            "from",
+            source,
+            vec![
+                m(source, "今日", 0, 2, FeatureMap::new()),
+                m(source, "明日", 2, 4, features(&[("pos", Some("名詞"))])),
+            ],
+        );
+        let to = analysis_with_morphemes(
+            "to",
+            source,
+            vec![
+                m(source, "今", 0, 1, FeatureMap::new()),
+                m(source, "日", 1, 2, FeatureMap::new()),
+                m(source, "明日", 2, 4, features(&[("pos", Some("副詞"))])),
+            ],
+        );
+        let full = compare_pair_with_source_text(&from, &to, source, &[]).unwrap();
+        let compact = compare_pair_compact_with_source_text(&from, &to, source, &[], 10).unwrap();
+
+        let full_rows = example_rows_from_comparison(
+            "source-a".to_owned(),
+            source,
+            &full,
+            &[from.clone(), to.clone()],
+            10,
+        );
+        let compact_rows =
+            example_rows_from_compact_comparison("source-a".to_owned(), source, &compact);
+
+        assert_eq!(compact_rows, full_rows);
+    }
+
     fn fixture_comparison_with_segmentation_regions(count: usize) -> Comparison {
         let regions = (0..count)
             .map(|index| {
@@ -531,6 +663,51 @@ mod tests {
                 features: FeatureMap::new(),
             }],
         }
+    }
+
+    fn analysis_with_morphemes(
+        analyzer: &str,
+        source_text: &str,
+        morphemes: Vec<Morpheme>,
+    ) -> Analysis {
+        Analysis {
+            analyzer: analyzer.to_owned(),
+            text_id: "t1".to_owned(),
+            source_text: source_text.to_owned(),
+            morphemes,
+        }
+    }
+
+    fn m(
+        source_text: &str,
+        surface: &str,
+        start: usize,
+        end: usize,
+        features: FeatureMap,
+    ) -> Morpheme {
+        let byte_start = source_text
+            .char_indices()
+            .nth(start)
+            .map(|(index, _)| index)
+            .unwrap_or(source_text.len());
+        let byte_end = source_text
+            .char_indices()
+            .nth(end)
+            .map(|(index, _)| index)
+            .unwrap_or(source_text.len());
+        Morpheme {
+            surface: surface.to_owned(),
+            byte_span: byte_start..byte_end,
+            char_span: start..end,
+            features,
+        }
+    }
+
+    fn features(values: &[(&str, Option<&str>)]) -> FeatureMap {
+        values
+            .iter()
+            .map(|(key, value)| (key.to_string(), value.map(str::to_owned)))
+            .collect()
     }
 
     fn stats(

@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use ab_morph_analyzers::{MorphAnalyzer, SudachiAnalyzer, SudachiMode, VibratoAnalyzer};
-use ab_morph_diff::{Analysis, Comparison, compare_pair, compare_pair_with_source_text};
+use ab_morph_diff::{Analysis, Comparison, compare_pair, compare_pair_compact_with_source_text};
 use ab_plaintext::{PlainTextDocument, from_aat_value};
 use anyhow::{Context, Result, bail};
 use clap::ValueEnum;
@@ -723,20 +723,10 @@ fn write_comparison_rows(
 ) -> Result<()> {
     for from_index in 0..analyses.len() {
         for to_index in (from_index + 1)..analyses.len() {
-            let comparison = match output_profile {
+            match output_profile {
                 OutputProfile::Full => {
-                    compare_pair(&analyses[from_index], &analyses[to_index], &[])?
-                }
-                OutputProfile::Compact => compare_pair_with_source_text(
-                    &analyses[from_index],
-                    &analyses[to_index],
-                    source_text,
-                    &[],
-                )?,
-            };
-            if let Some(writer) = writer.as_deref_mut() {
-                match output_profile {
-                    OutputProfile::Full => {
+                    let comparison = compare_pair(&analyses[from_index], &analyses[to_index], &[])?;
+                    if let Some(writer) = writer.as_deref_mut() {
                         let row = ComparisonRow {
                             text_id: comparison.text_id.clone(),
                             from_analyzer: comparison.from_analyzer.clone(),
@@ -745,25 +735,44 @@ fn write_comparison_rows(
                         };
                         write_jsonl_row(writer, &row)?;
                     }
-                    OutputProfile::Compact => {
-                        let row = compact::ComparisonSummaryRow::from_comparison(
+
+                    if let Some(examples_writer) = examples_writer.as_deref_mut() {
+                        for row in compact::example_rows_from_comparison(
+                            source_id.to_owned(),
+                            source_text,
+                            &comparison,
+                            analyses,
+                            max_examples_per_comparison,
+                        ) {
+                            write_jsonl_row(examples_writer, &row)?;
+                        }
+                    }
+                }
+                OutputProfile::Compact => {
+                    let comparison = compare_pair_compact_with_source_text(
+                        &analyses[from_index],
+                        &analyses[to_index],
+                        source_text,
+                        &[],
+                        max_examples_per_comparison,
+                    )?;
+                    if let Some(writer) = writer.as_deref_mut() {
+                        let row = compact::ComparisonSummaryRow::from_compact_comparison(
                             source_id.to_owned(),
                             &comparison,
                         );
                         write_jsonl_row(writer, &row)?;
                     }
-                }
-            }
 
-            if let Some(examples_writer) = examples_writer.as_deref_mut() {
-                for row in compact::example_rows_from_comparison(
-                    source_id.to_owned(),
-                    source_text,
-                    &comparison,
-                    analyses,
-                    max_examples_per_comparison,
-                ) {
-                    write_jsonl_row(examples_writer, &row)?;
+                    if let Some(examples_writer) = examples_writer.as_deref_mut() {
+                        for row in compact::example_rows_from_compact_comparison(
+                            source_id.to_owned(),
+                            source_text,
+                            &comparison,
+                        ) {
+                            write_jsonl_row(examples_writer, &row)?;
+                        }
+                    }
                 }
             }
         }

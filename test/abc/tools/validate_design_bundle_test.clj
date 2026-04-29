@@ -1,9 +1,12 @@
 (ns abc.tools.validate-design-bundle-test
   (:require [abc.tools.files :as files]
+            [abc.tools.malli :as am]
             [abc.tools.manifest-to-rdf :as manifest-to-rdf]
             [abc.tools.shacl :as shacl]
             [abc.tools.validate-design-bundle :as validate]
-            [clojure.test :refer [deftest is testing]]))
+            [clojure.test :refer [deftest is testing use-fixtures]]))
+
+(use-fixtures :once (fn [f] (am/install!) (f)))
 
 (deftest sha256-file-test
   (let [file (java.io.File/createTempFile "abc-sha256" ".txt")]
@@ -23,85 +26,117 @@
       (finally
         (.delete file)))))
 
-(deftest validate-run-summary-test
+(def ^:private complete-manifest-inputs
+  {"producer" "ab-validator"
+   "producer_version" "0.0.0"
+   "work_id" "fixture"
+   "corpus_snapshot_hash" (files/example-hash "00")
+   "work_content_hash" (files/example-hash "01")
+   "parser_build_hash" (files/example-hash "02")
+   "parser_config_hash" (files/example-hash "03")
+   "parser_ir_schema_hash" (files/example-hash "04")
+   "diagnostic_schema_hash" (files/example-hash "08")
+   "warning_sidecar_hash" (files/example-hash "05")
+   "run_summary_hash" (files/example-hash "06")
+   "comparison_report_hash" (files/example-hash "07")})
+
+(deftest run-summary-events-schema-test
   (testing "accepts start, work result, complete"
-    (is (empty?
-         (validate/run-summary-errors
-          [{"event" "run-start" "run_id" "r1"}
-           {"event" "work-result" "run_id" "r1"}
-           {"event" "run-complete" "run_id" "r1"}]))))
+    (is (= :ok
+           (am/explain-or-throw!
+            ::am/run-summary-events
+            [{"event" "run-start" "run_id" "r1"}
+             {"event" "work-result" "run_id" "r1"}
+             {"event" "run-complete" "run_id" "r1"}]
+            "test"))))
   (testing "accepts start and complete without work results"
-    (is (empty?
-         (validate/run-summary-errors
-          [{"event" "run-start" "run_id" "r1"}
-           {"event" "run-complete" "run_id" "r1"}]))))
+    (is (= :ok
+           (am/explain-or-throw!
+            ::am/run-summary-events
+            [{"event" "run-start" "run_id" "r1"}
+             {"event" "run-complete" "run_id" "r1"}]
+            "test"))))
   (testing "rejects mismatched run ids"
-    (is (= ["ab-validator run summary events must all use the same run_id"]
-           (validate/run-summary-errors
-            [{"event" "run-start" "run_id" "r1"}
-             {"event" "work-result" "run_id" "r2"}
-             {"event" "run-complete" "run_id" "r1"}]))))
+    (is (thrown-with-msg?
+         clojure.lang.ExceptionInfo #"share one run_id"
+         (am/explain-or-throw!
+          ::am/run-summary-events
+          [{"event" "run-start" "run_id" "r1"}
+           {"event" "work-result" "run_id" "r2"}
+           {"event" "run-complete" "run_id" "r1"}]
+          "test"))))
   (testing "rejects extra lifecycle events"
-    (is (= ["ab-validator run summary must contain exactly one run-start event"
-            "ab-validator run summary must contain exactly one run-complete event"]
-           (validate/run-summary-errors
-            [{"event" "run-start" "run_id" "r1"}
-             {"event" "run-start" "run_id" "r1"}
-             {"event" "run-complete" "run_id" "r1"}
-             {"event" "run-complete" "run_id" "r1"}]))))
+    (is (thrown-with-msg?
+         clojure.lang.ExceptionInfo #"exactly one run-start event"
+         (am/explain-or-throw!
+          ::am/run-summary-events
+          [{"event" "run-start" "run_id" "r1"}
+           {"event" "run-start" "run_id" "r1"}
+           {"event" "run-complete" "run_id" "r1"}
+           {"event" "run-complete" "run_id" "r1"}]
+          "test"))))
   (testing "rejects missing run id"
-    (is (= ["run summary event is missing run_id: {\"event\" \"work-result\"}"]
-           (validate/run-summary-errors
-            [{"event" "run-start" "run_id" "r1"}
-             {"event" "work-result"}
-             {"event" "run-complete" "run_id" "r1"}])))))
+    (is (thrown-with-msg?
+         clojure.lang.ExceptionInfo #"must include run_id"
+         (am/explain-or-throw!
+          ::am/run-summary-events
+          [{"event" "run-start" "run_id" "r1"}
+           {"event" "work-result"}
+           {"event" "run-complete" "run_id" "r1"}]
+          "test"))))
+  (testing "ex-data carries humanized errors and explanation"
+    (try
+      (am/explain-or-throw!
+       ::am/run-summary-events
+       [{"event" "work-result" "run_id" "r1"}]
+       "test")
+      (is false "expected throw")
+      (catch clojure.lang.ExceptionInfo e
+        (let [d (ex-data e)]
+          (is (= "test" (:label d)))
+          (is (every? string? (:errors-humanized d)))
+          (is (some? (:explanation d))))))))
 
-(deftest manifest-input-errors-test
+(deftest manifest-inputs-schema-test
   (testing "accepts complete manifest inputs"
-    (is (empty?
-         (validate/manifest-input-errors
-          {"producer" "ab-validator"
-           "producer_version" "0.0.0"
-           "work_id" "fixture"
-           "corpus_snapshot_hash" (files/example-hash "00")
-           "work_content_hash" (files/example-hash "01")
-           "parser_build_hash" (files/example-hash "02")
-           "parser_config_hash" (files/example-hash "03")
-           "parser_ir_schema_hash" (files/example-hash "04")
-           "diagnostic_schema_hash" (files/example-hash "08")
-           "warning_sidecar_hash" (files/example-hash "05")
-           "run_summary_hash" (files/example-hash "06")
-           "comparison_report_hash" (files/example-hash "07")}))))
-  (testing "reports missing keys"
-    (let [actual (validate/manifest-input-errors {"producer" "ab-validator"})]
-      (is (= 1 (count actual)))
-      (is (re-find #"corpus_snapshot_hash" (first actual)))))
-  (testing "reports invalid hash values"
-    (is (= ["ab-validator manifest input work_content_hash is not a sha256 hash: nope"]
-           (validate/manifest-input-errors
-            {"producer" "ab-validator"
-             "producer_version" "0.0.0"
-             "work_id" "fixture"
-             "corpus_snapshot_hash" (files/example-hash "00")
-             "work_content_hash" "nope"
-             "parser_build_hash" (files/example-hash "02")
-             "parser_config_hash" (files/example-hash "03")
-             "parser_ir_schema_hash" (files/example-hash "04")
-             "diagnostic_schema_hash" (files/example-hash "08")
-             "warning_sidecar_hash" (files/example-hash "05")
-             "run_summary_hash" (files/example-hash "06")
-             "comparison_report_hash" (files/example-hash "07")})))))
+    (is (= :ok (am/explain-or-throw!
+                ::am/manifest-inputs complete-manifest-inputs "test"))))
+  (testing "rejects missing required keys"
+    (is (thrown-with-msg?
+         clojure.lang.ExceptionInfo #"missing required keys"
+         (am/explain-or-throw!
+          ::am/manifest-inputs {"producer" "ab-validator"} "test"))))
+  (testing "rejects invalid hash values"
+    (is (thrown-with-msg?
+         clojure.lang.ExceptionInfo #"sha256: hash"
+         (am/explain-or-throw!
+          ::am/manifest-inputs
+          (assoc complete-manifest-inputs "work_content_hash" "nope")
+          "test")))))
 
-(deftest comparison-report-errors-test
-  (is (empty?
-       (validate/comparison-report-errors
-        {"report_schema" "abc.ab-validator-comparison.v0"
-         "parser_candidates" [{"parser_id" "fixture"}]})))
-  (is (= ["ab-validator comparison report has an unexpected report_schema"
-          "ab-validator comparison report must list parser_candidates"]
-         (validate/comparison-report-errors
+(deftest comparison-report-schema-test
+  (testing "accepts a well-formed comparison report"
+    (is (= :ok (am/explain-or-throw!
+                ::am/comparison-report
+                {"report_schema" "abc.ab-validator-comparison.v0"
+                 "parser_candidates" [{"parser_id" "fixture"}]}
+                "test"))))
+  (testing "rejects unexpected report_schema"
+    (is (thrown-with-msg?
+         clojure.lang.ExceptionInfo #"unexpected report_schema"
+         (am/explain-or-throw!
+          ::am/comparison-report
           {"report_schema" "wrong"
-           "parser_candidates" []}))))
+           "parser_candidates" [{"parser_id" "fixture"}]}
+          "test"))))
+  (testing "rejects empty parser_candidates"
+    (is (thrown-with-msg?
+         clojure.lang.ExceptionInfo #"parser_candidates"
+         (am/explain-or-throw!
+          ::am/comparison-report
+          {"report_schema" "abc.ab-validator-comparison.v0"
+           "parser_candidates" []}
+          "test")))))
 
 (deftest schema-hash-errors-test
   (is (empty?

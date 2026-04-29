@@ -4,6 +4,7 @@
             ;; Apache SSHD) get pulled in by other requires.
    [abc.tools.logging :as logging]
    [abc.tools.files :as files]
+   [abc.tools.malli :as am]
    [abc.tools.manifest-index :as manifest-index]
    [abc.tools.manifest-to-rdf :as manifest-to-rdf]
    [abc.tools.manifest :as manifest]
@@ -18,67 +19,6 @@
    [clojure.set :as set]
    [clojure.string :as string]
    [taoensso.telemere :as tel]))
-
-(def required-manifest-input-keys
-  #{"producer"
-    "producer_version"
-    "work_id"
-    "corpus_snapshot_hash"
-    "work_content_hash"
-    "parser_build_hash"
-    "parser_config_hash"
-    "parser_ir_schema_hash"
-    "diagnostic_schema_hash"
-    "warning_sidecar_hash"
-    "run_summary_hash"
-    "comparison_report_hash"})
-
-(defn manifest-input-errors [manifest-inputs]
-  (let [missing (sort (set/difference required-manifest-input-keys
-                                      (set (keys manifest-inputs))))
-        missing-error (when (seq missing)
-                        (str "ab-validator manifest inputs missing keys: "
-                             (string/join ", " missing)))
-        hash-errors (for [[k v] (sort-by key manifest-inputs)
-                          :when (string/ends-with? k "_hash")
-                          :when (not (and (string? v)
-                                          (re-matches files/hash-pattern v)))]
-                      (str "ab-validator manifest input " k
-                           " is not a sha256 hash: " v))]
-    (vec (concat (when missing-error [missing-error])
-                 hash-errors))))
-
-(defn run-summary-errors [events]
-  (let [event-types (mapv #(get % "event") events)
-        start-count (count (filter #{"run-start"} event-types))
-        complete-count (count (filter #{"run-complete"} event-types))
-        run-ids (->> events
-                     (keep #(get % "run_id"))
-                     set)]
-    (vec
-     (concat
-      (when (not= 1 start-count)
-        ["ab-validator run summary must contain exactly one run-start event"])
-      (when (not= 1 complete-count)
-        ["ab-validator run summary must contain exactly one run-complete event"])
-      (when (not= ["run-start"] (subvec event-types 0 (min 1 (count event-types))))
-        ["ab-validator run summary must start with run-start"])
-      (when (not= ["run-complete"] (subvec event-types (max 0 (dec (count event-types)))))
-        ["ab-validator run summary must end with run-complete"])
-      (when (< 1 (count run-ids))
-        ["ab-validator run summary events must all use the same run_id"])
-      (for [event events
-            :when (not (contains? event "run_id"))]
-        (str "run summary event is missing run_id: " event))))))
-
-(defn comparison-report-errors [comparison-report]
-  (vec
-   (concat
-    (when (not= "abc.ab-validator-comparison.v0"
-                (get comparison-report "report_schema"))
-      ["ab-validator comparison report has an unexpected report_schema"])
-    (when-not (seq (get comparison-report "parser_candidates"))
-      ["ab-validator comparison report must list parser_candidates"]))))
 
 (defn schema-hash-errors [manifest-inputs]
   (let [expected-parser-ir (manifest/schema-hash "schemas/parser-ir.schema.json")
@@ -182,17 +122,18 @@
 
 (defn validate-ab-validator-output! []
   (let [manifest-inputs (files/read-json (files/path "examples" "ab-validator-output" "manifest-inputs.json"))]
-    (check-errors! (manifest-input-errors manifest-inputs))
+    (am/explain-or-throw! ::am/manifest-inputs manifest-inputs
+                          "ab-validator manifest inputs")
     (check-errors! (schema-hash-errors manifest-inputs)))
   (check-errors!
    (parser-ir-schema-hash-errors
     (files/read-json (files/path "examples" "ab-validator-output" "parser-ir.json"))))
-  (check-errors!
-   (run-summary-errors
-    (files/read-json-lines (files/path "examples" "ab-validator-output" "run-summary.jsonl"))))
-  (check-errors!
-   (comparison-report-errors
-    (files/read-json (files/path "examples" "ab-validator-output" "comparison-report.json")))))
+  (am/explain-or-throw! ::am/run-summary-events
+                        (files/read-json-lines (files/path "examples" "ab-validator-output" "run-summary.jsonl"))
+                        "ab-validator run summary")
+  (am/explain-or-throw! ::am/comparison-report
+                        (files/read-json (files/path "examples" "ab-validator-output" "comparison-report.json"))
+                        "ab-validator comparison report"))
 
 (defn validate-canonicalization! []
   (let [expected "9d49ff018a43ac2b24323276424cc325e3a5d0a22716144c8800f9fec0911f0a"
@@ -560,6 +501,7 @@
 
 (defn -main [& _args]
   (logging/install-cli-handler!)
+  (am/install!)
   (try
     (validate-design-bundle!)
     (catch Throwable t

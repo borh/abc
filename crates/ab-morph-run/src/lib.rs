@@ -1,5 +1,6 @@
 mod compact;
 mod output;
+mod summary;
 
 use std::collections::BTreeSet;
 use std::fs::{self, File, OpenOptions};
@@ -15,6 +16,11 @@ use clap::ValueEnum;
 use output::{open_output_writer, read_jsonl_or_zst_to_string};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+
+pub use summary::{
+    CompactSummaryGroupBy, CompactSummaryOptions, CompactSummaryRow, CompactSummarySort,
+    summarize_compact_comparisons,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]

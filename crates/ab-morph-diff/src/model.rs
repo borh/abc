@@ -99,6 +99,46 @@ pub struct Comparison {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct CompactComparison {
+    pub from_analyzer: AnalyzerId,
+    pub to_analyzer: AnalyzerId,
+    pub text_id: TextId,
+    pub stats: ComparisonStats,
+    pub examples: Vec<CompactComparisonExample>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct CompactComparisonExample {
+    pub region_index: usize,
+    pub kind: CompactExampleKind,
+    pub text_span: Range<usize>,
+    pub from_indices: Range<usize>,
+    pub to_indices: Range<usize>,
+    pub from_surfaces: Vec<String>,
+    pub to_surfaces: Vec<String>,
+    pub feature_changes: Option<Vec<CompactFeatureChange>>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+pub enum CompactExampleKind {
+    Split,
+    Merge,
+    Resegment,
+    CoverageMissingFrom,
+    CoverageMissingTo,
+    CoverageUnequal,
+    CoverageInvalidInput,
+    FeatureDiff,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct CompactFeatureChange {
+    pub key: FeatureKey,
+    pub from: Option<String>,
+    pub to: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct ComparisonStats {
     pub from_morphemes: usize,
     pub to_morphemes: usize,

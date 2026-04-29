@@ -7,7 +7,8 @@ mod validate;
 
 pub use error::MorphDiffError;
 pub use model::{
-    AlignedMorpheme, Analysis, AnalyzerId, ChangedValue, Comparison, ComparisonStats,
+    AlignedMorpheme, Analysis, AnalyzerId, ChangedValue, CompactComparison,
+    CompactComparisonExample, CompactExampleKind, CompactFeatureChange, Comparison, ComparisonStats,
     CoverageMismatch, CoverageMismatchKind, FeatureDiff, FeatureKey, FeatureMap, Morpheme, Region,
     SegmentationDiff, SegmentationKind, TextId,
 };

@@ -2,10 +2,10 @@
   "contributors": [
     {
       "person_id": "000879",
-      "person_record_hash": "sha256:62c1a2dd026d12b9f59f869f7d49eedb356d82569fb0c416afb0b16fd2198206",
+      "person_record_hash": "sha256:feb0bffbcb40ab886280089550bb3a20f322de6c6051e321185cc50ab26708f0",
       "relation_to_work": "\u8457\u8005"
     }],
-  "metadata_record_schema_hash": "sha256:32aca3ff821f6ac11159f7b6a16190791f0535f230f933047e821513b785fad3",
+  "metadata_record_schema_hash": "sha256:692dfa23215ea6c58e21f5d293b364dff06371c75fb32ebc9694f52e8e5c9b1f",
   "metadata_record_schema_id": "https:\/\/w3id.org\/abc\/schemas\/metadata-record.schema.json",
   "work": 
   {

@@ -2,7 +2,7 @@
 
 ## Current State
 
-Four contract-harness milestones complete:
+Five contract-harness milestones complete:
 
 - **2026-04-27 v0 contract harness** (archived as
   `docs/archive/2026-04-27-v0-contract-harness.md`).
@@ -20,12 +20,21 @@ Four contract-harness milestones complete:
   A person edit only invalidates works that reference that person.
   `nix run .#aozora-ingest --refresh-manifest` closes the work +
   manifest identity loop.
+- **2026-04-29 Corpus-scale CSV ingestion.** `aozora-ingest --all
+  --output-dir <DIR>` streams every work in
+  `list_person_all_extended_utf8.csv` into 17,810 metadata-record
+  files under `<DIR>/works/` plus 1,334 deduplicated person-record
+  files under `<DIR>/persons/`. Schemas widened to reflect the
+  corpus reality (multi-category and absent NDC, mononym persons
+  with no `given_name`); single-work fixtures regenerate
+  byte-identically against the new shape.
 
 ## Canonical Commands
 
 ```bash
 nix run .#validate-design-bundle
 nix run .#aozora-ingest -- --zip references/aozorabunko/index_pages/list_person_all_extended_utf8.zip --work-id 000127 --output examples/v0/example-work/metadata-record.json
+nix run .#aozora-ingest -- --zip references/aozorabunko/index_pages/list_person_all_extended_utf8.zip --all --output-dir out/corpus
 nix run .#materialize-import -- examples/ab-validator-output out/imported --generated-at 2026-04-26T00:00:00Z
 nix run .#manifest-to-rdf -- examples/v0/example-work/manifest.json -o out/manifest.ttl
 nix flake check
@@ -36,31 +45,27 @@ bin/update-clj-nix-lock
 
 In rough order of leverage, none committed:
 
-1. **Corpus-scale CSV ingestion.** Stream the full Aozora CSV into
-   many metadata-record + person-record artifacts; needed for any
-   real corpus build. Two-stage CLI (persons-first, then per-work)
-   pre-staged by the separated-persons milestone.
-2. **Vocabulary review.** Audit the `abc:` predicates introduced by
+1. **Vocabulary review.** Audit the `abc:` predicates introduced by
    the metadata milestone (`abc:orthographicStyle`,
    `abc:copyrightExpired`, `abc:familyNameReading`, etc.) against
    possible standard alternatives once the legacy `aozora:`
    namespace question is resolved.
-3. **TEI ODD promotion.** Promote `schemas/tei-profile.odd` from
+2. **TEI ODD promotion.** Promote `schemas/tei-profile.odd` from
    stub to a project-specific ODD aligned with TEI P5 4.11.0 ruby
    support. Generate project-specific Relax NG and Schematron via
    `roma`/`teiroma` or equivalent, then use both layers in
    `validate-design-bundle`.
-4. **Cultural-heritage publication profile.** Evaluate the derived
+3. **Cultural-heritage publication profile.** Evaluate the derived
    Linked Art JSON-LD crosswalk and IIIF applicability fixtures
    without changing canonical manifest identity.
-5. **Parser-decision exercise (ADR 0002).** Run a candidate parser
+4. **Parser-decision exercise (ADR 0002).** Run a candidate parser
    (e.g. `aozora-rs`) over one Aozora work into the parser IR
    contract. Currently parked while parser work happens in another
    project.
-6. **Person identity drift (Flavor 2).** Splits, merges, renames as
+5. **Person identity drift (Flavor 2).** Splits, merges, renames as
    PROV-style events; the separated-persons milestone scoped Flavor 1
    only.
-7. **Move legacy namespaces behind clj-nix.** `abc.aozora`,
+6. **Move legacy namespaces behind clj-nix.** `abc.aozora`,
    `abc.tei`, `abc.stats` remain outside the v0 contract gate.
 
 ## Done Criteria For The Closed Milestones

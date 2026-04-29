@@ -20,7 +20,7 @@
     "person_record_schema_hash": { "$ref": "#/$defs/hash" },
     "person_id": { "type": "string", "pattern": "^[0-9]{6}$" },
     "family_name": { "type": "string", "minLength": 1 },
-    "given_name": { "type": "string", "minLength": 1 },
+    "given_name": { "$ref": "#/$defs/nullableString" },
     "family_name_reading": { "$ref": "#/$defs/nullableString" },
     "given_name_reading": { "$ref": "#/$defs/nullableString" },
     "family_name_sort": { "$ref": "#/$defs/nullableString" },

@@ -65,14 +65,16 @@
   unchanged so RDF/Turtle output remains byte-identical when the
   metadata-record namespace delegates here."
   [person]
-  (let [iri (str "<" (person-iri (get person "person_id")) ">")]
+  (let [iri (str "<" (person-iri (get person "person_id")) ">")
+        given (get person "given_name")
+        family (get person "family_name")]
     (cond-> {:rdf/about iri
              :rdf/type [:foaf/Person]
              :dcterms/identifier (->int-literal (get person "person_id"))
-             :foaf/familyName (get person "family_name")
-             :foaf/givenName (get person "given_name")
-             :foaf/name (str (get person "family_name") " "
-                             (get person "given_name"))}
+             :foaf/familyName family
+             :foaf/name (if given (str family " " given) family)}
+      given
+      (assoc :foaf/givenName given)
       (get person "family_name_reading")
       (assoc :abc/familyNameReading (get person "family_name_reading"))
       (get person "given_name_reading")

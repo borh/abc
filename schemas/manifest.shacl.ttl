@@ -176,7 +176,6 @@ abc:PersonRecordShape
   ] ;
   sh:property [
     sh:path foaf:givenName ;
-    sh:minCount 1 ;
     sh:maxCount 1 ;
     sh:datatype xsd:string
   ] ;

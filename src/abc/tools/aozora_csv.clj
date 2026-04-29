@@ -4,7 +4,8 @@
   no I/O beyond reading the supplied path or string. NFC normalization
   applied at the parse boundary."
   (:require [charred.api :as charred]
-            [clojure.java.io :as io])
+            [clojure.java.io :as io]
+            [clojure.string :as string])
   (:import [java.text Normalizer Normalizer$Form]))
 
 (def ^:private bom-char (char 0xFEFF))
@@ -88,7 +89,9 @@
      "subtitle_reading" (nullable (get row "副題読み"))
      "original_title" (nullable (get row "原題"))
      "first_published" (nullable (get row "初出"))
-     "ndc" (get row "分類番号")
+     "ndc" (let [v (some-> (get row "分類番号") nfc string/trim)]
+             (when (and v (re-matches #"NDC [0-9A-Z]+( [0-9A-Z]+)*" v))
+               v))
      "orthographic_style" (get row "文字遣い種別")
      "copyright_expired" (parse-bool-flag (get row "作品著作権フラグ"))
      "aozora_available" (get row "公開日")
@@ -99,7 +102,7 @@
 (defn parse-person-fields-from-row [row]
   {"person_id" (get row "人物ID")
    "family_name" (nfc (get row "姓"))
-   "given_name" (nfc (get row "名"))
+   "given_name" (nullable (get row "名"))
    "family_name_reading" (nullable (get row "姓読み"))
    "given_name_reading" (nullable (get row "名読み"))
    "family_name_sort" (nullable (get row "姓読みソート用"))

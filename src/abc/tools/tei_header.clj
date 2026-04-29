@@ -42,24 +42,22 @@
   the reading and romaji forms repeat surname/forename only."
   [person]
   (let [pid (get person "person_id")
-        family (get person "family_name")
-        given (get person "given_name")
-        family-r (get person "family_name_reading")
-        given-r (get person "given_name_reading")
-        family-l (get person "family_name_romaji")
-        given-l (get person "given_name_romaji")]
-    (cond-> [[:persName {:xml/lang "ja"}
-              [:surname family]
-              [:forename given]
-              [:idno {:type "aozora-person-id"} pid]]]
-      (and family-r given-r)
-      (conj [:persName {:xml/lang "ja-Hira"}
-             [:surname family-r]
-             [:forename given-r]])
-      (and family-l given-l)
-      (conj [:persName {:xml/lang "ja-Latn"}
-             [:surname family-l]
-             [:forename given-l]]))))
+        pers-name (fn [lang surname forename & extras]
+                    (cond-> [:persName {:xml/lang lang} [:surname surname]]
+                      forename (conj [:forename forename])
+                      true (into extras)))]
+    (cond-> [(pers-name "ja"
+                        (get person "family_name")
+                        (get person "given_name")
+                        [:idno {:type "aozora-person-id"} pid])]
+      (get person "family_name_reading")
+      (conj (pers-name "ja-Hira"
+                       (get person "family_name_reading")
+                       (get person "given_name_reading")))
+      (get person "family_name_romaji")
+      (conj (pers-name "ja-Latn"
+                       (get person "family_name_romaji")
+                       (get person "given_name_romaji"))))))
 
 (defn- author-block [person]
   (into [:author] (person-name-block person)))

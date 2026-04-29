@@ -61,7 +61,12 @@
         "subtitle_reading": { "$ref": "#/$defs/nullableString" },
         "original_title": { "$ref": "#/$defs/nullableString" },
         "first_published": { "$ref": "#/$defs/nullableString" },
-        "ndc": { "type": "string", "pattern": "^NDC [0-9A-Z]+$" },
+        "ndc": {
+          "anyOf": [
+            { "type": "null" },
+            { "type": "string", "pattern": "^NDC [0-9A-Z]+( [0-9A-Z]+)*$" }
+          ]
+        },
         "orthographic_style": {
           "type": "string",
           "enum": ["新字新仮名", "新字旧仮名", "旧字新仮名", "旧字旧仮名", "その他"]
@@ -72,8 +77,7 @@
         "card_url": { "type": "string", "format": "uri" },
         "source_editions": {
           "type": "array",
-          "items": { "$ref": "#/$defs/sourceEdition" },
-          "minItems": 1
+          "items": { "$ref": "#/$defs/sourceEdition" }
         }
       }
     },

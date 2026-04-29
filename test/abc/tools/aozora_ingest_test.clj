@@ -155,6 +155,91 @@
           (delete-recursive work-dir)
           (delete-recursive persons-dir))))))
 
+(defn- person-row [overrides]
+  ;; Variant of `row` letting us vary work_id / person_id / names in one place.
+  (row overrides))
+
+(def synthetic-corpus-rows
+  ;; Works 000127 and 000128 share person 000879 (Akutagawa).
+  ;; Work 000129 has a different person 000888 (Soseki).
+  [(person-row {"作品ID" "000127"
+                "底本名1" "羅生門" "底本出版社名1" "テスト出版社"})
+   (person-row {"作品ID" "000128"
+                "作品名" "鼻" "作品名読み" "はな" "ソート用読み" "はな"
+                "底本名1" "鼻" "底本出版社名1" "テスト出版社"})
+   (person-row {"作品ID" "000129"
+                "人物ID" "000888"
+                "作品名" "吾輩は猫である" "作品名読み" "わがはいはねこである"
+                "ソート用読み" "わかはいはねこてある"
+                "姓" "夏目" "名" "漱石"
+                "姓読み" "なつめ" "名読み" "そうせき"
+                "姓読みソート用" "なつめ" "名読みソート用" "そうせき"
+                "姓ローマ字" "Natsume" "名ローマ字" "Soseki"
+                "生年月日" "1867-02-09" "没年月日" "1916-12-09"
+                "底本名1" "吾輩は猫である" "底本出版社名1" "テスト出版社"})])
+
+(deftest ingest-corpus-emits-work-and-person-files-test
+  (testing "run-corpus! writes one metadata-record per work and dedups persons"
+    (let [out-dir (temp-dir "abc-ingest-corpus")]
+      (try
+        (let [{:keys [works-written persons-written]}
+              (ingest/run-corpus!
+               {:rows synthetic-corpus-rows
+                :output-dir (str out-dir)})]
+          (is (= 3 works-written))
+          (is (= 2 persons-written)))
+        (is (.exists (io/file out-dir "works" "000127.json")))
+        (is (.exists (io/file out-dir "works" "000128.json")))
+        (is (.exists (io/file out-dir "works" "000129.json")))
+        (is (.exists (io/file out-dir "persons" "000879.json")))
+        (is (.exists (io/file out-dir "persons" "000888.json")))
+        ;; Two works that share a person reference the same person_record_hash.
+        (let [m1 (files/read-json (str (io/file out-dir "works" "000127.json")))
+              m2 (files/read-json (str (io/file out-dir "works" "000128.json")))
+              h1 (-> m1 (get "contributors") first (get "person_record_hash"))
+              h2 (-> m2 (get "contributors") first (get "person_record_hash"))]
+          (is (= h1 h2)))
+        (finally
+          (delete-recursive out-dir))))))
+
+(deftest ingest-corpus-deterministic-test
+  (testing "two corpus runs produce byte-identical output"
+    (let [d1 (temp-dir "abc-ingest-corpus-1")
+          d2 (temp-dir "abc-ingest-corpus-2")]
+      (try
+        (ingest/run-corpus! {:rows synthetic-corpus-rows :output-dir (str d1)})
+        (ingest/run-corpus! {:rows synthetic-corpus-rows :output-dir (str d2)})
+        (doseq [rel ["works/000127.json" "works/000128.json" "works/000129.json"
+                     "persons/000879.json" "persons/000888.json"]]
+          (is (= (slurp (io/file d1 rel)) (slurp (io/file d2 rel)))
+              (str rel " differs between runs")))
+        (finally
+          (delete-recursive d1)
+          (delete-recursive d2))))))
+
+(deftest ingest-corpus-byte-identical-to-single-work-test
+  (testing "running corpus over the single-work fixture matches the single-work output"
+    (let [single-work-dir (temp-dir "abc-single")
+          single-persons-dir (temp-dir "abc-single-persons")
+          corpus-dir (temp-dir "abc-corpus-single")]
+      (try
+        (ingest/run-from-rows!
+         {:rows synthetic-rows-with-edition
+          :work-id "000127"
+          :output (str (io/file single-work-dir "metadata-record.json"))
+          :persons-output-dir (str single-persons-dir)})
+        (ingest/run-corpus!
+         {:rows synthetic-rows-with-edition
+          :output-dir (str corpus-dir)})
+        (is (= (slurp (io/file single-work-dir "metadata-record.json"))
+               (slurp (io/file corpus-dir "works" "000127.json"))))
+        (is (= (slurp (io/file single-persons-dir "000879.json"))
+               (slurp (io/file corpus-dir "persons" "000879.json"))))
+        (finally
+          (delete-recursive single-work-dir)
+          (delete-recursive single-persons-dir)
+          (delete-recursive corpus-dir))))))
+
 (deftest ingest-refresh-manifest-roundtrip-test
   (testing "--refresh-manifest rewrites metadata_record_hash and recomputes artifact_id; re-run is byte-identical"
     (let [work-dir (temp-dir "abc-ingest-rm-w")

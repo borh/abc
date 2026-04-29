@@ -166,6 +166,40 @@
             (tel/log! :info (str "refreshed manifest " refresh-manifest))))
         new-hash))))
 
+(defn run-corpus!
+  "Two-stage corpus ingest. Groups rows by work_id and writes:
+    - <output-dir>/works/<work_id>.json   (one metadata-record per work)
+    - <output-dir>/persons/<person_id>.json (deduplicated across works)
+
+  Returns {:works-written N :persons-written M}.
+
+  Cross-work person dedup is handled by the corruption-safe
+  write-person-file! call: identical bodies produce identical hashes
+  and are no-op rewrites; divergent bodies throw unless :overwrite is
+  true. Within a single work, build-record-fragment-from-rows already
+  enforces consistency.
+
+  Required keys: :rows, :output-dir.
+  Optional: :overwrite (boolean, default false)."
+  [{:keys [rows output-dir overwrite]}]
+  (let [works-dir (io/file output-dir "works")
+        persons-dir (io/file output-dir "persons")
+        rows-by-work (group-by #(get % "作品ID") rows)
+        person-ids (atom #{})]
+    (.mkdirs works-dir)
+    (.mkdirs persons-dir)
+    (doseq [[work-id work-rows] (sort-by key rows-by-work)]
+      (run-from-rows!
+       {:rows work-rows
+        :work-id work-id
+        :output (str (io/file works-dir (str work-id ".json")))
+        :persons-output-dir (str persons-dir)
+        :overwrite (boolean overwrite)})
+      (doseq [r work-rows]
+        (swap! person-ids conj (get r "人物ID"))))
+    {:works-written (count rows-by-work)
+     :persons-written (count @person-ids)}))
+
 (defn run!
   "CLI-shaped entry: reads the CSV from a ZIP path and delegates to
   run-from-rows!. Same return value."
@@ -174,15 +208,29 @@
         rows (ac/read-rows-from-string csv)]
     (run-from-rows! (-> opts (dissoc :zip-path) (assoc :rows rows)))))
 
+(defn run-corpus-from-zip!
+  "CLI-shaped entry: reads the CSV from a ZIP path and delegates to
+  run-corpus!."
+  [{:keys [zip-path] :as opts}]
+  (let [csv (read-zip-csv zip-path)
+        rows (ac/read-rows-from-string csv)]
+    (run-corpus! (-> opts (dissoc :zip-path) (assoc :rows rows)))))
+
 (def cli-options
   [["-z" "--zip ZIP" "Path to an Aozora list_person_all_extended ZIP."
     :id :zip-path]
    ["-w" "--work-id WORK_ID" "Aozora work ID (6-digit zero-padded string)."
     :id :work-id]
-   ["-o" "--output FILE" "Output JSON path (work metadata-record)."
+   ["-o" "--output FILE" "Output JSON path (work metadata-record). Single-work mode."
     :id :output]
+   [nil "--all"
+    "Corpus mode: ingest every work in the CSV. Requires --output-dir."
+    :id :all? :default false]
+   [nil "--output-dir DIR"
+    "Corpus-mode output root (writes <DIR>/works/ and <DIR>/persons/)."
+    :id :output-dir]
    [nil "--persons-output-dir DIR"
-    "Directory for per-person JSON files (default: <output-dir>/persons)."
+    "Single-work mode: directory for per-person JSON files (default: <output-dir>/persons)."
     :id :persons-output-dir]
    [nil "--overwrite" "Overwrite an existing on-disk person file whose hash differs."
     :id :overwrite :default false]
@@ -191,22 +239,34 @@
     :id :refresh-manifest]])
 
 (defn usage []
-  (tel/log! :warn (str "Usage: clojure -M:abc/aozora-ingest "
+  (tel/log! :warn (str "Usage:\n"
+                       "  Single-work mode: clojure -M:abc/aozora-ingest "
                        "--zip <path-to-zip> --work-id NNNNNN --output <path>"
                        " [--persons-output-dir DIR] [--overwrite]"
-                       " [--refresh-manifest manifest.json]")))
+                       " [--refresh-manifest manifest.json]\n"
+                       "  Corpus mode:      clojure -M:abc/aozora-ingest "
+                       "--zip <path-to-zip> --all --output-dir <DIR> [--overwrite]")))
 
 (defn -main [& args]
   (logging/install-cli-handler!)
-  (let [{:keys [options errors]} (cli/parse-opts args cli-options)]
-    (if (or (seq errors)
-            (nil? (:zip-path options))
-            (nil? (:work-id options))
-            (nil? (:output options)))
+  (let [{:keys [options errors]} (cli/parse-opts args cli-options)
+        {:keys [zip-path all? output-dir work-id output]} options
+        corpus? (boolean all?)
+        invalid? (or (seq errors)
+                     (nil? zip-path)
+                     (if corpus?
+                       (nil? output-dir)
+                       (or (nil? work-id) (nil? output))))]
+    (if invalid?
       (do
         (doseq [e errors] (tel/log! :error e))
         (usage)
         (System/exit 2))
-      (do
-        (run! options)
-        (tel/log! :info (str "wrote metadata-record to " (:output options)))))))
+      (if corpus?
+        (let [{:keys [works-written persons-written]}
+              (run-corpus-from-zip! options)]
+          (tel/log! :info (str "wrote " works-written " works and "
+                               persons-written " persons under " output-dir)))
+        (do
+          (run! options)
+          (tel/log! :info (str "wrote metadata-record to " output)))))))

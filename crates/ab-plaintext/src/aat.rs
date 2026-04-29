@@ -1,6 +1,6 @@
 use serde_json::Value;
 
-use crate::{PlainTextDocument, PlainTextError, SourceFormat};
+use crate::{PlainTextDocument, PlainTextError, SourceFormat, canonicalize_line_endings};
 
 pub fn from_aat_value(aat: &Value) -> Result<PlainTextDocument, PlainTextError> {
     let text_id = aat
@@ -23,7 +23,7 @@ pub fn visible_text_projection(aat: &Value) -> String {
             collect_block(block, &mut out);
         }
     }
-    out
+    canonicalize_line_endings(out)
 }
 
 fn collect_block(node: &Value, out: &mut String) {
@@ -122,6 +122,19 @@ mod tests {
         });
 
         assert_eq!(visible_text_projection(&aat), "ABCDEFGH");
+    }
+
+    #[test]
+    fn projection_canonicalizes_line_endings() {
+        let aat = json!({
+            "work_id": "w-line-endings",
+            "blocks": [{
+                "kind": "paragraph",
+                "content": [{"kind": "text", "value": "A\r\nB\rC\nD"}]
+            }]
+        });
+
+        assert_eq!(visible_text_projection(&aat), "A\nB\nC\nD");
     }
 
     #[test]

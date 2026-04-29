@@ -36,3 +36,24 @@ impl fmt::Display for PlainTextError {
 }
 
 impl Error for PlainTextError {}
+
+pub(crate) fn canonicalize_line_endings(text: impl Into<String>) -> String {
+    let text = text.into();
+    if !text.as_bytes().contains(&b'\r') {
+        return text;
+    }
+
+    let mut out = String::with_capacity(text.len());
+    let mut chars = text.chars().peekable();
+    while let Some(ch) = chars.next() {
+        if ch == '\r' {
+            if chars.peek() == Some(&'\n') {
+                chars.next();
+            }
+            out.push('\n');
+        } else {
+            out.push(ch);
+        }
+    }
+    out
+}

@@ -1,12 +1,12 @@
 use ab_source_syntax::comparison_lossy_body;
 use encoding_rs::SHIFT_JIS;
 
-use crate::{PlainTextDocument, SourceFormat};
+use crate::{PlainTextDocument, SourceFormat, canonicalize_line_endings};
 
 pub fn from_aozora_honbun_bytes(text_id: impl Into<String>, bytes: &[u8]) -> PlainTextDocument {
     let decoded = decode_source_bytes(bytes);
     let body = select_body(&decoded);
-    let text = comparison_lossy_body(&body).into_owned();
+    let text = canonicalize_line_endings(comparison_lossy_body(&body).into_owned());
 
     PlainTextDocument {
         text_id: text_id.into(),
@@ -91,6 +91,13 @@ mod tests {
         let source = "｜吾輩《わがはい》は猫である。";
         let doc = from_aozora_honbun_bytes("t3", source.as_bytes());
         assert_eq!(doc.text, "吾輩は猫である。");
+    }
+
+    #[test]
+    fn canonicalizes_line_endings_after_projection() {
+        let source = "A\r\nB\rC\nD";
+        let doc = from_aozora_honbun_bytes("line-endings", source.as_bytes());
+        assert_eq!(doc.text, "A\nB\nC\nD");
     }
 
     #[test]

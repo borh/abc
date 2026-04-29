@@ -15,6 +15,8 @@ use crate::features::feature_value;
 use crate::span_builder::{RawToken, build_analysis_from_tokens};
 use crate::{AnalyzerError, MorphAnalyzer};
 
+const SUDACHI_MAX_INPUT_BYTES: usize = 40_000;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SudachiMode {
     A,
@@ -79,12 +81,36 @@ impl MorphAnalyzer for SudachiAnalyzer {
     }
 
     fn analyze(&self, document: &PlainTextDocument) -> Result<Analysis, AnalyzerError> {
+        let chunks = sudachi_chunks(&document.text, SUDACHI_MAX_INPUT_BYTES);
+        let mut all_morphemes = Vec::new();
+
+        for chunk in chunks {
+            let mut analysis = self.analyze_chunk(document, &chunk)?;
+            offset_chunk_analysis(&mut analysis, chunk.byte_offset, chunk.char_offset);
+            all_morphemes.extend(analysis.morphemes);
+        }
+
+        Ok(Analysis {
+            analyzer: self.analyzer_id.clone(),
+            text_id: document.text_id.clone(),
+            source_text: document.text.clone(),
+            morphemes: all_morphemes,
+        })
+    }
+}
+
+impl SudachiAnalyzer {
+    fn analyze_chunk(
+        &self,
+        document: &PlainTextDocument,
+        chunk: &SudachiChunk<'_>,
+    ) -> Result<Analysis, AnalyzerError> {
         let mut tokenizer =
             StatefulTokenizer::new(self.dictionary.as_ref(), self.mode.as_sudachi());
         tokenizer.set_subset(InfoSubset::empty());
         let mut morphemes = MorphemeList::empty(self.dictionary.as_ref());
 
-        tokenizer.reset().push_str(&document.text);
+        tokenizer.reset().push_str(chunk.text);
         tokenizer
             .do_tokenize()
             .map_err(|err| AnalyzerError::Tokenize {
@@ -110,9 +136,108 @@ impl MorphAnalyzer for SudachiAnalyzer {
         build_analysis_from_tokens(
             self.analyzer_id.clone(),
             document.text_id.clone(),
-            document.text.clone(),
+            chunk.text.to_owned(),
             tokens,
         )
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct SudachiChunk<'a> {
+    text: &'a str,
+    byte_offset: usize,
+    char_offset: usize,
+}
+
+fn sudachi_chunks(text: &str, max_bytes: usize) -> Vec<SudachiChunk<'_>> {
+    if text.is_empty() {
+        return Vec::new();
+    }
+
+    let mut chunks = Vec::new();
+    let mut start = 0usize;
+    let mut char_offset = 0usize;
+
+    while start < text.len() {
+        let end = choose_chunk_end(text, start, max_bytes);
+        let chunk_text = &text[start..end];
+        let chunk_chars = chunk_text.chars().count();
+        chunks.push(SudachiChunk {
+            text: chunk_text,
+            byte_offset: start,
+            char_offset,
+        });
+        start = end;
+        char_offset += chunk_chars;
+    }
+
+    chunks
+}
+
+fn choose_chunk_end(text: &str, start: usize, max_bytes: usize) -> usize {
+    let hard_end = next_char_boundary_at_or_before(text, (start + max_bytes).min(text.len()));
+    if hard_end == text.len() {
+        return hard_end;
+    }
+
+    for predicate in [is_paragraph_boundary, is_sentence_boundary] {
+        if let Some(end) = find_last_boundary(text, start, hard_end, predicate) {
+            if end > start {
+                return end;
+            }
+        }
+    }
+
+    hard_end.max(next_char_boundary_after(text, start))
+}
+
+fn find_last_boundary(
+    text: &str,
+    start: usize,
+    hard_end: usize,
+    predicate: fn(char) -> bool,
+) -> Option<usize> {
+    text[start..hard_end]
+        .char_indices()
+        .filter_map(|(relative_index, ch)| {
+            if predicate(ch) {
+                Some(start + relative_index + ch.len_utf8())
+            } else {
+                None
+            }
+        })
+        .last()
+}
+
+fn is_paragraph_boundary(ch: char) -> bool {
+    ch == '\n' || ch == '\r'
+}
+
+fn is_sentence_boundary(ch: char) -> bool {
+    matches!(ch, '。' | '！' | '？' | '!' | '?')
+}
+
+fn next_char_boundary_at_or_before(text: &str, mut index: usize) -> usize {
+    while index > 0 && !text.is_char_boundary(index) {
+        index -= 1;
+    }
+    index
+}
+
+fn next_char_boundary_after(text: &str, mut index: usize) -> usize {
+    index += 1;
+    while index < text.len() && !text.is_char_boundary(index) {
+        index += 1;
+    }
+    index.min(text.len())
+}
+
+fn offset_chunk_analysis(analysis: &mut Analysis, byte_offset: usize, char_offset: usize) {
+    for morpheme in &mut analysis.morphemes {
+        morpheme.byte_span.start += byte_offset;
+        morpheme.byte_span.end += byte_offset;
+        morpheme.char_span.start += char_offset;
+        morpheme.char_span.end += char_offset;
     }
 }
 
@@ -202,6 +327,39 @@ mod tests {
         assert_eq!(SudachiMode::A.analyzer_suffix(), "a");
         assert_eq!(SudachiMode::B.analyzer_suffix(), "b");
         assert_eq!(SudachiMode::C.analyzer_suffix(), "c");
+    }
+
+    #[test]
+    fn chunking_prefers_sentence_boundaries_under_limit() {
+        let chunks = sudachi_chunks("吾輩は猫である。名前はまだ無い。", 24);
+
+        assert_eq!(chunks.len(), 2);
+        assert_eq!(chunks[0].text, "吾輩は猫である。");
+        assert_eq!(chunks[0].byte_offset, 0);
+        assert_eq!(chunks[0].char_offset, 0);
+        assert_eq!(chunks[1].text, "名前はまだ無い。");
+        assert_eq!(chunks[1].byte_offset, "吾輩は猫である。".len());
+        assert_eq!(chunks[1].char_offset, "吾輩は猫である。".chars().count());
+    }
+
+    #[test]
+    fn offsets_chunk_analysis_spans_to_original_document() {
+        let mut analysis = build_analysis_from_tokens(
+            "sudachi-c".to_owned(),
+            "work".to_owned(),
+            "名前".to_owned(),
+            vec![RawToken {
+                emitted_surface: "名前".to_owned(),
+                byte_span: Some(0..6),
+                features: FeatureMap::new(),
+            }],
+        )
+        .unwrap();
+
+        offset_chunk_analysis(&mut analysis, 24, 8);
+
+        assert_eq!(analysis.morphemes[0].byte_span, 24..30);
+        assert_eq!(analysis.morphemes[0].char_span, 8..10);
     }
 
     #[test]

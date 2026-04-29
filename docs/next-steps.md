@@ -2,7 +2,7 @@
 
 ## Current State
 
-Ten contract-harness milestones complete:
+Eleven contract-harness milestones complete:
 
 - **2026-04-27 v0 contract harness** (archived as
   `docs/archive/2026-04-27-v0-contract-harness.md`).
@@ -173,6 +173,41 @@ Ten contract-harness milestones complete:
   the identity invariant, and the loader's refusal to fetch
   external JSON-LD contexts. `docs/lod/linked-art-crosswalk.md` and
   `docs/lod/json-ld-context-policy.md` flip from Draft to Active.
+- **2026-04-29 TEI Schematron rule expansion (ADR 0012 widening).**
+  Three rules added to `schemas/tei-profile.odd`, regenerated through
+  the same TEI-Stylesheets / Saxon pipeline as the seven baseline
+  rules so the existing `tei-profile-drift` flake check keeps the
+  generated `tei-profile.sch` honest:
+  - `abc-ruby-base-non-empty` (error): `tei:ruby/tei:rb` must have
+    non-empty content. Closes a loophole where
+    `<rb></rb><rt>ねこ</rt>` passes the structural
+    `abc-ruby-complete` check.
+  - `abc-source-span-target-exists` (error): every fragment id in
+    `@source` must resolve to an `@xml:id` in this document. The
+    pre-existing `abc-source-span-reference` only enforced the `#`
+    prefix; dangling local references like `#nonexistent-target`
+    used to pass.
+  - `abc-gaiji-chardecl-resolution` (error): `tei:g[starts-with(@ref,
+    '#')]` must point to a `tei:charDecl/tei:char` declaration in
+    the document. Pre-existing `abc-gaiji-reference` only required
+    *some* `@ref`/`@corresp`/`@ana` attribute, so a `<g
+    ref="#nonexistent-gaiji"/>` with no matching declaration used to
+    pass. (The all-lowercase `chardecl` segment is required by the
+    flake's pattern-id canonicalization regex; mixed-case ids would
+    be filtered out as inherited TEI patterns.) Three new fixtures
+    under `fixtures/tei/invalid/` (`ruby-empty-base.xml`,
+    `source-span-dangling-ref.xml`, `gaiji-dangling-ref.xml`) cover
+    the new rules; `validate-design-bundle` runs each through
+    project-RNG and Schematron with the expected single-rule
+    findings, and `abc.tools.schematron-test` adds a deftest per
+    rule. The `source-span-external-ref.xml` fixture now correctly
+    trips both `abc-source-span-reference` and
+    `abc-source-span-target-exists` (the `external-ref` value has
+    no `#` and no matching `@xml:id`); the test was updated to
+    accept the set of findings rather than a single id. The v0
+    Schematron evaluator's `<sch:let>` and `role="nonfatal"`
+    limitations remain the ceiling on what inherited TEI rules can
+    be promoted.
 
 ## Canonical Commands
 
@@ -197,13 +232,21 @@ In rough order of leverage, none committed:
    `abc:copyrightExpired`, `abc:familyNameReading`, etc.) against
    possible standard alternatives once the legacy `aozora:`
    namespace question is resolved.
-2. **TEI rule expansion.** ADR 0012's seven-rule Schematron set
-   is deliberately narrow. Future widenings (additional ruby
-   shapes, source-span coverage tightening, gaiji-resolution
-   policy) extend the ODD's `constraintSpec` block and re-run
-   the drift gate; the ABC v0 Schematron evaluator's lack of
-   `<sch:let>` and `role="nonfatal"` support is the current
-   ceiling on inherited TEI rules.
+2. **Further TEI rule expansion.** Three high-leverage widenings
+   landed in the 2026-04-29 milestone (`abc-ruby-base-non-empty`,
+   `abc-source-span-target-exists`, `abc-gaiji-chardecl-resolution`).
+   Remaining candidates: `abc-ruby-reading-non-empty` mirroring the
+   base check; tighter `tei:char` content (every charDecl/char
+   must declare at least one resolution form — `mapping`,
+   `unicodeProp`, `localProp`, or `desc` — so `<char xml:id="x"/>`
+   doesn't silently count as resolved); explicit ruby
+   scope-qualifier expectation tied to the parser-IR fields
+   (`explicit`/`inferred`/`grouped`/`mid-word`/`ambiguous`); a
+   header-language assertion (`teiHeader//langUsage/language[@ident]`)
+   for downstream tooling. Each new rule extends the ODD's
+   `constraintSpec` block and re-runs the drift gate; the v0
+   evaluator's lack of `<sch:let>` and `role="nonfatal"` support
+   remains the ceiling on inherited TEI rules.
 3. **IIIF applicability promotion (ADR 0014).** The Linked Art half
    landed in the 2026-04-29 milestone; the IIIF side still ships
    only as a draft applicability fixture

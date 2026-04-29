@@ -13456,7 +13456,17 @@ Sample values include: 1] Unicode (Unicode); 2] Bridwell (E. Nelson Bridwell); 3
       </sch:rule>
    </pattern>
    <pattern xmlns="http://purl.oclc.org/dsdl/schematron"
-            id="abc-tei-v0-abc-gaiji-reference-constraint-rule-49">
+            id="abc-tei-v0-abc-ruby-base-non-empty-constraint-rule-49">
+      <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                xmlns:sch="http://purl.oclc.org/dsdl/schematron"
+                context="tei:ruby/tei:rb">
+         <sch:assert test="normalize-space(string(.)) != ''">
+                ABC TEI ruby base must not be empty; preserve the source token text.
+              </sch:assert>
+      </sch:rule>
+   </pattern>
+   <pattern xmlns="http://purl.oclc.org/dsdl/schematron"
+            id="abc-tei-v0-abc-gaiji-reference-constraint-rule-50">
       <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
                 xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                 context="tei:g">
@@ -13466,7 +13476,17 @@ Sample values include: 1] Unicode (Unicode); 2] Bridwell (E. Nelson Bridwell); 3
       </sch:rule>
    </pattern>
    <pattern xmlns="http://purl.oclc.org/dsdl/schematron"
-            id="abc-tei-v0-abc-figure-accessibility-constraint-rule-50">
+            id="abc-tei-v0-abc-gaiji-chardecl-resolution-constraint-rule-51">
+      <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                xmlns:sch="http://purl.oclc.org/dsdl/schematron"
+                context="tei:g[starts-with(@ref, '#')]">
+         <sch:assert test="/tei:TEI/tei:teiHeader//tei:charDecl/tei:char/@xml:id = substring-after(@ref, '#')">
+                ABC TEI gaiji local @ref must point to a charDecl/char declaration in this document.
+              </sch:assert>
+      </sch:rule>
+   </pattern>
+   <pattern xmlns="http://purl.oclc.org/dsdl/schematron"
+            id="abc-tei-v0-abc-figure-accessibility-constraint-rule-52">
       <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
                 xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                 context="tei:figure">
@@ -13476,7 +13496,7 @@ Sample values include: 1] Unicode (Unicode); 2] Bridwell (E. Nelson Bridwell); 3
       </sch:rule>
    </pattern>
    <pattern xmlns="http://purl.oclc.org/dsdl/schematron"
-            id="abc-tei-v0-abc-source-span-reference-constraint-rule-51">
+            id="abc-tei-v0-abc-source-span-reference-constraint-rule-53">
       <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
                 xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                 context="*[@source]">
@@ -13486,7 +13506,17 @@ Sample values include: 1] Unicode (Unicode); 2] Bridwell (E. Nelson Bridwell); 3
       </sch:rule>
    </pattern>
    <pattern xmlns="http://purl.oclc.org/dsdl/schematron"
-            id="abc-tei-v0-abc-transcription-vs-annotation-constraint-rule-52">
+            id="abc-tei-v0-abc-source-span-target-exists-constraint-rule-54">
+      <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
+                xmlns:sch="http://purl.oclc.org/dsdl/schematron"
+                context="*[@source]">
+         <sch:assert test="every $s in tokenize(normalize-space(@source), '\s+') satisfies //*[@xml:id = substring-after($s, '#')]">
+                ABC TEI source span fragments must resolve to an existing @xml:id in this document.
+              </sch:assert>
+      </sch:rule>
+   </pattern>
+   <pattern xmlns="http://purl.oclc.org/dsdl/schematron"
+            id="abc-tei-v0-abc-transcription-vs-annotation-constraint-rule-55">
       <sch:rule xmlns="http://www.tei-c.org/ns/1.0"
                 xmlns:sch="http://purl.oclc.org/dsdl/schematron"
                 context="tei:text//tei:w | tei:text//tei:m | tei:text//tei:pc">

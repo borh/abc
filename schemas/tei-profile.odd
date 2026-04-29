@@ -65,9 +65,12 @@
           <item><label>abc-tei-header-title</label> error: every generated TEI file must have a main title in `teiHeader`.</item>
           <item><label>abc-tei-header-source-work-id</label> error: TEI header must preserve the Aozora work ID or source identifier.</item>
           <item><label>abc-ruby-complete</label> error: ruby structures must contain base and reading components.</item>
+          <item><label>abc-ruby-base-non-empty</label> error: ruby base components must not be empty (a present-but-empty `rb` defeats `abc-ruby-complete`).</item>
           <item><label>abc-gaiji-reference</label> error: gaiji must retain original marker and either a resolved replacement or unresolved status.</item>
+          <item><label>abc-gaiji-chardecl-resolution</label> error: gaiji `@ref` fragment identifiers must point to a `charDecl/char` declaration in this document.</item>
           <item><label>abc-figure-accessibility</label> warning initially: figures/images should have `figDesc`, `head`, or caption mapping where available.</item>
           <item><label>abc-source-span-reference</label> error: elements claiming source spans must point to valid span identifiers.</item>
+          <item><label>abc-source-span-target-exists</label> error: each fragment id in `@source` must resolve to an `@xml:id` defined in this document.</item>
           <item><label>abc-transcription-vs-annotation</label> warning initially: linguistic enrichment must not be mixed into transcription unless declared.</item>
         </list>
 
@@ -122,12 +125,34 @@
           </constraint>
         </constraintSpec>
 
+        <constraintSpec ident="abc-ruby-base-non-empty" scheme="schematron">
+          <desc>Require ruby base components to carry the underlying source token.</desc>
+          <constraint>
+            <sch:rule context="tei:ruby/tei:rb">
+              <sch:assert test="normalize-space(string(.)) != ''">
+                ABC TEI ruby base must not be empty; preserve the source token text.
+              </sch:assert>
+            </sch:rule>
+          </constraint>
+        </constraintSpec>
+
         <constraintSpec ident="abc-gaiji-reference" scheme="schematron">
           <desc>Require gaiji traceability and resolution status.</desc>
           <constraint>
             <sch:rule context="tei:g">
               <sch:assert test="@ref or @corresp or @ana">
                 ABC TEI gaiji requires a declaration reference, source marker reference, or resolution status.
+              </sch:assert>
+            </sch:rule>
+          </constraint>
+        </constraintSpec>
+
+        <constraintSpec ident="abc-gaiji-chardecl-resolution" scheme="schematron">
+          <desc>Require local gaiji `@ref` to resolve to a `charDecl/char` declaration in this document.</desc>
+          <constraint>
+            <sch:rule context="tei:g[starts-with(@ref, '#')]">
+              <sch:assert test="/tei:TEI/tei:teiHeader//tei:charDecl/tei:char/@xml:id = substring-after(@ref, '#')">
+                ABC TEI gaiji local @ref must point to a charDecl/char declaration in this document.
               </sch:assert>
             </sch:rule>
           </constraint>
@@ -150,6 +175,17 @@
             <sch:rule context="*[@source]">
               <sch:assert test="every $s in tokenize(normalize-space(@source), '\s+') satisfies starts-with($s, '#')">
                 ABC TEI source span references must point to local span identifiers.
+              </sch:assert>
+            </sch:rule>
+          </constraint>
+        </constraintSpec>
+
+        <constraintSpec ident="abc-source-span-target-exists" scheme="schematron">
+          <desc>Require each `@source` fragment id to resolve to an `@xml:id` in this document.</desc>
+          <constraint>
+            <sch:rule context="*[@source]">
+              <sch:assert test="every $s in tokenize(normalize-space(@source), '\s+') satisfies //*[@xml:id = substring-after($s, '#')]">
+                ABC TEI source span fragments must resolve to an existing @xml:id in this document.
               </sch:assert>
             </sch:rule>
           </constraint>

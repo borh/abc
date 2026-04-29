@@ -63,15 +63,14 @@
              (mapv :severity findings))))))
 
 (deftest source-span-external-reference-fails-source-span-rule-test
-  (testing "source attributes must point to local span identifiers"
+  (testing "external @source value trips both the # prefix rule and the target-exists rule"
     (let [{:keys [findings]} (schematron/validate!
                               {:schema-path schema-path
                                :xml-path "fixtures/tei/invalid/source-span-external-ref.xml"
                                :label "source-span"})]
-      (is (= ["abc-source-span-reference"]
-             (mapv :rule-id findings)))
-      (is (= [:error]
-             (mapv :severity findings))))))
+      (is (= #{"abc-source-span-reference" "abc-source-span-target-exists"}
+             (set (map :rule-id findings))))
+      (is (every? #{:error} (map :severity findings))))))
 
 (deftest figure-missing-description-reports-warning-test
   (testing "figure without textual description reports abc-figure-accessibility warning"
@@ -85,6 +84,39 @@
              (mapv :severity findings)))
       (is (= [:report]
              (mapv :kind findings))))))
+
+(deftest ruby-empty-base-fails-base-non-empty-rule-test
+  (testing "ruby with empty rb fails abc-ruby-base-non-empty"
+    (let [{:keys [findings]} (schematron/validate!
+                              {:schema-path schema-path
+                               :xml-path "fixtures/tei/invalid/ruby-empty-base.xml"
+                               :label "ruby-empty-base"})]
+      (is (= ["abc-ruby-base-non-empty"]
+             (mapv :rule-id findings)))
+      (is (= [:error]
+             (mapv :severity findings))))))
+
+(deftest gaiji-dangling-ref-fails-chardecl-resolution-rule-test
+  (testing "gaiji local @ref to a missing charDecl/char fails abc-gaiji-chardecl-resolution"
+    (let [{:keys [findings]} (schematron/validate!
+                              {:schema-path schema-path
+                               :xml-path "fixtures/tei/invalid/gaiji-dangling-ref.xml"
+                               :label "gaiji-dangling"})]
+      (is (= ["abc-gaiji-chardecl-resolution"]
+             (mapv :rule-id findings)))
+      (is (= [:error]
+             (mapv :severity findings))))))
+
+(deftest source-span-dangling-ref-fails-target-exists-rule-test
+  (testing "source span fragment id with no matching @xml:id fails abc-source-span-target-exists"
+    (let [{:keys [findings]} (schematron/validate!
+                              {:schema-path schema-path
+                               :xml-path "fixtures/tei/invalid/source-span-dangling-ref.xml"
+                               :label "source-span-dangling"})]
+      (is (= ["abc-source-span-target-exists"]
+             (mapv :rule-id findings)))
+      (is (= [:error]
+             (mapv :severity findings))))))
 
 (deftest transcription-enrichment-undeclared-reports-warning-test
   (testing "undeclared transcription enrichment reports abc-transcription-vs-annotation warning"

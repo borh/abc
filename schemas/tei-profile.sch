@@ -13,7 +13,7 @@
    <ns prefix="sch" uri="http://purl.oclc.org/dsdl/schematron"/>
    <ns prefix="sch1x" uri="http://www.ascc.net/xml/schematron"/>
    <!-- ******************************************************* -->
-   <!-- constraints in en, und, mul, zxx, of which there are 80 -->
+   <!-- constraints in en, und, mul, zxx, of which there are 83 -->
    <!-- ******************************************************* -->
    <pattern id="abc-tei-header-title">
       <rule context="tei:teiHeader">
@@ -30,9 +30,19 @@
          <assert test="tei:rb and tei:rt"> ABC TEI ruby requires both rb and rt components.</assert>
       </rule>
    </pattern>
+   <pattern id="abc-ruby-base-non-empty">
+      <rule context="tei:ruby/tei:rb">
+         <assert test="normalize-space(string(.)) != ''"> ABC TEI ruby base must not be empty; preserve the source token text.</assert>
+      </rule>
+   </pattern>
    <pattern id="abc-gaiji-reference">
       <rule context="tei:g">
          <assert test="@ref or @corresp or @ana"> ABC TEI gaiji requires a declaration reference, source marker reference, or resolution status.</assert>
+      </rule>
+   </pattern>
+   <pattern id="abc-gaiji-chardecl-resolution">
+      <rule context="tei:g[starts-with(@ref, '#')]">
+         <assert test="/tei:TEI/tei:teiHeader//tei:charDecl/tei:char/@xml:id = substring-after(@ref, '#')"> ABC TEI gaiji local @ref must point to a charDecl/char declaration in this document.</assert>
       </rule>
    </pattern>
    <pattern id="abc-figure-accessibility">
@@ -43,6 +53,11 @@
    <pattern id="abc-source-span-reference">
       <rule context="*[@source]">
          <assert test="every $s in tokenize(normalize-space(@source), '\s+') satisfies starts-with($s, '#')"> ABC TEI source span references must point to local span identifiers.</assert>
+      </rule>
+   </pattern>
+   <pattern id="abc-source-span-target-exists">
+      <rule context="*[@source]">
+         <assert test="every $s in tokenize(normalize-space(@source), '\s+') satisfies //*[@xml:id = substring-after($s, '#')]"> ABC TEI source span fragments must resolve to an existing @xml:id in this document.</assert>
       </rule>
    </pattern>
    <pattern id="abc-transcription-vs-annotation">

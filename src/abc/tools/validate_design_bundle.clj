@@ -164,8 +164,11 @@
                 "fixtures/tei/invalid/missing-title.xml"
                 "fixtures/tei/invalid/missing-source-work-id.xml"
                 "fixtures/tei/invalid/gaiji-missing-ref.xml"
+                "fixtures/tei/invalid/gaiji-dangling-ref.xml"
                 "fixtures/tei/invalid/ruby-missing-reading.xml"
+                "fixtures/tei/invalid/ruby-empty-base.xml"
                 "fixtures/tei/invalid/source-span-external-ref.xml"
+                "fixtures/tei/invalid/source-span-dangling-ref.xml"
                 "fixtures/tei/warnings/figure-missing-desc.xml"
                 "fixtures/tei/warnings/transcription-enrichment-undeclared.xml"))
 
@@ -532,7 +535,10 @@
                       "fixtures/tei/warnings/transcription-enrichment-undeclared.xml"
                       "fixtures/tei/invalid/missing-source-work-id.xml"
                       "fixtures/tei/invalid/gaiji-missing-ref.xml"
-                      "fixtures/tei/invalid/source-span-external-ref.xml"])
+                      "fixtures/tei/invalid/gaiji-dangling-ref.xml"
+                      "fixtures/tei/invalid/ruby-empty-base.xml"
+                      "fixtures/tei/invalid/source-span-external-ref.xml"
+                      "fixtures/tei/invalid/source-span-dangling-ref.xml"])
       (tel/log! :info "tei project rng validation ok")
       (tel/log! :info "==> Validating TEI against project Schematron")
       (validate-tei-schematron!
@@ -551,10 +557,16 @@
                            #{"abc-tei-header-source-work-id"}
                            "fixtures/tei/invalid/gaiji-missing-ref.xml"
                            #{"abc-gaiji-reference"}
+                           "fixtures/tei/invalid/gaiji-dangling-ref.xml"
+                           #{"abc-gaiji-chardecl-resolution"}
                            "fixtures/tei/invalid/ruby-missing-reading.xml"
                            #{"abc-ruby-complete"}
+                           "fixtures/tei/invalid/ruby-empty-base.xml"
+                           #{"abc-ruby-base-non-empty"}
                            "fixtures/tei/invalid/source-span-external-ref.xml"
-                           #{"abc-source-span-reference"}}})
+                           #{"abc-source-span-reference"}
+                           "fixtures/tei/invalid/source-span-dangling-ref.xml"
+                           #{"abc-source-span-target-exists"}}})
       (tel/log! :info "tei schematron validation ok")
       (tel/log! :info "==> Validating Linked Art publication view (ADR 0013)")
       (validate-publication-view!

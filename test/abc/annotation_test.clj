@@ -1,5 +1,6 @@
 (ns abc.annotation-test
   (:require [abc.annotation :refer :all]
+            [abc.tools.malli :as am]
             [clojure.test :as t :refer [deftest is use-fixtures]]
             [clojure.string :as string]
             [malli.core :as m]
@@ -7,13 +8,13 @@
             [malli.dev.pretty :as pretty]
             [abc.test-utils :refer :all]))
 
-(dev/start! {:report (pretty/reporter)})
-
 (def ^:dynamic ^:private *parser* nil)
 
 (defn fixture [f]
-  (binding []
-    (f)))
+  (am/install!)
+  (dev/start! {:report (pretty/reporter)})
+  (try (f)
+       (finally (dev/stop!))))
 
 (use-fixtures :once fixture)
 
@@ -40,28 +41,28 @@
               {:sentence/fragment "J", :fragment/annotation {:annotation/type :ruby, :ruby/reading "K"}}
               "L"]]
     (is (= test parsed-sentence))
-    (is (schema-valid :sentence/annotated-text parsed-sentence registry))
-    (is (schema-valid :document/body parsed-doc registry))))
+    (is (schema-valid :sentence/annotated-text parsed-sentence))
+    (is (schema-valid :document/body parsed-doc))))
 
 (deftest parse-annotations-tests
   (doseq [s (drop-last test-strings)]
-    (is (schema-valid :sentence/annotated-text (aozora-annotation->tags (string/trim s)) registry))))
+    (is (schema-valid :sentence/annotated-text (aozora-annotation->tags (string/trim s))))))
 
 (deftest parse-aozora-text
   (is (= (count test-strings) (count parsed-strings)))
   (doseq [[s s-gold] (map vector test-strings parsed-strings)]
     (let [s-parsed (parse-text s)]
       (is (= s-gold (clojure.walk/prewalk
-                      (fn [x]
-                        (if (map? x)
-                          (dissoc x :document/metadata :sentence/tokens :sentence/text)
-                          x))
-                      s-parsed)))
-      (is (schema-validate :document/body s-parsed registry)))))
+                     (fn [x]
+                       (if (map? x)
+                         (dissoc x :document/metadata :sentence/tokens :sentence/text)
+                         x))
+                     s-parsed)))
+      (is (schema-validate :document/body s-parsed)))))
 
 (deftest parse-aozora-plaintext
   (doseq [s test-strings]
-    (is (schema-valid :string (doc->plaintext (parse-text s)) registry))))
+    (is (schema-valid :string (doc->plaintext (parse-text s))))))
 
 #_(deftest parse-tests
     (is (map parse-bnf test-strings)))

@@ -1,7 +1,7 @@
 (ns abc.tei-test
   (:require [abc.tei :refer :all]
             [abc.annotation :as annotation]
-            [abc.annotation.schema :as annotation-schema]
+            [abc.tools.malli :as am]
             [clojure.test :as t :refer [deftest is use-fixtures]]
             [abc.test-utils :refer :all]
             [malli.generator :as mg]
@@ -14,32 +14,25 @@
 (def ^:dynamic ^:private *text* nil)
 
 (defn tei-fixture [f]
+  (am/install!)
   (let [work-record (xtdb/work-query "文鳥" "夏目")]
     (clojure.pprint/pprint work-record)
-    (binding [*metadata* (metadata-to-tei work-record) #_(mg/generate [:schema {:registry registry} :tei/header])
-              *text* (annotation/parse-text "A［＃B］C｜D《E》F※［＃1-86-29］G［H］I｜J《K》L") #_(mg/generate [:schema {:registry annotation-schema/registry} :document/body])]
+    (binding [*metadata* (metadata-to-tei work-record)
+              *text* (annotation/parse-text "A［＃B］C｜D《E》F※［＃1-86-29］G［H］I｜J《K》L")]
       (println *text*)
       (f))))
 
 (use-fixtures :once tei-fixture)
 
 (deftest header-test
-  #_(is *metadata*)
-  #_(is (gen/sample (mg/generator [:schema {:registry registry} :tei/header])))
   (let [h (header *metadata*)]
-    (is (schema-valid
-          vector?
-          #_[:vector [:teiHeader :vector] [:profileDesc :vector] [:revisionDesc :vector] [:classDecl :vector]]
-          h
-          (merge registry
-                 annotation-schema/registry)))))
+    (is (schema-valid vector? h))))
 
 (deftest body-test
   (is *text*)
-  (is (gen/sample (mg/generator [:schema {:registry annotation-schema/registry} :document/body])))
+  (is (gen/sample (mg/generator :document/body)))
   (let [b (body *text*)]
-    (is (schema-valid vector? b (merge registry
-                                       annotation-schema/registry)))))
+    (is (schema-valid vector? b))))
 
 (deftest document-test
   (is (doc *metadata* *text*))

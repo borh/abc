@@ -1,7 +1,9 @@
 (ns abc.annotation-schema-test
-  (:require [abc.annotation.schema :as annotation-schema]
-            [abc.test-utils]
-            [clojure.test :refer [deftest is]]))
+  (:require [abc.test-utils]
+            [abc.tools.malli :as am]
+            [clojure.test :refer [deftest is use-fixtures]]))
+
+(use-fixtures :once (fn [f] (am/install!) (f)))
 
 (deftest registry-validates-document-body-shape
   (let [doc {:document/paragraphs
@@ -20,4 +22,4 @@
                          :hapax-legomenon 1
                          :yules-k 0.0
                          :sttr-500 nil}}]
-    (is (schema-valid :document/body doc annotation-schema/registry))))
+    (is (schema-valid :document/body doc))))

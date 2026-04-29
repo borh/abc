@@ -1,48 +1,40 @@
 {
-  "@context": [
-    "https://linked.art/ns/v1/linked-art.json",
-    "../../../../contexts/abc-v0.jsonld"
-  ],
-  "id": "https://w3id.org/abc/example/work/000127/linked-art-candidate",
-  "type": "HumanMadeObject",
-  "_label": "羅生門 derived publication view candidate",
-  "canonicalManifest": "https://w3id.org/abc/artifact/sha256-bdda3542406de4ad4ff9ecc4c4d135b67678dd1861f943debd3e6275ad325f12",
-  "artifactId": "sha256:bdda3542406de4ad4ff9ecc4c4d135b67678dd1861f943debd3e6275ad325f12",
+  "@context": "https:\/\/w3id.org\/abc\/contexts\/abc-v0.jsonld",
+  "_label": "\u7f85\u751f\u9580 derived publication view candidate",
+  "artifactId": "sha256:0d426e23314fc72d1a912d074168a1ff509f0139eead96721906750267ef38f5",
+  "canonicalManifest": "https:\/\/w3id.org\/abc\/artifact\/sha256-0d426e23314fc72d1a912d074168a1ff509f0139eead96721906750267ef38f5",
+  "id": "https:\/\/w3id.org\/abc\/example\/work\/000127\/linked-art-candidate",
   "identified_by": [
     {
-      "type": "Name",
-      "content": "羅生門",
+      "content": "\u7f85\u751f\u9580",
       "language": [
         {
-          "id": "http://vocab.getty.edu/aat/300388277",
-          "type": "Language",
-          "_label": "Japanese"
-        }
-      ]
+          "_label": "Japanese",
+          "id": "http:\/\/vocab.getty.edu\/aat\/300388277",
+          "type": "Language"
+        }],
+      "type": "Name"
     },
     {
-      "type": "Identifier",
-      "content": "000127",
       "classified_as": [
         {
-          "id": "https://w3id.org/abc/vocab#AozoraWorkId",
-          "type": "Type",
-          "_label": "Aozora work ID"
-        }
-      ]
-    }
-  ],
+          "_label": "Aozora work ID",
+          "id": "https:\/\/w3id.org\/abc\/vocab#AozoraWorkId",
+          "type": "Type"
+        }],
+      "content": "000127",
+      "type": "Identifier"
+    }],
   "referred_to_by": [
     {
-      "type": "LinguisticObject",
-      "content": "Candidate Linked Art-compatible view generated from ABC metadata; not canonical for v0."
-    }
-  ],
+      "content": "Candidate Linked Art-compatible view generated from ABC metadata; not canonical for v0.",
+      "type": "LinguisticObject"
+    }],
   "subject_of": [
     {
-      "id": "https://www.aozora.gr.jp/cards/000879/card127.html",
-      "type": "DigitalObject",
-      "_label": "Aozora Bunko card"
-    }
-  ]
+      "_label": "Aozora Bunko card",
+      "id": "https:\/\/www.aozora.gr.jp\/cards\/000879\/card127.html",
+      "type": "DigitalObject"
+    }],
+  "type": "HumanMadeObject"
 }

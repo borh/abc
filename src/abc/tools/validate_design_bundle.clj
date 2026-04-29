@@ -4,6 +4,7 @@
             ;; Apache SSHD) get pulled in by other requires.
    [abc.tools.logging :as logging]
    [abc.tools.files :as files]
+   [abc.tools.linked-art :as linked-art]
    [abc.tools.malli :as am]
    [abc.tools.manifest-index :as manifest-index]
    [abc.tools.manifest-to-rdf :as manifest-to-rdf]
@@ -273,6 +274,64 @@
   (doseq [[path expected-rules] invalid-fixtures]
     (validate-schematron-invalid-fixture! schema-path path expected-rules)))
 
+(defn- file-bytes [path]
+  (with-open [in (io/input-stream (io/file path))]
+    (.readAllBytes in)))
+
+(defn validate-publication-view!
+  "Regenerate the Linked Art candidate, expanded, and validation-result
+  fixtures under a temp dir and byte-compare them against the committed
+  LOD fixtures. The harness internally enforces the artifact-id
+  identity invariant; here we additionally enforce that the on-disk
+  bytes are exactly what the harness emits, so any drift surfaces as a
+  bundle failure rather than an ADR 0013 invariant breach at publish
+  time."
+  [{:keys [manifest-path metadata-record-path context-path
+           candidate-path expanded-path result-path]}]
+  (let [temp (.toFile (java.nio.file.Files/createTempDirectory
+                       "abc-linked-art-bundle"
+                       (make-array java.nio.file.attribute.FileAttribute 0)))]
+    (try
+      (let [tmp-candidate (io/file temp "linked-art-candidate.jsonld")
+            tmp-expanded (io/file temp "linked-art-expanded.normalized.json")
+            tmp-result (io/file temp "jsonld-context-validation-result.json")]
+        (linked-art/write-publication-view!
+         {:manifest-path manifest-path
+          :metadata-record-path metadata-record-path
+          :context-path context-path
+          :candidate-path (str tmp-candidate)
+          :expanded-path (str tmp-expanded)
+          :result-path (str tmp-result)})
+        (doseq [[label committed regen]
+                [["linked-art-candidate.jsonld" candidate-path tmp-candidate]
+                 ["linked-art-expanded.normalized.json" expanded-path tmp-expanded]
+                 ["jsonld-context-validation-result.json" result-path tmp-result]]]
+          (let [a (file-bytes committed)
+                b (file-bytes regen)]
+            (when-not (= (seq a) (seq b))
+              (throw (ex-info (str label " drifted from harness output")
+                              {:committed (str committed)
+                               :regenerated (str regen)}))))))
+      (finally
+        (doseq [f (reverse (file-seq temp))]
+          (.delete f))))))
+
+(defn validate-iiif-applicability!
+  "Sanity-check the IIIF applicability decision record. ADR 0014 has
+  not yet been promoted to Accepted, so there is no JSON schema; we
+  only verify the file parses, names the example work, and carries an
+  expected status keyword."
+  [path]
+  (let [doc (files/read-json path)
+        status (get doc "status")
+        work-id (get doc "work_id")]
+    (when-not (#{"applicable" "not_applicable" "rights_blocker"} status)
+      (throw (ex-info (str "IIIF applicability status must be a known keyword: " status)
+                      {:path path :status status})))
+    (when-not (and (string? work-id) (re-matches #"\d{6}" work-id))
+      (throw (ex-info (str "IIIF applicability work_id must be a 6-digit Aozora work id: " work-id)
+                      {:path path :work-id work-id})))))
+
 (defn validate-git-cliff! []
   (run-command! "git-cliff" "--config" "cliff.toml" "--unreleased" "--strip" "header"
                 "--output" "/tmp/abc-changelog-check.md"))
@@ -497,6 +556,18 @@
                            "fixtures/tei/invalid/source-span-external-ref.xml"
                            #{"abc-source-span-reference"}}})
       (tel/log! :info "tei schematron validation ok")
+      (tel/log! :info "==> Validating Linked Art publication view (ADR 0013)")
+      (validate-publication-view!
+       {:manifest-path "examples/v0/example-work/manifest.json"
+        :metadata-record-path "examples/v0/example-work/metadata-record.json"
+        :context-path "contexts/abc-v0.jsonld"
+        :candidate-path "examples/v0/example-work/lod/linked-art-candidate.jsonld"
+        :expanded-path "examples/v0/example-work/lod/linked-art-expanded.normalized.json"
+        :result-path "examples/v0/example-work/lod/jsonld-context-validation-result.json"})
+      (tel/log! :info "linked art publication view ok")
+      (tel/log! :info "==> Checking IIIF applicability fixture (ADR 0014, draft)")
+      (validate-iiif-applicability! "examples/v0/example-work/iiif/applicability.json")
+      (tel/log! :info "iiif applicability fixture ok")
       (tel/log! :info "==> Checking git-cliff configuration")
       (validate-git-cliff!)
       (tel/log! :info "git-cliff config ok")

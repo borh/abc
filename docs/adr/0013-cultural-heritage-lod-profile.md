@@ -1,7 +1,8 @@
 # ADR 0013: Cultural-Heritage LOD Publication Profile
 
-Status: Draft
+Status: Accepted
 Date: 2026-04-28
+Accepted: 2026-04-29
 
 ## Context
 
@@ -53,7 +54,49 @@ must not change `ArtifactID`.
 - The canonical ABC JSON manifest and PROV-O view remain valid without Linked
   Art fixtures until this ADR is accepted and implementation gates are enabled.
 
+## Toolchain (pinned 2026-04-29)
+
+- titanium-json-ld 1.7.0 (`com.apicatalog/titanium-json-ld`) for JSON-LD 1.1
+  expansion.
+- Jakarta JSON-P 2.0.1 runtime (`org.glassfish:jakarta.json:2.0.1`, already
+  transitively pulled in by Apache Jena).
+
+The harness `abc.tools.linked-art` reads a manifest plus its
+metadata-record, deterministically builds a Linked Art-flavored JSON-LD
+candidate, runs titanium expand against an in-memory document loader
+that resolves only the ABC public context URI
+`https://w3id.org/abc/contexts/abc-v0.jsonld` to bytes from
+`contexts/abc-v0.jsonld`, and writes three byte-stable artifacts:
+`linked-art-candidate.jsonld`, `linked-art-expanded.normalized.json`,
+and `jsonld-context-validation-result.json`. Network fetches are
+explicitly refused. The candidate's `@context` therefore references
+only the ABC public context URI; CIDOC-CRM and Linked Art term
+mappings live inside `contexts/abc-v0.jsonld`.
+
+## Identity Invariant
+
+`abc:artifactId` is preserved literally through JSON-LD expansion. The
+harness extracts the value at the expanded `https://w3id.org/abc/vocab#artifactId`
+predicate and asserts byte-equality with `manifest.json`'s `artifact_id`;
+the bundle gate `validate-design-bundle` fails if expansion changes
+that value.
+
+## Acceptance Criteria
+
+- `validate-design-bundle` regenerates the LOD fixtures into a temp
+  directory and byte-compares against the committed
+  `examples/v0/example-work/lod/{linked-art-candidate.jsonld,
+  linked-art-expanded.normalized.json,
+  jsonld-context-validation-result.json}`. Any drift fails the bundle.
+- `validation-result.json` records `status: "ok"` and the recomputed
+  context hash.
+- `abc.tools.linked-art-test` covers determinism, byte-parity with
+  the committed fixtures, the recomputed context hash, the identity
+  invariant, and the loader's refusal to fetch external JSON-LD
+  contexts.
+
 ## References
 
 - Linked Art data model: https://linked.art/model/
 - Linked Art CIDOC-CRM profile: https://linked.art/model/profile/
+- titanium-json-ld release: https://github.com/filip26/titanium-json-ld/releases/tag/v1.7.0

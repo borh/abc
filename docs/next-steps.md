@@ -2,7 +2,7 @@
 
 ## Current State
 
-Seven contract-harness milestones complete:
+Ten contract-harness milestones complete:
 
 - **2026-04-27 v0 contract harness** (archived as
   `docs/archive/2026-04-27-v0-contract-harness.md`).
@@ -134,6 +134,45 @@ Seven contract-harness milestones complete:
   `nix run .#regenerate-tei-profile`. `nix flake check` runs the
   new `tei-profile-drift` check, which regenerates and byte-diffs
   against the committed artifacts; the build fails on any drift.
+- **2026-04-29 Linked Art publication view (ADR 0013).**
+  ABC now derives a Linked Art-flavored JSON-LD publication view from
+  the canonical manifest plus its metadata record without making it an
+  identity input. The harness `abc.tools.linked-art` pins
+  titanium-json-ld 1.7.0 (Jakarta JSON-P 2.0.1 comes in transitively
+  via Jena), builds a deterministic candidate
+  (`linked-art-candidate.jsonld`), runs JSON-LD 1.1 expansion against
+  an in-memory `DocumentLoader` that resolves only the ABC public
+  context URI `https://w3id.org/abc/contexts/abc-v0.jsonld` to bytes
+  from `contexts/abc-v0.jsonld` and explicitly refuses every other
+  URL, then writes `linked-art-expanded.normalized.json` and
+  `jsonld-context-validation-result.json` (status `ok`, recomputed
+  context hash, identity-invariant block). `contexts/abc-v0.jsonld`
+  is self-contained — no remote `linked.art` context fetch — and
+  carries CIDOC-CRM term aliases (`HumanMadeObject` → `crm:E22`,
+  `content` → `crm:P190_has_symbolic_content`,
+  `language` → `crm:P72_has_language` with `@type: @id`, plus
+  `Name`/`Identifier`/`Type`/`LinguisticObject`/`DigitalObject`).
+  The three previously-stub LOD fixtures
+  (`linked-art-candidate.jsonld` was hand-written and stale,
+  `linked-art-expanded.normalized.json` was a `fixture_status:
+  "placeholder"` stub, `jsonld-context-validation-result.json` was a
+  `status: "not_run"` stub) are replaced with the harness's real
+  byte-stable output. Identity invariant: the harness extracts the
+  literal value at the expanded
+  `https://w3id.org/abc/vocab#artifactId` predicate and asserts
+  byte-equality with `manifest.json`'s `artifact_id`; mismatch raises
+  and fails the bundle gate. `validate-design-bundle` regenerates
+  the three LOD fixtures into a temp directory and byte-compares
+  against the committed bytes (drift-gate); a draft IIIF
+  applicability fixture under
+  `examples/v0/example-work/iiif/applicability.json` is shape-checked
+  in the same step (status ∈ {applicable, not_applicable,
+  rights_blocker}; work_id matches `\d{6}`) ahead of ADR 0014's
+  promotion. `abc.tools.linked-art-test` covers determinism, byte
+  parity with the committed fixtures, the recomputed context hash,
+  the identity invariant, and the loader's refusal to fetch
+  external JSON-LD contexts. `docs/lod/linked-art-crosswalk.md` and
+  `docs/lod/json-ld-context-policy.md` flip from Draft to Active.
 
 ## Canonical Commands
 
@@ -165,9 +204,17 @@ In rough order of leverage, none committed:
    the drift gate; the ABC v0 Schematron evaluator's lack of
    `<sch:let>` and `role="nonfatal"` support is the current
    ceiling on inherited TEI rules.
-3. **Cultural-heritage publication profile.** Evaluate the derived
-   Linked Art JSON-LD crosswalk and IIIF applicability fixtures
-   without changing canonical manifest identity.
+3. **IIIF applicability promotion (ADR 0014).** The Linked Art half
+   landed in the 2026-04-29 milestone; the IIIF side still ships
+   only as a draft applicability fixture
+   (`examples/v0/example-work/iiif/applicability.json`) shape-checked
+   by `validate-design-bundle`. Promotion means accepting ADR 0014
+   with a justified status (`applicable` / `not_applicable` /
+   `rights_blocker`) per source, deciding whether ABC publishes IIIF
+   manifests for Aozora's pre-existing image facsimiles, and — if
+   yes — writing a real fixture under
+   `examples/v0/example-work/iiif/` plus a SHACL/JSON-Schema gate
+   that does not change canonical manifest identity.
 4. **Parser-decision exercise (ADR 0002).** Run a candidate parser
    (e.g. `aozora-rs`) over one Aozora work into the parser IR
    contract. Currently parked while parser work happens in another

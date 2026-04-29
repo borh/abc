@@ -61,14 +61,44 @@
       "hash": "sha256-Iz++ZjMTDvh3vHJjp/u9Zu+k1NBVGDeXRBTVy7i4H58="
     },
     {
-      "mvn-path": "com/apicatalog/titanium-json-ld/1.4.1/titanium-json-ld-1.4.1.jar",
+      "mvn-path": "com/apicatalog/titanium-jcs/1.1.1/titanium-jcs-1.1.1.jar",
       "mvn-repo": "https://repo1.maven.org/maven2/",
-      "hash": "sha256-LlOlWgGHaMczcEZ5wvA4xp2ENlExtC61NX+NLC2vTPA="
+      "hash": "sha256-LhDTZyGxmVfvQUVVt5UHNkoxVU0oK15BpUsBCM7Ik5o="
     },
     {
-      "mvn-path": "com/apicatalog/titanium-json-ld/1.4.1/titanium-json-ld-1.4.1.pom",
+      "mvn-path": "com/apicatalog/titanium-jcs/1.1.1/titanium-jcs-1.1.1.pom",
       "mvn-repo": "https://repo1.maven.org/maven2/",
-      "hash": "sha256-GWqhNbNsIB8Cg3YJ15VsClrdLg2uKJhZ/GQOeve778c="
+      "hash": "sha256-xxAtqO7HNCABjrbnrN016RqsiuXed2Q0M2mbT4h4ljE="
+    },
+    {
+      "mvn-path": "com/apicatalog/titanium-json-ld/1.7.0/titanium-json-ld-1.7.0.jar",
+      "mvn-repo": "https://repo1.maven.org/maven2/",
+      "hash": "sha256-c5kYtmGNp52ZvTm89PnRbLyyFHpEtobKi9ueT+0u0jE="
+    },
+    {
+      "mvn-path": "com/apicatalog/titanium-json-ld/1.7.0/titanium-json-ld-1.7.0.pom",
+      "mvn-repo": "https://repo1.maven.org/maven2/",
+      "hash": "sha256-kJeBJEfUnnM44Y7NJYm9BQB1FXfDA/eQK/M2i/nyHSk="
+    },
+    {
+      "mvn-path": "com/apicatalog/titanium-rdf-api/1.0.0/titanium-rdf-api-1.0.0.jar",
+      "mvn-repo": "https://repo1.maven.org/maven2/",
+      "hash": "sha256-HEFEKOUcwI8xR/FU2VWGBCLkkcSFbSYTu2N5egRQsWE="
+    },
+    {
+      "mvn-path": "com/apicatalog/titanium-rdf-api/1.0.0/titanium-rdf-api-1.0.0.pom",
+      "mvn-repo": "https://repo1.maven.org/maven2/",
+      "hash": "sha256-mE2jEBT1iFUohtJpUn9p6odyFtZCHJis7CP0ZoU3YUk="
+    },
+    {
+      "mvn-path": "com/apicatalog/titanium-rdf-n-quads/1.0.2/titanium-rdf-n-quads-1.0.2.jar",
+      "mvn-repo": "https://repo1.maven.org/maven2/",
+      "hash": "sha256-MlujQT3rlrfPf4xkzW7SMDXj+BM6frtAHNa3Y9/4icY="
+    },
+    {
+      "mvn-path": "com/apicatalog/titanium-rdf-n-quads/1.0.2/titanium-rdf-n-quads-1.0.2.pom",
+      "mvn-repo": "https://repo1.maven.org/maven2/",
+      "hash": "sha256-kl5kVlpzJ1gMwZ7ipsiAj4umZ7QPVcmEBiPMtEXtyTo="
     },
     {
       "mvn-path": "com/bhauman/cljs-test-display/0.1.1/cljs-test-display-0.1.1.jar",

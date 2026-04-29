@@ -1,7 +1,8 @@
 # JSON-LD Context Policy v0
 
-Status: Draft
+Status: Active
 Date: 2026-04-28
+Updated: 2026-04-29
 
 ABC JSON-LD publication views must declare explicit contexts.
 

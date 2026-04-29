@@ -1,7 +1,8 @@
 # Linked Art Crosswalk v0
 
-Status: Draft
+Status: Active
 Date: 2026-04-28
+Updated: 2026-04-29
 
 ABC keeps the canonical JSON manifest and PROV-O provenance view as the
 identity and reproducibility core. Linked Art is evaluated only as a derived

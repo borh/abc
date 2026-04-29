@@ -60,7 +60,14 @@
   ;; Explicit for the v0 Schematron harness. This intentionally matches the
   ;; Saxon version already present in deps-lock.json via the OWL stack; upgrade
   ;; to Saxon 12.x in a separate dependency-refresh change.
-  net.sf.saxon/Saxon-HE            {:mvn/version "9.6.0-4"}}
+  net.sf.saxon/Saxon-HE            {:mvn/version "9.6.0-4"}
+
+  ;; Linked Art / JSON-LD publication-view harness (ADR 0013). Jena pulls in
+  ;; titanium-json-ld 1.4.1 transitively; this explicit pin upgrades it to
+  ;; the current 1.7.x line so the LOD harness uses an up-to-date JSON-LD 1.1
+  ;; processor. The Jakarta JSON-P 2.x runtime provider already comes in via
+  ;; Jena (org.glassfish:jakarta.json:2.0.1).
+  com.apicatalog/titanium-json-ld  {:mvn/version "1.7.0"}}
 
  :aliases
  {:test {:extra-paths ["test"]

@@ -1,6 +1,14 @@
 {
-  "status": "not_run",
-  "context": "../../../../contexts/abc-v0.jsonld",
-  "context_hash": null,
-  "message": "Decision artifact only. JSON-LD compaction/expansion validation is enabled after ADR 0013 acceptance."
+  "candidate": "linked-art-candidate.jsonld",
+  "context": "https:\/\/w3id.org\/abc\/contexts\/abc-v0.jsonld",
+  "context_hash": "sha256:c049ef6b15544868e3f332a15d15d883352784ea661ffdc4e020e82ce21ed1b6",
+  "engine": "titanium-json-ld:1.7.0",
+  "expanded": "linked-art-expanded.normalized.json",
+  "identity_invariant": 
+  {
+    "expanded_artifact_id": "sha256:0d426e23314fc72d1a912d074168a1ff509f0139eead96721906750267ef38f5",
+    "manifest_artifact_id": "sha256:0d426e23314fc72d1a912d074168a1ff509f0139eead96721906750267ef38f5",
+    "preserved_after_expansion": true
+  },
+  "status": "ok"
 }

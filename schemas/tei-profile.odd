@@ -30,6 +30,8 @@
         <moduleRef key="namesdates"/>
         <moduleRef key="transcr"/>
         <moduleRef key="figures"/>
+        <moduleRef key="gaiji"/>
+        <moduleRef key="analysis"/>
 
         <!-- Schematron constraint declarations -->
         <constraintDecl scheme="schematron" queryBinding="xslt2">
@@ -75,12 +77,12 @@
             <p>Ruby is represented with native TEI `ruby`, `rb`, and `rt` elements.</p>
           </remarks>
         </elementSpec>
-        <elementSpec ident="g" mode="change" module="transcr">
+        <elementSpec ident="g" mode="change" module="gaiji">
           <remarks>
             <p>Gaiji uses TEI `g` with a stable declaration or resolution reference.</p>
           </remarks>
         </elementSpec>
-        <elementSpec ident="char" mode="change" module="transcr">
+        <elementSpec ident="char" mode="change" module="gaiji">
           <remarks>
             <p>Character declarations document unresolved or custom external-character mappings.</p>
           </remarks>
@@ -135,7 +137,7 @@
           <desc>Warn when a figure has no textual description.</desc>
           <constraint>
             <sch:rule context="tei:figure">
-              <sch:report test="not(tei:figDesc or tei:head or tei:p)">
+              <sch:report role="warning" test="not(tei:figDesc or tei:head or tei:p)">
                 ABC TEI figure should preserve a figDesc, head, or caption paragraph when available.
               </sch:report>
             </sch:rule>
@@ -157,7 +159,7 @@
           <desc>Warn when linguistic enrichment appears in the transcription body without declaration.</desc>
           <constraint>
             <sch:rule context="tei:text//tei:w | tei:text//tei:m | tei:text//tei:pc">
-              <sch:assert test="ancestor::tei:TEI/tei:teiHeader//tei:encodingDesc//tei:tagsDecl//tei:namespace[@name = 'http://www.tei-c.org/ns/1.0']/tei:tagUsage/@gi = local-name()">
+              <sch:assert role="warning" test="ancestor::tei:TEI/tei:teiHeader//tei:encodingDesc//tei:tagsDecl//tei:namespace[@name = 'http://www.tei-c.org/ns/1.0']/tei:tagUsage/@gi = local-name()">
                 ABC TEI linguistic enrichment in the transcription layer must be declared in the header.
               </sch:assert>
             </sch:rule>

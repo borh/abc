@@ -1,7 +1,8 @@
 # TEI Validation v0
 
-Status: Draft
+Status: Active
 Date: 2026-04-28
+Updated: 2026-04-29 (ODD-derived RNG/Schematron promoted; drift gate added)
 
 ABC TEI validation has two required layers:
 
@@ -50,6 +51,24 @@ that the business-rule layer catches constraints the structural schema cannot.
 | `fixtures/tei/invalid/gaiji-missing-ref.xml` | Fails `abc-gaiji-reference` |
 | `fixtures/tei/invalid/ruby-missing-reading.xml` | Fails `abc-ruby-complete` |
 | `fixtures/tei/warnings/figure-missing-desc.xml` | Reports `abc-figure-accessibility` |
+
+## Generated Artifacts and Drift Gate
+
+`schemas/tei-profile.odd` is the canonical contract. `schemas/tei-profile.rng`
+and `schemas/tei-profile.sch` are reproducibly generated from the ODD by the
+Nix derivation `tei-profile-artifacts` (TEI Stylesheets v7.60.0 + p5subset
+4.11.0 + Saxon-HE 12.9). Build-artifact canonicalization strips generation
+timestamps, rewrites the seven ABC `constraintSpec` pattern IDs back to their
+declared idents, and drops inherited TEI built-in patterns the v0 ABC
+Schematron evaluator does not implement. To regenerate after an ODD edit:
+
+```
+nix run .#regenerate-tei-profile
+```
+
+`nix flake check` runs `tei-profile-drift`, which fails the build if the
+committed artifacts diverge from what the ODD currently produces. See ADR 0012
+for the toolchain pin and canonicalization rationale.
 
 ## Validation Result Artifacts
 

@@ -4,8 +4,8 @@
     <fileDesc>
       <titleStmt/>
       <publicationStmt>
+        <publisher>ABC fixture</publisher>
         <idno type="aozora-work-id">000127</idno>
-        <p>ABC fixture.</p>
       </publicationStmt>
       <sourceDesc>
         <p>Aozora Bunko source fixture.</p>

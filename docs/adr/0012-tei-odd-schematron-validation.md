@@ -1,7 +1,8 @@
 # ADR 0012: TEI ODD, Relax NG, and Schematron Validation
 
-Status: Draft
+Status: Accepted
 Date: 2026-04-28
+Accepted: 2026-04-29
 Supersedes: TEI stub language in ADR 0006
 
 ## Context
@@ -78,9 +79,52 @@ The first Schematron rules are deliberately narrow:
 - Warning fixtures materialize reports with expected rule IDs.
 - Artifact manifests reference validation-result sidecars.
 
+## Toolchain (pinned 2026-04-29)
+
+- TEI Stylesheets v7.60.0
+  (https://github.com/TEIC/Stylesheets/releases/tag/v7.60.0)
+- p5subset.xml from TEI P5 4.11.0 vault
+  (https://www.tei-c.org/Vault/P5/4.11.0/xml/tei/odd/p5subset.xml)
+- Saxon-HE 12.9 (`pkgs.saxon-he`)
+
+The Nix derivation `tei-profile-artifacts` (defined inline in `flake.nix`)
+runs the chain `odd2odd.xsl → odd2relax.xsl` and `odd2odd.xsl →
+extract-isosch.xsl`, then applies a narrow build-artifact canonicalization
+step before emitting `tei-profile.rng` / `tei-profile.sch`:
+
+1. Strip the non-deterministic generation timestamps that
+   `odd2relax.xsl` and `extract-isosch.xsl` embed.
+2. Rewrite ABC pattern IDs from
+   `schematron-constraint-<ident>-<seq>` (the form
+   `extract-isosch.xsl` mints) back to the bare `<ident>` declared by
+   the ODD's `constraintSpec/@ident`. Inherited TEI built-in pattern
+   IDs are left untouched.
+3. Drop inherited TEI built-in patterns. The ODD's seven
+   `constraintSpec` rules are the committed contract surface; the v0
+   ABC Schematron evaluator (`abc.tools.schematron`) does not implement
+   `<sch:let>` or `role="nonfatal"` semantics that the inherited TEI
+   corpus depends on, so those patterns are stripped here rather than
+   deferred-and-failed at validation time.
+
+This canonicalization is purely artifact-shape: the ODD remains the
+single source of truth, and a future ADR can swap the toolchain or
+loosen the canonicalization without changing the ODD.
+
+## Drift Gate
+
+`nix flake check` builds `checks.<system>.tei-profile-drift`, which
+regenerates `tei-profile.rng` and `tei-profile.sch` through the same
+derivation, applies the same canonicalization, and `diff -u`s against
+the committed files. Build fails on any drift. To intentionally update
+the artifacts after editing `tei-profile.odd`, run
+`nix run .#regenerate-tei-profile`; that copies the regenerated files
+into `schemas/`, after which the drift gate is satisfied again.
+
 ## References
 
 - TEI documentation elements: https://tei-c.org/release/doc/tei-p5-doc/en/html/TD.html
 - TEI `constraintDecl`: https://tei-c.org/release/doc/tei-p5-doc/en/html/ref-constraintDecl.html
 - TEI `constraintSpec`: https://tei-c.org/release/doc/tei-p5-doc/en/html/ref-constraintSpec.html
 - TEI `constraintSpec` examples: https://tei-c.org/release/doc/tei-p5-doc/en/html/examples-constraintSpec.html
+- TEI Stylesheets release: https://github.com/TEIC/Stylesheets/releases/tag/v7.60.0
+- TEI P5 4.11.0 release: https://www.tei-c.org/release/doc/tei-p5-doc/en/html/index.html

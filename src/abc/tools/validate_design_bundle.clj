@@ -456,6 +456,14 @@
                      ["examples/v0/example-work/tei.xml"])
       (tel/log! :info "tei rng validation ok")
       (tel/log! :info "==> Validating TEI against project RelaxNG")
+      ;; missing-title and ruby-missing-reading are intentionally
+      ;; structurally invalid TEI: they have no <title> at all, and a
+      ;; <ruby> with no <rt>. Both fail the RelaxNG content model that
+      ;; the ODD-derived tei-profile.rng now enforces, in addition to
+      ;; tripping their corresponding ABC Schematron rule. They are
+      ;; covered by the Schematron partition below; excluding them from
+      ;; the project-RNG step keeps the structural-validity step honest
+      ;; about which fixtures *should* pass RNG.
       (validate-tei! "schemas/tei-profile.rng"
                      ["examples/v0/example-work/tei.xml"
                       "fixtures/tei/valid/rashomon-minimal.xml"
@@ -463,10 +471,8 @@
                       "fixtures/tei/valid/transcription-enrichment-declared.xml"
                       "fixtures/tei/warnings/figure-missing-desc.xml"
                       "fixtures/tei/warnings/transcription-enrichment-undeclared.xml"
-                      "fixtures/tei/invalid/missing-title.xml"
                       "fixtures/tei/invalid/missing-source-work-id.xml"
                       "fixtures/tei/invalid/gaiji-missing-ref.xml"
-                      "fixtures/tei/invalid/ruby-missing-reading.xml"
                       "fixtures/tei/invalid/source-span-external-ref.xml"])
       (tel/log! :info "tei project rng validation ok")
       (tel/log! :info "==> Validating TEI against project Schematron")

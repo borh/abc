@@ -2,7 +2,7 @@
 
 ## Current State
 
-Six contract-harness milestones complete:
+Seven contract-harness milestones complete:
 
 - **2026-04-27 v0 contract harness** (archived as
   `docs/archive/2026-04-27-v0-contract-harness.md`).
@@ -102,6 +102,38 @@ Six contract-harness milestones complete:
   restored to canonical identity. The schema-hash cascade
   rotates again under the widening; all fixtures regenerate
   byte-identically.
+- **2026-04-29 TEI ODD promotion (ADR 0012).**
+  `schemas/tei-profile.odd` is now the canonical TEI contract,
+  and both `schemas/tei-profile.rng` and `schemas/tei-profile.sch`
+  are reproducibly derived from it. The Nix derivation
+  `tei-profile-artifacts` (defined inline in `flake.nix`) pins
+  TEI Stylesheets v7.60.0, p5subset.xml from TEI P5 4.11.0, and
+  Saxon-HE 12.9, runs `odd2odd.xsl → odd2relax.xsl` and
+  `odd2odd.xsl → extract-isosch.xsl`, then applies a narrow
+  build-artifact canonicalization step: strip generation-timestamp
+  comments, rewrite the seven ABC `constraintSpec` pattern IDs
+  from `schematron-constraint-<ident>-<seq>` back to the bare
+  `<ident>`, and drop inherited TEI built-in patterns the v0 ABC
+  Schematron evaluator does not implement (`<sch:let>` and
+  `role="nonfatal"` semantics live there). The ODD picks up
+  `<moduleRef key="gaiji"/>` (so `<g>` / `<charDecl>` / `<char>`
+  are admitted under their real module) and
+  `<moduleRef key="analysis"/>` (so `tei:w | tei:m | tei:pc`
+  resolve under `abc-transcription-vs-annotation`); the warning
+  `role` attributes for `abc-figure-accessibility` and
+  `abc-transcription-vs-annotation` move into the ODD itself.
+  Nine fixtures restructure `<publicationStmt>` into the
+  `(publisher, idno)` form so they pass real RNG, and
+  `figure-missing-desc.xml` wraps its `<figure>` in `<p>`. The
+  two genuinely-structurally-invalid TEI fixtures
+  (`missing-title.xml`, `ruby-missing-reading.xml`) are removed
+  from the project-RNG validation list and remain Schematron-only
+  fixtures; their ABC rules (`abc-tei-header-title`,
+  `abc-ruby-complete`) are RNG-redundant for those cases. To
+  regenerate after an ODD edit, run
+  `nix run .#regenerate-tei-profile`. `nix flake check` runs the
+  new `tei-profile-drift` check, which regenerates and byte-diffs
+  against the committed artifacts; the build fails on any drift.
 
 ## Canonical Commands
 
@@ -112,6 +144,7 @@ nix run .#aozora-ingest -- --zip references/aozorabunko/index_pages/list_person_
 nix run .#validate-corpus -- --input-dir out/corpus
 nix run .#materialize-import -- examples/ab-validator-output out/imported --generated-at 2026-04-26T00:00:00Z
 nix run .#manifest-to-rdf -- examples/v0/example-work/manifest.json -o out/manifest.ttl
+nix run .#regenerate-tei-profile
 nix flake check
 bin/update-clj-nix-lock
 ```
@@ -125,11 +158,13 @@ In rough order of leverage, none committed:
    `abc:copyrightExpired`, `abc:familyNameReading`, etc.) against
    possible standard alternatives once the legacy `aozora:`
    namespace question is resolved.
-2. **TEI ODD promotion.** Promote `schemas/tei-profile.odd` from
-   stub to a project-specific ODD aligned with TEI P5 4.11.0 ruby
-   support. Generate project-specific Relax NG and Schematron via
-   `roma`/`teiroma` or equivalent, then use both layers in
-   `validate-design-bundle`.
+2. **TEI rule expansion.** ADR 0012's seven-rule Schematron set
+   is deliberately narrow. Future widenings (additional ruby
+   shapes, source-span coverage tightening, gaiji-resolution
+   policy) extend the ODD's `constraintSpec` block and re-run
+   the drift gate; the ABC v0 Schematron evaluator's lack of
+   `<sch:let>` and `role="nonfatal"` support is the current
+   ceiling on inherited TEI rules.
 3. **Cultural-heritage publication profile.** Evaluate the derived
    Linked Art JSON-LD crosswalk and IIIF applicability fixtures
    without changing canonical manifest identity.

@@ -138,10 +138,6 @@
       [:edition "9"]
       [:ptr {:target "http://..."}]]]]])
 
-#_(m/=> header [:=>
-                [:cat [:schema {:registry registry} :tei/header]]
-                [:vector :any]])
-
 ;; <purpose type="entertain" degree="high"/>
 ;; <purpose type="inform" degree="medium"/>
 
@@ -163,8 +159,6 @@
      (:quotation/direct m) (assoc :direct true)
      (:quotation/aloud m) (assoc :aloud true))
    s])
-
-#_(m/=> tei-quotation [:=> [:catn [:m Quotation :s :string]] [:tuple [:enum :quote :q] map?]])
 
 #_(s/fdef tei-tags
     :args (s/cat :tags (s/alt :p :paragraph/tags :s :sentence/tags))
@@ -198,11 +192,6 @@
         [:s (tei-tags (:sentence/tags s))
          sentence-text])])])
 
-#_(m/=> body
-        [:=>
-         [:cat [:schema {:registry annotation-schema/registry} :document/body]]
-         :vector])
-
 #_(s/fdef doc
     :args (s/cat :metadata :tei/header :text :document/body)
     :ret #(instance? Element %))
@@ -214,13 +203,6 @@
    [:TEI {:xmlns "http://www.tei-c.org/ns/1.0"}
     (header (assoc metadata ::aozora/stats (-> doc :document/metadata)))
     (body doc)]))
-
-#_(m/=> doc
-        [:=>
-         [:catn
-          [:metadata [:schema {:registry registry} :tei/header]]
-          [:text [:schema {:registry annotation-schema/registry} :document/body]]]
-         #(instance? Element %)])
 
 (defn save! [path data]
   ;; FIXME pretty-print

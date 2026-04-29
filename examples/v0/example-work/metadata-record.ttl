@@ -31,6 +31,8 @@
   foaf:familyName "芥川" ;
   foaf:givenName "竜之介" ;
   foaf:name "芥川 竜之介" ;
+  abc:edtfDateOfBirth "1892-03-01"^^abc:EDTF ;
+  abc:edtfDateOfDeath "1927-07-24"^^abc:EDTF ;
   abc:familyNameForSort "あくたかわ" ;
   abc:familyNameReading "あくたがわ" ;
   abc:familyNameRomaji "Akutagawa" ;

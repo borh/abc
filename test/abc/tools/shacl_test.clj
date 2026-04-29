@@ -5,12 +5,15 @@
             [arachne.aristotle :as aa]
             [arachne.aristotle.registry :as reg]
             [clojure.test :refer [deftest is testing]])
-  (:import [org.apache.jena.graph Graph]))
+  (:import [org.apache.jena.datatypes BaseDatatype]
+           [org.apache.jena.datatypes.xsd XSDDatatype]
+           [org.apache.jena.graph Graph NodeFactory]))
 
 ;; Register prefixes so keyword-based map literals resolve to the correct IRIs.
 ;; Idempotent; safe at load time.
 (reg/prefix 'abc     "https://w3id.org/abc/")
 (reg/prefix 'dcterms "http://purl.org/dc/terms/")
+(reg/prefix 'foaf    "http://xmlns.com/foaf/0.1/")
 (reg/prefix 'prov    "http://www.w3.org/ns/prov#")
 
 (deftest load-shapes-graph-test
@@ -150,3 +153,40 @@
   (testing "MetadataRecordPersonShape is no longer in the shapes graph"
     (is (not (contains? (shape-iris (shacl/load-shapes-graph))
                         "https://w3id.org/abc/MetadataRecordPersonShape")))))
+
+(def ^:private edtf-datatype
+  (BaseDatatype. "https://w3id.org/abc/EDTF"))
+
+(defn- edtf-literal [^String s]
+  (NodeFactory/createLiteral s edtf-datatype))
+
+(defn- xsd-int-literal [^String s]
+  (NodeFactory/createLiteral s XSDDatatype/XSDint))
+
+(deftest validate-malformed-edtf-date-of-birth-test
+  (testing "abc:edtfDateOfBirth that fails the v0 lexical pattern reports a PersonRecordShape violation tied to edtfDateOfBirth"
+    (let [shapes (shacl/load-shapes-graph)
+          ;; "1892?" carries the EDTF datatype (so sh:datatype passes) but
+          ;; uses an EDTF Level 1 uncertainty marker that's outside v0's
+          ;; constrained grammar, so sh:pattern must fire.
+          person {:rdf/about           "<http://www.aozora.gr.jp/index_pages/person001234.html>"
+                  :rdf/type            [:foaf/Person]
+                  :dcterms/identifier  (xsd-int-literal "1234")
+                  :foaf/familyName     "Test"
+                  :foaf/givenName      "Person"
+                  :foaf/name           "Test Person"
+                  :abc/edtfDateOfBirth (edtf-literal "1892?")}
+          data (-> (aa/graph :simple) (aa/add person))]
+      (try
+        (shacl/validate! {:shapes-graph shapes :data-graph data
+                          :label "bad-edtf-dob"})
+        (is false "expected validate! to throw")
+        (catch clojure.lang.ExceptionInfo e
+          (let [errors (:errors (ex-data e))]
+            (is (seq errors) "must report at least one violation")
+            (is (some (fn [v]
+                        (let [ctx (str (:source v) " " (:path v) " " (:message v))]
+                          (and (re-find #"edtfDateOfBirth|PersonRecordShape" ctx)
+                               (re-find #"(?i)pattern|1892" ctx))))
+                      errors)
+                "violation must reference edtfDateOfBirth/PersonRecordShape and the pattern failure")))))))

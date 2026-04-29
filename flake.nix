@@ -86,6 +86,16 @@
             );
             meta.description = "Build a metadata-record JSON from an Aozora list_person_all_extended ZIP slice";
           };
+
+          validate-corpus = {
+            type = "app";
+            program = toString (
+              pkgs.writeShellScript "abc-validate-corpus" ''
+                exec ${pkgs.clojure}/bin/clojure -M:abc/validate-corpus "$@"
+              ''
+            );
+            meta.description = "Validate an ingested corpus directory through SHACL";
+          };
         }
       );
 

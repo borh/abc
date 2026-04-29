@@ -202,6 +202,41 @@
         (finally
           (delete-recursive out-dir))))))
 
+(deftest ingest-corpus-skips-invalid-work-and-continues-test
+  (testing "run-corpus! logs and skips a work whose person fails validate!, completes the rest"
+    (let [out-dir (temp-dir "abc-ingest-corpus-skip")
+          ;; Work 000130 references a brand-new person 000999 with a
+          ;; calendar-impossible date that survives parse-date as raw
+          ;; passthrough; person-record/validate! must reject it.
+          ;; Works 000127 / 000128 / 000129 are clean and must still be written.
+          rows (conj synthetic-corpus-rows
+                     (person-row {"作品ID" "000130"
+                                  "人物ID" "000999"
+                                  "作品名" "羅生門続編"
+                                  "作品名読み" "らしょうもんぞくへん"
+                                  "ソート用読み" "らしようもんそくへん"
+                                  "姓" "テスト" "名" "次郎"
+                                  "姓読み" "てすと" "名読み" "じろう"
+                                  "姓読みソート用" "てすと" "名読みソート用" "しろう"
+                                  "姓ローマ字" "Test" "名ローマ字" "Jiro"
+                                  "生年月日" "2020-02-31" "没年月日" ""
+                                  "底本名1" "羅生門続編" "底本出版社名1" "テスト出版社"}))]
+      (try
+        (let [{:keys [works-written works-skipped skipped-work-ids]}
+              (ingest/run-corpus! {:rows rows :output-dir (str out-dir)})]
+          (is (= 3 works-written) "the three clean works are written")
+          (is (= 1 works-skipped) "the bad-date work is skipped")
+          (is (= ["000130"] skipped-work-ids))
+          (is (.exists (io/file out-dir "works" "000127.json")))
+          (is (.exists (io/file out-dir "works" "000128.json")))
+          (is (.exists (io/file out-dir "works" "000129.json")))
+          (is (not (.exists (io/file out-dir "works" "000130.json")))
+              "skipped work has no metadata-record on disk")
+          (is (not (.exists (io/file out-dir "persons" "000999.json")))
+              "the offending person was never written"))
+        (finally
+          (delete-recursive out-dir))))))
+
 (deftest ingest-corpus-deterministic-test
   (testing "two corpus runs produce byte-identical output"
     (let [d1 (temp-dir "abc-ingest-corpus-1")
@@ -216,6 +251,107 @@
         (finally
           (delete-recursive d1)
           (delete-recursive d2))))))
+
+(deftest ingest-omits-provenance-when-not-supplied-test
+  (testing "without :source-csv-provenance, the person record has no source_csv_provenance block"
+    (let [work-dir (temp-dir "abc-ing-noprov-w")
+          persons-dir (temp-dir "abc-ing-noprov-p")]
+      (try
+        (ingest/run-from-rows!
+         {:rows synthetic-rows-with-edition
+          :work-id "000127"
+          :output (str (io/file work-dir "metadata-record.json"))
+          :persons-output-dir (str persons-dir)})
+        (let [person (files/read-json (str (io/file persons-dir "000879.json")))]
+          (is (not (contains? person "source_csv_provenance"))))
+        (finally
+          (delete-recursive work-dir)
+          (delete-recursive persons-dir))))))
+
+(deftest ingest-attaches-provenance-when-supplied-test
+  (testing ":source-csv-provenance is embedded on each emitted person record"
+    (let [work-dir (temp-dir "abc-ing-prov-w")
+          persons-dir (temp-dir "abc-ing-prov-p")
+          prov {"source_url" nil
+                "retrieved_at" "2026-04-29T00:00:00Z"
+                "original_file_hash"
+                "sha256:0000000000000000000000000000000000000000000000000000000000000000"}]
+      (try
+        (ingest/run-from-rows!
+         {:rows synthetic-rows-with-edition
+          :work-id "000127"
+          :output (str (io/file work-dir "metadata-record.json"))
+          :persons-output-dir (str persons-dir)
+          :source-csv-provenance prov})
+        (let [person (files/read-json (str (io/file persons-dir "000879.json")))
+              p (get person "source_csv_provenance")]
+          (is (= prov (dissoc p "parse_corrections"))
+              "supplied provenance is embedded verbatim")
+          (is (not (contains? p "parse_corrections"))
+              "no parse_corrections key when no corrections were emitted")
+          (is (= :ok (pr/validate! person))))
+        (finally
+          (delete-recursive work-dir)
+          (delete-recursive persons-dir))))))
+
+(deftest ingest-merges-corrections-into-provenance-test
+  (testing "parser-emitted corrections land under source_csv_provenance.parse_corrections"
+    (let [work-dir (temp-dir "abc-ing-corr-w")
+          persons-dir (temp-dir "abc-ing-corr-p")
+          rows-with-pad-month
+          [(merge (first synthetic-rows-with-edition)
+                  ;; Single-digit month triggers a pad-month correction.
+                  {"生年月日" "1892-3-01" "没年月日" "1927-07-24"})]
+          prov {"source_url" nil
+                "retrieved_at" "2026-04-29T00:00:00Z"
+                "original_file_hash"
+                "sha256:1111111111111111111111111111111111111111111111111111111111111111"}]
+      (try
+        (ingest/run-from-rows!
+         {:rows rows-with-pad-month
+          :work-id "000127"
+          :output (str (io/file work-dir "metadata-record.json"))
+          :persons-output-dir (str persons-dir)
+          :source-csv-provenance prov})
+        (let [person (files/read-json (str (io/file persons-dir "000879.json")))
+              corrs (get-in person ["source_csv_provenance" "parse_corrections"])]
+          (is (= "1892-03-01" (get person "date_of_birth"))
+              "the corrected value is what's persisted under date_of_birth")
+          (is (= 1 (count corrs)))
+          (is (= "date_of_birth" (get-in corrs [0 "field"])))
+          (is (= "1892-3-01"  (get-in corrs [0 "raw"])))
+          (is (= "1892-03-01" (get-in corrs [0 "corrected"])))
+          (is (= "pad-month"  (get-in corrs [0 "rule"])))
+          (is (= :ok (pr/validate! person))))
+        (finally
+          (delete-recursive work-dir)
+          (delete-recursive persons-dir))))))
+
+(deftest ingest-rejects-impossible-date-on-validate-test
+  (testing "an impossible-calendar date that falls through parse-date as verbatim raw fails validate! before any write"
+    (let [work-dir (temp-dir "abc-ing-bad-w")
+          persons-dir (temp-dir "abc-ing-bad-p")
+          rows-with-bad-day
+          [(merge (first synthetic-rows-with-edition)
+                  ;; Feb 31 — passes the regex digit-shape check, fails
+                  ;; java.time.LocalDate, so parse-date falls through and
+                  ;; the raw string is what reaches validate!. Stricter
+                  ;; schema regex (or the raw-passthrough case) makes
+                  ;; validate! throw before write.
+                  {"生年月日" "2020-02-31"})]]
+      (try
+        (is (thrown-with-msg?
+             clojure.lang.ExceptionInfo #"person-record validation failed"
+             (ingest/run-from-rows!
+              {:rows rows-with-bad-day
+               :work-id "000127"
+               :output (str (io/file work-dir "metadata-record.json"))
+               :persons-output-dir (str persons-dir)})))
+        (is (not (.exists (io/file persons-dir "000879.json")))
+            "no person file is written when validate! rejects")
+        (finally
+          (delete-recursive work-dir)
+          (delete-recursive persons-dir))))))
 
 (deftest ingest-corpus-byte-identical-to-single-work-test
   (testing "running corpus over the single-work fixture matches the single-work output"

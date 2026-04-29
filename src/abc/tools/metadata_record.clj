@@ -110,11 +110,12 @@
              :rdf/type [:bibo/Document :schema/CreativeWork]
              :dcterms/identifier (->int-literal (get work "work_id"))
              :dcterms/title (title-blank-node work)
-             :dc/subject (ndc-literal (get work "ndc"))
              :abc/orthographicStyle (get work "orthographic_style")
              :abc/copyrightExpired (->bool-literal (get work "copyright_expired"))
              :dcterms/available (->date-literal (get work "aozora_available"))
              :dcterms/modified (->date-literal (get work "aozora_modified"))}
+      (get work "ndc")
+      (assoc :dc/subject (ndc-literal (get work "ndc")))
       (seq authors)
       (assoc :dcterms/creator (mapv #(person-iri-bracketed (get % "person_id")) authors))
       (seq others)

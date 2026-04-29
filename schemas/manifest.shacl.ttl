@@ -127,7 +127,7 @@ abc:MetadataRecordWorkShape
   ] ;
   sh:property [
     sh:path dc:subject ;
-    sh:minCount 1
+    sh:maxCount 1
   ] ;
   sh:property [
     sh:path abc:orthographicStyle ;
@@ -188,10 +188,30 @@ abc:PersonRecordShape
   sh:property [
     sh:path rdag2:dateOfBirth ;
     sh:maxCount 1 ;
-    sh:datatype xsd:date
+    sh:or (
+      [ sh:datatype xsd:date ]
+      [ sh:datatype xsd:gYearMonth ]
+      [ sh:datatype xsd:gYear ]
+    )
   ] ;
   sh:property [
     sh:path rdag2:dateOfDeath ;
     sh:maxCount 1 ;
-    sh:datatype xsd:date
+    sh:or (
+      [ sh:datatype xsd:date ]
+      [ sh:datatype xsd:gYearMonth ]
+      [ sh:datatype xsd:gYear ]
+    )
+  ] ;
+  sh:property [
+    sh:path abc:edtfDateOfBirth ;
+    sh:maxCount 1 ;
+    sh:datatype abc:EDTF ;
+    sh:pattern "^-?\\d{4}(-(0[1-9]|1[0-2])(-(0[1-9]|[12][0-9]|3[01]))?)?$"
+  ] ;
+  sh:property [
+    sh:path abc:edtfDateOfDeath ;
+    sh:maxCount 1 ;
+    sh:datatype abc:EDTF ;
+    sh:pattern "^-?\\d{4}(-(0[1-9]|1[0-2])(-(0[1-9]|[12][0-9]|3[01]))?)?$"
   ] .

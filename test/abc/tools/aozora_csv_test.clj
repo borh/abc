@@ -67,22 +67,24 @@
       (is (= "ちくま文庫、筑摩書房" (get-in work ["source_editions" 0 "publisher"]))))))
 
 (deftest parse-person-fields-test
-  (testing "parse-person-fields-from-row maps person columns; role is NOT in body"
+  (testing "parse-person-fields-from-row returns {:fields :corrections}; role is NOT in body"
     (let [row (first (ac/read-rows-from-string csv-text))
-          person (ac/parse-person-fields-from-row row)]
-      (is (= "000879" (get person "person_id")))
-      (is (= "芥川" (get person "family_name")))
-      (is (= "竜之介" (get person "given_name")))
-      (is (= "あくたがわ" (get person "family_name_reading")))
-      (is (= "りゅうのすけ" (get person "given_name_reading")))
-      (is (= "Akutagawa" (get person "family_name_romaji")))
-      (is (= "Ryunosuke" (get person "given_name_romaji")))
-      (is (not (contains? person "relation_to_work"))
+          {:keys [fields corrections]} (ac/parse-person-fields-from-row row)]
+      (is (= "000879" (get fields "person_id")))
+      (is (= "芥川" (get fields "family_name")))
+      (is (= "竜之介" (get fields "given_name")))
+      (is (= "あくたがわ" (get fields "family_name_reading")))
+      (is (= "りゅうのすけ" (get fields "given_name_reading")))
+      (is (= "Akutagawa" (get fields "family_name_romaji")))
+      (is (= "Ryunosuke" (get fields "given_name_romaji")))
+      (is (not (contains? fields "relation_to_work"))
           "relation_to_work is a Work-Person edge, not a person body field")
-      (is (= "1892-03-01" (get person "date_of_birth")))
-      (is (= "1927-07-24" (get person "date_of_death")))
-      (is (true? (get person "person_copyright_expired")))
-      (is (= [] (get person "external_links"))))))
+      (is (= "1892-03-01" (get fields "date_of_birth")))
+      (is (= "1927-07-24" (get fields "date_of_death")))
+      (is (true? (get fields "person_copyright_expired")))
+      (is (= [] (get fields "external_links")))
+      (is (= [] corrections)
+          "ISO dates produce no corrections"))))
 
 (deftest parse-contributor-test
   (testing "parse-contributor-from-row carries person_id + role only"
@@ -91,7 +93,7 @@
              (ac/parse-contributor-from-row row))))))
 
 (deftest build-record-fragment-test
-  (testing "build-record-fragment-from-rows returns {:work :persons-by-id :contributors}"
+  (testing "build-record-fragment-from-rows returns work, persons, contributors, corrections"
     (let [rows (ac/read-rows-from-string csv-text)
           frag (ac/build-record-fragment-from-rows rows)]
       (is (= "000127" (get-in frag [:work "work_id"])))
@@ -100,4 +102,138 @@
       (is (not (contains? (get-in frag [:persons-by-id "000879"])
                           "relation_to_work")))
       (is (= [{"person_id" "000879" "relation_to_work" "著者"}]
-             (:contributors frag))))))
+             (:contributors frag)))
+      (is (= {"000879" []} (:corrections-by-pid frag))
+          "ISO-clean rows produce a corrections-by-pid map with empty entries"))))
+
+(deftest parse-date-iso-test
+  (testing "parse-date passes through ISO-shaped values without correction"
+    (is (= ["1892-03-01" []] (ac/parse-date "1892-03-01")))
+    (is (= ["1904-01" []] (ac/parse-date "1904-01")))
+    (is (= ["1941" []] (ac/parse-date "1941")))
+    (is (= [nil []] (ac/parse-date nil)))
+    (is (= [nil []] (ac/parse-date "")))))
+
+(deftest parse-date-pad-month-test
+  (testing "parse-date zero-pads single-digit month"
+    (let [[norm corrs] (ac/parse-date "1888-6-12")]
+      (is (= "1888-06-12" norm))
+      (is (= [{"raw" "1888-6-12" "corrected" "1888-06-12" "rule" "pad-month"}]
+             corrs)))))
+
+(deftest parse-date-pad-day-test
+  (testing "parse-date zero-pads single-digit day"
+    (let [[norm corrs] (ac/parse-date "1888-06-1")]
+      (is (= "1888-06-01" norm))
+      (is (= [{"raw" "1888-06-1" "corrected" "1888-06-01" "rule" "pad-day"}]
+             corrs)))))
+
+(deftest parse-date-pad-year-test
+  (testing "parse-date zero-pads short years"
+    (let [[norm corrs] (ac/parse-date "723-08-15")]
+      (is (= "0723-08-15" norm))
+      (is (= [{"raw" "723-08-15" "corrected" "0723-08-15" "rule" "pad-year"}]
+             corrs)))))
+
+(deftest parse-date-strip-whitespace-test
+  (testing "parse-date strips interior whitespace"
+    (let [[norm corrs] (ac/parse-date "1869- 02-22")]
+      (is (= "1869-02-22" norm))
+      (is (= [{"raw" "1869- 02-22" "corrected" "1869-02-22" "rule" "strip-whitespace"}]
+             corrs)))))
+
+(deftest parse-date-multi-rule-test
+  (testing "parse-date emits one correction per rule when several apply"
+    (let [[norm corrs] (ac/parse-date "1869- 6-1")]
+      (is (= "1869-06-01" norm))
+      (is (= #{"strip-whitespace" "pad-month" "pad-day"}
+             (set (map #(get % "rule") corrs))))
+      (is (every? #(= "1869- 6-1" (get % "raw")) corrs))
+      (is (every? #(= "1869-06-01" (get % "corrected")) corrs)))))
+
+(deftest parse-date-bce-astronomical-test
+  (testing "parse-date converts 前N (N BCE) to ISO 8601-2 astronomical year"
+    (is (= ["-0426" [{"raw" "前427" "corrected" "-0426" "rule" "bce-astronomical"}]]
+           (ac/parse-date "前427"))
+        "前427 (427 BCE) → -0426 in astronomical year numbering")
+    (is (= ["-0001" [{"raw" "前2" "corrected" "-0001" "rule" "bce-astronomical"}]]
+           (ac/parse-date "前2"))
+        "前2 (2 BCE) → -0001")
+    (is (= ["0000" [{"raw" "前1" "corrected" "0000" "rule" "bce-astronomical"}]]
+           (ac/parse-date "前1"))
+        "前1 (1 BCE) → 0000")))
+
+(deftest parse-date-passthrough-on-unparseable-test
+  (testing "parse-date passes unparseable shapes through verbatim"
+    (let [[norm corrs] (ac/parse-date "19xx")]
+      (is (= "19xx" norm)
+          "unparseable shape is preserved; schema validation will reject it")
+      (is (= [] corrs)))))
+
+(deftest parse-date-passthrough-edtf-level1-test
+  (testing "EDTF Level 1 shapes are out of v0 grammar and pass through verbatim, not silently 'corrected'"
+    ;; Per ADR 0015, parse-date must not invent semantics for decade
+    ;; markers, century-level prose, or uncertainty qualifiers — these
+    ;; should fail downstream so a future ADR has clear signal.
+    (doseq [in ["192X" "紀元前7世紀末" "紀元前6世紀初" "1892?" "1892~"]]
+      (let [[norm corrs] (ac/parse-date in)]
+        (is (= in norm) (str "expected " in " to pass through verbatim"))
+        (is (= [] corrs) (str "expected " in " to record no corrections"))))))
+
+(deftest parse-date-rejects-impossible-calendar-day-test
+  (testing "parse-date passes through values whose regex shape fits but whose calendar day is impossible (Feb 31, etc.)"
+    (let [[norm corrs] (ac/parse-date "2020-02-31")]
+      (is (= "2020-02-31" norm)
+          "shape-valid but calendar-impossible date is preserved verbatim, not normalized")
+      (is (= [] corrs)
+          "no correction is recorded — downstream validation will reject this"))))
+
+(deftest parse-date-rejects-impossible-bce-day-test
+  (testing "BCE full dates with impossible day pass through verbatim"
+    ;; 前427 → -0426 (year), so a 前427-02-31 shape would convert to
+    ;; -0426-02-31 — Feb 31 doesn't exist in any year. The parser
+    ;; doesn't construct that shape from the BCE side (年月日 columns
+    ;; are independent), but a curated -0426-02-31 string in the date
+    ;; column should fall through. Verifying via the parser's
+    ;; partial-date-pattern / valid-calendar-shape? path.
+    (let [[norm corrs] (ac/parse-date "-0426-02-31")]
+      (is (= "-0426-02-31" norm))
+      (is (= [] corrs)))))
+
+(deftest parse-date-bce-zero-rejects-test
+  (testing "前0 / 前000 has no astronomical equivalent — pass raw through with no correction"
+    (let [[norm corrs] (ac/parse-date "前0")]
+      (is (= "前0" norm))
+      (is (= [] corrs)
+          "no bogus 'corrected' value (the previous bug emitted '--001')"))
+    (let [[norm corrs] (ac/parse-date "前000")]
+      (is (= "前000" norm))
+      (is (= [] corrs)))))
+
+(deftest parse-date-unknown-marker-test
+  (testing "parse-date maps Japanese 'unknown' sentinels to null with an unknown-marker correction"
+    (is (= [nil [{"raw" "不詳" "corrected" nil "rule" "unknown-marker"}]]
+           (ac/parse-date "不詳")))
+    (is (= [nil [{"raw" "未詳" "corrected" nil "rule" "unknown-marker"}]]
+           (ac/parse-date "未詳"))
+        "未詳 (not yet ascertained) is a synonym for 不詳 in Aozora date columns")))
+
+(deftest parse-date-collapse-multi-dash-test
+  (testing "parse-date collapses repeated dashes from obvious typos"
+    (let [[norm corrs] (ac/parse-date "1850-08--18")]
+      (is (= "1850-08-18" norm))
+      (is (= [{"raw" "1850-08--18" "corrected" "1850-08-18" "rule" "collapse-multi-dash"}]
+             corrs)))))
+
+(deftest parse-date-rejects-out-of-range-month-day-test
+  (testing "parse-date passes through values with out-of-range month/day rather than emitting them as 'corrected'"
+    ;; partial-date-pattern accepts \d{1,2} for month/day. The
+    ;; calendar validity check then rejects the corrected form, so
+    ;; the parser falls through to verbatim passthrough; downstream
+    ;; schema validation rejects.
+    (let [[norm corrs] (ac/parse-date "2020-99-99")]
+      (is (= "2020-99-99" norm))
+      (is (= [] corrs)))
+    (let [[norm corrs] (ac/parse-date "2020-13-01")]
+      (is (= "2020-13-01" norm))
+      (is (= [] corrs)))))

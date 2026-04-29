@@ -38,6 +38,18 @@
     (is (thrown? clojure.lang.ExceptionInfo
                  (pr/validate! (dissoc (example-person) "family_name"))))))
 
+(deftest validate-rejects-impossible-bce-calendar-day-test
+  (testing "validate! rejects calendar-impossible BCE full-date (e.g. -0426-02-31)"
+    (is (thrown-with-msg?
+         clojure.lang.ExceptionInfo #"not a valid calendar date"
+         (pr/validate! (assoc (example-person)
+                              "date_of_birth" "-0426-02-31"))))))
+
+(deftest validate-accepts-real-bce-calendar-day-test
+  (testing "validate! accepts a real BCE full date (LocalDate handles signed years)"
+    (is (= :ok (pr/validate! (assoc (example-person)
+                                    "date_of_birth" "-0426-01-15"))))))
+
 (deftest validate-rejects-extra-key-test
   (testing "validate! rejects an unknown property"
     (is (thrown? clojure.lang.ExceptionInfo
@@ -131,7 +143,7 @@
              (get record "person_record_schema_hash"))))))
 
 (deftest record->graph-key-triples-test
-  (testing "record->graph emits FOAF + RDA Group 2 triples for one person"
+  (testing "record->graph emits FOAF + RDA Group 2 + EDTF echo triples"
     (let [g (pr/record->graph (example-person))
           triples (iterator-seq (.find g))
           predicates (set (map #(.getURI (.getPredicate %)) triples))
@@ -142,4 +154,64 @@
       (is (contains? predicates "http://xmlns.com/foaf/0.1/givenName"))
       (is (contains? predicates "http://xmlns.com/foaf/0.1/name"))
       (is (contains? predicates "http://RDVocab.info/ElementsGr2/dateOfBirth"))
-      (is (contains? predicates "http://RDVocab.info/ElementsGr2/dateOfDeath")))))
+      (is (contains? predicates "http://RDVocab.info/ElementsGr2/dateOfDeath"))
+      (is (contains? predicates "https://w3id.org/abc/edtfDateOfBirth"))
+      (is (contains? predicates "https://w3id.org/abc/edtfDateOfDeath")))))
+
+(defn- objects-of [graph predicate-uri]
+  (->> (iterator-seq (.find graph))
+       (filter #(= predicate-uri (.getURI (.getPredicate %))))
+       (mapv #(.getObject %))))
+
+(deftest record->graph-precise-date-test
+  (testing "YYYY-MM-DD dates emit xsd:date with parallel EDTF echo"
+    (let [g (pr/record->graph (example-person))
+          [dob] (objects-of g "http://RDVocab.info/ElementsGr2/dateOfBirth")
+          [edtf-dob] (objects-of g "https://w3id.org/abc/edtfDateOfBirth")]
+      (is (= "1892-03-01" (.getLiteralLexicalForm dob)))
+      (is (= "http://www.w3.org/2001/XMLSchema#date"
+             (.getLiteralDatatypeURI dob)))
+      (is (= "1892-03-01" (.getLiteralLexicalForm edtf-dob)))
+      (is (= "https://w3id.org/abc/EDTF"
+             (.getLiteralDatatypeURI edtf-dob))))))
+
+(deftest record->graph-year-only-test
+  (testing "YYYY-only dates emit xsd:gYear with parallel EDTF echo"
+    (let [person (assoc (example-person)
+                        "date_of_birth" "1941"
+                        "date_of_death" nil)
+          g (pr/record->graph person)
+          [dob] (objects-of g "http://RDVocab.info/ElementsGr2/dateOfBirth")
+          [edtf-dob] (objects-of g "https://w3id.org/abc/edtfDateOfBirth")]
+      (is (= "1941" (.getLiteralLexicalForm dob)))
+      (is (= "http://www.w3.org/2001/XMLSchema#gYear"
+             (.getLiteralDatatypeURI dob)))
+      (is (= "1941" (.getLiteralLexicalForm edtf-dob)))
+      (is (= "https://w3id.org/abc/EDTF"
+             (.getLiteralDatatypeURI edtf-dob)))
+      (is (empty? (objects-of g "http://RDVocab.info/ElementsGr2/dateOfDeath"))
+          "null date_of_death omits the predicate"))))
+
+(deftest record->graph-year-month-test
+  (testing "YYYY-MM dates emit xsd:gYearMonth"
+    (let [person (assoc (example-person)
+                        "date_of_birth" "1904-01"
+                        "date_of_death" nil)
+          g (pr/record->graph person)
+          [dob] (objects-of g "http://RDVocab.info/ElementsGr2/dateOfBirth")]
+      (is (= "1904-01" (.getLiteralLexicalForm dob)))
+      (is (= "http://www.w3.org/2001/XMLSchema#gYearMonth"
+             (.getLiteralDatatypeURI dob))))))
+
+(deftest record->graph-bce-test
+  (testing "Negative-year dates emit xsd:gYear and survive EDTF echo"
+    (let [person (assoc (example-person)
+                        "date_of_birth" "-0426"
+                        "date_of_death" "-0346")
+          g (pr/record->graph person)
+          [dob] (objects-of g "http://RDVocab.info/ElementsGr2/dateOfBirth")
+          [edtf-dob] (objects-of g "https://w3id.org/abc/edtfDateOfBirth")]
+      (is (= "-0426" (.getLiteralLexicalForm dob)))
+      (is (= "http://www.w3.org/2001/XMLSchema#gYear"
+             (.getLiteralDatatypeURI dob)))
+      (is (= "-0426" (.getLiteralLexicalForm edtf-dob))))))

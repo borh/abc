@@ -12,6 +12,12 @@
   "given_name_sort": "\u308a\u3086\u3046\u306e\u3059\u3051",
   "person_copyright_expired": true,
   "person_id": "000879",
-  "person_record_schema_hash": "sha256:a135806f4046452a8ed465dcd233366cb90e37dfc15dc278651724a4a6236876",
-  "person_record_schema_id": "https:\/\/w3id.org\/abc\/schemas\/person-record.schema.json"
+  "person_record_schema_hash": "sha256:347dcf76cf5933a0e04c89911ef5b9a611c620f6c632df89784a7e9132dd8b59",
+  "person_record_schema_id": "https:\/\/w3id.org\/abc\/schemas\/person-record.schema.json",
+  "source_csv_provenance": 
+  {
+    "original_file_hash": "sha256:c0ace54c7ac037e5aebd045922c7879b9f7dc01f85b8f7483c8d4ecc29569ef4",
+    "retrieved_at": "2026-04-24T17:51:12Z",
+    "source_url": null
+  }
 }

@@ -1,5 +1,5 @@
 {
-  "artifact_id": "sha256:9ccc6aa811b910c43b3b959951c46d61e3a05554a2a2f56b64db9224ff9b7854",
+  "artifact_id": "sha256:6c623f32d3ee47a17e3a2759994864abd49e66babcd027f5bc02b8b160ed6a26",
   "artifact_kind": "tei",
   "content": 
   {
@@ -19,7 +19,7 @@
     "analysis_recipe_hash": null,
     "corpus_snapshot_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
     "manifest_schema_hash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
-    "metadata_record_hash": "sha256:c5e96063cc05c685927628f6b9ef8f04e93be2a5487aed4d5273b77a923af435",
+    "metadata_record_hash": "sha256:b7128b649fa694915b68efce20cf83e8c3e9c6816f3bc99ddec21174a9f48891",
     "output_format_spec_hash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
     "parser_build_hash": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
     "parser_config_hash": "sha256:5555555555555555555555555555555555555555555555555555555555555555",

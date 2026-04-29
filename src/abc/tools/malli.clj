@@ -15,13 +15,30 @@
             [malli.registry :as mr]))
 
 (def ^:private project-namespaces
+  "Registry-owning namespaces, in declared merge order. The Nix
+  focused-test sandbox deliberately omits the deps for some of these
+  (e.g. java-time for abc.aozora); `install!` skips a namespace whose
+  require fails so the foundation still works there."
   '[abc.annotation.schema abc.aozora abc.tei])
+
+(defn- ns-loadable? [ns-sym]
+  ;; A transitive `:require` failure inside the loaded namespace is
+  ;; wrapped as Compiler$CompilerException whose cause is the inner
+  ;; FileNotFoundException, so checking the cause chain is the
+  ;; reliable way to skip Nix-sandbox-omitted namespaces.
+  (try (require ns-sym) true
+       (catch Throwable t
+         (loop [cause t]
+           (cond
+             (nil? cause) (throw t)
+             (instance? java.io.FileNotFoundException cause) false
+             :else (recur (.getCause cause)))))))
 
 (defn- compose-project-registry []
   (reduce
    (fn [acc ns-sym]
-     (require ns-sym)
-     (let [v (some-> (resolve (symbol (name ns-sym) "registry")) deref)]
+     (let [v (when (ns-loadable? ns-sym)
+               (some-> (resolve (symbol (name ns-sym) "registry")) deref))]
        (cond-> acc (map? v) (merge v))))
    {}
    project-namespaces))

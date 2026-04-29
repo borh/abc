@@ -461,5 +461,5 @@
 
 (m/=> merge-entities
       [:=>
-       [:cat [:schema {:registry registry} ::db-entry]]
+       [:cat [:schema {:registry registry} [:sequential ::db-entry]]]
        [:schema {:registry registry} ::db-entries]])

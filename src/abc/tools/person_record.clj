@@ -81,14 +81,21 @@
 (def ^:private full-date-pattern  #"-?\d{4}-\d{2}-\d{2}")
 (def ^:private year-month-pattern #"-?\d{4}-\d{2}")
 (def ^:private year-pattern       #"-?\d{4}")
+(def ^:private decade-pattern     #"-?\d{3}X")
+(def ^:private century-pattern    #"-?\d{2}XX")
 
 (def ^:private edtf-datatype
   (BaseDatatype. "https://w3id.org/abc/EDTF"))
 
 (defn- date-literal-for
-  "Pick the most-precise XSD literal for a v0 EDTF lexical value
-  (`YYYY[-MM[-DD]]`, optional leading `-`). Returns nil for nil.
-  Throws on shape mismatch — schema validation should have caught it."
+  "Pick the most-precise XSD literal for an EDTF lexical value.
+  Returns nil for nil, and also nil for EDTF Level 1 decade and
+  century shapes (`192X`, `-06XX`) — XSD's coarsest temporal type is
+  `xsd:gYear`, so there is no precision-honest XSD literal at decade
+  or century granularity. The EDTF echo via `edtf-literal` is the
+  carrier for those values; `person-data` omits the RDA Group 2
+  predicate when this returns nil. Throws on unrecognized shape —
+  schema validation should have caught it. ADR 0015 / ADR 0016."
   [s]
   (when s
     (cond
@@ -98,6 +105,8 @@
       (NodeFactory/createLiteral ^String s XSDDatatype/XSDgYearMonth)
       (re-matches year-pattern s)
       (NodeFactory/createLiteral ^String s XSDDatatype/XSDgYear)
+      (re-matches decade-pattern s) nil
+      (re-matches century-pattern s) nil
       :else
       (throw (ex-info (str "unrecognized date shape: " s) {:value s})))))
 
@@ -110,15 +119,20 @@
 
 (defn- person-data
   "Aristotle map for one Person. ADR 0015: each non-null date is
-  emitted twice — as a precision-typed XSD literal under the RDA
-  Group 2 predicate, and as the canonical EDTF lexical string under
-  a parallel abc:edtf* predicate."
+  emitted as a canonical EDTF lexical string under the abc:edtf*
+  predicate, and additionally as a precision-typed XSD literal under
+  the RDA Group 2 predicate when XSD has a precision-honest type
+  (Level 0 only). For EDTF Level 1 decade / century shapes the RDA
+  Group 2 predicate is omitted — the EDTF echo is the carrier. ADR
+  0016."
   [person]
   (let [iri (str "<" (person-iri (get person "person_id")) ">")
         given (get person "given_name")
         family (get person "family_name")
         dob (get person "date_of_birth")
-        dod (get person "date_of_death")]
+        dod (get person "date_of_death")
+        dob-xsd (date-literal-for dob)
+        dod-xsd (date-literal-for dod)]
     (cond-> {:rdf/about iri
              :rdf/type [:foaf/Person]
              :dcterms/identifier (->int-literal (get person "person_id"))
@@ -138,9 +152,9 @@
       (assoc :abc/familyNameRomaji (get person "family_name_romaji"))
       (get person "given_name_romaji")
       (assoc :abc/givenNameRomaji (get person "given_name_romaji"))
-      dob (assoc :rdag2/dateOfBirth (date-literal-for dob))
+      dob-xsd (assoc :rdag2/dateOfBirth dob-xsd)
       dob (assoc :abc/edtfDateOfBirth (edtf-literal dob))
-      dod (assoc :rdag2/dateOfDeath (date-literal-for dod))
+      dod-xsd (assoc :rdag2/dateOfDeath dod-xsd)
       dod (assoc :abc/edtfDateOfDeath (edtf-literal dod))
       (seq (get person "external_links"))
       (assoc :rdfs/seeAlso (mapv #(str "<" % ">") (get person "external_links"))))))

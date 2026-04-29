@@ -170,15 +170,50 @@
           "unparseable shape is preserved; schema validation will reject it")
       (is (= [] corrs)))))
 
-(deftest parse-date-passthrough-edtf-level1-test
-  (testing "EDTF Level 1 shapes are out of v0 grammar and pass through verbatim, not silently 'corrected'"
-    ;; Per ADR 0015, parse-date must not invent semantics for decade
-    ;; markers, century-level prose, or uncertainty qualifiers — these
-    ;; should fail downstream so a future ADR has clear signal.
-    (doseq [in ["192X" "紀元前7世紀末" "紀元前6世紀初" "1892?" "1892~"]]
+(deftest parse-date-decade-marker-admitted-verbatim-test
+  (testing "EDTF Level 1 decade markers (\\d{3}X) are admitted verbatim with no audit correction"
+    ;; Per ADR 0016, decade markers are first-class v0.1 lexical
+    ;; values. No transformation occurs, so no audit entry is written;
+    ;; downstream schema/SHACL accept them.
+    (doseq [in ["192X" "200X" "-019X"]]
       (let [[norm corrs] (ac/parse-date in)]
-        (is (= in norm) (str "expected " in " to pass through verbatim"))
-        (is (= [] corrs) (str "expected " in " to record no corrections"))))))
+        (is (= in norm) (str in " admitted verbatim"))
+        (is (= [] corrs) (str in " produces no audit entry"))))))
+
+(deftest parse-date-bce-century-prose-test
+  (testing "Japanese BCE century prose translates to EDTF Level 1 century markers under astronomical year numbering (ADR 0016)"
+    (is (= ["-06XX" [{"raw" "紀元前7世紀末"
+                      "corrected" "-06XX"
+                      "rule" "century-prose"}]]
+           (ac/parse-date "紀元前7世紀末"))
+        "紀元前7世紀末 → -06XX; the qualifier 末 lives in the audit raw field only")
+    (is (= ["-05XX" [{"raw" "紀元前6世紀初"
+                      "corrected" "-05XX"
+                      "rule" "century-prose"}]]
+           (ac/parse-date "紀元前6世紀初"))
+        "紀元前6世紀初 → -05XX")
+    (is (= ["-00XX" [{"raw" "紀元前1世紀"
+                      "corrected" "-00XX"
+                      "rule" "century-prose"}]]
+           (ac/parse-date "紀元前1世紀"))
+        "紀元前1世紀 (the 100..1 BCE century) maps to astronomical -00XX")
+    (doseq [q ["初頭" "半ば" "前半" "後半"]]
+      (let [raw (str "紀元前7世紀" q)
+            [norm corrs] (ac/parse-date raw)]
+        (is (= "-06XX" norm)
+            (str "qualifier " q " does not influence the canonical lexical form"))
+        (is (= [{"raw" raw "corrected" "-06XX" "rule" "century-prose"}] corrs)
+            (str "qualifier " q " is preserved verbatim in audit raw field"))))))
+
+(deftest parse-date-passthrough-out-of-grammar-test
+  (testing "EDTF Level 1 shapes still out of v0.1 grammar pass through verbatim"
+    ;; Per ADR 0016, uncertainty/approximation qualifiers and CE
+    ;; century prose remain deferred. They must not be silently
+    ;; rewritten — they pass through and fail downstream.
+    (doseq [in ["1892?" "1892~" "1892%" "7世紀" "6世紀後半"]]
+      (let [[norm corrs] (ac/parse-date in)]
+        (is (= in norm) (str in " passes through verbatim"))
+        (is (= [] corrs) (str in " produces no audit entry"))))))
 
 (deftest parse-date-rejects-impossible-calendar-day-test
   (testing "parse-date passes through values whose regex shape fits but whose calendar day is impossible (Feb 31, etc.)"

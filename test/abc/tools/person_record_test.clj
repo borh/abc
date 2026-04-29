@@ -215,3 +215,44 @@
       (is (= "http://www.w3.org/2001/XMLSchema#gYear"
              (.getLiteralDatatypeURI dob)))
       (is (= "-0426" (.getLiteralLexicalForm edtf-dob))))))
+
+(deftest record->graph-decade-marker-test
+  (testing "EDTF Level 1 decade markers emit only the abc:EDTF echo; RDA Group 2 omitted (no XSD precision type)"
+    ;; ADR 0016: decade and century markers have no XSD precision-typed
+    ;; equivalent. The EDTF echo carries the value; the RDA Group 2
+    ;; predicate is omitted, satisfying SHACL `sh:maxCount 1` with zero.
+    (let [person (assoc (example-person)
+                        "date_of_birth" "192X"
+                        "date_of_death" nil)
+          g (pr/record->graph person)
+          [edtf-dob] (objects-of g "https://w3id.org/abc/edtfDateOfBirth")]
+      (is (= "192X" (.getLiteralLexicalForm edtf-dob)))
+      (is (= "https://w3id.org/abc/EDTF" (.getLiteralDatatypeURI edtf-dob)))
+      (is (empty? (objects-of g "http://RDVocab.info/ElementsGr2/dateOfBirth"))
+          "decade marker omits the RDA Group 2 predicate — no XSD precision type")
+      (is (empty? (objects-of g "http://RDVocab.info/ElementsGr2/dateOfDeath"))
+          "null date_of_death omits its predicates"))))
+
+(deftest record->graph-bce-century-marker-test
+  (testing "EDTF Level 1 BCE century markers emit only the abc:EDTF echo"
+    (let [person (assoc (example-person)
+                        "date_of_birth" "-06XX"
+                        "date_of_death" "-05XX")
+          g (pr/record->graph person)
+          [edtf-dob] (objects-of g "https://w3id.org/abc/edtfDateOfBirth")
+          [edtf-dod] (objects-of g "https://w3id.org/abc/edtfDateOfDeath")]
+      (is (= "-06XX" (.getLiteralLexicalForm edtf-dob)))
+      (is (= "-05XX" (.getLiteralLexicalForm edtf-dod)))
+      (is (= "https://w3id.org/abc/EDTF" (.getLiteralDatatypeURI edtf-dob)))
+      (is (empty? (objects-of g "http://RDVocab.info/ElementsGr2/dateOfBirth"))
+          "century marker omits the RDA Group 2 predicate")
+      (is (empty? (objects-of g "http://RDVocab.info/ElementsGr2/dateOfDeath"))
+          "century marker omits the RDA Group 2 predicate"))))
+
+(deftest validate-accepts-edtf-level1-shapes-test
+  (testing "validate! accepts EDTF Level 1 decade and century shapes (ADR 0016)"
+    (doseq [v ["192X" "200X" "-019X" "-06XX" "-00XX" "20XX"]]
+      (is (= :ok (pr/validate! (assoc (example-person) "date_of_birth" v)))
+          (str v " admitted by schema"))
+      (is (= :ok (pr/validate! (assoc (example-person) "date_of_death" v)))
+          (str v " admitted by schema (death)")))))

@@ -45,9 +45,9 @@
     },
     "nullableString": { "type": ["string", "null"] },
     "nullableDate": {
-      "description": "v0 EDTF lexical subset: YYYY, YYYY-MM, or YYYY-MM-DD, with optional leading '-' for BCE. Month is 01-12; day is 01-31 (calendar validity for full dates is enforced parser-side via java.time.LocalDate). ADR 0015 specifies the canonical form; uncertainty markers, intervals, and sets are out of v0 scope.",
+      "description": "v0.1 EDTF lexical union: Level 0 (YYYY, YYYY-MM, YYYY-MM-DD with optional leading '-' for BCE) plus Level 1 decade (YYYX) and century (YYXX) digit-placeholder shapes. Month is 01-12; day is 01-31 (calendar validity for full dates is enforced parser-side via java.time.LocalDate). ADR 0015 specifies the L0 canonical form; ADR 0016 widens to admit L1 decade/century. EDTF Level 1 uncertainty markers, intervals, and sets remain out of v0 scope.",
       "anyOf": [
-        { "type": "string", "pattern": "^-?\\d{4}(-(0[1-9]|1[0-2])(-(0[1-9]|[12][0-9]|3[01]))?)?$" },
+        { "type": "string", "pattern": "^(-?\\d{4}(-(0[1-9]|1[0-2])(-(0[1-9]|[12][0-9]|3[01]))?)?|-?\\d{3}X|-?\\d{2}XX)$" },
         { "type": "null" }
       ]
     },
@@ -74,7 +74,8 @@
             "strip-whitespace",
             "collapse-multi-dash",
             "bce-astronomical",
-            "unknown-marker"
+            "unknown-marker",
+            "century-prose"
           ]
         }
       }

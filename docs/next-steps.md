@@ -2,7 +2,7 @@
 
 ## Current State
 
-Five contract-harness milestones complete:
+Six contract-harness milestones complete:
 
 - **2026-04-27 v0 contract harness** (archived as
   `docs/archive/2026-04-27-v0-contract-harness.md`).
@@ -73,6 +73,35 @@ Five contract-harness milestones complete:
   works reference two persons with century-level / decade-only
   dates that fall outside v0 grammar and need a future ADR for
   EDTF Level 1.
+- **2026-04-29 EDTF Level 1 decade and BCE century prose
+  (ADR 0016).** v0.1 widens the EDTF lexical grammar admitted
+  by `nullableDate` and the SHACL `abc:EDTF` pattern to the
+  union `L0 ∪ \d{3}X ∪ \d{2}XX` (with optional leading `-`
+  for BCE). The parser admits `192X`-style decade markers
+  verbatim (no transformation, no audit entry) and translates
+  Japanese BCE century prose `紀元前N世紀(初頭|初|末|半ば|前半|後半)?`
+  to `-{N-1:02d}XX` under astronomical year numbering — lossless
+  at century precision (`紀元前N世紀` covers the closed
+  astronomical interval `[-(100N-1), -((N-1)·100)]`, which is
+  exactly what the EDTF marker matches). The qualifier is
+  preserved verbatim in the `parse_corrections` audit trail
+  under rule `century-prose`; EDTF Level 1 has no sub-century
+  precision, so the qualifier is intentionally not encoded in
+  the canonical lexical form. CE century prose is deferred:
+  conventional 7世紀 = 601..700 does not align with EDTF `06XX`
+  = 0600..0699 without a 1-year loss, and the corpus contains
+  no CE prose for persons. `record->graph` emits decade /
+  century shapes only as the `abc:edtf*` echo typed `abc:EDTF`;
+  the RDA Group 2 predicates (`rdag2:dateOfBirth/Death`) are
+  omitted because XSD's coarsest temporal type is `xsd:gYear`
+  and there is no precision-honest XSD literal at decade or
+  century granularity. End-to-end corpus ingest now reaches
+  17,810 / 17,810 works and 1,334 / 1,334 persons with zero
+  skips: サッフォ (`紀元前7世紀末` / `紀元前6世紀初` →
+  `-06XX` / `-05XX`) and シェミン マーガレット (`192X`) are
+  restored to canonical identity. The schema-hash cascade
+  rotates again under the widening; all fixtures regenerate
+  byte-identically.
 
 ## Canonical Commands
 

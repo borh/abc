@@ -207,11 +207,11 @@ abc:PersonRecordShape
     sh:path abc:edtfDateOfBirth ;
     sh:maxCount 1 ;
     sh:datatype abc:EDTF ;
-    sh:pattern "^-?\\d{4}(-(0[1-9]|1[0-2])(-(0[1-9]|[12][0-9]|3[01]))?)?$"
+    sh:pattern "^(-?\\d{4}(-(0[1-9]|1[0-2])(-(0[1-9]|[12][0-9]|3[01]))?)?|-?\\d{3}X|-?\\d{2}XX)$"
   ] ;
   sh:property [
     sh:path abc:edtfDateOfDeath ;
     sh:maxCount 1 ;
     sh:datatype abc:EDTF ;
-    sh:pattern "^-?\\d{4}(-(0[1-9]|1[0-2])(-(0[1-9]|[12][0-9]|3[01]))?)?$"
+    sh:pattern "^(-?\\d{4}(-(0[1-9]|1[0-2])(-(0[1-9]|[12][0-9]|3[01]))?)?|-?\\d{3}X|-?\\d{2}XX)$"
   ] .

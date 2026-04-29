@@ -51,6 +51,17 @@
   time; preserved in parse_corrections under rule `unknown-marker`."
   #{"不詳" "未詳"})
 (def ^:private multi-dash-pattern #"--+")
+(def ^:private century-prose-pattern
+  ;; Japanese BCE century prose with optional sub-century qualifier.
+  ;; The qualifier (`初頭`/`初`/`末`/`半ば`/`前半`/`後半`) is captured
+  ;; only for the audit trail — EDTF Level 1 has no sub-century
+  ;; precision, so the qualifier does not influence the canonical
+  ;; lexical output. ADR 0016.
+  #"^紀元前(\d+)世紀(初頭|初|末|半ば|前半|後半)?$")
+(def ^:private decade-pattern
+  ;; EDTF Level 1 decade marker (capital-X digit placeholder), with
+  ;; optional leading `-` for BCE. ADR 0016.
+  #"^-?\d{3}X$")
 
 (defn- pad4-year [^String s]
   (let [neg? (string/starts-with? s "-")
@@ -67,6 +78,16 @@
   [^String n-str]
   (let [n (Integer/parseInt n-str)]
     (if (= n 1) "0000" (format "-%04d" (dec n)))))
+
+(defn- bce-century->edtf
+  "紀元前N世紀 → EDTF Level 1 century marker `-{N-1:02d}XX`. Lossless
+  at century precision under ISO 8601-2 / XSD 1.1 astronomical year
+  numbering: 紀元前N世紀 covers astronomical interval
+  `[-(100N - 1), -((N - 1) · 100)]`, which matches the EDTF lexical
+  `-{N-1:02d}XX`. Two-digit zero-padding holds for N ≤ 100; deeper
+  history is not exercised by the corpus. ADR 0016."
+  [^String n-str]
+  (format "-%02dXX" (dec (Integer/parseInt n-str))))
 
 (defn- valid-calendar-shape?
   "Reject impossible calendar dates (Feb 31, etc.) for YYYY-MM-DD /
@@ -86,14 +107,17 @@
     :else true))
 
 (defn parse-date
-  "Normalize an Aozora date-cell string to the v0 EDTF lexical subset
-  (YYYY[-MM[-DD]] with optional leading '-'). Returns
+  "Normalize an Aozora date-cell string to the v0.1 EDTF lexical union
+  (Level 0: YYYY[-MM[-DD]] with optional leading '-'; Level 1: decade
+  YYYX and century YYXX, both with optional leading '-'). Returns
   `[normalized corrections]` where `corrections` is a vector of
   `{raw, corrected, rule}` maps (the caller adds `field`).
 
   Cosmetic rules: `pad-year`, `pad-month`, `pad-day`,
   `strip-whitespace`, `collapse-multi-dash`. Semantic rules:
-  `bce-astronomical`, `unknown-marker`. ADR 0015."
+  `bce-astronomical`, `unknown-marker`, `century-prose`. Decade
+  markers (`192X`) are admitted verbatim with no rule entry — no
+  rewrite occurs. ADR 0015 / ADR 0016."
   [raw]
   (cond
     (or (nil? raw) (= "" raw))
@@ -104,8 +128,10 @@
 
     :else
     (let [raw-str (string/trim raw)]
-      (if-let [bce-match (re-matches bce-pattern raw-str)]
-        (let [n-str (second bce-match)
+      (cond
+        ;; 前N (CE-relative BCE notation) → astronomical year. ADR 0015.
+        (re-matches bce-pattern raw-str)
+        (let [n-str (second (re-matches bce-pattern raw-str))
               n (Integer/parseInt n-str)]
           (if (pos? n)
             (let [corrected (bce->astronomical n-str)]
@@ -117,6 +143,23 @@
             ;; lexical form.
             [raw-str []]))
 
+        ;; 紀元前N世紀(初頭|初|末|半ば|前半|後半)? → EDTF Level 1
+        ;; century marker. The qualifier is preserved in the raw
+        ;; field of the audit entry but does not influence the
+        ;; corrected lexical form (no sub-century precision in EDTF
+        ;; Level 1). ADR 0016.
+        (re-matches century-prose-pattern raw-str)
+        (let [n-str (second (re-matches century-prose-pattern raw-str))
+              corrected (bce-century->edtf n-str)]
+          [corrected
+           [{"raw" raw "corrected" corrected "rule" "century-prose"}]])
+
+        ;; EDTF Level 1 decade marker (`192X`) — admitted verbatim.
+        ;; No rewrite, no audit entry. ADR 0016.
+        (re-matches decade-pattern raw-str)
+        [raw-str []]
+
+        :else
         (let [had-interior-space? (boolean (re-find #"\s" raw-str))
               despaced (string/replace raw-str #"\s+" "")
               had-multi-dash? (boolean (re-find multi-dash-pattern despaced))

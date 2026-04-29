@@ -71,6 +71,8 @@ enum Command {
         examples_output: Option<PathBuf>,
         #[arg(long, default_value_t = 10)]
         max_examples_per_comparison: usize,
+        #[arg(long, value_enum, default_value_t = RerunDetailArg::Full)]
+        detail: RerunDetailArg,
     },
 }
 
@@ -86,6 +88,12 @@ enum SummarySortArg {
     SegmentationRegions,
     FeatureDifferences,
     CoverageMismatchRegions,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
+enum RerunDetailArg {
+    Full,
+    ExamplesOnly,
 }
 
 impl SummaryGroupByArg {
@@ -200,6 +208,7 @@ fn main() -> Result<()> {
             jobs,
             examples_output,
             max_examples_per_comparison,
+            detail,
         } => run_rerun_full(
             &aat_dir,
             &source_id,
@@ -208,6 +217,7 @@ fn main() -> Result<()> {
             jobs,
             examples_output.as_deref(),
             max_examples_per_comparison,
+            detail,
         ),
     }
 }
@@ -221,19 +231,33 @@ fn run_rerun_full(
     jobs: usize,
     examples_output: Option<&Path>,
     max_examples_per_comparison: usize,
+    detail: RerunDetailArg,
 ) -> Result<()> {
     let inputs = ab_morph_run::resolve_source_id_aat_paths(aat_dir, source_ids)?;
+    let output_profile = match detail {
+        RerunDetailArg::Full => ab_morph_run::OutputProfile::Full,
+        RerunDetailArg::ExamplesOnly => ab_morph_run::OutputProfile::Compact,
+    };
+    let comparisons_output = match detail {
+        RerunDetailArg::Full => Some(output_dir.join("comparisons.jsonl")),
+        RerunDetailArg::ExamplesOnly => None,
+    };
+    let default_examples_output = match (detail, examples_output) {
+        (RerunDetailArg::ExamplesOnly, None) => Some(output_dir.join("examples.jsonl")),
+        _ => None,
+    };
+    let examples_output = examples_output.or(default_examples_output.as_deref());
     ab_morph_run::run_analyze_aat_selected(
         inputs,
         "aat_dir",
         &aat_dir.display().to_string(),
         analyzer,
         &output_dir.join("analyses.jsonl"),
-        Some(&output_dir.join("comparisons.jsonl")),
+        comparisons_output.as_deref(),
         Some(&output_dir.join("errors.jsonl")),
         false,
         jobs,
-        ab_morph_run::OutputProfile::Full,
+        output_profile,
         examples_output,
         max_examples_per_comparison,
         Some(&output_dir.join("manifest.json")),
@@ -446,6 +470,8 @@ mod tests {
             "examples.jsonl",
             "--max-examples-per-comparison",
             "50",
+            "--detail",
+            "examples-only",
         ]);
 
         let Command::RerunFull {
@@ -456,6 +482,7 @@ mod tests {
             jobs,
             examples_output,
             max_examples_per_comparison,
+            detail,
         } = args.command
         else {
             panic!("expected rerun-full command");
@@ -468,6 +495,7 @@ mod tests {
         assert_eq!(jobs, 2);
         assert_eq!(examples_output, Some(PathBuf::from("examples.jsonl")));
         assert_eq!(max_examples_per_comparison, 50);
+        assert_eq!(detail, RerunDetailArg::ExamplesOnly);
     }
 
     #[test]
@@ -516,6 +544,7 @@ mod tests {
             1,
             None,
             10,
+            RerunDetailArg::Full,
         )
         .unwrap();
 
@@ -523,6 +552,41 @@ mod tests {
             serde_json::from_str(&fs::read_to_string(out.join("manifest.json")).unwrap()).unwrap();
         assert_eq!(manifest["input_path"], aat_dir.display().to_string());
         assert!(out.join("analyses.jsonl").exists());
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn rerun_full_examples_only_skips_full_comparisons() {
+        const TINY_AAT: &str = r#"{"version":1,"work_id":"source-a","blocks":[{"kind":"paragraph","content":[{"kind":"text","value":"吾輩は猫である。"}]}],"meta":{"adapter":"fixture","adapter_version":"fixture","source_encoding":"utf-8","source_hash":"sha256:0000000000000000000000000000000000000000000000000000000000000000","parse_complete":true,"warnings":[]}}"#;
+        let dir = temp_dir("rerun-full-examples-only");
+        let aat_dir = dir.join("aats");
+        let out = dir.join("out");
+        fs::create_dir_all(&aat_dir).unwrap();
+        fs::create_dir_all(&out).unwrap();
+        fs::write(aat_dir.join("source-a.json"), TINY_AAT).unwrap();
+
+        run_rerun_full(
+            &aat_dir,
+            &["source-a".to_owned()],
+            &["vibrato".to_owned()],
+            &out,
+            1,
+            None,
+            10,
+            RerunDetailArg::ExamplesOnly,
+        )
+        .unwrap();
+
+        assert!(out.join("analyses.jsonl").exists());
+        assert!(out.join("examples.jsonl").exists());
+        assert!(!out.join("comparisons.jsonl").exists());
+        let analyses = fs::read_to_string(out.join("analyses.jsonl")).unwrap();
+        assert!(analyses.contains("\"morpheme_count\""));
+        assert!(!analyses.contains("\"source_text\""));
+        let manifest: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(out.join("manifest.json")).unwrap()).unwrap();
+        assert_eq!(manifest["output_profile"], "compact");
+
         let _ = fs::remove_dir_all(dir);
     }
 

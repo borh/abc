@@ -265,3 +265,7 @@ This is another very large source. Full analysis plus comparison rows are roughl
 2. Add an example filter for structural examples involving only whitespace/newline spans, so bounded examples can show linguistically useful differences earlier.
 3. Add targeted full-output filters before doing broader full reruns: source slices around compact examples, segmentation-only comparisons, and feature-key allow/deny lists.
 4. Add feature-difference aggregation by key pair. Raw feature-difference totals are too coarse to distinguish expected schema mismatch from suspicious analyzer disagreement.
+
+## Follow-up implemented
+
+The first storage-control filter is `rerun-full --detail examples-only`. It reruns the selected source IDs with compact streaming comparison, writes compact analysis summaries and bounded examples, and skips the full `comparisons.jsonl` artifact. This addresses the immediate large-source failure mode observed above without changing the default full-detail behavior.

@@ -70,6 +70,8 @@ The tabular output includes `source_ids` and `text_ids`. Use `--json` when membe
 
 ## 5. Rerun full detail for selected sources
 
+Use full detail when the selected source is small enough that full analyses and full comparisons are worth the storage cost:
+
 ```bash
 AB_SUDACHI_DICT="$(nix path-info .#sudachi-dictionary-full)/share/sudachi/system.dic" \
   target/release/ab-morph-run rerun-full \
@@ -84,6 +86,21 @@ AB_SUDACHI_DICT="$(nix path-info .#sudachi-dictionary-full)/share/sudachi/system
 ```
 
 The rerun writes full `analyses.jsonl`, `comparisons.jsonl`, `errors.jsonl`, and `manifest.json` into the output directory. If `--examples-output` is provided, it also writes bounded example rows for quick inspection.
+
+For very large or noisy sources, start with examples-only detail. This keeps the selected rerun streaming and compact: `analyses.jsonl` contains compact analysis summaries, `examples.jsonl` contains bounded comparison examples, and no `comparisons.jsonl` is written.
+
+```bash
+AB_SUDACHI_DICT="$(nix path-info .#sudachi-dictionary-full)/share/sudachi/system.dic" \
+  target/release/ab-morph-run rerun-full \
+    --aat-dir scratch/morph-full-corpus/aats \
+    --source-id 001529_50685-dd3b2fe4e5bf \
+    --analyzer vibrato \
+    --analyzer sudachi-c \
+    --output-dir scratch/morph-targeted-examples/001529_50685-dd3b2fe4e5bf \
+    --jobs 2 \
+    --detail examples-only \
+    --max-examples-per-comparison 100
+```
 
 ## Identity policy
 

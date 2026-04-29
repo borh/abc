@@ -4,21 +4,21 @@
 
 **Goal:** Add the smallest usable workflow around compact morph outputs: summarize worst cases, rerun selected sources in full mode, emit periodic progress, and document source-id/text-id policy.
 
-**Architecture:** Keep `analyze-aat` as the engine. Add focused library modules for compact summary loading/ranking and source-id input selection, then expose them through two CLI subcommands: `summarize-compact` and `rerun-full`. Periodic progress stays in `main.rs` as CLI orchestration around the existing library call.
+**Architecture:** Keep `analyze-aat` as the main engine, but factor the runner so it can also accept an explicit selected AAT path list with separate manifest provenance. Add streaming compact-summary loading so comprehensive artifacts do not need to be decompressed into a single `String`. Expose the workflow through `summarize-compact`, `rerun-full`, and periodic progress on `analyze-aat`.
 
-**Tech Stack:** Rust 2024, `clap`, `serde`/`serde_json`, existing zstd reader in `ab-morph-run::output`, existing compact JSONL row schemas.
+**Tech Stack:** Rust 2024, `clap`, `serde`/`serde_json`, `zstd`, existing compact JSONL row schemas.
 
 ---
 
 ## File Map
 
-- Modify: `crates/ab-morph-run/src/lib.rs` — expose new modules/functions and add source-id filtering support to the runner.
+- Modify: `crates/ab-morph-run/src/output.rs` — add streaming JSONL / JSONL.zst line reading.
+- Modify: `crates/ab-morph-run/src/lib.rs` — add selected-input runner entry point and preserve manifest provenance independently from selected file paths.
 - Modify: `crates/ab-morph-run/src/main.rs` — add CLI subcommands and periodic progress orchestration.
-- Modify: `crates/ab-morph-run/src/compact.rs` — make compact row types usable by sibling modules and tests; keep schema unchanged.
-- Create: `crates/ab-morph-run/src/summary.rs` — load compact comparison JSONL, aggregate/rank by explicit grouping key, and serialize summary rows.
+- Create: `crates/ab-morph-run/src/summary.rs` — stream compact comparison JSONL, aggregate/rank by explicit grouping key, and serialize summary rows.
 - Create: `crates/ab-morph-run/src/select.rs` — resolve AAT file paths by `source_id` for targeted full reruns.
 - Create: `docs/morph-corpus-workflow.md` — standard corpus workflow and identity policy.
-- Modify: `docs/superpowers/reports/2026-04-29-morph-compact-artifacts.md` — add a short pointer to the workflow doc and tools.
+- Modify: `docs/superpowers/reports/2026-04-29-morph-compact-artifacts.md` — add a pointer to the workflow doc and tools.
 
 ## Public CLI Shape
 
@@ -29,19 +29,15 @@ ab-morph-run summarize-compact \
   --group-by source-id \
   --limit 20
 
-ab-morph-run summarize-compact \
-  --comparisons scratch/morph-full-corpus-compact-canonical/comparisons.jsonl.zst \
-  --sort-by segmentation-regions \
-  --group-by text-id \
-  --limit 20 \
-  --json
-
 ab-morph-run rerun-full \
   --aat-dir scratch/morph-full-corpus/aats \
   --source-id 001529_50685-dd3b2fe4e5bf \
   --analyzer vibrato \
   --analyzer sudachi-c \
-  --output-dir scratch/morph-targeted-full/001529_50685-dd3b2fe4e5bf
+  --output-dir scratch/morph-targeted-full/001529_50685-dd3b2fe4e5bf \
+  --jobs 2 \
+  --examples-output scratch/morph-targeted-full/001529_50685-dd3b2fe4e5bf/examples.jsonl \
+  --max-examples-per-comparison 100
 
 ab-morph-run analyze-aat \
   --aat-dir scratch/morph-full-corpus/aats \
@@ -50,7 +46,6 @@ ab-morph-run analyze-aat \
   --output-profile compact \
   --analyses-output scratch/out/analyses.jsonl.zst \
   --comparisons-output scratch/out/comparisons.jsonl.zst \
-  --progress \
   --progress-interval-seconds 30
 ```
 
@@ -58,45 +53,143 @@ ab-morph-run analyze-aat \
 
 - `source_id` is the stable row/run identity. It is derived from the AAT file stem and distinguishes duplicate corpus index records.
 - `text_id` is a logical grouping key. It can intentionally collapse multiple source records.
-- Summary tooling must require explicit grouping semantics through `--group-by source-id|text-id`; default is `source-id`.
+- Summary tooling defaults to `--group-by source-id`; `--group-by text-id` is explicit logical-work grouping.
 - Targeted full rerun selects by `source_id`, not `text_id`, to avoid accidentally rerunning or skipping duplicate logical works.
+- `boundary_f1 = null` is sorted as worse than any numeric value when sorting by `boundary-f1`, because undefined boundary metrics are inspection-worthy.
 
 ---
 
-### Task 1: Compact Summary Library
+### Task 1: Streaming JSONL Input Helper
+
+**Files:**
+- Modify: `crates/ab-morph-run/src/output.rs`
+
+- [ ] **Step 1: Add failing streaming-reader tests**
+
+In `crates/ab-morph-run/src/output.rs`, add these tests inside the existing test module:
+
+```rust
+#[test]
+fn streams_plain_jsonl_lines_without_materializing_file() {
+    let dir = temp_dir("stream-plain");
+    fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("rows.jsonl");
+    fs::write(&path, "one\n\n two \n").unwrap();
+
+    let mut rows = Vec::new();
+    for_each_jsonl_or_zst_line(&path, |line| {
+        rows.push(line.to_owned());
+        Ok(())
+    })
+    .unwrap();
+
+    assert_eq!(rows, vec!["one", " two "]);
+    let _ = fs::remove_dir_all(dir);
+}
+
+#[test]
+fn streams_zstd_jsonl_lines() {
+    let dir = temp_dir("stream-zst");
+    fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("rows.jsonl.zst");
+    {
+        let mut writer = open_output_writer(&path, false).unwrap();
+        writer.write_all(b"one\ntwo\n").unwrap();
+        writer.flush().unwrap();
+    }
+
+    let mut rows = Vec::new();
+    for_each_jsonl_or_zst_line(&path, |line| {
+        rows.push(line.to_owned());
+        Ok(())
+    })
+    .unwrap();
+
+    assert_eq!(rows, vec!["one", "two"]);
+    let _ = fs::remove_dir_all(dir);
+}
+```
+
+- [ ] **Step 2: Run tests and verify red**
+
+```bash
+cargo test -p ab-morph-run output::tests::streams_plain_jsonl_lines_without_materializing_file
+cargo test -p ab-morph-run output::tests::streams_zstd_jsonl_lines
+```
+
+Expected: FAIL because `for_each_jsonl_or_zst_line` is not defined.
+
+- [ ] **Step 3: Implement streaming reader**
+
+In `crates/ab-morph-run/src/output.rs`, change imports to include `BufRead` and `BufReader`:
+
+```rust
+use std::io::{BufRead, BufReader, BufWriter, Write};
+```
+
+Add this function below `read_jsonl_or_zst_to_string`:
+
+```rust
+pub(crate) fn for_each_jsonl_or_zst_line(
+    path: &Path,
+    mut visit: impl FnMut(&str) -> Result<()>,
+) -> Result<()> {
+    let file = File::open(path).with_context(|| format!("failed to open {}", path.display()))?;
+    let mut reader: Box<dyn BufRead> = if path.extension().and_then(|ext| ext.to_str()) == Some("zst") {
+        Box::new(BufReader::new(zstd::stream::read::Decoder::new(file)?))
+    } else {
+        Box::new(BufReader::new(file))
+    };
+
+    let mut line = String::new();
+    loop {
+        line.clear();
+        let read = reader.read_line(&mut line)?;
+        if read == 0 {
+            break;
+        }
+        let line = line.trim_end_matches(['\r', '\n']);
+        if !line.trim().is_empty() {
+            visit(line)?;
+        }
+    }
+    Ok(())
+}
+```
+
+- [ ] **Step 4: Run output tests and verify green**
+
+```bash
+cargo test -p ab-morph-run output::tests::streams_plain_jsonl_lines_without_materializing_file
+cargo test -p ab-morph-run output::tests::streams_zstd_jsonl_lines
+```
+
+Expected: PASS.
+
+- [ ] **Step 5: Commit Task 1**
+
+```bash
+git add crates/ab-morph-run/src/output.rs
+git commit -m "feat: stream morph JSONL inputs"
+```
+
+---
+
+### Task 2: Compact Summary Library
 
 **Files:**
 - Create: `crates/ab-morph-run/src/summary.rs`
 - Modify: `crates/ab-morph-run/src/lib.rs`
-- Modify: `crates/ab-morph-run/src/compact.rs`
 
-- [ ] **Step 1: Make compact comparison row fields comparable in tests**
+- [ ] **Step 1: Add the summary module declaration**
 
-In `crates/ab-morph-run/src/compact.rs`, change this derive:
-
-```rust
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub(crate) struct ComparisonSummaryRow {
-```
-
-to:
+In `crates/ab-morph-run/src/lib.rs`, add:
 
 ```rust
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub(crate) struct ComparisonSummaryRow {
-```
-
-- [ ] **Step 2: Add the summary module declaration**
-
-In `crates/ab-morph-run/src/lib.rs`, add the module near the existing modules:
-
-```rust
-mod compact;
-mod output;
 mod summary;
 ```
 
-Then add these re-exports near `OutputProfile`:
+Add public re-exports near `OutputProfile`:
 
 ```rust
 pub use summary::{
@@ -105,9 +198,9 @@ pub use summary::{
 };
 ```
 
-- [ ] **Step 3: Write failing summary tests**
+- [ ] **Step 2: Write failing summary tests**
 
-Create `crates/ab-morph-run/src/summary.rs` with this initial content:
+Create `crates/ab-morph-run/src/summary.rs`:
 
 ```rust
 use std::path::Path;
@@ -166,8 +259,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn summarize_groups_by_source_id_and_sorts_lowest_boundary_f1_first() {
-        let dir = temp_dir("source-boundary");
+    fn boundary_f1_sort_puts_null_first_then_lowest_numeric() {
+        let dir = temp_dir("boundary");
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("comparisons.jsonl");
         fs::write(
@@ -190,10 +283,7 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(rows.len(), 2);
-        assert_eq!(rows[0].key, "src-a");
-        assert_eq!(rows[0].worst_boundary_f1, Some(0.847));
-        assert_eq!(rows[1].key, "src-b");
+        assert_eq!(rows.iter().map(|row| row.key.as_str()).collect::<Vec<_>>(), vec!["src-c", "src-a"]);
         let _ = fs::remove_dir_all(dir);
     }
 
@@ -233,31 +323,23 @@ mod tests {
     }
 
     fn temp_dir(label: &str) -> std::path::PathBuf {
-        let unique = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_nanos();
-        std::env::temp_dir().join(format!(
-            "ab-morph-run-summary-{label}-{}-{unique}",
-            std::process::id()
-        ))
+        let unique = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
+        std::env::temp_dir().join(format!("ab-morph-run-summary-{label}-{}-{unique}", std::process::id()))
     }
 }
 ```
 
-- [ ] **Step 4: Run summary tests and verify red**
-
-Run:
+- [ ] **Step 3: Run summary tests and verify red**
 
 ```bash
 cargo test -p ab-morph-run summary::tests
 ```
 
-Expected: tests compile and fail with the `unimplemented!` panic from `summarize_compact_comparisons`.
+Expected: tests compile and fail with the `unimplemented!` panic.
 
-- [ ] **Step 5: Implement summary loading, grouping, and sorting**
+- [ ] **Step 4: Implement streaming summary loading, grouping, and sorting**
 
-Replace the body of `crates/ab-morph-run/src/summary.rs` above the test module with:
+Replace `summary.rs` above the test module with:
 
 ```rust
 use std::collections::{BTreeMap, BTreeSet};
@@ -267,7 +349,7 @@ use anyhow::Result;
 use serde::Serialize;
 
 use crate::compact::ComparisonSummaryRow;
-use crate::output::read_jsonl_or_zst_to_string;
+use crate::output::for_each_jsonl_or_zst_line;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CompactSummaryGroupBy {
@@ -311,6 +393,7 @@ struct Accumulator {
     text_ids: BTreeSet<String>,
     comparisons: usize,
     worst_boundary_f1: Option<f64>,
+    saw_null_boundary_f1: bool,
     total_segmentation_regions: usize,
     total_feature_difference_regions: usize,
     total_coverage_mismatch_regions: usize,
@@ -323,17 +406,16 @@ pub fn summarize_compact_comparisons(
     comparisons_path: &Path,
     options: CompactSummaryOptions,
 ) -> Result<Vec<CompactSummaryRow>> {
-    let text = read_jsonl_or_zst_to_string(comparisons_path)?;
     let mut groups = BTreeMap::<String, Accumulator>::new();
-
-    for line in text.lines().filter(|line| !line.trim().is_empty()) {
+    for_each_jsonl_or_zst_line(comparisons_path, |line| {
         let row: ComparisonSummaryRow = serde_json::from_str(line)?;
         let key = match options.group_by {
             CompactSummaryGroupBy::SourceId => row.source_id.clone(),
             CompactSummaryGroupBy::TextId => row.text_id.clone(),
         };
         groups.entry(key).or_default().push(row);
-    }
+        Ok(())
+    })?;
 
     let mut rows = groups
         .into_iter()
@@ -349,21 +431,18 @@ impl Accumulator {
         self.source_ids.insert(row.source_id);
         self.text_ids.insert(row.text_id);
         self.comparisons += 1;
-        self.worst_boundary_f1 = match (self.worst_boundary_f1, row.boundary_f1) {
-            (Some(left), Some(right)) => Some(left.min(right)),
-            (None, Some(value)) => Some(value),
-            (value, None) => value,
-        };
+        match row.boundary_f1 {
+            Some(value) => {
+                self.worst_boundary_f1 = Some(self.worst_boundary_f1.map_or(value, |old| old.min(value)));
+            }
+            None => self.saw_null_boundary_f1 = true,
+        }
         self.total_segmentation_regions += row.segmentation_regions;
         self.total_feature_difference_regions += row.one_to_one_with_feature_differences;
         self.total_coverage_mismatch_regions += row.coverage_mismatch_regions;
         self.max_segmentation_regions = self.max_segmentation_regions.max(row.segmentation_regions);
-        self.max_feature_difference_regions = self
-            .max_feature_difference_regions
-            .max(row.one_to_one_with_feature_differences);
-        self.max_coverage_mismatch_regions = self
-            .max_coverage_mismatch_regions
-            .max(row.coverage_mismatch_regions);
+        self.max_feature_difference_regions = self.max_feature_difference_regions.max(row.one_to_one_with_feature_differences);
+        self.max_coverage_mismatch_regions = self.max_coverage_mismatch_regions.max(row.coverage_mismatch_regions);
     }
 
     fn into_row(self, key: String) -> CompactSummaryRow {
@@ -372,7 +451,7 @@ impl Accumulator {
             source_ids: self.source_ids.into_iter().collect(),
             text_ids: self.text_ids.into_iter().collect(),
             comparisons: self.comparisons,
-            worst_boundary_f1: self.worst_boundary_f1,
+            worst_boundary_f1: if self.saw_null_boundary_f1 { None } else { self.worst_boundary_f1 },
             total_segmentation_regions: self.total_segmentation_regions,
             total_feature_difference_regions: self.total_feature_difference_regions,
             total_coverage_mismatch_regions: self.total_coverage_mismatch_regions,
@@ -383,46 +462,29 @@ impl Accumulator {
     }
 }
 
-fn compare_rows(
-    left: &CompactSummaryRow,
-    right: &CompactSummaryRow,
-    sort_by: CompactSummarySort,
-) -> std::cmp::Ordering {
+fn compare_rows(left: &CompactSummaryRow, right: &CompactSummaryRow, sort_by: CompactSummarySort) -> std::cmp::Ordering {
     match sort_by {
         CompactSummarySort::BoundaryF1 => compare_boundary_f1(left, right),
-        CompactSummarySort::SegmentationRegions => right
-            .total_segmentation_regions
-            .cmp(&left.total_segmentation_regions)
-            .then_with(|| left.key.cmp(&right.key)),
-        CompactSummarySort::FeatureDifferences => right
-            .total_feature_difference_regions
-            .cmp(&left.total_feature_difference_regions)
-            .then_with(|| left.key.cmp(&right.key)),
-        CompactSummarySort::CoverageMismatchRegions => right
-            .total_coverage_mismatch_regions
-            .cmp(&left.total_coverage_mismatch_regions)
-            .then_with(|| left.key.cmp(&right.key)),
+        CompactSummarySort::SegmentationRegions => right.total_segmentation_regions.cmp(&left.total_segmentation_regions).then_with(|| left.key.cmp(&right.key)),
+        CompactSummarySort::FeatureDifferences => right.total_feature_difference_regions.cmp(&left.total_feature_difference_regions).then_with(|| left.key.cmp(&right.key)),
+        CompactSummarySort::CoverageMismatchRegions => right.total_coverage_mismatch_regions.cmp(&left.total_coverage_mismatch_regions).then_with(|| left.key.cmp(&right.key)),
     }
 }
 
 fn compare_boundary_f1(left: &CompactSummaryRow, right: &CompactSummaryRow) -> std::cmp::Ordering {
     match (left.worst_boundary_f1, right.worst_boundary_f1) {
-        (Some(left), Some(right)) => left
-            .partial_cmp(&right)
-            .unwrap_or(std::cmp::Ordering::Equal),
-        (Some(_), None) => std::cmp::Ordering::Less,
-        (None, Some(_)) => std::cmp::Ordering::Greater,
+        (None, Some(_)) => std::cmp::Ordering::Less,
+        (Some(_), None) => std::cmp::Ordering::Greater,
         (None, None) => left.key.cmp(&right.key),
+        (Some(left), Some(right)) => left.partial_cmp(&right).unwrap_or(std::cmp::Ordering::Equal),
     }
     .then_with(|| left.key.cmp(&right.key))
 }
 ```
 
-Keep the test module from Step 3 below this implementation.
+Keep the test module from Step 2 below this implementation.
 
-- [ ] **Step 6: Run summary tests and verify green**
-
-Run:
+- [ ] **Step 5: Run summary tests and verify green**
 
 ```bash
 cargo test -p ab-morph-run summary::tests
@@ -430,24 +492,23 @@ cargo test -p ab-morph-run summary::tests
 
 Expected: PASS.
 
-- [ ] **Step 7: Commit Task 1**
+- [ ] **Step 6: Commit Task 2**
 
 ```bash
-git add crates/ab-morph-run/src/lib.rs crates/ab-morph-run/src/compact.rs crates/ab-morph-run/src/summary.rs
+git add crates/ab-morph-run/src/lib.rs crates/ab-morph-run/src/summary.rs
 git commit -m "feat: summarize compact morph comparisons"
 ```
 
 ---
 
-### Task 2: `summarize-compact` CLI
+### Task 3: `summarize-compact` CLI
 
 **Files:**
 - Modify: `crates/ab-morph-run/src/main.rs`
-- Test: `crates/ab-morph-run/src/main.rs`
 
-- [ ] **Step 1: Write failing parser tests for the new subcommand enums**
+- [ ] **Step 1: Write failing parser test for `summarize-compact`**
 
-In `crates/ab-morph-run/src/main.rs`, add the enum types above `Command`:
+In `crates/ab-morph-run/src/main.rs`, add the CLI enum types above `Command`:
 
 ```rust
 #[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
@@ -465,7 +526,7 @@ enum SummarySortArg {
 }
 ```
 
-Then add a failing test inside the existing `#[cfg(test)] mod tests`:
+Add this test inside the existing test module:
 
 ```rust
 #[test]
@@ -484,14 +545,7 @@ fn parses_summarize_compact_command() {
         "--json",
     ]);
 
-    let Command::SummarizeCompact {
-        comparisons,
-        group_by,
-        sort_by,
-        limit,
-        json,
-    } = args.command
-    else {
+    let Command::SummarizeCompact { comparisons, group_by, sort_by, limit, json } = args.command else {
         panic!("expected summarize-compact command");
     };
 
@@ -505,17 +559,15 @@ fn parses_summarize_compact_command() {
 
 - [ ] **Step 2: Run parser test and verify red**
 
-Run:
-
 ```bash
 cargo test -p ab-morph-run parses_summarize_compact_command
 ```
 
 Expected: FAIL because `Command::SummarizeCompact` is not defined.
 
-- [ ] **Step 3: Add the CLI variant and mapping helpers**
+- [ ] **Step 3: Add CLI variant and mapper helpers**
 
-In `Command`, add this variant after `AnalyzeAat`:
+Add this `Command` variant after `AnalyzeAat`:
 
 ```rust
     SummarizeCompact {
@@ -532,7 +584,7 @@ In `Command`, add this variant after `AnalyzeAat`:
     },
 ```
 
-Add mapping helpers below `Command`:
+Add helpers below `Command`:
 
 ```rust
 impl SummaryGroupByArg {
@@ -558,16 +610,10 @@ impl SummarySortArg {
 
 - [ ] **Step 4: Implement CLI execution and table formatting**
 
-In the `match args.command` block, add this arm after `AnalyzeAat`:
+Add this `match` arm:
 
 ```rust
-        Command::SummarizeCompact {
-            comparisons,
-            group_by,
-            sort_by,
-            limit,
-            json,
-        } => {
+        Command::SummarizeCompact { comparisons, group_by, sort_by, limit, json } => {
             let rows = ab_morph_run::summarize_compact_comparisons(
                 &comparisons,
                 ab_morph_run::CompactSummaryOptions {
@@ -586,21 +632,21 @@ In the `match args.command` block, add this arm after `AnalyzeAat`:
         }
 ```
 
-Add this helper near `emit_progress_summary`:
+Add the table helper near `emit_progress_summary`:
 
 ```rust
 fn print_summary_table(rows: &[ab_morph_run::CompactSummaryRow]) {
     println!(
-        "key\tcomparisons\tworst_boundary_f1\ttotal_segmentation_regions\ttotal_feature_difference_regions\ttotal_coverage_mismatch_regions"
+        "key\tsource_ids\ttext_ids\tcomparisons\tworst_boundary_f1\ttotal_segmentation_regions\ttotal_feature_difference_regions\ttotal_coverage_mismatch_regions"
     );
     for row in rows {
         println!(
-            "{}\t{}\t{}\t{}\t{}\t{}",
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
             row.key,
+            row.source_ids.join(","),
+            row.text_ids.join(","),
             row.comparisons,
-            row.worst_boundary_f1
-                .map(|value| value.to_string())
-                .unwrap_or_else(|| "null".to_owned()),
+            row.worst_boundary_f1.map(|value| value.to_string()).unwrap_or_else(|| "null".to_owned()),
             row.total_segmentation_regions,
             row.total_feature_difference_regions,
             row.total_coverage_mismatch_regions,
@@ -609,18 +655,16 @@ fn print_summary_table(rows: &[ab_morph_run::CompactSummaryRow]) {
 }
 ```
 
-- [ ] **Step 5: Run parser test and CLI unit tests**
-
-Run:
+- [ ] **Step 5: Run CLI tests and summary tests**
 
 ```bash
 cargo test -p ab-morph-run parses_summarize_compact_command
-cargo test -p ab-morph-run --lib summary::tests
+cargo test -p ab-morph-run summary::tests
 ```
 
 Expected: PASS.
 
-- [ ] **Step 6: Commit Task 2**
+- [ ] **Step 6: Commit Task 3**
 
 ```bash
 git add crates/ab-morph-run/src/main.rs
@@ -629,14 +673,13 @@ git commit -m "feat: add compact summary CLI"
 
 ---
 
-### Task 3: Source-ID Selection and `rerun-full` CLI
+### Task 4: Selected-Input Runner and Source-ID Selection
 
 **Files:**
 - Create: `crates/ab-morph-run/src/select.rs`
 - Modify: `crates/ab-morph-run/src/lib.rs`
-- Modify: `crates/ab-morph-run/src/main.rs`
 
-- [ ] **Step 1: Add source-id selector module and failing tests**
+- [ ] **Step 1: Add selector module and failing tests**
 
 Create `crates/ab-morph-run/src/select.rs`:
 
@@ -647,10 +690,7 @@ use anyhow::Result;
 
 use crate::compact::source_id_from_aat_path;
 
-pub fn resolve_source_id_aat_paths(
-    _aat_dir: &Path,
-    _source_ids: &[String],
-) -> Result<Vec<PathBuf>> {
+pub fn resolve_source_id_aat_paths(_aat_dir: &Path, _source_ids: &[String]) -> Result<Vec<PathBuf>> {
     unimplemented!("selector implementation follows failing tests")
 }
 
@@ -669,11 +709,7 @@ mod tests {
         fs::write(nested.join("src-b.json"), "{}").unwrap();
         fs::write(nested.join("src-a.json"), "{}").unwrap();
 
-        let paths = resolve_source_id_aat_paths(
-            &dir,
-            &["src-a".to_owned(), "src-b".to_owned()],
-        )
-        .unwrap();
+        let paths = resolve_source_id_aat_paths(&dir, &["src-a".to_owned(), "src-b".to_owned()]).unwrap();
 
         assert_eq!(paths.len(), 2);
         assert_eq!(source_id_from_aat_path(&paths[0]), "src-a");
@@ -682,48 +718,47 @@ mod tests {
     }
 
     #[test]
+    fn duplicate_source_id_is_an_error() {
+        let dir = temp_dir("duplicate");
+        let one = dir.join("one");
+        let two = dir.join("two");
+        fs::create_dir_all(&one).unwrap();
+        fs::create_dir_all(&two).unwrap();
+        fs::write(one.join("same.json"), "{}").unwrap();
+        fs::write(two.join("same.json"), "{}").unwrap();
+
+        let error = resolve_source_id_aat_paths(&dir, &["same".to_owned()]).unwrap_err().to_string();
+
+        assert!(error.contains("duplicate source_id"));
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
     fn missing_source_id_is_an_error() {
         let dir = temp_dir("missing");
         fs::create_dir_all(&dir).unwrap();
 
-        let error = resolve_source_id_aat_paths(&dir, &["missing".to_owned()])
-            .unwrap_err()
-            .to_string();
+        let error = resolve_source_id_aat_paths(&dir, &["missing".to_owned()]).unwrap_err().to_string();
 
         assert!(error.contains("missing source_id"));
         let _ = fs::remove_dir_all(dir);
     }
 
     fn temp_dir(label: &str) -> std::path::PathBuf {
-        let unique = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_nanos();
-        std::env::temp_dir().join(format!(
-            "ab-morph-run-select-{label}-{}-{unique}",
-            std::process::id()
-        ))
+        let unique = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
+        std::env::temp_dir().join(format!("ab-morph-run-select-{label}-{}-{unique}", std::process::id()))
     }
 }
 ```
 
-- [ ] **Step 2: Wire module declaration**
-
-In `crates/ab-morph-run/src/lib.rs`, add:
+In `lib.rs`, add:
 
 ```rust
 mod select;
-```
-
-and re-export:
-
-```rust
 pub use select::resolve_source_id_aat_paths;
 ```
 
-- [ ] **Step 3: Run selector tests and verify red**
-
-Run:
+- [ ] **Step 2: Run selector tests and verify red**
 
 ```bash
 cargo test -p ab-morph-run select::tests
@@ -731,7 +766,7 @@ cargo test -p ab-morph-run select::tests
 
 Expected: FAIL with `unimplemented!` panic.
 
-- [ ] **Step 4: Implement recursive source-id resolution**
+- [ ] **Step 3: Implement selector**
 
 Replace `select.rs` above the test module with:
 
@@ -777,10 +812,8 @@ fn collect_matching_json(
             collect_matching_json(&path, requested, discovered)?;
         } else if path.extension().and_then(|ext| ext.to_str()) == Some("json") {
             let source_id = source_id_from_aat_path(&path);
-            if requested.contains(&source_id) {
-                if discovered.insert(source_id.clone(), path).is_some() {
-                    bail!("duplicate source_id `{source_id}` under {}", dir.display());
-                }
+            if requested.contains(&source_id) && discovered.insert(source_id.clone(), path).is_some() {
+                bail!("duplicate source_id `{source_id}` under {}", dir.display());
             }
         }
     }
@@ -788,21 +821,220 @@ fn collect_matching_json(
 }
 ```
 
-Keep the test module from Step 1 below this implementation.
+- [ ] **Step 4: Refactor runner to preserve provenance for selected inputs**
 
-- [ ] **Step 5: Run selector tests and verify green**
+In `crates/ab-morph-run/src/lib.rs`, introduce this public function next to `run_analyze_aat`:
 
-Run:
+```rust
+#[allow(clippy::too_many_arguments)]
+pub fn run_analyze_aat_selected(
+    inputs: Vec<PathBuf>,
+    input_mode: &str,
+    input_path: &str,
+    analyzer_ids: &[String],
+    analyses_output: &Path,
+    comparisons_output: Option<&Path>,
+    errors_output: Option<&Path>,
+    resume: bool,
+    jobs: usize,
+    output_profile: OutputProfile,
+    examples_output: Option<&Path>,
+    max_examples_per_comparison: usize,
+    manifest_output: Option<&Path>,
+) -> Result<()> {
+    if inputs.is_empty() {
+        bail!("provide at least one AAT input");
+    }
+    run_analyze_aat_inputs(
+        inputs,
+        input_mode,
+        input_path,
+        analyzer_ids,
+        analyses_output,
+        comparisons_output,
+        errors_output,
+        resume,
+        jobs,
+        output_profile,
+        examples_output,
+        max_examples_per_comparison,
+        manifest_output,
+    )
+}
+```
+
+Then change `run_analyze_aat` so after validating input mode, analyzer list, and jobs it calls a new private helper:
+
+```rust
+let inputs = discover_aat_inputs(aat, aat_dir)?;
+let input_mode = if aat.is_some() { "aat" } else { "aat_dir" };
+let input_path = aat.or(aat_dir).map(|path| path.display().to_string()).unwrap_or_default();
+run_analyze_aat_inputs(
+    inputs,
+    input_mode,
+    &input_path,
+    analyzer_ids,
+    analyses_output,
+    comparisons_output,
+    errors_output,
+    resume,
+    jobs,
+    output_profile,
+    examples_output,
+    max_examples_per_comparison,
+    manifest_output,
+)
+```
+
+Move the existing analyzer loading, serial/parallel execution, and manifest writing body into a private helper:
+
+```rust
+#[allow(clippy::too_many_arguments)]
+fn run_analyze_aat_inputs(
+    inputs: Vec<PathBuf>,
+    input_mode: &str,
+    input_path: &str,
+    analyzer_ids: &[String],
+    analyses_output: &Path,
+    comparisons_output: Option<&Path>,
+    errors_output: Option<&Path>,
+    resume: bool,
+    jobs: usize,
+    output_profile: OutputProfile,
+    examples_output: Option<&Path>,
+    max_examples_per_comparison: usize,
+    manifest_output: Option<&Path>,
+) -> Result<()> {
+    if analyzer_ids.is_empty() {
+        bail!("provide at least one --analyzer");
+    }
+    if jobs == 0 {
+        bail!("--jobs must be at least 1");
+    }
+
+    let input_file_count = inputs.len();
+    let specs = parse_analyzer_specs(analyzer_ids)?;
+    let analyzers = load_analyzers(&specs)?;
+
+    if jobs > 1 {
+        run_analyze_aat_parallel(
+            inputs,
+            analyzers,
+            analyses_output,
+            comparisons_output,
+            errors_output,
+            resume,
+            jobs,
+            output_profile,
+            examples_output,
+            max_examples_per_comparison,
+        )?;
+    } else {
+        run_analyze_aat_serial(
+            inputs,
+            &analyzers,
+            analyses_output,
+            comparisons_output,
+            errors_output,
+            resume,
+            output_profile,
+            examples_output,
+            max_examples_per_comparison,
+        )?;
+    }
+
+    if let Some(path) = manifest_output {
+        write_manifest(
+            path,
+            output_profile,
+            analyzer_ids,
+            jobs,
+            input_mode,
+            input_path,
+            input_file_count,
+            analyses_output,
+            comparisons_output,
+            examples_output,
+            errors_output,
+        )?;
+    }
+
+    Ok(())
+}
+```
+
+Change `write_manifest` parameters from `aat: Option<&Path>, aat_dir: Option<&Path>` to `input_mode: &str, input_path: &str`, and set:
+
+```rust
+input_mode: input_mode.to_owned(),
+input_path: input_path.to_owned(),
+```
+
+- [ ] **Step 5: Add runner provenance regression test**
+
+In `lib.rs` tests, add:
+
+```rust
+#[test]
+fn selected_runner_manifest_preserves_original_input_path() {
+    let dir = temp_dir("selected-manifest");
+    let aat_dir = dir.join("aats");
+    fs::create_dir_all(&aat_dir).unwrap();
+    let input = aat_dir.join("source-a.json");
+    fs::write(&input, TINY_AAT).unwrap();
+
+    let out = dir.join("out");
+    fs::create_dir_all(&out).unwrap();
+    run_analyze_aat_selected(
+        vec![input],
+        "aat_dir",
+        &aat_dir.display().to_string(),
+        &["vibrato".to_owned()],
+        &out.join("analyses.jsonl"),
+        None,
+        Some(&out.join("errors.jsonl")),
+        false,
+        1,
+        OutputProfile::Compact,
+        None,
+        10,
+        Some(&out.join("manifest.json")),
+    )
+    .unwrap();
+
+    let manifest: serde_json::Value = serde_json::from_str(&fs::read_to_string(out.join("manifest.json")).unwrap()).unwrap();
+    assert_eq!(manifest["input_path"], aat_dir.display().to_string());
+    assert_eq!(manifest["input_file_count"], 1);
+    let _ = fs::remove_dir_all(dir);
+}
+```
+
+- [ ] **Step 6: Run selector and provenance tests**
 
 ```bash
 cargo test -p ab-morph-run select::tests
+cargo test -p ab-morph-run selected_runner_manifest_preserves_original_input_path
 ```
 
 Expected: PASS.
 
-- [ ] **Step 6: Add `rerun-full` parser test**
+- [ ] **Step 7: Commit Task 4**
 
-In `crates/ab-morph-run/src/main.rs`, add this test inside the existing test module:
+```bash
+git add crates/ab-morph-run/src/lib.rs crates/ab-morph-run/src/select.rs
+git commit -m "feat: select morph AAT inputs by source id"
+```
+
+---
+
+### Task 5: `rerun-full` CLI
+
+**Files:**
+- Modify: `crates/ab-morph-run/src/main.rs`
+
+- [ ] **Step 1: Add failing parser test for `rerun-full` options**
+
+Add this test to `main.rs` tests:
 
 ```rust
 #[test]
@@ -822,15 +1054,15 @@ fn parses_rerun_full_command() {
         "sudachi-c",
         "--output-dir",
         "full-out",
+        "--jobs",
+        "2",
+        "--examples-output",
+        "examples.jsonl",
+        "--max-examples-per-comparison",
+        "50",
     ]);
 
-    let Command::RerunFull {
-        aat_dir,
-        source_id,
-        analyzer,
-        output_dir,
-    } = args.command
-    else {
+    let Command::RerunFull { aat_dir, source_id, analyzer, output_dir, jobs, examples_output, max_examples_per_comparison } = args.command else {
         panic!("expected rerun-full command");
     };
 
@@ -838,12 +1070,13 @@ fn parses_rerun_full_command() {
     assert_eq!(source_id, vec!["src-a".to_owned(), "src-b".to_owned()]);
     assert_eq!(analyzer, vec!["vibrato".to_owned(), "sudachi-c".to_owned()]);
     assert_eq!(output_dir, PathBuf::from("full-out"));
+    assert_eq!(jobs, 2);
+    assert_eq!(examples_output, Some(PathBuf::from("examples.jsonl")));
+    assert_eq!(max_examples_per_comparison, 50);
 }
 ```
 
-- [ ] **Step 7: Run parser test and verify red**
-
-Run:
+- [ ] **Step 2: Run parser test and verify red**
 
 ```bash
 cargo test -p ab-morph-run parses_rerun_full_command
@@ -851,9 +1084,9 @@ cargo test -p ab-morph-run parses_rerun_full_command
 
 Expected: FAIL because `Command::RerunFull` is not defined.
 
-- [ ] **Step 8: Implement the `rerun-full` CLI command**
+- [ ] **Step 3: Add CLI variant and a testable helper**
 
-In `Command`, add this variant after `SummarizeCompact`:
+Add this variant after `SummarizeCompact`:
 
 ```rust
     RerunFull {
@@ -865,10 +1098,48 @@ In `Command`, add this variant after `SummarizeCompact`:
         analyzer: Vec<String>,
         #[arg(long)]
         output_dir: PathBuf,
+        #[arg(long, default_value_t = 1)]
+        jobs: usize,
+        #[arg(long)]
+        examples_output: Option<PathBuf>,
+        #[arg(long, default_value_t = 10)]
+        max_examples_per_comparison: usize,
     },
 ```
 
-Add this match arm after `SummarizeCompact`:
+Add this helper near `print_summary_table`:
+
+```rust
+#[allow(clippy::too_many_arguments)]
+fn run_rerun_full(
+    aat_dir: &Path,
+    source_ids: &[String],
+    analyzer: &[String],
+    output_dir: &Path,
+    jobs: usize,
+    examples_output: Option<&Path>,
+    max_examples_per_comparison: usize,
+) -> Result<()> {
+    let inputs = ab_morph_run::resolve_source_id_aat_paths(aat_dir, source_ids)?;
+    ab_morph_run::run_analyze_aat_selected(
+        inputs,
+        "aat_dir",
+        &aat_dir.display().to_string(),
+        analyzer,
+        &output_dir.join("analyses.jsonl"),
+        Some(&output_dir.join("comparisons.jsonl")),
+        Some(&output_dir.join("errors.jsonl")),
+        false,
+        jobs,
+        ab_morph_run::OutputProfile::Full,
+        examples_output,
+        max_examples_per_comparison,
+        Some(&output_dir.join("manifest.json")),
+    )
+}
+```
+
+Add this match arm:
 
 ```rust
         Command::RerunFull {
@@ -876,64 +1147,91 @@ Add this match arm after `SummarizeCompact`:
             source_id,
             analyzer,
             output_dir,
-        } => {
-            let inputs = ab_morph_run::resolve_source_id_aat_paths(&aat_dir, &source_id)?;
-            let input_dir = output_dir.join("inputs");
-            if input_dir.exists() {
-                fs::remove_dir_all(&input_dir)?;
-            }
-            fs::create_dir_all(&input_dir)?;
-            for input in inputs {
-                let target = input_dir.join(input.file_name().expect("AAT path has file name"));
-                fs::copy(&input, &target)?;
-            }
-            ab_morph_run::run_analyze_aat(
-                None,
-                Some(&input_dir),
-                &analyzer,
-                &output_dir.join("analyses.jsonl"),
-                Some(&output_dir.join("comparisons.jsonl")),
-                Some(&output_dir.join("errors.jsonl")),
-                false,
-                1,
-                ab_morph_run::OutputProfile::Full,
-                None,
-                0,
-                Some(&output_dir.join("manifest.json")),
-            )
-        }
+            jobs,
+            examples_output,
+            max_examples_per_comparison,
+        } => run_rerun_full(
+            &aat_dir,
+            &source_id,
+            &analyzer,
+            &output_dir,
+            jobs,
+            examples_output.as_deref(),
+            max_examples_per_comparison,
+        ),
 ```
 
-This copies selected AAT files into an output-local `inputs/` directory before running. That avoids extending `run_analyze_aat` with an input-list API in this increment.
+- [ ] **Step 4: Add end-to-end helper test**
 
-- [ ] **Step 9: Run selector and parser tests**
+Add this test to `main.rs` tests:
 
-Run:
+```rust
+#[test]
+fn rerun_full_writes_manifest_with_original_aat_dir() {
+    const TINY_AAT: &str = r#"{"version":1,"work_id":"source-a","blocks":[{"kind":"paragraph","content":[{"kind":"text","value":"吾輩は猫である。"}]}],"meta":{"adapter":"fixture","adapter_version":"fixture","source_encoding":"utf-8","source_hash":"sha256:0000000000000000000000000000000000000000000000000000000000000000","parse_complete":true,"warnings":[]}}"#;
+    let dir = temp_dir("rerun-full");
+    let aat_dir = dir.join("aats");
+    let out = dir.join("out");
+    fs::create_dir_all(&aat_dir).unwrap();
+    fs::create_dir_all(&out).unwrap();
+    fs::write(aat_dir.join("source-a.json"), TINY_AAT).unwrap();
+
+    run_rerun_full(
+        &aat_dir,
+        &["source-a".to_owned()],
+        &["vibrato".to_owned()],
+        &out,
+        1,
+        None,
+        10,
+    )
+    .unwrap();
+
+    let manifest: serde_json::Value = serde_json::from_str(&fs::read_to_string(out.join("manifest.json")).unwrap()).unwrap();
+    assert_eq!(manifest["input_path"], aat_dir.display().to_string());
+    assert!(out.join("analyses.jsonl").exists());
+    let _ = fs::remove_dir_all(dir);
+}
+```
+
+If `main.rs` tests do not already have `temp_dir`, add:
+
+```rust
+fn temp_dir(label: &str) -> PathBuf {
+    let unique = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    std::env::temp_dir().join(format!("ab-morph-run-main-{label}-{}-{unique}", std::process::id()))
+}
+```
+
+- [ ] **Step 5: Run parser and end-to-end tests**
 
 ```bash
-cargo test -p ab-morph-run select::tests
 cargo test -p ab-morph-run parses_rerun_full_command
+cargo test -p ab-morph-run rerun_full_writes_manifest_with_original_aat_dir
 ```
 
-Expected: both PASS.
+Expected: PASS.
 
-- [ ] **Step 10: Commit Task 3**
+- [ ] **Step 6: Commit Task 5**
 
 ```bash
-git add crates/ab-morph-run/src/lib.rs crates/ab-morph-run/src/main.rs crates/ab-morph-run/src/select.rs
-git commit -m "feat: rerun full morph details by source id"
+git add crates/ab-morph-run/src/main.rs
+git commit -m "feat: add targeted full morph rerun CLI"
 ```
 
 ---
 
-### Task 4: Periodic Progress Output
+### Task 6: Periodic Progress Output
 
 **Files:**
 - Modify: `crates/ab-morph-run/src/main.rs`
 
-- [ ] **Step 1: Write failing parser test for progress interval**
+- [ ] **Step 1: Write failing parser test for progress interval implying progress**
 
-Add this test inside `crates/ab-morph-run/src/main.rs` test module:
+Add this test to `main.rs` tests:
 
 ```rust
 #[test]
@@ -947,28 +1245,20 @@ fn parses_progress_interval_seconds() {
         "vibrato",
         "--analyses-output",
         "analyses.jsonl",
-        "--progress",
         "--progress-interval-seconds",
         "5",
     ]);
 
-    let Command::AnalyzeAat {
-        progress,
-        progress_interval_seconds,
-        ..
-    } = args.command
-    else {
+    let Command::AnalyzeAat { progress, progress_interval_seconds, .. } = args.command else {
         panic!("expected analyze-aat command");
     };
 
-    assert!(progress);
-    assert_eq!(progress_interval_seconds, 5);
+    assert!(!progress);
+    assert_eq!(progress_interval_seconds, Some(5));
 }
 ```
 
 - [ ] **Step 2: Run parser test and verify red**
-
-Run:
 
 ```bash
 cargo test -p ab-morph-run parses_progress_interval_seconds
@@ -976,53 +1266,48 @@ cargo test -p ab-morph-run parses_progress_interval_seconds
 
 Expected: FAIL because `progress_interval_seconds` is not a field.
 
-- [ ] **Step 3: Add the CLI field**
+- [ ] **Step 3: Add optional progress interval field**
 
-In the `AnalyzeAat` variant, add after `progress`:
-
-```rust
-        #[arg(long, default_value_t = 30)]
-        progress_interval_seconds: u64,
-```
-
-Add `progress_interval_seconds` to the `Command::AnalyzeAat` destructuring in `main()`.
-
-- [ ] **Step 4: Implement periodic progress thread**
-
-Replace the direct `run_analyze_aat` block in the `AnalyzeAat` arm with:
+In `AnalyzeAat`, add:
 
 ```rust
-            let start = Instant::now();
-            let progress_stop = if progress {
-                let interval = std::time::Duration::from_secs(progress_interval_seconds.max(1));
-                Some(spawn_progress_thread(start, input_count, interval))
-            } else {
-                None
-            };
-            let result = ab_morph_run::run_analyze_aat(
-                aat.as_deref(),
-                aat_dir.as_deref(),
-                &analyzer,
-                &analyses_output,
-                comparisons_output.as_deref(),
-                errors_output.as_deref(),
-                resume,
-                jobs,
-                output_profile,
-                examples_output.as_deref(),
-                max_examples_per_comparison,
-                manifest_output.as_deref(),
-            );
-            if let Some(stop) = progress_stop {
-                stop.stop();
-            }
-            if progress {
-                emit_progress_summary(start, input_count);
-            }
-            result
+        #[arg(long)]
+        progress_interval_seconds: Option<u64>,
 ```
 
-Add this struct and helper near `emit_progress_summary`:
+Add it to the `Command::AnalyzeAat` destructuring. Replace the existing `input_count` setup with:
+
+```rust
+let progress_enabled = progress || progress_interval_seconds.is_some();
+let progress_interval_seconds = progress_interval_seconds.unwrap_or(30).max(1);
+let input_count = if progress_enabled {
+    Some(count_aat_json_inputs(aat.as_deref(), aat_dir.as_deref())?)
+} else {
+    None
+};
+```
+
+Use `progress_enabled` anywhere the old code used `progress`.
+
+- [ ] **Step 4: Implement immediate and periodic progress thread**
+
+Replace the direct progress setup with:
+
+```rust
+let start = Instant::now();
+let progress_stop = if progress_enabled {
+    emit_progress_summary(start, input_count);
+    Some(spawn_progress_thread(
+        start,
+        input_count,
+        std::time::Duration::from_secs(progress_interval_seconds),
+    ))
+} else {
+    None
+};
+```
+
+Add this helper near `emit_progress_summary`:
 
 ```rust
 struct ProgressStop {
@@ -1052,18 +1337,22 @@ fn spawn_progress_thread(
             emit_progress_summary(start, input_count);
         }
     });
-    ProgressStop {
-        stop: Some(stop),
-        handle: Some(handle),
-    }
+    ProgressStop { stop: Some(stop), handle: Some(handle) }
 }
 ```
 
-This emits elapsed/memory periodically, retains the existing final summary, and stops promptly when the run finishes. It does not count completed inputs in this increment because the runner does not expose cross-thread progress counters yet.
+After `run_analyze_aat` returns, keep:
+
+```rust
+if let Some(stop) = progress_stop {
+    stop.stop();
+}
+if progress_enabled {
+    emit_progress_summary(start, input_count);
+}
+```
 
 - [ ] **Step 5: Run progress parser test**
-
-Run:
 
 ```bash
 cargo test -p ab-morph-run parses_progress_interval_seconds
@@ -1071,7 +1360,7 @@ cargo test -p ab-morph-run parses_progress_interval_seconds
 
 Expected: PASS.
 
-- [ ] **Step 6: Commit Task 4**
+- [ ] **Step 6: Commit Task 6**
 
 ```bash
 git add crates/ab-morph-run/src/main.rs
@@ -1080,7 +1369,7 @@ git commit -m "feat: emit periodic morph run progress"
 
 ---
 
-### Task 5: Workflow Documentation and Report Pointer
+### Task 7: Workflow Documentation and Report Pointer
 
 **Files:**
 - Create: `docs/morph-corpus-workflow.md`
@@ -1129,7 +1418,6 @@ AB_SUDACHI_DICT="$(nix path-info .#sudachi-dictionary-full)/share/sudachi/system
     --errors-output scratch/morph-full-corpus-compact-canonical/errors.jsonl.zst \
     --manifest-output scratch/morph-full-corpus-compact-canonical/manifest.json \
     --jobs 8 \
-    --progress \
     --progress-interval-seconds 30
 ```
 
@@ -1137,7 +1425,9 @@ Compact output is the default artifact for comprehensive runs. Full-detail outpu
 
 ## 4. Summarize worst cases
 
-Lowest boundary F1 by source record:
+Summary commands are dictionary-free. They read compact JSONL artifacts and do not load Vibrato or Sudachi.
+
+Lowest boundary F1 by source record. Rows with undefined boundary F1 (`null`) sort before numeric scores because they need explicit inspection:
 
 ```bash
 target/release/ab-morph-run summarize-compact \
@@ -1158,6 +1448,8 @@ target/release/ab-morph-run summarize-compact \
   --json
 ```
 
+The tabular output includes `source_ids` and `text_ids`. Use `--json` when membership lists are too long for comfortable terminal reading.
+
 ## 5. Rerun full detail for selected sources
 
 ```bash
@@ -1167,10 +1459,13 @@ AB_SUDACHI_DICT="$(nix path-info .#sudachi-dictionary-full)/share/sudachi/system
     --source-id 001529_50685-dd3b2fe4e5bf \
     --analyzer vibrato \
     --analyzer sudachi-c \
-    --output-dir scratch/morph-targeted-full/001529_50685-dd3b2fe4e5bf
+    --output-dir scratch/morph-targeted-full/001529_50685-dd3b2fe4e5bf \
+    --jobs 2 \
+    --examples-output scratch/morph-targeted-full/001529_50685-dd3b2fe4e5bf/examples.jsonl \
+    --max-examples-per-comparison 100
 ```
 
-The rerun writes full `analyses.jsonl`, `comparisons.jsonl`, `errors.jsonl`, and `manifest.json` into the output directory.
+The rerun writes full `analyses.jsonl`, `comparisons.jsonl`, `errors.jsonl`, and `manifest.json` into the output directory. If `--examples-output` is provided, it also writes bounded example rows for quick inspection.
 
 ## Identity policy
 
@@ -1191,7 +1486,7 @@ Append this to `docs/superpowers/reports/2026-04-29-morph-compact-artifacts.md`:
 The standard corpus workflow is documented in `docs/morph-corpus-workflow.md`. It covers checked AAT generation, compact corpus comparison, compact summary ranking, targeted full-detail reruns by `source_id`, and the `source_id` vs `text_id` grouping policy.
 ```
 
-- [ ] **Step 3: Commit Task 5**
+- [ ] **Step 3: Commit Task 7**
 
 ```bash
 git add docs/morph-corpus-workflow.md docs/superpowers/reports/2026-04-29-morph-compact-artifacts.md
@@ -1200,7 +1495,7 @@ git commit -m "docs: document morph corpus workflow"
 
 ---
 
-### Task 6: Final Verification
+### Task 8: Final Verification
 
 **Files:**
 - No new source files beyond prior tasks.
@@ -1229,7 +1524,7 @@ cargo build --release -p ab-morph-run
 
 Expected: PASS.
 
-- [ ] **Step 4: Smoke compact summary command**
+- [ ] **Step 4: Smoke compact summary command if scratch artifact exists**
 
 If `scratch/morph-full-corpus-compact-canonical/comparisons.jsonl.zst` exists, run:
 
@@ -1243,11 +1538,7 @@ target/release/ab-morph-run summarize-compact \
 
 Expected: PASS and print a tab-separated header plus at most 5 rows.
 
-If the scratch artifact does not exist, skip this smoke and record that it was skipped because scratch artifacts are regenerable and not committed.
-
-- [ ] **Step 5: Smoke JSON summary command**
-
-If `scratch/morph-full-corpus-compact-canonical/comparisons.jsonl.zst` exists, run:
+- [ ] **Step 5: Smoke JSON summary command if scratch artifact exists**
 
 ```bash
 target/release/ab-morph-run summarize-compact \
@@ -1258,7 +1549,7 @@ target/release/ab-morph-run summarize-compact \
   --json
 ```
 
-Expected: PASS and print a JSON array.
+Expected: PASS and print a JSON array. If scratch artifact does not exist, record that both smoke steps were skipped because scratch artifacts are regenerable and not committed.
 
 - [ ] **Step 6: Check worktree**
 

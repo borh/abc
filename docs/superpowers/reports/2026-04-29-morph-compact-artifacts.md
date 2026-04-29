@@ -93,3 +93,19 @@ The canonical full-corpus run completed in 1,037 seconds with `--jobs 8 --progre
 - Feature-diff examples include changed feature payloads; segmentation and coverage examples include surfaces resolved from region data or source analyses.
 - Region and coverage examples are emitted before feature-diff examples under the shared per-comparison budget, so tight budgets prioritize structural differences.
 - Full-detail artifacts remain available when needed, but should not be the default artifact for comprehensive corpus runs.
+
+## Regenerated full-corpus run after streaming compact comparisons
+
+After regenerating `scratch/morph-full-corpus/aats` from `scratch/ab-index.json`, the compact full-corpus run was repeated with the streaming compact comparison path.
+
+| artifact | compressed bytes | rows | decompressed bytes |
+| --- | ---: | ---: | ---: |
+| analyses.jsonl.zst | 712,256 | 35,788 | 5,726,628 |
+| comparisons.jsonl.zst | 1,500,853 | 17,894 | 9,736,232 |
+| examples.jsonl.zst | 5,386,285 | 178,908 | 65,806,323 |
+| errors.jsonl.zst | 72 | 0 | 0 |
+| manifest.json | 576 | n/a | n/a |
+
+Total compact artifact size including manifest: 7,600,042 bytes. The run completed in 1,015 seconds with 17,894 inputs and 0 error rows.
+
+Memory sampling during the run found a low final RSS/PSS (`rss_kb=764664`, `pss_kb=762664`) but a short-lived peak around 17.16 GB RSS/PSS. This confirms compact storage is solved, while peak runtime memory still needs size-aware scheduling for unusually large works.

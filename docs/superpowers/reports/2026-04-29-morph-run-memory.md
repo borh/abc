@@ -85,3 +85,46 @@ cargo build --release -p ab-morph-run
 ```
 
 All four commands completed successfully. The optional cleaned-workspace smoke command did not produce fresh artifacts because the runtime inputs were unavailable in `scratch/`; `ab-morph-run` returned `No such file or directory` before writing output.
+
+## Regenerated full-corpus compact run after streaming comparison
+
+AAT inputs were regenerated from `scratch/ab-index.json` with `aozora-rs-adapter`:
+
+```bash
+target/release/ab-check \
+  --index scratch/ab-index.json \
+  --corpus references/aozorabunko \
+  --adapter adapters/aozora-rs/target/release/aozora-rs-adapter \
+  --output scratch/morph-full-corpus/reports \
+  --aat-output scratch/morph-full-corpus/aats \
+  --jobs 16
+```
+
+AAT generation produced 17,894 AAT JSON files and 17,894 reports in 14m48s.
+
+The full compact morph command was rerun with `--jobs 8 --progress` and zstd outputs. It completed successfully:
+
+| metric | value |
+| --- | ---: |
+| inputs | 17,894 |
+| wall time | 1,015 seconds |
+| error rows | 0 |
+| final RSS | 764,664 kB |
+| final PSS | 762,664 kB |
+| sampled peak RSS | 17,161,224 kB |
+| sampled peak PSS | 17,159,286 kB |
+| sampled peak private dirty | 15,944,968 kB |
+
+The high peak was short-lived: 7 of 200 samples were above 16 GB RSS, and 29 of 200 samples were above 12 GB RSS. End-of-run memory stayed low, so the remaining problem is large-document concurrent peak memory, not steady-state dictionary residency.
+
+Largest regenerated AAT/plaintext inputs included:
+
+| AAT file | AAT bytes | projected chars |
+| --- | ---: | ---: |
+| `001529_50685-dd3b2fe4e5bf.json` | 41,956,998 | 632,346 |
+| `000118_1745-a30a16b68711.json` | 30,413,476 | 236,577 |
+| `001562_56145-c9fe64a731a3.json` | 19,711,121 | 536,295 |
+| `001562_56146-66c41ed10b8f.json` | 14,120,757 | 720,828 |
+| `001562_33224-e48e57f82f86.json` | 9,739,544 | 592,649 |
+
+Interpretation: streaming compact comparisons removed retained `Comparison` region/feature payloads, but peak memory is still dominated by concurrently analyzing very large works across multiple worker lanes. The next optimization should be size-aware scheduling for compact parallel runs: isolate oversized AAT inputs so only one huge document is processed at a time while normal-sized inputs continue across the remaining workers.

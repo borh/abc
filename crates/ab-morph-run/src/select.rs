@@ -24,7 +24,10 @@ pub fn resolve_source_id_aat_paths(aat_dir: &Path, source_ids: &[String]) -> Res
     let mut paths = Vec::new();
     for source_id in source_ids {
         let Some(path) = discovered.get(source_id) else {
-            bail!("missing source_id `{source_id}` under {}", aat_dir.display());
+            bail!(
+                "missing source_id `{source_id}` under {}",
+                aat_dir.display()
+            );
         };
         paths.push(path.clone());
     }

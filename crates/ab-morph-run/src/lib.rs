@@ -18,11 +18,11 @@ use output::{open_output_writer, read_jsonl_or_zst_to_string};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+pub use select::resolve_source_id_aat_paths;
 pub use summary::{
     CompactSummaryGroupBy, CompactSummaryOptions, CompactSummaryRow, CompactSummarySort,
     summarize_compact_comparisons,
 };
-pub use select::resolve_source_id_aat_paths;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -56,6 +56,12 @@ pub fn run_analyze_aat(
 ) -> Result<()> {
     if aat.is_none() == aat_dir.is_none() {
         bail!("provide exactly one of --aat or --aat-dir");
+    }
+    if analyzer_ids.is_empty() {
+        bail!("provide at least one --analyzer");
+    }
+    if jobs == 0 {
+        bail!("--jobs must be at least 1");
     }
     let inputs = discover_aat_inputs(aat, aat_dir)?;
     let input_mode = if aat.is_some() { "aat" } else { "aat_dir" };

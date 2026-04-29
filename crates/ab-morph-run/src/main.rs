@@ -463,10 +463,7 @@ mod tests {
 
         assert_eq!(aat_dir, PathBuf::from("aats"));
         assert_eq!(source_id, vec!["src-a".to_owned(), "src-b".to_owned()]);
-        assert_eq!(
-            analyzer,
-            vec!["vibrato".to_owned(), "sudachi-c".to_owned()]
-        );
+        assert_eq!(analyzer, vec!["vibrato".to_owned(), "sudachi-c".to_owned()]);
         assert_eq!(output_dir, PathBuf::from("full-out"));
         assert_eq!(jobs, 2);
         assert_eq!(examples_output, Some(PathBuf::from("examples.jsonl")));

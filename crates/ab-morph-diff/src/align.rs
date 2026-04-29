@@ -15,18 +15,35 @@ pub(crate) fn align_regions_with_source_len(
     source_len: usize,
 ) -> Result<Vec<Region>, MorphDiffError> {
     let mut regions = Vec::new();
+    visit_regions_with_source_len(from, to, source_len, |_index, region| {
+        regions.push(region);
+    })?;
+    Ok(regions)
+}
+
+pub(crate) fn visit_regions_with_source_len(
+    from: &Analysis,
+    to: &Analysis,
+    source_len: usize,
+    mut visit: impl FnMut(usize, Region),
+) -> Result<(), MorphDiffError> {
     let mut i = 0usize;
     let mut j = 0usize;
+    let mut region_index = 0usize;
 
     while i < from.morphemes.len() || j < to.morphemes.len() {
         if let (Some(left), Some(right)) = (from.morphemes.get(i), to.morphemes.get(j))
             && left.char_span == right.char_span
         {
-            regions.push(Region::OneToOne(AlignedMorpheme {
-                text_span: left.char_span.clone(),
-                from_index: i,
-                to_index: j,
-            }));
+            visit(
+                region_index,
+                Region::OneToOne(AlignedMorpheme {
+                    text_span: left.char_span.clone(),
+                    from_index: i,
+                    to_index: j,
+                }),
+            );
+            region_index += 1;
             i += 1;
             j += 1;
             continue;
@@ -53,24 +70,24 @@ pub(crate) fn align_regions_with_source_len(
             }
         }
 
-        if from_start == i && to_start < j {
-            regions.push(Region::CoverageMismatch(CoverageMismatch {
+        let region = if from_start == i && to_start < j {
+            Region::CoverageMismatch(CoverageMismatch {
                 text_span: region_start..region_end,
                 from_indices: from_start..from_start,
                 to_indices: to_start..j,
                 reason: CoverageMismatchKind::MissingFrom,
-            }));
+            })
         } else if to_start == j && from_start < i {
-            regions.push(Region::CoverageMismatch(CoverageMismatch {
+            Region::CoverageMismatch(CoverageMismatch {
                 text_span: region_start..region_end,
                 from_indices: from_start..i,
                 to_indices: to_start..to_start,
                 reason: CoverageMismatchKind::MissingTo,
-            }));
+            })
         } else if covers_exactly(from, from_start..i, region_start..region_end)
             && covers_exactly(to, to_start..j, region_start..region_end)
         {
-            regions.push(Region::Segmentation(SegmentationDiff {
+            Region::Segmentation(SegmentationDiff {
                 text_span: region_start..region_end,
                 from_indices: from_start..i,
                 to_indices: to_start..j,
@@ -83,18 +100,20 @@ pub(crate) fn align_regions_with_source_len(
                     .map(|m| m.surface.clone())
                     .collect(),
                 kind: segmentation_kind(i - from_start, j - to_start),
-            }));
+            })
         } else {
-            regions.push(Region::CoverageMismatch(CoverageMismatch {
+            Region::CoverageMismatch(CoverageMismatch {
                 text_span: region_start..region_end,
                 from_indices: from_start..i,
                 to_indices: to_start..j,
                 reason: CoverageMismatchKind::UnequalCoverage,
-            }));
-        }
+            })
+        };
+        visit(region_index, region);
+        region_index += 1;
     }
 
-    Ok(regions)
+    Ok(())
 }
 
 fn next_start(from: &Analysis, to: &Analysis, i: usize, j: usize, source_len: usize) -> usize {
@@ -150,7 +169,7 @@ mod tests {
         SegmentationKind,
     };
 
-    use super::align_regions;
+    use super::{align_regions, visit_regions_with_source_len};
 
     fn m(source: &str, surface: &str, char_start: usize, char_end: usize) -> Morpheme {
         let byte_start = source
@@ -178,6 +197,35 @@ mod tests {
             source_text: source.to_owned(),
             morphemes,
         }
+    }
+
+    #[test]
+    fn visit_regions_matches_align_regions_order_and_shape() {
+        let source = "今日明日";
+        let from = a(
+            "from",
+            source,
+            vec![m(source, "今日", 0, 2), m(source, "明日", 2, 4)],
+        );
+        let to = a(
+            "to",
+            source,
+            vec![
+                m(source, "今", 0, 1),
+                m(source, "日", 1, 2),
+                m(source, "明日", 2, 4),
+            ],
+        );
+
+        let collected = align_regions(&from, &to).unwrap();
+        let mut visited = Vec::new();
+        visit_regions_with_source_len(&from, &to, source.chars().count(), |index, region| {
+            assert_eq!(index, visited.len());
+            visited.push(region);
+        })
+        .unwrap();
+
+        assert_eq!(visited, collected);
     }
 
     #[test]

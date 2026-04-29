@@ -2,6 +2,13 @@ use std::collections::BTreeSet;
 
 use crate::{Analysis, ComparisonStats, FeatureDiff, Region, SegmentationKind};
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub(crate) struct BoundaryMetrics {
+    pub(crate) precision: Option<f64>,
+    pub(crate) recall: Option<f64>,
+    pub(crate) f1: Option<f64>,
+}
+
 pub(crate) fn derive_stats(
     from: &Analysis,
     to: &Analysis,
@@ -62,17 +69,7 @@ pub(crate) fn derive_stats_with_source_len(
             _ => None,
         })
         .collect::<Vec<_>>();
-    let from_boundaries = comparable_boundaries(from, &ignored_spans, source_len);
-    let to_boundaries = comparable_boundaries(to, &ignored_spans, source_len);
-    let shared = from_boundaries.intersection(&to_boundaries).count();
-    let boundary_precision = ratio(shared, to_boundaries.len());
-    let boundary_recall = ratio(shared, from_boundaries.len());
-    let boundary_f1 = match (boundary_precision, boundary_recall) {
-        (Some(precision), Some(recall)) if precision + recall > 0.0 => {
-            Some(2.0 * precision * recall / (precision + recall))
-        }
-        _ => None,
-    };
+    let boundary_metrics = derive_boundary_metrics(from, to, &ignored_spans, source_len);
 
     ComparisonStats {
         from_morphemes: from.morphemes.len(),
@@ -86,9 +83,34 @@ pub(crate) fn derive_stats_with_source_len(
         resegment_regions,
         from_morphemes_in_segmentation,
         to_morphemes_in_segmentation,
-        boundary_precision,
-        boundary_recall,
-        boundary_f1,
+        boundary_precision: boundary_metrics.precision,
+        boundary_recall: boundary_metrics.recall,
+        boundary_f1: boundary_metrics.f1,
+    }
+}
+
+pub(crate) fn derive_boundary_metrics(
+    from: &Analysis,
+    to: &Analysis,
+    ignored_spans: &[std::ops::Range<usize>],
+    source_len: usize,
+) -> BoundaryMetrics {
+    let from_boundaries = comparable_boundaries(from, ignored_spans, source_len);
+    let to_boundaries = comparable_boundaries(to, ignored_spans, source_len);
+    let shared = from_boundaries.intersection(&to_boundaries).count();
+    let precision = ratio(shared, to_boundaries.len());
+    let recall = ratio(shared, from_boundaries.len());
+    let f1 = match (precision, recall) {
+        (Some(precision), Some(recall)) if precision + recall > 0.0 => {
+            Some(2.0 * precision * recall / (precision + recall))
+        }
+        _ => None,
+    };
+
+    BoundaryMetrics {
+        precision,
+        recall,
+        f1,
     }
 }
 
@@ -127,7 +149,7 @@ mod tests {
         Region, SegmentationDiff, SegmentationKind,
     };
 
-    use super::derive_stats;
+    use super::{derive_boundary_metrics, derive_stats, derive_stats_with_source_len};
 
     fn m(source: &str, surface: &str, start: usize, end: usize) -> Morpheme {
         let byte_start = source
@@ -266,6 +288,27 @@ mod tests {
         assert_eq!(stats.boundary_precision, None);
         assert_eq!(stats.boundary_recall, None);
         assert_eq!(stats.boundary_f1, None);
+    }
+
+    #[test]
+    fn derive_boundary_metrics_matches_stats_fields() {
+        let from = analysis(&[("ab", 0, 2), ("cd", 2, 4)]);
+        let to = analysis(&[("a", 0, 1), ("b", 1, 2), ("cd", 2, 4)]);
+        let regions = vec![Region::Segmentation(SegmentationDiff {
+            text_span: 0..2,
+            from_indices: 0..1,
+            to_indices: 0..2,
+            from_surfaces: vec!["ab".to_owned()],
+            to_surfaces: vec!["a".to_owned(), "b".to_owned()],
+            kind: SegmentationKind::Split,
+        })];
+
+        let stats = derive_stats_with_source_len(&from, &to, &regions, &[], 6);
+        let metrics = derive_boundary_metrics(&from, &to, &[], 6);
+
+        assert_eq!(metrics.precision, stats.boundary_precision);
+        assert_eq!(metrics.recall, stats.boundary_recall);
+        assert_eq!(metrics.f1, stats.boundary_f1);
     }
 
     #[test]

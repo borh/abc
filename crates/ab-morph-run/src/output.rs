@@ -1,5 +1,5 @@
 use std::fs::{self, File, OpenOptions};
-use std::io::{BufWriter, Write};
+use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path::Path;
 
 use anyhow::{Context, Result};
@@ -40,6 +40,33 @@ pub(crate) fn read_jsonl_or_zst_to_string(path: &Path) -> Result<String> {
     } else {
         fs::read_to_string(path).with_context(|| format!("failed to read {}", path.display()))
     }
+}
+
+pub(crate) fn for_each_jsonl_or_zst_line(
+    path: &Path,
+    mut visit: impl FnMut(&str) -> Result<()>,
+) -> Result<()> {
+    let file = File::open(path).with_context(|| format!("failed to open {}", path.display()))?;
+    let mut reader: Box<dyn BufRead> =
+        if path.extension().and_then(|ext| ext.to_str()) == Some("zst") {
+            Box::new(BufReader::new(zstd::stream::read::Decoder::new(file)?))
+        } else {
+            Box::new(BufReader::new(file))
+        };
+
+    let mut line = String::new();
+    loop {
+        line.clear();
+        let read = reader.read_line(&mut line)?;
+        if read == 0 {
+            break;
+        }
+        let line = line.trim_end_matches(['\r', '\n']);
+        if !line.trim().is_empty() {
+            visit(line)?;
+        }
+    }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -101,6 +128,46 @@ mod tests {
 
         let text = read_jsonl_or_zst_to_string(&path).unwrap();
         assert_eq!(text, "one\ntwo\n");
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn streams_plain_jsonl_lines_without_materializing_file() {
+        let dir = temp_dir("stream-plain");
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("rows.jsonl");
+        fs::write(&path, "one\n\n two \n").unwrap();
+
+        let mut rows = Vec::new();
+        for_each_jsonl_or_zst_line(&path, |line| {
+            rows.push(line.to_owned());
+            Ok(())
+        })
+        .unwrap();
+
+        assert_eq!(rows, vec!["one", " two "]);
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn streams_zstd_jsonl_lines() {
+        let dir = temp_dir("stream-zst");
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("rows.jsonl.zst");
+        {
+            let mut writer = open_output_writer(&path, false).unwrap();
+            writer.write_all(b"one\ntwo\n").unwrap();
+            writer.flush().unwrap();
+        }
+
+        let mut rows = Vec::new();
+        for_each_jsonl_or_zst_line(&path, |line| {
+            rows.push(line.to_owned());
+            Ok(())
+        })
+        .unwrap();
+
+        assert_eq!(rows, vec!["one", "two"]);
         let _ = fs::remove_dir_all(dir);
     }
 

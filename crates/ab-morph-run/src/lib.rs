@@ -18,6 +18,7 @@ pub fn run_analyze_aat(
     comparisons_output: Option<&Path>,
     errors_output: Option<&Path>,
     resume: bool,
+    jobs: usize,
 ) -> Result<()> {
     if aat.is_none() == aat_dir.is_none() {
         bail!("provide exactly one of --aat or --aat-dir");
@@ -25,9 +26,23 @@ pub fn run_analyze_aat(
     if analyzer_ids.is_empty() {
         bail!("provide at least one --analyzer");
     }
+    if jobs == 0 {
+        bail!("--jobs must be at least 1");
+    }
 
     let inputs = discover_aat_inputs(aat, aat_dir)?;
     let specs = parse_analyzer_specs(analyzer_ids)?;
+    if jobs > 1 {
+        return run_analyze_aat_parallel(
+            inputs,
+            specs,
+            analyses_output,
+            comparisons_output,
+            errors_output,
+            resume,
+            jobs,
+        );
+    }
     let analyzers = load_analyzers(&specs)?;
     let resume_text_ids = if resume {
         read_resume_text_ids(analyses_output, errors_output)?
@@ -159,6 +174,197 @@ pub fn run_analyze_aat(
     Ok(())
 }
 
+fn run_analyze_aat_parallel(
+    inputs: Vec<PathBuf>,
+    specs: Vec<AnalyzerSpec>,
+    analyses_output: &Path,
+    comparisons_output: Option<&Path>,
+    errors_output: Option<&Path>,
+    resume: bool,
+    jobs: usize,
+) -> Result<()> {
+    let resume_text_ids = if resume {
+        read_resume_text_ids(analyses_output, errors_output)?
+    } else {
+        BTreeSet::new()
+    };
+    let inputs = filter_resume_inputs(inputs, &resume_text_ids)?;
+    let partitions = partition_inputs(inputs, jobs);
+    let analyzer_ids = specs
+        .iter()
+        .map(AnalyzerSpec::as_arg)
+        .map(str::to_owned)
+        .collect::<Vec<_>>();
+    let temp_root = std::env::temp_dir().join(format!(
+        "ab-morph-run-{}-{}",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_nanos()
+    ));
+    fs::create_dir_all(&temp_root)
+        .with_context(|| format!("failed to create {}", temp_root.display()))?;
+
+    let result = std::thread::scope(|scope| {
+        let mut handles = Vec::new();
+        for (job_index, partition) in partitions.into_iter().enumerate() {
+            if partition.is_empty() {
+                continue;
+            }
+            let analyzer_ids = analyzer_ids.clone();
+            let input_dir = temp_root.join(format!("inputs-{job_index}"));
+            let output_dir = temp_root.join(format!("outputs-{job_index}"));
+            handles.push(scope.spawn(move || -> Result<ShardOutput> {
+                fs::create_dir_all(&input_dir)
+                    .with_context(|| format!("failed to create {}", input_dir.display()))?;
+                fs::create_dir_all(&output_dir)
+                    .with_context(|| format!("failed to create {}", output_dir.display()))?;
+                for input in partition {
+                    let link = input_dir.join(input.file_name().ok_or_else(|| {
+                        anyhow::anyhow!("missing file name for {}", input.display())
+                    })?);
+                    symlink_input_file(&input, &link)?;
+                }
+
+                let analyses = output_dir.join("analyses.jsonl");
+                let comparisons = output_dir.join("comparisons.jsonl");
+                let errors = output_dir.join("errors.jsonl");
+                run_analyze_aat(
+                    None,
+                    Some(&input_dir),
+                    &analyzer_ids,
+                    &analyses,
+                    comparisons_output.map(|_| comparisons.as_path()),
+                    errors_output.map(|_| errors.as_path()),
+                    false,
+                    1,
+                )?;
+                Ok(ShardOutput {
+                    job_index,
+                    analyses,
+                    comparisons: comparisons_output.map(|_| comparisons),
+                    errors: errors_output.map(|_| errors),
+                })
+            }));
+        }
+
+        let mut outputs = Vec::new();
+        for handle in handles {
+            outputs.push(handle.join().expect("morph worker panicked")?);
+        }
+        Ok::<_, anyhow::Error>(outputs)
+    });
+
+    let mut outputs = match result {
+        Ok(outputs) => outputs,
+        Err(error) => {
+            let _ = fs::remove_dir_all(&temp_root);
+            return Err(error);
+        }
+    };
+    outputs.sort_by_key(|output| output.job_index);
+
+    merge_shard_files(
+        outputs.iter().map(|output| output.analyses.as_path()),
+        analyses_output,
+        resume,
+    )?;
+    if let Some(path) = comparisons_output {
+        merge_shard_files(
+            outputs
+                .iter()
+                .filter_map(|output| output.comparisons.as_deref()),
+            path,
+            resume,
+        )?;
+    }
+    if let Some(path) = errors_output {
+        merge_shard_files(
+            outputs.iter().filter_map(|output| output.errors.as_deref()),
+            path,
+            resume,
+        )?;
+    }
+
+    fs::remove_dir_all(&temp_root)
+        .with_context(|| format!("failed to remove {}", temp_root.display()))?;
+    Ok(())
+}
+
+struct ShardOutput {
+    job_index: usize,
+    analyses: PathBuf,
+    comparisons: Option<PathBuf>,
+    errors: Option<PathBuf>,
+}
+
+fn partition_inputs(inputs: Vec<PathBuf>, jobs: usize) -> Vec<Vec<PathBuf>> {
+    let mut partitions = vec![Vec::new(); jobs];
+    for (index, input) in inputs.into_iter().enumerate() {
+        partitions[index % jobs].push(input);
+    }
+    partitions
+}
+
+fn symlink_input_file(input: &Path, link: &Path) -> Result<()> {
+    let target = input
+        .canonicalize()
+        .with_context(|| format!("failed to canonicalize {}", input.display()))?;
+    std::os::unix::fs::symlink(&target, link).with_context(|| {
+        format!(
+            "failed to symlink {} to {}",
+            target.display(),
+            link.display()
+        )
+    })
+}
+
+fn filter_resume_inputs(
+    inputs: Vec<PathBuf>,
+    resume_text_ids: &BTreeSet<String>,
+) -> Result<Vec<PathBuf>> {
+    if resume_text_ids.is_empty() {
+        return Ok(inputs);
+    }
+
+    let mut filtered = Vec::new();
+    for input in inputs {
+        let should_skip = read_aat_value(&input)
+            .ok()
+            .and_then(|value| {
+                value
+                    .get("work_id")
+                    .and_then(Value::as_str)
+                    .map(|text_id| resume_text_ids.contains(text_id))
+            })
+            .unwrap_or(false);
+        if !should_skip {
+            filtered.push(input);
+        }
+    }
+    Ok(filtered)
+}
+
+fn merge_shard_files<'a>(
+    shard_paths: impl IntoIterator<Item = &'a Path>,
+    output_path: &Path,
+    append: bool,
+) -> Result<()> {
+    create_parent_dir(output_path)?;
+    let mut output = open_output_file(output_path, append)?;
+    for shard_path in shard_paths {
+        if !shard_path.exists() {
+            continue;
+        }
+        let mut input = File::open(shard_path)
+            .with_context(|| format!("failed to open {}", shard_path.display()))?;
+        std::io::copy(&mut input, &mut output)?;
+    }
+    output.flush()?;
+    Ok(())
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum AnalyzerSpec {
     Vibrato,
@@ -166,6 +372,15 @@ enum AnalyzerSpec {
 }
 
 impl AnalyzerSpec {
+    fn as_arg(&self) -> &'static str {
+        match self {
+            Self::Vibrato => "vibrato",
+            Self::Sudachi(SudachiMode::A) => "sudachi-a",
+            Self::Sudachi(SudachiMode::B) => "sudachi-b",
+            Self::Sudachi(SudachiMode::C) => "sudachi-c",
+        }
+    }
+
     fn parse(value: &str) -> Result<Self> {
         match value {
             "vibrato" => Ok(Self::Vibrato),
@@ -393,6 +608,7 @@ mod tests {
             None,
             None,
             false,
+            1,
         )
         .unwrap_err();
         assert!(err.to_string().contains("exactly one"));
@@ -408,6 +624,7 @@ mod tests {
             None,
             None,
             false,
+            1,
         )
         .unwrap_err();
         assert!(err.to_string().contains("exactly one"));
@@ -423,9 +640,26 @@ mod tests {
             None,
             None,
             false,
+            1,
         )
         .unwrap_err();
         assert!(err.to_string().contains("at least one"));
+    }
+
+    #[test]
+    fn rejects_zero_jobs() {
+        let err = run_analyze_aat(
+            Some(Path::new("a.json")),
+            None,
+            &["vibrato".to_owned()],
+            Path::new("out.jsonl"),
+            None,
+            None,
+            false,
+            0,
+        )
+        .unwrap_err();
+        assert!(err.to_string().contains("at least 1"));
     }
 
     #[test]
@@ -571,6 +805,46 @@ mod tests {
         assert!(ids.contains("done-analysis"));
         assert!(ids.contains("done-error"));
         assert!(!ids.contains("read_aat"));
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn partitions_inputs_round_robin_by_job() {
+        let inputs = (0..7)
+            .map(|index| PathBuf::from(format!("work-{index}.json")))
+            .collect::<Vec<_>>();
+
+        let partitions = partition_inputs(inputs, 3);
+
+        assert_eq!(
+            partitions,
+            vec![
+                vec![
+                    PathBuf::from("work-0.json"),
+                    PathBuf::from("work-3.json"),
+                    PathBuf::from("work-6.json"),
+                ],
+                vec![PathBuf::from("work-1.json"), PathBuf::from("work-4.json")],
+                vec![PathBuf::from("work-2.json"), PathBuf::from("work-5.json")],
+            ]
+        );
+    }
+
+    #[test]
+    fn symlink_input_file_uses_readable_absolute_target() {
+        let dir = temp_dir("symlink");
+        let source_dir = dir.join("source");
+        let link_dir = dir.join("links");
+        fs::create_dir_all(&source_dir).unwrap();
+        fs::create_dir_all(&link_dir).unwrap();
+        let source = source_dir.join("work.json");
+        let link = link_dir.join("work.json");
+        fs::write(&source, "{}").unwrap();
+
+        symlink_input_file(&source, &link).unwrap();
+
+        assert_eq!(fs::read_to_string(&link).unwrap(), "{}");
 
         let _ = fs::remove_dir_all(dir);
     }

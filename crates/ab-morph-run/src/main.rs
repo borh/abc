@@ -27,6 +27,8 @@ enum Command {
         errors_output: Option<PathBuf>,
         #[arg(long)]
         resume: bool,
+        #[arg(long, default_value_t = 1)]
+        jobs: usize,
     },
 }
 
@@ -41,6 +43,7 @@ fn main() -> Result<()> {
             comparisons_output,
             errors_output,
             resume,
+            jobs,
         } => ab_morph_run::run_analyze_aat(
             aat.as_deref(),
             aat_dir.as_deref(),
@@ -49,6 +52,7 @@ fn main() -> Result<()> {
             comparisons_output.as_deref(),
             errors_output.as_deref(),
             resume,
+            jobs,
         ),
     }
 }

@@ -42,6 +42,54 @@ enum Command {
         #[arg(long)]
         progress: bool,
     },
+    SummarizeCompact {
+        #[arg(long)]
+        comparisons: PathBuf,
+        #[arg(long, value_enum, default_value_t = SummaryGroupByArg::SourceId)]
+        group_by: SummaryGroupByArg,
+        #[arg(long, value_enum, default_value_t = SummarySortArg::BoundaryF1)]
+        sort_by: SummarySortArg,
+        #[arg(long, default_value_t = 20)]
+        limit: usize,
+        #[arg(long)]
+        json: bool,
+    },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
+enum SummaryGroupByArg {
+    SourceId,
+    TextId,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
+enum SummarySortArg {
+    BoundaryF1,
+    SegmentationRegions,
+    FeatureDifferences,
+    CoverageMismatchRegions,
+}
+
+impl SummaryGroupByArg {
+    fn into_library(self) -> ab_morph_run::CompactSummaryGroupBy {
+        match self {
+            Self::SourceId => ab_morph_run::CompactSummaryGroupBy::SourceId,
+            Self::TextId => ab_morph_run::CompactSummaryGroupBy::TextId,
+        }
+    }
+}
+
+impl SummarySortArg {
+    fn into_library(self) -> ab_morph_run::CompactSummarySort {
+        match self {
+            Self::BoundaryF1 => ab_morph_run::CompactSummarySort::BoundaryF1,
+            Self::SegmentationRegions => ab_morph_run::CompactSummarySort::SegmentationRegions,
+            Self::FeatureDifferences => ab_morph_run::CompactSummarySort::FeatureDifferences,
+            Self::CoverageMismatchRegions => {
+                ab_morph_run::CompactSummarySort::CoverageMismatchRegions
+            }
+        }
+    }
 }
 
 fn main() -> Result<()> {
@@ -87,6 +135,50 @@ fn main() -> Result<()> {
             }
             result
         }
+        Command::SummarizeCompact {
+            comparisons,
+            group_by,
+            sort_by,
+            limit,
+            json,
+        } => {
+            let rows = ab_morph_run::summarize_compact_comparisons(
+                &comparisons,
+                ab_morph_run::CompactSummaryOptions {
+                    group_by: group_by.into_library(),
+                    sort_by: sort_by.into_library(),
+                    limit,
+                },
+            )?;
+            if json {
+                serde_json::to_writer_pretty(std::io::stdout(), &rows)?;
+                println!();
+            } else {
+                print_summary_table(&rows);
+            }
+            Ok(())
+        }
+    }
+}
+
+fn print_summary_table(rows: &[ab_morph_run::CompactSummaryRow]) {
+    println!(
+        "key\tsource_ids\ttext_ids\tcomparisons\tworst_boundary_f1\ttotal_segmentation_regions\ttotal_feature_difference_regions\ttotal_coverage_mismatch_regions"
+    );
+    for row in rows {
+        println!(
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            row.key,
+            row.source_ids.join(","),
+            row.text_ids.join(","),
+            row.comparisons,
+            row.worst_boundary_f1
+                .map(|value| value.to_string())
+                .unwrap_or_else(|| "null".to_owned()),
+            row.total_segmentation_regions,
+            row.total_feature_difference_regions,
+            row.total_coverage_mismatch_regions,
+        );
     }
 }
 
@@ -183,5 +275,39 @@ mod tests {
                 pss_kb: Some(6_388_652),
             }
         );
+    }
+
+    #[test]
+    fn parses_summarize_compact_command() {
+        let args = Args::parse_from([
+            "ab-morph-run",
+            "summarize-compact",
+            "--comparisons",
+            "comparisons.jsonl.zst",
+            "--group-by",
+            "text-id",
+            "--sort-by",
+            "segmentation-regions",
+            "--limit",
+            "25",
+            "--json",
+        ]);
+
+        let Command::SummarizeCompact {
+            comparisons,
+            group_by,
+            sort_by,
+            limit,
+            json,
+        } = args.command
+        else {
+            panic!("expected summarize-compact command");
+        };
+
+        assert_eq!(comparisons, PathBuf::from("comparisons.jsonl.zst"));
+        assert_eq!(group_by, SummaryGroupByArg::TextId);
+        assert_eq!(sort_by, SummarySortArg::SegmentationRegions);
+        assert_eq!(limit, 25);
+        assert!(json);
     }
 }

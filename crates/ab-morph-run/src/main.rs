@@ -56,6 +56,20 @@ enum Command {
         #[arg(long)]
         json: bool,
     },
+    SummarizeExamples {
+        #[arg(long)]
+        examples: PathBuf,
+        #[arg(long, value_enum, default_value_t = SummaryGroupByArg::SourceId)]
+        group_by: SummaryGroupByArg,
+        #[arg(long, value_enum, default_value_t = ExampleFilterArg::All)]
+        filter: ExampleFilterArg,
+        #[arg(long, value_enum, default_value_t = ExampleSortArg::Examples)]
+        sort_by: ExampleSortArg,
+        #[arg(long, default_value_t = 20)]
+        limit: usize,
+        #[arg(long)]
+        json: bool,
+    },
     RerunFull {
         #[arg(long)]
         aat_dir: PathBuf,
@@ -91,6 +105,23 @@ enum SummarySortArg {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
+enum ExampleFilterArg {
+    All,
+    WhitespaceOnly,
+    LexicalOnly,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
+enum ExampleSortArg {
+    Examples,
+    WhitespaceExamples,
+    LexicalExamples,
+    SegmentationExamples,
+    FeatureDiffExamples,
+    CoverageExamples,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
 enum RerunDetailArg {
     Full,
     ExamplesOnly,
@@ -114,6 +145,33 @@ impl SummarySortArg {
             Self::CoverageMismatchRegions => {
                 ab_morph_run::CompactSummarySort::CoverageMismatchRegions
             }
+        }
+    }
+}
+
+impl ExampleFilterArg {
+    fn into_library(self) -> ab_morph_run::CompactExampleFilter {
+        match self {
+            Self::All => ab_morph_run::CompactExampleFilter::All,
+            Self::WhitespaceOnly => ab_morph_run::CompactExampleFilter::WhitespaceOnly,
+            Self::LexicalOnly => ab_morph_run::CompactExampleFilter::LexicalOnly,
+        }
+    }
+}
+
+impl ExampleSortArg {
+    fn into_library(self) -> ab_morph_run::CompactExampleSummarySort {
+        match self {
+            Self::Examples => ab_morph_run::CompactExampleSummarySort::Examples,
+            Self::WhitespaceExamples => ab_morph_run::CompactExampleSummarySort::WhitespaceExamples,
+            Self::LexicalExamples => ab_morph_run::CompactExampleSummarySort::LexicalExamples,
+            Self::SegmentationExamples => {
+                ab_morph_run::CompactExampleSummarySort::SegmentationExamples
+            }
+            Self::FeatureDiffExamples => {
+                ab_morph_run::CompactExampleSummarySort::FeatureDiffExamples
+            }
+            Self::CoverageExamples => ab_morph_run::CompactExampleSummarySort::CoverageExamples,
         }
     }
 }
@@ -197,6 +255,31 @@ fn main() -> Result<()> {
                 println!();
             } else {
                 print_summary_table(&rows);
+            }
+            Ok(())
+        }
+        Command::SummarizeExamples {
+            examples,
+            group_by,
+            filter,
+            sort_by,
+            limit,
+            json,
+        } => {
+            let rows = ab_morph_run::summarize_compact_examples(
+                &examples,
+                ab_morph_run::CompactExampleSummaryOptions {
+                    group_by: group_by.into_library(),
+                    filter: filter.into_library(),
+                    sort_by: sort_by.into_library(),
+                    limit,
+                },
+            )?;
+            if json {
+                serde_json::to_writer_pretty(std::io::stdout(), &rows)?;
+                println!();
+            } else {
+                print_example_summary_table(&rows);
             }
             Ok(())
         }
@@ -314,6 +397,26 @@ fn print_summary_table(rows: &[ab_morph_run::CompactSummaryRow]) {
             row.total_segmentation_regions,
             row.total_feature_difference_regions,
             row.total_coverage_mismatch_regions,
+        );
+    }
+}
+
+fn print_example_summary_table(rows: &[ab_morph_run::CompactExampleSummaryRow]) {
+    println!(
+        "key\tsource_ids\ttext_ids\texamples\twhitespace_examples\tlexical_examples\tsegmentation_examples\tfeature_diff_examples\tcoverage_examples"
+    );
+    for row in rows {
+        println!(
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            row.key,
+            row.source_ids.join(","),
+            row.text_ids.join(","),
+            row.examples,
+            row.whitespace_examples,
+            row.lexical_examples,
+            row.segmentation_examples,
+            row.feature_diff_examples,
+            row.coverage_examples,
         );
     }
 }
@@ -444,6 +547,44 @@ mod tests {
         assert_eq!(group_by, SummaryGroupByArg::TextId);
         assert_eq!(sort_by, SummarySortArg::SegmentationRegions);
         assert_eq!(limit, 25);
+        assert!(json);
+    }
+
+    #[test]
+    fn parses_summarize_examples_command() {
+        let args = Args::parse_from([
+            "ab-morph-run",
+            "summarize-examples",
+            "--examples",
+            "examples.jsonl.zst",
+            "--group-by",
+            "text-id",
+            "--filter",
+            "whitespace-only",
+            "--sort-by",
+            "whitespace-examples",
+            "--limit",
+            "30",
+            "--json",
+        ]);
+
+        let Command::SummarizeExamples {
+            examples,
+            group_by,
+            filter,
+            sort_by,
+            limit,
+            json,
+        } = args.command
+        else {
+            panic!("expected summarize-examples command");
+        };
+
+        assert_eq!(examples, PathBuf::from("examples.jsonl.zst"));
+        assert_eq!(group_by, SummaryGroupByArg::TextId);
+        assert_eq!(filter, ExampleFilterArg::WhitespaceOnly);
+        assert_eq!(sort_by, ExampleSortArg::WhitespaceExamples);
+        assert_eq!(limit, 30);
         assert!(json);
     }
 

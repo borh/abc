@@ -109,3 +109,31 @@ AB_SUDACHI_DICT="$(nix path-info .#sudachi-dictionary-full)/share/sudachi/system
 `text_id` is the logical work id. It is useful for grouped reporting, but multiple `source_id` values can share one `text_id`.
 
 Reporting tools must make grouping explicit. Use `--group-by source-id` when investigating a concrete AAT file or rerunning full details. Use `--group-by text-id` when asking logical-work questions.
+
+## 6. Isolate whitespace-related example evidence
+
+Compact example rows include `whitespace_only`, computed from the source excerpt. This keeps raw comparison metrics intact while making newline/indentation evidence separable during triage.
+
+Whitespace-only examples by source record:
+
+```bash
+target/release/ab-morph-run summarize-examples \
+  --examples scratch/morph-full-corpus-compact-canonical/examples.jsonl.zst \
+  --group-by source-id \
+  --filter whitespace-only \
+  --sort-by whitespace-examples \
+  --limit 20
+```
+
+Lexical examples by source record, excluding whitespace-only spans:
+
+```bash
+target/release/ab-morph-run summarize-examples \
+  --examples scratch/morph-full-corpus-compact-canonical/examples.jsonl.zst \
+  --group-by source-id \
+  --filter lexical-only \
+  --sort-by lexical-examples \
+  --limit 20
+```
+
+The example summary is bounded-evidence triage, not an exhaustive count of all whitespace or lexical diffs. Increase `--max-examples-per-comparison` or run targeted detail when the cap saturates.

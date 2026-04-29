@@ -126,6 +126,7 @@ pub(crate) struct ComparisonExampleRow {
     pub char_start: usize,
     pub char_end: usize,
     pub source_excerpt: String,
+    pub whitespace_only: bool,
     pub from_surfaces: Vec<String>,
     pub to_surfaces: Vec<String>,
     pub feature_changes: Option<Vec<FeatureChangeRow>>,
@@ -227,6 +228,7 @@ fn example_row_from_compact_example(
     example: &CompactComparisonExample,
 ) -> ComparisonExampleRow {
     let byte_span = byte_span_from_char_span(source_text, &example.text_span);
+    let source_excerpt = excerpt(source_text, &example.text_span);
     ComparisonExampleRow {
         source_id: source_id.to_owned(),
         text_id: comparison.text_id.clone(),
@@ -238,7 +240,8 @@ fn example_row_from_compact_example(
         byte_end: byte_span.end,
         char_start: example.text_span.start,
         char_end: example.text_span.end,
-        source_excerpt: excerpt(source_text, &example.text_span),
+        whitespace_only: is_whitespace_only(&source_excerpt),
+        source_excerpt,
         from_surfaces: example.from_surfaces.clone(),
         to_surfaces: example.to_surfaces.clone(),
         feature_changes: example
@@ -261,6 +264,7 @@ fn example_row_from_region(
         Region::OneToOne(_) => None,
         Region::Segmentation(diff) => {
             let byte_span = byte_span_from_char_span(source_text, &diff.text_span);
+            let source_excerpt = excerpt(source_text, &diff.text_span);
             Some(ComparisonExampleRow {
                 source_id: source_id.to_owned(),
                 text_id: comparison.text_id.clone(),
@@ -272,7 +276,8 @@ fn example_row_from_region(
                 byte_end: byte_span.end,
                 char_start: diff.text_span.start,
                 char_end: diff.text_span.end,
-                source_excerpt: excerpt(source_text, &diff.text_span),
+                whitespace_only: is_whitespace_only(&source_excerpt),
+                source_excerpt,
                 from_surfaces: diff.from_surfaces.clone(),
                 to_surfaces: diff.to_surfaces.clone(),
                 feature_changes: None,
@@ -280,6 +285,7 @@ fn example_row_from_region(
         }
         Region::CoverageMismatch(mismatch) => {
             let byte_span = byte_span_from_char_span(source_text, &mismatch.text_span);
+            let source_excerpt = excerpt(source_text, &mismatch.text_span);
             Some(ComparisonExampleRow {
                 source_id: source_id.to_owned(),
                 text_id: comparison.text_id.clone(),
@@ -291,7 +297,8 @@ fn example_row_from_region(
                 byte_end: byte_span.end,
                 char_start: mismatch.text_span.start,
                 char_end: mismatch.text_span.end,
-                source_excerpt: excerpt(source_text, &mismatch.text_span),
+                whitespace_only: is_whitespace_only(&source_excerpt),
+                source_excerpt,
                 from_surfaces: surfaces(from, mismatch.from_indices.clone()),
                 to_surfaces: surfaces(to, mismatch.to_indices.clone()),
                 feature_changes: None,
@@ -309,6 +316,7 @@ fn example_row_from_feature_diff(
     feature_diff: &FeatureDiff,
 ) -> ComparisonExampleRow {
     let byte_span = byte_span_from_char_span(source_text, &feature_diff.text_span);
+    let source_excerpt = excerpt(source_text, &feature_diff.text_span);
     ComparisonExampleRow {
         source_id: source_id.to_owned(),
         text_id: comparison.text_id.clone(),
@@ -320,7 +328,8 @@ fn example_row_from_feature_diff(
         byte_end: byte_span.end,
         char_start: feature_diff.text_span.start,
         char_end: feature_diff.text_span.end,
-        source_excerpt: excerpt(source_text, &feature_diff.text_span),
+        whitespace_only: is_whitespace_only(&source_excerpt),
+        source_excerpt,
         from_surfaces: surface_at(from, feature_diff.from_index),
         to_surfaces: surface_at(to, feature_diff.to_index),
         feature_changes: Some(feature_changes(&feature_diff.changed)),
@@ -373,6 +382,10 @@ fn excerpt(source_text: &str, span: &Range<usize>) -> String {
         .get(byte_span_from_char_span(source_text, span))
         .unwrap_or("")
         .to_owned()
+}
+
+pub(crate) fn is_whitespace_only(text: &str) -> bool {
+    !text.is_empty() && text.chars().all(char::is_whitespace)
 }
 
 fn byte_span_from_char_span(source_text: &str, span: &Range<usize>) -> Range<usize> {
@@ -547,6 +560,37 @@ mod tests {
         assert_eq!(rows[0].char_start, 0);
         assert_eq!(rows[0].char_end, 2);
         assert_eq!(rows[0].source_excerpt, "今日");
+    }
+
+    #[test]
+    fn example_rows_mark_whitespace_only_spans() {
+        let comparison = Comparison {
+            text_id: "t1".to_owned(),
+            from_analyzer: "from".to_owned(),
+            to_analyzer: "to".to_owned(),
+            regions: vec![Region::Segmentation(SegmentationDiff {
+                text_span: 0..2,
+                from_indices: 0..1,
+                to_indices: 0..2,
+                from_surfaces: vec!["\n\u{3000}".to_owned()],
+                to_surfaces: vec!["\n".to_owned(), "\u{3000}".to_owned()],
+                kind: SegmentationKind::Split,
+            })],
+            feature_diffs: Vec::new(),
+            stats: stats(1, 2, 0, 1),
+        };
+
+        let rows = example_rows_from_comparison(
+            "source-a".to_owned(),
+            "\n\u{3000}本文",
+            &comparison,
+            &fixture_analyses(),
+            10,
+        );
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].source_excerpt, "\n\u{3000}");
+        assert!(rows[0].whitespace_only);
     }
 
     #[test]

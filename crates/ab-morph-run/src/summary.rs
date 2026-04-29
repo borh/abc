@@ -2,9 +2,9 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 
 use anyhow::Result;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
-use crate::compact::ComparisonSummaryRow;
+use crate::compact::{ComparisonSummaryRow, is_whitespace_only};
 use crate::output::for_each_jsonl_or_zst_line;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -21,10 +21,35 @@ pub enum CompactSummarySort {
     CoverageMismatchRegions,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CompactExampleFilter {
+    All,
+    WhitespaceOnly,
+    LexicalOnly,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CompactExampleSummarySort {
+    Examples,
+    WhitespaceExamples,
+    LexicalExamples,
+    SegmentationExamples,
+    FeatureDiffExamples,
+    CoverageExamples,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CompactSummaryOptions {
     pub group_by: CompactSummaryGroupBy,
     pub sort_by: CompactSummarySort,
+    pub limit: usize,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CompactExampleSummaryOptions {
+    pub group_by: CompactSummaryGroupBy,
+    pub filter: CompactExampleFilter,
+    pub sort_by: CompactExampleSummarySort,
     pub limit: usize,
 }
 
@@ -43,6 +68,19 @@ pub struct CompactSummaryRow {
     pub max_coverage_mismatch_regions: usize,
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct CompactExampleSummaryRow {
+    pub key: String,
+    pub source_ids: Vec<String>,
+    pub text_ids: Vec<String>,
+    pub examples: usize,
+    pub whitespace_examples: usize,
+    pub lexical_examples: usize,
+    pub segmentation_examples: usize,
+    pub feature_diff_examples: usize,
+    pub coverage_examples: usize,
+}
+
 #[derive(Debug, Default)]
 struct Accumulator {
     source_ids: BTreeSet<String>,
@@ -56,6 +94,28 @@ struct Accumulator {
     max_segmentation_regions: usize,
     max_feature_difference_regions: usize,
     max_coverage_mismatch_regions: usize,
+}
+
+#[derive(Debug, Default)]
+struct ExampleAccumulator {
+    source_ids: BTreeSet<String>,
+    text_ids: BTreeSet<String>,
+    examples: usize,
+    whitespace_examples: usize,
+    lexical_examples: usize,
+    segmentation_examples: usize,
+    feature_diff_examples: usize,
+    coverage_examples: usize,
+}
+
+#[derive(Debug, Deserialize)]
+struct ExampleSummaryInputRow {
+    source_id: String,
+    text_id: String,
+    kind: String,
+    source_excerpt: String,
+    #[serde(default)]
+    whitespace_only: Option<bool>,
 }
 
 pub fn summarize_compact_comparisons(
@@ -78,6 +138,36 @@ pub fn summarize_compact_comparisons(
         .map(|(key, accumulator)| accumulator.into_row(key))
         .collect::<Vec<_>>();
     rows.sort_by(|left, right| compare_rows(left, right, options.sort_by));
+    rows.truncate(options.limit);
+    Ok(rows)
+}
+
+pub fn summarize_compact_examples(
+    examples_path: &Path,
+    options: CompactExampleSummaryOptions,
+) -> Result<Vec<CompactExampleSummaryRow>> {
+    let mut groups = BTreeMap::<String, ExampleAccumulator>::new();
+    for_each_jsonl_or_zst_line(examples_path, |line| {
+        let row: ExampleSummaryInputRow = serde_json::from_str(line)?;
+        let whitespace_only = row
+            .whitespace_only
+            .unwrap_or_else(|| is_whitespace_only(&row.source_excerpt));
+        if !example_filter_matches(options.filter, whitespace_only) {
+            return Ok(());
+        }
+        let key = match options.group_by {
+            CompactSummaryGroupBy::SourceId => row.source_id.clone(),
+            CompactSummaryGroupBy::TextId => row.text_id.clone(),
+        };
+        groups.entry(key).or_default().push(row, whitespace_only);
+        Ok(())
+    })?;
+
+    let mut rows = groups
+        .into_iter()
+        .map(|(key, accumulator)| accumulator.into_row(key))
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| compare_example_rows(left, right, options.sort_by));
     rows.truncate(options.limit);
     Ok(rows)
 }
@@ -127,6 +217,40 @@ impl Accumulator {
     }
 }
 
+impl ExampleAccumulator {
+    fn push(&mut self, row: ExampleSummaryInputRow, whitespace_only: bool) {
+        self.source_ids.insert(row.source_id);
+        self.text_ids.insert(row.text_id);
+        self.examples += 1;
+        if whitespace_only {
+            self.whitespace_examples += 1;
+        } else {
+            self.lexical_examples += 1;
+        }
+        if is_segmentation_example(&row.kind) {
+            self.segmentation_examples += 1;
+        } else if row.kind == "feature_diff" {
+            self.feature_diff_examples += 1;
+        } else if row.kind.starts_with("coverage_") {
+            self.coverage_examples += 1;
+        }
+    }
+
+    fn into_row(self, key: String) -> CompactExampleSummaryRow {
+        CompactExampleSummaryRow {
+            key,
+            source_ids: self.source_ids.into_iter().collect(),
+            text_ids: self.text_ids.into_iter().collect(),
+            examples: self.examples,
+            whitespace_examples: self.whitespace_examples,
+            lexical_examples: self.lexical_examples,
+            segmentation_examples: self.segmentation_examples,
+            feature_diff_examples: self.feature_diff_examples,
+            coverage_examples: self.coverage_examples,
+        }
+    }
+}
+
 fn compare_rows(
     left: &CompactSummaryRow,
     right: &CompactSummaryRow,
@@ -147,6 +271,41 @@ fn compare_rows(
             .cmp(&left.total_coverage_mismatch_regions)
             .then_with(|| left.key.cmp(&right.key)),
     }
+}
+
+fn compare_example_rows(
+    left: &CompactExampleSummaryRow,
+    right: &CompactExampleSummaryRow,
+    sort_by: CompactExampleSummarySort,
+) -> std::cmp::Ordering {
+    let left_value = example_sort_value(left, sort_by);
+    let right_value = example_sort_value(right, sort_by);
+    right_value
+        .cmp(&left_value)
+        .then_with(|| left.key.cmp(&right.key))
+}
+
+fn example_sort_value(row: &CompactExampleSummaryRow, sort_by: CompactExampleSummarySort) -> usize {
+    match sort_by {
+        CompactExampleSummarySort::Examples => row.examples,
+        CompactExampleSummarySort::WhitespaceExamples => row.whitespace_examples,
+        CompactExampleSummarySort::LexicalExamples => row.lexical_examples,
+        CompactExampleSummarySort::SegmentationExamples => row.segmentation_examples,
+        CompactExampleSummarySort::FeatureDiffExamples => row.feature_diff_examples,
+        CompactExampleSummarySort::CoverageExamples => row.coverage_examples,
+    }
+}
+
+fn example_filter_matches(filter: CompactExampleFilter, whitespace_only: bool) -> bool {
+    match filter {
+        CompactExampleFilter::All => true,
+        CompactExampleFilter::WhitespaceOnly => whitespace_only,
+        CompactExampleFilter::LexicalOnly => !whitespace_only,
+    }
+}
+
+fn is_segmentation_example(kind: &str) -> bool {
+    matches!(kind, "split" | "merge" | "resegment")
 }
 
 fn compare_boundary_f1(left: &CompactSummaryRow, right: &CompactSummaryRow) -> std::cmp::Ordering {
@@ -232,6 +391,43 @@ mod tests {
         assert_eq!(rows[0].max_segmentation_regions, 5);
         assert_eq!(rows[0].total_feature_difference_regions, 6);
         assert_eq!(rows[0].total_coverage_mismatch_regions, 1);
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn summarize_examples_can_isolate_whitespace_only_rows() {
+        let dir = temp_dir("example-whitespace");
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("examples.jsonl");
+        fs::write(
+            &path,
+            concat!(
+                r#"{"source_id":"src-a","text_id":"t1","from_analyzer":"vibrato","to_analyzer":"sudachi-c","region_index":0,"kind":"merge","byte_start":0,"byte_end":2,"char_start":0,"char_end":2,"source_excerpt":"\n　","from_surfaces":["\n","　"],"to_surfaces":["\n　"],"feature_changes":null}"#, "\n",
+                r#"{"source_id":"src-a","text_id":"t1","from_analyzer":"vibrato","to_analyzer":"sudachi-c","region_index":1,"kind":"split","byte_start":2,"byte_end":8,"char_start":2,"char_end":4,"source_excerpt":"今日","from_surfaces":["今日"],"to_surfaces":["今","日"],"feature_changes":null,"whitespace_only":false}"#, "\n",
+                r#"{"source_id":"src-b","text_id":"t2","from_analyzer":"vibrato","to_analyzer":"sudachi-c","region_index":0,"kind":"feature_diff","byte_start":0,"byte_end":6,"char_start":0,"char_end":2,"source_excerpt":"明日","from_surfaces":["明日"],"to_surfaces":["明日"],"feature_changes":[{"key":"pos","from":"名詞","to":"副詞"}],"whitespace_only":false}"#, "\n",
+            ),
+        )
+        .unwrap();
+
+        let rows = summarize_compact_examples(
+            &path,
+            CompactExampleSummaryOptions {
+                group_by: CompactSummaryGroupBy::SourceId,
+                filter: CompactExampleFilter::WhitespaceOnly,
+                sort_by: CompactExampleSummarySort::Examples,
+                limit: 10,
+            },
+        )
+        .unwrap();
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].key, "src-a");
+        assert_eq!(rows[0].examples, 1);
+        assert_eq!(rows[0].whitespace_examples, 1);
+        assert_eq!(rows[0].lexical_examples, 0);
+        assert_eq!(rows[0].segmentation_examples, 1);
+        assert_eq!(rows[0].feature_diff_examples, 0);
+
         let _ = fs::remove_dir_all(dir);
     }
 

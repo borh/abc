@@ -8,6 +8,22 @@ pub(crate) fn derive_stats(
     regions: &[Region],
     feature_diffs: &[FeatureDiff],
 ) -> ComparisonStats {
+    derive_stats_with_source_len(
+        from,
+        to,
+        regions,
+        feature_diffs,
+        from.source_text.chars().count(),
+    )
+}
+
+pub(crate) fn derive_stats_with_source_len(
+    from: &Analysis,
+    to: &Analysis,
+    regions: &[Region],
+    feature_diffs: &[FeatureDiff],
+    source_len: usize,
+) -> ComparisonStats {
     let mut one_to_one_regions = 0usize;
     let mut segmentation_regions = 0usize;
     let mut coverage_mismatch_regions = 0usize;
@@ -46,8 +62,8 @@ pub(crate) fn derive_stats(
             _ => None,
         })
         .collect::<Vec<_>>();
-    let from_boundaries = comparable_boundaries(from, &ignored_spans);
-    let to_boundaries = comparable_boundaries(to, &ignored_spans);
+    let from_boundaries = comparable_boundaries(from, &ignored_spans, source_len);
+    let to_boundaries = comparable_boundaries(to, &ignored_spans, source_len);
     let shared = from_boundaries.intersection(&to_boundaries).count();
     let boundary_precision = ratio(shared, to_boundaries.len());
     let boundary_recall = ratio(shared, from_boundaries.len());
@@ -79,8 +95,8 @@ pub(crate) fn derive_stats(
 fn comparable_boundaries(
     analysis: &Analysis,
     ignored_spans: &[std::ops::Range<usize>],
+    source_len: usize,
 ) -> BTreeSet<usize> {
-    let source_len = analysis.source_text.chars().count();
     let mut boundaries = BTreeSet::new();
     for morpheme in &analysis.morphemes {
         boundaries.insert(morpheme.char_span.start);

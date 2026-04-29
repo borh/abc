@@ -6,10 +6,17 @@ use crate::{
 };
 
 pub(crate) fn align_regions(from: &Analysis, to: &Analysis) -> Result<Vec<Region>, MorphDiffError> {
+    align_regions_with_source_len(from, to, from.source_text.chars().count())
+}
+
+pub(crate) fn align_regions_with_source_len(
+    from: &Analysis,
+    to: &Analysis,
+    source_len: usize,
+) -> Result<Vec<Region>, MorphDiffError> {
     let mut regions = Vec::new();
     let mut i = 0usize;
     let mut j = 0usize;
-    let source_len = from.source_text.chars().count();
 
     while i < from.morphemes.len() || j < to.morphemes.len() {
         if let (Some(left), Some(right)) = (from.morphemes.get(i), to.morphemes.get(j))

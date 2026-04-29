@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use ab_morph_analyzers::{MorphAnalyzer, SudachiAnalyzer, SudachiMode, VibratoAnalyzer};
-use ab_morph_diff::{Analysis, Comparison, compare_pair};
+use ab_morph_diff::{Analysis, Comparison, compare_pair, compare_pair_with_source_text};
 use ab_plaintext::{PlainTextDocument, from_aat_value};
 use anyhow::{Context, Result, bail};
 use clap::ValueEnum;
@@ -188,7 +188,7 @@ fn run_analyze_aat_serial(
         let mut analyses = Vec::new();
 
         for analyzer in analyzers {
-            let analysis = match analyzer.analyze(&document) {
+            let mut analysis = match analyzer.analyze(&document) {
                 Ok(analysis) => analysis,
                 Err(error) => {
                     if let Some(writer) = &mut errors_writer {
@@ -210,6 +210,9 @@ fn run_analyze_aat_serial(
             };
 
             write_analysis_row(&mut *analyses_writer, output_profile, &source_id, &analysis)?;
+            if output_profile == OutputProfile::Compact {
+                analysis.source_text.clear();
+            }
             analyses.push(analysis);
         }
 
@@ -223,6 +226,7 @@ fn run_analyze_aat_serial(
                     .map(|writer| &mut **writer as &mut dyn Write),
                 &analyses,
                 &source_id,
+                &document.text,
                 output_profile,
                 max_examples_per_comparison,
             ) {
@@ -543,11 +547,8 @@ fn discover_aat_inputs(aat: Option<&Path>, aat_dir: Option<&Path>) -> Result<Vec
                     dir.display()
                 );
             }
-            let mut paths = fs::read_dir(dir)
-                .with_context(|| format!("failed to read {}", dir.display()))?
-                .map(|entry| entry.map(|entry| entry.path()))
-                .collect::<std::io::Result<Vec<_>>>()?;
-            paths.retain(|path| path.extension().and_then(|ext| ext.to_str()) == Some("json"));
+            let mut paths = Vec::new();
+            collect_aat_json_files(dir, &mut paths)?;
             paths.sort();
             if paths.is_empty() {
                 bail!("no AAT JSON files found in {}", dir.display());
@@ -556,6 +557,20 @@ fn discover_aat_inputs(aat: Option<&Path>, aat_dir: Option<&Path>) -> Result<Vec
         }
         _ => bail!("provide exactly one of --aat or --aat-dir"),
     }
+}
+
+fn collect_aat_json_files(dir: &Path, paths: &mut Vec<PathBuf>) -> Result<()> {
+    for entry in fs::read_dir(dir).with_context(|| format!("failed to read {}", dir.display()))? {
+        let path = entry
+            .with_context(|| format!("failed to read entry in {}", dir.display()))?
+            .path();
+        if path.is_dir() {
+            collect_aat_json_files(&path, paths)?;
+        } else if path.extension().and_then(|ext| ext.to_str()) == Some("json") {
+            paths.push(path);
+        }
+    }
+    Ok(())
 }
 
 fn load_analyzers(specs: &[AnalyzerSpec]) -> Result<Vec<Arc<LoadedAnalyzer>>> {
@@ -702,12 +717,23 @@ fn write_comparison_rows(
     mut examples_writer: Option<&mut dyn Write>,
     analyses: &[Analysis],
     source_id: &str,
+    source_text: &str,
     output_profile: OutputProfile,
     max_examples_per_comparison: usize,
 ) -> Result<()> {
     for from_index in 0..analyses.len() {
         for to_index in (from_index + 1)..analyses.len() {
-            let comparison = compare_pair(&analyses[from_index], &analyses[to_index], &[])?;
+            let comparison = match output_profile {
+                OutputProfile::Full => {
+                    compare_pair(&analyses[from_index], &analyses[to_index], &[])?
+                }
+                OutputProfile::Compact => compare_pair_with_source_text(
+                    &analyses[from_index],
+                    &analyses[to_index],
+                    source_text,
+                    &[],
+                )?,
+            };
             if let Some(writer) = writer.as_deref_mut() {
                 match output_profile {
                     OutputProfile::Full => {
@@ -730,10 +756,6 @@ fn write_comparison_rows(
             }
 
             if let Some(examples_writer) = examples_writer.as_deref_mut() {
-                // compare_pair enforces equal source_text for the pair; use the
-                // current left analysis so examples stay tied to the comparison
-                // being serialized instead of silently depending on analyses[0].
-                let source_text = analyses[from_index].source_text.as_str();
                 for row in compact::example_rows_from_comparison(
                     source_id.to_owned(),
                     source_text,
@@ -925,6 +947,21 @@ mod tests {
     }
 
     #[test]
+    fn discovers_json_files_recursively_in_directory() {
+        let dir = temp_dir("recursive");
+        let nested = dir.join("aozora-rs-adapter");
+        fs::create_dir_all(&nested).unwrap();
+        fs::write(nested.join("b.json"), "{}").unwrap();
+        fs::write(dir.join("a.json"), "{}").unwrap();
+        fs::write(nested.join("ignored.txt"), "{}").unwrap();
+
+        let paths = discover_aat_inputs(None, Some(&dir)).unwrap();
+        assert_eq!(paths, vec![dir.join("a.json"), nested.join("b.json")]);
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
     fn rejects_empty_aat_directory() {
         let dir = temp_dir("empty");
         fs::create_dir_all(&dir).unwrap();
@@ -956,6 +993,7 @@ mod tests {
             None,
             &analyses,
             "source-a",
+            "今日",
             OutputProfile::Full,
             10,
         )

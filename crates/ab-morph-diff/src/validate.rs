@@ -3,15 +3,18 @@ use std::ops::Range;
 use crate::{Analysis, MorphDiffError};
 
 pub fn validate_analysis(analysis: &Analysis) -> Result<(), MorphDiffError> {
+    validate_analysis_against_source(analysis, &analysis.source_text)
+}
+
+pub fn validate_analysis_against_source(
+    analysis: &Analysis,
+    source_text: &str,
+) -> Result<(), MorphDiffError> {
     for (index, morpheme) in analysis.morphemes.iter().enumerate() {
         if morpheme.byte_span.start >= morpheme.byte_span.end
-            || morpheme.byte_span.end > analysis.source_text.len()
-            || !analysis
-                .source_text
-                .is_char_boundary(morpheme.byte_span.start)
-            || !analysis
-                .source_text
-                .is_char_boundary(morpheme.byte_span.end)
+            || morpheme.byte_span.end > source_text.len()
+            || !source_text.is_char_boundary(morpheme.byte_span.start)
+            || !source_text.is_char_boundary(morpheme.byte_span.end)
         {
             return Err(MorphDiffError::InvalidByteSpan {
                 analyzer: analysis.analyzer.clone(),
@@ -39,14 +42,12 @@ pub fn validate_analysis(analysis: &Analysis) -> Result<(), MorphDiffError> {
             }
         }
 
-        let expected_char_span =
-            byte_span_to_char_span(&analysis.source_text, morpheme.byte_span.clone()).ok_or_else(
-                || MorphDiffError::InvalidByteSpan {
-                    analyzer: analysis.analyzer.clone(),
-                    text_id: analysis.text_id.clone(),
-                    index,
-                },
-            )?;
+        let expected_char_span = byte_span_to_char_span(source_text, morpheme.byte_span.clone())
+            .ok_or_else(|| MorphDiffError::InvalidByteSpan {
+                analyzer: analysis.analyzer.clone(),
+                text_id: analysis.text_id.clone(),
+                index,
+            })?;
         if expected_char_span != morpheme.char_span {
             return Err(MorphDiffError::CharSpanMismatch {
                 analyzer: analysis.analyzer.clone(),
@@ -54,7 +55,7 @@ pub fn validate_analysis(analysis: &Analysis) -> Result<(), MorphDiffError> {
                 index,
             });
         }
-        if &analysis.source_text[morpheme.byte_span.clone()] != morpheme.surface.as_str() {
+        if &source_text[morpheme.byte_span.clone()] != morpheme.surface.as_str() {
             return Err(MorphDiffError::SurfaceMismatch {
                 analyzer: analysis.analyzer.clone(),
                 text_id: analysis.text_id.clone(),

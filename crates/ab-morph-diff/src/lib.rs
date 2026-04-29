@@ -11,7 +11,7 @@ pub use model::{
     CoverageMismatch, CoverageMismatchKind, FeatureDiff, FeatureKey, FeatureMap, Morpheme, Region,
     SegmentationDiff, SegmentationKind, TextId,
 };
-pub use validate::validate_analysis;
+pub use validate::{validate_analysis, validate_analysis_against_source};
 
 pub fn compare_pair(
     from: &Analysis,
@@ -45,13 +45,42 @@ pub fn compare_pair(
     })
 }
 
+pub fn compare_pair_with_source_text(
+    from: &Analysis,
+    to: &Analysis,
+    source_text: &str,
+    feature_context_keys: &[FeatureKey],
+) -> Result<Comparison, MorphDiffError> {
+    if from.text_id != to.text_id {
+        return Err(MorphDiffError::TextIdMismatch {
+            from: from.text_id.clone(),
+            to: to.text_id.clone(),
+        });
+    }
+    validate::validate_analysis_against_source(from, source_text)?;
+    validate::validate_analysis_against_source(to, source_text)?;
+
+    let source_len = source_text.chars().count();
+    let regions = align::align_regions_with_source_len(from, to, source_len)?;
+    let feature_diffs = features::compare_feature_diffs(from, to, &regions, feature_context_keys);
+    let stats = stats::derive_stats_with_source_len(from, to, &regions, &feature_diffs, source_len);
+    Ok(Comparison {
+        from_analyzer: from.analyzer.clone(),
+        to_analyzer: to.analyzer.clone(),
+        text_id: from.text_id.clone(),
+        regions,
+        feature_diffs,
+        stats,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::BTreeMap;
 
     use crate::{
         Analysis, ChangedValue, FeatureMap, MorphDiffError, Morpheme, Region, SegmentationKind,
-        compare_pair,
+        compare_pair, compare_pair_with_source_text,
     };
 
     fn features(values: &[(&str, Option<&str>)]) -> FeatureMap {
@@ -107,6 +136,32 @@ mod tests {
             compare_pair(&from, &to, &[]),
             Err(MorphDiffError::SourceTextMismatch { .. })
         ));
+    }
+
+    #[test]
+    fn compare_pair_with_source_text_allows_trimmed_analysis_sources() {
+        let source = "今日";
+        let mut from = analysis(
+            "a",
+            "t",
+            source,
+            vec![m(source, "今日", 0, 2, features(&[]))],
+        );
+        let mut to = analysis(
+            "b",
+            "t",
+            source,
+            vec![
+                m(source, "今", 0, 1, features(&[])),
+                m(source, "日", 1, 2, features(&[])),
+            ],
+        );
+        from.source_text.clear();
+        to.source_text.clear();
+
+        let comparison = compare_pair_with_source_text(&from, &to, source, &[]).unwrap();
+
+        assert_eq!(comparison.stats.segmentation_regions, 1);
     }
 
     #[test]

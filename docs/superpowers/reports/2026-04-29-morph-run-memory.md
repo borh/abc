@@ -55,14 +55,16 @@ Observed reduction at the 60-second sample:
 
 The analyzer APIs already use immutable `&self` analysis. Sudachi creates per-analysis `StatefulTokenizer` values over the shared dictionary. Vibrato creates per-analysis workers from the shared tokenizer.
 
+Compact runs also clear per-analysis `source_text` clones after writing compact analysis summaries. Comparisons then use the document text as shared source context through `compare_pair_with_source_text`, preserving validation while avoiding duplicate retained source strings inside the stored analysis vector.
+
 ## Throughput check
 
-A complete full-corpus compact run after the fix completed in 1,045 seconds with `--jobs 8` and produced the same row counts and artifact sizes as the previous compact full-corpus run.
+A complete full-corpus compact run after the shared-analyzer fix completed in 1,045 seconds with `--jobs 8` and produced the same row counts and artifact sizes as the previous compact full-corpus run.
 
-The previous compact run's scratch directory birth time and manifest mtime also span 1,045 seconds, so no wall-time regression was observed in this environment.
+After recursive AAT discovery, progress telemetry, and compact source-text trimming, the canonical full-corpus compact run completed in 1,037 seconds with `--jobs 8 --progress`. It reported `inputs=17894`, `rss_kb=1553272`, and `pss_kb=1551273` at process end. No wall-time regression was observed in this environment.
 
 ## Remaining notes
 
 - This reduces duplicate dictionary residency, but one Sudachi dictionary and one Vibrato dictionary are still large and expected to remain resident.
 - Peak memory can still exceed the 60-second sample during unusually large documents because each comparison temporarily holds both analyses and comparison regions for the current input.
-- If memory needs to be reduced further, the next target is compact-mode streaming: write compact summaries/examples without retaining full `source_text` clones longer than necessary.
+- If memory needs to be reduced further, the next target is streaming compact comparison summaries/examples without materializing every region for very large documents.

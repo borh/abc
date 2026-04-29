@@ -4,6 +4,7 @@
             ;; Apache SSHD) get pulled in by other requires.
    [abc.tools.logging :as logging]
    [abc.tools.files :as files]
+   [abc.tools.iiif :as iiif]
    [abc.tools.linked-art :as linked-art]
    [abc.tools.malli :as am]
    [abc.tools.manifest-index :as manifest-index]
@@ -76,14 +77,16 @@
         run-summary-schema (files/read-json "schemas/run-summary.schema.json")
         manifest-inputs-schema (files/read-json "schemas/manifest-inputs.schema.json")
         comparison-report-schema (files/read-json "schemas/comparison-report.schema.json")
-        tei-validation-result-schema (files/read-json "schemas/tei-validation-result.schema.json")]
+        tei-validation-result-schema (files/read-json "schemas/tei-validation-result.schema.json")
+        iiif-applicability-schema (files/read-json "schemas/iiif-applicability.schema.json")]
     (doseq [[path schema] [["schemas/manifest.schema.json" manifest-schema]
                            ["schemas/parser-ir.schema.json" parser-ir-schema]
                            ["schemas/diagnostic.schema.json" diagnostic-schema]
                            ["schemas/run-summary.schema.json" run-summary-schema]
                            ["schemas/manifest-inputs.schema.json" manifest-inputs-schema]
                            ["schemas/comparison-report.schema.json" comparison-report-schema]
-                           ["schemas/tei-validation-result.schema.json" tei-validation-result-schema]]]
+                           ["schemas/tei-validation-result.schema.json" tei-validation-result-schema]
+                           ["schemas/iiif-applicability.schema.json" iiif-applicability-schema]]]
       (schema-valid! schema path))
     (doseq [path (concat ["examples/v0/example-work/source.manifest.json"
                           "examples/v0/example-work/manifest.json"
@@ -318,22 +321,6 @@
       (finally
         (doseq [f (reverse (file-seq temp))]
           (.delete f))))))
-
-(defn validate-iiif-applicability!
-  "Sanity-check the IIIF applicability decision record. ADR 0014 has
-  not yet been promoted to Accepted, so there is no JSON schema; we
-  only verify the file parses, names the example work, and carries an
-  expected status keyword."
-  [path]
-  (let [doc (files/read-json path)
-        status (get doc "status")
-        work-id (get doc "work_id")]
-    (when-not (#{"applicable" "not_applicable" "rights_blocker"} status)
-      (throw (ex-info (str "IIIF applicability status must be a known keyword: " status)
-                      {:path path :status status})))
-    (when-not (and (string? work-id) (re-matches #"\d{6}" work-id))
-      (throw (ex-info (str "IIIF applicability work_id must be a 6-digit Aozora work id: " work-id)
-                      {:path path :work-id work-id})))))
 
 (defn validate-git-cliff! []
   (run-command! "git-cliff" "--config" "cliff.toml" "--unreleased" "--strip" "header"
@@ -577,9 +564,9 @@
         :expanded-path "examples/v0/example-work/lod/linked-art-expanded.normalized.json"
         :result-path "examples/v0/example-work/lod/jsonld-context-validation-result.json"})
       (tel/log! :info "linked art publication view ok")
-      (tel/log! :info "==> Checking IIIF applicability fixture (ADR 0014, draft)")
-      (validate-iiif-applicability! "examples/v0/example-work/iiif/applicability.json")
-      (tel/log! :info "iiif applicability fixture ok")
+      (tel/log! :info "==> Checking IIIF applicability record (ADR 0014)")
+      (iiif/validate-applicability! "examples/v0/example-work/iiif/applicability.json")
+      (tel/log! :info "iiif applicability record ok")
       (tel/log! :info "==> Checking git-cliff configuration")
       (validate-git-cliff!)
       (tel/log! :info "git-cliff config ok")

@@ -2,7 +2,7 @@
 
 ## Current State
 
-Twelve contract-harness milestones complete:
+Thirteen contract-harness milestones complete:
 
 - **2026-04-27 v0 contract harness** (archived as
   `docs/archive/2026-04-27-v0-contract-harness.md`).
@@ -233,6 +233,33 @@ Twelve contract-harness milestones complete:
   resolved as part of this audit: no v0 code or fixture references
   it; only the `references/archive/aozora_lod_data/` historical
   copy remains.
+- **2026-04-29 IIIF applicability promotion (ADR 0014).** ADR 0014
+  flips from Draft to Accepted. The per-work applicability decision
+  record now has a real JSON Schema 2020-12 contract at
+  `schemas/iiif-applicability.schema.json`, with conditional
+  `allOf` clauses asserting that `derived_manifest` is a non-empty
+  string when `status="applicable"` and `null` for
+  `status="not_applicable"` or `"rights_blocker"`. The ad-hoc
+  shape-check `validate-iiif-applicability!` in
+  `abc.tools.validate-design-bundle` is replaced by the schema-driven
+  gate `abc.tools.iiif/validate-applicability!`; the schema itself is
+  meta-schema-validated alongside the other v0 schemas.
+  `examples/v0/example-work/iiif/applicability.json` drops its
+  documentation-style `policy` block (the policy lives in the ADR's
+  decision matrix; each record carries only the per-work outcome) and
+  validates clean as `not_applicable` for the text-only 羅生門
+  example. Five contract fixtures under `fixtures/iiif/` cover the
+  positive cases (`applicable.json` with a `derived_manifest` path,
+  `rights_blocker.json`) and the conditional negatives
+  (`invalid/missing-work-id.json`,
+  `invalid/applicable-without-manifest.json`,
+  `invalid/not-applicable-with-manifest.json`).
+  `abc.tools.iiif-test` exercises all six paths and is wired into the
+  flake's focused-test alias. No v0 production IIIF Presentation
+  manifests ship in this milestone; the schema and gate close out the
+  cultural-heritage publication profile started by ADR 0013, and the
+  `applicable` row is reserved for future works with confirmed
+  facsimiles and clean rights.
 
 ## Canonical Commands
 
@@ -278,25 +305,14 @@ In rough order of leverage, none committed:
    `constraintSpec` block and re-runs the drift gate; the v0
    evaluator's lack of `<sch:let>` and `role="nonfatal"` support
    remains the ceiling on inherited TEI rules.
-3. **IIIF applicability promotion (ADR 0014).** The Linked Art half
-   landed in the 2026-04-29 milestone; the IIIF side still ships
-   only as a draft applicability fixture
-   (`examples/v0/example-work/iiif/applicability.json`) shape-checked
-   by `validate-design-bundle`. Promotion means accepting ADR 0014
-   with a justified status (`applicable` / `not_applicable` /
-   `rights_blocker`) per source, deciding whether ABC publishes IIIF
-   manifests for Aozora's pre-existing image facsimiles, and — if
-   yes — writing a real fixture under
-   `examples/v0/example-work/iiif/` plus a SHACL/JSON-Schema gate
-   that does not change canonical manifest identity.
-4. **Parser-decision exercise (ADR 0002).** Run a candidate parser
+3. **Parser-decision exercise (ADR 0002).** Run a candidate parser
    (e.g. `aozora-rs`) over one Aozora work into the parser IR
    contract. Currently parked while parser work happens in another
    project.
-5. **Person identity drift (Flavor 2).** Splits, merges, renames as
+4. **Person identity drift (Flavor 2).** Splits, merges, renames as
    PROV-style events; the separated-persons milestone scoped Flavor 1
    only.
-6. **Move legacy namespaces behind clj-nix.** `abc.aozora`,
+5. **Move legacy namespaces behind clj-nix.** `abc.aozora`,
    `abc.tei`, `abc.stats` remain outside the v0 contract gate.
 
 ## Done Criteria For The Closed Milestones

@@ -1,7 +1,8 @@
 # ADR 0014: IIIF Applicability for ABC v0
 
-Status: Draft
+Status: Accepted
 Date: 2026-04-28
+Accepted: 2026-04-29
 
 ## Context
 
@@ -24,23 +25,53 @@ When IIIF is applicable, the IIIF Presentation manifest is a derived
 publication artifact linked from the ABC manifest, TEI `@facs`/`graphic`
 references, and RDF publication view.
 
+Each work carries a small applicability decision record validated by
+`schemas/iiif-applicability.schema.json`. The record's `status` is one of
+`applicable`, `not_applicable`, or `rights_blocker`; `derived_manifest`
+is required (non-empty string) when `status="applicable"` and must be
+`null` otherwise. The decision policy below is the source of truth for
+which status applies; the schema only enforces structural shape.
+
 ## Decision Matrix
 
-| Case | IIIF action |
-| --- | --- |
-| Plain text only | No IIIF artifact required |
-| Aozora text with inline image/caption references | Preserve in IR/TEI; evaluate IIIF if image URLs/assets are available |
-| Facsimile/page images available | Generate IIIF Presentation 3.0 manifest |
-| Page-level annotations or text-image alignment | Use IIIF annotations/content search only after a separate ADR |
-| Rights unclear | Do not publish IIIF image service links; record rights blocker |
+| Case | IIIF action | Status |
+| --- | --- | --- |
+| Plain text only | No IIIF artifact required | `not_applicable` |
+| Aozora text with inline image/caption references | Preserve in IR/TEI; evaluate IIIF if image URLs/assets are available | `not_applicable` until assets are available |
+| Facsimile/page images available | Generate IIIF Presentation 3.0 manifest | `applicable` |
+| Page-level annotations or text-image alignment | Use IIIF annotations/content search only after a separate ADR | `not_applicable` for v0 |
+| Rights unclear | Do not publish IIIF image service links; record rights blocker | `rights_blocker` |
+
+The example v0 bundle (羅生門 / 000127) is text-only; it carries
+`status: "not_applicable"` with a written reason and `derived_manifest:
+null`. No production IIIF Presentation manifests ship in v0; the
+`applicable` row is reserved for future works with confirmed
+facsimiles and clean rights.
+
+## Hard Rule
+
+The applicability record is a derived publication artifact, not an
+identity input. JSON-LD compaction, expansion, schema evolution, or
+status changes from `not_applicable` to `applicable` must not change
+`ArtifactID`. The schema and ADR live alongside the bundle; any IIIF
+Presentation manifest produced under `status="applicable"` is also
+derived and must not feed `manifest_identity_object`.
 
 ## Acceptance Criteria
 
-- Documentation says exactly when IIIF is required, optional, or out of scope.
-- A text-only v0 bundle is valid without IIIF.
-- If images/facsimiles are present, the example bundle includes either an IIIF
-  manifest or an explicit "not publishable due to rights/source absence" note.
-- TEI image/caption handling remains valid even without IIIF.
+- `schemas/iiif-applicability.schema.json` is JSON Schema 2020-12 and is
+  itself validated against the meta-schema by
+  `validate-design-bundle`.
+- `examples/v0/example-work/iiif/applicability.json` validates against
+  the schema; status, reason, and `derived_manifest=null` reflect the
+  text-only example.
+- `validate-design-bundle` calls `abc.tools.iiif/validate-applicability!`
+  on the example record; failure aborts the bundle gate.
+- `abc.tools.iiif-test` covers the example record plus four contract
+  cases: an `applicable` record with a `derived_manifest` path, a
+  `rights_blocker` record, a missing `work_id`, an `applicable` record
+  with `derived_manifest=null` (must fail), and a non-applicable record
+  carrying a `derived_manifest` path (must fail).
 
 ## References
 

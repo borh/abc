@@ -1,0 +1,7 @@
+{
+  "work_id": "999002",
+  "title": "Applicable but no derived_manifest",
+  "status": "applicable",
+  "reason": "Used to assert that status=applicable requires a derived_manifest path.",
+  "derived_manifest": null
+}

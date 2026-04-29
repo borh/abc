@@ -3,11 +3,5 @@
   "title": "羅生門",
   "status": "not_applicable",
   "reason": "The v0 example bundle is text-only and does not include source images, facsimiles, illustrations, or page-level presentation assets.",
-  "policy": {
-    "plain_text_only": "No IIIF artifact required",
-    "inline_image_or_caption_references": "Preserve in IR/TEI; evaluate IIIF if image URLs/assets are available",
-    "facsimile_or_page_images": "Generate IIIF Presentation 3.0 manifest",
-    "rights_unclear": "Do not publish IIIF image service links; record rights blocker"
-  },
   "derived_manifest": null
 }

@@ -151,10 +151,12 @@
                                                                   (URL. "https://some.other.url.com/with/path")]}})
    :dcterms/format             [:enum "text/plain" "text/html" "text/xml"]
    ::character-set             [:enum "JIS X 0208" "Unicode"]
-   ::encoding                  [:enum "SJIS" "EUC" "UTF-8"]
+   ::encoding                  [:enum {:decode/csv to-encoding} "SJIS" "EUC" "UTF-8"]
    :abc.aozora.ndc/category    (into [:enum] ndc-strings)
    :abc.aozora.ndc/children    :boolean
-   ::NDC                       [:set [:map :abc.aozora.ndc/category [:abc.aozora.ndc/children {:optional true}]]]
+   ::NDC                       [:set {:decode/csv to-ndc}
+                                [:map :abc.aozora.ndc/category
+                                 [:abc.aozora.ndc/children {:optional true}]]]
    ::orthographic-style        [:enum
                                 "新字新仮名"
                                 "新字旧仮名"
@@ -162,8 +164,8 @@
                                 "旧字旧仮名"
                                 "その他"]
    ::relation-to-work          [:enum "著者" "翻訳者" "編者" "校訂者" "その他"]
-   ::revision-count            [:int {:min 0}]
-   ::last-modified-date        ::date
+   ::revision-count            [:int {:min 0 :decode/csv to-integer}]
+   ::last-modified-date        [:schema {:decode/csv to-date} ::date]
    ::source                    [:map :dcterms/format :abc.aozora/url :abc.aozora/revision-count :abc.aozora/character-set :abc.aozora/last-modified-date :abc.aozora/encoding]
    ::sources                   [:vector ::source]
    ::text-resource             ::source
@@ -179,8 +181,8 @@
    ::subtitle                  [:string {:min 1}]
    ::subtitle-reading          [:string {:min 1}]
    ::sort-reading              [:string {:min 1}]
-   ::copyright-expired         :boolean
-   ::person-copyright-expired  :boolean
+   ::copyright-expired         [:boolean {:decode/csv flag-to-boolean}]
+   ::person-copyright-expired  [:boolean {:decode/csv flag-to-boolean}]
    ::revision-source           [:vector :string]
    ::transcription-source      [:vector :string]
    ::bib-resource              ::url
@@ -220,11 +222,11 @@
                                 [::transcriber {:optional true}]
                                 [::transcription-source {:optional true}]]
    ::publishing-span           ::date
-   ::first-published           ::date
-   ::aozora-publishing-date    ::date
-   ::aozora-last-modified-date ::date
-   ::date-of-birth             ::date
-   ::date-of-death             ::date
+   ::first-published           [:schema {:decode/csv aozora-to-date} ::date]
+   ::aozora-publishing-date    [:schema {:decode/csv to-date} ::date]
+   ::aozora-last-modified-date [:schema {:decode/csv to-date} ::date]
+   ::date-of-birth             [:schema {:decode/csv aozora-to-date} ::date]
+   ::date-of-death             [:schema {:decode/csv aozora-to-date} ::date]
    ::reference                 [:map
                                 [::publisher {:optional true}]
                                 [::first-published {:optional true}]
@@ -268,6 +270,12 @@
       [:=>
        [:cat :string]
        [:schema {:registry registry} [:maybe ::NDC]]])
+
+(def csv-cell-transformer
+  "Decoders fire when malli walks the schema with name :csv. Decoder
+  functions live as :decode/csv properties on each leaf schema in the
+  project registry."
+  (mt/transformer {:name :csv}))
 
 (defn to-multiple
   ([s] (string/split s #"、"))
@@ -322,16 +330,19 @@
         relation (g "役割フラグ")
         relation-kw (relation-to-work-rdf relation)
 
+        decode (fn [schema-key cell]
+                 (m/decode schema-key cell csv-cell-transformer))
+
         text-resource
         (if text-resource-id
           (to-subject
            text-resource-id
            {::url                text-resource-id
             :dcterms/format      "text/plain"
-            ::revision-count     (to-integer (g "テキストファイル修正回数"))
+            ::revision-count     (decode ::revision-count (g "テキストファイル修正回数"))
             ::character-set      (g "テキストファイル文字集合")
-            ::last-modified-date (to-date (g "テキストファイル最終更新日"))
-            ::encoding           (to-encoding (g "テキストファイル符号化方式"))}))
+            ::last-modified-date (decode ::last-modified-date (g "テキストファイル最終更新日"))
+            ::encoding           (decode ::encoding (g "テキストファイル符号化方式"))}))
 
         html-resource
         (if html-resource-id
@@ -339,20 +350,20 @@
            html-resource-id
            {::url                html-resource-id
             :dcterms/format      "text/html"
-            ::revision-count     (to-integer (g "XHTML/HTMLファイル修正回数"))
+            ::revision-count     (decode ::revision-count (g "XHTML/HTMLファイル修正回数"))
             ::character-set      (g "XHTML/HTMLファイル文字集合")
-            ::last-modified-date (to-date (g "XHTML/HTMLファイル最終更新日"))
-            ::encoding           (to-encoding (g "XHTML/HTMLファイル符号化方式"))}))
+            ::last-modified-date (decode ::last-modified-date (g "XHTML/HTMLファイル最終更新日"))
+            ::encoding           (decode ::encoding (g "XHTML/HTMLファイル符号化方式"))}))
 
         reference-1
         (if reference-1-id
           (to-subject
            reference-1-id
            {::title           reference-1-id
-            ::first-published (some-> (g "底本初版発行年1") aozora-to-date)
+            ::first-published (some->> (g "底本初版発行年1") (decode ::first-published))
             ::publisher       (some->> (g "底本出版社名1") to-multiple)
             ::parent          {::title           (g "底本の親本名1")
-                               ::publishing-span (some-> (g "底本の親本初版発行年1") aozora-to-date) #_TODO
+                               ::publishing-span (some->> (g "底本の親本初版発行年1") (decode ::first-published)) #_TODO
                                ::publisher       (some->> (g "底本の親本出版社名1") to-multiple)}}))
 
         reference-2
@@ -360,10 +371,10 @@
           (to-subject
            reference-2-id
            {::title           reference-2-id
-            ::first-published (some-> (g "底本初版発行年2") aozora-to-date)
+            ::first-published (some->> (g "底本初版発行年2") (decode ::first-published))
             ::publisher       (some->> (g "底本出版社名2") to-multiple)
             ::parent          {::title           (g "底本の親本名2")
-                               ::publishing-span (some-> (g "底本の親本初版発行年2") aozora-to-date) #_TODO
+                               ::publishing-span (some->> (g "底本の親本初版発行年2") (decode ::first-published)) #_TODO
                                ::publisher       (some->> (g "底本の親本出版社名2") to-multiple)}}))
 
         work
@@ -383,14 +394,14 @@
             ::subtitle                  (g "作品名読み")
             ::subtitle-transcription    (g "副題読み")
             ::original-title            (g "原題")
-            ::copyright-expired         (flag-to-boolean (g "作品著作権フラグ"))
+            ::copyright-expired         (decode ::copyright-expired (g "作品著作権フラグ"))
             ::transcriber               (g "入力者")
-            ::aozora-publishing-date    (to-date (g "公開日"))
-            ::NDC                       (some-> (g "分類番号") to-ndc)
-            ::first-published           (some-> (g "初出") aozora-to-date)
+            ::aozora-publishing-date    (decode ::aozora-publishing-date (g "公開日"))
+            ::NDC                       (some->> (g "分類番号") (decode ::NDC))
+            ::first-published           (some->> (g "初出") (decode ::first-published))
             ::bib-resource              (to-uri (g "図書カードURL"))
             ::orthographic-style        (g "文字遣い種別")
-            ::aozora-last-modified-date (to-date (g "最終更新日"))
+            ::aozora-last-modified-date (decode ::aozora-last-modified-date (g "最終更新日"))
             ::revisor                   (g "校正者")
             ::revision-source           (remove-nils-vec [(g "校正に使用した版1") (g "校正に使用した版2")])
             ::transcription-source      (remove-nils-vec [(g "入力に使用した版1") (g "入力に使用した版2")])}))
@@ -401,15 +412,15 @@
            person-id
            {::person-id                    (to-id person-id)
             (inverse-relation relation-kw) [(to-id work-id)]
-            ::person-copyright-expired     (flag-to-boolean (g "人物著作権フラグ")) ;; FIXME How to deal with Tsurayuki being set to false? (Because of recently published word/rendition...) Should we rather set this to a rule-based (date of death) value?
+            ::person-copyright-expired     (decode ::person-copyright-expired (g "人物著作権フラグ")) ;; FIXME How to deal with Tsurayuki being set to false? (Because of recently published word/rendition...) Should we rather set this to a rule-based (date of death) value?
             ::given-name                   (g "名")
             ::given-name-romaji            (g "名ローマ字")
             ::given-name-transcription     (g "名読み")
             ::family-name                  (g "姓")
             ::family-name-romaji           (g "姓ローマ字")
             ::family-name-transcription    (g "姓読み")
-            ::date-of-death                (some-> (g "没年月日") aozora-to-date)
-            ::date-of-birth                (some-> (g "生年月日") aozora-to-date)}))]
+            ::date-of-death                (some->> (g "没年月日") (decode ::date-of-death))
+            ::date-of-birth                (some->> (g "生年月日") (decode ::date-of-birth))}))]
     (remove-nils
      {::work   work
       ::person person})))

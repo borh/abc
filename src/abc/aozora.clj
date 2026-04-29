@@ -1,5 +1,6 @@
 (ns abc.aozora
   (:require [malli.core :as m]
+            [malli.transform :as mt]
             [clojure.string :as string]
             [clojure.set :as set]
             [clojure.data]
@@ -12,6 +13,130 @@
 (defn url? [u] (instance? URL u))
 
 (defonce ndc-strings (set (vals ndc-map)))
+
+(defn inverse-relation [kw]
+  (keyword (namespace kw) (str (name kw) "-of")))
+
+(defn relation-to-work-rdf [s]
+  (case s
+    "著者" ::author
+    "翻訳者" ::translator
+    "編者" ::editor
+    "校訂者" ::proofreader
+    "その他" ::other-author))
+
+(defn to-integer [s]
+  (Integer/parseInt s))
+
+(defn to-uri
+  "Converts string to URL (uri name kept to align with uri?)."
+  [s]
+  (if s (URL. s)))
+
+(def japan-modern-period-map
+  {"明治" 1868
+   "大正" 1912
+   "昭和" 1926
+   "平成" 1989
+   "令和" 2019})
+(def year-rx [:repeat :digit 3 4])
+(def day-or-month-rx [:repeat :digit 1 2])
+(def simple-date-rx
+  (regal/regex [:cat
+                [:capture year-rx]
+                [:? "-"]
+                [:? [:capture day-or-month-rx]]
+                [:? "-"]
+                [:? [:capture day-or-month-rx]]]))
+(def japanese-date-rx
+  (regal/regex [:cat
+                [:capture (into [:alt] (keys japan-modern-period-map))]
+                [:capture day-or-month-rx]
+                [:? "）"]
+                \年
+                [:? [:capture day-or-month-rx]]
+                [:? "月"]]))
+
+(defn to-date [s]
+  (if-let [[_ year month day] (first (re-seq simple-date-rx s
+                                             #_#"(\d{3,4})-?(\d{1,2})?-?(\d{1,2})?" #_s))]
+    (try
+      (cond
+        (and year month day) (time/local-date (to-integer year) (to-integer month) (to-integer day))
+        (and year month) (time/local-date (to-integer year) (to-integer month))
+        year (time/local-date (to-integer year))
+        #_:else #_[s _ year month day])
+      (catch Exception e
+        (throw (Exception. (format "%s" [(ex-data e) (seq s) (re-seq simple-date-rx s) s])))))))
+
+#_(s/fdef string-date-helper
+    :args (s/cat :year string? :month (s/nilable string?) :day (s/nilable string?))
+    :ret ::date-time)
+
+(defn string-date-helper [year month day]
+  (cond
+    (and year month day) (time/local-date (to-integer year) (to-integer month) (to-integer day))
+    (and year month) (time/local-date (to-integer year) (to-integer month))
+    year (time/local-date (to-integer year))))
+
+;; FIXME: Example below list several dates, meaning we should change this to be optionally a collection of dates...
+;; 推古時代における仏教受容の仕方について「思想」1922（大正11）年7月<br>仏像の相好についての一考察「思想」1922（大正11）年5月<br>『万葉集』の歌と『古今集』の歌との相違について「思想」1922（大正11）年8月<br>お伽噺としての『竹取物語』「思想」1922（大正11）年11月<br>『枕草紙』について「思想」1922（大正11）年9月<br>『枕草紙』の原典批評についての提案「思想」1922（大正11）年9月<br>『源氏物語』について「思想」1922（大正11）年12月<br>「もののあはれ」について「思想」1922（大正11）年10月<br>歌舞伎劇についての一考察「思想」1922（大正11）年4月
+;; FIXME アーヴィング -> p001257 -> dateOfBirth/Death missing month and day!? maybe a serialization problem. Also, it should be a date and not date-time object in the first place.
+#_(s/fdef aozora-to-date
+    :args (s/cat :s string?)
+    :ret (s/nilable ::date-time))                           ;; also (s/coll-of ::date-time)
+(defn aozora-to-date [s]
+  (try
+    (cond
+      (or (= "不詳" s) (re-seq #"^\s*$" s)) nil
+
+      (= "「太陽　創刊号」" s) (time/local-date 1963 7)
+
+      (= "紀元前6世紀初" s) (time/local-date -600)
+
+      (not (re-seq #"\d{4}" s))
+      (let [match (first (re-seq japanese-date-rx s))]
+        (if (seq match)
+          (let [[_ period period-year month] match
+                year (+ (japan-modern-period-map period) (dec (to-integer period-year)))]
+            (string-date-helper (str year) month nil))))
+
+      :else
+      (let [match (first (re-seq #"(\d{3,4})年?([\(（][^)）]+[）\)])?年?\s?((\d{1,2})|(\d{1,2})[～、]\d{1,2})?月?((\d{1,2})日)?" s))]
+        (if (seq match)
+          (let [[_ year _ _ month _ _ day] match]
+            (string-date-helper year month day))
+          (throw (Exception. (format "%s :: %s :: %s :: %s" s match (seq s) (re-seq #"\d{3,4}.+年" s)))))))
+    (catch
+     Exception
+     e
+      (println (ex-data e)
+               s
+               (re-seq japanese-date-rx s)
+               (re-seq #"(\d{3,4})年?([\(（][^)）]+[）\)])?年?\s?((\d{1,2})|(\d{1,2})[～、]\d{1,2})?月?((\d{1,2})日)?" s)))))
+
+(defn flag-to-boolean [s]
+  (case s
+    "なし" false
+    "あり" true))
+
+(defn to-ndc [s]
+  (when-let [match (seq (first (re-seq #"NDC (K)?(\d{3})\s?(K)?(\d{3})?" s)))]
+    (let [[_ a-child? a b-child? b] match]
+      (if (and a b)
+        (set/union                                          ;; TODO dcndl:NDC9 (Aozora Bunko is not updated to NDC10, but maybe we could replace with LOD from Web NDL Authorities)
+         #{(cond-> {:abc.aozora.ndc/category (ndc-map a)}
+             a-child? (assoc :abc.aozora.ndc/children true))}
+         #{(cond-> {:abc.aozora.ndc/category (ndc-map b)}
+             b-child? (assoc :abc.aozora.ndc/children true))})
+        #{(cond-> {:abc.aozora.ndc/category (ndc-map a)}
+            a-child? (assoc :abc.aozora.ndc/children true))}))))
+
+(defn to-encoding [s]
+  (case s
+    "ShiftJIS" "SJIS"
+    "EUC" "EUC"
+    "UTF-8" "UTF-8"))
 
 (def registry
   {::date                      (m/-simple-schema
@@ -139,134 +264,10 @@
                                 [:sources ::sources]
                                 [:references ::references]]})
 
-(defn inverse-relation [kw]
-  (keyword (namespace kw) (str (name kw) "-of")))
-
-(defn relation-to-work-rdf [s]
-  (case s
-    "著者" ::author
-    "翻訳者" ::translator
-    "編者" ::editor
-    "校訂者" ::proofreader
-    "その他" ::other-author))
-
-(defn to-integer [s]
-  (Integer/parseInt s))
-
-(defn to-uri
-  "Converts string to URL (uri name kept to align with uri?)."
-  [s]
-  (if s (URL. s)))
-
-(def japan-modern-period-map
-  {"明治" 1868
-   "大正" 1912
-   "昭和" 1926
-   "平成" 1989
-   "令和" 2019})
-(def year-rx [:repeat :digit 3 4])
-(def day-or-month-rx [:repeat :digit 1 2])
-(def simple-date-rx
-  (regal/regex [:cat
-                [:capture year-rx]
-                [:? "-"]
-                [:? [:capture day-or-month-rx]]
-                [:? "-"]
-                [:? [:capture day-or-month-rx]]]))
-(def japanese-date-rx
-  (regal/regex [:cat
-                [:capture (into [:alt] (keys japan-modern-period-map))]
-                [:capture day-or-month-rx]
-                [:? "）"]
-                \年
-                [:? [:capture day-or-month-rx]]
-                [:? "月"]]))
-
-(defn to-date [s]
-  (if-let [[_ year month day] (first (re-seq simple-date-rx s
-                                             #_#"(\d{3,4})-?(\d{1,2})?-?(\d{1,2})?" #_s))]
-    (try
-      (cond
-        (and year month day) (time/local-date (to-integer year) (to-integer month) (to-integer day))
-        (and year month) (time/local-date (to-integer year) (to-integer month))
-        year (time/local-date (to-integer year))
-        #_:else #_[s _ year month day])
-      (catch Exception e
-        (throw (Exception. (format "%s" [(ex-data e) (seq s) (re-seq simple-date-rx s) s])))))))
-
-#_(s/fdef string-date-helper
-    :args (s/cat :year string? :month (s/nilable string?) :day (s/nilable string?))
-    :ret ::date-time)
-
-(defn string-date-helper [year month day]
-  (cond
-    (and year month day) (time/local-date (to-integer year) (to-integer month) (to-integer day))
-    (and year month) (time/local-date (to-integer year) (to-integer month))
-    year (time/local-date (to-integer year))))
-
-;; FIXME: Example below list several dates, meaning we should change this to be optionally a collection of dates...
-;; 推古時代における仏教受容の仕方について「思想」1922（大正11）年7月<br>仏像の相好についての一考察「思想」1922（大正11）年5月<br>『万葉集』の歌と『古今集』の歌との相違について「思想」1922（大正11）年8月<br>お伽噺としての『竹取物語』「思想」1922（大正11）年11月<br>『枕草紙』について「思想」1922（大正11）年9月<br>『枕草紙』の原典批評についての提案「思想」1922（大正11）年9月<br>『源氏物語』について「思想」1922（大正11）年12月<br>「もののあはれ」について「思想」1922（大正11）年10月<br>歌舞伎劇についての一考察「思想」1922（大正11）年4月
-;; FIXME アーヴィング -> p001257 -> dateOfBirth/Death missing month and day!? maybe a serialization problem. Also, it should be a date and not date-time object in the first place.
-#_(s/fdef aozora-to-date
-    :args (s/cat :s string?)
-    :ret (s/nilable ::date-time))                           ;; also (s/coll-of ::date-time)
-(defn aozora-to-date [s]
-  (try
-    (cond
-      (or (= "不詳" s) (re-seq #"^\s*$" s)) nil
-
-      (= "「太陽　創刊号」" s) (time/local-date 1963 7)
-
-      (= "紀元前6世紀初" s) (time/local-date -600)
-
-      (not (re-seq #"\d{4}" s))
-      (let [match (first (re-seq japanese-date-rx s))]
-        (if (seq match)
-          (let [[_ period period-year month] match
-                year (+ (japan-modern-period-map period) (dec (to-integer period-year)))]
-            (string-date-helper (str year) month nil))))
-
-      :else
-      (let [match (first (re-seq #"(\d{3,4})年?([\(（][^)）]+[）\)])?年?\s?((\d{1,2})|(\d{1,2})[～、]\d{1,2})?月?((\d{1,2})日)?" s))]
-        (if (seq match)
-          (let [[_ year _ _ month _ _ day] match]
-            (string-date-helper year month day))
-          (throw (Exception. (format "%s :: %s :: %s :: %s" s match (seq s) (re-seq #"\d{3,4}.+年" s)))))))
-    (catch
-     Exception
-     e
-      (println (ex-data e)
-               s
-               (re-seq japanese-date-rx s)
-               (re-seq #"(\d{3,4})年?([\(（][^)）]+[）\)])?年?\s?((\d{1,2})|(\d{1,2})[～、]\d{1,2})?月?((\d{1,2})日)?" s)))))
-
-(defn flag-to-boolean [s]
-  (case s
-    "なし" false
-    "あり" true))
-
-(defn to-ndc [s]
-  (when-let [match (seq (first (re-seq #"NDC (K)?(\d{3})\s?(K)?(\d{3})?" s)))]
-    (let [[_ a-child? a b-child? b] match]
-      (if (and a b)
-        (set/union                                          ;; TODO dcndl:NDC9 (Aozora Bunko is not updated to NDC10, but maybe we could replace with LOD from Web NDL Authorities)
-         #{(cond-> {:abc.aozora.ndc/category (ndc-map a)}
-             a-child? (assoc :abc.aozora.ndc/children true))}
-         #{(cond-> {:abc.aozora.ndc/category (ndc-map b)}
-             b-child? (assoc :abc.aozora.ndc/children true))})
-        #{(cond-> {:abc.aozora.ndc/category (ndc-map a)}
-            a-child? (assoc :abc.aozora.ndc/children true))}))))
-
 (m/=> to-ndc
       [:=>
        [:cat :string]
        [:schema {:registry registry} [:maybe ::NDC]]])
-
-(defn to-encoding [s]
-  (case s
-    "ShiftJIS" "SJIS"
-    "EUC" "EUC"
-    "UTF-8" "UTF-8"))
 
 (defn to-multiple
   ([s] (string/split s #"、"))

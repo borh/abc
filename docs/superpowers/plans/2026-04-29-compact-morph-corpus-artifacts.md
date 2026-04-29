@@ -8,6 +8,8 @@
 
 **Tech Stack:** Rust 2024, `serde`, `serde_json`, existing `zstd` workspace dependency, `ab-morph-run`, `ab-morph-diff`, `ab-plaintext`, `clap`.
 
+**Storage Principle:** Compact row shape is the fix. Zstd is a multiplier on top of compact rows, not a substitute for changing the persisted schema.
+
 ---
 
 ## Rich Hickey Review
@@ -37,7 +39,7 @@ For phase 1, do not implement an `explain` command, a database, or arbitrary pro
 ## File Structure
 
 - Modify `crates/ab-morph-run/src/main.rs`: add CLI flags for `--output-profile`, compact output paths, and example budget.
-- Modify `crates/ab-morph-run/src/lib.rs`: route full vs compact execution, define compact row structs, derive source ids, write compact rows, and add zstd-aware writers.
+- Modify `crates/ab-morph-run/src/lib.rs`: route full vs compact execution, define compact row structs, derive source ids, write compact rows, make resume source-id aware in compact mode, propagate compact/zstd behavior through `--jobs`, and add zstd-aware writers.
 - Create `crates/ab-morph-run/src/output.rs`: small output-writer abstraction for plain and `.zst` paths.
 - Create `crates/ab-morph-run/src/compact.rs`: compact row structs and conversion helpers from `Analysis`/`Comparison` to summary/example rows.
 - Modify `crates/ab-morph-run/Cargo.toml`: ensure `zstd.workspace = true` is present if not already inherited.
@@ -125,6 +127,29 @@ mod tests {
         let _ = fs::remove_dir_all(dir);
     }
 
+    #[test]
+    fn appends_zstd_output_as_concatenated_frames() {
+        let dir = temp_dir("zst-append");
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("rows.jsonl.zst");
+
+        {
+            let mut writer = open_output_writer(&path, false).unwrap();
+            writer.write_all(b"one\n").unwrap();
+            writer.flush().unwrap();
+        }
+        {
+            let mut writer = open_output_writer(&path, true).unwrap();
+            writer.write_all(b"two\n").unwrap();
+            writer.flush().unwrap();
+        }
+
+        let bytes = fs::read(&path).unwrap();
+        let decoded = zstd::decode_all(bytes.as_slice()).unwrap();
+        assert_eq!(decoded, b"one\ntwo\n");
+        let _ = fs::remove_dir_all(dir);
+    }
+
     fn temp_dir(label: &str) -> std::path::PathBuf {
         let unique = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -185,7 +210,7 @@ Run:
 cargo test -p ab-morph-run output::tests
 ```
 
-Expected: both output tests pass.
+Expected: all output tests pass, including append-to-zstd as concatenated frames.
 
 - [ ] **Step 7: Commit**
 
@@ -288,9 +313,7 @@ git commit -m "feat: add morph source identity helper"
 Append this test to `compact.rs` tests:
 
 ```rust
-use ab_morph_diff::{
-    Analysis, BoundaryMetrics, Comparison, ComparisonStats, FeatureMap, Morpheme,
-};
+use ab_morph_diff::{Analysis, Comparison, ComparisonStats, FeatureMap, Morpheme};
 
 #[test]
 fn builds_compact_rows_without_source_text_or_regions() {
@@ -311,11 +334,6 @@ fn builds_compact_rows_without_source_text_or_regions() {
         to_analyzer: "sudachi-c".to_owned(),
         regions: Vec::new(),
         feature_diffs: Vec::new(),
-        boundary_metrics: BoundaryMetrics {
-            precision: Some(1.0),
-            recall: Some(1.0),
-            f1: Some(1.0),
-        },
         stats: ComparisonStats {
             from_morphemes: 1,
             to_morphemes: 1,
@@ -467,37 +485,14 @@ git commit -m "feat: add compact morph summary rows"
 
 - [ ] **Step 1: Add CLI enum and flag**
 
-Modify `main.rs` imports:
+Modify `main.rs` imports only if needed; do not add a separate CLI-only enum. Add to `AnalyzeAat` args:
 
 ```rust
-use clap::{Parser, Subcommand, ValueEnum};
+#[arg(long, value_enum, default_value_t = ab_morph_run::OutputProfile::Full)]
+output_profile: ab_morph_run::OutputProfile,
 ```
 
-Add this enum above `Command`:
-
-```rust
-#[derive(Debug, Clone, Copy, ValueEnum)]
-enum OutputProfileArg {
-    Full,
-    Compact,
-}
-```
-
-Add to `AnalyzeAat` args:
-
-```rust
-#[arg(long, value_enum, default_value_t = OutputProfileArg::Full)]
-output_profile: OutputProfileArg,
-```
-
-Map it in the `run_analyze_aat` call:
-
-```rust
-match output_profile {
-    OutputProfileArg::Full => ab_morph_run::OutputProfile::Full,
-    OutputProfileArg::Compact => ab_morph_run::OutputProfile::Compact,
-}
-```
+Pass `output_profile` directly into `run_analyze_aat`.
 
 Expected: compile fails until `OutputProfile` exists and `run_analyze_aat` accepts it.
 
@@ -506,7 +501,7 @@ Expected: compile fails until `OutputProfile` exists and `run_analyze_aat` accep
 Add near the top of `lib.rs`:
 
 ```rust
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
 pub enum OutputProfile {
     Full,
     Compact,
@@ -620,11 +615,13 @@ match output_profile {
 }
 ```
 
-Derive `source_id` once per input:
+Derive `source_id` once per input and keep it alongside `document.text_id`:
 
 ```rust
 let source_id = compact::source_id_from_aat_path(&input);
 ```
+
+This is intentionally file-stem based. Do not derive compact-row identity from `document.text_id`, because duplicate logical `text_id` values are valid corpus records.
 
 - [ ] **Step 4: Route comparison row writing by profile**
 
@@ -692,7 +689,157 @@ git commit -m "feat: write compact morph corpus summaries"
 
 ---
 
-### Task 6: Add bounded examples file for compact profile
+
+### Task 6: Propagate compact profile through parallel jobs and resume
+
+**Files:**
+- Modify: `crates/ab-morph-run/src/lib.rs`
+- Modify: `crates/ab-morph-run/src/output.rs`
+
+- [ ] **Step 1: Write failing real-shape test for compact parallel output**
+
+In `lib.rs` test module, add a test that uses two tiny AAT files, `--jobs 2`, `OutputProfile::Compact`, and `.jsonl.zst` output paths. Use only Vibrato so no Sudachi dictionary is required:
+
+```rust
+#[test]
+fn compact_parallel_profile_writes_compressed_summary_rows() {
+    let dir = temp_dir("compact-parallel");
+    let aat_dir = dir.join("aat");
+    fs::create_dir_all(&aat_dir).unwrap();
+    for name in ["source-a", "source-b"] {
+        fs::write(
+            aat_dir.join(format!("{name}.json")),
+            format!(
+                r#"{{"version":1,"work_id":"{name}","blocks":[{{"kind":"paragraph","content":[{{"kind":"text","value":"吾輩は猫である。"}}]}}],"meta":{{"adapter":"fixture","adapter_version":"fixture","source_encoding":"utf-8","source_hash":"sha256:0000000000000000000000000000000000000000000000000000000000000000","parse_complete":true,"warnings":[]}}}}"#
+            ),
+        )
+        .unwrap();
+    }
+
+    let analyses = dir.join("analyses.jsonl.zst");
+    let comparisons = dir.join("comparisons.jsonl.zst");
+    let errors = dir.join("errors.jsonl.zst");
+    run_analyze_aat(
+        None,
+        Some(&aat_dir),
+        &["vibrato".to_owned()],
+        &analyses,
+        Some(&comparisons),
+        Some(&errors),
+        false,
+        2,
+        OutputProfile::Compact,
+    )
+    .unwrap();
+
+    let analysis_bytes = fs::read(&analyses).unwrap();
+    let analysis_text = String::from_utf8(zstd::decode_all(analysis_bytes.as_slice()).unwrap()).unwrap();
+    assert_eq!(analysis_text.lines().count(), 2);
+    assert!(analysis_text.contains("\"source_id\":\"source-a\""));
+    assert!(analysis_text.contains("\"source_id\":\"source-b\""));
+    assert!(!analysis_text.contains("source_text"));
+
+    let error_bytes = fs::read(&errors).unwrap();
+    let error_text = String::from_utf8(zstd::decode_all(error_bytes.as_slice()).unwrap()).unwrap();
+    assert_eq!(error_text.lines().count(), 0);
+
+    let _ = fs::remove_dir_all(dir);
+}
+```
+
+- [ ] **Step 2: Run test and verify failure**
+
+Run:
+
+```bash
+cargo test -p ab-morph-run compact_parallel_profile_writes_compressed_summary_rows
+```
+
+Expected before implementation: failure because `run_analyze_aat_parallel` still hardcodes full-profile shard runs and plain `.jsonl` shard paths.
+
+- [ ] **Step 3: Mirror final extensions in shard paths**
+
+Change `run_analyze_aat_parallel` so shard paths preserve the final extension:
+
+```rust
+fn shard_output_path(output_dir: &Path, final_path: &Path, stem: &str) -> PathBuf {
+    let file_name = final_path.file_name().and_then(|name| name.to_str()).unwrap_or(stem);
+    if file_name.ends_with(".jsonl.zst") {
+        output_dir.join(format!("{stem}.jsonl.zst"))
+    } else {
+        output_dir.join(format!("{stem}.jsonl"))
+    }
+}
+```
+
+Use it for analyses, comparisons, and errors shard files. Do not hardcode `analyses.jsonl`, `comparisons.jsonl`, or `errors.jsonl` in the parallel path.
+
+- [ ] **Step 4: Thread output profile through shard calls**
+
+Update `run_analyze_aat_parallel` to accept and pass through:
+
+```rust
+output_profile: OutputProfile,
+```
+
+Inside each worker call `run_analyze_aat` with `output_profile` instead of hardcoding `OutputProfile::Full`. At this point in the plan, examples and manifest output do not exist yet; later tasks extend the same shard plumbing for those outputs.
+
+- [ ] **Step 5: Merge compressed shard files by raw concatenation**
+
+Keep `merge_shard_files` as raw byte concatenation, but make the behavior explicit. For `.zst`, every shard file is already a complete zstd frame because it was created via `open_output_writer`; concatenating frames is valid zstd multi-frame output and is covered by `appends_zstd_output_as_concatenated_frames` from Task 1.
+
+Open final merge targets with `OpenOptions`/`File`, not `open_output_writer`, because the shard bytes are already encoded. If `append == true`, append raw shard frames to the existing file. If `append == false`, truncate/create the file.
+
+- [ ] **Step 6: Make compact resume source-id based**
+
+Replace `read_resume_text_ids` with a function that reads both compact and full rows:
+
+```rust
+fn read_resume_ids(path: &Path, prefer_source_id: bool, ids: &mut BTreeSet<String>) -> Result<()> {
+    if !path.exists() {
+        return Ok(());
+    }
+    let content = read_jsonl_or_zst_to_string(path)?;
+    for line in content.lines().filter(|line| !line.trim().is_empty()) {
+        let value: Value = serde_json::from_str(line)?;
+        let key = if prefer_source_id {
+            value.get("source_id").and_then(Value::as_str)
+        } else {
+            value.get("text_id").and_then(Value::as_str)
+        };
+        if let Some(key) = key {
+            ids.insert(key.to_owned());
+        }
+    }
+    Ok(())
+}
+```
+
+For `OutputProfile::Compact`, filter resume inputs by `compact::source_id_from_aat_path(&input)`. For `OutputProfile::Full`, keep the existing `text_id` behavior for backward compatibility.
+
+- [ ] **Step 7: Run tests**
+
+Run:
+
+```bash
+cargo test -p ab-morph-run compact_parallel_profile_writes_compressed_summary_rows
+cargo test -p ab-morph-run
+```
+
+Expected: all tests pass.
+
+- [ ] **Step 8: Commit**
+
+Run:
+
+```bash
+git add crates/ab-morph-run/src/lib.rs crates/ab-morph-run/src/output.rs
+git commit -m "feat: support compact compressed parallel morph output"
+```
+
+---
+
+### Task 7: Add bounded examples file for compact profile
 
 **Files:**
 - Modify: `crates/ab-morph-run/src/main.rs`
@@ -707,7 +854,7 @@ Add to `AnalyzeAat` in `main.rs`:
 #[arg(long)]
 examples_output: Option<PathBuf>,
 #[arg(long, default_value_t = 10)]
-max_examples_per_text: usize,
+max_examples_per_comparison: usize,
 ```
 
 Pass both into `run_analyze_aat`.
@@ -743,7 +890,7 @@ Add a compact unit test that builds a `Comparison` with more segmentation region
 #[test]
 fn example_rows_are_limited_by_budget() {
     let comparison = fixture_comparison_with_segmentation_regions(12);
-    let rows = example_rows_from_comparison("source-a".to_owned(), &comparison, 3);
+    let rows = example_rows_from_comparison("source-a".to_owned(), "今日は晴れです。", &comparison, 3);
     assert_eq!(rows.len(), 3);
     assert!(rows.iter().all(|row| row.source_id == "source-a"));
 }
@@ -758,6 +905,7 @@ Implement:
 ```rust
 pub(crate) fn example_rows_from_comparison(
     source_id: String,
+    source_text: &str,
     comparison: &Comparison,
     max_examples: usize,
 ) -> Vec<ComparisonExampleRow> {
@@ -765,29 +913,38 @@ pub(crate) fn example_rows_from_comparison(
         .regions
         .iter()
         .enumerate()
-        .filter_map(|(region_index, region)| example_row_from_region(&source_id, comparison, region_index, region))
+        .filter_map(|(region_index, region)| {
+            example_row_from_region(&source_id, source_text, comparison, region_index, region)
+        })
         .take(max_examples)
         .collect()
 }
 ```
 
-Implement `example_row_from_region` for segmentation and coverage mismatch regions only. Return `None` for one-to-one regions without feature diffs in phase 1.
+Implement `example_row_from_region` for segmentation and coverage mismatch regions. Use the region `text_span` to slice `source_text` for `source_excerpt`; clamp to UTF-8 boundaries by using spans produced by `ab-morph-diff`, which are validated byte spans. Also emit example rows for `comparison.feature_diffs` after segmentation/coverage rows, with `kind: "feature_diff"`, so `one_to_one_with_feature_differences` has a drill-down path. Return `None` only for one-to-one regions that do not have feature differences.
 
 - [ ] **Step 5: Wire examples writer in compact profile**
 
 In `run_analyze_aat`, open `examples_output` if present. When writing each comparison in compact mode, also write:
 
 ```rust
+let source_text = analyses
+    .first()
+    .map(|analysis| analysis.source_text.as_str())
+    .unwrap_or("");
 for row in compact::example_rows_from_comparison(
     source_id.to_owned(),
+    source_text,
     &comparison,
-    max_examples_per_text,
+    max_examples_per_comparison,
 ) {
     write_jsonl_row(examples_writer, &row)?;
 }
 ```
 
-If `examples_output` is provided with `OutputProfile::Full`, still allow it. Examples are compact evidence and useful beside full rows.
+If `examples_output` is provided with `OutputProfile::Full`, still allow it. Examples are compact evidence and useful beside full rows. The example budget applies per comparison, not per logical text ID.
+
+Update `run_analyze_aat_parallel` in the same task: add an optional shard `examples` path to `ShardOutput`, mirror the final examples extension with `shard_output_path`, pass `examples_output.map(|_| examples.as_path())` to shard workers, and merge example shard files with `merge_shard_files` after comparisons.
 
 - [ ] **Step 6: Run tests**
 
@@ -811,7 +968,7 @@ git commit -m "feat: write bounded morph comparison examples"
 
 ---
 
-### Task 7: Add manifest output
+### Task 8: Add manifest output
 
 **Files:**
 - Modify: `crates/ab-morph-run/src/main.rs`
@@ -840,6 +997,9 @@ pub(crate) struct RunManifest {
     pub output_profile: String,
     pub analyzer_args: Vec<String>,
     pub jobs: usize,
+    pub input_mode: String,
+    pub input_path: String,
+    pub input_file_count: usize,
     pub analyses_output: String,
     pub comparisons_output: Option<String>,
     pub examples_output: Option<String>,
@@ -857,6 +1017,9 @@ let manifest = compact::RunManifest {
     output_profile: output_profile.as_str().to_owned(),
     analyzer_args: analyzer_ids.to_vec(),
     jobs,
+    input_mode: if aat.is_some() { "aat" } else { "aat_dir" }.to_owned(),
+    input_path: aat.or(aat_dir).map(|path| path.display().to_string()).unwrap_or_default(),
+    input_file_count: inputs.len(),
     analyses_output: analyses_output.display().to_string(),
     comparisons_output: comparisons_output.map(|path| path.display().to_string()),
     examples_output: examples_output.map(|path| path.display().to_string()),
@@ -885,13 +1048,40 @@ Add a unit test around a one-file Vibrato compact run:
 ```rust
 #[test]
 fn writes_manifest_for_compact_run() {
-    // Build the same tiny AAT fixture as compact_profile_writes_summary_rows_without_full_regions.
-    // Run with manifest_output.
-    // Assert manifest JSON contains output_profile == "compact" and jobs == 1.
+    let dir = temp_dir("manifest");
+    let aat_dir = dir.join("aat");
+    fs::create_dir_all(&aat_dir).unwrap();
+    fs::write(
+        aat_dir.join("source-a.json"),
+        r#"{"version":1,"work_id":"source-a","blocks":[{"kind":"paragraph","content":[{"kind":"text","value":"吾輩は猫である。"}]}],"meta":{"adapter":"fixture","adapter_version":"fixture","source_encoding":"utf-8","source_hash":"sha256:0000000000000000000000000000000000000000000000000000000000000000","parse_complete":true,"warnings":[]}}"#,
+    )
+    .unwrap();
+
+    let manifest = dir.join("manifest.json");
+    run_analyze_aat(
+        None,
+        Some(&aat_dir),
+        &["vibrato".to_owned()],
+        &dir.join("analyses.jsonl"),
+        Some(&dir.join("comparisons.jsonl")),
+        Some(&dir.join("errors.jsonl")),
+        false,
+        1,
+        OutputProfile::Compact,
+        None,
+        10,
+        Some(&manifest),
+    )
+    .unwrap();
+
+    let value: serde_json::Value = serde_json::from_str(&fs::read_to_string(&manifest).unwrap()).unwrap();
+    assert_eq!(value["output_profile"], "compact");
+    assert_eq!(value["jobs"], 1);
+    assert_eq!(value["input_file_count"], 1);
+
+    let _ = fs::remove_dir_all(dir);
 }
 ```
-
-Use complete code, not a placeholder, when implementing.
 
 - [ ] **Step 5: Run tests**
 
@@ -915,7 +1105,7 @@ git commit -m "feat: write morph run manifests"
 
 ---
 
-### Task 8: Real corpus smoke and documentation
+### Task 9: Real corpus smoke and documentation
 
 **Files:**
 - Create: `docs/superpowers/reports/2026-04-29-morph-artifact-storage.md`
@@ -970,7 +1160,7 @@ comparisons 10
 errors 0
 ```
 
-`examples` may vary by segmentation differences but should be bounded by `10 * comparison_count`.
+`examples` may vary by segmentation differences but should be bounded by `max_examples_per_comparison * comparison_count`.
 
 - [ ] **Step 3: Compare compact vs full size on smoke sample**
 
@@ -1018,11 +1208,11 @@ Required identities:
 
 ## Debug path
 
-Use `--output-profile full` on selected AAT files when full detail is needed.
+Use `--output-profile full` on selected AAT files when full detail is needed. Sudachi may internally chunk large documents, but chunking is reassembled into one `Analysis` per `source_id`; it must not change `text_id` or `source_id`.
 
 ## Result
 
-Record the smoke-run file sizes here after running the commands in Task 8.
+Paste the exact `du -h` output from Step 3 in a fenced `text` block, then add one sentence stating whether compact compressed files are smaller than the full JSONL files for this smoke sample.
 ```
 
 Replace the final `Record...` sentence with actual size numbers from Step 3.
@@ -1053,15 +1243,15 @@ git commit -m "docs: document compact morph artifacts"
 
 ### Spec coverage
 
-This plan covers the requested goal: complete corpus comparison without ballooning storage. It adds compact summaries, source identity, bounded examples, zstd output, and a manifest. It deliberately leaves full-detail regeneration as a later command because existing `--output-profile full` on selected AAT files already provides the debug path.
+This plan covers the requested goal: complete corpus comparison without ballooning storage. It adds compact summaries, source identity, bounded examples including feature-diff evidence, zstd output, compact-aware parallel execution, source-id-based compact resume, and a manifest. It deliberately leaves full-detail regeneration as a later command because existing `--output-profile full` on selected AAT files already provides the debug path.
 
 ### Placeholder scan
 
-No task uses `TBD`, `TODO`, or unspecified error handling. Task 6 requires copying exact region constructors from current `ab-morph-diff` tests because those model fields must match the current code; the plan explicitly says not to invent fields.
+No task uses placeholder markers or unspecified error handling. Task 7 requires copying exact region constructors from current `ab-morph-diff` tests because those model fields must match the current code; the plan explicitly says not to invent fields. The previous invalid boundary-metrics fixture has been removed; boundary metrics live only in `ComparisonStats`.
 
 ### Type consistency
 
-The plan consistently uses `source_id`, `text_id`, `OutputProfile::{Full, Compact}`, `AnalysisSummaryRow`, `ComparisonSummaryRow`, and `ComparisonExampleRow`. Existing tests must be updated to pass `OutputProfile::Full` after the signature change.
+The plan consistently uses `source_id`, `text_id`, `OutputProfile::{Full, Compact}`, `AnalysisSummaryRow`, `ComparisonSummaryRow`, and `ComparisonExampleRow`. Existing tests must be updated to pass `OutputProfile::Full` after the signature change. Compact resume is keyed by `source_id`; full-profile resume remains text-id keyed for backward compatibility.
 
 ### Hickey alignment
 

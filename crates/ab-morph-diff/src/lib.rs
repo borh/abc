@@ -3,14 +3,15 @@ mod error;
 mod features;
 mod model;
 mod stats;
+mod streaming;
 mod validate;
 
 pub use error::MorphDiffError;
 pub use model::{
     AlignedMorpheme, Analysis, AnalyzerId, ChangedValue, CompactComparison,
-    CompactComparisonExample, CompactExampleKind, CompactFeatureChange, Comparison, ComparisonStats,
-    CoverageMismatch, CoverageMismatchKind, FeatureDiff, FeatureKey, FeatureMap, Morpheme, Region,
-    SegmentationDiff, SegmentationKind, TextId,
+    CompactComparisonExample, CompactExampleKind, CompactFeatureChange, Comparison,
+    ComparisonStats, CoverageMismatch, CoverageMismatchKind, FeatureDiff, FeatureKey, FeatureMap,
+    Morpheme, Region, SegmentationDiff, SegmentationKind, TextId,
 };
 pub use validate::{validate_analysis, validate_analysis_against_source};
 
@@ -73,6 +74,22 @@ pub fn compare_pair_with_source_text(
         feature_diffs,
         stats,
     })
+}
+
+pub fn compare_pair_compact_with_source_text(
+    from: &Analysis,
+    to: &Analysis,
+    source_text: &str,
+    feature_context_keys: &[FeatureKey],
+    max_examples: usize,
+) -> Result<CompactComparison, MorphDiffError> {
+    streaming::compare_pair_compact_with_source_text(
+        from,
+        to,
+        source_text,
+        feature_context_keys,
+        max_examples,
+    )
 }
 
 #[cfg(test)]

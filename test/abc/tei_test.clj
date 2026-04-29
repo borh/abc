@@ -34,11 +34,14 @@
   (let [b (body *text*)]
     (is (schema-valid vector? b))))
 
-(deftest document-test
+;; Skipped: depends on Clojure-side text parsing, which moves out of
+;; the codebase; TEI document construction will consume the JSON AST
+;; produced by the external parser.
+(deftest ^:kaocha/skip document-test
   (is (doc *metadata* *text*))
   (is (string? (xml/emit-str (doc *metadata* *text*)))))
 
-(deftest serialization-roundtrip-test
+(deftest ^:kaocha/skip serialization-roundtrip-test
   (let [d (doc *metadata* *text*)
         _ (save! "tmp.xml" d)]
     ;; FIXME does not round-trip correctly (empty content, xmlns encoding)

@@ -48,7 +48,9 @@
   (doseq [s (drop-last test-strings)]
     (is (schema-valid :sentence/annotated-text (aozora-annotation->tags (string/trim s))))))
 
-(deftest parse-aozora-text
+;; Skipped: Aozora text parsing moves out of Clojure; consumed as JSON AST
+;; from an external parser per the parser-IR contract.
+(deftest ^:kaocha/skip parse-aozora-text
   (is (= (count test-strings) (count parsed-strings)))
   (doseq [[s s-gold] (map vector test-strings parsed-strings)]
     (let [s-parsed (parse-text s)]

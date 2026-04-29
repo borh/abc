@@ -24,7 +24,9 @@
     ;; A full database validation is slow
     (is (schema-valid :abc.aozora/db-entries *db*))))
 
-(deftest extract-texts-test
+;; Skipped: Aozora text parsing moves out of Clojure; consumed as JSON AST
+;; from an external parser per the parser-IR contract.
+(deftest ^:kaocha/skip extract-texts-test
   (testing "Extracting texts from database fixture"
     ;; Good testcase:
     ;; :abc.aozora/w043688

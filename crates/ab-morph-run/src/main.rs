@@ -54,6 +54,22 @@ enum Command {
         #[arg(long)]
         json: bool,
     },
+    RerunFull {
+        #[arg(long)]
+        aat_dir: PathBuf,
+        #[arg(long, required = true)]
+        source_id: Vec<String>,
+        #[arg(long, required = true)]
+        analyzer: Vec<String>,
+        #[arg(long)]
+        output_dir: PathBuf,
+        #[arg(long, default_value_t = 1)]
+        jobs: usize,
+        #[arg(long)]
+        examples_output: Option<PathBuf>,
+        #[arg(long, default_value_t = 10)]
+        max_examples_per_comparison: usize,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
@@ -158,7 +174,52 @@ fn main() -> Result<()> {
             }
             Ok(())
         }
+        Command::RerunFull {
+            aat_dir,
+            source_id,
+            analyzer,
+            output_dir,
+            jobs,
+            examples_output,
+            max_examples_per_comparison,
+        } => run_rerun_full(
+            &aat_dir,
+            &source_id,
+            &analyzer,
+            &output_dir,
+            jobs,
+            examples_output.as_deref(),
+            max_examples_per_comparison,
+        ),
     }
+}
+
+#[allow(clippy::too_many_arguments)]
+fn run_rerun_full(
+    aat_dir: &Path,
+    source_ids: &[String],
+    analyzer: &[String],
+    output_dir: &Path,
+    jobs: usize,
+    examples_output: Option<&Path>,
+    max_examples_per_comparison: usize,
+) -> Result<()> {
+    let inputs = ab_morph_run::resolve_source_id_aat_paths(aat_dir, source_ids)?;
+    ab_morph_run::run_analyze_aat_selected(
+        inputs,
+        "aat_dir",
+        &aat_dir.display().to_string(),
+        analyzer,
+        &output_dir.join("analyses.jsonl"),
+        Some(&output_dir.join("comparisons.jsonl")),
+        Some(&output_dir.join("errors.jsonl")),
+        false,
+        jobs,
+        ab_morph_run::OutputProfile::Full,
+        examples_output,
+        max_examples_per_comparison,
+        Some(&output_dir.join("manifest.json")),
+    )
 }
 
 fn print_summary_table(rows: &[ab_morph_run::CompactSummaryRow]) {
@@ -309,5 +370,94 @@ mod tests {
         assert_eq!(sort_by, SummarySortArg::SegmentationRegions);
         assert_eq!(limit, 25);
         assert!(json);
+    }
+
+    #[test]
+    fn parses_rerun_full_command() {
+        let args = Args::parse_from([
+            "ab-morph-run",
+            "rerun-full",
+            "--aat-dir",
+            "aats",
+            "--source-id",
+            "src-a",
+            "--source-id",
+            "src-b",
+            "--analyzer",
+            "vibrato",
+            "--analyzer",
+            "sudachi-c",
+            "--output-dir",
+            "full-out",
+            "--jobs",
+            "2",
+            "--examples-output",
+            "examples.jsonl",
+            "--max-examples-per-comparison",
+            "50",
+        ]);
+
+        let Command::RerunFull {
+            aat_dir,
+            source_id,
+            analyzer,
+            output_dir,
+            jobs,
+            examples_output,
+            max_examples_per_comparison,
+        } = args.command
+        else {
+            panic!("expected rerun-full command");
+        };
+
+        assert_eq!(aat_dir, PathBuf::from("aats"));
+        assert_eq!(source_id, vec!["src-a".to_owned(), "src-b".to_owned()]);
+        assert_eq!(
+            analyzer,
+            vec!["vibrato".to_owned(), "sudachi-c".to_owned()]
+        );
+        assert_eq!(output_dir, PathBuf::from("full-out"));
+        assert_eq!(jobs, 2);
+        assert_eq!(examples_output, Some(PathBuf::from("examples.jsonl")));
+        assert_eq!(max_examples_per_comparison, 50);
+    }
+
+    #[test]
+    fn rerun_full_writes_manifest_with_original_aat_dir() {
+        const TINY_AAT: &str = r#"{"version":1,"work_id":"source-a","blocks":[{"kind":"paragraph","content":[{"kind":"text","value":"吾輩は猫である。"}]}],"meta":{"adapter":"fixture","adapter_version":"fixture","source_encoding":"utf-8","source_hash":"sha256:0000000000000000000000000000000000000000000000000000000000000000","parse_complete":true,"warnings":[]}}"#;
+        let dir = temp_dir("rerun-full");
+        let aat_dir = dir.join("aats");
+        let out = dir.join("out");
+        fs::create_dir_all(&aat_dir).unwrap();
+        fs::create_dir_all(&out).unwrap();
+        fs::write(aat_dir.join("source-a.json"), TINY_AAT).unwrap();
+
+        run_rerun_full(
+            &aat_dir,
+            &["source-a".to_owned()],
+            &["vibrato".to_owned()],
+            &out,
+            1,
+            None,
+            10,
+        )
+        .unwrap();
+
+        let manifest: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(out.join("manifest.json")).unwrap()).unwrap();
+        assert_eq!(manifest["input_path"], aat_dir.display().to_string());
+        assert!(out.join("analyses.jsonl").exists());
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    fn temp_dir(label: &str) -> PathBuf {
+        let unique = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        std::env::temp_dir().join(format!(
+            "ab-morph-run-main-{label}-{}-{unique}",
+            std::process::id()
+        ))
     }
 }

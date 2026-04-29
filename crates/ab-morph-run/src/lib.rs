@@ -1,5 +1,6 @@
 mod compact;
 mod output;
+mod select;
 mod summary;
 
 use std::collections::BTreeSet;
@@ -21,6 +22,7 @@ pub use summary::{
     CompactSummaryGroupBy, CompactSummaryOptions, CompactSummaryRow, CompactSummarySort,
     summarize_compact_comparisons,
 };
+pub use select::resolve_source_id_aat_paths;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -55,6 +57,81 @@ pub fn run_analyze_aat(
     if aat.is_none() == aat_dir.is_none() {
         bail!("provide exactly one of --aat or --aat-dir");
     }
+    let inputs = discover_aat_inputs(aat, aat_dir)?;
+    let input_mode = if aat.is_some() { "aat" } else { "aat_dir" };
+    let input_path = aat
+        .or(aat_dir)
+        .map(|path| path.display().to_string())
+        .unwrap_or_default();
+    run_analyze_aat_inputs(
+        inputs,
+        input_mode,
+        &input_path,
+        analyzer_ids,
+        analyses_output,
+        comparisons_output,
+        errors_output,
+        resume,
+        jobs,
+        output_profile,
+        examples_output,
+        max_examples_per_comparison,
+        manifest_output,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn run_analyze_aat_selected(
+    inputs: Vec<PathBuf>,
+    input_mode: &str,
+    input_path: &str,
+    analyzer_ids: &[String],
+    analyses_output: &Path,
+    comparisons_output: Option<&Path>,
+    errors_output: Option<&Path>,
+    resume: bool,
+    jobs: usize,
+    output_profile: OutputProfile,
+    examples_output: Option<&Path>,
+    max_examples_per_comparison: usize,
+    manifest_output: Option<&Path>,
+) -> Result<()> {
+    if inputs.is_empty() {
+        bail!("provide at least one AAT input");
+    }
+    run_analyze_aat_inputs(
+        inputs,
+        input_mode,
+        input_path,
+        analyzer_ids,
+        analyses_output,
+        comparisons_output,
+        errors_output,
+        resume,
+        jobs,
+        output_profile,
+        examples_output,
+        max_examples_per_comparison,
+        manifest_output,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn run_analyze_aat_inputs(
+    inputs: Vec<PathBuf>,
+    input_mode: &str,
+    input_path: &str,
+    analyzer_ids: &[String],
+    analyses_output: &Path,
+    comparisons_output: Option<&Path>,
+    errors_output: Option<&Path>,
+    resume: bool,
+    jobs: usize,
+    output_profile: OutputProfile,
+    examples_output: Option<&Path>,
+    max_examples_per_comparison: usize,
+    manifest_output: Option<&Path>,
+) -> Result<()> {
     if analyzer_ids.is_empty() {
         bail!("provide at least one --analyzer");
     }
@@ -62,7 +139,6 @@ pub fn run_analyze_aat(
         bail!("--jobs must be at least 1");
     }
 
-    let inputs = discover_aat_inputs(aat, aat_dir)?;
     let input_file_count = inputs.len();
     let specs = parse_analyzer_specs(analyzer_ids)?;
     let analyzers = load_analyzers(&specs)?;
@@ -100,8 +176,8 @@ pub fn run_analyze_aat(
             output_profile,
             analyzer_ids,
             jobs,
-            aat,
-            aat_dir,
+            input_mode,
+            input_path,
             input_file_count,
             analyses_output,
             comparisons_output,
@@ -792,8 +868,8 @@ fn write_manifest(
     output_profile: OutputProfile,
     analyzer_ids: &[String],
     jobs: usize,
-    aat: Option<&Path>,
-    aat_dir: Option<&Path>,
+    input_mode: &str,
+    input_path: &str,
     input_file_count: usize,
     analyses_output: &Path,
     comparisons_output: Option<&Path>,
@@ -806,11 +882,8 @@ fn write_manifest(
         output_profile: output_profile.as_str().to_owned(),
         analyzer_args: analyzer_ids.to_vec(),
         jobs,
-        input_mode: if aat.is_some() { "aat" } else { "aat_dir" }.to_owned(),
-        input_path: aat
-            .or(aat_dir)
-            .map(|path| path.display().to_string())
-            .unwrap_or_default(),
+        input_mode: input_mode.to_owned(),
+        input_path: input_path.to_owned(),
         input_file_count,
         analyses_output: analyses_output.display().to_string(),
         comparisons_output: comparisons_output.map(|path| path.display().to_string()),
@@ -1111,6 +1184,40 @@ mod tests {
         .unwrap();
 
         assert_eq!(filtered, vec![second]);
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn selected_runner_manifest_preserves_original_input_path() {
+        let dir = temp_dir("selected-manifest");
+        let aat_dir = dir.join("aats");
+        fs::create_dir_all(&aat_dir).unwrap();
+        let input = aat_dir.join("source-a.json");
+        fs::write(&input, TINY_AAT).unwrap();
+
+        let out = dir.join("out");
+        fs::create_dir_all(&out).unwrap();
+        run_analyze_aat_selected(
+            vec![input],
+            "aat_dir",
+            &aat_dir.display().to_string(),
+            &["vibrato".to_owned()],
+            &out.join("analyses.jsonl"),
+            None,
+            Some(&out.join("errors.jsonl")),
+            false,
+            1,
+            OutputProfile::Compact,
+            None,
+            10,
+            Some(&out.join("manifest.json")),
+        )
+        .unwrap();
+
+        let manifest: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(out.join("manifest.json")).unwrap()).unwrap();
+        assert_eq!(manifest["input_path"], aat_dir.display().to_string());
+        assert_eq!(manifest["input_file_count"], 1);
         let _ = fs::remove_dir_all(dir);
     }
 

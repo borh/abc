@@ -21,6 +21,10 @@ pub(crate) fn build_analysis_from_tokens(
     let mut morphemes = Vec::with_capacity(tokens.len());
 
     for token in tokens {
+        if matches!(&token.byte_span, Some(span) if span.start == span.end) {
+            continue;
+        }
+
         let byte_span = match token.byte_span {
             Some(span) => validate_reported_span(&analyzer, &text_id, &source_text, &span)?,
             None => find_sequential_span(
@@ -196,6 +200,39 @@ mod tests {
         assert_eq!(analysis.morphemes[0].surface, "ＡＢＣ");
         assert_eq!(analysis.morphemes[0].byte_span, 0..9);
         assert_eq!(analysis.morphemes[0].char_span, 0..3);
+    }
+
+    #[test]
+    fn skips_zero_length_reported_spans() {
+        let tokens = vec![
+            RawToken {
+                emitted_surface: "吾輩".to_owned(),
+                byte_span: Some(0..6),
+                features: FeatureMap::new(),
+            },
+            RawToken {
+                emitted_surface: String::new(),
+                byte_span: Some(6..6),
+                features: FeatureMap::new(),
+            },
+            RawToken {
+                emitted_surface: "は".to_owned(),
+                byte_span: Some(6..9),
+                features: FeatureMap::new(),
+            },
+        ];
+
+        let analysis = build_analysis_from_tokens(
+            "test".to_owned(),
+            "t4".to_owned(),
+            "吾輩は".to_owned(),
+            tokens,
+        )
+        .unwrap();
+
+        assert_eq!(analysis.morphemes.len(), 2);
+        assert_eq!(analysis.morphemes[0].surface, "吾輩");
+        assert_eq!(analysis.morphemes[1].surface, "は");
     }
 
     #[test]

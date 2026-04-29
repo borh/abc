@@ -1,5 +1,5 @@
 use std::collections::BTreeSet;
-use std::fs::{self, File};
+use std::fs::{self, File, OpenOptions};
 use std::io::{BufWriter, Write};
 use std::path::{Path, PathBuf};
 
@@ -16,6 +16,8 @@ pub fn run_analyze_aat(
     analyzer_ids: &[String],
     analyses_output: &Path,
     comparisons_output: Option<&Path>,
+    errors_output: Option<&Path>,
+    resume: bool,
 ) -> Result<()> {
     if aat.is_none() == aat_dir.is_none() {
         bail!("provide exactly one of --aat or --aat-dir");
@@ -27,28 +29,97 @@ pub fn run_analyze_aat(
     let inputs = discover_aat_inputs(aat, aat_dir)?;
     let specs = parse_analyzer_specs(analyzer_ids)?;
     let analyzers = load_analyzers(&specs)?;
+    let resume_text_ids = if resume {
+        read_resume_text_ids(analyses_output, errors_output)?
+    } else {
+        BTreeSet::new()
+    };
 
     create_parent_dir(analyses_output)?;
-    let analyses_file = File::create(analyses_output)
-        .with_context(|| format!("failed to create {}", analyses_output.display()))?;
+    let analyses_file = open_output_file(analyses_output, resume)?;
     let mut analyses_writer = BufWriter::new(analyses_file);
 
     let mut comparisons_writer = if let Some(path) = comparisons_output {
         create_parent_dir(path)?;
-        let file =
-            File::create(path).with_context(|| format!("failed to create {}", path.display()))?;
+        let file = open_output_file(path, resume)?;
+        Some(BufWriter::new(file))
+    } else {
+        None
+    };
+
+    let mut errors_writer = if let Some(path) = errors_output {
+        create_parent_dir(path)?;
+        let file = open_output_file(path, resume)?;
         Some(BufWriter::new(file))
     } else {
         None
     };
 
     for input in inputs {
-        let aat = read_aat_value(&input)?;
-        let document = from_aat_value(&aat)?;
+        let input_path = input.display().to_string();
+        let aat = match read_aat_value(&input) {
+            Ok(value) => value,
+            Err(error) => {
+                if let Some(writer) = &mut errors_writer {
+                    write_error_row(
+                        writer,
+                        &RunErrorRow {
+                            input_path,
+                            text_id: None,
+                            analyzer: None,
+                            stage: "read_aat".to_owned(),
+                            error: error.to_string(),
+                        },
+                    )?;
+                    continue;
+                }
+                return Err(error);
+            }
+        };
+        let document = match from_aat_value(&aat) {
+            Ok(document) => document,
+            Err(error) => {
+                if let Some(writer) = &mut errors_writer {
+                    write_error_row(
+                        writer,
+                        &RunErrorRow {
+                            input_path,
+                            text_id: None,
+                            analyzer: None,
+                            stage: "project_aat".to_owned(),
+                            error: error.to_string(),
+                        },
+                    )?;
+                    continue;
+                }
+                return Err(error.into());
+            }
+        };
+        if resume_text_ids.contains(&document.text_id) {
+            continue;
+        }
         let mut analyses = Vec::new();
 
         for analyzer in &analyzers {
-            let analysis = analyzer.analyze(&document)?;
+            let analysis = match analyzer.analyze(&document) {
+                Ok(analysis) => analysis,
+                Err(error) => {
+                    if let Some(writer) = &mut errors_writer {
+                        write_error_row(
+                            writer,
+                            &RunErrorRow {
+                                input_path: input_path.clone(),
+                                text_id: Some(document.text_id.clone()),
+                                analyzer: Some(analyzer.analyzer_id().to_owned()),
+                                stage: "analyze".to_owned(),
+                                error: error.to_string(),
+                            },
+                        )?;
+                        continue;
+                    }
+                    return Err(error);
+                }
+            };
             let row = AnalysisRow {
                 text_id: analysis.text_id.clone(),
                 analyzer: analysis.analyzer.clone(),
@@ -59,12 +130,30 @@ pub fn run_analyze_aat(
         }
 
         if let Some(writer) = &mut comparisons_writer {
-            write_comparison_rows(writer, &analyses)?;
+            if let Err(error) = write_comparison_rows(writer, &analyses) {
+                if let Some(error_writer) = &mut errors_writer {
+                    write_error_row(
+                        error_writer,
+                        &RunErrorRow {
+                            input_path,
+                            text_id: Some(document.text_id),
+                            analyzer: None,
+                            stage: "compare".to_owned(),
+                            error: error.to_string(),
+                        },
+                    )?;
+                } else {
+                    return Err(error);
+                }
+            }
         }
     }
 
     analyses_writer.flush()?;
     if let Some(writer) = &mut comparisons_writer {
+        writer.flush()?;
+    }
+    if let Some(writer) = &mut errors_writer {
         writer.flush()?;
     }
     Ok(())
@@ -170,6 +259,51 @@ fn create_parent_dir(path: &Path) -> Result<()> {
     Ok(())
 }
 
+fn open_output_file(path: &Path, append: bool) -> Result<File> {
+    if append {
+        OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(path)
+            .with_context(|| format!("failed to open {}", path.display()))
+    } else {
+        File::create(path).with_context(|| format!("failed to create {}", path.display()))
+    }
+}
+
+fn read_resume_text_ids(
+    analyses_output: &Path,
+    errors_output: Option<&Path>,
+) -> Result<BTreeSet<String>> {
+    let mut ids = BTreeSet::new();
+    read_text_ids_from_jsonl(analyses_output, &mut ids)?;
+    if let Some(path) = errors_output {
+        read_text_ids_from_jsonl(path, &mut ids)?;
+    }
+    Ok(ids)
+}
+
+fn read_text_ids_from_jsonl(path: &Path, ids: &mut BTreeSet<String>) -> Result<()> {
+    if !path.exists() {
+        return Ok(());
+    }
+
+    let content =
+        fs::read_to_string(path).with_context(|| format!("failed to read {}", path.display()))?;
+    for (line_index, line) in content.lines().enumerate() {
+        if line.trim().is_empty() {
+            continue;
+        }
+        let value: Value = serde_json::from_str(line).with_context(|| {
+            format!("failed to parse {} line {}", path.display(), line_index + 1)
+        })?;
+        if let Some(text_id) = value.get("text_id").and_then(Value::as_str) {
+            ids.insert(text_id.to_owned());
+        }
+    }
+    Ok(())
+}
+
 fn write_jsonl_row<T: Serialize>(writer: &mut impl Write, row: &T) -> Result<()> {
     serde_json::to_writer(&mut *writer, row)?;
     writer.write_all(b"\n")?;
@@ -189,6 +323,19 @@ struct ComparisonRow {
     from_analyzer: String,
     to_analyzer: String,
     comparison: Comparison,
+}
+
+#[derive(Serialize)]
+struct RunErrorRow {
+    input_path: String,
+    text_id: Option<String>,
+    analyzer: Option<String>,
+    stage: String,
+    error: String,
+}
+
+fn write_error_row(writer: &mut impl Write, row: &RunErrorRow) -> Result<()> {
+    write_jsonl_row(writer, row)
 }
 
 fn write_comparison_rows(writer: &mut impl Write, analyses: &[Analysis]) -> Result<()> {
@@ -213,6 +360,13 @@ enum LoadedAnalyzer {
 }
 
 impl LoadedAnalyzer {
+    fn analyzer_id(&self) -> &str {
+        match self {
+            Self::Vibrato(analyzer) => analyzer.analyzer_id(),
+            Self::Sudachi(analyzer) => analyzer.analyzer_id(),
+        }
+    }
+
     fn analyze(&self, document: &PlainTextDocument) -> Result<Analysis> {
         match self {
             Self::Vibrato(analyzer) => Ok(analyzer.analyze(document)?),
@@ -237,6 +391,8 @@ mod tests {
             &["vibrato".to_owned()],
             Path::new("out.jsonl"),
             None,
+            None,
+            false,
         )
         .unwrap_err();
         assert!(err.to_string().contains("exactly one"));
@@ -250,6 +406,8 @@ mod tests {
             &["vibrato".to_owned()],
             Path::new("out.jsonl"),
             None,
+            None,
+            false,
         )
         .unwrap_err();
         assert!(err.to_string().contains("exactly one"));
@@ -263,6 +421,8 @@ mod tests {
             &[],
             Path::new("out.jsonl"),
             None,
+            None,
+            false,
         )
         .unwrap_err();
         assert!(err.to_string().contains("at least one"));
@@ -365,6 +525,54 @@ mod tests {
         assert!(rows[0].contains("\"text_id\":\"t1\""));
         assert!(rows[0].contains("\"from_analyzer\":\"from\""));
         assert!(rows[0].contains("\"to_analyzer\":\"to\""));
+    }
+
+    #[test]
+    fn writes_error_row_for_failed_analyzer() {
+        let mut out = Vec::new();
+        write_error_row(
+            &mut out,
+            &RunErrorRow {
+                input_path: "aat/work.json".to_owned(),
+                text_id: Some("work".to_owned()),
+                analyzer: Some("sudachi-c".to_owned()),
+                stage: "analyze".to_owned(),
+                error: "input too long".to_owned(),
+            },
+        )
+        .unwrap();
+
+        let row: serde_json::Value = serde_json::from_slice(&out).unwrap();
+        assert_eq!(row["input_path"], "aat/work.json");
+        assert_eq!(row["text_id"], "work");
+        assert_eq!(row["analyzer"], "sudachi-c");
+        assert_eq!(row["stage"], "analyze");
+        assert_eq!(row["error"], "input too long");
+    }
+
+    #[test]
+    fn reads_resume_text_ids_from_existing_jsonl_outputs() {
+        let dir = temp_dir("resume");
+        fs::create_dir_all(&dir).unwrap();
+        let analyses = dir.join("analyses.jsonl");
+        let errors = dir.join("errors.jsonl");
+        fs::write(
+            &analyses,
+            "{\"text_id\":\"done-analysis\",\"analyzer\":\"vibrato\"}\n",
+        )
+        .unwrap();
+        fs::write(
+            &errors,
+            "{\"text_id\":\"done-error\",\"stage\":\"analyze\"}\n{\"stage\":\"read_aat\"}\n",
+        )
+        .unwrap();
+
+        let ids = read_resume_text_ids(&analyses, Some(&errors)).unwrap();
+        assert!(ids.contains("done-analysis"));
+        assert!(ids.contains("done-error"));
+        assert!(!ids.contains("read_aat"));
+
+        let _ = fs::remove_dir_all(dir);
     }
 
     fn valid_analysis(analyzer: &str) -> Analysis {

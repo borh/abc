@@ -23,6 +23,10 @@ enum Command {
         analyses_output: PathBuf,
         #[arg(long)]
         comparisons_output: Option<PathBuf>,
+        #[arg(long)]
+        errors_output: Option<PathBuf>,
+        #[arg(long)]
+        resume: bool,
     },
 }
 
@@ -35,12 +39,16 @@ fn main() -> Result<()> {
             analyzer,
             analyses_output,
             comparisons_output,
+            errors_output,
+            resume,
         } => ab_morph_run::run_analyze_aat(
             aat.as_deref(),
             aat_dir.as_deref(),
             &analyzer,
             &analyses_output,
             comparisons_output.as_deref(),
+            errors_output.as_deref(),
+            resume,
         ),
     }
 }

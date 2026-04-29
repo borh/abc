@@ -68,3 +68,20 @@ After recursive AAT discovery, progress telemetry, and compact source-text trimm
 - This reduces duplicate dictionary residency, but one Sudachi dictionary and one Vibrato dictionary are still large and expected to remain resident.
 - Peak memory can still exceed the 60-second sample during unusually large documents because each comparison temporarily holds both analyses and comparison regions for the current input.
 - If memory needs to be reduced further, the next target is streaming compact comparison summaries/examples without materializing every region for very large documents.
+
+## Streaming compact comparison update
+
+Compact output now uses `compare_pair_compact_with_source_text`, which accumulates `ComparisonStats` and bounded examples without storing a full `Vec<Region>` or `Vec<FeatureDiff>` for each comparison. Full output still uses `compare_pair` and remains behavior-compatible.
+
+The expected memory impact is limited to per-document peaks for unusually large works. Typical full-corpus RSS/PSS is expected to look similar to the previous shared-analyzer run because dictionary residency and retained morpheme vectors dominate ordinary corpus runs.
+
+Verification on 2026-04-29:
+
+```bash
+cargo fmt --all -- --check
+cargo test -p ab-morph-diff
+cargo test -p ab-morph-run
+cargo build --release -p ab-morph-run
+```
+
+All four commands completed successfully. The optional cleaned-workspace smoke command did not produce fresh artifacts because the runtime inputs were unavailable in `scratch/`; `ab-morph-run` returned `No such file or directory` before writing output.

@@ -41,6 +41,8 @@ enum Command {
         max_examples_per_comparison: usize,
         #[arg(long)]
         progress: bool,
+        #[arg(long)]
+        progress_interval_seconds: Option<u64>,
     },
     SummarizeCompact {
         #[arg(long)]
@@ -125,13 +127,26 @@ fn main() -> Result<()> {
             output_profile,
             max_examples_per_comparison,
             progress,
+            progress_interval_seconds,
         } => {
-            let input_count = if progress {
+            let progress_enabled = progress || progress_interval_seconds.is_some();
+            let progress_interval_seconds = progress_interval_seconds.unwrap_or(30).max(1);
+            let input_count = if progress_enabled {
                 Some(count_aat_json_inputs(aat.as_deref(), aat_dir.as_deref())?)
             } else {
                 None
             };
             let start = Instant::now();
+            let progress_stop = if progress_enabled {
+                emit_progress_summary(start, input_count);
+                Some(spawn_progress_thread(
+                    start,
+                    input_count,
+                    std::time::Duration::from_secs(progress_interval_seconds),
+                ))
+            } else {
+                None
+            };
             let result = ab_morph_run::run_analyze_aat(
                 aat.as_deref(),
                 aat_dir.as_deref(),
@@ -146,7 +161,10 @@ fn main() -> Result<()> {
                 max_examples_per_comparison,
                 manifest_output.as_deref(),
             );
-            if progress {
+            if let Some(stop) = progress_stop {
+                stop.stop();
+            }
+            if progress_enabled {
                 emit_progress_summary(start, input_count);
             }
             result
@@ -220,6 +238,39 @@ fn run_rerun_full(
         max_examples_per_comparison,
         Some(&output_dir.join("manifest.json")),
     )
+}
+
+struct ProgressStop {
+    stop: Option<std::sync::mpsc::Sender<()>>,
+    handle: Option<std::thread::JoinHandle<()>>,
+}
+
+impl ProgressStop {
+    fn stop(mut self) {
+        if let Some(stop) = self.stop.take() {
+            let _ = stop.send(());
+        }
+        if let Some(handle) = self.handle.take() {
+            let _ = handle.join();
+        }
+    }
+}
+
+fn spawn_progress_thread(
+    start: Instant,
+    input_count: Option<usize>,
+    interval: std::time::Duration,
+) -> ProgressStop {
+    let (stop, stopped) = std::sync::mpsc::channel();
+    let handle = std::thread::spawn(move || {
+        while stopped.recv_timeout(interval).is_err() {
+            emit_progress_summary(start, input_count);
+        }
+    });
+    ProgressStop {
+        stop: Some(stop),
+        handle: Some(handle),
+    }
 }
 
 fn print_summary_table(rows: &[ab_morph_run::CompactSummaryRow]) {
@@ -420,6 +471,34 @@ mod tests {
         assert_eq!(jobs, 2);
         assert_eq!(examples_output, Some(PathBuf::from("examples.jsonl")));
         assert_eq!(max_examples_per_comparison, 50);
+    }
+
+    #[test]
+    fn parses_progress_interval_seconds() {
+        let args = Args::parse_from([
+            "ab-morph-run",
+            "analyze-aat",
+            "--aat",
+            "one.json",
+            "--analyzer",
+            "vibrato",
+            "--analyses-output",
+            "analyses.jsonl",
+            "--progress-interval-seconds",
+            "5",
+        ]);
+
+        let Command::AnalyzeAat {
+            progress,
+            progress_interval_seconds,
+            ..
+        } = args.command
+        else {
+            panic!("expected analyze-aat command");
+        };
+
+        assert!(!progress);
+        assert_eq!(progress_interval_seconds, Some(5));
     }
 
     #[test]

@@ -24,11 +24,19 @@ enum Command {
         #[arg(long)]
         comparisons_output: Option<PathBuf>,
         #[arg(long)]
+        examples_output: Option<PathBuf>,
+        #[arg(long)]
         errors_output: Option<PathBuf>,
+        #[arg(long)]
+        manifest_output: Option<PathBuf>,
         #[arg(long)]
         resume: bool,
         #[arg(long, default_value_t = 1)]
         jobs: usize,
+        #[arg(long, value_enum, default_value_t = ab_morph_run::OutputProfile::Full)]
+        output_profile: ab_morph_run::OutputProfile,
+        #[arg(long, default_value_t = 10)]
+        max_examples_per_comparison: usize,
     },
 }
 
@@ -41,9 +49,13 @@ fn main() -> Result<()> {
             analyzer,
             analyses_output,
             comparisons_output,
+            examples_output,
             errors_output,
+            manifest_output,
             resume,
             jobs,
+            output_profile,
+            max_examples_per_comparison,
         } => ab_morph_run::run_analyze_aat(
             aat.as_deref(),
             aat_dir.as_deref(),
@@ -53,6 +65,10 @@ fn main() -> Result<()> {
             errors_output.as_deref(),
             resume,
             jobs,
+            output_profile,
+            examples_output.as_deref(),
+            max_examples_per_comparison,
+            manifest_output.as_deref(),
         ),
     }
 }

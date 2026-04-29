@@ -124,6 +124,7 @@ dependencies = [
  "clap",
  "serde",
  "serde_json",
+ "zstd",
 ]
 
 [[package]]

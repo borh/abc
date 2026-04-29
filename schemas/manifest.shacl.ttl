@@ -137,10 +137,14 @@ abc:MetadataRecordWorkShape
     sh:in ("新字新仮名" "新字旧仮名" "旧字新仮名" "旧字旧仮名" "その他")
   ] ;
   sh:property [
-    sh:path abc:copyrightExpired ;
+    sh:path dcterms:rights ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
-    sh:datatype xsd:boolean
+    sh:nodeKind sh:IRI ;
+    sh:in (
+      <https://creativecommons.org/publicdomain/mark/1.0/>
+      <http://rightsstatements.org/vocab/InC/1.0/>
+    )
   ] ;
   sh:property [
     sh:path dcterms:available ;

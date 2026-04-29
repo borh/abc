@@ -84,9 +84,6 @@
 (defn- ->int-literal [s]
   (NodeFactory/createLiteral ^String s XSDDatatype/XSDint))
 
-(defn- ->bool-literal [b]
-  (NodeFactory/createLiteral ^String (str b) XSDDatatype/XSDboolean))
-
 (def ^:private dcndl-ndc-datatype
   (BaseDatatype. "http://ndl.go.jp/dcndl/terms/NDC"))
 
@@ -96,7 +93,16 @@
 (defn- title-blank-node [work]
   (let [reading (get work "title_reading")]
     (cond-> {:rdf/value (get work "title")}
-      reading (assoc :abc/reading reading))))
+      reading (assoc :dcndl/titleTranscription reading))))
+
+(def ^:private public-domain-mark-iri
+  "<https://creativecommons.org/publicdomain/mark/1.0/>")
+
+(def ^:private in-copyright-iri
+  "<http://rightsstatements.org/vocab/InC/1.0/>")
+
+(defn- rights-iri [copyright-expired?]
+  (if copyright-expired? public-domain-mark-iri in-copyright-iri))
 
 (defn- contributor-blank [contributor]
   {:rdf/about (person-iri-bracketed (get contributor "person_id"))
@@ -111,7 +117,7 @@
              :dcterms/identifier (->int-literal (get work "work_id"))
              :dcterms/title (title-blank-node work)
              :abc/orthographicStyle (get work "orthographic_style")
-             :abc/copyrightExpired (->bool-literal (get work "copyright_expired"))
+             :dcterms/rights (rights-iri (get work "copyright_expired"))
              :dcterms/available (->date-literal (get work "aozora_available"))
              :dcterms/modified (->date-literal (get work "aozora_modified"))}
       (get work "ndc")

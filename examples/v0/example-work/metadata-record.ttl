@@ -19,8 +19,8 @@
   dcterms:creator <http://www.aozora.gr.jp/index_pages/person000879.html> ;
   dcterms:identifier "000127"^^xsd:int ;
   dcterms:modified "2022-07-16"^^xsd:date ;
-  dcterms:title [ rdf:value "羅生門" ; abc:reading "らしょうもん" ] ;
-  abc:copyrightExpired "true"^^xsd:boolean ;
+  dcterms:rights <https://creativecommons.org/publicdomain/mark/1.0/> ;
+  dcterms:title [ dcndl:titleTranscription "らしょうもん" ; rdf:value "羅生門" ] ;
   abc:orthographicStyle "新字新仮名" .
 
 <http://www.aozora.gr.jp/index_pages/person000879.html>

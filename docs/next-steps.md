@@ -2,7 +2,7 @@
 
 ## Current State
 
-Thirteen contract-harness milestones complete:
+Fourteen contract-harness milestones complete:
 
 - **2026-04-27 v0 contract harness** (archived as
   `docs/archive/2026-04-27-v0-contract-harness.md`).
@@ -260,6 +260,29 @@ Thirteen contract-harness milestones complete:
   cultural-heritage publication profile started by ADR 0013, and the
   `applicable` row is reserved for future works with confirmed
   facsimiles and clean rights.
+- **2026-04-29 Predicate rename batch 1 (ADR 0018).** The two clean
+  defer-switch candidates from ADR 0017 land:
+  `abc:reading` (title kana) → `dcndl:titleTranscription`, and
+  `abc:copyrightExpired` (xsd:boolean) → `dcterms:rights` IRI from
+  the closed set
+  `{<https://creativecommons.org/publicdomain/mark/1.0/>,
+    <http://rightsstatements.org/vocab/InC/1.0/>}` (mapping
+  `true → PD-mark`, `false → InC`). The JSON metadata-record contract
+  is unchanged: `title_reading` stays a string, `copyright_expired`
+  stays a boolean. Therefore `metadata_record_schema_hash`,
+  `person_record_schema_hash`, the example's `metadata_record_hash`,
+  `manifest_identity_object`, and `manifest.json` all stay byte-for-byte
+  identical — no schema-hash cascade rotates. What rotates: one
+  property shape in `schemas/manifest.shacl.ttl` (now
+  `sh:path dcterms:rights ; sh:nodeKind sh:IRI ; sh:in (…)`) and
+  `examples/v0/example-work/metadata-record.ttl` (the title blank node
+  switches `abc:reading` → `dcndl:titleTranscription`; the boolean
+  triple is replaced by `dcterms:rights <…/publicdomain/mark/1.0/>`
+  for 羅生門). The three ADR 0017 needs-research items
+  (per-component name reading / sort / romaji) remain deferred —
+  their proposed standard alternatives operate on whole-name strings,
+  not family/given components, and adopting them would lose
+  component-level distinction the corpus needs.
 
 ## Canonical Commands
 
@@ -279,18 +302,7 @@ bin/update-clj-nix-lock
 
 In rough order of leverage, none committed:
 
-1. **Predicate-rename follow-ups (ADR 0017 deferred-switches).** ADR
-   0017's audit identified two clean candidates whose semantics map
-   exactly onto a standard alternative — `abc:reading` (title kana)
-   → `dcndl:titleTranscription`, and `abc:copyrightExpired`
-   (boolean) → `dcterms:rights` URI from `rightsstatements.org` /
-   `creativecommons.org/publicdomain/mark/1.0/`. Implementing
-   either rotates the schema-hash cascade and every TTL fixture, so
-   they are deferred until batched together. The
-   needs-research items (per-component name reading / sort / romaji
-   predicates) require a deeper look at DCNDL component-level
-   profiles before a switch can be proposed.
-2. **Further TEI rule expansion.** Three high-leverage widenings
+1. **Further TEI rule expansion.** Three high-leverage widenings
    landed in the 2026-04-29 milestone (`abc-ruby-base-non-empty`,
    `abc-source-span-target-exists`, `abc-gaiji-chardecl-resolution`).
    Remaining candidates: `abc-ruby-reading-non-empty` mirroring the
@@ -305,14 +317,14 @@ In rough order of leverage, none committed:
    `constraintSpec` block and re-runs the drift gate; the v0
    evaluator's lack of `<sch:let>` and `role="nonfatal"` support
    remains the ceiling on inherited TEI rules.
-3. **Parser-decision exercise (ADR 0002).** Run a candidate parser
+2. **Parser-decision exercise (ADR 0002).** Run a candidate parser
    (e.g. `aozora-rs`) over one Aozora work into the parser IR
    contract. Currently parked while parser work happens in another
    project.
-4. **Person identity drift (Flavor 2).** Splits, merges, renames as
+3. **Person identity drift (Flavor 2).** Splits, merges, renames as
    PROV-style events; the separated-persons milestone scoped Flavor 1
    only.
-5. **Move legacy namespaces behind clj-nix.** `abc.aozora`,
+4. **Move legacy namespaces behind clj-nix.** `abc.aozora`,
    `abc.tei`, `abc.stats` remain outside the v0 contract gate.
 
 ## Done Criteria For The Closed Milestones

@@ -1,6 +1,7 @@
 (ns abc.tools.schema
   (:require [abc.tools.hash :as hash]
             [abc.tools.json :as abc-json]
+            [abc.tools.malli :as am]
             [m3.json-schema :as m3]))
 
 (defn read-schema [file]
@@ -28,6 +29,15 @@
   (let [result (m3/validate schema value {:draft :draft2020-12})]
     (when-not (:valid? result)
       (:errors result))))
+
+(defn validation-errors-humanized
+  "Return [errors humanized-strings] for `value` against `schema`.
+  Both nil/empty when `value` validates."
+  [schema value]
+  (let [errors (validation-errors schema value)]
+    (if (seq errors)
+      [errors (am/humanize-validation-errors errors)]
+      [nil nil])))
 
 (defn validate-json! [schema path]
   (when-let [errors (validation-errors schema (abc-json/read-json-file path))]

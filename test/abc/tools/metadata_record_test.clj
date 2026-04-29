@@ -1,7 +1,12 @@
 (ns abc.tools.metadata-record-test
   (:require [abc.tools.files :as files]
+            [abc.tools.json :as json]
+            [abc.tools.malli :as am]
             [abc.tools.metadata-record :as mr]
-            [clojure.test :refer [deftest is testing]]))
+            [clojure.string :as string]
+            [clojure.test :refer [deftest is testing use-fixtures]]))
+
+(use-fixtures :once (fn [f] (am/install!) (f)))
 
 (def example-record
   (delay (files/read-json "examples/v0/example-work/metadata-record.json")))
@@ -20,6 +25,31 @@
   (testing "validate! throws when a required field is missing"
     (let [bad (dissoc @example-record "work")]
       (is (thrown? clojure.lang.ExceptionInfo (mr/validate! bad))))))
+
+(deftest validate-humanizes-errors-test
+  (testing "validate! ex-data carries both :errors and :errors-humanized"
+    (try
+      (mr/validate! {"work" {} "contributors" []})
+      (is false "validate! should have thrown")
+      (catch clojure.lang.ExceptionInfo e
+        (let [d (ex-data e)]
+          (is (contains? d :errors))
+          (is (contains? d :errors-humanized))
+          (is (every? string? (:errors-humanized d))))))))
+
+(deftest schema-read-is-cached-test
+  (testing "no disk read for schema after the cache is primed"
+    (am/cached-schema "schemas/metadata-record.schema.json")
+    (let [counter (atom 0)
+          original abc.tools.json/read-json-file]
+      (with-redefs [abc.tools.json/read-json-file
+                    (fn [p]
+                      (when (string/ends-with? (str p) "metadata-record.schema.json")
+                        (swap! counter inc))
+                      (original p))]
+        (mr/validate! @example-record)
+        (mr/validate! @example-record)
+        (is (zero? @counter))))))
 
 (deftest record-hash-deterministic-test
   (testing "record-hash returns the same value across two calls"

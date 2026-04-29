@@ -1,8 +1,13 @@
 (ns abc.tools.person-record-test
   (:require [abc.tools.files :as files]
+            [abc.tools.json :as json]
+            [abc.tools.malli :as am]
             [abc.tools.manifest :as manifest]
             [abc.tools.person-record :as pr]
-            [clojure.test :refer [deftest is testing]]))
+            [clojure.string :as string]
+            [clojure.test :refer [deftest is testing use-fixtures]]))
+
+(use-fixtures :once (fn [f] (am/install!) (f)))
 
 (def ^:private schema-path "schemas/person-record.schema.json")
 (def ^:private schema-id "https://w3id.org/abc/schemas/person-record.schema.json")
@@ -37,6 +42,32 @@
   (testing "validate! rejects an unknown property"
     (is (thrown? clojure.lang.ExceptionInfo
                  (pr/validate! (assoc (example-person) "unknown" 1))))))
+
+(deftest validate-humanizes-errors-test
+  (testing "validate! ex-data carries both :errors and :errors-humanized"
+    (try
+      (pr/validate! (dissoc (example-person) "family_name"))
+      (is false "validate! should have thrown")
+      (catch clojure.lang.ExceptionInfo e
+        (let [d (ex-data e)]
+          (is (contains? d :errors))
+          (is (contains? d :errors-humanized))
+          (is (every? string? (:errors-humanized d))))))))
+
+(deftest schema-read-is-cached-test
+  (testing "no disk read for schema after the cache is primed"
+    (am/cached-schema "schemas/person-record.schema.json")
+    (let [record (example-person)
+          counter (atom 0)
+          original abc.tools.json/read-json-file]
+      (with-redefs [abc.tools.json/read-json-file
+                    (fn [p]
+                      (when (string/ends-with? (str p) "person-record.schema.json")
+                        (swap! counter inc))
+                      (original p))]
+        (pr/validate! record)
+        (pr/validate! record)
+        (is (zero? @counter))))))
 
 (deftest record-hash-format-test
   (testing "record-hash returns sha256:<64-hex>"

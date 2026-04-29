@@ -9,6 +9,7 @@
   abc: for project-specific concepts)."
   (:require [abc.tools.files :as files]
             [abc.tools.hash :as hash]
+            [abc.tools.malli :as am]
             [abc.tools.manifest :as manifest]
             [abc.tools.manifest-to-rdf :as manifest-to-rdf]
             [abc.tools.person-record :as person-record]
@@ -25,13 +26,15 @@
 
 (defn validate!
   "Validate `record` against schemas/metadata-record.schema.json.
-  Returns :ok on success; throws ex-info with :errors on failure."
+  Returns :ok on success; throws ex-info on failure with both :errors
+  (raw m3 vector) and :errors-humanized (readable strings)."
   [record]
-  (let [s (files/read-json schema-path)
-        errors (schema/validation-errors s record)]
+  (let [[errors humanized] (schema/validation-errors-humanized
+                            (am/cached-schema schema-path) record)]
     (if (seq errors)
       (throw (ex-info "metadata-record validation failed"
-                      {:errors errors}))
+                      {:errors errors
+                       :errors-humanized humanized}))
       :ok)))
 
 (defn- canonical-identity-form

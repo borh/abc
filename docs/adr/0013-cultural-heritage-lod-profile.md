@@ -76,8 +76,9 @@ mappings live inside `contexts/abc-v0.jsonld`.
 ## Identity Invariant
 
 `abc:artifactId` is preserved literally through JSON-LD expansion. The
-harness extracts the value at the expanded `https://w3id.org/abc/vocab#artifactId`
-predicate and asserts byte-equality with `manifest.json`'s `artifact_id`;
+harness extracts the value at the expanded `https://w3id.org/abc/artifactId`
+predicate (canonical `abc:` namespace; see ADR 0017) and asserts
+byte-equality with `manifest.json`'s `artifact_id`;
 the bundle gate `validate-design-bundle` fails if expansion changes
 that value.
 

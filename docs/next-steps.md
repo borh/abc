@@ -2,7 +2,7 @@
 
 ## Current State
 
-Eleven contract-harness milestones complete:
+Twelve contract-harness milestones complete:
 
 - **2026-04-27 v0 contract harness** (archived as
   `docs/archive/2026-04-27-v0-contract-harness.md`).
@@ -159,7 +159,7 @@ Eleven contract-harness milestones complete:
   `status: "not_run"` stub) are replaced with the harness's real
   byte-stable output. Identity invariant: the harness extracts the
   literal value at the expanded
-  `https://w3id.org/abc/vocab#artifactId` predicate and asserts
+  `https://w3id.org/abc/artifactId` predicate and asserts
   byte-equality with `manifest.json`'s `artifact_id`; mismatch raises
   and fails the bundle gate. `validate-design-bundle` regenerates
   the three LOD fixtures into a temp directory and byte-compares
@@ -208,6 +208,31 @@ Eleven contract-harness milestones complete:
     Schematron evaluator's `<sch:let>` and `role="nonfatal"`
     limitations remain the ceiling on what inherited TEI rules can
     be promoted.
+- **2026-04-29 Vocabulary review + `abc:` namespace consistency
+  (ADR 0017).** Audited every `abc:` predicate and class introduced
+  by the metadata, person-record, and LOD milestones against
+  candidate standard vocabularies (DCNDL, FOAF, Dublin Core,
+  schema.org, RDA Group 2, CIDOC-CRM, PROV-O). Documented the
+  per-predicate decision (keep / defer-switch / needs-research) in
+  ADR 0017's audit table; this becomes the v0 contract surface for
+  `abc:` predicates. Surfaced a real correctness bug: the `abc:`
+  prefix was declared as `https://w3id.org/abc/` in every committed
+  TTL fixture and SHACL shape, but as `https://w3id.org/abc/vocab#`
+  in `contexts/abc-v0.jsonld` and the linked-art harness, so the
+  same predicate (`abc:artifactId`) resolved to two different IRIs
+  depending on serialization. Fix: aligned the JSON-LD context to
+  the TTL form (`https://w3id.org/abc/`); updated the linked-art
+  harness's `aozora-work-id-type-uri` constant and the identity-
+  invariant predicate URI (`https://w3id.org/abc/artifactId`); and
+  regenerated the three LOD fixtures (context hash rotates to
+  `sha256:1cf7c68d…`, identity invariant holds end-to-end). All
+  TTL fixtures, manifest identity hashes, and `abc:EDTF` datatype
+  URIs are unchanged. Predicate renames are explicitly out of
+  scope and deferred to follow-up ADRs that batch them with the
+  schema-hash cascade. The legacy `aozora:` namespace question is
+  resolved as part of this audit: no v0 code or fixture references
+  it; only the `references/archive/aozora_lod_data/` historical
+  copy remains.
 
 ## Canonical Commands
 
@@ -227,11 +252,17 @@ bin/update-clj-nix-lock
 
 In rough order of leverage, none committed:
 
-1. **Vocabulary review.** Audit the `abc:` predicates introduced by
-   the metadata milestone (`abc:orthographicStyle`,
-   `abc:copyrightExpired`, `abc:familyNameReading`, etc.) against
-   possible standard alternatives once the legacy `aozora:`
-   namespace question is resolved.
+1. **Predicate-rename follow-ups (ADR 0017 deferred-switches).** ADR
+   0017's audit identified two clean candidates whose semantics map
+   exactly onto a standard alternative — `abc:reading` (title kana)
+   → `dcndl:titleTranscription`, and `abc:copyrightExpired`
+   (boolean) → `dcterms:rights` URI from `rightsstatements.org` /
+   `creativecommons.org/publicdomain/mark/1.0/`. Implementing
+   either rotates the schema-hash cascade and every TTL fixture, so
+   they are deferred until batched together. The
+   needs-research items (per-component name reading / sort / romaji
+   predicates) require a deeper look at DCNDL component-level
+   profiles before a switch can be proposed.
 2. **Further TEI rule expansion.** Three high-leverage widenings
    landed in the 2026-04-29 milestone (`abc-ruby-base-non-empty`,
    `abc-source-span-target-exists`, `abc-gaiji-chardecl-resolution`).

@@ -1,6 +1,6 @@
 {
   "@context": {
-    "abc": "https://w3id.org/abc/vocab#",
+    "abc": "https://w3id.org/abc/",
     "crm": "http://www.cidoc-crm.org/cidoc-crm/",
     "dcterms": "http://purl.org/dc/terms/",
     "la": "https://linked.art/ns/terms/",

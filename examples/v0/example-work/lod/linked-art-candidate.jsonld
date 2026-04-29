@@ -19,7 +19,7 @@
       "classified_as": [
         {
           "_label": "Aozora work ID",
-          "id": "https:\/\/w3id.org\/abc\/vocab#AozoraWorkId",
+          "id": "https:\/\/w3id.org\/abc\/AozoraWorkId",
           "type": "Type"
         }],
       "content": "000127",

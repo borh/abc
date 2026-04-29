@@ -42,7 +42,7 @@
   "https://w3id.org/abc/artifact/")
 
 (def ^:const aozora-work-id-type-uri
-  "https://w3id.org/abc/vocab#AozoraWorkId")
+  "https://w3id.org/abc/AozoraWorkId")
 
 (def ^:const japanese-language-aat-uri
   "http://vocab.getty.edu/aat/300388277")
@@ -141,7 +141,7 @@
   "Extract the literal value at the expanded `abc:artifactId` predicate.
   Returns nil if the predicate is absent."
   [expanded]
-  (let [predicate "https://w3id.org/abc/vocab#artifactId"]
+  (let [predicate "https://w3id.org/abc/artifactId"]
     (some-> expanded
             first
             (get predicate)

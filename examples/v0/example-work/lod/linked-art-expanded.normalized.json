@@ -1,6 +1,6 @@
 {
   "context": "https:\/\/w3id.org\/abc\/contexts\/abc-v0.jsonld",
-  "context_hash": "sha256:c049ef6b15544868e3f332a15d15d883352784ea661ffdc4e020e82ce21ed1b6",
+  "context_hash": "sha256:1cf7c68df4e464e30fe8a074db7930d8c846817d23f42e6411b803a8485589b0",
   "engine": "titanium-json-ld:1.7.0",
   "expanded": [
     {
@@ -40,7 +40,7 @@
             }],
           "http:\/\/www.cidoc-crm.org\/cidoc-crm\/P2_has_type": [
             {
-              "@id": "https:\/\/w3id.org\/abc\/vocab#AozoraWorkId",
+              "@id": "https:\/\/w3id.org\/abc\/AozoraWorkId",
               "@type": ["http:\/\/www.cidoc-crm.org\/cidoc-crm\/E55_Type"],
               "http:\/\/www.w3.org\/2000\/01\/rdf-schema#label": [
                 {
@@ -60,11 +60,11 @@
         {
           "@value": "\u7f85\u751f\u9580 derived publication view candidate"
         }],
-      "https:\/\/w3id.org\/abc\/vocab#artifactId": [
+      "https:\/\/w3id.org\/abc\/artifactId": [
         {
           "@value": "sha256:0d426e23314fc72d1a912d074168a1ff509f0139eead96721906750267ef38f5"
         }],
-      "https:\/\/w3id.org\/abc\/vocab#canonicalManifest": [
+      "https:\/\/w3id.org\/abc\/canonicalManifest": [
         {
           "@id": "https:\/\/w3id.org\/abc\/artifact\/sha256-0d426e23314fc72d1a912d074168a1ff509f0139eead96721906750267ef38f5"
         }]

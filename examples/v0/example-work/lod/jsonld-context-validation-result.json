@@ -1,7 +1,7 @@
 {
   "candidate": "linked-art-candidate.jsonld",
   "context": "https:\/\/w3id.org\/abc\/contexts\/abc-v0.jsonld",
-  "context_hash": "sha256:c049ef6b15544868e3f332a15d15d883352784ea661ffdc4e020e82ce21ed1b6",
+  "context_hash": "sha256:1cf7c68df4e464e30fe8a074db7930d8c846817d23f42e6411b803a8485589b0",
   "engine": "titanium-json-ld:1.7.0",
   "expanded": "linked-art-expanded.normalized.json",
   "identity_invariant": 

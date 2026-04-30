@@ -22,9 +22,11 @@ use serde_json::Value;
 pub use script::ScriptCategory;
 pub use select::resolve_source_id_aat_paths;
 pub use summary::{
+    CompactDifferenceKindFilter, CompactDifferenceSummaryOptions, CompactDifferenceSummaryRow,
     CompactExampleFilter, CompactExampleSummaryOptions, CompactExampleSummaryRow,
     CompactExampleSummarySort, CompactSummaryGroupBy, CompactSummaryOptions, CompactSummaryRow,
-    CompactSummarySort, summarize_compact_comparisons, summarize_compact_examples,
+    CompactSummarySort, summarize_compact_comparisons, summarize_compact_differences,
+    summarize_compact_examples,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum, Serialize, Deserialize)]

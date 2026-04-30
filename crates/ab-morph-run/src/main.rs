@@ -74,6 +74,22 @@ enum Command {
         #[arg(long)]
         json: bool,
     },
+    SummarizeDifferences {
+        #[arg(long)]
+        examples: PathBuf,
+        #[arg(long, value_enum, default_value_t = DifferenceKindArg::All)]
+        kind: DifferenceKindArg,
+        #[arg(long)]
+        feature_key: Option<String>,
+        #[arg(long, value_enum, default_value_t = ExampleFilterArg::All)]
+        filter: ExampleFilterArg,
+        #[arg(long, value_enum)]
+        script_category: Option<ScriptCategoryArg>,
+        #[arg(long, default_value_t = 20)]
+        limit: usize,
+        #[arg(long)]
+        json: bool,
+    },
     RerunFull {
         #[arg(long)]
         aat_dir: PathBuf,
@@ -127,6 +143,13 @@ enum ExampleSortArg {
     SegmentationExamples,
     FeatureDiffExamples,
     CoverageExamples,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
+enum DifferenceKindArg {
+    All,
+    Segmentation,
+    Feature,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
@@ -202,6 +225,16 @@ impl ExampleSortArg {
                 ab_morph_run::CompactExampleSummarySort::FeatureDiffExamples
             }
             Self::CoverageExamples => ab_morph_run::CompactExampleSummarySort::CoverageExamples,
+        }
+    }
+}
+
+impl DifferenceKindArg {
+    fn into_library(self) -> ab_morph_run::CompactDifferenceKindFilter {
+        match self {
+            Self::All => ab_morph_run::CompactDifferenceKindFilter::All,
+            Self::Segmentation => ab_morph_run::CompactDifferenceKindFilter::Segmentation,
+            Self::Feature => ab_morph_run::CompactDifferenceKindFilter::Feature,
         }
     }
 }
@@ -327,6 +360,33 @@ fn main() -> Result<()> {
                 println!();
             } else {
                 print_example_summary_table(&rows);
+            }
+            Ok(())
+        }
+        Command::SummarizeDifferences {
+            examples,
+            kind,
+            feature_key,
+            filter,
+            script_category,
+            limit,
+            json,
+        } => {
+            let rows = ab_morph_run::summarize_compact_differences(
+                &examples,
+                ab_morph_run::CompactDifferenceSummaryOptions {
+                    filter: filter.into_library(),
+                    script_category: script_category.map(ScriptCategoryArg::into_library),
+                    kind: kind.into_library(),
+                    feature_key,
+                    limit,
+                },
+            )?;
+            if json {
+                serde_json::to_writer_pretty(std::io::stdout(), &rows)?;
+                println!();
+            } else {
+                print_difference_summary_table(&rows);
             }
             Ok(())
         }
@@ -472,6 +532,40 @@ fn print_example_summary_table(rows: &[ab_morph_run::CompactExampleSummaryRow]) 
             row.coverage_examples,
         );
     }
+}
+
+fn print_difference_summary_table(rows: &[ab_morph_run::CompactDifferenceSummaryRow]) {
+    println!(
+        "kind\tfrom_analyzer\tto_analyzer\texamples\tsource_count\ttext_count\tsample_source_ids\tsample_text_ids\tscript_categories\tregion_kind\tfrom_surfaces\tto_surfaces\tfeature_key\tfeature_from\tfeature_to"
+    );
+    for row in rows {
+        println!(
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            row.kind,
+            row.from_analyzer,
+            row.to_analyzer,
+            row.examples,
+            row.source_ids.len(),
+            row.text_ids.len(),
+            sample_values(&row.source_ids, 5),
+            sample_values(&row.text_ids, 5),
+            row.script_categories.join(","),
+            row.region_kind.as_deref().unwrap_or(""),
+            row.from_surfaces.join(" + "),
+            row.to_surfaces.join(" + "),
+            row.feature_key.as_deref().unwrap_or(""),
+            row.feature_from.as_deref().unwrap_or(""),
+            row.feature_to.as_deref().unwrap_or(""),
+        );
+    }
+}
+
+fn sample_values(values: &[String], limit: usize) -> String {
+    let mut sample = values.iter().take(limit).cloned().collect::<Vec<_>>();
+    if values.len() > limit {
+        sample.push(format!("...+{}", values.len() - limit));
+    }
+    sample.join(",")
 }
 
 fn emit_progress_summary(start: Instant, input_count: Option<usize>) {
@@ -646,6 +740,48 @@ mod tests {
     }
 
     #[test]
+    fn parses_summarize_differences_command() {
+        let args = Args::parse_from([
+            "ab-morph-run",
+            "summarize-differences",
+            "--examples",
+            "examples.jsonl.zst",
+            "--kind",
+            "feature",
+            "--feature-key",
+            "pos1",
+            "--filter",
+            "lexical-only",
+            "--script-category",
+            "japanese",
+            "--limit",
+            "50",
+            "--json",
+        ]);
+
+        let Command::SummarizeDifferences {
+            examples,
+            kind,
+            feature_key,
+            filter,
+            script_category,
+            limit,
+            json,
+        } = args.command
+        else {
+            panic!("expected summarize-differences command");
+        };
+
+        assert_eq!(examples, PathBuf::from("examples.jsonl.zst"));
+        assert_eq!(kind, DifferenceKindArg::Feature);
+        assert_eq!(feature_key, Some("pos1".to_owned()));
+        assert_eq!(filter, ExampleFilterArg::LexicalOnly);
+        assert_eq!(script_category, Some(ScriptCategoryArg::Japanese));
+        assert_eq!(limit, 50);
+        assert!(json);
+    }
+
+    #[test]
     fn parses_script_category_filters() {
         let compact = Args::parse_from([
             "ab-morph-run",
@@ -757,6 +893,16 @@ mod tests {
 
         assert!(!progress);
         assert_eq!(progress_interval_seconds, Some(5));
+    }
+
+    #[test]
+    fn sample_values_truncates_large_id_lists() {
+        let values = ["a", "b", "c", "d"]
+            .into_iter()
+            .map(str::to_owned)
+            .collect::<Vec<_>>();
+
+        assert_eq!(sample_values(&values, 2), "a,b,...+2");
     }
 
     #[test]

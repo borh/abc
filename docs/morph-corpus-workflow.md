@@ -211,3 +211,43 @@ target/release/ab-morph-run summarize-examples \
   --sort-by examples \
   --limit 20
 ```
+
+## 9. Summarize recurring tokenizer differences
+
+Use `summarize-differences` to aggregate concrete compact example rows into recurring segmentation patterns and feature-value transitions. This is a bounded-evidence report: it summarizes the examples captured during the compact run, not every diff in every source unless the run used a sufficiently high `--max-examples-per-comparison`.
+
+Top Japanese lexical segmentation patterns:
+
+```bash
+target/release/ab-morph-run summarize-differences \
+  --examples scratch/morph-full-corpus-compact-canonical-v2/examples.jsonl.zst \
+  --kind segmentation \
+  --filter lexical-only \
+  --script-category japanese \
+  --limit 25
+```
+
+Top Japanese lexical feature transitions:
+
+```bash
+target/release/ab-morph-run summarize-differences \
+  --examples scratch/morph-full-corpus-compact-canonical-v2/examples.jsonl.zst \
+  --kind feature \
+  --filter lexical-only \
+  --script-category japanese \
+  --limit 25
+```
+
+Top Japanese POS transitions for a specific feature key:
+
+```bash
+target/release/ab-morph-run summarize-differences \
+  --examples scratch/morph-full-corpus-compact-canonical-v2/examples.jsonl.zst \
+  --kind feature \
+  --feature-key pos1 \
+  --filter lexical-only \
+  --script-category japanese \
+  --limit 25
+```
+
+The tabular output shows source/text counts plus short ID samples. Use `--json` when full source/text membership is needed.

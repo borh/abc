@@ -43,6 +43,13 @@ pub enum CompactExampleSummarySort {
     CoverageExamples,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CompactDifferenceKindFilter {
+    All,
+    Segmentation,
+    Feature,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CompactSummaryOptions {
     pub group_by: CompactSummaryGroupBy,
@@ -57,6 +64,15 @@ pub struct CompactExampleSummaryOptions {
     pub filter: CompactExampleFilter,
     pub script_category: Option<ScriptCategory>,
     pub sort_by: CompactExampleSummarySort,
+    pub limit: usize,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CompactDifferenceSummaryOptions {
+    pub filter: CompactExampleFilter,
+    pub script_category: Option<ScriptCategory>,
+    pub kind: CompactDifferenceKindFilter,
+    pub feature_key: Option<String>,
     pub limit: usize,
 }
 
@@ -94,6 +110,23 @@ pub struct CompactExampleSummaryRow {
     pub coverage_examples: usize,
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct CompactDifferenceSummaryRow {
+    pub kind: String,
+    pub from_analyzer: String,
+    pub to_analyzer: String,
+    pub source_ids: Vec<String>,
+    pub text_ids: Vec<String>,
+    pub script_categories: Vec<String>,
+    pub examples: usize,
+    pub region_kind: Option<String>,
+    pub from_surfaces: Vec<String>,
+    pub to_surfaces: Vec<String>,
+    pub feature_key: Option<String>,
+    pub feature_from: Option<String>,
+    pub feature_to: Option<String>,
+}
+
 #[derive(Debug, Default)]
 struct Accumulator {
     source_ids: BTreeSet<String>,
@@ -127,16 +160,52 @@ struct ExampleAccumulator {
     coverage_examples: usize,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+struct DifferenceKey {
+    kind: String,
+    from_analyzer: String,
+    to_analyzer: String,
+    region_kind: Option<String>,
+    from_surfaces: Vec<String>,
+    to_surfaces: Vec<String>,
+    feature_key: Option<String>,
+    feature_from: Option<String>,
+    feature_to: Option<String>,
+}
+
+#[derive(Debug, Default)]
+struct DifferenceAccumulator {
+    source_ids: BTreeSet<String>,
+    text_ids: BTreeSet<String>,
+    script_categories: BTreeSet<ScriptCategory>,
+    examples: usize,
+}
+
 #[derive(Debug, Deserialize)]
 struct ExampleSummaryInputRow {
     source_id: String,
     text_id: String,
+    from_analyzer: String,
+    to_analyzer: String,
     kind: String,
     source_excerpt: String,
+    #[serde(default)]
+    from_surfaces: Vec<String>,
+    #[serde(default)]
+    to_surfaces: Vec<String>,
+    #[serde(default)]
+    feature_changes: Option<Vec<FeatureChangeInputRow>>,
     #[serde(default)]
     whitespace_only: Option<bool>,
     #[serde(default)]
     script_category: Option<ScriptCategory>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct FeatureChangeInputRow {
+    key: String,
+    from: Option<String>,
+    to: Option<String>,
 }
 
 pub fn summarize_compact_comparisons(
@@ -207,6 +276,99 @@ pub fn summarize_compact_examples(
         .map(|(key, accumulator)| accumulator.into_row(key))
         .collect::<Vec<_>>();
     rows.sort_by(|left, right| compare_example_rows(left, right, options.sort_by));
+    rows.truncate(options.limit);
+    Ok(rows)
+}
+
+pub fn summarize_compact_differences(
+    examples_path: &Path,
+    options: CompactDifferenceSummaryOptions,
+) -> Result<Vec<CompactDifferenceSummaryRow>> {
+    let mut groups = BTreeMap::<DifferenceKey, DifferenceAccumulator>::new();
+    for_each_jsonl_or_zst_line(examples_path, |line| {
+        let row: ExampleSummaryInputRow = serde_json::from_str(line)?;
+        let whitespace_only = row
+            .whitespace_only
+            .unwrap_or_else(|| is_whitespace_only(&row.source_excerpt));
+        let script_category = row
+            .script_category
+            .unwrap_or_else(|| classify_text(&row.source_excerpt));
+        if options
+            .script_category
+            .is_some_and(|category| script_category != category)
+        {
+            return Ok(());
+        }
+        if !example_filter_matches(options.filter, whitespace_only) {
+            return Ok(());
+        }
+
+        if matches!(
+            options.kind,
+            CompactDifferenceKindFilter::All | CompactDifferenceKindFilter::Segmentation
+        ) && is_segmentation_example(&row.kind)
+        {
+            let key = DifferenceKey {
+                kind: "segmentation".to_owned(),
+                from_analyzer: row.from_analyzer.clone(),
+                to_analyzer: row.to_analyzer.clone(),
+                region_kind: Some(row.kind.clone()),
+                from_surfaces: row.from_surfaces.clone(),
+                to_surfaces: row.to_surfaces.clone(),
+                feature_key: None,
+                feature_from: None,
+                feature_to: None,
+            };
+            groups.entry(key).or_default().push(&row, script_category);
+        }
+
+        if matches!(
+            options.kind,
+            CompactDifferenceKindFilter::All | CompactDifferenceKindFilter::Feature
+        ) && row.kind == "feature_diff"
+        {
+            for change in row.feature_changes.as_deref().unwrap_or(&[]) {
+                if options
+                    .feature_key
+                    .as_ref()
+                    .is_some_and(|wanted| change.key != *wanted)
+                {
+                    continue;
+                }
+                let key = DifferenceKey {
+                    kind: "feature".to_owned(),
+                    from_analyzer: row.from_analyzer.clone(),
+                    to_analyzer: row.to_analyzer.clone(),
+                    region_kind: None,
+                    from_surfaces: Vec::new(),
+                    to_surfaces: Vec::new(),
+                    feature_key: Some(change.key.clone()),
+                    feature_from: change.from.clone(),
+                    feature_to: change.to.clone(),
+                };
+                groups.entry(key).or_default().push(&row, script_category);
+            }
+        }
+
+        Ok(())
+    })?;
+
+    let mut rows = groups
+        .into_iter()
+        .map(|(key, accumulator)| accumulator.into_row(key))
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| {
+        right
+            .examples
+            .cmp(&left.examples)
+            .then_with(|| left.kind.cmp(&right.kind))
+            .then_with(|| left.feature_key.cmp(&right.feature_key))
+            .then_with(|| left.region_kind.cmp(&right.region_kind))
+            .then_with(|| left.from_surfaces.cmp(&right.from_surfaces))
+            .then_with(|| left.to_surfaces.cmp(&right.to_surfaces))
+            .then_with(|| left.feature_from.cmp(&right.feature_from))
+            .then_with(|| left.feature_to.cmp(&right.feature_to))
+    });
     rows.truncate(options.limit);
     Ok(rows)
 }
@@ -314,6 +476,38 @@ impl ExampleAccumulator {
             segmentation_examples: self.segmentation_examples,
             feature_diff_examples: self.feature_diff_examples,
             coverage_examples: self.coverage_examples,
+        }
+    }
+}
+
+impl DifferenceAccumulator {
+    fn push(&mut self, row: &ExampleSummaryInputRow, script_category: ScriptCategory) {
+        self.source_ids.insert(row.source_id.clone());
+        self.text_ids.insert(row.text_id.clone());
+        self.script_categories.insert(script_category);
+        self.examples += 1;
+    }
+
+    fn into_row(self, key: DifferenceKey) -> CompactDifferenceSummaryRow {
+        CompactDifferenceSummaryRow {
+            kind: key.kind,
+            from_analyzer: key.from_analyzer,
+            to_analyzer: key.to_analyzer,
+            source_ids: self.source_ids.into_iter().collect(),
+            text_ids: self.text_ids.into_iter().collect(),
+            script_categories: self
+                .script_categories
+                .into_iter()
+                .map(ScriptCategory::as_str)
+                .map(str::to_owned)
+                .collect(),
+            examples: self.examples,
+            region_kind: key.region_kind,
+            from_surfaces: key.from_surfaces,
+            to_surfaces: key.to_surfaces,
+            feature_key: key.feature_key,
+            feature_from: key.feature_from,
+            feature_to: key.feature_to,
         }
     }
 }
@@ -611,6 +805,62 @@ mod tests {
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].key, "src-b");
         assert_eq!(rows[0].script_categories, vec!["japanese"]);
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn summarize_differences_groups_segmentation_patterns_and_feature_transitions() {
+        let dir = temp_dir("difference-summary");
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("examples.jsonl");
+        fs::write(
+            &path,
+            concat!(
+                r#"{"source_id":"src-a","text_id":"t1","from_analyzer":"vibrato","to_analyzer":"sudachi-c","region_index":0,"kind":"split","byte_start":0,"byte_end":6,"char_start":0,"char_end":2,"source_excerpt":"今日","whitespace_only":false,"script_category":"japanese","from_surfaces":["今日"],"to_surfaces":["今","日"],"feature_changes":null}"#, "\n",
+                r#"{"source_id":"src-b","text_id":"t2","from_analyzer":"vibrato","to_analyzer":"sudachi-c","region_index":0,"kind":"split","byte_start":0,"byte_end":6,"char_start":0,"char_end":2,"source_excerpt":"今日","whitespace_only":false,"script_category":"japanese","from_surfaces":["今日"],"to_surfaces":["今","日"],"feature_changes":null}"#, "\n",
+                r#"{"source_id":"src-c","text_id":"t3","from_analyzer":"vibrato","to_analyzer":"sudachi-c","region_index":0,"kind":"merge","byte_start":0,"byte_end":2,"char_start":0,"char_end":2,"source_excerpt":"\n　","whitespace_only":true,"script_category":"whitespace","from_surfaces":["\n","　"],"to_surfaces":["\n　"],"feature_changes":null}"#, "\n",
+                r#"{"source_id":"src-a","text_id":"t1","from_analyzer":"vibrato","to_analyzer":"sudachi-c","region_index":1,"kind":"feature_diff","byte_start":6,"byte_end":12,"char_start":2,"char_end":4,"source_excerpt":"明日","whitespace_only":false,"script_category":"japanese","from_surfaces":["明日"],"to_surfaces":["明日"],"feature_changes":[{"key":"pos1","from":"名詞","to":"副詞"},{"key":"reading","from":"アス","to":"ミョウニチ"}]}"#, "\n",
+                r#"{"source_id":"src-b","text_id":"t2","from_analyzer":"vibrato","to_analyzer":"sudachi-c","region_index":1,"kind":"feature_diff","byte_start":6,"byte_end":12,"char_start":2,"char_end":4,"source_excerpt":"明日","whitespace_only":false,"script_category":"japanese","from_surfaces":["明日"],"to_surfaces":["明日"],"feature_changes":[{"key":"pos1","from":"名詞","to":"副詞"}]}"#, "\n",
+                r#"{"source_id":"src-d","text_id":"t4","from_analyzer":"vibrato","to_analyzer":"sudachi-c","region_index":1,"kind":"feature_diff","byte_start":6,"byte_end":12,"char_start":2,"char_end":4,"source_excerpt":"昨日","whitespace_only":false,"script_category":"japanese","from_surfaces":["昨日"],"to_surfaces":["昨日"],"feature_changes":[{"key":"pos1","from":"名詞","to":"副詞"}]}"#, "\n",
+            ),
+        )
+        .unwrap();
+
+        let rows = summarize_compact_differences(
+            &path,
+            CompactDifferenceSummaryOptions {
+                filter: CompactExampleFilter::LexicalOnly,
+                script_category: Some(ScriptCategory::Japanese),
+                kind: CompactDifferenceKindFilter::All,
+                feature_key: None,
+                limit: 10,
+            },
+        )
+        .unwrap();
+
+        assert_eq!(rows[0].kind, "feature");
+        assert_eq!(rows[0].feature_key.as_deref(), Some("pos1"));
+        assert_eq!(rows[0].feature_from.as_deref(), Some("名詞"));
+        assert_eq!(rows[0].feature_to.as_deref(), Some("副詞"));
+        assert_eq!(rows[0].examples, 3);
+        assert_eq!(rows[0].source_ids, vec!["src-a", "src-b", "src-d"]);
+
+        assert_eq!(rows[1].kind, "segmentation");
+        assert_eq!(rows[1].region_kind.as_deref(), Some("split"));
+        assert_eq!(rows[1].from_surfaces, vec!["今日"]);
+        assert_eq!(rows[1].to_surfaces, vec!["今", "日"]);
+        assert_eq!(rows[1].examples, 2);
+
+        assert!(
+            rows.iter()
+                .all(|row| row.script_categories == vec!["japanese"])
+        );
+        assert!(
+            !rows
+                .iter()
+                .any(|row| row.region_kind.as_deref() == Some("merge"))
+        );
 
         let _ = fs::remove_dir_all(dir);
     }

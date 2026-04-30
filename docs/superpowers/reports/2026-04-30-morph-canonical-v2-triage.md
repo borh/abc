@@ -92,6 +92,31 @@ target/release/ab-morph-run summarize-examples \
   --sort-by examples \
   --limit 25 \
   > scratch/morph-canonical-v2-triage/latin-code-examples.tsv
+
+target/release/ab-morph-run summarize-differences \
+  --examples scratch/morph-full-corpus-compact-canonical-v2/examples.jsonl.zst \
+  --kind segmentation \
+  --filter lexical-only \
+  --script-category japanese \
+  --limit 25 \
+  > scratch/morph-canonical-v2-triage/japanese-segmentation-patterns.tsv
+
+target/release/ab-morph-run summarize-differences \
+  --examples scratch/morph-full-corpus-compact-canonical-v2/examples.jsonl.zst \
+  --kind feature \
+  --filter lexical-only \
+  --script-category japanese \
+  --limit 25 \
+  > scratch/morph-canonical-v2-triage/japanese-feature-transitions.tsv
+
+target/release/ab-morph-run summarize-differences \
+  --examples scratch/morph-full-corpus-compact-canonical-v2/examples.jsonl.zst \
+  --kind feature \
+  --feature-key pos1 \
+  --filter lexical-only \
+  --script-category japanese \
+  --limit 25 \
+  > scratch/morph-canonical-v2-triage/japanese-pos1-transitions.tsv
 ```
 
 ## Japanese lexical ranking
@@ -146,6 +171,46 @@ Latin/code examples are isolated at span level, regardless of source-level categ
 | `000159_857-469c33b33d4a` | 10 | latin-code | 10 |
 | `001475_51028-bf9c6433d8a5` | 10 | latin-code | 10 |
 
+## Recurring tokenizer differences
+
+`summarize-differences` aggregates bounded compact examples into recurring segmentation patterns and feature transitions. This is not exhaustive unless the compact run's `--max-examples-per-comparison` budget is high enough to capture all differences.
+
+Top Japanese lexical segmentation patterns:
+
+| kind | examples | source count | pattern |
+| --- | ---: | ---: | --- |
+| split | 1,869 | 1,332 | `あつた` -> `あつ + た` |
+| split | 1,825 | 1,527 | `二十` -> `二 + 十` |
+| merge | 1,283 | 1,127 | `いつ + も` -> `いつも` |
+| merge | 1,102 | 942 | `な + つ` -> `なつ` |
+| merge | 1,026 | 918 | `つ + て` -> `つて` |
+| split | 904 | 792 | `三十` -> `三 + 十` |
+| merge | 688 | 640 | `て + は` -> `ては` |
+
+Top Japanese lexical feature transitions:
+
+| feature | from | to | examples | source count |
+| --- | --- | --- | ---: | ---: |
+| dictionary_form | empty | empty | 6,106 | 1,370 |
+| goshu | `和` | empty | 4,696 | 1,251 |
+| pos1 | `名詞` | `空白` | 2,469 | 1,219 |
+| type | `体` | empty | 2,229 | 1,182 |
+| pos2 | `普通名詞` | empty | 2,089 | 1,132 |
+| pos1 | `助詞` | `空白` | 1,857 | 1,028 |
+| pos3 | `一般` | empty | 1,659 | 1,005 |
+
+Top Japanese `pos1` transitions:
+
+| from | to | examples | source count |
+| --- | --- | ---: | ---: |
+| `名詞` | `空白` | 2,469 | 1,219 |
+| `助詞` | `空白` | 1,857 | 1,028 |
+| `動詞` | `空白` | 607 | 499 |
+| `助動詞` | `空白` | 269 | 241 |
+| `代名詞` | `空白` | 206 | 190 |
+| `形容詞` | `空白` | 159 | 145 |
+| `副詞` | `空白` | 137 | 130 |
+
 ## Recommended default triage workflow
 
 Use the canonical v2 artifact as the default compact corpus output.
@@ -172,6 +237,14 @@ summarize-compact --script-category mixed --sort-by lexical-segmentation-regions
 
 ```bash
 summarize-examples --script-category latin-code --filter lexical-only --sort-by examples
+```
+
+5. Recurring tokenizer difference patterns:
+
+```bash
+summarize-differences --kind segmentation --script-category japanese --filter lexical-only
+summarize-differences --kind feature --script-category japanese --filter lexical-only
+summarize-differences --kind feature --feature-key pos1 --script-category japanese --filter lexical-only
 ```
 
 ## Next engineering item

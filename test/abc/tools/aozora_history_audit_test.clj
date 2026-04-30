@@ -78,6 +78,18 @@
         (.setCommitter "ABC Test" "abc@example.test")
         .call)))
 
+(defn- commit-text! [^Git git root rel content message]
+  (let [file (io/file root rel)]
+    (io/make-parents file)
+    (spit file content)
+    (-> git .add (.addFilepattern rel) .call)
+    (-> git
+        .commit
+        (.setMessage message)
+        (.setAuthor "ABC Test" "abc@example.test")
+        (.setCommitter "ABC Test" "abc@example.test")
+        .call)))
+
 (defn- write-drift-sidecars! [persons-dir event]
   (let [event-with-id (drift/materialize-event-id event)
         event-id (get event-with-id "drift_event_id")
@@ -318,3 +330,56 @@
           (delete-recursive repo-dir)
           (delete-recursive work-dir)
           (delete-recursive drift-dir))))))
+
+(deftest scan-history-audits-adjacent-zip-changing-commits-test
+  (testing "scan mode walks adjacent commits that changed the upstream CSV ZIP"
+    (let [repo-dir (temp-dir "abc-history-scan-repo")
+          work-dir (temp-dir "abc-history-scan-work")
+          git (-> (Git/init) (.setDirectory repo-dir) .call)]
+      (try
+        (let [old-commit (commit-zip!
+                          git repo-dir
+                          (zip-bytes (csv-text [(row {})]))
+                          "old corpus")
+              _unrelated (commit-text! git repo-dir "README.md" "not a csv change"
+                                       "unrelated")
+              new-commit (commit-zip!
+                          git repo-dir
+                          (zip-bytes
+                           (csv-text [(row {"人物ID" "abc-000000000001"
+                                            "姓" "新" "名" "一"
+                                            "姓読み" "しん" "名読み" "いち"
+                                            "姓読みソート用" "しん" "名読みソート用" "いち"
+                                            "姓ローマ字" "New" "名ローマ字" "One"})
+                                      (row {"人物ID" "abc-000000000002"
+                                            "姓" "新" "名" "二"
+                                            "姓読み" "しん" "名読み" "に"
+                                            "姓読みソート用" "しん" "名読みソート用" "に"
+                                            "姓ローマ字" "New" "名ローマ字" "Two"})]))
+                          "new corpus")
+              result (audit/scan-history! {:aozora-repo (str repo-dir)
+                                           :from-ref (.getName old-commit)
+                                           :to-ref (.getName new-commit)
+                                           :max-pairs 1
+                                           :work-dir (str work-dir)})]
+          (is (= "ok" (:status result)))
+          (is (= {"pairs_scanned" 1
+                  "validation_failed" 0
+                  "split_candidates" 1
+                  "merge_candidates" 0
+                  "drift_participant_updates" 0}
+                 (:summary result)))
+          (is (= [{:previous-ref (.getName old-commit)
+                   :current-ref (.getName new-commit)
+                   :status "ok"
+                   :split-candidates 1
+                   :merge-candidates 0
+                   :drift-participant-updates 0}]
+                 (mapv #(select-keys % [:previous-ref :current-ref :status
+                                         :split-candidates :merge-candidates
+                                         :drift-participant-updates])
+                       (:pairs result)))))
+        (finally
+          (.close git)
+          (delete-recursive repo-dir)
+          (delete-recursive work-dir))))))

@@ -123,3 +123,40 @@ Results:
 | `analyze_aat/jobs_2` | `0-7` | `74.282 ms..75.171 ms` |
 
 This smoke used the benchmark's synthetic AAT fixture and the reproducible Sudachi full dictionary from the flake. It validates the benchmark path and pinning policy; it is not a full-corpus throughput number.
+
+## Pinned full-corpus baseline attempt
+
+Command:
+
+```bash
+mkdir -p scratch/perf-baseline
+AB_SUDACHI_DICT="$(nix path-info .#sudachi-dictionary-full)/share/sudachi/system.dic" \
+  taskset -c 0-7 /run/current-system/sw/bin/time -v \
+  target/release/ab-morph-run analyze-aat \
+    --aat-dir scratch/morph-full-corpus/aats \
+    --analyzer vibrato \
+    --analyzer sudachi-a \
+    --analyzer sudachi-c \
+    --output-profile compact \
+    --analyses-output scratch/perf-baseline/analyses.jsonl.zst \
+    --comparisons-output scratch/perf-baseline/comparisons.jsonl.zst \
+    --examples-output scratch/perf-baseline/examples.jsonl.zst \
+    --nway-output scratch/perf-baseline/nway.jsonl.zst \
+    --errors-output scratch/perf-baseline/errors.jsonl.zst \
+    --manifest-output scratch/perf-baseline/manifest.json \
+    --jobs 8 \
+    --progress-interval-seconds 30
+```
+
+Result:
+
+- Inputs discovered: `17894`.
+- Termination: signal 15 after `30:44.16`.
+- Peak RSS: `72419252 KB` (~69.1 GiB).
+- Peak observed progress RSS before termination: `71888828 KB` at `1839s`.
+- User time: `14146.74s`.
+- System time: `491.35s`.
+- CPU: `793%`.
+- Durable output artifacts: none. The run was terminated before output writers finished/flushed.
+
+Conclusion: the canonical `--jobs 8` three-analyzer full-corpus run is memory-bound and not currently a viable baseline. The next optimization should reduce resident analyzer/dictionary memory or reduce concurrent analyzer workers before chasing smaller map/string optimizations.

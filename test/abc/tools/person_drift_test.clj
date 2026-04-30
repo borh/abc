@@ -155,3 +155,19 @@
     (is (contains? triples [post-a "http://www.w3.org/ns/prov#wasDerivedFrom" pre]))
     (is (contains? triples [pre "http://www.w3.org/ns/prov#specializationOf"
                             "http://www.aozora.gr.jp/index_pages/person000879.html"]))))
+
+(deftest drift-event-shacl-accepts-emitted-split-test
+  (let [graph (drift/event->graph (base-split))]
+    (is (= :ok (drift/validate-event-shacl! graph "base split")))))
+
+(deftest typing-coherence-accepts-emitted-types-test
+  (let [event (base-split)
+        graph (drift/event->graph event)
+        failures (drift/typing-coherence-failures event graph)]
+    (is (= [] failures))))
+
+(deftest typing-coherence-rejects-missing-types-test
+  (let [event (base-split)
+        graph (aa/graph :simple)]
+    (is (some #{:missing-rdf-type}
+              (map :code (drift/typing-coherence-failures event graph))))))

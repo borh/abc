@@ -4,7 +4,9 @@
 @prefix dcterms: <http://purl.org/dc/terms/> .
 @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 @prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdag2: <http://RDVocab.info/ElementsGr2/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix sh: <http://www.w3.org/ns/shacl#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
@@ -68,6 +70,74 @@ abc:ActivityShape
     sh:minCount 1
   ] .
 
+abc:DriftEvent
+  rdfs:subClassOf prov:Activity .
+
+abc:DriftSplitEvent
+  rdfs:subClassOf abc:DriftEvent .
+
+abc:DriftMergeEvent
+  rdfs:subClassOf abc:DriftEvent .
+
+abc:PersonDriftEventShape
+  a sh:NodeShape ;
+  sh:targetClass abc:DriftEvent ;
+  sh:property [
+    sh:path rdf:type ;
+    sh:hasValue prov:Activity
+  ] ;
+  sh:property [
+    sh:path abc:driftEventType ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:in ("split" "merge")
+  ] ;
+  sh:property [
+    sh:path dcterms:date ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:date
+  ] ;
+  sh:property [
+    sh:path abc:driftEvidence ;
+    sh:minCount 1 ;
+    sh:nodeKind sh:IRI
+  ] .
+
+abc:PersonDriftSplitEventShape
+  a sh:NodeShape ;
+  sh:targetClass abc:DriftSplitEvent ;
+  sh:property [
+    sh:path abc:driftEventType ;
+    sh:hasValue "split"
+  ] ;
+  sh:property [
+    sh:path prov:used ;
+    sh:minCount 1 ;
+    sh:maxCount 1
+  ] ;
+  sh:property [
+    sh:path [ sh:inversePath prov:wasGeneratedBy ] ;
+    sh:minCount 2
+  ] .
+
+abc:PersonDriftMergeEventShape
+  a sh:NodeShape ;
+  sh:targetClass abc:DriftMergeEvent ;
+  sh:property [
+    sh:path abc:driftEventType ;
+    sh:hasValue "merge"
+  ] ;
+  sh:property [
+    sh:path prov:used ;
+    sh:minCount 2
+  ] ;
+  sh:property [
+    sh:path [ sh:inversePath prov:wasGeneratedBy ] ;
+    sh:minCount 1 ;
+    sh:maxCount 1
+  ] .
+
 abc:FailureShape
   a sh:NodeShape ;
   sh:targetClass abc:FailureArtifact ;
@@ -118,7 +188,10 @@ abc:MetadataRecordWorkShape
     sh:path dcterms:identifier ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
-    sh:datatype xsd:int
+    sh:or (
+      [ sh:datatype xsd:int ; sh:pattern "^[0-9]{6}$" ]
+      [ sh:datatype xsd:string ; sh:pattern "^abc-[0-9a-f]{12}$" ]
+    )
   ] ;
   sh:property [
     sh:path dcterms:title ;

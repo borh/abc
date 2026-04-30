@@ -2,6 +2,7 @@
   (:require [abc.tools.hash :as hash]
             [abc.tools.person-record :as person-record]
             [abc.tools.rdf-prefixes :as rdf-prefixes]
+            [abc.tools.shacl :as shacl]
             [arachne.aristotle :as aa]
             [clojure.set :as set]
             [clojure.string :as string])
@@ -185,3 +186,36 @@
     (add-triple! graph assoc-node (uri (str prov-base "agent")) agent)
     (add-triple! graph assoc-node (uri (str prov-base "hadRole")) (uri (str abc-base "DriftEditor")))
     graph))
+
+(defn- type-uris [graph event-node-uri]
+  (let [node (uri event-node-uri)]
+    (->> (iterator-seq (.find graph node (uri rdf-type-uri) nil))
+         (map #(.getURI (.getObject %)))
+         set)))
+
+(defn expected-type-uris [event]
+  #{(str abc-base "DriftEvent")
+    (str prov-base "Activity")
+    (subclass-type-uri (get event "drift_event_type"))})
+
+(defn typing-coherence-failures [event graph]
+  (let [actual (type-uris graph (event-iri (get event "drift_event_id")))
+        expected (expected-type-uris event)]
+    (vec
+     (concat
+      (map (fn [type-uri] {:code :missing-rdf-type :type type-uri})
+           (sort (set/difference expected actual)))
+      (map (fn [type-uri] {:code :unexpected-rdf-type :type type-uri})
+           (sort (set/difference actual expected)))))))
+
+(defn assert-typing-coherent! [event graph]
+  (let [failures (typing-coherence-failures event graph)]
+    (when (seq failures)
+      (throw (ex-info "person drift event RDF typing coherence failed"
+                      {:failures failures}))))
+  :ok)
+
+(defn validate-event-shacl! [graph label]
+  (shacl/validate! {:shapes-graph (shacl/load-shapes-graph)
+                    :data-graph graph
+                    :label label}))

@@ -40,6 +40,12 @@
 (defn resolve-role-curie [role]
   (rdf-prefixes/resolve-curie role))
 
+(defn- resolved-role-uri! [event]
+  (let [role (get-in event ["prov" "qualified_association" "had_role"])]
+    (or (resolve-role-curie role)
+        (throw (ex-info "unresolvable drift event role CURIE"
+                        {:had_role role})))))
+
 (defn- sorted-lex? [xs]
   (= (vec xs) (vec (sort xs))))
 
@@ -164,8 +170,7 @@
         used (get-in event ["prov" "used"])
         generated (get-in event ["prov" "was_generated_by"])
         agent (uri (get-in event ["prov" "qualified_association" "agent"]))
-        role (uri (resolve-role-curie
-                   (get-in event ["prov" "qualified_association" "had_role"])))
+        role (uri (resolved-role-uri! event))
         assoc-node (NodeFactory/createBlankNode)]
     (doseq [type-uri [(str abc-base "DriftEvent")
                       (str prov-base "Activity")
@@ -284,7 +289,12 @@
       (mapv #(assoc % :code :shacl-violation :path label)
             (:errors (ex-data e))))))
 
-(defn validate-drift-graph-failures [event graph label]
+(defn validate-drift-graph-failures
+  "Validate an externally supplied drift RDF graph against an independently
+  supplied event JSON contract. The live pipeline derives its graph from JSON
+  with event->graph, so participant/PROV mismatch checks are primarily for TTL
+  negative fixtures and other hand-authored graph validation."
+  [event graph label]
   (vec (concat
         (mapv #(assoc % :path label)
               (typing-coherence-failures event graph))
@@ -349,10 +359,10 @@
                           (mapv #(assoc % :path path)
                                 (typing-coherence-failures value graph))
                           [])
-        shacl-failures (if (and graph (empty? typing-failures))
-                         (shacl-failures graph path)
-                         [])]
-    (vec (concat schema-failures json-failures typing-failures shacl-failures))))
+        shacl-violations (if (and graph (empty? typing-failures))
+                           (shacl-failures graph path)
+                           [])]
+    (vec (concat schema-failures json-failures typing-failures shacl-violations))))
 
 (defn- participants-by-person-id [event]
   (->> (get event "participants")

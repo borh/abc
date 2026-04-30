@@ -23,6 +23,10 @@
    ['schema  "https://schema.org/"]
    ['xsd     "http://www.w3.org/2001/XMLSchema#"]])
 
+(def prefix-map
+  "Map of prefix-name string to namespace IRI for CURIE resolution."
+  (into {} (map (fn [[sym uri]] [(name sym) uri]) prefix-bindings)))
+
 (defonce ^:private installed
   (delay
     (doseq [[sym uri] prefix-bindings]
@@ -49,7 +53,5 @@
   [s]
   (when-let [[_ prefix local] (and (string? s)
                                    (re-matches #"^([^:]+):(.+)$" s))]
-    (when-let [base (get (into {} (map (fn [[sym uri]] [(name sym) uri])
-                                       prefix-bindings))
-                         prefix)]
+    (when-let [base (get prefix-map prefix)]
       (str base local))))

@@ -388,15 +388,20 @@
                 "fixtures/v0/invalid/drift/asymmetric-index"
                 #{:event-missing-from-participant-index}
                 "fixtures/v0/invalid/drift/orphan-event-file"
-                #{:orphan-event-file}
+                #{:orphan-event-file :event-missing-from-participant-index}
                 "fixtures/v0/invalid/drift/unsorted-participants"
-                #{:participants-not-sorted}
+                #{:participants-not-sorted :index-target-missing
+                  :event-missing-from-participant-index :orphan-event-file}
                 "fixtures/v0/invalid/drift/dangling-snapshot-ref"
-                #{:unknown-snapshot-reference}
+                #{:unknown-snapshot-reference :participant-not-covered
+                  :index-target-missing :event-missing-from-participant-index
+                  :orphan-event-file}
                 "fixtures/v0/invalid/drift/invalid-role"
-                #{:invalid-had-role}
+                #{:invalid-had-role :index-target-missing
+                  :event-missing-from-participant-index :orphan-event-file}
                 "fixtures/v0/invalid/drift/invalid-agent"
-                #{:invalid-agent-iri}
+                #{:invalid-agent-iri :index-target-missing
+                  :event-missing-from-participant-index :orphan-event-file}
                 {:type :ttl
                  :event "examples/v0/example-persons/_events/sha256:550c55dbfed12ce9b6de833a75c8b03e8a01bf3047c17ced494e87db0f4ee747.json"
                  :graph "fixtures/v0/invalid/drift/shacl-missing-date/graph.ttl"}
@@ -404,7 +409,7 @@
                 {:type :ttl
                  :event "examples/v0/example-persons/_events/sha256:550c55dbfed12ce9b6de833a75c8b03e8a01bf3047c17ced494e87db0f4ee747.json"
                  :graph "fixtures/v0/invalid/drift/split-cardinality-one-successor/graph.ttl"}
-                #{:shacl-violation}
+                #{:shacl-violation :rdf-participant-prov-mismatch}
                 {:type :ttl
                  :event "fixtures/v0/invalid/drift/merge-cardinality-one-predecessor/event.json"
                  :graph "fixtures/v0/invalid/drift/merge-cardinality-one-predecessor/graph.ttl"}
@@ -412,12 +417,18 @@
                 {:type :ttl
                  :event "examples/v0/example-persons/_events/sha256:550c55dbfed12ce9b6de833a75c8b03e8a01bf3047c17ced494e87db0f4ee747.json"
                  :graph "fixtures/v0/invalid/drift/typing-missing-subclass/graph.ttl"}
-                #{:missing-rdf-type}
+                #{:missing-rdf-type :rdf-participant-prov-mismatch}
                 {:type :ttl
                  :event "examples/v0/example-persons/_events/sha256:550c55dbfed12ce9b6de833a75c8b03e8a01bf3047c17ced494e87db0f4ee747.json"
                  :graph "fixtures/v0/invalid/drift/typing-missing-activity/graph.ttl"}
-                #{:missing-rdf-type :shacl-violation}
+                #{:missing-rdf-type :shacl-violation :rdf-participant-prov-mismatch}
                 {:type :ttl
                  :event "examples/v0/example-persons/_events/sha256:550c55dbfed12ce9b6de833a75c8b03e8a01bf3047c17ced494e87db0f4ee747.json"
                  :graph "fixtures/v0/invalid/drift/rdf-participant-prov-mismatch/graph.ttl"}
                 #{:rdf-participant-prov-mismatch}})))))
+
+(deftest validate-drift-fixtures-rejects-unexpected-failure-codes-test
+  (testing "drift fixture runner requires the expected code set to be exact"
+    (is (thrown? clojure.lang.ExceptionInfo
+                 (validate/validate-drift-fixtures!
+                  {"fixtures/v0/invalid/drift/invalid-agent" #{}})))))

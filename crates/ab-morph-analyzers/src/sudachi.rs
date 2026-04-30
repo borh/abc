@@ -54,24 +54,37 @@ impl SudachiAnalyzer {
         dictionary_path: impl AsRef<Path>,
     ) -> Result<Self, AnalyzerError> {
         let analyzer_id = format!("sudachi-{}", mode.analyzer_suffix());
-        let dictionary_path = prepare_dictionary_path(&analyzer_id, dictionary_path.as_ref())?;
+        let dictionary = Self::load_dictionary(&analyzer_id, dictionary_path)?;
+
+        Ok(Self::from_dictionary(mode, dictionary))
+    }
+
+    pub fn load_dictionary(
+        analyzer_id: &str,
+        dictionary_path: impl AsRef<Path>,
+    ) -> Result<Arc<JapaneseDictionary>, AnalyzerError> {
+        let dictionary_path = prepare_dictionary_path(analyzer_id, dictionary_path.as_ref())?;
         let config = Config::new(None, None, Some(dictionary_path)).map_err(|err| {
             AnalyzerError::DictionaryLoad {
-                analyzer: analyzer_id.clone(),
+                analyzer: analyzer_id.to_owned(),
                 message: err.to_string(),
             }
         })?;
         let dictionary =
             JapaneseDictionary::from_cfg(&config).map_err(|err| AnalyzerError::DictionaryLoad {
-                analyzer: analyzer_id.clone(),
+                analyzer: analyzer_id.to_owned(),
                 message: err.to_string(),
             })?;
 
-        Ok(Self {
-            analyzer_id,
+        Ok(Arc::new(dictionary))
+    }
+
+    pub fn from_dictionary(mode: SudachiMode, dictionary: Arc<JapaneseDictionary>) -> Self {
+        Self {
+            analyzer_id: format!("sudachi-{}", mode.analyzer_suffix()),
             mode,
-            dictionary: Arc::new(dictionary),
-        })
+            dictionary,
+        }
     }
 }
 

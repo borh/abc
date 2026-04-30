@@ -804,6 +804,16 @@ fn collect_aat_json_files(dir: &Path, paths: &mut Vec<PathBuf>) -> Result<()> {
 
 fn load_analyzers(specs: &[AnalyzerSpec]) -> Result<Vec<Arc<LoadedAnalyzer>>> {
     let mut analyzers = Vec::new();
+    let sudachi_dictionary = if specs
+        .iter()
+        .any(|spec| matches!(spec, AnalyzerSpec::Sudachi(_)))
+    {
+        let dict = std::env::var_os("AB_SUDACHI_DICT")
+            .context("AB_SUDACHI_DICT is required for Sudachi analyzers")?;
+        Some(SudachiAnalyzer::load_dictionary("sudachi", dict)?)
+    } else {
+        None
+    };
 
     for spec in specs {
         match spec {
@@ -813,10 +823,15 @@ fn load_analyzers(specs: &[AnalyzerSpec]) -> Result<Vec<Arc<LoadedAnalyzer>>> {
                 )));
             }
             AnalyzerSpec::Sudachi(mode) => {
-                let dict = std::env::var_os("AB_SUDACHI_DICT")
-                    .context("AB_SUDACHI_DICT is required for Sudachi analyzers")?;
                 analyzers.push(Arc::new(LoadedAnalyzer::Sudachi(
-                    SudachiAnalyzer::from_dictionary_path(*mode, dict)?,
+                    SudachiAnalyzer::from_dictionary(
+                        *mode,
+                        Arc::clone(
+                            sudachi_dictionary
+                                .as_ref()
+                                .expect("Sudachi dictionary loaded"),
+                        ),
+                    ),
                 )));
             }
         }

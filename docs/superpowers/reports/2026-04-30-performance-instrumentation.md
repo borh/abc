@@ -160,3 +160,23 @@ Result:
 - Durable output artifacts: none. The run was terminated before output writers finished/flushed.
 
 Conclusion: the canonical `--jobs 8` three-analyzer full-corpus run is memory-bound and not currently a viable baseline. The next optimization should reduce resident analyzer/dictionary memory or reduce concurrent analyzer workers before chasing smaller map/string optimizations.
+
+## Shared Sudachi dictionary smoke
+
+Change: `sudachi-a` and `sudachi-c` now share one loaded `JapaneseDictionary` when constructed by `ab-morph-run` from the same `AB_SUDACHI_DICT` path.
+
+Pinned benchmark command:
+
+```bash
+AB_SUDACHI_DICT="$(nix path-info .#sudachi-dictionary-full)/share/sudachi/system.dic" \
+  taskset -c 0-7 cargo bench -p ab-morph-run --bench analyze_aat -- --sample-size 10 --measurement-time 2
+```
+
+Results after sharing:
+
+| Benchmark | CPU set | Mean range | Criterion comparison |
+| --- | --- | ---: | --- |
+| `analyze_aat/jobs_1` | `0-7` | `98.860 ms..99.113 ms` | no change detected |
+| `analyze_aat/jobs_2` | `0-7` | `74.345 ms..75.506 ms` | no change detected |
+
+This change targets resident memory for multi-Sudachi-mode runs. It is not expected to improve per-source throughput.

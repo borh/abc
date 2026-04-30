@@ -12,6 +12,29 @@ pub(crate) fn compare_nway_with_source_text(
     source_text: &str,
     compare_keys: &[FeatureKey],
 ) -> Result<NwayComparison, MorphDiffError> {
+    let mut regions = Vec::new();
+    let stats =
+        visit_nway_regions_with_source_text(analyses, source_text, compare_keys, |region| {
+            regions.push(region.clone());
+        })?;
+
+    Ok(NwayComparison {
+        text_id: analyses[0].text_id.clone(),
+        analyzers: analyses
+            .iter()
+            .map(|analysis| analysis.analyzer.clone())
+            .collect(),
+        regions,
+        stats,
+    })
+}
+
+pub(crate) fn visit_nway_regions_with_source_text(
+    analyses: &[Analysis],
+    source_text: &str,
+    compare_keys: &[FeatureKey],
+    mut visit: impl FnMut(&NwayRegion),
+) -> Result<NwayStats, MorphDiffError> {
     if analyses.len() < 2 {
         return Err(MorphDiffError::InvalidInput {
             message: "N-way comparison requires at least two analyses".to_owned(),
@@ -29,22 +52,19 @@ pub(crate) fn compare_nway_with_source_text(
     }
 
     let analysis_refs = analyses.iter().collect::<Vec<_>>();
-    let mut regions =
-        shared_regions_with_source_len(&analysis_refs, source_text.chars().count(), compare_keys)?;
-    for (index, region) in regions.iter_mut().enumerate() {
-        region.region_index = index;
-    }
-    let stats = derive_nway_stats(&analysis_refs, source_text, &regions);
+    let mut stats = NwayStatsAccumulator::new(&analysis_refs, source_text);
+    visit_shared_regions_with_source_len(
+        &analysis_refs,
+        source_text.chars().count(),
+        compare_keys,
+        |mut region| {
+            region.region_index = stats.regions;
+            stats.record(source_text, &region);
+            visit(&region);
+        },
+    )?;
 
-    Ok(NwayComparison {
-        text_id: analyses[0].text_id.clone(),
-        analyzers: analyses
-            .iter()
-            .map(|analysis| analysis.analyzer.clone())
-            .collect(),
-        regions,
-        stats,
-    })
+    Ok(stats.finish())
 }
 
 pub(crate) fn shared_regions_with_source_len(
@@ -52,6 +72,19 @@ pub(crate) fn shared_regions_with_source_len(
     source_len: usize,
     compare_keys: &[FeatureKey],
 ) -> Result<Vec<NwayRegion>, MorphDiffError> {
+    let mut regions = Vec::new();
+    visit_shared_regions_with_source_len(analyses, source_len, compare_keys, |region| {
+        regions.push(region);
+    })?;
+    Ok(regions)
+}
+
+fn visit_shared_regions_with_source_len(
+    analyses: &[&Analysis],
+    source_len: usize,
+    compare_keys: &[FeatureKey],
+    mut visit: impl FnMut(NwayRegion),
+) -> Result<(), MorphDiffError> {
     if analyses.len() < 2 {
         return Err(MorphDiffError::InvalidInput {
             message: "shared region alignment requires at least two analyses".to_owned(),
@@ -59,7 +92,7 @@ pub(crate) fn shared_regions_with_source_len(
     }
 
     let mut cursors = vec![0usize; analyses.len()];
-    let mut regions = Vec::new();
+    let mut region_index = 0usize;
     while cursors
         .iter()
         .enumerate()
@@ -103,15 +136,16 @@ pub(crate) fn shared_regions_with_source_len(
             .collect::<Vec<_>>();
         let segmentation_groups = segmentation_groups(&per_analyzer);
         let feature_groups = feature_groups(analyses, &per_analyzer, compare_keys);
-        regions.push(NwayRegion {
-            region_index: regions.len(),
+        visit(NwayRegion {
+            region_index,
             text_span: region_start..region_end,
             per_analyzer,
             segmentation_groups,
             feature_groups,
         });
+        region_index += 1;
     }
-    Ok(regions)
+    Ok(())
 }
 
 fn next_start(analyses: &[&Analysis], cursors: &[usize], source_len: usize) -> usize {
@@ -360,12 +394,68 @@ fn value_group(
     }
 }
 
-fn derive_nway_stats(
-    analyses: &[&Analysis],
-    source_text: &str,
-    regions: &[NwayRegion],
-) -> NwayStats {
-    let source_len = source_text.chars().count();
+struct NwayStatsAccumulator {
+    analyzers: usize,
+    regions: usize,
+    agreement_regions: usize,
+    regions_with_feature_disagreement: usize,
+    regions_with_segmentation_disagreement: usize,
+    regions_with_coverage_mismatch: usize,
+    whitespace_regions: usize,
+    lexical_regions: usize,
+    unanimous_boundary_count: usize,
+    variable_boundary_count: usize,
+}
+
+impl NwayStatsAccumulator {
+    fn new(analyses: &[&Analysis], source_text: &str) -> Self {
+        let (unanimous_boundary_count, variable_boundary_count) =
+            boundary_counts(analyses, source_text.chars().count());
+        Self {
+            analyzers: analyses.len(),
+            regions: 0,
+            agreement_regions: 0,
+            regions_with_feature_disagreement: 0,
+            regions_with_segmentation_disagreement: 0,
+            regions_with_coverage_mismatch: 0,
+            whitespace_regions: 0,
+            lexical_regions: 0,
+            unanimous_boundary_count,
+            variable_boundary_count,
+        }
+    }
+
+    fn record(&mut self, source_text: &str, region: &NwayRegion) {
+        self.regions += 1;
+        self.agreement_regions += usize::from(region.is_agreement());
+        self.regions_with_feature_disagreement += usize::from(region.has_feature_disagreement());
+        self.regions_with_segmentation_disagreement +=
+            usize::from(region.has_segmentation_disagreement());
+        self.regions_with_coverage_mismatch += usize::from(region.has_coverage_mismatch());
+        if crate::stats::char_span_is_whitespace_only(source_text, &region.text_span) {
+            self.whitespace_regions += 1;
+        } else {
+            self.lexical_regions += 1;
+        }
+    }
+
+    fn finish(self) -> NwayStats {
+        NwayStats {
+            analyzers: self.analyzers,
+            regions: self.regions,
+            agreement_regions: self.agreement_regions,
+            regions_with_feature_disagreement: self.regions_with_feature_disagreement,
+            regions_with_segmentation_disagreement: self.regions_with_segmentation_disagreement,
+            regions_with_coverage_mismatch: self.regions_with_coverage_mismatch,
+            whitespace_regions: self.whitespace_regions,
+            lexical_regions: self.lexical_regions,
+            unanimous_boundary_count: self.unanimous_boundary_count,
+            variable_boundary_count: self.variable_boundary_count,
+        }
+    }
+}
+
+fn boundary_counts(analyses: &[&Analysis], source_len: usize) -> (usize, usize) {
     let mut all_boundaries = BTreeSet::new();
     let boundary_sets = analyses
         .iter()
@@ -386,39 +476,5 @@ fn derive_nway_stats(
         .filter(|boundary| boundary_sets.iter().all(|set| set.contains(boundary)))
         .count();
     let variable_boundary_count = all_boundaries.len() - unanimous_boundary_count;
-
-    NwayStats {
-        analyzers: analyses.len(),
-        regions: regions.len(),
-        agreement_regions: regions
-            .iter()
-            .filter(|region| region.is_agreement())
-            .count(),
-        regions_with_feature_disagreement: regions
-            .iter()
-            .filter(|region| region.has_feature_disagreement())
-            .count(),
-        regions_with_segmentation_disagreement: regions
-            .iter()
-            .filter(|region| region.has_segmentation_disagreement())
-            .count(),
-        regions_with_coverage_mismatch: regions
-            .iter()
-            .filter(|region| region.has_coverage_mismatch())
-            .count(),
-        whitespace_regions: regions
-            .iter()
-            .filter(|region| {
-                crate::stats::char_span_is_whitespace_only(source_text, &region.text_span)
-            })
-            .count(),
-        lexical_regions: regions
-            .iter()
-            .filter(|region| {
-                !crate::stats::char_span_is_whitespace_only(source_text, &region.text_span)
-            })
-            .count(),
-        unanimous_boundary_count,
-        variable_boundary_count,
-    }
+    (unanimous_boundary_count, variable_boundary_count)
 }

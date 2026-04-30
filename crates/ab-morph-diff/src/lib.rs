@@ -110,6 +110,15 @@ pub fn compare_nway_with_source_text(
     nway::compare_nway_with_source_text(analyses, source_text, compare_keys)
 }
 
+pub fn visit_nway_regions_with_source_text(
+    analyses: &[Analysis],
+    source_text: &str,
+    compare_keys: &[FeatureKey],
+    visit: impl FnMut(&NwayRegion),
+) -> Result<NwayStats, MorphDiffError> {
+    nway::visit_nway_regions_with_source_text(analyses, source_text, compare_keys, visit)
+}
+
 #[cfg(test)]
 mod tests {
     use std::collections::BTreeMap;

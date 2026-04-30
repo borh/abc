@@ -12,10 +12,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use ab_morph_analyzers::{MorphAnalyzer, SudachiAnalyzer, SudachiMode, VibratoAnalyzer};
-use ab_morph_diff::{
-    Analysis, Comparison, compare_nway_with_source_text, compare_pair,
-    compare_pair_compact_with_source_text,
-};
+use ab_morph_diff::{Analysis, Comparison, compare_pair, compare_pair_compact_with_source_text};
 use ab_plaintext::{PlainTextDocument, from_aat_value};
 use anyhow::{Context, Result, bail};
 use clap::ValueEnum;
@@ -428,14 +425,13 @@ fn run_analyze_aat_serial(
             }
         }
         if let Some(writer) = &mut nway_writer {
-            match compare_nway_with_source_text(&analyses, &document.text, &[]) {
-                Ok(comparison) => {
-                    let row = nway::row_from_comparison(
-                        source_id.clone(),
-                        &document.text,
-                        &comparison,
-                        options.max_nway_examples_per_text,
-                    );
+            match nway::row_from_analyses(
+                source_id.clone(),
+                &document.text,
+                &analyses,
+                options.max_nway_examples_per_text,
+            ) {
+                Ok(row) => {
                     write_jsonl_row(&mut **writer, &row)?;
                 }
                 Err(error) => {

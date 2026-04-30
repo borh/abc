@@ -180,3 +180,23 @@ Results after sharing:
 | `analyze_aat/jobs_2` | `0-7` | `74.345 ms..75.506 ms` | no change detected |
 
 This change targets resident memory for multi-Sudachi-mode runs. It is not expected to improve per-source throughput.
+
+## Streaming compact N-way smoke
+
+Change: compact N-way output now visits N-way regions and accumulates stats/examples directly instead of building a full `NwayComparison { regions: Vec<NwayRegion> }` per source before reducing it to a compact row.
+
+Pinned benchmark command:
+
+```bash
+AB_SUDACHI_DICT="$(nix path-info .#sudachi-dictionary-full)/share/sudachi/system.dic" \
+  taskset -c 0-7 cargo bench -p ab-morph-run --bench analyze_aat -- --sample-size 10 --measurement-time 2
+```
+
+Results after streaming compact N-way:
+
+| Benchmark | CPU set | Mean range | Criterion comparison |
+| --- | --- | ---: | --- |
+| `analyze_aat/jobs_1` | `0-7` | `98.920 ms..99.839 ms` | no change detected |
+| `analyze_aat/jobs_2` | `0-7` | `74.764 ms..76.014 ms` | no change detected |
+
+This targets peak memory on large individual documents. It should not materially change small-fixture throughput.

@@ -256,3 +256,25 @@
           (str v " admitted by schema"))
       (is (= :ok (pr/validate! (assoc (example-person) "date_of_death" v)))
           (str v " admitted by schema (death)")))))
+
+(defn- abc-local-person []
+  (assoc (example-person)
+         "person_id" "abc-000000000001"
+         "family_name" "ABC Local"
+         "given_name" "One"))
+
+(deftest validate-accepts-abc-local-person-id-test
+  (is (= :ok (pr/validate! (abc-local-person)))))
+
+(deftest person-iri-branches-for-abc-local-id-test
+  (is (= "https://w3id.org/abc/persons/abc-000000000001"
+         (pr/person-iri "abc-000000000001")))
+  (is (= "http://www.aozora.gr.jp/index_pages/person000879.html"
+         (pr/person-iri "000879"))))
+
+(deftest record->graph-abc-local-identifier-is-string-test
+  (let [g (pr/record->graph (abc-local-person))
+        [identifier] (objects-of g "http://purl.org/dc/terms/identifier")]
+    (is (= "abc-000000000001" (.getLiteralLexicalForm identifier)))
+    (is (= "http://www.w3.org/2001/XMLSchema#string"
+           (.getLiteralDatatypeURI identifier)))))

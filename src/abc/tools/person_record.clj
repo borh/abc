@@ -72,11 +72,26 @@
 ;; RDF mapping
 ;; ---------------------------------------------------------------------------
 
+(defn numeric-person-id? [person-id]
+  (boolean (re-matches #"^[0-9]{6}$" person-id)))
+
+(defn abc-local-person-id? [person-id]
+  (boolean (re-matches #"^abc-[0-9a-f]{12}$" person-id)))
+
 (defn person-iri
-  "Existing Aozora LOD uses http://www.aozora.gr.jp/index_pages/personNNNNNN.html
-  as the person IRI."
+  "Aozora numeric IDs keep their Aozora page IRI. ABC-local IDs use the
+  ADR 0020 local person namespace."
   [person-id]
-  (str "http://www.aozora.gr.jp/index_pages/person" person-id ".html"))
+  (cond
+    (numeric-person-id? person-id)
+    (str "http://www.aozora.gr.jp/index_pages/person" person-id ".html")
+
+    (abc-local-person-id? person-id)
+    (str "https://w3id.org/abc/persons/" person-id)
+
+    :else
+    (throw (ex-info (str "unsupported person_id shape: " person-id)
+                    {:person_id person-id}))))
 
 (def ^:private full-date-pattern  #"-?\d{4}-\d{2}-\d{2}")
 (def ^:private year-month-pattern #"-?\d{4}-\d{2}")
@@ -117,6 +132,11 @@
 (defn- ->int-literal [s]
   (NodeFactory/createLiteral ^String s XSDDatatype/XSDint))
 
+(defn- ->identifier-literal [person-id]
+  (if (numeric-person-id? person-id)
+    (->int-literal person-id)
+    (NodeFactory/createLiteral ^String person-id XSDDatatype/XSDstring)))
+
 (defn- person-data
   "Aristotle map for one Person. ADR 0015: each non-null date is
   emitted as a canonical EDTF lexical string under the abc:edtf*
@@ -135,7 +155,7 @@
         dod-xsd (date-literal-for dod)]
     (cond-> {:rdf/about iri
              :rdf/type [:foaf/Person]
-             :dcterms/identifier (->int-literal (get person "person_id"))
+             :dcterms/identifier (->identifier-literal (get person "person_id"))
              :foaf/familyName family
              :foaf/name (if given (str family " " given) family)}
       given

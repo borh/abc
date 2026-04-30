@@ -101,7 +101,7 @@
       "additionalProperties": false,
       "required": ["person_id", "person_record_hash", "relation_to_work"],
       "properties": {
-        "person_id": { "type": "string", "pattern": "^[0-9]{6}$" },
+        "person_id": { "type": "string", "pattern": "^([0-9]{6}|abc-[0-9a-f]{12})$" },
         "person_record_hash": { "$ref": "#/$defs/hash" },
         "relation_to_work": {
           "type": "string",

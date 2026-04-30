@@ -13,6 +13,7 @@ pom.xml.asc
 /.nrepl-port
 /.idea
 /.iml
+/.claude/
 .hgignore
 .hg/
 /*.omn
@@ -31,6 +32,8 @@ docs/superpowers/plans/archive/
 # Local/generated corpus and conversion artifacts
 /data/dev/
 /data/test/
+/out/
+/result
 
 /paper/
 

@@ -30,6 +30,102 @@ Important interpretation note:
 - `summarize-differences` and `summarize-nway-patterns` operate over bounded example rows, not all regions. Treat `examples` counts as triage evidence, not exact corpus frequencies.
 - Feature/POS reports are still noisy around whitespace and region-scope comparisons. Rows such as `pos1 名詞=>... ; 空白=>...` often indicate region alignment/coverage scope rather than a clean POS disagreement on the same lexical token.
 
+Update after exact N-way pattern reporting:
+
+- New exact artifacts were generated under `scratch/perf-exact-full-corpus/out`.
+- The exact rerun completed with `17,894` inputs, `0` errors, `53,682` analyses, `53,682` pairwise rows, `536,718` bounded pairwise examples, and `17,894` N-way rows.
+- Runtime was `1:13:13`; max RSS was `13,906,912 KB`.
+- `nway.jsonl.zst` grew to `5.6G` because each row now includes exact per-source `pattern_counts`.
+- Scalar `summarize-nway` over the exact artifact took `2m29s` after switching to a lightweight summary row parser.
+- Exact `summarize-nway-patterns` scans took about `10m` each over the `5.6G` compressed N-way artifact.
+- The old bounded-example interpretation still applies to pairwise `summarize-differences`; exact counts now apply to `summarize-nway-patterns` when the artifact contains `pattern_counts`.
+
+Improved filters used below:
+
+- Exclude non-literary outlier logical text ID: `--exclude-text-id JISTABLE`.
+- Exclude whitespace POS noise: `--exclude-feature-value 空白`.
+- Focus pairwise POS on lexical one-to-one evidence: `--one-to-one-lexical-features`.
+
+Exact rerun command:
+
+```bash
+AB_SUDACHI_DICT="$(nix path-info .#sudachi-dictionary-full)/share/sudachi/system.dic" \
+/run/current-system/sw/bin/time -v cargo run --release -p ab-morph-run -- \
+    analyze-aat \
+    --aat-dir scratch/morph-full-corpus/aats \
+    --analyzer vibrato \
+    --analyzer sudachi-a \
+    --analyzer sudachi-c \
+    --output-profile compact \
+    --jobs 8 \
+    --analyses-output scratch/perf-exact-full-corpus/out/analyses.jsonl.zst \
+    --comparisons-output scratch/perf-exact-full-corpus/out/comparisons.jsonl.zst \
+    --examples-output scratch/perf-exact-full-corpus/out/examples.jsonl.zst \
+    --nway-output scratch/perf-exact-full-corpus/out/nway.jsonl.zst \
+    --errors-output scratch/perf-exact-full-corpus/out/errors.jsonl.zst \
+    --manifest-output scratch/perf-exact-full-corpus/out/manifest.json \
+    --progress-interval-seconds 60
+```
+
+## Exact filtered N-way segmentation patterns
+
+These counts are exact region-pattern counts over the full corpus, excluding `JISTABLE`.
+
+| examples | source count | text count | pattern |
+|---:|---:|---:|---|
+| 67,006 | 4,029 | 3,997 | `sudachi-a+sudachi-c:[あつ|た] ; vibrato:[あつた]` |
+| 40,626 | 4,166 | 4,116 | `vibrato:[つ|て] ; sudachi-a+sudachi-c:[つて]` |
+| 40,175 | 4,045 | 4,009 | `vibrato:[な|つ] ; sudachi-a+sudachi-c:[なつ]` |
+| 32,291 | 6,843 | 6,704 | `vibrato:[いつ|も] ; sudachi-a+sudachi-c:[いつも]` |
+| 25,551 | 6,676 | 6,546 | `vibrato:[て|は] ; sudachi-a+sudachi-c:[ては]` |
+| 23,561 | 6,711 | 6,553 | `vibrato:[一|度] ; sudachi-a+sudachi-c:[一度]` |
+| 23,430 | 3,025 | 2,998 | `vibrato:[行|つ] ; sudachi-a+sudachi-c:[行つ]` |
+
+Exact segmentation takeaway:
+
+- The highest-frequency N-way disagreements are not isolated titles or proper names; they are corpus-wide historical-kana and lexicalized-expression differences.
+- `sudachi-a` and `sudachi-c` often agree against Vibrato/UniDic on historical forms such as `あつた`, `つて`, `なつ`, and `行つ`.
+- Vibrato/UniDic often splits short lexicalized expressions where both Sudachi modes keep one token: `いつも`, `ては`, `一度`.
+
+## Exact filtered N-way `pos1` patterns
+
+These counts are exact region-pattern counts over the full corpus, excluding `JISTABLE` and excluding value `空白`.
+
+| examples | source count | text count | pattern |
+|---:|---:|---:|---|
+| 194,148 | 13,337 | 13,090 | `pos1 whole_region 助動詞=>vibrato ; 助詞=>sudachi-a` |
+| 179,629 | 13,503 | 13,254 | `pos1 whole_region 助動詞=>sudachi-a ; 助詞=>vibrato` |
+| 164,334 | 12,611 | 12,362 | `pos1 whole_region 動詞=>vibrato ; 名詞=>sudachi-a` |
+| 114,461 | 12,012 | 11,783 | `pos1 surface:で 助動詞=>sudachi-a ; 助詞=>vibrato` |
+| 114,010 | 11,774 | 11,525 | `pos1 whole_region 名詞=>sudachi-a ; 接尾辞=>vibrato` |
+| 107,636 | 11,565 | 11,335 | `pos1 whole_region 動詞=>sudachi-a ; 名詞=>vibrato` |
+| 105,958 | 11,244 | 11,010 | `pos1 whole_region 名詞=>vibrato ; 接尾辞=>sudachi-a` |
+
+Exact POS takeaway:
+
+- After removing `空白`, the dominant POS disagreements are systematic schema/granularity differences, especially `助動詞` vs `助詞`, `動詞` vs `名詞`, and `名詞` vs `接尾辞`.
+- `surface:で` confirms a specific high-frequency lexical surface where Sudachi-A and Vibrato/UniDic assign different coarse POS.
+- Exact N-way POS counts are much more useful than the bounded example rows, but they also show that feature reports need scope-aware interpretation: `whole_region` rows include segmentation-region evidence, not only one-to-one token evidence.
+
+## Filtered one-to-one pairwise `pos1`
+
+This is bounded-example evidence from pairwise compact examples with lexical, one-to-one feature rows only, excluding `空白` and `JISTABLE`.
+
+| analyzers | examples | transition |
+|---|---:|---|
+| vibrato vs sudachi-a | 20 | `pos1`: `動詞` -> `名詞` |
+| vibrato vs sudachi-a | 18 | `pos1`: `名詞` -> `動詞` |
+| vibrato vs sudachi-a | 13 | `pos1`: `接尾辞` -> `名詞` |
+| vibrato vs sudachi-a | 11 | `pos1`: `副詞` -> `名詞` |
+| vibrato vs sudachi-a | 11 | `pos1`: `名詞` -> `接尾辞` |
+| vibrato vs sudachi-a | 10 | `pos1`: `助詞` -> `名詞` |
+| vibrato vs sudachi-a | 9 | `pos1`: `助動詞` -> `助詞` |
+
+Pairwise POS takeaway:
+
+- The one-to-one pairwise view is cleaner but bounded by `--max-examples-per-comparison`; use it for examples, not corpus frequencies.
+- Exact N-way counts are the better corpus-frequency source.
+
 ## Commands run
 
 ```bash

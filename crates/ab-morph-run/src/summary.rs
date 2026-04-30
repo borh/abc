@@ -296,6 +296,23 @@ struct NwayAccumulator {
     variable_boundary_count: usize,
 }
 
+#[derive(Debug, Deserialize)]
+struct NwaySummaryInputRow {
+    source_id: String,
+    text_id: String,
+    source_script_category: ScriptCategory,
+    analyzer_count: usize,
+    regions: usize,
+    agreement_regions: usize,
+    regions_with_feature_disagreement: usize,
+    regions_with_segmentation_disagreement: usize,
+    regions_with_coverage_mismatch: usize,
+    whitespace_regions: usize,
+    lexical_regions: usize,
+    unanimous_boundary_count: usize,
+    variable_boundary_count: usize,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 struct NwayPatternKey {
     kind: String,
@@ -528,7 +545,7 @@ pub fn summarize_nway(
 ) -> Result<Vec<NwaySummaryRow>> {
     let mut groups = BTreeMap::<String, NwayAccumulator>::new();
     for_each_jsonl_or_zst_line(nway_path, |line| {
-        let row: NwayComparisonRow = serde_json::from_str(line)?;
+        let row: NwaySummaryInputRow = serde_json::from_str(line)?;
         if options.exclusions.excludes(&row.source_id, &row.text_id) {
             return Ok(());
         }
@@ -788,7 +805,7 @@ impl DifferenceAccumulator {
 }
 
 impl NwayAccumulator {
-    fn push(&mut self, row: NwayComparisonRow) {
+    fn push(&mut self, row: NwaySummaryInputRow) {
         self.source_ids.insert(row.source_id);
         self.text_ids.insert(row.text_id);
         self.script_categories.insert(row.source_script_category);

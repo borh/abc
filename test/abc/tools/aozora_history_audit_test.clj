@@ -11,7 +11,10 @@
   (:import [java.nio.charset StandardCharsets]
            [java.nio.file Files]
            [java.nio.file.attribute FileAttribute]
+           [java.time Instant]
+           [java.util Date TimeZone]
            [java.util.zip ZipEntry ZipOutputStream]
+           [org.eclipse.jgit.lib PersonIdent]
            [org.eclipse.jgit.api Git]))
 
 (defn- temp-dir [prefix]
@@ -76,6 +79,22 @@
         (.setMessage message)
         (.setAuthor "ABC Test" "abc@example.test")
         (.setCommitter "ABC Test" "abc@example.test")
+        .call)))
+
+(defn- commit-zip-at! [^Git git root bytes message instant]
+  (let [file (io/file root "index_pages/list_person_all_extended_utf8.zip")
+        date (Date/from (Instant/parse instant))
+        zone (TimeZone/getTimeZone "UTC")
+        ident (PersonIdent. "ABC Test" "abc@example.test" date zone)]
+    (io/make-parents file)
+    (with-open [out (io/output-stream file)]
+      (.write out bytes))
+    (-> git .add (.addFilepattern "index_pages/list_person_all_extended_utf8.zip") .call)
+    (-> git
+        .commit
+        (.setMessage message)
+        (.setAuthor ident)
+        (.setCommitter ident)
         .call)))
 
 (defn- commit-text! [^Git git root rel content message]
@@ -379,6 +398,88 @@
                                         :split_candidates :merge_candidates
                                         :drift_participant_update_count])
                        (:pairs result)))))
+        (finally
+          (.close git)
+          (delete-recursive repo-dir)
+          (delete-recursive work-dir))))))
+
+(deftest scan-history-can-sample-one-zip-changing-commit-per-year-test
+  (testing "year sampling spreads scan pairs across history instead of clustering"
+    (let [repo-dir (temp-dir "abc-history-year-scan-repo")
+          work-dir (temp-dir "abc-history-year-scan-work")
+          git (-> (Git/init) (.setDirectory repo-dir) .call)]
+      (try
+        (let [baseline (commit-zip-at!
+                        git repo-dir
+                        (zip-bytes (csv-text [(row {})]))
+                        "2023 baseline"
+                        "2023-01-01T00:00:00Z")
+              same-year (commit-zip-at!
+                         git repo-dir
+                         (zip-bytes (csv-text [(row {"姓" "旧改"})]))
+                         "2023 year end"
+                         "2023-12-31T00:00:00Z")
+              split-year (commit-zip-at!
+                          git repo-dir
+                          (zip-bytes
+                           (csv-text [(row {"人物ID" "abc-000000000001"
+                                            "姓" "新" "名" "一"
+                                            "姓読み" "しん" "名読み" "いち"
+                                            "姓読みソート用" "しん" "名読みソート用" "いち"
+                                            "姓ローマ字" "New" "名ローマ字" "One"})
+                                      (row {"人物ID" "abc-000000000002"
+                                            "姓" "新" "名" "二"
+                                            "姓読み" "しん" "名読み" "に"
+                                            "姓読みソート用" "しん" "名読みソート用" "に"
+                                            "姓ローマ字" "New" "名ローマ字" "Two"})]))
+                          "2024 split"
+                          "2024-06-01T00:00:00Z")
+              same-split-year (commit-zip-at!
+                               git repo-dir
+                               (zip-bytes
+                                (csv-text [(row {"人物ID" "abc-000000000001"
+                                                 "姓" "新改" "名" "一"
+                                                 "姓読み" "しん" "名読み" "いち"
+                                                 "姓読みソート用" "しん" "名読みソート用" "いち"
+                                                 "姓ローマ字" "New" "名ローマ字" "One"})
+                                           (row {"人物ID" "abc-000000000002"
+                                                 "姓" "新" "名" "二"
+                                                 "姓読み" "しん" "名読み" "に"
+                                                 "姓読みソート用" "しん" "名読みソート用" "に"
+                                                 "姓ローマ字" "New" "名ローマ字" "Two"})]))
+                               "2024 year end"
+                               "2024-12-31T00:00:00Z")
+              stable-year (commit-zip-at!
+                           git repo-dir
+                           (zip-bytes
+                            (csv-text [(row {"人物ID" "abc-000000000001"
+                                             "姓" "新改二" "名" "一"
+                                             "姓読み" "しん" "名読み" "いち"
+                                             "姓読みソート用" "しん" "名読みソート用" "いち"
+                                             "姓ローマ字" "New" "名ローマ字" "One"})
+                                       (row {"人物ID" "abc-000000000002"
+                                             "姓" "新" "名" "二"
+                                             "姓読み" "しん" "名読み" "に"
+                                             "姓読みソート用" "しん" "名読みソート用" "に"
+                                             "姓ローマ字" "New" "名ローマ字" "Two"})]))
+                           "2025 stable"
+                           "2025-06-01T00:00:00Z")
+              result (audit/scan-history! {:aozora-repo (str repo-dir)
+                                           :from-ref (.getName baseline)
+                                           :to-ref (.getName stable-year)
+                                           :sample-period "year"
+                                           :work-dir (str work-dir)})]
+          (is (= "ok" (:status result)))
+          (is (= {"pairs_scanned" 3
+                  "validation_failed" 0
+                  "split_candidates" 1
+                  "merge_candidates" 0
+                  "drift_participant_updates" 0}
+                 (:summary result)))
+          (is (= [[(.getName baseline) (.getName same-year)]
+                  [(.getName same-year) (.getName same-split-year)]
+                  [(.getName same-split-year) (.getName stable-year)]]
+                 (mapv (juxt :previous_ref :current_ref) (:pairs result)))))
         (finally
           (.close git)
           (delete-recursive repo-dir)

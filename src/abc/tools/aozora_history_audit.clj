@@ -11,7 +11,8 @@
             [charred.api :as json]
             [clojure.java.io :as io]
             [clojure.string :as string]
-            [clojure.tools.cli :refer [parse-opts]]))
+            [clojure.tools.cli :refer [parse-opts]])
+  (:import [java.time ZoneOffset]))
 
 (def ^:private default-zip-path
   "index_pages/list_person_all_extended_utf8.zip")
@@ -28,6 +29,7 @@
    [nil "--to-ref REF" "History scan end ref; defaults to HEAD"]
    [nil "--max-pairs N" "History scan limit for adjacent ref pairs"
     :parse-fn parse-long]
+   [nil "--sample-period PERIOD" "History scan sampling period: month or year"]
    [nil "--zip-path PATH" "Path to the list_person_all_extended ZIP inside the upstream repo"
     :default default-zip-path]
    [nil "--work-dir DIR" "Tool-owned working directory; previous.zip, current.zip, previous-corpus/, and current-corpus/ are deleted before each run"
@@ -187,11 +189,31 @@
            :merge_candidates (merge-candidate-count report)
            :drift_participant_update_count (participant-update-count report))))
 
-(defn- history-scan-refs [repo zip-path from-ref to-ref]
+(defn- commit-period-key [sample-period commit]
+  (let [zdt (.atZone (.toInstant (abc-git/get-commit-date commit))
+                     ZoneOffset/UTC)]
+    (case sample-period
+      "year" (format "%04d" (.getYear zdt))
+      "month" (format "%04d-%02d" (.getYear zdt) (.getMonthValue zdt))
+      (throw (ex-info "unsupported --sample-period"
+                      {:sample-period sample-period
+                       :supported ["month" "year"]})))))
+
+(defn- sample-commits-by-period [commits sample-period]
+  (if-not sample-period
+    commits
+    (->> commits
+         (partition-by #(commit-period-key sample-period %))
+         (mapv last))))
+
+(defn- history-scan-refs [repo zip-path from-ref to-ref sample-period]
   (let [opts (cond-> {}
                from-ref (assoc :from-ref from-ref)
                to-ref (assoc :to-ref to-ref))
-        touching-refs (mapv #(.getName %) (abc-git/commits-touching-path repo zip-path opts))]
+        touching-refs (mapv #(.getName %)
+                            (sample-commits-by-period
+                             (abc-git/commits-touching-path repo zip-path opts)
+                             sample-period))]
     (if from-ref
       (vec (cons from-ref touching-refs))
       touching-refs)))
@@ -219,7 +241,7 @@
 (defn scan-history!
   "Audit adjacent upstream commits that changed the configured CSV ZIP path."
   [{:keys [aozora-repo from-ref to-ref zip-path work-dir max-pairs
-           drift-persons-dir]
+           drift-persons-dir sample-period]
     :or {zip-path default-zip-path
          work-dir default-work-dir}}]
   (when-not aozora-repo
@@ -231,7 +253,7 @@
         previous-corpus (io/file work-root "scan-previous-corpus")
         current-corpus (io/file work-root "scan-current-corpus")]
     (try
-      (let [refs (history-scan-refs repo zip-path from-ref to-ref)
+      (let [refs (history-scan-refs repo zip-path from-ref to-ref sample-period)
             pairs-to-scan (pair-refs refs max-pairs)]
         (if (empty? pairs-to-scan)
           {:status "ok"
@@ -239,6 +261,7 @@
            :zip-path zip-path
            :from-ref from-ref
            :to-ref to-ref
+           :sample-period sample-period
            :max-pairs max-pairs
            :work-dir work-dir
            :summary (scan-summary [])
@@ -266,6 +289,7 @@
              :zip-path zip-path
              :from-ref from-ref
              :to-ref to-ref
+             :sample-period sample-period
              :max-pairs max-pairs
              :work-dir work-dir
              :summary summary

@@ -1,7 +1,8 @@
 # ADR 0022: Upstream Ingest Drift Awareness
 
-Status: Proposed
+Status: Accepted
 Date: 2026-04-30
+Accepted: 2026-04-30
 
 ## Context
 

@@ -32,7 +32,10 @@
   (or *ab-repo* (load-aozora-bunko-git)))
 
 (defn update-aozora-bunko-repo [path]
-  (git-pull (repo-or-default)))
+  (if path
+    (with-open [repo (load-git-repo path)]
+      (git-pull repo))
+    (git-pull (ab-repo-or-default))))
 
 (defn get-commit-date [^RevCommit commit]
   (.. commit (getAuthorIdent) (getWhen)))

@@ -9,7 +9,6 @@
             [abc.tools.validate-corpus :as validate-corpus]
             [charred.api :as json]
             [clojure.java.io :as io]
-            [clojure.string :as string]
             [clojure.tools.cli :refer [parse-opts]]))
 
 (def ^:private default-zip-path
@@ -24,7 +23,7 @@
    ["-c" "--current-ref REF" "Current upstream ref/commit"]
    [nil "--zip-path PATH" "Path to the list_person_all_extended ZIP inside the upstream repo"
     :default default-zip-path]
-   [nil "--work-dir DIR" "Working directory for extracted ZIPs and generated corpora"
+   [nil "--work-dir DIR" "Tool-owned working directory; previous.zip, current.zip, previous-corpus/, and current-corpus/ are deleted before each run"
     :default default-work-dir]
    ["-o" "--output FILE" "Write JSON report to FILE instead of stdout"]
    [nil "--fail-on-candidates" "Exit 1 when split/merge candidates are present"]
@@ -34,7 +33,9 @@
   (str "Usage: clojure -M:abc/aozora-history-audit -- "
        "--aozora-repo DIR --previous-ref REF --current-ref REF [--output FILE]\n\n"
        "Extracts " default-zip-path " at both refs, runs corpus ingest, "
-       "validates the current corpus, then runs person-drift-history.\n\n"
+       "validates the current corpus, then runs person-drift-history. "
+       "--work-dir is tool-owned: previous.zip, current.zip, previous-corpus/, "
+       "and current-corpus/ are deleted before each run.\n\n"
        summary))
 
 (defn- normalize-cli-args [args]
@@ -56,31 +57,8 @@
     (delete-recursive! file)
     file))
 
-(defn- key->json-key [k]
-  (if (keyword? k)
-    (string/replace (name k) "-" "_")
-    k))
-
-(defn- json-ready [value]
-  (cond
-    (map? value)
-    (into (sorted-map)
-          (map (fn [[k v]]
-                 [(key->json-key k) (json-ready v)]))
-          value)
-
-    (vector? value)
-    (mapv json-ready value)
-
-    (sequential? value)
-    (mapv json-ready value)
-
-    :else
-    value))
-
 (defn- extract-zip! [repo ref zip-path output-file]
-  (abc-git/write-blob-at! repo ref zip-path output-file)
-  (str output-file))
+  (abc-git/write-blob-at! repo ref zip-path output-file))
 
 (defn- ingest-corpus! [zip-path output-dir ref source-path]
   (ingest/run-corpus-from-zip!
@@ -90,7 +68,11 @@
     :source-url (str "git:" ref ":" source-path)}))
 
 (defn audit!
-  "Run the full upstream history audit and return a deterministic JSON-ready map."
+  "Run the full upstream history audit and return a keyword-keyed report map.
+
+  Only the current corpus is validated before reporting drift. The previous
+  corpus is generated from the previous ref for comparison, but this tool does
+  not treat historical validation failures as a separate gate."
   [{:keys [aozora-repo previous-ref current-ref zip-path work-dir]
     :or {zip-path default-zip-path
          work-dir default-work-dir}}]
@@ -126,21 +108,21 @@
             drift-report (drift-history/report
                           {:previous-dir (str previous-corpus)
                            :current-dir (str current-corpus)})
-            validation-failed? (pos? (:failed validation))]
-        {"status" (if validation-failed? "validation_failed" "ok")
-         "aozora_repo" aozora-repo
-         "zip_path" zip-path
-         "previous_ref" previous-ref
-         "current_ref" current-ref
-         "work_dir" work-dir
-         "extracted_zips" {"previous" (str previous-zip)
-                           "current" (str current-zip)}
-         "corpus_dirs" {"previous" (str previous-corpus)
-                        "current" (str current-corpus)}
-         "ingest" {"previous" (json-ready previous-ingest)
-                   "current" (json-ready current-ingest)}
-         "validation" {"current" (json-ready validation)}
-         "drift" drift-report})
+            validation-failed? (pos? (or (:failed validation) 0))]
+        {:status (if validation-failed? "validation_failed" "ok")
+         :aozora-repo aozora-repo
+         :zip-path zip-path
+         :previous-ref previous-ref
+         :current-ref current-ref
+         :work-dir work-dir
+         :extracted-zips {:previous (str previous-zip)
+                          :current (str current-zip)}
+         :corpus-dirs {:previous (str previous-corpus)
+                       :current (str current-corpus)}
+         :ingest {:previous previous-ingest
+                  :current current-ingest}
+         :validation {:current validation}
+         :drift drift-report})
       (finally
         (.close repo)))))
 
@@ -170,9 +152,9 @@
       (try
         (let [result (write-or-print! (audit! (dissoc options :output))
                                       (:output options))
-              validation-failed? (= "validation_failed" (get result "status"))
-              candidate-count (+ (get-in result ["drift" "summary" "split_candidates"])
-                                 (get-in result ["drift" "summary" "merge_candidates"]))]
+              validation-failed? (= "validation_failed" (:status result))
+              candidate-count (+ (or (get-in result [:drift "summary" "split_candidates"]) 0)
+                                 (or (get-in result [:drift "summary" "merge_candidates"]) 0))]
           (when (or validation-failed?
                     (and (:fail-on-candidates options) (pos? candidate-count)))
             (System/exit 1)))

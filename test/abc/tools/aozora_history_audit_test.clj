@@ -101,14 +101,14 @@
                                     :previous-ref (.getName old-commit)
                                     :current-ref (.getName new-commit)
                                     :work-dir (str work-dir)})]
-          (is (= "ok" (get result "status")))
-          (is (= 0 (get-in result ["validation" "current" "failed"])))
-          (is (= 1 (get-in result ["drift" "summary" "split_candidates"])))
+          (is (= "ok" (:status result)))
+          (is (= 0 (get-in result [:validation :current :failed])))
+          (is (= 1 (get-in result [:drift "summary" "split_candidates"])))
           (is (= [{"work_id" "000100"
                    "relation_to_work" "著者"
                    "source_person_ids" ["000001"]
                    "target_person_ids" ["abc-000000000001" "abc-000000000002"]}]
-                 (get-in result ["drift" "split_candidates"]))))
+                 (get-in result [:drift "split_candidates"]))))
         (finally
           (.close git)
           (delete-recursive repo-dir)

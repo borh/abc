@@ -6,8 +6,8 @@
   "expanded": "linked-art-expanded.normalized.json",
   "identity_invariant": 
   {
-    "expanded_artifact_id": "sha256:0d426e23314fc72d1a912d074168a1ff509f0139eead96721906750267ef38f5",
-    "manifest_artifact_id": "sha256:0d426e23314fc72d1a912d074168a1ff509f0139eead96721906750267ef38f5",
+    "expanded_artifact_id": "sha256:696e120ceb423a8216b6f780e71fe32d3982b8fff46dbd99587a179180bba8e8",
+    "manifest_artifact_id": "sha256:696e120ceb423a8216b6f780e71fe32d3982b8fff46dbd99587a179180bba8e8",
     "preserved_after_expansion": true
   },
   "status": "ok"

@@ -11,14 +11,14 @@
 @prefix schema: <https://schema.org/> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
-<https://w3id.org/abc/artifact/sha256-0d426e23314fc72d1a912d074168a1ff509f0139eead96721906750267ef38f5>
+<https://w3id.org/abc/artifact/sha256-696e120ceb423a8216b6f780e71fe32d3982b8fff46dbd99587a179180bba8e8>
   a abc:Artifact ;
   a prov:Entity ;
   dcterms:format "application/tei+xml" ;
   prov:generatedAtTime "2026-04-26T00:00:00Z"^^xsd:dateTime ;
   prov:wasDerivedFrom <https://w3id.org/abc/artifact/sha256-0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a> ;
   prov:wasGeneratedBy <https://w3id.org/abc/activity/parse-and-render-example> ;
-  abc:artifactId "sha256:0d426e23314fc72d1a912d074168a1ff509f0139eead96721906750267ef38f5" ;
+  abc:artifactId "sha256:696e120ceb423a8216b6f780e71fe32d3982b8fff46dbd99587a179180bba8e8" ;
   abc:artifactKind "tei" ;
   abc:contentHash "sha256:0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c" ;
   abc:hasSidecar <https://w3id.org/abc/artifact/sha256-9999999999999999999999999999999999999999999999999999999999999999> ;
@@ -29,7 +29,7 @@
 <https://w3id.org/abc/artifact/sha256-9999999999999999999999999999999999999999999999999999999999999999>
   a prov:Entity ;
   dcterms:format "application/jsonl" ;
-  prov:wasDerivedFrom <https://w3id.org/abc/artifact/sha256-0d426e23314fc72d1a912d074168a1ff509f0139eead96721906750267ef38f5> ;
+  prov:wasDerivedFrom <https://w3id.org/abc/artifact/sha256-696e120ceb423a8216b6f780e71fe32d3982b8fff46dbd99587a179180bba8e8> ;
   prov:wasGeneratedBy <https://w3id.org/abc/activity/parse-and-render-example> ;
   abc:contentHash "sha256:9999999999999999999999999999999999999999999999999999999999999999" ;
   abc:schemaHash "sha256:2222222222222222222222222222222222222222222222222222222222222222" ;
@@ -38,7 +38,7 @@
 <https://w3id.org/abc/artifact/sha256-abababababababababababababababababababababababababababababababab>
   a prov:Entity ;
   dcterms:format "application/json" ;
-  prov:wasDerivedFrom <https://w3id.org/abc/artifact/sha256-0d426e23314fc72d1a912d074168a1ff509f0139eead96721906750267ef38f5> ;
+  prov:wasDerivedFrom <https://w3id.org/abc/artifact/sha256-696e120ceb423a8216b6f780e71fe32d3982b8fff46dbd99587a179180bba8e8> ;
   prov:wasGeneratedBy <https://w3id.org/abc/activity/parse-and-render-example> ;
   abc:contentHash "sha256:abababababababababababababababababababababababababababababababab" ;
   abc:schemaHash "sha256:2222222222222222222222222222222222222222222222222222222222222222" ;

@@ -62,11 +62,11 @@
         }],
       "https:\/\/w3id.org\/abc\/artifactId": [
         {
-          "@value": "sha256:0d426e23314fc72d1a912d074168a1ff509f0139eead96721906750267ef38f5"
+          "@value": "sha256:696e120ceb423a8216b6f780e71fe32d3982b8fff46dbd99587a179180bba8e8"
         }],
       "https:\/\/w3id.org\/abc\/canonicalManifest": [
         {
-          "@id": "https:\/\/w3id.org\/abc\/artifact\/sha256-0d426e23314fc72d1a912d074168a1ff509f0139eead96721906750267ef38f5"
+          "@id": "https:\/\/w3id.org\/abc\/artifact\/sha256-696e120ceb423a8216b6f780e71fe32d3982b8fff46dbd99587a179180bba8e8"
         }]
     }],
   "source": "linked-art-candidate.jsonld"

@@ -81,9 +81,7 @@ fn byte_span_to_char_span(source: &str, byte_span: Range<usize>) -> Option<Range
 
 #[cfg(test)]
 mod tests {
-    use std::collections::BTreeMap;
-
-    use crate::{Analysis, MorphDiffError, Morpheme};
+    use crate::{Analysis, FeatureMap, MorphDiffError, Morpheme};
 
     use super::validate_analysis;
 
@@ -94,7 +92,7 @@ mod tests {
             surface: surface.to_owned(),
             byte_span: byte_start..byte_end,
             char_span: char_start..char_end,
-            features: BTreeMap::new(),
+            features: FeatureMap::new(),
         }
     }
 
@@ -137,7 +135,7 @@ mod tests {
                 surface: "日は".to_owned(),
                 byte_span: 3..9,
                 char_span: 1..3,
-                features: BTreeMap::new(),
+                features: FeatureMap::new(),
             },
         ]);
         assert!(matches!(
@@ -152,7 +150,7 @@ mod tests {
             surface: String::new(),
             byte_span: 0..0,
             char_span: 0..0,
-            features: BTreeMap::new(),
+            features: FeatureMap::new(),
         }]);
         assert!(matches!(
             validate_analysis(&a),
@@ -166,7 +164,7 @@ mod tests {
             surface: "今".to_owned(),
             byte_span: 0..1,
             char_span: 0..1,
-            features: BTreeMap::new(),
+            features: FeatureMap::new(),
         }]);
         assert!(matches!(
             validate_analysis(&a),
@@ -180,7 +178,7 @@ mod tests {
             surface: "今日".to_owned(),
             byte_span: 0..6,
             char_span: 0..1,
-            features: BTreeMap::new(),
+            features: FeatureMap::new(),
         }]);
         assert!(matches!(
             validate_analysis(&a),
@@ -194,7 +192,7 @@ mod tests {
             surface: "明日".to_owned(),
             byte_span: 0..6,
             char_span: 0..2,
-            features: BTreeMap::new(),
+            features: FeatureMap::new(),
         }]);
         assert!(matches!(
             validate_analysis(&a),

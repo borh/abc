@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::{Analysis, ChangedValue, FeatureDiff, FeatureKey, Region};
+use crate::{Analysis, ChangedValue, FeatureDiff, FeatureKey, FeatureMap, FeatureValue, Region};
 
 pub(crate) fn compare_feature_diffs(
     from: &Analysis,
@@ -17,29 +17,25 @@ pub(crate) fn compare_feature_diffs(
         };
         let from_m = &from.morphemes[aligned.from_index];
         let to_m = &to.morphemes[aligned.to_index];
-        let keys = from_m
-            .features
-            .keys()
-            .chain(to_m.features.keys())
-            .cloned()
-            .collect::<BTreeSet<_>>();
         let mut changed = BTreeMap::new();
         let mut same_context = BTreeMap::new();
-        for key in keys {
-            let from_value = from_m.features.get(&key).cloned().unwrap_or(None);
-            let to_value = to_m.features.get(&key).cloned().unwrap_or(None);
-            if from_value != to_value {
-                changed.insert(
-                    key,
-                    ChangedValue {
-                        from: from_value,
-                        to: to_value,
-                    },
-                );
-            } else if context_keys.contains(&key) {
-                same_context.insert(key, from_value);
-            }
-        }
+        visit_feature_pairs(
+            &from_m.features,
+            &to_m.features,
+            |key, from_value, to_value| {
+                if from_value != to_value {
+                    changed.insert(
+                        key.clone(),
+                        ChangedValue {
+                            from: from_value.cloned(),
+                            to: to_value.cloned(),
+                        },
+                    );
+                } else if context_keys.contains(key) {
+                    same_context.insert(key.clone(), from_value.cloned());
+                }
+            },
+        );
         if !changed.is_empty() {
             diffs.push(FeatureDiff {
                 region_index,
@@ -54,6 +50,46 @@ pub(crate) fn compare_feature_diffs(
     }
 
     diffs
+}
+
+pub(crate) fn visit_feature_pairs(
+    from: &FeatureMap,
+    to: &FeatureMap,
+    mut visit: impl FnMut(&FeatureKey, Option<&FeatureValue>, Option<&FeatureValue>),
+) {
+    let mut from_iter = from.iter().peekable();
+    let mut to_iter = to.iter().peekable();
+
+    loop {
+        match (from_iter.peek(), to_iter.peek()) {
+            (Some((from_key, _)), Some((to_key, _))) => {
+                match from_key.as_str().cmp(to_key.as_str()) {
+                    std::cmp::Ordering::Less => {
+                        let (key, value) = from_iter.next().expect("peeked from value");
+                        visit(key, value.as_ref(), None);
+                    }
+                    std::cmp::Ordering::Equal => {
+                        let (key, from_value) = from_iter.next().expect("peeked from value");
+                        let (_, to_value) = to_iter.next().expect("peeked to value");
+                        visit(key, from_value.as_ref(), to_value.as_ref());
+                    }
+                    std::cmp::Ordering::Greater => {
+                        let (key, value) = to_iter.next().expect("peeked to value");
+                        visit(key, None, value.as_ref());
+                    }
+                }
+            }
+            (Some(_), None) => {
+                let (key, value) = from_iter.next().expect("peeked from value");
+                visit(key, value.as_ref(), None);
+            }
+            (None, Some(_)) => {
+                let (key, value) = to_iter.next().expect("peeked to value");
+                visit(key, None, value.as_ref());
+            }
+            (None, None) => break,
+        }
+    }
 }
 
 #[cfg(test)]

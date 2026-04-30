@@ -26,7 +26,8 @@ pub(crate) fn visit_regions_with_source_len(
     mut visit: impl FnMut(usize, Region),
 ) -> Result<(), MorphDiffError> {
     let analyses = [from, to];
-    let regions = crate::nway::shared_regions_with_source_len(&analyses, source_len, &[])?;
+    let regions =
+        crate::nway::shared_regions_without_features_with_source_len(&analyses, source_len)?;
     for (region_index, region) in regions.into_iter().enumerate() {
         visit(region_index, project_pair_region(region));
     }
@@ -92,11 +93,9 @@ fn segmentation_kind(from_count: usize, to_count: usize) -> SegmentationKind {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::BTreeMap;
-
     use crate::{
-        Analysis, CoverageMismatch, CoverageMismatchKind, Morpheme, Region, SegmentationDiff,
-        SegmentationKind,
+        Analysis, CoverageMismatch, CoverageMismatchKind, FeatureMap, Morpheme, Region,
+        SegmentationDiff, SegmentationKind,
     };
 
     use super::{align_regions, visit_regions_with_source_len};
@@ -116,7 +115,7 @@ mod tests {
             surface: surface.to_owned(),
             byte_span: byte_start..byte_end,
             char_span: char_start..char_end,
-            features: BTreeMap::new(),
+            features: FeatureMap::new(),
         }
     }
 

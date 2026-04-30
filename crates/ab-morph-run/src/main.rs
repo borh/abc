@@ -34,6 +34,8 @@ enum Command {
         #[arg(long)]
         nway_output: Option<PathBuf>,
         #[arg(long)]
+        string_stats_output: Option<PathBuf>,
+        #[arg(long)]
         max_nway_examples_per_text: Option<usize>,
         #[arg(long)]
         resume: bool,
@@ -337,6 +339,7 @@ fn main() -> Result<()> {
             errors_output,
             manifest_output,
             nway_output,
+            string_stats_output,
             max_nway_examples_per_text,
             resume,
             jobs,
@@ -378,6 +381,7 @@ fn main() -> Result<()> {
                 manifest_output.as_deref(),
                 nway_output.as_deref(),
                 max_nway_examples_per_text,
+                string_stats_output.as_deref(),
             );
             if let Some(stop) = progress_stop {
                 stop.stop();
@@ -1097,6 +1101,35 @@ mod tests {
 
         assert_eq!(nway_output, Some(PathBuf::from("nway.jsonl.zst")));
         assert_eq!(max_nway_examples_per_text, Some(25));
+    }
+
+    #[test]
+    fn parses_string_stats_output_flag() {
+        let args = Args::parse_from([
+            "ab-morph-run",
+            "analyze-aat",
+            "--aat",
+            "one.json",
+            "--analyzer",
+            "vibrato",
+            "--analyses-output",
+            "analyses.jsonl",
+            "--string-stats-output",
+            "string-stats.json",
+        ]);
+
+        let Command::AnalyzeAat {
+            string_stats_output,
+            ..
+        } = args.command
+        else {
+            panic!("expected analyze-aat");
+        };
+
+        assert_eq!(
+            string_stats_output,
+            Some(PathBuf::from("string-stats.json"))
+        );
     }
 
     #[test]

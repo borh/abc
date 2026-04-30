@@ -1,4 +1,3 @@
-use std::collections::BTreeSet;
 use std::ops::Range;
 
 use crate::{
@@ -227,21 +226,17 @@ impl<'a> CompactAccumulator<'a> {
 }
 
 fn changed_features(from: &FeatureMap, to: &FeatureMap) -> Vec<CompactFeatureChange> {
-    from.keys()
-        .chain(to.keys())
-        .cloned()
-        .collect::<BTreeSet<_>>()
-        .into_iter()
-        .filter_map(|key| {
-            let from_value = from.get(&key).cloned().unwrap_or(None);
-            let to_value = to.get(&key).cloned().unwrap_or(None);
-            (from_value != to_value).then_some(CompactFeatureChange {
-                key,
-                from: from_value,
-                to: to_value,
-            })
-        })
-        .collect()
+    let mut changes = Vec::new();
+    crate::features::visit_feature_pairs(from, to, |key, from_value, to_value| {
+        if from_value != to_value {
+            changes.push(CompactFeatureChange {
+                key: key.clone(),
+                from: from_value.cloned(),
+                to: to_value.cloned(),
+            });
+        }
+    });
+    changes
 }
 
 fn surfaces(analysis: &Analysis, indices: Range<usize>) -> Vec<String> {

@@ -1,6 +1,4 @@
-use std::collections::BTreeMap;
-
-use ab_morph_diff::{Analysis, Morpheme, Region, compare_pair};
+use ab_morph_diff::{Analysis, FeatureMap, Morpheme, Region, compare_pair};
 use proptest::prelude::*;
 
 fn analysis(analyzer: &str, text: &str, cuts: &[usize]) -> Analysis {
@@ -22,7 +20,7 @@ fn analysis(analyzer: &str, text: &str, cuts: &[usize]) -> Analysis {
             surface: text[start_byte..end_byte].to_owned(),
             byte_span: start_byte..end_byte,
             char_span: start_char..end_char,
-            features: BTreeMap::new(),
+            features: FeatureMap::new(),
         });
     }
     Analysis {

@@ -57,6 +57,7 @@ pub(crate) fn visit_nway_regions_with_source_text(
         &analysis_refs,
         source_text.chars().count(),
         compare_keys,
+        true,
         |mut region| {
             region.region_index = stats.regions;
             stats.record(source_text, &region);
@@ -67,13 +68,12 @@ pub(crate) fn visit_nway_regions_with_source_text(
     Ok(stats.finish())
 }
 
-pub(crate) fn shared_regions_with_source_len(
+pub(crate) fn shared_regions_without_features_with_source_len(
     analyses: &[&Analysis],
     source_len: usize,
-    compare_keys: &[FeatureKey],
 ) -> Result<Vec<NwayRegion>, MorphDiffError> {
     let mut regions = Vec::new();
-    visit_shared_regions_with_source_len(analyses, source_len, compare_keys, |region| {
+    visit_shared_regions_with_source_len(analyses, source_len, &[], false, |region| {
         regions.push(region);
     })?;
     Ok(regions)
@@ -83,6 +83,7 @@ fn visit_shared_regions_with_source_len(
     analyses: &[&Analysis],
     source_len: usize,
     compare_keys: &[FeatureKey],
+    build_feature_groups: bool,
     mut visit: impl FnMut(NwayRegion),
 ) -> Result<(), MorphDiffError> {
     if analyses.len() < 2 {
@@ -135,7 +136,11 @@ fn visit_shared_regions_with_source_len(
             })
             .collect::<Vec<_>>();
         let segmentation_groups = segmentation_groups(&per_analyzer);
-        let feature_groups = feature_groups(analyses, &per_analyzer, compare_keys);
+        let feature_groups = if build_feature_groups {
+            feature_groups(analyses, &per_analyzer, compare_keys)
+        } else {
+            Vec::new()
+        };
         visit(NwayRegion {
             region_index,
             text_span: region_start..region_end,

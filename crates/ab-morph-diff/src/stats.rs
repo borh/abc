@@ -181,8 +181,8 @@ mod tests {
     use std::collections::{BTreeMap, BTreeSet};
 
     use crate::{
-        AlignedMorpheme, Analysis, CoverageMismatch, CoverageMismatchKind, FeatureDiff, Morpheme,
-        Region, SegmentationDiff, SegmentationKind,
+        AlignedMorpheme, Analysis, CoverageMismatch, CoverageMismatchKind, FeatureDiff, FeatureMap,
+        Morpheme, Region, SegmentationDiff, SegmentationKind,
     };
 
     use super::{derive_boundary_metrics, derive_stats, derive_stats_with_source_text};
@@ -202,7 +202,7 @@ mod tests {
             surface: surface.to_owned(),
             byte_span: byte_start..byte_end,
             char_span: start..end,
-            features: BTreeMap::new(),
+            features: FeatureMap::new(),
         }
     }
 

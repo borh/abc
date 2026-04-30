@@ -68,20 +68,15 @@ impl MorphAnalyzer for VibratoAnalyzer {
         worker.reset_sentence(&document.text);
         worker.tokenize();
 
-        let tokens = worker
-            .token_iter()
-            .map(|token| RawToken {
-                emitted_surface: token.surface().to_owned(),
-                byte_span: None,
-                features: parse_vibrato_feature_string(token.feature()),
-            })
-            .collect();
-
         build_analysis_from_tokens(
             self.analyzer_id.clone(),
             document.text_id.clone(),
             document.text.clone(),
-            tokens,
+            worker.token_iter().map(|token| RawToken {
+                emitted_surface: token.surface().to_owned(),
+                byte_span: None,
+                features: parse_vibrato_feature_string(token.feature()),
+            }),
         )
     }
 }

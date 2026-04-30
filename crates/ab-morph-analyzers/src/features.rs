@@ -41,7 +41,7 @@ pub(crate) fn feature_value(value: impl AsRef<str>) -> Option<FeatureValue> {
 }
 
 pub(crate) fn parse_vibrato_feature_string(feature: &str) -> FeatureMap {
-    let mut features = FeatureMap::new();
+    let mut features = FeatureMap::with_capacity(VIBRATO_UNIDIC_KEYS.len());
 
     for (index, value) in feature.split(',').enumerate() {
         let key = VIBRATO_UNIDIC_KEYS

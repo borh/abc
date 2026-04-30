@@ -5,12 +5,12 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
-compact_str.workspace = true
 serde.workspace = true
 
 [dev-dependencies]
 criterion.workspace = true
 proptest = "1.5"
+serde_json.workspace = true
 
 [[bench]]
 name = "compare_pair"

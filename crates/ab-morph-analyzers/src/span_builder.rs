@@ -15,10 +15,26 @@ pub(crate) fn build_analysis_from_tokens(
     analyzer: AnalyzerId,
     text_id: TextId,
     source_text: String,
-    tokens: Vec<RawToken>,
+    tokens: impl IntoIterator<Item = RawToken>,
 ) -> Result<Analysis, AnalyzerError> {
+    let morphemes = build_morphemes_from_tokens(&analyzer, &text_id, &source_text, tokens)?;
+
+    Ok(Analysis {
+        analyzer,
+        text_id,
+        source_text,
+        morphemes,
+    })
+}
+
+pub(crate) fn build_morphemes_from_tokens(
+    analyzer: &str,
+    text_id: &str,
+    source_text: &str,
+    tokens: impl IntoIterator<Item = RawToken>,
+) -> Result<Vec<Morpheme>, AnalyzerError> {
     let mut cursor = 0usize;
-    let mut morphemes = Vec::with_capacity(tokens.len());
+    let mut morphemes = Vec::new();
 
     for token in tokens {
         if matches!(&token.byte_span, Some(span) if span.start == span.end) {
@@ -26,19 +42,19 @@ pub(crate) fn build_analysis_from_tokens(
         }
 
         let byte_span = match token.byte_span {
-            Some(span) => validate_reported_span(&analyzer, &text_id, &source_text, &span)?,
+            Some(span) => validate_reported_span(analyzer, text_id, source_text, &span)?,
             None => find_sequential_span(
-                &analyzer,
-                &text_id,
-                &source_text,
+                analyzer,
+                text_id,
+                source_text,
                 cursor,
                 &token.emitted_surface,
             )?,
         };
 
         let surface = source_text[byte_span.clone()].to_owned();
-        let char_start = byte_to_char_offset(&source_text, byte_span.start);
-        let char_end = byte_to_char_offset(&source_text, byte_span.end);
+        let char_start = byte_to_char_offset(source_text, byte_span.start);
+        let char_end = byte_to_char_offset(source_text, byte_span.end);
         cursor = byte_span.end;
 
         morphemes.push(Morpheme {
@@ -49,12 +65,7 @@ pub(crate) fn build_analysis_from_tokens(
         });
     }
 
-    Ok(Analysis {
-        analyzer,
-        text_id,
-        source_text,
-        morphemes,
-    })
+    Ok(morphemes)
 }
 
 fn validate_reported_span(

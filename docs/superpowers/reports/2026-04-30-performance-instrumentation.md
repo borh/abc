@@ -346,3 +346,211 @@ Result:
 - Rows: `3` analyses, `3` comparisons, `30` examples, `1` N-way row, `0` errors.
 
 Conclusion: compact feature strings are a real but partial improvement. They reduce retained analysis payload by about 2.2 GiB on the largest single file, but the remaining ~15.7 GiB peak still confirms a larger per-document memory bug. The next target should be changing the analysis representation or reduction strategy so compact runs do not retain full morpheme feature maps for all analyzers at once.
+
+## Root-cause memory fix: skip N-way feature grouping in pairwise alignment
+
+Investigation after compact feature strings showed that the largest single-file run still peaked near 16 GiB. Reducing Sudachi chunk size and streaming analyzer token construction did not remove the spike; the spike occurred after analyzer output was available, during comparison.
+
+Root cause:
+
+- Pairwise alignment delegated to the generic N-way shared-region builder.
+- That builder eagerly computed full N-way feature groups for every aligned region.
+- Pairwise projection never used those feature groups; it only needed spans, indices, surfaces, and coverage flags.
+- On a large Aozora work with roughly 1.34M morphemes across three analyzers, this caused allocator-heavy temporary `BTreeMap`/group construction for every pairwise region.
+
+Fix:
+
+- Pairwise alignment now calls `shared_regions_without_features_with_source_len`, which uses the same N-way span alignment but skips feature-group construction.
+- Pairwise feature comparison now merges sorted flat feature maps directly instead of allocating a per-morpheme `BTreeSet` of keys.
+- Sudachi analysis no longer materializes an intermediate `Vec<RawToken>` for each chunk, and reuses one tokenizer/list per document.
+- Sudachi chunking prefers sentence/paragraph boundaries, keeps adjacent sentence punctuation together (`！？`, `！！！`), does not split decimal points (`5.4`, `５．４`), and only logs an aggregate warning if a large delimiterless span requires a hard split.
+
+Single-largest-file rerun:
+
+```bash
+rm -rf scratch/perf-one-largest-no-pair-feature-groups
+mkdir -p scratch/perf-one-largest-no-pair-feature-groups/aats/aozora-rs-adapter scratch/perf-one-largest-no-pair-feature-groups/out
+largest=$(find scratch/morph-full-corpus/aats -type f -name '*.json' -printf '%s %p\n' | sort -nr | head -1 | awk '{print $2}')
+ln -s "$(realpath "$largest")" "scratch/perf-one-largest-no-pair-feature-groups/aats/aozora-rs-adapter/$(basename "$largest")"
+
+AB_SUDACHI_DICT="$(nix path-info .#sudachi-dictionary-full)/share/sudachi/system.dic" \
+  taskset -c 0 /run/current-system/sw/bin/time -v \
+  target/release/ab-morph-run analyze-aat \
+    --aat-dir scratch/perf-one-largest-no-pair-feature-groups/aats \
+    --analyzer vibrato \
+    --analyzer sudachi-a \
+    --analyzer sudachi-c \
+    --output-profile compact \
+    --analyses-output scratch/perf-one-largest-no-pair-feature-groups/out/analyses.jsonl.zst \
+    --comparisons-output scratch/perf-one-largest-no-pair-feature-groups/out/comparisons.jsonl.zst \
+    --examples-output scratch/perf-one-largest-no-pair-feature-groups/out/examples.jsonl.zst \
+    --nway-output scratch/perf-one-largest-no-pair-feature-groups/out/nway.jsonl.zst \
+    --errors-output scratch/perf-one-largest-no-pair-feature-groups/out/errors.jsonl.zst \
+    --manifest-output scratch/perf-one-largest-no-pair-feature-groups/out/manifest.json \
+    --jobs 1 \
+    --progress-interval-seconds 15
+```
+
+Result:
+
+- Input: `001529_50685-dd3b2fe4e5bf.json`, `41956998` bytes.
+- Exit status: `0`.
+- Wall time: `7:28.96`.
+- Peak RSS: `3168948 KB` (~3.0 GiB).
+- Previous compact-string peak RSS: `16478584 KB` (~15.7 GiB).
+- Original single-file peak RSS: `18804424 KB` (~17.9 GiB).
+- Reduction versus compact-string baseline: about `80.8%`.
+- Reduction versus original single-file baseline: about `83.1%`.
+- Rows: `3` analyses, `3` comparisons, `30` examples, `1` N-way row, `0` errors.
+- No Sudachi hard-split warnings were emitted for this input with the restored large fallback threshold.
+
+Conclusion: the dominant per-document memory bug was unnecessary N-way feature grouping in the pairwise alignment path, not retained source text or Sudachi dictionary sharing. The process now stays near 3 GiB on the prior worst single-file case.
+
+## String interning validation: largest-file analyzer output
+
+Purpose: validate whether a string interner or symbol table is worth prototyping after the pairwise memory fix reduced peak RSS to roughly 3 GiB. This run measures duplication in analyzer output strings only: analyzer IDs, morpheme surfaces, feature keys, and feature values.
+
+Command shape:
+
+```bash
+rm -rf scratch/perf-string-stats-largest
+mkdir -p scratch/perf-string-stats-largest/aats/aozora-rs-adapter scratch/perf-string-stats-largest/out
+largest=$(find scratch/morph-full-corpus/aats -type f -name '*.json' -printf '%s %p\n' | sort -nr | awk 'NR==1 {print $2}')
+ln -s "$(realpath "$largest")" "scratch/perf-string-stats-largest/aats/aozora-rs-adapter/$(basename "$largest")"
+AB_SUDACHI_DICT="$(nix path-info .#sudachi-dictionary-full)/share/sudachi/system.dic" \
+time cargo run --release -p ab-morph-run -- \
+    analyze-aat \
+    --aat-dir scratch/perf-string-stats-largest/aats \
+    --analyzer vibrato \
+    --analyzer sudachi-a \
+    --analyzer sudachi-c \
+    --output-profile compact \
+    --jobs 1 \
+    --analyses-output scratch/perf-string-stats-largest/out/analyses.jsonl.zst \
+    --errors-output scratch/perf-string-stats-largest/out/errors.jsonl.zst \
+    --string-stats-output scratch/perf-string-stats-largest/out/string-stats.json
+```
+
+Warmed run:
+
+- Wall time: `0:41.91`.
+- User CPU: `31.56s`.
+- System CPU: `10.43s`.
+- Peak RSS: `2,866,304 KB`.
+- No-stats warmed reference for the same analysis-only shape: `0:44.61`, peak RSS `2,866,576 KB`.
+
+Report summary from `scratch/perf-string-stats-largest/out/string-stats.json`:
+
+| category | occurrences | unique values | duplicate occurrence % | total bytes | unique bytes | duplicate byte % |
+|---|---:|---:|---:|---:|---:|---:|
+| analyzer IDs | 3 | 3 | 0.00% | 43 | 43 | 0.00% |
+| surfaces | 1,337,885 | 20,643 | 98.46% | 5,606,886 | 131,556 | 97.65% |
+| feature keys | 21,025,163 | 37 | 100.00% | 140,657,466 | 252 | 100.00% |
+| feature values | 10,591,649 | 71,710 | 99.32% | 69,665,821 | 720,678 | 98.97% |
+
+Interpretation:
+
+- Feature keys are the clearest interning/symbol candidate: only `37` distinct strings over `21M` occurrences.
+- Feature values also have strong duplication: `71,710` distinct values over `10.6M` occurrences.
+- Surface strings are highly duplicated by occurrence, but the total raw byte payload is small relative to the feature payload and surfaces are more user-visible, so they are a lower-priority interning target.
+- The then-current `CompactString` representation already removed many heap allocations for short keys/values, so the next prototype should focus on symbol IDs for feature keys and values, not a trie and not analyzer IDs.
+- Because memory is now acceptable and overall speed is the primary concern, the next step should be a measured symbol-ID prototype behind the morph model boundary. Success criteria: no JSON schema change, lower or neutral wall time on `compare_pair` and largest-file analysis/comparison runs, and no RSS regression.
+
+## Interned feature strings prototype
+
+Change: `ab-morph-diff::FeatureKey` and `FeatureValue` now use an interned string wrapper backed by `Arc<str>`. Serialization remains unchanged: feature keys and values still serialize as JSON strings. The interner is thread-local to avoid cross-worker lock contention; this is a prototype for symbol-like storage, not a trie.
+
+Regression coverage:
+
+- Repeated `FeatureKey` and `FeatureValue` construction shares storage within the thread.
+- Serialized keys and values remain plain JSON strings.
+
+Largest-file analysis-only warmed comparison:
+
+| representation | wall time | peak RSS |
+|---|---:|---:|
+| compact strings, no string stats | `0:44.61` | `2,866,576 KB` |
+| interned feature strings, no string stats | `0:42.22` | `2,475,740 KB` |
+
+Largest-file full compact comparison shape with pairwise summaries, examples, and N-way output:
+
+| representation | wall time | peak RSS |
+|---|---:|---:|
+| no pairwise N-way feature groups, compact strings | `7:28.96` | `3,168,948 KB` |
+| interned feature strings | `5:02.08` | `2,655,968 KB` |
+
+Interpretation:
+
+- The interner is useful on both target dimensions: speed and memory.
+- The win is large enough to keep the prototype rather than back it out.
+- The remaining risk is corpus-long interner growth, because thread-local interners retain unique feature strings for the worker thread lifetime. This should be checked on an 8-file and then full-corpus run before considering deeper symbol-table work.
+- A trie is still not indicated: exact string interning captures the measured duplication without introducing tokenizer-adjacent dictionary complexity.
+
+## Interned feature strings: 8-largest corpus-shaped run
+
+Purpose: validate that thread-local feature string interning does not regress memory when a worker processes multiple large AAT files, and compare against the prior 8-largest compact baseline.
+
+Command shape:
+
+```bash
+rm -rf scratch/perf-interned-8-largest
+mkdir -p scratch/perf-interned-8-largest/aats/aozora-rs-adapter scratch/perf-interned-8-largest/out
+find scratch/morph-full-corpus/aats -type f -name '*.json' -printf '%s %p\n' \
+  | sort -nr \
+  | awk 'NR<=8 {print $2}' \
+  | while read -r input; do
+      ln -s "$(realpath "$input")" "scratch/perf-interned-8-largest/aats/aozora-rs-adapter/$(basename "$input")"
+    done
+AB_SUDACHI_DICT="$(nix path-info .#sudachi-dictionary-full)/share/sudachi/system.dic" \
+time cargo run --release -p ab-morph-run -- \
+    analyze-aat \
+    --aat-dir scratch/perf-interned-8-largest/aats \
+    --analyzer vibrato \
+    --analyzer sudachi-a \
+    --analyzer sudachi-c \
+    --output-profile compact \
+    --jobs 8 \
+    --analyses-output scratch/perf-interned-8-largest/out/analyses.jsonl.zst \
+    --comparisons-output scratch/perf-interned-8-largest/out/comparisons.jsonl.zst \
+    --examples-output scratch/perf-interned-8-largest/out/examples.jsonl.zst \
+    --nway-output scratch/perf-interned-8-largest/out/nway.jsonl.zst \
+    --errors-output scratch/perf-interned-8-largest/out/errors.jsonl.zst \
+    --manifest-output scratch/perf-interned-8-largest/out/manifest.json
+```
+
+Inputs:
+
+- `000077_1323-b51132c1dd72.json`
+- `000091_522-f7514a80c216.json`
+- `000118_1745-a30a16b68711.json`
+- `000148_56923-8b813e03a8b8.json`
+- `001034_4823-ee91d5f3886b.json`
+- `001529_50685-dd3b2fe4e5bf.json`
+- `001562_56145-c9fe64a731a3.json`
+- `001562_56146-66c41ed10b8f.json`
+
+Result:
+
+- Wall time: `6:14.96`.
+- User CPU: `1068.57s`.
+- System CPU: `61.97s`.
+- Peak RSS: `7,927,232 KB`.
+- Errors: `0` rows.
+- Analyses: `24` rows.
+- Pairwise compact comparisons: `24` rows.
+- Examples: `240` rows.
+- N-way rows: `8` rows.
+
+Comparison:
+
+| run | wall time | peak RSS |
+|---|---:|---:|
+| prior 8-largest compact baseline before root/interner fixes | `11:07.84` | `51,931,200 KB` |
+| interned feature strings + pairwise feature-group fix | `6:14.96` | `7,927,232 KB` |
+
+Interpretation:
+
+- The thread-local interner did not create runaway memory growth on the 8-largest multi-file shape.
+- Peak RSS dropped by roughly `84.7%` versus the prior 8-largest compact baseline.
+- Wall time also improved materially, though this workstation was not isolated for speed benchmarking.
+- The next validation target is a whole-corpus compact run. At this point the memory profile is stable enough to try it without expecting the previous 70+ GiB/OOM failure mode.

@@ -1,14 +1,223 @@
+use std::borrow::Borrow;
+use std::cell::RefCell;
 use std::collections::BTreeMap;
+use std::collections::HashSet;
+use std::fmt;
+use std::hash::{Hash, Hasher};
+use std::iter::FromIterator;
+use std::ops::Index;
 use std::ops::Range;
+use std::sync::Arc;
 
-use compact_str::CompactString;
-use serde::Serialize;
+use serde::ser::SerializeMap;
+use serde::{Serialize, Serializer};
 
 pub type AnalyzerId = String;
 pub type TextId = String;
-pub type FeatureKey = CompactString;
-pub type FeatureValue = CompactString;
-pub type FeatureMap = BTreeMap<FeatureKey, Option<FeatureValue>>;
+pub type FeatureKey = InternedString;
+pub type FeatureValue = InternedString;
+
+thread_local! {
+    static FEATURE_STRING_INTERNER: RefCell<HashSet<Arc<str>>> = RefCell::new(HashSet::new());
+}
+
+#[derive(Clone, Eq)]
+pub struct InternedString(Arc<str>);
+
+impl InternedString {
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+
+    #[cfg(test)]
+    fn ptr_eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.0, &other.0)
+    }
+
+    fn intern(value: &str) -> Self {
+        FEATURE_STRING_INTERNER.with(|interner| {
+            let mut interner = interner.borrow_mut();
+            if let Some(existing) = interner.get(value) {
+                return Self(Arc::clone(existing));
+            }
+
+            let interned = Arc::<str>::from(value);
+            interner.insert(Arc::clone(&interned));
+            Self(interned)
+        })
+    }
+}
+
+impl fmt::Debug for InternedString {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.as_str().fmt(f)
+    }
+}
+
+impl fmt::Display for InternedString {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for InternedString {
+    fn from(value: &str) -> Self {
+        Self::intern(value)
+    }
+}
+
+impl From<String> for InternedString {
+    fn from(value: String) -> Self {
+        Self::intern(&value)
+    }
+}
+
+impl AsRef<str> for InternedString {
+    fn as_ref(&self) -> &str {
+        self.as_str()
+    }
+}
+
+impl Borrow<str> for InternedString {
+    fn borrow(&self) -> &str {
+        self.as_str()
+    }
+}
+
+impl PartialEq for InternedString {
+    fn eq(&self, other: &Self) -> bool {
+        self.as_str() == other.as_str()
+    }
+}
+
+impl PartialEq<&str> for InternedString {
+    fn eq(&self, other: &&str) -> bool {
+        self.as_str() == *other
+    }
+}
+
+impl PartialEq<&str> for &InternedString {
+    fn eq(&self, other: &&str) -> bool {
+        self.as_str() == *other
+    }
+}
+
+impl PartialOrd for InternedString {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for InternedString {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.as_str().cmp(other.as_str())
+    }
+}
+
+impl Hash for InternedString {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.as_str().hash(state);
+    }
+}
+
+impl Serialize for InternedString {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(self.as_str())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct FeatureMap {
+    entries: Vec<(FeatureKey, Option<FeatureValue>)>,
+}
+
+impl FeatureMap {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn with_capacity(capacity: usize) -> Self {
+        Self {
+            entries: Vec::with_capacity(capacity),
+        }
+    }
+
+    pub fn insert(
+        &mut self,
+        key: FeatureKey,
+        value: Option<FeatureValue>,
+    ) -> Option<Option<FeatureValue>> {
+        match self
+            .entries
+            .binary_search_by(|(existing, _)| existing.as_str().cmp(key.as_str()))
+        {
+            Ok(index) => Some(std::mem::replace(&mut self.entries[index].1, value)),
+            Err(index) => {
+                self.entries.insert(index, (key, value));
+                None
+            }
+        }
+    }
+
+    pub fn get(&self, key: impl AsRef<str>) -> Option<&Option<FeatureValue>> {
+        let key = key.as_ref();
+        self.entries
+            .binary_search_by(|(existing, _)| existing.as_str().cmp(key))
+            .ok()
+            .map(|index| &self.entries[index].1)
+    }
+
+    pub fn keys(&self) -> impl Iterator<Item = &FeatureKey> {
+        self.entries.iter().map(|(key, _)| key)
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = (&FeatureKey, &Option<FeatureValue>)> {
+        self.entries.iter().map(|(key, value)| (key, value))
+    }
+
+    pub fn len(&self) -> usize {
+        self.entries.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.entries.is_empty()
+    }
+}
+
+impl Serialize for FeatureMap {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut map = serializer.serialize_map(Some(self.entries.len()))?;
+        for (key, value) in &self.entries {
+            map.serialize_entry(key, value)?;
+        }
+        map.end()
+    }
+}
+
+impl FromIterator<(FeatureKey, Option<FeatureValue>)> for FeatureMap {
+    fn from_iter<T: IntoIterator<Item = (FeatureKey, Option<FeatureValue>)>>(iter: T) -> Self {
+        let mut map = Self::new();
+        for (key, value) in iter {
+            map.insert(key, value);
+        }
+        map
+    }
+}
+
+impl Index<&str> for FeatureMap {
+    type Output = Option<FeatureValue>;
+
+    fn index(&self, index: &str) -> &Self::Output {
+        self.get(index)
+            .unwrap_or_else(|| panic!("feature key not found: {index}"))
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Morpheme {
@@ -228,6 +437,24 @@ pub struct NwayStats {
     pub lexical_regions: usize,
     pub unanimous_boundary_count: usize,
     pub variable_boundary_count: usize,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn feature_strings_are_interned_but_serialize_as_strings() {
+        let first_key: FeatureKey = "pos1".into();
+        let second_key: FeatureKey = "pos1".into();
+        let first_value: FeatureValue = "名詞".into();
+        let second_value: FeatureValue = "名詞".into();
+
+        assert!(first_key.ptr_eq(&second_key));
+        assert!(first_value.ptr_eq(&second_value));
+        assert_eq!(serde_json::to_string(&first_key).unwrap(), "\"pos1\"");
+        assert_eq!(serde_json::to_string(&first_value).unwrap(), "\"名詞\"");
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]

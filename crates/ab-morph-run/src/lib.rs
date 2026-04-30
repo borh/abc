@@ -5,7 +5,7 @@ mod script;
 mod select;
 mod summary;
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, HashMap};
 use std::fs::{self, File, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -78,6 +78,7 @@ pub fn run_analyze_aat(
         manifest_output,
         None,
         None,
+        None,
     )
 }
 
@@ -97,6 +98,7 @@ pub fn run_analyze_aat_with_nway(
     manifest_output: Option<&Path>,
     nway_output: Option<&Path>,
     max_nway_examples_per_text: Option<usize>,
+    string_stats_output: Option<&Path>,
 ) -> Result<()> {
     if aat.is_none() == aat_dir.is_none() {
         bail!("provide exactly one of --aat or --aat-dir");
@@ -129,6 +131,7 @@ pub fn run_analyze_aat_with_nway(
         manifest_output,
         nway_output,
         max_nway_examples_per_text,
+        string_stats_output,
     )
 }
 
@@ -167,6 +170,7 @@ pub fn run_analyze_aat_selected(
         manifest_output,
         None,
         None,
+        None,
     )
 }
 
@@ -187,6 +191,7 @@ fn run_analyze_aat_inputs(
     manifest_output: Option<&Path>,
     nway_output: Option<&Path>,
     max_nway_examples_per_text: Option<usize>,
+    string_stats_output: Option<&Path>,
 ) -> Result<()> {
     if analyzer_ids.is_empty() {
         bail!("provide at least one --analyzer");
@@ -202,12 +207,13 @@ fn run_analyze_aat_inputs(
     }
     let max_nway_examples_per_text =
         max_nway_examples_per_text.unwrap_or(max_examples_per_comparison);
+    let collect_string_stats = string_stats_output.is_some();
 
     let input_file_count = inputs.len();
     let specs = parse_analyzer_specs(analyzer_ids)?;
     let analyzers = load_analyzers(&specs)?;
 
-    if jobs > 1 {
+    let string_stats = if jobs > 1 {
         run_analyze_aat_parallel(
             inputs,
             analyzers,
@@ -221,7 +227,8 @@ fn run_analyze_aat_inputs(
             max_examples_per_comparison,
             nway_output,
             max_nway_examples_per_text,
-        )?;
+            collect_string_stats,
+        )?
     } else {
         run_analyze_aat_serial(
             inputs,
@@ -236,9 +243,10 @@ fn run_analyze_aat_inputs(
                 max_examples_per_comparison,
                 nway_output,
                 max_nway_examples_per_text,
+                collect_string_stats,
             },
-        )?;
-    }
+        )?
+    };
 
     if let Some(path) = manifest_output {
         write_manifest(
@@ -256,6 +264,9 @@ fn run_analyze_aat_inputs(
             nway_output,
         )?;
     }
+    if let Some(path) = string_stats_output {
+        write_string_stats_report(path, &string_stats)?;
+    }
 
     Ok(())
 }
@@ -270,13 +281,14 @@ struct SerialRunOptions<'a> {
     max_examples_per_comparison: usize,
     nway_output: Option<&'a Path>,
     max_nway_examples_per_text: usize,
+    collect_string_stats: bool,
 }
 
 fn run_analyze_aat_serial(
     inputs: Vec<PathBuf>,
     analyzers: &[Arc<LoadedAnalyzer>],
     options: SerialRunOptions<'_>,
-) -> Result<()> {
+) -> Result<StringStatsReport> {
     let resume_ids = if options.resume {
         read_resume_ids(
             options.analyses_output,
@@ -310,6 +322,7 @@ fn run_analyze_aat_serial(
     } else {
         None
     };
+    let mut string_stats = StringStatsReport::default();
 
     for input in inputs {
         let input_path = input.display().to_string();
@@ -377,6 +390,9 @@ fn run_analyze_aat_serial(
                     return Err(error);
                 }
             };
+            if options.collect_string_stats {
+                string_stats.record_analysis(&analysis);
+            }
 
             write_analysis_row(
                 &mut *analyses_writer,
@@ -468,7 +484,7 @@ fn run_analyze_aat_serial(
     if let Some(writer) = &mut nway_writer {
         writer.flush()?;
     }
-    Ok(())
+    Ok(string_stats)
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -485,7 +501,8 @@ fn run_analyze_aat_parallel(
     max_examples_per_comparison: usize,
     nway_output: Option<&Path>,
     max_nway_examples_per_text: usize,
-) -> Result<()> {
+    collect_string_stats: bool,
+) -> Result<StringStatsReport> {
     let resume_ids = if resume {
         read_resume_ids(analyses_output, errors_output, nway_output, output_profile)?
     } else {
@@ -535,7 +552,7 @@ fn run_analyze_aat_parallel(
                 let nway = nway_output.map(|path| shard_output_path(&output_dir, path, "nway"));
                 let errors =
                     errors_output.map(|path| shard_output_path(&output_dir, path, "errors"));
-                run_analyze_aat_serial(
+                let string_stats = run_analyze_aat_serial(
                     shard_inputs,
                     &analyzers,
                     SerialRunOptions {
@@ -548,6 +565,7 @@ fn run_analyze_aat_parallel(
                         max_examples_per_comparison,
                         nway_output: nway.as_deref(),
                         max_nway_examples_per_text,
+                        collect_string_stats,
                     },
                 )?;
                 Ok(ShardOutput {
@@ -557,6 +575,7 @@ fn run_analyze_aat_parallel(
                     examples,
                     nway,
                     errors,
+                    string_stats,
                 })
             }));
         }
@@ -614,10 +633,16 @@ fn run_analyze_aat_parallel(
             resume,
         )?;
     }
+    let mut string_stats = StringStatsReport::default();
+    if collect_string_stats {
+        for output in &outputs {
+            string_stats.merge(&output.string_stats);
+        }
+    }
 
     fs::remove_dir_all(&temp_root)
         .with_context(|| format!("failed to remove {}", temp_root.display()))?;
-    Ok(())
+    Ok(string_stats)
 }
 
 struct ShardOutput {
@@ -627,6 +652,7 @@ struct ShardOutput {
     examples: Option<PathBuf>,
     nway: Option<PathBuf>,
     errors: Option<PathBuf>,
+    string_stats: StringStatsReport,
 }
 
 fn shard_output_path(output_dir: &Path, final_path: &Path, stem: &str) -> PathBuf {
@@ -933,6 +959,89 @@ struct RunErrorRow {
     error: String,
 }
 
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct StringStatsReport {
+    pub analysis_count: usize,
+    pub morpheme_count: usize,
+    pub analyzer_ids: StringCategoryStats,
+    pub surfaces: StringCategoryStats,
+    pub feature_keys: StringCategoryStats,
+    pub feature_values: StringCategoryStats,
+}
+
+impl StringStatsReport {
+    pub fn record_analysis(&mut self, analysis: &Analysis) {
+        self.analysis_count += 1;
+        self.morpheme_count += analysis.morphemes.len();
+        self.analyzer_ids.record(&analysis.analyzer);
+        for morpheme in &analysis.morphemes {
+            self.surfaces.record(&morpheme.surface);
+            for (key, value) in morpheme.features.iter() {
+                self.feature_keys.record(key.as_str());
+                if let Some(value) = value {
+                    self.feature_values.record(value.as_str());
+                }
+            }
+        }
+    }
+
+    fn merge(&mut self, other: &Self) {
+        self.analysis_count += other.analysis_count;
+        self.morpheme_count += other.morpheme_count;
+        self.analyzer_ids.merge(&other.analyzer_ids);
+        self.surfaces.merge(&other.surfaces);
+        self.feature_keys.merge(&other.feature_keys);
+        self.feature_values.merge(&other.feature_values);
+    }
+}
+
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct StringCategoryStats {
+    pub total_occurrences: usize,
+    pub unique_values: usize,
+    pub total_bytes: usize,
+    pub unique_bytes: usize,
+    pub duplicate_occurrences: usize,
+    pub duplicate_bytes: usize,
+    #[serde(skip)]
+    counts: HashMap<String, usize>,
+}
+
+impl StringCategoryStats {
+    fn record(&mut self, value: &str) {
+        self.record_many(value, 1);
+    }
+
+    fn record_many(&mut self, value: &str, count: usize) {
+        if count == 0 {
+            return;
+        }
+        let len = value.len();
+        self.total_occurrences += count;
+        self.total_bytes += len * count;
+        match self.counts.get_mut(value) {
+            Some(existing) => {
+                *existing += count;
+                self.duplicate_occurrences += count;
+                self.duplicate_bytes += len * count;
+            }
+            None => {
+                self.counts.insert(value.to_owned(), count);
+                self.unique_values += 1;
+                self.unique_bytes += len;
+                self.duplicate_occurrences += count - 1;
+                self.duplicate_bytes += len * count.saturating_sub(1);
+            }
+        }
+    }
+
+    fn merge(&mut self, other: &Self) {
+        for (value, count) in &other.counts {
+            self.record_many(value, *count);
+        }
+    }
+}
+
 fn write_error_row<W: Write + ?Sized>(writer: &mut W, row: &RunErrorRow) -> Result<()> {
     write_jsonl_row(writer, row)
 }
@@ -1025,6 +1134,16 @@ fn write_comparison_rows(
             }
         }
     }
+    Ok(())
+}
+
+fn write_string_stats_report(path: &Path, report: &StringStatsReport) -> Result<()> {
+    create_parent_dir(path)?;
+    let file =
+        File::create(path).with_context(|| format!("failed to create {}", path.display()))?;
+    let mut writer = std::io::BufWriter::new(file);
+    serde_json::to_writer_pretty(&mut writer, report)?;
+    writeln!(writer)?;
     Ok(())
 }
 
@@ -1596,6 +1715,89 @@ mod tests {
         assert_eq!(value["input_file_count"], 1);
 
         let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn writes_string_stats_report_when_requested() {
+        let dir = temp_dir("string-stats-output");
+        let aat_dir = dir.join("aat");
+        fs::create_dir_all(&aat_dir).unwrap();
+        fs::write(aat_dir.join("source-a.json"), TINY_AAT).unwrap();
+
+        let stats_path = dir.join("reports").join("string-stats.json");
+        run_analyze_aat_with_nway(
+            None,
+            Some(&aat_dir),
+            &["vibrato".to_owned()],
+            &dir.join("analyses.jsonl"),
+            None,
+            Some(&dir.join("errors.jsonl")),
+            false,
+            1,
+            OutputProfile::Compact,
+            None,
+            10,
+            None,
+            None,
+            None,
+            Some(&stats_path),
+        )
+        .unwrap();
+
+        let value: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(&stats_path).unwrap()).unwrap();
+        assert_eq!(value["analysis_count"], 1);
+        assert!(value["morpheme_count"].as_u64().unwrap() > 0);
+        assert!(value["surfaces"]["total_occurrences"].as_u64().unwrap() > 0);
+        assert!(value["feature_keys"]["unique_values"].as_u64().unwrap() > 0);
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn string_stats_report_counts_repeated_features_and_surfaces() {
+        let analysis = Analysis {
+            analyzer: "fixture".to_owned(),
+            text_id: "t1".to_owned(),
+            source_text: "日日".to_owned(),
+            morphemes: vec![
+                Morpheme {
+                    surface: "日".to_owned(),
+                    byte_span: 0..3,
+                    char_span: 0..1,
+                    features: [
+                        ("pos1".into(), Some("名詞".into())),
+                        ("lemma".into(), Some("日".into())),
+                    ]
+                    .into_iter()
+                    .collect(),
+                },
+                Morpheme {
+                    surface: "日".to_owned(),
+                    byte_span: 3..6,
+                    char_span: 1..2,
+                    features: [
+                        ("pos1".into(), Some("名詞".into())),
+                        ("lemma".into(), Some("日".into())),
+                    ]
+                    .into_iter()
+                    .collect(),
+                },
+            ],
+        };
+
+        let mut report = StringStatsReport::default();
+        report.record_analysis(&analysis);
+
+        assert_eq!(report.analysis_count, 1);
+        assert_eq!(report.morpheme_count, 2);
+        assert_eq!(report.surfaces.total_occurrences, 2);
+        assert_eq!(report.surfaces.unique_values, 1);
+        assert_eq!(report.feature_keys.total_occurrences, 4);
+        assert_eq!(report.feature_keys.unique_values, 2);
+        assert_eq!(report.feature_values.total_occurrences, 4);
+        assert_eq!(report.feature_values.unique_values, 2);
+        assert!(report.feature_keys.duplicate_bytes > 0);
     }
 
     fn run_default(

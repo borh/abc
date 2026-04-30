@@ -1,4 +1,3 @@
-use std::collections::BTreeMap;
 use std::hint::black_box;
 
 use ab_morph_diff::{Analysis, FeatureMap, Morpheme, compare_pair_compact_with_source_text};
@@ -69,7 +68,7 @@ fn features(values: &[(&str, Option<&str>)]) -> FeatureMap {
     values
         .iter()
         .map(|(key, value)| ((*key).into(), value.map(Into::into)))
-        .collect::<BTreeMap<_, _>>()
+        .collect()
 }
 
 criterion_group!(benches, bench_compare_pair_compact);

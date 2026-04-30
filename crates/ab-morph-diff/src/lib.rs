@@ -121,8 +121,6 @@ pub fn visit_nway_regions_with_source_text(
 
 #[cfg(test)]
 mod tests {
-    use std::collections::BTreeMap;
-
     use crate::{
         Analysis, ChangedValue, FeatureMap, MorphDiffError, Morpheme, Region, SegmentationKind,
         compare_pair, compare_pair_with_source_text,
@@ -263,13 +261,13 @@ mod tests {
             "a",
             "t",
             source,
-            vec![m(source, "。", 0, 1, BTreeMap::new())],
+            vec![m(source, "。", 0, 1, FeatureMap::new())],
         );
         let to = analysis(
             "b",
             "t",
             source,
-            vec![m(source, "。", 0, 1, BTreeMap::new())],
+            vec![m(source, "。", 0, 1, FeatureMap::new())],
         );
         let comparison = compare_pair(&from, &to, &[]).unwrap();
         assert_eq!(comparison.stats.one_to_one_regions, 1);

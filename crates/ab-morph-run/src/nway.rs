@@ -239,8 +239,6 @@ fn excerpt(source_text: &str, span: &Range<usize>) -> String {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::BTreeMap;
-
     use ab_morph_diff::{Analysis, FeatureMap, Morpheme, compare_nway_with_source_text};
 
     use super::*;
@@ -249,7 +247,7 @@ mod tests {
         values
             .iter()
             .map(|(key, value)| ((*key).into(), value.map(Into::into)))
-            .collect::<BTreeMap<_, _>>()
+            .collect()
     }
 
     fn morpheme(

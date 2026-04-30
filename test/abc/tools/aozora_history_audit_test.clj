@@ -250,6 +250,7 @@
   (testing "two upstream refs are extracted, ingested, validated, and compared"
     (let [repo-dir (temp-dir "abc-history-audit-repo")
           work-dir (temp-dir "abc-history-audit-work")
+          drift-dir (temp-dir "abc-history-audit-drift")
           git (-> (Git/init) (.setDirectory repo-dir) .call)]
       (try
         (let [old-commit (commit-zip!
@@ -270,9 +271,31 @@
                                             "姓読みソート用" "しん" "名読みソート用" "に"
                                             "姓ローマ字" "New" "名ローマ字" "Two"})]))
                           "new corpus")
+              event (write-drift-sidecars!
+                     drift-dir
+                     {"schema_id" drift/event-schema-id
+                      "schema_hash" (manifest/schema-hash drift/event-schema-path)
+                      "drift_event_type" "split"
+                      "date" "2026-04-30"
+                      "participants" [{"snapshot_id" "post-abc-000000000001"
+                                       "person_id" "abc-000000000001"
+                                       "person_record_hash" "sha256:1111111111111111111111111111111111111111111111111111111111111111"}
+                                      {"snapshot_id" "post-abc-000000000002"
+                                       "person_id" "abc-000000000002"
+                                       "person_record_hash" "sha256:2222222222222222222222222222222222222222222222222222222222222222"}
+                                      {"snapshot_id" "pre-000001"
+                                       "person_id" "000001"
+                                       "person_record_hash" "sha256:0000000000000000000000000000000000000000000000000000000000000000"}]
+                      "evidence" ["https://example.org/drift-evidence"]
+                      "prov" {"used" ["pre-000001"]
+                              "was_generated_by" ["post-abc-000000000001"
+                                                  "post-abc-000000000002"]
+                              "qualified_association" {"agent" "https://w3id.org/abc/agents/test"
+                                                       "had_role" "abc:DriftEditor"}}})
               result (audit/audit! {:aozora-repo (str repo-dir)
                                     :previous-ref (.getName old-commit)
                                     :current-ref (.getName new-commit)
+                                    :drift-persons-dir (str drift-dir)
                                     :work-dir (str work-dir)})]
           (is (= "ok" (:status result)))
           (is (= 0 (get-in result [:validation :current :failed])))
@@ -281,8 +304,17 @@
                    "relation_to_work" "著者"
                    "source_person_ids" ["000001"]
                    "target_person_ids" ["abc-000000000001" "abc-000000000002"]}]
-                 (get-in result [:drift "split_candidates"]))))
+                 (get-in result [:drift "split_candidates"])))
+          (let [updates (:drift-participant-updates result)]
+            (is (= #{"000001" "abc-000000000001" "abc-000000000002"}
+                   (set (map #(get % "person_id") updates))))
+            (is (= #{"removed" "added"}
+                   (set (map #(get % "change_type") updates))))
+            (is (every? #(= [(get event "drift_event_id")]
+                            (get % "drift_event_ids"))
+                        updates))))
         (finally
           (.close git)
           (delete-recursive repo-dir)
-          (delete-recursive work-dir))))))
+          (delete-recursive work-dir)
+          (delete-recursive drift-dir))))))

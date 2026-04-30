@@ -27,8 +27,10 @@
     :default default-zip-path]
    [nil "--work-dir DIR" "Tool-owned working directory; previous.zip, current.zip, previous-corpus/, and current-corpus/ are deleted before each run"
     :default default-work-dir]
+   [nil "--drift-persons-dir DIR" "Validated persons directory containing optional _events/ and _indexes/ drift sidecars"]
    ["-o" "--output FILE" "Write JSON report to FILE instead of stdout"]
    [nil "--fail-on-candidates" "Exit 1 when split/merge candidates are present"]
+   [nil "--fail-on-drift-participant-updates" "Exit 1 when accepted drift participants changed across the audited upstream refs"]
    ["-h" "--help"]])
 
 (defn- usage [summary]
@@ -227,9 +229,12 @@
                                       (:output options))
               validation-failed? (= "validation_failed" (:status result))
               candidate-count (+ (or (get-in result [:drift "summary" "split_candidates"]) 0)
-                                 (or (get-in result [:drift "summary" "merge_candidates"]) 0))]
+                                 (or (get-in result [:drift "summary" "merge_candidates"]) 0))
+              drift-participant-update-count (count (:drift-participant-updates result))]
           (when (or validation-failed?
-                    (and (:fail-on-candidates options) (pos? candidate-count)))
+                    (and (:fail-on-candidates options) (pos? candidate-count))
+                    (and (:fail-on-drift-participant-updates options)
+                         (pos? drift-participant-update-count)))
             (System/exit 1)))
         (catch clojure.lang.ExceptionInfo ex
           (binding [*out* *err*]

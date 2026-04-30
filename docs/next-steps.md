@@ -2,7 +2,7 @@
 
 ## Current State
 
-Fifteen contract-harness milestones complete:
+Sixteen contract-harness milestones complete:
 
 - **2026-04-27 v0 contract harness** (archived as
   `docs/archive/2026-04-27-v0-contract-harness.md`).
@@ -35,6 +35,12 @@ Fifteen contract-harness milestones complete:
   fixes surfaced by the sweep: `:dc/subject` is omitted when `ndc`
   is null and `dc:subject` in the SHACL shape relaxed from
   `minCount 1` to `maxCount 1`.
+- **2026-04-30 Person drift history audit.**
+  `person-drift-history --previous-dir <OLD> --current-dir <NEW>`
+  compares two generated corpus snapshots, classifies ordinary
+  person-record and contributor-edge changes, and only flags split or
+  merge candidates when same-work/same-relation replacement evidence
+  exists.
 - **2026-04-29 Temporal modeling (ADR 0015).** Partial dates
   (`1941`, `1904-01`) and 前N CE-relative BCE notation are
   preserved end-to-end instead of dropped. The schema
@@ -308,6 +314,7 @@ nix run .#validate-design-bundle
 nix run .#aozora-ingest -- --zip references/aozorabunko/index_pages/list_person_all_extended_utf8.zip --work-id 000127 --output examples/v0/example-work/metadata-record.json
 nix run .#aozora-ingest -- --zip references/aozorabunko/index_pages/list_person_all_extended_utf8.zip --all --output-dir out/corpus
 nix run .#validate-corpus -- --input-dir out/corpus
+nix run .#person-drift-history -- --previous-dir out/corpus-prev --current-dir out/corpus --output out/person-drift-history.json
 nix run .#materialize-import -- examples/ab-validator-output out/imported --generated-at 2026-04-26T00:00:00Z
 nix run .#manifest-to-rdf -- examples/v0/example-work/manifest.json -o out/manifest.ttl
 nix run .#regenerate-tei-profile

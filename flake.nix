@@ -152,6 +152,16 @@
             meta.description = "Validate an ingested corpus directory through SHACL";
           };
 
+          person-drift-history = {
+            type = "app";
+            program = toString (
+              pkgs.writeShellScript "abc-person-drift-history" ''
+                exec ${pkgs.clojure}/bin/clojure -M:abc/person-drift-history "$@"
+              ''
+            );
+            meta.description = "Audit generated corpus snapshots for conservative person split/merge candidates";
+          };
+
           regenerate-tei-profile = {
             type = "app";
             program = toString (
@@ -285,6 +295,7 @@
             test -f ${./src/abc/tools/logging.clj}
             test -f ${./src/abc/tools/manifest_to_rdf.clj}
             test -f ${./src/abc/tools/metadata_record.clj}
+            test -f ${./src/abc/tools/person_drift_history.clj}
             test -f ${./src/abc/tools/person_record.clj}
             test -f ${./src/abc/tools/rdf_prefixes.clj}
             test -f ${./src/abc/tools/schematron.clj}
@@ -305,6 +316,7 @@
             test -f ${./test/abc/tools/materialize_import_test.clj}
             test -f ${./test/abc/tools/aozora_csv_test.clj}
             test -f ${./test/abc/tools/metadata_record_test.clj}
+            test -f ${./test/abc/tools/person_drift_history_test.clj}
             test -f ${./test/abc/tools/person_record_test.clj}
             test -f ${./test/abc/tools/aozora_ingest_test.clj}
             test -f ${./test/abc/tools/schematron_test.clj}

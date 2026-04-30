@@ -49,7 +49,9 @@ Seventeen contract-harness milestones complete:
   exist, pass `--drift-persons-dir examples/v0/example-persons` so
   ordinary upstream edits to drift participants surface as
   `drift_participant_updates[]` instead of being hidden inside a clean
-  non-split/non-merge audit.
+  non-split/non-merge audit. Use `--scan-history` with optional
+  `--from-ref`, `--to-ref`, and `--max-pairs` to run the same audit
+  across adjacent upstream commits that changed the CSV ZIP.
 - **2026-04-29 Temporal modeling (ADR 0015).** Partial dates
   (`1941`, `1904-01`) and 前N CE-relative BCE notation are
   preserved end-to-end instead of dropped. The schema
@@ -325,6 +327,7 @@ nix run .#aozora-ingest -- --zip references/aozorabunko/index_pages/list_person_
 nix run .#validate-corpus -- --input-dir out/corpus
 nix run .#person-drift-history -- --previous-dir out/corpus-prev --current-dir out/corpus --output out/person-drift-history.json
 nix run .#aozora-history-audit -- --aozora-repo /home/bor/Dependencies/aozorabunko --previous-ref <old-ref> --current-ref <new-ref> --drift-persons-dir examples/v0/example-persons --fail-on-candidates --fail-on-drift-participant-updates --output out/aozora-history-audit.json
+nix run .#aozora-history-audit -- --aozora-repo /home/bor/Dependencies/aozorabunko --scan-history --from-ref <old-ref> --to-ref <new-ref> --max-pairs 10 --drift-persons-dir examples/v0/example-persons --fail-on-candidates --fail-on-drift-participant-updates --output out/aozora-history-scan.json
 nix run .#materialize-import -- examples/ab-validator-output out/imported --generated-at 2026-04-26T00:00:00Z
 nix run .#manifest-to-rdf -- examples/v0/example-work/manifest.json -o out/manifest.ttl
 nix run .#regenerate-tei-profile

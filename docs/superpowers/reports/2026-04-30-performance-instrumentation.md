@@ -105,3 +105,21 @@ Results:
 | `aat_diff_representative_tree` | `0` | `36.649 ms..36.873 ms` |
 
 These are smoke baselines for the new benchmark targets, not final corpus-performance claims.
+
+## Pinned `ab-morph-run` benchmark smoke
+
+Command:
+
+```bash
+AB_SUDACHI_DICT="$(nix path-info .#sudachi-dictionary-full)/share/sudachi/system.dic" \
+  taskset -c 0-7 cargo bench -p ab-morph-run --bench analyze_aat -- --sample-size 10 --measurement-time 2
+```
+
+Results:
+
+| Benchmark | CPU set | Mean range |
+| --- | --- | ---: |
+| `analyze_aat/jobs_1` | `0-7` | `98.480 ms..99.207 ms` |
+| `analyze_aat/jobs_2` | `0-7` | `74.282 ms..75.171 ms` |
+
+This smoke used the benchmark's synthetic AAT fixture and the reproducible Sudachi full dictionary from the flake. It validates the benchmark path and pinning policy; it is not a full-corpus throughput number.

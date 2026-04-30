@@ -1,5 +1,6 @@
 mod compact;
 mod output;
+mod script;
 mod select;
 mod summary;
 
@@ -18,6 +19,7 @@ use output::{open_output_writer, read_jsonl_or_zst_to_string};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+pub use script::ScriptCategory;
 pub use select::resolve_source_id_aat_paths;
 pub use summary::{
     CompactExampleFilter, CompactExampleSummaryOptions, CompactExampleSummaryRow,
@@ -849,6 +851,7 @@ fn write_comparison_rows(
                         let row = compact::ComparisonSummaryRow::from_compact_comparison(
                             source_id.to_owned(),
                             &comparison,
+                            source_text,
                         );
                         write_jsonl_row(writer, &row)?;
                     }

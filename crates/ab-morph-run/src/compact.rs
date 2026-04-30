@@ -7,6 +7,8 @@ use ab_morph_diff::{
 };
 use serde::{Deserialize, Serialize};
 
+use crate::script::{ScriptCategory, classify_text};
+
 pub(crate) fn source_id_from_aat_path(path: &Path) -> String {
     path.file_stem()
         .and_then(|stem| stem.to_str())
@@ -41,6 +43,8 @@ impl AnalysisSummaryRow {
 pub(crate) struct ComparisonSummaryRow {
     pub source_id: String,
     pub text_id: String,
+    #[serde(default)]
+    pub source_script_category: ScriptCategory,
     pub from_analyzer: String,
     pub to_analyzer: String,
     pub from_morphemes: usize,
@@ -74,6 +78,7 @@ impl ComparisonSummaryRow {
         Self {
             source_id,
             text_id: comparison.text_id.clone(),
+            source_script_category: ScriptCategory::Other,
             from_analyzer: comparison.from_analyzer.clone(),
             to_analyzer: comparison.to_analyzer.clone(),
             from_morphemes: stats.from_morphemes,
@@ -100,11 +105,13 @@ impl ComparisonSummaryRow {
     pub(crate) fn from_compact_comparison(
         source_id: String,
         comparison: &CompactComparison,
+        source_text: &str,
     ) -> Self {
         let stats = &comparison.stats;
         Self {
             source_id,
             text_id: comparison.text_id.clone(),
+            source_script_category: classify_text(source_text),
             from_analyzer: comparison.from_analyzer.clone(),
             to_analyzer: comparison.to_analyzer.clone(),
             from_morphemes: stats.from_morphemes,
@@ -143,6 +150,7 @@ pub(crate) struct ComparisonExampleRow {
     pub char_end: usize,
     pub source_excerpt: String,
     pub whitespace_only: bool,
+    pub script_category: ScriptCategory,
     pub from_surfaces: Vec<String>,
     pub to_surfaces: Vec<String>,
     pub feature_changes: Option<Vec<FeatureChangeRow>>,
@@ -257,6 +265,7 @@ fn example_row_from_compact_example(
         char_start: example.text_span.start,
         char_end: example.text_span.end,
         whitespace_only: is_whitespace_only(&source_excerpt),
+        script_category: classify_text(&source_excerpt),
         source_excerpt,
         from_surfaces: example.from_surfaces.clone(),
         to_surfaces: example.to_surfaces.clone(),
@@ -293,6 +302,7 @@ fn example_row_from_region(
                 char_start: diff.text_span.start,
                 char_end: diff.text_span.end,
                 whitespace_only: is_whitespace_only(&source_excerpt),
+                script_category: classify_text(&source_excerpt),
                 source_excerpt,
                 from_surfaces: diff.from_surfaces.clone(),
                 to_surfaces: diff.to_surfaces.clone(),
@@ -314,6 +324,7 @@ fn example_row_from_region(
                 char_start: mismatch.text_span.start,
                 char_end: mismatch.text_span.end,
                 whitespace_only: is_whitespace_only(&source_excerpt),
+                script_category: classify_text(&source_excerpt),
                 source_excerpt,
                 from_surfaces: surfaces(from, mismatch.from_indices.clone()),
                 to_surfaces: surfaces(to, mismatch.to_indices.clone()),
@@ -345,6 +356,7 @@ fn example_row_from_feature_diff(
         char_start: feature_diff.text_span.start,
         char_end: feature_diff.text_span.end,
         whitespace_only: is_whitespace_only(&source_excerpt),
+        script_category: classify_text(&source_excerpt),
         source_excerpt,
         from_surfaces: surface_at(from, feature_diff.from_index),
         to_surfaces: surface_at(to, feature_diff.to_index),

@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::compact::{ComparisonSummaryRow, is_whitespace_only};
 use crate::output::for_each_jsonl_or_zst_line;
+use crate::script::{ScriptCategory, classify_text};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CompactSummaryGroupBy {
@@ -46,6 +47,7 @@ pub enum CompactExampleSummarySort {
 pub struct CompactSummaryOptions {
     pub group_by: CompactSummaryGroupBy,
     pub sort_by: CompactSummarySort,
+    pub script_category: Option<ScriptCategory>,
     pub limit: usize,
 }
 
@@ -53,6 +55,7 @@ pub struct CompactSummaryOptions {
 pub struct CompactExampleSummaryOptions {
     pub group_by: CompactSummaryGroupBy,
     pub filter: CompactExampleFilter,
+    pub script_category: Option<ScriptCategory>,
     pub sort_by: CompactExampleSummarySort,
     pub limit: usize,
 }
@@ -62,6 +65,7 @@ pub struct CompactSummaryRow {
     pub key: String,
     pub source_ids: Vec<String>,
     pub text_ids: Vec<String>,
+    pub script_categories: Vec<String>,
     pub comparisons: usize,
     pub worst_boundary_f1: Option<f64>,
     pub total_segmentation_regions: usize,
@@ -81,6 +85,7 @@ pub struct CompactExampleSummaryRow {
     pub key: String,
     pub source_ids: Vec<String>,
     pub text_ids: Vec<String>,
+    pub script_categories: Vec<String>,
     pub examples: usize,
     pub whitespace_examples: usize,
     pub lexical_examples: usize,
@@ -93,6 +98,7 @@ pub struct CompactExampleSummaryRow {
 struct Accumulator {
     source_ids: BTreeSet<String>,
     text_ids: BTreeSet<String>,
+    script_categories: BTreeSet<ScriptCategory>,
     comparisons: usize,
     worst_boundary_f1: Option<f64>,
     saw_null_boundary_f1: bool,
@@ -112,6 +118,7 @@ struct Accumulator {
 struct ExampleAccumulator {
     source_ids: BTreeSet<String>,
     text_ids: BTreeSet<String>,
+    script_categories: BTreeSet<ScriptCategory>,
     examples: usize,
     whitespace_examples: usize,
     lexical_examples: usize,
@@ -128,6 +135,8 @@ struct ExampleSummaryInputRow {
     source_excerpt: String,
     #[serde(default)]
     whitespace_only: Option<bool>,
+    #[serde(default)]
+    script_category: Option<ScriptCategory>,
 }
 
 pub fn summarize_compact_comparisons(
@@ -137,6 +146,12 @@ pub fn summarize_compact_comparisons(
     let mut groups = BTreeMap::<String, Accumulator>::new();
     for_each_jsonl_or_zst_line(comparisons_path, |line| {
         let row: ComparisonSummaryRow = serde_json::from_str(line)?;
+        if options
+            .script_category
+            .is_some_and(|category| row.source_script_category != category)
+        {
+            return Ok(());
+        }
         let key = match options.group_by {
             CompactSummaryGroupBy::SourceId => row.source_id.clone(),
             CompactSummaryGroupBy::TextId => row.text_id.clone(),
@@ -164,6 +179,15 @@ pub fn summarize_compact_examples(
         let whitespace_only = row
             .whitespace_only
             .unwrap_or_else(|| is_whitespace_only(&row.source_excerpt));
+        let script_category = row
+            .script_category
+            .unwrap_or_else(|| classify_text(&row.source_excerpt));
+        if options
+            .script_category
+            .is_some_and(|category| script_category != category)
+        {
+            return Ok(());
+        }
         if !example_filter_matches(options.filter, whitespace_only) {
             return Ok(());
         }
@@ -171,7 +195,10 @@ pub fn summarize_compact_examples(
             CompactSummaryGroupBy::SourceId => row.source_id.clone(),
             CompactSummaryGroupBy::TextId => row.text_id.clone(),
         };
-        groups.entry(key).or_default().push(row, whitespace_only);
+        groups
+            .entry(key)
+            .or_default()
+            .push(row, whitespace_only, script_category);
         Ok(())
     })?;
 
@@ -188,6 +215,7 @@ impl Accumulator {
     fn push(&mut self, row: ComparisonSummaryRow) {
         self.source_ids.insert(row.source_id);
         self.text_ids.insert(row.text_id);
+        self.script_categories.insert(row.source_script_category);
         self.comparisons += 1;
         match row.boundary_f1 {
             Some(value) => {
@@ -217,6 +245,12 @@ impl Accumulator {
             key,
             source_ids: self.source_ids.into_iter().collect(),
             text_ids: self.text_ids.into_iter().collect(),
+            script_categories: self
+                .script_categories
+                .into_iter()
+                .map(ScriptCategory::as_str)
+                .map(str::to_owned)
+                .collect(),
             comparisons: self.comparisons,
             worst_boundary_f1: if self.saw_null_boundary_f1 {
                 None
@@ -239,9 +273,15 @@ impl Accumulator {
 }
 
 impl ExampleAccumulator {
-    fn push(&mut self, row: ExampleSummaryInputRow, whitespace_only: bool) {
+    fn push(
+        &mut self,
+        row: ExampleSummaryInputRow,
+        whitespace_only: bool,
+        script_category: ScriptCategory,
+    ) {
         self.source_ids.insert(row.source_id);
         self.text_ids.insert(row.text_id);
+        self.script_categories.insert(script_category);
         self.examples += 1;
         if whitespace_only {
             self.whitespace_examples += 1;
@@ -262,6 +302,12 @@ impl ExampleAccumulator {
             key,
             source_ids: self.source_ids.into_iter().collect(),
             text_ids: self.text_ids.into_iter().collect(),
+            script_categories: self
+                .script_categories
+                .into_iter()
+                .map(ScriptCategory::as_str)
+                .map(str::to_owned)
+                .collect(),
             examples: self.examples,
             whitespace_examples: self.whitespace_examples,
             lexical_examples: self.lexical_examples,
@@ -384,6 +430,7 @@ mod tests {
             CompactSummaryOptions {
                 group_by: CompactSummaryGroupBy::SourceId,
                 sort_by: CompactSummarySort::BoundaryF1,
+                script_category: None,
                 limit: 2,
             },
         )
@@ -415,6 +462,7 @@ mod tests {
             CompactSummaryOptions {
                 group_by: CompactSummaryGroupBy::TextId,
                 sort_by: CompactSummarySort::SegmentationRegions,
+                script_category: None,
                 limit: 10,
             },
         )
@@ -450,6 +498,7 @@ mod tests {
             CompactSummaryOptions {
                 group_by: CompactSummaryGroupBy::SourceId,
                 sort_by: CompactSummarySort::LexicalSegmentationRegions,
+                script_category: None,
                 limit: 10,
             },
         )
@@ -459,6 +508,38 @@ mod tests {
         assert_eq!(rows[0].total_lexical_segmentation_regions, 4);
         assert_eq!(rows[1].key, "whitespace-heavy");
         assert_eq!(rows[1].total_whitespace_segmentation_regions, 9);
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn summarize_comparisons_can_filter_by_script_category() {
+        let dir = temp_dir("script-filter");
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("comparisons.jsonl");
+        fs::write(
+            &path,
+            concat!(
+                r#"{"source_id":"japanese","text_id":"t1","source_script_category":"japanese","from_analyzer":"vibrato","to_analyzer":"sudachi-c","from_morphemes":10,"to_morphemes":11,"one_to_one_regions":8,"one_to_one_with_feature_differences":1,"segmentation_regions":4,"whitespace_segmentation_regions":0,"lexical_segmentation_regions":4,"coverage_mismatch_regions":0,"split_regions":4,"merge_regions":0,"resegment_regions":0,"whitespace_feature_diff_regions":0,"lexical_feature_diff_regions":1,"from_morphemes_in_segmentation":4,"to_morphemes_in_segmentation":8,"boundary_precision":0.9,"boundary_recall":0.8,"boundary_f1":0.847}"#, "\n",
+                r#"{"source_id":"jis-table","text_id":"JISTABLE","source_script_category":"latin-code","from_analyzer":"vibrato","to_analyzer":"sudachi-c","from_morphemes":10,"to_morphemes":11,"one_to_one_regions":8,"one_to_one_with_feature_differences":1,"segmentation_regions":40,"whitespace_segmentation_regions":0,"lexical_segmentation_regions":40,"coverage_mismatch_regions":0,"split_regions":4,"merge_regions":36,"resegment_regions":0,"whitespace_feature_diff_regions":0,"lexical_feature_diff_regions":1,"from_morphemes_in_segmentation":40,"to_morphemes_in_segmentation":40,"boundary_precision":0.9,"boundary_recall":0.8,"boundary_f1":0.847}"#, "\n",
+            ),
+        )
+        .unwrap();
+
+        let rows = summarize_compact_comparisons(
+            &path,
+            CompactSummaryOptions {
+                group_by: CompactSummaryGroupBy::SourceId,
+                sort_by: CompactSummarySort::LexicalSegmentationRegions,
+                script_category: Some(ScriptCategory::Japanese),
+                limit: 10,
+            },
+        )
+        .unwrap();
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].key, "japanese");
+        assert_eq!(rows[0].script_categories, vec!["japanese"]);
 
         let _ = fs::remove_dir_all(dir);
     }
@@ -483,6 +564,7 @@ mod tests {
             CompactExampleSummaryOptions {
                 group_by: CompactSummaryGroupBy::SourceId,
                 filter: CompactExampleFilter::WhitespaceOnly,
+                script_category: None,
                 sort_by: CompactExampleSummarySort::Examples,
                 limit: 10,
             },
@@ -496,6 +578,39 @@ mod tests {
         assert_eq!(rows[0].lexical_examples, 0);
         assert_eq!(rows[0].segmentation_examples, 1);
         assert_eq!(rows[0].feature_diff_examples, 0);
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn summarize_examples_can_filter_by_script_category() {
+        let dir = temp_dir("example-script-filter");
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("examples.jsonl");
+        fs::write(
+            &path,
+            concat!(
+                r#"{"source_id":"src-a","text_id":"t1","from_analyzer":"vibrato","to_analyzer":"sudachi-c","region_index":0,"kind":"merge","byte_start":0,"byte_end":3,"char_start":0,"char_end":3,"source_excerpt":"JIS","whitespace_only":false,"script_category":"latin-code","from_surfaces":["J","I","S"],"to_surfaces":["JIS"],"feature_changes":null}"#, "\n",
+                r#"{"source_id":"src-b","text_id":"t2","from_analyzer":"vibrato","to_analyzer":"sudachi-c","region_index":0,"kind":"merge","byte_start":0,"byte_end":12,"char_start":0,"char_end":4,"source_excerpt":"徳川時代","whitespace_only":false,"script_category":"japanese","from_surfaces":["徳川","時代"],"to_surfaces":["徳川時代"],"feature_changes":null}"#, "\n",
+            ),
+        )
+        .unwrap();
+
+        let rows = summarize_compact_examples(
+            &path,
+            CompactExampleSummaryOptions {
+                group_by: CompactSummaryGroupBy::SourceId,
+                filter: CompactExampleFilter::LexicalOnly,
+                script_category: Some(ScriptCategory::Japanese),
+                sort_by: CompactExampleSummarySort::Examples,
+                limit: 10,
+            },
+        )
+        .unwrap();
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].key, "src-b");
+        assert_eq!(rows[0].script_categories, vec!["japanese"]);
 
         let _ = fs::remove_dir_all(dir);
     }

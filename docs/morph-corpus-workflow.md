@@ -173,3 +173,41 @@ target/release/ab-morph-run summarize-compact \
 ```
 
 Use `summarize-examples` after this to inspect bounded concrete evidence for the selected source IDs.
+
+## 8. Filter morph triage by script/category
+
+Compact comparison summaries include a source-level `source_script_category`; compact example rows include a span-level `script_category`.
+
+Japanese-source lexical segmentation ranking:
+
+```bash
+target/release/ab-morph-run summarize-compact \
+  --comparisons scratch/morph-full-corpus-compact-canonical/comparisons.jsonl.zst \
+  --group-by source-id \
+  --script-category japanese \
+  --sort-by lexical-segmentation-regions \
+  --limit 20
+```
+
+Mixed-source ranking, useful for technical tables or sources containing both Japanese and code/Latin text:
+
+```bash
+target/release/ab-morph-run summarize-compact \
+  --comparisons scratch/morph-full-corpus-compact-canonical/comparisons.jsonl.zst \
+  --group-by source-id \
+  --script-category mixed \
+  --sort-by lexical-segmentation-regions \
+  --limit 20
+```
+
+Latin/code example evidence inside any source category:
+
+```bash
+target/release/ab-morph-run summarize-examples \
+  --examples scratch/morph-full-corpus-compact-canonical/examples.jsonl.zst \
+  --group-by source-id \
+  --script-category latin-code \
+  --filter lexical-only \
+  --sort-by examples \
+  --limit 20
+```

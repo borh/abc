@@ -51,6 +51,8 @@ enum Command {
         group_by: SummaryGroupByArg,
         #[arg(long, value_enum, default_value_t = SummarySortArg::BoundaryF1)]
         sort_by: SummarySortArg,
+        #[arg(long, value_enum)]
+        script_category: Option<ScriptCategoryArg>,
         #[arg(long, default_value_t = 20)]
         limit: usize,
         #[arg(long)]
@@ -63,6 +65,8 @@ enum Command {
         group_by: SummaryGroupByArg,
         #[arg(long, value_enum, default_value_t = ExampleFilterArg::All)]
         filter: ExampleFilterArg,
+        #[arg(long, value_enum)]
+        script_category: Option<ScriptCategoryArg>,
         #[arg(long, value_enum, default_value_t = ExampleSortArg::Examples)]
         sort_by: ExampleSortArg,
         #[arg(long, default_value_t = 20)]
@@ -123,6 +127,16 @@ enum ExampleSortArg {
     SegmentationExamples,
     FeatureDiffExamples,
     CoverageExamples,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
+enum ScriptCategoryArg {
+    Whitespace,
+    Japanese,
+    LatinCode,
+    Numeric,
+    Mixed,
+    Other,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
@@ -192,6 +206,19 @@ impl ExampleSortArg {
     }
 }
 
+impl ScriptCategoryArg {
+    fn into_library(self) -> ab_morph_run::ScriptCategory {
+        match self {
+            Self::Whitespace => ab_morph_run::ScriptCategory::Whitespace,
+            Self::Japanese => ab_morph_run::ScriptCategory::Japanese,
+            Self::LatinCode => ab_morph_run::ScriptCategory::LatinCode,
+            Self::Numeric => ab_morph_run::ScriptCategory::Numeric,
+            Self::Mixed => ab_morph_run::ScriptCategory::Mixed,
+            Self::Other => ab_morph_run::ScriptCategory::Other,
+        }
+    }
+}
+
 fn main() -> Result<()> {
     let args = Args::parse();
     match args.command {
@@ -255,6 +282,7 @@ fn main() -> Result<()> {
             comparisons,
             group_by,
             sort_by,
+            script_category,
             limit,
             json,
         } => {
@@ -263,6 +291,7 @@ fn main() -> Result<()> {
                 ab_morph_run::CompactSummaryOptions {
                     group_by: group_by.into_library(),
                     sort_by: sort_by.into_library(),
+                    script_category: script_category.map(ScriptCategoryArg::into_library),
                     limit,
                 },
             )?;
@@ -278,6 +307,7 @@ fn main() -> Result<()> {
             examples,
             group_by,
             filter,
+            script_category,
             sort_by,
             limit,
             json,
@@ -287,6 +317,7 @@ fn main() -> Result<()> {
                 ab_morph_run::CompactExampleSummaryOptions {
                     group_by: group_by.into_library(),
                     filter: filter.into_library(),
+                    script_category: script_category.map(ScriptCategoryArg::into_library),
                     sort_by: sort_by.into_library(),
                     limit,
                 },
@@ -398,14 +429,15 @@ fn spawn_progress_thread(
 
 fn print_summary_table(rows: &[ab_morph_run::CompactSummaryRow]) {
     println!(
-        "key\tsource_ids\ttext_ids\tcomparisons\tworst_boundary_f1\ttotal_segmentation_regions\ttotal_whitespace_segmentation_regions\ttotal_lexical_segmentation_regions\ttotal_feature_difference_regions\ttotal_whitespace_feature_difference_regions\ttotal_lexical_feature_difference_regions\ttotal_coverage_mismatch_regions"
+        "key\tsource_ids\ttext_ids\tscript_categories\tcomparisons\tworst_boundary_f1\ttotal_segmentation_regions\ttotal_whitespace_segmentation_regions\ttotal_lexical_segmentation_regions\ttotal_feature_difference_regions\ttotal_whitespace_feature_difference_regions\ttotal_lexical_feature_difference_regions\ttotal_coverage_mismatch_regions"
     );
     for row in rows {
         println!(
-            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
             row.key,
             row.source_ids.join(","),
             row.text_ids.join(","),
+            row.script_categories.join(","),
             row.comparisons,
             row.worst_boundary_f1
                 .map(|value| value.to_string())
@@ -423,14 +455,15 @@ fn print_summary_table(rows: &[ab_morph_run::CompactSummaryRow]) {
 
 fn print_example_summary_table(rows: &[ab_morph_run::CompactExampleSummaryRow]) {
     println!(
-        "key\tsource_ids\ttext_ids\texamples\twhitespace_examples\tlexical_examples\tsegmentation_examples\tfeature_diff_examples\tcoverage_examples"
+        "key\tsource_ids\ttext_ids\tscript_categories\texamples\twhitespace_examples\tlexical_examples\tsegmentation_examples\tfeature_diff_examples\tcoverage_examples"
     );
     for row in rows {
         println!(
-            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
             row.key,
             row.source_ids.join(","),
             row.text_ids.join(","),
+            row.script_categories.join(","),
             row.examples,
             row.whitespace_examples,
             row.lexical_examples,
@@ -556,6 +589,7 @@ mod tests {
             comparisons,
             group_by,
             sort_by,
+            script_category,
             limit,
             json,
         } = args.command
@@ -566,6 +600,7 @@ mod tests {
         assert_eq!(comparisons, PathBuf::from("comparisons.jsonl.zst"));
         assert_eq!(group_by, SummaryGroupByArg::TextId);
         assert_eq!(sort_by, SummarySortArg::LexicalSegmentationRegions);
+        assert_eq!(script_category, None);
         assert_eq!(limit, 25);
         assert!(json);
     }
@@ -592,6 +627,7 @@ mod tests {
             examples,
             group_by,
             filter,
+            script_category,
             sort_by,
             limit,
             json,
@@ -603,9 +639,45 @@ mod tests {
         assert_eq!(examples, PathBuf::from("examples.jsonl.zst"));
         assert_eq!(group_by, SummaryGroupByArg::TextId);
         assert_eq!(filter, ExampleFilterArg::WhitespaceOnly);
+        assert_eq!(script_category, None);
         assert_eq!(sort_by, ExampleSortArg::WhitespaceExamples);
         assert_eq!(limit, 30);
         assert!(json);
+    }
+
+    #[test]
+    fn parses_script_category_filters() {
+        let compact = Args::parse_from([
+            "ab-morph-run",
+            "summarize-compact",
+            "--comparisons",
+            "comparisons.jsonl.zst",
+            "--script-category",
+            "japanese",
+        ]);
+        let Command::SummarizeCompact {
+            script_category, ..
+        } = compact.command
+        else {
+            panic!("expected summarize-compact command");
+        };
+        assert_eq!(script_category, Some(ScriptCategoryArg::Japanese));
+
+        let examples = Args::parse_from([
+            "ab-morph-run",
+            "summarize-examples",
+            "--examples",
+            "examples.jsonl.zst",
+            "--script-category",
+            "latin-code",
+        ]);
+        let Command::SummarizeExamples {
+            script_category, ..
+        } = examples.command
+        else {
+            panic!("expected summarize-examples command");
+        };
+        assert_eq!(script_category, Some(ScriptCategoryArg::LatinCode));
     }
 
     #[test]

@@ -554,3 +554,62 @@ Interpretation:
 - Peak RSS dropped by roughly `84.7%` versus the prior 8-largest compact baseline.
 - Wall time also improved materially, though this workstation was not isolated for speed benchmarking.
 - The next validation target is a whole-corpus compact run. At this point the memory profile is stable enough to try it without expecting the previous 70+ GiB/OOM failure mode.
+
+## Interned feature strings: full corpus compact run
+
+Purpose: validate the new memory profile on the complete checked AAT corpus, with compact pairwise summaries, bounded examples, and N-way rows enabled.
+
+Command shape:
+
+```bash
+rm -rf scratch/perf-interned-full-corpus
+mkdir -p scratch/perf-interned-full-corpus/out
+AB_SUDACHI_DICT="$(nix path-info .#sudachi-dictionary-full)/share/sudachi/system.dic" \
+time cargo run --release -p ab-morph-run -- \
+    analyze-aat \
+    --aat-dir scratch/morph-full-corpus/aats \
+    --analyzer vibrato \
+    --analyzer sudachi-a \
+    --analyzer sudachi-c \
+    --output-profile compact \
+    --jobs 8 \
+    --analyses-output scratch/perf-interned-full-corpus/out/analyses.jsonl.zst \
+    --comparisons-output scratch/perf-interned-full-corpus/out/comparisons.jsonl.zst \
+    --examples-output scratch/perf-interned-full-corpus/out/examples.jsonl.zst \
+    --nway-output scratch/perf-interned-full-corpus/out/nway.jsonl.zst \
+    --errors-output scratch/perf-interned-full-corpus/out/errors.jsonl.zst \
+    --manifest-output scratch/perf-interned-full-corpus/out/manifest.json
+```
+
+Result:
+
+- Input files: `17,894`.
+- Wall time: `58:56.59`.
+- User CPU: `24,928.41s`.
+- System CPU: `768.01s`.
+- CPU utilization: `726%`.
+- Peak RSS: `13,032,272 KB`.
+- Errors: `0` rows.
+- Analyses: `53,682` rows.
+- Pairwise compact comparisons: `53,682` rows.
+- Examples: `536,718` rows.
+- N-way rows: `17,894` rows.
+
+Artifact sizes:
+
+| artifact | compressed size |
+|---|---:|
+| analyses | `812K` |
+| pairwise comparisons | `4.2M` |
+| examples | `15M` |
+| nway | `26M` |
+| errors | `4.0K` |
+| manifest | `4.0K` |
+
+Interpretation:
+
+- The previous whole-corpus OOM failure mode is resolved for compact artifacts.
+- The complete corpus now fits in about `13.0 GB` peak RSS with `--jobs 8`.
+- Storage is small enough for comprehensive comparisons to be routine: all compact artifacts together are under `50 MB` compressed.
+- There were no analyzer, projection, pairwise comparison, or N-way comparison errors on the checked corpus.
+- The next practical step is to treat `scratch/perf-interned-full-corpus/out` as the current complete comparison artifact set and use the summary commands for top pairwise, feature, and N-way difference reports.

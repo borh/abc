@@ -369,15 +369,15 @@
                   "merge_candidates" 0
                   "drift_participant_updates" 0}
                  (:summary result)))
-          (is (= [{:previous-ref (.getName old-commit)
-                   :current-ref (.getName new-commit)
+          (is (= [{:previous_ref (.getName old-commit)
+                   :current_ref (.getName new-commit)
                    :status "ok"
-                   :split-candidates 1
-                   :merge-candidates 0
-                   :drift-participant-updates 0}]
-                 (mapv #(select-keys % [:previous-ref :current-ref :status
-                                         :split-candidates :merge-candidates
-                                         :drift-participant-updates])
+                   :split_candidates 1
+                   :merge_candidates 0
+                   :drift_participant_update_count 0}]
+                 (mapv #(select-keys % [:previous_ref :current_ref :status
+                                        :split_candidates :merge_candidates
+                                        :drift_participant_update_count])
                        (:pairs result)))))
         (finally
           (.close git)

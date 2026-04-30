@@ -180,12 +180,12 @@
                  :current-dir (str current-corpus)
                  :drift-persons-dir drift-persons-dir})]
     (assoc report
-           :previous-ref previous-ref
-           :current-ref current-ref
-           :current-ingest current-ingest
-           :split-candidates (split-candidate-count report)
-           :merge-candidates (merge-candidate-count report)
-           :drift-participant-updates (participant-update-count report))))
+           :previous_ref previous-ref
+           :current_ref current-ref
+           :current_ingest current-ingest
+           :split_candidates (split-candidate-count report)
+           :merge_candidates (merge-candidate-count report)
+           :drift_participant_update_count (participant-update-count report))))
 
 (defn- history-scan-refs [repo zip-path from-ref to-ref]
   (let [opts (cond-> {}
@@ -212,9 +212,9 @@
 (defn- scan-summary [pairs]
   {"pairs_scanned" (count pairs)
    "validation_failed" (count (filter #(= "validation_failed" (:status %)) pairs))
-   "split_candidates" (reduce + 0 (map :split-candidates pairs))
-   "merge_candidates" (reduce + 0 (map :merge-candidates pairs))
-   "drift_participant_updates" (reduce + 0 (map :drift-participant-updates pairs))})
+   "split_candidates" (reduce + 0 (map :split_candidates pairs))
+   "merge_candidates" (reduce + 0 (map :merge_candidates pairs))
+   "drift_participant_updates" (reduce + 0 (map :drift_participant_update_count pairs))})
 
 (defn scan-history!
   "Audit adjacent upstream commits that changed the configured CSV ZIP path."

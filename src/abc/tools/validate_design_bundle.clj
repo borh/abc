@@ -13,6 +13,7 @@
    [abc.tools.materialize-import :as materialize]
    [abc.tools.schema :as schema]
    [abc.tools.metadata-record :as metadata-record]
+   [abc.tools.person-drift :as person-drift]
    [abc.tools.person-record :as person-record]
    [abc.tools.shacl :as shacl]
    [abc.tools.schematron :as schematron]
@@ -287,6 +288,24 @@
   (doseq [[path expected-rules] invalid-fixtures]
     (validate-schematron-invalid-fixture! schema-path path expected-rules)))
 
+(defn- validate-drift-invalid-fixture! [path expected-codes]
+  (let [result (person-drift/validate-drift-events! {:persons-dir path})
+        actual (set (map :code (:failures result)))]
+    (when-not (= :error (:status result))
+      (throw (ex-info "expected invalid drift fixture to fail"
+                      {:fixture path
+                       :result result})))
+    (let [missing (set/difference expected-codes actual)]
+      (when (seq missing)
+        (throw (ex-info "missing expected drift validation failure"
+                        {:fixture path
+                         :missing (sort missing)
+                         :actual (sort actual)}))))))
+
+(defn validate-drift-fixtures! [invalid-fixtures]
+  (doseq [[path expected-codes] invalid-fixtures]
+    (validate-drift-invalid-fixture! path expected-codes)))
+
 (defn- file-bytes [path]
   (with-open [in (io/input-stream (io/file path))]
     (.readAllBytes in)))
@@ -497,7 +516,14 @@
             :person-schema-path "schemas/person-record.schema.json"
             :ttl-path "examples/v0/example-work/metadata-record.ttl"
             :shapes-graph shapes}))
-        (tel/log! :info "metadata bundle ok"))
+        (tel/log! :info "metadata bundle ok")
+        (tel/log! :info "==> Validating person drift events")
+        (let [result (person-drift/validate-drift-events!
+                      {:persons-dir "examples/v0/example-persons"})]
+          (when (= :error (:status result))
+            (throw (ex-info "person drift validation failed"
+                            {:errors (:failures result)}))))
+        (tel/log! :info "person drift events ok"))
       (tel/log! :info "==> Checking imported ab-validator output")
       (validate-ab-validator-output!)
       (tel/log! :info "ab-validator output ok")
@@ -571,6 +597,10 @@
                            "fixtures/tei/invalid/source-span-dangling-ref.xml"
                            #{"abc-source-span-target-exists"}}})
       (tel/log! :info "tei schematron validation ok")
+      (tel/log! :info "==> Validating person drift negative fixtures")
+      (validate-drift-fixtures!
+       {"fixtures/v0/invalid/drift/broken-index-target" #{:index-target-missing}})
+      (tel/log! :info "person drift negative fixtures ok")
       (tel/log! :info "==> Validating Linked Art publication view (ADR 0013)")
       (validate-publication-view!
        {:manifest-path "examples/v0/example-work/manifest.json"

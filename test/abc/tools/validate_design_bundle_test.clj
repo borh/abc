@@ -379,3 +379,9 @@
                        (vec (distinct (map :severity violations))))))
           (finally
             (.delete tmp)))))))
+
+(deftest validate-drift-fixtures-smoke-test
+  (testing "drift fixture runner returns nil when expected failures are observed"
+    (is (nil? (validate/validate-drift-fixtures!
+               {"fixtures/v0/invalid/drift/broken-index-target"
+                #{:index-target-missing}})))))

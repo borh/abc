@@ -1,7 +1,8 @@
 # ADR 0020: Person Identity Drift Data Model
 
-Status: Draft
+Status: Accepted
 Date: 2026-04-29
+Accepted: 2026-04-30
 
 ## Context
 

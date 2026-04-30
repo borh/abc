@@ -171,3 +171,50 @@
         graph (aa/graph :simple)]
     (is (some #{:missing-rdf-type}
               (map :code (drift/typing-coherence-failures event graph))))))
+
+(defn with-temp-dir [f]
+  (let [dir (.toFile (java.nio.file.Files/createTempDirectory
+                      "abc-person-drift-test"
+                      (make-array java.nio.file.attribute.FileAttribute 0)))]
+    (try
+      (f dir)
+      (finally
+        (doseq [file (reverse (file-seq dir))]
+          (.delete file))))))
+
+(defn write-json! [path value]
+  (manifest/write-json-file! path value))
+
+(deftest validate-drift-events-not-present-test
+  (with-temp-dir
+    (fn [dir]
+      (is (= {:status :not-present}
+             (drift/validate-drift-events! {:persons-dir (str dir)}))))))
+
+(deftest validate-drift-events-ok-test
+  (with-temp-dir
+    (fn [dir]
+      (let [event (base-split)
+            event-id (get event "drift_event_id")
+            events-dir (java.io.File. dir "_events")
+            indexes-dir (java.io.File. dir "_indexes")]
+        (.mkdirs events-dir)
+        (.mkdirs indexes-dir)
+        (write-json! (java.io.File. events-dir (str event-id ".json")) event)
+        (doseq [person-id ["000879" "abc-000000000001" "abc-000000000002"]]
+          (write-json! (java.io.File. indexes-dir (str person-id ".json"))
+                       (index-for person-id event-id)))
+        (is (= {:status :ok :events 1 :indexes 3}
+               (drift/validate-drift-events! {:persons-dir (str dir)})))))))
+
+(deftest validate-drift-events-rejects-broken-index-target-test
+  (with-temp-dir
+    (fn [dir]
+      (let [indexes-dir (java.io.File. dir "_indexes")]
+        (.mkdirs indexes-dir)
+        (write-json! (java.io.File. indexes-dir "000879.json")
+                     (index-for "000879" (example-hash "09")))
+        (let [result (drift/validate-drift-events! {:persons-dir (str dir)})]
+          (is (= :error (:status result)))
+          (is (some #{:index-target-missing}
+                    (map :code (:failures result)))))))))

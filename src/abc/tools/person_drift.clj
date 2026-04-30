@@ -1,9 +1,13 @@
 (ns abc.tools.person-drift
-  (:require [abc.tools.hash :as hash]
+  (:require [abc.tools.files :as files]
+            [abc.tools.hash :as hash]
+            [abc.tools.manifest :as manifest]
             [abc.tools.person-record :as person-record]
             [abc.tools.rdf-prefixes :as rdf-prefixes]
+            [abc.tools.schema :as schema]
             [abc.tools.shacl :as shacl]
             [arachne.aristotle :as aa]
+            [clojure.java.io :as io]
             [clojure.set :as set]
             [clojure.string :as string])
   (:import [org.apache.jena.datatypes.xsd XSDDatatype]
@@ -219,3 +223,137 @@
   (shacl/validate! {:shapes-graph (shacl/load-shapes-graph)
                     :data-graph graph
                     :label label}))
+
+(defn- drift-dir [persons-dir dirname]
+  (java.io.File. (io/file persons-dir) dirname))
+
+(defn- json-files [dir]
+  (if (.isDirectory dir)
+    (->> (.listFiles dir)
+         (filter #(and (.isFile %) (string/ends-with? (.getName %) ".json")))
+         sort
+         vec)
+    []))
+
+(defn- expected-schema-hash [schema-path]
+  (manifest/schema-hash schema-path))
+
+(defn- schema-hash-failure [artifact-kind path expected actual]
+  {:code :schema-hash-mismatch
+   :artifact_kind artifact-kind
+   :path (str path)
+   :expected expected
+   :actual actual})
+
+(defn- validate-json-value! [schema-value value path]
+  (when-let [errors (schema/validation-errors schema-value value)]
+    (throw (ex-info (str "JSON Schema validation failed: " path)
+                    {:path (str path)
+                     :errors errors}))))
+
+(defn- load-event-file [file]
+  (let [event (files/read-json (str file))
+        event-schema (files/read-json event-schema-path)
+        live-hash (expected-schema-hash event-schema-path)]
+    (validate-json-value! event-schema event file)
+    {:path (str file)
+     :value event
+     :schema-failures (when-not (= live-hash (get event "schema_hash"))
+                        [(schema-hash-failure :event file live-hash
+                                              (get event "schema_hash"))])}))
+
+(defn- load-index-file [file]
+  (let [index (files/read-json (str file))
+        index-schema (files/read-json index-schema-path)
+        live-hash (expected-schema-hash index-schema-path)]
+    (validate-json-value! index-schema index file)
+    {:path (str file)
+     :value index
+     :schema-failures (when-not (= live-hash (get index "schema_hash"))
+                        [(schema-hash-failure :index file live-hash
+                                              (get index "schema_hash"))])}))
+
+(defn- event-failures [{:keys [path value schema-failures]}]
+  (let [json-failures (mapv #(assoc % :path path)
+                            (event-json-coherence-failures value))
+        graph (when (empty? json-failures) (event->graph value))
+        typing-failures (if graph
+                          (mapv #(assoc % :path path)
+                                (typing-coherence-failures value graph))
+                          [])
+        shacl-failures (if (and graph (empty? typing-failures))
+                         (try
+                           (validate-event-shacl! graph path)
+                           []
+                           (catch clojure.lang.ExceptionInfo e
+                             (mapv #(assoc % :code :shacl-violation :path path)
+                                   (:errors (ex-data e)))))
+                         [])]
+    (vec (concat schema-failures json-failures typing-failures shacl-failures))))
+
+(defn- participants-by-person-id [event]
+  (->> (get event "participants")
+       (map (fn [participant] [(get participant "person_id")
+                               (get event "drift_event_id")]))
+       (group-by first)
+       (map (fn [[person-id pairs]]
+              [person-id (set (map second pairs))]))
+       (into {})))
+
+(defn- expected-index-map [events]
+  (apply merge-with set/union (map participants-by-person-id events)))
+
+(defn- actual-index-map [indexes]
+  (into {}
+        (map (fn [index]
+               [(get index "person_id") (set (get index "drift_event_ids"))]))
+        indexes))
+
+(defn- referential-integrity-failures [events indexes]
+  (let [events-by-id (into {} (map (juxt #(get % "drift_event_id") identity) events))
+        event-ids (set (keys events-by-id))
+        expected (expected-index-map events)
+        actual (actual-index-map indexes)
+        indexed-event-ids (apply set/union #{} (vals actual))]
+    (vec
+     (concat
+      (for [[person-id ids] actual
+            event-id (sort ids)
+            :when (not (contains? event-ids event-id))]
+        {:code :index-target-missing
+         :person_id person-id
+         :drift_event_id event-id})
+      (for [[person-id expected-ids] expected
+            :let [actual-ids (get actual person-id #{})]
+            event-id (sort (set/difference expected-ids actual-ids))]
+        {:code :event-missing-from-participant-index
+         :person_id person-id
+         :drift_event_id event-id})
+      (for [event-id (sort (set/difference event-ids indexed-event-ids))]
+        {:code :orphan-event-file
+         :drift_event_id event-id})))))
+
+(defn validate-drift-events! [{:keys [persons-dir]}]
+  (let [events-dir (drift-dir persons-dir "_events")
+        indexes-dir (drift-dir persons-dir "_indexes")
+        event-files (json-files events-dir)
+        index-files (json-files indexes-dir)]
+    (if (and (empty? event-files) (empty? index-files))
+      {:status :not-present}
+      (try
+        (let [loaded-events (mapv load-event-file event-files)
+              loaded-indexes (mapv load-index-file index-files)
+              events (mapv :value loaded-events)
+              indexes (mapv :value loaded-indexes)
+              failures (vec (concat
+                             (mapcat event-failures loaded-events)
+                             (mapcat :schema-failures loaded-indexes)
+                             (referential-integrity-failures events indexes)))]
+          (if (seq failures)
+            {:status :error :failures failures}
+            {:status :ok :events (count events) :indexes (count indexes)}))
+        (catch clojure.lang.ExceptionInfo e
+          {:status :error
+           :failures [{:code :exception
+                       :message (ex-message e)
+                       :data (ex-data e)}]})))))

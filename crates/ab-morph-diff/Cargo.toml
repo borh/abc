@@ -8,4 +8,9 @@ license.workspace = true
 serde.workspace = true
 
 [dev-dependencies]
+criterion.workspace = true
 proptest = "1.5"
+
+[[bench]]
+name = "compare_pair"
+harness = false

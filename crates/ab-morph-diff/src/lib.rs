@@ -106,9 +106,8 @@ pub fn compare_nway_with_source_text(
     analyses: &[Analysis],
     source_text: &str,
     compare_keys: &[FeatureKey],
-    context_keys: &[FeatureKey],
 ) -> Result<NwayComparison, MorphDiffError> {
-    nway::compare_nway_with_source_text(analyses, source_text, compare_keys, context_keys)
+    nway::compare_nway_with_source_text(analyses, source_text, compare_keys)
 }
 
 #[cfg(test)]
@@ -331,7 +330,7 @@ mod tests {
             ),
         ];
 
-        let comparison = crate::compare_nway_with_source_text(&analyses, source, &[], &[]).unwrap();
+        let comparison = crate::compare_nway_with_source_text(&analyses, source, &[]).unwrap();
 
         assert_eq!(
             comparison.analyzers,
@@ -384,8 +383,7 @@ mod tests {
         ];
 
         let comparison =
-            crate::compare_nway_with_source_text(&analyses, source, &["pos1".to_owned()], &[])
-                .unwrap();
+            crate::compare_nway_with_source_text(&analyses, source, &["pos1".to_owned()]).unwrap();
 
         assert_eq!(comparison.regions.len(), 1);
         assert_eq!(comparison.regions[0].feature_groups[0].key, "pos1");

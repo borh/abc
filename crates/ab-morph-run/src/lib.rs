@@ -428,7 +428,7 @@ fn run_analyze_aat_serial(
             }
         }
         if let Some(writer) = &mut nway_writer {
-            match compare_nway_with_source_text(&analyses, &document.text, &[], &[]) {
+            match compare_nway_with_source_text(&analyses, &document.text, &[]) {
                 Ok(comparison) => {
                     let row = nway::row_from_comparison(
                         source_id.clone(),

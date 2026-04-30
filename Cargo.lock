@@ -30,6 +30,8 @@ dependencies = [
  "ab-diff-utils",
  "anyhow",
  "clap",
+ "criterion",
+ "rustc-hash",
  "serde",
  "serde_json",
  "tempfile",
@@ -109,6 +111,7 @@ dependencies = [
 name = "ab-morph-diff"
 version = "0.1.0"
 dependencies = [
+ "criterion",
  "proptest",
  "serde",
 ]
@@ -122,8 +125,10 @@ dependencies = [
  "ab-plaintext",
  "anyhow",
  "clap",
+ "criterion",
  "serde",
  "serde_json",
+ "tempfile",
  "zstd",
 ]
 

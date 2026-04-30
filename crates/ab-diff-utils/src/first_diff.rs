@@ -9,23 +9,30 @@ pub struct FirstDifference {
 /// Finds the first character index where `left` and `right` diverge.
 /// Returns `None` if the strings are identical.
 pub fn first_difference(left: &str, right: &str) -> Option<FirstDifference> {
-    let left_chars: Vec<char> = left.chars().collect();
-    let right_chars: Vec<char> = right.chars().collect();
-    let max_common = left_chars.len().min(right_chars.len());
-    let char_index = (0..max_common)
-        .find(|idx| left_chars[*idx] != right_chars[*idx])
-        .or_else(|| (left_chars.len() != right_chars.len()).then_some(max_common))?;
+    let mut left_chars = left.chars();
+    let mut right_chars = right.chars();
+    let mut char_index = 0usize;
+    loop {
+        match (left_chars.next(), right_chars.next()) {
+            (Some(left), Some(right)) if left == right => char_index += 1,
+            (Some(_), Some(_)) | (Some(_), None) | (None, Some(_)) => break,
+            (None, None) => return None,
+        }
+    }
     Some(FirstDifference {
         char_index,
-        left_snippet: snippet(&left_chars, char_index),
-        right_snippet: snippet(&right_chars, char_index),
+        left_snippet: snippet(left, char_index),
+        right_snippet: snippet(right, char_index),
     })
 }
 
-fn snippet(chars: &[char], center: usize) -> String {
+fn snippet(value: &str, center: usize) -> String {
     let start = center.saturating_sub(24);
-    let end = chars.len().min(center + 24);
-    chars[start..end].iter().collect()
+    value
+        .chars()
+        .skip(start)
+        .take(center + 24 - start)
+        .collect()
 }
 
 #[cfg(test)]

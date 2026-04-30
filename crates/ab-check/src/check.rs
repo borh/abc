@@ -4,7 +4,7 @@ use std::{
     io::{Read, Write},
     path::{Path, PathBuf},
     process::{Command, Stdio},
-    sync::Arc,
+    sync::LazyLock,
     thread,
     time::{Duration, Instant},
 };
@@ -23,6 +23,12 @@ use crate::{
 };
 
 const AAT_SCHEMA: &str = include_str!("../../../data/aat-schema.json");
+static AAT_SCHEMA_VALIDATOR: LazyLock<Result<Validator, String>> = LazyLock::new(|| {
+    let schema: Value = serde_json::from_str(AAT_SCHEMA).map_err(|error| error.to_string())?;
+    jsonschema::validator_for(&schema)
+        .context("failed to compile AAT schema")
+        .map_err(|error| error.to_string())
+});
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CheckReport {
@@ -76,9 +82,10 @@ struct AdapterCheckOutput {
     aat: Option<Value>,
 }
 
-pub fn schema_validator() -> Result<Validator> {
-    let schema: Value = serde_json::from_str(AAT_SCHEMA)?;
-    jsonschema::validator_for(&schema).context("failed to compile AAT schema")
+pub fn schema_validator() -> Result<&'static Validator> {
+    AAT_SCHEMA_VALIDATOR
+        .as_ref()
+        .map_err(|message| anyhow::anyhow!(message.clone()))
 }
 
 pub fn check_single(
@@ -214,7 +221,7 @@ pub fn run_batch(options: BatchOptions<'_>) -> Result<()> {
             .and_then(|name| name.to_str())
             .unwrap_or(options.adapter),
     );
-    let validator = Arc::new(schema_validator()?);
+    let validator = schema_validator()?;
     let pool = rayon::ThreadPoolBuilder::new()
         .num_threads(options.jobs)
         .build()?;
@@ -228,7 +235,7 @@ pub fn run_batch(options: BatchOptions<'_>) -> Result<()> {
                 &work.txt_path,
                 &work.id,
                 options.timeout,
-                &validator,
+                validator,
             )?;
             let out = options
                 .output_dir

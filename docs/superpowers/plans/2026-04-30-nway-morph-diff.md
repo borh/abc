@@ -154,11 +154,10 @@ pub fn compare_nway_with_source_text(
     analyses: &[Analysis],
     source_text: &str,
     compare_keys: &[FeatureKey],
-    context_keys: &[FeatureKey],
 ) -> Result<NwayComparison, MorphDiffError>
 ```
 
-`compare_keys` gates feature comparison. Empty means all observed keys. `context_keys` preserves the pairwise context-key concept for projections that need unchanged evidence. Runner call sites that do not need filtering or context pass `&[]` for both slices.
+`compare_keys` gates feature comparison. Empty means all observed keys. Runner call sites that do not need feature filtering pass `&[]`.
 
 Rules:
 
@@ -170,7 +169,6 @@ Rules:
 - derive segmentation groups by identical `surfaces` vectors;
 - compare all observed feature keys when `compare_keys` is empty;
 - compare only selected keys when `compare_keys` is non-empty;
-- do not use `context_keys` to gate feature comparison.
 
 Do not accept `max_examples`; example selection is not part of diff production.
 
@@ -322,7 +320,7 @@ It should select non-agreement regions by derived facts, not a stored `kind` enu
 
 Thread `nway_output` and `max_nway_examples_per_text` through serial execution. For each source with at least two successful analyses:
 
-- compute `compare_nway_with_source_text(&analyses, &document.text, &[], &[])`;
+- compute `compare_nway_with_source_text(&analyses, &document.text, &[])`;
 - project compact row with bounded example regions;
 - write to `nway_output`.
 

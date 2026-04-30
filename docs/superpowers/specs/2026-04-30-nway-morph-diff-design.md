@@ -227,12 +227,7 @@ Pairwise comparison uses this same alignment with two analyses, then projects th
 
 ## Feature-key semantics
 
-Pairwise comparison currently uses `feature_context_keys` only for `same_context` evidence; it does not gate which features are compared. N-way needs a separate concept because exact feature-pattern reports often need to restrict the comparison universe.
-
-Use two parameters in N-way APIs:
-
-- `compare_keys`: gates which feature keys are compared. Empty means all observed keys. Non-empty means only those keys.
-- `context_keys`: optional extra context keys for projections that need surrounding unchanged evidence. Pairwise keeps its existing `feature_context_keys` meaning.
+Pairwise comparison currently uses `feature_context_keys` only for `same_context` evidence; it does not gate which features are compared. N-way does not produce pairwise `same_context` evidence, so its API exposes only `compare_keys`: empty means all observed keys, non-empty means only those keys.
 
 Do not reuse the name `feature_context_keys` for N-way comparison gating.
 

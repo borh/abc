@@ -8,9 +8,12 @@ use ab_diff_utils::{
     FirstDifference, first_difference, hash_bytes, hash_json, hash_string_sequence,
 };
 use anyhow::{Context, Result};
+use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use walkdir::WalkDir;
+
+type CountMap = FxHashMap<String, usize>;
 
 #[derive(Debug, Serialize)]
 pub struct AatCompareSummary {
@@ -101,10 +104,10 @@ struct AatSummary {
     visible_hash: String,
     normalized_visible_hash: String,
     normalized_visible: String,
-    block_kinds: BTreeMap<String, usize>,
-    inline_kinds: BTreeMap<String, usize>,
-    semantic_totals: BTreeMap<String, usize>,
-    semantic_counts: BTreeMap<String, usize>,
+    block_kinds: CountMap,
+    inline_kinds: CountMap,
+    semantic_totals: CountMap,
+    semantic_counts: CountMap,
     semantic_hashes: BTreeMap<String, String>,
     semantic_summary_hashes: BTreeMap<String, String>,
     fallback_used: Option<bool>,
@@ -147,12 +150,12 @@ pub fn compare_aat_dirs_with_limit(
         let semantic_summary_hashes_differ = semantic_summary_hash_differences(left, right);
         for (name, differs) in &semantic_hashes_differ {
             if *differs {
-                increment(&mut semantic_hash_difference_counts, name.clone());
+                increment_ordered(&mut semantic_hash_difference_counts, name.clone());
             }
         }
         for (name, differs) in &semantic_summary_hashes_differ {
             if *differs {
-                increment(&mut semantic_summary_hash_difference_counts, name.clone());
+                increment_ordered(&mut semantic_summary_hash_difference_counts, name.clone());
             }
         }
         let coverage_mismatch = if left.fallback_used.is_some()
@@ -189,7 +192,7 @@ pub fn compare_aat_dirs_with_limit(
                 if left.normalized_visible_hash != right.normalized_visible_hash {
                     normalized_visible_text_difference_count += 1;
                     let bucket = normalized_visible_difference_bucket(&semantic_hashes_differ);
-                    increment(&mut normalized_visible_difference_buckets, bucket.clone());
+                    increment_ordered(&mut normalized_visible_difference_buckets, bucket.clone());
                     Some(bucket)
                 } else {
                     None
@@ -215,12 +218,12 @@ pub fn compare_aat_dirs_with_limit(
                 b_visible_hash: right.visible_hash.clone(),
                 a_normalized_visible_hash: left.normalized_visible_hash.clone(),
                 b_normalized_visible_hash: right.normalized_visible_hash.clone(),
-                a_block_kinds: left.block_kinds.clone(),
-                b_block_kinds: right.block_kinds.clone(),
-                a_inline_kinds: left.inline_kinds.clone(),
-                b_inline_kinds: right.inline_kinds.clone(),
-                a_semantic_counts: left.semantic_counts.clone(),
-                b_semantic_counts: right.semantic_counts.clone(),
+                a_block_kinds: sorted_counts(&left.block_kinds),
+                b_block_kinds: sorted_counts(&right.block_kinds),
+                a_inline_kinds: sorted_counts(&left.inline_kinds),
+                b_inline_kinds: sorted_counts(&right.inline_kinds),
+                a_semantic_counts: sorted_counts(&left.semantic_counts),
+                b_semantic_counts: sorted_counts(&right.semantic_counts),
                 a_semantic_hashes: left.semantic_hashes.clone(),
                 b_semantic_hashes: right.semantic_hashes.clone(),
                 semantic_hashes_differ,
@@ -248,12 +251,12 @@ pub fn compare_aat_dirs_with_limit(
                 b_visible_hash: right.visible_hash.clone(),
                 a_normalized_visible_hash: left.normalized_visible_hash.clone(),
                 b_normalized_visible_hash: right.normalized_visible_hash.clone(),
-                a_block_kinds: left.block_kinds.clone(),
-                b_block_kinds: right.block_kinds.clone(),
-                a_inline_kinds: left.inline_kinds.clone(),
-                b_inline_kinds: right.inline_kinds.clone(),
-                a_semantic_counts: left.semantic_counts.clone(),
-                b_semantic_counts: right.semantic_counts.clone(),
+                a_block_kinds: sorted_counts(&left.block_kinds),
+                b_block_kinds: sorted_counts(&right.block_kinds),
+                a_inline_kinds: sorted_counts(&left.inline_kinds),
+                b_inline_kinds: sorted_counts(&right.inline_kinds),
+                a_semantic_counts: sorted_counts(&left.semantic_counts),
+                b_semantic_counts: sorted_counts(&right.semantic_counts),
                 a_semantic_hashes: left.semantic_hashes.clone(),
                 b_semantic_hashes: right.semantic_hashes.clone(),
                 semantic_hashes_differ,
@@ -337,10 +340,10 @@ fn aat_key(work_id_counts: &BTreeMap<String, usize>, path: &Path, root: &AatRoot
 
 fn summarize(root: AatRoot) -> Result<AatSummary> {
     let structure_hash = hash_json(&root.blocks)?;
-    let mut block_kinds = BTreeMap::new();
-    let mut inline_kinds = BTreeMap::new();
-    let mut semantic_totals = BTreeMap::new();
-    let mut semantic_counts = BTreeMap::new();
+    let mut block_kinds = CountMap::default();
+    let mut inline_kinds = CountMap::default();
+    let mut semantic_totals = CountMap::default();
+    let mut semantic_counts = CountMap::default();
     let mut semantic_sequences = SemanticSequences::default();
     let mut visible = String::new();
     collect_blocks(
@@ -396,10 +399,10 @@ fn summarize(root: AatRoot) -> Result<AatSummary> {
 
 fn collect_blocks(
     blocks: &Value,
-    block_kinds: &mut BTreeMap<String, usize>,
-    inline_kinds: &mut BTreeMap<String, usize>,
-    semantic_totals: &mut BTreeMap<String, usize>,
-    semantic_counts: &mut BTreeMap<String, usize>,
+    block_kinds: &mut CountMap,
+    inline_kinds: &mut CountMap,
+    semantic_totals: &mut CountMap,
+    semantic_counts: &mut CountMap,
     semantic_sequences: &mut SemanticSequences,
     visible: &mut String,
 ) {
@@ -437,9 +440,9 @@ fn collect_blocks(
 
 fn collect_inline_containers(
     value: &Value,
-    inline_kinds: &mut BTreeMap<String, usize>,
-    semantic_totals: &mut BTreeMap<String, usize>,
-    semantic_counts: &mut BTreeMap<String, usize>,
+    inline_kinds: &mut CountMap,
+    semantic_totals: &mut CountMap,
+    semantic_counts: &mut CountMap,
     semantic_sequences: &mut SemanticSequences,
     visible: &mut String,
 ) {
@@ -462,9 +465,9 @@ fn collect_inline_containers(
 
 fn collect_inline_node(
     node: &Value,
-    inline_kinds: &mut BTreeMap<String, usize>,
-    semantic_totals: &mut BTreeMap<String, usize>,
-    semantic_counts: &mut BTreeMap<String, usize>,
+    inline_kinds: &mut CountMap,
+    semantic_totals: &mut CountMap,
+    semantic_counts: &mut CountMap,
     semantic_sequences: &mut SemanticSequences,
     visible: &mut String,
 ) {
@@ -553,26 +556,33 @@ impl SemanticSequences {
 fn semantic_totals<'a>(
     summaries: impl IntoIterator<Item = &'a AatSummary>,
 ) -> BTreeMap<String, usize> {
-    let mut out = BTreeMap::new();
+    let mut out = CountMap::default();
     for summary in summaries {
         for (key, value) in &summary.semantic_totals {
             *out.entry(key.clone()).or_insert(0) += value;
         }
     }
-    out
+    sorted_counts(&out)
 }
 
-fn count_both(
-    totals: &mut BTreeMap<String, usize>,
-    details: &mut BTreeMap<String, usize>,
-    key: String,
-) {
+fn count_both(totals: &mut CountMap, details: &mut CountMap, key: String) {
     increment(totals, key.clone());
     increment(details, key);
 }
 
-fn increment(counts: &mut BTreeMap<String, usize>, key: String) {
+fn increment(counts: &mut CountMap, key: String) {
     *counts.entry(key).or_insert(0) += 1;
+}
+
+fn increment_ordered(counts: &mut BTreeMap<String, usize>, key: String) {
+    *counts.entry(key).or_insert(0) += 1;
+}
+
+fn sorted_counts(counts: &CountMap) -> BTreeMap<String, usize> {
+    counts
+        .iter()
+        .map(|(key, value)| (key.clone(), *value))
+        .collect()
 }
 
 fn semantic_hash_differences(left: &AatSummary, right: &AatSummary) -> BTreeMap<String, bool> {

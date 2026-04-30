@@ -11,7 +11,6 @@ pub(crate) fn compare_nway_with_source_text(
     analyses: &[Analysis],
     source_text: &str,
     compare_keys: &[FeatureKey],
-    _context_keys: &[FeatureKey],
 ) -> Result<NwayComparison, MorphDiffError> {
     if analyses.len() < 2 {
         return Err(MorphDiffError::InvalidInput {

@@ -200,3 +200,51 @@ Results after streaming compact N-way:
 | `analyze_aat/jobs_2` | `0-7` | `74.764 ms..76.014 ms` | no change detected |
 
 This targets peak memory on large individual documents. It should not materially change small-fixture throughput.
+
+## Large8 bounded memory baseline
+
+This baseline uses the eight largest checked AAT JSON files by byte size. It preserves the stressful shape of the full corpus run: large documents, three analyzers, compact pairwise output, compact examples, compact N-way output, and `--jobs 8` pinned to the large-L3 CCD.
+
+The run overlapped with other local work, so wall time and CPU utilization are not authoritative. Process RSS/PSS progress and `/run/current-system/sw/bin/time -v` peak RSS are still useful memory measurements.
+
+Command:
+
+```bash
+rm -rf scratch/perf-large8
+mkdir -p scratch/perf-large8/aats/aozora-rs-adapter scratch/perf-large8/out
+find scratch/morph-full-corpus/aats -type f -name '*.json' -printf '%s %p\n' \
+  | sort -nr \
+  | head -8 \
+  | awk '{print $2}' \
+  | while read -r path; do
+      ln -s "$(realpath "$path")" "scratch/perf-large8/aats/aozora-rs-adapter/$(basename "$path")"
+    done
+
+AB_SUDACHI_DICT="$(nix path-info .#sudachi-dictionary-full)/share/sudachi/system.dic" \
+  taskset -c 0-7 /run/current-system/sw/bin/time -v \
+  target/release/ab-morph-run analyze-aat \
+    --aat-dir scratch/perf-large8/aats \
+    --analyzer vibrato \
+    --analyzer sudachi-a \
+    --analyzer sudachi-c \
+    --output-profile compact \
+    --analyses-output scratch/perf-large8/out/analyses.jsonl.zst \
+    --comparisons-output scratch/perf-large8/out/comparisons.jsonl.zst \
+    --examples-output scratch/perf-large8/out/examples.jsonl.zst \
+    --nway-output scratch/perf-large8/out/nway.jsonl.zst \
+    --errors-output scratch/perf-large8/out/errors.jsonl.zst \
+    --manifest-output scratch/perf-large8/out/manifest.json \
+    --jobs 8 \
+    --progress-interval-seconds 30
+```
+
+Result:
+
+- Inputs: `8` largest AAT files.
+- Exit status: `0`.
+- Peak RSS: `54380356 KB` (~51.9 GiB).
+- Peak observed progress RSS: `54382368 KB` at `242s`.
+- Output rows: `24` analyses, `24` pairwise comparisons, `240` examples, `8` N-way rows, `0` errors.
+- Artifact sizes: `4K` analyses, `8K` comparisons, `12K` examples, `28K` N-way, `4K` errors.
+
+Conclusion: streaming compact N-way prevents the earlier full-corpus `70+ GB` failure pattern, but large concurrent inputs still create ~52 GiB process RSS. The next memory target is per-document analysis retention and scheduling: avoid running the largest AAT files concurrently, or write a memory-aware scheduler that limits concurrent large documents while preserving `--jobs 8` for normal-sized documents.

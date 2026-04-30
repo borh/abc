@@ -261,7 +261,7 @@ mod tests {
     fn features(values: &[(&str, Option<&str>)]) -> FeatureMap {
         values
             .iter()
-            .map(|(key, value)| (key.to_string(), value.map(str::to_owned)))
+            .map(|(key, value)| ((*key).into(), value.map(Into::into)))
             .collect()
     }
 

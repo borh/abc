@@ -1,4 +1,4 @@
-use ab_morph_diff::FeatureMap;
+use ab_morph_diff::{FeatureMap, FeatureValue};
 
 const VIBRATO_UNIDIC_KEYS: &[&str] = &[
     "pos1",
@@ -31,12 +31,12 @@ const VIBRATO_UNIDIC_KEYS: &[&str] = &[
     "lex_type",
 ];
 
-pub(crate) fn feature_value(value: impl AsRef<str>) -> Option<String> {
+pub(crate) fn feature_value(value: impl AsRef<str>) -> Option<FeatureValue> {
     let value = value.as_ref();
     if value.is_empty() || value == "*" {
         None
     } else {
-        Some(value.to_owned())
+        Some(value.into())
     }
 }
 
@@ -46,8 +46,8 @@ pub(crate) fn parse_vibrato_feature_string(feature: &str) -> FeatureMap {
     for (index, value) in feature.split(',').enumerate() {
         let key = VIBRATO_UNIDIC_KEYS
             .get(index)
-            .map(|key| (*key).to_owned())
-            .unwrap_or_else(|| format!("field_{index}"));
+            .map(|key| (*key).into())
+            .unwrap_or_else(|| format!("field_{index}").into());
         features.insert(key, feature_value(value));
     }
 
@@ -62,17 +62,17 @@ mod tests {
     fn normalizes_missing_values() {
         assert_eq!(feature_value("*"), None);
         assert_eq!(feature_value(""), None);
-        assert_eq!(feature_value("名詞"), Some("名詞".to_owned()));
+        assert_eq!(feature_value("名詞"), Some("名詞".into()));
     }
 
     #[test]
     fn parses_known_and_missing_vibrato_fields() {
         let features = parse_vibrato_feature_string("名詞,普通名詞,*,*,extra");
-        assert_eq!(features["pos1"], Some("名詞".to_owned()));
-        assert_eq!(features["pos2"], Some("普通名詞".to_owned()));
+        assert_eq!(features["pos1"], Some("名詞".into()));
+        assert_eq!(features["pos2"], Some("普通名詞".into()));
         assert_eq!(features["pos3"], None);
         assert_eq!(features["pos4"], None);
-        assert_eq!(features["ctype"], Some("extra".to_owned()));
+        assert_eq!(features["ctype"], Some("extra".into()));
     }
 
     #[test]
@@ -80,6 +80,6 @@ mod tests {
         let mut fields = vec!["*"; 28];
         fields.push("tail");
         let features = parse_vibrato_feature_string(&fields.join(","));
-        assert_eq!(features["field_28"], Some("tail".to_owned()));
+        assert_eq!(features["field_28"], Some("tail".into()));
     }
 }

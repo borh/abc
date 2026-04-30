@@ -261,7 +261,7 @@ fn feature_group_for_whole_region(
     per_analyzer: &[NwayAnalyzerRegion],
     key: FeatureKey,
 ) -> NwayFeatureGroup {
-    let mut values = BTreeMap::<Option<String>, Vec<AnalyzerId>>::new();
+    let mut values = BTreeMap::<Option<crate::FeatureValue>, Vec<AnalyzerId>>::new();
     for (analysis_index, entry) in per_analyzer.iter().enumerate() {
         let morpheme = &analyses[analysis_index].morphemes[entry.indices.start];
         values
@@ -305,7 +305,7 @@ fn feature_groups_by_token_position(
         {
             continue;
         }
-        let mut values = BTreeMap::<Option<String>, Vec<AnalyzerId>>::new();
+        let mut values = BTreeMap::<Option<crate::FeatureValue>, Vec<AnalyzerId>>::new();
         for (analysis_index, entry) in per_analyzer.iter().enumerate() {
             let morpheme = &analyses[analysis_index].morphemes[entry.indices.start + position];
             values
@@ -358,7 +358,7 @@ fn feature_groups_by_surface(
                 })
         })
         .map(|(surface, values)| {
-            let mut grouped = BTreeMap::<Option<String>, Vec<AnalyzerId>>::new();
+            let mut grouped = BTreeMap::<Option<crate::FeatureValue>, Vec<AnalyzerId>>::new();
             for (analysis_index, morpheme_index) in values {
                 grouped
                     .entry(
@@ -379,7 +379,7 @@ fn feature_groups_by_surface(
 fn value_group(
     key: FeatureKey,
     scope: NwayFeatureScope,
-    values: BTreeMap<Option<String>, Vec<AnalyzerId>>,
+    values: BTreeMap<Option<crate::FeatureValue>, Vec<AnalyzerId>>,
 ) -> NwayFeatureGroup {
     NwayFeatureGroup {
         key,

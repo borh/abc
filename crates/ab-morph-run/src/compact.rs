@@ -366,14 +366,14 @@ fn example_row_from_feature_diff(
 }
 
 fn feature_changes(
-    changed: &std::collections::BTreeMap<String, ChangedValue>,
+    changed: &std::collections::BTreeMap<ab_morph_diff::FeatureKey, ChangedValue>,
 ) -> Vec<FeatureChangeRow> {
     changed
         .iter()
         .map(|(key, value)| FeatureChangeRow {
-            key: key.clone(),
-            from: value.from.clone(),
-            to: value.to.clone(),
+            key: key.to_string(),
+            from: value.from.as_ref().map(ToString::to_string),
+            to: value.to.as_ref().map(ToString::to_string),
         })
         .collect()
 }
@@ -382,9 +382,9 @@ fn compact_feature_changes(changed: &[CompactFeatureChange]) -> Vec<FeatureChang
     changed
         .iter()
         .map(|value| FeatureChangeRow {
-            key: value.key.clone(),
-            from: value.from.clone(),
-            to: value.to.clone(),
+            key: value.key.to_string(),
+            from: value.from.as_ref().map(ToString::to_string),
+            to: value.to.as_ref().map(ToString::to_string),
         })
         .collect()
 }
@@ -630,10 +630,10 @@ mod tests {
     fn feature_diff_examples_include_changed_payload() {
         let mut changed = BTreeMap::new();
         changed.insert(
-            "pos".to_owned(),
+            "pos".into(),
             ChangedValue {
-                from: Some("名詞".to_owned()),
-                to: Some("動詞".to_owned()),
+                from: Some("名詞".into()),
+                to: Some("動詞".into()),
             },
         );
         let comparison = Comparison {
@@ -783,7 +783,7 @@ mod tests {
     fn features(values: &[(&str, Option<&str>)]) -> FeatureMap {
         values
             .iter()
-            .map(|(key, value)| (key.to_string(), value.map(str::to_owned)))
+            .map(|(key, value)| ((*key).into(), value.map(Into::into)))
             .collect()
     }
 

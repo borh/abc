@@ -5,6 +5,7 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
+compact_str.workspace = true
 serde.workspace = true
 
 [dev-dependencies]

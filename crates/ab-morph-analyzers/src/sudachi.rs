@@ -308,21 +308,21 @@ where
         .enumerate()
     {
         features.insert(
-            (*key).to_owned(),
+            (*key).into(),
             morpheme.part_of_speech().get(index).and_then(feature_value),
         );
     }
 
     features.insert(
-        "dictionary_form".to_owned(),
+        "dictionary_form".into(),
         feature_value(morpheme.dictionary_form()),
     );
     features.insert(
-        "normalized_form".to_owned(),
+        "normalized_form".into(),
         feature_value(morpheme.normalized_form()),
     );
     features.insert(
-        "reading_form".to_owned(),
+        "reading_form".into(),
         feature_value(morpheme.reading_form()),
     );
 

@@ -210,7 +210,7 @@ fn segmentation_group_row(group: NwaySegmentationGroup) -> NwaySegmentationGroup
 
 fn feature_group_row(group: NwayFeatureGroup) -> NwayFeatureGroupRow {
     NwayFeatureGroupRow {
-        key: group.key,
+        key: group.key.to_string(),
         scope: match group.scope {
             NwayFeatureScope::WholeRegion => NwayFeatureScopeRow::WholeRegion,
             NwayFeatureScope::TokenPosition { position } => {
@@ -222,7 +222,7 @@ fn feature_group_row(group: NwayFeatureGroup) -> NwayFeatureGroupRow {
             .values
             .into_iter()
             .map(|value| NwayFeatureValueGroupRow {
-                value: value.value,
+                value: value.value.map(|value| value.to_string()),
                 analyzers: value.analyzers,
             })
             .collect(),
@@ -248,7 +248,7 @@ mod tests {
     fn features(values: &[(&str, Option<&str>)]) -> FeatureMap {
         values
             .iter()
-            .map(|(key, value)| (key.to_string(), value.map(str::to_owned)))
+            .map(|(key, value)| ((*key).into(), value.map(Into::into)))
             .collect::<BTreeMap<_, _>>()
     }
 

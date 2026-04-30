@@ -68,7 +68,7 @@ fn byte_span(source: &str, char_index: usize) -> usize {
 fn features(values: &[(&str, Option<&str>)]) -> FeatureMap {
     values
         .iter()
-        .map(|(key, value)| (key.to_string(), value.map(str::to_owned)))
+        .map(|(key, value)| ((*key).into(), value.map(Into::into)))
         .collect::<BTreeMap<_, _>>()
 }
 

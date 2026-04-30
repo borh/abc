@@ -288,3 +288,61 @@ Result:
 - Rows: `3` analyses, `3` comparisons, `30` examples, `1` N-way row, `0` errors.
 
 Conclusion: there is a real per-document memory issue independent of scheduling. The largest single file holds roughly 18 GiB while reducing the three analyses. Scheduling remains useful for corpus stability, but the first correctness target is reducing per-document retained analysis/comparison memory.
+
+## Planned compact feature-string thinning
+
+The single-file run shows the peak is per-document retained analysis payload. The first targeted thinning step is to store feature keys and feature values as compact inline strings in `ab-morph-diff`'s model. These strings are short and repeated across every morpheme (`pos1`, `reading_form`, `名詞`, `一般`, etc.), so they are a high-leverage target without changing JSON output shape.
+
+## Compact feature-string thinning result
+
+Change:
+
+- `ab-morph-diff::FeatureKey` and `FeatureValue` now use `compact_str::CompactString`.
+- Feature maps still serialize with the same JSON shape.
+- Runner summary/example rows convert feature keys and values back to owned `String` only at the output boundary.
+
+Verification:
+
+- `cargo test -p ab-morph-diff -p ab-morph-analyzers -p ab-morph-run`: pass.
+- `cargo fmt --all -- --check`: pass.
+- `cargo clippy -p ab-morph-diff -p ab-morph-analyzers -p ab-morph-run --all-targets -- -D warnings`: pass.
+- `cargo check --workspace --benches`: pass.
+- `cargo build --release`: pass.
+
+Single-largest-file rerun:
+
+```bash
+rm -rf scratch/perf-one-largest-compactstr
+mkdir -p scratch/perf-one-largest-compactstr/aats/aozora-rs-adapter scratch/perf-one-largest-compactstr/out
+largest=$(find scratch/morph-full-corpus/aats -type f -name '*.json' -printf '%s %p\n' | sort -nr | head -1 | awk '{print $2}')
+ln -s "$(realpath "$largest")" "scratch/perf-one-largest-compactstr/aats/aozora-rs-adapter/$(basename "$largest")"
+
+AB_SUDACHI_DICT="$(nix path-info .#sudachi-dictionary-full)/share/sudachi/system.dic" \
+  taskset -c 0 /run/current-system/sw/bin/time -v \
+  target/release/ab-morph-run analyze-aat \
+    --aat-dir scratch/perf-one-largest-compactstr/aats \
+    --analyzer vibrato \
+    --analyzer sudachi-a \
+    --analyzer sudachi-c \
+    --output-profile compact \
+    --analyses-output scratch/perf-one-largest-compactstr/out/analyses.jsonl.zst \
+    --comparisons-output scratch/perf-one-largest-compactstr/out/comparisons.jsonl.zst \
+    --examples-output scratch/perf-one-largest-compactstr/out/examples.jsonl.zst \
+    --nway-output scratch/perf-one-largest-compactstr/out/nway.jsonl.zst \
+    --errors-output scratch/perf-one-largest-compactstr/out/errors.jsonl.zst \
+    --manifest-output scratch/perf-one-largest-compactstr/out/manifest.json \
+    --jobs 1 \
+    --progress-interval-seconds 15
+```
+
+Result:
+
+- Input: `001529_50685-dd3b2fe4e5bf.json`, `41956998` bytes.
+- Exit status: `0`.
+- Wall time: `6:13.76`.
+- Peak RSS: `16478584 KB` (~15.7 GiB).
+- Previous single-file peak RSS: `18804424 KB` (~17.9 GiB).
+- Reduction: `2325840 KB` (~2.2 GiB), about `12.4%`.
+- Rows: `3` analyses, `3` comparisons, `30` examples, `1` N-way row, `0` errors.
+
+Conclusion: compact feature strings are a real but partial improvement. They reduce retained analysis payload by about 2.2 GiB on the largest single file, but the remaining ~15.7 GiB peak still confirms a larger per-document memory bug. The next target should be changing the analysis representation or reduction strategy so compact runs do not retain full morpheme feature maps for all analyzers at once.

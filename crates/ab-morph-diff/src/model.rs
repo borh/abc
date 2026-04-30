@@ -1,12 +1,14 @@
 use std::collections::BTreeMap;
 use std::ops::Range;
 
+use compact_str::CompactString;
 use serde::Serialize;
 
 pub type AnalyzerId = String;
 pub type TextId = String;
-pub type FeatureKey = String;
-pub type FeatureMap = BTreeMap<FeatureKey, Option<String>>;
+pub type FeatureKey = CompactString;
+pub type FeatureValue = CompactString;
+pub type FeatureMap = BTreeMap<FeatureKey, Option<FeatureValue>>;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Morpheme {
@@ -79,13 +81,13 @@ pub struct FeatureDiff {
     pub from_index: usize,
     pub to_index: usize,
     pub changed: BTreeMap<FeatureKey, ChangedValue>,
-    pub same_context: BTreeMap<FeatureKey, Option<String>>,
+    pub same_context: BTreeMap<FeatureKey, Option<FeatureValue>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct ChangedValue {
-    pub from: Option<String>,
-    pub to: Option<String>,
+    pub from: Option<FeatureValue>,
+    pub to: Option<FeatureValue>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -134,8 +136,8 @@ pub enum CompactExampleKind {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct CompactFeatureChange {
     pub key: FeatureKey,
-    pub from: Option<String>,
-    pub to: Option<String>,
+    pub from: Option<FeatureValue>,
+    pub to: Option<FeatureValue>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -210,7 +212,7 @@ pub enum NwayFeatureScope {
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize)]
 pub struct NwayFeatureValueGroup {
-    pub value: Option<String>,
+    pub value: Option<FeatureValue>,
     pub analyzers: Vec<AnalyzerId>,
 }
 

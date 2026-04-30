@@ -12,7 +12,7 @@ pub use model::{
     AlignedMorpheme, Analysis, AnalyzerId, ChangedValue, CompactComparison,
     CompactComparisonExample, CompactExampleKind, CompactFeatureChange, Comparison,
     ComparisonStats, CoverageMismatch, CoverageMismatchKind, FeatureDiff, FeatureKey, FeatureMap,
-    Morpheme, NwayAnalyzerRegion, NwayComparison, NwayFeatureGroup, NwayFeatureScope,
+    FeatureValue, Morpheme, NwayAnalyzerRegion, NwayComparison, NwayFeatureGroup, NwayFeatureScope,
     NwayFeatureValueGroup, NwayRegion, NwaySegmentationGroup, NwayStats, Region, SegmentationDiff,
     SegmentationKind, TextId,
 };
@@ -131,7 +131,7 @@ mod tests {
     fn features(values: &[(&str, Option<&str>)]) -> FeatureMap {
         values
             .iter()
-            .map(|(key, value)| (key.to_string(), value.map(str::to_owned)))
+            .map(|(key, value)| ((*key).into(), value.map(Into::into)))
             .collect()
     }
 
@@ -240,8 +240,8 @@ mod tests {
         assert_eq!(
             comparison.feature_diffs[0].changed["pos"],
             ChangedValue {
-                from: Some("助詞".to_owned()),
-                to: Some("名詞".to_owned())
+                from: Some("助詞".into()),
+                to: Some("名詞".into())
             }
         );
     }
@@ -392,7 +392,7 @@ mod tests {
         ];
 
         let comparison =
-            crate::compare_nway_with_source_text(&analyses, source, &["pos1".to_owned()]).unwrap();
+            crate::compare_nway_with_source_text(&analyses, source, &["pos1".into()]).unwrap();
 
         assert_eq!(comparison.regions.len(), 1);
         assert_eq!(comparison.regions[0].feature_groups[0].key, "pos1");

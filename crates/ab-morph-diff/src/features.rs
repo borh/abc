@@ -68,7 +68,7 @@ mod tests {
     fn features(values: &[(&str, Option<&str>)]) -> FeatureMap {
         values
             .iter()
-            .map(|(k, v)| (k.to_string(), v.map(str::to_owned)))
+            .map(|(k, v)| ((*k).into(), v.map(Into::into)))
             .collect()
     }
 
@@ -112,8 +112,8 @@ mod tests {
         assert_eq!(
             diffs[0].changed["pos"],
             ChangedValue {
-                from: Some("名詞".to_owned()),
-                to: Some("動詞".to_owned())
+                from: Some("名詞".into()),
+                to: Some("動詞".into())
             }
         );
     }
@@ -131,7 +131,7 @@ mod tests {
         assert_eq!(
             diffs[0].changed["lemma"],
             ChangedValue {
-                from: Some("今日".to_owned()),
+                from: Some("今日".into()),
                 to: None
             }
         );
@@ -152,12 +152,7 @@ mod tests {
             from_index: 0,
             to_index: 0,
         })];
-        let diffs = compare_feature_diffs(
-            &from,
-            &to,
-            &regions,
-            &["lemma".to_owned(), "lemma".to_owned()],
-        );
+        let diffs = compare_feature_diffs(&from, &to, &regions, &["lemma".into(), "lemma".into()]);
         assert_eq!(
             diffs[0].same_context.keys().collect::<Vec<_>>(),
             vec!["lemma"]

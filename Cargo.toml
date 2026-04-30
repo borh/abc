@@ -35,6 +35,7 @@ ab-ir = { path = "crates/ab-ir" }
 ab-source-syntax = { path = "crates/ab-source-syntax" }
 chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4.5", features = ["derive"] }
+compact_str = { version = "0.9", features = ["serde"] }
 criterion = "0.8"
 encoding_rs = "0.8"
 flate2 = "1.0"

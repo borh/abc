@@ -70,3 +70,49 @@
     (is (nil? (schema/validation-errors
                (files/read-json drift/index-schema-path)
                (index-for "000879" event-id))))))
+
+(deftest drift-event-id-omits-only-id-field-test
+  (let [without-id (base-split-without-id)
+        with-id (drift/materialize-event-id without-id)
+        rederived (drift/drift-event-id with-id)
+        changed-date (assoc with-id "date" "2026-05-01")]
+    (is (= (get with-id "drift_event_id") rederived))
+    (is (not= (get with-id "drift_event_id")
+              (drift/drift-event-id changed-date)))))
+
+(deftest validate-event-json-coherence-accepts-base-split-test
+  (is (= [] (drift/event-json-coherence-failures (base-split)))))
+
+(deftest validate-event-json-coherence-rejects-unsorted-participants-test
+  (let [event (base-split)
+        bad (assoc event "participants" (vec (reverse (get event "participants"))))]
+    (is (= [:participants-not-sorted]
+           (mapv :code (drift/event-json-coherence-failures bad))))))
+
+(deftest validate-event-json-coherence-rejects-dangling-snapshot-ref-test
+  (let [bad (assoc-in (base-split) ["prov" "used"] ["pre-missing"])]
+    (is (some #{:unknown-snapshot-reference}
+              (map :code (drift/event-json-coherence-failures bad))))))
+
+(deftest validate-event-json-coherence-rejects-uncovered-participant-test
+  (let [bad (update (base-split) "participants" conj
+                    {"snapshot_id" "post-abc-000000000003"
+                     "person_id" "abc-000000000003"
+                     "person_record_hash" (example-hash "04")})]
+    (is (some #{:participant-not-covered}
+              (map :code (drift/event-json-coherence-failures bad))))))
+
+(deftest validate-event-json-coherence-rejects-prefix-usage-mismatch-test
+  (let [bad (-> (base-split)
+                (assoc-in ["prov" "used"] ["post-abc-000000000001"])
+                (assoc-in ["prov" "was_generated_by"] ["post-abc-000000000002"
+                                                        "pre-000879"]))]
+    (is (some #{:snapshot-prefix-usage-mismatch}
+              (map :code (drift/event-json-coherence-failures bad))))))
+
+(deftest validate-event-json-coherence-rejects-invalid-agent-iri-test
+  (let [bad (assoc-in (base-split)
+                      ["prov" "qualified_association" "agent"]
+                      "not an iri")]
+    (is (some #{:invalid-agent-iri}
+              (map :code (drift/event-json-coherence-failures bad))))))

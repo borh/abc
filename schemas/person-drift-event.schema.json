@@ -113,7 +113,7 @@
           "required": ["agent", "had_role"],
           "properties": {
             "agent": { "type": "string", "format": "uri" },
-            "had_role": { "const": "abc:DriftEditor" }
+            "had_role": { "type": "string" }
           }
         }
       }

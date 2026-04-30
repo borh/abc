@@ -599,7 +599,13 @@
       (tel/log! :info "tei schematron validation ok")
       (tel/log! :info "==> Validating person drift negative fixtures")
       (validate-drift-fixtures!
-       {"fixtures/v0/invalid/drift/broken-index-target" #{:index-target-missing}})
+       {"fixtures/v0/invalid/drift/broken-index-target" #{:index-target-missing}
+        "fixtures/v0/invalid/drift/asymmetric-index" #{:event-missing-from-participant-index}
+        "fixtures/v0/invalid/drift/orphan-event-file" #{:orphan-event-file}
+        "fixtures/v0/invalid/drift/unsorted-participants" #{:participants-not-sorted}
+        "fixtures/v0/invalid/drift/dangling-snapshot-ref" #{:unknown-snapshot-reference}
+        "fixtures/v0/invalid/drift/invalid-role" #{:invalid-had-role}
+        "fixtures/v0/invalid/drift/invalid-agent" #{:invalid-agent-iri}})
       (tel/log! :info "person drift negative fixtures ok")
       (tel/log! :info "==> Validating Linked Art publication view (ADR 0013)")
       (validate-publication-view!

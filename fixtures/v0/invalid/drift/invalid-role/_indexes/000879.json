@@ -1,0 +1,6 @@
+{
+  "drift_event_ids": ["sha256:550c55dbfed12ce9b6de833a75c8b03e8a01bf3047c17ced494e87db0f4ee747"],
+  "person_id": "000879",
+  "schema_hash": "sha256:e802a9abaf0938126f9f5b93e12c3eafb70483127ceac3ff89c95023c07d0e74",
+  "schema_id": "https:\/\/w3id.org\/abc\/schemas\/person-drift-index.schema.json"
+}

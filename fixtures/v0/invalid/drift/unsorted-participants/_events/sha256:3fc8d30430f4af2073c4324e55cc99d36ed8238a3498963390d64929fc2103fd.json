@@ -1,0 +1,34 @@
+{
+  "date": "2026-04-30",
+  "drift_event_id": "sha256:3fc8d30430f4af2073c4324e55cc99d36ed8238a3498963390d64929fc2103fd",
+  "drift_event_type": "split",
+  "evidence": ["https:\/\/example.org\/abc\/drift-evidence\/fictional-split-2026"],
+  "participants": [
+    {
+      "person_id": "000879",
+      "person_record_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000003",
+      "snapshot_id": "pre-000879"
+    },
+    {
+      "person_id": "abc-000000000002",
+      "person_record_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000002",
+      "snapshot_id": "post-abc-000000000002"
+    },
+    {
+      "person_id": "abc-000000000001",
+      "person_record_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000001",
+      "snapshot_id": "post-abc-000000000001"
+    }],
+  "prov": 
+  {
+    "qualified_association": 
+    {
+      "agent": "https:\/\/w3id.org\/abc\/agents\/editorial-board",
+      "had_role": "abc:DriftEditor"
+    },
+    "used": ["pre-000879"],
+    "was_generated_by": ["post-abc-000000000001","post-abc-000000000002"]
+  },
+  "schema_hash": "sha256:329dc53274f500c156dc0117fdfaa164361d5a33bcb2f7a8f4c0d60ccf5508c0",
+  "schema_id": "https:\/\/w3id.org\/abc\/schemas\/person-drift-event.schema.json"
+}

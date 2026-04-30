@@ -384,4 +384,16 @@
   (testing "drift fixture runner returns nil when expected failures are observed"
     (is (nil? (validate/validate-drift-fixtures!
                {"fixtures/v0/invalid/drift/broken-index-target"
-                #{:index-target-missing}})))))
+                #{:index-target-missing}
+                "fixtures/v0/invalid/drift/asymmetric-index"
+                #{:event-missing-from-participant-index}
+                "fixtures/v0/invalid/drift/orphan-event-file"
+                #{:orphan-event-file}
+                "fixtures/v0/invalid/drift/unsorted-participants"
+                #{:participants-not-sorted}
+                "fixtures/v0/invalid/drift/dangling-snapshot-ref"
+                #{:unknown-snapshot-reference}
+                "fixtures/v0/invalid/drift/invalid-role"
+                #{:invalid-had-role}
+                "fixtures/v0/invalid/drift/invalid-agent"
+                #{:invalid-agent-iri}})))))

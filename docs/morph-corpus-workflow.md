@@ -30,11 +30,11 @@ AB_SUDACHI_DICT="$(nix path-info .#sudachi-dictionary-full)/share/sudachi/system
     --analyzer vibrato \
     --analyzer sudachi-c \
     --output-profile compact \
-    --analyses-output scratch/morph-full-corpus-compact-canonical/analyses.jsonl.zst \
-    --comparisons-output scratch/morph-full-corpus-compact-canonical/comparisons.jsonl.zst \
-    --examples-output scratch/morph-full-corpus-compact-canonical/examples.jsonl.zst \
-    --errors-output scratch/morph-full-corpus-compact-canonical/errors.jsonl.zst \
-    --manifest-output scratch/morph-full-corpus-compact-canonical/manifest.json \
+    --analyses-output scratch/morph-full-corpus-compact-canonical-v2/analyses.jsonl.zst \
+    --comparisons-output scratch/morph-full-corpus-compact-canonical-v2/comparisons.jsonl.zst \
+    --examples-output scratch/morph-full-corpus-compact-canonical-v2/examples.jsonl.zst \
+    --errors-output scratch/morph-full-corpus-compact-canonical-v2/errors.jsonl.zst \
+    --manifest-output scratch/morph-full-corpus-compact-canonical-v2/manifest.json \
     --jobs 8 \
     --progress-interval-seconds 30
 ```
@@ -49,7 +49,7 @@ Lowest boundary F1 by source record. Rows with undefined boundary F1 (`null`) so
 
 ```bash
 target/release/ab-morph-run summarize-compact \
-  --comparisons scratch/morph-full-corpus-compact-canonical/comparisons.jsonl.zst \
+  --comparisons scratch/morph-full-corpus-compact-canonical-v2/comparisons.jsonl.zst \
   --group-by source-id \
   --sort-by boundary-f1 \
   --limit 20
@@ -59,7 +59,7 @@ Most segmentation regions by logical text id:
 
 ```bash
 target/release/ab-morph-run summarize-compact \
-  --comparisons scratch/morph-full-corpus-compact-canonical/comparisons.jsonl.zst \
+  --comparisons scratch/morph-full-corpus-compact-canonical-v2/comparisons.jsonl.zst \
   --group-by text-id \
   --sort-by segmentation-regions \
   --limit 20 \
@@ -118,7 +118,7 @@ Whitespace-only examples by source record:
 
 ```bash
 target/release/ab-morph-run summarize-examples \
-  --examples scratch/morph-full-corpus-compact-canonical/examples.jsonl.zst \
+  --examples scratch/morph-full-corpus-compact-canonical-v2/examples.jsonl.zst \
   --group-by source-id \
   --filter whitespace-only \
   --sort-by whitespace-examples \
@@ -129,7 +129,7 @@ Lexical examples by source record, excluding whitespace-only spans:
 
 ```bash
 target/release/ab-morph-run summarize-examples \
-  --examples scratch/morph-full-corpus-compact-canonical/examples.jsonl.zst \
+  --examples scratch/morph-full-corpus-compact-canonical-v2/examples.jsonl.zst \
   --group-by source-id \
   --filter lexical-only \
   --sort-by lexical-examples \
@@ -146,7 +146,7 @@ Lexical segmentation disagreements:
 
 ```bash
 target/release/ab-morph-run summarize-compact \
-  --comparisons scratch/morph-full-corpus-compact-canonical/comparisons.jsonl.zst \
+  --comparisons scratch/morph-full-corpus-compact-canonical-v2/comparisons.jsonl.zst \
   --group-by source-id \
   --sort-by lexical-segmentation-regions \
   --limit 20
@@ -156,7 +156,7 @@ Whitespace-only segmentation disagreements:
 
 ```bash
 target/release/ab-morph-run summarize-compact \
-  --comparisons scratch/morph-full-corpus-compact-canonical/comparisons.jsonl.zst \
+  --comparisons scratch/morph-full-corpus-compact-canonical-v2/comparisons.jsonl.zst \
   --group-by source-id \
   --sort-by whitespace-segmentation-regions \
   --limit 20
@@ -166,7 +166,7 @@ Lexical feature-diff ranking:
 
 ```bash
 target/release/ab-morph-run summarize-compact \
-  --comparisons scratch/morph-full-corpus-compact-canonical/comparisons.jsonl.zst \
+  --comparisons scratch/morph-full-corpus-compact-canonical-v2/comparisons.jsonl.zst \
   --group-by source-id \
   --sort-by lexical-feature-differences \
   --limit 20
@@ -182,7 +182,7 @@ Japanese-source lexical segmentation ranking:
 
 ```bash
 target/release/ab-morph-run summarize-compact \
-  --comparisons scratch/morph-full-corpus-compact-canonical/comparisons.jsonl.zst \
+  --comparisons scratch/morph-full-corpus-compact-canonical-v2/comparisons.jsonl.zst \
   --group-by source-id \
   --script-category japanese \
   --sort-by lexical-segmentation-regions \
@@ -193,7 +193,7 @@ Mixed-source ranking, useful for technical tables or sources containing both Jap
 
 ```bash
 target/release/ab-morph-run summarize-compact \
-  --comparisons scratch/morph-full-corpus-compact-canonical/comparisons.jsonl.zst \
+  --comparisons scratch/morph-full-corpus-compact-canonical-v2/comparisons.jsonl.zst \
   --group-by source-id \
   --script-category mixed \
   --sort-by lexical-segmentation-regions \
@@ -204,7 +204,7 @@ Latin/code example evidence inside any source category:
 
 ```bash
 target/release/ab-morph-run summarize-examples \
-  --examples scratch/morph-full-corpus-compact-canonical/examples.jsonl.zst \
+  --examples scratch/morph-full-corpus-compact-canonical-v2/examples.jsonl.zst \
   --group-by source-id \
   --script-category latin-code \
   --filter lexical-only \

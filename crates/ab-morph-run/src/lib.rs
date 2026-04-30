@@ -51,6 +51,7 @@ impl OutputProfile {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn run_analyze_aat(
     aat: Option<&Path>,
     aat_dir: Option<&Path>,
@@ -228,15 +229,17 @@ fn run_analyze_aat_inputs(
         run_analyze_aat_serial(
             inputs,
             &analyzers,
-            analyses_output,
-            comparisons_output,
-            errors_output,
-            resume,
-            output_profile,
-            examples_output,
-            max_examples_per_comparison,
-            nway_output,
-            max_nway_examples_per_text,
+            SerialRunOptions {
+                analyses_output,
+                comparisons_output,
+                errors_output,
+                resume,
+                output_profile,
+                examples_output,
+                max_examples_per_comparison,
+                nway_output,
+                max_nway_examples_per_text,
+            },
         )?;
     }
 
@@ -260,44 +263,53 @@ fn run_analyze_aat_inputs(
     Ok(())
 }
 
+struct SerialRunOptions<'a> {
+    analyses_output: &'a Path,
+    comparisons_output: Option<&'a Path>,
+    errors_output: Option<&'a Path>,
+    resume: bool,
+    output_profile: OutputProfile,
+    examples_output: Option<&'a Path>,
+    max_examples_per_comparison: usize,
+    nway_output: Option<&'a Path>,
+    max_nway_examples_per_text: usize,
+}
+
 fn run_analyze_aat_serial(
     inputs: Vec<PathBuf>,
     analyzers: &[Arc<LoadedAnalyzer>],
-    analyses_output: &Path,
-    comparisons_output: Option<&Path>,
-    errors_output: Option<&Path>,
-    resume: bool,
-    output_profile: OutputProfile,
-    examples_output: Option<&Path>,
-    max_examples_per_comparison: usize,
-    nway_output: Option<&Path>,
-    max_nway_examples_per_text: usize,
+    options: SerialRunOptions<'_>,
 ) -> Result<()> {
-    let resume_ids = if resume {
-        read_resume_ids(analyses_output, errors_output, nway_output, output_profile)?
+    let resume_ids = if options.resume {
+        read_resume_ids(
+            options.analyses_output,
+            options.errors_output,
+            options.nway_output,
+            options.output_profile,
+        )?
     } else {
         BTreeSet::new()
     };
-    let inputs = filter_resume_inputs(inputs, &resume_ids, output_profile)?;
+    let inputs = filter_resume_inputs(inputs, &resume_ids, options.output_profile)?;
 
-    let mut analyses_writer = open_output_writer(analyses_output, resume)?;
-    let mut comparisons_writer = if let Some(path) = comparisons_output {
-        Some(open_output_writer(path, resume)?)
+    let mut analyses_writer = open_output_writer(options.analyses_output, options.resume)?;
+    let mut comparisons_writer = if let Some(path) = options.comparisons_output {
+        Some(open_output_writer(path, options.resume)?)
     } else {
         None
     };
-    let mut examples_writer = if let Some(path) = examples_output {
-        Some(open_output_writer(path, resume)?)
+    let mut examples_writer = if let Some(path) = options.examples_output {
+        Some(open_output_writer(path, options.resume)?)
     } else {
         None
     };
-    let mut errors_writer = if let Some(path) = errors_output {
-        Some(open_output_writer(path, resume)?)
+    let mut errors_writer = if let Some(path) = options.errors_output {
+        Some(open_output_writer(path, options.resume)?)
     } else {
         None
     };
-    let mut nway_writer = if let Some(path) = nway_output {
-        Some(open_output_writer(path, resume)?)
+    let mut nway_writer = if let Some(path) = options.nway_output {
+        Some(open_output_writer(path, options.resume)?)
     } else {
         None
     };
@@ -369,15 +381,20 @@ fn run_analyze_aat_serial(
                 }
             };
 
-            write_analysis_row(&mut *analyses_writer, output_profile, &source_id, &analysis)?;
-            if output_profile == OutputProfile::Compact {
+            write_analysis_row(
+                &mut *analyses_writer,
+                options.output_profile,
+                &source_id,
+                &analysis,
+            )?;
+            if options.output_profile == OutputProfile::Compact {
                 analysis.source_text.clear();
             }
             analyses.push(analysis);
         }
 
-        if comparisons_writer.is_some() || examples_writer.is_some() {
-            if let Err(error) = write_comparison_rows(
+        let comparison_result = if comparisons_writer.is_some() || examples_writer.is_some() {
+            write_comparison_rows(
                 comparisons_writer
                     .as_mut()
                     .map(|writer| &mut **writer as &mut dyn Write),
@@ -387,24 +404,27 @@ fn run_analyze_aat_serial(
                 &analyses,
                 &source_id,
                 &document.text,
-                output_profile,
-                max_examples_per_comparison,
-            ) {
-                if let Some(error_writer) = &mut errors_writer {
-                    write_error_row(
-                        &mut **error_writer,
-                        &RunErrorRow {
-                            input_path: input_path.clone(),
-                            source_id: Some(source_id.clone()),
-                            text_id: Some(document.text_id.clone()),
-                            analyzer: None,
-                            stage: "compare".to_owned(),
-                            error: error.to_string(),
-                        },
-                    )?;
-                } else {
-                    return Err(error);
-                }
+                options.output_profile,
+                options.max_examples_per_comparison,
+            )
+        } else {
+            Ok(())
+        };
+        if let Err(error) = comparison_result {
+            if let Some(error_writer) = &mut errors_writer {
+                write_error_row(
+                    &mut **error_writer,
+                    &RunErrorRow {
+                        input_path: input_path.clone(),
+                        source_id: Some(source_id.clone()),
+                        text_id: Some(document.text_id.clone()),
+                        analyzer: None,
+                        stage: "compare".to_owned(),
+                        error: error.to_string(),
+                    },
+                )?;
+            } else {
+                return Err(error);
             }
         }
         if let Some(writer) = &mut nway_writer {
@@ -414,7 +434,7 @@ fn run_analyze_aat_serial(
                         source_id.clone(),
                         &document.text,
                         &comparison,
-                        max_nway_examples_per_text,
+                        options.max_nway_examples_per_text,
                     );
                     write_jsonl_row(&mut **writer, &row)?;
                 }
@@ -522,15 +542,17 @@ fn run_analyze_aat_parallel(
                 run_analyze_aat_serial(
                     shard_inputs,
                     &analyzers,
-                    &analyses,
-                    comparisons.as_deref(),
-                    errors.as_deref(),
-                    false,
-                    output_profile,
-                    examples.as_deref(),
-                    max_examples_per_comparison,
-                    nway.as_deref(),
-                    max_nway_examples_per_text,
+                    SerialRunOptions {
+                        analyses_output: &analyses,
+                        comparisons_output: comparisons.as_deref(),
+                        errors_output: errors.as_deref(),
+                        resume: false,
+                        output_profile,
+                        examples_output: examples.as_deref(),
+                        max_examples_per_comparison,
+                        nway_output: nway.as_deref(),
+                        max_nway_examples_per_text,
+                    },
                 )?;
                 Ok(ShardOutput {
                     job_index,

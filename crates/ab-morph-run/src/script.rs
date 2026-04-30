@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum ScriptCategory {
     Whitespace,
@@ -8,13 +8,8 @@ pub enum ScriptCategory {
     LatinCode,
     Numeric,
     Mixed,
+    #[default]
     Other,
-}
-
-impl Default for ScriptCategory {
-    fn default() -> Self {
-        Self::Other
-    }
 }
 
 impl ScriptCategory {

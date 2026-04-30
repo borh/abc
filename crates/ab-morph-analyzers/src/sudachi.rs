@@ -181,10 +181,10 @@ fn choose_chunk_end(text: &str, start: usize, max_bytes: usize) -> usize {
     }
 
     for predicate in [is_paragraph_boundary, is_sentence_boundary] {
-        if let Some(end) = find_last_boundary(text, start, hard_end, predicate) {
-            if end > start {
-                return end;
-            }
+        if let Some(end) = find_last_boundary(text, start, hard_end, predicate)
+            && end > start
+        {
+            return end;
         }
     }
 
@@ -206,7 +206,7 @@ fn find_last_boundary(
                 None
             }
         })
-        .last()
+        .next_back()
 }
 
 fn is_paragraph_boundary(ch: char) -> bool {

@@ -35,6 +35,10 @@
   (assoc event "drift_event_id" (drift-event-id event)))
 
 (def drift-editor-curie "abc:DriftEditor")
+(def allowed-role-curies #{drift-editor-curie})
+
+(defn resolve-role-curie [role]
+  (rdf-prefixes/resolve-curie role))
 
 (defn- sorted-lex? [xs]
   (= (vec xs) (vec (sort xs))))
@@ -70,6 +74,7 @@
         referenced (set (concat used generated))
         participant-set (set snapshot-ids)
         role (get-in event ["prov" "qualified_association" "had_role"])
+        resolved-role (resolve-role-curie role)
         agent (get-in event ["prov" "qualified_association" "agent"])]
     (vec
      (concat
@@ -98,7 +103,9 @@
                      :snapshot_id id
                      :usage "was_generated_by"})
            (remove #(string/starts-with? % "post-") generated))
-      (when-not (= drift-editor-curie role)
+      (when (nil? resolved-role)
+        [{:code :unresolved-curie-prefix :had_role role}])
+      (when (and resolved-role (not (contains? allowed-role-curies role)))
         [{:code :invalid-had-role :had_role role}])
       (when-not (valid-iri? agent)
         [{:code :invalid-agent-iri :agent agent}])))))
@@ -157,6 +164,8 @@
         used (get-in event ["prov" "used"])
         generated (get-in event ["prov" "was_generated_by"])
         agent (uri (get-in event ["prov" "qualified_association" "agent"]))
+        role (uri (resolve-role-curie
+                   (get-in event ["prov" "qualified_association" "had_role"])))
         assoc-node (NodeFactory/createBlankNode)]
     (doseq [type-uri [(str abc-base "DriftEvent")
                       (str prov-base "Activity")
@@ -188,7 +197,7 @@
     (add-triple! graph event-node (uri (str prov-base "qualifiedAssociation")) assoc-node)
     (add-triple! graph assoc-node (uri rdf-type-uri) (uri (str prov-base "Association")))
     (add-triple! graph assoc-node (uri (str prov-base "agent")) agent)
-    (add-triple! graph assoc-node (uri (str prov-base "hadRole")) (uri (str abc-base "DriftEditor")))
+    (add-triple! graph assoc-node (uri (str prov-base "hadRole")) role)
     graph))
 
 (defn- type-uris [graph event-node-uri]
@@ -223,6 +232,65 @@
   (shacl/validate! {:shapes-graph (shacl/load-shapes-graph)
                     :data-graph graph
                     :label label}))
+
+(defn- uri-objects [graph subject-uri predicate-uri]
+  (let [subject (uri subject-uri)
+        predicate (uri predicate-uri)]
+    (->> (iterator-seq (.find graph subject predicate nil))
+         (keep (fn [triple]
+                 (let [object (.getObject triple)]
+                   (when (.isURI object)
+                     (.getURI object)))))
+         set)))
+
+(defn- uri-subjects [graph predicate-uri object-uri]
+  (let [predicate (uri predicate-uri)
+        object (uri object-uri)]
+    (->> (iterator-seq (.find graph nil predicate object))
+         (keep (fn [triple]
+                 (let [subject (.getSubject triple)]
+                   (when (.isURI subject)
+                     (.getURI subject)))))
+         set)))
+
+(defn- expected-snapshot-iris [event snapshot-ids]
+  (let [by-id (participant-by-id event)]
+    (set (map #(snapshot-iri (get by-id %)) snapshot-ids))))
+
+(defn graph-participant-prov-failures [event graph]
+  (let [event-node (event-iri (get event "drift_event_id"))
+        expected-used (expected-snapshot-iris event (used-ids event))
+        actual-used (uri-objects graph event-node (str prov-base "used"))
+        expected-generated (expected-snapshot-iris event (generated-ids event))
+        actual-generated (uri-subjects graph (str prov-base "wasGeneratedBy") event-node)
+        actual-invalidated (uri-subjects graph (str prov-base "wasInvalidatedBy") event-node)
+        mismatch (fn [field expected actual]
+                   (when (not= expected actual)
+                     {:code :rdf-participant-prov-mismatch
+                      :field field
+                      :expected (sort expected)
+                      :actual (sort actual)}))]
+    (vec
+     (keep identity
+           [(mismatch "prov:used" expected-used actual-used)
+            (mismatch "prov:wasGeneratedBy" expected-generated actual-generated)
+            (mismatch "prov:wasInvalidatedBy" expected-used actual-invalidated)]))))
+
+(defn- shacl-failures [graph label]
+  (try
+    (validate-event-shacl! graph label)
+    []
+    (catch clojure.lang.ExceptionInfo e
+      (mapv #(assoc % :code :shacl-violation :path label)
+            (:errors (ex-data e))))))
+
+(defn validate-drift-graph-failures [event graph label]
+  (vec (concat
+        (mapv #(assoc % :path label)
+              (typing-coherence-failures event graph))
+        (mapv #(assoc % :path label)
+              (graph-participant-prov-failures event graph))
+        (shacl-failures graph label))))
 
 (defn- drift-dir [persons-dir dirname]
   (java.io.File. (io/file persons-dir) dirname))
@@ -282,12 +350,7 @@
                                 (typing-coherence-failures value graph))
                           [])
         shacl-failures (if (and graph (empty? typing-failures))
-                         (try
-                           (validate-event-shacl! graph path)
-                           []
-                           (catch clojure.lang.ExceptionInfo e
-                             (mapv #(assoc % :code :shacl-violation :path path)
-                                   (:errors (ex-data e)))))
+                         (shacl-failures graph path)
                          [])]
     (vec (concat schema-failures json-failures typing-failures shacl-failures))))
 

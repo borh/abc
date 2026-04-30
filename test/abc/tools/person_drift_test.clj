@@ -61,8 +61,8 @@
                       ["post-abc-000000000001"])]
     (is (thrown? clojure.lang.ExceptionInfo
                  (when-let [errors (schema/validation-errors
-                                     (files/read-json drift/event-schema-path)
-                                     bad)]
+                                    (files/read-json drift/event-schema-path)
+                                    bad)]
                    (throw (ex-info "expected schema failure" {:errors errors})))))))
 
 (deftest index-schema-accepts-valid-index-test
@@ -106,7 +106,7 @@
   (let [bad (-> (base-split)
                 (assoc-in ["prov" "used"] ["post-abc-000000000001"])
                 (assoc-in ["prov" "was_generated_by"] ["post-abc-000000000002"
-                                                        "pre-000879"]))]
+                                                       "pre-000879"]))]
     (is (some #{:snapshot-prefix-usage-mismatch}
               (map :code (drift/event-json-coherence-failures bad))))))
 
@@ -116,6 +116,22 @@
                       "not an iri")]
     (is (some #{:invalid-agent-iri}
               (map :code (drift/event-json-coherence-failures bad))))))
+
+(deftest role-curie-resolution-test
+  (is (= "https://w3id.org/abc/DriftEditor"
+         (drift/resolve-role-curie "abc:DriftEditor"))))
+
+(deftest validate-event-json-coherence-distinguishes-role-prefix-test
+  (let [unknown-prefix (assoc-in (base-split)
+                                 ["prov" "qualified_association" "had_role"]
+                                 "unknown:DriftEditor")
+        disallowed-role (assoc-in (base-split)
+                                  ["prov" "qualified_association" "had_role"]
+                                  "abc:DriftReviewer")]
+    (is (some #{:unresolved-curie-prefix}
+              (map :code (drift/event-json-coherence-failures unknown-prefix))))
+    (is (some #{:invalid-had-role}
+              (map :code (drift/event-json-coherence-failures disallowed-role))))))
 
 (defn triples [graph]
   (iterator-seq (.find graph)))

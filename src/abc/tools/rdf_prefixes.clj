@@ -42,3 +42,14 @@
   (mapv (fn [[sym uri]]
           (str "@prefix " (name sym) ": <" uri "> ."))
         prefix-bindings))
+
+(defn resolve-curie
+  "Resolve `prefix:local` through ABC's registered RDF prefix bindings.
+  Returns nil when the value is not a CURIE or the prefix is unknown."
+  [s]
+  (when-let [[_ prefix local] (and (string? s)
+                                   (re-matches #"^([^:]+):(.+)$" s))]
+    (when-let [base (get (into {} (map (fn [[sym uri]] [(name sym) uri])
+                                       prefix-bindings))
+                         prefix)]
+      (str base local))))

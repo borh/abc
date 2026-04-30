@@ -396,4 +396,28 @@
                 "fixtures/v0/invalid/drift/invalid-role"
                 #{:invalid-had-role}
                 "fixtures/v0/invalid/drift/invalid-agent"
-                #{:invalid-agent-iri}})))))
+                #{:invalid-agent-iri}
+                {:type :ttl
+                 :event "examples/v0/example-persons/_events/sha256:550c55dbfed12ce9b6de833a75c8b03e8a01bf3047c17ced494e87db0f4ee747.json"
+                 :graph "fixtures/v0/invalid/drift/shacl-missing-date/graph.ttl"}
+                #{:shacl-violation}
+                {:type :ttl
+                 :event "examples/v0/example-persons/_events/sha256:550c55dbfed12ce9b6de833a75c8b03e8a01bf3047c17ced494e87db0f4ee747.json"
+                 :graph "fixtures/v0/invalid/drift/split-cardinality-one-successor/graph.ttl"}
+                #{:shacl-violation}
+                {:type :ttl
+                 :event "fixtures/v0/invalid/drift/merge-cardinality-one-predecessor/event.json"
+                 :graph "fixtures/v0/invalid/drift/merge-cardinality-one-predecessor/graph.ttl"}
+                #{:shacl-violation}
+                {:type :ttl
+                 :event "examples/v0/example-persons/_events/sha256:550c55dbfed12ce9b6de833a75c8b03e8a01bf3047c17ced494e87db0f4ee747.json"
+                 :graph "fixtures/v0/invalid/drift/typing-missing-subclass/graph.ttl"}
+                #{:missing-rdf-type}
+                {:type :ttl
+                 :event "examples/v0/example-persons/_events/sha256:550c55dbfed12ce9b6de833a75c8b03e8a01bf3047c17ced494e87db0f4ee747.json"
+                 :graph "fixtures/v0/invalid/drift/typing-missing-activity/graph.ttl"}
+                #{:missing-rdf-type :shacl-violation}
+                {:type :ttl
+                 :event "examples/v0/example-persons/_events/sha256:550c55dbfed12ce9b6de833a75c8b03e8a01bf3047c17ced494e87db0f4ee747.json"
+                 :graph "fixtures/v0/invalid/drift/rdf-participant-prov-mismatch/graph.ttl"}
+                #{:rdf-participant-prov-mismatch}})))))

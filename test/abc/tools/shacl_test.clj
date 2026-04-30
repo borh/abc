@@ -1,6 +1,7 @@
 (ns abc.tools.shacl-test
   (:require [abc.tools.files :as files]
             [abc.tools.manifest-to-rdf :as manifest-to-rdf]
+            [abc.tools.person-record :as person-record]
             [abc.tools.shacl :as shacl]
             [arachne.aristotle :as aa]
             [arachne.aristotle.registry :as reg]
@@ -148,6 +149,29 @@
   (testing "PersonRecordShape is loaded from manifest.shacl.ttl"
     (is (contains? (shape-iris (shacl/load-shapes-graph))
                    "https://w3id.org/abc/PersonRecordShape"))))
+
+(deftest validate-abc-local-person-record-conforms-test
+  (testing "PersonRecordShape accepts the ABC-local identifier RDF emitted by person-record"
+    (let [record {"schema_id" person-record/schema-id
+                  "schema_hash" "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                  "person_id" "abc-000000000001"
+                  "family_name" "Test"
+                  "given_name" "Person"
+                  "family_name_reading" nil
+                  "given_name_reading" nil
+                  "family_name_sort" nil
+                  "given_name_sort" nil
+                  "family_name_romaji" nil
+                  "given_name_romaji" nil
+                  "date_of_birth" nil
+                  "date_of_death" nil
+                  "external_links" []
+                  "source_csv_provenance" nil}
+          shapes (shacl/load-shapes-graph)
+          data (person-record/record->graph record)]
+      (is (= :ok (shacl/validate! {:shapes-graph shapes
+                                   :data-graph data
+                                   :label "abc-local-person"}))))))
 
 (deftest metadata-record-person-shape-retired-test
   (testing "MetadataRecordPersonShape is no longer in the shapes graph"

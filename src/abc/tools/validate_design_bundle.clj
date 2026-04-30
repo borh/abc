@@ -18,6 +18,7 @@
    [abc.tools.shacl :as shacl]
    [abc.tools.schematron :as schematron]
    [abc.tools.tei :as tei]
+   [arachne.aristotle :as aa]
    [clojure.java.io :as io]
    [clojure.set :as set]
    [clojure.string :as string]
@@ -288,17 +289,37 @@
   (doseq [[path expected-rules] invalid-fixtures]
     (validate-schematron-invalid-fixture! schema-path path expected-rules)))
 
-(defn- validate-drift-invalid-fixture! [path expected-codes]
-  (let [result (person-drift/validate-drift-events! {:persons-dir path})
+(defn- load-turtle-graph [path]
+  (aa/read (aa/graph :simple) (io/file path)))
+
+(defn- validate-drift-ttl-fixture-result [{:keys [event graph]}]
+  (let [event-value (files/read-json event)
+        data-graph (load-turtle-graph graph)
+        failures (person-drift/validate-drift-graph-failures event-value
+                                                             data-graph
+                                                             graph)]
+    (if (seq failures)
+      {:status :error :failures failures}
+      {:status :ok})))
+
+(defn- validate-drift-fixture-result [fixture]
+  (if (map? fixture)
+    (case (:type fixture)
+      :ttl (validate-drift-ttl-fixture-result fixture)
+      (throw (ex-info "unknown drift fixture type" {:fixture fixture})))
+    (person-drift/validate-drift-events! {:persons-dir fixture})))
+
+(defn- validate-drift-invalid-fixture! [fixture expected-codes]
+  (let [result (validate-drift-fixture-result fixture)
         actual (set (map :code (:failures result)))]
     (when-not (= :error (:status result))
       (throw (ex-info "expected invalid drift fixture to fail"
-                      {:fixture path
+                      {:fixture fixture
                        :result result})))
     (let [missing (set/difference expected-codes actual)]
       (when (seq missing)
         (throw (ex-info "missing expected drift validation failure"
-                        {:fixture path
+                        {:fixture fixture
                          :missing (sort missing)
                          :actual (sort actual)}))))))
 
@@ -605,7 +626,31 @@
         "fixtures/v0/invalid/drift/unsorted-participants" #{:participants-not-sorted}
         "fixtures/v0/invalid/drift/dangling-snapshot-ref" #{:unknown-snapshot-reference}
         "fixtures/v0/invalid/drift/invalid-role" #{:invalid-had-role}
-        "fixtures/v0/invalid/drift/invalid-agent" #{:invalid-agent-iri}})
+        "fixtures/v0/invalid/drift/invalid-agent" #{:invalid-agent-iri}
+        {:type :ttl
+         :event "examples/v0/example-persons/_events/sha256:550c55dbfed12ce9b6de833a75c8b03e8a01bf3047c17ced494e87db0f4ee747.json"
+         :graph "fixtures/v0/invalid/drift/shacl-missing-date/graph.ttl"}
+        #{:shacl-violation}
+        {:type :ttl
+         :event "examples/v0/example-persons/_events/sha256:550c55dbfed12ce9b6de833a75c8b03e8a01bf3047c17ced494e87db0f4ee747.json"
+         :graph "fixtures/v0/invalid/drift/split-cardinality-one-successor/graph.ttl"}
+        #{:shacl-violation}
+        {:type :ttl
+         :event "fixtures/v0/invalid/drift/merge-cardinality-one-predecessor/event.json"
+         :graph "fixtures/v0/invalid/drift/merge-cardinality-one-predecessor/graph.ttl"}
+        #{:shacl-violation}
+        {:type :ttl
+         :event "examples/v0/example-persons/_events/sha256:550c55dbfed12ce9b6de833a75c8b03e8a01bf3047c17ced494e87db0f4ee747.json"
+         :graph "fixtures/v0/invalid/drift/typing-missing-subclass/graph.ttl"}
+        #{:missing-rdf-type}
+        {:type :ttl
+         :event "examples/v0/example-persons/_events/sha256:550c55dbfed12ce9b6de833a75c8b03e8a01bf3047c17ced494e87db0f4ee747.json"
+         :graph "fixtures/v0/invalid/drift/typing-missing-activity/graph.ttl"}
+        #{:missing-rdf-type :shacl-violation}
+        {:type :ttl
+         :event "examples/v0/example-persons/_events/sha256:550c55dbfed12ce9b6de833a75c8b03e8a01bf3047c17ced494e87db0f4ee747.json"
+         :graph "fixtures/v0/invalid/drift/rdf-participant-prov-mismatch/graph.ttl"}
+        #{:rdf-participant-prov-mismatch}})
       (tel/log! :info "person drift negative fixtures ok")
       (tel/log! :info "==> Validating Linked Art publication view (ADR 0013)")
       (validate-publication-view!

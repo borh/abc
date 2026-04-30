@@ -243,7 +243,10 @@ abc:PersonRecordShape
     sh:path dcterms:identifier ;
     sh:minCount 1 ;
     sh:maxCount 1 ;
-    sh:datatype xsd:int
+    sh:or (
+      [ sh:datatype xsd:int ; sh:pattern "^[0-9]{6}$" ]
+      [ sh:datatype xsd:string ; sh:pattern "^abc-[0-9a-f]{12}$" ]
+    )
   ] ;
   sh:property [
     sh:path foaf:familyName ;

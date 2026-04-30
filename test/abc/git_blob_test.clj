@@ -80,3 +80,35 @@
           (delete-recursive remote-dir)
           (delete-recursive local-dir)
           (delete-recursive seed-dir))))))
+
+(deftest commits-touching-path-returns-chronological-path-history-test
+  (testing "abc.git can discover the commits that changed one path"
+    (let [root (temp-dir "abc-git-path-history")
+          git (-> (Git/init) (.setDirectory root) .call)]
+      (try
+        (let [first-target (commit-file! git root "index_pages/list_person_all_extended_utf8.zip"
+                                         "v1" "target v1")
+              other-path (commit-file! git root "README.md" "notes" "other")
+              second-target (commit-file! git root "index_pages/list_person_all_extended_utf8.zip"
+                                          "v2" "target v2")
+              third-target (commit-file! git root "index_pages/list_person_all_extended_utf8.zip"
+                                         "v3" "target v3")]
+          (is (= [(.getName first-target)
+                  (.getName second-target)
+                  (.getName third-target)]
+                 (mapv #(.getName %)
+                       (abc-git/commits-touching-path
+                        git "index_pages/list_person_all_extended_utf8.zip"))))
+          (is (= [(.getName second-target)]
+                 (mapv #(.getName %)
+                       (abc-git/commits-touching-path
+                        git "index_pages/list_person_all_extended_utf8.zip"
+                        {:from-ref (.getName first-target)
+                         :to-ref (.getName second-target)}))))
+          (is (not-any? #{(.getName other-path)}
+                        (map #(.getName %)
+                             (abc-git/commits-touching-path
+                              git "index_pages/list_person_all_extended_utf8.zip")))))
+        (finally
+          (.close git)
+          (delete-recursive root))))))

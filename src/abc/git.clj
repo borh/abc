@@ -101,6 +101,24 @@
       (.write out (blob-bytes-at repo ref path)))
     file))
 
+(defn commits-touching-path
+  "Return RevCommit values that changed `path`, oldest first.
+
+  With `:from-ref` and `:to-ref`, returns commits reachable from `to-ref` and
+  not reachable from `from-ref`, matching JGit's addRange semantics. The
+  baseline `from-ref` is intentionally excluded so callers can decide whether
+  to use it as a comparison base."
+  ([^Git repo path]
+   (commits-touching-path repo path {}))
+  ([^Git repo path {:keys [from-ref to-ref]}]
+   (let [command (.log repo)
+         until (resolve-ref repo (or to-ref "HEAD"))]
+     (.addPath command path)
+     (if from-ref
+       (.addRange command (resolve-ref repo from-ref) until)
+       (.add command until))
+     (vec (reverse (iterator-seq (.iterator (.call command))))))))
+
 ;; Time travel
 
 (s/fdef file-time-span

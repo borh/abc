@@ -1,8 +1,8 @@
 {
   "@context": "https:\/\/w3id.org\/abc\/contexts\/abc-v0.jsonld",
   "_label": "\u7f85\u751f\u9580 derived publication view candidate",
-  "artifactId": "sha256:696e120ceb423a8216b6f780e71fe32d3982b8fff46dbd99587a179180bba8e8",
-  "canonicalManifest": "https:\/\/w3id.org\/abc\/artifact\/sha256-696e120ceb423a8216b6f780e71fe32d3982b8fff46dbd99587a179180bba8e8",
+  "artifactId": "sha256:ed9b00739a19aae6ae4aa9a33d84d44067c7e10c03b32a0d7353379c783c8dbc",
+  "canonicalManifest": "https:\/\/w3id.org\/abc\/artifact\/sha256-ed9b00739a19aae6ae4aa9a33d84d44067c7e10c03b32a0d7353379c783c8dbc",
   "id": "https:\/\/w3id.org\/abc\/example\/work\/000127\/linked-art-candidate",
   "identified_by": [
     {

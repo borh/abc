@@ -46,6 +46,8 @@
 (def ^:private bce-pattern #"^前(\d+)$")
 (def ^:private partial-date-pattern
   #"^(-?\d{1,4})(?:-\s*(\d{1,2})(?:-(\d{1,2}))?)?$")
+(def ^:private dot-date-separator-pattern
+  #"(?<=\d)\.(?=\d)")
 (def ^:private unknown-marker-set
   "Aozora date sentinels that mean 'not known'. Mapped to null at parse
   time; preserved in parse_corrections under rule `unknown-marker`."
@@ -114,10 +116,11 @@
   `{raw, corrected, rule}` maps (the caller adds `field`).
 
   Cosmetic rules: `pad-year`, `pad-month`, `pad-day`,
-  `strip-whitespace`, `collapse-multi-dash`. Semantic rules:
-  `bce-astronomical`, `unknown-marker`, `century-prose`. Decade
-  markers (`192X`) are admitted verbatim with no rule entry — no
-  rewrite occurs. ADR 0015 / ADR 0016."
+  `strip-whitespace`, `collapse-multi-dash`,
+  `normalize-date-separator`. Semantic rules: `bce-astronomical`,
+  `unknown-marker`, `century-prose`. Decade markers (`192X`) are
+  admitted verbatim with no rule entry — no rewrite occurs. ADR 0015 /
+  ADR 0016."
   [raw]
   (cond
     (or (nil? raw) (= "" raw))
@@ -162,13 +165,16 @@
         :else
         (let [had-interior-space? (boolean (re-find #"\s" raw-str))
               despaced (string/replace raw-str #"\s+" "")
-              had-multi-dash? (boolean (re-find multi-dash-pattern despaced))
-              cleaned (string/replace despaced multi-dash-pattern "-")]
+              had-dot-separator? (boolean (re-find dot-date-separator-pattern despaced))
+              normalized-separators (string/replace despaced dot-date-separator-pattern "-")
+              had-multi-dash? (boolean (re-find multi-dash-pattern normalized-separators))
+              cleaned (string/replace normalized-separators multi-dash-pattern "-")]
           (if-let [m (re-matches partial-date-pattern cleaned)]
             (let [[_ y mo d] m
                   y-digits (count (cond-> y (string/starts-with? y "-") (subs 1)))
                   rules (cond-> []
                           had-interior-space? (conj "strip-whitespace")
+                          had-dot-separator? (conj "normalize-date-separator")
                           had-multi-dash? (conj "collapse-multi-dash")
                           (< y-digits 4) (conj "pad-year")
                           (and mo (= 1 (count mo))) (conj "pad-month")

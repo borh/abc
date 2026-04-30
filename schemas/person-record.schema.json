@@ -73,6 +73,7 @@
             "pad-year",
             "strip-whitespace",
             "collapse-multi-dash",
+            "normalize-date-separator",
             "bce-astronomical",
             "unknown-marker",
             "century-prose"

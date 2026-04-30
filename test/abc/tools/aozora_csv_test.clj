@@ -260,6 +260,15 @@
       (is (= [{"raw" "1850-08--18" "corrected" "1850-08-18" "rule" "collapse-multi-dash"}]
              corrs)))))
 
+(deftest parse-date-normalizes-dot-separators-test
+  (testing "parse-date normalizes unambiguous dot-separated Y.M.D dates"
+    (let [[norm corrs] (ac/parse-date "1839.1.1")]
+      (is (= "1839-01-01" norm))
+      (is (= [{"raw" "1839.1.1" "corrected" "1839-01-01" "rule" "normalize-date-separator"}
+              {"raw" "1839.1.1" "corrected" "1839-01-01" "rule" "pad-month"}
+              {"raw" "1839.1.1" "corrected" "1839-01-01" "rule" "pad-day"}]
+             corrs)))))
+
 (deftest parse-date-rejects-out-of-range-month-day-test
   (testing "parse-date passes through values with out-of-range month/day rather than emitting them as 'corrected'"
     ;; partial-date-pattern accepts \d{1,2} for month/day. The

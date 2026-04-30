@@ -104,6 +104,30 @@
           (delete-recursive work-dir)
           (delete-recursive persons-dir))))))
 
+(deftest ingest-accepts-dot-separated-date-correction-test
+  (testing "dot-separated Aozora dates normalize and satisfy the provenance schema enum"
+    (let [work-dir (temp-dir "abc-ingest-dot-date-w")
+          persons-dir (temp-dir "abc-ingest-dot-date-p")]
+      (try
+        (ingest/run-from-rows!
+         {:rows [(merge (first synthetic-rows-with-edition)
+                        {"生年月日" "1839.1.1"})]
+          :work-id "000127"
+          :output (str (io/file work-dir "metadata-record.json"))
+          :persons-output-dir (str persons-dir)
+          :source-csv-provenance {"source_url" nil
+                                  "retrieved_at" nil
+                                  "original_file_hash"
+                                  "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}})
+        (let [person (files/read-json (io/file persons-dir "000879.json"))
+              corrs (get-in person ["source_csv_provenance" "parse_corrections"])]
+          (is (= "1839-01-01" (get person "date_of_birth")))
+          (is (= #{"normalize-date-separator" "pad-month" "pad-day"}
+                 (set (map #(get % "rule") corrs)))))
+        (finally
+          (delete-recursive work-dir)
+          (delete-recursive persons-dir))))))
+
 (deftest ingest-deterministic-test
   (testing "two runs with the same inputs produce byte-identical outputs"
     (let [d1-work (temp-dir "abc-ingest-w1")

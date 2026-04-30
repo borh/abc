@@ -66,7 +66,8 @@ classes of input before validation:
   pads single-digit month/day (`1888-6-12` → `1888-06-12`), strips
   interior whitespace (`1869- 02-22` → `1869-02-22`), pads short
   years (`723-08-15` → `0723-08-15`), collapses repeated dashes from
-  obvious typos (`1850-08--18` → `1850-08-18`).
+  obvious typos (`1850-08--18` → `1850-08-18`), and normalizes
+  unambiguous dot date separators (`1839.1.1` → `1839-01-01`).
 - *Semantic source-calendar conversion* — converts `前N` (N BCE)
   from Japanese-style anno-Domini-relative notation to ISO 8601-2 /
   XSD 1.1 astronomical year numbering (see "BCE conversion"). This
@@ -83,12 +84,13 @@ classes of input before validation:
   consumers need to distinguish "we know the date is unknown" from
   "the cell was blank".
 
-All three classes are recorded as `parse_corrections` entries with
-distinct `rule` values — `pad-month`, `pad-day`, `pad-year`,
-`strip-whitespace`, `collapse-multi-dash`, `bce-astronomical`,
-`unknown-marker` — so the audit trail distinguishes them. All are
-required to keep `record-hash` stable across cosmetic CSV revisions
-and across notation choices in the source.
+All correction classes are recorded as `parse_corrections` entries
+with distinct `rule` values — `pad-month`, `pad-day`, `pad-year`,
+`strip-whitespace`, `collapse-multi-dash`,
+`normalize-date-separator`, `bce-astronomical`, `unknown-marker` —
+so the audit trail distinguishes them. All are required to keep
+`record-hash` stable across cosmetic CSV revisions and across notation
+choices in the source.
 
 EDTF Level 1 shapes that v0 does **not** normalize remain in scope
 for a future ADR: decade markers (`192X`), uncertainty/approximation

@@ -29,6 +29,8 @@
 
   clj-jgit/clj-jgit                          {:mvn/version "1.1.0"
                                               :exclusions [org.eclipse.jgit/org.eclipse.jgit.gpg.bc]}
+  org.eclipse.jgit/org.eclipse.jgit          {:mvn/version "7.6.0.202603022253-r"}
+  org.eclipse.jgit/org.eclipse.jgit.ssh.apache {:mvn/version "7.6.0.202603022253-r"}
 
   uk.org.russet/tawny-owl                    {:mvn/version "2.3.3"
                                               :exclusions [org.slf4j/slf4j-nop]}
@@ -91,5 +93,6 @@
   :abc/aozora-ingest {:main-opts ["-m" "abc.tools.aozora-ingest"]}
   :abc/validate-corpus {:main-opts ["-m" "abc.tools.validate-corpus"]}
   :abc/person-drift-history {:main-opts ["-m" "abc.tools.person-drift-history"]}
+  :abc/aozora-history-audit {:main-opts ["-m" "abc.tools.aozora-history-audit"]}
   :update {:deps {com.github.liquidz/antq {:mvn/version "2.11.1276"}}
            :main-opts ["-m" "antq.core"]}}}

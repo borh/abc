@@ -2,7 +2,7 @@
 
 ## Current State
 
-Sixteen contract-harness milestones complete:
+Seventeen contract-harness milestones complete:
 
 - **2026-04-27 v0 contract harness** (archived as
   `docs/archive/2026-04-27-v0-contract-harness.md`).
@@ -41,6 +41,11 @@ Sixteen contract-harness milestones complete:
   person-record and contributor-edge changes, and only flags split or
   merge candidates when same-work/same-relation replacement evidence
   exists.
+- **2026-04-30 Aozora upstream history audit.**
+  `aozora-history-audit --aozora-repo <DIR> --previous-ref <REF>
+  --current-ref <REF>` extracts the upstream CSV ZIP at both git refs
+  via `abc.git`, ingests both snapshots, validates the current corpus,
+  and writes the person-drift report.
 - **2026-04-29 Temporal modeling (ADR 0015).** Partial dates
   (`1941`, `1904-01`) and 前N CE-relative BCE notation are
   preserved end-to-end instead of dropped. The schema
@@ -315,6 +320,7 @@ nix run .#aozora-ingest -- --zip references/aozorabunko/index_pages/list_person_
 nix run .#aozora-ingest -- --zip references/aozorabunko/index_pages/list_person_all_extended_utf8.zip --all --output-dir out/corpus
 nix run .#validate-corpus -- --input-dir out/corpus
 nix run .#person-drift-history -- --previous-dir out/corpus-prev --current-dir out/corpus --output out/person-drift-history.json
+nix run .#aozora-history-audit -- --aozora-repo /home/bor/Dependencies/aozorabunko --previous-ref <old-ref> --current-ref <new-ref> --output out/aozora-history-audit.json
 nix run .#materialize-import -- examples/ab-validator-output out/imported --generated-at 2026-04-26T00:00:00Z
 nix run .#manifest-to-rdf -- examples/v0/example-work/manifest.json -o out/manifest.ttl
 nix run .#regenerate-tei-profile

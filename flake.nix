@@ -162,6 +162,16 @@
             meta.description = "Audit generated corpus snapshots for conservative person split/merge candidates";
           };
 
+          aozora-history-audit = {
+            type = "app";
+            program = toString (
+              pkgs.writeShellScript "abc-aozora-history-audit" ''
+                exec ${pkgs.clojure}/bin/clojure -M:abc/aozora-history-audit "$@"
+              ''
+            );
+            meta.description = "Extract two Aozora git refs, ingest them, validate current corpus, and report person drift candidates";
+          };
+
           regenerate-tei-profile = {
             type = "app";
             program = toString (
@@ -290,7 +300,9 @@
             test -f ${./src/abc/tools/json.clj}
             test -f ${./src/abc/tools/schema.clj}
             test -f ${./src/abc/tools/aozora_csv.clj}
+            test -f ${./src/abc/tools/aozora_history_audit.clj}
             test -f ${./src/abc/tools/aozora_ingest.clj}
+            test -f ${./src/abc/git.clj}
             test -f ${./src/abc/tools/manifest_index.clj}
             test -f ${./src/abc/tools/logging.clj}
             test -f ${./src/abc/tools/manifest_to_rdf.clj}
@@ -315,6 +327,8 @@
             test -f ${./test/abc/tools/manifest_to_rdf_test.clj}
             test -f ${./test/abc/tools/materialize_import_test.clj}
             test -f ${./test/abc/tools/aozora_csv_test.clj}
+            test -f ${./test/abc/tools/aozora_history_audit_test.clj}
+            test -f ${./test/abc/git_blob_test.clj}
             test -f ${./test/abc/tools/metadata_record_test.clj}
             test -f ${./test/abc/tools/person_drift_history_test.clj}
             test -f ${./test/abc/tools/person_record_test.clj}

@@ -116,3 +116,42 @@
                       "not an iri")]
     (is (some #{:invalid-agent-iri}
               (map :code (drift/event-json-coherence-failures bad))))))
+
+(defn triples [graph]
+  (iterator-seq (.find graph)))
+
+(defn triple-uris [graph]
+  (set (map (fn [triple]
+              [(when (.isURI (.getSubject triple))
+                 (.getURI (.getSubject triple)))
+               (.getURI (.getPredicate triple))
+               (cond
+                 (.isURI (.getObject triple)) (.getURI (.getObject triple))
+                 (.isLiteral (.getObject triple)) (.getLiteralLexicalForm (.getObject triple))
+                 :else (str (.getObject triple)))])
+            (triples graph))))
+
+(deftest snapshot-iri-uses-event-embedded-hash-test
+  (is (= "https://w3id.org/abc/persons/000879#snapshot-000000000000"
+         (drift/snapshot-iri {"snapshot_id" "pre-000879"
+                              "person_id" "000879"
+                              "person_record_hash" (example-hash "03")}))))
+
+(deftest event->graph-materializes-types-and-derived-prov-test
+  (let [event (base-split)
+        graph (drift/event->graph event)
+        triples (triple-uris graph)
+        event-iri (drift/event-iri (get event "drift_event_id"))
+        pre "https://w3id.org/abc/persons/000879#snapshot-000000000000"
+        post-a "https://w3id.org/abc/persons/abc-000000000001#snapshot-000000000000"
+        rdf-type "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"]
+    (is (contains? triples [event-iri rdf-type "https://w3id.org/abc/DriftEvent"]))
+    (is (contains? triples [event-iri rdf-type "http://www.w3.org/ns/prov#Activity"]))
+    (is (contains? triples [event-iri rdf-type "https://w3id.org/abc/DriftSplitEvent"]))
+    (is (contains? triples [event-iri "https://w3id.org/abc/driftEventType" "split"]))
+    (is (contains? triples [event-iri "http://www.w3.org/ns/prov#used" pre]))
+    (is (contains? triples [post-a "http://www.w3.org/ns/prov#wasGeneratedBy" event-iri]))
+    (is (contains? triples [pre "http://www.w3.org/ns/prov#wasInvalidatedBy" event-iri]))
+    (is (contains? triples [post-a "http://www.w3.org/ns/prov#wasDerivedFrom" pre]))
+    (is (contains? triples [pre "http://www.w3.org/ns/prov#specializationOf"
+                            "http://www.aozora.gr.jp/index_pages/person000879.html"]))))

@@ -1,7 +1,12 @@
 (ns abc.tools.person-drift
   (:require [abc.tools.hash :as hash]
+            [abc.tools.person-record :as person-record]
+            [abc.tools.rdf-prefixes :as rdf-prefixes]
+            [arachne.aristotle :as aa]
             [clojure.set :as set]
-            [clojure.string :as string]))
+            [clojure.string :as string])
+  (:import [org.apache.jena.datatypes.xsd XSDDatatype]
+           [org.apache.jena.graph NodeFactory Triple]))
 
 (def event-schema-path "schemas/person-drift-event.schema.json")
 (def event-schema-id "https://w3id.org/abc/schemas/person-drift-event.schema.json")
@@ -11,6 +16,11 @@
 
 (def person-id-pattern #"^([0-9]{6}|abc-[0-9a-f]{12})$")
 (def hash-pattern #"^sha256:[0-9a-f]{64}$")
+
+(def rdf-type-uri "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")
+(def abc-base "https://w3id.org/abc/")
+(def prov-base "http://www.w3.org/ns/prov#")
+(def dcterms-base "http://purl.org/dc/terms/")
 
 (defn drift-event-id [event]
   (hash/format-sha256
@@ -94,3 +104,84 @@
       (throw (ex-info "person drift event JSON graph-coherence failed"
                       {:failures failures}))))
   :ok)
+
+(defn- uri [s]
+  (NodeFactory/createURI s))
+
+(defn- literal [s]
+  (NodeFactory/createLiteral ^String s))
+
+(defn- date-literal [s]
+  (NodeFactory/createLiteral ^String s XSDDatatype/XSDdate))
+
+(defn- add-triple! [graph s p o]
+  (.add graph (Triple/create s p o)))
+
+(defn event-iri [drift-event-id]
+  (let [hex (subs drift-event-id (count "sha256:"))]
+    (str abc-base "person-drift-events/" hex)))
+
+(defn- hash-short [person-record-hash]
+  (subs person-record-hash (count "sha256:") (+ (count "sha256:") 12)))
+
+(defn- person-iri [person-id]
+  (if (re-matches #"^[0-9]{6}$" person-id)
+    (person-record/person-iri person-id)
+    (str abc-base "persons/" person-id)))
+
+(defn snapshot-iri [participant]
+  (str abc-base "persons/" (get participant "person_id")
+       "#snapshot-"
+       (hash-short (get participant "person_record_hash"))))
+
+(defn- participant-by-id [event]
+  (into {} (map (juxt #(get % "snapshot_id") identity)
+                (get event "participants"))))
+
+(defn- subclass-type-uri [event-type]
+  (case event-type
+    "split" (str abc-base "DriftSplitEvent")
+    "merge" (str abc-base "DriftMergeEvent")))
+
+(defn event->graph [event]
+  (rdf-prefixes/ensure!)
+  (assert-event-json-coherent! event)
+  (let [graph (aa/graph :simple)
+        by-id (participant-by-id event)
+        event-node (uri (event-iri (get event "drift_event_id")))
+        used (get-in event ["prov" "used"])
+        generated (get-in event ["prov" "was_generated_by"])
+        agent (uri (get-in event ["prov" "qualified_association" "agent"]))
+        assoc-node (NodeFactory/createBlankNode)]
+    (doseq [type-uri [(str abc-base "DriftEvent")
+                      (str prov-base "Activity")
+                      (subclass-type-uri (get event "drift_event_type"))]]
+      (add-triple! graph event-node (uri rdf-type-uri) (uri type-uri)))
+    (add-triple! graph event-node (uri (str abc-base "driftEventType"))
+                 (literal (get event "drift_event_type")))
+    (add-triple! graph event-node (uri (str dcterms-base "date"))
+                 (date-literal (get event "date")))
+    (doseq [evidence (get event "evidence")]
+      (add-triple! graph event-node (uri (str abc-base "driftEvidence")) (uri evidence)))
+    (doseq [participant (get event "participants")]
+      (let [snapshot-node (uri (snapshot-iri participant))
+            person-node (uri (person-iri (get participant "person_id")))]
+        (add-triple! graph snapshot-node (uri rdf-type-uri) (uri (str prov-base "Entity")))
+        (add-triple! graph snapshot-node (uri (str prov-base "specializationOf")) person-node)))
+    (doseq [snapshot-id used]
+      (let [snapshot-node (uri (snapshot-iri (get by-id snapshot-id)))]
+        (add-triple! graph event-node (uri (str prov-base "used")) snapshot-node)
+        (add-triple! graph snapshot-node (uri (str prov-base "wasInvalidatedBy")) event-node)))
+    (doseq [snapshot-id generated]
+      (let [snapshot-node (uri (snapshot-iri (get by-id snapshot-id)))]
+        (add-triple! graph snapshot-node (uri (str prov-base "wasGeneratedBy")) event-node)
+        (doseq [used-id used]
+          (add-triple! graph snapshot-node
+                       (uri (str prov-base "wasDerivedFrom"))
+                       (uri (snapshot-iri (get by-id used-id)))))))
+    (add-triple! graph event-node (uri (str prov-base "wasAssociatedWith")) agent)
+    (add-triple! graph event-node (uri (str prov-base "qualifiedAssociation")) assoc-node)
+    (add-triple! graph assoc-node (uri rdf-type-uri) (uri (str prov-base "Association")))
+    (add-triple! graph assoc-node (uri (str prov-base "agent")) agent)
+    (add-triple! graph assoc-node (uri (str prov-base "hadRole")) (uri (str abc-base "DriftEditor")))
+    graph))

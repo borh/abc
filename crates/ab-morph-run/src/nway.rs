@@ -27,7 +27,7 @@ pub(crate) struct NwayComparisonRow {
     pub lexical_regions: usize,
     pub unanimous_boundary_count: usize,
     pub variable_boundary_count: usize,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub pattern_counts: Vec<NwayPatternCountRow>,
     pub examples: Vec<NwayExampleRegionRow>,
 }
@@ -51,6 +51,22 @@ pub(crate) struct NwayAnalyzerSurfacesRow {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub(crate) struct NwayPatternCountRow {
+    pub kind: String,
+    pub count: usize,
+    pub segmentation_groups: Vec<NwaySegmentationGroupRow>,
+    #[serde(default)]
+    pub feature_key: Option<String>,
+    #[serde(default)]
+    pub feature_scope: Option<NwayFeatureScopeRow>,
+    #[serde(default)]
+    pub feature_values: Vec<NwayFeatureValueGroupRow>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub(crate) struct NwayPatternCountOutputRow {
+    pub source_id: String,
+    pub text_id: String,
+    pub source_script_category: ScriptCategory,
     pub kind: String,
     pub count: usize,
     pub segmentation_groups: Vec<NwaySegmentationGroupRow>,
@@ -122,7 +138,7 @@ pub(crate) fn row_from_comparison(
         lexical_regions: comparison.stats.lexical_regions,
         unanimous_boundary_count: comparison.stats.unanimous_boundary_count,
         variable_boundary_count: comparison.stats.variable_boundary_count,
-        pattern_counts: pattern_counts_from_regions(comparison.regions.iter()),
+        pattern_counts: Vec::new(),
         examples: select_nway_example_regions(comparison, max_examples)
             .into_iter()
             .map(|region| example_region_row(source_text, region))
@@ -130,12 +146,23 @@ pub(crate) fn row_from_comparison(
     }
 }
 
+#[cfg(test)]
 pub(crate) fn row_from_analyses(
     source_id: String,
     source_text: &str,
     analyses: &[Analysis],
     max_examples: usize,
 ) -> Result<NwayComparisonRow, MorphDiffError> {
+    row_and_pattern_counts_from_analyses(source_id, source_text, analyses, max_examples)
+        .map(|(row, _)| row)
+}
+
+pub(crate) fn row_and_pattern_counts_from_analyses(
+    source_id: String,
+    source_text: &str,
+    analyses: &[Analysis],
+    max_examples: usize,
+) -> Result<(NwayComparisonRow, Vec<NwayPatternCountOutputRow>), MorphDiffError> {
     let mut examples = Vec::new();
     let mut pattern_counts = BTreeMap::<NwayPatternCountKey, usize>::new();
     let stats = visit_nway_regions_with_source_text(analyses, source_text, &[], |region| {
@@ -145,31 +172,42 @@ pub(crate) fn row_from_analyses(
         }
     })?;
 
-    Ok(row_from_parts(
-        source_id,
-        source_text,
-        analyses,
-        stats,
-        pattern_count_rows(pattern_counts),
-        examples,
+    let text_id = analyses
+        .first()
+        .map(|analysis| analysis.text_id.clone())
+        .unwrap_or_default();
+    let source_script_category = classify_text(source_text);
+    let pattern_counts = pattern_count_output_rows(
+        source_id.clone(),
+        text_id.clone(),
+        source_script_category,
+        pattern_counts,
+    );
+    Ok((
+        row_from_parts(
+            source_id,
+            text_id,
+            source_script_category,
+            analyses,
+            stats,
+            examples,
+        ),
+        pattern_counts,
     ))
 }
 
 fn row_from_parts(
     source_id: String,
-    source_text: &str,
+    text_id: String,
+    source_script_category: ScriptCategory,
     analyses: &[Analysis],
     stats: NwayStats,
-    pattern_counts: Vec<NwayPatternCountRow>,
     examples: Vec<NwayExampleRegionRow>,
 ) -> NwayComparisonRow {
     NwayComparisonRow {
         source_id,
-        text_id: analyses
-            .first()
-            .map(|analysis| analysis.text_id.clone())
-            .unwrap_or_default(),
-        source_script_category: classify_text(source_text),
+        text_id,
+        source_script_category,
         analyzers: analyses
             .iter()
             .map(|analysis| analysis.analyzer.clone())
@@ -184,7 +222,7 @@ fn row_from_parts(
         lexical_regions: stats.lexical_regions,
         unanimous_boundary_count: stats.unanimous_boundary_count,
         variable_boundary_count: stats.variable_boundary_count,
-        pattern_counts,
+        pattern_counts: Vec::new(),
         examples,
     }
 }
@@ -227,17 +265,6 @@ fn example_region_row(source_text: &str, region: &NwayRegion) -> NwayExampleRegi
     }
 }
 
-#[cfg(test)]
-fn pattern_counts_from_regions<'a>(
-    regions: impl Iterator<Item = &'a NwayRegion>,
-) -> Vec<NwayPatternCountRow> {
-    let mut counts = BTreeMap::<NwayPatternCountKey, usize>::new();
-    for region in regions {
-        record_pattern_counts(&mut counts, region);
-    }
-    pattern_count_rows(counts)
-}
-
 fn record_pattern_counts(counts: &mut BTreeMap<NwayPatternCountKey, usize>, region: &NwayRegion) {
     let segmentation_groups = segmentation_groups_for_region(region);
     if segmentation_groups.len() > 1 {
@@ -270,10 +297,18 @@ fn record_pattern_counts(counts: &mut BTreeMap<NwayPatternCountKey, usize>, regi
     }
 }
 
-fn pattern_count_rows(counts: BTreeMap<NwayPatternCountKey, usize>) -> Vec<NwayPatternCountRow> {
+fn pattern_count_output_rows(
+    source_id: String,
+    text_id: String,
+    source_script_category: ScriptCategory,
+    counts: BTreeMap<NwayPatternCountKey, usize>,
+) -> Vec<NwayPatternCountOutputRow> {
     counts
         .into_iter()
-        .map(|(key, count)| NwayPatternCountRow {
+        .map(|(key, count)| NwayPatternCountOutputRow {
+            source_id: source_id.clone(),
+            text_id: text_id.clone(),
+            source_script_category,
             kind: key.kind,
             count,
             segmentation_groups: key.segmentation_groups,
@@ -435,5 +470,39 @@ mod tests {
             serde_json::to_value(streaming_row).unwrap(),
             serde_json::to_value(full_row).unwrap()
         );
+    }
+
+    #[test]
+    fn row_and_pattern_counts_keep_exact_counts_out_of_nway_row() {
+        let source = "今日晴れ";
+        let analyses = vec![
+            analysis(
+                "vibrato",
+                source,
+                vec![
+                    morpheme(source, "今日", 0, 2, features(&[("pos1", Some("名詞"))])),
+                    morpheme(source, "晴れ", 2, 4, features(&[("pos1", Some("名詞"))])),
+                ],
+            ),
+            analysis(
+                "sudachi-a",
+                source,
+                vec![
+                    morpheme(source, "今", 0, 1, features(&[("pos1", Some("名詞"))])),
+                    morpheme(source, "日", 1, 2, features(&[("pos1", Some("名詞"))])),
+                    morpheme(source, "晴れ", 2, 4, features(&[("pos1", Some("動詞"))])),
+                ],
+            ),
+        ];
+
+        let (row, pattern_counts) =
+            row_and_pattern_counts_from_analyses("source-a".to_owned(), source, &analyses, 10)
+                .unwrap();
+
+        assert!(row.pattern_counts.is_empty());
+        assert_eq!(pattern_counts[0].source_id, "source-a");
+        assert_eq!(pattern_counts[0].text_id, "text-a");
+        assert!(pattern_counts.iter().any(|row| row.kind == "segmentation"));
+        assert!(pattern_counts.iter().any(|row| row.kind == "feature"));
     }
 }

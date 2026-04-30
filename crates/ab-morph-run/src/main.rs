@@ -34,6 +34,8 @@ enum Command {
         #[arg(long)]
         nway_output: Option<PathBuf>,
         #[arg(long)]
+        nway_pattern_counts_output: Option<PathBuf>,
+        #[arg(long)]
         string_stats_output: Option<PathBuf>,
         #[arg(long)]
         max_nway_examples_per_text: Option<usize>,
@@ -132,7 +134,9 @@ enum Command {
     },
     SummarizeNwayPatterns {
         #[arg(long)]
-        nway: PathBuf,
+        nway: Option<PathBuf>,
+        #[arg(long)]
+        pattern_counts: Option<PathBuf>,
         #[arg(long, value_enum, default_value_t = NwayPatternKindArg::Segmentation)]
         kind: NwayPatternKindArg,
         #[arg(long)]
@@ -372,6 +376,7 @@ fn main() -> Result<()> {
             errors_output,
             manifest_output,
             nway_output,
+            nway_pattern_counts_output,
             string_stats_output,
             max_nway_examples_per_text,
             resume,
@@ -413,6 +418,7 @@ fn main() -> Result<()> {
                 max_examples_per_comparison,
                 manifest_output.as_deref(),
                 nway_output.as_deref(),
+                nway_pattern_counts_output.as_deref(),
                 max_nway_examples_per_text,
                 string_stats_output.as_deref(),
             );
@@ -546,6 +552,7 @@ fn main() -> Result<()> {
         }
         Command::SummarizeNwayPatterns {
             nway,
+            pattern_counts,
             kind,
             feature_key,
             exclude_feature_value,
@@ -555,17 +562,22 @@ fn main() -> Result<()> {
             limit,
             json,
         } => {
-            let rows = ab_morph_run::summarize_nway_patterns(
-                &nway,
-                ab_morph_run::NwayPatternOptions {
-                    kind: kind.into_library(),
-                    feature_key,
-                    script_category: script_category.map(ScriptCategoryArg::into_library),
-                    excluded_feature_values: exclude_feature_value.into_iter().collect(),
-                    exclusions: summary_exclusions(exclude_source_id, exclude_text_id),
-                    limit,
-                },
-            )?;
+            let options = ab_morph_run::NwayPatternOptions {
+                kind: kind.into_library(),
+                feature_key,
+                script_category: script_category.map(ScriptCategoryArg::into_library),
+                excluded_feature_values: exclude_feature_value.into_iter().collect(),
+                exclusions: summary_exclusions(exclude_source_id, exclude_text_id),
+                limit,
+            };
+            let rows = match (nway.as_deref(), pattern_counts.as_deref()) {
+                (Some(_), Some(_)) => {
+                    anyhow::bail!("provide only one of --nway or --pattern-counts")
+                }
+                (Some(path), None) => ab_morph_run::summarize_nway_patterns(path, options)?,
+                (None, Some(path)) => ab_morph_run::summarize_nway_pattern_counts(path, options)?,
+                (None, None) => anyhow::bail!("provide one of --nway or --pattern-counts"),
+            };
             if json {
                 serde_json::to_writer_pretty(std::io::stdout(), &rows)?;
                 println!();
@@ -1165,12 +1177,15 @@ mod tests {
             "analyses.jsonl.zst",
             "--nway-output",
             "nway.jsonl.zst",
+            "--nway-pattern-counts-output",
+            "nway-pattern-counts.jsonl.zst",
             "--max-nway-examples-per-text",
             "25",
         ]);
 
         let Command::AnalyzeAat {
             nway_output,
+            nway_pattern_counts_output,
             max_nway_examples_per_text,
             ..
         } = args.command
@@ -1179,7 +1194,44 @@ mod tests {
         };
 
         assert_eq!(nway_output, Some(PathBuf::from("nway.jsonl.zst")));
+        assert_eq!(
+            nway_pattern_counts_output,
+            Some(PathBuf::from("nway-pattern-counts.jsonl.zst"))
+        );
         assert_eq!(max_nway_examples_per_text, Some(25));
+    }
+
+    #[test]
+    fn parses_summarize_nway_patterns_from_pattern_counts() {
+        let args = Args::parse_from([
+            "ab-morph-run",
+            "summarize-nway-patterns",
+            "--pattern-counts",
+            "nway-pattern-counts.jsonl.zst",
+            "--kind",
+            "feature",
+            "--feature-key",
+            "pos1",
+        ]);
+
+        let Command::SummarizeNwayPatterns {
+            nway,
+            pattern_counts,
+            kind,
+            feature_key,
+            ..
+        } = args.command
+        else {
+            panic!("expected summarize-nway-patterns");
+        };
+
+        assert_eq!(nway, None);
+        assert_eq!(
+            pattern_counts,
+            Some(PathBuf::from("nway-pattern-counts.jsonl.zst"))
+        );
+        assert_eq!(kind, NwayPatternKindArg::Feature);
+        assert_eq!(feature_key, Some("pos1".to_owned()));
     }
 
     #[test]

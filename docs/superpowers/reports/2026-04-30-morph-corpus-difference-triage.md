@@ -40,6 +40,13 @@ Update after exact N-way pattern reporting:
 - Exact `summarize-nway-patterns` scans took about `10m` each over the `5.6G` compressed N-way artifact.
 - The old bounded-example interpretation still applies to pairwise `summarize-differences`; exact counts now apply to `summarize-nway-patterns` when the artifact contains `pattern_counts`.
 
+2026-05-01 workflow update:
+
+- Future exact runs should write exact patterns with `--nway-pattern-counts-output`.
+- `nway.jsonl.zst` no longer embeds `pattern_counts`; it stays a compact source-level summary artifact.
+- Exact reports should use `summarize-nway-patterns --pattern-counts ...`.
+- `summarize-nway-patterns --nway ...` remains a bounded-example fallback for older artifacts or runs without exact pattern counts.
+
 Improved filters used below:
 
 - Exclude non-literary outlier logical text ID: `--exclude-text-id JISTABLE`.

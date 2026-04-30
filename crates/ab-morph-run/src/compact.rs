@@ -177,6 +177,7 @@ pub(crate) struct RunManifest {
     pub examples_output: Option<String>,
     pub errors_output: Option<String>,
     pub nway_output: Option<String>,
+    pub nway_pattern_counts_output: Option<String>,
 }
 
 pub(crate) fn example_rows_from_comparison(

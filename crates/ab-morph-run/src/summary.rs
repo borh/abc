@@ -6,8 +6,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::compact::{ComparisonSummaryRow, is_whitespace_only};
 use crate::nway::{
-    NwayComparisonRow, NwayFeatureScopeRow, NwayFeatureValueGroupRow, NwayPatternCountRow,
-    NwaySegmentationGroupRow,
+    NwayComparisonRow, NwayFeatureScopeRow, NwayFeatureValueGroupRow, NwayPatternCountOutputRow,
+    NwayPatternCountRow, NwaySegmentationGroupRow,
 };
 use crate::output::for_each_jsonl_or_zst_line;
 use crate::script::{ScriptCategory, classify_text};
@@ -665,6 +665,39 @@ pub fn summarize_nway_patterns(
     Ok(rows)
 }
 
+pub fn summarize_nway_pattern_counts(
+    pattern_counts_path: &Path,
+    options: NwayPatternOptions,
+) -> Result<Vec<NwayPatternRow>> {
+    let mut groups = BTreeMap::<NwayPatternKey, NwayPatternAccumulator>::new();
+    for_each_jsonl_or_zst_line(pattern_counts_path, |line| {
+        let row: NwayPatternCountOutputRow = serde_json::from_str(line)?;
+        if options.exclusions.excludes(&row.source_id, &row.text_id) {
+            return Ok(());
+        }
+        if options
+            .script_category
+            .is_some_and(|category| row.source_script_category != category)
+        {
+            return Ok(());
+        }
+        push_nway_pattern_output_count(&mut groups, &row, &options);
+        Ok(())
+    })?;
+    let mut rows = groups
+        .into_iter()
+        .map(|(key, accumulator)| accumulator.into_row(key))
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| {
+        right
+            .examples
+            .cmp(&left.examples)
+            .then_with(|| left.pattern.cmp(&right.pattern))
+    });
+    rows.truncate(options.limit);
+    Ok(rows)
+}
+
 impl Accumulator {
     fn push(&mut self, row: ComparisonSummaryRow) {
         self.source_ids.insert(row.source_id);
@@ -859,8 +892,23 @@ impl NwayPatternAccumulator {
         script_category: ScriptCategory,
         count: usize,
     ) {
-        self.source_ids.insert(row.source_id.clone());
-        self.text_ids.insert(row.text_id.clone());
+        self.push_count_values(
+            row.source_id.clone(),
+            row.text_id.clone(),
+            script_category,
+            count,
+        );
+    }
+
+    fn push_count_values(
+        &mut self,
+        source_id: String,
+        text_id: String,
+        script_category: ScriptCategory,
+        count: usize,
+    ) {
+        self.source_ids.insert(source_id);
+        self.text_ids.insert(text_id);
         self.script_categories.insert(script_category);
         self.examples += count;
     }
@@ -1146,6 +1194,68 @@ fn push_nway_pattern_count(
                 row,
                 row.source_script_category,
                 pattern_count.count,
+            );
+        }
+        _ => {}
+    }
+}
+
+fn push_nway_pattern_output_count(
+    groups: &mut BTreeMap<NwayPatternKey, NwayPatternAccumulator>,
+    row: &NwayPatternCountOutputRow,
+    options: &NwayPatternOptions,
+) {
+    if row.count == 0 {
+        return;
+    }
+
+    match (options.kind, row.kind.as_str()) {
+        (NwayPatternKind::Segmentation, "segmentation") => {
+            let mut segmentation_groups = row.segmentation_groups.clone();
+            if segmentation_groups.len() <= 1 {
+                return;
+            }
+            canonicalize_segmentation_groups(&mut segmentation_groups);
+            let key = NwayPatternKey {
+                kind: "segmentation".to_owned(),
+                segmentation_groups,
+                feature_key: None,
+                feature_scope: None,
+                feature_values: Vec::new(),
+            };
+            groups.entry(key).or_default().push_count_values(
+                row.source_id.clone(),
+                row.text_id.clone(),
+                row.source_script_category,
+                row.count,
+            );
+        }
+        (NwayPatternKind::Feature, "feature") => {
+            if options
+                .feature_key
+                .as_ref()
+                .is_some_and(|wanted| row.feature_key.as_deref() != Some(wanted))
+            {
+                return;
+            }
+            let mut values =
+                filtered_feature_values(&row.feature_values, &options.excluded_feature_values);
+            if values.len() <= 1 {
+                return;
+            }
+            canonicalize_feature_values(&mut values);
+            let key = NwayPatternKey {
+                kind: "feature".to_owned(),
+                segmentation_groups: Vec::new(),
+                feature_key: row.feature_key.clone(),
+                feature_scope: row.feature_scope.clone(),
+                feature_values: values,
+            };
+            groups.entry(key).or_default().push_count_values(
+                row.source_id.clone(),
+                row.text_id.clone(),
+                row.source_script_category,
+                row.count,
             );
         }
         _ => {}
@@ -1584,6 +1694,39 @@ mod tests {
 
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].examples, 7);
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn summarize_nway_pattern_counts_reads_narrow_exact_rows() {
+        let dir = temp_dir("nway-pattern-counts");
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("nway-pattern-counts.jsonl");
+        fs::write(
+            &path,
+            concat!(
+                r#"{"source_id":"src-a","text_id":"txt-a","source_script_category":"japanese","kind":"segmentation","count":7,"segmentation_groups":[{"surfaces":["今日"],"analyzers":["vibrato"]},{"surfaces":["今","日"],"analyzers":["sudachi-a"]}],"feature_key":null,"feature_scope":null,"feature_values":[]}"#, "\n",
+                r#"{"source_id":"src-b","text_id":"txt-b","source_script_category":"japanese","kind":"segmentation","count":5,"segmentation_groups":[{"surfaces":["今日"],"analyzers":["vibrato"]},{"surfaces":["今","日"],"analyzers":["sudachi-a"]}],"feature_key":null,"feature_scope":null,"feature_values":[]}"#, "\n",
+            ),
+        )
+        .unwrap();
+
+        let rows = summarize_nway_pattern_counts(
+            &path,
+            NwayPatternOptions {
+                kind: NwayPatternKind::Segmentation,
+                feature_key: None,
+                excluded_feature_values: BTreeSet::new(),
+                script_category: Some(ScriptCategory::Japanese),
+                exclusions: SummaryExclusions::default(),
+                limit: 10,
+            },
+        )
+        .unwrap();
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].examples, 12);
+        assert_eq!(rows[0].source_ids, vec!["src-a", "src-b"]);
         let _ = fs::remove_dir_all(dir);
     }
 

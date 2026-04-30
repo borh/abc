@@ -268,13 +268,14 @@ AB_SUDACHI_DICT="$(nix path-info .#sudachi-dictionary-full)/share/sudachi/system
     --comparisons-output scratch/morph-full-corpus-nway/comparisons.jsonl.zst \
     --examples-output scratch/morph-full-corpus-nway/examples.jsonl.zst \
     --nway-output scratch/morph-full-corpus-nway/nway.jsonl.zst \
+    --nway-pattern-counts-output scratch/morph-full-corpus-nway/nway-pattern-counts.jsonl.zst \
     --errors-output scratch/morph-full-corpus-nway/errors.jsonl.zst \
     --manifest-output scratch/morph-full-corpus-nway/manifest.json \
     --jobs 8 \
     --progress-interval-seconds 30
 ```
 
-N-way output is compact-only in this phase. Resume requires the analysis and N-way outputs to agree on completed `source_id` values; incomplete sources are rerun.
+N-way output is compact-only in this phase. Keep exact pattern counts in `--nway-pattern-counts-output`; `nway.jsonl.zst` stays small and contains source-level summary rows plus bounded examples. Resume requires the analysis, N-way, and pattern-count outputs to agree on completed `source_id` values; incomplete sources are rerun.
 
 Worst N-way sources by segmentation disagreement:
 
@@ -289,7 +290,7 @@ Recurring N-way segmentation partitions:
 
 ```bash
 target/release/ab-morph-run summarize-nway-patterns \
-  --nway scratch/morph-full-corpus-nway/nway.jsonl.zst \
+  --pattern-counts scratch/morph-full-corpus-nway/nway-pattern-counts.jsonl.zst \
   --kind segmentation \
   --limit 25
 ```
@@ -298,10 +299,11 @@ Recurring N-way POS disagreements:
 
 ```bash
 target/release/ab-morph-run summarize-nway-patterns \
-  --nway scratch/morph-full-corpus-nway/nway.jsonl.zst \
+  --pattern-counts scratch/morph-full-corpus-nway/nway-pattern-counts.jsonl.zst \
   --kind feature \
   --feature-key pos1 \
+  --exclude-feature-value 空白 \
   --limit 25
 ```
 
-Pattern reports count matching regions. If one source row contains the same pattern in five regions, it contributes five examples to that pattern.
+Pattern-count reports count exact matching regions. If one source row contains the same pattern in five regions, it contributes five examples to that pattern. If `--pattern-counts` is unavailable, `summarize-nway-patterns --nway ...` still works as a bounded-example fallback.

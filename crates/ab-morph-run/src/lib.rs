@@ -30,7 +30,7 @@ pub use summary::{
     CompactSummarySort, NwayPatternKind, NwayPatternOptions, NwayPatternRow, NwaySummaryOptions,
     NwaySummaryRow, NwaySummarySort, SummaryExclusions, summarize_compact_comparisons,
     summarize_compact_differences, summarize_compact_examples, summarize_nway,
-    summarize_nway_patterns,
+    summarize_nway_pattern_counts, summarize_nway_patterns,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum, Serialize, Deserialize)]
@@ -80,6 +80,7 @@ pub fn run_analyze_aat(
         None,
         None,
         None,
+        None,
     )
 }
 
@@ -98,6 +99,7 @@ pub fn run_analyze_aat_with_nway(
     max_examples_per_comparison: usize,
     manifest_output: Option<&Path>,
     nway_output: Option<&Path>,
+    nway_pattern_counts_output: Option<&Path>,
     max_nway_examples_per_text: Option<usize>,
     string_stats_output: Option<&Path>,
 ) -> Result<()> {
@@ -131,6 +133,7 @@ pub fn run_analyze_aat_with_nway(
         max_examples_per_comparison,
         manifest_output,
         nway_output,
+        nway_pattern_counts_output,
         max_nway_examples_per_text,
         string_stats_output,
     )
@@ -172,6 +175,7 @@ pub fn run_analyze_aat_selected(
         None,
         None,
         None,
+        None,
     )
 }
 
@@ -191,6 +195,7 @@ fn run_analyze_aat_inputs(
     max_examples_per_comparison: usize,
     manifest_output: Option<&Path>,
     nway_output: Option<&Path>,
+    nway_pattern_counts_output: Option<&Path>,
     max_nway_examples_per_text: Option<usize>,
     string_stats_output: Option<&Path>,
 ) -> Result<()> {
@@ -200,11 +205,15 @@ fn run_analyze_aat_inputs(
     if jobs == 0 {
         bail!("--jobs must be at least 1");
     }
-    if nway_output.is_some() && output_profile != OutputProfile::Compact {
-        bail!("--nway-output requires --output-profile compact in phase 1");
+    if (nway_output.is_some() || nway_pattern_counts_output.is_some())
+        && output_profile != OutputProfile::Compact
+    {
+        bail!(
+            "--nway-output and --nway-pattern-counts-output require --output-profile compact in phase 1"
+        );
     }
-    if nway_output.is_some() && analyzer_ids.len() < 2 {
-        bail!("--nway-output requires at least two --analyzer values");
+    if (nway_output.is_some() || nway_pattern_counts_output.is_some()) && analyzer_ids.len() < 2 {
+        bail!("N-way outputs require at least two --analyzer values");
     }
     let max_nway_examples_per_text =
         max_nway_examples_per_text.unwrap_or(max_examples_per_comparison);
@@ -227,6 +236,7 @@ fn run_analyze_aat_inputs(
             examples_output,
             max_examples_per_comparison,
             nway_output,
+            nway_pattern_counts_output,
             max_nway_examples_per_text,
             collect_string_stats,
         )?
@@ -243,6 +253,7 @@ fn run_analyze_aat_inputs(
                 examples_output,
                 max_examples_per_comparison,
                 nway_output,
+                nway_pattern_counts_output,
                 max_nway_examples_per_text,
                 collect_string_stats,
             },
@@ -263,6 +274,7 @@ fn run_analyze_aat_inputs(
             examples_output,
             errors_output,
             nway_output,
+            nway_pattern_counts_output,
         )?;
     }
     if let Some(path) = string_stats_output {
@@ -281,6 +293,7 @@ struct SerialRunOptions<'a> {
     examples_output: Option<&'a Path>,
     max_examples_per_comparison: usize,
     nway_output: Option<&'a Path>,
+    nway_pattern_counts_output: Option<&'a Path>,
     max_nway_examples_per_text: usize,
     collect_string_stats: bool,
 }
@@ -295,6 +308,7 @@ fn run_analyze_aat_serial(
             options.analyses_output,
             options.errors_output,
             options.nway_output,
+            options.nway_pattern_counts_output,
             options.output_profile,
         )?
     } else {
@@ -319,6 +333,11 @@ fn run_analyze_aat_serial(
         None
     };
     let mut nway_writer = if let Some(path) = options.nway_output {
+        Some(open_output_writer(path, options.resume)?)
+    } else {
+        None
+    };
+    let mut nway_pattern_counts_writer = if let Some(path) = options.nway_pattern_counts_output {
         Some(open_output_writer(path, options.resume)?)
     } else {
         None
@@ -441,15 +460,22 @@ fn run_analyze_aat_serial(
                 return Err(error);
             }
         }
-        if let Some(writer) = &mut nway_writer {
-            match nway::row_from_analyses(
+        if nway_writer.is_some() || nway_pattern_counts_writer.is_some() {
+            match nway::row_and_pattern_counts_from_analyses(
                 source_id.clone(),
                 &document.text,
                 &analyses,
                 options.max_nway_examples_per_text,
             ) {
-                Ok(row) => {
-                    write_jsonl_row(&mut **writer, &row)?;
+                Ok((row, pattern_counts)) => {
+                    if let Some(writer) = &mut nway_writer {
+                        write_jsonl_row(&mut **writer, &row)?;
+                    }
+                    if let Some(writer) = &mut nway_pattern_counts_writer {
+                        for pattern_count in pattern_counts {
+                            write_jsonl_row(&mut **writer, &pattern_count)?;
+                        }
+                    }
                 }
                 Err(error) => {
                     if let Some(error_writer) = &mut errors_writer {
@@ -485,6 +511,9 @@ fn run_analyze_aat_serial(
     if let Some(writer) = &mut nway_writer {
         writer.flush()?;
     }
+    if let Some(writer) = &mut nway_pattern_counts_writer {
+        writer.flush()?;
+    }
     Ok(string_stats)
 }
 
@@ -501,11 +530,18 @@ fn run_analyze_aat_parallel(
     examples_output: Option<&Path>,
     max_examples_per_comparison: usize,
     nway_output: Option<&Path>,
+    nway_pattern_counts_output: Option<&Path>,
     max_nway_examples_per_text: usize,
     collect_string_stats: bool,
 ) -> Result<StringStatsReport> {
     let resume_ids = if resume {
-        read_resume_ids(analyses_output, errors_output, nway_output, output_profile)?
+        read_resume_ids(
+            analyses_output,
+            errors_output,
+            nway_output,
+            nway_pattern_counts_output,
+            output_profile,
+        )?
     } else {
         BTreeSet::new()
     };
@@ -551,6 +587,8 @@ fn run_analyze_aat_parallel(
                 let examples =
                     examples_output.map(|path| shard_output_path(&output_dir, path, "examples"));
                 let nway = nway_output.map(|path| shard_output_path(&output_dir, path, "nway"));
+                let nway_pattern_counts = nway_pattern_counts_output
+                    .map(|path| shard_output_path(&output_dir, path, "nway-pattern-counts"));
                 let errors =
                     errors_output.map(|path| shard_output_path(&output_dir, path, "errors"));
                 let string_stats = run_analyze_aat_serial(
@@ -565,6 +603,7 @@ fn run_analyze_aat_parallel(
                         examples_output: examples.as_deref(),
                         max_examples_per_comparison,
                         nway_output: nway.as_deref(),
+                        nway_pattern_counts_output: nway_pattern_counts.as_deref(),
                         max_nway_examples_per_text,
                         collect_string_stats,
                     },
@@ -575,6 +614,7 @@ fn run_analyze_aat_parallel(
                     comparisons,
                     examples,
                     nway,
+                    nway_pattern_counts,
                     errors,
                     string_stats,
                 })
@@ -627,6 +667,15 @@ fn run_analyze_aat_parallel(
             resume,
         )?;
     }
+    if let Some(path) = nway_pattern_counts_output {
+        merge_shard_files(
+            outputs
+                .iter()
+                .filter_map(|output| output.nway_pattern_counts.as_deref()),
+            path,
+            resume,
+        )?;
+    }
     if let Some(path) = errors_output {
         merge_shard_files(
             outputs.iter().filter_map(|output| output.errors.as_deref()),
@@ -652,6 +701,7 @@ struct ShardOutput {
     comparisons: Option<PathBuf>,
     examples: Option<PathBuf>,
     nway: Option<PathBuf>,
+    nway_pattern_counts: Option<PathBuf>,
     errors: Option<PathBuf>,
     string_stats: StringStatsReport,
 }
@@ -883,6 +933,7 @@ fn read_resume_ids(
     analyses_output: &Path,
     errors_output: Option<&Path>,
     nway_output: Option<&Path>,
+    nway_pattern_counts_output: Option<&Path>,
     output_profile: OutputProfile,
 ) -> Result<BTreeSet<String>> {
     let prefer_source_id = output_profile == OutputProfile::Compact;
@@ -893,6 +944,11 @@ fn read_resume_ids(
         let mut nway_ids = BTreeSet::new();
         read_resume_ids_from_path(path, true, &mut nway_ids)?;
         ids = ids.intersection(&nway_ids).cloned().collect();
+    }
+    if let Some(path) = nway_pattern_counts_output {
+        let mut nway_pattern_count_ids = BTreeSet::new();
+        read_resume_ids_from_path(path, true, &mut nway_pattern_count_ids)?;
+        ids = ids.intersection(&nway_pattern_count_ids).cloned().collect();
     }
     if let Some(path) = errors_output {
         read_resume_ids_from_path(path, prefer_source_id, &mut ids)?;
@@ -1162,6 +1218,7 @@ fn write_manifest(
     examples_output: Option<&Path>,
     errors_output: Option<&Path>,
     nway_output: Option<&Path>,
+    nway_pattern_counts_output: Option<&Path>,
 ) -> Result<()> {
     create_parent_dir(path)?;
     let manifest = compact::RunManifest {
@@ -1177,6 +1234,8 @@ fn write_manifest(
         examples_output: examples_output.map(|path| path.display().to_string()),
         errors_output: errors_output.map(|path| path.display().to_string()),
         nway_output: nway_output.map(|path| path.display().to_string()),
+        nway_pattern_counts_output: nway_pattern_counts_output
+            .map(|path| path.display().to_string()),
     };
     let file =
         File::create(path).with_context(|| format!("failed to create {}", path.display()))?;
@@ -1425,7 +1484,8 @@ mod tests {
         )
         .unwrap();
 
-        let ids = read_resume_ids(&analyses, Some(&errors), None, OutputProfile::Full).unwrap();
+        let ids =
+            read_resume_ids(&analyses, Some(&errors), None, None, OutputProfile::Full).unwrap();
         assert!(ids.contains("done-analysis"));
         assert!(ids.contains("done-error"));
         assert!(!ids.contains("read_aat"));
@@ -1446,7 +1506,7 @@ mod tests {
             writer.flush().unwrap();
         }
 
-        let ids = read_resume_ids(&analyses, None, None, OutputProfile::Compact).unwrap();
+        let ids = read_resume_ids(&analyses, None, None, None, OutputProfile::Compact).unwrap();
         assert!(ids.contains("source-a"));
         assert!(!ids.contains("same"));
 
@@ -1738,6 +1798,7 @@ mod tests {
             OutputProfile::Compact,
             None,
             10,
+            None,
             None,
             None,
             None,

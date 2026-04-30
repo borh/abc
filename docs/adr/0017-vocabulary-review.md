@@ -6,7 +6,10 @@ Accepted: 2026-04-29
 
 ## Context
 
-The metadata-record + person-record milestones (ADRs 0008–0011) introduced
+The metadata-record + person-record milestones (specs at
+`docs/superpowers/specs/archive/2026-04-27-metadata-data-model-design.md`
+and `docs/superpowers/specs/2026-04-28-separated-person-records-design.md` —
+both implemented but neither has its own accepted ADR) introduced
 a number of `abc:`-prefixed predicates without a unified review against
 candidate standard vocabularies. ADR 0013 then added a JSON-LD publication
 view that emits `abc:` triples too. As of 2026-04-29 the corpus emits the
@@ -144,10 +147,16 @@ v0 contract surface for `abc:` predicates.
 
 ## References
 
-- ADR 0008 (metadata data model) — introduced `abc:reading`,
-  `abc:orthographicStyle`, `abc:copyrightExpired`.
-- ADR 0011 (separated person records) — introduced
-  `abc:familyName{Reading,ForSort,Romaji}` etc.
+- Metadata-record data model (spec
+  `docs/superpowers/specs/archive/2026-04-27-metadata-data-model-design.md`) —
+  introduced `abc:reading`, `abc:orthographicStyle`,
+  `abc:copyrightExpired`. (Implemented under ADR 0008's tools
+  runtime; the data model itself was not adopted as a standalone ADR.)
+- Separated person records (spec
+  `docs/superpowers/specs/2026-04-28-separated-person-records-design.md`) —
+  introduced `abc:familyName{Reading,ForSort,Romaji}` etc.
+  (Implemented but, like the metadata-record data model, not adopted
+  as a standalone ADR.)
 - ADR 0013 (cultural-heritage LOD profile) — introduced the JSON-LD
   context where the namespace mismatch was discovered.
 - ADR 0015 (temporal modeling) — justified `abc:edtfDateOf{Birth,Death}`

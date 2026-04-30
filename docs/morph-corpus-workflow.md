@@ -137,3 +137,39 @@ target/release/ab-morph-run summarize-examples \
 ```
 
 The example summary is bounded-evidence triage, not an exhaustive count of all whitespace or lexical diffs. Increase `--max-examples-per-comparison` or run targeted detail when the cap saturates.
+
+## 7. Use exact whitespace/lexical compact counters
+
+Compact comparison summaries include exact whitespace-vs-lexical counters. These are exhaustive per comparison and are better for ranking than bounded examples.
+
+Lexical segmentation disagreements:
+
+```bash
+target/release/ab-morph-run summarize-compact \
+  --comparisons scratch/morph-full-corpus-compact-canonical/comparisons.jsonl.zst \
+  --group-by source-id \
+  --sort-by lexical-segmentation-regions \
+  --limit 20
+```
+
+Whitespace-only segmentation disagreements:
+
+```bash
+target/release/ab-morph-run summarize-compact \
+  --comparisons scratch/morph-full-corpus-compact-canonical/comparisons.jsonl.zst \
+  --group-by source-id \
+  --sort-by whitespace-segmentation-regions \
+  --limit 20
+```
+
+Lexical feature-diff ranking:
+
+```bash
+target/release/ab-morph-run summarize-compact \
+  --comparisons scratch/morph-full-corpus-compact-canonical/comparisons.jsonl.zst \
+  --group-by source-id \
+  --sort-by lexical-feature-differences \
+  --limit 20
+```
+
+Use `summarize-examples` after this to inspect bounded concrete evidence for the selected source IDs.

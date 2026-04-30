@@ -17,7 +17,11 @@ pub enum CompactSummaryGroupBy {
 pub enum CompactSummarySort {
     BoundaryF1,
     SegmentationRegions,
+    LexicalSegmentationRegions,
+    WhitespaceSegmentationRegions,
     FeatureDifferences,
+    LexicalFeatureDifferences,
+    WhitespaceFeatureDifferences,
     CoverageMismatchRegions,
 }
 
@@ -61,7 +65,11 @@ pub struct CompactSummaryRow {
     pub comparisons: usize,
     pub worst_boundary_f1: Option<f64>,
     pub total_segmentation_regions: usize,
+    pub total_whitespace_segmentation_regions: usize,
+    pub total_lexical_segmentation_regions: usize,
     pub total_feature_difference_regions: usize,
+    pub total_whitespace_feature_difference_regions: usize,
+    pub total_lexical_feature_difference_regions: usize,
     pub total_coverage_mismatch_regions: usize,
     pub max_segmentation_regions: usize,
     pub max_feature_difference_regions: usize,
@@ -89,7 +97,11 @@ struct Accumulator {
     worst_boundary_f1: Option<f64>,
     saw_null_boundary_f1: bool,
     total_segmentation_regions: usize,
+    total_whitespace_segmentation_regions: usize,
+    total_lexical_segmentation_regions: usize,
     total_feature_difference_regions: usize,
+    total_whitespace_feature_difference_regions: usize,
+    total_lexical_feature_difference_regions: usize,
     total_coverage_mismatch_regions: usize,
     max_segmentation_regions: usize,
     max_feature_difference_regions: usize,
@@ -185,7 +197,11 @@ impl Accumulator {
             None => self.saw_null_boundary_f1 = true,
         }
         self.total_segmentation_regions += row.segmentation_regions;
+        self.total_whitespace_segmentation_regions += row.whitespace_segmentation_regions;
+        self.total_lexical_segmentation_regions += row.lexical_segmentation_regions;
         self.total_feature_difference_regions += row.one_to_one_with_feature_differences;
+        self.total_whitespace_feature_difference_regions += row.whitespace_feature_diff_regions;
+        self.total_lexical_feature_difference_regions += row.lexical_feature_diff_regions;
         self.total_coverage_mismatch_regions += row.coverage_mismatch_regions;
         self.max_segmentation_regions = self.max_segmentation_regions.max(row.segmentation_regions);
         self.max_feature_difference_regions = self
@@ -208,7 +224,12 @@ impl Accumulator {
                 self.worst_boundary_f1
             },
             total_segmentation_regions: self.total_segmentation_regions,
+            total_whitespace_segmentation_regions: self.total_whitespace_segmentation_regions,
+            total_lexical_segmentation_regions: self.total_lexical_segmentation_regions,
             total_feature_difference_regions: self.total_feature_difference_regions,
+            total_whitespace_feature_difference_regions: self
+                .total_whitespace_feature_difference_regions,
+            total_lexical_feature_difference_regions: self.total_lexical_feature_difference_regions,
             total_coverage_mismatch_regions: self.total_coverage_mismatch_regions,
             max_segmentation_regions: self.max_segmentation_regions,
             max_feature_difference_regions: self.max_feature_difference_regions,
@@ -262,9 +283,25 @@ fn compare_rows(
             .total_segmentation_regions
             .cmp(&left.total_segmentation_regions)
             .then_with(|| left.key.cmp(&right.key)),
+        CompactSummarySort::LexicalSegmentationRegions => right
+            .total_lexical_segmentation_regions
+            .cmp(&left.total_lexical_segmentation_regions)
+            .then_with(|| left.key.cmp(&right.key)),
+        CompactSummarySort::WhitespaceSegmentationRegions => right
+            .total_whitespace_segmentation_regions
+            .cmp(&left.total_whitespace_segmentation_regions)
+            .then_with(|| left.key.cmp(&right.key)),
         CompactSummarySort::FeatureDifferences => right
             .total_feature_difference_regions
             .cmp(&left.total_feature_difference_regions)
+            .then_with(|| left.key.cmp(&right.key)),
+        CompactSummarySort::LexicalFeatureDifferences => right
+            .total_lexical_feature_difference_regions
+            .cmp(&left.total_lexical_feature_difference_regions)
+            .then_with(|| left.key.cmp(&right.key)),
+        CompactSummarySort::WhitespaceFeatureDifferences => right
+            .total_whitespace_feature_difference_regions
+            .cmp(&left.total_whitespace_feature_difference_regions)
             .then_with(|| left.key.cmp(&right.key)),
         CompactSummarySort::CoverageMismatchRegions => right
             .total_coverage_mismatch_regions
@@ -391,6 +428,38 @@ mod tests {
         assert_eq!(rows[0].max_segmentation_regions, 5);
         assert_eq!(rows[0].total_feature_difference_regions, 6);
         assert_eq!(rows[0].total_coverage_mismatch_regions, 1);
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn summarize_can_sort_by_lexical_segmentation_regions() {
+        let dir = temp_dir("lexical-sort");
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("comparisons.jsonl");
+        fs::write(
+            &path,
+            concat!(
+                r#"{"source_id":"whitespace-heavy","text_id":"t1","from_analyzer":"vibrato","to_analyzer":"sudachi-c","from_morphemes":10,"to_morphemes":11,"one_to_one_regions":8,"one_to_one_with_feature_differences":1,"segmentation_regions":10,"whitespace_segmentation_regions":9,"lexical_segmentation_regions":1,"coverage_mismatch_regions":0,"split_regions":1,"merge_regions":9,"resegment_regions":0,"whitespace_feature_diff_regions":1,"lexical_feature_diff_regions":0,"from_morphemes_in_segmentation":10,"to_morphemes_in_segmentation":11,"boundary_precision":0.9,"boundary_recall":0.8,"boundary_f1":0.847}"#, "\n",
+                r#"{"source_id":"lexical-heavy","text_id":"t2","from_analyzer":"vibrato","to_analyzer":"sudachi-c","from_morphemes":10,"to_morphemes":11,"one_to_one_regions":8,"one_to_one_with_feature_differences":1,"segmentation_regions":4,"whitespace_segmentation_regions":0,"lexical_segmentation_regions":4,"coverage_mismatch_regions":0,"split_regions":4,"merge_regions":0,"resegment_regions":0,"whitespace_feature_diff_regions":0,"lexical_feature_diff_regions":1,"from_morphemes_in_segmentation":4,"to_morphemes_in_segmentation":8,"boundary_precision":0.9,"boundary_recall":0.8,"boundary_f1":0.847}"#, "\n",
+            ),
+        )
+        .unwrap();
+
+        let rows = summarize_compact_comparisons(
+            &path,
+            CompactSummaryOptions {
+                group_by: CompactSummaryGroupBy::SourceId,
+                sort_by: CompactSummarySort::LexicalSegmentationRegions,
+                limit: 10,
+            },
+        )
+        .unwrap();
+
+        assert_eq!(rows[0].key, "lexical-heavy");
+        assert_eq!(rows[0].total_lexical_segmentation_regions, 4);
+        assert_eq!(rows[1].key, "whitespace-heavy");
+        assert_eq!(rows[1].total_whitespace_segmentation_regions, 9);
+
         let _ = fs::remove_dir_all(dir);
     }
 

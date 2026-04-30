@@ -65,7 +65,14 @@ pub fn compare_pair_with_source_text(
     let source_len = source_text.chars().count();
     let regions = align::align_regions_with_source_len(from, to, source_len)?;
     let feature_diffs = features::compare_feature_diffs(from, to, &regions, feature_context_keys);
-    let stats = stats::derive_stats_with_source_len(from, to, &regions, &feature_diffs, source_len);
+    let stats = stats::derive_stats_with_source_text(
+        from,
+        to,
+        &regions,
+        &feature_diffs,
+        source_text,
+        source_len,
+    );
     Ok(Comparison {
         from_analyzer: from.analyzer.clone(),
         to_analyzer: to.analyzer.clone(),

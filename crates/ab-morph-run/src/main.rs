@@ -100,7 +100,11 @@ enum SummaryGroupByArg {
 enum SummarySortArg {
     BoundaryF1,
     SegmentationRegions,
+    LexicalSegmentationRegions,
+    WhitespaceSegmentationRegions,
     FeatureDifferences,
+    LexicalFeatureDifferences,
+    WhitespaceFeatureDifferences,
     CoverageMismatchRegions,
 }
 
@@ -141,7 +145,19 @@ impl SummarySortArg {
         match self {
             Self::BoundaryF1 => ab_morph_run::CompactSummarySort::BoundaryF1,
             Self::SegmentationRegions => ab_morph_run::CompactSummarySort::SegmentationRegions,
+            Self::LexicalSegmentationRegions => {
+                ab_morph_run::CompactSummarySort::LexicalSegmentationRegions
+            }
+            Self::WhitespaceSegmentationRegions => {
+                ab_morph_run::CompactSummarySort::WhitespaceSegmentationRegions
+            }
             Self::FeatureDifferences => ab_morph_run::CompactSummarySort::FeatureDifferences,
+            Self::LexicalFeatureDifferences => {
+                ab_morph_run::CompactSummarySort::LexicalFeatureDifferences
+            }
+            Self::WhitespaceFeatureDifferences => {
+                ab_morph_run::CompactSummarySort::WhitespaceFeatureDifferences
+            }
             Self::CoverageMismatchRegions => {
                 ab_morph_run::CompactSummarySort::CoverageMismatchRegions
             }
@@ -382,11 +398,11 @@ fn spawn_progress_thread(
 
 fn print_summary_table(rows: &[ab_morph_run::CompactSummaryRow]) {
     println!(
-        "key\tsource_ids\ttext_ids\tcomparisons\tworst_boundary_f1\ttotal_segmentation_regions\ttotal_feature_difference_regions\ttotal_coverage_mismatch_regions"
+        "key\tsource_ids\ttext_ids\tcomparisons\tworst_boundary_f1\ttotal_segmentation_regions\ttotal_whitespace_segmentation_regions\ttotal_lexical_segmentation_regions\ttotal_feature_difference_regions\ttotal_whitespace_feature_difference_regions\ttotal_lexical_feature_difference_regions\ttotal_coverage_mismatch_regions"
     );
     for row in rows {
         println!(
-            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
             row.key,
             row.source_ids.join(","),
             row.text_ids.join(","),
@@ -395,7 +411,11 @@ fn print_summary_table(rows: &[ab_morph_run::CompactSummaryRow]) {
                 .map(|value| value.to_string())
                 .unwrap_or_else(|| "null".to_owned()),
             row.total_segmentation_regions,
+            row.total_whitespace_segmentation_regions,
+            row.total_lexical_segmentation_regions,
             row.total_feature_difference_regions,
+            row.total_whitespace_feature_difference_regions,
+            row.total_lexical_feature_difference_regions,
             row.total_coverage_mismatch_regions,
         );
     }
@@ -526,7 +546,7 @@ mod tests {
             "--group-by",
             "text-id",
             "--sort-by",
-            "segmentation-regions",
+            "lexical-segmentation-regions",
             "--limit",
             "25",
             "--json",
@@ -545,7 +565,7 @@ mod tests {
 
         assert_eq!(comparisons, PathBuf::from("comparisons.jsonl.zst"));
         assert_eq!(group_by, SummaryGroupByArg::TextId);
-        assert_eq!(sort_by, SummarySortArg::SegmentationRegions);
+        assert_eq!(sort_by, SummarySortArg::LexicalSegmentationRegions);
         assert_eq!(limit, 25);
         assert!(json);
     }

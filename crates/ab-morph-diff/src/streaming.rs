@@ -24,7 +24,7 @@ pub(crate) fn compare_pair_compact_with_source_text(
     validate::validate_analysis_against_source(to, source_text)?;
 
     let source_len = source_text.chars().count();
-    let mut accumulator = CompactAccumulator::new(from, to, max_examples);
+    let mut accumulator = CompactAccumulator::new(from, to, source_text, max_examples);
     crate::align::visit_regions_with_source_len(from, to, source_len, |region_index, region| {
         accumulator.visit_region(region_index, region);
     })?;
@@ -34,14 +34,19 @@ pub(crate) fn compare_pair_compact_with_source_text(
 struct CompactAccumulator<'a> {
     from: &'a Analysis,
     to: &'a Analysis,
+    source_text: &'a str,
     max_examples: usize,
     one_to_one_regions: usize,
     one_to_one_with_feature_differences: usize,
     segmentation_regions: usize,
+    whitespace_segmentation_regions: usize,
+    lexical_segmentation_regions: usize,
     coverage_mismatch_regions: usize,
     split_regions: usize,
     merge_regions: usize,
     resegment_regions: usize,
+    whitespace_feature_diff_regions: usize,
+    lexical_feature_diff_regions: usize,
     from_morphemes_in_segmentation: usize,
     to_morphemes_in_segmentation: usize,
     ignored_spans: Vec<Range<usize>>,
@@ -50,18 +55,28 @@ struct CompactAccumulator<'a> {
 }
 
 impl<'a> CompactAccumulator<'a> {
-    fn new(from: &'a Analysis, to: &'a Analysis, max_examples: usize) -> Self {
+    fn new(
+        from: &'a Analysis,
+        to: &'a Analysis,
+        source_text: &'a str,
+        max_examples: usize,
+    ) -> Self {
         Self {
             from,
             to,
+            source_text,
             max_examples,
             one_to_one_regions: 0,
             one_to_one_with_feature_differences: 0,
             segmentation_regions: 0,
+            whitespace_segmentation_regions: 0,
+            lexical_segmentation_regions: 0,
             coverage_mismatch_regions: 0,
             split_regions: 0,
             merge_regions: 0,
             resegment_regions: 0,
+            whitespace_feature_diff_regions: 0,
+            lexical_feature_diff_regions: 0,
             from_morphemes_in_segmentation: 0,
             to_morphemes_in_segmentation: 0,
             ignored_spans: Vec::new(),
@@ -80,6 +95,14 @@ impl<'a> CompactAccumulator<'a> {
                     changed_features(&from_morpheme.features, &to_morpheme.features);
                 if !feature_changes.is_empty() {
                     self.one_to_one_with_feature_differences += 1;
+                    if crate::stats::char_span_is_whitespace_only(
+                        self.source_text,
+                        &aligned.text_span,
+                    ) {
+                        self.whitespace_feature_diff_regions += 1;
+                    } else {
+                        self.lexical_feature_diff_regions += 1;
+                    }
                     self.push_feature_example(CompactComparisonExample {
                         region_index,
                         kind: CompactExampleKind::FeatureDiff,
@@ -94,6 +117,11 @@ impl<'a> CompactAccumulator<'a> {
             }
             Region::Segmentation(diff) => {
                 self.segmentation_regions += 1;
+                if crate::stats::char_span_is_whitespace_only(self.source_text, &diff.text_span) {
+                    self.whitespace_segmentation_regions += 1;
+                } else {
+                    self.lexical_segmentation_regions += 1;
+                }
                 self.from_morphemes_in_segmentation += diff.from_indices.len();
                 self.to_morphemes_in_segmentation += diff.to_indices.len();
                 let kind = match diff.kind {
@@ -179,10 +207,14 @@ impl<'a> CompactAccumulator<'a> {
                 one_to_one_regions: self.one_to_one_regions,
                 one_to_one_with_feature_differences: self.one_to_one_with_feature_differences,
                 segmentation_regions: self.segmentation_regions,
+                whitespace_segmentation_regions: self.whitespace_segmentation_regions,
+                lexical_segmentation_regions: self.lexical_segmentation_regions,
                 coverage_mismatch_regions: self.coverage_mismatch_regions,
                 split_regions: self.split_regions,
                 merge_regions: self.merge_regions,
                 resegment_regions: self.resegment_regions,
+                whitespace_feature_diff_regions: self.whitespace_feature_diff_regions,
+                lexical_feature_diff_regions: self.lexical_feature_diff_regions,
                 from_morphemes_in_segmentation: self.from_morphemes_in_segmentation,
                 to_morphemes_in_segmentation: self.to_morphemes_in_segmentation,
                 boundary_precision: boundary_metrics.precision,

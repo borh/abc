@@ -15,24 +15,28 @@ pub(crate) fn derive_stats(
     regions: &[Region],
     feature_diffs: &[FeatureDiff],
 ) -> ComparisonStats {
-    derive_stats_with_source_len(
+    derive_stats_with_source_text(
         from,
         to,
         regions,
         feature_diffs,
+        &from.source_text,
         from.source_text.chars().count(),
     )
 }
 
-pub(crate) fn derive_stats_with_source_len(
+pub(crate) fn derive_stats_with_source_text(
     from: &Analysis,
     to: &Analysis,
     regions: &[Region],
     feature_diffs: &[FeatureDiff],
+    source_text: &str,
     source_len: usize,
 ) -> ComparisonStats {
     let mut one_to_one_regions = 0usize;
     let mut segmentation_regions = 0usize;
+    let mut whitespace_segmentation_regions = 0usize;
+    let mut lexical_segmentation_regions = 0usize;
     let mut coverage_mismatch_regions = 0usize;
     let mut split_regions = 0usize;
     let mut merge_regions = 0usize;
@@ -45,6 +49,11 @@ pub(crate) fn derive_stats_with_source_len(
             Region::OneToOne(_) => one_to_one_regions += 1,
             Region::Segmentation(diff) => {
                 segmentation_regions += 1;
+                if char_span_is_whitespace_only(source_text, &diff.text_span) {
+                    whitespace_segmentation_regions += 1;
+                } else {
+                    lexical_segmentation_regions += 1;
+                }
                 from_morphemes_in_segmentation += diff.from_indices.len();
                 to_morphemes_in_segmentation += diff.to_indices.len();
                 match diff.kind {
@@ -62,6 +71,15 @@ pub(crate) fn derive_stats_with_source_len(
         .map(|diff| diff.region_index)
         .collect::<BTreeSet<_>>()
         .len();
+    let mut whitespace_feature_regions = BTreeSet::new();
+    let mut lexical_feature_regions = BTreeSet::new();
+    for diff in feature_diffs {
+        if char_span_is_whitespace_only(source_text, &diff.text_span) {
+            whitespace_feature_regions.insert(diff.region_index);
+        } else {
+            lexical_feature_regions.insert(diff.region_index);
+        }
+    }
     let ignored_spans = regions
         .iter()
         .filter_map(|region| match region {
@@ -77,16 +95,34 @@ pub(crate) fn derive_stats_with_source_len(
         one_to_one_regions,
         one_to_one_with_feature_differences,
         segmentation_regions,
+        whitespace_segmentation_regions,
+        lexical_segmentation_regions,
         coverage_mismatch_regions,
         split_regions,
         merge_regions,
         resegment_regions,
+        whitespace_feature_diff_regions: whitespace_feature_regions.len(),
+        lexical_feature_diff_regions: lexical_feature_regions.len(),
         from_morphemes_in_segmentation,
         to_morphemes_in_segmentation,
         boundary_precision: boundary_metrics.precision,
         boundary_recall: boundary_metrics.recall,
         boundary_f1: boundary_metrics.f1,
     }
+}
+
+pub(crate) fn char_span_is_whitespace_only(
+    source_text: &str,
+    span: &std::ops::Range<usize>,
+) -> bool {
+    let mut chars = source_text
+        .chars()
+        .skip(span.start)
+        .take(span.end - span.start);
+    let Some(first) = chars.next() else {
+        return false;
+    };
+    first.is_whitespace() && chars.all(char::is_whitespace)
 }
 
 pub(crate) fn derive_boundary_metrics(
@@ -149,7 +185,7 @@ mod tests {
         Region, SegmentationDiff, SegmentationKind,
     };
 
-    use super::{derive_boundary_metrics, derive_stats, derive_stats_with_source_len};
+    use super::{derive_boundary_metrics, derive_stats, derive_stats_with_source_text};
 
     fn m(source: &str, surface: &str, start: usize, end: usize) -> Morpheme {
         let byte_start = source
@@ -218,6 +254,104 @@ mod tests {
         assert_eq!(stats.split_regions, 1);
         assert_eq!(stats.merge_regions, 1);
         assert_eq!(stats.resegment_regions, 1);
+    }
+
+    #[test]
+    fn counts_whitespace_and_lexical_segmentation_regions() {
+        let source = "\n　今日";
+        let from = Analysis {
+            analyzer: "a".to_owned(),
+            text_id: "t".to_owned(),
+            source_text: source.to_owned(),
+            morphemes: vec![m(source, "\n　", 0, 2), m(source, "今日", 2, 4)],
+        };
+        let to = Analysis {
+            analyzer: "b".to_owned(),
+            text_id: "t".to_owned(),
+            source_text: source.to_owned(),
+            morphemes: vec![
+                m(source, "\n", 0, 1),
+                m(source, "　", 1, 2),
+                m(source, "今日", 2, 4),
+            ],
+        };
+        let regions = vec![
+            Region::Segmentation(SegmentationDiff {
+                text_span: 0..2,
+                from_indices: 0..1,
+                to_indices: 0..2,
+                from_surfaces: vec![],
+                to_surfaces: vec![],
+                kind: SegmentationKind::Split,
+            }),
+            Region::Segmentation(SegmentationDiff {
+                text_span: 2..4,
+                from_indices: 1..2,
+                to_indices: 2..3,
+                from_surfaces: vec![],
+                to_surfaces: vec![],
+                kind: SegmentationKind::Split,
+            }),
+        ];
+
+        let stats = derive_stats(&from, &to, &regions, &[]);
+
+        assert_eq!(stats.whitespace_segmentation_regions, 1);
+        assert_eq!(stats.lexical_segmentation_regions, 1);
+    }
+
+    #[test]
+    fn counts_whitespace_and_lexical_feature_diff_regions() {
+        let source = "\n今日";
+        let from = Analysis {
+            analyzer: "a".to_owned(),
+            text_id: "t".to_owned(),
+            source_text: source.to_owned(),
+            morphemes: vec![m(source, "\n", 0, 1), m(source, "今日", 1, 3)],
+        };
+        let to = Analysis {
+            analyzer: "b".to_owned(),
+            text_id: "t".to_owned(),
+            source_text: source.to_owned(),
+            morphemes: vec![m(source, "\n", 0, 1), m(source, "今日", 1, 3)],
+        };
+        let regions = vec![
+            Region::OneToOne(AlignedMorpheme {
+                text_span: 0..1,
+                from_index: 0,
+                to_index: 0,
+            }),
+            Region::OneToOne(AlignedMorpheme {
+                text_span: 1..3,
+                from_index: 1,
+                to_index: 1,
+            }),
+        ];
+        let feature_diffs = vec![
+            FeatureDiff {
+                region_index: 0,
+                text_span: 0..1,
+                surface: "\n".to_owned(),
+                from_index: 0,
+                to_index: 0,
+                changed: BTreeMap::new(),
+                same_context: BTreeMap::new(),
+            },
+            FeatureDiff {
+                region_index: 1,
+                text_span: 1..3,
+                surface: "今日".to_owned(),
+                from_index: 1,
+                to_index: 1,
+                changed: BTreeMap::new(),
+                same_context: BTreeMap::new(),
+            },
+        ];
+
+        let stats = derive_stats(&from, &to, &regions, &feature_diffs);
+
+        assert_eq!(stats.whitespace_feature_diff_regions, 1);
+        assert_eq!(stats.lexical_feature_diff_regions, 1);
     }
 
     #[test]
@@ -303,7 +437,7 @@ mod tests {
             kind: SegmentationKind::Split,
         })];
 
-        let stats = derive_stats_with_source_len(&from, &to, &regions, &[], 6);
+        let stats = derive_stats_with_source_text(&from, &to, &regions, &[], "abcdef", 6);
         let metrics = derive_boundary_metrics(&from, &to, &[], 6);
 
         assert_eq!(metrics.precision, stats.boundary_precision);

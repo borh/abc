@@ -6,7 +6,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::compact::{ComparisonSummaryRow, is_whitespace_only};
 use crate::nway::{
-    NwayComparisonRow, NwayFeatureScopeRow, NwayFeatureValueGroupRow, NwaySegmentationGroupRow,
+    NwayComparisonRow, NwayFeatureScopeRow, NwayFeatureValueGroupRow, NwayPatternCountRow,
+    NwaySegmentationGroupRow,
 };
 use crate::output::for_each_jsonl_or_zst_line;
 use crate::script::{ScriptCategory, classify_text};
@@ -67,11 +68,34 @@ pub enum NwayPatternKind {
     Feature,
 }
 
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct SummaryExclusions {
+    pub source_ids: BTreeSet<String>,
+    pub text_ids: BTreeSet<String>,
+}
+
+impl SummaryExclusions {
+    pub fn from_values(
+        source_ids: impl IntoIterator<Item = String>,
+        text_ids: impl IntoIterator<Item = String>,
+    ) -> Self {
+        Self {
+            source_ids: source_ids.into_iter().collect(),
+            text_ids: text_ids.into_iter().collect(),
+        }
+    }
+
+    fn excludes(&self, source_id: &str, text_id: &str) -> bool {
+        self.source_ids.contains(source_id) || self.text_ids.contains(text_id)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CompactSummaryOptions {
     pub group_by: CompactSummaryGroupBy,
     pub sort_by: CompactSummarySort,
     pub script_category: Option<ScriptCategory>,
+    pub exclusions: SummaryExclusions,
     pub limit: usize,
 }
 
@@ -81,6 +105,7 @@ pub struct CompactExampleSummaryOptions {
     pub filter: CompactExampleFilter,
     pub script_category: Option<ScriptCategory>,
     pub sort_by: CompactExampleSummarySort,
+    pub exclusions: SummaryExclusions,
     pub limit: usize,
 }
 
@@ -90,6 +115,9 @@ pub struct CompactDifferenceSummaryOptions {
     pub script_category: Option<ScriptCategory>,
     pub kind: CompactDifferenceKindFilter,
     pub feature_key: Option<String>,
+    pub excluded_feature_values: BTreeSet<String>,
+    pub one_to_one_lexical_features: bool,
+    pub exclusions: SummaryExclusions,
     pub limit: usize,
 }
 
@@ -98,6 +126,7 @@ pub struct NwaySummaryOptions {
     pub group_by: CompactSummaryGroupBy,
     pub sort_by: NwaySummarySort,
     pub script_category: Option<ScriptCategory>,
+    pub exclusions: SummaryExclusions,
     pub limit: usize,
 }
 
@@ -106,6 +135,8 @@ pub struct NwayPatternOptions {
     pub kind: NwayPatternKind,
     pub feature_key: Option<String>,
     pub script_category: Option<ScriptCategory>,
+    pub excluded_feature_values: BTreeSet<String>,
+    pub exclusions: SummaryExclusions,
     pub limit: usize,
 }
 
@@ -316,6 +347,9 @@ pub fn summarize_compact_comparisons(
     let mut groups = BTreeMap::<String, Accumulator>::new();
     for_each_jsonl_or_zst_line(comparisons_path, |line| {
         let row: ComparisonSummaryRow = serde_json::from_str(line)?;
+        if options.exclusions.excludes(&row.source_id, &row.text_id) {
+            return Ok(());
+        }
         if options
             .script_category
             .is_some_and(|category| row.source_script_category != category)
@@ -346,6 +380,9 @@ pub fn summarize_compact_examples(
     let mut groups = BTreeMap::<String, ExampleAccumulator>::new();
     for_each_jsonl_or_zst_line(examples_path, |line| {
         let row: ExampleSummaryInputRow = serde_json::from_str(line)?;
+        if options.exclusions.excludes(&row.source_id, &row.text_id) {
+            return Ok(());
+        }
         let whitespace_only = row
             .whitespace_only
             .unwrap_or_else(|| is_whitespace_only(&row.source_excerpt));
@@ -388,6 +425,9 @@ pub fn summarize_compact_differences(
     let mut groups = BTreeMap::<DifferenceKey, DifferenceAccumulator>::new();
     for_each_jsonl_or_zst_line(examples_path, |line| {
         let row: ExampleSummaryInputRow = serde_json::from_str(line)?;
+        if options.exclusions.excludes(&row.source_id, &row.text_id) {
+            return Ok(());
+        }
         let whitespace_only = row
             .whitespace_only
             .unwrap_or_else(|| is_whitespace_only(&row.source_excerpt));
@@ -403,11 +443,16 @@ pub fn summarize_compact_differences(
         if !example_filter_matches(options.filter, whitespace_only) {
             return Ok(());
         }
+        if options.one_to_one_lexical_features && (whitespace_only || row.kind != "feature_diff") {
+            return Ok(());
+        }
 
-        if matches!(
-            options.kind,
-            CompactDifferenceKindFilter::All | CompactDifferenceKindFilter::Segmentation
-        ) && is_segmentation_example(&row.kind)
+        if !options.one_to_one_lexical_features
+            && matches!(
+                options.kind,
+                CompactDifferenceKindFilter::All | CompactDifferenceKindFilter::Segmentation
+            )
+            && is_segmentation_example(&row.kind)
         {
             let key = DifferenceKey {
                 kind: "segmentation".to_owned(),
@@ -434,6 +479,9 @@ pub fn summarize_compact_differences(
                     .as_ref()
                     .is_some_and(|wanted| change.key != *wanted)
                 {
+                    continue;
+                }
+                if feature_change_has_excluded_value(change, &options.excluded_feature_values) {
                     continue;
                 }
                 let key = DifferenceKey {
@@ -481,6 +529,9 @@ pub fn summarize_nway(
     let mut groups = BTreeMap::<String, NwayAccumulator>::new();
     for_each_jsonl_or_zst_line(nway_path, |line| {
         let row: NwayComparisonRow = serde_json::from_str(line)?;
+        if options.exclusions.excludes(&row.source_id, &row.text_id) {
+            return Ok(());
+        }
         if options
             .script_category
             .is_some_and(|category| row.source_script_category != category)
@@ -510,10 +561,19 @@ pub fn summarize_nway_patterns(
     let mut groups = BTreeMap::<NwayPatternKey, NwayPatternAccumulator>::new();
     for_each_jsonl_or_zst_line(nway_path, |line| {
         let row: NwayComparisonRow = serde_json::from_str(line)?;
+        if options.exclusions.excludes(&row.source_id, &row.text_id) {
+            return Ok(());
+        }
         if options
             .script_category
             .is_some_and(|category| row.source_script_category != category)
         {
+            return Ok(());
+        }
+        if !row.pattern_counts.is_empty() {
+            for pattern_count in &row.pattern_counts {
+                push_nway_pattern_count(&mut groups, &row, pattern_count, &options);
+            }
             return Ok(());
         }
         for example in &row.examples {
@@ -548,7 +608,13 @@ pub fn summarize_nway_patterns(
                         if feature_group.values.len() <= 1 {
                             continue;
                         }
-                        let mut values = feature_group.values.clone();
+                        let mut values = filtered_feature_values(
+                            &feature_group.values,
+                            &options.excluded_feature_values,
+                        );
+                        if values.len() <= 1 {
+                            continue;
+                        }
                         canonicalize_feature_values(&mut values);
                         let key = NwayPatternKey {
                             kind: "feature".to_owned(),
@@ -557,10 +623,11 @@ pub fn summarize_nway_patterns(
                             feature_scope: Some(feature_group.scope.clone()),
                             feature_values: values,
                         };
-                        groups
-                            .entry(key)
-                            .or_default()
-                            .push(&row, row.source_script_category);
+                        groups.entry(key).or_default().push_count(
+                            &row,
+                            row.source_script_category,
+                            1,
+                        );
                     }
                 }
             }
@@ -766,10 +833,19 @@ impl NwayAccumulator {
 
 impl NwayPatternAccumulator {
     fn push(&mut self, row: &NwayComparisonRow, script_category: ScriptCategory) {
+        self.push_count(row, script_category, 1);
+    }
+
+    fn push_count(
+        &mut self,
+        row: &NwayComparisonRow,
+        script_category: ScriptCategory,
+        count: usize,
+    ) {
         self.source_ids.insert(row.source_id.clone());
         self.text_ids.insert(row.text_id.clone());
         self.script_categories.insert(script_category);
-        self.examples += 1;
+        self.examples += count;
     }
 
     fn into_row(self, key: NwayPatternKey) -> NwayPatternRow {
@@ -973,6 +1049,92 @@ fn example_filter_matches(filter: CompactExampleFilter, whitespace_only: bool) -
     }
 }
 
+fn feature_change_has_excluded_value(
+    change: &FeatureChangeInputRow,
+    excluded_values: &BTreeSet<String>,
+) -> bool {
+    value_is_excluded(change.from.as_deref(), excluded_values)
+        || value_is_excluded(change.to.as_deref(), excluded_values)
+}
+
+fn value_is_excluded(value: Option<&str>, excluded_values: &BTreeSet<String>) -> bool {
+    value.is_some_and(|value| excluded_values.contains(value))
+}
+
+fn filtered_feature_values(
+    values: &[NwayFeatureValueGroupRow],
+    excluded_values: &BTreeSet<String>,
+) -> Vec<NwayFeatureValueGroupRow> {
+    values
+        .iter()
+        .filter(|value| !value_is_excluded(value.value.as_deref(), excluded_values))
+        .cloned()
+        .collect()
+}
+
+fn push_nway_pattern_count(
+    groups: &mut BTreeMap<NwayPatternKey, NwayPatternAccumulator>,
+    row: &NwayComparisonRow,
+    pattern_count: &NwayPatternCountRow,
+    options: &NwayPatternOptions,
+) {
+    if pattern_count.count == 0 {
+        return;
+    }
+
+    match (options.kind, pattern_count.kind.as_str()) {
+        (NwayPatternKind::Segmentation, "segmentation") => {
+            let mut segmentation_groups = pattern_count.segmentation_groups.clone();
+            if segmentation_groups.len() <= 1 {
+                return;
+            }
+            canonicalize_segmentation_groups(&mut segmentation_groups);
+            let key = NwayPatternKey {
+                kind: "segmentation".to_owned(),
+                segmentation_groups,
+                feature_key: None,
+                feature_scope: None,
+                feature_values: Vec::new(),
+            };
+            groups.entry(key).or_default().push_count(
+                row,
+                row.source_script_category,
+                pattern_count.count,
+            );
+        }
+        (NwayPatternKind::Feature, "feature") => {
+            if options
+                .feature_key
+                .as_ref()
+                .is_some_and(|wanted| pattern_count.feature_key.as_deref() != Some(wanted))
+            {
+                return;
+            }
+            let mut values = filtered_feature_values(
+                &pattern_count.feature_values,
+                &options.excluded_feature_values,
+            );
+            if values.len() <= 1 {
+                return;
+            }
+            canonicalize_feature_values(&mut values);
+            let key = NwayPatternKey {
+                kind: "feature".to_owned(),
+                segmentation_groups: Vec::new(),
+                feature_key: pattern_count.feature_key.clone(),
+                feature_scope: pattern_count.feature_scope.clone(),
+                feature_values: values,
+            };
+            groups.entry(key).or_default().push_count(
+                row,
+                row.source_script_category,
+                pattern_count.count,
+            );
+        }
+        _ => {}
+    }
+}
+
 fn is_segmentation_example(kind: &str) -> bool {
     matches!(kind, "split" | "merge" | "resegment")
 }
@@ -1017,6 +1179,7 @@ mod tests {
                 group_by: CompactSummaryGroupBy::SourceId,
                 sort_by: CompactSummarySort::BoundaryF1,
                 script_category: None,
+                exclusions: SummaryExclusions::default(),
                 limit: 2,
             },
         )
@@ -1049,6 +1212,7 @@ mod tests {
                 group_by: CompactSummaryGroupBy::TextId,
                 sort_by: CompactSummarySort::SegmentationRegions,
                 script_category: None,
+                exclusions: SummaryExclusions::default(),
                 limit: 10,
             },
         )
@@ -1085,6 +1249,7 @@ mod tests {
                 group_by: CompactSummaryGroupBy::SourceId,
                 sort_by: CompactSummarySort::LexicalSegmentationRegions,
                 script_category: None,
+                exclusions: SummaryExclusions::default(),
                 limit: 10,
             },
         )
@@ -1118,6 +1283,7 @@ mod tests {
                 group_by: CompactSummaryGroupBy::SourceId,
                 sort_by: CompactSummarySort::LexicalSegmentationRegions,
                 script_category: Some(ScriptCategory::Japanese),
+                exclusions: SummaryExclusions::default(),
                 limit: 10,
             },
         )
@@ -1152,6 +1318,7 @@ mod tests {
                 filter: CompactExampleFilter::WhitespaceOnly,
                 script_category: None,
                 sort_by: CompactExampleSummarySort::Examples,
+                exclusions: SummaryExclusions::default(),
                 limit: 10,
             },
         )
@@ -1189,6 +1356,7 @@ mod tests {
                 filter: CompactExampleFilter::LexicalOnly,
                 script_category: Some(ScriptCategory::Japanese),
                 sort_by: CompactExampleSummarySort::Examples,
+                exclusions: SummaryExclusions::default(),
                 limit: 10,
             },
         )
@@ -1226,6 +1394,9 @@ mod tests {
                 script_category: Some(ScriptCategory::Japanese),
                 kind: CompactDifferenceKindFilter::All,
                 feature_key: None,
+                excluded_feature_values: BTreeSet::new(),
+                one_to_one_lexical_features: false,
+                exclusions: SummaryExclusions::default(),
                 limit: 10,
             },
         )
@@ -1277,6 +1448,7 @@ mod tests {
                 group_by: CompactSummaryGroupBy::SourceId,
                 sort_by: NwaySummarySort::RegionsWithSegmentationDisagreement,
                 script_category: Some(ScriptCategory::Japanese),
+                exclusions: SummaryExclusions::default(),
                 limit: 10,
             },
         )
@@ -1301,6 +1473,8 @@ mod tests {
                 kind: NwayPatternKind::Segmentation,
                 feature_key: None,
                 script_category: Some(ScriptCategory::Japanese),
+                excluded_feature_values: BTreeSet::new(),
+                exclusions: SummaryExclusions::default(),
                 limit: 10,
             },
         )
@@ -1315,6 +1489,8 @@ mod tests {
                 kind: NwayPatternKind::Feature,
                 feature_key: Some("pos1".to_owned()),
                 script_category: Some(ScriptCategory::Japanese),
+                excluded_feature_values: BTreeSet::new(),
+                exclusions: SummaryExclusions::default(),
                 limit: 10,
             },
         )
@@ -1323,6 +1499,108 @@ mod tests {
         assert_eq!(feature[0].examples, 2);
         assert_eq!(feature[0].feature_key.as_deref(), Some("pos1"));
 
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn summarize_differences_can_exclude_feature_values_and_focus_one_to_one_lexical() {
+        let dir = temp_dir("difference-feature-filters");
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("examples.jsonl");
+        fs::write(
+            &path,
+            concat!(
+                r#"{"source_id":"src-a","text_id":"txt-a","from_analyzer":"vibrato","to_analyzer":"sudachi-a","kind":"feature_diff","source_excerpt":"猫","from_surfaces":["猫"],"to_surfaces":["猫"],"feature_changes":[{"key":"pos1","from":"名詞","to":"空白"}],"whitespace_only":false,"script_category":"japanese"}"#, "\n",
+                r#"{"source_id":"src-b","text_id":"txt-b","from_analyzer":"vibrato","to_analyzer":"sudachi-a","kind":"feature_diff","source_excerpt":"走る","from_surfaces":["走る"],"to_surfaces":["走る"],"feature_changes":[{"key":"pos1","from":"動詞","to":"名詞"}],"whitespace_only":false,"script_category":"japanese"}"#, "\n",
+                r#"{"source_id":"src-c","text_id":"txt-c","from_analyzer":"vibrato","to_analyzer":"sudachi-a","kind":"split","source_excerpt":"犬","from_surfaces":["犬"],"to_surfaces":["犬"],"feature_changes":null,"whitespace_only":false,"script_category":"japanese"}"#, "\n",
+            ),
+        )
+        .unwrap();
+
+        let rows = summarize_compact_differences(
+            &path,
+            CompactDifferenceSummaryOptions {
+                filter: CompactExampleFilter::All,
+                script_category: None,
+                kind: CompactDifferenceKindFilter::All,
+                feature_key: Some("pos1".to_owned()),
+                excluded_feature_values: BTreeSet::from(["空白".to_owned()]),
+                one_to_one_lexical_features: true,
+                exclusions: SummaryExclusions::default(),
+                limit: 10,
+            },
+        )
+        .unwrap();
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].kind, "feature");
+        assert_eq!(rows[0].feature_from.as_deref(), Some("動詞"));
+        assert_eq!(rows[0].feature_to.as_deref(), Some("名詞"));
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn summarize_nway_patterns_prefers_exact_pattern_counts() {
+        let dir = temp_dir("nway-patterns-exact");
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("nway.jsonl");
+        fs::write(
+            &path,
+            concat!(
+                r#"{"source_id":"src-a","text_id":"txt-a","source_script_category":"japanese","analyzers":["vibrato","sudachi-a"],"analyzer_count":2,"regions":7,"agreement_regions":0,"regions_with_feature_disagreement":0,"regions_with_segmentation_disagreement":7,"regions_with_coverage_mismatch":0,"whitespace_regions":0,"lexical_regions":7,"unanimous_boundary_count":0,"variable_boundary_count":7,"pattern_counts":[{"kind":"segmentation","count":7,"segmentation_groups":[{"surfaces":["今日"],"analyzers":["vibrato"]},{"surfaces":["今","日"],"analyzers":["sudachi-a"]}],"feature_key":null,"feature_scope":null,"feature_values":[]}],"examples":[]}"#, "\n",
+            ),
+        )
+        .unwrap();
+
+        let rows = summarize_nway_patterns(
+            &path,
+            NwayPatternOptions {
+                kind: NwayPatternKind::Segmentation,
+                feature_key: None,
+                excluded_feature_values: BTreeSet::new(),
+                script_category: None,
+                exclusions: SummaryExclusions::default(),
+                limit: 10,
+            },
+        )
+        .unwrap();
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].examples, 7);
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn nway_summaries_can_exclude_outlier_text_ids() {
+        let dir = temp_dir("nway-outlier-exclusion");
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("nway.jsonl");
+        fs::write(
+            &path,
+            concat!(
+                r#"{"source_id":"src-a","text_id":"JISTABLE","source_script_category":"other","analyzers":["vibrato","sudachi-a"],"analyzer_count":2,"regions":10,"agreement_regions":0,"regions_with_feature_disagreement":0,"regions_with_segmentation_disagreement":10,"regions_with_coverage_mismatch":0,"whitespace_regions":0,"lexical_regions":10,"unanimous_boundary_count":0,"variable_boundary_count":10,"examples":[]}"#, "\n",
+                r#"{"source_id":"src-b","text_id":"normal","source_script_category":"japanese","analyzers":["vibrato","sudachi-a"],"analyzer_count":2,"regions":3,"agreement_regions":3,"regions_with_feature_disagreement":0,"regions_with_segmentation_disagreement":0,"regions_with_coverage_mismatch":0,"whitespace_regions":0,"lexical_regions":3,"unanimous_boundary_count":2,"variable_boundary_count":0,"examples":[]}"#, "\n",
+            ),
+        )
+        .unwrap();
+
+        let rows = summarize_nway(
+            &path,
+            NwaySummaryOptions {
+                group_by: CompactSummaryGroupBy::TextId,
+                sort_by: NwaySummarySort::RegionsWithSegmentationDisagreement,
+                script_category: None,
+                exclusions: SummaryExclusions {
+                    source_ids: BTreeSet::new(),
+                    text_ids: BTreeSet::from(["JISTABLE".to_owned()]),
+                },
+                limit: 10,
+            },
+        )
+        .unwrap();
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].text_ids, vec!["normal"]);
         let _ = fs::remove_dir_all(dir);
     }
 

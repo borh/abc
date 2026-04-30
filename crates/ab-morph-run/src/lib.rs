@@ -28,8 +28,9 @@ pub use summary::{
     CompactExampleFilter, CompactExampleSummaryOptions, CompactExampleSummaryRow,
     CompactExampleSummarySort, CompactSummaryGroupBy, CompactSummaryOptions, CompactSummaryRow,
     CompactSummarySort, NwayPatternKind, NwayPatternOptions, NwayPatternRow, NwaySummaryOptions,
-    NwaySummaryRow, NwaySummarySort, summarize_compact_comparisons, summarize_compact_differences,
-    summarize_compact_examples, summarize_nway, summarize_nway_patterns,
+    NwaySummaryRow, NwaySummarySort, SummaryExclusions, summarize_compact_comparisons,
+    summarize_compact_differences, summarize_compact_examples, summarize_nway,
+    summarize_nway_patterns,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum, Serialize, Deserialize)]

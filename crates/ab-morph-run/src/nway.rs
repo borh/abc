@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::ops::Range;
 
 #[cfg(test)]
@@ -26,6 +27,8 @@ pub(crate) struct NwayComparisonRow {
     pub lexical_regions: usize,
     pub unanimous_boundary_count: usize,
     pub variable_boundary_count: usize,
+    #[serde(default)]
+    pub pattern_counts: Vec<NwayPatternCountRow>,
     pub examples: Vec<NwayExampleRegionRow>,
 }
 
@@ -44,6 +47,19 @@ pub(crate) struct NwayExampleRegionRow {
 pub(crate) struct NwayAnalyzerSurfacesRow {
     pub analyzer: String,
     pub surfaces: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub(crate) struct NwayPatternCountRow {
+    pub kind: String,
+    pub count: usize,
+    pub segmentation_groups: Vec<NwaySegmentationGroupRow>,
+    #[serde(default)]
+    pub feature_key: Option<String>,
+    #[serde(default)]
+    pub feature_scope: Option<NwayFeatureScopeRow>,
+    #[serde(default)]
+    pub feature_values: Vec<NwayFeatureValueGroupRow>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -73,6 +89,15 @@ pub struct NwayFeatureValueGroupRow {
     pub analyzers: Vec<String>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+struct NwayPatternCountKey {
+    kind: String,
+    segmentation_groups: Vec<NwaySegmentationGroupRow>,
+    feature_key: Option<String>,
+    feature_scope: Option<NwayFeatureScopeRow>,
+    feature_values: Vec<NwayFeatureValueGroupRow>,
+}
+
 #[cfg(test)]
 pub(crate) fn row_from_comparison(
     source_id: String,
@@ -97,6 +122,7 @@ pub(crate) fn row_from_comparison(
         lexical_regions: comparison.stats.lexical_regions,
         unanimous_boundary_count: comparison.stats.unanimous_boundary_count,
         variable_boundary_count: comparison.stats.variable_boundary_count,
+        pattern_counts: pattern_counts_from_regions(comparison.regions.iter()),
         examples: select_nway_example_regions(comparison, max_examples)
             .into_iter()
             .map(|region| example_region_row(source_text, region))
@@ -111,7 +137,9 @@ pub(crate) fn row_from_analyses(
     max_examples: usize,
 ) -> Result<NwayComparisonRow, MorphDiffError> {
     let mut examples = Vec::new();
+    let mut pattern_counts = BTreeMap::<NwayPatternCountKey, usize>::new();
     let stats = visit_nway_regions_with_source_text(analyses, source_text, &[], |region| {
+        record_pattern_counts(&mut pattern_counts, region);
         if examples.len() < max_examples && !region.is_agreement() {
             examples.push(example_region_row(source_text, region));
         }
@@ -122,6 +150,7 @@ pub(crate) fn row_from_analyses(
         source_text,
         analyses,
         stats,
+        pattern_count_rows(pattern_counts),
         examples,
     ))
 }
@@ -131,6 +160,7 @@ fn row_from_parts(
     source_text: &str,
     analyses: &[Analysis],
     stats: NwayStats,
+    pattern_counts: Vec<NwayPatternCountRow>,
     examples: Vec<NwayExampleRegionRow>,
 ) -> NwayComparisonRow {
     NwayComparisonRow {
@@ -154,6 +184,7 @@ fn row_from_parts(
         lexical_regions: stats.lexical_regions,
         unanimous_boundary_count: stats.unanimous_boundary_count,
         variable_boundary_count: stats.variable_boundary_count,
+        pattern_counts,
         examples,
     }
 }
@@ -185,12 +216,7 @@ fn example_region_row(source_text: &str, region: &NwayRegion) -> NwayExampleRegi
                 surfaces: entry.surfaces.clone(),
             })
             .collect(),
-        segmentation_groups: region
-            .segmentation_groups
-            .iter()
-            .cloned()
-            .map(segmentation_group_row)
-            .collect(),
+        segmentation_groups: segmentation_groups_for_region(region),
         feature_groups: region
             .feature_groups
             .iter()
@@ -199,6 +225,88 @@ fn example_region_row(source_text: &str, region: &NwayRegion) -> NwayExampleRegi
             .map(feature_group_row)
             .collect(),
     }
+}
+
+#[cfg(test)]
+fn pattern_counts_from_regions<'a>(
+    regions: impl Iterator<Item = &'a NwayRegion>,
+) -> Vec<NwayPatternCountRow> {
+    let mut counts = BTreeMap::<NwayPatternCountKey, usize>::new();
+    for region in regions {
+        record_pattern_counts(&mut counts, region);
+    }
+    pattern_count_rows(counts)
+}
+
+fn record_pattern_counts(counts: &mut BTreeMap<NwayPatternCountKey, usize>, region: &NwayRegion) {
+    let segmentation_groups = segmentation_groups_for_region(region);
+    if segmentation_groups.len() > 1 {
+        *counts
+            .entry(NwayPatternCountKey {
+                kind: "segmentation".to_owned(),
+                segmentation_groups,
+                feature_key: None,
+                feature_scope: None,
+                feature_values: Vec::new(),
+            })
+            .or_default() += 1;
+    }
+
+    for feature_group in &region.feature_groups {
+        if feature_group.values.len() <= 1 {
+            continue;
+        }
+        let mut values = feature_group_row(feature_group.clone()).values;
+        canonicalize_feature_values(&mut values);
+        *counts
+            .entry(NwayPatternCountKey {
+                kind: "feature".to_owned(),
+                segmentation_groups: Vec::new(),
+                feature_key: Some(feature_group.key.to_string()),
+                feature_scope: Some(feature_scope_row(&feature_group.scope)),
+                feature_values: values,
+            })
+            .or_default() += 1;
+    }
+}
+
+fn pattern_count_rows(counts: BTreeMap<NwayPatternCountKey, usize>) -> Vec<NwayPatternCountRow> {
+    counts
+        .into_iter()
+        .map(|(key, count)| NwayPatternCountRow {
+            kind: key.kind,
+            count,
+            segmentation_groups: key.segmentation_groups,
+            feature_key: key.feature_key,
+            feature_scope: key.feature_scope,
+            feature_values: key.feature_values,
+        })
+        .collect()
+}
+
+fn segmentation_groups_for_region(region: &NwayRegion) -> Vec<NwaySegmentationGroupRow> {
+    let mut groups = region
+        .segmentation_groups
+        .iter()
+        .cloned()
+        .map(segmentation_group_row)
+        .collect::<Vec<_>>();
+    canonicalize_segmentation_groups(&mut groups);
+    groups
+}
+
+fn canonicalize_segmentation_groups(groups: &mut [NwaySegmentationGroupRow]) {
+    for group in groups.iter_mut() {
+        group.analyzers.sort();
+    }
+    groups.sort();
+}
+
+fn canonicalize_feature_values(values: &mut [NwayFeatureValueGroupRow]) {
+    for value in values.iter_mut() {
+        value.analyzers.sort();
+    }
+    values.sort();
 }
 
 fn segmentation_group_row(group: NwaySegmentationGroup) -> NwaySegmentationGroupRow {
@@ -211,13 +319,7 @@ fn segmentation_group_row(group: NwaySegmentationGroup) -> NwaySegmentationGroup
 fn feature_group_row(group: NwayFeatureGroup) -> NwayFeatureGroupRow {
     NwayFeatureGroupRow {
         key: group.key.to_string(),
-        scope: match group.scope {
-            NwayFeatureScope::WholeRegion => NwayFeatureScopeRow::WholeRegion,
-            NwayFeatureScope::TokenPosition { position } => {
-                NwayFeatureScopeRow::TokenPosition { position }
-            }
-            NwayFeatureScope::Surface { surface } => NwayFeatureScopeRow::Surface { surface },
-        },
+        scope: feature_scope_row(&group.scope),
         values: group
             .values
             .into_iter()
@@ -226,6 +328,18 @@ fn feature_group_row(group: NwayFeatureGroup) -> NwayFeatureGroupRow {
                 analyzers: value.analyzers,
             })
             .collect(),
+    }
+}
+
+fn feature_scope_row(scope: &NwayFeatureScope) -> NwayFeatureScopeRow {
+    match scope {
+        NwayFeatureScope::WholeRegion => NwayFeatureScopeRow::WholeRegion,
+        NwayFeatureScope::TokenPosition { position } => NwayFeatureScopeRow::TokenPosition {
+            position: *position,
+        },
+        NwayFeatureScope::Surface { surface } => NwayFeatureScopeRow::Surface {
+            surface: surface.clone(),
+        },
     }
 }
 

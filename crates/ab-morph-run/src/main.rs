@@ -59,6 +59,10 @@ enum Command {
         sort_by: SummarySortArg,
         #[arg(long, value_enum)]
         script_category: Option<ScriptCategoryArg>,
+        #[arg(long)]
+        exclude_source_id: Vec<String>,
+        #[arg(long)]
+        exclude_text_id: Vec<String>,
         #[arg(long, default_value_t = 20)]
         limit: usize,
         #[arg(long)]
@@ -73,6 +77,10 @@ enum Command {
         filter: ExampleFilterArg,
         #[arg(long, value_enum)]
         script_category: Option<ScriptCategoryArg>,
+        #[arg(long)]
+        exclude_source_id: Vec<String>,
+        #[arg(long)]
+        exclude_text_id: Vec<String>,
         #[arg(long, value_enum, default_value_t = ExampleSortArg::Examples)]
         sort_by: ExampleSortArg,
         #[arg(long, default_value_t = 20)]
@@ -87,10 +95,18 @@ enum Command {
         kind: DifferenceKindArg,
         #[arg(long)]
         feature_key: Option<String>,
+        #[arg(long)]
+        exclude_feature_value: Vec<String>,
+        #[arg(long)]
+        one_to_one_lexical_features: bool,
         #[arg(long, value_enum, default_value_t = ExampleFilterArg::All)]
         filter: ExampleFilterArg,
         #[arg(long, value_enum)]
         script_category: Option<ScriptCategoryArg>,
+        #[arg(long)]
+        exclude_source_id: Vec<String>,
+        #[arg(long)]
+        exclude_text_id: Vec<String>,
         #[arg(long, default_value_t = 20)]
         limit: usize,
         #[arg(long)]
@@ -105,6 +121,10 @@ enum Command {
         sort_by: NwaySummarySortArg,
         #[arg(long, value_enum)]
         script_category: Option<ScriptCategoryArg>,
+        #[arg(long)]
+        exclude_source_id: Vec<String>,
+        #[arg(long)]
+        exclude_text_id: Vec<String>,
         #[arg(long, default_value_t = 20)]
         limit: usize,
         #[arg(long)]
@@ -117,8 +137,14 @@ enum Command {
         kind: NwayPatternKindArg,
         #[arg(long)]
         feature_key: Option<String>,
+        #[arg(long)]
+        exclude_feature_value: Vec<String>,
         #[arg(long, value_enum)]
         script_category: Option<ScriptCategoryArg>,
+        #[arg(long)]
+        exclude_source_id: Vec<String>,
+        #[arg(long)]
+        exclude_text_id: Vec<String>,
         #[arg(long, default_value_t = 20)]
         limit: usize,
         #[arg(long)]
@@ -326,6 +352,13 @@ impl ScriptCategoryArg {
     }
 }
 
+fn summary_exclusions(
+    source_ids: Vec<String>,
+    text_ids: Vec<String>,
+) -> ab_morph_run::SummaryExclusions {
+    ab_morph_run::SummaryExclusions::from_values(source_ids, text_ids)
+}
+
 fn main() -> Result<()> {
     let args = Args::parse();
     match args.command {
@@ -396,6 +429,8 @@ fn main() -> Result<()> {
             group_by,
             sort_by,
             script_category,
+            exclude_source_id,
+            exclude_text_id,
             limit,
             json,
         } => {
@@ -405,6 +440,7 @@ fn main() -> Result<()> {
                     group_by: group_by.into_library(),
                     sort_by: sort_by.into_library(),
                     script_category: script_category.map(ScriptCategoryArg::into_library),
+                    exclusions: summary_exclusions(exclude_source_id, exclude_text_id),
                     limit,
                 },
             )?;
@@ -421,6 +457,8 @@ fn main() -> Result<()> {
             group_by,
             filter,
             script_category,
+            exclude_source_id,
+            exclude_text_id,
             sort_by,
             limit,
             json,
@@ -432,6 +470,7 @@ fn main() -> Result<()> {
                     filter: filter.into_library(),
                     script_category: script_category.map(ScriptCategoryArg::into_library),
                     sort_by: sort_by.into_library(),
+                    exclusions: summary_exclusions(exclude_source_id, exclude_text_id),
                     limit,
                 },
             )?;
@@ -447,8 +486,12 @@ fn main() -> Result<()> {
             examples,
             kind,
             feature_key,
+            exclude_feature_value,
+            one_to_one_lexical_features,
             filter,
             script_category,
+            exclude_source_id,
+            exclude_text_id,
             limit,
             json,
         } => {
@@ -459,6 +502,9 @@ fn main() -> Result<()> {
                     script_category: script_category.map(ScriptCategoryArg::into_library),
                     kind: kind.into_library(),
                     feature_key,
+                    excluded_feature_values: exclude_feature_value.into_iter().collect(),
+                    one_to_one_lexical_features,
+                    exclusions: summary_exclusions(exclude_source_id, exclude_text_id),
                     limit,
                 },
             )?;
@@ -475,6 +521,8 @@ fn main() -> Result<()> {
             group_by,
             sort_by,
             script_category,
+            exclude_source_id,
+            exclude_text_id,
             limit,
             json,
         } => {
@@ -484,6 +532,7 @@ fn main() -> Result<()> {
                     group_by: group_by.into_library(),
                     sort_by: sort_by.into_library(),
                     script_category: script_category.map(ScriptCategoryArg::into_library),
+                    exclusions: summary_exclusions(exclude_source_id, exclude_text_id),
                     limit,
                 },
             )?;
@@ -499,7 +548,10 @@ fn main() -> Result<()> {
             nway,
             kind,
             feature_key,
+            exclude_feature_value,
             script_category,
+            exclude_source_id,
+            exclude_text_id,
             limit,
             json,
         } => {
@@ -509,6 +561,8 @@ fn main() -> Result<()> {
                     kind: kind.into_library(),
                     feature_key,
                     script_category: script_category.map(ScriptCategoryArg::into_library),
+                    excluded_feature_values: exclude_feature_value.into_iter().collect(),
+                    exclusions: summary_exclusions(exclude_source_id, exclude_text_id),
                     limit,
                 },
             )?;
@@ -846,6 +900,8 @@ mod tests {
             "text-id",
             "--sort-by",
             "lexical-segmentation-regions",
+            "--exclude-text-id",
+            "JISTABLE",
             "--limit",
             "25",
             "--json",
@@ -856,6 +912,8 @@ mod tests {
             group_by,
             sort_by,
             script_category,
+            exclude_source_id,
+            exclude_text_id,
             limit,
             json,
         } = args.command
@@ -867,6 +925,8 @@ mod tests {
         assert_eq!(group_by, SummaryGroupByArg::TextId);
         assert_eq!(sort_by, SummarySortArg::LexicalSegmentationRegions);
         assert_eq!(script_category, None);
+        assert!(exclude_source_id.is_empty());
+        assert_eq!(exclude_text_id, vec!["JISTABLE"]);
         assert_eq!(limit, 25);
         assert!(json);
     }
@@ -884,6 +944,8 @@ mod tests {
             "whitespace-only",
             "--sort-by",
             "whitespace-examples",
+            "--exclude-source-id",
+            "src-a",
             "--limit",
             "30",
             "--json",
@@ -894,6 +956,8 @@ mod tests {
             group_by,
             filter,
             script_category,
+            exclude_source_id,
+            exclude_text_id,
             sort_by,
             limit,
             json,
@@ -906,6 +970,8 @@ mod tests {
         assert_eq!(group_by, SummaryGroupByArg::TextId);
         assert_eq!(filter, ExampleFilterArg::WhitespaceOnly);
         assert_eq!(script_category, None);
+        assert_eq!(exclude_source_id, vec!["src-a"]);
+        assert!(exclude_text_id.is_empty());
         assert_eq!(sort_by, ExampleSortArg::WhitespaceExamples);
         assert_eq!(limit, 30);
         assert!(json);
@@ -922,10 +988,15 @@ mod tests {
             "feature",
             "--feature-key",
             "pos1",
+            "--exclude-feature-value",
+            "空白",
+            "--one-to-one-lexical-features",
             "--filter",
             "lexical-only",
             "--script-category",
             "japanese",
+            "--exclude-text-id",
+            "JISTABLE",
             "--limit",
             "50",
             "--json",
@@ -935,8 +1006,12 @@ mod tests {
             examples,
             kind,
             feature_key,
+            exclude_feature_value,
+            one_to_one_lexical_features,
             filter,
             script_category,
+            exclude_source_id,
+            exclude_text_id,
             limit,
             json,
         } = args.command
@@ -947,8 +1022,12 @@ mod tests {
         assert_eq!(examples, PathBuf::from("examples.jsonl.zst"));
         assert_eq!(kind, DifferenceKindArg::Feature);
         assert_eq!(feature_key, Some("pos1".to_owned()));
+        assert_eq!(exclude_feature_value, vec!["空白"]);
+        assert!(one_to_one_lexical_features);
         assert_eq!(filter, ExampleFilterArg::LexicalOnly);
         assert_eq!(script_category, Some(ScriptCategoryArg::Japanese));
+        assert!(exclude_source_id.is_empty());
+        assert_eq!(exclude_text_id, vec!["JISTABLE"]);
         assert_eq!(limit, 50);
         assert!(json);
     }

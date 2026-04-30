@@ -78,7 +78,9 @@
         manifest-inputs-schema (files/read-json "schemas/manifest-inputs.schema.json")
         comparison-report-schema (files/read-json "schemas/comparison-report.schema.json")
         tei-validation-result-schema (files/read-json "schemas/tei-validation-result.schema.json")
-        iiif-applicability-schema (files/read-json "schemas/iiif-applicability.schema.json")]
+        iiif-applicability-schema (files/read-json "schemas/iiif-applicability.schema.json")
+        person-drift-event-schema (files/read-json "schemas/person-drift-event.schema.json")
+        person-drift-index-schema (files/read-json "schemas/person-drift-index.schema.json")]
     (doseq [[path schema] [["schemas/manifest.schema.json" manifest-schema]
                            ["schemas/parser-ir.schema.json" parser-ir-schema]
                            ["schemas/diagnostic.schema.json" diagnostic-schema]
@@ -86,7 +88,9 @@
                            ["schemas/manifest-inputs.schema.json" manifest-inputs-schema]
                            ["schemas/comparison-report.schema.json" comparison-report-schema]
                            ["schemas/tei-validation-result.schema.json" tei-validation-result-schema]
-                           ["schemas/iiif-applicability.schema.json" iiif-applicability-schema]]]
+                           ["schemas/iiif-applicability.schema.json" iiif-applicability-schema]
+                           ["schemas/person-drift-event.schema.json" person-drift-event-schema]
+                           ["schemas/person-drift-index.schema.json" person-drift-index-schema]]]
       (schema-valid! schema path))
     (doseq [path (concat ["examples/v0/example-work/source.manifest.json"
                           "examples/v0/example-work/manifest.json"

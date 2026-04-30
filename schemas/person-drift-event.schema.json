@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/abc/schemas/person-drift-event.schema.json",
+  "title": "ABC Person Drift Event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_id",
+    "schema_hash",
+    "drift_event_id",
+    "drift_event_type",
+    "date",
+    "participants",
+    "evidence",
+    "prov"
+  ],
+  "properties": {
+    "schema_id": {
+      "const": "https://w3id.org/abc/schemas/person-drift-event.schema.json"
+    },
+    "schema_hash": { "$ref": "#/$defs/hash" },
+    "drift_event_id": { "$ref": "#/$defs/hash" },
+    "drift_event_type": { "type": "string", "enum": ["split", "merge"] },
+    "date": { "type": "string", "format": "date" },
+    "participants": {
+      "type": "array",
+      "minItems": 2,
+      "items": { "$ref": "#/$defs/participant" }
+    },
+    "evidence": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "format": "uri" }
+    },
+    "prov": { "$ref": "#/$defs/prov" }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "drift_event_type": { "const": "split" } },
+        "required": ["drift_event_type"]
+      },
+      "then": {
+        "properties": {
+          "prov": {
+            "properties": {
+              "used": { "minItems": 1, "maxItems": 1 },
+              "was_generated_by": { "minItems": 2 }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "drift_event_type": { "const": "merge" } },
+        "required": ["drift_event_type"]
+      },
+      "then": {
+        "properties": {
+          "prov": {
+            "properties": {
+              "used": { "minItems": 2 },
+              "was_generated_by": { "minItems": 1, "maxItems": 1 }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "personId": {
+      "type": "string",
+      "pattern": "^([0-9]{6}|abc-[0-9a-f]{12})$"
+    },
+    "snapshotId": {
+      "type": "string",
+      "pattern": "^(pre|post)-([0-9]{6}|abc-[0-9a-f]{12})$"
+    },
+    "participant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["snapshot_id", "person_id", "person_record_hash"],
+      "properties": {
+        "snapshot_id": { "$ref": "#/$defs/snapshotId" },
+        "person_id": { "$ref": "#/$defs/personId" },
+        "person_record_hash": { "$ref": "#/$defs/hash" }
+      }
+    },
+    "prov": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["used", "was_generated_by", "qualified_association"],
+      "properties": {
+        "used": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/snapshotId" },
+          "uniqueItems": true
+        },
+        "was_generated_by": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/snapshotId" },
+          "uniqueItems": true
+        },
+        "qualified_association": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["agent", "had_role"],
+          "properties": {
+            "agent": { "type": "string", "format": "uri" },
+            "had_role": { "const": "abc:DriftEditor" }
+          }
+        }
+      }
+    }
+  }
+}

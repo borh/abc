@@ -197,7 +197,7 @@
                   :current current-ingest}
          :validation {:current validation}
          :drift drift-report
-         :drift-participant-updates drift-participant-updates})
+         :drift_participant_updates drift-participant-updates})
       (finally
         (.close repo)))))
 
@@ -230,7 +230,7 @@
               validation-failed? (= "validation_failed" (:status result))
               candidate-count (+ (or (get-in result [:drift "summary" "split_candidates"]) 0)
                                  (or (get-in result [:drift "summary" "merge_candidates"]) 0))
-              drift-participant-update-count (count (:drift-participant-updates result))]
+              drift-participant-update-count (count (:drift_participant_updates result))]
           (when (or validation-failed?
                     (and (:fail-on-candidates options) (pos? candidate-count))
                     (and (:fail-on-drift-participant-updates options)

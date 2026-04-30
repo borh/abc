@@ -354,7 +354,7 @@ drift-participant-updates
 Then add the top-level report field:
 
 ```clojure
-:drift-participant-updates drift-participant-updates
+:drift_participant_updates drift-participant-updates
 ```
 
 - [ ] **Step 5: Run the focused tests**
@@ -401,7 +401,7 @@ In `-main`, after `candidate-count`, add:
 
 ```clojure
 drift-participant-update-count
-(count (:drift-participant-updates result))
+(count (:drift_participant_updates result))
 ```
 
 Then extend the exit condition:
@@ -447,7 +447,7 @@ files:
                             :current-ref (.getName new-commit)
                             :drift-persons-dir (str drift-dir)
                             :work-dir (str work-dir)})
-      updates (:drift-participant-updates result)]
+      updates (:drift_participant_updates result)]
   (is (= #{"000001" "abc-000000000001" "abc-000000000002"}
          (set (map #(get % "person_id") updates))))
   (is (= #{"removed" "added"}

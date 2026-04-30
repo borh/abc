@@ -305,7 +305,7 @@
                    "source_person_ids" ["000001"]
                    "target_person_ids" ["abc-000000000001" "abc-000000000002"]}]
                  (get-in result [:drift "split_candidates"])))
-          (let [updates (:drift-participant-updates result)]
+          (let [updates (:drift_participant_updates result)]
             (is (= #{"000001" "abc-000000000001" "abc-000000000002"}
                    (set (map #(get % "person_id") updates))))
             (is (= #{"removed" "added"}

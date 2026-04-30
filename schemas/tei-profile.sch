@@ -13,7 +13,7 @@
    <ns prefix="sch" uri="http://purl.oclc.org/dsdl/schematron"/>
    <ns prefix="sch1x" uri="http://www.ascc.net/xml/schematron"/>
    <!-- ******************************************************* -->
-   <!-- constraints in en, und, mul, zxx, of which there are 83 -->
+   <!-- constraints in en, und, mul, zxx, of which there are 86 -->
    <!-- ******************************************************* -->
    <pattern id="abc-tei-header-title">
       <rule context="tei:teiHeader">
@@ -23,6 +23,11 @@
    <pattern id="abc-tei-header-source-work-id">
       <rule context="tei:teiHeader">
          <assert test=".//tei:idno[@type = ('aozora-work-id', 'source-work-id')]"> ABC TEI requires an Aozora work ID or source work identifier.</assert>
+      </rule>
+   </pattern>
+   <pattern id="abc-header-language-declared">
+      <rule context="tei:TEI">
+         <assert test="tei:teiHeader/tei:profileDesc/tei:langUsage/tei:language[@ident and normalize-space(@ident) != '']"> teiHeader must declare at least one tei:profileDesc/tei:langUsage/tei:language with non-empty @ident (abc-header-language-declared)</assert>
       </rule>
    </pattern>
    <pattern id="abc-ruby-complete">
@@ -35,6 +40,11 @@
          <assert test="normalize-space(string(.)) != ''"> ABC TEI ruby base must not be empty; preserve the source token text.</assert>
       </rule>
    </pattern>
+   <pattern id="abc-ruby-reading-non-empty">
+      <rule context="tei:ruby/tei:rt">
+         <assert test="normalize-space(string(.)) != ''"> tei:ruby/tei:rt must have non-empty content (abc-ruby-reading-non-empty)</assert>
+      </rule>
+   </pattern>
    <pattern id="abc-gaiji-reference">
       <rule context="tei:g">
          <assert test="@ref or @corresp or @ana"> ABC TEI gaiji requires a declaration reference, source marker reference, or resolution status.</assert>
@@ -43,6 +53,11 @@
    <pattern id="abc-gaiji-chardecl-resolution">
       <rule context="tei:g[starts-with(@ref, '#')]">
          <assert test="/tei:TEI/tei:teiHeader//tei:charDecl/tei:char/@xml:id = substring-after(@ref, '#')"> ABC TEI gaiji local @ref must point to a charDecl/char declaration in this document.</assert>
+      </rule>
+   </pattern>
+   <pattern id="abc-char-resolution-form">
+      <rule context="tei:charDecl/tei:char">
+         <assert test="(some $m in tei:mapping satisfies normalize-space(string($m)) != '') or (some $u in tei:unicodeProp satisfies normalize-space(string($u/@value)) != '') or (some $l in tei:localProp satisfies normalize-space(string($l/@value)) != '') or (some $d in tei:desc satisfies normalize-space(string($d)) != '')"> tei:charDecl/tei:char must declare at least one non-empty resolution form: tei:mapping, tei:unicodeProp/@value, tei:localProp/@value, or tei:desc (abc-char-resolution-form)</assert>
       </rule>
    </pattern>
    <pattern id="abc-figure-accessibility">

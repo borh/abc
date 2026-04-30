@@ -2,7 +2,7 @@
 
 ## Current State
 
-Fourteen contract-harness milestones complete:
+Fifteen contract-harness milestones complete:
 
 - **2026-04-27 v0 contract harness** (archived as
   `docs/archive/2026-04-27-v0-contract-harness.md`).
@@ -283,6 +283,23 @@ Fourteen contract-harness milestones complete:
   their proposed standard alternatives operate on whole-name strings,
   not family/given components, and adopting them would lose
   component-level distinction the corpus needs.
+- **2026-04-29 TEI rule expansion batch 2.** Three new ABC Schematron
+  rules added to `schemas/tei-profile.odd` and propagated through the
+  pinned `tei-profile-artifacts` derivation: `abc-ruby-reading-non-empty`
+  (mirrors the base check on `tei:rt`), `abc-char-resolution-form`
+  (every `tei:charDecl/tei:char` declares at least one of
+  `mapping`/`unicodeProp`/`localProp`/`desc`), and
+  `abc-header-language-declared`
+  (`teiHeader//profileDesc/langUsage/language[@ident]` is present and
+  non-empty). Three invalid fixtures + three deftests cover the new
+  rules; the inventory in `docs/tei-validation.md` advances from ten
+  to thirteen ABC patterns. The fourth candidate from the previous
+  milestone (parser-IR scope-qualifier expectation) is deferred — it
+  needs a separate ADR to decide how
+  `explicit`/`inferred`/`grouped`/`mid-word`/`ambiguous` are encoded
+  in TEI before a Schematron rule can be written. The v0 evaluator's
+  `<sch:let>` and `role="nonfatal"` ceiling on inherited TEI rules
+  remains.
 
 ## Canonical Commands
 
@@ -302,29 +319,14 @@ bin/update-clj-nix-lock
 
 In rough order of leverage, none committed:
 
-1. **Further TEI rule expansion.** Three high-leverage widenings
-   landed in the 2026-04-29 milestone (`abc-ruby-base-non-empty`,
-   `abc-source-span-target-exists`, `abc-gaiji-chardecl-resolution`).
-   Remaining candidates: `abc-ruby-reading-non-empty` mirroring the
-   base check; tighter `tei:char` content (every charDecl/char
-   must declare at least one resolution form — `mapping`,
-   `unicodeProp`, `localProp`, or `desc` — so `<char xml:id="x"/>`
-   doesn't silently count as resolved); explicit ruby
-   scope-qualifier expectation tied to the parser-IR fields
-   (`explicit`/`inferred`/`grouped`/`mid-word`/`ambiguous`); a
-   header-language assertion (`teiHeader//langUsage/language[@ident]`)
-   for downstream tooling. Each new rule extends the ODD's
-   `constraintSpec` block and re-runs the drift gate; the v0
-   evaluator's lack of `<sch:let>` and `role="nonfatal"` support
-   remains the ceiling on inherited TEI rules.
-2. **Parser-decision exercise (ADR 0002).** Run a candidate parser
+1. **Parser-decision exercise (ADR 0002).** Run a candidate parser
    (e.g. `aozora-rs`) over one Aozora work into the parser IR
    contract. Currently parked while parser work happens in another
    project.
-3. **Person identity drift (Flavor 2).** Splits, merges, renames as
+2. **Person identity drift (Flavor 2).** Splits, merges, renames as
    PROV-style events; the separated-persons milestone scoped Flavor 1
    only.
-4. **Move legacy namespaces behind clj-nix.** `abc.aozora`,
+3. **Move legacy namespaces behind clj-nix.** `abc.aozora`,
    `abc.tei`, `abc.stats` remain outside the v0 contract gate.
 
 ## Done Criteria For The Closed Milestones

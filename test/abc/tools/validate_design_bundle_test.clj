@@ -213,14 +213,20 @@
                                    #{"abc-tei-header-title"}
                                    "fixtures/tei/invalid/missing-source-work-id.xml"
                                    #{"abc-tei-header-source-work-id"}
+                                   "fixtures/tei/invalid/char-empty-decl.xml"
+                                   #{"abc-char-resolution-form"}
                                    "fixtures/tei/invalid/gaiji-missing-ref.xml"
                                    #{"abc-gaiji-reference"}
                                    "fixtures/tei/invalid/gaiji-dangling-ref.xml"
                                    #{"abc-gaiji-chardecl-resolution"}
+                                   "fixtures/tei/invalid/header-no-language.xml"
+                                   #{"abc-header-language-declared"}
                                    "fixtures/tei/invalid/ruby-missing-reading.xml"
                                    #{"abc-ruby-complete"}
                                    "fixtures/tei/invalid/ruby-empty-base.xml"
                                    #{"abc-ruby-base-non-empty"}
+                                   "fixtures/tei/invalid/ruby-empty-reading.xml"
+                                   #{"abc-ruby-reading-non-empty"}
                                    "fixtures/tei/invalid/source-span-external-ref.xml"
                                    #{"abc-source-span-reference"
                                      "abc-source-span-target-exists"}

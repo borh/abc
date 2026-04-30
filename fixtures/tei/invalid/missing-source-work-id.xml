@@ -12,6 +12,11 @@
         <p>Aozora Bunko source fixture.</p>
       </sourceDesc>
     </fileDesc>
+    <profileDesc>
+      <langUsage>
+        <language ident="ja">日本語</language>
+      </langUsage>
+    </profileDesc>
   </teiHeader>
   <text>
     <body>

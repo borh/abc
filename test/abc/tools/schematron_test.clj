@@ -96,6 +96,17 @@
       (is (= [:error]
              (mapv :severity findings))))))
 
+(deftest ruby-empty-reading-fails-ruby-reading-rule-test
+  (testing "ruby with empty rt fails abc-ruby-reading-non-empty"
+    (let [{:keys [findings]} (schematron/validate!
+                              {:schema-path schema-path
+                               :xml-path "fixtures/tei/invalid/ruby-empty-reading.xml"
+                               :label "ruby-empty-reading"})]
+      (is (= ["abc-ruby-reading-non-empty"]
+             (mapv :rule-id findings)))
+      (is (= [:error]
+             (mapv :severity findings))))))
+
 (deftest gaiji-dangling-ref-fails-chardecl-resolution-rule-test
   (testing "gaiji local @ref to a missing charDecl/char fails abc-gaiji-chardecl-resolution"
     (let [{:keys [findings]} (schematron/validate!
@@ -103,6 +114,28 @@
                                :xml-path "fixtures/tei/invalid/gaiji-dangling-ref.xml"
                                :label "gaiji-dangling"})]
       (is (= ["abc-gaiji-chardecl-resolution"]
+             (mapv :rule-id findings)))
+      (is (= [:error]
+             (mapv :severity findings))))))
+
+(deftest char-empty-decl-fails-char-resolution-rule-test
+  (testing "char with empty desc fails abc-char-resolution-form"
+    (let [{:keys [findings]} (schematron/validate!
+                              {:schema-path schema-path
+                               :xml-path "fixtures/tei/invalid/char-empty-decl.xml"
+                               :label "char-empty-decl"})]
+      (is (= ["abc-char-resolution-form"]
+             (mapv :rule-id findings)))
+      (is (= [:error]
+             (mapv :severity findings))))))
+
+(deftest header-no-language-fails-header-language-rule-test
+  (testing "teiHeader without profileDesc/langUsage/language fails abc-header-language-declared"
+    (let [{:keys [findings]} (schematron/validate!
+                              {:schema-path schema-path
+                               :xml-path "fixtures/tei/invalid/header-no-language.xml"
+                               :label "header-no-language"})]
+      (is (= ["abc-header-language-declared"]
              (mapv :rule-id findings)))
       (is (= [:error]
              (mapv :severity findings))))))

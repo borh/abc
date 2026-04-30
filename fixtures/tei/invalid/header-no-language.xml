@@ -3,25 +3,20 @@
   <teiHeader>
     <fileDesc>
       <titleStmt>
-        <title type="main" xml:lang="ja">羅生門</title>
+        <title type="main" xml:lang="ja">header without language fixture</title>
       </titleStmt>
       <publicationStmt>
         <publisher>ABC fixture</publisher>
-        <idno type="aozora-work-id">000127</idno>
+        <idno type="aozora-work-id">000000</idno>
       </publicationStmt>
       <sourceDesc>
         <p>Aozora Bunko source fixture.</p>
       </sourceDesc>
     </fileDesc>
-    <profileDesc>
-      <langUsage>
-        <language ident="ja">日本語</language>
-      </langUsage>
-    </profileDesc>
   </teiHeader>
   <text>
     <body>
-      <p>Ruby without reading <ruby><rb>猫</rb></ruby></p>
+      <p>placeholder</p>
     </body>
   </text>
 </TEI>

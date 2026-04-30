@@ -164,14 +164,17 @@
                 "fixtures/tei/valid/rashomon-minimal.xml"
                 "fixtures/tei/valid/source-span-local-ref.xml"
                 "fixtures/tei/valid/transcription-enrichment-declared.xml"
-                "fixtures/tei/invalid/missing-title.xml"
-                "fixtures/tei/invalid/missing-source-work-id.xml"
-                "fixtures/tei/invalid/gaiji-missing-ref.xml"
+                "fixtures/tei/invalid/char-empty-decl.xml"
                 "fixtures/tei/invalid/gaiji-dangling-ref.xml"
-                "fixtures/tei/invalid/ruby-missing-reading.xml"
+                "fixtures/tei/invalid/gaiji-missing-ref.xml"
+                "fixtures/tei/invalid/header-no-language.xml"
+                "fixtures/tei/invalid/missing-source-work-id.xml"
+                "fixtures/tei/invalid/missing-title.xml"
                 "fixtures/tei/invalid/ruby-empty-base.xml"
-                "fixtures/tei/invalid/source-span-external-ref.xml"
+                "fixtures/tei/invalid/ruby-empty-reading.xml"
+                "fixtures/tei/invalid/ruby-missing-reading.xml"
                 "fixtures/tei/invalid/source-span-dangling-ref.xml"
+                "fixtures/tei/invalid/source-span-external-ref.xml"
                 "fixtures/tei/warnings/figure-missing-desc.xml"
                 "fixtures/tei/warnings/transcription-enrichment-undeclared.xml"))
 
@@ -520,12 +523,15 @@
                       "fixtures/tei/valid/transcription-enrichment-declared.xml"
                       "fixtures/tei/warnings/figure-missing-desc.xml"
                       "fixtures/tei/warnings/transcription-enrichment-undeclared.xml"
-                      "fixtures/tei/invalid/missing-source-work-id.xml"
-                      "fixtures/tei/invalid/gaiji-missing-ref.xml"
+                      "fixtures/tei/invalid/char-empty-decl.xml"
                       "fixtures/tei/invalid/gaiji-dangling-ref.xml"
+                      "fixtures/tei/invalid/gaiji-missing-ref.xml"
+                      "fixtures/tei/invalid/header-no-language.xml"
+                      "fixtures/tei/invalid/missing-source-work-id.xml"
                       "fixtures/tei/invalid/ruby-empty-base.xml"
-                      "fixtures/tei/invalid/source-span-external-ref.xml"
-                      "fixtures/tei/invalid/source-span-dangling-ref.xml"])
+                      "fixtures/tei/invalid/ruby-empty-reading.xml"
+                      "fixtures/tei/invalid/source-span-dangling-ref.xml"
+                      "fixtures/tei/invalid/source-span-external-ref.xml"])
       (tel/log! :info "tei project rng validation ok")
       (tel/log! :info "==> Validating TEI against project Schematron")
       (validate-tei-schematron!
@@ -540,16 +546,22 @@
                            #{"abc-transcription-vs-annotation"}}
         :invalid-fixtures {"fixtures/tei/invalid/missing-title.xml"
                            #{"abc-tei-header-title"}
-                           "fixtures/tei/invalid/missing-source-work-id.xml"
-                           #{"abc-tei-header-source-work-id"}
-                           "fixtures/tei/invalid/gaiji-missing-ref.xml"
-                           #{"abc-gaiji-reference"}
+                           "fixtures/tei/invalid/char-empty-decl.xml"
+                           #{"abc-char-resolution-form"}
                            "fixtures/tei/invalid/gaiji-dangling-ref.xml"
                            #{"abc-gaiji-chardecl-resolution"}
-                           "fixtures/tei/invalid/ruby-missing-reading.xml"
-                           #{"abc-ruby-complete"}
+                           "fixtures/tei/invalid/gaiji-missing-ref.xml"
+                           #{"abc-gaiji-reference"}
+                           "fixtures/tei/invalid/header-no-language.xml"
+                           #{"abc-header-language-declared"}
+                           "fixtures/tei/invalid/missing-source-work-id.xml"
+                           #{"abc-tei-header-source-work-id"}
                            "fixtures/tei/invalid/ruby-empty-base.xml"
                            #{"abc-ruby-base-non-empty"}
+                           "fixtures/tei/invalid/ruby-empty-reading.xml"
+                           #{"abc-ruby-reading-non-empty"}
+                           "fixtures/tei/invalid/ruby-missing-reading.xml"
+                           #{"abc-ruby-complete"}
                            "fixtures/tei/invalid/source-span-external-ref.xml"
                            #{"abc-source-span-reference"}
                            "fixtures/tei/invalid/source-span-dangling-ref.xml"

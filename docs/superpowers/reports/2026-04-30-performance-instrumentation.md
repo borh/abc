@@ -248,3 +248,43 @@ Result:
 - Artifact sizes: `4K` analyses, `8K` comparisons, `12K` examples, `28K` N-way, `4K` errors.
 
 Conclusion: streaming compact N-way prevents the earlier full-corpus `70+ GB` failure pattern, but large concurrent inputs still create ~52 GiB process RSS. The next memory target is per-document analysis retention and scheduling: avoid running the largest AAT files concurrently, or write a memory-aware scheduler that limits concurrent large documents while preserving `--jobs 8` for normal-sized documents.
+
+## Single largest file memory baseline
+
+This isolates per-document memory from scheduling/concurrency effects.
+
+Command:
+
+```bash
+rm -rf scratch/perf-one-largest
+mkdir -p scratch/perf-one-largest/aats/aozora-rs-adapter scratch/perf-one-largest/out
+largest=$(find scratch/morph-full-corpus/aats -type f -name '*.json' -printf '%s %p\n' | sort -nr | head -1 | awk '{print $2}')
+ln -s "$(realpath "$largest")" "scratch/perf-one-largest/aats/aozora-rs-adapter/$(basename "$largest")"
+
+AB_SUDACHI_DICT="$(nix path-info .#sudachi-dictionary-full)/share/sudachi/system.dic" \
+  taskset -c 0 /run/current-system/sw/bin/time -v \
+  target/release/ab-morph-run analyze-aat \
+    --aat-dir scratch/perf-one-largest/aats \
+    --analyzer vibrato \
+    --analyzer sudachi-a \
+    --analyzer sudachi-c \
+    --output-profile compact \
+    --analyses-output scratch/perf-one-largest/out/analyses.jsonl.zst \
+    --comparisons-output scratch/perf-one-largest/out/comparisons.jsonl.zst \
+    --examples-output scratch/perf-one-largest/out/examples.jsonl.zst \
+    --nway-output scratch/perf-one-largest/out/nway.jsonl.zst \
+    --errors-output scratch/perf-one-largest/out/errors.jsonl.zst \
+    --manifest-output scratch/perf-one-largest/out/manifest.json \
+    --jobs 1 \
+    --progress-interval-seconds 15
+```
+
+Result:
+
+- Input: `001529_50685-dd3b2fe4e5bf.json`, `41956998` bytes.
+- Exit status: `0`.
+- Peak RSS: `18804424 KB` (~17.9 GiB).
+- Peak observed progress RSS: `18804564 KB` at `257s`.
+- Rows: `3` analyses, `3` comparisons, `30` examples, `1` N-way row, `0` errors.
+
+Conclusion: there is a real per-document memory issue independent of scheduling. The largest single file holds roughly 18 GiB while reducing the three analyses. Scheduling remains useful for corpus stability, but the first correctness target is reducing per-document retained analysis/comparison memory.

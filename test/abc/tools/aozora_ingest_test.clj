@@ -3,7 +3,8 @@
             [abc.tools.files :as files]
             [abc.tools.person-record :as pr]
             [clojure.java.io :as io]
-            [clojure.test :refer [deftest is testing]])
+            [clojure.test :refer [deftest is testing]]
+            [taoensso.telemere :as tel])
   (:import [java.nio.file Files]
            [java.nio.file.attribute FileAttribute]))
 
@@ -65,6 +66,40 @@
         (let [person (files/read-json (str (io/file persons-dir "000879.json")))]
           (is (= :ok (pr/validate! person)))
           (is (= "000879" (get person "person_id"))))
+        (finally
+          (delete-recursive work-dir)
+          (delete-recursive persons-dir))))))
+
+(deftest ingest-logs-per-work-metadata-hash-at-debug-test
+  (testing "per-work metadata hashes do not flood normal corpus-scale logs"
+    (let [work-dir (temp-dir "abc-ingest-log-w")
+          persons-dir (temp-dir "abc-ingest-log-p")
+          signals (atom [])]
+      (try
+        (tel/with-handler+ ::capture
+          (fn [signal]
+            (swap! signals conj {:level (:level signal)
+                                 :msg (force (:msg_ signal))}))
+          {:async nil}
+          (tel/with-min-level nil
+            (ingest/run-from-rows!
+             {:rows [(merge (first synthetic-rows-with-edition)
+                            {"生年月日" "1892-3-01"})]
+              :work-id "000127"
+              :output (str (io/file work-dir "metadata-record.json"))
+              :persons-output-dir (str persons-dir)})))
+        (is (some #(and (= :debug (:level %))
+                        (re-find #"^metadata_record_hash: sha256:" (:msg %)))
+                  @signals))
+        (is (some #(and (= :debug (:level %))
+                        (re-find #"^parse-correction person=" (:msg %)))
+                  @signals))
+        (is (not-any? #(and (= :info (:level %))
+                            (re-find #"^parse-correction person=" (:msg %)))
+                      @signals))
+        (is (not-any? #(and (= :info (:level %))
+                            (re-find #"^metadata_record_hash: sha256:" (:msg %)))
+                      @signals))
         (finally
           (delete-recursive work-dir)
           (delete-recursive persons-dir))))))

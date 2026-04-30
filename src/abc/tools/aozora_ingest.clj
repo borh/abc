@@ -175,7 +175,7 @@
                           (str (.getParent (io/file output)) "/persons"))
           _ (doseq [[pid corrs] (sort-by key corrections-by-pid)
                     c corrs]
-              (tel/log! :info
+              (tel/log! :debug
                         (str "parse-correction person=" pid
                              " field=" (get c "field")
                              " rule=" (get c "rule")
@@ -201,7 +201,7 @@
       (.mkdirs (.getParentFile (io/file output)))
       (json/write-deterministic-json-file! (io/file output) metadata-rec)
       (let [new-hash (metadata-record/record-hash metadata-rec)]
-        (tel/log! :info (str "metadata_record_hash: " new-hash))
+        (tel/log! :debug (str "metadata_record_hash: " new-hash))
         (when refresh-manifest
           (let [m (files/read-json refresh-manifest)
                 m' (assoc-in m ["manifest_identity_object" "metadata_record_hash"] new-hash)

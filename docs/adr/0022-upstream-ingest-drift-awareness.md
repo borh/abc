@@ -86,6 +86,13 @@ The check is report-only by default. A new
 `--fail-on-drift-participant-updates` flag makes the audit exit non-zero when
 the list is non-empty.
 
+The repository workflow exposes this as `nix run .#aozora-upstream-audit`,
+which wraps `aozora-history-audit` with
+`--drift-persons-dir examples/v0/example-persons`, `--fail-on-candidates`, and
+`--fail-on-drift-participant-updates`. The lower-level
+`aozora-history-audit` app remains available for exploratory scans and custom
+drift sidecar directories.
+
 The raw `aozora-ingest` command remains source-faithful and does not rewrite,
 skip, or retire Aozora person IDs based on drift sidecars. A later managed
 corpus command may reuse the same check as a pre-overwrite guard, but this ADR
@@ -138,6 +145,8 @@ still be possible. The failure mode belongs behind an explicit audit flag.
   participant appears in `drift_participant_updates`.
 - `--fail-on-drift-participant-updates` exits non-zero only when that list is
   non-empty.
+- `nix run .#aozora-upstream-audit` runs the default after-upstream audit with
+  drift sidecars and both failure gates enabled.
 - `aozora-ingest` still produces source-faithful person and work records from
   the CSV without applying drift-event rewrites.
 

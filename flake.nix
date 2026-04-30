@@ -172,6 +172,25 @@
             meta.description = "Extract two Aozora git refs, ingest them, validate current corpus, and report person drift candidates";
           };
 
+          aozora-upstream-audit = {
+            type = "app";
+            program = toString (
+              pkgs.writeShellScript "abc-aozora-upstream-audit" ''
+                set -euo pipefail
+                if [ ! -d examples/v0/example-persons ]; then
+                  echo "aozora-upstream-audit: run from the ABC repository root; examples/v0/example-persons not found" >&2
+                  exit 2
+                fi
+                exec ${pkgs.clojure}/bin/clojure -M:abc/aozora-history-audit \
+                  --drift-persons-dir examples/v0/example-persons \
+                  --fail-on-candidates \
+                  --fail-on-drift-participant-updates \
+                  "$@"
+              ''
+            );
+            meta.description = "Default after-upstream Aozora audit with drift sidecars and failure gates enabled";
+          };
+
           regenerate-tei-profile = {
             type = "app";
             program = toString (
@@ -273,6 +292,7 @@
               export JAVA_TOOL_OPTIONS="-Duser.home=${cljDepsCache}"
               export CLJ_CONFIG="$HOME/.clojure"
               export CLJ_CACHE="$TMPDIR/cp-cache"
+              export XDG_CONFIG_HOME="$TMPDIR/xdg-config"
               export GITLIBS="$HOME/.gitlibs"
 
               # The Nix sandbox has no network access; tests that need

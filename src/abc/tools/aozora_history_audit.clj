@@ -5,10 +5,12 @@
   (:require [abc.git :as abc-git]
             [abc.tools.aozora-ingest :as ingest]
             [abc.tools.json :as abc-json]
+            [abc.tools.person-drift :as drift]
             [abc.tools.person-drift-history :as drift-history]
             [abc.tools.validate-corpus :as validate-corpus]
             [charred.api :as json]
             [clojure.java.io :as io]
+            [clojure.string :as string]
             [clojure.tools.cli :refer [parse-opts]]))
 
 (def ^:private default-zip-path
@@ -67,13 +69,79 @@
     :overwrite true
     :source-url (str "git:" ref ":" source-path)}))
 
+(defn- index-json-files [indexes-dir]
+  (->> (or (.listFiles (io/file indexes-dir)) (make-array java.io.File 0))
+       (filter #(and (.isFile ^java.io.File %)
+                     (string/ends-with? (.getName ^java.io.File %) ".json")))
+       (sort-by #(.getName ^java.io.File %))))
+
+(defn- drift-index-map [persons-dir]
+  (let [result (drift/validate-drift-events! {:persons-dir persons-dir})]
+    (case (:status result)
+      :not-present
+      {}
+
+      :ok
+      (let [indexes-dir (io/file persons-dir "_indexes")]
+        (into (sorted-map)
+              (map (fn [file]
+                     (let [index (abc-json/read-json-file file)]
+                       [(get index "person_id")
+                        (vec (sort (get index "drift_event_ids")))])))
+              (index-json-files indexes-dir)))
+
+      :error
+      (throw (ex-info "drift sidecars failed validation"
+                      {:persons-dir persons-dir
+                       :failures (:failures result)})))))
+
+(defn drift-participant-updates
+  "Return review entries for generated person-record changes that touch
+  person_ids already mentioned by accepted drift indexes."
+  [{:keys [previous-dir current-dir drift-persons-dir]}]
+  (if-not drift-persons-dir
+    []
+    (let [drift-indexes (drift-index-map drift-persons-dir)
+          previous-hashes (drift-history/person-hashes previous-dir)
+          current-hashes (drift-history/person-hashes current-dir)]
+      (vec
+       (keep (fn [[person-id event-ids]]
+               (let [previous-hash (get previous-hashes person-id)
+                     current-hash (get current-hashes person-id)]
+                 (cond
+                   (= previous-hash current-hash)
+                   nil
+
+                   (and previous-hash current-hash)
+                   {"person_id" person-id
+                    "change_type" "hash_changed"
+                    "previous_hash" previous-hash
+                    "current_hash" current-hash
+                    "drift_event_ids" event-ids}
+
+                   previous-hash
+                   {"person_id" person-id
+                    "change_type" "removed"
+                    "previous_hash" previous-hash
+                    "current_hash" nil
+                    "drift_event_ids" event-ids}
+
+                   current-hash
+                   {"person_id" person-id
+                    "change_type" "added"
+                    "previous_hash" nil
+                    "current_hash" current-hash
+                    "drift_event_ids" event-ids})))
+             drift-indexes)))))
+
 (defn audit!
   "Run the full upstream history audit and return a keyword-keyed report map.
 
   Only the current corpus is validated before reporting drift. The previous
   corpus is generated from the previous ref for comparison, but this tool does
   not treat historical validation failures as a separate gate."
-  [{:keys [aozora-repo previous-ref current-ref zip-path work-dir]
+  [{:keys [aozora-repo previous-ref current-ref zip-path work-dir
+           drift-persons-dir]
     :or {zip-path default-zip-path
          work-dir default-work-dir}}]
   (when-not aozora-repo
@@ -108,6 +176,10 @@
             drift-report (drift-history/report
                           {:previous-dir (str previous-corpus)
                            :current-dir (str current-corpus)})
+            drift-participant-updates (drift-participant-updates
+                                       {:previous-dir (str previous-corpus)
+                                        :current-dir (str current-corpus)
+                                        :drift-persons-dir drift-persons-dir})
             validation-failed? (pos? (or (:failed validation) 0))]
         {:status (if validation-failed? "validation_failed" "ok")
          :aozora-repo aozora-repo
@@ -122,7 +194,8 @@
          :ingest {:previous previous-ingest
                   :current current-ingest}
          :validation {:current validation}
-         :drift drift-report})
+         :drift drift-report
+         :drift-participant-updates drift-participant-updates})
       (finally
         (.close repo)))))
 

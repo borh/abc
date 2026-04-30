@@ -96,6 +96,15 @@
               (sorted-map)
               works)}))
 
+(defn person-hashes
+  "Return a sorted map of person_id to person_record_hash for a generated
+  corpus root containing persons/*.json."
+  [root]
+  (into (sorted-map)
+        (map (fn [[person-id record]]
+               [person-id (person-record/record-hash record)]))
+        (read-persons root)))
+
 (defn- sorted-ids [ids]
   (vec (sort ids)))
 

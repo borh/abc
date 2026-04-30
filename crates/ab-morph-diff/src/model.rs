@@ -139,6 +139,96 @@ pub struct CompactFeatureChange {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct NwayComparison {
+    pub text_id: TextId,
+    pub analyzers: Vec<AnalyzerId>,
+    pub regions: Vec<NwayRegion>,
+    pub stats: NwayStats,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct NwayRegion {
+    pub region_index: usize,
+    pub text_span: Range<usize>,
+    pub per_analyzer: Vec<NwayAnalyzerRegion>,
+    pub segmentation_groups: Vec<NwaySegmentationGroup>,
+    pub feature_groups: Vec<NwayFeatureGroup>,
+}
+
+impl NwayRegion {
+    pub fn has_coverage_mismatch(&self) -> bool {
+        self.per_analyzer
+            .iter()
+            .any(|region| !region.covers_exactly)
+    }
+
+    pub fn has_segmentation_disagreement(&self) -> bool {
+        self.segmentation_groups.len() > 1
+    }
+
+    pub fn has_feature_disagreement(&self) -> bool {
+        self.feature_groups
+            .iter()
+            .any(|group| group.values.len() > 1)
+    }
+
+    pub fn is_agreement(&self) -> bool {
+        !self.has_coverage_mismatch()
+            && !self.has_segmentation_disagreement()
+            && !self.has_feature_disagreement()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct NwayAnalyzerRegion {
+    pub analyzer: AnalyzerId,
+    pub indices: Range<usize>,
+    pub surfaces: Vec<String>,
+    pub covers_exactly: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize)]
+pub struct NwaySegmentationGroup {
+    pub surfaces: Vec<String>,
+    pub analyzers: Vec<AnalyzerId>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize)]
+pub struct NwayFeatureGroup {
+    pub key: FeatureKey,
+    pub scope: NwayFeatureScope,
+    pub values: Vec<NwayFeatureValueGroup>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum NwayFeatureScope {
+    WholeRegion,
+    TokenPosition { position: usize },
+    Surface { surface: String },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize)]
+pub struct NwayFeatureValueGroup {
+    pub value: Option<String>,
+    pub analyzers: Vec<AnalyzerId>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct NwayStats {
+    pub analyzers: usize,
+    pub regions: usize,
+    pub agreement_regions: usize,
+    pub regions_with_feature_disagreement: usize,
+    pub regions_with_segmentation_disagreement: usize,
+    pub regions_with_coverage_mismatch: usize,
+    pub whitespace_regions: usize,
+    pub lexical_regions: usize,
+    pub unanimous_boundary_count: usize,
+    pub variable_boundary_count: usize,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct ComparisonStats {
     pub from_morphemes: usize,
     pub to_morphemes: usize,

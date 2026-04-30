@@ -5,6 +5,9 @@ use crate::model::{AnalyzerId, TextId};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MorphDiffError {
+    InvalidInput {
+        message: String,
+    },
     TextIdMismatch {
         from: TextId,
         to: TextId,
@@ -43,6 +46,7 @@ pub enum MorphDiffError {
 impl fmt::Display for MorphDiffError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::InvalidInput { message } => write!(f, "invalid input: {message}"),
             Self::TextIdMismatch { from, to } => {
                 write!(f, "text id mismatch: from={from}, to={to}")
             }

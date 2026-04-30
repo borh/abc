@@ -1,5 +1,3 @@
-use std::ops::Range;
-
 use crate::{
     AlignedMorpheme, Analysis, CoverageMismatch, CoverageMismatchKind, MorphDiffError, Region,
     SegmentationDiff, SegmentationKind,
@@ -27,129 +25,61 @@ pub(crate) fn visit_regions_with_source_len(
     source_len: usize,
     mut visit: impl FnMut(usize, Region),
 ) -> Result<(), MorphDiffError> {
-    let mut i = 0usize;
-    let mut j = 0usize;
-    let mut region_index = 0usize;
-
-    while i < from.morphemes.len() || j < to.morphemes.len() {
-        if let (Some(left), Some(right)) = (from.morphemes.get(i), to.morphemes.get(j))
-            && left.char_span == right.char_span
-        {
-            visit(
-                region_index,
-                Region::OneToOne(AlignedMorpheme {
-                    text_span: left.char_span.clone(),
-                    from_index: i,
-                    to_index: j,
-                }),
-            );
-            region_index += 1;
-            i += 1;
-            j += 1;
-            continue;
-        }
-
-        let region_start = next_start(from, to, i, j, source_len);
-        let mut region_end = next_end(from, to, i, j, source_len);
-        let from_start = i;
-        let to_start = j;
-
-        loop {
-            let old_i = i;
-            let old_j = j;
-            while i < from.morphemes.len() && from.morphemes[i].char_span.start < region_end {
-                region_end = region_end.max(from.morphemes[i].char_span.end);
-                i += 1;
-            }
-            while j < to.morphemes.len() && to.morphemes[j].char_span.start < region_end {
-                region_end = region_end.max(to.morphemes[j].char_span.end);
-                j += 1;
-            }
-            if old_i == i && old_j == j {
-                break;
-            }
-        }
-
-        let region = if from_start == i && to_start < j {
-            Region::CoverageMismatch(CoverageMismatch {
-                text_span: region_start..region_end,
-                from_indices: from_start..from_start,
-                to_indices: to_start..j,
-                reason: CoverageMismatchKind::MissingFrom,
-            })
-        } else if to_start == j && from_start < i {
-            Region::CoverageMismatch(CoverageMismatch {
-                text_span: region_start..region_end,
-                from_indices: from_start..i,
-                to_indices: to_start..to_start,
-                reason: CoverageMismatchKind::MissingTo,
-            })
-        } else if covers_exactly(from, from_start..i, region_start..region_end)
-            && covers_exactly(to, to_start..j, region_start..region_end)
-        {
-            Region::Segmentation(SegmentationDiff {
-                text_span: region_start..region_end,
-                from_indices: from_start..i,
-                to_indices: to_start..j,
-                from_surfaces: from.morphemes[from_start..i]
-                    .iter()
-                    .map(|m| m.surface.clone())
-                    .collect(),
-                to_surfaces: to.morphemes[to_start..j]
-                    .iter()
-                    .map(|m| m.surface.clone())
-                    .collect(),
-                kind: segmentation_kind(i - from_start, j - to_start),
-            })
-        } else {
-            Region::CoverageMismatch(CoverageMismatch {
-                text_span: region_start..region_end,
-                from_indices: from_start..i,
-                to_indices: to_start..j,
-                reason: CoverageMismatchKind::UnequalCoverage,
-            })
-        };
-        visit(region_index, region);
-        region_index += 1;
+    let analyses = [from, to];
+    let regions = crate::nway::shared_regions_with_source_len(&analyses, source_len, &[])?;
+    for (region_index, region) in regions.into_iter().enumerate() {
+        visit(region_index, project_pair_region(region));
     }
 
     Ok(())
 }
 
-fn next_start(from: &Analysis, to: &Analysis, i: usize, j: usize, source_len: usize) -> usize {
-    match (from.morphemes.get(i), to.morphemes.get(j)) {
-        (Some(a), Some(b)) => a.char_span.start.min(b.char_span.start),
-        (Some(a), None) => a.char_span.start,
-        (None, Some(b)) => b.char_span.start,
-        (None, None) => source_len,
+fn project_pair_region(region: crate::NwayRegion) -> Region {
+    let left = &region.per_analyzer[0];
+    let right = &region.per_analyzer[1];
+    if left.covers_exactly
+        && right.covers_exactly
+        && left.indices.len() == 1
+        && right.indices.len() == 1
+    {
+        return Region::OneToOne(AlignedMorpheme {
+            text_span: region.text_span,
+            from_index: left.indices.start,
+            to_index: right.indices.start,
+        });
     }
-}
-
-fn next_end(from: &Analysis, to: &Analysis, i: usize, j: usize, source_len: usize) -> usize {
-    match (from.morphemes.get(i), to.morphemes.get(j)) {
-        (Some(a), Some(b)) => a
-            .char_span
-            .end
-            .min(b.char_span.end)
-            .max(next_start(from, to, i, j, source_len) + 1),
-        (Some(a), None) => a.char_span.end,
-        (None, Some(b)) => b.char_span.end,
-        (None, None) => source_len,
+    if left.indices.is_empty() && !right.indices.is_empty() {
+        return Region::CoverageMismatch(CoverageMismatch {
+            text_span: region.text_span,
+            from_indices: left.indices.clone(),
+            to_indices: right.indices.clone(),
+            reason: CoverageMismatchKind::MissingFrom,
+        });
     }
-}
-
-fn covers_exactly(analysis: &Analysis, indices: Range<usize>, span: Range<usize>) -> bool {
-    if indices.is_empty() {
-        return false;
+    if right.indices.is_empty() && !left.indices.is_empty() {
+        return Region::CoverageMismatch(CoverageMismatch {
+            text_span: region.text_span,
+            from_indices: left.indices.clone(),
+            to_indices: right.indices.clone(),
+            reason: CoverageMismatchKind::MissingTo,
+        });
     }
-    let first = &analysis.morphemes[indices.start];
-    let last = &analysis.morphemes[indices.end - 1];
-    if first.char_span.start != span.start || last.char_span.end != span.end {
-        return false;
+    if left.covers_exactly && right.covers_exactly {
+        return Region::Segmentation(SegmentationDiff {
+            text_span: region.text_span,
+            from_indices: left.indices.clone(),
+            to_indices: right.indices.clone(),
+            from_surfaces: left.surfaces.clone(),
+            to_surfaces: right.surfaces.clone(),
+            kind: segmentation_kind(left.indices.len(), right.indices.len()),
+        });
     }
-    analysis.morphemes[indices]
-        .windows(2)
-        .all(|pair| pair[0].char_span.end == pair[1].char_span.start)
+    Region::CoverageMismatch(CoverageMismatch {
+        text_span: region.text_span,
+        from_indices: left.indices.clone(),
+        to_indices: right.indices.clone(),
+        reason: CoverageMismatchKind::UnequalCoverage,
+    })
 }
 
 fn segmentation_kind(from_count: usize, to_count: usize) -> SegmentationKind {

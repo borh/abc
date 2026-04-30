@@ -1,4 +1,5 @@
 mod compact;
+mod nway;
 mod output;
 mod script;
 mod select;
@@ -11,7 +12,10 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use ab_morph_analyzers::{MorphAnalyzer, SudachiAnalyzer, SudachiMode, VibratoAnalyzer};
-use ab_morph_diff::{Analysis, Comparison, compare_pair, compare_pair_compact_with_source_text};
+use ab_morph_diff::{
+    Analysis, Comparison, compare_nway_with_source_text, compare_pair,
+    compare_pair_compact_with_source_text,
+};
 use ab_plaintext::{PlainTextDocument, from_aat_value};
 use anyhow::{Context, Result, bail};
 use clap::ValueEnum;
@@ -19,14 +23,16 @@ use output::{open_output_writer, read_jsonl_or_zst_to_string};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+pub use nway::{NwayFeatureScopeRow, NwayFeatureValueGroupRow, NwaySegmentationGroupRow};
 pub use script::ScriptCategory;
 pub use select::resolve_source_id_aat_paths;
 pub use summary::{
     CompactDifferenceKindFilter, CompactDifferenceSummaryOptions, CompactDifferenceSummaryRow,
     CompactExampleFilter, CompactExampleSummaryOptions, CompactExampleSummaryRow,
     CompactExampleSummarySort, CompactSummaryGroupBy, CompactSummaryOptions, CompactSummaryRow,
-    CompactSummarySort, summarize_compact_comparisons, summarize_compact_differences,
-    summarize_compact_examples,
+    CompactSummarySort, NwayPatternKind, NwayPatternOptions, NwayPatternRow, NwaySummaryOptions,
+    NwaySummaryRow, NwaySummarySort, summarize_compact_comparisons, summarize_compact_differences,
+    summarize_compact_examples, summarize_nway, summarize_nway_patterns,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum, Serialize, Deserialize)]
@@ -59,6 +65,41 @@ pub fn run_analyze_aat(
     max_examples_per_comparison: usize,
     manifest_output: Option<&Path>,
 ) -> Result<()> {
+    run_analyze_aat_with_nway(
+        aat,
+        aat_dir,
+        analyzer_ids,
+        analyses_output,
+        comparisons_output,
+        errors_output,
+        resume,
+        jobs,
+        output_profile,
+        examples_output,
+        max_examples_per_comparison,
+        manifest_output,
+        None,
+        None,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn run_analyze_aat_with_nway(
+    aat: Option<&Path>,
+    aat_dir: Option<&Path>,
+    analyzer_ids: &[String],
+    analyses_output: &Path,
+    comparisons_output: Option<&Path>,
+    errors_output: Option<&Path>,
+    resume: bool,
+    jobs: usize,
+    output_profile: OutputProfile,
+    examples_output: Option<&Path>,
+    max_examples_per_comparison: usize,
+    manifest_output: Option<&Path>,
+    nway_output: Option<&Path>,
+    max_nway_examples_per_text: Option<usize>,
+) -> Result<()> {
     if aat.is_none() == aat_dir.is_none() {
         bail!("provide exactly one of --aat or --aat-dir");
     }
@@ -88,6 +129,8 @@ pub fn run_analyze_aat(
         examples_output,
         max_examples_per_comparison,
         manifest_output,
+        nway_output,
+        max_nway_examples_per_text,
     )
 }
 
@@ -124,6 +167,8 @@ pub fn run_analyze_aat_selected(
         examples_output,
         max_examples_per_comparison,
         manifest_output,
+        None,
+        None,
     )
 }
 
@@ -142,6 +187,8 @@ fn run_analyze_aat_inputs(
     examples_output: Option<&Path>,
     max_examples_per_comparison: usize,
     manifest_output: Option<&Path>,
+    nway_output: Option<&Path>,
+    max_nway_examples_per_text: Option<usize>,
 ) -> Result<()> {
     if analyzer_ids.is_empty() {
         bail!("provide at least one --analyzer");
@@ -149,6 +196,14 @@ fn run_analyze_aat_inputs(
     if jobs == 0 {
         bail!("--jobs must be at least 1");
     }
+    if nway_output.is_some() && output_profile != OutputProfile::Compact {
+        bail!("--nway-output requires --output-profile compact in phase 1");
+    }
+    if nway_output.is_some() && analyzer_ids.len() < 2 {
+        bail!("--nway-output requires at least two --analyzer values");
+    }
+    let max_nway_examples_per_text =
+        max_nway_examples_per_text.unwrap_or(max_examples_per_comparison);
 
     let input_file_count = inputs.len();
     let specs = parse_analyzer_specs(analyzer_ids)?;
@@ -166,6 +221,8 @@ fn run_analyze_aat_inputs(
             output_profile,
             examples_output,
             max_examples_per_comparison,
+            nway_output,
+            max_nway_examples_per_text,
         )?;
     } else {
         run_analyze_aat_serial(
@@ -178,6 +235,8 @@ fn run_analyze_aat_inputs(
             output_profile,
             examples_output,
             max_examples_per_comparison,
+            nway_output,
+            max_nway_examples_per_text,
         )?;
     }
 
@@ -194,6 +253,7 @@ fn run_analyze_aat_inputs(
             comparisons_output,
             examples_output,
             errors_output,
+            nway_output,
         )?;
     }
 
@@ -210,9 +270,11 @@ fn run_analyze_aat_serial(
     output_profile: OutputProfile,
     examples_output: Option<&Path>,
     max_examples_per_comparison: usize,
+    nway_output: Option<&Path>,
+    max_nway_examples_per_text: usize,
 ) -> Result<()> {
     let resume_ids = if resume {
-        read_resume_ids(analyses_output, errors_output, output_profile)?
+        read_resume_ids(analyses_output, errors_output, nway_output, output_profile)?
     } else {
         BTreeSet::new()
     };
@@ -230,6 +292,11 @@ fn run_analyze_aat_serial(
         None
     };
     let mut errors_writer = if let Some(path) = errors_output {
+        Some(open_output_writer(path, resume)?)
+    } else {
+        None
+    };
+    let mut nway_writer = if let Some(path) = nway_output {
         Some(open_output_writer(path, resume)?)
     } else {
         None
@@ -327,9 +394,9 @@ fn run_analyze_aat_serial(
                     write_error_row(
                         &mut **error_writer,
                         &RunErrorRow {
-                            input_path,
-                            source_id: Some(source_id),
-                            text_id: Some(document.text_id),
+                            input_path: input_path.clone(),
+                            source_id: Some(source_id.clone()),
+                            text_id: Some(document.text_id.clone()),
                             analyzer: None,
                             stage: "compare".to_owned(),
                             error: error.to_string(),
@@ -337,6 +404,36 @@ fn run_analyze_aat_serial(
                     )?;
                 } else {
                     return Err(error);
+                }
+            }
+        }
+        if let Some(writer) = &mut nway_writer {
+            match compare_nway_with_source_text(&analyses, &document.text, &[], &[]) {
+                Ok(comparison) => {
+                    let row = nway::row_from_comparison(
+                        source_id.clone(),
+                        &document.text,
+                        &comparison,
+                        max_nway_examples_per_text,
+                    );
+                    write_jsonl_row(&mut **writer, &row)?;
+                }
+                Err(error) => {
+                    if let Some(error_writer) = &mut errors_writer {
+                        write_error_row(
+                            &mut **error_writer,
+                            &RunErrorRow {
+                                input_path: input_path.clone(),
+                                source_id: Some(source_id.clone()),
+                                text_id: Some(document.text_id.clone()),
+                                analyzer: None,
+                                stage: "compare_nway".to_owned(),
+                                error: error.to_string(),
+                            },
+                        )?;
+                    } else {
+                        return Err(error.into());
+                    }
                 }
             }
         }
@@ -350,6 +447,9 @@ fn run_analyze_aat_serial(
         writer.flush()?;
     }
     if let Some(writer) = &mut errors_writer {
+        writer.flush()?;
+    }
+    if let Some(writer) = &mut nway_writer {
         writer.flush()?;
     }
     Ok(())
@@ -367,9 +467,11 @@ fn run_analyze_aat_parallel(
     output_profile: OutputProfile,
     examples_output: Option<&Path>,
     max_examples_per_comparison: usize,
+    nway_output: Option<&Path>,
+    max_nway_examples_per_text: usize,
 ) -> Result<()> {
     let resume_ids = if resume {
-        read_resume_ids(analyses_output, errors_output, output_profile)?
+        read_resume_ids(analyses_output, errors_output, nway_output, output_profile)?
     } else {
         BTreeSet::new()
     };
@@ -414,6 +516,7 @@ fn run_analyze_aat_parallel(
                     .map(|path| shard_output_path(&output_dir, path, "comparisons"));
                 let examples =
                     examples_output.map(|path| shard_output_path(&output_dir, path, "examples"));
+                let nway = nway_output.map(|path| shard_output_path(&output_dir, path, "nway"));
                 let errors =
                     errors_output.map(|path| shard_output_path(&output_dir, path, "errors"));
                 run_analyze_aat_serial(
@@ -426,12 +529,15 @@ fn run_analyze_aat_parallel(
                     output_profile,
                     examples.as_deref(),
                     max_examples_per_comparison,
+                    nway.as_deref(),
+                    max_nway_examples_per_text,
                 )?;
                 Ok(ShardOutput {
                     job_index,
                     analyses,
                     comparisons,
                     examples,
+                    nway,
                     errors,
                 })
             }));
@@ -476,6 +582,13 @@ fn run_analyze_aat_parallel(
             resume,
         )?;
     }
+    if let Some(path) = nway_output {
+        merge_shard_files(
+            outputs.iter().filter_map(|output| output.nway.as_deref()),
+            path,
+            resume,
+        )?;
+    }
     if let Some(path) = errors_output {
         merge_shard_files(
             outputs.iter().filter_map(|output| output.errors.as_deref()),
@@ -494,6 +607,7 @@ struct ShardOutput {
     analyses: PathBuf,
     comparisons: Option<PathBuf>,
     examples: Option<PathBuf>,
+    nway: Option<PathBuf>,
     errors: Option<PathBuf>,
 }
 
@@ -708,11 +822,18 @@ fn create_parent_dir(path: &Path) -> Result<()> {
 fn read_resume_ids(
     analyses_output: &Path,
     errors_output: Option<&Path>,
+    nway_output: Option<&Path>,
     output_profile: OutputProfile,
 ) -> Result<BTreeSet<String>> {
-    let mut ids = BTreeSet::new();
     let prefer_source_id = output_profile == OutputProfile::Compact;
-    read_resume_ids_from_path(analyses_output, prefer_source_id, &mut ids)?;
+    let mut analysis_ids = BTreeSet::new();
+    read_resume_ids_from_path(analyses_output, prefer_source_id, &mut analysis_ids)?;
+    let mut ids = analysis_ids;
+    if let Some(path) = nway_output {
+        let mut nway_ids = BTreeSet::new();
+        read_resume_ids_from_path(path, true, &mut nway_ids)?;
+        ids = ids.intersection(&nway_ids).cloned().collect();
+    }
     if let Some(path) = errors_output {
         read_resume_ids_from_path(path, prefer_source_id, &mut ids)?;
     }
@@ -887,6 +1008,7 @@ fn write_manifest(
     comparisons_output: Option<&Path>,
     examples_output: Option<&Path>,
     errors_output: Option<&Path>,
+    nway_output: Option<&Path>,
 ) -> Result<()> {
     create_parent_dir(path)?;
     let manifest = compact::RunManifest {
@@ -901,6 +1023,7 @@ fn write_manifest(
         comparisons_output: comparisons_output.map(|path| path.display().to_string()),
         examples_output: examples_output.map(|path| path.display().to_string()),
         errors_output: errors_output.map(|path| path.display().to_string()),
+        nway_output: nway_output.map(|path| path.display().to_string()),
     };
     let file =
         File::create(path).with_context(|| format!("failed to create {}", path.display()))?;
@@ -1149,7 +1272,7 @@ mod tests {
         )
         .unwrap();
 
-        let ids = read_resume_ids(&analyses, Some(&errors), OutputProfile::Full).unwrap();
+        let ids = read_resume_ids(&analyses, Some(&errors), None, OutputProfile::Full).unwrap();
         assert!(ids.contains("done-analysis"));
         assert!(ids.contains("done-error"));
         assert!(!ids.contains("read_aat"));
@@ -1170,7 +1293,7 @@ mod tests {
             writer.flush().unwrap();
         }
 
-        let ids = read_resume_ids(&analyses, None, OutputProfile::Compact).unwrap();
+        let ids = read_resume_ids(&analyses, None, None, OutputProfile::Compact).unwrap();
         assert!(ids.contains("source-a"));
         assert!(!ids.contains("same"));
 

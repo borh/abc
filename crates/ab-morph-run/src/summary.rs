@@ -5,6 +5,9 @@ use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
 use crate::compact::{ComparisonSummaryRow, is_whitespace_only};
+use crate::nway::{
+    NwayComparisonRow, NwayFeatureScopeRow, NwayFeatureValueGroupRow, NwaySegmentationGroupRow,
+};
 use crate::output::for_each_jsonl_or_zst_line;
 use crate::script::{ScriptCategory, classify_text};
 
@@ -50,6 +53,20 @@ pub enum CompactDifferenceKindFilter {
     Feature,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NwaySummarySort {
+    RegionsWithSegmentationDisagreement,
+    RegionsWithFeatureDisagreement,
+    RegionsWithCoverageMismatch,
+    VariableBoundaryCount,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NwayPatternKind {
+    Segmentation,
+    Feature,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CompactSummaryOptions {
     pub group_by: CompactSummaryGroupBy,
@@ -73,6 +90,22 @@ pub struct CompactDifferenceSummaryOptions {
     pub script_category: Option<ScriptCategory>,
     pub kind: CompactDifferenceKindFilter,
     pub feature_key: Option<String>,
+    pub limit: usize,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct NwaySummaryOptions {
+    pub group_by: CompactSummaryGroupBy,
+    pub sort_by: NwaySummarySort,
+    pub script_category: Option<ScriptCategory>,
+    pub limit: usize,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct NwayPatternOptions {
+    pub kind: NwayPatternKind,
+    pub feature_key: Option<String>,
+    pub script_category: Option<ScriptCategory>,
     pub limit: usize,
 }
 
@@ -127,6 +160,39 @@ pub struct CompactDifferenceSummaryRow {
     pub feature_to: Option<String>,
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct NwaySummaryRow {
+    pub key: String,
+    pub source_ids: Vec<String>,
+    pub text_ids: Vec<String>,
+    pub script_categories: Vec<String>,
+    pub rows: usize,
+    pub analyzer_count: usize,
+    pub regions: usize,
+    pub agreement_regions: usize,
+    pub regions_with_feature_disagreement: usize,
+    pub regions_with_segmentation_disagreement: usize,
+    pub regions_with_coverage_mismatch: usize,
+    pub whitespace_regions: usize,
+    pub lexical_regions: usize,
+    pub unanimous_boundary_count: usize,
+    pub variable_boundary_count: usize,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct NwayPatternRow {
+    pub kind: String,
+    pub pattern: String,
+    pub examples: usize,
+    pub source_ids: Vec<String>,
+    pub text_ids: Vec<String>,
+    pub script_categories: Vec<String>,
+    pub segmentation_groups: Vec<NwaySegmentationGroupRow>,
+    pub feature_key: Option<String>,
+    pub feature_scope: Option<NwayFeatureScopeRow>,
+    pub feature_values: Vec<NwayFeatureValueGroupRow>,
+}
+
 #[derive(Debug, Default)]
 struct Accumulator {
     source_ids: BTreeSet<String>,
@@ -175,6 +241,41 @@ struct DifferenceKey {
 
 #[derive(Debug, Default)]
 struct DifferenceAccumulator {
+    source_ids: BTreeSet<String>,
+    text_ids: BTreeSet<String>,
+    script_categories: BTreeSet<ScriptCategory>,
+    examples: usize,
+}
+
+#[derive(Debug, Default)]
+struct NwayAccumulator {
+    source_ids: BTreeSet<String>,
+    text_ids: BTreeSet<String>,
+    script_categories: BTreeSet<ScriptCategory>,
+    rows: usize,
+    analyzer_count: usize,
+    regions: usize,
+    agreement_regions: usize,
+    regions_with_feature_disagreement: usize,
+    regions_with_segmentation_disagreement: usize,
+    regions_with_coverage_mismatch: usize,
+    whitespace_regions: usize,
+    lexical_regions: usize,
+    unanimous_boundary_count: usize,
+    variable_boundary_count: usize,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+struct NwayPatternKey {
+    kind: String,
+    segmentation_groups: Vec<NwaySegmentationGroupRow>,
+    feature_key: Option<String>,
+    feature_scope: Option<NwayFeatureScopeRow>,
+    feature_values: Vec<NwayFeatureValueGroupRow>,
+}
+
+#[derive(Debug, Default)]
+struct NwayPatternAccumulator {
     source_ids: BTreeSet<String>,
     text_ids: BTreeSet<String>,
     script_categories: BTreeSet<ScriptCategory>,
@@ -373,6 +474,113 @@ pub fn summarize_compact_differences(
     Ok(rows)
 }
 
+pub fn summarize_nway(
+    nway_path: &Path,
+    options: NwaySummaryOptions,
+) -> Result<Vec<NwaySummaryRow>> {
+    let mut groups = BTreeMap::<String, NwayAccumulator>::new();
+    for_each_jsonl_or_zst_line(nway_path, |line| {
+        let row: NwayComparisonRow = serde_json::from_str(line)?;
+        if options
+            .script_category
+            .is_some_and(|category| row.source_script_category != category)
+        {
+            return Ok(());
+        }
+        let key = match options.group_by {
+            CompactSummaryGroupBy::SourceId => row.source_id.clone(),
+            CompactSummaryGroupBy::TextId => row.text_id.clone(),
+        };
+        groups.entry(key).or_default().push(row);
+        Ok(())
+    })?;
+    let mut rows = groups
+        .into_iter()
+        .map(|(key, accumulator)| accumulator.into_row(key))
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| compare_nway_rows(left, right, options.sort_by));
+    rows.truncate(options.limit);
+    Ok(rows)
+}
+
+pub fn summarize_nway_patterns(
+    nway_path: &Path,
+    options: NwayPatternOptions,
+) -> Result<Vec<NwayPatternRow>> {
+    let mut groups = BTreeMap::<NwayPatternKey, NwayPatternAccumulator>::new();
+    for_each_jsonl_or_zst_line(nway_path, |line| {
+        let row: NwayComparisonRow = serde_json::from_str(line)?;
+        if options
+            .script_category
+            .is_some_and(|category| row.source_script_category != category)
+        {
+            return Ok(());
+        }
+        for example in &row.examples {
+            match options.kind {
+                NwayPatternKind::Segmentation => {
+                    if example.segmentation_groups.len() <= 1 {
+                        continue;
+                    }
+                    let mut segmentation_groups = example.segmentation_groups.clone();
+                    canonicalize_segmentation_groups(&mut segmentation_groups);
+                    let key = NwayPatternKey {
+                        kind: "segmentation".to_owned(),
+                        segmentation_groups,
+                        feature_key: None,
+                        feature_scope: None,
+                        feature_values: Vec::new(),
+                    };
+                    groups
+                        .entry(key)
+                        .or_default()
+                        .push(&row, row.source_script_category);
+                }
+                NwayPatternKind::Feature => {
+                    for feature_group in &example.feature_groups {
+                        if options
+                            .feature_key
+                            .as_ref()
+                            .is_some_and(|wanted| *wanted != feature_group.key)
+                        {
+                            continue;
+                        }
+                        if feature_group.values.len() <= 1 {
+                            continue;
+                        }
+                        let mut values = feature_group.values.clone();
+                        canonicalize_feature_values(&mut values);
+                        let key = NwayPatternKey {
+                            kind: "feature".to_owned(),
+                            segmentation_groups: Vec::new(),
+                            feature_key: Some(feature_group.key.clone()),
+                            feature_scope: Some(feature_group.scope.clone()),
+                            feature_values: values,
+                        };
+                        groups
+                            .entry(key)
+                            .or_default()
+                            .push(&row, row.source_script_category);
+                    }
+                }
+            }
+        }
+        Ok(())
+    })?;
+    let mut rows = groups
+        .into_iter()
+        .map(|(key, accumulator)| accumulator.into_row(key))
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| {
+        right
+            .examples
+            .cmp(&left.examples)
+            .then_with(|| left.pattern.cmp(&right.pattern))
+    });
+    rows.truncate(options.limit);
+    Ok(rows)
+}
+
 impl Accumulator {
     fn push(&mut self, row: ComparisonSummaryRow) {
         self.source_ids.insert(row.source_id);
@@ -512,6 +720,80 @@ impl DifferenceAccumulator {
     }
 }
 
+impl NwayAccumulator {
+    fn push(&mut self, row: NwayComparisonRow) {
+        self.source_ids.insert(row.source_id);
+        self.text_ids.insert(row.text_id);
+        self.script_categories.insert(row.source_script_category);
+        self.rows += 1;
+        self.analyzer_count = self.analyzer_count.max(row.analyzer_count);
+        self.regions += row.regions;
+        self.agreement_regions += row.agreement_regions;
+        self.regions_with_feature_disagreement += row.regions_with_feature_disagreement;
+        self.regions_with_segmentation_disagreement += row.regions_with_segmentation_disagreement;
+        self.regions_with_coverage_mismatch += row.regions_with_coverage_mismatch;
+        self.whitespace_regions += row.whitespace_regions;
+        self.lexical_regions += row.lexical_regions;
+        self.unanimous_boundary_count += row.unanimous_boundary_count;
+        self.variable_boundary_count += row.variable_boundary_count;
+    }
+
+    fn into_row(self, key: String) -> NwaySummaryRow {
+        NwaySummaryRow {
+            key,
+            source_ids: self.source_ids.into_iter().collect(),
+            text_ids: self.text_ids.into_iter().collect(),
+            script_categories: self
+                .script_categories
+                .into_iter()
+                .map(ScriptCategory::as_str)
+                .map(str::to_owned)
+                .collect(),
+            rows: self.rows,
+            analyzer_count: self.analyzer_count,
+            regions: self.regions,
+            agreement_regions: self.agreement_regions,
+            regions_with_feature_disagreement: self.regions_with_feature_disagreement,
+            regions_with_segmentation_disagreement: self.regions_with_segmentation_disagreement,
+            regions_with_coverage_mismatch: self.regions_with_coverage_mismatch,
+            whitespace_regions: self.whitespace_regions,
+            lexical_regions: self.lexical_regions,
+            unanimous_boundary_count: self.unanimous_boundary_count,
+            variable_boundary_count: self.variable_boundary_count,
+        }
+    }
+}
+
+impl NwayPatternAccumulator {
+    fn push(&mut self, row: &NwayComparisonRow, script_category: ScriptCategory) {
+        self.source_ids.insert(row.source_id.clone());
+        self.text_ids.insert(row.text_id.clone());
+        self.script_categories.insert(script_category);
+        self.examples += 1;
+    }
+
+    fn into_row(self, key: NwayPatternKey) -> NwayPatternRow {
+        let pattern = nway_pattern_display(&key);
+        NwayPatternRow {
+            kind: key.kind,
+            pattern,
+            examples: self.examples,
+            source_ids: self.source_ids.into_iter().collect(),
+            text_ids: self.text_ids.into_iter().collect(),
+            script_categories: self
+                .script_categories
+                .into_iter()
+                .map(ScriptCategory::as_str)
+                .map(str::to_owned)
+                .collect(),
+            segmentation_groups: key.segmentation_groups,
+            feature_key: key.feature_key,
+            feature_scope: key.feature_scope,
+            feature_values: key.feature_values,
+        }
+    }
+}
+
 fn compare_rows(
     left: &CompactSummaryRow,
     right: &CompactSummaryRow,
@@ -560,6 +842,116 @@ fn compare_example_rows(
     right_value
         .cmp(&left_value)
         .then_with(|| left.key.cmp(&right.key))
+}
+
+fn compare_nway_rows(
+    left: &NwaySummaryRow,
+    right: &NwaySummaryRow,
+    sort_by: NwaySummarySort,
+) -> std::cmp::Ordering {
+    let left_value = nway_sort_value(left, sort_by);
+    let right_value = nway_sort_value(right, sort_by);
+    right_value
+        .cmp(&left_value)
+        .then_with(|| left.key.cmp(&right.key))
+}
+
+fn nway_sort_value(row: &NwaySummaryRow, sort_by: NwaySummarySort) -> usize {
+    match sort_by {
+        NwaySummarySort::RegionsWithSegmentationDisagreement => {
+            row.regions_with_segmentation_disagreement
+        }
+        NwaySummarySort::RegionsWithFeatureDisagreement => row.regions_with_feature_disagreement,
+        NwaySummarySort::RegionsWithCoverageMismatch => row.regions_with_coverage_mismatch,
+        NwaySummarySort::VariableBoundaryCount => row.variable_boundary_count,
+    }
+}
+
+fn canonicalize_segmentation_groups(groups: &mut [NwaySegmentationGroupRow]) {
+    for group in groups.iter_mut() {
+        group.analyzers.sort();
+    }
+    groups.sort();
+}
+
+fn canonicalize_feature_values(values: &mut [NwayFeatureValueGroupRow]) {
+    for value in values.iter_mut() {
+        value.analyzers.sort();
+    }
+    values.sort();
+}
+
+fn nway_pattern_display(key: &NwayPatternKey) -> String {
+    match key.kind.as_str() {
+        "segmentation" => key
+            .segmentation_groups
+            .iter()
+            .map(|group| {
+                format!(
+                    "{}:[{}]",
+                    group.analyzers.join("+"),
+                    group
+                        .surfaces
+                        .iter()
+                        .map(|surface| escape_pattern_value(surface))
+                        .collect::<Vec<_>>()
+                        .join("|")
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(" ; "),
+        "feature" => {
+            let values = key
+                .feature_values
+                .iter()
+                .map(|value| {
+                    format!(
+                        "{}=>{}",
+                        value
+                            .value
+                            .as_deref()
+                            .map(escape_pattern_value)
+                            .unwrap_or_default(),
+                        value.analyzers.join("+")
+                    )
+                })
+                .collect::<Vec<_>>()
+                .join(" ; ");
+            format!(
+                "{} {} {}",
+                key.feature_key.as_deref().unwrap_or(""),
+                key.feature_scope
+                    .as_ref()
+                    .map(scope_display)
+                    .unwrap_or_default(),
+                values
+            )
+        }
+        _ => String::new(),
+    }
+}
+
+fn escape_pattern_value(value: &str) -> String {
+    value
+        .chars()
+        .flat_map(|ch| match ch {
+            '\n' => "\\n".chars().collect::<Vec<_>>(),
+            '\r' => "\\r".chars().collect::<Vec<_>>(),
+            '\t' => "\\t".chars().collect::<Vec<_>>(),
+            '\\' => "\\\\".chars().collect::<Vec<_>>(),
+            other => vec![other],
+        })
+        .collect()
+}
+
+fn scope_display(scope: &NwayFeatureScopeRow) -> String {
+    match scope {
+        NwayFeatureScopeRow::WholeRegion => "whole_region".to_owned(),
+        NwayFeatureScopeRow::TokenPosition { position } => format!("token_position:{position}"),
+        NwayFeatureScopeRow::Surface { surface } => {
+            format!("surface:{}", escape_pattern_value(surface))
+        }
+    }
 }
 
 fn example_sort_value(row: &CompactExampleSummaryRow, sort_by: CompactExampleSummarySort) -> usize {
@@ -863,6 +1255,91 @@ mod tests {
         );
 
         let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn summarize_nway_groups_exact_region_counts() {
+        let dir = temp_dir("nway-summary");
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("nway.jsonl");
+        fs::write(
+            &path,
+            concat!(
+                r#"{"source_id":"src-a","text_id":"t1","source_script_category":"japanese","analyzers":["vibrato","sudachi-a","sudachi-c"],"analyzer_count":3,"regions":10,"agreement_regions":6,"regions_with_feature_disagreement":1,"regions_with_segmentation_disagreement":3,"regions_with_coverage_mismatch":0,"whitespace_regions":1,"lexical_regions":9,"unanimous_boundary_count":8,"variable_boundary_count":2,"examples":[]}"#, "\n",
+                r#"{"source_id":"src-b","text_id":"t2","source_script_category":"japanese","analyzers":["vibrato","sudachi-a","sudachi-c"],"analyzer_count":3,"regions":10,"agreement_regions":2,"regions_with_feature_disagreement":2,"regions_with_segmentation_disagreement":6,"regions_with_coverage_mismatch":0,"whitespace_regions":0,"lexical_regions":10,"unanimous_boundary_count":4,"variable_boundary_count":6,"examples":[]}"#, "\n",
+            ),
+        )
+        .unwrap();
+
+        let rows = summarize_nway(
+            &path,
+            NwaySummaryOptions {
+                group_by: CompactSummaryGroupBy::SourceId,
+                sort_by: NwaySummarySort::RegionsWithSegmentationDisagreement,
+                script_category: Some(ScriptCategory::Japanese),
+                limit: 10,
+            },
+        )
+        .unwrap();
+
+        assert_eq!(rows[0].key, "src-b");
+        assert_eq!(rows[0].regions_with_segmentation_disagreement, 6);
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn summarize_nway_patterns_groups_segmentation_partitions_and_feature_values() {
+        let dir = temp_dir("nway-patterns");
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("nway.jsonl");
+        let row = r#"{"source_id":"src-a","text_id":"t1","source_script_category":"japanese","analyzers":["vibrato","sudachi-a","sudachi-c"],"analyzer_count":3,"regions":1,"agreement_regions":0,"regions_with_feature_disagreement":1,"regions_with_segmentation_disagreement":1,"regions_with_coverage_mismatch":0,"whitespace_regions":0,"lexical_regions":1,"unanimous_boundary_count":0,"variable_boundary_count":1,"examples":[{"region_index":0,"char_start":0,"char_end":2,"source_excerpt":"今日","per_analyzer_surfaces":[{"analyzer":"vibrato","surfaces":["今日"]},{"analyzer":"sudachi-a","surfaces":["今日"]},{"analyzer":"sudachi-c","surfaces":["今","日"]}],"segmentation_groups":[{"surfaces":["今日"],"analyzers":["sudachi-a","vibrato"]},{"surfaces":["今","日"],"analyzers":["sudachi-c"]}],"feature_groups":[{"key":"pos1","scope":{"kind":"whole_region"},"values":[{"value":"名詞","analyzers":["sudachi-a","vibrato"]},{"value":"空白","analyzers":["sudachi-c"]}]}]}]}"#;
+        fs::write(&path, format!("{row}\n{}\n", row.replace("src-a", "src-b"))).unwrap();
+
+        let segmentation = summarize_nway_patterns(
+            &path,
+            NwayPatternOptions {
+                kind: NwayPatternKind::Segmentation,
+                feature_key: None,
+                script_category: Some(ScriptCategory::Japanese),
+                limit: 10,
+            },
+        )
+        .unwrap();
+        assert_eq!(segmentation.len(), 1);
+        assert_eq!(segmentation[0].examples, 2);
+        assert_eq!(segmentation[0].segmentation_groups.len(), 2);
+
+        let feature = summarize_nway_patterns(
+            &path,
+            NwayPatternOptions {
+                kind: NwayPatternKind::Feature,
+                feature_key: Some("pos1".to_owned()),
+                script_category: Some(ScriptCategory::Japanese),
+                limit: 10,
+            },
+        )
+        .unwrap();
+        assert_eq!(feature.len(), 1);
+        assert_eq!(feature[0].examples, 2);
+        assert_eq!(feature[0].feature_key.as_deref(), Some("pos1"));
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn nway_pattern_display_escapes_control_characters() {
+        let key = NwayPatternKey {
+            kind: "segmentation".to_owned(),
+            segmentation_groups: vec![NwaySegmentationGroupRow {
+                surfaces: vec!["\n".to_owned(), "\t".to_owned()],
+                analyzers: vec!["a".to_owned()],
+            }],
+            feature_key: None,
+            feature_scope: None,
+            feature_values: Vec::new(),
+        };
+
+        assert_eq!(nway_pattern_display(&key), r#"a:[\n|\t]"#);
     }
 
     fn temp_dir(label: &str) -> std::path::PathBuf {

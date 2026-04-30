@@ -32,6 +32,10 @@ enum Command {
         #[arg(long)]
         manifest_output: Option<PathBuf>,
         #[arg(long)]
+        nway_output: Option<PathBuf>,
+        #[arg(long)]
+        max_nway_examples_per_text: Option<usize>,
+        #[arg(long)]
         resume: bool,
         #[arg(long, default_value_t = 1)]
         jobs: usize,
@@ -83,6 +87,34 @@ enum Command {
         feature_key: Option<String>,
         #[arg(long, value_enum, default_value_t = ExampleFilterArg::All)]
         filter: ExampleFilterArg,
+        #[arg(long, value_enum)]
+        script_category: Option<ScriptCategoryArg>,
+        #[arg(long, default_value_t = 20)]
+        limit: usize,
+        #[arg(long)]
+        json: bool,
+    },
+    SummarizeNway {
+        #[arg(long)]
+        nway: PathBuf,
+        #[arg(long, value_enum, default_value_t = SummaryGroupByArg::SourceId)]
+        group_by: SummaryGroupByArg,
+        #[arg(long, value_enum, default_value_t = NwaySummarySortArg::RegionsWithSegmentationDisagreement)]
+        sort_by: NwaySummarySortArg,
+        #[arg(long, value_enum)]
+        script_category: Option<ScriptCategoryArg>,
+        #[arg(long, default_value_t = 20)]
+        limit: usize,
+        #[arg(long)]
+        json: bool,
+    },
+    SummarizeNwayPatterns {
+        #[arg(long)]
+        nway: PathBuf,
+        #[arg(long, value_enum, default_value_t = NwayPatternKindArg::Segmentation)]
+        kind: NwayPatternKindArg,
+        #[arg(long)]
+        feature_key: Option<String>,
         #[arg(long, value_enum)]
         script_category: Option<ScriptCategoryArg>,
         #[arg(long, default_value_t = 20)]
@@ -148,6 +180,20 @@ enum ExampleSortArg {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
 enum DifferenceKindArg {
     All,
+    Segmentation,
+    Feature,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
+enum NwaySummarySortArg {
+    RegionsWithSegmentationDisagreement,
+    RegionsWithFeatureDisagreement,
+    RegionsWithCoverageMismatch,
+    VariableBoundaryCount,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
+enum NwayPatternKindArg {
     Segmentation,
     Feature,
 }
@@ -239,6 +285,32 @@ impl DifferenceKindArg {
     }
 }
 
+impl NwaySummarySortArg {
+    fn into_library(self) -> ab_morph_run::NwaySummarySort {
+        match self {
+            Self::RegionsWithSegmentationDisagreement => {
+                ab_morph_run::NwaySummarySort::RegionsWithSegmentationDisagreement
+            }
+            Self::RegionsWithFeatureDisagreement => {
+                ab_morph_run::NwaySummarySort::RegionsWithFeatureDisagreement
+            }
+            Self::RegionsWithCoverageMismatch => {
+                ab_morph_run::NwaySummarySort::RegionsWithCoverageMismatch
+            }
+            Self::VariableBoundaryCount => ab_morph_run::NwaySummarySort::VariableBoundaryCount,
+        }
+    }
+}
+
+impl NwayPatternKindArg {
+    fn into_library(self) -> ab_morph_run::NwayPatternKind {
+        match self {
+            Self::Segmentation => ab_morph_run::NwayPatternKind::Segmentation,
+            Self::Feature => ab_morph_run::NwayPatternKind::Feature,
+        }
+    }
+}
+
 impl ScriptCategoryArg {
     fn into_library(self) -> ab_morph_run::ScriptCategory {
         match self {
@@ -264,6 +336,8 @@ fn main() -> Result<()> {
             examples_output,
             errors_output,
             manifest_output,
+            nway_output,
+            max_nway_examples_per_text,
             resume,
             jobs,
             output_profile,
@@ -289,7 +363,7 @@ fn main() -> Result<()> {
             } else {
                 None
             };
-            let result = ab_morph_run::run_analyze_aat(
+            let result = ab_morph_run::run_analyze_aat_with_nway(
                 aat.as_deref(),
                 aat_dir.as_deref(),
                 &analyzer,
@@ -302,6 +376,8 @@ fn main() -> Result<()> {
                 examples_output.as_deref(),
                 max_examples_per_comparison,
                 manifest_output.as_deref(),
+                nway_output.as_deref(),
+                max_nway_examples_per_text,
             );
             if let Some(stop) = progress_stop {
                 stop.stop();
@@ -387,6 +463,56 @@ fn main() -> Result<()> {
                 println!();
             } else {
                 print_difference_summary_table(&rows);
+            }
+            Ok(())
+        }
+        Command::SummarizeNway {
+            nway,
+            group_by,
+            sort_by,
+            script_category,
+            limit,
+            json,
+        } => {
+            let rows = ab_morph_run::summarize_nway(
+                &nway,
+                ab_morph_run::NwaySummaryOptions {
+                    group_by: group_by.into_library(),
+                    sort_by: sort_by.into_library(),
+                    script_category: script_category.map(ScriptCategoryArg::into_library),
+                    limit,
+                },
+            )?;
+            if json {
+                serde_json::to_writer_pretty(std::io::stdout(), &rows)?;
+                println!();
+            } else {
+                print_nway_summary_table(&rows);
+            }
+            Ok(())
+        }
+        Command::SummarizeNwayPatterns {
+            nway,
+            kind,
+            feature_key,
+            script_category,
+            limit,
+            json,
+        } => {
+            let rows = ab_morph_run::summarize_nway_patterns(
+                &nway,
+                ab_morph_run::NwayPatternOptions {
+                    kind: kind.into_library(),
+                    feature_key,
+                    script_category: script_category.map(ScriptCategoryArg::into_library),
+                    limit,
+                },
+            )?;
+            if json {
+                serde_json::to_writer_pretty(std::io::stdout(), &rows)?;
+                println!();
+            } else {
+                print_nway_pattern_table(&rows);
             }
             Ok(())
         }
@@ -556,6 +682,48 @@ fn print_difference_summary_table(rows: &[ab_morph_run::CompactDifferenceSummary
             row.feature_key.as_deref().unwrap_or(""),
             row.feature_from.as_deref().unwrap_or(""),
             row.feature_to.as_deref().unwrap_or(""),
+        );
+    }
+}
+
+fn print_nway_summary_table(rows: &[ab_morph_run::NwaySummaryRow]) {
+    println!(
+        "key\tsource_ids\ttext_ids\tscript_categories\trows\tanalyzer_count\tregions\tagreement_regions\tregions_with_feature_disagreement\tregions_with_segmentation_disagreement\tregions_with_coverage_mismatch\tvariable_boundary_count"
+    );
+    for row in rows {
+        println!(
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            row.key,
+            row.source_ids.join(","),
+            row.text_ids.join(","),
+            row.script_categories.join(","),
+            row.rows,
+            row.analyzer_count,
+            row.regions,
+            row.agreement_regions,
+            row.regions_with_feature_disagreement,
+            row.regions_with_segmentation_disagreement,
+            row.regions_with_coverage_mismatch,
+            row.variable_boundary_count,
+        );
+    }
+}
+
+fn print_nway_pattern_table(rows: &[ab_morph_run::NwayPatternRow]) {
+    println!(
+        "kind\texamples\tsource_count\ttext_count\tsample_source_ids\tsample_text_ids\tscript_categories\tpattern"
+    );
+    for row in rows {
+        println!(
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            row.kind,
+            row.examples,
+            row.source_ids.len(),
+            row.text_ids.len(),
+            sample_values(&row.source_ids, 5),
+            sample_values(&row.text_ids, 5),
+            row.script_categories.join(","),
+            row.pattern,
         );
     }
 }
@@ -893,6 +1061,42 @@ mod tests {
 
         assert!(!progress);
         assert_eq!(progress_interval_seconds, Some(5));
+    }
+
+    #[test]
+    fn parses_nway_output_flags() {
+        let args = Args::parse_from([
+            "ab-morph-run",
+            "analyze-aat",
+            "--aat",
+            "one.json",
+            "--analyzer",
+            "vibrato",
+            "--analyzer",
+            "sudachi-a",
+            "--analyzer",
+            "sudachi-c",
+            "--output-profile",
+            "compact",
+            "--analyses-output",
+            "analyses.jsonl.zst",
+            "--nway-output",
+            "nway.jsonl.zst",
+            "--max-nway-examples-per-text",
+            "25",
+        ]);
+
+        let Command::AnalyzeAat {
+            nway_output,
+            max_nway_examples_per_text,
+            ..
+        } = args.command
+        else {
+            panic!("expected analyze-aat");
+        };
+
+        assert_eq!(nway_output, Some(PathBuf::from("nway.jsonl.zst")));
+        assert_eq!(max_nway_examples_per_text, Some(25));
     }
 
     #[test]

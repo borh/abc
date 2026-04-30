@@ -251,3 +251,57 @@ target/release/ab-morph-run summarize-differences \
 ```
 
 The tabular output shows source/text counts plus short ID samples. Use `--json` when full source/text membership is needed.
+
+## 10. Run true N-way tokenizer comparison
+
+Use N-way output when comparing three or more analyzers over the same AAT inputs. Pairwise compact comparisons remain useful for boundary F1; N-way rows expose regions where any analyzer differs and aggregate recurring multi-analyzer patterns.
+
+```bash
+AB_SUDACHI_DICT="$(nix path-info .#sudachi-dictionary-full)/share/sudachi/system.dic" \
+  target/release/ab-morph-run analyze-aat \
+    --aat-dir scratch/morph-full-corpus/aats \
+    --analyzer vibrato \
+    --analyzer sudachi-a \
+    --analyzer sudachi-c \
+    --output-profile compact \
+    --analyses-output scratch/morph-full-corpus-nway/analyses.jsonl.zst \
+    --comparisons-output scratch/morph-full-corpus-nway/comparisons.jsonl.zst \
+    --examples-output scratch/morph-full-corpus-nway/examples.jsonl.zst \
+    --nway-output scratch/morph-full-corpus-nway/nway.jsonl.zst \
+    --errors-output scratch/morph-full-corpus-nway/errors.jsonl.zst \
+    --manifest-output scratch/morph-full-corpus-nway/manifest.json \
+    --jobs 8 \
+    --progress-interval-seconds 30
+```
+
+N-way output is compact-only in this phase. Resume requires the analysis and N-way outputs to agree on completed `source_id` values; incomplete sources are rerun.
+
+Worst N-way sources by segmentation disagreement:
+
+```bash
+target/release/ab-morph-run summarize-nway \
+  --nway scratch/morph-full-corpus-nway/nway.jsonl.zst \
+  --sort-by regions-with-segmentation-disagreement \
+  --limit 20
+```
+
+Recurring N-way segmentation partitions:
+
+```bash
+target/release/ab-morph-run summarize-nway-patterns \
+  --nway scratch/morph-full-corpus-nway/nway.jsonl.zst \
+  --kind segmentation \
+  --limit 25
+```
+
+Recurring N-way POS disagreements:
+
+```bash
+target/release/ab-morph-run summarize-nway-patterns \
+  --nway scratch/morph-full-corpus-nway/nway.jsonl.zst \
+  --kind feature \
+  --feature-key pos1 \
+  --limit 25
+```
+
+Pattern reports count matching regions. If one source row contains the same pattern in five regions, it contributes five examples to that pattern.

@@ -2,6 +2,7 @@ mod align;
 mod error;
 mod features;
 mod model;
+mod nway;
 mod stats;
 mod streaming;
 mod validate;
@@ -11,7 +12,9 @@ pub use model::{
     AlignedMorpheme, Analysis, AnalyzerId, ChangedValue, CompactComparison,
     CompactComparisonExample, CompactExampleKind, CompactFeatureChange, Comparison,
     ComparisonStats, CoverageMismatch, CoverageMismatchKind, FeatureDiff, FeatureKey, FeatureMap,
-    Morpheme, Region, SegmentationDiff, SegmentationKind, TextId,
+    Morpheme, NwayAnalyzerRegion, NwayComparison, NwayFeatureGroup, NwayFeatureScope,
+    NwayFeatureValueGroup, NwayRegion, NwaySegmentationGroup, NwayStats, Region, SegmentationDiff,
+    SegmentationKind, TextId,
 };
 pub use validate::{validate_analysis, validate_analysis_against_source};
 
@@ -97,6 +100,15 @@ pub fn compare_pair_compact_with_source_text(
         feature_context_keys,
         max_examples,
     )
+}
+
+pub fn compare_nway_with_source_text(
+    analyses: &[Analysis],
+    source_text: &str,
+    compare_keys: &[FeatureKey],
+    context_keys: &[FeatureKey],
+) -> Result<NwayComparison, MorphDiffError> {
+    nway::compare_nway_with_source_text(analyses, source_text, compare_keys, context_keys)
 }
 
 #[cfg(test)]
@@ -280,5 +292,104 @@ mod tests {
         let comparison = compare_pair(&from, &to, &[]).unwrap();
         assert_eq!(comparison.stats.one_to_one_regions, 2);
         assert!(comparison.feature_diffs.is_empty());
+    }
+
+    #[test]
+    fn nway_model_uses_analyzer_ids_in_segmentation_groups() {
+        let group = crate::NwaySegmentationGroup {
+            surfaces: vec!["今日".to_owned()],
+            analyzers: vec!["vibrato".to_owned(), "sudachi-a".to_owned()],
+        };
+
+        assert_eq!(group.analyzers, vec!["vibrato", "sudachi-a"]);
+    }
+
+    #[test]
+    fn compare_nway_groups_three_analyzer_segmentation_partition() {
+        let source = "今日";
+        let analyses = vec![
+            analysis(
+                "vibrato",
+                "t",
+                source,
+                vec![m(source, "今日", 0, 2, features(&[]))],
+            ),
+            analysis(
+                "sudachi-a",
+                "t",
+                source,
+                vec![m(source, "今日", 0, 2, features(&[]))],
+            ),
+            analysis(
+                "sudachi-c",
+                "t",
+                source,
+                vec![
+                    m(source, "今", 0, 1, features(&[])),
+                    m(source, "日", 1, 2, features(&[])),
+                ],
+            ),
+        ];
+
+        let comparison = crate::compare_nway_with_source_text(&analyses, source, &[], &[]).unwrap();
+
+        assert_eq!(
+            comparison.analyzers,
+            vec!["vibrato", "sudachi-a", "sudachi-c"]
+        );
+        assert_eq!(comparison.regions.len(), 1);
+        assert_eq!(comparison.regions[0].segmentation_groups.len(), 2);
+        assert!(
+            comparison.regions[0]
+                .segmentation_groups
+                .iter()
+                .any(|group| {
+                    group.surfaces == vec!["今日"]
+                        && group.analyzers == vec!["sudachi-a", "vibrato"]
+                })
+        );
+        assert!(
+            comparison.regions[0]
+                .segmentation_groups
+                .iter()
+                .any(|group| {
+                    group.surfaces == vec!["今", "日"] && group.analyzers == vec!["sudachi-c"]
+                })
+        );
+        assert_eq!(comparison.stats.regions_with_segmentation_disagreement, 1);
+    }
+
+    #[test]
+    fn compare_nway_reports_whole_region_feature_groups() {
+        let source = "今日";
+        let analyses = vec![
+            analysis(
+                "a",
+                "t",
+                source,
+                vec![m(source, "今日", 0, 2, features(&[("pos1", Some("名詞"))]))],
+            ),
+            analysis(
+                "b",
+                "t",
+                source,
+                vec![m(source, "今日", 0, 2, features(&[("pos1", Some("名詞"))]))],
+            ),
+            analysis(
+                "c",
+                "t",
+                source,
+                vec![m(source, "今日", 0, 2, features(&[("pos1", Some("空白"))]))],
+            ),
+        ];
+
+        let comparison =
+            crate::compare_nway_with_source_text(&analyses, source, &["pos1".to_owned()], &[])
+                .unwrap();
+
+        assert_eq!(comparison.regions.len(), 1);
+        assert_eq!(comparison.regions[0].feature_groups[0].key, "pos1");
+        assert_eq!(comparison.regions[0].feature_groups[0].values.len(), 2);
+        assert_eq!(comparison.stats.regions_with_feature_disagreement, 1);
     }
 }

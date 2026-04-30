@@ -1,5 +1,10 @@
 (ns abc.tools.aozora-history-audit-test
   (:require [abc.tools.aozora-history-audit :as audit]
+            [abc.tools.files :as files]
+            [abc.tools.json :as json]
+            [abc.tools.manifest :as manifest]
+            [abc.tools.person-drift :as drift]
+            [abc.tools.person-record :as person-record]
             [clojure.java.io :as io]
             [clojure.string :as string]
             [clojure.test :refer [deftest is testing]])
@@ -72,6 +77,174 @@
         (.setAuthor "ABC Test" "abc@example.test")
         (.setCommitter "ABC Test" "abc@example.test")
         .call)))
+
+(defn- write-drift-sidecars! [persons-dir event]
+  (let [event-with-id (drift/materialize-event-id event)
+        event-id (get event-with-id "drift_event_id")
+        events-dir (io/file persons-dir "_events")
+        indexes-dir (io/file persons-dir "_indexes")]
+    (.mkdirs events-dir)
+    (.mkdirs indexes-dir)
+    (json/write-deterministic-json-file!
+     (io/file events-dir (str event-id ".json"))
+     event-with-id)
+    (doseq [participant (get event-with-id "participants")]
+      (json/write-deterministic-json-file!
+       (io/file indexes-dir (str (get participant "person_id") ".json"))
+       {"schema_id" drift/index-schema-id
+        "schema_hash" (manifest/schema-hash drift/index-schema-path)
+        "person_id" (get participant "person_id")
+        "drift_event_ids" [event-id]}))
+    event-with-id))
+
+(defn- synthetic-person-record [person-id family-name]
+  {"person_record_schema_id" "https://w3id.org/abc/schemas/person-record.schema.json"
+   "person_record_schema_hash" (manifest/schema-hash "schemas/person-record.schema.json")
+   "person_id" person-id
+   "family_name" family-name
+   "given_name" "人"
+   "family_name_reading" "せい"
+   "given_name_reading" "ひと"
+   "family_name_sort" "せい"
+   "given_name_sort" "ひと"
+   "family_name_romaji" "Sei"
+   "given_name_romaji" "Hito"
+   "date_of_birth" "1900-01-01"
+   "date_of_death" "1970-01-01"
+   "person_copyright_expired" true
+   "external_links" []})
+
+(defn- write-corpus! [root persons-by-id]
+  (let [persons-dir (io/file root "persons")
+        works-dir (io/file root "works")]
+    (.mkdirs persons-dir)
+    (.mkdirs works-dir)
+    (doseq [[person-id record] persons-by-id]
+      (json/write-deterministic-json-file!
+       (io/file persons-dir (str person-id ".json"))
+       record))
+    (json/write-deterministic-json-file!
+     (io/file works-dir "000100.json")
+     {"metadata_record_schema_id" "https://w3id.org/abc/schemas/metadata-record.schema.json"
+      "metadata_record_schema_hash" (manifest/schema-hash "schemas/metadata-record.schema.json")
+      "work" {"work_id" "000100"
+              "title" "テスト作品"
+              "title_reading" "てすとさくひん"
+              "title_sort" "てすとさくひん"
+              "subtitle" nil
+              "subtitle_reading" nil
+              "original_title" nil
+              "first_appearance" nil
+              "ndc" "NDC 913"
+              "orthography" "新字新仮名"
+              "work_copyright_expired" true
+              "publication_date" "1997-10-29"
+              "last_updated" "2022-07-16"
+              "card_url" "https://www.aozora.gr.jp/cards/000001/card100.html"
+              "source_editions" [{"edition_name" "テスト作品"
+                                  "publisher" "テスト出版社"
+                                  "first_edition_year" nil
+                                  "input_edition" nil
+                                  "proofing_edition" nil
+                                  "parent_edition_name" nil
+                                  "parent_publisher" nil
+                                  "parent_first_edition_year" nil}]}
+      "contributors" (vec
+                      (for [[person-id record] (sort-by key persons-by-id)]
+                        {"person_id" person-id
+                         "person_record_hash" (person-record/record-hash record)
+                         "relation_to_work" "著者"}))})))
+
+(deftest drift-participant-updates-empty-without-sidecars-test
+  (let [previous-dir (temp-dir "abc-audit-prev")
+        current-dir (temp-dir "abc-audit-cur")
+        drift-dir (temp-dir "abc-audit-drift")]
+    (try
+      (write-corpus! previous-dir {"000879" (synthetic-person-record "000879" "芥川")})
+      (write-corpus! current-dir {"000879" (synthetic-person-record "000879" "芥川")})
+      (is (= []
+             (audit/drift-participant-updates
+              {:previous-dir (str previous-dir)
+               :current-dir (str current-dir)
+               :drift-persons-dir (str drift-dir)})))
+      (finally
+        (delete-recursive previous-dir)
+        (delete-recursive current-dir)
+        (delete-recursive drift-dir)))))
+
+(deftest drift-participant-updates-report-hash-changes-test
+  (let [previous-dir (temp-dir "abc-audit-prev")
+        current-dir (temp-dir "abc-audit-cur")
+        drift-dir (temp-dir "abc-audit-drift")]
+    (try
+      (write-corpus! previous-dir {"000879" (synthetic-person-record "000879" "芥川")})
+      (write-corpus! current-dir {"000879" (synthetic-person-record "000879" "芥川改")})
+      (let [previous-person (files/read-json (io/file previous-dir "persons" "000879.json"))
+            current-person (files/read-json (io/file current-dir "persons" "000879.json"))
+            first-successor (synthetic-person-record "abc-000000000001" "芥川一")
+            second-successor (synthetic-person-record "abc-000000000002" "芥川二")
+            event (write-drift-sidecars!
+                   drift-dir
+                   {"schema_id" drift/event-schema-id
+                    "schema_hash" (manifest/schema-hash drift/event-schema-path)
+                    "drift_event_type" "split"
+                    "date" "2026-04-30"
+                    "participants" [{"snapshot_id" "post-abc-000000000001"
+                                     "person_id" "abc-000000000001"
+                                     "person_record_hash" (person-record/record-hash first-successor)}
+                                    {"snapshot_id" "post-abc-000000000002"
+                                     "person_id" "abc-000000000002"
+                                     "person_record_hash" (person-record/record-hash second-successor)}
+                                    {"snapshot_id" "pre-000879"
+                                     "person_id" "000879"
+                                     "person_record_hash" (person-record/record-hash previous-person)}]
+                    "evidence" ["https://example.org/drift-evidence"]
+                    "prov" {"used" ["pre-000879"]
+                            "was_generated_by" ["post-abc-000000000001"
+                                                "post-abc-000000000002"]
+                            "qualified_association" {"agent" "https://w3id.org/abc/agents/test"
+                                                     "had_role" "abc:DriftEditor"}}})
+            updates (audit/drift-participant-updates
+                     {:previous-dir (str previous-dir)
+                      :current-dir (str current-dir)
+                      :drift-persons-dir (str drift-dir)})]
+        (is (= [{"person_id" "000879"
+                 "change_type" "hash_changed"
+                 "previous_hash" (person-record/record-hash previous-person)
+                 "current_hash" (person-record/record-hash current-person)
+                 "drift_event_ids" [(get event "drift_event_id")]}]
+               updates)))
+      (finally
+        (delete-recursive previous-dir)
+        (delete-recursive current-dir)
+        (delete-recursive drift-dir)))))
+
+(deftest drift-participant-updates-reject-invalid-sidecars-test
+  (let [previous-dir (temp-dir "abc-audit-prev")
+        current-dir (temp-dir "abc-audit-cur")
+        drift-dir (temp-dir "abc-audit-drift")
+        indexes-dir (io/file drift-dir "_indexes")]
+    (try
+      (write-corpus! previous-dir {"000879" (synthetic-person-record "000879" "芥川")})
+      (write-corpus! current-dir {"000879" (synthetic-person-record "000879" "芥川")})
+      (.mkdirs indexes-dir)
+      (json/write-deterministic-json-file!
+       (io/file indexes-dir "000879.json")
+       {"schema_id" drift/index-schema-id
+        "schema_hash" (manifest/schema-hash drift/index-schema-path)
+        "person_id" "000879"
+        "drift_event_ids" ["sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"]})
+      (is (thrown-with-msg?
+           clojure.lang.ExceptionInfo
+           #"drift sidecars failed validation"
+           (audit/drift-participant-updates
+            {:previous-dir (str previous-dir)
+             :current-dir (str current-dir)
+             :drift-persons-dir (str drift-dir)})))
+      (finally
+        (delete-recursive previous-dir)
+        (delete-recursive current-dir)
+        (delete-recursive drift-dir)))))
 
 (deftest audit-history-uses-git-refs-and-flags-real-split-evidence-test
   (testing "two upstream refs are extracted, ingested, validated, and compared"

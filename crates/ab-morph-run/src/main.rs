@@ -226,6 +226,28 @@ enum Command {
         #[arg(long)]
         json: bool,
     },
+    SummarizeWarehousePatternExamples {
+        #[arg(long)]
+        run_dir: PathBuf,
+        #[arg(long, value_enum, default_value_t = NwayPatternKindArg::Segmentation)]
+        kind: NwayPatternKindArg,
+        #[arg(long)]
+        pattern: String,
+        #[arg(long)]
+        feature_key: Option<String>,
+        #[arg(long, value_enum, default_value_t = WarehouseTextFilterArg::All)]
+        filter: WarehouseTextFilterArg,
+        #[arg(long)]
+        exclude_feature_value: Vec<String>,
+        #[arg(long)]
+        exclude_source_id: Vec<String>,
+        #[arg(long)]
+        exclude_text_id: Vec<String>,
+        #[arg(long, default_value_t = 20)]
+        limit: usize,
+        #[arg(long)]
+        json: bool,
+    },
     SummarizeWarehouseRegions {
         #[arg(long)]
         run_dir: PathBuf,
@@ -874,6 +896,38 @@ fn main() -> Result<()> {
                 println!();
             } else {
                 print_nway_pattern_table(&rows);
+            }
+            Ok(())
+        }
+        Command::SummarizeWarehousePatternExamples {
+            run_dir,
+            kind,
+            pattern,
+            feature_key,
+            filter,
+            exclude_feature_value,
+            exclude_source_id,
+            exclude_text_id,
+            limit,
+            json,
+        } => {
+            let rows = ab_morph_run::summarize_warehouse_pattern_examples(
+                &run_dir,
+                ab_morph_run::WarehousePatternExampleOptions {
+                    kind: kind.into_library(),
+                    pattern,
+                    feature_key,
+                    text_filter: filter.into_library(),
+                    excluded_feature_values: exclude_feature_value.into_iter().collect(),
+                    exclusions: summary_exclusions(exclude_source_id, exclude_text_id),
+                    limit,
+                },
+            )?;
+            if json {
+                serde_json::to_writer_pretty(std::io::stdout(), &rows)?;
+                println!();
+            } else {
+                print_warehouse_region_table(&rows);
             }
             Ok(())
         }
@@ -2032,6 +2086,52 @@ mod tests {
         assert_eq!(feature_key, Some("pos1".to_owned()));
         assert_eq!(filter, WarehouseTextFilterArg::LexicalOnly);
         assert_eq!(exclude_source_id, vec!["source-a"]);
+        assert_eq!(limit, 15);
+        assert!(json);
+    }
+
+    #[test]
+    fn parses_summarize_warehouse_pattern_examples_command() {
+        let args = Args::parse_from([
+            "ab-morph-run",
+            "summarize-warehouse-pattern-examples",
+            "--run-dir",
+            "scratch/morph-warehouse/runs/full-2026-05-01",
+            "--kind",
+            "feature",
+            "--pattern",
+            "pos1 whole_region 名詞=>vibrato ; 動詞=>sudachi-a",
+            "--feature-key",
+            "pos1",
+            "--filter",
+            "lexical-only",
+            "--limit",
+            "15",
+            "--json",
+        ]);
+
+        let Command::SummarizeWarehousePatternExamples {
+            run_dir,
+            kind,
+            pattern,
+            feature_key,
+            filter,
+            limit,
+            json,
+            ..
+        } = args.command
+        else {
+            panic!("expected summarize-warehouse-pattern-examples");
+        };
+
+        assert_eq!(
+            run_dir,
+            PathBuf::from("scratch/morph-warehouse/runs/full-2026-05-01")
+        );
+        assert_eq!(kind, NwayPatternKindArg::Feature);
+        assert_eq!(pattern, "pos1 whole_region 名詞=>vibrato ; 動詞=>sudachi-a");
+        assert_eq!(feature_key, Some("pos1".to_owned()));
+        assert_eq!(filter, WarehouseTextFilterArg::LexicalOnly);
         assert_eq!(limit, 15);
         assert!(json);
     }

@@ -96,6 +96,15 @@ target/release/ab-morph-run summarize-warehouse-patterns \
   --filter lexical-only \
   --limit 50
 
+# Copy a pattern string from summarize-warehouse-patterns and drill into bounded examples.
+target/release/ab-morph-run summarize-warehouse-pattern-examples \
+  --run-dir scratch/morph-warehouse/runs/full-2026-05-01 \
+  --kind feature \
+  --feature-key pos1 \
+  --filter lexical-only \
+  --pattern 'pos1 whole_region 助動詞=>vibrato:unidic-cwj-202512 ; 助詞=>sudachi-a+sudachi-c' \
+  --limit 20
+
 target/release/ab-morph-run summarize-warehouse-regions \
   --run-dir scratch/morph-warehouse/runs/full-2026-05-01 \
   --kind segmentation \

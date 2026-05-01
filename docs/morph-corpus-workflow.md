@@ -85,6 +85,12 @@ target/release/ab-morph-run summarize-warehouse-patterns \
   --kind feature \
   --feature-key pos1 \
   --limit 50
+
+target/release/ab-morph-run summarize-warehouse-regions \
+  --run-dir scratch/morph-warehouse/runs/full-2026-05-01 \
+  --kind segmentation \
+  --limit 20 \
+  --json
 ```
 
 The existing JSONL `--output-dir` mode remains for compatibility and targeted debugging, but it is not the canonical comprehensive store.

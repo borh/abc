@@ -208,6 +208,20 @@ enum Command {
         #[arg(long)]
         json: bool,
     },
+    SummarizeWarehouseRegions {
+        #[arg(long)]
+        run_dir: PathBuf,
+        #[arg(long, value_enum, default_value_t = WarehouseRegionKindArg::All)]
+        kind: WarehouseRegionKindArg,
+        #[arg(long)]
+        exclude_source_id: Vec<String>,
+        #[arg(long)]
+        exclude_text_id: Vec<String>,
+        #[arg(long, default_value_t = 20)]
+        limit: usize,
+        #[arg(long)]
+        json: bool,
+    },
     RerunFull {
         #[arg(long)]
         aat_dir: PathBuf,
@@ -282,6 +296,14 @@ enum NwaySummarySortArg {
 enum NwayPatternKindArg {
     Segmentation,
     Feature,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
+enum WarehouseRegionKindArg {
+    All,
+    Segmentation,
+    Feature,
+    Coverage,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
@@ -393,6 +415,17 @@ impl NwayPatternKindArg {
         match self {
             Self::Segmentation => ab_morph_run::NwayPatternKind::Segmentation,
             Self::Feature => ab_morph_run::NwayPatternKind::Feature,
+        }
+    }
+}
+
+impl WarehouseRegionKindArg {
+    fn into_library(self) -> ab_morph_run::WarehouseRegionKind {
+        match self {
+            Self::All => ab_morph_run::WarehouseRegionKind::All,
+            Self::Segmentation => ab_morph_run::WarehouseRegionKind::Segmentation,
+            Self::Feature => ab_morph_run::WarehouseRegionKind::Feature,
+            Self::Coverage => ab_morph_run::WarehouseRegionKind::Coverage,
         }
     }
 }
@@ -726,6 +759,30 @@ fn main() -> Result<()> {
             }
             Ok(())
         }
+        Command::SummarizeWarehouseRegions {
+            run_dir,
+            kind,
+            exclude_source_id,
+            exclude_text_id,
+            limit,
+            json,
+        } => {
+            let rows = ab_morph_run::summarize_warehouse_regions(
+                &run_dir,
+                ab_morph_run::WarehouseRegionOptions {
+                    kind: kind.into_library(),
+                    exclusions: summary_exclusions(exclude_source_id, exclude_text_id),
+                    limit,
+                },
+            )?;
+            if json {
+                serde_json::to_writer_pretty(std::io::stdout(), &rows)?;
+                println!();
+            } else {
+                print_warehouse_region_table(&rows);
+            }
+            Ok(())
+        }
         Command::RerunFull {
             aat_dir,
             source_id,
@@ -1032,6 +1089,48 @@ fn print_nway_pattern_table(rows: &[ab_morph_run::NwayPatternRow]) {
             sample_values(&row.text_ids, 5),
             row.script_categories.join(","),
             row.pattern,
+        );
+    }
+}
+
+fn print_warehouse_region_table(rows: &[ab_morph_run::WarehouseRegionExampleRow]) {
+    println!(
+        "source_id\ttext_id\tregion_index\tchar_span\tbytes\tsegmentation\tfeature\tcoverage\tanalyzers\tfeatures"
+    );
+    for row in rows {
+        let analyzers = row
+            .analyzers
+            .iter()
+            .map(|analyzer| format!("{}:[{}]", analyzer.analyzer_id, analyzer.surfaces.join("|")))
+            .collect::<Vec<_>>()
+            .join(" ; ");
+        let features = row
+            .feature_diffs
+            .iter()
+            .map(|feature| {
+                format!(
+                    "{}:{}={}",
+                    feature.analyzer_id,
+                    feature.feature_key,
+                    feature.feature_value.as_deref().unwrap_or("<null>")
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(" ; ");
+        println!(
+            "{}\t{}\t{}\t{}..{}\t{}..{}\t{}\t{}\t{}\t{}\t{}",
+            row.source_id,
+            row.text_id,
+            row.region_index,
+            row.char_start,
+            row.char_end,
+            row.byte_start,
+            row.byte_end,
+            row.has_segmentation_disagreement,
+            row.has_feature_disagreement,
+            row.has_coverage_mismatch,
+            analyzers,
+            features,
         );
     }
 }
@@ -1743,6 +1842,44 @@ mod tests {
         );
         assert_eq!(kind, NwayPatternKindArg::Feature);
         assert_eq!(feature_key, Some("pos1".to_owned()));
+        assert_eq!(exclude_source_id, vec!["source-a"]);
+        assert_eq!(limit, 15);
+        assert!(json);
+    }
+
+    #[test]
+    fn parses_summarize_warehouse_regions_command() {
+        let args = Args::parse_from([
+            "ab-morph-run",
+            "summarize-warehouse-regions",
+            "--run-dir",
+            "scratch/morph-warehouse/runs/full-2026-05-01",
+            "--kind",
+            "segmentation",
+            "--exclude-source-id",
+            "source-a",
+            "--limit",
+            "15",
+            "--json",
+        ]);
+
+        let Command::SummarizeWarehouseRegions {
+            run_dir,
+            kind,
+            exclude_source_id,
+            limit,
+            json,
+            ..
+        } = args.command
+        else {
+            panic!("expected summarize-warehouse-regions");
+        };
+
+        assert_eq!(
+            run_dir,
+            PathBuf::from("scratch/morph-warehouse/runs/full-2026-05-01")
+        );
+        assert_eq!(kind, WarehouseRegionKindArg::Segmentation);
         assert_eq!(exclude_source_id, vec!["source-a"]);
         assert_eq!(limit, 15);
         assert!(json);

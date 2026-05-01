@@ -174,6 +174,24 @@ enum Command {
         #[arg(long)]
         json: bool,
     },
+    SummarizeWarehousePatterns {
+        #[arg(long)]
+        run_dir: PathBuf,
+        #[arg(long, value_enum, default_value_t = NwayPatternKindArg::Segmentation)]
+        kind: NwayPatternKindArg,
+        #[arg(long)]
+        feature_key: Option<String>,
+        #[arg(long)]
+        exclude_feature_value: Vec<String>,
+        #[arg(long)]
+        exclude_source_id: Vec<String>,
+        #[arg(long)]
+        exclude_text_id: Vec<String>,
+        #[arg(long, default_value_t = 20)]
+        limit: usize,
+        #[arg(long)]
+        json: bool,
+    },
     RerunFull {
         #[arg(long)]
         aat_dir: PathBuf,
@@ -628,6 +646,35 @@ fn main() -> Result<()> {
                 (None, Some(path)) => ab_morph_run::summarize_nway_pattern_counts(path, options)?,
                 (None, None) => anyhow::bail!("provide one of --nway or --pattern-counts"),
             };
+            if json {
+                serde_json::to_writer_pretty(std::io::stdout(), &rows)?;
+                println!();
+            } else {
+                print_nway_pattern_table(&rows);
+            }
+            Ok(())
+        }
+        Command::SummarizeWarehousePatterns {
+            run_dir,
+            kind,
+            feature_key,
+            exclude_feature_value,
+            exclude_source_id,
+            exclude_text_id,
+            limit,
+            json,
+        } => {
+            let rows = ab_morph_run::summarize_warehouse_nway_patterns(
+                &run_dir,
+                ab_morph_run::NwayPatternOptions {
+                    kind: kind.into_library(),
+                    feature_key,
+                    script_category: None,
+                    excluded_feature_values: exclude_feature_value.into_iter().collect(),
+                    exclusions: summary_exclusions(exclude_source_id, exclude_text_id),
+                    limit,
+                },
+            )?;
             if json {
                 serde_json::to_writer_pretty(std::io::stdout(), &rows)?;
                 println!();
@@ -1572,6 +1619,48 @@ mod tests {
         );
         assert_eq!(kind, NwayPatternKindArg::Feature);
         assert_eq!(feature_key, Some("pos1".to_owned()));
+    }
+
+    #[test]
+    fn parses_summarize_warehouse_patterns_command() {
+        let args = Args::parse_from([
+            "ab-morph-run",
+            "summarize-warehouse-patterns",
+            "--run-dir",
+            "scratch/morph-warehouse/runs/full-2026-05-01",
+            "--kind",
+            "feature",
+            "--feature-key",
+            "pos1",
+            "--exclude-source-id",
+            "source-a",
+            "--limit",
+            "15",
+            "--json",
+        ]);
+
+        let Command::SummarizeWarehousePatterns {
+            run_dir,
+            kind,
+            feature_key,
+            exclude_source_id,
+            limit,
+            json,
+            ..
+        } = args.command
+        else {
+            panic!("expected summarize-warehouse-patterns");
+        };
+
+        assert_eq!(
+            run_dir,
+            PathBuf::from("scratch/morph-warehouse/runs/full-2026-05-01")
+        );
+        assert_eq!(kind, NwayPatternKindArg::Feature);
+        assert_eq!(feature_key, Some("pos1".to_owned()));
+        assert_eq!(exclude_source_id, vec!["source-a"]);
+        assert_eq!(limit, 15);
+        assert!(json);
     }
 
     #[test]

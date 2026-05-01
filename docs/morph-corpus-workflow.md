@@ -66,6 +66,21 @@ duckdb -c ".read scratch/morph-warehouse/runs/full-2026-05-01/views.sql" \
        -c "SELECT * FROM top_segmentation_patterns LIMIT 50;"
 ```
 
+Query recurring warehouse patterns through `ab-morph-run` without JSONL intermediates:
+
+```bash
+target/release/ab-morph-run summarize-warehouse-patterns \
+  --run-dir scratch/morph-warehouse/runs/full-2026-05-01 \
+  --kind segmentation \
+  --limit 50
+
+target/release/ab-morph-run summarize-warehouse-patterns \
+  --run-dir scratch/morph-warehouse/runs/full-2026-05-01 \
+  --kind feature \
+  --feature-key pos1 \
+  --limit 50
+```
+
 The existing JSONL `--output-dir` mode remains for compatibility and targeted debugging, but it is not the canonical comprehensive store.
 
 ## 4. Summarize worst cases

@@ -1,7 +1,10 @@
 use std::collections::{BTreeMap, BTreeSet};
+use std::fs::File;
 use std::path::Path;
 
-use anyhow::Result;
+use anyhow::{Context, Result, bail};
+use arrow_array::{Array, BooleanArray, ListArray, RecordBatch, StringArray, UInt64Array};
+use parquet::arrow::arrow_reader::ParquetRecordBatchReaderBuilder;
 use serde::{Deserialize, Serialize};
 
 use crate::compact::{ComparisonSummaryRow, is_whitespace_only};
@@ -11,6 +14,7 @@ use crate::nway::{
 };
 use crate::output::for_each_jsonl_or_zst_line;
 use crate::script::{ScriptCategory, classify_text};
+use crate::warehouse::schema::WarehouseTable;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CompactSummaryGroupBy {
@@ -328,6 +332,49 @@ struct NwayPatternAccumulator {
     text_ids: BTreeSet<String>,
     script_categories: BTreeSet<ScriptCategory>,
     examples: usize,
+}
+
+#[derive(Debug, Default)]
+struct WarehousePatternAccumulator {
+    source_ids: BTreeSet<String>,
+    text_ids: BTreeSet<String>,
+    examples: usize,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+struct WarehouseRegionKey {
+    run_id: String,
+    source_id: String,
+    text_id: String,
+    region_index: u64,
+}
+
+#[derive(Debug, Clone, Copy)]
+struct WarehouseRegionFlags {
+    has_segmentation_disagreement: bool,
+}
+
+#[derive(Debug, Clone)]
+struct WarehouseRegionAnalyzerFact {
+    key: WarehouseRegionKey,
+    analyzer_id: String,
+    surfaces: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+struct WarehouseFeatureGroupKey {
+    region: WarehouseRegionKey,
+    feature_key: String,
+    scope_type: String,
+    scope_position: Option<u64>,
+    scope_surface: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+struct WarehouseFeatureDiffFact {
+    key: WarehouseFeatureGroupKey,
+    feature_value: Option<String>,
+    analyzer_id: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -698,6 +745,159 @@ pub fn summarize_nway_pattern_counts(
     Ok(rows)
 }
 
+pub fn summarize_warehouse_nway_patterns(
+    run_dir: &Path,
+    options: NwayPatternOptions,
+) -> Result<Vec<NwayPatternRow>> {
+    if options.script_category.is_some() {
+        bail!(
+            "warehouse pattern summaries do not support --script-category in phase 1; warehouse facts do not store script categories"
+        );
+    }
+    let regions = read_warehouse_region_flags(run_dir)?;
+    let groups = match options.kind {
+        NwayPatternKind::Segmentation => {
+            summarize_warehouse_segmentation_patterns(run_dir, &regions, &options)?
+        }
+        NwayPatternKind::Feature => {
+            summarize_warehouse_feature_patterns(run_dir, &regions, &options)?
+        }
+    };
+    let mut rows = groups
+        .into_iter()
+        .map(|(key, accumulator)| accumulator.into_row(key))
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| {
+        right
+            .examples
+            .cmp(&left.examples)
+            .then_with(|| left.pattern.cmp(&right.pattern))
+    });
+    rows.truncate(options.limit);
+    Ok(rows)
+}
+
+fn summarize_warehouse_segmentation_patterns(
+    run_dir: &Path,
+    regions: &BTreeMap<WarehouseRegionKey, WarehouseRegionFlags>,
+    options: &NwayPatternOptions,
+) -> Result<BTreeMap<NwayPatternKey, WarehousePatternAccumulator>> {
+    let mut by_region = BTreeMap::<WarehouseRegionKey, Vec<WarehouseRegionAnalyzerFact>>::new();
+    for fact in read_warehouse_region_analyzers(run_dir)? {
+        if options
+            .exclusions
+            .excludes(&fact.key.source_id, &fact.key.text_id)
+        {
+            continue;
+        }
+        if !regions
+            .get(&fact.key)
+            .is_some_and(|flags| flags.has_segmentation_disagreement)
+        {
+            continue;
+        }
+        by_region.entry(fact.key.clone()).or_default().push(fact);
+    }
+
+    let mut groups = BTreeMap::<NwayPatternKey, WarehousePatternAccumulator>::new();
+    for (region, facts) in by_region {
+        let mut surface_groups = BTreeMap::<Vec<String>, Vec<String>>::new();
+        for fact in facts {
+            surface_groups
+                .entry(fact.surfaces)
+                .or_default()
+                .push(fact.analyzer_id);
+        }
+        let mut segmentation_groups = surface_groups
+            .into_iter()
+            .map(|(surfaces, mut analyzers)| {
+                analyzers.sort();
+                NwaySegmentationGroupRow {
+                    surfaces,
+                    analyzers,
+                }
+            })
+            .collect::<Vec<_>>();
+        canonicalize_segmentation_groups(&mut segmentation_groups);
+        if segmentation_groups.len() <= 1 {
+            continue;
+        }
+        let key = NwayPatternKey {
+            kind: "segmentation".to_owned(),
+            segmentation_groups,
+            feature_key: None,
+            feature_scope: None,
+            feature_values: Vec::new(),
+        };
+        groups.entry(key).or_default().push_region(&region, 1);
+    }
+    Ok(groups)
+}
+
+fn summarize_warehouse_feature_patterns(
+    run_dir: &Path,
+    _regions: &BTreeMap<WarehouseRegionKey, WarehouseRegionFlags>,
+    options: &NwayPatternOptions,
+) -> Result<BTreeMap<NwayPatternKey, WarehousePatternAccumulator>> {
+    let mut by_feature =
+        BTreeMap::<WarehouseFeatureGroupKey, BTreeMap<Option<String>, Vec<String>>>::new();
+    for fact in read_warehouse_feature_diffs(run_dir)? {
+        if options
+            .exclusions
+            .excludes(&fact.key.region.source_id, &fact.key.region.text_id)
+        {
+            continue;
+        }
+        if options
+            .feature_key
+            .as_ref()
+            .is_some_and(|wanted| fact.key.feature_key != *wanted)
+        {
+            continue;
+        }
+        if fact
+            .feature_value
+            .as_ref()
+            .is_some_and(|value| options.excluded_feature_values.contains(value))
+        {
+            continue;
+        }
+        by_feature
+            .entry(fact.key)
+            .or_default()
+            .entry(fact.feature_value)
+            .or_default()
+            .push(fact.analyzer_id);
+    }
+
+    let mut groups = BTreeMap::<NwayPatternKey, WarehousePatternAccumulator>::new();
+    for (feature, values_by_analyzer) in by_feature {
+        let mut values = values_by_analyzer
+            .into_iter()
+            .map(|(value, mut analyzers)| {
+                analyzers.sort();
+                NwayFeatureValueGroupRow { value, analyzers }
+            })
+            .collect::<Vec<_>>();
+        canonicalize_feature_values(&mut values);
+        if values.len() <= 1 {
+            continue;
+        }
+        let key = NwayPatternKey {
+            kind: "feature".to_owned(),
+            segmentation_groups: Vec::new(),
+            feature_key: Some(feature.feature_key.clone()),
+            feature_scope: Some(warehouse_feature_scope_row(&feature)?),
+            feature_values: values,
+        };
+        groups
+            .entry(key)
+            .or_default()
+            .push_region(&feature.region, 1);
+    }
+    Ok(groups)
+}
+
 impl Accumulator {
     fn push(&mut self, row: ComparisonSummaryRow) {
         self.source_ids.insert(row.source_id);
@@ -933,6 +1133,201 @@ impl NwayPatternAccumulator {
             feature_values: key.feature_values,
         }
     }
+}
+
+impl WarehousePatternAccumulator {
+    fn push_region(&mut self, region: &WarehouseRegionKey, count: usize) {
+        self.source_ids.insert(region.source_id.clone());
+        self.text_ids.insert(region.text_id.clone());
+        self.examples += count;
+    }
+
+    fn into_row(self, key: NwayPatternKey) -> NwayPatternRow {
+        NwayPatternRow {
+            kind: key.kind.clone(),
+            pattern: nway_pattern_display(&key),
+            examples: self.examples,
+            source_ids: self.source_ids.into_iter().collect(),
+            text_ids: self.text_ids.into_iter().collect(),
+            script_categories: Vec::new(),
+            segmentation_groups: key.segmentation_groups,
+            feature_key: key.feature_key,
+            feature_scope: key.feature_scope,
+            feature_values: key.feature_values,
+        }
+    }
+}
+
+fn read_warehouse_region_flags(
+    run_dir: &Path,
+) -> Result<BTreeMap<WarehouseRegionKey, WarehouseRegionFlags>> {
+    let mut regions = BTreeMap::new();
+    for batch in read_warehouse_table(run_dir, WarehouseTable::NwayRegions)? {
+        let run_id = string_column(&batch, 0)?;
+        let source_id = string_column(&batch, 1)?;
+        let text_id = string_column(&batch, 2)?;
+        let region_index = u64_column(&batch, 3)?;
+        let has_segmentation_disagreement = bool_column(&batch, 11)?;
+        for row in 0..batch.num_rows() {
+            regions.insert(
+                WarehouseRegionKey {
+                    run_id: run_id.value(row).to_owned(),
+                    source_id: source_id.value(row).to_owned(),
+                    text_id: text_id.value(row).to_owned(),
+                    region_index: region_index.value(row),
+                },
+                WarehouseRegionFlags {
+                    has_segmentation_disagreement: has_segmentation_disagreement.value(row),
+                },
+            );
+        }
+    }
+    Ok(regions)
+}
+
+fn read_warehouse_region_analyzers(run_dir: &Path) -> Result<Vec<WarehouseRegionAnalyzerFact>> {
+    let mut facts = Vec::new();
+    for batch in read_warehouse_table(run_dir, WarehouseTable::NwayRegionAnalyzers)? {
+        let run_id = string_column(&batch, 0)?;
+        let source_id = string_column(&batch, 1)?;
+        let text_id = string_column(&batch, 2)?;
+        let region_index = u64_column(&batch, 3)?;
+        let analyzer_id = string_column(&batch, 4)?;
+        let surfaces = list_string_column(&batch, 8)?;
+        for row in 0..batch.num_rows() {
+            facts.push(WarehouseRegionAnalyzerFact {
+                key: WarehouseRegionKey {
+                    run_id: run_id.value(row).to_owned(),
+                    source_id: source_id.value(row).to_owned(),
+                    text_id: text_id.value(row).to_owned(),
+                    region_index: region_index.value(row),
+                },
+                analyzer_id: analyzer_id.value(row).to_owned(),
+                surfaces: list_string_value(surfaces, row)?,
+            });
+        }
+    }
+    Ok(facts)
+}
+
+fn read_warehouse_feature_diffs(run_dir: &Path) -> Result<Vec<WarehouseFeatureDiffFact>> {
+    let mut facts = Vec::new();
+    for batch in read_warehouse_table(run_dir, WarehouseTable::NwayFeatureDiffs)? {
+        let run_id = string_column(&batch, 0)?;
+        let source_id = string_column(&batch, 1)?;
+        let text_id = string_column(&batch, 2)?;
+        let region_index = u64_column(&batch, 3)?;
+        let feature_key = string_column(&batch, 4)?;
+        let scope_type = string_column(&batch, 5)?;
+        let scope_position = u64_column(&batch, 6)?;
+        let scope_surface = string_column(&batch, 7)?;
+        let feature_value = string_column(&batch, 8)?;
+        let analyzer_id = string_column(&batch, 9)?;
+        for row in 0..batch.num_rows() {
+            facts.push(WarehouseFeatureDiffFact {
+                key: WarehouseFeatureGroupKey {
+                    region: WarehouseRegionKey {
+                        run_id: run_id.value(row).to_owned(),
+                        source_id: source_id.value(row).to_owned(),
+                        text_id: text_id.value(row).to_owned(),
+                        region_index: region_index.value(row),
+                    },
+                    feature_key: feature_key.value(row).to_owned(),
+                    scope_type: scope_type.value(row).to_owned(),
+                    scope_position: nullable_u64_value(scope_position, row),
+                    scope_surface: nullable_string_value(scope_surface, row),
+                },
+                feature_value: nullable_string_value(feature_value, row),
+                analyzer_id: analyzer_id.value(row).to_owned(),
+            });
+        }
+    }
+    Ok(facts)
+}
+
+fn warehouse_feature_scope_row(feature: &WarehouseFeatureGroupKey) -> Result<NwayFeatureScopeRow> {
+    match feature.scope_type.as_str() {
+        "whole_region" => Ok(NwayFeatureScopeRow::WholeRegion),
+        "token_position" => Ok(NwayFeatureScopeRow::TokenPosition {
+            position: feature
+                .scope_position
+                .context("token_position scope missing scope_position")?
+                as usize,
+        }),
+        "surface" => Ok(NwayFeatureScopeRow::Surface {
+            surface: feature
+                .scope_surface
+                .clone()
+                .context("surface scope missing scope_surface")?,
+        }),
+        other => bail!("unknown warehouse feature scope_type `{other}`"),
+    }
+}
+
+fn read_warehouse_table(run_dir: &Path, table: WarehouseTable) -> Result<Vec<RecordBatch>> {
+    let path = run_dir.join(table.file_name());
+    let file = File::open(&path).with_context(|| format!("failed to open {}", path.display()))?;
+    let reader = ParquetRecordBatchReaderBuilder::try_new(file)
+        .with_context(|| format!("failed to read parquet metadata from {}", path.display()))?
+        .build()
+        .with_context(|| format!("failed to build parquet reader for {}", path.display()))?;
+    reader
+        .collect::<std::result::Result<Vec<_>, _>>()
+        .with_context(|| format!("failed to read {}", path.display()))
+}
+
+fn string_column(batch: &RecordBatch, index: usize) -> Result<&StringArray> {
+    batch
+        .column(index)
+        .as_any()
+        .downcast_ref::<StringArray>()
+        .with_context(|| format!("column {index} is not a StringArray"))
+}
+
+fn u64_column(batch: &RecordBatch, index: usize) -> Result<&UInt64Array> {
+    batch
+        .column(index)
+        .as_any()
+        .downcast_ref::<UInt64Array>()
+        .with_context(|| format!("column {index} is not a UInt64Array"))
+}
+
+fn bool_column(batch: &RecordBatch, index: usize) -> Result<&BooleanArray> {
+    batch
+        .column(index)
+        .as_any()
+        .downcast_ref::<BooleanArray>()
+        .with_context(|| format!("column {index} is not a BooleanArray"))
+}
+
+fn list_string_column(batch: &RecordBatch, index: usize) -> Result<&ListArray> {
+    batch
+        .column(index)
+        .as_any()
+        .downcast_ref::<ListArray>()
+        .with_context(|| format!("column {index} is not a ListArray"))
+}
+
+fn nullable_string_value(array: &StringArray, row: usize) -> Option<String> {
+    (!array.is_null(row)).then(|| array.value(row).to_owned())
+}
+
+fn nullable_u64_value(array: &UInt64Array, row: usize) -> Option<u64> {
+    (!array.is_null(row)).then(|| array.value(row))
+}
+
+fn list_string_value(array: &ListArray, row: usize) -> Result<Vec<String>> {
+    if array.is_null(row) {
+        return Ok(Vec::new());
+    }
+    let values = array.value(row);
+    let values = values
+        .as_any()
+        .downcast_ref::<StringArray>()
+        .context("list value is not a StringArray")?;
+    Ok((0..values.len())
+        .map(|index| values.value(index).to_owned())
+        .collect())
 }
 
 fn compare_rows(
@@ -1728,6 +2123,206 @@ mod tests {
         assert_eq!(rows[0].examples, 12);
         assert_eq!(rows[0].source_ids, vec!["src-a", "src-b"]);
         let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn summarize_warehouse_patterns_reads_segmentation_disagreement_facts() {
+        use crate::warehouse::schema::{
+            NwayRegionAnalyzerRow, NwayRegionRow, RunRow, WarehousePaths,
+        };
+        use crate::warehouse::writer::WarehouseWriter;
+
+        let root = temp_dir("warehouse-patterns");
+        let paths = WarehousePaths::new(&root, "run-a");
+        let mut writer = WarehouseWriter::create(paths.clone()).unwrap();
+        writer
+            .append_runs(&[RunRow {
+                schema_version: crate::warehouse::schema::SCHEMA_VERSION,
+                run_id: "run-a".to_owned(),
+                created_at_utc: "2026-05-01T00:00:00Z".to_owned(),
+                input_mode: "aat_dir".to_owned(),
+                input_path: "scratch/aats".to_owned(),
+                source_count: 1,
+                analyzer_count: 2,
+                error_count: 0,
+            }])
+            .unwrap();
+        writer
+            .append_nway_regions(&[
+                NwayRegionRow {
+                    run_id: "run-a".to_owned(),
+                    source_id: "source-a".to_owned(),
+                    text_id: "work-a".to_owned(),
+                    region_index: 0,
+                    byte_start: 0,
+                    byte_end: 6,
+                    char_start: 0,
+                    char_end: 2,
+                    is_nonempty_whitespace: false,
+                    is_agreement: false,
+                    has_coverage_mismatch: false,
+                    has_segmentation_disagreement: true,
+                    has_feature_disagreement: false,
+                },
+                NwayRegionRow {
+                    run_id: "run-a".to_owned(),
+                    source_id: "source-a".to_owned(),
+                    text_id: "work-a".to_owned(),
+                    region_index: 1,
+                    byte_start: 6,
+                    byte_end: 9,
+                    char_start: 2,
+                    char_end: 3,
+                    is_nonempty_whitespace: false,
+                    is_agreement: true,
+                    has_coverage_mismatch: false,
+                    has_segmentation_disagreement: false,
+                    has_feature_disagreement: false,
+                },
+            ])
+            .unwrap();
+        writer
+            .append_nway_region_analyzers(&[
+                NwayRegionAnalyzerRow {
+                    run_id: "run-a".to_owned(),
+                    source_id: "source-a".to_owned(),
+                    text_id: "work-a".to_owned(),
+                    region_index: 0,
+                    analyzer_id: "vibrato".to_owned(),
+                    covers_exactly: true,
+                    morpheme_start: 0,
+                    morpheme_end: 1,
+                    surfaces: vec!["今日".to_owned()],
+                },
+                NwayRegionAnalyzerRow {
+                    run_id: "run-a".to_owned(),
+                    source_id: "source-a".to_owned(),
+                    text_id: "work-a".to_owned(),
+                    region_index: 0,
+                    analyzer_id: "sudachi-c".to_owned(),
+                    covers_exactly: true,
+                    morpheme_start: 0,
+                    morpheme_end: 2,
+                    surfaces: vec!["今".to_owned(), "日".to_owned()],
+                },
+                NwayRegionAnalyzerRow {
+                    run_id: "run-a".to_owned(),
+                    source_id: "source-a".to_owned(),
+                    text_id: "work-a".to_owned(),
+                    region_index: 1,
+                    analyzer_id: "vibrato".to_owned(),
+                    covers_exactly: true,
+                    morpheme_start: 1,
+                    morpheme_end: 2,
+                    surfaces: vec!["は".to_owned()],
+                },
+                NwayRegionAnalyzerRow {
+                    run_id: "run-a".to_owned(),
+                    source_id: "source-a".to_owned(),
+                    text_id: "work-a".to_owned(),
+                    region_index: 1,
+                    analyzer_id: "sudachi-c".to_owned(),
+                    covers_exactly: true,
+                    morpheme_start: 2,
+                    morpheme_end: 3,
+                    surfaces: vec!["は".to_owned()],
+                },
+            ])
+            .unwrap();
+        writer.finalize().unwrap();
+
+        let rows = summarize_warehouse_nway_patterns(
+            &paths.final_dir,
+            NwayPatternOptions {
+                kind: NwayPatternKind::Segmentation,
+                feature_key: None,
+                script_category: None,
+                excluded_feature_values: BTreeSet::new(),
+                exclusions: SummaryExclusions::default(),
+                limit: 10,
+            },
+        )
+        .unwrap();
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].examples, 1);
+        assert_eq!(rows[0].source_ids, vec!["source-a"]);
+        assert!(rows[0].pattern.contains("vibrato:[今日]"));
+        assert!(rows[0].pattern.contains("sudachi-c:[今|日]"));
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn summarize_warehouse_patterns_reads_feature_disagreement_facts() {
+        use crate::warehouse::schema::{NwayFeatureDiffRow, RunRow, WarehousePaths};
+        use crate::warehouse::writer::WarehouseWriter;
+
+        let root = temp_dir("warehouse-feature-patterns");
+        let paths = WarehousePaths::new(&root, "run-a");
+        let mut writer = WarehouseWriter::create(paths.clone()).unwrap();
+        writer
+            .append_runs(&[RunRow {
+                schema_version: crate::warehouse::schema::SCHEMA_VERSION,
+                run_id: "run-a".to_owned(),
+                created_at_utc: "2026-05-01T00:00:00Z".to_owned(),
+                input_mode: "aat_dir".to_owned(),
+                input_path: "scratch/aats".to_owned(),
+                source_count: 1,
+                analyzer_count: 2,
+                error_count: 0,
+            }])
+            .unwrap();
+        writer
+            .append_nway_feature_diffs(&[
+                NwayFeatureDiffRow {
+                    run_id: "run-a".to_owned(),
+                    source_id: "source-a".to_owned(),
+                    text_id: "work-a".to_owned(),
+                    region_index: 0,
+                    feature_key: "pos1".to_owned(),
+                    scope_type: "whole_region".to_owned(),
+                    scope_position: None,
+                    scope_surface: None,
+                    feature_value: Some("名詞".to_owned()),
+                    analyzer_id: "vibrato".to_owned(),
+                },
+                NwayFeatureDiffRow {
+                    run_id: "run-a".to_owned(),
+                    source_id: "source-a".to_owned(),
+                    text_id: "work-a".to_owned(),
+                    region_index: 0,
+                    feature_key: "pos1".to_owned(),
+                    scope_type: "whole_region".to_owned(),
+                    scope_position: None,
+                    scope_surface: None,
+                    feature_value: Some("空白".to_owned()),
+                    analyzer_id: "sudachi-c".to_owned(),
+                },
+            ])
+            .unwrap();
+        writer.finalize().unwrap();
+
+        let rows = summarize_warehouse_nway_patterns(
+            &paths.final_dir,
+            NwayPatternOptions {
+                kind: NwayPatternKind::Feature,
+                feature_key: Some("pos1".to_owned()),
+                script_category: None,
+                excluded_feature_values: BTreeSet::new(),
+                exclusions: SummaryExclusions::default(),
+                limit: 10,
+            },
+        )
+        .unwrap();
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].examples, 1);
+        assert_eq!(rows[0].feature_key, Some("pos1".to_owned()));
+        assert!(rows[0].pattern.contains("名詞=>vibrato"));
+        assert!(rows[0].pattern.contains("空白=>sudachi-c"));
+
+        let _ = fs::remove_dir_all(root);
     }
 
     #[test]

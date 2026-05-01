@@ -152,6 +152,22 @@ enum Command {
         #[arg(long)]
         json: bool,
     },
+    SummarizeWarehouseNway {
+        #[arg(long)]
+        run_dir: PathBuf,
+        #[arg(long, value_enum, default_value_t = SummaryGroupByArg::SourceId)]
+        group_by: SummaryGroupByArg,
+        #[arg(long, value_enum, default_value_t = NwaySummarySortArg::RegionsWithSegmentationDisagreement)]
+        sort_by: NwaySummarySortArg,
+        #[arg(long)]
+        exclude_source_id: Vec<String>,
+        #[arg(long)]
+        exclude_text_id: Vec<String>,
+        #[arg(long, default_value_t = 20)]
+        limit: usize,
+        #[arg(long)]
+        json: bool,
+    },
     SummarizeNwayPatterns {
         #[arg(long)]
         nway: Option<PathBuf>,
@@ -606,6 +622,33 @@ fn main() -> Result<()> {
                     group_by: group_by.into_library(),
                     sort_by: sort_by.into_library(),
                     script_category: script_category.map(ScriptCategoryArg::into_library),
+                    exclusions: summary_exclusions(exclude_source_id, exclude_text_id),
+                    limit,
+                },
+            )?;
+            if json {
+                serde_json::to_writer_pretty(std::io::stdout(), &rows)?;
+                println!();
+            } else {
+                print_nway_summary_table(&rows);
+            }
+            Ok(())
+        }
+        Command::SummarizeWarehouseNway {
+            run_dir,
+            group_by,
+            sort_by,
+            exclude_source_id,
+            exclude_text_id,
+            limit,
+            json,
+        } => {
+            let rows = ab_morph_run::summarize_warehouse_nway(
+                &run_dir,
+                ab_morph_run::NwaySummaryOptions {
+                    group_by: group_by.into_library(),
+                    sort_by: sort_by.into_library(),
+                    script_category: None,
                     exclusions: summary_exclusions(exclude_source_id, exclude_text_id),
                     limit,
                 },
@@ -1619,6 +1662,48 @@ mod tests {
         );
         assert_eq!(kind, NwayPatternKindArg::Feature);
         assert_eq!(feature_key, Some("pos1".to_owned()));
+    }
+
+    #[test]
+    fn parses_summarize_warehouse_nway_command() {
+        let args = Args::parse_from([
+            "ab-morph-run",
+            "summarize-warehouse-nway",
+            "--run-dir",
+            "scratch/morph-warehouse/runs/full-2026-05-01",
+            "--group-by",
+            "text-id",
+            "--sort-by",
+            "variable-boundary-count",
+            "--exclude-text-id",
+            "JISTABLE",
+            "--limit",
+            "15",
+            "--json",
+        ]);
+
+        let Command::SummarizeWarehouseNway {
+            run_dir,
+            group_by,
+            sort_by,
+            exclude_text_id,
+            limit,
+            json,
+            ..
+        } = args.command
+        else {
+            panic!("expected summarize-warehouse-nway");
+        };
+
+        assert_eq!(
+            run_dir,
+            PathBuf::from("scratch/morph-warehouse/runs/full-2026-05-01")
+        );
+        assert_eq!(group_by, SummaryGroupByArg::TextId);
+        assert_eq!(sort_by, NwaySummarySortArg::VariableBoundaryCount);
+        assert_eq!(exclude_text_id, vec!["JISTABLE"]);
+        assert_eq!(limit, 15);
+        assert!(json);
     }
 
     #[test]

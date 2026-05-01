@@ -69,6 +69,12 @@ duckdb -c ".read scratch/morph-warehouse/runs/full-2026-05-01/views.sql" \
 Query recurring warehouse patterns through `ab-morph-run` without JSONL intermediates:
 
 ```bash
+target/release/ab-morph-run summarize-warehouse-nway \
+  --run-dir scratch/morph-warehouse/runs/full-2026-05-01 \
+  --group-by source-id \
+  --sort-by regions-with-segmentation-disagreement \
+  --limit 50
+
 target/release/ab-morph-run summarize-warehouse-patterns \
   --run-dir scratch/morph-warehouse/runs/full-2026-05-01 \
   --kind segmentation \

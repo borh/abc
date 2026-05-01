@@ -13,7 +13,9 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use ab_morph_analyzers::{MorphAnalyzer, SudachiAnalyzer, SudachiMode, VibratoAnalyzer};
-use ab_morph_diff::{Analysis, Comparison, compare_pair, compare_pair_compact_with_source_text};
+use ab_morph_diff::{
+    Analysis, Comparison, MorphDiffError, compare_pair, compare_pair_compact_with_source_text,
+};
 use ab_plaintext::{PlainTextDocument, from_aat_value};
 use anyhow::{Context, Result, bail};
 use clap::ValueEnum;
@@ -591,13 +593,15 @@ fn run_analyze_aat_serial(
                 let features = warehouse::rows::morpheme_feature_rows(run_id, &source_id, analysis);
                 writer.append_morpheme_features(&features)?;
             }
-            match warehouse::rows::nway_fact_rows(run_id, &source_id, &document.text, &analyses) {
-                Ok(facts) => {
-                    writer.append_nway_regions(&facts.regions)?;
-                    writer.append_nway_region_analyzers(&facts.region_analyzers)?;
-                    writer.append_nway_feature_diffs(&facts.feature_diffs)?;
-                }
-                Err(error) => {
+            match append_warehouse_nway_fact_rows(
+                writer,
+                run_id,
+                &source_id,
+                &document.text,
+                &analyses,
+            ) {
+                Ok(()) => {}
+                Err(error) if error.downcast_ref::<MorphDiffError>().is_some() => {
                     warehouse_error_count += 1;
                     writer.append_errors(&[warehouse_error_row(
                         run_id,
@@ -609,6 +613,7 @@ fn run_analyze_aat_serial(
                         &error.to_string(),
                     )])?;
                 }
+                Err(error) => return Err(error),
             }
         }
 
@@ -1176,6 +1181,28 @@ fn warehouse_analyzer_rows(
             analyzer_family: spec.family().to_owned(),
         })
         .collect())
+}
+
+fn append_warehouse_nway_fact_rows(
+    writer: &mut WarehouseWriter,
+    run_id: &str,
+    source_id: &str,
+    source_text: &str,
+    analyses: &[Analysis],
+) -> Result<()> {
+    warehouse::rows::visit_nway_fact_row_batches(
+        run_id,
+        source_id,
+        source_text,
+        analyses,
+        10_000,
+        |facts| {
+            writer.append_nway_regions(&facts.regions)?;
+            writer.append_nway_region_analyzers(&facts.region_analyzers)?;
+            writer.append_nway_feature_diffs(&facts.feature_diffs)?;
+            Ok(())
+        },
+    )
 }
 
 fn read_aat_value(path: &Path) -> Result<Value> {

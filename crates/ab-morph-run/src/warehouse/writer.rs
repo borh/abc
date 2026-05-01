@@ -17,6 +17,8 @@ use super::schema::{
     WarehouseTable,
 };
 
+const WAREHOUSE_MAX_ROW_GROUP_SIZE: usize = 50_000;
+
 pub(crate) struct WarehouseWriter {
     paths: WarehousePaths,
     runs: Option<ArrowWriter<File>>,
@@ -390,6 +392,7 @@ fn open_table_writer(
 
 fn writer_properties() -> WriterProperties {
     WriterProperties::builder()
+        .set_max_row_group_size(WAREHOUSE_MAX_ROW_GROUP_SIZE)
         .set_compression(Compression::ZSTD(
             ZstdLevel::try_new(3).expect("valid zstd level"),
         ))
@@ -612,6 +615,11 @@ mod tests {
     use parquet::arrow::arrow_reader::ParquetRecordBatchReaderBuilder;
 
     use super::*;
+
+    #[test]
+    fn writer_properties_use_bounded_row_groups_for_large_string_tables() {
+        assert_eq!(writer_properties().max_row_group_size(), 50_000);
+    }
 
     #[test]
     fn create_removes_stale_staging_for_same_run_id() {

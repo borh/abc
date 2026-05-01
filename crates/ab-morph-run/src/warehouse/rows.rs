@@ -1,8 +1,9 @@
 use std::ops::Range;
 
-use ab_morph_diff::{
-    Analysis, MorphDiffError, NwayFeatureScope, NwayRegion, visit_nway_regions_with_source_text,
-};
+#[cfg(test)]
+use ab_morph_diff::MorphDiffError;
+use ab_morph_diff::{Analysis, NwayFeatureScope, NwayRegion, visit_nway_regions_with_source_text};
+use anyhow::Result as AnyhowResult;
 
 use super::schema::{
     AnalysisRow, MorphemeFeatureRow, MorphemeRow, NwayFeatureDiffRow, NwayRegionAnalyzerRow,
@@ -92,6 +93,7 @@ pub(crate) fn morpheme_feature_rows(
         .collect()
 }
 
+#[cfg(test)]
 pub(crate) fn nway_fact_rows(
     run_id: &str,
     source_id: &str,
@@ -107,6 +109,57 @@ pub(crate) fn nway_fact_rows(
         push_region_rows(run_id, source_id, &text_id, source_text, region, &mut rows);
     })?;
     Ok(rows)
+}
+
+pub(crate) fn visit_nway_fact_row_batches<F>(
+    run_id: &str,
+    source_id: &str,
+    source_text: &str,
+    analyses: &[Analysis],
+    batch_region_limit: usize,
+    mut on_batch: F,
+) -> AnyhowResult<()>
+where
+    F: FnMut(&NwayFactRows) -> AnyhowResult<()>,
+{
+    let text_id = analyses
+        .first()
+        .map(|analysis| analysis.text_id.clone())
+        .unwrap_or_default();
+    let batch_region_limit = batch_region_limit.max(1);
+    let mut rows = NwayFactRows::default();
+    let mut flush_error = None;
+    visit_nway_regions_with_source_text(analyses, source_text, &[], |region| {
+        if flush_error.is_some() {
+            return;
+        }
+        push_region_rows(run_id, source_id, &text_id, source_text, region, &mut rows);
+        if rows.regions.len() >= batch_region_limit {
+            if let Err(error) = on_batch(&rows) {
+                flush_error = Some(error);
+            }
+            rows.clear();
+        }
+    })?;
+    if let Some(error) = flush_error {
+        return Err(error);
+    }
+    if !rows.is_empty() {
+        on_batch(&rows)?;
+    }
+    Ok(())
+}
+
+impl NwayFactRows {
+    fn is_empty(&self) -> bool {
+        self.regions.is_empty() && self.region_analyzers.is_empty() && self.feature_diffs.is_empty()
+    }
+
+    fn clear(&mut self) {
+        self.regions.clear();
+        self.region_analyzers.clear();
+        self.feature_diffs.clear();
+    }
 }
 
 fn push_region_rows(
@@ -291,6 +344,53 @@ mod tests {
                 .any(|row| row.analyzer_id == "sudachi-c" && row.surfaces == vec!["今", "日"])
         );
         assert!(facts.feature_diffs.is_empty());
+    }
+
+    #[test]
+    fn batched_nway_fact_rows_match_collected_rows() {
+        let analyses = vec![
+            analysis(
+                "work-a",
+                "vibrato",
+                "今日は晴れ",
+                vec![
+                    m("今日", 0..6, 0..2, [("pos1", Some("名詞"))]),
+                    m("は", 6..9, 2..3, [("pos1", Some("助詞"))]),
+                    m("晴れ", 9..15, 3..5, [("pos1", Some("動詞"))]),
+                ],
+            ),
+            analysis(
+                "work-a",
+                "sudachi-a",
+                "今日は晴れ",
+                vec![
+                    m("今日", 0..6, 0..2, [("pos1", Some("名詞"))]),
+                    m("は", 6..9, 2..3, [("pos1", Some("助詞"))]),
+                    m("晴れ", 9..15, 3..5, [("pos1", Some("名詞"))]),
+                ],
+            ),
+        ];
+        let collected = nway_fact_rows("run-a", "source-a", "今日は晴れ", &analyses).unwrap();
+        let mut batched = NwayFactRows::default();
+
+        visit_nway_fact_row_batches(
+            "run-a",
+            "source-a",
+            "今日は晴れ",
+            &analyses,
+            1,
+            |batch| {
+                batched.regions.extend(batch.regions.clone());
+                batched
+                    .region_analyzers
+                    .extend(batch.region_analyzers.clone());
+                batched.feature_diffs.extend(batch.feature_diffs.clone());
+                Ok(())
+            },
+        )
+        .unwrap();
+
+        assert_eq!(batched, collected);
     }
 
     fn m(

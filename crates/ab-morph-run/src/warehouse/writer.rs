@@ -1,0 +1,740 @@
+use std::fs::{self, File};
+use std::path::Path;
+use std::sync::Arc;
+
+use anyhow::{Context, Result, bail};
+use arrow_array::builder::{ListBuilder, StringBuilder};
+use arrow_array::{ArrayRef, BooleanArray, RecordBatch, StringArray, UInt32Array, UInt64Array};
+use arrow_schema::{DataType, Field, Schema};
+use parquet::arrow::ArrowWriter;
+use parquet::basic::{Compression, ZstdLevel};
+use parquet::file::properties::WriterProperties;
+
+use super::schema::{
+    AnalysisRow, ErrorRow, MorphemeFeatureRow, MorphemeRow, NwayFeatureDiffRow,
+    NwayRegionAnalyzerRow, NwayRegionRow, RunAnalyzerRow, RunRow, SourceRow, WarehousePaths,
+    WarehouseTable,
+};
+
+pub(crate) struct WarehouseWriter {
+    paths: WarehousePaths,
+    runs: Option<ArrowWriter<File>>,
+    run_analyzers: Option<ArrowWriter<File>>,
+    sources: Option<ArrowWriter<File>>,
+    analyses: Option<ArrowWriter<File>>,
+    morphemes: Option<ArrowWriter<File>>,
+    morpheme_features: Option<ArrowWriter<File>>,
+    nway_regions: Option<ArrowWriter<File>>,
+    nway_region_analyzers: Option<ArrowWriter<File>>,
+    nway_feature_diffs: Option<ArrowWriter<File>>,
+    errors: Option<ArrowWriter<File>>,
+}
+
+impl WarehouseWriter {
+    pub(crate) fn create(paths: WarehousePaths) -> Result<Self> {
+        if paths.final_dir.exists() {
+            bail!("warehouse run {} already exists", paths.run_id);
+        }
+        cleanup_stale_staging(&paths)?;
+        if paths.staging_dir.exists() {
+            fs::remove_dir_all(&paths.staging_dir).with_context(|| {
+                format!("failed to remove {}", paths.staging_dir.display())
+            })?;
+        }
+        fs::create_dir_all(&paths.staging_dir)
+            .with_context(|| format!("failed to create {}", paths.staging_dir.display()))?;
+
+        Ok(Self {
+            runs: Some(open_table_writer(&paths, WarehouseTable::Runs, runs_schema())?),
+            run_analyzers: Some(open_table_writer(
+                &paths,
+                WarehouseTable::RunAnalyzers,
+                run_analyzers_schema(),
+            )?),
+            sources: Some(open_table_writer(
+                &paths,
+                WarehouseTable::Sources,
+                sources_schema(),
+            )?),
+            analyses: Some(open_table_writer(
+                &paths,
+                WarehouseTable::Analyses,
+                analyses_schema(),
+            )?),
+            morphemes: Some(open_table_writer(
+                &paths,
+                WarehouseTable::Morphemes,
+                morphemes_schema(),
+            )?),
+            morpheme_features: Some(open_table_writer(
+                &paths,
+                WarehouseTable::MorphemeFeatures,
+                morpheme_features_schema(),
+            )?),
+            nway_regions: Some(open_table_writer(
+                &paths,
+                WarehouseTable::NwayRegions,
+                nway_regions_schema(),
+            )?),
+            nway_region_analyzers: Some(open_table_writer(
+                &paths,
+                WarehouseTable::NwayRegionAnalyzers,
+                nway_region_analyzers_schema(),
+            )?),
+            nway_feature_diffs: Some(open_table_writer(
+                &paths,
+                WarehouseTable::NwayFeatureDiffs,
+                nway_feature_diffs_schema(),
+            )?),
+            errors: Some(open_table_writer(&paths, WarehouseTable::Errors, errors_schema())?),
+            paths,
+        })
+    }
+
+    pub(crate) fn append_runs(&mut self, rows: &[RunRow]) -> Result<()> {
+        if rows.is_empty() {
+            return Ok(());
+        }
+        let schema = runs_schema();
+        write_batch(
+            self.runs.as_mut().expect("runs writer open"),
+            schema.clone(),
+            vec![
+                u32_array(rows.iter().map(|row| row.schema_version)),
+                string_array(rows.iter().map(|row| row.run_id.as_str())),
+                string_array(rows.iter().map(|row| row.created_at_utc.as_str())),
+                string_array(rows.iter().map(|row| row.input_mode.as_str())),
+                string_array(rows.iter().map(|row| row.input_path.as_str())),
+                u64_array(rows.iter().map(|row| row.source_count)),
+                u64_array(rows.iter().map(|row| row.analyzer_count)),
+                u64_array(rows.iter().map(|row| row.error_count)),
+            ],
+        )
+    }
+
+    pub(crate) fn append_run_analyzers(&mut self, rows: &[RunAnalyzerRow]) -> Result<()> {
+        if rows.is_empty() {
+            return Ok(());
+        }
+        write_batch(
+            self.run_analyzers
+                .as_mut()
+                .expect("run_analyzers writer open"),
+            run_analyzers_schema(),
+            vec![
+                string_array(rows.iter().map(|row| row.run_id.as_str())),
+                string_array(rows.iter().map(|row| row.analyzer_id.as_str())),
+                string_array(rows.iter().map(|row| row.analyzer_arg.as_str())),
+                string_array(rows.iter().map(|row| row.analyzer_family.as_str())),
+            ],
+        )
+    }
+
+    pub(crate) fn append_sources(&mut self, rows: &[SourceRow]) -> Result<()> {
+        if rows.is_empty() {
+            return Ok(());
+        }
+        write_batch(
+            self.sources.as_mut().expect("sources writer open"),
+            sources_schema(),
+            vec![
+                string_array(rows.iter().map(|row| row.run_id.as_str())),
+                string_array(rows.iter().map(|row| row.source_id.as_str())),
+                string_array(rows.iter().map(|row| row.text_id.as_str())),
+                string_array(rows.iter().map(|row| row.aat_path.as_str())),
+                u64_array(rows.iter().map(|row| row.source_bytes)),
+                u64_array(rows.iter().map(|row| row.source_chars)),
+            ],
+        )
+    }
+
+    pub(crate) fn append_analyses(&mut self, rows: &[AnalysisRow]) -> Result<()> {
+        if rows.is_empty() {
+            return Ok(());
+        }
+        write_batch(
+            self.analyses.as_mut().expect("analyses writer open"),
+            analyses_schema(),
+            vec![
+                string_array(rows.iter().map(|row| row.run_id.as_str())),
+                string_array(rows.iter().map(|row| row.source_id.as_str())),
+                string_array(rows.iter().map(|row| row.text_id.as_str())),
+                string_array(rows.iter().map(|row| row.analyzer_id.as_str())),
+                u64_array(rows.iter().map(|row| row.morpheme_count)),
+            ],
+        )
+    }
+
+    pub(crate) fn append_morphemes(&mut self, rows: &[MorphemeRow]) -> Result<()> {
+        if rows.is_empty() {
+            return Ok(());
+        }
+        write_batch(
+            self.morphemes.as_mut().expect("morphemes writer open"),
+            morphemes_schema(),
+            vec![
+                string_array(rows.iter().map(|row| row.run_id.as_str())),
+                string_array(rows.iter().map(|row| row.source_id.as_str())),
+                string_array(rows.iter().map(|row| row.text_id.as_str())),
+                string_array(rows.iter().map(|row| row.analyzer_id.as_str())),
+                u64_array(rows.iter().map(|row| row.morpheme_index)),
+                u64_array(rows.iter().map(|row| row.byte_start)),
+                u64_array(rows.iter().map(|row| row.byte_end)),
+                u64_array(rows.iter().map(|row| row.char_start)),
+                u64_array(rows.iter().map(|row| row.char_end)),
+                string_array(rows.iter().map(|row| row.surface.as_str())),
+            ],
+        )
+    }
+
+    pub(crate) fn append_morpheme_features(&mut self, rows: &[MorphemeFeatureRow]) -> Result<()> {
+        if rows.is_empty() {
+            return Ok(());
+        }
+        write_batch(
+            self.morpheme_features
+                .as_mut()
+                .expect("morpheme_features writer open"),
+            morpheme_features_schema(),
+            vec![
+                string_array(rows.iter().map(|row| row.run_id.as_str())),
+                string_array(rows.iter().map(|row| row.source_id.as_str())),
+                string_array(rows.iter().map(|row| row.text_id.as_str())),
+                string_array(rows.iter().map(|row| row.analyzer_id.as_str())),
+                u64_array(rows.iter().map(|row| row.morpheme_index)),
+                string_array(rows.iter().map(|row| row.feature_key.as_str())),
+                nullable_string_array(rows.iter().map(|row| row.feature_value.as_deref())),
+            ],
+        )
+    }
+
+    pub(crate) fn append_nway_regions(&mut self, rows: &[NwayRegionRow]) -> Result<()> {
+        if rows.is_empty() {
+            return Ok(());
+        }
+        write_batch(
+            self.nway_regions
+                .as_mut()
+                .expect("nway_regions writer open"),
+            nway_regions_schema(),
+            vec![
+                string_array(rows.iter().map(|row| row.run_id.as_str())),
+                string_array(rows.iter().map(|row| row.source_id.as_str())),
+                string_array(rows.iter().map(|row| row.text_id.as_str())),
+                u64_array(rows.iter().map(|row| row.region_index)),
+                u64_array(rows.iter().map(|row| row.byte_start)),
+                u64_array(rows.iter().map(|row| row.byte_end)),
+                u64_array(rows.iter().map(|row| row.char_start)),
+                u64_array(rows.iter().map(|row| row.char_end)),
+                bool_array(rows.iter().map(|row| row.is_nonempty_whitespace)),
+                bool_array(rows.iter().map(|row| row.is_agreement)),
+                bool_array(rows.iter().map(|row| row.has_coverage_mismatch)),
+                bool_array(rows.iter().map(|row| row.has_segmentation_disagreement)),
+                bool_array(rows.iter().map(|row| row.has_feature_disagreement)),
+            ],
+        )
+    }
+
+    pub(crate) fn append_nway_region_analyzers(
+        &mut self,
+        rows: &[NwayRegionAnalyzerRow],
+    ) -> Result<()> {
+        if rows.is_empty() {
+            return Ok(());
+        }
+        write_batch(
+            self.nway_region_analyzers
+                .as_mut()
+                .expect("nway_region_analyzers writer open"),
+            nway_region_analyzers_schema(),
+            vec![
+                string_array(rows.iter().map(|row| row.run_id.as_str())),
+                string_array(rows.iter().map(|row| row.source_id.as_str())),
+                string_array(rows.iter().map(|row| row.text_id.as_str())),
+                u64_array(rows.iter().map(|row| row.region_index)),
+                string_array(rows.iter().map(|row| row.analyzer_id.as_str())),
+                bool_array(rows.iter().map(|row| row.covers_exactly)),
+                u64_array(rows.iter().map(|row| row.morpheme_start)),
+                u64_array(rows.iter().map(|row| row.morpheme_end)),
+                string_list_array(rows.iter().map(|row| row.surfaces.as_slice())),
+            ],
+        )
+    }
+
+    pub(crate) fn append_nway_feature_diffs(&mut self, rows: &[NwayFeatureDiffRow]) -> Result<()> {
+        if rows.is_empty() {
+            return Ok(());
+        }
+        write_batch(
+            self.nway_feature_diffs
+                .as_mut()
+                .expect("nway_feature_diffs writer open"),
+            nway_feature_diffs_schema(),
+            vec![
+                string_array(rows.iter().map(|row| row.run_id.as_str())),
+                string_array(rows.iter().map(|row| row.source_id.as_str())),
+                string_array(rows.iter().map(|row| row.text_id.as_str())),
+                u64_array(rows.iter().map(|row| row.region_index)),
+                string_array(rows.iter().map(|row| row.feature_key.as_str())),
+                string_array(rows.iter().map(|row| row.scope_type.as_str())),
+                nullable_u64_array(rows.iter().map(|row| row.scope_position)),
+                nullable_string_array(rows.iter().map(|row| row.scope_surface.as_deref())),
+                nullable_string_array(rows.iter().map(|row| row.feature_value.as_deref())),
+                string_array(rows.iter().map(|row| row.analyzer_id.as_str())),
+            ],
+        )
+    }
+
+    pub(crate) fn append_errors(&mut self, rows: &[ErrorRow]) -> Result<()> {
+        if rows.is_empty() {
+            return Ok(());
+        }
+        write_batch(
+            self.errors.as_mut().expect("errors writer open"),
+            errors_schema(),
+            vec![
+                string_array(rows.iter().map(|row| row.run_id.as_str())),
+                nullable_string_array(rows.iter().map(|row| row.source_id.as_deref())),
+                nullable_string_array(rows.iter().map(|row| row.text_id.as_deref())),
+                nullable_string_array(rows.iter().map(|row| row.analyzer_id.as_deref())),
+                string_array(rows.iter().map(|row| row.stage.as_str())),
+                string_array(rows.iter().map(|row| row.error_code.as_str())),
+                string_array(rows.iter().map(|row| row.message.as_str())),
+            ],
+        )
+    }
+
+    pub(crate) fn finalize(mut self) -> Result<()> {
+        close_writer(self.runs.take())?;
+        close_writer(self.run_analyzers.take())?;
+        close_writer(self.sources.take())?;
+        close_writer(self.analyses.take())?;
+        close_writer(self.morphemes.take())?;
+        close_writer(self.morpheme_features.take())?;
+        close_writer(self.nway_regions.take())?;
+        close_writer(self.nway_region_analyzers.take())?;
+        close_writer(self.nway_feature_diffs.take())?;
+        close_writer(self.errors.take())?;
+        finalize_staging_run(&self.paths)
+    }
+}
+
+pub(crate) fn parquet_file_exists(dir: &Path, table: WarehouseTable) -> bool {
+    dir.join(table.file_name()).is_file()
+}
+
+fn cleanup_stale_staging(paths: &WarehousePaths) -> Result<()> {
+    let Some(staging_root) = paths.staging_dir.parent() else {
+        return Ok(());
+    };
+    if !staging_root.exists() {
+        return Ok(());
+    }
+    let prefix = format!("{}.", paths.run_id);
+    for entry in fs::read_dir(staging_root)? {
+        let entry = entry?;
+        let file_name = entry.file_name();
+        let file_name = file_name.to_string_lossy();
+        if file_name.starts_with(&prefix) && entry.path() != paths.staging_dir {
+            fs::remove_dir_all(entry.path()).with_context(|| {
+                format!(
+                    "failed to remove stale staging directory {}",
+                    entry.path().display()
+                )
+            })?;
+        }
+    }
+    Ok(())
+}
+
+fn finalize_staging_run(paths: &WarehousePaths) -> Result<()> {
+    if paths.final_dir.exists() {
+        bail!("warehouse run {} already exists", paths.run_id);
+    }
+    if let Some(parent) = paths.final_dir.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    fs::rename(&paths.staging_dir, &paths.final_dir).with_context(|| {
+        format!(
+            "failed to publish warehouse run from {} to {}",
+            paths.staging_dir.display(),
+            paths.final_dir.display()
+        )
+    })?;
+    Ok(())
+}
+
+fn open_table_writer(
+    paths: &WarehousePaths,
+    table: WarehouseTable,
+    schema: Arc<Schema>,
+) -> Result<ArrowWriter<File>> {
+    let file = File::create(paths.staging_table_path(table))?;
+    Ok(ArrowWriter::try_new(
+        file,
+        schema,
+        Some(writer_properties()),
+    )?)
+}
+
+fn writer_properties() -> WriterProperties {
+    WriterProperties::builder()
+        .set_compression(Compression::ZSTD(
+            ZstdLevel::try_new(3).expect("valid zstd level"),
+        ))
+        .build()
+}
+
+fn write_batch<W: std::io::Write + Send>(
+    writer: &mut ArrowWriter<W>,
+    schema: Arc<Schema>,
+    columns: Vec<ArrayRef>,
+) -> Result<()> {
+    let batch = RecordBatch::try_new(schema, columns)?;
+    writer.write(&batch)?;
+    Ok(())
+}
+
+fn close_writer(writer: Option<ArrowWriter<File>>) -> Result<()> {
+    if let Some(writer) = writer {
+        writer.close()?;
+    }
+    Ok(())
+}
+
+fn string_array<'a>(values: impl Iterator<Item = &'a str>) -> ArrayRef {
+    Arc::new(StringArray::from_iter_values(values))
+}
+
+fn nullable_string_array<'a>(values: impl Iterator<Item = Option<&'a str>>) -> ArrayRef {
+    Arc::new(StringArray::from_iter(values))
+}
+
+fn u32_array(values: impl Iterator<Item = u32>) -> ArrayRef {
+    Arc::new(UInt32Array::from_iter_values(values))
+}
+
+fn u64_array(values: impl Iterator<Item = u64>) -> ArrayRef {
+    Arc::new(UInt64Array::from_iter_values(values))
+}
+
+fn nullable_u64_array(values: impl Iterator<Item = Option<u64>>) -> ArrayRef {
+    Arc::new(UInt64Array::from_iter(values))
+}
+
+fn bool_array(values: impl Iterator<Item = bool>) -> ArrayRef {
+    Arc::new(BooleanArray::from_iter(values.map(Some)))
+}
+
+fn string_list_array<'a>(values: impl Iterator<Item = &'a [String]>) -> ArrayRef {
+    let mut builder = ListBuilder::new(StringBuilder::new());
+    for list in values {
+        for value in list {
+            builder.values().append_value(value);
+        }
+        builder.append(true);
+    }
+    Arc::new(builder.finish())
+}
+
+fn schema(fields: Vec<Field>) -> Arc<Schema> {
+    Arc::new(Schema::new(fields))
+}
+
+fn utf8(name: &'static str, nullable: bool) -> Field {
+    Field::new(name, DataType::Utf8, nullable)
+}
+
+fn u32_field(name: &'static str) -> Field {
+    Field::new(name, DataType::UInt32, false)
+}
+
+fn u64_field(name: &'static str, nullable: bool) -> Field {
+    Field::new(name, DataType::UInt64, nullable)
+}
+
+fn bool_field(name: &'static str) -> Field {
+    Field::new(name, DataType::Boolean, false)
+}
+
+fn utf8_list(name: &'static str) -> Field {
+    Field::new(
+        name,
+        DataType::List(Arc::new(Field::new("item", DataType::Utf8, true))),
+        false,
+    )
+}
+
+fn runs_schema() -> Arc<Schema> {
+    schema(vec![
+        u32_field("schema_version"),
+        utf8("run_id", false),
+        utf8("created_at_utc", false),
+        utf8("input_mode", false),
+        utf8("input_path", false),
+        u64_field("source_count", false),
+        u64_field("analyzer_count", false),
+        u64_field("error_count", false),
+    ])
+}
+
+fn run_analyzers_schema() -> Arc<Schema> {
+    schema(vec![
+        utf8("run_id", false),
+        utf8("analyzer_id", false),
+        utf8("analyzer_arg", false),
+        utf8("analyzer_family", false),
+    ])
+}
+
+fn sources_schema() -> Arc<Schema> {
+    schema(vec![
+        utf8("run_id", false),
+        utf8("source_id", false),
+        utf8("text_id", false),
+        utf8("aat_path", false),
+        u64_field("source_bytes", false),
+        u64_field("source_chars", false),
+    ])
+}
+
+fn analyses_schema() -> Arc<Schema> {
+    schema(vec![
+        utf8("run_id", false),
+        utf8("source_id", false),
+        utf8("text_id", false),
+        utf8("analyzer_id", false),
+        u64_field("morpheme_count", false),
+    ])
+}
+
+fn morphemes_schema() -> Arc<Schema> {
+    schema(vec![
+        utf8("run_id", false),
+        utf8("source_id", false),
+        utf8("text_id", false),
+        utf8("analyzer_id", false),
+        u64_field("morpheme_index", false),
+        u64_field("byte_start", false),
+        u64_field("byte_end", false),
+        u64_field("char_start", false),
+        u64_field("char_end", false),
+        utf8("surface", false),
+    ])
+}
+
+fn morpheme_features_schema() -> Arc<Schema> {
+    schema(vec![
+        utf8("run_id", false),
+        utf8("source_id", false),
+        utf8("text_id", false),
+        utf8("analyzer_id", false),
+        u64_field("morpheme_index", false),
+        utf8("feature_key", false),
+        utf8("feature_value", true),
+    ])
+}
+
+fn nway_regions_schema() -> Arc<Schema> {
+    schema(vec![
+        utf8("run_id", false),
+        utf8("source_id", false),
+        utf8("text_id", false),
+        u64_field("region_index", false),
+        u64_field("byte_start", false),
+        u64_field("byte_end", false),
+        u64_field("char_start", false),
+        u64_field("char_end", false),
+        bool_field("is_nonempty_whitespace"),
+        bool_field("is_agreement"),
+        bool_field("has_coverage_mismatch"),
+        bool_field("has_segmentation_disagreement"),
+        bool_field("has_feature_disagreement"),
+    ])
+}
+
+fn nway_region_analyzers_schema() -> Arc<Schema> {
+    schema(vec![
+        utf8("run_id", false),
+        utf8("source_id", false),
+        utf8("text_id", false),
+        u64_field("region_index", false),
+        utf8("analyzer_id", false),
+        bool_field("covers_exactly"),
+        u64_field("morpheme_start", false),
+        u64_field("morpheme_end", false),
+        utf8_list("surfaces"),
+    ])
+}
+
+fn nway_feature_diffs_schema() -> Arc<Schema> {
+    schema(vec![
+        utf8("run_id", false),
+        utf8("source_id", false),
+        utf8("text_id", false),
+        u64_field("region_index", false),
+        utf8("feature_key", false),
+        utf8("scope_type", false),
+        u64_field("scope_position", true),
+        utf8("scope_surface", true),
+        utf8("feature_value", true),
+        utf8("analyzer_id", false),
+    ])
+}
+
+fn errors_schema() -> Arc<Schema> {
+    schema(vec![
+        utf8("run_id", false),
+        utf8("source_id", true),
+        utf8("text_id", true),
+        utf8("analyzer_id", true),
+        utf8("stage", false),
+        utf8("error_code", false),
+        utf8("message", false),
+    ])
+}
+
+#[cfg(test)]
+mod tests {
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    use parquet::arrow::arrow_reader::ParquetRecordBatchReaderBuilder;
+
+    use super::*;
+
+    #[test]
+    fn create_removes_stale_staging_for_same_run_id() {
+        let root = temp_dir("stale");
+        let stale = root.join(".staging/run-a.12345");
+        fs::create_dir_all(&stale).unwrap();
+        fs::write(stale.join("sentinel"), b"stale").unwrap();
+
+        let paths = WarehousePaths::new(&root, "run-a");
+        let writer = WarehouseWriter::create(paths.clone()).unwrap();
+
+        assert!(!stale.exists());
+        assert!(paths.staging_dir.exists());
+        drop(writer);
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn finalize_moves_complete_run_out_of_staging() {
+        let root = temp_dir("finalize");
+        let paths = WarehousePaths::new(&root, "run-a");
+        let writer = WarehouseWriter::create(paths.clone()).unwrap();
+        writer.finalize().unwrap();
+
+        assert!(!paths.staging_dir.exists());
+        assert!(paths.final_dir.exists());
+        assert!(parquet_file_exists(&paths.final_dir, WarehouseTable::Runs));
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn finalize_refuses_to_overwrite_existing_run() {
+        let root = temp_dir("overwrite");
+        let paths = WarehousePaths::new(&root, "run-a");
+        fs::create_dir_all(&paths.final_dir).unwrap();
+
+        let err = match WarehouseWriter::create(paths) {
+            Ok(_) => panic!("expected existing run error"),
+            Err(error) => error.to_string(),
+        };
+
+        assert!(err.contains("already exists"));
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn empty_tables_are_valid_parquet_files() {
+        let root = temp_dir("empty-tables");
+        let paths = WarehousePaths::new(&root, "run-a");
+        let writer = WarehouseWriter::create(paths.clone()).unwrap();
+        writer.finalize().unwrap();
+
+        for table in WarehouseTable::ALL {
+            assert!(
+                paths.final_table_path(*table).is_file(),
+                "missing {:?}",
+                table
+            );
+        }
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn empty_parquet_schemas_match_documented_columns() {
+        let root = temp_dir("empty-schema");
+        let paths = WarehousePaths::new(&root, "run-a");
+        let writer = WarehouseWriter::create(paths.clone()).unwrap();
+        writer.finalize().unwrap();
+
+        for table in WarehouseTable::ALL {
+            let file = File::open(paths.final_table_path(*table)).unwrap();
+            let builder = ParquetRecordBatchReaderBuilder::try_new(file).unwrap();
+            let actual: Vec<_> = builder
+                .schema()
+                .fields()
+                .iter()
+                .map(|field| field.name().as_str())
+                .collect();
+            assert_eq!(actual, table.column_names(), "schema mismatch for {table:?}");
+        }
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn writes_non_empty_runs_and_surface_lists() {
+        let root = temp_dir("non-empty");
+        let paths = WarehousePaths::new(&root, "run-a");
+        let mut writer = WarehouseWriter::create(paths.clone()).unwrap();
+        writer
+            .append_runs(&[RunRow {
+                schema_version: 1,
+                run_id: "run-a".to_owned(),
+                created_at_utc: "2026-05-01T00:00:00Z".to_owned(),
+                input_mode: "aat_dir".to_owned(),
+                input_path: "scratch/aats".to_owned(),
+                source_count: 1,
+                analyzer_count: 1,
+                error_count: 0,
+            }])
+            .unwrap();
+        writer
+            .append_nway_region_analyzers(&[NwayRegionAnalyzerRow {
+                run_id: "run-a".to_owned(),
+                source_id: "source-a".to_owned(),
+                text_id: "work-a".to_owned(),
+                region_index: 0,
+                analyzer_id: "sudachi-c".to_owned(),
+                covers_exactly: true,
+                morpheme_start: 0,
+                morpheme_end: 2,
+                surfaces: vec!["今".to_owned(), "日".to_owned()],
+            }])
+            .unwrap();
+        writer.finalize().unwrap();
+
+        assert!(paths.final_table_path(WarehouseTable::Runs).is_file());
+        assert!(
+            paths
+                .final_table_path(WarehouseTable::NwayRegionAnalyzers)
+                .is_file()
+        );
+        let _ = fs::remove_dir_all(root);
+    }
+
+    fn temp_dir(label: &str) -> std::path::PathBuf {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        std::env::temp_dir().join(format!(
+            "ab-morph-warehouse-{label}-{}-{unique}",
+            std::process::id()
+        ))
+    }
+}

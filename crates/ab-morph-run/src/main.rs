@@ -880,17 +880,24 @@ fn main() -> Result<()> {
             limit,
             json,
         } => {
-            let rows = ab_morph_run::summarize_warehouse_nway_patterns(
-                &run_dir,
-                ab_morph_run::WarehousePatternOptions {
-                    kind: kind.into_library(),
-                    feature_key,
-                    text_filter: filter.into_library(),
-                    excluded_feature_values: exclude_feature_value.into_iter().collect(),
-                    exclusions: summary_exclusions(exclude_source_id, exclude_text_id),
-                    limit,
-                },
-            )?;
+            let options = ab_morph_run::WarehousePatternOptions {
+                kind: kind.into_library(),
+                feature_key,
+                text_filter: filter.into_library(),
+                excluded_feature_values: exclude_feature_value.into_iter().collect(),
+                exclusions: summary_exclusions(exclude_source_id, exclude_text_id),
+                limit,
+            };
+            if !json
+                && ab_morph_run::write_warehouse_nway_patterns_duckdb_tsv(
+                    &run_dir,
+                    &options,
+                    std::io::stdout(),
+                )?
+            {
+                return Ok(());
+            }
+            let rows = ab_morph_run::summarize_warehouse_nway_patterns(&run_dir, options)?;
             if json {
                 serde_json::to_writer_pretty(std::io::stdout(), &rows)?;
                 println!();

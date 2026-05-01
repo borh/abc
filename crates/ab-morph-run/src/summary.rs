@@ -1,6 +1,8 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs::File;
+use std::io::{self, Write};
 use std::path::Path;
+use std::process::Command;
 
 use anyhow::{Context, Result, bail};
 use arrow_array::{Array, BooleanArray, ListArray, RecordBatch, StringArray, UInt64Array};
@@ -1291,6 +1293,201 @@ pub fn summarize_warehouse_nway_patterns(
     });
     rows.truncate(options.limit);
     Ok(rows)
+}
+
+pub fn write_warehouse_nway_patterns_duckdb_tsv<W: Write>(
+    run_dir: &Path,
+    options: &WarehousePatternOptions,
+    mut writer: W,
+) -> Result<bool> {
+    let sql = warehouse_pattern_duckdb_sql(run_dir, options);
+    let output = match Command::new("duckdb").arg("-c").arg(sql).output() {
+        Ok(output) => output,
+        Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(false),
+        Err(error) => return Err(error).context("failed to run duckdb"),
+    };
+    if !output.status.success() {
+        bail!(
+            "duckdb warehouse pattern summary failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+    writer
+        .write_all(&output.stdout)
+        .context("failed to write duckdb pattern summary")?;
+    Ok(true)
+}
+
+fn warehouse_pattern_duckdb_sql(run_dir: &Path, options: &WarehousePatternOptions) -> String {
+    let regions = sql_literal(
+        &run_dir
+            .join(WarehouseTable::NwayRegions.file_name())
+            .display()
+            .to_string(),
+    );
+    let analyzers = sql_literal(
+        &run_dir
+            .join(WarehouseTable::NwayRegionAnalyzers.file_name())
+            .display()
+            .to_string(),
+    );
+    let features = sql_literal(
+        &run_dir
+            .join(WarehouseTable::NwayFeatureDiffs.file_name())
+            .display()
+            .to_string(),
+    );
+    let region_filter = warehouse_duckdb_region_filter(options);
+    let source_exclusion = sql_not_in_clause("source_id", &options.exclusions.source_ids);
+    let text_exclusion = sql_not_in_clause("text_id", &options.exclusions.text_ids);
+    let limit = options.limit;
+    let body = match options.kind {
+        NwayPatternKind::Segmentation => format!(
+            r#"
+WITH regions AS (
+    SELECT source_id, text_id, region_index
+    FROM read_parquet({regions})
+    WHERE has_segmentation_disagreement
+      AND {region_filter}
+      AND {source_exclusion}
+      AND {text_exclusion}
+),
+surface_groups AS (
+    SELECT
+        a.source_id,
+        a.text_id,
+        a.region_index,
+        a.surfaces,
+        list(a.analyzer_id ORDER BY a.analyzer_id) AS analyzers,
+        array_to_string(a.surfaces, '|') AS surface_text
+    FROM read_parquet({analyzers}) AS a
+    JOIN regions AS r USING (source_id, text_id, region_index)
+    GROUP BY a.source_id, a.text_id, a.region_index, a.surfaces
+),
+patterns AS (
+    SELECT
+        'segmentation' AS kind,
+        source_id,
+        text_id,
+        region_index,
+        string_agg(array_to_string(analyzers, '+') || ':[' || surface_text || ']', ' ; ' ORDER BY surface_text, array_to_string(analyzers, '+')) AS pattern
+    FROM surface_groups
+    GROUP BY source_id, text_id, region_index
+    HAVING count(*) > 1
+)
+{final_select}
+"#,
+            final_select = warehouse_pattern_final_select(limit)
+        ),
+        NwayPatternKind::Feature => {
+            let feature_filter = options.feature_key.as_ref().map_or_else(
+                || "TRUE".to_owned(),
+                |feature_key| format!("feature_key = {}", sql_literal(feature_key)),
+            );
+            let excluded_values =
+                sql_not_in_clause("feature_value", &options.excluded_feature_values);
+            format!(
+                r#"
+WITH regions AS (
+    SELECT source_id, text_id, region_index
+    FROM read_parquet({regions})
+    WHERE {region_filter}
+      AND {source_exclusion}
+      AND {text_exclusion}
+),
+feature_values AS (
+    SELECT
+        f.source_id,
+        f.text_id,
+        f.region_index,
+        f.feature_key,
+        f.scope_type,
+        f.scope_position,
+        f.scope_surface,
+        f.feature_value,
+        list(f.analyzer_id ORDER BY f.analyzer_id) AS analyzers
+    FROM read_parquet({features}) AS f
+    JOIN regions AS r USING (source_id, text_id, region_index)
+    WHERE {feature_filter}
+      AND {excluded_values}
+    GROUP BY f.source_id, f.text_id, f.region_index, f.feature_key, f.scope_type, f.scope_position, f.scope_surface, f.feature_value
+),
+patterns AS (
+    SELECT
+        'feature' AS kind,
+        source_id,
+        text_id,
+        region_index,
+        feature_key || ' ' ||
+            CASE
+                WHEN scope_type = 'whole_region' THEN 'whole_region'
+                WHEN scope_type = 'token_position' THEN 'token_position:' || CAST(scope_position AS VARCHAR)
+                ELSE 'surface:' || scope_surface
+            END || ' ' ||
+            string_agg(coalesce(feature_value, '') || '=>' || array_to_string(analyzers, '+'), ' ; ' ORDER BY feature_value NULLS FIRST, array_to_string(analyzers, '+')) AS pattern
+    FROM feature_values
+    GROUP BY source_id, text_id, region_index, feature_key, scope_type, scope_position, scope_surface
+    HAVING count(*) > 1
+)
+{final_select}
+"#,
+                final_select = warehouse_pattern_final_select(limit)
+            )
+        }
+    };
+    format!("COPY ({body}) TO STDOUT (HEADER, DELIMITER '\t');")
+}
+
+fn warehouse_pattern_final_select(limit: usize) -> String {
+    format!(
+        r#"
+SELECT
+    kind,
+    count(*) AS examples,
+    count(DISTINCT source_id) AS source_count,
+    count(DISTINCT text_id) AS text_count,
+    array_to_string(list_slice(list_sort(list_distinct(list(source_id))), 1, 5), ',') ||
+        CASE
+            WHEN count(DISTINCT source_id) > 5 THEN ',...+' || CAST(count(DISTINCT source_id) - 5 AS VARCHAR)
+            ELSE ''
+        END AS sample_source_ids,
+    array_to_string(list_slice(list_sort(list_distinct(list(text_id))), 1, 5), ',') ||
+        CASE
+            WHEN count(DISTINCT text_id) > 5 THEN ',...+' || CAST(count(DISTINCT text_id) - 5 AS VARCHAR)
+            ELSE ''
+        END AS sample_text_ids,
+    NULL::VARCHAR AS script_categories,
+    pattern
+FROM patterns
+GROUP BY kind, pattern
+ORDER BY examples DESC, pattern
+LIMIT {limit}
+"#
+    )
+}
+
+fn warehouse_duckdb_region_filter(options: &WarehousePatternOptions) -> &'static str {
+    match options.text_filter {
+        WarehouseTextFilter::All => "TRUE",
+        WarehouseTextFilter::WhitespaceOnly => "is_nonempty_whitespace",
+        WarehouseTextFilter::LexicalOnly => "NOT is_nonempty_whitespace",
+    }
+}
+
+fn sql_not_in_clause(column: &str, values: &BTreeSet<String>) -> String {
+    if values.is_empty() {
+        return "TRUE".to_owned();
+    }
+    let values = values
+        .iter()
+        .map(|value| sql_literal(value))
+        .collect::<Vec<_>>()
+        .join(", ");
+    format!("{column} NOT IN ({values})")
+}
+
+fn sql_literal(value: &str) -> String {
+    format!("'{}'", value.replace('\'', "''"))
 }
 
 pub fn summarize_warehouse_pattern_examples(
@@ -3463,6 +3660,49 @@ mod tests {
         );
 
         let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn warehouse_pattern_duckdb_sql_escapes_literals_and_preserves_surface_boundaries() {
+        let segmentation_sql = warehouse_pattern_duckdb_sql(
+            Path::new("scratch/warehouse/runs/run's"),
+            &WarehousePatternOptions {
+                kind: NwayPatternKind::Segmentation,
+                feature_key: None,
+                text_filter: WarehouseTextFilter::LexicalOnly,
+                excluded_feature_values: BTreeSet::new(),
+                exclusions: SummaryExclusions::from_values(
+                    ["src'1".to_owned()],
+                    ["text'1".to_owned()],
+                ),
+                limit: 7,
+            },
+        );
+
+        assert!(
+            segmentation_sql
+                .contains("read_parquet('scratch/warehouse/runs/run''s/nway_regions.parquet')")
+        );
+        assert!(segmentation_sql.contains("source_id NOT IN ('src''1')"));
+        assert!(segmentation_sql.contains("text_id NOT IN ('text''1')"));
+        assert!(segmentation_sql.contains("NOT is_nonempty_whitespace"));
+        assert!(segmentation_sql.contains("array_to_string(a.surfaces, '|')"));
+        assert!(segmentation_sql.contains("LIMIT 7"));
+
+        let feature_sql = warehouse_pattern_duckdb_sql(
+            Path::new("scratch/warehouse/runs/run's"),
+            &WarehousePatternOptions {
+                kind: NwayPatternKind::Feature,
+                feature_key: Some("pos'1".to_owned()),
+                text_filter: WarehouseTextFilter::LexicalOnly,
+                excluded_feature_values: ["空'白".to_owned()].into_iter().collect(),
+                exclusions: SummaryExclusions::default(),
+                limit: 7,
+            },
+        );
+
+        assert!(feature_sql.contains("feature_key = 'pos''1'"));
+        assert!(feature_sql.contains("feature_value NOT IN ('空''白')"));
     }
 
     #[test]

@@ -40,7 +40,7 @@ pub use summary::{
     summarize_nway, summarize_nway_pattern_counts, summarize_nway_patterns,
     summarize_warehouse_errors, summarize_warehouse_nway, summarize_warehouse_nway_patterns,
     summarize_warehouse_pairwise, summarize_warehouse_pattern_examples,
-    summarize_warehouse_regions,
+    summarize_warehouse_regions, write_warehouse_nway_patterns_duckdb_tsv,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum, Serialize, Deserialize)]

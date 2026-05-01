@@ -1,4 +1,5 @@
 use std::fs::{self, File};
+#[cfg(test)]
 use std::path::Path;
 use std::sync::Arc;
 
@@ -43,6 +44,7 @@ impl WarehouseWriter {
         }
         fs::create_dir_all(&paths.staging_dir)
             .with_context(|| format!("failed to create {}", paths.staging_dir.display()))?;
+        crate::warehouse::sql::write_schema_sql(&paths.warehouse_dir)?;
 
         Ok(Self {
             runs: Some(open_table_writer(&paths, WarehouseTable::Runs, runs_schema())?),
@@ -315,10 +317,12 @@ impl WarehouseWriter {
         close_writer(self.nway_region_analyzers.take())?;
         close_writer(self.nway_feature_diffs.take())?;
         close_writer(self.errors.take())?;
+        crate::warehouse::sql::write_run_views_sql(&self.paths.staging_dir, &self.paths.final_dir)?;
         finalize_staging_run(&self.paths)
     }
 }
 
+#[cfg(test)]
 pub(crate) fn parquet_file_exists(dir: &Path, table: WarehouseTable) -> bool {
     dir.join(table.file_name()).is_file()
 }

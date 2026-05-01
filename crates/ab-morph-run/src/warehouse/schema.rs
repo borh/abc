@@ -17,6 +17,7 @@ pub(crate) enum WarehouseTable {
 }
 
 impl WarehouseTable {
+    #[cfg(test)]
     pub(crate) const ALL: &'static [Self] = &[
         Self::Runs,
         Self::RunAnalyzers,
@@ -45,6 +46,7 @@ impl WarehouseTable {
         }
     }
 
+    #[cfg(test)]
     pub(crate) fn column_names(self) -> &'static [&'static str] {
         match self {
             Self::Runs => &[
@@ -173,6 +175,7 @@ impl WarehousePaths {
         self.staging_dir.join(table.file_name())
     }
 
+    #[cfg(test)]
     pub(crate) fn final_table_path(&self, table: WarehouseTable) -> PathBuf {
         self.final_dir.join(table.file_name())
     }

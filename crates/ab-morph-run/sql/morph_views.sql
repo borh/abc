@@ -16,12 +16,15 @@ SELECT * FROM read_parquet('__RUN_DIR__/nway_feature_diffs.parquet');
 CREATE OR REPLACE VIEW top_segmentation_patterns AS
 WITH region_patterns AS (
   SELECT
-    run_id,
-    source_id,
-    region_index,
-    list(struct_pack(analyzer_id := analyzer_id, surfaces := surfaces) ORDER BY analyzer_id) AS pattern
-  FROM warehouse_nway_region_analyzers
-  GROUP BY run_id, source_id, region_index
+    analyzer.run_id,
+    analyzer.source_id,
+    analyzer.region_index,
+    list(struct_pack(analyzer_id := analyzer.analyzer_id, surfaces := analyzer.surfaces) ORDER BY analyzer.analyzer_id) AS pattern
+  FROM warehouse_nway_region_analyzers AS analyzer
+  JOIN warehouse_nway_regions AS region
+    USING (run_id, source_id, text_id, region_index)
+  WHERE region.has_segmentation_disagreement
+  GROUP BY analyzer.run_id, analyzer.source_id, analyzer.region_index
 )
 SELECT
   run_id,

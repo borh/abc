@@ -43,8 +43,8 @@ scratch/morph-warehouse-smoke/warehouse/runs/smoke-2026-05-01/views.sql
 ## DuckDB checks
 
 - `warehouse_nway_regions` row count: 40.
-- `top_segmentation_patterns` row count: 31.
+- `top_segmentation_patterns` row count: 3.
 
 ## Notes
 
-The smoke verifies that warehouse mode writes comprehensive Parquet facts directly. No JSONL files are produced by the warehouse run.
+The smoke verifies that warehouse mode writes comprehensive Parquet facts directly. `top_segmentation_patterns` is filtered to regions with segmentation disagreement. No JSONL files are produced by the warehouse run.

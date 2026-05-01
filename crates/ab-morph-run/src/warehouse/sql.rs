@@ -38,23 +38,49 @@ mod tests {
 
     #[test]
     fn sql_mentions_parquet_not_jsonl_and_has_version_policy() {
+        assert!(SCHEMA_SQL.contains(&format!(
+            "Morph warehouse schema version {}.",
+            crate::warehouse::schema::SCHEMA_VERSION
+        )));
         assert!(SCHEMA_SQL.contains("Readers must reject runs.schema_version values other than 1"));
         assert!(MORPH_VIEWS_SQL_TEMPLATE.contains("__RUN_DIR__/nway_regions.parquet"));
+        assert!(MORPH_VIEWS_SQL_TEMPLATE.contains("has_segmentation_disagreement"));
         assert!(MORPH_VIEWS_SQL_TEMPLATE.contains("struct_pack"));
         assert!(!MORPH_VIEWS_SQL_TEMPLATE.contains("jsonl"));
     }
 
     #[test]
-    fn schema_sql_mentions_every_documented_column() {
+    fn schema_sql_columns_match_documented_parquet_columns() {
         for table in crate::warehouse::schema::WarehouseTable::ALL {
-            for column in table.column_names() {
-                assert!(
-                    SCHEMA_SQL.contains(column),
-                    "schema.sql does not mention {:?}.{}",
-                    table,
-                    column
-                );
-            }
+            let table_name = table
+                .file_name()
+                .strip_suffix(".parquet")
+                .expect("warehouse table file has parquet suffix");
+            assert_eq!(
+                schema_sql_columns(table_name),
+                table.column_names(),
+                "schema.sql column mismatch for {table:?}"
+            );
         }
+    }
+
+    fn schema_sql_columns(table_name: &str) -> Vec<&str> {
+        let start = format!("CREATE TABLE {table_name} (");
+        let (_, rest) = SCHEMA_SQL
+            .split_once(&start)
+            .unwrap_or_else(|| panic!("schema.sql is missing CREATE TABLE {table_name}"));
+        let (body, _) = rest
+            .split_once("\n);")
+            .unwrap_or_else(|| panic!("schema.sql table {table_name} has no closing );"));
+        body.lines()
+            .map(str::trim)
+            .filter(|line| !line.is_empty())
+            .map(|line| {
+                line.trim_end_matches(',')
+                    .split_whitespace()
+                    .next()
+                    .expect("column line has a name")
+            })
+            .collect()
     }
 }

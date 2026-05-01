@@ -159,6 +159,21 @@ pub struct WarehouseRegionOptions {
     pub limit: usize,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WarehouseErrorGroupBy {
+    ErrorCode,
+    Stage,
+    Analyzer,
+    SourceId,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WarehouseErrorSummaryOptions {
+    pub group_by: WarehouseErrorGroupBy,
+    pub exclusions: SummaryExclusions,
+    pub limit: usize,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct CompactSummaryRow {
     pub key: String,
@@ -278,6 +293,18 @@ pub struct WarehouseFeatureDiffExampleRow {
     pub scope_surface: Option<String>,
     pub feature_value: Option<String>,
     pub analyzer_id: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct WarehouseErrorSummaryRow {
+    pub key: String,
+    pub errors: usize,
+    pub source_ids: Vec<String>,
+    pub text_ids: Vec<String>,
+    pub analyzer_ids: Vec<String>,
+    pub stages: Vec<String>,
+    pub error_codes: Vec<String>,
+    pub sample_messages: Vec<String>,
 }
 
 #[derive(Debug, Default)]
@@ -438,6 +465,27 @@ struct WarehouseFeatureDiffFact {
     key: WarehouseFeatureGroupKey,
     feature_value: Option<String>,
     analyzer_id: String,
+}
+
+#[derive(Debug, Clone)]
+struct WarehouseErrorFact {
+    source_id: Option<String>,
+    text_id: Option<String>,
+    analyzer_id: Option<String>,
+    stage: String,
+    error_code: String,
+    message: String,
+}
+
+#[derive(Debug, Default)]
+struct WarehouseErrorAccumulator {
+    errors: usize,
+    source_ids: BTreeSet<String>,
+    text_ids: BTreeSet<String>,
+    analyzer_ids: BTreeSet<String>,
+    stages: BTreeSet<String>,
+    error_codes: BTreeSet<String>,
+    sample_messages: Vec<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -950,6 +998,46 @@ pub fn summarize_warehouse_regions(
     Ok(rows)
 }
 
+pub fn summarize_warehouse_errors(
+    run_dir: &Path,
+    options: WarehouseErrorSummaryOptions,
+) -> Result<Vec<WarehouseErrorSummaryRow>> {
+    let mut groups = BTreeMap::<String, WarehouseErrorAccumulator>::new();
+    for fact in read_warehouse_errors(run_dir)? {
+        if options.exclusions.excludes(
+            fact.source_id.as_deref().unwrap_or_default(),
+            fact.text_id.as_deref().unwrap_or_default(),
+        ) {
+            continue;
+        }
+        let key = match options.group_by {
+            WarehouseErrorGroupBy::ErrorCode => fact.error_code.clone(),
+            WarehouseErrorGroupBy::Stage => fact.stage.clone(),
+            WarehouseErrorGroupBy::Analyzer => fact
+                .analyzer_id
+                .clone()
+                .unwrap_or_else(|| "<none>".to_owned()),
+            WarehouseErrorGroupBy::SourceId => fact
+                .source_id
+                .clone()
+                .unwrap_or_else(|| "<none>".to_owned()),
+        };
+        groups.entry(key).or_default().push(fact);
+    }
+    let mut rows = groups
+        .into_iter()
+        .map(|(key, accumulator)| accumulator.into_row(key))
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| {
+        right
+            .errors
+            .cmp(&left.errors)
+            .then_with(|| left.key.cmp(&right.key))
+    });
+    rows.truncate(options.limit);
+    Ok(rows)
+}
+
 pub fn summarize_warehouse_nway_patterns(
     run_dir: &Path,
     options: NwayPatternOptions,
@@ -1380,6 +1468,39 @@ impl WarehousePatternAccumulator {
     }
 }
 
+impl WarehouseErrorAccumulator {
+    fn push(&mut self, fact: WarehouseErrorFact) {
+        self.errors += 1;
+        if let Some(source_id) = fact.source_id {
+            self.source_ids.insert(source_id);
+        }
+        if let Some(text_id) = fact.text_id {
+            self.text_ids.insert(text_id);
+        }
+        if let Some(analyzer_id) = fact.analyzer_id {
+            self.analyzer_ids.insert(analyzer_id);
+        }
+        self.stages.insert(fact.stage);
+        self.error_codes.insert(fact.error_code);
+        if self.sample_messages.len() < 3 && !self.sample_messages.contains(&fact.message) {
+            self.sample_messages.push(fact.message);
+        }
+    }
+
+    fn into_row(self, key: String) -> WarehouseErrorSummaryRow {
+        WarehouseErrorSummaryRow {
+            key,
+            errors: self.errors,
+            source_ids: self.source_ids.into_iter().collect(),
+            text_ids: self.text_ids.into_iter().collect(),
+            analyzer_ids: self.analyzer_ids.into_iter().collect(),
+            stages: self.stages.into_iter().collect(),
+            error_codes: self.error_codes.into_iter().collect(),
+            sample_messages: self.sample_messages,
+        }
+    }
+}
+
 fn read_warehouse_region_flags(
     run_dir: &Path,
 ) -> Result<BTreeMap<WarehouseRegionKey, WarehouseRegionFlags>> {
@@ -1421,6 +1542,29 @@ fn read_warehouse_region_flags(
         }
     }
     Ok(regions)
+}
+
+fn read_warehouse_errors(run_dir: &Path) -> Result<Vec<WarehouseErrorFact>> {
+    let mut facts = Vec::new();
+    for batch in read_warehouse_table(run_dir, WarehouseTable::Errors)? {
+        let source_id = string_column(&batch, 1)?;
+        let text_id = string_column(&batch, 2)?;
+        let analyzer_id = string_column(&batch, 3)?;
+        let stage = string_column(&batch, 4)?;
+        let error_code = string_column(&batch, 5)?;
+        let message = string_column(&batch, 6)?;
+        for row in 0..batch.num_rows() {
+            facts.push(WarehouseErrorFact {
+                source_id: nullable_string_value(source_id, row),
+                text_id: nullable_string_value(text_id, row),
+                analyzer_id: nullable_string_value(analyzer_id, row),
+                stage: stage.value(row).to_owned(),
+                error_code: error_code.value(row).to_owned(),
+                message: message.value(row).to_owned(),
+            });
+        }
+    }
+    Ok(facts)
 }
 
 fn read_warehouse_analysis_counts(run_dir: &Path) -> Result<BTreeMap<String, usize>> {
@@ -2893,6 +3037,67 @@ mod tests {
                 .iter()
                 .any(|row| row.analyzer_id == "sudachi-c" && row.surfaces == vec!["今", "日"])
         );
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn summarize_warehouse_errors_groups_error_facts() {
+        use crate::warehouse::schema::{ErrorRow, WarehousePaths};
+        use crate::warehouse::writer::WarehouseWriter;
+
+        let root = temp_dir("warehouse-errors");
+        let paths = WarehousePaths::new(&root, "run-a");
+        let mut writer = WarehouseWriter::create(paths.clone()).unwrap();
+        writer
+            .append_errors(&[
+                ErrorRow {
+                    run_id: "run-a".to_owned(),
+                    source_id: Some("source-a".to_owned()),
+                    text_id: Some("work-a".to_owned()),
+                    analyzer_id: Some("sudachi-c".to_owned()),
+                    stage: "analyze".to_owned(),
+                    error_code: "analyze_failed".to_owned(),
+                    message: "input too long".to_owned(),
+                },
+                ErrorRow {
+                    run_id: "run-a".to_owned(),
+                    source_id: Some("source-b".to_owned()),
+                    text_id: Some("work-b".to_owned()),
+                    analyzer_id: Some("sudachi-c".to_owned()),
+                    stage: "analyze".to_owned(),
+                    error_code: "analyze_failed".to_owned(),
+                    message: "input too long".to_owned(),
+                },
+                ErrorRow {
+                    run_id: "run-a".to_owned(),
+                    source_id: Some("source-c".to_owned()),
+                    text_id: Some("work-c".to_owned()),
+                    analyzer_id: None,
+                    stage: "read_aat".to_owned(),
+                    error_code: "read_aat_failed".to_owned(),
+                    message: "bad json".to_owned(),
+                },
+            ])
+            .unwrap();
+        writer.finalize().unwrap();
+
+        let rows = summarize_warehouse_errors(
+            &paths.final_dir,
+            WarehouseErrorSummaryOptions {
+                group_by: WarehouseErrorGroupBy::ErrorCode,
+                exclusions: SummaryExclusions::default(),
+                limit: 10,
+            },
+        )
+        .unwrap();
+
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows[0].key, "analyze_failed");
+        assert_eq!(rows[0].errors, 2);
+        assert_eq!(rows[0].source_ids, vec!["source-a", "source-b"]);
+        assert_eq!(rows[0].analyzer_ids, vec!["sudachi-c"]);
+        assert_eq!(rows[0].sample_messages, vec!["input too long"]);
 
         let _ = fs::remove_dir_all(root);
     }

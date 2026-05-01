@@ -31,12 +31,13 @@ pub use summary::{
     CompactExampleFilter, CompactExampleSummaryOptions, CompactExampleSummaryRow,
     CompactExampleSummarySort, CompactSummaryGroupBy, CompactSummaryOptions, CompactSummaryRow,
     CompactSummarySort, NwayPatternKind, NwayPatternOptions, NwayPatternRow, NwaySummaryOptions,
-    NwaySummaryRow, NwaySummarySort, SummaryExclusions, WarehouseFeatureDiffExampleRow,
+    NwaySummaryRow, NwaySummarySort, SummaryExclusions, WarehouseErrorGroupBy,
+    WarehouseErrorSummaryOptions, WarehouseErrorSummaryRow, WarehouseFeatureDiffExampleRow,
     WarehouseRegionAnalyzerExampleRow, WarehouseRegionExampleRow, WarehouseRegionKind,
     WarehouseRegionOptions, summarize_compact_comparisons, summarize_compact_differences,
     summarize_compact_examples, summarize_nway, summarize_nway_pattern_counts,
-    summarize_nway_patterns, summarize_warehouse_nway, summarize_warehouse_nway_patterns,
-    summarize_warehouse_regions,
+    summarize_nway_patterns, summarize_warehouse_errors, summarize_warehouse_nway,
+    summarize_warehouse_nway_patterns, summarize_warehouse_regions,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum, Serialize, Deserialize)]

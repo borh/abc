@@ -91,6 +91,11 @@ target/release/ab-morph-run summarize-warehouse-regions \
   --kind segmentation \
   --limit 20 \
   --json
+
+target/release/ab-morph-run summarize-warehouse-errors \
+  --run-dir scratch/morph-warehouse/runs/full-2026-05-01 \
+  --group-by error-code \
+  --limit 50
 ```
 
 The existing JSONL `--output-dir` mode remains for compatibility and targeted debugging, but it is not the canonical comprehensive store.

@@ -222,6 +222,20 @@ enum Command {
         #[arg(long)]
         json: bool,
     },
+    SummarizeWarehouseErrors {
+        #[arg(long)]
+        run_dir: PathBuf,
+        #[arg(long, value_enum, default_value_t = WarehouseErrorGroupByArg::ErrorCode)]
+        group_by: WarehouseErrorGroupByArg,
+        #[arg(long)]
+        exclude_source_id: Vec<String>,
+        #[arg(long)]
+        exclude_text_id: Vec<String>,
+        #[arg(long, default_value_t = 20)]
+        limit: usize,
+        #[arg(long)]
+        json: bool,
+    },
     RerunFull {
         #[arg(long)]
         aat_dir: PathBuf,
@@ -304,6 +318,14 @@ enum WarehouseRegionKindArg {
     Segmentation,
     Feature,
     Coverage,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
+enum WarehouseErrorGroupByArg {
+    ErrorCode,
+    Stage,
+    Analyzer,
+    SourceId,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
@@ -426,6 +448,17 @@ impl WarehouseRegionKindArg {
             Self::Segmentation => ab_morph_run::WarehouseRegionKind::Segmentation,
             Self::Feature => ab_morph_run::WarehouseRegionKind::Feature,
             Self::Coverage => ab_morph_run::WarehouseRegionKind::Coverage,
+        }
+    }
+}
+
+impl WarehouseErrorGroupByArg {
+    fn into_library(self) -> ab_morph_run::WarehouseErrorGroupBy {
+        match self {
+            Self::ErrorCode => ab_morph_run::WarehouseErrorGroupBy::ErrorCode,
+            Self::Stage => ab_morph_run::WarehouseErrorGroupBy::Stage,
+            Self::Analyzer => ab_morph_run::WarehouseErrorGroupBy::Analyzer,
+            Self::SourceId => ab_morph_run::WarehouseErrorGroupBy::SourceId,
         }
     }
 }
@@ -783,6 +816,30 @@ fn main() -> Result<()> {
             }
             Ok(())
         }
+        Command::SummarizeWarehouseErrors {
+            run_dir,
+            group_by,
+            exclude_source_id,
+            exclude_text_id,
+            limit,
+            json,
+        } => {
+            let rows = ab_morph_run::summarize_warehouse_errors(
+                &run_dir,
+                ab_morph_run::WarehouseErrorSummaryOptions {
+                    group_by: group_by.into_library(),
+                    exclusions: summary_exclusions(exclude_source_id, exclude_text_id),
+                    limit,
+                },
+            )?;
+            if json {
+                serde_json::to_writer_pretty(std::io::stdout(), &rows)?;
+                println!();
+            } else {
+                print_warehouse_error_table(&rows);
+            }
+            Ok(())
+        }
         Command::RerunFull {
             aat_dir,
             source_id,
@@ -1131,6 +1188,26 @@ fn print_warehouse_region_table(rows: &[ab_morph_run::WarehouseRegionExampleRow]
             row.has_coverage_mismatch,
             analyzers,
             features,
+        );
+    }
+}
+
+fn print_warehouse_error_table(rows: &[ab_morph_run::WarehouseErrorSummaryRow]) {
+    println!(
+        "key\terrors\tsource_count\ttext_count\tanalyzers\tstages\terror_codes\tsample_source_ids\tsample_messages"
+    );
+    for row in rows {
+        println!(
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            row.key,
+            row.errors,
+            row.source_ids.len(),
+            row.text_ids.len(),
+            row.analyzer_ids.join(","),
+            row.stages.join(","),
+            row.error_codes.join(","),
+            sample_values(&row.source_ids, 5),
+            row.sample_messages.join(" | "),
         );
     }
 }
@@ -1880,6 +1957,44 @@ mod tests {
             PathBuf::from("scratch/morph-warehouse/runs/full-2026-05-01")
         );
         assert_eq!(kind, WarehouseRegionKindArg::Segmentation);
+        assert_eq!(exclude_source_id, vec!["source-a"]);
+        assert_eq!(limit, 15);
+        assert!(json);
+    }
+
+    #[test]
+    fn parses_summarize_warehouse_errors_command() {
+        let args = Args::parse_from([
+            "ab-morph-run",
+            "summarize-warehouse-errors",
+            "--run-dir",
+            "scratch/morph-warehouse/runs/full-2026-05-01",
+            "--group-by",
+            "analyzer",
+            "--exclude-source-id",
+            "source-a",
+            "--limit",
+            "15",
+            "--json",
+        ]);
+
+        let Command::SummarizeWarehouseErrors {
+            run_dir,
+            group_by,
+            exclude_source_id,
+            limit,
+            json,
+            ..
+        } = args.command
+        else {
+            panic!("expected summarize-warehouse-errors");
+        };
+
+        assert_eq!(
+            run_dir,
+            PathBuf::from("scratch/morph-warehouse/runs/full-2026-05-01")
+        );
+        assert_eq!(group_by, WarehouseErrorGroupByArg::Analyzer);
         assert_eq!(exclude_source_id, vec!["source-a"]);
         assert_eq!(limit, 15);
         assert!(json);

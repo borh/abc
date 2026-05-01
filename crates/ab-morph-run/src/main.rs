@@ -411,8 +411,17 @@ fn main() -> Result<()> {
             progress_interval_seconds,
         } => {
             validate_warehouse_cli(warehouse_dir.as_ref(), run_id.as_deref(), resume, jobs)?;
-            if warehouse_dir.is_some() {
-                bail!("warehouse mode is introduced in this task and wired in Task 4");
+            if let Some(warehouse_dir) = warehouse_dir {
+                return ab_morph_run::run_analyze_aat_warehouse(
+                    aat.as_deref(),
+                    aat_dir.as_deref(),
+                    &analyzer,
+                    &warehouse_dir,
+                    run_id
+                        .as_deref()
+                        .expect("validate_warehouse_cli requires --run-id"),
+                    jobs,
+                );
             }
             let progress_enabled = progress || progress_interval_seconds.is_some();
             let progress_interval_seconds = progress_interval_seconds.unwrap_or(30).max(1);

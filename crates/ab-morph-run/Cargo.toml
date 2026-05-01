@@ -11,6 +11,7 @@ ab-plaintext.workspace = true
 anyhow.workspace = true
 arrow-array.workspace = true
 arrow-schema.workspace = true
+chrono.workspace = true
 clap.workspace = true
 parquet.workspace = true
 serde.workspace = true

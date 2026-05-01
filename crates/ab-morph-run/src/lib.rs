@@ -20,6 +20,8 @@ use clap::ValueEnum;
 use output::{open_output_writer, read_jsonl_or_zst_to_string};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use warehouse::schema::{ErrorRow as WarehouseErrorRow, RunAnalyzerRow, RunRow, WarehousePaths};
+use warehouse::writer::WarehouseWriter;
 
 pub use nway::{NwayFeatureScopeRow, NwayFeatureValueGroupRow, NwaySegmentationGroupRow};
 pub use script::ScriptCategory;
@@ -140,6 +142,58 @@ pub fn run_analyze_aat_with_nway(
     )
 }
 
+pub fn run_analyze_aat_warehouse(
+    aat: Option<&Path>,
+    aat_dir: Option<&Path>,
+    analyzer_ids: &[String],
+    warehouse_dir: &Path,
+    run_id: &str,
+    jobs: usize,
+) -> Result<()> {
+    if jobs != 1 {
+        bail!("warehouse mode requires --jobs 1 in phase 1");
+    }
+    if aat.is_none() == aat_dir.is_none() {
+        bail!("provide exactly one of --aat or --aat-dir");
+    }
+    if analyzer_ids.is_empty() {
+        bail!("provide at least one --analyzer");
+    }
+    let inputs = discover_aat_inputs(aat, aat_dir)?;
+    let input_mode = if aat.is_some() { "aat" } else { "aat_dir" };
+    let input_path = aat
+        .or(aat_dir)
+        .map(|path| path.display().to_string())
+        .unwrap_or_default();
+    let specs = parse_analyzer_specs(analyzer_ids)?;
+    let analyzers = load_analyzers(&specs)?;
+    let analyzer_rows = warehouse_analyzer_rows(run_id, &specs, &analyzers)?;
+    run_analyze_aat_serial(
+        inputs,
+        &analyzers,
+        SerialRunOptions {
+            analyses_output: None,
+            comparisons_output: None,
+            errors_output: None,
+            resume: false,
+            output_profile: OutputProfile::Compact,
+            examples_output: None,
+            max_examples_per_comparison: 0,
+            nway_output: None,
+            nway_pattern_counts_output: None,
+            max_nway_examples_per_text: 0,
+            collect_string_stats: false,
+            warehouse: Some(WarehouseRunOptions {
+                paths: WarehousePaths::new(warehouse_dir, run_id),
+                input_mode,
+                input_path,
+                analyzer_rows,
+            }),
+        },
+    )?;
+    Ok(())
+}
+
 #[allow(clippy::too_many_arguments)]
 pub fn run_analyze_aat_selected(
     inputs: Vec<PathBuf>,
@@ -246,7 +300,7 @@ fn run_analyze_aat_inputs(
             inputs,
             &analyzers,
             SerialRunOptions {
-                analyses_output,
+                analyses_output: Some(analyses_output),
                 comparisons_output,
                 errors_output,
                 resume,
@@ -257,6 +311,7 @@ fn run_analyze_aat_inputs(
                 nway_pattern_counts_output,
                 max_nway_examples_per_text,
                 collect_string_stats,
+                warehouse: None,
             },
         )?
     };
@@ -286,7 +341,7 @@ fn run_analyze_aat_inputs(
 }
 
 struct SerialRunOptions<'a> {
-    analyses_output: &'a Path,
+    analyses_output: Option<&'a Path>,
     comparisons_output: Option<&'a Path>,
     errors_output: Option<&'a Path>,
     resume: bool,
@@ -297,6 +352,14 @@ struct SerialRunOptions<'a> {
     nway_pattern_counts_output: Option<&'a Path>,
     max_nway_examples_per_text: usize,
     collect_string_stats: bool,
+    warehouse: Option<WarehouseRunOptions>,
+}
+
+struct WarehouseRunOptions {
+    paths: WarehousePaths,
+    input_mode: &'static str,
+    input_path: String,
+    analyzer_rows: Vec<RunAnalyzerRow>,
 }
 
 fn run_analyze_aat_serial(
@@ -305,8 +368,11 @@ fn run_analyze_aat_serial(
     options: SerialRunOptions<'_>,
 ) -> Result<StringStatsReport> {
     let resume_ids = if options.resume {
+        let analyses_output = options
+            .analyses_output
+            .context("resume requires an analyses output path")?;
         read_resume_ids(
-            options.analyses_output,
+            analyses_output,
             options.errors_output,
             options.nway_output,
             options.nway_pattern_counts_output,
@@ -316,8 +382,13 @@ fn run_analyze_aat_serial(
         BTreeSet::new()
     };
     let inputs = filter_resume_inputs(inputs, &resume_ids, options.output_profile)?;
+    let input_count = inputs.len() as u64;
 
-    let mut analyses_writer = open_output_writer(options.analyses_output, options.resume)?;
+    let mut analyses_writer = if let Some(path) = options.analyses_output {
+        Some(open_output_writer(path, options.resume)?)
+    } else {
+        None
+    };
     let mut comparisons_writer = if let Some(path) = options.comparisons_output {
         Some(open_output_writer(path, options.resume)?)
     } else {
@@ -343,6 +414,14 @@ fn run_analyze_aat_serial(
     } else {
         None
     };
+    let mut warehouse_writer = if let Some(warehouse) = &options.warehouse {
+        let mut writer = WarehouseWriter::create(warehouse.paths.clone())?;
+        writer.append_run_analyzers(&warehouse.analyzer_rows)?;
+        Some(writer)
+    } else {
+        None
+    };
+    let mut warehouse_error_count = 0u64;
     let mut string_stats = StringStatsReport::default();
 
     for input in inputs {
@@ -351,6 +430,19 @@ fn run_analyze_aat_serial(
         let aat = match read_aat_value(&input) {
             Ok(value) => value,
             Err(error) => {
+                if let Some(writer) = &mut warehouse_writer {
+                    warehouse_error_count += 1;
+                    writer.append_errors(&[warehouse_error_row(
+                        options.warehouse.as_ref().expect("warehouse options").paths.run_id.as_str(),
+                        Some(source_id.clone()),
+                        None,
+                        None,
+                        "read_aat",
+                        "read_aat_failed",
+                        &error.to_string(),
+                    )])?;
+                    continue;
+                }
                 if let Some(writer) = &mut errors_writer {
                     write_error_row(
                         &mut **writer,
@@ -371,6 +463,19 @@ fn run_analyze_aat_serial(
         let document = match from_aat_value(&aat) {
             Ok(document) => document,
             Err(error) => {
+                if let Some(writer) = &mut warehouse_writer {
+                    warehouse_error_count += 1;
+                    writer.append_errors(&[warehouse_error_row(
+                        options.warehouse.as_ref().expect("warehouse options").paths.run_id.as_str(),
+                        Some(source_id.clone()),
+                        None,
+                        None,
+                        "project_aat",
+                        "project_aat_failed",
+                        &error.to_string(),
+                    )])?;
+                    continue;
+                }
                 if let Some(writer) = &mut errors_writer {
                     write_error_row(
                         &mut **writer,
@@ -394,6 +499,19 @@ fn run_analyze_aat_serial(
             let mut analysis = match analyzer.analyze(&document) {
                 Ok(analysis) => analysis,
                 Err(error) => {
+                    if let Some(writer) = &mut warehouse_writer {
+                        warehouse_error_count += 1;
+                        writer.append_errors(&[warehouse_error_row(
+                            options.warehouse.as_ref().expect("warehouse options").paths.run_id.as_str(),
+                            Some(source_id.clone()),
+                            Some(document.text_id.clone()),
+                            Some(analyzer.analyzer_id().to_owned()),
+                            "analyze",
+                            "analyze_failed",
+                            &error.to_string(),
+                        )])?;
+                        continue;
+                    }
                     if let Some(writer) = &mut errors_writer {
                         write_error_row(
                             &mut **writer,
@@ -415,16 +533,56 @@ fn run_analyze_aat_serial(
                 string_stats.record_analysis(&analysis);
             }
 
-            write_analysis_row(
-                &mut *analyses_writer,
-                options.output_profile,
-                &source_id,
-                &analysis,
-            )?;
-            if options.output_profile == OutputProfile::Compact {
+            if let Some(writer) = &mut analyses_writer {
+                write_analysis_row(
+                    &mut **writer,
+                    options.output_profile,
+                    &source_id,
+                    &analysis,
+                )?;
+            }
+            if options.output_profile == OutputProfile::Compact && options.warehouse.is_none() {
                 analysis.source_text.clear();
             }
             analyses.push(analysis);
+        }
+
+        if let Some(writer) = &mut warehouse_writer {
+            if let Some(first_analysis) = analyses.first() {
+                let run_id = options.warehouse.as_ref().expect("warehouse options").paths.run_id.as_str();
+                let source = warehouse::rows::source_row(run_id, &source_id, &input_path, first_analysis);
+                writer.append_sources(&[source])?;
+                let analysis_rows = analyses
+                    .iter()
+                    .map(|analysis| warehouse::rows::analysis_row(run_id, &source_id, analysis))
+                    .collect::<Vec<_>>();
+                writer.append_analyses(&analysis_rows)?;
+                for analysis in &analyses {
+                    let morphemes = warehouse::rows::morpheme_rows(run_id, &source_id, analysis);
+                    writer.append_morphemes(&morphemes)?;
+                    let features = warehouse::rows::morpheme_feature_rows(run_id, &source_id, analysis);
+                    writer.append_morpheme_features(&features)?;
+                }
+                match warehouse::rows::nway_fact_rows(run_id, &source_id, &document.text, &analyses) {
+                    Ok(facts) => {
+                        writer.append_nway_regions(&facts.regions)?;
+                        writer.append_nway_region_analyzers(&facts.region_analyzers)?;
+                        writer.append_nway_feature_diffs(&facts.feature_diffs)?;
+                    }
+                    Err(error) => {
+                        warehouse_error_count += 1;
+                        writer.append_errors(&[warehouse_error_row(
+                            run_id,
+                            Some(source_id.clone()),
+                            Some(document.text_id.clone()),
+                            None,
+                            "compare_nway",
+                            "compare_nway_failed",
+                            &error.to_string(),
+                        )])?;
+                    }
+                }
+            }
         }
 
         let comparison_result = if comparisons_writer.is_some() || examples_writer.is_some() {
@@ -499,7 +657,9 @@ fn run_analyze_aat_serial(
         }
     }
 
-    analyses_writer.flush()?;
+    if let Some(writer) = &mut analyses_writer {
+        writer.flush()?;
+    }
     if let Some(writer) = &mut comparisons_writer {
         writer.flush()?;
     }
@@ -515,8 +675,23 @@ fn run_analyze_aat_serial(
     if let Some(writer) = &mut nway_pattern_counts_writer {
         writer.flush()?;
     }
+    if let Some(mut writer) = warehouse_writer {
+        let warehouse = options.warehouse.as_ref().expect("warehouse options");
+        writer.append_runs(&[RunRow {
+            schema_version: warehouse::schema::SCHEMA_VERSION,
+            run_id: warehouse.paths.run_id.clone(),
+            created_at_utc: chrono::Utc::now().to_rfc3339(),
+            input_mode: warehouse.input_mode.to_owned(),
+            input_path: warehouse.input_path.clone(),
+            source_count: input_count,
+            analyzer_count: warehouse.analyzer_rows.len() as u64,
+            error_count: warehouse_error_count,
+        }])?;
+        writer.finalize()?;
+    }
     Ok(string_stats)
 }
+
 
 #[allow(clippy::too_many_arguments)]
 fn run_analyze_aat_parallel(
@@ -596,7 +771,7 @@ fn run_analyze_aat_parallel(
                     shard_inputs,
                     &analyzers,
                     SerialRunOptions {
-                        analyses_output: &analyses,
+                        analyses_output: Some(&analyses),
                         comparisons_output: comparisons.as_deref(),
                         errors_output: errors.as_deref(),
                         resume: false,
@@ -607,6 +782,7 @@ fn run_analyze_aat_parallel(
                         nway_pattern_counts_output: nway_pattern_counts.as_deref(),
                         max_nway_examples_per_text,
                         collect_string_stats,
+                        warehouse: None,
                     },
                 )?;
                 Ok(ShardOutput {
@@ -808,6 +984,10 @@ fn merge_shard_files<'a>(
 enum AnalyzerSpec {
     Vibrato,
     Sudachi(SudachiMode),
+    #[cfg(test)]
+    TestSingle,
+    #[cfg(test)]
+    TestSplit,
 }
 
 impl AnalyzerSpec {
@@ -817,7 +997,33 @@ impl AnalyzerSpec {
             "sudachi-a" => Ok(Self::Sudachi(SudachiMode::A)),
             "sudachi-b" => Ok(Self::Sudachi(SudachiMode::B)),
             "sudachi-c" => Ok(Self::Sudachi(SudachiMode::C)),
+            #[cfg(test)]
+            "test:single" => Ok(Self::TestSingle),
+            #[cfg(test)]
+            "test:split" => Ok(Self::TestSplit),
             other => bail!("unknown analyzer `{other}`"),
+        }
+    }
+
+    fn arg(self) -> &'static str {
+        match self {
+            Self::Vibrato => "vibrato",
+            Self::Sudachi(SudachiMode::A) => "sudachi-a",
+            Self::Sudachi(SudachiMode::B) => "sudachi-b",
+            Self::Sudachi(SudachiMode::C) => "sudachi-c",
+            #[cfg(test)]
+            Self::TestSingle => "test:single",
+            #[cfg(test)]
+            Self::TestSplit => "test:split",
+        }
+    }
+
+    fn family(self) -> &'static str {
+        match self {
+            Self::Vibrato => "vibrato",
+            Self::Sudachi(_) => "sudachi",
+            #[cfg(test)]
+            Self::TestSingle | Self::TestSplit => "test",
         }
     }
 }
@@ -908,10 +1114,42 @@ fn load_analyzers(specs: &[AnalyzerSpec]) -> Result<Vec<Arc<LoadedAnalyzer>>> {
                     ),
                 )));
             }
+            #[cfg(test)]
+            AnalyzerSpec::TestSingle => {
+                analyzers.push(Arc::new(LoadedAnalyzer::Test(TestAnalyzerKind::Single)));
+            }
+            #[cfg(test)]
+            AnalyzerSpec::TestSplit => {
+                analyzers.push(Arc::new(LoadedAnalyzer::Test(TestAnalyzerKind::Split)));
+            }
         }
     }
 
     Ok(analyzers)
+}
+
+fn warehouse_analyzer_rows(
+    run_id: &str,
+    specs: &[AnalyzerSpec],
+    analyzers: &[Arc<LoadedAnalyzer>],
+) -> Result<Vec<RunAnalyzerRow>> {
+    if specs.len() != analyzers.len() {
+        bail!(
+            "internal error: analyzer spec count {} does not match loaded analyzer count {}",
+            specs.len(),
+            analyzers.len()
+        );
+    }
+    Ok(specs
+        .iter()
+        .zip(analyzers)
+        .map(|(spec, analyzer)| RunAnalyzerRow {
+            run_id: run_id.to_owned(),
+            analyzer_id: analyzer.analyzer_id().to_owned(),
+            analyzer_arg: spec.arg().to_owned(),
+            analyzer_family: spec.family().to_owned(),
+        })
+        .collect())
 }
 
 fn read_aat_value(path: &Path) -> Result<Value> {
@@ -1015,6 +1253,26 @@ struct RunErrorRow {
     analyzer: Option<String>,
     stage: String,
     error: String,
+}
+
+fn warehouse_error_row(
+    run_id: &str,
+    source_id: Option<String>,
+    text_id: Option<String>,
+    analyzer_id: Option<String>,
+    stage: &str,
+    error_code: &str,
+    message: &str,
+) -> WarehouseErrorRow {
+    WarehouseErrorRow {
+        run_id: run_id.to_owned(),
+        source_id,
+        text_id,
+        analyzer_id,
+        stage: stage.to_owned(),
+        error_code: error_code.to_owned(),
+        message: message.to_owned(),
+    }
 }
 
 #[derive(Debug, Clone, Default, Serialize)]
@@ -1249,6 +1507,15 @@ fn write_manifest(
 enum LoadedAnalyzer {
     Vibrato(VibratoAnalyzer),
     Sudachi(SudachiAnalyzer),
+    #[cfg(test)]
+    Test(TestAnalyzerKind),
+}
+
+#[cfg(test)]
+#[derive(Debug, Clone, Copy)]
+enum TestAnalyzerKind {
+    Single,
+    Split,
 }
 
 impl LoadedAnalyzer {
@@ -1256,6 +1523,10 @@ impl LoadedAnalyzer {
         match self {
             Self::Vibrato(analyzer) => analyzer.analyzer_id(),
             Self::Sudachi(analyzer) => analyzer.analyzer_id(),
+            #[cfg(test)]
+            Self::Test(TestAnalyzerKind::Single) => "test:single",
+            #[cfg(test)]
+            Self::Test(TestAnalyzerKind::Split) => "test:split",
         }
     }
 
@@ -1263,7 +1534,59 @@ impl LoadedAnalyzer {
         match self {
             Self::Vibrato(analyzer) => Ok(analyzer.analyze(document)?),
             Self::Sudachi(analyzer) => Ok(analyzer.analyze(document)?),
+            #[cfg(test)]
+            Self::Test(kind) => Ok(test_analysis(*kind, document)),
         }
+    }
+}
+
+#[cfg(test)]
+fn test_analysis(kind: TestAnalyzerKind, document: &PlainTextDocument) -> Analysis {
+    let mut morphemes = Vec::new();
+    match kind {
+        TestAnalyzerKind::Single => {
+            morphemes.push(test_morpheme(
+                document.text.clone(),
+                0..document.text.len(),
+                0..document.text.chars().count(),
+            ));
+        }
+        TestAnalyzerKind::Split if document.text == "今日" => {
+            morphemes.push(test_morpheme("今".to_owned(), 0..3, 0..1));
+            morphemes.push(test_morpheme("日".to_owned(), 3..6, 1..2));
+        }
+        TestAnalyzerKind::Split => {
+            morphemes.push(test_morpheme(
+                document.text.clone(),
+                0..document.text.len(),
+                0..document.text.chars().count(),
+            ));
+        }
+    }
+    Analysis {
+        analyzer: match kind {
+            TestAnalyzerKind::Single => "test:single".to_owned(),
+            TestAnalyzerKind::Split => "test:split".to_owned(),
+        },
+        text_id: document.text_id.clone(),
+        source_text: document.text.clone(),
+        morphemes,
+    }
+}
+
+#[cfg(test)]
+fn test_morpheme(
+    surface: String,
+    byte_span: std::ops::Range<usize>,
+    char_span: std::ops::Range<usize>,
+) -> ab_morph_diff::Morpheme {
+    let mut features = ab_morph_diff::FeatureMap::new();
+    features.insert("pos1".into(), Some("名詞".into()));
+    ab_morph_diff::Morpheme {
+        surface,
+        byte_span,
+        char_span,
+        features,
     }
 }
 
@@ -1567,6 +1890,45 @@ mod tests {
             serde_json::from_str(&fs::read_to_string(out.join("manifest.json")).unwrap()).unwrap();
         assert_eq!(manifest["input_path"], aat_dir.display().to_string());
         assert_eq!(manifest["input_file_count"], 1);
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn warehouse_mode_writes_sealed_parquet_without_jsonl_outputs() {
+        let dir = temp_dir("warehouse-mode");
+        let aat_dir = dir.join("aats");
+        let warehouse_dir = dir.join("warehouse");
+        fs::create_dir_all(&aat_dir).unwrap();
+        fs::write(
+            aat_dir.join("source-a.json"),
+            tiny_aat("work-a").replace("吾輩は猫である。", "今日"),
+        )
+        .unwrap();
+
+        run_analyze_aat_warehouse(
+            None,
+            Some(&aat_dir),
+            &["test:single".to_owned(), "test:split".to_owned()],
+            &warehouse_dir,
+            "run-a",
+            1,
+        )
+        .unwrap();
+
+        let run_dir = warehouse_dir.join("runs").join("run-a");
+        assert!(run_dir.join("runs.parquet").is_file());
+        assert!(run_dir.join("run_analyzers.parquet").is_file());
+        assert!(run_dir.join("sources.parquet").is_file());
+        assert!(run_dir.join("morphemes.parquet").is_file());
+        assert!(run_dir.join("nway_regions.parquet").is_file());
+        assert!(!run_dir.join("analyses.jsonl").exists());
+        assert!(!run_dir.join("comparisons.jsonl").exists());
+
+        let staging = warehouse_dir.join(".staging");
+        if staging.exists() {
+            assert!(fs::read_dir(&staging).unwrap().next().is_none());
+        }
+
         let _ = fs::remove_dir_all(dir);
     }
 

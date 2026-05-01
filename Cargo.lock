@@ -127,6 +127,7 @@ dependencies = [
  "anyhow",
  "arrow-array",
  "arrow-schema",
+ "chrono",
  "clap",
  "criterion",
  "parquet",

@@ -152,9 +152,17 @@ pub enum WarehouseRegionKind {
     Coverage,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WarehouseTextFilter {
+    All,
+    WhitespaceOnly,
+    LexicalOnly,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WarehouseRegionOptions {
     pub kind: WarehouseRegionKind,
+    pub text_filter: WarehouseTextFilter,
     pub exclusions: SummaryExclusions,
     pub limit: usize,
 }
@@ -185,6 +193,7 @@ pub enum WarehousePairwiseSort {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WarehousePairwiseSummaryOptions {
     pub sort_by: WarehousePairwiseSort,
+    pub text_filter: WarehouseTextFilter,
     pub exclusions: SummaryExclusions,
     pub limit: usize,
 }
@@ -988,6 +997,9 @@ pub fn summarize_warehouse_regions(
         if !warehouse_region_kind_matches(options.kind, flags) {
             continue;
         }
+        if !warehouse_text_filter_matches(options.text_filter, flags) {
+            continue;
+        }
         let analyzers = analyzers_by_region
             .remove(&region)
             .unwrap_or_default()
@@ -1144,7 +1156,14 @@ pub fn summarize_warehouse_pairwise(
             .or_default()
             .push(fact);
     }
+    let regions = read_warehouse_region_flags(run_dir)?;
     for (region, mut analyzers) in analyzers_by_region {
+        let Some(flags) = regions.get(&region).copied() else {
+            continue;
+        };
+        if !warehouse_text_filter_matches(options.text_filter, flags) {
+            continue;
+        }
         analyzers.sort_by(|left, right| left.analyzer_id.cmp(&right.analyzer_id));
         for left_index in 0..analyzers.len() {
             for right_index in (left_index + 1)..analyzers.len() {
@@ -1159,9 +1178,14 @@ pub fn summarize_warehouse_pairwise(
                     ))
                     .or_default();
                 accumulator.regions += 1;
-                if !left.covers_exactly || !right.covers_exactly {
+                if flags.has_coverage_mismatch || !left.covers_exactly || !right.covers_exactly {
                     accumulator.coverage_regions += 1;
-                } else if left.surfaces != right.surfaces {
+                }
+                if flags.has_segmentation_disagreement
+                    && left.covers_exactly
+                    && right.covers_exactly
+                    && left.surfaces != right.surfaces
+                {
                     accumulator.segmentation_regions += 1;
                 }
             }
@@ -1174,6 +1198,13 @@ pub fn summarize_warehouse_pairwise(
         if options
             .exclusions
             .excludes(&fact.key.region.source_id, &fact.key.region.text_id)
+        {
+            continue;
+        }
+        if !regions
+            .get(&fact.key.region)
+            .copied()
+            .is_some_and(|flags| warehouse_text_filter_matches(options.text_filter, flags))
         {
             continue;
         }
@@ -1981,6 +2012,14 @@ fn warehouse_region_kind_matches(kind: WarehouseRegionKind, flags: WarehouseRegi
         WarehouseRegionKind::Segmentation => flags.has_segmentation_disagreement,
         WarehouseRegionKind::Feature => flags.has_feature_disagreement,
         WarehouseRegionKind::Coverage => flags.has_coverage_mismatch,
+    }
+}
+
+fn warehouse_text_filter_matches(filter: WarehouseTextFilter, flags: WarehouseRegionFlags) -> bool {
+    match filter {
+        WarehouseTextFilter::All => true,
+        WarehouseTextFilter::WhitespaceOnly => flags.is_nonempty_whitespace,
+        WarehouseTextFilter::LexicalOnly => !flags.is_nonempty_whitespace,
     }
 }
 
@@ -3271,21 +3310,38 @@ mod tests {
             ])
             .unwrap();
         writer
-            .append_nway_regions(&[NwayRegionRow {
-                run_id: "run-a".to_owned(),
-                source_id: "source-a".to_owned(),
-                text_id: "work-a".to_owned(),
-                region_index: 0,
-                byte_start: 0,
-                byte_end: 6,
-                char_start: 0,
-                char_end: 2,
-                is_nonempty_whitespace: false,
-                is_agreement: false,
-                has_coverage_mismatch: false,
-                has_segmentation_disagreement: true,
-                has_feature_disagreement: true,
-            }])
+            .append_nway_regions(&[
+                NwayRegionRow {
+                    run_id: "run-a".to_owned(),
+                    source_id: "source-a".to_owned(),
+                    text_id: "work-a".to_owned(),
+                    region_index: 0,
+                    byte_start: 0,
+                    byte_end: 6,
+                    char_start: 0,
+                    char_end: 2,
+                    is_nonempty_whitespace: false,
+                    is_agreement: false,
+                    has_coverage_mismatch: false,
+                    has_segmentation_disagreement: true,
+                    has_feature_disagreement: true,
+                },
+                NwayRegionRow {
+                    run_id: "run-a".to_owned(),
+                    source_id: "source-a".to_owned(),
+                    text_id: "work-a".to_owned(),
+                    region_index: 1,
+                    byte_start: 6,
+                    byte_end: 7,
+                    char_start: 2,
+                    char_end: 3,
+                    is_nonempty_whitespace: true,
+                    is_agreement: false,
+                    has_coverage_mismatch: false,
+                    has_segmentation_disagreement: true,
+                    has_feature_disagreement: false,
+                },
+            ])
             .unwrap();
         writer
             .append_nway_region_analyzers(&[
@@ -3310,6 +3366,28 @@ mod tests {
                     morpheme_start: 0,
                     morpheme_end: 2,
                     surfaces: vec!["今".to_owned(), "日".to_owned()],
+                },
+                NwayRegionAnalyzerRow {
+                    run_id: "run-a".to_owned(),
+                    source_id: "source-a".to_owned(),
+                    text_id: "work-a".to_owned(),
+                    region_index: 1,
+                    analyzer_id: "vibrato".to_owned(),
+                    covers_exactly: true,
+                    morpheme_start: 1,
+                    morpheme_end: 2,
+                    surfaces: vec![" ".to_owned()],
+                },
+                NwayRegionAnalyzerRow {
+                    run_id: "run-a".to_owned(),
+                    source_id: "source-a".to_owned(),
+                    text_id: "work-a".to_owned(),
+                    region_index: 1,
+                    analyzer_id: "sudachi-c".to_owned(),
+                    covers_exactly: true,
+                    morpheme_start: 2,
+                    morpheme_end: 4,
+                    surfaces: vec!["".to_owned(), " ".to_owned()],
                 },
             ])
             .unwrap();
@@ -3347,6 +3425,7 @@ mod tests {
             &paths.final_dir,
             WarehousePairwiseSummaryOptions {
                 sort_by: WarehousePairwiseSort::SegmentationRegions,
+                text_filter: WarehouseTextFilter::LexicalOnly,
                 exclusions: SummaryExclusions::default(),
                 limit: 10,
             },
@@ -3391,21 +3470,38 @@ mod tests {
             }])
             .unwrap();
         writer
-            .append_nway_regions(&[NwayRegionRow {
-                run_id: "run-a".to_owned(),
-                source_id: "source-a".to_owned(),
-                text_id: "work-a".to_owned(),
-                region_index: 0,
-                byte_start: 0,
-                byte_end: 6,
-                char_start: 0,
-                char_end: 2,
-                is_nonempty_whitespace: false,
-                is_agreement: false,
-                has_coverage_mismatch: false,
-                has_segmentation_disagreement: true,
-                has_feature_disagreement: true,
-            }])
+            .append_nway_regions(&[
+                NwayRegionRow {
+                    run_id: "run-a".to_owned(),
+                    source_id: "source-a".to_owned(),
+                    text_id: "work-a".to_owned(),
+                    region_index: 0,
+                    byte_start: 0,
+                    byte_end: 6,
+                    char_start: 0,
+                    char_end: 2,
+                    is_nonempty_whitespace: false,
+                    is_agreement: false,
+                    has_coverage_mismatch: false,
+                    has_segmentation_disagreement: true,
+                    has_feature_disagreement: true,
+                },
+                NwayRegionRow {
+                    run_id: "run-a".to_owned(),
+                    source_id: "source-a".to_owned(),
+                    text_id: "work-a".to_owned(),
+                    region_index: 1,
+                    byte_start: 6,
+                    byte_end: 7,
+                    char_start: 2,
+                    char_end: 3,
+                    is_nonempty_whitespace: true,
+                    is_agreement: false,
+                    has_coverage_mismatch: false,
+                    has_segmentation_disagreement: true,
+                    has_feature_disagreement: false,
+                },
+            ])
             .unwrap();
         writer
             .append_nway_region_analyzers(&[
@@ -3430,6 +3526,28 @@ mod tests {
                     morpheme_start: 0,
                     morpheme_end: 2,
                     surfaces: vec!["今".to_owned(), "日".to_owned()],
+                },
+                NwayRegionAnalyzerRow {
+                    run_id: "run-a".to_owned(),
+                    source_id: "source-a".to_owned(),
+                    text_id: "work-a".to_owned(),
+                    region_index: 1,
+                    analyzer_id: "vibrato".to_owned(),
+                    covers_exactly: true,
+                    morpheme_start: 1,
+                    morpheme_end: 2,
+                    surfaces: vec![" ".to_owned()],
+                },
+                NwayRegionAnalyzerRow {
+                    run_id: "run-a".to_owned(),
+                    source_id: "source-a".to_owned(),
+                    text_id: "work-a".to_owned(),
+                    region_index: 1,
+                    analyzer_id: "sudachi-c".to_owned(),
+                    covers_exactly: true,
+                    morpheme_start: 2,
+                    morpheme_end: 4,
+                    surfaces: vec!["".to_owned(), " ".to_owned()],
                 },
             ])
             .unwrap();
@@ -3467,6 +3585,7 @@ mod tests {
             &paths.final_dir,
             WarehouseRegionOptions {
                 kind: WarehouseRegionKind::Segmentation,
+                text_filter: WarehouseTextFilter::LexicalOnly,
                 exclusions: SummaryExclusions::default(),
                 limit: 10,
             },

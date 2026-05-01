@@ -78,6 +78,7 @@ target/release/ab-morph-run summarize-warehouse-nway \
 target/release/ab-morph-run summarize-warehouse-pairwise \
   --run-dir scratch/morph-warehouse/runs/full-2026-05-01 \
   --sort-by segmentation-regions \
+  --filter lexical-only \
   --limit 50
 
 target/release/ab-morph-run summarize-warehouse-patterns \
@@ -94,6 +95,7 @@ target/release/ab-morph-run summarize-warehouse-patterns \
 target/release/ab-morph-run summarize-warehouse-regions \
   --run-dir scratch/morph-warehouse/runs/full-2026-05-01 \
   --kind segmentation \
+  --filter lexical-only \
   --limit 20 \
   --json
 

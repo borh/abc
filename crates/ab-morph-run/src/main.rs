@@ -173,6 +173,8 @@ enum Command {
         run_dir: PathBuf,
         #[arg(long, value_enum, default_value_t = WarehousePairwiseSortArg::SegmentationRegions)]
         sort_by: WarehousePairwiseSortArg,
+        #[arg(long, value_enum, default_value_t = WarehouseTextFilterArg::All)]
+        filter: WarehouseTextFilterArg,
         #[arg(long)]
         exclude_source_id: Vec<String>,
         #[arg(long)]
@@ -227,6 +229,8 @@ enum Command {
         run_dir: PathBuf,
         #[arg(long, value_enum, default_value_t = WarehouseRegionKindArg::All)]
         kind: WarehouseRegionKindArg,
+        #[arg(long, value_enum, default_value_t = WarehouseTextFilterArg::All)]
+        filter: WarehouseTextFilterArg,
         #[arg(long)]
         exclude_source_id: Vec<String>,
         #[arg(long)]
@@ -348,6 +352,13 @@ enum WarehousePairwiseSortArg {
     FeatureRegions,
     CoverageRegions,
     VariableBoundaryCount,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
+enum WarehouseTextFilterArg {
+    All,
+    WhitespaceOnly,
+    LexicalOnly,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
@@ -494,6 +505,16 @@ impl WarehousePairwiseSortArg {
             Self::VariableBoundaryCount => {
                 ab_morph_run::WarehousePairwiseSort::VariableBoundaryCount
             }
+        }
+    }
+}
+
+impl WarehouseTextFilterArg {
+    fn into_library(self) -> ab_morph_run::WarehouseTextFilter {
+        match self {
+            Self::All => ab_morph_run::WarehouseTextFilter::All,
+            Self::WhitespaceOnly => ab_morph_run::WarehouseTextFilter::WhitespaceOnly,
+            Self::LexicalOnly => ab_morph_run::WarehouseTextFilter::LexicalOnly,
         }
     }
 }
@@ -765,6 +786,7 @@ fn main() -> Result<()> {
         Command::SummarizeWarehousePairwise {
             run_dir,
             sort_by,
+            filter,
             exclude_source_id,
             exclude_text_id,
             limit,
@@ -774,6 +796,7 @@ fn main() -> Result<()> {
                 &run_dir,
                 ab_morph_run::WarehousePairwiseSummaryOptions {
                     sort_by: sort_by.into_library(),
+                    text_filter: filter.into_library(),
                     exclusions: summary_exclusions(exclude_source_id, exclude_text_id),
                     limit,
                 },
@@ -854,6 +877,7 @@ fn main() -> Result<()> {
         Command::SummarizeWarehouseRegions {
             run_dir,
             kind,
+            filter,
             exclude_source_id,
             exclude_text_id,
             limit,
@@ -863,6 +887,7 @@ fn main() -> Result<()> {
                 &run_dir,
                 ab_morph_run::WarehouseRegionOptions {
                     kind: kind.into_library(),
+                    text_filter: filter.into_library(),
                     exclusions: summary_exclusions(exclude_source_id, exclude_text_id),
                     limit,
                 },
@@ -2013,6 +2038,8 @@ mod tests {
             "scratch/morph-warehouse/runs/full-2026-05-01",
             "--kind",
             "segmentation",
+            "--filter",
+            "lexical-only",
             "--exclude-source-id",
             "source-a",
             "--limit",
@@ -2023,6 +2050,7 @@ mod tests {
         let Command::SummarizeWarehouseRegions {
             run_dir,
             kind,
+            filter,
             exclude_source_id,
             limit,
             json,
@@ -2037,6 +2065,7 @@ mod tests {
             PathBuf::from("scratch/morph-warehouse/runs/full-2026-05-01")
         );
         assert_eq!(kind, WarehouseRegionKindArg::Segmentation);
+        assert_eq!(filter, WarehouseTextFilterArg::LexicalOnly);
         assert_eq!(exclude_source_id, vec!["source-a"]);
         assert_eq!(limit, 15);
         assert!(json);
@@ -2089,6 +2118,8 @@ mod tests {
             "scratch/morph-warehouse/runs/full-2026-05-01",
             "--sort-by",
             "feature-regions",
+            "--filter",
+            "whitespace-only",
             "--exclude-source-id",
             "source-a",
             "--limit",
@@ -2099,6 +2130,7 @@ mod tests {
         let Command::SummarizeWarehousePairwise {
             run_dir,
             sort_by,
+            filter,
             exclude_source_id,
             limit,
             json,
@@ -2113,6 +2145,7 @@ mod tests {
             PathBuf::from("scratch/morph-warehouse/runs/full-2026-05-01")
         );
         assert_eq!(sort_by, WarehousePairwiseSortArg::FeatureRegions);
+        assert_eq!(filter, WarehouseTextFilterArg::WhitespaceOnly);
         assert_eq!(exclude_source_id, vec!["source-a"]);
         assert_eq!(limit, 15);
         assert!(json);

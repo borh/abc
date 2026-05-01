@@ -75,6 +75,11 @@ target/release/ab-morph-run summarize-warehouse-nway \
   --sort-by regions-with-segmentation-disagreement \
   --limit 50
 
+target/release/ab-morph-run summarize-warehouse-pairwise \
+  --run-dir scratch/morph-warehouse/runs/full-2026-05-01 \
+  --sort-by segmentation-regions \
+  --limit 50
+
 target/release/ab-morph-run summarize-warehouse-patterns \
   --run-dir scratch/morph-warehouse/runs/full-2026-05-01 \
   --kind segmentation \

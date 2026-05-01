@@ -174,6 +174,21 @@ pub struct WarehouseErrorSummaryOptions {
     pub limit: usize,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WarehousePairwiseSort {
+    SegmentationRegions,
+    FeatureRegions,
+    CoverageRegions,
+    VariableBoundaryCount,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WarehousePairwiseSummaryOptions {
+    pub sort_by: WarehousePairwiseSort,
+    pub exclusions: SummaryExclusions,
+    pub limit: usize,
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct CompactSummaryRow {
     pub key: String,
@@ -305,6 +320,28 @@ pub struct WarehouseErrorSummaryRow {
     pub stages: Vec<String>,
     pub error_codes: Vec<String>,
     pub sample_messages: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct WarehousePairwiseSummaryRow {
+    pub source_id: String,
+    pub text_id: String,
+    pub from_analyzer: String,
+    pub to_analyzer: String,
+    pub regions: usize,
+    pub segmentation_regions: usize,
+    pub feature_regions: usize,
+    pub coverage_regions: usize,
+    pub unanimous_boundary_count: usize,
+    pub variable_boundary_count: usize,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+struct WarehousePairwiseKey {
+    source_id: String,
+    text_id: String,
+    from_analyzer: String,
+    to_analyzer: String,
 }
 
 #[derive(Debug, Default)]
@@ -486,6 +523,16 @@ struct WarehouseErrorAccumulator {
     stages: BTreeSet<String>,
     error_codes: BTreeSet<String>,
     sample_messages: Vec<String>,
+}
+
+#[derive(Debug, Default)]
+struct WarehousePairwiseAccumulator {
+    regions: usize,
+    segmentation_regions: usize,
+    feature_region_keys: BTreeSet<WarehouseRegionKey>,
+    coverage_regions: usize,
+    unanimous_boundary_count: usize,
+    variable_boundary_count: usize,
 }
 
 #[derive(Debug, Deserialize)]
@@ -1038,6 +1085,135 @@ pub fn summarize_warehouse_errors(
     Ok(rows)
 }
 
+pub fn summarize_warehouse_pairwise(
+    run_dir: &Path,
+    options: WarehousePairwiseSummaryOptions,
+) -> Result<Vec<WarehousePairwiseSummaryRow>> {
+    let source_text_ids = read_warehouse_source_text_ids(run_dir)?;
+    let boundary_sets = read_warehouse_boundary_sets(run_dir)?;
+    let mut groups = BTreeMap::<WarehousePairwiseKey, WarehousePairwiseAccumulator>::new();
+
+    for (source_id, analyzer_sets) in &boundary_sets {
+        let text_id = source_text_ids
+            .get(source_id)
+            .cloned()
+            .unwrap_or_else(|| source_id.clone());
+        if options.exclusions.excludes(source_id, &text_id) {
+            continue;
+        }
+        let analyzers = analyzer_sets.keys().cloned().collect::<Vec<_>>();
+        for left_index in 0..analyzers.len() {
+            for right_index in (left_index + 1)..analyzers.len() {
+                let key = warehouse_pairwise_key(
+                    source_id,
+                    &text_id,
+                    &analyzers[left_index],
+                    &analyzers[right_index],
+                );
+                let accumulator = groups.entry(key).or_default();
+                let left_boundaries = &analyzer_sets[&analyzers[left_index]];
+                let right_boundaries = &analyzer_sets[&analyzers[right_index]];
+                let all_boundaries = left_boundaries
+                    .union(right_boundaries)
+                    .copied()
+                    .collect::<BTreeSet<_>>();
+                let unanimous = all_boundaries
+                    .iter()
+                    .filter(|boundary| {
+                        left_boundaries.contains(boundary) && right_boundaries.contains(boundary)
+                    })
+                    .count();
+                accumulator.unanimous_boundary_count += unanimous;
+                accumulator.variable_boundary_count +=
+                    all_boundaries.len().saturating_sub(unanimous);
+            }
+        }
+    }
+
+    let mut analyzers_by_region =
+        BTreeMap::<WarehouseRegionKey, Vec<WarehouseRegionAnalyzerFact>>::new();
+    for fact in read_warehouse_region_analyzers(run_dir)? {
+        if options
+            .exclusions
+            .excludes(&fact.key.source_id, &fact.key.text_id)
+        {
+            continue;
+        }
+        analyzers_by_region
+            .entry(fact.key.clone())
+            .or_default()
+            .push(fact);
+    }
+    for (region, mut analyzers) in analyzers_by_region {
+        analyzers.sort_by(|left, right| left.analyzer_id.cmp(&right.analyzer_id));
+        for left_index in 0..analyzers.len() {
+            for right_index in (left_index + 1)..analyzers.len() {
+                let left = &analyzers[left_index];
+                let right = &analyzers[right_index];
+                let accumulator = groups
+                    .entry(warehouse_pairwise_key(
+                        &region.source_id,
+                        &region.text_id,
+                        &left.analyzer_id,
+                        &right.analyzer_id,
+                    ))
+                    .or_default();
+                accumulator.regions += 1;
+                if !left.covers_exactly || !right.covers_exactly {
+                    accumulator.coverage_regions += 1;
+                } else if left.surfaces != right.surfaces {
+                    accumulator.segmentation_regions += 1;
+                }
+            }
+        }
+    }
+
+    let mut feature_groups =
+        BTreeMap::<WarehouseFeatureGroupKey, BTreeMap<String, Option<String>>>::new();
+    for fact in read_warehouse_feature_diffs(run_dir)? {
+        if options
+            .exclusions
+            .excludes(&fact.key.region.source_id, &fact.key.region.text_id)
+        {
+            continue;
+        }
+        feature_groups
+            .entry(fact.key)
+            .or_default()
+            .insert(fact.analyzer_id, fact.feature_value);
+    }
+    for (feature, values_by_analyzer) in feature_groups {
+        let analyzers = values_by_analyzer.keys().cloned().collect::<Vec<_>>();
+        for left_index in 0..analyzers.len() {
+            for right_index in (left_index + 1)..analyzers.len() {
+                let left = &analyzers[left_index];
+                let right = &analyzers[right_index];
+                if values_by_analyzer[left] == values_by_analyzer[right] {
+                    continue;
+                }
+                groups
+                    .entry(warehouse_pairwise_key(
+                        &feature.region.source_id,
+                        &feature.region.text_id,
+                        left,
+                        right,
+                    ))
+                    .or_default()
+                    .feature_region_keys
+                    .insert(feature.region.clone());
+            }
+        }
+    }
+
+    let mut rows = groups
+        .into_iter()
+        .map(|(key, accumulator)| accumulator.into_row(key))
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| compare_warehouse_pairwise_rows(left, right, options.sort_by));
+    rows.truncate(options.limit);
+    Ok(rows)
+}
+
 pub fn summarize_warehouse_nway_patterns(
     run_dir: &Path,
     options: NwayPatternOptions,
@@ -1501,6 +1677,66 @@ impl WarehouseErrorAccumulator {
     }
 }
 
+impl WarehousePairwiseAccumulator {
+    fn into_row(self, key: WarehousePairwiseKey) -> WarehousePairwiseSummaryRow {
+        WarehousePairwiseSummaryRow {
+            source_id: key.source_id,
+            text_id: key.text_id,
+            from_analyzer: key.from_analyzer,
+            to_analyzer: key.to_analyzer,
+            regions: self.regions,
+            segmentation_regions: self.segmentation_regions,
+            feature_regions: self.feature_region_keys.len(),
+            coverage_regions: self.coverage_regions,
+            unanimous_boundary_count: self.unanimous_boundary_count,
+            variable_boundary_count: self.variable_boundary_count,
+        }
+    }
+}
+
+fn warehouse_pairwise_key(
+    source_id: &str,
+    text_id: &str,
+    left_analyzer: &str,
+    right_analyzer: &str,
+) -> WarehousePairwiseKey {
+    let (from_analyzer, to_analyzer) = if left_analyzer <= right_analyzer {
+        (left_analyzer.to_owned(), right_analyzer.to_owned())
+    } else {
+        (right_analyzer.to_owned(), left_analyzer.to_owned())
+    };
+    WarehousePairwiseKey {
+        source_id: source_id.to_owned(),
+        text_id: text_id.to_owned(),
+        from_analyzer,
+        to_analyzer,
+    }
+}
+
+fn compare_warehouse_pairwise_rows(
+    left: &WarehousePairwiseSummaryRow,
+    right: &WarehousePairwiseSummaryRow,
+    sort_by: WarehousePairwiseSort,
+) -> std::cmp::Ordering {
+    let ordering = match sort_by {
+        WarehousePairwiseSort::SegmentationRegions => {
+            left.segmentation_regions.cmp(&right.segmentation_regions)
+        }
+        WarehousePairwiseSort::FeatureRegions => left.feature_regions.cmp(&right.feature_regions),
+        WarehousePairwiseSort::CoverageRegions => {
+            left.coverage_regions.cmp(&right.coverage_regions)
+        }
+        WarehousePairwiseSort::VariableBoundaryCount => left
+            .variable_boundary_count
+            .cmp(&right.variable_boundary_count),
+    };
+    ordering
+        .reverse()
+        .then_with(|| left.source_id.cmp(&right.source_id))
+        .then_with(|| left.from_analyzer.cmp(&right.from_analyzer))
+        .then_with(|| left.to_analyzer.cmp(&right.to_analyzer))
+}
+
 fn read_warehouse_region_flags(
     run_dir: &Path,
 ) -> Result<BTreeMap<WarehouseRegionKey, WarehouseRegionFlags>> {
@@ -1579,6 +1815,27 @@ fn read_warehouse_analysis_counts(run_dir: &Path) -> Result<BTreeMap<String, usi
 }
 
 fn read_warehouse_boundary_counts(run_dir: &Path) -> Result<BTreeMap<String, (usize, usize)>> {
+    let boundary_sets = read_warehouse_boundary_sets(run_dir)?;
+    Ok(boundary_sets
+        .into_iter()
+        .map(|(source_id, analyzer_sets)| {
+            let mut all_boundaries = BTreeSet::new();
+            for set in analyzer_sets.values() {
+                all_boundaries.extend(set.iter().copied());
+            }
+            let unanimous = all_boundaries
+                .iter()
+                .filter(|boundary| analyzer_sets.values().all(|set| set.contains(boundary)))
+                .count();
+            let variable = all_boundaries.len().saturating_sub(unanimous);
+            (source_id, (unanimous, variable))
+        })
+        .collect())
+}
+
+fn read_warehouse_boundary_sets(
+    run_dir: &Path,
+) -> Result<BTreeMap<String, BTreeMap<String, BTreeSet<usize>>>> {
     let source_chars = read_warehouse_source_chars(run_dir)?;
     let mut boundary_sets = BTreeMap::<String, BTreeMap<String, BTreeSet<usize>>>::new();
     for batch in read_warehouse_table(run_dir, WarehouseTable::Morphemes)? {
@@ -1603,21 +1860,7 @@ fn read_warehouse_boundary_counts(run_dir: &Path) -> Result<BTreeMap<String, (us
             }
         }
     }
-    Ok(boundary_sets
-        .into_iter()
-        .map(|(source_id, analyzer_sets)| {
-            let mut all_boundaries = BTreeSet::new();
-            for set in analyzer_sets.values() {
-                all_boundaries.extend(set.iter().copied());
-            }
-            let unanimous = all_boundaries
-                .iter()
-                .filter(|boundary| analyzer_sets.values().all(|set| set.contains(boundary)))
-                .count();
-            let variable = all_boundaries.len().saturating_sub(unanimous);
-            (source_id, (unanimous, variable))
-        })
-        .collect())
+    Ok(boundary_sets)
 }
 
 fn read_warehouse_source_chars(run_dir: &Path) -> Result<BTreeMap<String, usize>> {
@@ -1630,6 +1873,21 @@ fn read_warehouse_source_chars(run_dir: &Path) -> Result<BTreeMap<String, usize>
         }
     }
     Ok(source_chars)
+}
+
+fn read_warehouse_source_text_ids(run_dir: &Path) -> Result<BTreeMap<String, String>> {
+    let mut source_text_ids = BTreeMap::new();
+    for batch in read_warehouse_table(run_dir, WarehouseTable::Sources)? {
+        let source_id = string_column(&batch, 1)?;
+        let text_id = string_column(&batch, 2)?;
+        for row in 0..batch.num_rows() {
+            source_text_ids.insert(
+                source_id.value(row).to_owned(),
+                text_id.value(row).to_owned(),
+            );
+        }
+    }
+    Ok(source_text_ids)
 }
 
 fn read_warehouse_region_analyzers(run_dir: &Path) -> Result<Vec<WarehouseRegionAnalyzerFact>> {
@@ -2915,6 +3173,195 @@ mod tests {
         assert_eq!(rows[0].regions, 1);
         assert_eq!(rows[0].regions_with_segmentation_disagreement, 1);
         assert_eq!(rows[0].lexical_regions, 1);
+        assert_eq!(rows[0].unanimous_boundary_count, 0);
+        assert_eq!(rows[0].variable_boundary_count, 1);
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn summarize_warehouse_pairwise_derives_pair_facts_from_nway_tables() {
+        use crate::warehouse::schema::{
+            AnalysisRow, MorphemeRow, NwayFeatureDiffRow, NwayRegionAnalyzerRow, NwayRegionRow,
+            RunRow, SourceRow, WarehousePaths,
+        };
+        use crate::warehouse::writer::WarehouseWriter;
+
+        let root = temp_dir("warehouse-pairwise-summary");
+        let paths = WarehousePaths::new(&root, "run-a");
+        let mut writer = WarehouseWriter::create(paths.clone()).unwrap();
+        writer
+            .append_runs(&[RunRow {
+                schema_version: crate::warehouse::schema::SCHEMA_VERSION,
+                run_id: "run-a".to_owned(),
+                created_at_utc: "2026-05-01T00:00:00Z".to_owned(),
+                input_mode: "aat_dir".to_owned(),
+                input_path: "scratch/aats".to_owned(),
+                source_count: 1,
+                analyzer_count: 2,
+                error_count: 0,
+            }])
+            .unwrap();
+        writer
+            .append_sources(&[SourceRow {
+                run_id: "run-a".to_owned(),
+                source_id: "source-a".to_owned(),
+                text_id: "work-a".to_owned(),
+                aat_path: "scratch/source-a.json".to_owned(),
+                source_bytes: 6,
+                source_chars: 2,
+            }])
+            .unwrap();
+        writer
+            .append_analyses(&[
+                AnalysisRow {
+                    run_id: "run-a".to_owned(),
+                    source_id: "source-a".to_owned(),
+                    text_id: "work-a".to_owned(),
+                    analyzer_id: "vibrato".to_owned(),
+                    morpheme_count: 1,
+                },
+                AnalysisRow {
+                    run_id: "run-a".to_owned(),
+                    source_id: "source-a".to_owned(),
+                    text_id: "work-a".to_owned(),
+                    analyzer_id: "sudachi-c".to_owned(),
+                    morpheme_count: 2,
+                },
+            ])
+            .unwrap();
+        writer
+            .append_morphemes(&[
+                MorphemeRow {
+                    run_id: "run-a".to_owned(),
+                    source_id: "source-a".to_owned(),
+                    text_id: "work-a".to_owned(),
+                    analyzer_id: "vibrato".to_owned(),
+                    morpheme_index: 0,
+                    byte_start: 0,
+                    byte_end: 6,
+                    char_start: 0,
+                    char_end: 2,
+                    surface: "今日".to_owned(),
+                },
+                MorphemeRow {
+                    run_id: "run-a".to_owned(),
+                    source_id: "source-a".to_owned(),
+                    text_id: "work-a".to_owned(),
+                    analyzer_id: "sudachi-c".to_owned(),
+                    morpheme_index: 0,
+                    byte_start: 0,
+                    byte_end: 3,
+                    char_start: 0,
+                    char_end: 1,
+                    surface: "今".to_owned(),
+                },
+                MorphemeRow {
+                    run_id: "run-a".to_owned(),
+                    source_id: "source-a".to_owned(),
+                    text_id: "work-a".to_owned(),
+                    analyzer_id: "sudachi-c".to_owned(),
+                    morpheme_index: 1,
+                    byte_start: 3,
+                    byte_end: 6,
+                    char_start: 1,
+                    char_end: 2,
+                    surface: "日".to_owned(),
+                },
+            ])
+            .unwrap();
+        writer
+            .append_nway_regions(&[NwayRegionRow {
+                run_id: "run-a".to_owned(),
+                source_id: "source-a".to_owned(),
+                text_id: "work-a".to_owned(),
+                region_index: 0,
+                byte_start: 0,
+                byte_end: 6,
+                char_start: 0,
+                char_end: 2,
+                is_nonempty_whitespace: false,
+                is_agreement: false,
+                has_coverage_mismatch: false,
+                has_segmentation_disagreement: true,
+                has_feature_disagreement: true,
+            }])
+            .unwrap();
+        writer
+            .append_nway_region_analyzers(&[
+                NwayRegionAnalyzerRow {
+                    run_id: "run-a".to_owned(),
+                    source_id: "source-a".to_owned(),
+                    text_id: "work-a".to_owned(),
+                    region_index: 0,
+                    analyzer_id: "vibrato".to_owned(),
+                    covers_exactly: true,
+                    morpheme_start: 0,
+                    morpheme_end: 1,
+                    surfaces: vec!["今日".to_owned()],
+                },
+                NwayRegionAnalyzerRow {
+                    run_id: "run-a".to_owned(),
+                    source_id: "source-a".to_owned(),
+                    text_id: "work-a".to_owned(),
+                    region_index: 0,
+                    analyzer_id: "sudachi-c".to_owned(),
+                    covers_exactly: true,
+                    morpheme_start: 0,
+                    morpheme_end: 2,
+                    surfaces: vec!["今".to_owned(), "日".to_owned()],
+                },
+            ])
+            .unwrap();
+        writer
+            .append_nway_feature_diffs(&[
+                NwayFeatureDiffRow {
+                    run_id: "run-a".to_owned(),
+                    source_id: "source-a".to_owned(),
+                    text_id: "work-a".to_owned(),
+                    region_index: 0,
+                    feature_key: "pos1".to_owned(),
+                    scope_type: "whole_region".to_owned(),
+                    scope_position: None,
+                    scope_surface: None,
+                    feature_value: Some("名詞".to_owned()),
+                    analyzer_id: "vibrato".to_owned(),
+                },
+                NwayFeatureDiffRow {
+                    run_id: "run-a".to_owned(),
+                    source_id: "source-a".to_owned(),
+                    text_id: "work-a".to_owned(),
+                    region_index: 0,
+                    feature_key: "pos1".to_owned(),
+                    scope_type: "whole_region".to_owned(),
+                    scope_position: None,
+                    scope_surface: None,
+                    feature_value: Some("空白".to_owned()),
+                    analyzer_id: "sudachi-c".to_owned(),
+                },
+            ])
+            .unwrap();
+        writer.finalize().unwrap();
+
+        let rows = summarize_warehouse_pairwise(
+            &paths.final_dir,
+            WarehousePairwiseSummaryOptions {
+                sort_by: WarehousePairwiseSort::SegmentationRegions,
+                exclusions: SummaryExclusions::default(),
+                limit: 10,
+            },
+        )
+        .unwrap();
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].source_id, "source-a");
+        assert_eq!(rows[0].text_id, "work-a");
+        assert_eq!(rows[0].from_analyzer, "sudachi-c");
+        assert_eq!(rows[0].to_analyzer, "vibrato");
+        assert_eq!(rows[0].regions, 1);
+        assert_eq!(rows[0].segmentation_regions, 1);
+        assert_eq!(rows[0].feature_regions, 1);
+        assert_eq!(rows[0].coverage_regions, 0);
         assert_eq!(rows[0].unanimous_boundary_count, 0);
         assert_eq!(rows[0].variable_boundary_count, 1);
 

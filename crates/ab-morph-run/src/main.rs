@@ -168,6 +168,20 @@ enum Command {
         #[arg(long)]
         json: bool,
     },
+    SummarizeWarehousePairwise {
+        #[arg(long)]
+        run_dir: PathBuf,
+        #[arg(long, value_enum, default_value_t = WarehousePairwiseSortArg::SegmentationRegions)]
+        sort_by: WarehousePairwiseSortArg,
+        #[arg(long)]
+        exclude_source_id: Vec<String>,
+        #[arg(long)]
+        exclude_text_id: Vec<String>,
+        #[arg(long, default_value_t = 20)]
+        limit: usize,
+        #[arg(long)]
+        json: bool,
+    },
     SummarizeNwayPatterns {
         #[arg(long)]
         nway: Option<PathBuf>,
@@ -329,6 +343,14 @@ enum WarehouseErrorGroupByArg {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
+enum WarehousePairwiseSortArg {
+    SegmentationRegions,
+    FeatureRegions,
+    CoverageRegions,
+    VariableBoundaryCount,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
 enum ScriptCategoryArg {
     Whitespace,
     Japanese,
@@ -459,6 +481,19 @@ impl WarehouseErrorGroupByArg {
             Self::Stage => ab_morph_run::WarehouseErrorGroupBy::Stage,
             Self::Analyzer => ab_morph_run::WarehouseErrorGroupBy::Analyzer,
             Self::SourceId => ab_morph_run::WarehouseErrorGroupBy::SourceId,
+        }
+    }
+}
+
+impl WarehousePairwiseSortArg {
+    fn into_library(self) -> ab_morph_run::WarehousePairwiseSort {
+        match self {
+            Self::SegmentationRegions => ab_morph_run::WarehousePairwiseSort::SegmentationRegions,
+            Self::FeatureRegions => ab_morph_run::WarehousePairwiseSort::FeatureRegions,
+            Self::CoverageRegions => ab_morph_run::WarehousePairwiseSort::CoverageRegions,
+            Self::VariableBoundaryCount => {
+                ab_morph_run::WarehousePairwiseSort::VariableBoundaryCount
+            }
         }
     }
 }
@@ -724,6 +759,30 @@ fn main() -> Result<()> {
                 println!();
             } else {
                 print_nway_summary_table(&rows);
+            }
+            Ok(())
+        }
+        Command::SummarizeWarehousePairwise {
+            run_dir,
+            sort_by,
+            exclude_source_id,
+            exclude_text_id,
+            limit,
+            json,
+        } => {
+            let rows = ab_morph_run::summarize_warehouse_pairwise(
+                &run_dir,
+                ab_morph_run::WarehousePairwiseSummaryOptions {
+                    sort_by: sort_by.into_library(),
+                    exclusions: summary_exclusions(exclude_source_id, exclude_text_id),
+                    limit,
+                },
+            )?;
+            if json {
+                serde_json::to_writer_pretty(std::io::stdout(), &rows)?;
+                println!();
+            } else {
+                print_warehouse_pairwise_table(&rows);
             }
             Ok(())
         }
@@ -1208,6 +1267,27 @@ fn print_warehouse_error_table(rows: &[ab_morph_run::WarehouseErrorSummaryRow]) 
             row.error_codes.join(","),
             sample_values(&row.source_ids, 5),
             row.sample_messages.join(" | "),
+        );
+    }
+}
+
+fn print_warehouse_pairwise_table(rows: &[ab_morph_run::WarehousePairwiseSummaryRow]) {
+    println!(
+        "source_id\ttext_id\tfrom_analyzer\tto_analyzer\tregions\tsegmentation_regions\tfeature_regions\tcoverage_regions\tunanimous_boundary_count\tvariable_boundary_count"
+    );
+    for row in rows {
+        println!(
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            row.source_id,
+            row.text_id,
+            row.from_analyzer,
+            row.to_analyzer,
+            row.regions,
+            row.segmentation_regions,
+            row.feature_regions,
+            row.coverage_regions,
+            row.unanimous_boundary_count,
+            row.variable_boundary_count,
         );
     }
 }
@@ -1995,6 +2075,44 @@ mod tests {
             PathBuf::from("scratch/morph-warehouse/runs/full-2026-05-01")
         );
         assert_eq!(group_by, WarehouseErrorGroupByArg::Analyzer);
+        assert_eq!(exclude_source_id, vec!["source-a"]);
+        assert_eq!(limit, 15);
+        assert!(json);
+    }
+
+    #[test]
+    fn parses_summarize_warehouse_pairwise_command() {
+        let args = Args::parse_from([
+            "ab-morph-run",
+            "summarize-warehouse-pairwise",
+            "--run-dir",
+            "scratch/morph-warehouse/runs/full-2026-05-01",
+            "--sort-by",
+            "feature-regions",
+            "--exclude-source-id",
+            "source-a",
+            "--limit",
+            "15",
+            "--json",
+        ]);
+
+        let Command::SummarizeWarehousePairwise {
+            run_dir,
+            sort_by,
+            exclude_source_id,
+            limit,
+            json,
+            ..
+        } = args.command
+        else {
+            panic!("expected summarize-warehouse-pairwise");
+        };
+
+        assert_eq!(
+            run_dir,
+            PathBuf::from("scratch/morph-warehouse/runs/full-2026-05-01")
+        );
+        assert_eq!(sort_by, WarehousePairwiseSortArg::FeatureRegions);
         assert_eq!(exclude_source_id, vec!["source-a"]);
         assert_eq!(limit, 15);
         assert!(json);

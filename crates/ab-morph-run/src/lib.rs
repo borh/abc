@@ -180,6 +180,7 @@ pub fn run_analyze_aat_warehouse(
     let analyzers = load_analyzers(&specs)?;
     let analyzer_rows = warehouse_analyzer_rows(run_id, &specs, &analyzers)?;
     if jobs == 1 {
+        let input_count = inputs.len();
         run_analyze_aat_serial(
             inputs,
             &analyzers,
@@ -200,6 +201,10 @@ pub fn run_analyze_aat_warehouse(
                     input_mode,
                     input_path,
                     analyzer_rows,
+                }),
+                progress: Some(SerialProgress {
+                    label: format!("warehouse:{run_id}"),
+                    total: input_count,
                 }),
             },
         )?;
@@ -338,6 +343,7 @@ fn run_analyze_aat_inputs(
                 max_nway_examples_per_text,
                 collect_string_stats,
                 warehouse: None,
+                progress: None,
             },
         )?
     };
@@ -379,6 +385,13 @@ struct SerialRunOptions<'a> {
     max_nway_examples_per_text: usize,
     collect_string_stats: bool,
     warehouse: Option<WarehouseRunOptions>,
+    progress: Option<SerialProgress>,
+}
+
+#[derive(Clone)]
+struct SerialProgress {
+    label: String,
+    total: usize,
 }
 
 struct WarehouseRunOptions {
@@ -458,10 +471,20 @@ fn run_analyze_aat_serial(
     };
     let mut warehouse_error_count = 0u64;
     let mut string_stats = StringStatsReport::default();
+    let progress = options.progress.clone();
 
-    for input in inputs {
+    for (input_index, input) in inputs.into_iter().enumerate() {
         let input_path = input.display().to_string();
         let source_id = compact::source_id_from_aat_path(&input);
+        if let Some(progress) = &progress {
+            eprintln!(
+                "ab-morph-run: {} analyzing {}/{} source_id={}",
+                progress.label,
+                input_index + 1,
+                progress.total,
+                source_id
+            );
+        }
         let aat = match read_aat_value(&input) {
             Ok(value) => value,
             Err(error) => {
@@ -780,6 +803,7 @@ fn run_analyze_aat_warehouse_parallel(
             let input_mode = options.input_mode;
             let input_path = options.input_path.clone();
             let analyzer_rows = options.analyzer_rows.clone();
+            let partition_len = partition.len();
             handles.push(scope.spawn(move || -> Result<WarehouseShardOutput> {
                 let paths = WarehousePaths::new(
                     shard_warehouse_dir.join(format!("shard-{job_index}")),
@@ -805,6 +829,10 @@ fn run_analyze_aat_warehouse_parallel(
                             input_mode,
                             input_path,
                             analyzer_rows,
+                        }),
+                        progress: Some(SerialProgress {
+                            label: format!("warehouse-worker-{job_index}"),
+                            total: partition_len,
                         }),
                     },
                 )?;
@@ -836,7 +864,16 @@ fn run_analyze_aat_warehouse_parallel(
                 .join(&options.run_id)
         })
         .collect::<Vec<_>>();
+    eprintln!(
+        "ab-morph-run: warehouse merging {} shard(s) into run_id={}",
+        shard_run_dirs.len(),
+        options.run_id
+    );
     merge_warehouse_shard_runs(&options, &shard_run_dirs)?;
+    eprintln!(
+        "ab-morph-run: warehouse merge complete run_id={}",
+        options.run_id
+    );
     fs::remove_dir_all(&temp_root)
         .with_context(|| format!("failed to remove {}", temp_root.display()))?;
     Ok(())
@@ -969,6 +1006,7 @@ fn run_analyze_aat_parallel(
                         max_nway_examples_per_text,
                         collect_string_stats,
                         warehouse: None,
+                        progress: None,
                     },
                 )?;
                 Ok(ShardOutput {

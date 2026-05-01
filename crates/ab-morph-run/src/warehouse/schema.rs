@@ -31,6 +31,17 @@ impl WarehouseTable {
         Self::Errors,
     ];
 
+    pub(crate) const MERGED_DATA: &'static [Self] = &[
+        Self::Sources,
+        Self::Analyses,
+        Self::Morphemes,
+        Self::MorphemeFeatures,
+        Self::NwayRegions,
+        Self::NwayRegionAnalyzers,
+        Self::NwayFeatureDiffs,
+        Self::Errors,
+    ];
+
     pub(crate) fn file_name(self) -> &'static str {
         match self {
             Self::Runs => "runs.parquet",

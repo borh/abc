@@ -22,8 +22,10 @@ use clap::ValueEnum;
 use output::{open_output_writer, read_jsonl_or_zst_to_string};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use warehouse::schema::{ErrorRow as WarehouseErrorRow, RunAnalyzerRow, RunRow, WarehousePaths};
-use warehouse::writer::WarehouseWriter;
+use warehouse::schema::{
+    ErrorRow as WarehouseErrorRow, RunAnalyzerRow, RunRow, WarehousePaths, WarehouseTable,
+};
+use warehouse::writer::{WarehouseWriter, append_parquet_table_file, parquet_table_row_count};
 
 pub use nway::{NwayFeatureScopeRow, NwayFeatureValueGroupRow, NwaySegmentationGroupRow};
 pub use script::ScriptCategory;
@@ -159,8 +161,8 @@ pub fn run_analyze_aat_warehouse(
     run_id: &str,
     jobs: usize,
 ) -> Result<()> {
-    if jobs != 1 {
-        bail!("warehouse mode requires --jobs 1 in phase 1");
+    if jobs == 0 {
+        bail!("--jobs must be greater than zero");
     }
     if aat.is_none() == aat_dir.is_none() {
         bail!("provide exactly one of --aat or --aat-dir");
@@ -177,29 +179,44 @@ pub fn run_analyze_aat_warehouse(
     let specs = parse_analyzer_specs(analyzer_ids)?;
     let analyzers = load_analyzers(&specs)?;
     let analyzer_rows = warehouse_analyzer_rows(run_id, &specs, &analyzers)?;
-    run_analyze_aat_serial(
-        inputs,
-        &analyzers,
-        SerialRunOptions {
-            analyses_output: None,
-            comparisons_output: None,
-            errors_output: None,
-            resume: false,
-            output_profile: OutputProfile::Compact,
-            examples_output: None,
-            max_examples_per_comparison: 0,
-            nway_output: None,
-            nway_pattern_counts_output: None,
-            max_nway_examples_per_text: 0,
-            collect_string_stats: false,
-            warehouse: Some(WarehouseRunOptions {
-                paths: WarehousePaths::new(warehouse_dir, run_id),
+    if jobs == 1 {
+        run_analyze_aat_serial(
+            inputs,
+            &analyzers,
+            SerialRunOptions {
+                analyses_output: None,
+                comparisons_output: None,
+                errors_output: None,
+                resume: false,
+                output_profile: OutputProfile::Compact,
+                examples_output: None,
+                max_examples_per_comparison: 0,
+                nway_output: None,
+                nway_pattern_counts_output: None,
+                max_nway_examples_per_text: 0,
+                collect_string_stats: false,
+                warehouse: Some(WarehouseRunOptions {
+                    paths: WarehousePaths::new(warehouse_dir, run_id),
+                    input_mode,
+                    input_path,
+                    analyzer_rows,
+                }),
+            },
+        )?;
+    } else {
+        run_analyze_aat_warehouse_parallel(
+            inputs,
+            analyzers,
+            WarehouseParallelOptions {
+                warehouse_dir: warehouse_dir.to_path_buf(),
+                run_id: run_id.to_owned(),
+                jobs,
                 input_mode,
                 input_path,
                 analyzer_rows,
-            }),
-        },
-    )?;
+            },
+        )?;
+    }
     Ok(())
 }
 
@@ -366,6 +383,15 @@ struct SerialRunOptions<'a> {
 
 struct WarehouseRunOptions {
     paths: WarehousePaths,
+    input_mode: &'static str,
+    input_path: String,
+    analyzer_rows: Vec<RunAnalyzerRow>,
+}
+
+struct WarehouseParallelOptions {
+    warehouse_dir: PathBuf,
+    run_id: String,
+    jobs: usize,
     input_mode: &'static str,
     input_path: String,
     analyzer_rows: Vec<RunAnalyzerRow>,
@@ -722,6 +748,135 @@ fn run_analyze_aat_serial(
         writer.finalize()?;
     }
     Ok(string_stats)
+}
+
+fn run_analyze_aat_warehouse_parallel(
+    inputs: Vec<PathBuf>,
+    analyzers: Vec<Arc<LoadedAnalyzer>>,
+    options: WarehouseParallelOptions,
+) -> Result<()> {
+    let partitions = partition_inputs(inputs, options.jobs);
+    let temp_root = std::env::temp_dir().join(format!(
+        "ab-morph-run-warehouse-{}-{}",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_nanos()
+    ));
+    let shard_warehouse_dir = temp_root.join("warehouse");
+    fs::create_dir_all(&shard_warehouse_dir)
+        .with_context(|| format!("failed to create {}", shard_warehouse_dir.display()))?;
+
+    let result = std::thread::scope(|scope| {
+        let mut handles = Vec::new();
+        for (job_index, partition) in partitions.into_iter().enumerate() {
+            if partition.is_empty() {
+                continue;
+            }
+            let analyzers = analyzers.clone();
+            let shard_warehouse_dir = shard_warehouse_dir.clone();
+            let shard_run_id = options.run_id.clone();
+            let input_mode = options.input_mode;
+            let input_path = options.input_path.clone();
+            let analyzer_rows = options.analyzer_rows.clone();
+            handles.push(scope.spawn(move || -> Result<WarehouseShardOutput> {
+                let paths = WarehousePaths::new(
+                    shard_warehouse_dir.join(format!("shard-{job_index}")),
+                    shard_run_id,
+                );
+                run_analyze_aat_serial(
+                    partition,
+                    &analyzers,
+                    SerialRunOptions {
+                        analyses_output: None,
+                        comparisons_output: None,
+                        errors_output: None,
+                        resume: false,
+                        output_profile: OutputProfile::Compact,
+                        examples_output: None,
+                        max_examples_per_comparison: 0,
+                        nway_output: None,
+                        nway_pattern_counts_output: None,
+                        max_nway_examples_per_text: 0,
+                        collect_string_stats: false,
+                        warehouse: Some(WarehouseRunOptions {
+                            paths,
+                            input_mode,
+                            input_path,
+                            analyzer_rows,
+                        }),
+                    },
+                )?;
+                Ok(WarehouseShardOutput { job_index })
+            }));
+        }
+
+        let mut outputs = Vec::new();
+        for handle in handles {
+            outputs.push(handle.join().expect("warehouse worker panicked")?);
+        }
+        Ok::<_, anyhow::Error>(outputs)
+    });
+
+    let mut outputs = match result {
+        Ok(outputs) => outputs,
+        Err(error) => {
+            let _ = fs::remove_dir_all(&temp_root);
+            return Err(error);
+        }
+    };
+    outputs.sort_by_key(|output| output.job_index);
+    let shard_run_dirs = outputs
+        .iter()
+        .map(|output| {
+            shard_warehouse_dir
+                .join(format!("shard-{}", output.job_index))
+                .join("runs")
+                .join(&options.run_id)
+        })
+        .collect::<Vec<_>>();
+    merge_warehouse_shard_runs(&options, &shard_run_dirs)?;
+    fs::remove_dir_all(&temp_root)
+        .with_context(|| format!("failed to remove {}", temp_root.display()))?;
+    Ok(())
+}
+
+struct WarehouseShardOutput {
+    job_index: usize,
+}
+
+fn merge_warehouse_shard_runs(
+    options: &WarehouseParallelOptions,
+    shard_run_dirs: &[PathBuf],
+) -> Result<()> {
+    let paths = WarehousePaths::new(&options.warehouse_dir, &options.run_id);
+    let error_count = shard_run_dirs
+        .iter()
+        .map(|run_dir| parquet_table_row_count(run_dir, WarehouseTable::Errors))
+        .try_fold(0u64, |total, count| count.map(|count| total + count))?;
+    let source_count = shard_run_dirs
+        .iter()
+        .map(|run_dir| parquet_table_row_count(run_dir, WarehouseTable::Sources))
+        .try_fold(0u64, |total, count| count.map(|count| total + count))?;
+    let mut writer = WarehouseWriter::create(paths)?;
+    writer.append_run_analyzers(&options.analyzer_rows)?;
+    for table in WarehouseTable::MERGED_DATA {
+        for run_dir in shard_run_dirs {
+            append_parquet_table_file(&mut writer, *table, &run_dir.join(table.file_name()))?;
+        }
+    }
+    writer.append_runs(&[RunRow {
+        schema_version: warehouse::schema::SCHEMA_VERSION,
+        run_id: options.run_id.clone(),
+        created_at_utc: chrono::Utc::now().to_rfc3339(),
+        input_mode: options.input_mode.to_owned(),
+        input_path: options.input_path.clone(),
+        source_count,
+        analyzer_count: options.analyzer_rows.len() as u64,
+        error_count,
+    }])?;
+    writer.finalize()
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -1981,6 +2136,50 @@ mod tests {
         if staging.exists() {
             assert!(fs::read_dir(&staging).unwrap().next().is_none());
         }
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn warehouse_mode_accepts_parallel_jobs_and_publishes_one_run() {
+        let dir = temp_dir("warehouse-parallel-mode");
+        let aat_dir = dir.join("aats");
+        let warehouse_dir = dir.join("warehouse");
+        fs::create_dir_all(&aat_dir).unwrap();
+        fs::write(
+            aat_dir.join("source-a.json"),
+            tiny_aat("work-a").replace("吾輩は猫である。", "今日"),
+        )
+        .unwrap();
+        fs::write(
+            aat_dir.join("source-b.json"),
+            tiny_aat("work-b").replace("吾輩は猫である。", "今日"),
+        )
+        .unwrap();
+
+        run_analyze_aat_warehouse(
+            None,
+            Some(&aat_dir),
+            &["test:single".to_owned(), "test:split".to_owned()],
+            &warehouse_dir,
+            "run-a",
+            2,
+        )
+        .unwrap();
+
+        let run_dir = warehouse_dir.join("runs").join("run-a");
+        assert!(run_dir.join("runs.parquet").is_file());
+        assert!(run_dir.join("sources.parquet").is_file());
+        assert!(run_dir.join("nway_regions.parquet").is_file());
+        assert_eq!(
+            fs::read_dir(warehouse_dir.join("runs"))
+                .unwrap()
+                .filter_map(Result::ok)
+                .filter(|entry| entry.path().is_dir())
+                .count(),
+            1
+        );
+        assert!(!dir.join("analyses.jsonl").exists());
 
         let _ = fs::remove_dir_all(dir);
     }

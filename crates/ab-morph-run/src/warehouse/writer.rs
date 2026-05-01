@@ -1,5 +1,4 @@
 use std::fs::{self, File};
-#[cfg(test)]
 use std::path::Path;
 use std::sync::Arc;
 
@@ -8,6 +7,7 @@ use arrow_array::builder::{ListBuilder, StringBuilder};
 use arrow_array::{ArrayRef, BooleanArray, RecordBatch, StringArray, UInt32Array, UInt64Array};
 use arrow_schema::{DataType, Field, Schema};
 use parquet::arrow::ArrowWriter;
+use parquet::arrow::arrow_reader::ParquetRecordBatchReaderBuilder;
 use parquet::basic::{Compression, ZstdLevel};
 use parquet::file::properties::WriterProperties;
 
@@ -315,6 +315,66 @@ impl WarehouseWriter {
         )
     }
 
+    pub(crate) fn append_record_batch(
+        &mut self,
+        table: WarehouseTable,
+        batch: RecordBatch,
+    ) -> Result<()> {
+        match table {
+            WarehouseTable::Runs => self
+                .runs
+                .as_mut()
+                .expect("runs writer open")
+                .write(&batch)?,
+            WarehouseTable::RunAnalyzers => self
+                .run_analyzers
+                .as_mut()
+                .expect("run_analyzers writer open")
+                .write(&batch)?,
+            WarehouseTable::Sources => self
+                .sources
+                .as_mut()
+                .expect("sources writer open")
+                .write(&batch)?,
+            WarehouseTable::Analyses => self
+                .analyses
+                .as_mut()
+                .expect("analyses writer open")
+                .write(&batch)?,
+            WarehouseTable::Morphemes => self
+                .morphemes
+                .as_mut()
+                .expect("morphemes writer open")
+                .write(&batch)?,
+            WarehouseTable::MorphemeFeatures => self
+                .morpheme_features
+                .as_mut()
+                .expect("morpheme_features writer open")
+                .write(&batch)?,
+            WarehouseTable::NwayRegions => self
+                .nway_regions
+                .as_mut()
+                .expect("nway_regions writer open")
+                .write(&batch)?,
+            WarehouseTable::NwayRegionAnalyzers => self
+                .nway_region_analyzers
+                .as_mut()
+                .expect("nway_region_analyzers writer open")
+                .write(&batch)?,
+            WarehouseTable::NwayFeatureDiffs => self
+                .nway_feature_diffs
+                .as_mut()
+                .expect("nway_feature_diffs writer open")
+                .write(&batch)?,
+            WarehouseTable::Errors => self
+                .errors
+                .as_mut()
+                .expect("errors writer open")
+                .write(&batch)?,
+        }
+        Ok(())
+    }
+
     pub(crate) fn finalize(mut self) -> Result<()> {
         close_writer(self.runs.take())?;
         close_writer(self.run_analyzers.take())?;
@@ -329,6 +389,33 @@ impl WarehouseWriter {
         crate::warehouse::sql::write_run_views_sql(&self.paths.staging_dir, &self.paths.final_dir)?;
         finalize_staging_run(&self.paths)
     }
+}
+
+pub(crate) fn append_parquet_table_file(
+    writer: &mut WarehouseWriter,
+    table: WarehouseTable,
+    path: &Path,
+) -> Result<()> {
+    let file = File::open(path).with_context(|| format!("failed to open {}", path.display()))?;
+    let reader = ParquetRecordBatchReaderBuilder::try_new(file)
+        .with_context(|| format!("failed to read parquet metadata from {}", path.display()))?
+        .build()
+        .with_context(|| format!("failed to build parquet reader for {}", path.display()))?;
+    for batch in reader {
+        writer.append_record_batch(
+            table,
+            batch.with_context(|| format!("failed to read {}", path.display()))?,
+        )?;
+    }
+    Ok(())
+}
+
+pub(crate) fn parquet_table_row_count(run_dir: &Path, table: WarehouseTable) -> Result<u64> {
+    let path = run_dir.join(table.file_name());
+    let file = File::open(&path).with_context(|| format!("failed to open {}", path.display()))?;
+    let builder = ParquetRecordBatchReaderBuilder::try_new(file)
+        .with_context(|| format!("failed to read parquet metadata from {}", path.display()))?;
+    Ok(builder.metadata().file_metadata().num_rows() as u64)
 }
 
 #[cfg(test)]

@@ -1091,7 +1091,7 @@ fn validate_warehouse_cli(
     warehouse_dir: Option<&PathBuf>,
     run_id: Option<&str>,
     resume: bool,
-    jobs: usize,
+    _jobs: usize,
 ) -> Result<()> {
     if warehouse_dir.is_none() {
         return Ok(());
@@ -1101,9 +1101,6 @@ fn validate_warehouse_cli(
     }
     if resume {
         bail!("warehouse mode does not support --resume in phase 1");
-    }
-    if jobs != 1 {
-        bail!("warehouse mode requires --jobs 1 in phase 1");
     }
     Ok(())
 }
@@ -1876,7 +1873,7 @@ mod tests {
     }
 
     #[test]
-    fn warehouse_validation_rejects_resume_and_parallel_jobs() {
+    fn warehouse_validation_rejects_resume_but_allows_parallel_jobs() {
         let err = validate_warehouse_cli(
             Some(&PathBuf::from("scratch/warehouse")),
             Some("run-a"),
@@ -1887,15 +1884,13 @@ mod tests {
         .to_string();
         assert!(err.contains("does not support --resume"));
 
-        let err = validate_warehouse_cli(
+        validate_warehouse_cli(
             Some(&PathBuf::from("scratch/warehouse")),
             Some("run-a"),
             false,
             2,
         )
-        .unwrap_err()
-        .to_string();
-        assert!(err.contains("requires --jobs 1"));
+        .unwrap();
     }
 
     #[test]

@@ -43,6 +43,18 @@ AB_SUDACHI_DICT="$(nix path-info .#sudachi-dictionary-full)/share/sudachi/system
 
 Full-detail JSONL output is available for targeted debugging, but it is too large as a default corpus artifact.
 
+Warehouse replacements for legacy JSONL summary commands:
+
+| Legacy JSONL command | Warehouse replacement |
+|---|---|
+| `summarize-compact` | `summarize-warehouse-nway` and `summarize-warehouse-pairwise` |
+| `summarize-examples` | `summarize-warehouse-regions` |
+| `summarize-differences` | `summarize-warehouse-patterns` plus `summarize-warehouse-pattern-examples` |
+| `summarize-nway` | `summarize-warehouse-nway` |
+| `summarize-nway-patterns` | `summarize-warehouse-patterns` |
+
+Keep JSONL commands only for compatibility with old artifacts and targeted debugging exports. New comprehensive corpus analysis should use warehouse mode plus `summarize-warehouse-triage`.
+
 ## Warehouse mode: canonical comprehensive artifact
 
 Warehouse mode writes sealed Parquet fact tables. It is the preferred format for complete corpus analysis. It does not write JSONL outputs.

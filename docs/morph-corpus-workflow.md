@@ -264,18 +264,24 @@ AB_SUDACHI_DICT="$(nix path-info .#sudachi-dictionary-full)/share/sudachi/system
     --analyzer sudachi-a \
     --analyzer sudachi-c \
     --output-profile compact \
-    --analyses-output scratch/morph-full-corpus-nway/analyses.jsonl.zst \
-    --comparisons-output scratch/morph-full-corpus-nway/comparisons.jsonl.zst \
-    --examples-output scratch/morph-full-corpus-nway/examples.jsonl.zst \
-    --nway-output scratch/morph-full-corpus-nway/nway.jsonl.zst \
-    --nway-pattern-counts-output scratch/morph-full-corpus-nway/nway-pattern-counts.jsonl.zst \
-    --errors-output scratch/morph-full-corpus-nway/errors.jsonl.zst \
-    --manifest-output scratch/morph-full-corpus-nway/manifest.json \
+    --output-dir scratch/morph-full-corpus-nway \
+    --nway \
+    --nway-pattern-counts \
     --jobs 8 \
     --progress-interval-seconds 30
 ```
 
-N-way output is compact-only in this phase. Keep exact pattern counts in `--nway-pattern-counts-output`; `nway.jsonl.zst` stays small and contains source-level summary rows plus bounded examples. Resume requires the analysis, N-way, and pattern-count outputs to agree on completed `source_id` values; incomplete sources are rerun.
+`--output-dir` writes standard artifact names:
+
+- `analyses.jsonl.zst`
+- `comparisons.jsonl.zst`
+- `examples.jsonl.zst`
+- `errors.jsonl.zst`
+- `manifest.json`
+- `nway.jsonl.zst` when `--nway` is set
+- `nway-pattern-counts.jsonl.zst` when `--nway-pattern-counts` is set
+
+The older `--*-output` flags remain available as advanced overrides. N-way output is compact-only in this phase. Keep exact pattern counts in `nway-pattern-counts.jsonl.zst`; `nway.jsonl.zst` stays small and contains source-level summary rows plus bounded examples. Resume requires the analysis, N-way, and pattern-count outputs to agree on completed `source_id` values; incomplete sources are rerun.
 
 Worst N-way sources by segmentation disagreement:
 

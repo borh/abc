@@ -18,13 +18,9 @@ AB_SUDACHI_DICT="$(nix path-info .#sudachi-dictionary-full)/share/sudachi/system
     --analyzer sudachi-a \
     --analyzer sudachi-c \
     --output-profile compact \
-    --analyses-output scratch/morph-pattern-counts-smoke/analyses.jsonl.zst \
-    --comparisons-output scratch/morph-pattern-counts-smoke/comparisons.jsonl.zst \
-    --examples-output scratch/morph-pattern-counts-smoke/examples.jsonl.zst \
-    --nway-output scratch/morph-pattern-counts-smoke/nway.jsonl.zst \
-    --nway-pattern-counts-output scratch/morph-pattern-counts-smoke/nway-pattern-counts.jsonl.zst \
-    --errors-output scratch/morph-pattern-counts-smoke/errors.jsonl.zst \
-    --manifest-output scratch/morph-pattern-counts-smoke/manifest.json \
+    --output-dir scratch/morph-pattern-counts-smoke \
+    --nway \
+    --nway-pattern-counts \
     --jobs 1
 ```
 
@@ -62,9 +58,10 @@ Top smoke rows:
 
 ## Operational note
 
-The previous exact full-corpus run produced a `5.6G` `nway.jsonl.zst` because exact pattern counts were embedded in each source row. New full runs should use both:
+The previous exact full-corpus run produced a `5.6G` `nway.jsonl.zst` because exact pattern counts were embedded in each source row. New full runs should use:
 
-- `--nway-output scratch/.../nway.jsonl.zst`
-- `--nway-pattern-counts-output scratch/.../nway-pattern-counts.jsonl.zst`
+- `--output-dir scratch/...`
+- `--nway`
+- `--nway-pattern-counts`
 
 Then use `summarize-nway` on `nway.jsonl.zst` and exact `summarize-nway-patterns` on `nway-pattern-counts.jsonl.zst`.

@@ -2,7 +2,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 
-use anyhow::Result;
+use anyhow::{Result, bail};
 use clap::{Parser, Subcommand};
 
 #[derive(Debug, Parser)]
@@ -22,7 +22,9 @@ enum Command {
         #[arg(long, required = true)]
         analyzer: Vec<String>,
         #[arg(long)]
-        analyses_output: PathBuf,
+        output_dir: Option<PathBuf>,
+        #[arg(long)]
+        analyses_output: Option<PathBuf>,
         #[arg(long)]
         comparisons_output: Option<PathBuf>,
         #[arg(long)]
@@ -35,6 +37,10 @@ enum Command {
         nway_output: Option<PathBuf>,
         #[arg(long)]
         nway_pattern_counts_output: Option<PathBuf>,
+        #[arg(long)]
+        nway: bool,
+        #[arg(long)]
+        nway_pattern_counts: bool,
         #[arg(long)]
         string_stats_output: Option<PathBuf>,
         #[arg(long)]
@@ -370,6 +376,7 @@ fn main() -> Result<()> {
             aat,
             aat_dir,
             analyzer,
+            output_dir,
             analyses_output,
             comparisons_output,
             examples_output,
@@ -377,6 +384,8 @@ fn main() -> Result<()> {
             manifest_output,
             nway_output,
             nway_pattern_counts_output,
+            nway,
+            nway_pattern_counts,
             string_stats_output,
             max_nway_examples_per_text,
             resume,
@@ -404,21 +413,33 @@ fn main() -> Result<()> {
             } else {
                 None
             };
+            let outputs = resolve_analyze_outputs(AnalyzeOutputArgs {
+                output_dir,
+                analyses_output,
+                comparisons_output,
+                examples_output,
+                errors_output,
+                manifest_output,
+                nway_output,
+                nway_pattern_counts_output,
+                nway,
+                nway_pattern_counts,
+            })?;
             let result = ab_morph_run::run_analyze_aat_with_nway(
                 aat.as_deref(),
                 aat_dir.as_deref(),
                 &analyzer,
-                &analyses_output,
-                comparisons_output.as_deref(),
-                errors_output.as_deref(),
+                &outputs.analyses_output,
+                outputs.comparisons_output.as_deref(),
+                outputs.errors_output.as_deref(),
                 resume,
                 jobs,
                 output_profile,
-                examples_output.as_deref(),
+                outputs.examples_output.as_deref(),
                 max_examples_per_comparison,
-                manifest_output.as_deref(),
-                nway_output.as_deref(),
-                nway_pattern_counts_output.as_deref(),
+                outputs.manifest_output.as_deref(),
+                outputs.nway_output.as_deref(),
+                outputs.nway_pattern_counts_output.as_deref(),
                 max_nway_examples_per_text,
                 string_stats_output.as_deref(),
             );
@@ -606,6 +627,83 @@ fn main() -> Result<()> {
             detail,
         ),
     }
+}
+
+#[derive(Debug)]
+struct AnalyzeOutputArgs {
+    output_dir: Option<PathBuf>,
+    analyses_output: Option<PathBuf>,
+    comparisons_output: Option<PathBuf>,
+    examples_output: Option<PathBuf>,
+    errors_output: Option<PathBuf>,
+    manifest_output: Option<PathBuf>,
+    nway_output: Option<PathBuf>,
+    nway_pattern_counts_output: Option<PathBuf>,
+    nway: bool,
+    nway_pattern_counts: bool,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct AnalyzeOutputPaths {
+    analyses_output: PathBuf,
+    comparisons_output: Option<PathBuf>,
+    examples_output: Option<PathBuf>,
+    errors_output: Option<PathBuf>,
+    manifest_output: Option<PathBuf>,
+    nway_output: Option<PathBuf>,
+    nway_pattern_counts_output: Option<PathBuf>,
+}
+
+fn resolve_analyze_outputs(args: AnalyzeOutputArgs) -> Result<AnalyzeOutputPaths> {
+    let Some(output_dir) = args.output_dir else {
+        if args.nway && args.nway_output.is_none() {
+            bail!("--nway requires --output-dir or --nway-output");
+        }
+        if args.nway_pattern_counts && args.nway_pattern_counts_output.is_none() {
+            bail!("--nway-pattern-counts requires --output-dir or --nway-pattern-counts-output");
+        }
+        let Some(analyses_output) = args.analyses_output else {
+            bail!("provide --analyses-output or --output-dir");
+        };
+        return Ok(AnalyzeOutputPaths {
+            analyses_output,
+            comparisons_output: args.comparisons_output,
+            examples_output: args.examples_output,
+            errors_output: args.errors_output,
+            manifest_output: args.manifest_output,
+            nway_output: args.nway_output,
+            nway_pattern_counts_output: args.nway_pattern_counts_output,
+        });
+    };
+
+    Ok(AnalyzeOutputPaths {
+        analyses_output: args
+            .analyses_output
+            .unwrap_or_else(|| output_dir.join("analyses.jsonl.zst")),
+        comparisons_output: Some(
+            args.comparisons_output
+                .unwrap_or_else(|| output_dir.join("comparisons.jsonl.zst")),
+        ),
+        examples_output: Some(
+            args.examples_output
+                .unwrap_or_else(|| output_dir.join("examples.jsonl.zst")),
+        ),
+        errors_output: Some(
+            args.errors_output
+                .unwrap_or_else(|| output_dir.join("errors.jsonl.zst")),
+        ),
+        manifest_output: Some(
+            args.manifest_output
+                .unwrap_or_else(|| output_dir.join("manifest.json")),
+        ),
+        nway_output: args
+            .nway_output
+            .or_else(|| args.nway.then(|| output_dir.join("nway.jsonl.zst"))),
+        nway_pattern_counts_output: args.nway_pattern_counts_output.or_else(|| {
+            args.nway_pattern_counts
+                .then(|| output_dir.join("nway-pattern-counts.jsonl.zst"))
+        }),
+    })
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -1199,6 +1297,118 @@ mod tests {
             Some(PathBuf::from("nway-pattern-counts.jsonl.zst"))
         );
         assert_eq!(max_nway_examples_per_text, Some(25));
+    }
+
+    #[test]
+    fn parses_output_dir_with_standard_optional_outputs() {
+        let args = Args::parse_from([
+            "ab-morph-run",
+            "analyze-aat",
+            "--aat",
+            "one.json",
+            "--analyzer",
+            "vibrato",
+            "--output-profile",
+            "compact",
+            "--output-dir",
+            "scratch/out",
+            "--nway",
+            "--nway-pattern-counts",
+        ]);
+
+        let Command::AnalyzeAat {
+            analyses_output,
+            output_dir,
+            nway,
+            nway_pattern_counts,
+            ..
+        } = args.command
+        else {
+            panic!("expected analyze-aat");
+        };
+
+        assert_eq!(analyses_output, None);
+        assert_eq!(output_dir, Some(PathBuf::from("scratch/out")));
+        assert!(nway);
+        assert!(nway_pattern_counts);
+    }
+
+    #[test]
+    fn output_dir_resolves_standard_artifact_paths() {
+        let paths = resolve_analyze_outputs(AnalyzeOutputArgs {
+            output_dir: Some(PathBuf::from("scratch/out")),
+            analyses_output: None,
+            comparisons_output: None,
+            examples_output: None,
+            errors_output: None,
+            manifest_output: None,
+            nway_output: None,
+            nway_pattern_counts_output: None,
+            nway: true,
+            nway_pattern_counts: true,
+        })
+        .unwrap();
+
+        assert_eq!(
+            paths,
+            AnalyzeOutputPaths {
+                analyses_output: PathBuf::from("scratch/out/analyses.jsonl.zst"),
+                comparisons_output: Some(PathBuf::from("scratch/out/comparisons.jsonl.zst")),
+                examples_output: Some(PathBuf::from("scratch/out/examples.jsonl.zst")),
+                errors_output: Some(PathBuf::from("scratch/out/errors.jsonl.zst")),
+                manifest_output: Some(PathBuf::from("scratch/out/manifest.json")),
+                nway_output: Some(PathBuf::from("scratch/out/nway.jsonl.zst")),
+                nway_pattern_counts_output: Some(PathBuf::from(
+                    "scratch/out/nway-pattern-counts.jsonl.zst"
+                )),
+            }
+        );
+    }
+
+    #[test]
+    fn output_dir_keeps_explicit_output_overrides() {
+        let paths = resolve_analyze_outputs(AnalyzeOutputArgs {
+            output_dir: Some(PathBuf::from("scratch/out")),
+            analyses_output: Some(PathBuf::from("custom/analyses.jsonl")),
+            comparisons_output: None,
+            examples_output: None,
+            errors_output: None,
+            manifest_output: None,
+            nway_output: Some(PathBuf::from("custom/nway.jsonl")),
+            nway_pattern_counts_output: None,
+            nway: false,
+            nway_pattern_counts: true,
+        })
+        .unwrap();
+
+        assert_eq!(
+            paths.analyses_output,
+            PathBuf::from("custom/analyses.jsonl")
+        );
+        assert_eq!(paths.nway_output, Some(PathBuf::from("custom/nway.jsonl")));
+        assert_eq!(
+            paths.nway_pattern_counts_output,
+            Some(PathBuf::from("scratch/out/nway-pattern-counts.jsonl.zst"))
+        );
+    }
+
+    #[test]
+    fn explicit_output_mode_requires_analyses_output() {
+        let error = resolve_analyze_outputs(AnalyzeOutputArgs {
+            output_dir: None,
+            analyses_output: None,
+            comparisons_output: None,
+            examples_output: None,
+            errors_output: None,
+            manifest_output: None,
+            nway_output: None,
+            nway_pattern_counts_output: None,
+            nway: false,
+            nway_pattern_counts: false,
+        })
+        .unwrap_err();
+
+        assert!(error.to_string().contains("--analyses-output"));
     }
 
     #[test]

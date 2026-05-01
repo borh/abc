@@ -113,9 +113,12 @@ Warehouse reporting now covers the useful first-pass triage surfaces:
 
 The raw region table is intentionally verbose and should be treated as drill-down, not a top-level report.
 
-## Next engineering steps
+## Follow-up
 
-1. Investigate why `sudachi-c` appears as `pos1=空白` for many lexical regions.
-2. Keep warehouse mode serial until analyzer dictionary sharing or a bounded-memory worker model exists; naive parallel mode would multiply the 5.9 GiB RSS.
-3. Move workflow docs toward warehouse-first triage and mark JSONL compact reporting as legacy/debug.
-4. Consider a focused drill-down command that takes a pattern row and returns bounded concrete regions, rather than printing full feature payloads for arbitrary regions.
+The initial subset exposed a real Sudachi adapter bug: `sudachi-c` appeared as `pos1=空白` for many lexical regions. This was traced to using `InfoSubset::empty()` while reading POS/form fields. See `docs/superpowers/reports/2026-05-01-sudachi-feature-subset-fix.md` for the fix and corrected subset results.
+
+Remaining next steps:
+
+1. Keep warehouse mode serial until analyzer dictionary sharing or a bounded-memory worker model exists; naive parallel mode would multiply the 5.9 GiB RSS.
+2. Move workflow docs toward warehouse-first triage and mark JSONL compact reporting as legacy/debug.
+3. Consider a focused drill-down command that takes a pattern row and returns bounded concrete regions, rather than printing full feature payloads for arbitrary regions.

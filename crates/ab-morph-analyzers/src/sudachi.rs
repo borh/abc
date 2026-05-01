@@ -16,6 +16,11 @@ use crate::span_builder::{RawToken, build_morphemes_from_tokens};
 use crate::{AnalyzerError, MorphAnalyzer};
 
 const SUDACHI_HARD_CHUNK_BYTES: usize = 32_000;
+const SUDACHI_FEATURE_SUBSET: InfoSubset = InfoSubset::SURFACE
+    .union(InfoSubset::POS_ID)
+    .union(InfoSubset::NORMALIZED_FORM)
+    .union(InfoSubset::DIC_FORM_WORD_ID)
+    .union(InfoSubset::READING_FORM);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SudachiMode {
@@ -100,16 +105,14 @@ impl MorphAnalyzer for SudachiAnalyzer {
         let mut first_hard_split_offset = None;
         let mut tokenizer =
             StatefulTokenizer::new(self.dictionary.as_ref(), self.mode.as_sudachi());
-        tokenizer.set_subset(InfoSubset::empty());
-        let mut sudachi_morphemes = MorphemeList::empty(self.dictionary.as_ref());
+        tokenizer.set_subset(SUDACHI_FEATURE_SUBSET);
 
         for chunk in chunks {
             if chunk.hard_split {
                 hard_split_count += 1;
                 first_hard_split_offset.get_or_insert(chunk.byte_offset);
             }
-            let mut morphemes =
-                self.analyze_chunk(document, &chunk, &mut tokenizer, &mut sudachi_morphemes)?;
+            let mut morphemes = self.analyze_chunk(document, &chunk, &mut tokenizer)?;
             offset_chunk_morphemes(&mut morphemes, chunk.byte_offset, chunk.char_offset);
             all_morphemes.extend(morphemes);
         }
@@ -139,7 +142,6 @@ impl SudachiAnalyzer {
         document: &PlainTextDocument,
         chunk: &SudachiChunk<'_>,
         tokenizer: &mut StatefulTokenizer<&JapaneseDictionary>,
-        morphemes: &mut MorphemeList<&JapaneseDictionary>,
     ) -> Result<Vec<DiffMorpheme>, AnalyzerError> {
         tokenizer.reset().push_str(chunk.text);
         tokenizer
@@ -148,6 +150,7 @@ impl SudachiAnalyzer {
                 analyzer: self.analyzer_id.clone(),
                 message: err.to_string(),
             })?;
+        let mut morphemes = MorphemeList::empty(self.dictionary.as_ref());
         morphemes
             .collect_results(&mut *tokenizer)
             .map_err(|err| AnalyzerError::Tokenize {
@@ -440,5 +443,43 @@ mod tests {
             assert_eq!(analysis.source_text, doc.text);
             assert!(!analysis.morphemes.is_empty());
         }
+    }
+
+    #[test]
+    fn sudachi_chunking_does_not_reuse_morpheme_features_across_chunks() {
+        let Some(dictionary_path) = std::env::var_os("AB_SUDACHI_DICT") else {
+            eprintln!("skipping Sudachi chunk feature test: AB_SUDACHI_DICT is not set");
+            return;
+        };
+        let analyzer = SudachiAnalyzer::from_dictionary_path(SudachiMode::C, dictionary_path)
+            .expect("load Sudachi dictionary");
+        let repeated_sentence = "吾輩は猫である。";
+        let repetitions = (SUDACHI_HARD_CHUNK_BYTES / repeated_sentence.len()) + 2;
+        let doc = PlainTextDocument {
+            text_id: "chunked".to_owned(),
+            source_format: SourceFormat::AozoraHonbun,
+            text: repeated_sentence.repeat(repetitions),
+        };
+
+        let analysis = analyzer.analyze(&doc).expect("analyze chunked text");
+        let lexical_blank_features = analysis
+            .morphemes
+            .iter()
+            .filter(|morpheme| {
+                !morpheme.surface.chars().all(char::is_whitespace)
+                    && morpheme
+                        .features
+                        .get("pos1")
+                        .and_then(|value| value.as_ref())
+                        == Some(&"空白".into())
+            })
+            .take(5)
+            .map(|morpheme| morpheme.surface.clone())
+            .collect::<Vec<_>>();
+
+        assert!(
+            lexical_blank_features.is_empty(),
+            "lexical morphemes inherited blank POS features: {lexical_blank_features:?}"
+        );
     }
 }

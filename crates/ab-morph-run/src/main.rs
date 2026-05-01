@@ -213,6 +213,8 @@ enum Command {
         kind: NwayPatternKindArg,
         #[arg(long)]
         feature_key: Option<String>,
+        #[arg(long, value_enum, default_value_t = WarehouseTextFilterArg::All)]
+        filter: WarehouseTextFilterArg,
         #[arg(long)]
         exclude_feature_value: Vec<String>,
         #[arg(long)]
@@ -849,6 +851,7 @@ fn main() -> Result<()> {
             run_dir,
             kind,
             feature_key,
+            filter,
             exclude_feature_value,
             exclude_source_id,
             exclude_text_id,
@@ -857,10 +860,10 @@ fn main() -> Result<()> {
         } => {
             let rows = ab_morph_run::summarize_warehouse_nway_patterns(
                 &run_dir,
-                ab_morph_run::NwayPatternOptions {
+                ab_morph_run::WarehousePatternOptions {
                     kind: kind.into_library(),
                     feature_key,
-                    script_category: None,
+                    text_filter: filter.into_library(),
                     excluded_feature_values: exclude_feature_value.into_iter().collect(),
                     exclusions: summary_exclusions(exclude_source_id, exclude_text_id),
                     limit,
@@ -1998,6 +2001,8 @@ mod tests {
             "feature",
             "--feature-key",
             "pos1",
+            "--filter",
+            "lexical-only",
             "--exclude-source-id",
             "source-a",
             "--limit",
@@ -2009,6 +2014,7 @@ mod tests {
             run_dir,
             kind,
             feature_key,
+            filter,
             exclude_source_id,
             limit,
             json,
@@ -2024,6 +2030,7 @@ mod tests {
         );
         assert_eq!(kind, NwayPatternKindArg::Feature);
         assert_eq!(feature_key, Some("pos1".to_owned()));
+        assert_eq!(filter, WarehouseTextFilterArg::LexicalOnly);
         assert_eq!(exclude_source_id, vec!["source-a"]);
         assert_eq!(limit, 15);
         assert!(json);

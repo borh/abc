@@ -34,12 +34,12 @@ pub use summary::{
     NwaySummaryRow, NwaySummarySort, SummaryExclusions, WarehouseErrorGroupBy,
     WarehouseErrorSummaryOptions, WarehouseErrorSummaryRow, WarehouseFeatureDiffExampleRow,
     WarehousePairwiseSort, WarehousePairwiseSummaryOptions, WarehousePairwiseSummaryRow,
-    WarehouseRegionAnalyzerExampleRow, WarehouseRegionExampleRow, WarehouseRegionKind,
-    WarehouseRegionOptions, WarehouseTextFilter, summarize_compact_comparisons,
-    summarize_compact_differences, summarize_compact_examples, summarize_nway,
-    summarize_nway_pattern_counts, summarize_nway_patterns, summarize_warehouse_errors,
-    summarize_warehouse_nway, summarize_warehouse_nway_patterns, summarize_warehouse_pairwise,
-    summarize_warehouse_regions,
+    WarehousePatternOptions, WarehouseRegionAnalyzerExampleRow, WarehouseRegionExampleRow,
+    WarehouseRegionKind, WarehouseRegionOptions, WarehouseTextFilter,
+    summarize_compact_comparisons, summarize_compact_differences, summarize_compact_examples,
+    summarize_nway, summarize_nway_pattern_counts, summarize_nway_patterns,
+    summarize_warehouse_errors, summarize_warehouse_nway, summarize_warehouse_nway_patterns,
+    summarize_warehouse_pairwise, summarize_warehouse_regions,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum, Serialize, Deserialize)]

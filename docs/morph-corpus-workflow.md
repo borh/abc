@@ -21,7 +21,9 @@ target/release/ab-check \
   --jobs 16
 ```
 
-## 3. Run compact morph comparison
+## 3. Legacy compact JSONL morph comparison
+
+Prefer warehouse mode for new comprehensive corpus analysis. Compact JSONL remains useful for compatibility and targeted debugging while the old summary commands are being retired.
 
 ```bash
 AB_SUDACHI_DICT="$(nix path-info .#sudachi-dictionary-full)/share/sudachi/system.dic" \
@@ -39,7 +41,7 @@ AB_SUDACHI_DICT="$(nix path-info .#sudachi-dictionary-full)/share/sudachi/system
     --progress-interval-seconds 30
 ```
 
-Compact output is the default artifact for comprehensive runs. Full-detail output is available for targeted debugging, but it is too large as a default corpus artifact.
+Full-detail JSONL output is available for targeted debugging, but it is too large as a default corpus artifact.
 
 ## Warehouse mode: canonical comprehensive artifact
 
@@ -66,7 +68,7 @@ duckdb -c ".read scratch/morph-warehouse/runs/full-2026-05-01/views.sql" \
        -c "SELECT * FROM top_segmentation_patterns LIMIT 50;"
 ```
 
-Query recurring warehouse patterns through `ab-morph-run` without JSONL intermediates:
+Query recurring warehouse patterns through `ab-morph-run` without JSONL intermediates. These commands are the default first-pass triage surface for new runs:
 
 ```bash
 target/release/ab-morph-run summarize-warehouse-nway \
@@ -84,12 +86,14 @@ target/release/ab-morph-run summarize-warehouse-pairwise \
 target/release/ab-morph-run summarize-warehouse-patterns \
   --run-dir scratch/morph-warehouse/runs/full-2026-05-01 \
   --kind segmentation \
+  --filter lexical-only \
   --limit 50
 
 target/release/ab-morph-run summarize-warehouse-patterns \
   --run-dir scratch/morph-warehouse/runs/full-2026-05-01 \
   --kind feature \
   --feature-key pos1 \
+  --filter lexical-only \
   --limit 50
 
 target/release/ab-morph-run summarize-warehouse-regions \

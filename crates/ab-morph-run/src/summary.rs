@@ -144,6 +144,16 @@ pub struct NwayPatternOptions {
     pub limit: usize,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WarehousePatternOptions {
+    pub kind: NwayPatternKind,
+    pub feature_key: Option<String>,
+    pub text_filter: WarehouseTextFilter,
+    pub excluded_feature_values: BTreeSet<String>,
+    pub exclusions: SummaryExclusions,
+    pub limit: usize,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WarehouseRegionKind {
     All,
@@ -1247,13 +1257,8 @@ pub fn summarize_warehouse_pairwise(
 
 pub fn summarize_warehouse_nway_patterns(
     run_dir: &Path,
-    options: NwayPatternOptions,
+    options: WarehousePatternOptions,
 ) -> Result<Vec<NwayPatternRow>> {
-    if options.script_category.is_some() {
-        bail!(
-            "warehouse pattern summaries do not support --script-category in phase 1; warehouse facts do not store script categories"
-        );
-    }
     let regions = read_warehouse_region_flags(run_dir)?;
     let groups = match options.kind {
         NwayPatternKind::Segmentation => {
@@ -1280,7 +1285,7 @@ pub fn summarize_warehouse_nway_patterns(
 fn summarize_warehouse_segmentation_patterns(
     run_dir: &Path,
     regions: &BTreeMap<WarehouseRegionKey, WarehouseRegionFlags>,
-    options: &NwayPatternOptions,
+    options: &WarehousePatternOptions,
 ) -> Result<BTreeMap<NwayPatternKey, WarehousePatternAccumulator>> {
     let mut by_region = BTreeMap::<WarehouseRegionKey, Vec<WarehouseRegionAnalyzerFact>>::new();
     for fact in read_warehouse_region_analyzers(run_dir)? {
@@ -1290,10 +1295,10 @@ fn summarize_warehouse_segmentation_patterns(
         {
             continue;
         }
-        if !regions
-            .get(&fact.key)
-            .is_some_and(|flags| flags.has_segmentation_disagreement)
-        {
+        if !regions.get(&fact.key).is_some_and(|flags| {
+            flags.has_segmentation_disagreement
+                && warehouse_text_filter_matches(options.text_filter, *flags)
+        }) {
             continue;
         }
         by_region.entry(fact.key.clone()).or_default().push(fact);
@@ -1336,8 +1341,8 @@ fn summarize_warehouse_segmentation_patterns(
 
 fn summarize_warehouse_feature_patterns(
     run_dir: &Path,
-    _regions: &BTreeMap<WarehouseRegionKey, WarehouseRegionFlags>,
-    options: &NwayPatternOptions,
+    regions: &BTreeMap<WarehouseRegionKey, WarehouseRegionFlags>,
+    options: &WarehousePatternOptions,
 ) -> Result<BTreeMap<NwayPatternKey, WarehousePatternAccumulator>> {
     let mut by_feature =
         BTreeMap::<WarehouseFeatureGroupKey, BTreeMap<Option<String>, Vec<String>>>::new();
@@ -1345,6 +1350,12 @@ fn summarize_warehouse_feature_patterns(
         if options
             .exclusions
             .excludes(&fact.key.region.source_id, &fact.key.region.text_id)
+        {
+            continue;
+        }
+        if !regions
+            .get(&fact.key.region)
+            .is_some_and(|flags| warehouse_text_filter_matches(options.text_filter, *flags))
         {
             continue;
         }
@@ -2938,6 +2949,21 @@ mod tests {
                     has_segmentation_disagreement: false,
                     has_feature_disagreement: false,
                 },
+                NwayRegionRow {
+                    run_id: "run-a".to_owned(),
+                    source_id: "source-a".to_owned(),
+                    text_id: "work-a".to_owned(),
+                    region_index: 2,
+                    byte_start: 9,
+                    byte_end: 10,
+                    char_start: 3,
+                    char_end: 4,
+                    is_nonempty_whitespace: true,
+                    is_agreement: false,
+                    has_coverage_mismatch: false,
+                    has_segmentation_disagreement: true,
+                    has_feature_disagreement: false,
+                },
             ])
             .unwrap();
         writer
@@ -2986,16 +3012,38 @@ mod tests {
                     morpheme_end: 3,
                     surfaces: vec!["は".to_owned()],
                 },
+                NwayRegionAnalyzerRow {
+                    run_id: "run-a".to_owned(),
+                    source_id: "source-a".to_owned(),
+                    text_id: "work-a".to_owned(),
+                    region_index: 2,
+                    analyzer_id: "vibrato".to_owned(),
+                    covers_exactly: true,
+                    morpheme_start: 2,
+                    morpheme_end: 3,
+                    surfaces: vec![" ".to_owned()],
+                },
+                NwayRegionAnalyzerRow {
+                    run_id: "run-a".to_owned(),
+                    source_id: "source-a".to_owned(),
+                    text_id: "work-a".to_owned(),
+                    region_index: 2,
+                    analyzer_id: "sudachi-c".to_owned(),
+                    covers_exactly: true,
+                    morpheme_start: 3,
+                    morpheme_end: 5,
+                    surfaces: vec!["".to_owned(), " ".to_owned()],
+                },
             ])
             .unwrap();
         writer.finalize().unwrap();
 
         let rows = summarize_warehouse_nway_patterns(
             &paths.final_dir,
-            NwayPatternOptions {
+            WarehousePatternOptions {
                 kind: NwayPatternKind::Segmentation,
                 feature_key: None,
-                script_category: None,
+                text_filter: WarehouseTextFilter::LexicalOnly,
                 excluded_feature_values: BTreeSet::new(),
                 exclusions: SummaryExclusions::default(),
                 limit: 10,
@@ -3014,7 +3062,7 @@ mod tests {
 
     #[test]
     fn summarize_warehouse_patterns_reads_feature_disagreement_facts() {
-        use crate::warehouse::schema::{NwayFeatureDiffRow, RunRow, WarehousePaths};
+        use crate::warehouse::schema::{NwayFeatureDiffRow, NwayRegionRow, RunRow, WarehousePaths};
         use crate::warehouse::writer::WarehouseWriter;
 
         let root = temp_dir("warehouse-feature-patterns");
@@ -3030,6 +3078,23 @@ mod tests {
                 source_count: 1,
                 analyzer_count: 2,
                 error_count: 0,
+            }])
+            .unwrap();
+        writer
+            .append_nway_regions(&[NwayRegionRow {
+                run_id: "run-a".to_owned(),
+                source_id: "source-a".to_owned(),
+                text_id: "work-a".to_owned(),
+                region_index: 0,
+                byte_start: 0,
+                byte_end: 6,
+                char_start: 0,
+                char_end: 2,
+                is_nonempty_whitespace: false,
+                is_agreement: false,
+                has_coverage_mismatch: false,
+                has_segmentation_disagreement: false,
+                has_feature_disagreement: true,
             }])
             .unwrap();
         writer
@@ -3064,10 +3129,10 @@ mod tests {
 
         let rows = summarize_warehouse_nway_patterns(
             &paths.final_dir,
-            NwayPatternOptions {
+            WarehousePatternOptions {
                 kind: NwayPatternKind::Feature,
                 feature_key: Some("pos1".to_owned()),
-                script_category: None,
+                text_filter: WarehouseTextFilter::All,
                 excluded_feature_values: BTreeSet::new(),
                 exclusions: SummaryExclusions::default(),
                 limit: 10,

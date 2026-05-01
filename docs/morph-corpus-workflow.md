@@ -41,6 +41,33 @@ AB_SUDACHI_DICT="$(nix path-info .#sudachi-dictionary-full)/share/sudachi/system
 
 Compact output is the default artifact for comprehensive runs. Full-detail output is available for targeted debugging, but it is too large as a default corpus artifact.
 
+## Warehouse mode: canonical comprehensive artifact
+
+Warehouse mode writes sealed Parquet fact tables. It is the preferred format for complete corpus analysis. It does not write JSONL outputs.
+
+```bash
+AB_SUDACHI_DICT="$(nix path-info .#sudachi-dictionary-full)/share/sudachi/system.dic" \
+  target/release/ab-morph-run analyze-aat \
+    --aat-dir scratch/morph-full-corpus/aats \
+    --analyzer vibrato \
+    --analyzer sudachi-a \
+    --analyzer sudachi-c \
+    --warehouse-dir scratch/morph-warehouse \
+    --run-id full-2026-05-01 \
+    --jobs 1
+```
+
+Phase-1 warehouse mode is serial and does not support `--resume`. Interrupted runs leave staging directories under `.staging/`; the next run with the same `--run-id` removes stale staging before starting. Published runs under `runs/<run-id>/` are immutable.
+
+Query with DuckDB:
+
+```bash
+duckdb -c ".read scratch/morph-warehouse/runs/full-2026-05-01/views.sql" \
+       -c "SELECT * FROM top_segmentation_patterns LIMIT 50;"
+```
+
+The existing JSONL `--output-dir` mode remains for compatibility and targeted debugging, but it is not the canonical comprehensive store.
+
 ## 4. Summarize worst cases
 
 Summary commands are dictionary-free. They read compact JSONL artifacts and do not load Vibrato or Sudachi.

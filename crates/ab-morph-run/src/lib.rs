@@ -4,6 +4,7 @@ mod output;
 mod script;
 mod select;
 mod summary;
+mod warehouse;
 
 use std::collections::{BTreeSet, HashMap};
 use std::fs::{self, File, OpenOptions};

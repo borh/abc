@@ -23,6 +23,19 @@ enum Command {
         analyzer: Vec<String>,
         #[arg(long)]
         output_dir: Option<PathBuf>,
+        #[arg(long, conflicts_with_all = [
+            "output_dir",
+            "analyses_output",
+            "comparisons_output",
+            "examples_output",
+            "errors_output",
+            "manifest_output",
+            "nway_output",
+            "nway_pattern_counts_output",
+        ])]
+        warehouse_dir: Option<PathBuf>,
+        #[arg(long, requires = "warehouse_dir")]
+        run_id: Option<String>,
         #[arg(long)]
         analyses_output: Option<PathBuf>,
         #[arg(long)]
@@ -377,6 +390,8 @@ fn main() -> Result<()> {
             aat_dir,
             analyzer,
             output_dir,
+            warehouse_dir,
+            run_id,
             analyses_output,
             comparisons_output,
             examples_output,
@@ -395,6 +410,10 @@ fn main() -> Result<()> {
             progress,
             progress_interval_seconds,
         } => {
+            validate_warehouse_cli(warehouse_dir.as_ref(), run_id.as_deref(), resume, jobs)?;
+            if warehouse_dir.is_some() {
+                bail!("warehouse mode is introduced in this task and wired in Task 4");
+            }
             let progress_enabled = progress || progress_interval_seconds.is_some();
             let progress_interval_seconds = progress_interval_seconds.unwrap_or(30).max(1);
             let input_count = if progress_enabled {
@@ -704,6 +723,27 @@ fn resolve_analyze_outputs(args: AnalyzeOutputArgs) -> Result<AnalyzeOutputPaths
                 .then(|| output_dir.join("nway-pattern-counts.jsonl.zst"))
         }),
     })
+}
+
+fn validate_warehouse_cli(
+    warehouse_dir: Option<&PathBuf>,
+    run_id: Option<&str>,
+    resume: bool,
+    jobs: usize,
+) -> Result<()> {
+    if warehouse_dir.is_none() {
+        return Ok(());
+    }
+    if run_id.is_none() {
+        bail!("--warehouse-dir requires --run-id");
+    }
+    if resume {
+        bail!("warehouse mode does not support --resume in phase 1");
+    }
+    if jobs != 1 {
+        bail!("warehouse mode requires --jobs 1 in phase 1");
+    }
+    Ok(())
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -1331,6 +1371,86 @@ mod tests {
         assert_eq!(output_dir, Some(PathBuf::from("scratch/out")));
         assert!(nway);
         assert!(nway_pattern_counts);
+    }
+
+    #[test]
+    fn parses_warehouse_mode_without_jsonl_outputs() {
+        let args = Args::try_parse_from([
+            "ab-morph-run",
+            "analyze-aat",
+            "--aat-dir",
+            "scratch/aats",
+            "--analyzer",
+            "vibrato",
+            "--warehouse-dir",
+            "scratch/morph-warehouse",
+            "--run-id",
+            "smoke-2026-05-01",
+        ])
+        .unwrap();
+
+        let Command::AnalyzeAat {
+            warehouse_dir,
+            run_id,
+            output_dir,
+            analyses_output,
+            ..
+        } = args.command
+        else {
+            panic!("expected analyze-aat");
+        };
+
+        assert_eq!(
+            warehouse_dir,
+            Some(PathBuf::from("scratch/morph-warehouse"))
+        );
+        assert_eq!(run_id, Some("smoke-2026-05-01".to_owned()));
+        assert_eq!(output_dir, None);
+        assert_eq!(analyses_output, None);
+    }
+
+    #[test]
+    fn rejects_warehouse_with_jsonl_output_dir() {
+        let err = Args::try_parse_from([
+            "ab-morph-run",
+            "analyze-aat",
+            "--aat-dir",
+            "scratch/aats",
+            "--analyzer",
+            "vibrato",
+            "--warehouse-dir",
+            "scratch/morph-warehouse",
+            "--run-id",
+            "smoke-2026-05-01",
+            "--output-dir",
+            "scratch/jsonl",
+        ])
+        .unwrap_err();
+
+        assert_eq!(err.kind(), clap::error::ErrorKind::ArgumentConflict);
+    }
+
+    #[test]
+    fn warehouse_validation_rejects_resume_and_parallel_jobs() {
+        let err = validate_warehouse_cli(
+            Some(&PathBuf::from("scratch/warehouse")),
+            Some("run-a"),
+            true,
+            1,
+        )
+        .unwrap_err()
+        .to_string();
+        assert!(err.contains("does not support --resume"));
+
+        let err = validate_warehouse_cli(
+            Some(&PathBuf::from("scratch/warehouse")),
+            Some("run-a"),
+            false,
+            2,
+        )
+        .unwrap_err()
+        .to_string();
+        assert!(err.contains("requires --jobs 1"));
     }
 
     #[test]

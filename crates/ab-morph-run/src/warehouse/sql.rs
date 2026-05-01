@@ -8,8 +8,7 @@ pub(crate) const MORPH_VIEWS_SQL_TEMPLATE: &str = include_str!("../../sql/morph_
 
 pub(crate) fn write_schema_sql(warehouse_dir: &Path) -> Result<()> {
     let path = warehouse_dir.join("schema.sql");
-    fs::write(&path, SCHEMA_SQL)
-        .with_context(|| format!("failed to write {}", path.display()))?;
+    fs::write(&path, SCHEMA_SQL).with_context(|| format!("failed to write {}", path.display()))?;
     Ok(())
 }
 

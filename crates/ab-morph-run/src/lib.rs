@@ -433,7 +433,13 @@ fn run_analyze_aat_serial(
                 if let Some(writer) = &mut warehouse_writer {
                     warehouse_error_count += 1;
                     writer.append_errors(&[warehouse_error_row(
-                        options.warehouse.as_ref().expect("warehouse options").paths.run_id.as_str(),
+                        options
+                            .warehouse
+                            .as_ref()
+                            .expect("warehouse options")
+                            .paths
+                            .run_id
+                            .as_str(),
                         Some(source_id.clone()),
                         None,
                         None,
@@ -466,7 +472,13 @@ fn run_analyze_aat_serial(
                 if let Some(writer) = &mut warehouse_writer {
                     warehouse_error_count += 1;
                     writer.append_errors(&[warehouse_error_row(
-                        options.warehouse.as_ref().expect("warehouse options").paths.run_id.as_str(),
+                        options
+                            .warehouse
+                            .as_ref()
+                            .expect("warehouse options")
+                            .paths
+                            .run_id
+                            .as_str(),
                         Some(source_id.clone()),
                         None,
                         None,
@@ -502,7 +514,13 @@ fn run_analyze_aat_serial(
                     if let Some(writer) = &mut warehouse_writer {
                         warehouse_error_count += 1;
                         writer.append_errors(&[warehouse_error_row(
-                            options.warehouse.as_ref().expect("warehouse options").paths.run_id.as_str(),
+                            options
+                                .warehouse
+                                .as_ref()
+                                .expect("warehouse options")
+                                .paths
+                                .run_id
+                                .as_str(),
                             Some(source_id.clone()),
                             Some(document.text_id.clone()),
                             Some(analyzer.analyzer_id().to_owned()),
@@ -534,12 +552,7 @@ fn run_analyze_aat_serial(
             }
 
             if let Some(writer) = &mut analyses_writer {
-                write_analysis_row(
-                    &mut **writer,
-                    options.output_profile,
-                    &source_id,
-                    &analysis,
-                )?;
+                write_analysis_row(&mut **writer, options.output_profile, &source_id, &analysis)?;
             }
             if options.output_profile == OutputProfile::Compact && options.warehouse.is_none() {
                 analysis.source_text.clear();
@@ -547,40 +560,47 @@ fn run_analyze_aat_serial(
             analyses.push(analysis);
         }
 
-        if let Some(writer) = &mut warehouse_writer {
-            if let Some(first_analysis) = analyses.first() {
-                let run_id = options.warehouse.as_ref().expect("warehouse options").paths.run_id.as_str();
-                let source = warehouse::rows::source_row(run_id, &source_id, &input_path, first_analysis);
-                writer.append_sources(&[source])?;
-                let analysis_rows = analyses
-                    .iter()
-                    .map(|analysis| warehouse::rows::analysis_row(run_id, &source_id, analysis))
-                    .collect::<Vec<_>>();
-                writer.append_analyses(&analysis_rows)?;
-                for analysis in &analyses {
-                    let morphemes = warehouse::rows::morpheme_rows(run_id, &source_id, analysis);
-                    writer.append_morphemes(&morphemes)?;
-                    let features = warehouse::rows::morpheme_feature_rows(run_id, &source_id, analysis);
-                    writer.append_morpheme_features(&features)?;
+        if let Some(writer) = &mut warehouse_writer
+            && let Some(first_analysis) = analyses.first()
+        {
+            let run_id = options
+                .warehouse
+                .as_ref()
+                .expect("warehouse options")
+                .paths
+                .run_id
+                .as_str();
+            let source =
+                warehouse::rows::source_row(run_id, &source_id, &input_path, first_analysis);
+            writer.append_sources(&[source])?;
+            let analysis_rows = analyses
+                .iter()
+                .map(|analysis| warehouse::rows::analysis_row(run_id, &source_id, analysis))
+                .collect::<Vec<_>>();
+            writer.append_analyses(&analysis_rows)?;
+            for analysis in &analyses {
+                let morphemes = warehouse::rows::morpheme_rows(run_id, &source_id, analysis);
+                writer.append_morphemes(&morphemes)?;
+                let features = warehouse::rows::morpheme_feature_rows(run_id, &source_id, analysis);
+                writer.append_morpheme_features(&features)?;
+            }
+            match warehouse::rows::nway_fact_rows(run_id, &source_id, &document.text, &analyses) {
+                Ok(facts) => {
+                    writer.append_nway_regions(&facts.regions)?;
+                    writer.append_nway_region_analyzers(&facts.region_analyzers)?;
+                    writer.append_nway_feature_diffs(&facts.feature_diffs)?;
                 }
-                match warehouse::rows::nway_fact_rows(run_id, &source_id, &document.text, &analyses) {
-                    Ok(facts) => {
-                        writer.append_nway_regions(&facts.regions)?;
-                        writer.append_nway_region_analyzers(&facts.region_analyzers)?;
-                        writer.append_nway_feature_diffs(&facts.feature_diffs)?;
-                    }
-                    Err(error) => {
-                        warehouse_error_count += 1;
-                        writer.append_errors(&[warehouse_error_row(
-                            run_id,
-                            Some(source_id.clone()),
-                            Some(document.text_id.clone()),
-                            None,
-                            "compare_nway",
-                            "compare_nway_failed",
-                            &error.to_string(),
-                        )])?;
-                    }
+                Err(error) => {
+                    warehouse_error_count += 1;
+                    writer.append_errors(&[warehouse_error_row(
+                        run_id,
+                        Some(source_id.clone()),
+                        Some(document.text_id.clone()),
+                        None,
+                        "compare_nway",
+                        "compare_nway_failed",
+                        &error.to_string(),
+                    )])?;
                 }
             }
         }
@@ -691,7 +711,6 @@ fn run_analyze_aat_serial(
     }
     Ok(string_stats)
 }
-
 
 #[allow(clippy::too_many_arguments)]
 fn run_analyze_aat_parallel(

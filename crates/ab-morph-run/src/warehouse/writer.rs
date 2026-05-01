@@ -38,16 +38,19 @@ impl WarehouseWriter {
         }
         cleanup_stale_staging(&paths)?;
         if paths.staging_dir.exists() {
-            fs::remove_dir_all(&paths.staging_dir).with_context(|| {
-                format!("failed to remove {}", paths.staging_dir.display())
-            })?;
+            fs::remove_dir_all(&paths.staging_dir)
+                .with_context(|| format!("failed to remove {}", paths.staging_dir.display()))?;
         }
         fs::create_dir_all(&paths.staging_dir)
             .with_context(|| format!("failed to create {}", paths.staging_dir.display()))?;
         crate::warehouse::sql::write_schema_sql(&paths.warehouse_dir)?;
 
         Ok(Self {
-            runs: Some(open_table_writer(&paths, WarehouseTable::Runs, runs_schema())?),
+            runs: Some(open_table_writer(
+                &paths,
+                WarehouseTable::Runs,
+                runs_schema(),
+            )?),
             run_analyzers: Some(open_table_writer(
                 &paths,
                 WarehouseTable::RunAnalyzers,
@@ -88,7 +91,11 @@ impl WarehouseWriter {
                 WarehouseTable::NwayFeatureDiffs,
                 nway_feature_diffs_schema(),
             )?),
-            errors: Some(open_table_writer(&paths, WarehouseTable::Errors, errors_schema())?),
+            errors: Some(open_table_writer(
+                &paths,
+                WarehouseTable::Errors,
+                errors_schema(),
+            )?),
             paths,
         })
     }
@@ -684,7 +691,11 @@ mod tests {
                 .iter()
                 .map(|field| field.name().as_str())
                 .collect();
-            assert_eq!(actual, table.column_names(), "schema mismatch for {table:?}");
+            assert_eq!(
+                actual,
+                table.column_names(),
+                "schema mismatch for {table:?}"
+            );
         }
 
         let _ = fs::remove_dir_all(root);

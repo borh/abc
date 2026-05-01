@@ -159,9 +159,10 @@ impl WarehousePaths {
     pub(crate) fn new(warehouse_dir: impl AsRef<Path>, run_id: impl Into<String>) -> Self {
         let warehouse_dir = warehouse_dir.as_ref().to_path_buf();
         let run_id = run_id.into();
-        let staging_dir = warehouse_dir
-            .join(".staging")
-            .join(format!("{}.{}", run_id, std::process::id()));
+        let staging_dir =
+            warehouse_dir
+                .join(".staging")
+                .join(format!("{}.{}", run_id, std::process::id()));
         let final_dir = warehouse_dir.join("runs").join(&run_id);
         Self {
             warehouse_dir,

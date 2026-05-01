@@ -12,6 +12,7 @@ struct Args {
     command: Command,
 }
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug, Subcommand)]
 enum Command {
     AnalyzeAat {

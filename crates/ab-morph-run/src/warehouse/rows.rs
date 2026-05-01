@@ -76,15 +76,18 @@ pub(crate) fn morpheme_feature_rows(
         .iter()
         .enumerate()
         .flat_map(|(index, morpheme)| {
-            morpheme.features.iter().map(move |(key, value)| MorphemeFeatureRow {
-                run_id: run_id.to_owned(),
-                source_id: source_id.to_owned(),
-                text_id: analysis.text_id.clone(),
-                analyzer_id: analysis.analyzer.clone(),
-                morpheme_index: index as u64,
-                feature_key: key.to_string(),
-                feature_value: value.as_ref().map(ToString::to_string),
-            })
+            morpheme
+                .features
+                .iter()
+                .map(move |(key, value)| MorphemeFeatureRow {
+                    run_id: run_id.to_owned(),
+                    source_id: source_id.to_owned(),
+                    text_id: analysis.text_id.clone(),
+                    analyzer_id: analysis.analyzer.clone(),
+                    morpheme_index: index as u64,
+                    feature_key: key.to_string(),
+                    feature_value: value.as_ref().map(ToString::to_string),
+                })
         })
         .collect()
 }
@@ -132,18 +135,22 @@ fn push_region_rows(
         has_feature_disagreement: region.has_feature_disagreement(),
     });
 
-    rows.region_analyzers
-        .extend(region.per_analyzer.iter().map(|entry| NwayRegionAnalyzerRow {
-            run_id: run_id.to_owned(),
-            source_id: source_id.to_owned(),
-            text_id: text_id.to_owned(),
-            region_index: region.region_index as u64,
-            analyzer_id: entry.analyzer.clone(),
-            covers_exactly: entry.covers_exactly,
-            morpheme_start: entry.indices.start as u64,
-            morpheme_end: entry.indices.end as u64,
-            surfaces: entry.surfaces.clone(),
-        }));
+    rows.region_analyzers.extend(
+        region
+            .per_analyzer
+            .iter()
+            .map(|entry| NwayRegionAnalyzerRow {
+                run_id: run_id.to_owned(),
+                source_id: source_id.to_owned(),
+                text_id: text_id.to_owned(),
+                region_index: region.region_index as u64,
+                analyzer_id: entry.analyzer.clone(),
+                covers_exactly: entry.covers_exactly,
+                morpheme_start: entry.indices.start as u64,
+                morpheme_end: entry.indices.end as u64,
+                surfaces: entry.surfaces.clone(),
+            }),
+    );
 
     for group in &region.feature_groups {
         if group.values.len() < 2 {
@@ -221,7 +228,10 @@ mod tests {
             source_row("run-a", "source-a", "scratch/a.json", &analysis).text_id,
             "work-a"
         );
-        assert_eq!(analysis_row("run-a", "source-a", &analysis).morpheme_count, 1);
+        assert_eq!(
+            analysis_row("run-a", "source-a", &analysis).morpheme_count,
+            1
+        );
 
         let morphemes = morpheme_rows("run-a", "source-a", &analysis);
         assert_eq!(morphemes[0].surface, "今日");
@@ -230,8 +240,11 @@ mod tests {
 
         let features = morpheme_feature_rows("run-a", "source-a", &analysis);
         assert_eq!(features.len(), 2);
-        assert!(features.iter().any(|row| row.feature_key == "pos1"
-            && row.feature_value.as_deref() == Some("名詞")));
+        assert!(
+            features.iter().any(
+                |row| row.feature_key == "pos1" && row.feature_value.as_deref() == Some("名詞")
+            )
+        );
     }
 
     #[test]
@@ -265,14 +278,18 @@ mod tests {
         assert_eq!(facts.regions.len(), 1);
         assert!(facts.regions[0].has_segmentation_disagreement);
         assert_eq!(facts.region_analyzers.len(), 3);
-        assert!(facts
-            .region_analyzers
-            .iter()
-            .any(|row| row.analyzer_id == "vibrato" && row.surfaces == vec!["今日"]));
-        assert!(facts
-            .region_analyzers
-            .iter()
-            .any(|row| row.analyzer_id == "sudachi-c" && row.surfaces == vec!["今", "日"]));
+        assert!(
+            facts
+                .region_analyzers
+                .iter()
+                .any(|row| row.analyzer_id == "vibrato" && row.surfaces == vec!["今日"])
+        );
+        assert!(
+            facts
+                .region_analyzers
+                .iter()
+                .any(|row| row.analyzer_id == "sudachi-c" && row.surfaces == vec!["今", "日"])
+        );
         assert!(facts.feature_diffs.is_empty());
     }
 

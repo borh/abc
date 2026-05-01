@@ -1,8 +1,9 @@
-use std::fs;
+use std::fs::{self, File};
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 
-use anyhow::{Result, bail};
+use anyhow::{Context, Result, bail};
 use clap::{Parser, Subcommand};
 
 #[derive(Debug, Parser)]
@@ -247,6 +248,14 @@ enum Command {
         limit: usize,
         #[arg(long)]
         json: bool,
+    },
+    SummarizeWarehouseTriage {
+        #[arg(long)]
+        run_dir: PathBuf,
+        #[arg(long)]
+        output_dir: PathBuf,
+        #[arg(long, default_value_t = 50)]
+        limit: usize,
     },
     SummarizeWarehouseRegions {
         #[arg(long)]
@@ -938,6 +947,11 @@ fn main() -> Result<()> {
             }
             Ok(())
         }
+        Command::SummarizeWarehouseTriage {
+            run_dir,
+            output_dir,
+            limit,
+        } => run_warehouse_triage(&run_dir, &output_dir, limit),
         Command::SummarizeWarehouseRegions {
             run_dir,
             kind,
@@ -1085,6 +1099,103 @@ fn resolve_analyze_outputs(args: AnalyzeOutputArgs) -> Result<AnalyzeOutputPaths
                 .then(|| output_dir.join("nway-pattern-counts.jsonl.zst"))
         }),
     })
+}
+
+fn run_warehouse_triage(run_dir: &Path, output_dir: &Path, limit: usize) -> Result<()> {
+    fs::create_dir_all(output_dir)
+        .with_context(|| format!("failed to create {}", output_dir.display()))?;
+    write_warehouse_errors_tsv(run_dir, &output_dir.join("errors.tsv"), limit)?;
+    write_warehouse_patterns_tsv(
+        run_dir,
+        &output_dir.join("top-segmentation.tsv"),
+        ab_morph_run::WarehousePatternOptions {
+            kind: ab_morph_run::NwayPatternKind::Segmentation,
+            feature_key: None,
+            text_filter: ab_morph_run::WarehouseTextFilter::LexicalOnly,
+            excluded_feature_values: Default::default(),
+            exclusions: ab_morph_run::SummaryExclusions::default(),
+            limit,
+        },
+    )?;
+    write_warehouse_patterns_tsv(
+        run_dir,
+        &output_dir.join("top-pos1.tsv"),
+        ab_morph_run::WarehousePatternOptions {
+            kind: ab_morph_run::NwayPatternKind::Feature,
+            feature_key: Some("pos1".to_owned()),
+            text_filter: ab_morph_run::WarehouseTextFilter::LexicalOnly,
+            excluded_feature_values: ["空白".to_owned()].into_iter().collect(),
+            exclusions: ab_morph_run::SummaryExclusions::default(),
+            limit,
+        },
+    )?;
+    eprintln!("wrote warehouse triage to {}", output_dir.display());
+    Ok(())
+}
+
+fn write_warehouse_errors_tsv(run_dir: &Path, output_path: &Path, limit: usize) -> Result<()> {
+    let rows = ab_morph_run::summarize_warehouse_errors(
+        run_dir,
+        ab_morph_run::WarehouseErrorSummaryOptions {
+            group_by: ab_morph_run::WarehouseErrorGroupBy::ErrorCode,
+            exclusions: ab_morph_run::SummaryExclusions::default(),
+            limit,
+        },
+    )?;
+    let mut writer = File::create(output_path)
+        .with_context(|| format!("failed to create {}", output_path.display()))?;
+    writeln!(
+        writer,
+        "key\terrors\tsource_count\ttext_count\tanalyzers\tstages\terror_codes\tsample_source_ids\tsample_messages"
+    )?;
+    for row in rows {
+        writeln!(
+            writer,
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            row.key,
+            row.errors,
+            row.source_ids.len(),
+            row.text_ids.len(),
+            row.analyzer_ids.join(","),
+            row.stages.join(","),
+            row.error_codes.join(","),
+            sample_values(&row.source_ids, 5),
+            sample_values(&row.sample_messages, 5),
+        )?;
+    }
+    Ok(())
+}
+
+fn write_warehouse_patterns_tsv(
+    run_dir: &Path,
+    output_path: &Path,
+    options: ab_morph_run::WarehousePatternOptions,
+) -> Result<()> {
+    let mut writer = File::create(output_path)
+        .with_context(|| format!("failed to create {}", output_path.display()))?;
+    if ab_morph_run::write_warehouse_nway_patterns_duckdb_tsv(run_dir, &options, &mut writer)? {
+        return Ok(());
+    }
+    let rows = ab_morph_run::summarize_warehouse_nway_patterns(run_dir, options)?;
+    writeln!(
+        writer,
+        "kind\texamples\tsource_count\ttext_count\tsample_source_ids\tsample_text_ids\tscript_categories\tpattern"
+    )?;
+    for row in rows {
+        writeln!(
+            writer,
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            row.kind,
+            row.examples,
+            row.source_ids.len(),
+            row.text_ids.len(),
+            sample_values(&row.source_ids, 5),
+            sample_values(&row.text_ids, 5),
+            row.script_categories.join(","),
+            row.pattern,
+        )?;
+    }
+    Ok(())
 }
 
 fn validate_warehouse_cli(
@@ -2136,6 +2247,36 @@ mod tests {
         assert_eq!(filter, WarehouseTextFilterArg::LexicalOnly);
         assert_eq!(limit, 15);
         assert!(json);
+    }
+
+    #[test]
+    fn parses_summarize_warehouse_triage_command() {
+        let args = Args::parse_from([
+            "ab-morph-run",
+            "summarize-warehouse-triage",
+            "--run-dir",
+            "scratch/morph-warehouse/runs/full-2026-05-01",
+            "--output-dir",
+            "scratch/triage",
+            "--limit",
+            "30",
+        ]);
+
+        let Command::SummarizeWarehouseTriage {
+            run_dir,
+            output_dir,
+            limit,
+        } = args.command
+        else {
+            panic!("expected summarize-warehouse-triage");
+        };
+
+        assert_eq!(
+            run_dir,
+            PathBuf::from("scratch/morph-warehouse/runs/full-2026-05-01")
+        );
+        assert_eq!(output_dir, PathBuf::from("scratch/triage"));
+        assert_eq!(limit, 30);
     }
 
     #[test]

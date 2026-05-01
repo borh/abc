@@ -68,7 +68,16 @@ duckdb -c ".read scratch/morph-warehouse/runs/full-2026-05-01/views.sql" \
        -c "SELECT * FROM top_segmentation_patterns LIMIT 50;"
 ```
 
-Query recurring warehouse patterns through `ab-morph-run` without JSONL intermediates. These commands are the default first-pass triage surface for new runs:
+Query recurring warehouse patterns through `ab-morph-run` without JSONL intermediates. The standard first-pass triage bundle writes errors, top lexical segmentation patterns, and top lexical `pos1` feature patterns to a directory:
+
+```bash
+target/release/ab-morph-run summarize-warehouse-triage \
+  --run-dir scratch/morph-warehouse/runs/full-2026-05-01 \
+  --output-dir scratch/morph-warehouse/triage/full-2026-05-01 \
+  --limit 50
+```
+
+Use the individual summary commands for custom grouping, filtering, or drill-down:
 
 ```bash
 target/release/ab-morph-run summarize-warehouse-nway \

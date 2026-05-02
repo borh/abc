@@ -1,3 +1,4 @@
+mod chunking;
 mod error;
 mod features;
 mod span_builder;

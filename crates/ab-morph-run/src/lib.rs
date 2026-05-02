@@ -6,11 +6,11 @@ mod select;
 mod summary;
 mod warehouse;
 
-use std::collections::{BTreeSet, HashMap};
+use std::collections::{BTreeSet, HashMap, VecDeque};
 use std::fs::{self, File, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use ab_morph_analyzers::{MorphAnalyzer, SudachiAnalyzer, SudachiMode, VibratoAnalyzer};
 use ab_morph_diff::{
@@ -25,7 +25,11 @@ use serde_json::Value;
 use warehouse::schema::{
     ErrorRow as WarehouseErrorRow, RunAnalyzerRow, RunRow, WarehousePaths, WarehouseTable,
 };
-use warehouse::writer::{WarehouseWriter, append_parquet_table_file, parquet_table_row_count};
+use warehouse::writer::{WarehouseWriter, parquet_table_row_count, stage_parquet_table_part};
+
+const LARGE_INPUT_THRESHOLD_BYTES: u64 = 5 * 1024 * 1024;
+const WAREHOUSE_MORPHEME_ROW_BATCH_SIZE: usize = 50_000;
+const WAREHOUSE_REGULAR_BATCH_SIZE: usize = 32;
 
 pub use nway::{NwayFeatureScopeRow, NwayFeatureValueGroupRow, NwaySegmentationGroupRow};
 pub use script::ScriptCategory;
@@ -636,11 +640,30 @@ fn run_analyze_aat_serial(
                 .map(|analysis| warehouse::rows::analysis_row(run_id, &source_id, analysis))
                 .collect::<Vec<_>>();
             writer.append_analyses(&analysis_rows)?;
+            for analysis in &mut analyses {
+                analysis.source_text.clear();
+            }
             for analysis in &analyses {
-                let morphemes = warehouse::rows::morpheme_rows(run_id, &source_id, analysis);
-                writer.append_morphemes(&morphemes)?;
-                let features = warehouse::rows::morpheme_feature_rows(run_id, &source_id, analysis);
-                writer.append_morpheme_features(&features)?;
+                for start in
+                    (0..analysis.morphemes.len()).step_by(WAREHOUSE_MORPHEME_ROW_BATCH_SIZE)
+                {
+                    let end =
+                        (start + WAREHOUSE_MORPHEME_ROW_BATCH_SIZE).min(analysis.morphemes.len());
+                    let morphemes = warehouse::rows::morpheme_rows_for_range(
+                        run_id,
+                        &source_id,
+                        analysis,
+                        start..end,
+                    );
+                    writer.append_morphemes(&morphemes)?;
+                    let features = warehouse::rows::morpheme_feature_rows_for_range(
+                        run_id,
+                        &source_id,
+                        analysis,
+                        start..end,
+                    );
+                    writer.append_morpheme_features(&features)?;
+                }
             }
             match append_warehouse_nway_fact_rows(
                 writer,
@@ -778,7 +801,9 @@ fn run_analyze_aat_warehouse_parallel(
     analyzers: Vec<Arc<LoadedAnalyzer>>,
     options: WarehouseParallelOptions,
 ) -> Result<()> {
-    let partitions = partition_inputs(inputs, options.jobs);
+    let total_inputs = inputs.len();
+    let large_lanes = bounded_large_lane_count(options.jobs);
+    let queue = Arc::new(Mutex::new(WarehouseWorkQueue::new(inputs, large_lanes)));
     let temp_root = std::env::temp_dir().join(format!(
         "ab-morph-run-warehouse-{}-{}",
         std::process::id(),
@@ -793,50 +818,59 @@ fn run_analyze_aat_warehouse_parallel(
 
     let result = std::thread::scope(|scope| {
         let mut handles = Vec::new();
-        for (job_index, partition) in partitions.into_iter().enumerate() {
-            if partition.is_empty() {
-                continue;
-            }
+        for job_index in 0..options.jobs {
             let analyzers = analyzers.clone();
             let shard_warehouse_dir = shard_warehouse_dir.clone();
             let shard_run_id = options.run_id.clone();
             let input_mode = options.input_mode;
             let input_path = options.input_path.clone();
             let analyzer_rows = options.analyzer_rows.clone();
-            let partition_len = partition.len();
+            let queue = Arc::clone(&queue);
             handles.push(scope.spawn(move || -> Result<WarehouseShardOutput> {
-                let paths = WarehousePaths::new(
-                    shard_warehouse_dir.join(format!("shard-{job_index}")),
-                    shard_run_id,
-                );
-                run_analyze_aat_serial(
-                    partition,
-                    &analyzers,
-                    SerialRunOptions {
-                        analyses_output: None,
-                        comparisons_output: None,
-                        errors_output: None,
-                        resume: false,
-                        output_profile: OutputProfile::Compact,
-                        examples_output: None,
-                        max_examples_per_comparison: 0,
-                        nway_output: None,
-                        nway_pattern_counts_output: None,
-                        max_nway_examples_per_text: 0,
-                        collect_string_stats: false,
-                        warehouse: Some(WarehouseRunOptions {
-                            paths,
-                            input_mode,
-                            input_path,
-                            analyzer_rows,
-                        }),
-                        progress: Some(SerialProgress {
-                            label: format!("warehouse-worker-{job_index}"),
-                            total: partition_len,
-                        }),
-                    },
-                )?;
-                Ok(WarehouseShardOutput { job_index })
+                let mut shard_run_dirs = Vec::new();
+                loop {
+                    let Some(batch) = take_warehouse_work_batch(&queue) else {
+                        break;
+                    };
+                    let shard_index = batch.shard_index;
+                    let batch_is_large = batch.is_large;
+                    let batch_len = batch.inputs.len();
+                    let paths = WarehousePaths::new(
+                        shard_warehouse_dir.join(format!("shard-{shard_index}")),
+                        shard_run_id.clone(),
+                    );
+                    let result = run_analyze_aat_serial(
+                        batch.inputs,
+                        &analyzers,
+                        SerialRunOptions {
+                            analyses_output: None,
+                            comparisons_output: None,
+                            errors_output: None,
+                            resume: false,
+                            output_profile: OutputProfile::Compact,
+                            examples_output: None,
+                            max_examples_per_comparison: 0,
+                            nway_output: None,
+                            nway_pattern_counts_output: None,
+                            max_nway_examples_per_text: 0,
+                            collect_string_stats: false,
+                            warehouse: Some(WarehouseRunOptions {
+                                paths: paths.clone(),
+                                input_mode,
+                                input_path: input_path.clone(),
+                                analyzer_rows: analyzer_rows.clone(),
+                            }),
+                            progress: Some(SerialProgress {
+                                label: format!("warehouse-worker-{job_index}/shard-{shard_index}"),
+                                total: batch_len,
+                            }),
+                        },
+                    );
+                    complete_warehouse_work_batch(&queue, batch_is_large);
+                    result?;
+                    shard_run_dirs.push(paths.final_dir);
+                }
+                Ok(WarehouseShardOutput { shard_run_dirs })
             }));
         }
 
@@ -847,26 +881,22 @@ fn run_analyze_aat_warehouse_parallel(
         Ok::<_, anyhow::Error>(outputs)
     });
 
-    let mut outputs = match result {
+    let outputs = match result {
         Ok(outputs) => outputs,
         Err(error) => {
             let _ = fs::remove_dir_all(&temp_root);
             return Err(error);
         }
     };
-    outputs.sort_by_key(|output| output.job_index);
-    let shard_run_dirs = outputs
-        .iter()
-        .map(|output| {
-            shard_warehouse_dir
-                .join(format!("shard-{}", output.job_index))
-                .join("runs")
-                .join(&options.run_id)
-        })
+    let mut shard_run_dirs = outputs
+        .into_iter()
+        .flat_map(|output| output.shard_run_dirs)
         .collect::<Vec<_>>();
+    shard_run_dirs.sort();
     eprintln!(
-        "ab-morph-run: warehouse merging {} shard(s) into run_id={}",
+        "ab-morph-run: warehouse merging {} dynamic shard(s) from {} input(s) into run_id={}",
         shard_run_dirs.len(),
+        total_inputs,
         options.run_id
     );
     merge_warehouse_shard_runs(&options, &shard_run_dirs)?;
@@ -880,7 +910,113 @@ fn run_analyze_aat_warehouse_parallel(
 }
 
 struct WarehouseShardOutput {
-    job_index: usize,
+    shard_run_dirs: Vec<PathBuf>,
+}
+
+struct WarehouseWorkBatch {
+    shard_index: usize,
+    inputs: Vec<PathBuf>,
+    is_large: bool,
+}
+
+struct WarehouseWorkQueue {
+    regular: VecDeque<PathBuf>,
+    large: VecDeque<PathBuf>,
+    next_shard_index: usize,
+    active_large_batches: usize,
+    large_lanes: usize,
+}
+
+impl WarehouseWorkQueue {
+    fn new(inputs: Vec<PathBuf>, large_lanes: usize) -> Self {
+        let mut regular = Vec::new();
+        let mut large = Vec::new();
+        for input in inputs {
+            let size = fs::metadata(&input)
+                .map(|metadata| metadata.len())
+                .unwrap_or(0);
+            if size >= LARGE_INPUT_THRESHOLD_BYTES {
+                large.push((input, size));
+            } else {
+                regular.push((input, size));
+            }
+        }
+        regular.sort_by(|(left_path, left_size), (right_path, right_size)| {
+            left_size
+                .cmp(right_size)
+                .then_with(|| left_path.cmp(right_path))
+        });
+        large.sort_by(|(left_path, left_size), (right_path, right_size)| {
+            left_size
+                .cmp(right_size)
+                .then_with(|| left_path.cmp(right_path))
+        });
+        Self {
+            regular: regular.into_iter().map(|(path, _)| path).collect(),
+            large: large.into_iter().map(|(path, _)| path).collect(),
+            next_shard_index: 0,
+            active_large_batches: 0,
+            large_lanes,
+        }
+    }
+
+    fn take_batch(&mut self) -> Option<WarehouseWorkBatch> {
+        if !self.regular.is_empty() {
+            let shard_index = self.next_shard_index;
+            self.next_shard_index += 1;
+            let mut inputs = Vec::new();
+            for _ in 0..WAREHOUSE_REGULAR_BATCH_SIZE {
+                let Some(input) = self.regular.pop_front() else {
+                    break;
+                };
+                inputs.push(input);
+            }
+            return Some(WarehouseWorkBatch {
+                shard_index,
+                inputs,
+                is_large: false,
+            });
+        }
+
+        if self.active_large_batches < self.large_lanes
+            && let Some(input) = self.large.pop_front()
+        {
+            let shard_index = self.next_shard_index;
+            self.next_shard_index += 1;
+            self.active_large_batches += 1;
+            return Some(WarehouseWorkBatch {
+                shard_index,
+                inputs: vec![input],
+                is_large: true,
+            });
+        }
+
+        None
+    }
+
+    fn complete_batch(&mut self, is_large: bool) {
+        if is_large {
+            self.active_large_batches = self.active_large_batches.saturating_sub(1);
+        }
+    }
+}
+
+fn take_warehouse_work_batch(queue: &Arc<Mutex<WarehouseWorkQueue>>) -> Option<WarehouseWorkBatch> {
+    queue
+        .lock()
+        .expect("warehouse work queue poisoned")
+        .take_batch()
+}
+
+fn complete_warehouse_work_batch(queue: &Arc<Mutex<WarehouseWorkQueue>>, is_large: bool) {
+    queue
+        .lock()
+        .expect("warehouse work queue poisoned")
+        .complete_batch(is_large);
+}
+
+fn bounded_large_lane_count(jobs: usize) -> usize {
+    (jobs / 4).max(1)
 }
 
 fn merge_warehouse_shard_runs(
@@ -896,11 +1032,19 @@ fn merge_warehouse_shard_runs(
         .iter()
         .map(|run_dir| parquet_table_row_count(run_dir, WarehouseTable::Sources))
         .try_fold(0u64, |total, count| count.map(|count| total + count))?;
-    let mut writer = WarehouseWriter::create(paths)?;
+    let mut writer = WarehouseWriter::create_for_tables(
+        paths.clone(),
+        &[WarehouseTable::Runs, WarehouseTable::RunAnalyzers],
+    )?;
     writer.append_run_analyzers(&options.analyzer_rows)?;
     for table in WarehouseTable::MERGED_DATA {
-        for run_dir in shard_run_dirs {
-            append_parquet_table_file(&mut writer, *table, &run_dir.join(table.file_name()))?;
+        for (shard_index, run_dir) in shard_run_dirs.iter().enumerate() {
+            stage_parquet_table_part(
+                &paths.staging_dir,
+                *table,
+                shard_index,
+                &run_dir.join(table.file_name()),
+            )?;
         }
     }
     writer.append_runs(&[RunRow {
@@ -1121,10 +1265,71 @@ fn shard_output_path(output_dir: &Path, final_path: &Path, stem: &str) -> PathBu
 
 fn partition_inputs(inputs: Vec<PathBuf>, jobs: usize) -> Vec<Vec<PathBuf>> {
     let mut partitions = vec![Vec::new(); jobs];
-    for (index, input) in inputs.into_iter().enumerate() {
-        partitions[index % jobs].push(input);
+    let mut partition_sizes = vec![0u64; jobs];
+    let inputs = inputs
+        .into_iter()
+        .map(|input| {
+            let size = fs::metadata(&input)
+                .map(|metadata| metadata.len())
+                .unwrap_or(0);
+            (input, size)
+        })
+        .collect::<Vec<_>>();
+    let (large_inputs, regular_inputs): (Vec<_>, Vec<_>) = inputs
+        .into_iter()
+        .partition(|(_, size)| *size >= LARGE_INPUT_THRESHOLD_BYTES);
+    assign_inputs_to_partitions(&mut partitions, &mut partition_sizes, regular_inputs, jobs);
+    let large_lanes = if large_inputs.is_empty() {
+        jobs
+    } else {
+        (jobs / 4).max(1)
+    };
+    assign_inputs_to_partitions(
+        &mut partitions,
+        &mut partition_sizes,
+        large_inputs,
+        large_lanes,
+    );
+    for partition in &mut partitions {
+        partition.sort_by(|left, right| {
+            let left_size = fs::metadata(left)
+                .map(|metadata| metadata.len())
+                .unwrap_or(0);
+            let right_size = fs::metadata(right)
+                .map(|metadata| metadata.len())
+                .unwrap_or(0);
+            left_size.cmp(&right_size).then_with(|| left.cmp(right))
+        });
     }
     partitions
+}
+
+fn assign_inputs_to_partitions(
+    partitions: &mut [Vec<PathBuf>],
+    partition_sizes: &mut [u64],
+    mut inputs: Vec<(PathBuf, u64)>,
+    lane_count: usize,
+) {
+    inputs.sort_by(|(left_path, left_size), (right_path, right_size)| {
+        right_size
+            .cmp(left_size)
+            .then_with(|| left_path.cmp(right_path))
+    });
+    for (input, size) in inputs {
+        let partition_index = partition_sizes
+            .iter()
+            .take(lane_count)
+            .enumerate()
+            .min_by(|(left_index, left_size), (right_index, right_size)| {
+                left_size
+                    .cmp(right_size)
+                    .then_with(|| left_index.cmp(right_index))
+            })
+            .map(|(index, _)| index)
+            .expect("at least one partition");
+        partition_sizes[partition_index] += size;
+        partitions[partition_index].push(input);
+    }
 }
 
 fn symlink_input_file(input: &Path, link: &Path) -> Result<()> {
@@ -2207,8 +2412,8 @@ mod tests {
 
         let run_dir = warehouse_dir.join("runs").join("run-a");
         assert!(run_dir.join("runs.parquet").is_file());
-        assert!(run_dir.join("sources.parquet").is_file());
-        assert!(run_dir.join("nway_regions.parquet").is_file());
+        assert!(run_dir.join("sources.parquet").is_dir());
+        assert!(run_dir.join("nway_regions.parquet").is_dir());
         assert_eq!(
             fs::read_dir(warehouse_dir.join("runs"))
                 .unwrap()
@@ -2223,25 +2428,114 @@ mod tests {
     }
 
     #[test]
-    fn partitions_inputs_round_robin_by_job() {
-        let inputs = (0..7)
-            .map(|index| PathBuf::from(format!("work-{index}.json")))
+    fn partitions_inputs_by_size_to_balance_worker_load() {
+        let dir = temp_dir("partition-sizes");
+        fs::create_dir_all(&dir).unwrap();
+        let inputs = [90usize, 80, 70, 60, 50]
+            .into_iter()
+            .enumerate()
+            .map(|(index, size)| {
+                let path = dir.join(format!("work-{index}.json"));
+                fs::write(&path, vec![b'x'; size]).unwrap();
+                path
+            })
             .collect::<Vec<_>>();
 
         let partitions = partition_inputs(inputs, 3);
 
-        assert_eq!(
-            partitions,
-            vec![
-                vec![
-                    PathBuf::from("work-0.json"),
-                    PathBuf::from("work-3.json"),
-                    PathBuf::from("work-6.json"),
-                ],
-                vec![PathBuf::from("work-1.json"), PathBuf::from("work-4.json")],
-                vec![PathBuf::from("work-2.json"), PathBuf::from("work-5.json")],
-            ]
-        );
+        let partition_sizes = partitions
+            .iter()
+            .map(|partition| {
+                partition
+                    .iter()
+                    .map(|path| fs::metadata(path).unwrap().len())
+                    .sum::<u64>()
+            })
+            .collect::<Vec<_>>();
+
+        assert_eq!(partition_sizes, vec![90, 130, 130]);
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn partitions_delay_largest_inputs_to_reduce_peak_worker_memory() {
+        let dir = temp_dir("partition-memory");
+        fs::create_dir_all(&dir).unwrap();
+        let inputs = [
+            8 * 1024 * 1024usize,
+            7 * 1024 * 1024,
+            6 * 1024 * 1024,
+            5 * 1024 * 1024,
+            10,
+            9,
+            8,
+            7,
+        ]
+        .into_iter()
+        .enumerate()
+        .map(|(index, size)| {
+            let path = dir.join(format!("work-{index}.json"));
+            File::create(&path).unwrap().set_len(size as u64).unwrap();
+            path
+        })
+        .collect::<Vec<_>>();
+
+        let partitions = partition_inputs(inputs, 4);
+        let first_wave_sizes = partitions
+            .iter()
+            .map(|partition| fs::metadata(partition.first().unwrap()).unwrap().len())
+            .collect::<Vec<_>>();
+
+        assert_eq!(first_wave_sizes, vec![10, 9, 8, 7]);
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn warehouse_work_queue_limits_concurrent_large_batches() {
+        let dir = temp_dir("dynamic-large-lanes");
+        fs::create_dir_all(&dir).unwrap();
+        let inputs = [8 * 1024 * 1024usize, 7 * 1024 * 1024]
+            .into_iter()
+            .enumerate()
+            .map(|(index, size)| {
+                let path = dir.join(format!("large-{index}.json"));
+                File::create(&path).unwrap().set_len(size as u64).unwrap();
+                path
+            })
+            .collect::<Vec<_>>();
+        let mut queue = WarehouseWorkQueue::new(inputs, 1);
+
+        let first = queue.take_batch().unwrap();
+
+        assert!(first.is_large);
+        assert!(queue.take_batch().is_none());
+        queue.complete_batch(first.is_large);
+        assert!(queue.take_batch().unwrap().is_large);
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn warehouse_work_queue_batches_regular_work_before_large_work() {
+        let dir = temp_dir("dynamic-regular-first");
+        fs::create_dir_all(&dir).unwrap();
+        let inputs = [8 * 1024 * 1024usize, 12, 11]
+            .into_iter()
+            .enumerate()
+            .map(|(index, size)| {
+                let path = dir.join(format!("work-{index}.json"));
+                File::create(&path).unwrap().set_len(size as u64).unwrap();
+                path
+            })
+            .collect::<Vec<_>>();
+        let mut queue = WarehouseWorkQueue::new(inputs, 1);
+
+        let regular = queue.take_batch().unwrap();
+        let large = queue.take_batch().unwrap();
+
+        assert!(!regular.is_large);
+        assert_eq!(regular.inputs.len(), 2);
+        assert!(large.is_large);
+        let _ = fs::remove_dir_all(dir);
     }
 
     #[test]

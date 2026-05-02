@@ -17,7 +17,6 @@ pub(crate) enum WarehouseTable {
 }
 
 impl WarehouseTable {
-    #[cfg(test)]
     pub(crate) const ALL: &'static [Self] = &[
         Self::Runs,
         Self::RunAnalyzers,

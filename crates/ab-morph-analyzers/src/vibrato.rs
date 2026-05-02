@@ -4,9 +4,12 @@ use ab_morph_diff::Analysis;
 use ab_plaintext::PlainTextDocument;
 use vibrato_rkyv::{CacheStrategy, Dictionary, LoadMode, Tokenizer};
 
+use crate::chunking::semantic_chunks;
 use crate::features::parse_vibrato_feature_string;
 use crate::span_builder::{RawToken, build_analysis_from_tokens};
 use crate::{AnalyzerError, MorphAnalyzer};
+
+const VIBRATO_CHUNK_BYTES: usize = 32_000;
 
 pub struct VibratoAnalyzer {
     analyzer_id: String,
@@ -65,18 +68,40 @@ impl MorphAnalyzer for VibratoAnalyzer {
 
     fn analyze(&self, document: &PlainTextDocument) -> Result<Analysis, AnalyzerError> {
         let mut worker = self.tokenizer.new_worker();
-        worker.reset_sentence(&document.text);
-        worker.tokenize();
+        let chunks = semantic_chunks(&document.text, VIBRATO_CHUNK_BYTES);
+        let mut hard_split_count = 0usize;
+        let mut first_hard_split_offset = None;
+        let mut tokens = Vec::new();
+
+        for chunk in chunks {
+            if chunk.hard_split {
+                hard_split_count += 1;
+                first_hard_split_offset.get_or_insert(chunk.byte_offset);
+            }
+            worker.reset_sentence(chunk.text);
+            worker.tokenize();
+            tokens.extend(worker.token_iter().map(|token| RawToken {
+                emitted_surface: token.surface().to_owned(),
+                byte_span: None,
+                features: parse_vibrato_feature_string(token.feature()),
+            }));
+        }
+        if hard_split_count > 0 {
+            eprintln!(
+                "ab-morph-analyzers: analyzer={} text_id={} stage=vibrato_chunk warning=hard_split_without_sentence_boundary count={} first_byte_offset={} hard_limit_bytes={}",
+                self.analyzer_id,
+                document.text_id,
+                hard_split_count,
+                first_hard_split_offset.unwrap_or(0),
+                VIBRATO_CHUNK_BYTES
+            );
+        }
 
         build_analysis_from_tokens(
             self.analyzer_id.clone(),
             document.text_id.clone(),
             document.text.clone(),
-            worker.token_iter().map(|token| RawToken {
-                emitted_surface: token.surface().to_owned(),
-                byte_span: None,
-                features: parse_vibrato_feature_string(token.feature()),
-            }),
+            tokens,
         )
     }
 }

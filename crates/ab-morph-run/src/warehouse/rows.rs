@@ -43,15 +43,27 @@ pub(crate) fn analysis_row(run_id: &str, source_id: &str, analysis: &Analysis) -
     }
 }
 
+#[cfg(test)]
 pub(crate) fn morpheme_rows(
     run_id: &str,
     source_id: &str,
     analysis: &Analysis,
 ) -> Vec<MorphemeRow> {
+    morpheme_rows_for_range(run_id, source_id, analysis, 0..analysis.morphemes.len())
+}
+
+pub(crate) fn morpheme_rows_for_range(
+    run_id: &str,
+    source_id: &str,
+    analysis: &Analysis,
+    range: Range<usize>,
+) -> Vec<MorphemeRow> {
     analysis
         .morphemes
         .iter()
         .enumerate()
+        .skip(range.start)
+        .take(range.end.saturating_sub(range.start))
         .map(|(index, morpheme)| MorphemeRow {
             run_id: run_id.to_owned(),
             source_id: source_id.to_owned(),
@@ -67,15 +79,27 @@ pub(crate) fn morpheme_rows(
         .collect()
 }
 
+#[cfg(test)]
 pub(crate) fn morpheme_feature_rows(
     run_id: &str,
     source_id: &str,
     analysis: &Analysis,
 ) -> Vec<MorphemeFeatureRow> {
+    morpheme_feature_rows_for_range(run_id, source_id, analysis, 0..analysis.morphemes.len())
+}
+
+pub(crate) fn morpheme_feature_rows_for_range(
+    run_id: &str,
+    source_id: &str,
+    analysis: &Analysis,
+    range: Range<usize>,
+) -> Vec<MorphemeFeatureRow> {
     analysis
         .morphemes
         .iter()
         .enumerate()
+        .skip(range.start)
+        .take(range.end.saturating_sub(range.start))
         .flat_map(|(index, morpheme)| {
             morpheme
                 .features
@@ -297,6 +321,38 @@ mod tests {
             features.iter().any(
                 |row| row.feature_key == "pos1" && row.feature_value.as_deref() == Some("名詞")
             )
+        );
+    }
+
+    #[test]
+    fn morpheme_row_ranges_keep_original_indices() {
+        let analysis = analysis(
+            "work-a",
+            "vibrato",
+            "今日は晴れ",
+            vec![
+                m("今日", 0..6, 0..2, [("pos1", Some("名詞"))]),
+                m("は", 6..9, 2..3, [("pos1", Some("助詞"))]),
+                m("晴れ", 9..15, 3..5, [("pos1", Some("名詞"))]),
+            ],
+        );
+
+        let morphemes = morpheme_rows_for_range("run-a", "source-a", &analysis, 1..3);
+        let features = morpheme_feature_rows_for_range("run-a", "source-a", &analysis, 1..3);
+
+        assert_eq!(
+            morphemes
+                .iter()
+                .map(|row| (row.morpheme_index, row.surface.as_str()))
+                .collect::<Vec<_>>(),
+            vec![(1, "は"), (2, "晴れ")]
+        );
+        assert_eq!(
+            features
+                .iter()
+                .map(|row| (row.morpheme_index, row.feature_key.as_str()))
+                .collect::<Vec<_>>(),
+            vec![(1, "pos1"), (2, "pos1")]
         );
     }
 

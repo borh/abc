@@ -1,5 +1,5 @@
 use std::collections::{BTreeMap, BTreeSet};
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::{self, Write};
 use std::path::Path;
 use std::process::Command;
@@ -2453,6 +2453,27 @@ fn warehouse_text_filter_matches(filter: WarehouseTextFilter, flags: WarehouseRe
 
 fn read_warehouse_table(run_dir: &Path, table: WarehouseTable) -> Result<Vec<RecordBatch>> {
     let path = run_dir.join(table.file_name());
+    if path.is_dir() {
+        let mut paths = fs::read_dir(&path)
+            .with_context(|| format!("failed to read {}", path.display()))?
+            .map(|entry| entry.map(|entry| entry.path()))
+            .collect::<std::result::Result<Vec<_>, _>>()
+            .with_context(|| format!("failed to read {}", path.display()))?;
+        paths.retain(|path| {
+            path.extension()
+                .is_some_and(|extension| extension == "parquet")
+        });
+        paths.sort();
+        let mut batches = Vec::new();
+        for part in paths {
+            batches.extend(read_warehouse_parquet_file(&part)?);
+        }
+        return Ok(batches);
+    }
+    read_warehouse_parquet_file(&path)
+}
+
+fn read_warehouse_parquet_file(path: &Path) -> Result<Vec<RecordBatch>> {
     let file = File::open(&path).with_context(|| format!("failed to open {}", path.display()))?;
     let reader = ParquetRecordBatchReaderBuilder::try_new(file)
         .with_context(|| format!("failed to read parquet metadata from {}", path.display()))?

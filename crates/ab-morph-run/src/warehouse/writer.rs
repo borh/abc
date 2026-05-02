@@ -35,6 +35,13 @@ pub(crate) struct WarehouseWriter {
 
 impl WarehouseWriter {
     pub(crate) fn create(paths: WarehousePaths) -> Result<Self> {
+        Self::create_for_tables(paths, WarehouseTable::ALL)
+    }
+
+    pub(crate) fn create_for_tables(
+        paths: WarehousePaths,
+        tables: &[WarehouseTable],
+    ) -> Result<Self> {
         if paths.final_dir.exists() {
             bail!("warehouse run {} already exists", paths.run_id);
         }
@@ -48,56 +55,61 @@ impl WarehouseWriter {
         crate::warehouse::sql::write_schema_sql(&paths.warehouse_dir)?;
 
         Ok(Self {
-            runs: Some(open_table_writer(
+            runs: open_optional_table_writer(&paths, tables, WarehouseTable::Runs, runs_schema())?,
+            run_analyzers: open_optional_table_writer(
                 &paths,
-                WarehouseTable::Runs,
-                runs_schema(),
-            )?),
-            run_analyzers: Some(open_table_writer(
-                &paths,
+                tables,
                 WarehouseTable::RunAnalyzers,
                 run_analyzers_schema(),
-            )?),
-            sources: Some(open_table_writer(
+            )?,
+            sources: open_optional_table_writer(
                 &paths,
+                tables,
                 WarehouseTable::Sources,
                 sources_schema(),
-            )?),
-            analyses: Some(open_table_writer(
+            )?,
+            analyses: open_optional_table_writer(
                 &paths,
+                tables,
                 WarehouseTable::Analyses,
                 analyses_schema(),
-            )?),
-            morphemes: Some(open_table_writer(
+            )?,
+            morphemes: open_optional_table_writer(
                 &paths,
+                tables,
                 WarehouseTable::Morphemes,
                 morphemes_schema(),
-            )?),
-            morpheme_features: Some(open_table_writer(
+            )?,
+            morpheme_features: open_optional_table_writer(
                 &paths,
+                tables,
                 WarehouseTable::MorphemeFeatures,
                 morpheme_features_schema(),
-            )?),
-            nway_regions: Some(open_table_writer(
+            )?,
+            nway_regions: open_optional_table_writer(
                 &paths,
+                tables,
                 WarehouseTable::NwayRegions,
                 nway_regions_schema(),
-            )?),
-            nway_region_analyzers: Some(open_table_writer(
+            )?,
+            nway_region_analyzers: open_optional_table_writer(
                 &paths,
+                tables,
                 WarehouseTable::NwayRegionAnalyzers,
                 nway_region_analyzers_schema(),
-            )?),
-            nway_feature_diffs: Some(open_table_writer(
+            )?,
+            nway_feature_diffs: open_optional_table_writer(
                 &paths,
+                tables,
                 WarehouseTable::NwayFeatureDiffs,
                 nway_feature_diffs_schema(),
-            )?),
-            errors: Some(open_table_writer(
+            )?,
+            errors: open_optional_table_writer(
                 &paths,
+                tables,
                 WarehouseTable::Errors,
                 errors_schema(),
-            )?),
+            )?,
             paths,
         })
     }
@@ -315,6 +327,7 @@ impl WarehouseWriter {
         )
     }
 
+    #[cfg(test)]
     pub(crate) fn append_record_batch(
         &mut self,
         table: WarehouseTable,
@@ -391,6 +404,7 @@ impl WarehouseWriter {
     }
 }
 
+#[cfg(test)]
 pub(crate) fn append_parquet_table_file(
     writer: &mut WarehouseWriter,
     table: WarehouseTable,
@@ -412,10 +426,79 @@ pub(crate) fn append_parquet_table_file(
 
 pub(crate) fn parquet_table_row_count(run_dir: &Path, table: WarehouseTable) -> Result<u64> {
     let path = run_dir.join(table.file_name());
+    if path.is_dir() {
+        return parquet_table_part_paths(&path)?
+            .into_iter()
+            .try_fold(0u64, |total, path| {
+                parquet_file_row_count(&path).map(|count| total + count)
+            });
+    }
+    parquet_file_row_count(&path)
+}
+
+pub(crate) fn stage_parquet_table_part(
+    staging_run_dir: &Path,
+    table: WarehouseTable,
+    shard_index: usize,
+    source_path: &Path,
+) -> Result<()> {
+    let dataset_dir = staging_run_dir.join(table.file_name());
+    fs::create_dir_all(&dataset_dir)
+        .with_context(|| format!("failed to create {}", dataset_dir.display()))?;
+    if source_path.is_dir() {
+        for (part_index, part) in parquet_table_part_paths(source_path)?
+            .into_iter()
+            .enumerate()
+        {
+            move_or_copy_parquet_part(
+                &part,
+                &dataset_dir.join(format!("part-{shard_index:05}-{part_index:05}.parquet")),
+            )?;
+        }
+    } else {
+        move_or_copy_parquet_part(
+            source_path,
+            &dataset_dir.join(format!("part-{shard_index:05}.parquet")),
+        )?;
+    }
+    Ok(())
+}
+
+fn parquet_file_row_count(path: &Path) -> Result<u64> {
     let file = File::open(&path).with_context(|| format!("failed to open {}", path.display()))?;
     let builder = ParquetRecordBatchReaderBuilder::try_new(file)
         .with_context(|| format!("failed to read parquet metadata from {}", path.display()))?;
     Ok(builder.metadata().file_metadata().num_rows() as u64)
+}
+
+fn parquet_table_part_paths(dataset_dir: &Path) -> Result<Vec<std::path::PathBuf>> {
+    let mut paths = fs::read_dir(dataset_dir)
+        .with_context(|| format!("failed to read {}", dataset_dir.display()))?
+        .map(|entry| entry.map(|entry| entry.path()))
+        .collect::<std::result::Result<Vec<_>, _>>()
+        .with_context(|| format!("failed to read {}", dataset_dir.display()))?;
+    paths.retain(|path| {
+        path.extension()
+            .is_some_and(|extension| extension == "parquet")
+    });
+    paths.sort();
+    Ok(paths)
+}
+
+fn move_or_copy_parquet_part(source: &Path, destination: &Path) -> Result<()> {
+    match fs::rename(source, destination) {
+        Ok(()) => Ok(()),
+        Err(rename_error) => {
+            fs::copy(source, destination).with_context(|| {
+                format!(
+                    "failed to move {} to {} after rename failed with {rename_error}",
+                    source.display(),
+                    destination.display()
+                )
+            })?;
+            Ok(())
+        }
+    }
 }
 
 #[cfg(test)]
@@ -475,6 +558,19 @@ fn open_table_writer(
         schema,
         Some(writer_properties()),
     )?)
+}
+
+fn open_optional_table_writer(
+    paths: &WarehousePaths,
+    tables: &[WarehouseTable],
+    table: WarehouseTable,
+    schema: Arc<Schema>,
+) -> Result<Option<ArrowWriter<File>>> {
+    if tables.contains(&table) {
+        open_table_writer(paths, table, schema).map(Some)
+    } else {
+        Ok(None)
+    }
 }
 
 fn writer_properties() -> WriterProperties {
@@ -835,6 +931,122 @@ mod tests {
                 .is_file()
         );
         let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn append_parquet_table_file_coalesces_tiny_row_groups() {
+        let root = temp_dir("coalesce-row-groups");
+        fs::create_dir_all(&root).unwrap();
+        let shard_sources = root.join("shard-sources.parquet");
+        let rows = (0..100)
+            .map(|index| SourceRow {
+                run_id: "run-a".to_owned(),
+                source_id: format!("source-{index}"),
+                text_id: format!("work-{index}"),
+                aat_path: format!("aat/{index}.json"),
+                source_bytes: 10,
+                source_chars: 10,
+            })
+            .collect::<Vec<_>>();
+        let mut shard = ArrowWriter::try_new(
+            File::create(&shard_sources).unwrap(),
+            sources_schema(),
+            Some(
+                WriterProperties::builder()
+                    .set_max_row_group_size(1)
+                    .build(),
+            ),
+        )
+        .unwrap();
+        write_batch(
+            &mut shard,
+            sources_schema(),
+            vec![
+                string_array(rows.iter().map(|row| row.run_id.as_str())),
+                string_array(rows.iter().map(|row| row.source_id.as_str())),
+                string_array(rows.iter().map(|row| row.text_id.as_str())),
+                string_array(rows.iter().map(|row| row.aat_path.as_str())),
+                u64_array(rows.iter().map(|row| row.source_bytes)),
+                u64_array(rows.iter().map(|row| row.source_chars)),
+            ],
+        )
+        .unwrap();
+        shard.close().unwrap();
+        assert!(
+            row_group_count(&shard_sources) > 10,
+            "fixture should create many source row groups"
+        );
+
+        let merged_paths = WarehousePaths::new(root.join("merged"), "run-a");
+        let mut merged = WarehouseWriter::create(merged_paths.clone()).unwrap();
+        append_parquet_table_file(&mut merged, WarehouseTable::Sources, &shard_sources).unwrap();
+        merged.finalize().unwrap();
+
+        assert_eq!(
+            parquet_table_row_count(&merged_paths.final_dir, WarehouseTable::Sources).unwrap(),
+            100
+        );
+        assert!(
+            row_group_count(&merged_paths.final_table_path(WarehouseTable::Sources)) <= 2,
+            "merged file should not preserve one row group per tiny shard batch"
+        );
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn parquet_table_row_count_sums_partitioned_table_dir() {
+        let root = temp_dir("partition-count");
+        let part_dir = root.join("run").join(WarehouseTable::Sources.file_name());
+        fs::create_dir_all(&part_dir).unwrap();
+        write_sources_part(&part_dir.join("part-00000.parquet"), "a", 2);
+        write_sources_part(&part_dir.join("part-00001.parquet"), "b", 3);
+
+        assert_eq!(
+            parquet_table_row_count(&root.join("run"), WarehouseTable::Sources).unwrap(),
+            5
+        );
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    fn write_sources_part(path: &Path, prefix: &str, count: usize) {
+        let rows = (0..count)
+            .map(|index| SourceRow {
+                run_id: "run-a".to_owned(),
+                source_id: format!("{prefix}-source-{index}"),
+                text_id: format!("{prefix}-work-{index}"),
+                aat_path: format!("aat/{prefix}-{index}.json"),
+                source_bytes: 10,
+                source_chars: 10,
+            })
+            .collect::<Vec<_>>();
+        let mut writer = ArrowWriter::try_new(
+            File::create(path).unwrap(),
+            sources_schema(),
+            Some(writer_properties()),
+        )
+        .unwrap();
+        write_batch(
+            &mut writer,
+            sources_schema(),
+            vec![
+                string_array(rows.iter().map(|row| row.run_id.as_str())),
+                string_array(rows.iter().map(|row| row.source_id.as_str())),
+                string_array(rows.iter().map(|row| row.text_id.as_str())),
+                string_array(rows.iter().map(|row| row.aat_path.as_str())),
+                u64_array(rows.iter().map(|row| row.source_bytes)),
+                u64_array(rows.iter().map(|row| row.source_chars)),
+            ],
+        )
+        .unwrap();
+        writer.close().unwrap();
+    }
+
+    fn row_group_count(path: &Path) -> usize {
+        let file = File::open(path).unwrap();
+        let builder = ParquetRecordBatchReaderBuilder::try_new(file).unwrap();
+        builder.metadata().num_row_groups()
     }
 
     fn temp_dir(label: &str) -> std::path::PathBuf {

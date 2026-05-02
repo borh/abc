@@ -11,6 +11,7 @@ use sudachi::dic::dictionary::JapaneseDictionary;
 use sudachi::dic::subset::InfoSubset;
 use sudachi::prelude::{Mode, Morpheme, MorphemeList};
 
+use crate::chunking::{TextChunk, semantic_chunks};
 use crate::features::feature_value;
 use crate::span_builder::{RawToken, build_morphemes_from_tokens};
 use crate::{AnalyzerError, MorphAnalyzer};
@@ -140,7 +141,7 @@ impl SudachiAnalyzer {
     fn analyze_chunk(
         &self,
         document: &PlainTextDocument,
-        chunk: &SudachiChunk<'_>,
+        chunk: &TextChunk<'_>,
         tokenizer: &mut StatefulTokenizer<&JapaneseDictionary>,
     ) -> Result<Vec<DiffMorpheme>, AnalyzerError> {
         tokenizer.reset().push_str(chunk.text);
@@ -171,94 +172,8 @@ impl SudachiAnalyzer {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-struct SudachiChunk<'a> {
-    text: &'a str,
-    byte_offset: usize,
-    char_offset: usize,
-    hard_split: bool,
-}
-
-fn sudachi_chunks(text: &str, max_bytes: usize) -> Vec<SudachiChunk<'_>> {
-    if text.is_empty() {
-        return Vec::new();
-    }
-
-    let mut chunks = Vec::new();
-    let mut start = 0usize;
-    let mut char_offset = 0usize;
-
-    while start < text.len() {
-        let (end, hard_split) = choose_chunk_end(text, start, max_bytes);
-        let chunk_text = &text[start..end];
-        let chunk_chars = chunk_text.chars().count();
-        chunks.push(SudachiChunk {
-            text: chunk_text,
-            byte_offset: start,
-            char_offset,
-            hard_split,
-        });
-        start = end;
-        char_offset += chunk_chars;
-    }
-
-    chunks
-}
-
-fn choose_chunk_end(text: &str, start: usize, max_bytes: usize) -> (usize, bool) {
-    let hard_end = next_char_boundary_at_or_before(text, (start + max_bytes).min(text.len()));
-    if hard_end == text.len() {
-        if let Some(end) = find_first_boundary(text, start, hard_end) {
-            return (end, false);
-        }
-        return (hard_end, false);
-    }
-
-    if let Some(end) = find_first_boundary(text, start, hard_end)
-        && end > start
-    {
-        return (end, false);
-    }
-
-    (hard_end.max(next_char_boundary_after(text, start)), true)
-}
-
-fn find_first_boundary(text: &str, start: usize, hard_end: usize) -> Option<usize> {
-    let mut iter = text[start..hard_end].char_indices().peekable();
-    while let Some((relative_index, ch)) = iter.next() {
-        if !is_chunk_boundary(ch) {
-            continue;
-        }
-        let mut end = start + relative_index + ch.len_utf8();
-        while let Some((next_relative_index, next_ch)) = iter.peek().copied() {
-            if !is_chunk_boundary(next_ch) {
-                break;
-            }
-            iter.next();
-            end = start + next_relative_index + next_ch.len_utf8();
-        }
-        return Some(end);
-    }
-    None
-}
-
-fn is_chunk_boundary(ch: char) -> bool {
-    ch == '\n' || ch == '\r' || matches!(ch, '。' | '！' | '？' | '!' | '?')
-}
-
-fn next_char_boundary_at_or_before(text: &str, mut index: usize) -> usize {
-    while index > 0 && !text.is_char_boundary(index) {
-        index -= 1;
-    }
-    index
-}
-
-fn next_char_boundary_after(text: &str, mut index: usize) -> usize {
-    index += 1;
-    while index < text.len() && !text.is_char_boundary(index) {
-        index += 1;
-    }
-    index.min(text.len())
+fn sudachi_chunks(text: &str, max_bytes: usize) -> Vec<TextChunk<'_>> {
+    semantic_chunks(text, max_bytes)
 }
 
 fn offset_chunk_morphemes(morphemes: &mut [DiffMorpheme], byte_offset: usize, char_offset: usize) {

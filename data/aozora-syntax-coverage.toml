@@ -176,7 +176,7 @@ validation_properties = ["semantic_ruby_sequence", "semantic_gaiji_sequence", "g
 adapter_expectations = ["preserve ruby relationship in IR", "do not emit orphan ruby when AAT cannot represent unresolved base"]
 oracle_cases = ["ruby.gaiji.inline_base"]
 status = "partial"
-status_reason = "current AAT cannot represent a structured ruby base"
+status_reason = "resolved gaiji bases can be represented with ruby.base_content; unresolved bases still need warning and fallback policy"
 
 [syntax.parsers.aozora2]
 recognition = "parsed"

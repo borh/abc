@@ -214,6 +214,24 @@ mod tests {
             .find(|case| case.id == "ruby.basic.simple")
             .unwrap();
         assert_eq!(ruby_case.current_review_status(), ReviewStatus::Reviewed);
+
+        let gaiji_ruby_case = cases
+            .case
+            .iter()
+            .find(|case| case.id == "ruby.gaiji.inline_base")
+            .unwrap();
+        assert_eq!(
+            gaiji_ruby_case.current_review_status(),
+            ReviewStatus::Reviewed
+        );
+        assert_eq!(
+            gaiji_ruby_case.evidence_ids,
+            vec!["jis-x-0213-1-15-23", "aozora-rule-ruby-basic"]
+        );
+        assert_eq!(
+            gaiji_ruby_case.oracle.visible_text.as_deref(),
+            Some("噯が出た。")
+        );
     }
 
     #[test]

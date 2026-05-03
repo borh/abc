@@ -19,20 +19,21 @@ supports = "U+546D is 呭."
 independent = true
 
 [[evidence]]
-id = "aozora-ruby-gaiji-inline-base"
-kind = "curator_note"
-citation = "Curated Aozora syntax fixture for gaiji marker followed by ruby annotation"
-supports = "The gaiji marker is the ruby base and should not become a raw node."
-independent = true
-notes = "Draft evidence only; requires separate confirmation against Aozora rule text or corpus examples before reviewed status."
-
-[[evidence]]
 id = "aozora-rule-ruby-basic"
 kind = "aozora_rule"
 citation = "Aozora Bunko input manual, section 4-1 ruby"
 locator = "4-1. Ruby"
 url = "https://www.aozora.gr.jp/aozora-manual/index-input.html"
 supports = "Aozora ruby notation writes the reading in 《》 after the base text; ｜ marks the beginning of the base when the ruby range is otherwise ambiguous."
+independent = true
+
+[[evidence]]
+id = "jis-x-0213-1-15-23"
+kind = "reference_table"
+citation = "Project X0213 JIS X 0213:2004 code table, row 3-2F37"
+locator = "1-15-23"
+url = "https://www.x0213.org/codetable/jisx0213-2004-std.txt"
+supports = "JIS X 0213 plane 1 row 15 cell 23 resolves to U+566F 噯."
 independent = true
 
 [[case]]
@@ -105,7 +106,7 @@ id = "ruby.gaiji.inline_base"
 syntax_row_ids = ["gaiji_ruby.inline_base", "ruby.basic"]
 category = "ruby"
 source_utf8 = "※［＃「口＋愛」、第3水準1-15-23］《おくび》が出た。"
-evidence_ids = ["aozora-ruby-gaiji-inline-base"]
+evidence_ids = ["jis-x-0213-1-15-23", "aozora-rule-ruby-basic"]
 
 [[case.review]]
 status = "draft"
@@ -113,18 +114,32 @@ reviewer = "oracle-seed"
 reviewed_at = "2026-05-03"
 notes = "Curated structural fixture; not reviewed against independent Aozora rule evidence yet."
 
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified gaiji base against Project X0213 and ruby attachment syntax against the Aozora Bunko input manual."
+
 [case.oracle]
-visible_text = "が出た。"
+visible_text = "噯が出た。"
+
+[[case.oracle.sequence]]
+selector = "blocks.*.content"
+kinds = ["ruby", "text"]
 
 [[case.oracle.nodes]]
-selector = "**"
+selector = "blocks.*.content.*"
 kind = "ruby"
-min_count = 1
+count = 1
+fields = { base = "噯", reading = "おくび", direction = "right" }
 
-[[case.oracle.nodes]]
-selector = "**"
-kind = "gaiji"
-min_count = 1
+[[case.oracle.gaiji]]
+selector = "blocks.*.content.*.base_content.*"
+description = "「口＋愛」、第3水準1-15-23"
+resolved = "噯"
+jis_code = "1-15-23"
+unresolved_reason = ""
+source = "JIS X 0213"
 
 [[case.oracle.nodes]]
 selector = "**"

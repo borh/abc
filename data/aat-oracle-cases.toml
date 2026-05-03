@@ -37,7 +37,7 @@ independent = true
 
 [[case]]
 id = "gaiji.jis.2-13-47"
-syntax_row_ids = ["gaiji.jis_code"]
+syntax_row_ids = ["gaiji.marker", "gaiji.jis_code"]
 category = "gaiji"
 source_utf8 = "耳朶を※［＃「てへん＋掌」、第4水準2-13-47］えて"
 evidence_ids = ["jis-x-0213-2-13-47"]
@@ -72,7 +72,7 @@ source = "JIS X 0213"
 
 [[case]]
 id = "gaiji.unicode.u546d"
-syntax_row_ids = ["gaiji.unicode_codepoint"]
+syntax_row_ids = ["gaiji.marker", "gaiji.unicode_codepoint"]
 category = "gaiji"
 source_utf8 = "※［＃「口＋世」、U+546D］は珍しい字。"
 evidence_ids = ["unicode-u546d"]

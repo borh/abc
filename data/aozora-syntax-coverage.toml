@@ -116,6 +116,7 @@ plaintext_projection = "resolved_character_or_drop"
 comparison_projection = "resolved_character_or_drop"
 validation_properties = ["gaiji_resolution", "semantic_gaiji_sequence", "gaiji_resolution_quality"]
 adapter_expectations = ["preserve source marker", "classify gaiji kind", "report unresolved reason"]
+oracle_cases = ["gaiji.jis.2-13-47", "gaiji.unicode.u546d"]
 status = "partial"
 status_reason = "current ab-ir stores gaiji as description plus resolved string without typed kind"
 

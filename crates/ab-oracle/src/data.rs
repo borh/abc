@@ -198,6 +198,7 @@ mod tests {
             .find(|case| case.id == "gaiji.jis.2-13-47")
             .unwrap();
         assert_eq!(case.evidence_ids, vec!["jis-x-0213-2-13-47"]);
+        assert!(case.syntax_row_ids.iter().any(|id| id == "gaiji.marker"));
         assert_eq!(case.current_review_status(), ReviewStatus::Reviewed);
 
         let ruby_evidence = cases

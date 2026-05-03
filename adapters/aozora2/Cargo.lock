@@ -106,7 +106,8 @@ checksum = "7f202df86484c868dbad7eaa557ef785d5c66295e41b460ef922eca0723b842c"
 [[package]]
 name = "aozora-core"
 version = "0.7.1"
-source = "git+https://github.com/takahashim/aozora2?rev=93420b53c7d52579a0ca3fde466cef8ce6d89879#93420b53c7d52579a0ca3fde466cef8ce6d89879"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "63df0ee4cba237cc1971cde19bea936e2b288abdbd8521923a2ce6d4166075cb"
 dependencies = [
  "encoding_rs",
  "flate2",

@@ -1,7 +1,8 @@
-use anyhow::Result;
-use encoding_rs::SHIFT_JIS;
+#[cfg(test)]
 use ab_source_syntax as source_syntax;
-use serde::Serialize;
+use anyhow::Result;
+use aozora_core::{Node, RubyDirection};
+use encoding_rs::SHIFT_JIS;
 use serde_json::json;
 use sha2::{Digest, Sha256};
 
@@ -12,14 +13,6 @@ pub struct DecodedSource {
     pub text: String,
     pub encoding: &'static str,
     pub source_hash: String,
-}
-
-#[derive(Debug, Serialize)]
-struct Span {
-    line_start: usize,
-    line_end: usize,
-    byte_start: usize,
-    byte_end: usize,
 }
 
 pub fn decode_source_bytes(bytes: &[u8]) -> Result<DecodedSource> {
@@ -116,82 +109,154 @@ pub fn body_text(text: &str) -> &str {
 }
 
 fn parse_inline_content(text: &str) -> Vec<serde_json::Value> {
-    let events = source_syntax::source_events(text);
-    let source_visible = source_syntax::comparison_lossy_body_from_events(&events);
+    let tokens = aozora_core::tokenize(text);
+    let nodes = aozora_core::parse(&tokens);
+    aozora_nodes_to_aat_content(&nodes)
+}
+
+fn aozora_nodes_to_aat_content(nodes: &[Node]) -> Vec<serde_json::Value> {
     let mut content = Vec::new();
-    content.push(json!({
-        "kind": "text",
-        "value": source_visible,
-        "span": span_for(text, 0, text.len())
-    }));
-    append_source_annotations_from_events(&mut content, &events);
+    for node in nodes {
+        append_aozora_node(&mut content, node);
+    }
     content
 }
 
-fn append_source_annotations_from_events(
-    content: &mut Vec<serde_json::Value>,
-    events: &[source_syntax::SourceEvent],
-) {
-    let mut last_gaiji_end = None;
-    for event in events {
-        match event.kind {
-            source_syntax::SourceEventKind::Ruby { reading, .. } => {
-                if last_gaiji_end != Some(event.span.start) {
-                    content.push(json!({
-                        "kind": "ruby",
-                        "base": "",
-                        "reading": reading
-                    }));
-
-                    for marker in source_syntax::source_annotations(reading)
-                        .gaiji_descriptions
-                        .iter()
-                        .map(|marker| marker.value)
-                    {
-                        content.push(json!({
-                            "kind": "gaiji",
-                            "description": marker,
-                            "resolved": "",
-                            "jis_code": null,
-                            "unresolved_reason": null
-                        }));
-                    }
-                }
-                last_gaiji_end = None;
-            }
-            source_syntax::SourceEventKind::Gaiji { description } => {
-                content.push(json!({
-                    "kind": "gaiji",
-                    "description": description,
-                    "resolved": "",
-                    "jis_code": null,
-                    "unresolved_reason": null
-                }));
-                last_gaiji_end = Some(event.span.end);
-            }
-            source_syntax::SourceEventKind::Text(_)
-            | source_syntax::SourceEventKind::Command { .. }
-            | source_syntax::SourceEventKind::EditorialNote { .. }
-            | source_syntax::SourceEventKind::SegmentBoundary { .. } => {
-                last_gaiji_end = None;
+fn append_aozora_node(content: &mut Vec<serde_json::Value>, node: &Node) {
+    match node {
+        Node::Text(text) => push_text_node(content, text),
+        Node::Gaiji {
+            description,
+            unicode,
+            jis_code,
+        } => content.push(gaiji_json(
+            description,
+            unicode.as_deref(),
+            jis_code.as_deref(),
+        )),
+        Node::Ruby {
+            children,
+            ruby,
+            direction,
+        } => content.push(json!({
+            "kind": "ruby",
+            "base": aozora_nodes_visible_text(children),
+            "reading": aozora_nodes_visible_text(ruby),
+            "direction": ruby_direction_name(*direction),
+            "base_content": aozora_nodes_to_aat_content(children),
+            "reading_content": aozora_nodes_to_aat_content(ruby)
+        })),
+        Node::Style {
+            children,
+            style_type,
+            ..
+        } => content.push(json!({
+            "kind": "style",
+            "style_type": format!("{style_type:?}"),
+            "content": aozora_nodes_to_aat_content(children)
+        })),
+        Node::Tcy { children }
+        | Node::Keigakomi { children }
+        | Node::Yokogumi { children }
+        | Node::Caption { children }
+        | Node::FontSize { children, .. }
+        | Node::Midashi { children, .. } => {
+            for child in children {
+                append_aozora_node(content, child);
             }
         }
+        Node::Warigaki { upper, lower } => content.push(json!({
+            "kind": "warigaki",
+            "upper": aozora_nodes_to_aat_content(upper),
+            "lower": aozora_nodes_to_aat_content(lower)
+        })),
+        Node::Accent { name, unicode, .. } => {
+            push_text_node(content, unicode.as_deref().unwrap_or(name));
+        }
+        Node::Img {
+            filename,
+            alt,
+            css_class,
+            width,
+            height,
+        } => content.push(json!({
+            "kind": "image",
+            "filename": filename,
+            "alt": alt,
+            "css_class": css_class,
+            "width": width,
+            "height": height
+        })),
+        Node::DakutenKatakana { .. }
+        | Node::Kaeriten(_)
+        | Node::Okurigana(_)
+        | Node::UnresolvedReference { .. } => {
+            let visible = node.to_text();
+            if !visible.is_empty() {
+                push_text_node(content, &visible);
+            }
+        }
+        Node::AnnotationEnd {
+            prefix,
+            content: annotation,
+            suffix,
+        } => {
+            push_text_node(content, prefix);
+            for child in annotation {
+                append_aozora_node(content, child);
+            }
+            push_text_node(content, suffix);
+        }
+        Node::BlockStart { .. } | Node::BlockEnd { .. } | Node::Note(_) => {}
+    }
+}
+
+fn push_text_node(content: &mut Vec<serde_json::Value>, text: &str) {
+    if text.is_empty() {
+        return;
+    }
+    if let Some(last) = content.last_mut()
+        && let Some(object) = last.as_object_mut()
+        && object.get("kind").and_then(serde_json::Value::as_str) == Some("text")
+        && let Some(serde_json::Value::String(value)) = object.get_mut("value")
+    {
+        value.push_str(text);
+        return;
+    }
+    content.push(json!({
+        "kind": "text",
+        "value": text
+    }));
+}
+
+fn gaiji_json(
+    description: &str,
+    resolved: Option<&str>,
+    jis_code: Option<&str>,
+) -> serde_json::Value {
+    json!({
+        "kind": "gaiji",
+        "description": description,
+        "resolved": resolved.unwrap_or(""),
+        "jis_code": jis_code,
+        "unresolved_reason": if resolved.is_some() { None::<&str> } else { Some("unresolved") }
+    })
+}
+
+fn aozora_nodes_visible_text(nodes: &[Node]) -> String {
+    nodes.iter().map(Node::to_text).collect()
+}
+
+fn ruby_direction_name(direction: RubyDirection) -> &'static str {
+    match direction {
+        RubyDirection::Right => "right",
+        RubyDirection::Left => "left",
     }
 }
 
 #[cfg(test)]
 fn source_visible_text(text: &str) -> String {
     source_syntax::comparison_lossy_body(text).into_owned()
-}
-
-fn span_for(text: &str, start: usize, end: usize) -> Span {
-    let line = text[..start].chars().filter(|ch| *ch == '\n').count() + 1;
-    Span {
-        line_start: line,
-        line_end: line,
-        byte_start: text[..start].len(),
-        byte_end: text[..end].len(),
-    }
 }
 
 fn hex_sha256(bytes: &[u8]) -> String {
@@ -228,7 +293,8 @@ mod tests {
 
     #[test]
     fn source_visible_text_removes_orphan_ruby_after_unresolved_gaiji() {
-        let visible = source_visible_text("ことを、※［＃「口＋愛」、第3水準1-15-23］《おくび》にも");
+        let visible =
+            source_visible_text("ことを、※［＃「口＋愛」、第3水準1-15-23］《おくび》にも");
 
         assert_eq!(visible, "ことを、にも");
     }
@@ -236,8 +302,35 @@ mod tests {
     #[test]
     fn parse_inline_content_emits_nested_gaiji_inside_ruby_reading() {
         let content = parse_inline_content("淡絹《※［＃濁点付き片仮名ヱ、1-7-84］エル》");
+        let ruby = content
+            .iter()
+            .find(|node| node["kind"] == "ruby")
+            .expect("ruby node");
+        let reading_content = ruby["reading_content"].as_array().expect("reading content");
 
-        assert_eq!(content.iter().filter(|node| node["kind"] == "gaiji").count(), 1);
-        assert!(content.iter().any(|node| node["kind"] == "ruby"));
+        assert_eq!(ruby["base"], "淡絹");
+        assert_eq!(ruby["reading"], "ヹエル");
+        assert_eq!(
+            reading_content
+                .iter()
+                .filter(|node| node["kind"] == "gaiji")
+                .count(),
+            1
+        );
+        assert_eq!(reading_content[0]["resolved"], "ヹ");
+    }
+
+    #[test]
+    fn parse_inline_content_preserves_aozora2_resolved_jis_gaiji() {
+        let content = parse_inline_content("耳朶を※［＃「てへん＋掌」、第4水準2-13-47］えて");
+
+        assert_eq!(content[0]["kind"], "text");
+        assert_eq!(content[0]["value"], "耳朶を");
+        assert_eq!(content[1]["kind"], "gaiji");
+        assert_eq!(content[1]["description"], "「てへん＋掌」、第4水準2-13-47");
+        assert_eq!(content[1]["resolved"], "撑");
+        assert_eq!(content[1]["jis_code"], "2-13-47");
+        assert_eq!(content[2]["kind"], "text");
+        assert_eq!(content[2]["value"], "えて");
     }
 }

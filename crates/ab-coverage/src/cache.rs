@@ -4,12 +4,11 @@
 //!
 //! - `parser_id` identifies the adapter binary.
 //! - `adapter_sha` is the deterministic hash of every regular file under the
-//!   adapter and parser source directories — recomputed once at startup.
+//!   adapter source directory — recomputed once at startup.
 //! - `input_sha` is the sha256 of the raw work source bytes as ingested.
 //!
-//! A code change in adapter or parser sources moves entries into a new
-//! `<adapter_sha>` directory, so stale results are unreachable by
-//! construction.
+//! A code change in adapter sources moves entries into a new `<adapter_sha>`
+//! directory, so stale results are unreachable by construction.
 
 use std::{
     fs,
@@ -30,24 +29,15 @@ pub struct AdapterFingerprintInputs {
 
 impl AdapterFingerprintInputs {
     pub fn for_parser(repo_root: &Path, parser_id: &str) -> Result<Self> {
-        let (adapter_dir, parser_dir): (PathBuf, PathBuf) = match parser_id {
-            "aozora2" => (
-                repo_root.join("adapters/aozora2"),
-                repo_root.join("references/parsers/aozora2"),
-            ),
-            "aozora-rs" => (
-                repo_root.join("adapters/aozora-rs"),
-                repo_root.join("references/parsers/aozora-rs"),
-            ),
-            "aozora2html" => (
-                repo_root.join("adapters/aozora2html"),
-                repo_root.join("references/parsers/aozora2html"),
-            ),
+        let adapter_dir = match parser_id {
+            "aozora2" => repo_root.join("adapters/aozora2"),
+            "aozora-rs" => repo_root.join("adapters/aozora-rs"),
+            "aozora2html" => repo_root.join("adapters/aozora2html"),
             other => anyhow::bail!("unknown parser id: {other}"),
         };
         Ok(Self {
             parser_id: parser_id.to_string(),
-            source_roots: vec![adapter_dir, parser_dir],
+            source_roots: vec![adapter_dir],
             exclude_globs: vec![
                 "target".to_string(),
                 "node_modules".to_string(),
@@ -208,6 +198,21 @@ mod tests {
         std::fs::write(dir.join("a.txt"), b"hello!").unwrap();
         let s2 = compute_adapter_sha(&inputs).unwrap();
         assert_ne!(s1, s2);
+    }
+
+    #[test]
+    fn parser_fingerprint_inputs_do_not_depend_on_reference_checkouts() {
+        let repo = tempdir();
+
+        for parser_id in ["aozora2", "aozora-rs", "aozora2html"] {
+            let inputs = AdapterFingerprintInputs::for_parser(&repo, parser_id).unwrap();
+
+            assert_eq!(inputs.source_roots.len(), 1);
+            assert_eq!(
+                inputs.source_roots[0],
+                repo.join("adapters").join(parser_id)
+            );
+        }
     }
 
     fn tempdir() -> PathBuf {

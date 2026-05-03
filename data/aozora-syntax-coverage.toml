@@ -516,14 +516,15 @@ reference_sources = [
 source_examples = ["［＃改ページ］", "［＃改行］"]
 source_patterns = ['［＃改ページ］|［＃ページの左右中央］', '［＃改行］']
 ir_nodes = ["Inline::Break", "Block::Milestone"]
-aat_nodes = ["text"]
+aat_nodes = ["paragraph"]
 tei_projection = "pb/lb"
 plaintext_projection = "newline_or_drop"
 comparison_projection = "whitespace_normalized"
 validation_properties = ["block_scope_balance"]
 adapter_expectations = ["preserve break order", "distinguish page and line breaks"]
+oracle_cases = ["break.page.basic"]
 status = "partial"
-status_reason = "current AAT projection flattens many breaks into text or whitespace"
+status_reason = "AAT represents breaks as empty paragraphs with x-break-kind metadata; adapter support is still partial"
 
 [syntax.parsers.aozora2]
 recognition = "unrecognised"

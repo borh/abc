@@ -73,6 +73,15 @@ supports = "Aozora image notes include description, filename, and dimensions; ca
 independent = true
 
 [[evidence]]
+id = "aozora-rule-page-break"
+kind = "aozora_rule"
+citation = "Aozora Bunko input manual, section 4-4 page breaks"
+locator = "4-4. Page and column breaks"
+url = "https://www.aozora.gr.jp/aozora-manual/index-input.html"
+supports = "Aozora page breaks use the ［＃改ページ］ note to mark that following content begins on the next page."
+independent = true
+
+[[evidence]]
 id = "jis-x-0213-1-15-23"
 kind = "reference_table"
 citation = "Project X0213 JIS X 0213:2004 code table, row 3-2F37"
@@ -185,6 +194,43 @@ resolved = "噯"
 jis_code = "1-15-23"
 unresolved_reason = ""
 source = "JIS X 0213"
+
+[[case.oracle.nodes]]
+selector = "**"
+kind = "raw"
+absent = true
+
+[[case]]
+id = "break.page.basic"
+syntax_row_ids = ["break.page_line"]
+category = "milestone"
+source_utf8 = "前の段落。\n［＃改ページ］\n後の段落。"
+evidence_ids = ["aozora-rule-page-break"]
+notes = "A page break should preserve its milestone kind without contributing visible text."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified against the Aozora Bunko input manual page-break notation guidance."
+
+[case.oracle]
+visible_text = "前の段落。後の段落。"
+
+[[case.oracle.sequence]]
+selector = "blocks"
+kinds = ["paragraph", "paragraph", "paragraph"]
+
+[[case.oracle.nodes]]
+selector = "blocks.*"
+kind = "paragraph"
+count = 1
+fields = { "x-break-kind" = "page" }
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*"
+kind = "text"
+count = 2
 
 [[case.oracle.nodes]]
 selector = "**"

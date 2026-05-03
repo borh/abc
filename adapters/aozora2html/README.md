@@ -1,8 +1,8 @@
 # aozora2html adapter
 
-Wraps the official Ruby `aozora2html` parser
-(`references/parsers/aozora2html`, pinned at SHA `9ca5395`) so its XHTML output
-can be compared with the Rust adapters under `ab-check` / `ab-compare`.
+Wraps the official Ruby `aozora2html` parser gem (`aozora2html` 3.0.1) so its
+XHTML output can be compared with the Rust adapters under `ab-check` /
+`ab-compare`.
 
 ## Pipeline
 
@@ -13,9 +13,14 @@ can be compared with the Rust adapters under `ab-check` / `ab-compare`.
    line endings. `aozora2html-adapter` therefore detects encoding from raw stdin (UTF-8 BOM
    / UTF-8 / Shift_JIS fallback), transcodes to CP932 with `iconv` if needed,
    and rewrites line endings to CRLF before invoking Ruby.
+   If stdin is a source fragment rather than a full Aozora file with separator
+   lines, the wrapper feeds Ruby a synthetic Aozora document around that
+   fragment. `adapter.py` still hashes and reports the original stdin bytes.
 2. **Ruby parser.** `aozora2html --error-utf8 --use-unicode <crlf_src> <xhtml>`
-   under `nix shell nixpkgs#ruby`. Stderr is redirected so progress chatter
-   does not pollute the AAT JSON written to stdout.
+   under `nix shell nixpkgs#ruby`. The wrapper installs the released gem into
+   `/db/ab-validator/gems/aozora2html-3.0.1` by default, keeping dependency
+   cache data outside the repo. Stderr is redirected so progress chatter does
+   not pollute the AAT JSON written to stdout.
 3. **XHTML → AAT mapping.** `adapter.py` parses the XHTML with `lxml`, walks
    the tree, and emits AAT JSON. It reads `--source` (the original raw stdin
    bytes) for `meta.source_hash` and `meta.source_encoding`, so those fields
@@ -29,7 +34,7 @@ positional arguments:
 - `--source <path>` — original stdin bytes, used for hashing/encoding metadata.
 - `--xhtml <path>` — Ruby's XHTML output, used for AAT projection.
 - `--mode <aat|ir>` — output mode (currently only `aat` is wired up).
-- `--version` — prints `aozora2html-adapter <semver> <ruby-parser-sha>`.
+- `--version` — prints `aozora2html-adapter <semver> gem-<aozora2html-version>`.
 
 ## Encoding duplication
 

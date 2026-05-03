@@ -7,6 +7,14 @@ summary = "Adapter faithfully follows aozora-rs-gaiji v0.6.0 for JIS-form gaiji;
 evidence = "docs/adapter-fidelity.md"
 
 [[note]]
+id = "aozora-rs-cross-oracle-observations-needed"
+adapter = "aozora-rs"
+syntax_row_ids = ["ruby.basic", "heading.basic", "decoration.boten", "indentation.jisage_block", "warichu.basic", "figure.image_caption"]
+status = "active"
+summary = "Cross-adapter oracle triage shows broad aozora-rs reviewed-case failures without upstream observations; classify upstream behavior before marking each mismatch as an adapter projection bug."
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[note]]
 id = "aozora2-blocks-raw-before-reconstruction"
 adapter = "aozora2"
 syntax_row_ids = ["indentation.jisage_block", "caption.block", "layout.yokogumi"]
@@ -30,3 +38,11 @@ syntax_row_ids = ["gaiji.marker", "warichu.basic"]
 status = "active"
 summary = "Adapter maps rendered XHTML, so source-only markup distinctions absent from XHTML cannot always be recovered."
 evidence = "adapters/aozora2html/README.md"
+
+[[note]]
+id = "aozora2html-cross-oracle-source-level-limits"
+adapter = "aozora2html"
+syntax_row_ids = ["gaiji.marker", "ruby.placement_directional", "heading.basic", "decoration.boten", "warichu.basic", "figure.image_caption"]
+status = "active"
+summary = "Cross-adapter oracle triage confirms aozora2html is mostly below source-level AAT oracle expectations because it maps rendered XHTML; failures must be split into recoverable notes-span reconstruction and unrecoverable rendered-output loss."
+evidence = "reports/aat-fidelity/cross-adapter-summary.md"

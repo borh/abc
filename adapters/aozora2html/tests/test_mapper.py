@@ -78,6 +78,23 @@ def test_stdin_without_trailing_newline_is_normalized_for_parser() -> None:
     )
 
 
+def test_fragment_stdin_is_wrapped_for_parser_without_changing_source_hash() -> None:
+    fragment = "吾輩《わがはい》は猫である。"
+    raw = _run(fragment.encode("utf-8"), "--mode", "aat")
+    aat = json.loads(raw)
+    jsonschema.validate(aat, SCHEMA)
+
+    assert aat["meta"]["parse_complete"] is True
+    assert aat["meta"]["source_hash"] == "sha256:ef709900663e4c7e77235b88422ceb252eb50283ff2872b3f93ed61133b45b6b"
+    assert any(
+        inline.get("kind") == "ruby"
+        and inline.get("base") == "吾輩"
+        and inline.get("reading") == "わがはい"
+        for block in aat["blocks"]
+        for inline in block.get("content", [])
+    )
+
+
 @pytest.mark.parametrize("fixture", FIXTURES)
 def test_fixture_passes_aat_schema(fixture: str) -> None:
     txt_path = FIXTURE_DIR / f"{fixture}.txt"

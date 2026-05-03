@@ -3,16 +3,18 @@ aat_version = 1
 [[evidence]]
 id = "jis-x-0213-2-13-47"
 kind = "reference_table"
-citation = "JIS X 0213 plane 2 row 13 cell 47"
+citation = "Project X0213 JIS X 0213:2004 code table, row 4-2D4F"
 locator = "2-13-47"
-supports = "JIS code 2-13-47 resolves to 撑."
+url = "https://www.x0213.org/codetable/jisx0213-2004-std.txt"
+supports = "JIS X 0213 plane 2 row 13 cell 47 resolves to U+6491 撑."
 independent = true
 
 [[evidence]]
 id = "unicode-u546d"
 kind = "unicode"
-citation = "Unicode code point U+546D"
+citation = "Unicode CJK Unified Ideographs chart, U+546D"
 locator = "U+546D"
+url = "https://unicode.org/charts/PDF/U4E00.pdf"
 supports = "U+546D is 呭."
 independent = true
 
@@ -37,6 +39,12 @@ status = "draft"
 reviewer = "oracle-seed"
 reviewed_at = "2026-05-03"
 notes = "Seeded from current oracle fixture; needs source audit before reviewed."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified against Project X0213 JIS X 0213:2004 table row 4-2D4F -> U+6491; U+6491 is 撑."
 
 [case.oracle]
 visible_text = "耳朶を撑えて"
@@ -65,6 +73,12 @@ status = "draft"
 reviewer = "oracle-seed"
 reviewed_at = "2026-05-03"
 notes = "Seeded from Unicode code point fixture; needs source audit before reviewed."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified against the Unicode CJK Unified Ideographs chart for U+546D."
 
 [case.oracle]
 visible_text = "呭は珍しい字。"

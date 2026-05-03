@@ -186,6 +186,10 @@ mod tests {
             .unwrap();
         assert_eq!(evidence.kind, EvidenceKind::ReferenceTable);
         assert!(evidence.independent);
+        assert_eq!(
+            evidence.url.as_deref(),
+            Some("https://www.x0213.org/codetable/jisx0213-2004-std.txt")
+        );
 
         let case = cases
             .case
@@ -193,7 +197,7 @@ mod tests {
             .find(|case| case.id == "gaiji.jis.2-13-47")
             .unwrap();
         assert_eq!(case.evidence_ids, vec!["jis-x-0213-2-13-47"]);
-        assert_eq!(case.current_review_status(), ReviewStatus::Draft);
+        assert_eq!(case.current_review_status(), ReviewStatus::Reviewed);
     }
 
     #[test]

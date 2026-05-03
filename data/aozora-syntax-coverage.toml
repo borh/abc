@@ -1200,6 +1200,7 @@ plaintext_projection = "drop"
 comparison_projection = "drop"
 validation_properties = []
 adapter_expectations = ["preserve return-point marker"]
+oracle_cases = ["kunten.kaeriten.basic"]
 status = "needs_research"
 status_reason = "classical Chinese return-point marker"
 
@@ -1255,6 +1256,7 @@ plaintext_projection = "drop"
 comparison_projection = "drop"
 validation_properties = []
 adapter_expectations = ["preserve okurigana marker"]
+oracle_cases = ["kunten.okurigana.basic"]
 status = "needs_research"
 status_reason = "kunten okurigana mark"
 
@@ -1310,6 +1312,7 @@ plaintext_projection = "heading_text"
 comparison_projection = "heading_text"
 validation_properties = ["heading_level_consistency"]
 adapter_expectations = ["preserve heading level inferred from inline marker"]
+oracle_cases = ["heading.inline_form.large"]
 status = "needs_research"
 status_reason = "inline-form heading; complements heading.basic block form"
 
@@ -1365,6 +1368,7 @@ plaintext_projection = "heading_text"
 comparison_projection = "heading_text"
 validation_properties = ["heading_level_consistency"]
 adapter_expectations = ["preserve same-line heading variant"]
+oracle_cases = ["heading.dogyo.medium"]
 status = "needs_research"
 status_reason = "dogyo (same-line) heading variant"
 
@@ -1420,6 +1424,7 @@ plaintext_projection = "heading_text"
 comparison_projection = "heading_text"
 validation_properties = ["heading_level_consistency"]
 adapter_expectations = ["preserve framed heading variant"]
+oracle_cases = ["heading.mado.small"]
 status = "needs_research"
 status_reason = "mado (framed) heading variant"
 
@@ -1475,6 +1480,7 @@ plaintext_projection = "content_only"
 comparison_projection = "content_only"
 validation_properties = ["style_scope_balance"]
 adapter_expectations = ["preserve dot variant (sesame/black/white/circle)"]
+oracle_cases = ["decoration.boten.white_sesame"]
 status = "needs_research"
 status_reason = "boten (emphasis dots); sub-case of emphasis.basic with variant kinds"
 
@@ -1530,6 +1536,7 @@ plaintext_projection = "content_only"
 comparison_projection = "content_only"
 validation_properties = ["style_scope_balance"]
 adapter_expectations = ["preserve line variant (single/double/wavy/chain)"]
+oracle_cases = ["decoration.bousen.double"]
 status = "needs_research"
 status_reason = "bousen (sideline) variants"
 
@@ -1585,6 +1592,7 @@ plaintext_projection = "content_only"
 comparison_projection = "content_only"
 validation_properties = ["style_scope_balance"]
 adapter_expectations = ["distinguish bold from italic"]
+oracle_cases = ["decoration.bold_italic.both"]
 status = "needs_research"
 status_reason = "futoji/shatai variants in MultilineStyle and inline form"
 
@@ -1634,12 +1642,13 @@ reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/font_si
 source_examples = ["［＃ここから小3段階大な文字］", "「text」の中2段階大な文字"]
 source_patterns = ['［＃ここから[大中小]?[0-9]+段階[大小]な文字］', '「[^」]+」の[大中小]?[0-9]+段階[大小]な文字']
 ir_nodes = ["Inline::Style", "Block::Style"]
-aat_nodes = ["style"]
+aat_nodes = ["font_size"]
 tei_projection = "hi rend=fontsize"
 plaintext_projection = "content_only"
 comparison_projection = "content_only"
 validation_properties = ["style_scope_balance"]
 adapter_expectations = ["preserve magnitude and direction"]
+oracle_cases = ["decoration.font_size.larger"]
 status = "needs_research"
 status_reason = "block + inline font-size adjustments"
 
@@ -1689,12 +1698,13 @@ reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/keigako
 source_examples = ["［＃ここから罫囲み］", "「text」の罫囲み"]
 source_patterns = ['［＃ここから罫囲み］', '「[^」]+」の罫囲み']
 ir_nodes = ["Inline::Style", "Block::Style"]
-aat_nodes = ["style"]
+aat_nodes = ["keigakomi"]
 tei_projection = "ab rend=keigakomi"
 plaintext_projection = "content_only"
 comparison_projection = "content_only"
 validation_properties = ["block_scope_balance"]
 adapter_expectations = ["preserve box border scope"]
+oracle_cases = ["decoration.keigakomi.inline"]
 status = "needs_research"
 status_reason = "rule-line box; block + inline forms"
 
@@ -1750,6 +1760,7 @@ plaintext_projection = "content_only"
 comparison_projection = "content_only"
 validation_properties = []
 adapter_expectations = ["preserve placement attribute on dot/line"]
+oracle_cases = ["decoration.direction_override.left_boten"]
 status = "needs_research"
 status_reason = "boten/bousen with directional placement override"
 
@@ -1861,6 +1872,7 @@ plaintext_projection = "content_only"
 comparison_projection = "content_only"
 validation_properties = []
 adapter_expectations = ["apply indent to single line only"]
+oracle_cases = ["indentation.jisage_oneline.two_chars"]
 status = "needs_research"
 status_reason = "single-line indent variant"
 
@@ -1916,6 +1928,7 @@ plaintext_projection = "content_only"
 comparison_projection = "content_only"
 validation_properties = ["block_scope_balance"]
 adapter_expectations = ["preserve right-alignment magnitude and scope"]
+oracle_cases = ["indentation.chitsuki.line"]
 status = "needs_research"
 status_reason = "right-alignment / jiage; not currently surfaced beyond indentation.basic"
 
@@ -1971,6 +1984,7 @@ plaintext_projection = "content_only"
 comparison_projection = "content_only"
 validation_properties = ["block_scope_balance"]
 adapter_expectations = ["preserve fixed-width column"]
+oracle_cases = ["indentation.jizume.width"]
 status = "needs_research"
 status_reason = "fixed character-width block (jizume)"
 
@@ -2026,6 +2040,7 @@ plaintext_projection = "content_only"
 comparison_projection = "content_only"
 validation_properties = ["block_scope_balance"]
 adapter_expectations = ["preserve hanging-indent magnitude pair"]
+oracle_cases = ["indentation.burasage.hanging"]
 status = "needs_research"
 status_reason = "hanging-indent / wrap-continuation form"
 
@@ -2075,12 +2090,13 @@ reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/multili
 source_examples = ["［＃ここから横組み］", "「ABC」の横組み"]
 source_patterns = ['［＃ここから横組み］', '「[^」]+」の横組み']
 ir_nodes = ["Block::Layout", "Inline::Style"]
-aat_nodes = ["style"]
+aat_nodes = ["yokogumi"]
 tei_projection = "ab rend=yokogumi"
 plaintext_projection = "content_only"
 comparison_projection = "content_only"
 validation_properties = ["block_scope_balance"]
 adapter_expectations = ["preserve writing-mode toggle scope"]
+oracle_cases = ["layout.yokogumi.inline"]
 status = "needs_research"
 status_reason = "horizontal-in-vertical block + inline forms"
 
@@ -2130,12 +2146,13 @@ reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/dir.rb"
 source_examples = ["「12」の縦中横"]
 source_patterns = ['「[^」]+」の縦中横']
 ir_nodes = ["Inline::Style"]
-aat_nodes = ["style"]
+aat_nodes = ["tcy"]
 tei_projection = "hi rend=tcy"
 plaintext_projection = "content_only"
 comparison_projection = "content_only"
 validation_properties = []
 adapter_expectations = ["preserve TCY span"]
+oracle_cases = ["layout.tcy.inline"]
 status = "needs_research"
 status_reason = "tate-chu-yoko (horizontal in vertical) inline; aozora2html emits dir=ltr span"
 
@@ -2185,12 +2202,13 @@ reference_sources = ["references/parsers/aozora2html/lib/aozora2html.rb"]
 source_examples = ["［＃割書］"]
 source_patterns = ['［＃割書］', '「[^」]+」の割書']
 ir_nodes = ["Inline::Warichu"]
-aat_nodes = ["style"]
+aat_nodes = ["warigaki"]
 tei_projection = "seg rend=warigaki"
 plaintext_projection = "content_only"
 comparison_projection = "content_only"
 validation_properties = []
 adapter_expectations = ["distinguish from warichu"]
+oracle_cases = ["warigaki.parenthetical.basic"]
 status = "needs_research"
 status_reason = "warigaki (parenthetical aside); related to but distinct from warichu"
 
@@ -2246,6 +2264,7 @@ plaintext_projection = "caption_only"
 comparison_projection = "caption_only"
 validation_properties = []
 adapter_expectations = ["associate caption with nearest figure"]
+oracle_cases = ["caption.inline.basic"]
 status = "needs_research"
 status_reason = "inline-form caption; sub-case of figure.image_caption"
 
@@ -2295,12 +2314,13 @@ reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/multili
 source_examples = ["［＃ここからキャプション］", "［＃ここでキャプション終わり］"]
 source_patterns = ['［＃ここからキャプション］', '［＃ここでキャプション終わり］']
 ir_nodes = ["Block::Figure", "Inline::Caption"]
-aat_nodes = ["caption"]
+aat_nodes = ["caption_block"]
 tei_projection = "figure/head"
 plaintext_projection = "caption_only"
 comparison_projection = "caption_only"
 validation_properties = []
 adapter_expectations = ["preserve block-level caption scope"]
+oracle_cases = ["caption.block.basic"]
 status = "needs_research"
 status_reason = "block-form caption"
 
@@ -2350,12 +2370,13 @@ reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/img.rb"
 source_examples = ["alt（fig001.png、横600×縦400）入る"]
 source_patterns = ['[^（\n]*（fig[^）]*\.(png|jpg|jpeg|gif)[^）]*）入る']
 ir_nodes = ["Block::Figure"]
-aat_nodes = ["gaiji"]
+aat_nodes = ["figure"]
 tei_projection = "figure/graphic"
 plaintext_projection = "alt_only"
 comparison_projection = "alt_only"
 validation_properties = []
 adapter_expectations = ["preserve src, dimensions, alt"]
+oracle_cases = ["figure.image_inline.basic"]
 status = "needs_research"
 status_reason = "inline image without caption"
 
@@ -2411,6 +2432,7 @@ plaintext_projection = "content_only"
 comparison_projection = "drop"
 validation_properties = []
 adapter_expectations = ["fall back gracefully when no specific handler matches"]
+oracle_cases = ["editor_note.unmapped.blank"]
 status = "needs_research"
 status_reason = "catch-all for ［＃...］ commands not matched by other handlers"
 
@@ -2466,6 +2488,7 @@ plaintext_projection = "content_only"
 comparison_projection = "content_only"
 validation_properties = []
 adapter_expectations = ["resolve forward reference target"]
+oracle_cases = ["reference.frontref.boten"]
 status = "needs_research"
 status_reason = "front-reference style application via PAT_FRONTREF"
 
@@ -2521,6 +2544,7 @@ plaintext_projection = "newline"
 comparison_projection = "whitespace_normalized"
 validation_properties = []
 adapter_expectations = ["emit explicit line break"]
+oracle_cases = ["break.line_explicit.basic"]
 status = "needs_research"
 status_reason = "explicit line break; sub-case of break.page_line"
 

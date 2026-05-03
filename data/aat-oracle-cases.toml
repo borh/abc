@@ -168,6 +168,94 @@ url = "https://www.x0213.org/codetable/jisx0213-2004-std.txt"
 supports = "JIS X 0213 plane 1 row 9 cell 63 resolves to U+00E9 é."
 independent = true
 
+[[evidence]]
+id = "aozora-reference-kunten-kaeriten"
+kind = "aozora_rule"
+citation = "aozora2html kaeriten handler"
+locator = "references/parsers/aozora2html/lib/aozora2html/tag/kaeriten.rb:6"
+supports = "Aozora return-point markers such as 返り点一 are parsed as kunten annotations and should be preserved without contributing ordinary visible text."
+independent = true
+
+[[evidence]]
+id = "aozora-reference-kunten-okurigana"
+kind = "aozora_rule"
+citation = "aozora2html okurigana handler"
+locator = "references/parsers/aozora2html/lib/aozora2html/tag/okurigana.rb:6"
+supports = "Aozora kunten okurigana markers preserve the okurigana string as annotation content and should not contribute ordinary visible text."
+independent = true
+
+[[evidence]]
+id = "aozora-reference-heading-variants"
+kind = "aozora_rule"
+citation = "aozora2html heading handlers"
+locator = "references/parsers/aozora2html/lib/aozora2html/tag/midashi.rb:6; references/parsers/aozora2html/lib/aozora2html/tag/multiline_midashi.rb:1"
+supports = "Aozora heading annotations encode heading level and style variants including ordinary inline headings, dogyo headings, and mado headings."
+independent = true
+
+[[evidence]]
+id = "aozora-reference-decoration-variants"
+kind = "aozora_rule"
+citation = "aozora2html decoration and font-size handlers"
+locator = "references/parsers/aozora2html/lib/aozora2html/tag/decorate.rb:6; references/parsers/aozora2html/lib/aozora2html/tag/font_size.rb:1"
+supports = "Aozora decoration annotations encode scoped text styling, including boten, bousen, bold, italic, font size, keigakomi, and directional placement variants."
+independent = true
+
+[[evidence]]
+id = "aozora-reference-layout-variants"
+kind = "aozora_rule"
+citation = "aozora2html layout handlers"
+locator = "references/parsers/aozora2html/lib/aozora2html/tag/oneline_jisage.rb:1; references/parsers/aozora2html/lib/aozora2html/tag/chitsuki.rb:8; references/parsers/aozora2html/lib/aozora2html/tag/jizume.rb:1"
+supports = "Aozora layout annotations encode single-line indent, chitsuki right alignment, jizume fixed character width, and burasage hanging indent scopes."
+independent = true
+
+[[evidence]]
+id = "aozora-reference-yokogumi-tcy"
+kind = "aozora_rule"
+citation = "aozora2html writing-mode handlers"
+locator = "references/parsers/aozora2html/lib/aozora2html/tag/multiline_yokogumi.rb:6; references/parsers/aozora2html/lib/aozora2html.rb:52"
+supports = "Aozora writing-mode annotations preserve horizontal composition scopes, including yokogumi and tate-chu-yoko spans."
+independent = true
+
+[[evidence]]
+id = "aozora-reference-warigaki-parenthetical"
+kind = "aozora_rule"
+citation = "aozora2html warigaki command"
+locator = "references/parsers/aozora2html/lib/aozora2html.rb:56"
+supports = "Aozora 割書 marks a parenthetical split-line note distinct from 割り注 and should preserve the note content."
+independent = true
+
+[[evidence]]
+id = "aozora-reference-caption-figure"
+kind = "aozora_rule"
+citation = "aozora2html caption and image handlers"
+locator = "references/parsers/aozora2html/lib/aozora2html/tag/inline_caption.rb:1; references/parsers/aozora2html/lib/aozora2html/tag/multiline_caption.rb:1; references/parsers/aozora2html/lib/aozora2html/tag/img.rb:6"
+supports = "Aozora media annotations preserve inline captions, caption blocks, image filename, image alt text, and optional image dimensions."
+independent = true
+
+[[evidence]]
+id = "aozora-reference-editor-note"
+kind = "aozora_rule"
+citation = "aozora2html editor-note handler"
+locator = "references/parsers/aozora2html/lib/aozora2html/tag/editor_note.rb:6"
+supports = "Unmapped Aozora ［＃...］ annotations are editorial notes and should be preserved as metadata while comparison projection can drop the marker."
+independent = true
+
+[[evidence]]
+id = "aozora-reference-frontref"
+kind = "aozora_rule"
+citation = "aozora2html front-reference pattern"
+locator = "references/parsers/aozora2html/lib/aozora2html.rb:102"
+supports = "Aozora front-reference commands attach a later annotation target to a referenced text span and should preserve both the styled base and reference metadata."
+independent = true
+
+[[evidence]]
+id = "aozora-reference-line-break"
+kind = "aozora_rule"
+citation = "Aozora explicit line-break annotation"
+locator = "references/aozorabunko/rules/kijyunn.html"
+supports = "The explicit 改行 annotation marks a line break in the text stream."
+independent = true
+
 [[case]]
 id = "gaiji.jis.2-13-47"
 syntax_row_ids = ["gaiji.marker", "gaiji.jis_code"]
@@ -521,6 +609,699 @@ selector = "blocks.*.content.*"
 kind = "accent"
 count = 1
 fields = { code = "1-09-63", name = "アキュートアクセント付きE小文字", resolved = "é" }
+
+[[case]]
+id = "kunten.kaeriten.basic"
+syntax_row_ids = ["kunten.kaeriten"]
+category = "inline_annotation"
+source_utf8 = "漢［＃返り点一］文"
+evidence_ids = ["aozora-reference-kunten-kaeriten"]
+notes = "Return-point annotations should preserve the marker as metadata and not add ordinary visible text."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified against the aozora2html kaeriten handler and the AAT style-node contract."
+
+[case.oracle]
+visible_text = "漢文"
+
+[[case.oracle.sequence]]
+selector = "blocks.*.content"
+kinds = ["text", "style", "text"]
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*"
+kind = "style"
+count = 1
+fields = { style_type = "kaeriten", "x-marker" = "一" }
+
+[[case]]
+id = "kunten.okurigana.basic"
+syntax_row_ids = ["kunten.okurigana"]
+category = "inline_annotation"
+source_utf8 = "漢［＃訓点送り仮名「読」］文"
+evidence_ids = ["aozora-reference-kunten-okurigana"]
+notes = "Kunten okurigana should preserve the reading marker while remaining outside ordinary visible text."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified against the aozora2html okurigana handler."
+
+[case.oracle]
+visible_text = "漢文"
+
+[[case.oracle.sequence]]
+selector = "blocks.*.content"
+kinds = ["text", "ruby", "text"]
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*"
+kind = "ruby"
+count = 1
+fields = { base = "", reading = "読", direction = "right", "x-annotation-type" = "okurigana" }
+
+[[case]]
+id = "heading.inline_form.large"
+syntax_row_ids = ["heading.inline_form"]
+category = "heading"
+source_utf8 = "序章［＃「序章」の大見出し］"
+evidence_ids = ["aozora-reference-heading-variants"]
+notes = "Inline-form heading annotation should become a heading block with ordinary heading style and the annotated target as content."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified against aozora2html inline midashi handling."
+
+[case.oracle]
+visible_text = "序章"
+
+[[case.oracle.sequence]]
+selector = "blocks"
+kinds = ["heading"]
+
+[[case.oracle.nodes]]
+selector = "blocks.*"
+kind = "heading"
+count = 1
+fields = { level = 1, style = "normal" }
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*"
+kind = "text"
+count = 1
+fields = { value = "序章" }
+
+[[case]]
+id = "heading.dogyo.medium"
+syntax_row_ids = ["heading.dogyo"]
+category = "heading"
+source_utf8 = "同行見出し［＃「同行見出し」は同行中見出し］"
+evidence_ids = ["aozora-reference-heading-variants"]
+notes = "Dogyo heading annotation should preserve both heading level and same-line style."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified against aozora2html multiline/dogyo midashi handling."
+
+[case.oracle]
+visible_text = "同行見出し"
+
+[[case.oracle.sequence]]
+selector = "blocks"
+kinds = ["heading"]
+
+[[case.oracle.nodes]]
+selector = "blocks.*"
+kind = "heading"
+count = 1
+fields = { level = 2, style = "dogyo" }
+
+[[case]]
+id = "heading.mado.small"
+syntax_row_ids = ["heading.mado"]
+category = "heading"
+source_utf8 = "窓見出し［＃「窓見出し」は窓小見出し］"
+evidence_ids = ["aozora-reference-heading-variants"]
+notes = "Mado heading annotation should preserve both heading level and framed/window style."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified against aozora2html mado midashi handling."
+
+[case.oracle]
+visible_text = "窓見出し"
+
+[[case.oracle.sequence]]
+selector = "blocks"
+kinds = ["heading"]
+
+[[case.oracle.nodes]]
+selector = "blocks.*"
+kind = "heading"
+count = 1
+fields = { level = 3, style = "mado" }
+
+[[case]]
+id = "decoration.boten.white_sesame"
+syntax_row_ids = ["decoration.boten"]
+category = "inline_annotation"
+source_utf8 = "胡麻塩おやじ［＃「おやじ」に白ゴマ傍点］"
+evidence_ids = ["aozora-reference-decoration-variants"]
+notes = "Boten annotations should preserve the scope and dot variant."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified against aozora2html decoration handling for boten variants."
+
+[case.oracle]
+visible_text = "胡麻塩おやじ"
+
+[[case.oracle.sequence]]
+selector = "blocks.*.content"
+kinds = ["text", "style"]
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*"
+kind = "style"
+count = 1
+fields = { style_type = "boten", "x-boten-kind" = "white_sesame" }
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*.content.*"
+kind = "text"
+count = 1
+fields = { value = "おやじ" }
+
+[[case]]
+id = "decoration.bousen.double"
+syntax_row_ids = ["decoration.bousen"]
+category = "inline_annotation"
+source_utf8 = "この傍線［＃「傍線」に二重傍線］です。"
+evidence_ids = ["aozora-reference-decoration-variants"]
+notes = "Bousen annotations should preserve the scope and line variant."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified against aozora2html decoration handling for bousen variants."
+
+[case.oracle]
+visible_text = "この傍線です。"
+
+[[case.oracle.sequence]]
+selector = "blocks.*.content"
+kinds = ["text", "style", "text"]
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*"
+kind = "style"
+count = 1
+fields = { style_type = "bousen", "x-line-kind" = "double" }
+
+[[case]]
+id = "decoration.bold_italic.both"
+syntax_row_ids = ["decoration.bold_italic"]
+category = "inline_annotation"
+source_utf8 = "太字［＃「太字」は太字］と斜体［＃「斜体」は斜体］"
+evidence_ids = ["aozora-reference-decoration-variants"]
+notes = "Bold and italic annotations should remain distinguishable as separate style scopes."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified against aozora2html decoration handling for bold and italic."
+
+[case.oracle]
+visible_text = "太字と斜体"
+
+[[case.oracle.sequence]]
+selector = "blocks.*.content"
+kinds = ["style", "text", "style"]
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*"
+kind = "style"
+count = 1
+fields = { style_type = "bold" }
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*"
+kind = "style"
+count = 1
+fields = { style_type = "italic" }
+
+[[case]]
+id = "decoration.font_size.larger"
+syntax_row_ids = ["decoration.font_size"]
+category = "inline_annotation"
+source_utf8 = "大きい［＃「大きい」は2段階大きな文字］"
+evidence_ids = ["aozora-reference-decoration-variants"]
+notes = "Font-size annotations should preserve direction, level, and scope."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified against aozora2html font-size handling."
+
+[case.oracle]
+visible_text = "大きい"
+
+[[case.oracle.sequence]]
+selector = "blocks.*.content"
+kinds = ["font_size"]
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*"
+kind = "font_size"
+count = 1
+fields = { size_type = "larger", level = 2 }
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*.content.*"
+kind = "text"
+count = 1
+fields = { value = "大きい" }
+
+[[case]]
+id = "decoration.keigakomi.inline"
+syntax_row_ids = ["decoration.keigakomi"]
+category = "inline_annotation"
+source_utf8 = "囲み［＃「囲み」は罫囲み］"
+evidence_ids = ["aozora-reference-decoration-variants"]
+notes = "Inline keigakomi should preserve the ruled enclosure scope."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified against aozora2html keigakomi handling."
+
+[case.oracle]
+visible_text = "囲み"
+
+[[case.oracle.sequence]]
+selector = "blocks.*.content"
+kinds = ["keigakomi"]
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*"
+kind = "keigakomi"
+count = 1
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*.content.*"
+kind = "text"
+count = 1
+fields = { value = "囲み" }
+
+[[case]]
+id = "decoration.direction_override.left_boten"
+syntax_row_ids = ["decoration.direction_override"]
+category = "inline_annotation"
+source_utf8 = "語［＃「語」の左に傍点］"
+evidence_ids = ["aozora-reference-decoration-variants"]
+notes = "Directional decoration annotations should preserve placement independently from the decoration type."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified against aozora2html PAT_DIRECTION handling."
+
+[case.oracle]
+visible_text = "語"
+
+[[case.oracle.sequence]]
+selector = "blocks.*.content"
+kinds = ["style"]
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*"
+kind = "style"
+count = 1
+fields = { style_type = "boten", "x-placement" = "left" }
+
+[[case]]
+id = "indentation.jisage_oneline.two_chars"
+syntax_row_ids = ["indentation.jisage_oneline"]
+category = "layout"
+source_utf8 = "字下げ行［＃この行2字下げ］"
+evidence_ids = ["aozora-reference-layout-variants"]
+notes = "One-line jisage should preserve the line-scoped indent magnitude."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified against aozora2html one-line jisage handling."
+
+[case.oracle]
+visible_text = "字下げ行"
+
+[[case.oracle.sequence]]
+selector = "blocks.*.content"
+kinds = ["style"]
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*"
+kind = "style"
+count = 1
+fields = { style_type = "jisage_line", "x-indent" = 2 }
+
+[[case]]
+id = "indentation.chitsuki.line"
+syntax_row_ids = ["indentation.chitsuki"]
+category = "layout"
+source_utf8 = "右寄せ［＃この行地付き］"
+evidence_ids = ["aozora-reference-layout-variants"]
+notes = "Chitsuki should preserve right-alignment scope."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified against aozora2html chitsuki handling."
+
+[case.oracle]
+visible_text = "右寄せ"
+
+[[case.oracle.sequence]]
+selector = "blocks.*.content"
+kinds = ["style"]
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*"
+kind = "style"
+count = 1
+fields = { style_type = "chitsuki", "x-align" = "right" }
+
+[[case]]
+id = "indentation.jizume.width"
+syntax_row_ids = ["indentation.jizume"]
+category = "layout"
+source_utf8 = "［＃ここから字詰め4］\n本文\n［＃ここで字詰め終わり］"
+evidence_ids = ["aozora-reference-layout-variants"]
+notes = "Jizume should preserve fixed character-width scope and width."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified against aozora2html jizume handling."
+
+[case.oracle]
+visible_text = "本文"
+
+[[case.oracle.sequence]]
+selector = "blocks.*.content"
+kinds = ["style"]
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*"
+kind = "style"
+count = 1
+fields = { style_type = "jizume", "x-width" = 4 }
+
+[[case]]
+id = "indentation.burasage.hanging"
+syntax_row_ids = ["indentation.burasage"]
+category = "layout"
+source_utf8 = "［＃ここから2字下げ、折り返して4字下げ］\n本文\n［＃ここで字下げ終わり］"
+evidence_ids = ["aozora-reference-layout-variants"]
+notes = "Burasage should preserve both first-line and continuation indent magnitudes."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified against aozora2html hanging-indent/jisage handling."
+
+[case.oracle]
+visible_text = "本文"
+
+[[case.oracle.sequence]]
+selector = "blocks.*.content"
+kinds = ["style"]
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*"
+kind = "style"
+count = 1
+fields = { style_type = "burasage", "x-indent-first" = 2, "x-indent-rest" = 4 }
+
+[[case]]
+id = "layout.yokogumi.inline"
+syntax_row_ids = ["layout.yokogumi"]
+category = "layout"
+source_utf8 = "ABC［＃「ABC」の横組み］"
+evidence_ids = ["aozora-reference-yokogumi-tcy"]
+notes = "Yokogumi should preserve horizontal-composition scope."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified against aozora2html yokogumi handling."
+
+[case.oracle]
+visible_text = "ABC"
+
+[[case.oracle.sequence]]
+selector = "blocks.*.content"
+kinds = ["yokogumi"]
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*"
+kind = "yokogumi"
+count = 1
+
+[[case]]
+id = "layout.tcy.inline"
+syntax_row_ids = ["layout.tcy"]
+category = "layout"
+source_utf8 = "12［＃「12」の縦中横］"
+evidence_ids = ["aozora-reference-yokogumi-tcy"]
+notes = "Tate-chu-yoko should preserve the inline horizontal-in-vertical span."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified against aozora2html TCY command handling."
+
+[case.oracle]
+visible_text = "12"
+
+[[case.oracle.sequence]]
+selector = "blocks.*.content"
+kinds = ["tcy"]
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*"
+kind = "tcy"
+count = 1
+
+[[case]]
+id = "warigaki.parenthetical.basic"
+syntax_row_ids = ["warigaki.parenthetical"]
+category = "inline_annotation"
+source_utf8 = "本文に［＃割書］注［＃割書終わり］が入る。"
+evidence_ids = ["aozora-reference-warigaki-parenthetical"]
+notes = "Warigaki parenthetical aside should preserve the note content as split-line annotation content."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified against aozora2html WARIGAKI command handling."
+
+[case.oracle]
+visible_text = "本文に注が入る。"
+
+[[case.oracle.sequence]]
+selector = "blocks.*.content"
+kinds = ["text", "warigaki", "text"]
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*"
+kind = "warigaki"
+count = 1
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*.upper.*"
+kind = "text"
+count = 1
+fields = { value = "注" }
+
+[[case]]
+id = "caption.inline.basic"
+syntax_row_ids = ["caption.inline"]
+category = "media"
+source_utf8 = "猫の図［＃「猫の図」のキャプション］"
+evidence_ids = ["aozora-reference-caption-figure"]
+notes = "Inline caption annotation should preserve caption text as caption content."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified against aozora2html inline caption handling."
+
+[case.oracle]
+visible_text = "猫の図"
+
+[[case.oracle.sequence]]
+selector = "blocks.*.content"
+kinds = ["caption"]
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*"
+kind = "caption"
+count = 1
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*.content.*"
+kind = "text"
+count = 1
+fields = { value = "猫の図" }
+
+[[case]]
+id = "caption.block.basic"
+syntax_row_ids = ["caption.block"]
+category = "media"
+source_utf8 = "［＃ここからキャプション］\n猫の図\n［＃ここでキャプション終わり］"
+evidence_ids = ["aozora-reference-caption-figure"]
+notes = "Block caption annotation should preserve caption block scope and text."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified against aozora2html multiline caption handling."
+
+[case.oracle]
+visible_text = "猫の図"
+
+[[case.oracle.sequence]]
+selector = "blocks"
+kinds = ["caption_block"]
+
+[[case.oracle.nodes]]
+selector = "blocks.*"
+kind = "caption_block"
+count = 1
+
+[[case.oracle.sequence]]
+selector = "blocks.*.children"
+kinds = ["paragraph"]
+
+[[case.oracle.nodes]]
+selector = "blocks.*.children.*.content.*"
+kind = "text"
+count = 1
+fields = { value = "猫の図" }
+
+[[case]]
+id = "figure.image_inline.basic"
+syntax_row_ids = ["figure.image_inline"]
+category = "media"
+source_utf8 = "猫の図（fig00001_01.png、横321×縦123）入る"
+evidence_ids = ["aozora-reference-caption-figure"]
+notes = "Inline image annotation should preserve image alt text, filename, and dimensions."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified against aozora2html image handling."
+
+[case.oracle]
+
+[[case.oracle.sequence]]
+selector = "blocks.*.content"
+kinds = ["figure"]
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*"
+kind = "figure"
+count = 1
+fields = { filename = "fig00001_01.png", alt = "猫の図", width = 321, height = 123 }
+
+[[case]]
+id = "editor_note.unmapped.blank"
+syntax_row_ids = ["editor_note.unmapped"]
+category = "reference"
+source_utf8 = "本文［＃左頁］続き"
+evidence_ids = ["aozora-reference-editor-note"]
+notes = "Unmapped editor notes should be preserved as metadata while comparison text drops the marker."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified against aozora2html editor-note handling."
+
+[case.oracle]
+visible_text = "本文続き"
+
+[[case.oracle.sequence]]
+selector = "blocks.*.content"
+kinds = ["text", "text", "text"]
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*"
+kind = "text"
+count = 1
+fields = { value = "", "x-editor-note" = "左頁" }
+
+[[case]]
+id = "reference.frontref.boten"
+syntax_row_ids = ["reference.frontref"]
+category = "reference"
+source_utf8 = "参照［＃「参照」に「強調」の傍点］"
+evidence_ids = ["aozora-reference-frontref"]
+notes = "Front-reference annotation should preserve the styled base and the referenced annotation target."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified against aozora2html PAT_FRONTREF handling."
+
+[case.oracle]
+visible_text = "参照"
+
+[[case.oracle.sequence]]
+selector = "blocks.*.content"
+kinds = ["style"]
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*"
+kind = "style"
+count = 1
+fields = { style_type = "boten", "x-frontref" = "強調" }
+
+[[case]]
+id = "break.line_explicit.basic"
+syntax_row_ids = ["break.line_explicit"]
+category = "milestone"
+source_utf8 = "前［＃改行］後"
+evidence_ids = ["aozora-reference-line-break"]
+notes = "Explicit line-break annotation should become a newline in visible text."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified against the Aozora explicit line-break annotation row and aozora2html br handling."
+
+[case.oracle]
+visible_text = "前\n後"
+
+[[case.oracle.sequence]]
+selector = "blocks.*.content"
+kinds = ["text"]
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*"
+kind = "text"
+count = 1
+fields = { value = "前\n後", "x-break-kind" = "line" }
 
 [[case]]
 id = "break.page.basic"

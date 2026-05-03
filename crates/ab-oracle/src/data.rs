@@ -369,6 +369,48 @@ mod tests {
         assert_eq!(accent_case.current_review_status(), ReviewStatus::Reviewed);
         assert_eq!(accent_case.syntax_row_ids, vec!["accent.diacritic"]);
 
+        let expected_remaining_reviewed_cases = [
+            ("kunten.kaeriten.basic", "kunten.kaeriten"),
+            ("kunten.okurigana.basic", "kunten.okurigana"),
+            ("heading.inline_form.large", "heading.inline_form"),
+            ("heading.dogyo.medium", "heading.dogyo"),
+            ("heading.mado.small", "heading.mado"),
+            ("decoration.boten.white_sesame", "decoration.boten"),
+            ("decoration.bousen.double", "decoration.bousen"),
+            ("decoration.bold_italic.both", "decoration.bold_italic"),
+            ("decoration.font_size.larger", "decoration.font_size"),
+            ("decoration.keigakomi.inline", "decoration.keigakomi"),
+            (
+                "decoration.direction_override.left_boten",
+                "decoration.direction_override",
+            ),
+            (
+                "indentation.jisage_oneline.two_chars",
+                "indentation.jisage_oneline",
+            ),
+            ("indentation.chitsuki.line", "indentation.chitsuki"),
+            ("indentation.jizume.width", "indentation.jizume"),
+            ("indentation.burasage.hanging", "indentation.burasage"),
+            ("layout.yokogumi.inline", "layout.yokogumi"),
+            ("layout.tcy.inline", "layout.tcy"),
+            ("warigaki.parenthetical.basic", "warigaki.parenthetical"),
+            ("caption.inline.basic", "caption.inline"),
+            ("caption.block.basic", "caption.block"),
+            ("figure.image_inline.basic", "figure.image_inline"),
+            ("editor_note.unmapped.blank", "editor_note.unmapped"),
+            ("reference.frontref.boten", "reference.frontref"),
+            ("break.line_explicit.basic", "break.line_explicit"),
+        ];
+        for (case_id, syntax_row_id) in expected_remaining_reviewed_cases {
+            let oracle_case = cases
+                .case
+                .iter()
+                .find(|case| case.id == case_id)
+                .unwrap_or_else(|| panic!("missing oracle case {case_id}"));
+            assert_eq!(oracle_case.current_review_status(), ReviewStatus::Reviewed);
+            assert_eq!(oracle_case.syntax_row_ids, vec![syntax_row_id]);
+        }
+
         let gaiji_ruby_case = cases
             .case
             .iter()

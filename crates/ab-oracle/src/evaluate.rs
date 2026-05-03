@@ -240,8 +240,8 @@ fn optional_string_matches(actual: Option<&Value>, expected: Option<&str>) -> bo
 mod tests {
     use super::*;
     use crate::data::{
-        GaijiAssertion, OracleCase, OracleExpectations, SequenceAssertion, UpstreamObservation,
-        UpstreamObservations,
+        GaijiAssertion, OracleCase, OracleExpectations, ReviewEntry, ReviewStatus,
+        SequenceAssertion, UpstreamObservation, UpstreamObservations,
     };
     use serde_json::json;
 
@@ -277,12 +277,20 @@ mod tests {
             syntax_row_ids: vec!["gaiji.jis_code".to_owned()],
             category: "gaiji".to_owned(),
             source_utf8: "耳朶を※［＃「てへん＋掌」、第4水準2-13-47］えて".to_owned(),
+            evidence_ids: vec!["fixture-evidence".to_owned()],
+            review: vec![ReviewEntry {
+                status: ReviewStatus::Draft,
+                reviewer: "test".to_owned(),
+                reviewed_at: "2026-05-03".to_owned(),
+                notes: None,
+            }],
             notes: None,
             oracle: OracleExpectations {
                 visible_text: Some("耳朶を撑えて".to_owned()),
                 sequence: vec![SequenceAssertion {
                     selector: "blocks.*.content".to_owned(),
                     kinds: vec!["text".to_owned(), "gaiji".to_owned(), "text".to_owned()],
+                    evidence_ids: Vec::new(),
                 }],
                 gaiji: vec![GaijiAssertion {
                     selector: "blocks.*.content.*".to_owned(),
@@ -291,6 +299,7 @@ mod tests {
                     jis_code: Some("2-13-47".to_owned()),
                     unresolved_reason: Some(String::new()),
                     source: None,
+                    evidence_ids: Vec::new(),
                 }],
                 ..OracleExpectations::default()
             },

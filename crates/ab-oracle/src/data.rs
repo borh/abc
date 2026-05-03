@@ -6,7 +6,45 @@ use serde::Deserialize;
 #[derive(Debug, Clone, Deserialize, PartialEq)]
 pub struct OracleCases {
     pub aat_version: u64,
+    pub evidence: Vec<Evidence>,
     pub case: Vec<OracleCase>,
+}
+
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+pub struct Evidence {
+    pub id: String,
+    pub kind: EvidenceKind,
+    pub citation: String,
+    pub locator: Option<String>,
+    pub url: Option<String>,
+    pub supports: String,
+    pub independent: bool,
+    pub notes: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum EvidenceKind {
+    ReferenceTable,
+    Unicode,
+    CuratorNote,
+}
+
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+pub struct ReviewEntry {
+    pub status: ReviewStatus,
+    pub reviewer: String,
+    pub reviewed_at: String,
+    pub notes: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum ReviewStatus {
+    Draft,
+    Reviewed,
+    Disputed,
+    Retired,
 }
 
 #[derive(Debug, Clone, Deserialize, PartialEq)]
@@ -15,6 +53,8 @@ pub struct OracleCase {
     pub syntax_row_ids: Vec<String>,
     pub category: String,
     pub source_utf8: String,
+    pub evidence_ids: Vec<String>,
+    pub review: Vec<ReviewEntry>,
     pub notes: Option<String>,
     pub oracle: OracleExpectations,
 }
@@ -41,12 +81,16 @@ pub struct NodeAssertion {
     pub fields: BTreeMap<String, toml::Value>,
     #[serde(default)]
     pub field_absent: Vec<String>,
+    #[serde(default)]
+    pub evidence_ids: Vec<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
 pub struct SequenceAssertion {
     pub selector: String,
     pub kinds: Vec<String>,
+    #[serde(default)]
+    pub evidence_ids: Vec<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
@@ -57,6 +101,8 @@ pub struct GaijiAssertion {
     pub jis_code: Option<String>,
     pub unresolved_reason: Option<String>,
     pub source: Option<String>,
+    #[serde(default)]
+    pub evidence_ids: Vec<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, PartialEq)]
@@ -91,6 +137,26 @@ pub fn load_upstream_observations(path: &Path) -> Result<UpstreamObservations> {
         .with_context(|| format!("failed to parse upstream observations {}", path.display()))
 }
 
+impl OracleCase {
+    pub fn current_review_status(&self) -> ReviewStatus {
+        self.review
+            .last()
+            .map(|entry| entry.status)
+            .unwrap_or(ReviewStatus::Draft)
+    }
+}
+
+impl ReviewStatus {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            ReviewStatus::Draft => "draft",
+            ReviewStatus::Reviewed => "reviewed",
+            ReviewStatus::Disputed => "disputed",
+            ReviewStatus::Retired => "retired",
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -108,6 +174,26 @@ mod tests {
 
         assert_eq!(cases.aat_version, 1);
         assert!(cases.case.iter().any(|case| case.id == "gaiji.jis.2-13-47"));
+    }
+
+    #[test]
+    fn loads_oracle_evidence_and_review_history() {
+        let cases = load_oracle_cases(&data_path("aat-oracle-cases.toml")).unwrap();
+        let evidence = cases
+            .evidence
+            .iter()
+            .find(|evidence| evidence.id == "jis-x-0213-2-13-47")
+            .unwrap();
+        assert_eq!(evidence.kind, EvidenceKind::ReferenceTable);
+        assert!(evidence.independent);
+
+        let case = cases
+            .case
+            .iter()
+            .find(|case| case.id == "gaiji.jis.2-13-47")
+            .unwrap();
+        assert_eq!(case.evidence_ids, vec!["jis-x-0213-2-13-47"]);
+        assert_eq!(case.current_review_status(), ReviewStatus::Draft);
     }
 
     #[test]

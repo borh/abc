@@ -342,6 +342,33 @@ mod tests {
         assert_eq!(dakuten_case.current_review_status(), ReviewStatus::Reviewed);
         assert_eq!(dakuten_case.syntax_row_ids, vec!["gaiji.dakuten_katakana"]);
 
+        let un_embed_case = cases
+            .case
+            .iter()
+            .find(|case| case.id == "gaiji.un_embed.description_only")
+            .unwrap();
+        assert_eq!(
+            un_embed_case.current_review_status(),
+            ReviewStatus::Reviewed
+        );
+        assert_eq!(un_embed_case.syntax_row_ids, vec!["gaiji.un_embed"]);
+
+        let kunoji_case = cases
+            .case
+            .iter()
+            .find(|case| case.id == "iteration.kunoji.basic")
+            .unwrap();
+        assert_eq!(kunoji_case.current_review_status(), ReviewStatus::Reviewed);
+        assert_eq!(kunoji_case.syntax_row_ids, vec!["iteration.kunoji"]);
+
+        let accent_case = cases
+            .case
+            .iter()
+            .find(|case| case.id == "accent.diacritic.e_acute")
+            .unwrap();
+        assert_eq!(accent_case.current_review_status(), ReviewStatus::Reviewed);
+        assert_eq!(accent_case.syntax_row_ids, vec!["accent.diacritic"]);
+
         let gaiji_ruby_case = cases
             .case
             .iter()

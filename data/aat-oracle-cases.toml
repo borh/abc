@@ -126,6 +126,48 @@ url = "https://www.x0213.org/codetable/jisx0213-2004-std.txt"
 supports = "JIS X 0213 plane 1 row 7 cell 84 resolves to U+30F9 ヹ."
 independent = true
 
+[[evidence]]
+id = "aozora-reference-unembed-gaiji"
+kind = "aozora_rule"
+citation = "aozora2html UnEmbedGaiji handler"
+locator = "references/parsers/aozora2html/lib/aozora2html/tag/un_embed_gaiji.rb:6"
+supports = "Description-only gaiji markers are preserved as non-embedded gaiji notes with their original description and no Unicode or JIS resolution."
+independent = true
+
+[[evidence]]
+id = "aozora-reference-kunoji-basic"
+kind = "aozora_rule"
+citation = "AozoraEpub3 kunoji conversion"
+locator = "references/parsers/AozoraEpub3-JDK21/src/com/github/hmdev/converter/AozoraEpub3Converter.java:1445"
+supports = "The converter maps source ／＼ kunoji notation to the Unicode vertical kana repeat mark upper and lower halves."
+independent = true
+
+[[evidence]]
+id = "unicode-u3033-u3035"
+kind = "unicode"
+citation = "Unicode CJK Symbols and Punctuation chart, U+3033 and U+3035"
+locator = "U+3033, U+3035"
+url = "https://unicode.org/charts/PDF/U3000.pdf"
+supports = "U+3033 is 〳 and U+3035 is 〵, the vertical kana repeat mark upper and lower halves."
+independent = true
+
+[[evidence]]
+id = "aozora-reference-accent-e-acute"
+kind = "aozora_rule"
+citation = "aozora2html accent table and regression fixture"
+locator = "references/parsers/aozora2html/yml/accent_table.yml:161; references/parsers/aozora2html/test/test_command_parse.rb:18"
+supports = "The upstream accent table maps e' to JIS 1-09/1-09-63 with the name アキュートアクセント付きE小文字, and the regression fixture parses 〔e'tiquette〕 through that mapping."
+independent = true
+
+[[evidence]]
+id = "jis-x-0213-1-09-63"
+kind = "reference_table"
+citation = "Project X0213 JIS X 0213:2004 code table, row 3-295F"
+locator = "1-09-63"
+url = "https://www.x0213.org/codetable/jisx0213-2004-std.txt"
+supports = "JIS X 0213 plane 1 row 9 cell 63 resolves to U+00E9 é."
+independent = true
+
 [[case]]
 id = "gaiji.jis.2-13-47"
 syntax_row_ids = ["gaiji.marker", "gaiji.jis_code"]
@@ -394,6 +436,91 @@ resolved = "ヹ"
 jis_code = "1-7-84"
 unresolved_reason = ""
 source = "JIS X 0213"
+
+[[case]]
+id = "gaiji.un_embed.description_only"
+syntax_row_ids = ["gaiji.un_embed"]
+category = "gaiji"
+source_utf8 = "これは※［＃底本では欠字］である。"
+evidence_ids = ["aozora-reference-unembed-gaiji"]
+notes = "Description-only gaiji should be preserved as unresolved metadata and should not contribute visible text."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified against aozora2html UnEmbedGaiji handling and the AAT contract for unresolved gaiji projection."
+
+[case.oracle]
+visible_text = "これはである。"
+
+[[case.oracle.sequence]]
+selector = "blocks.*.content"
+kinds = ["text", "gaiji", "text"]
+
+[[case.oracle.gaiji]]
+selector = "blocks.*.content.*"
+description = "底本では欠字"
+resolved = ""
+jis_code = ""
+unresolved_reason = "unresolved"
+source = "description-only gaiji"
+
+[[case]]
+id = "iteration.kunoji.basic"
+syntax_row_ids = ["iteration.kunoji"]
+category = "gaiji"
+source_utf8 = "／＼"
+evidence_ids = ["aozora-reference-kunoji-basic", "unicode-u3033-u3035"]
+notes = "Kunoji iteration notation should preserve the semantic vertical kana repeat mark, not only the source slash glyphs."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified the source mapping against AozoraEpub3 conversion and the target glyphs against the Unicode chart."
+
+[case.oracle]
+visible_text = "〳〵"
+
+[[case.oracle.sequence]]
+selector = "blocks.*.content"
+kinds = ["gaiji"]
+
+[[case.oracle.gaiji]]
+selector = "blocks.*.content.*"
+description = "くの字点"
+resolved = "〳〵"
+jis_code = ""
+unresolved_reason = ""
+source = "kunoji iteration mark"
+
+[[case]]
+id = "accent.diacritic.e_acute"
+syntax_row_ids = ["accent.diacritic"]
+category = "accent"
+source_utf8 = "繁雑な日本の 〔e'tiquette〕 も、"
+evidence_ids = ["aozora-reference-accent-e-acute", "jis-x-0213-1-09-63"]
+notes = "Accent separation notation should preserve the resolved accented Latin character and the remaining literal text."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified e' mapping against the aozora2html accent table and JIS X 0213 row 1-09-63 -> U+00E9."
+
+[case.oracle]
+visible_text = "繁雑な日本の étiquette も、"
+
+[[case.oracle.sequence]]
+selector = "blocks.*.content"
+kinds = ["text", "accent", "text"]
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*"
+kind = "accent"
+count = 1
+fields = { code = "1-09-63", name = "アキュートアクセント付きE小文字", resolved = "é" }
 
 [[case]]
 id = "break.page.basic"

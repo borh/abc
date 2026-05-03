@@ -1032,6 +1032,7 @@ plaintext_projection = "drop"
 comparison_projection = "drop"
 validation_properties = ["gaiji_resolution"]
 adapter_expectations = ["fall back to descriptive note"]
+oracle_cases = ["gaiji.un_embed.description_only"]
 status = "needs_research"
 status_reason = "gaiji with description but no JIS/Unicode mapping"
 
@@ -1087,6 +1088,7 @@ plaintext_projection = "drop"
 comparison_projection = "drop"
 validation_properties = []
 adapter_expectations = ["preserve iteration mark"]
+oracle_cases = ["iteration.kunoji.basic"]
 status = "needs_research"
 status_reason = "kunoji iteration mark; aozora2html flags via @chuuki_table without inline transform"
 
@@ -1136,12 +1138,13 @@ reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/accent.
 source_examples = ["〔A`@grave〕", "〔e'@acute〕", "〔n~@tilde〕"]
 source_patterns = ['〔[^〕]+@[a-z]+〕']
 ir_nodes = []
-aat_nodes = ["gaiji"]
+aat_nodes = ["accent"]
 tei_projection = "g or character entity"
 plaintext_projection = "resolved_character"
 comparison_projection = "resolved_character_or_drop"
 validation_properties = []
 adapter_expectations = ["resolve via accent table"]
+oracle_cases = ["accent.diacritic.e_acute"]
 status = "needs_research"
 status_reason = "Latin accents via ACCENT_TABLE"
 

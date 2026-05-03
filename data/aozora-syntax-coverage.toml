@@ -584,6 +584,7 @@ plaintext_projection = "base_only"
 comparison_projection = "base_only"
 validation_properties = ["semantic_ruby_sequence"]
 adapter_expectations = ["preserve both reading layers"]
+oracle_cases = ["ruby.double.right_left"]
 status = "needs_research"
 status_reason = "double-ruby pattern; aozora2html rearranges via rearrange_ruby"
 
@@ -639,6 +640,7 @@ plaintext_projection = "base_only"
 comparison_projection = "base_only"
 validation_properties = ["semantic_ruby_sequence"]
 adapter_expectations = ["preserve placement attribute"]
+oracle_cases = ["ruby.placement.left"]
 status = "needs_research"
 status_reason = "directional ruby placement (left/below)"
 
@@ -694,6 +696,7 @@ plaintext_projection = "n/a"
 comparison_projection = "n/a"
 validation_properties = []
 adapter_expectations = ["report parser error"]
+oracle_cases = ["ruby.nested_forbidden.target_includes_ruby"]
 status = "needs_research"
 status_reason = "aozora2html raises Aozora2Html::Error on triple-nested ruby"
 

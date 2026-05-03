@@ -279,6 +279,45 @@ mod tests {
         assert_eq!(break_case.current_review_status(), ReviewStatus::Reviewed);
         assert_eq!(break_case.syntax_row_ids, vec!["break.page_line"]);
 
+        let double_ruby_case = cases
+            .case
+            .iter()
+            .find(|case| case.id == "ruby.double.right_left")
+            .unwrap();
+        assert_eq!(
+            double_ruby_case.current_review_status(),
+            ReviewStatus::Reviewed
+        );
+        assert_eq!(double_ruby_case.syntax_row_ids, vec!["ruby.double"]);
+
+        let left_ruby_case = cases
+            .case
+            .iter()
+            .find(|case| case.id == "ruby.placement.left")
+            .unwrap();
+        assert_eq!(
+            left_ruby_case.current_review_status(),
+            ReviewStatus::Reviewed
+        );
+        assert_eq!(
+            left_ruby_case.syntax_row_ids,
+            vec!["ruby.placement_directional"]
+        );
+
+        let nested_ruby_case = cases
+            .case
+            .iter()
+            .find(|case| case.id == "ruby.nested_forbidden.target_includes_ruby")
+            .unwrap();
+        assert_eq!(
+            nested_ruby_case.current_review_status(),
+            ReviewStatus::Reviewed
+        );
+        assert_eq!(
+            nested_ruby_case.syntax_row_ids,
+            vec!["ruby.nested_forbidden"]
+        );
+
         let gaiji_ruby_case = cases
             .case
             .iter()

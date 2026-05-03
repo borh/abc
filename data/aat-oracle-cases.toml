@@ -82,6 +82,15 @@ supports = "Aozora page breaks use the ［＃改ページ］ note to mark that f
 independent = true
 
 [[evidence]]
+id = "aozora-rule-ruby-left-and-overlap"
+kind = "aozora_rule"
+citation = "Aozora Bunko annotation list, other: ruby and ruby-like text / annotation overlap"
+locator = "Other / Ruby and ruby-like text; Annotation overlap"
+url = "https://www.aozora.gr.jp/annotation/etc.html"
+supports = "The annotation list defines left-side ruby notation and states that when ruby overlaps another annotation, the target should be the ruby base text rather than the ruby markup."
+independent = true
+
+[[evidence]]
 id = "jis-x-0213-1-15-23"
 kind = "reference_table"
 citation = "Project X0213 JIS X 0213:2004 code table, row 3-2F37"
@@ -199,6 +208,82 @@ source = "JIS X 0213"
 selector = "**"
 kind = "raw"
 absent = true
+
+[[case]]
+id = "ruby.double.right_left"
+syntax_row_ids = ["ruby.double"]
+category = "ruby"
+source_utf8 = "青空文庫《あおぞらぶんこ》［＃「青空文庫」の左に「aozora bunko」のルビ］"
+evidence_ids = ["aozora-rule-ruby-basic", "aozora-rule-ruby-left-and-overlap"]
+notes = "Ruby attached on both sides of the same base should preserve both readings."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified right-side ruby against the input manual and left-side ruby against the annotation list."
+
+[case.oracle]
+visible_text = "青空文庫"
+
+[[case.oracle.sequence]]
+selector = "blocks.*.content"
+kinds = ["ruby"]
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*"
+kind = "ruby"
+count = 1
+fields = { base = "青空文庫", reading = "あおぞらぶんこ", direction = "right", "x-left-reading" = "aozora bunko" }
+
+[[case]]
+id = "ruby.placement.left"
+syntax_row_ids = ["ruby.placement_directional"]
+category = "ruby"
+source_utf8 = "青空文庫［＃「青空文庫」の左に「あおぞらぶんこ」のルビ］"
+evidence_ids = ["aozora-rule-ruby-left-and-overlap"]
+notes = "Left-side ruby should preserve the ruby placement instead of normalizing to right-side ruby."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified against the Aozora Bunko annotation list left-ruby notation."
+
+[case.oracle]
+visible_text = "青空文庫"
+
+[[case.oracle.sequence]]
+selector = "blocks.*.content"
+kinds = ["ruby"]
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*"
+kind = "ruby"
+count = 1
+fields = { base = "青空文庫", reading = "あおぞらぶんこ", direction = "left" }
+
+[[case]]
+id = "ruby.nested_forbidden.target_includes_ruby"
+syntax_row_ids = ["ruby.nested_forbidden"]
+category = "ruby"
+source_utf8 = "青空文庫《あおぞらぶんこ》［＃「青空文庫《あおぞらぶんこ》」の左に「aozora bunko」のルビ］"
+evidence_ids = ["aozora-rule-ruby-left-and-overlap"]
+notes = "An overlapping ruby annotation whose target includes ruby markup violates the documented target-selection rule and should surface as a diagnostic."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified against the annotation-list rule that overlapping annotations target the ruby base text, not the ruby notation."
+
+[case.oracle]
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*"
+kind = "raw"
+count = 1
+fields = { "x-error-kind" = "nested_ruby_forbidden" }
 
 [[case]]
 id = "break.page.basic"

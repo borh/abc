@@ -241,6 +241,20 @@ mod tests {
         );
         assert_eq!(emphasis_case.syntax_row_ids, vec!["emphasis.basic"]);
 
+        let indentation_case = cases
+            .case
+            .iter()
+            .find(|case| case.id == "indentation.jisage_block.basic")
+            .unwrap();
+        assert_eq!(
+            indentation_case.current_review_status(),
+            ReviewStatus::Reviewed
+        );
+        assert_eq!(
+            indentation_case.syntax_row_ids,
+            vec!["indentation.basic", "indentation.jisage_block"]
+        );
+
         let gaiji_ruby_case = cases
             .case
             .iter()

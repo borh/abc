@@ -342,14 +342,15 @@ reference_sources = [
 source_examples = ["［＃２字下げ］", "［＃ここから２字下げ］", "［＃地付き］"]
 source_patterns = ['［＃[０-９0-9]+字下げ］', '［＃ここから[０-９0-9]+字下げ］', '［＃地付き］|［＃[０-９0-9]+字上げ］']
 ir_nodes = ["Block::Layout"]
-aat_nodes = ["style"]
+aat_nodes = ["jisage_block", "style"]
 tei_projection = "p or lg with rend/layout attributes"
 plaintext_projection = "content_only"
 comparison_projection = "content_only"
 validation_properties = ["block_scope_balance"]
 adapter_expectations = ["preserve indentation magnitude", "preserve block scope"]
+oracle_cases = ["indentation.jisage_block.basic"]
 status = "partial"
-status_reason = "current IR lacks first-class layout nodes"
+status_reason = "block-scoped jisage has AAT coverage; one-line jisage and chitsuki remain partial"
 
 [syntax.parsers.aozora2]
 recognition = "parsed"
@@ -1786,12 +1787,13 @@ reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/jisage.
 source_examples = ["［＃ここから2字下げ］", "［＃ここで2字下げ終わり］"]
 source_patterns = ['［＃ここから[０-９0-9]+字下げ］', '［＃ここで[０-９0-9]+字下げ終わり］']
 ir_nodes = ["Block::Layout"]
-aat_nodes = ["style"]
+aat_nodes = ["jisage_block"]
 tei_projection = "p rend=jisage"
 plaintext_projection = "content_only"
 comparison_projection = "content_only"
 validation_properties = ["block_scope_balance"]
 adapter_expectations = ["preserve indentation magnitude and scope"]
+oracle_cases = ["indentation.jisage_block.basic"]
 status = "needs_research"
 status_reason = "block-scoped indent; sub-case of indentation.basic"
 

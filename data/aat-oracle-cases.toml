@@ -46,6 +46,15 @@ supports = "Aozora boten annotation marks an emphasized target phrase with input
 independent = true
 
 [[evidence]]
+id = "aozora-rule-indentation-jisage"
+kind = "aozora_rule"
+citation = "Aozora Bunko input manual, section 4-3 indentation"
+locator = "4-3. Indentation"
+url = "https://www.aozora.gr.jp/aozora-manual/index-input.html"
+supports = "Aozora block indentation uses ここからN字下げ and ここで字下げ終わり markers to scope text indented by N characters."
+independent = true
+
+[[evidence]]
 id = "jis-x-0213-1-15-23"
 kind = "reference_table"
 citation = "Project X0213 JIS X 0213:2004 code table, row 3-2F37"
@@ -250,3 +259,40 @@ selector = "blocks.*.content.*.content.*"
 kind = "text"
 count = 1
 fields = { value = "おやじ" }
+
+[[case]]
+id = "indentation.jisage_block.basic"
+syntax_row_ids = ["indentation.basic", "indentation.jisage_block"]
+category = "layout"
+source_utf8 = "［＃ここから２字下げ］\n字下げされた段落。\n［＃ここで字下げ終わり］"
+evidence_ids = ["aozora-rule-indentation-jisage"]
+notes = "Block-scoped JIS-age should preserve indentation magnitude and scoped content."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified against the Aozora Bunko input manual block indentation guidance."
+
+[case.oracle]
+visible_text = "字下げされた段落。"
+
+[[case.oracle.sequence]]
+selector = "blocks"
+kinds = ["jisage_block"]
+
+[[case.oracle.nodes]]
+selector = "blocks.*"
+kind = "jisage_block"
+count = 1
+fields = { "x-indent" = 2 }
+
+[[case.oracle.sequence]]
+selector = "blocks.*.children"
+kinds = ["paragraph"]
+
+[[case.oracle.nodes]]
+selector = "blocks.*.children.*.content.*"
+kind = "text"
+count = 1
+fields = { value = "字下げされた段落。" }

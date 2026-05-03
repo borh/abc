@@ -1,4 +1,8 @@
+use std::fs;
+use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
+use std::time::Duration;
 
 use ab_morph_diff::Analysis;
 use ab_plaintext::PlainTextDocument;
@@ -10,6 +14,9 @@ use crate::span_builder::{RawToken, build_analysis_from_tokens};
 use crate::{AnalyzerError, MorphAnalyzer};
 
 const VIBRATO_CHUNK_BYTES: usize = 32_000;
+const ZSTD_DICTIONARY_LOAD_LOCK_RETRIES: usize = 600;
+const ZSTD_DICTIONARY_LOAD_LOCK_SLEEP: Duration = Duration::from_millis(50);
+static ZSTD_DICTIONARY_LOAD_LOCK: Mutex<()> = Mutex::new(());
 
 pub struct VibratoAnalyzer {
     analyzer_id: String,
@@ -23,16 +30,23 @@ impl VibratoAnalyzer {
     ) -> Result<Self, AnalyzerError> {
         let analyzer_id = analyzer_id.into();
         let dictionary_path = dictionary_path.as_ref();
-        let dictionary = if dictionary_path.extension().and_then(|ext| ext.to_str()) == Some("zst")
-        {
-            Dictionary::from_zstd(dictionary_path, CacheStrategy::Local)
-        } else {
-            Dictionary::from_path(dictionary_path, LoadMode::TrustCache)
-        }
-        .map_err(|err| AnalyzerError::DictionaryLoad {
-            analyzer: analyzer_id.clone(),
-            message: err.to_string(),
-        })?;
+        let dictionary =
+            if dictionary_path.extension().and_then(|ext| ext.to_str()) == Some("zst") {
+                let _guard = ZSTD_DICTIONARY_LOAD_LOCK.lock().map_err(|err| {
+                    AnalyzerError::DictionaryLoad {
+                        analyzer: analyzer_id.clone(),
+                        message: format!("zstd dictionary load lock poisoned: {err}"),
+                    }
+                })?;
+                let _cache_guard = ZstdCacheLock::acquire(&analyzer_id, dictionary_path)?;
+                Dictionary::from_zstd(dictionary_path, CacheStrategy::Local)
+            } else {
+                Dictionary::from_path(dictionary_path, LoadMode::TrustCache)
+            }
+            .map_err(|err| AnalyzerError::DictionaryLoad {
+                analyzer: analyzer_id.clone(),
+                message: err.to_string(),
+            })?;
 
         Ok(Self {
             analyzer_id,
@@ -48,10 +62,70 @@ impl VibratoAnalyzer {
     }
 
     pub fn unidic_cwj_default() -> Result<Self, AnalyzerError> {
-        Self::from_zstd(
-            "vibrato:unidic-cwj-202512",
-            workspace_path("dictionary/optimized/unidic-cwj-202512.dic.zst"),
-        )
+        Self::from_zstd("vibrato:unidic-cwj-202512", default_dictionary_path())
+    }
+}
+
+fn default_dictionary_path() -> PathBuf {
+    default_dictionary_path_from_env(std::env::var_os("AB_VIBRATO_DICT"))
+}
+
+fn default_dictionary_path_from_env(override_path: Option<std::ffi::OsString>) -> PathBuf {
+    override_path
+        .map(PathBuf::from)
+        .unwrap_or_else(|| workspace_path("dictionary/optimized/unidic-cwj-202512.dic.zst"))
+}
+
+struct ZstdCacheLock {
+    lock_dir: PathBuf,
+}
+
+impl ZstdCacheLock {
+    fn acquire(analyzer_id: &str, dictionary_path: &Path) -> Result<Self, AnalyzerError> {
+        let parent = dictionary_path
+            .parent()
+            .ok_or_else(|| AnalyzerError::DictionaryLoad {
+                analyzer: analyzer_id.to_owned(),
+                message: format!(
+                    "cannot derive zstd dictionary cache directory from {}",
+                    dictionary_path.display()
+                ),
+            })?;
+        let cache_dir = parent.join(".cache");
+        fs::create_dir_all(&cache_dir).map_err(|err| AnalyzerError::DictionaryLoad {
+            analyzer: analyzer_id.to_owned(),
+            message: err.to_string(),
+        })?;
+        let lock_dir = cache_dir.join(".ab-validator-zstd-load.lock");
+
+        for _ in 0..ZSTD_DICTIONARY_LOAD_LOCK_RETRIES {
+            match fs::create_dir(&lock_dir) {
+                Ok(()) => return Ok(Self { lock_dir }),
+                Err(err) if err.kind() == ErrorKind::AlreadyExists => {
+                    std::thread::sleep(ZSTD_DICTIONARY_LOAD_LOCK_SLEEP);
+                }
+                Err(err) => {
+                    return Err(AnalyzerError::DictionaryLoad {
+                        analyzer: analyzer_id.to_owned(),
+                        message: err.to_string(),
+                    });
+                }
+            }
+        }
+
+        Err(AnalyzerError::DictionaryLoad {
+            analyzer: analyzer_id.to_owned(),
+            message: format!(
+                "timed out waiting for zstd dictionary cache lock at {}",
+                lock_dir.display()
+            ),
+        })
+    }
+}
+
+impl Drop for ZstdCacheLock {
+    fn drop(&mut self) {
+        let _ = fs::remove_dir(&self.lock_dir);
     }
 }
 
@@ -127,5 +201,15 @@ mod tests {
         assert_eq!(analysis.text_id, "smoke");
         assert_eq!(analysis.source_text, doc.text);
         assert!(!analysis.morphemes.is_empty());
+    }
+
+    #[test]
+    fn default_dictionary_path_honors_env_override() {
+        let override_path = std::ffi::OsString::from("/tmp/unidic-cwj-202512.dic");
+
+        assert_eq!(
+            default_dictionary_path_from_env(Some(override_path.clone())),
+            PathBuf::from(override_path)
+        );
     }
 }

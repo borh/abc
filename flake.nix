@@ -35,6 +35,11 @@
       url = "github:AozoraEpub3-JDK21/AozoraEpub3-JDK21";
       flake = false;
     };
+
+    vibrato-unidic-cwj-zst = {
+      url = "path:/home/bor/Projects/vibrato-pipe/dictionary/optimized/unidic-cwj-202512.dic.zst";
+      flake = false;
+    };
   };
 
   outputs =
@@ -48,6 +53,7 @@
       reference-aozorabunko-extractor-src,
       flake-utils,
       rust-overlay,
+      vibrato-unidic-cwj-zst,
     }:
     flake-utils.lib.eachDefaultSystem (
       system:
@@ -256,6 +262,40 @@
           hash = "sha256-/eC1rOdQWy94f/PsxeTzENGD3f7ubWABN3LyLcniIec=";
         };
 
+        cargoGitOutputHashes = {
+          "sudachi-0.6.11-a1" = "sha256-nQiBcAY/NGbyw1/+3ACZ3HtGgc9Ow54+8auyT1Udo0w=";
+          "vibrato-rkyv-0.7.7" = "sha256-ZPDiLrA8Losm28tgw/apjFdo07gRTVTZFPM8QLy3MPA=";
+        };
+
+        abCargoLock = {
+          lockFile = ./Cargo.lock;
+          outputHashes = cargoGitOutputHashes;
+        };
+
+        sudachiRustSource = pkgs.fetchgit {
+          url = "https://github.com/WorksApplications/sudachi.rs.git";
+          rev = "54e85e8f7e0a6c4b570cd7b103506b080dc60c92";
+          hash = cargoGitOutputHashes."sudachi-0.6.11-a1";
+        };
+
+        abCargoDeps = pkgs.runCommand "cargo-vendor-dir" { } ''
+          cp -Lr --reflink=auto ${rustPlatform.importCargoLock abCargoLock} "$out"
+          chmod -R u+w "$out"
+
+          # The locked Sudachi crate lives under sudachi/ in its git repo, but
+          # the crate source includes repo-root resources via ../../resources.
+          cp -R ${sudachiRustSource}/resources "$out/resources"
+        '';
+
+        vibratoDictionaryPreCheck = ''
+          mkdir -p "$TMPDIR/ab-validator-vibrato"
+          mkdir -p "$TMPDIR/xdg-cache"
+          zstd -dc ${vibrato-unidic-cwj-zst} \
+            > "$TMPDIR/ab-validator-vibrato/unidic-cwj-202512.dic"
+          export AB_VIBRATO_DICT="$TMPDIR/ab-validator-vibrato/unidic-cwj-202512.dic"
+          export XDG_CACHE_HOME="$TMPDIR/xdg-cache"
+        '';
+
         nonRustReferenceMetadata = pkgs.runCommand "reference-parser-metadata-check" { } ''
           test -f ${reference-aozora-parser-js-src}/package.json
           test -f ${reference-aozora-epub3-src}/build.gradle
@@ -277,11 +317,12 @@
               version = "0.1.0";
 
               src = source;
-              cargoLock.lockFile = ./Cargo.lock;
+              cargoDeps = abCargoDeps;
 
               nativeBuildInputs = [
                 pkgs.pkg-config
                 pkgs.python3
+                pkgs.zstd
               ];
 
               buildInputs = [
@@ -297,6 +338,7 @@
               AB_AOZORA_RS_GAIJI_CHUKI_PDF = "${aozoraRsGaijiChukiPdf}";
               AB_AOZORA_RS_GAIJI_PDFIUM_DIR = "${pkgs.pdfium-binaries}/lib";
 
+              preCheck = vibratoDictionaryPreCheck;
               doCheck = true;
             }
           else
@@ -321,11 +363,12 @@
               version = "0.1.0";
 
               src = source;
-              cargoLock.lockFile = ./Cargo.lock;
+              cargoDeps = abCargoDeps;
 
               nativeBuildInputs = [
                 pkgs.pkg-config
                 pkgs.python3
+                pkgs.zstd
               ];
 
               buildInputs = [
@@ -343,6 +386,7 @@
 
               cargoBuildFlags = [ "--workspace" ];
               cargoTestFlags = [ "--workspace" ];
+              preCheck = vibratoDictionaryPreCheck;
               doCheck = true;
             }
           else

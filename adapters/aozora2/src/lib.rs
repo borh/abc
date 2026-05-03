@@ -126,6 +126,7 @@ fn parse_blocks(text: &str) -> Vec<serde_json::Value> {
 #[derive(Debug)]
 struct BlockFrame {
     block_type: Option<aozora_core::BlockType>,
+    params: aozora_core::BlockParams,
     children: Vec<serde_json::Value>,
     content: Vec<serde_json::Value>,
 }
@@ -134,20 +135,23 @@ impl BlockFrame {
     fn root() -> Self {
         Self {
             block_type: None,
+            params: aozora_core::BlockParams::default(),
             children: Vec::new(),
             content: Vec::new(),
         }
     }
 
-    fn block(block_type: aozora_core::BlockType) -> Self {
+    fn block(block_type: aozora_core::BlockType, params: aozora_core::BlockParams) -> Self {
         Self {
             block_type: Some(block_type),
+            params,
             children: Vec::new(),
             content: Vec::new(),
         }
     }
 
     fn flush_paragraph(&mut self) {
+        trim_content_boundary_line_breaks(&mut self.content);
         if self.content.is_empty() {
             return;
         }
@@ -157,13 +161,60 @@ impl BlockFrame {
         }));
     }
 
+    fn flush_heading(&mut self, level: MidashiLevel, style: MidashiStyle) {
+        trim_content_boundary_line_breaks(&mut self.content);
+        if self.content.is_empty() {
+            return;
+        }
+        self.children.push(json!({
+            "kind": "heading",
+            "level": midashi_level_number(level),
+            "style": midashi_style_name(style),
+            "content": std::mem::take(&mut self.content)
+        }));
+    }
+
+    fn wrap_content_in_line_style(
+        &mut self,
+        block_type: aozora_core::BlockType,
+        params: &aozora_core::BlockParams,
+    ) {
+        trim_content_boundary_line_breaks(&mut self.content);
+        if self.content.is_empty() {
+            return;
+        }
+        let Some(style_type) = line_style_type(block_type) else {
+            return;
+        };
+        let mut style = json!({
+            "kind": "style",
+            "style_type": style_type,
+            "content": std::mem::take(&mut self.content)
+        });
+        apply_style_params(&mut style, style_type, params);
+        self.content.push(style);
+    }
+
     fn into_block(mut self) -> serde_json::Value {
         self.flush_paragraph();
         let block_type = self.block_type.expect("non-root block frame");
         if let Some(kind) = block_kind(block_type) {
-            json!({
+            let mut block = json!({
                 "kind": kind,
                 "children": self.children
+            });
+            apply_block_params(&mut block, block_type, &self.params);
+            block
+        } else if let Some(style_type) = style_block_type(block_type) {
+            let mut style = json!({
+                "kind": "style",
+                "style_type": style_type,
+                "content": inline_content_from_blocks(self.children)
+            });
+            apply_style_params(&mut style, style_type, &self.params);
+            json!({
+                "kind": "paragraph",
+                "content": [style]
             })
         } else {
             let mut content = vec![raw_json(format!("BlockStart({block_type:?})"))];
@@ -183,13 +234,38 @@ fn aozora_nodes_to_aat_blocks(nodes: &[Node]) -> Vec<serde_json::Value> {
     let mut stack = vec![BlockFrame::root()];
     for node in nodes {
         match node {
-            Node::BlockStart { block_type, .. } if block_kind(*block_type).is_some() => {
+            Node::BlockStart { block_type, params }
+                if *block_type == aozora_core::BlockType::Midashi =>
+            {
+                stack.last_mut().expect("root frame").flush_heading(
+                    params.level.unwrap_or(MidashiLevel::O),
+                    params.midashi_style.unwrap_or_default(),
+                );
+            }
+            Node::BlockStart { block_type, params }
+                if !params.is_block && line_style_type(*block_type).is_some() =>
+            {
+                stack
+                    .last_mut()
+                    .expect("current frame")
+                    .wrap_content_in_line_style(*block_type, params);
+            }
+            Node::BlockStart { block_type, params }
+                if params.is_block && block_kind(*block_type).is_some() =>
+            {
                 stack.last_mut().expect("root frame").flush_paragraph();
-                stack.push(BlockFrame::block(*block_type));
+                stack.push(BlockFrame::block(*block_type, params.clone()));
+            }
+            Node::BlockStart { block_type, params } if style_block_type(*block_type).is_some() => {
+                stack.last_mut().expect("root frame").flush_paragraph();
+                stack.push(BlockFrame::block(*block_type, params.clone()));
             }
             Node::BlockEnd { block_type, .. } => {
                 if stack.len() > 1
-                    && stack.last().and_then(|frame| frame.block_type) == Some(*block_type)
+                    && stack
+                        .last()
+                        .and_then(|frame| frame.block_type)
+                        .is_some_and(|start| block_end_matches(start, *block_type))
                 {
                     let block = stack.pop().expect("block frame").into_block();
                     stack.last_mut().expect("parent frame").children.push(block);
@@ -198,6 +274,16 @@ fn aozora_nodes_to_aat_blocks(nodes: &[Node]) -> Vec<serde_json::Value> {
                 }
             }
             Node::Text(text) => append_text_to_current_frame(&mut stack, text),
+            Node::Midashi {
+                children,
+                level,
+                style,
+            } => {
+                let current = stack.last_mut().expect("current frame");
+                current.flush_paragraph();
+                current.content = aozora_nodes_to_aat_content(children);
+                current.flush_heading(*level, *style);
+            }
             _ => append_node_to_current_frame(&mut stack, node),
         }
     }
@@ -254,6 +340,138 @@ fn block_kind(block_type: aozora_core::BlockType) -> Option<&'static str> {
         aozora_core::BlockType::Caption => Some("caption_block"),
         _ => None,
     }
+}
+
+fn style_block_type(block_type: aozora_core::BlockType) -> Option<&'static str> {
+    match block_type {
+        aozora_core::BlockType::Jizume => Some("jizume"),
+        aozora_core::BlockType::Burasage => Some("burasage"),
+        _ => None,
+    }
+}
+
+fn line_style_type(block_type: aozora_core::BlockType) -> Option<&'static str> {
+    match block_type {
+        aozora_core::BlockType::Jisage => Some("jisage_line"),
+        aozora_core::BlockType::Chitsuki => Some("chitsuki"),
+        _ => None,
+    }
+}
+
+fn block_end_matches(start: aozora_core::BlockType, end: aozora_core::BlockType) -> bool {
+    start == end
+        || (start == aozora_core::BlockType::Burasage && end == aozora_core::BlockType::Jisage)
+}
+
+fn apply_block_params(
+    block: &mut serde_json::Value,
+    block_type: aozora_core::BlockType,
+    params: &aozora_core::BlockParams,
+) {
+    let Some(object) = block.as_object_mut() else {
+        return;
+    };
+    if block_type == aozora_core::BlockType::Jisage
+        && let Some(width) = params.width
+    {
+        object.insert("x-indent".to_owned(), json!(width));
+    }
+}
+
+fn apply_style_params(
+    style: &mut serde_json::Value,
+    style_type: &str,
+    params: &aozora_core::BlockParams,
+) {
+    let Some(object) = style.as_object_mut() else {
+        return;
+    };
+    match style_type {
+        "jisage_line" => {
+            if let Some(width) = params.width {
+                object.insert("x-indent".to_owned(), json!(width));
+            }
+        }
+        "chitsuki" => {
+            object.insert("x-align".to_owned(), json!("right"));
+            if let Some(width) = params.width {
+                object.insert("x-width".to_owned(), json!(width));
+            }
+        }
+        "jizume" => {
+            if let Some(width) = params.width {
+                object.insert("x-width".to_owned(), json!(width));
+            }
+        }
+        "burasage" => {
+            if let Some(width) = params.width {
+                object.insert("x-indent-first".to_owned(), json!(width));
+            }
+            if let Some(wrap_width) = params.wrap_width {
+                object.insert("x-indent-rest".to_owned(), json!(wrap_width));
+            }
+        }
+        _ => {}
+    }
+}
+
+fn inline_content_from_blocks(blocks: Vec<serde_json::Value>) -> Vec<serde_json::Value> {
+    let mut content = Vec::new();
+    for block in blocks {
+        if block.get("kind").and_then(serde_json::Value::as_str) == Some("paragraph")
+            && let Some(items) = block.get("content").and_then(serde_json::Value::as_array)
+        {
+            content.extend(items.iter().cloned());
+        }
+    }
+    trim_content_boundary_line_breaks(&mut content);
+    content
+}
+
+fn trim_content_boundary_line_breaks(content: &mut Vec<serde_json::Value>) {
+    if let Some(first) = content.first_mut() {
+        trim_text_node(first, true);
+    }
+    while content
+        .first()
+        .is_some_and(|node| text_node_value(node).is_some_and(str::is_empty))
+    {
+        content.remove(0);
+    }
+    if let Some(last) = content.last_mut() {
+        trim_text_node(last, false);
+    }
+    while content
+        .last()
+        .is_some_and(|node| text_node_value(node).is_some_and(str::is_empty))
+    {
+        content.pop();
+    }
+}
+
+fn trim_text_node(node: &mut serde_json::Value, leading: bool) {
+    let Some(object) = node.as_object_mut() else {
+        return;
+    };
+    if object.get("kind").and_then(serde_json::Value::as_str) != Some("text") {
+        return;
+    }
+    let Some(serde_json::Value::String(value)) = object.get_mut("value") else {
+        return;
+    };
+    let trimmed = if leading {
+        value.trim_start_matches(['\r', '\n'])
+    } else {
+        value.trim_end_matches(['\r', '\n'])
+    };
+    *value = trimmed.to_owned();
+}
+
+fn text_node_value(node: &serde_json::Value) -> Option<&str> {
+    node.as_object()
+        .filter(|object| object.get("kind").and_then(serde_json::Value::as_str) == Some("text"))
+        .and_then(|object| object.get("value"))
+        .and_then(serde_json::Value::as_str)
 }
 
 fn aozora_nodes_to_aat_content(nodes: &[Node]) -> Vec<serde_json::Value> {
@@ -648,7 +866,9 @@ mod tests {
 
         assert_eq!(blocks[0]["kind"], "paragraph");
         assert_eq!(blocks[1]["kind"], "jisage_block");
+        assert_eq!(blocks[1]["x-indent"], 2);
         assert_eq!(blocks[1]["children"][0]["kind"], "paragraph");
+        assert_eq!(blocks[1]["children"][0]["content"][0]["value"], "字下げ");
         assert_eq!(blocks[2]["kind"], "paragraph");
     }
 
@@ -666,8 +886,123 @@ mod tests {
         let blocks = aat["blocks"].as_array().expect("blocks");
 
         assert_eq!(blocks[0]["kind"], "jisage_block");
+        assert_eq!(blocks[0]["x-indent"], 2);
         assert_eq!(blocks[0]["children"][0]["kind"], "keigakomi_block");
         assert_eq!(blocks[0]["children"][0]["children"][0]["kind"], "paragraph");
+        assert_eq!(
+            blocks[0]["children"][0]["children"][0]["content"][0]["value"],
+            "囲み"
+        );
+    }
+
+    #[test]
+    fn build_aat_reconstructs_heading_block_from_marker() {
+        let decoded = DecodedSource {
+            text: "序章［＃「序章」の大見出し］".to_owned(),
+            encoding: "utf-8",
+            source_hash: "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+                .to_owned(),
+        };
+
+        let aat = build_aat(&decoded);
+        let blocks = aat["blocks"].as_array().expect("blocks");
+
+        assert_eq!(blocks[0]["kind"], "heading");
+        assert_eq!(blocks[0]["level"], 1);
+        assert_eq!(blocks[0]["style"], "normal");
+        assert_eq!(blocks[0]["content"][0]["value"], "序章");
+    }
+
+    #[test]
+    fn build_aat_reconstructs_heading_block_from_midashi_node() {
+        let decoded = DecodedSource {
+            text: "同行見出し［＃「同行見出し」は同行中見出し］".to_owned(),
+            encoding: "utf-8",
+            source_hash: "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+                .to_owned(),
+        };
+
+        let aat = build_aat(&decoded);
+        let blocks = aat["blocks"].as_array().expect("blocks");
+
+        assert_eq!(blocks[0]["kind"], "heading");
+        assert_eq!(blocks[0]["level"], 2);
+        assert_eq!(blocks[0]["style"], "dogyo");
+        assert_eq!(blocks[0]["content"][0]["value"], "同行見出し");
+    }
+
+    #[test]
+    fn build_aat_reconstructs_line_jisage_as_style() {
+        let decoded = DecodedSource {
+            text: "字下げ行［＃この行2字下げ］".to_owned(),
+            encoding: "utf-8",
+            source_hash: "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+                .to_owned(),
+        };
+
+        let aat = build_aat(&decoded);
+        let style = &aat["blocks"][0]["content"][0];
+
+        assert_eq!(style["kind"], "style");
+        assert_eq!(style["style_type"], "jisage_line");
+        assert_eq!(style["x-indent"], 2);
+        assert_eq!(style["content"][0]["value"], "字下げ行");
+    }
+
+    #[test]
+    fn build_aat_reconstructs_line_chitsuki_as_style() {
+        let decoded = DecodedSource {
+            text: "右寄せ［＃この行地付き］".to_owned(),
+            encoding: "utf-8",
+            source_hash: "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+                .to_owned(),
+        };
+
+        let aat = build_aat(&decoded);
+        let style = &aat["blocks"][0]["content"][0];
+
+        assert_eq!(style["kind"], "style");
+        assert_eq!(style["style_type"], "chitsuki");
+        assert_eq!(style["x-align"], "right");
+        assert_eq!(style["content"][0]["value"], "右寄せ");
+    }
+
+    #[test]
+    fn build_aat_reconstructs_jizume_block_as_style_scope() {
+        let decoded = DecodedSource {
+            text: "［＃ここから字詰め4］\n本文\n［＃ここで字詰め終わり］".to_owned(),
+            encoding: "utf-8",
+            source_hash: "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+                .to_owned(),
+        };
+
+        let aat = build_aat(&decoded);
+        let style = &aat["blocks"][0]["content"][0];
+
+        assert_eq!(style["kind"], "style");
+        assert_eq!(style["style_type"], "jizume");
+        assert_eq!(style["x-width"], 4);
+        assert_eq!(style["content"][0]["value"], "本文");
+    }
+
+    #[test]
+    fn build_aat_reconstructs_burasage_block_as_style_scope() {
+        let decoded = DecodedSource {
+            text: "［＃ここから2字下げ、折り返して4字下げ］\n本文\n［＃ここで字下げ終わり］"
+                .to_owned(),
+            encoding: "utf-8",
+            source_hash: "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+                .to_owned(),
+        };
+
+        let aat = build_aat(&decoded);
+        let style = &aat["blocks"][0]["content"][0];
+
+        assert_eq!(style["kind"], "style");
+        assert_eq!(style["style_type"], "burasage");
+        assert_eq!(style["x-indent-first"], 2);
+        assert_eq!(style["x-indent-rest"], 4);
+        assert_eq!(style["content"][0]["value"], "本文");
     }
 
     #[test]

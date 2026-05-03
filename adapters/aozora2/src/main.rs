@@ -1,7 +1,7 @@
 use std::io::{self, Read, Write};
 
-use aozora2_adapter::{aat_json_from_bytes, decode_source_bytes, html_escape, VERSION};
 use anyhow::Result;
+use aozora2_adapter::{VERSION, aat_json_from_bytes, html_from_bytes};
 use clap::{Parser, ValueEnum};
 
 #[derive(Debug, Parser)]
@@ -28,15 +28,14 @@ fn main() -> Result<()> {
 
     let mut bytes = Vec::new();
     io::stdin().read_to_end(&mut bytes)?;
-    let decoded = decode_source_bytes(&bytes)?;
-
     match args.mode.unwrap_or(Mode::Aat) {
         Mode::Aat => {
             let out = aat_json_from_bytes(&bytes)?;
             io::stdout().write_all(&out)?;
         }
         Mode::Html => {
-            println!("<p>{}</p>", html_escape(&decoded.text));
+            let out = html_from_bytes(&bytes)?;
+            io::stdout().write_all(&out)?;
         }
     }
     Ok(())

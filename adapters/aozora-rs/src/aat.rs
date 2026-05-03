@@ -1,14 +1,11 @@
 use std::{borrow::Cow, collections::HashMap, time::Instant};
 
 use ab_ir::{Block, GaijiKind, GaijiRef, Inline, ProjectedText, Provenance, RubyPlacement};
-use aozora_rs_core::{Break, Deco, Retokenized};
+use aozora_rs_core::{Deco, Figure, Retokenized};
+use aozora_rs_gaiji::{gaiji_to_char, parse_tag};
 use winnow::Parser;
 
-use crate::{
-    metrics::FallbackDecision,
-    parser::ParsedSource,
-    source::source_visible_text,
-};
+use crate::{metrics::FallbackDecision, parser::ParsedSource, source::source_visible_text};
 
 #[derive(Debug, Clone)]
 pub struct InitialAatBuildResult {
@@ -86,9 +83,7 @@ pub fn build_initial_without_source_annotations<'a>(
     }
 }
 
-pub(crate) fn projected_visible_from_retokenized<'a>(
-    retokenized: &[Retokenized<'a>],
-) -> String {
+pub(crate) fn projected_visible_from_retokenized<'a>(retokenized: &[Retokenized<'a>]) -> String {
     let mut visible = String::new();
     collect_projected_visible_text(retokenized, 0, None, &mut visible);
     ab_source_syntax::comparison_lossy_body(&visible).into_owned()
@@ -110,7 +105,11 @@ pub fn build_fallback_from_events_with_annotations<'a>(
     match source_visible {
         Some(source_visible) => {
             let blocks = if let Some(annotations) = source_annotations_both {
-                source_visible_fallback_blocks_with_annotations(source_visible, source_events, annotations)
+                source_visible_fallback_blocks_with_annotations(
+                    source_visible,
+                    source_events,
+                    annotations,
+                )
             } else {
                 source_visible_fallback_blocks_with_events(source_visible, source_events)
             };
@@ -146,7 +145,7 @@ fn collect_projected_visible_text<'a>(
         match &tokens[idx] {
             Retokenized::Text(text) => visible.push_str(text),
             Retokenized::Kunten(_) | Retokenized::Okurigana(_) => {}
-            Retokenized::Break(_) => visible.push('\n'),
+            Retokenized::Br => visible.push('\n'),
             Retokenized::Figure(_) => {}
             Retokenized::DecoBegin(Deco::Ruby(_)) => {
                 idx = collect_projected_visible_text(
@@ -167,7 +166,9 @@ fn collect_projected_visible_text<'a>(
                 continue;
             }
             Retokenized::DecoEnd(deco) => {
-                if let Some(is_match) = matching_end && is_match(deco) {
+                if let Some(is_match) = matching_end
+                    && is_match(deco)
+                {
                     return idx + 1;
                 }
             }
@@ -235,20 +236,12 @@ fn retokenized_to_aat_blocks(tokens: &[Retokenized<'_>]) -> Vec<Block> {
         match &tokens[idx] {
             Retokenized::Text(text) => push_text(&mut content, text),
             Retokenized::Kunten(_) | Retokenized::Okurigana(_) => {}
-            Retokenized::Break(Break::BreakLine) => flush_paragraph(&mut blocks, &mut content),
-            Retokenized::Break(_) => flush_paragraph(&mut blocks, &mut content),
-            Retokenized::Figure(figure) => content.push(Inline::gaiji(
-                figure.to_string(),
-                "",
-                Some(
-                    "aozora-rs-core Figure Display output; original gaiji notation is not preserved by Figure",
-                ),
-            )),
+            Retokenized::Br => flush_paragraph(&mut blocks, &mut content),
+            Retokenized::Figure(figure) => content.push(figure_inline(figure, Provenance::Parser)),
             Retokenized::DecoBegin(Deco::Ruby(reading)) => {
-                let (base, next_idx) =
-                    collect_decorated_content(tokens, idx + 1, false, &|deco| {
-                        matches!(deco, Deco::Ruby(_))
-                    });
+                let (base, next_idx) = collect_decorated_content(tokens, idx + 1, false, &|deco| {
+                    matches!(deco, Deco::Ruby(_))
+                });
                 push_ruby_inline(&mut content, base, reading, Provenance::Parser);
                 idx = next_idx;
                 continue;
@@ -276,7 +269,7 @@ fn retokenized_to_aat_blocks(tokens: &[Retokenized<'_>]) -> Vec<Block> {
                 };
                 blocks.push(Block::Heading {
                     level,
-                    style: stable_style_type(deco),
+                    style: heading_style_type(deco),
                     content: heading_content,
                 });
                 idx = next_idx;
@@ -313,19 +306,12 @@ fn collect_decorated_content<'a>(
         match &tokens[idx] {
             Retokenized::Text(text) => push_text(&mut content, text),
             Retokenized::Kunten(_) | Retokenized::Okurigana(_) => {}
-            Retokenized::Break(_) => push_text(&mut content, "\n"),
-            Retokenized::Figure(figure) => content.push(Inline::gaiji(
-                figure.to_string(),
-                "",
-                Some(
-                    "aozora-rs-core Figure Display output; original gaiji notation is not preserved by Figure",
-                ),
-            )),
+            Retokenized::Br => push_text(&mut content, "\n"),
+            Retokenized::Figure(figure) => content.push(figure_inline(figure, Provenance::Parser)),
             Retokenized::DecoBegin(Deco::Ruby(reading)) => {
-                let (base, next_idx) =
-                    collect_decorated_content(tokens, idx + 1, false, &|deco| {
-                        matches!(deco, Deco::Ruby(_))
-                    });
+                let (base, next_idx) = collect_decorated_content(tokens, idx + 1, false, &|deco| {
+                    matches!(deco, Deco::Ruby(_))
+                });
                 push_ruby_inline(&mut content, base, reading, Provenance::Parser);
                 idx = next_idx;
                 continue;
@@ -440,6 +426,13 @@ fn stable_style_type(deco: &Deco<'_>) -> &'static str {
     }
 }
 
+fn heading_style_type(deco: &Deco<'_>) -> &'static str {
+    match deco {
+        Deco::AHead | Deco::BHead | Deco::CHead => "normal",
+        _ => "handled_elsewhere",
+    }
+}
+
 fn push_text(content: &mut Vec<Inline>, value: &str) {
     if value.is_empty() {
         return;
@@ -466,9 +459,7 @@ fn strip_commands_in_inline(
     pending_split_marker: &mut bool,
 ) {
     match value {
-        Inline::Text { value, .. } => {
-            strip_string(value, command_depth, pending_split_marker)
-        }
+        Inline::Text { value, .. } => strip_string(value, command_depth, pending_split_marker),
         Inline::Ruby { base, .. } => {
             for child in base {
                 strip_commands_in_inline(child, command_depth, pending_split_marker);
@@ -574,10 +565,7 @@ fn strip_string(text: &mut String, command_depth: &mut usize, pending_split_mark
             while close < chars.len() && chars[close] == '」' {
                 close += 1;
             }
-            if close > idx + 1
-                && close < chars.len()
-                && matches!(chars[close], '］' | ']')
-            {
+            if close > idx + 1 && close < chars.len() && matches!(chars[close], '］' | ']') {
                 idx = close + 1;
                 changed = true;
                 continue;
@@ -761,9 +749,7 @@ fn source_visible_fallback_blocks_with_annotations<'a>(
     markers: &ab_source_syntax::SourceAnnotationsBoth<'a>,
 ) -> Vec<Block> {
     let blocks = structured_source_fallback_blocks_with_events(source_events);
-    if ab_ir::visible_projection(&blocks).visible_text == source_visible
-        && blocks_cover_validation_annotations_with_annotations(&markers.validation, &blocks)
-    {
+    if blocks_cover_validation_annotations_with_annotations(&markers.validation, &blocks) {
         return blocks;
     }
     legacy_source_visible_fallback_blocks(source_visible, &markers.full)
@@ -1239,31 +1225,41 @@ fn gaiji_inline(description: &str, provenance: Provenance) -> Inline {
     })
 }
 
+fn figure_inline(figure: &Figure<'_>, provenance: Provenance) -> Inline {
+    Inline::gaiji_ref(GaijiRef {
+        source: figure.to_string(),
+        description: figure.caption.to_owned(),
+        description_format: Some("aozora-rs-core Figure".to_owned()),
+        kind: GaijiKind::Image {
+            path: figure.path.to_owned(),
+        },
+        resolved: None,
+        provenance,
+    })
+}
+
 fn parsed_gaiji(description: &str, provenance: Provenance) -> Option<Inline> {
     let mut input = description;
-    let parsed = gaiji_chuki_parser::parse_tag.parse_next(&mut input).ok()?;
+    let parsed = parse_tag.parse_next(&mut input).ok()?;
     if !input.is_empty() {
         return None;
     }
 
-    let (kind, resolved) = if let Some(unicode) = parsed.unicode {
+    let resolved = resolve_aozora_rs_gaiji(description);
+    let kind = if let Some(unicode) = parsed.unicode.as_ref() {
         let values = unicode.chars().collect::<Vec<_>>();
-        let kind = match values.as_slice() {
+        match values.as_slice() {
             [value] => GaijiKind::UnicodeCodepoint { value: *value },
             _ => GaijiKind::UnicodeSequence {
                 values: values.clone(),
             },
-        };
-        (kind, Some(String::new()))
+        }
     } else if let Some((plane, row, cell)) = parsed.sjis {
-        (
-            GaijiKind::JisCode {
-                plane: Some(plane),
-                row,
-                cell,
-            },
-            Some(String::new()),
-        )
+        GaijiKind::JisCode {
+            plane: Some(plane),
+            row,
+            cell,
+        }
     } else {
         return None;
     };
@@ -1276,6 +1272,12 @@ fn parsed_gaiji(description: &str, provenance: Provenance) -> Option<Inline> {
         resolved,
         provenance,
     }))
+}
+
+fn resolve_aozora_rs_gaiji(description: &str) -> Option<String> {
+    let mut input = description;
+    let resolved = gaiji_to_char(&mut input)?.into_owned();
+    input.is_empty().then_some(resolved)
 }
 
 fn insert_inline_at_visible_len(content: &mut Vec<Inline>, target: usize, node: Inline) {
@@ -1424,7 +1426,7 @@ mod tests {
         let counts = ab_ir::provenance_counts(&blocks);
         let json = ab_ir::blocks_to_aat_json(&blocks);
 
-        assert_eq!(projected.visible_text, "吾輩はである。");
+        assert_eq!(projected.visible_text, "吾輩は呭である。");
         assert_eq!(counts.source_supplement, 0);
         assert_eq!(json[0]["content"][0]["kind"], "ruby");
         assert_eq!(json[0]["content"][0]["base"], "吾輩");
@@ -1563,7 +1565,7 @@ mod tests {
     }
 
     #[test]
-    fn fallback_blocks_remove_jis_gaiji_markers_from_large_body_projection() {
+    fn fallback_blocks_remove_unresolved_jis_gaiji_markers_from_large_body_projection() {
         let mut body =
             "この卷見※［＃「二点しんにょう＋官」、第3水準1-92-56］すべきもの\n".repeat(10_000);
         body.push_str("終わり");
@@ -1591,7 +1593,7 @@ mod tests {
         let counts = ab_ir::provenance_counts(&blocks);
         assert_eq!(
             ab_ir::visible_projection(&blocks).visible_text,
-            "吾輩はである。"
+            "吾輩は呭である。"
         );
         assert_eq!(counts.source_supplement, 0);
         assert!(counts.parser_normalized >= 2);
@@ -1732,6 +1734,32 @@ mod tests {
     }
 
     #[test]
+    fn retokenized_heading_decorations_emit_normal_heading_style() {
+        let cases = [
+            (Deco::AHead, 1, "大見出し"),
+            (Deco::BHead, 2, "中見出し"),
+            (Deco::CHead, 3, "小見出し"),
+        ];
+
+        for (deco, expected_level, text) in cases {
+            let tokens = vec![
+                Retokenized::DecoBegin(deco.clone()),
+                Retokenized::Text(text),
+                Retokenized::DecoEnd(deco),
+            ];
+
+            let blocks = retokenized_to_aat_blocks(&tokens);
+            let json = ab_ir::blocks_to_aat_json(&blocks);
+            let heading = &json[0];
+
+            assert_eq!(heading["kind"], "heading");
+            assert_eq!(heading["level"], expected_level);
+            assert_eq!(heading["style"], "normal");
+            assert_eq!(heading["content"][0]["value"], text);
+        }
+    }
+
+    #[test]
     fn source_annotation_supplements_parse_unicode_gaiji_as_parser_normalized() {
         let mut blocks = vec![Block::Paragraph { content: vec![] }];
 
@@ -1743,7 +1771,7 @@ mod tests {
         let json = ab_ir::blocks_to_aat_json(&blocks);
         assert_eq!(json[0]["content"][0]["kind"], "gaiji");
         assert_eq!(json[0]["content"][0]["description"], "「口＋世」、U+546D");
-        assert_eq!(json[0]["content"][0]["resolved"], "");
+        assert_eq!(json[0]["content"][0]["resolved"], "呭");
     }
 
     #[test]
@@ -1764,7 +1792,61 @@ mod tests {
             json[0]["content"][0]["description"],
             "「二点しんにょう＋官」、第3水準1-92-56"
         );
-        assert_eq!(json[0]["content"][0]["resolved"], "");
+        assert_eq!(json[0]["content"][0]["resolved"], serde_json::Value::Null);
+        assert_eq!(json[0]["content"][0]["unresolved_reason"], "unresolved");
+    }
+
+    #[test]
+    fn gaiji_resolution_follows_aozora_rs_gaiji() {
+        let unicode_description = "「口＋世」、U+546D";
+        let mut upstream_input = unicode_description;
+        let upstream = aozora_rs_gaiji::gaiji_to_char(&mut upstream_input)
+            .expect("upstream gaiji resolution")
+            .into_owned();
+        let node = gaiji_inline(unicode_description, Provenance::ParserNormalized);
+        let Inline::GaijiRef(gaiji) = node else {
+            panic!("expected gaiji ref");
+        };
+
+        assert!(upstream_input.is_empty());
+        assert_eq!(upstream, "呭");
+        assert_eq!(gaiji.resolved.as_deref(), Some(upstream.as_str()));
+
+        let jis_description = "「てへん＋掌」、第4水準2-13-47";
+        let mut unresolved_input = jis_description;
+        let unresolved = aozora_rs_gaiji::gaiji_to_char(&mut unresolved_input);
+        let node = gaiji_inline(jis_description, Provenance::ParserNormalized);
+        let Inline::GaijiRef(gaiji) = node else {
+            panic!("expected gaiji ref");
+        };
+
+        assert!(unresolved.is_none());
+        assert_eq!(gaiji.resolved, None);
+    }
+
+    #[test]
+    fn retokenized_figure_preserves_image_path_and_caption() {
+        let tokens = vec![Retokenized::Figure(aozora_rs_core::Figure {
+            path: "figures/map.png",
+            caption: "地図",
+            size: Some((120, 240)),
+        })];
+
+        let blocks = retokenized_to_aat_blocks(&tokens);
+        let inline = ab_ir::block_content(&blocks[0]).first().unwrap();
+
+        let Inline::GaijiRef(gaiji) = inline else {
+            panic!("expected image gaiji ref");
+        };
+        assert_eq!(gaiji.source, "地図（figures/map.png縦120×横240）入る");
+        assert_eq!(gaiji.description, "地図");
+        assert_eq!(
+            gaiji.kind,
+            GaijiKind::Image {
+                path: "figures/map.png".to_owned()
+            }
+        );
+        assert_eq!(gaiji.resolved, None);
     }
 
     #[test]

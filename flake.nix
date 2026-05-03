@@ -246,6 +246,16 @@
               runHook postInstall
             '';
 
+        aozoraRsGaijiMenkuten = pkgs.fetchurl {
+          url = "https://x0213.org/codetable/jisx0213-2004-std.txt";
+          hash = "sha256-OIrngiy/Cuz/CbhGbdYw6jQ2c9AaPH351hlHrRrVst0=";
+        };
+
+        aozoraRsGaijiChukiPdf = pkgs.fetchurl {
+          url = "https://www.aozora.gr.jp/gaiji_chuki/gaiji_chuki.pdf";
+          hash = "sha256-/eC1rOdQWy94f/PsxeTzENGD3f7ubWABN3LyLcniIec=";
+        };
+
         nonRustReferenceMetadata = pkgs.runCommand "reference-parser-metadata-check" { } ''
           test -f ${reference-aozora-parser-js-src}/package.json
           test -f ${reference-aozora-epub3-src}/build.gradle
@@ -274,13 +284,18 @@
                 pkgs.python3
               ];
 
-              buildInputs =
-                [ ]
-                ++ lib.optionals pkgs.stdenv.isDarwin [
-                  pkgs.libiconv
-                  pkgs.darwin.apple_sdk.frameworks.Security
-                  pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
-                ];
+              buildInputs = [
+                pkgs.pdfium-binaries
+              ]
+              ++ lib.optionals pkgs.stdenv.isDarwin [
+                pkgs.libiconv
+                pkgs.darwin.apple_sdk.frameworks.Security
+                pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
+              ];
+
+              AB_AOZORA_RS_GAIJI_MENKUTEN_PATH = "${aozoraRsGaijiMenkuten}";
+              AB_AOZORA_RS_GAIJI_CHUKI_PDF = "${aozoraRsGaijiChukiPdf}";
+              AB_AOZORA_RS_GAIJI_PDFIUM_DIR = "${pkgs.pdfium-binaries}/lib";
 
               doCheck = true;
             }
@@ -313,13 +328,18 @@
                 pkgs.python3
               ];
 
-              buildInputs =
-                [ ]
-                ++ lib.optionals pkgs.stdenv.isDarwin [
-                  pkgs.libiconv
-                  pkgs.darwin.apple_sdk.frameworks.Security
-                  pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
-                ];
+              buildInputs = [
+                pkgs.pdfium-binaries
+              ]
+              ++ lib.optionals pkgs.stdenv.isDarwin [
+                pkgs.libiconv
+                pkgs.darwin.apple_sdk.frameworks.Security
+                pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
+              ];
+
+              AB_AOZORA_RS_GAIJI_MENKUTEN_PATH = "${aozoraRsGaijiMenkuten}";
+              AB_AOZORA_RS_GAIJI_CHUKI_PDF = "${aozoraRsGaijiChukiPdf}";
+              AB_AOZORA_RS_GAIJI_PDFIUM_DIR = "${pkgs.pdfium-binaries}/lib";
 
               cargoBuildFlags = [ "--workspace" ];
               cargoTestFlags = [ "--workspace" ];
@@ -379,6 +399,9 @@
 
             RUST_SRC_PATH = "${rustToolchain}/lib/rustlib/src/rust/library";
             AB_SUDACHI_DICT = "${sudachiDictionaryFull}/share/sudachi/system.dic";
+            AB_AOZORA_RS_GAIJI_MENKUTEN_PATH = "${aozoraRsGaijiMenkuten}";
+            AB_AOZORA_RS_GAIJI_CHUKI_PDF = "${aozoraRsGaijiChukiPdf}";
+            AB_AOZORA_RS_GAIJI_PDFIUM_DIR = "${pkgs.pdfium-binaries}/lib";
 
             shellHook = ''
               export CARGO_HOME="''${CARGO_HOME:-$PWD/.cargo}"

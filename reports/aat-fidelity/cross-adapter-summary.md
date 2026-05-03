@@ -7,7 +7,7 @@ Oracle cases: `data/aat-oracle-cases.toml`
 
 | adapter | cases | schema pass | upstream faithful | oracle pass | oracle fail |
 | --- | --- | --- | --- | --- | --- |
-| aozora-rs | 43 | 43 | 39 | 4 | 39 |
+| aozora-rs | 43 | 43 | 39 | 5 | 38 |
 | aozora2 | 43 | 43 | 2 | 43 | 0 |
 | aozora2html | 43 | 43 | 42 | 1 | 42 |
 
@@ -15,7 +15,7 @@ Oracle cases: `data/aat-oracle-cases.toml`
 
 | adapter | bucket | count |
 | --- | --- | --- |
-| aozora-rs | faithful-upstream-vs-oracle | 39 |
+| aozora-rs | faithful-upstream-vs-oracle | 38 |
 | aozora2html | faithful-rendered-output-vs-oracle | 42 |
 
 ## Failure Families
@@ -30,7 +30,7 @@ Oracle cases: `data/aat-oracle-cases.toml`
 | aozora-rs | editor_note | 1 |
 | aozora-rs | figure | 2 |
 | aozora-rs | gaiji | 3 |
-| aozora-rs | heading | 4 |
+| aozora-rs | heading | 3 |
 | aozora-rs | indentation | 5 |
 | aozora-rs | iteration | 1 |
 | aozora-rs | kunten | 2 |
@@ -131,7 +131,7 @@ Oracle cases: `data/aat-oracle-cases.toml`
 | gaiji_ruby.inline_base | aozora-rs | 0 | 1 |
 | gaiji_ruby.inline_base | aozora2 | 1 | 0 |
 | gaiji_ruby.inline_base | aozora2html | 0 | 1 |
-| heading.basic | aozora-rs | 0 | 1 |
+| heading.basic | aozora-rs | 1 | 0 |
 | heading.basic | aozora2 | 1 | 0 |
 | heading.basic | aozora2html | 0 | 1 |
 | heading.dogyo | aozora-rs | 0 | 1 |

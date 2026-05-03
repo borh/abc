@@ -81,7 +81,11 @@ pub fn parse_with_aozora_rs(body: BodySelection<'_>) -> Result<ParsedSource<'_>>
     let scopenize = scopenize_start.elapsed();
 
     let retokenize_start = Instant::now();
-    let (retokenized, retokenize_errors) = retokenize(flat_tokens, scopenized).into_tuple();
+    let (pages, retokenize_errors) = retokenize(flat_tokens, scopenized);
+    let retokenized = pages
+        .into_iter()
+        .flat_map(|page| page.content.into_iter())
+        .collect::<Vec<_>>();
     let retokenize = retokenize_start.elapsed();
     let retokenized_count = retokenized.len();
 

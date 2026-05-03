@@ -3,8 +3,8 @@ use std::{
     time::{Duration, Instant},
 };
 
-use anyhow::Result;
 use ab_source_syntax::{self, SourceAnnotationsBoth, SourceEvent};
+use anyhow::Result;
 use encoding_rs::SHIFT_JIS;
 use sha2::{Digest, Sha256};
 

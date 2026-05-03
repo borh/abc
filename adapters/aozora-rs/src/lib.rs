@@ -1,8 +1,8 @@
 use std::time::{Duration, Instant};
 
+use ab_source_syntax::SourceEvent;
 use anyhow::{Result, bail};
 use serde_json::json;
-use ab_source_syntax::SourceEvent;
 mod aat;
 mod metrics;
 mod parser;
@@ -15,7 +15,7 @@ pub use source::{DecodedSource, decode_source_bytes};
 
 const LARGE_BODY_BYTES: usize = 500_000;
 
-pub const VERSION: &str = "aozora-rs-adapter 0.1.0 2b4e8d1";
+pub const VERSION: &str = "aozora-rs-adapter 0.1.0 aozora-rs-v0.6.0";
 
 pub fn aat_json_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
     let decode_start = Instant::now();
@@ -129,7 +129,7 @@ fn build_aat(
             "adapter_version": VERSION,
             "source_encoding": decoded.encoding,
             "source_hash": decoded.source_hash,
-            "parse_complete": true,
+            "parse_complete": !result.fallback.used,
             "warnings": warnings,
             "metrics": metrics,
             "semantic_summary": semantic_summary
@@ -151,11 +151,8 @@ fn build_fallback_blocks(
         } else {
             return {
                 let events = ab_source_syntax::source_events(validation_body);
-                let (blocks, _) = aat::build_fallback_from_events_with_annotations(
-                    &events,
-                    source_visible,
-                    None,
-                );
+                let (blocks, _) =
+                    aat::build_fallback_from_events_with_annotations(&events, source_visible, None);
                 (blocks, fallback_start.elapsed())
             };
         };
@@ -201,7 +198,8 @@ fn build_aat_result(parsed: &ParsedSource<'_>) -> (aat::AatBuildResult, Duration
                 used: true,
                 reason: FallbackReason::ParserFailure,
             };
-            fallback_source_visible = Some(source_artifacts.as_ref().unwrap().source_visible.to_owned());
+            fallback_source_visible =
+                Some(source_artifacts.as_ref().unwrap().source_visible.to_owned());
         } else {
             let source_artifacts = source_artifacts
         .as_ref()
@@ -209,7 +207,8 @@ fn build_aat_result(parsed: &ParsedSource<'_>) -> (aat::AatBuildResult, Duration
             let source_visible = &source_artifacts.source_visible;
             let projected_visible = aat::projected_visible_from_retokenized(&parsed.retokenized);
             let projection_start = Instant::now();
-            let projection = projection::check_with_source_visible(source_visible, &projected_visible);
+            let projection =
+                projection::check_with_source_visible(source_visible, &projected_visible);
             projection_check = projection_start.elapsed();
 
             if !projection.in_source_order
@@ -242,18 +241,19 @@ fn build_aat_result(parsed: &ParsedSource<'_>) -> (aat::AatBuildResult, Duration
 
     let mut fallback_build = Duration::ZERO;
     let (blocks, timings) = if fallback.used {
-        let source_events = source_artifacts.as_ref().map(|artifacts| artifacts.events.as_slice());
+        let source_events = source_artifacts
+            .as_ref()
+            .map(|artifacts| artifacts.events.as_slice());
         let source_annotations_both = source_artifacts
             .as_ref()
             .map(|artifacts| &artifacts.annotations_both);
-        let (blocks, fallback_ms) =
-            build_fallback_blocks(
-                validation_body,
-                has_markup,
-                source_events,
-                source_annotations_both,
-                fallback_source_visible,
-            );
+        let (blocks, fallback_ms) = build_fallback_blocks(
+            validation_body,
+            has_markup,
+            source_events,
+            source_annotations_both,
+            fallback_source_visible,
+        );
         fallback_build = fallback_ms;
         (
             blocks,
@@ -348,7 +348,6 @@ mod tests {
         );
     }
 
-
     #[test]
     fn fallback_is_reported_in_metrics_for_large_body() {
         let large_body = "本文".repeat(260_000);
@@ -385,7 +384,7 @@ mod tests {
 
         assert_eq!(value["meta"]["metrics"]["fallback_used"], true);
         assert_eq!(value["meta"]["metrics"]["fallback_reason"], "large_body");
-        assert_eq!(value["meta"]["parse_complete"], true);
+        assert_eq!(value["meta"]["parse_complete"], false);
     }
 
     #[test]
@@ -505,6 +504,11 @@ mod tests {
         let out = aat_json_from_bytes(input).unwrap();
         let value: serde_json::Value = serde_json::from_slice(&out).unwrap();
         let metrics = &value["meta"]["metrics"];
+        let content = value["blocks"][0]["content"].as_array().unwrap();
+        let gaiji = content
+            .iter()
+            .find(|node| node["kind"] == "gaiji")
+            .expect("gaiji node");
 
         assert_eq!(metrics["fallback_used"], false);
         assert_eq!(metrics["fallback_reason"], "none");
@@ -512,5 +516,29 @@ mod tests {
         assert_eq!(metrics["source_supplement_nodes"], 0);
         assert!(metrics["parser_normalized_nodes"].as_u64().unwrap() > 0);
         assert_eq!(metrics["source_fallback_nodes"], 0);
+        assert_eq!(gaiji["resolved"], "呭");
+    }
+
+    #[test]
+    fn parser_normalized_jis_gaiji_follows_aozora_rs_gaiji_unresolved_result() {
+        let input = "\
+タイトル
+著者
+-------------------------------------------------------
+凡例
+-------------------------------------------------------
+耳朶を※［＃「てへん＋掌」、第4水準2-13-47］えて"
+            .as_bytes();
+        let out = aat_json_from_bytes(input).unwrap();
+        let value: serde_json::Value = serde_json::from_slice(&out).unwrap();
+        let content = value["blocks"][0]["content"].as_array().unwrap();
+        let gaiji = content
+            .iter()
+            .find(|node| node["kind"] == "gaiji")
+            .expect("gaiji node");
+
+        assert_eq!(gaiji["description"], "「てへん＋掌」、第4水準2-13-47");
+        assert_eq!(gaiji["resolved"], serde_json::Value::Null);
+        assert_eq!(gaiji["unresolved_reason"], "unresolved");
     }
 }

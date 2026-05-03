@@ -59,10 +59,19 @@ fn normalize_visible(value: &str) -> String {
 
     value
         .nfkc()
+        .map(normalize_iteration_mark)
         .collect::<String>()
         .split_whitespace()
         .collect::<Vec<_>>()
         .join(" ")
+}
+
+fn normalize_iteration_mark(ch: char) -> char {
+    match ch {
+        'ゝ' | 'ヽ' => 'ゝ',
+        'ゞ' | 'ヾ' => 'ゞ',
+        _ => ch,
+    }
 }
 
 #[cfg(test)]
@@ -109,10 +118,7 @@ mod tests {
     fn stream_normalization_like_property_check() {
         let value = "　吾輩\n\tは　 猫  ";
 
-        assert_eq!(
-            normalize_visible(value),
-            "吾輩 は 猫"
-        );
+        assert_eq!(normalize_visible(value), "吾輩 は 猫");
         assert!(is_normalized_subsequence("吾輩 は", value));
         assert!(!is_normalized_subsequence("吾輩  は", "吾輩は"));
     }
@@ -138,10 +144,7 @@ mod tests {
     fn streams_normalized_whitespace_like_split_join() {
         let value = "  吾輩\n\tは  猫  ";
 
-        assert_eq!(
-            normalize_visible(value),
-            "吾輩 は 猫"
-        );
+        assert_eq!(normalize_visible(value), "吾輩 は 猫");
         assert!(is_normalized_subsequence("吾輩 は", value));
         assert!(!is_normalized_subsequence("吾輩  は", "吾輩は"));
     }

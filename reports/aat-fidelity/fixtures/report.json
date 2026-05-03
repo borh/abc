@@ -1,0 +1,12 @@
+{
+  "rows": [
+    {
+      "adapter": "aozora2",
+      "case_id": "gaiji.jis.2-13-47",
+      "schema_status": "pass",
+      "upstream_status": "faithful",
+      "oracle_status": "pass",
+      "failures": []
+    }
+  ]
+}

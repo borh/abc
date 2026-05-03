@@ -6,6 +6,8 @@
       "schema_status": "pass",
       "upstream_status": "faithful",
       "oracle_status": "pass",
+      "oracle_review_status": "draft",
+      "oracle_evidence_strength": "reference",
       "failures": []
     }
   ]

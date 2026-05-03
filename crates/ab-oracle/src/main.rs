@@ -63,13 +63,16 @@ fn main() -> Result<()> {
             for adapter_arg in &args.adapters {
                 let adapter = parse_adapter_spec(adapter_arg);
                 let aat = run_adapter_aat(&adapter, &case.source_utf8, &case.id)?;
-                let evaluation = evaluate_case(case, &observations, &adapter.id, aat);
+                let evaluation =
+                    evaluate_case(case, &oracle.evidence, &observations, &adapter.id, aat);
                 rows.push(ReportRow {
                     case_id: evaluation.case_id,
                     adapter: adapter.id.clone(),
                     schema_status: evaluation.schema_status,
                     upstream_status: evaluation.upstream_status,
                     oracle_status: evaluation.oracle_status,
+                    oracle_review_status: evaluation.oracle_review_status,
+                    oracle_evidence_strength: evaluation.oracle_evidence_strength,
                     failures: evaluation.failures,
                 });
             }

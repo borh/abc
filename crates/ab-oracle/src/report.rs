@@ -15,6 +15,8 @@ pub struct ReportRow {
     pub schema_status: String,
     pub upstream_status: String,
     pub oracle_status: String,
+    pub oracle_review_status: String,
+    pub oracle_evidence_strength: String,
     pub failures: Vec<String>,
 }
 
@@ -38,17 +40,19 @@ pub fn read_json_report(path: &Path) -> Result<OracleReport> {
 
 pub fn render_markdown(report: &OracleReport) -> String {
     let mut out = String::from(
-        "| case_id | adapter | schema_status | upstream_status | oracle_status | failures |\n\
-         | --- | --- | --- | --- | --- | --- |\n",
+        "| case_id | adapter | schema_status | upstream_status | oracle_status | oracle_review_status | oracle_evidence_strength | failures |\n\
+         | --- | --- | --- | --- | --- | --- | --- | --- |\n",
     );
     for row in &report.rows {
         out.push_str(&format!(
-            "| {} | {} | {} | {} | {} | {} |\n",
+            "| {} | {} | {} | {} | {} | {} | {} | {} |\n",
             row.case_id,
             row.adapter,
             row.schema_status,
             row.upstream_status,
             row.oracle_status,
+            row.oracle_review_status,
+            row.oracle_evidence_strength,
             row.failures.join("<br>")
         ));
     }
@@ -68,6 +72,8 @@ mod tests {
                 schema_status: "pass".to_owned(),
                 upstream_status: "faithful".to_owned(),
                 oracle_status: "pass".to_owned(),
+                oracle_review_status: "draft".to_owned(),
+                oracle_evidence_strength: "reference".to_owned(),
                 failures: Vec::new(),
             }],
         });
@@ -75,5 +81,24 @@ mod tests {
         assert!(markdown.contains("schema_status"));
         assert!(markdown.contains("upstream_status"));
         assert!(markdown.contains("oracle_status"));
+    }
+
+    #[test]
+    fn markdown_names_oracle_review_fields() {
+        let markdown = render_markdown(&OracleReport {
+            rows: vec![ReportRow {
+                case_id: "case".to_owned(),
+                adapter: "adapter".to_owned(),
+                schema_status: "pass".to_owned(),
+                upstream_status: "faithful".to_owned(),
+                oracle_status: "pass".to_owned(),
+                oracle_review_status: "draft".to_owned(),
+                oracle_evidence_strength: "reference".to_owned(),
+                failures: Vec::new(),
+            }],
+        });
+
+        assert!(markdown.contains("oracle_review_status"));
+        assert!(markdown.contains("oracle_evidence_strength"));
     }
 }

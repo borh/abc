@@ -51,19 +51,51 @@ def _(mo, rows):
     schema_statuses = sorted({row.get("schema_status", "") for row in rows if row.get("schema_status")})
     upstream_statuses = sorted({row.get("upstream_status", "") for row in rows if row.get("upstream_status")})
     oracle_statuses = sorted({row.get("oracle_status", "") for row in rows if row.get("oracle_status")})
+    review_statuses = sorted({row.get("oracle_review_status", "") for row in rows if row.get("oracle_review_status")})
+    evidence_strengths = sorted({row.get("oracle_evidence_strength", "") for row in rows if row.get("oracle_evidence_strength")})
 
     adapter = mo.ui.dropdown(options=[""] + adapters, value="", label="Adapter")
     schema_status = mo.ui.dropdown(options=[""] + schema_statuses, value="", label="Schema")
     upstream_status = mo.ui.dropdown(options=[""] + upstream_statuses, value="", label="Upstream")
     oracle_status = mo.ui.dropdown(options=[""] + oracle_statuses, value="", label="Oracle")
+    review_status = mo.ui.dropdown(options=[""] + review_statuses, value="", label="Review")
+    evidence_strength = mo.ui.dropdown(options=[""] + evidence_strengths, value="", label="Evidence")
     case_filter = mo.ui.text(value="", label="Case contains")
 
-    mo.hstack([adapter, schema_status, upstream_status, oracle_status, case_filter], widths="equal")
-    return adapter, case_filter, oracle_status, schema_status, upstream_status
+    mo.hstack(
+        [
+            adapter,
+            schema_status,
+            upstream_status,
+            oracle_status,
+            review_status,
+            evidence_strength,
+            case_filter,
+        ],
+        widths="equal",
+    )
+    return (
+        adapter,
+        case_filter,
+        evidence_strength,
+        oracle_status,
+        review_status,
+        schema_status,
+        upstream_status,
+    )
 
 
 @app.cell
-def _(adapter, case_filter, oracle_status, rows, schema_status, upstream_status):
+def _(
+    adapter,
+    case_filter,
+    evidence_strength,
+    oracle_status,
+    review_status,
+    rows,
+    schema_status,
+    upstream_status,
+):
     filtered_rows = rows
     if adapter.value:
         filtered_rows = [row for row in filtered_rows if row.get("adapter") == adapter.value]
@@ -78,6 +110,18 @@ def _(adapter, case_filter, oracle_status, rows, schema_status, upstream_status)
     if oracle_status.value:
         filtered_rows = [
             row for row in filtered_rows if row.get("oracle_status") == oracle_status.value
+        ]
+    if review_status.value:
+        filtered_rows = [
+            row
+            for row in filtered_rows
+            if row.get("oracle_review_status") == review_status.value
+        ]
+    if evidence_strength.value:
+        filtered_rows = [
+            row
+            for row in filtered_rows
+            if row.get("oracle_evidence_strength") == evidence_strength.value
         ]
     if case_filter.value.strip():
         needle = case_filter.value.strip()

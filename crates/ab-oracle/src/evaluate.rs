@@ -1,7 +1,7 @@
 use ab_ir::aat_view::AatDocument;
 use serde_json::Value;
 
-use crate::data::{OracleCase, UpstreamObservations};
+use crate::data::{Evidence, EvidenceKind, OracleCase, UpstreamObservations};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CaseEvaluation {
@@ -9,6 +9,8 @@ pub struct CaseEvaluation {
     pub schema_status: String,
     pub upstream_status: String,
     pub oracle_status: String,
+    pub oracle_review_status: String,
+    pub oracle_evidence_strength: String,
     pub failures: Vec<String>,
 }
 
@@ -24,8 +26,35 @@ pub fn visible_text(document: &AatDocument) -> String {
     document.visible_text()
 }
 
+fn evidence_strength_rank(kind: EvidenceKind) -> u8 {
+    match kind {
+        EvidenceKind::Unicode => 3,
+        EvidenceKind::ReferenceTable => 2,
+        EvidenceKind::CuratorNote => 1,
+    }
+}
+
+pub fn evidence_strength(case: &OracleCase, evidence: &[Evidence]) -> &'static str {
+    let linked = evidence
+        .iter()
+        .filter(|record| case.evidence_ids.iter().any(|id| id == &record.id))
+        .collect::<Vec<_>>();
+
+    match linked
+        .iter()
+        .map(|record| evidence_strength_rank(record.kind))
+        .max()
+        .unwrap_or(1)
+    {
+        3 => "normative",
+        2 => "reference",
+        _ => "curated",
+    }
+}
+
 pub fn evaluate_case(
     case: &OracleCase,
+    all_evidence: &[Evidence],
     observations: &UpstreamObservations,
     adapter: &str,
     aat: Value,
@@ -56,6 +85,8 @@ pub fn evaluate_case(
         schema_status,
         upstream_status,
         oracle_status,
+        oracle_review_status: case.current_review_status().as_str().to_owned(),
+        oracle_evidence_strength: evidence_strength(case, all_evidence).to_owned(),
         failures,
     }
 }
@@ -240,8 +271,8 @@ fn optional_string_matches(actual: Option<&Value>, expected: Option<&str>) -> bo
 mod tests {
     use super::*;
     use crate::data::{
-        GaijiAssertion, OracleCase, OracleExpectations, ReviewEntry, ReviewStatus,
-        SequenceAssertion, UpstreamObservation, UpstreamObservations,
+        Evidence, EvidenceKind, GaijiAssertion, OracleCase, OracleExpectations, ReviewEntry,
+        ReviewStatus, SequenceAssertion, UpstreamObservation, UpstreamObservations,
     };
     use serde_json::json;
 
@@ -339,11 +370,28 @@ mod tests {
             }
         });
 
-        let result = evaluate_case(&case, &observations, "fixture", aat);
+        let result = evaluate_case(
+            &case,
+            &[Evidence {
+                id: "fixture-evidence".to_owned(),
+                kind: EvidenceKind::ReferenceTable,
+                citation: "fixture".to_owned(),
+                locator: None,
+                url: None,
+                supports: "fixture".to_owned(),
+                independent: true,
+                notes: None,
+            }],
+            &observations,
+            "fixture",
+            aat,
+        );
 
         assert_eq!(result.schema_status, "pass");
         assert_eq!(result.upstream_status, "faithful");
         assert_eq!(result.oracle_status, "pass");
+        assert_eq!(result.oracle_review_status, "draft");
+        assert_eq!(result.oracle_evidence_strength, "reference");
         assert!(result.failures.is_empty());
     }
 }

@@ -232,6 +232,7 @@ plaintext_projection = "heading_text"
 comparison_projection = "heading_text"
 validation_properties = ["heading_level_consistency", "heading_structure"]
 adapter_expectations = ["preserve heading level", "preserve heading text order"]
+oracle_cases = ["heading.basic.large"]
 status = "partial"
 status_reason = "heading validation is currently shallow"
 

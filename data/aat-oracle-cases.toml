@@ -28,6 +28,15 @@ supports = "Aozora ruby notation writes the reading in 《》 after the base tex
 independent = true
 
 [[evidence]]
+id = "aozora-rule-heading-basic"
+kind = "aozora_rule"
+citation = "Aozora Bunko input manual, section 4-2 headings"
+locator = "4-2. Headings"
+url = "https://www.aozora.gr.jp/aozora-manual/index-input.html"
+supports = "Aozora heading annotations use three levels: 大見出し, 中見出し, and 小見出し; the annotated target text is the heading content."
+independent = true
+
+[[evidence]]
 id = "jis-x-0213-1-15-23"
 kind = "reference_table"
 citation = "Project X0213 JIS X 0213:2004 code table, row 3-2F37"
@@ -172,3 +181,30 @@ selector = "blocks.*.content.*"
 kind = "ruby"
 count = 1
 fields = { base = "吾輩", reading = "わがはい", direction = "right" }
+
+[[case]]
+id = "heading.basic.large"
+syntax_row_ids = ["heading.basic"]
+category = "heading"
+source_utf8 = "第一章［＃「第一章」は大見出し］"
+evidence_ids = ["aozora-rule-heading-basic"]
+notes = "Basic forward-reference Aozora heading annotation should preserve heading text and level."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified against the Aozora Bunko input manual heading notation guidance."
+
+[case.oracle]
+visible_text = "第一章"
+
+[[case.oracle.sequence]]
+selector = "blocks"
+kinds = ["heading"]
+
+[[case.oracle.nodes]]
+selector = "blocks.*"
+kind = "heading"
+count = 1
+fields = { level = 1, style = "normal" }

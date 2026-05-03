@@ -215,6 +215,21 @@ mod tests {
             .unwrap();
         assert_eq!(ruby_case.current_review_status(), ReviewStatus::Reviewed);
 
+        let heading_evidence = cases
+            .evidence
+            .iter()
+            .find(|evidence| evidence.id == "aozora-rule-heading-basic")
+            .unwrap();
+        assert_eq!(heading_evidence.kind, EvidenceKind::AozoraRule);
+
+        let heading_case = cases
+            .case
+            .iter()
+            .find(|case| case.id == "heading.basic.large")
+            .unwrap();
+        assert_eq!(heading_case.current_review_status(), ReviewStatus::Reviewed);
+        assert_eq!(heading_case.syntax_row_ids, vec!["heading.basic"]);
+
         let gaiji_ruby_case = cases
             .case
             .iter()

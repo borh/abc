@@ -318,6 +318,30 @@ mod tests {
             vec!["ruby.nested_forbidden"]
         );
 
+        let chuuki_case = cases
+            .case
+            .iter()
+            .find(|case| case.id == "annotation.chuuki.basic")
+            .unwrap();
+        assert_eq!(chuuki_case.current_review_status(), ReviewStatus::Reviewed);
+        assert_eq!(chuuki_case.syntax_row_ids, vec!["annotation.chuuki"]);
+
+        let bouki_case = cases
+            .case
+            .iter()
+            .find(|case| case.id == "annotation.bouki.basic")
+            .unwrap();
+        assert_eq!(bouki_case.current_review_status(), ReviewStatus::Reviewed);
+        assert_eq!(bouki_case.syntax_row_ids, vec!["annotation.bouki"]);
+
+        let dakuten_case = cases
+            .case
+            .iter()
+            .find(|case| case.id == "gaiji.dakuten_katakana.ve")
+            .unwrap();
+        assert_eq!(dakuten_case.current_review_status(), ReviewStatus::Reviewed);
+        assert_eq!(dakuten_case.syntax_row_ids, vec!["gaiji.dakuten_katakana"]);
+
         let gaiji_ruby_case = cases
             .case
             .iter()

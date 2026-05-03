@@ -752,6 +752,7 @@ plaintext_projection = "base_only"
 comparison_projection = "base_only"
 validation_properties = []
 adapter_expectations = ["preserve annotation as ruby-like attachment"]
+oracle_cases = ["annotation.chuuki.basic"]
 status = "needs_research"
 status_reason = "PAT_CHUUKI in lib/aozora2html.rb; uses ruby rearrangement"
 
@@ -807,6 +808,7 @@ plaintext_projection = "base_only"
 comparison_projection = "base_only"
 validation_properties = []
 adapter_expectations = ["preserve marginal gloss"]
+oracle_cases = ["annotation.bouki.basic"]
 status = "needs_research"
 status_reason = "single-character side gloss; PAT_BOUKI in lib/aozora2html.rb"
 
@@ -974,6 +976,7 @@ plaintext_projection = "resolved_character_or_drop"
 comparison_projection = "resolved_character_or_drop"
 validation_properties = ["gaiji_resolution"]
 adapter_expectations = ["render voiced katakana glyph"]
+oracle_cases = ["gaiji.dakuten_katakana.ve"]
 status = "needs_research"
 status_reason = "voiced katakana via JIS code lookup"
 

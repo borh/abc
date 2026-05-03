@@ -91,12 +91,39 @@ supports = "The annotation list defines left-side ruby notation and states that 
 independent = true
 
 [[evidence]]
+id = "aozora-reference-chuuki-basic"
+kind = "aozora_rule"
+citation = "aozora2html reference parser chuuki rule"
+locator = "references/parsers/aozora2html/lib/aozora2html.rb:104,1175"
+supports = "The upstream aozora2html parser recognizes target-attached 注記 commands and rearranges them as ruby-like annotations."
+independent = true
+notes = "Parser-reference evidence for a legacy annotation form handled by the upstream Aozora reference implementation."
+
+[[evidence]]
+id = "aozora-reference-bouki-basic"
+kind = "aozora_rule"
+citation = "aozora2html reference parser bouki regression"
+locator = "references/parsers/aozora2html/test/test_command_parse.rb:253"
+supports = "The upstream aozora2html regression suite treats 「血が流れ」に「×」の傍記 as a side note rendered like repeated ruby text over the target phrase."
+independent = true
+notes = "Parser-reference evidence for a legacy side-note pattern not clearly located in the current public annotation manual."
+
+[[evidence]]
 id = "jis-x-0213-1-15-23"
 kind = "reference_table"
 citation = "Project X0213 JIS X 0213:2004 code table, row 3-2F37"
 locator = "1-15-23"
 url = "https://www.x0213.org/codetable/jisx0213-2004-std.txt"
 supports = "JIS X 0213 plane 1 row 15 cell 23 resolves to U+566F 噯."
+independent = true
+
+[[evidence]]
+id = "jis-x-0213-1-07-84"
+kind = "reference_table"
+citation = "Project X0213 JIS X 0213:2004 code table, row 3-2774"
+locator = "1-07-84"
+url = "https://www.x0213.org/codetable/jisx0213-2004-std.txt"
+supports = "JIS X 0213 plane 1 row 7 cell 84 resolves to U+30F9 ヹ."
 independent = true
 
 [[case]]
@@ -284,6 +311,89 @@ selector = "blocks.*.content.*"
 kind = "raw"
 count = 1
 fields = { "x-error-kind" = "nested_ruby_forbidden" }
+
+[[case]]
+id = "annotation.chuuki.basic"
+syntax_row_ids = ["annotation.chuuki"]
+category = "inline_annotation"
+source_utf8 = "吹喋［＃「喋」の「ママ」の注記］"
+evidence_ids = ["aozora-reference-chuuki-basic"]
+notes = "Target-attached chuuki should preserve the target as visible text and the note as ruby-like annotation content."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified against aozora2html PAT_CHUUKI and rearrange_ruby_tag handling."
+
+[case.oracle]
+visible_text = "吹喋"
+
+[[case.oracle.sequence]]
+selector = "blocks.*.content"
+kinds = ["text", "ruby"]
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*"
+kind = "ruby"
+count = 1
+fields = { base = "喋", reading = "ママ", direction = "right", "x-annotation-type" = "chuuki" }
+
+[[case]]
+id = "annotation.bouki.basic"
+syntax_row_ids = ["annotation.bouki"]
+category = "inline_annotation"
+source_utf8 = "支部長の顔にさっと血が流れ［＃「血が流れ」に「×」の傍記］た"
+evidence_ids = ["aozora-reference-bouki-basic"]
+notes = "Bouki should preserve the target as visible text and repeat the side-note marker once per target character."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified against the aozora2html bouki regression fixture."
+
+[case.oracle]
+visible_text = "支部長の顔にさっと血が流れた"
+
+[[case.oracle.sequence]]
+selector = "blocks.*.content"
+kinds = ["text", "ruby", "text"]
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*"
+kind = "ruby"
+count = 1
+fields = { base = "血が流れ", reading = "××××", direction = "right", "x-annotation-type" = "bouki" }
+
+[[case]]
+id = "gaiji.dakuten_katakana.ve"
+syntax_row_ids = ["gaiji.dakuten_katakana"]
+category = "gaiji"
+source_utf8 = "※［＃濁点付き片仮名ヱ、1-7-84］エル"
+evidence_ids = ["jis-x-0213-1-07-84"]
+notes = "Dakuten katakana JIS row 1-07-84 should resolve to the precomposed katakana letter VE."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified against Project X0213 JIS X 0213:2004 table row 3-2774 -> U+30F9; U+30F9 is ヹ."
+
+[case.oracle]
+visible_text = "ヹエル"
+
+[[case.oracle.sequence]]
+selector = "blocks.*.content"
+kinds = ["gaiji", "text"]
+
+[[case.oracle.gaiji]]
+selector = "blocks.*.content.*"
+description = "濁点付き片仮名ヱ、1-7-84"
+resolved = "ヹ"
+jis_code = "1-7-84"
+unresolved_reason = ""
+source = "JIS X 0213"
 
 [[case]]
 id = "break.page.basic"

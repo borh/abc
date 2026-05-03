@@ -230,6 +230,17 @@ mod tests {
         assert_eq!(heading_case.current_review_status(), ReviewStatus::Reviewed);
         assert_eq!(heading_case.syntax_row_ids, vec!["heading.basic"]);
 
+        let emphasis_case = cases
+            .case
+            .iter()
+            .find(|case| case.id == "emphasis.boten.basic")
+            .unwrap();
+        assert_eq!(
+            emphasis_case.current_review_status(),
+            ReviewStatus::Reviewed
+        );
+        assert_eq!(emphasis_case.syntax_row_ids, vec!["emphasis.basic"]);
+
         let gaiji_ruby_case = cases
             .case
             .iter()

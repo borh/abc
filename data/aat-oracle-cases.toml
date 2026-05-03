@@ -37,6 +37,15 @@ supports = "Aozora heading annotations use three levels: 大見出し, 中見出
 independent = true
 
 [[evidence]]
+id = "aozora-rule-emphasis-boten"
+kind = "aozora_rule"
+citation = "Aozora Bunko input manual, section 4-7 emphasis marks"
+locator = "4-7. Emphasis marks"
+url = "https://www.aozora.gr.jp/aozora-manual/index-input.html"
+supports = "Aozora boten annotation marks an emphasized target phrase with input note syntax such as ［＃「おやじ」に傍点］."
+independent = true
+
+[[evidence]]
 id = "jis-x-0213-1-15-23"
 kind = "reference_table"
 citation = "Project X0213 JIS X 0213:2004 code table, row 3-2F37"
@@ -208,3 +217,36 @@ selector = "blocks.*"
 kind = "heading"
 count = 1
 fields = { level = 1, style = "normal" }
+
+[[case]]
+id = "emphasis.boten.basic"
+syntax_row_ids = ["emphasis.basic"]
+category = "emphasis"
+source_utf8 = "胡麻塩おやじ［＃「おやじ」に傍点］"
+evidence_ids = ["aozora-rule-emphasis-boten"]
+notes = "Basic boten annotation should preserve the emphasized target text and style scope."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified against the Aozora Bunko input manual boten annotation example."
+
+[case.oracle]
+visible_text = "胡麻塩おやじ"
+
+[[case.oracle.sequence]]
+selector = "blocks.*.content"
+kinds = ["text", "style"]
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*"
+kind = "style"
+count = 1
+fields = { style_type = "boten" }
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*.content.*"
+kind = "text"
+count = 1
+fields = { value = "おやじ" }

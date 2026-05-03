@@ -290,6 +290,7 @@ plaintext_projection = "content_only"
 comparison_projection = "content_only"
 validation_properties = ["style_scope_balance"]
 adapter_expectations = ["preserve style variant", "preserve style scope"]
+oracle_cases = ["emphasis.boten.basic"]
 status = "partial"
 status_reason = "style variants are not yet matrix-keyed in validation reports"
 

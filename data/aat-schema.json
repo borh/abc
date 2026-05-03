@@ -156,6 +156,7 @@
         { "$ref": "#/$defs/ruby" },
         { "$ref": "#/$defs/gaiji" },
         { "$ref": "#/$defs/accent" },
+        { "$ref": "#/$defs/figure" },
         { "$ref": "#/$defs/raw" },
         { "$ref": "#/$defs/inline_container" },
         { "$ref": "#/$defs/warigaki" }
@@ -224,6 +225,8 @@
         "kind": { "const": "ruby" },
         "base": { "type": "string" },
         "reading": { "type": "string" },
+        "base_content": { "type": "array", "items": { "$ref": "#/$defs/inline" } },
+        "reading_content": { "type": "array", "items": { "$ref": "#/$defs/inline" } },
         "direction": { "enum": ["right", "left"] },
         "span": { "$ref": "#/$defs/span" }
       }
@@ -255,6 +258,22 @@
         "span": { "$ref": "#/$defs/span" }
       }
     },
+    "figure": {
+      "type": "object",
+      "required": ["kind", "filename", "alt", "css_class"],
+      "additionalProperties": false,
+      "patternProperties": { "^x-": true },
+      "properties": {
+        "kind": { "const": "figure" },
+        "filename": { "type": "string" },
+        "alt": { "type": "string" },
+        "css_class": { "type": "string" },
+        "width": { "type": ["integer", "null"], "minimum": 0 },
+        "height": { "type": ["integer", "null"], "minimum": 0 },
+        "caption": { "type": ["array", "null"], "items": { "$ref": "#/$defs/inline" } },
+        "span": { "$ref": "#/$defs/span" }
+      }
+    },
     "raw": {
       "type": "object",
       "required": ["kind", "source"],
@@ -272,7 +291,7 @@
       "additionalProperties": false,
       "patternProperties": { "^x-": true },
       "properties": {
-        "kind": { "enum": ["style", "font_size", "tcy", "yokogumi", "caption"] },
+        "kind": { "enum": ["style", "font_size", "tcy", "keigakomi", "yokogumi", "caption"] },
         "style_type": { "type": "string" },
         "size_type": { "type": "string" },
         "level": { "type": "integer" },

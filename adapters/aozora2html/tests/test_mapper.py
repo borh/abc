@@ -41,7 +41,8 @@ def _canonicalize(aat: dict) -> dict:
     """Strip fields that may legitimately drift between commits."""
     out = json.loads(json.dumps(aat))
     meta = out.get("meta", {})
-    # adapter_version embeds a git SHA; goldens should not pin it.
+    # adapter_version records the upstream parser identity; goldens should not
+    # pin it.
     meta.pop("adapter_version", None)
     return out
 
@@ -50,7 +51,7 @@ def test_version_format() -> None:
     out = subprocess.check_output(
         ["bash", str(RUN_SH), "--version"], text=True
     ).strip()
-    assert re.match(r"^aozora2html-adapter \d+\.\d+\.\d+ [0-9a-f]{7,40}$", out), out
+    assert re.match(r"^aozora2html-adapter \d+\.\d+\.\d+ gem-\d+\.\d+\.\d+$", out), out
 
 
 def test_envelope_passes_schema() -> None:
@@ -60,6 +61,21 @@ def test_envelope_passes_schema() -> None:
     assert aat["meta"]["adapter"] == "aozora2html"
     assert aat["meta"]["source_encoding"] == "utf-8"
     assert aat["meta"]["source_hash"].startswith("sha256:")
+
+
+def test_stdin_without_trailing_newline_is_normalized_for_parser() -> None:
+    raw = _run(MINIMAL_AOZORA.rstrip("\n").encode("utf-8"), "--mode", "aat")
+    aat = json.loads(raw)
+    jsonschema.validate(aat, SCHEMA)
+    assert aat["meta"]["parse_complete"] is True
+    assert aat["blocks"]
+    assert any(
+        inline.get("kind") == "ruby"
+        and inline.get("base") == "吾輩"
+        and inline.get("reading") == "わがはい"
+        for block in aat["blocks"]
+        for inline in block.get("content", [])
+    )
 
 
 @pytest.mark.parametrize("fixture", FIXTURES)

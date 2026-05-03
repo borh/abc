@@ -50,6 +50,17 @@ fn collect_inline(node: &Value, out: &mut String) {
                 push_string_field(node, "description", out);
             }
         }
+        "accent" => {
+            if let Some(resolved) = node
+                .get("resolved")
+                .and_then(Value::as_str)
+                .filter(|value| !value.is_empty())
+            {
+                out.push_str(resolved);
+            } else {
+                push_string_field(node, "name", out);
+            }
+        }
         "raw" => push_string_field(node, "source", out),
         "warigaki" => {
             for key in ["upper", "lower"] {
@@ -117,6 +128,8 @@ mod tests {
                     {"kind": "gaiji", "description": "desc", "resolved": "C"},
                     {"kind": "gaiji", "description": "empty", "resolved": ""},
                     {"kind": "gaiji", "description": "D"},
+                    {"kind": "accent", "code": "1-09-63", "name": "e acute", "resolved": "é"},
+                    {"kind": "accent", "code": "missing", "name": "fallback", "resolved": ""},
                     {"kind": "raw", "source": "E"},
                     {
                         "kind": "warigaki",
@@ -128,7 +141,7 @@ mod tests {
             }]
         });
 
-        assert_eq!(visible_text_projection(&aat), "ABCDEFGH");
+        assert_eq!(visible_text_projection(&aat), "ABCDéfallbackEFGH");
     }
 
     #[test]

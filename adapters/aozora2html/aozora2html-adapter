@@ -2,8 +2,10 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-PARSER_DIR="$REPO_ROOT/references/parsers/aozora2html"
 ADAPTER_PY="$REPO_ROOT/adapters/aozora2html/adapter.py"
+GEM_NAME="aozora2html"
+GEM_VERSION="3.0.1"
+GEM_HOME_DIR="${AB_VALIDATOR_GEM_HOME:-/db/ab-validator/gems/aozora2html-$GEM_VERSION}"
 
 PY_ENV='python3.withPackages(ps: [ ps.lxml ps.jsonschema ])'
 
@@ -37,7 +39,7 @@ else
   cp "$stdin_raw" "$sjis_src"  # assume already Shift_JIS
 fi
 
-sed -e 's/\r$//' -e 's/$/\r/' "$sjis_src" > "$crlf_src"
+perl -pe 's/\r?\n?$/\r\n/' "$sjis_src" > "$crlf_src"
 
 parser_err="$(mktemp --suffix=.err)"
 trap 'rm -f "$stdin_raw" "$crlf_src" "$xhtml" "$sjis_src" "$parser_err"' EXIT
@@ -47,9 +49,15 @@ trap 'rm -f "$stdin_raw" "$crlf_src" "$xhtml" "$sjis_src" "$parser_err"' EXIT
 # ab-check sees a valid AAT instead of empty stdout.
 parser_rc=0
 nix shell nixpkgs#ruby --command bash -lc \
-  "cd '$PARSER_DIR' && \
-   RUBYLIB='$PARSER_DIR/lib:$PARSER_DIR/vendor/zip/lib' \
-   ./bin/aozora2html --error-utf8 --use-unicode '$crlf_src' '$xhtml'" \
+  "set -euo pipefail
+   export GEM_HOME='$GEM_HOME_DIR'
+   export GEM_PATH='$GEM_HOME_DIR'
+   export PATH='$GEM_HOME_DIR/bin':\$PATH
+   if ! gem list --installed --exact '$GEM_NAME' --version '$GEM_VERSION' >/dev/null; then
+     mkdir -p '$GEM_HOME_DIR'
+     gem install --no-document --install-dir '$GEM_HOME_DIR' --version '$GEM_VERSION' '$GEM_NAME'
+   fi
+   aozora2html --error-utf8 --use-unicode '$crlf_src' '$xhtml'" \
   >"$parser_err" 2>&1 || parser_rc=$?
 cat "$parser_err" >&2
 

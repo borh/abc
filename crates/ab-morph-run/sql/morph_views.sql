@@ -10,8 +10,10 @@ SELECT * FROM read_parquet('__RUN_DIR__/nway_regions.parquet');
 CREATE OR REPLACE VIEW warehouse_nway_region_analyzers AS
 SELECT * FROM read_parquet('__RUN_DIR__/nway_region_analyzers.parquet');
 
+-- __RAW_FEATURE_DIFFS_BEGIN__
 CREATE OR REPLACE VIEW warehouse_nway_feature_diffs AS
 SELECT * FROM read_parquet('__RUN_DIR__/nway_feature_diffs.parquet');
+-- __RAW_FEATURE_DIFFS_END__
 
 CREATE OR REPLACE VIEW top_segmentation_patterns AS
 WITH region_patterns AS (
@@ -35,6 +37,7 @@ FROM region_patterns
 GROUP BY run_id, pattern
 ORDER BY regions DESC;
 
+-- __RAW_FEATURE_DIFFS_BEGIN__
 CREATE OR REPLACE VIEW top_feature_differences AS
 SELECT
   run_id,
@@ -48,3 +51,4 @@ SELECT
 FROM warehouse_nway_feature_diffs
 GROUP BY run_id, feature_key, scope_type, scope, feature_value, analyzer_id
 ORDER BY regions DESC;
+-- __RAW_FEATURE_DIFFS_END__

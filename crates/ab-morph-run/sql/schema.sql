@@ -110,6 +110,20 @@ CREATE TABLE nway_feature_diffs (
   analyzer_id VARCHAR
 );
 
+CREATE TABLE feature_pattern_counts (
+  kind VARCHAR,
+  feature_profile VARCHAR,
+  feature_key VARCHAR,
+  is_nonempty_whitespace BOOLEAN,
+  pattern VARCHAR,
+  examples UBIGINT,
+  source_count UBIGINT,
+  text_count UBIGINT,
+  sample_source_ids VARCHAR,
+  sample_text_ids VARCHAR,
+  script_categories VARCHAR
+);
+
 CREATE TABLE errors (
   run_id VARCHAR,
   source_id VARCHAR,

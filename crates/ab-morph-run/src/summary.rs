@@ -3,10 +3,17 @@ use std::fs::{self, File};
 use std::io::{self, Write};
 use std::path::Path;
 use std::process::Command;
+use std::sync::Arc;
 
 use anyhow::{Context, Result, bail};
-use arrow_array::{Array, BooleanArray, ListArray, RecordBatch, StringArray, UInt64Array};
-use parquet::arrow::arrow_reader::ParquetRecordBatchReaderBuilder;
+use arrow_array::{
+    Array, ArrayRef, BooleanArray, ListArray, RecordBatch, StringArray, UInt64Array,
+};
+use arrow_schema::{DataType, Field, Schema};
+use parquet::arrow::ArrowWriter;
+use parquet::arrow::arrow_reader::{ParquetRecordBatchReader, ParquetRecordBatchReaderBuilder};
+use parquet::basic::{Compression, ZstdLevel};
+use parquet::file::properties::WriterProperties;
 use serde::{Deserialize, Serialize};
 
 use crate::compact::{ComparisonSummaryRow, is_whitespace_only};
@@ -17,6 +24,8 @@ use crate::nway::{
 use crate::output::for_each_jsonl_or_zst_line;
 use crate::script::{ScriptCategory, classify_text};
 use crate::warehouse::schema::WarehouseTable;
+
+const WAREHOUSE_CORE_FEATURE_KEYS: &[&str] = &["pos1", "pos2", "pos3", "pos4"];
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CompactSummaryGroupBy {
@@ -72,6 +81,13 @@ pub enum NwaySummarySort {
 pub enum NwayPatternKind {
     Segmentation,
     Feature,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WarehouseFeatureProfile {
+    Raw,
+    Core,
+    Schema,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -150,6 +166,7 @@ pub struct NwayPatternOptions {
 pub struct WarehousePatternOptions {
     pub kind: NwayPatternKind,
     pub feature_key: Option<String>,
+    pub feature_profile: WarehouseFeatureProfile,
     pub text_filter: WarehouseTextFilter,
     pub excluded_feature_values: BTreeSet<String>,
     pub exclusions: SummaryExclusions,
@@ -161,6 +178,7 @@ pub struct WarehousePatternExampleOptions {
     pub kind: NwayPatternKind,
     pub pattern: String,
     pub feature_key: Option<String>,
+    pub feature_profile: WarehouseFeatureProfile,
     pub text_filter: WarehouseTextFilter,
     pub excluded_feature_values: BTreeSet<String>,
     pub exclusions: SummaryExclusions,
@@ -1272,6 +1290,9 @@ pub fn summarize_warehouse_nway_patterns(
     run_dir: &Path,
     options: WarehousePatternOptions,
 ) -> Result<Vec<NwayPatternRow>> {
+    if warehouse_feature_pattern_counts_available(run_dir, &options) {
+        return summarize_materialized_warehouse_feature_pattern_counts(run_dir, &options);
+    }
     let regions = read_warehouse_region_flags(run_dir)?;
     let groups = match options.kind {
         NwayPatternKind::Segmentation => {
@@ -1295,12 +1316,734 @@ pub fn summarize_warehouse_nway_patterns(
     Ok(rows)
 }
 
+fn summarize_materialized_warehouse_feature_pattern_counts(
+    run_dir: &Path,
+    options: &WarehousePatternOptions,
+) -> Result<Vec<NwayPatternRow>> {
+    let mut groups = BTreeMap::<
+        (String, String),
+        (usize, BTreeSet<String>, BTreeSet<String>, BTreeSet<String>),
+    >::new();
+    for batch in read_warehouse_table(run_dir, WarehouseTable::FeaturePatternCounts)? {
+        let kind = string_column(&batch, 0)?;
+        let feature_profile = string_column(&batch, 1)?;
+        let feature_key = string_column(&batch, 2)?;
+        let is_nonempty_whitespace = bool_column(&batch, 3)?;
+        let pattern = string_column(&batch, 4)?;
+        let examples = u64_column(&batch, 5)?;
+        let sample_source_ids = string_column(&batch, 8)?;
+        let sample_text_ids = string_column(&batch, 9)?;
+        let script_categories = string_column(&batch, 10)?;
+        for row in 0..batch.num_rows() {
+            let is_nonempty_whitespace = is_nonempty_whitespace.value(row);
+            if kind.value(row) != "feature"
+                || feature_profile.value(row) != "core"
+                || !warehouse_text_filter_matches_nonempty_whitespace(
+                    options.text_filter,
+                    is_nonempty_whitespace,
+                )
+                || options
+                    .feature_key
+                    .as_ref()
+                    .is_some_and(|wanted| feature_key.value(row) != wanted)
+            {
+                continue;
+            }
+            let entry = groups
+                .entry((
+                    feature_key.value(row).to_owned(),
+                    pattern.value(row).to_owned(),
+                ))
+                .or_default();
+            entry.0 += examples.value(row) as usize;
+            entry
+                .1
+                .extend(split_materialized_sample_ids(sample_source_ids.value(row)));
+            entry
+                .2
+                .extend(split_materialized_sample_ids(sample_text_ids.value(row)));
+            entry
+                .3
+                .extend(split_materialized_sample_ids(script_categories.value(row)));
+        }
+    }
+    let mut rows = groups
+        .into_iter()
+        .map(
+            |((feature_key, pattern), (examples, source_ids, text_ids, script_categories))| {
+                NwayPatternRow {
+                    kind: "feature".to_owned(),
+                    pattern,
+                    examples,
+                    source_ids: source_ids.into_iter().collect(),
+                    text_ids: text_ids.into_iter().collect(),
+                    script_categories: script_categories.into_iter().collect(),
+                    segmentation_groups: Vec::new(),
+                    feature_key: Some(feature_key),
+                    feature_scope: None,
+                    feature_values: Vec::new(),
+                }
+            },
+        )
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| {
+        right
+            .examples
+            .cmp(&left.examples)
+            .then_with(|| left.pattern.cmp(&right.pattern))
+    });
+    rows.truncate(options.limit);
+    Ok(rows)
+}
+
+fn split_materialized_sample_ids(value: &str) -> Vec<String> {
+    value
+        .split(',')
+        .filter(|part| !part.is_empty())
+        .map(str::to_owned)
+        .collect()
+}
+
 pub fn write_warehouse_nway_patterns_duckdb_tsv<W: Write>(
     run_dir: &Path,
     options: &WarehousePatternOptions,
     mut writer: W,
 ) -> Result<bool> {
+    if warehouse_feature_pattern_counts_available(run_dir, options) {
+        let sql = warehouse_feature_pattern_counts_duckdb_sql(run_dir, options);
+        return run_duckdb_tsv(
+            run_dir,
+            sql,
+            &mut writer,
+            "warehouse feature pattern counts",
+        );
+    }
+    if options.kind == NwayPatternKind::Feature
+        && options.feature_profile == WarehouseFeatureProfile::Core
+        && options.feature_key.is_none()
+    {
+        return write_warehouse_core_patterns_duckdb_tsv(run_dir, options, &mut writer);
+    }
     let sql = warehouse_pattern_duckdb_sql(run_dir, options);
+    run_duckdb_tsv(run_dir, sql, &mut writer, "warehouse pattern summary")
+}
+
+fn write_warehouse_core_patterns_duckdb_tsv<W: Write>(
+    run_dir: &Path,
+    options: &WarehousePatternOptions,
+    writer: &mut W,
+) -> Result<bool> {
+    let mut outputs = Vec::new();
+    for feature_key in WAREHOUSE_CORE_FEATURE_KEYS {
+        let mut key_options = options.clone();
+        key_options.feature_key = Some((*feature_key).to_owned());
+        let sql = warehouse_pattern_duckdb_sql(run_dir, &key_options);
+        let mut output = Vec::new();
+        if !run_duckdb_tsv(run_dir, sql, &mut output, "warehouse core pattern summary")? {
+            return Ok(false);
+        }
+        outputs.push(String::from_utf8(output).context("duckdb emitted non-UTF8 TSV")?);
+    }
+    write_merged_pattern_tsv(outputs.iter().map(String::as_str), options.limit, writer)
+        .context("failed to merge core feature pattern summaries")?;
+    Ok(true)
+}
+
+pub fn materialize_warehouse_core_feature_pattern_counts(
+    run_dir: &Path,
+    feature_key: Option<&str>,
+) -> Result<bool> {
+    let output_path = run_dir.join(WarehouseTable::FeaturePatternCounts.file_name());
+    if output_path.exists() && !output_path.is_dir() {
+        fs::remove_file(&output_path)
+            .with_context(|| format!("failed to remove {}", output_path.display()))?;
+    }
+    if feature_key.is_none() && output_path.exists() {
+        fs::remove_dir_all(&output_path)
+            .with_context(|| format!("failed to remove {}", output_path.display()))?;
+    }
+    fs::create_dir_all(&output_path)
+        .with_context(|| format!("failed to create {}", output_path.display()))?;
+    let feature_keys = feature_key
+        .map(|key| vec![key.to_owned()])
+        .unwrap_or_else(|| {
+            WAREHOUSE_CORE_FEATURE_KEYS
+                .iter()
+                .map(|key| (*key).to_owned())
+                .collect()
+        });
+    let mut used_duckdb = false;
+    for feature_key in &feature_keys {
+        let part_path = output_path.join(format!("{feature_key}.parquet"));
+        if part_path.exists() {
+            fs::remove_file(&part_path)
+                .with_context(|| format!("failed to remove {}", part_path.display()))?;
+        }
+        let sql = materialize_core_feature_pattern_counts_duckdb_sql(
+            run_dir,
+            &part_path,
+            feature_key.as_str(),
+        );
+        if !run_duckdb_statement(run_dir, sql, "warehouse feature pattern materialization")? {
+            break;
+        }
+        used_duckdb = true;
+    }
+    if used_duckdb {
+        return Ok(true);
+    }
+
+    let mut accumulator = FeaturePatternMaterializer::default();
+    for (regions, features) in paired_region_feature_part_paths(run_dir)? {
+        materialize_core_feature_pattern_counts_part(
+            &regions,
+            &features,
+            &feature_keys,
+            &mut accumulator,
+        )
+        .with_context(|| {
+            format!(
+                "failed to materialize feature patterns from {} and {}",
+                regions.display(),
+                features.display()
+            )
+        })?;
+    }
+    write_feature_pattern_count_parts(&output_path, accumulator)?;
+    Ok(true)
+}
+
+fn write_merged_pattern_tsv<'a, W: Write>(
+    chunks: impl IntoIterator<Item = &'a str>,
+    limit: usize,
+    writer: &mut W,
+) -> Result<()> {
+    let mut header = None::<&str>;
+    let mut rows = Vec::<(u64, &str)>::new();
+    for chunk in chunks {
+        let mut lines = chunk.lines();
+        if header.is_none() {
+            header = lines.next();
+        } else {
+            let _ = lines.next();
+        }
+        for line in lines {
+            if line.trim().is_empty() {
+                continue;
+            }
+            let examples = line
+                .split('\t')
+                .nth(1)
+                .and_then(|value| value.parse::<u64>().ok())
+                .unwrap_or(0);
+            rows.push((examples, line));
+        }
+    }
+    rows.sort_by(|left, right| right.0.cmp(&left.0).then_with(|| left.1.cmp(right.1)));
+    if let Some(header) = header {
+        writeln!(writer, "{header}")?;
+    }
+    for (_, row) in rows.into_iter().take(limit) {
+        writeln!(writer, "{row}")?;
+    }
+    Ok(())
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+struct MaterializedRegionKey {
+    source_id: String,
+    text_id: String,
+    region_index: u64,
+}
+
+#[derive(Debug, Clone)]
+struct MaterializedRegionRow {
+    key: MaterializedRegionKey,
+    is_nonempty_whitespace: bool,
+}
+
+#[derive(Debug, Clone)]
+struct MaterializedFeatureRow {
+    region: MaterializedRegionKey,
+    feature_key: String,
+    scope_type: String,
+    scope_position: Option<u64>,
+    scope_surface: Option<String>,
+    feature_value: Option<String>,
+    analyzer_id: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+struct MaterializedFeatureGroupKey {
+    feature_key: String,
+    scope_type: String,
+    scope_position: Option<u64>,
+    scope_surface: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+struct MaterializedPatternKey {
+    feature_key: String,
+    is_nonempty_whitespace: bool,
+    pattern: String,
+}
+
+#[derive(Debug, Default)]
+struct MaterializedPatternAccumulator {
+    examples: u64,
+    source_ids: BTreeSet<String>,
+    text_ids: BTreeSet<String>,
+}
+
+#[derive(Debug, Default)]
+struct FeaturePatternMaterializer {
+    patterns: BTreeMap<MaterializedPatternKey, MaterializedPatternAccumulator>,
+}
+
+fn materialize_core_feature_pattern_counts_part(
+    regions_path: &Path,
+    features_path: &Path,
+    feature_keys: &[String],
+    accumulator: &mut FeaturePatternMaterializer,
+) -> Result<()> {
+    let feature_keys = feature_keys
+        .iter()
+        .map(String::as_str)
+        .collect::<BTreeSet<_>>();
+    let mut regions = MaterializedRegionIter::new(regions_path)?;
+    let mut current_region = regions.next_row()?;
+    let mut features = MaterializedFeatureIter::new(features_path)?;
+    let mut current_features = Vec::new();
+    let mut current_key = None::<MaterializedRegionKey>;
+
+    while let Some(feature) = features.next_row()? {
+        if !feature_keys.contains(feature.feature_key.as_str())
+            || !warehouse_feature_key_in_profile(
+                &feature.feature_key,
+                WarehouseFeatureProfile::Core,
+            )
+        {
+            continue;
+        }
+        match &current_key {
+            Some(key) if *key == feature.region => current_features.push(feature),
+            Some(_) => {
+                flush_materialized_region_features(
+                    &mut current_region,
+                    &mut regions,
+                    current_key.take().expect("current key exists"),
+                    &mut current_features,
+                    accumulator,
+                )?;
+                current_key = Some(feature.region.clone());
+                current_features.push(feature);
+            }
+            None => {
+                current_key = Some(feature.region.clone());
+                current_features.push(feature);
+            }
+        }
+    }
+
+    if let Some(key) = current_key {
+        flush_materialized_region_features(
+            &mut current_region,
+            &mut regions,
+            key,
+            &mut current_features,
+            accumulator,
+        )?;
+    }
+    Ok(())
+}
+
+fn flush_materialized_region_features(
+    current_region: &mut Option<MaterializedRegionRow>,
+    regions: &mut MaterializedRegionIter,
+    feature_region: MaterializedRegionKey,
+    features: &mut Vec<MaterializedFeatureRow>,
+    accumulator: &mut FeaturePatternMaterializer,
+) -> Result<()> {
+    while current_region
+        .as_ref()
+        .is_some_and(|region| region.key < feature_region)
+    {
+        *current_region = regions.next_row()?;
+    }
+    let Some(region) = current_region.as_ref() else {
+        features.clear();
+        return Ok(());
+    };
+    if region.key != feature_region {
+        features.clear();
+        return Ok(());
+    }
+
+    let mut by_group = BTreeMap::<MaterializedFeatureGroupKey, Vec<MaterializedFeatureRow>>::new();
+    for feature in features.drain(..) {
+        by_group
+            .entry(MaterializedFeatureGroupKey {
+                feature_key: feature.feature_key.clone(),
+                scope_type: feature.scope_type.clone(),
+                scope_position: feature.scope_position,
+                scope_surface: feature.scope_surface.clone(),
+            })
+            .or_default()
+            .push(feature);
+    }
+
+    for (group, facts) in by_group {
+        if let Some(pattern) = materialized_feature_pattern(&group, &facts) {
+            let key = MaterializedPatternKey {
+                feature_key: group.feature_key,
+                is_nonempty_whitespace: region.is_nonempty_whitespace,
+                pattern,
+            };
+            let entry = accumulator.patterns.entry(key).or_default();
+            entry.examples += 1;
+            entry.source_ids.insert(feature_region.source_id.clone());
+            entry.text_ids.insert(feature_region.text_id.clone());
+        }
+    }
+    Ok(())
+}
+
+fn materialized_feature_pattern(
+    group: &MaterializedFeatureGroupKey,
+    facts: &[MaterializedFeatureRow],
+) -> Option<String> {
+    let mut by_value = BTreeMap::<Option<String>, Vec<String>>::new();
+    for fact in facts {
+        by_value
+            .entry(fact.feature_value.clone())
+            .or_default()
+            .push(fact.analyzer_id.clone());
+    }
+    if by_value.len() <= 1 {
+        return None;
+    }
+    let values = by_value
+        .into_iter()
+        .map(|(value, mut analyzers)| {
+            analyzers.sort();
+            format!("{}=>{}", value.unwrap_or_default(), analyzers.join("+"))
+        })
+        .collect::<Vec<_>>()
+        .join(" ; ");
+    Some(format!(
+        "{} {} {}",
+        group.feature_key,
+        materialized_scope_label(group),
+        values
+    ))
+}
+
+fn materialized_scope_label(group: &MaterializedFeatureGroupKey) -> String {
+    match group.scope_type.as_str() {
+        "whole_region" => "whole_region".to_owned(),
+        "token_position" => format!(
+            "token_position:{}",
+            group.scope_position.unwrap_or_default()
+        ),
+        "surface" => format!(
+            "surface:{}",
+            group.scope_surface.as_deref().unwrap_or_default()
+        ),
+        other => other.to_owned(),
+    }
+}
+
+fn write_feature_pattern_count_parts(
+    output_dir: &Path,
+    materializer: FeaturePatternMaterializer,
+) -> Result<()> {
+    let mut rows_by_feature = BTreeMap::<String, Vec<_>>::new();
+    for row in materializer.patterns {
+        rows_by_feature
+            .entry(row.0.feature_key.clone())
+            .or_default()
+            .push(row);
+    }
+    for (feature_key, rows) in rows_by_feature {
+        write_feature_pattern_count_part(output_dir, &feature_key, &rows)?;
+    }
+    Ok(())
+}
+
+fn write_feature_pattern_count_part(
+    output_dir: &Path,
+    feature_key: &str,
+    rows: &[(MaterializedPatternKey, MaterializedPatternAccumulator)],
+) -> Result<()> {
+    let path = output_dir.join(format!("{feature_key}.parquet"));
+    let mut writer = ArrowWriter::try_new(
+        File::create(&path).with_context(|| format!("failed to create {}", path.display()))?,
+        feature_pattern_counts_schema(),
+        Some(
+            WriterProperties::builder()
+                .set_compression(Compression::ZSTD(
+                    ZstdLevel::try_new(3).expect("valid zstd level"),
+                ))
+                .build(),
+        ),
+    )?;
+    for chunk in rows.chunks(50_000) {
+        let batch = RecordBatch::try_new(
+            feature_pattern_counts_schema(),
+            vec![
+                Arc::new(StringArray::from_iter_values(
+                    chunk.iter().map(|_| "feature"),
+                )) as ArrayRef,
+                Arc::new(StringArray::from_iter_values(chunk.iter().map(|_| "core"))) as ArrayRef,
+                Arc::new(StringArray::from_iter_values(
+                    chunk.iter().map(|(key, _)| key.feature_key.as_str()),
+                )) as ArrayRef,
+                Arc::new(BooleanArray::from_iter(
+                    chunk
+                        .iter()
+                        .map(|(key, _)| Some(key.is_nonempty_whitespace)),
+                )) as ArrayRef,
+                Arc::new(StringArray::from_iter_values(
+                    chunk.iter().map(|(key, _)| key.pattern.as_str()),
+                )) as ArrayRef,
+                Arc::new(UInt64Array::from_iter_values(
+                    chunk.iter().map(|(_, acc)| acc.examples),
+                )) as ArrayRef,
+                Arc::new(UInt64Array::from_iter_values(
+                    chunk.iter().map(|(_, acc)| acc.source_ids.len() as u64),
+                )) as ArrayRef,
+                Arc::new(UInt64Array::from_iter_values(
+                    chunk.iter().map(|(_, acc)| acc.text_ids.len() as u64),
+                )) as ArrayRef,
+                Arc::new(StringArray::from_iter_values(
+                    chunk
+                        .iter()
+                        .map(|(_, acc)| materialized_sample_ids(&acc.source_ids)),
+                )) as ArrayRef,
+                Arc::new(StringArray::from_iter_values(
+                    chunk
+                        .iter()
+                        .map(|(_, acc)| materialized_sample_ids(&acc.text_ids)),
+                )) as ArrayRef,
+                Arc::new(StringArray::from_iter_values(chunk.iter().map(|_| ""))) as ArrayRef,
+            ],
+        )?;
+        writer.write(&batch)?;
+    }
+    writer.close()?;
+    Ok(())
+}
+
+fn materialized_sample_ids(ids: &BTreeSet<String>) -> String {
+    let mut sample = ids.iter().take(5).cloned().collect::<Vec<_>>().join(",");
+    if ids.len() > 5 {
+        sample.push_str(&format!(",...+{}", ids.len() - 5));
+    }
+    sample
+}
+
+fn feature_pattern_counts_schema() -> Arc<Schema> {
+    Arc::new(Schema::new(vec![
+        Field::new("kind", DataType::Utf8, false),
+        Field::new("feature_profile", DataType::Utf8, false),
+        Field::new("feature_key", DataType::Utf8, false),
+        Field::new("is_nonempty_whitespace", DataType::Boolean, false),
+        Field::new("pattern", DataType::Utf8, false),
+        Field::new("examples", DataType::UInt64, false),
+        Field::new("source_count", DataType::UInt64, false),
+        Field::new("text_count", DataType::UInt64, false),
+        Field::new("sample_source_ids", DataType::Utf8, false),
+        Field::new("sample_text_ids", DataType::Utf8, false),
+        Field::new("script_categories", DataType::Utf8, false),
+    ]))
+}
+
+struct MaterializedRegionIter {
+    reader: ParquetRecordBatchReader,
+    batch: Option<RecordBatch>,
+    row: usize,
+}
+
+impl MaterializedRegionIter {
+    fn new(path: &Path) -> Result<Self> {
+        Ok(Self {
+            reader: ParquetRecordBatchReaderBuilder::try_new(
+                File::open(path).with_context(|| format!("failed to open {}", path.display()))?,
+            )?
+            .build()?,
+            batch: None,
+            row: 0,
+        })
+    }
+
+    fn next_row(&mut self) -> Result<Option<MaterializedRegionRow>> {
+        loop {
+            if let Some(batch) = self.batch.as_ref()
+                && self.row < batch.num_rows()
+            {
+                let row = self.row;
+                self.row += 1;
+                return Ok(Some(MaterializedRegionRow {
+                    key: MaterializedRegionKey {
+                        source_id: batch_string_value(batch, "source_id", row)?,
+                        text_id: batch_string_value(batch, "text_id", row)?,
+                        region_index: batch_u64_value(batch, "region_index", row)?,
+                    },
+                    is_nonempty_whitespace: batch_bool_value(batch, "is_nonempty_whitespace", row)?,
+                }));
+            }
+            match self.reader.next() {
+                Some(batch) => {
+                    self.batch = Some(batch?);
+                    self.row = 0;
+                }
+                None => return Ok(None),
+            }
+        }
+    }
+}
+
+struct MaterializedFeatureIter {
+    reader: ParquetRecordBatchReader,
+    batch: Option<RecordBatch>,
+    row: usize,
+}
+
+impl MaterializedFeatureIter {
+    fn new(path: &Path) -> Result<Self> {
+        Ok(Self {
+            reader: ParquetRecordBatchReaderBuilder::try_new(
+                File::open(path).with_context(|| format!("failed to open {}", path.display()))?,
+            )?
+            .build()?,
+            batch: None,
+            row: 0,
+        })
+    }
+
+    fn next_row(&mut self) -> Result<Option<MaterializedFeatureRow>> {
+        loop {
+            if let Some(batch) = self.batch.as_ref()
+                && self.row < batch.num_rows()
+            {
+                let row = self.row;
+                self.row += 1;
+                return Ok(Some(MaterializedFeatureRow {
+                    region: MaterializedRegionKey {
+                        source_id: batch_string_value(batch, "source_id", row)?,
+                        text_id: batch_string_value(batch, "text_id", row)?,
+                        region_index: batch_u64_value(batch, "region_index", row)?,
+                    },
+                    feature_key: batch_string_value(batch, "feature_key", row)?,
+                    scope_type: batch_string_value(batch, "scope_type", row)?,
+                    scope_position: batch_nullable_u64_value(batch, "scope_position", row)?,
+                    scope_surface: batch_nullable_string_value(batch, "scope_surface", row)?,
+                    feature_value: batch_nullable_string_value(batch, "feature_value", row)?,
+                    analyzer_id: batch_string_value(batch, "analyzer_id", row)?,
+                }));
+            }
+            match self.reader.next() {
+                Some(batch) => {
+                    self.batch = Some(batch?);
+                    self.row = 0;
+                }
+                None => return Ok(None),
+            }
+        }
+    }
+}
+
+fn paired_region_feature_part_paths(
+    run_dir: &Path,
+) -> Result<Vec<(std::path::PathBuf, std::path::PathBuf)>> {
+    let region_paths = parquet_part_paths_for_table(run_dir, WarehouseTable::NwayRegions)?;
+    let feature_paths = parquet_part_paths_for_table(run_dir, WarehouseTable::NwayFeatureDiffs)?;
+    if region_paths.len() != feature_paths.len() {
+        bail!(
+            "cannot stream feature pattern counts: nway_regions has {} part(s), nway_feature_diffs has {} part(s)",
+            region_paths.len(),
+            feature_paths.len()
+        );
+    }
+    Ok(region_paths.into_iter().zip(feature_paths).collect())
+}
+
+fn parquet_part_paths_for_table(
+    run_dir: &Path,
+    table: WarehouseTable,
+) -> Result<Vec<std::path::PathBuf>> {
+    let path = run_dir.join(table.file_name());
+    if path.is_dir() {
+        let mut paths = fs::read_dir(&path)
+            .with_context(|| format!("failed to read {}", path.display()))?
+            .map(|entry| entry.map(|entry| entry.path()))
+            .collect::<std::result::Result<Vec<_>, _>>()?;
+        paths.retain(|path| path.extension().is_some_and(|ext| ext == "parquet"));
+        paths.sort();
+        return Ok(paths);
+    }
+    Ok(vec![path])
+}
+
+fn batch_string_value(batch: &RecordBatch, name: &str, row: usize) -> Result<String> {
+    let index = batch.schema().index_of(name)?;
+    Ok(string_column(batch, index)?.value(row).to_owned())
+}
+
+fn batch_nullable_string_value(
+    batch: &RecordBatch,
+    name: &str,
+    row: usize,
+) -> Result<Option<String>> {
+    let index = batch.schema().index_of(name)?;
+    Ok(nullable_string_value(string_column(batch, index)?, row))
+}
+
+fn batch_u64_value(batch: &RecordBatch, name: &str, row: usize) -> Result<u64> {
+    let index = batch.schema().index_of(name)?;
+    Ok(u64_column(batch, index)?.value(row))
+}
+
+fn batch_nullable_u64_value(batch: &RecordBatch, name: &str, row: usize) -> Result<Option<u64>> {
+    let index = batch.schema().index_of(name)?;
+    Ok(nullable_u64_value(u64_column(batch, index)?, row))
+}
+
+fn batch_bool_value(batch: &RecordBatch, name: &str, row: usize) -> Result<bool> {
+    let index = batch.schema().index_of(name)?;
+    Ok(bool_column(batch, index)?.value(row))
+}
+
+pub fn write_warehouse_regions_duckdb_tsv<W: Write>(
+    run_dir: &Path,
+    options: &WarehouseRegionOptions,
+    mut writer: W,
+) -> Result<bool> {
+    let sql = warehouse_region_examples_duckdb_sql(run_dir, options);
+    run_duckdb_tsv(run_dir, sql, &mut writer, "warehouse region examples")
+}
+
+pub fn write_warehouse_pattern_examples_duckdb_tsv<W: Write>(
+    run_dir: &Path,
+    options: &WarehousePatternExampleOptions,
+    mut writer: W,
+) -> Result<bool> {
+    let sql = warehouse_pattern_examples_duckdb_sql(run_dir, options);
+    run_duckdb_tsv(run_dir, sql, &mut writer, "warehouse pattern examples")
+}
+
+fn run_duckdb_tsv<W: Write>(
+    run_dir: &Path,
+    sql: String,
+    writer: &mut W,
+    context: &str,
+) -> Result<bool> {
+    fs::create_dir_all(duckdb_temp_dir(run_dir)).with_context(|| {
+        format!(
+            "failed to create DuckDB temp directory for {}",
+            run_dir.display()
+        )
+    })?;
     let output = match Command::new("duckdb").arg("-c").arg(sql).output() {
         Ok(output) => output,
         Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(false),
@@ -1308,39 +2051,86 @@ pub fn write_warehouse_nway_patterns_duckdb_tsv<W: Write>(
     };
     if !output.status.success() {
         bail!(
-            "duckdb warehouse pattern summary failed: {}",
-            String::from_utf8_lossy(&output.stderr)
+            "duckdb {context} failed with status {}: stderr={} stdout={}",
+            output.status,
+            String::from_utf8_lossy(&output.stderr),
+            String::from_utf8_lossy(&output.stdout)
         );
     }
     writer
         .write_all(&output.stdout)
-        .context("failed to write duckdb pattern summary")?;
+        .with_context(|| format!("failed to write duckdb {context}"))?;
+    Ok(true)
+}
+
+fn run_duckdb_statement(run_dir: &Path, sql: String, context: &str) -> Result<bool> {
+    fs::create_dir_all(duckdb_temp_dir(run_dir)).with_context(|| {
+        format!(
+            "failed to create DuckDB temp directory for {}",
+            run_dir.display()
+        )
+    })?;
+    let output = match Command::new("duckdb").arg("-c").arg(sql).output() {
+        Ok(output) => output,
+        Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(false),
+        Err(error) => return Err(error).context("failed to run duckdb"),
+    };
+    if !output.status.success() {
+        bail!(
+            "duckdb {context} failed with status {}: stderr={} stdout={}",
+            output.status,
+            String::from_utf8_lossy(&output.stderr),
+            String::from_utf8_lossy(&output.stdout)
+        );
+    }
     Ok(true)
 }
 
 fn warehouse_pattern_duckdb_sql(run_dir: &Path, options: &WarehousePatternOptions) -> String {
-    let regions = sql_literal(
-        &run_dir
-            .join(WarehouseTable::NwayRegions.file_name())
-            .display()
-            .to_string(),
-    );
-    let analyzers = sql_literal(
-        &run_dir
-            .join(WarehouseTable::NwayRegionAnalyzers.file_name())
-            .display()
-            .to_string(),
-    );
-    let features = sql_literal(
-        &run_dir
-            .join(WarehouseTable::NwayFeatureDiffs.file_name())
-            .display()
-            .to_string(),
-    );
+    let regions = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegions);
+    let analyzers = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegionAnalyzers);
+    let features = duckdb_table_path_literal(run_dir, WarehouseTable::NwayFeatureDiffs);
     let region_filter = warehouse_duckdb_region_filter(options);
     let source_exclusion = sql_not_in_clause("source_id", &options.exclusions.source_ids);
     let text_exclusion = sql_not_in_clause("text_id", &options.exclusions.text_ids);
     let limit = options.limit;
+    if options.kind == NwayPatternKind::Feature
+        && options.feature_profile == WarehouseFeatureProfile::Core
+        && options.feature_key.is_none()
+    {
+        let excluded_values = sql_not_in_clause("feature_value", &options.excluded_feature_values);
+        let branches = WAREHOUSE_CORE_FEATURE_KEYS
+            .iter()
+            .map(|feature_key| {
+                format!(
+                    "({})",
+                    warehouse_feature_pattern_select_sql(
+                        &regions,
+                        &features,
+                        region_filter,
+                        &source_exclusion,
+                        &text_exclusion,
+                        &format!("feature_key = {}", sql_literal(feature_key)),
+                        &excluded_values,
+                        "TRUE",
+                        limit,
+                    )
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("\nUNION ALL\n");
+        let body = format!(
+            r#"
+SELECT *
+FROM (
+{branches}
+) AS core_patterns
+ORDER BY examples DESC, pattern
+LIMIT {limit}
+"#
+        );
+        return duckdb_copy_sql(run_dir, &body);
+    }
     let body = match options.kind {
         NwayPatternKind::Segmentation => format!(
             r#"
@@ -1386,8 +2176,248 @@ patterns AS (
             );
             let excluded_values =
                 sql_not_in_clause("feature_value", &options.excluded_feature_values);
-            format!(
-                r#"
+            let profile_filter = warehouse_feature_profile_filter(options.feature_profile);
+            if options.feature_profile == WarehouseFeatureProfile::Schema {
+                format!(
+                    r#"
+WITH regions AS (
+    SELECT source_id, text_id, region_index
+    FROM read_parquet({regions})
+    WHERE {region_filter}
+      AND {source_exclusion}
+      AND {text_exclusion}
+),
+filtered_feature_rows AS (
+    SELECT
+        f.*,
+        {schema_expr} AS analyzer_schema_id
+    FROM read_parquet({features}) AS f
+    JOIN regions AS r USING (source_id, text_id, region_index)
+    WHERE {feature_filter}
+      AND {excluded_values}
+),
+schema_value_counts AS (
+    SELECT
+        source_id,
+        text_id,
+        region_index,
+        feature_key,
+        scope_type,
+        scope_position,
+        scope_surface,
+        analyzer_schema_id
+    FROM filtered_feature_rows
+    GROUP BY source_id, text_id, region_index, feature_key, scope_type, scope_position, scope_surface, analyzer_schema_id
+    HAVING count(DISTINCT feature_value) > 1
+       AND count(DISTINCT analyzer_id) > 1
+),
+feature_values AS (
+    SELECT
+        f.source_id,
+        f.text_id,
+        f.region_index,
+        f.feature_key,
+        f.scope_type,
+        f.scope_position,
+        f.scope_surface,
+        f.feature_value,
+        list(f.analyzer_id ORDER BY f.analyzer_id) AS analyzers
+    FROM filtered_feature_rows AS f
+    JOIN schema_value_counts AS s
+      ON f.source_id = s.source_id
+     AND f.text_id = s.text_id
+     AND f.region_index = s.region_index
+     AND f.feature_key = s.feature_key
+     AND f.scope_type = s.scope_type
+     AND coalesce(f.scope_position, -1) = coalesce(s.scope_position, -1)
+     AND coalesce(f.scope_surface, '') = coalesce(s.scope_surface, '')
+     AND f.analyzer_schema_id = s.analyzer_schema_id
+    GROUP BY f.source_id, f.text_id, f.region_index, f.feature_key, f.scope_type, f.scope_position, f.scope_surface, f.feature_value
+),
+patterns AS (
+    SELECT
+        'feature' AS kind,
+        source_id,
+        text_id,
+        region_index,
+        feature_key || ' ' ||
+            CASE
+                WHEN scope_type = 'whole_region' THEN 'whole_region'
+                WHEN scope_type = 'token_position' THEN 'token_position:' || CAST(scope_position AS VARCHAR)
+                ELSE 'surface:' || scope_surface
+            END || ' ' ||
+            string_agg(coalesce(feature_value, '') || '=>' || array_to_string(analyzers, '+'), ' ; ' ORDER BY feature_value NULLS FIRST, array_to_string(analyzers, '+')) AS pattern
+    FROM feature_values
+    GROUP BY source_id, text_id, region_index, feature_key, scope_type, scope_position, scope_surface
+    HAVING count(*) > 1
+)
+{final_select}
+"#,
+                    schema_expr = warehouse_analyzer_schema_sql("f.analyzer_id"),
+                    final_select = warehouse_pattern_final_select(limit)
+                )
+            } else {
+                warehouse_feature_pattern_select_sql(
+                    &regions,
+                    &features,
+                    region_filter,
+                    &source_exclusion,
+                    &text_exclusion,
+                    &feature_filter,
+                    &excluded_values,
+                    profile_filter,
+                    limit,
+                )
+            }
+        }
+    };
+    duckdb_copy_sql(run_dir, &body)
+}
+
+fn warehouse_feature_pattern_counts_available(
+    run_dir: &Path,
+    options: &WarehousePatternOptions,
+) -> bool {
+    options.kind == NwayPatternKind::Feature
+        && options.feature_profile == WarehouseFeatureProfile::Core
+        && options.exclusions.source_ids.is_empty()
+        && options.exclusions.text_ids.is_empty()
+        && options.excluded_feature_values.is_empty()
+        && parquet_part_paths_for_table(run_dir, WarehouseTable::FeaturePatternCounts)
+            .is_ok_and(|paths| !paths.is_empty())
+}
+
+fn warehouse_feature_pattern_counts_duckdb_sql(
+    run_dir: &Path,
+    options: &WarehousePatternOptions,
+) -> String {
+    let counts = duckdb_table_path_literal(run_dir, WarehouseTable::FeaturePatternCounts);
+    let feature_filter = options.feature_key.as_ref().map_or_else(
+        || "TRUE".to_owned(),
+        |feature_key| format!("feature_key = {}", sql_literal(feature_key)),
+    );
+    let text_filter = warehouse_feature_pattern_count_text_filter(options.text_filter);
+    let limit = options.limit;
+    let body = format!(
+        r#"
+SELECT
+    kind,
+    sum(examples) AS examples,
+    sum(source_count) AS source_count,
+    sum(text_count) AS text_count,
+    any_value(sample_source_ids) AS sample_source_ids,
+    any_value(sample_text_ids) AS sample_text_ids,
+    any_value(script_categories) AS script_categories,
+    pattern
+FROM read_parquet({counts})
+WHERE feature_profile = 'core'
+  AND {feature_filter}
+  AND {text_filter}
+GROUP BY kind, pattern
+ORDER BY examples DESC, pattern
+LIMIT {limit}
+"#
+    );
+    duckdb_copy_sql(run_dir, &body)
+}
+
+fn materialize_core_feature_pattern_counts_duckdb_sql(
+    run_dir: &Path,
+    output_path: &Path,
+    feature_key: &str,
+) -> String {
+    let regions = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegions);
+    let features = duckdb_table_path_literal(run_dir, WarehouseTable::NwayFeatureDiffs);
+    let output = sql_literal(&output_path.display().to_string());
+    let feature_key = sql_literal(feature_key);
+    let body = format!(
+        r#"
+WITH regions AS (
+    SELECT source_id, text_id, region_index, is_nonempty_whitespace
+    FROM read_parquet({regions})
+    WHERE has_feature_disagreement
+),
+feature_values AS (
+    SELECT
+        f.source_id,
+        f.text_id,
+        f.region_index,
+        r.is_nonempty_whitespace,
+        f.feature_key,
+        f.scope_type,
+        f.scope_position,
+        f.scope_surface,
+        f.feature_value,
+        list(f.analyzer_id ORDER BY f.analyzer_id) AS analyzers
+    FROM read_parquet({features}) AS f
+    JOIN regions AS r USING (source_id, text_id, region_index)
+    WHERE feature_key = {feature_key}
+    GROUP BY f.source_id, f.text_id, f.region_index, r.is_nonempty_whitespace, f.feature_key, f.scope_type, f.scope_position, f.scope_surface, f.feature_value
+),
+patterns AS (
+    SELECT
+        'feature' AS kind,
+        'core' AS feature_profile,
+        source_id,
+        text_id,
+        region_index,
+        is_nonempty_whitespace,
+        feature_key,
+        feature_key || ' ' ||
+            CASE
+                WHEN scope_type = 'whole_region' THEN 'whole_region'
+                WHEN scope_type = 'token_position' THEN 'token_position:' || CAST(scope_position AS VARCHAR)
+                ELSE 'surface:' || scope_surface
+            END || ' ' ||
+            string_agg(coalesce(feature_value, '') || '=>' || array_to_string(analyzers, '+'), ' ; ' ORDER BY feature_value NULLS FIRST, array_to_string(analyzers, '+')) AS pattern
+    FROM feature_values
+    GROUP BY source_id, text_id, region_index, is_nonempty_whitespace, feature_key, scope_type, scope_position, scope_surface
+    HAVING count(*) > 1
+)
+SELECT
+    kind,
+    feature_profile,
+    feature_key,
+    is_nonempty_whitespace,
+    pattern,
+    CAST(count(*) AS UBIGINT) AS examples,
+    CAST(count(DISTINCT source_id) AS UBIGINT) AS source_count,
+    CAST(count(DISTINCT text_id) AS UBIGINT) AS text_count,
+    array_to_string(list_slice(list_sort(list_distinct(list(source_id))), 1, 5), ',') ||
+        CASE
+            WHEN count(DISTINCT source_id) > 5 THEN ',...+' || CAST(count(DISTINCT source_id) - 5 AS VARCHAR)
+            ELSE ''
+        END AS sample_source_ids,
+    array_to_string(list_slice(list_sort(list_distinct(list(text_id))), 1, 5), ',') ||
+        CASE
+            WHEN count(DISTINCT text_id) > 5 THEN ',...+' || CAST(count(DISTINCT text_id) - 5 AS VARCHAR)
+            ELSE ''
+        END AS sample_text_ids,
+    '' AS script_categories
+FROM patterns
+GROUP BY kind, feature_profile, feature_key, is_nonempty_whitespace, pattern
+"#
+    );
+    format!(
+        "{}\nCOPY ({body}) TO {output} (FORMAT PARQUET, COMPRESSION ZSTD);",
+        duckdb_settings_sql(run_dir)
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+fn warehouse_feature_pattern_select_sql(
+    regions: &str,
+    features: &str,
+    region_filter: &str,
+    source_exclusion: &str,
+    text_exclusion: &str,
+    feature_filter: &str,
+    excluded_values: &str,
+    profile_filter: &str,
+    limit: usize,
+) -> String {
+    format!(
+        r#"
 WITH regions AS (
     SELECT source_id, text_id, region_index
     FROM read_parquet({regions})
@@ -1410,6 +2440,7 @@ feature_values AS (
     JOIN regions AS r USING (source_id, text_id, region_index)
     WHERE {feature_filter}
       AND {excluded_values}
+      AND {profile_filter}
     GROUP BY f.source_id, f.text_id, f.region_index, f.feature_key, f.scope_type, f.scope_position, f.scope_surface, f.feature_value
 ),
 patterns AS (
@@ -1431,11 +2462,8 @@ patterns AS (
 )
 {final_select}
 "#,
-                final_select = warehouse_pattern_final_select(limit)
-            )
-        }
-    };
-    format!("COPY ({body}) TO STDOUT (HEADER, DELIMITER '\t');")
+        final_select = warehouse_pattern_final_select(limit)
+    )
 }
 
 fn warehouse_pattern_final_select(limit: usize) -> String {
@@ -1466,12 +2494,452 @@ LIMIT {limit}
     )
 }
 
+fn warehouse_feature_pattern_count_text_filter(filter: WarehouseTextFilter) -> &'static str {
+    match filter {
+        WarehouseTextFilter::All => "TRUE",
+        WarehouseTextFilter::WhitespaceOnly => "is_nonempty_whitespace",
+        WarehouseTextFilter::LexicalOnly => "NOT is_nonempty_whitespace",
+    }
+}
+
 fn warehouse_duckdb_region_filter(options: &WarehousePatternOptions) -> &'static str {
     match options.text_filter {
         WarehouseTextFilter::All => "TRUE",
         WarehouseTextFilter::WhitespaceOnly => "is_nonempty_whitespace",
         WarehouseTextFilter::LexicalOnly => "NOT is_nonempty_whitespace",
     }
+}
+
+fn warehouse_region_examples_duckdb_sql(
+    run_dir: &Path,
+    options: &WarehouseRegionOptions,
+) -> String {
+    let regions = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegions);
+    let analyzers = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegionAnalyzers);
+    let features = duckdb_table_path_literal(run_dir, WarehouseTable::NwayFeatureDiffs);
+    let kind_filter = warehouse_region_kind_filter(options.kind);
+    let text_filter = warehouse_text_filter_sql(options.text_filter);
+    let source_exclusion = sql_not_in_clause("source_id", &options.exclusions.source_ids);
+    let text_exclusion = sql_not_in_clause("text_id", &options.exclusions.text_ids);
+    let limit = options.limit;
+    let body = format!(
+        r#"
+WITH selected_regions AS (
+    SELECT
+        source_id,
+        text_id,
+        region_index,
+        byte_start,
+        byte_end,
+        char_start,
+        char_end,
+        is_nonempty_whitespace,
+        is_agreement,
+        has_coverage_mismatch,
+        has_segmentation_disagreement,
+        has_feature_disagreement
+    FROM read_parquet({regions})
+    WHERE {kind_filter}
+      AND {text_filter}
+      AND {source_exclusion}
+      AND {text_exclusion}
+    ORDER BY source_id, text_id, region_index
+    LIMIT {limit}
+),
+analyzer_rows AS (
+    SELECT
+        a.source_id,
+        a.text_id,
+        a.region_index,
+        string_agg(
+            a.analyzer_id || ':[' || array_to_string(a.surfaces, '|') || ']',
+            ' ; '
+            ORDER BY a.analyzer_id
+        ) AS analyzers
+    FROM read_parquet({analyzers}) AS a
+    JOIN selected_regions AS r USING (source_id, text_id, region_index)
+    GROUP BY a.source_id, a.text_id, a.region_index
+),
+feature_diffs AS (
+    SELECT
+        f.source_id,
+        f.text_id,
+        f.region_index,
+        string_agg(
+            f.analyzer_id || ':' || f.feature_key || ':' ||
+                CASE
+                    WHEN f.scope_type = 'whole_region' THEN 'whole_region'
+                    WHEN f.scope_type = 'token_position' THEN 'token_position:' || CAST(f.scope_position AS VARCHAR)
+                    ELSE 'surface:' || f.scope_surface
+                END || '=' || coalesce(f.feature_value, '<null>'),
+            ' ; '
+            ORDER BY f.feature_key, f.scope_type, f.scope_position, f.scope_surface, f.feature_value NULLS FIRST, f.analyzer_id
+        ) AS feature_diffs
+    FROM read_parquet({features}) AS f
+    JOIN selected_regions AS r USING (source_id, text_id, region_index)
+    GROUP BY f.source_id, f.text_id, f.region_index
+)
+SELECT
+    r.source_id,
+    r.text_id,
+    r.region_index,
+    r.char_start || '..' || r.char_end AS char_span,
+    r.byte_start || '..' || r.byte_end AS byte_span,
+    r.is_nonempty_whitespace,
+    r.is_agreement,
+    r.has_segmentation_disagreement,
+    r.has_feature_disagreement,
+    r.has_coverage_mismatch,
+    coalesce(a.analyzers, '') AS analyzers,
+    coalesce(f.feature_diffs, '') AS feature_diffs
+FROM selected_regions AS r
+LEFT JOIN analyzer_rows AS a USING (source_id, text_id, region_index)
+LEFT JOIN feature_diffs AS f USING (source_id, text_id, region_index)
+ORDER BY r.source_id, r.text_id, r.region_index
+"#
+    );
+    duckdb_copy_sql(run_dir, &body)
+}
+
+fn warehouse_pattern_examples_duckdb_sql(
+    run_dir: &Path,
+    options: &WarehousePatternExampleOptions,
+) -> String {
+    let regions = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegions);
+    let analyzers = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegionAnalyzers);
+    let features = duckdb_table_path_literal(run_dir, WarehouseTable::NwayFeatureDiffs);
+    let text_filter = warehouse_text_filter_sql(options.text_filter);
+    let source_exclusion = sql_not_in_clause("source_id", &options.exclusions.source_ids);
+    let text_exclusion = sql_not_in_clause("text_id", &options.exclusions.text_ids);
+    let pattern = sql_literal(&options.pattern);
+    let limit = options.limit;
+    let pattern_ctes = match options.kind {
+        NwayPatternKind::Segmentation => format!(
+            r#"
+base_regions AS (
+    SELECT source_id, text_id, region_index
+    FROM read_parquet({regions})
+    WHERE has_segmentation_disagreement
+      AND {text_filter}
+      AND {source_exclusion}
+      AND {text_exclusion}
+),
+surface_groups AS (
+    SELECT
+        a.source_id,
+        a.text_id,
+        a.region_index,
+        a.surfaces,
+        list(a.analyzer_id ORDER BY a.analyzer_id) AS analyzers,
+        array_to_string(a.surfaces, '|') AS surface_text
+    FROM read_parquet({analyzers}) AS a
+    JOIN base_regions AS r USING (source_id, text_id, region_index)
+    GROUP BY a.source_id, a.text_id, a.region_index, a.surfaces
+),
+patterns AS (
+    SELECT
+        source_id,
+        text_id,
+        region_index,
+        string_agg(array_to_string(analyzers, '+') || ':[' || surface_text || ']', ' ; ' ORDER BY surface_text, array_to_string(analyzers, '+')) AS pattern
+    FROM surface_groups
+    GROUP BY source_id, text_id, region_index
+    HAVING count(*) > 1
+)"#
+        ),
+        NwayPatternKind::Feature => {
+            let feature_filter = options.feature_key.as_ref().map_or_else(
+                || "TRUE".to_owned(),
+                |feature_key| format!("feature_key = {}", sql_literal(feature_key)),
+            );
+            let excluded_values =
+                sql_not_in_clause("feature_value", &options.excluded_feature_values);
+            let profile_filter = warehouse_feature_profile_filter(options.feature_profile);
+            if options.feature_profile == WarehouseFeatureProfile::Schema {
+                format!(
+                    r#"
+base_regions AS (
+    SELECT source_id, text_id, region_index
+    FROM read_parquet({regions})
+    WHERE {text_filter}
+      AND {source_exclusion}
+      AND {text_exclusion}
+),
+filtered_feature_rows AS (
+    SELECT
+        f.*,
+        {schema_expr} AS analyzer_schema_id
+    FROM read_parquet({features}) AS f
+    JOIN base_regions AS r USING (source_id, text_id, region_index)
+    WHERE {feature_filter}
+      AND {excluded_values}
+),
+schema_value_counts AS (
+    SELECT
+        source_id,
+        text_id,
+        region_index,
+        feature_key,
+        scope_type,
+        scope_position,
+        scope_surface,
+        analyzer_schema_id
+    FROM filtered_feature_rows
+    GROUP BY source_id, text_id, region_index, feature_key, scope_type, scope_position, scope_surface, analyzer_schema_id
+    HAVING count(DISTINCT feature_value) > 1
+       AND count(DISTINCT analyzer_id) > 1
+),
+feature_values AS (
+    SELECT
+        f.source_id,
+        f.text_id,
+        f.region_index,
+        f.feature_key,
+        f.scope_type,
+        f.scope_position,
+        f.scope_surface,
+        f.feature_value,
+        list(f.analyzer_id ORDER BY f.analyzer_id) AS analyzers
+    FROM filtered_feature_rows AS f
+    JOIN schema_value_counts AS s
+      ON f.source_id = s.source_id
+     AND f.text_id = s.text_id
+     AND f.region_index = s.region_index
+     AND f.feature_key = s.feature_key
+     AND f.scope_type = s.scope_type
+     AND coalesce(f.scope_position, -1) = coalesce(s.scope_position, -1)
+     AND coalesce(f.scope_surface, '') = coalesce(s.scope_surface, '')
+     AND f.analyzer_schema_id = s.analyzer_schema_id
+    GROUP BY f.source_id, f.text_id, f.region_index, f.feature_key, f.scope_type, f.scope_position, f.scope_surface, f.feature_value
+),
+patterns AS (
+    SELECT
+        source_id,
+        text_id,
+        region_index,
+        feature_key || ' ' ||
+            CASE
+                WHEN scope_type = 'whole_region' THEN 'whole_region'
+                WHEN scope_type = 'token_position' THEN 'token_position:' || CAST(scope_position AS VARCHAR)
+                ELSE 'surface:' || scope_surface
+            END || ' ' ||
+            string_agg(coalesce(feature_value, '') || '=>' || array_to_string(analyzers, '+'), ' ; ' ORDER BY feature_value NULLS FIRST, array_to_string(analyzers, '+')) AS pattern
+    FROM feature_values
+    GROUP BY source_id, text_id, region_index, feature_key, scope_type, scope_position, scope_surface
+    HAVING count(*) > 1
+)"#,
+                    schema_expr = warehouse_analyzer_schema_sql("f.analyzer_id")
+                )
+            } else {
+                format!(
+                    r#"
+base_regions AS (
+    SELECT source_id, text_id, region_index
+    FROM read_parquet({regions})
+    WHERE {text_filter}
+      AND {source_exclusion}
+      AND {text_exclusion}
+),
+feature_values AS (
+    SELECT
+        f.source_id,
+        f.text_id,
+        f.region_index,
+        f.feature_key,
+        f.scope_type,
+        f.scope_position,
+        f.scope_surface,
+        f.feature_value,
+        list(f.analyzer_id ORDER BY f.analyzer_id) AS analyzers
+    FROM read_parquet({features}) AS f
+    JOIN base_regions AS r USING (source_id, text_id, region_index)
+    WHERE {feature_filter}
+      AND {excluded_values}
+      AND {profile_filter}
+    GROUP BY f.source_id, f.text_id, f.region_index, f.feature_key, f.scope_type, f.scope_position, f.scope_surface, f.feature_value
+),
+patterns AS (
+    SELECT
+        source_id,
+        text_id,
+        region_index,
+        feature_key || ' ' ||
+            CASE
+                WHEN scope_type = 'whole_region' THEN 'whole_region'
+                WHEN scope_type = 'token_position' THEN 'token_position:' || CAST(scope_position AS VARCHAR)
+                ELSE 'surface:' || scope_surface
+            END || ' ' ||
+            string_agg(coalesce(feature_value, '') || '=>' || array_to_string(analyzers, '+'), ' ; ' ORDER BY feature_value NULLS FIRST, array_to_string(analyzers, '+')) AS pattern
+    FROM feature_values
+    GROUP BY source_id, text_id, region_index, feature_key, scope_type, scope_position, scope_surface
+    HAVING count(*) > 1
+)"#
+                )
+            }
+        }
+    };
+    let body = format!(
+        r#"
+WITH {pattern_ctes},
+selected_regions AS (
+    SELECT
+        r.source_id,
+        r.text_id,
+        r.region_index,
+        r.byte_start,
+        r.byte_end,
+        r.char_start,
+        r.char_end,
+        r.is_nonempty_whitespace,
+        r.is_agreement,
+        r.has_coverage_mismatch,
+        r.has_segmentation_disagreement,
+        r.has_feature_disagreement
+    FROM patterns AS p
+    JOIN read_parquet({regions}) AS r USING (source_id, text_id, region_index)
+    WHERE p.pattern = {pattern}
+    ORDER BY r.source_id, r.text_id, r.region_index
+    LIMIT {limit}
+),
+analyzer_rows AS (
+    SELECT
+        a.source_id,
+        a.text_id,
+        a.region_index,
+        string_agg(
+            a.analyzer_id || ':[' || array_to_string(a.surfaces, '|') || ']',
+            ' ; '
+            ORDER BY a.analyzer_id
+        ) AS analyzers
+    FROM read_parquet({analyzers}) AS a
+    JOIN selected_regions AS r USING (source_id, text_id, region_index)
+    GROUP BY a.source_id, a.text_id, a.region_index
+),
+feature_diffs AS (
+    SELECT
+        f.source_id,
+        f.text_id,
+        f.region_index,
+        string_agg(
+            f.analyzer_id || ':' || f.feature_key || ':' ||
+                CASE
+                    WHEN f.scope_type = 'whole_region' THEN 'whole_region'
+                    WHEN f.scope_type = 'token_position' THEN 'token_position:' || CAST(f.scope_position AS VARCHAR)
+                    ELSE 'surface:' || f.scope_surface
+                END || '=' || coalesce(f.feature_value, '<null>'),
+            ' ; '
+            ORDER BY f.feature_key, f.scope_type, f.scope_position, f.scope_surface, f.feature_value NULLS FIRST, f.analyzer_id
+        ) AS feature_diffs
+    FROM read_parquet({features}) AS f
+    JOIN selected_regions AS r USING (source_id, text_id, region_index)
+    GROUP BY f.source_id, f.text_id, f.region_index
+)
+SELECT
+    r.source_id,
+    r.text_id,
+    r.region_index,
+    r.char_start || '..' || r.char_end AS char_span,
+    r.byte_start || '..' || r.byte_end AS byte_span,
+    r.is_nonempty_whitespace,
+    r.is_agreement,
+    r.has_segmentation_disagreement,
+    r.has_feature_disagreement,
+    r.has_coverage_mismatch,
+    coalesce(a.analyzers, '') AS analyzers,
+    coalesce(f.feature_diffs, '') AS feature_diffs
+FROM selected_regions AS r
+LEFT JOIN analyzer_rows AS a USING (source_id, text_id, region_index)
+LEFT JOIN feature_diffs AS f USING (source_id, text_id, region_index)
+ORDER BY r.source_id, r.text_id, r.region_index
+"#
+    );
+    duckdb_copy_sql(run_dir, &body)
+}
+
+fn warehouse_region_kind_filter(kind: WarehouseRegionKind) -> &'static str {
+    match kind {
+        WarehouseRegionKind::All => "NOT is_agreement",
+        WarehouseRegionKind::Segmentation => "has_segmentation_disagreement",
+        WarehouseRegionKind::Feature => "has_feature_disagreement",
+        WarehouseRegionKind::Coverage => "has_coverage_mismatch",
+    }
+}
+
+fn warehouse_text_filter_sql(filter: WarehouseTextFilter) -> &'static str {
+    match filter {
+        WarehouseTextFilter::All => "TRUE",
+        WarehouseTextFilter::WhitespaceOnly => "is_nonempty_whitespace",
+        WarehouseTextFilter::LexicalOnly => "NOT is_nonempty_whitespace",
+    }
+}
+
+fn warehouse_feature_profile_filter(profile: WarehouseFeatureProfile) -> &'static str {
+    match profile {
+        WarehouseFeatureProfile::Raw | WarehouseFeatureProfile::Schema => "TRUE",
+        WarehouseFeatureProfile::Core => "feature_key IN ('pos1', 'pos2', 'pos3', 'pos4')",
+    }
+}
+
+fn warehouse_feature_key_in_profile(feature_key: &str, profile: WarehouseFeatureProfile) -> bool {
+    match profile {
+        WarehouseFeatureProfile::Raw | WarehouseFeatureProfile::Schema => true,
+        WarehouseFeatureProfile::Core => matches!(feature_key, "pos1" | "pos2" | "pos3" | "pos4"),
+    }
+}
+
+fn warehouse_feature_facts_for_profile(
+    profile: WarehouseFeatureProfile,
+    facts: Vec<WarehouseFeatureDiffFact>,
+) -> Vec<WarehouseFeatureDiffFact> {
+    if profile != WarehouseFeatureProfile::Schema {
+        return facts;
+    }
+
+    let mut by_schema = BTreeMap::<String, Vec<WarehouseFeatureDiffFact>>::new();
+    for fact in facts {
+        by_schema
+            .entry(warehouse_analyzer_schema_id(&fact.analyzer_id).to_owned())
+            .or_default()
+            .push(fact);
+    }
+
+    let mut selected = Vec::new();
+    for schema_facts in by_schema.into_values() {
+        let analyzer_count = schema_facts
+            .iter()
+            .map(|fact| fact.analyzer_id.as_str())
+            .collect::<BTreeSet<_>>()
+            .len();
+        let value_count = schema_facts
+            .iter()
+            .map(|fact| fact.feature_value.as_deref())
+            .collect::<BTreeSet<_>>()
+            .len();
+        if analyzer_count > 1 && value_count > 1 {
+            selected.extend(schema_facts);
+        }
+    }
+    selected
+}
+
+fn warehouse_analyzer_schema_id(analyzer_id: &str) -> &str {
+    if analyzer_id.starts_with("vibrato:") {
+        "unidic"
+    } else if analyzer_id.starts_with("sudachi-") {
+        "sudachi"
+    } else {
+        analyzer_id
+    }
+}
+
+fn warehouse_analyzer_schema_sql(analyzer_expr: &str) -> String {
+    format!(
+        "CASE
+            WHEN {analyzer_expr} LIKE 'vibrato:%' THEN 'unidic'
+            WHEN {analyzer_expr} LIKE 'sudachi-%' THEN 'sudachi'
+            ELSE {analyzer_expr}
+        END"
+    )
 }
 
 fn sql_not_in_clause(column: &str, values: &BTreeSet<String>) -> String {
@@ -1484,6 +2952,38 @@ fn sql_not_in_clause(column: &str, values: &BTreeSet<String>) -> String {
         .collect::<Vec<_>>()
         .join(", ");
     format!("{column} NOT IN ({values})")
+}
+
+fn duckdb_table_path_literal(run_dir: &Path, table: WarehouseTable) -> String {
+    let path = run_dir.join(table.file_name());
+    let path = if path.is_dir() {
+        path.join("*.parquet")
+    } else {
+        path
+    };
+    sql_literal(&path.display().to_string())
+}
+
+fn duckdb_copy_sql(run_dir: &Path, body: &str) -> String {
+    format!(
+        "{}\nCOPY ({body}) TO STDOUT (HEADER, DELIMITER '\t');",
+        duckdb_settings_sql(run_dir)
+    )
+}
+
+fn duckdb_settings_sql(run_dir: &Path) -> String {
+    format!(
+        "SET temp_directory = {};\nSET threads = 4;\nSET preserve_insertion_order = false;\nSET memory_limit = '16GB';",
+        sql_literal(&duckdb_temp_dir(run_dir).display().to_string())
+    )
+}
+
+fn duckdb_temp_dir(run_dir: &Path) -> std::path::PathBuf {
+    run_dir
+        .parent()
+        .and_then(Path::parent)
+        .unwrap_or(run_dir)
+        .join(".duckdb_tmp")
 }
 
 fn sql_literal(value: &str) -> String {
@@ -1580,6 +3080,9 @@ fn summarize_warehouse_feature_pattern_examples(
         {
             continue;
         }
+        if !warehouse_feature_key_in_profile(&fact.key.feature_key, options.feature_profile) {
+            continue;
+        }
         if fact
             .feature_value
             .as_ref()
@@ -1596,6 +3099,10 @@ fn summarize_warehouse_feature_pattern_examples(
             continue;
         };
         if !warehouse_text_filter_matches(options.text_filter, flags) {
+            continue;
+        }
+        let facts = warehouse_feature_facts_for_profile(options.feature_profile, facts);
+        if facts.is_empty() {
             continue;
         }
         let key = warehouse_feature_pattern_key(&feature, &facts)?;
@@ -1654,8 +3161,7 @@ fn summarize_warehouse_feature_patterns(
     regions: &BTreeMap<WarehouseRegionKey, WarehouseRegionFlags>,
     options: &WarehousePatternOptions,
 ) -> Result<BTreeMap<NwayPatternKey, WarehousePatternAccumulator>> {
-    let mut by_feature =
-        BTreeMap::<WarehouseFeatureGroupKey, BTreeMap<Option<String>, Vec<String>>>::new();
+    let mut by_feature = BTreeMap::<WarehouseFeatureGroupKey, Vec<WarehouseFeatureDiffFact>>::new();
     for fact in read_warehouse_feature_diffs(run_dir)? {
         if options
             .exclusions
@@ -1676,6 +3182,9 @@ fn summarize_warehouse_feature_patterns(
         {
             continue;
         }
+        if !warehouse_feature_key_in_profile(&fact.key.feature_key, options.feature_profile) {
+            continue;
+        }
         if fact
             .feature_value
             .as_ref()
@@ -1683,25 +3192,14 @@ fn summarize_warehouse_feature_patterns(
         {
             continue;
         }
-        by_feature
-            .entry(fact.key)
-            .or_default()
-            .entry(fact.feature_value)
-            .or_default()
-            .push(fact.analyzer_id);
+        by_feature.entry(fact.key.clone()).or_default().push(fact);
     }
 
     let mut groups = BTreeMap::<NwayPatternKey, WarehousePatternAccumulator>::new();
-    for (feature, values_by_analyzer) in by_feature {
-        let mut facts = Vec::new();
-        for (value, analyzers) in values_by_analyzer {
-            for analyzer_id in analyzers {
-                facts.push(WarehouseFeatureDiffFact {
-                    key: feature.clone(),
-                    feature_value: value.clone(),
-                    analyzer_id,
-                });
-            }
+    for (feature, facts) in by_feature {
+        let facts = warehouse_feature_facts_for_profile(options.feature_profile, facts);
+        if facts.is_empty() {
+            continue;
         }
         let key = warehouse_feature_pattern_key(&feature, &facts)?;
         if key.feature_values.len() > 1 {
@@ -2444,10 +3942,17 @@ fn warehouse_region_kind_matches(kind: WarehouseRegionKind, flags: WarehouseRegi
 }
 
 fn warehouse_text_filter_matches(filter: WarehouseTextFilter, flags: WarehouseRegionFlags) -> bool {
+    warehouse_text_filter_matches_nonempty_whitespace(filter, flags.is_nonempty_whitespace)
+}
+
+fn warehouse_text_filter_matches_nonempty_whitespace(
+    filter: WarehouseTextFilter,
+    is_nonempty_whitespace: bool,
+) -> bool {
     match filter {
         WarehouseTextFilter::All => true,
-        WarehouseTextFilter::WhitespaceOnly => flags.is_nonempty_whitespace,
-        WarehouseTextFilter::LexicalOnly => !flags.is_nonempty_whitespace,
+        WarehouseTextFilter::WhitespaceOnly => is_nonempty_whitespace,
+        WarehouseTextFilter::LexicalOnly => !is_nonempty_whitespace,
     }
 }
 
@@ -3481,6 +4986,7 @@ mod tests {
             WarehousePatternOptions {
                 kind: NwayPatternKind::Segmentation,
                 feature_key: None,
+                feature_profile: WarehouseFeatureProfile::Raw,
                 text_filter: WarehouseTextFilter::LexicalOnly,
                 excluded_feature_values: BTreeSet::new(),
                 exclusions: SummaryExclusions::default(),
@@ -3501,6 +5007,7 @@ mod tests {
                 kind: NwayPatternKind::Segmentation,
                 pattern: rows[0].pattern.clone(),
                 feature_key: None,
+                feature_profile: WarehouseFeatureProfile::Raw,
                 text_filter: WarehouseTextFilter::LexicalOnly,
                 excluded_feature_values: BTreeSet::new(),
                 exclusions: SummaryExclusions::default(),
@@ -3641,6 +5148,7 @@ mod tests {
             WarehousePatternOptions {
                 kind: NwayPatternKind::Feature,
                 feature_key: Some("pos1".to_owned()),
+                feature_profile: WarehouseFeatureProfile::Raw,
                 text_filter: WarehouseTextFilter::All,
                 excluded_feature_values: BTreeSet::new(),
                 exclusions: SummaryExclusions::default(),
@@ -3661,6 +5169,7 @@ mod tests {
                 kind: NwayPatternKind::Feature,
                 pattern: rows[0].pattern.clone(),
                 feature_key: Some("pos1".to_owned()),
+                feature_profile: WarehouseFeatureProfile::Raw,
                 text_filter: WarehouseTextFilter::LexicalOnly,
                 excluded_feature_values: BTreeSet::new(),
                 exclusions: SummaryExclusions::default(),
@@ -3690,6 +5199,7 @@ mod tests {
             &WarehousePatternOptions {
                 kind: NwayPatternKind::Segmentation,
                 feature_key: None,
+                feature_profile: WarehouseFeatureProfile::Raw,
                 text_filter: WarehouseTextFilter::LexicalOnly,
                 excluded_feature_values: BTreeSet::new(),
                 exclusions: SummaryExclusions::from_values(
@@ -3715,6 +5225,7 @@ mod tests {
             &WarehousePatternOptions {
                 kind: NwayPatternKind::Feature,
                 feature_key: Some("pos'1".to_owned()),
+                feature_profile: WarehouseFeatureProfile::Raw,
                 text_filter: WarehouseTextFilter::LexicalOnly,
                 excluded_feature_values: ["空'白".to_owned()].into_iter().collect(),
                 exclusions: SummaryExclusions::default(),
@@ -3724,6 +5235,344 @@ mod tests {
 
         assert!(feature_sql.contains("feature_key = 'pos''1'"));
         assert!(feature_sql.contains("feature_value NOT IN ('空''白')"));
+    }
+
+    #[test]
+    fn warehouse_region_examples_duckdb_sql_limits_before_large_joins() {
+        let sql = warehouse_region_examples_duckdb_sql(
+            Path::new("scratch/warehouse/runs/run's"),
+            &WarehouseRegionOptions {
+                kind: WarehouseRegionKind::Feature,
+                text_filter: WarehouseTextFilter::LexicalOnly,
+                exclusions: SummaryExclusions::from_values(
+                    ["src'1".to_owned()],
+                    ["text'1".to_owned()],
+                ),
+                limit: 11,
+            },
+        );
+
+        assert!(sql.contains("read_parquet('scratch/warehouse/runs/run''s/nway_regions.parquet')"));
+        assert!(sql.contains(
+            "read_parquet('scratch/warehouse/runs/run''s/nway_region_analyzers.parquet')"
+        ));
+        assert!(
+            sql.contains(
+                "read_parquet('scratch/warehouse/runs/run''s/nway_feature_diffs.parquet')"
+            )
+        );
+        assert!(sql.contains("has_feature_disagreement"));
+        assert!(sql.contains("NOT is_nonempty_whitespace"));
+        assert!(sql.contains("source_id NOT IN ('src''1')"));
+        assert!(sql.contains("text_id NOT IN ('text''1')"));
+        assert!(sql.contains("LIMIT 11"));
+        assert!(
+            sql.find("LIMIT 11").unwrap()
+                < sql
+                    .find(
+                        "read_parquet('scratch/warehouse/runs/run''s/nway_feature_diffs.parquet')"
+                    )
+                    .unwrap()
+        );
+    }
+
+    #[test]
+    fn warehouse_pattern_examples_duckdb_sql_filters_by_pattern_and_feature_values() {
+        let sql = warehouse_pattern_examples_duckdb_sql(
+            Path::new("scratch/warehouse/runs/run's"),
+            &WarehousePatternExampleOptions {
+                kind: NwayPatternKind::Feature,
+                pattern: "pos'1 whole_region 名詞=>vibrato ; 空白=>sudachi-c".to_owned(),
+                feature_key: Some("pos'1".to_owned()),
+                feature_profile: WarehouseFeatureProfile::Raw,
+                text_filter: WarehouseTextFilter::LexicalOnly,
+                excluded_feature_values: ["空'白".to_owned()].into_iter().collect(),
+                exclusions: SummaryExclusions::default(),
+                limit: 3,
+            },
+        );
+
+        assert!(sql.contains("pattern = 'pos''1 whole_region 名詞=>vibrato ; 空白=>sudachi-c'"));
+        assert!(sql.contains("feature_key = 'pos''1'"));
+        assert!(sql.contains("feature_value NOT IN ('空''白')"));
+        assert!(sql.contains("LIMIT 3"));
+        assert!(sql.contains("feature_diffs"));
+    }
+
+    #[test]
+    fn warehouse_duckdb_sql_uses_globs_for_partitioned_tables() {
+        let root = temp_dir("warehouse-duckdb-partitions");
+        let run_dir = root.join("runs").join("run-a");
+        fs::create_dir_all(run_dir.join(WarehouseTable::NwayRegions.file_name())).unwrap();
+        fs::create_dir_all(run_dir.join(WarehouseTable::NwayRegionAnalyzers.file_name())).unwrap();
+        fs::create_dir_all(run_dir.join(WarehouseTable::NwayFeatureDiffs.file_name())).unwrap();
+
+        let sql = warehouse_region_examples_duckdb_sql(
+            &run_dir,
+            &WarehouseRegionOptions {
+                kind: WarehouseRegionKind::All,
+                text_filter: WarehouseTextFilter::All,
+                exclusions: SummaryExclusions::default(),
+                limit: 1,
+            },
+        );
+
+        assert!(sql.contains("nway_regions.parquet/*.parquet"));
+        assert!(sql.contains("nway_region_analyzers.parquet/*.parquet"));
+        assert!(sql.contains("nway_feature_diffs.parquet/*.parquet"));
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn warehouse_duckdb_sql_sets_disk_temp_directory_and_memory_bound() {
+        let sql = warehouse_pattern_duckdb_sql(
+            Path::new("scratch/warehouse/runs/run's"),
+            &WarehousePatternOptions {
+                kind: NwayPatternKind::Feature,
+                feature_key: Some("pos1".to_owned()),
+                feature_profile: WarehouseFeatureProfile::Raw,
+                text_filter: WarehouseTextFilter::LexicalOnly,
+                excluded_feature_values: BTreeSet::new(),
+                exclusions: SummaryExclusions::default(),
+                limit: 5,
+            },
+        );
+
+        assert!(sql.starts_with("SET temp_directory = "));
+        assert!(sql.contains("scratch/warehouse/.duckdb_tmp"));
+        assert!(sql.contains("SET threads = 4;"));
+        assert!(sql.contains("SET preserve_insertion_order = false;"));
+        assert!(sql.contains("SET memory_limit = '16GB';"));
+        assert!(sql.contains("COPY ("));
+    }
+
+    #[test]
+    fn warehouse_feature_profile_core_limits_feature_keys_in_duckdb_sql() {
+        let sql = warehouse_pattern_duckdb_sql(
+            Path::new("scratch/warehouse/runs/run-a"),
+            &WarehousePatternOptions {
+                kind: NwayPatternKind::Feature,
+                feature_key: None,
+                feature_profile: WarehouseFeatureProfile::Core,
+                text_filter: WarehouseTextFilter::LexicalOnly,
+                excluded_feature_values: BTreeSet::new(),
+                exclusions: SummaryExclusions::default(),
+                limit: 5,
+            },
+        );
+
+        assert!(sql.contains("UNION ALL"));
+        assert!(sql.contains("feature_key = 'pos1'"));
+        assert!(sql.contains("feature_key = 'pos2'"));
+        assert!(sql.contains("feature_key = 'pos3'"));
+        assert!(sql.contains("feature_key = 'pos4'"));
+        assert!(!sql.contains("feature_key IN ('pos1', 'pos2', 'pos3', 'pos4')"));
+    }
+
+    #[test]
+    fn merged_pattern_tsv_orders_rows_globally_by_example_count() {
+        let pos1 = concat!(
+            "kind\texamples\tsource_count\ttext_count\tsample_source_ids\tsample_text_ids\tscript_categories\tpattern\n",
+            "feature\t10\t1\t1\ts1\tt1\t\tpos1 whole_region A=>x ; B=>y\n",
+            "feature\t8\t1\t1\ts2\tt2\t\tpos1 whole_region C=>x ; D=>y\n",
+        );
+        let pos2 = concat!(
+            "kind\texamples\tsource_count\ttext_count\tsample_source_ids\tsample_text_ids\tscript_categories\tpattern\n",
+            "feature\t12\t1\t1\ts3\tt3\t\tpos2 whole_region E=>x ; F=>y\n",
+            "feature\t7\t1\t1\ts4\tt4\t\tpos2 whole_region G=>x ; H=>y\n",
+        );
+        let mut output = Vec::new();
+
+        write_merged_pattern_tsv([pos1, pos2], 3, &mut output).unwrap();
+
+        let output = String::from_utf8(output).unwrap();
+        let lines = output.lines().collect::<Vec<_>>();
+        assert_eq!(lines.len(), 4);
+        assert!(lines[1].contains("feature\t12"));
+        assert!(lines[2].contains("feature\t10"));
+        assert!(lines[3].contains("feature\t8"));
+    }
+
+    #[test]
+    fn warehouse_feature_pattern_counts_sql_reads_materialized_counts() {
+        let sql = warehouse_feature_pattern_counts_duckdb_sql(
+            Path::new("scratch/warehouse/runs/run-a"),
+            &WarehousePatternOptions {
+                kind: NwayPatternKind::Feature,
+                feature_key: Some("pos1".to_owned()),
+                feature_profile: WarehouseFeatureProfile::Core,
+                text_filter: WarehouseTextFilter::LexicalOnly,
+                excluded_feature_values: BTreeSet::new(),
+                exclusions: SummaryExclusions::default(),
+                limit: 12,
+            },
+        );
+
+        assert!(sql.contains("feature_pattern_counts.parquet"));
+        assert!(sql.contains("feature_profile = 'core'"));
+        assert!(sql.contains("feature_key = 'pos1'"));
+        assert!(sql.contains("NOT is_nonempty_whitespace"));
+        assert!(sql.contains("LIMIT 12"));
+    }
+
+    #[test]
+    fn materialize_core_feature_pattern_counts_sql_writes_partitionable_table() {
+        let sql = materialize_core_feature_pattern_counts_duckdb_sql(
+            Path::new("scratch/warehouse/runs/run-a"),
+            Path::new("scratch/warehouse/runs/run-a/feature_pattern_counts.parquet"),
+            "pos1",
+        );
+
+        assert!(sql.contains("COPY ("));
+        assert!(sql.contains("feature_profile"));
+        assert!(sql.contains("'core'"));
+        assert!(sql.contains("feature_key = 'pos1'"));
+        assert!(sql.contains("is_nonempty_whitespace"));
+        assert!(sql.contains("TO 'scratch/warehouse/runs/run-a/feature_pattern_counts.parquet'"));
+    }
+
+    #[test]
+    fn materialized_core_feature_patterns_are_used_without_raw_feature_diffs() {
+        use crate::warehouse::schema::{NwayFeatureDiffRow, NwayRegionRow, RunRow, WarehousePaths};
+        use crate::warehouse::writer::WarehouseWriter;
+
+        let root = temp_dir("warehouse-materialized-feature-patterns");
+        let paths = WarehousePaths::new(&root, "run-a");
+        let mut writer = WarehouseWriter::create(paths.clone()).unwrap();
+        writer
+            .append_runs(&[RunRow {
+                schema_version: crate::warehouse::schema::SCHEMA_VERSION,
+                run_id: "run-a".to_owned(),
+                created_at_utc: "2026-05-01T00:00:00Z".to_owned(),
+                input_mode: "aat_dir".to_owned(),
+                input_path: "scratch/aats".to_owned(),
+                source_count: 1,
+                analyzer_count: 2,
+                error_count: 0,
+            }])
+            .unwrap();
+        writer
+            .append_nway_regions(&[NwayRegionRow {
+                run_id: "run-a".to_owned(),
+                source_id: "source-a".to_owned(),
+                text_id: "work-a".to_owned(),
+                region_index: 0,
+                byte_start: 0,
+                byte_end: 6,
+                char_start: 0,
+                char_end: 2,
+                is_nonempty_whitespace: false,
+                is_agreement: false,
+                has_coverage_mismatch: false,
+                has_segmentation_disagreement: false,
+                has_feature_disagreement: true,
+            }])
+            .unwrap();
+        writer
+            .append_nway_feature_diffs(&[
+                NwayFeatureDiffRow {
+                    run_id: "run-a".to_owned(),
+                    source_id: "source-a".to_owned(),
+                    text_id: "work-a".to_owned(),
+                    region_index: 0,
+                    feature_key: "pos1".to_owned(),
+                    scope_type: "whole_region".to_owned(),
+                    scope_position: None,
+                    scope_surface: None,
+                    feature_value: Some("名詞".to_owned()),
+                    analyzer_id: "vibrato".to_owned(),
+                },
+                NwayFeatureDiffRow {
+                    run_id: "run-a".to_owned(),
+                    source_id: "source-a".to_owned(),
+                    text_id: "work-a".to_owned(),
+                    region_index: 0,
+                    feature_key: "pos1".to_owned(),
+                    scope_type: "whole_region".to_owned(),
+                    scope_position: None,
+                    scope_surface: None,
+                    feature_value: Some("空白".to_owned()),
+                    analyzer_id: "sudachi-c".to_owned(),
+                },
+                NwayFeatureDiffRow {
+                    run_id: "run-a".to_owned(),
+                    source_id: "source-a".to_owned(),
+                    text_id: "work-a".to_owned(),
+                    region_index: 0,
+                    feature_key: "lemma".to_owned(),
+                    scope_type: "whole_region".to_owned(),
+                    scope_position: None,
+                    scope_surface: None,
+                    feature_value: Some("今日".to_owned()),
+                    analyzer_id: "vibrato".to_owned(),
+                },
+                NwayFeatureDiffRow {
+                    run_id: "run-a".to_owned(),
+                    source_id: "source-a".to_owned(),
+                    text_id: "work-a".to_owned(),
+                    region_index: 0,
+                    feature_key: "lemma".to_owned(),
+                    scope_type: "whole_region".to_owned(),
+                    scope_position: None,
+                    scope_surface: None,
+                    feature_value: Some("きょう".to_owned()),
+                    analyzer_id: "sudachi-c".to_owned(),
+                },
+            ])
+            .unwrap();
+        writer.finalize().unwrap();
+
+        materialize_warehouse_core_feature_pattern_counts(&paths.final_dir, Some("pos1")).unwrap();
+        let raw_features = paths.final_dir.join("nway_feature_diffs.parquet");
+        if raw_features.is_dir() {
+            fs::remove_dir_all(&raw_features).unwrap();
+        } else {
+            fs::remove_file(&raw_features).unwrap();
+        }
+
+        let rows = summarize_warehouse_nway_patterns(
+            &paths.final_dir,
+            WarehousePatternOptions {
+                kind: NwayPatternKind::Feature,
+                feature_key: Some("pos1".to_owned()),
+                feature_profile: WarehouseFeatureProfile::Core,
+                text_filter: WarehouseTextFilter::LexicalOnly,
+                excluded_feature_values: BTreeSet::new(),
+                exclusions: SummaryExclusions::default(),
+                limit: 10,
+            },
+        )
+        .unwrap();
+
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].examples, 1);
+        assert_eq!(rows[0].feature_key, Some("pos1".to_owned()));
+        assert!(rows[0].pattern.contains("名詞=>vibrato"));
+        assert!(rows[0].pattern.contains("空白=>sudachi-c"));
+        assert!(!rows[0].pattern.contains("lemma"));
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn warehouse_feature_profile_schema_requires_same_schema_disagreement() {
+        let sql = warehouse_pattern_duckdb_sql(
+            Path::new("scratch/warehouse/runs/run-a"),
+            &WarehousePatternOptions {
+                kind: NwayPatternKind::Feature,
+                feature_key: None,
+                feature_profile: WarehouseFeatureProfile::Schema,
+                text_filter: WarehouseTextFilter::LexicalOnly,
+                excluded_feature_values: BTreeSet::new(),
+                exclusions: SummaryExclusions::default(),
+                limit: 5,
+            },
+        );
+
+        assert!(sql.contains("schema_value_counts"));
+        assert!(sql.contains("HAVING count(DISTINCT feature_value) > 1"));
+        assert!(sql.contains("analyzer_schema_id"));
     }
 
     #[test]

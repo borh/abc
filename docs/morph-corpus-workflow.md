@@ -11,6 +11,8 @@ cargo build --release --manifest-path adapters/aozora-rs/Cargo.toml
 
 ## 2. Generate checked AAT
 
+`ab-index` and `ab-check` only treat sources under `cards/{card}/files/` as Aozora literary-work corpus inputs. Reference/support files outside that tree, such as `tools/JISTABLE.zip::JISTABLE.TXT`, may be useful for JIS/gaiji handling but are not Aozora markup works and should not be parsed as corpus text.
+
 ```bash
 target/release/ab-check \
   --index scratch/ab-index.json \
@@ -59,24 +61,32 @@ Keep JSONL commands only for compatibility with old artifacts and targeted debug
 
 Warehouse mode writes sealed Parquet fact tables. It is the preferred format for complete corpus analysis. It does not write JSONL outputs.
 
+Use `/db` for warehouse outputs and DuckDB temporary spill on machines where the project filesystem is space-constrained. The triage profile is the default choice for first-pass corpus analysis: it keeps segmentation, N-way, pairwise, morpheme, and materialized core POS pattern facts, but omits the raw `morpheme_features.parquet` and `nway_feature_diffs.parquet` tables.
+
 ```bash
+TMPDIR=/db/ab-validator/tmp \
+TMP=/db/ab-validator/tmp \
+TEMP=/db/ab-validator/tmp \
 AB_SUDACHI_DICT="$(nix path-info .#sudachi-dictionary-full)/share/sudachi/system.dic" \
   target/release/ab-morph-run analyze-aat \
     --aat-dir scratch/morph-full-corpus/aats \
     --analyzer vibrato \
     --analyzer sudachi-a \
     --analyzer sudachi-c \
-    --warehouse-dir scratch/morph-warehouse \
-    --run-id full-2026-05-01 \
-    --jobs 1
+    --warehouse-dir /db/ab-validator/morph-warehouse \
+    --run-id triage-2026-05-03 \
+    --warehouse-profile triage \
+    --jobs 12
 ```
 
-Phase-1 warehouse mode is serial and does not support `--resume`. Interrupted runs leave staging directories under `.staging/`; the next run with the same `--run-id` removes stale staging before starting. Published runs under `runs/<run-id>/` are immutable.
+The default `--warehouse-profile full` preserves all raw feature fact tables for later drill-down, at significantly higher storage cost. Use full only when raw `morpheme_features` or raw `nway_feature_diffs` queries are required.
+
+Warehouse mode does not support `--resume`. Interrupted runs leave staging directories under `.staging/`; the next run with the same `--run-id` removes stale staging before starting. Published runs under `runs/<run-id>/` are immutable.
 
 Query with DuckDB:
 
 ```bash
-duckdb -c ".read scratch/morph-warehouse/runs/full-2026-05-01/views.sql" \
+duckdb -c ".read /db/ab-validator/morph-warehouse/runs/triage-2026-05-03/views.sql" \
        -c "SELECT * FROM top_segmentation_patterns LIMIT 50;"
 ```
 
@@ -84,8 +94,8 @@ Query recurring warehouse patterns through `ab-morph-run` without JSONL intermed
 
 ```bash
 target/release/ab-morph-run summarize-warehouse-triage \
-  --run-dir scratch/morph-warehouse/runs/full-2026-05-01 \
-  --output-dir scratch/morph-warehouse/triage/full-2026-05-01 \
+  --run-dir /db/ab-validator/morph-warehouse/runs/triage-2026-05-03 \
+  --output-dir /db/ab-validator/morph-warehouse/triage/triage-2026-05-03 \
   --limit 50
 ```
 
@@ -93,33 +103,34 @@ Use the individual summary commands for custom grouping, filtering, or drill-dow
 
 ```bash
 target/release/ab-morph-run summarize-warehouse-nway \
-  --run-dir scratch/morph-warehouse/runs/full-2026-05-01 \
+  --run-dir /db/ab-validator/morph-warehouse/runs/triage-2026-05-03 \
   --group-by source-id \
   --sort-by regions-with-segmentation-disagreement \
   --limit 50
 
 target/release/ab-morph-run summarize-warehouse-pairwise \
-  --run-dir scratch/morph-warehouse/runs/full-2026-05-01 \
+  --run-dir /db/ab-validator/morph-warehouse/runs/triage-2026-05-03 \
   --sort-by segmentation-regions \
   --filter lexical-only \
   --limit 50
 
 target/release/ab-morph-run summarize-warehouse-patterns \
-  --run-dir scratch/morph-warehouse/runs/full-2026-05-01 \
+  --run-dir /db/ab-validator/morph-warehouse/runs/triage-2026-05-03 \
   --kind segmentation \
   --filter lexical-only \
   --limit 50
 
 target/release/ab-morph-run summarize-warehouse-patterns \
-  --run-dir scratch/morph-warehouse/runs/full-2026-05-01 \
+  --run-dir /db/ab-validator/morph-warehouse/runs/triage-2026-05-03 \
   --kind feature \
   --feature-key pos1 \
+  --feature-profile core \
   --filter lexical-only \
   --limit 50
 
-# Copy a pattern string from summarize-warehouse-patterns and drill into bounded examples.
+# Feature pattern examples need --warehouse-profile full because they read raw nway_feature_diffs.
 target/release/ab-morph-run summarize-warehouse-pattern-examples \
-  --run-dir scratch/morph-warehouse/runs/full-2026-05-01 \
+  --run-dir /db/ab-validator/morph-warehouse/runs/full-2026-05-03 \
   --kind feature \
   --feature-key pos1 \
   --filter lexical-only \
@@ -127,14 +138,14 @@ target/release/ab-morph-run summarize-warehouse-pattern-examples \
   --limit 20
 
 target/release/ab-morph-run summarize-warehouse-regions \
-  --run-dir scratch/morph-warehouse/runs/full-2026-05-01 \
+  --run-dir /db/ab-validator/morph-warehouse/runs/triage-2026-05-03 \
   --kind segmentation \
   --filter lexical-only \
   --limit 20 \
   --json
 
 target/release/ab-morph-run summarize-warehouse-errors \
-  --run-dir scratch/morph-warehouse/runs/full-2026-05-01 \
+  --run-dir /db/ab-validator/morph-warehouse/runs/triage-2026-05-03 \
   --group-by error-code \
   --limit 50
 ```

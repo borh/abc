@@ -3,6 +3,8 @@ use std::path::Path;
 
 use anyhow::{Context, Result};
 
+use super::schema::WarehouseTable;
+
 pub(crate) const SCHEMA_SQL: &str = include_str!("../../sql/schema.sql");
 pub(crate) const MORPH_VIEWS_SQL_TEMPLATE: &str = include_str!("../../sql/morph_views.sql");
 
@@ -26,10 +28,40 @@ pub(crate) fn write_run_views_sql(output_run_dir: &Path, final_run_dir: &Path) -
         .to_string_lossy()
         .replace('\\', "\\\\")
         .replace('\'', "''");
-    let views = MORPH_VIEWS_SQL_TEMPLATE.replace("__RUN_DIR__", &final_run_dir);
+    let mut views = MORPH_VIEWS_SQL_TEMPLATE.replace("__RUN_DIR__", &final_run_dir);
+    if !output_run_dir
+        .join(WarehouseTable::NwayFeatureDiffs.file_name())
+        .exists()
+    {
+        views = remove_marked_sql_sections(
+            &views,
+            "-- __RAW_FEATURE_DIFFS_BEGIN__",
+            "-- __RAW_FEATURE_DIFFS_END__",
+        );
+    }
+    views = views
+        .replace("-- __RAW_FEATURE_DIFFS_BEGIN__\n", "")
+        .replace("-- __RAW_FEATURE_DIFFS_END__\n", "");
     let path = output_run_dir.join("views.sql");
     fs::write(&path, views).with_context(|| format!("failed to write {}", path.display()))?;
     Ok(())
+}
+
+fn remove_marked_sql_sections(sql: &str, begin: &str, end: &str) -> String {
+    let mut remaining = sql;
+    let mut output = String::new();
+    while let Some(begin_index) = remaining.find(begin) {
+        output.push_str(&remaining[..begin_index]);
+        let after_begin = &remaining[begin_index + begin.len()..];
+        let Some(end_index) = after_begin.find(end) else {
+            output.push_str(&remaining[begin_index..]);
+            return output;
+        };
+        let after_end = &after_begin[end_index + end.len()..];
+        remaining = after_end.strip_prefix('\n').unwrap_or(after_end);
+    }
+    output.push_str(remaining);
+    output
 }
 
 #[cfg(test)]

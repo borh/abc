@@ -38,6 +38,8 @@ enum Command {
         warehouse_dir: Option<PathBuf>,
         #[arg(long, requires = "warehouse_dir")]
         run_id: Option<String>,
+        #[arg(long, value_enum, default_value_t = ab_morph_run::WarehouseProfile::Full)]
+        warehouse_profile: ab_morph_run::WarehouseProfile,
         #[arg(long)]
         analyses_output: Option<PathBuf>,
         #[arg(long)]
@@ -214,6 +216,8 @@ enum Command {
         kind: NwayPatternKindArg,
         #[arg(long)]
         feature_key: Option<String>,
+        #[arg(long, value_enum, default_value_t = WarehouseFeatureProfileArg::Raw)]
+        feature_profile: WarehouseFeatureProfileArg,
         #[arg(long, value_enum, default_value_t = WarehouseTextFilterArg::All)]
         filter: WarehouseTextFilterArg,
         #[arg(long)]
@@ -227,6 +231,12 @@ enum Command {
         #[arg(long)]
         json: bool,
     },
+    MaterializeWarehouseFeaturePatterns {
+        #[arg(long)]
+        run_dir: PathBuf,
+        #[arg(long)]
+        feature_key: Option<String>,
+    },
     SummarizeWarehousePatternExamples {
         #[arg(long)]
         run_dir: PathBuf,
@@ -236,6 +246,8 @@ enum Command {
         pattern: String,
         #[arg(long)]
         feature_key: Option<String>,
+        #[arg(long, value_enum, default_value_t = WarehouseFeatureProfileArg::Raw)]
+        feature_profile: WarehouseFeatureProfileArg,
         #[arg(long, value_enum, default_value_t = WarehouseTextFilterArg::All)]
         filter: WarehouseTextFilterArg,
         #[arg(long)]
@@ -361,6 +373,13 @@ enum NwaySummarySortArg {
 enum NwayPatternKindArg {
     Segmentation,
     Feature,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
+enum WarehouseFeatureProfileArg {
+    Raw,
+    Core,
+    Schema,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
@@ -507,6 +526,16 @@ impl NwayPatternKindArg {
     }
 }
 
+impl WarehouseFeatureProfileArg {
+    fn into_library(self) -> ab_morph_run::WarehouseFeatureProfile {
+        match self {
+            Self::Raw => ab_morph_run::WarehouseFeatureProfile::Raw,
+            Self::Core => ab_morph_run::WarehouseFeatureProfile::Core,
+            Self::Schema => ab_morph_run::WarehouseFeatureProfile::Schema,
+        }
+    }
+}
+
 impl WarehouseRegionKindArg {
     fn into_library(self) -> ab_morph_run::WarehouseRegionKind {
         match self {
@@ -572,6 +601,22 @@ fn summary_exclusions(
     ab_morph_run::SummaryExclusions::from_values(source_ids, text_ids)
 }
 
+fn validate_warehouse_feature_profile(
+    kind: NwayPatternKindArg,
+    feature_profile: WarehouseFeatureProfileArg,
+    feature_key: Option<&str>,
+) -> Result<()> {
+    if kind == NwayPatternKindArg::Feature
+        && feature_profile == WarehouseFeatureProfileArg::Schema
+        && feature_key.is_none()
+    {
+        bail!(
+            "--feature-profile schema requires --feature-key until warehouse feature-pattern aggregates are materialized"
+        );
+    }
+    Ok(())
+}
+
 fn main() -> Result<()> {
     let args = Args::parse();
     match args.command {
@@ -582,6 +627,7 @@ fn main() -> Result<()> {
             output_dir,
             warehouse_dir,
             run_id,
+            warehouse_profile,
             analyses_output,
             comparisons_output,
             examples_output,
@@ -611,6 +657,7 @@ fn main() -> Result<()> {
                         .as_deref()
                         .expect("validate_warehouse_cli requires --run-id"),
                     jobs,
+                    warehouse_profile,
                 );
             }
             let progress_enabled = progress || progress_interval_seconds.is_some();
@@ -882,6 +929,7 @@ fn main() -> Result<()> {
             run_dir,
             kind,
             feature_key,
+            feature_profile,
             filter,
             exclude_feature_value,
             exclude_source_id,
@@ -889,9 +937,11 @@ fn main() -> Result<()> {
             limit,
             json,
         } => {
+            validate_warehouse_feature_profile(kind, feature_profile, feature_key.as_deref())?;
             let options = ab_morph_run::WarehousePatternOptions {
                 kind: kind.into_library(),
                 feature_key,
+                feature_profile: feature_profile.into_library(),
                 text_filter: filter.into_library(),
                 excluded_feature_values: exclude_feature_value.into_iter().collect(),
                 exclusions: summary_exclusions(exclude_source_id, exclude_text_id),
@@ -915,11 +965,27 @@ fn main() -> Result<()> {
             }
             Ok(())
         }
+        Command::MaterializeWarehouseFeaturePatterns {
+            run_dir,
+            feature_key,
+        } => {
+            if ab_morph_run::materialize_warehouse_core_feature_pattern_counts(
+                &run_dir,
+                feature_key.as_deref(),
+            )? {
+                eprintln!(
+                    "wrote {}",
+                    run_dir.join("feature_pattern_counts.parquet").display()
+                );
+            }
+            Ok(())
+        }
         Command::SummarizeWarehousePatternExamples {
             run_dir,
             kind,
             pattern,
             feature_key,
+            feature_profile,
             filter,
             exclude_feature_value,
             exclude_source_id,
@@ -927,18 +993,27 @@ fn main() -> Result<()> {
             limit,
             json,
         } => {
-            let rows = ab_morph_run::summarize_warehouse_pattern_examples(
-                &run_dir,
-                ab_morph_run::WarehousePatternExampleOptions {
-                    kind: kind.into_library(),
-                    pattern,
-                    feature_key,
-                    text_filter: filter.into_library(),
-                    excluded_feature_values: exclude_feature_value.into_iter().collect(),
-                    exclusions: summary_exclusions(exclude_source_id, exclude_text_id),
-                    limit,
-                },
-            )?;
+            validate_warehouse_feature_profile(kind, feature_profile, feature_key.as_deref())?;
+            let options = ab_morph_run::WarehousePatternExampleOptions {
+                kind: kind.into_library(),
+                pattern,
+                feature_key,
+                feature_profile: feature_profile.into_library(),
+                text_filter: filter.into_library(),
+                excluded_feature_values: exclude_feature_value.into_iter().collect(),
+                exclusions: summary_exclusions(exclude_source_id, exclude_text_id),
+                limit,
+            };
+            if !json
+                && ab_morph_run::write_warehouse_pattern_examples_duckdb_tsv(
+                    &run_dir,
+                    &options,
+                    std::io::stdout(),
+                )?
+            {
+                return Ok(());
+            }
+            let rows = ab_morph_run::summarize_warehouse_pattern_examples(&run_dir, options)?;
             if json {
                 serde_json::to_writer_pretty(std::io::stdout(), &rows)?;
                 println!();
@@ -961,15 +1036,22 @@ fn main() -> Result<()> {
             limit,
             json,
         } => {
-            let rows = ab_morph_run::summarize_warehouse_regions(
-                &run_dir,
-                ab_morph_run::WarehouseRegionOptions {
-                    kind: kind.into_library(),
-                    text_filter: filter.into_library(),
-                    exclusions: summary_exclusions(exclude_source_id, exclude_text_id),
-                    limit,
-                },
-            )?;
+            let options = ab_morph_run::WarehouseRegionOptions {
+                kind: kind.into_library(),
+                text_filter: filter.into_library(),
+                exclusions: summary_exclusions(exclude_source_id, exclude_text_id),
+                limit,
+            };
+            if !json
+                && ab_morph_run::write_warehouse_regions_duckdb_tsv(
+                    &run_dir,
+                    &options,
+                    std::io::stdout(),
+                )?
+            {
+                return Ok(());
+            }
+            let rows = ab_morph_run::summarize_warehouse_regions(&run_dir, options)?;
             if json {
                 serde_json::to_writer_pretty(std::io::stdout(), &rows)?;
                 println!();
@@ -1111,6 +1193,7 @@ fn run_warehouse_triage(run_dir: &Path, output_dir: &Path, limit: usize) -> Resu
         ab_morph_run::WarehousePatternOptions {
             kind: ab_morph_run::NwayPatternKind::Segmentation,
             feature_key: None,
+            feature_profile: ab_morph_run::WarehouseFeatureProfile::Raw,
             text_filter: ab_morph_run::WarehouseTextFilter::LexicalOnly,
             excluded_feature_values: Default::default(),
             exclusions: ab_morph_run::SummaryExclusions::default(),
@@ -1120,17 +1203,22 @@ fn run_warehouse_triage(run_dir: &Path, output_dir: &Path, limit: usize) -> Resu
     write_warehouse_patterns_tsv(
         run_dir,
         &output_dir.join("top-pos1.tsv"),
-        ab_morph_run::WarehousePatternOptions {
-            kind: ab_morph_run::NwayPatternKind::Feature,
-            feature_key: Some("pos1".to_owned()),
-            text_filter: ab_morph_run::WarehouseTextFilter::LexicalOnly,
-            excluded_feature_values: ["空白".to_owned()].into_iter().collect(),
-            exclusions: ab_morph_run::SummaryExclusions::default(),
-            limit,
-        },
+        warehouse_triage_pos1_options(limit),
     )?;
     eprintln!("wrote warehouse triage to {}", output_dir.display());
     Ok(())
+}
+
+fn warehouse_triage_pos1_options(limit: usize) -> ab_morph_run::WarehousePatternOptions {
+    ab_morph_run::WarehousePatternOptions {
+        kind: ab_morph_run::NwayPatternKind::Feature,
+        feature_key: Some("pos1".to_owned()),
+        feature_profile: ab_morph_run::WarehouseFeatureProfile::Core,
+        text_filter: ab_morph_run::WarehouseTextFilter::LexicalOnly,
+        excluded_feature_values: Default::default(),
+        exclusions: ab_morph_run::SummaryExclusions::default(),
+        limit,
+    }
 }
 
 fn write_warehouse_errors_tsv(run_dir: &Path, output_path: &Path, limit: usize) -> Result<()> {
@@ -1963,6 +2051,34 @@ mod tests {
     }
 
     #[test]
+    fn parses_warehouse_profile_triage() {
+        let args = Args::try_parse_from([
+            "ab-morph-run",
+            "analyze-aat",
+            "--aat-dir",
+            "scratch/aats",
+            "--analyzer",
+            "vibrato",
+            "--warehouse-dir",
+            "scratch/morph-warehouse",
+            "--run-id",
+            "triage-2026-05-03",
+            "--warehouse-profile",
+            "triage",
+        ])
+        .unwrap();
+
+        let Command::AnalyzeAat {
+            warehouse_profile, ..
+        } = args.command
+        else {
+            panic!("expected analyze-aat");
+        };
+
+        assert_eq!(warehouse_profile, ab_morph_run::WarehouseProfile::Triage);
+    }
+
+    #[test]
     fn rejects_warehouse_with_jsonl_output_dir() {
         let err = Args::try_parse_from([
             "ab-morph-run",
@@ -2168,6 +2284,8 @@ mod tests {
             "feature",
             "--feature-key",
             "pos1",
+            "--feature-profile",
+            "core",
             "--filter",
             "lexical-only",
             "--exclude-source-id",
@@ -2181,6 +2299,7 @@ mod tests {
             run_dir,
             kind,
             feature_key,
+            feature_profile,
             filter,
             exclude_source_id,
             limit,
@@ -2197,10 +2316,60 @@ mod tests {
         );
         assert_eq!(kind, NwayPatternKindArg::Feature);
         assert_eq!(feature_key, Some("pos1".to_owned()));
+        assert_eq!(feature_profile, WarehouseFeatureProfileArg::Core);
         assert_eq!(filter, WarehouseTextFilterArg::LexicalOnly);
         assert_eq!(exclude_source_id, vec!["source-a"]);
         assert_eq!(limit, 15);
         assert!(json);
+    }
+
+    #[test]
+    fn warehouse_feature_profiles_require_feature_key_for_full_corpus_queries() {
+        assert!(
+            validate_warehouse_feature_profile(
+                NwayPatternKindArg::Feature,
+                WarehouseFeatureProfileArg::Core,
+                None,
+            )
+            .is_ok()
+        );
+        assert!(
+            validate_warehouse_feature_profile(
+                NwayPatternKindArg::Feature,
+                WarehouseFeatureProfileArg::Schema,
+                Some("goshu"),
+            )
+            .is_ok()
+        );
+        assert!(
+            validate_warehouse_feature_profile(
+                NwayPatternKindArg::Feature,
+                WarehouseFeatureProfileArg::Schema,
+                None,
+            )
+            .is_err()
+        );
+        assert!(
+            validate_warehouse_feature_profile(
+                NwayPatternKindArg::Segmentation,
+                WarehouseFeatureProfileArg::Schema,
+                None,
+            )
+            .is_ok()
+        );
+    }
+
+    #[test]
+    fn warehouse_triage_pos1_uses_materialized_core_profile() {
+        let options = warehouse_triage_pos1_options(7);
+
+        assert_eq!(
+            options.feature_profile,
+            ab_morph_run::WarehouseFeatureProfile::Core
+        );
+        assert_eq!(options.feature_key, Some("pos1".to_owned()));
+        assert!(options.excluded_feature_values.is_empty());
+        assert_eq!(options.limit, 7);
     }
 
     #[test]
@@ -2216,6 +2385,8 @@ mod tests {
             "pos1 whole_region 名詞=>vibrato ; 動詞=>sudachi-a",
             "--feature-key",
             "pos1",
+            "--feature-profile",
+            "schema",
             "--filter",
             "lexical-only",
             "--limit",
@@ -2228,6 +2399,7 @@ mod tests {
             kind,
             pattern,
             feature_key,
+            feature_profile,
             filter,
             limit,
             json,
@@ -2244,6 +2416,7 @@ mod tests {
         assert_eq!(kind, NwayPatternKindArg::Feature);
         assert_eq!(pattern, "pos1 whole_region 名詞=>vibrato ; 動詞=>sudachi-a");
         assert_eq!(feature_key, Some("pos1".to_owned()));
+        assert_eq!(feature_profile, WarehouseFeatureProfileArg::Schema);
         assert_eq!(filter, WarehouseTextFilterArg::LexicalOnly);
         assert_eq!(limit, 15);
         assert!(json);

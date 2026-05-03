@@ -13,6 +13,7 @@ pub(crate) enum WarehouseTable {
     NwayRegions,
     NwayRegionAnalyzers,
     NwayFeatureDiffs,
+    FeaturePatternCounts,
     Errors,
 }
 
@@ -27,6 +28,7 @@ impl WarehouseTable {
         Self::NwayRegions,
         Self::NwayRegionAnalyzers,
         Self::NwayFeatureDiffs,
+        Self::FeaturePatternCounts,
         Self::Errors,
     ];
 
@@ -38,6 +40,7 @@ impl WarehouseTable {
         Self::NwayRegions,
         Self::NwayRegionAnalyzers,
         Self::NwayFeatureDiffs,
+        Self::FeaturePatternCounts,
         Self::Errors,
     ];
 
@@ -52,6 +55,7 @@ impl WarehouseTable {
             Self::NwayRegions => "nway_regions.parquet",
             Self::NwayRegionAnalyzers => "nway_region_analyzers.parquet",
             Self::NwayFeatureDiffs => "nway_feature_diffs.parquet",
+            Self::FeaturePatternCounts => "feature_pattern_counts.parquet",
             Self::Errors => "errors.parquet",
         }
     }
@@ -143,6 +147,19 @@ impl WarehouseTable {
                 "scope_surface",
                 "feature_value",
                 "analyzer_id",
+            ],
+            Self::FeaturePatternCounts => &[
+                "kind",
+                "feature_profile",
+                "feature_key",
+                "is_nonempty_whitespace",
+                "pattern",
+                "examples",
+                "source_count",
+                "text_count",
+                "sample_source_ids",
+                "sample_text_ids",
+                "script_categories",
             ],
             Self::Errors => &[
                 "run_id",
@@ -301,6 +318,21 @@ pub(crate) struct NwayFeatureDiffRow {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct FeaturePatternCountRow {
+    pub(crate) kind: String,
+    pub(crate) feature_profile: String,
+    pub(crate) feature_key: String,
+    pub(crate) is_nonempty_whitespace: bool,
+    pub(crate) pattern: String,
+    pub(crate) examples: u64,
+    pub(crate) source_count: u64,
+    pub(crate) text_count: u64,
+    pub(crate) sample_source_ids: String,
+    pub(crate) sample_text_ids: String,
+    pub(crate) script_categories: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct ErrorRow {
     pub(crate) run_id: String,
     pub(crate) source_id: Option<String>,
@@ -339,7 +371,7 @@ mod tests {
             .map(|table| table.file_name())
             .collect();
 
-        assert_eq!(names.len(), 10);
+        assert_eq!(names.len(), 11);
         assert!(names.iter().all(|name| name.ends_with(".parquet")));
         assert!(names.contains(&"nway_region_analyzers.parquet"));
         assert!(!names.contains(&"nway_segmentation_groups.parquet"));

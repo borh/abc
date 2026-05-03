@@ -12,9 +12,9 @@ use parquet::basic::{Compression, ZstdLevel};
 use parquet::file::properties::WriterProperties;
 
 use super::schema::{
-    AnalysisRow, ErrorRow, MorphemeFeatureRow, MorphemeRow, NwayFeatureDiffRow,
-    NwayRegionAnalyzerRow, NwayRegionRow, RunAnalyzerRow, RunRow, SourceRow, WarehousePaths,
-    WarehouseTable,
+    AnalysisRow, ErrorRow, FeaturePatternCountRow, MorphemeFeatureRow, MorphemeRow,
+    NwayFeatureDiffRow, NwayRegionAnalyzerRow, NwayRegionRow, RunAnalyzerRow, RunRow, SourceRow,
+    WarehousePaths, WarehouseTable,
 };
 
 const WAREHOUSE_MAX_ROW_GROUP_SIZE: usize = 50_000;
@@ -30,10 +30,12 @@ pub(crate) struct WarehouseWriter {
     nway_regions: Option<ArrowWriter<File>>,
     nway_region_analyzers: Option<ArrowWriter<File>>,
     nway_feature_diffs: Option<ArrowWriter<File>>,
+    feature_pattern_counts: Option<ArrowWriter<File>>,
     errors: Option<ArrowWriter<File>>,
 }
 
 impl WarehouseWriter {
+    #[allow(dead_code)]
     pub(crate) fn create(paths: WarehousePaths) -> Result<Self> {
         Self::create_for_tables(paths, WarehouseTable::ALL)
     }
@@ -104,6 +106,12 @@ impl WarehouseWriter {
                 WarehouseTable::NwayFeatureDiffs,
                 nway_feature_diffs_schema(),
             )?,
+            feature_pattern_counts: open_optional_table_writer(
+                &paths,
+                tables,
+                WarehouseTable::FeaturePatternCounts,
+                feature_pattern_counts_schema(),
+            )?,
             errors: open_optional_table_writer(
                 &paths,
                 tables,
@@ -112,6 +120,22 @@ impl WarehouseWriter {
             )?,
             paths,
         })
+    }
+
+    pub(crate) fn writes_table(&self, table: WarehouseTable) -> bool {
+        match table {
+            WarehouseTable::Runs => self.runs.is_some(),
+            WarehouseTable::RunAnalyzers => self.run_analyzers.is_some(),
+            WarehouseTable::Sources => self.sources.is_some(),
+            WarehouseTable::Analyses => self.analyses.is_some(),
+            WarehouseTable::Morphemes => self.morphemes.is_some(),
+            WarehouseTable::MorphemeFeatures => self.morpheme_features.is_some(),
+            WarehouseTable::NwayRegions => self.nway_regions.is_some(),
+            WarehouseTable::NwayRegionAnalyzers => self.nway_region_analyzers.is_some(),
+            WarehouseTable::NwayFeatureDiffs => self.nway_feature_diffs.is_some(),
+            WarehouseTable::FeaturePatternCounts => self.feature_pattern_counts.is_some(),
+            WarehouseTable::Errors => self.errors.is_some(),
+        }
     }
 
     pub(crate) fn append_runs(&mut self, rows: &[RunRow]) -> Result<()> {
@@ -214,10 +238,11 @@ impl WarehouseWriter {
         if rows.is_empty() {
             return Ok(());
         }
+        let Some(writer) = self.morpheme_features.as_mut() else {
+            return Ok(());
+        };
         write_batch(
-            self.morpheme_features
-                .as_mut()
-                .expect("morpheme_features writer open"),
+            writer,
             morpheme_features_schema(),
             vec![
                 string_array(rows.iter().map(|row| row.run_id.as_str())),
@@ -288,10 +313,11 @@ impl WarehouseWriter {
         if rows.is_empty() {
             return Ok(());
         }
+        let Some(writer) = self.nway_feature_diffs.as_mut() else {
+            return Ok(());
+        };
         write_batch(
-            self.nway_feature_diffs
-                .as_mut()
-                .expect("nway_feature_diffs writer open"),
+            writer,
             nway_feature_diffs_schema(),
             vec![
                 string_array(rows.iter().map(|row| row.run_id.as_str())),
@@ -304,6 +330,35 @@ impl WarehouseWriter {
                 nullable_string_array(rows.iter().map(|row| row.scope_surface.as_deref())),
                 nullable_string_array(rows.iter().map(|row| row.feature_value.as_deref())),
                 string_array(rows.iter().map(|row| row.analyzer_id.as_str())),
+            ],
+        )
+    }
+
+    pub(crate) fn append_feature_pattern_counts(
+        &mut self,
+        rows: &[FeaturePatternCountRow],
+    ) -> Result<()> {
+        if rows.is_empty() {
+            return Ok(());
+        }
+        let Some(writer) = self.feature_pattern_counts.as_mut() else {
+            return Ok(());
+        };
+        write_batch(
+            writer,
+            feature_pattern_counts_schema(),
+            vec![
+                string_array(rows.iter().map(|row| row.kind.as_str())),
+                string_array(rows.iter().map(|row| row.feature_profile.as_str())),
+                string_array(rows.iter().map(|row| row.feature_key.as_str())),
+                bool_array(rows.iter().map(|row| row.is_nonempty_whitespace)),
+                string_array(rows.iter().map(|row| row.pattern.as_str())),
+                u64_array(rows.iter().map(|row| row.examples)),
+                u64_array(rows.iter().map(|row| row.source_count)),
+                u64_array(rows.iter().map(|row| row.text_count)),
+                string_array(rows.iter().map(|row| row.sample_source_ids.as_str())),
+                string_array(rows.iter().map(|row| row.sample_text_ids.as_str())),
+                string_array(rows.iter().map(|row| row.script_categories.as_str())),
             ],
         )
     }
@@ -379,6 +434,11 @@ impl WarehouseWriter {
                 .as_mut()
                 .expect("nway_feature_diffs writer open")
                 .write(&batch)?,
+            WarehouseTable::FeaturePatternCounts => self
+                .feature_pattern_counts
+                .as_mut()
+                .expect("feature_pattern_counts writer open")
+                .write(&batch)?,
             WarehouseTable::Errors => self
                 .errors
                 .as_mut()
@@ -398,6 +458,7 @@ impl WarehouseWriter {
         close_writer(self.nway_regions.take())?;
         close_writer(self.nway_region_analyzers.take())?;
         close_writer(self.nway_feature_diffs.take())?;
+        close_writer(self.feature_pattern_counts.take())?;
         close_writer(self.errors.take())?;
         crate::warehouse::sql::write_run_views_sql(&self.paths.staging_dir, &self.paths.final_dir)?;
         finalize_staging_run(&self.paths)
@@ -776,6 +837,22 @@ fn nway_feature_diffs_schema() -> Arc<Schema> {
         utf8("scope_surface", true),
         utf8("feature_value", true),
         utf8("analyzer_id", false),
+    ])
+}
+
+fn feature_pattern_counts_schema() -> Arc<Schema> {
+    schema(vec![
+        utf8("kind", false),
+        utf8("feature_profile", false),
+        utf8("feature_key", false),
+        bool_field("is_nonempty_whitespace"),
+        utf8("pattern", false),
+        u64_field("examples", false),
+        u64_field("source_count", false),
+        u64_field("text_count", false),
+        utf8("sample_source_ids", false),
+        utf8("sample_text_ids", false),
+        utf8("script_categories", false),
     ])
 }
 

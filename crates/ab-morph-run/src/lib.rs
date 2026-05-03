@@ -6,7 +6,7 @@ mod select;
 mod summary;
 mod warehouse;
 
-use std::collections::{BTreeSet, HashMap, VecDeque};
+use std::collections::{BTreeMap, BTreeSet, HashMap, VecDeque};
 use std::fs::{self, File, OpenOptions};
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -23,13 +23,15 @@ use output::{open_output_writer, read_jsonl_or_zst_to_string};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use warehouse::schema::{
-    ErrorRow as WarehouseErrorRow, RunAnalyzerRow, RunRow, WarehousePaths, WarehouseTable,
+    ErrorRow as WarehouseErrorRow, FeaturePatternCountRow, NwayFeatureDiffRow, NwayRegionRow,
+    RunAnalyzerRow, RunRow, WarehousePaths, WarehouseTable,
 };
 use warehouse::writer::{WarehouseWriter, parquet_table_row_count, stage_parquet_table_part};
 
 const LARGE_INPUT_THRESHOLD_BYTES: u64 = 5 * 1024 * 1024;
 const WAREHOUSE_MORPHEME_ROW_BATCH_SIZE: usize = 50_000;
 const WAREHOUSE_REGULAR_BATCH_SIZE: usize = 32;
+const WAREHOUSE_CORE_FEATURE_KEYS: &[&str] = &["pos1", "pos2", "pos3", "pos4"];
 
 pub use nway::{NwayFeatureScopeRow, NwayFeatureValueGroupRow, NwaySegmentationGroupRow};
 pub use script::ScriptCategory;
@@ -41,14 +43,16 @@ pub use summary::{
     CompactSummarySort, NwayPatternKind, NwayPatternOptions, NwayPatternRow, NwaySummaryOptions,
     NwaySummaryRow, NwaySummarySort, SummaryExclusions, WarehouseErrorGroupBy,
     WarehouseErrorSummaryOptions, WarehouseErrorSummaryRow, WarehouseFeatureDiffExampleRow,
-    WarehousePairwiseSort, WarehousePairwiseSummaryOptions, WarehousePairwiseSummaryRow,
-    WarehousePatternExampleOptions, WarehousePatternOptions, WarehouseRegionAnalyzerExampleRow,
-    WarehouseRegionExampleRow, WarehouseRegionKind, WarehouseRegionOptions, WarehouseTextFilter,
+    WarehouseFeatureProfile, WarehousePairwiseSort, WarehousePairwiseSummaryOptions,
+    WarehousePairwiseSummaryRow, WarehousePatternExampleOptions, WarehousePatternOptions,
+    WarehouseRegionAnalyzerExampleRow, WarehouseRegionExampleRow, WarehouseRegionKind,
+    WarehouseRegionOptions, WarehouseTextFilter, materialize_warehouse_core_feature_pattern_counts,
     summarize_compact_comparisons, summarize_compact_differences, summarize_compact_examples,
     summarize_nway, summarize_nway_pattern_counts, summarize_nway_patterns,
     summarize_warehouse_errors, summarize_warehouse_nway, summarize_warehouse_nway_patterns,
     summarize_warehouse_pairwise, summarize_warehouse_pattern_examples,
     summarize_warehouse_regions, write_warehouse_nway_patterns_duckdb_tsv,
+    write_warehouse_pattern_examples_duckdb_tsv, write_warehouse_regions_duckdb_tsv,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum, Serialize, Deserialize)]
@@ -56,6 +60,51 @@ pub use summary::{
 pub enum OutputProfile {
     Full,
     Compact,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum WarehouseProfile {
+    Full,
+    Triage,
+}
+
+const WAREHOUSE_TRIAGE_TABLES: &[WarehouseTable] = &[
+    WarehouseTable::Runs,
+    WarehouseTable::RunAnalyzers,
+    WarehouseTable::Sources,
+    WarehouseTable::Analyses,
+    WarehouseTable::Morphemes,
+    WarehouseTable::NwayRegions,
+    WarehouseTable::NwayRegionAnalyzers,
+    WarehouseTable::FeaturePatternCounts,
+    WarehouseTable::Errors,
+];
+
+const WAREHOUSE_TRIAGE_MERGED_DATA_TABLES: &[WarehouseTable] = &[
+    WarehouseTable::Sources,
+    WarehouseTable::Analyses,
+    WarehouseTable::Morphemes,
+    WarehouseTable::NwayRegions,
+    WarehouseTable::NwayRegionAnalyzers,
+    WarehouseTable::FeaturePatternCounts,
+    WarehouseTable::Errors,
+];
+
+impl WarehouseProfile {
+    fn tables(self) -> &'static [WarehouseTable] {
+        match self {
+            Self::Full => WarehouseTable::ALL,
+            Self::Triage => WAREHOUSE_TRIAGE_TABLES,
+        }
+    }
+
+    fn merged_data_tables(self) -> &'static [WarehouseTable] {
+        match self {
+            Self::Full => WarehouseTable::MERGED_DATA,
+            Self::Triage => WAREHOUSE_TRIAGE_MERGED_DATA_TABLES,
+        }
+    }
 }
 
 impl OutputProfile {
@@ -164,6 +213,7 @@ pub fn run_analyze_aat_warehouse(
     warehouse_dir: &Path,
     run_id: &str,
     jobs: usize,
+    warehouse_profile: WarehouseProfile,
 ) -> Result<()> {
     if jobs == 0 {
         bail!("--jobs must be greater than zero");
@@ -205,6 +255,7 @@ pub fn run_analyze_aat_warehouse(
                     input_mode,
                     input_path,
                     analyzer_rows,
+                    warehouse_profile,
                 }),
                 progress: Some(SerialProgress {
                     label: format!("warehouse:{run_id}"),
@@ -223,6 +274,7 @@ pub fn run_analyze_aat_warehouse(
                 input_mode,
                 input_path,
                 analyzer_rows,
+                warehouse_profile,
             },
         )?;
     }
@@ -403,6 +455,7 @@ struct WarehouseRunOptions {
     input_mode: &'static str,
     input_path: String,
     analyzer_rows: Vec<RunAnalyzerRow>,
+    warehouse_profile: WarehouseProfile,
 }
 
 struct WarehouseParallelOptions {
@@ -412,6 +465,7 @@ struct WarehouseParallelOptions {
     input_mode: &'static str,
     input_path: String,
     analyzer_rows: Vec<RunAnalyzerRow>,
+    warehouse_profile: WarehouseProfile,
 }
 
 fn run_analyze_aat_serial(
@@ -467,7 +521,10 @@ fn run_analyze_aat_serial(
         None
     };
     let mut warehouse_writer = if let Some(warehouse) = &options.warehouse {
-        let mut writer = WarehouseWriter::create(warehouse.paths.clone())?;
+        let mut writer = WarehouseWriter::create_for_tables(
+            warehouse.paths.clone(),
+            warehouse.warehouse_profile.tables(),
+        )?;
         writer.append_run_analyzers(&warehouse.analyzer_rows)?;
         Some(writer)
     } else {
@@ -656,13 +713,15 @@ fn run_analyze_aat_serial(
                         start..end,
                     );
                     writer.append_morphemes(&morphemes)?;
-                    let features = warehouse::rows::morpheme_feature_rows_for_range(
-                        run_id,
-                        &source_id,
-                        analysis,
-                        start..end,
-                    );
-                    writer.append_morpheme_features(&features)?;
+                    if writer.writes_table(WarehouseTable::MorphemeFeatures) {
+                        let features = warehouse::rows::morpheme_feature_rows_for_range(
+                            run_id,
+                            &source_id,
+                            analysis,
+                            start..end,
+                        );
+                        writer.append_morpheme_features(&features)?;
+                    }
                 }
             }
             match append_warehouse_nway_fact_rows(
@@ -859,6 +918,7 @@ fn run_analyze_aat_warehouse_parallel(
                                 input_mode,
                                 input_path: input_path.clone(),
                                 analyzer_rows: analyzer_rows.clone(),
+                                warehouse_profile: options.warehouse_profile,
                             }),
                             progress: Some(SerialProgress {
                                 label: format!("warehouse-worker-{job_index}/shard-{shard_index}"),
@@ -1037,7 +1097,7 @@ fn merge_warehouse_shard_runs(
         &[WarehouseTable::Runs, WarehouseTable::RunAnalyzers],
     )?;
     writer.append_run_analyzers(&options.analyzer_rows)?;
-    for table in WarehouseTable::MERGED_DATA {
+    for table in options.warehouse_profile.merged_data_tables() {
         for (shard_index, run_dir) in shard_run_dirs.iter().enumerate() {
             stage_parquet_table_part(
                 &paths.staging_dir,
@@ -1588,6 +1648,7 @@ fn append_warehouse_nway_fact_rows(
     source_text: &str,
     analyses: &[Analysis],
 ) -> Result<()> {
+    let mut feature_pattern_counts = WarehouseFeaturePatternAccumulator::default();
     warehouse::rows::visit_nway_fact_row_batches(
         run_id,
         source_id,
@@ -1595,12 +1656,179 @@ fn append_warehouse_nway_fact_rows(
         analyses,
         10_000,
         |facts| {
+            feature_pattern_counts.record(&facts.regions, &facts.feature_diffs);
             writer.append_nway_regions(&facts.regions)?;
             writer.append_nway_region_analyzers(&facts.region_analyzers)?;
             writer.append_nway_feature_diffs(&facts.feature_diffs)?;
             Ok(())
         },
-    )
+    )?;
+    writer.append_feature_pattern_counts(&feature_pattern_counts.into_rows())?;
+    Ok(())
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+struct WarehouseFeaturePatternKey {
+    feature_key: String,
+    is_nonempty_whitespace: bool,
+    pattern: String,
+}
+
+#[derive(Debug, Default)]
+struct WarehouseFeaturePatternAccumulator {
+    patterns: BTreeMap<WarehouseFeaturePatternKey, WarehouseFeaturePatternEntry>,
+}
+
+#[derive(Debug, Default)]
+struct WarehouseFeaturePatternEntry {
+    examples: u64,
+    source_ids: BTreeSet<String>,
+    text_ids: BTreeSet<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+struct WarehouseFeatureGroupKey {
+    source_id: String,
+    text_id: String,
+    region_index: u64,
+    feature_key: String,
+    scope_type: String,
+    scope_position: Option<u64>,
+    scope_surface: Option<String>,
+}
+
+impl WarehouseFeaturePatternAccumulator {
+    fn record(&mut self, regions: &[NwayRegionRow], feature_diffs: &[NwayFeatureDiffRow]) {
+        let region_whitespace = regions
+            .iter()
+            .map(|region| {
+                (
+                    (
+                        region.source_id.as_str(),
+                        region.text_id.as_str(),
+                        region.region_index,
+                    ),
+                    region.is_nonempty_whitespace,
+                )
+            })
+            .collect::<BTreeMap<_, _>>();
+        let mut groups = BTreeMap::<WarehouseFeatureGroupKey, Vec<&NwayFeatureDiffRow>>::new();
+        for diff in feature_diffs {
+            if !WAREHOUSE_CORE_FEATURE_KEYS.contains(&diff.feature_key.as_str()) {
+                continue;
+            }
+            groups
+                .entry(WarehouseFeatureGroupKey {
+                    source_id: diff.source_id.clone(),
+                    text_id: diff.text_id.clone(),
+                    region_index: diff.region_index,
+                    feature_key: diff.feature_key.clone(),
+                    scope_type: diff.scope_type.clone(),
+                    scope_position: diff.scope_position,
+                    scope_surface: diff.scope_surface.clone(),
+                })
+                .or_default()
+                .push(diff);
+        }
+        for (group, facts) in groups {
+            let Some(is_nonempty_whitespace) = region_whitespace
+                .get(&(
+                    group.source_id.as_str(),
+                    group.text_id.as_str(),
+                    group.region_index,
+                ))
+                .copied()
+            else {
+                continue;
+            };
+            let Some(pattern) = warehouse_feature_pattern_from_rows(&group, &facts) else {
+                continue;
+            };
+            let entry = self
+                .patterns
+                .entry(WarehouseFeaturePatternKey {
+                    feature_key: group.feature_key,
+                    is_nonempty_whitespace,
+                    pattern,
+                })
+                .or_default();
+            entry.examples += 1;
+            entry.source_ids.insert(group.source_id);
+            entry.text_ids.insert(group.text_id);
+        }
+    }
+
+    fn into_rows(self) -> Vec<FeaturePatternCountRow> {
+        self.patterns
+            .into_iter()
+            .map(|(key, entry)| FeaturePatternCountRow {
+                kind: "feature".to_owned(),
+                feature_profile: "core".to_owned(),
+                feature_key: key.feature_key,
+                is_nonempty_whitespace: key.is_nonempty_whitespace,
+                pattern: key.pattern,
+                examples: entry.examples,
+                source_count: entry.source_ids.len() as u64,
+                text_count: entry.text_ids.len() as u64,
+                sample_source_ids: warehouse_sample_ids(&entry.source_ids),
+                sample_text_ids: warehouse_sample_ids(&entry.text_ids),
+                script_categories: String::new(),
+            })
+            .collect()
+    }
+}
+
+fn warehouse_feature_pattern_from_rows(
+    group: &WarehouseFeatureGroupKey,
+    facts: &[&NwayFeatureDiffRow],
+) -> Option<String> {
+    let mut by_value = BTreeMap::<Option<String>, Vec<String>>::new();
+    for fact in facts {
+        by_value
+            .entry(fact.feature_value.clone())
+            .or_default()
+            .push(fact.analyzer_id.clone());
+    }
+    if by_value.len() <= 1 {
+        return None;
+    }
+    let values = by_value
+        .into_iter()
+        .map(|(value, mut analyzers)| {
+            analyzers.sort();
+            format!("{}=>{}", value.unwrap_or_default(), analyzers.join("+"))
+        })
+        .collect::<Vec<_>>()
+        .join(" ; ");
+    Some(format!(
+        "{} {} {}",
+        group.feature_key,
+        warehouse_feature_scope_label(group),
+        values
+    ))
+}
+
+fn warehouse_feature_scope_label(group: &WarehouseFeatureGroupKey) -> String {
+    match group.scope_type.as_str() {
+        "whole_region" => "whole_region".to_owned(),
+        "token_position" => format!(
+            "token_position:{}",
+            group.scope_position.unwrap_or_default()
+        ),
+        "surface" => format!(
+            "surface:{}",
+            group.scope_surface.as_deref().unwrap_or_default()
+        ),
+        other => other.to_owned(),
+    }
+}
+
+fn warehouse_sample_ids(ids: &BTreeSet<String>) -> String {
+    let mut sample = ids.iter().take(5).cloned().collect::<Vec<_>>().join(",");
+    if ids.len() > 5 {
+        sample.push_str(&format!(",...+{}", ids.len() - 5));
+    }
+    sample
 }
 
 fn read_aat_value(path: &Path) -> Result<Value> {
@@ -2363,6 +2591,7 @@ mod tests {
             &warehouse_dir,
             "run-a",
             1,
+            WarehouseProfile::Full,
         )
         .unwrap();
 
@@ -2379,6 +2608,60 @@ mod tests {
         if staging.exists() {
             assert!(fs::read_dir(&staging).unwrap().next().is_none());
         }
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn warehouse_triage_profile_omits_raw_feature_tables() {
+        let dir = temp_dir("warehouse-triage-profile");
+        let aat_dir = dir.join("aats");
+        let warehouse_dir = dir.join("warehouse");
+        fs::create_dir_all(&aat_dir).unwrap();
+        fs::write(
+            aat_dir.join("source-a.json"),
+            tiny_aat("work-a").replace("吾輩は猫である。", "今日"),
+        )
+        .unwrap();
+
+        run_analyze_aat_warehouse(
+            None,
+            Some(&aat_dir),
+            &["test:single".to_owned(), "test:split".to_owned()],
+            &warehouse_dir,
+            "run-a",
+            1,
+            WarehouseProfile::Triage,
+        )
+        .unwrap();
+
+        let run_dir = warehouse_dir.join("runs").join("run-a");
+        assert!(run_dir.join("runs.parquet").is_file());
+        assert!(run_dir.join("sources.parquet").is_file());
+        assert!(run_dir.join("morphemes.parquet").is_file());
+        assert!(run_dir.join("nway_regions.parquet").is_file());
+        assert!(run_dir.join("nway_region_analyzers.parquet").is_file());
+        assert!(run_dir.join("feature_pattern_counts.parquet").is_file());
+        assert!(!run_dir.join("morpheme_features.parquet").exists());
+        assert!(!run_dir.join("nway_feature_diffs.parquet").exists());
+        let views_sql = fs::read_to_string(run_dir.join("views.sql")).unwrap();
+        assert!(!views_sql.contains("warehouse_nway_feature_diffs"));
+        assert!(!views_sql.contains("top_feature_differences"));
+
+        let rows = summarize_warehouse_nway_patterns(
+            &run_dir,
+            WarehousePatternOptions {
+                kind: NwayPatternKind::Feature,
+                feature_key: Some("pos1".to_owned()),
+                feature_profile: WarehouseFeatureProfile::Core,
+                text_filter: WarehouseTextFilter::LexicalOnly,
+                excluded_feature_values: BTreeSet::new(),
+                exclusions: SummaryExclusions::default(),
+                limit: 10,
+            },
+        )
+        .unwrap();
+        assert!(rows.is_empty());
 
         let _ = fs::remove_dir_all(dir);
     }
@@ -2407,6 +2690,7 @@ mod tests {
             &warehouse_dir,
             "run-a",
             2,
+            WarehouseProfile::Full,
         )
         .unwrap();
 

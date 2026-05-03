@@ -172,12 +172,13 @@ fn batch_mode_can_persist_mutated_aat_output() {
         &adapter,
     );
     let corpus = temp.path().join("corpus");
-    fs::create_dir(&corpus).unwrap();
-    fs::write(corpus.join("1_ruby_1.txt"), "吾輩《わがはい》は猫である。").unwrap();
+    let files = corpus.join("cards/000001/files");
+    fs::create_dir_all(&files).unwrap();
+    fs::write(files.join("1_ruby_1.txt"), "吾輩《わがはい》は猫である。").unwrap();
     let index = temp.path().join("index.json");
     fs::write(
         &index,
-        r#"{"works":[{"id":"000001_1","txt_path":"1_ruby_1.txt","features":["ruby"]}]}"#,
+        r#"{"works":[{"id":"000001_1","txt_path":"cards/000001/files/1_ruby_1.txt","features":["ruby"]}]}"#,
     )
     .unwrap();
     let reports = temp.path().join("reports");
@@ -212,6 +213,96 @@ fn batch_mode_can_persist_mutated_aat_output() {
         persisted_aat["meta"]["adapter_version"],
         "test-adapter 0.0.1 test"
     );
+}
+
+#[test]
+fn batch_mode_does_not_emit_aat_for_aozora_tools_reference_text() {
+    let manifest = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let temp = tempfile::tempdir().unwrap();
+    let adapter = temp.path().join("test-adapter");
+    write_portable_test_adapter(
+        &manifest.join("../../adapters/test-adapter/test-adapter"),
+        &adapter,
+    );
+    let corpus = temp.path().join("corpus");
+    let tools = corpus.join("tools");
+    fs::create_dir_all(&tools).unwrap();
+    fs::write(tools.join("JISTABLE.TXT"), "JIS漢字コード表 (JIS X 0208)").unwrap();
+    let index = temp.path().join("index.json");
+    fs::write(
+        &index,
+        r#"{"works":[{"id":"JISTABLE","txt_path":"tools/JISTABLE.TXT","features":["jis_code"]}]}"#,
+    )
+    .unwrap();
+    let reports = temp.path().join("reports");
+    let aat_output = temp.path().join("aat");
+
+    let check = Command::new(env!("CARGO_BIN_EXE_ab-check"))
+        .arg("--index")
+        .arg(&index)
+        .arg("--corpus")
+        .arg(&corpus)
+        .arg("--adapter")
+        .arg(&adapter)
+        .arg("--output")
+        .arg(&reports)
+        .arg("--aat-output")
+        .arg(&aat_output)
+        .output()
+        .unwrap();
+    assert!(
+        check.status.success(),
+        "{}",
+        String::from_utf8_lossy(&check.stderr)
+    );
+
+    assert!(!reports.join("test-adapter").exists());
+    assert!(!aat_output.join("test-adapter").exists());
+}
+
+#[test]
+fn batch_mode_does_not_emit_aat_for_non_card_reference_text() {
+    let manifest = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let temp = tempfile::tempdir().unwrap();
+    let adapter = temp.path().join("test-adapter");
+    write_portable_test_adapter(
+        &manifest.join("../../adapters/test-adapter/test-adapter"),
+        &adapter,
+    );
+    let corpus = temp.path().join("corpus");
+    let reference = corpus.join("reference");
+    fs::create_dir_all(&reference).unwrap();
+    fs::write(reference.join("ruby_reference.txt"), "基準《きじゅん》資料").unwrap();
+    let index = temp.path().join("index.json");
+    fs::write(
+        &index,
+        r#"{"works":[{"id":"ruby_reference","txt_path":"reference/ruby_reference.txt","features":["ruby"]}]}"#,
+    )
+    .unwrap();
+    let reports = temp.path().join("reports");
+    let aat_output = temp.path().join("aat");
+
+    let check = Command::new(env!("CARGO_BIN_EXE_ab-check"))
+        .arg("--index")
+        .arg(&index)
+        .arg("--corpus")
+        .arg(&corpus)
+        .arg("--adapter")
+        .arg(&adapter)
+        .arg("--output")
+        .arg(&reports)
+        .arg("--aat-output")
+        .arg(&aat_output)
+        .output()
+        .unwrap();
+    assert!(
+        check.status.success(),
+        "{}",
+        String::from_utf8_lossy(&check.stderr)
+    );
+
+    assert!(!reports.join("test-adapter").exists());
+    assert!(!aat_output.join("test-adapter").exists());
 }
 
 fn write_portable_test_adapter(source: &Path, destination: &Path) {

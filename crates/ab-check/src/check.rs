@@ -208,6 +208,7 @@ pub fn run_batch(options: BatchOptions<'_>) -> Result<()> {
     let works = index
         .works
         .into_iter()
+        .filter(|work| is_aozora_markup_corpus_source(&work.txt_path))
         .filter(|work| {
             if explicit_ids.is_none() && options.features.is_empty() {
                 return true;
@@ -405,6 +406,17 @@ fn read_indexed_source_bytes(corpus_root: &Path, indexed_path: &str) -> Result<V
     }
     let path = corpus_root.join(indexed_path);
     fs::read(&path).with_context(|| format!("failed to read {}", path.display()))
+}
+
+fn is_aozora_markup_corpus_source(indexed_path: &str) -> bool {
+    let source_path = indexed_path
+        .split_once("::")
+        .map_or(indexed_path, |(archive, _)| archive);
+    let parts = source_path.split('/').collect::<Vec<_>>();
+    parts.len() >= 4
+        && parts[0].eq_ignore_ascii_case("cards")
+        && !parts[1].is_empty()
+        && parts[2].eq_ignore_ascii_case("files")
 }
 
 fn read_zip_entry_bytes(archive: &Path, entry_name: &str) -> Result<Vec<u8>> {

@@ -122,6 +122,63 @@ fn indexes_misnamed_zip_with_txt_extension() {
 }
 
 #[test]
+fn excludes_aozora_tools_reference_text_from_work_index() {
+    let root = std::env::temp_dir().join(format!("ab-index-tools-{}", std::process::id()));
+    let tools = root.join("tools");
+    fs::create_dir_all(&tools).unwrap();
+    write_zip_text(
+        &tools.join("JISTABLE.zip"),
+        "JISTABLE.TXT",
+        "JIS漢字コード表 (JIS X 0208)\n1-1\tj-2121\n",
+    );
+    fs::write(tools.join("tools.html"), "<html>tools</html>").unwrap();
+
+    let patterns = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../data/feature-patterns.toml")
+        .canonicalize()
+        .unwrap();
+    let detector = FeatureDetector::from_toml(&patterns).unwrap();
+    let index = build_index(&root, &detector).unwrap();
+
+    assert_eq!(index.works_count, 0);
+    assert!(index.works.is_empty());
+    assert!(!index.by_feature.contains_key("jis_code"));
+
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
+fn excludes_text_sources_outside_aozora_cards_files_tree() {
+    let root = std::env::temp_dir().join(format!("ab-index-nonwork-{}", std::process::id()));
+    let files = root.join("cards/000148/files");
+    fs::create_dir_all(&files).unwrap();
+    write_zip_text(
+        &files.join("799_ruby_19091.zip"),
+        "799_ruby_19091.txt",
+        "吾輩《わがはい》は猫である。",
+    );
+    let reference = root.join("reference");
+    fs::create_dir_all(&reference).unwrap();
+    fs::write(reference.join("ruby_reference.txt"), "基準《きじゅん》資料").unwrap();
+
+    let patterns = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../data/feature-patterns.toml")
+        .canonicalize()
+        .unwrap();
+    let detector = FeatureDetector::from_toml(&patterns).unwrap();
+    let index = build_index(&root, &detector).unwrap();
+
+    assert_eq!(index.works_count, 1);
+    assert_eq!(
+        index.works[0].txt_path,
+        "cards/000148/files/799_ruby_19091.zip::799_ruby_19091.txt"
+    );
+    assert_eq!(query_any(&index, &["ruby".to_owned()]), vec!["000148_799"]);
+
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn skips_unreadable_zip_artifacts() {
     let root = std::env::temp_dir().join(format!("ab-index-bad-zip-{}", std::process::id()));
     let files = root.join("cards/000148/files");

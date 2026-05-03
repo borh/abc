@@ -14,7 +14,7 @@ from typing import Any
 from lxml import etree
 
 ADAPTER_NAME = "aozora2html"
-ADAPTER_VERSION = "aozora2html-adapter 0.1.0 9ca5395"
+ADAPTER_VERSION = "aozora2html-adapter 0.1.0 gem-3.0.1"
 
 XHTML_NS = "http://www.w3.org/1999/xhtml"
 NS = {"x": XHTML_NS}
@@ -227,6 +227,8 @@ def map_ruby(
         "base": base_str,
         "reading": reading,
     }
+    if has_gaiji_base:
+        aat_node["base_content"] = base_inline
     if placement == "left":
         aat_node["direction"] = "left"
     else:

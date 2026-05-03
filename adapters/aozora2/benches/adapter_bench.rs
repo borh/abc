@@ -9,7 +9,8 @@ fn bench_adapter_aat(c: &mut Criterion) {
 }
 
 fn large_aozora_text() -> String {
-    let mut text = String::from("タイトル\n著者\n--------------------\n凡例\n--------------------\n");
+    let mut text =
+        String::from("タイトル\n著者\n--------------------\n凡例\n--------------------\n");
     for idx in 0..20_000 {
         text.push_str(&format!(
             "吾輩《わがはい》は※［＃「口＋世」、U+546D］である。第{idx}行。\n"

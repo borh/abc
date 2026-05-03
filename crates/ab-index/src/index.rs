@@ -164,6 +164,9 @@ fn collect_source_files(corpus_root: &Path) -> Result<Vec<SourceFile>> {
             continue;
         }
         let path = entry.path();
+        if !is_aozora_work_source_path(path, corpus_root) {
+            continue;
+        }
         if is_text_file(path) {
             if is_zip_file(path)? {
                 push_zip_sources(&mut sources, path);
@@ -203,6 +206,20 @@ fn push_zip_sources(sources: &mut Vec<SourceFile>, path: &Path) {
 fn is_hidden(path: &Path) -> bool {
     path.file_name()
         .is_some_and(|name| name.to_string_lossy().starts_with('.'))
+}
+
+fn is_aozora_work_source_path(path: &Path, corpus_root: &Path) -> bool {
+    let Ok(relative) = path.strip_prefix(corpus_root) else {
+        return false;
+    };
+    let parts = relative
+        .components()
+        .map(|component| component.as_os_str().to_string_lossy())
+        .collect::<Vec<_>>();
+    parts.len() >= 4
+        && parts[0].eq_ignore_ascii_case("cards")
+        && !parts[1].is_empty()
+        && parts[2].eq_ignore_ascii_case("files")
 }
 
 fn scan_work(
@@ -460,5 +477,26 @@ mod tests {
         let one = corpus_hash([("cards/1/files/a.txt", 3, "abc")]);
         let two = corpus_hash([("cards/1/files/a.txt", 3, "abc")]);
         assert_eq!(one, two);
+    }
+
+    #[test]
+    fn identifies_aozora_work_source_paths() {
+        let root = Path::new("/corpus");
+        assert!(is_aozora_work_source_path(
+            Path::new("/corpus/cards/000001/files/1.txt"),
+            root
+        ));
+        assert!(is_aozora_work_source_path(
+            Path::new("/corpus/cards/000001/files/1_ruby/1.txt"),
+            root
+        ));
+        assert!(!is_aozora_work_source_path(
+            Path::new("/corpus/tools/JISTABLE.zip"),
+            root
+        ));
+        assert!(!is_aozora_work_source_path(
+            Path::new("/corpus/reference/ruby_reference.txt"),
+            root
+        ));
     }
 }

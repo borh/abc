@@ -1,6 +1,7 @@
 # /// script
 # requires-python = ">=3.13"
 # dependencies = [
+#     "duckdb>=1.1",
 #     "marimo==0.23.4",
 #     "polars>=1.0",
 # ]
@@ -18,69 +19,147 @@ def _():
     import os
     from pathlib import Path
 
+    import duckdb
     import marimo as mo
     import polars as pl
 
-    return Path, json, mo, os, pl
+    return Path, duckdb, json, mo, os, pl
 
 
 @app.cell
 def _(Path, os):
-    default_report = Path("reports/aat-fidelity/fixtures/report.json")
+    default_db = Path("/db/ab-validator/aat-fidelity/cross-adapter/fidelity.duckdb")
+    default_report = Path("/db/ab-validator/aat-fidelity/cross-adapter/report.json")
+    fixture_report = Path("reports/aat-fidelity/fixtures/report.json")
+    db_path = Path(os.environ.get("AB_AAT_FIDELITY_DB", default_db)).expanduser()
     report_path = Path(os.environ.get("AB_AAT_FIDELITY_REPORT", default_report)).expanduser()
-    return report_path,
+    if not report_path.exists():
+        report_path = fixture_report
+    return db_path, report_path,
 
 
 @app.cell
-def _(mo, report_path):
-    mo.md(f"# AAT Fidelity Explorer\n\nReport: `{report_path}`")
+def _(db_path, mo, report_path):
+    mo.md(
+        f"# AAT Fidelity Explorer\n\nDuckDB: `{db_path}`\n\nReport fallback: `{report_path}`"
+    )
     return
 
 
 @app.cell
-def _(json, pl, report_path):
-    raw_report = json.loads(report_path.read_text())
-    rows = raw_report.get("rows", raw_report if isinstance(raw_report, list) else [])
-    table = pl.DataFrame(rows) if rows else pl.DataFrame()
-    return raw_report, rows, table
+def _(db_path, duckdb, json, pl, report_path):
+    if db_path.exists():
+        conn = duckdb.connect(str(db_path), read_only=True)
+        table = conn.sql(
+            """
+            SELECT
+              r.report_id,
+              r.row_index,
+              r.adapter,
+              r.case_id,
+              r.category,
+              r.schema_status,
+              r.upstream_status,
+              r.oracle_status,
+              r.oracle_review_status,
+              r.oracle_evidence_strength,
+              r.failure_count,
+              r.failures_json::VARCHAR AS failures_json,
+              r.source_utf8,
+              r.notes,
+              COALESCE(
+                list(s.syntax_row_id ORDER BY s.syntax_row_id)
+                  FILTER (WHERE s.syntax_row_id IS NOT NULL),
+                []
+              ) AS syntax_row_ids
+            FROM fidelity_rows r
+            LEFT JOIN fidelity_syntax_rows s
+              ON r.report_id = s.report_id
+             AND r.row_index = s.row_index
+             AND r.adapter = s.adapter
+             AND r.case_id = s.case_id
+            GROUP BY
+              r.report_id,
+              r.row_index,
+              r.adapter,
+              r.case_id,
+              r.category,
+              r.schema_status,
+              r.upstream_status,
+              r.oracle_status,
+              r.oracle_review_status,
+              r.oracle_evidence_strength,
+              r.failure_count,
+              r.failures_json,
+              r.source_utf8,
+              r.notes
+            ORDER BY r.adapter, r.case_id
+            """
+        ).pl()
+        rows = table.to_dicts()
+        raw_report = {"source": "duckdb", "db_path": str(db_path), "rows": rows}
+        conn.close()
+        source_label = f"DuckDB `{db_path}`"
+    else:
+        raw_report = json.loads(report_path.read_text())
+        rows = raw_report.get("rows", raw_report if isinstance(raw_report, list) else [])
+        table = pl.DataFrame(rows) if rows else pl.DataFrame()
+        source_label = f"JSON `{report_path}`"
+    return raw_report, rows, source_label, table
 
 
 @app.cell
-def _(mo, rows):
+def _(mo, rows, source_label):
     adapters = sorted({row.get("adapter", "") for row in rows if row.get("adapter")})
+    categories = sorted({row.get("category", "") for row in rows if row.get("category")})
     schema_statuses = sorted({row.get("schema_status", "") for row in rows if row.get("schema_status")})
     upstream_statuses = sorted({row.get("upstream_status", "") for row in rows if row.get("upstream_status")})
     oracle_statuses = sorted({row.get("oracle_status", "") for row in rows if row.get("oracle_status")})
     review_statuses = sorted({row.get("oracle_review_status", "") for row in rows if row.get("oracle_review_status")})
     evidence_strengths = sorted({row.get("oracle_evidence_strength", "") for row in rows if row.get("oracle_evidence_strength")})
+    syntax_rows = sorted(
+        {
+            syntax_row
+            for row in rows
+            for syntax_row in row.get("syntax_row_ids", [])
+            if syntax_row
+        }
+    )
 
     adapter = mo.ui.dropdown(options=[""] + adapters, value="", label="Adapter")
+    category = mo.ui.dropdown(options=[""] + categories, value="", label="Category")
+    syntax_row = mo.ui.dropdown(options=[""] + syntax_rows, value="", label="Syntax row")
     schema_status = mo.ui.dropdown(options=[""] + schema_statuses, value="", label="Schema")
     upstream_status = mo.ui.dropdown(options=[""] + upstream_statuses, value="", label="Upstream")
     oracle_status = mo.ui.dropdown(options=[""] + oracle_statuses, value="", label="Oracle")
     review_status = mo.ui.dropdown(options=[""] + review_statuses, value="", label="Review")
     evidence_strength = mo.ui.dropdown(options=[""] + evidence_strengths, value="", label="Evidence")
     case_filter = mo.ui.text(value="", label="Case contains")
+    failure_filter = mo.ui.text(value="", label="Failure contains")
 
-    mo.hstack(
+    mo.vstack(
         [
-            adapter,
-            schema_status,
-            upstream_status,
-            oracle_status,
-            review_status,
-            evidence_strength,
-            case_filter,
-        ],
-        widths="equal",
+            mo.md(f"Loaded from {source_label}. Rows: **{len(rows)}**"),
+            mo.hstack(
+                [adapter, category, syntax_row, schema_status, upstream_status, oracle_status],
+                widths="equal",
+            ),
+            mo.hstack(
+                [review_status, evidence_strength, case_filter, failure_filter],
+                widths="equal",
+            ),
+        ]
     )
     return (
         adapter,
         case_filter,
+        category,
         evidence_strength,
+        failure_filter,
         oracle_status,
         review_status,
         schema_status,
+        syntax_row,
         upstream_status,
     )
 
@@ -89,16 +168,25 @@ def _(mo, rows):
 def _(
     adapter,
     case_filter,
+    category,
     evidence_strength,
+    failure_filter,
     oracle_status,
     review_status,
     rows,
     schema_status,
+    syntax_row,
     upstream_status,
 ):
     filtered_rows = rows
     if adapter.value:
         filtered_rows = [row for row in filtered_rows if row.get("adapter") == adapter.value]
+    if category.value:
+        filtered_rows = [row for row in filtered_rows if row.get("category") == category.value]
+    if syntax_row.value:
+        filtered_rows = [
+            row for row in filtered_rows if syntax_row.value in row.get("syntax_row_ids", [])
+        ]
     if schema_status.value:
         filtered_rows = [
             row for row in filtered_rows if row.get("schema_status") == schema_status.value
@@ -126,19 +214,44 @@ def _(
     if case_filter.value.strip():
         needle = case_filter.value.strip()
         filtered_rows = [row for row in filtered_rows if needle in row.get("case_id", "")]
+    if failure_filter.value.strip():
+        needle = failure_filter.value.strip()
+        filtered_rows = [
+            row for row in filtered_rows if needle in row.get("failures_json", "")
+        ]
     return filtered_rows,
 
 
 @app.cell
 def _(filtered_rows, mo, pl):
     filtered_table = pl.DataFrame(filtered_rows) if filtered_rows else pl.DataFrame()
-    mo.ui.table(filtered_table, selection="single")
-    return filtered_table
+    mo.ui.table(filtered_table)
+    return filtered_table,
 
 
 @app.cell
 def _(filtered_rows, mo):
-    selected = filtered_rows[0] if filtered_rows else {}
+    row_options = [
+        f"{index}: {row.get('adapter', '')} {row.get('case_id', '')} {row.get('oracle_status', '')}"
+        for index, row in enumerate(filtered_rows)
+    ]
+    selected_row = mo.ui.dropdown(
+        options=row_options,
+        value=row_options[0] if row_options else None,
+        label="Row detail",
+    )
+    selected_row
+    return selected_row,
+
+
+@app.cell
+def _(filtered_rows, json, mo, selected_row):
+    selected = {}
+    if selected_row.value:
+        index = int(selected_row.value.split(":", 1)[0])
+        selected = dict(filtered_rows[index])
+        if isinstance(selected.get("failures_json"), str):
+            selected["failures"] = json.loads(selected["failures_json"])
     mo.json(selected)
     return
 

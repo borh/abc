@@ -6,6 +6,7 @@ source "$repo_root/tests/lib/aat-fidelity-env.sh"
 
 out_dir="${AB_AAT_FIDELITY_OUT_DIR:-$AB_DB_ROOT/aat-fidelity/cross-adapter}"
 summary_md="${AB_AAT_FIDELITY_SUMMARY:-$repo_root/reports/aat-fidelity/cross-adapter-summary.md}"
+db_path="${AB_AAT_FIDELITY_DB:-$out_dir/fidelity.duckdb}"
 case_id="${AB_AAT_FIDELITY_CASE_ID:-}"
 
 mkdir -p "$out_dir" "$(dirname "$summary_md")"
@@ -45,6 +46,27 @@ run_cargo run \
   --report-md-from-json "$report_json" \
   > "$report_md"
 
+duckdb_bin="${DUCKDB:-duckdb}"
+if [[ -x /etc/profiles/per-user/bor/bin/duckdb ]]; then
+  duckdb_bin=/etc/profiles/per-user/bor/bin/duckdb
+fi
+libstdcxx_path=""
+if command -v "$duckdb_bin" >/dev/null 2>&1; then
+  libstdcxx_path="$(ldd "$duckdb_bin" | awk '/libstdc\+\+/{print $3; exit}')"
+fi
+loader_env=()
+if [[ -n "$libstdcxx_path" ]]; then
+  loader_env=(env "LD_LIBRARY_PATH=$(dirname "$libstdcxx_path"):${LD_LIBRARY_PATH:-}")
+fi
+
+"${loader_env[@]}" uv run --isolated --no-project \
+  --with 'duckdb>=1.1' \
+  "$AB_VALIDATOR_ROOT/reports/aat-fidelity/load-report-duckdb.py" \
+  --report "$report_json" \
+  --oracle "$AB_VALIDATOR_ROOT/data/aat-oracle-cases.toml" \
+  --db "$db_path" \
+  --report-id cross-adapter
+
 (
   cd "$AB_VALIDATOR_ROOT"
   python3 reports/aat-fidelity/cross_adapter_summary.py \
@@ -54,4 +76,5 @@ run_cargo run \
 
 printf 'report_json=%s\n' "$report_json"
 printf 'report_md=%s\n' "$report_md"
+printf 'db_path=%s\n' "$db_path"
 printf 'summary_md=%s\n' "$summary_md"

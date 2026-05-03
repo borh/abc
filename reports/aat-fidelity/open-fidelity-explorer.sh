@@ -8,6 +8,17 @@ port="${AB_AAT_FIDELITY_MARIMO_PORT:-27189}"
 
 cd "$repo_root"
 
+duckdb_bin="${DUCKDB:-duckdb}"
+if [[ -x /etc/profiles/per-user/bor/bin/duckdb ]]; then
+  duckdb_bin=/etc/profiles/per-user/bor/bin/duckdb
+fi
+if command -v "$duckdb_bin" >/dev/null 2>&1; then
+  libstdcxx_path="$(ldd "$duckdb_bin" | awk '/libstdc\+\+/{print $3; exit}')"
+  if [[ -n "$libstdcxx_path" ]]; then
+    export LD_LIBRARY_PATH="$(dirname "$libstdcxx_path"):${LD_LIBRARY_PATH:-}"
+  fi
+fi
+
 cmd=(
   uvx --from "marimo==0.23.4" marimo
   edit --sandbox "$notebook"

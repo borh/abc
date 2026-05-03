@@ -31,6 +31,42 @@ changes or changed node semantics require AAT v2.
 These axes are independent. A faithful adapter can fail oracle correctness when
 upstream is incomplete.
 
+## Oracle Correctness Provenance
+
+Oracle cases are independent truth-data claims, not adapter consensus. Evidence
+for oracle correctness lives in top-level `[[evidence]]` records in
+`data/aat-oracle-cases.toml`; cases reference those records through
+`evidence_ids`.
+
+Review state is a succession of `[[case.review]]` values. The current review
+status is the last review entry. This preserves review history instead of
+mutating a single status field without context.
+
+`oracle_status` reports only whether adapter output matches the oracle
+assertions. It remains independent of oracle credibility. Reports carry
+`oracle_review_status` and `oracle_evidence_strength` as separate fields.
+
+Assertion-level `evidence_ids` are optional overrides. When omitted or empty,
+the assertion inherits the case-level `evidence_ids`.
+
+Retired oracle cases are not evaluated in reports by default.
+
+Evidence strength is derived from linked evidence using strongest-wins
+precedence: `unicode` evidence reports `normative`, `reference_table` reports
+`reference`, and `curator_note` reports `curated`. If more than one evidence
+kind is linked, the strongest linked kind wins.
+
+`visible_text` assertions inherit the case-level `evidence_ids`; there is no
+separate `visible_text_evidence_ids` field in this contract. If a visible-text
+claim needs different evidence from the rest of the case, split it into a
+separate oracle case.
+
+Evidence records may contain extension fields whose names start with `x-`.
+Consumers must ignore unknown `x-*` fields.
+
+`reviewed_at` is stored as `YYYY-MM-DD` text. This contract validates the
+shape; it does not require semantic calendar-date validation.
+
 ## Document Shape
 
 An AAT document is an object with these top-level fields:

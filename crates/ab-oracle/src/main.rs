@@ -1,7 +1,8 @@
-use std::path::PathBuf;
+use std::{fs, path::PathBuf};
 
 use ab_oracle::{
     adapter_run::{parse_adapter_spec, run_adapter_aat},
+    audit::{audit_oracle, read_json_audit, render_audit_markdown, write_json_audit},
     data::{load_oracle_cases, load_upstream_observations},
     evaluate::evaluate_case,
     oracle_quality::validate_oracle_quality,
@@ -18,6 +19,9 @@ struct Args {
     #[arg(long, default_value = "data/aat-upstream-observations.toml")]
     upstream: PathBuf,
 
+    #[arg(long, default_value = "data/aozora-syntax-coverage.toml")]
+    syntax_coverage: PathBuf,
+
     #[arg(long = "adapter")]
     adapters: Vec<String>,
 
@@ -29,6 +33,12 @@ struct Args {
 
     #[arg(long)]
     report_md_from_json: Option<PathBuf>,
+
+    #[arg(long)]
+    audit_json: Option<PathBuf>,
+
+    #[arg(long)]
+    audit_md_from_json: Option<PathBuf>,
 }
 
 fn should_evaluate_case(
@@ -51,6 +61,11 @@ fn main() -> Result<()> {
         print!("{}", render_markdown(&report));
         return Ok(());
     }
+    if let Some(audit_json) = &args.audit_md_from_json {
+        let audit = read_json_audit(audit_json)?;
+        print!("{}", render_audit_markdown(&audit));
+        return Ok(());
+    }
 
     let oracle = load_oracle_cases(&args.oracle)?;
     let quality_errors = validate_oracle_quality(&oracle);
@@ -63,6 +78,19 @@ fn main() -> Result<()> {
         }
         bail!("oracle quality validation failed");
     }
+
+    if let Some(path) = &args.audit_json {
+        let syntax_coverage = fs::read_to_string(&args.syntax_coverage).map_err(|error| {
+            anyhow::anyhow!(
+                "failed to read syntax coverage {}: {error}",
+                args.syntax_coverage.display()
+            )
+        })?;
+        let audit = audit_oracle(&oracle, Some(&syntax_coverage));
+        write_json_audit(&audit, path)?;
+        return Ok(());
+    }
+
     let observations = load_upstream_observations(&args.upstream)?;
 
     if !args.adapters.is_empty() {

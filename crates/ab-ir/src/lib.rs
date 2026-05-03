@@ -1,5 +1,6 @@
 use serde_json::json;
 
+pub mod aat_view;
 mod semantic_summary;
 pub use semantic_summary::{SemanticSummary, SemanticSummaryNode, SourceSpan, semantic_summary};
 

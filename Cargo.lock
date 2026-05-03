@@ -91,6 +91,7 @@ dependencies = [
 name = "ab-ir"
 version = "0.1.0"
 dependencies = [
+ "ab-plaintext",
  "serde",
  "serde_json",
 ]

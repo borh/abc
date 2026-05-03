@@ -27,7 +27,7 @@
         "id": { "type": "string", "minLength": 1 },
         "kind": {
           "type": "string",
-          "enum": ["reference_table", "unicode", "curator_note"]
+          "enum": ["reference_table", "unicode", "aozora_rule", "curator_note"]
         },
         "citation": { "type": "string", "minLength": 1 },
         "locator": { "type": "string" },

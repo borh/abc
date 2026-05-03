@@ -29,6 +29,7 @@ pub fn visible_text(document: &AatDocument) -> String {
 fn evidence_strength_rank(kind: EvidenceKind) -> u8 {
     match kind {
         EvidenceKind::Unicode => 3,
+        EvidenceKind::AozoraRule => 2,
         EvidenceKind::ReferenceTable => 2,
         EvidenceKind::CuratorNote => 1,
     }

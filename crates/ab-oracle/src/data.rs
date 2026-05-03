@@ -27,6 +27,7 @@ pub struct Evidence {
 pub enum EvidenceKind {
     ReferenceTable,
     Unicode,
+    AozoraRule,
     CuratorNote,
 }
 
@@ -198,6 +199,20 @@ mod tests {
             .unwrap();
         assert_eq!(case.evidence_ids, vec!["jis-x-0213-2-13-47"]);
         assert_eq!(case.current_review_status(), ReviewStatus::Reviewed);
+
+        let ruby_evidence = cases
+            .evidence
+            .iter()
+            .find(|evidence| evidence.id == "aozora-rule-ruby-basic")
+            .unwrap();
+        assert_eq!(ruby_evidence.kind, EvidenceKind::AozoraRule);
+
+        let ruby_case = cases
+            .case
+            .iter()
+            .find(|case| case.id == "ruby.basic.simple")
+            .unwrap();
+        assert_eq!(ruby_case.current_review_status(), ReviewStatus::Reviewed);
     }
 
     #[test]

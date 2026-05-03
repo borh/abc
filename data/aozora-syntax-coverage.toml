@@ -58,7 +58,7 @@ plaintext_projection = "base_only"
 comparison_projection = "base_only"
 validation_properties = ["ruby_completeness", "semantic_ruby_sequence"]
 adapter_expectations = ["preserve reading", "preserve base order", "distinguish left placement"]
-oracle_cases = ["ruby.gaiji.inline_base"]
+oracle_cases = ["ruby.basic.simple", "ruby.gaiji.inline_base"]
 status = "partial"
 status_reason = "current ab-ir and AAT use a flat ruby base string"
 

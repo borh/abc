@@ -150,3 +150,7 @@ conformant to this contract and must be called out in structured fidelity
 notes. Future schema-compatible additions may make `coordinate_system =
 "decoded_utf8"` explicit and may add optional `char_start`, `char_end`,
 `raw_byte_start`, and `raw_byte_end` fields.
+
+See `docs/aat-span-audit.md` for the current implementation audit. As of that
+audit, production adapters generally omit serialized AAT spans; internal
+source-scanner spans use decoded UTF-8 offsets.

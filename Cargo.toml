@@ -11,6 +11,7 @@ members = [
     "crates/ab-plaintext",
     "crates/ab-morph-analyzers",
     "crates/ab-morph-run",
+    "crates/ab-oracle",
 ]
 resolver = "2"
 exclude = [
@@ -34,6 +35,7 @@ ab-plaintext = { path = "crates/ab-plaintext" }
 ab-morph-analyzers = { path = "crates/ab-morph-analyzers" }
 ab-morph-run = { path = "crates/ab-morph-run" }
 ab-ir = { path = "crates/ab-ir" }
+ab-check = { path = "crates/ab-check" }
 ab-source-syntax = { path = "crates/ab-source-syntax" }
 chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4.5", features = ["derive"] }

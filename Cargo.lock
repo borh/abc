@@ -139,6 +139,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "ab-oracle"
+version = "0.1.0"
+dependencies = [
+ "ab-check",
+ "ab-ir",
+ "anyhow",
+ "clap",
+ "serde",
+ "serde_json",
+ "toml",
+]
+
+[[package]]
 name = "ab-plaintext"
 version = "0.1.0"
 dependencies = [

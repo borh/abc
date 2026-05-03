@@ -7,17 +7,16 @@ Oracle cases: `data/aat-oracle-cases.toml`
 
 | adapter | cases | schema pass | upstream faithful | oracle pass | oracle fail |
 | --- | --- | --- | --- | --- | --- |
-| aozora-rs | 43 | 43 | 1 | 4 | 39 |
+| aozora-rs | 43 | 43 | 39 | 4 | 39 |
 | aozora2 | 43 | 43 | 2 | 43 | 0 |
-| aozora2html | 43 | 43 | 0 | 1 | 42 |
+| aozora2html | 43 | 43 | 42 | 1 | 42 |
 
 ## Failure Buckets
 
 | adapter | bucket | count |
 | --- | --- | --- |
-| aozora-rs | faithful-upstream-vs-oracle | 1 |
-| aozora-rs | needs-upstream-observation | 38 |
-| aozora2html | needs-upstream-observation | 42 |
+| aozora-rs | faithful-upstream-vs-oracle | 39 |
+| aozora2html | faithful-rendered-output-vs-oracle | 42 |
 
 ## Failure Families
 
@@ -202,6 +201,6 @@ Oracle cases: `data/aat-oracle-cases.toml`
 ## Triage Notes
 
 - `aozora2` is the current oracle baseline for the reviewed AAT cases.
-- `aozora-rs` has one known faithful-upstream oracle failure: `gaiji.jis.2-13-47` remains unresolved upstream.
-- `aozora-rs` needs more upstream observations before the remaining oracle failures can be cleanly split between faithful upstream behavior and adapter projection gaps.
-- `aozora2html` is indirect: it is faithful to rendered XHTML. Many source-level assertions require reconstructing Aozora markers from XHTML notes or accepting that the rendered form discarded the source distinction.
+- `aozora-rs` now has upstream observations for every reviewed oracle failure. Its remaining failures are faithful-to-observed-output vs oracle-correctness divergences.
+- `aozora2html` now has rendered-output observations for every reviewed oracle failure. Its remaining failures are faithful-to-XHTML vs source-level oracle divergences.
+- The next implementation work should target one adapter/family at a time, using these observations as the pre-fix upstream contract.

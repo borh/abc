@@ -33,15 +33,16 @@ kept under `/db/ab-validator/aat-fidelity/cross-adapter/report.json`.
 | Adapter | Reviewed cases | Oracle pass | Oracle fail | Interpretation |
 | --- | ---: | ---: | ---: | --- |
 | `aozora2` | 43 | 43 | 0 | Current reviewed-case AAT baseline. |
-| `aozora-rs` | 43 | 4 | 39 | Needs more upstream observations before failures can be cleanly separated into faithful upstream behavior vs adapter projection gaps. |
-| `aozora2html` | 43 | 1 | 42 | Fragment handling is fixed, but source-level oracle assertions mostly exceed what the rendered XHTML mapper currently reconstructs. |
+| `aozora-rs` | 43 | 4 | 39 | Upstream observations now cover every reviewed failure; remaining mismatches are faithful observed output vs oracle correctness. |
+| `aozora2html` | 43 | 1 | 42 | Rendered-output observations now cover every reviewed failure; source-level oracle assertions mostly exceed what the XHTML mapper reconstructs. |
 
 ## Follow-up Checks
 
 - Add an oracle table for expected gaiji resolutions independent of adapter
   output.
-- Add upstream observations for the remaining `aozora-rs` and `aozora2html`
-  oracle failures before treating every mismatch as an adapter bug.
+- Use the upstream observation table as the pre-fix contract when improving
+  `aozora-rs` or `aozora2html`, so adapter changes can be distinguished from
+  upstream/parser behavior changes.
 - Expand `aozora2` block reconstruction to remaining upstream boundary types
   such as block tcy.
 - Keep version strings tied to the dependency actually loaded by each adapter.

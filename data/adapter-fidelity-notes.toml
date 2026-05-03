@@ -1,0 +1,23 @@
+[[note]]
+id = "aozora-rs-gaiji-jis-unresolved"
+adapter = "aozora-rs"
+syntax_row_ids = ["gaiji.jis_code"]
+status = "active"
+summary = "Adapter faithfully follows aozora-rs-gaiji v0.6.0 for JIS-form gaiji; some remain unresolved relative to the oracle."
+evidence = "docs/adapter-fidelity.md"
+
+[[note]]
+id = "aozora2-blocks-raw-before-reconstruction"
+adapter = "aozora2"
+syntax_row_ids = ["indentation.jisage", "block.keigakomi", "layout.caption"]
+status = "active"
+summary = "Adapter preserves some block markers as raw nodes until block reconstruction is implemented and verified."
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[note]]
+id = "aozora2html-xhtml-projection"
+adapter = "aozora2html"
+syntax_row_ids = ["gaiji.marker", "warichu.basic"]
+status = "active"
+summary = "Adapter maps rendered XHTML, so source-only markup distinctions absent from XHTML cannot always be recovered."
+evidence = "adapters/aozora2html/README.md"

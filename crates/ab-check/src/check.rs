@@ -88,6 +88,16 @@ pub fn schema_validator() -> Result<&'static Validator> {
         .map_err(|message| anyhow::anyhow!(message.clone()))
 }
 
+pub fn validate_aat_value(aat: &Value) -> Result<()> {
+    let validator = schema_validator()?;
+    validator.validate(aat).map_err(|error| {
+        anyhow::anyhow!(
+            "AAT schema validation failed at {}: {error}",
+            error.instance_path()
+        )
+    })
+}
+
 pub fn check_single(
     txt_path: &Path,
     aat_path: &Path,
@@ -536,4 +546,30 @@ fn default_confidence(name: &str) -> &'static str {
 
 pub fn report_to_value(report: &CheckReport) -> Value {
     json!(report)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn validate_aat_value_reports_schema_status() {
+        let valid = serde_json::json!({
+            "version": 1,
+            "work_id": "fixture",
+            "blocks": [{"kind": "paragraph", "content": [{"kind": "text", "value": "本文"}]}],
+            "meta": {
+                "adapter": "fixture",
+                "adapter_version": "fixture",
+                "source_encoding": "utf-8",
+                "source_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+                "parse_complete": true,
+                "warnings": []
+            }
+        });
+        assert!(validate_aat_value(&valid).is_ok());
+
+        let invalid = serde_json::json!({"version": 1});
+        assert!(validate_aat_value(&invalid).is_err());
+    }
 }

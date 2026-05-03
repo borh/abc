@@ -1,0 +1,64 @@
+aat_version = 1
+
+[[case]]
+id = "gaiji.jis.2-13-47"
+syntax_row_ids = ["gaiji.jis_code"]
+category = "gaiji"
+source_utf8 = "耳朶を※［＃「てへん＋掌」、第4水準2-13-47］えて"
+notes = "JIS X 0213 plane 2 row 13 cell 47 should resolve to 撑."
+
+[case.oracle]
+visible_text = "耳朶を撑えて"
+
+[[case.oracle.sequence]]
+selector = "blocks.*.content"
+kinds = ["text", "gaiji", "text"]
+
+[[case.oracle.gaiji]]
+selector = "blocks.*.content.*"
+description = "「てへん＋掌」、第4水準2-13-47"
+resolved = "撑"
+jis_code = "2-13-47"
+unresolved_reason = ""
+source = "JIS X 0213"
+
+[[case]]
+id = "gaiji.unicode.u546d"
+syntax_row_ids = ["gaiji.unicode_codepoint"]
+category = "gaiji"
+source_utf8 = "※［＃「口＋世」、U+546D］は珍しい字。"
+
+[case.oracle]
+visible_text = "呭は珍しい字。"
+
+[[case.oracle.gaiji]]
+selector = "blocks.*.content.*"
+description = "「口＋世」、U+546D"
+resolved = "呭"
+jis_code = ""
+unresolved_reason = ""
+source = "Unicode code point"
+
+[[case]]
+id = "ruby.gaiji.inline_base"
+syntax_row_ids = ["gaiji_ruby.inline_base", "ruby.basic"]
+category = "ruby"
+source_utf8 = "※［＃「口＋愛」、第3水準1-15-23］《おくび》が出た。"
+
+[case.oracle]
+visible_text = "が出た。"
+
+[[case.oracle.nodes]]
+selector = "**"
+kind = "ruby"
+min_count = 1
+
+[[case.oracle.nodes]]
+selector = "**"
+kind = "gaiji"
+min_count = 1
+
+[[case.oracle.nodes]]
+selector = "**"
+kind = "raw"
+absent = true

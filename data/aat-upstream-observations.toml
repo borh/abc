@@ -1,0 +1,19 @@
+[[observation]]
+case_id = "gaiji.jis.2-13-47"
+adapter = "aozora-rs"
+status = "unresolved"
+summary = "aozora-rs-gaiji v0.6.0 does not resolve this JIS-form marker."
+selector = "blocks.*.content.*"
+kind = "gaiji"
+fields = { resolved = "", unresolved_reason = "unresolved" }
+evidence = "adapters/aozora-rs/src/aat.rs"
+
+[[observation]]
+case_id = "gaiji.jis.2-13-47"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora-core 0.7.1 resolves this JIS-form marker to 撑."
+selector = "blocks.*.content.*"
+kind = "gaiji"
+fields = { resolved = "撑", jis_code = "2-13-47" }
+evidence = "adapters/aozora2/src/lib.rs"

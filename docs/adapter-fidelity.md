@@ -13,8 +13,8 @@ rules, see `docs/aat-contract.md`.
 | Level | Meaning |
 | --- | --- |
 | Direct | Adapter uses upstream parser output directly and preserves the relevant parser events in AAT. |
-| Direct incomplete | Adapter uses upstream parser output directly, but known upstream events are still dropped, flattened, or only preserved as `raw`. |
-| Indirect | Adapter is faithful to an intermediate representation, not directly to the original Aozora source markup. |
+| Direct incomplete | Adapter uses upstream parser output directly, but known upstream events are still dropped, flattened, or only preserved as `raw`. This is a fidelity failure for the affected structure, not a minor display limitation. |
+| Indirect | Adapter is faithful to an intermediate representation, not directly to the original Aozora source markup. Source-level claims require separate oracle or source-marker checks. |
 
 ## Matrix
 

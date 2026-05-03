@@ -4,6 +4,11 @@ The Aozora Adapter Tree (AAT) is the normalized JSON emitted by parser
 adapters. AAT records adapter output and provenance. It does not by itself
 assert linguistic correctness.
 
+`data/aat-schema.json` is the normative validation schema for AAT v1 document
+shape. This document explains the contract semantics that schema validation
+cannot fully express, including selector behavior, result axes, span coordinate
+meaning, and projection rules.
+
 ## Versioning
 
 AAT documents use top-level `version`. Current AAT is `version = 1`.
@@ -61,6 +66,8 @@ An AAT document is an object with these top-level fields:
 | `caption_block` | `kind`, `children` | `span`, `x-*` | Caption block container. |
 
 `content` arrays contain inline nodes. `children` arrays contain block nodes.
+Block containers can nest through `children`; paragraphs and headings carry
+inline content through `content`.
 
 ## Inline Nodes
 

@@ -55,6 +55,47 @@ fn matrix_corpus_prevalence_present_for_every_row() {
 }
 
 #[test]
+fn oracle_case_syntax_rows_exist_and_link_back() {
+    #[derive(serde::Deserialize)]
+    struct OracleCases {
+        case: Vec<OracleCase>,
+    }
+
+    #[derive(serde::Deserialize)]
+    struct OracleCase {
+        id: String,
+        syntax_row_ids: Vec<String>,
+    }
+
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let rows = matrix
+        .rows()
+        .iter()
+        .map(|row| (row.id.as_str(), row))
+        .collect::<std::collections::BTreeMap<_, _>>();
+    let oracle_path = matrix_path()
+        .parent()
+        .unwrap()
+        .join("aat-oracle-cases.toml");
+    let oracle: OracleCases =
+        toml::from_str(&std::fs::read_to_string(oracle_path).unwrap()).unwrap();
+
+    for case in oracle.case {
+        for row_id in &case.syntax_row_ids {
+            let row = rows.get(row_id.as_str()).unwrap_or_else(|| {
+                panic!("oracle case {} references missing row {}", case.id, row_id)
+            });
+            assert!(
+                row.oracle_cases.iter().any(|linked| linked == &case.id),
+                "row {} must link back to oracle case {}",
+                row.id,
+                case.id
+            );
+        }
+    }
+}
+
+#[test]
 fn forbidden_combinations_rejected() {
     use std::collections::BTreeMap;
     let mut parsers = BTreeMap::new();
@@ -90,6 +131,7 @@ fn forbidden_combinations_rejected() {
         comparison_projection: String::new(),
         validation_properties: vec![],
         adapter_expectations: vec![],
+        oracle_cases: vec![],
         status: ab_coverage::RowStatus::NeedsResearch,
         status_reason: String::new(),
         parsers,
@@ -146,6 +188,7 @@ fn serialize_row(row: &ab_coverage::matrix::Row) -> String {
     out.push_str("comparison_projection = \"\"\n");
     out.push_str("validation_properties = []\n");
     out.push_str("adapter_expectations = []\n");
+    out.push_str("oracle_cases = []\n");
     let status = match row.status {
         ab_coverage::RowStatus::Covered => "covered",
         ab_coverage::RowStatus::Partial => "partial",

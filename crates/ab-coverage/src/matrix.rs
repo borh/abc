@@ -44,6 +44,8 @@ pub struct Row {
     pub comparison_projection: String,
     pub validation_properties: Vec<String>,
     pub adapter_expectations: Vec<String>,
+    #[serde(default)]
+    pub oracle_cases: Vec<String>,
     pub status: RowStatus,
     pub status_reason: String,
     #[serde(default)]

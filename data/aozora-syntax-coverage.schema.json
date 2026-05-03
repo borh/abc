@@ -48,6 +48,11 @@
         "comparison_projection": { "type": "string" },
         "validation_properties": { "type": "array", "items": { "type": "string" } },
         "adapter_expectations": { "type": "array", "items": { "type": "string" } },
+        "oracle_cases": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Optional reverse links to data/aat-oracle-cases.toml case ids."
+        },
         "status": { "$ref": "#/$defs/SyntaxStatus" },
         "status_reason": { "type": "string" },
         "parsers": {

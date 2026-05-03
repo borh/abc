@@ -58,6 +58,7 @@ plaintext_projection = "base_only"
 comparison_projection = "base_only"
 validation_properties = ["ruby_completeness", "semantic_ruby_sequence"]
 adapter_expectations = ["preserve reading", "preserve base order", "distinguish left placement"]
+oracle_cases = ["ruby.gaiji.inline_base"]
 status = "partial"
 status_reason = "current ab-ir and AAT use a flat ruby base string"
 
@@ -172,6 +173,7 @@ plaintext_projection = "resolved_base_or_drop_with_attached_reading"
 comparison_projection = "resolved_base_or_drop_with_attached_reading"
 validation_properties = ["semantic_ruby_sequence", "semantic_gaiji_sequence", "gaiji_resolution_quality"]
 adapter_expectations = ["preserve ruby relationship in IR", "do not emit orphan ruby when AAT cannot represent unresolved base"]
+oracle_cases = ["ruby.gaiji.inline_base"]
 status = "partial"
 status_reason = "current AAT cannot represent a structured ruby base"
 
@@ -850,6 +852,7 @@ plaintext_projection = "resolved_character"
 comparison_projection = "resolved_character_or_drop"
 validation_properties = ["gaiji_resolution"]
 adapter_expectations = ["resolve to Unicode codepoint when --use-unicode is on"]
+oracle_cases = ["gaiji.unicode.u546d"]
 status = "needs_research"
 status_reason = "U+ form sub-case of gaiji.marker; aozora2html uses jis2ucs.yml"
 
@@ -905,6 +908,7 @@ plaintext_projection = "resolved_character_or_drop"
 comparison_projection = "resolved_character_or_drop"
 validation_properties = ["gaiji_resolution"]
 adapter_expectations = ["resolve via jis2ucs table"]
+oracle_cases = ["gaiji.jis.2-13-47"]
 status = "needs_research"
 status_reason = "JIS X 0213 code form of gaiji"
 

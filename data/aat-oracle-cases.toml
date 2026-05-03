@@ -55,6 +55,15 @@ supports = "Aozora block indentation uses ここからN字下げ and ここで�
 independent = true
 
 [[evidence]]
+id = "aozora-rule-warichu-basic"
+kind = "aozora_rule"
+citation = "Aozora Bunko input manual, section 4-11 warichu"
+locator = "4-11. Other / Warichu"
+url = "https://www.aozora.gr.jp/aozora-manual/index-input.html"
+supports = "Aozora warichu marks split-line inline notes with ［＃割り注］...［＃割り注終わり］."
+independent = true
+
+[[evidence]]
 id = "jis-x-0213-1-15-23"
 kind = "reference_table"
 citation = "Project X0213 JIS X 0213:2004 code table, row 3-2F37"
@@ -296,3 +305,40 @@ selector = "blocks.*.children.*.content.*"
 kind = "text"
 count = 1
 fields = { value = "字下げされた段落。" }
+
+[[case]]
+id = "warichu.basic.inline"
+syntax_row_ids = ["warichu.basic"]
+category = "inline_annotation"
+source_utf8 = "本文に［＃割り注］注釈［＃割り注終わり］が入る。"
+evidence_ids = ["aozora-rule-warichu-basic"]
+notes = "Basic inline warichu should preserve the note content as a warigaki node."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified against the Aozora Bunko input manual warichu notation guidance."
+
+[case.oracle]
+visible_text = "本文に注釈が入る。"
+
+[[case.oracle.sequence]]
+selector = "blocks.*.content"
+kinds = ["text", "warigaki", "text"]
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*"
+kind = "warigaki"
+count = 1
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*.upper.*"
+kind = "text"
+count = 1
+fields = { value = "注釈" }
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*.lower.*"
+kind = "text"
+count = 0

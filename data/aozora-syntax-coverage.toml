@@ -406,6 +406,7 @@ plaintext_projection = "content_only"
 comparison_projection = "content_only"
 validation_properties = ["style_scope_balance"]
 adapter_expectations = ["preserve warichu content", "preserve inline or block scope"]
+oracle_cases = ["warichu.basic.inline"]
 status = "partial"
 status_reason = "current IR lacks warichu-specific nodes"
 

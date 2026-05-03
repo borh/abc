@@ -1,14 +1,17 @@
 # AAT Contract
 
-The Aozora Adapter Tree (AAT) is the normalized JSON emitted by parser adapters.
-AAT records adapter output and provenance. It does not by itself assert
-linguistic correctness.
+The Aozora Adapter Tree (AAT) is the normalized JSON emitted by parser
+adapters. AAT records adapter output and provenance. It does not by itself
+assert linguistic correctness.
 
 ## Versioning
 
 AAT documents use top-level `version`. Current AAT is `version = 1`.
 
-Oracle cases use `aat_version = 1` to declare the AAT contract they target.
+Oracle case files use `aat_version` because they are not AAT documents; they
+are test data that targets an AAT contract version. `aat_version = 1` means the
+oracle expectations are written against AAT document `version = 1`.
+
 Schema-compatible additions to AAT v1 may add optional fields. Required field
 changes or changed node semantics require AAT v2.
 
@@ -23,26 +26,99 @@ changes or changed node semantics require AAT v2.
 These axes are independent. A faithful adapter can fail oracle correctness when
 upstream is incomplete.
 
+## Document Shape
+
+An AAT document is an object with these top-level fields:
+
+| Field | Required | Type | Meaning |
+| --- | --- | --- | --- |
+| `version` | yes | integer | AAT contract version. Current value is `1`. |
+| `work_id` | yes | string | Work/source identifier assigned by the adapter or caller. |
+| `blocks` | yes | array of block nodes | Document body. |
+| `meta` | yes | object | Adapter and parse metadata. |
+
+`meta` requires:
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `adapter` | string | Adapter id such as `aozora-rs`, `aozora2`, or `aozora2html`. |
+| `adapter_version` | string | Adapter and upstream parser identity. |
+| `source_encoding` | string | Decoded source encoding label. |
+| `source_hash` | string | SHA-256 hash of the source bytes. |
+| `parse_complete` | boolean | Whether the adapter reports a complete parser-backed projection. |
+| `warnings` | array | Adapter warnings. |
+
+## Block Nodes
+
+| Kind | Required fields | Optional fields | Meaning |
+| --- | --- | --- | --- |
+| `paragraph` | `kind`, `content` | `span`, `x-*` | Inline content in reading order. |
+| `heading` | `kind`, `level`, `style`, `content` | `span`, `x-*` | Block-level heading. |
+| `jisage_block` | `kind`, `children` | `span`, `x-*` | Indented block container. |
+| `quote_block` | `kind`, `children` | `span`, `x-*` | Quoted block container. |
+| `keigakomi_block` | `kind`, `children` | `span`, `x-*` | Ruled enclosure block container. |
+| `yokogumi_block` | `kind`, `children` | `span`, `x-*` | Horizontal-composition block container. |
+| `caption_block` | `kind`, `children` | `span`, `x-*` | Caption block container. |
+
+`content` arrays contain inline nodes. `children` arrays contain block nodes.
+
+## Inline Nodes
+
+| Kind | Required fields | Optional fields | Plaintext projection | Meaning |
+| --- | --- | --- | --- | --- |
+| `text` | `kind`, `value` | `span`, `x-*` | `value` | Plain text. |
+| `ruby` | `kind`, `base`, `reading` | `base_content`, `reading_content`, `direction`, `span`, `x-*` | `base` | Ruby annotation. Nested source structure can be preserved in `base_content` and `reading_content`. |
+| `gaiji` | `kind`, `description`, `resolved`, `unresolved_reason` | `jis_code`, `span`, `x-*` | `resolved` when non-empty, otherwise empty | Aozora gaiji marker or parser-normalized gaiji. |
+| `accent` | `kind`, `code`, `name`, `resolved` | `span`, `x-*` | `resolved` when non-empty, otherwise `name` | Latin accent notation. |
+| `figure` | `kind`, `filename`, `alt`, `css_class` | `width`, `height`, `caption`, `span`, `x-*` | empty | Inline figure/image. |
+| `raw` | `kind`, `source` | `span`, `x-*` | adapter-defined, normally empty for oracle checks | Faithful escape hatch for unsupported parser events. |
+| `style` | `kind`, `content` | `style_type`, `level`, `class_name`, `span`, `x-*` | child projection | Inline style or normalized parser scope. |
+| `font_size` | `kind`, `content` | `size_type`, `level`, `span`, `x-*` | child projection | Inline font-size scope. |
+| `tcy` | `kind`, `content` | `span`, `x-*` | child projection | Vertical-in-horizontal text. |
+| `yokogumi` | `kind`, `content` | `span`, `x-*` | child projection | Inline horizontal composition. |
+| `keigakomi` | `kind`, `content` | `span`, `x-*` | child projection | Inline ruled enclosure. |
+| `caption` | `kind`, `content` | `span`, `x-*` | child projection | Inline caption. |
+| `warigaki` | `kind`, `upper`, `lower` | `span`, `x-*` | upper then lower child projection | Split-line note/warigaki. |
+
+Gaiji fields:
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `description` | string | Human-readable Aozora gaiji description. |
+| `resolved` | string or null | Adapter-emitted character resolution, if any. |
+| `jis_code` | string or null | Adapter-emitted JIS plane-row-cell or row-cell code, if known. |
+| `unresolved_reason` | string or null | Reason the adapter did not resolve the gaiji. Null or empty means resolved/no unresolved reason. |
+
 ## Selector Protocol v1
 
 Selectors are path-only. They have no predicates and no embedded comparisons.
 Predicate checks belong in oracle assertions.
 
-Supported selectors:
+Selector paths are dot-separated object field names plus `*` array expansion.
+Arbitrary explicit depth is allowed, so `blocks.*.children.*.content.*` is a
+valid selector. The only recursive selector is `**`; recursive matching must be
+requested explicitly.
+
+Supported common selectors:
 
 | Selector | Meaning |
 | --- | --- |
 | `blocks` | The top-level blocks array. |
 | `blocks.*` | Every top-level block object. |
-| `blocks.*.content` | Direct `content` arrays on top-level blocks that have `content`; blocks without `content` are skipped. |
+| `blocks.*.content` | Direct `content` arrays on top-level blocks that have `content`. |
 | `blocks.*.content.*` | Direct inline children inside top-level block `content` arrays. |
-| `blocks.*.children` | Direct `children` arrays on top-level block containers that have `children`; blocks without `children` are skipped. |
+| `blocks.*.children` | Direct `children` arrays on top-level block containers that have `children`. |
 | `blocks.*.children.*` | Direct child blocks inside top-level block containers. |
-| `**` | Every object in the AAT tree. Recursive matching must be explicit. |
+| `**` | Every object in the AAT tree. |
 
-Path mismatches skip missing object fields. A `*` segment only expands arrays.
-If `*` is applied to a non-array, the selector is invalid and the evaluator
-reports an assertion failure.
+Selectors select arrays or objects. Terminal scalar-property selectors such as
+`blocks.*.kind` are not supported in selector protocol v1. Assertions inspect
+fields on selected objects instead.
+
+If an object field is missing, that branch is skipped. For example,
+`blocks.*.content` skips `caption_block` nodes that have `children` but no
+`content`. If `*` is applied to a value that exists but is not an array, the
+selector is invalid and the evaluator reports an assertion failure.
 
 ## Empty String and Null
 
@@ -52,19 +128,18 @@ existing adapter output. This equivalence is limited to those fields.
 
 ## Span Coordinate System
 
-AAT v1 spans require `line_start`, `line_end`, `byte_start`, and `byte_end`.
-Before changing span semantics, implementations must audit current adapter span
-emission.
+AAT v1 span objects require `line_start`, `line_end`, `byte_start`, and
+`byte_end`.
 
-If `coordinate_system = "decoded_utf8"` is present, then:
+When `coordinate_system` is absent, the default AAT v1 coordinate system is
+`decoded_utf8`:
 
 - `byte_start` and `byte_end` are UTF-8 byte offsets into the decoded source
   string used by the adapter;
-- `line_start` and `line_end` are one-based decoded-source line numbers;
-- optional `char_start` and `char_end` are Unicode scalar offsets into the
-  decoded source string;
-- original encoded byte offsets require separate fields such as
-  `raw_byte_start` and `raw_byte_end`.
+- `line_start` and `line_end` are one-based decoded-source line numbers.
 
-Tests must compute expected offsets from fixture strings rather than using
-unexplained numeric literals.
+If an adapter emits spans with different semantics, that adapter output is not
+conformant to this contract and must be called out in structured fidelity
+notes. Future schema-compatible additions may make `coordinate_system =
+"decoded_utf8"` explicit and may add optional `char_start`, `char_end`,
+`raw_byte_start`, and `raw_byte_end` fields.

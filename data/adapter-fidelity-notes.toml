@@ -9,9 +9,18 @@ evidence = "docs/adapter-fidelity.md"
 [[note]]
 id = "aozora2-blocks-raw-before-reconstruction"
 adapter = "aozora2"
-syntax_row_ids = ["indentation.jisage", "block.keigakomi", "layout.caption"]
+syntax_row_ids = ["indentation.jisage_block", "caption.block", "layout.yokogumi"]
+status = "retired"
+summary = "Adapter previously preserved supported block markers only as raw nodes before block reconstruction was implemented."
+evidence = "adapters/aozora2/src/lib.rs"
+retired_by = "feat: reconstruct aozora2 block containers"
+
+[[note]]
+id = "aozora2-unsupported-block-types-raw"
+adapter = "aozora2"
+syntax_row_ids = ["indentation.chitsuki", "indentation.jizume", "indentation.burasage", "layout.tcy"]
 status = "active"
-summary = "Adapter preserves some block markers as raw nodes until block reconstruction is implemented and verified."
+summary = "Adapter reconstructs supported block containers but still preserves unsupported block boundary types as raw nodes."
 evidence = "adapters/aozora2/src/lib.rs"
 
 [[note]]

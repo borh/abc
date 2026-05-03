@@ -1,12 +1,13 @@
 #[cfg(test)]
 use ab_source_syntax as source_syntax;
 use anyhow::Result;
-use aozora_core::{Node, RubyDirection};
+use aozora_core::node::FontSizeType;
+use aozora_core::{MidashiLevel, MidashiStyle, Node, RubyDirection};
 use encoding_rs::SHIFT_JIS;
 use serde_json::json;
 use sha2::{Digest, Sha256};
 
-pub const VERSION: &str = "aozora2-adapter 0.1.0 93420b53c7d52579a0ca3fde466cef8ce6d89879";
+pub const VERSION: &str = "aozora2-adapter 0.1.0 aozora-core-0.7.1";
 
 #[derive(Debug)]
 pub struct DecodedSource {
@@ -44,16 +45,11 @@ pub fn decode_source_bytes(bytes: &[u8]) -> Result<DecodedSource> {
 }
 
 pub fn build_aat(decoded: &DecodedSource) -> serde_json::Value {
-    let content = parse_inline_content(body_text(&decoded.text));
+    let blocks = parse_blocks(body_text(&decoded.text));
     json!({
         "version": 1,
         "work_id": "stdin",
-        "blocks": [
-            {
-                "kind": "paragraph",
-                "content": content
-            }
-        ],
+        "blocks": blocks,
         "meta": {
             "adapter": "aozora2",
             "adapter_version": VERSION,
@@ -72,6 +68,12 @@ pub fn aat_json_from_bytes(bytes: &[u8]) -> Result<Vec<u8>> {
     serde_json::to_writer(&mut out, &aat)?;
     out.push(b'\n');
     Ok(out)
+}
+
+pub fn html_from_bytes(_bytes: &[u8]) -> Result<Vec<u8>> {
+    anyhow::bail!(
+        "aozora2-adapter --mode html is unsupported because aozora-core does not expose an upstream HTML renderer"
+    );
 }
 
 pub fn body_text(text: &str) -> &str {
@@ -108,10 +110,150 @@ pub fn body_text(text: &str) -> &str {
     &body[..body_end]
 }
 
+#[cfg(test)]
 fn parse_inline_content(text: &str) -> Vec<serde_json::Value> {
     let tokens = aozora_core::tokenize(text);
     let nodes = aozora_core::parse(&tokens);
     aozora_nodes_to_aat_content(&nodes)
+}
+
+fn parse_blocks(text: &str) -> Vec<serde_json::Value> {
+    let tokens = aozora_core::tokenize(text);
+    let nodes = aozora_core::parse(&tokens);
+    aozora_nodes_to_aat_blocks(&nodes)
+}
+
+#[derive(Debug)]
+struct BlockFrame {
+    block_type: Option<aozora_core::BlockType>,
+    children: Vec<serde_json::Value>,
+    content: Vec<serde_json::Value>,
+}
+
+impl BlockFrame {
+    fn root() -> Self {
+        Self {
+            block_type: None,
+            children: Vec::new(),
+            content: Vec::new(),
+        }
+    }
+
+    fn block(block_type: aozora_core::BlockType) -> Self {
+        Self {
+            block_type: Some(block_type),
+            children: Vec::new(),
+            content: Vec::new(),
+        }
+    }
+
+    fn flush_paragraph(&mut self) {
+        if self.content.is_empty() {
+            return;
+        }
+        self.children.push(json!({
+            "kind": "paragraph",
+            "content": std::mem::take(&mut self.content)
+        }));
+    }
+
+    fn into_block(mut self) -> serde_json::Value {
+        self.flush_paragraph();
+        let block_type = self.block_type.expect("non-root block frame");
+        if let Some(kind) = block_kind(block_type) {
+            json!({
+                "kind": kind,
+                "children": self.children
+            })
+        } else {
+            let mut content = vec![raw_json(format!("BlockStart({block_type:?})"))];
+            for child in self.children {
+                content.push(child);
+            }
+            content.push(raw_json(format!("BlockEnd({block_type:?})")));
+            json!({
+                "kind": "paragraph",
+                "content": content
+            })
+        }
+    }
+}
+
+fn aozora_nodes_to_aat_blocks(nodes: &[Node]) -> Vec<serde_json::Value> {
+    let mut stack = vec![BlockFrame::root()];
+    for node in nodes {
+        match node {
+            Node::BlockStart { block_type, .. } if block_kind(*block_type).is_some() => {
+                stack.last_mut().expect("root frame").flush_paragraph();
+                stack.push(BlockFrame::block(*block_type));
+            }
+            Node::BlockEnd { block_type, .. } => {
+                if stack.len() > 1
+                    && stack.last().and_then(|frame| frame.block_type) == Some(*block_type)
+                {
+                    let block = stack.pop().expect("block frame").into_block();
+                    stack.last_mut().expect("parent frame").children.push(block);
+                } else {
+                    append_raw_to_current_frame(&mut stack, format!("BlockEnd({block_type:?})"));
+                }
+            }
+            Node::Text(text) => append_text_to_current_frame(&mut stack, text),
+            _ => append_node_to_current_frame(&mut stack, node),
+        }
+    }
+
+    while stack.len() > 1 {
+        let mut frame = stack.pop().expect("block frame");
+        let block_type = frame.block_type.expect("block type");
+        stack
+            .last_mut()
+            .expect("parent frame")
+            .content
+            .push(raw_json(format!("BlockStart({block_type:?})")));
+        frame.flush_paragraph();
+        for child in frame.children {
+            stack.last_mut().expect("parent frame").children.push(child);
+        }
+    }
+
+    let mut root = stack.pop().expect("root frame");
+    root.flush_paragraph();
+    root.children
+}
+
+fn append_node_to_current_frame(stack: &mut [BlockFrame], node: &Node) {
+    append_aozora_node(&mut stack.last_mut().expect("current frame").content, node);
+}
+
+fn append_raw_to_current_frame(stack: &mut [BlockFrame], source: impl Into<String>) {
+    stack
+        .last_mut()
+        .expect("current frame")
+        .content
+        .push(raw_json(source));
+}
+
+fn append_text_to_current_frame(stack: &mut [BlockFrame], text: &str) {
+    let parts = text.split("\n\n").collect::<Vec<_>>();
+    let split_count = parts.len();
+    for (idx, part) in parts.into_iter().enumerate() {
+        if !part.trim().is_empty() {
+            push_text_node(&mut stack.last_mut().expect("current frame").content, part);
+        }
+        if idx + 1 < split_count {
+            stack.last_mut().expect("current frame").flush_paragraph();
+        }
+    }
+}
+
+fn block_kind(block_type: aozora_core::BlockType) -> Option<&'static str> {
+    match block_type {
+        aozora_core::BlockType::Jisage => Some("jisage_block"),
+        aozora_core::BlockType::Keigakomi => Some("keigakomi_block"),
+        aozora_core::BlockType::Yokogumi => Some("yokogumi_block"),
+        aozora_core::BlockType::Caption => Some("caption_block"),
+        _ => None,
+    }
 }
 
 fn aozora_nodes_to_aat_content(nodes: &[Node]) -> Vec<serde_json::Value> {
@@ -155,24 +297,46 @@ fn append_aozora_node(content: &mut Vec<serde_json::Value>, node: &Node) {
             "style_type": format!("{style_type:?}"),
             "content": aozora_nodes_to_aat_content(children)
         })),
-        Node::Tcy { children }
-        | Node::Keigakomi { children }
-        | Node::Yokogumi { children }
-        | Node::Caption { children }
-        | Node::FontSize { children, .. }
-        | Node::Midashi { children, .. } => {
-            for child in children {
-                append_aozora_node(content, child);
-            }
-        }
+        Node::Tcy { children } => content.push(inline_container_json("tcy", children)),
+        Node::Keigakomi { children } => content.push(inline_container_json("keigakomi", children)),
+        Node::Yokogumi { children } => content.push(inline_container_json("yokogumi", children)),
+        Node::Caption { children } => content.push(inline_container_json("caption", children)),
+        Node::FontSize {
+            children,
+            size_type,
+            level,
+        } => content.push(json!({
+            "kind": "font_size",
+            "size_type": font_size_type_name(*size_type),
+            "level": level,
+            "content": aozora_nodes_to_aat_content(children)
+        })),
+        Node::Midashi {
+            children,
+            level,
+            style,
+        } => content.push(json!({
+            "kind": "style",
+            "style_type": "midashi",
+            "level": midashi_level_number(*level),
+            "class_name": midashi_style_name(*style),
+            "content": aozora_nodes_to_aat_content(children)
+        })),
         Node::Warigaki { upper, lower } => content.push(json!({
             "kind": "warigaki",
             "upper": aozora_nodes_to_aat_content(upper),
             "lower": aozora_nodes_to_aat_content(lower)
         })),
-        Node::Accent { name, unicode, .. } => {
-            push_text_node(content, unicode.as_deref().unwrap_or(name));
-        }
+        Node::Accent {
+            code,
+            name,
+            unicode,
+        } => content.push(json!({
+            "kind": "accent",
+            "code": code,
+            "name": name,
+            "resolved": unicode
+        })),
         Node::Img {
             filename,
             alt,
@@ -180,7 +344,7 @@ fn append_aozora_node(content: &mut Vec<serde_json::Value>, node: &Node) {
             width,
             height,
         } => content.push(json!({
-            "kind": "image",
+            "kind": "figure",
             "filename": filename,
             "alt": alt,
             "css_class": css_class,
@@ -207,7 +371,13 @@ fn append_aozora_node(content: &mut Vec<serde_json::Value>, node: &Node) {
             }
             push_text_node(content, suffix);
         }
-        Node::BlockStart { .. } | Node::BlockEnd { .. } | Node::Note(_) => {}
+        Node::BlockStart { block_type, .. } => {
+            content.push(raw_json(format!("BlockStart({block_type:?})")))
+        }
+        Node::BlockEnd { block_type, .. } => {
+            content.push(raw_json(format!("BlockEnd({block_type:?})")))
+        }
+        Node::Note(note) => content.push(raw_json(note)),
     }
 }
 
@@ -243,8 +413,45 @@ fn gaiji_json(
     })
 }
 
+fn inline_container_json(kind: &str, children: &[Node]) -> serde_json::Value {
+    json!({
+        "kind": kind,
+        "content": aozora_nodes_to_aat_content(children)
+    })
+}
+
+fn raw_json(source: impl Into<String>) -> serde_json::Value {
+    json!({
+        "kind": "raw",
+        "source": source.into()
+    })
+}
+
 fn aozora_nodes_visible_text(nodes: &[Node]) -> String {
     nodes.iter().map(Node::to_text).collect()
+}
+
+fn font_size_type_name(size_type: FontSizeType) -> &'static str {
+    match size_type {
+        FontSizeType::Dai => "dai",
+        FontSizeType::Sho => "sho",
+    }
+}
+
+fn midashi_level_number(level: MidashiLevel) -> u8 {
+    match level {
+        MidashiLevel::O => 1,
+        MidashiLevel::Naka => 2,
+        MidashiLevel::Ko => 3,
+    }
+}
+
+fn midashi_style_name(style: MidashiStyle) -> &'static str {
+    match style {
+        MidashiStyle::Normal => "normal",
+        MidashiStyle::Dogyo => "dogyo",
+        MidashiStyle::Mado => "mado",
+    }
 }
 
 fn ruby_direction_name(direction: RubyDirection) -> &'static str {
@@ -276,6 +483,211 @@ pub fn html_escape(value: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use aozora_core::node::FontSizeType;
+    use aozora_core::{BlockParams, BlockType, MidashiLevel, MidashiStyle};
+
+    fn project_node(node: Node) -> Vec<serde_json::Value> {
+        let mut content = Vec::new();
+        append_aozora_node(&mut content, &node);
+        content
+    }
+
+    #[test]
+    fn version_names_crates_io_aozora_core_version() {
+        assert_eq!(VERSION, "aozora2-adapter 0.1.0 aozora-core-0.7.1");
+    }
+
+    #[test]
+    fn html_mode_is_not_reported_as_upstream_renderer() {
+        assert!(html_from_bytes("本文".as_bytes()).is_err());
+    }
+
+    #[test]
+    fn projection_preserves_accent_node() {
+        let content = project_node(Node::Accent {
+            code: "E9".to_owned(),
+            name: "e acute".to_owned(),
+            unicode: Some("é".to_owned()),
+        });
+
+        assert_eq!(content[0]["kind"], "accent");
+        assert_eq!(content[0]["code"], "E9");
+        assert_eq!(content[0]["name"], "e acute");
+        assert_eq!(content[0]["resolved"], "é");
+    }
+
+    #[test]
+    fn projection_preserves_image_as_figure_node() {
+        let content = project_node(Node::Img {
+            filename: "fig01.png".to_owned(),
+            alt: "挿絵".to_owned(),
+            css_class: "width-400 height-300".to_owned(),
+            width: Some(400),
+            height: Some(300),
+        });
+
+        assert_eq!(content[0]["kind"], "figure");
+        assert_eq!(content[0]["filename"], "fig01.png");
+        assert_eq!(content[0]["alt"], "挿絵");
+        assert_eq!(content[0]["css_class"], "width-400 height-300");
+        assert_eq!(content[0]["width"], 400);
+        assert_eq!(content[0]["height"], 300);
+    }
+
+    #[test]
+    fn projection_preserves_inline_wrapper_nodes() {
+        let cases = [
+            (
+                Node::Tcy {
+                    children: vec![Node::Text("12".to_owned())],
+                },
+                "tcy",
+            ),
+            (
+                Node::Yokogumi {
+                    children: vec![Node::Text("abc".to_owned())],
+                },
+                "yokogumi",
+            ),
+            (
+                Node::Caption {
+                    children: vec![Node::Text("説明".to_owned())],
+                },
+                "caption",
+            ),
+            (
+                Node::Keigakomi {
+                    children: vec![Node::Text("囲み".to_owned())],
+                },
+                "keigakomi",
+            ),
+        ];
+
+        for (node, kind) in cases {
+            let content = project_node(node);
+            assert_eq!(content[0]["kind"], kind);
+            assert_eq!(content[0]["content"][0]["kind"], "text");
+        }
+    }
+
+    #[test]
+    fn projection_preserves_font_size_and_midashi_semantics() {
+        let font_size = project_node(Node::FontSize {
+            children: vec![Node::Text("大".to_owned())],
+            size_type: FontSizeType::Dai,
+            level: 2,
+        });
+        assert_eq!(font_size[0]["kind"], "font_size");
+        assert_eq!(font_size[0]["size_type"], "dai");
+        assert_eq!(font_size[0]["level"], 2);
+
+        let midashi = project_node(Node::Midashi {
+            children: vec![Node::Text("章".to_owned())],
+            level: MidashiLevel::O,
+            style: MidashiStyle::Dogyo,
+        });
+        assert_eq!(midashi[0]["kind"], "style");
+        assert_eq!(midashi[0]["style_type"], "midashi");
+        assert_eq!(midashi[0]["level"], 1);
+        assert_eq!(midashi[0]["class_name"], "dogyo");
+    }
+
+    #[test]
+    fn projection_preserves_notes_and_block_boundaries_as_raw_nodes() {
+        let note = project_node(Node::Note("注記".to_owned()));
+        assert_eq!(note[0]["kind"], "raw");
+        assert_eq!(note[0]["source"], "注記");
+
+        let block = project_node(Node::BlockStart {
+            block_type: BlockType::Jisage,
+            params: BlockParams::default(),
+        });
+        assert_eq!(block[0]["kind"], "raw");
+        assert_eq!(block[0]["source"], "BlockStart(Jisage)");
+    }
+
+    #[test]
+    fn aozora_core_emits_jisage_block_markers() {
+        // Verified against aozora-core 0.7.1: tokenize(&str) and parse(&[Token])
+        // return public Node::BlockStart/BlockEnd variants.
+        let tokens =
+            aozora_core::tokenize("［＃ここから2字下げ］\n字下げ\n［＃ここで字下げ終わり］");
+        let nodes = aozora_core::parse(&tokens);
+
+        assert!(nodes.iter().any(|node| {
+            matches!(
+                node,
+                Node::BlockStart {
+                    block_type: BlockType::Jisage,
+                    ..
+                }
+            )
+        }));
+        assert!(nodes.iter().any(|node| {
+            matches!(
+                node,
+                Node::BlockEnd {
+                    block_type: BlockType::Jisage,
+                    ..
+                }
+            )
+        }));
+    }
+
+    #[test]
+    fn build_aat_reconstructs_jisage_block_container() {
+        let decoded = DecodedSource {
+            text: "前\n［＃ここから2字下げ］\n字下げ\n［＃ここで字下げ終わり］\n後".to_owned(),
+            encoding: "utf-8",
+            source_hash: "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+                .to_owned(),
+        };
+
+        let aat = build_aat(&decoded);
+        let blocks = aat["blocks"].as_array().expect("blocks");
+
+        assert_eq!(blocks[0]["kind"], "paragraph");
+        assert_eq!(blocks[1]["kind"], "jisage_block");
+        assert_eq!(blocks[1]["children"][0]["kind"], "paragraph");
+        assert_eq!(blocks[2]["kind"], "paragraph");
+    }
+
+    #[test]
+    fn build_aat_reconstructs_nested_block_containers() {
+        let decoded = DecodedSource {
+            text: "［＃ここから2字下げ］\n［＃ここから罫囲み］\n囲み\n［＃ここで罫囲み終わり］\n［＃ここで字下げ終わり］"
+                .to_owned(),
+            encoding: "utf-8",
+            source_hash: "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+                .to_owned(),
+        };
+
+        let aat = build_aat(&decoded);
+        let blocks = aat["blocks"].as_array().expect("blocks");
+
+        assert_eq!(blocks[0]["kind"], "jisage_block");
+        assert_eq!(blocks[0]["children"][0]["kind"], "keigakomi_block");
+        assert_eq!(blocks[0]["children"][0]["children"][0]["kind"], "paragraph");
+    }
+
+    #[test]
+    fn unmatched_block_end_remains_raw_inline() {
+        let decoded = DecodedSource {
+            text: "本文［＃ここで字下げ終わり］".to_owned(),
+            encoding: "utf-8",
+            source_hash: "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+                .to_owned(),
+        };
+
+        let aat = build_aat(&decoded);
+        let content = aat["blocks"][0]["content"].as_array().expect("content");
+
+        assert!(
+            content
+                .iter()
+                .any(|node| { node["kind"] == "raw" && node["source"] == "BlockEnd(Jisage)" })
+        );
+    }
 
     #[test]
     fn source_visible_text_excludes_unresolved_gaiji_descriptions() {

@@ -1,11 +1,42 @@
 aat_version = 1
 
+[[evidence]]
+id = "jis-x-0213-2-13-47"
+kind = "reference_table"
+citation = "JIS X 0213 plane 2 row 13 cell 47"
+locator = "2-13-47"
+supports = "JIS code 2-13-47 resolves to 撑."
+independent = true
+
+[[evidence]]
+id = "unicode-u546d"
+kind = "unicode"
+citation = "Unicode code point U+546D"
+locator = "U+546D"
+supports = "U+546D is 呭."
+independent = true
+
+[[evidence]]
+id = "aozora-ruby-gaiji-inline-base"
+kind = "curator_note"
+citation = "Curated Aozora syntax fixture for gaiji marker followed by ruby annotation"
+supports = "The gaiji marker is the ruby base and should not become a raw node."
+independent = true
+notes = "Draft evidence only; requires separate confirmation against Aozora rule text or corpus examples before reviewed status."
+
 [[case]]
 id = "gaiji.jis.2-13-47"
 syntax_row_ids = ["gaiji.jis_code"]
 category = "gaiji"
 source_utf8 = "耳朶を※［＃「てへん＋掌」、第4水準2-13-47］えて"
+evidence_ids = ["jis-x-0213-2-13-47"]
 notes = "JIS X 0213 plane 2 row 13 cell 47 should resolve to 撑."
+
+[[case.review]]
+status = "draft"
+reviewer = "oracle-seed"
+reviewed_at = "2026-05-03"
+notes = "Seeded from current oracle fixture; needs source audit before reviewed."
 
 [case.oracle]
 visible_text = "耳朶を撑えて"
@@ -27,6 +58,13 @@ id = "gaiji.unicode.u546d"
 syntax_row_ids = ["gaiji.unicode_codepoint"]
 category = "gaiji"
 source_utf8 = "※［＃「口＋世」、U+546D］は珍しい字。"
+evidence_ids = ["unicode-u546d"]
+
+[[case.review]]
+status = "draft"
+reviewer = "oracle-seed"
+reviewed_at = "2026-05-03"
+notes = "Seeded from Unicode code point fixture; needs source audit before reviewed."
 
 [case.oracle]
 visible_text = "呭は珍しい字。"
@@ -44,6 +82,13 @@ id = "ruby.gaiji.inline_base"
 syntax_row_ids = ["gaiji_ruby.inline_base", "ruby.basic"]
 category = "ruby"
 source_utf8 = "※［＃「口＋愛」、第3水準1-15-23］《おくび》が出た。"
+evidence_ids = ["aozora-ruby-gaiji-inline-base"]
+
+[[case.review]]
+status = "draft"
+reviewer = "oracle-seed"
+reviewed_at = "2026-05-03"
+notes = "Curated structural fixture; not reviewed against independent Aozora rule evidence yet."
 
 [case.oracle]
 visible_text = "が出た。"

@@ -31,6 +31,19 @@ struct Args {
     report_md_from_json: Option<PathBuf>,
 }
 
+fn should_evaluate_case(
+    case: &ab_oracle::data::OracleCase,
+    requested_case_id: Option<&str>,
+) -> bool {
+    if matches!(
+        case.current_review_status(),
+        ab_oracle::data::ReviewStatus::Retired
+    ) {
+        return false;
+    }
+    requested_case_id.is_none_or(|case_id| case.id == case_id)
+}
+
 fn main() -> Result<()> {
     let args = Args::parse();
     if let Some(report_json) = &args.report_md_from_json {
@@ -54,11 +67,10 @@ fn main() -> Result<()> {
 
     if !args.adapters.is_empty() {
         let mut rows = Vec::new();
-        let cases = oracle.case.iter().filter(|case| {
-            args.case_id
-                .as_ref()
-                .is_none_or(|case_id| case.id == *case_id)
-        });
+        let cases = oracle
+            .case
+            .iter()
+            .filter(|case| should_evaluate_case(case, args.case_id.as_deref()));
         for case in cases {
             for adapter_arg in &args.adapters {
                 let adapter = parse_adapter_spec(adapter_arg);

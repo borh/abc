@@ -246,5 +246,11 @@ mod tests {
                 .any(|observation| observation.case_id == "gaiji.jis.2-13-47"
                     && observation.adapter == "aozora-rs")
         );
+        assert!(observations.observation.iter().any(|observation| {
+            observation.case_id == "ruby.gaiji.inline_base"
+                && observation.adapter == "aozora2"
+                && observation.kind == "ruby"
+                && observation.fields.get("base").and_then(toml::Value::as_str) == Some("噯")
+        }));
     }
 }

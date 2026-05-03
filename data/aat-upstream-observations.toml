@@ -17,3 +17,13 @@ selector = "blocks.*.content.*"
 kind = "gaiji"
 fields = { resolved = "撑", jis_code = "2-13-47" }
 evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "ruby.gaiji.inline_base"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora-core 0.7.1 emits a ruby node with the resolved JIS gaiji as structured base_content."
+selector = "blocks.*.content.*"
+kind = "ruby"
+fields = { base = "噯", reading = "おくび" }
+evidence = "adapters/aozora2/src/lib.rs"

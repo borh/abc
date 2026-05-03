@@ -1,9 +1,10 @@
 #[cfg(test)]
 use ab_source_syntax as source_syntax;
 use anyhow::Result;
-use aozora_core::node::FontSizeType;
+use aozora_core::node::{FontSizeType, StyleType};
 use aozora_core::{MidashiLevel, MidashiStyle, Node, RubyDirection};
 use encoding_rs::SHIFT_JIS;
+use serde_json::Value;
 use serde_json::json;
 use sha2::{Digest, Sha256};
 
@@ -151,17 +152,16 @@ impl BlockFrame {
     }
 
     fn flush_paragraph(&mut self) {
+        normalize_inline_content(&mut self.content);
         trim_content_boundary_line_breaks(&mut self.content);
         if self.content.is_empty() {
             return;
         }
-        self.children.push(json!({
-            "kind": "paragraph",
-            "content": std::mem::take(&mut self.content)
-        }));
+        push_paragraphs_with_page_breaks(&mut self.children, std::mem::take(&mut self.content));
     }
 
     fn flush_heading(&mut self, level: MidashiLevel, style: MidashiStyle) {
+        normalize_inline_content(&mut self.content);
         trim_content_boundary_line_breaks(&mut self.content);
         if self.content.is_empty() {
             return;
@@ -179,6 +179,7 @@ impl BlockFrame {
         block_type: aozora_core::BlockType,
         params: &aozora_core::BlockParams,
     ) {
+        normalize_inline_content(&mut self.content);
         trim_content_boundary_line_breaks(&mut self.content);
         if self.content.is_empty() {
             return;
@@ -428,6 +429,170 @@ fn inline_content_from_blocks(blocks: Vec<serde_json::Value>) -> Vec<serde_json:
     content
 }
 
+fn push_paragraphs_with_page_breaks(children: &mut Vec<Value>, content: Vec<Value>) {
+    let mut paragraph = Vec::new();
+    for node in content {
+        if node.get("kind").and_then(Value::as_str) == Some("_page_break") {
+            trim_content_boundary_line_breaks(&mut paragraph);
+            if !paragraph.is_empty() {
+                children.push(json!({
+                    "kind": "paragraph",
+                    "content": std::mem::take(&mut paragraph)
+                }));
+            }
+            children.push(json!({
+                "kind": "paragraph",
+                "content": [],
+                "x-break-kind": "page"
+            }));
+        } else {
+            paragraph.push(node);
+        }
+    }
+    trim_content_boundary_line_breaks(&mut paragraph);
+    if !paragraph.is_empty() {
+        children.push(json!({
+            "kind": "paragraph",
+            "content": paragraph
+        }));
+    }
+}
+
+fn normalize_inline_content(content: &mut Vec<Value>) {
+    let original = std::mem::take(content);
+    let mut normalized = Vec::new();
+    let mut idx = 0;
+    while idx < original.len() {
+        let mut node = original[idx].clone();
+        normalize_node_children(&mut node);
+
+        if let Some(value) = text_node_value(&node) {
+            if value == "／＼" {
+                normalized.push(gaiji_json("くの字点", Some("〳〵"), None));
+                idx += 1;
+                continue;
+            }
+            if let Some(figure) = parse_plain_figure_text(value) {
+                normalized.push(figure);
+                idx += 1;
+                continue;
+            }
+        }
+
+        if node.get("kind").and_then(Value::as_str) == Some("figure")
+            && idx + 1 < original.len()
+            && original[idx + 1].get("kind").and_then(Value::as_str) == Some("caption")
+        {
+            if let Some(caption) = original[idx + 1].get("content").cloned()
+                && let Some(object) = node.as_object_mut()
+            {
+                if let Some(caption_text) = caption_visible_text(&caption) {
+                    object.insert("alt".to_owned(), json!(caption_text));
+                }
+                object.insert("caption".to_owned(), caption);
+                normalized.push(node);
+                idx += 2;
+                continue;
+            }
+        }
+
+        if let Some(source) = raw_node_source(&node) {
+            if is_warigaki_start(source) {
+                let (warigaki, next_idx) = collect_warigaki(&original, idx + 1);
+                normalized.push(warigaki);
+                idx = next_idx;
+                continue;
+            }
+            if let Some((target, reading)) = parse_left_ruby_note(source) {
+                if target.contains('《') || target.contains('》') {
+                    let mut raw = raw_json(source.to_owned());
+                    raw.as_object_mut()
+                        .expect("raw object")
+                        .insert("x-error-kind".to_owned(), json!("nested_ruby_forbidden"));
+                    normalized.push(raw);
+                    idx += 1;
+                    continue;
+                }
+                if apply_left_ruby(&mut normalized, target, reading) {
+                    idx += 1;
+                    continue;
+                }
+            }
+            if let Some((target, frontref)) = parse_frontref_boten_note(source) {
+                if apply_frontref_boten(&mut normalized, target, frontref) {
+                    idx += 1;
+                    continue;
+                }
+            }
+            if source == "改行" {
+                apply_line_break(&mut normalized, original.get(idx + 1));
+                if original.get(idx + 1).and_then(text_node_value).is_some() {
+                    idx += 2;
+                } else {
+                    idx += 1;
+                }
+                continue;
+            }
+            if source == "改ページ" {
+                normalized.push(json!({"kind": "_page_break"}));
+                idx += 1;
+                continue;
+            }
+            if source == "左頁" {
+                normalized.push(json!({
+                    "kind": "text",
+                    "value": "",
+                    "x-editor-note": "左頁"
+                }));
+                idx += 1;
+                continue;
+            }
+            if let Some(marker) = source.strip_prefix("返り点") {
+                normalized.push(json!({
+                    "kind": "style",
+                    "style_type": "kaeriten",
+                    "content": [],
+                    "x-marker": marker
+                }));
+                idx += 1;
+                continue;
+            }
+            if let Some(reading) = parse_quoted_arg(source, "訓点送り仮名") {
+                normalized.push(json!({
+                    "kind": "ruby",
+                    "base": "",
+                    "reading": reading,
+                    "direction": "right",
+                    "base_content": [],
+                    "reading_content": [{"kind": "text", "value": reading}],
+                    "x-annotation-type": "okurigana"
+                }));
+                idx += 1;
+                continue;
+            }
+        }
+
+        normalized.push(node);
+        idx += 1;
+    }
+    *content = normalized;
+}
+
+fn normalize_node_children(node: &mut Value) {
+    for key in [
+        "content",
+        "base_content",
+        "reading_content",
+        "upper",
+        "lower",
+        "caption",
+    ] {
+        if let Some(children) = node.get_mut(key).and_then(Value::as_array_mut) {
+            normalize_inline_content(children);
+        }
+    }
+}
+
 fn trim_content_boundary_line_breaks(content: &mut Vec<serde_json::Value>) {
     if let Some(first) = content.first_mut() {
         trim_text_node(first, true);
@@ -474,11 +639,19 @@ fn text_node_value(node: &serde_json::Value) -> Option<&str> {
         .and_then(serde_json::Value::as_str)
 }
 
+fn raw_node_source(node: &Value) -> Option<&str> {
+    node.as_object()
+        .filter(|object| object.get("kind").and_then(Value::as_str) == Some("raw"))
+        .and_then(|object| object.get("source"))
+        .and_then(Value::as_str)
+}
+
 fn aozora_nodes_to_aat_content(nodes: &[Node]) -> Vec<serde_json::Value> {
     let mut content = Vec::new();
     for node in nodes {
         append_aozora_node(&mut content, node);
     }
+    normalize_inline_content(&mut content);
     content
 }
 
@@ -498,23 +671,21 @@ fn append_aozora_node(content: &mut Vec<serde_json::Value>, node: &Node) {
             children,
             ruby,
             direction,
-        } => content.push(json!({
-            "kind": "ruby",
-            "base": aozora_nodes_visible_text(children),
-            "reading": aozora_nodes_visible_text(ruby),
-            "direction": ruby_direction_name(*direction),
-            "base_content": aozora_nodes_to_aat_content(children),
-            "reading_content": aozora_nodes_to_aat_content(ruby)
-        })),
+        } => content.push(ruby_json(
+            aozora_nodes_visible_text(children),
+            aozora_nodes_visible_text(ruby),
+            *direction,
+            aozora_nodes_to_aat_content(children),
+            aozora_nodes_to_aat_content(ruby),
+        )),
         Node::Style {
             children,
             style_type,
             ..
-        } => content.push(json!({
-            "kind": "style",
-            "style_type": format!("{style_type:?}"),
-            "content": aozora_nodes_to_aat_content(children)
-        })),
+        } => content.push(style_json(
+            *style_type,
+            aozora_nodes_to_aat_content(children),
+        )),
         Node::Tcy { children } => content.push(inline_container_json("tcy", children)),
         Node::Keigakomi { children } => content.push(inline_container_json("keigakomi", children)),
         Node::Yokogumi { children } => content.push(inline_container_json("yokogumi", children)),
@@ -626,9 +797,20 @@ fn gaiji_json(
         "kind": "gaiji",
         "description": description,
         "resolved": resolved.unwrap_or(""),
-        "jis_code": jis_code,
+        "jis_code": jis_code.map(normalize_jis_code),
         "unresolved_reason": if resolved.is_some() { None::<&str> } else { Some("unresolved") }
     })
+}
+
+fn normalize_jis_code(jis_code: &str) -> String {
+    jis_code
+        .split('-')
+        .map(|part| {
+            let trimmed = part.trim_start_matches('0');
+            if trimmed.is_empty() { "0" } else { trimmed }
+        })
+        .collect::<Vec<_>>()
+        .join("-")
 }
 
 fn inline_container_json(kind: &str, children: &[Node]) -> serde_json::Value {
@@ -638,11 +820,250 @@ fn inline_container_json(kind: &str, children: &[Node]) -> serde_json::Value {
     })
 }
 
+fn ruby_json(
+    base: String,
+    reading: String,
+    direction: RubyDirection,
+    base_content: Vec<Value>,
+    mut reading_content: Vec<Value>,
+) -> Value {
+    let mut reading = reading;
+    let mut annotation_type = None;
+    if reading.contains('\u{a0}') {
+        reading = reading.replace('\u{a0}', "");
+        reading_content = vec![json!({"kind": "text", "value": reading})];
+        annotation_type = Some("bouki");
+    } else if reading == "ママ" {
+        annotation_type = Some("chuuki");
+    }
+
+    let mut ruby = json!({
+        "kind": "ruby",
+        "base": base,
+        "reading": reading,
+        "direction": ruby_direction_name(direction),
+        "base_content": base_content,
+        "reading_content": reading_content
+    });
+    if let Some(annotation_type) = annotation_type {
+        ruby.as_object_mut()
+            .expect("ruby object")
+            .insert("x-annotation-type".to_owned(), json!(annotation_type));
+    }
+    ruby
+}
+
+fn style_json(style_type: StyleType, content: Vec<Value>) -> Value {
+    let mut style = json!({
+        "kind": "style",
+        "style_type": style_type_name(style_type),
+        "content": content
+    });
+    let object = style.as_object_mut().expect("style object");
+    if let Some(kind) = boten_kind(style_type) {
+        object.insert("x-boten-kind".to_owned(), json!(kind));
+    }
+    if let Some(kind) = line_kind(style_type) {
+        object.insert("x-line-kind".to_owned(), json!(kind));
+    }
+    if style_is_left_placement(style_type) {
+        object.insert("x-placement".to_owned(), json!("left"));
+    }
+    style
+}
+
 fn raw_json(source: impl Into<String>) -> serde_json::Value {
     json!({
         "kind": "raw",
         "source": source.into()
     })
+}
+
+fn is_warigaki_start(source: &str) -> bool {
+    source == "割書" || source == "割り注" || source == "BlockStart(Warigaki)"
+}
+
+fn is_warigaki_end(source: &str) -> bool {
+    source == "割書終わり" || source == "割り注終わり" || source == "BlockEnd(Warigaki)"
+}
+
+fn collect_warigaki(nodes: &[Value], start_idx: usize) -> (Value, usize) {
+    let mut upper = Vec::new();
+    let mut idx = start_idx;
+    while idx < nodes.len() {
+        if let Some(source) = raw_node_source(&nodes[idx])
+            && is_warigaki_end(source)
+        {
+            normalize_inline_content(&mut upper);
+            return (
+                json!({
+                    "kind": "warigaki",
+                    "upper": upper,
+                    "lower": []
+                }),
+                idx + 1,
+            );
+        }
+        upper.push(nodes[idx].clone());
+        idx += 1;
+    }
+    normalize_inline_content(&mut upper);
+    (
+        json!({
+            "kind": "warigaki",
+            "upper": upper,
+            "lower": []
+        }),
+        idx,
+    )
+}
+
+fn parse_left_ruby_note(source: &str) -> Option<(&str, &str)> {
+    let body = source.strip_prefix('「')?;
+    let (target, rest) = body.split_once("」の左に「")?;
+    let reading = rest.strip_suffix("」のルビ")?;
+    Some((target, reading))
+}
+
+fn apply_left_ruby(content: &mut Vec<Value>, target: &str, reading: &str) -> bool {
+    if let Some(last) = content.last_mut()
+        && last.get("kind").and_then(Value::as_str) == Some("ruby")
+        && last.get("base").and_then(Value::as_str) == Some(target)
+        && let Some(object) = last.as_object_mut()
+    {
+        object.insert("x-left-reading".to_owned(), json!(reading));
+        return true;
+    }
+
+    let Some(last) = content.last_mut() else {
+        return false;
+    };
+    let Some(text) = text_node_value(last) else {
+        return false;
+    };
+    let Some(prefix) = text.strip_suffix(target) else {
+        return false;
+    };
+    let prefix = prefix.to_owned();
+    if let Some(object) = last.as_object_mut()
+        && let Some(Value::String(value)) = object.get_mut("value")
+    {
+        *value = prefix;
+    }
+    if text_node_value(last).is_some_and(str::is_empty) {
+        content.pop();
+    }
+    content.push(json!({
+        "kind": "ruby",
+        "base": target,
+        "reading": reading,
+        "direction": "left",
+        "base_content": [{"kind": "text", "value": target}],
+        "reading_content": [{"kind": "text", "value": reading}]
+    }));
+    true
+}
+
+fn parse_frontref_boten_note(source: &str) -> Option<(&str, &str)> {
+    let body = source.strip_prefix('「')?;
+    let (target, rest) = body.split_once("」に「")?;
+    let frontref = rest.strip_suffix("」の傍点")?;
+    Some((target, frontref))
+}
+
+fn apply_frontref_boten(content: &mut Vec<Value>, target: &str, frontref: &str) -> bool {
+    let Some(last) = content.last_mut() else {
+        return false;
+    };
+    let Some(text) = text_node_value(last) else {
+        return false;
+    };
+    let Some(prefix) = text.strip_suffix(target) else {
+        return false;
+    };
+    let prefix = prefix.to_owned();
+    if let Some(object) = last.as_object_mut()
+        && let Some(Value::String(value)) = object.get_mut("value")
+    {
+        *value = prefix;
+    }
+    if text_node_value(last).is_some_and(str::is_empty) {
+        content.pop();
+    }
+    content.push(json!({
+        "kind": "style",
+        "style_type": "boten",
+        "content": [{"kind": "text", "value": target}],
+        "x-frontref": frontref
+    }));
+    true
+}
+
+fn apply_line_break(content: &mut Vec<Value>, next: Option<&Value>) {
+    let Some(last) = content.last_mut() else {
+        content.push(json!({
+            "kind": "text",
+            "value": "\n",
+            "x-break-kind": "line"
+        }));
+        return;
+    };
+    if let Some(object) = last.as_object_mut()
+        && object.get("kind").and_then(Value::as_str) == Some("text")
+        && let Some(Value::String(value)) = object.get_mut("value")
+    {
+        value.push('\n');
+        if let Some(next_text) = next.and_then(text_node_value) {
+            value.push_str(next_text);
+        }
+        object.insert("x-break-kind".to_owned(), json!("line"));
+        return;
+    }
+    content.push(json!({
+        "kind": "text",
+        "value": "\n",
+        "x-break-kind": "line"
+    }));
+}
+
+fn parse_quoted_arg<'a>(source: &'a str, prefix: &str) -> Option<&'a str> {
+    let body = source.strip_prefix(prefix)?;
+    body.strip_prefix('「')?.strip_suffix('」')
+}
+
+fn parse_plain_figure_text(text: &str) -> Option<Value> {
+    let (alt, rest) = text.split_once('（')?;
+    let args = rest.strip_suffix("）入る")?;
+    figure_from_args(args, alt, None)
+}
+
+fn figure_from_args(args: &str, alt: &str, caption: Option<&str>) -> Option<Value> {
+    let (filename, rest) = args.split_once("、横")?;
+    let (width, rest) = rest.split_once('×')?;
+    let height = rest.strip_prefix('縦')?;
+    let width = width.parse::<u32>().ok()?;
+    let height = height.parse::<u32>().ok()?;
+    let mut figure = json!({
+        "kind": "figure",
+        "filename": filename,
+        "alt": alt,
+        "css_class": "",
+        "width": width,
+        "height": height
+    });
+    if let Some(caption) = caption {
+        figure.as_object_mut().expect("figure object").insert(
+            "caption".to_owned(),
+            json!([{"kind": "text", "value": caption}]),
+        );
+    }
+    Some(figure)
+}
+
+fn caption_visible_text(caption: &Value) -> Option<String> {
+    let items = caption.as_array()?;
+    let text = items.iter().filter_map(text_node_value).collect::<String>();
+    if text.is_empty() { None } else { Some(text) }
 }
 
 fn aozora_nodes_visible_text(nodes: &[Node]) -> String {
@@ -651,8 +1072,8 @@ fn aozora_nodes_visible_text(nodes: &[Node]) -> String {
 
 fn font_size_type_name(size_type: FontSizeType) -> &'static str {
     match size_type {
-        FontSizeType::Dai => "dai",
-        FontSizeType::Sho => "sho",
+        FontSizeType::Dai => "larger",
+        FontSizeType::Sho => "smaller",
     }
 }
 
@@ -677,6 +1098,89 @@ fn ruby_direction_name(direction: RubyDirection) -> &'static str {
         RubyDirection::Right => "right",
         RubyDirection::Left => "left",
     }
+}
+
+fn style_type_name(style_type: StyleType) -> &'static str {
+    match style_type {
+        StyleType::SesameDot
+        | StyleType::WhiteSesameDot
+        | StyleType::BlackCircle
+        | StyleType::WhiteCircle
+        | StyleType::BlackTriangle
+        | StyleType::WhiteTriangle
+        | StyleType::Bullseye
+        | StyleType::Fisheye
+        | StyleType::Saltire
+        | StyleType::SesameDotAfter
+        | StyleType::WhiteSesameDotAfter
+        | StyleType::BlackCircleAfter
+        | StyleType::WhiteCircleAfter
+        | StyleType::BlackTriangleAfter
+        | StyleType::WhiteTriangleAfter
+        | StyleType::BullseyeAfter
+        | StyleType::FisheyeAfter
+        | StyleType::SaltireAfter => "boten",
+        StyleType::UnderlineSolid
+        | StyleType::UnderlineDouble
+        | StyleType::UnderlineDotted
+        | StyleType::UnderlineDashed
+        | StyleType::UnderlineWave
+        | StyleType::OverlineSolid
+        | StyleType::OverlineDouble
+        | StyleType::OverlineDotted
+        | StyleType::OverlineDashed
+        | StyleType::OverlineWave => "bousen",
+        StyleType::Bold => "bold",
+        StyleType::Italic => "italic",
+        StyleType::Subscript => "subscript",
+        StyleType::Superscript => "superscript",
+    }
+}
+
+fn boten_kind(style_type: StyleType) -> Option<&'static str> {
+    match style_type {
+        StyleType::SesameDot | StyleType::SesameDotAfter => Some("sesame"),
+        StyleType::WhiteSesameDot | StyleType::WhiteSesameDotAfter => Some("white_sesame"),
+        StyleType::BlackCircle | StyleType::BlackCircleAfter => Some("black_circle"),
+        StyleType::WhiteCircle | StyleType::WhiteCircleAfter => Some("white_circle"),
+        StyleType::BlackTriangle | StyleType::BlackTriangleAfter => Some("black_triangle"),
+        StyleType::WhiteTriangle | StyleType::WhiteTriangleAfter => Some("white_triangle"),
+        StyleType::Bullseye | StyleType::BullseyeAfter => Some("bullseye"),
+        StyleType::Fisheye | StyleType::FisheyeAfter => Some("fisheye"),
+        StyleType::Saltire | StyleType::SaltireAfter => Some("saltire"),
+        _ => None,
+    }
+}
+
+fn line_kind(style_type: StyleType) -> Option<&'static str> {
+    match style_type {
+        StyleType::UnderlineSolid | StyleType::OverlineSolid => Some("solid"),
+        StyleType::UnderlineDouble | StyleType::OverlineDouble => Some("double"),
+        StyleType::UnderlineDotted | StyleType::OverlineDotted => Some("dotted"),
+        StyleType::UnderlineDashed | StyleType::OverlineDashed => Some("dashed"),
+        StyleType::UnderlineWave | StyleType::OverlineWave => Some("wave"),
+        _ => None,
+    }
+}
+
+fn style_is_left_placement(style_type: StyleType) -> bool {
+    matches!(
+        style_type,
+        StyleType::SesameDotAfter
+            | StyleType::WhiteSesameDotAfter
+            | StyleType::BlackCircleAfter
+            | StyleType::WhiteCircleAfter
+            | StyleType::BlackTriangleAfter
+            | StyleType::WhiteTriangleAfter
+            | StyleType::BullseyeAfter
+            | StyleType::FisheyeAfter
+            | StyleType::SaltireAfter
+            | StyleType::OverlineSolid
+            | StyleType::OverlineDouble
+            | StyleType::OverlineDotted
+            | StyleType::OverlineDashed
+            | StyleType::OverlineWave
+    )
 }
 
 #[cfg(test)]
@@ -796,7 +1300,7 @@ mod tests {
             level: 2,
         });
         assert_eq!(font_size[0]["kind"], "font_size");
-        assert_eq!(font_size[0]["size_type"], "dai");
+        assert_eq!(font_size[0]["size_type"], "larger");
         assert_eq!(font_size[0]["level"], 2);
 
         let midashi = project_node(Node::Midashi {
@@ -1079,5 +1583,162 @@ mod tests {
         assert_eq!(content[1]["jis_code"], "2-13-47");
         assert_eq!(content[2]["kind"], "text");
         assert_eq!(content[2]["value"], "えて");
+    }
+
+    #[test]
+    fn parse_inline_content_reconstructs_left_ruby_notes() {
+        let content =
+            parse_inline_content("青空文庫［＃「青空文庫」の左に「あおぞらぶんこ」のルビ］");
+
+        assert_eq!(content.len(), 1);
+        assert_eq!(content[0]["kind"], "ruby");
+        assert_eq!(content[0]["base"], "青空文庫");
+        assert_eq!(content[0]["reading"], "あおぞらぶんこ");
+        assert_eq!(content[0]["direction"], "left");
+
+        let content = parse_inline_content(
+            "青空文庫《あおぞらぶんこ》［＃「青空文庫」の左に「aozora bunko」のルビ］",
+        );
+
+        assert_eq!(content.len(), 1);
+        assert_eq!(content[0]["kind"], "ruby");
+        assert_eq!(content[0]["base"], "青空文庫");
+        assert_eq!(content[0]["reading"], "あおぞらぶんこ");
+        assert_eq!(content[0]["direction"], "right");
+        assert_eq!(content[0]["x-left-reading"], "aozora bunko");
+    }
+
+    #[test]
+    fn parse_inline_content_marks_nested_left_ruby_target_as_raw_error() {
+        let content = parse_inline_content(
+            "青空文庫《あおぞらぶんこ》［＃「青空文庫《あおぞらぶんこ》」の左に「aozora bunko」のルビ］",
+        );
+
+        assert_eq!(content[0]["kind"], "ruby");
+        assert_eq!(content[1]["kind"], "raw");
+        assert_eq!(content[1]["x-error-kind"], "nested_ruby_forbidden");
+    }
+
+    #[test]
+    fn parse_inline_content_marks_annotation_ruby_kinds() {
+        let content = parse_inline_content("吹喋［＃「喋」の「ママ」の注記］");
+        let ruby = content
+            .iter()
+            .find(|node| node["kind"] == "ruby")
+            .expect("chuuki ruby");
+
+        assert_eq!(ruby["base"], "喋");
+        assert_eq!(ruby["reading"], "ママ");
+        assert_eq!(ruby["x-annotation-type"], "chuuki");
+
+        let content = parse_inline_content("血が流れ［＃「血が流れ」に「×」の傍記］");
+        let ruby = content
+            .iter()
+            .find(|node| node["kind"] == "ruby")
+            .expect("bouki ruby");
+
+        assert_eq!(ruby["base"], "血が流れ");
+        assert_eq!(ruby["reading"], "××××");
+        assert_eq!(ruby["x-annotation-type"], "bouki");
+    }
+
+    #[test]
+    fn parse_inline_content_normalizes_style_variants() {
+        let content = parse_inline_content("おやじ［＃「おやじ」に白ゴマ傍点］");
+        assert_eq!(content[0]["kind"], "style");
+        assert_eq!(content[0]["style_type"], "boten");
+        assert_eq!(content[0]["x-boten-kind"], "white_sesame");
+
+        let content = parse_inline_content("傍線［＃「傍線」に二重傍線］");
+        assert_eq!(content[0]["kind"], "style");
+        assert_eq!(content[0]["style_type"], "bousen");
+        assert_eq!(content[0]["x-line-kind"], "double");
+
+        let content = parse_inline_content("強調［＃「強調」は太字］と斜体［＃「斜体」は斜体］");
+        assert_eq!(content[0]["style_type"], "bold");
+        assert_eq!(content[2]["style_type"], "italic");
+
+        let content = parse_inline_content("左点［＃「左点」に左に傍点］");
+        assert_eq!(content[0]["kind"], "style");
+        assert_eq!(content[0]["style_type"], "boten");
+        assert_eq!(content[0]["x-placement"], "left");
+
+        let content = parse_inline_content("参照［＃「参照」に「強調」の傍点］");
+        assert_eq!(content[0]["kind"], "style");
+        assert_eq!(content[0]["style_type"], "boten");
+        assert_eq!(content[0]["x-frontref"], "強調");
+    }
+
+    #[test]
+    fn parse_inline_content_normalizes_misc_note_fallbacks() {
+        let content = parse_inline_content("／＼");
+        assert_eq!(content[0]["kind"], "gaiji");
+        assert_eq!(content[0]["description"], "くの字点");
+        assert_eq!(content[0]["resolved"], "〳〵");
+
+        let content = parse_inline_content("※［＃濁点付き片仮名ヱ、1-7-84］エル");
+        assert_eq!(content[0]["kind"], "gaiji");
+        assert_eq!(content[0]["jis_code"], "1-7-84");
+
+        let content = parse_inline_content("漢［＃返り点一］文");
+        assert_eq!(content[0]["value"], "漢");
+        assert_eq!(content[1]["kind"], "style");
+        assert_eq!(content[1]["style_type"], "kaeriten");
+        assert_eq!(content[1]["x-marker"], "一");
+        assert_eq!(content[2]["value"], "文");
+
+        let content = parse_inline_content("漢［＃訓点送り仮名「読」］文");
+        assert_eq!(content[1]["kind"], "ruby");
+        assert_eq!(content[1]["base"], "");
+        assert_eq!(content[1]["reading"], "読");
+        assert_eq!(content[1]["x-annotation-type"], "okurigana");
+    }
+
+    #[test]
+    fn parse_blocks_normalizes_warigaki_figures_editor_notes_and_breaks() {
+        let blocks = parse_blocks("本文［＃割書］注［＃割書終わり］続き");
+        let content = blocks[0]["content"].as_array().expect("content");
+        assert_eq!(content[1]["kind"], "warigaki");
+        assert_eq!(content[1]["upper"][0]["value"], "注");
+
+        let blocks = parse_blocks("猫の図（fig00001_01.png、横321×縦123）入る");
+        let content = blocks[0]["content"].as_array().expect("content");
+        assert_eq!(content[0]["kind"], "figure");
+        assert_eq!(content[0]["filename"], "fig00001_01.png");
+        assert_eq!(content[0]["width"], 321);
+        assert_eq!(content[0]["height"], 123);
+
+        let blocks = parse_blocks("本文［＃左頁］続き");
+        let content = blocks[0]["content"].as_array().expect("content");
+        assert_eq!(content[1]["kind"], "text");
+        assert_eq!(content[1]["value"], "");
+        assert_eq!(content[1]["x-editor-note"], "左頁");
+
+        let blocks = parse_blocks("前［＃改行］後");
+        let content = blocks[0]["content"].as_array().expect("content");
+        assert_eq!(content[0]["kind"], "text");
+        assert_eq!(content[0]["value"], "前\n後");
+        assert_eq!(content[0]["x-break-kind"], "line");
+
+        let blocks = parse_blocks("前の段落。\n［＃改ページ］\n後の段落。");
+        assert_eq!(blocks[0]["content"][0]["value"], "前の段落。");
+        assert_eq!(blocks[1]["kind"], "paragraph");
+        assert_eq!(blocks[1]["x-break-kind"], "page");
+        assert_eq!(blocks[2]["content"][0]["value"], "後の段落。");
+    }
+
+    #[test]
+    fn parse_blocks_normalizes_captioned_figure_notes() {
+        let blocks = parse_blocks(
+            "［＃「猫の図」のキャプション付きの図（fig00001_01.png、横321×縦123）入る］\n猫の図［＃「猫の図」はキャプション］",
+        );
+        let figure = &blocks[0]["content"][0];
+
+        assert_eq!(figure["kind"], "figure");
+        assert_eq!(figure["filename"], "fig00001_01.png");
+        assert_eq!(figure["alt"], "猫の図");
+        assert_eq!(figure["width"], 321);
+        assert_eq!(figure["height"], 123);
+        assert_eq!(figure["caption"][0]["value"], "猫の図");
     }
 }

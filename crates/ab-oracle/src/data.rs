@@ -263,6 +263,14 @@ mod tests {
         assert_eq!(warichu_case.current_review_status(), ReviewStatus::Reviewed);
         assert_eq!(warichu_case.syntax_row_ids, vec!["warichu.basic"]);
 
+        let figure_case = cases
+            .case
+            .iter()
+            .find(|case| case.id == "figure.image_caption.basic")
+            .unwrap();
+        assert_eq!(figure_case.current_review_status(), ReviewStatus::Reviewed);
+        assert_eq!(figure_case.syntax_row_ids, vec!["figure.image_caption"]);
+
         let gaiji_ruby_case = cases
             .case
             .iter()

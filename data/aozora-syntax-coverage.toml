@@ -458,14 +458,15 @@ reference_sources = [
 source_examples = ["［＃（fig.png）入る］", "［＃キャプション］"]
 source_patterns = ['［＃（?[^］\n]+\.(png|jpg|jpeg|gif)）?入る］', '［＃キャプション］|［＃ここからキャプション］']
 ir_nodes = ["Block::Figure", "Inline::Caption"]
-aat_nodes = ["gaiji", "caption"]
+aat_nodes = ["figure", "caption"]
 tei_projection = "figure/graphic/head"
 plaintext_projection = "caption_only"
 comparison_projection = "caption_only"
 validation_properties = ["figure_caption_integrity"]
 adapter_expectations = ["preserve image path", "preserve caption relationship"]
+oracle_cases = ["figure.image_caption.basic"]
 status = "partial"
-status_reason = "current AAT uses lossy figure representation in some adapters"
+status_reason = "AAT has a structured figure node; current adapters still vary in figure and caption fidelity"
 
 [syntax.parsers.aozora2]
 recognition = "parsed"

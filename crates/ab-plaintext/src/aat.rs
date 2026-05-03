@@ -60,6 +60,13 @@ fn collect_inline(node: &Value, out: &mut String) {
                 }
             }
         }
+        "figure" => {
+            if let Some(caption) = node.get("caption").and_then(Value::as_array) {
+                for inline in caption {
+                    collect_inline(inline, out);
+                }
+            }
+        }
         _ => {
             if let Some(content) = node.get("content").and_then(Value::as_array) {
                 for inline in content {
@@ -122,6 +129,27 @@ mod tests {
         });
 
         assert_eq!(visible_text_projection(&aat), "ABCDEFGH");
+    }
+
+    #[test]
+    fn projects_figure_caption_text() {
+        let aat = json!({
+            "work_id": "w-figure",
+            "blocks": [{
+                "kind": "paragraph",
+                "content": [{
+                    "kind": "figure",
+                    "filename": "fig00001_01.png",
+                    "alt": "猫の図",
+                    "css_class": "",
+                    "width": 321,
+                    "height": 123,
+                    "caption": [{"kind": "text", "value": "猫の図"}]
+                }]
+            }]
+        });
+
+        assert_eq!(visible_text_projection(&aat), "猫の図");
     }
 
     #[test]

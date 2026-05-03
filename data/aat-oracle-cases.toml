@@ -64,6 +64,15 @@ supports = "Aozora warichu marks split-line inline notes with ［＃割り注］
 independent = true
 
 [[evidence]]
+id = "aozora-rule-figure-caption"
+kind = "aozora_rule"
+citation = "Aozora Bunko input manual, section 4-10 images and captions"
+locator = "4-10. Images and captions"
+url = "https://www.aozora.gr.jp/aozora-manual/index-input.html"
+supports = "Aozora image notes include description, filename, and dimensions; captions are marked with キャプション and associated with the figure."
+independent = true
+
+[[evidence]]
 id = "jis-x-0213-1-15-23"
 kind = "reference_table"
 citation = "Project X0213 JIS X 0213:2004 code table, row 3-2F37"
@@ -342,3 +351,37 @@ fields = { value = "注釈" }
 selector = "blocks.*.content.*.lower.*"
 kind = "text"
 count = 0
+
+[[case]]
+id = "figure.image_caption.basic"
+syntax_row_ids = ["figure.image_caption"]
+category = "media"
+source_utf8 = "［＃「猫の図」のキャプション付きの図（fig00001_01.png、横321×縦123）入る］\n猫の図［＃「猫の図」はキャプション］"
+evidence_ids = ["aozora-rule-figure-caption"]
+notes = "A figure with an explicitly marked caption should preserve the image metadata and caption relationship."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-03"
+notes = "Verified against the Aozora Bunko input manual image and caption guidance."
+
+[case.oracle]
+visible_text = "猫の図"
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*"
+kind = "figure"
+count = 1
+fields = { filename = "fig00001_01.png", alt = "猫の図", width = 321, height = 123 }
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*.caption.*"
+kind = "text"
+count = 1
+fields = { value = "猫の図" }
+
+[[case.oracle.nodes]]
+selector = "**"
+kind = "raw"
+absent = true

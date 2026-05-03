@@ -4,6 +4,7 @@ use ab_oracle::{
     adapter_run::{parse_adapter_spec, run_adapter_aat},
     data::{load_oracle_cases, load_upstream_observations},
     evaluate::evaluate_case,
+    oracle_quality::validate_oracle_quality,
     report::{OracleReport, ReportRow, read_json_report, render_markdown, write_json_report},
 };
 use anyhow::{Result, bail};
@@ -39,6 +40,16 @@ fn main() -> Result<()> {
     }
 
     let oracle = load_oracle_cases(&args.oracle)?;
+    let quality_errors = validate_oracle_quality(&oracle);
+    if !quality_errors.is_empty() {
+        for error in &quality_errors {
+            eprintln!(
+                "oracle quality error in {}: {}",
+                error.case_id, error.message
+            );
+        }
+        bail!("oracle quality validation failed");
+    }
     let observations = load_upstream_observations(&args.upstream)?;
 
     if !args.adapters.is_empty() {

@@ -217,6 +217,13 @@ impl BlockFrame {
                 "kind": "paragraph",
                 "content": [style]
             })
+        } else if inline_scope_block_type(block_type) {
+            let inline = inline_scope_block(block_type, &self.params, self.children)
+                .expect("inline scope block");
+            json!({
+                "kind": "paragraph",
+                "content": [inline]
+            })
         } else {
             let mut content = vec![raw_json(format!("BlockStart({block_type:?})"))];
             for child in self.children {
@@ -258,6 +265,10 @@ fn aozora_nodes_to_aat_blocks(nodes: &[Node]) -> Vec<serde_json::Value> {
                 stack.push(BlockFrame::block(*block_type, params.clone()));
             }
             Node::BlockStart { block_type, params } if style_block_type(*block_type).is_some() => {
+                stack.last_mut().expect("root frame").flush_paragraph();
+                stack.push(BlockFrame::block(*block_type, params.clone()));
+            }
+            Node::BlockStart { block_type, params } if inline_scope_block_type(*block_type) => {
                 stack.last_mut().expect("root frame").flush_paragraph();
                 stack.push(BlockFrame::block(*block_type, params.clone()));
             }
@@ -347,6 +358,54 @@ fn style_block_type(block_type: aozora_core::BlockType) -> Option<&'static str> 
     match block_type {
         aozora_core::BlockType::Jizume => Some("jizume"),
         aozora_core::BlockType::Burasage => Some("burasage"),
+        _ => None,
+    }
+}
+
+fn inline_scope_block_type(block_type: aozora_core::BlockType) -> bool {
+    matches!(
+        block_type,
+        aozora_core::BlockType::Tcy
+            | aozora_core::BlockType::Futoji
+            | aozora_core::BlockType::Shatai
+            | aozora_core::BlockType::FontDai
+            | aozora_core::BlockType::FontSho
+    )
+}
+
+fn inline_scope_block(
+    block_type: aozora_core::BlockType,
+    params: &aozora_core::BlockParams,
+    children: Vec<serde_json::Value>,
+) -> Option<serde_json::Value> {
+    let content = inline_content_from_blocks(children);
+    match block_type {
+        aozora_core::BlockType::Tcy => Some(json!({
+            "kind": "tcy",
+            "content": content
+        })),
+        aozora_core::BlockType::Futoji => Some(json!({
+            "kind": "style",
+            "style_type": "bold",
+            "content": content
+        })),
+        aozora_core::BlockType::Shatai => Some(json!({
+            "kind": "style",
+            "style_type": "italic",
+            "content": content
+        })),
+        aozora_core::BlockType::FontDai => Some(json!({
+            "kind": "font_size",
+            "size_type": "larger",
+            "level": params.font_size.unwrap_or(1),
+            "content": content
+        })),
+        aozora_core::BlockType::FontSho => Some(json!({
+            "kind": "font_size",
+            "size_type": "smaller",
+            "level": params.font_size.unwrap_or(1),
+            "content": content
+        })),
         _ => None,
     }
 }
@@ -1507,6 +1566,68 @@ mod tests {
         assert_eq!(style["x-indent-first"], 2);
         assert_eq!(style["x-indent-rest"], 4);
         assert_eq!(style["content"][0]["value"], "本文");
+    }
+
+    #[test]
+    fn build_aat_reconstructs_tcy_block_as_inline_scope() {
+        let decoded = DecodedSource {
+            text: "［＃ここから縦中横］\n12\n［＃ここで縦中横終わり］".to_owned(),
+            encoding: "utf-8",
+            source_hash: "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+                .to_owned(),
+        };
+
+        let aat = build_aat(&decoded);
+        let tcy = &aat["blocks"][0]["content"][0];
+
+        assert_eq!(tcy["kind"], "tcy");
+        assert_eq!(tcy["content"][0]["value"], "12");
+    }
+
+    #[test]
+    fn build_aat_reconstructs_bold_and_italic_blocks_as_style_scopes() {
+        let decoded = DecodedSource {
+            text: "［＃ここから太字］\n太字\n［＃ここで太字終わり］\n［＃ここから斜体］\n斜体\n［＃ここで斜体終わり］"
+                .to_owned(),
+            encoding: "utf-8",
+            source_hash: "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+                .to_owned(),
+        };
+
+        let aat = build_aat(&decoded);
+        let bold = &aat["blocks"][0]["content"][0];
+        let italic = &aat["blocks"][1]["content"][0];
+
+        assert_eq!(bold["kind"], "style");
+        assert_eq!(bold["style_type"], "bold");
+        assert_eq!(bold["content"][0]["value"], "太字");
+        assert_eq!(italic["kind"], "style");
+        assert_eq!(italic["style_type"], "italic");
+        assert_eq!(italic["content"][0]["value"], "斜体");
+    }
+
+    #[test]
+    fn build_aat_reconstructs_font_size_blocks_as_font_size_scopes() {
+        let decoded = DecodedSource {
+            text: "［＃ここから2段階大きな文字］\n大\n［＃ここで大きな文字終わり］\n［＃ここから3段階小さな文字］\n小\n［＃ここで小さな文字終わり］"
+                .to_owned(),
+            encoding: "utf-8",
+            source_hash: "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+                .to_owned(),
+        };
+
+        let aat = build_aat(&decoded);
+        let larger = &aat["blocks"][0]["content"][0];
+        let smaller = &aat["blocks"][1]["content"][0];
+
+        assert_eq!(larger["kind"], "font_size");
+        assert_eq!(larger["size_type"], "larger");
+        assert_eq!(larger["level"], 2);
+        assert_eq!(larger["content"][0]["value"], "大");
+        assert_eq!(smaller["kind"], "font_size");
+        assert_eq!(smaller["size_type"], "smaller");
+        assert_eq!(smaller["level"], 3);
+        assert_eq!(smaller["content"][0]["value"], "小");
     }
 
     #[test]

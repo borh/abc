@@ -845,6 +845,35 @@ count = 1
 fields = { style_type = "italic" }
 
 [[case]]
+id = "decoration.bold_italic.block"
+syntax_row_ids = ["decoration.bold_italic"]
+category = "inline_annotation"
+source_utf8 = "［＃ここから太字］\n太字\n［＃ここで太字終わり］\n［＃ここから斜体］\n斜体\n［＃ここで斜体終わり］"
+evidence_ids = ["aozora-reference-decoration-variants"]
+notes = "Block-scoped bold and italic commands should preserve style scope and distinguish the style type."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-04"
+notes = "Verified against aozora2 block parser output and aozora2html decoration handling."
+
+[case.oracle]
+visible_text = "太字斜体"
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*"
+kind = "style"
+count = 1
+fields = { style_type = "bold" }
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*"
+kind = "style"
+count = 1
+fields = { style_type = "italic" }
+
+[[case]]
 id = "decoration.font_size.larger"
 syntax_row_ids = ["decoration.font_size"]
 category = "inline_annotation"
@@ -857,6 +886,39 @@ status = "reviewed"
 reviewer = "oracle-source-audit"
 reviewed_at = "2026-05-03"
 notes = "Verified against aozora2html font-size handling."
+
+[case.oracle]
+visible_text = "大きい"
+
+[[case.oracle.sequence]]
+selector = "blocks.*.content"
+kinds = ["font_size"]
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*"
+kind = "font_size"
+count = 1
+fields = { size_type = "larger", level = 2 }
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*.content.*"
+kind = "text"
+count = 1
+fields = { value = "大きい" }
+
+[[case]]
+id = "decoration.font_size.block_larger"
+syntax_row_ids = ["decoration.font_size"]
+category = "inline_annotation"
+source_utf8 = "［＃ここから2段階大きな文字］\n大きい\n［＃ここで大きな文字終わり］"
+evidence_ids = ["aozora-reference-decoration-variants"]
+notes = "Block-scoped font-size commands should preserve direction, level, and content scope."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-04"
+notes = "Verified against aozora2 block parser output and aozora2html font-size handling."
 
 [case.oracle]
 visible_text = "大きい"
@@ -1095,6 +1157,38 @@ kinds = ["tcy"]
 selector = "blocks.*.content.*"
 kind = "tcy"
 count = 1
+
+[[case]]
+id = "layout.tcy.block"
+syntax_row_ids = ["layout.tcy"]
+category = "layout"
+source_utf8 = "［＃ここから縦中横］\n12\n［＃ここで縦中横終わり］"
+evidence_ids = ["aozora-reference-yokogumi-tcy"]
+notes = "Block-scoped tate-chu-yoko should preserve the horizontal-in-vertical scope."
+
+[[case.review]]
+status = "reviewed"
+reviewer = "oracle-source-audit"
+reviewed_at = "2026-05-04"
+notes = "Verified against aozora2 block parser output and aozora2html TCY command handling."
+
+[case.oracle]
+visible_text = "12"
+
+[[case.oracle.sequence]]
+selector = "blocks.*.content"
+kinds = ["tcy"]
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*"
+kind = "tcy"
+count = 1
+
+[[case.oracle.nodes]]
+selector = "blocks.*.content.*.content.*"
+kind = "text"
+count = 1
+fields = { value = "12" }
 
 [[case]]
 id = "warigaki.parenthetical.basic"

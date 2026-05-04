@@ -29,6 +29,36 @@ fields = { base = "噯", reading = "おくび" }
 evidence = "adapters/aozora2/src/lib.rs"
 
 [[observation]]
+case_id = "decoration.bold_italic.block"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora-core 0.7.1 emits balanced block scopes for bold and italic; the adapter preserves them as AAT style scopes."
+selector = "blocks.*.content.*"
+kind = "style"
+fields = { style_type = "bold" }
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "decoration.font_size.block_larger"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora-core 0.7.1 emits block font-size scope with magnitude; the adapter preserves direction and level."
+selector = "blocks.*.content.*"
+kind = "font_size"
+fields = { size_type = "larger", level = 2 }
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
+case_id = "layout.tcy.block"
+adapter = "aozora2"
+status = "normalised"
+summary = "aozora-core 0.7.1 emits balanced block TCY scope; the adapter preserves it as an AAT tcy scope."
+selector = "blocks.*.content.*"
+kind = "tcy"
+fields = {}
+evidence = "adapters/aozora2/src/lib.rs"
+
+[[observation]]
 case_id = "gaiji.jis.2-13-47"
 adapter = "aozora2html"
 status = "parsed"
@@ -389,6 +419,26 @@ fields = { style_type = "underline_double" }
 evidence = "reports/aat-fidelity/cross-adapter-summary.md"
 
 [[observation]]
+case_id = "decoration.bold_italic.block"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs emits paragraph text for block bold/italic; oracle correctness is tracked separately."
+selector = "blocks.*"
+kind = "paragraph"
+fields = {}
+evidence = "reports/aat-fidelity/new-block-cases/decoration.bold_italic.block/report.json"
+
+[[observation]]
+case_id = "decoration.bold_italic.block"
+adapter = "aozora2html"
+status = "parsed"
+summary = "aozora2html emits paragraph text for block bold/italic; oracle correctness is tracked separately."
+selector = "blocks.*"
+kind = "paragraph"
+fields = {}
+evidence = "reports/aat-fidelity/new-block-cases/decoration.bold_italic.block/report.json"
+
+[[observation]]
 case_id = "decoration.bold_italic.both"
 adapter = "aozora2html"
 status = "parsed"
@@ -417,6 +467,26 @@ selector = "blocks.*.content.*"
 kind = "style"
 fields = { style_type = "dai2" }
 evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "decoration.font_size.block_larger"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs emits paragraph text for block font-size; oracle correctness is tracked separately."
+selector = "blocks.*"
+kind = "paragraph"
+fields = {}
+evidence = "reports/aat-fidelity/new-block-cases/decoration.font_size.block_larger/report.json"
+
+[[observation]]
+case_id = "decoration.font_size.block_larger"
+adapter = "aozora2html"
+status = "parsed"
+summary = "aozora2html emits paragraph text for block font-size; oracle correctness is tracked separately."
+selector = "blocks.*"
+kind = "paragraph"
+fields = {}
+evidence = "reports/aat-fidelity/new-block-cases/decoration.font_size.block_larger/report.json"
 
 [[observation]]
 case_id = "decoration.keigakomi.inline"
@@ -577,6 +647,26 @@ selector = "blocks.*"
 kind = "paragraph"
 fields = {}
 evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "layout.tcy.block"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs emits paragraph text for block TCY; oracle correctness is tracked separately."
+selector = "blocks.*"
+kind = "paragraph"
+fields = {}
+evidence = "reports/aat-fidelity/new-block-cases/layout.tcy.block/report.json"
+
+[[observation]]
+case_id = "layout.tcy.block"
+adapter = "aozora2html"
+status = "parsed"
+summary = "aozora2html emits paragraph text for block TCY markers; oracle correctness is tracked separately."
+selector = "blocks.*"
+kind = "paragraph"
+fields = {}
+evidence = "reports/aat-fidelity/new-block-cases/layout.tcy.block/report.json"
 
 [[observation]]
 case_id = "warigaki.parenthetical.basic"

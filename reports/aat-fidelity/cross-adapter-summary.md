@@ -7,16 +7,16 @@ Oracle cases: `data/aat-oracle-cases.toml`
 
 | adapter | cases | schema pass | upstream faithful | oracle pass | oracle fail |
 | --- | --- | --- | --- | --- | --- |
-| aozora-rs | 43 | 43 | 39 | 5 | 38 |
-| aozora2 | 43 | 43 | 2 | 43 | 0 |
-| aozora2html | 43 | 43 | 33 | 11 | 32 |
+| aozora-rs | 46 | 46 | 42 | 5 | 41 |
+| aozora2 | 46 | 46 | 5 | 46 | 0 |
+| aozora2html | 46 | 46 | 36 | 11 | 35 |
 
 ## Failure Buckets
 
 | adapter | bucket | count |
 | --- | --- | --- |
-| aozora-rs | faithful-upstream-vs-oracle | 38 |
-| aozora2html | faithful-rendered-output-vs-oracle | 32 |
+| aozora-rs | faithful-upstream-vs-oracle | 41 |
+| aozora2html | faithful-rendered-output-vs-oracle | 35 |
 
 ## Failure Families
 
@@ -26,7 +26,7 @@ Oracle cases: `data/aat-oracle-cases.toml`
 | aozora-rs | annotation | 2 |
 | aozora-rs | break | 2 |
 | aozora-rs | caption | 2 |
-| aozora-rs | decoration | 5 |
+| aozora-rs | decoration | 7 |
 | aozora-rs | editor_note | 1 |
 | aozora-rs | figure | 2 |
 | aozora-rs | gaiji | 3 |
@@ -34,7 +34,7 @@ Oracle cases: `data/aat-oracle-cases.toml`
 | aozora-rs | indentation | 5 |
 | aozora-rs | iteration | 1 |
 | aozora-rs | kunten | 2 |
-| aozora-rs | layout | 2 |
+| aozora-rs | layout | 3 |
 | aozora-rs | reference | 1 |
 | aozora-rs | ruby | 4 |
 | aozora-rs | warichu | 1 |
@@ -42,14 +42,14 @@ Oracle cases: `data/aat-oracle-cases.toml`
 | aozora2html | accent | 1 |
 | aozora2html | annotation | 2 |
 | aozora2html | caption | 1 |
-| aozora2html | decoration | 6 |
+| aozora2html | decoration | 8 |
 | aozora2html | editor_note | 1 |
 | aozora2html | emphasis | 1 |
 | aozora2html | gaiji | 4 |
 | aozora2html | indentation | 5 |
 | aozora2html | iteration | 1 |
 | aozora2html | kunten | 2 |
-| aozora2html | layout | 2 |
+| aozora2html | layout | 3 |
 | aozora2html | reference | 1 |
 | aozora2html | ruby | 4 |
 | aozora2html | warigaki | 1 |
@@ -79,9 +79,9 @@ Oracle cases: `data/aat-oracle-cases.toml`
 | caption.inline | aozora-rs | 0 | 1 |
 | caption.inline | aozora2 | 1 | 0 |
 | caption.inline | aozora2html | 1 | 0 |
-| decoration.bold_italic | aozora-rs | 1 | 0 |
-| decoration.bold_italic | aozora2 | 1 | 0 |
-| decoration.bold_italic | aozora2html | 0 | 1 |
+| decoration.bold_italic | aozora-rs | 1 | 1 |
+| decoration.bold_italic | aozora2 | 2 | 0 |
+| decoration.bold_italic | aozora2html | 0 | 2 |
 | decoration.boten | aozora-rs | 0 | 1 |
 | decoration.boten | aozora2 | 1 | 0 |
 | decoration.boten | aozora2html | 0 | 1 |
@@ -91,9 +91,9 @@ Oracle cases: `data/aat-oracle-cases.toml`
 | decoration.direction_override | aozora-rs | 0 | 1 |
 | decoration.direction_override | aozora2 | 1 | 0 |
 | decoration.direction_override | aozora2html | 0 | 1 |
-| decoration.font_size | aozora-rs | 0 | 1 |
-| decoration.font_size | aozora2 | 1 | 0 |
-| decoration.font_size | aozora2html | 0 | 1 |
+| decoration.font_size | aozora-rs | 0 | 2 |
+| decoration.font_size | aozora2 | 2 | 0 |
+| decoration.font_size | aozora2html | 0 | 2 |
 | decoration.keigakomi | aozora-rs | 0 | 1 |
 | decoration.keigakomi | aozora2 | 1 | 0 |
 | decoration.keigakomi | aozora2html | 0 | 1 |
@@ -166,9 +166,9 @@ Oracle cases: `data/aat-oracle-cases.toml`
 | kunten.okurigana | aozora-rs | 0 | 1 |
 | kunten.okurigana | aozora2 | 1 | 0 |
 | kunten.okurigana | aozora2html | 0 | 1 |
-| layout.tcy | aozora-rs | 0 | 1 |
-| layout.tcy | aozora2 | 1 | 0 |
-| layout.tcy | aozora2html | 0 | 1 |
+| layout.tcy | aozora-rs | 0 | 2 |
+| layout.tcy | aozora2 | 2 | 0 |
+| layout.tcy | aozora2html | 0 | 2 |
 | layout.yokogumi | aozora-rs | 0 | 1 |
 | layout.yokogumi | aozora2 | 1 | 0 |
 | layout.yokogumi | aozora2html | 0 | 1 |

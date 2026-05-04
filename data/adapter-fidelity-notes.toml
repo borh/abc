@@ -36,9 +36,10 @@ retired_by = "feat: reconstruct aozora2 block containers"
 id = "aozora2-unsupported-block-types-raw"
 adapter = "aozora2"
 syntax_row_ids = ["layout.tcy"]
-status = "active"
-summary = "Adapter reconstructs reviewed block/layout scopes for headings, jisage, chitsuki, jizume, burasage, caption, keigakomi, and yokogumi, but still preserves unsupported block boundary types such as block tcy as raw nodes."
+status = "retired"
+summary = "Adapter previously reconstructed headings, jisage, chitsuki, jizume, burasage, caption, keigakomi, and yokogumi, but preserved scoped tcy and related inline-display block boundaries as raw nodes."
 evidence = "adapters/aozora2/src/lib.rs"
+retired_by = "feat: reconstruct aozora2 inline-display block scopes"
 
 [[note]]
 id = "aozora2html-xhtml-projection"

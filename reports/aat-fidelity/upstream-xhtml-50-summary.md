@@ -18,13 +18,16 @@ reports/aat-fidelity/build-upstream-xhtml-manifest.py \
   --person-url references/aozorabunko/index_pages/person153.html \
   --max-cards 180 \
   --sample-size 50 \
-  --classify-source
+  --classify-source \
+  --out-manifest /db/ab-validator/aat-fidelity/upstream-xhtml-50-local/manifest.tsv \
+  --out-metadata /db/ab-validator/aat-fidelity/upstream-xhtml-50-local/metadata.csv
 ```
 
-Artifacts are stored under `/db/ab-validator/aat-fidelity/upstream-xhtml-50`.
+Artifacts are stored under `/db/ab-validator/aat-fidelity/upstream-xhtml-50-local`.
 Rows were loaded into
 `/db/ab-validator/aat-fidelity/cross-adapter/fidelity.duckdb` with
-`report_id = 'upstream-50'`.
+`report_id = 'upstream-50-local'`. This run uses only local files from
+`references/aozorabunko`; it does not download upstream corpus data.
 
 ## Result
 
@@ -32,8 +35,9 @@ Rows were loaded into
 | --- | ---: |
 | Observations | 50 |
 | Raw XHTML equal | 9 |
-| Normalized `main_text` equal | 45 |
-| Normalized `main_text` mismatch | 4 |
+| Normalized `main_text` equal | 46 |
+| Rendered-body proxy eligible | 46 |
+| Normalized `main_text` mismatch | 3 |
 | Local XHTML parse error | 1 |
 
 Status breakdown:
@@ -41,9 +45,17 @@ Status breakdown:
 | Status | Rows |
 | --- | ---: |
 | `raw_equal` | 9 |
-| `main_text_equal` | 36 |
-| `main_text_mismatch` | 4 |
+| `main_text_equal` | 37 |
+| `main_text_mismatch` | 3 |
 | `local_parse_error` | 1 |
+
+Proxy basis:
+
+| Proxy basis | Rows |
+| --- | ---: |
+| `raw_xhtml_equal` | 9 |
+| `normalized_main_text_equal` | 37 |
+| `not_eligible` | 4 |
 
 Feature coverage in the selected sample:
 
@@ -62,7 +74,6 @@ Rows needing follow-up, with first-diff context from the DuckDB observation:
 | --- | --- | ---: | --- | --- | --- |
 | `001185_45210` | `local_parse_error` | 0 | `訳者序一九〇九年、レオン・ワルラスの七十五歳の齢` | empty | Local `aozora2html` aborts with `NoMethodError` in `push_block_tag` after accent-syntax warnings. Exclude from proxy evidence until the upstream renderer path is understood. |
 | `000148_2575` | `main_text_mismatch` | 2754 | `※（原）［＃「漱」の「欠」に代えて「攵」、309-` | `※［＃「漱」の「欠」に代えて「攵」、309-15］` | Local and upstream differ in how an editorial gaiji/source note is rendered. |
-| `000148_2674` | `main_text_mismatch` | 0 | `�@���������ڏo�i���߂��j��` | `元日を御目出（おめで）たいものと極（き）めたのは` | Upstream `main_text` extraction is mojibake for this row; this is an XHTML decoding/extraction issue, not necessarily a renderer semantic difference. |
 | `001492_51194` | `main_text_mismatch` | 256745 | `AntoineLouis,1723-92` | `AntoineLouis,1723-1792` | Local and upstream differ in date/range expansion in visible text. |
 | `001764_55990` | `main_text_mismatch` | 29632 | `※（ざる）［＃「竹かんむり／瓜」、U+7B1F、` | `笟（ざる）を二つ下げている人が` | Local resolves a gaiji to Unicode where upstream text keeps the marker plus reading. |
 
@@ -70,7 +81,7 @@ Rows needing follow-up, with first-diff context from the DuckDB observation:
 
 This supports local `aozora2html` XHTML as a useful rendered-body proxy for most
 works in the sample, but not as a blanket substitute for upstream XHTML. The
-proxy is strongest for the 45 rows with equal normalized `main_text`. The 5
+proxy is strongest for the 46 rows with equal normalized `main_text`. The 4
 non-equal rows should be excluded or separately flagged when using local XHTML
 as corroborating evidence.
 

@@ -118,6 +118,8 @@ def _(db_path, duckdb, json, pl, report_path):
                 "upstream_url",
                 "feature_tags",
                 "manifest_status",
+                "rendered_body_proxy_eligible",
+                "proxy_basis",
                 "first_diff_index",
                 "upstream_diff_context",
                 "local_diff_context",
@@ -127,6 +129,10 @@ def _(db_path, duckdb, json, pl, report_path):
                 else:
                     if column == "first_diff_index":
                         optional_xhtml_columns.append("-1 AS first_diff_index")
+                    elif column == "rendered_body_proxy_eligible":
+                        optional_xhtml_columns.append("false AS rendered_body_proxy_eligible")
+                    elif column == "proxy_basis":
+                        optional_xhtml_columns.append("'not_eligible' AS proxy_basis")
                     else:
                         optional_xhtml_columns.append(f"'' AS {column}")
             xhtml_table = conn.sql(
@@ -317,6 +323,9 @@ def _(mo, pl, xhtml_observations, xhtml_table):
         1 for row in xhtml_observations if row.get("main_text_equal")
     )
     main_text_mismatch_count = len(xhtml_observations) - main_text_equal_count
+    proxy_eligible_count = sum(
+        1 for row in xhtml_observations if row.get("rendered_body_proxy_eligible")
+    )
     local_missing_main_text_count = sum(
         1
         for row in xhtml_observations
@@ -356,6 +365,18 @@ def _(mo, pl, xhtml_observations, xhtml_table):
         )
     else:
         xhtml_feature_summary = pl.DataFrame()
+    proxy_rows = [
+        {"proxy_basis": row.get("proxy_basis") or "not_eligible"}
+        for row in xhtml_observations
+    ]
+    xhtml_proxy_summary = (
+        pl.DataFrame(proxy_rows)
+        .group_by("proxy_basis")
+        .agg(pl.len().alias("observations"))
+        .sort("proxy_basis")
+        if proxy_rows
+        else pl.DataFrame()
+    )
     mo.vstack(
         [
             mo.md(
@@ -363,10 +384,15 @@ def _(mo, pl, xhtml_observations, xhtml_table):
                 f"Observations: **{len(xhtml_observations)}**  \n"
                 f"Raw equal: **{raw_equal_count}**  \n"
                 f"`main_text` equal: **{main_text_equal_count}**  \n"
+                f"Rendered-body proxy eligible: **{proxy_eligible_count}**  \n"
                 f"`main_text` mismatch: **{main_text_mismatch_count}**  \n"
                 f"Upstream missing `main_text`: **{upstream_missing_main_text_count}**  \n"
                 f"Local missing `main_text`: **{local_missing_main_text_count}**"
             ),
+            mo.md("### Proxy Basis Summary"),
+            mo.ui.table(xhtml_proxy_summary)
+            if proxy_rows
+            else mo.md("No proxy observations loaded."),
             mo.md("### Feature Tag Summary"),
             mo.ui.table(xhtml_feature_summary)
             if feature_rows
@@ -375,7 +401,7 @@ def _(mo, pl, xhtml_observations, xhtml_table):
             mo.ui.table(xhtml_table) if xhtml_observations else mo.md("No upstream XHTML observations loaded."),
         ]
     )
-    return xhtml_feature_summary,
+    return xhtml_feature_summary, xhtml_proxy_summary
 
 
 @app.cell
@@ -389,7 +415,7 @@ def _(mo, pl, xhtml_observations):
     xhtml_mismatch_rows = [
         row
         for row in xhtml_observations
-        if row.get("comparison_status") not in {"raw_equal", "main_text_equal"}
+        if not row.get("rendered_body_proxy_eligible")
     ]
     mismatch_table = (
         pl.DataFrame(
@@ -397,6 +423,7 @@ def _(mo, pl, xhtml_observations):
                 {
                     "case_id": row.get("case_id"),
                     "status": row.get("comparison_status"),
+                    "proxy_basis": row.get("proxy_basis"),
                     "first_diff_index": row.get("first_diff_index"),
                     "feature_tags": row.get("feature_tags"),
                     "card_url": row.get("card_url"),
@@ -439,6 +466,8 @@ def _(mo, selected_xhtml_row, xhtml_mismatch_rows):
         selected = {
             "case_id": row.get("case_id"),
             "comparison_status": row.get("comparison_status"),
+            "rendered_body_proxy_eligible": row.get("rendered_body_proxy_eligible"),
+            "proxy_basis": row.get("proxy_basis"),
             "feature_tags": row.get("feature_tags"),
             "card_url": row.get("card_url"),
             "first_diff_index": row.get("first_diff_index"),

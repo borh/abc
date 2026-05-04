@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
 import re
 from datetime import UTC, datetime
@@ -14,16 +15,38 @@ from lxml import etree
 
 XHTML_NS = "http://www.w3.org/1999/xhtml"
 NS = {"x": XHTML_NS}
+HTML_CHARSET_RE = re.compile(br"charset\s*=\s*['\"]?([A-Za-z0-9._-]+)", re.IGNORECASE)
+XML_ENCODING_RE = re.compile(br"^\s*<\?xml[^>]*encoding\s*=", re.IGNORECASE)
+NON_MAIN_TEXT_CLASSES = {
+    "bibliographical_information",
+    "notation_notes",
+}
 
 
 def sha256_hex(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+def parser_input(data: bytes) -> bytes:
+    if XML_ENCODING_RE.search(data[:256]):
+        return data
+    match = HTML_CHARSET_RE.search(data[:4096])
+    if not match:
+        return data
+
+    charset = match.group(1).decode("ascii", errors="ignore").lower()
+    if charset in {"shift_jis", "shift-jis", "sjis", "windows-31j", "cp932"}:
+        charset = "cp932"
+    try:
+        return data.decode(charset).encode("utf-8")
+    except (LookupError, UnicodeDecodeError):
+        return data
+
+
 def parse_xhtml(data: bytes) -> etree._Element | None:
     parser = etree.XMLParser(recover=True, ns_clean=False, resolve_entities=False)
     try:
-        return etree.fromstring(data, parser=parser)
+        return etree.fromstring(parser_input(data), parser=parser)
     except etree.XMLSyntaxError:
         return None
 
@@ -40,6 +63,20 @@ def normalize_text(value: str) -> str:
     return re.sub(r"\s+", "", value)
 
 
+def class_names(node: etree._Element) -> set[str]:
+    return set((node.get("class") or "").split())
+
+
+def prune_non_body_descendants(main: etree._Element) -> etree._Element:
+    pruned = copy.deepcopy(main)
+    for descendant in list(pruned.xpath(".//*[local-name()='div']")):
+        if class_names(descendant) & NON_MAIN_TEXT_CLASSES:
+            parent = descendant.getparent()
+            if parent is not None:
+                parent.remove(descendant)
+    return pruned
+
+
 def main_text_value(data: bytes) -> str:
     root = parse_xhtml(data)
     if root is None:
@@ -47,6 +84,7 @@ def main_text_value(data: bytes) -> str:
     main = find_main_text(root)
     if main is None:
         return ""
+    main = prune_non_body_descendants(main)
     return normalize_text("".join(main.itertext()))
 
 
@@ -66,6 +104,8 @@ def create_tables(conn: duckdb.DuckDBPyConnection) -> None:
           upstream_main_text_hash TEXT NOT NULL,
           local_main_text_hash TEXT NOT NULL,
           main_text_equal BOOLEAN NOT NULL,
+          rendered_body_proxy_eligible BOOLEAN NOT NULL,
+          proxy_basis TEXT NOT NULL,
           upstream_main_text TEXT NOT NULL,
           local_main_text TEXT NOT NULL,
           card_url TEXT NOT NULL,
@@ -106,6 +146,16 @@ def create_tables(conn: duckdb.DuckDBPyConnection) -> None:
                 f"ALTER TABLE fidelity_xhtml_observations "
                 f"ADD COLUMN {column} TEXT DEFAULT ''"
             )
+    if "rendered_body_proxy_eligible" not in existing_columns:
+        conn.execute(
+            "ALTER TABLE fidelity_xhtml_observations "
+            "ADD COLUMN rendered_body_proxy_eligible BOOLEAN DEFAULT false"
+        )
+    if "proxy_basis" not in existing_columns:
+        conn.execute(
+            "ALTER TABLE fidelity_xhtml_observations "
+            "ADD COLUMN proxy_basis TEXT DEFAULT 'not_eligible'"
+        )
 
 
 def first_diff(
@@ -147,6 +197,14 @@ def comparison_status(
     return "main_text_mismatch"
 
 
+def proxy_basis(raw_equal: bool, main_text_equal: bool) -> str:
+    if raw_equal:
+        return "raw_xhtml_equal"
+    if main_text_equal:
+        return "normalized_main_text_equal"
+    return "not_eligible"
+
+
 def load_observation(
     *,
     db_path: Path,
@@ -167,6 +225,8 @@ def load_observation(
     upstream_main_text = main_text_value(upstream_bytes)
     local_main_text = main_text_value(local_bytes)
     raw_equal = upstream_bytes == local_bytes
+    main_text_equal = upstream_main_text == local_main_text
+    basis = proxy_basis(raw_equal, main_text_equal)
     diff_index, upstream_diff_context, local_diff_context = first_diff(
         upstream_main_text, local_main_text
     )
@@ -184,10 +244,11 @@ def load_observation(
           (report_id, case_id, loaded_at_utc, upstream_xhtml_path, local_xhtml_path,
            upstream_sha256, local_sha256, raw_equal, comparison_status,
            upstream_main_text_hash, local_main_text_hash, main_text_equal,
-           upstream_main_text, local_main_text, card_url, source_url, upstream_url,
+           rendered_body_proxy_eligible, proxy_basis, upstream_main_text,
+           local_main_text, card_url, source_url, upstream_url,
            feature_tags, manifest_status, first_diff_index, upstream_diff_context,
            local_diff_context)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         [
             report_id,
@@ -207,7 +268,9 @@ def load_observation(
             ),
             sha256_hex(upstream_main_text.encode("utf-8")),
             sha256_hex(local_main_text.encode("utf-8")),
-            upstream_main_text == local_main_text,
+            main_text_equal,
+            basis != "not_eligible",
+            basis,
             upstream_main_text,
             local_main_text,
             card_url,

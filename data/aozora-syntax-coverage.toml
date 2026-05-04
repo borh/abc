@@ -1592,7 +1592,7 @@ plaintext_projection = "content_only"
 comparison_projection = "content_only"
 validation_properties = ["style_scope_balance"]
 adapter_expectations = ["distinguish bold from italic"]
-oracle_cases = ["decoration.bold_italic.both"]
+oracle_cases = ["decoration.bold_italic.both", "decoration.bold_italic.block"]
 status = "needs_research"
 status_reason = "futoji/shatai variants in MultilineStyle and inline form"
 
@@ -1612,9 +1612,9 @@ evidence = "references/parsers/aozora2html/lib/aozora2html/tag/decorate.rb:6"
 notes = "bold/italic markers"
 
 [syntax.adapters.aozora2]
-aat_fidelity = "dropped"
-evidence = "adapters/aozora2/src/lib.rs:53"
-notes = "bold/italic style nodes not projected to AAT"
+aat_fidelity = "lossy"
+evidence = "adapters/aozora2/src/lib.rs:376"
+notes = "block-scoped bold/italic are projected to style nodes; inline backref coverage remains incomplete"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "preserved"
@@ -1648,7 +1648,7 @@ plaintext_projection = "content_only"
 comparison_projection = "content_only"
 validation_properties = ["style_scope_balance"]
 adapter_expectations = ["preserve magnitude and direction"]
-oracle_cases = ["decoration.font_size.larger"]
+oracle_cases = ["decoration.font_size.larger", "decoration.font_size.block_larger"]
 status = "needs_research"
 status_reason = "block + inline font-size adjustments"
 
@@ -1668,9 +1668,9 @@ evidence = "references/parsers/aozora2html/lib/aozora2html/tag/font_size.rb:1"
 notes = "font size markers"
 
 [syntax.adapters.aozora2]
-aat_fidelity = "dropped"
-evidence = "adapters/aozora2/src/lib.rs:53"
-notes = "font size nodes not projected to AAT"
+aat_fidelity = "lossy"
+evidence = "adapters/aozora2/src/lib.rs:376"
+notes = "block-scoped font size is projected with direction and level; inline/backref coverage remains incomplete"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "lossy"
@@ -2143,16 +2143,16 @@ priority = 2
 category = "layout"
 feature_keys = ["tcy"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/dir.rb"]
-source_examples = ["「12」の縦中横"]
-source_patterns = ['「[^」]+」の縦中横']
-ir_nodes = ["Inline::Style"]
+source_examples = ["「12」の縦中横", "［＃ここから縦中横］"]
+source_patterns = ['「[^」]+」の縦中横', '［＃ここから縦中横］']
+ir_nodes = ["Inline::Style", "Block::Style"]
 aat_nodes = ["tcy"]
 tei_projection = "hi rend=tcy"
 plaintext_projection = "content_only"
 comparison_projection = "content_only"
 validation_properties = []
 adapter_expectations = ["preserve TCY span"]
-oracle_cases = ["layout.tcy.inline"]
+oracle_cases = ["layout.tcy.inline", "layout.tcy.block"]
 status = "needs_research"
 status_reason = "tate-chu-yoko (horizontal in vertical) inline; aozora2html emits dir=ltr span"
 
@@ -2172,9 +2172,9 @@ evidence = "references/parsers/aozora2html/lib/aozora2html.rb:52"
 notes = "TCY_COMMAND"
 
 [syntax.adapters.aozora2]
-aat_fidelity = "dropped"
-evidence = "adapters/aozora2/src/lib.rs:53"
-notes = "tcy nodes not projected to AAT"
+aat_fidelity = "lossy"
+evidence = "adapters/aozora2/src/lib.rs:376"
+notes = "block-scoped TCY is projected; の-form inline coverage remains incomplete"
 
 [syntax.adapters.aozora-rs]
 aat_fidelity = "not_applicable"

@@ -509,41 +509,161 @@ def _(active_xhtml_observations, mo):
 
 
 @app.cell
-def _(active_xhtml_observations, mo, pl):
+def _():
+    def xhtml_length_delta_bucket(row):
+        upstream_len = len(row.get("upstream_main_text") or "")
+        local_len = len(row.get("local_main_text") or "")
+        delta = local_len - upstream_len
+        if delta == 0:
+            return "0"
+        if abs(delta) <= 10:
+            return "1-10"
+        if abs(delta) <= 100:
+            return "11-100"
+        if abs(delta) <= 1000:
+            return "101-1000"
+        return "1001+"
+
+    def xhtml_first_diff_family(row):
+        context = (row.get("upstream_diff_context") or "") + (
+            row.get("local_diff_context") or ""
+        )
+        if "［＃" in context:
+            return "aozora_note_marker"
+        if "※" in context:
+            return "gaiji_marker"
+        if any(marker in context for marker in ["改ページ", "改行"]):
+            return "break_marker"
+        if any(marker in context for marker in ["字下げ", "地付き", "字詰め", "ぶら下げ"]):
+            return "layout_marker"
+        if any(marker in context for marker in ["キャプション", ".png", ".jpg", ".jpeg", ".gif"]):
+            return "media_marker"
+        return "text_content"
+
+    return xhtml_first_diff_family, xhtml_length_delta_bucket
+
+
+@app.cell
+def _(
+    active_xhtml_observations,
+    mo,
+    xhtml_first_diff_family,
+    xhtml_length_delta_bucket,
+):
+    candidate_rows = [
+        row
+        for row in active_xhtml_observations
+        if not row.get("rendered_body_proxy_eligible")
+    ]
+    status_options = sorted(
+        {row.get("comparison_status", "") for row in candidate_rows if row.get("comparison_status")}
+    )
+    feature_options = sorted(
+        {
+            tag.strip()
+            for row in candidate_rows
+            for tag in (row.get("feature_tags") or "").split(";")
+            if tag.strip()
+        }
+    )
+    bucket_options = sorted({xhtml_length_delta_bucket(row) for row in candidate_rows})
+    family_options = sorted({xhtml_first_diff_family(row) for row in candidate_rows})
+
+    xhtml_status_filter = mo.ui.dropdown(
+        options=[""] + status_options,
+        value="",
+        label="Status",
+    )
+    xhtml_feature_filter = mo.ui.dropdown(
+        options=[""] + feature_options,
+        value="",
+        label="Feature",
+    )
+    xhtml_length_bucket_filter = mo.ui.dropdown(
+        options=[""] + bucket_options,
+        value="",
+        label="Length bucket",
+    )
+    xhtml_diff_family_filter = mo.ui.dropdown(
+        options=[""] + family_options,
+        value="",
+        label="Diff family",
+    )
+    mo.vstack(
+        [
+            mo.md("### Mismatch Filters"),
+            mo.hstack(
+                [
+                    xhtml_status_filter,
+                    xhtml_feature_filter,
+                    xhtml_length_bucket_filter,
+                    xhtml_diff_family_filter,
+                ]
+            ),
+        ]
+    )
+    return (
+        xhtml_diff_family_filter,
+        xhtml_feature_filter,
+        xhtml_length_bucket_filter,
+        xhtml_status_filter,
+    )
+
+
+@app.cell
+def _(
+    active_xhtml_observations,
+    mo,
+    pl,
+    xhtml_diff_family_filter,
+    xhtml_feature_filter,
+    xhtml_first_diff_family,
+    xhtml_length_bucket_filter,
+    xhtml_length_delta_bucket,
+    xhtml_status_filter,
+):
     xhtml_mismatch_rows = [
         row
         for row in active_xhtml_observations
         if not row.get("rendered_body_proxy_eligible")
+        and (
+            not xhtml_status_filter.value
+            or row.get("comparison_status") == xhtml_status_filter.value
+        )
+        and (
+            not xhtml_feature_filter.value
+            or xhtml_feature_filter.value
+            in [tag.strip() for tag in (row.get("feature_tags") or "").split(";")]
+        )
+        and (
+            not xhtml_length_bucket_filter.value
+            or xhtml_length_delta_bucket(row) == xhtml_length_bucket_filter.value
+        )
+        and (
+            not xhtml_diff_family_filter.value
+            or xhtml_first_diff_family(row) == xhtml_diff_family_filter.value
+        )
     ]
     shape_rows = []
     for row in xhtml_mismatch_rows:
         upstream_len = len(row.get("upstream_main_text") or "")
         local_len = len(row.get("local_main_text") or "")
         delta = local_len - upstream_len
-        if delta == 0:
-            bucket = "0"
-        elif abs(delta) <= 10:
-            bucket = "1-10"
-        elif abs(delta) <= 100:
-            bucket = "11-100"
-        elif abs(delta) <= 1000:
-            bucket = "101-1000"
-        else:
-            bucket = "1001+"
         shape_rows.append(
             {
                 "status": row.get("comparison_status"),
                 "length_direction": "local_longer"
                 if delta > 0
                 else ("upstream_longer" if delta < 0 else "same_length"),
-                "length_delta_bucket": bucket,
+                "length_delta_bucket": xhtml_length_delta_bucket(row),
+                "first_diff_family": xhtml_first_diff_family(row),
             }
         )
     mismatch_shape_summary = (
         pl.DataFrame(shape_rows)
-        .group_by(["status", "length_direction", "length_delta_bucket"])
+        .group_by(["status", "length_direction", "length_delta_bucket", "first_diff_family"])
         .agg(pl.len().alias("observations"))
-        .sort(["status", "length_direction", "length_delta_bucket"])
+        .sort(["status", "length_direction", "length_delta_bucket", "first_diff_family"])
         if shape_rows
         else pl.DataFrame()
     )
@@ -555,6 +675,8 @@ def _(active_xhtml_observations, mo, pl):
                     "status": row.get("comparison_status"),
                     "proxy_basis": row.get("proxy_basis"),
                     "first_diff_index": row.get("first_diff_index"),
+                    "length_delta_bucket": xhtml_length_delta_bucket(row),
+                    "first_diff_family": xhtml_first_diff_family(row),
                     "feature_tags": row.get("feature_tags"),
                     "card_url": row.get("card_url"),
                     "upstream_len": len(row.get("upstream_main_text") or ""),

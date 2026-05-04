@@ -62,6 +62,10 @@ equality, 2,179 normalized `main_text` mismatches, 58 local adapter aborts,
 132 upstream XHTML files without `main_text`, and 1 row where both sides lack
 `main_text`. The triage outputs are generated in
 `/db/ab-validator/aat-fidelity/upstream-xhtml-full/triage-report/`.
+The run is reproducible with
+`reports/aat-fidelity/run-upstream-xhtml-full.sh`; see
+`reports/aat-fidelity/upstream-xhtml-full-summary.md` for the command and
+current triage.
 
 The 58 local adapter aborts are classified as `local_adapter_error` because the
 local adapter wrote AAT-style JSON failure payloads after the wrapped

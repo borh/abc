@@ -236,6 +236,37 @@ def load_observation(
     feature_tags: str = "",
     manifest_status: str = "",
 ) -> None:
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    conn = duckdb.connect(str(db_path))
+    create_tables(conn)
+    load_observation_with_conn(
+        conn=conn,
+        report_id=report_id,
+        case_id=case_id,
+        upstream_xhtml=upstream_xhtml,
+        local_xhtml=local_xhtml,
+        card_url=card_url,
+        source_url=source_url,
+        upstream_url=upstream_url,
+        feature_tags=feature_tags,
+        manifest_status=manifest_status,
+    )
+    conn.close()
+
+
+def load_observation_with_conn(
+    *,
+    conn: duckdb.DuckDBPyConnection,
+    report_id: str,
+    case_id: str,
+    upstream_xhtml: Path,
+    local_xhtml: Path,
+    card_url: str = "",
+    source_url: str = "",
+    upstream_url: str = "",
+    feature_tags: str = "",
+    manifest_status: str = "",
+) -> None:
     upstream_bytes = upstream_xhtml.read_bytes()
     local_bytes = local_xhtml.read_bytes()
     upstream_adapter_error = is_adapter_error_payload(upstream_bytes)
@@ -260,9 +291,6 @@ def load_observation(
         upstream_main_text, local_main_text
     )
 
-    db_path.parent.mkdir(parents=True, exist_ok=True)
-    conn = duckdb.connect(str(db_path))
-    create_tables(conn)
     conn.execute(
         "DELETE FROM fidelity_xhtml_observations WHERE report_id = ? AND case_id = ?",
         [report_id, case_id],
@@ -306,8 +334,6 @@ def load_observation(
             local_diff_context,
         ],
     )
-    conn.close()
-
 
 def main() -> int:
     parser = argparse.ArgumentParser()

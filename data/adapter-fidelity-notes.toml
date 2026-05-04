@@ -64,4 +64,4 @@ adapter = "aozora2html"
 syntax_row_ids = ["gaiji.marker", "ruby.basic", "heading.basic", "layout.yokogumi", "figure.image_caption"]
 status = "active"
 summary = "Full local upstream-XHTML comparison uses references/aozorabunko only: report_id upstream-xhtml-full loaded 17,601 observations with 15,231 rendered-body proxy rows (6,321 raw XHTML matches plus 8,910 normalized main_text matches), 2,179 main_text mismatches, 58 local_adapter_error rows, 132 upstream_missing_main_text rows, and 1 both_missing_main_text row."
-evidence = "/db/ab-validator/aat-fidelity/upstream-xhtml-full/triage-report/index.md"
+evidence = "reports/aat-fidelity/upstream-xhtml-full-summary.md"

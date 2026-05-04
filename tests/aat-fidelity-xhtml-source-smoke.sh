@@ -196,4 +196,52 @@ uv run --isolated --no-project \
 
 rg -n '^fixture.xhtml.adapter-error-empty-body,true,false,not_eligible,local_adapter_error$' "$out_dir/adapter-error-empty-body-query.csv"
 
+uv run --isolated --no-project \
+  --with 'duckdb>=1.1' \
+  --with 'lxml>=5' \
+  python - "$repo_root" "$db_path" "$out_dir/upstream.xhtml" "$out_dir/local.xhtml" "$out_dir/local-mismatch.xhtml" <<'PY'
+import importlib.util
+import sys
+from pathlib import Path
+
+import duckdb
+
+repo_root = Path(sys.argv[1])
+db_path = Path(sys.argv[2])
+upstream = Path(sys.argv[3])
+local_equal = Path(sys.argv[4])
+local_mismatch = Path(sys.argv[5])
+
+spec = importlib.util.spec_from_file_location(
+    "compare_xhtml_sources",
+    repo_root / "reports" / "aat-fidelity" / "compare-xhtml-sources.py",
+)
+module = importlib.util.module_from_spec(spec)
+assert spec.loader is not None
+spec.loader.exec_module(module)
+
+conn = duckdb.connect(str(db_path))
+module.create_tables(conn)
+module.load_observation_with_conn(
+    conn=conn,
+    report_id="xhtml-shared-loader",
+    case_id="shared.equal",
+    upstream_xhtml=upstream,
+    local_xhtml=local_equal,
+)
+module.load_observation_with_conn(
+    conn=conn,
+    report_id="xhtml-shared-loader",
+    case_id="shared.mismatch",
+    upstream_xhtml=upstream,
+    local_xhtml=local_mismatch,
+)
+rows = conn.execute(
+    "select comparison_status, count(*) from fidelity_xhtml_observations "
+    "where report_id = 'xhtml-shared-loader' group by 1 order by 1"
+).fetchall()
+assert rows == [("main_text_equal", 1), ("main_text_mismatch", 1)], rows
+print("shared loader ok")
+PY
+
 echo "aat fidelity xhtml source smoke ok: $out_dir"

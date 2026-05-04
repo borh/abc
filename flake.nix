@@ -438,6 +438,36 @@
           drv = abValidator;
         };
 
+        apps.aat-oracle-data-schema-smoke = flake-utils.lib.mkApp {
+          drv = pkgs.writeShellApplication {
+            name = "aat-oracle-data-schema-smoke";
+            runtimeInputs = [
+              pkgs.python3
+              pkgs.python3.pkgs.jsonschema
+              pkgs.python3.pkgs.tomli
+            ];
+            text = ''
+              export AB_VALIDATOR_DIRECT_PYTHON=1
+              bash "${source}/tests/aat-oracle-data-schema-smoke.sh"
+            '';
+          };
+        };
+
+        apps.adapter-fidelity-notes-schema-smoke = flake-utils.lib.mkApp {
+          drv = pkgs.writeShellApplication {
+            name = "adapter-fidelity-notes-schema-smoke";
+            runtimeInputs = [
+              pkgs.python3
+              pkgs.python3.pkgs.jsonschema
+              pkgs.python3.pkgs.tomli
+            ];
+            text = ''
+              export AB_VALIDATOR_DIRECT_PYTHON=1
+              bash "${source}/tests/adapter-fidelity-notes-schema-smoke.sh"
+            '';
+          };
+        };
+
         checks = {
           default = workspaceCheck;
           ab-validator = workspaceCheck;

@@ -19,7 +19,11 @@ run_cargo() {
 
 run_py_in_aozora2html_flake() {
   local repo_root="${AB_VALIDATOR_ROOT}"
-  nix develop "${repo_root}#aozora2html" --command python3 "$@"
+  if [[ "${AB_VALIDATOR_DIRECT_PYTHON:-0}" == "1" ]]; then
+    python3 "$@"
+  else
+    nix develop "${repo_root}#aozora2html" --command python3 "$@"
+  fi
 }
 
 aat_duckdb_bin() {

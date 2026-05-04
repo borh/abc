@@ -102,7 +102,11 @@ fn source_derived_gaiji_kind(node: &Value) -> &'static str {
     {
         return "JisCode";
     }
-    if value_text(node).contains("U+") {
+    if node
+        .get("description")
+        .and_then(Value::as_str)
+        .is_some_and(|it| it.contains("U+"))
+    {
         return "UnicodeCodepoint";
     }
     "DescriptionOnly"

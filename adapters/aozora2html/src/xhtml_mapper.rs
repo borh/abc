@@ -45,9 +45,16 @@ fn node_class<'a>(node: Node<'a, 'a>) -> &'a str {
 }
 
 fn text_only<'a>(node: Node<'a, 'a>) -> String {
-    node.descendants()
-        .filter_map(|node| node.text())
-        .collect::<String>()
+    let mut out = String::new();
+    for descendant in node.descendants() {
+        if !descendant.is_text() {
+            continue;
+        }
+        if let Some(text) = descendant.text() {
+            out.push_str(text);
+        }
+    }
+    out
 }
 
 fn inline_visible_text(nodes: &[Value]) -> String {
@@ -367,7 +374,7 @@ fn map_warichu(node: Node<'_, '_>, warnings: &mut Vec<Value>, summary: &mut Sour
     };
 
     let node = json!({
-        "kind": "warichu",
+        "kind": "warigaki",
         "upper": if upper.is_empty() { Value::Array(Vec::new()) } else { json!([{"kind":"text","value":upper.clone()}]) },
         "lower": if lower.is_empty() { Value::Array(Vec::new()) } else { json!([{"kind":"text","value":lower.clone()}]) },
     });
@@ -514,7 +521,7 @@ fn map_img_gaiji(
     node: Node<'_, '_>,
     _warnings: &mut Vec<Value>,
     summary: &mut SourceDerivedSummary,
-    _ruby_reading: Option<&str>,
+    ruby_reading: Option<&str>,
 ) -> Value {
     let alt = node.attribute("alt").unwrap_or("");
     let src = node.attribute("src").unwrap_or("");
@@ -531,7 +538,9 @@ fn map_img_gaiji(
                     "description_format": Value::Null,
                     "kind": "Image",
                     "resolved": Value::Null,
-                    "ruby_reading": Value::Null,
+                    "ruby_reading": ruby_reading
+                        .map(|value| Value::String(value.to_string()))
+                        .unwrap_or(Value::Null),
                 },
                 "provenance": "parser",
             }),

@@ -411,6 +411,14 @@
           pkgs.jdk21
           pkgs.gradle
         ];
+
+        aozora2htmlTools = [
+          pkgs.ruby
+          pkgs.bundler
+          pkgs.python3
+          pkgs.python3.pkgs.lxml
+          pkgs.python3.pkgs.jsonschema
+        ];
       in
       {
         packages = {
@@ -451,6 +459,10 @@
               export CARGO_HOME="''${CARGO_HOME:-$PWD/.cargo}"
               export RUST_BACKTRACE="1"
             '';
+          };
+
+          aozora2html = pkgs.mkShell {
+            packages = aozora2htmlTools;
           };
 
           reference-parsers = referenceParserShell;

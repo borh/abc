@@ -8,11 +8,10 @@ GEM_VERSION="3.0.1"
 GEM_HOME_DIR="${AB_VALIDATOR_GEM_HOME:-/db/ab-validator/gems/aozora2html-$GEM_VERSION}"
 RUST_MAPPER_BIN="$REPO_ROOT/adapters/aozora2html/target/release/aozora2html-adapter"
 BACKEND="${AOZORA2HTML_BACKEND:-rust}"
-
-PY_ENV='python3.withPackages(ps: [ ps.lxml ps.jsonschema ])'
+AOZORA2HTML_FLAKE="${REPO_ROOT}#aozora2html"
 
 if [[ "${1:-}" == "--version" ]]; then
-  exec nix-shell -p "$PY_ENV" --run "python3 '$ADAPTER_PY' --version"
+  exec nix develop "$AOZORA2HTML_FLAKE" --command python3 "$ADAPTER_PY" --version
 fi
 
 mode="aat"
@@ -60,7 +59,7 @@ trap 'rm -f "$stdin_raw" "$parser_sjis_src" "$crlf_src" "$xhtml" "$sjis_src" "$p
 # Capture its exit and let adapter.py emit a parse_complete=false envelope so
 # ab-check sees a valid AAT instead of empty stdout.
 parser_rc=0
-nix shell nixpkgs#ruby --command bash -lc \
+nix develop "$AOZORA2HTML_FLAKE" --command bash -lc \
   "set -euo pipefail
    export GEM_HOME='$GEM_HOME_DIR'
    export GEM_PATH='$GEM_HOME_DIR'
@@ -92,5 +91,4 @@ if [[ "$BACKEND" == "rust" ]]; then
   exec "$RUST_MAPPER_BIN" "${common_args[@]}"
 fi
 
-exec nix-shell -p "$PY_ENV" --run \
-  "python3 '$ADAPTER_PY' ${common_args[*]}"
+exec nix develop "$AOZORA2HTML_FLAKE" --command python3 "$ADAPTER_PY" "${common_args[@]}"

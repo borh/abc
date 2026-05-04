@@ -3,11 +3,14 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-nix-shell -p 'python3.withPackages(ps: [ ps.jsonschema ps.tomli ])' --run "
+nix develop "${repo_root}#aozora2html" --command bash -lc "
 python3 - <<'PY'
 import json
 from pathlib import Path
-import tomli
+try:
+  import tomllib as tomli
+except ImportError:
+  import tomli
 import jsonschema
 
 root = Path('$repo_root')

@@ -118,11 +118,17 @@ def _(db_path, duckdb, json, pl, report_path):
                 "upstream_url",
                 "feature_tags",
                 "manifest_status",
+                "first_diff_index",
+                "upstream_diff_context",
+                "local_diff_context",
             ):
                 if column in xhtml_columns:
                     optional_xhtml_columns.append(column)
                 else:
-                    optional_xhtml_columns.append(f"'' AS {column}")
+                    if column == "first_diff_index":
+                        optional_xhtml_columns.append("-1 AS first_diff_index")
+                    else:
+                        optional_xhtml_columns.append(f"'' AS {column}")
             xhtml_table = conn.sql(
                 f"""
                 SELECT
@@ -375,6 +381,75 @@ def _(mo, pl, xhtml_observations, xhtml_table):
 @app.cell
 def _(mo, xhtml_observations):
     mo.json(xhtml_observations[0] if xhtml_observations else {})
+    return
+
+
+@app.cell
+def _(mo, pl, xhtml_observations):
+    xhtml_mismatch_rows = [
+        row
+        for row in xhtml_observations
+        if row.get("comparison_status") not in {"raw_equal", "main_text_equal"}
+    ]
+    mismatch_table = (
+        pl.DataFrame(
+            [
+                {
+                    "case_id": row.get("case_id"),
+                    "status": row.get("comparison_status"),
+                    "first_diff_index": row.get("first_diff_index"),
+                    "feature_tags": row.get("feature_tags"),
+                    "card_url": row.get("card_url"),
+                    "upstream_len": len(row.get("upstream_main_text") or ""),
+                    "local_len": len(row.get("local_main_text") or ""),
+                }
+                for row in xhtml_mismatch_rows
+            ]
+        )
+        if xhtml_mismatch_rows
+        else pl.DataFrame()
+    )
+    options = [
+        f"{index}: {row.get('case_id', '')} {row.get('comparison_status', '')}"
+        for index, row in enumerate(xhtml_mismatch_rows)
+    ]
+    selected_xhtml_row = mo.ui.dropdown(
+        options=options,
+        value=options[0] if options else None,
+        label="XHTML mismatch",
+    )
+    mo.vstack(
+        [
+            mo.md("## XHTML Mismatch Drilldown"),
+            mo.ui.table(mismatch_table)
+            if xhtml_mismatch_rows
+            else mo.md("No XHTML mismatches loaded."),
+            selected_xhtml_row,
+        ]
+    )
+    return selected_xhtml_row, xhtml_mismatch_rows
+
+
+@app.cell
+def _(mo, selected_xhtml_row, xhtml_mismatch_rows):
+    selected = {}
+    if selected_xhtml_row.value:
+        index = int(selected_xhtml_row.value.split(":", 1)[0])
+        row = dict(xhtml_mismatch_rows[index])
+        selected = {
+            "case_id": row.get("case_id"),
+            "comparison_status": row.get("comparison_status"),
+            "feature_tags": row.get("feature_tags"),
+            "card_url": row.get("card_url"),
+            "first_diff_index": row.get("first_diff_index"),
+            "upstream_diff_context": row.get("upstream_diff_context"),
+            "local_diff_context": row.get("local_diff_context"),
+            "upstream_main_text": row.get("upstream_main_text"),
+            "local_main_text": row.get("local_main_text"),
+            "upstream_xhtml_path": row.get("upstream_xhtml_path"),
+            "local_xhtml_path": row.get("local_xhtml_path"),
+        }
+    mo.json(selected)
     return
 
 

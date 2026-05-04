@@ -22,7 +22,7 @@ rules, see `docs/aat-contract.md`.
 | --- | --- | --- | --- | --- | --- |
 | `aozora-rs` | Direct | `aozora-rs-core` v0.6.0 plus `aozora-rs-gaiji` v0.6.0 | `AozoraDocument::parse` with adapter projection and `aozora-rs-gaiji::{parse_tag, gaiji_to_char}` for gaiji | Parser-normalized nodes, upstream gaiji resolution behavior including unresolved upstream results, ruby/gaiji nesting, fallback status in metadata. Fidelity policy: record upstream behavior as emitted; do not patch oracle-correct gaiji results inline. | Upstream `aozora-rs-gaiji` does not resolve every JIS-form gaiji, so faithful adapter output may still fail oracle correctness. |
 | `aozora2` | Direct incomplete | `aozora-core` 0.7.1 from crates.io | `aozora_core::tokenize` then `aozora_core::parse` | Text, ruby with nested content, gaiji, accent, figure, warigaki, inline wrappers, notes, reconstructed block containers for jisage, keigakomi, yokogumi, caption, and heading, plus style scopes for one-line jisage, chitsuki, jizume, and burasage. | Block fidelity is still incomplete for block tcy and other unsupported boundary types, which remain raw. `--mode html` is unsupported because `aozora-core` does not expose an upstream HTML renderer. |
-| `aozora2html` | Indirect | Ruby gem `aozora2html` 3.0.1 | Gem-rendered XHTML parsed by the Python mapper | XHTML-derived paragraphs, styles, ruby, warigaki, figures/captions where rendered XHTML or surviving source-note text supports them, visible parser output, and parser failure metadata. | Faithful to rendered XHTML, not directly to original Aozora markup. Source marker details, resolved gaiji markers that become plain text, and split structures not encoded in XHTML cannot always be recovered; source-derived recoveries are marked with `x-provenance`/`x-caption-provenance`. |
+| `aozora2html` | Indirect | Ruby gem `aozora2html` 3.0.1 | Gem-rendered XHTML parsed by the Python mapper | XHTML-derived paragraphs, styles, ruby, warigaki, headings, break markers, figures/captions where rendered XHTML or surviving source-marker text supports them, visible parser output, and parser failure metadata. | Faithful to rendered XHTML, not directly to original Aozora markup. Source marker details, resolved gaiji markers that become plain text, and split structures not encoded in XHTML cannot always be recovered; source-derived recoveries are marked with `x-provenance`/`x-caption-provenance`. |
 
 ## XHTML Source Layer
 
@@ -68,7 +68,7 @@ kept under `/db/ab-validator/aat-fidelity/cross-adapter/report.json`.
 | --- | ---: | ---: | ---: | --- |
 | `aozora2` | 43 | 43 | 0 | Current reviewed-case AAT baseline. |
 | `aozora-rs` | 43 | 5 | 38 | Upstream observations now cover every reviewed failure; remaining mismatches are faithful observed output vs oracle correctness. |
-| `aozora2html` | 43 | 4 | 39 | Rendered-output observations now cover every reviewed failure; narrow source-derived recovery now covers warichu plus simple figure/caption cases, while most source-level oracle assertions still exceed what the XHTML mapper reconstructs. |
+| `aozora2html` | 43 | 11 | 32 | Rendered-output observations now cover every reviewed failure; narrow source-derived recovery now covers warichu, simple figure/caption and image-inline cases, headings, and page/line breaks, while many source-level oracle assertions still exceed what the XHTML mapper reconstructs. |
 
 ## Follow-up Checks
 

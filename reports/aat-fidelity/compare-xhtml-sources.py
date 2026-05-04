@@ -73,6 +73,9 @@ def create_tables(conn: duckdb.DuckDBPyConnection) -> None:
           upstream_url TEXT NOT NULL,
           feature_tags TEXT NOT NULL,
           manifest_status TEXT NOT NULL,
+          first_diff_index INTEGER NOT NULL,
+          upstream_diff_context TEXT NOT NULL,
+          local_diff_context TEXT NOT NULL,
           PRIMARY KEY (report_id, case_id)
         )
         """
@@ -92,6 +95,31 @@ def create_tables(conn: duckdb.DuckDBPyConnection) -> None:
                 f"ALTER TABLE fidelity_xhtml_observations "
                 f"ADD COLUMN {column} TEXT DEFAULT ''"
             )
+    if "first_diff_index" not in existing_columns:
+        conn.execute(
+            "ALTER TABLE fidelity_xhtml_observations "
+            "ADD COLUMN first_diff_index INTEGER DEFAULT -1"
+        )
+    for column in ("upstream_diff_context", "local_diff_context"):
+        if column not in existing_columns:
+            conn.execute(
+                f"ALTER TABLE fidelity_xhtml_observations "
+                f"ADD COLUMN {column} TEXT DEFAULT ''"
+            )
+
+
+def first_diff(
+    upstream: str, local: str, *, context_chars: int = 24
+) -> tuple[int, str, str]:
+    if upstream == local:
+        return -1, "", ""
+    limit = min(len(upstream), len(local))
+    index = 0
+    while index < limit and upstream[index] == local[index]:
+        index += 1
+    start = max(index - context_chars, 0)
+    end = index + context_chars
+    return index, upstream[start:end], local[start:end]
 
 
 def comparison_status(
@@ -139,6 +167,9 @@ def load_observation(
     upstream_main_text = main_text_value(upstream_bytes)
     local_main_text = main_text_value(local_bytes)
     raw_equal = upstream_bytes == local_bytes
+    diff_index, upstream_diff_context, local_diff_context = first_diff(
+        upstream_main_text, local_main_text
+    )
 
     db_path.parent.mkdir(parents=True, exist_ok=True)
     conn = duckdb.connect(str(db_path))
@@ -154,8 +185,9 @@ def load_observation(
            upstream_sha256, local_sha256, raw_equal, comparison_status,
            upstream_main_text_hash, local_main_text_hash, main_text_equal,
            upstream_main_text, local_main_text, card_url, source_url, upstream_url,
-           feature_tags, manifest_status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           feature_tags, manifest_status, first_diff_index, upstream_diff_context,
+           local_diff_context)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         [
             report_id,
@@ -183,6 +215,9 @@ def load_observation(
             upstream_url,
             feature_tags,
             manifest_status,
+            diff_index,
+            upstream_diff_context,
+            local_diff_context,
         ],
     )
     conn.close()

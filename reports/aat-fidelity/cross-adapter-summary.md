@@ -9,14 +9,14 @@ Oracle cases: `data/aat-oracle-cases.toml`
 | --- | --- | --- | --- | --- | --- |
 | aozora-rs | 43 | 43 | 39 | 5 | 38 |
 | aozora2 | 43 | 43 | 2 | 43 | 0 |
-| aozora2html | 43 | 43 | 39 | 4 | 39 |
+| aozora2html | 43 | 43 | 33 | 11 | 32 |
 
 ## Failure Buckets
 
 | adapter | bucket | count |
 | --- | --- | --- |
 | aozora-rs | faithful-upstream-vs-oracle | 38 |
-| aozora2html | faithful-rendered-output-vs-oracle | 39 |
+| aozora2html | faithful-rendered-output-vs-oracle | 32 |
 
 ## Failure Families
 
@@ -41,14 +41,11 @@ Oracle cases: `data/aat-oracle-cases.toml`
 | aozora-rs | warigaki | 1 |
 | aozora2html | accent | 1 |
 | aozora2html | annotation | 2 |
-| aozora2html | break | 2 |
 | aozora2html | caption | 1 |
 | aozora2html | decoration | 6 |
 | aozora2html | editor_note | 1 |
 | aozora2html | emphasis | 1 |
-| aozora2html | figure | 1 |
 | aozora2html | gaiji | 4 |
-| aozora2html | heading | 4 |
 | aozora2html | indentation | 5 |
 | aozora2html | iteration | 1 |
 | aozora2html | kunten | 2 |
@@ -72,10 +69,10 @@ Oracle cases: `data/aat-oracle-cases.toml`
 | annotation.chuuki | aozora2html | 0 | 1 |
 | break.line_explicit | aozora-rs | 0 | 1 |
 | break.line_explicit | aozora2 | 1 | 0 |
-| break.line_explicit | aozora2html | 0 | 1 |
+| break.line_explicit | aozora2html | 1 | 0 |
 | break.page_line | aozora-rs | 0 | 1 |
 | break.page_line | aozora2 | 1 | 0 |
-| break.page_line | aozora2html | 0 | 1 |
+| break.page_line | aozora2html | 1 | 0 |
 | caption.block | aozora-rs | 0 | 1 |
 | caption.block | aozora2 | 1 | 0 |
 | caption.block | aozora2html | 0 | 1 |
@@ -111,7 +108,7 @@ Oracle cases: `data/aat-oracle-cases.toml`
 | figure.image_caption | aozora2html | 1 | 0 |
 | figure.image_inline | aozora-rs | 0 | 1 |
 | figure.image_inline | aozora2 | 1 | 0 |
-| figure.image_inline | aozora2html | 0 | 1 |
+| figure.image_inline | aozora2html | 1 | 0 |
 | gaiji.dakuten_katakana | aozora-rs | 0 | 1 |
 | gaiji.dakuten_katakana | aozora2 | 1 | 0 |
 | gaiji.dakuten_katakana | aozora2html | 0 | 1 |
@@ -132,16 +129,16 @@ Oracle cases: `data/aat-oracle-cases.toml`
 | gaiji_ruby.inline_base | aozora2html | 0 | 1 |
 | heading.basic | aozora-rs | 1 | 0 |
 | heading.basic | aozora2 | 1 | 0 |
-| heading.basic | aozora2html | 0 | 1 |
+| heading.basic | aozora2html | 1 | 0 |
 | heading.dogyo | aozora-rs | 0 | 1 |
 | heading.dogyo | aozora2 | 1 | 0 |
-| heading.dogyo | aozora2html | 0 | 1 |
+| heading.dogyo | aozora2html | 1 | 0 |
 | heading.inline_form | aozora-rs | 0 | 1 |
 | heading.inline_form | aozora2 | 1 | 0 |
-| heading.inline_form | aozora2html | 0 | 1 |
+| heading.inline_form | aozora2html | 1 | 0 |
 | heading.mado | aozora-rs | 0 | 1 |
 | heading.mado | aozora2 | 1 | 0 |
-| heading.mado | aozora2html | 0 | 1 |
+| heading.mado | aozora2html | 1 | 0 |
 | indentation.basic | aozora-rs | 0 | 1 |
 | indentation.basic | aozora2 | 1 | 0 |
 | indentation.basic | aozora2html | 0 | 1 |

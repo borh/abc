@@ -75,17 +75,21 @@ Captured during fixture review (`tests/fixtures/*.xhtml`):
   parser-side decision, not a mapping bug. `ab-compare` will see the
   asymmetry as `summary:gaiji.marker` mismatch and that is correct
   signal: it tells the user the two parsers chose different abstractions.
-- **Some `［＃...］` markers stay as `<span class="notes">`.** Page breaks
-  (`［＃改ページ］`) and the alternative-form heading marker
-  (`［＃「タイトル」は大見出し］`) are emitted by `aozora2html` as literal
-  notes spans, not as structural blocks. The adapter preserves unsupported
-  notes as `{kind: "style", style_type: "notes", ...}`.
+- **Some `［＃...］` markers stay as `<span class="notes">`.** The adapter
+  reconstructs the supported subset that the source marker still identifies:
+  explicit line breaks (`［＃改行］`), page breaks (`［＃改ページ］`), and
+  heading variants such as `［＃「タイトル」は大見出し］` or
+  `［＃「タイトル」の大見出し］`. Unsupported notes remain
+  `{kind: "style", style_type: "notes", ...}`.
 - **Narrow source-note enrichment is explicit.** Image notes like
   `［＃挿絵（fig01.png、横４００×縦３００）入る］` are reconstructed as
   AAT `figure` nodes with `x-provenance = "source-derived"` because the
   source marker text is still present in the rendered XHTML. These nodes are
   useful for oracle checks but are not counted as upstream-XHTML
   faithfulness.
+- **Plain source image annotations are also recovered narrowly.** Text of the
+  form `猫の図（fig00001_01.png、横321×縦123）入る` is mapped to a
+  source-derived AAT `figure` node when it survives as plain text.
 - **Rendered image/caption pairs are linked conservatively.** Non-gaiji
   `<img>` elements become AAT `figure` nodes. If the immediately following
   paragraph is only a rendered caption span, the adapter attaches that caption

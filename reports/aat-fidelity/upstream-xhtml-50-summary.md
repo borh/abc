@@ -55,15 +55,15 @@ Feature coverage in the selected sample:
 | `heading` | 20 |
 | `media` | 5 |
 
-Rows needing follow-up:
+Rows needing follow-up, with first-diff context from the DuckDB observation:
 
-| Case | Status | Tags | Upstream chars | Local chars |
-| --- | --- | --- | ---: | ---: |
-| `001185_45210` | `local_parse_error` | ruby; inline_annotation; heading; layout; media | 87355 | 0 |
-| `000148_2575` | `main_text_mismatch` | gaiji; inline_annotation; layout | 7930 | 7940 |
-| `000148_2674` | `main_text_mismatch` | ruby | 3630 | 1871 |
-| `001492_51194` | `main_text_mismatch` | ruby; inline_annotation; heading; layout; media | 274676 | 274740 |
-| `001764_55990` | `main_text_mismatch` | ruby; gaiji; inline_annotation; heading; layout; media | 485703 | 485247 |
+| Case | Status | First diff | Upstream context | Local context | Interpretation |
+| --- | --- | ---: | --- | --- | --- |
+| `001185_45210` | `local_parse_error` | 0 | `訳者序一九〇九年、レオン・ワルラスの七十五歳の齢` | empty | Local `aozora2html` aborts with `NoMethodError` in `push_block_tag` after accent-syntax warnings. Exclude from proxy evidence until the upstream renderer path is understood. |
+| `000148_2575` | `main_text_mismatch` | 2754 | `※（原）［＃「漱」の「欠」に代えて「攵」、309-` | `※［＃「漱」の「欠」に代えて「攵」、309-15］` | Local and upstream differ in how an editorial gaiji/source note is rendered. |
+| `000148_2674` | `main_text_mismatch` | 0 | `�@���������ڏo�i���߂��j��` | `元日を御目出（おめで）たいものと極（き）めたのは` | Upstream `main_text` extraction is mojibake for this row; this is an XHTML decoding/extraction issue, not necessarily a renderer semantic difference. |
+| `001492_51194` | `main_text_mismatch` | 256745 | `AntoineLouis,1723-92` | `AntoineLouis,1723-1792` | Local and upstream differ in date/range expansion in visible text. |
+| `001764_55990` | `main_text_mismatch` | 29632 | `※（ざる）［＃「竹かんむり／瓜」、U+7B1F、` | `笟（ざる）を二つ下げている人が` | Local resolves a gaiji to Unicode where upstream text keeps the marker plus reading. |
 
 ## Interpretation
 

@@ -511,18 +511,15 @@ def map_block(
                 "x-indent": indent,
             }]
         # Headings via div+class (Aozora's own midashi convention)
-        midashi_match = re.match(
-            r"(?:.*\s)?(o|naka|ko)-midashi(?:\s|$)",
-            cls,
-        )
-        if midashi_match:
+        midashi_kind = midashi_kind_from_class(cls)
+        if midashi_kind:
             level_map = {"o": 1, "naka": 2, "ko": 3}
-            level = level_map[midashi_match.group(1)]
+            level = level_map[midashi_kind]
             content = walk_inline_children(el, warnings, summary)
             return [{
                 "kind": "heading",
                 "level": level,
-                "style": cls,
+                "style": heading_style_from_class(cls),
                 "content": content,
             }]
 
@@ -576,6 +573,7 @@ def xhtml_to_aat(
         # Build paragraphs by splitting on <br/> sequences.
         blocks = paragraphs_from_main(main, warnings, summary)
 
+    blocks = normalize_source_derived_blocks(blocks, summary, source_text)
     blocks = attach_following_captions(blocks, summary)
 
     aat: dict[str, Any] = {
@@ -651,7 +649,7 @@ def paragraphs_from_container(
             name in {"h1", "h2", "h3", "p"}
             or (name == "div" and (
                 re.match(r"jisage_\d+", cls)
-                or re.search(r"(o|naka|ko)-midashi", cls)
+                or midashi_kind_from_class(cls)
             ))
         )
 
@@ -674,6 +672,204 @@ def paragraphs_from_container(
         or any(_inline_has_content(n) for n in b.get("content", []))
     ]
     return blocks
+
+
+def midashi_kind_from_class(cls: str) -> str | None:
+    tokens = set(cls.split())
+    for token in ("o-midashi", "naka-midashi", "ko-midashi"):
+        if token in tokens:
+            return token.split("-", 1)[0]
+    return None
+
+
+def heading_style_from_class(cls: str) -> str:
+    tokens = set(cls.split())
+    if any(token.startswith("mado-") or token == "mado" for token in tokens):
+        return "mado"
+    if any(token.startswith("dogyo-") or token == "dogyo" for token in tokens):
+        return "dogyo"
+    return "normal"
+
+
+def normalize_source_derived_blocks(
+    blocks: list[dict[str, Any]],
+    summary: dict[str, list[dict[str, Any]]],
+    source_text: str,
+) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for block in blocks:
+        if block.get("kind") == "paragraph":
+            normalized = normalize_source_derived_paragraph(block, summary, source_text)
+            out.extend(normalized)
+        elif block.get("kind") == "heading":
+            normalized_heading = heading_from_source_note(source_text, block) or dict(block)
+            normalized_heading["style"] = heading_style_from_class(
+                normalized_heading.get("style", "")
+            )
+            out.append(normalized_heading)
+        else:
+            out.append(block)
+    return strip_text_after_page_break(out)
+
+
+def heading_from_source_note(
+    source_text: str, block: dict[str, Any]
+) -> dict[str, Any] | None:
+    content_text = inline_visible_text(block.get("content", []))
+    m = re.search(
+        r"［＃「(?P<target>.+?)」(?:は|の)(?P<style>同行|窓)?(?P<size>大|中|小)見出し］",
+        source_text,
+    )
+    if not m or m.group("target") != content_text:
+        return None
+    level_map = {"大": 1, "中": 2, "小": 3}
+    style = "normal"
+    if m.group("style") == "同行":
+        style = "dogyo"
+    elif m.group("style") == "窓":
+        style = "mado"
+    return {
+        "kind": "heading",
+        "level": level_map[m.group("size")],
+        "style": style,
+        "content": block.get("content", []),
+        "x-provenance": "source-derived",
+    }
+
+
+def strip_text_after_page_break(blocks: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    previous_was_page_break = False
+    for block in blocks:
+        current = block
+        if previous_was_page_break and current.get("kind") == "paragraph":
+            content = current.get("content", [])
+            if content and content[0].get("kind") == "text":
+                current = dict(current)
+                current["content"] = [dict(content[0]), *content[1:]]
+                current["content"][0]["value"] = current["content"][0].get("value", "").lstrip()
+        out.append(current)
+        previous_was_page_break = (
+            current.get("kind") == "paragraph"
+            and current.get("x-break-kind") == "page"
+        )
+    return out
+
+
+def normalize_source_derived_paragraph(
+    block: dict[str, Any],
+    summary: dict[str, list[dict[str, Any]]],
+    source_text: str,
+) -> list[dict[str, Any]]:
+    content = block.get("content", [])
+    meaningful = [
+        node
+        for node in content
+        if node.get("kind") != "text" or (node.get("value") or "").strip()
+    ]
+    if len(meaningful) == 1 and (
+        meaningful[0].get("kind") == "style"
+        and str(meaningful[0].get("style_type", "")).startswith("unmapped-h")
+    ):
+        heading = heading_from_source_note(
+            source_text,
+            {
+                "kind": "heading",
+                "level": 1,
+                "style": "normal",
+                "content": meaningful[0].get("content", []),
+            },
+        )
+        if heading is not None:
+            return [heading]
+    if len(meaningful) == 1 and meaningful[0].get("kind") == "text":
+        figure = source_text_figure(meaningful[0].get("value", ""))
+        if figure is not None:
+            summary.setdefault("figure.image_inline", []).append({
+                "kind": "figure",
+                "value": {
+                    "filename": figure["filename"],
+                    "alt": figure["alt"],
+                    "width": figure.get("width"),
+                    "height": figure.get("height"),
+                },
+                "provenance": "source-derived",
+            })
+            return [{"kind": "paragraph", "content": [figure]}]
+
+    line_break = paragraph_line_break_text(content)
+    if line_break is not None:
+        return [{
+            "kind": "paragraph",
+            "content": [{
+                "kind": "text",
+                "value": line_break,
+                "x-break-kind": "line",
+                "x-provenance": "source-derived",
+            }],
+        }]
+
+    page_break = paragraph_is_note(content, "［＃改ページ］")
+    if page_break:
+        return [{
+            "kind": "paragraph",
+            "content": [],
+            "x-break-kind": "page",
+            "x-provenance": "source-derived",
+        }]
+
+    return [block]
+
+
+def source_text_figure(text: str) -> dict[str, Any] | None:
+    m = re.match(
+        r"^(?P<alt>.+?)（(?P<filename>[^、）]+\.(?:png|jpe?g|gif))、横(?P<width>[０-９0-9]+)×縦(?P<height>[０-９0-9]+)）入る$",
+        text.strip(),
+        flags=re.IGNORECASE,
+    )
+    if not m:
+        return None
+    return {
+        "kind": "figure",
+        "filename": m.group("filename"),
+        "alt": normalize_figure_alt(m.group("alt")),
+        "css_class": "source-text",
+        "width": parse_aozora_int(m.group("width")),
+        "height": parse_aozora_int(m.group("height")),
+        "caption": None,
+        "x-provenance": "source-derived",
+    }
+
+
+def paragraph_line_break_text(content: list[dict[str, Any]]) -> str | None:
+    meaningful = [
+        node
+        for node in content
+        if node.get("kind") != "text" or (node.get("value") or "").strip()
+    ]
+    if len(meaningful) != 3:
+        return None
+    before, note, after = meaningful
+    if before.get("kind") != "text" or after.get("kind") != "text":
+        return None
+    if not node_is_note(note, "［＃改行］"):
+        return None
+    return f"{before.get('value', '')}\n{after.get('value', '')}"
+
+
+def paragraph_is_note(content: list[dict[str, Any]], note_text: str) -> bool:
+    meaningful = [
+        node
+        for node in content
+        if node.get("kind") != "text" or (node.get("value") or "").strip()
+    ]
+    return len(meaningful) == 1 and node_is_note(meaningful[0], note_text)
+
+
+def node_is_note(node: dict[str, Any], note_text: str) -> bool:
+    if node.get("kind") != "style" or node.get("style_type") != "notes":
+        return False
+    return inline_visible_text(node.get("content", [])) == note_text
 
 
 def _inline_has_content(n: dict[str, Any]) -> bool:

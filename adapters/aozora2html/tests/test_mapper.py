@@ -166,6 +166,128 @@ def test_rendered_image_caption_attaches_caption_to_figure() -> None:
     ]
 
 
+def test_inline_image_annotation_maps_to_figure() -> None:
+    source = "猫の図（fig00001_01.png、横321×縦123）入る"
+    raw = _run(source.encode("utf-8"), "--mode", "aat")
+    aat = json.loads(raw)
+    jsonschema.validate(aat, SCHEMA)
+
+    assert aat["blocks"] == [
+        {
+            "kind": "paragraph",
+            "content": [
+                {
+                    "kind": "figure",
+                    "filename": "fig00001_01.png",
+                    "alt": "猫の図",
+                    "css_class": "source-text",
+                    "width": 321,
+                    "height": 123,
+                    "caption": None,
+                    "x-provenance": "source-derived",
+                }
+            ],
+        }
+    ]
+
+
+def test_source_heading_note_maps_to_heading_block() -> None:
+    source = "第一章［＃「第一章」は大見出し］"
+    raw = _run(source.encode("utf-8"), "--mode", "aat")
+    aat = json.loads(raw)
+    jsonschema.validate(aat, SCHEMA)
+
+    assert aat["blocks"] == [
+        {
+            "kind": "heading",
+            "level": 1,
+            "style": "normal",
+            "content": [{"kind": "text", "value": "第一章"}],
+            "x-provenance": "source-derived",
+        }
+    ]
+
+
+def test_source_heading_no_particle_note_maps_to_heading_block() -> None:
+    source = "序章［＃「序章」の大見出し］"
+    raw = _run(source.encode("utf-8"), "--mode", "aat")
+    aat = json.loads(raw)
+    jsonschema.validate(aat, SCHEMA)
+
+    assert aat["blocks"] == [
+        {
+            "kind": "heading",
+            "level": 1,
+            "style": "normal",
+            "content": [{"kind": "text", "value": "序章"}],
+            "x-provenance": "source-derived",
+        }
+    ]
+
+
+@pytest.mark.parametrize(
+    ("source", "level", "style"),
+    [
+        ("同行見出し［＃「同行見出し」は同行中見出し］", 2, "dogyo"),
+        ("窓見出し［＃「窓見出し」は窓小見出し］", 3, "mado"),
+    ],
+)
+def test_source_heading_note_preserves_heading_style(
+    source: str, level: int, style: str
+) -> None:
+    raw = _run(source.encode("utf-8"), "--mode", "aat")
+    aat = json.loads(raw)
+    jsonschema.validate(aat, SCHEMA)
+
+    assert aat["blocks"] == [
+        {
+            "kind": "heading",
+            "level": level,
+            "style": style,
+            "content": [{"kind": "text", "value": source.split("［", 1)[0]}],
+            "x-provenance": "source-derived",
+        }
+    ]
+
+
+def test_explicit_line_break_note_maps_to_break_text() -> None:
+    raw = _run("前［＃改行］後".encode("utf-8"), "--mode", "aat")
+    aat = json.loads(raw)
+    jsonschema.validate(aat, SCHEMA)
+
+    assert aat["blocks"] == [
+        {
+            "kind": "paragraph",
+            "content": [
+                {
+                    "kind": "text",
+                    "value": "前\n後",
+                    "x-break-kind": "line",
+                    "x-provenance": "source-derived",
+                }
+            ],
+        }
+    ]
+
+
+def test_page_break_note_maps_to_marker_paragraph() -> None:
+    source = "前の段落。\n［＃改ページ］\n後の段落。"
+    raw = _run(source.encode("utf-8"), "--mode", "aat")
+    aat = json.loads(raw)
+    jsonschema.validate(aat, SCHEMA)
+
+    assert aat["blocks"] == [
+        {"kind": "paragraph", "content": [{"kind": "text", "value": "前の段落。"}]},
+        {
+            "kind": "paragraph",
+            "content": [],
+            "x-break-kind": "page",
+            "x-provenance": "source-derived",
+        },
+        {"kind": "paragraph", "content": [{"kind": "text", "value": "後の段落。"}]},
+    ]
+
+
 @pytest.mark.parametrize("fixture", FIXTURES)
 def test_fixture_passes_aat_schema(fixture: str) -> None:
     txt_path = FIXTURE_DIR / f"{fixture}.txt"

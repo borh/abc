@@ -46,10 +46,33 @@ uv run --isolated --no-project \
 test -s "$db_path"
 
 "$duckdb_bin" -csv -header "$db_path" \
-  "select case_id, raw_equal, main_text_equal, comparison_status, upstream_main_text, local_main_text from fidelity_xhtml_observations" \
+  "select case_id, raw_equal, main_text_equal, comparison_status, first_diff_index, upstream_diff_context, local_diff_context, upstream_main_text, local_main_text from fidelity_xhtml_observations where case_id = 'fixture.xhtml.same-main-text'" \
   | tee "$out_dir/query.csv"
 
-rg -n 'fixture.xhtml.same-main-text,false,true,main_text_equal,"吾輩猫ねこである。","吾輩猫ねこである。"' "$out_dir/query.csv"
+rg -n 'fixture.xhtml.same-main-text,false,true,main_text_equal,-1,,,\"吾輩猫ねこである。\",\"吾輩猫ねこである。\"' "$out_dir/query.csv"
+
+cat > "$out_dir/local-mismatch.xhtml" <<'HTML'
+<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml"><body>
+<div class="main_text">吾輩<ruby><rb>犬</rb><rt>いぬ</rt></ruby>である。<br/></div>
+</body></html>
+HTML
+
+uv run --isolated --no-project \
+  --with 'duckdb>=1.1' \
+  --with 'lxml>=5' \
+  "$repo_root/reports/aat-fidelity/compare-xhtml-sources.py" \
+  --db "$db_path" \
+  --report-id xhtml-smoke \
+  --case-id fixture.xhtml.mismatch \
+  --upstream-xhtml "$out_dir/upstream.xhtml" \
+  --local-xhtml "$out_dir/local-mismatch.xhtml"
+
+"$duckdb_bin" -csv -header "$db_path" \
+  "select case_id, main_text_equal, comparison_status, first_diff_index, upstream_diff_context, local_diff_context from fidelity_xhtml_observations where case_id = 'fixture.xhtml.mismatch'" \
+  | tee "$out_dir/mismatch-query.csv"
+
+rg -n '^fixture.xhtml.mismatch,false,main_text_mismatch,2,\"吾輩猫ねこである。\",\"吾輩犬いぬである。\"$' "$out_dir/mismatch-query.csv"
 
 : > "$out_dir/empty-local.xhtml"
 uv run --isolated --no-project \

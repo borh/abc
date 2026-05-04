@@ -2,6 +2,8 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 
 repo_root := `pwd`
 ab_db_root := env_var_or_default("AB_DB_ROOT", "/db/ab-validator")
+morph_warehouse_dir := env_var_or_default("AB_MORPH_WAREHOUSE_DIR", "/db/ab-validator/morph-warehouse")
+morph_warehouse_aat_dir := env_var_or_default("AB_MORPH_WAREHOUSE_AAT_DIR", "/db/ab-validator/aat-corpus/aozora2html-aat/aozora2html-adapter")
 
 default:
 	@just --list
@@ -121,3 +123,118 @@ fidelity-run-clean KEEP_DAYS="30":
 	fi
 	@mkdir -p "{{ab_db_root}}/aat-fidelity"
 	@find "{{ab_db_root}}/aat-fidelity" -maxdepth 1 -type d -name 'run-*' -mtime +{{KEEP_DAYS}} -print -exec rm -rf {} +
+
+morph-warehouse-clean:
+	@echo "cleaning canonical warehouse state under {{morph_warehouse_dir}}"
+	@rm -rf \
+		"{{morph_warehouse_dir}}/.staging" \
+		"{{morph_warehouse_dir}}/.duckdb_tmp" \
+		"{{morph_warehouse_dir}}/runs" \
+		"{{morph_warehouse_dir}}/triage" \
+		"{{morph_warehouse_dir}}/reports"
+	@mkdir -p "{{morph_warehouse_dir}}/runs"
+
+morph-warehouse-clean-dry-run:
+	@echo "candidate cleanup paths under {{morph_warehouse_dir}}:"
+	@for d in \
+	  "{{morph_warehouse_dir}}/.staging" \
+	  "{{morph_warehouse_dir}}/.duckdb_tmp" \
+	  "{{morph_warehouse_dir}}/runs" \
+	  "{{morph_warehouse_dir}}/triage" \
+	  "{{morph_warehouse_dir}}/reports"; do \
+	  if [ -e "$d" ]; then echo "$d"; fi; \
+	done
+
+morph-warehouse-run profile="full" aat_dir="{{morph_warehouse_aat_dir}}" run_id="" jobs="0":
+	@jobs="{{jobs}}"; \
+	if [ "$jobs" = "0" ]; then jobs="$(nproc)"; fi; \
+	run_id="{{run_id}}"; \
+	if [ -z "$run_id" ]; then run_id="{{profile}}-$(date -u +%F_%H%M%S)-jobs${jobs}"; fi; \
+	AB_SUDACHI_DICT="$(nix path-info .#sudachi-dictionary-full)/share/sudachi/system.dic" \
+	TMPDIR="{{ab_db_root}}/tmp" \
+	TMP="{{ab_db_root}}/tmp" \
+	TEMP="{{ab_db_root}}/tmp" \
+	cargo run --release -p ab-morph-run -- analyze-aat \
+		--aat-dir "{{aat_dir}}" \
+		--analyzer vibrato \
+		--analyzer sudachi-a \
+		--analyzer sudachi-c \
+		--warehouse-dir "{{morph_warehouse_dir}}" \
+		--run-id "$run_id" \
+		--warehouse-profile "{{profile}}" \
+		--jobs "$jobs"
+
+morph-warehouse-run-full aat_dir="{{morph_warehouse_aat_dir}}" run_id="" jobs="0":
+	@just morph-warehouse-run full "{{aat_dir}}" "{{run_id}}" "{{jobs}}"
+
+morph-warehouse-run-triage aat_dir="{{morph_warehouse_aat_dir}}" run_id="" jobs="0":
+	@just morph-warehouse-run triage "{{aat_dir}}" "{{run_id}}" "{{jobs}}"
+
+morph-warehouse-recreate profile="full" aat_dir="{{morph_warehouse_aat_dir}}" run_id="" jobs="0":
+	@just morph-warehouse-clean
+	@just morph-warehouse-run "{{profile}}" "{{aat_dir}}" "{{run_id}}" "{{jobs}}"
+
+morph-warehouse-recreate-full jobs="0":
+	@just morph-warehouse-recreate full "{{morph_warehouse_aat_dir}}" "" "{{jobs}}"
+
+ab-validator-clean-warehouse:
+	@echo "cleaning generated db + canonical warehouse artifacts under {{ab_db_root}} and {{morph_warehouse_dir}}"
+	@just clean-db-full
+	@just morph-warehouse-clean
+
+ab-validator-clean-warehouse-dry-run:
+	@just clean-db-full-dry-run
+	@just morph-warehouse-clean-dry-run
+
+ab-validator-recreate-warehouse-run profile="full" aat_dir="{{morph_warehouse_aat_dir}}" run_id="" jobs="0" build_report="0" report_limit="50":
+	@jobs="{{jobs}}"; \
+	if [ "$jobs" = "0" ]; then jobs="$(nproc)"; fi; \
+	run_id="{{run_id}}"; \
+	if [ -z "$run_id" ]; then run_id="{{profile}}-$(date -u +%F_%H%M%S)-jobs${jobs}"; fi; \
+	just clean-db-full; \
+	just morph-warehouse-clean; \
+	AB_SUDACHI_DICT="$(nix path-info .#sudachi-dictionary-full)/share/sudachi/system.dic" \
+	TMPDIR="{{ab_db_root}}/tmp" \
+	TMP="{{ab_db_root}}/tmp" \
+	TEMP="{{ab_db_root}}/tmp" \
+	cargo run --release -p ab-morph-run -- analyze-aat \
+		--aat-dir "{{aat_dir}}" \
+		--analyzer vibrato \
+		--analyzer sudachi-a \
+		--analyzer sudachi-c \
+		--warehouse-dir "{{morph_warehouse_dir}}" \
+		--run-id "$run_id" \
+		--warehouse-profile "{{profile}}" \
+		--jobs "$jobs"; \
+	if [ "{{build_report}}" = "1" ]; then \
+		just morph-warehouse-build-latest-report "{{profile}}" "{{report_limit}}"; \
+	fi
+
+ab-validator-recreate-warehouse-full jobs="0" run_id="" build_report="0" report_limit="50":
+	@just ab-validator-recreate-warehouse-run full "{{morph_warehouse_aat_dir}}" "{{run_id}}" "{{jobs}}" "{{build_report}}" "{{report_limit}}"
+
+ab-validator-refresh-warehouse-full jobs="0" report_limit="50":
+	@just ab-validator-recreate-warehouse-run full "{{morph_warehouse_aat_dir}}" "" "{{jobs}}" "1" "{{report_limit}}"
+
+morph-warehouse-list-runs:
+	@find "{{morph_warehouse_dir}}/runs" -maxdepth 1 -mindepth 1 -type d -printf '%f\n' | sort
+
+morph-warehouse-build-report RUN_DIR PROFILE="triage" LIMIT="50" OUTPUT_DIR="":
+	@if [ -z "{{OUTPUT_DIR}}" ]; then \
+		run_dir="{{RUN_DIR}}"; if [ -z "$run_dir" ]; then echo "RUN_DIR required or use: morph-warehouse-build-latest-report" ; exit 1; fi; \
+		out_dir="{{morph_warehouse_dir}}/reports/$(basename "$run_dir")"; \
+	else \
+		out_dir="{{OUTPUT_DIR}}"; \
+		run_dir="{{RUN_DIR}}"; \
+	fi; \
+	"{{repo_root}}/reports/morph-warehouse/build-report.sh" "$run_dir" "$out_dir" "{{LIMIT}}"
+
+morph-warehouse-build-latest-report PROFILE="full" LIMIT="50":
+	@run_dir="$(find "{{morph_warehouse_dir}}/runs" -maxdepth 1 -mindepth 1 -type d -name '{{PROFILE}}-*' | sort | tail -n 1)"; \
+	if [ -z "$run_dir" ]; then \
+		echo "no warehouse runs matching profile '{{PROFILE}}' in {{morph_warehouse_dir}}/runs"; \
+		exit 1; \
+	fi; \
+	out_dir="{{morph_warehouse_dir}}/reports/{{PROFILE}}-$(date -u +%F_%H%M%S)"; \
+	"{{repo_root}}/reports/morph-warehouse/build-report.sh" "$run_dir" "$out_dir" "{{LIMIT}}"; \
+	echo "$out_dir"

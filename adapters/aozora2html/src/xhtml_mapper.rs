@@ -1,4 +1,4 @@
-use crate::model::{AtBlock, MappingError, SourceDerivedSummary};
+use crate::{decode_source_bytes, model::DecodedSource, model::MappingError, AtBlock, SourceDerivedSummary};
 use regex::Regex;
 use roxmltree::{Document, Node};
 use serde_json::{json, Value};
@@ -6,6 +6,34 @@ use std::sync::OnceLock;
 
 fn parser_text(value: &str) -> String {
     value.replace('｜', "").replace('|', "")
+}
+
+fn strip_dtd_block(xml: &str) -> String {
+    let doctype_start = xml.find("<!DOCTYPE");
+    if doctype_start.is_none() {
+        return xml.to_string();
+    }
+
+    let start = doctype_start.unwrap();
+    let tail = &xml[start..];
+    let doctype_end = tail
+        .find("]>")
+        .map(|idx| start + idx + 2)
+        .or_else(|| tail.find('>').map(|idx| start + idx + 1));
+
+    match doctype_end {
+        Some(end) => {
+            let mut out = String::with_capacity(xml.len().saturating_sub(end - start));
+            out.push_str(&xml[..start]);
+            out.push_str(&xml[end..]);
+            out
+        }
+        None => xml.to_string(),
+    }
+}
+
+fn normalize_xml_entities(xml: &str) -> String {
+    xml.replace("&nbsp;", " ")
 }
 
 fn node_name<'a>(node: Node<'a, 'a>) -> &'a str {
@@ -323,8 +351,10 @@ fn source_note_inline_caption(note: &str) -> Option<Value> {
 fn map_warichu(node: Node<'_, '_>, warnings: &mut Vec<Value>, summary: &mut SourceDerivedSummary) -> Value {
     let _ = warnings;
     let text = text_only(node).trim().to_string();
-    let inner = if text.starts_with('（') && text.ends_with('）') && text.len() >= 2 {
-        text[1..text.len() - 1].to_string()
+    let inner = if text.starts_with('（') && text.ends_with('）') {
+        let mut chars = text.chars();
+        chars.next();
+        chars.as_str().trim_end_matches('）').to_string()
     } else {
         text
     };
@@ -1003,10 +1033,36 @@ pub fn map_blocks_from_xhtml_bytes(
     warnings: &mut Vec<Value>,
     summary: &mut SourceDerivedSummary,
 ) -> Result<(Vec<AtBlock>, bool), MappingError> {
-    let xml = std::str::from_utf8(xhtml)
-        .map_err(|err| MappingError::parse_error(format!("invalid XHTML bytes: {err}"), Vec::new(), false))?;
-    let doc = Document::parse(xml)
-        .map_err(|err| MappingError::parse_error(format!("invalid XHTML: {err}"), Vec::new(), false))?;
+    let decoded: DecodedSource = decode_source_bytes(xhtml).map_err(|err| {
+        MappingError::parse_error(
+            format!("invalid XHTML bytes: {}", err.to_string()),
+            Vec::new(),
+            false,
+        )
+    })?;
+    let mut xml = normalize_xml_entities(&decoded.text);
+    let doc = match Document::parse(&xml) {
+        Ok(doc) => doc,
+        Err(err) => {
+            let msg = err.to_string();
+            if msg.contains("XML with DTD detected") {
+                xml = normalize_xml_entities(&strip_dtd_block(&xml));
+                Document::parse(&xml).map_err(|err| {
+                    MappingError::parse_error(
+                        format!("invalid XHTML: {err}"),
+                        Vec::new(),
+                        false,
+                    )
+                })?
+            } else {
+                return Err(MappingError::parse_error(
+                    format!("invalid XHTML: {err}"),
+                    Vec::new(),
+                    false,
+                ));
+            }
+        }
+    };
     let root = doc.root_element();
 
     if let Some(main) = find_main_text(root) {

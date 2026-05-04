@@ -810,26 +810,32 @@ fn source_derived_ruby_and_reference_content(
 
     if let Some(m) = ruby_with_left_note_re().captures(source) {
         let base = m.name("base").map(|it| it.as_str()).unwrap_or_default();
-        let reading = m.name("reading").map(|it| it.as_str()).unwrap_or_default();
-        let left = m.name("left").map(|it| it.as_str()).unwrap_or_default();
-        let mut node = ruby_node(base, reading, "right");
-        if let Some(obj) = node.as_object_mut() {
-            obj.insert("x-left-reading".to_string(), Value::String(left.to_string()));
-            obj.insert("x-provenance".to_string(), Value::String("source-derived".to_string()));
+        let quoted = m.name("quoted").map(|it| it.as_str()).unwrap_or_default();
+        if quoted == base {
+            let reading = m.name("reading").map(|it| it.as_str()).unwrap_or_default();
+            let left = m.name("left").map(|it| it.as_str()).unwrap_or_default();
+            let mut node = ruby_node(base, reading, "right");
+            if let Some(obj) = node.as_object_mut() {
+                obj.insert("x-left-reading".to_string(), Value::String(left.to_string()));
+                obj.insert("x-provenance".to_string(), Value::String("source-derived".to_string()));
+            }
+            record_ruby_summary(summary, &node, "source-derived");
+            return Some(vec![node]);
         }
-        record_ruby_summary(summary, &node, "source-derived");
-        return Some(vec![node]);
     }
 
     if let Some(m) = ruby_left_note_re().captures(source) {
         let base = m.name("base").map(|it| it.as_str()).unwrap_or_default();
-        let reading = m.name("reading").map(|it| it.as_str()).unwrap_or_default();
-        let mut node = ruby_node(base, reading, "left");
-        if let Some(obj) = node.as_object_mut() {
-            obj.insert("x-provenance".to_string(), Value::String("source-derived".to_string()));
+        let quoted = m.name("quoted").map(|it| it.as_str()).unwrap_or_default();
+        if quoted == base {
+            let reading = m.name("reading").map(|it| it.as_str()).unwrap_or_default();
+            let mut node = ruby_node(base, reading, "left");
+            if let Some(obj) = node.as_object_mut() {
+                obj.insert("x-provenance".to_string(), Value::String("source-derived".to_string()));
+            }
+            record_ruby_summary(summary, &node, "source-derived");
+            return Some(vec![node]);
         }
-        record_ruby_summary(summary, &node, "source-derived");
-        return Some(vec![node]);
     }
 
     if let Some(m) = ruby_marker_re().captures(source) {
@@ -919,19 +925,22 @@ fn source_derived_ruby_and_reference_content(
 
     if let Some(m) = ruby_front_note_re().captures(source) {
         let target = m.name("target").map(|it| it.as_str()).unwrap_or_default();
-        let mark = m.name("mark").map(|it| it.as_str()).unwrap_or_default();
-        let node = record_source_derived_decoration(
-            summary,
-            &json!({
-                "kind":"style",
-                "style_type":"boten",
-                "content":[{"kind":"text","value":target}],
-                "x-frontref": mark,
-                "x-provenance":"source-derived",
-            }),
-            "reference.frontref",
-        );
-        return Some(vec![node]);
+        let quoted = m.name("quoted").map(|it| it.as_str()).unwrap_or_default();
+        if quoted == target {
+            let mark = m.name("mark").map(|it| it.as_str()).unwrap_or_default();
+            let node = record_source_derived_decoration(
+                summary,
+                &json!({
+                    "kind":"style",
+                    "style_type":"boten",
+                    "content":[{"kind":"text","value":target}],
+                    "x-frontref": mark,
+                    "x-provenance":"source-derived",
+                }),
+                "reference.frontref",
+            );
+            return Some(vec![node]);
+        }
     }
 
     if let Some(m) = ruby_basic_bouten_re().captures(source) {
@@ -1084,27 +1093,31 @@ fn source_derived_inline_content(
     }
 
     if let Some(m) = yokogumi_inline_re().captures(source) {
-        return Some(vec![record_source_derived_decoration(
-            summary,
-            &json!({
-                "kind":"yokogumi",
-                "content":[{"kind":"text","value":m.name("target").map(|it| it.as_str()).unwrap_or_default()}],
-                "x-provenance":"source-derived",
-            }),
-            "layout.yokogumi",
-        )]);
+        if m.name("quoted").map(|it| it.as_str()).unwrap_or("") == m.name("target").map(|it| it.as_str()).unwrap_or("") {
+            return Some(vec![record_source_derived_decoration(
+                summary,
+                &json!({
+                    "kind":"yokogumi",
+                    "content":[{"kind":"text","value":m.name("target").map(|it| it.as_str()).unwrap_or_default()}],
+                    "x-provenance":"source-derived",
+                }),
+                "layout.yokogumi",
+            )]);
+        }
     }
 
     if let Some(m) = tcy_inline_re().captures(source) {
-        return Some(vec![record_source_derived_decoration(
-            summary,
-            &json!({
-                "kind":"tcy",
-                "content":[{"kind":"text","value":m.name("target").map(|it| it.as_str()).unwrap_or_default()}],
-                "x-provenance":"source-derived",
-            }),
-            "layout.tcy",
-        )]);
+        if m.name("quoted").map(|it| it.as_str()).unwrap_or("") == m.name("target").map(|it| it.as_str()).unwrap_or("") {
+            return Some(vec![record_source_derived_decoration(
+                summary,
+                &json!({
+                    "kind":"tcy",
+                    "content":[{"kind":"text","value":m.name("target").map(|it| it.as_str()).unwrap_or_default()}],
+                    "x-provenance":"source-derived",
+                }),
+                "layout.tcy",
+            )]);
+        }
     }
 
     if let Some(m) = warigaki_inline_re().captures(source) {
@@ -1545,12 +1558,13 @@ fn left_page_re() -> &'static Regex {
 
 fn yokogumi_inline_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| Regex::new(r#"^(?P<target>.+?)［＃「(?P=target)」の横組み］$"#).unwrap())
+    RE.get_or_init(|| Regex::new(r#"^(?P<target>.+?)［＃「(?P<quoted>.+?)」の横組み］$"#).unwrap())
 }
+
 
 fn tcy_inline_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| Regex::new(r#"^(?P<target>.+?)［＃「(?P=target)」の縦中横］$"#).unwrap())
+    RE.get_or_init(|| Regex::new(r#"^(?P<target>.+?)［＃「(?P<quoted>.+?)」の縦中横］$"#).unwrap())
 }
 
 fn warigaki_inline_re() -> &'static Regex {
@@ -1566,14 +1580,14 @@ fn nested_ruby_note_re() -> &'static Regex {
 fn ruby_with_left_note_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
-        Regex::new(r#"^(?P<base>.+?)《(?P<reading>.+?)》［＃「(?P=base)」の左に「(?P<left>.+?)」のルビ］$"#).unwrap()
+        Regex::new(r#"^(?P<base>.+?)《(?P<reading>.+?)》［＃「(?P<quoted>.+?)」の左に「(?P<left>.+?)」のルビ］$"#).unwrap()
     })
 }
 
 fn ruby_left_note_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
-        Regex::new(r#"^(?P<base>.+?)［＃「(?P=base)」の左に「(?P<reading>.+?)」のルビ］$"#).unwrap()
+        Regex::new(r#"^(?P<base>.+?)［＃「(?P<quoted>.+?)」の左に「(?P<reading>.+?)」のルビ］$"#).unwrap()
     })
 }
 
@@ -1604,7 +1618,7 @@ fn ruby_okurigana_re() -> &'static Regex {
 fn ruby_front_note_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
-        Regex::new(r#"^(?P<target>.+?)［＃「(?P=target)」の「(?P<mark>.+?)」の傍点］$"#).unwrap()
+        Regex::new(r#"^(?P<target>.+?)［＃「(?P<quoted>.+?)」の「(?P<mark>.+?)」の傍点］$"#).unwrap()
     })
 }
 

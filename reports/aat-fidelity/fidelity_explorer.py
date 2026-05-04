@@ -351,27 +351,82 @@ def _(filtered_rows, json, mo, selected_row):
 
 
 @app.cell
-def _(mo, pl, xhtml_observations, xhtml_table):
-    raw_equal_count = sum(1 for row in xhtml_observations if row.get("raw_equal"))
-    main_text_equal_count = sum(
-        1 for row in xhtml_observations if row.get("main_text_equal")
+def _(mo, xhtml_observations):
+    xhtml_report_ids = sorted(
+        {row.get("report_id", "") for row in xhtml_observations if row.get("report_id")}
     )
-    main_text_mismatch_count = len(xhtml_observations) - main_text_equal_count
+    default_xhtml_report = (
+        "upstream-xhtml-full"
+        if "upstream-xhtml-full" in xhtml_report_ids
+        else (xhtml_report_ids[0] if xhtml_report_ids else "")
+    )
+    xhtml_report_id = mo.ui.dropdown(
+        options=xhtml_report_ids,
+        value=default_xhtml_report,
+        label="XHTML report",
+    )
+    mo.vstack(
+        [
+            mo.md("## XHTML Report"),
+            xhtml_report_id
+            if xhtml_report_ids
+            else mo.md("No XHTML observation reports loaded."),
+        ]
+    )
+    return xhtml_report_id,
+
+
+@app.cell
+def _(pl, xhtml_observations, xhtml_report_id):
+    active_xhtml_observations = [
+        row
+        for row in xhtml_observations
+        if not xhtml_report_id.value or row.get("report_id") == xhtml_report_id.value
+    ]
+    active_xhtml_table = (
+        pl.DataFrame(active_xhtml_observations)
+        if active_xhtml_observations
+        else pl.DataFrame()
+    )
+    return active_xhtml_observations, active_xhtml_table
+
+
+@app.cell
+def _(active_xhtml_observations, active_xhtml_table, mo, pl, xhtml_report_id):
+    raw_equal_count = sum(1 for row in active_xhtml_observations if row.get("raw_equal"))
+    main_text_equal_count = sum(
+        1 for row in active_xhtml_observations if row.get("main_text_equal")
+    )
+    main_text_mismatch_count = len(active_xhtml_observations) - main_text_equal_count
     proxy_eligible_count = sum(
-        1 for row in xhtml_observations if row.get("rendered_body_proxy_eligible")
+        1
+        for row in active_xhtml_observations
+        if row.get("rendered_body_proxy_eligible")
     )
     local_missing_main_text_count = sum(
         1
-        for row in xhtml_observations
+        for row in active_xhtml_observations
         if row.get("comparison_status") == "local_missing_main_text"
     )
     upstream_missing_main_text_count = sum(
         1
-        for row in xhtml_observations
+        for row in active_xhtml_observations
         if row.get("comparison_status") == "upstream_missing_main_text"
     )
+    status_rows = [
+        {"comparison_status": row.get("comparison_status") or "unknown"}
+        for row in active_xhtml_observations
+    ]
+    xhtml_status_summary = (
+        pl.DataFrame(status_rows)
+        .group_by("comparison_status")
+        .agg(pl.len().alias("observations"))
+        .sort("comparison_status")
+        if status_rows
+        else pl.DataFrame()
+    )
     feature_rows = []
-    for row in xhtml_observations:
+    for row in active_xhtml_observations:
         tags = [
             tag.strip()
             for tag in (row.get("feature_tags") or "").split(";")
@@ -401,7 +456,7 @@ def _(mo, pl, xhtml_observations, xhtml_table):
         xhtml_feature_summary = pl.DataFrame()
     proxy_rows = [
         {"proxy_basis": row.get("proxy_basis") or "not_eligible"}
-        for row in xhtml_observations
+        for row in active_xhtml_observations
     ]
     xhtml_proxy_summary = (
         pl.DataFrame(proxy_rows)
@@ -415,14 +470,21 @@ def _(mo, pl, xhtml_observations, xhtml_table):
         [
             mo.md(
                 "## XHTML Source Layer\n\n"
-                f"Observations: **{len(xhtml_observations)}**  \n"
+                f"Report: `{xhtml_report_id.value}`  \n"
+                f"Observations: **{len(active_xhtml_observations)}**  \n"
                 f"Raw equal: **{raw_equal_count}**  \n"
                 f"`main_text` equal: **{main_text_equal_count}**  \n"
                 f"Rendered-body proxy eligible: **{proxy_eligible_count}**  \n"
                 f"`main_text` mismatch: **{main_text_mismatch_count}**  \n"
                 f"Upstream missing `main_text`: **{upstream_missing_main_text_count}**  \n"
-                f"Local missing `main_text`: **{local_missing_main_text_count}**"
+                f"Local missing `main_text`: **{local_missing_main_text_count}**  \n\n"
+                "`local_adapter_error` rows are adapter-abort JSON payloads, not "
+                "malformed XHTML source files."
             ),
+            mo.md("### Status Summary"),
+            mo.ui.table(xhtml_status_summary)
+            if status_rows
+            else mo.md("No status rows loaded."),
             mo.md("### Proxy Basis Summary"),
             mo.ui.table(xhtml_proxy_summary)
             if proxy_rows
@@ -432,25 +494,59 @@ def _(mo, pl, xhtml_observations, xhtml_table):
             if feature_rows
             else mo.md("No feature tags loaded."),
             mo.md("### Observations"),
-            mo.ui.table(xhtml_table) if xhtml_observations else mo.md("No upstream XHTML observations loaded."),
+            mo.ui.table(active_xhtml_table)
+            if active_xhtml_observations
+            else mo.md("No upstream XHTML observations loaded."),
         ]
     )
-    return xhtml_feature_summary, xhtml_proxy_summary
+    return xhtml_feature_summary, xhtml_proxy_summary, xhtml_status_summary
 
 
 @app.cell
-def _(mo, xhtml_observations):
-    mo.json(xhtml_observations[0] if xhtml_observations else {})
+def _(active_xhtml_observations, mo):
+    mo.json(active_xhtml_observations[0] if active_xhtml_observations else {})
     return
 
 
 @app.cell
-def _(mo, pl, xhtml_observations):
+def _(active_xhtml_observations, mo, pl):
     xhtml_mismatch_rows = [
         row
-        for row in xhtml_observations
+        for row in active_xhtml_observations
         if not row.get("rendered_body_proxy_eligible")
     ]
+    shape_rows = []
+    for row in xhtml_mismatch_rows:
+        upstream_len = len(row.get("upstream_main_text") or "")
+        local_len = len(row.get("local_main_text") or "")
+        delta = local_len - upstream_len
+        if delta == 0:
+            bucket = "0"
+        elif abs(delta) <= 10:
+            bucket = "1-10"
+        elif abs(delta) <= 100:
+            bucket = "11-100"
+        elif abs(delta) <= 1000:
+            bucket = "101-1000"
+        else:
+            bucket = "1001+"
+        shape_rows.append(
+            {
+                "status": row.get("comparison_status"),
+                "length_direction": "local_longer"
+                if delta > 0
+                else ("upstream_longer" if delta < 0 else "same_length"),
+                "length_delta_bucket": bucket,
+            }
+        )
+    mismatch_shape_summary = (
+        pl.DataFrame(shape_rows)
+        .group_by(["status", "length_direction", "length_delta_bucket"])
+        .agg(pl.len().alias("observations"))
+        .sort(["status", "length_direction", "length_delta_bucket"])
+        if shape_rows
+        else pl.DataFrame()
+    )
     mismatch_table = (
         pl.DataFrame(
             [
@@ -482,13 +578,18 @@ def _(mo, pl, xhtml_observations):
     mo.vstack(
         [
             mo.md("## XHTML Mismatch Drilldown"),
+            mo.md("### Mismatch Shape Summary"),
+            mo.ui.table(mismatch_shape_summary)
+            if shape_rows
+            else mo.md("No mismatch shape rows loaded."),
+            mo.md("### Rows"),
             mo.ui.table(mismatch_table)
             if xhtml_mismatch_rows
             else mo.md("No XHTML mismatches loaded."),
             selected_xhtml_row,
         ]
     )
-    return selected_xhtml_row, xhtml_mismatch_rows
+    return mismatch_shape_summary, selected_xhtml_row, xhtml_mismatch_rows
 
 
 @app.cell

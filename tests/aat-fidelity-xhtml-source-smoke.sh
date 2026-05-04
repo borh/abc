@@ -155,4 +155,45 @@ uv run --isolated --no-project \
 
 rg -n '^fixture.xhtml.empty-local,false,local_parse_error,$' "$out_dir/empty-local-query.csv"
 
+cat > "$out_dir/local-adapter-error.json" <<'JSON'
+{"version":1,"work_id":"stdin","blocks":[],"meta":{"adapter":"aozora2html","adapter_version":"fixture","source_encoding":"windows-31j","source_hash":"sha256:0000000000000000000000000000000000000000000000000000000000000000","parse_complete":false,"warnings":[{"message":"aozora2html parser aborted: fixture"}]}}
+JSON
+
+uv run --isolated --no-project \
+  --with 'duckdb>=1.1' \
+  --with 'lxml>=5' \
+  "$repo_root/reports/aat-fidelity/compare-xhtml-sources.py" \
+  --db "$db_path" \
+  --report-id xhtml-smoke \
+  --case-id fixture.xhtml.adapter-error \
+  --upstream-xhtml "$out_dir/upstream.xhtml" \
+  --local-xhtml "$out_dir/local-adapter-error.json"
+
+"$duckdb_bin" -csv -header "$db_path" \
+  "select case_id, main_text_equal, comparison_status, local_main_text from fidelity_xhtml_observations where case_id = 'fixture.xhtml.adapter-error'" \
+  | tee "$out_dir/adapter-error-query.csv"
+
+rg -n '^fixture.xhtml.adapter-error,false,local_adapter_error,$' "$out_dir/adapter-error-query.csv"
+
+cat > "$out_dir/upstream-no-main-text.xhtml" <<'XHTML'
+<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml"><body><div class="bibliographical_information">本文なし</div></body></html>
+XHTML
+
+uv run --isolated --no-project \
+  --with 'duckdb>=1.1' \
+  --with 'lxml>=5' \
+  "$repo_root/reports/aat-fidelity/compare-xhtml-sources.py" \
+  --db "$db_path" \
+  --report-id xhtml-smoke \
+  --case-id fixture.xhtml.adapter-error-empty-body \
+  --upstream-xhtml "$out_dir/upstream-no-main-text.xhtml" \
+  --local-xhtml "$out_dir/local-adapter-error.json"
+
+"$duckdb_bin" -csv -header "$db_path" \
+  "select case_id, main_text_equal, rendered_body_proxy_eligible, proxy_basis, comparison_status from fidelity_xhtml_observations where case_id = 'fixture.xhtml.adapter-error-empty-body'" \
+  | tee "$out_dir/adapter-error-empty-body-query.csv"
+
+rg -n '^fixture.xhtml.adapter-error-empty-body,true,false,not_eligible,local_adapter_error$' "$out_dir/adapter-error-empty-body-query.csv"
+
 echo "aat fidelity xhtml source smoke ok: $out_dir"

@@ -19,9 +19,10 @@ retired_by = "observations: classify aozora-rs cross-adapter oracle failures"
 id = "aozora-rs-cross-oracle-observed-divergence"
 adapter = "aozora-rs"
 syntax_row_ids = ["ruby.basic", "heading.basic", "decoration.boten", "indentation.jisage_block", "warichu.basic", "figure.image_caption"]
-status = "active"
-summary = "Upstream observations now cover aozora-rs reviewed oracle failures; remaining failures are faithful observed output vs oracle correctness and should be fixed one syntax family at a time."
+status = "retired"
+summary = "Upstream observations previously covered aozora-rs reviewed oracle failures; aozora-rs now passes the reviewed oracle matrix."
 evidence = "data/aat-upstream-observations.toml"
+retired_by = "fixes: aozora-rs reviewed oracle matrix green"
 
 [[note]]
 id = "aozora2-blocks-raw-before-reconstruction"
@@ -56,3 +57,11 @@ syntax_row_ids = ["gaiji.marker", "ruby.placement_directional", "heading.basic",
 status = "active"
 summary = "Cross-adapter oracle triage confirms aozora2html is mostly below source-level AAT oracle expectations because it maps rendered XHTML; failures must be split into recoverable notes-span reconstruction and unrecoverable rendered-output loss."
 evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[note]]
+id = "aozora2html-full-xhtml-corpus"
+adapter = "aozora2html"
+syntax_row_ids = ["gaiji.marker", "ruby.basic", "heading.basic", "layout.yokogumi", "figure.image_caption"]
+status = "active"
+summary = "Full local upstream-XHTML comparison uses references/aozorabunko only: report_id upstream-xhtml-full loaded 17,601 observations with 15,231 rendered-body proxy rows (6,321 raw XHTML matches plus 8,910 normalized main_text matches), 2,179 main_text mismatches, 58 local_adapter_error rows, 132 upstream_missing_main_text rows, and 1 both_missing_main_text row."
+evidence = "/db/ab-validator/aat-fidelity/upstream-xhtml-full/triage-report/index.md"

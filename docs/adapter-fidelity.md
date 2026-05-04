@@ -52,6 +52,23 @@ records 50 real Aozora pairs from the same local mirror under
 error. The selected sample is stratified by source features and includes ruby,
 inline annotations, layout, gaiji, headings, and 5 media-tagged works.
 
+The full local-corpus run uses only the local `references/aozorabunko` mirror
+and is stored under `report_id = 'upstream-xhtml-full'` in
+`/db/ab-validator/aat-fidelity/cross-adapter/fidelity.duckdb`. The run paired
+17,603 upstream XHTML/source entries, loaded 17,601 observations, and skipped
+2 source inputs that could not produce a local comparison file. Current status:
+6,321 raw XHTML matches, 8,910 normalized `main_text` matches beyond raw
+equality, 2,179 normalized `main_text` mismatches, 58 local adapter aborts,
+132 upstream XHTML files without `main_text`, and 1 row where both sides lack
+`main_text`. The triage outputs are generated in
+`/db/ab-validator/aat-fidelity/upstream-xhtml-full/triage-report/`.
+
+The 58 local adapter aborts are classified as `local_adapter_error` because the
+local adapter wrote AAT-style JSON failure payloads after the wrapped
+`aozora2html` gem aborted. They are not malformed local XHTML files. This
+keeps source extraction/parser failures separate from XHTML comparison
+failures.
+
 Policy consequence: local `aozora2html` output is acceptable as a rendered-body
 proxy when upstream XHTML `main_text` equality is established for the work or
 sample slice being used. It is not a source-structure oracle. Any source-derived
@@ -67,7 +84,7 @@ kept under `/db/ab-validator/aat-fidelity/cross-adapter/report.json`.
 | Adapter | Reviewed cases | Oracle pass | Oracle fail | Interpretation |
 | --- | ---: | ---: | ---: | --- |
 | `aozora2` | 46 | 46 | 0 | Current reviewed-case AAT baseline. |
-| `aozora-rs` | 46 | 5 | 41 | Upstream observations now cover every reviewed failure; remaining mismatches are faithful observed output vs oracle correctness. |
+| `aozora-rs` | 46 | 46 | 0 | Current reviewed-case AAT baseline. |
 | `aozora2html` | 46 | 11 | 35 | Rendered-output observations now cover every reviewed failure; narrow source-derived recovery now covers warichu, simple figure/caption and image-inline cases, headings, and page/line breaks, while many source-level oracle assertions still exceed what the XHTML mapper reconstructs. |
 
 ## Follow-up Checks

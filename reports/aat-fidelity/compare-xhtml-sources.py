@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import copy
 import hashlib
+import json
 import re
 from datetime import UTC, datetime
 from pathlib import Path
@@ -86,6 +87,17 @@ def main_text_value(data: bytes) -> str:
         return ""
     main = prune_non_body_descendants(main)
     return normalize_text("".join(main.itertext()))
+
+
+def is_adapter_error_payload(data: bytes) -> bool:
+    try:
+        payload = json.loads(data.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return False
+    if not isinstance(payload, dict):
+        return False
+    meta = payload.get("meta")
+    return isinstance(meta, dict) and meta.get("parse_complete") is False
 
 
 def create_tables(conn: duckdb.DuckDBPyConnection) -> None:
@@ -177,9 +189,15 @@ def comparison_status(
     raw_equal: bool,
     upstream_main_text: str,
     local_main_text: str,
+    upstream_adapter_error: bool = False,
+    local_adapter_error: bool = False,
     upstream_parse_ok: bool = True,
     local_parse_ok: bool = True,
 ) -> str:
+    if upstream_adapter_error:
+        return "upstream_adapter_error"
+    if local_adapter_error:
+        return "local_adapter_error"
     if not upstream_parse_ok:
         return "upstream_parse_error"
     if not local_parse_ok:
@@ -197,10 +215,10 @@ def comparison_status(
     return "main_text_mismatch"
 
 
-def proxy_basis(raw_equal: bool, main_text_equal: bool) -> str:
-    if raw_equal:
+def proxy_basis(status: str) -> str:
+    if status == "raw_equal":
         return "raw_xhtml_equal"
-    if main_text_equal:
+    if status == "main_text_equal":
         return "normalized_main_text_equal"
     return "not_eligible"
 
@@ -220,13 +238,24 @@ def load_observation(
 ) -> None:
     upstream_bytes = upstream_xhtml.read_bytes()
     local_bytes = local_xhtml.read_bytes()
+    upstream_adapter_error = is_adapter_error_payload(upstream_bytes)
+    local_adapter_error = is_adapter_error_payload(local_bytes)
     upstream_parse_ok = parse_xhtml(upstream_bytes) is not None
     local_parse_ok = parse_xhtml(local_bytes) is not None
     upstream_main_text = main_text_value(upstream_bytes)
     local_main_text = main_text_value(local_bytes)
     raw_equal = upstream_bytes == local_bytes
     main_text_equal = upstream_main_text == local_main_text
-    basis = proxy_basis(raw_equal, main_text_equal)
+    status = comparison_status(
+        raw_equal=raw_equal,
+        upstream_main_text=upstream_main_text,
+        local_main_text=local_main_text,
+        upstream_adapter_error=upstream_adapter_error,
+        local_adapter_error=local_adapter_error,
+        upstream_parse_ok=upstream_parse_ok,
+        local_parse_ok=local_parse_ok,
+    )
+    basis = proxy_basis(status)
     diff_index, upstream_diff_context, local_diff_context = first_diff(
         upstream_main_text, local_main_text
     )
@@ -259,13 +288,7 @@ def load_observation(
             sha256_hex(upstream_bytes),
             sha256_hex(local_bytes),
             raw_equal,
-            comparison_status(
-                raw_equal=raw_equal,
-                upstream_main_text=upstream_main_text,
-                local_main_text=local_main_text,
-                upstream_parse_ok=upstream_parse_ok,
-                local_parse_ok=local_parse_ok,
-            ),
+            status,
             sha256_hex(upstream_main_text.encode("utf-8")),
             sha256_hex(local_main_text.encode("utf-8")),
             main_text_equal,

@@ -11,7 +11,7 @@
 
 A third orchestrator layer `lib.rs` composes them; it does not flatten them into one ad hoc function. A final serializer builds existing legacy output JSON shape.
 
-**Tech Stack:** Rust 2024, `roxmltree` (fixed), `clap`, `serde_json`, `ab-source-syntax`, `regex`, `sha2`, existing shell wrapper in Bash, `jsonschema` checks in existing Python tests.
+**Tech Stack:** Rust 2024, `roxmltree` (fixed), `clap`, `serde_json`, `ab-source-syntax`, `regex`, `sha2`, `once_cell`, optional `fancy-regex` for parity-only patterns, existing shell wrapper in Bash, `jsonschema` checks in existing Python tests.
 
 ---
 
@@ -53,6 +53,34 @@ For each `fixtures/*.txt`:
 
 Expected before Rust implementation: these tests are skipped unless `AOZORA2HTML_PARITY=1` and toolchain artifact exists.
 
+### Task 1.5: Pre-lock checks before Task 2 implementation (blocking)
+
+**Files:**
+- Modify: `docs/superpowers/plans/2026-05-04-aozora2html-rust-migration.md`
+- Modify: `adapters/aozora2html/src/model.rs` (scaffold only)
+- Modify: `adapters/aozora2html/Cargo.toml` (scaffold dependencies)
+
+- [ ] **Step 1: Rust regex compatibility audit (required before coding `source_derived.rs`)**
+
+Create a migration table in this plan for every regex-driven helper in `adapter.py` used by `source_derived.rs` (`source_derived_block_scope`, `source_derived_inline_content`, `source_derived_split_gaiji_notes`, `source_derived_inlined_gaiji_content`, `source_derived_gaiji_content`, `source_derived_ruby_and_reference_content`, caption helpers):
+- source Python `re` pattern
+- Rust equivalent (`regex`, `fancy_regex`, or explicit parser refactor)
+- support equivalence risk
+- required approximation strategy
+
+If any pattern is unsupported by either Rust regex crate, explicitly list it and defer implementation until mitigation is chosen.
+
+- [ ] **Step 2: Lock `model.rs` types before implementation**
+
+Define shared contracts first:
+- `AtBlock`, `AtInline`
+- `SourceDerivedContext`, `SourceDerivedSummary`
+- `MappingInput`, `MappingResult`
+- `MappingError` + `MappingErrorKind`
+- parser-failed serialization helpers
+
+Run `cargo check --manifest-path adapters/aozora2html/Cargo.toml` on this skeleton and treat failures as blocking before starting Task 2a/2b.
+
 ### Task 2: Add Rust crate scaffold and explicit module boundaries
 
 **Files:**
@@ -87,15 +115,17 @@ pub fn map_with_protocol_bytes(
     xhtml: &[u8],
     source_bytes: &[u8],
     parse_complete: bool,
-) -> Result<serde_json::Value>;
+) -> Result<serde_json::Value, MappingError>;
 
-pub fn map_with_protocol(input: MappingInput) -> Result<serde_json::Value>;
+pub fn map_with_protocol(input: MappingInput) -> Result<serde_json::Value, MappingError>;
 ```
 
 `map_with_protocol_bytes` is the hot-path API for no-copy library callers and should be the preferred entry point.
 
-`main.rs` keeps the wrapper protocol (`--source`, `--xhtml`, etc.) and should read those files itself, then pass borrowed bytes into
+`main.rs` keeps the wrapper protocol (`--source`, `--xhtml`, etc.) and should read those files as raw bytes (never decode in main), then pass borrowed bytes into
 `map_with_protocol_bytes`.
+
+`map_with_protocol` returns `Result<serde_json::Value, MappingError>` so callers can convert failures into the existing parser-failed envelope shape (`meta.error`, `meta.warnings`, and compatibility fields).
 
 `map_with_protocol` composes:
 
@@ -106,6 +136,8 @@ pub fn map_with_protocol(input: MappingInput) -> Result<serde_json::Value>;
 - [ ] **Step 2: Define source-text ownership**
 
 `map_with_protocol` accepts `source_bytes`, decodes and hashes source text internally by calling `ab-source-syntax::decode_source_bytes` so `source_encoding` and `source_hash` remain source-internal and deterministic.
+
+Add a scaffold `Cargo.toml` check that resolves `ab-source-syntax` from the repository path and fails fast in CI if the crate or feature path changes.
 
 - [ ] **Step 3: Choose and document XML parser choice now (roxmltree only)**
 
@@ -123,6 +155,8 @@ Use `roxmltree` in `xhtml_mapper.rs` only. It is DOM-based and closest to Python
 - small helper value objects used by summary emission (projection/warning records)
 
 Each stage must consume/produce explicit typed structures from this module to avoid signature drift across tasks.
+
+`model.rs` also defines the serialized error shape used for parser-failed envelopes (`MappingError`, `AdapterFailureEnvelope`) so both CLI and direct callers get deterministic envelopes.
 
 ### Task 2a: Implement source-agnostic XHTML mapper (`xhtml_mapper.rs`)
 
@@ -155,7 +189,8 @@ Add unit tests under `adapters/aozora2html/src/lib.rs` (or `tests/`) for:
 - warning emission on unmapped tags,
 - gaiji image fallback to `gaiji` or `figure` per existing behavior.
 
-Acceptance: stage can produce identical `blocks/warnings` for fixtures that do not depend on source-derived enrichment.
+Track a dedicated parser-only fixture list for this stage (e.g. `xhtml_mapper_suite`) and run stage-only assertions only on those fixtures.
+Acceptance: stage can produce identical `blocks/warnings` for that parser-only fixture list.
 
 ### Task 2b: Implement high-risk source-derived recovery (`source_derived.rs`) as separate pass
 
@@ -190,6 +225,8 @@ Add explicit ordering tests around overlapping markers:
 - gaiji markers at line edges,
 - nested ruby/notes,
 - multiple unmatched/ambiguous patterns.
+
+Before implementation, verify each regex used in this step against the Task 1.5 audit table and attach its concrete engine choice (`regex` vs `fancy-regex`) in comments.
 
 - [ ] **Step 3: Ruby + marker enrichment pass**
 
@@ -236,11 +273,12 @@ Prefer a compile-time constant mapping path:
 - use a `build.rs` that parses `data/jis2ucs.yml` at build time and emits `src/generated_jis2ucs.rs`,
 - expose a `phf::Map` or `const` hash map from generated code.
 
-Keep `include_str!` + runtime YAML parse as fallback only if `build.rs` is explicitly not enabled.
+Do not use general runtime YAML parse in normal operation.
+Allow runtime YAML parse only under the explicit `runtime-jis2ucs` feature (for local debugging), and document that CI must not enable it.
 
 - [ ] **Step 2: Implement deterministic parser with unit tests**
 
-- parse table once via `Lazy` cache only in the non-`build.rs` fallback path,
+- parse table once via `once_cell::sync::Lazy` cache only in the non-`build.rs` fallback path,
 - normalize row numbers (`0-03-04` style normalization equivalent to Python normalize function),
 - map Unicode/unknown behavior parity for gaiji resolution.
 
@@ -330,6 +368,8 @@ In README/docs, mark `adapter.py` as fallback-only and not default.
 
 If parity remains green for two CI runs, replace fallback references with legacy status and limit direct Python execution paths to explicit operator override.
 
+If parity fails after default flip in CI or release smoke, do not keep Rust-default behavior. Add a required rollback task to switch the wrapper default back to `python` and reopen migration gate before any new release.
+
 ### Task 6: Workspace and maintenance choices
 
 **Files:**
@@ -349,6 +389,13 @@ Add concise recipes:
 - run parity suite.
 
 Exact command target should match wrapper path and keep parity env var usage consistent.
+
+- [ ] **Step 3: Add a baseline performance gate**
+
+Track a lightweight benchmark target before enabling default Rust:
+- verify `map_with_protocol_bytes` avoids unnecessary clones in profiler/criterion smoke,
+- document expected allocation profile for fixture corpus (hot path should be linear and mostly borrowed),
+- use this as a planning guard for subsequent optimization tasks.
 
 ### Self-Review
 

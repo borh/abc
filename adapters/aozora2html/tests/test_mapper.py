@@ -3,10 +3,8 @@
 from __future__ import annotations
 
 import json
-import os
 import re
 import subprocess
-import sys
 from pathlib import Path
 
 import jsonschema
@@ -16,7 +14,6 @@ REPO_ROOT = Path(__file__).resolve().parents[3]
 RUN_SH = REPO_ROOT / "adapters" / "aozora2html" / "aozora2html-adapter"
 FIXTURE_DIR = Path(__file__).resolve().parent / "fixtures"
 SCHEMA = json.loads((REPO_ROOT / "data" / "aat-schema.json").read_text())
-PARITY_ENABLED = os.environ.get("AOZORA2HTML_PARITY") == "1"
 
 # Minimal aozora-bunko-format text used for envelope verification.
 MINIMAL_AOZORA = (
@@ -34,17 +31,10 @@ FIXTURES = sorted(p.stem for p in FIXTURE_DIR.glob("*.txt"))
 
 
 
-def _run(stdin_bytes: bytes, *args: str, backend: str | None = None) -> bytes:
-    env = os.environ.copy()
-    if PARITY_ENABLED:
-        env["AOZORA2HTML_BACKEND"] = "python"
-    if backend is not None:
-        env["AOZORA2HTML_BACKEND"] = backend
-
+def _run(stdin_bytes: bytes, *args: str) -> bytes:
     return subprocess.check_output(
         ["bash", str(RUN_SH), *args],
         input=stdin_bytes,
-        env=env,
     )
 
 
@@ -1272,21 +1262,6 @@ def test_fixture_matches_golden(fixture: str) -> None:
     actual = json.loads(raw)
     expected = json.loads(golden_path.read_text())
     assert _canonicalize(actual) == _canonicalize(expected)
-
-
-@pytest.mark.skipif(
-    not PARITY_ENABLED,
-    reason="Set AOZORA2HTML_PARITY=1 to run rust-vs-python parity checks",
-)
-@pytest.mark.parametrize("fixture", FIXTURES)
-def test_fixture_parity_python_vs_rust(fixture: str) -> None:
-    txt_path = FIXTURE_DIR / f"{fixture}.txt"
-    source = txt_path.read_bytes()
-    python_raw = _run(source, "--mode", "aat", backend="python")
-    rust_raw = _run(source, "--mode", "aat", backend="rust")
-    python_aat = json.loads(python_raw)
-    rust_aat = json.loads(rust_raw)
-    assert _canonicalize(python_aat) == _canonicalize(rust_aat)
 
 
 if __name__ == "__main__":

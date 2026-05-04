@@ -2,16 +2,20 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-ADAPTER_PY="$REPO_ROOT/adapters/aozora2html/adapter.py"
 GEM_NAME="aozora2html"
 GEM_VERSION="3.0.1"
 GEM_HOME_DIR="${AB_VALIDATOR_GEM_HOME:-/db/ab-validator/gems/aozora2html-$GEM_VERSION}"
 RUST_MAPPER_BIN="$REPO_ROOT/adapters/aozora2html/target/release/aozora2html-adapter"
-BACKEND="${AOZORA2HTML_BACKEND:-rust}"
 AOZORA2HTML_FLAKE="${REPO_ROOT}#aozora2html"
 
+if [[ ! -x "$RUST_MAPPER_BIN" ]]; then
+  echo "Rust mapper unavailable, build it with: just aozora2html-rust-build" >&2
+  echo "Expected binary: $RUST_MAPPER_BIN" >&2
+  exit 1
+fi
+
 if [[ "${1:-}" == "--version" ]]; then
-  exec nix develop "$AOZORA2HTML_FLAKE" --command python3 "$ADAPTER_PY" --version
+  exec "$RUST_MAPPER_BIN" --version
 fi
 
 mode="aat"
@@ -56,7 +60,7 @@ parser_err="$(mktemp --suffix=.err)"
 trap 'rm -f "$stdin_raw" "$parser_sjis_src" "$crlf_src" "$xhtml" "$sjis_src" "$parser_err"' EXIT
 
 # Ruby parser may abort partway through (CRLF errors, JIS-out-of-range, etc.).
-# Capture its exit and let adapter.py emit a parse_complete=false envelope so
+# Capture its exit and let the Rust mapper emit a parse_complete=false envelope so
 # ab-check sees a valid AAT instead of empty stdout.
 parser_rc=0
 nix develop "$AOZORA2HTML_FLAKE" --command bash -lc \
@@ -79,16 +83,7 @@ if [[ "$parser_rc" -ne 0 ]]; then
 fi
 mode_arg=(--mode "$mode")
 
-# adapter.py reads --source for hash/encoding metadata. Pass the original
+# Rust mapper reads --source for hash/encoding metadata. Pass the original
 # stdin bytes so source_hash matches what other adapters see.
 common_args=(--source "$stdin_raw" --xhtml "$xhtml" "${mode_arg[@]}" "${parse_complete_arg[@]}")
-if [[ "$BACKEND" == "rust" ]]; then
-  if [[ ! -x "$RUST_MAPPER_BIN" ]]; then
-    echo "AOZORA2HTML_BACKEND=rust selected, but Rust binary is not available at: $RUST_MAPPER_BIN" >&2
-    echo "Build it with: just aozora2html-rust-build" >&2
-    exit 1
-  fi
-  exec "$RUST_MAPPER_BIN" "${common_args[@]}"
-fi
-
-exec nix develop "$AOZORA2HTML_FLAKE" --command python3 "$ADAPTER_PY" "${common_args[@]}"
+exec "$RUST_MAPPER_BIN" "${common_args[@]}"

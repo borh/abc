@@ -4,7 +4,7 @@ repo_root := `pwd`
 ab_db_root := env_var_or_default("AB_DB_ROOT", "/db/ab-validator")
 morph_warehouse_dir := env_var_or_default("AB_MORPH_WAREHOUSE_DIR", "/db/ab-validator/morph-warehouse")
 morph_warehouse_aat_dir := env_var_or_default("AB_MORPH_WAREHOUSE_AAT_DIR", "/db/ab-validator/aat-corpus/aozora2html-aat/aozora2html-adapter")
-aozora2html_flake := "{{repo_root}}#aozora2html"
+aozora2html_flake := repo_root + "#aozora2html"
 
 default:
 	@just --list
@@ -19,7 +19,7 @@ aozora2html-rust-test:
 	@cargo test --manifest-path "{{repo_root}}/adapters/aozora2html/Cargo.toml"
 
 aozora2html-rust-parity:
-	@nix develop "{{aozora2html_flake}}" --command AOZORA2HTML_PARITY=1 pytest "{{repo_root}}/adapters/aozora2html/tests/test_mapper.py" -vv
+	@nix develop "{{aozora2html_flake}}" --command pytest "{{repo_root}}/adapters/aozora2html/tests/test_mapper.py" -vv
 
 clean-db:
 	@echo "cleaning generated artifacts under {{ab_db_root}}"

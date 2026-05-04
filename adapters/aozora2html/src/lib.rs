@@ -113,8 +113,8 @@ pub fn map_with_protocol(input: MappingInput) -> anyhow::Result<serde_json::Valu
             return Ok(err.into_envelope(decoded.encoding, &decoded.source_hash));
         }
     };
-    // Source-derived recovery is still scaffolded to preserve behavior while the
-    // full port is migrated from adapter.py.
+    // Source-derived recovery is still scaffolded to preserve behavior while
+    // the old Python implementation is retired.
     source_derived::apply_source_derived_recovery(&mut blocks, &decoded.text, &mut ctx);
     let blocks = source_derived::attach_following_captions(blocks, &mut ctx);
     warnings.extend(ctx.warnings);

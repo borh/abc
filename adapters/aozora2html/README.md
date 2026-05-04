@@ -15,20 +15,21 @@ XHTML output can be compared with the Rust adapters under `ab-check` /
    and rewrites line endings to CRLF before invoking Ruby.
    If stdin is a source fragment rather than a full Aozora file with separator
    lines, the wrapper feeds Ruby a synthetic Aozora document around that
-   fragment. `adapter.py` still hashes and reports the original stdin bytes.
+   fragment. The Rust adapter still hashes and reports the original stdin bytes.
 2. **Ruby parser.** `aozora2html --error-utf8 --use-unicode <crlf_src> <xhtml>`
    under `nix develop .#aozora2html`. The wrapper installs the released gem into
    `/db/ab-validator/gems/aozora2html-3.0.1` by default, keeping dependency
    cache data outside the repo. Stderr is redirected so progress chatter does
    not pollute the AAT JSON written to stdout.
-3. **XHTML → AAT mapping.** `adapter.py` parses the XHTML with `lxml`, walks
-   the tree, and emits AAT JSON. It reads `--source` (the original raw stdin
-   bytes) for `meta.source_hash` and `meta.source_encoding`, so those fields
-   reflect the user's input — not the Shift_JIS intermediate.
+3. **XHTML → AAT mapping.** `aozora2html-adapter` maps XHTML with the Rust
+   pipeline (`adapters/aozora2html`), walks the tree, and emits AAT JSON. It
+   reads `--source` (the original raw stdin bytes) for `meta.source_hash` and
+   `meta.source_encoding`, so those fields reflect the user's input — not the
+   Shift_JIS intermediate.
 
 ## Contract
 
-`aozora2html-adapter` ↔ `adapter.py` communicate through two temp files passed as
+`aozora2html-adapter` consumes two temp files passed as
 positional arguments:
 
 - `--source <path>` — original stdin bytes, used for hashing/encoding metadata.
@@ -36,22 +37,19 @@ positional arguments:
 - `--mode <aat|html>` — output AAT JSON or the intermediate XHTML.
 - `--version` — prints `aozora2html-adapter <semver> gem-<aozora2html-version>`.
 
-## Encoding duplication
+## Encoding handling
 
-Encoding detection logic exists in two places:
-
-- Rust (`crates/ab-source-syntax/src/lib.rs::decode_source_bytes`).
-- Python (`adapters/aozora2html/adapter.py::detect_encoding`).
-
-The Python copy follows the same UTF-8-BOM → UTF-8 → CP932 priority order
-used by the test adapter (`adapters/test-adapter/test-adapter:19-26`). Sharing
-a helper across language boundaries is out of scope for this plan.
+- Ruby input shim: `aozora2html-adapter` detects/normalizes stdin encodings
+  before invoking `aozora2html` and passes the original source path so
+  `meta.source_hash` and `meta.source_encoding` match user input.
+- XHTML→AAT mapping: Rust input decoding follows the same UTF-8-BOM → UTF-8 →
+  CP932 priority order as a downstream safety net.
 
 ## Metrics
 
 `meta.metrics` is omitted. The schema's `metrics` object encodes 20+ fields
 tied to internal Rust adapter phases (`decode_ms`, `tokenize_ms`, …) that
-have no analogue in a Ruby+Python pipeline. `metrics` is optional in
+have no analogue in this Ruby+Rust wrapper pipeline. `metrics` is optional in
 `data/aat-schema.json`, so omission is valid. `ab-compare` should not be
 expected to produce metrics deltas for this adapter.
 
@@ -62,21 +60,16 @@ echo "テスト\n著者\n\n-----------------------------------------------------
   | adapters/aozora2html/aozora2html-adapter --mode aat
 ```
 
-## Backend selector (migration)
+## Rust mapping
 
-The mapping stage runs under `aozora2html-adapter` and defaults to Rust.
-To opt into Python explicitly:
+The mapping stage runs in `adapters/aozora2html` (Rust), so output is produced
+directly from the wrapper pipeline.
 
-```bash
-AOZORA2HTML_BACKEND=rust adapters/aozora2html/aozora2html-adapter --mode aat
-```
-
-If Rust is not available, set `AOZORA2HTML_BACKEND=python` for emergency fallback.
-Rust parity and parity-test tasks are:
+Build and parity-check tasks are:
 
 ```bash
 just aozora2html-rust-build
-AOZORA2HTML_PARITY=1 pytest adapters/aozora2html/tests/test_mapper.py -vv
+pytest adapters/aozora2html/tests/test_mapper.py -vv
 ```
 
 ## Parser-behavior caveats
@@ -128,7 +121,7 @@ Captured during fixture review (`tests/fixtures/*.xhtml`):
   reviewed subset to parser-neutral AAT `style`, `font_size`, or `keigakomi`
   nodes with `x-provenance = "source-derived"` and keeps the relevant variant
   metadata (`x-boten-kind`, `x-line-kind`, `x-placement`, `level`).
-- **`gaiji.marker.value.kind` is a Python-side simplification.** Rust's
+- **`gaiji.marker.value.kind` is a legacy simplification.** Rust's
   `ab-ir` stores the full `format!("{:?}", GaijiKind)` debug string
   (e.g. `"UnicodeCodepoint { value: '吭' }"`,
   `"JisLevel { level: 3, row: 15, cell: 23 }"`). The adapter emits stable
@@ -141,5 +134,5 @@ Captured during fixture review (`tests/fixtures/*.xhtml`):
 
 ```bash
 cd /path/to/ab-validator
-nix develop .#aozora2html --command python3 -m pytest adapters/aozora2html/tests/ -v
+just aozora2html-rust-parity
 ```

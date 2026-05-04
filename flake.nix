@@ -420,6 +420,13 @@
           pkgs.python3.pkgs.jsonschema
           pkgs.python3.pkgs.pytest
         ];
+
+        pythonWithAatSchemaDeps = pkgs.python3.withPackages (
+          ps: [
+            ps.jsonschema
+            ps.tomli
+          ]
+        );
       in
       {
         packages = {
@@ -442,9 +449,7 @@
           drv = pkgs.writeShellApplication {
             name = "aat-oracle-data-schema-smoke";
             runtimeInputs = [
-              pkgs.python3
-              pkgs.python3.pkgs.jsonschema
-              pkgs.python3.pkgs.tomli
+              pythonWithAatSchemaDeps
             ];
             text = ''
               export AB_VALIDATOR_DIRECT_PYTHON=1
@@ -457,9 +462,7 @@
           drv = pkgs.writeShellApplication {
             name = "adapter-fidelity-notes-schema-smoke";
             runtimeInputs = [
-              pkgs.python3
-              pkgs.python3.pkgs.jsonschema
-              pkgs.python3.pkgs.tomli
+              pythonWithAatSchemaDeps
             ];
             text = ''
               export AB_VALIDATOR_DIRECT_PYTHON=1

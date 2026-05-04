@@ -64,19 +64,19 @@ echo "テスト\n著者\n\n-----------------------------------------------------
 
 ## Backend selector (migration)
 
-The mapping stage runs under `aozora2html-adapter` and currently defaults to Python.
-To opt in to the Rust implementation when available:
+The mapping stage runs under `aozora2html-adapter` and defaults to Rust.
+To opt into Python explicitly:
 
 ```bash
 AOZORA2HTML_BACKEND=rust adapters/aozora2html/aozora2html-adapter --mode aat
 ```
 
-Until migration is fully complete, `AOZORA2HTML_BACKEND=python` remains the
-default and explicit emergency fallback. Rust parity and parity-test tasks are:
+If Rust is not available, set `AOZORA2HTML_BACKEND=python` for emergency fallback.
+Rust parity and parity-test tasks are:
 
 ```bash
 just aozora2html-rust-build
-AOZORA2HTML_BACKEND=rust AOZORA2HTML_PARITY=1 pytest adapters/aozora2html/tests/test_mapper.py -vv
+AOZORA2HTML_PARITY=1 pytest adapters/aozora2html/tests/test_mapper.py -vv
 ```
 
 ## Parser-behavior caveats

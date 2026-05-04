@@ -7,7 +7,7 @@ GEM_NAME="aozora2html"
 GEM_VERSION="3.0.1"
 GEM_HOME_DIR="${AB_VALIDATOR_GEM_HOME:-/db/ab-validator/gems/aozora2html-$GEM_VERSION}"
 RUST_MAPPER_BIN="$REPO_ROOT/adapters/aozora2html/target/release/aozora2html-adapter"
-BACKEND="${AOZORA2HTML_BACKEND:-python}"
+BACKEND="${AOZORA2HTML_BACKEND:-rust}"
 
 PY_ENV='python3.withPackages(ps: [ ps.lxml ps.jsonschema ])'
 

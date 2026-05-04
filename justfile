@@ -18,7 +18,7 @@ aozora2html-rust-test:
 	@cargo test --manifest-path "{{repo_root}}/adapters/aozora2html/Cargo.toml"
 
 aozora2html-rust-parity:
-	@AOZORA2HTML_PARITY=1 AOZORA2HTML_BACKEND=rust pytest "{{repo_root}}/adapters/aozora2html/tests/test_mapper.py" -vv
+	@AOZORA2HTML_PARITY=1 pytest "{{repo_root}}/adapters/aozora2html/tests/test_mapper.py" -vv
 
 clean-db:
 	@echo "cleaning generated artifacts under {{ab_db_root}}"

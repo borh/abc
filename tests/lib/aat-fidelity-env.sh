@@ -17,6 +17,11 @@ run_cargo() {
   nix develop "$AB_VALIDATOR_ROOT#" --command cargo "$@"
 }
 
+run_py_in_aozora2html_flake() {
+  local repo_root="${AB_VALIDATOR_ROOT}"
+  nix develop "${repo_root}#aozora2html" --command python3 "$@"
+}
+
 aat_duckdb_bin() {
   if [[ -x /etc/profiles/per-user/bor/bin/duckdb ]]; then
     echo "/etc/profiles/per-user/bor/bin/duckdb"

@@ -3,7 +3,10 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-nix develop "${repo_root}#aozora2html" --command python3 - "${repo_root}" <<'PY'
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "${SCRIPT_DIR}/lib/aat-fidelity-env.sh"
+
+run_py_in_aozora2html_flake - "${repo_root}" <<'PY'
 import json
 import sys
 from pathlib import Path

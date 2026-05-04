@@ -11,7 +11,7 @@
 
 A third orchestrator layer `lib.rs` composes them; it does not flatten them into one ad hoc function. A final serializer builds existing legacy output JSON shape.
 
-**Tech Stack:** Rust 2024, `roxmltree` (fixed), `clap`, `serde_json`, `ab-source-syntax`, `regex`, `sha2`, `once_cell`, optional `fancy-regex` for parity-only patterns, existing shell wrapper in Bash, `jsonschema` checks in existing Python tests.
+**Tech Stack:** Rust 2024, `roxmltree` (fixed), `clap`, `serde_json`, `ab-source-syntax`, `regex`, `sha2`, `once_cell`, optional `fancy-regex` only if required by regex audit, existing shell wrapper in Bash, `jsonschema` checks in existing Python tests.
 
 ---
 
@@ -69,6 +69,7 @@ Create a migration table in this plan for every regex-driven helper in `adapter.
 - required approximation strategy
 
 If any pattern is unsupported by either Rust regex crate, explicitly list it and defer implementation until mitigation is chosen.
+If the audit shows no unsupported constructs, `fancy-regex` is not added as a dependency.
 
 - [ ] **Step 2: Lock `model.rs` types before implementation**
 
@@ -80,6 +81,8 @@ Define shared contracts first:
 - parser-failed serialization helpers
 
 Run `cargo check --manifest-path adapters/aozora2html/Cargo.toml` on this skeleton and treat failures as blocking before starting Task 2a/2b.
+
+Treat unresolved `ab-source-syntax` crate/path availability as a hard block: verify crate path and exported symbol (`decode_source_bytes`) before marking Task 1.5 complete.
 
 ### Task 2: Add Rust crate scaffold and explicit module boundaries
 
@@ -271,7 +274,7 @@ Keep the JIS2UCS source-of-truth in-repo as `adapters/aozora2html/data/jis2ucs.y
 Prefer a compile-time constant mapping path:
 
 - use a `build.rs` that parses `data/jis2ucs.yml` at build time and emits `src/generated_jis2ucs.rs`,
-- expose a `phf::Map` or `const` hash map from generated code.
+- expose a `phf::Map` (preferred default) from generated code; allow `const` hash map only if performance/compatibility review explicitly permits.
 
 Do not use general runtime YAML parse in normal operation.
 Allow runtime YAML parse only under the explicit `runtime-jis2ucs` feature (for local debugging), and document that CI must not enable it.

@@ -92,6 +92,15 @@ def map_inline(
             "content": children,
         }]
 
+    if name == "span" and "warichu" in cls.split():
+        return [map_warichu(node, warnings, summary)]
+
+    if name == "span" and "notes" in cls.split():
+        return map_source_note(node, warnings, summary)
+
+    if name == "span" and "caption" in cls.split():
+        return [map_caption_span(node, warnings, summary)]
+
     if name == "br":
         return [{"kind": "raw", "source": "<br/>"}]
 
@@ -147,6 +156,158 @@ def walk_inline_children(
         if child.tail:
             out.append({"kind": "text", "value": child.tail})
     return out
+
+
+def map_warichu(
+    el: etree._Element,
+    warnings: list[dict[str, Any]],
+    summary: dict[str, list[dict[str, Any]]],
+) -> dict[str, Any]:
+    text = text_only(el)
+    inner = text.strip()
+    if inner.startswith("（") and inner.endswith("）"):
+        inner = inner[1:-1]
+    if "／" in inner:
+        upper_text, lower_text = inner.split("／", 1)
+    elif "/" in inner:
+        upper_text, lower_text = inner.split("/", 1)
+    else:
+        upper_text, lower_text = inner, ""
+    node = {
+        "kind": "warigaki",
+        "upper": [{"kind": "text", "value": upper_text}] if upper_text else [],
+        "lower": [{"kind": "text", "value": lower_text}] if lower_text else [],
+    }
+    summary.setdefault("warichu.basic", []).append({
+        "kind": "warigaki",
+        "value": {
+            "upper_projection": upper_text,
+            "lower_projection": lower_text,
+        },
+        "provenance": "parser",
+    })
+    return node
+
+
+def map_source_note(
+    el: etree._Element,
+    warnings: list[dict[str, Any]],
+    summary: dict[str, list[dict[str, Any]]],
+) -> list[dict[str, Any]]:
+    note = text_only(el)
+    figure = source_note_figure(note)
+    if figure is not None:
+        summary.setdefault("figure.image_inline", []).append({
+            "kind": "figure",
+            "value": {
+                "filename": figure["filename"],
+                "alt": figure["alt"],
+                "width": figure.get("width"),
+                "height": figure.get("height"),
+            },
+            "provenance": "source-derived",
+        })
+        return [figure]
+
+    caption = source_note_inline_caption(note)
+    if caption is not None:
+        summary.setdefault("caption.inline", []).append({
+            "kind": "caption",
+            "value": {
+                "text": inline_visible_text(caption["content"]),
+            },
+            "provenance": "source-derived",
+        })
+        return [caption]
+
+    return [{
+        "kind": "style",
+        "style_type": "notes",
+        "content": [{"kind": "text", "value": note}],
+    }]
+
+
+def map_caption_span(
+    el: etree._Element,
+    warnings: list[dict[str, Any]],
+    summary: dict[str, list[dict[str, Any]]],
+) -> dict[str, Any]:
+    content = walk_inline_children(el, warnings, summary)
+    summary.setdefault("caption.inline", []).append({
+        "kind": "caption",
+        "value": {"text": inline_visible_text(content)},
+        "provenance": "parser",
+    })
+    return {
+        "kind": "caption",
+        "content": content,
+    }
+
+
+def source_note_figure(note: str) -> dict[str, Any] | None:
+    m = re.match(
+        r"^［＃(?P<alt>.+?)（(?P<filename>[^、）]+\.(?:png|jpe?g|gif))、横(?P<width>[０-９0-9]+)×縦(?P<height>[０-９0-9]+)）入る］$",
+        note,
+        flags=re.IGNORECASE,
+    )
+    if not m:
+        return None
+    return {
+        "kind": "figure",
+        "filename": m.group("filename"),
+        "alt": normalize_figure_alt(m.group("alt")),
+        "css_class": "source-note",
+        "width": parse_aozora_int(m.group("width")),
+        "height": parse_aozora_int(m.group("height")),
+        "caption": None,
+        "x-provenance": "source-derived",
+    }
+
+
+def source_note_inline_caption(note: str) -> dict[str, Any] | None:
+    m = re.match(r"^［＃「(?P<caption>.+?)」のキャプション］$", note)
+    if not m:
+        return None
+    return {
+        "kind": "caption",
+        "content": [{"kind": "text", "value": m.group("caption")}],
+        "x-provenance": "source-derived",
+    }
+
+
+def normalize_figure_alt(raw: str) -> str:
+    text = raw.strip()
+    if text.startswith("「") and "」" in text:
+        return text[1:text.index("」")]
+    text = re.sub(r"のキャプション付きの図$", "", text)
+    return text.strip("「」")
+
+
+def parse_aozora_int(value: str) -> int:
+    table = str.maketrans("０１２３４５６７８９", "0123456789")
+    return int(value.translate(table))
+
+
+def parse_optional_int(value: str | None) -> int | None:
+    if value is None or not value:
+        return None
+    try:
+        return parse_aozora_int(value)
+    except ValueError:
+        return None
+
+
+def inline_visible_text(nodes: list[dict[str, Any]]) -> str:
+    parts: list[str] = []
+    for node in nodes:
+        kind = node.get("kind")
+        if kind == "text":
+            parts.append(node.get("value", ""))
+        elif kind == "gaiji":
+            parts.append(node.get("resolved") or "")
+        elif "content" in node:
+            parts.append(inline_visible_text(node.get("content", [])))
+    return "".join(parts)
 
 
 def map_ruby(
@@ -246,10 +407,26 @@ def map_img_gaiji(
     src = el.get("src", "") or ""
     is_gaiji = "gaiji" in src
     if not is_gaiji:
-        return {
-            "kind": "raw",
-            "source": etree.tostring(el, encoding="unicode"),
+        node = {
+            "kind": "figure",
+            "filename": Path(src).name,
+            "alt": normalize_figure_alt(alt),
+            "css_class": el_class(el),
+            "width": parse_optional_int(el.get("width")),
+            "height": parse_optional_int(el.get("height")),
+            "caption": None,
         }
+        summary.setdefault("figure.image_inline", []).append({
+            "kind": "figure",
+            "value": {
+                "filename": node["filename"],
+                "alt": node["alt"],
+                "width": node["width"],
+                "height": node["height"],
+            },
+            "provenance": "parser",
+        })
+        return node
     description = alt or "unknown"
     node = {
         "kind": "gaiji",
@@ -399,6 +576,8 @@ def xhtml_to_aat(
         # Build paragraphs by splitting on <br/> sequences.
         blocks = paragraphs_from_main(main, warnings, summary)
 
+    blocks = attach_following_captions(blocks, summary)
+
     aat: dict[str, Any] = {
         "version": 1,
         "work_id": "stdin",
@@ -501,6 +680,73 @@ def _inline_has_content(n: dict[str, Any]) -> bool:
     if n.get("kind") == "text":
         return bool((n.get("value") or "").strip())
     return True
+
+
+def attach_following_captions(
+    blocks: list[dict[str, Any]],
+    summary: dict[str, list[dict[str, Any]]],
+) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    index = 0
+    while index < len(blocks):
+        block = blocks[index]
+        figure = single_figure(block)
+        if figure is not None and index + 1 < len(blocks):
+            caption, remainder = first_caption_and_remainder(blocks[index + 1])
+            if caption is not None and figure.get("caption") is None:
+                figure["caption"] = caption.get("content", [])
+                figure["x-caption-provenance"] = "source-derived"
+                summary.setdefault("figure.image_caption", []).append({
+                    "kind": "figure_caption",
+                    "value": {
+                        "filename": figure.get("filename"),
+                        "caption": inline_visible_text(figure["caption"]),
+                    },
+                    "provenance": "source-derived",
+                })
+                out.append(block)
+                if remainder is not None:
+                    out.append(remainder)
+                index += 2
+                continue
+        out.append(block)
+        index += 1
+    return out
+
+
+def single_figure(block: dict[str, Any]) -> dict[str, Any] | None:
+    if block.get("kind") != "paragraph":
+        return None
+    meaningful = [
+        node
+        for node in block.get("content", [])
+        if node.get("kind") != "text" or (node.get("value") or "").strip()
+    ]
+    if len(meaningful) == 1 and meaningful[0].get("kind") == "figure":
+        return meaningful[0]
+    return None
+
+
+def first_caption_and_remainder(
+    block: dict[str, Any],
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    if block.get("kind") != "paragraph":
+        return None, block
+    content = block.get("content", [])
+    for index, node in enumerate(content):
+        if node.get("kind") == "caption":
+            remainder_content = [
+                item
+                for item_index, item in enumerate(content)
+                if item_index != index
+                and (item.get("kind") != "text" or (item.get("value") or "").strip())
+            ]
+            if not remainder_content:
+                return node, None
+            remainder = dict(block)
+            remainder["content"] = remainder_content
+            return node, remainder
+    return None, block
 
 
 def main(argv: list[str]) -> int:

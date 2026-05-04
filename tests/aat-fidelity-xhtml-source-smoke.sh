@@ -51,4 +51,21 @@ test -s "$db_path"
 
 rg -n 'fixture.xhtml.same-main-text,false,true,main_text_equal,"吾輩猫ねこである。","吾輩猫ねこである。"' "$out_dir/query.csv"
 
+: > "$out_dir/empty-local.xhtml"
+uv run --isolated --no-project \
+  --with 'duckdb>=1.1' \
+  --with 'lxml>=5' \
+  "$repo_root/reports/aat-fidelity/compare-xhtml-sources.py" \
+  --db "$db_path" \
+  --report-id xhtml-smoke \
+  --case-id fixture.xhtml.empty-local \
+  --upstream-xhtml "$out_dir/upstream.xhtml" \
+  --local-xhtml "$out_dir/empty-local.xhtml"
+
+"$duckdb_bin" -csv -header "$db_path" \
+  "select case_id, main_text_equal, comparison_status, local_main_text from fidelity_xhtml_observations where case_id = 'fixture.xhtml.empty-local'" \
+  | tee "$out_dir/empty-local-query.csv"
+
+rg -n '^fixture.xhtml.empty-local,false,local_parse_error,$' "$out_dir/empty-local-query.csv"
+
 echo "aat fidelity xhtml source smoke ok: $out_dir"

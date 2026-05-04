@@ -9,14 +9,14 @@ Oracle cases: `data/aat-oracle-cases.toml`
 | --- | --- | --- | --- | --- | --- |
 | aozora-rs | 43 | 43 | 39 | 5 | 38 |
 | aozora2 | 43 | 43 | 2 | 43 | 0 |
-| aozora2html | 43 | 43 | 42 | 1 | 42 |
+| aozora2html | 43 | 43 | 39 | 4 | 39 |
 
 ## Failure Buckets
 
 | adapter | bucket | count |
 | --- | --- | --- |
 | aozora-rs | faithful-upstream-vs-oracle | 38 |
-| aozora2html | faithful-rendered-output-vs-oracle | 42 |
+| aozora2html | faithful-rendered-output-vs-oracle | 39 |
 
 ## Failure Families
 
@@ -42,11 +42,11 @@ Oracle cases: `data/aat-oracle-cases.toml`
 | aozora2html | accent | 1 |
 | aozora2html | annotation | 2 |
 | aozora2html | break | 2 |
-| aozora2html | caption | 2 |
+| aozora2html | caption | 1 |
 | aozora2html | decoration | 6 |
 | aozora2html | editor_note | 1 |
 | aozora2html | emphasis | 1 |
-| aozora2html | figure | 2 |
+| aozora2html | figure | 1 |
 | aozora2html | gaiji | 4 |
 | aozora2html | heading | 4 |
 | aozora2html | indentation | 5 |
@@ -55,7 +55,6 @@ Oracle cases: `data/aat-oracle-cases.toml`
 | aozora2html | layout | 2 |
 | aozora2html | reference | 1 |
 | aozora2html | ruby | 4 |
-| aozora2html | warichu | 1 |
 | aozora2html | warigaki | 1 |
 
 ## Syntax Row Coverage
@@ -82,7 +81,7 @@ Oracle cases: `data/aat-oracle-cases.toml`
 | caption.block | aozora2html | 0 | 1 |
 | caption.inline | aozora-rs | 0 | 1 |
 | caption.inline | aozora2 | 1 | 0 |
-| caption.inline | aozora2html | 0 | 1 |
+| caption.inline | aozora2html | 1 | 0 |
 | decoration.bold_italic | aozora-rs | 1 | 0 |
 | decoration.bold_italic | aozora2 | 1 | 0 |
 | decoration.bold_italic | aozora2html | 0 | 1 |
@@ -109,7 +108,7 @@ Oracle cases: `data/aat-oracle-cases.toml`
 | emphasis.basic | aozora2html | 0 | 1 |
 | figure.image_caption | aozora-rs | 0 | 1 |
 | figure.image_caption | aozora2 | 1 | 0 |
-| figure.image_caption | aozora2html | 0 | 1 |
+| figure.image_caption | aozora2html | 1 | 0 |
 | figure.image_inline | aozora-rs | 0 | 1 |
 | figure.image_inline | aozora2 | 1 | 0 |
 | figure.image_inline | aozora2html | 0 | 1 |
@@ -193,7 +192,7 @@ Oracle cases: `data/aat-oracle-cases.toml`
 | ruby.placement_directional | aozora2html | 0 | 1 |
 | warichu.basic | aozora-rs | 0 | 1 |
 | warichu.basic | aozora2 | 1 | 0 |
-| warichu.basic | aozora2html | 0 | 1 |
+| warichu.basic | aozora2html | 1 | 0 |
 | warigaki.parenthetical | aozora-rs | 0 | 1 |
 | warigaki.parenthetical | aozora2 | 1 | 0 |
 | warigaki.parenthetical | aozora2html | 0 | 1 |

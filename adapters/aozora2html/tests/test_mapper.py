@@ -95,6 +95,77 @@ def test_fragment_stdin_is_wrapped_for_parser_without_changing_source_hash() -> 
     )
 
 
+def test_warichu_maps_to_warigaki_node() -> None:
+    raw = _run((FIXTURE_DIR / "warichu_basic.txt").read_bytes(), "--mode", "aat")
+    aat = json.loads(raw)
+    jsonschema.validate(aat, SCHEMA)
+
+    warigaki = [
+        inline
+        for block in aat["blocks"]
+        for inline in block.get("content", [])
+        if inline.get("kind") == "warigaki"
+    ]
+    assert warigaki == [
+        {
+            "kind": "warigaki",
+            "upper": [{"kind": "text", "value": "注釈の上行"}],
+            "lower": [{"kind": "text", "value": "注釈の下行"}],
+        }
+    ]
+
+
+def test_source_note_image_maps_to_source_derived_figure() -> None:
+    raw = _run((FIXTURE_DIR / "figure_image_caption.txt").read_bytes(), "--mode", "aat")
+    aat = json.loads(raw)
+    jsonschema.validate(aat, SCHEMA)
+
+    figures = [
+        inline
+        for block in aat["blocks"]
+        for inline in block.get("content", [])
+        if inline.get("kind") == "figure"
+    ]
+    assert figures == [
+        {
+            "kind": "figure",
+            "filename": "fig01.png",
+            "alt": "挿絵",
+            "css_class": "source-note",
+            "width": 400,
+            "height": 300,
+            "caption": None,
+            "x-provenance": "source-derived",
+        }
+    ]
+
+
+def test_rendered_image_caption_attaches_caption_to_figure() -> None:
+    source = "［＃「猫の図」のキャプション付きの図（fig00001_01.png、横321×縦123）入る］\n猫の図［＃「猫の図」はキャプション］"
+    raw = _run(source.encode("utf-8"), "--mode", "aat")
+    aat = json.loads(raw)
+    jsonschema.validate(aat, SCHEMA)
+
+    figures = [
+        inline
+        for block in aat["blocks"]
+        for inline in block.get("content", [])
+        if inline.get("kind") == "figure"
+    ]
+    assert figures == [
+        {
+            "kind": "figure",
+            "filename": "fig00001_01.png",
+            "alt": "猫の図",
+            "css_class": "illustration",
+            "width": 321,
+            "height": 123,
+            "caption": [{"kind": "text", "value": "猫の図"}],
+            "x-caption-provenance": "source-derived",
+        }
+    ]
+
+
 @pytest.mark.parametrize("fixture", FIXTURES)
 def test_fixture_passes_aat_schema(fixture: str) -> None:
     txt_path = FIXTURE_DIR / f"{fixture}.txt"

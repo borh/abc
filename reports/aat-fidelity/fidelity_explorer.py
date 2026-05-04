@@ -105,8 +105,26 @@ def _(db_path, duckdb, json, pl, report_path):
             if row.get("table_name")
         }
         if "fidelity_xhtml_observations" in table_names:
+            xhtml_columns = {
+                row["name"]
+                for row in conn.sql(
+                    "PRAGMA table_info('fidelity_xhtml_observations')"
+                ).pl().to_dicts()
+            }
+            optional_xhtml_columns = []
+            for column in (
+                "card_url",
+                "source_url",
+                "upstream_url",
+                "feature_tags",
+                "manifest_status",
+            ):
+                if column in xhtml_columns:
+                    optional_xhtml_columns.append(column)
+                else:
+                    optional_xhtml_columns.append(f"'' AS {column}")
             xhtml_table = conn.sql(
-                """
+                f"""
                 SELECT
                   report_id,
                   case_id,
@@ -119,6 +137,7 @@ def _(db_path, duckdb, json, pl, report_path):
                   local_sha256,
                   upstream_main_text_hash,
                   local_main_text_hash,
+                  {", ".join(optional_xhtml_columns)},
                   upstream_main_text,
                   local_main_text
                 FROM fidelity_xhtml_observations
@@ -286,7 +305,7 @@ def _(filtered_rows, json, mo, selected_row):
 
 
 @app.cell
-def _(mo, xhtml_observations, xhtml_table):
+def _(mo, pl, xhtml_observations, xhtml_table):
     raw_equal_count = sum(1 for row in xhtml_observations if row.get("raw_equal"))
     main_text_equal_count = sum(
         1 for row in xhtml_observations if row.get("main_text_equal")
@@ -302,6 +321,35 @@ def _(mo, xhtml_observations, xhtml_table):
         for row in xhtml_observations
         if row.get("comparison_status") == "upstream_missing_main_text"
     )
+    feature_rows = []
+    for row in xhtml_observations:
+        tags = [
+            tag.strip()
+            for tag in (row.get("feature_tags") or "").split(";")
+            if tag.strip()
+        ]
+        for tag in tags or ["unclassified"]:
+            feature_rows.append(
+                {
+                    "Feature Tag": tag,
+                    "comparison_status": row.get("comparison_status"),
+                    "main_text_equal": row.get("main_text_equal"),
+                }
+            )
+    if feature_rows:
+        xhtml_feature_summary = (
+            pl.DataFrame(feature_rows)
+            .group_by(["Feature Tag", "comparison_status"])
+            .agg(
+                [
+                    pl.len().alias("observations"),
+                    pl.col("main_text_equal").sum().alias("main_text_equal"),
+                ]
+            )
+            .sort(["Feature Tag", "comparison_status"])
+        )
+    else:
+        xhtml_feature_summary = pl.DataFrame()
     mo.vstack(
         [
             mo.md(
@@ -313,10 +361,15 @@ def _(mo, xhtml_observations, xhtml_table):
                 f"Upstream missing `main_text`: **{upstream_missing_main_text_count}**  \n"
                 f"Local missing `main_text`: **{local_missing_main_text_count}**"
             ),
+            mo.md("### Feature Tag Summary"),
+            mo.ui.table(xhtml_feature_summary)
+            if feature_rows
+            else mo.md("No feature tags loaded."),
+            mo.md("### Observations"),
             mo.ui.table(xhtml_table) if xhtml_observations else mo.md("No upstream XHTML observations loaded."),
         ]
     )
-    return
+    return xhtml_feature_summary,
 
 
 @app.cell

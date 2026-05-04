@@ -4,6 +4,7 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 out_dir="${AB_DB_ROOT:-/db/ab-validator}/aat-fidelity/upstream-xhtml-manifest-smoke"
 manifest="$out_dir/manifest.tsv"
+metadata="$out_dir/metadata.csv"
 db_path="$out_dir/fidelity.duckdb"
 
 rm -rf "$out_dir"
@@ -24,8 +25,14 @@ cat > "$manifest" <<TSV
 fixture.manifest.ruby	$out_dir/source.txt	$out_dir/upstream.xhtml
 TSV
 
+cat > "$metadata" <<CSV
+case_id,feature_tags,card_url,source,upstream_xhtml,status
+fixture.manifest.ruby,ruby;inline_annotation,https://example.test/cards/000001/card1.html,$out_dir/source.txt,$out_dir/upstream.xhtml,paired
+CSV
+
 "$repo_root/reports/aat-fidelity/run-upstream-xhtml-observations.sh" \
   --manifest "$manifest" \
+  --metadata "$metadata" \
   --out-dir "$out_dir/observations" \
   --db "$db_path" \
   --report-id manifest-smoke
@@ -40,10 +47,10 @@ if [[ -x /etc/profiles/per-user/bor/bin/duckdb ]]; then
   duckdb_bin=/etc/profiles/per-user/bor/bin/duckdb
 fi
 "$duckdb_bin" -csv -header "$db_path" \
-  "select case_id, raw_equal, main_text_equal from fidelity_xhtml_observations" \
+  "select case_id, raw_equal, main_text_equal, feature_tags, card_url from fidelity_xhtml_observations" \
   | tee "$out_dir/query.csv"
 
-rg -n 'fixture.manifest.ruby,false,true' "$out_dir/query.csv"
+rg -n 'fixture.manifest.ruby,false,true,ruby;inline_annotation,https://example.test/cards/000001/card1.html' "$out_dir/query.csv"
 rg -n 'total,raw_equal,main_text_equal' "$out_dir/observations/summary.csv"
 rg -n '^1,0,1$' "$out_dir/observations/summary.csv"
 rg -n 'comparison_status,rows' "$out_dir/observations/status-summary.csv"

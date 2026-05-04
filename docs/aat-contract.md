@@ -4,6 +4,12 @@ The Aozora Adapter Tree (AAT) is the normalized JSON emitted by parser
 adapters. AAT records adapter output and provenance. It does not by itself
 assert linguistic correctness.
 
+Adapters may add `x-*` extension fields to nodes where the schema permits them.
+`x-provenance = "source-derived"` means the node was reconstructed from source
+marker text that survived in parser output, not emitted as a first-class parser
+event. Consumers must not count source-derived nodes as direct upstream parser
+faithfulness.
+
 `data/aat-schema.json` is the normative validation schema for AAT v1 document
 shape. This document explains the contract semantics that schema validation
 cannot fully express, including selector behavior, result axes, span coordinate

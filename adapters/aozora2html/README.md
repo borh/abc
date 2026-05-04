@@ -33,7 +33,7 @@ positional arguments:
 
 - `--source <path>` — original stdin bytes, used for hashing/encoding metadata.
 - `--xhtml <path>` — Ruby's XHTML output, used for AAT projection.
-- `--mode <aat|ir>` — output mode (currently only `aat` is wired up).
+- `--mode <aat|html>` — output AAT JSON or the intermediate XHTML.
 - `--version` — prints `aozora2html-adapter <semver> gem-<aozora2html-version>`.
 
 ## Encoding duplication
@@ -75,19 +75,25 @@ Captured during fixture review (`tests/fixtures/*.xhtml`):
   parser-side decision, not a mapping bug. `ab-compare` will see the
   asymmetry as `summary:gaiji.marker` mismatch and that is correct
   signal: it tells the user the two parsers chose different abstractions.
-- **Many `［＃...］` markers stay as `<span class="notes">`.** Page breaks
-  (`［＃改ページ］`), illustrations (`［＃挿絵...入る］`), and the
-  alternative-form heading marker (`［＃「タイトル」は大見出し］`) are
-  emitted by `aozora2html` as literal notes spans, not as structural blocks
-  or images. The adapter maps these to `{kind: "style", style_type:
-  "notes", content: [{kind: "text", value: "［＃...］"}]}`. They do not
-  populate matrix-keyed semantic-summary rows.
-- **Warichu is not split.** `［＃割り注］上行／下行［＃割り注終わり］`
-  comes through as a single `<span class="warichu">（上行／下行）</span>`.
-  The adapter maps this to `{kind: "style", style_type: "warichu", ...}`
-  rather than a `warigaki` block with separate `upper`/`lower` arrays. The
-  source XHTML does not encode the split, so emitting one would invent
-  data.
+- **Some `［＃...］` markers stay as `<span class="notes">`.** Page breaks
+  (`［＃改ページ］`) and the alternative-form heading marker
+  (`［＃「タイトル」は大見出し］`) are emitted by `aozora2html` as literal
+  notes spans, not as structural blocks. The adapter preserves unsupported
+  notes as `{kind: "style", style_type: "notes", ...}`.
+- **Narrow source-note enrichment is explicit.** Image notes like
+  `［＃挿絵（fig01.png、横４００×縦３００）入る］` are reconstructed as
+  AAT `figure` nodes with `x-provenance = "source-derived"` because the
+  source marker text is still present in the rendered XHTML. These nodes are
+  useful for oracle checks but are not counted as upstream-XHTML
+  faithfulness.
+- **Rendered image/caption pairs are linked conservatively.** Non-gaiji
+  `<img>` elements become AAT `figure` nodes. If the immediately following
+  paragraph is only a rendered caption span, the adapter attaches that caption
+  to the figure with `x-caption-provenance = "source-derived"`.
+- **Warichu is split from rendered warichu text.** `［＃割り注］上行／下行［＃割り注終わり］`
+  comes through as `<span class="warichu">（上行／下行）</span>`. The adapter
+  maps that XHTML class to AAT `warigaki`, splitting on `／` or `/` when
+  present and leaving `lower` empty otherwise.
 - **`gaiji.marker.value.kind` is a Python-side simplification.** Rust's
   `ab-ir` stores the full `format!("{:?}", GaijiKind)` debug string
   (e.g. `"UnicodeCodepoint { value: '吭' }"`,

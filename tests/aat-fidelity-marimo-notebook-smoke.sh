@@ -10,5 +10,6 @@ rg -n "oracle_status|upstream_status|schema_status|mo\\.json" "$repo_root/report
 rg -n "duckdb|AB_AAT_FIDELITY_DB|fidelity_rows|fidelity_syntax_rows" "$repo_root/reports/aat-fidelity/fidelity_explorer.py"
 rg -n "fidelity_xhtml_observations|xhtml_observations|main_text_equal" "$repo_root/reports/aat-fidelity/fidelity_explorer.py"
 rg -n "comparison_status|raw_equal_count|main_text_equal_count|main_text_mismatch_count|upstream_missing_main_text_count|local_missing_main_text_count" "$repo_root/reports/aat-fidelity/fidelity_explorer.py"
+rg -n "feature_tags|card_url|xhtml_feature_summary|Feature Tag" "$repo_root/reports/aat-fidelity/fidelity_explorer.py"
 rg -n "LD_LIBRARY_PATH|libstdc" "$repo_root/reports/aat-fidelity/open-fidelity-explorer.sh"
 uv run --isolated --no-project --with 'marimo==0.23.4' --with 'duckdb>=1.1' --with 'polars>=1.0' python -m py_compile "$repo_root/reports/aat-fidelity/fidelity_explorer.py"

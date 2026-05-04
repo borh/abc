@@ -9,6 +9,11 @@ upstream_xhtml=""
 out_dir="${AB_AAT_FIDELITY_XHTML_OUT_DIR:-/db/ab-validator/aat-fidelity/xhtml-observations}"
 db_path="${AB_AAT_FIDELITY_DB:-/db/ab-validator/aat-fidelity/cross-adapter/fidelity.duckdb}"
 report_id="${AB_AAT_FIDELITY_REPORT_ID:-cross-adapter}"
+card_url=""
+source_url=""
+upstream_url=""
+feature_tags=""
+manifest_status=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -36,6 +41,26 @@ while [[ $# -gt 0 ]]; do
       report_id="$2"
       shift 2
       ;;
+    --card-url)
+      card_url="$2"
+      shift 2
+      ;;
+    --source-url)
+      source_url="$2"
+      shift 2
+      ;;
+    --upstream-url)
+      upstream_url="$2"
+      shift 2
+      ;;
+    --feature-tags)
+      feature_tags="$2"
+      shift 2
+      ;;
+    --manifest-status)
+      manifest_status="$2"
+      shift 2
+      ;;
     *)
       printf 'unknown argument: %s\n' "$1" >&2
       exit 2
@@ -51,7 +76,9 @@ usage: compare-aozora-upstream-xhtml.sh \
   --upstream-xhtml upstream.xhtml \
   [--out-dir /db/...] \
   [--db /db/.../fidelity.duckdb] \
-  [--report-id cross-adapter]
+  [--report-id cross-adapter] \
+  [--card-url URL] [--source-url URL] [--upstream-url URL] \
+  [--feature-tags tag;tag] [--manifest-status paired]
 EOF
   exit 2
 fi
@@ -84,7 +111,12 @@ fi
   --report-id "$report_id" \
   --case-id "$case_id" \
   --upstream-xhtml "$upstream_xhtml" \
-  --local-xhtml "$local_xhtml"
+  --local-xhtml "$local_xhtml" \
+  --card-url "$card_url" \
+  --source-url "$source_url" \
+  --upstream-url "$upstream_url" \
+  --feature-tags "$feature_tags" \
+  --manifest-status "$manifest_status"
 
 printf 'local_xhtml=%s\n' "$local_xhtml"
 printf 'db_path=%s\n' "$db_path"

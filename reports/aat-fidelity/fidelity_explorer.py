@@ -48,6 +48,8 @@ def _(db_path, mo, report_path):
 
 @app.cell
 def _(db_path, duckdb, json, pl, report_path):
+    xhtml_observations = []
+    xhtml_table = pl.DataFrame()
     if db_path.exists():
         conn = duckdb.connect(str(db_path), read_only=True)
         table = conn.sql(
@@ -97,6 +99,32 @@ def _(db_path, duckdb, json, pl, report_path):
             """
         ).pl()
         rows = table.to_dicts()
+        table_names = {
+            row["table_name"]
+            for row in conn.sql("SHOW TABLES").pl().to_dicts()
+            if row.get("table_name")
+        }
+        if "fidelity_xhtml_observations" in table_names:
+            xhtml_table = conn.sql(
+                """
+                SELECT
+                  report_id,
+                  case_id,
+                  raw_equal,
+                  main_text_equal,
+                  upstream_xhtml_path,
+                  local_xhtml_path,
+                  upstream_sha256,
+                  local_sha256,
+                  upstream_main_text_hash,
+                  local_main_text_hash,
+                  upstream_main_text,
+                  local_main_text
+                FROM fidelity_xhtml_observations
+                ORDER BY report_id, case_id
+                """
+            ).pl()
+            xhtml_observations = xhtml_table.to_dicts()
         raw_report = {"source": "duckdb", "db_path": str(db_path), "rows": rows}
         conn.close()
         source_label = f"DuckDB `{db_path}`"
@@ -105,7 +133,7 @@ def _(db_path, duckdb, json, pl, report_path):
         rows = raw_report.get("rows", raw_report if isinstance(raw_report, list) else [])
         table = pl.DataFrame(rows) if rows else pl.DataFrame()
         source_label = f"JSON `{report_path}`"
-    return raw_report, rows, source_label, table
+    return raw_report, rows, source_label, table, xhtml_observations, xhtml_table
 
 
 @app.cell
@@ -253,6 +281,23 @@ def _(filtered_rows, json, mo, selected_row):
         if isinstance(selected.get("failures_json"), str):
             selected["failures"] = json.loads(selected["failures_json"])
     mo.json(selected)
+    return
+
+
+@app.cell
+def _(mo, xhtml_observations, xhtml_table):
+    mo.vstack(
+        [
+            mo.md(f"## XHTML Source Layer\n\nObservations: **{len(xhtml_observations)}**"),
+            mo.ui.table(xhtml_table) if xhtml_observations else mo.md("No upstream XHTML observations loaded."),
+        ]
+    )
+    return
+
+
+@app.cell
+def _(mo, xhtml_observations):
+    mo.json(xhtml_observations[0] if xhtml_observations else {})
     return
 
 

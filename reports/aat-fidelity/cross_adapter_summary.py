@@ -129,16 +129,28 @@ def render(report_path: Path, oracle_path: Path) -> str:
             )
     lines.extend(md_table(["syntax row", "adapter", "pass", "fail"], coverage_rows))
 
-    lines.extend(
-        [
-            "",
-            "## Triage Notes",
-            "",
-            "- `aozora2` is the current oracle baseline for the reviewed AAT cases.",
-            "- `aozora-rs` now has upstream observations for every reviewed oracle failure. Its remaining failures are faithful-to-observed-output vs oracle-correctness divergences.",
-            "- `aozora2html` now has rendered-output observations for every reviewed oracle failure. Its remaining failures are faithful-to-XHTML vs source-level oracle divergences.",
-            "- The next implementation work should target one adapter/family at a time, using these observations as the pre-fix upstream contract.",
-        ]
+    lines.extend(["", "## Triage Notes", ""])
+    for adapter in sorted(by_adapter):
+        adapter_rows = by_adapter[adapter]
+        schema_fail = status_counts(adapter_rows, "schema_status")["fail"]
+        upstream_nonfaithful = sum(
+            1 for row in adapter_rows if row.get("upstream_status") != "faithful"
+        )
+        oracle_fail = status_counts(adapter_rows, "oracle_status")["fail"]
+        if schema_fail == 0 and upstream_nonfaithful == 0 and oracle_fail == 0:
+            lines.append(
+                f"- `{adapter}` passes schema, upstream-observation, and oracle axes for all reviewed cases."
+            )
+        elif schema_fail == 0 and upstream_nonfaithful == 0 and oracle_fail:
+            lines.append(
+                f"- `{adapter}` is fully observed but has {oracle_fail} oracle divergence(s); failures are now classified as faithful-output vs oracle-correctness work."
+            )
+        else:
+            lines.append(
+                f"- `{adapter}` has {schema_fail} schema failure(s), {upstream_nonfaithful} upstream-observation gap(s), and {oracle_fail} oracle failure(s)."
+            )
+    lines.append(
+        "- Next implementation work should target one remaining adapter/family at a time, using these observations as the pre-fix upstream contract."
     )
     return "\n".join(lines) + "\n"
 

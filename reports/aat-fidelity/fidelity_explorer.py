@@ -169,6 +169,40 @@ def _(db_path, duckdb, json, pl, report_path):
 
 
 @app.cell
+def _(mo, pl, rows):
+    axis_summary_rows = []
+    for adapter_name in sorted({row.get("adapter", "") for row in rows if row.get("adapter")}):
+        adapter_rows = [row for row in rows if row.get("adapter") == adapter_name]
+        axis_summary_rows.append(
+            {
+                "adapter": adapter_name,
+                "cases": len(adapter_rows),
+                "schema_pass": sum(
+                    1 for row in adapter_rows if row.get("schema_status") == "pass"
+                ),
+                "upstream_faithful": sum(
+                    1 for row in adapter_rows if row.get("upstream_status") == "faithful"
+                ),
+                "oracle_pass": sum(
+                    1 for row in adapter_rows if row.get("oracle_status") == "pass"
+                ),
+                "oracle_fail": sum(
+                    1 for row in adapter_rows if row.get("oracle_status") == "fail"
+                ),
+            }
+        )
+    axis_summary = pl.DataFrame(axis_summary_rows) if axis_summary_rows else pl.DataFrame()
+
+    mo.vstack(
+        [
+            mo.md("## Adapter Axis Summary"),
+            mo.ui.table(axis_summary) if axis_summary_rows else mo.md("No fidelity rows loaded."),
+        ]
+    )
+    return axis_summary,
+
+
+@app.cell
 def _(mo, rows, source_label):
     adapters = sorted({row.get("adapter", "") for row in rows if row.get("adapter")})
     categories = sorted({row.get("category", "") for row in rows if row.get("category")})

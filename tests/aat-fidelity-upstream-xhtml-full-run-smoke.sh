@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/tests/lib/aat-fidelity-env.sh"
+
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 out_dir="${AB_DB_ROOT:-/db/ab-validator}/aat-fidelity/upstream-xhtml-full-run-smoke"
 aozora_root="$out_dir/aozorabunko"

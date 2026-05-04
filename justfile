@@ -103,6 +103,13 @@ fresh-full-fidelity-suite JOBS="0" MAX_CARDS="0" TRIAGE_LIMIT="100":
 	@just upstream-xhtml-full jobs={{JOBS}} max_cards={{MAX_CARDS}} triage_limit={{TRIAGE_LIMIT}}
 	@just fidelity-smoke-suite
 
+fresh-fidelity-full-run DIR="" JOBS="0" MAX_CARDS="0" TRIAGE_LIMIT="100":
+	@if [ "{{DIR}}" = "" ]; then \
+	  just clean-db-full && just fidelity-full-run "" "{{JOBS}}" "{{MAX_CARDS}}" "{{TRIAGE_LIMIT}}"; \
+	else \
+	  just clean-db-full && just fidelity-full-run "{{DIR}}" "{{JOBS}}" "{{MAX_CARDS}}" "{{TRIAGE_LIMIT}}"; \
+	fi
+
 fidelity-run-list:
 	@mkdir -p "{{ab_db_root}}/aat-fidelity"
 	@find "{{ab_db_root}}/aat-fidelity" -maxdepth 1 -type d -name 'run-*' -print | sort

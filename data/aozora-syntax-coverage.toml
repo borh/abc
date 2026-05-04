@@ -1230,9 +1230,9 @@ evidence = "adapters/aozora-rs/src/aat.rs:237"
 notes = "Even when bare Kundoku tokens are produced, adapter discards Retokenized::Kunten; for the matrix's 返り点 form there is no synthesis path"
 
 [syntax.adapters.aozora2html]
-aat_fidelity = "dropped"
-evidence = "adapters/aozora2html/adapter.py:118"
-notes = "sub.kaeriten unmapped"
+aat_fidelity = "parsed"
+evidence = "adapters/aozora2html/adapter.py:91"
+notes = "sub.kaeriten maps to style_type=kaeriten and is preserved in ruby base_content when embedded in ruby bases"
 
 [syntax.corpus_prevalence]
 works_with_feature = 0

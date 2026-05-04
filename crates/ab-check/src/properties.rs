@@ -3,7 +3,7 @@ use serde::Serialize;
 use serde_json::Value;
 use unicode_normalization::UnicodeNormalization;
 
-use crate::aat::{inline_nodes_by_kind, visible_text_projection};
+use crate::aat::{comparison_visible_text_projection, inline_nodes_by_kind};
 use crate::source_projection;
 
 pub trait Property {
@@ -73,7 +73,7 @@ impl Property for VisibleTextBodyOrder {
 
     fn check(&self, txt: &str, aat: &Value) -> Result<(), PropertyViolation> {
         let source = normalize_visible(&source_projection::comparison_lossy_body(body_text(txt)));
-        let projection = normalize_visible(&visible_text_projection(aat));
+        let projection = normalize_visible(&comparison_visible_text_projection(aat));
         if projection.is_empty() || is_subsequence(&projection, &source) {
             Ok(())
         } else {
@@ -282,6 +282,29 @@ mod tests {
             source_visible_text("ことを、※［＃「口＋愛」、第3水準1-15-23］《おくび》にも");
 
         assert_eq!(visible, "ことを、にも");
+    }
+
+    #[test]
+    fn visible_text_body_order_allows_structured_resolved_gaiji() {
+        let txt = "芒の快い刺※［＃「りっしんべん＋戟」、第4水準2-12-78］を感じた。";
+        let aat = serde_json::json!({
+            "blocks": [{
+                "kind": "paragraph",
+                "content": [
+                    {"kind": "text", "value": "芒の快い刺"},
+                    {
+                        "kind": "gaiji",
+                        "description": "「りっしんべん＋戟」、第4水準2-12-78",
+                        "resolved": "㦸",
+                        "jis_code": "2-12-78",
+                        "unresolved_reason": null
+                    },
+                    {"kind": "text", "value": "を感じた。"}
+                ]
+            }]
+        });
+
+        assert!(VisibleTextBodyOrder.check(txt, &aat).is_ok());
     }
 
     #[test]

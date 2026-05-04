@@ -46,6 +46,10 @@ fn collect_inline(node: &Value, out: &mut String) {
         "gaiji" => {
             if let Some(resolved) = node.get("resolved").and_then(Value::as_str) {
                 out.push_str(resolved);
+            } else if node
+                .get("unresolved_reason")
+                .is_some_and(|value| !value.is_null())
+            {
             } else {
                 push_string_field(node, "description", out);
             }
@@ -214,6 +218,28 @@ mod tests {
         });
 
         assert_eq!(visible_text_projection(&aat), "fallback");
+    }
+
+    #[test]
+    fn null_resolved_unresolved_gaiji_is_empty() {
+        let aat = json!({
+            "work_id": "w-null-gaiji",
+            "blocks": [{
+                "kind": "paragraph",
+                "content": [
+                    {"kind": "text", "value": "前"},
+                    {
+                        "kind": "gaiji",
+                        "description": "※(「てへん＋僉」、第3水準1-84-94)",
+                        "resolved": null,
+                        "unresolved_reason": "image_fallback"
+                    },
+                    {"kind": "text", "value": "後"}
+                ]
+            }]
+        });
+
+        assert_eq!(visible_text_projection(&aat), "前後");
     }
 
     #[test]

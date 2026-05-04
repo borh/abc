@@ -63,6 +63,10 @@ def text_only(el: etree._Element) -> str:
     return "".join(el.itertext())
 
 
+def parser_text(value: str) -> str:
+    return value.replace("｜", "").replace("|", "")
+
+
 def map_inline(
     node: etree._Element | str,
     warnings: list[dict[str, Any]],
@@ -73,7 +77,7 @@ def map_inline(
     if isinstance(node, str):
         if not node:
             return []
-        return [{"kind": "text", "value": node}]
+        return [{"kind": "text", "value": parser_text(node)}]
 
     name = el_local(node)
     cls = el_class(node)
@@ -83,6 +87,9 @@ def map_inline(
 
     if name == "img":
         return [map_img_gaiji(node, warnings, summary, ruby_reading)]
+
+    if name == "sub":
+        return [map_sub_kaeriten(node, summary)]
 
     if name == "span" and cls.startswith("gaiji"):
         return [map_span_gaiji(node, warnings, summary, ruby_reading)]
@@ -315,11 +322,11 @@ def walk_inline_children(
 ) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     if el.text:
-        out.append({"kind": "text", "value": el.text})
+        out.append({"kind": "text", "value": parser_text(el.text)})
     for child in el:
         out.extend(map_inline(child, warnings, summary, ruby_reading))
         if child.tail:
-            out.append({"kind": "text", "value": child.tail})
+            out.append({"kind": "text", "value": parser_text(child.tail)})
     return out
 
 
@@ -470,9 +477,31 @@ def inline_visible_text(nodes: list[dict[str, Any]]) -> str:
             parts.append(node.get("value", ""))
         elif kind == "gaiji":
             parts.append(node.get("resolved") or "")
+        elif kind == "style" and node.get("style_type") in {"notes", "kaeriten"}:
+            continue
         elif "content" in node:
             parts.append(inline_visible_text(node.get("content", [])))
     return "".join(parts)
+
+
+def map_sub_kaeriten(
+    el: etree._Element,
+    summary: dict[str, list[dict[str, Any]]],
+) -> dict[str, Any]:
+    marker = text_only(el).strip()
+    node = {
+        "kind": "style",
+        "style_type": "kaeriten",
+        "content": [],
+        "x-marker": marker,
+        "x-provenance": "parser",
+    }
+    summary.setdefault("kunten.kaeriten", []).append({
+        "kind": "style",
+        "value": {"marker": marker},
+        "provenance": "parser",
+    })
+    return node
 
 
 def map_ruby(
@@ -493,28 +522,35 @@ def map_ruby(
     base_text_parts: list[str] = []
     base_inline: list[dict[str, Any]] = []
     has_gaiji_base = False
+    has_structured_base = False
     if rb_els:
         rb_el = rb_els[0]
         if rb_el.text:
-            base_text_parts.append(rb_el.text)
-            base_inline.append({"kind": "text", "value": rb_el.text})
+            rb_text = parser_text(rb_el.text)
+            base_text_parts.append(rb_text)
+            base_inline.append({"kind": "text", "value": rb_text})
         for child in rb_el:
             child_inline = map_inline(child, warnings, summary, reading)
             base_inline.extend(child_inline)
             for n in child_inline:
                 if n.get("kind") == "gaiji":
                     has_gaiji_base = True
-            ct = text_only(child)
+                    has_structured_base = True
+                elif n.get("kind") == "style" and n.get("style_type") == "kaeriten":
+                    has_structured_base = True
+            ct = inline_visible_text(child_inline)
             if ct:
                 base_text_parts.append(ct)
             if child.tail:
-                base_text_parts.append(child.tail)
-                base_inline.append({"kind": "text", "value": child.tail})
+                tail = parser_text(child.tail)
+                base_text_parts.append(tail)
+                base_inline.append({"kind": "text", "value": tail})
     else:
         # No <rb> wrapper — treat element text as base.
         if el.text:
-            base_text_parts.append(el.text)
-            base_inline.append({"kind": "text", "value": el.text})
+            base_text = parser_text(el.text)
+            base_text_parts.append(base_text)
+            base_inline.append({"kind": "text", "value": base_text})
 
     base_str = "".join(base_text_parts)
 
@@ -553,7 +589,7 @@ def map_ruby(
         "base": base_str,
         "reading": reading,
     }
-    if has_gaiji_base:
+    if has_structured_base:
         aat_node["base_content"] = base_inline
     if placement == "left":
         aat_node["direction"] = "left"
@@ -802,7 +838,7 @@ def paragraphs_from_container(
             current_inline = []
 
     if main.text:
-        current_inline.append({"kind": "text", "value": main.text})
+        current_inline.append({"kind": "text", "value": parser_text(main.text)})
 
     for child in main:
         name = el_local(child)
@@ -827,7 +863,7 @@ def paragraphs_from_container(
             current_inline.extend(map_inline(child, warnings, summary))
 
         if child.tail:
-            current_inline.append({"kind": "text", "value": child.tail})
+            current_inline.append({"kind": "text", "value": parser_text(child.tail)})
 
     flush_paragraph()
     # Drop empty/whitespace-only paragraphs.
@@ -867,18 +903,31 @@ def normalize_source_derived_blocks(
 
     out: list[dict[str, Any]] = []
     for block in blocks:
-        if block.get("kind") == "paragraph":
-            normalized = normalize_source_derived_paragraph(block, summary, source_text)
-            out.extend(normalized)
-        elif block.get("kind") == "heading":
-            normalized_heading = heading_from_source_note(source_text, block) or dict(block)
-            normalized_heading["style"] = heading_style_from_class(
-                normalized_heading.get("style", "")
-            )
-            out.append(normalized_heading)
-        else:
-            out.append(block)
+        out.extend(normalize_source_derived_block(block, summary, source_text))
     return strip_text_after_page_break(out)
+
+
+def normalize_source_derived_block(
+    block: dict[str, Any],
+    summary: dict[str, list[dict[str, Any]]],
+    source_text: str,
+) -> list[dict[str, Any]]:
+    if block.get("kind") == "paragraph":
+        return normalize_source_derived_paragraph(block, summary, source_text)
+    if block.get("kind") == "heading":
+        normalized_heading = heading_from_source_note(source_text, block) or dict(block)
+        normalized_heading["style"] = heading_style_from_class(
+            normalized_heading.get("style", "")
+        )
+        return [normalized_heading]
+
+    children = block.get("children")
+    if isinstance(children, list):
+        normalized = dict(block)
+        normalized["children"] = normalize_source_derived_blocks(children, summary, source_text)
+        return [normalized]
+
+    return [block]
 
 
 def source_derived_blocks_from_source_text(
@@ -1349,6 +1398,12 @@ def normalize_source_derived_paragraph(
     if gaiji_content is not None:
         return [{"kind": "paragraph", "content": gaiji_content}]
 
+    inlined_gaiji_content = source_derived_inlined_gaiji_content(content, source_text, summary)
+    if inlined_gaiji_content is not None:
+        block = dict(block)
+        block["content"] = inlined_gaiji_content
+        return [block]
+
     meaningful = [
         node
         for node in content
@@ -1459,6 +1514,125 @@ def source_derived_gaiji_content(
     return derived
 
 
+def source_derived_inlined_gaiji_content(
+    content: list[dict[str, Any]],
+    source_text: str,
+    summary: dict[str, list[dict[str, Any]]],
+) -> list[dict[str, Any]] | None:
+    all_markers = source_gaiji_markers(source_text)
+    markers = [marker for marker in all_markers if marker.get("resolved")]
+    if not markers:
+        if not all_markers:
+            return None
+    marker_by_char = {marker["resolved"]: marker for marker in markers}
+
+    if not marker_by_char and not all_markers:
+        return None
+
+    out: list[dict[str, Any]] = []
+    changed = False
+    for node in content:
+        if node.get("kind") == "ruby" and isinstance(node.get("base"), str):
+            base_content = None
+            if "※" in node["base"]:
+                base_content = split_gaiji_placeholders(node["base"], all_markers, summary)
+            if base_content is None:
+                base_content = split_inlined_gaiji_text(node["base"], marker_by_char, summary)
+            if base_content is not None:
+                ruby = dict(node)
+                ruby["base"] = inline_visible_text(base_content)
+                ruby["base_content"] = base_content
+                ruby["x-provenance"] = "source-derived"
+                record_ruby_summary(summary, ruby, "source-derived")
+                out.append(ruby)
+                changed = True
+            else:
+                out.append(node)
+            continue
+        if node.get("kind") != "text":
+            out.append(node)
+            continue
+        value = node.get("value", "")
+        if not isinstance(value, str):
+            out.append(node)
+            continue
+        split = split_inlined_gaiji_text(value, marker_by_char, summary)
+        if split is None:
+            out.append(node)
+        else:
+            out.extend(split)
+            changed = True
+    return out if changed else None
+
+
+def split_gaiji_placeholders(
+    value: str,
+    markers: list[dict[str, Any]],
+    summary: dict[str, list[dict[str, Any]]],
+) -> list[dict[str, Any]] | None:
+    if "※" not in value or not markers:
+        return None
+    out: list[dict[str, Any]] = []
+    pending: list[str] = []
+    marker_index = 0
+    changed = False
+    for ch in value:
+        if ch != "※":
+            pending.append(ch)
+            continue
+        if marker_index >= len(markers):
+            pending.append(ch)
+            continue
+        if pending:
+            out.append({"kind": "text", "value": "".join(pending)})
+            pending = []
+        gaiji = dict(markers[marker_index])
+        marker_index += 1
+        record_source_derived_gaiji(
+            summary,
+            gaiji,
+            gaiji.get("x-source", ""),
+            source_derived_gaiji_kind(gaiji),
+        )
+        gaiji.pop("x-source", None)
+        out.append(gaiji)
+        changed = True
+    if pending:
+        out.append({"kind": "text", "value": "".join(pending)})
+    return out if changed else None
+
+
+def split_inlined_gaiji_text(
+    value: str,
+    marker_by_char: dict[str, dict[str, Any]],
+    summary: dict[str, list[dict[str, Any]]],
+) -> list[dict[str, Any]] | None:
+    out: list[dict[str, Any]] = []
+    changed = False
+    pending: list[str] = []
+    for ch in value:
+        marker = marker_by_char.get(ch)
+        if marker is None:
+            pending.append(ch)
+            continue
+        if pending:
+            out.append({"kind": "text", "value": "".join(pending)})
+            pending = []
+        gaiji = dict(marker)
+        record_source_derived_gaiji(
+            summary,
+            gaiji,
+            gaiji.get("x-source", ""),
+            source_derived_gaiji_kind(gaiji),
+        )
+        gaiji.pop("x-source", None)
+        out.append(gaiji)
+        changed = True
+    if pending:
+        out.append({"kind": "text", "value": "".join(pending)})
+    return out if changed else None
+
+
 def source_derived_split_gaiji_notes(
     content: list[dict[str, Any]],
     summary: dict[str, list[dict[str, Any]]],
@@ -1492,6 +1666,31 @@ def source_derived_split_gaiji_notes(
                     )
                     gaiji.pop("x-source", None)
                     out.append(gaiji)
+                    changed = True
+                    index += 2
+                    continue
+        if (
+            node.get("kind") == "ruby"
+            and node.get("base") == "※"
+            and next_node is not None
+        ):
+            body = gaiji_note_body(next_node)
+            if body is not None:
+                gaiji = parse_source_gaiji_marker(body, f"※［＃{body}］")
+                if gaiji is not None:
+                    record_source_derived_gaiji(
+                        summary,
+                        gaiji,
+                        gaiji.get("x-source", ""),
+                        source_derived_gaiji_kind(gaiji),
+                    )
+                    gaiji.pop("x-source", None)
+                    ruby = dict(node)
+                    ruby["base"] = gaiji.get("resolved") or ""
+                    ruby["base_content"] = [gaiji]
+                    ruby["x-provenance"] = "source-derived"
+                    record_ruby_summary(summary, ruby, "source-derived")
+                    out.append(ruby)
                     changed = True
                     index += 2
                     continue
@@ -1554,6 +1753,15 @@ def source_text_gaiji_content(source_text: str) -> list[dict[str, Any]] | None:
     if pos < len(source_text):
         content.append({"kind": "text", "value": source_text[pos:]})
     return content
+
+
+def source_gaiji_markers(source_text: str) -> list[dict[str, Any]]:
+    markers: list[dict[str, Any]] = []
+    for match in GAIJI_MARKER_RE.finditer(source_text):
+        gaiji = parse_source_gaiji_marker(match.group("body"), match.group(0))
+        if gaiji is not None:
+            markers.append(gaiji)
+    return markers
 
 
 def parse_source_gaiji_marker(body: str, source: str) -> dict[str, Any] | None:

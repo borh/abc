@@ -10,6 +10,7 @@ pub enum VisibleFragment<'a> {
     Gaiji {
         resolved: Option<String>,
         description: String,
+        has_unresolved_reason: bool,
         path: String,
         node: &'a Value,
     },
@@ -17,6 +18,16 @@ pub enum VisibleFragment<'a> {
 
 pub fn visible_text_projection(aat: &Value) -> String {
     ab_plaintext::visible_text_projection(aat)
+}
+
+pub fn comparison_visible_text_projection(aat: &Value) -> String {
+    let mut out = String::new();
+    if let Some(blocks) = aat.get("blocks").and_then(Value::as_array) {
+        for block in blocks {
+            collect_comparison_block(block, &mut out);
+        }
+    }
+    out
 }
 
 pub fn visible_text_fragments<'a>(aat: &'a Value) -> Vec<VisibleFragment<'a>> {
@@ -44,6 +55,77 @@ pub fn node_line(node: &Value) -> Option<usize> {
         .get("line_start")?
         .as_u64()
         .and_then(|line| usize::try_from(line).ok())
+}
+
+fn collect_comparison_block(node: &Value, out: &mut String) {
+    if let Some(content) = node.get("content").and_then(Value::as_array) {
+        for inline in content {
+            collect_comparison_inline(inline, out);
+        }
+    }
+    if let Some(children) = node.get("children").and_then(Value::as_array) {
+        for child in children {
+            collect_comparison_block(child, out);
+        }
+    }
+}
+
+fn collect_comparison_inline(node: &Value, out: &mut String) {
+    match node.get("kind").and_then(Value::as_str).unwrap_or("") {
+        "text" => push_string_field(node, "value", out),
+        "ruby" => {
+            if let Some(base_content) = node.get("base_content").and_then(Value::as_array) {
+                for inline in base_content {
+                    collect_comparison_inline(inline, out);
+                }
+            } else {
+                push_string_field(node, "base", out);
+            }
+        }
+        "gaiji" => {}
+        "style" if node.get("style_type").and_then(Value::as_str) == Some("notes") => {}
+        "accent" => {
+            if let Some(resolved) = node
+                .get("resolved")
+                .and_then(Value::as_str)
+                .filter(|value| !value.is_empty())
+            {
+                out.push_str(resolved);
+            } else {
+                push_string_field(node, "name", out);
+            }
+        }
+        "raw" => push_string_field(node, "source", out),
+        "warigaki" => {
+            for key in ["upper", "lower"] {
+                if let Some(content) = node.get(key).and_then(Value::as_array) {
+                    for inline in content {
+                        collect_comparison_inline(inline, out);
+                    }
+                }
+            }
+        }
+        "figure" => {
+            if let Some(caption) = node.get("caption").and_then(Value::as_array) {
+                for inline in caption {
+                    collect_comparison_inline(inline, out);
+                }
+            }
+        }
+        _ => {
+            if let Some(content) = node.get("content").and_then(Value::as_array) {
+                for inline in content {
+                    collect_comparison_inline(inline, out);
+                }
+            }
+        }
+    }
+}
+
+fn push_string_field(node: &Value, key: &str, out: &mut String) {
+    if let Some(value) = node.get(key).and_then(Value::as_str) {
+        out.push_str(value);
+    }
 }
 
 fn collect_block<'a>(node: &'a Value, path: &str, fragments: &mut Vec<VisibleFragment<'a>>) {
@@ -90,6 +172,9 @@ fn collect_inline<'a>(node: &'a Value, path: &str, fragments: &mut Vec<VisibleFr
                 .and_then(Value::as_str)
                 .unwrap_or_default()
                 .to_owned(),
+            has_unresolved_reason: node
+                .get("unresolved_reason")
+                .is_some_and(|value| !value.is_null()),
             path: path.to_owned(),
             node,
         }),
@@ -158,8 +243,15 @@ mod tests {
                 VisibleFragment::Gaiji {
                     resolved,
                     description,
+                    has_unresolved_reason,
                     ..
-                } => resolved.unwrap_or(description),
+                } => resolved.unwrap_or_else(|| {
+                    if has_unresolved_reason {
+                        String::new()
+                    } else {
+                        description
+                    }
+                }),
             })
             .collect()
     }
@@ -174,6 +266,12 @@ mod tests {
                     {"kind": "ruby", "base": "B", "reading": "ビー"},
                     {"kind": "gaiji", "description": "desc", "resolved": "C"},
                     {"kind": "gaiji", "description": "empty", "resolved": ""},
+                    {
+                        "kind": "gaiji",
+                        "description": "null",
+                        "resolved": null,
+                        "unresolved_reason": "image_fallback"
+                    },
                     {"kind": "gaiji", "description": "D"},
                     {"kind": "raw", "source": "E"},
                     {

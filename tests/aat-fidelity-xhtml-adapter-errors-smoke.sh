@@ -9,11 +9,8 @@ rm -rf "$out_dir"
 mkdir -p "$out_dir"
 
 duckdb_bin="${DUCKDB:-duckdb}"
-if [[ -x /etc/profiles/per-user/bor/bin/duckdb ]]; then
-  duckdb_bin=/etc/profiles/per-user/bor/bin/duckdb
-fi
-libstdcxx_dir="$(dirname "$(ldd "$duckdb_bin" | awk '/libstdc\+\+/{print $3; exit}')")"
-export LD_LIBRARY_PATH="$libstdcxx_dir:${LD_LIBRARY_PATH:-}"
+duckdb_bin="$(aat_duckdb_bin)"
+aat_setup_duckdb_runtime "$duckdb_bin"
 
 cat > "$out_dir/upstream.xhtml" <<'XHTML'
 <?xml version="1.0" encoding="UTF-8"?>

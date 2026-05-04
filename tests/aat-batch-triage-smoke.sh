@@ -81,15 +81,10 @@ cat > "$aat_dir/work-ok.json" <<'JSON'
 }
 JSON
 
-duckdb_bin="${DUCKDB:-duckdb}"
-if [[ -x /etc/profiles/per-user/bor/bin/duckdb ]]; then
-  duckdb_bin=/etc/profiles/per-user/bor/bin/duckdb
-fi
-libstdcxx_path="$(ldd "$duckdb_bin" | awk '/libstdc\+\+/{print $3; exit}')"
-libstdcxx_dir="$(dirname "$libstdcxx_path")"
+duckdb_bin="$(aat_duckdb_bin)"
+aat_setup_duckdb_runtime "$duckdb_bin"
 
-LD_LIBRARY_PATH="${libstdcxx_dir}:${LD_LIBRARY_PATH:-}" \
-  uv run --isolated --no-project --with 'duckdb>=1.1' \
+uv run --isolated --no-project --with 'duckdb>=1.1' \
   "$repo_root/reports/aat-fidelity/build-aat-batch-triage.py" \
   --reports-dir "$out_dir/check-reports" \
   --aat-dir "$out_dir/aat" \

@@ -51,9 +51,8 @@ test -s "$out_dir/run/adapter-error-report/adapter-error-classes.csv"
 test -s "$db_path"
 
 duckdb_bin="${DUCKDB:-duckdb}"
-if [[ -x /etc/profiles/per-user/bor/bin/duckdb ]]; then
-  duckdb_bin=/etc/profiles/per-user/bor/bin/duckdb
-fi
+duckdb_bin="$(aat_duckdb_bin)"
+aat_setup_duckdb_runtime "$duckdb_bin"
 "$duckdb_bin" -csv -header "$db_path" \
   "select case_id, comparison_status, rendered_body_proxy_eligible, proxy_basis, feature_tags from fidelity_xhtml_observations where report_id = 'full-smoke'" \
   | tee "$out_dir/query.csv"

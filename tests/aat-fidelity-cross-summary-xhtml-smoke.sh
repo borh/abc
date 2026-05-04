@@ -8,29 +8,53 @@ out_dir="${AB_DB_ROOT:-/db/ab-validator}/aat-fidelity/cross-summary-xhtml-smoke"
 db_path="$out_dir/fidelity.duckdb"
 report_json="$out_dir/report.json"
 summary_md="$out_dir/summary.md"
+case_report_dir="$out_dir/case-reports"
+case_ids=(
+  gaiji.jis.2-13-47
+  gaiji.unicode.u546d
+  ruby.gaiji.inline_base
+)
 
 rm -rf "$out_dir"
-mkdir -p "$out_dir"
+mkdir -p "$out_dir" "$case_report_dir"
 
-duckdb_bin="${DUCKDB:-duckdb}"
-if [[ -x /etc/profiles/per-user/bor/bin/duckdb ]]; then
-  duckdb_bin=/etc/profiles/per-user/bor/bin/duckdb
-fi
-libstdcxx_dir="$(dirname "$(ldd "$duckdb_bin" | awk '/libstdc\+\+/{print $3; exit}')")"
-export LD_LIBRARY_PATH="$libstdcxx_dir:${LD_LIBRARY_PATH:-}"
+duckdb_bin="$(aat_duckdb_bin)"
+aat_setup_duckdb_runtime "$duckdb_bin"
 
 oracle_target="$(target_for ab-oracle-cross-adapter-smoke)"
 aozora2html_bin="$AB_VALIDATOR_ROOT/adapters/aozora2html/aozora2html-adapter"
+case_count="${#case_ids[@]}"
+for case_id in "${case_ids[@]}"; do
+  safe_case_id="${case_id//./_}"
+  run_cargo run \
+    --manifest-path "$AB_VALIDATOR_ROOT/crates/ab-oracle/Cargo.toml" \
+    --target-dir "$oracle_target" \
+    -- \
+    --oracle "$AB_VALIDATOR_ROOT/data/aat-oracle-cases.toml" \
+    --upstream "$AB_VALIDATOR_ROOT/data/aat-upstream-observations.toml" \
+    --adapter "aozora2html=$aozora2html_bin" \
+    --case-id "$case_id" \
+    --report-json "$case_report_dir/$safe_case_id.json"
+done
 
-run_cargo run \
-  --manifest-path "$AB_VALIDATOR_ROOT/crates/ab-oracle/Cargo.toml" \
-  --target-dir "$oracle_target" \
-  -- \
-  --oracle "$AB_VALIDATOR_ROOT/data/aat-oracle-cases.toml" \
-  --upstream "$AB_VALIDATOR_ROOT/data/aat-upstream-observations.toml" \
-  --adapter "aozora2html=$aozora2html_bin" \
-  --case-id gaiji.jis.2-13-47 \
-  --report-json "$report_json"
+python - "$report_json" "$case_count" "$case_report_dir"/*.json <<'PY'
+import json
+import pathlib
+import sys
+
+out = pathlib.Path(sys.argv[1])
+expected = int(sys.argv[2])
+parts = [pathlib.Path(path) for path in sys.argv[3:]]
+rows = []
+for part in parts:
+    payload = json.loads(part.read_text())
+    rows.extend(payload["rows"])
+if len(rows) != expected:
+    raise SystemExit(f"expected {expected} report rows, got {len(rows)}")
+out.write_text(json.dumps({"rows": rows}, indent=2) + "\n")
+PY
+
+aat_validate_json_report_rows "$report_json" "$case_count"
 
 cat > "$out_dir/upstream.xhtml" <<'XHTML'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -60,6 +84,7 @@ uv run --isolated --no-project \
 rg -n 'XHTML Source Evidence' "$summary_md"
 rg -n 'xhtml-smoke' "$summary_md"
 rg -n 'rendered-body proxy eligible | 1' "$summary_md"
+rg -n -F "| aozora2html | $case_count | $case_count | $case_count | $case_count | 0 |" "$summary_md"
 rg -n 'aozora2html.*source-level oracle failures should be interpreted beside rendered-XHTML evidence' "$summary_md"
 
 echo "aat fidelity cross summary xhtml smoke ok: $summary_md"

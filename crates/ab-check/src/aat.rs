@@ -127,16 +127,16 @@ fn collect_inline_kind<'a>(
     kind: &str,
     nodes: &mut Vec<(String, &'a Value)>,
 ) {
+    if node.get("kind").and_then(Value::as_str) == Some(kind) {
+        nodes.push((path.to_owned(), node));
+    }
     if let Some(content) = node.get("content").and_then(Value::as_array) {
         for (idx, inline) in content.iter().enumerate() {
             let inline_path = format!("{path}.content[{idx}]");
-            if inline.get("kind").and_then(Value::as_str) == Some(kind) {
-                nodes.push((inline_path.clone(), inline));
-            }
             collect_inline_kind(inline, &inline_path, kind, nodes);
         }
     }
-    for key in ["children", "upper", "lower"] {
+    for key in ["children", "upper", "lower", "base_content", "caption"] {
         if let Some(children) = node.get(key).and_then(Value::as_array) {
             for (idx, child) in children.iter().enumerate() {
                 collect_inline_kind(child, &format!("{path}.{key}[{idx}]"), kind, nodes);

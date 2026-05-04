@@ -78,6 +78,7 @@ fn collect_inline(node: &Value, out: &mut String) {
                 }
             }
         }
+        "style" if node.get("style_type").and_then(Value::as_str) == Some("notes") => {}
         _ => {
             if let Some(content) = node.get("content").and_then(Value::as_array) {
                 for inline in content {
@@ -163,6 +164,27 @@ mod tests {
         });
 
         assert_eq!(visible_text_projection(&aat), "猫の図");
+    }
+
+    #[test]
+    fn projection_excludes_aozora_input_notes() {
+        let aat = json!({
+            "work_id": "w-notes",
+            "blocks": [{
+                "kind": "paragraph",
+                "content": [
+                    {"kind": "text", "value": "前"},
+                    {
+                        "kind": "style",
+                        "style_type": "notes",
+                        "content": [{"kind": "text", "value": "［＃改丁］"}]
+                    },
+                    {"kind": "text", "value": "後"}
+                ]
+            }]
+        });
+
+        assert_eq!(visible_text_projection(&aat), "前後");
     }
 
     #[test]

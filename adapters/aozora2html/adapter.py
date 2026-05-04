@@ -1334,6 +1334,12 @@ def normalize_source_derived_paragraph(
     source_text: str,
 ) -> list[dict[str, Any]]:
     content = block.get("content", [])
+    split_gaiji_content = source_derived_split_gaiji_notes(content, summary)
+    if split_gaiji_content is not None:
+        content = split_gaiji_content
+        block = dict(block)
+        block["content"] = content
+
     if any(is_source_derived_decoration(node) for node in content):
         content = strip_newline_only_text(content)
         block = dict(block)
@@ -1447,10 +1453,67 @@ def source_derived_gaiji_content(
                 summary,
                 node,
                 node.get("x-source", ""),
-                "JisCode" if node.get("jis_code") else "UnicodeCodepoint",
+                source_derived_gaiji_kind(node),
             )
             node.pop("x-source", None)
     return derived
+
+
+def source_derived_split_gaiji_notes(
+    content: list[dict[str, Any]],
+    summary: dict[str, list[dict[str, Any]]],
+) -> list[dict[str, Any]] | None:
+    out: list[dict[str, Any]] = []
+    changed = False
+    index = 0
+    while index < len(content):
+        node = content[index]
+        next_node = content[index + 1] if index + 1 < len(content) else None
+        if (
+            node.get("kind") == "text"
+            and isinstance(node.get("value"), str)
+            and node["value"].endswith("※")
+            and next_node is not None
+        ):
+            body = gaiji_note_body(next_node)
+            if body is not None:
+                gaiji = parse_source_gaiji_marker(body, f"※［＃{body}］")
+                if gaiji is not None:
+                    prefix = node["value"][:-1]
+                    if prefix:
+                        replacement = dict(node)
+                        replacement["value"] = prefix
+                        out.append(replacement)
+                    record_source_derived_gaiji(
+                        summary,
+                        gaiji,
+                        gaiji.get("x-source", ""),
+                        source_derived_gaiji_kind(gaiji),
+                    )
+                    gaiji.pop("x-source", None)
+                    out.append(gaiji)
+                    changed = True
+                    index += 2
+                    continue
+        out.append(node)
+        index += 1
+    return out if changed else None
+
+
+def gaiji_note_body(node: dict[str, Any]) -> str | None:
+    if node.get("kind") != "style" or node.get("style_type") != "notes":
+        return None
+    text = inline_visible_text(node.get("content", []))
+    match = re.fullmatch(r"［＃(?P<body>.+)］", text)
+    return match.group("body") if match else None
+
+
+def source_derived_gaiji_kind(node: dict[str, Any]) -> str:
+    if node.get("jis_code"):
+        return "JisCode"
+    if "U+" in str(node.get("description", "")):
+        return "UnicodeCodepoint"
+    return "DescriptionOnly"
 
 
 def record_source_derived_gaiji(
@@ -1512,7 +1575,15 @@ def parse_source_gaiji_marker(body: str, source: str) -> dict[str, Any] | None:
         body,
     )
     if not jis_match:
-        return None
+        return {
+            "kind": "gaiji",
+            "description": body,
+            "resolved": "",
+            "jis_code": None,
+            "unresolved_reason": "unresolved",
+            "x-provenance": "source-derived",
+            "x-source": source,
+        }
     jis_code = (
         f"{jis_match.group('plane')}-"
         f"{int(jis_match.group('row'))}-"
@@ -1520,7 +1591,15 @@ def parse_source_gaiji_marker(body: str, source: str) -> dict[str, Any] | None:
     )
     resolved = resolve_jisx0213(jis_code)
     if not resolved:
-        return None
+        return {
+            "kind": "gaiji",
+            "description": body,
+            "resolved": "",
+            "jis_code": jis_code,
+            "unresolved_reason": "unresolved",
+            "x-provenance": "source-derived",
+            "x-source": source,
+        }
     return {
         "kind": "gaiji",
         "description": body,

@@ -188,6 +188,31 @@ def test_dakuten_katakana_gaiji_image_fallback_is_source_derived() -> None:
     ]
 
 
+def test_split_unresolved_gaiji_marker_is_source_derived() -> None:
+    source = "小書きの※［＃小書き片仮名ン、237-11］もある。"
+    raw = _run(source.encode("utf-8"), "--mode", "aat")
+    aat = json.loads(raw)
+    jsonschema.validate(aat, SCHEMA)
+
+    assert aat["blocks"] == [
+        {
+            "kind": "paragraph",
+            "content": [
+                {"kind": "text", "value": "小書きの"},
+                {
+                    "kind": "gaiji",
+                    "description": "小書き片仮名ン、237-11",
+                    "resolved": "",
+                    "jis_code": None,
+                    "unresolved_reason": "unresolved",
+                    "x-provenance": "source-derived",
+                },
+                {"kind": "text", "value": "もある。"},
+            ],
+        }
+    ]
+
+
 @pytest.mark.parametrize(
     ("source", "expected_content"),
     [

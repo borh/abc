@@ -296,4 +296,28 @@ mod tests {
 
         assert!(GaijiResolution.check(txt, &aat).is_ok());
     }
+
+    #[test]
+    fn gaiji_resolution_counts_gaiji_inside_ruby_base_content() {
+        let txt = "耳朶を※［＃「てへん＋掌」、第4水準2-13-47］《ささ》えて";
+        let aat = serde_json::json!({
+            "blocks": [{
+                "kind": "paragraph",
+                "content": [{
+                    "kind": "ruby",
+                    "base": "",
+                    "reading": "ささ",
+                    "base_content": [{
+                        "kind": "gaiji",
+                        "description": "「てへん＋掌」、第4水準2-13-47",
+                        "resolved": "撑",
+                        "jis_code": "2-13-47",
+                        "unresolved_reason": null
+                    }]
+                }]
+            }]
+        });
+
+        assert!(GaijiResolution.check(txt, &aat).is_ok());
+    }
 }

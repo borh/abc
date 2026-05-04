@@ -8,7 +8,7 @@
 
 **Architecture:** The work is split into four independent layers. The AAT contract defines the target JSON shapes. The oracle data layer defines expected results for selected Aozora features without depending on any adapter. The fidelity runner compares each adapter output against both the contract and the oracle. Adapter fixes then use that runner and shared fixtures to improve behavior one feature family at a time.
 
-**Tech Stack:** Rust 2024 workspace crates, JSON Schema 2020-12, TOML fixture data, existing Aozora adapters, `cargo test`, `nix-shell`/`nix develop`, and `/db/ab-validator` for temporary targets and generated comparison output.
+**Tech Stack:** Rust 2024 workspace crates, JSON Schema 2020-12, TOML fixture data, existing Aozora adapters, `cargo test`, `nix develop`, and `/db/ab-validator` for temporary targets and generated comparison output.
 
 ---
 
@@ -146,20 +146,19 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-nix-shell -p 'python3.withPackages(ps: [ ps.jsonschema ps.tomli ])' --run "
-python3 - <<'PY'
+nix develop "${repo_root}#aozora2html" --command python3 - "${repo_root}" <<'PY'
 import json
 from pathlib import Path
+import sys
 import tomli
 import jsonschema
 
-root = Path('$repo_root')
+root = Path(sys.argv[1])
 schema = json.loads((root / 'data' / 'aat-oracle-cases.schema.json').read_text())
 cases = tomli.loads((root / 'data' / 'aat-oracle-cases.toml').read_text())
 jsonschema.validate(cases, schema)
 print(f\"validated {len(cases['case'])} oracle cases\")
 PY
-"
 ```
 
 Run:
@@ -1521,8 +1520,7 @@ CARGO_TARGET_DIR=/db/ab-validator/target-aat-fidelity \
 
 nix develop .# --command cargo test --manifest-path adapters/aozora-rs/Cargo.toml -- --nocapture
 
-nix-shell -p 'python3.withPackages(ps: [ps.lxml ps.jsonschema ps.pytest])' \
-  --run 'python3 -m pytest adapters/aozora2html/tests/ -v'
+nix develop "${repo_root}#aozora2html" --command python3 -m pytest adapters/aozora2html/tests/ -v
 
 bash tests/aat-oracle-cases-schema-smoke.sh
 bash tests/adapter-fidelity-smoke.sh

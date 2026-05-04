@@ -216,21 +216,20 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-nix-shell -p 'python3.withPackages(ps: [ ps.jsonschema ps.tomli ])' --run "
-python3 - <<'PY'
+nix develop "${repo_root}#aozora2html" --command python3 - "${repo_root}" <<'PY'
 import json
 from pathlib import Path
+import sys
 import tomli
 import jsonschema
 
-root = Path('$repo_root')
+root = Path(sys.argv[1])
 schema = json.loads((root / 'data' / 'adapter-fidelity-notes.schema.json').read_text())
 notes = tomli.loads((root / 'data' / 'adapter-fidelity-notes.toml').read_text())
 jsonschema.validate(notes, schema)
 assert isinstance(notes.get('note'), list)
 print(f\"validated {len(notes['note'])} adapter fidelity notes\")
 PY
-"
 ```
 
 Run:
@@ -341,21 +340,20 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-nix-shell -p 'python3.withPackages(ps: [ ps.jsonschema ps.tomli ])' --run "
-python3 - <<'PY'
+nix develop "${repo_root}#aozora2html" --command python3 - "${repo_root}" <<'PY'
 import json
 from pathlib import Path
+import sys
 import tomli
 import jsonschema
 
-root = Path('$repo_root')
+root = Path(sys.argv[1])
 for stem in ['aat-oracle-cases', 'aat-upstream-observations']:
     schema = json.loads((root / 'data' / f'{stem}.schema.json').read_text())
     data = tomli.loads((root / 'data' / f'{stem}.toml').read_text())
     jsonschema.validate(data, schema)
     print(f'validated {stem}')
 PY
-"
 ```
 
 Run:
@@ -1395,8 +1393,7 @@ CARGO_TARGET_DIR=/db/ab-validator/target-aozora2-all \
 
 nix develop .# --command cargo test --manifest-path adapters/aozora-rs/Cargo.toml -- --nocapture
 
-nix-shell -p 'python3.withPackages(ps: [ps.lxml ps.jsonschema ps.pytest])' \
-  --run 'python3 -m pytest adapters/aozora2html/tests/ -v'
+nix develop "${repo_root}#aozora2html" --command python3 -m pytest adapters/aozora2html/tests/ -v
 ```
 
 Expected: every command exits 0.

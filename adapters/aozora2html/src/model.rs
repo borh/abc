@@ -8,7 +8,7 @@ pub const ADAPTER_VERSION: &str = "aozora2html-adapter 0.1.0 gem-3.0.1";
 pub type AtBlock = Value;
 pub type AtInline = Value;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct SourceDerivedSummary {
     pub syntax: BTreeMap<String, Vec<Value>>,
 }

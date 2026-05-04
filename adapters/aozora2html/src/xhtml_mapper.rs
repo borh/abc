@@ -8,17 +8,17 @@ fn parser_text(value: &str) -> String {
     value.replace('｜', "").replace('|', "")
 }
 
-fn node_name(node: Node<'_, '_>) -> &str {
+fn node_name<'a>(node: Node<'a, 'a>) -> &'a str {
     node.tag_name().name()
 }
 
-fn node_class(node: Node<'_, '_>) -> &str {
+fn node_class<'a>(node: Node<'a, 'a>) -> &'a str {
     node.attribute("class").unwrap_or("")
 }
 
-fn text_only(node: Node<'_, '_>) -> String {
+fn text_only<'a>(node: Node<'a, 'a>) -> String {
     node.descendants()
-        .filter_map(Node::text)
+        .filter_map(|node| node.text())
         .collect::<String>()
 }
 
@@ -55,8 +55,8 @@ fn paragraph_has_content(nodes: &[Value]) -> bool {
     })
 }
 
-fn walk_inline_children(
-    node: Node<'_, '_>,
+fn walk_inline_children<'a>(
+    node: Node<'a, 'a>,
     warnings: &mut Vec<Value>,
     summary: &mut SourceDerivedSummary,
     ruby_reading: Option<&str>,
@@ -181,12 +181,16 @@ fn font_size_from_class(class: &str, content: Vec<Value>) -> Option<Value> {
     }))
 }
 
-fn record_source_derived_decoration(summary: &mut SourceDerivedSummary, syntax_id: &str, mut node: Value) -> Value {
+fn record_source_derived_decoration(
+    summary: &mut SourceDerivedSummary,
+    syntax_id: &str,
+    node: Value,
+) -> Value {
     let mut value = json!({
         "text": node
             .get("content")
             .and_then(Value::as_array)
-            .map_or_else(String::new, inline_visible_text),
+            .map_or_else(String::new, |nodes| inline_visible_text(nodes)),
     });
     if let Some(container) = value.as_object_mut() {
         for key in [
@@ -234,9 +238,12 @@ fn clean_decoration_content(nodes: Vec<Value>) -> Vec<Value> {
             out.push(node);
             continue;
         }
-        if let Some(content) = node.get("content").and_then(Value::as_array) {
+        if let Some(content) = node.get("content").and_then(Value::as_array).map(|nodes| nodes.to_vec()) {
             if let Some(obj) = node.as_object_mut() {
-                obj.insert("content".to_string(), Value::Array(clean_decoration_content(content.clone())));
+                obj.insert(
+                    "content".to_string(),
+                    Value::Array(clean_decoration_content(content)),
+                );
             }
         }
         out.push(node);
@@ -265,10 +272,12 @@ fn parse_aozora_int(value: &str) -> i64 {
         .unwrap_or(0)
 }
 
-fn normalize_optional_int(value: Option<&str>) -> Option<i64> {
-    value
-        .filter(|it| !it.is_empty())
-        .map(|it| parse_aozora_int(it))
+fn normalize_optional_int(value: &str) -> Option<i64> {
+    if value.is_empty() {
+        None
+    } else {
+        Some(parse_aozora_int(value))
+    }
 }
 
 fn normalize_figure_alt(raw: &str) -> String {
@@ -516,8 +525,8 @@ fn map_img_gaiji(
         "filename": filename,
         "alt": normalize_figure_alt(alt),
         "css_class": node_class(node),
-        "width": node.attribute("width").and_then(normalize_optional_int),
-        "height": node.attribute("height").and_then(normalize_optional_int),
+        "width": node.attribute("width").and_then(|value| normalize_optional_int(value)),
+        "height": node.attribute("height").and_then(|value| normalize_optional_int(value)),
         "caption": Value::Null,
     });
     summary.push_syntax(
@@ -662,8 +671,8 @@ fn map_ruby(
     out
 }
 
-fn map_inline(
-    node: Node<'_, '_>,
+fn map_inline<'a>(
+    node: Node<'a, 'a>,
     warnings: &mut Vec<Value>,
     summary: &mut SourceDerivedSummary,
     ruby_reading: Option<&str>,
@@ -859,7 +868,7 @@ fn map_from_container(
     let mut blocks = Vec::new();
     let mut current: Vec<AtBlock> = Vec::new();
 
-    let mut flush = |blocks: &mut Vec<Value>, current: &mut Vec<AtBlock>| {
+    let flush = |blocks: &mut Vec<Value>, current: &mut Vec<AtBlock>| {
         if !current.is_empty() {
             blocks.push(json!({"kind":"paragraph","content":current.clone()}));
             current.clear();
@@ -900,7 +909,10 @@ fn map_from_container(
         .into_iter()
         .filter(|block| {
             if block.get("kind").and_then(Value::as_str) == Some("paragraph") {
-                block.get("content").and_then(Value::as_array).is_some_and(paragraph_has_content)
+                block
+                    .get("content")
+                    .and_then(Value::as_array)
+                    .is_some_and(|content| paragraph_has_content(content))
             } else {
                 true
             }
@@ -908,7 +920,7 @@ fn map_from_container(
         .collect()
 }
 
-fn find_main_text(root: Node<'_, '_>) -> Option<Node<'_, '_>> {
+fn find_main_text<'a>(root: Node<'a, 'a>) -> Option<Node<'a, 'a>> {
     root.descendants().find(|node| {
         node.is_element()
             && node.tag_name().name() == "div"

@@ -1,6 +1,6 @@
 use crate::jis2ucs::resolve_jis2ucs;
 use crate::model::{AtBlock, SourceDerivedContext, SourceDerivedSummary};
-use regex::{Captures, Regex};
+use regex::Regex;
 use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::sync::OnceLock;
@@ -221,7 +221,7 @@ fn record_source_derived_decoration(
         "text": node
             .get("content")
             .and_then(Value::as_array)
-            .map_or_else(String::new, inline_visible_text),
+            .map_or_else(String::new, |nodes| inline_visible_text(nodes)),
     });
     if let Some(obj) = value.as_object_mut() {
         for key in [
@@ -278,7 +278,8 @@ fn heading_from_source_note(source_text: &str, block: &Value) -> Option<Value> {
         block
             .get("content")
             .and_then(Value::as_array)
-            .unwrap_or(&Vec::new()),
+            .map(|content| content.as_slice())
+            .unwrap_or(&[]),
     );
     let Some(capture) = heading_note_re().captures(source_text) else {
         return None;
@@ -479,7 +480,12 @@ fn gaiji_note_body(node: &Value) -> Option<String> {
     if node_kind(node) != "style" || node.get("style_type").and_then(Value::as_str) != Some("notes") {
         return None;
     }
-    let text = inline_visible_text(node.get("content").and_then(Value::as_array).unwrap_or(&Vec::new()));
+    let text = inline_visible_text(
+        node.get("content")
+            .and_then(Value::as_array)
+            .map(|content| content.as_slice())
+            .unwrap_or(&[]),
+    );
     let captures = note_body_re().captures(&text)?;
     Some(captures.name("body").map(|it| it.as_str().to_string())?)
 }
@@ -631,7 +637,12 @@ fn paragraph_is_note(content: &[Value], note_text: &str) -> bool {
 fn node_is_note(node: &Value, note_text: &str) -> bool {
     node_kind(node) == "style"
         && node.get("style_type").and_then(Value::as_str) == Some("notes")
-        && inline_visible_text(node.get("content").and_then(Value::as_array).unwrap_or(&Vec::new())) == note_text
+        && inline_visible_text(
+            node.get("content")
+                .and_then(Value::as_array)
+                .map(|content| content.as_slice())
+                .unwrap_or(&[]),
+        ) == note_text
 }
 
 fn strip_text_after_page_break(blocks: &[Value]) -> Vec<Value> {
@@ -648,7 +659,8 @@ fn strip_text_after_page_break(blocks: &[Value]) -> Vec<Value> {
                     if node_kind(first) == "text" {
                         let mut next = content.clone();
                         let mut first_node = next[0].clone();
-                        if let Some(value) = first_node.get("value").and_then(Value::as_str) {
+                        let value = first_node.get("value").and_then(Value::as_str).unwrap_or_default().to_string();
+                        if !value.is_empty() {
                             if let Some(obj) = first_node.as_object_mut() {
                                 obj.insert(
                                     "value".to_string(),
@@ -1011,7 +1023,10 @@ fn source_derived_inline_content(
             record_source_derived_gaiji(
                 summary,
                 &mut node,
-                captures.get(0).map(Captures::as_str).unwrap_or(""),
+                captures
+                    .get(0)
+                    .map(|m| m.as_str())
+                    .unwrap_or(""),
                 "DescriptionOnly",
             );
             return Some(compact_inline(vec![
@@ -1276,11 +1291,14 @@ fn normalize_source_derived_block(
     }
 
     if kind == "heading" {
-        let mut heading = heading_from_source_note(source_text, block).unwrap_or_else(|| {
+        let heading = heading_from_source_note(source_text, block).unwrap_or_else(|| {
             let style = block.get("style").and_then(Value::as_str).unwrap_or_default();
             let mut cloned = block.clone();
             if let Some(obj) = cloned.as_object_mut() {
-                obj.insert("style".to_string(), Value::String(heading_style_from_class(style)));
+                obj.insert(
+                    "style".to_string(),
+                    Value::String(heading_style_from_class(style).to_string()),
+                );
             }
             cloned
         });
@@ -1331,10 +1349,12 @@ fn single_figure(block: &Value) -> Option<Value> {
     if block.get("kind").and_then(Value::as_str) != Some("paragraph") {
         return None;
     }
-    let meaningful = block
+    let content = block
         .get("content")
         .and_then(Value::as_array)
-        .unwrap_or(&Vec::new())
+        .map(|content| content.as_slice())
+        .unwrap_or(&[]);
+    let meaningful = content
         .iter()
         .filter(|node| node_kind(node) != "text" || !value_text(node).trim().is_empty())
         .collect::<Vec<_>>();
@@ -1349,7 +1369,11 @@ fn first_caption_and_remainder(block: &Value) -> (Option<Value>, Option<Value>) 
     if block.get("kind").and_then(Value::as_str) != Some("paragraph") {
         return (None, Some(block.clone()));
     }
-    let content = block.get("content").and_then(Value::as_array).unwrap_or(&Vec::new());
+    let content = block
+        .get("content")
+        .and_then(Value::as_array)
+        .map(|content| content.as_slice())
+        .unwrap_or(&[]);
     for (index, node) in content.iter().enumerate() {
         if node_kind(node) == "caption" {
             let remainder_content = content
@@ -1400,7 +1424,13 @@ pub fn attach_following_captions(
                             "kind": "figure_caption",
                             "value": {
                                 "filename": figure.get("filename").and_then(Value::as_str).unwrap_or(""),
-                                "caption": inline_visible_text(figure.get("caption").and_then(Value::as_array).unwrap_or(&Vec::new())),
+                                "caption": inline_visible_text(
+                                    figure
+                                        .get("caption")
+                                        .and_then(Value::as_array)
+                                        .map(|content| content.as_slice())
+                                        .unwrap_or(&[])
+                                ),
                             },
                             "provenance": "source-derived",
                         }),

@@ -16,6 +16,7 @@ members = [
 resolver = "2"
 exclude = [
     "adapters/aozora2",
+    "adapters/aozora2html",
     "adapters/aozora-rs",
     "references",
 ]

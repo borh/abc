@@ -40,6 +40,17 @@ and store the observation in the fidelity DuckDB database. The resulting
 `fidelity_xhtml_observations` table records raw SHA-256 equality and normalized
 `main_text` equality as separate facts.
 
+The seed sample in `reports/aat-fidelity/upstream-xhtml-sample.tsv` currently
+records 5 real Aozora pairs. All 5 have equal normalized `main_text`; 4 are
+byte-identical at the raw XHTML layer. See
+`reports/aat-fidelity/upstream-xhtml-sample-summary.md`.
+
+Policy consequence: local `aozora2html` output is acceptable as a rendered-body
+proxy when upstream XHTML `main_text` equality is established. It is not a
+source-structure oracle. Any source-derived reconstruction added to the
+`aozora2html` adapter must be explicitly marked as source-derived and should not
+be counted as upstream-XHTML faithfulness.
+
 ## Current Oracle Matrix
 
 The latest cross-adapter report is summarized in

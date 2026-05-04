@@ -34,9 +34,9 @@ if [[ -x /etc/profiles/per-user/bor/bin/duckdb ]]; then
   duckdb_bin=/etc/profiles/per-user/bor/bin/duckdb
 fi
 "$duckdb_bin" -csv -header "$db_path" \
-  "select case_id, raw_equal, main_text_equal, upstream_main_text, local_main_text from fidelity_xhtml_observations" \
+  "select case_id, raw_equal, main_text_equal, comparison_status, upstream_main_text, local_main_text from fidelity_xhtml_observations" \
   | tee "$out_dir/query.csv"
 
-rg -n 'upstream.fixture.ruby,false,true,"吾輩（わがはい）は猫である。","吾輩（わがはい）は猫である。"' "$out_dir/query.csv"
+rg -n 'upstream.fixture.ruby,false,true,main_text_equal,"吾輩（わがはい）は猫である。","吾輩（わがはい）は猫である。"' "$out_dir/query.csv"
 
 echo "aat fidelity upstream xhtml smoke ok: $out_dir"

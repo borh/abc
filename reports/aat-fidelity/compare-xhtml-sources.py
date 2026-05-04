@@ -57,6 +57,7 @@ def create_tables(conn: duckdb.DuckDBPyConnection) -> None:
           upstream_sha256 TEXT NOT NULL,
           local_sha256 TEXT NOT NULL,
           raw_equal BOOLEAN NOT NULL,
+          comparison_status TEXT NOT NULL,
           upstream_main_text_hash TEXT NOT NULL,
           local_main_text_hash TEXT NOT NULL,
           main_text_equal BOOLEAN NOT NULL,
@@ -66,6 +67,31 @@ def create_tables(conn: duckdb.DuckDBPyConnection) -> None:
         )
         """
     )
+    existing_columns = {
+        row[1]
+        for row in conn.execute("PRAGMA table_info('fidelity_xhtml_observations')").fetchall()
+    }
+    if "comparison_status" not in existing_columns:
+        conn.execute(
+            "ALTER TABLE fidelity_xhtml_observations "
+            "ADD COLUMN comparison_status TEXT DEFAULT 'unknown'"
+        )
+
+
+def comparison_status(
+    *, raw_equal: bool, upstream_main_text: str, local_main_text: str
+) -> str:
+    if raw_equal:
+        return "raw_equal"
+    if not upstream_main_text and not local_main_text:
+        return "both_missing_main_text"
+    if not upstream_main_text:
+        return "upstream_missing_main_text"
+    if not local_main_text:
+        return "local_missing_main_text"
+    if upstream_main_text == local_main_text:
+        return "main_text_equal"
+    return "main_text_mismatch"
 
 
 def load_observation(
@@ -80,6 +106,7 @@ def load_observation(
     local_bytes = local_xhtml.read_bytes()
     upstream_main_text = main_text_value(upstream_bytes)
     local_main_text = main_text_value(local_bytes)
+    raw_equal = upstream_bytes == local_bytes
 
     db_path.parent.mkdir(parents=True, exist_ok=True)
     conn = duckdb.connect(str(db_path))
@@ -92,10 +119,10 @@ def load_observation(
         """
         INSERT INTO fidelity_xhtml_observations
           (report_id, case_id, loaded_at_utc, upstream_xhtml_path, local_xhtml_path,
-           upstream_sha256, local_sha256, raw_equal,
+           upstream_sha256, local_sha256, raw_equal, comparison_status,
            upstream_main_text_hash, local_main_text_hash, main_text_equal,
            upstream_main_text, local_main_text)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         [
             report_id,
@@ -105,7 +132,12 @@ def load_observation(
             str(local_xhtml),
             sha256_hex(upstream_bytes),
             sha256_hex(local_bytes),
-            upstream_bytes == local_bytes,
+            raw_equal,
+            comparison_status(
+                raw_equal=raw_equal,
+                upstream_main_text=upstream_main_text,
+                local_main_text=local_main_text,
+            ),
             sha256_hex(upstream_main_text.encode("utf-8")),
             sha256_hex(local_main_text.encode("utf-8")),
             upstream_main_text == local_main_text,

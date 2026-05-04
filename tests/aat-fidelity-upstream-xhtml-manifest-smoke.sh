@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+out_dir="${AB_DB_ROOT:-/db/ab-validator}/aat-fidelity/upstream-xhtml-manifest-smoke"
+manifest="$out_dir/manifest.tsv"
+db_path="$out_dir/fidelity.duckdb"
+
+rm -rf "$out_dir"
+mkdir -p "$out_dir"
+
+printf '吾輩《わがはい》は猫である。' > "$out_dir/source.txt"
+cat > "$out_dir/upstream.xhtml" <<'HTML'
+<?xml version="1.0" encoding="UTF-8"?>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <body>
+    <div class="main_text"><ruby><rb>吾輩</rb><rp>（</rp><rt>わがはい</rt><rp>）</rp></ruby>は猫である。<br /></div>
+  </body>
+</html>
+HTML
+
+cat > "$manifest" <<TSV
+# case_id	source	upstream_xhtml
+fixture.manifest.ruby	$out_dir/source.txt	$out_dir/upstream.xhtml
+TSV
+
+"$repo_root/reports/aat-fidelity/run-upstream-xhtml-observations.sh" \
+  --manifest "$manifest" \
+  --out-dir "$out_dir/observations" \
+  --db "$db_path" \
+  --report-id manifest-smoke
+
+test -s "$db_path"
+test -s "$out_dir/observations/summary.csv"
+test -s "$out_dir/observations/status-summary.csv"
+test -s "$out_dir/observations/fixture.manifest.ruby.local.xhtml"
+
+duckdb_bin="${DUCKDB:-duckdb}"
+if [[ -x /etc/profiles/per-user/bor/bin/duckdb ]]; then
+  duckdb_bin=/etc/profiles/per-user/bor/bin/duckdb
+fi
+"$duckdb_bin" -csv -header "$db_path" \
+  "select case_id, raw_equal, main_text_equal from fidelity_xhtml_observations" \
+  | tee "$out_dir/query.csv"
+
+rg -n 'fixture.manifest.ruby,false,true' "$out_dir/query.csv"
+rg -n 'total,raw_equal,main_text_equal' "$out_dir/observations/summary.csv"
+rg -n '^1,0,1$' "$out_dir/observations/summary.csv"
+rg -n 'comparison_status,rows' "$out_dir/observations/status-summary.csv"
+rg -n '^main_text_equal,1$' "$out_dir/observations/status-summary.csv"
+
+echo "aat fidelity upstream xhtml manifest smoke ok: $out_dir"

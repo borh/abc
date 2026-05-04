@@ -112,6 +112,7 @@ def _(db_path, duckdb, json, pl, report_path):
                   case_id,
                   raw_equal,
                   main_text_equal,
+                  comparison_status,
                   upstream_xhtml_path,
                   local_xhtml_path,
                   upstream_sha256,
@@ -286,9 +287,32 @@ def _(filtered_rows, json, mo, selected_row):
 
 @app.cell
 def _(mo, xhtml_observations, xhtml_table):
+    raw_equal_count = sum(1 for row in xhtml_observations if row.get("raw_equal"))
+    main_text_equal_count = sum(
+        1 for row in xhtml_observations if row.get("main_text_equal")
+    )
+    main_text_mismatch_count = len(xhtml_observations) - main_text_equal_count
+    local_missing_main_text_count = sum(
+        1
+        for row in xhtml_observations
+        if row.get("comparison_status") == "local_missing_main_text"
+    )
+    upstream_missing_main_text_count = sum(
+        1
+        for row in xhtml_observations
+        if row.get("comparison_status") == "upstream_missing_main_text"
+    )
     mo.vstack(
         [
-            mo.md(f"## XHTML Source Layer\n\nObservations: **{len(xhtml_observations)}**"),
+            mo.md(
+                "## XHTML Source Layer\n\n"
+                f"Observations: **{len(xhtml_observations)}**  \n"
+                f"Raw equal: **{raw_equal_count}**  \n"
+                f"`main_text` equal: **{main_text_equal_count}**  \n"
+                f"`main_text` mismatch: **{main_text_mismatch_count}**  \n"
+                f"Upstream missing `main_text`: **{upstream_missing_main_text_count}**  \n"
+                f"Local missing `main_text`: **{local_missing_main_text_count}**"
+            ),
             mo.ui.table(xhtml_table) if xhtml_observations else mo.md("No upstream XHTML observations loaded."),
         ]
     )

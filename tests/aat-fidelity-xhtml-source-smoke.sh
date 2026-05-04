@@ -46,9 +46,9 @@ uv run --isolated --no-project \
 test -s "$db_path"
 
 "$duckdb_bin" -csv -header "$db_path" \
-  "select case_id, raw_equal, main_text_equal, upstream_main_text, local_main_text from fidelity_xhtml_observations" \
+  "select case_id, raw_equal, main_text_equal, comparison_status, upstream_main_text, local_main_text from fidelity_xhtml_observations" \
   | tee "$out_dir/query.csv"
 
-rg -n 'fixture.xhtml.same-main-text,false,true,"吾輩猫ねこである。","吾輩猫ねこである。"' "$out_dir/query.csv"
+rg -n 'fixture.xhtml.same-main-text,false,true,main_text_equal,"吾輩猫ねこである。","吾輩猫ねこである。"' "$out_dir/query.csv"
 
 echo "aat fidelity xhtml source smoke ok: $out_dir"

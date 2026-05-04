@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib/aat-fidelity-env.sh"
+
+repo_root="$AB_VALIDATOR_ROOT"
 out_dir="${AB_DB_ROOT:-/db/ab-validator}/aat-fidelity/cross-summary-xhtml-smoke"
 db_path="$out_dir/fidelity.duckdb"
 report_json="$out_dir/report.json"
@@ -17,22 +19,18 @@ fi
 libstdcxx_dir="$(dirname "$(ldd "$duckdb_bin" | awk '/libstdc\+\+/{print $3; exit}')")"
 export LD_LIBRARY_PATH="$libstdcxx_dir:${LD_LIBRARY_PATH:-}"
 
-cat > "$report_json" <<'JSON'
-{
-  "rows": [
-    {
-      "adapter": "aozora2html",
-      "case_id": "gaiji.jis.2-13-47",
-      "schema_status": "pass",
-      "upstream_status": "faithful",
-      "oracle_status": "fail",
-      "oracle_review_status": "reviewed",
-      "oracle_evidence_strength": "reference",
-      "failures": ["fixture failure"]
-    }
-  ]
-}
-JSON
+oracle_target="$(target_for ab-oracle-cross-adapter-smoke)"
+aozora2html_bin="$AB_VALIDATOR_ROOT/adapters/aozora2html/aozora2html-adapter"
+
+run_cargo run \
+  --manifest-path "$AB_VALIDATOR_ROOT/crates/ab-oracle/Cargo.toml" \
+  --target-dir "$oracle_target" \
+  -- \
+  --oracle "$AB_VALIDATOR_ROOT/data/aat-oracle-cases.toml" \
+  --upstream "$AB_VALIDATOR_ROOT/data/aat-upstream-observations.toml" \
+  --adapter "aozora2html=$aozora2html_bin" \
+  --case-id gaiji.jis.2-13-47 \
+  --report-json "$report_json"
 
 cat > "$out_dir/upstream.xhtml" <<'XHTML'
 <?xml version="1.0" encoding="UTF-8"?>

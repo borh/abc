@@ -103,8 +103,12 @@ pub fn map_with_protocol(input: MappingInput) -> anyhow::Result<serde_json::Valu
 
     let mut warnings = Vec::new();
     let mut ctx = SourceDerivedContext::default();
-    let mut blocks = match xhtml_mapper::map_blocks_from_xhtml_bytes(&input.xhtml, &mut warnings) {
-        Ok(blocks) => blocks,
+    let (mut blocks, parse_complete) = match xhtml_mapper::map_blocks_from_xhtml_bytes(
+        &input.xhtml,
+        &mut warnings,
+        &mut ctx.summary,
+    ) {
+        Ok(result) => result,
         Err(err) => {
             return Ok(err.into_envelope(decoded.encoding, &decoded.source_hash));
         }
@@ -129,7 +133,7 @@ pub fn map_with_protocol(input: MappingInput) -> anyhow::Result<serde_json::Valu
             "adapter_version": ADAPTER_VERSION,
             "source_encoding": decoded.encoding,
             "source_hash": decoded.source_hash,
-            "parse_complete": true,
+            "parse_complete": parse_complete,
             "warnings": warnings,
         },
     });

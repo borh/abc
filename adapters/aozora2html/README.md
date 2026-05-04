@@ -86,6 +86,14 @@ Captured during fixture review (`tests/fixtures/*.xhtml`):
   original source marker gives information the rendered XHTML has flattened
   or kept only as note text. These nodes are useful for oracle checks but
   must be read as adapter normalization, not raw upstream-XHTML structure.
+- **Reviewed source-note recoveries use source markers as the oracle bridge.**
+  The adapter now reconstructs the reviewed subset of ruby placement,
+  annotation ruby, kunten, one-line indentation, TCY/yokogumi, caption
+  blocks, parenthetical warigaki, front-reference boten, and editor-note
+  metadata from the original source text when the XHTML output flattens those
+  constructs. These recoveries are intentionally conservative and carry
+  `x-provenance = "source-derived"` where the AAT node has no direct XHTML
+  counterpart.
 - **Plain source image annotations are also recovered narrowly.** Text of the
   form `猫の図（fig00001_01.png、横321×縦123）入る` is mapped to a
   source-derived AAT `figure` node when it survives as plain text.

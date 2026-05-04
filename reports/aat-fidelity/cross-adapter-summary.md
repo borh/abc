@@ -9,31 +9,17 @@ Oracle cases: `data/aat-oracle-cases.toml`
 | --- | --- | --- | --- | --- | --- |
 | aozora-rs | 46 | 46 | 46 | 46 | 0 |
 | aozora2 | 46 | 46 | 46 | 46 | 0 |
-| aozora2html | 46 | 46 | 46 | 22 | 24 |
+| aozora2html | 46 | 46 | 46 | 46 | 0 |
 
 ## Failure Buckets
 
 | adapter | bucket | count |
 | --- | --- | --- |
-| aozora2html | faithful-rendered-output-vs-oracle | 24 |
 
 ## Failure Families
 
 | adapter | case family | failures |
 | --- | --- | --- |
-| aozora2html | accent | 1 |
-| aozora2html | annotation | 2 |
-| aozora2html | caption | 1 |
-| aozora2html | editor_note | 1 |
-| aozora2html | emphasis | 1 |
-| aozora2html | gaiji | 1 |
-| aozora2html | indentation | 5 |
-| aozora2html | iteration | 1 |
-| aozora2html | kunten | 2 |
-| aozora2html | layout | 3 |
-| aozora2html | reference | 1 |
-| aozora2html | ruby | 4 |
-| aozora2html | warigaki | 1 |
 
 ## XHTML Source Evidence
 
@@ -59,13 +45,13 @@ XHTML report id: `upstream-xhtml-full`
 | --- | --- | --- | --- |
 | accent.diacritic | aozora-rs | 1 | 0 |
 | accent.diacritic | aozora2 | 1 | 0 |
-| accent.diacritic | aozora2html | 0 | 1 |
+| accent.diacritic | aozora2html | 1 | 0 |
 | annotation.bouki | aozora-rs | 1 | 0 |
 | annotation.bouki | aozora2 | 1 | 0 |
-| annotation.bouki | aozora2html | 0 | 1 |
+| annotation.bouki | aozora2html | 1 | 0 |
 | annotation.chuuki | aozora-rs | 1 | 0 |
 | annotation.chuuki | aozora2 | 1 | 0 |
-| annotation.chuuki | aozora2html | 0 | 1 |
+| annotation.chuuki | aozora2html | 1 | 0 |
 | break.line_explicit | aozora-rs | 1 | 0 |
 | break.line_explicit | aozora2 | 1 | 0 |
 | break.line_explicit | aozora2html | 1 | 0 |
@@ -74,7 +60,7 @@ XHTML report id: `upstream-xhtml-full`
 | break.page_line | aozora2html | 1 | 0 |
 | caption.block | aozora-rs | 1 | 0 |
 | caption.block | aozora2 | 1 | 0 |
-| caption.block | aozora2html | 0 | 1 |
+| caption.block | aozora2html | 1 | 0 |
 | caption.inline | aozora-rs | 1 | 0 |
 | caption.inline | aozora2 | 1 | 0 |
 | caption.inline | aozora2html | 1 | 0 |
@@ -98,10 +84,10 @@ XHTML report id: `upstream-xhtml-full`
 | decoration.keigakomi | aozora2html | 1 | 0 |
 | editor_note.unmapped | aozora-rs | 1 | 0 |
 | editor_note.unmapped | aozora2 | 1 | 0 |
-| editor_note.unmapped | aozora2html | 0 | 1 |
+| editor_note.unmapped | aozora2html | 1 | 0 |
 | emphasis.basic | aozora-rs | 1 | 0 |
 | emphasis.basic | aozora2 | 1 | 0 |
-| emphasis.basic | aozora2html | 0 | 1 |
+| emphasis.basic | aozora2html | 1 | 0 |
 | figure.image_caption | aozora-rs | 1 | 0 |
 | figure.image_caption | aozora2 | 1 | 0 |
 | figure.image_caption | aozora2html | 1 | 0 |
@@ -119,13 +105,13 @@ XHTML report id: `upstream-xhtml-full`
 | gaiji.marker | aozora2html | 2 | 0 |
 | gaiji.un_embed | aozora-rs | 1 | 0 |
 | gaiji.un_embed | aozora2 | 1 | 0 |
-| gaiji.un_embed | aozora2html | 0 | 1 |
+| gaiji.un_embed | aozora2html | 1 | 0 |
 | gaiji.unicode_codepoint | aozora-rs | 1 | 0 |
 | gaiji.unicode_codepoint | aozora2 | 1 | 0 |
 | gaiji.unicode_codepoint | aozora2html | 1 | 0 |
 | gaiji_ruby.inline_base | aozora-rs | 1 | 0 |
 | gaiji_ruby.inline_base | aozora2 | 1 | 0 |
-| gaiji_ruby.inline_base | aozora2html | 0 | 1 |
+| gaiji_ruby.inline_base | aozora2html | 1 | 0 |
 | heading.basic | aozora-rs | 1 | 0 |
 | heading.basic | aozora2 | 1 | 0 |
 | heading.basic | aozora2html | 1 | 0 |
@@ -140,62 +126,62 @@ XHTML report id: `upstream-xhtml-full`
 | heading.mado | aozora2html | 1 | 0 |
 | indentation.basic | aozora-rs | 1 | 0 |
 | indentation.basic | aozora2 | 1 | 0 |
-| indentation.basic | aozora2html | 0 | 1 |
+| indentation.basic | aozora2html | 1 | 0 |
 | indentation.burasage | aozora-rs | 1 | 0 |
 | indentation.burasage | aozora2 | 1 | 0 |
-| indentation.burasage | aozora2html | 0 | 1 |
+| indentation.burasage | aozora2html | 1 | 0 |
 | indentation.chitsuki | aozora-rs | 1 | 0 |
 | indentation.chitsuki | aozora2 | 1 | 0 |
-| indentation.chitsuki | aozora2html | 0 | 1 |
+| indentation.chitsuki | aozora2html | 1 | 0 |
 | indentation.jisage_block | aozora-rs | 1 | 0 |
 | indentation.jisage_block | aozora2 | 1 | 0 |
-| indentation.jisage_block | aozora2html | 0 | 1 |
+| indentation.jisage_block | aozora2html | 1 | 0 |
 | indentation.jisage_oneline | aozora-rs | 1 | 0 |
 | indentation.jisage_oneline | aozora2 | 1 | 0 |
-| indentation.jisage_oneline | aozora2html | 0 | 1 |
+| indentation.jisage_oneline | aozora2html | 1 | 0 |
 | indentation.jizume | aozora-rs | 1 | 0 |
 | indentation.jizume | aozora2 | 1 | 0 |
-| indentation.jizume | aozora2html | 0 | 1 |
+| indentation.jizume | aozora2html | 1 | 0 |
 | iteration.kunoji | aozora-rs | 1 | 0 |
 | iteration.kunoji | aozora2 | 1 | 0 |
-| iteration.kunoji | aozora2html | 0 | 1 |
+| iteration.kunoji | aozora2html | 1 | 0 |
 | kunten.kaeriten | aozora-rs | 1 | 0 |
 | kunten.kaeriten | aozora2 | 1 | 0 |
-| kunten.kaeriten | aozora2html | 0 | 1 |
+| kunten.kaeriten | aozora2html | 1 | 0 |
 | kunten.okurigana | aozora-rs | 1 | 0 |
 | kunten.okurigana | aozora2 | 1 | 0 |
-| kunten.okurigana | aozora2html | 0 | 1 |
+| kunten.okurigana | aozora2html | 1 | 0 |
 | layout.tcy | aozora-rs | 2 | 0 |
 | layout.tcy | aozora2 | 2 | 0 |
-| layout.tcy | aozora2html | 0 | 2 |
+| layout.tcy | aozora2html | 2 | 0 |
 | layout.yokogumi | aozora-rs | 1 | 0 |
 | layout.yokogumi | aozora2 | 1 | 0 |
-| layout.yokogumi | aozora2html | 0 | 1 |
+| layout.yokogumi | aozora2html | 1 | 0 |
 | reference.frontref | aozora-rs | 1 | 0 |
 | reference.frontref | aozora2 | 1 | 0 |
-| reference.frontref | aozora2html | 0 | 1 |
+| reference.frontref | aozora2html | 1 | 0 |
 | ruby.basic | aozora-rs | 2 | 0 |
 | ruby.basic | aozora2 | 2 | 0 |
-| ruby.basic | aozora2html | 1 | 1 |
+| ruby.basic | aozora2html | 2 | 0 |
 | ruby.double | aozora-rs | 1 | 0 |
 | ruby.double | aozora2 | 1 | 0 |
-| ruby.double | aozora2html | 0 | 1 |
+| ruby.double | aozora2html | 1 | 0 |
 | ruby.nested_forbidden | aozora-rs | 1 | 0 |
 | ruby.nested_forbidden | aozora2 | 1 | 0 |
-| ruby.nested_forbidden | aozora2html | 0 | 1 |
+| ruby.nested_forbidden | aozora2html | 1 | 0 |
 | ruby.placement_directional | aozora-rs | 1 | 0 |
 | ruby.placement_directional | aozora2 | 1 | 0 |
-| ruby.placement_directional | aozora2html | 0 | 1 |
+| ruby.placement_directional | aozora2html | 1 | 0 |
 | warichu.basic | aozora-rs | 1 | 0 |
 | warichu.basic | aozora2 | 1 | 0 |
 | warichu.basic | aozora2html | 1 | 0 |
 | warigaki.parenthetical | aozora-rs | 1 | 0 |
 | warigaki.parenthetical | aozora2 | 1 | 0 |
-| warigaki.parenthetical | aozora2html | 0 | 1 |
+| warigaki.parenthetical | aozora2html | 1 | 0 |
 
 ## Triage Notes
 
 - `aozora-rs` passes schema, upstream-observation, and oracle axes for all reviewed cases.
 - `aozora2` passes schema, upstream-observation, and oracle axes for all reviewed cases.
-- `aozora2html` is fully observed but has 24 oracle divergence(s); failures are now classified as faithful-output vs oracle-correctness work.
+- `aozora2html` passes schema, upstream-observation, and oracle axes for all reviewed cases.
 - Next implementation work should target one remaining adapter/family at a time, using these observations as the pre-fix upstream contract.

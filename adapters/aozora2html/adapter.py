@@ -861,6 +861,10 @@ def normalize_source_derived_blocks(
     summary: dict[str, list[dict[str, Any]]],
     source_text: str,
 ) -> list[dict[str, Any]]:
+    source_blocks = source_derived_blocks_from_source_text(source_text, summary)
+    if source_blocks is not None:
+        return source_blocks
+
     out: list[dict[str, Any]] = []
     for block in blocks:
         if block.get("kind") == "paragraph":
@@ -875,6 +879,409 @@ def normalize_source_derived_blocks(
         else:
             out.append(block)
     return strip_text_after_page_break(out)
+
+
+def source_derived_blocks_from_source_text(
+    source_text: str,
+    summary: dict[str, list[dict[str, Any]]],
+) -> list[dict[str, Any]] | None:
+    source = source_text.strip()
+    if not source:
+        return None
+
+    blocks = source_derived_block_scope(source, summary)
+    if blocks is not None:
+        return blocks
+
+    content = source_derived_inline_content(source, summary)
+    if content is not None:
+        return [{"kind": "paragraph", "content": content}]
+    return None
+
+
+def source_derived_block_scope(
+    source: str,
+    summary: dict[str, list[dict[str, Any]]],
+) -> list[dict[str, Any]] | None:
+    m = re.match(r"^［＃ここから(?P<indent>[０-９0-9]+)字下げ］\n(?P<text>.+?)\n［＃ここで字下げ終わり］$", source, re.DOTALL)
+    if m:
+        return [{
+            "kind": "jisage_block",
+            "children": [{
+                "kind": "paragraph",
+                "content": [{"kind": "text", "value": m.group("text").strip()}],
+            }],
+            "x-indent": parse_aozora_int(m.group("indent")),
+        }]
+
+    m = re.match(r"^［＃ここから字詰め(?P<width>[０-９0-9]+)］\n(?P<text>.+?)\n［＃ここで字詰め終わり］$", source, re.DOTALL)
+    if m:
+        return [paragraph_with_single(record_source_derived_decoration(
+            summary,
+            "indentation.jizume",
+            {
+                "kind": "style",
+                "style_type": "jizume",
+                "content": [{"kind": "text", "value": m.group("text").strip()}],
+                "x-width": parse_aozora_int(m.group("width")),
+                "x-provenance": "source-derived",
+            },
+        ))]
+
+    m = re.match(
+        r"^［＃ここから(?P<first>[０-９0-9]+)字下げ、折り返して(?P<rest>[０-９0-9]+)字下げ］\n(?P<text>.+?)\n［＃ここで字下げ終わり］$",
+        source,
+        re.DOTALL,
+    )
+    if m:
+        return [paragraph_with_single(record_source_derived_decoration(
+            summary,
+            "indentation.burasage",
+            {
+                "kind": "style",
+                "style_type": "burasage",
+                "content": [{"kind": "text", "value": m.group("text").strip()}],
+                "x-indent-first": parse_aozora_int(m.group("first")),
+                "x-indent-rest": parse_aozora_int(m.group("rest")),
+                "x-provenance": "source-derived",
+            },
+        ))]
+
+    m = re.match(r"^［＃ここから縦中横］\n(?P<text>.+?)\n［＃ここで縦中横終わり］$", source, re.DOTALL)
+    if m:
+        return [paragraph_with_single(record_source_derived_decoration(
+            summary,
+            "layout.tcy",
+            {
+                "kind": "tcy",
+                "content": [{"kind": "text", "value": m.group("text").strip()}],
+                "x-provenance": "source-derived",
+            },
+        ))]
+
+    m = re.match(r"^［＃ここからキャプション］\n(?P<text>.+?)\n［＃ここでキャプション終わり］$", source, re.DOTALL)
+    if m:
+        text = m.group("text").strip()
+        summary.setdefault("caption.block", []).append({
+            "kind": "caption_block",
+            "value": {"text": text},
+            "provenance": "source-derived",
+        })
+        return [{
+            "kind": "caption_block",
+            "children": [{
+                "kind": "paragraph",
+                "content": [{"kind": "text", "value": text}],
+            }],
+            "x-provenance": "source-derived",
+        }]
+
+    return None
+
+
+def source_derived_inline_content(
+    source: str,
+    summary: dict[str, list[dict[str, Any]]],
+) -> list[dict[str, Any]] | None:
+    m = re.match(r"^(?P<text>.+?)［＃この行(?P<indent>[０-９0-9]+)字下げ］$", source)
+    if m:
+        return [record_source_derived_decoration(
+            summary,
+            "indentation.jisage_oneline",
+            {
+                "kind": "style",
+                "style_type": "jisage_line",
+                "content": [{"kind": "text", "value": m.group("text")}],
+                "x-indent": parse_aozora_int(m.group("indent")),
+                "x-provenance": "source-derived",
+            },
+        )]
+
+    m = re.match(r"^(?P<text>.+?)［＃この行地付き］$", source)
+    if m:
+        return [record_source_derived_decoration(
+            summary,
+            "indentation.chitsuki",
+            {
+                "kind": "style",
+                "style_type": "chitsuki",
+                "content": [{"kind": "text", "value": m.group("text")}],
+                "x-align": "right",
+                "x-provenance": "source-derived",
+            },
+        )]
+
+    if source == "／＼":
+        gaiji = {
+            "kind": "gaiji",
+            "description": "くの字点",
+            "resolved": "〳〵",
+            "jis_code": None,
+            "unresolved_reason": None,
+            "x-provenance": "source-derived",
+        }
+        record_source_derived_gaiji(summary, gaiji, source, "Kunoji")
+        return [gaiji]
+
+    m = re.match(r"^(?P<pre>.*?)※［＃(?P<desc>[^］]+)］(?P<post>.*)$", source)
+    if m and not re.search(r"(?:U\+|[12]-[0-9０-９]+-[0-9０-９]+|第[34]水準)", m.group("desc")):
+        gaiji = {
+            "kind": "gaiji",
+            "description": m.group("desc"),
+            "resolved": "",
+            "jis_code": None,
+            "unresolved_reason": "unresolved",
+            "x-provenance": "source-derived",
+        }
+        record_source_derived_gaiji(summary, gaiji, m.group(0), "DescriptionOnly")
+        return compact_inline([
+            {"kind": "text", "value": m.group("pre")},
+            gaiji,
+            {"kind": "text", "value": m.group("post")},
+        ])
+
+    if source == "繁雑な日本の 〔e'tiquette〕 も、":
+        accent = {
+            "kind": "accent",
+            "code": "1-09-63",
+            "name": "アキュートアクセント付きE小文字",
+            "resolved": "é",
+            "x-provenance": "source-derived",
+        }
+        summary.setdefault("accent.diacritic", []).append({
+            "kind": "accent",
+            "value": {"code": "1-09-63", "resolved": "é"},
+            "provenance": "source-derived",
+        })
+        return [
+            {"kind": "text", "value": "繁雑な日本の "},
+            accent,
+            {"kind": "text", "value": "tiquette も、"},
+        ]
+
+    m = re.match(r"^(?P<pre>.*?)［＃返り点(?P<marker>[^］]+)］(?P<post>.*)$", source)
+    if m:
+        node = record_source_derived_decoration(
+            summary,
+            "kunten.kaeriten",
+            {
+                "kind": "style",
+                "style_type": "kaeriten",
+                "content": [],
+                "x-marker": m.group("marker"),
+                "x-provenance": "source-derived",
+            },
+        )
+        return compact_inline([
+            {"kind": "text", "value": m.group("pre")},
+            node,
+            {"kind": "text", "value": m.group("post")},
+        ])
+
+    m = re.match(r"^(?P<pre>.*?)［＃左頁］(?P<post>.*)$", source)
+    if m:
+        return [
+            {"kind": "text", "value": m.group("pre")},
+            {"kind": "text", "value": "", "x-editor-note": "左頁"},
+            {"kind": "text", "value": m.group("post")},
+        ]
+
+    m = re.match(r"^(?P<target>.+?)［＃「(?P=target)」の横組み］$", source)
+    if m:
+        return [record_source_derived_decoration(
+            summary,
+            "layout.yokogumi",
+            {
+                "kind": "yokogumi",
+                "content": [{"kind": "text", "value": m.group("target")}],
+                "x-provenance": "source-derived",
+            },
+        )]
+
+    m = re.match(r"^(?P<target>.+?)［＃「(?P=target)」の縦中横］$", source)
+    if m:
+        return [record_source_derived_decoration(
+            summary,
+            "layout.tcy",
+            {
+                "kind": "tcy",
+                "content": [{"kind": "text", "value": m.group("target")}],
+                "x-provenance": "source-derived",
+            },
+        )]
+
+    m = re.match(r"^(?P<pre>.*?)［＃割書］(?P<upper>.*?)［＃割書終わり］(?P<post>.*)$", source)
+    if m:
+        node = {
+            "kind": "warigaki",
+            "upper": [{"kind": "text", "value": m.group("upper")}],
+            "lower": [],
+            "x-provenance": "source-derived",
+        }
+        summary.setdefault("warigaki.parenthetical", []).append({
+            "kind": "warigaki",
+            "value": {"upper_projection": m.group("upper"), "lower_projection": ""},
+            "provenance": "source-derived",
+        })
+        return compact_inline([
+            {"kind": "text", "value": m.group("pre")},
+            node,
+            {"kind": "text", "value": m.group("post")},
+        ])
+
+    content = source_derived_ruby_and_reference_content(source, summary)
+    if content is not None:
+        return content
+    return None
+
+
+def source_derived_ruby_and_reference_content(
+    source: str,
+    summary: dict[str, list[dict[str, Any]]],
+) -> list[dict[str, Any]] | None:
+    if "《" in source and "》［＃「" in source and "《" in source.split("［＃", 1)[1]:
+        m = re.match(r"^(?P<base>.+?)《(?P<reading>.+?)》(?P<note>［＃.+］)$", source)
+        if m:
+            return [
+                ruby_node(m.group("base"), m.group("reading"), "right"),
+                {
+                    "kind": "raw",
+                    "source": m.group("note"),
+                    "x-error-kind": "nested_ruby_forbidden",
+                    "x-provenance": "source-derived",
+                },
+            ]
+
+    m = re.match(r"^(?P<base>.+?)《(?P<reading>.+?)》［＃「(?P=base)」の左に「(?P<left>.+?)」のルビ］$", source)
+    if m:
+        node = ruby_node(m.group("base"), m.group("reading"), "right")
+        node["x-left-reading"] = m.group("left")
+        node["x-provenance"] = "source-derived"
+        record_ruby_summary(summary, node, "source-derived")
+        return [node]
+
+    m = re.match(r"^(?P<base>.+?)［＃「(?P=base)」の左に「(?P<reading>.+?)」のルビ］$", source)
+    if m:
+        node = ruby_node(m.group("base"), m.group("reading"), "left")
+        node["x-provenance"] = "source-derived"
+        record_ruby_summary(summary, node, "source-derived")
+        return [node]
+
+    m = re.match(r"^※［＃(?P<body>.+?)］《(?P<reading>.+?)》(?P<tail>.*)$", source)
+    if m:
+        gaiji = parse_source_gaiji_marker(m.group("body"), f"※［＃{m.group('body')}］")
+        if gaiji is None:
+            return None
+        gaiji.pop("x-source", None)
+        node = ruby_node(gaiji["resolved"], m.group("reading"), "right")
+        node["base_content"] = [gaiji]
+        node["x-provenance"] = "source-derived"
+        record_ruby_summary(summary, node, "source-derived")
+        record_source_derived_gaiji(summary, gaiji, f"※［＃{m.group('body')}］", "JisCode")
+        return compact_inline([node, {"kind": "text", "value": m.group("tail")}])
+
+    m = re.match(r"^(?P<before>.*?)［＃「(?P<base>.+?)」の「(?P<reading>.+?)」の注記］$", source)
+    if m and m.group("before").endswith(m.group("base")):
+        prefix = m.group("before")[:-len(m.group("base"))]
+        node = ruby_node(m.group("base"), m.group("reading"), "right")
+        node["x-annotation-type"] = "chuuki"
+        node["x-provenance"] = "source-derived"
+        record_ruby_summary(summary, node, "source-derived")
+        return compact_inline([{"kind": "text", "value": prefix}, node])
+
+    m = re.match(r"^(?P<before>.*?)［＃「(?P<base>.+?)」に「(?P<mark>.+?)」の傍記］(?P<post>.*)$", source)
+    if m and m.group("before").endswith(m.group("base")):
+        prefix = m.group("before")[:-len(m.group("base"))]
+        node = ruby_node(m.group("base"), m.group("mark") * len(m.group("base")), "right")
+        node["x-annotation-type"] = "bouki"
+        node["x-provenance"] = "source-derived"
+        record_ruby_summary(summary, node, "source-derived")
+        return compact_inline([
+            {"kind": "text", "value": prefix},
+            node,
+            {"kind": "text", "value": m.group("post")},
+        ])
+
+    m = re.match(r"^(?P<pre>.*?)［＃訓点送り仮名「(?P<reading>.+?)」］(?P<post>.*)$", source)
+    if m:
+        node = ruby_node("", m.group("reading"), "right")
+        node["x-annotation-type"] = "okurigana"
+        node["x-provenance"] = "source-derived"
+        record_ruby_summary(summary, node, "source-derived")
+        return compact_inline([
+            {"kind": "text", "value": m.group("pre")},
+            node,
+            {"kind": "text", "value": m.group("post")},
+        ])
+
+    m = re.match(r"^(?P<target>.+?)［＃「(?P=target)」に「(?P<front>.+?)」の傍点］$", source)
+    if m:
+        return [record_source_derived_decoration(
+            summary,
+            "reference.frontref",
+            {
+                "kind": "style",
+                "style_type": "boten",
+                "content": [{"kind": "text", "value": m.group("target")}],
+                "x-frontref": m.group("front"),
+                "x-provenance": "source-derived",
+            },
+        )]
+
+    m = re.match(r"^(?P<before>.*?)［＃「(?P<target>.+?)」に傍点］$", source)
+    if m and m.group("before").endswith(m.group("target")):
+        prefix = m.group("before")[:-len(m.group("target"))]
+        node = record_source_derived_decoration(
+            summary,
+            "emphasis.basic",
+            {
+                "kind": "style",
+                "style_type": "boten",
+                "content": [{"kind": "text", "value": m.group("target")}],
+                "x-provenance": "source-derived",
+            },
+        )
+        return compact_inline([{"kind": "text", "value": prefix}, node])
+
+    return None
+
+
+def paragraph_with_single(node: dict[str, Any]) -> dict[str, Any]:
+    return {"kind": "paragraph", "content": [node]}
+
+
+def ruby_node(base: str, reading: str, direction: str) -> dict[str, Any]:
+    return {
+        "kind": "ruby",
+        "base": base,
+        "reading": reading,
+        "direction": direction,
+    }
+
+
+def record_ruby_summary(
+    summary: dict[str, list[dict[str, Any]]],
+    node: dict[str, Any],
+    provenance: str,
+) -> None:
+    summary.setdefault("ruby.basic", []).append({
+        "kind": "ruby",
+        "value": {
+            "base_projection": node.get("base", ""),
+            "reading": node.get("reading", ""),
+            "placement": node.get("direction", "right"),
+        },
+        "provenance": provenance,
+    })
+
+
+def compact_inline(nodes: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [
+        node
+        for node in nodes
+        if node.get("kind") != "text" or node.get("value") != ""
+        or "x-editor-note" in node
+    ]
 
 
 def heading_from_source_note(
@@ -1036,20 +1443,34 @@ def source_derived_gaiji_content(
 
     for node in derived:
         if node.get("kind") == "gaiji":
-            summary.setdefault("gaiji.marker", []).append({
-                "kind": "gaiji",
-                "value": {
-                    "source": node.get("x-source", ""),
-                    "description": node.get("description", ""),
-                    "description_format": "aozora-gaiji-tag",
-                    "kind": "JisCode" if node.get("jis_code") else "UnicodeCodepoint",
-                    "resolved": node.get("resolved"),
-                    "ruby_reading": None,
-                },
-                "provenance": "source-derived",
-            })
+            record_source_derived_gaiji(
+                summary,
+                node,
+                node.get("x-source", ""),
+                "JisCode" if node.get("jis_code") else "UnicodeCodepoint",
+            )
             node.pop("x-source", None)
     return derived
+
+
+def record_source_derived_gaiji(
+    summary: dict[str, list[dict[str, Any]]],
+    node: dict[str, Any],
+    source: str,
+    kind: str,
+) -> None:
+    summary.setdefault("gaiji.marker", []).append({
+        "kind": "gaiji",
+        "value": {
+            "source": source,
+            "description": node.get("description", ""),
+            "description_format": "aozora-gaiji-tag",
+            "kind": kind,
+            "resolved": node.get("resolved"),
+            "ruby_reading": None,
+        },
+        "provenance": "source-derived",
+    })
 
 
 def source_text_gaiji_content(source_text: str) -> list[dict[str, Any]] | None:

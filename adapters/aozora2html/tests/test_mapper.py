@@ -326,6 +326,380 @@ def test_block_decoration_classes_are_source_derived_to_aat_nodes(
     assert aat["blocks"] == [{"kind": "paragraph", "content": expected_content}]
 
 
+@pytest.mark.parametrize(
+    ("source", "expected_blocks"),
+    [
+        (
+            "字下げ行［＃この行2字下げ］",
+            [{
+                "kind": "paragraph",
+                "content": [{
+                    "kind": "style",
+                    "style_type": "jisage_line",
+                    "content": [{"kind": "text", "value": "字下げ行"}],
+                    "x-indent": 2,
+                    "x-provenance": "source-derived",
+                }],
+            }],
+        ),
+        (
+            "右寄せ［＃この行地付き］",
+            [{
+                "kind": "paragraph",
+                "content": [{
+                    "kind": "style",
+                    "style_type": "chitsuki",
+                    "content": [{"kind": "text", "value": "右寄せ"}],
+                    "x-align": "right",
+                    "x-provenance": "source-derived",
+                }],
+            }],
+        ),
+        (
+            "［＃ここから字詰め4］\n本文\n［＃ここで字詰め終わり］",
+            [{
+                "kind": "paragraph",
+                "content": [{
+                    "kind": "style",
+                    "style_type": "jizume",
+                    "content": [{"kind": "text", "value": "本文"}],
+                    "x-width": 4,
+                    "x-provenance": "source-derived",
+                }],
+            }],
+        ),
+        (
+            "［＃ここから2字下げ、折り返して4字下げ］\n本文\n［＃ここで字下げ終わり］",
+            [{
+                "kind": "paragraph",
+                "content": [{
+                    "kind": "style",
+                    "style_type": "burasage",
+                    "content": [{"kind": "text", "value": "本文"}],
+                    "x-indent-first": 2,
+                    "x-indent-rest": 4,
+                    "x-provenance": "source-derived",
+                }],
+            }],
+        ),
+        (
+            "［＃ここから２字下げ］\n字下げされた段落。\n［＃ここで字下げ終わり］",
+            [{
+                "kind": "jisage_block",
+                "children": [{
+                    "kind": "paragraph",
+                    "content": [{"kind": "text", "value": "字下げされた段落。"}],
+                }],
+                "x-indent": 2,
+            }],
+        ),
+    ],
+)
+def test_indentation_source_notes_are_source_derived(
+    source: str, expected_blocks: list[dict],
+) -> None:
+    raw = _run(source.encode("utf-8"), "--mode", "aat")
+    aat = json.loads(raw)
+    jsonschema.validate(aat, SCHEMA)
+
+    assert aat["blocks"] == expected_blocks
+
+
+@pytest.mark.parametrize(
+    ("source", "expected_content"),
+    [
+        (
+            "これは※［＃底本では欠字］である。",
+            [
+                {"kind": "text", "value": "これは"},
+                {
+                    "kind": "gaiji",
+                    "description": "底本では欠字",
+                    "resolved": "",
+                    "jis_code": None,
+                    "unresolved_reason": "unresolved",
+                    "x-provenance": "source-derived",
+                },
+                {"kind": "text", "value": "である。"},
+            ],
+        ),
+        (
+            "／＼",
+            [{
+                "kind": "gaiji",
+                "description": "くの字点",
+                "resolved": "〳〵",
+                "jis_code": None,
+                "unresolved_reason": None,
+                "x-provenance": "source-derived",
+            }],
+        ),
+        (
+            "繁雑な日本の 〔e'tiquette〕 も、",
+            [
+                {"kind": "text", "value": "繁雑な日本の "},
+                {
+                    "kind": "accent",
+                    "code": "1-09-63",
+                    "name": "アキュートアクセント付きE小文字",
+                    "resolved": "é",
+                    "x-provenance": "source-derived",
+                },
+                {"kind": "text", "value": "tiquette も、"},
+            ],
+        ),
+        (
+            "漢［＃返り点一］文",
+            [
+                {"kind": "text", "value": "漢"},
+                {
+                    "kind": "style",
+                    "style_type": "kaeriten",
+                    "content": [],
+                    "x-marker": "一",
+                    "x-provenance": "source-derived",
+                },
+                {"kind": "text", "value": "文"},
+            ],
+        ),
+        (
+            "本文［＃左頁］続き",
+            [
+                {"kind": "text", "value": "本文"},
+                {"kind": "text", "value": "", "x-editor-note": "左頁"},
+                {"kind": "text", "value": "続き"},
+            ],
+        ),
+    ],
+)
+def test_small_inline_source_markers_are_source_derived(
+    source: str, expected_content: list[dict],
+) -> None:
+    raw = _run(source.encode("utf-8"), "--mode", "aat")
+    aat = json.loads(raw)
+    jsonschema.validate(aat, SCHEMA)
+
+    assert aat["blocks"] == [{"kind": "paragraph", "content": expected_content}]
+
+
+@pytest.mark.parametrize(
+    ("source", "expected_content"),
+    [
+        (
+            "ABC［＃「ABC」の横組み］",
+            [{
+                "kind": "yokogumi",
+                "content": [{"kind": "text", "value": "ABC"}],
+                "x-provenance": "source-derived",
+            }],
+        ),
+        (
+            "12［＃「12」の縦中横］",
+            [{
+                "kind": "tcy",
+                "content": [{"kind": "text", "value": "12"}],
+                "x-provenance": "source-derived",
+            }],
+        ),
+        (
+            "［＃ここから縦中横］\n12\n［＃ここで縦中横終わり］",
+            [{
+                "kind": "tcy",
+                "content": [{"kind": "text", "value": "12"}],
+                "x-provenance": "source-derived",
+            }],
+        ),
+    ],
+)
+def test_layout_source_markers_are_source_derived(
+    source: str, expected_content: list[dict],
+) -> None:
+    raw = _run(source.encode("utf-8"), "--mode", "aat")
+    aat = json.loads(raw)
+    jsonschema.validate(aat, SCHEMA)
+
+    assert aat["blocks"] == [{"kind": "paragraph", "content": expected_content}]
+
+
+@pytest.mark.parametrize(
+    ("source", "expected_blocks"),
+    [
+        (
+            "本文に［＃割書］注［＃割書終わり］が入る。",
+            [{
+                "kind": "paragraph",
+                "content": [
+                    {"kind": "text", "value": "本文に"},
+                    {
+                        "kind": "warigaki",
+                        "upper": [{"kind": "text", "value": "注"}],
+                        "lower": [],
+                        "x-provenance": "source-derived",
+                    },
+                    {"kind": "text", "value": "が入る。"},
+                ],
+            }],
+        ),
+        (
+            "［＃ここからキャプション］\n猫の図\n［＃ここでキャプション終わり］",
+            [{
+                "kind": "caption_block",
+                "children": [{
+                    "kind": "paragraph",
+                    "content": [{"kind": "text", "value": "猫の図"}],
+                }],
+                "x-provenance": "source-derived",
+            }],
+        ),
+    ],
+)
+def test_warigaki_and_caption_source_markers_are_source_derived(
+    source: str, expected_blocks: list[dict],
+) -> None:
+    raw = _run(source.encode("utf-8"), "--mode", "aat")
+    aat = json.loads(raw)
+    jsonschema.validate(aat, SCHEMA)
+
+    assert aat["blocks"] == expected_blocks
+
+
+@pytest.mark.parametrize(
+    ("source", "expected_content"),
+    [
+        (
+            "青空文庫［＃「青空文庫」の左に「あおぞらぶんこ」のルビ］",
+            [{
+                "kind": "ruby",
+                "base": "青空文庫",
+                "reading": "あおぞらぶんこ",
+                "direction": "left",
+                "x-provenance": "source-derived",
+            }],
+        ),
+        (
+            "青空文庫《あおぞらぶんこ》［＃「青空文庫」の左に「aozora bunko」のルビ］",
+            [{
+                "kind": "ruby",
+                "base": "青空文庫",
+                "reading": "あおぞらぶんこ",
+                "direction": "right",
+                "x-left-reading": "aozora bunko",
+                "x-provenance": "source-derived",
+            }],
+        ),
+        (
+            "※［＃「口＋愛」、第3水準1-15-23］《おくび》が出た。",
+            [
+                {
+                    "kind": "ruby",
+                    "base": "噯",
+                    "reading": "おくび",
+                    "direction": "right",
+                    "base_content": [{
+                        "kind": "gaiji",
+                        "description": "「口＋愛」、第3水準1-15-23",
+                        "resolved": "噯",
+                        "jis_code": "1-15-23",
+                        "unresolved_reason": None,
+                        "x-provenance": "source-derived",
+                    }],
+                    "x-provenance": "source-derived",
+                },
+                {"kind": "text", "value": "が出た。"},
+            ],
+        ),
+        (
+            "吹喋［＃「喋」の「ママ」の注記］",
+            [
+                {"kind": "text", "value": "吹"},
+                {
+                    "kind": "ruby",
+                    "base": "喋",
+                    "reading": "ママ",
+                    "direction": "right",
+                    "x-annotation-type": "chuuki",
+                    "x-provenance": "source-derived",
+                },
+            ],
+        ),
+        (
+            "支部長の顔にさっと血が流れ［＃「血が流れ」に「×」の傍記］た",
+            [
+                {"kind": "text", "value": "支部長の顔にさっと"},
+                {
+                    "kind": "ruby",
+                    "base": "血が流れ",
+                    "reading": "××××",
+                    "direction": "right",
+                    "x-annotation-type": "bouki",
+                    "x-provenance": "source-derived",
+                },
+                {"kind": "text", "value": "た"},
+            ],
+        ),
+        (
+            "漢［＃訓点送り仮名「読」］文",
+            [
+                {"kind": "text", "value": "漢"},
+                {
+                    "kind": "ruby",
+                    "base": "",
+                    "reading": "読",
+                    "direction": "right",
+                    "x-annotation-type": "okurigana",
+                    "x-provenance": "source-derived",
+                },
+                {"kind": "text", "value": "文"},
+            ],
+        ),
+        (
+            "参照［＃「参照」に「強調」の傍点］",
+            [{
+                "kind": "style",
+                "style_type": "boten",
+                "content": [{"kind": "text", "value": "参照"}],
+                "x-frontref": "強調",
+                "x-provenance": "source-derived",
+            }],
+        ),
+        (
+            "胡麻塩おやじ［＃「おやじ」に傍点］",
+            [
+                {"kind": "text", "value": "胡麻塩"},
+                {
+                    "kind": "style",
+                    "style_type": "boten",
+                    "content": [{"kind": "text", "value": "おやじ"}],
+                    "x-provenance": "source-derived",
+                },
+            ],
+        ),
+    ],
+)
+def test_ruby_and_reference_source_notes_are_source_derived(
+    source: str, expected_content: list[dict],
+) -> None:
+    raw = _run(source.encode("utf-8"), "--mode", "aat")
+    aat = json.loads(raw)
+    jsonschema.validate(aat, SCHEMA)
+
+    assert aat["blocks"] == [{"kind": "paragraph", "content": expected_content}]
+
+
+def test_nested_ruby_note_is_preserved_as_source_derived_raw() -> None:
+    source = "青空文庫《あおぞらぶんこ》［＃「青空文庫《あおぞらぶんこ》」の左に「aozora bunko」のルビ］"
+    raw = _run(source.encode("utf-8"), "--mode", "aat")
+    aat = json.loads(raw)
+    jsonschema.validate(aat, SCHEMA)
+
+    assert any(
+        node.get("kind") == "raw"
+        and node.get("x-error-kind") == "nested_ruby_forbidden"
+        for block in aat["blocks"]
+        for node in block.get("content", [])
+    )
+
+
 def test_source_note_image_maps_to_source_derived_figure() -> None:
     raw = _run((FIXTURE_DIR / "figure_image_caption.txt").read_bytes(), "--mode", "aat")
     aat = json.loads(raw)

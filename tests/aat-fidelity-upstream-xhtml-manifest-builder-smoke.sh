@@ -49,7 +49,8 @@ HTML
 
 python3 "$repo_root/reports/aat-fidelity/build-upstream-xhtml-manifest.py" \
   --card-url "$out_dir/cards/000001/card1.html" \
-  --card-url "$out_dir/cards/000002/card2.html" \
+  --card-url "https://www.aozora.gr.jp/cards/000002/card2.html" \
+  --aozora-root "$out_dir" \
   --sample-size 2 \
   --classify-source \
   --out-manifest "$manifest" \

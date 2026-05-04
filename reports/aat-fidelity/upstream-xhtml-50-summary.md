@@ -4,17 +4,18 @@ Generated with:
 
 ```sh
 reports/aat-fidelity/build-upstream-xhtml-manifest.py \
-  --card-url https://www.aozora.gr.jp/cards/001764/card55990.html \
-  --card-url https://www.aozora.gr.jp/cards/001185/card45210.html \
-  --card-url https://www.aozora.gr.jp/cards/001574/card52529.html \
-  --card-url https://www.aozora.gr.jp/cards/001054/card18371.html \
-  --card-url https://www.aozora.gr.jp/cards/001492/card51194.html \
-  --person-url https://www.aozora.gr.jp/index_pages/person148.html \
-  --person-url https://www.aozora.gr.jp/index_pages/person879.html \
-  --person-url https://www.aozora.gr.jp/index_pages/person35.html \
-  --person-url https://www.aozora.gr.jp/index_pages/person81.html \
-  --person-url https://www.aozora.gr.jp/index_pages/person50.html \
-  --person-url https://www.aozora.gr.jp/index_pages/person153.html \
+  --aozora-root references/aozorabunko \
+  --card-url references/aozorabunko/cards/001764/card55990.html \
+  --card-url references/aozorabunko/cards/001185/card45210.html \
+  --card-url references/aozorabunko/cards/001574/card52529.html \
+  --card-url references/aozorabunko/cards/001054/card18371.html \
+  --card-url references/aozorabunko/cards/001492/card51194.html \
+  --person-url references/aozorabunko/index_pages/person148.html \
+  --person-url references/aozorabunko/index_pages/person879.html \
+  --person-url references/aozorabunko/index_pages/person35.html \
+  --person-url references/aozorabunko/index_pages/person81.html \
+  --person-url references/aozorabunko/index_pages/person50.html \
+  --person-url references/aozorabunko/index_pages/person153.html \
   --max-cards 180 \
   --sample-size 50 \
   --classify-source

@@ -41,16 +41,16 @@ and store the observation in the fidelity DuckDB database. The resulting
 `main_text` equality as separate facts.
 
 The seed sample in `reports/aat-fidelity/upstream-xhtml-sample.tsv` records 5
-real Aozora pairs. All 5 have equal normalized `main_text`; 4 are
-byte-identical at the raw XHTML layer. See
+real Aozora pairs from the local `references/aozorabunko` mirror. All 5 have
+equal normalized `main_text`; 4 are byte-identical at the raw XHTML layer. See
 `reports/aat-fidelity/upstream-xhtml-sample-summary.md`.
 
 The scaled sample in `reports/aat-fidelity/upstream-xhtml-50-summary.md`
-records 50 real Aozora pairs under `report_id = 'upstream-50'`. It found 45
-normalized `main_text` matches, 9 raw XHTML matches, 4 normalized text
-mismatches, and 1 local XHTML parse error. The selected sample is stratified by
-source features and includes ruby, inline annotations, layout, gaiji, headings,
-and 5 media-tagged works.
+records 50 real Aozora pairs from the same local mirror under
+`report_id = 'upstream-50'`. It found 45 normalized `main_text` matches, 9 raw
+XHTML matches, 4 normalized text mismatches, and 1 local XHTML parse error. The
+selected sample is stratified by source features and includes ruby, inline
+annotations, layout, gaiji, headings, and 5 media-tagged works.
 
 Policy consequence: local `aozora2html` output is acceptable as a rendered-body
 proxy when upstream XHTML `main_text` equality is established for the work or

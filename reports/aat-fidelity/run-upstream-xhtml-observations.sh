@@ -48,8 +48,8 @@ usage: run-upstream-xhtml-observations.sh \
   [--report-id cross-adapter]
 
 manifest columns: case_id<TAB>source_txt_or_zip<TAB>upstream_xhtml
-Sources may be local files or http(s) URLs. Zip sources are extracted to the
-first .txt member.
+Sources must be local files from the Aozora mirror. Zip sources are extracted
+to the first .txt member.
 EOF
   exit 2
 fi
@@ -83,9 +83,17 @@ fetch_input() {
   local value="$1"
   local dest="$2"
   if [[ "$value" =~ ^https?:// ]]; then
-    curl -fsSL "$value" -o "$dest"
-  else
-    cp "$value" "$dest"
+    printf 'remote inputs are not allowed; use local references/aozorabunko paths: %s\n' "$value" >&2
+    return 2
+  fi
+  cp "$value" "$dest"
+}
+
+reject_remote_input() {
+  local value="$1"
+  if [[ "$value" =~ ^https?:// ]]; then
+    printf 'remote inputs are not allowed; use local references/aozorabunko paths: %s\n' "$value" >&2
+    return 2
   fi
 }
 
@@ -94,7 +102,7 @@ prepare_source() {
   local case_id="$2"
   local fetched="$out_dir/downloads/$case_id.source"
   local source_txt="$out_dir/sources/$case_id.txt"
-  fetch_input "$input" "$fetched"
+  fetch_input "$input" "$fetched" || return
 
   if file "$fetched" | rg -q 'Zip archive'; then
     unzip -p "$fetched" '*.txt' > "$source_txt"
@@ -108,7 +116,7 @@ prepare_upstream() {
   local input="$1"
   local case_id="$2"
   local upstream="$out_dir/upstream/$case_id.xhtml"
-  fetch_input "$input" "$upstream"
+  fetch_input "$input" "$upstream" || return
   printf '%s\n' "$upstream"
 }
 
@@ -123,6 +131,8 @@ while IFS=$'\t' read -r case_id source_input upstream_input extra; do
     printf 'invalid manifest row for case_id=%s\n' "$case_id" >&2
     exit 2
   fi
+  reject_remote_input "$source_input"
+  reject_remote_input "$upstream_input"
 
   source_txt="$(prepare_source "$source_input" "$case_id")"
   upstream_xhtml="$(prepare_upstream "$upstream_input" "$case_id")"

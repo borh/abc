@@ -4,6 +4,10 @@
 The output manifest is intentionally compatible with
 run-upstream-xhtml-observations.sh: case_id, source, upstream_xhtml.
 Metadata needed for auditing and stratification is written separately.
+
+All Aozora resources are read from a local mirror. Aozora HTTPS URLs are
+accepted only as mirror-relative identifiers and are resolved under
+--aozora-root; no network fetch is performed.
 """
 
 from __future__ import annotations
@@ -16,14 +20,14 @@ import random
 import re
 import sys
 import urllib.parse
-import urllib.request
 from dataclasses import dataclass
 from html.parser import HTMLParser
 from pathlib import Path
 from zipfile import ZipFile
 
 
-AOZORA_ROOT = "https://www.aozora.gr.jp/"
+DEFAULT_AOZORA_ROOT = Path(__file__).resolve().parents[2] / "references" / "aozorabunko"
+AOZORA_HOSTS = {"www.aozora.gr.jp", "aozora.gr.jp"}
 FEATURE_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
     ("ruby", re.compile(r"《[^》]+》|｜[^《\n]+《[^》]+》")),
     ("gaiji", re.compile(r"※［＃")),
@@ -66,20 +70,13 @@ class LinkParser(HTMLParser):
 
 
 def read_text_resource(url_or_path: str) -> Page:
-    if re.match(r"^https?://", url_or_path):
-        req = urllib.request.Request(url_or_path, headers={"User-Agent": "ab-validator/aat-fidelity"})
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            raw = resp.read()
-            final_url = resp.geturl()
-    elif url_or_path.startswith("file://"):
-        parsed = urllib.parse.urlparse(url_or_path)
-        path = Path(urllib.request.url2pathname(parsed.path))
-        raw = path.read_bytes()
-        final_url = str(path)
-    else:
-        path = Path(url_or_path)
-        raw = path.read_bytes()
-        final_url = str(path)
+    return read_text_resource_from_root(url_or_path, DEFAULT_AOZORA_ROOT)
+
+
+def read_text_resource_from_root(url_or_path: str, aozora_root: Path) -> Page:
+    path = local_resource_path(url_or_path, aozora_root)
+    raw = path.read_bytes()
+    final_url = str(path)
 
     for enc in ("utf-8", "euc_jp", "cp932"):
         try:
@@ -89,21 +86,43 @@ def read_text_resource(url_or_path: str) -> Page:
     return Page(final_url, raw.decode("utf-8", errors="replace"))
 
 
+def is_remote_url(value: str) -> bool:
+    return re.match(r"^https?://", value) is not None
+
+
+def local_resource_path(value: str, aozora_root: Path) -> Path:
+    if is_remote_url(value):
+        parsed = urllib.parse.urlparse(value)
+        if parsed.netloc not in AOZORA_HOSTS:
+            raise ValueError(f"remote inputs are not allowed outside the local Aozora mirror: {value}")
+        relative = urllib.parse.unquote(parsed.path.lstrip("/"))
+        if not relative:
+            raise ValueError(f"Aozora URL has no mirror path: {value}")
+        return (aozora_root / relative).absolute()
+    if value.startswith("file://"):
+        parsed = urllib.parse.urlparse(value)
+        return Path(urllib.parse.unquote(parsed.path)).absolute()
+    return Path(value).absolute()
+
+
 def extract_links(html: str) -> list[str]:
     parser = LinkParser()
     parser.feed(html)
     return parser.links
 
 
-def resolve_href(base_url: str, href: str) -> str:
-    if re.match(r"^https?://", base_url):
-        return urllib.parse.urljoin(base_url, href)
+def resolve_href(base_url: str, href: str, aozora_root: Path) -> str:
+    if is_remote_url(href):
+        parsed = urllib.parse.urlparse(href)
+        if parsed.netloc in AOZORA_HOSTS:
+            return str(local_resource_path(href, aozora_root))
+        return href
     if base_url.startswith("file://"):
         parsed = urllib.parse.urlparse(base_url)
-        base_path = Path(urllib.request.url2pathname(parsed.path)).parent
+        base_path = Path(urllib.parse.unquote(parsed.path)).parent
     else:
         base_path = Path(base_url).parent
-    return str((base_path / href).resolve())
+    return str((base_path / href).absolute())
 
 
 def case_id_from_card_url(card_url: str) -> str:
@@ -118,35 +137,40 @@ def case_id_from_card_url(card_url: str) -> str:
     return hashlib.sha1(card_url.encode("utf-8")).hexdigest()[:12]
 
 
-def discover_card_urls(page_urls: list[str]) -> list[str]:
+def discover_card_urls(page_urls: list[str], aozora_root: Path) -> list[str]:
     card_urls: list[str] = []
     seen: set[str] = set()
     for page_url in page_urls:
-        page = read_text_resource(page_url)
+        page = read_text_resource_from_root(page_url, aozora_root)
         for href in extract_links(page.body):
             if re.search(r"(?:^|/)card\d+\.html(?:#.*)?$", href):
-                resolved = resolve_href(page.url, href.split("#", 1)[0])
+                resolved = resolve_href(page.url, href.split("#", 1)[0], aozora_root)
                 if resolved not in seen:
                     card_urls.append(resolved)
                     seen.add(resolved)
     return card_urls
 
 
-def pair_from_card(card_url: str, classify_source: bool) -> Pair | None:
-    page = read_text_resource(card_url)
-    links = [resolve_href(page.url, href) for href in extract_links(page.body)]
+def pair_from_card(card_url: str, classify_source: bool, aozora_root: Path) -> Pair | None:
+    page = read_text_resource_from_root(card_url, aozora_root)
+    links = [resolve_href(page.url, href, aozora_root) for href in extract_links(page.body)]
     source_candidates = [
         href
         for href in links
-        if re.search(r"/?files/.*_ruby_?.*\.zip$", href)
-        or re.search(r"/?files/.*_ruby_?.*\.txt$", href)
+        if not is_remote_url(href)
+        and (
+            re.search(r"/?files/.*_ruby_?.*\.zip$", href)
+            or re.search(r"/?files/.*_ruby_?.*\.txt$", href)
+        )
     ]
     if not source_candidates:
-        source_candidates = [href for href in links if re.search(r"/?files/.*\.zip$", href)]
+        source_candidates = [href for href in links if not is_remote_url(href) and re.search(r"/?files/.*\.zip$", href)]
     xhtml_candidates = [
         href
         for href in links
-        if re.search(r"/?files/.*\.html$", href) and "card" not in Path(urllib.parse.urlparse(href).path).name
+        if not is_remote_url(href)
+        and re.search(r"/?files/.*\.html$", href)
+        and "card" not in Path(urllib.parse.urlparse(href).path).name
     ]
     if not source_candidates or not xhtml_candidates:
         return None
@@ -156,7 +180,7 @@ def pair_from_card(card_url: str, classify_source: bool) -> Pair | None:
     feature_tags: tuple[str, ...] = ()
     if classify_source:
         try:
-            feature_tags = classify_source_resource(source)
+            feature_tags = classify_source_resource(source, aozora_root)
         except Exception as exc:  # keep discovery running; record the unresolved case.
             print(f"warning: source classification failed for {source}: {exc}", file=sys.stderr)
 
@@ -170,15 +194,8 @@ def pair_from_card(card_url: str, classify_source: bool) -> Pair | None:
     )
 
 
-def fetch_bytes(url_or_path: str) -> bytes:
-    if re.match(r"^https?://", url_or_path):
-        req = urllib.request.Request(url_or_path, headers={"User-Agent": "ab-validator/aat-fidelity"})
-        with urllib.request.urlopen(req, timeout=60) as resp:
-            return resp.read()
-    if url_or_path.startswith("file://"):
-        parsed = urllib.parse.urlparse(url_or_path)
-        return Path(urllib.request.url2pathname(parsed.path)).read_bytes()
-    return Path(url_or_path).read_bytes()
+def fetch_bytes(url_or_path: str, aozora_root: Path) -> bytes:
+    return local_resource_path(url_or_path, aozora_root).read_bytes()
 
 
 def decode_source_bytes(raw: bytes) -> str:
@@ -190,8 +207,8 @@ def decode_source_bytes(raw: bytes) -> str:
     return raw.decode("utf-8", errors="replace")
 
 
-def classify_source_resource(source: str) -> tuple[str, ...]:
-    raw = fetch_bytes(source)
+def classify_source_resource(source: str, aozora_root: Path) -> tuple[str, ...]:
+    raw = fetch_bytes(source, aozora_root)
     if source.lower().endswith(".zip") or raw.startswith(b"PK\x03\x04"):
         with ZipFile(io.BytesIO(raw)) as zf:
             txt_names = sorted(name for name in zf.namelist() if name.lower().endswith(".txt"))
@@ -282,20 +299,24 @@ def main() -> int:
     parser.add_argument("--sample-size", type=int, default=50)
     parser.add_argument("--seed", type=int, default=20260504)
     parser.add_argument("--classify-source", action="store_true")
+    parser.add_argument("--aozora-root", type=Path, default=DEFAULT_AOZORA_ROOT)
     parser.add_argument("--out-manifest", type=Path, required=True)
     parser.add_argument("--out-metadata", type=Path, required=True)
     args = parser.parse_args()
+    aozora_root = args.aozora_root.absolute()
 
     card_urls = list(args.card_url)
     for path in args.card_url_file:
         card_urls.extend(read_card_url_file(path))
-    card_urls.extend(discover_card_urls(args.person_url + args.index_url))
+    card_urls.extend(discover_card_urls(args.person_url + args.index_url, aozora_root))
 
     seen: set[str] = set()
     unique_card_urls = []
     for url in card_urls:
-        if not re.match(r"^https?://", url) and not url.startswith("file://"):
-            url = str(Path(url).resolve())
+        if is_remote_url(url):
+            url = str(local_resource_path(url, aozora_root))
+        elif not url.startswith("file://"):
+            url = str(Path(url).absolute())
         if url not in seen:
             unique_card_urls.append(url)
             seen.add(url)
@@ -305,7 +326,7 @@ def main() -> int:
     pairs: list[Pair] = []
     for card_url in unique_card_urls:
         try:
-            pair = pair_from_card(card_url, args.classify_source)
+            pair = pair_from_card(card_url, args.classify_source, aozora_root)
         except Exception as exc:
             print(f"warning: card discovery failed for {card_url}: {exc}", file=sys.stderr)
             continue

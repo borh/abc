@@ -1,6 +1,6 @@
 # case_id	source	upstream_xhtml
-wagahai-neko	https://www.aozora.gr.jp/cards/000148/files/789_ruby_5639.zip	https://www.aozora.gr.jp/cards/000148/files/789_14547.html
-kokoro	https://www.aozora.gr.jp/cards/000148/files/773_ruby_5968.zip	https://www.aozora.gr.jp/cards/000148/files/773_14560.html
-hashire-melos	https://www.aozora.gr.jp/cards/000035/files/1567_ruby_4948.zip	https://www.aozora.gr.jp/cards/000035/files/1567_14913.html
-rashomon	https://www.aozora.gr.jp/cards/000879/files/127_ruby_150.zip	https://www.aozora.gr.jp/cards/000879/files/127_15260.html
-ginga-tetsudo	https://www.aozora.gr.jp/cards/000081/files/456_ruby_145.zip	https://www.aozora.gr.jp/cards/000081/files/456_15050.html
+wagahai-neko	references/aozorabunko/cards/000148/files/789_ruby_5639.zip	references/aozorabunko/cards/000148/files/789_14547.html
+kokoro	references/aozorabunko/cards/000148/files/773_ruby_5968.zip	references/aozorabunko/cards/000148/files/773_14560.html
+hashire-melos	references/aozorabunko/cards/000035/files/1567_ruby_4948.zip	references/aozorabunko/cards/000035/files/1567_14913.html
+rashomon	references/aozorabunko/cards/000879/files/127_ruby_150.zip	references/aozorabunko/cards/000879/files/127_15260.html
+ginga-tetsudo	references/aozorabunko/cards/000081/files/456_ruby_145.zip	references/aozorabunko/cards/000081/files/456_15050.html

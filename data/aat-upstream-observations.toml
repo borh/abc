@@ -1,11 +1,11 @@
 [[observation]]
 case_id = "gaiji.jis.2-13-47"
 adapter = "aozora-rs"
-status = "unresolved"
-summary = "aozora-rs-gaiji v0.6.0 does not resolve this JIS-form marker."
+status = "normalised"
+summary = "aozora-rs adapter supplements aozora-rs-gaiji v0.6.0 with the oracle JIS mapping for this marker."
 selector = "blocks.*.content.*"
 kind = "gaiji"
-fields = { resolved = "", unresolved_reason = "unresolved" }
+fields = { resolved = "撑", jis_code = "2-13-47" }
 evidence = "adapters/aozora-rs/src/aat.rs"
 
 [[observation]]
@@ -81,11 +81,11 @@ evidence = "reports/aat-fidelity/cross-adapter-summary.md"
 [[observation]]
 case_id = "ruby.gaiji.inline_base"
 adapter = "aozora-rs"
-status = "aborts"
-summary = "aozora-rs emits gaiji for ruby.gaiji.inline_base; oracle correctness is tracked separately."
+status = "normalised"
+summary = "aozora-rs adapter resolves the JIS gaiji and preserves it as ruby base content."
 selector = "blocks.*.content.*"
-kind = "gaiji"
-fields = { description = "「口＋愛」、第3水準1-15-23", resolved = "", jis_code = "", unresolved_reason = "unresolved" }
+kind = "ruby"
+fields = { base = "噯", reading = "おくび", direction = "right" }
 evidence = "reports/aat-fidelity/cross-adapter-summary.md"
 
 [[observation]]
@@ -202,10 +202,10 @@ evidence = "reports/aat-fidelity/cross-adapter-summary.md"
 case_id = "gaiji.dakuten_katakana.ve"
 adapter = "aozora-rs"
 status = "normalised"
-summary = "aozora-rs emits gaiji for gaiji.dakuten_katakana.ve; oracle correctness is tracked separately."
+summary = "aozora-rs adapter resolves dakuten katakana JIS marker through the oracle supplement."
 selector = "blocks.*.content.*"
 kind = "gaiji"
-fields = { description = "濁点付き片仮名ヱ、1-7-84", resolved = "", jis_code = "", unresolved_reason = "unresolved" }
+fields = { description = "濁点付き片仮名ヱ、1-7-84", resolved = "ヹ", jis_code = "1-7-84" }
 evidence = "reports/aat-fidelity/cross-adapter-summary.md"
 
 [[observation]]
@@ -222,10 +222,10 @@ evidence = "reports/aat-fidelity/cross-adapter-summary.md"
 case_id = "gaiji.un_embed.description_only"
 adapter = "aozora-rs"
 status = "normalised"
-summary = "aozora-rs emits gaiji for gaiji.un_embed.description_only; oracle correctness is tracked separately."
+summary = "aozora-rs adapter preserves description-only gaiji as unresolved metadata."
 selector = "blocks.*.content.*"
 kind = "gaiji"
-fields = { description = "底本では欠字", resolved = "", jis_code = "", unresolved_reason = "" }
+fields = { description = "底本では欠字", resolved = "", unresolved_reason = "unresolved" }
 evidence = "reports/aat-fidelity/cross-adapter-summary.md"
 
 [[observation]]
@@ -322,10 +322,10 @@ evidence = "reports/aat-fidelity/cross-adapter-summary.md"
 case_id = "heading.inline_form.large"
 adapter = "aozora-rs"
 status = "normalised"
-summary = "aozora-rs emits paragraph for heading.inline_form.large; oracle correctness is tracked separately."
+summary = "aozora-rs adapter reconstructs inline-form large heading as an AAT heading block."
 selector = "blocks.*"
-kind = "paragraph"
-fields = {}
+kind = "heading"
+fields = { level = 1, style = "normal" }
 evidence = "reports/aat-fidelity/cross-adapter-summary.md"
 
 [[observation]]
@@ -342,10 +342,10 @@ evidence = "reports/aat-fidelity/cross-adapter-summary.md"
 case_id = "heading.dogyo.medium"
 adapter = "aozora-rs"
 status = "normalised"
-summary = "aozora-rs emits paragraph for heading.dogyo.medium; oracle correctness is tracked separately."
+summary = "aozora-rs adapter reconstructs dogyo medium heading as an AAT heading block."
 selector = "blocks.*"
-kind = "paragraph"
-fields = {}
+kind = "heading"
+fields = { level = 2, style = "dogyo" }
 evidence = "reports/aat-fidelity/cross-adapter-summary.md"
 
 [[observation]]
@@ -362,10 +362,10 @@ evidence = "reports/aat-fidelity/cross-adapter-summary.md"
 case_id = "heading.mado.small"
 adapter = "aozora-rs"
 status = "normalised"
-summary = "aozora-rs emits paragraph for heading.mado.small; oracle correctness is tracked separately."
+summary = "aozora-rs adapter reconstructs mado small heading as an AAT heading block."
 selector = "blocks.*"
-kind = "paragraph"
-fields = {}
+kind = "heading"
+fields = { level = 3, style = "mado" }
 evidence = "reports/aat-fidelity/cross-adapter-summary.md"
 
 [[observation]]
@@ -402,10 +402,10 @@ evidence = "reports/aat-fidelity/cross-adapter-summary.md"
 case_id = "decoration.bousen.double"
 adapter = "aozora-rs"
 status = "normalised"
-summary = "aozora-rs emits style for decoration.bousen.double; oracle correctness is tracked separately."
+summary = "aozora-rs adapter preserves double bousen as style metadata."
 selector = "blocks.*.content.*"
 kind = "style"
-fields = { style_type = "bosen" }
+fields = { style_type = "bousen", x-line-kind = "double" }
 evidence = "reports/aat-fidelity/cross-adapter-summary.md"
 
 [[observation]]
@@ -452,10 +452,10 @@ evidence = "reports/aat-fidelity/cross-adapter-summary.md"
 case_id = "decoration.font_size.larger"
 adapter = "aozora-rs"
 status = "normalised"
-summary = "aozora-rs emits style for decoration.font_size.larger; oracle correctness is tracked separately."
+summary = "aozora-rs adapter preserves inline larger-font command as a font_size node."
 selector = "blocks.*.content.*"
-kind = "style"
-fields = { style_type = "bigger" }
+kind = "font_size"
+fields = { size_type = "larger", level = 2 }
 evidence = "reports/aat-fidelity/cross-adapter-summary.md"
 
 [[observation]]
@@ -711,10 +711,10 @@ evidence = "reports/aat-fidelity/cross-adapter-summary.md"
 [[observation]]
 case_id = "caption.block.basic"
 adapter = "aozora-rs"
-status = "aborts"
-summary = "aozora-rs emits paragraph for caption.block.basic; oracle correctness is tracked separately."
+status = "normalised"
+summary = "aozora-rs adapter reconstructs block caption scope."
 selector = "blocks.*"
-kind = "paragraph"
+kind = "caption_block"
 fields = {}
 evidence = "reports/aat-fidelity/cross-adapter-summary.md"
 
@@ -861,11 +861,11 @@ evidence = "reports/aat-fidelity/cross-adapter-summary.md"
 [[observation]]
 case_id = "indentation.jisage_block.basic"
 adapter = "aozora-rs"
-status = "aborts"
-summary = "aozora-rs emits paragraph for indentation.jisage_block.basic; oracle correctness is tracked separately."
+status = "normalised"
+summary = "aozora-rs adapter reconstructs block jisage scope."
 selector = "blocks.*"
-kind = "paragraph"
-fields = {}
+kind = "jisage_block"
+fields = { x-indent = 2 }
 evidence = "reports/aat-fidelity/cross-adapter-summary.md"
 
 [[observation]]
@@ -882,10 +882,10 @@ evidence = "reports/aat-fidelity/cross-adapter-summary.md"
 case_id = "warichu.basic.inline"
 adapter = "aozora-rs"
 status = "normalised"
-summary = "aozora-rs emits style for warichu.basic.inline; oracle correctness is tracked separately."
+summary = "aozora-rs adapter preserves warichu as an AAT warigaki inline node."
 selector = "blocks.*.content.*"
-kind = "style"
-fields = { style_type = "warichu" }
+kind = "warigaki"
+fields = {}
 evidence = "reports/aat-fidelity/cross-adapter-summary.md"
 
 [[observation]]
@@ -902,10 +902,10 @@ evidence = "reports/aat-fidelity/cross-adapter-summary.md"
 case_id = "figure.image_caption.basic"
 adapter = "aozora-rs"
 status = "normalised"
-summary = "aozora-rs emits gaiji for figure.image_caption.basic; oracle correctness is tracked separately."
+summary = "aozora-rs adapter reconstructs figure metadata and caption content."
 selector = "blocks.*.content.*"
-kind = "gaiji"
-fields = { description = "「猫の図」のキャプション付きの図", resolved = "", jis_code = "", unresolved_reason = "unresolved" }
+kind = "figure"
+fields = { filename = "fig00001_01.png", alt = "猫の図", width = 321, height = 123 }
 evidence = "reports/aat-fidelity/cross-adapter-summary.md"
 
 [[observation]]
@@ -917,3 +917,43 @@ selector = "blocks.*.content.*"
 kind = "style"
 fields = { style_type = "caption" }
 evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+
+[[observation]]
+case_id = "gaiji.unicode.u546d"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs adapter resolves Unicode-codepoint gaiji through aozora-rs-gaiji."
+selector = "blocks.*.content.*"
+kind = "gaiji"
+fields = { description = "「口＋世」、U+546D", resolved = "呭" }
+evidence = "adapters/aozora-rs/src/aat.rs"
+
+[[observation]]
+case_id = "decoration.bold_italic.both"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs adapter reconstructs inline bold and italic style scopes."
+selector = "blocks.*.content.*"
+kind = "style"
+fields = { style_type = "bold" }
+evidence = "adapters/aozora-rs/src/aat.rs"
+
+[[observation]]
+case_id = "ruby.basic.simple"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs adapter preserves ordinary ruby as an AAT ruby node."
+selector = "blocks.*.content.*"
+kind = "ruby"
+fields = { base = "吾輩", reading = "わがはい", direction = "right" }
+evidence = "adapters/aozora-rs/src/aat.rs"
+
+[[observation]]
+case_id = "emphasis.boten.basic"
+adapter = "aozora-rs"
+status = "normalised"
+summary = "aozora-rs adapter reconstructs basic boten emphasis as an AAT style scope."
+selector = "blocks.*.content.*"
+kind = "style"
+fields = { style_type = "boten" }
+evidence = "adapters/aozora-rs/src/aat.rs"

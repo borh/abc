@@ -58,7 +58,7 @@ pub fn semantic_summary(blocks: &[Block], warnings: &[ProjectionWarning]) -> Sem
 
 fn collect_block(block: &Block, summary: &mut SemanticSummary) {
     match block {
-        Block::Paragraph { .. } | Block::Heading { .. } => {}
+        Block::Paragraph { .. } | Block::Heading { .. } | Block::CaptionBlock { .. } => {}
         Block::Jisage { level, content } => {
             push_node(
                 summary,
@@ -134,6 +134,7 @@ fn collect_inline(node: &Inline, ruby_reading: Option<&str>, summary: &mut Seman
             reading,
             placement,
             provenance,
+            ..
         } => {
             push_node(
                 summary,
@@ -172,12 +173,28 @@ fn collect_inline(node: &Inline, ruby_reading: Option<&str>, summary: &mut Seman
         Inline::GaijiRef(gaiji) => {
             collect_gaiji(gaiji, ruby_reading, summary);
         }
-        Inline::Style { content, .. } => {
+        Inline::Style { content, .. }
+        | Inline::Scope { content, .. }
+        | Inline::FontSize { content, .. } => {
             for child in content {
                 collect_inline(child, ruby_reading, summary);
             }
         }
-        Inline::Text { .. } => {}
+        Inline::Warigaki { upper, lower, .. } => {
+            for child in upper.iter().chain(lower.iter()) {
+                collect_inline(child, ruby_reading, summary);
+            }
+        }
+        Inline::FigureRef { caption, .. } => {
+            for child in caption {
+                collect_inline(child, ruby_reading, summary);
+            }
+        }
+        Inline::Text { .. }
+        | Inline::TextMeta { .. }
+        | Inline::Accent { .. }
+        | Inline::EditorNote { .. }
+        | Inline::Raw { .. } => {}
     }
 }
 
@@ -213,8 +230,16 @@ fn contains_gaiji(content: &[Inline]) -> bool {
     content.iter().any(|node| match node {
         Inline::GaijiRef(_) => true,
         Inline::Ruby { base, .. } => contains_gaiji(base),
-        Inline::Style { content, .. } => contains_gaiji(content),
-        Inline::Text { .. } => false,
+        Inline::Style { content, .. }
+        | Inline::Scope { content, .. }
+        | Inline::FontSize { content, .. } => contains_gaiji(content),
+        Inline::Warigaki { upper, lower, .. } => contains_gaiji(upper) || contains_gaiji(lower),
+        Inline::FigureRef { caption, .. } => contains_gaiji(caption),
+        Inline::Text { .. }
+        | Inline::TextMeta { .. }
+        | Inline::Accent { .. }
+        | Inline::EditorNote { .. }
+        | Inline::Raw { .. } => false,
     })
 }
 
@@ -228,7 +253,7 @@ fn inline_visible_text(content: &[Inline]) -> String {
 
 fn collect_visible(value: &Inline, out: &mut String) {
     match value {
-        Inline::Text { value, .. } => out.push_str(value),
+        Inline::Text { value, .. } | Inline::TextMeta { value, .. } => out.push_str(value),
         Inline::Ruby { base, .. } => {
             for child in base {
                 collect_visible(child, out);
@@ -239,10 +264,24 @@ fn collect_visible(value: &Inline, out: &mut String) {
                 out.push_str(resolved);
             }
         }
-        Inline::Style { content, .. } => {
+        Inline::Style { content, .. }
+        | Inline::Scope { content, .. }
+        | Inline::FontSize { content, .. } => {
             for child in content {
                 collect_visible(child, out);
             }
         }
+        Inline::Warigaki { upper, lower, .. } => {
+            for child in upper.iter().chain(lower.iter()) {
+                collect_visible(child, out);
+            }
+        }
+        Inline::FigureRef { caption, .. } => {
+            for child in caption {
+                collect_visible(child, out);
+            }
+        }
+        Inline::Accent { resolved, .. } => out.push_str(resolved),
+        Inline::EditorNote { .. } | Inline::Raw { .. } => {}
     }
 }

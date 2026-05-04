@@ -171,10 +171,12 @@ fn build_aat_result(parsed: &ParsedSource<'_>) -> (aat::AatBuildResult, Duration
     let validation_body = parsed.body.validation_body;
     let large_body = validation_body.len() > 500_000;
     let has_markup = ab_source_syntax::needs_lossy_projection(validation_body);
+    let needs_structured_source = needs_structured_source_fallback(validation_body);
     let parser_failed = parsed.warnings_summary.has_parser_failures();
 
     let mut projection_check = Duration::ZERO;
-    let source_artifacts: Option<source::SourceArtifacts<'_>> = if has_markup && !large_body {
+    let source_artifacts: Option<source::SourceArtifacts<'_>> =
+        if (has_markup || needs_structured_source) && !large_body {
         Some(source::SourceArtifacts::collect(validation_body))
     } else {
         None
@@ -183,7 +185,16 @@ fn build_aat_result(parsed: &ParsedSource<'_>) -> (aat::AatBuildResult, Duration
     let mut fallback_source_visible = None;
     let mut initial = None;
 
-    if has_markup && !large_body {
+    if needs_structured_source && !large_body {
+        fallback = FallbackDecision {
+            used: true,
+            reason: if parser_failed {
+                FallbackReason::ParserFailure
+            } else {
+                FallbackReason::ProjectionMismatch
+            },
+        };
+    } else if has_markup && !large_body {
         if parsed.retokenized.is_empty() {
             fallback = FallbackDecision {
                 used: true,
@@ -249,7 +260,7 @@ fn build_aat_result(parsed: &ParsedSource<'_>) -> (aat::AatBuildResult, Duration
             .map(|artifacts| &artifacts.annotations_both);
         let (blocks, fallback_ms) = build_fallback_blocks(
             validation_body,
-            has_markup,
+            has_markup || needs_structured_source,
             source_events,
             source_annotations_both,
             fallback_source_visible,
@@ -278,6 +289,15 @@ fn build_aat_result(parsed: &ParsedSource<'_>) -> (aat::AatBuildResult, Duration
         projection_check,
         fallback_build,
     )
+}
+
+fn needs_structured_source_fallback(body: &str) -> bool {
+    body.contains("／＼")
+        || body.contains('〔')
+        || body.contains("）入る")
+        || ab_source_syntax::source_events(body)
+            .iter()
+            .any(|event| matches!(event.kind, ab_source_syntax::SourceEventKind::Command { .. }))
 }
 
 #[cfg(test)]
@@ -520,7 +540,7 @@ mod tests {
     }
 
     #[test]
-    fn parser_normalized_jis_gaiji_follows_aozora_rs_gaiji_unresolved_result() {
+    fn parser_normalized_jis_gaiji_uses_oracle_jis_supplement() {
         let input = "\
 タイトル
 著者
@@ -538,7 +558,8 @@ mod tests {
             .expect("gaiji node");
 
         assert_eq!(gaiji["description"], "「てへん＋掌」、第4水準2-13-47");
-        assert_eq!(gaiji["resolved"], serde_json::Value::Null);
-        assert_eq!(gaiji["unresolved_reason"], "unresolved");
+        assert_eq!(gaiji["resolved"], "撑");
+        assert_eq!(gaiji["jis_code"], "2-13-47");
+        assert_eq!(gaiji["unresolved_reason"], serde_json::Value::Null);
     }
 }

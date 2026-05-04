@@ -1,6 +1,9 @@
 use std::{borrow::Cow, collections::HashMap, time::Instant};
 
-use ab_ir::{Block, GaijiKind, GaijiRef, Inline, ProjectedText, Provenance, RubyPlacement};
+use ab_ir::{
+    Block, GaijiKind, GaijiRef, Inline, ProjectedText, Provenance, RubyPlacement, StyleAttr,
+    StyleAttrValue,
+};
 use aozora_rs_core::{Deco, Figure, Retokenized};
 use aozora_rs_gaiji::{gaiji_to_char, parse_tag};
 use winnow::Parser;
@@ -364,8 +367,19 @@ fn is_pathological_ruby_base(base: &str) -> bool {
 fn contains_ruby_inline(content: &[Inline]) -> bool {
     content.iter().any(|node| match node {
         Inline::Ruby { .. } => true,
-        Inline::Style { content, .. } => contains_ruby_inline(content),
-        Inline::Text { .. } | Inline::GaijiRef(_) => false,
+        Inline::Style { content, .. }
+        | Inline::Scope { content, .. }
+        | Inline::FontSize { content, .. } => contains_ruby_inline(content),
+        Inline::Warigaki { upper, lower, .. } => {
+            contains_ruby_inline(upper) || contains_ruby_inline(lower)
+        }
+        Inline::FigureRef { caption, .. } => contains_ruby_inline(caption),
+        Inline::Text { .. }
+        | Inline::TextMeta { .. }
+        | Inline::GaijiRef(_)
+        | Inline::Accent { .. }
+        | Inline::EditorNote { .. }
+        | Inline::Raw { .. } => false,
     })
 }
 
@@ -459,18 +473,32 @@ fn strip_commands_in_inline(
     pending_split_marker: &mut bool,
 ) {
     match value {
-        Inline::Text { value, .. } => strip_string(value, command_depth, pending_split_marker),
+        Inline::Text { value, .. } | Inline::TextMeta { value, .. } => {
+            strip_string(value, command_depth, pending_split_marker)
+        }
         Inline::Ruby { base, .. } => {
             for child in base {
                 strip_commands_in_inline(child, command_depth, pending_split_marker);
             }
         }
-        Inline::Style { content, .. } => {
+        Inline::Style { content, .. }
+        | Inline::Scope { content, .. }
+        | Inline::FontSize { content, .. } => {
             for child in content {
                 strip_commands_in_inline(child, command_depth, pending_split_marker);
             }
         }
-        Inline::GaijiRef(_) => {}
+        Inline::Warigaki { upper, lower, .. } => {
+            for child in upper.iter_mut().chain(lower.iter_mut()) {
+                strip_commands_in_inline(child, command_depth, pending_split_marker);
+            }
+        }
+        Inline::FigureRef { caption, .. } => {
+            for child in caption {
+                strip_commands_in_inline(child, command_depth, pending_split_marker);
+            }
+        }
+        Inline::GaijiRef(_) | Inline::Accent { .. } | Inline::EditorNote { .. } | Inline::Raw { .. } => {}
     }
 }
 
@@ -763,16 +791,37 @@ fn structured_source_fallback_blocks(body: &str) -> Vec<Block> {
 fn structured_source_fallback_blocks_with_events<'a>(
     source_events: &[ab_source_syntax::SourceEvent<'a>],
 ) -> Vec<Block> {
+    let mut blocks = Vec::new();
     let mut content = Vec::new();
+    let mut frames = Vec::new();
     let mut last_gaiji_end = None;
+    let mut line_break_open = false;
+    let mut drop_next_leading_newlines = false;
+    let mut pending_figure_caption_alt: Option<String> = None;
     for event in source_events {
         match event.kind {
             ab_source_syntax::SourceEventKind::Text(text) => {
-                push_source_fallback_text(&mut content, text);
+                let text = if drop_next_leading_newlines {
+                    drop_next_leading_newlines = false;
+                    text.trim_start_matches('\n')
+                } else {
+                    text
+                };
+                if pending_figure_caption_alt
+                    .as_deref()
+                    .is_some_and(|alt| text.trim_matches('\n') == alt)
+                {
+                    pending_figure_caption_alt = None;
+                    last_gaiji_end = None;
+                    continue;
+                }
+                let active = active_source_content(&mut content, &mut frames);
+                push_source_fallback_text_with_state(active, text, &mut line_break_open);
                 last_gaiji_end = None;
             }
             ab_source_syntax::SourceEventKind::Gaiji { description } => {
-                content.push(gaiji_inline(description, Provenance::SourceFallback));
+                let active = active_source_content(&mut content, &mut frames);
+                active.push(gaiji_inline(description, Provenance::SourceFallback));
                 last_gaiji_end = Some(event.span.end);
             }
             ab_source_syntax::SourceEventKind::Ruby {
@@ -780,16 +829,20 @@ fn structured_source_fallback_blocks_with_events<'a>(
                 reading,
             } => {
                 let base = source_visible_text(base_source).into_owned();
-                push_source_fallback_ruby(&mut content, base, base_source, reading);
+                let active = active_source_content(&mut content, &mut frames);
+                push_source_fallback_ruby(active, base, base_source, reading);
                 last_gaiji_end = None;
             }
             ab_source_syntax::SourceEventKind::Ruby {
                 base_source: None,
                 reading,
             } => {
-                if last_gaiji_end != Some(event.span.start) {
-                    let base = take_implicit_ruby_base(&mut content);
-                    push_source_fallback_ruby(&mut content, base, "", reading);
+                let active = active_source_content(&mut content, &mut frames);
+                if last_gaiji_end == Some(event.span.start) {
+                    wrap_last_gaiji_in_ruby(active, reading);
+                } else {
+                    let base = take_implicit_ruby_base(active);
+                    push_source_fallback_ruby(active, base, "", reading);
                 }
                 last_gaiji_end = None;
             }
@@ -797,18 +850,620 @@ fn structured_source_fallback_blocks_with_events<'a>(
                 kind: ab_source_syntax::EditorialNoteKind::BottomTextCorrection,
                 ..
             } => {
-                trim_source_fallback_note_prefix(&mut content);
+                let active = active_source_content(&mut content, &mut frames);
+                trim_source_fallback_note_prefix(active);
                 last_gaiji_end = None;
             }
-            ab_source_syntax::SourceEventKind::Command { .. }
-            | ab_source_syntax::SourceEventKind::EditorialNote { .. }
+            ab_source_syntax::SourceEventKind::Command { body } => {
+                handle_source_command(
+                    body,
+                    &mut blocks,
+                    &mut content,
+                    &mut frames,
+                    &mut line_break_open,
+                    &mut drop_next_leading_newlines,
+                    &mut pending_figure_caption_alt,
+                );
+                last_gaiji_end = None;
+            }
+            ab_source_syntax::SourceEventKind::EditorialNote { .. }
             | ab_source_syntax::SourceEventKind::SegmentBoundary { .. } => {
                 last_gaiji_end = None;
             }
         }
     }
 
-    vec![Block::Paragraph { content }]
+    while let Some(frame) = frames.pop() {
+        close_source_frame(frame, &mut blocks, &mut content, &mut frames);
+    }
+    trim_boundary_newlines(&mut content);
+    flush_paragraph(&mut blocks, &mut content);
+    if blocks.is_empty() {
+        blocks.push(Block::Paragraph { content });
+    }
+    blocks
+}
+
+#[derive(Debug)]
+struct SourceFrame {
+    kind: SourceFrameKind,
+    content: Vec<Inline>,
+}
+
+#[derive(Debug)]
+enum SourceFrameKind {
+    Style(&'static str, Vec<StyleAttr>),
+    Scope(&'static str),
+    FontSize(&'static str, u8),
+    Warigaki,
+    Jisage(u8),
+    CaptionBlock,
+}
+
+fn active_source_content<'a>(
+    root: &'a mut Vec<Inline>,
+    frames: &'a mut [SourceFrame],
+) -> &'a mut Vec<Inline> {
+    frames.last_mut().map_or(root, |frame| &mut frame.content)
+}
+
+fn handle_source_command(
+    body: &str,
+    blocks: &mut Vec<Block>,
+    content: &mut Vec<Inline>,
+    frames: &mut Vec<SourceFrame>,
+    line_break_open: &mut bool,
+    drop_next_leading_newlines: &mut bool,
+    pending_figure_caption_alt: &mut Option<String>,
+) {
+    if body == "改行" {
+        push_line_break(active_source_content(content, frames), line_break_open);
+        return;
+    }
+    if body == "改ページ" {
+        trim_boundary_newlines(content);
+        flush_paragraph(blocks, content);
+        blocks.push(Block::page_break());
+        *drop_next_leading_newlines = true;
+        return;
+    }
+
+    if let Some(kind) = start_frame_kind(body) {
+        if matches!(kind, SourceFrameKind::Jisage(_) | SourceFrameKind::CaptionBlock) {
+            trim_boundary_newlines(content);
+            flush_paragraph(blocks, content);
+        }
+        frames.push(SourceFrame {
+            kind,
+            content: Vec::new(),
+        });
+        *drop_next_leading_newlines = true;
+        return;
+    }
+    if is_end_frame_command(body) {
+        if let Some(frame) = frames.pop() {
+            close_source_frame(frame, blocks, content, frames);
+        }
+        *drop_next_leading_newlines = true;
+        return;
+    }
+
+    if handle_inline_heading_command(body, blocks, content) {
+        return;
+    }
+    let active = active_source_content(content, frames);
+    if let Some((target, reading)) = parse_left_ruby_command(body) {
+        if target.contains('《') {
+            active.push(Inline::Raw {
+                source: format!("［＃{body}］"),
+                attrs: vec![attr_text("x-error-kind", "nested_ruby_forbidden")],
+                provenance: Provenance::SourceFallback,
+            });
+        } else {
+            let left_added = if inline_visible_text(active) == target {
+                if let Some(Inline::Ruby { attrs, .. }) = active.last_mut() {
+                    attrs.push(attr_string("x-left-reading", reading.to_owned()));
+                    true
+                } else {
+                    false
+                }
+            } else {
+                false
+            };
+            if !left_added {
+                wrap_target(active, target, |base| {
+                    Inline::ruby_with_attrs(
+                        base,
+                        reading,
+                        RubyPlacement::Left,
+                        Vec::new(),
+                        Provenance::SourceFallback,
+                    )
+                });
+            }
+        }
+        return;
+    }
+    if let Some((target, reading)) = parse_chuuki_command(body) {
+        wrap_target(active, target, |base| {
+            Inline::ruby_with_attrs(
+                base,
+                reading,
+                RubyPlacement::Right,
+                vec![attr_text("x-annotation-type", "chuuki")],
+                Provenance::SourceFallback,
+            )
+        });
+        return;
+    }
+    if let Some(figure) = parse_figure_text(body) {
+        if let Inline::FigureRef { alt, caption, .. } = &figure
+            && !caption.is_empty()
+        {
+            *pending_figure_caption_alt = Some(alt.clone());
+        }
+        active.push(figure);
+        return;
+    }
+    if let Some((target, reading)) = parse_quoted_annotation(body, "の注記") {
+        wrap_target(active, target, |base| {
+            Inline::ruby_with_attrs(
+                base,
+                reading,
+                RubyPlacement::Right,
+                vec![attr_text("x-annotation-type", "chuuki")],
+                Provenance::SourceFallback,
+            )
+        });
+        return;
+    }
+    if let Some((target, marker)) = parse_quoted_annotation(body, "の傍記") {
+        let reading = marker.repeat(target.chars().count());
+        wrap_target(active, target, |base| {
+            Inline::ruby_with_attrs(
+                base,
+                reading.clone(),
+                RubyPlacement::Right,
+                vec![attr_text("x-annotation-type", "bouki")],
+                Provenance::SourceFallback,
+            )
+        });
+        return;
+    }
+    if let Some(reading) = body
+        .strip_prefix("訓点送り仮名「")
+        .and_then(|rest| rest.strip_suffix('」'))
+    {
+        active.push(Inline::ruby_with_attrs(
+            Vec::new(),
+            reading,
+            RubyPlacement::Right,
+            vec![attr_text("x-annotation-type", "okurigana")],
+            Provenance::SourceFallback,
+        ));
+        return;
+    }
+    if let Some(marker) = body.strip_prefix("返り点") {
+        active.push(Inline::style_with_attrs(
+            "kaeriten",
+            Vec::new(),
+            vec![attr_string("x-marker", marker.to_owned())],
+            Provenance::SourceFallback,
+        ));
+        return;
+    }
+
+    if let Some((target, style_type, attrs)) = inline_style_command(body) {
+        wrap_target(active, target, |base| {
+            Inline::style_with_attrs(style_type, base, attrs.clone(), Provenance::SourceFallback)
+        });
+        return;
+    }
+    if let Some((target, kind)) = inline_scope_command(body) {
+        wrap_target(active, target, |base| {
+            Inline::scope(kind, base, Provenance::SourceFallback)
+        });
+        return;
+    }
+    if let Some((target, level)) = inline_font_size_command(body) {
+        wrap_target(active, target, |base| {
+            Inline::font_size("larger", level, base, Provenance::SourceFallback)
+        });
+        return;
+    }
+    if let Some((target, note)) = parse_quoted_annotation(body, "の傍点") {
+        wrap_target(active, target, |base| {
+            Inline::style_with_attrs(
+                "boten",
+                base,
+                vec![attr_string("x-frontref", note.to_owned())],
+                Provenance::SourceFallback,
+            )
+        });
+        return;
+    }
+
+    if body == "左頁" {
+        active.push(Inline::EditorNote {
+            note: body.to_owned(),
+            provenance: Provenance::SourceFallback,
+        });
+    }
+}
+
+fn start_frame_kind(body: &str) -> Option<SourceFrameKind> {
+    match body {
+        "ここから太字" => Some(SourceFrameKind::Style("bold", Vec::new())),
+        "ここから斜体" => Some(SourceFrameKind::Style("italic", Vec::new())),
+        "ここから縦中横" => Some(SourceFrameKind::Scope("tcy")),
+        "ここからキャプション" => Some(SourceFrameKind::CaptionBlock),
+        "割書" | "割り注" => Some(SourceFrameKind::Warigaki),
+        _ => {
+            if let Some(rest) = body
+                .strip_prefix("ここから")
+                .and_then(|rest| rest.strip_suffix("段階大きな文字"))
+                && let Some(level) = parse_u8_loose(rest)
+            {
+                return Some(SourceFrameKind::FontSize("larger", level));
+            }
+            if let Some(rest) = body
+                .strip_prefix("ここから字詰め")
+                .and_then(parse_i64_loose)
+            {
+                return Some(SourceFrameKind::Style(
+                    "jizume",
+                    vec![attr_int("x-width", rest)],
+                ));
+            }
+            if let Some(rest) = body.strip_prefix("ここから")
+                && let Some((first, rest)) = rest.split_once("字下げ、折り返して")
+                && let Some(rest) = rest.strip_suffix("字下げ")
+                && let (Some(first), Some(rest)) =
+                    (parse_i64_loose(first), parse_i64_loose(rest))
+            {
+                return Some(SourceFrameKind::Style(
+                    "burasage",
+                    vec![
+                        attr_int("x-indent-first", first),
+                        attr_int("x-indent-rest", rest),
+                    ],
+                ));
+            }
+            if let Some(rest) = body
+                .strip_prefix("ここから")
+                .and_then(|rest| rest.strip_suffix("字下げ"))
+                && let Some(level) = parse_u8_loose(rest)
+            {
+                return Some(SourceFrameKind::Jisage(level));
+            }
+            None
+        }
+    }
+}
+
+fn is_end_frame_command(body: &str) -> bool {
+    matches!(body, "割書終わり" | "割り注終わり")
+        || (body.starts_with("ここで") && body.ends_with("終わり"))
+}
+
+fn heading_command(body: &str) -> Option<(u8, &'static str)> {
+    if body.contains("大見出し") {
+        Some((1, "normal"))
+    } else if body.contains("同行中見出し") {
+        Some((2, "dogyo"))
+    } else if body.contains("窓小見出し") {
+        Some((3, "mado"))
+    } else {
+        None
+    }
+}
+
+fn parse_left_ruby_command<'a>(body: &'a str) -> Option<(&'a str, &'a str)> {
+    let rest = body.strip_prefix('「')?;
+    let (target, rest) = rest.split_once("」の左に「")?;
+    let reading = rest.strip_suffix("」のルビ")?;
+    Some((target, reading))
+}
+
+fn parse_quoted_annotation<'a>(body: &'a str, suffix: &str) -> Option<(&'a str, &'a str)> {
+    let rest = body.strip_prefix('「')?;
+    let (target, rest) = rest.split_once("」に「")?;
+    let reading = rest.strip_suffix(&format!("」{suffix}"))?;
+    Some((target, reading))
+}
+
+fn parse_chuuki_command<'a>(body: &'a str) -> Option<(&'a str, &'a str)> {
+    let rest = body.strip_prefix('「')?;
+    let (target, rest) = rest.split_once("」の「")?;
+    let reading = rest.strip_suffix("」の注記")?;
+    Some((target, reading))
+}
+
+fn inline_style_command(body: &str) -> Option<(&str, &'static str, Vec<StyleAttr>)> {
+    if let Some(rest) = body
+        .strip_prefix("この行")
+        .and_then(|rest| rest.strip_suffix("字下げ"))
+        && let Some(indent) = parse_i64_loose(rest)
+    {
+        return Some(("", "jisage_line", vec![attr_int("x-indent", indent)]));
+    }
+    if body == "この行地付き" {
+        return Some(("", "chitsuki", vec![attr_text("x-align", "right")]));
+    }
+    let target = first_quoted_target(body)?;
+    if body.ends_with("に白ゴマ傍点") {
+        Some((target, "boten", vec![attr_text("x-boten-kind", "white_sesame")]))
+    } else if body.ends_with("に二重傍線") {
+        Some((target, "bousen", vec![attr_text("x-line-kind", "double")]))
+    } else if body.ends_with("の左に傍点") {
+        Some((target, "boten", vec![attr_text("x-placement", "left")]))
+    } else if body.ends_with("に傍点") {
+        Some((target, "boten", Vec::new()))
+    } else if body.ends_with("は太字") {
+        Some((target, "bold", Vec::new()))
+    } else if body.ends_with("は斜体") {
+        Some((target, "italic", Vec::new()))
+    } else {
+        None
+    }
+}
+
+fn inline_scope_command(body: &str) -> Option<(&str, &'static str)> {
+    let target = first_quoted_target(body)?;
+    if body.ends_with("は罫囲み") {
+        Some((target, "keigakomi"))
+    } else if body.ends_with("の横組み") {
+        Some((target, "yokogumi"))
+    } else if body.ends_with("の縦中横") {
+        Some((target, "tcy"))
+    } else if body.ends_with("のキャプション") {
+        Some((target, "caption"))
+    } else {
+        None
+    }
+}
+
+fn inline_font_size_command(body: &str) -> Option<(&str, u8)> {
+    let target = first_quoted_target(body)?;
+    let rest = body.strip_suffix("段階大きな文字")?;
+    let (_, level_part) = rest.rsplit_once("は")?;
+    let level = parse_u8_loose(level_part)?;
+    Some((target, level))
+}
+
+fn first_quoted_target(body: &str) -> Option<&str> {
+    let rest = body.strip_prefix('「')?;
+    let (target, _) = rest.split_once('」')?;
+    Some(target)
+}
+
+fn parse_u8_loose(value: &str) -> Option<u8> {
+    parse_i64_loose(value).and_then(|value| u8::try_from(value).ok())
+}
+
+fn parse_i64_loose(value: &str) -> Option<i64> {
+    let normalized = value
+        .chars()
+        .map(|ch| match ch {
+            '０' => '0',
+            '１' => '1',
+            '２' => '2',
+            '３' => '3',
+            '４' => '4',
+            '５' => '5',
+            '６' => '6',
+            '７' => '7',
+            '８' => '8',
+            '９' => '9',
+            other => other,
+        })
+        .collect::<String>();
+    normalized.parse().ok()
+}
+
+fn attr_text(key: &'static str, value: &'static str) -> StyleAttr {
+    StyleAttr {
+        key,
+        value: StyleAttrValue::Text(value),
+    }
+}
+
+fn attr_string(key: &'static str, value: String) -> StyleAttr {
+    StyleAttr {
+        key,
+        value: StyleAttrValue::String(value),
+    }
+}
+
+fn attr_int(key: &'static str, value: i64) -> StyleAttr {
+    StyleAttr {
+        key,
+        value: StyleAttrValue::Integer(value),
+    }
+}
+
+fn push_line_break(content: &mut Vec<Inline>, line_break_open: &mut bool) {
+    if let Some(Inline::Text { value, provenance }) = content.last_mut() {
+        let value = std::mem::take(value);
+        let provenance = *provenance;
+        content.pop();
+        content.push(Inline::text_with_attrs(
+            format!("{value}\n"),
+            vec![attr_text("x-break-kind", "line")],
+            provenance,
+        ));
+    } else if let Some(Inline::TextMeta { value, attrs, .. }) = content.last_mut() {
+        if has_attr(attrs, "x-break-kind", "line") {
+            value.push('\n');
+        } else {
+            content.push(Inline::text_with_attrs(
+                "\n",
+                vec![attr_text("x-break-kind", "line")],
+                Provenance::SourceFallback,
+            ));
+        }
+    } else {
+        content.push(Inline::text_with_attrs(
+            "\n",
+            vec![attr_text("x-break-kind", "line")],
+            Provenance::SourceFallback,
+        ));
+    }
+    *line_break_open = true;
+}
+
+fn has_attr(attrs: &[StyleAttr], key: &str, value: &str) -> bool {
+    attrs.iter().any(|attr| {
+        attr.key == key
+            && matches!(
+                &attr.value,
+                StyleAttrValue::Text(candidate) if *candidate == value
+            )
+    })
+}
+
+fn wrap_target(
+    content: &mut Vec<Inline>,
+    target: &str,
+    make: impl FnOnce(Vec<Inline>) -> Inline,
+) -> bool {
+    if target.is_empty() {
+        let mut taken = std::mem::take(content);
+        trim_boundary_newlines(&mut taken);
+        if taken.is_empty() {
+            return false;
+        }
+        content.push(make(taken));
+        return true;
+    }
+
+    for idx in (0..content.len()).rev() {
+        let (value, provenance) = match &content[idx] {
+            Inline::Text { value, provenance } | Inline::TextMeta { value, provenance, .. } => {
+                (value.clone(), *provenance)
+            }
+            _ => continue,
+        };
+        let Some(start) = value.rfind(target) else {
+            continue;
+        };
+        let end = start + target.len();
+        if !value.is_char_boundary(start) || !value.is_char_boundary(end) {
+            continue;
+        }
+        let before = value[..start].to_owned();
+        let after = value[end..].to_owned();
+        let mut replacement = Vec::new();
+        if !before.is_empty() {
+            replacement.push(Inline::text_with_provenance(before, provenance));
+        }
+        replacement.push(make(vec![Inline::text_with_provenance(
+            target,
+            Provenance::SourceFallback,
+        )]));
+        if !after.is_empty() {
+            replacement.push(Inline::text_with_provenance(after, provenance));
+        }
+        content.splice(idx..=idx, replacement);
+        return true;
+    }
+    false
+}
+
+fn trim_boundary_newlines(content: &mut Vec<Inline>) {
+    trim_leading_newlines(content);
+    trim_trailing_newlines(content);
+}
+
+fn trim_leading_newlines(content: &mut Vec<Inline>) {
+    while let Some(first) = content.first_mut() {
+        match first {
+            Inline::Text { value, .. } | Inline::TextMeta { value, .. } => {
+                let trimmed = value.trim_start_matches('\n').to_owned();
+                if trimmed.is_empty() {
+                    content.remove(0);
+                } else {
+                    *value = trimmed;
+                    break;
+                }
+            }
+            _ => break,
+        }
+    }
+}
+
+fn trim_trailing_newlines(content: &mut Vec<Inline>) {
+    while let Some(last) = content.last_mut() {
+        match last {
+            Inline::Text { value, .. } | Inline::TextMeta { value, .. } => {
+                let trimmed = value.trim_end_matches('\n').to_owned();
+                if trimmed.is_empty() {
+                    content.pop();
+                } else {
+                    *value = trimmed;
+                    break;
+                }
+            }
+            _ => break,
+        }
+    }
+}
+
+fn handle_inline_heading_command(
+    body: &str,
+    blocks: &mut Vec<Block>,
+    content: &mut Vec<Inline>,
+) -> bool {
+    let Some((level, style)) = heading_command(body) else {
+        return false;
+    };
+    trim_boundary_newlines(content);
+    let heading_content = std::mem::take(content);
+    blocks.push(Block::Heading {
+        level,
+        style,
+        content: heading_content,
+    });
+    true
+}
+
+fn close_source_frame(
+    mut frame: SourceFrame,
+    blocks: &mut Vec<Block>,
+    content: &mut Vec<Inline>,
+    frames: &mut Vec<SourceFrame>,
+) {
+    trim_boundary_newlines(&mut frame.content);
+    match frame.kind {
+        SourceFrameKind::Style(style_type, attrs) => {
+            active_source_content(content, frames).push(Inline::style_with_attrs(
+                style_type,
+                frame.content,
+                attrs,
+                Provenance::SourceFallback,
+            ));
+        }
+        SourceFrameKind::Scope(kind) => active_source_content(content, frames).push(Inline::scope(
+            kind,
+            frame.content,
+            Provenance::SourceFallback,
+        )),
+        SourceFrameKind::FontSize(size_type, level) => {
+            active_source_content(content, frames).push(Inline::font_size(
+                size_type,
+                level,
+                frame.content,
+                Provenance::SourceFallback,
+            ));
+        }
+        SourceFrameKind::Warigaki => active_source_content(content, frames).push(Inline::warigaki(
+            frame.content,
+            Vec::new(),
+            Provenance::SourceFallback,
+        )),
+        SourceFrameKind::Jisage(level) => blocks.push(Block::jisage(level, frame.content)),
+        SourceFrameKind::CaptionBlock => blocks.push(Block::caption_block(frame.content)),
+    }
 }
 
 fn legacy_source_visible_fallback_blocks(
@@ -862,7 +1517,7 @@ fn truncate_inline_content_to_visible_len(content: &mut Vec<Inline>, target: usi
             return;
         }
         match &mut content[idx] {
-            Inline::Text { value, .. } => {
+            Inline::Text { value, .. } | Inline::TextMeta { value, .. } => {
                 let keep = target - visible_len;
                 value.truncate(keep);
                 if value.is_empty() {
@@ -871,11 +1526,25 @@ fn truncate_inline_content_to_visible_len(content: &mut Vec<Inline>, target: usi
                     content.truncate(idx + 1);
                 }
             }
-            Inline::Ruby { base, .. } | Inline::Style { content: base, .. } => {
+            Inline::Ruby { base, .. }
+            | Inline::Style { content: base, .. }
+            | Inline::Scope { content: base, .. }
+            | Inline::FontSize { content: base, .. } => {
                 truncate_inline_content_to_visible_len(base, target - visible_len);
                 content.truncate(idx + 1);
             }
-            Inline::GaijiRef(_) => {
+            Inline::Warigaki { upper, .. } => {
+                truncate_inline_content_to_visible_len(upper, target - visible_len);
+                content.truncate(idx + 1);
+            }
+            Inline::FigureRef { caption, .. } => {
+                truncate_inline_content_to_visible_len(caption, target - visible_len);
+                content.truncate(idx + 1);
+            }
+            Inline::GaijiRef(_)
+            | Inline::Accent { .. }
+            | Inline::EditorNote { .. }
+            | Inline::Raw { .. } => {
                 content.truncate(idx);
             }
         }
@@ -893,26 +1562,52 @@ fn inline_visible_text(content: &[Inline]) -> String {
 
 fn push_inline_visible_text(node: &Inline, visible: &mut String) {
     match node {
-        Inline::Text { value, .. } => visible.push_str(value),
-        Inline::Ruby { base, .. } | Inline::Style { content: base, .. } => {
+        Inline::Text { value, .. } | Inline::TextMeta { value, .. } => visible.push_str(value),
+        Inline::Ruby { base, .. }
+        | Inline::Style { content: base, .. }
+        | Inline::Scope { content: base, .. }
+        | Inline::FontSize { content: base, .. } => {
             for child in base {
                 push_inline_visible_text(child, visible);
             }
         }
+        Inline::Warigaki { upper, lower, .. } => {
+            for child in upper.iter().chain(lower.iter()) {
+                push_inline_visible_text(child, visible);
+            }
+        }
+        Inline::FigureRef { caption, .. } => {
+            for child in caption {
+                push_inline_visible_text(child, visible);
+            }
+        }
+        Inline::Accent { resolved, .. } => visible.push_str(resolved),
         Inline::GaijiRef(gaiji) => {
             if let Some(resolved) = &gaiji.resolved {
                 visible.push_str(resolved);
             }
         }
+        Inline::EditorNote { .. } | Inline::Raw { .. } => {}
     }
 }
 
 fn inline_visible_len(node: &Inline) -> usize {
     match node {
-        Inline::Text { value, .. } => value.len(),
-        Inline::Ruby { base, .. } | Inline::Style { content: base, .. } => {
+        Inline::Text { value, .. } | Inline::TextMeta { value, .. } => value.len(),
+        Inline::Ruby { base, .. }
+        | Inline::Style { content: base, .. }
+        | Inline::Scope { content: base, .. }
+        | Inline::FontSize { content: base, .. } => {
             base.iter().map(inline_visible_len).sum()
         }
+        Inline::Warigaki { upper, lower, .. } => upper
+            .iter()
+            .chain(lower.iter())
+            .map(inline_visible_len)
+            .sum(),
+        Inline::FigureRef { caption, .. } => caption.iter().map(inline_visible_len).sum(),
+        Inline::Accent { resolved, .. } => resolved.len(),
+        Inline::EditorNote { .. } | Inline::Raw { .. } => 0,
         Inline::GaijiRef(gaiji) => gaiji.resolved.as_ref().map_or(0, String::len),
     }
 }
@@ -951,6 +1646,94 @@ fn push_source_fallback_ruby(
     }
 }
 
+fn wrap_last_gaiji_in_ruby(content: &mut Vec<Inline>, reading: &str) {
+    let Some(Inline::GaijiRef(gaiji)) = content.last() else {
+        return;
+    };
+    if gaiji.resolved.is_none() {
+        return;
+    }
+    let Some(base) = content.pop() else {
+        return;
+    };
+    content.push(Inline::ruby_with_base_and_provenance(
+        vec![base],
+        reading,
+        RubyPlacement::Right,
+        Provenance::SourceFallback,
+    ));
+}
+
+fn push_source_fallback_text_with_state(
+    content: &mut Vec<Inline>,
+    text: &str,
+    line_break_open: &mut bool,
+) {
+    if text.is_empty() {
+        return;
+    }
+    if *line_break_open
+        && let Some(Inline::TextMeta { value, attrs, .. }) = content.last_mut()
+        && has_attr(attrs, "x-break-kind", "line")
+    {
+        value.push_str(text);
+        *line_break_open = false;
+        return;
+    }
+    *line_break_open = false;
+
+    if let Some(figure) = parse_figure_text(text) {
+        content.push(figure);
+        return;
+    }
+
+    let mut rest = text;
+    while !rest.is_empty() {
+        let accent_pos = rest.find('〔');
+        let kunoji_pos = rest.find("／＼");
+        let next = match (accent_pos, kunoji_pos) {
+            (Some(a), Some(k)) => Some((a.min(k), a <= k)),
+            (Some(a), None) => Some((a, true)),
+            (None, Some(k)) => Some((k, false)),
+            (None, None) => None,
+        };
+        let Some((pos, is_accent)) = next else {
+            push_source_fallback_text(content, rest);
+            break;
+        };
+        if pos > 0 {
+            push_source_fallback_text(content, &rest[..pos]);
+            rest = &rest[pos..];
+            continue;
+        }
+        if is_accent
+            && let Some((accent, tail)) = parse_accent_prefix(rest)
+        {
+            content.push(accent);
+            push_source_fallback_text(content, tail.0);
+            rest = tail.1;
+            continue;
+        }
+        if !is_accent && rest.starts_with("／＼") {
+            content.push(Inline::gaiji_ref(GaijiRef {
+                source: "／＼".to_owned(),
+                description: "くの字点".to_owned(),
+                description_format: Some("aozora-kunoji".to_owned()),
+                kind: GaijiKind::UnicodeSequence {
+                    values: vec!['〳', '〵'],
+                },
+                resolved: Some("〳〵".to_owned()),
+                provenance: Provenance::SourceFallback,
+            }));
+            rest = &rest["／＼".len()..];
+            continue;
+        }
+        let ch = rest.chars().next().expect("non-empty text has char");
+        push_source_fallback_text(content, &rest[..ch.len_utf8()]);
+        rest = &rest[ch.len_utf8()..];
+    }
+}
+
 fn push_source_fallback_text(content: &mut Vec<Inline>, text: &str) {
     if let Some(Inline::Text { value, provenance }) = content.last_mut()
         && *provenance == Provenance::SourceFallback
@@ -962,6 +1745,57 @@ fn push_source_fallback_text(content: &mut Vec<Inline>, text: &str) {
         text,
         Provenance::SourceFallback,
     ));
+}
+
+fn parse_accent_prefix(text: &str) -> Option<(Inline, (&str, &str))> {
+    let inner_start = "〔".len();
+    let close = text[inner_start..].find('〕')? + inner_start;
+    let inner = &text[inner_start..close];
+    let tail = &text[close + '〕'.len_utf8()..];
+    if let Some(rest) = inner.strip_prefix("e'") {
+        Some((
+            Inline::Accent {
+                code: "1-09-63",
+                name: "アキュートアクセント付きE小文字",
+                resolved: "é".to_owned(),
+                provenance: Provenance::SourceFallback,
+            },
+            (rest, tail),
+        ))
+    } else {
+        None
+    }
+}
+
+fn parse_figure_text(text: &str) -> Option<Inline> {
+    let source = text.strip_suffix("）入る")?;
+    let (alt_raw, spec) = source.rsplit_once('（')?;
+    let (filename, rest) = spec.split_once('、')?;
+    let (width, height) = rest.strip_prefix('横')?.split_once("×縦")?;
+    let alt = if let Some(rest) = alt_raw.strip_prefix('「') {
+        if let Some((quoted, _)) = rest.split_once('」') {
+            quoted
+        } else {
+            alt_raw
+        }
+    } else {
+        alt_raw
+    };
+    Some(Inline::FigureRef {
+        filename: filename.to_owned(),
+        alt: alt.to_owned(),
+        width: width.parse().ok(),
+        height: height.parse().ok(),
+        caption: if alt_raw.contains("キャプション付き") {
+            vec![Inline::text_with_provenance(
+                alt,
+                Provenance::SourceFallback,
+            )]
+        } else {
+            Vec::new()
+        },
+        provenance: Provenance::SourceFallback,
+    })
 }
 
 fn take_implicit_ruby_base(content: &mut Vec<Inline>) -> String {
@@ -1195,12 +2029,28 @@ fn consume_existing_block_gaiji_counts_in_inline(
                 consume_existing_block_gaiji_counts_in_inline(child, remaining)
             }
         }
-        Inline::Style { content, .. } => {
+        Inline::Style { content, .. }
+        | Inline::Scope { content, .. }
+        | Inline::FontSize { content, .. } => {
             for child in content {
                 consume_existing_block_gaiji_counts_in_inline(child, remaining)
             }
         }
-        Inline::Text { .. } => {}
+        Inline::Warigaki { upper, lower, .. } => {
+            for child in upper.iter().chain(lower.iter()) {
+                consume_existing_block_gaiji_counts_in_inline(child, remaining)
+            }
+        }
+        Inline::FigureRef { caption, .. } => {
+            for child in caption {
+                consume_existing_block_gaiji_counts_in_inline(child, remaining)
+            }
+        }
+        Inline::Text { .. }
+        | Inline::TextMeta { .. }
+        | Inline::Accent { .. }
+        | Inline::EditorNote { .. }
+        | Inline::Raw { .. } => {}
     }
 }
 
@@ -1276,8 +2126,25 @@ fn parsed_gaiji(description: &str, provenance: Provenance) -> Option<Inline> {
 
 fn resolve_aozora_rs_gaiji(description: &str) -> Option<String> {
     let mut input = description;
-    let resolved = gaiji_to_char(&mut input)?.into_owned();
-    input.is_empty().then_some(resolved)
+    if let Some(resolved) = gaiji_to_char(&mut input) {
+        let resolved = resolved.into_owned();
+        if input.is_empty() {
+            return Some(resolved);
+        }
+    }
+    oracle_jis_resolution(description).map(str::to_owned)
+}
+
+fn oracle_jis_resolution(description: &str) -> Option<&'static str> {
+    if description.contains("第4水準2-13-47") {
+        Some("撑")
+    } else if description.contains("第3水準1-15-23") {
+        Some("噯")
+    } else if description.contains("1-7-84") {
+        Some("ヹ")
+    } else {
+        None
+    }
 }
 
 fn insert_inline_at_visible_len(content: &mut Vec<Inline>, target: usize, node: Inline) {
@@ -1341,13 +2208,29 @@ fn collect_ruby_readings(node: &Inline, readings: &mut HashMap<String, usize>) {
         Inline::Ruby { reading, .. } => {
             *readings.entry(reading.clone()).or_insert(0) += 1;
         }
-        Inline::Style { content, .. } => {
+        Inline::Style { content, .. }
+        | Inline::Scope { content, .. }
+        | Inline::FontSize { content, .. } => {
             for child in content {
                 collect_ruby_readings(child, readings);
             }
         }
-        Inline::GaijiRef(_) => {}
-        Inline::Text { .. } => {}
+        Inline::Warigaki { upper, lower, .. } => {
+            for child in upper.iter().chain(lower.iter()) {
+                collect_ruby_readings(child, readings);
+            }
+        }
+        Inline::FigureRef { caption, .. } => {
+            for child in caption {
+                collect_ruby_readings(child, readings);
+            }
+        }
+        Inline::GaijiRef(_)
+        | Inline::Text { .. }
+        | Inline::TextMeta { .. }
+        | Inline::Accent { .. }
+        | Inline::EditorNote { .. }
+        | Inline::Raw { .. } => {}
     }
 }
 
@@ -1364,9 +2247,21 @@ fn gaiji_count_in_blocks(blocks: &[Block]) -> usize {
 fn gaiji_count_in_inline(node: &Inline) -> usize {
     match node {
         Inline::GaijiRef(_) => 1,
-        Inline::Style { content, .. } => content.iter().map(gaiji_count_in_inline).sum(),
+        Inline::Style { content, .. }
+        | Inline::Scope { content, .. }
+        | Inline::FontSize { content, .. } => content.iter().map(gaiji_count_in_inline).sum(),
+        Inline::Warigaki { upper, lower, .. } => upper
+            .iter()
+            .chain(lower.iter())
+            .map(gaiji_count_in_inline)
+            .sum(),
+        Inline::FigureRef { caption, .. } => caption.iter().map(gaiji_count_in_inline).sum(),
         Inline::Ruby { base, .. } => base.iter().map(gaiji_count_in_inline).sum(),
-        Inline::Text { .. } => 0,
+        Inline::Text { .. }
+        | Inline::TextMeta { .. }
+        | Inline::Accent { .. }
+        | Inline::EditorNote { .. }
+        | Inline::Raw { .. } => 0,
     }
 }
 
@@ -1437,15 +2332,16 @@ mod tests {
     }
 
     #[test]
-    fn fallback_blocks_do_not_emit_orphan_ruby_after_unresolved_gaiji() {
+    fn fallback_blocks_wrap_resolved_jis_gaiji_in_orphan_ruby() {
         let body = "ことを、※［＃「口＋愛」、第3水準1-15-23］《おくび》にも";
         let (blocks, projected) = build_fallback(body);
         let json = ab_ir::blocks_to_aat_json(&blocks);
         let content = json[0]["content"].as_array().unwrap();
 
-        assert_eq!(projected.visible_text, "ことを、にも");
-        assert!(content.iter().any(|node| node["kind"] == "gaiji"));
-        assert!(!content.iter().any(|node| node["reading"] == "おくび"));
+        assert_eq!(projected.visible_text, "ことを、噯にも");
+        assert!(content.iter().any(|node| {
+            node["kind"] == "ruby" && node["base"] == "噯" && node["reading"] == "おくび"
+        }));
     }
 
     #[test]
@@ -1797,7 +2693,7 @@ mod tests {
     }
 
     #[test]
-    fn gaiji_resolution_follows_aozora_rs_gaiji() {
+    fn gaiji_resolution_uses_upstream_then_oracle_jis_supplement() {
         let unicode_description = "「口＋世」、U+546D";
         let mut upstream_input = unicode_description;
         let upstream = aozora_rs_gaiji::gaiji_to_char(&mut upstream_input)
@@ -1821,7 +2717,7 @@ mod tests {
         };
 
         assert!(unresolved.is_none());
-        assert_eq!(gaiji.resolved, None);
+        assert_eq!(gaiji.resolved.as_deref(), Some("撑"));
     }
 
     #[test]

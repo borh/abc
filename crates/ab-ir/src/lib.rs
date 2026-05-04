@@ -20,6 +20,9 @@ pub enum Block {
         level: u8,
         content: Vec<Inline>,
     },
+    CaptionBlock {
+        content: Vec<Inline>,
+    },
     /// Split-line note (warichu / warigaki). The whole inline run is treated
     /// as the upper column; the lower column is unused for the single-line
     /// form but the structure leaves room for splitting later.
@@ -66,14 +69,73 @@ pub enum Inline {
         base: Vec<Inline>,
         reading: String,
         placement: RubyPlacement,
+        attrs: Vec<StyleAttr>,
+        provenance: Provenance,
+    },
+    TextMeta {
+        value: String,
+        attrs: Vec<StyleAttr>,
         provenance: Provenance,
     },
     GaijiRef(GaijiRef),
     Style {
         style_type: &'static str,
         content: Vec<Inline>,
+        attrs: Vec<StyleAttr>,
         provenance: Provenance,
     },
+    Scope {
+        kind: &'static str,
+        content: Vec<Inline>,
+        provenance: Provenance,
+    },
+    FontSize {
+        size_type: &'static str,
+        level: u8,
+        content: Vec<Inline>,
+        provenance: Provenance,
+    },
+    Warigaki {
+        upper: Vec<Inline>,
+        lower: Vec<Inline>,
+        provenance: Provenance,
+    },
+    FigureRef {
+        filename: String,
+        alt: String,
+        width: Option<u64>,
+        height: Option<u64>,
+        caption: Vec<Inline>,
+        provenance: Provenance,
+    },
+    Accent {
+        code: &'static str,
+        name: &'static str,
+        resolved: String,
+        provenance: Provenance,
+    },
+    EditorNote {
+        note: String,
+        provenance: Provenance,
+    },
+    Raw {
+        source: String,
+        attrs: Vec<StyleAttr>,
+        provenance: Provenance,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StyleAttr {
+    pub key: &'static str,
+    pub value: StyleAttrValue,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum StyleAttrValue {
+    Text(&'static str),
+    String(String),
+    Integer(i64),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -190,6 +252,7 @@ impl Inline {
             base: vec![Self::text(base)],
             reading: reading.into(),
             placement: RubyPlacement::Right,
+            attrs: Vec::new(),
             provenance,
         }
     }
@@ -212,6 +275,35 @@ impl Inline {
             base,
             reading: reading.into(),
             placement,
+            attrs: Vec::new(),
+            provenance,
+        }
+    }
+
+    pub fn ruby_with_attrs(
+        base: Vec<Inline>,
+        reading: impl Into<String>,
+        placement: RubyPlacement,
+        attrs: Vec<StyleAttr>,
+        provenance: Provenance,
+    ) -> Self {
+        Self::Ruby {
+            base,
+            reading: reading.into(),
+            placement,
+            attrs,
+            provenance,
+        }
+    }
+
+    pub fn text_with_attrs(
+        value: impl Into<String>,
+        attrs: Vec<StyleAttr>,
+        provenance: Provenance,
+    ) -> Self {
+        Self::TextMeta {
+            value: value.into(),
+            attrs,
             provenance,
         }
     }
@@ -273,7 +365,52 @@ impl Inline {
         Self::Style {
             style_type,
             content,
+            attrs: Vec::new(),
             provenance: Provenance::Parser,
+        }
+    }
+
+    pub fn style_with_attrs(
+        style_type: &'static str,
+        content: Vec<Inline>,
+        attrs: Vec<StyleAttr>,
+        provenance: Provenance,
+    ) -> Self {
+        Self::Style {
+            style_type,
+            content,
+            attrs,
+            provenance,
+        }
+    }
+
+    pub fn scope(kind: &'static str, content: Vec<Inline>, provenance: Provenance) -> Self {
+        Self::Scope {
+            kind,
+            content,
+            provenance,
+        }
+    }
+
+    pub fn font_size(
+        size_type: &'static str,
+        level: u8,
+        content: Vec<Inline>,
+        provenance: Provenance,
+    ) -> Self {
+        Self::FontSize {
+            size_type,
+            level,
+            content,
+            provenance,
+        }
+    }
+
+    pub fn warigaki(upper: Vec<Inline>, lower: Vec<Inline>, provenance: Provenance) -> Self {
+        Self::Warigaki {
+            upper,
+            lower,
+            provenance,
         }
     }
 }
@@ -285,6 +422,10 @@ impl Block {
 
     pub fn warichu(content: Vec<Inline>) -> Self {
         Self::Warichu { content }
+    }
+
+    pub fn caption_block(content: Vec<Inline>) -> Self {
+        Self::CaptionBlock { content }
     }
 
     pub fn figure(source: impl Into<String>, content: Vec<Inline>) -> Self {
@@ -335,6 +476,13 @@ pub fn blocks_to_aat_projection(blocks: &[Block]) -> AatProjection {
             Block::Jisage { level, content } => json!({
                 "kind": "jisage_block",
                 "x-indent": level,
+                "children": [{
+                    "kind": "paragraph",
+                    "content": inline_to_aat_json(content, &mut warnings)
+                }]
+            }),
+            Block::CaptionBlock { content } => json!({
+                "kind": "caption_block",
                 "children": [{
                     "kind": "paragraph",
                     "content": inline_to_aat_json(content, &mut warnings)
@@ -396,6 +544,7 @@ fn inline_node_to_aat_json(
     warnings: &mut Vec<ProjectionWarning>,
 ) -> Vec<serde_json::Value> {
     match node {
+        Inline::Text { value, .. } if value.is_empty() => Vec::new(),
         Inline::Ruby { base, reading, .. } if contains_unresolved_gaiji(base) => {
             warnings.push(ProjectionWarning {
                 syntax_id: "gaiji_ruby.unresolved_base",
@@ -409,18 +558,33 @@ fn inline_node_to_aat_json(
             base,
             reading,
             placement,
+            attrs,
             provenance,
             ..
         } => vec![with_provenance(
-            json!({
-                "kind": "ruby",
-                "base": inline_visible_text(base),
-                "reading": reading,
-                "direction": placement.as_str(),
-            }),
+            style_json_with_attrs(
+                json!({
+                    "kind": "ruby",
+                    "base": inline_visible_text(base),
+                    "reading": reading,
+                    "direction": placement.as_str(),
+                    "base_content": inline_to_aat_json_without_warnings(base),
+                }),
+                attrs,
+            ),
             *provenance,
         )],
-        Inline::Text { .. } | Inline::GaijiRef(_) | Inline::Style { .. } => {
+        Inline::Text { .. }
+        | Inline::TextMeta { .. }
+        | Inline::GaijiRef(_)
+        | Inline::Style { .. }
+        | Inline::Scope { .. }
+        | Inline::FontSize { .. }
+        | Inline::Warigaki { .. }
+        | Inline::FigureRef { .. }
+        | Inline::Accent { .. }
+        | Inline::EditorNote { .. }
+        | Inline::Raw { .. } => {
             vec![inline_node_to_aat_json_without_warnings(node)]
         }
     }
@@ -438,44 +602,172 @@ fn inline_node_to_aat_json_without_warnings(node: &Inline) -> serde_json::Value 
         Inline::Text { value, provenance } => {
             with_provenance(json!({ "kind": "text", "value": value }), *provenance)
         }
+        Inline::TextMeta {
+            value,
+            attrs,
+            provenance,
+        } => with_provenance(
+            style_json_with_attrs(json!({ "kind": "text", "value": value }), attrs),
+            *provenance,
+        ),
         Inline::Ruby {
             base,
             reading,
             placement,
+            attrs,
             provenance,
             ..
         } => with_provenance(
-            json!({
-                "kind": "ruby",
-                "base": inline_visible_text(base),
-                "reading": reading,
-                "direction": placement.as_str(),
-            }),
+            style_json_with_attrs(
+                json!({
+                    "kind": "ruby",
+                    "base": inline_visible_text(base),
+                    "reading": reading,
+                    "direction": placement.as_str(),
+                    "base_content": inline_to_aat_json_without_warnings(base),
+                }),
+                attrs,
+            ),
             *provenance,
         ),
         Inline::GaijiRef(gaiji) => gaiji_to_aat_json(gaiji),
         Inline::Style {
             style_type,
             content,
+            attrs,
+            provenance,
+        } => with_provenance(
+            style_json_with_attrs(
+                json!({
+                    "kind": "style",
+                    "style_type": style_type,
+                    "content": inline_to_aat_json_without_warnings(content)
+                }),
+                attrs,
+            ),
+            *provenance,
+        ),
+        Inline::Scope {
+            kind,
+            content,
             provenance,
         } => with_provenance(
             json!({
-                "kind": "style",
-                "style_type": style_type,
+                "kind": kind,
                 "content": inline_to_aat_json_without_warnings(content)
             }),
+            *provenance,
+        ),
+        Inline::FontSize {
+            size_type,
+            level,
+            content,
+            provenance,
+        } => with_provenance(
+            json!({
+                "kind": "font_size",
+                "size_type": size_type,
+                "level": level,
+                "content": inline_to_aat_json_without_warnings(content)
+            }),
+            *provenance,
+        ),
+        Inline::Warigaki {
+            upper,
+            lower,
+            provenance,
+        } => with_provenance(
+            json!({
+                "kind": "warigaki",
+                "upper": inline_to_aat_json_without_warnings(upper),
+                "lower": inline_to_aat_json_without_warnings(lower),
+            }),
+            *provenance,
+        ),
+        Inline::FigureRef {
+            filename,
+            alt,
+            width,
+            height,
+            caption,
+            provenance,
+        } => {
+            let mut value = json!({
+                "kind": "figure",
+                "filename": filename,
+                "alt": alt,
+                "css_class": "",
+                "caption": inline_to_aat_json_without_warnings(caption)
+            });
+            if let Some(width) = width {
+                value["width"] = json!(width);
+            }
+            if let Some(height) = height {
+                value["height"] = json!(height);
+            }
+            with_provenance(value, *provenance)
+        }
+        Inline::Accent {
+            code,
+            name,
+            resolved,
+            provenance,
+        } => with_provenance(
+            json!({
+                "kind": "accent",
+                "code": code,
+                "name": name,
+                "resolved": resolved
+            }),
+            *provenance,
+        ),
+        Inline::EditorNote { note, provenance } => with_provenance(
+            json!({
+                "kind": "text",
+                "value": "",
+                "x-editor-note": note
+            }),
+            *provenance,
+        ),
+        Inline::Raw {
+            source,
+            attrs,
+            provenance,
+        } => with_provenance(
+            style_json_with_attrs(
+                json!({
+                    "kind": "raw",
+                    "source": source
+                }),
+                attrs,
+            ),
             *provenance,
         ),
     }
 }
 
+fn style_json_with_attrs(mut value: serde_json::Value, attrs: &[StyleAttr]) -> serde_json::Value {
+    for attr in attrs {
+        value[attr.key] = match &attr.value {
+            StyleAttrValue::Text(value) => json!(value),
+            StyleAttrValue::String(value) => json!(value),
+            StyleAttrValue::Integer(value) => json!(value),
+        };
+    }
+    value
+}
+
 fn gaiji_to_aat_json(gaiji: &GaijiRef) -> serde_json::Value {
+    let resolved_has_visible_value = gaiji
+        .resolved
+        .as_deref()
+        .is_some_and(|value| !value.is_empty());
     let mut value = json!({
         "kind": "gaiji",
         "description": gaiji.description,
         "resolved": gaiji.resolved,
-        "jis_code": null,
-        "unresolved_reason": if gaiji.resolved.is_some() { None } else { Some("unresolved") }
+        "jis_code": gaiji_jis_code(gaiji),
+        "unresolved_reason": if resolved_has_visible_value { None } else { Some("unresolved") }
     });
     if let Some(format) = &gaiji.description_format {
         value["x-description-format"] = serde_json::Value::String(format.clone());
@@ -483,18 +775,45 @@ fn gaiji_to_aat_json(gaiji: &GaijiRef) -> serde_json::Value {
     with_provenance(value, gaiji.provenance)
 }
 
+fn gaiji_jis_code(gaiji: &GaijiRef) -> Option<String> {
+    match gaiji.kind {
+        GaijiKind::JisCode {
+            plane: Some(plane),
+            row,
+            cell,
+        } => Some(format!("{plane}-{row}-{cell}")),
+        GaijiKind::JisCode {
+            plane: None,
+            row,
+            cell,
+        } => Some(format!("{row}-{cell}")),
+        GaijiKind::JisLevel { level, row, cell } => Some(format!("{level}-{row}-{cell}")),
+        _ => None,
+    }
+}
+
 fn contains_unresolved_gaiji(content: &[Inline]) -> bool {
     content.iter().any(|node| match node {
         Inline::GaijiRef(gaiji) => gaiji.resolved.is_none(),
         Inline::Ruby { base, .. } => contains_unresolved_gaiji(base),
-        Inline::Style { content, .. } => contains_unresolved_gaiji(content),
-        Inline::Text { .. } => false,
+        Inline::Style { content, .. }
+        | Inline::Scope { content, .. }
+        | Inline::FontSize { content, .. } => contains_unresolved_gaiji(content),
+        Inline::Warigaki { upper, lower, .. } => {
+            contains_unresolved_gaiji(upper) || contains_unresolved_gaiji(lower)
+        }
+        Inline::FigureRef { caption, .. } => contains_unresolved_gaiji(caption),
+        Inline::Text { .. }
+        | Inline::TextMeta { .. }
+        | Inline::Accent { .. }
+        | Inline::EditorNote { .. }
+        | Inline::Raw { .. } => false,
     })
 }
 
 fn collect_visible(value: &Inline, out: &mut String) {
     match value {
-        Inline::Text { value, .. } => out.push_str(value),
+        Inline::Text { value, .. } | Inline::TextMeta { value, .. } => out.push_str(value),
         Inline::Ruby { base, .. } => {
             for child in base {
                 collect_visible(child, out);
@@ -505,11 +824,25 @@ fn collect_visible(value: &Inline, out: &mut String) {
                 out.push_str(resolved);
             }
         }
-        Inline::Style { content, .. } => {
+        Inline::Style { content, .. }
+        | Inline::Scope { content, .. }
+        | Inline::FontSize { content, .. } => {
             for child in content {
                 collect_visible(child, out);
             }
         }
+        Inline::Warigaki { upper, lower, .. } => {
+            for child in upper.iter().chain(lower.iter()) {
+                collect_visible(child, out);
+            }
+        }
+        Inline::FigureRef { caption, .. } => {
+            for child in caption {
+                collect_visible(child, out);
+            }
+        }
+        Inline::Accent { resolved, .. } => out.push_str(resolved),
+        Inline::EditorNote { .. } | Inline::Raw { .. } => {}
     }
 }
 
@@ -530,12 +863,23 @@ fn collect_provenance(value: &Inline, counts: &mut ProvenanceCounts) {
         Provenance::SourceSupplement => counts.source_supplement += 1,
         Provenance::SourceFallback => counts.source_fallback += 1,
     }
-    if let Inline::Style { content, .. } = value {
+    if let Inline::Style { content, .. }
+    | Inline::Scope { content, .. }
+    | Inline::FontSize { content, .. } = value
+    {
         for child in content {
             collect_provenance(child, counts);
         }
     } else if let Inline::Ruby { base, .. } = value {
         for child in base {
+            collect_provenance(child, counts);
+        }
+    } else if let Inline::FigureRef { caption, .. } = value {
+        for child in caption {
+            collect_provenance(child, counts);
+        }
+    } else if let Inline::Warigaki { upper, lower, .. } = value {
+        for child in upper.iter().chain(lower.iter()) {
             collect_provenance(child, counts);
         }
     }
@@ -544,9 +888,17 @@ fn collect_provenance(value: &Inline, counts: &mut ProvenanceCounts) {
 fn inline_provenance(value: &Inline) -> Provenance {
     match value {
         Inline::Text { provenance, .. }
+        | Inline::TextMeta { provenance, .. }
         | Inline::Ruby { provenance, .. }
         | Inline::GaijiRef(GaijiRef { provenance, .. })
-        | Inline::Style { provenance, .. } => *provenance,
+        | Inline::Style { provenance, .. }
+        | Inline::Scope { provenance, .. }
+        | Inline::FontSize { provenance, .. }
+        | Inline::Warigaki { provenance, .. }
+        | Inline::FigureRef { provenance, .. }
+        | Inline::Accent { provenance, .. }
+        | Inline::EditorNote { provenance, .. }
+        | Inline::Raw { provenance, .. } => *provenance,
     }
 }
 
@@ -590,6 +942,7 @@ pub fn block_content(block: &Block) -> &[Inline] {
         Block::Paragraph { content }
         | Block::Heading { content, .. }
         | Block::Jisage { content, .. }
+        | Block::CaptionBlock { content }
         | Block::Warichu { content }
         | Block::Figure { content, .. }
         | Block::Break { content, .. } => content,
@@ -601,6 +954,7 @@ pub fn block_content_mut(block: &mut Block) -> &mut Vec<Inline> {
         Block::Paragraph { content }
         | Block::Heading { content, .. }
         | Block::Jisage { content, .. }
+        | Block::CaptionBlock { content }
         | Block::Warichu { content }
         | Block::Figure { content, .. }
         | Block::Break { content, .. } => content,

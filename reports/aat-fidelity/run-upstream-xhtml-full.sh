@@ -292,6 +292,13 @@ PY
   --out-dir "$out_dir/triage-report" \
   --limit "$triage_limit"
 
+"${loader_env[@]}" uv run --isolated --no-project \
+  --with 'duckdb>=1.1' \
+  "$repo_root/reports/aat-fidelity/classify-xhtml-adapter-errors.py" \
+  --db "$db_path" \
+  --report-id "$report_id" \
+  --out-dir "$out_dir/adapter-error-report"
+
 printf 'card_urls=%s\n' "$card_urls"
 printf 'manifest=%s\n' "$manifest"
 printf 'valid_manifest=%s\n' "$valid_manifest"
@@ -301,3 +308,4 @@ printf 'db_path=%s\n' "$db_path"
 printf 'summary=%s\n' "$out_dir/observations/summary.csv"
 printf 'status_summary=%s\n' "$out_dir/observations/status-summary.csv"
 printf 'triage_report=%s\n' "$out_dir/triage-report/index.md"
+printf 'adapter_error_report=%s\n' "$out_dir/adapter-error-report/index.md"

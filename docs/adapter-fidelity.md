@@ -65,7 +65,9 @@ equality, 2,179 normalized `main_text` mismatches, 58 local adapter aborts,
 The run is reproducible with
 `reports/aat-fidelity/run-upstream-xhtml-full.sh`; see
 `reports/aat-fidelity/upstream-xhtml-full-summary.md` for the command and
-current triage.
+current triage. Adapter-abort payloads are classified by
+`reports/aat-fidelity/classify-xhtml-adapter-errors.py` and written under
+`/db/ab-validator/aat-fidelity/upstream-xhtml-full/adapter-error-report/`.
 
 The 58 local adapter aborts are classified as `local_adapter_error` because the
 local adapter wrote AAT-style JSON failure payloads after the wrapped

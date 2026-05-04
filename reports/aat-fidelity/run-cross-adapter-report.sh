@@ -67,11 +67,29 @@ fi
   --db "$db_path" \
   --report-id cross-adapter
 
+summary_args=(
+  --report "$report_json"
+  --oracle data/aat-oracle-cases.toml
+)
+xhtml_report_id="${AB_AAT_FIDELITY_XHTML_REPORT_ID:-upstream-xhtml-full}"
+if "$duckdb_bin" -readonly -csv -noheader "$db_path" "
+  SELECT count(*)
+  FROM information_schema.tables
+  WHERE table_name = 'fidelity_xhtml_observations'
+" | rg -q '^[1-9][0-9]*$'; then
+  xhtml_rows="$("$duckdb_bin" -readonly -csv -noheader "$db_path" \
+    "SELECT count(*) FROM fidelity_xhtml_observations WHERE report_id = '$xhtml_report_id'")"
+  if [[ "$xhtml_rows" =~ ^[1-9][0-9]*$ ]]; then
+    summary_args+=(--xhtml-db "$db_path" --xhtml-report-id "$xhtml_report_id")
+  fi
+fi
+
 (
   cd "$AB_VALIDATOR_ROOT"
-  python3 reports/aat-fidelity/cross_adapter_summary.py \
-    --report "$report_json" \
-    --oracle data/aat-oracle-cases.toml
+  "${loader_env[@]}" uv run --isolated --no-project \
+    --with 'duckdb>=1.1' \
+    reports/aat-fidelity/cross_adapter_summary.py \
+    "${summary_args[@]}"
 ) > "$summary_md"
 
 printf 'report_json=%s\n' "$report_json"

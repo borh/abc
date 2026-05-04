@@ -10,6 +10,11 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
+try:
+    import duckdb
+except ImportError:  # pragma: no cover - handled by optional CLI branch.
+    duckdb = None
+
 
 def load_cases(path: Path) -> dict[str, dict[str, Any]]:
     data = tomllib.loads(path.read_text())
@@ -48,7 +53,47 @@ def md_table(headers: list[str], rows: list[list[Any]]) -> list[str]:
     return out
 
 
-def render(report_path: Path, oracle_path: Path) -> str:
+def xhtml_evidence_rows(db_path: Path, report_id: str) -> list[list[Any]]:
+    if duckdb is None:
+        raise RuntimeError("duckdb is required when --xhtml-db is used")
+    conn = duckdb.connect(str(db_path), read_only=True)
+    try:
+        rows = conn.execute(
+            """
+            SELECT
+              'total observations' AS metric,
+              count(*)::UBIGINT AS value
+            FROM fidelity_xhtml_observations
+            WHERE report_id = ?
+            UNION ALL
+            SELECT
+              'rendered-body proxy eligible' AS metric,
+              sum(rendered_body_proxy_eligible)::UBIGINT AS value
+            FROM fidelity_xhtml_observations
+            WHERE report_id = ?
+            UNION ALL
+            SELECT
+              comparison_status AS metric,
+              count(*)::UBIGINT AS value
+            FROM fidelity_xhtml_observations
+            WHERE report_id = ?
+            GROUP BY comparison_status
+            ORDER BY metric
+            """,
+            [report_id, report_id, report_id],
+        ).fetchall()
+    finally:
+        conn.close()
+    return [[metric, value] for metric, value in rows]
+
+
+def render(
+    report_path: Path,
+    oracle_path: Path,
+    *,
+    xhtml_db: Path | None = None,
+    xhtml_report_id: str = "upstream-xhtml-full",
+) -> str:
     report = json.loads(report_path.read_text())
     rows = report.get("rows", [])
     cases = load_cases(oracle_path)
@@ -108,6 +153,19 @@ def render(report_path: Path, oracle_path: Path) -> str:
             family_rows.append([adapter, family, count])
     lines.extend(md_table(["adapter", "case family", "failures"], family_rows))
 
+    if xhtml_db is not None:
+        lines.extend(["", "## XHTML Source Evidence", ""])
+        lines.append(f"XHTML DuckDB: `{xhtml_db}`")
+        lines.append(f"XHTML report id: `{xhtml_report_id}`")
+        lines.append("")
+        lines.extend(md_table(["metric", "value"], xhtml_evidence_rows(xhtml_db, xhtml_report_id)))
+        lines.extend(
+            [
+                "",
+                "- `aozora2html` source-level oracle failures should be interpreted beside rendered-XHTML evidence: `raw_equal` and `main_text_equal` rows support rendered-body proxy claims, while `main_text_mismatch`, adapter errors, and missing-main-text rows require separate triage.",
+            ]
+        )
+
     lines.extend(["", "## Syntax Row Coverage", ""])
     syntax_rows: dict[str, dict[str, Counter[str]]] = defaultdict(lambda: defaultdict(Counter))
     for row in rows:
@@ -159,8 +217,18 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--report", type=Path, required=True)
     parser.add_argument("--oracle", type=Path, default=Path("data/aat-oracle-cases.toml"))
+    parser.add_argument("--xhtml-db", type=Path)
+    parser.add_argument("--xhtml-report-id", default="upstream-xhtml-full")
     args = parser.parse_args()
-    print(render(args.report, args.oracle), end="")
+    print(
+        render(
+            args.report,
+            args.oracle,
+            xhtml_db=args.xhtml_db,
+            xhtml_report_id=args.xhtml_report_id,
+        ),
+        end="",
+    )
     return 0
 
 

@@ -46,6 +46,8 @@ test -s "$out_dir/run/observations/000001_1.local.xhtml"
 test -s "$out_dir/run/observations/summary.csv"
 test -s "$out_dir/run/observations/status-summary.csv"
 test -s "$out_dir/run/triage-report/index.md"
+test -s "$out_dir/run/adapter-error-report/index.md"
+test -s "$out_dir/run/adapter-error-report/adapter-error-classes.csv"
 test -s "$db_path"
 
 duckdb_bin="${DUCKDB:-duckdb}"
@@ -59,5 +61,6 @@ fi
 rg -n '^000001_1,main_text_equal,true,normalized_main_text_equal,ruby$' "$out_dir/query.csv"
 rg -n '^main_text_equal,1$' "$out_dir/run/observations/status-summary.csv"
 rg -n 'Report id: `full-smoke`' "$out_dir/run/triage-report/index.md"
+rg -n 'XHTML Adapter Error Classification' "$out_dir/run/adapter-error-report/index.md"
 
 echo "aat fidelity upstream xhtml full run smoke ok: $out_dir"

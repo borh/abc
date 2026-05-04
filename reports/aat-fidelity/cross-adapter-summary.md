@@ -36,6 +36,24 @@ Oracle cases: `data/aat-oracle-cases.toml`
 | aozora2html | ruby | 4 |
 | aozora2html | warigaki | 1 |
 
+## XHTML Source Evidence
+
+XHTML DuckDB: `/db/ab-validator/aat-fidelity/cross-adapter/fidelity.duckdb`
+XHTML report id: `upstream-xhtml-full`
+
+| metric | value |
+| --- | --- |
+| both_missing_main_text | 1 |
+| local_adapter_error | 58 |
+| main_text_equal | 8910 |
+| main_text_mismatch | 2179 |
+| raw_equal | 6321 |
+| rendered-body proxy eligible | 15231 |
+| total observations | 17601 |
+| upstream_missing_main_text | 132 |
+
+- `aozora2html` source-level oracle failures should be interpreted beside rendered-XHTML evidence: `raw_equal` and `main_text_equal` rows support rendered-body proxy claims, while `main_text_mismatch`, adapter errors, and missing-main-text rows require separate triage.
+
 ## Syntax Row Coverage
 
 | syntax row | adapter | pass | fail |

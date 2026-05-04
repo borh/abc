@@ -30,6 +30,7 @@ The script writes intermediate and generated files under `/db`, including:
 - `observations/summary.csv`
 - `observations/status-summary.csv`
 - `triage-report/index.md`
+- `adapter-error-report/index.md`
 
 Use `--force` only when local XHTML should be regenerated. Without `--force`,
 existing non-empty local XHTML files are reused and the DuckDB load/reporting
@@ -97,14 +98,23 @@ media,main_text_mismatch,90
 ## Local Adapter Errors
 
 The 58 `local_adapter_error` rows are adapter-abort JSON payloads from the
-wrapped Ruby `aozora2html` gem, not malformed local XHTML. The largest class is
-block-stack imbalance in source files:
+wrapped Ruby `aozora2html` gem, not malformed local XHTML. The reproducible
+classification report is generated at
+`/db/ab-validator/aat-fidelity/upstream-xhtml-full/adapter-error-report/`.
+The largest class is block-stack imbalance in source files:
 
 ```csv
-family,count
+error_class,row_count
 jisage_close_without_open,37
-ruby_no_method_error,10
-other_parser_abort,11
+ruby_close_tag_no_method,9
+other_parser_abort,3
+burasage_unclosed_at_eof,2
+jisage_unclosed_at_eof,2
+crlf_required,1
+double_ruby_forbidden,1
+duplicate_author,1
+jizume_unclosed_at_eof,1
+ruby_no_method_error,1
 ```
 
 These rows should remain separate from XHTML comparison failures. They are

@@ -8,6 +8,18 @@ morph_warehouse_aat_dir := env_var_or_default("AB_MORPH_WAREHOUSE_AAT_DIR", "/db
 default:
 	@just --list
 
+aozora2html-rust-build PROFILE="release":
+	@cargo build --manifest-path "{{repo_root}}/adapters/aozora2html/Cargo.toml" --{{PROFILE}}
+
+aozora2html-rust-clean:
+	@rm -rf "{{repo_root}}/adapters/aozora2html/target"
+
+aozora2html-rust-test:
+	@cargo test --manifest-path "{{repo_root}}/adapters/aozora2html/Cargo.toml"
+
+aozora2html-rust-parity:
+	@AOZORA2HTML_PARITY=1 AOZORA2HTML_BACKEND=rust pytest "{{repo_root}}/adapters/aozora2html/tests/test_mapper.py" -vv
+
 clean-db:
 	@echo "cleaning generated artifacts under {{ab_db_root}}"
 	@rm -rf \

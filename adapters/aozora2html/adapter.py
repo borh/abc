@@ -87,6 +87,12 @@ def map_inline(
     if name == "span" and cls.startswith("gaiji"):
         return [map_span_gaiji(node, warnings, summary, ruby_reading)]
 
+    if name in {"div", "em", "span"} and cls:
+        children = walk_inline_children(node, warnings, summary, ruby_reading)
+        decoration = source_derived_decoration_node(cls, children, summary)
+        if decoration is not None:
+            return [decoration]
+
     if name == "em":
         children = walk_inline_children(node, warnings, summary, ruby_reading)
         return [{
@@ -143,6 +149,162 @@ def map_inline(
         "content": children,
         "x-aozora2html-unmapped": name,
     }]
+
+
+def source_derived_decoration_node(
+    cls: str,
+    children: list[dict[str, Any]],
+    summary: dict[str, list[dict[str, Any]]],
+) -> dict[str, Any] | None:
+    tokens = cls.split()
+    if not tokens:
+        return None
+    primary = tokens[0]
+    content = clean_decoration_content(children)
+
+    if primary == "white_sesame_dot":
+        return record_source_derived_decoration(
+            summary,
+            "decoration.boten",
+            {
+                "kind": "style",
+                "style_type": "boten",
+                "content": content,
+                "x-boten-kind": "white_sesame",
+                "x-provenance": "source-derived",
+            },
+        )
+    if primary == "sesame_dot_after":
+        return record_source_derived_decoration(
+            summary,
+            "decoration.direction_override",
+            {
+                "kind": "style",
+                "style_type": "boten",
+                "content": content,
+                "x-placement": "left",
+                "x-provenance": "source-derived",
+            },
+        )
+    if primary == "underline_double":
+        return record_source_derived_decoration(
+            summary,
+            "decoration.bousen",
+            {
+                "kind": "style",
+                "style_type": "bousen",
+                "content": content,
+                "x-line-kind": "double",
+                "x-provenance": "source-derived",
+            },
+        )
+    if primary == "futoji":
+        return record_source_derived_decoration(
+            summary,
+            "decoration.bold_italic",
+            {
+                "kind": "style",
+                "style_type": "bold",
+                "content": content,
+                "x-provenance": "source-derived",
+            },
+        )
+    if primary == "shatai":
+        return record_source_derived_decoration(
+            summary,
+            "decoration.bold_italic",
+            {
+                "kind": "style",
+                "style_type": "italic",
+                "content": content,
+                "x-provenance": "source-derived",
+            },
+        )
+    if primary == "keigakomi":
+        return record_source_derived_decoration(
+            summary,
+            "decoration.keigakomi",
+            {
+                "kind": "keigakomi",
+                "content": content,
+                "x-provenance": "source-derived",
+            },
+        )
+
+    font_size = font_size_from_class(primary, content)
+    if font_size is not None:
+        return record_source_derived_decoration(
+            summary,
+            "decoration.font_size",
+            font_size,
+        )
+    return None
+
+
+def font_size_from_class(
+    cls: str,
+    content: list[dict[str, Any]],
+) -> dict[str, Any] | None:
+    m = re.match(r"^(?P<kind>dai|sho)(?P<level>[0-9]+)$", cls)
+    if not m:
+        return None
+    return {
+        "kind": "font_size",
+        "size_type": "larger" if m.group("kind") == "dai" else "smaller",
+        "level": int(m.group("level")),
+        "content": content,
+        "x-provenance": "source-derived",
+    }
+
+
+def clean_decoration_content(nodes: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    cleaned: list[dict[str, Any]] = []
+    for node in nodes:
+        kind = node.get("kind")
+        if kind == "raw" and node.get("source") == "<br/>":
+            continue
+        if kind == "text":
+            value = node.get("value", "")
+            if "\n" in value:
+                value = value.strip()
+            if value:
+                item = dict(node)
+                item["value"] = value
+                cleaned.append(item)
+            continue
+        if "content" in node:
+            item = dict(node)
+            item["content"] = clean_decoration_content(node.get("content", []))
+            cleaned.append(item)
+        else:
+            cleaned.append(node)
+    return cleaned
+
+
+def record_source_derived_decoration(
+    summary: dict[str, list[dict[str, Any]]],
+    syntax_id: str,
+    node: dict[str, Any],
+) -> dict[str, Any]:
+    value = {
+        "text": inline_visible_text(node.get("content", [])),
+    }
+    for key in (
+        "style_type",
+        "size_type",
+        "level",
+        "x-boten-kind",
+        "x-line-kind",
+        "x-placement",
+    ):
+        if key in node:
+            value[key] = node[key]
+    summary.setdefault(syntax_id, []).append({
+        "kind": node["kind"],
+        "value": value,
+        "provenance": "source-derived",
+    })
+    return node
 
 
 def walk_inline_children(
@@ -765,6 +927,11 @@ def normalize_source_derived_paragraph(
     source_text: str,
 ) -> list[dict[str, Any]]:
     content = block.get("content", [])
+    if any(is_source_derived_decoration(node) for node in content):
+        content = strip_newline_only_text(content)
+        block = dict(block)
+        block["content"] = content
+
     gaiji_content = source_derived_gaiji_content(content, source_text, summary)
     if gaiji_content is not None:
         return [{"kind": "paragraph", "content": gaiji_content}]
@@ -826,6 +993,25 @@ def normalize_source_derived_paragraph(
         }]
 
     return [block]
+
+
+def is_source_derived_decoration(node: dict[str, Any]) -> bool:
+    return (
+        node.get("x-provenance") == "source-derived"
+        and node.get("kind") in {"style", "font_size", "keigakomi"}
+    )
+
+
+def strip_newline_only_text(nodes: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [
+        node
+        for node in nodes
+        if not (
+            node.get("kind") == "text"
+            and "\n" in node.get("value", "")
+            and not node.get("value", "").strip()
+        )
+    ]
 
 
 def source_derived_gaiji_content(

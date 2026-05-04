@@ -391,12 +391,12 @@ evidence = "reports/aat-fidelity/cross-adapter-summary.md"
 [[observation]]
 case_id = "decoration.boten.white_sesame"
 adapter = "aozora2html"
-status = "parsed"
-summary = "aozora2html emits style for decoration.boten.white_sesame; oracle correctness is tracked separately."
+status = "normalised"
+summary = "aozora2html renders white-sesame boten with a parser-specific class; the adapter normalizes it to parser-neutral AAT style metadata."
 selector = "blocks.*.content.*"
 kind = "style"
-fields = { style_type = "white_sesame_dot" }
-evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+fields = { style_type = "boten", x-boten-kind = "white_sesame" }
+evidence = "adapters/aozora2html/adapter.py"
 
 [[observation]]
 case_id = "decoration.bousen.double"
@@ -411,12 +411,12 @@ evidence = "reports/aat-fidelity/cross-adapter-summary.md"
 [[observation]]
 case_id = "decoration.bousen.double"
 adapter = "aozora2html"
-status = "parsed"
-summary = "aozora2html emits style for decoration.bousen.double; oracle correctness is tracked separately."
+status = "normalised"
+summary = "aozora2html renders double bousen with a parser-specific class; the adapter normalizes it to parser-neutral AAT style metadata."
 selector = "blocks.*.content.*"
 kind = "style"
-fields = { style_type = "underline_double" }
-evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+fields = { style_type = "bousen", x-line-kind = "double" }
+evidence = "adapters/aozora2html/adapter.py"
 
 [[observation]]
 case_id = "decoration.bold_italic.block"
@@ -431,22 +431,22 @@ evidence = "reports/aat-fidelity/new-block-cases/decoration.bold_italic.block/re
 [[observation]]
 case_id = "decoration.bold_italic.block"
 adapter = "aozora2html"
-status = "parsed"
-summary = "aozora2html emits paragraph text for block bold/italic; oracle correctness is tracked separately."
-selector = "blocks.*"
-kind = "paragraph"
-fields = {}
-evidence = "reports/aat-fidelity/new-block-cases/decoration.bold_italic.block/report.json"
+status = "normalised"
+summary = "aozora2html renders block bold/italic as classed divs; the adapter normalizes those classes to AAT style scopes."
+selector = "blocks.*.content.*"
+kind = "style"
+fields = { style_type = "bold" }
+evidence = "adapters/aozora2html/adapter.py"
 
 [[observation]]
 case_id = "decoration.bold_italic.both"
 adapter = "aozora2html"
-status = "parsed"
-summary = "aozora2html emits style for decoration.bold_italic.both; oracle correctness is tracked separately."
+status = "normalised"
+summary = "aozora2html renders bold/italic with parser-specific classes; the adapter normalizes them to parser-neutral AAT style scopes."
 selector = "blocks.*.content.*"
 kind = "style"
-fields = { style_type = "futoji" }
-evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+fields = { style_type = "bold" }
+evidence = "adapters/aozora2html/adapter.py"
 
 [[observation]]
 case_id = "decoration.font_size.larger"
@@ -461,12 +461,12 @@ evidence = "reports/aat-fidelity/cross-adapter-summary.md"
 [[observation]]
 case_id = "decoration.font_size.larger"
 adapter = "aozora2html"
-status = "parsed"
-summary = "aozora2html emits style for decoration.font_size.larger; oracle correctness is tracked separately."
+status = "normalised"
+summary = "aozora2html renders inline font size as a parser-specific class; the adapter normalizes it to an AAT font_size node."
 selector = "blocks.*.content.*"
-kind = "style"
-fields = { style_type = "dai2" }
-evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+kind = "font_size"
+fields = { size_type = "larger", level = 2 }
+evidence = "adapters/aozora2html/adapter.py"
 
 [[observation]]
 case_id = "decoration.font_size.block_larger"
@@ -481,12 +481,12 @@ evidence = "reports/aat-fidelity/new-block-cases/decoration.font_size.block_larg
 [[observation]]
 case_id = "decoration.font_size.block_larger"
 adapter = "aozora2html"
-status = "parsed"
-summary = "aozora2html emits paragraph text for block font-size; oracle correctness is tracked separately."
-selector = "blocks.*"
-kind = "paragraph"
-fields = {}
-evidence = "reports/aat-fidelity/new-block-cases/decoration.font_size.block_larger/report.json"
+status = "normalised"
+summary = "aozora2html renders block font size as a classed div; the adapter normalizes it to an AAT font_size node."
+selector = "blocks.*.content.*"
+kind = "font_size"
+fields = { size_type = "larger", level = 2 }
+evidence = "adapters/aozora2html/adapter.py"
 
 [[observation]]
 case_id = "decoration.keigakomi.inline"
@@ -501,12 +501,12 @@ evidence = "reports/aat-fidelity/cross-adapter-summary.md"
 [[observation]]
 case_id = "decoration.keigakomi.inline"
 adapter = "aozora2html"
-status = "parsed"
-summary = "aozora2html emits style for decoration.keigakomi.inline; oracle correctness is tracked separately."
+status = "normalised"
+summary = "aozora2html renders inline keigakomi as a parser-specific style class; the adapter normalizes it to an AAT keigakomi node."
 selector = "blocks.*.content.*"
-kind = "style"
-fields = { style_type = "keigakomi" }
-evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+kind = "keigakomi"
+fields = {}
+evidence = "adapters/aozora2html/adapter.py"
 
 [[observation]]
 case_id = "decoration.direction_override.left_boten"
@@ -521,12 +521,12 @@ evidence = "reports/aat-fidelity/cross-adapter-summary.md"
 [[observation]]
 case_id = "decoration.direction_override.left_boten"
 adapter = "aozora2html"
-status = "parsed"
-summary = "aozora2html emits style for decoration.direction_override.left_boten; oracle correctness is tracked separately."
+status = "normalised"
+summary = "aozora2html renders directional boten with a parser-specific class; the adapter normalizes it to AAT boten placement metadata."
 selector = "blocks.*.content.*"
 kind = "style"
-fields = { style_type = "sesame_dot_after" }
-evidence = "reports/aat-fidelity/cross-adapter-summary.md"
+fields = { style_type = "boten", x-placement = "left" }
+evidence = "adapters/aozora2html/adapter.py"
 
 [[observation]]
 case_id = "indentation.jisage_oneline.two_chars"

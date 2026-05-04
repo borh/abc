@@ -9,13 +9,13 @@ Oracle cases: `data/aat-oracle-cases.toml`
 | --- | --- | --- | --- | --- | --- |
 | aozora-rs | 46 | 46 | 46 | 46 | 0 |
 | aozora2 | 46 | 46 | 46 | 46 | 0 |
-| aozora2html | 46 | 46 | 46 | 14 | 32 |
+| aozora2html | 46 | 46 | 46 | 22 | 24 |
 
 ## Failure Buckets
 
 | adapter | bucket | count |
 | --- | --- | --- |
-| aozora2html | faithful-rendered-output-vs-oracle | 32 |
+| aozora2html | faithful-rendered-output-vs-oracle | 24 |
 
 ## Failure Families
 
@@ -24,7 +24,6 @@ Oracle cases: `data/aat-oracle-cases.toml`
 | aozora2html | accent | 1 |
 | aozora2html | annotation | 2 |
 | aozora2html | caption | 1 |
-| aozora2html | decoration | 8 |
 | aozora2html | editor_note | 1 |
 | aozora2html | emphasis | 1 |
 | aozora2html | gaiji | 1 |
@@ -81,22 +80,22 @@ XHTML report id: `upstream-xhtml-full`
 | caption.inline | aozora2html | 1 | 0 |
 | decoration.bold_italic | aozora-rs | 2 | 0 |
 | decoration.bold_italic | aozora2 | 2 | 0 |
-| decoration.bold_italic | aozora2html | 0 | 2 |
+| decoration.bold_italic | aozora2html | 2 | 0 |
 | decoration.boten | aozora-rs | 1 | 0 |
 | decoration.boten | aozora2 | 1 | 0 |
-| decoration.boten | aozora2html | 0 | 1 |
+| decoration.boten | aozora2html | 1 | 0 |
 | decoration.bousen | aozora-rs | 1 | 0 |
 | decoration.bousen | aozora2 | 1 | 0 |
-| decoration.bousen | aozora2html | 0 | 1 |
+| decoration.bousen | aozora2html | 1 | 0 |
 | decoration.direction_override | aozora-rs | 1 | 0 |
 | decoration.direction_override | aozora2 | 1 | 0 |
-| decoration.direction_override | aozora2html | 0 | 1 |
+| decoration.direction_override | aozora2html | 1 | 0 |
 | decoration.font_size | aozora-rs | 2 | 0 |
 | decoration.font_size | aozora2 | 2 | 0 |
-| decoration.font_size | aozora2html | 0 | 2 |
+| decoration.font_size | aozora2html | 2 | 0 |
 | decoration.keigakomi | aozora-rs | 1 | 0 |
 | decoration.keigakomi | aozora2 | 1 | 0 |
-| decoration.keigakomi | aozora2html | 0 | 1 |
+| decoration.keigakomi | aozora2html | 1 | 0 |
 | editor_note.unmapped | aozora-rs | 1 | 0 |
 | editor_note.unmapped | aozora2 | 1 | 0 |
 | editor_note.unmapped | aozora2html | 0 | 1 |
@@ -198,5 +197,5 @@ XHTML report id: `upstream-xhtml-full`
 
 - `aozora-rs` passes schema, upstream-observation, and oracle axes for all reviewed cases.
 - `aozora2` passes schema, upstream-observation, and oracle axes for all reviewed cases.
-- `aozora2html` is fully observed but has 32 oracle divergence(s); failures are now classified as faithful-output vs oracle-correctness work.
+- `aozora2html` is fully observed but has 24 oracle divergence(s); failures are now classified as faithful-output vs oracle-correctness work.
 - Next implementation work should target one remaining adapter/family at a time, using these observations as the pre-fix upstream contract.

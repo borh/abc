@@ -188,6 +188,144 @@ def test_dakuten_katakana_gaiji_image_fallback_is_source_derived() -> None:
     ]
 
 
+@pytest.mark.parametrize(
+    ("source", "expected_content"),
+    [
+        (
+            "胡麻塩おやじ［＃「おやじ」に白ゴマ傍点］",
+            [
+                {"kind": "text", "value": "胡麻塩"},
+                {
+                    "kind": "style",
+                    "style_type": "boten",
+                    "content": [{"kind": "text", "value": "おやじ"}],
+                    "x-boten-kind": "white_sesame",
+                    "x-provenance": "source-derived",
+                },
+            ],
+        ),
+        (
+            "この傍線［＃「傍線」に二重傍線］です。",
+            [
+                {"kind": "text", "value": "この"},
+                {
+                    "kind": "style",
+                    "style_type": "bousen",
+                    "content": [{"kind": "text", "value": "傍線"}],
+                    "x-line-kind": "double",
+                    "x-provenance": "source-derived",
+                },
+                {"kind": "text", "value": "です。"},
+            ],
+        ),
+        (
+            "太字［＃「太字」は太字］と斜体［＃「斜体」は斜体］",
+            [
+                {
+                    "kind": "style",
+                    "style_type": "bold",
+                    "content": [{"kind": "text", "value": "太字"}],
+                    "x-provenance": "source-derived",
+                },
+                {"kind": "text", "value": "と"},
+                {
+                    "kind": "style",
+                    "style_type": "italic",
+                    "content": [{"kind": "text", "value": "斜体"}],
+                    "x-provenance": "source-derived",
+                },
+            ],
+        ),
+        (
+            "大きい［＃「大きい」は2段階大きな文字］",
+            [
+                {
+                    "kind": "font_size",
+                    "size_type": "larger",
+                    "level": 2,
+                    "content": [{"kind": "text", "value": "大きい"}],
+                    "x-provenance": "source-derived",
+                },
+            ],
+        ),
+        (
+            "囲み［＃「囲み」は罫囲み］",
+            [
+                {
+                    "kind": "keigakomi",
+                    "content": [{"kind": "text", "value": "囲み"}],
+                    "x-provenance": "source-derived",
+                },
+            ],
+        ),
+        (
+            "語［＃「語」の左に傍点］",
+            [
+                {
+                    "kind": "style",
+                    "style_type": "boten",
+                    "content": [{"kind": "text", "value": "語"}],
+                    "x-placement": "left",
+                    "x-provenance": "source-derived",
+                },
+            ],
+        ),
+    ],
+)
+def test_inline_decoration_classes_are_source_derived_to_aat_nodes(
+    source: str, expected_content: list[dict],
+) -> None:
+    raw = _run(source.encode("utf-8"), "--mode", "aat")
+    aat = json.loads(raw)
+    jsonschema.validate(aat, SCHEMA)
+
+    assert aat["blocks"] == [{"kind": "paragraph", "content": expected_content}]
+
+
+@pytest.mark.parametrize(
+    ("source", "expected_content"),
+    [
+        (
+            "［＃ここから太字］\n太字\n［＃ここで太字終わり］\n［＃ここから斜体］\n斜体\n［＃ここで斜体終わり］",
+            [
+                {
+                    "kind": "style",
+                    "style_type": "bold",
+                    "content": [{"kind": "text", "value": "太字"}],
+                    "x-provenance": "source-derived",
+                },
+                {
+                    "kind": "style",
+                    "style_type": "italic",
+                    "content": [{"kind": "text", "value": "斜体"}],
+                    "x-provenance": "source-derived",
+                },
+            ],
+        ),
+        (
+            "［＃ここから2段階大きな文字］\n大きい\n［＃ここで大きな文字終わり］",
+            [
+                {
+                    "kind": "font_size",
+                    "size_type": "larger",
+                    "level": 2,
+                    "content": [{"kind": "text", "value": "大きい"}],
+                    "x-provenance": "source-derived",
+                },
+            ],
+        ),
+    ],
+)
+def test_block_decoration_classes_are_source_derived_to_aat_nodes(
+    source: str, expected_content: list[dict],
+) -> None:
+    raw = _run(source.encode("utf-8"), "--mode", "aat")
+    aat = json.loads(raw)
+    jsonschema.validate(aat, SCHEMA)
+
+    assert aat["blocks"] == [{"kind": "paragraph", "content": expected_content}]
+
+
 def test_source_note_image_maps_to_source_derived_figure() -> None:
     raw = _run((FIXTURE_DIR / "figure_image_caption.txt").read_bytes(), "--mode", "aat")
     aat = json.loads(raw)

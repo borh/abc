@@ -97,6 +97,12 @@ Captured during fixture review (`tests/fixtures/*.xhtml`):
   comes through as `<span class="warichu">（上行／下行）</span>`. The adapter
   maps that XHTML class to AAT `warigaki`, splitting on `／` or `/` when
   present and leaving `lower` empty otherwise.
+- **Decoration classes are normalized to AAT terms.** Rendered class names
+  such as `futoji`, `shatai`, `white_sesame_dot`, `underline_double`, `dai2`,
+  and `keigakomi` are parser-specific XHTML vocabulary. The adapter maps the
+  reviewed subset to parser-neutral AAT `style`, `font_size`, or `keigakomi`
+  nodes with `x-provenance = "source-derived"` and keeps the relevant variant
+  metadata (`x-boten-kind`, `x-line-kind`, `x-placement`, `level`).
 - **`gaiji.marker.value.kind` is a Python-side simplification.** Rust's
   `ab-ir` stores the full `format!("{:?}", GaijiKind)` debug string
   (e.g. `"UnicodeCodepoint { value: '吭' }"`,

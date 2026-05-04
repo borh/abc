@@ -115,6 +115,79 @@ def test_warichu_maps_to_warigaki_node() -> None:
     ]
 
 
+def test_jis_gaiji_image_fallback_is_source_derived_from_marker() -> None:
+    source = "耳朶を※［＃「てへん＋掌」、第4水準2-13-47］えて"
+    raw = _run(source.encode("utf-8"), "--mode", "aat")
+    aat = json.loads(raw)
+    jsonschema.validate(aat, SCHEMA)
+
+    assert aat["blocks"] == [
+        {
+            "kind": "paragraph",
+            "content": [
+                {"kind": "text", "value": "耳朶を"},
+                {
+                    "kind": "gaiji",
+                    "description": "「てへん＋掌」、第4水準2-13-47",
+                    "resolved": "撑",
+                    "jis_code": "2-13-47",
+                    "unresolved_reason": None,
+                    "x-provenance": "source-derived",
+                },
+                {"kind": "text", "value": "えて"},
+            ],
+        }
+    ]
+
+
+def test_unicode_gaiji_plain_text_is_source_derived_from_marker() -> None:
+    source = "※［＃「口＋世」、U+546D］は珍しい字。"
+    raw = _run(source.encode("utf-8"), "--mode", "aat")
+    aat = json.loads(raw)
+    jsonschema.validate(aat, SCHEMA)
+
+    assert aat["blocks"] == [
+        {
+            "kind": "paragraph",
+            "content": [
+                {
+                    "kind": "gaiji",
+                    "description": "「口＋世」、U+546D",
+                    "resolved": "呭",
+                    "jis_code": None,
+                    "unresolved_reason": None,
+                    "x-provenance": "source-derived",
+                },
+                {"kind": "text", "value": "は珍しい字。"},
+            ],
+        }
+    ]
+
+
+def test_dakuten_katakana_gaiji_image_fallback_is_source_derived() -> None:
+    source = "※［＃濁点付き片仮名ヱ、1-7-84］エル"
+    raw = _run(source.encode("utf-8"), "--mode", "aat")
+    aat = json.loads(raw)
+    jsonschema.validate(aat, SCHEMA)
+
+    assert aat["blocks"] == [
+        {
+            "kind": "paragraph",
+            "content": [
+                {
+                    "kind": "gaiji",
+                    "description": "濁点付き片仮名ヱ、1-7-84",
+                    "resolved": "ヹ",
+                    "jis_code": "1-7-84",
+                    "unresolved_reason": None,
+                    "x-provenance": "source-derived",
+                },
+                {"kind": "text", "value": "エル"},
+            ],
+        }
+    ]
+
+
 def test_source_note_image_maps_to_source_derived_figure() -> None:
     raw = _run((FIXTURE_DIR / "figure_image_caption.txt").read_bytes(), "--mode", "aat")
     aat = json.loads(raw)

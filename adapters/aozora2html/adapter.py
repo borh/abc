@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -18,6 +19,8 @@ ADAPTER_VERSION = "aozora2html-adapter 0.1.0 gem-3.0.1"
 
 XHTML_NS = "http://www.w3.org/1999/xhtml"
 NS = {"x": XHTML_NS}
+GAIJI_MARKER_RE = re.compile(r"※［＃(?P<body>.+?)］")
+JIS2UCS_CACHE: dict[str, str] | None = None
 
 
 def detect_encoding(raw: bytes) -> tuple[str, str]:
@@ -762,6 +765,10 @@ def normalize_source_derived_paragraph(
     source_text: str,
 ) -> list[dict[str, Any]]:
     content = block.get("content", [])
+    gaiji_content = source_derived_gaiji_content(content, source_text, summary)
+    if gaiji_content is not None:
+        return [{"kind": "paragraph", "content": gaiji_content}]
+
     meaningful = [
         node
         for node in content
@@ -819,6 +826,157 @@ def normalize_source_derived_paragraph(
         }]
 
     return [block]
+
+
+def source_derived_gaiji_content(
+    content: list[dict[str, Any]],
+    source_text: str,
+    summary: dict[str, list[dict[str, Any]]],
+) -> list[dict[str, Any]] | None:
+    if "\n" in source_text.strip() or "※［＃" not in source_text:
+        return None
+    if any(node.get("kind") not in {"text", "gaiji"} for node in content):
+        return None
+
+    derived = source_text_gaiji_content(source_text.strip())
+    if derived is None:
+        return None
+
+    rendered_visible = inline_visible_text(content)
+    markerless_visible = GAIJI_MARKER_RE.sub("", source_text.strip())
+    derived_visible = inline_visible_text(derived)
+    if rendered_visible not in {markerless_visible, derived_visible}:
+        return None
+
+    for node in derived:
+        if node.get("kind") == "gaiji":
+            summary.setdefault("gaiji.marker", []).append({
+                "kind": "gaiji",
+                "value": {
+                    "source": node.get("x-source", ""),
+                    "description": node.get("description", ""),
+                    "description_format": "aozora-gaiji-tag",
+                    "kind": "JisCode" if node.get("jis_code") else "UnicodeCodepoint",
+                    "resolved": node.get("resolved"),
+                    "ruby_reading": None,
+                },
+                "provenance": "source-derived",
+            })
+            node.pop("x-source", None)
+    return derived
+
+
+def source_text_gaiji_content(source_text: str) -> list[dict[str, Any]] | None:
+    content: list[dict[str, Any]] = []
+    pos = 0
+    saw_gaiji = False
+    for match in GAIJI_MARKER_RE.finditer(source_text):
+        if match.start() > pos:
+            content.append({"kind": "text", "value": source_text[pos:match.start()]})
+        gaiji = parse_source_gaiji_marker(match.group("body"), match.group(0))
+        if gaiji is None:
+            return None
+        content.append(gaiji)
+        saw_gaiji = True
+        pos = match.end()
+    if not saw_gaiji:
+        return None
+    if pos < len(source_text):
+        content.append({"kind": "text", "value": source_text[pos:]})
+    return content
+
+
+def parse_source_gaiji_marker(body: str, source: str) -> dict[str, Any] | None:
+    unicode_match = re.search(r"U\+(?P<code>[0-9A-Fa-f]{4,6})", body)
+    if unicode_match:
+        resolved = chr(int(unicode_match.group("code"), 16))
+        return {
+            "kind": "gaiji",
+            "description": body,
+            "resolved": resolved,
+            "jis_code": None,
+            "unresolved_reason": None,
+            "x-provenance": "source-derived",
+            "x-source": source,
+        }
+
+    jis_match = re.search(
+        r"(?:第[34]水準)?(?P<plane>[12])-(?P<row>[0-9]{1,2})-(?P<cell>[0-9]{1,2})",
+        body,
+    )
+    if not jis_match:
+        return None
+    jis_code = (
+        f"{jis_match.group('plane')}-"
+        f"{int(jis_match.group('row'))}-"
+        f"{int(jis_match.group('cell'))}"
+    )
+    resolved = resolve_jisx0213(jis_code)
+    if not resolved:
+        return None
+    return {
+        "kind": "gaiji",
+        "description": body,
+        "resolved": resolved,
+        "jis_code": jis_code,
+        "unresolved_reason": None,
+        "x-provenance": "source-derived",
+        "x-source": source,
+    }
+
+
+def resolve_jisx0213(jis_code: str) -> str | None:
+    return load_jis2ucs().get(normalize_jis_code(jis_code))
+
+
+def normalize_jis_code(jis_code: str) -> str:
+    parts = jis_code.split("-")
+    if len(parts) != 3:
+        return jis_code
+    return f"{int(parts[0])}-{int(parts[1])}-{int(parts[2])}"
+
+
+def load_jis2ucs() -> dict[str, str]:
+    global JIS2UCS_CACHE
+    if JIS2UCS_CACHE is not None:
+        return JIS2UCS_CACHE
+
+    JIS2UCS_CACHE = {}
+    table = find_jis2ucs_table()
+    if table is None:
+        return JIS2UCS_CACHE
+
+    line_re = re.compile(r"^:(?P<jis>[0-9]+-[0-9]+-[0-9]+): \"&#x(?P<ucs>[0-9A-Fa-f]+);\"")
+    for line in table.read_text(encoding="utf-8").splitlines():
+        m = line_re.match(line)
+        if m:
+            JIS2UCS_CACHE[normalize_jis_code(m.group("jis"))] = chr(
+                int(m.group("ucs"), 16)
+            )
+    return JIS2UCS_CACHE
+
+
+def find_jis2ucs_table() -> Path | None:
+    roots = [
+        Path.cwd(),
+        Path(__file__).resolve().parents[2],
+        Path(os.environ.get(
+            "AB_VALIDATOR_GEM_HOME",
+            "/db/ab-validator/gems/aozora2html-3.0.1",
+        )),
+    ]
+    candidates = [
+        root / "references/parsers/aozora2html/yml/jis2ucs.yml"
+        for root in roots
+    ]
+    candidates.extend([
+        roots[-1] / "gems/aozora2html-3.0.1/yml/jis2ucs.yml",
+        Path("/db/ab-validator/gems/aozora2html-3.0.1/gems/aozora2html-3.0.1/yml/jis2ucs.yml"),
+    ])
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return None
 
 
 def source_text_figure(text: str) -> dict[str, Any] | None:

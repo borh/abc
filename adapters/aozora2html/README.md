@@ -66,27 +66,26 @@ echo "テスト\n著者\n\n-----------------------------------------------------
 
 Captured during fixture review (`tests/fixtures/*.xhtml`):
 
-- **Resolved gaiji become plain text.** When `--use-unicode` succeeds (e.g.
-  `※［＃「口＋世」、U+546D］` → `&#x546D;` → `吭`), the parser inlines the
-  resolved character as text and discards the marker. The adapter therefore
-  cannot emit a `gaiji.marker` semantic-summary entry for this case — the
-  Rust adapters that retain the marker in their IR will report a
-  `gaiji.marker` row that has no counterpart on this side. This is a
-  parser-side decision, not a mapping bug. `ab-compare` will see the
-  asymmetry as `summary:gaiji.marker` mismatch and that is correct
-  signal: it tells the user the two parsers chose different abstractions.
+- **Resolved gaiji may become plain text or image fallback.** When
+  `--use-unicode` succeeds (e.g. `※［＃「口＋世」、U+546D］` → `&#x546D;` →
+  `呭`), the parser inlines the resolved character as text and discards the
+  marker. When it cannot resolve through XHTML, it emits a gaiji image. For
+  single-line source fragments whose rendered projection still aligns, the
+  adapter reconstructs a gaiji AAT node from the original source marker and
+  marks it with `x-provenance = "source-derived"`. Broader cases remain
+  parser-side abstraction differences rather than mapping bugs.
 - **Some `［＃...］` markers stay as `<span class="notes">`.** The adapter
   reconstructs the supported subset that the source marker still identifies:
   explicit line breaks (`［＃改行］`), page breaks (`［＃改ページ］`), and
   heading variants such as `［＃「タイトル」は大見出し］` or
   `［＃「タイトル」の大見出し］`. Unsupported notes remain
   `{kind: "style", style_type: "notes", ...}`.
-- **Narrow source-note enrichment is explicit.** Image notes like
-  `［＃挿絵（fig01.png、横４００×縦３００）入る］` are reconstructed as
-  AAT `figure` nodes with `x-provenance = "source-derived"` because the
-  source marker text is still present in the rendered XHTML. These nodes are
-  useful for oracle checks but are not counted as upstream-XHTML
-  faithfulness.
+- **Narrow source-derived enrichment is explicit.** Gaiji marker recovery and
+  image notes like `［＃挿絵（fig01.png、横４００×縦３００）入る］` are
+  reconstructed as AAT nodes with `x-provenance = "source-derived"` when the
+  original source marker gives information the rendered XHTML has flattened
+  or kept only as note text. These nodes are useful for oracle checks but
+  must be read as adapter normalization, not raw upstream-XHTML structure.
 - **Plain source image annotations are also recovered narrowly.** Text of the
   form `猫の図（fig00001_01.png、横321×縦123）入る` is mapped to a
   source-derived AAT `figure` node when it survives as plain text.

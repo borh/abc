@@ -9,13 +9,13 @@ Oracle cases: `data/aat-oracle-cases.toml`
 | --- | --- | --- | --- | --- | --- |
 | aozora-rs | 46 | 46 | 46 | 46 | 0 |
 | aozora2 | 46 | 46 | 46 | 46 | 0 |
-| aozora2html | 46 | 46 | 46 | 11 | 35 |
+| aozora2html | 46 | 46 | 46 | 14 | 32 |
 
 ## Failure Buckets
 
 | adapter | bucket | count |
 | --- | --- | --- |
-| aozora2html | faithful-rendered-output-vs-oracle | 35 |
+| aozora2html | faithful-rendered-output-vs-oracle | 32 |
 
 ## Failure Families
 
@@ -27,7 +27,7 @@ Oracle cases: `data/aat-oracle-cases.toml`
 | aozora2html | decoration | 8 |
 | aozora2html | editor_note | 1 |
 | aozora2html | emphasis | 1 |
-| aozora2html | gaiji | 4 |
+| aozora2html | gaiji | 1 |
 | aozora2html | indentation | 5 |
 | aozora2html | iteration | 1 |
 | aozora2html | kunten | 2 |
@@ -111,19 +111,19 @@ XHTML report id: `upstream-xhtml-full`
 | figure.image_inline | aozora2html | 1 | 0 |
 | gaiji.dakuten_katakana | aozora-rs | 1 | 0 |
 | gaiji.dakuten_katakana | aozora2 | 1 | 0 |
-| gaiji.dakuten_katakana | aozora2html | 0 | 1 |
+| gaiji.dakuten_katakana | aozora2html | 1 | 0 |
 | gaiji.jis_code | aozora-rs | 1 | 0 |
 | gaiji.jis_code | aozora2 | 1 | 0 |
-| gaiji.jis_code | aozora2html | 0 | 1 |
+| gaiji.jis_code | aozora2html | 1 | 0 |
 | gaiji.marker | aozora-rs | 2 | 0 |
 | gaiji.marker | aozora2 | 2 | 0 |
-| gaiji.marker | aozora2html | 0 | 2 |
+| gaiji.marker | aozora2html | 2 | 0 |
 | gaiji.un_embed | aozora-rs | 1 | 0 |
 | gaiji.un_embed | aozora2 | 1 | 0 |
 | gaiji.un_embed | aozora2html | 0 | 1 |
 | gaiji.unicode_codepoint | aozora-rs | 1 | 0 |
 | gaiji.unicode_codepoint | aozora2 | 1 | 0 |
-| gaiji.unicode_codepoint | aozora2html | 0 | 1 |
+| gaiji.unicode_codepoint | aozora2html | 1 | 0 |
 | gaiji_ruby.inline_base | aozora-rs | 1 | 0 |
 | gaiji_ruby.inline_base | aozora2 | 1 | 0 |
 | gaiji_ruby.inline_base | aozora2html | 0 | 1 |
@@ -198,5 +198,5 @@ XHTML report id: `upstream-xhtml-full`
 
 - `aozora-rs` passes schema, upstream-observation, and oracle axes for all reviewed cases.
 - `aozora2` passes schema, upstream-observation, and oracle axes for all reviewed cases.
-- `aozora2html` is fully observed but has 35 oracle divergence(s); failures are now classified as faithful-output vs oracle-correctness work.
+- `aozora2html` is fully observed but has 32 oracle divergence(s); failures are now classified as faithful-output vs oracle-correctness work.
 - Next implementation work should target one remaining adapter/family at a time, using these observations as the pre-fix upstream contract.

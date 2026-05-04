@@ -418,6 +418,7 @@
           pkgs.python3
           pkgs.python3.pkgs.lxml
           pkgs.python3.pkgs.jsonschema
+          pkgs.python3.pkgs.pytest
         ];
       in
       {

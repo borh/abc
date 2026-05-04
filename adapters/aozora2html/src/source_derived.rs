@@ -627,7 +627,7 @@ fn paragraph_line_break_text(content: &[Value]) -> Option<String> {
     if !node_is_note(note, "［＃改行］") {
         return None;
     }
-    Some(format!("{}\\n{}", value_text(before), value_text(after)))
+    Some(format!("{}\n{}", value_text(before), value_text(after)))
 }
 
 fn paragraph_is_note(content: &[Value], note_text: &str) -> bool {
@@ -785,30 +785,24 @@ fn source_derived_ruby_and_reference_content(
     source: &str,
     summary: &mut SourceDerivedSummary,
 ) -> Option<Vec<Value>> {
-    if source.contains("《")
-        && source.contains("】")
-        && source.contains("《")
-        && source.contains("［＃")
+    if source.contains("》［＃「")
+        && source.split_once("［＃").is_some_and(|(_, tail)| tail.contains("《"))
+        && source.contains("》")
     {
-        let first = source.split_once("［＃");
-        if let Some((_, tail)) = first {
-            if tail.contains("《") {
-                if let Some(captures) = nested_ruby_note_re().captures(source) {
-                    let base = captures.name("base").map(|m| m.as_str()).unwrap_or_default();
-                    let reading = captures.name("reading").map(|m| m.as_str()).unwrap_or_default();
-                    let note = captures.name("note").map(|m| m.as_str()).unwrap_or_default();
-                    let node = ruby_node(base, reading, "right");
-                    return Some(vec![
-                        node,
-                        json!({
-                            "kind":"raw",
-                            "source": note,
-                            "x-error-kind":"nested_ruby_forbidden",
-                            "x-provenance":"source-derived",
-                        }),
-                    ]);
-                }
-            }
+        if let Some(captures) = nested_ruby_note_re().captures(source) {
+            let base = captures.name("base").map(|m| m.as_str()).unwrap_or_default();
+            let reading = captures.name("reading").map(|m| m.as_str()).unwrap_or_default();
+            let note = captures.name("note").map(|m| m.as_str()).unwrap_or_default();
+            let node = ruby_node(base, reading, "right");
+            return Some(vec![
+                node,
+                json!({
+                    "kind":"raw",
+                    "source": note,
+                    "x-error-kind":"nested_ruby_forbidden",
+                    "x-provenance":"source-derived",
+                }),
+            ]);
         }
     }
 
@@ -848,13 +842,6 @@ fn source_derived_ruby_and_reference_content(
             let base = gaiji.get("resolved").and_then(Value::as_str).unwrap_or_default();
             let reading = m.name("reading").map(|it| it.as_str()).unwrap_or_default();
             let mut node = ruby_node(base, reading, "right");
-            if let Some(obj) = node.as_object_mut() {
-                obj.insert(
-                    "base_content".to_string(),
-                    Value::Array(vec![gaiji.clone()]),
-                );
-                obj.insert("x-provenance".to_string(), Value::String("source-derived".to_string()));
-            }
             let source = gaiji
                 .get("x-source")
                 .and_then(Value::as_str)
@@ -862,6 +849,13 @@ fn source_derived_ruby_and_reference_content(
                 .to_string();
             let kind = source_derived_gaiji_kind(&gaiji);
             record_source_derived_gaiji(summary, &mut gaiji, &source, kind);
+            if let Some(obj) = node.as_object_mut() {
+                obj.insert(
+                    "base_content".to_string(),
+                    Value::Array(vec![gaiji.clone()]),
+                );
+                obj.insert("x-provenance".to_string(), Value::String("source-derived".to_string()));
+            }
             record_ruby_summary(summary, &node, "source-derived");
             return Some(vec![
                 node,
@@ -879,6 +873,7 @@ fn source_derived_ruby_and_reference_content(
             let mut node = node;
             if let Some(obj) = node.as_object_mut() {
                 obj.insert("x-annotation-type".to_string(), Value::String("chuuki".to_string()));
+                obj.insert("x-provenance".to_string(), Value::String("source-derived".to_string()));
             }
             return Some(compact_inline(vec![
                 json!({"kind":"text","value":prefix}),
@@ -900,6 +895,7 @@ fn source_derived_ruby_and_reference_content(
             );
             if let Some(obj) = node.as_object_mut() {
                 obj.insert("x-annotation-type".to_string(), Value::String("bouki".to_string()));
+                obj.insert("x-provenance".to_string(), Value::String("source-derived".to_string()));
             }
             record_ruby_summary(summary, &node, "source-derived");
             return Some(compact_inline(vec![
@@ -1622,7 +1618,7 @@ fn ruby_okurigana_re() -> &'static Regex {
 fn ruby_front_note_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
-        Regex::new(r#"^(?P<target>.+?)［＃「(?P<quoted>.+?)」の「(?P<mark>.+?)」の傍点］$"#).unwrap()
+        Regex::new(r#"^(?P<target>.+?)［＃「(?P<quoted>.+?)」に「(?P<mark>.+?)」の傍点］$"#).unwrap()
     })
 }
 

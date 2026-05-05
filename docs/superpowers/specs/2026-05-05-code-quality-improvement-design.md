@@ -28,9 +28,11 @@ Additionally, `FeatureMap` in `ab-morph-diff/src/model.rs` implements `Index<&st
 
 ### Design
 
-**Core: `macro_rules!` walker with zero-cost static dispatch.**
+**Core: generic `pub fn walk_inline` with zero-cost static dispatch.**
 
-A declarative macro generates `walk_inline` functions for concrete visitor types. Each visitor struct implements an `InlineVisitor` trait with default no-op methods. Override only the variants you care about.
+A generic function with a trait bound — the compiler monomorphizes one copy per visitor type, producing identical code to today's hand-written matches. No macro, no vtable, no overhead. Better tooling (rust-analyzer, error messages) than a declarative macro.
+
+Each visitor struct implements an `InlineVisitor` trait with default no-op methods. Override only the variants you care about. When a new `Inline` variant is added, the compiler forces you to update `walk_inline` and the trait — all visitors get the new method (with default no-op) and the walk function gains the new match arm.
 
 ```rust
 /// Visitor for walking the Inline tree. Every method has a default no-op
@@ -41,8 +43,8 @@ pub trait InlineVisitor {
     fn enter_text_meta(&mut self, _value: &str, _attrs: &[StyleAttr], _provenance: &Provenance) {}
     fn enter_gaiji_ref(&mut self, _gaiji: &GaijiRef) {}
     fn enter_accent(&mut self, _resolved: &str, _provenance: &Provenance) {}
-    fn enter_editor_note(&mut self, _text: &str) {}
-    fn enter_raw(&mut self, _text: &str) {}
+    fn enter_editor_note(&mut self, _note: &str, _provenance: &Provenance) {}
+    fn enter_raw(&mut self, _source: &str, _attrs: &[StyleAttr], _provenance: &Provenance) {}
 
     // Container nodes — enter/leave pair
     fn enter_ruby(&mut self, _base: &[Inline], _reading: &str, _placement: &RubyPlacement, _provenance: &Provenance) {}
@@ -59,74 +61,84 @@ pub trait InlineVisitor {
     fn leave_figure_ref(&mut self) {}
 }
 
-/// Walk an Inline tree with a visitor. Called internally by the macro.
-/// Generated once and monomorphized per visitor type (zero runtime overhead).
-macro_rules! walk_inline {
-    ($visitor:expr, $node:expr) => {
-        match $node {
-            Inline::Text { value, provenance } => {
-                $visitor.enter_text(value, provenance);
-            }
-            Inline::TextMeta { value, attrs, provenance } => {
-                $visitor.enter_text_meta(value, &attrs, provenance);
-            }
-            Inline::GaijiRef(gaiji) => {
-                $visitor.enter_gaiji_ref(gaiji);
-            }
-            Inline::Ruby { base, reading, placement, provenance, .. } => {
-                $visitor.enter_ruby(base, reading, placement, provenance);
-                for child in base {
-                    walk_inline!($visitor, child);
-                }
-                $visitor.leave_ruby();
-            }
-            Inline::Style { style_type, content, attrs, provenance, .. } => {
-                $visitor.enter_style(style_type, content, &attrs, provenance);
-                for child in content {
-                    walk_inline!($visitor, child);
-                }
-                $visitor.leave_style();
-            }
-            Inline::Scope { kind, content, provenance, .. } => {
-                $visitor.enter_scope(kind, content, provenance);
-                for child in content {
-                    walk_inline!($visitor, child);
-                }
-                $visitor.leave_scope();
-            }
-            Inline::FontSize { size_type, level, content, provenance, .. } => {
-                $visitor.enter_font_size(size_type, *level, content, provenance);
-                for child in content {
-                    walk_inline!($visitor, child);
-                }
-                $visitor.leave_font_size();
-            }
-            Inline::Warigaki { upper, lower, provenance, .. } => {
-                $visitor.enter_warigaki(upper, lower, provenance);
-                for child in upper.iter().chain(lower.iter()) {
-                    walk_inline!($visitor, child);
-                }
-                $visitor.leave_warigaki();
-            }
-            Inline::FigureRef { source, caption, provenance, .. } => {
-                $visitor.enter_figure_ref(source, caption, provenance);
-                for child in caption {
-                    walk_inline!($visitor, child);
-                }
-                $visitor.leave_figure_ref();
-            }
-            Inline::Accent { resolved, provenance, .. } => {
-                $visitor.enter_accent(resolved, provenance);
-            }
-            Inline::EditorNote { .. } => {
-                $visitor.enter_editor_note("");
-            }
-            Inline::Raw { .. } => {
-                $visitor.enter_raw("");
-            }
+/// Walk an Inline tree with a visitor. Monomorphized per concrete V:
+/// same match structure as the current hand-written walks, same codegen.
+pub fn walk_inline<V: InlineVisitor>(visitor: &mut V, node: &Inline) {
+    match node {
+        Inline::Text { value, provenance } => {
+            visitor.enter_text(value, provenance);
         }
-    };
+        Inline::TextMeta { value, attrs, provenance } => {
+            visitor.enter_text_meta(value, &attrs, provenance);
+        }
+        Inline::GaijiRef(gaiji) => {
+            visitor.enter_gaiji_ref(gaiji);
+        }
+        Inline::Ruby { base, reading, placement, provenance, .. } => {
+            visitor.enter_ruby(base, reading, placement, provenance);
+            for child in base {
+                walk_inline(visitor, child);
+            }
+            visitor.leave_ruby();
+        }
+        Inline::Style { style_type, content, attrs, provenance, .. } => {
+            visitor.enter_style(style_type, content, &attrs, provenance);
+            for child in content {
+                walk_inline(visitor, child);
+            }
+            visitor.leave_style();
+        }
+        Inline::Scope { kind, content, provenance, .. } => {
+            visitor.enter_scope(kind, content, provenance);
+            for child in content {
+                walk_inline(visitor, child);
+            }
+            visitor.leave_scope();
+        }
+        Inline::FontSize { size_type, level, content, provenance, .. } => {
+            visitor.enter_font_size(size_type, *level, content, provenance);
+            for child in content {
+                walk_inline(visitor, child);
+            }
+            visitor.leave_font_size();
+        }
+        Inline::Warigaki { upper, lower, provenance, .. } => {
+            visitor.enter_warigaki(upper, lower, provenance);
+            for child in upper.iter().chain(lower.iter()) {
+                walk_inline(visitor, child);
+            }
+            visitor.leave_warigaki();
+        }
+        Inline::FigureRef { source, caption, provenance, .. } => {
+            visitor.enter_figure_ref(source, caption, provenance);
+            for child in caption {
+                walk_inline(visitor, child);
+            }
+            visitor.leave_figure_ref();
+        }
+        Inline::Accent { resolved, provenance, .. } => {
+            visitor.enter_accent(resolved, provenance);
+        }
+        Inline::EditorNote { note, provenance } => {
+            visitor.enter_editor_note(note, provenance);
+        }
+        Inline::Raw { source, attrs, provenance } => {
+            visitor.enter_raw(source, &attrs, provenance);
+        }
+    }
 }
+```
+
+If the recursed iteration feels verbose, `Inline` can optionally gain a convenience helper:
+
+```rust
+impl Inline {
+    /// Returns children of container variants, empty slice for leaf variants.
+    pub fn children(&self) -> &[Inline] { /* match once, return &[] or &content */ }
+}
+```
+
+This reduces the container loops to `for child in node.children() { walk_inline(visitor, child); }` but is not required for the initial implementation.
 ```
 
 **Current functions replaced by concrete visitors:**
@@ -185,7 +197,7 @@ Remove the `impl Index<&str> for FeatureMap`. Convert all call sites from `map["
 
 | Action | Path |
 |---|---|
-| Modify | `crates/ab-ir/src/lib.rs` — add visitor trait, macro, concrete visitors; remove old walk functions; fix Break variant; remove redundant helpers |
+| Modify | `crates/ab-ir/src/lib.rs` — add visitor trait, `pub fn walk_inline`, concrete visitors; remove old walk functions; fix Break variant; remove redundant helpers |
 | Modify | `crates/ab-ir/src/semantic_summary.rs` — replace `collect_gaiji`, `contains_gaiji`, `collect_visible`, `inline_visible_text` with visitors |
 | Modify | `crates/ab-morph-diff/src/model.rs` — remove `Index<&str>` impl |
 | Modify | Callers of `FeatureMap["..."]` syntax — convert to `.get()` |
@@ -193,7 +205,7 @@ Remove the `impl Index<&str> for FeatureMap`. Convert all call sites from `map["
 
 ### Risk
 
-Low. Visitor macro produces identical code to hand-written matches. Existing tests for `visible_projection`, `semantic_summary`, and gaiji detection serve as regression gates. The only observable change is removal of `content` from `Block::Break`.
+Low. The generic `walk_inline` monomorphizes to identical code as hand-written matches. Existing tests for `visible_projection`, `semantic_summary`, and gaiji detection serve as regression gates. The only observable change is removal of `content` from `Block::Break`.
 
 ---
 
@@ -218,7 +230,7 @@ Low. Visitor macro produces identical code to hand-written matches. Existing tes
 crates/ab-morph-run/src/
   lib.rs              (~200 lines — public API re-exports, run entry points)
   pipeline.rs         (~600 lines — run_analyze_aat, serial/parallel dispatch)
-  options.rs          (~150 lines — SerialRunOptions, WarehouseRunOptions, compact/nway options moved from lib.rs)
+  options.rs          (~150 lines — SerialRunOptions, WarehouseRunOptions, compact/nway options moved from lib.rs; all types `pub(crate)` unless they are intended as public API, in which case they need doc comments)
   output.rs           (unchanged — JSONL/ZST I/O)
   script.rs           (unchanged — script classification)
   select.rs           (unchanged — source ID → AAT path resolution)
@@ -252,7 +264,9 @@ crates/ab-warehouse/
     sql.rs            (DuckDB SQL report templates)
 ```
 
-Dependencies: `arrow-array`, `arrow-schema`, `parquet`, `serde`, `serde_json`, `anyhow`. No dependency on `ab-morph-run` or any crate in the workspace beyond data dependencies (ab-morph-diff types for row definitions, if needed—or keep row types generic enough to avoid the dependency).
+`ab-warehouse` dependencies: `arrow-array`, `arrow-schema`, `parquet`, `serde`, `serde_json`, `anyhow`. It is a pure I/O crate with **no workspace dependencies**. Row types (`RunRow`, `AnalysisRow`, `MorphemeRow`, etc.) already use plain `String`/`u64`/`Vec<String>` — no dependency on `ab-morph-diff` types at all.
+
+Row **construction** functions that accept `ab_morph_diff::Analysis` (e.g. `analysis_row(run_id, source_id, &Analysis)`, `morpheme_rows_for_range`) stay in `ab-morph-run` as thin wrappers around `ab-warehouse` row types. `ab-morph-run` depends on both `ab-warehouse` + `ab-morph-diff`.
 
 **Pipeline module:** The `run_analyze_aat` function currently mixes pipeline orchestration with output format selection in a 200+ line function with deep nesting for the `jobs == 1` serial path versus the parallel path. Extract to `pipeline.rs` with the serial and parallel paths as separate functions, sharing a common preparation phase.
 
@@ -306,7 +320,9 @@ pub type FeatureKey = Arc<str>;
 pub type FeatureValue = Arc<str>;
 ```
 
-Callers using `InternedString::as_str()` switch to `Arc::as_ref()`. `From<&str>` for `InternedString` becomes `Arc::from`. The `Display`, `Debug`, `Serialize` impls are replaced by `Arc<str>`'s standard implementations.
+Callers using `InternedString::as_str()` (15+ sites across `ab-morph-diff` and `ab-morph-run`) switch to `&*val` for deref or `val.as_ref()` for explicit conversion. `From<&str>` for `InternedString` becomes `Arc::from`. The `Display`, `Debug`, `Serialize` impls are replaced by `Arc<str>`'s standard implementations.
+
+`Arc<str>` is the conservative choice. If profiling later shows feature strings are typically ≤16 bytes, the workspace already pulls in `compact_str` (a transitive dependency of `parquet`) — `CompactString` would be more cache-friendly and avoid heap indirection. A future optimization pass can evaluate this.
 
 **eprintln! → structured warnings:**
 
@@ -318,6 +334,8 @@ Callers using `InternedString::as_str()` switch to `Arc::as_ref()`. `From<&str>`
 | `ab-morph-analyzers/src/sudachi.rs:345,366` — skipped smoke tests | These are test-only `eprintln!` → switch to `println!` (acceptable in tests). |
 
 Following the existing `ProjectionWarning` pattern from `ab-ir` for consistency.
+
+**Breaking change to `MorphAnalyzer` trait:** Adding warnings to the analyzer output changes the trait signature in `ab-morph-analyzers`. All implementors (`VibratoAnalyzer`, `SudachiAnalyzer`, `VaporettoAnalyzer`) and all callers (primarily `ab-morph-run`) must be updated. The change is additive — existing callers that ignore the new field continue to work.
 
 **panic! → Result:**
 
@@ -365,6 +383,7 @@ categories = ["text-processing", ...]
 - **or-patterns:** `Some(0) | Some(2)` → `Some(0 | 2)` in ~5-10 locations
 - **similar_names:** Rename `interner`/`interned` → more distinct names
 - **single_char_names:** Expand test binding names
+- **needless_raw_string_hashes:** Fix `r#"..."#` in `ab-index/src/features.rs:101` → use `r"..."`
 - **must_use_candidate:** Add `#[must_use]` to pure getter/constructor functions
 - **missing_errors_doc:** Add `# Errors` doc sections to Result-returning `pub fn`
 

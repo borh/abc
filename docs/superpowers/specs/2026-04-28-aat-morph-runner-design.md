@@ -102,7 +102,7 @@ may contain CLI id `vibrato` but emitted analyzer id
 `vibrato:unidic-cwj-202512`.
 
 Sudachi analyzers require `AB_SUDACHI_DICT`, matching the convention already used
-by `ab-morph-analyzers` ignored tests. In `nix develop`, the flake sets it to the
+by `ab-morph-analyzers` ignored tests. In the default dev shell, the flake sets it to the
 reproducible Sudachi full dictionary package. The flake output
 `.#sudachi-dictionary-full` already exists and can be used by smoke tests.
 The `vibrato:unidic-cwj-202512` suffix in emitted rows comes from
@@ -207,7 +207,7 @@ Dictionary-backed smoke tests should use:
 
 ```bash
 AB_SUDACHI_DICT="$(nix path-info .#sudachi-dictionary-full)/share/sudachi/system.dic" \
-  cargo run -p ab-morph-run -- analyze-aat \
+  just flake-cargo run -p ab-morph-run -- analyze-aat \
   --aat /tmp/aat.json \
   --analyzer vibrato \
   --analyzer sudachi-c \

@@ -17,7 +17,9 @@ XHTML output can be compared with the Rust adapters under `ab-check` /
    lines, the wrapper feeds Ruby a synthetic Aozora document around that
    fragment. The Rust adapter still hashes and reports the original stdin bytes.
 2. **Ruby parser.** `aozora2html --error-utf8 --use-unicode <crlf_src> <xhtml>`
-   under `nix develop .#aozora2html`. The wrapper installs the released gem into
+   under the `aozora2html` flake shell (invoked via the configured adapter
+   shell context in scripts). The wrapper installs the
+   released gem into
    `/db/ab-validator/gems/aozora2html-3.0.1` by default, keeping dependency
    cache data outside the repo. Stderr is redirected so progress chatter does
    not pollute the AAT JSON written to stdout.

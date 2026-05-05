@@ -15,7 +15,5 @@ by Git.
 ## Development
 
 ```bash
-nix develop .#
-cargo fmt
-cargo test
+just quality
 ```

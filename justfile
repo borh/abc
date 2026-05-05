@@ -321,6 +321,7 @@ morph-vibrato-dictionary-status:
 	@echo "  Source root        = {{vibrato_unidic_sources}}"
 	@echo "  Compiled output    = {{vibrato_compiled_dir}}"
 	@echo "  Optimized output   = {{vibrato_optimized_dir}}"
+	@echo "  Legacy loader      = vibrato-rkyv legacy format support enabled"
 	@printf "\nCompilation artifacts:\n"
 	@for dir in compiled optimized; do \
 		if [ -d "{{repo_root}}/dictionary/$dir" ]; then \
@@ -398,52 +399,78 @@ morph-vibrato-dictionary-transmute-legacy VERSION="202512":
 	@for src in "{{vibrato_unidic_sources}}"/*; do \
 		[ -d "$src" ] || continue; \
 		name="$(basename "$src")"; \
-		sysdic="$(find "$src" -maxdepth 1 -name sys.dic -type f | head -n 1)"; \
 		sysdic_zst="$(find "$src" -maxdepth 1 -name 'sys.dic.zst' -type f | head -n 1)"; \
-		compiled="{{vibrato_compiled_dir}}/${name}-{{VERSION}}.dic.zst"; \
-		optimized="{{vibrato_optimized_dir}}/${name}-{{VERSION}}.dic.zst"; \
+		sysdic="$(find "$src" -maxdepth 1 -name sys.dic -type f | head -n 1)"; \
+		compiled_transmuted="{{vibrato_compiled_dir}}/${name}-{{VERSION}}.dic.zst"; \
+		compiled_direct="{{vibrato_compiled_dir}}/${name}-{{VERSION}}.dic"; \
+		optimized_transmuted="{{vibrato_optimized_dir}}/${name}-{{VERSION}}.dic.zst"; \
+		optimized_direct="{{vibrato_optimized_dir}}/${name}-{{VERSION}}.dic"; \
 		staging_dir="$(mktemp -d /tmp/vibrato-transmute-XXXXXX)"; \
 		if [ -f "$sysdic_zst" ]; then \
-			echo "TRANS ${name} :: ${sysdic_zst} -> ${compiled} (legacy zstd sysdic)"; \
-			zstd -d --stdout "$sysdic_zst" > "$staging_dir/system.dic"; \
+			fallback_source="$sysdic_zst"; \
+			fallback_compiled="${compiled_transmuted}"; \
+			fallback_optimized="$optimized_transmuted"; \
+			echo "TRANS ${name} :: ${sysdic_zst} -> rkyv (legacy zstd sysdic)"; \
 		elif [ -f "$sysdic" ]; then \
-			echo "TRANS ${name} :: ${sysdic} -> ${compiled}"; \
-			cp "$sysdic" "$staging_dir/system.dic"; \
+			fallback_source="$sysdic"; \
+			fallback_compiled="$compiled_direct"; \
+			fallback_optimized="$optimized_direct"; \
+			echo "TRANS ${name} :: ${sysdic} -> rkyv"; \
 		else \
 			echo "SKIP ${name} (no sys.dic)"; \
 			rm -rf "$staging_dir"; \
 			continue; \
 		fi; \
-		if [ -f "${compiled}" ]; then \
+		if [ -f "$compiled_transmuted" ] || [ -f "$compiled_direct" ]; then \
 			echo "OK ${name} already has converted dictionary"; \
 			rm -rf "$staging_dir"; \
 			continue; \
 		fi; \
-		echo "REPACKAGE ${name} via transmute format conversion"; \
+		if [ "$sysdic_zst" = "$fallback_source" ]; then \
+			zstd -d --stdout "$fallback_source" > "$staging_dir/system.dic"; \
+		else \
+			cp "$fallback_source" "$staging_dir/system.dic"; \
+		fi; \
 		if ( \
 			cd "{{vibrato_rkyv_dir}}" && \
 			cargo run --release -p compiler -- transmute \
 				-o "$staging_dir" \
 				"$(realpath "$staging_dir/system.dic")" \
 		); then \
+			echo "OK ${name} transmuted to rkyv"; \
 			if [ -f "$staging_dir/system.dic.zst" ]; then \
-				mv "$staging_dir/system.dic.zst" "$compiled"; \
+				mv "$staging_dir/system.dic.zst" "$compiled_transmuted"; \
+				compiled_path="$compiled_transmuted"; \
+				optimized_path="$optimized_transmuted"; \
 			elif [ -f "$staging_dir/system.dic" ]; then \
-				zstd -f "$staging_dir/system.dic" -o "$compiled"; \
+				zstd -f "$staging_dir/system.dic" -o "$compiled_transmuted"; \
+				compiled_path="$compiled_transmuted"; \
+				optimized_path="$optimized_transmuted"; \
 			else \
-				echo "SKIP ${name} (transmute output missing)"; \
-				rm -rf "$staging_dir"; \
-				continue; \
+				echo "WARN ${name} transmute completed without dictionary output; using direct legacy wire"; \
+				compiled_path="$fallback_compiled"; \
+				optimized_path="$fallback_optimized"; \
 			fi; \
 		else \
-			echo "SKIP ${name} (transmute compatibility error)"; \
+			echo "WARN ${name} (transmute compatibility error)"; \
+			compiled_path="$fallback_compiled"; \
+			optimized_path="$fallback_optimized"; \
+			ln -sf "$(realpath "$fallback_source")" "$compiled_path"; \
+		fi; \
+		if [ ! -e "$compiled_path" ]; then \
+			echo "FAIL ${name} did not produce compiled artifact"; \
 			rm -rf "$staging_dir"; \
 			continue; \
 		fi; \
+		if [ ! -f "$optimized_path" ]; then \
+			ln -sf "$(realpath --relative-to={{vibrato_optimized_dir}} "$compiled_path")" "$optimized_path"; \
+			echo "WIRE ${name} -> ${optimized_path}"; \
+		fi; \
 		rm -rf "$staging_dir"; \
-		if [ ! -f "$optimized" ]; then \
-			ln -sf "$(realpath --relative-to={{vibrato_optimized_dir}} "$compiled")" "$optimized"; \
-			echo "WIRE ${name} -> ${optimized}"; \
+		if [ -f "$compiled_transmuted" ]; then \
+			echo "DONE ${name} (${compiled_transmuted})"; \
+		else \
+			echo "DONE ${name} (direct legacy: ${compiled_path})"; \
 		fi; \
 	done
 
@@ -460,24 +487,32 @@ morph-vibrato-dictionary-audit:
 	@printf "dictionary,status,versioned_compiled,optimized,notes\n"
 	@for src in "{{repo_root}}/dictionary/unidic-sources"/*; do \
 		[ -d "$src" ] || continue; \
-		name="$(basename \"$src\")"; \
+		name="$(basename "$src")"; \
 		lex="$(find "$src" -name lex.csv -type f | head -n 1)"; \
 		matrix="$(find "$src" -name matrix.def -type f | head -n 1)"; \
 		char="$(find "$src" -name char.def -type f | head -n 1)"; \
 		unk="$(find "$src" -name unk.def -type f | head -n 1)"; \
+		sysdic="$(find "$src" -maxdepth 1 -name 'sys.dic' -o -name 'sys.dic.zst' -type f | head -n 1)"; \
 		if [ -n "$lex" ] && [ -n "$matrix" ] && [ -n "$char" ] && [ -n "$unk" ]; then \
 			status="compile-ready"; \
 			notes="source has lex/matrix/char/unk"; \
+		elif [ -n "$sysdic" ]; then \
+			status="legacy-direct"; \
+			notes="source has sys.dic/sys.dic.zst"; \
 		else \
-			status="precompiled-only"; \
-			notes="missing one of lex|matrix|char|unk"; \
+			status="missing-source"; \
+			notes="missing lex|matrix|char|unk and sys.dic"; \
 		fi; \
 		compiled_versioned="{{repo_root}}/dictionary/compiled/${name}-202512.dic.zst"; \
 		compiled_compact="{{repo_root}}/dictionary/compiled/${name}.dic.zst"; \
 		optimized_versioned="{{repo_root}}/dictionary/optimized/${name}-202512.dic.zst"; \
 		optimized_alias="{{repo_root}}/dictionary/optimized/${name}.dic.zst"; \
+		compiled_legacy="{{repo_root}}/dictionary/compiled/${name}-202512.dic"; \
+		optimized_legacy="{{repo_root}}/dictionary/optimized/${name}-202512.dic"; \
 		if [ -f "$compiled_versioned" ]; then \
 			versioned_compiled="present"; \
+		elif [ -f "$compiled_legacy" ]; then \
+			versioned_compiled="present-legacy"; \
 		elif [ -f "$compiled_compact" ]; then \
 			versioned_compiled="compact-legacy"; \
 		else \
@@ -485,6 +520,8 @@ morph-vibrato-dictionary-audit:
 		fi; \
 		if [ -f "$optimized_versioned" ]; then \
 			optimized="present-202512"; \
+		elif [ -f "$optimized_legacy" ]; then \
+			optimized="present-legacy-202512"; \
 		elif [ -f "$optimized_alias" ]; then \
 			optimized="present-alias"; \
 		else \

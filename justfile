@@ -5,6 +5,14 @@ ab_db_root := env_var_or_default("AB_DB_ROOT", "/db/ab-validator")
 morph_warehouse_dir := env_var_or_default("AB_MORPH_WAREHOUSE_DIR", "/db/ab-validator/morph-warehouse")
 morph_warehouse_aat_dir := env_var_or_default("AB_MORPH_WAREHOUSE_AAT_DIR", "/db/ab-validator/aat-corpus/aozora2html-aat/aozora2html-adapter")
 aozora2html_flake := repo_root + "#aozora2html"
+vibrato_dictionary_root := repo_root + "/dictionary"
+vibrato_unidic_sources := vibrato_dictionary_root + "/unidic-sources"
+vibrato_compiled_dir := vibrato_dictionary_root + "/compiled"
+vibrato_optimized_dir := vibrato_dictionary_root + "/optimized"
+vibrato_rkyv_dir := env_var_or_default(
+    "VIBRATO_RKYV_DIR",
+    repo_root + "/../vibrato-pipe/third-party/vibrato-rkyv",
+)
 
 default:
 	@just --list
@@ -307,6 +315,12 @@ morph-vibrato-dictionary-status:
 	else \
 		echo "  (missing) {{repo_root}}/dictionary/unidic-sources"; \
 	fi
+	@echo "\nDictionary tooling (in project):"
+	@echo "  VERSION            = 202512"
+	@echo "  RKYV compiler path = {{vibrato_rkyv_dir}}"
+	@echo "  Source root        = {{vibrato_unidic_sources}}"
+	@echo "  Compiled output    = {{vibrato_compiled_dir}}"
+	@echo "  Optimized output   = {{vibrato_optimized_dir}}"
 	@printf "\nCompilation artifacts:\n"
 	@for dir in compiled optimized; do \
 		if [ -d "{{repo_root}}/dictionary/$dir" ]; then \
@@ -315,9 +329,166 @@ morph-vibrato-dictionary-status:
 				[ -e "$path" ] || continue; \
 				echo "    $(basename "$path")"; \
 			done | sort; \
-		else \
-			echo "  (missing) {{repo_root}}/dictionary/$dir"; \
+	else \
+		echo "  (missing) {{repo_root}}/dictionary/$dir"; \
 		fi; \
 	done
 	@printf "\nBuild command references:\n"
-	@echo "  Build all UniDic 202512 dictionaries: ./scripts/build_unidic_dictionaries.sh"
+	@echo "  Compile source-ready dictionaries: just morph-vibrato-dictionary-build-source-ready"
+	@echo "  Transmute legacy sys.dic binaries: just morph-vibrato-dictionary-transmute-legacy"
+	@echo "  Build all (source + legacy):      just morph-vibrato-dictionaries-rebuild-all"
+
+morph-vibrato-dictionary-build-source-ready VERSION="202512":
+	@set -euo pipefail
+	@if [ ! -d "{{vibrato_unidic_sources}}" ]; then \
+		echo "missing source directory: {{vibrato_unidic_sources}}"; \
+		exit 1; \
+	fi
+	@if [ ! -d "{{vibrato_rkyv_dir}}" ]; then \
+		echo "missing vibrato-rkyv workspace: {{vibrato_rkyv_dir}}"; \
+		echo "set VIBRATO_RKYV_DIR or clone and build third-party/vibrato-rkyv"; \
+		exit 1; \
+	fi
+	@mkdir -p "{{vibrato_compiled_dir}}" "{{vibrato_optimized_dir}}"
+	@for src in "{{vibrato_unidic_sources}}"/*; do \
+		[ -d "$src" ] || continue; \
+		name="$(basename "$src")"; \
+		lex="$(find "$src" -name lex.csv -type f | head -n 1)"; \
+		matrix="$(find "$src" -name matrix.def -type f | head -n 1)"; \
+		char="$(find "$src" -name char.def -type f | head -n 1)"; \
+		unk="$(find "$src" -name unk.def -type f | head -n 1)"; \
+		compiled="{{vibrato_compiled_dir}}/${name}-{{VERSION}}.dic.zst"; \
+		optimized="{{vibrato_optimized_dir}}/${name}-{{VERSION}}.dic.zst"; \
+		if [ -z "$lex" ] || [ -z "$matrix" ] || [ -z "$char" ] || [ -z "$unk" ]; then \
+			echo "SKIP ${name} (source files missing)"; \
+			continue; \
+		fi; \
+		if [ -f "$compiled" ]; then \
+			echo "OK ${name} already compiled"; \
+		else \
+			echo "BUILD ${name} -> ${compiled}"; \
+			( \
+				cd "{{vibrato_rkyv_dir}}" && \
+				cargo run --release -p compiler -- build \
+					--lexicon-in "$lex" \
+					--matrix-in "$matrix" \
+					--char-in "$char" \
+					--unk-in "$unk" \
+					--sysdic-out "$compiled" \
+			); \
+		fi; \
+		if [ ! -f "$optimized" ]; then \
+			ln -sf "$(realpath --relative-to={{vibrato_optimized_dir}} "$compiled")" "$optimized"; \
+			echo "WIRE ${name} -> ${optimized}"; \
+		fi; \
+	done
+
+morph-vibrato-dictionary-transmute-legacy VERSION="202512":
+	@set -euo pipefail
+	@if [ ! -d "{{vibrato_unidic_sources}}" ]; then \
+		echo "missing source directory: {{vibrato_unidic_sources}}"; \
+		exit 1; \
+	fi
+	@if [ ! -d "{{vibrato_rkyv_dir}}" ]; then \
+		echo "missing vibrato-rkyv workspace: {{vibrato_rkyv_dir}}"; \
+		echo "set VIBRATO_RKYV_DIR or clone and build third-party/vibrato-rkyv"; \
+		exit 1; \
+	fi
+	@mkdir -p "{{vibrato_compiled_dir}}" "{{vibrato_optimized_dir}}"
+	@for src in "{{vibrato_unidic_sources}}"/*; do \
+		[ -d "$src" ] || continue; \
+		name="$(basename "$src")"; \
+		sysdic="$(find "$src" -maxdepth 1 -name sys.dic -type f | head -n 1)"; \
+		sysdic_zst="$(find "$src" -maxdepth 1 -name 'sys.dic.zst' -type f | head -n 1)"; \
+		compiled="{{vibrato_compiled_dir}}/${name}-{{VERSION}}.dic.zst"; \
+		optimized="{{vibrato_optimized_dir}}/${name}-{{VERSION}}.dic.zst"; \
+		staging_dir="$(mktemp -d /tmp/vibrato-transmute-XXXXXX)"; \
+		if [ -f "$sysdic_zst" ]; then \
+			echo "TRANS ${name} :: ${sysdic_zst} -> ${compiled} (legacy zstd sysdic)"; \
+			zstd -d --stdout "$sysdic_zst" > "$staging_dir/system.dic"; \
+		elif [ -f "$sysdic" ]; then \
+			echo "TRANS ${name} :: ${sysdic} -> ${compiled}"; \
+			cp "$sysdic" "$staging_dir/system.dic"; \
+		else \
+			echo "SKIP ${name} (no sys.dic)"; \
+			rm -rf "$staging_dir"; \
+			continue; \
+		fi; \
+		if [ -f "${compiled}" ]; then \
+			echo "OK ${name} already has converted dictionary"; \
+			rm -rf "$staging_dir"; \
+			continue; \
+		fi; \
+		echo "REPACKAGE ${name} via transmute format conversion"; \
+		if ( \
+			cd "{{vibrato_rkyv_dir}}" && \
+			cargo run --release -p compiler -- transmute \
+				-o "$staging_dir" \
+				"$(realpath "$staging_dir/system.dic")" \
+		); then \
+			if [ -f "$staging_dir/system.dic.zst" ]; then \
+				mv "$staging_dir/system.dic.zst" "$compiled"; \
+			elif [ -f "$staging_dir/system.dic" ]; then \
+				zstd -f "$staging_dir/system.dic" -o "$compiled"; \
+			else \
+				echo "SKIP ${name} (transmute output missing)"; \
+				rm -rf "$staging_dir"; \
+				continue; \
+			fi; \
+		else \
+			echo "SKIP ${name} (transmute compatibility error)"; \
+			rm -rf "$staging_dir"; \
+			continue; \
+		fi; \
+		rm -rf "$staging_dir"; \
+		if [ ! -f "$optimized" ]; then \
+			ln -sf "$(realpath --relative-to={{vibrato_optimized_dir}} "$compiled")" "$optimized"; \
+			echo "WIRE ${name} -> ${optimized}"; \
+		fi; \
+	done
+
+morph-vibrato-dictionaries-rebuild-all VERSION="202512":
+	@just morph-vibrato-dictionary-build-source-ready "{{VERSION}}"
+	@just morph-vibrato-dictionary-transmute-legacy "{{VERSION}}"
+	@echo "VIBRATO DICTIONARY REBUILD COMPLETE"
+
+morph-vibrato-dictionary-audit:
+	@if [ ! -d "{{repo_root}}/dictionary/unidic-sources" ]; then \
+		echo "missing: {{repo_root}}/dictionary/unidic-sources"; \
+		exit 1; \
+	fi
+	@printf "dictionary,status,versioned_compiled,optimized,notes\n"
+	@for src in "{{repo_root}}/dictionary/unidic-sources"/*; do \
+		[ -d "$src" ] || continue; \
+		name="$(basename \"$src\")"; \
+		lex="$(find "$src" -name lex.csv -type f | head -n 1)"; \
+		matrix="$(find "$src" -name matrix.def -type f | head -n 1)"; \
+		char="$(find "$src" -name char.def -type f | head -n 1)"; \
+		unk="$(find "$src" -name unk.def -type f | head -n 1)"; \
+		if [ -n "$lex" ] && [ -n "$matrix" ] && [ -n "$char" ] && [ -n "$unk" ]; then \
+			status="compile-ready"; \
+			notes="source has lex/matrix/char/unk"; \
+		else \
+			status="precompiled-only"; \
+			notes="missing one of lex|matrix|char|unk"; \
+		fi; \
+		compiled_versioned="{{repo_root}}/dictionary/compiled/${name}-202512.dic.zst"; \
+		compiled_compact="{{repo_root}}/dictionary/compiled/${name}.dic.zst"; \
+		optimized_versioned="{{repo_root}}/dictionary/optimized/${name}-202512.dic.zst"; \
+		optimized_alias="{{repo_root}}/dictionary/optimized/${name}.dic.zst"; \
+		if [ -f "$compiled_versioned" ]; then \
+			versioned_compiled="present"; \
+		elif [ -f "$compiled_compact" ]; then \
+			versioned_compiled="compact-legacy"; \
+		else \
+			versioned_compiled="missing"; \
+		fi; \
+		if [ -f "$optimized_versioned" ]; then \
+			optimized="present-202512"; \
+		elif [ -f "$optimized_alias" ]; then \
+			optimized="present-alias"; \
+		else \
+			optimized="missing"; \
+		fi; \
+		printf '%s,%s,%s,%s,%s\n' "$name" "$status" "$versioned_compiled" "$optimized" "$notes"; \
+	done | sort

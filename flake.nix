@@ -425,8 +425,82 @@
           ps: [
             ps.jsonschema
             ps.tomli
+            ps.pytest
           ]
         );
+
+        aozora2htmlRustParityShell = pkgs.writeShellApplication {
+          name = "aozora2html-rust-parity";
+          runtimeInputs = [
+            rustToolchain
+            pythonWithAatSchemaDeps
+          ];
+          text = ''
+            repo_root="$PWD"
+            if [ ! -d "$repo_root/adapters/aozora2html" ]; then
+              repo_root="${source}"
+            fi
+            cargo build --manifest-path "$repo_root/adapters/aozora2html/Cargo.toml" --release
+            python3 -m pytest "$repo_root/adapters/aozora2html/tests/test_mapper.py" -vv
+          '';
+        };
+
+        aozora2htmlRustParityCheck = pkgs.runCommand "aozora2html-rust-parity-check" {
+          nativeBuildInputs = [
+            rustToolchain
+            pythonWithAatSchemaDeps
+          ];
+        } ''
+          work_dir="$(mktemp -d)"
+          cp -R "${source}" "$work_dir/source"
+          chmod -R +w "$work_dir/source"
+          cd "$work_dir/source"
+          cargo build --manifest-path "$work_dir/source/adapters/aozora2html/Cargo.toml" --release
+          python3 -m pytest "$work_dir/source/adapters/aozora2html/tests/test_mapper.py" -vv
+          touch "$out"
+        '';
+
+        aatOracleDataSchemaSmokeShell = pkgs.writeShellApplication {
+          name = "aat-oracle-data-schema-smoke";
+          runtimeInputs = [
+            pythonWithAatSchemaDeps
+          ];
+          text = ''
+            export AB_VALIDATOR_DIRECT_PYTHON=1
+            bash "${source}/tests/aat-oracle-data-schema-smoke.sh"
+          '';
+        };
+
+        aatOracleDataSchemaSmokeCheck = pkgs.runCommand "aat-oracle-data-schema-smoke-check" {
+          nativeBuildInputs = [
+            pythonWithAatSchemaDeps
+          ];
+        } ''
+          export AB_VALIDATOR_DIRECT_PYTHON=1
+          bash "${source}/tests/aat-oracle-data-schema-smoke.sh"
+          touch "$out"
+        '';
+
+        adapterFidelityNotesSchemaSmokeShell = pkgs.writeShellApplication {
+          name = "adapter-fidelity-notes-schema-smoke";
+          runtimeInputs = [
+            pythonWithAatSchemaDeps
+          ];
+          text = ''
+            export AB_VALIDATOR_DIRECT_PYTHON=1
+            bash "${source}/tests/adapter-fidelity-notes-schema-smoke.sh"
+          '';
+        };
+
+        adapterFidelityNotesSchemaSmokeCheck = pkgs.runCommand "adapter-fidelity-notes-schema-smoke-check" {
+          nativeBuildInputs = [
+            pythonWithAatSchemaDeps
+          ];
+        } ''
+          export AB_VALIDATOR_DIRECT_PYTHON=1
+          bash "${source}/tests/adapter-fidelity-notes-schema-smoke.sh"
+          touch "$out"
+        '';
       in
       {
         packages = {
@@ -446,29 +520,15 @@
         };
 
         apps.aat-oracle-data-schema-smoke = flake-utils.lib.mkApp {
-          drv = pkgs.writeShellApplication {
-            name = "aat-oracle-data-schema-smoke";
-            runtimeInputs = [
-              pythonWithAatSchemaDeps
-            ];
-            text = ''
-              export AB_VALIDATOR_DIRECT_PYTHON=1
-              bash "${source}/tests/aat-oracle-data-schema-smoke.sh"
-            '';
-          };
+          drv = aatOracleDataSchemaSmokeShell;
+        };
+
+        apps.aozora2html-rust-parity = flake-utils.lib.mkApp {
+          drv = aozora2htmlRustParityShell;
         };
 
         apps.adapter-fidelity-notes-schema-smoke = flake-utils.lib.mkApp {
-          drv = pkgs.writeShellApplication {
-            name = "adapter-fidelity-notes-schema-smoke";
-            runtimeInputs = [
-              pythonWithAatSchemaDeps
-            ];
-            text = ''
-              export AB_VALIDATOR_DIRECT_PYTHON=1
-              bash "${source}/tests/adapter-fidelity-notes-schema-smoke.sh"
-            '';
-          };
+          drv = adapterFidelityNotesSchemaSmokeShell;
         };
 
         checks = {
@@ -477,6 +537,9 @@
           reference-aozora2 = referenceAozora2;
           reference-aozora-rs = referenceAozoraRs;
           reference-parser-metadata = nonRustReferenceMetadata;
+          aat-oracle-data-schema-smoke = aatOracleDataSchemaSmokeCheck;
+          aozora2html-rust-parity = aozora2htmlRustParityCheck;
+          adapter-fidelity-notes-schema-smoke = adapterFidelityNotesSchemaSmokeCheck;
         };
 
         devShells = {

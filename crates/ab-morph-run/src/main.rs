@@ -75,86 +75,6 @@ enum Command {
         #[arg(long)]
         progress_interval_seconds: Option<u64>,
     },
-    SummarizeCompact {
-        #[arg(long)]
-        comparisons: PathBuf,
-        #[arg(long, value_enum, default_value_t = SummaryGroupByArg::SourceId)]
-        group_by: SummaryGroupByArg,
-        #[arg(long, value_enum, default_value_t = SummarySortArg::BoundaryF1)]
-        sort_by: SummarySortArg,
-        #[arg(long, value_enum)]
-        script_category: Option<ScriptCategoryArg>,
-        #[arg(long)]
-        exclude_source_id: Vec<String>,
-        #[arg(long)]
-        exclude_text_id: Vec<String>,
-        #[arg(long, default_value_t = 20)]
-        limit: usize,
-        #[arg(long)]
-        json: bool,
-    },
-    SummarizeExamples {
-        #[arg(long)]
-        examples: PathBuf,
-        #[arg(long, value_enum, default_value_t = SummaryGroupByArg::SourceId)]
-        group_by: SummaryGroupByArg,
-        #[arg(long, value_enum, default_value_t = ExampleFilterArg::All)]
-        filter: ExampleFilterArg,
-        #[arg(long, value_enum)]
-        script_category: Option<ScriptCategoryArg>,
-        #[arg(long)]
-        exclude_source_id: Vec<String>,
-        #[arg(long)]
-        exclude_text_id: Vec<String>,
-        #[arg(long, value_enum, default_value_t = ExampleSortArg::Examples)]
-        sort_by: ExampleSortArg,
-        #[arg(long, default_value_t = 20)]
-        limit: usize,
-        #[arg(long)]
-        json: bool,
-    },
-    SummarizeDifferences {
-        #[arg(long)]
-        examples: PathBuf,
-        #[arg(long, value_enum, default_value_t = DifferenceKindArg::All)]
-        kind: DifferenceKindArg,
-        #[arg(long)]
-        feature_key: Option<String>,
-        #[arg(long)]
-        exclude_feature_value: Vec<String>,
-        #[arg(long)]
-        one_to_one_lexical_features: bool,
-        #[arg(long, value_enum, default_value_t = ExampleFilterArg::All)]
-        filter: ExampleFilterArg,
-        #[arg(long, value_enum)]
-        script_category: Option<ScriptCategoryArg>,
-        #[arg(long)]
-        exclude_source_id: Vec<String>,
-        #[arg(long)]
-        exclude_text_id: Vec<String>,
-        #[arg(long, default_value_t = 20)]
-        limit: usize,
-        #[arg(long)]
-        json: bool,
-    },
-    SummarizeNway {
-        #[arg(long)]
-        nway: PathBuf,
-        #[arg(long, value_enum, default_value_t = SummaryGroupByArg::SourceId)]
-        group_by: SummaryGroupByArg,
-        #[arg(long, value_enum, default_value_t = NwaySummarySortArg::RegionsWithSegmentationDisagreement)]
-        sort_by: NwaySummarySortArg,
-        #[arg(long, value_enum)]
-        script_category: Option<ScriptCategoryArg>,
-        #[arg(long)]
-        exclude_source_id: Vec<String>,
-        #[arg(long)]
-        exclude_text_id: Vec<String>,
-        #[arg(long, default_value_t = 20)]
-        limit: usize,
-        #[arg(long)]
-        json: bool,
-    },
     SummarizeWarehouseNway {
         #[arg(long)]
         run_dir: PathBuf,
@@ -178,28 +98,6 @@ enum Command {
         sort_by: WarehousePairwiseSortArg,
         #[arg(long, value_enum, default_value_t = WarehouseTextFilterArg::All)]
         filter: WarehouseTextFilterArg,
-        #[arg(long)]
-        exclude_source_id: Vec<String>,
-        #[arg(long)]
-        exclude_text_id: Vec<String>,
-        #[arg(long, default_value_t = 20)]
-        limit: usize,
-        #[arg(long)]
-        json: bool,
-    },
-    SummarizeNwayPatterns {
-        #[arg(long)]
-        nway: Option<PathBuf>,
-        #[arg(long)]
-        pattern_counts: Option<PathBuf>,
-        #[arg(long, value_enum, default_value_t = NwayPatternKindArg::Segmentation)]
-        kind: NwayPatternKindArg,
-        #[arg(long)]
-        feature_key: Option<String>,
-        #[arg(long)]
-        exclude_feature_value: Vec<String>,
-        #[arg(long, value_enum)]
-        script_category: Option<ScriptCategoryArg>,
         #[arg(long)]
         exclude_source_id: Vec<String>,
         #[arg(long)]
@@ -326,42 +224,6 @@ enum SummaryGroupByArg {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
-enum SummarySortArg {
-    BoundaryF1,
-    SegmentationRegions,
-    LexicalSegmentationRegions,
-    WhitespaceSegmentationRegions,
-    FeatureDifferences,
-    LexicalFeatureDifferences,
-    WhitespaceFeatureDifferences,
-    CoverageMismatchRegions,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
-enum ExampleFilterArg {
-    All,
-    WhitespaceOnly,
-    LexicalOnly,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
-enum ExampleSortArg {
-    Examples,
-    WhitespaceExamples,
-    LexicalExamples,
-    SegmentationExamples,
-    FeatureDiffExamples,
-    CoverageExamples,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
-enum DifferenceKindArg {
-    All,
-    Segmentation,
-    Feature,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
 enum NwaySummarySortArg {
     RegionsWithSegmentationDisagreement,
     RegionsWithFeatureDisagreement,
@@ -414,16 +276,6 @@ enum WarehouseTextFilterArg {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
-enum ScriptCategoryArg {
-    Whitespace,
-    Japanese,
-    LatinCode,
-    Numeric,
-    Mixed,
-    Other,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
 enum RerunDetailArg {
     Full,
     ExamplesOnly,
@@ -434,68 +286,6 @@ impl SummaryGroupByArg {
         match self {
             Self::SourceId => ab_morph_run::CompactSummaryGroupBy::SourceId,
             Self::TextId => ab_morph_run::CompactSummaryGroupBy::TextId,
-        }
-    }
-}
-
-impl SummarySortArg {
-    fn into_library(self) -> ab_morph_run::CompactSummarySort {
-        match self {
-            Self::BoundaryF1 => ab_morph_run::CompactSummarySort::BoundaryF1,
-            Self::SegmentationRegions => ab_morph_run::CompactSummarySort::SegmentationRegions,
-            Self::LexicalSegmentationRegions => {
-                ab_morph_run::CompactSummarySort::LexicalSegmentationRegions
-            }
-            Self::WhitespaceSegmentationRegions => {
-                ab_morph_run::CompactSummarySort::WhitespaceSegmentationRegions
-            }
-            Self::FeatureDifferences => ab_morph_run::CompactSummarySort::FeatureDifferences,
-            Self::LexicalFeatureDifferences => {
-                ab_morph_run::CompactSummarySort::LexicalFeatureDifferences
-            }
-            Self::WhitespaceFeatureDifferences => {
-                ab_morph_run::CompactSummarySort::WhitespaceFeatureDifferences
-            }
-            Self::CoverageMismatchRegions => {
-                ab_morph_run::CompactSummarySort::CoverageMismatchRegions
-            }
-        }
-    }
-}
-
-impl ExampleFilterArg {
-    fn into_library(self) -> ab_morph_run::CompactExampleFilter {
-        match self {
-            Self::All => ab_morph_run::CompactExampleFilter::All,
-            Self::WhitespaceOnly => ab_morph_run::CompactExampleFilter::WhitespaceOnly,
-            Self::LexicalOnly => ab_morph_run::CompactExampleFilter::LexicalOnly,
-        }
-    }
-}
-
-impl ExampleSortArg {
-    fn into_library(self) -> ab_morph_run::CompactExampleSummarySort {
-        match self {
-            Self::Examples => ab_morph_run::CompactExampleSummarySort::Examples,
-            Self::WhitespaceExamples => ab_morph_run::CompactExampleSummarySort::WhitespaceExamples,
-            Self::LexicalExamples => ab_morph_run::CompactExampleSummarySort::LexicalExamples,
-            Self::SegmentationExamples => {
-                ab_morph_run::CompactExampleSummarySort::SegmentationExamples
-            }
-            Self::FeatureDiffExamples => {
-                ab_morph_run::CompactExampleSummarySort::FeatureDiffExamples
-            }
-            Self::CoverageExamples => ab_morph_run::CompactExampleSummarySort::CoverageExamples,
-        }
-    }
-}
-
-impl DifferenceKindArg {
-    fn into_library(self) -> ab_morph_run::CompactDifferenceKindFilter {
-        match self {
-            Self::All => ab_morph_run::CompactDifferenceKindFilter::All,
-            Self::Segmentation => ab_morph_run::CompactDifferenceKindFilter::Segmentation,
-            Self::Feature => ab_morph_run::CompactDifferenceKindFilter::Feature,
         }
     }
 }
@@ -577,19 +367,6 @@ impl WarehouseTextFilterArg {
             Self::All => ab_morph_run::WarehouseTextFilter::All,
             Self::WhitespaceOnly => ab_morph_run::WarehouseTextFilter::WhitespaceOnly,
             Self::LexicalOnly => ab_morph_run::WarehouseTextFilter::LexicalOnly,
-        }
-    }
-}
-
-impl ScriptCategoryArg {
-    fn into_library(self) -> ab_morph_run::ScriptCategory {
-        match self {
-            Self::Whitespace => ab_morph_run::ScriptCategory::Whitespace,
-            Self::Japanese => ab_morph_run::ScriptCategory::Japanese,
-            Self::LatinCode => ab_morph_run::ScriptCategory::LatinCode,
-            Self::Numeric => ab_morph_run::ScriptCategory::Numeric,
-            Self::Mixed => ab_morph_run::ScriptCategory::Mixed,
-            Self::Other => ab_morph_run::ScriptCategory::Other,
         }
     }
 }
@@ -716,126 +493,6 @@ fn main() -> Result<()> {
             }
             result
         }
-        Command::SummarizeCompact {
-            comparisons,
-            group_by,
-            sort_by,
-            script_category,
-            exclude_source_id,
-            exclude_text_id,
-            limit,
-            json,
-        } => {
-            let rows = ab_morph_run::summarize_compact_comparisons(
-                &comparisons,
-                ab_morph_run::CompactSummaryOptions {
-                    group_by: group_by.into_library(),
-                    sort_by: sort_by.into_library(),
-                    script_category: script_category.map(ScriptCategoryArg::into_library),
-                    exclusions: summary_exclusions(exclude_source_id, exclude_text_id),
-                    limit,
-                },
-            )?;
-            if json {
-                serde_json::to_writer_pretty(std::io::stdout(), &rows)?;
-                println!();
-            } else {
-                print_summary_table(&rows);
-            }
-            Ok(())
-        }
-        Command::SummarizeExamples {
-            examples,
-            group_by,
-            filter,
-            script_category,
-            exclude_source_id,
-            exclude_text_id,
-            sort_by,
-            limit,
-            json,
-        } => {
-            let rows = ab_morph_run::summarize_compact_examples(
-                &examples,
-                ab_morph_run::CompactExampleSummaryOptions {
-                    group_by: group_by.into_library(),
-                    filter: filter.into_library(),
-                    script_category: script_category.map(ScriptCategoryArg::into_library),
-                    sort_by: sort_by.into_library(),
-                    exclusions: summary_exclusions(exclude_source_id, exclude_text_id),
-                    limit,
-                },
-            )?;
-            if json {
-                serde_json::to_writer_pretty(std::io::stdout(), &rows)?;
-                println!();
-            } else {
-                print_example_summary_table(&rows);
-            }
-            Ok(())
-        }
-        Command::SummarizeDifferences {
-            examples,
-            kind,
-            feature_key,
-            exclude_feature_value,
-            one_to_one_lexical_features,
-            filter,
-            script_category,
-            exclude_source_id,
-            exclude_text_id,
-            limit,
-            json,
-        } => {
-            let rows = ab_morph_run::summarize_compact_differences(
-                &examples,
-                ab_morph_run::CompactDifferenceSummaryOptions {
-                    filter: filter.into_library(),
-                    script_category: script_category.map(ScriptCategoryArg::into_library),
-                    kind: kind.into_library(),
-                    feature_key,
-                    excluded_feature_values: exclude_feature_value.into_iter().collect(),
-                    one_to_one_lexical_features,
-                    exclusions: summary_exclusions(exclude_source_id, exclude_text_id),
-                    limit,
-                },
-            )?;
-            if json {
-                serde_json::to_writer_pretty(std::io::stdout(), &rows)?;
-                println!();
-            } else {
-                print_difference_summary_table(&rows);
-            }
-            Ok(())
-        }
-        Command::SummarizeNway {
-            nway,
-            group_by,
-            sort_by,
-            script_category,
-            exclude_source_id,
-            exclude_text_id,
-            limit,
-            json,
-        } => {
-            let rows = ab_morph_run::summarize_nway(
-                &nway,
-                ab_morph_run::NwaySummaryOptions {
-                    group_by: group_by.into_library(),
-                    sort_by: sort_by.into_library(),
-                    script_category: script_category.map(ScriptCategoryArg::into_library),
-                    exclusions: summary_exclusions(exclude_source_id, exclude_text_id),
-                    limit,
-                },
-            )?;
-            if json {
-                serde_json::to_writer_pretty(std::io::stdout(), &rows)?;
-                println!();
-            } else {
-                print_nway_summary_table(&rows);
-            }
-            Ok(())
-        }
         Command::SummarizeWarehouseNway {
             run_dir,
             group_by,
@@ -886,42 +543,6 @@ fn main() -> Result<()> {
                 println!();
             } else {
                 print_warehouse_pairwise_table(&rows);
-            }
-            Ok(())
-        }
-        Command::SummarizeNwayPatterns {
-            nway,
-            pattern_counts,
-            kind,
-            feature_key,
-            exclude_feature_value,
-            script_category,
-            exclude_source_id,
-            exclude_text_id,
-            limit,
-            json,
-        } => {
-            let options = ab_morph_run::NwayPatternOptions {
-                kind: kind.into_library(),
-                feature_key,
-                script_category: script_category.map(ScriptCategoryArg::into_library),
-                excluded_feature_values: exclude_feature_value.into_iter().collect(),
-                exclusions: summary_exclusions(exclude_source_id, exclude_text_id),
-                limit,
-            };
-            let rows = match (nway.as_deref(), pattern_counts.as_deref()) {
-                (Some(_), Some(_)) => {
-                    anyhow::bail!("provide only one of --nway or --pattern-counts")
-                }
-                (Some(path), None) => ab_morph_run::summarize_nway_patterns(path, options)?,
-                (None, Some(path)) => ab_morph_run::summarize_nway_pattern_counts(path, options)?,
-                (None, None) => anyhow::bail!("provide one of --nway or --pattern-counts"),
-            };
-            if json {
-                serde_json::to_writer_pretty(std::io::stdout(), &rows)?;
-                println!();
-            } else {
-                print_nway_pattern_table(&rows);
             }
             Ok(())
         }
@@ -1379,79 +1000,6 @@ fn spawn_progress_thread(
     }
 }
 
-fn print_summary_table(rows: &[ab_morph_run::CompactSummaryRow]) {
-    println!(
-        "key\tsource_ids\ttext_ids\tscript_categories\tcomparisons\tworst_boundary_f1\ttotal_segmentation_regions\ttotal_whitespace_segmentation_regions\ttotal_lexical_segmentation_regions\ttotal_feature_difference_regions\ttotal_whitespace_feature_difference_regions\ttotal_lexical_feature_difference_regions\ttotal_coverage_mismatch_regions"
-    );
-    for row in rows {
-        println!(
-            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
-            row.key,
-            row.source_ids.join(","),
-            row.text_ids.join(","),
-            row.script_categories.join(","),
-            row.comparisons,
-            row.worst_boundary_f1
-                .map(|value| value.to_string())
-                .unwrap_or_else(|| "null".to_owned()),
-            row.total_segmentation_regions,
-            row.total_whitespace_segmentation_regions,
-            row.total_lexical_segmentation_regions,
-            row.total_feature_difference_regions,
-            row.total_whitespace_feature_difference_regions,
-            row.total_lexical_feature_difference_regions,
-            row.total_coverage_mismatch_regions,
-        );
-    }
-}
-
-fn print_example_summary_table(rows: &[ab_morph_run::CompactExampleSummaryRow]) {
-    println!(
-        "key\tsource_ids\ttext_ids\tscript_categories\texamples\twhitespace_examples\tlexical_examples\tsegmentation_examples\tfeature_diff_examples\tcoverage_examples"
-    );
-    for row in rows {
-        println!(
-            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
-            row.key,
-            row.source_ids.join(","),
-            row.text_ids.join(","),
-            row.script_categories.join(","),
-            row.examples,
-            row.whitespace_examples,
-            row.lexical_examples,
-            row.segmentation_examples,
-            row.feature_diff_examples,
-            row.coverage_examples,
-        );
-    }
-}
-
-fn print_difference_summary_table(rows: &[ab_morph_run::CompactDifferenceSummaryRow]) {
-    println!(
-        "kind\tfrom_analyzer\tto_analyzer\texamples\tsource_count\ttext_count\tsample_source_ids\tsample_text_ids\tscript_categories\tregion_kind\tfrom_surfaces\tto_surfaces\tfeature_key\tfeature_from\tfeature_to"
-    );
-    for row in rows {
-        println!(
-            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
-            row.kind,
-            row.from_analyzer,
-            row.to_analyzer,
-            row.examples,
-            row.source_ids.len(),
-            row.text_ids.len(),
-            sample_values(&row.source_ids, 5),
-            sample_values(&row.text_ids, 5),
-            row.script_categories.join(","),
-            row.region_kind.as_deref().unwrap_or(""),
-            row.from_surfaces.join(" + "),
-            row.to_surfaces.join(" + "),
-            row.feature_key.as_deref().unwrap_or(""),
-            row.feature_from.as_deref().unwrap_or(""),
-            row.feature_to.as_deref().unwrap_or(""),
-        );
-    }
-}
-
 fn print_nway_summary_table(rows: &[ab_morph_run::NwaySummaryRow]) {
     println!(
         "key\tsource_ids\ttext_ids\tscript_categories\trows\tanalyzer_count\tregions\tagreement_regions\tregions_with_feature_disagreement\tregions_with_segmentation_disagreement\tregions_with_coverage_mismatch\tvariable_boundary_count"
@@ -1678,184 +1226,6 @@ mod tests {
                 pss_kb: Some(6_388_652),
             }
         );
-    }
-
-    #[test]
-    fn parses_summarize_compact_command() {
-        let args = Args::parse_from([
-            "ab-morph-run",
-            "summarize-compact",
-            "--comparisons",
-            "comparisons.jsonl.zst",
-            "--group-by",
-            "text-id",
-            "--sort-by",
-            "lexical-segmentation-regions",
-            "--exclude-text-id",
-            "JISTABLE",
-            "--limit",
-            "25",
-            "--json",
-        ]);
-
-        let Command::SummarizeCompact {
-            comparisons,
-            group_by,
-            sort_by,
-            script_category,
-            exclude_source_id,
-            exclude_text_id,
-            limit,
-            json,
-        } = args.command
-        else {
-            panic!("expected summarize-compact command");
-        };
-
-        assert_eq!(comparisons, PathBuf::from("comparisons.jsonl.zst"));
-        assert_eq!(group_by, SummaryGroupByArg::TextId);
-        assert_eq!(sort_by, SummarySortArg::LexicalSegmentationRegions);
-        assert_eq!(script_category, None);
-        assert!(exclude_source_id.is_empty());
-        assert_eq!(exclude_text_id, vec!["JISTABLE"]);
-        assert_eq!(limit, 25);
-        assert!(json);
-    }
-
-    #[test]
-    fn parses_summarize_examples_command() {
-        let args = Args::parse_from([
-            "ab-morph-run",
-            "summarize-examples",
-            "--examples",
-            "examples.jsonl.zst",
-            "--group-by",
-            "text-id",
-            "--filter",
-            "whitespace-only",
-            "--sort-by",
-            "whitespace-examples",
-            "--exclude-source-id",
-            "src-a",
-            "--limit",
-            "30",
-            "--json",
-        ]);
-
-        let Command::SummarizeExamples {
-            examples,
-            group_by,
-            filter,
-            script_category,
-            exclude_source_id,
-            exclude_text_id,
-            sort_by,
-            limit,
-            json,
-        } = args.command
-        else {
-            panic!("expected summarize-examples command");
-        };
-
-        assert_eq!(examples, PathBuf::from("examples.jsonl.zst"));
-        assert_eq!(group_by, SummaryGroupByArg::TextId);
-        assert_eq!(filter, ExampleFilterArg::WhitespaceOnly);
-        assert_eq!(script_category, None);
-        assert_eq!(exclude_source_id, vec!["src-a"]);
-        assert!(exclude_text_id.is_empty());
-        assert_eq!(sort_by, ExampleSortArg::WhitespaceExamples);
-        assert_eq!(limit, 30);
-        assert!(json);
-    }
-
-    #[test]
-    fn parses_summarize_differences_command() {
-        let args = Args::parse_from([
-            "ab-morph-run",
-            "summarize-differences",
-            "--examples",
-            "examples.jsonl.zst",
-            "--kind",
-            "feature",
-            "--feature-key",
-            "pos1",
-            "--exclude-feature-value",
-            "空白",
-            "--one-to-one-lexical-features",
-            "--filter",
-            "lexical-only",
-            "--script-category",
-            "japanese",
-            "--exclude-text-id",
-            "JISTABLE",
-            "--limit",
-            "50",
-            "--json",
-        ]);
-
-        let Command::SummarizeDifferences {
-            examples,
-            kind,
-            feature_key,
-            exclude_feature_value,
-            one_to_one_lexical_features,
-            filter,
-            script_category,
-            exclude_source_id,
-            exclude_text_id,
-            limit,
-            json,
-        } = args.command
-        else {
-            panic!("expected summarize-differences command");
-        };
-
-        assert_eq!(examples, PathBuf::from("examples.jsonl.zst"));
-        assert_eq!(kind, DifferenceKindArg::Feature);
-        assert_eq!(feature_key, Some("pos1".to_owned()));
-        assert_eq!(exclude_feature_value, vec!["空白"]);
-        assert!(one_to_one_lexical_features);
-        assert_eq!(filter, ExampleFilterArg::LexicalOnly);
-        assert_eq!(script_category, Some(ScriptCategoryArg::Japanese));
-        assert!(exclude_source_id.is_empty());
-        assert_eq!(exclude_text_id, vec!["JISTABLE"]);
-        assert_eq!(limit, 50);
-        assert!(json);
-    }
-
-    #[test]
-    fn parses_script_category_filters() {
-        let compact = Args::parse_from([
-            "ab-morph-run",
-            "summarize-compact",
-            "--comparisons",
-            "comparisons.jsonl.zst",
-            "--script-category",
-            "japanese",
-        ]);
-        let Command::SummarizeCompact {
-            script_category, ..
-        } = compact.command
-        else {
-            panic!("expected summarize-compact command");
-        };
-        assert_eq!(script_category, Some(ScriptCategoryArg::Japanese));
-
-        let examples = Args::parse_from([
-            "ab-morph-run",
-            "summarize-examples",
-            "--examples",
-            "examples.jsonl.zst",
-            "--script-category",
-            "latin-code",
-        ]);
-        let Command::SummarizeExamples {
-            script_category, ..
-        } = examples.command
-        else {
-            panic!("expected summarize-examples command");
-        };
-        assert_eq!(script_category, Some(ScriptCategoryArg::LatinCode));
     }
 
     #[test]
@@ -2196,39 +1566,6 @@ mod tests {
         .unwrap_err();
 
         assert!(error.to_string().contains("--analyses-output"));
-    }
-
-    #[test]
-    fn parses_summarize_nway_patterns_from_pattern_counts() {
-        let args = Args::parse_from([
-            "ab-morph-run",
-            "summarize-nway-patterns",
-            "--pattern-counts",
-            "nway-pattern-counts.jsonl.zst",
-            "--kind",
-            "feature",
-            "--feature-key",
-            "pos1",
-        ]);
-
-        let Command::SummarizeNwayPatterns {
-            nway,
-            pattern_counts,
-            kind,
-            feature_key,
-            ..
-        } = args.command
-        else {
-            panic!("expected summarize-nway-patterns");
-        };
-
-        assert_eq!(nway, None);
-        assert_eq!(
-            pattern_counts,
-            Some(PathBuf::from("nway-pattern-counts.jsonl.zst"))
-        );
-        assert_eq!(kind, NwayPatternKindArg::Feature);
-        assert_eq!(feature_key, Some("pos1".to_owned()));
     }
 
     #[test]

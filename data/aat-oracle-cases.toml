@@ -97,7 +97,7 @@ citation = "aozora2html reference parser chuuki rule"
 locator = "references/parsers/aozora2html/lib/aozora2html.rb:104,1175"
 supports = "The upstream aozora2html parser recognizes target-attached 注記 commands and rearranges them as ruby-like annotations."
 independent = true
-notes = "Parser-reference evidence for a legacy annotation form handled by the upstream Aozora reference implementation."
+notes = "[status: historical] Parser-reference evidence for a legacy annotation form handled by the upstream Aozora reference implementation."
 
 [[evidence]]
 id = "aozora-reference-bouki-basic"
@@ -106,7 +106,7 @@ citation = "aozora2html reference parser bouki regression"
 locator = "references/parsers/aozora2html/test/test_command_parse.rb:253"
 supports = "The upstream aozora2html regression suite treats 「血が流れ」に「×」の傍記 as a side note rendered like repeated ruby text over the target phrase."
 independent = true
-notes = "Parser-reference evidence for a legacy side-note pattern not clearly located in the current public annotation manual."
+notes = "[status: historical] Parser-reference evidence for a legacy side-note pattern not clearly located in the current public annotation manual."
 
 [[evidence]]
 id = "jis-x-0213-1-15-23"

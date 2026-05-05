@@ -378,11 +378,6 @@ fn source_derived_split_gaiji_notes(
                 {
                     let resolved = gaiji.get("resolved").and_then(Value::as_str).unwrap_or_default().to_string();
                     let mut ruby = node.clone();
-                    if let Some(obj) = ruby.as_object_mut() {
-                        obj.insert("base".to_string(), Value::String(resolved));
-                        obj.insert("base_content".to_string(), Value::Array(vec![gaiji.clone()]));
-                        obj.insert("x-provenance".to_string(), Value::String("source-derived".to_string()));
-                    }
                     let source = gaiji
                         .get("x-source")
                         .and_then(Value::as_str)
@@ -390,6 +385,11 @@ fn source_derived_split_gaiji_notes(
                         .to_string();
                     let kind = source_derived_gaiji_kind(&gaiji);
                     record_source_derived_gaiji(summary, &mut gaiji, &source, kind);
+                    if let Some(obj) = ruby.as_object_mut() {
+                        obj.insert("base".to_string(), Value::String(resolved));
+                        obj.insert("base_content".to_string(), Value::Array(vec![gaiji.clone()]));
+                        obj.insert("x-provenance".to_string(), Value::String("source-derived".to_string()));
+                    }
                     record_ruby_summary(summary, &ruby, "source-derived");
                     out.push(ruby);
                     index += 2;
@@ -1632,4 +1632,260 @@ fn source_text_figure_re() -> &'static Regex {
     RE.get_or_init(|| {
         Regex::new(r#"^(?P<alt>.+?)（(?P<filename>[^、）]+\.(?:png|jpe?g|gif))、横(?P<width>[０-９0-9]+)×縦(?P<height>[０-９0-9]+)）入る$"#).unwrap()
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::model::SourceDerivedSummary;
+
+    fn normalize(blocks: &[Value], source: &str) -> Vec<Value> {
+        let mut summary = SourceDerivedSummary::default();
+        normalize_source_derived_blocks(blocks, &mut summary, source)
+    }
+
+    #[test]
+    fn nested_paragraphs_are_source_derived_normalized() {
+        let blocks = vec![json!({
+            "kind": "jisage_block",
+            "children": [{
+                "kind": "paragraph",
+                "content": [
+                    {"kind":"text","value":"念じ※"},
+                    {
+                        "kind":"style",
+                        "style_type":"notes",
+                        "content":[
+                            {"kind":"text","value":"［＃「参らせ候」のくずし字、13-12］"},
+                        ],
+                    },
+                ],
+            }],
+            "x-indent":1,
+        })];
+
+        assert_eq!(
+            normalize(&blocks, "full source"),
+            vec![json!({
+                "kind":"jisage_block",
+                "children":[{
+                    "kind":"paragraph",
+                    "content":[
+                        {"kind":"text","value":"念じ"},
+                        {
+                            "kind":"gaiji",
+                            "description":"「参らせ候」のくずし字、13-12",
+                            "resolved":"",
+                            "jis_code": Value::Null,
+                            "unresolved_reason":"unresolved",
+                            "x-provenance":"source-derived",
+                        },
+                    ],
+                }],
+                "x-indent":1,
+            })],
+        );
+    }
+
+    #[test]
+    fn split_gaiji_ruby_notes_are_source_derived_in_nested_paragraphs() {
+        let blocks = vec![json!({
+            "kind": "jisage_block",
+            "children": [{
+                "kind": "paragraph",
+                "content": [
+                    {"kind":"ruby","base":"※","reading":"まいらせそろ","direction":"right"},
+                    {
+                        "kind":"style",
+                        "style_type":"notes",
+                        "content":[
+                            {"kind":"text","value":"［＃「参らせ候」のくずし字、13-12］"},
+                        ],
+                    },
+                    {"kind":"text","value":"、"},
+                ],
+            }],
+            "x-indent":1,
+        })];
+
+        assert_eq!(
+            normalize(&blocks, "full source"),
+            vec![json!({
+                "kind":"jisage_block",
+                "children":[{
+                    "kind":"paragraph",
+                    "content":[
+                        {
+                            "kind":"ruby",
+                            "base":"",
+                            "reading":"まいらせそろ",
+                            "direction":"right",
+                            "base_content":[
+                                {
+                                    "kind":"gaiji",
+                                    "description":"「参らせ候」のくずし字、13-12",
+                                    "resolved":"",
+                                    "jis_code": Value::Null,
+                                    "unresolved_reason":"unresolved",
+                                    "x-provenance":"source-derived",
+                                },
+                            ],
+                            "x-provenance":"source-derived",
+                        },
+                        {"kind":"text","value":"、"},
+                    ],
+                }],
+                "x-indent":1,
+            })],
+        );
+    }
+
+    #[test]
+    fn inlined_resolved_gaiji_text_is_source_derived() {
+        let blocks = vec![json!({
+            "kind":"paragraph",
+            "content":[
+                {"kind":"text","value":"芒の快い刺㦸を感じた。"},
+            ],
+        })];
+        let source = "芒の快い刺※［＃「卓＋戈」、U+39B8、32-上-8］を感じた。";
+
+        assert_eq!(
+            normalize(&blocks, source),
+            vec![json!({
+                "kind":"paragraph",
+                "content":[
+                    {"kind":"text","value":"芒の快い刺"},
+                    {
+                        "kind":"gaiji",
+                        "description":"「卓＋戈」、U+39B8、32-上-8",
+                        "resolved":"㦸",
+                        "jis_code": Value::Null,
+                        "unresolved_reason": Value::Null,
+                        "x-provenance":"source-derived",
+                    },
+                    {"kind":"text","value":"を感じた。"},
+                ],
+            })],
+        );
+    }
+
+    #[test]
+    fn inlined_resolved_gaiji_text_is_source_derived_in_mixed_content() {
+        let blocks = vec![json!({
+            "kind":"paragraph",
+            "content":[
+                {"kind":"text","value":"經濟に刺㦸されてその"},
+                {"kind":"ruby","base":"人","reading":"にん","direction":"right"},
+            ],
+        })];
+        let source = "經濟に刺※［＃「卓＋戈」、U+39B8、64-上-17］されてその人《にん》";
+
+        assert_eq!(
+            normalize(&blocks, source),
+            vec![json!({
+                "kind":"paragraph",
+                "content":[
+                    {"kind":"text","value":"經濟に刺"},
+                    {
+                        "kind":"gaiji",
+                        "description":"「卓＋戈」、U+39B8、64-上-17",
+                        "resolved":"㦸",
+                        "jis_code": Value::Null,
+                        "unresolved_reason": Value::Null,
+                        "x-provenance":"source-derived",
+                    },
+                    {"kind":"text","value":"されてその"},
+                    {"kind":"ruby","base":"人","reading":"にん","direction":"right"},
+                ],
+            })],
+        );
+    }
+
+    #[test]
+    fn inlined_resolved_gaiji_ruby_base_is_source_derived() {
+        let blocks = vec![json!({
+            "kind":"paragraph",
+            "content":[
+                {"kind":"text","value":"沙漠の"},
+                {"kind":"ruby","base":"砂","reading":"すな","direction":"right"},
+                {"kind":"text","value":"の"},
+                {"kind":"ruby","base":"燩","reading":"や","direction":"right"},
+                {"kind":"text","value":"けて"},
+            ],
+        })];
+        let source = "沙漠の砂《すな》の※［＃「檄」の「木」に代えて「火」、U+71E9、35-3］《や》けて";
+
+        assert_eq!(
+            normalize(&blocks, source),
+            vec![json!({
+                "kind":"paragraph",
+                "content":[
+                    {"kind":"text","value":"沙漠の"},
+                    {"kind":"ruby","base":"砂","reading":"すな","direction":"right"},
+                    {"kind":"text","value":"の"},
+                    {
+                        "kind":"ruby",
+                        "base":"燩",
+                        "reading":"や",
+                        "direction":"right",
+                        "base_content":[
+                            {
+                                "kind":"gaiji",
+                                "description":"「檄」の「木」に代えて「火」、U+71E9、35-3",
+                                "resolved":"燩",
+                                "jis_code": Value::Null,
+                                "unresolved_reason": Value::Null,
+                                "x-provenance":"source-derived",
+                            },
+                        ],
+                        "x-provenance":"source-derived",
+                    },
+                    {"kind":"text","value":"けて"},
+                ],
+            })],
+        );
+    }
+
+    #[test]
+    fn unresolved_gaiji_placeholder_in_ruby_base_is_source_derived() {
+        let blocks = vec![json!({
+            "kind":"paragraph",
+            "content":[
+                {"kind":"text","value":"長き"},
+                {"kind":"ruby","base":"※衣","reading":"けおりごろも","direction":"right"},
+                {"kind":"text","value":"を着て"},
+            ],
+        })];
+        let source = "前文\n長き※［＃「曷＋毛」、37-下段-28］衣《けおりごろも》を着て";
+
+        assert_eq!(
+            normalize(&blocks, source),
+            vec![json!({
+                "kind":"paragraph",
+                "content":[
+                    {"kind":"text","value":"長き"},
+                    {
+                        "kind":"ruby",
+                        "base":"衣",
+                        "reading":"けおりごろも",
+                        "direction":"right",
+                        "base_content":[
+                            {
+                                "kind":"gaiji",
+                                "description":"「曷＋毛」、37-下段-28",
+                                "resolved":"",
+                                "jis_code": Value::Null,
+                                "unresolved_reason":"unresolved",
+                                "x-provenance":"source-derived",
+                            },
+                            {"kind":"text","value":"衣"},
+                        ],
+                        "x-provenance":"source-derived",
+                    },
+                    {"kind":"text","value":"を着て"},
+                ],
+            })],
+        );
+    }
 }

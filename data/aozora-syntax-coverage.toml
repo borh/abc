@@ -89,7 +89,7 @@ notes = "DecoBegin(Deco::Ruby) emits Inline::Ruby with reading via push_ruby_inl
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "preserved"
-evidence = "adapters/aozora2html/adapter.py:152"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = ""
 
 [syntax.corpus_prevalence]
@@ -147,7 +147,7 @@ notes = "parsed_gaiji parses ※［＃...］ from source events to emit GaijiRef
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "dropped"
-evidence = "adapters/aozora2html/adapter.py:274"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = "span gaiji preserved as text, marker lost"
 
 [syntax.corpus_prevalence]
@@ -190,7 +190,7 @@ notes = "gaiji marker not parsed; following 《...》 ruby has no kanji base so 
 
 [syntax.parsers.aozora2html]
 recognition = "parsed"
-evidence = "adapters/aozora2html/adapter.py:215"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = "ruby with gaiji base"
 
 [syntax.adapters.aozora2]
@@ -205,7 +205,7 @@ notes = "structured_source_fallback_blocks_with_events emits gaiji+ruby from sou
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "preserved"
-evidence = "adapters/aozora2html/adapter.py:215"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = ""
 
 [syntax.corpus_prevalence]
@@ -263,7 +263,7 @@ notes = "Deco::AHead/BHead/CHead emit Block::Heading with level 1/2/3"
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "preserved"
-evidence = "adapters/aozora2html/adapter.py:314"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = ""
 
 [syntax.corpus_prevalence]
@@ -321,7 +321,7 @@ notes = "DecoBegin emits Inline::Style with stable_style_type bold/italic/boten/
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "preserved"
-evidence = "adapters/aozora2html/adapter.py:87"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = ""
 
 [syntax.corpus_prevalence]
@@ -379,7 +379,7 @@ notes = "stable_style_type returns 'indent'/'grounded'/'low_flying' but level/ma
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "preserved"
-evidence = "adapters/aozora2html/adapter.py:325"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = ""
 
 [syntax.corpus_prevalence]
@@ -437,7 +437,7 @@ notes = "Deco::Warichu maps to style 'warichu' via stable_style_type"
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "lossy"
-evidence = "adapters/aozora2html/adapter.py:350"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = "warichu content as paragraph"
 
 [syntax.corpus_prevalence]
@@ -495,7 +495,7 @@ notes = "Retokenized::Figure flattened to Inline::gaiji using figure.to_string()
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "lossy"
-evidence = "adapters/aozora2html/adapter.py:243"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = "img alt preserved, caption structure lost"
 
 [syntax.corpus_prevalence]
@@ -553,7 +553,7 @@ notes = "All Retokenized::Break variants flush_paragraph; no node distinguishes 
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "preserved"
-evidence = "adapters/aozora2html/adapter.py:95"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = "br as raw HTML"
 
 [syntax.corpus_prevalence]
@@ -615,7 +615,7 @@ notes = "push_ruby_inline emits one ruby node per Deco::Ruby; nested ruby suppre
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "dropped"
-evidence = "adapters/aozora2html/adapter.py:152"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = "under_ruby ignored"
 
 [syntax.corpus_prevalence]
@@ -671,7 +671,7 @@ notes = "RubyPlacement::Right hard-coded throughout; no synthesis path for left/
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "preserved"
-evidence = "adapters/aozora2html/adapter.py:161"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = "left/right placement mapped"
 
 [syntax.corpus_prevalence]
@@ -783,7 +783,7 @@ notes = "Adapter has no synthesis path for の-form chuuki annotation"
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "dropped"
-evidence = "adapters/aozora2html/adapter.py:1"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = "chuuki table used, marker emitted separately"
 
 [syntax.corpus_prevalence]
@@ -839,7 +839,7 @@ notes = "Adapter has no synthesis path for bouki side-gloss annotation"
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "dropped"
-evidence = "adapters/aozora2html/adapter.py:1"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = "bouki markers not mapped in adapter"
 
 [syntax.corpus_prevalence]
@@ -895,7 +895,7 @@ notes = "parsed_gaiji extracts unicode field from source-event description and e
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "preserved"
-evidence = "adapters/aozora2html/adapter.py:280"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = "span gaiji with resolved text"
 
 [syntax.corpus_prevalence]
@@ -951,7 +951,7 @@ notes = "parsed_gaiji extracts plane/row/cell from source-event description and 
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "lossy"
-evidence = "adapters/aozora2html/adapter.py:243"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = "img fallback preserves alt, not code"
 
 [syntax.corpus_prevalence]
@@ -1007,7 +1007,7 @@ notes = "parsed_gaiji handles JIS-form gaiji from source events; dakuten katakan
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "dropped"
-evidence = "adapters/aozora2html/adapter.py:243"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = "img gaiji rendered, dakuten marker lost"
 
 [syntax.corpus_prevalence]
@@ -1063,7 +1063,7 @@ notes = "gaiji_inline fallback emits GaijiRef with description and no resolved k
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "dropped"
-evidence = "adapters/aozora2html/adapter.py:1"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = "un-embed marker not mapped"
 
 [syntax.corpus_prevalence]
@@ -1119,7 +1119,7 @@ notes = "Adapter has no synthesis path for kunoji iteration mark"
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "dropped"
-evidence = "adapters/aozora2html/adapter.py:1"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = "iteration marker not in adapter"
 
 [syntax.corpus_prevalence]
@@ -1175,7 +1175,7 @@ notes = "No accent table or synthesis path"
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "lossy"
-evidence = "adapters/aozora2html/adapter.py:243"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = "accent as img, name in alt"
 
 [syntax.corpus_prevalence]
@@ -1231,7 +1231,7 @@ notes = "Even when bare Kundoku tokens are produced, adapter discards Retokenize
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "parsed"
-evidence = "adapters/aozora2html/adapter.py:91"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = "sub.kaeriten maps to style_type=kaeriten and is preserved in ruby base_content when embedded in ruby bases"
 
 [syntax.corpus_prevalence]
@@ -1287,7 +1287,7 @@ notes = "Retokenized::Okurigana discarded by adapter; no synthesis for 訓点送
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "dropped"
-evidence = "adapters/aozora2html/adapter.py:118"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = "sup.okurigana unmapped"
 
 [syntax.corpus_prevalence]
@@ -1343,7 +1343,7 @@ notes = "No synthesis path for の-form inline heading"
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "preserved"
-evidence = "adapters/aozora2html/adapter.py:314"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = ""
 
 [syntax.corpus_prevalence]
@@ -1399,7 +1399,7 @@ notes = "No synthesis path for dogyo heading variant"
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "preserved"
-evidence = "adapters/aozora2html/adapter.py:335"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = "div.o-midashi/naka-midashi/ko-midashi"
 
 [syntax.corpus_prevalence]
@@ -1455,7 +1455,7 @@ notes = "No synthesis path for mado heading variant"
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "preserved"
-evidence = "adapters/aozora2html/adapter.py:335"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = "div mado class mapping"
 
 [syntax.corpus_prevalence]
@@ -1511,7 +1511,7 @@ notes = "stable_style_type collapses Deco::Boten(BotenKind) to flat 'boten' stri
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "preserved"
-evidence = "adapters/aozora2html/adapter.py:87"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = "em class mapped to style"
 
 [syntax.corpus_prevalence]
@@ -1567,7 +1567,7 @@ notes = "stable_style_type collapses Deco::Bosen(BosenKind) to flat 'bosen'; lin
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "preserved"
-evidence = "adapters/aozora2html/adapter.py:87"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = "em underline mapped"
 
 [syntax.corpus_prevalence]
@@ -1623,7 +1623,7 @@ notes = "stable_style_type maps Bold→bold, Italic→italic"
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "preserved"
-evidence = "adapters/aozora2html/adapter.py:87"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = "em futoji/shatai"
 
 [syntax.corpus_prevalence]
@@ -1679,7 +1679,7 @@ notes = "stable_style_type returns 'smaller'/'bigger' but level (1-N) is dropped
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "preserved"
-evidence = "adapters/aozora2html/adapter.py:87"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = "em dai/sho classes"
 
 [syntax.corpus_prevalence]
@@ -1735,7 +1735,7 @@ notes = "No synthesis path for keigakomi"
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "lossy"
-evidence = "adapters/aozora2html/adapter.py:87"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = "keigakomi as em, structure lost"
 
 [syntax.corpus_prevalence]
@@ -1791,7 +1791,7 @@ notes = "No directional placement attribute on style nodes"
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "dropped"
-evidence = "adapters/aozora2html/adapter.py:118"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = "direction override not mapped"
 
 [syntax.corpus_prevalence]
@@ -1847,7 +1847,7 @@ notes = "Inline::Style 'indent' emitted but level magnitude dropped"
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "preserved"
-evidence = "adapters/aozora2html/adapter.py:325"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = "div.jisage_N mapped"
 
 [syntax.corpus_prevalence]
@@ -1903,7 +1903,7 @@ notes = "No synthesis path for one-line jisage"
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "preserved"
-evidence = "adapters/aozora2html/adapter.py:325"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = "span jisage inline"
 
 [syntax.corpus_prevalence]
@@ -1959,7 +1959,7 @@ notes = "Deco::Grounded → 'grounded' style; Deco::LowFlying(level) → 'low_fl
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "preserved"
-evidence = "adapters/aozora2html/adapter.py:1"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = "chitsuki alignment preserved in style"
 
 [syntax.corpus_prevalence]
@@ -2015,7 +2015,7 @@ notes = "No synthesis path for matrix-form jizume"
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "dropped"
-evidence = "adapters/aozora2html/adapter.py:1"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = "jizume letter-spacing not mapped"
 
 [syntax.corpus_prevalence]
@@ -2071,7 +2071,7 @@ notes = "Deco::Hanging((fst,snd)) flattens to 'hanging' style; magnitude pair dr
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "dropped"
-evidence = "adapters/aozora2html/adapter.py:325"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = "burasage div not recognized"
 
 [syntax.corpus_prevalence]
@@ -2127,7 +2127,7 @@ notes = "No synthesis path for ここから/の-form yokogumi"
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "preserved"
-evidence = "adapters/aozora2html/adapter.py:1"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = "div.yokogumi layout"
 
 [syntax.corpus_prevalence]
@@ -2183,7 +2183,7 @@ notes = "No synthesis path for の-form TCY"
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "dropped"
-evidence = "adapters/aozora2html/adapter.py:1"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = "tcy marker not in adapter"
 
 [syntax.corpus_prevalence]
@@ -2239,7 +2239,7 @@ notes = "No synthesis path for warigaki parenthetical aside"
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "lossy"
-evidence = "adapters/aozora2html/adapter.py:87"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = "warigaki as em, marker lost"
 
 [syntax.corpus_prevalence]
@@ -2295,7 +2295,7 @@ notes = "No synthesis path for inline caption"
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "lossy"
-evidence = "adapters/aozora2html/adapter.py:351"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = "caption in paragraph, structure lost"
 
 [syntax.corpus_prevalence]
@@ -2351,7 +2351,7 @@ notes = "No synthesis path for block caption scope"
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "lossy"
-evidence = "adapters/aozora2html/adapter.py:357"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = "caption block not distinguished"
 
 [syntax.corpus_prevalence]
@@ -2407,7 +2407,7 @@ notes = "Retokenized::Figure flattened to gaiji using figure.to_string(); struct
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "lossy"
-evidence = "adapters/aozora2html/adapter.py:243"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = "img alt preserved, inline context lost"
 
 [syntax.corpus_prevalence]
@@ -2463,7 +2463,7 @@ notes = "strip_cross_node_commands removes any leftover ［＃...］ text from i
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "dropped"
-evidence = "adapters/aozora2html/adapter.py:118"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = "span.notes unmapped, command syntax lost"
 
 [syntax.corpus_prevalence]
@@ -2519,7 +2519,7 @@ notes = "No reference resolution or synthesis path"
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "dropped"
-evidence = "adapters/aozora2html/adapter.py:113"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = "anchor kept, link structure lost"
 
 [syntax.corpus_prevalence]
@@ -2575,7 +2575,7 @@ notes = "strip_cross_node_commands strips the marker; no Inline::Break emitted f
 
 [syntax.adapters.aozora2html]
 aat_fidelity = "preserved"
-evidence = "adapters/aozora2html/adapter.py:480"
+evidence = "adapters/aozora2html/src/lib.rs"
 notes = "br flushes paragraph"
 
 [syntax.corpus_prevalence]

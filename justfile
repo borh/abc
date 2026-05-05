@@ -19,7 +19,11 @@ aozora2html-rust-test:
 	@cargo test --manifest-path "{{repo_root}}/adapters/aozora2html/Cargo.toml"
 
 aozora2html-rust-parity:
-	@nix develop "{{aozora2html_flake}}" --command pytest "{{repo_root}}/adapters/aozora2html/tests/test_mapper.py" -vv
+	@nix run "{{repo_root}}#aozora2html-rust-parity"
+
+aat-schema-smoke-suite:
+	@nix run "{{repo_root}}#aat-oracle-data-schema-smoke"
+	@nix run "{{repo_root}}#adapter-fidelity-notes-schema-smoke"
 
 clean-db:
 	@echo "cleaning generated artifacts under {{ab_db_root}}"

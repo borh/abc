@@ -1,4 +1,3 @@
-use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::BTreeMap;
 
@@ -137,9 +136,3 @@ pub struct DecodedSource {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct AdapterEnvelope {
-    pub version: u8,
-    pub work_id: &'static str,
-    pub blocks: Vec<AtBlock>,
-    pub meta: Value,
-}

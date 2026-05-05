@@ -121,7 +121,7 @@ Captured during fixture review (`tests/fixtures/*.xhtml`):
   reviewed subset to parser-neutral AAT `style`, `font_size`, or `keigakomi`
   nodes with `x-provenance = "source-derived"` and keeps the relevant variant
   metadata (`x-boten-kind`, `x-line-kind`, `x-placement`, `level`).
-- **`gaiji.marker.value.kind` is a legacy simplification.** Rust's
+- **`gaiji.marker.value.kind` is a legacy simplification (status: compat).** Rust's
   `ab-ir` stores the full `format!("{:?}", GaijiKind)` debug string
   (e.g. `"UnicodeCodepoint { value: '吭' }"`,
   `"JisLevel { level: 3, row: 15, cell: 23 }"`). The adapter emits stable

@@ -4,7 +4,7 @@
 
 **Goal:** Add a canonical Parquet-backed morph result warehouse that persists comprehensive analyzer, morpheme, feature, and N-way disagreement facts without using JSONL as the durable artifact.
 
-**Architecture:** Warehouse mode is an output sink inside the existing `ab-morph-run` analysis loop, not a second analyzer runner. A run is written to `.staging/<run_id>.<pid>/` and published by atomic rename to `runs/<run_id>/`; every row carries `run_id`, while the path is only a publication boundary. DuckDB reads Parquet directly through generated SQL helper files; JSONL remains a legacy/debug path in phase 1 and is not extended as the canonical store.
+**Architecture:** Warehouse mode is an output sink inside the existing `ab-morph-run` analysis loop, not a second analyzer runner. A run is written to `.staging/<run_id>.<pid>/` and published by atomic rename to `runs/<run_id>/`; every row carries `run_id`, while the path is only a publication boundary. DuckDB reads Parquet directly through generated SQL helper files; JSONL remains a deprecated/debug path in phase 1 (status: deprecated) and is not extended as the canonical store.
 
 **Tech Stack:** Rust 2024, `ab-morph-run`, `ab-morph-diff`, Apache Arrow/Parquet Rust crates, existing Vibrato/Sudachi analyzers, DuckDB SQL over Parquet.
 
@@ -1890,7 +1890,7 @@ If no fixes were required, do not create an empty commit.
 
 ## Deferred Work
 
-- Deleting the legacy JSONL write path. Trigger: after `ab-morph-run report` commands can read warehouse facts and produce equivalents for `summarize-compact`, `summarize-examples`, `summarize-differences`, `summarize-nway`, and `summarize-nway-patterns`. Target phase: warehouse reporting phase, immediately after this persistence phase.
+- Deleting the JSONL write path (status: deprecated). Trigger: after `ab-morph-run report` commands can read warehouse facts and produce equivalents for `summarize-compact`, `summarize-examples`, `summarize-differences`, `summarize-nway`, and `summarize-nway-patterns`. Target phase: warehouse reporting phase, immediately after this persistence phase.
 - `export-jsonl` generated from warehouse facts. Add only when a concrete downstream consumer needs JSONL.
 - Warehouse resume. Phase 1 restarts interrupted runs from scratch; stale staging cleanup prevents partial data from becoming visible.
 - Parallel warehouse writes. Phase 1 is serial because schema correctness is the first constraint.

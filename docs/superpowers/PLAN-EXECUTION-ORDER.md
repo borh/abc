@@ -20,6 +20,10 @@ None at the moment.
 All previously queued plans landed and were moved to
 `docs/superpowers/archive/`:
 
+- `2026-05-03-aat-fidelity-oracle-roadmap`
+- `2026-05-03-aat-fidelity-oracle-roadmap-v2`
+- `2026-04-28-morph-analyzer-adapters`
+- `2026-05-03-morph-warehouse-sql-report`
 - `2026-04-25-parser-validation-harness`
 - `2026-04-26-parser-neutral-ir`
 - `2026-04-26-structured-ab-ir`

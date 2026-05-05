@@ -731,7 +731,7 @@ Each adapter directory contains a lockfile or checksum file (e.g., `Cargo.lock`,
 | 7 | `ab-render-diff` for aozora-rs | Can diff aozora-rs's HTML against official XHTML |
 | 8 | `ab-compare` | Can compare aozora2 vs. aozora-rs AAT output (both validated) |
 | 9 | `ab-report` | Can aggregate all outputs into cross-parser reports |
-| 10 | `aozora-parser-js` adapter | Can evaluate the legacy PEG.js parser |
+| 10 | `aozora-parser-js` adapter | Can evaluate the legacy PEG.js parser (status: deprecated) |
 
 ---
 

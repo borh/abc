@@ -120,5 +120,5 @@ The initial subset exposed a real Sudachi adapter bug: `sudachi-c` appeared as `
 Remaining next steps:
 
 1. Keep warehouse mode serial until analyzer dictionary sharing or a bounded-memory worker model exists; naive parallel mode would multiply the 5.9 GiB RSS.
-2. Move workflow docs toward warehouse-first triage and mark JSONL compact reporting as legacy/debug.
+2. Move workflow docs toward warehouse-first triage and mark JSONL compact reporting as deprecated/debug (status: deprecated).
 3. Consider a focused drill-down command that takes a pattern row and returns bounded concrete regions, rather than printing full feature payloads for arbitrary regions.

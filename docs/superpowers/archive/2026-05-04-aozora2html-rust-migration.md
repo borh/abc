@@ -1,5 +1,7 @@
 # Aozora2HTML Rust Migration Implementation Plan (Revised)
 
+> ARCHIVED: 2026-05-05 — Migration completed and Rust implementation in `adapters/aozora2html` is now active; this document is kept for historical reference only.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Replace the Python mapping stage in `adapters/aozora2html` with a Rust implementation while preserving existing behavior of the Ruby parser wrapper and existing fixture/parity expectations.

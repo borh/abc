@@ -169,7 +169,7 @@ TOML rows:
 | ---         | ---                                                                                     |
 | aozora2     | `adapters/aozora2/src/lib.rs`                                                            |
 | aozora-rs   | `adapters/aozora-rs/src/{aat,projection,source}.rs`                                     |
-| aozora2html | `adapters/aozora2html/adapter.py`                                                       |
+| aozora2html | `adapters/aozora2html/aozora2html-adapter`, `adapters/aozora2html/src`                    |
 
 Findings JSON is in `scratch/findings-<id>.json` per pass; the merger
 (`crates/ab-coverage/src/bin/merge.rs`) applies findings to the matrix

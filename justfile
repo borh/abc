@@ -9,6 +9,28 @@ aozora2html_flake := repo_root + "#aozora2html"
 default:
 	@just --list
 
+fmt:
+	@cargo fmt --all
+
+fmt-check:
+	@cargo fmt --all -- --check
+
+workspace-check:
+	@cargo check --workspace --all-targets
+
+clippy:
+	@cargo clippy --workspace --all-targets --all-features
+
+quality:
+	@just fmt-check
+	@just workspace-check
+	@just clippy
+
+quality-fix:
+	@just fmt
+	@just workspace-check
+	@just clippy
+
 aozora2html-rust-build PROFILE="release":
 	@cargo build --manifest-path "{{repo_root}}/adapters/aozora2html/Cargo.toml" --{{PROFILE}}
 

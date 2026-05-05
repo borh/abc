@@ -53,7 +53,7 @@ crates/ab-morph-run/src/                   [modify] — update callers, warnings
 crates/ab-morph-analyzers/src/vibrato.rs   [modify] — warnings → structured, panic → Result
 crates/ab-morph-analyzers/src/vaporetto.rs [modify] — panic → Result
 crates/ab-morph-analyzers/src/sudachi.rs   [modify] — warnings → structured
-crates/ab-morph-analyzers/src/lib.rs       [modify] — MorphAnalyzer trait breaking change
+crates/ab-morph-diff/src/model.rs          [modify] — add warnings field to Analysis struct (no trait change)
 crates/ab-coverage/src/adapter.rs          [modify] — panic → Result
 ```
 
@@ -228,15 +228,20 @@ Find the existing `fn collect_visible(value: &Inline, out: &mut String)` at ~lin
 
 ```rust
 fn collect_visible(value: &Inline, out: &mut String) {
-    let mut collector = VisibleCollector {
-        out: std::mem::take(out),
-    };
-    walk_inline(&mut collector, value);
-    *out = collector.out;
+    struct Vis<'a>(&'a mut String);
+    impl InlineVisitor for Vis<'_> {
+        fn enter_text(&mut self, v: &str, _: &Provenance) { self.0.push_str(v); }
+        fn enter_text_meta(&mut self, v: &str, _: &[StyleAttr], _: &Provenance) { self.0.push_str(v); }
+        fn enter_gaiji_ref(&mut self, g: &GaijiRef) {
+            if let Some(r) = &g.resolved { self.0.push_str(r); }
+        }
+        fn enter_accent(&mut self, r: &str, _: &Provenance) { self.0.push_str(r); }
+    }
+    walk_inline(&mut Vis(out), value);
 }
 ```
 
-This preserves the function signature for `inline_visible_text` and `visible_projection` which still call it.
+This preserves the function signature for `inline_visible_text` and `visible_projection` which still call it. No allocation overhead — `&mut String` is borrowed directly, avoiding `std::mem::take` (which would clear accumulated text on every call, causing data loss in loops like `visible_projection`).
 
 - [ ] **Step 3: Run tests**
 
@@ -311,13 +316,9 @@ git commit -m "refactor(ab-ir): replace contains_unresolved_gaiji with GaijiChec
 **Files:**
 - Modify: `crates/ab-ir/src/lib.rs` (~lines 849–891)
 
-- [ ] **Step 1: Add ProvenanceCollector visitor and ProvenanceCounts helper**
+- [ ] **Step 1: Add ProvenanceCounts::increment helper**
 
 ```rust
-struct ProvenanceCollector {
-    pub counts: ProvenanceCounts,
-}
-
 impl ProvenanceCounts {
     fn increment(&mut self, provenance: &Provenance) {
         match provenance {
@@ -328,34 +329,34 @@ impl ProvenanceCounts {
         }
     }
 }
-
-impl InlineVisitor for ProvenanceCollector {
-    fn enter_text(&mut self, _: &str, p: &Provenance) { self.counts.increment(p); }
-    fn enter_text_meta(&mut self, _: &str, _: &[StyleAttr], p: &Provenance) { self.counts.increment(p); }
-    fn enter_gaiji_ref(&mut self, gaiji: &GaijiRef) { self.counts.increment(&gaiji.provenance); }
-    fn enter_accent(&mut self, _: &str, p: &Provenance) { self.counts.increment(p); }
-    fn enter_editor_note(&mut self, _: &str, p: &Provenance) { self.counts.increment(p); }
-    fn enter_raw(&mut self, _: &str, _: &[StyleAttr], p: &Provenance) { self.counts.increment(p); }
-    fn enter_ruby(&mut self, _: &[Inline], _: &str, _: &RubyPlacement, p: &Provenance) { self.counts.increment(p); }
-    fn enter_style(&mut self, _: &str, _: &[Inline], _: &[StyleAttr], p: &Provenance) { self.counts.increment(p); }
-    fn enter_scope(&mut self, _: &str, _: &[Inline], p: &Provenance) { self.counts.increment(p); }
-    fn enter_font_size(&mut self, _: &str, _: u8, _: &[Inline], p: &Provenance) { self.counts.increment(p); }
-    fn enter_warigaki(&mut self, _: &[Inline], _: &[Inline], p: &Provenance) { self.counts.increment(p); }
-    fn enter_figure_ref(&mut self, _: &str, _: &[Inline], p: &Provenance) { self.counts.increment(p); }
-}
 ```
 
 - [ ] **Step 2: Replace `fn collect_provenance` body**
 
+Same borrow-based approach as `collect_visible` — no `std::mem::take` (which would zero accumulated counts on every call in the loop).
+
 ```rust
 fn collect_provenance(value: &Inline, counts: &mut ProvenanceCounts) {
-    let mut collector = ProvenanceCollector {
-        counts: std::mem::take(counts),
-    };
-    walk_inline(&mut collector, value);
-    *counts = collector.counts;
+    struct Vis<'a>(&'a mut ProvenanceCounts);
+    impl InlineVisitor for Vis<'_> {
+        fn enter_text(&mut self, _: &str, p: &Provenance) { self.0.increment(p); }
+        fn enter_text_meta(&mut self, _: &str, _: &[StyleAttr], p: &Provenance) { self.0.increment(p); }
+        fn enter_gaiji_ref(&mut self, g: &GaijiRef) { self.0.increment(&g.provenance); }
+        fn enter_accent(&mut self, _: &str, p: &Provenance) { self.0.increment(p); }
+        fn enter_editor_note(&mut self, _: &str, p: &Provenance) { self.0.increment(p); }
+        fn enter_raw(&mut self, _: &str, _: &[StyleAttr], p: &Provenance) { self.0.increment(p); }
+        fn enter_ruby(&mut self, _: &[Inline], _: &str, _: &RubyPlacement, p: &Provenance) { self.0.increment(p); }
+        fn enter_style(&mut self, _: &str, _: &[Inline], _: &[StyleAttr], p: &Provenance) { self.0.increment(p); }
+        fn enter_scope(&mut self, _: &str, _: &[Inline], p: &Provenance) { self.0.increment(p); }
+        fn enter_font_size(&mut self, _: &str, _: u8, _: &[Inline], p: &Provenance) { self.0.increment(p); }
+        fn enter_warigaki(&mut self, _: &[Inline], _: &[Inline], p: &Provenance) { self.0.increment(p); }
+        fn enter_figure_ref(&mut self, _: &str, _: &[Inline], p: &Provenance) { self.0.increment(p); }
+    }
+    walk_inline(&mut Vis(counts), value);
 }
 ```
+
+The inline `Vis` struct borrows `&mut ProvenanceCounts` directly — no allocation, no `std::mem::take`, no separate `ProvenanceCollector` struct needed.
 
 - [ ] **Step 3: Remove the old `fn inline_provenance`**
 
@@ -437,25 +438,13 @@ pub fn block_content(block: &Block) -> &[Inline] {
     }
 }
 
-pub fn block_content_mut(block: &mut Block) -> &mut Vec<Inline> {
-    match block {
-        Block::Paragraph { content, .. }
-        | Block::Heading { content, .. }
-        | Block::Jisage { content, .. }
-        | Block::CaptionBlock { content, .. }
-        | Block::Warichu { content, .. }
-        | Block::Figure { content, .. } => content,
-        Block::Break { .. } => {
-            // Return a mutable reference to a static empty vec is impossible;
-            // but block_content_mut is used in contexts that never mutate Break.
-            // Use unreachable or define a dummy static.
-            unreachable!("Break has no content to mutate")
-        }
-    }
-}
 ```
 
-- [ ] **Step 4: Update all consumers matching Block::Break { content, .. }**
+- [ ] **Step 4: Delete `pub fn block_content_mut` entirely**
+
+**Verified: zero callers** — `rg "block_content_mut" crates/` returns only the definition at lib.rs:952, no external call sites. Delete the entire function (~lines 952-962). No `unreachable!()` needed — just remove dead code.
+
+- [ ] **Step 5: Update all consumers matching `Block::Break { content, .. }`**
 
 Search the codebase for patterns matching `Block::Break` and remove any `content` binding:
 
@@ -465,16 +454,16 @@ Check `semantic_summary.rs` for `collect_block` — it matches `Block::Break { .
 Run: `cargo build -p ab-ir 2>&1 | head -30`
 Fix any compile errors from removed `content` field.
 
-- [ ] **Step 5: Run tests**
+- [ ] **Step 6: Run tests**
 
 Run: `cargo test -p ab-ir`
 Expected: all tests pass
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
 git add crates/ab-ir/src/lib.rs
-git commit -m "refactor(ab-ir): remove always-empty content from Block::Break"
+git commit -m "refactor(ab-ir): remove always-empty content from Block::Break, delete block_content_mut"
 ```
 
 ---
@@ -585,15 +574,15 @@ assert_eq!(features["ctype"], Some("extra".into()));
 assert_eq!(features["field_28"], Some("tail".into()));
 
 // After:
-assert_eq!(features.get("pos1").expect("pos1"), &Some("名詞".into()));
-assert_eq!(features.get("pos2").expect("pos2"), &Some("普通名詞".into()));
-assert_eq!(features.get("pos3").expect("pos3"), &None);
-assert_eq!(features.get("pos4").expect("pos4"), &None);
-assert_eq!(features.get("ctype").expect("ctype"), &Some("extra".into()));
-assert_eq!(features.get("field_28").expect("field_28"), &Some("tail".into()));
+assert_eq!(features.get("pos1"), Some(&Some("名詞".into())));
+assert_eq!(features.get("pos2"), Some(&Some("普通名詞".into())));
+assert_eq!(features.get("pos3"), Some(&None));
+assert_eq!(features.get("pos4"), Some(&None));
+assert_eq!(features.get("ctype"), Some(&Some("extra".into())));
+assert_eq!(features.get("field_28"), Some(&Some("tail".into())));
 ```
 
-Note: `get()` returns `&Option<FeatureValue>`, so comparisons need `&`. Apply the same change to the second test block at ~line 139.
+Note: `FeatureMap::get()` returns `Option<&Option<FeatureValue>>`, so the correct comparison is `Some(&Some(...))`. This tests both key existence and value match in one `assert_eq!`. Apply the same change to the second test block at ~line 139.
 
 - [ ] **Step 3: Search for any other callers**
 
@@ -637,6 +626,8 @@ Expected: all 375 tests pass (excluding 4 ab-coverage failures from missing data
 **Files:**
 - Create: `crates/ab-morph-run/src/summary/mod.rs`
 - Create: `crates/ab-morph-run/src/summary/types.rs`
+
+**Pattern for all Tasks 2.1–2.7:** Each task copies content from `summary.rs` to a new file, then deletes that content from `summary.rs`. After each task, both the new sub-module AND the remainder of `summary.rs` must compile. This ensures `summary.rs` shrinks incrementally with every commit.
 
 - [ ] **Step 1: Create the summary directory**
 
@@ -846,7 +837,7 @@ mod summary_mod;
 pub use summary_mod::*;
 ```
 
-Wait — since we now have `pub mod summary;` in lib.rs pointing to the `summary/` directory module, the old `summary.rs` file is no longer compiled. Remove it entirely:
+**Important:** Cargo resolves `mod summary;` as follows: if both `summary.rs` and `summary/mod.rs` exist, `summary.rs` wins. The directory module **will not** be compiled until `summary.rs` is deleted. So the order is: create `summary/` directory, copy content, **then** delete `summary.rs`.
 
 ```bash
 rm crates/ab-morph-run/src/summary.rs
@@ -855,7 +846,7 @@ rm crates/ab-morph-run/src/summary.rs
 - [ ] **Step 2: Verify the workspace compiles**
 
 Run: `cargo build --workspace`
-Expected: compiles cleanly. If `ab-morph-run/src/summary.rs` is still being compiled, check that the `mod summary;` declaration points to the new directory.
+Expected: compiles cleanly. If it doesn't, cargo may still be picking up the old `summary.rs` — verify it's deleted with `ls crates/ab-morph-run/src/summary.rs`.
 
 - [ ] **Step 3: Commit**
 
@@ -867,16 +858,17 @@ git commit -m "refactor(ab-morph-run): remove summary.rs, now split across summa
 
 ---
 
-### Task 2.8: Create new `ab-warehouse` crate
+### Task 2.8: Create new `ab-warehouse` crate (schema + writer + sql only)
 
 **Files:**
 - Create: `crates/ab-warehouse/Cargo.toml`
 - Create: `crates/ab-warehouse/src/lib.rs`
-- Create: `crates/ab-warehouse/src/schema.rs`
-- Create: `crates/ab-warehouse/src/rows.rs`
-- Create: `crates/ab-warehouse/src/writer.rs`
-- Create: `crates/ab-warehouse/src/sql.rs`
+- Create: `crates/ab-warehouse/src/schema.rs` (row type definitions + WarehouseTable + WarehousePaths)
+- Create: `crates/ab-warehouse/src/writer.rs` (parquet writes from row structs)
+- Create: `crates/ab-warehouse/src/sql.rs` (DuckDB templates)
 - Modify: `Cargo.toml` (workspace members)
+
+**Important:** `rows.rs` stays in `ab-morph-run` — it deeply depends on `ab_morph_diff::Analysis`, `NwayRegion`, `NwayFeatureScope`, etc. (confirmed: all 483 lines of construction functions take `&Analysis`). Only the pure-I/O modules move to `ab-warehouse`.
 
 - [ ] **Step 1: Create crate directory and Cargo.toml**
 
@@ -903,24 +895,26 @@ serde_json.workspace = true
 
 File: `crates/ab-warehouse/src/lib.rs`
 ```rust
-pub mod rows;
 pub mod schema;
 pub mod sql;
 pub mod writer;
 ```
 
-- [ ] **Step 2: Move warehouse source files**
+- [ ] **Step 2: Move only the pure-I/O files**
 
 ```bash
 cp crates/ab-morph-run/src/warehouse/schema.rs crates/ab-warehouse/src/schema.rs
-cp crates/ab-morph-run/src/warehouse/rows.rs crates/ab-warehouse/src/rows.rs
 cp crates/ab-morph-run/src/warehouse/writer.rs crates/ab-warehouse/src/writer.rs
 cp crates/ab-morph-run/src/warehouse/sql.rs crates/ab-warehouse/src/sql.rs
 ```
 
+**Do NOT move rows.rs** — it stays in `ab-morph-run`.
+
 - [ ] **Step 3: Update imports in the moved files**
 
-In `rows.rs`, `writer.rs`, and `sql.rs`: change internal crate references. Remove any dependencies on `ab_morph_diff`, `ab_morph_run`, etc. — the row types already use plain `String`/`u64`. If any row construction function accepts `&Analysis`, move it back to `ab-morph-run` (see next task).
+In `writer.rs`: change `use super::schema::...` to `use crate::schema::...`. In `schema.rs`: row type definitions (AnalysisRow, MorphemeRow, etc.) already use plain `String`/`u64`/`Vec<String>` — no `ab_morph_diff` dependency. Verify with `rg "ab_morph_diff" crates/ab-warehouse/src/` — should return nothing.
+
+Add `serde.workspace = true` if any row types derive Serialize/Deserialize.
 
 Run: `cargo build -p ab-warehouse`
 Fix compile errors iteratively.
@@ -941,17 +935,17 @@ ab-warehouse = { path = "crates/ab-warehouse" }
 
 ```bash
 git add crates/ab-warehouse/ Cargo.toml
-git commit -m "feat: create ab-warehouse crate from ab-morph-run warehouse module"
+git commit -m "feat: create ab-warehouse crate with schema, writer, sql modules"
 ```
 
 ---
 
-### Task 2.9: Update ab-morph-run to depend on ab-warehouse
+### Task 2.9: Update ab-morph-run to use ab-warehouse, keep rows.rs locally
 
 **Files:**
 - Modify: `crates/ab-morph-run/Cargo.toml`
 - Modify: `crates/ab-morph-run/src/lib.rs`
-- Modify: `crates/ab-morph-run/src/warehouse/` (remove old files)
+- Modify: `crates/ab-morph-run/src/warehouse/` (replace moved files, keep rows.rs + mod.rs)
 
 - [ ] **Step 1: Add ab-warehouse dependency**
 
@@ -960,35 +954,34 @@ In `crates/ab-morph-run/Cargo.toml`:
 ab-warehouse.workspace = true
 ```
 
-- [ ] **Step 2: Update lib.rs imports**
+- [ ] **Step 2: Restructure warehouse/ directory**
 
-Replace `use warehouse::schema::...` etc. with `use ab_warehouse::schema::...`.
-Replace `use warehouse::writer::...` with `use ab_warehouse::writer::...`.
-
-- [ ] **Step 3: Handle row construction functions that depend on ab_morph_diff**
-
-If `rows.rs` had functions like `analysis_row(run_id, source_id, &Analysis)`, these need `ab_morph_diff::Analysis`. Move them from `ab-warehouse/src/rows.rs` into a new file `crates/ab-morph-run/src/warehouse_rows.rs` (or keep in `lib.rs`). They become thin wrappers:
-
-```rust
-use ab_warehouse::rows::AnalysisRow;
-use ab_morph_diff::Analysis;
-
-pub(crate) fn build_analysis_row(run_id: &str, source_id: &str, analysis: &Analysis) -> AnalysisRow {
-    AnalysisRow {
-        run_id: run_id.to_string(),
-        source_id: source_id.to_string(),
-        text_id: analysis.text_id.clone(),
-        analyzer_id: analysis.analyzer_id.clone(),
-        morpheme_count: analysis.morphemes.len() as u64,
-    }
-}
-```
-
-- [ ] **Step 4: Remove old warehouse/ directory**
-
+Remove the files that moved to ab-warehouse:
 ```bash
-rm -r crates/ab-morph-run/src/warehouse/
+rm crates/ab-morph-run/src/warehouse/schema.rs
+rm crates/ab-morph-run/src/warehouse/writer.rs
+rm crates/ab-morph-run/src/warehouse/sql.rs
 ```
+
+Keep `rows.rs` and `mod.rs` (or rename mod.rs to contain only the rows module).
+
+Update `warehouse/mod.rs` to re-export from ab-warehouse:
+```rust
+mod rows;
+pub(crate) use rows::*;
+
+pub use ab_warehouse::schema;
+pub use ab_warehouse::writer;
+pub use ab_warehouse::sql;
+```
+
+- [ ] **Step 3: Update imports in warehouse/rows.rs**
+
+Change `use super::schema::...` to `use ab_warehouse::schema::...`. The row construction functions continue to use `ab_morph_diff::Analysis` — no changes there.
+
+- [ ] **Step 4: Update lib.rs imports**
+
+The `use warehouse::schema::...` and `use warehouse::writer::...` imports in `lib.rs` continue to work because `warehouse/mod.rs` re-exports from `ab_warehouse`. Verify with `cargo build -p ab-morph-run`.
 
 - [ ] **Step 5: Build and fix errors**
 
@@ -999,7 +992,7 @@ Fix any import errors.
 
 ```bash
 git add crates/ab-morph-run/
-git commit -m "refactor(ab-morph-run): switch to ab-warehouse crate, remove old warehouse module"
+git commit -m "refactor(ab-morph-run): use ab-warehouse for schema/writer/sql, keep rows.rs local"
 ```
 
 ---
@@ -1294,16 +1287,17 @@ git commit -m "fix(ab-coverage): return Result instead of panicking on unknown p
 
 ---
 
-### Task 3.4: Fix panics in VibratoAnalyzer and VaporettoAnalyzer
+### Task 3.4: Fix panics in VibratoAnalyzer and VaporettoAnalyzer internal call chains
 
 **Files:**
 - Modify: `crates/ab-morph-analyzers/src/vibrato.rs`
 - Modify: `crates/ab-morph-analyzers/src/vaporetto.rs`
-- Modify: `crates/ab-morph-analyzers/src/lib.rs` (MorphAnalyzer trait callers)
 
-- [ ] **Step 1: Change VibratoAnalyzer default constructor to return Result**
+**Note:** `unidic_cwj_default()` already returns `Result<Self, AnalyzerError>`. The panic is in the private `resolve_default_dictionary()` helper, via `.unwrap_or_else(|err| panic!("{err}"))`. Only the internal call chain needs fixing — the public API stays the same.
 
-In vibrato.rs, change `resolve_default_dictionary`:
+- [ ] **Step 1: Fix VibratoAnalyzer internal chain**
+
+In vibrato.rs, change `resolve_default_dictionary` (~line 90):
 
 ```rust
 // Before:
@@ -1317,18 +1311,16 @@ fn resolve_default_dictionary() -> Result<PathBuf, AnalyzerError> {
 }
 ```
 
-Update callers (`default_dictionary_path`, `default_dictionary_path_from_env`) to return `Result<PathBuf, AnalyzerError>` and propagate with `?`.
-
-Update the public constructors that call these (e.g., `VibratoAnalyzer::unidic_cwj_default()`) to return `Result<Self, AnalyzerError>`.
+Update `default_dictionary_path` and `default_dictionary_path_from_env` to return `Result<PathBuf, AnalyzerError>` and propagate with `?`. Since `unidic_cwj_default()` already calls these and returns `Result`, it naturally propagates.
 
 - [ ] **Step 2: Same for VaporettoAnalyzer**
 
-Apply the same pattern to `crates/ab-morph-analyzers/src/vaporetto.rs`.
+Apply the same pattern to `vaporetto.rs` (~line 163). The `resolve_default_dictionary` → `Result<PathBuf, AnalyzerError>` chain is structurally identical to Vibrato.
 
-- [ ] **Step 3: Update callers in tests and main.rs**
+- [ ] **Step 3: Verify callers compile**
 
 Run: `cargo build --workspace 2>&1 | grep error`
-At each call site that previously `.unwrap()`ed, add `?` or proper error handling.
+Expected: no new errors (callers already `.unwrap()` the public `Result` constructors).
 
 - [ ] **Step 4: Run analyzer tests**
 
@@ -1339,24 +1331,27 @@ Expected: all tests pass (non-dictionary-dependent ones)
 
 ```bash
 git add crates/ab-morph-analyzers/src/vibrato.rs crates/ab-morph-analyzers/src/vaporetto.rs
-git commit -m "fix(ab-morph-analyzers): return Result instead of panicking on missing dictionary"
+git commit -m "fix(ab-morph-analyzers): propagate Result in resolve_default_dictionary instead of panicking"
 ```
 
 ---
 
-### Task 3.5: Convert eprintln! to structured warnings in analyzers
+### Task 3.5: Add warnings to Analysis struct and convert eprintln! in analyzers
 
 **Files:**
-- Modify: `crates/ab-morph-analyzers/src/vibrato.rs`
-- Modify: `crates/ab-morph-analyzers/src/sudachi.rs`
-- Modify: `crates/ab-morph-analyzers/src/lib.rs` (MorphAnalyzer trait)
+- Modify: `crates/ab-morph-diff/src/model.rs` — add `warnings` field to `Analysis`
+- Modify: `crates/ab-morph-analyzers/src/lib.rs` — define `AnalyzerWarning` type
+- Modify: `crates/ab-morph-analyzers/src/vibrato.rs` — populate warnings during analyze()
+- Modify: `crates/ab-morph-analyzers/src/sudachi.rs` — populate warnings during analyze()
 
-- [ ] **Step 1: Add warning types to analyzer output**
+**Key design decision:** Warnings go on the `Analysis` struct, NOT on the `MorphAnalyzer` trait. This avoids all issues with `&self` mutability (analyzers build warnings during `analyze()` as local `Vec` and attach them to the returned `Analysis`). The trait signature stays unchanged — zero breaking change. Pattern matches `ProjectionWarning` in `ab-ir`.
+
+- [ ] **Step 1: Define AnalyzerWarning and add to Analysis**
 
 In `crates/ab-morph-analyzers/src/lib.rs`, add:
 
 ```rust
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AnalyzerWarning {
     pub analyzer_id: String,
     pub text_id: String,
@@ -1368,33 +1363,34 @@ pub struct AnalyzerWarning {
 }
 ```
 
-Update the `MorphAnalyzer` trait to return warnings:
+In `crates/ab-morph-diff/src/model.rs`, add `warnings` field to `Analysis`:
 
 ```rust
-pub trait MorphAnalyzer {
-    fn analyzer_id(&self) -> &str;
-    fn analyze(&self, document: &PlainTextDocument) -> Result<Analysis, AnalyzerError>;
-    /// Warnings collected during analysis (chunk splits, etc.)
-    fn warnings(&self) -> &[AnalyzerWarning];
+pub struct Analysis {
+    pub analyzer: AnalyzerId,
+    pub text_id: TextId,
+    pub source_text: String,
+    pub morphemes: Vec<Morpheme>,
+    pub warnings: Vec<AnalyzerWarning>,  // NEW
 }
 ```
 
-- [ ] **Step 2: Update VibratoAnalyzer to collect warnings instead of eprintln!**
+Build to confirm: `cargo build -p ab-morph-diff`. Note: to avoid a circular dependency (`ab-morph-analyzers` depends on `ab-morph-diff`), define `AnalyzerWarning` in `ab-morph-diff/src/model.rs` alongside `Analysis`, and re-export from `ab-morph-analyzers`.
 
-In vibrato.rs, replace the `eprintln!` block (~line 215):
+- [ ] **Step 2: Update VibratoAnalyzer to collect warnings during analyze()**
+
+In vibrato.rs, replace the `eprintln!` block (~line 215) with warnings accumulated in a local `Vec` and attached to the `Analysis` at return:
 
 ```rust
 // Before:
 if hard_split_count > 0 {
-    eprintln!(
-        "ab-morph-analyzers: analyzer={} ...",
-        self.analyzer_id, document.text_id, hard_split_count, ...
-    );
+    eprintln!("ab-morph-analyzers: ...", ...);
 }
 
-// After:
+// After: collect warnings in a local vec, attach to Analysis before returning
+let mut warnings = Vec::new();
 if hard_split_count > 0 {
-    self.warnings.push(AnalyzerWarning {
+    warnings.push(AnalyzerWarning {
         analyzer_id: self.analyzer_id.clone(),
         text_id: document.text_id.clone(),
         stage: "vibrato_chunk".into(),
@@ -1404,39 +1400,33 @@ if hard_split_count > 0 {
         hard_limit_bytes: VIBRATO_CHUNK_BYTES,
     });
 }
-```
-
-Add `warnings: Vec<AnalyzerWarning>` field to `VibratoAnalyzer` and `impl MorphAnalyzer for VibratoAnalyzer` with:
-
-```rust
-fn warnings(&self) -> &[AnalyzerWarning] {
-    &self.warnings
-}
+// ... later, when building the Analysis:
+Analysis { warnings, ..analysis }
 ```
 
 - [ ] **Step 3: Same for SudachiAnalyzer**
 
-Replace the `eprintln!` at sudachi.rs:121 with structured warning collection.
+Replace the `eprintln!` at sudachi.rs:121 with structured warning collection, attached to the returned `Analysis.warnings`.
 
 - [ ] **Step 4: Update ab-morph-run to surface warnings**
 
-In `ab-morph-run`, after calling `analyzer.analyze()`, collect warnings from `analyzer.warnings()` and include them in the output or log them at the caller's discretion.
+In `ab-morph-run`, after calling `analyzer.analyze()`, the returned `Analysis.warnings` are available. Log them or surface them in the output at the caller's discretion.
 
-- [ ] **Step 5: Fix all trait implementations**
+- [ ] **Step 5: Fix all Analysis construction sites**
 
-Run: `cargo build --workspace 2>&1 | grep "doesn't satisfy"`
-Implement the new `warnings()` method on all `MorphAnalyzer` implementors.
+Run: `cargo build --workspace 2>&1 | grep "missing field"`
+Every place that constructs `Analysis { .. }` must now include `warnings: Vec::new()` (for sites that don't collect warnings) or actual warnings.
 
 - [ ] **Step 6: Run tests**
 
-Run: `cargo test -p ab-morph-analyzers -p ab-morph-run`
+Run: `cargo test -p ab-morph-diff -p ab-morph-analyzers -p ab-morph-run`
 Expected: all non-dictionary tests pass
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add crates/ab-morph-analyzers/
-git commit -m "refactor(ab-morph-analyzers): convert eprintln! to structured warnings"
+git add crates/ab-morph-diff/src/model.rs crates/ab-morph-analyzers/
+git commit -m "refactor: add AnalyzerWarning to Analysis, convert eprintln! to structured warnings"
 ```
 
 ---
@@ -1448,7 +1438,7 @@ git commit -m "refactor(ab-morph-analyzers): convert eprintln! to structured war
 
 - [ ] **Step 1: Replace eprintln! calls**
 
-At lines 543, 955, 962 — replace with a `warnings.push(...)` pattern. The caller (main.rs) decides whether to print.
+At lines 543, 955, 962 — replace with attaching warnings to the result struct (same pattern as analyzers). The caller (main.rs) decides whether to print.
 
 - [ ] **Step 2: Verify and commit**
 
@@ -1507,7 +1497,7 @@ For each crate, add:
 
 ```toml
 description = "Japanese text processing — [one-line description of this crate's role]"
-repository = "https://github.com/your-org/ab-validator"
+repository = "https://github.com/your-org/ab-validator"  <!-- FIXME: replace with actual repo URL before committing -->
 keywords = ["japanese", "text-processing"]
 categories = ["text-processing"]
 ```
@@ -1699,8 +1689,8 @@ Expected: all tests pass (excluding 4 ab-coverage integration tests that require
 
 - [ ] **Step 3: Run clippy**
 
-Run: `cargo clippy --workspace -- -W clippy::pedantic -W clippy::nursery -W clippy::cargo 2>&1 | tail -5`
-Expected: warning count is measurably lower than the original ~751
+Run: `cargo clippy --workspace --all-targets -- -W clippy::pedantic -W clippy::nursery -W clippy::cargo 2>&1 | grep -c "^warning:"`
+Expected: prints a number measurably lower than the original ~751
 
 - [ ] **Step 4: Commit any remaining fixes**
 

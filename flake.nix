@@ -36,10 +36,6 @@
       flake = false;
     };
 
-    vibrato-unidic-cwj-zst = {
-      url = "path:/home/bor/Projects/vibrato-pipe/dictionary/optimized/unidic-cwj-202512.dic.zst";
-      flake = false;
-    };
   };
 
   outputs =
@@ -53,7 +49,6 @@
       reference-aozorabunko-extractor-src,
       flake-utils,
       rust-overlay,
-      vibrato-unidic-cwj-zst,
     }:
     flake-utils.lib.eachDefaultSystem (
       system:
@@ -288,12 +283,43 @@
         '';
 
         vibratoDictionaryPreCheck = ''
-          mkdir -p "$TMPDIR/ab-validator-vibrato"
-          mkdir -p "$TMPDIR/xdg-cache"
-          zstd -dc ${vibrato-unidic-cwj-zst} \
-            > "$TMPDIR/ab-validator-vibrato/unidic-cwj-202512.dic"
-          export AB_VIBRATO_DICT="$TMPDIR/ab-validator-vibrato/unidic-cwj-202512.dic"
+          if [ -z "${AB_VIBRATO_DICT:-}" ]; then
+            for dir in "${source}/dictionary/compiled" "${source}/dictionary/optimized"; do
+              for candidate in \
+                "$dir/unidic-cwj-202512.dic" \
+                "$dir/unidic-cwj-202512.dic.zst" \
+                "$dir/unidic-cwj.dic" \
+                "$dir/unidic-cwj.dic.zst"
+              do
+                if [ -f "$candidate" ]; then
+                  export AB_VIBRATO_DICT="$candidate"
+                  break 2
+                fi
+              done
+            done
+          elif [ ! -f "$AB_VIBRATO_DICT" ]; then
+            echo "AB_VIBRATO_DICT is set but does not point to a file: $AB_VIBRATO_DICT" >&2
+            exit 1
+          fi
+
+          if [ -z "${AB_VIBRATO_DICT:-}" ]; then
+            echo "AB_VIBRATO_DICT is not set and no default dictionary was found in dictionary/{compiled,optimized}/unidic-cwj-202512.{dic,dic.zst}." >&2
+            exit 1
+          fi
+
+          dict_input="$AB_VIBRATO_DICT"
+          dict_name="$(basename "$dict_input")"
+          if [ "${dict_name##*.}" = "zst" ]; then
+            mkdir -p "$TMPDIR/ab-validator-vibrato"
+            dict_output="$TMPDIR/ab-validator-vibrato/${dict_name%.zst}"
+            if [ ! -f "$dict_output" ] || [ "$dict_input" -nt "$dict_output" ]; then
+              zstd -dc "$dict_input" > "$dict_output"
+            fi
+            export AB_VIBRATO_DICT="$dict_output"
+          fi
+
           export XDG_CACHE_HOME="$TMPDIR/xdg-cache"
+          mkdir -p "$XDG_CACHE_HOME"
         '';
 
         nonRustReferenceMetadata = pkgs.runCommand "reference-parser-metadata-check" { } ''
@@ -400,6 +426,7 @@
           pkgs.cargo-watch
           pkgs.criterion
           pkgs.just
+          pkgs.duckdb
           pkgs.pkg-config
           pkgs.openssl
           pkgs.ripgrep
@@ -551,6 +578,7 @@
             AB_AOZORA_RS_GAIJI_MENKUTEN_PATH = "${aozoraRsGaijiMenkuten}";
             AB_AOZORA_RS_GAIJI_CHUKI_PDF = "${aozoraRsGaijiChukiPdf}";
             AB_AOZORA_RS_GAIJI_PDFIUM_DIR = "${pkgs.pdfium-binaries}/lib";
+            AB_DUCKDB_BIN = "${pkgs.duckdb}/bin/duckdb";
 
             shellHook = ''
               export CARGO_HOME="''${CARGO_HOME:-$PWD/.cargo}"

@@ -123,8 +123,7 @@
         "reference-aozora-rs-src": "reference-aozora-rs-src",
         "reference-aozora2-src": "reference-aozora2-src",
         "reference-aozorabunko-extractor-src": "reference-aozorabunko-extractor-src",
-        "rust-overlay": "rust-overlay",
-        "vibrato-unidic-cwj-zst": "vibrato-unidic-cwj-zst"
+        "rust-overlay": "rust-overlay"
       }
     },
     "rust-overlay": {
@@ -162,19 +161,6 @@
         "type": "github"
       }
     },
-    "vibrato-unidic-cwj-zst": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1767430852,
-        "narHash": "sha256-CEdwhCEbctmPhbVZDGS5qjZ9QosNKTkdsSGGRBtzN/8=",
-        "path": "/home/bor/Projects/vibrato-pipe/dictionary/optimized/unidic-cwj-202512.dic.zst",
-        "type": "path"
-      },
-      "original": {
-        "path": "/home/bor/Projects/vibrato-pipe/dictionary/optimized/unidic-cwj-202512.dic.zst",
-        "type": "path"
-      }
-    }
   },
   "root": "root",
   "version": 7

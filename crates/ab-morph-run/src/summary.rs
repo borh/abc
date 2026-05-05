@@ -2038,13 +2038,17 @@ fn run_duckdb_tsv<W: Write>(
     writer: &mut W,
     context: &str,
 ) -> Result<bool> {
+    let duckdb_bin = std::env::var("AB_DUCKDB_BIN").unwrap_or_else(|_| {
+        std::env::var("DUCKDB").unwrap_or_else(|_| String::from("duckdb"))
+    });
+
     fs::create_dir_all(duckdb_temp_dir(run_dir)).with_context(|| {
         format!(
             "failed to create DuckDB temp directory for {}",
             run_dir.display()
         )
     })?;
-    let output = match Command::new("duckdb").arg("-c").arg(sql).output() {
+    let output = match Command::new(&duckdb_bin).arg("-c").arg(sql).output() {
         Ok(output) => output,
         Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(false),
         Err(error) => return Err(error).context("failed to run duckdb"),
@@ -2064,13 +2068,17 @@ fn run_duckdb_tsv<W: Write>(
 }
 
 fn run_duckdb_statement(run_dir: &Path, sql: String, context: &str) -> Result<bool> {
+    let duckdb_bin = std::env::var("AB_DUCKDB_BIN").unwrap_or_else(|_| {
+        std::env::var("DUCKDB").unwrap_or_else(|_| String::from("duckdb"))
+    });
+
     fs::create_dir_all(duckdb_temp_dir(run_dir)).with_context(|| {
         format!(
             "failed to create DuckDB temp directory for {}",
             run_dir.display()
         )
     })?;
-    let output = match Command::new("duckdb").arg("-c").arg(sql).output() {
+    let output = match Command::new(&duckdb_bin).arg("-c").arg(sql).output() {
         Ok(output) => output,
         Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(false),
         Err(error) => return Err(error).context("failed to run duckdb"),

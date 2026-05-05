@@ -194,19 +194,24 @@ morph-warehouse-clean-dry-run:
 	done
 
 morph-warehouse-run profile="full" aat_dir="{{morph_warehouse_aat_dir}}" run_id="" jobs="0":
+	@just morph-warehouse-run-with-analyzers "{{profile}}" "{{aat_dir}}" "vibrato sudachi-a sudachi-c" "{{run_id}}" "{{jobs}}"
+
+morph-warehouse-run-with-analyzers profile="full" aat_dir="{{morph_warehouse_aat_dir}}" analyzers="vibrato sudachi-a sudachi-c" run_id="" jobs="0":
 	@jobs="{{jobs}}"; \
 	if [ "$jobs" = "0" ]; then jobs="$(nproc)"; fi; \
 	run_id="{{run_id}}"; \
 	if [ -z "$run_id" ]; then run_id="{{profile}}-$(date -u +%F_%H%M%S)-jobs${jobs}"; fi; \
+	args=() ; \
+	for analyzer in {{analyzers}}; do \
+	  args+=(--analyzer "$analyzer"); \
+	done; \
 	AB_SUDACHI_DICT="$(nix path-info .#sudachi-dictionary-full)/share/sudachi/system.dic" \
 	TMPDIR="{{ab_db_root}}/tmp" \
 	TMP="{{ab_db_root}}/tmp" \
 	TEMP="{{ab_db_root}}/tmp" \
 	cargo run --release -p ab-morph-run -- analyze-aat \
 		--aat-dir "{{aat_dir}}" \
-		--analyzer vibrato \
-		--analyzer sudachi-a \
-		--analyzer sudachi-c \
+		"${args[@]}" \
 		--warehouse-dir "{{morph_warehouse_dir}}" \
 		--run-id "$run_id" \
 		--warehouse-profile "{{profile}}" \
@@ -221,6 +226,26 @@ morph-warehouse-run-triage aat_dir="{{morph_warehouse_aat_dir}}" run_id="" jobs=
 morph-warehouse-recreate profile="full" aat_dir="{{morph_warehouse_aat_dir}}" run_id="" jobs="0":
 	@just morph-warehouse-clean
 	@just morph-warehouse-run "{{profile}}" "{{aat_dir}}" "{{run_id}}" "{{jobs}}"
+
+morph-available-vibrato-dictionaries:
+	@for dir in "{{repo_root}}/dictionary/compiled" "{{repo_root}}/dictionary/optimized"; do \
+	  for path in "$dir"/*.dic "$dir"/*.dic.zst; do \
+	    [ -e "$path" ] || continue; \
+	    name="$(basename "$path")"; \
+	    name="${name%.dic.zst}"; \
+	    name="${name%.dic}"; \
+	    echo "$name"; \
+	  done; \
+	done | sort -u
+
+morph-warehouse-run-all-vibrato-dictionaries profile="full" aat_dir="{{morph_warehouse_aat_dir}}" run_id_prefix="" jobs="0":
+	@jobs="{{jobs}}"; \
+	if [ "$jobs" = "0" ]; then jobs="$(nproc)"; fi; \
+	run_id_prefix="{{run_id_prefix}}"; \
+	if [ -z "$run_id_prefix" ]; then run_id_prefix="{{profile}}-$(date -u +%F_%H%M%S)-jobs${jobs}-dict"; fi; \
+	for dict in $(just morph-available-vibrato-dictionaries); do \
+	  just morph-warehouse-run-with-analyzers "{{profile}}" "{{aat_dir}}" "vibrato:${dict} sudachi-a sudachi-c" "${run_id_prefix}-${dict}" "{{jobs}}"; \
+	done
 
 morph-warehouse-recreate-full jobs="0":
 	@just morph-warehouse-recreate full "{{morph_warehouse_aat_dir}}" "" "{{jobs}}"
@@ -241,19 +266,7 @@ ab-validator-recreate-warehouse-run profile="full" aat_dir="{{morph_warehouse_aa
 	if [ -z "$run_id" ]; then run_id="{{profile}}-$(date -u +%F_%H%M%S)-jobs${jobs}"; fi; \
 	just clean-db-full; \
 	just morph-warehouse-clean; \
-	AB_SUDACHI_DICT="$(nix path-info .#sudachi-dictionary-full)/share/sudachi/system.dic" \
-	TMPDIR="{{ab_db_root}}/tmp" \
-	TMP="{{ab_db_root}}/tmp" \
-	TEMP="{{ab_db_root}}/tmp" \
-	cargo run --release -p ab-morph-run -- analyze-aat \
-		--aat-dir "{{aat_dir}}" \
-		--analyzer vibrato \
-		--analyzer sudachi-a \
-		--analyzer sudachi-c \
-		--warehouse-dir "{{morph_warehouse_dir}}" \
-		--run-id "$run_id" \
-		--warehouse-profile "{{profile}}" \
-		--jobs "$jobs"; \
+	just morph-warehouse-run-with-analyzers "{{profile}}" "{{aat_dir}}" "vibrato sudachi-a sudachi-c" "$run_id" "{{jobs}}"; \
 	if [ "{{build_report}}" = "1" ]; then \
 		just morph-warehouse-build-latest-report "{{profile}}" "{{report_limit}}"; \
 	fi
@@ -286,3 +299,25 @@ morph-warehouse-build-latest-report PROFILE="full" LIMIT="50":
 	out_dir="{{morph_warehouse_dir}}/reports/{{PROFILE}}-$(date -u +%F_%H%M%S)"; \
 	"{{repo_root}}/reports/morph-warehouse/build-report.sh" "$run_dir" "$out_dir" "{{LIMIT}}"; \
 	echo "$out_dir"
+
+morph-vibrato-dictionary-status:
+	@printf "Available dictionary source snapshots:\n"
+	@if [ -d "{{repo_root}}/dictionary/unidic-sources" ]; then \
+		find "{{repo_root}}/dictionary/unidic-sources" -maxdepth 1 -mindepth 1 -type d -printf '  sources/%f\n' | sort; \
+	else \
+		echo "  (missing) {{repo_root}}/dictionary/unidic-sources"; \
+	fi
+	@printf "\nCompilation artifacts:\n"
+	@for dir in compiled optimized; do \
+		if [ -d "{{repo_root}}/dictionary/$dir" ]; then \
+			echo "  $dir/"; \
+			for path in "{{repo_root}}/dictionary/$dir"/*.dic "{{repo_root}}/dictionary/$dir"/*.dic.zst; do \
+				[ -e "$path" ] || continue; \
+				echo "    $(basename "$path")"; \
+			done | sort; \
+		else \
+			echo "  (missing) {{repo_root}}/dictionary/$dir"; \
+		fi; \
+	done
+	@printf "\nBuild command references:\n"
+	@echo "  Build all UniDic 202512 dictionaries: ./scripts/build_unidic_dictionaries.sh"

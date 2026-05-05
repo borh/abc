@@ -1,132 +1,25 @@
-use std::borrow::Borrow;
-use std::cell::RefCell;
 use std::collections::BTreeMap;
-use std::collections::HashSet;
-use std::fmt;
-use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
-use std::ops::Index;
 use std::ops::Range;
 use std::sync::Arc;
 
 use serde::ser::SerializeMap;
-use serde::{Serialize, Serializer};
+use serde::{Deserialize, Serialize, Serializer};
 
 pub type AnalyzerId = String;
 pub type TextId = String;
-pub type FeatureKey = InternedString;
-pub type FeatureValue = InternedString;
+pub type FeatureKey = Arc<str>;
+pub type FeatureValue = Arc<str>;
 
-thread_local! {
-    static FEATURE_STRING_INTERNER: RefCell<HashSet<Arc<str>>> = RefCell::new(HashSet::new());
-}
-
-#[derive(Clone, Eq)]
-pub struct InternedString(Arc<str>);
-
-impl InternedString {
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-
-    #[cfg(test)]
-    fn ptr_eq(&self, other: &Self) -> bool {
-        Arc::ptr_eq(&self.0, &other.0)
-    }
-
-    fn intern(value: &str) -> Self {
-        FEATURE_STRING_INTERNER.with(|interner| {
-            let mut interner = interner.borrow_mut();
-            if let Some(existing) = interner.get(value) {
-                return Self(Arc::clone(existing));
-            }
-
-            let interned = Arc::<str>::from(value);
-            interner.insert(Arc::clone(&interned));
-            Self(interned)
-        })
-    }
-}
-
-impl fmt::Debug for InternedString {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.as_str().fmt(f)
-    }
-}
-
-impl fmt::Display for InternedString {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-impl From<&str> for InternedString {
-    fn from(value: &str) -> Self {
-        Self::intern(value)
-    }
-}
-
-impl From<String> for InternedString {
-    fn from(value: String) -> Self {
-        Self::intern(&value)
-    }
-}
-
-impl AsRef<str> for InternedString {
-    fn as_ref(&self) -> &str {
-        self.as_str()
-    }
-}
-
-impl Borrow<str> for InternedString {
-    fn borrow(&self) -> &str {
-        self.as_str()
-    }
-}
-
-impl PartialEq for InternedString {
-    fn eq(&self, other: &Self) -> bool {
-        self.as_str() == other.as_str()
-    }
-}
-
-impl PartialEq<&str> for InternedString {
-    fn eq(&self, other: &&str) -> bool {
-        self.as_str() == *other
-    }
-}
-
-impl PartialEq<&str> for &InternedString {
-    fn eq(&self, other: &&str) -> bool {
-        self.as_str() == *other
-    }
-}
-
-impl PartialOrd for InternedString {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for InternedString {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.as_str().cmp(other.as_str())
-    }
-}
-
-impl Hash for InternedString {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.as_str().hash(state);
-    }
-}
-
-impl Serialize for InternedString {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        serializer.serialize_str(self.as_str())
-    }
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct AnalyzerWarning {
+    pub analyzer_id: String,
+    pub text_id: TextId,
+    pub stage: String,
+    pub message: String,
+    pub count: usize,
+    pub first_byte_offset: usize,
+    pub hard_limit_bytes: usize,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -135,16 +28,19 @@ pub struct FeatureMap {
 }
 
 impl FeatureMap {
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
+    #[must_use]
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
             entries: Vec::with_capacity(capacity),
         }
     }
 
+    #[must_use]
     pub fn insert(
         &mut self,
         key: FeatureKey,
@@ -152,7 +48,7 @@ impl FeatureMap {
     ) -> Option<Option<FeatureValue>> {
         match self
             .entries
-            .binary_search_by(|(existing, _)| existing.as_str().cmp(key.as_str()))
+            .binary_search_by(|(existing, _)| existing.as_ref().cmp(key.as_ref()))
         {
             Ok(index) => Some(std::mem::replace(&mut self.entries[index].1, value)),
             Err(index) => {
@@ -162,10 +58,11 @@ impl FeatureMap {
         }
     }
 
+    #[must_use]
     pub fn get(&self, key: impl AsRef<str>) -> Option<&Option<FeatureValue>> {
         let key = key.as_ref();
         self.entries
-            .binary_search_by(|(existing, _)| existing.as_str().cmp(key))
+            .binary_search_by(|(existing, _)| existing.as_ref().cmp(key))
             .ok()
             .map(|index| &self.entries[index].1)
     }
@@ -178,10 +75,12 @@ impl FeatureMap {
         self.entries.iter().map(|(key, value)| (key, value))
     }
 
+    #[must_use]
     pub fn len(&self) -> usize {
         self.entries.len()
     }
 
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.entries.is_empty()
     }
@@ -204,18 +103,9 @@ impl FromIterator<(FeatureKey, Option<FeatureValue>)> for FeatureMap {
     fn from_iter<T: IntoIterator<Item = (FeatureKey, Option<FeatureValue>)>>(iter: T) -> Self {
         let mut map = Self::new();
         for (key, value) in iter {
-            map.insert(key, value);
+            let _ = map.insert(key, value);
         }
         map
-    }
-}
-
-impl Index<&str> for FeatureMap {
-    type Output = Option<FeatureValue>;
-
-    fn index(&self, index: &str) -> &Self::Output {
-        self.get(index)
-            .unwrap_or_else(|| panic!("feature key not found: {index}"))
     }
 }
 
@@ -233,6 +123,7 @@ pub struct Analysis {
     pub text_id: TextId,
     pub source_text: String,
     pub morphemes: Vec<Morpheme>,
+    pub warnings: Vec<AnalyzerWarning>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -367,22 +258,26 @@ pub struct NwayRegion {
 }
 
 impl NwayRegion {
+    #[must_use]
     pub fn has_coverage_mismatch(&self) -> bool {
         self.per_analyzer
             .iter()
             .any(|region| !region.covers_exactly)
     }
 
+    #[must_use]
     pub fn has_segmentation_disagreement(&self) -> bool {
         self.segmentation_groups.len() > 1
     }
 
+    #[must_use]
     pub fn has_feature_disagreement(&self) -> bool {
         self.feature_groups
             .iter()
             .any(|group| group.values.len() > 1)
     }
 
+    #[must_use]
     pub fn is_agreement(&self) -> bool {
         !self.has_coverage_mismatch()
             && !self.has_segmentation_disagreement()
@@ -450,8 +345,8 @@ mod tests {
         let first_value: FeatureValue = "名詞".into();
         let second_value: FeatureValue = "名詞".into();
 
-        assert!(first_key.ptr_eq(&second_key));
-        assert!(first_value.ptr_eq(&second_value));
+        assert_eq!(first_key, second_key);
+        assert_eq!(first_value, second_value);
         assert_eq!(serde_json::to_string(&first_key).unwrap(), "\"pos1\"");
         assert_eq!(serde_json::to_string(&first_value).unwrap(), "\"名詞\"");
     }

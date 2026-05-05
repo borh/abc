@@ -125,6 +125,7 @@ mod tests {
             text_id: "t".to_owned(),
             source_text: source.to_owned(),
             morphemes,
+            warnings: Vec::new(),
         }
     }
 

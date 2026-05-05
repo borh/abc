@@ -10,6 +10,11 @@ pub struct CoverageMatrix {
 }
 
 impl CoverageMatrix {
+    /// Load a coverage matrix from TOML.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the matrix file cannot be read or parsed.
     pub fn from_toml(path: &Path) -> Result<Self> {
         let raw = fs::read_to_string(path)
             .with_context(|| format!("failed to read coverage matrix {}", path.display()))?;
@@ -20,6 +25,7 @@ impl CoverageMatrix {
         })
     }
 
+    #[must_use] 
     pub fn rows(&self) -> &[Row] {
         &self.rows
     }
@@ -85,10 +91,12 @@ pub enum Recognition {
 }
 
 impl Recognition {
+    #[must_use] 
     pub fn is_unknown(self) -> bool {
         matches!(self, Recognition::Unknown)
     }
 
+    #[must_use] 
     pub fn as_str(self) -> &'static str {
         match self {
             Recognition::Parsed => "parsed",
@@ -122,10 +130,12 @@ pub enum RowAatFidelity {
 }
 
 impl RowAatFidelity {
+    #[must_use] 
     pub fn is_unknown(self) -> bool {
         matches!(self, RowAatFidelity::Unknown)
     }
 
+    #[must_use] 
     pub fn as_str(self) -> &'static str {
         match self {
             RowAatFidelity::Preserved => "preserved",

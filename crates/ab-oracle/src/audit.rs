@@ -27,6 +27,7 @@ pub struct OracleAudit {
     pub syntax_rows_without_reviewed_oracle_coverage: Vec<SyntaxCoverageGap>,
 }
 
+/// Build a summary of oracle review/evidence status for all cases.
 pub fn audit_oracle(cases: &OracleCases, syntax_coverage: Option<&str>) -> OracleAudit {
     let mut review_status_counts = BTreeMap::new();
     let mut evidence_strength_counts = BTreeMap::new();
@@ -78,6 +79,7 @@ pub fn audit_oracle(cases: &OracleCases, syntax_coverage: Option<&str>) -> Oracl
     }
 }
 
+#[must_use]
 pub fn render_audit_markdown(audit: &OracleAudit) -> String {
     let mut out = format!(
         "# Oracle Evidence Audit\n\n- total_cases: {}\n- total_evidence: {}\n",
@@ -118,6 +120,11 @@ pub fn render_audit_markdown(audit: &OracleAudit) -> String {
     out
 }
 
+/// Write audit summary JSON to disk.
+///
+/// # Errors
+///
+/// Returns an error when the output directory cannot be created or writing fails.
 pub fn write_json_audit(audit: &OracleAudit, path: &Path) -> Result<()> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)
@@ -129,6 +136,11 @@ pub fn write_json_audit(audit: &OracleAudit, path: &Path) -> Result<()> {
         .with_context(|| format!("failed to write {}", path.display()))
 }
 
+/// Read audit summary JSON from disk.
+///
+/// # Errors
+///
+/// Returns an error when the file cannot be read or decoded as JSON.
 pub fn read_json_audit(path: &Path) -> Result<OracleAudit> {
     let input =
         fs::read(path).with_context(|| format!("failed to read audit {}", path.display()))?;

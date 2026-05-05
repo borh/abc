@@ -16,6 +16,7 @@ pub enum VisibleFragment<'a> {
     },
 }
 
+#[must_use] 
 pub fn visible_text_projection(aat: &Value) -> String {
     ab_plaintext::visible_text_projection(aat)
 }
@@ -50,6 +51,7 @@ pub fn inline_nodes_by_kind<'a>(aat: &'a Value, kind: &str) -> Vec<(String, &'a 
     nodes
 }
 
+#[must_use] 
 pub fn node_line(node: &Value) -> Option<usize> {
     node.get("span")?
         .get("line_start")?

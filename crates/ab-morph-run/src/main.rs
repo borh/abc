@@ -78,10 +78,14 @@ enum Command {
     SummarizeWarehouseNway {
         #[arg(long)]
         run_dir: PathBuf,
-        #[arg(long, value_enum, default_value_t = SummaryGroupByArg::SourceId)]
-        group_by: SummaryGroupByArg,
-        #[arg(long, value_enum, default_value_t = NwaySummarySortArg::RegionsWithSegmentationDisagreement)]
-        sort_by: NwaySummarySortArg,
+        #[arg(long, value_enum, default_value_t = ab_morph_run::CompactSummaryGroupBy::SourceId)]
+        group_by: ab_morph_run::CompactSummaryGroupBy,
+        #[arg(
+            long,
+            value_enum,
+            default_value_t = ab_morph_run::NwaySummarySort::RegionsWithSegmentationDisagreement
+        )]
+        sort_by: ab_morph_run::NwaySummarySort,
         #[arg(long)]
         exclude_source_id: Vec<String>,
         #[arg(long)]
@@ -94,10 +98,14 @@ enum Command {
     SummarizeWarehousePairwise {
         #[arg(long)]
         run_dir: PathBuf,
-        #[arg(long, value_enum, default_value_t = WarehousePairwiseSortArg::SegmentationRegions)]
-        sort_by: WarehousePairwiseSortArg,
-        #[arg(long, value_enum, default_value_t = WarehouseTextFilterArg::All)]
-        filter: WarehouseTextFilterArg,
+        #[arg(
+            long,
+            value_enum,
+            default_value_t = ab_morph_run::WarehousePairwiseSort::SegmentationRegions
+        )]
+        sort_by: ab_morph_run::WarehousePairwiseSort,
+        #[arg(long, value_enum, default_value_t = ab_morph_run::WarehouseTextFilter::All)]
+        filter: ab_morph_run::WarehouseTextFilter,
         #[arg(long)]
         exclude_source_id: Vec<String>,
         #[arg(long)]
@@ -110,14 +118,18 @@ enum Command {
     SummarizeWarehousePatterns {
         #[arg(long)]
         run_dir: PathBuf,
-        #[arg(long, value_enum, default_value_t = NwayPatternKindArg::Segmentation)]
-        kind: NwayPatternKindArg,
+        #[arg(long, value_enum, default_value_t = ab_morph_run::NwayPatternKind::Segmentation)]
+        kind: ab_morph_run::NwayPatternKind,
         #[arg(long)]
         feature_key: Option<String>,
-        #[arg(long, value_enum, default_value_t = WarehouseFeatureProfileArg::Raw)]
-        feature_profile: WarehouseFeatureProfileArg,
-        #[arg(long, value_enum, default_value_t = WarehouseTextFilterArg::All)]
-        filter: WarehouseTextFilterArg,
+        #[arg(
+            long,
+            value_enum,
+            default_value_t = ab_morph_run::WarehouseFeatureProfile::Raw
+        )]
+        feature_profile: ab_morph_run::WarehouseFeatureProfile,
+        #[arg(long, value_enum, default_value_t = ab_morph_run::WarehouseTextFilter::All)]
+        filter: ab_morph_run::WarehouseTextFilter,
         #[arg(long)]
         exclude_feature_value: Vec<String>,
         #[arg(long)]
@@ -138,16 +150,20 @@ enum Command {
     SummarizeWarehousePatternExamples {
         #[arg(long)]
         run_dir: PathBuf,
-        #[arg(long, value_enum, default_value_t = NwayPatternKindArg::Segmentation)]
-        kind: NwayPatternKindArg,
+        #[arg(long, value_enum, default_value_t = ab_morph_run::NwayPatternKind::Segmentation)]
+        kind: ab_morph_run::NwayPatternKind,
         #[arg(long)]
         pattern: String,
         #[arg(long)]
         feature_key: Option<String>,
-        #[arg(long, value_enum, default_value_t = WarehouseFeatureProfileArg::Raw)]
-        feature_profile: WarehouseFeatureProfileArg,
-        #[arg(long, value_enum, default_value_t = WarehouseTextFilterArg::All)]
-        filter: WarehouseTextFilterArg,
+        #[arg(
+            long,
+            value_enum,
+            default_value_t = ab_morph_run::WarehouseFeatureProfile::Raw
+        )]
+        feature_profile: ab_morph_run::WarehouseFeatureProfile,
+        #[arg(long, value_enum, default_value_t = ab_morph_run::WarehouseTextFilter::All)]
+        filter: ab_morph_run::WarehouseTextFilter,
         #[arg(long)]
         exclude_feature_value: Vec<String>,
         #[arg(long)]
@@ -170,10 +186,10 @@ enum Command {
     SummarizeWarehouseRegions {
         #[arg(long)]
         run_dir: PathBuf,
-        #[arg(long, value_enum, default_value_t = WarehouseRegionKindArg::All)]
-        kind: WarehouseRegionKindArg,
-        #[arg(long, value_enum, default_value_t = WarehouseTextFilterArg::All)]
-        filter: WarehouseTextFilterArg,
+        #[arg(long, value_enum, default_value_t = ab_morph_run::WarehouseRegionKind::All)]
+        kind: ab_morph_run::WarehouseRegionKind,
+        #[arg(long, value_enum, default_value_t = ab_morph_run::WarehouseTextFilter::All)]
+        filter: ab_morph_run::WarehouseTextFilter,
         #[arg(long)]
         exclude_source_id: Vec<String>,
         #[arg(long)]
@@ -186,8 +202,12 @@ enum Command {
     SummarizeWarehouseErrors {
         #[arg(long)]
         run_dir: PathBuf,
-        #[arg(long, value_enum, default_value_t = WarehouseErrorGroupByArg::ErrorCode)]
-        group_by: WarehouseErrorGroupByArg,
+        #[arg(
+            long,
+            value_enum,
+            default_value_t = ab_morph_run::WarehouseErrorGroupBy::ErrorCode
+        )]
+        group_by: ab_morph_run::WarehouseErrorGroupBy,
         #[arg(long)]
         exclude_source_id: Vec<String>,
         #[arg(long)]
@@ -218,157 +238,9 @@ enum Command {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
-enum SummaryGroupByArg {
-    SourceId,
-    TextId,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
-enum NwaySummarySortArg {
-    RegionsWithSegmentationDisagreement,
-    RegionsWithFeatureDisagreement,
-    RegionsWithCoverageMismatch,
-    VariableBoundaryCount,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
-enum NwayPatternKindArg {
-    Segmentation,
-    Feature,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
-enum WarehouseFeatureProfileArg {
-    Raw,
-    Core,
-    Schema,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
-enum WarehouseRegionKindArg {
-    All,
-    Segmentation,
-    Feature,
-    Coverage,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
-enum WarehouseErrorGroupByArg {
-    ErrorCode,
-    Stage,
-    Analyzer,
-    SourceId,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
-enum WarehousePairwiseSortArg {
-    SegmentationRegions,
-    FeatureRegions,
-    CoverageRegions,
-    VariableBoundaryCount,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
-enum WarehouseTextFilterArg {
-    All,
-    WhitespaceOnly,
-    LexicalOnly,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
 enum RerunDetailArg {
     Full,
     ExamplesOnly,
-}
-
-impl SummaryGroupByArg {
-    fn into_library(self) -> ab_morph_run::CompactSummaryGroupBy {
-        match self {
-            Self::SourceId => ab_morph_run::CompactSummaryGroupBy::SourceId,
-            Self::TextId => ab_morph_run::CompactSummaryGroupBy::TextId,
-        }
-    }
-}
-
-impl NwaySummarySortArg {
-    fn into_library(self) -> ab_morph_run::NwaySummarySort {
-        match self {
-            Self::RegionsWithSegmentationDisagreement => {
-                ab_morph_run::NwaySummarySort::RegionsWithSegmentationDisagreement
-            }
-            Self::RegionsWithFeatureDisagreement => {
-                ab_morph_run::NwaySummarySort::RegionsWithFeatureDisagreement
-            }
-            Self::RegionsWithCoverageMismatch => {
-                ab_morph_run::NwaySummarySort::RegionsWithCoverageMismatch
-            }
-            Self::VariableBoundaryCount => ab_morph_run::NwaySummarySort::VariableBoundaryCount,
-        }
-    }
-}
-
-impl NwayPatternKindArg {
-    fn into_library(self) -> ab_morph_run::NwayPatternKind {
-        match self {
-            Self::Segmentation => ab_morph_run::NwayPatternKind::Segmentation,
-            Self::Feature => ab_morph_run::NwayPatternKind::Feature,
-        }
-    }
-}
-
-impl WarehouseFeatureProfileArg {
-    fn into_library(self) -> ab_morph_run::WarehouseFeatureProfile {
-        match self {
-            Self::Raw => ab_morph_run::WarehouseFeatureProfile::Raw,
-            Self::Core => ab_morph_run::WarehouseFeatureProfile::Core,
-            Self::Schema => ab_morph_run::WarehouseFeatureProfile::Schema,
-        }
-    }
-}
-
-impl WarehouseRegionKindArg {
-    fn into_library(self) -> ab_morph_run::WarehouseRegionKind {
-        match self {
-            Self::All => ab_morph_run::WarehouseRegionKind::All,
-            Self::Segmentation => ab_morph_run::WarehouseRegionKind::Segmentation,
-            Self::Feature => ab_morph_run::WarehouseRegionKind::Feature,
-            Self::Coverage => ab_morph_run::WarehouseRegionKind::Coverage,
-        }
-    }
-}
-
-impl WarehouseErrorGroupByArg {
-    fn into_library(self) -> ab_morph_run::WarehouseErrorGroupBy {
-        match self {
-            Self::ErrorCode => ab_morph_run::WarehouseErrorGroupBy::ErrorCode,
-            Self::Stage => ab_morph_run::WarehouseErrorGroupBy::Stage,
-            Self::Analyzer => ab_morph_run::WarehouseErrorGroupBy::Analyzer,
-            Self::SourceId => ab_morph_run::WarehouseErrorGroupBy::SourceId,
-        }
-    }
-}
-
-impl WarehousePairwiseSortArg {
-    fn into_library(self) -> ab_morph_run::WarehousePairwiseSort {
-        match self {
-            Self::SegmentationRegions => ab_morph_run::WarehousePairwiseSort::SegmentationRegions,
-            Self::FeatureRegions => ab_morph_run::WarehousePairwiseSort::FeatureRegions,
-            Self::CoverageRegions => ab_morph_run::WarehousePairwiseSort::CoverageRegions,
-            Self::VariableBoundaryCount => {
-                ab_morph_run::WarehousePairwiseSort::VariableBoundaryCount
-            }
-        }
-    }
-}
-
-impl WarehouseTextFilterArg {
-    fn into_library(self) -> ab_morph_run::WarehouseTextFilter {
-        match self {
-            Self::All => ab_morph_run::WarehouseTextFilter::All,
-            Self::WhitespaceOnly => ab_morph_run::WarehouseTextFilter::WhitespaceOnly,
-            Self::LexicalOnly => ab_morph_run::WarehouseTextFilter::LexicalOnly,
-        }
-    }
 }
 
 fn summary_exclusions(
@@ -379,12 +251,12 @@ fn summary_exclusions(
 }
 
 fn validate_warehouse_feature_profile(
-    kind: NwayPatternKindArg,
-    feature_profile: WarehouseFeatureProfileArg,
+    kind: ab_morph_run::NwayPatternKind,
+    feature_profile: ab_morph_run::WarehouseFeatureProfile,
     feature_key: Option<&str>,
 ) -> Result<()> {
-    if kind == NwayPatternKindArg::Feature
-        && feature_profile == WarehouseFeatureProfileArg::Schema
+    if kind == ab_morph_run::NwayPatternKind::Feature
+        && feature_profile == ab_morph_run::WarehouseFeatureProfile::Schema
         && feature_key.is_none()
     {
         bail!(
@@ -505,8 +377,8 @@ fn main() -> Result<()> {
             let rows = ab_morph_run::summarize_warehouse_nway(
                 &run_dir,
                 ab_morph_run::NwaySummaryOptions {
-                    group_by: group_by.into_library(),
-                    sort_by: sort_by.into_library(),
+                    group_by,
+                    sort_by,
                     script_category: None,
                     exclusions: summary_exclusions(exclude_source_id, exclude_text_id),
                     limit,
@@ -532,8 +404,8 @@ fn main() -> Result<()> {
             let rows = ab_morph_run::summarize_warehouse_pairwise(
                 &run_dir,
                 ab_morph_run::WarehousePairwiseSummaryOptions {
-                    sort_by: sort_by.into_library(),
-                    text_filter: filter.into_library(),
+                    sort_by,
+                    text_filter: filter,
                     exclusions: summary_exclusions(exclude_source_id, exclude_text_id),
                     limit,
                 },
@@ -560,10 +432,10 @@ fn main() -> Result<()> {
         } => {
             validate_warehouse_feature_profile(kind, feature_profile, feature_key.as_deref())?;
             let options = ab_morph_run::WarehousePatternOptions {
-                kind: kind.into_library(),
+                kind,
                 feature_key,
-                feature_profile: feature_profile.into_library(),
-                text_filter: filter.into_library(),
+                feature_profile,
+                text_filter: filter,
                 excluded_feature_values: exclude_feature_value.into_iter().collect(),
                 exclusions: summary_exclusions(exclude_source_id, exclude_text_id),
                 limit,
@@ -616,11 +488,11 @@ fn main() -> Result<()> {
         } => {
             validate_warehouse_feature_profile(kind, feature_profile, feature_key.as_deref())?;
             let options = ab_morph_run::WarehousePatternExampleOptions {
-                kind: kind.into_library(),
+                kind,
                 pattern,
                 feature_key,
-                feature_profile: feature_profile.into_library(),
-                text_filter: filter.into_library(),
+                feature_profile,
+                text_filter: filter,
                 excluded_feature_values: exclude_feature_value.into_iter().collect(),
                 exclusions: summary_exclusions(exclude_source_id, exclude_text_id),
                 limit,
@@ -658,8 +530,8 @@ fn main() -> Result<()> {
             json,
         } => {
             let options = ab_morph_run::WarehouseRegionOptions {
-                kind: kind.into_library(),
-                text_filter: filter.into_library(),
+                kind,
+                text_filter: filter,
                 exclusions: summary_exclusions(exclude_source_id, exclude_text_id),
                 limit,
             };
@@ -692,7 +564,7 @@ fn main() -> Result<()> {
             let rows = ab_morph_run::summarize_warehouse_errors(
                 &run_dir,
                 ab_morph_run::WarehouseErrorSummaryOptions {
-                    group_by: group_by.into_library(),
+                    group_by,
                     exclusions: summary_exclusions(exclude_source_id, exclude_text_id),
                     limit,
                 },
@@ -1641,8 +1513,8 @@ mod tests {
             run_dir,
             PathBuf::from("scratch/morph-warehouse/runs/full-2026-05-01")
         );
-        assert_eq!(group_by, SummaryGroupByArg::TextId);
-        assert_eq!(sort_by, NwaySummarySortArg::VariableBoundaryCount);
+        assert_eq!(group_by, ab_morph_run::CompactSummaryGroupBy::TextId);
+        assert_eq!(sort_by, ab_morph_run::NwaySummarySort::VariableBoundaryCount);
         assert_eq!(exclude_text_id, vec!["JISTABLE"]);
         assert_eq!(limit, 15);
         assert!(json);
@@ -1689,10 +1561,10 @@ mod tests {
             run_dir,
             PathBuf::from("scratch/morph-warehouse/runs/full-2026-05-01")
         );
-        assert_eq!(kind, NwayPatternKindArg::Feature);
+        assert_eq!(kind, ab_morph_run::NwayPatternKind::Feature);
         assert_eq!(feature_key, Some("pos1".to_owned()));
-        assert_eq!(feature_profile, WarehouseFeatureProfileArg::Core);
-        assert_eq!(filter, WarehouseTextFilterArg::LexicalOnly);
+        assert_eq!(feature_profile, ab_morph_run::WarehouseFeatureProfile::Core);
+        assert_eq!(filter, ab_morph_run::WarehouseTextFilter::LexicalOnly);
         assert_eq!(exclude_source_id, vec!["source-a"]);
         assert_eq!(limit, 15);
         assert!(json);
@@ -1702,32 +1574,32 @@ mod tests {
     fn warehouse_feature_profiles_require_feature_key_for_full_corpus_queries() {
         assert!(
             validate_warehouse_feature_profile(
-                NwayPatternKindArg::Feature,
-                WarehouseFeatureProfileArg::Core,
+                ab_morph_run::NwayPatternKind::Feature,
+                ab_morph_run::WarehouseFeatureProfile::Core,
                 None,
             )
             .is_ok()
         );
         assert!(
             validate_warehouse_feature_profile(
-                NwayPatternKindArg::Feature,
-                WarehouseFeatureProfileArg::Schema,
+                ab_morph_run::NwayPatternKind::Feature,
+                ab_morph_run::WarehouseFeatureProfile::Schema,
                 Some("goshu"),
             )
             .is_ok()
         );
         assert!(
             validate_warehouse_feature_profile(
-                NwayPatternKindArg::Feature,
-                WarehouseFeatureProfileArg::Schema,
+                ab_morph_run::NwayPatternKind::Feature,
+                ab_morph_run::WarehouseFeatureProfile::Schema,
                 None,
             )
             .is_err()
         );
         assert!(
             validate_warehouse_feature_profile(
-                NwayPatternKindArg::Segmentation,
-                WarehouseFeatureProfileArg::Schema,
+                ab_morph_run::NwayPatternKind::Segmentation,
+                ab_morph_run::WarehouseFeatureProfile::Schema,
                 None,
             )
             .is_ok()
@@ -1788,11 +1660,11 @@ mod tests {
             run_dir,
             PathBuf::from("scratch/morph-warehouse/runs/full-2026-05-01")
         );
-        assert_eq!(kind, NwayPatternKindArg::Feature);
+        assert_eq!(kind, ab_morph_run::NwayPatternKind::Feature);
         assert_eq!(pattern, "pos1 whole_region 名詞=>vibrato ; 動詞=>sudachi-a");
         assert_eq!(feature_key, Some("pos1".to_owned()));
-        assert_eq!(feature_profile, WarehouseFeatureProfileArg::Schema);
-        assert_eq!(filter, WarehouseTextFilterArg::LexicalOnly);
+        assert_eq!(feature_profile, ab_morph_run::WarehouseFeatureProfile::Schema);
+        assert_eq!(filter, ab_morph_run::WarehouseTextFilter::LexicalOnly);
         assert_eq!(limit, 15);
         assert!(json);
     }
@@ -1862,8 +1734,8 @@ mod tests {
             run_dir,
             PathBuf::from("scratch/morph-warehouse/runs/full-2026-05-01")
         );
-        assert_eq!(kind, WarehouseRegionKindArg::Segmentation);
-        assert_eq!(filter, WarehouseTextFilterArg::LexicalOnly);
+        assert_eq!(kind, ab_morph_run::WarehouseRegionKind::Segmentation);
+        assert_eq!(filter, ab_morph_run::WarehouseTextFilter::LexicalOnly);
         assert_eq!(exclude_source_id, vec!["source-a"]);
         assert_eq!(limit, 15);
         assert!(json);
@@ -1901,7 +1773,7 @@ mod tests {
             run_dir,
             PathBuf::from("scratch/morph-warehouse/runs/full-2026-05-01")
         );
-        assert_eq!(group_by, WarehouseErrorGroupByArg::Analyzer);
+        assert_eq!(group_by, ab_morph_run::WarehouseErrorGroupBy::Analyzer);
         assert_eq!(exclude_source_id, vec!["source-a"]);
         assert_eq!(limit, 15);
         assert!(json);
@@ -1942,8 +1814,8 @@ mod tests {
             run_dir,
             PathBuf::from("scratch/morph-warehouse/runs/full-2026-05-01")
         );
-        assert_eq!(sort_by, WarehousePairwiseSortArg::FeatureRegions);
-        assert_eq!(filter, WarehouseTextFilterArg::WhitespaceOnly);
+        assert_eq!(sort_by, ab_morph_run::WarehousePairwiseSort::FeatureRegions);
+        assert_eq!(filter, ab_morph_run::WarehouseTextFilter::WhitespaceOnly);
         assert_eq!(exclude_source_id, vec!["source-a"]);
         assert_eq!(limit, 15);
         assert!(json);

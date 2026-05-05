@@ -21,19 +21,30 @@ pub struct AdapterBinary {
 }
 
 impl AdapterBinary {
-    pub fn for_parser(repo_root: &Path, parser_id: &str) -> Self {
+    /// Builds an adapter launcher for a known parser ID.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the parser ID is unknown.
+    pub fn for_parser(repo_root: &Path, parser_id: &str) -> Result<Self> {
         let binary = match parser_id {
             "aozora2" => repo_root.join("adapters/aozora2/target/release/aozora2-adapter"),
             "aozora-rs" => repo_root.join("adapters/aozora-rs/target/release/aozora-rs-adapter"),
             "aozora2html" => repo_root.join("adapters/aozora2html/aozora2html-adapter"),
-            other => panic!("unknown parser id: {other}"),
+            other => bail!("unknown parser id: {other}"),
         };
-        Self {
+        Ok(Self {
             parser_id: parser_id.to_string(),
             binary,
-        }
+        })
     }
 
+    /// Runs the configured adapter and returns captured AAT JSON output bytes.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if spawning the adapter fails, reading I/O fails, the
+    /// adapter times out, or it exits with an unexpected status code.
     pub fn invoke(&self, source_bytes: &[u8], timeout: Duration) -> Result<Vec<u8>> {
         if !self.binary.exists() {
             bail!(
@@ -85,7 +96,7 @@ impl AdapterBinary {
                     .join()
                     .map_err(|_| anyhow::anyhow!("stderr reader panicked"))??;
                 return match status.code() {
-                    Some(0) | Some(2) => Ok(stdout),
+                    Some(0 | 2) => Ok(stdout),
                     other => bail!("adapter {} exited with status {:?}", self.parser_id, other),
                 };
             }

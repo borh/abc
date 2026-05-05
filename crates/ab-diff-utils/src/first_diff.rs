@@ -8,15 +8,22 @@ pub struct FirstDifference {
 
 /// Finds the first character index where `left` and `right` diverge.
 /// Returns `None` if the strings are identical.
+#[must_use]
 pub fn first_difference(left: &str, right: &str) -> Option<FirstDifference> {
     let mut left_chars = left.chars();
     let mut right_chars = right.chars();
     let mut char_index = 0usize;
     loop {
         match (left_chars.next(), right_chars.next()) {
-            (Some(left), Some(right)) if left == right => char_index += 1,
-            (Some(_), Some(_)) | (Some(_), None) | (None, Some(_)) => break,
+            (Some(left), Some(right)) => {
+                if left == right {
+                    char_index += 1;
+                } else {
+                    break;
+                }
+            }
             (None, None) => return None,
+            _ => break,
         }
     }
     Some(FirstDifference {

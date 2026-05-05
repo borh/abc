@@ -1,6 +1,8 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs::{self, File};
-use std::io::{self, Write};
+use std::io;
+#[cfg(test)]
+use std::io::Write;
 use std::path::Path;
 use std::process::Command;
 use std::sync::Arc;
@@ -14,7 +16,7 @@ use parquet::arrow::ArrowWriter;
 use parquet::arrow::arrow_reader::{ParquetRecordBatchReader, ParquetRecordBatchReaderBuilder};
 use parquet::basic::{Compression, ZstdLevel};
 use parquet::file::properties::WriterProperties;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use crate::compact::{ComparisonSummaryRow, is_whitespace_only};
 use crate::nway::{
@@ -24,378 +26,10 @@ use crate::nway::{
 use crate::output::for_each_jsonl_or_zst_line;
 use crate::script::{ScriptCategory, classify_text};
 use crate::warehouse::schema::WarehouseTable;
-
-const WAREHOUSE_CORE_FEATURE_KEYS: &[&str] = &["pos1", "pos2", "pos3", "pos4"];
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum CompactSummaryGroupBy {
-    SourceId,
-    TextId,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum CompactSummarySort {
-    BoundaryF1,
-    SegmentationRegions,
-    LexicalSegmentationRegions,
-    WhitespaceSegmentationRegions,
-    FeatureDifferences,
-    LexicalFeatureDifferences,
-    WhitespaceFeatureDifferences,
-    CoverageMismatchRegions,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum CompactExampleFilter {
-    All,
-    WhitespaceOnly,
-    LexicalOnly,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum CompactExampleSummarySort {
-    Examples,
-    WhitespaceExamples,
-    LexicalExamples,
-    SegmentationExamples,
-    FeatureDiffExamples,
-    CoverageExamples,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum CompactDifferenceKindFilter {
-    All,
-    Segmentation,
-    Feature,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum NwaySummarySort {
-    RegionsWithSegmentationDisagreement,
-    RegionsWithFeatureDisagreement,
-    RegionsWithCoverageMismatch,
-    VariableBoundaryCount,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum NwayPatternKind {
-    Segmentation,
-    Feature,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum WarehouseFeatureProfile {
-    Raw,
-    Core,
-    Schema,
-}
-
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub struct SummaryExclusions {
-    pub source_ids: BTreeSet<String>,
-    pub text_ids: BTreeSet<String>,
-}
-
-impl SummaryExclusions {
-    pub fn from_values(
-        source_ids: impl IntoIterator<Item = String>,
-        text_ids: impl IntoIterator<Item = String>,
-    ) -> Self {
-        Self {
-            source_ids: source_ids.into_iter().collect(),
-            text_ids: text_ids.into_iter().collect(),
-        }
-    }
-
-    fn excludes(&self, source_id: &str, text_id: &str) -> bool {
-        self.source_ids.contains(source_id) || self.text_ids.contains(text_id)
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct CompactSummaryOptions {
-    pub group_by: CompactSummaryGroupBy,
-    pub sort_by: CompactSummarySort,
-    pub script_category: Option<ScriptCategory>,
-    pub exclusions: SummaryExclusions,
-    pub limit: usize,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct CompactExampleSummaryOptions {
-    pub group_by: CompactSummaryGroupBy,
-    pub filter: CompactExampleFilter,
-    pub script_category: Option<ScriptCategory>,
-    pub sort_by: CompactExampleSummarySort,
-    pub exclusions: SummaryExclusions,
-    pub limit: usize,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct CompactDifferenceSummaryOptions {
-    pub filter: CompactExampleFilter,
-    pub script_category: Option<ScriptCategory>,
-    pub kind: CompactDifferenceKindFilter,
-    pub feature_key: Option<String>,
-    pub excluded_feature_values: BTreeSet<String>,
-    pub one_to_one_lexical_features: bool,
-    pub exclusions: SummaryExclusions,
-    pub limit: usize,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct NwaySummaryOptions {
-    pub group_by: CompactSummaryGroupBy,
-    pub sort_by: NwaySummarySort,
-    pub script_category: Option<ScriptCategory>,
-    pub exclusions: SummaryExclusions,
-    pub limit: usize,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct NwayPatternOptions {
-    pub kind: NwayPatternKind,
-    pub feature_key: Option<String>,
-    pub script_category: Option<ScriptCategory>,
-    pub excluded_feature_values: BTreeSet<String>,
-    pub exclusions: SummaryExclusions,
-    pub limit: usize,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct WarehousePatternOptions {
-    pub kind: NwayPatternKind,
-    pub feature_key: Option<String>,
-    pub feature_profile: WarehouseFeatureProfile,
-    pub text_filter: WarehouseTextFilter,
-    pub excluded_feature_values: BTreeSet<String>,
-    pub exclusions: SummaryExclusions,
-    pub limit: usize,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct WarehousePatternExampleOptions {
-    pub kind: NwayPatternKind,
-    pub pattern: String,
-    pub feature_key: Option<String>,
-    pub feature_profile: WarehouseFeatureProfile,
-    pub text_filter: WarehouseTextFilter,
-    pub excluded_feature_values: BTreeSet<String>,
-    pub exclusions: SummaryExclusions,
-    pub limit: usize,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum WarehouseRegionKind {
-    All,
-    Segmentation,
-    Feature,
-    Coverage,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum WarehouseTextFilter {
-    All,
-    WhitespaceOnly,
-    LexicalOnly,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct WarehouseRegionOptions {
-    pub kind: WarehouseRegionKind,
-    pub text_filter: WarehouseTextFilter,
-    pub exclusions: SummaryExclusions,
-    pub limit: usize,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum WarehouseErrorGroupBy {
-    ErrorCode,
-    Stage,
-    Analyzer,
-    SourceId,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct WarehouseErrorSummaryOptions {
-    pub group_by: WarehouseErrorGroupBy,
-    pub exclusions: SummaryExclusions,
-    pub limit: usize,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum WarehousePairwiseSort {
-    SegmentationRegions,
-    FeatureRegions,
-    CoverageRegions,
-    VariableBoundaryCount,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct WarehousePairwiseSummaryOptions {
-    pub sort_by: WarehousePairwiseSort,
-    pub text_filter: WarehouseTextFilter,
-    pub exclusions: SummaryExclusions,
-    pub limit: usize,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize)]
-pub struct CompactSummaryRow {
-    pub key: String,
-    pub source_ids: Vec<String>,
-    pub text_ids: Vec<String>,
-    pub script_categories: Vec<String>,
-    pub comparisons: usize,
-    pub worst_boundary_f1: Option<f64>,
-    pub total_segmentation_regions: usize,
-    pub total_whitespace_segmentation_regions: usize,
-    pub total_lexical_segmentation_regions: usize,
-    pub total_feature_difference_regions: usize,
-    pub total_whitespace_feature_difference_regions: usize,
-    pub total_lexical_feature_difference_regions: usize,
-    pub total_coverage_mismatch_regions: usize,
-    pub max_segmentation_regions: usize,
-    pub max_feature_difference_regions: usize,
-    pub max_coverage_mismatch_regions: usize,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize)]
-pub struct CompactExampleSummaryRow {
-    pub key: String,
-    pub source_ids: Vec<String>,
-    pub text_ids: Vec<String>,
-    pub script_categories: Vec<String>,
-    pub examples: usize,
-    pub whitespace_examples: usize,
-    pub lexical_examples: usize,
-    pub segmentation_examples: usize,
-    pub feature_diff_examples: usize,
-    pub coverage_examples: usize,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize)]
-pub struct CompactDifferenceSummaryRow {
-    pub kind: String,
-    pub from_analyzer: String,
-    pub to_analyzer: String,
-    pub source_ids: Vec<String>,
-    pub text_ids: Vec<String>,
-    pub script_categories: Vec<String>,
-    pub examples: usize,
-    pub region_kind: Option<String>,
-    pub from_surfaces: Vec<String>,
-    pub to_surfaces: Vec<String>,
-    pub feature_key: Option<String>,
-    pub feature_from: Option<String>,
-    pub feature_to: Option<String>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize)]
-pub struct NwaySummaryRow {
-    pub key: String,
-    pub source_ids: Vec<String>,
-    pub text_ids: Vec<String>,
-    pub script_categories: Vec<String>,
-    pub rows: usize,
-    pub analyzer_count: usize,
-    pub regions: usize,
-    pub agreement_regions: usize,
-    pub regions_with_feature_disagreement: usize,
-    pub regions_with_segmentation_disagreement: usize,
-    pub regions_with_coverage_mismatch: usize,
-    pub whitespace_regions: usize,
-    pub lexical_regions: usize,
-    pub unanimous_boundary_count: usize,
-    pub variable_boundary_count: usize,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize)]
-pub struct NwayPatternRow {
-    pub kind: String,
-    pub pattern: String,
-    pub examples: usize,
-    pub source_ids: Vec<String>,
-    pub text_ids: Vec<String>,
-    pub script_categories: Vec<String>,
-    pub segmentation_groups: Vec<NwaySegmentationGroupRow>,
-    pub feature_key: Option<String>,
-    pub feature_scope: Option<NwayFeatureScopeRow>,
-    pub feature_values: Vec<NwayFeatureValueGroupRow>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize)]
-pub struct WarehouseRegionExampleRow {
-    pub source_id: String,
-    pub text_id: String,
-    pub region_index: u64,
-    pub byte_start: u64,
-    pub byte_end: u64,
-    pub char_start: u64,
-    pub char_end: u64,
-    pub is_nonempty_whitespace: bool,
-    pub is_agreement: bool,
-    pub has_coverage_mismatch: bool,
-    pub has_segmentation_disagreement: bool,
-    pub has_feature_disagreement: bool,
-    pub analyzers: Vec<WarehouseRegionAnalyzerExampleRow>,
-    pub feature_diffs: Vec<WarehouseFeatureDiffExampleRow>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-pub struct WarehouseRegionAnalyzerExampleRow {
-    pub analyzer_id: String,
-    pub covers_exactly: bool,
-    pub morpheme_start: u64,
-    pub morpheme_end: u64,
-    pub surfaces: Vec<String>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-pub struct WarehouseFeatureDiffExampleRow {
-    pub feature_key: String,
-    pub scope_type: String,
-    pub scope_position: Option<u64>,
-    pub scope_surface: Option<String>,
-    pub feature_value: Option<String>,
-    pub analyzer_id: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-pub struct WarehouseErrorSummaryRow {
-    pub key: String,
-    pub errors: usize,
-    pub source_ids: Vec<String>,
-    pub text_ids: Vec<String>,
-    pub analyzer_ids: Vec<String>,
-    pub stages: Vec<String>,
-    pub error_codes: Vec<String>,
-    pub sample_messages: Vec<String>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize)]
-pub struct WarehousePairwiseSummaryRow {
-    pub source_id: String,
-    pub text_id: String,
-    pub from_analyzer: String,
-    pub to_analyzer: String,
-    pub regions: usize,
-    pub segmentation_regions: usize,
-    pub feature_regions: usize,
-    pub coverage_regions: usize,
-    pub unanimous_boundary_count: usize,
-    pub variable_boundary_count: usize,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-struct WarehousePairwiseKey {
-    source_id: String,
-    text_id: String,
-    from_analyzer: String,
-    to_analyzer: String,
-}
+use super::types::*;
 
 #[derive(Debug, Default)]
-struct Accumulator {
+pub(crate) struct Accumulator {
     source_ids: BTreeSet<String>,
     text_ids: BTreeSet<String>,
     script_categories: BTreeSet<ScriptCategory>,
@@ -415,7 +49,7 @@ struct Accumulator {
 }
 
 #[derive(Debug, Default)]
-struct ExampleAccumulator {
+pub(crate) struct ExampleAccumulator {
     source_ids: BTreeSet<String>,
     text_ids: BTreeSet<String>,
     script_categories: BTreeSet<ScriptCategory>,
@@ -428,20 +62,20 @@ struct ExampleAccumulator {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-struct DifferenceKey {
-    kind: String,
-    from_analyzer: String,
-    to_analyzer: String,
-    region_kind: Option<String>,
-    from_surfaces: Vec<String>,
-    to_surfaces: Vec<String>,
-    feature_key: Option<String>,
-    feature_from: Option<String>,
-    feature_to: Option<String>,
+pub(crate) struct DifferenceKey {
+    pub(crate) kind: String,
+    pub(crate) from_analyzer: String,
+    pub(crate) to_analyzer: String,
+    pub(crate) region_kind: Option<String>,
+    pub(crate) from_surfaces: Vec<String>,
+    pub(crate) to_surfaces: Vec<String>,
+    pub(crate) feature_key: Option<String>,
+    pub(crate) feature_from: Option<String>,
+    pub(crate) feature_to: Option<String>,
 }
 
 #[derive(Debug, Default)]
-struct DifferenceAccumulator {
+pub(crate) struct DifferenceAccumulator {
     source_ids: BTreeSet<String>,
     text_ids: BTreeSet<String>,
     script_categories: BTreeSet<ScriptCategory>,
@@ -449,7 +83,7 @@ struct DifferenceAccumulator {
 }
 
 #[derive(Debug, Default)]
-struct NwayAccumulator {
+pub(crate) struct NwayAccumulator {
     source_ids: BTreeSet<String>,
     text_ids: BTreeSet<String>,
     script_categories: BTreeSet<ScriptCategory>,
@@ -467,33 +101,33 @@ struct NwayAccumulator {
 }
 
 #[derive(Debug, Deserialize)]
-struct NwaySummaryInputRow {
-    source_id: String,
-    text_id: String,
-    source_script_category: ScriptCategory,
-    analyzer_count: usize,
-    regions: usize,
-    agreement_regions: usize,
-    regions_with_feature_disagreement: usize,
-    regions_with_segmentation_disagreement: usize,
-    regions_with_coverage_mismatch: usize,
-    whitespace_regions: usize,
-    lexical_regions: usize,
-    unanimous_boundary_count: usize,
-    variable_boundary_count: usize,
+pub(crate) struct NwaySummaryInputRow {
+    pub(crate) source_id: String,
+    pub(crate) text_id: String,
+    pub(crate) source_script_category: ScriptCategory,
+    pub(crate) analyzer_count: usize,
+    pub(crate) regions: usize,
+    pub(crate) agreement_regions: usize,
+    pub(crate) regions_with_feature_disagreement: usize,
+    pub(crate) regions_with_segmentation_disagreement: usize,
+    pub(crate) regions_with_coverage_mismatch: usize,
+    pub(crate) whitespace_regions: usize,
+    pub(crate) lexical_regions: usize,
+    pub(crate) unanimous_boundary_count: usize,
+    pub(crate) variable_boundary_count: usize,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-struct NwayPatternKey {
-    kind: String,
-    segmentation_groups: Vec<NwaySegmentationGroupRow>,
-    feature_key: Option<String>,
-    feature_scope: Option<NwayFeatureScopeRow>,
-    feature_values: Vec<NwayFeatureValueGroupRow>,
+pub(crate) struct NwayPatternKey {
+    pub(crate) kind: String,
+    pub(crate) segmentation_groups: Vec<NwaySegmentationGroupRow>,
+    pub(crate) feature_key: Option<String>,
+    pub(crate) feature_scope: Option<NwayFeatureScopeRow>,
+    pub(crate) feature_values: Vec<NwayFeatureValueGroupRow>,
 }
 
 #[derive(Debug, Default)]
-struct NwayPatternAccumulator {
+pub(crate) struct NwayPatternAccumulator {
     source_ids: BTreeSet<String>,
     text_ids: BTreeSet<String>,
     script_categories: BTreeSet<ScriptCategory>,
@@ -501,14 +135,14 @@ struct NwayPatternAccumulator {
 }
 
 #[derive(Debug, Default)]
-struct WarehousePatternAccumulator {
+pub(crate) struct WarehousePatternAccumulator {
     source_ids: BTreeSet<String>,
     text_ids: BTreeSet<String>,
     examples: usize,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-struct WarehouseRegionKey {
+pub(crate) struct WarehouseRegionKey {
     run_id: String,
     source_id: String,
     text_id: String,
@@ -516,7 +150,7 @@ struct WarehouseRegionKey {
 }
 
 #[derive(Debug, Clone, Copy)]
-struct WarehouseRegionFlags {
+pub(crate) struct WarehouseRegionFlags {
     byte_start: u64,
     byte_end: u64,
     char_start: u64,
@@ -529,7 +163,7 @@ struct WarehouseRegionFlags {
 }
 
 #[derive(Debug, Clone)]
-struct WarehouseRegionAnalyzerFact {
+pub(crate) struct WarehouseRegionAnalyzerFact {
     key: WarehouseRegionKey,
     analyzer_id: String,
     covers_exactly: bool,
@@ -539,7 +173,7 @@ struct WarehouseRegionAnalyzerFact {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-struct WarehouseFeatureGroupKey {
+pub(crate) struct WarehouseFeatureGroupKey {
     region: WarehouseRegionKey,
     feature_key: String,
     scope_type: String,
@@ -548,14 +182,14 @@ struct WarehouseFeatureGroupKey {
 }
 
 #[derive(Debug, Clone)]
-struct WarehouseFeatureDiffFact {
+pub(crate) struct WarehouseFeatureDiffFact {
     key: WarehouseFeatureGroupKey,
     feature_value: Option<String>,
     analyzer_id: String,
 }
 
 #[derive(Debug, Clone)]
-struct WarehouseErrorFact {
+pub(crate) struct WarehouseErrorFact {
     source_id: Option<String>,
     text_id: Option<String>,
     analyzer_id: Option<String>,
@@ -565,7 +199,7 @@ struct WarehouseErrorFact {
 }
 
 #[derive(Debug, Default)]
-struct WarehouseErrorAccumulator {
+pub(crate) struct WarehouseErrorAccumulator {
     errors: usize,
     source_ids: BTreeSet<String>,
     text_ids: BTreeSet<String>,
@@ -576,7 +210,7 @@ struct WarehouseErrorAccumulator {
 }
 
 #[derive(Debug, Default)]
-struct WarehousePairwiseAccumulator {
+pub(crate) struct WarehousePairwiseAccumulator {
     regions: usize,
     segmentation_regions: usize,
     feature_region_keys: BTreeSet<WarehouseRegionKey>,
@@ -586,32 +220,37 @@ struct WarehousePairwiseAccumulator {
 }
 
 #[derive(Debug, Deserialize)]
-struct ExampleSummaryInputRow {
-    source_id: String,
-    text_id: String,
-    from_analyzer: String,
-    to_analyzer: String,
-    kind: String,
-    source_excerpt: String,
+pub(crate) struct ExampleSummaryInputRow {
+    pub(crate) source_id: String,
+    pub(crate) text_id: String,
+    pub(crate) from_analyzer: String,
+    pub(crate) to_analyzer: String,
+    pub(crate) kind: String,
+    pub(crate) source_excerpt: String,
     #[serde(default)]
-    from_surfaces: Vec<String>,
+    pub(crate) from_surfaces: Vec<String>,
     #[serde(default)]
-    to_surfaces: Vec<String>,
+    pub(crate) to_surfaces: Vec<String>,
     #[serde(default)]
-    feature_changes: Option<Vec<FeatureChangeInputRow>>,
+    pub(crate) feature_changes: Option<Vec<FeatureChangeInputRow>>,
     #[serde(default)]
-    whitespace_only: Option<bool>,
+    pub(crate) whitespace_only: Option<bool>,
     #[serde(default)]
-    script_category: Option<ScriptCategory>,
+    pub(crate) script_category: Option<ScriptCategory>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
-struct FeatureChangeInputRow {
-    key: String,
-    from: Option<String>,
-    to: Option<String>,
+pub(crate) struct FeatureChangeInputRow {
+    pub(crate) key: String,
+    pub(crate) from: Option<String>,
+    pub(crate) to: Option<String>,
 }
 
+/// Summarizes compact comparisons by source or text ID.
+///
+/// # Errors
+///
+/// Returns an error when comparison input lines cannot be read or parsed as JSON.
 pub fn summarize_compact_comparisons(
     comparisons_path: &Path,
     options: CompactSummaryOptions,
@@ -645,6 +284,11 @@ pub fn summarize_compact_comparisons(
     Ok(rows)
 }
 
+/// Summarizes compact example rows by source or text ID.
+///
+/// # Errors
+///
+/// Returns an error when comparison input lines cannot be read or parsed as JSON.
 pub fn summarize_compact_examples(
     examples_path: &Path,
     options: CompactExampleSummaryOptions,
@@ -690,6 +334,11 @@ pub fn summarize_compact_examples(
     Ok(rows)
 }
 
+/// Summarizes compact differences into grouped difference rows.
+///
+/// # Errors
+///
+/// Returns an error when comparison input lines cannot be read or parsed as JSON.
 pub fn summarize_compact_differences(
     examples_path: &Path,
     options: CompactDifferenceSummaryOptions,
@@ -794,6 +443,11 @@ pub fn summarize_compact_differences(
     Ok(rows)
 }
 
+/// Summarizes N-way comparison rows.
+///
+/// # Errors
+///
+/// Returns an error when N-way input lines cannot be read or parsed as JSON.
 pub fn summarize_nway(
     nway_path: &Path,
     options: NwaySummaryOptions,
@@ -826,6 +480,11 @@ pub fn summarize_nway(
     Ok(rows)
 }
 
+/// Summarizes N-way pattern rows from compact outputs.
+///
+/// # Errors
+///
+/// Returns an error when pattern rows cannot be read or parsed as JSON.
 pub fn summarize_nway_patterns(
     nway_path: &Path,
     options: NwayPatternOptions,
@@ -920,6 +579,11 @@ pub fn summarize_nway_patterns(
     Ok(rows)
 }
 
+/// Summarizes N-way pattern-count output rows.
+///
+/// # Errors
+///
+/// Returns an error when pattern-count rows cannot be read or parsed as JSON.
 pub fn summarize_nway_pattern_counts(
     pattern_counts_path: &Path,
     options: NwayPatternOptions,
@@ -953,6 +617,11 @@ pub fn summarize_nway_pattern_counts(
     Ok(rows)
 }
 
+/// Summarizes N-way results from warehouse output.
+///
+/// # Errors
+///
+/// Returns an error when required warehouse tables are missing or unreadable.
 pub fn summarize_warehouse_nway(
     run_dir: &Path,
     options: NwaySummaryOptions,
@@ -1002,6 +671,11 @@ pub fn summarize_warehouse_nway(
     Ok(rows)
 }
 
+/// Summarizes warehouse region-level rows.
+///
+/// # Errors
+///
+/// Returns an error when warehouse region facts cannot be loaded.
 pub fn summarize_warehouse_regions(
     run_dir: &Path,
     options: WarehouseRegionOptions,
@@ -1098,6 +772,11 @@ pub fn summarize_warehouse_regions(
     Ok(rows)
 }
 
+/// Summarizes warehouse error rows.
+///
+/// # Errors
+///
+/// Returns an error when warehouse error facts cannot be loaded.
 pub fn summarize_warehouse_errors(
     run_dir: &Path,
     options: WarehouseErrorSummaryOptions,
@@ -1138,6 +817,11 @@ pub fn summarize_warehouse_errors(
     Ok(rows)
 }
 
+/// Summarizes pairwise agreement metrics from warehouse rows.
+///
+/// # Errors
+///
+/// Returns an error when warehouse boundary and feature facts cannot be loaded.
 pub fn summarize_warehouse_pairwise(
     run_dir: &Path,
     options: WarehousePairwiseSummaryOptions,
@@ -1286,6 +970,11 @@ pub fn summarize_warehouse_pairwise(
     Ok(rows)
 }
 
+/// Summarizes warehouse N-way pattern rows.
+///
+/// # Errors
+///
+/// Returns an error when required warehouse data is unavailable or unparsable.
 pub fn summarize_warehouse_nway_patterns(
     run_dir: &Path,
     options: WarehousePatternOptions,
@@ -1404,51 +1093,12 @@ fn split_materialized_sample_ids(value: &str) -> Vec<String> {
         .collect()
 }
 
-pub fn write_warehouse_nway_patterns_duckdb_tsv<W: Write>(
-    run_dir: &Path,
-    options: &WarehousePatternOptions,
-    mut writer: W,
-) -> Result<bool> {
-    if warehouse_feature_pattern_counts_available(run_dir, options) {
-        let sql = warehouse_feature_pattern_counts_duckdb_sql(run_dir, options);
-        return run_duckdb_tsv(
-            run_dir,
-            sql,
-            &mut writer,
-            "warehouse feature pattern counts",
-        );
-    }
-    if options.kind == NwayPatternKind::Feature
-        && options.feature_profile == WarehouseFeatureProfile::Core
-        && options.feature_key.is_none()
-    {
-        return write_warehouse_core_patterns_duckdb_tsv(run_dir, options, &mut writer);
-    }
-    let sql = warehouse_pattern_duckdb_sql(run_dir, options);
-    run_duckdb_tsv(run_dir, sql, &mut writer, "warehouse pattern summary")
-}
-
-fn write_warehouse_core_patterns_duckdb_tsv<W: Write>(
-    run_dir: &Path,
-    options: &WarehousePatternOptions,
-    writer: &mut W,
-) -> Result<bool> {
-    let mut outputs = Vec::new();
-    for feature_key in WAREHOUSE_CORE_FEATURE_KEYS {
-        let mut key_options = options.clone();
-        key_options.feature_key = Some((*feature_key).to_owned());
-        let sql = warehouse_pattern_duckdb_sql(run_dir, &key_options);
-        let mut output = Vec::new();
-        if !run_duckdb_tsv(run_dir, sql, &mut output, "warehouse core pattern summary")? {
-            return Ok(false);
-        }
-        outputs.push(String::from_utf8(output).context("duckdb emitted non-UTF8 TSV")?);
-    }
-    write_merged_pattern_tsv(outputs.iter().map(String::as_str), options.limit, writer)
-        .context("failed to merge core feature pattern summaries")?;
-    Ok(true)
-}
-
+/// Writes materialized feature-pattern parquet artifacts for the warehouse.
+///
+/// # Errors
+///
+/// Returns an error when existing files cannot be removed, directories cannot be
+/// created, or the materialization process fails.
 pub fn materialize_warehouse_core_feature_pattern_counts(
     run_dir: &Path,
     feature_key: Option<&str>,
@@ -1513,40 +1163,13 @@ pub fn materialize_warehouse_core_feature_pattern_counts(
     Ok(true)
 }
 
+#[cfg(test)]
 fn write_merged_pattern_tsv<'a, W: Write>(
     chunks: impl IntoIterator<Item = &'a str>,
     limit: usize,
     writer: &mut W,
 ) -> Result<()> {
-    let mut header = None::<&str>;
-    let mut rows = Vec::<(u64, &str)>::new();
-    for chunk in chunks {
-        let mut lines = chunk.lines();
-        if header.is_none() {
-            header = lines.next();
-        } else {
-            let _ = lines.next();
-        }
-        for line in lines {
-            if line.trim().is_empty() {
-                continue;
-            }
-            let examples = line
-                .split('\t')
-                .nth(1)
-                .and_then(|value| value.parse::<u64>().ok())
-                .unwrap_or(0);
-            rows.push((examples, line));
-        }
-    }
-    rows.sort_by(|left, right| right.0.cmp(&left.0).then_with(|| left.1.cmp(right.1)));
-    if let Some(header) = header {
-        writeln!(writer, "{header}")?;
-    }
-    for (_, row) in rows.into_iter().take(limit) {
-        writeln!(writer, "{row}")?;
-    }
-    Ok(())
+    super::write::write_merged_pattern_tsv(chunks, limit, writer)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -2014,58 +1637,6 @@ fn batch_bool_value(batch: &RecordBatch, name: &str, row: usize) -> Result<bool>
     Ok(bool_column(batch, index)?.value(row))
 }
 
-pub fn write_warehouse_regions_duckdb_tsv<W: Write>(
-    run_dir: &Path,
-    options: &WarehouseRegionOptions,
-    mut writer: W,
-) -> Result<bool> {
-    let sql = warehouse_region_examples_duckdb_sql(run_dir, options);
-    run_duckdb_tsv(run_dir, sql, &mut writer, "warehouse region examples")
-}
-
-pub fn write_warehouse_pattern_examples_duckdb_tsv<W: Write>(
-    run_dir: &Path,
-    options: &WarehousePatternExampleOptions,
-    mut writer: W,
-) -> Result<bool> {
-    let sql = warehouse_pattern_examples_duckdb_sql(run_dir, options);
-    run_duckdb_tsv(run_dir, sql, &mut writer, "warehouse pattern examples")
-}
-
-fn run_duckdb_tsv<W: Write>(
-    run_dir: &Path,
-    sql: String,
-    writer: &mut W,
-    context: &str,
-) -> Result<bool> {
-    let duckdb_bin = std::env::var("AB_DUCKDB_BIN")
-        .unwrap_or_else(|_| std::env::var("DUCKDB").unwrap_or_else(|_| String::from("duckdb")));
-
-    fs::create_dir_all(duckdb_temp_dir(run_dir)).with_context(|| {
-        format!(
-            "failed to create DuckDB temp directory for {}",
-            run_dir.display()
-        )
-    })?;
-    let output = match Command::new(&duckdb_bin).arg("-c").arg(sql).output() {
-        Ok(output) => output,
-        Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(false),
-        Err(error) => return Err(error).context("failed to run duckdb"),
-    };
-    if !output.status.success() {
-        bail!(
-            "duckdb {context} failed with status {}: stderr={} stdout={}",
-            output.status,
-            String::from_utf8_lossy(&output.stderr),
-            String::from_utf8_lossy(&output.stdout)
-        );
-    }
-    writer
-        .write_all(&output.stdout)
-        .with_context(|| format!("failed to write duckdb {context}"))?;
-    Ok(true)
-}
-
 fn run_duckdb_statement(run_dir: &Path, sql: String, context: &str) -> Result<bool> {
     let duckdb_bin = std::env::var("AB_DUCKDB_BIN")
         .unwrap_or_else(|_| std::env::var("DUCKDB").unwrap_or_else(|_| String::from("duckdb")));
@@ -2092,7 +1663,7 @@ fn run_duckdb_statement(run_dir: &Path, sql: String, context: &str) -> Result<bo
     Ok(true)
 }
 
-fn warehouse_pattern_duckdb_sql(run_dir: &Path, options: &WarehousePatternOptions) -> String {
+pub(crate) fn warehouse_pattern_duckdb_sql(run_dir: &Path, options: &WarehousePatternOptions) -> String {
     let regions = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegions);
     let analyzers = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegionAnalyzers);
     let features = duckdb_table_path_literal(run_dir, WarehouseTable::NwayFeatureDiffs);
@@ -2280,7 +1851,7 @@ patterns AS (
     duckdb_copy_sql(run_dir, &body)
 }
 
-fn warehouse_feature_pattern_counts_available(
+pub(crate) fn warehouse_feature_pattern_counts_available(
     run_dir: &Path,
     options: &WarehousePatternOptions,
 ) -> bool {
@@ -2293,7 +1864,7 @@ fn warehouse_feature_pattern_counts_available(
             .is_ok_and(|paths| !paths.is_empty())
 }
 
-fn warehouse_feature_pattern_counts_duckdb_sql(
+pub(crate) fn warehouse_feature_pattern_counts_duckdb_sql(
     run_dir: &Path,
     options: &WarehousePatternOptions,
 ) -> String {
@@ -2516,7 +2087,7 @@ fn warehouse_duckdb_region_filter(options: &WarehousePatternOptions) -> &'static
     }
 }
 
-fn warehouse_region_examples_duckdb_sql(
+pub(crate) fn warehouse_region_examples_duckdb_sql(
     run_dir: &Path,
     options: &WarehouseRegionOptions,
 ) -> String {
@@ -2607,7 +2178,7 @@ ORDER BY r.source_id, r.text_id, r.region_index
     duckdb_copy_sql(run_dir, &body)
 }
 
-fn warehouse_pattern_examples_duckdb_sql(
+pub(crate) fn warehouse_pattern_examples_duckdb_sql(
     run_dir: &Path,
     options: &WarehousePatternExampleOptions,
 ) -> String {
@@ -2984,7 +2555,7 @@ fn duckdb_settings_sql(run_dir: &Path) -> String {
     )
 }
 
-fn duckdb_temp_dir(run_dir: &Path) -> std::path::PathBuf {
+pub(crate) fn duckdb_temp_dir(run_dir: &Path) -> std::path::PathBuf {
     run_dir
         .parent()
         .and_then(Path::parent)
@@ -2996,6 +2567,11 @@ fn sql_literal(value: &str) -> String {
     format!("'{}'", value.replace('\'', "''"))
 }
 
+/// Summarizes warehouse pattern example rows.
+///
+/// # Errors
+///
+/// Returns an error when warehouse region and analyzer facts cannot be loaded.
 pub fn summarize_warehouse_pattern_examples(
     run_dir: &Path,
     options: WarehousePatternExampleOptions,
@@ -3219,7 +2795,7 @@ fn summarize_warehouse_feature_patterns(
 }
 
 impl Accumulator {
-    fn push(&mut self, row: ComparisonSummaryRow) {
+    pub(super) fn push(&mut self, row: ComparisonSummaryRow) {
         self.source_ids.insert(row.source_id);
         self.text_ids.insert(row.text_id);
         self.script_categories.insert(row.source_script_category);
@@ -3247,7 +2823,7 @@ impl Accumulator {
             .max(row.coverage_mismatch_regions);
     }
 
-    fn into_row(self, key: String) -> CompactSummaryRow {
+    pub(super) fn into_row(self, key: String) -> CompactSummaryRow {
         CompactSummaryRow {
             key,
             source_ids: self.source_ids.into_iter().collect(),
@@ -3280,7 +2856,7 @@ impl Accumulator {
 }
 
 impl ExampleAccumulator {
-    fn push(
+    pub(super) fn push(
         &mut self,
         row: ExampleSummaryInputRow,
         whitespace_only: bool,
@@ -3304,7 +2880,7 @@ impl ExampleAccumulator {
         }
     }
 
-    fn into_row(self, key: String) -> CompactExampleSummaryRow {
+    pub(super) fn into_row(self, key: String) -> CompactExampleSummaryRow {
         CompactExampleSummaryRow {
             key,
             source_ids: self.source_ids.into_iter().collect(),
@@ -3326,14 +2902,14 @@ impl ExampleAccumulator {
 }
 
 impl DifferenceAccumulator {
-    fn push(&mut self, row: &ExampleSummaryInputRow, script_category: ScriptCategory) {
+    pub(super) fn push(&mut self, row: &ExampleSummaryInputRow, script_category: ScriptCategory) {
         self.source_ids.insert(row.source_id.clone());
         self.text_ids.insert(row.text_id.clone());
         self.script_categories.insert(script_category);
         self.examples += 1;
     }
 
-    fn into_row(self, key: DifferenceKey) -> CompactDifferenceSummaryRow {
+    pub(super) fn into_row(self, key: DifferenceKey) -> CompactDifferenceSummaryRow {
         CompactDifferenceSummaryRow {
             kind: key.kind,
             from_analyzer: key.from_analyzer,
@@ -3358,7 +2934,7 @@ impl DifferenceAccumulator {
 }
 
 impl NwayAccumulator {
-    fn push(&mut self, row: NwaySummaryInputRow) {
+    pub(super) fn push(&mut self, row: NwaySummaryInputRow) {
         self.source_ids.insert(row.source_id);
         self.text_ids.insert(row.text_id);
         self.script_categories.insert(row.source_script_category);
@@ -3375,7 +2951,7 @@ impl NwayAccumulator {
         self.variable_boundary_count += row.variable_boundary_count;
     }
 
-    fn push_warehouse_region(&mut self, region: &WarehouseRegionKey, flags: WarehouseRegionFlags) {
+    pub(super) fn push_warehouse_region(&mut self, region: &WarehouseRegionKey, flags: WarehouseRegionFlags) {
         self.source_ids.insert(region.source_id.clone());
         self.text_ids.insert(region.text_id.clone());
         self.rows = self.source_ids.len();
@@ -3392,7 +2968,7 @@ impl NwayAccumulator {
         }
     }
 
-    fn into_row(self, key: String) -> NwaySummaryRow {
+    pub(super) fn into_row(self, key: String) -> NwaySummaryRow {
         NwaySummaryRow {
             key,
             source_ids: self.source_ids.into_iter().collect(),
@@ -3419,11 +2995,11 @@ impl NwayAccumulator {
 }
 
 impl NwayPatternAccumulator {
-    fn push(&mut self, row: &NwayComparisonRow, script_category: ScriptCategory) {
+    pub(super) fn push(&mut self, row: &NwayComparisonRow, script_category: ScriptCategory) {
         self.push_count(row, script_category, 1);
     }
 
-    fn push_count(
+    pub(super) fn push_count(
         &mut self,
         row: &NwayComparisonRow,
         script_category: ScriptCategory,
@@ -3437,7 +3013,7 @@ impl NwayPatternAccumulator {
         );
     }
 
-    fn push_count_values(
+    pub(super) fn push_count_values(
         &mut self,
         source_id: String,
         text_id: String,
@@ -3450,7 +3026,7 @@ impl NwayPatternAccumulator {
         self.examples += count;
     }
 
-    fn into_row(self, key: NwayPatternKey) -> NwayPatternRow {
+    pub(super) fn into_row(self, key: NwayPatternKey) -> NwayPatternRow {
         let pattern = nway_pattern_display(&key);
         NwayPatternRow {
             kind: key.kind,
@@ -3473,13 +3049,13 @@ impl NwayPatternAccumulator {
 }
 
 impl WarehousePatternAccumulator {
-    fn push_region(&mut self, region: &WarehouseRegionKey, count: usize) {
+    pub(super) fn push_region(&mut self, region: &WarehouseRegionKey, count: usize) {
         self.source_ids.insert(region.source_id.clone());
         self.text_ids.insert(region.text_id.clone());
         self.examples += count;
     }
 
-    fn into_row(self, key: NwayPatternKey) -> NwayPatternRow {
+    pub(super) fn into_row(self, key: NwayPatternKey) -> NwayPatternRow {
         NwayPatternRow {
             kind: key.kind.clone(),
             pattern: nway_pattern_display(&key),
@@ -3496,7 +3072,7 @@ impl WarehousePatternAccumulator {
 }
 
 impl WarehouseErrorAccumulator {
-    fn push(&mut self, fact: WarehouseErrorFact) {
+    pub(super) fn push(&mut self, fact: WarehouseErrorFact) {
         self.errors += 1;
         if let Some(source_id) = fact.source_id {
             self.source_ids.insert(source_id);
@@ -3514,7 +3090,7 @@ impl WarehouseErrorAccumulator {
         }
     }
 
-    fn into_row(self, key: String) -> WarehouseErrorSummaryRow {
+    pub(super) fn into_row(self, key: String) -> WarehouseErrorSummaryRow {
         WarehouseErrorSummaryRow {
             key,
             errors: self.errors,
@@ -3529,7 +3105,7 @@ impl WarehouseErrorAccumulator {
 }
 
 impl WarehousePairwiseAccumulator {
-    fn into_row(self, key: WarehousePairwiseKey) -> WarehousePairwiseSummaryRow {
+    pub(super) fn into_row(self, key: WarehousePairwiseKey) -> WarehousePairwiseSummaryRow {
         WarehousePairwiseSummaryRow {
             source_id: key.source_id,
             text_id: key.text_id,
@@ -3826,7 +3402,7 @@ fn warehouse_feature_scope_row(feature: &WarehouseFeatureGroupKey) -> Result<Nwa
     }
 }
 
-fn warehouse_segmentation_pattern_key(
+pub(super) fn warehouse_segmentation_pattern_key(
     facts: &[WarehouseRegionAnalyzerFact],
 ) -> Option<NwayPatternKey> {
     let mut surface_groups = BTreeMap::<Vec<String>, Vec<String>>::new();
@@ -3856,7 +3432,7 @@ fn warehouse_segmentation_pattern_key(
     })
 }
 
-fn warehouse_feature_pattern_key(
+pub(super) fn warehouse_feature_pattern_key(
     feature: &WarehouseFeatureGroupKey,
     facts: &[WarehouseFeatureDiffFact],
 ) -> Result<NwayPatternKey> {
@@ -4122,21 +3698,21 @@ fn nway_sort_value(row: &NwaySummaryRow, sort_by: NwaySummarySort) -> usize {
     }
 }
 
-fn canonicalize_segmentation_groups(groups: &mut [NwaySegmentationGroupRow]) {
+pub(super) fn canonicalize_segmentation_groups(groups: &mut [NwaySegmentationGroupRow]) {
     for group in groups.iter_mut() {
         group.analyzers.sort();
     }
     groups.sort();
 }
 
-fn canonicalize_feature_values(values: &mut [NwayFeatureValueGroupRow]) {
+pub(super) fn canonicalize_feature_values(values: &mut [NwayFeatureValueGroupRow]) {
     for value in values.iter_mut() {
         value.analyzers.sort();
     }
     values.sort();
 }
 
-fn nway_pattern_display(key: &NwayPatternKey) -> String {
+pub(super) fn nway_pattern_display(key: &NwayPatternKey) -> String {
     match key.kind.as_str() {
         "segmentation" => key
             .segmentation_groups
@@ -4186,7 +3762,7 @@ fn nway_pattern_display(key: &NwayPatternKey) -> String {
     }
 }
 
-fn escape_pattern_value(value: &str) -> String {
+pub(super) fn escape_pattern_value(value: &str) -> String {
     value
         .chars()
         .flat_map(|ch| match ch {
@@ -4199,7 +3775,7 @@ fn escape_pattern_value(value: &str) -> String {
         .collect()
 }
 
-fn scope_display(scope: &NwayFeatureScopeRow) -> String {
+pub(super) fn scope_display(scope: &NwayFeatureScopeRow) -> String {
     match scope {
         NwayFeatureScopeRow::WholeRegion => "whole_region".to_owned(),
         NwayFeatureScopeRow::TokenPosition { position } => format!("token_position:{position}"),
@@ -4220,7 +3796,7 @@ fn example_sort_value(row: &CompactExampleSummaryRow, sort_by: CompactExampleSum
     }
 }
 
-fn example_filter_matches(filter: CompactExampleFilter, whitespace_only: bool) -> bool {
+pub(super) fn example_filter_matches(filter: CompactExampleFilter, whitespace_only: bool) -> bool {
     match filter {
         CompactExampleFilter::All => true,
         CompactExampleFilter::WhitespaceOnly => whitespace_only,
@@ -4228,7 +3804,7 @@ fn example_filter_matches(filter: CompactExampleFilter, whitespace_only: bool) -
     }
 }
 
-fn feature_change_has_excluded_value(
+pub(super) fn feature_change_has_excluded_value(
     change: &FeatureChangeInputRow,
     excluded_values: &BTreeSet<String>,
 ) -> bool {
@@ -4236,11 +3812,11 @@ fn feature_change_has_excluded_value(
         || value_is_excluded(change.to.as_deref(), excluded_values)
 }
 
-fn value_is_excluded(value: Option<&str>, excluded_values: &BTreeSet<String>) -> bool {
+pub(super) fn value_is_excluded(value: Option<&str>, excluded_values: &BTreeSet<String>) -> bool {
     value.is_some_and(|value| excluded_values.contains(value))
 }
 
-fn filtered_feature_values(
+pub(super) fn filtered_feature_values(
     values: &[NwayFeatureValueGroupRow],
     excluded_values: &BTreeSet<String>,
 ) -> Vec<NwayFeatureValueGroupRow> {
@@ -4251,7 +3827,7 @@ fn filtered_feature_values(
         .collect()
 }
 
-fn push_nway_pattern_count(
+pub(super) fn push_nway_pattern_count(
     groups: &mut BTreeMap<NwayPatternKey, NwayPatternAccumulator>,
     row: &NwayComparisonRow,
     pattern_count: &NwayPatternCountRow,
@@ -4314,7 +3890,7 @@ fn push_nway_pattern_count(
     }
 }
 
-fn push_nway_pattern_output_count(
+pub(super) fn push_nway_pattern_output_count(
     groups: &mut BTreeMap<NwayPatternKey, NwayPatternAccumulator>,
     row: &NwayPatternCountOutputRow,
     options: &NwayPatternOptions,
@@ -4376,7 +3952,7 @@ fn push_nway_pattern_output_count(
     }
 }
 
-fn is_segmentation_example(kind: &str) -> bool {
+pub(super) fn is_segmentation_example(kind: &str) -> bool {
     matches!(kind, "split" | "merge" | "resegment")
 }
 

@@ -4,8 +4,7 @@ use std::ops::Range;
 use ab_morph_diff::MorphDiffError;
 use ab_morph_diff::{Analysis, NwayFeatureScope, NwayRegion, visit_nway_regions_with_source_text};
 use anyhow::Result as AnyhowResult;
-
-use super::schema::{
+use ab_warehouse::schema::{
     AnalysisRow, MorphemeFeatureRow, MorphemeRow, NwayFeatureDiffRow, NwayRegionAnalyzerRow,
     NwayRegionRow, SourceRow,
 };
@@ -299,6 +298,7 @@ mod tests {
                 0..2,
                 [("pos1", Some("名詞")), ("lemma", Some("今日"))],
             )],
+            warnings: Vec::new(),
         };
 
         assert_eq!(
@@ -457,7 +457,7 @@ mod tests {
     ) -> Morpheme {
         let mut map = FeatureMap::new();
         for (key, value) in features {
-            map.insert(key.into(), value.map(Into::into));
+            let _ = map.insert(key.into(), value.map(Into::into));
         }
         Morpheme {
             surface: surface.to_owned(),
@@ -478,6 +478,7 @@ mod tests {
             analyzer: analyzer.to_owned(),
             source_text: source_text.to_owned(),
             morphemes,
+            warnings: Vec::new(),
         }
     }
 }

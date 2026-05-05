@@ -54,6 +54,12 @@ pub struct PerParserPrevalence {
     pub works_failed: u64,
 }
 
+/// Run corpus-wide prevalence estimation for all configured parsers.
+///
+/// # Errors
+///
+/// Returns an error when adapter cache/index resolution fails or a work cannot be
+/// processed due to IO/parsing/runtime issues.
 pub fn run_prevalence(
     cfg: &PrevalenceConfig,
     registry: &DetectorRegistry,
@@ -65,7 +71,7 @@ pub fn run_prevalence(
     for parser_id in &cfg.parsers {
         let inputs = AdapterFingerprintInputs::for_parser(&cfg.repo_root, parser_id)?;
         let adapter_sha = compute_adapter_sha(&inputs)?;
-        let adapter = AdapterBinary::for_parser(&cfg.repo_root, parser_id);
+        let adapter = AdapterBinary::for_parser(&cfg.repo_root, parser_id)?;
         eprintln!(
             "[ab-coverage] {parser_id}: adapter_sha={} workers={}",
             &adapter_sha[..12],
@@ -143,6 +149,11 @@ pub fn run_prevalence(
 /// Maps a work_id to a corpus-relative path or `archive::entry`. The corpus
 /// pipeline uses `ab-index` output as the canonical mapping.
 pub trait IndexResolver: Sync {
+    /// Resolve a work id to a source path or archive selector.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the work id is unknown or resolution fails.
     fn resolve(&self, work_id: &str) -> Result<String>;
 }
 

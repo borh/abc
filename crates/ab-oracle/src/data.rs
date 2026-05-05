@@ -124,6 +124,11 @@ pub struct UpstreamObservation {
     pub evidence: Option<String>,
 }
 
+/// Load oracle cases from a TOML file.
+///
+/// # Errors
+///
+/// Returns an error when the file cannot be read or parsed.
 pub fn load_oracle_cases(path: &Path) -> Result<OracleCases> {
     let input = fs::read_to_string(path)
         .with_context(|| format!("failed to read oracle cases {}", path.display()))?;
@@ -131,6 +136,11 @@ pub fn load_oracle_cases(path: &Path) -> Result<OracleCases> {
         .with_context(|| format!("failed to parse oracle cases {}", path.display()))
 }
 
+/// Load upstream observations from a TOML file.
+///
+/// # Errors
+///
+/// Returns an error when the file cannot be read or parsed.
 pub fn load_upstream_observations(path: &Path) -> Result<UpstreamObservations> {
     let input = fs::read_to_string(path)
         .with_context(|| format!("failed to read upstream observations {}", path.display()))?;
@@ -139,6 +149,7 @@ pub fn load_upstream_observations(path: &Path) -> Result<UpstreamObservations> {
 }
 
 impl OracleCase {
+    #[must_use] 
     pub fn current_review_status(&self) -> ReviewStatus {
         self.review
             .last()
@@ -148,6 +159,7 @@ impl OracleCase {
 }
 
 impl ReviewStatus {
+    #[must_use] 
     pub fn as_str(self) -> &'static str {
         match self {
             ReviewStatus::Draft => "draft",

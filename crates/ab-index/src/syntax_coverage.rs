@@ -43,6 +43,11 @@ struct SyntaxCoverageFile {
 }
 
 impl SyntaxCoverage {
+    /// Load syntax coverage data from TOML.
+    ///
+    /// # Errors
+    /// 
+    /// Returns an error when the file cannot be read or parsed as TOML.
     pub fn from_toml(path: &Path) -> Result<Self> {
         let raw = fs::read_to_string(path)
             .with_context(|| format!("failed to read syntax coverage {}", path.display()))?;
@@ -53,6 +58,7 @@ impl SyntaxCoverage {
         })
     }
 
+    #[must_use] 
     pub fn rows(&self) -> &[SyntaxRow] {
         &self.rows
     }

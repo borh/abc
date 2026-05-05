@@ -11,6 +11,7 @@ members = [
     "crates/ab-plaintext",
     "crates/ab-morph-analyzers",
     "crates/ab-morph-run",
+    "crates/ab-warehouse",
     "crates/ab-oracle",
 ]
 resolver = "2"
@@ -35,6 +36,7 @@ ab-morph-diff = { path = "crates/ab-morph-diff" }
 ab-plaintext = { path = "crates/ab-plaintext" }
 ab-morph-analyzers = { path = "crates/ab-morph-analyzers" }
 ab-morph-run = { path = "crates/ab-morph-run" }
+ab-warehouse = { path = "crates/ab-warehouse" }
 ab-ir = { path = "crates/ab-ir" }
 ab-check = { path = "crates/ab-check" }
 ab-source-syntax = { path = "crates/ab-source-syntax" }
@@ -47,7 +49,7 @@ jsonschema = "0.46"
 rayon = "1.10"
 regex = "1.10"
 rustc-hash = "2"
-serde = { version = "1.0", features = ["derive"] }
+serde = { version = "1.0", features = ["derive", "rc"] }
 serde_json = "1.0"
 parquet = { version = "56", default-features = false, features = ["arrow", "zstd"] }
 sha2 = "0.10"

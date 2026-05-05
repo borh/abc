@@ -497,6 +497,7 @@ mod tests {
                 char_span: 0..2,
                 features: FeatureMap::new(),
             }],
+            warnings: Vec::new(),
         };
         let comparison = Comparison {
             text_id: "t1".to_owned(),
@@ -740,6 +741,7 @@ mod tests {
                 char_span: 0..2,
                 features: FeatureMap::new(),
             }],
+            warnings: Vec::new(),
         }
     }
 
@@ -753,6 +755,7 @@ mod tests {
             text_id: "t1".to_owned(),
             source_text: source_text.to_owned(),
             morphemes,
+            warnings: Vec::new(),
         }
     }
 

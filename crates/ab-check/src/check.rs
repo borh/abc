@@ -82,12 +82,22 @@ struct AdapterCheckOutput {
     aat: Option<Value>,
 }
 
+/// Return a lazily initialized JSON-schema validator for AAT documents.
+///
+/// # Errors
+///
+/// Returns an error when the embedded schema cannot be parsed or validated.
 pub fn schema_validator() -> Result<&'static Validator> {
     AAT_SCHEMA_VALIDATOR
         .as_ref()
         .map_err(|message| anyhow::anyhow!(message.clone()))
 }
 
+/// Validate an AAT object against the JSON schema.
+///
+/// # Errors
+///
+/// Returns an error when schema validation fails.
 pub fn validate_aat_value(aat: &Value) -> Result<()> {
     let validator = schema_validator()?;
     validator.validate(aat).map_err(|error| {
@@ -98,6 +108,12 @@ pub fn validate_aat_value(aat: &Value) -> Result<()> {
     })
 }
 
+/// Validate one text+aat pair and produce a report.
+///
+/// # Errors
+///
+/// Returns an error when input files cannot be read, AAT cannot be parsed,
+/// or validation fails.
 pub fn check_single(
     txt_path: &Path,
     aat_path: &Path,
@@ -198,6 +214,12 @@ pub fn check_value(txt: &str, aat: &Value, validator: &Validator) -> CheckReport
     }
 }
 
+/// Validate many works from an index and write reports.
+///
+/// # Errors
+///
+/// Returns an error when inputs cannot be read/discovered, adapter is missing, or
+/// any execution/serialization step fails.
 pub fn run_batch(options: BatchOptions<'_>) -> Result<()> {
     let index: IndexFile = serde_json::from_slice(&fs::read(options.index_path)?)?;
     let explicit_ids = if let Some(path) = options.work_ids_path {
@@ -271,6 +293,11 @@ pub fn run_batch(options: BatchOptions<'_>) -> Result<()> {
     })
 }
 
+/// Write a check report to file when requested.
+///
+/// # Errors
+///
+/// Returns an error when the output path cannot be created or JSON serialization fails.
 pub fn write_report(report: &CheckReport, output: Option<&Path>) -> Result<()> {
     if let Some(path) = output {
         if let Some(parent) = path.parent() {
@@ -331,7 +358,7 @@ fn invoke_and_check(
             let stdout = join_reader(stdout_reader, "stdout")?;
             let stderr = join_reader(stderr_reader, "stderr")?;
             return match status.code() {
-                Some(0) | Some(2) => {
+                Some(code) if code == 0 || code == 2 => {
                     let mut aat: Value = serde_json::from_slice(&stdout)?;
                     if let Some(root) = aat.as_object_mut() {
                         root.insert("work_id".to_owned(), Value::String(work_id.to_owned()));
@@ -556,6 +583,7 @@ fn default_confidence(name: &str) -> &'static str {
     }
 }
 
+#[must_use] 
 pub fn report_to_value(report: &CheckReport) -> Value {
     json!(report)
 }

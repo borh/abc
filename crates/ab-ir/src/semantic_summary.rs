@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
-use crate::{Block, BreakKind, GaijiRef, Inline, ProjectionWarning, block_content};
+use crate::{block_content, walk_inline, Inline, InlineVisitor, GaijiRef, Block, BreakKind, ProjectionWarning};
 
 /// Parser-neutral semantic summary serialized into AAT `meta.semantic_summary`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -28,15 +28,14 @@ pub struct SourceSpan {
     pub end: usize,
 }
 
+#[must_use]
 pub fn semantic_summary(blocks: &[Block], warnings: &[ProjectionWarning]) -> SemanticSummary {
     let mut summary = SemanticSummary {
         syntax: BTreeMap::new(),
     };
     for block in blocks {
         collect_block(block, &mut summary);
-        for child in block_content(block) {
-            collect_inline(child, None, &mut summary);
-        }
+        collect_inlines(block_content(block), &mut summary);
     }
     for warning in warnings {
         push_node(
@@ -127,21 +126,50 @@ fn collect_block(block: &Block, summary: &mut SemanticSummary) {
     }
 }
 
-fn collect_inline(node: &Inline, ruby_reading: Option<&str>, summary: &mut SemanticSummary) {
-    match node {
-        Inline::Ruby {
-            base,
-            reading,
-            placement,
-            provenance,
-            ..
-        } => {
+fn collect_inlines(nodes: &[Inline], summary: &mut SemanticSummary) {
+    let mut collector = SummaryCollector {
+        summary,
+        ruby_reading: Vec::new(),
+    };
+    for node in nodes {
+        walk_inline(&mut collector, node);
+    }
+}
+
+struct SummaryCollector<'a> {
+    summary: &'a mut SemanticSummary,
+    ruby_reading: Vec<String>,
+}
+
+impl<'a> InlineVisitor for SummaryCollector<'a> {
+    fn enter_ruby(
+        &mut self,
+        base: &[Inline],
+        reading: &str,
+        placement: &crate::RubyPlacement,
+        provenance: &crate::Provenance,
+    ) {
+        push_node(
+            self.summary,
+            "ruby.basic",
+            SemanticSummaryNode {
+                source_span: None,
+                kind: "ruby".to_owned(),
+                value: json!({
+                    "base_projection": inline_visible_text(base),
+                    "reading": reading,
+                    "placement": placement.as_str(),
+                }),
+                provenance: provenance.as_str().to_owned(),
+            },
+        );
+        if contains_gaiji(base) {
             push_node(
-                summary,
-                "ruby.basic",
+                self.summary,
+                "gaiji_ruby.inline_base",
                 SemanticSummaryNode {
                     source_span: None,
-                    kind: "ruby".to_owned(),
+                    kind: "gaiji_ruby".to_owned(),
                     value: json!({
                         "base_projection": inline_visible_text(base),
                         "reading": reading,
@@ -150,51 +178,27 @@ fn collect_inline(node: &Inline, ruby_reading: Option<&str>, summary: &mut Seman
                     provenance: provenance.as_str().to_owned(),
                 },
             );
-            if contains_gaiji(base) {
-                push_node(
-                    summary,
-                    "gaiji_ruby.inline_base",
-                    SemanticSummaryNode {
-                        source_span: None,
-                        kind: "gaiji_ruby".to_owned(),
-                        value: json!({
-                            "base_projection": inline_visible_text(base),
-                            "reading": reading,
-                            "placement": placement.as_str(),
-                        }),
-                        provenance: provenance.as_str().to_owned(),
-                    },
-                );
-            }
-            for child in base {
-                collect_inline(child, Some(reading), summary);
-            }
         }
-        Inline::GaijiRef(gaiji) => {
-            collect_gaiji(gaiji, ruby_reading, summary);
-        }
-        Inline::Style { content, .. }
-        | Inline::Scope { content, .. }
-        | Inline::FontSize { content, .. } => {
-            for child in content {
-                collect_inline(child, ruby_reading, summary);
-            }
-        }
-        Inline::Warigaki { upper, lower, .. } => {
-            for child in upper.iter().chain(lower.iter()) {
-                collect_inline(child, ruby_reading, summary);
-            }
-        }
-        Inline::FigureRef { caption, .. } => {
-            for child in caption {
-                collect_inline(child, ruby_reading, summary);
-            }
-        }
-        Inline::Text { .. }
-        | Inline::TextMeta { .. }
-        | Inline::Accent { .. }
-        | Inline::EditorNote { .. }
-        | Inline::Raw { .. } => {}
+        self.ruby_reading.push(reading.to_owned());
+    }
+
+    fn leave_ruby(&mut self) {
+        self.ruby_reading.pop();
+    }
+
+    fn enter_gaiji_ref(&mut self, gaiji: &GaijiRef) {
+        let ruby_reading = self.ruby_reading.last().map(String::as_str);
+        collect_gaiji(gaiji, ruby_reading, self.summary);
+    }
+}
+
+struct ContainsGaiji {
+    pub found: bool,
+}
+
+impl InlineVisitor for ContainsGaiji {
+    fn enter_gaiji_ref(&mut self, _gaiji: &GaijiRef) {
+        self.found = true;
     }
 }
 
@@ -227,61 +231,16 @@ fn push_node(summary: &mut SemanticSummary, syntax_id: &str, node: SemanticSumma
 }
 
 fn contains_gaiji(content: &[Inline]) -> bool {
-    content.iter().any(|node| match node {
-        Inline::GaijiRef(_) => true,
-        Inline::Ruby { base, .. } => contains_gaiji(base),
-        Inline::Style { content, .. }
-        | Inline::Scope { content, .. }
-        | Inline::FontSize { content, .. } => contains_gaiji(content),
-        Inline::Warigaki { upper, lower, .. } => contains_gaiji(upper) || contains_gaiji(lower),
-        Inline::FigureRef { caption, .. } => contains_gaiji(caption),
-        Inline::Text { .. }
-        | Inline::TextMeta { .. }
-        | Inline::Accent { .. }
-        | Inline::EditorNote { .. }
-        | Inline::Raw { .. } => false,
-    })
+    let mut visitor = ContainsGaiji { found: false };
+    for node in content {
+        walk_inline(&mut visitor, node);
+        if visitor.found {
+            return true;
+        }
+    }
+    false
 }
 
 fn inline_visible_text(content: &[Inline]) -> String {
-    let mut out = String::new();
-    for child in content {
-        collect_visible(child, &mut out);
-    }
-    out
-}
-
-fn collect_visible(value: &Inline, out: &mut String) {
-    match value {
-        Inline::Text { value, .. } | Inline::TextMeta { value, .. } => out.push_str(value),
-        Inline::Ruby { base, .. } => {
-            for child in base {
-                collect_visible(child, out);
-            }
-        }
-        Inline::GaijiRef(gaiji) => {
-            if let Some(resolved) = &gaiji.resolved {
-                out.push_str(resolved);
-            }
-        }
-        Inline::Style { content, .. }
-        | Inline::Scope { content, .. }
-        | Inline::FontSize { content, .. } => {
-            for child in content {
-                collect_visible(child, out);
-            }
-        }
-        Inline::Warigaki { upper, lower, .. } => {
-            for child in upper.iter().chain(lower.iter()) {
-                collect_visible(child, out);
-            }
-        }
-        Inline::FigureRef { caption, .. } => {
-            for child in caption {
-                collect_visible(child, out);
-            }
-        }
-        Inline::Accent { resolved, .. } => out.push_str(resolved),
-        Inline::EditorNote { .. } | Inline::Raw { .. } => {}
-    }
+    super::inline_visible_text(content)
 }

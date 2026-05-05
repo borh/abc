@@ -1,3 +1,5 @@
+#![allow(clippy::missing_errors_doc)]
+
 use std::fs::{self, File};
 use std::path::Path;
 use std::sync::Arc;
@@ -11,7 +13,7 @@ use parquet::arrow::arrow_reader::ParquetRecordBatchReaderBuilder;
 use parquet::basic::{Compression, ZstdLevel};
 use parquet::file::properties::WriterProperties;
 
-use super::schema::{
+use crate::schema::{
     AnalysisRow, ErrorRow, FeaturePatternCountRow, MorphemeFeatureRow, MorphemeRow,
     NwayFeatureDiffRow, NwayRegionAnalyzerRow, NwayRegionRow, RunAnalyzerRow, RunRow, SourceRow,
     WarehousePaths, WarehouseTable,
@@ -19,7 +21,7 @@ use super::schema::{
 
 const WAREHOUSE_MAX_ROW_GROUP_SIZE: usize = 50_000;
 
-pub(crate) struct WarehouseWriter {
+pub struct WarehouseWriter {
     paths: WarehousePaths,
     runs: Option<ArrowWriter<File>>,
     run_analyzers: Option<ArrowWriter<File>>,
@@ -36,11 +38,11 @@ pub(crate) struct WarehouseWriter {
 
 impl WarehouseWriter {
     #[allow(dead_code)]
-    pub(crate) fn create(paths: WarehousePaths) -> Result<Self> {
+    pub fn create(paths: WarehousePaths) -> Result<Self> {
         Self::create_for_tables(paths, WarehouseTable::ALL)
     }
 
-    pub(crate) fn create_for_tables(
+    pub fn create_for_tables(
         paths: WarehousePaths,
         tables: &[WarehouseTable],
     ) -> Result<Self> {
@@ -54,7 +56,7 @@ impl WarehouseWriter {
         }
         fs::create_dir_all(&paths.staging_dir)
             .with_context(|| format!("failed to create {}", paths.staging_dir.display()))?;
-        crate::warehouse::sql::write_schema_sql(&paths.warehouse_dir)?;
+        crate::sql::write_schema_sql(&paths.warehouse_dir)?;
 
         Ok(Self {
             runs: open_optional_table_writer(&paths, tables, WarehouseTable::Runs, runs_schema())?,
@@ -122,7 +124,8 @@ impl WarehouseWriter {
         })
     }
 
-    pub(crate) fn writes_table(&self, table: WarehouseTable) -> bool {
+    #[must_use]
+    pub fn writes_table(&self, table: WarehouseTable) -> bool {
         match table {
             WarehouseTable::Runs => self.runs.is_some(),
             WarehouseTable::RunAnalyzers => self.run_analyzers.is_some(),
@@ -138,7 +141,7 @@ impl WarehouseWriter {
         }
     }
 
-    pub(crate) fn append_runs(&mut self, rows: &[RunRow]) -> Result<()> {
+    pub fn append_runs(&mut self, rows: &[RunRow]) -> Result<()> {
         if rows.is_empty() {
             return Ok(());
         }
@@ -159,7 +162,7 @@ impl WarehouseWriter {
         )
     }
 
-    pub(crate) fn append_run_analyzers(&mut self, rows: &[RunAnalyzerRow]) -> Result<()> {
+    pub fn append_run_analyzers(&mut self, rows: &[RunAnalyzerRow]) -> Result<()> {
         if rows.is_empty() {
             return Ok(());
         }
@@ -177,7 +180,7 @@ impl WarehouseWriter {
         )
     }
 
-    pub(crate) fn append_sources(&mut self, rows: &[SourceRow]) -> Result<()> {
+    pub fn append_sources(&mut self, rows: &[SourceRow]) -> Result<()> {
         if rows.is_empty() {
             return Ok(());
         }
@@ -195,7 +198,7 @@ impl WarehouseWriter {
         )
     }
 
-    pub(crate) fn append_analyses(&mut self, rows: &[AnalysisRow]) -> Result<()> {
+    pub fn append_analyses(&mut self, rows: &[AnalysisRow]) -> Result<()> {
         if rows.is_empty() {
             return Ok(());
         }
@@ -212,7 +215,7 @@ impl WarehouseWriter {
         )
     }
 
-    pub(crate) fn append_morphemes(&mut self, rows: &[MorphemeRow]) -> Result<()> {
+    pub fn append_morphemes(&mut self, rows: &[MorphemeRow]) -> Result<()> {
         if rows.is_empty() {
             return Ok(());
         }
@@ -234,7 +237,7 @@ impl WarehouseWriter {
         )
     }
 
-    pub(crate) fn append_morpheme_features(&mut self, rows: &[MorphemeFeatureRow]) -> Result<()> {
+    pub fn append_morpheme_features(&mut self, rows: &[MorphemeFeatureRow]) -> Result<()> {
         if rows.is_empty() {
             return Ok(());
         }
@@ -256,7 +259,7 @@ impl WarehouseWriter {
         )
     }
 
-    pub(crate) fn append_nway_regions(&mut self, rows: &[NwayRegionRow]) -> Result<()> {
+    pub fn append_nway_regions(&mut self, rows: &[NwayRegionRow]) -> Result<()> {
         if rows.is_empty() {
             return Ok(());
         }
@@ -283,7 +286,7 @@ impl WarehouseWriter {
         )
     }
 
-    pub(crate) fn append_nway_region_analyzers(
+    pub fn append_nway_region_analyzers(
         &mut self,
         rows: &[NwayRegionAnalyzerRow],
     ) -> Result<()> {
@@ -309,7 +312,7 @@ impl WarehouseWriter {
         )
     }
 
-    pub(crate) fn append_nway_feature_diffs(&mut self, rows: &[NwayFeatureDiffRow]) -> Result<()> {
+    pub fn append_nway_feature_diffs(&mut self, rows: &[NwayFeatureDiffRow]) -> Result<()> {
         if rows.is_empty() {
             return Ok(());
         }
@@ -334,7 +337,7 @@ impl WarehouseWriter {
         )
     }
 
-    pub(crate) fn append_feature_pattern_counts(
+    pub fn append_feature_pattern_counts(
         &mut self,
         rows: &[FeaturePatternCountRow],
     ) -> Result<()> {
@@ -363,7 +366,7 @@ impl WarehouseWriter {
         )
     }
 
-    pub(crate) fn append_errors(&mut self, rows: &[ErrorRow]) -> Result<()> {
+    pub fn append_errors(&mut self, rows: &[ErrorRow]) -> Result<()> {
         if rows.is_empty() {
             return Ok(());
         }
@@ -383,7 +386,7 @@ impl WarehouseWriter {
     }
 
     #[cfg(test)]
-    pub(crate) fn append_record_batch(
+    pub fn append_record_batch(
         &mut self,
         table: WarehouseTable,
         batch: RecordBatch,
@@ -448,7 +451,7 @@ impl WarehouseWriter {
         Ok(())
     }
 
-    pub(crate) fn finalize(mut self) -> Result<()> {
+    pub fn finalize(mut self) -> Result<()> {
         close_writer(self.runs.take())?;
         close_writer(self.run_analyzers.take())?;
         close_writer(self.sources.take())?;
@@ -460,13 +463,13 @@ impl WarehouseWriter {
         close_writer(self.nway_feature_diffs.take())?;
         close_writer(self.feature_pattern_counts.take())?;
         close_writer(self.errors.take())?;
-        crate::warehouse::sql::write_run_views_sql(&self.paths.staging_dir, &self.paths.final_dir)?;
+        crate::sql::write_run_views_sql(&self.paths.staging_dir, &self.paths.final_dir)?;
         finalize_staging_run(&self.paths)
     }
 }
 
 #[cfg(test)]
-pub(crate) fn append_parquet_table_file(
+pub fn append_parquet_table_file(
     writer: &mut WarehouseWriter,
     table: WarehouseTable,
     path: &Path,
@@ -485,7 +488,7 @@ pub(crate) fn append_parquet_table_file(
     Ok(())
 }
 
-pub(crate) fn parquet_table_row_count(run_dir: &Path, table: WarehouseTable) -> Result<u64> {
+pub fn parquet_table_row_count(run_dir: &Path, table: WarehouseTable) -> Result<u64> {
     let path = run_dir.join(table.file_name());
     if path.is_dir() {
         return parquet_table_part_paths(&path)?
@@ -497,7 +500,7 @@ pub(crate) fn parquet_table_row_count(run_dir: &Path, table: WarehouseTable) -> 
     parquet_file_row_count(&path)
 }
 
-pub(crate) fn stage_parquet_table_part(
+pub fn stage_parquet_table_part(
     staging_run_dir: &Path,
     table: WarehouseTable,
     shard_index: usize,
@@ -563,7 +566,7 @@ fn move_or_copy_parquet_part(source: &Path, destination: &Path) -> Result<()> {
 }
 
 #[cfg(test)]
-pub(crate) fn parquet_file_exists(dir: &Path, table: WarehouseTable) -> bool {
+pub fn parquet_file_exists(dir: &Path, table: WarehouseTable) -> bool {
     dir.join(table.file_name()).is_file()
 }
 

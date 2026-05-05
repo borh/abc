@@ -77,7 +77,7 @@ crates/ab-coverage/     [modify] — unnest or-patterns
 **Files:**
 - Modify: `crates/ab-ir/src/lib.rs` (~after Inline enum, before existing walk functions)
 
-- [ ] **Step 1: Add the InlineVisitor trait after the Inline enum definition**
+- [x] **Step 1: Add the InlineVisitor trait after the Inline enum definition**
 
 Insert after the closing `}` of `pub enum Inline { ... }` (before `#[derive(Debug, Clone, PartialEq, Eq)] pub struct StyleAttr`):
 
@@ -175,12 +175,12 @@ pub fn walk_inline<V: InlineVisitor>(visitor: &mut V, node: &Inline) {
 }
 ```
 
-- [ ] **Step 2: Build and verify compilation**
+- [x] **Step 2: Build and verify compilation**
 
 Run: `cargo build -p ab-ir`
 Expected: compiles cleanly (trait + fn added, nothing broken)
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add crates/ab-ir/src/lib.rs
@@ -194,7 +194,7 @@ git commit -m "feat(ab-ir): add InlineVisitor trait and walk_inline function"
 **Files:**
 - Modify: `crates/ab-ir/src/lib.rs` (~lines 814–845 for collect_visible, ~905–911 for inline_visible_text)
 
-- [ ] **Step 1: Add VisibleCollector visitor struct**
+- [x] **Step 1: Add VisibleCollector visitor struct**
 
 Place after the trait+fn added in Task 1.1:
 
@@ -222,7 +222,7 @@ impl InlineVisitor for VisibleCollector {
 }
 ```
 
-- [ ] **Step 2: Replace the old `fn collect_visible` with a delegating version**
+- [x] **Step 2: Replace the old `fn collect_visible` with a delegating version**
 
 Find the existing `fn collect_visible(value: &Inline, out: &mut String)` at ~line 814. Replace the entire function body:
 
@@ -243,12 +243,12 @@ fn collect_visible(value: &Inline, out: &mut String) {
 
 This preserves the function signature for `inline_visible_text` and `visible_projection` which still call it. No allocation overhead — `&mut String` is borrowed directly, avoiding `std::mem::take` (which would clear accumulated text on every call, causing data loss in loops like `visible_projection`).
 
-- [ ] **Step 3: Run tests**
+- [x] **Step 3: Run tests**
 
 Run: `cargo test -p ab-ir`
 Expected: all tests pass (visible_projection tests exercise collect_visible)
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add crates/ab-ir/src/lib.rs
@@ -262,7 +262,7 @@ git commit -m "refactor(ab-ir): replace collect_visible body with VisibleCollect
 **Files:**
 - Modify: `crates/ab-ir/src/lib.rs` (~lines 795–811)
 
-- [ ] **Step 1: Add GaijiChecker visitor**
+- [x] **Step 1: Add GaijiChecker visitor**
 
 ```rust
 struct GaijiChecker {
@@ -279,7 +279,7 @@ impl InlineVisitor for GaijiChecker {
 }
 ```
 
-- [ ] **Step 2: Replace `fn contains_unresolved_gaiji` body**
+- [x] **Step 2: Replace `fn contains_unresolved_gaiji` body**
 
 ```rust
 fn contains_unresolved_gaiji(content: &[Inline]) -> bool {
@@ -297,12 +297,12 @@ fn contains_unresolved_gaiji(content: &[Inline]) -> bool {
 }
 ```
 
-- [ ] **Step 3: Run tests**
+- [x] **Step 3: Run tests**
 
 Run: `cargo test -p ab-ir`
 Expected: all tests pass
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add crates/ab-ir/src/lib.rs
@@ -316,7 +316,7 @@ git commit -m "refactor(ab-ir): replace contains_unresolved_gaiji with GaijiChec
 **Files:**
 - Modify: `crates/ab-ir/src/lib.rs` (~lines 849–891)
 
-- [ ] **Step 1: Add ProvenanceCounts::increment helper**
+- [x] **Step 1: Add ProvenanceCounts::increment helper**
 
 ```rust
 impl ProvenanceCounts {
@@ -331,7 +331,7 @@ impl ProvenanceCounts {
 }
 ```
 
-- [ ] **Step 2: Replace `fn collect_provenance` body**
+- [x] **Step 2: Replace `fn collect_provenance` body**
 
 Same borrow-based approach as `collect_visible` — no `std::mem::take` (which would zero accumulated counts on every call in the loop).
 
@@ -358,16 +358,16 @@ fn collect_provenance(value: &Inline, counts: &mut ProvenanceCounts) {
 
 The inline `Vis` struct borrows `&mut ProvenanceCounts` directly — no allocation, no `std::mem::take`, no separate `ProvenanceCollector` struct needed.
 
-- [ ] **Step 3: Remove the old `fn inline_provenance`**
+- [x] **Step 3: Remove the old `fn inline_provenance`**
 
 Delete the function entirely — it's only called by `collect_provenance` (now dead).
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run: `cargo test -p ab-ir`
 Expected: all tests pass
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add crates/ab-ir/src/lib.rs
@@ -381,7 +381,7 @@ git commit -m "refactor(ab-ir): replace collect_provenance with ProvenanceCollec
 **Files:**
 - Modify: `crates/ab-ir/src/lib.rs`
 
-- [ ] **Step 1: Remove content from Break variant**
+- [x] **Step 1: Remove content from Break variant**
 
 Find `pub enum Block {` and change:
 
@@ -400,7 +400,7 @@ Break {
 
 Also update the doc comment above Break (remove "content is always empty; carried so block_content keeps a uniform signature").
 
-- [ ] **Step 2: Update constructors that pass empty vecs**
+- [x] **Step 2: Update constructors that pass empty vecs**
 
 Find `Block::page_break()` and `Block::line_break()` constructors. Remove the `content: Vec::new()` field:
 
@@ -423,7 +423,7 @@ pub fn page_break() -> Self {
 
 Do the same for `line_break()`.
 
-- [ ] **Step 3: Update block_content to handle Break explicitly**
+- [x] **Step 3: Update block_content to handle Break explicitly**
 
 ```rust
 pub fn block_content(block: &Block) -> &[Inline] {
@@ -440,11 +440,11 @@ pub fn block_content(block: &Block) -> &[Inline] {
 
 ```
 
-- [ ] **Step 4: Delete `pub fn block_content_mut` entirely**
+- [x] **Step 4: Delete `pub fn block_content_mut` entirely**
 
 **Verified: zero callers** — `rg "block_content_mut" crates/` returns only the definition at lib.rs:952, no external call sites. Delete the entire function (~lines 952-962). No `unreachable!()` needed — just remove dead code.
 
-- [ ] **Step 5: Update all consumers matching `Block::Break { content, .. }`**
+- [x] **Step 5: Update all consumers matching `Block::Break { content, .. }`**
 
 Search the codebase for patterns matching `Block::Break` and remove any `content` binding:
 
@@ -454,12 +454,12 @@ Check `semantic_summary.rs` for `collect_block` — it matches `Block::Break { .
 Run: `cargo build -p ab-ir 2>&1 | head -30`
 Fix any compile errors from removed `content` field.
 
-- [ ] **Step 6: Run tests**
+- [x] **Step 6: Run tests**
 
 Run: `cargo test -p ab-ir`
 Expected: all tests pass
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add crates/ab-ir/src/lib.rs
@@ -473,7 +473,7 @@ git commit -m "refactor(ab-ir): remove always-empty content from Block::Break, d
 **Files:**
 - Modify: `crates/ab-ir/src/semantic_summary.rs`
 
-- [ ] **Step 1: Add ContainsGaiji visitor and replace contains_gaiji**
+- [x] **Step 1: Add ContainsGaiji visitor and replace contains_gaiji**
 
 Add at the top of `semantic_summary.rs`:
 
@@ -506,7 +506,7 @@ fn contains_gaiji(content: &[Inline]) -> bool {
 }
 ```
 
-- [ ] **Step 2: Replace inline_visible_text to use the VisibleCollector**
+- [x] **Step 2: Replace inline_visible_text to use the VisibleCollector**
 
 Remove the local `fn inline_visible_text` and `fn collect_visible` from `semantic_summary.rs`. Import the one from lib.rs (or use the same `VisibleCollector` + `walk_inline` pattern):
 
@@ -522,12 +522,12 @@ fn inline_visible_text(content: &[Inline]) -> String {
 
 Make sure `VisibleCollector` is imported (or re-define it locally if it's `pub(crate)`).
 
-- [ ] **Step 3: Run tests**
+- [x] **Step 3: Run tests**
 
 Run: `cargo test -p ab-ir`
 Expected: all tests pass, especially `semantic_summary_records_ruby_gaiji_gaiji_ruby_and_projection_warnings`
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add crates/ab-ir/src/semantic_summary.rs
@@ -542,7 +542,7 @@ git commit -m "refactor(ab-ir): replace duplicate walks in semantic_summary with
 - Modify: `crates/ab-morph-diff/src/model.rs`
 - Modify: `crates/ab-morph-analyzers/src/features.rs`
 
-- [ ] **Step 1: Remove the Index<&str> impl from FeatureMap**
+- [x] **Step 1: Remove the Index<&str> impl from FeatureMap**
 
 In `model.rs`, delete lines ~213–220:
 
@@ -560,7 +560,7 @@ impl Index<&str> for FeatureMap {
 
 Also remove `use std::ops::Index;` from the top of the file if it's only used for this impl.
 
-- [ ] **Step 2: Update callers that use bracket syntax**
+- [x] **Step 2: Update callers that use bracket syntax**
 
 In `crates/ab-morph-analyzers/src/features.rs`, change `features["pos1"]` to `features.get("pos1").expect("pos1")`:
 
@@ -584,17 +584,17 @@ assert_eq!(features.get("field_28"), Some(&Some("tail".into())));
 
 Note: `FeatureMap::get()` returns `Option<&Option<FeatureValue>>`, so the correct comparison is `Some(&Some(...))`. This tests both key existence and value match in one `assert_eq!`. Apply the same change to the second test block at ~line 139.
 
-- [ ] **Step 3: Search for any other callers**
+- [x] **Step 3: Search for any other callers**
 
 Run: `cargo check --workspace 2>&1 | grep -i 'index.*featuremap\|no method.*index'`
 If any other crates use `features["..."]` or `map["..."]` on FeatureMap, fix them the same way.
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run: `cargo test -p ab-morph-diff -p ab-morph-analyzers`
 Expected: all tests pass
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add crates/ab-morph-diff/src/model.rs crates/ab-morph-analyzers/src/features.rs
@@ -605,17 +605,17 @@ git commit -m "refactor: remove panicking FeatureMap Index impl, use get() inste
 
 ### Task 1.8: Verify full workspace after Stream 1
 
-- [ ] **Step 1: Build workspace**
+- [x] **Step 1: Build workspace**
 
 Run: `cargo build --workspace`
 Expected: compiles cleanly
 
-- [ ] **Step 2: Run all tests**
+- [x] **Step 2: Run all tests**
 
 Run: `cargo test --workspace`
 Expected: all 375 tests pass (excluding 4 ab-coverage failures from missing data)
 
-- [ ] **Step 3: Commit if any final touch-ups needed**
+- [x] **Step 3: Commit if any final touch-ups needed**
 
 ---
 
@@ -629,13 +629,13 @@ Expected: all 375 tests pass (excluding 4 ab-coverage failures from missing data
 
 **Pattern for all Tasks 2.1–2.7:** Each task copies content from `summary.rs` to a new file, then deletes that content from `summary.rs`. After each task, both the new sub-module AND the remainder of `summary.rs` must compile. This ensures `summary.rs` shrinks incrementally with every commit.
 
-- [ ] **Step 1: Create the summary directory**
+- [x] **Step 1: Create the summary directory**
 
 ```bash
 mkdir -p crates/ab-morph-run/src/summary
 ```
 
-- [ ] **Step 2: Create mod.rs with re-exports placeholder**
+- [x] **Step 2: Create mod.rs with re-exports placeholder**
 
 File: `crates/ab-morph-run/src/summary/mod.rs`
 ```rust
@@ -654,7 +654,7 @@ pub use warehouse::*;
 pub use write::*;
 ```
 
-- [ ] **Step 3: Move type definitions to types.rs**
+- [x] **Step 3: Move type definitions to types.rs**
 
 Extract all public enums, structs, and const from `summary.rs` (lines ~1–130) into `types.rs`. These are:
 - `WAREHOUSE_CORE_FEATURE_KEYS` const
@@ -685,7 +685,7 @@ Extract all public enums, structs, and const from `summary.rs` (lines ~1–130) 
 
 Add `use` imports at top for any dependencies (crate types, serde, arrow, etc.).
 
-- [ ] **Step 4: Add `pub mod summary;` to lib.rs and verify compilation**
+- [x] **Step 4: Add `pub mod summary;` to lib.rs and verify compilation**
 
 In `crates/ab-morph-run/src/lib.rs`, add `pub mod summary;` if not already present.
 Delete the original type definitions from `summary.rs` (but keep the `use` imports and function bodies for now).
@@ -693,7 +693,7 @@ Delete the original type definitions from `summary.rs` (but keep the `use` impor
 Run: `cargo build -p ab-morph-run`
 Expected: compiles. Fix any missing imports.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add crates/ab-morph-run/src/summary/
@@ -708,7 +708,7 @@ git commit -m "refactor(ab-morph-run): extract summary types into summary/types.
 - Create: `crates/ab-morph-run/src/summary/compact.rs`
 - Modify: `crates/ab-morph-run/src/summary/mod.rs`
 
-- [ ] **Step 1: Create compact.rs with the three compact summarize functions**
+- [x] **Step 1: Create compact.rs with the three compact summarize functions**
 
 Extract from `summary.rs`:
 - `summarize_compact_comparisons` (~line 615)
@@ -718,12 +718,12 @@ Extract from `summary.rs`:
 
 Use: `cargo build -p ab-morph-run 2>&1 | grep "cannot find"` to find missing imports and add them.
 
-- [ ] **Step 2: Verify compilation**
+- [x] **Step 2: Verify compilation**
 
 Run: `cargo build -p ab-morph-run`
 Expected: compiles cleanly
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add crates/ab-morph-run/src/summary/compact.rs
@@ -737,7 +737,7 @@ git commit -m "refactor(ab-morph-run): move compact summary to summary/compact.r
 **Files:**
 - Create: `crates/ab-morph-run/src/summary/nway.rs`
 
-- [ ] **Step 1: Create nway.rs**
+- [x] **Step 1: Create nway.rs**
 
 Move from `summary.rs`:
 - `summarize_nway` (~line 797)
@@ -745,7 +745,7 @@ Move from `summary.rs`:
 - `summarize_nway_pattern_counts` (~line 923)
 - Any private helpers
 
-- [ ] **Step 2: Verify compilation and commit**
+- [x] **Step 2: Verify compilation and commit**
 
 Run: `cargo build -p ab-morph-run`
 ```bash
@@ -760,7 +760,7 @@ git commit -m "refactor(ab-morph-run): move nway summary to summary/nway.rs"
 **Files:**
 - Create: `crates/ab-morph-run/src/summary/warehouse.rs`
 
-- [ ] **Step 1: Create warehouse.rs**
+- [x] **Step 1: Create warehouse.rs**
 
 Move from `summary.rs`:
 - `summarize_warehouse_nway` (~line 956)
@@ -771,7 +771,7 @@ Move from `summary.rs`:
 - `summarize_warehouse_pattern_examples` (~line 2999)
 - `materialize_warehouse_core_feature_pattern_counts` (~line 1452)
 
-- [ ] **Step 2: Verify compilation and commit**
+- [x] **Step 2: Verify compilation and commit**
 
 Run: `cargo build -p ab-morph-run`
 ```bash
@@ -786,12 +786,12 @@ git commit -m "refactor(ab-morph-run): move warehouse summary to summary/warehou
 **Files:**
 - Create: `crates/ab-morph-run/src/summary/patterns.rs`
 
-- [ ] **Step 1: Move pattern-related types and helpers**
+- [x] **Step 1: Move pattern-related types and helpers**
 
 All `NwayPattern*` and `WarehousePattern*` types were already moved to `types.rs`.
 Move remaining pattern helper functions from `summary.rs`.
 
-- [ ] **Step 2: Verify and commit**
+- [x] **Step 2: Verify and commit**
 
 Run: `cargo build -p ab-morph-run`
 ```bash
@@ -806,14 +806,14 @@ git commit -m "refactor(ab-morph-run): move pattern helpers to summary/patterns.
 **Files:**
 - Create: `crates/ab-morph-run/src/summary/write.rs`
 
-- [ ] **Step 1: Create write.rs**
+- [x] **Step 1: Create write.rs**
 
 Move from `summary.rs`:
 - `write_warehouse_nway_patterns_duckdb_tsv` (~line 1407)
 - `write_warehouse_regions_duckdb_tsv` (~line 2017)
 - `write_warehouse_pattern_examples_duckdb_tsv` (~line 2026)
 
-- [ ] **Step 2: Verify and commit**
+- [x] **Step 2: Verify and commit**
 
 ```bash
 git add crates/ab-morph-run/src/summary/write.rs
@@ -827,7 +827,7 @@ git commit -m "refactor(ab-morph-run): move DuckDB TSV writers to summary/write.
 **Files:**
 - Modify: `crates/ab-morph-run/src/summary.rs`
 
-- [ ] **Step 1: Replace summary.rs with re-exports shim**
+- [x] **Step 1: Replace summary.rs with re-exports shim**
 
 Delete all content from `summary.rs` and replace with:
 
@@ -843,12 +843,12 @@ pub use summary_mod::*;
 rm crates/ab-morph-run/src/summary.rs
 ```
 
-- [ ] **Step 2: Verify the workspace compiles**
+- [x] **Step 2: Verify the workspace compiles**
 
 Run: `cargo build --workspace`
 Expected: compiles cleanly. If it doesn't, cargo may still be picking up the old `summary.rs` — verify it's deleted with `ls crates/ab-morph-run/src/summary.rs`.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git rm crates/ab-morph-run/src/summary.rs
@@ -870,7 +870,7 @@ git commit -m "refactor(ab-morph-run): remove summary.rs, now split across summa
 
 **Important:** `rows.rs` stays in `ab-morph-run` — it deeply depends on `ab_morph_diff::Analysis`, `NwayRegion`, `NwayFeatureScope`, etc. (confirmed: all 483 lines of construction functions take `&Analysis`). Only the pure-I/O modules move to `ab-warehouse`.
 
-- [ ] **Step 1: Create crate directory and Cargo.toml**
+- [x] **Step 1: Create crate directory and Cargo.toml**
 
 ```bash
 mkdir -p crates/ab-warehouse/src
@@ -900,7 +900,7 @@ pub mod sql;
 pub mod writer;
 ```
 
-- [ ] **Step 2: Move only the pure-I/O files**
+- [x] **Step 2: Move only the pure-I/O files**
 
 ```bash
 cp crates/ab-morph-run/src/warehouse/schema.rs crates/ab-warehouse/src/schema.rs
@@ -910,7 +910,7 @@ cp crates/ab-morph-run/src/warehouse/sql.rs crates/ab-warehouse/src/sql.rs
 
 **Do NOT move rows.rs** — it stays in `ab-morph-run`.
 
-- [ ] **Step 3: Update imports in the moved files**
+- [x] **Step 3: Update imports in the moved files**
 
 In `writer.rs`: change `use super::schema::...` to `use crate::schema::...`. In `schema.rs`: row type definitions (AnalysisRow, MorphemeRow, etc.) already use plain `String`/`u64`/`Vec<String>` — no `ab_morph_diff` dependency. Verify with `rg "ab_morph_diff" crates/ab-warehouse/src/` — should return nothing.
 
@@ -919,7 +919,7 @@ Add `serde.workspace = true` if any row types derive Serialize/Deserialize.
 Run: `cargo build -p ab-warehouse`
 Fix compile errors iteratively.
 
-- [ ] **Step 4: Add ab-warehouse to workspace Cargo.toml**
+- [x] **Step 4: Add ab-warehouse to workspace Cargo.toml**
 
 In `/Cargo.toml`, add to `members`:
 ```toml
@@ -931,7 +931,7 @@ Also add workspace dependency:
 ab-warehouse = { path = "crates/ab-warehouse" }
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add crates/ab-warehouse/ Cargo.toml
@@ -947,14 +947,14 @@ git commit -m "feat: create ab-warehouse crate with schema, writer, sql modules"
 - Modify: `crates/ab-morph-run/src/lib.rs`
 - Modify: `crates/ab-morph-run/src/warehouse/` (replace moved files, keep rows.rs + mod.rs)
 
-- [ ] **Step 1: Add ab-warehouse dependency**
+- [x] **Step 1: Add ab-warehouse dependency**
 
 In `crates/ab-morph-run/Cargo.toml`:
 ```toml
 ab-warehouse.workspace = true
 ```
 
-- [ ] **Step 2: Restructure warehouse/ directory**
+- [x] **Step 2: Restructure warehouse/ directory**
 
 Remove the files that moved to ab-warehouse:
 ```bash
@@ -975,20 +975,20 @@ pub use ab_warehouse::writer;
 pub use ab_warehouse::sql;
 ```
 
-- [ ] **Step 3: Update imports in warehouse/rows.rs**
+- [x] **Step 3: Update imports in warehouse/rows.rs**
 
 Change `use super::schema::...` to `use ab_warehouse::schema::...`. The row construction functions continue to use `ab_morph_diff::Analysis` — no changes there.
 
-- [ ] **Step 4: Update lib.rs imports**
+- [x] **Step 4: Update lib.rs imports**
 
 The `use warehouse::schema::...` and `use warehouse::writer::...` imports in `lib.rs` continue to work because `warehouse/mod.rs` re-exports from `ab_warehouse`. Verify with `cargo build -p ab-morph-run`.
 
-- [ ] **Step 5: Build and fix errors**
+- [x] **Step 5: Build and fix errors**
 
 Run: `cargo build -p ab-morph-run`
 Fix any import errors.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add crates/ab-morph-run/
@@ -1003,7 +1003,7 @@ git commit -m "refactor(ab-morph-run): use ab-warehouse for schema/writer/sql, k
 - Create: `crates/ab-morph-run/src/pipeline.rs`
 - Modify: `crates/ab-morph-run/src/lib.rs`
 
-- [ ] **Step 1: Identify pipeline content in lib.rs**
+- [x] **Step 1: Identify pipeline content in lib.rs**
 
 The pipeline content includes:
 - `run_analyze_aat` function
@@ -1012,7 +1012,7 @@ The pipeline content includes:
 - `WAREHOUSE_MORPHEME_ROW_BATCH_SIZE` etc. (move to pipeline or keep shared)
 - Private helper functions for pipeline orchestration
 
-- [ ] **Step 2: Create pipeline.rs**
+- [x] **Step 2: Create pipeline.rs**
 
 Move the pipeline functions into `pipeline.rs`. Keep `lib.rs` as the public API surface with re-exports:
 
@@ -1024,11 +1024,11 @@ pub use pipeline::run_analyze_aat;
 // ... other re-exports
 ```
 
-- [ ] **Step 3: Build and fix**
+- [x] **Step 3: Build and fix**
 
 Run: `cargo build -p ab-morph-run`
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add crates/ab-morph-run/src/pipeline.rs crates/ab-morph-run/src/lib.rs
@@ -1043,7 +1043,7 @@ git commit -m "refactor(ab-morph-run): extract pipeline orchestration to pipelin
 - Create: `crates/ab-morph-run/src/options.rs`
 - Modify: `crates/ab-morph-run/src/lib.rs`
 
-- [ ] **Step 1: Move SerialRunOptions and related types to options.rs**
+- [x] **Step 1: Move SerialRunOptions and related types to options.rs**
 
 Extract:
 - `SerialRunOptions` struct
@@ -1053,13 +1053,13 @@ Extract:
 
 Mark all as `pub(crate)` unless they constitute public API. If public, add doc comments.
 
-- [ ] **Step 2: Add pub mod options to lib.rs, update imports**
+- [x] **Step 2: Add pub mod options to lib.rs, update imports**
 
 ```rust
 pub mod options; // or pub(crate) mod options;
 ```
 
-- [ ] **Step 3: Build and commit**
+- [x] **Step 3: Build and commit**
 
 Run: `cargo build -p ab-morph-run`
 ```bash
@@ -1074,11 +1074,11 @@ git commit -m "refactor(ab-morph-run): extract options types to options.rs"
 **Files:**
 - Modify: `crates/ab-morph-run/src/main.rs`
 
-- [ ] **Step 1: Identify all *Arg enum types**
+- [x] **Step 1: Identify all *Arg enum types**
 
 Find all enum types like `SummaryGroupByArg`, `NwaySummarySortArg`, `CompactSummarySortArg`, etc. that have hand-written `into_library()` methods.
 
-- [ ] **Step 2: Replace with direct ValueEnum on library types where possible**
+- [x] **Step 2: Replace with direct ValueEnum on library types where possible**
 
 For types defined in `ab-morph-run`, derive `clap::ValueEnum` directly:
 
@@ -1111,17 +1111,17 @@ macro_rules! arg_enum {
 }
 ```
 
-- [ ] **Step 3: Update CLI match arms**
+- [x] **Step 3: Update CLI match arms**
 
 Replace `arg.into_library()` calls with `arg.into()`.
 
-- [ ] **Step 4: Build and verify CLI works**
+- [x] **Step 4: Build and verify CLI works**
 
 Run: `cargo build -p ab-morph-run`
 Run: `cargo run -p ab-morph-run -- --help`
 Expected: help output renders correctly
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add crates/ab-morph-run/src/main.rs
@@ -1132,17 +1132,17 @@ git commit -m "refactor(ab-morph-run): simplify CLI adapter enum conversions"
 
 ### Task 2.13: Verify full workspace after Stream 2
 
-- [ ] **Step 1: Build workspace**
+- [x] **Step 1: Build workspace**
 
 Run: `cargo build --workspace`
 Expected: compiles cleanly
 
-- [ ] **Step 2: Run all tests**
+- [x] **Step 2: Run all tests**
 
 Run: `cargo test --workspace`
 Expected: all 375 tests pass
 
-- [ ] **Step 3: Commit any final fixes**
+- [x] **Step 3: Commit any final fixes**
 
 ---
 
@@ -1153,7 +1153,7 @@ Expected: all 375 tests pass
 **Files:**
 - Modify: `crates/ab-morph-diff/src/model.rs`
 
-- [ ] **Step 1: Replace InternedString definition and impls**
+- [x] **Step 1: Replace InternedString definition and impls**
 
 In `model.rs`, delete the entire `InternedString` struct and all its impls (lines ~1–100 covering the struct, `intern()`, `Debug`, `Display`, `From<&str>`, `From<String>`, `AsRef`, `Borrow`, `PartialEq`, `Hash`, `Serialize`).
 
@@ -1171,7 +1171,7 @@ pub type FeatureValue = Arc<str>;
 
 Remove the `thread_local!` interner block and associated imports (`RefCell`, `HashSet` that were only used for interning).
 
-- [ ] **Step 2: Update callers of as_str()**
+- [x] **Step 2: Update callers of as_str()**
 
 Search: `rg "as_str\(\)" crates/ab-morph-diff/src/ crates/ab-morph-run/src/ crates/ab-morph-analyzers/src/`
 
@@ -1181,21 +1181,21 @@ In `model.rs` itself, update:
 - `FeatureMap::insert` — line ~153: `existing.as_str().cmp(key.as_str())` → `existing.as_ref().cmp(key.as_ref())`
 - `FeatureMap::get` — line ~168: `existing.as_str().cmp(key)` → `existing.as_ref().cmp(key)`
 
-- [ ] **Step 3: Update From<&str> conversions**
+- [x] **Step 3: Update From<&str> conversions**
 
 Where code calls `InternedString::from("foo")` or `"foo".into()`, these automatically become `Arc<str>::from("foo")` since the type alias changed. `Arc<str>` implements `From<&str>`. Verify compilation handles this.
 
-- [ ] **Step 4: Build and fix**
+- [x] **Step 4: Build and fix**
 
 Run: `cargo build -p ab-morph-diff 2>&1 | head -40`
 Fix all compile errors iteratively.
 
-- [ ] **Step 5: Run tests**
+- [x] **Step 5: Run tests**
 
 Run: `cargo test -p ab-morph-diff`
 Expected: all tests pass
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add crates/ab-morph-diff/src/model.rs
@@ -1211,11 +1211,11 @@ git commit -m "refactor(ab-morph-diff): remove InternedString, replace with Arc<
 - `crates/ab-oracle/src/` — if using FeatureKey/FeatureValue
 - `crates/ab-check/src/` — if using FeatureKey/FeatureValue
 
-- [ ] **Step 1: Find all callers**
+- [x] **Step 1: Find all callers**
 
 Run: `rg -l "InternedString|FeatureKey|FeatureValue" crates/ -- crates/ab-morph-diff/`
 
-- [ ] **Step 2: Build workspace and fix errors**
+- [x] **Step 2: Build workspace and fix errors**
 
 Run: `cargo build --workspace 2>&1 | grep "error\["`
 Fix each error. Common patterns:
@@ -1223,12 +1223,12 @@ Fix each error. Common patterns:
 - `From<&str> for InternedString` no longer exists but `Arc<str>::from("...")` works
 - `Serialize` for `InternedString` is now `Arc<str>`'s built-in serde support
 
-- [ ] **Step 3: Run all tests**
+- [x] **Step 3: Run all tests**
 
 Run: `cargo test --workspace`
 Expected: all tests pass
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add -u
@@ -1242,7 +1242,7 @@ git commit -m "refactor: update all InternedString callers to use Arc<str>"
 **Files:**
 - Modify: `crates/ab-coverage/src/adapter.rs`
 
-- [ ] **Step 1: Change AdapterBinary::for_parser to return Result**
+- [x] **Step 1: Change AdapterBinary::for_parser to return Result**
 
 ```rust
 // Before:
@@ -1268,17 +1268,17 @@ pub fn for_parser(repo_root: &Path, parser_id: &str) -> Result<Self> {
 }
 ```
 
-- [ ] **Step 2: Update all callers of AdapterBinary::for_parser**
+- [x] **Step 2: Update all callers of AdapterBinary::for_parser**
 
 Run: `cargo build -p ab-coverage 2>&1 | grep error`
 Change `.for_parser(...)` to `.for_parser(...)?` at each call site.
 
-- [ ] **Step 3: Run coverage tests**
+- [x] **Step 3: Run coverage tests**
 
 Run: `cargo test -p ab-coverage`
 Expected: non-data-dependent tests pass
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add crates/ab-coverage/src/adapter.rs
@@ -1295,7 +1295,7 @@ git commit -m "fix(ab-coverage): return Result instead of panicking on unknown p
 
 **Note:** `unidic_cwj_default()` already returns `Result<Self, AnalyzerError>`. The panic is in the private `resolve_default_dictionary()` helper, via `.unwrap_or_else(|err| panic!("{err}"))`. Only the internal call chain needs fixing — the public API stays the same.
 
-- [ ] **Step 1: Fix VibratoAnalyzer internal chain**
+- [x] **Step 1: Fix VibratoAnalyzer internal chain**
 
 In vibrato.rs, change `resolve_default_dictionary` (~line 90):
 
@@ -1313,21 +1313,21 @@ fn resolve_default_dictionary() -> Result<PathBuf, AnalyzerError> {
 
 Update `default_dictionary_path` and `default_dictionary_path_from_env` to return `Result<PathBuf, AnalyzerError>` and propagate with `?`. Since `unidic_cwj_default()` already calls these and returns `Result`, it naturally propagates.
 
-- [ ] **Step 2: Same for VaporettoAnalyzer**
+- [x] **Step 2: Same for VaporettoAnalyzer**
 
 Apply the same pattern to `vaporetto.rs` (~line 163). The `resolve_default_dictionary` → `Result<PathBuf, AnalyzerError>` chain is structurally identical to Vibrato.
 
-- [ ] **Step 3: Verify callers compile**
+- [x] **Step 3: Verify callers compile**
 
 Run: `cargo build --workspace 2>&1 | grep error`
 Expected: no new errors (callers already `.unwrap()` the public `Result` constructors).
 
-- [ ] **Step 4: Run analyzer tests**
+- [x] **Step 4: Run analyzer tests**
 
 Run: `cargo test -p ab-morph-analyzers`
 Expected: all tests pass (non-dictionary-dependent ones)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add crates/ab-morph-analyzers/src/vibrato.rs crates/ab-morph-analyzers/src/vaporetto.rs
@@ -1346,7 +1346,7 @@ git commit -m "fix(ab-morph-analyzers): propagate Result in resolve_default_dict
 
 **Key design decision:** Warnings go on the `Analysis` struct, NOT on the `MorphAnalyzer` trait. This avoids all issues with `&self` mutability (analyzers build warnings during `analyze()` as local `Vec` and attach them to the returned `Analysis`). The trait signature stays unchanged — zero breaking change. Pattern matches `ProjectionWarning` in `ab-ir`.
 
-- [ ] **Step 1: Define AnalyzerWarning and add to Analysis**
+- [x] **Step 1: Define AnalyzerWarning and add to Analysis**
 
 In `crates/ab-morph-analyzers/src/lib.rs`, add:
 
@@ -1377,7 +1377,7 @@ pub struct Analysis {
 
 Build to confirm: `cargo build -p ab-morph-diff`. Note: to avoid a circular dependency (`ab-morph-analyzers` depends on `ab-morph-diff`), define `AnalyzerWarning` in `ab-morph-diff/src/model.rs` alongside `Analysis`, and re-export from `ab-morph-analyzers`.
 
-- [ ] **Step 2: Update VibratoAnalyzer to collect warnings during analyze()**
+- [x] **Step 2: Update VibratoAnalyzer to collect warnings during analyze()**
 
 In vibrato.rs, replace the `eprintln!` block (~line 215) with warnings accumulated in a local `Vec` and attached to the `Analysis` at return:
 
@@ -1404,25 +1404,25 @@ if hard_split_count > 0 {
 Analysis { warnings, ..analysis }
 ```
 
-- [ ] **Step 3: Same for SudachiAnalyzer**
+- [x] **Step 3: Same for SudachiAnalyzer**
 
 Replace the `eprintln!` at sudachi.rs:121 with structured warning collection, attached to the returned `Analysis.warnings`.
 
-- [ ] **Step 4: Update ab-morph-run to surface warnings**
+- [x] **Step 4: Update ab-morph-run to surface warnings**
 
 In `ab-morph-run`, after calling `analyzer.analyze()`, the returned `Analysis.warnings` are available. Log them or surface them in the output at the caller's discretion.
 
-- [ ] **Step 5: Fix all Analysis construction sites**
+- [x] **Step 5: Fix all Analysis construction sites**
 
 Run: `cargo build --workspace 2>&1 | grep "missing field"`
 Every place that constructs `Analysis { .. }` must now include `warnings: Vec::new()` (for sites that don't collect warnings) or actual warnings.
 
-- [ ] **Step 6: Run tests**
+- [x] **Step 6: Run tests**
 
 Run: `cargo test -p ab-morph-diff -p ab-morph-analyzers -p ab-morph-run`
 Expected: all non-dictionary tests pass
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add crates/ab-morph-diff/src/model.rs crates/ab-morph-analyzers/
@@ -1436,11 +1436,11 @@ git commit -m "refactor: add AnalyzerWarning to Analysis, convert eprintln! to s
 **Files:**
 - Modify: `crates/ab-morph-run/src/lib.rs`
 
-- [ ] **Step 1: Replace eprintln! calls**
+- [x] **Step 1: Replace eprintln! calls**
 
 At lines 543, 955, 962 — replace with attaching warnings to the result struct (same pattern as analyzers). The caller (main.rs) decides whether to print.
 
-- [ ] **Step 2: Verify and commit**
+- [x] **Step 2: Verify and commit**
 
 Run: `cargo build -p ab-morph-run`
 ```bash
@@ -1455,11 +1455,11 @@ git commit -m "refactor(ab-morph-run): convert eprintln! to structured warnings"
 **Files:**
 - Modify: `crates/ab-morph-analyzers/src/sudachi.rs` (test module)
 
-- [ ] **Step 1: Change eprintln! to println!**
+- [x] **Step 1: Change eprintln! to println!**
 
 In sudachi.rs test module, lines 345 and 366, `eprintln!("skipping Sudachi smoke test...")` → `println!("skipping Sudachi smoke test...")`.
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add crates/ab-morph-analyzers/src/sudachi.rs
@@ -1470,17 +1470,17 @@ git commit -m "fix(ab-morph-analyzers): use println! instead of eprintln! in Sud
 
 ### Task 3.8: Verify full workspace after Stream 3
 
-- [ ] **Step 1: Build workspace**
+- [x] **Step 1: Build workspace**
 
 Run: `cargo build --workspace`
 Expected: compiles
 
-- [ ] **Step 2: Run all tests**
+- [x] **Step 2: Run all tests**
 
 Run: `cargo test --workspace`
 Expected: all tests pass
 
-- [ ] **Step 3: Commit any final fixes**
+- [x] **Step 3: Commit any final fixes**
 
 ---
 
@@ -1491,7 +1491,7 @@ Expected: all tests pass
 **Files:**
 - Modify: `crates/*/Cargo.toml` (all 12 crates + ab-warehouse)
 
-- [ ] **Step 1: Add metadata fields to each Cargo.toml**
+- [x] **Step 1: Add metadata fields to each Cargo.toml**
 
 For each crate, add:
 
@@ -1517,12 +1517,12 @@ Tailor the description per crate:
 - `ab-oracle`: "Test oracle and evaluation framework"
 - `ab-warehouse`: "Parquet warehouse I/O for morphological analysis data"
 
-- [ ] **Step 2: Verify cargo metadata**
+- [x] **Step 2: Verify cargo metadata**
 
 Run: `cargo metadata --no-deps --format-version 1 | jq '.packages[] | select(.name | startswith("ab-")) | {name, description, repository, keywords, categories}'`
 Expected: each package shows non-null description, repository, etc.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add crates/*/Cargo.toml
@@ -1536,7 +1536,7 @@ git commit -m "chore: add crate metadata (description, repository, keywords) to 
 **Files:**
 - Modify: `crates/ab-index/src/features.rs`
 
-- [ ] **Step 1: Fix the raw string hash**
+- [x] **Step 1: Fix the raw string hash**
 
 At line 101, change `r#"..."#` → `r"..."`:
 
@@ -1548,11 +1548,11 @@ r#"..."#
 r"..."
 ```
 
-- [ ] **Step 2: Verify**
+- [x] **Step 2: Verify**
 
 Run: `cargo build -p ab-index`
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add crates/ab-index/src/features.rs
@@ -1568,22 +1568,22 @@ git commit -m "fix(ab-index): remove needless raw string hashes"
 - Modify: `crates/ab-coverage/src/adapter.rs`
 - Modify: any other files with clippy `unnested_or_patterns`
 
-- [ ] **Step 1: Find all or-pattern warnings**
+- [x] **Step 1: Find all or-pattern warnings**
 
 Run: `cargo clippy --workspace 2>&1 | grep "unnested_or_patterns"`
 
-- [ ] **Step 2: Fix each location**
+- [x] **Step 2: Fix each location**
 
 Common fixes:
 - `(Some(_), Some(_)) | (Some(_), None) | (None, Some(_))` → `(Some(_) | None, Some(_)) | (Some(_), None)`
 - `Some(0) | Some(2)` → `Some(0 | 2)`
 
-- [ ] **Step 3: Verify clippy passes**
+- [x] **Step 3: Verify clippy passes**
 
 Run: `cargo clippy --workspace -- -W clippy::unnested_or_patterns`
 Expected: no warnings
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add -u
@@ -1599,20 +1599,20 @@ git commit -m "fix: unnest or-patterns throughout codebase"
 - Modify: `crates/ab-morph-diff/src/` — public API functions
 - Modify: `crates/ab-morph-run/src/` — public API functions
 
-- [ ] **Step 1: Identify functions needing must_use**
+- [x] **Step 1: Identify functions needing must_use**
 
 Run: `cargo clippy --workspace -- -W clippy::pedantic 2>&1 | grep "must_use_candidate" | head -20`
 
-- [ ] **Step 2: Add #[must_use] to the 20 most-impactful functions**
+- [x] **Step 2: Add #[must_use] to the 20 most-impactful functions**
 
 Focus on public API: constructors (`new()`, `from_*()`, `with_*()`), pure getters, and functions with no side effects.
 
-- [ ] **Step 3: Verify no new clippy warnings**
+- [x] **Step 3: Verify no new clippy warnings**
 
 Run: `cargo clippy --workspace -- -W clippy::must_use_candidate 2>&1 | grep -c must_use`
 Expected: count is lower than before
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add crates/
@@ -1626,11 +1626,11 @@ git commit -m "chore: add #[must_use] to pure getter/constructor functions"
 **Files:**
 - Modify: public API files across workspace
 
-- [ ] **Step 1: Find functions needing docs**
+- [x] **Step 1: Find functions needing docs**
 
 Run: `cargo clippy --workspace -- -W clippy::pedantic 2>&1 | grep "missing_errors_doc" | head -20`
 
-- [ ] **Step 2: Add # Errors sections**
+- [x] **Step 2: Add # Errors sections**
 
 For each function, add a doc comment like:
 
@@ -1645,7 +1645,7 @@ pub fn process(&self) -> Result<(), Error> { ... }
 
 Prioritize the 20 most-flagged functions.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add crates/
@@ -1660,13 +1660,13 @@ git commit -m "docs: add # Errors sections to Result-returning functions"
 - `crates/ab-morph-diff/src/model.rs` — `interner`/`interned` (now removed with interner)
 - Any remaining similar_names from clippy
 
-- [ ] **Step 1: Find remaining similar_names warnings**
+- [x] **Step 1: Find remaining similar_names warnings**
 
 Run: `cargo clippy --workspace -- -W clippy::pedantic 2>&1 | grep "similar_names"`
 
-- [ ] **Step 2: Rename variables to be more distinct**
+- [x] **Step 2: Rename variables to be more distinct**
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add -u
@@ -1677,22 +1677,22 @@ git commit -m "chore: fix similar_names clippy warnings"
 
 ### Task 4.7: Final verification
 
-- [ ] **Step 1: Build workspace**
+- [x] **Step 1: Build workspace**
 
 Run: `cargo build --workspace`
 Expected: clean
 
-- [ ] **Step 2: Run all tests**
+- [x] **Step 2: Run all tests**
 
 Run: `cargo test --workspace`
 Expected: all tests pass (excluding 4 ab-coverage integration tests that require missing data files, and dictionary-dependent tests marked `#[ignore]`)
 
-- [ ] **Step 3: Run clippy**
+- [x] **Step 3: Run clippy**
 
 Run: `cargo clippy --workspace --all-targets -- -W clippy::pedantic -W clippy::nursery -W clippy::cargo 2>&1 | grep -c "^warning:"`
 Expected: prints a number measurably lower than the original ~751
 
-- [ ] **Step 4: Commit any remaining fixes**
+- [x] **Step 4: Commit any remaining fixes**
 
 ---
 

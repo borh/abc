@@ -6,18 +6,30 @@ pub struct AatDocument {
 }
 
 impl AatDocument {
+    #[must_use]
     pub fn from_value(root: Value) -> Self {
         Self { root }
     }
 
+    #[must_use]
     pub fn root(&self) -> &Value {
         &self.root
     }
 
+    #[must_use]
     pub fn visible_text(&self) -> String {
         visible_text_from_value(&self.root)
     }
 
+    /// Selects nodes from the AAT document by a dot-separated selector.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when:
+    /// - the selector is empty;
+    /// - `**` is used with additional selector segments;
+    /// - `*` is applied to a non-array value; or
+    /// - the selector resolves to scalar terminal values.
     pub fn select(&self, selector: &str) -> Result<Vec<&Value>, SelectorError> {
         select(&self.root, selector)
     }
@@ -29,10 +41,20 @@ pub struct SelectorError {
     pub message: String,
 }
 
+#[must_use]
 pub fn visible_text_from_value(value: &Value) -> String {
     ab_plaintext::visible_text_projection(value)
 }
 
+/// Selects nodes from the AAT JSON root by a dot-separated selector.
+///
+/// # Errors
+///
+/// Returns an error when:
+/// - the selector is empty;
+/// - `**` is used with additional selector segments;
+/// - `*` is applied to a non-array value; or
+/// - the selector resolves to scalar terminal values.
 pub fn select<'a>(root: &'a Value, selector: &str) -> Result<Vec<&'a Value>, SelectorError> {
     if selector.is_empty() {
         return Err(SelectorError {

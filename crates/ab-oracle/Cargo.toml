@@ -3,6 +3,11 @@ name = "ab-oracle"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+description = "Rules engine for classifying and validating Aozora Bunko syntax"
+repository = "https://github.com/your-org/ab-validator"
+readme = "../../README.md"
+keywords = ["japanese", "text-processing", "validation", "oracle"]
+categories = ["text-processing"]
 
 [dependencies]
 ab-check = { workspace = true }

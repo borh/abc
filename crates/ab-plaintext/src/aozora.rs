@@ -60,7 +60,8 @@ fn trim_colophon(body: &str) -> &str {
 
     match (japanese, ascii) {
         (Some(a), Some(b)) => &body[..a.min(b)],
-        (Some(index), None) | (None, Some(index)) => &body[..index],
+        (Some(index), None) => &body[..index],
+        (None, Some(index)) => &body[..index],
         (None, None) => body,
     }
 }

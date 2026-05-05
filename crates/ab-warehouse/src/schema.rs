@@ -1,9 +1,9 @@
 use std::path::{Path, PathBuf};
 
-pub(crate) const SCHEMA_VERSION: u32 = 1;
+pub const SCHEMA_VERSION: u32 = 1;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum WarehouseTable {
+pub enum WarehouseTable {
     Runs,
     RunAnalyzers,
     Sources,
@@ -18,7 +18,7 @@ pub(crate) enum WarehouseTable {
 }
 
 impl WarehouseTable {
-    pub(crate) const ALL: &'static [Self] = &[
+    pub const ALL: &'static [Self] = &[
         Self::Runs,
         Self::RunAnalyzers,
         Self::Sources,
@@ -32,7 +32,7 @@ impl WarehouseTable {
         Self::Errors,
     ];
 
-    pub(crate) const MERGED_DATA: &'static [Self] = &[
+    pub const MERGED_DATA: &'static [Self] = &[
         Self::Sources,
         Self::Analyses,
         Self::Morphemes,
@@ -44,7 +44,8 @@ impl WarehouseTable {
         Self::Errors,
     ];
 
-    pub(crate) fn file_name(self) -> &'static str {
+    #[must_use]
+    pub fn file_name(self) -> &'static str {
         match self {
             Self::Runs => "runs.parquet",
             Self::RunAnalyzers => "run_analyzers.parquet",
@@ -61,7 +62,7 @@ impl WarehouseTable {
     }
 
     #[cfg(test)]
-    pub(crate) fn column_names(self) -> &'static [&'static str] {
+    pub fn column_names(self) -> &'static [&'static str] {
         match self {
             Self::Runs => &[
                 "schema_version",
@@ -175,15 +176,15 @@ impl WarehouseTable {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) struct WarehousePaths {
-    pub(crate) warehouse_dir: PathBuf,
-    pub(crate) run_id: String,
-    pub(crate) staging_dir: PathBuf,
-    pub(crate) final_dir: PathBuf,
+pub struct WarehousePaths {
+    pub warehouse_dir: PathBuf,
+    pub run_id: String,
+    pub staging_dir: PathBuf,
+    pub final_dir: PathBuf,
 }
 
 impl WarehousePaths {
-    pub(crate) fn new(warehouse_dir: impl AsRef<Path>, run_id: impl Into<String>) -> Self {
+    pub fn new(warehouse_dir: impl AsRef<Path>, run_id: impl Into<String>) -> Self {
         let warehouse_dir = warehouse_dir.as_ref().to_path_buf();
         let run_id = run_id.into();
         let staging_dir =
@@ -199,148 +200,149 @@ impl WarehousePaths {
         }
     }
 
-    pub(crate) fn staging_table_path(&self, table: WarehouseTable) -> PathBuf {
+    #[must_use]
+    pub fn staging_table_path(&self, table: WarehouseTable) -> PathBuf {
         self.staging_dir.join(table.file_name())
     }
 
     #[cfg(test)]
-    pub(crate) fn final_table_path(&self, table: WarehouseTable) -> PathBuf {
+    pub fn final_table_path(&self, table: WarehouseTable) -> PathBuf {
         self.final_dir.join(table.file_name())
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) struct RunRow {
-    pub(crate) schema_version: u32,
-    pub(crate) run_id: String,
-    pub(crate) created_at_utc: String,
-    pub(crate) input_mode: String,
-    pub(crate) input_path: String,
-    pub(crate) source_count: u64,
-    pub(crate) analyzer_count: u64,
-    pub(crate) error_count: u64,
+pub struct RunRow {
+    pub schema_version: u32,
+    pub run_id: String,
+    pub created_at_utc: String,
+    pub input_mode: String,
+    pub input_path: String,
+    pub source_count: u64,
+    pub analyzer_count: u64,
+    pub error_count: u64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) struct RunAnalyzerRow {
-    pub(crate) run_id: String,
-    pub(crate) analyzer_id: String,
-    pub(crate) analyzer_arg: String,
-    pub(crate) analyzer_family: String,
+pub struct RunAnalyzerRow {
+    pub run_id: String,
+    pub analyzer_id: String,
+    pub analyzer_arg: String,
+    pub analyzer_family: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) struct SourceRow {
-    pub(crate) run_id: String,
-    pub(crate) source_id: String,
-    pub(crate) text_id: String,
-    pub(crate) aat_path: String,
-    pub(crate) source_bytes: u64,
-    pub(crate) source_chars: u64,
+pub struct SourceRow {
+    pub run_id: String,
+    pub source_id: String,
+    pub text_id: String,
+    pub aat_path: String,
+    pub source_bytes: u64,
+    pub source_chars: u64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) struct AnalysisRow {
-    pub(crate) run_id: String,
-    pub(crate) source_id: String,
-    pub(crate) text_id: String,
-    pub(crate) analyzer_id: String,
-    pub(crate) morpheme_count: u64,
+pub struct AnalysisRow {
+    pub run_id: String,
+    pub source_id: String,
+    pub text_id: String,
+    pub analyzer_id: String,
+    pub morpheme_count: u64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) struct MorphemeRow {
-    pub(crate) run_id: String,
-    pub(crate) source_id: String,
-    pub(crate) text_id: String,
-    pub(crate) analyzer_id: String,
-    pub(crate) morpheme_index: u64,
-    pub(crate) byte_start: u64,
-    pub(crate) byte_end: u64,
-    pub(crate) char_start: u64,
-    pub(crate) char_end: u64,
-    pub(crate) surface: String,
+pub struct MorphemeRow {
+    pub run_id: String,
+    pub source_id: String,
+    pub text_id: String,
+    pub analyzer_id: String,
+    pub morpheme_index: u64,
+    pub byte_start: u64,
+    pub byte_end: u64,
+    pub char_start: u64,
+    pub char_end: u64,
+    pub surface: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) struct MorphemeFeatureRow {
-    pub(crate) run_id: String,
-    pub(crate) source_id: String,
-    pub(crate) text_id: String,
-    pub(crate) analyzer_id: String,
-    pub(crate) morpheme_index: u64,
-    pub(crate) feature_key: String,
-    pub(crate) feature_value: Option<String>,
+pub struct MorphemeFeatureRow {
+    pub run_id: String,
+    pub source_id: String,
+    pub text_id: String,
+    pub analyzer_id: String,
+    pub morpheme_index: u64,
+    pub feature_key: String,
+    pub feature_value: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) struct NwayRegionRow {
-    pub(crate) run_id: String,
-    pub(crate) source_id: String,
-    pub(crate) text_id: String,
-    pub(crate) region_index: u64,
-    pub(crate) byte_start: u64,
-    pub(crate) byte_end: u64,
-    pub(crate) char_start: u64,
-    pub(crate) char_end: u64,
-    pub(crate) is_nonempty_whitespace: bool,
-    pub(crate) is_agreement: bool,
-    pub(crate) has_coverage_mismatch: bool,
-    pub(crate) has_segmentation_disagreement: bool,
-    pub(crate) has_feature_disagreement: bool,
+pub struct NwayRegionRow {
+    pub run_id: String,
+    pub source_id: String,
+    pub text_id: String,
+    pub region_index: u64,
+    pub byte_start: u64,
+    pub byte_end: u64,
+    pub char_start: u64,
+    pub char_end: u64,
+    pub is_nonempty_whitespace: bool,
+    pub is_agreement: bool,
+    pub has_coverage_mismatch: bool,
+    pub has_segmentation_disagreement: bool,
+    pub has_feature_disagreement: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) struct NwayRegionAnalyzerRow {
-    pub(crate) run_id: String,
-    pub(crate) source_id: String,
-    pub(crate) text_id: String,
-    pub(crate) region_index: u64,
-    pub(crate) analyzer_id: String,
-    pub(crate) covers_exactly: bool,
-    pub(crate) morpheme_start: u64,
-    pub(crate) morpheme_end: u64,
-    pub(crate) surfaces: Vec<String>,
+pub struct NwayRegionAnalyzerRow {
+    pub run_id: String,
+    pub source_id: String,
+    pub text_id: String,
+    pub region_index: u64,
+    pub analyzer_id: String,
+    pub covers_exactly: bool,
+    pub morpheme_start: u64,
+    pub morpheme_end: u64,
+    pub surfaces: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) struct NwayFeatureDiffRow {
-    pub(crate) run_id: String,
-    pub(crate) source_id: String,
-    pub(crate) text_id: String,
-    pub(crate) region_index: u64,
-    pub(crate) feature_key: String,
-    pub(crate) scope_type: String,
-    pub(crate) scope_position: Option<u64>,
-    pub(crate) scope_surface: Option<String>,
-    pub(crate) feature_value: Option<String>,
-    pub(crate) analyzer_id: String,
+pub struct NwayFeatureDiffRow {
+    pub run_id: String,
+    pub source_id: String,
+    pub text_id: String,
+    pub region_index: u64,
+    pub feature_key: String,
+    pub scope_type: String,
+    pub scope_position: Option<u64>,
+    pub scope_surface: Option<String>,
+    pub feature_value: Option<String>,
+    pub analyzer_id: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) struct FeaturePatternCountRow {
-    pub(crate) kind: String,
-    pub(crate) feature_profile: String,
-    pub(crate) feature_key: String,
-    pub(crate) is_nonempty_whitespace: bool,
-    pub(crate) pattern: String,
-    pub(crate) examples: u64,
-    pub(crate) source_count: u64,
-    pub(crate) text_count: u64,
-    pub(crate) sample_source_ids: String,
-    pub(crate) sample_text_ids: String,
-    pub(crate) script_categories: String,
+pub struct FeaturePatternCountRow {
+    pub kind: String,
+    pub feature_profile: String,
+    pub feature_key: String,
+    pub is_nonempty_whitespace: bool,
+    pub pattern: String,
+    pub examples: u64,
+    pub source_count: u64,
+    pub text_count: u64,
+    pub sample_source_ids: String,
+    pub sample_text_ids: String,
+    pub script_categories: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) struct ErrorRow {
-    pub(crate) run_id: String,
-    pub(crate) source_id: Option<String>,
-    pub(crate) text_id: Option<String>,
-    pub(crate) analyzer_id: Option<String>,
-    pub(crate) stage: String,
-    pub(crate) error_code: String,
-    pub(crate) message: String,
+pub struct ErrorRow {
+    pub run_id: String,
+    pub source_id: Option<String>,
+    pub text_id: Option<String>,
+    pub analyzer_id: Option<String>,
+    pub stage: String,
+    pub error_code: String,
+    pub message: String,
 }
 
 #[cfg(test)]

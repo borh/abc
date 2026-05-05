@@ -14,6 +14,7 @@ pub struct ValidationOptions {
 }
 
 impl ValidationOptions {
+    #[must_use] 
     pub const fn lenient() -> Self {
         Self {
             allow_unknown: true,
@@ -21,6 +22,7 @@ impl ValidationOptions {
         }
     }
 
+    #[must_use] 
     pub const fn strict() -> Self {
         Self {
             allow_unknown: false,
@@ -44,6 +46,7 @@ impl fmt::Display for RowError {
 pub struct SchemaValidator;
 
 impl SchemaValidator {
+    #[must_use] 
     pub fn validate(matrix: &CoverageMatrix, opts: ValidationOptions) -> Vec<RowError> {
         let mut errors = Vec::new();
         for row in matrix.rows() {
@@ -143,7 +146,7 @@ fn check_combination(
         // parsed => not synthesised.
         (Parsed, Synthesised) => true,
         // unrecognised => only synthesised | not_applicable.
-        (Unrecognised, Preserved) | (Unrecognised, Lossy) | (Unrecognised, Dropped) => true,
+        (Unrecognised, Preserved | Lossy | Dropped) => true,
         _ => false,
     };
 

@@ -26,6 +26,7 @@ pub struct FrequencyEntry<E> {
 }
 
 impl<K: Ord, E: Eq> FrequencyTable<K, E> {
+    #[must_use]
     pub fn new(max_examples: usize) -> Self {
         Self {
             max_examples,
@@ -55,10 +56,12 @@ impl<K: Ord, E: Eq> FrequencyTable<K, E> {
         self.entries.iter()
     }
 
+    #[must_use]
     pub fn len(&self) -> usize {
         self.entries.len()
     }
 
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.entries.is_empty()
     }

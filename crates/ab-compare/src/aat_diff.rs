@@ -115,10 +115,22 @@ struct AatSummary {
     source_bytes: Option<usize>,
 }
 
+/// Compare AAT summary trees from two directories.
+///
+/// # Errors
+///
+/// Returns an error if either directory cannot be traversed or any input JSON
+/// file cannot be read or parsed.
 pub fn compare_aat_dirs(a: &Path, b: &Path) -> Result<AatCompareSummary> {
     compare_aat_dirs_with_limit(a, b, None)
 }
 
+/// Compare AAT summary trees with an optional difference output limit.
+///
+/// # Errors
+///
+/// Returns an error if either directory cannot be traversed or any input JSON
+/// file cannot be read or parsed.
 pub fn compare_aat_dirs_with_limit(
     a: &Path,
     b: &Path,

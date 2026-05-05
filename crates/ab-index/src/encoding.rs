@@ -10,6 +10,11 @@ pub struct DecodedSource {
     pub raw_sha256: String,
 }
 
+/// Decode source bytes with UTF-8 detection and SHIFT-JIS fallback.
+///
+/// # Errors
+///
+/// Returns an error when UTF-8 decoding fails unexpectedly.
 pub fn decode_source_bytes(bytes: &[u8]) -> Result<DecodedSource> {
     let raw_sha256 = format!("sha256:{}", hex_sha256(bytes));
 
@@ -44,6 +49,7 @@ pub fn decode_source_bytes(bytes: &[u8]) -> Result<DecodedSource> {
     })
 }
 
+#[must_use] 
 pub fn hex_sha256(bytes: &[u8]) -> String {
     let mut hasher = Sha256::new();
     hasher.update(bytes);

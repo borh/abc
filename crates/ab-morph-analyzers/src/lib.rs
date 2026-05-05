@@ -17,6 +17,11 @@ use ab_plaintext::PlainTextDocument;
 pub trait MorphAnalyzer {
     fn analyzer_id(&self) -> &str;
 
+    /// Run the analyzer on a source document and return a structured analysis.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when tokenization or conversion fails.
     fn analyze(&self, document: &PlainTextDocument) -> Result<Analysis, AnalyzerError>;
 }
 
@@ -36,7 +41,7 @@ mod integration_tests {
 
         let vibrato = VibratoAnalyzer::unidic_cwj_default().unwrap();
         let Some(sudachi_dictionary) = std::env::var_os("AB_SUDACHI_DICT") else {
-            eprintln!("skipping Sudachi smoke path: AB_SUDACHI_DICT is not set");
+            println!("skipping Sudachi smoke path: AB_SUDACHI_DICT is not set");
             return;
         };
         let sudachi =

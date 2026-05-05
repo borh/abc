@@ -2,10 +2,22 @@ use std::ops::Range;
 
 use crate::{Analysis, MorphDiffError};
 
+/// Verifies an analysis structure is internally consistent.
+///
+/// # Errors
+///
+/// Returns an error when morpheme spans are empty, out of order, overlapping,
+/// or otherwise inconsistent with the source text.
 pub fn validate_analysis(analysis: &Analysis) -> Result<(), MorphDiffError> {
     validate_analysis_against_source(analysis, &analysis.source_text)
 }
 
+/// Verifies an analysis against a concrete source text.
+///
+/// # Errors
+///
+/// Returns an error when spans are invalid, not character-boundary aligned,
+/// overlap, are out-of-order, or do not match the supplied source text.
 pub fn validate_analysis_against_source(
     analysis: &Analysis,
     source_text: &str,
@@ -102,6 +114,7 @@ mod tests {
             text_id: "t".to_owned(),
             source_text: "今日はabc".to_owned(),
             morphemes,
+            warnings: Vec::new(),
         }
     }
 

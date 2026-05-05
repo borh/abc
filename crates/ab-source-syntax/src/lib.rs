@@ -68,6 +68,7 @@ pub struct SourceAnnotationsBoth<'a> {
     pub full: SourceAnnotations<'a>,
 }
 
+#[must_use]
 pub fn comparison_lossy_body(txt: &str) -> Cow<'_, str> {
     if !needs_lossy_projection(txt) {
         return Cow::Borrowed(txt);
@@ -77,6 +78,7 @@ pub fn comparison_lossy_body(txt: &str) -> Cow<'_, str> {
     Cow::Owned(comparison_lossy_body_from_events(&events))
 }
 
+#[must_use]
 pub fn comparison_lossy_body_from_events(events: &[SourceEvent<'_>]) -> String {
     let mut out = String::new();
     for event in events {
@@ -103,6 +105,7 @@ pub fn comparison_lossy_body_from_events(events: &[SourceEvent<'_>]) -> String {
     remove_bottom_note_fragments(&out)
 }
 
+#[must_use]
 pub fn source_events(txt: &str) -> Vec<SourceEvent<'_>> {
     let mut events = Vec::new();
     let mut offset = 0;
@@ -285,6 +288,7 @@ pub fn source_events(txt: &str) -> Vec<SourceEvent<'_>> {
     events
 }
 
+#[must_use]
 pub fn remove_bottom_note_fragments(txt: &str) -> String {
     if !txt.contains('」') {
         return txt.to_owned();
@@ -313,21 +317,25 @@ pub fn remove_bottom_note_fragments(txt: &str) -> String {
     out
 }
 
+#[must_use]
 pub fn source_annotations(body: &str) -> SourceAnnotations<'_> {
     let events = source_events(body);
     source_annotations_from_events(&events, false)
 }
 
+#[must_use]
 pub fn source_annotations_for_validation(body: &str) -> SourceAnnotations<'_> {
     let events = source_events(body);
     source_annotations_from_events(&events, true)
 }
 
+#[must_use]
 pub fn source_annotations_both(body: &str) -> SourceAnnotationsBoth<'_> {
     let events = source_events(body);
     source_annotations_both_from_events(&events)
 }
 
+#[must_use]
 pub fn source_annotations_from_events<'a>(
     events: &[SourceEvent<'a>],
     skip_gaiji_orphan_ruby: bool,
@@ -371,6 +379,7 @@ pub fn source_annotations_from_events<'a>(
     annotations
 }
 
+#[must_use]
 pub fn source_annotations_both_from_events<'a>(
     events: &[SourceEvent<'a>],
 ) -> SourceAnnotationsBoth<'a> {
@@ -428,6 +437,7 @@ pub fn source_annotations_both_from_events<'a>(
     SourceAnnotationsBoth { validation, full }
 }
 
+#[must_use]
 pub fn gaiji_marker_count(body: &str) -> usize {
     let mut count = 0;
     let mut offset = 0;
@@ -493,6 +503,7 @@ fn collect_gaiji_markers<'a>(
     }
 }
 
+#[must_use]
 pub fn needs_lossy_projection(txt: &str) -> bool {
     txt.find(['※', '《', '｜', '［', '[', '」']).is_some()
 }

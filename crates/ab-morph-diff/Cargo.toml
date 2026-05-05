@@ -3,6 +3,11 @@ name = "ab-morph-diff"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+description = "Core diff primitives for comparing Japanese morphological analyses"
+repository = "https://github.com/your-org/ab-validator"
+readme = "../../README.md"
+keywords = ["japanese", "morphology", "diff", "nlp"]
+categories = ["text-processing"]
 
 [dependencies]
 serde.workspace = true

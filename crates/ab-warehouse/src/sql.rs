@@ -3,27 +3,36 @@ use std::path::Path;
 
 use anyhow::{Context, Result};
 
-use super::schema::WarehouseTable;
+use crate::schema::WarehouseTable;
 
-pub(crate) const SCHEMA_SQL: &str = include_str!("../../sql/schema.sql");
-pub(crate) const MORPH_VIEWS_SQL_TEMPLATE: &str = include_str!("../../sql/morph_views.sql");
+pub const SCHEMA_SQL: &str = include_str!("../sql/schema.sql");
+pub const MORPH_VIEWS_SQL_TEMPLATE: &str = include_str!("../sql/morph_views.sql");
 
-pub(crate) fn write_schema_sql(warehouse_dir: &Path) -> Result<()> {
+/// # Errors
+///
+/// Returns an error if the schema file cannot be written.
+pub fn write_schema_sql(warehouse_dir: &Path) -> Result<()> {
     let path = warehouse_dir.join("schema.sql");
     fs::write(&path, SCHEMA_SQL).with_context(|| format!("failed to write {}", path.display()))?;
     Ok(())
 }
 
-pub(crate) fn write_run_views_sql(output_run_dir: &Path, final_run_dir: &Path) -> Result<()> {
-    let final_run_dir = final_run_dir.canonicalize().unwrap_or_else(|_| {
-        if final_run_dir.is_absolute() {
-            final_run_dir.to_path_buf()
-        } else {
-            std::env::current_dir()
-                .expect("current directory is available")
-                .join(final_run_dir)
-        }
-    });
+/// Writes a rendered SQL view definition file for a run.
+///
+/// # Errors
+///
+/// Returns an error if canonicalization or SQL rendering fails, or if the output
+/// file cannot be written.
+pub fn write_run_views_sql(output_run_dir: &Path, final_run_dir: &Path) -> Result<()> {
+    let final_run_dir = final_run_dir
+        .canonicalize()
+        .or_else(|_| {
+            if final_run_dir.is_absolute() {
+                Ok(final_run_dir.to_path_buf())
+            } else {
+                std::env::current_dir().map(|cwd| cwd.join(final_run_dir))
+            }
+        })?;
     let final_run_dir = final_run_dir
         .to_string_lossy()
         .replace('\\', "\\\\")
@@ -72,7 +81,7 @@ mod tests {
     fn sql_mentions_parquet_not_jsonl_and_has_version_policy() {
         assert!(SCHEMA_SQL.contains(&format!(
             "Morph warehouse schema version {}.",
-            crate::warehouse::schema::SCHEMA_VERSION
+            crate::schema::SCHEMA_VERSION
         )));
         assert!(SCHEMA_SQL.contains("Readers must reject runs.schema_version values other than 1"));
         assert!(MORPH_VIEWS_SQL_TEMPLATE.contains("__RUN_DIR__/nway_regions.parquet"));
@@ -83,7 +92,7 @@ mod tests {
 
     #[test]
     fn schema_sql_columns_match_documented_parquet_columns() {
-        for table in crate::warehouse::schema::WarehouseTable::ALL {
+        for table in crate::schema::WarehouseTable::ALL {
             let table_name = table
                 .file_name()
                 .strip_suffix(".parquet")

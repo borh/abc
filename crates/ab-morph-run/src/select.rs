@@ -6,6 +6,12 @@ use anyhow::{Context, Result, bail};
 
 use crate::compact::source_id_from_aat_path;
 
+/// Resolves requested source IDs under an AAT root directory.
+///
+/// # Errors
+///
+/// Returns an error if `source_ids` is empty, the directory is not readable,
+/// a source ID is missing, or duplicates are encountered during discovery.
 pub fn resolve_source_id_aat_paths(aat_dir: &Path, source_ids: &[String]) -> Result<Vec<PathBuf>> {
     if source_ids.is_empty() {
         bail!("provide at least one --source-id");

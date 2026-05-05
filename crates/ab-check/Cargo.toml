@@ -3,6 +3,11 @@ name = "ab-check"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+description = "Japanese text validation and quality checks for Aozora Bunko documents"
+repository = "https://github.com/your-org/ab-validator"
+readme = "../../README.md"
+keywords = ["japanese", "text-processing", "validation", "diff"]
+categories = ["text-processing"]
 
 [dependencies]
 ab-plaintext.workspace = true

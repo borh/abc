@@ -28,6 +28,7 @@ fn analysis(analyzer: &str, text: &str, cuts: &[usize]) -> Analysis {
         text_id: "t".to_owned(),
         source_text: text.to_owned(),
         morphemes,
+        warnings: Vec::new(),
     }
 }
 

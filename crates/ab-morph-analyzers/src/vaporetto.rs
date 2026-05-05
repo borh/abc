@@ -27,6 +27,11 @@ pub struct VaporettoAnalyzer {
 }
 
 impl VaporettoAnalyzer {
+    /// Load a Vaporetto predictor from an explicit dictionary path.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the model cannot be loaded.
     pub fn from_dictionary_path(
         analyzer_id: impl Into<String>,
         dictionary_path: impl AsRef<Path>,
@@ -46,6 +51,11 @@ impl VaporettoAnalyzer {
         })
     }
 
+    /// Load a Vaporetto model from `.zst`-compressed path.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the compressed model cannot be loaded.
     pub fn from_zstd(
         analyzer_id: impl Into<String>,
         dictionary_path: impl AsRef<Path>,
@@ -53,6 +63,11 @@ impl VaporettoAnalyzer {
         Self::from_dictionary_path(analyzer_id, dictionary_path)
     }
 
+    /// Load and parse a dictionary from an explicit `.model` path.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the dictionary name cannot be resolved or loaded.
     pub fn from_dictionary_name(dictionary_name: impl AsRef<str>) -> Result<Self, AnalyzerError> {
         let dictionary_name = dictionary_name.as_ref();
         let analyzer_id = format!("vaporetto:{dictionary_name}");
@@ -61,8 +76,13 @@ impl VaporettoAnalyzer {
         Self::from_dictionary_path(analyzer_id, dictionary_path)
     }
 
+    /// Load the default Unidic-CWJ dictionary.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the default dictionary cannot be resolved or loaded.
     pub fn unidic_cwj_default() -> Result<Self, AnalyzerError> {
-        let path = default_dictionary_path();
+        let path = default_dictionary_path()?;
         Self::from_dictionary_path(format!("vaporetto:{DEFAULT_VAPORETTO_DICTIONARY}"), path)
     }
 }
@@ -149,18 +169,21 @@ fn load_vaporetto_model(analyzer_id: &str, dictionary_path: &Path) -> Result<Mod
     }
 }
 
-fn default_dictionary_path() -> PathBuf {
+fn default_dictionary_path() -> Result<PathBuf, AnalyzerError> {
     default_dictionary_path_from_env(std::env::var_os("AB_VAPORETTO_DICT"))
 }
 
-fn default_dictionary_path_from_env(override_path: Option<std::ffi::OsString>) -> PathBuf {
+fn default_dictionary_path_from_env(
+    override_path: Option<std::ffi::OsString>,
+) -> Result<PathBuf, AnalyzerError> {
     override_path
         .map(PathBuf::from)
+        .map(Ok)
         .unwrap_or_else(resolve_default_dictionary)
 }
 
-fn resolve_default_dictionary() -> PathBuf {
-    resolve_dictionary_path(DEFAULT_VAPORETTO_DICTIONARY).unwrap_or_else(|err| panic!("{err}"))
+fn resolve_default_dictionary() -> Result<PathBuf, AnalyzerError> {
+    resolve_dictionary_path(DEFAULT_VAPORETTO_DICTIONARY)
 }
 
 fn resolve_dictionary_path(dictionary_name: &str) -> Result<PathBuf, AnalyzerError> {

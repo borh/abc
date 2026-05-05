@@ -44,6 +44,7 @@ fn analysis(analyzer: &str, source: &str, split_today: bool) -> Analysis {
         text_id: "bench".to_owned(),
         source_text: source.to_owned(),
         morphemes,
+        warnings: Vec::new(),
     }
 }
 

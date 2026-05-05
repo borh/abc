@@ -3,6 +3,11 @@ name = "ab-ir"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+description = "Intermediate representation for Aozora Bunko parser output"
+repository = "https://github.com/your-org/ab-validator"
+readme = "../../README.md"
+keywords = ["japanese", "text-processing", "parser", "ast"]
+categories = ["text-processing"]
 
 [dependencies]
 ab-plaintext = { workspace = true }

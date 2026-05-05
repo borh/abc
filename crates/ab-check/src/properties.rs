@@ -8,6 +8,11 @@ use crate::source_projection;
 
 pub trait Property {
     fn name(&self) -> &'static str;
+    /// Validate a property against AAT and source text.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the property is violated.
     fn check(&self, txt: &str, aat: &Value) -> Result<(), PropertyViolation>;
 }
 
@@ -30,6 +35,7 @@ pub struct BlockBalance;
 pub struct NoDroppedLines;
 pub struct HeadingLevelConsistency;
 
+#[must_use] 
 pub fn builtin_properties() -> Vec<Box<dyn Property + Sync>> {
     vec![
         Box::new(ParseCompleteness),
@@ -119,6 +125,7 @@ impl Property for RubyCompleteness {
     }
 }
 
+#[must_use] 
 pub fn body_text(text: &str) -> &str {
     let mut separator_count = 0;
     let mut body_start = 0;
@@ -233,6 +240,7 @@ fn violation(
     }
 }
 
+#[must_use] 
 pub fn source_visible_text(txt: &str) -> String {
     // Compatibility wrapper for existing callers. New code should use
     // source_projection::comparison_lossy_body so the lossy semantics are named.

@@ -30,6 +30,12 @@ pub fn parse_adapter_spec(spec: &str) -> AdapterSpec {
     AdapterSpec { id, command }
 }
 
+/// Invoke an adapter binary in AAT mode and parse its JSON output.
+///
+/// # Errors
+///
+/// Returns an error when the adapter cannot be started, when write/IO fails,
+/// when process exit status is non-zero, or when output is not valid JSON.
 pub fn run_adapter_aat(adapter: &AdapterSpec, source_utf8: &str, work_id: &str) -> Result<Value> {
     let mut child = Command::new(&adapter.command)
         .arg("--mode")

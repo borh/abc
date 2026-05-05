@@ -34,11 +34,9 @@ pub enum Block {
         source: String,
         content: Vec<Inline>,
     },
-    /// Explicit page or line break. `content` is always empty; carried so
-    /// `block_content` keeps a uniform signature.
+    /// Explicit page or line break.
     Break {
         kind: BreakKind,
-        content: Vec<Inline>,
     },
 }
 
@@ -51,6 +49,7 @@ pub enum BreakKind {
 }
 
 impl BreakKind {
+    #[must_use]
     pub fn as_str(self) -> &'static str {
         match self {
             BreakKind::Page => "page",
@@ -123,6 +122,164 @@ pub enum Inline {
         attrs: Vec<StyleAttr>,
         provenance: Provenance,
     },
+}
+
+/// Visitor for walking the Inline tree. Every method has a default no-op
+/// implementation so visitors only override the variants they care about.
+pub trait InlineVisitor {
+    // Leaf nodes — enter only
+    fn enter_text(&mut self, _value: &str, _provenance: &Provenance) {}
+    fn enter_text_meta(&mut self, _value: &str, _attrs: &[StyleAttr], _provenance: &Provenance) {}
+    fn enter_gaiji_ref(&mut self, _gaiji: &GaijiRef) {}
+    fn enter_accent(&mut self, _resolved: &str, _provenance: &Provenance) {}
+    fn enter_editor_note(&mut self, _note: &str, _provenance: &Provenance) {}
+    fn enter_raw(&mut self, _source: &str, _attrs: &[StyleAttr], _provenance: &Provenance) {}
+
+    // Container nodes — enter/leave pair
+    fn enter_ruby(
+        &mut self,
+        _base: &[Inline],
+        _reading: &str,
+        _placement: &RubyPlacement,
+        _provenance: &Provenance,
+    ) {
+    }
+    fn leave_ruby(&mut self) {}
+    fn enter_style(
+        &mut self,
+        _style_type: &str,
+        _content: &[Inline],
+        _attrs: &[StyleAttr],
+        _provenance: &Provenance,
+    ) {
+    }
+    fn leave_style(&mut self) {}
+    fn enter_scope(&mut self, _kind: &str, _content: &[Inline], _provenance: &Provenance) {}
+    fn leave_scope(&mut self) {}
+    fn enter_font_size(
+        &mut self,
+        _size_type: &str,
+        _level: u8,
+        _content: &[Inline],
+        _provenance: &Provenance,
+    ) {
+    }
+    fn leave_font_size(&mut self) {}
+    fn enter_warigaki(&mut self, _upper: &[Inline], _lower: &[Inline], _provenance: &Provenance) {}
+    fn leave_warigaki(&mut self) {}
+    fn enter_figure_ref(&mut self, _source: &str, _caption: &[Inline], _provenance: &Provenance) {}
+    fn leave_figure_ref(&mut self) {}
+}
+
+/// Walk an Inline tree with a visitor. Monomorphized per concrete V.
+pub fn walk_inline<V: InlineVisitor>(visitor: &mut V, node: &Inline) {
+    match node {
+        Inline::Text { value, provenance } => {
+            visitor.enter_text(value, provenance);
+        }
+        Inline::TextMeta {
+            value,
+            attrs,
+            provenance,
+        } => {
+            visitor.enter_text_meta(value, attrs, provenance);
+        }
+        Inline::GaijiRef(gaiji) => {
+            visitor.enter_gaiji_ref(gaiji);
+        }
+        Inline::Ruby {
+            base,
+            reading,
+            placement,
+            provenance,
+            ..
+        } => {
+            visitor.enter_ruby(base, reading, placement, provenance);
+            for child in base {
+                walk_inline(visitor, child);
+            }
+            visitor.leave_ruby();
+        }
+        Inline::Style {
+            style_type,
+            content,
+            attrs,
+            provenance,
+            ..
+        } => {
+            visitor.enter_style(style_type, content, attrs, provenance);
+            for child in content {
+                walk_inline(visitor, child);
+            }
+            visitor.leave_style();
+        }
+        Inline::Scope {
+            kind,
+            content,
+            provenance,
+            ..
+        } => {
+            visitor.enter_scope(kind, content, provenance);
+            for child in content {
+                walk_inline(visitor, child);
+            }
+            visitor.leave_scope();
+        }
+        Inline::FontSize {
+            size_type,
+            level,
+            content,
+            provenance,
+            ..
+        } => {
+            visitor.enter_font_size(size_type, *level, content, provenance);
+            for child in content {
+                walk_inline(visitor, child);
+            }
+            visitor.leave_font_size();
+        }
+        Inline::Warigaki {
+            upper,
+            lower,
+            provenance,
+            ..
+        } => {
+            visitor.enter_warigaki(upper, lower, provenance);
+            for child in upper.iter().chain(lower.iter()) {
+                walk_inline(visitor, child);
+            }
+            visitor.leave_warigaki();
+        }
+        Inline::FigureRef {
+            filename,
+            caption,
+            provenance,
+            ..
+        } => {
+            visitor.enter_figure_ref(filename, caption, provenance);
+            for child in caption {
+                walk_inline(visitor, child);
+            }
+            visitor.leave_figure_ref();
+        }
+        Inline::Accent {
+            resolved,
+            provenance,
+            ..
+        } => {
+            visitor.enter_accent(resolved, provenance);
+        }
+        Inline::EditorNote { note, provenance } => {
+            visitor.enter_editor_note(note, provenance);
+        }
+        Inline::Raw {
+            source,
+            attrs,
+            provenance,
+        } => {
+            visitor.enter_raw(source, attrs, provenance);
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -228,10 +385,12 @@ pub struct ProjectionWarning {
 }
 
 impl Inline {
+    #[must_use]
     pub fn text(value: impl Into<String>) -> Self {
         Self::text_with_provenance(value, Provenance::Parser)
     }
 
+    #[must_use]
     pub fn text_with_provenance(value: impl Into<String>, provenance: Provenance) -> Self {
         Self::Text {
             value: value.into(),
@@ -239,10 +398,12 @@ impl Inline {
         }
     }
 
+    #[must_use]
     pub fn ruby(base: impl Into<String>, reading: impl Into<String>) -> Self {
         Self::ruby_with_provenance(base, reading, Provenance::Parser)
     }
 
+    #[must_use]
     pub fn ruby_with_provenance(
         base: impl Into<String>,
         reading: impl Into<String>,
@@ -257,6 +418,7 @@ impl Inline {
         }
     }
 
+    #[must_use]
     pub fn ruby_with_base(
         base: Vec<Inline>,
         reading: impl Into<String>,
@@ -265,6 +427,7 @@ impl Inline {
         Self::ruby_with_base_and_provenance(base, reading, placement, Provenance::Parser)
     }
 
+    #[must_use]
     pub fn ruby_with_base_and_provenance(
         base: Vec<Inline>,
         reading: impl Into<String>,
@@ -280,6 +443,7 @@ impl Inline {
         }
     }
 
+    #[must_use]
     pub fn ruby_with_attrs(
         base: Vec<Inline>,
         reading: impl Into<String>,
@@ -296,6 +460,7 @@ impl Inline {
         }
     }
 
+    #[must_use]
     pub fn text_with_attrs(
         value: impl Into<String>,
         attrs: Vec<StyleAttr>,
@@ -308,6 +473,7 @@ impl Inline {
         }
     }
 
+    #[must_use]
     pub fn gaiji(
         description: impl Into<String>,
         resolved: impl Into<String>,
@@ -321,6 +487,7 @@ impl Inline {
         )
     }
 
+    #[must_use]
     pub fn gaiji_with_provenance(
         description: impl Into<String>,
         resolved: impl Into<String>,
@@ -337,10 +504,12 @@ impl Inline {
         })
     }
 
+    #[must_use]
     pub fn gaiji_ref(gaiji: GaijiRef) -> Self {
         Self::GaijiRef(gaiji)
     }
 
+    #[must_use]
     pub fn dakuten_gaiji(
         source: impl Into<String>,
         description: impl Into<String>,
@@ -361,6 +530,7 @@ impl Inline {
         })
     }
 
+    #[must_use]
     pub fn style(style_type: &'static str, content: Vec<Inline>) -> Self {
         Self::Style {
             style_type,
@@ -370,6 +540,7 @@ impl Inline {
         }
     }
 
+    #[must_use]
     pub fn style_with_attrs(
         style_type: &'static str,
         content: Vec<Inline>,
@@ -384,6 +555,7 @@ impl Inline {
         }
     }
 
+    #[must_use]
     pub fn scope(kind: &'static str, content: Vec<Inline>, provenance: Provenance) -> Self {
         Self::Scope {
             kind,
@@ -392,6 +564,7 @@ impl Inline {
         }
     }
 
+    #[must_use]
     pub fn font_size(
         size_type: &'static str,
         level: u8,
@@ -406,6 +579,7 @@ impl Inline {
         }
     }
 
+    #[must_use]
     pub fn warigaki(upper: Vec<Inline>, lower: Vec<Inline>, provenance: Provenance) -> Self {
         Self::Warigaki {
             upper,
@@ -416,18 +590,22 @@ impl Inline {
 }
 
 impl Block {
+    #[must_use]
     pub fn jisage(level: u8, content: Vec<Inline>) -> Self {
         Self::Jisage { level, content }
     }
 
+    #[must_use]
     pub fn warichu(content: Vec<Inline>) -> Self {
         Self::Warichu { content }
     }
 
+    #[must_use]
     pub fn caption_block(content: Vec<Inline>) -> Self {
         Self::CaptionBlock { content }
     }
 
+    #[must_use]
     pub fn figure(source: impl Into<String>, content: Vec<Inline>) -> Self {
         Self::Figure {
             source: source.into(),
@@ -435,25 +613,27 @@ impl Block {
         }
     }
 
+    #[must_use]
     pub fn page_break() -> Self {
         Self::Break {
             kind: BreakKind::Page,
-            content: Vec::new(),
         }
     }
 
+    #[must_use]
     pub fn line_break() -> Self {
         Self::Break {
             kind: BreakKind::Line,
-            content: Vec::new(),
         }
     }
 }
 
+#[must_use]
 pub fn blocks_to_aat_json(blocks: &[Block]) -> Vec<serde_json::Value> {
     blocks_to_aat_projection(blocks).blocks
 }
 
+#[must_use]
 pub fn blocks_to_aat_projection(blocks: &[Block]) -> AatProjection {
     let mut warnings = Vec::new();
     let blocks = blocks
@@ -519,6 +699,7 @@ pub fn blocks_to_aat_projection(blocks: &[Block]) -> AatProjection {
     AatProjection { blocks, warnings }
 }
 
+#[must_use]
 pub fn visible_projection(blocks: &[Block]) -> ProjectedText {
     let mut visible_text = String::new();
     for block in blocks {
@@ -793,59 +974,82 @@ fn gaiji_jis_code(gaiji: &GaijiRef) -> Option<String> {
 }
 
 fn contains_unresolved_gaiji(content: &[Inline]) -> bool {
-    content.iter().any(|node| match node {
-        Inline::GaijiRef(gaiji) => gaiji.resolved.is_none(),
-        Inline::Ruby { base, .. } => contains_unresolved_gaiji(base),
-        Inline::Style { content, .. }
-        | Inline::Scope { content, .. }
-        | Inline::FontSize { content, .. } => contains_unresolved_gaiji(content),
-        Inline::Warigaki { upper, lower, .. } => {
-            contains_unresolved_gaiji(upper) || contains_unresolved_gaiji(lower)
+    struct GaijiChecker {
+        unresolved_only: bool,
+        found: bool,
+    }
+
+    impl InlineVisitor for GaijiChecker {
+        fn enter_gaiji_ref(&mut self, gaiji: &GaijiRef) {
+            if !self.unresolved_only || gaiji.resolved.is_none() {
+                self.found = true;
+            }
         }
-        Inline::FigureRef { caption, .. } => contains_unresolved_gaiji(caption),
-        Inline::Text { .. }
-        | Inline::TextMeta { .. }
-        | Inline::Accent { .. }
-        | Inline::EditorNote { .. }
-        | Inline::Raw { .. } => false,
-    })
+    }
+
+    let mut checker = GaijiChecker {
+        unresolved_only: true,
+        found: false,
+    };
+    for node in content {
+        walk_inline(&mut checker, node);
+        if checker.found {
+            return true;
+        }
+    }
+    false
 }
 
-fn collect_visible(value: &Inline, out: &mut String) {
-    match value {
-        Inline::Text { value, .. } | Inline::TextMeta { value, .. } => out.push_str(value),
-        Inline::Ruby { base, .. } => {
-            for child in base {
-                collect_visible(child, out);
-            }
+struct VisibleCollector {
+    out: String,
+}
+
+impl InlineVisitor for VisibleCollector {
+    fn enter_text(&mut self, value: &str, _provenance: &Provenance) {
+        self.out.push_str(value);
+    }
+    fn enter_text_meta(&mut self, value: &str, _attrs: &[StyleAttr], _provenance: &Provenance) {
+        self.out.push_str(value);
+    }
+    fn enter_gaiji_ref(&mut self, gaiji: &GaijiRef) {
+        if let Some(resolved) = &gaiji.resolved {
+            self.out.push_str(resolved);
         }
-        Inline::GaijiRef(gaiji) => {
-            if let Some(resolved) = &gaiji.resolved {
-                out.push_str(resolved);
-            }
-        }
-        Inline::Style { content, .. }
-        | Inline::Scope { content, .. }
-        | Inline::FontSize { content, .. } => {
-            for child in content {
-                collect_visible(child, out);
-            }
-        }
-        Inline::Warigaki { upper, lower, .. } => {
-            for child in upper.iter().chain(lower.iter()) {
-                collect_visible(child, out);
-            }
-        }
-        Inline::FigureRef { caption, .. } => {
-            for child in caption {
-                collect_visible(child, out);
-            }
-        }
-        Inline::Accent { resolved, .. } => out.push_str(resolved),
-        Inline::EditorNote { .. } | Inline::Raw { .. } => {}
+    }
+    fn enter_accent(&mut self, resolved: &str, _provenance: &Provenance) {
+        self.out.push_str(resolved);
     }
 }
 
+fn collect_visible(value: &Inline, out: &mut String) {
+    struct Vis<'a>(&'a mut String);
+
+    impl InlineVisitor for Vis<'_> {
+        fn enter_text(&mut self, value: &str, _provenance: &Provenance) {
+            self.0.push_str(value);
+        }
+        fn enter_text_meta(
+            &mut self,
+            value: &str,
+            _attrs: &[StyleAttr],
+            _provenance: &Provenance,
+        ) {
+            self.0.push_str(value);
+        }
+        fn enter_gaiji_ref(&mut self, gaiji: &GaijiRef) {
+            if let Some(resolved) = &gaiji.resolved {
+                self.0.push_str(resolved);
+            }
+        }
+        fn enter_accent(&mut self, resolved: &str, _provenance: &Provenance) {
+            self.0.push_str(resolved);
+        }
+    }
+
+    walk_inline(&mut Vis(out), value);
+}
+
+#[must_use]
 pub fn provenance_counts(blocks: &[Block]) -> ProvenanceCounts {
     let mut counts = ProvenanceCounts::default();
     for block in blocks {
@@ -857,57 +1061,81 @@ pub fn provenance_counts(blocks: &[Block]) -> ProvenanceCounts {
 }
 
 fn collect_provenance(value: &Inline, counts: &mut ProvenanceCounts) {
-    match inline_provenance(value) {
-        Provenance::Parser => counts.parser += 1,
-        Provenance::ParserNormalized => counts.parser_normalized += 1,
-        Provenance::SourceSupplement => counts.source_supplement += 1,
-        Provenance::SourceFallback => counts.source_fallback += 1,
+    struct Vis<'a>(&'a mut ProvenanceCounts);
+
+    impl InlineVisitor for Vis<'_> {
+        fn enter_text(&mut self, _value: &str, provenance: &Provenance) {
+            self.0.increment(provenance);
+        }
+        fn enter_text_meta(&mut self, _value: &str, _attrs: &[StyleAttr], provenance: &Provenance) {
+            self.0.increment(provenance);
+        }
+        fn enter_gaiji_ref(&mut self, gaiji: &GaijiRef) {
+            self.0.increment(&gaiji.provenance);
+        }
+        fn enter_ruby(&mut self, _base: &[Inline], _reading: &str, _placement: &RubyPlacement, provenance: &Provenance) {
+            self.0.increment(provenance);
+        }
+        fn enter_style(
+            &mut self,
+            _style_type: &str,
+            _content: &[Inline],
+            _attrs: &[StyleAttr],
+            provenance: &Provenance,
+        ) {
+            self.0.increment(provenance);
+        }
+        fn enter_scope(&mut self, _kind: &str, _content: &[Inline], provenance: &Provenance) {
+            self.0.increment(provenance);
+        }
+        fn enter_font_size(
+            &mut self,
+            _size_type: &str,
+            _level: u8,
+            _content: &[Inline],
+            provenance: &Provenance,
+        ) {
+            self.0.increment(provenance);
+        }
+        fn enter_warigaki(&mut self, _upper: &[Inline], _lower: &[Inline], provenance: &Provenance) {
+            self.0.increment(provenance);
+        }
+        fn enter_figure_ref(&mut self, _source: &str, _caption: &[Inline], provenance: &Provenance) {
+            self.0.increment(provenance);
+        }
+        fn enter_accent(&mut self, _resolved: &str, provenance: &Provenance) {
+            self.0.increment(provenance);
+        }
+        fn enter_editor_note(&mut self, _note: &str, provenance: &Provenance) {
+            self.0.increment(provenance);
+        }
+        fn enter_raw(&mut self, _source: &str, _attrs: &[StyleAttr], provenance: &Provenance) {
+            self.0.increment(provenance);
+        }
     }
-    if let Inline::Style { content, .. }
-    | Inline::Scope { content, .. }
-    | Inline::FontSize { content, .. } = value
-    {
-        for child in content {
-            collect_provenance(child, counts);
-        }
-    } else if let Inline::Ruby { base, .. } = value {
-        for child in base {
-            collect_provenance(child, counts);
-        }
-    } else if let Inline::FigureRef { caption, .. } = value {
-        for child in caption {
-            collect_provenance(child, counts);
-        }
-    } else if let Inline::Warigaki { upper, lower, .. } = value {
-        for child in upper.iter().chain(lower.iter()) {
-            collect_provenance(child, counts);
-        }
-    }
+
+    walk_inline(&mut Vis(counts), value);
 }
 
-fn inline_provenance(value: &Inline) -> Provenance {
-    match value {
-        Inline::Text { provenance, .. }
-        | Inline::TextMeta { provenance, .. }
-        | Inline::Ruby { provenance, .. }
-        | Inline::GaijiRef(GaijiRef { provenance, .. })
-        | Inline::Style { provenance, .. }
-        | Inline::Scope { provenance, .. }
-        | Inline::FontSize { provenance, .. }
-        | Inline::Warigaki { provenance, .. }
-        | Inline::FigureRef { provenance, .. }
-        | Inline::Accent { provenance, .. }
-        | Inline::EditorNote { provenance, .. }
-        | Inline::Raw { provenance, .. } => *provenance,
+impl ProvenanceCounts {
+    fn increment(&mut self, provenance: &Provenance) {
+        match provenance {
+            Provenance::Parser => self.parser += 1,
+            Provenance::ParserNormalized => self.parser_normalized += 1,
+            Provenance::SourceSupplement => self.source_supplement += 1,
+            Provenance::SourceFallback => self.source_fallback += 1,
+        }
     }
 }
 
 fn inline_visible_text(content: &[Inline]) -> String {
-    let mut out = String::new();
+    let mut visitor = VisibleCollector {
+        out: String::new(),
+    };
     for child in content {
-        collect_visible(child, &mut out);
+        walk_inline(&mut visitor, child);
     }
-    out
+    visitor.out
 }
 
 fn with_provenance(mut value: serde_json::Value, provenance: Provenance) -> serde_json::Value {
@@ -918,6 +1146,7 @@ fn with_provenance(mut value: serde_json::Value, provenance: Provenance) -> serd
 }
 
 impl Provenance {
+    #[must_use]
     pub fn as_str(self) -> &'static str {
         match self {
             Self::Parser => "parser",
@@ -929,6 +1158,7 @@ impl Provenance {
 }
 
 impl RubyPlacement {
+    #[must_use]
     pub fn as_str(self) -> &'static str {
         match self {
             Self::Right => "right",
@@ -937,6 +1167,7 @@ impl RubyPlacement {
     }
 }
 
+#[must_use]
 pub fn block_content(block: &Block) -> &[Inline] {
     match block {
         Block::Paragraph { content }
@@ -944,20 +1175,8 @@ pub fn block_content(block: &Block) -> &[Inline] {
         | Block::Jisage { content, .. }
         | Block::CaptionBlock { content }
         | Block::Warichu { content }
-        | Block::Figure { content, .. }
-        | Block::Break { content, .. } => content,
-    }
-}
-
-pub fn block_content_mut(block: &mut Block) -> &mut Vec<Inline> {
-    match block {
-        Block::Paragraph { content }
-        | Block::Heading { content, .. }
-        | Block::Jisage { content, .. }
-        | Block::CaptionBlock { content }
-        | Block::Warichu { content }
-        | Block::Figure { content, .. }
-        | Block::Break { content, .. } => content,
+        | Block::Figure { content, .. } => content,
+        Block::Break { .. } => &[],
     }
 }
 

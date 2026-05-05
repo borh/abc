@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use std::time::Duration;
 
-use ab_morph_diff::Analysis;
+use ab_morph_diff::{Analysis, AnalyzerWarning};
 use ab_plaintext::PlainTextDocument;
 use vibrato_rkyv::{CacheStrategy, Dictionary, LoadMode, Tokenizer};
 
@@ -26,6 +26,11 @@ pub struct VibratoAnalyzer {
 }
 
 impl VibratoAnalyzer {
+    /// Load a Vibrato tokenizer from an explicit dictionary path.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the tokenizer cannot be created from the dictionary.
     pub fn from_dictionary_path(
         analyzer_id: impl Into<String>,
         dictionary_path: impl AsRef<Path>,
@@ -56,39 +61,57 @@ impl VibratoAnalyzer {
         })
     }
 
+    /// Load a Vibrato dictionary from an explicit dictionary identifier.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the dictionary cannot be resolved or loaded.
+    pub fn from_dictionary_name(dictionary_name: impl AsRef<str>) -> Result<Self, AnalyzerError> {
+        let dictionary_name = dictionary_name.as_ref();
+        let analyzer_id = format!("vibrato:{dictionary_name}");
+        let dictionary_path = resolve_dictionary_path(dictionary_name)?;
+
+        Self::from_dictionary_path(analyzer_id, dictionary_path)
+    }
+
+    /// Load the default Unidic-CWJ dictionary.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the default dictionary cannot be resolved or loaded.
+    pub fn unidic_cwj_default() -> Result<Self, AnalyzerError> {
+        let path = default_dictionary_path()?;
+        Self::from_dictionary_path(format!("vibrato:{DEFAULT_VIBRATO_DICTIONARY}"), path)
+    }
+
+    /// Load a Vibrato model from a `.zst`-compressed path.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the compressed model cannot be loaded.
     pub fn from_zstd(
         analyzer_id: impl Into<String>,
         dictionary_path: impl AsRef<Path>,
     ) -> Result<Self, AnalyzerError> {
         Self::from_dictionary_path(analyzer_id, dictionary_path)
     }
-
-    pub fn from_dictionary_name(dictionary_name: impl AsRef<str>) -> Result<Self, AnalyzerError> {
-        let dictionary_name = dictionary_name.as_ref();
-        let analyzer_id = format!("vibrato:{dictionary_name}");
-        let dictionary_path = resolve_dictionary_path(dictionary_name)?;
-
-        Self::from_zstd(analyzer_id, dictionary_path)
-    }
-
-    pub fn unidic_cwj_default() -> Result<Self, AnalyzerError> {
-        let path = default_dictionary_path();
-        Self::from_dictionary_path(format!("vibrato:{DEFAULT_VIBRATO_DICTIONARY}"), path)
-    }
 }
 
-fn default_dictionary_path() -> PathBuf {
+fn default_dictionary_path() -> Result<PathBuf, AnalyzerError> {
     default_dictionary_path_from_env(std::env::var_os("AB_VIBRATO_DICT"))
 }
 
-fn default_dictionary_path_from_env(override_path: Option<std::ffi::OsString>) -> PathBuf {
+fn default_dictionary_path_from_env(
+    override_path: Option<std::ffi::OsString>,
+) -> Result<PathBuf, AnalyzerError> {
     override_path
         .map(PathBuf::from)
+        .map(Ok)
         .unwrap_or_else(resolve_default_dictionary)
 }
 
-fn resolve_default_dictionary() -> PathBuf {
-    resolve_dictionary_path(DEFAULT_VIBRATO_DICTIONARY).unwrap_or_else(|err| panic!("{err}"))
+fn resolve_default_dictionary() -> Result<PathBuf, AnalyzerError> {
+    resolve_dictionary_path(DEFAULT_VIBRATO_DICTIONARY)
 }
 
 fn resolve_dictionary_path(dictionary_name: &str) -> Result<PathBuf, AnalyzerError> {
@@ -196,6 +219,7 @@ impl MorphAnalyzer for VibratoAnalyzer {
         let chunks = semantic_chunks(&document.text, VIBRATO_CHUNK_BYTES);
         let mut hard_split_count = 0usize;
         let mut first_hard_split_offset = None;
+        let mut warnings = Vec::new();
         let mut tokens = Vec::new();
 
         for chunk in chunks {
@@ -212,22 +236,25 @@ impl MorphAnalyzer for VibratoAnalyzer {
             }));
         }
         if hard_split_count > 0 {
-            eprintln!(
-                "ab-morph-analyzers: analyzer={} text_id={} stage=vibrato_chunk warning=hard_split_without_sentence_boundary count={} first_byte_offset={} hard_limit_bytes={}",
-                self.analyzer_id,
-                document.text_id,
-                hard_split_count,
-                first_hard_split_offset.unwrap_or(0),
-                VIBRATO_CHUNK_BYTES
-            );
+            warnings.push(AnalyzerWarning {
+                analyzer_id: self.analyzer_id.clone(),
+                text_id: document.text_id.clone(),
+                stage: "vibrato_chunk".to_owned(),
+                message: "hard_split_without_sentence_boundary".to_owned(),
+                count: hard_split_count,
+                first_byte_offset: first_hard_split_offset.unwrap_or(0),
+                hard_limit_bytes: VIBRATO_CHUNK_BYTES,
+            });
         }
 
-        build_analysis_from_tokens(
+        let mut analysis = build_analysis_from_tokens(
             self.analyzer_id.clone(),
             document.text_id.clone(),
             document.text.clone(),
             tokens,
-        )
+        )?;
+        analysis.warnings = warnings;
+        Ok(analysis)
     }
 }
 
@@ -259,7 +286,7 @@ mod tests {
         let override_path = std::env::temp_dir().join("unidic-cwj-202512.dic");
 
         assert_eq!(
-            default_dictionary_path_from_env(Some(override_path.clone().into_os_string())),
+            default_dictionary_path_from_env(Some(override_path.clone().into_os_string())).unwrap(),
             override_path
         );
     }

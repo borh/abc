@@ -3,6 +3,11 @@ name = "ab-compare"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+description = "Compare multiple Aozora Bunko parser and analyzer outputs"
+repository = "https://github.com/your-org/ab-validator"
+readme = "../../README.md"
+keywords = ["japanese", "text-processing", "diff", "compare"]
+categories = ["text-processing"]
 
 [dependencies]
 ab-diff-utils.workspace = true

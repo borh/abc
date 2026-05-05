@@ -52,6 +52,12 @@ enum SourceFile {
     Zip { archive: PathBuf, entry: String },
 }
 
+/// Build a feature index from a corpus root and detector.
+///
+/// # Errors
+///
+/// Returns an error when source scanning, decoding, feature detection, or
+/// serialization preparation fails.
 pub fn build_index(corpus_root: &Path, detector: &FeatureDetector) -> Result<Index> {
     let sources = collect_source_files(corpus_root)?;
     let mut scanned = sources
@@ -97,6 +103,11 @@ pub fn build_index(corpus_root: &Path, detector: &FeatureDetector) -> Result<Ind
     })
 }
 
+/// Write an index into a JSON file.
+///
+/// # Errors
+///
+/// Returns an error when the file cannot be created or serialized.
 pub fn write_index(index: &Index, output: &Path) -> Result<()> {
     let file = fs::File::create(output)
         .with_context(|| format!("failed to create output {}", output.display()))?;
@@ -104,12 +115,18 @@ pub fn write_index(index: &Index, output: &Path) -> Result<()> {
     Ok(())
 }
 
+/// Read an index from a JSON file.
+///
+/// # Errors
+///
+/// Returns an error when the file cannot be opened or parsed.
 pub fn read_index(path: &Path) -> Result<Index> {
     let file =
         fs::File::open(path).with_context(|| format!("failed to open {}", path.display()))?;
     Ok(serde_json::from_reader(file)?)
 }
 
+#[must_use] 
 pub fn query_any(index: &Index, features: &[String]) -> Vec<String> {
     let mut ids = Vec::new();
     for feature in features {
@@ -122,6 +139,7 @@ pub fn query_any(index: &Index, features: &[String]) -> Vec<String> {
     ids
 }
 
+#[must_use] 
 pub fn query_all(index: &Index, features: &[String]) -> Vec<String> {
     let Some((first, rest)) = features.split_first() else {
         return Vec::new();
@@ -144,6 +162,7 @@ pub fn query_all(index: &Index, features: &[String]) -> Vec<String> {
         .collect()
 }
 
+#[must_use] 
 pub fn sample(index: &Index, limit: usize, features: &[String]) -> Vec<String> {
     let mut ids = query_any(index, features);
     if ids.len() > limit {

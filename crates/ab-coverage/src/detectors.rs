@@ -22,6 +22,7 @@ pub struct DetectorRegistry {
 }
 
 impl DetectorRegistry {
+    #[must_use] 
     pub fn from_matrix(rows: &[Row]) -> Self {
         let mut detectors = HashMap::new();
         for row in rows {
@@ -31,6 +32,7 @@ impl DetectorRegistry {
         Self { detectors }
     }
 
+    #[must_use] 
     pub fn detect(&self, row_id: &str, ctx: &DetectorContext<'_>) -> u64 {
         match self.detectors.get(row_id) {
             Some(d) => d.run(ctx),
@@ -344,7 +346,7 @@ fn d_figure_image(aat: &Value) -> u64 {
     count_with(aat, |n| {
         matches!(
             n.get("kind").and_then(Value::as_str),
-            Some("Image") | Some("figure")
+            Some("Image" | "figure")
         )
     })
 }
@@ -362,7 +364,7 @@ fn d_ruby_directional(aat: &Value) -> u64 {
         }
         matches!(
             n.get("direction").and_then(Value::as_str),
-            Some("left") | Some("below")
+            Some("left" | "below")
         )
     })
 }
@@ -531,7 +533,7 @@ fn d_figure_image_caption(aat: &Value) -> u64 {
     count_with(aat, |n| {
         let kind = n.get("kind").and_then(Value::as_str);
         kind == Some("caption_block")
-            || (matches!(kind, Some("Image") | Some("figure"))
+            || (matches!(kind, Some("Image" | "figure"))
                 && n.get("caption").is_some_and(|v| !v.is_null()))
     })
 }

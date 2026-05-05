@@ -32,6 +32,12 @@ struct FeatureSpec {
 }
 
 impl FeatureDetector {
+    /// Creates a detector from a TOML feature pattern file.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the file cannot be read, parsed, or if any regex in the
+    /// file is invalid.
     pub fn from_toml(path: &Path) -> Result<Self> {
         let raw = fs::read_to_string(path)
             .with_context(|| format!("failed to read feature patterns {}", path.display()))?;
@@ -51,6 +57,7 @@ impl FeatureDetector {
         Ok(Self { features })
     }
 
+    #[must_use]
     pub fn detect(&self, text: &str) -> HashMap<String, Vec<usize>> {
         let mut detected = HashMap::new();
         for feature in &self.features {
@@ -67,6 +74,7 @@ impl FeatureDetector {
         detected
     }
 
+    #[must_use]
     pub fn feature_names(&self) -> Vec<&str> {
         self.features
             .iter()
@@ -75,6 +83,7 @@ impl FeatureDetector {
     }
 }
 
+#[must_use]
 pub fn normalize_relative_path(path: &Path) -> String {
     path.components()
         .filter_map(|component| match component {
@@ -98,11 +107,7 @@ mod tests {
         let path = temp_file("feature-patterns-test.toml");
         fs::write(
             &path,
-            r#"
-[features.ruby]
-pattern = '《[^》]+》'
-description = 'Ruby'
-"#,
+        "\n[features.ruby]\npattern = '《[^》]+》'\ndescription = 'Ruby'\n",
         )
         .unwrap();
 

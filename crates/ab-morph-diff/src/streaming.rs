@@ -289,6 +289,7 @@ mod tests {
             text_id: "t".to_owned(),
             source_text: source.to_owned(),
             morphemes: morphemes.into_iter().collect(),
+            warnings: Vec::new(),
         }
     }
 

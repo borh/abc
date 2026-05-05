@@ -1,3 +1,4 @@
+#[must_use] 
 pub fn comparison_lossy_body(txt: &str) -> String {
     ab_source_syntax::comparison_lossy_body(txt).into_owned()
 }

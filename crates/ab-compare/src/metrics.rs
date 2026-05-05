@@ -89,6 +89,12 @@ struct AatMetrics {
     validation_body_bytes: usize,
 }
 
+/// Summarize metric data from AAT metadata files in a directory tree.
+///
+/// # Errors
+///
+/// Returns an error if traversal fails or any metrics JSON file cannot be read
+/// or parsed.
 pub fn summarize_aat_metrics(root: &Path) -> Result<MetricsSummary> {
     let mut adapter = String::new();
     let mut works = 0usize;

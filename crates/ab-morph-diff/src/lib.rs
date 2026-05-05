@@ -9,6 +9,7 @@ mod validate;
 
 pub use error::MorphDiffError;
 pub use model::{
+    AnalyzerWarning,
     AlignedMorpheme, Analysis, AnalyzerId, ChangedValue, CompactComparison,
     CompactComparisonExample, CompactExampleKind, CompactFeatureChange, Comparison,
     ComparisonStats, CoverageMismatch, CoverageMismatchKind, FeatureDiff, FeatureKey, FeatureMap,
@@ -18,6 +19,12 @@ pub use model::{
 };
 pub use validate::{validate_analysis, validate_analysis_against_source};
 
+/// Compare two analyses and return a full comparison.
+///
+/// # Errors
+///
+/// Returns `MorphDiffError` when text ids or source text differ, or when either
+/// analysis is structurally invalid.
 pub fn compare_pair(
     from: &Analysis,
     to: &Analysis,
@@ -50,6 +57,13 @@ pub fn compare_pair(
     })
 }
 
+/// Compare two analyses against an authoritative source text and return a full
+/// comparison.
+///
+/// # Errors
+///
+/// Returns `MorphDiffError` when text ids differ, source text validation fails, or
+/// either analysis is structurally invalid.
 pub fn compare_pair_with_source_text(
     from: &Analysis,
     to: &Analysis,
@@ -86,6 +100,12 @@ pub fn compare_pair_with_source_text(
     })
 }
 
+/// Compare two analyses against source text and return a compact comparison.
+///
+/// # Errors
+///
+/// Returns `MorphDiffError` when text ids differ, source text validation fails, or
+/// either analysis is structurally invalid.
 pub fn compare_pair_compact_with_source_text(
     from: &Analysis,
     to: &Analysis,
@@ -102,6 +122,11 @@ pub fn compare_pair_compact_with_source_text(
     )
 }
 
+/// Compare multiple analyses against source text and return N-way comparison data.
+///
+/// # Errors
+///
+/// Returns `MorphDiffError` when any comparison fails validation or alignment.
 pub fn compare_nway_with_source_text(
     analyses: &[Analysis],
     source_text: &str,
@@ -110,6 +135,13 @@ pub fn compare_nway_with_source_text(
     nway::compare_nway_with_source_text(analyses, source_text, compare_keys)
 }
 
+/// Visit N-way comparison regions while keeping the same validation and alignment
+/// checks as the bulk N-way comparison API.
+///
+/// # Errors
+///
+/// Returns `MorphDiffError` when any analysis is invalid for alignment or when
+/// source-text checks fail.
 pub fn visit_nway_regions_with_source_text(
     analyses: &[Analysis],
     source_text: &str,
@@ -158,6 +190,7 @@ mod tests {
             text_id: text_id.to_owned(),
             source_text: source.to_owned(),
             morphemes,
+            warnings: Vec::new(),
         }
     }
 
@@ -236,8 +269,12 @@ mod tests {
         assert_eq!(comparison.feature_diffs.len(), 1);
         assert_eq!(comparison.feature_diffs[0].region_index, 1);
         assert_eq!(
-            comparison.feature_diffs[0].changed["pos"],
-            ChangedValue {
+            comparison
+                .feature_diffs[0]
+                .changed
+                .get("pos")
+                .expect("feature diff should include pos"),
+            &ChangedValue {
                 from: Some("助詞".into()),
                 to: Some("名詞".into())
             }
@@ -393,7 +430,10 @@ mod tests {
             crate::compare_nway_with_source_text(&analyses, source, &["pos1".into()]).unwrap();
 
         assert_eq!(comparison.regions.len(), 1);
-        assert_eq!(comparison.regions[0].feature_groups[0].key, "pos1");
+        assert_eq!(
+            comparison.regions[0].feature_groups[0].key.as_ref(),
+            "pos1"
+        );
         assert_eq!(comparison.regions[0].feature_groups[0].values.len(), 2);
         assert_eq!(comparison.stats.regions_with_feature_disagreement, 1);
     }

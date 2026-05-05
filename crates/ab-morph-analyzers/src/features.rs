@@ -77,7 +77,7 @@ pub(crate) fn parse_vibrato_feature_string(feature: &str) -> FeatureMap {
             .get(index)
             .map(|key| (*key).into())
             .unwrap_or_else(|| format!("field_{index}").into());
-        features.insert(key, feature_value(value));
+        let _ = features.insert(key, feature_value(value));
     }
 
     features
@@ -93,7 +93,7 @@ pub(crate) fn parse_vaporetto_feature_string<'a>(
             .get(index)
             .map(|key| (*key).into())
             .unwrap_or_else(|| format!("field_{index}").into());
-        features.insert(key, tag.and_then(|tag| feature_value(tag.as_ref())));
+        let _ = features.insert(key, tag.and_then(|tag| feature_value(tag.as_ref())));
     }
 
     features
@@ -113,11 +113,11 @@ mod tests {
     #[test]
     fn parses_known_and_missing_vibrato_fields() {
         let features = parse_vibrato_feature_string("名詞,普通名詞,*,*,extra");
-        assert_eq!(features["pos1"], Some("名詞".into()));
-        assert_eq!(features["pos2"], Some("普通名詞".into()));
-        assert_eq!(features["pos3"], None);
-        assert_eq!(features["pos4"], None);
-        assert_eq!(features["ctype"], Some("extra".into()));
+        assert_eq!(features.get("pos1"), Some(&Some("名詞".into())));
+        assert_eq!(features.get("pos2"), Some(&Some("普通名詞".into())));
+        assert_eq!(features.get("pos3"), Some(&None));
+        assert_eq!(features.get("pos4"), Some(&None));
+        assert_eq!(features.get("ctype"), Some(&Some("extra".into())));
     }
 
     #[test]
@@ -125,7 +125,7 @@ mod tests {
         let mut fields = vec!["*"; 28];
         fields.push("tail");
         let features = parse_vibrato_feature_string(&fields.join(","));
-        assert_eq!(features["field_28"], Some("tail".into()));
+        assert_eq!(features.get("field_28"), Some(&Some("tail".into())));
     }
 
     #[test]
@@ -136,10 +136,10 @@ mod tests {
             None,
             Some("*".into()),
         ]);
-        assert_eq!(features["pos1"], Some("名詞".into()));
-        assert_eq!(features["pos2"], Some("普通名詞".into()));
-        assert_eq!(features["pos3"], None);
-        assert_eq!(features["pos4"], None);
+        assert_eq!(features.get("pos1"), Some(&Some("名詞".into())));
+        assert_eq!(features.get("pos2"), Some(&Some("普通名詞".into())));
+        assert_eq!(features.get("pos3"), Some(&None));
+        assert_eq!(features.get("pos4"), Some(&None));
     }
 
     #[test]
@@ -154,6 +154,6 @@ mod tests {
             })
             .collect::<Vec<_>>();
         let features = parse_vaporetto_feature_string(tags);
-        assert_eq!(features["field_28"], Some("tag-28".into()));
+        assert_eq!(features.get("field_28"), Some(&Some("tag-28".into())));
     }
 }

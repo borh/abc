@@ -45,6 +45,12 @@ pub struct ResultDifference {
     pub b_pass: bool,
 }
 
+/// Compare check results from two directories and return a summary.
+///
+/// # Errors
+///
+/// Returns an error when report loading or JSON parsing fails, or when directory
+/// traversal fails.
 pub fn compare_report_dirs(a: &Path, b: &Path) -> Result<CompareSummary> {
     let reports_a = read_reports(a)?;
     let reports_b = read_reports(b)?;
@@ -54,20 +60,20 @@ pub fn compare_report_dirs(a: &Path, b: &Path) -> Result<CompareSummary> {
 
     let mut result_differences = Vec::new();
     for key in &common {
-        let report_a = &reports_a[key];
-        let report_b = &reports_b[key];
-        let properties = report_a
+        let a_report = &reports_a[key];
+        let b_report = &reports_b[key];
+        let properties = a_report
             .results
             .keys()
-            .chain(report_b.results.keys())
+            .chain(b_report.results.keys())
             .cloned()
             .collect::<BTreeSet<_>>();
         for property in properties {
-            let a_pass = report_a.results.get(&property).is_some_and(|r| r.pass);
-            let b_pass = report_b.results.get(&property).is_some_and(|r| r.pass);
+            let a_pass = a_report.results.get(&property).is_some_and(|r| r.pass);
+            let b_pass = b_report.results.get(&property).is_some_and(|r| r.pass);
             if a_pass != b_pass {
                 result_differences.push(ResultDifference {
-                    work_id: report_a.work_id.clone(),
+                    work_id: a_report.work_id.clone(),
                     property,
                     a_pass,
                     b_pass,

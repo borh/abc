@@ -2,7 +2,7 @@ use std::fs::{self, File};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use ab_morph_diff::{Analysis, FeatureMap, Morpheme as DiffMorpheme};
+use ab_morph_diff::{Analysis, AnalyzerWarning, FeatureMap, Morpheme as DiffMorpheme};
 use ab_plaintext::PlainTextDocument;
 use sudachi::analysis::stateful_tokenizer::StatefulTokenizer;
 use sudachi::analysis::stateless_tokenizer::DictionaryAccess;
@@ -55,6 +55,11 @@ pub struct SudachiAnalyzer {
 }
 
 impl SudachiAnalyzer {
+    /// Create a Sudachi analyzer from a dictionary path.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when dictionary path cannot be converted or loaded.
     pub fn from_dictionary_path(
         mode: SudachiMode,
         dictionary_path: impl AsRef<Path>,
@@ -65,6 +70,11 @@ impl SudachiAnalyzer {
         Ok(Self::from_dictionary(mode, dictionary))
     }
 
+    /// Load a Sudachi dictionary from disk.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the dictionary cannot be loaded.
     pub fn load_dictionary(
         analyzer_id: &str,
         dictionary_path: impl AsRef<Path>,
@@ -85,6 +95,8 @@ impl SudachiAnalyzer {
         Ok(Arc::new(dictionary))
     }
 
+    /// Construct a Sudachi analyzer from an already-loaded dictionary.
+    #[must_use]
     pub fn from_dictionary(mode: SudachiMode, dictionary: Arc<JapaneseDictionary>) -> Self {
         Self {
             analyzer_id: format!("sudachi-{}", mode.analyzer_suffix()),
@@ -104,6 +116,7 @@ impl MorphAnalyzer for SudachiAnalyzer {
         let mut all_morphemes = Vec::new();
         let mut hard_split_count = 0usize;
         let mut first_hard_split_offset = None;
+        let mut warnings = Vec::new();
         let mut tokenizer =
             StatefulTokenizer::new(self.dictionary.as_ref(), self.mode.as_sudachi());
         tokenizer.set_subset(SUDACHI_FEATURE_SUBSET);
@@ -118,14 +131,15 @@ impl MorphAnalyzer for SudachiAnalyzer {
             all_morphemes.extend(morphemes);
         }
         if hard_split_count > 0 {
-            eprintln!(
-                "ab-morph-analyzers: analyzer={} text_id={} stage=sudachi_chunk warning=hard_split_without_sentence_boundary count={} first_byte_offset={} hard_limit_bytes={}",
-                self.analyzer_id,
-                document.text_id,
-                hard_split_count,
-                first_hard_split_offset.unwrap_or(0),
-                SUDACHI_HARD_CHUNK_BYTES
-            );
+            warnings.push(AnalyzerWarning {
+                analyzer_id: self.analyzer_id.clone(),
+                text_id: document.text_id.clone(),
+                stage: "sudachi_chunk".to_owned(),
+                message: "hard_split_without_sentence_boundary".to_owned(),
+                count: hard_split_count,
+                first_byte_offset: first_hard_split_offset.unwrap_or(0),
+                hard_limit_bytes: SUDACHI_HARD_CHUNK_BYTES,
+            });
         }
 
         Ok(Analysis {
@@ -133,6 +147,7 @@ impl MorphAnalyzer for SudachiAnalyzer {
             text_id: document.text_id.clone(),
             source_text: document.text.clone(),
             morphemes: all_morphemes,
+            warnings,
         })
     }
 }
@@ -238,24 +253,24 @@ where
         .iter()
         .enumerate()
     {
-        features.insert(
+        let _ = features.insert(
             (*key).into(),
             morpheme.part_of_speech().get(index).and_then(feature_value),
         );
     }
 
-    features.insert(
-        "dictionary_form".into(),
-        feature_value(morpheme.dictionary_form()),
-    );
-    features.insert(
-        "normalized_form".into(),
-        feature_value(morpheme.normalized_form()),
-    );
-    features.insert(
-        "reading_form".into(),
-        feature_value(morpheme.reading_form()),
-    );
+        let _ = features.insert(
+            "dictionary_form".into(),
+            feature_value(morpheme.dictionary_form()),
+        );
+        let _ = features.insert(
+            "normalized_form".into(),
+            feature_value(morpheme.normalized_form()),
+        );
+        let _ = features.insert(
+            "reading_form".into(),
+            feature_value(morpheme.reading_form()),
+        );
 
     features
 }
@@ -342,7 +357,7 @@ mod tests {
     #[ignore = "requires dictionary symlink"]
     fn sudachi_tokenizes_plaintext_with_env_dictionary() {
         let Some(dictionary_path) = std::env::var_os("AB_SUDACHI_DICT") else {
-            eprintln!("skipping Sudachi smoke test: AB_SUDACHI_DICT is not set");
+            println!("skipping Sudachi smoke test: AB_SUDACHI_DICT is not set");
             return;
         };
         let doc = PlainTextDocument {
@@ -363,7 +378,7 @@ mod tests {
     #[test]
     fn sudachi_chunking_does_not_reuse_morpheme_features_across_chunks() {
         let Some(dictionary_path) = std::env::var_os("AB_SUDACHI_DICT") else {
-            eprintln!("skipping Sudachi chunk feature test: AB_SUDACHI_DICT is not set");
+            println!("skipping Sudachi chunk feature test: AB_SUDACHI_DICT is not set");
             return;
         };
         let analyzer = SudachiAnalyzer::from_dictionary_path(SudachiMode::C, dictionary_path)

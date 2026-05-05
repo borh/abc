@@ -2,6 +2,12 @@ use serde_json::Value;
 
 use crate::{PlainTextDocument, PlainTextError, SourceFormat, canonicalize_line_endings};
 
+/// Creates a plain-text document from an AAT JSON value.
+///
+/// # Errors
+///
+/// Returns an error when the required `work_id` field is missing or not a string.
+#[must_use = "construct a PlainTextDocument from an AAT JSON value"]
 pub fn from_aat_value(aat: &Value) -> Result<PlainTextDocument, PlainTextError> {
     let text_id = aat
         .get("work_id")

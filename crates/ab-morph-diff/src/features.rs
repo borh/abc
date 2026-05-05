@@ -63,7 +63,7 @@ pub(crate) fn visit_feature_pairs(
     loop {
         match (from_iter.peek(), to_iter.peek()) {
             (Some((from_key, _)), Some((to_key, _))) => {
-                match from_key.as_str().cmp(to_key.as_str()) {
+                match from_key.as_ref().cmp(to_key.as_ref()) {
                     std::cmp::Ordering::Less => {
                         let (key, value) = from_iter.next().expect("peeked from value");
                         visit(key, value.as_ref(), None);
@@ -119,6 +119,7 @@ mod tests {
                 char_span: 0..2,
                 features,
             }],
+            warnings: Vec::new(),
         }
     }
 
@@ -146,8 +147,11 @@ mod tests {
         let diffs = compare_feature_diffs(&from, &to, &regions, &[]);
         assert_eq!(diffs[0].region_index, 0);
         assert_eq!(
-            diffs[0].changed["pos"],
-            ChangedValue {
+            diffs[0]
+                .changed
+                .get("pos")
+                .expect("feature diff should include pos"),
+            &ChangedValue {
                 from: Some("名詞".into()),
                 to: Some("動詞".into())
             }
@@ -165,8 +169,11 @@ mod tests {
         })];
         let diffs = compare_feature_diffs(&from, &to, &regions, &[]);
         assert_eq!(
-            diffs[0].changed["lemma"],
-            ChangedValue {
+            diffs[0]
+                .changed
+                .get("lemma")
+                .expect("feature diff should include lemma"),
+            &ChangedValue {
                 from: Some("今日".into()),
                 to: None
             }
@@ -190,7 +197,11 @@ mod tests {
         })];
         let diffs = compare_feature_diffs(&from, &to, &regions, &["lemma".into(), "lemma".into()]);
         assert_eq!(
-            diffs[0].same_context.keys().collect::<Vec<_>>(),
+            diffs[0]
+                .same_context
+                .keys()
+                .map(|key| key.as_ref())
+                .collect::<Vec<_>>(),
             vec!["lemma"]
         );
     }

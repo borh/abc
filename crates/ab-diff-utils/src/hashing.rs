@@ -2,6 +2,7 @@ use serde_json::Value;
 use sha2::{Digest, Sha256};
 
 /// Returns `"sha256:{hex}"` for the given bytes.
+#[must_use]
 pub fn hash_bytes(bytes: &[u8]) -> String {
     let mut hasher = Sha256::new();
     hasher.update(bytes);
@@ -9,6 +10,11 @@ pub fn hash_bytes(bytes: &[u8]) -> String {
 }
 
 /// Serializes `value` to JSON and returns its SHA256 hash.
+///
+/// # Errors
+///
+/// Returns an error when JSON serialization fails.
+#[must_use = "hash_json returns a digest string"]
 pub fn hash_json(value: &Value) -> anyhow::Result<String> {
     let bytes = serde_json::to_vec(value)?;
     Ok(hash_bytes(&bytes))
@@ -20,6 +26,7 @@ pub fn hash_json(value: &Value) -> anyhow::Result<String> {
 /// so `[
 /// "a", "b"]` differs from `["ab"]` and strings containing null bytes are
 /// unambiguous.
+#[must_use]
 pub fn hash_string_sequence(values: &[String]) -> String {
     let mut hasher = Sha256::new();
     for value in values {

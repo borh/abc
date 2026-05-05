@@ -28,6 +28,11 @@ pub struct AdapterFingerprintInputs {
 }
 
 impl AdapterFingerprintInputs {
+    /// Build fingerprint inputs for a supported parser.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the parser id is unknown.
     pub fn for_parser(repo_root: &Path, parser_id: &str) -> Result<Self> {
         let adapter_dir = match parser_id {
             "aozora2" => repo_root.join("adapters/aozora2"),
@@ -48,6 +53,11 @@ impl AdapterFingerprintInputs {
     }
 }
 
+/// Compute the content-addressed hash for a parser source tree.
+///
+/// # Errors
+///
+/// Returns an error when files cannot be enumerated or read.
 pub fn compute_adapter_sha(inputs: &AdapterFingerprintInputs) -> Result<String> {
     let mut entries: Vec<(PathBuf, Vec<u8>)> = Vec::new();
     for root in &inputs.source_roots {
@@ -102,6 +112,7 @@ pub fn compute_adapter_sha(inputs: &AdapterFingerprintInputs) -> Result<String> 
     Ok(hex(&outer.finalize()))
 }
 
+#[must_use] 
 pub fn input_sha(bytes: &[u8]) -> String {
     hex(&Sha256::digest(bytes))
 }
@@ -127,6 +138,7 @@ impl ParserCache {
         }
     }
 
+    #[must_use] 
     pub fn entry_path(&self, parser_id: &str, adapter_sha: &str, input_sha: &str) -> PathBuf {
         self.root
             .join(parser_id)
@@ -134,6 +146,11 @@ impl ParserCache {
             .join(format!("{input_sha}.json"))
     }
 
+    /// Read cached adapter output for a work from disk.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the cache entry cannot be opened or read.
     pub fn read(
         &self,
         parser_id: &str,
@@ -149,6 +166,11 @@ impl ParserCache {
         }
     }
 
+    /// Store adapter output bytes in the cache.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when directories cannot be created or cache entry cannot be written.
     pub fn write(
         &self,
         parser_id: &str,

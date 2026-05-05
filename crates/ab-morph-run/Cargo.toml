@@ -3,11 +3,17 @@ name = "ab-morph-run"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+description = "CLI runner and summary tooling for pairwise and N-way morphology comparison"
+repository = "https://github.com/your-org/ab-validator"
+readme = "../../README.md"
+keywords = ["japanese", "morphology", "cli", "comparison"]
+categories = ["text-processing"]
 
 [dependencies]
 ab-morph-analyzers.workspace = true
 ab-morph-diff.workspace = true
 ab-plaintext.workspace = true
+ab-warehouse.workspace = true
 anyhow.workspace = true
 arrow-array.workspace = true
 arrow-schema.workspace = true

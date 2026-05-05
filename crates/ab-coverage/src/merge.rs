@@ -62,6 +62,11 @@ pub struct PrevalenceRow {
     pub sample_works: Vec<String>,
 }
 
+/// Merge classifier findings into a coverage matrix.
+///
+/// # Errors
+///
+/// Returns an error when the matrix cannot be read, parsed, or written.
 pub fn apply_classifier_findings(
     matrix_path: &Path,
     findings: &ClassifierFindings,
@@ -118,6 +123,11 @@ pub fn apply_classifier_findings(
     Ok(updated)
 }
 
+/// Merge prevalence findings into a coverage matrix.
+///
+/// # Errors
+///
+/// Returns an error when the matrix cannot be read, parsed, or written.
 pub fn apply_prevalence_findings(
     matrix_path: &Path,
     findings: &PrevalenceFindings,

@@ -24,6 +24,7 @@ pub(crate) fn build_analysis_from_tokens(
         text_id,
         source_text,
         morphemes,
+        warnings: Vec::new(),
     })
 }
 

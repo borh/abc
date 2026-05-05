@@ -42,9 +42,9 @@ test -s "$out_dir/observations/summary.csv"
 test -s "$out_dir/observations/status-summary.csv"
 test -s "$out_dir/observations/fixture.manifest.ruby.local.xhtml"
 
-duckdb_bin="${DUCKDB:-duckdb}"
-if [[ -x /etc/profiles/per-user/bor/bin/duckdb ]]; then
-  duckdb_bin=/etc/profiles/per-user/bor/bin/duckdb
+duckdb_bin="${AB_DUCKDB_BIN:-${DUCKDB:-duckdb}}"
+if [[ -n "$duckdb_bin" ]] && ! command -v "$duckdb_bin" >/dev/null 2>&1; then
+  duckdb_bin=duckdb
 fi
 "$duckdb_bin" -csv -header "$db_path" \
   "select case_id, raw_equal, main_text_equal, feature_tags, card_url from fidelity_xhtml_observations" \

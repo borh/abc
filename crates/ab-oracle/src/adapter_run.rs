@@ -80,17 +80,21 @@ mod tests {
 
     #[test]
     fn parses_adapter_id_from_binary_name() {
-        let spec = parse_adapter_spec("/tmp/aozora2-adapter");
+        let temp = std::env::temp_dir().join("aozora2-adapter");
+        let temp_path = temp.to_string_lossy().to_string();
+        let spec = parse_adapter_spec(&temp_path);
 
         assert_eq!(spec.id, "aozora2");
-        assert_eq!(spec.command, std::path::Path::new("/tmp/aozora2-adapter"));
+        assert_eq!(spec.command, temp);
     }
 
     #[test]
     fn parses_explicit_adapter_id() {
-        let spec = parse_adapter_spec("custom=/tmp/parser");
+        let parser = std::env::temp_dir().join("parser");
+        let parser_path = parser.to_string_lossy().to_string();
+        let spec = parse_adapter_spec(&format!("custom={parser_path}"));
 
         assert_eq!(spec.id, "custom");
-        assert_eq!(spec.command, std::path::Path::new("/tmp/parser"));
+        assert_eq!(spec.command, parser);
     }
 }

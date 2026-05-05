@@ -237,14 +237,80 @@ morph-warehouse-recreate profile="full" aat_dir="{{morph_warehouse_aat_dir}}" ru
 
 morph-available-vibrato-dictionaries:
 	@for dir in "{{repo_root}}/dictionary/compiled" "{{repo_root}}/dictionary/optimized"; do \
-	  for path in "$dir"/*.dic "$dir"/*.dic.zst; do \
-	    [ -e "$path" ] || continue; \
-	    name="$(basename "$path")"; \
-	    name="${name%.dic.zst}"; \
-	    name="${name%.dic}"; \
-	    echo "$name"; \
+	  for path in \
+	    "$dir"/*.dic "$dir"/*.dic.zst \
+	    "$dir"/*.model "$dir"/*.model.zst \
+	    "$dir"/*.bin "$dir"/*.bin.zst; do \
+		[ -e "$path" ] || continue; \
+		name="$(basename "$path")"; \
+		name="${name%.dic.zst}"; \
+		name="${name%.dic}"; \
+		name="${name%.model.zst}"; \
+		name="${name%.model}"; \
+		name="${name%.bin.zst}"; \
+		name="${name%.bin}"; \
+		echo "$name"; \
 	  done; \
 	done | sort -u
+
+morph-available-vaporetto-dictionaries:
+	@for dir in "{{repo_root}}/dictionary/compiled" "{{repo_root}}/dictionary/optimized"; do \
+	  for path in \
+	    "$dir"/*.dic "$dir"/*.dic.zst \
+	    "$dir"/*.model "$dir"/*.model.zst \
+	    "$dir"/*.bin "$dir"/*.bin.zst; do \
+		[ -e "$path" ] || continue; \
+		name="$(basename "$path")"; \
+		name="${name%.dic.zst}"; \
+		name="${name%.dic}"; \
+		name="${name%.model.zst}"; \
+		name="${name%.model}"; \
+		name="${name%.bin.zst}"; \
+		name="${name%.bin}"; \
+		echo "$name"; \
+	  done; \
+	done | sort -u
+
+morph-available-vaporetto-model-dictionaries:
+	@for dir in "{{repo_root}}/dictionary/compiled" "{{repo_root}}/dictionary/optimized"; do \
+	  for path in \
+	    "$dir"/*.model "$dir"/*.model.zst \
+	    "$dir"/*.bin "$dir"/*.bin.zst; do \
+		[ -e "$path" ] || continue; \
+		name="$(basename "$path")"; \
+		name="${name%.model.zst}"; \
+		name="${name%.model}"; \
+		name="${name%.bin.zst}"; \
+		name="${name%.bin}"; \
+		echo "$name"; \
+	  done; \
+	done | sort -u
+
+morph-vaporetto-dictionary-status:
+	@printf "Available dictionary source snapshots:\n"
+	@if [ -d "{{repo_root}}/dictionary/unidic-sources" ]; then \
+		find "{{repo_root}}/dictionary/unidic-sources" -maxdepth 1 -mindepth 1 -type d -printf '  sources/%f\n' | sort; \
+	else \
+		echo "  (missing) {{repo_root}}/dictionary/unidic-sources"; \
+	fi
+	@printf "\nVaporetto dictionary artifacts:\n"
+	@for dir in compiled optimized; do \
+		if [ -d "{{repo_root}}/dictionary/$dir" ]; then \
+			echo "  $dir/"; \
+			for path in \
+				"{{repo_root}}/dictionary/$dir"/*.model "{{repo_root}}/dictionary/$dir"/*.model.zst \
+				"{{repo_root}}/dictionary/$dir"/*.bin "{{repo_root}}/dictionary/$dir"/*.bin.zst; do \
+				[ -e "$path" ] || continue; \
+				echo "    $(basename "$path")"; \
+			done | sort; \
+		else \
+			echo "  (missing) {{repo_root}}/dictionary/$dir"; \
+		fi; \
+	done
+	@printf "\nBuild command references:\n"
+	@echo "  Compile Vaporetto-ready source artifacts: just morph-vaporetto-dictionary-build-source-ready"
+	@echo "  Refresh legacy conversion (same artifact set): just morph-vaporetto-dictionary-transmute-legacy"
+	@echo "  Build all (Vaporetto first then legacy conversions): just morph-vaporetto-dictionaries-rebuild-all"
 
 morph-warehouse-run-all-vibrato-dictionaries profile="full" aat_dir="{{morph_warehouse_aat_dir}}" run_id_prefix="" jobs="0":
 	@jobs="{{jobs}}"; \
@@ -253,6 +319,15 @@ morph-warehouse-run-all-vibrato-dictionaries profile="full" aat_dir="{{morph_war
 	if [ -z "$run_id_prefix" ]; then run_id_prefix="{{profile}}-$(date -u +%F_%H%M%S)-jobs${jobs}-dict"; fi; \
 	for dict in $(just morph-available-vibrato-dictionaries); do \
 	  just morph-warehouse-run-with-analyzers "{{profile}}" "{{aat_dir}}" "vibrato:${dict} sudachi-a sudachi-c" "${run_id_prefix}-${dict}" "{{jobs}}"; \
+	done
+
+morph-warehouse-run-all-vaporetto-dictionaries profile="full" aat_dir="{{morph_warehouse_aat_dir}}" run_id_prefix="" jobs="0":
+	@jobs="{{jobs}}"; \
+	if [ "$jobs" = "0" ]; then jobs="$(nproc)"; fi; \
+	run_id_prefix="{{run_id_prefix}}"; \
+	if [ -z "$run_id_prefix" ]; then run_id_prefix="{{profile}}-$(date -u +%F_%H%M%S)-jobs${jobs}-dict"; fi; \
+	for dict in $(just morph-available-vaporetto-model-dictionaries); do \
+	  just morph-warehouse-run-with-analyzers "{{profile}}" "{{aat_dir}}" "vaporetto:${dict} sudachi-a sudachi-c" "${run_id_prefix}-${dict}" "{{jobs}}"; \
 	done
 
 morph-warehouse-recreate-full jobs="0":
@@ -326,7 +401,10 @@ morph-vibrato-dictionary-status:
 	@for dir in compiled optimized; do \
 		if [ -d "{{repo_root}}/dictionary/$dir" ]; then \
 			echo "  $dir/"; \
-			for path in "{{repo_root}}/dictionary/$dir"/*.dic "{{repo_root}}/dictionary/$dir"/*.dic.zst; do \
+			for path in \
+				"{{repo_root}}/dictionary/$dir"/*.dic "{{repo_root}}/dictionary/$dir"/*.dic.zst \
+				"{{repo_root}}/dictionary/$dir"/*.model "{{repo_root}}/dictionary/$dir"/*.model.zst \
+				"{{repo_root}}/dictionary/$dir"/*.bin "{{repo_root}}/dictionary/$dir"/*.bin.zst; do \
 				[ -e "$path" ] || continue; \
 				echo "    $(basename "$path")"; \
 			done | sort; \
@@ -478,6 +556,121 @@ morph-vibrato-dictionaries-rebuild-all VERSION="202512":
 	@just morph-vibrato-dictionary-build-source-ready "{{VERSION}}"
 	@just morph-vibrato-dictionary-transmute-legacy "{{VERSION}}"
 	@echo "VIBRATO DICTIONARY REBUILD COMPLETE"
+
+morph-vaporetto-dictionary-build-source-ready VERSION="202512":
+	@set -euo pipefail
+	@if [ ! -d "{{vibrato_unidic_sources}}" ]; then \
+		echo "missing source directory: {{vibrato_unidic_sources}}"; \
+		exit 1; \
+	fi
+	@mkdir -p "{{vibrato_compiled_dir}}" "{{vibrato_optimized_dir}}"
+	@for src in "{{vibrato_unidic_sources}}"/*; do \
+		[ -d "$src" ] || continue; \
+		name="$(basename "$src")"; \
+		model_zst="$(find "$src" -maxdepth 1 \( -name 'model.bin.zst' -o -name '*.model.zst' \) -type f | head -n 1)"; \
+		model_plain="$(find "$src" -maxdepth 1 \( -name 'model.bin' -o -name '*.model' \) -type f | head -n 1)"; \
+		if [ -z "$model_zst" ] && [ -z "$model_plain" ]; then \
+			echo "SKIP ${name} (no Vaporetto model source)"; \
+			continue; \
+		fi; \
+		compiled_model="{{vibrato_compiled_dir}}/${name}-{{VERSION}}.model"; \
+		compiled_model_zst="{{vibrato_compiled_dir}}/${name}-{{VERSION}}.model.zst"; \
+		optimized_model="{{vibrato_optimized_dir}}/${name}-{{VERSION}}.model"; \
+		optimized_model_zst="{{vibrato_optimized_dir}}/${name}-{{VERSION}}.model.zst"; \
+		legacy_compiled="{{vibrato_compiled_dir}}/${name}.model"; \
+		legacy_optimized="{{vibrato_optimized_dir}}/${name}.model"; \
+		if [ -n "$model_zst" ]; then \
+			if [ ! -f "$compiled_model_zst" ]; then \
+				echo "BUILD ${name} -> ${compiled_model_zst}"; \
+				ln -sf "$(realpath "$model_zst")" "$compiled_model_zst"; \
+			else \
+				echo "OK ${name} model artifact already exists"; \
+			fi; \
+			if [ ! -L "$compiled_model" ] && [ ! -f "$compiled_model" ]; then \
+				ln -sf "$(realpath --relative-to={{vibrato_compiled_dir}} "$compiled_model_zst")" "$compiled_model"; \
+			fi; \
+			if [ ! -f "$optimized_model_zst" ]; then \
+				ln -sf "$(realpath --relative-to={{vibrato_optimized_dir}} "$compiled_model_zst")" "$optimized_model_zst"; \
+				echo "WIRE ${name} -> ${optimized_model_zst}"; \
+			fi; \
+		else \
+			if [ ! -f "$compiled_model" ]; then \
+				echo "BUILD ${name} -> ${compiled_model}"; \
+				ln -sf "$(realpath "$model_plain")" "$compiled_model"; \
+			else \
+				echo "OK ${name} model artifact already exists"; \
+			fi; \
+		fi; \
+		if [ -L "$legacy_compiled" ] || [ -e "$legacy_compiled" ]; then \
+			rm -f "$legacy_compiled"; \
+		fi; \
+		ln -sf "$(realpath --relative-to={{vibrato_compiled_dir}} "$compiled_model")" "$legacy_compiled"; \
+		if [ -L "$legacy_optimized" ] || [ -e "$legacy_optimized" ]; then \
+			rm -f "$legacy_optimized"; \
+		fi; \
+		ln -sf "$(realpath --relative-to={{vibrato_optimized_dir}} "$compiled_model")" "$legacy_optimized"; \
+	done
+
+morph-vaporetto-dictionary-transmute-legacy VERSION="202512":
+	@just morph-vaporetto-dictionary-build-source-ready "{{VERSION}}"
+
+morph-vaporetto-dictionaries-rebuild-all VERSION="202512":
+	@just morph-vaporetto-dictionary-build-source-ready "{{VERSION}}"
+	@just morph-vaporetto-dictionary-transmute-legacy "{{VERSION}}"
+	@echo "VAPORETTO DICTIONARY REBUILD COMPLETE"
+
+morph-vaporetto-dictionary-audit:
+	@if [ ! -d "{{repo_root}}/dictionary/unidic-sources" ]; then \
+		echo "missing: {{repo_root}}/dictionary/unidic-sources"; \
+		exit 1; \
+	fi
+	@printf "dictionary,status,source_artifact,versioned_compiled,optimized,notes\n"
+	@for src in "{{repo_root}}/dictionary/unidic-sources"/*; do \
+		[ -d "$src" ] || continue; \
+		name="$(basename "$src")"; \
+		model_zst="$(find "$src" -maxdepth 1 \( -name 'model.bin.zst' -o -name '*.model.zst' \) -type f | head -n 1)"; \
+		model_plain="$(find "$src" -maxdepth 1 \( -name 'model.bin' -o -name '*.model' \) -type f | head -n 1)"; \
+		if [ -n "$model_zst" ]; then \
+			source_artifact="model-zst"; \
+			source_path="$model_zst"; \
+		elif [ -n "$model_plain" ]; then \
+			source_artifact="model-bin"; \
+			source_path="$model_plain"; \
+		else \
+			source_artifact="missing"; \
+			source_path=""; \
+		fi; \
+		compiled_versioned_zst="{{repo_root}}/dictionary/compiled/${name}-202512.model.zst"; \
+		compiled_versioned="{{repo_root}}/dictionary/compiled/${name}-202512.model"; \
+		optimized_versioned_zst="{{repo_root}}/dictionary/optimized/${name}-202512.model.zst"; \
+		optimized_versioned="{{repo_root}}/dictionary/optimized/${name}-202512.model"; \
+		compiled_alias="{{repo_root}}/dictionary/compiled/${name}.model"; \
+		optimized_alias="{{repo_root}}/dictionary/optimized/${name}.model"; \
+		if [ -n "$source_artifact" ] && [ "$source_artifact" != "missing" ]; then \
+			notes="vaporetto model source available"; \
+		else \
+			notes="no source model file (no model.bin/ .model found)"; \
+		fi; \
+		if [ -f "$compiled_versioned_zst" ]; then \
+			versioned_compiled="present-zst"; \
+		elif [ -f "$compiled_versioned" ]; then \
+			versioned_compiled="present"; \
+		elif [ -f "$compiled_alias" ]; then \
+			versioned_compiled="present-alias"; \
+		else \
+			versioned_compiled="missing"; \
+		fi; \
+		if [ -f "$optimized_versioned_zst" ]; then \
+			optimized="present-zst"; \
+		elif [ -f "$optimized_versioned" ]; then \
+			optimized="present"; \
+		elif [ -f "$optimized_alias" ]; then \
+			optimized="present-alias"; \
+		else \
+			optimized="missing"; \
+		fi; \
+		printf '%s,%s,%s,%s,%s,%s\n' "$name" "$source_artifact" "$source_path" "$versioned_compiled" "$optimized" "$notes"; \
+	done | sort
 
 morph-vibrato-dictionary-audit:
 	@if [ ! -d "{{repo_root}}/dictionary/unidic-sources" ]; then \

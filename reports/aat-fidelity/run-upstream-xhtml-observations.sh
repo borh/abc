@@ -151,9 +151,9 @@ while IFS=$'\t' read -r case_id source_input upstream_input extra; do
     --manifest-status "${meta_status[$case_id]:-}"
 done < "$manifest"
 
-duckdb_bin="${DUCKDB:-duckdb}"
-if [[ -x /etc/profiles/per-user/bor/bin/duckdb ]]; then
-  duckdb_bin=/etc/profiles/per-user/bor/bin/duckdb
+duckdb_bin="${AB_DUCKDB_BIN:-${DUCKDB:-duckdb}}"
+if [[ -n "$duckdb_bin" ]] && ! command -v "$duckdb_bin" >/dev/null 2>&1; then
+  duckdb_bin=duckdb
 fi
 "$duckdb_bin" -csv -header "$db_path" \
   "select count(*) as total, sum(raw_equal)::UBIGINT as raw_equal, sum(main_text_equal)::UBIGINT as main_text_equal from fidelity_xhtml_observations where report_id = '$report_id'" \

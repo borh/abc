@@ -30,11 +30,19 @@ run_py_in_aozora2html_flake() {
 }
 
 aat_duckdb_bin() {
-  if [[ -x /etc/profiles/per-user/bor/bin/duckdb ]]; then
-    echo "/etc/profiles/per-user/bor/bin/duckdb"
+  if [[ -n "${AB_DUCKDB_BIN:-}" && -x "${AB_DUCKDB_BIN}" ]]; then
+    echo "${AB_DUCKDB_BIN}"
     return
   fi
-  echo "${DUCKDB:-duckdb}"
+  if [[ -n "${DUCKDB:-}" && -x "${DUCKDB}" ]]; then
+    echo "${DUCKDB}"
+    return
+  fi
+  if command -v "${DUCKDB:-duckdb}" >/dev/null 2>&1; then
+    echo "duckdb"
+    return
+  fi
+  echo duckdb
 }
 
 aat_setup_duckdb_runtime() {

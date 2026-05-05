@@ -6,9 +6,13 @@ notebook="reports/morph-warehouse/warehouse_explorer.py"
 tailscale_host="${AB_MORPH_MARIMO_HOST:-$(hostname).hyakutake-barbel.ts.net}"
 port="${AB_MORPH_MARIMO_PORT:-27188}"
 
-if [[ -x /etc/profiles/per-user/bor/bin/duckdb ]]; then
+duckdb_bin="${AB_DUCKDB_BIN:-duckdb}"
+if [[ -n "$duckdb_bin" ]] && ! command -v "$duckdb_bin" >/dev/null 2>&1; then
+  duckdb_bin=duckdb
+fi
+if command -v "$duckdb_bin" >/dev/null 2>&1; then
   stdcxx_dir="$(
-    ldd /etc/profiles/per-user/bor/bin/duckdb 2>/dev/null \
+    ldd "$duckdb_bin" 2>/dev/null \
       | sed -n 's|.*=> \\(.*\\)/libstdc++\\.so\\.6 .*|\\1|p' \
       | head -n 1
   )"

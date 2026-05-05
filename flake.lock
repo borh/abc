@@ -160,8 +160,8 @@
         "repo": "default",
         "type": "github"
       }
-    },
+    }
   },
-  "root": "root",
+		  "root": "root",
   "version": 7
 }

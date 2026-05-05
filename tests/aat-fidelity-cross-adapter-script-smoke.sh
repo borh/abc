@@ -21,9 +21,9 @@ rg -n '"adapter": "aozora2"|"adapter": "aozora-rs"|"adapter": "aozora2html"' "$o
 rg -n '"schema_status"|"upstream_status"|"oracle_status"' "$out_dir/report.json"
 rg -n 'Cross-Adapter AAT Oracle Summary|aozora2|aozora-rs|aozora2html' "$summary_md"
 
-duckdb_bin="${DUCKDB:-duckdb}"
-if [[ -x /etc/profiles/per-user/bor/bin/duckdb ]]; then
-  duckdb_bin=/etc/profiles/per-user/bor/bin/duckdb
+duckdb_bin="${AB_DUCKDB_BIN:-${DUCKDB:-duckdb}}"
+if [[ -n "$duckdb_bin" ]] && ! command -v "$duckdb_bin" >/dev/null 2>&1; then
+  duckdb_bin=duckdb
 fi
 "$duckdb_bin" -csv -noheader "$out_dir/fidelity.duckdb" \
   "select count(*) from fidelity_rows where adapter in ('aozora2', 'aozora-rs', 'aozora2html')" \

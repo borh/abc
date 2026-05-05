@@ -9,5 +9,6 @@ ab-morph-diff.workspace = true
 ab-plaintext.workspace = true
 serde.workspace = true
 sudachi.workspace = true
+vaporetto.workspace = true
 vibrato-rkyv.workspace = true
 zstd.workspace = true

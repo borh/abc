@@ -9,9 +9,9 @@ report_path="$repo_root/reports/aat-fidelity/fixtures/report.json"
 rm -rf "$out_dir"
 mkdir -p "$out_dir"
 
-duckdb_bin="${DUCKDB:-duckdb}"
-if [[ -x /etc/profiles/per-user/bor/bin/duckdb ]]; then
-  duckdb_bin=/etc/profiles/per-user/bor/bin/duckdb
+duckdb_bin="${AB_DUCKDB_BIN:-${DUCKDB:-duckdb}}"
+if [[ -n "$duckdb_bin" ]] && ! command -v "$duckdb_bin" >/dev/null 2>&1; then
+  duckdb_bin=duckdb
 fi
 libstdcxx_dir="$(dirname "$(ldd "$duckdb_bin" | awk '/libstdc\+\+/{print $3; exit}')")"
 export LD_LIBRARY_PATH="$libstdcxx_dir:${LD_LIBRARY_PATH:-}"

@@ -12,7 +12,7 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
-use ab_morph_analyzers::{MorphAnalyzer, SudachiAnalyzer, SudachiMode, VibratoAnalyzer};
+use ab_morph_analyzers::{MorphAnalyzer, SudachiAnalyzer, SudachiMode, VaporettoAnalyzer, VibratoAnalyzer};
 use ab_morph_diff::{
     Analysis, Comparison, MorphDiffError, compare_pair, compare_pair_compact_with_source_text,
 };
@@ -1466,9 +1466,10 @@ fn merge_shard_files<'a>(
     Ok(())
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 enum AnalyzerSpec {
-    Vibrato,
+    Vibrato(Option<String>),
+    Vaporetto(Option<String>),
     Sudachi(SudachiMode),
     #[cfg(test)]
     TestSingle,
@@ -1479,34 +1480,55 @@ enum AnalyzerSpec {
 impl AnalyzerSpec {
     fn parse(value: &str) -> Result<Self> {
         match value {
-            "vibrato" => Ok(Self::Vibrato),
-            "sudachi-a" => Ok(Self::Sudachi(SudachiMode::A)),
-            "sudachi-b" => Ok(Self::Sudachi(SudachiMode::B)),
-            "sudachi-c" => Ok(Self::Sudachi(SudachiMode::C)),
-            #[cfg(test)]
-            "test:single" => Ok(Self::TestSingle),
-            #[cfg(test)]
-            "test:split" => Ok(Self::TestSplit),
-            other => bail!("unknown analyzer `{other}`"),
+            "vibrato" => Ok(Self::Vibrato(None)),
+            "vaporetto" => Ok(Self::Vaporetto(None)),
+            _ => {
+                if let Some(name) = value.strip_prefix("vibrato:") {
+                    if name.is_empty() {
+                        bail!("vibrato analyzer requires a dictionary name");
+                    }
+                    Ok(Self::Vibrato(Some(name.to_owned())))
+                } else if let Some(name) = value.strip_prefix("vaporetto:") {
+                    if name.is_empty() {
+                        bail!("vaporetto analyzer requires a dictionary name");
+                    }
+                    Ok(Self::Vaporetto(Some(name.to_owned())))
+                } else {
+                    match value {
+                        "sudachi-a" => Ok(Self::Sudachi(SudachiMode::A)),
+                        "sudachi-b" => Ok(Self::Sudachi(SudachiMode::B)),
+                        "sudachi-c" => Ok(Self::Sudachi(SudachiMode::C)),
+                        #[cfg(test)]
+                        "test:single" => Ok(Self::TestSingle),
+                        #[cfg(test)]
+                        "test:split" => Ok(Self::TestSplit),
+                        other => bail!("unknown analyzer `{other}`"),
+                    }
+                }
+            }
         }
     }
 
-    fn arg(self) -> &'static str {
+    fn arg(&self) -> String {
         match self {
-            Self::Vibrato => "vibrato",
-            Self::Sudachi(SudachiMode::A) => "sudachi-a",
-            Self::Sudachi(SudachiMode::B) => "sudachi-b",
-            Self::Sudachi(SudachiMode::C) => "sudachi-c",
+            Self::Vibrato(None) => "vibrato".to_owned(),
+            Self::Vibrato(Some(name)) => format!("vibrato:{name}"),
+            Self::Vaporetto(None) => "vaporetto".to_owned(),
+            Self::Vaporetto(Some(name)) => format!("vaporetto:{name}"),
+            Self::Sudachi(SudachiMode::A) => "sudachi-a".to_owned(),
+            Self::Sudachi(SudachiMode::B) => "sudachi-b".to_owned(),
+            Self::Sudachi(SudachiMode::C) => "sudachi-c".to_owned(),
             #[cfg(test)]
-            Self::TestSingle => "test:single",
+            Self::TestSingle => "test:single".to_owned(),
             #[cfg(test)]
-            Self::TestSplit => "test:split",
+            Self::TestSplit => "test:split".to_owned(),
         }
     }
 
     fn family(self) -> &'static str {
         match self {
-            Self::Vibrato => "vibrato",
+            Self::Vibrato(_) => "vibrato",
+            Self::Vaporetto(_) => "vaporetto",
             Self::Sudachi(_) => "sudachi",
             #[cfg(test)]
             Self::TestSingle | Self::TestSplit => "test",
@@ -1583,9 +1605,24 @@ fn load_analyzers(specs: &[AnalyzerSpec]) -> Result<Vec<Arc<LoadedAnalyzer>>> {
 
     for spec in specs {
         match spec {
-            AnalyzerSpec::Vibrato => {
+            AnalyzerSpec::Vibrato(None) => {
                 analyzers.push(Arc::new(LoadedAnalyzer::Vibrato(
                     VibratoAnalyzer::unidic_cwj_default()?,
+                )));
+            }
+            AnalyzerSpec::Vibrato(Some(dictionary_name)) => {
+                analyzers.push(Arc::new(LoadedAnalyzer::Vibrato(
+                    VibratoAnalyzer::from_dictionary_name(dictionary_name)?,
+                )));
+            }
+            AnalyzerSpec::Vaporetto(None) => {
+                analyzers.push(Arc::new(LoadedAnalyzer::Vaporetto(
+                    VaporettoAnalyzer::unidic_cwj_default()?,
+                )));
+            }
+            AnalyzerSpec::Vaporetto(Some(dictionary_name)) => {
+                analyzers.push(Arc::new(LoadedAnalyzer::Vaporetto(
+                    VaporettoAnalyzer::from_dictionary_name(dictionary_name)?,
                 )));
             }
             AnalyzerSpec::Sudachi(mode) => {
@@ -1632,7 +1669,7 @@ fn warehouse_analyzer_rows(
         .map(|(spec, analyzer)| RunAnalyzerRow {
             run_id: run_id.to_owned(),
             analyzer_id: analyzer.analyzer_id().to_owned(),
-            analyzer_arg: spec.arg().to_owned(),
+            analyzer_arg: spec.arg(),
             analyzer_family: spec.family().to_owned(),
         })
         .collect())
@@ -2182,6 +2219,7 @@ fn write_manifest(
 
 enum LoadedAnalyzer {
     Vibrato(VibratoAnalyzer),
+    Vaporetto(VaporettoAnalyzer),
     Sudachi(SudachiAnalyzer),
     #[cfg(test)]
     Test(TestAnalyzerKind),
@@ -2198,6 +2236,7 @@ impl LoadedAnalyzer {
     fn analyzer_id(&self) -> &str {
         match self {
             Self::Vibrato(analyzer) => analyzer.analyzer_id(),
+            Self::Vaporetto(analyzer) => analyzer.analyzer_id(),
             Self::Sudachi(analyzer) => analyzer.analyzer_id(),
             #[cfg(test)]
             Self::Test(TestAnalyzerKind::Single) => "test:single",
@@ -2209,6 +2248,7 @@ impl LoadedAnalyzer {
     fn analyze(&self, document: &PlainTextDocument) -> Result<Analysis> {
         match self {
             Self::Vibrato(analyzer) => Ok(analyzer.analyze(document)?),
+            Self::Vaporetto(analyzer) => Ok(analyzer.analyze(document)?),
             Self::Sudachi(analyzer) => Ok(analyzer.analyze(document)?),
             #[cfg(test)]
             Self::Test(kind) => Ok(test_analysis(*kind, document)),
@@ -2323,7 +2363,19 @@ mod tests {
     fn parses_analyzer_specs() {
         assert_eq!(
             AnalyzerSpec::parse("vibrato").unwrap(),
-            AnalyzerSpec::Vibrato
+            AnalyzerSpec::Vibrato(None)
+        );
+        assert_eq!(
+            AnalyzerSpec::parse("vibrato:unidic-csj-202512").unwrap(),
+            AnalyzerSpec::Vibrato(Some("unidic-csj-202512".to_owned()))
+        );
+        assert_eq!(
+            AnalyzerSpec::parse("vaporetto").unwrap(),
+            AnalyzerSpec::Vaporetto(None)
+        );
+        assert_eq!(
+            AnalyzerSpec::parse("vaporetto:unidic-cwj-202512").unwrap(),
+            AnalyzerSpec::Vaporetto(Some("unidic-cwj-202512".to_owned()))
         );
         assert_eq!(
             AnalyzerSpec::parse("sudachi-c").unwrap(),
@@ -2341,14 +2393,24 @@ mod tests {
     fn dedupes_analyzer_specs_in_first_seen_order() {
         let specs = parse_analyzer_specs(&[
             "vibrato".to_owned(),
+            "vibrato:unidic-csj-202512".to_owned(),
             "sudachi-c".to_owned(),
             "vibrato".to_owned(),
+            "vibrato:unidic-csj-202512".to_owned(),
+            "vaporetto".to_owned(),
+            "vaporetto:unidic-csj-202512".to_owned(),
         ])
         .unwrap();
 
         assert_eq!(
             specs,
-            vec![AnalyzerSpec::Vibrato, AnalyzerSpec::Sudachi(SudachiMode::C)]
+            vec![
+                AnalyzerSpec::Vibrato(None),
+                AnalyzerSpec::Vibrato(Some("unidic-csj-202512".to_owned())),
+                AnalyzerSpec::Sudachi(SudachiMode::C),
+                AnalyzerSpec::Vaporetto(None),
+                AnalyzerSpec::Vaporetto(Some("unidic-csj-202512".to_owned())),
+            ]
         );
     }
 

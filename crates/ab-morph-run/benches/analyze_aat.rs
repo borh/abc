@@ -8,7 +8,7 @@ use tempfile::TempDir;
 fn bench_analyze_aat(c: &mut Criterion) {
     let Some(analyzers) = analyzer_specs() else {
         eprintln!(
-            "skipping analyze_aat bench; set AB_MORPH_RUN_BENCH_ANALYZERS, AB_VIBRATO_DICT, or AB_SUDACHI_DICT"
+            "skipping analyze_aat bench; set AB_MORPH_RUN_BENCH_ANALYZERS, AB_VIBRATO_DICT, AB_VAPORETTO_DICT, or AB_SUDACHI_DICT"
         );
         return;
     };
@@ -51,6 +51,9 @@ fn analyzer_specs() -> Option<Vec<String>> {
     }
     if std::env::var_os("AB_VIBRATO_DICT").is_some() {
         return Some(vec!["vibrato".to_owned()]);
+    }
+    if std::env::var_os("AB_VAPORETTO_DICT").is_some() {
+        return Some(vec!["vaporetto".to_owned()]);
     }
     if std::env::var_os("AB_SUDACHI_DICT").is_some() {
         return Some(vec!["sudachi-c".to_owned()]);

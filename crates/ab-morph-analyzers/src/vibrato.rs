@@ -14,6 +14,8 @@ use crate::span_builder::{RawToken, build_analysis_from_tokens};
 use crate::{AnalyzerError, MorphAnalyzer};
 
 const VIBRATO_CHUNK_BYTES: usize = 32_000;
+const DEFAULT_VIBRATO_DICTIONARY: &str = "unidic-cwj-202512";
+const VIBRATO_DICTIONARY_SEARCH_PATHS: [&str; 2] = ["compiled", "optimized"];
 const ZSTD_DICTIONARY_LOAD_LOCK_RETRIES: usize = 600;
 const ZSTD_DICTIONARY_LOAD_LOCK_SLEEP: Duration = Duration::from_millis(50);
 static ZSTD_DICTIONARY_LOAD_LOCK: Mutex<()> = Mutex::new(());
@@ -61,8 +63,18 @@ impl VibratoAnalyzer {
         Self::from_dictionary_path(analyzer_id, dictionary_path)
     }
 
+    pub fn from_dictionary_name(
+        dictionary_name: impl AsRef<str>,
+    ) -> Result<Self, AnalyzerError> {
+        let dictionary_name = dictionary_name.as_ref();
+        let analyzer_id = format!("vibrato:{dictionary_name}");
+        let dictionary_path = resolve_dictionary_path(dictionary_name)?;
+
+        Self::from_zstd(analyzer_id, dictionary_path)
+    }
+
     pub fn unidic_cwj_default() -> Result<Self, AnalyzerError> {
-        Self::from_zstd("vibrato:unidic-cwj-202512", default_dictionary_path())
+        Self::from_dictionary_name(DEFAULT_VIBRATO_DICTIONARY)
     }
 }
 
@@ -73,7 +85,51 @@ fn default_dictionary_path() -> PathBuf {
 fn default_dictionary_path_from_env(override_path: Option<std::ffi::OsString>) -> PathBuf {
     override_path
         .map(PathBuf::from)
-        .unwrap_or_else(|| workspace_path("dictionary/optimized/unidic-cwj-202512.dic.zst"))
+        .unwrap_or_else(resolve_default_dictionary)
+}
+
+fn resolve_default_dictionary() -> PathBuf {
+    resolve_dictionary_path(DEFAULT_VIBRATO_DICTIONARY)
+        .unwrap_or_else(|err| panic!("{err}"))
+}
+
+fn resolve_dictionary_path(dictionary_name: &str) -> Result<PathBuf, AnalyzerError> {
+    let direct = Path::new(dictionary_name);
+    if direct.is_file() {
+        return Ok(direct.to_path_buf());
+    }
+
+    if let Some(without_suffix) = dictionary_name.strip_suffix(".dic.zst") {
+        return resolve_dictionary_path_from_basename(without_suffix);
+    }
+
+    if let Some(without_suffix) = dictionary_name.strip_suffix(".dic") {
+        return resolve_dictionary_path_from_basename(without_suffix);
+    }
+
+    resolve_dictionary_path_from_basename(dictionary_name)
+}
+
+fn resolve_dictionary_path_from_basename(name: &str) -> Result<PathBuf, AnalyzerError> {
+    for dict_dir in VIBRATO_DICTIONARY_SEARCH_PATHS {
+        for extension in [".dic.zst", ".dic"] {
+            let candidate = workspace_path(format!(
+                "dictionary/{dict_dir}/{name}{extension}",
+            ));
+            if candidate.is_file() {
+                return Ok(candidate);
+            }
+        }
+    }
+
+    Err(AnalyzerError::DictionaryLoad {
+        analyzer: format!("vibrato:{name}"),
+        message: format!(
+            "could not resolve Vibrato dictionary `{name}` in dictionary/{}/ or dictionary/{}/ directories",
+            VIBRATO_DICTIONARY_SEARCH_PATHS[0],
+            VIBRATO_DICTIONARY_SEARCH_PATHS[1],
+        ),
+    })
 }
 
 struct ZstdCacheLock {
@@ -205,11 +261,11 @@ mod tests {
 
     #[test]
     fn default_dictionary_path_honors_env_override() {
-        let override_path = std::ffi::OsString::from("/tmp/unidic-cwj-202512.dic");
+        let override_path = std::env::temp_dir().join("unidic-cwj-202512.dic");
 
         assert_eq!(
-            default_dictionary_path_from_env(Some(override_path.clone())),
-            PathBuf::from(override_path)
+            default_dictionary_path_from_env(Some(override_path.clone().into_os_string())),
+            override_path
         );
     }
 }

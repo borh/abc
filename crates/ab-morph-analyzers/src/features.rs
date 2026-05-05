@@ -30,6 +30,35 @@ const VIBRATO_UNIDIC_KEYS: &[&str] = &[
     "amod_type",
     "lex_type",
 ];
+const VAPORETTO_UNIDIC_KEYS: &[&str] = &[
+    "pos1",
+    "pos2",
+    "pos3",
+    "pos4",
+    "ctype",
+    "cform",
+    "lemma",
+    "orth",
+    "pron",
+    "orth_base",
+    "pron_base",
+    "goshu",
+    "itype",
+    "iform",
+    "ftype",
+    "fform",
+    "icon_type",
+    "fcon_type",
+    "type",
+    "kana",
+    "kana_base",
+    "form",
+    "form_base",
+    "atype",
+    "acon_type",
+    "amod_type",
+    "lex_type",
+];
 
 pub(crate) fn feature_value(value: impl AsRef<str>) -> Option<FeatureValue> {
     let value = value.as_ref();
@@ -49,6 +78,22 @@ pub(crate) fn parse_vibrato_feature_string(feature: &str) -> FeatureMap {
             .map(|key| (*key).into())
             .unwrap_or_else(|| format!("field_{index}").into());
         features.insert(key, feature_value(value));
+    }
+
+    features
+}
+
+pub(crate) fn parse_vaporetto_feature_string(
+    feature_tags: impl IntoIterator<Item = Option<std::borrow::Cow<'_, str>>>,
+) -> FeatureMap {
+    let mut features = FeatureMap::with_capacity(VAPORETTO_UNIDIC_KEYS.len());
+
+    for (index, tag) in feature_tags.into_iter().enumerate() {
+        let key = VAPORETTO_UNIDIC_KEYS
+            .get(index)
+            .map(|key| (*key).into())
+            .unwrap_or_else(|| format!("field_{index}").into());
+        features.insert(key, tag.and_then(|tag| feature_value(tag.as_ref())));
     }
 
     features
@@ -81,5 +126,34 @@ mod tests {
         fields.push("tail");
         let features = parse_vibrato_feature_string(&fields.join(","));
         assert_eq!(features["field_28"], Some("tail".into()));
+    }
+
+    #[test]
+    fn parses_known_and_missing_vaporetto_fields() {
+        let features = parse_vaporetto_feature_string([
+            Some("名詞".into()),
+            Some("普通名詞".into()),
+            None,
+            Some("*".into()),
+        ]);
+        assert_eq!(features["pos1"], Some("名詞".into()));
+        assert_eq!(features["pos2"], Some("普通名詞".into()));
+        assert_eq!(features["pos3"], None);
+        assert_eq!(features["pos4"], None);
+    }
+
+    #[test]
+    fn stores_extra_vaporetto_fields_with_numbered_names() {
+        let tags = (0..30)
+            .map(|index| {
+                if index == 28 {
+                    Some(format!("tag-{index}").into())
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>();
+        let features = parse_vaporetto_feature_string(tags);
+        assert_eq!(features["field_28"], Some("tag-28".into()));
     }
 }

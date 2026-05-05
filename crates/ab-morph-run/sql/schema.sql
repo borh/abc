@@ -2,7 +2,7 @@
 -- Readers must reject runs.schema_version values other than 1.
 -- source_id is one AAT source record/file within a run.
 -- text_id is the logical work id; many source_id values may share one text_id.
--- analyzer_family is closed in v1: vibrato | sudachi.
+-- analyzer_family is closed in v1: vibrato | vaporetto | sudachi.
 -- analyses preserves successful zero-morpheme analyzer runs; non-zero morpheme counts are derivable.
 -- nway_feature_diffs scope invariant:
 --   whole_region   => scope_position IS NULL AND scope_surface IS NULL

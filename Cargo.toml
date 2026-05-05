@@ -56,6 +56,7 @@ tl = "0.7"
 toml = "1.1.2"
 toml_edit = "0.22"
 unicode-normalization = "0.1"
+vaporetto = "0.6.5"
 vibrato-rkyv = { git = "https://github.com/o24s/vibrato-rkyv.git", rev = "6467251cdb945f8f0ca0c6bfd8c96036ab9d4e12", features = ["legacy"] }
 walkdir = "2.5"
 zip = { version = "2.4", default-features = false, features = ["deflate"] }

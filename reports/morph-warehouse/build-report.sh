@@ -29,9 +29,9 @@ if [[ ! -f "$run_dir/runs.parquet" ]]; then
   exit 2
 fi
 
-duckdb_bin="${DUCKDB:-duckdb}"
-if [[ -x /etc/profiles/per-user/bor/bin/duckdb ]]; then
-  duckdb_bin=/etc/profiles/per-user/bor/bin/duckdb
+duckdb_bin="${AB_DUCKDB_BIN:-${DUCKDB:-duckdb}}"
+if [[ -n "$duckdb_bin" ]] && ! command -v "$duckdb_bin" >/dev/null 2>&1; then
+  duckdb_bin=duckdb
 fi
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

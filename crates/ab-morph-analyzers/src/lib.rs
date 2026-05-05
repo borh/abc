@@ -3,10 +3,12 @@ mod error;
 mod features;
 mod span_builder;
 pub mod sudachi;
+pub mod vaporetto;
 pub mod vibrato;
 
 pub use error::AnalyzerError;
 pub use sudachi::{SudachiAnalyzer, SudachiMode};
+pub use vaporetto::VaporettoAnalyzer;
 pub use vibrato::VibratoAnalyzer;
 
 use ab_morph_diff::Analysis;

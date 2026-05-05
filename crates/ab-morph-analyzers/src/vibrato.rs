@@ -63,9 +63,7 @@ impl VibratoAnalyzer {
         Self::from_dictionary_path(analyzer_id, dictionary_path)
     }
 
-    pub fn from_dictionary_name(
-        dictionary_name: impl AsRef<str>,
-    ) -> Result<Self, AnalyzerError> {
+    pub fn from_dictionary_name(dictionary_name: impl AsRef<str>) -> Result<Self, AnalyzerError> {
         let dictionary_name = dictionary_name.as_ref();
         let analyzer_id = format!("vibrato:{dictionary_name}");
         let dictionary_path = resolve_dictionary_path(dictionary_name)?;
@@ -74,7 +72,8 @@ impl VibratoAnalyzer {
     }
 
     pub fn unidic_cwj_default() -> Result<Self, AnalyzerError> {
-        Self::from_dictionary_name(DEFAULT_VIBRATO_DICTIONARY)
+        let path = default_dictionary_path();
+        Self::from_dictionary_path(format!("vibrato:{DEFAULT_VIBRATO_DICTIONARY}"), path)
     }
 }
 
@@ -89,8 +88,7 @@ fn default_dictionary_path_from_env(override_path: Option<std::ffi::OsString>) -
 }
 
 fn resolve_default_dictionary() -> PathBuf {
-    resolve_dictionary_path(DEFAULT_VIBRATO_DICTIONARY)
-        .unwrap_or_else(|err| panic!("{err}"))
+    resolve_dictionary_path(DEFAULT_VIBRATO_DICTIONARY).unwrap_or_else(|err| panic!("{err}"))
 }
 
 fn resolve_dictionary_path(dictionary_name: &str) -> Result<PathBuf, AnalyzerError> {
@@ -113,9 +111,7 @@ fn resolve_dictionary_path(dictionary_name: &str) -> Result<PathBuf, AnalyzerErr
 fn resolve_dictionary_path_from_basename(name: &str) -> Result<PathBuf, AnalyzerError> {
     for dict_dir in VIBRATO_DICTIONARY_SEARCH_PATHS {
         for extension in [".dic.zst", ".dic"] {
-            let candidate = workspace_path(format!(
-                "dictionary/{dict_dir}/{name}{extension}",
-            ));
+            let candidate = workspace_path(format!("dictionary/{dict_dir}/{name}{extension}",));
             if candidate.is_file() {
                 return Ok(candidate);
             }
@@ -126,8 +122,7 @@ fn resolve_dictionary_path_from_basename(name: &str) -> Result<PathBuf, Analyzer
         analyzer: format!("vibrato:{name}"),
         message: format!(
             "could not resolve Vibrato dictionary `{name}` in dictionary/{}/ or dictionary/{}/ directories",
-            VIBRATO_DICTIONARY_SEARCH_PATHS[0],
-            VIBRATO_DICTIONARY_SEARCH_PATHS[1],
+            VIBRATO_DICTIONARY_SEARCH_PATHS[0], VIBRATO_DICTIONARY_SEARCH_PATHS[1],
         ),
     })
 }

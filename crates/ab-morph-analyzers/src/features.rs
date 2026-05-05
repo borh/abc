@@ -83,8 +83,8 @@ pub(crate) fn parse_vibrato_feature_string(feature: &str) -> FeatureMap {
     features
 }
 
-pub(crate) fn parse_vaporetto_feature_string(
-    feature_tags: impl IntoIterator<Item = Option<std::borrow::Cow<'_, str>>>,
+pub(crate) fn parse_vaporetto_feature_string<'a>(
+    feature_tags: impl IntoIterator<Item = Option<std::borrow::Cow<'a, str>>>,
 ) -> FeatureMap {
     let mut features = FeatureMap::with_capacity(VAPORETTO_UNIDIC_KEYS.len());
 

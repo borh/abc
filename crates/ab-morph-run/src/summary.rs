@@ -2038,9 +2038,8 @@ fn run_duckdb_tsv<W: Write>(
     writer: &mut W,
     context: &str,
 ) -> Result<bool> {
-    let duckdb_bin = std::env::var("AB_DUCKDB_BIN").unwrap_or_else(|_| {
-        std::env::var("DUCKDB").unwrap_or_else(|_| String::from("duckdb"))
-    });
+    let duckdb_bin = std::env::var("AB_DUCKDB_BIN")
+        .unwrap_or_else(|_| std::env::var("DUCKDB").unwrap_or_else(|_| String::from("duckdb")));
 
     fs::create_dir_all(duckdb_temp_dir(run_dir)).with_context(|| {
         format!(
@@ -2068,9 +2067,8 @@ fn run_duckdb_tsv<W: Write>(
 }
 
 fn run_duckdb_statement(run_dir: &Path, sql: String, context: &str) -> Result<bool> {
-    let duckdb_bin = std::env::var("AB_DUCKDB_BIN").unwrap_or_else(|_| {
-        std::env::var("DUCKDB").unwrap_or_else(|_| String::from("duckdb"))
-    });
+    let duckdb_bin = std::env::var("AB_DUCKDB_BIN")
+        .unwrap_or_else(|_| std::env::var("DUCKDB").unwrap_or_else(|_| String::from("duckdb")));
 
     fs::create_dir_all(duckdb_temp_dir(run_dir)).with_context(|| {
         format!(

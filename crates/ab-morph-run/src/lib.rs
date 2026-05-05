@@ -12,7 +12,9 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
-use ab_morph_analyzers::{MorphAnalyzer, SudachiAnalyzer, SudachiMode, VaporettoAnalyzer, VibratoAnalyzer};
+use ab_morph_analyzers::{
+    MorphAnalyzer, SudachiAnalyzer, SudachiMode, VaporettoAnalyzer, VibratoAnalyzer,
+};
 use ab_morph_diff::{
     Analysis, Comparison, MorphDiffError, compare_pair, compare_pair_compact_with_source_text,
 };
@@ -1525,7 +1527,7 @@ impl AnalyzerSpec {
         }
     }
 
-    fn family(self) -> &'static str {
+    fn family(&self) -> &'static str {
         match self {
             Self::Vibrato(_) => "vibrato",
             Self::Vaporetto(_) => "vaporetto",
@@ -1616,14 +1618,14 @@ fn load_analyzers(specs: &[AnalyzerSpec]) -> Result<Vec<Arc<LoadedAnalyzer>>> {
                 )));
             }
             AnalyzerSpec::Vaporetto(None) => {
-                analyzers.push(Arc::new(LoadedAnalyzer::Vaporetto(
+                analyzers.push(Arc::new(LoadedAnalyzer::Vaporetto(Box::new(
                     VaporettoAnalyzer::unidic_cwj_default()?,
-                )));
+                ))));
             }
             AnalyzerSpec::Vaporetto(Some(dictionary_name)) => {
-                analyzers.push(Arc::new(LoadedAnalyzer::Vaporetto(
+                analyzers.push(Arc::new(LoadedAnalyzer::Vaporetto(Box::new(
                     VaporettoAnalyzer::from_dictionary_name(dictionary_name)?,
-                )));
+                ))));
             }
             AnalyzerSpec::Sudachi(mode) => {
                 analyzers.push(Arc::new(LoadedAnalyzer::Sudachi(
@@ -2219,7 +2221,7 @@ fn write_manifest(
 
 enum LoadedAnalyzer {
     Vibrato(VibratoAnalyzer),
-    Vaporetto(VaporettoAnalyzer),
+    Vaporetto(Box<VaporettoAnalyzer>),
     Sudachi(SudachiAnalyzer),
     #[cfg(test)]
     Test(TestAnalyzerKind),

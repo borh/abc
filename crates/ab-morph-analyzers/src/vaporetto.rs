@@ -12,8 +12,14 @@ use crate::{AnalyzerError, MorphAnalyzer};
 
 const DEFAULT_VAPORETTO_DICTIONARY: &str = "unidic-cwj-202512";
 const VAPORETTO_DICTIONARY_SEARCH_PATHS: [&str; 2] = ["compiled", "optimized"];
-const VAPORETTO_DICTIONARY_EXTENSIONS: [&str; 6] =
-    [".model", ".model.zst", ".bin", ".bin.zst", ".dic", ".dic.zst"];
+const VAPORETTO_DICTIONARY_EXTENSIONS: [&str; 6] = [
+    ".model",
+    ".model.zst",
+    ".bin",
+    ".bin.zst",
+    ".dic",
+    ".dic.zst",
+];
 
 pub struct VaporettoAnalyzer {
     analyzer_id: String,
@@ -28,12 +34,16 @@ impl VaporettoAnalyzer {
         let analyzer_id = analyzer_id.into();
         let dictionary_path = dictionary_path.as_ref();
         let model = load_vaporetto_model(&analyzer_id, dictionary_path)?;
-        let predictor = Predictor::new(model, true).map_err(|err| AnalyzerError::DictionaryLoad {
-            analyzer: analyzer_id.clone(),
-            message: err.to_string(),
-        })?;
+        let predictor =
+            Predictor::new(model, true).map_err(|err| AnalyzerError::DictionaryLoad {
+                analyzer: analyzer_id.clone(),
+                message: err.to_string(),
+            })?;
 
-        Ok(Self { analyzer_id, predictor })
+        Ok(Self {
+            analyzer_id,
+            predictor,
+        })
     }
 
     pub fn from_zstd(
@@ -43,9 +53,7 @@ impl VaporettoAnalyzer {
         Self::from_dictionary_path(analyzer_id, dictionary_path)
     }
 
-    pub fn from_dictionary_name(
-        dictionary_name: impl AsRef<str>,
-    ) -> Result<Self, AnalyzerError> {
+    pub fn from_dictionary_name(dictionary_name: impl AsRef<str>) -> Result<Self, AnalyzerError> {
         let dictionary_name = dictionary_name.as_ref();
         let analyzer_id = format!("vaporetto:{dictionary_name}");
         let dictionary_path = resolve_dictionary_path(dictionary_name)?;
@@ -78,16 +86,18 @@ impl MorphAnalyzer for VaporettoAnalyzer {
         let morphemes = sentence
             .iter_tokens()
             .map(|token| {
-                let byte_span = char_range_to_byte_range(&document.text, token.start(), token.end())
-                    .map_err(|message| AnalyzerError::Tokenize {
-                        analyzer: self.analyzer_id.clone(),
-                        message,
-                    })?;
+                let byte_span =
+                    char_range_to_byte_range(&document.text, token.start(), token.end()).map_err(
+                        |message| AnalyzerError::Tokenize {
+                            analyzer: self.analyzer_id.clone(),
+                            message,
+                        },
+                    )?;
 
                 Ok(RawToken {
                     emitted_surface: token.surface().to_owned(),
                     byte_span: Some(byte_span),
-                    features: parse_vaporetto_feature_string(token.tags().to_vec().into_iter()),
+                    features: parse_vaporetto_feature_string(token.tags().to_vec()),
                 })
             })
             .collect::<Result<Vec<_>, AnalyzerError>>()?;
@@ -101,14 +111,14 @@ impl MorphAnalyzer for VaporettoAnalyzer {
     }
 }
 
-fn load_vaporetto_model(
-    analyzer_id: &str,
-    dictionary_path: &Path,
-) -> Result<Model, AnalyzerError> {
+fn load_vaporetto_model(analyzer_id: &str, dictionary_path: &Path) -> Result<Model, AnalyzerError> {
     if dictionary_path.extension().and_then(|ext| ext.to_str()) == Some("zst") {
         let file = File::open(dictionary_path).map_err(|err| AnalyzerError::DictionaryLoad {
             analyzer: analyzer_id.to_owned(),
-            message: format!("failed to open compressed model {}: {err}", dictionary_path.display()),
+            message: format!(
+                "failed to open compressed model {}: {err}",
+                dictionary_path.display()
+            ),
         })?;
         let decoder = Decoder::new(file).map_err(|err| AnalyzerError::DictionaryLoad {
             analyzer: analyzer_id.to_owned(),
@@ -119,7 +129,10 @@ fn load_vaporetto_model(
         })?;
         Model::read(decoder).map_err(|err| AnalyzerError::DictionaryLoad {
             analyzer: analyzer_id.to_owned(),
-            message: format!("failed to read dictionary {}: {err}", dictionary_path.display()),
+            message: format!(
+                "failed to read dictionary {}: {err}",
+                dictionary_path.display()
+            ),
         })
     } else {
         let file = File::open(dictionary_path).map_err(|err| AnalyzerError::DictionaryLoad {
@@ -128,7 +141,10 @@ fn load_vaporetto_model(
         })?;
         Model::read(file).map_err(|err| AnalyzerError::DictionaryLoad {
             analyzer: analyzer_id.to_owned(),
-            message: format!("failed to read dictionary {}: {err}", dictionary_path.display()),
+            message: format!(
+                "failed to read dictionary {}: {err}",
+                dictionary_path.display()
+            ),
         })
     }
 }
@@ -155,12 +171,24 @@ fn resolve_dictionary_path(dictionary_name: &str) -> Result<PathBuf, AnalyzerErr
 
     let candidate_bases = [
         dictionary_name,
-        dictionary_name.strip_suffix(".model").unwrap_or(dictionary_name),
-        dictionary_name.strip_suffix(".model.zst").unwrap_or(dictionary_name),
-        dictionary_name.strip_suffix(".dic").unwrap_or(dictionary_name),
-        dictionary_name.strip_suffix(".dic.zst").unwrap_or(dictionary_name),
-        dictionary_name.strip_suffix(".bin").unwrap_or(dictionary_name),
-        dictionary_name.strip_suffix(".bin.zst").unwrap_or(dictionary_name),
+        dictionary_name
+            .strip_suffix(".model")
+            .unwrap_or(dictionary_name),
+        dictionary_name
+            .strip_suffix(".model.zst")
+            .unwrap_or(dictionary_name),
+        dictionary_name
+            .strip_suffix(".dic")
+            .unwrap_or(dictionary_name),
+        dictionary_name
+            .strip_suffix(".dic.zst")
+            .unwrap_or(dictionary_name),
+        dictionary_name
+            .strip_suffix(".bin")
+            .unwrap_or(dictionary_name),
+        dictionary_name
+            .strip_suffix(".bin.zst")
+            .unwrap_or(dictionary_name),
     ];
 
     for path in VAPORETTO_DICTIONARY_SEARCH_PATHS {
@@ -178,8 +206,7 @@ fn resolve_dictionary_path(dictionary_name: &str) -> Result<PathBuf, AnalyzerErr
         analyzer: "vaporetto".to_owned(),
         message: format!(
             "could not resolve Vaporetto dictionary `{dictionary_name}` in dictionary/{}/ or dictionary/{}/ directories",
-            VAPORETTO_DICTIONARY_SEARCH_PATHS[0],
-            VAPORETTO_DICTIONARY_SEARCH_PATHS[1],
+            VAPORETTO_DICTIONARY_SEARCH_PATHS[0], VAPORETTO_DICTIONARY_SEARCH_PATHS[1],
         ),
     })
 }
@@ -198,7 +225,10 @@ fn char_range_to_byte_range(
     let start = char_offset_to_byte_index(text, start_char)
         .ok_or_else(|| format!("start char offset {start_char} is invalid"))?;
     let end = char_offset_to_byte_index(text, end_char).ok_or_else(|| {
-        format!("end char offset {end_char} is invalid, source has {} chars", text.chars().count())
+        format!(
+            "end char offset {end_char} is invalid, source has {} chars",
+            text.chars().count()
+        )
     })?;
     Ok(start..end)
 }

@@ -62,18 +62,21 @@ trap 'rm -f "$stdin_raw" "$parser_sjis_src" "$crlf_src" "$xhtml" "$sjis_src" "$p
 # Ruby parser may abort partway through (CRLF errors, JIS-out-of-range, etc.).
 # Capture its exit and let the Rust mapper emit a parse_complete=false envelope so
 # ab-check sees a valid AAT instead of empty stdout.
+run_aozora2html_parser() {
+  nix develop "$AOZORA2HTML_FLAKE" --command bash -lc \
+    "set -euo pipefail
+     export GEM_HOME='$GEM_HOME_DIR'
+     export GEM_PATH='$GEM_HOME_DIR'
+     export PATH='$GEM_HOME_DIR/bin':\$PATH
+     if ! gem list --installed --exact '$GEM_NAME' --version '$GEM_VERSION' >/dev/null; then
+       mkdir -p '$GEM_HOME_DIR'
+       gem install --no-document --install-dir '$GEM_HOME_DIR' --version '$GEM_VERSION' '$GEM_NAME'
+     fi
+     aozora2html --error-utf8 --use-unicode '$crlf_src' '$xhtml'"
+}
+
 parser_rc=0
-nix develop "$AOZORA2HTML_FLAKE" --command bash -lc \
-  "set -euo pipefail
-   export GEM_HOME='$GEM_HOME_DIR'
-   export GEM_PATH='$GEM_HOME_DIR'
-   export PATH='$GEM_HOME_DIR/bin':\$PATH
-   if ! gem list --installed --exact '$GEM_NAME' --version '$GEM_VERSION' >/dev/null; then
-     mkdir -p '$GEM_HOME_DIR'
-     gem install --no-document --install-dir '$GEM_HOME_DIR' --version '$GEM_VERSION' '$GEM_NAME'
-   fi
-   aozora2html --error-utf8 --use-unicode '$crlf_src' '$xhtml'" \
-  >"$parser_err" 2>&1 || parser_rc=$?
+run_aozora2html_parser >"$parser_err" 2>&1 || parser_rc=$?
 cat "$parser_err" >&2
 
 parse_complete_arg=()

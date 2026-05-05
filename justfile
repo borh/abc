@@ -26,6 +26,15 @@ quality:
 	@just workspace-check
 	@just clippy
 
+flake-cargo *ARGS:
+	@nix develop "{{repo_root}}#default" --command cargo {{ARGS}}
+
+flake-python *ARGS:
+	@nix develop "{{repo_root}}#default" --command python3 {{ARGS}}
+
+flake-aozora2html-python *ARGS:
+	@nix develop "{{repo_root}}#aozora2html" --command python3 {{ARGS}}
+
 quality-fix:
 	@just fmt
 	@just workspace-check

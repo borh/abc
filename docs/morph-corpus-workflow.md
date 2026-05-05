@@ -25,7 +25,7 @@ target/release/ab-check \
 
 ## 3. Legacy compact JSONL morph comparison
 
-Prefer warehouse mode for new comprehensive corpus analysis. The compact JSONL output path remains useful for compatibility and targeted debugging, but the old `summarize-*` JSONL commands are now removed.
+Prefer warehouse mode for new comprehensive corpus analysis. The compact JSONL output path remains useful for compatibility and targeted debugging, but use explicit output filenames with `analyze-aat` (no implicit JSONL `--output-dir` defaults), and the old `summarize-*` JSONL commands are now removed.
 
 ```bash
 AB_SUDACHI_DICT="$(nix path-info .#sudachi-dictionary-full)/share/sudachi/system.dic" \
@@ -140,7 +140,7 @@ target/release/ab-morph-run summarize-warehouse-errors \
   --limit 50
 ```
 
-The existing JSONL `--output-dir` mode remains for compatibility and targeted debugging, but it is not the canonical comprehensive store.
+The existing JSONL compatibility mode remains for targeted debugging, with explicit output paths required when using `--output-dir`; it is not the canonical comprehensive store.
 
 ## 4. Summarize worst cases
 

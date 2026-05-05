@@ -8,21 +8,29 @@ export TMP="${TMP:-$TMPDIR}"
 export TEMP="${TEMP:-$TMPDIR}"
 mkdir -p "$TMPDIR" "$AB_DB_ROOT/aat-fidelity"
 
+AB_VALIDATOR_FLAKE="${AB_VALIDATOR_ROOT}#"
+AOZORA2HTML_FLAKE="${AB_VALIDATOR_ROOT}#aozora2html"
+
 target_for() {
   local name="$1"
   printf '%s\n' "$AB_DB_ROOT/target-$name"
 }
 
+run_in_flake() {
+  local flake="$1"
+  shift
+  nix develop "$flake" --command "$@"
+}
+
 run_cargo() {
-  nix develop "$AB_VALIDATOR_ROOT#" --command cargo "$@"
+  run_in_flake "$AB_VALIDATOR_FLAKE" cargo "$@"
 }
 
 run_py_in_aozora2html_flake() {
-  local repo_root="${AB_VALIDATOR_ROOT}"
   if [[ "${AB_VALIDATOR_DIRECT_PYTHON:-0}" == "1" ]]; then
     python3 "$@"
   else
-    nix develop "${repo_root}#aozora2html" --command python3 "$@"
+    run_in_flake "$AOZORA2HTML_FLAKE" python3 "$@"
   fi
 }
 

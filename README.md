@@ -15,7 +15,7 @@ by Git.
 ## Development
 
 ```bash
-nix develop
+nix develop .#
 cargo fmt
 cargo test
 ```

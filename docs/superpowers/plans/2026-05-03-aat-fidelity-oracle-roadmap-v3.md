@@ -79,10 +79,10 @@ Run:
 
 ```bash
 CARGO_TARGET_DIR=/db/ab-validator/target-toml-upgrade-index \
-  nix develop .# --command cargo test --manifest-path crates/ab-index/Cargo.toml -- --nocapture
+  just flake-cargo test --manifest-path crates/ab-index/Cargo.toml -- --nocapture
 
 CARGO_TARGET_DIR=/db/ab-validator/target-toml-upgrade-coverage \
-  nix develop .# --command cargo test --manifest-path crates/ab-coverage/Cargo.toml -- --nocapture
+  just flake-cargo test --manifest-path crates/ab-coverage/Cargo.toml -- --nocapture
 ```
 
 Expected: both pass. If `toml` 1.1 changes APIs used by these crates, fix those compile errors in the same task.
@@ -216,7 +216,7 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-nix develop "${repo_root}#aozora2html" --command python3 - "${repo_root}" <<'PY'
+just flake-aozora2html-python - "${repo_root}" <<'PY'
 import json
 from pathlib import Path
 import sys
@@ -340,7 +340,7 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-nix develop "${repo_root}#aozora2html" --command python3 - "${repo_root}" <<'PY'
+just flake-aozora2html-python - "${repo_root}" <<'PY'
 import json
 from pathlib import Path
 import sys
@@ -692,7 +692,7 @@ Run:
 
 ```bash
 CARGO_TARGET_DIR=/db/ab-validator/target-ab-ir-aat-view \
-  nix develop .# --command cargo test --manifest-path crates/ab-ir/Cargo.toml aat_view -- --nocapture
+  just flake-cargo test --manifest-path crates/ab-ir/Cargo.toml aat_view -- --nocapture
 ```
 
 Expected: FAIL because `ab-ir` does not yet depend on `ab-plaintext` and `select` is unimplemented.
@@ -769,7 +769,7 @@ Run:
 
 ```bash
 CARGO_TARGET_DIR=/db/ab-validator/target-ab-ir-aat-view \
-  nix develop .# --command cargo test --manifest-path crates/ab-ir/Cargo.toml -- --nocapture
+  just flake-cargo test --manifest-path crates/ab-ir/Cargo.toml -- --nocapture
 git add crates/ab-ir/src/lib.rs crates/ab-ir/src/aat_view.rs crates/ab-ir/Cargo.toml
 git commit -m "feat: add typed aat view selectors to ab-ir"
 ```
@@ -808,7 +808,7 @@ Run:
 
 ```bash
 CARGO_TARGET_DIR=/db/ab-validator/target-ab-check-schema-api \
-  nix develop .# --command cargo test --manifest-path crates/ab-check/Cargo.toml validate_aat_value_reports_schema_status -- --nocapture
+  just flake-cargo test --manifest-path crates/ab-check/Cargo.toml validate_aat_value_reports_schema_status -- --nocapture
 ```
 
 Expected: FAIL because `validate_aat_value` does not exist.
@@ -834,7 +834,7 @@ Run:
 
 ```bash
 CARGO_TARGET_DIR=/db/ab-validator/target-ab-check-schema-api \
-  nix develop .# --command cargo test --manifest-path crates/ab-check/Cargo.toml -- --nocapture
+  just flake-cargo test --manifest-path crates/ab-check/Cargo.toml -- --nocapture
 git add crates/ab-check/src/check.rs crates/ab-check/src/lib.rs
 git commit -m "feat: expose aat schema validation api"
 ```
@@ -965,7 +965,7 @@ Run:
 
 ```bash
 CARGO_TARGET_DIR=/db/ab-validator/target-ab-oracle-compose \
-  nix develop .# --command cargo test --manifest-path crates/ab-oracle/Cargo.toml -- --nocapture
+  just flake-cargo test --manifest-path crates/ab-oracle/Cargo.toml -- --nocapture
 ```
 
 Expected: FAIL until data module and binary are added.
@@ -1012,9 +1012,9 @@ Run:
 
 ```bash
 CARGO_TARGET_DIR=/db/ab-validator/target-ab-oracle-compose \
-  nix develop .# --command cargo test --manifest-path crates/ab-oracle/Cargo.toml -- --nocapture
+  just flake-cargo test --manifest-path crates/ab-oracle/Cargo.toml -- --nocapture
 CARGO_TARGET_DIR=/db/ab-validator/target-ab-oracle-compose \
-  nix develop .# --command cargo run --manifest-path crates/ab-oracle/Cargo.toml -- --oracle data/aat-oracle-cases.toml --upstream data/aat-upstream-observations.toml
+  just flake-cargo run --manifest-path crates/ab-oracle/Cargo.toml -- --oracle data/aat-oracle-cases.toml --upstream data/aat-upstream-observations.toml
 git add Cargo.toml crates/ab-oracle
 git commit -m "feat: add oracle coordinator crate"
 ```
@@ -1055,7 +1055,7 @@ target_for() {
 }
 
 run_cargo() {
-  nix develop "$AB_VALIDATOR_ROOT#" --command cargo "$@"
+  just flake-cargo "$@"
 }
 
 adapter_bin_path() {
@@ -1167,7 +1167,7 @@ Run:
 
 ```bash
 CARGO_TARGET_DIR=/db/ab-validator/target-ab-coverage-oracle \
-  nix develop .# --command cargo test --manifest-path crates/ab-coverage/Cargo.toml -- --nocapture
+  just flake-cargo test --manifest-path crates/ab-coverage/Cargo.toml -- --nocapture
 git add crates/ab-coverage/src/matrix.rs crates/ab-coverage/tests/schema_matrix.rs data/aozora-syntax-coverage.schema.json data/aozora-syntax-coverage.toml
 git commit -m "feat: link oracle cases to syntax coverage"
 ```
@@ -1223,7 +1223,7 @@ Run:
 ```bash
 test -s docs/aat-span-audit.md
 CARGO_TARGET_DIR=/db/ab-validator/target-ab-check-span-audit \
-  nix develop .# --command cargo test --manifest-path crates/ab-check/Cargo.toml -- --nocapture
+  just flake-cargo test --manifest-path crates/ab-check/Cargo.toml -- --nocapture
 git add docs/aat-span-audit.md docs/aat-contract.md data/aat-schema.json
 git commit -m "docs: audit aat span coordinate semantics"
 ```
@@ -1282,9 +1282,9 @@ Run:
 
 ```bash
 CARGO_TARGET_DIR=/db/ab-validator/target-aozora2-blocks \
-  nix develop .# --command cargo test --manifest-path adapters/aozora2/Cargo.toml -- --nocapture
+  just flake-cargo test --manifest-path adapters/aozora2/Cargo.toml -- --nocapture
 CARGO_TARGET_DIR=/db/ab-validator/target-ab-check-blocks \
-  nix develop .# --command cargo test --manifest-path crates/ab-check/Cargo.toml -- --nocapture
+  just flake-cargo test --manifest-path crates/ab-check/Cargo.toml -- --nocapture
 git add adapters/aozora2/src/lib.rs data/adapter-fidelity-notes.toml docs/adapter-fidelity.md
 git commit -m "feat: reconstruct aozora2 block containers"
 ```
@@ -1367,7 +1367,7 @@ Use per-crate target directories.
 
 ```bash
 CARGO_TARGET_DIR=/db/ab-validator/target-toml-upgrade-index \
-  nix develop .# --command cargo test --manifest-path crates/ab-index/Cargo.toml -- --nocapture
+  just flake-cargo test --manifest-path crates/ab-index/Cargo.toml -- --nocapture
 
 bash tests/adapter-fidelity-notes-schema-smoke.sh
 bash tests/aat-oracle-data-schema-smoke.sh
@@ -1377,23 +1377,23 @@ bash tests/adapter-oracle-report-smoke.sh
 bash tests/aat-fidelity-marimo-notebook-smoke.sh
 
 CARGO_TARGET_DIR=/db/ab-validator/target-ab-ir-all \
-  nix develop .# --command cargo test --manifest-path crates/ab-ir/Cargo.toml -- --nocapture
+  just flake-cargo test --manifest-path crates/ab-ir/Cargo.toml -- --nocapture
 
 CARGO_TARGET_DIR=/db/ab-validator/target-ab-check-all \
-  nix develop .# --command cargo test --manifest-path crates/ab-check/Cargo.toml -- --nocapture
+  just flake-cargo test --manifest-path crates/ab-check/Cargo.toml -- --nocapture
 
 CARGO_TARGET_DIR=/db/ab-validator/target-ab-oracle-all \
-  nix develop .# --command cargo test --manifest-path crates/ab-oracle/Cargo.toml -- --nocapture
+  just flake-cargo test --manifest-path crates/ab-oracle/Cargo.toml -- --nocapture
 
 CARGO_TARGET_DIR=/db/ab-validator/target-ab-coverage-all \
-  nix develop .# --command cargo test --manifest-path crates/ab-coverage/Cargo.toml -- --nocapture
+  just flake-cargo test --manifest-path crates/ab-coverage/Cargo.toml -- --nocapture
 
 CARGO_TARGET_DIR=/db/ab-validator/target-aozora2-all \
-  nix develop .# --command cargo test --manifest-path adapters/aozora2/Cargo.toml -- --nocapture
+  just flake-cargo test --manifest-path adapters/aozora2/Cargo.toml -- --nocapture
 
-nix develop .# --command cargo test --manifest-path adapters/aozora-rs/Cargo.toml -- --nocapture
+just flake-cargo test --manifest-path adapters/aozora-rs/Cargo.toml -- --nocapture
 
-nix develop "${repo_root}#aozora2html" --command python3 -m pytest adapters/aozora2html/tests/ -v
+just flake-aozora2html-python -m pytest adapters/aozora2html/tests/ -v
 ```
 
 Expected: every command exits 0.

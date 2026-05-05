@@ -419,7 +419,7 @@ Run:
 
 ```bash
 CARGO_TARGET_DIR=/db/ab-validator/target-ab-oracle-provenance \
-  nix develop .# --command cargo test --manifest-path crates/ab-oracle/Cargo.toml loads_oracle_evidence_and_review_history -- --nocapture
+  just flake-cargo test --manifest-path crates/ab-oracle/Cargo.toml loads_oracle_evidence_and_review_history -- --nocapture
 ```
 
 Expected: FAIL because the Rust types do not include evidence/review fields.
@@ -552,7 +552,7 @@ Run:
 
 ```bash
 CARGO_TARGET_DIR=/db/ab-validator/target-ab-oracle-provenance \
-  nix develop .# --command cargo test --manifest-path crates/ab-oracle/Cargo.toml -- --nocapture
+  just flake-cargo test --manifest-path crates/ab-oracle/Cargo.toml -- --nocapture
 ```
 
 Expected: PASS.
@@ -735,7 +735,7 @@ Run:
 
 ```bash
 CARGO_TARGET_DIR=/db/ab-validator/target-ab-oracle-provenance \
-  nix develop .# --command cargo test --manifest-path crates/ab-oracle/Cargo.toml oracle_quality -- --nocapture
+  just flake-cargo test --manifest-path crates/ab-oracle/Cargo.toml oracle_quality -- --nocapture
 ```
 
 Expected: FAIL because `validate_case_quality` returns no errors.
@@ -866,10 +866,10 @@ Run:
 
 ```bash
 CARGO_TARGET_DIR=/db/ab-validator/target-ab-oracle-provenance \
-  nix develop .# --command cargo test --manifest-path crates/ab-oracle/Cargo.toml -- --nocapture
+  just flake-cargo test --manifest-path crates/ab-oracle/Cargo.toml -- --nocapture
 
 CARGO_TARGET_DIR=/db/ab-validator/target-ab-oracle-provenance \
-  nix develop .# --command cargo run --manifest-path crates/ab-oracle/Cargo.toml -- \
+  just flake-cargo run --manifest-path crates/ab-oracle/Cargo.toml -- \
   --oracle data/aat-oracle-cases.toml \
   --upstream data/aat-upstream-observations.toml
 ```
@@ -927,7 +927,7 @@ Run:
 
 ```bash
 CARGO_TARGET_DIR=/db/ab-validator/target-ab-oracle-provenance \
-  nix develop .# --command cargo test --manifest-path crates/ab-oracle/Cargo.toml markdown_names_oracle_review_fields -- --nocapture
+  just flake-cargo test --manifest-path crates/ab-oracle/Cargo.toml markdown_names_oracle_review_fields -- --nocapture
 ```
 
 Expected: FAIL because `ReportRow` lacks these fields.
@@ -1058,7 +1058,7 @@ Run:
 
 ```bash
 CARGO_TARGET_DIR=/db/ab-validator/target-ab-oracle-provenance \
-  nix develop .# --command cargo test --manifest-path crates/ab-oracle/Cargo.toml -- --nocapture
+  just flake-cargo test --manifest-path crates/ab-oracle/Cargo.toml -- --nocapture
 
 bash tests/adapter-fidelity-smoke.sh
 bash tests/adapter-oracle-report-smoke.sh
@@ -1145,10 +1145,10 @@ bash tests/adapter-oracle-report-smoke.sh
 bash tests/aat-fidelity-marimo-notebook-smoke.sh
 
 CARGO_TARGET_DIR=/db/ab-validator/target-ab-oracle-provenance \
-  nix develop .# --command cargo test --manifest-path crates/ab-oracle/Cargo.toml -- --nocapture
+  just flake-cargo test --manifest-path crates/ab-oracle/Cargo.toml -- --nocapture
 
 CARGO_TARGET_DIR=/db/ab-validator/target-ab-coverage-oracle \
-  nix develop .# --command cargo test --manifest-path crates/ab-coverage/Cargo.toml -- --nocapture
+  just flake-cargo test --manifest-path crates/ab-coverage/Cargo.toml -- --nocapture
 ```
 
 Expected: every command exits 0.

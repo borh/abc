@@ -3979,7 +3979,7 @@ fn read_warehouse_table(run_dir: &Path, table: WarehouseTable) -> Result<Vec<Rec
 }
 
 fn read_warehouse_parquet_file(path: &Path) -> Result<Vec<RecordBatch>> {
-    let file = File::open(&path).with_context(|| format!("failed to open {}", path.display()))?;
+    let file = File::open(path).with_context(|| format!("failed to open {}", path.display()))?;
     let reader = ParquetRecordBatchReaderBuilder::try_new(file)
         .with_context(|| format!("failed to read parquet metadata from {}", path.display()))?
         .build()

@@ -526,7 +526,7 @@ pub(crate) fn stage_parquet_table_part(
 }
 
 fn parquet_file_row_count(path: &Path) -> Result<u64> {
-    let file = File::open(&path).with_context(|| format!("failed to open {}", path.display()))?;
+    let file = File::open(path).with_context(|| format!("failed to open {}", path.display()))?;
     let builder = ParquetRecordBatchReaderBuilder::try_new(file)
         .with_context(|| format!("failed to read parquet metadata from {}", path.display()))?;
     Ok(builder.metadata().file_metadata().num_rows() as u64)

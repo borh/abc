@@ -887,10 +887,7 @@ fn run_analyze_aat_warehouse_parallel(
             let queue = Arc::clone(&queue);
             handles.push(scope.spawn(move || -> Result<WarehouseShardOutput> {
                 let mut shard_run_dirs = Vec::new();
-                loop {
-                    let Some(batch) = take_warehouse_work_batch(&queue) else {
-                        break;
-                    };
+                while let Some(batch) = take_warehouse_work_batch(&queue) {
                     let shard_index = batch.shard_index;
                     let batch_is_large = batch.is_large;
                     let batch_len = batch.inputs.len();

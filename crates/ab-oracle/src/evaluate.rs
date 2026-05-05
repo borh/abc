@@ -158,21 +158,21 @@ fn evaluate_node_assertions(case: &OracleCase, document: &AatDocument, failures:
             continue;
         }
 
-        if let Some(expected) = assertion.count {
-            if matches != expected as usize {
-                failures.push(format!(
-                    "expected {} {} nodes at {}, found {}",
-                    expected, assertion.kind, assertion.selector, matches
-                ));
-            }
+        if let Some(expected) = assertion.count
+            && matches != expected as usize
+        {
+            failures.push(format!(
+                "expected {} {} nodes at {}, found {}",
+                expected, assertion.kind, assertion.selector, matches
+            ));
         }
-        if let Some(expected) = assertion.min_count {
-            if matches < expected as usize {
-                failures.push(format!(
-                    "expected at least {} {} nodes at {}, found {}",
-                    expected, assertion.kind, assertion.selector, matches
-                ));
-            }
+        if let Some(expected) = assertion.min_count
+            && matches < expected as usize
+        {
+            failures.push(format!(
+                "expected at least {} {} nodes at {}, found {}",
+                expected, assertion.kind, assertion.selector, matches
+            ));
         }
     }
 }

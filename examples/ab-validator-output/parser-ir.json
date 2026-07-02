@@ -1,6 +1,6 @@
 {
   "schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-  "schema_hash": "sha256:13e3127fe8eaa0649f83fd5c12e11923115810b454c6d3d22996b00e1218623f",
+  "schema_hash": "sha256:b22d3f24676d443972a543305a2536783762d6a102c42b2efafbf92849d16f13",
   "source": {
     "work_content_hash": "sha256:a100000000000000000000000000000000000000000000000000000000000001",
     "source_path": "fixtures/smoke-work/fixture-0001.txt",
@@ -10,27 +10,28 @@
   "nodes": [
     {
       "type": "heading",
-      "span": { "start": 0, "end": 4, "line": 1, "column": 1 },
+      "span": { "start": 0, "end": 4, "line": 1, "column": 1, "coordinate_system": "decoded_utf8" },
       "text": "一",
       "level": 1
     },
     {
       "type": "text",
-      "span": { "start": 5, "end": 8, "line": 2, "column": 1 },
+      "span": { "start": 5, "end": 8, "line": 2, "column": 1, "coordinate_system": "decoded_utf8" },
       "text": "吾輩"
     },
     {
       "type": "ruby",
-      "span": { "start": 8, "end": 16, "line": 2, "column": 4 },
+      "span": { "start": 8, "end": 16, "line": 2, "column": 4, "coordinate_system": "decoded_utf8" },
       "ruby": {
         "base": "猫",
         "reading": "ねこ",
-        "scope": "explicit"
+        "scope": "explicit",
+        "direction": "right"
       }
     },
     {
       "type": "gaiji",
-      "span": { "start": 17, "end": 28, "line": 2, "column": 12 },
+      "span": { "start": 17, "end": 28, "line": 2, "column": 12, "coordinate_system": "decoded_utf8" },
       "gaiji": {
         "raw_marker": "※［＃未解決外字］",
         "reference": null,
@@ -42,7 +43,7 @@
     },
     {
       "type": "editor-note",
-      "span": { "start": 29, "end": 37, "line": 3, "column": 1 },
+      "span": { "start": 29, "end": 37, "line": 3, "column": 1, "coordinate_system": "decoded_utf8" },
       "note": {
         "raw": "［＃地付き］",
         "category": "indentation"
@@ -54,7 +55,7 @@
       "severity": "warning",
       "code": "UNRESOLVED_GAIJI",
       "message": "Gaiji marker was preserved without Unicode resolution.",
-      "span": { "start": 17, "end": 28, "line": 2, "column": 12 },
+      "span": { "start": 17, "end": 28, "line": 2, "column": 12, "coordinate_system": "decoded_utf8" },
       "construct": "gaiji",
       "recovery": "Preserved raw marker in parser IR."
     }

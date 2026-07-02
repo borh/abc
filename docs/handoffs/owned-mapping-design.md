@@ -124,7 +124,7 @@ finalized (see Task 7, Step 1).
     { "rule_id": "A-03", "category": "AMBIGUITY", "aat_pointer": "blocks[*].content[*].accent", "parser_ir_pointer": "nodes[*].type='emphasis'", "action": "project", "description": "AAT accent is mapped to parser-IR emphasis; accent code/name semantics are not preserved (probe ledger AMBIGUITY-3)." },
     { "rule_id": "A-04", "category": "AMBIGUITY", "aat_pointer": "meta.source_hash", "parser_ir_pointer": "source.work_content_hash", "action": "project", "description": "AAT source_hash is a hash of raw source bytes; parser-IR work_content_hash is a content hash. Identifier semantics differ (probe ledger AMBIGUITY-4)." },
     { "rule_id": "L-01", "category": "LOSS", "aat_pointer": "blocks[*].heading.style", "parser_ir_pointer": null, "action": "drop", "description": "Heading style (e.g. 'main') has no parser-IR field (probe ledger LOSS-1)." },
-    { "rule_id": "L-02", "category": "LOSS", "aat_pointer": "blocks[*].content[*].ruby.direction", "parser_ir_pointer": null, "action": "drop", "description": "Ruby direction (right/left) has no parser-IR field (probe ledger LOSS-2)." },
+    { "rule_id": "L-02", "category": "LOSS", "aat_pointer": "blocks[*].content[*].ruby.direction", "parser_ir_pointer": null, "action": "drop", "description": "Superseded by ADR 0024: parser-IR now has ruby.direction; production mapping should project direction directly and omit this LOSS divergence. Original probe ledger classified it as LOSS-2." },
     { "rule_id": "L-03", "category": "LOSS", "aat_pointer": "blocks[*].content[*].gaiji.unicode", "parser_ir_pointer": null, "action": "drop", "description": "AAT does not separate unicode codepoint from resolved string; parser-IR gaiji.unicode cannot be reliably populated (probe ledger LOSS-3)." },
     { "rule_id": "L-04", "category": "LOSS", "aat_pointer": "blocks[*].content[*].accent.name", "parser_ir_pointer": null, "action": "drop", "description": "Accent name (e.g. 'circumflex') has no parser-IR field (probe ledger LOSS-4)." },
     { "rule_id": "L-05", "category": "LOSS", "aat_pointer": "blocks[*].content[*].figure.css_class", "parser_ir_pointer": null, "action": "drop", "description": "Figure css_class (e.g. 'source-note') has no parser-IR field (probe ledger LOSS-5)." },
@@ -259,7 +259,7 @@ policy per category is:
 | A-03 | blocks[1].content[4].accent | AMBIGUITY | Map to `emphasis`; record loss of accent code/name semantics. |
 | A-04 | meta.source_hash | AMBIGUITY | Copy to `source.work_content_hash`; record raw-bytes vs content-hash semantics. |
 | L-01 | blocks[0].heading.style | LOSS | Drop; record. |
-| L-02 | blocks[1].content[1].ruby.direction | LOSS | Drop; record. |
+| L-02 | blocks[1].content[1].ruby.direction | Superseded LOSS | ADR 0024 adds parser-IR `ruby.direction`; project directly and do not record this as a LOSS divergence. |
 | L-03 | blocks[1].content[3].gaiji.unicode | LOSS | Drop; record. |
 | L-04 | blocks[1].content[4].accent.name | LOSS | Drop; record. |
 | L-05 | blocks[2].content[0].figure.css_class | LOSS | Drop; record. |
@@ -315,9 +315,11 @@ There are **three independent version axes**:
 2. **parser-IR** — URI `schema_id` + content `schema_hash`. Additive
    parser-IR changes must be optional so older emitted documents remain valid.
    Breaking changes change the schema URI/hash.
-3. **Mapping** — semver `mapping_version` + `mapping_schema_hash`. Patch =
+3. **Mapping** — semver `mapping_version` + document `mapping_hash`. Patch =
    wording/clarifications; minor = new transform rules for the same AAT/parser-IR;
-   major = new AAT or parser-IR major target.
+   major = new AAT or parser-IR major target. `mapping_schema_hash` remains
+   provenance for the mapping-document contract; it is not the identity-bearing
+   transform dimension.
 
 ### Compatibility registry
 
@@ -327,6 +329,7 @@ Create `data/aat-parser-ir-compatibility.edn` owned by ABC:
 [{:aat_version 1
   :mapping_id "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1"
   :mapping_version "1.0.0"
+  :mapping_hash "sha256:<hash-of-mapping-document>"
   :mapping_schema_hash "sha256:<hash-of-abc-mapping-schema>"
   :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
   :parser_ir_schema_hash "sha256:<hash-of-parser-ir-schema>"
@@ -337,8 +340,9 @@ Create `data/aat-parser-ir-compatibility.edn` owned by ABC:
 A compatibility entry is valid iff:
 
 - the mapping document validates against
-  `schemas/aat-parser-ir-mapping.schema.json` and its declared
-  `mapping_schema_hash` matches the live mapping-schema hash, and
+  `schemas/aat-parser-ir-mapping.schema.json`, its JCS document hash matches
+  `mapping_hash`, and its declared `mapping_schema_hash` matches the live
+  mapping-schema hash, and
 - the `parser_ir_schema_hash` matches either the live parser-IR schema hash or
   a parser-IR schema hash that is itself registered as backward-compatible.
 
@@ -398,7 +402,7 @@ The same check applies to the mapping schema hash.
 - `schemas/aat-parser-ir-divergence.schema.json` — divergence sidecar contract
 - `schemas/parser-ir.schema.json` — add `derived_from`
 - `schemas/manifest-inputs.schema.json` — add mapping hash
-- `schemas/manifest.schema.json` — add `aat_parser_ir_mapping_schema_hash` and sidecar role
+- `schemas/manifest.schema.json` — add `aat_parser_ir_mapping_hash` and sidecar role
 - `data/aat-parser-ir-compatibility.edn` — compatibility registry
 - `src/abc/tools/aat_parser_ir_compat.clj` — registry loader/checker
 - `src/abc/tools/validate_design_bundle.clj` — use registry
@@ -474,32 +478,32 @@ The same check applies to the mapping schema hash.
 
 **Interfaces:**
 - Consumes: `schemas/aat-parser-ir-mapping.schema.json` (Task 1)
-- Produces: `manifest-inputs.json` carries `mapping_schema_hash`; Malli and tests enforce it.
+- Produces: `manifest-inputs.json` carries `mapping_hash`; Malli and tests enforce it.
 
 **Steps:**
 
 - [ ] **Step 1:** In `schemas/manifest-inputs.schema.json`, add to `required`:
-  `"mapping_schema_hash"`. Add properties:
+  `"mapping_hash"`. Add properties:
   ```json
-  "mapping_schema_hash": { "$ref": "#/$defs/hash" },
+  "mapping_hash": { "$ref": "#/$defs/hash" },
   "aat_version": { "type": "integer", "minimum": 1 },
   "mapping_id": { "type": "string" },
   "mapping_version": { "type": "string" }
   ```
-- [ ] **Step 2:** In `src/abc/tools/malli.clj`, add `"mapping_schema_hash"` to the `::manifest-inputs` required-keys list.
-- [ ] **Step 3:** Compute the live mapping-schema hash:
+- [ ] **Step 2:** In `src/abc/tools/malli.clj`, add `"mapping_hash"` to the `::manifest-inputs` required-keys list.
+- [ ] **Step 3:** Compute the live mapping document hash after the mapping document exists:
   ```bash
-  clojure -e "(require 'abc.tools.manifest) (println (abc.tools.manifest/schema-hash \"schemas/aat-parser-ir-mapping.schema.json\"))"
+  clojure -e "(require 'abc.tools.manifest) (println (abc.tools.manifest/schema-hash \"ab-validator/data/aat-to-parser-ir-mapping-v1.json\"))"
   ```
 - [ ] **Step 4:** Update `examples/ab-validator-output/manifest-inputs.json`:
   ```json
-  "mapping_schema_hash": "sha256:<hash-from-step-3>",
+  "mapping_hash": "sha256:<hash-from-step-3>",
   "aat_version": 1,
   "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1",
   "mapping_version": "1.0.0"
   ```
-- [ ] **Step 5:** Update `test/abc/tools/validate_design_bundle_test.clj` `complete-manifest-inputs` with the same required `mapping_schema_hash`.
-- [ ] **Step 6:** Update every `manifest-inputs.json` literal in `test/abc/tools/materialize_import_test.clj` with `"mapping_schema_hash": "sha256:..."` using any valid hash (e.g. the one from Step 3).
+- [ ] **Step 5:** Update `test/abc/tools/validate_design_bundle_test.clj` `complete-manifest-inputs` with the same required `mapping_hash`.
+- [ ] **Step 6:** Update every `manifest-inputs.json` literal in `test/abc/tools/materialize_import_test.clj` with `"mapping_hash": "sha256:..."` using any valid hash (e.g. the one from Step 3).
 - [ ] **Step 7:** Run:
   ```bash
   clojure -M:test -n abc.tools.validate-design-bundle-test
@@ -527,30 +531,30 @@ The same check applies to the mapping schema hash.
 
 **Interfaces:**
 - Consumes: `schemas/manifest.schema.json`, `src/abc/tools/manifest.clj` contracts
-- Produces: `manifest_identity_object` contains `aat_parser_ir_mapping_schema_hash`; sidecar role allows `mapping-divergence`.
+- Produces: `manifest_identity_object` contains `aat_parser_ir_mapping_hash`; sidecar role allows `mapping-divergence`.
 
 **Steps:**
 
 - [ ] **Step 1:** In `schemas/manifest.schema.json`:
-  - Add `"aat_parser_ir_mapping_schema_hash"` to `identityObject.required`.
+  - Add `"aat_parser_ir_mapping_hash"` to `identityObject.required`.
   - Add property:
     ```json
-    "aat_parser_ir_mapping_schema_hash": { "$ref": "#/$defs/nullableHash" }
+    "aat_parser_ir_mapping_hash": { "$ref": "#/$defs/nullableHash" }
     ```
   - Add `"mapping-divergence"` to the `sidecar.role` enum.
 - [ ] **Step 2:** In `src/abc/tools/manifest.clj`:
-  - Add `"aat_parser_ir_mapping_schema_hash"` to `identity-keys`.
+  - Add `"aat_parser_ir_mapping_hash"` to `identity-keys`.
   - In `identity-object`, resolve it from `manifest-inputs` for parser-IR kinds, otherwise `nil`:
     ```clojure
-    "aat_parser_ir_mapping_schema_hash" (get manifest-inputs "mapping_schema_hash")
+    "aat_parser_ir_mapping_hash" (get manifest-inputs "mapping_hash")
     ```
 - [ ] **Step 3:** Update `fixtures/canonicalization/manifest-identity-object.json` and `.canonical.json`:
-  add `"aat_parser_ir_mapping_schema_hash": null` in sorted position and recompute the expected hash.
+  add `"aat_parser_ir_mapping_hash": null` in sorted position and recompute the expected hash.
 - [ ] **Step 4:** Update `src/abc/tools/validate_design_bundle.clj` `validate-canonicalization!` expected hash to the value from Step 3.
 - [ ] **Step 5:** Update `examples/v0/example-work/source.manifest.json`,
   `examples/v0/example-work/failure-manifest.example.json`, and
   `examples/v0/example-work/manifest.json` by adding
-  `"aat_parser_ir_mapping_schema_hash": null` (or the real mapping hash if the
+  `"aat_parser_ir_mapping_hash": null` (or the real mapping hash if the
   artifact is AAT-derived) and recomputing each `artifact_id`.
 - [ ] **Step 6:** Regenerate the Turtle fixtures:
   ```bash
@@ -573,14 +577,14 @@ The same check applies to the mapping schema hash.
 - Modify: `test/abc/tools/materialize_import_test.clj`
 
 **Interfaces:**
-- Consumes: `mapping_schema_hash` from `manifest-inputs.json`
+- Consumes: `mapping_hash` from `manifest-inputs.json`
 - Produces: parser-IR manifest includes mapping identity and sidecars divergence file if present.
 
 **Steps:**
 
 - [ ] **Step 1:** In `src/abc/tools/materialize_import.clj`, update `parser-ir-manifest`:
-  - Pass `:aat_parser_ir_mapping_schema_hash` via `identity-object`.
-  - Add `(get manifest-inputs "mapping_schema_hash")` to `:used`.
+  - Pass `:aat_parser_ir_mapping_hash` via `identity-object`.
+  - Add `(get manifest-inputs "mapping_hash")` to `:used`.
   - If `input-dir/divergence.jsonl` exists, add a sidecar:
     ```clojure
     {"role" "mapping-divergence"
@@ -625,16 +629,17 @@ The same check applies to the mapping schema hash.
   (defn load-registry []
     (-> registry-path files/path slurp edn/read-string))
 
-  (defn compatible? [registry {:keys [aat_version mapping_id mapping_version parser_ir_schema_hash mapping_schema_hash]}]
+  (defn compatible? [registry {:keys [aat_version mapping_id mapping_version mapping_hash parser_ir_schema_hash mapping_schema_hash]}]
     ...)
   ```
   Implement `compatible?` to return `true` only when an entry matches all
-  supplied keys and the `mapping_schema_hash` matches the live mapping-schema
-  hash.
+  supplied keys, the `mapping_hash` matches the mapping document JCS hash, and
+  the `mapping_schema_hash` matches the live mapping-schema hash.
 
 - [ ] **Step 2:** Create `data/aat-parser-ir-compatibility.edn` with the entry
   from §3, inserting the live hashes:
-  - mapping-schema hash from Task 3 Step 3
+  - mapping document hash from Task 3 Step 3
+  - mapping-schema hash from `schemas/aat-parser-ir-mapping.schema.json`
   - parser-IR schema hash: compute with
     ```bash
     clojure -e "(require 'abc.tools.manifest) (println (abc.tools.manifest/schema-hash \"schemas/parser-ir.schema.json\"))"
@@ -648,8 +653,9 @@ The same check applies to the mapping schema hash.
       (let [aat-version (get-in parser-ir ["derived_from" "aat_version"])
             mapping-id (get-in parser-ir ["derived_from" "mapping_id"])
             mapping-version (get-in parser-ir ["derived_from" "mapping_version"])
+            mapping-hash (get manifest-inputs "mapping_hash")
             parser-ir-hash (get parser-ir "schema_hash")
-            mapping-hash (get-in parser-ir ["derived_from" "mapping_schema_hash"])]
+            mapping-schema-hash (get-in parser-ir ["derived_from" "mapping_schema_hash"])]
         (when-not (compat/compatible? (compat/load-registry) {...})
           [(str "No registered compatibility rule for ...")])))
     ```
@@ -906,3 +912,14 @@ Step 5 (the ab-validator mapping crate default CLI behavior), and the §5
 deferred-decisions warigaki annotation. The warigaki-specific note is
 preserved: warigaki fires 0× in real aozora-rs data, so the real unmeasured
 risk the gate guards is aozora2html `style` nodes (Finding G), not warigaki.
+
+---
+
+## Errata 2026-07-03 (ADR 0024: `ruby.direction` promoted into parser-IR)
+
+ADR 0024 adds optional parser-IR `ruby.direction`, so the original probe rule
+L-02 is no longer a production LOSS. Implementers should project
+`blocks[*].content[*].ruby.direction` to `nodes[*].type='ruby'.ruby.direction`
+and omit L-02 from the divergence sidecar. The historical L-02 row remains in
+the synthesized probe ledger only to explain why this parser-IR addition was
+prioritized.

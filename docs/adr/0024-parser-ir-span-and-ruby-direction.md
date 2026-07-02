@@ -1,7 +1,8 @@
 # ADR 0024: Parser-IR Additive Additions — Span Coordinate Semantics and `ruby.direction`
 
-Status: Draft
+Status: Accepted
 Date: 2026-07-02
+Accepted: 2026-07-03
 Supersedes: none
 Depends on: ADR 0002 (source_span_coverage gate), `docs/handoffs/review-reflection.md` §1.3/§1.5, `docs/handoffs/full-corpus-probe.md`
 
@@ -49,11 +50,21 @@ This promotes `ruby.direction` out of the v1 LOSS ledger. Existing fixtures that
 
 - `schemas/parser-ir.schema.json` changes, which changes the JCS schema hash used by parser-IR manifests.
 - Existing parser-IR fixtures remain valid because all new fields are optional.
-- The eventual fixture regeneration + schema-hash rotation happens once for this batch, not once per addition.
+- The fixture regeneration + schema-hash rotation happened once for this batch, not once per addition.
 
-## Deferred follow-ups (not in this commit)
+## Implementation Status
 
-1. **Fixture regeneration:** Regenerate all committed parser-IR fixtures to include `coordinate_system: "decoded_utf8"` and `ruby.direction` where known.
-2. **Schema-hash rotation:** Compute the new JCS hash of `schemas/parser-ir.schema.json` and update every fixture's `schema_hash` plus any manifest/mapping documents that reference it.
-3. **Owned-mapping-design rule updates:** Update `docs/handoffs/owned-mapping-design.md` rule **L-02** (`ruby.direction` LOSS) to reflect that the field now has a parser-IR home (it becomes a direct projection rather than a loss). Rule **I-01** (`ruby.scope` INVENTION) remains an invention because AAT still does not supply scope, but the mapping document should be reviewed alongside L-02. (The task framing referenced "I-02"; the live mapping document assigns `ruby.scope` to I-01 and `gaiji.raw_marker` to I-02, so the correction is recorded here.)
-4. **Accept this ADR:** Change status from Draft to Accepted only after fixtures regenerate and the schema-hash rotation lands.
+Accepted on 2026-07-03 after `schemas/parser-ir.schema.json` gained
+`span.coordinate_system` and `ruby.direction`, the imported ab-validator
+boundary fixture was rotated to parser-IR schema hash
+`sha256:b22d3f24676d443972a543305a2536783762d6a102c42b2efafbf92849d16f13`,
+and `nix run .#validate-design-bundle` completed successfully.
+
+The v0 design-bundle parser-IR example still uses synthetic fixture hashes
+inside the design example manifest; that fixture remains schema-valid and is
+not the external parser boundary hash gate.
+
+## Deferred follow-ups
+
+1. **Producer implementation:** Future AAT -> parser-IR mapping code should emit `span.coordinate_system: "decoded_utf8"` and project known AAT `ruby.direction` values into parser-IR.
+2. **AAT scope remains invented:** Rule **I-01** (`ruby.scope` INVENTION) remains an invention because AAT still does not supply scope. (The task framing referenced "I-02"; the live mapping document assigns `ruby.scope` to I-01 and `gaiji.raw_marker` to I-02, so the correction is recorded here.)

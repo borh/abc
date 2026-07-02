@@ -464,25 +464,51 @@ Several Aozora-specific policies need to become explicit schema/config inputs:
   Authoritative sources for replacement selection include the Mojikiban
   (文字情報基盤) database and the CID NINJAL kana reference; see
   `references/character-normalization-research.md`.
+  Source: `annotation/external_character.html` (gaiji handling); the
+  comprehensive reference is `annotation/detail.html`.
 - Ruby scope: preserve whether ruby scope was explicit with `｜`, inferred
   from preceding character classes, group ruby, mid-word ruby, nested or
   ambiguous ruby, and the exact source span used for the base text.
+  Source: `annotation/etc.html` (ruby is documented across pages; the
+  explicit-scope `｜` marker is in etc).
 - Editor-note taxonomy: classify notes such as emphasis, headings, indentation,
   page breaks, images, captions, external characters, accent marks, and
   miscellaneous editorial instructions. Unknown notes should be structured
   warnings rather than discarded strings.
+  Source: `annotation/index.html` (the 注記一覧 index) plus the per-family
+  pages (`annotation/emphasis.html`, `annotation/heading.html`,
+  `annotation/layout_1.html`, etc.).
 - Bibliographic drift: keep Aozora work ID and person ID as source identifiers,
   but also hash the relevant metadata record used for an artifact. Metadata
   edits should not masquerade as text edits. External bibliographic databases
   such as JBDB (`https://jbdb.jp/`) may be used for cross-validation or
   enrichment, but they do not replace the hashed metadata record as an identity
   input.
+  Source: ABC internal; the Aozora work/person CSV at
+  `list_person_all_extended.utf8.csv` (not an annotation manual page).
 - Text normalization: record encoding, line-ending normalization, Unicode
   normalization, Japanese metadata normalization policy, and front/back matter
   policy as explicit configuration. NFC vs. NFKC choices for Japanese names
   and bibliographic strings affect `metadata_record_hash` and must not be
   implicit. Combining-dakuten kana generation and precomposed-vs.-sequence
   policy should be documented; see `references/character-normalization-research.md`.
+  Source: `annotation/external_character.html` plus the encoding rules in
+  `aozora-manual/index-input.html`.
+
+Sources:
+
+The following Aozora Bunko prose spec pages were referenced above:
+- `annotation/external_character.html`
+- `annotation/detail.html`
+- `annotation/etc.html`
+- `annotation/index.html`
+- `annotation/emphasis.html`
+- `annotation/heading.html`
+- `annotation/layout_1.html`
+- `aozora-manual/index-input.html`
+
+These are Aozora Bunko's own prose spec pages; they document conventions
+but are not under ABC's control and may change.
 
 ## TEI and XML Profile
 

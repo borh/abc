@@ -143,7 +143,7 @@ finalized (see Task 7, Step 1).
     { "rule_id": "I-06", "category": "INVENTION", "aat_pointer": null, "parser_ir_pointer": "source.source_path", "action": "invent", "description": "parser-IR source_path optional; AAT has none — default null (probe ledger INVENTION-6)." },
     { "rule_id": "I-07", "category": "INVENTION", "aat_pointer": null, "parser_ir_pointer": "schema_id, schema_hash", "action": "invent", "description": "parser-IR requires ABC schema identity; AAT only has version=1 — producer hardcodes current parser-IR schema (probe ledger INVENTION-7)." },
     { "rule_id": "I-08", "category": "INVENTION", "aat_pointer": null, "parser_ir_pointer": "errors[]", "action": "invent", "description": "parser-IR requires errors[]; AAT has no errors concept — default empty (probe ledger INVENTION-8)." },
-    { "rule_id": "U-01", "category": "UNSUPPORTED", "aat_pointer": "blocks[*].content[*].warigaki", "parser_ir_pointer": null, "action": "drop-sidecar", "description": "parser-IR has no warigaki node; v1 mapping records the loss rather than refusing (probe ledger UNSUPPORTED-1). Refusal available via --strict." },
+    { "rule_id": "U-01", "category": "UNSUPPORTED", "aat_pointer": "blocks[*].content[*].warigaki", "parser_ir_pointer": null, "action": "drop-sidecar", "description": "parser-IR has no warigaki node; v1 mapping records the loss rather than refusing (probe ledger UNSUPPORTED-1). Default in development = drop-sidecar + critical-severity record; release-smoke (ADR 0006) fails on any critical-severity divergence record." },
     { "rule_id": "I-09", "category": "INVENTION", "aat_pointer": "blocks[*].content[*].style.style_type", "parser_ir_pointer": "nodes[*].type='emphasis'.style", "action": "invent", "description": "AAT style node (e.g. style_type='boten') -> parser-IR emphasis; style_type preserved verbatim in emphasis.style, child content emitted (full-corpus probe Finding G: 28,492 nodes in 5,474 files)." }
   ],
   "loss_taxonomy": {
@@ -242,7 +242,9 @@ policy per category is:
 | **AMBIGUITY** | 4 | map closest value, emit sidecar | yes | Both schemas have the concept, but semantics/range differ. The mapping documents the difference. |
 | **LOSS** | 10 | drop, emit sidecar | yes | Information exists only in AAT; parser-IR has no home. Adapter-faithfulness-only LOSS (probe LOSS-8/9/10) is acceptable for publication identity; publication-feature LOSS (probe LOSS-1/2/3/4/5/6/7) is acceptable in v1 but must be auditable. |
 | **INVENTION** | 8 | invent per documented rule | value-level: yes; schema-level: no | Filling required parser-IR fields is necessary. Value-level inventions (ruby scope, raw marker, emphasis style, image src) encode producer choices and are recorded. Schema-level inventions (schema identity, normalization default, null source_path, empty errors) are pure mapping constants. |
-| **UNSUPPORTED** | 1 (warigaki) + style nodes (mapped via I-09, not UNSUPPORTED) | **drop-sidecar** + critical severity (refuse only via `--strict`) | yes | Full-corpus probe (`docs/handoffs/full-corpus-probe.md` Finding G/H): the mapper's `style` UNSUPPORTED fires 28,492× across 5,474 files (30.6% of the corpus) — a hard `refuse` default would halt ingestion of ~1 in 3 works. Warigaki fires 0× in real aozora-rs output (17,894 docs). Demote default to `drop-sidecar`; add STYLE→EMPHASIS rule (I-09) so `style` maps rather than refuses. |
+| **UNSUPPORTED** | 1 (warigaki) + style nodes (mapped via I-09, not UNSUPPORTED) | **drop-sidecar** + critical severity (mode-bound: dev default; release-smoke fails on critical-severity records) | yes | Full-corpus probe (`docs/handoffs/full-corpus-probe.md` Finding G/H): the mapper's `style` UNSUPPORTED fires 28,492× across 5,474 files (30.6% of the corpus) — a hard `refuse` default would halt ingestion of ~1 in 3 works. Warigaki fires 0× in real aozora-rs output (17,894 docs). Demote default to `drop-sidecar`; add STYLE→EMPHASIS rule (I-09) so `style` maps rather than refuses. |
+
+> **POLICY NOTE (mode-binding).** Strictness is bound to release mode, not a CLI flag. Development builds default to **drop-sidecar** (so a single rare construct doesn't halt ingestion); **release-smoke** (ADR 0006) fails on any divergence record with `severity=critical`. This converts the policy from operator-discipline into a gate — there is no `--strict` flag to forget to set. The warigaki-specific note still applies: warigaki fires 0× in real aozora-rs data, so the real unmeasured risk this gate addresses is aozora2html `style` nodes (Finding G), not warigaki.
 
 ### Per-entry disposition using probe ledger IDs
 
@@ -276,7 +278,7 @@ policy per category is:
 | I-06 | source.source_path | INVENTION | Default `null`; no per-doc record. |
 | I-07 | schema_id/schema_hash | INVENTION | Hardcode current parser-IR schema; no per-doc record. |
 | I-08 | errors[] | INVENTION | Default `[]`; no per-doc record. |
-| U-01 | blocks[3].content[1].warigaki | UNSUPPORTED | **Drop with critical-severity record.** Default behavior records the loss and continues. `--strict` mode refuses (exits non-zero) for pipeline stages that need hard guarantees. (Annotated per `docs/handoffs/full-corpus-probe.md`: refusal fires 0× in real aozora-rs data; the original `refuse` default was unsafe because the same category caught `style` nodes at 30.6% of the corpus.) |
+| U-01 | blocks[3].content[1].warigaki | UNSUPPORTED | **Drop with critical-severity record.** Default behavior records the loss and continues; release-smoke (ADR 0006) fails on any divergence record with `severity=critical`, so the guarantee is enforced by the release gate rather than a per-invocation flag. (Annotated per `docs/handoffs/full-corpus-probe.md`: warigaki fires 0× in real aozora-rs data; the original `refuse` default was unsafe because the same category caught `style` nodes at 30.6% of the corpus.) |
 | I-09 | blocks[*].content[*].style.style_type='boten' (and other style_type values) | INVENTION (metadata) / STRUCTURAL (mapping) | Map `style` → parser-IR `emphasis`; preserve `style_type` verbatim in `emphasis.style`; emit child content in order. Recorded as a value-level invention. (Probe Finding G: 28,492 nodes in 5,474 files.) |
 
 The divergence sidecar schema (`schemas/aat-parser-ir-divergence.schema.json`):
@@ -709,13 +711,13 @@ The same check applies to the mapping schema hash.
     --mapping data/aat-to-parser-ir-mapping-v1.json \
     --output-dir bundle/
   ```
-  - In default mode, `U-01` causes `MappingError::UnsupportedConstruct` and exit code 3.
-    **Correction (full-corpus probe Finding H):** refusal must be opt-in via `--strict`. Default drops with a critical-severity divergence record, because `style` UNSUPPORTED fires on 30.6% of real works (Finding G) and warigaki fires 0× — a default that refuses would halt ingestion of ~1 in 3 works. `--strict` retains the hard-exit behavior for pipeline stages that need it.
+  - **Default mode** (the only behavior the CLI has): a UNSUPPORTED construct (e.g. `U-01` warigaki) is dropped and emits a critical-severity divergence record; the CLI exits 0 and continues. There is no `--strict` flag to toggle.
+    **Correction (full-corpus probe Finding H):** strictness is mode-bound, not a CLI flag. The default behavior drops the construct and emits a critical-severity divergence record, because `style` UNSUPPORTED fires on 30.6% of real works (Finding G) and warigaki fires 0× — a default that refuses would halt ingestion of ~1 in 3 works. The hard-guarantee behavior — fail on any critical-severity divergence record — is enforced by **release-smoke** (ADR 0006), not by a per-invocation `--strict` flag operators must remember to set.
 - [ ] **Step 6:** Add tests in `tests/mapping_tests.rs` that:
   - Map the probe's `prototypes/aat-to-parser-ir-probe/aat-sample.json` and
     assert the output validates against ABC's `schemas/parser-ir.schema.json`
     and `schemas/aat-parser-ir-divergence.schema.json`.
-  - Assert `warigaki` triggers refusal ONLY in `--strict` mode (default mode records and continues).
+  - Assert `warigaki` (and any UNSUPPORTED construct) records a critical-severity divergence in default mode and continues; assert the release-smoke gate (ADR 0006) fails on any critical-severity divergence record. There is no `--strict` flag — strictness is bound to release mode, not a CLI option.
   - Assert `style` nodes map to `emphasis` (I-09) and produce **zero UNSUPPORTED entries** on a real aozora-rs AAT (full-corpus probe Finding G — the synthesized sample passed but real data exposed the `style` gap).
 - [ ] **Step 7:** Run:
   ```bash
@@ -785,8 +787,10 @@ ADRs or TEI vocabulary work:
 
 1. **Whether `warigaki` should be added to parser-IR.**
    This is a TEI / publication-IR vocabulary decision, not a mapping decision.
-   The v1 mapping **records** warigaki as a loss by default (refuses only with
-   `--strict`); once parser-IR supports it, a new mapping version and registry
+   The v1 mapping **records** warigaki as a loss by default (drop-sidecar +
+   critical-severity record); release-smoke (ADR 0006) fails on any
+   critical-severity divergence record. Once parser-IR supports it, a new
+   mapping version and registry
    entry can be added. (Annotated per `docs/handoffs/full-corpus-probe.md`:
    warigaki fires 0× in 17,894 real aozora-rs AAT documents; the original
    `refuse` default was demoted because the same UNSUPPORTED category caught
@@ -839,7 +843,9 @@ refuted three assumptions and confirmed two. Applied corrections:
 
 1. **UNSUPPORTED default policy demoted** (§2 table, U-01 disposition, Task 7
    Step 5, §5 deferred-decisions): `refuse` → `drop-sidecar` + critical
-   severity; refusal now opt-in via `--strict`. Rationale: the mapper's
+   severity; strictness now bound to release mode (release-smoke fails on any
+   critical-severity divergence record) instead of an opt-in `--strict` flag.
+   Rationale: the mapper's
    `style` UNSUPPORTED fires on 28,492 nodes across 5,474 files (30.6% of the
    corpus) — a `refuse` default would halt ~1 in 3 works. Warigaki (the
    original U-01 target) fires 0× in real data.
@@ -885,3 +891,18 @@ This is the kind of bug the existing ADR 0001 SMT check does NOT catch (it
 verifies rule consistency, not field-selection correctness) — flagging that
 SMT gates aren't a substitute for design review of *which* hash is
 identity-bearing, only for *whether* the chosen invariant is self-consistent.
+
+---
+
+## Errata 2026-07-02 (review §1.2: `--strict` CLI flag replaced with dev/release mode-binding)
+
+External review §1.2 proposed replacing the owned-mapping spec's `--strict`
+CLI flag for UNSUPPORTED handling with a mode-binding: default **drop-sidecar**
+in development, but **release-smoke** (ADR 0006) fails on any
+critical-severity divergence record. This converts the policy from
+operator-discipline into a gate — there is no `--strict` flag to forget to
+set. Applied to the U-01 disposition, the §2 loss-handling policy, Task 7
+Step 5 (the ab-validator mapping crate default CLI behavior), and the §5
+deferred-decisions warigaki annotation. The warigaki-specific note is
+preserved: warigaki fires 0× in real aozora-rs data, so the real unmeasured
+risk the gate guards is aozora2html `style` nodes (Finding G), not warigaki.

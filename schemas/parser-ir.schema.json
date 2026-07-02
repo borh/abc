@@ -39,14 +39,15 @@
     },
     "span": {
       "type": "object",
-      "$comment": "end must be greater than or equal to start; JSON Schema cannot compare sibling numeric values portably without a non-standard extension.",
+      "$comment": "Coordinate system is decoded_utf8: start/end are UTF-8 byte offsets into the decoded source string; line is 1-based; column is nullable. All fields except start/end are optional for backwards compatibility. end must be greater than or equal to start; JSON Schema cannot compare sibling numeric values portably without a non-standard extension.",
       "required": ["start", "end"],
       "additionalProperties": false,
       "properties": {
-        "start": { "type": "integer", "minimum": 0 },
-        "end": { "type": "integer", "minimum": 0 },
+        "start": { "type": "integer", "minimum": 0, "description": "UTF-8 byte offset into the decoded source string where the span begins." },
+        "end": { "type": "integer", "minimum": 0, "description": "UTF-8 byte offset into the decoded source string where the span ends." },
         "line": { "type": ["integer", "null"], "minimum": 1 },
-        "column": { "type": ["integer", "null"], "minimum": 1 }
+        "column": { "type": ["integer", "null"], "minimum": 1 },
+        "coordinate_system": { "type": "string", "const": "decoded_utf8", "default": "decoded_utf8", "description": "When present, declares that start/end are UTF-8 byte offsets into the decoded source string." }
       }
     },
     "baseNode": {
@@ -104,7 +105,8 @@
               "properties": {
                 "base": { "type": "string" },
                 "reading": { "type": "string" },
-                "scope": { "type": "string", "enum": ["explicit", "inferred", "group", "mid-word", "ambiguous"] }
+                "scope": { "type": "string", "enum": ["explicit", "inferred", "group", "mid-word", "ambiguous"] },
+                "direction": { "type": ["string", "null"], "enum": ["left", "right", null], "description": "Ruby reading placement relative to base text: left (before base) or right (after base)." }
               }
             }
           }

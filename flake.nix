@@ -407,6 +407,29 @@
               mkdir -p "$out"
               echo "ADR 0001 manifest-identity invariants verified (Z3 reports unsat for both counterexample queries)." > "$out/result.txt"
             '';
+
+          adr0020-drift-cardinality = pkgs.runCommand "abc-adr0020-drift-cardinality"
+            { nativeBuildInputs = [ pkgs.z3 ]; }
+            ''
+              # ADR 0020: verify the person-identity drift event cardinality
+              # invariants with Z3. Counterexample-seeking query; Z3 must
+              # report `unsat`. Offline / Nix-sandbox-safe.
+              # ADR 0020 lines 148-149:
+              #   - a split has exactly 1 predecessor and >= 2 successors
+              #   - a merge has >= 2 predecessors and exactly 1 successor
+              # See docs/adr/r3-drift-cardinality.smt2 for the formal spec.
+              result="$(z3 ${./docs/adr/r3-drift-cardinality.smt2})"
+              case "$result" in
+                unsat) ;;
+                *)
+                  echo "ADR 0020 drift cardinality check FAILED:" >&2
+                  echo "$result" >&2
+                  exit 1
+                  ;;
+              esac
+              mkdir -p "$out"
+              echo "ADR 0020 drift-event cardinality invariants verified (Z3 reports unsat)." > "$out/result.txt"
+            '';
         }
       );
 

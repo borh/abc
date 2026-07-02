@@ -141,9 +141,9 @@
 (deftest schema-hash-errors-test
   (is (empty?
        (validate/schema-hash-errors
-        {"parser_ir_schema_hash" "sha256:13e3127fe8eaa0649f83fd5c12e11923115810b454c6d3d22996b00e1218623f"
+        {"parser_ir_schema_hash" "sha256:b22d3f24676d443972a543305a2536783762d6a102c42b2efafbf92849d16f13"
          "diagnostic_schema_hash" "sha256:e21ef2abdbf64b6fc920b4ef9a3df0e426b7bcc1cad0a6bbdd654f41e8ff302d"})))
-  (is (= ["ab-validator parser_ir_schema_hash sha256:0000000000000000000000000000000000000000000000000000000000000004 does not match ABC parser IR schema hash sha256:13e3127fe8eaa0649f83fd5c12e11923115810b454c6d3d22996b00e1218623f"
+  (is (= ["ab-validator parser_ir_schema_hash sha256:0000000000000000000000000000000000000000000000000000000000000004 does not match ABC parser IR schema hash sha256:b22d3f24676d443972a543305a2536783762d6a102c42b2efafbf92849d16f13"
           "ab-validator diagnostic_schema_hash sha256:0000000000000000000000000000000000000000000000000000000000000008 does not match ABC diagnostic schema hash sha256:e21ef2abdbf64b6fc920b4ef9a3df0e426b7bcc1cad0a6bbdd654f41e8ff302d"]
          (validate/schema-hash-errors
           {"parser_ir_schema_hash" (files/example-hash "04")
@@ -152,8 +152,8 @@
 (deftest parser-ir-schema-hash-errors-test
   (is (empty?
        (validate/parser-ir-schema-hash-errors
-        {"schema_hash" "sha256:13e3127fe8eaa0649f83fd5c12e11923115810b454c6d3d22996b00e1218623f"})))
-  (is (= ["ab-validator parser IR schema_hash sha256:0000000000000000000000000000000000000000000000000000000000000004 does not match ABC parser IR schema hash sha256:13e3127fe8eaa0649f83fd5c12e11923115810b454c6d3d22996b00e1218623f"]
+        {"schema_hash" "sha256:b22d3f24676d443972a543305a2536783762d6a102c42b2efafbf92849d16f13"})))
+  (is (= ["ab-validator parser IR schema_hash sha256:0000000000000000000000000000000000000000000000000000000000000004 does not match ABC parser IR schema hash sha256:b22d3f24676d443972a543305a2536783762d6a102c42b2efafbf92849d16f13"]
          (validate/parser-ir-schema-hash-errors
           {"schema_hash" (files/example-hash "04")}))))
 

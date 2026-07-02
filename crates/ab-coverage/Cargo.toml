@@ -31,3 +31,7 @@ path = "src/bin/merge.rs"
 [[bin]]
 name = "ab-coverage"
 path = "src/bin/coverage.rs"
+
+[[bin]]
+name = "generate_taxonomy"
+path = "src/bin/generate_taxonomy.rs"

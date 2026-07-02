@@ -288,7 +288,7 @@
                       "fixtures/tei/invalid/ruby-missing-reading.xml"
                       #{"abc-ruby-complete"}
                       "fixtures/tei/invalid/source-span-external-ref.xml"
-                      #{"abc-source-span-reference"}
+                      #{"abc-source-span-reference" "abc-source-span-target-exists"}
                       "fixtures/tei/invalid/source-span-dangling-ref.xml"
                       #{"abc-source-span-target-exists"}}})
 

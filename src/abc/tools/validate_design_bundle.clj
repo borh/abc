@@ -273,11 +273,25 @@
                                                   :xml-path path
                                                   :label path})
         actual-errors (rule-ids (filter schematron-error? findings))
-        missing (set/difference expected-rules actual-errors)]
+        expected-set (set expected-rules)
+        actual-set (set actual-errors)
+        missing (set/difference expected-set actual-set)
+        ;; Exact-equality coverage (review §3 root-cause fix): a fixture
+        ;; must fire EXACTLY its declared rule set, not a superset. The
+        ;; prior asymmetry (missing-only) is how the
+        ;; source-span-external-ref.xml drift went undetected: it fired 2
+        ;; rules while declaring 1, and the missing-only check passed.
+        unexpected (set/difference actual-set expected-set)]
     (when (seq missing)
       (throw (ex-info "missing expected Schematron rule"
                       {:fixture path
                        :missing (sort missing)
+                       :actual (sort actual-errors)})))
+    (when (seq unexpected)
+      (throw (ex-info "Schematron fixture fired rules not declared in its expected set (exact-equality violation)"
+                      {:fixture path
+                       :unexpected (sort unexpected)
+                       :expected (sort (seq expected-set))
                        :actual (sort actual-errors)})))))
 
 (defn rule-universe
@@ -322,7 +336,7 @@
                       "fixtures/tei/invalid/ruby-missing-reading.xml"
                       #{"abc-ruby-complete"}
                       "fixtures/tei/invalid/source-span-external-ref.xml"
-                      #{"abc-source-span-reference"}
+                      #{"abc-source-span-reference" "abc-source-span-target-exists"}
                       "fixtures/tei/invalid/source-span-dangling-ref.xml"
                       #{"abc-source-span-target-exists"}}})
 

@@ -201,6 +201,77 @@ morph-warehouse-clean-dry-run:
 	  if [ -e "$d" ]; then echo "$d"; fi; \
 	done
 
+# --- scratch/ hygiene -------------------------------------------------------
+# scratch/ is gitignored materialized output (perf runs, morph smokes, coverage
+# artifacts). Per the project principle that materialized outputs are caches,
+# these are all regenerable via the morph-warehouse- / ab-validator- recipes.
+# Two retention modes:
+#   * scratch-clean KEEP_DAYS    - age-based prune (safe reusable default)
+#   * scratch-keep-recent KEEP_N - keep only the N newest top-level entries
+# Each has a *-dry-run variant. Run dry-run first; deletes are irreversible.
+
+scratch-list:
+	@echo "# scratch/ top-level entries (newest first)"
+	@total=0; \
+	for d in scratch/*; do \
+	  [ -e "$d" ] || continue; \
+	  b=$(du -sb "$d" 2>/dev/null | cut -f1); \
+	  t=$(date -d "@$(stat -c '%Y' "$d")" +%F_%H:%M); \
+	  printf '%s  %14s B  %s\n' "$t" "$b" "$d"; \
+	  total=$((total + b)); \
+	done; \
+	printf '\nTOTAL  %14s B  (scratch/)\n' "$total"
+
+scratch-clean-dry-run KEEP_DAYS='14':
+	@cutoff=$(date -d "-{{KEEP_DAYS}} days" +%s); \
+	total=0; \
+	for d in scratch/*; do \
+	  [ -e "$d" ] || continue; \
+	  [ "$(stat -c '%Y' "$d")" -lt "$cutoff" ] || continue; \
+	  b=$(du -sb "$d" 2>/dev/null | cut -f1); \
+	  total=$((total + b)); \
+	  printf '%-8s %14s B  %s\n' "delete" "$b" "$d"; \
+	done; \
+	printf '\n%-8s %14s B  (would be freed; scratch/ older than %s days)\n' "TOTAL" "$total" "{{KEEP_DAYS}}"
+
+scratch-clean KEEP_DAYS='14':
+	@echo "# pruning scratch/ entries older than {{KEEP_DAYS}} days (irreversible; dry-run first)"
+	@cutoff=$(date -d "-{{KEEP_DAYS}} days" +%s); \
+	freed=0; \
+	for d in scratch/*; do \
+	  [ -e "$d" ] || continue; \
+	  [ "$(stat -c '%Y' "$d")" -lt "$cutoff" ] || continue; \
+	  b=$(du -sb "$d" 2>/dev/null | cut -f1); \
+	  freed=$((freed + b)); \
+	  echo "rm $d"; \
+	  rm -rf "$d"; \
+	done; \
+	printf '%14s B freed\n' "$freed"; \
+	just scratch-list >/dev/null || true
+
+scratch-keep-recent-dry-run KEEP_N='1':
+	@mapfile -t entries < <(for d in scratch/*; do [ -e "$d" ] || continue; printf '%s\t%s\n' "$(stat -c '%Y' "$d")" "$d"; done | sort -rn); \
+	keep=0; total=0; \
+	for line in "${entries[@]}"; do \
+	  path=${line#*$'\t'}; keep=$((keep + 1)); \
+	  b=$(du -sb "$path" 2>/dev/null | cut -f1); \
+	  if [ "$keep" -le "{{KEEP_N}}" ]; then \
+	    printf '%-8s %14s B  %s\n' "keep" "$b" "$path"; \
+	  else total=$((total + b)); printf '%-8s %14s B  %s\n' "delete" "$b" "$path"; fi; \
+	done; \
+	printf '\n%-8s %14s B  (would be freed; keeping newest %s)\n' "TOTAL" "$total" "{{KEEP_N}}"
+
+scratch-keep-recent KEEP_N='1':
+	@echo "# keeping newest {{KEEP_N}} scratch/ entries; deleting the rest (irreversible; dry-run first)"
+	@just scratch-keep-recent-dry-run {{KEEP_N}}
+	@mapfile -t entries < <(for d in scratch/*; do [ -e "$d" ] || continue; printf '%s\t%s\n' "$(stat -c '%Y' "$d")" "$d"; done | sort -rn); \
+	keep=0; \
+	for line in "${entries[@]}"; do \
+	  path=${line#*$'\t'}; keep=$((keep + 1)); \
+	  [ "$keep" -le "{{KEEP_N}}" ] && continue; \
+	  echo "rm $path"; rm -rf "$path"; \
+	done
+
 morph-warehouse-run profile="full" aat_dir="{{morph_warehouse_aat_dir}}" run_id="" jobs="0":
 	@just morph-warehouse-run-with-analyzers "{{profile}}" "{{aat_dir}}" "vibrato sudachi-a sudachi-c" "{{run_id}}" "{{jobs}}"
 

@@ -256,6 +256,64 @@
            :warning-fixtures {}
            :invalid-fixtures {}})))))
 
+(def ^:private expected-tei-schematron-fixtures-snapshot
+  "Hard-coded snapshot of the production TEI Schematron fixture map as of
+  the refactor. It pins the current partition so any change to the
+  production map is deliberate and reviewable."
+  {:schema-path "schemas/tei-profile.sch"
+   :valid-fixtures ["examples/v0/example-work/tei.xml"
+                    "fixtures/tei/valid/rashomon-minimal.xml"
+                    "fixtures/tei/valid/source-span-local-ref.xml"
+                    "fixtures/tei/valid/transcription-enrichment-declared.xml"]
+   :warning-fixtures {"fixtures/tei/warnings/figure-missing-desc.xml"
+                      #{"abc-figure-accessibility"}
+                      "fixtures/tei/warnings/transcription-enrichment-undeclared.xml"
+                      #{"abc-transcription-vs-annotation"}}
+   :invalid-fixtures {"fixtures/tei/invalid/missing-title.xml"
+                      #{"abc-tei-header-title"}
+                      "fixtures/tei/invalid/char-empty-decl.xml"
+                      #{"abc-char-resolution-form"}
+                      "fixtures/tei/invalid/gaiji-dangling-ref.xml"
+                      #{"abc-gaiji-chardecl-resolution"}
+                      "fixtures/tei/invalid/gaiji-missing-ref.xml"
+                      #{"abc-gaiji-reference"}
+                      "fixtures/tei/invalid/header-no-language.xml"
+                      #{"abc-header-language-declared"}
+                      "fixtures/tei/invalid/missing-source-work-id.xml"
+                      #{"abc-tei-header-source-work-id"}
+                      "fixtures/tei/invalid/ruby-empty-base.xml"
+                      #{"abc-ruby-base-non-empty"}
+                      "fixtures/tei/invalid/ruby-empty-reading.xml"
+                      #{"abc-ruby-reading-non-empty"}
+                      "fixtures/tei/invalid/ruby-missing-reading.xml"
+                      #{"abc-ruby-complete"}
+                      "fixtures/tei/invalid/source-span-external-ref.xml"
+                      #{"abc-source-span-reference"}
+                      "fixtures/tei/invalid/source-span-dangling-ref.xml"
+                      #{"abc-source-span-target-exists"}}})
+
+(deftest tei-schematron-fixtures-unchanged-test
+  (testing "hand-coded Schematron fixture map is unchanged and still passes"
+    (is (= expected-tei-schematron-fixtures-snapshot validate/tei-schematron-fixtures))
+    (is (nil? (validate/validate-tei-schematron! validate/tei-schematron-fixtures)))))
+
+(deftest tei-schematron-rule-universe-test
+  (testing "rule-universe extracts exactly the 13 abc-* ids from the ODD"
+    (is (= #{"abc-tei-header-title"
+             "abc-tei-header-source-work-id"
+             "abc-header-language-declared"
+             "abc-ruby-complete"
+             "abc-ruby-base-non-empty"
+             "abc-ruby-reading-non-empty"
+             "abc-gaiji-reference"
+             "abc-gaiji-chardecl-resolution"
+             "abc-char-resolution-form"
+             "abc-figure-accessibility"
+             "abc-source-span-reference"
+             "abc-source-span-target-exists"
+             "abc-transcription-vs-annotation"}
+           (validate/rule-universe)))))
+
 (def ^:private bundle-args
   {:record-path "examples/v0/example-work/metadata-record.json"
    :manifest-path "examples/v0/example-work/manifest.json"

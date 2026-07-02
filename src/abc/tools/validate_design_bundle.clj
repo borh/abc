@@ -280,6 +280,52 @@
                        :missing (sort missing)
                        :actual (sort actual-errors)})))))
 
+(defn rule-universe
+  "Return the canonical set of ABC Schematron rule ids declared in
+  schemas/tei-profile.odd. The set is derived from the ODD at runtime so
+  it cannot drift from the authored constraintSpec identifiers."
+  []
+  (->> (slurp "schemas/tei-profile.odd")
+       (re-seq #"<constraintSpec[^>]*\bident=\"(abc-[a-z0-9-]+)\"")
+       (map second)
+       set))
+
+(def tei-schematron-fixtures
+  "Hand-coded partition of TEI Schematron fixtures. The expected rule
+  sets are still maintained here, but they are now cross-checked against
+  the ODD-derived rule universe by validate-tei-schematron!."
+  {:schema-path "schemas/tei-profile.sch"
+   :valid-fixtures ["examples/v0/example-work/tei.xml"
+                    "fixtures/tei/valid/rashomon-minimal.xml"
+                    "fixtures/tei/valid/source-span-local-ref.xml"
+                    "fixtures/tei/valid/transcription-enrichment-declared.xml"]
+   :warning-fixtures {"fixtures/tei/warnings/figure-missing-desc.xml"
+                      #{"abc-figure-accessibility"}
+                      "fixtures/tei/warnings/transcription-enrichment-undeclared.xml"
+                      #{"abc-transcription-vs-annotation"}}
+   :invalid-fixtures {"fixtures/tei/invalid/missing-title.xml"
+                      #{"abc-tei-header-title"}
+                      "fixtures/tei/invalid/char-empty-decl.xml"
+                      #{"abc-char-resolution-form"}
+                      "fixtures/tei/invalid/gaiji-dangling-ref.xml"
+                      #{"abc-gaiji-chardecl-resolution"}
+                      "fixtures/tei/invalid/gaiji-missing-ref.xml"
+                      #{"abc-gaiji-reference"}
+                      "fixtures/tei/invalid/header-no-language.xml"
+                      #{"abc-header-language-declared"}
+                      "fixtures/tei/invalid/missing-source-work-id.xml"
+                      #{"abc-tei-header-source-work-id"}
+                      "fixtures/tei/invalid/ruby-empty-base.xml"
+                      #{"abc-ruby-base-non-empty"}
+                      "fixtures/tei/invalid/ruby-empty-reading.xml"
+                      #{"abc-ruby-reading-non-empty"}
+                      "fixtures/tei/invalid/ruby-missing-reading.xml"
+                      #{"abc-ruby-complete"}
+                      "fixtures/tei/invalid/source-span-external-ref.xml"
+                      #{"abc-source-span-reference"}
+                      "fixtures/tei/invalid/source-span-dangling-ref.xml"
+                      #{"abc-source-span-target-exists"}}})
+
 (defn validate-tei-schematron!
   [{:keys [schema-path valid-fixtures warning-fixtures invalid-fixtures]}]
   (doseq [path valid-fixtures]
@@ -287,7 +333,32 @@
   (doseq [[path expected-rules] warning-fixtures]
     (validate-schematron-warning-fixture! schema-path path expected-rules))
   (doseq [[path expected-rules] invalid-fixtures]
-    (validate-schematron-invalid-fixture! schema-path path expected-rules)))
+    (validate-schematron-invalid-fixture! schema-path path expected-rules))
+  (let [fixture-paths (concat (keys warning-fixtures) (keys invalid-fixtures))
+        findings (map (fn [path]
+                        (let [{:keys [findings]} (schematron/validate!
+                                                  {:schema-path schema-path
+                                                   :xml-path path
+                                                   :label path})]
+                          {:errors (rule-ids (filter schematron-error? findings))
+                           :warnings (rule-ids (filter schematron-warning? findings))}))
+                      fixture-paths)
+        actual-errors (set (mapcat :errors findings))
+        actual-warnings (set (mapcat :warnings findings))
+        all-actual (set/union actual-errors actual-warnings)
+        all-expected (set/union (apply set/union (vals warning-fixtures))
+                                (apply set/union (vals invalid-fixtures)))
+        universe (rule-universe)
+        uncovered (set/difference universe all-actual)
+        unknown (set/difference all-expected universe)]
+    (when (seq uncovered)
+      (throw (ex-info "Schematron rules declared in the ODD are not covered by any negative or warning fixture"
+                      {:rule-universe (sort universe)
+                       :uncovered (sort uncovered)})))
+    (when (seq unknown)
+      (throw (ex-info "Schematron fixture references rule-ids not declared in the ODD"
+                      {:rule-universe (sort universe)
+                       :unknown (sort unknown)})))))
 
 (defn- load-turtle-graph [path]
   (aa/read (aa/graph :simple) (io/file path)))
@@ -586,38 +657,7 @@
                       "fixtures/tei/invalid/source-span-external-ref.xml"])
       (tel/log! :info "tei project rng validation ok")
       (tel/log! :info "==> Validating TEI against project Schematron")
-      (validate-tei-schematron!
-       {:schema-path "schemas/tei-profile.sch"
-        :valid-fixtures ["examples/v0/example-work/tei.xml"
-                         "fixtures/tei/valid/rashomon-minimal.xml"
-                         "fixtures/tei/valid/source-span-local-ref.xml"
-                         "fixtures/tei/valid/transcription-enrichment-declared.xml"]
-        :warning-fixtures {"fixtures/tei/warnings/figure-missing-desc.xml"
-                           #{"abc-figure-accessibility"}
-                           "fixtures/tei/warnings/transcription-enrichment-undeclared.xml"
-                           #{"abc-transcription-vs-annotation"}}
-        :invalid-fixtures {"fixtures/tei/invalid/missing-title.xml"
-                           #{"abc-tei-header-title"}
-                           "fixtures/tei/invalid/char-empty-decl.xml"
-                           #{"abc-char-resolution-form"}
-                           "fixtures/tei/invalid/gaiji-dangling-ref.xml"
-                           #{"abc-gaiji-chardecl-resolution"}
-                           "fixtures/tei/invalid/gaiji-missing-ref.xml"
-                           #{"abc-gaiji-reference"}
-                           "fixtures/tei/invalid/header-no-language.xml"
-                           #{"abc-header-language-declared"}
-                           "fixtures/tei/invalid/missing-source-work-id.xml"
-                           #{"abc-tei-header-source-work-id"}
-                           "fixtures/tei/invalid/ruby-empty-base.xml"
-                           #{"abc-ruby-base-non-empty"}
-                           "fixtures/tei/invalid/ruby-empty-reading.xml"
-                           #{"abc-ruby-reading-non-empty"}
-                           "fixtures/tei/invalid/ruby-missing-reading.xml"
-                           #{"abc-ruby-complete"}
-                           "fixtures/tei/invalid/source-span-external-ref.xml"
-                           #{"abc-source-span-reference"}
-                           "fixtures/tei/invalid/source-span-dangling-ref.xml"
-                           #{"abc-source-span-target-exists"}}})
+      (validate-tei-schematron! tei-schematron-fixtures)
       (tel/log! :info "tei schematron validation ok")
       (tel/log! :info "==> Validating person drift negative fixtures")
       (validate-drift-fixtures!

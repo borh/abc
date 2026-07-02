@@ -1,455 +1,4448 @@
 # Generated Aozora Bunko Feature Taxonomy
 
-Derived from the canonical sources `chuki_tag.txt` and `annotation/*.html`.
+Derived from `annotation/*.html` (aozora.gr.jp authoritative spec) and real corpus observation.
+Third-party converter tables are not used as sources.
 
 ### Layout / レイアウト
 
-| ID | Feature | Example | Sources | Verdict |
-|----|---------|---------|---------|---------|
-| L1 | 改丁 | `［＃改丁］` | chuki_tag.txt:10; layout_1; layout_3 | VERIFIED |
-| L2 | 改ページ | `［＃改ページ］` | chuki_tag.txt:11; extra; layout_1; layout_2; layout_3 | VERIFIED |
-| L3 | 改頁 | `［＃改頁］` | chuki_tag.txt:12 | CHUKI-ONLY |
-| L4 | 改段 | `［＃改段］` | chuki_tag.txt:13; layout_1 | VERIFIED |
-| L5 | 本文終わり | `［＃本文終わり］` | chuki_tag.txt:15; extra | VERIFIED |
-| L6 | ページの左右中央 | `［＃ページの左右中央］` | chuki_tag.txt:19; layout_3 | VERIFIED |
-| L7 | ページの左右中央に | `［＃ページの左右中央に］` | chuki_tag.txt:20 | CHUKI-ONLY |
-| L8 | ページの左右中央から | `［＃ページの左右中央から］` | chuki_tag.txt:21 | CHUKI-ONLY |
-| L9 | ページの天地左右中央 | `［＃ページの天地左右中央］` | chuki_tag.txt:22 | CHUKI-ONLY |
-| L10 | ページの天地左右中央に | `［＃ページの天地左右中央に］` | chuki_tag.txt:23 | CHUKI-ONLY |
-| L11 | 改丁、ページの左右中央 | `［＃改丁、ページの左右中央］` | chuki_tag.txt:25 | CHUKI-ONLY |
-| L12 | 改丁、ページの左右中央に | `［＃改丁、ページの左右中央に］` | chuki_tag.txt:26 | CHUKI-ONLY |
-| L13 | 改ページ、ページの左右中央 | `［＃改ページ、ページの左右中央］` | chuki_tag.txt:27 | CHUKI-ONLY |
-| L14 | 改ページ、ページの左右中央に | `［＃改ページ、ページの左右中央に］` | chuki_tag.txt:28 | CHUKI-ONLY |
-| L15 | ページ左 | `［＃ページ左］` | chuki_tag.txt:29 | CHUKI-ONLY |
-| L16 | ページの左 | `［＃ページの左］` | chuki_tag.txt:30 | CHUKI-ONLY |
-| L17 | ページ左寄せ | `［＃ページ左寄せ］` | chuki_tag.txt:31 | CHUKI-ONLY |
-| L18 | ページの左寄せ | `［＃ページの左寄せ］` | chuki_tag.txt:32 | CHUKI-ONLY |
-| L19 | ページ左寄せで | `［＃ページ左寄せで］` | chuki_tag.txt:33 | CHUKI-ONLY |
-| L20 | ページの左寄せで | `［＃ページの左寄せで］` | chuki_tag.txt:34 | CHUKI-ONLY |
-| L21 | ページ左下 | `［＃ページ左下］` | chuki_tag.txt:35 | CHUKI-ONLY |
-| L22 | ページの左下 | `［＃ページの左下］` | chuki_tag.txt:36 | CHUKI-ONLY |
-| L23 | ここから１字下げ | `［＃ここからN字下げ］` | chuki_tag.txt:323; chuki_tag.txt:324; chuki_tag.txt:325; chuki_tag.txt:326; chuki_tag.txt:327; chuki_tag.txt:328; chuki_tag.txt:329; chuki_tag.txt:330; chuki_tag.txt:331; chuki_tag.txt:332; chuki_tag.txt:333; chuki_tag.txt:334; chuki_tag.txt:335; chuki_tag.txt:336; chuki_tag.txt:337; chuki_tag.txt:338; chuki_tag.txt:339; chuki_tag.txt:340; chuki_tag.txt:341; chuki_tag.txt:342; chuki_tag.txt:343; chuki_tag.txt:344; chuki_tag.txt:345; chuki_tag.txt:346; chuki_tag.txt:347; chuki_tag.txt:348; chuki_tag.txt:349; chuki_tag.txt:350; chuki_tag.txt:351; chuki_tag.txt:352; emphasis; etc; layout_2; layout_3 | VERIFIED |
-| L24 | ここから改行天付き、折り返して１字下げ | `［＃ここから改行天付き、折り返してN字下げ］` | chuki_tag.txt:354; chuki_tag.txt:355; chuki_tag.txt:356; chuki_tag.txt:357; chuki_tag.txt:358; chuki_tag.txt:359; chuki_tag.txt:360; chuki_tag.txt:361; chuki_tag.txt:362; chuki_tag.txt:363; chuki_tag.txt:364; chuki_tag.txt:365; chuki_tag.txt:366; chuki_tag.txt:367; chuki_tag.txt:368; chuki_tag.txt:369; chuki_tag.txt:370; chuki_tag.txt:371; chuki_tag.txt:372; chuki_tag.txt:373; chuki_tag.txt:374; chuki_tag.txt:375; chuki_tag.txt:376; chuki_tag.txt:377; chuki_tag.txt:378; layout_2 | VERIFIED |
-| L25 | 改行天付き、折り返して１字下げ | `［＃改行天付き、折り返してN字下げ］` | chuki_tag.txt:380; chuki_tag.txt:381; chuki_tag.txt:382; chuki_tag.txt:383; chuki_tag.txt:384; chuki_tag.txt:385; chuki_tag.txt:386; chuki_tag.txt:387; chuki_tag.txt:388; chuki_tag.txt:389; chuki_tag.txt:390; chuki_tag.txt:391; chuki_tag.txt:392; chuki_tag.txt:393; chuki_tag.txt:394; chuki_tag.txt:395; chuki_tag.txt:396; chuki_tag.txt:397; chuki_tag.txt:398; chuki_tag.txt:399; chuki_tag.txt:400; chuki_tag.txt:401; chuki_tag.txt:402; chuki_tag.txt:403; chuki_tag.txt:404 | CHUKI-ONLY |
-| L26 | ここで字下げ終わり | `［＃ここで字下げ終わり］` | chuki_tag.txt:406; emphasis; etc; heading; henkoten; layout_2; layout_3 | VERIFIED |
-| L27 | ここで字下げ終り | `［＃ここで字下げ終り］` | chuki_tag.txt:407 | CHUKI-ONLY |
-| L28 | 字下げ終わり | `［＃字下げ終わり］` | chuki_tag.txt:408 | CHUKI-ONLY |
-| L29 | 字下げ終り | `［＃字下げ終り］` | chuki_tag.txt:409 | CHUKI-ONLY |
-| L30 | ここから地付き | `［＃ここから地付き］` | chuki_tag.txt:412; layout_2 | VERIFIED |
-| L31 | ここから地から１字上げ | `［＃ここから地からN字上げ］` | chuki_tag.txt:413; chuki_tag.txt:414; chuki_tag.txt:415; chuki_tag.txt:416; chuki_tag.txt:417; chuki_tag.txt:418; chuki_tag.txt:419; chuki_tag.txt:420; chuki_tag.txt:421; chuki_tag.txt:422; chuki_tag.txt:423; chuki_tag.txt:424; chuki_tag.txt:425; chuki_tag.txt:426; chuki_tag.txt:427; chuki_tag.txt:428; chuki_tag.txt:429; chuki_tag.txt:430; chuki_tag.txt:431; chuki_tag.txt:432; chuki_tag.txt:433; chuki_tag.txt:434; chuki_tag.txt:435; chuki_tag.txt:436; chuki_tag.txt:437; layout_2 | VERIFIED |
-| L32 | ここで字上げ終わり | `［＃ここで字上げ終わり］` | chuki_tag.txt:438; layout_2 | VERIFIED |
-| L33 | ここで地付き終わり | `［＃ここで地付き終わり］` | chuki_tag.txt:440; layout_2 | VERIFIED |
-| L34 | ここで地付き終り | `［＃ここで地付き終り］` | chuki_tag.txt:441 | CHUKI-ONLY |
-| L35 | 地付き終わり | `［＃地付き終わり］` | chuki_tag.txt:442 | CHUKI-ONLY |
-| L36 | 地付き終り | `［＃地付き終り］` | chuki_tag.txt:443 | CHUKI-ONLY |
-| L37 | １字下げ | `［＃N字下げ］` | chuki_tag.txt:446; chuki_tag.txt:447; chuki_tag.txt:448; chuki_tag.txt:449; chuki_tag.txt:450; chuki_tag.txt:451; chuki_tag.txt:452; chuki_tag.txt:453; chuki_tag.txt:454; chuki_tag.txt:455; chuki_tag.txt:456; chuki_tag.txt:457; chuki_tag.txt:458; chuki_tag.txt:459; chuki_tag.txt:460; chuki_tag.txt:461; chuki_tag.txt:462; chuki_tag.txt:463; chuki_tag.txt:464; chuki_tag.txt:465; chuki_tag.txt:466; chuki_tag.txt:467; chuki_tag.txt:468; chuki_tag.txt:469; chuki_tag.txt:470; chuki_tag.txt:471; chuki_tag.txt:472; chuki_tag.txt:473; chuki_tag.txt:474; chuki_tag.txt:475; chuki_tag.txt:477; chuki_tag.txt:478; chuki_tag.txt:479; chuki_tag.txt:480; chuki_tag.txt:481; etc; heading; layout_1; layout_2; layout_3 | VERIFIED |
-| L38 | 天から１字下げ | `［＃天からN字下げ］` | chuki_tag.txt:483; chuki_tag.txt:484; chuki_tag.txt:485; chuki_tag.txt:486; chuki_tag.txt:487; chuki_tag.txt:488; chuki_tag.txt:489; chuki_tag.txt:490; chuki_tag.txt:491; chuki_tag.txt:492; chuki_tag.txt:493; chuki_tag.txt:494; chuki_tag.txt:495; chuki_tag.txt:496; chuki_tag.txt:497; chuki_tag.txt:498; chuki_tag.txt:499; chuki_tag.txt:500; chuki_tag.txt:501; chuki_tag.txt:502; chuki_tag.txt:503; chuki_tag.txt:504; chuki_tag.txt:505; chuki_tag.txt:506; chuki_tag.txt:507; chuki_tag.txt:508; chuki_tag.txt:509; chuki_tag.txt:510; chuki_tag.txt:511; chuki_tag.txt:512; chuki_tag.txt:514; chuki_tag.txt:515; chuki_tag.txt:516; chuki_tag.txt:517; chuki_tag.txt:518 | CHUKI-ONLY |
-| L39 | 地付き | `［＃地付き］` | chuki_tag.txt:520; layout_2 | VERIFIED |
-| L40 | 地から１字上げ | `［＃地からN字上げ］` | chuki_tag.txt:521; chuki_tag.txt:522; chuki_tag.txt:523; chuki_tag.txt:524; chuki_tag.txt:525; chuki_tag.txt:526; chuki_tag.txt:527; chuki_tag.txt:528; chuki_tag.txt:529; chuki_tag.txt:530; chuki_tag.txt:531; chuki_tag.txt:532; chuki_tag.txt:533; chuki_tag.txt:534; chuki_tag.txt:535; chuki_tag.txt:536; chuki_tag.txt:537; chuki_tag.txt:538; chuki_tag.txt:539; chuki_tag.txt:540; chuki_tag.txt:541; chuki_tag.txt:542; chuki_tag.txt:543; chuki_tag.txt:544; chuki_tag.txt:545; etc; layout_1; layout_2 | VERIFIED |
-| L41 | ここから１字詰め | `［＃ここからN字詰め］` | chuki_tag.txt:548; chuki_tag.txt:549; chuki_tag.txt:550; chuki_tag.txt:551; chuki_tag.txt:552; chuki_tag.txt:553; chuki_tag.txt:554; chuki_tag.txt:555; chuki_tag.txt:556; chuki_tag.txt:557; chuki_tag.txt:558; chuki_tag.txt:559; chuki_tag.txt:560; chuki_tag.txt:561; chuki_tag.txt:562; chuki_tag.txt:563; chuki_tag.txt:564; chuki_tag.txt:565; chuki_tag.txt:566; chuki_tag.txt:567; chuki_tag.txt:568; chuki_tag.txt:569; chuki_tag.txt:570; chuki_tag.txt:571; chuki_tag.txt:572; chuki_tag.txt:573; chuki_tag.txt:574; chuki_tag.txt:575; chuki_tag.txt:576; chuki_tag.txt:577; chuki_tag.txt:578; chuki_tag.txt:579; chuki_tag.txt:580; chuki_tag.txt:581; chuki_tag.txt:582; chuki_tag.txt:583; chuki_tag.txt:584; chuki_tag.txt:585; chuki_tag.txt:586; chuki_tag.txt:587; chuki_tag.txt:589; chuki_tag.txt:590; chuki_tag.txt:591; chuki_tag.txt:592; chuki_tag.txt:593; chuki_tag.txt:594; chuki_tag.txt:595; chuki_tag.txt:596; chuki_tag.txt:597; chuki_tag.txt:598; etc | VERIFIED |
-| L42 | ここで字詰め終わり | `［＃ここで字詰め終わり］` | chuki_tag.txt:600; etc; henkoten | VERIFIED |
-| L43 | ここで字詰め終り | `［＃ここで字詰め終り］` | chuki_tag.txt:601 | CHUKI-ONLY |
-| L44 | 字詰め終わり | `［＃字詰め終わり］` | chuki_tag.txt:602 | CHUKI-ONLY |
-| L45 | 字詰め終り | `［＃字詰め終り］` | chuki_tag.txt:603 | CHUKI-ONLY |
-| L46 | 「○○」は横組み | `［＃「○○」は横組み］` | etc | MANUAL-ONLY |
-| L47 | ここから○字下げ | `［＃ここから○字下げ］` | etc; heading; henkoten; layout_2 | MANUAL-ONLY |
-| L48 | ここから○字詰め | `［＃ここから○字詰め］` | etc | MANUAL-ONLY |
-| L49 | ここから●字詰め | `［＃ここから●字詰め］` | etc; henkoten | MANUAL-ONLY |
-| L50 | ○字下げ | `［＃○字下げ］` | heading; layout_2 | MANUAL-ONLY |
-| L51 | ここから○字下げ、●字詰め、罫囲み | `［＃ここから○字下げ、●字詰め、罫囲み］` | henkoten | MANUAL-ONLY |
-| L52 | 改見開き | `［＃改見開き］` | layout_1 | MANUAL-ONLY |
-| L53 | ここからN字下げ、折り返してN字下げ | `［＃ここからN字下げ、折り返してN字下げ］` | layout_2 | MANUAL-ONLY |
-| L54 | ここから○字下げ、折り返して●字下げ | `［＃ここから○字下げ、折り返して●字下げ］` | layout_2 | MANUAL-ONLY |
-| L55 | ここから地から○字上げ | `［＃ここから地から○字上げ］` | layout_2 | MANUAL-ONLY |
-| L56 | ここから改行天付き、折り返して○字下げ | `［＃ここから改行天付き、折り返して○字下げ］` | layout_2 | MANUAL-ONLY |
-| L57 | 地から○字上げ | `［＃地から○字上げ］` | layout_2 | MANUAL-ONLY |
+| ID | Family | Sub-family | Feature | Example | Sources | Status |
+|----|--------|------------|---------|---------|---------|--------|
+| L1 | Layout | — | N字下げ、地よりN字あきで | `［＃N字下げ、地よりN字あきで］` | corpus | OBSERVED |
+| L2 | Layout | — | N字下げここまで | `［＃N字下げここまで］` | corpus | OBSERVED |
+| L3 | Layout | — | N字下げて | `［＃N字下げて］` | corpus | OBSERVED |
+| L4 | Layout | — | N字下げて、地よりN字あきで | `［＃N字下げて、地よりN字あきで］` | corpus | OBSERVED |
+| L5 | Layout | — | N字下げて、地よりN字上げて | `［＃N字下げて、地よりN字上げて］` | corpus | OBSERVED |
+| L6 | Layout | — | N字下げて、地よりN字上げで | `［＃N字下げて、地よりN字上げで］` | corpus | OBSERVED |
+| L7 | Layout | — | N字下げ終わり | `［＃N字下げ終わり］` | corpus | OBSERVED |
+| L8 | Layout | — | 「○○」「○○」はN行組み、地付き | `［＃「○○」「○○」はN行組み、地付き］` | corpus | OBSERVED |
+| L9 | Layout | — | 「○○」の中央に横棒が入った形（figN_N.png、横N×縦N）入る | `［＃「○○」の中央に横棒が入った形（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| L10 | Layout | — | 「○○」の中央よりやや上方に横棒（figN_N.png、横N×縦N）入る | `［＃「○○」の中央よりやや上方に横棒（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| L11 | Layout | — | 「○○」の後は、底本では改行N字下げ | `［＃「○○」の後は、底本では改行N字下げ］` | corpus | OBSERVED |
+| L12 | Layout | — | 「○○」の文字の下からN字下げ、横組み右揃えで | `［＃「○○」の文字の下からN字下げ、横組み右揃えで］` | corpus | OBSERVED |
+| L13 | Layout | — | 「○○」はN行の中央、括弧はN行にわたる波括弧 | `［＃「○○」はN行の中央、括弧はN行にわたる波括弧］` | corpus | OBSERVED |
+| L14 | Layout | — | 「○○」は、『谷崎潤一郎全集　第二十巻』（中央公論新社N年N月N日初版発行）では「○○」、『谷崎潤一郎全集　第十五卷』（中央公論社N年N月N日発行）では「○○」 | `［＃「○○」は、『谷崎潤一郎全集　第二十巻』（中央公論新社N年N月N日初版発行）では「○○」、『谷崎潤一郎全集　第十五卷』（中央公論社N年N月N日発行）では「○○」］` | corpus | OBSERVED |
+| L15 | Layout | — | 「○○」は、『谷崎潤一郎全集　第二十巻』（中央公論新社N年N月N日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社N年N月N日発行）では「○○」 | `［＃「○○」は、『谷崎潤一郎全集　第二十巻』（中央公論新社N年N月N日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社N年N月N日発行）では「○○」］` | corpus | OBSERVED |
+| L16 | Layout | — | 「○○」は、『谷崎潤一郎全集　第二十巻』（中央公論新社N年N月N日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社N年N月N日発行）では「○○」（読点無し） | `［＃「○○」は、『谷崎潤一郎全集　第二十巻』（中央公論新社N年N月N日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社N年N月N日発行）では「○○」（読点無し）］` | corpus | OBSERVED |
+| L17 | Layout | — | 「○○」は、『谷崎潤一郎全集　第十九巻』（中央公論新社N年N月N日初版発行）では「○○」、『谷崎潤一郎全集　第十五卷』（中央公論社N年N月N日発行）では「○○」 | `［＃「○○」は、『谷崎潤一郎全集　第十九巻』（中央公論新社N年N月N日初版発行）では「○○」、『谷崎潤一郎全集　第十五卷』（中央公論社N年N月N日発行）では「○○」］` | corpus | OBSERVED |
+| L18 | Layout | — | 「○○」は、『谷崎潤一郎全集　第十九巻』（中央公論新社N年N月N日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社N年N月N日発行）では「○○」 | `［＃「○○」は、『谷崎潤一郎全集　第十九巻』（中央公論新社N年N月N日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社N年N月N日発行）では「○○」］` | corpus | OBSERVED |
+| L19 | Layout | — | 「○○」は「○○」と「○○」の二行の中央 | `［＃「○○」は「○○」と「○○」の二行の中央］` | corpus | OBSERVED |
+| L20 | Layout | — | 「○○」は二重罫囲み | `［＃「○○」は二重罫囲み］` | corpus | OBSERVED |
+| L21 | Layout | — | 「○○」は前N行の中央、下に | `［＃「○○」は前N行の中央、下に］` | corpus | OBSERVED |
+| L22 | Layout | — | 「○○」は割り注で処理 | `［＃「○○」は割り注で処理］` | corpus | OBSERVED |
+| L23 | Layout | — | 「○○」は地よりN字上げ | `［＃「○○」は地よりN字上げ］` | corpus | OBSERVED |
+| L24 | Layout | — | 「○○」は地付き | `［＃「○○」は地付き］` | corpus | OBSERVED |
+| L25 | Layout | — | 「○○」は地付き、地よりN字アキ | `［＃「○○」は地付き、地よりN字アキ］` | corpus | OBSERVED |
+| L26 | Layout | — | 「○○」は地付け | `［＃「○○」は地付け］` | corpus | OBSERVED |
+| L27 | Layout | — | 「○○」は天よりN字下げ、地よりN字上げ | `［＃「○○」は天よりN字下げ、地よりN字上げ］` | corpus | OBSERVED |
+| L28 | Layout | — | 「○○」は天地左右中央 | `［＃「○○」は天地左右中央］` | corpus | OBSERVED |
+| L29 | Layout | — | 「○○」は底本ではN字下げ | `［＃「○○」は底本ではN字下げ］` | corpus | OBSERVED |
+| L30 | Layout | — | 「○○」は底本では、俳句の上に横書き | `［＃「○○」は底本では、俳句の上に横書き］` | corpus | OBSERVED |
+| L31 | Layout | — | 「○○」は底本では、掟の文章の上に横書き | `［＃「○○」は底本では、掟の文章の上に横書き］` | corpus | OBSERVED |
+| L32 | Layout | — | 「○○」は底本には無い、『谷崎潤一郎全集　第十八巻』中央公論新社（N年N月N日初版発行）及び底本の親本『猫と庄造と二人のをんな』創元社（昭和N年N月N日再版発行）による。 | `［＃「○○」は底本には無い、『谷崎潤一郎全集　第十八巻』中央公論新社（N年N月N日初版発行）及び底本の親本『猫と庄造と二人のをんな』創元社（昭和N年N月N日再版発行）による。］` | corpus | OBSERVED |
+| L33 | Layout | — | 「○○」は底本には記載なし。『谷崎潤一郎全集　第二十巻』（中央公論新社N年N月N日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社N年N月N日発行）による | `［＃「○○」は底本には記載なし。『谷崎潤一郎全集　第二十巻』（中央公論新社N年N月N日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社N年N月N日発行）による］` | corpus | OBSERVED |
+| L34 | Layout | — | 「○○」は底本には記載なし。『谷崎潤一郎全集　第十九巻』（中央公論新社N年N月N日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社N年N月N日発行）による | `［＃「○○」は底本には記載なし。『谷崎潤一郎全集　第十九巻』（中央公論新社N年N月N日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社N年N月N日発行）による］` | corpus | OBSERVED |
+| L35 | Layout | — | 「○○」は文末よりN字上げ揃え | `［＃「○○」は文末よりN字上げ揃え］` | corpus | OBSERVED |
+| L36 | Layout | — | 「○○」は横書き | `［＃「○○」は横書き］` | corpus | OBSERVED |
+| L37 | Layout | — | 「○○」は縦中横、N行の左右中央 | `［＃「○○」は縦中横、N行の左右中央］` | corpus | OBSERVED |
+| L38 | Layout | — | 「○○」は縦中横、行右小書き | `［＃「○○」は縦中横、行右小書き］` | corpus | OBSERVED |
+| L39 | Layout | — | 「○○」は縦中横、行右小書き、「○○」が底本では「○○」 | `［＃「○○」は縦中横、行右小書き、「○○」が底本では「○○」］` | corpus | OBSERVED |
+| L40 | Layout | — | 「○○」は縦中横、行右小書き、「○○」が底本では欠落 | `［＃「○○」は縦中横、行右小書き、「○○」が底本では欠落］` | corpus | OBSERVED |
+| L41 | Layout | — | 「○○」は縦中横、行右小書き、底本では「○○」 | `［＃「○○」は縦中横、行右小書き、底本では「○○」］` | corpus | OBSERVED |
+| L42 | Layout | — | 「○○」は縦中横、行右小書き、底本では欠落 | `［＃「○○」は縦中横、行右小書き、底本では欠落］` | corpus | OBSERVED |
+| L43 | Layout | — | 「○○」は縦中横組み | `［＃「○○」は縦中横組み］` | corpus | OBSERVED |
+| L44 | Layout | — | 「○○」は罫囲み、手紙の中では上記の印 | `［＃「○○」は罫囲み、手紙の中では上記の印］` | corpus | OBSERVED |
+| L45 | Layout | — | 「○○」全体、天よりN字下げ | `［＃「○○」全体、天よりN字下げ］` | corpus | OBSERVED |
+| L46 | Layout | — | 『江馬兆策識」』は地付き | `［＃『江馬兆策識」』は地付き］` | corpus | OBSERVED |
+| L47 | Layout | — | ここかN字下げ | `［＃ここかN字下げ］` | corpus | OBSERVED |
+| L48 | Layout | — | ここからN　字下げ | `［＃ここからN　字下げ］` | corpus | OBSERVED |
+| L49 | Layout | — | ここからN字下げ　 | `［＃ここからN字下げ　］` | corpus | OBSERVED |
+| L50 | Layout | — | ここからN字下げ、N字組み | `［＃ここからN字下げ、N字組み］` | corpus | OBSERVED |
+| L51 | Layout | — | ここからN字下げ、N字詰×N行 | `［＃ここからN字下げ、N字詰×N行］` | corpus | OBSERVED |
+| L52 | Layout | — | ここからN字下げ、N字詰め | `［＃ここからN字下げ、N字詰め］` | corpus | OBSERVED |
+| L53 | Layout | — | ここからN字下げ、N字詰め、ページの左右中央に | `［＃ここからN字下げ、N字詰め、ページの左右中央に］` | corpus | OBSERVED |
+| L54 | Layout | — | ここからN字下げ、N字詰め、ページ左右中央 | `［＃ここからN字下げ、N字詰め、ページ左右中央］` | corpus | OBSERVED |
+| L55 | Layout | — | ここからN字下げ、N字詰め、罫囲み | `［＃ここからN字下げ、N字詰め、罫囲み］` | corpus | OBSERVED |
+| L56 | Layout | — | ここからN字下げ、N段組み | `［＃ここからN字下げ、N段組み］` | corpus | OBSERVED |
+| L57 | Layout | — | ここからN字下げ、N行N字組みで | `［＃ここからN字下げ、N行N字組みで］` | corpus | OBSERVED |
+| L58 | Layout | — | ここからN字下げ、ここから数式 | `［＃ここからN字下げ、ここから数式］` | corpus | OBSERVED |
+| L59 | Layout | — | ここからN字下げ、ただし冒頭の歌記号のみはN字下げ | `［＃ここからN字下げ、ただし冒頭の歌記号のみはN字下げ］` | corpus | OBSERVED |
+| L60 | Layout | — | ここからN字下げ、ただし底本には組み体裁上の誤りがあり | `［＃ここからN字下げ、ただし底本には組み体裁上の誤りがあり］` | corpus | OBSERVED |
+| L61 | Layout | — | ここからN字下げ、ただし改行行頭の「○○」のみN字下げ | `［＃ここからN字下げ、ただし改行行頭の「○○」のみN字下げ］` | corpus | OBSERVED |
+| L62 | Layout | — | ここからN字下げ、ページの左右中央 | `［＃ここからN字下げ、ページの左右中央］` | corpus | OBSERVED |
+| L63 | Layout | — | ここからN字下げ、ページの左右中央に | `［＃ここからN字下げ、ページの左右中央に］` | corpus | OBSERVED |
+| L64 | Layout | — | ここからN字下げ、一つの行が複数行に渡る場合はN行目からN字下げ | `［＃ここからN字下げ、一つの行が複数行に渡る場合はN行目からN字下げ］` | corpus | OBSERVED |
+| L65 | Layout | — | ここからN字下げ、地からN字下げ | `［＃ここからN字下げ、地からN字下げ］` | corpus | OBSERVED |
+| L66 | Layout | — | ここからN字下げ、地は本文よりN字上 | `［＃ここからN字下げ、地は本文よりN字上］` | corpus | OBSERVED |
+| L67 | Layout | — | ここからN字下げ、地よりN字上げ | `［＃ここからN字下げ、地よりN字上げ］` | corpus | OBSERVED |
+| L68 | Layout | — | ここからN字下げ、字のポイントはやや小さくしてある。 | `［＃ここからN字下げ、字のポイントはやや小さくしてある。］` | corpus | OBSERVED |
+| L69 | Layout | — | ここからN字下げ、小さい活字 | `［＃ここからN字下げ、小さい活字］` | corpus | OBSERVED |
+| L70 | Layout | — | ここからN字下げ、左右中央 | `［＃ここからN字下げ、左右中央］` | corpus | OBSERVED |
+| L71 | Layout | — | ここからN字下げ、底本ではN字下げ | `［＃ここからN字下げ、底本ではN字下げ］` | corpus | OBSERVED |
+| L72 | Layout | — | ここからN字下げ、底本では一行目はN字下げ | `［＃ここからN字下げ、底本では一行目はN字下げ］` | corpus | OBSERVED |
+| L73 | Layout | — | ここからN字下げ、底本では表組み | `［＃ここからN字下げ、底本では表組み］` | corpus | OBSERVED |
+| L74 | Layout | — | ここからN字下げ、折り返してN字下げ、N字詰め | `［＃ここからN字下げ、折り返してN字下げ、N字詰め］` | corpus | OBSERVED |
+| L75 | Layout | — | ここからN字下げ、折り返してN字下げ、罫囲み | `［＃ここからN字下げ、折り返してN字下げ、罫囲み］` | corpus | OBSERVED |
+| L76 | Layout | — | ここからN字下げ、文字のポイント下げる | `［＃ここからN字下げ、文字のポイント下げる］` | corpus | OBSERVED |
+| L77 | Layout | — | ここからN字下げ、文章は横組み、「○○」が左側、「○○」が右側に配置されている、罫囲み | `［＃ここからN字下げ、文章は横組み、「○○」が左側、「○○」が右側に配置されている、罫囲み］` | corpus | OBSERVED |
+| L78 | Layout | — | ここからN字下げ、文章は横組み、罫囲み | `［＃ここからN字下げ、文章は横組み、罫囲み］` | corpus | OBSERVED |
+| L79 | Layout | — | ここからN字下げ、枠囲み | `［＃ここからN字下げ、枠囲み］` | corpus | OBSERVED |
+| L80 | Layout | — | ここからN字下げ、横書き | `［＃ここからN字下げ、横書き］` | corpus | OBSERVED |
+| L81 | Layout | — | ここからN字下げ、横書き、中央揃え、罫囲み | `［＃ここからN字下げ、横書き、中央揃え、罫囲み］` | corpus | OBSERVED |
+| L82 | Layout | — | ここからN字下げ、横書き、罫囲み | `［＃ここからN字下げ、横書き、罫囲み］` | corpus | OBSERVED |
+| L83 | Layout | — | ここからN字下げ、横組みで | `［＃ここからN字下げ、横組みで］` | corpus | OBSERVED |
+| L84 | Layout | — | ここからN字下げ、横組み右揃えで | `［＃ここからN字下げ、横組み右揃えで］` | corpus | OBSERVED |
+| L85 | Layout | — | ここからN字下げ、罫囲み | `［＃ここからN字下げ、罫囲み］` | corpus | OBSERVED |
+| L86 | Layout | — | ここからN字下げ、罫囲み、N行N字 | `［＃ここからN字下げ、罫囲み、N行N字］` | corpus | OBSERVED |
+| L87 | Layout | — | ここからN字下げ、罫囲みで | `［＃ここからN字下げ、罫囲みで］` | corpus | OBSERVED |
+| L88 | Layout | — | ここからN字下げ、罫囲みの表 | `［＃ここからN字下げ、罫囲みの表］` | corpus | OBSERVED |
+| L89 | Layout | — | ここからN字下げ、表組み | `［＃ここからN字下げ、表組み］` | corpus | OBSERVED |
+| L90 | Layout | — | ここからN字下げ、表組み、罫無し | `［＃ここからN字下げ、表組み、罫無し］` | corpus | OBSERVED |
+| L91 | Layout | — | ここからN字下げ、表罫囲み | `［＃ここからN字下げ、表罫囲み］` | corpus | OBSERVED |
+| L92 | Layout | — | ここからN字下げ。鍵括弧のついた台詞のみ、N字下げ。 | `［＃ここからN字下げ。鍵括弧のついた台詞のみ、N字下げ。］` | corpus | OBSERVED |
+| L93 | Layout | — | ここからN字下げ折り返してN字下げ | `［＃ここからN字下げ折り返してN字下げ］` | corpus | OBSERVED |
+| L94 | Layout | — | ここからN段組 | `［＃ここからN段組］` | corpus | OBSERVED |
+| L95 | Layout | — | ここからN段組、上段 | `［＃ここからN段組、上段］` | corpus | OBSERVED |
+| L96 | Layout | — | ここからN段組、下段 | `［＃ここからN段組、下段］` | corpus | OBSERVED |
+| L97 | Layout | — | ここからN段組み | `［＃ここからN段組み］` | corpus | OBSERVED |
+| L98 | Layout | — | ここからN段組み、横書き、底本では前後の文とは改行しない | `［＃ここからN段組み、横書き、底本では前後の文とは改行しない］` | corpus | OBSERVED |
+| L99 | Layout | — | ここからN段組み、段間に罫 | `［＃ここからN段組み、段間に罫］` | corpus | OBSERVED |
+| L100 | Layout | — | ここからN段組み（「○○」と注記した箇所を除く）。上段に演目、下段に国名や出演者名など。演目は大文字 | `［＃ここからN段組み（「○○」と注記した箇所を除く）。上段に演目、下段に国名や出演者名など。演目は大文字］` | corpus | OBSERVED |
+| L101 | Layout | — | ここからプログラム、表罫囲み | `［＃ここからプログラム、表罫囲み］` | corpus | OBSERVED |
+| L102 | Layout | — | ここからページの左右中央 | `［＃ここからページの左右中央］` | corpus | OBSERVED |
+| L103 | Layout | — | ここからページ上部横組み | `［＃ここからページ上部横組み］` | corpus | OBSERVED |
+| L104 | Layout | — | ここから一字下げ | `［＃ここから一字下げ］` | corpus | OBSERVED |
+| L105 | Layout | — | ここから一字下げ、折り返して二字下げ、ここから二段組 | `［＃ここから一字下げ、折り返して二字下げ、ここから二段組］` | corpus | OBSERVED |
+| L106 | Layout | — | ここから二字下げ | `［＃ここから二字下げ］` | corpus | OBSERVED |
+| L107 | Layout | — | ここから天付き、折り返してN字下げ | `［＃ここから天付き、折り返してN字下げ］` | corpus | OBSERVED |
+| L108 | Layout | — | ここから天付き折り返してN字下げ | `［＃ここから天付き折り返してN字下げ］` | corpus | OBSERVED |
+| L109 | Layout | — | ここから字下げ | `［＃ここから字下げ］` | corpus | OBSERVED |
+| L110 | Layout | — | ここから小文字、N字下げ。冒頭のみN字下げ | `［＃ここから小文字、N字下げ。冒頭のみN字下げ］` | corpus | OBSERVED |
+| L111 | Layout | — | ここから左から右への横組み | `［＃ここから左から右への横組み］` | corpus | OBSERVED |
+| L112 | Layout | — | ここから引用文、N字下げ | `［＃ここから引用文、N字下げ］` | corpus | OBSERVED |
+| L113 | Layout | — | ここから引用文、N字下げ、N行アキ | `［＃ここから引用文、N字下げ、N行アキ］` | corpus | OBSERVED |
+| L114 | Layout | — | ここから引用文、N字下げ、はじめの「○○」のみN字下げ | `［＃ここから引用文、N字下げ、はじめの「○○」のみN字下げ］` | corpus | OBSERVED |
+| L115 | Layout | — | ここから引用文、一字下げ | `［＃ここから引用文、一字下げ］` | corpus | OBSERVED |
+| L116 | Layout | — | ここから改行N字下げ、折り返してN字下げ | `［＃ここから改行N字下げ、折り返してN字下げ］` | corpus | OBSERVED |
+| L117 | Layout | — | ここから最後までN字下げ | `［＃ここから最後までN字下げ］` | corpus | OBSERVED |
+| L118 | Layout | — | ここから最後まで一字下げ | `［＃ここから最後まで一字下げ］` | corpus | OBSERVED |
+| L119 | Layout | — | ここから本文外に横書き | `［＃ここから本文外に横書き］` | corpus | OBSERVED |
+| L120 | Layout | — | ここから横書き | `［＃ここから横書き］` | corpus | OBSERVED |
+| L121 | Layout | — | ここから横組みの表 | `［＃ここから横組みの表］` | corpus | OBSERVED |
+| L122 | Layout | — | ここから表罫囲み | `［＃ここから表罫囲み］` | corpus | OBSERVED |
+| L123 | Layout | — | ここでN字下げ終わり | `［＃ここでN字下げ終わり］` | corpus | OBSERVED |
+| L124 | Layout | — | ここでN段組、上段終わり | `［＃ここでN段組、上段終わり］` | corpus | OBSERVED |
+| L125 | Layout | — | ここでN段組、下段終わり | `［＃ここでN段組、下段終わり］` | corpus | OBSERVED |
+| L126 | Layout | — | ここでN段組み、罫囲み終わり | `［＃ここでN段組み、罫囲み終わり］` | corpus | OBSERVED |
+| L127 | Layout | — | ここでN段組み終わり | `［＃ここでN段組み終わり］` | corpus | OBSERVED |
+| L128 | Layout | — | ここでN段組終わり | `［＃ここでN段組終わり］` | corpus | OBSERVED |
+| L129 | Layout | — | ここでプログラム（表罫囲み）終わり | `［＃ここでプログラム（表罫囲み）終わり］` | corpus | OBSERVED |
+| L130 | Layout | — | ここで字下げ、N字組み終わり | `［＃ここで字下げ、N字組み終わり］` | corpus | OBSERVED |
+| L131 | Layout | — | ここで字下げ、枠囲み終わり | `［＃ここで字下げ、枠囲み終わり］` | corpus | OBSERVED |
+| L132 | Layout | — | ここで字下げ、横書き終わり | `［＃ここで字下げ、横書き終わり］` | corpus | OBSERVED |
+| L133 | Layout | — | ここで字下げ、横組み終わり | `［＃ここで字下げ、横組み終わり］` | corpus | OBSERVED |
+| L134 | Layout | — | ここで字下げ、罫囲み終わり | `［＃ここで字下げ、罫囲み終わり］` | corpus | OBSERVED |
+| L135 | Layout | — | ここで字下げ、表罫囲み終わり | `［＃ここで字下げ、表罫囲み終わり］` | corpus | OBSERVED |
+| L136 | Layout | — | ここで字下げおわり | `［＃ここで字下げおわり］` | corpus | OBSERVED |
+| L137 | Layout | — | ここで字下げ終り | `［＃ここで字下げ終り］` | corpus | OBSERVED |
+| L138 | Layout | — | ここで字下げ終わり　 | `［＃ここで字下げ終わり　］` | corpus | OBSERVED |
+| L139 | Layout | — | ここで字下げ終わり、ここで数式終わり | `［＃ここで字下げ終わり、ここで数式終わり］` | corpus | OBSERVED |
+| L140 | Layout | — | ここで字下げ終わり、ここで段組終わり | `［＃ここで字下げ終わり、ここで段組終わり］` | corpus | OBSERVED |
+| L141 | Layout | — | ここで字下げ終わり、小さい活字も終わり | `［＃ここで字下げ終わり、小さい活字も終わり］` | corpus | OBSERVED |
+| L142 | Layout | — | ここで字下げ終わり、小さい活字終わり | `［＃ここで字下げ終わり、小さい活字終わり］` | corpus | OBSERVED |
+| L143 | Layout | — | ここで字下げ終わり」 | `［＃ここで字下げ終わり」］` | corpus | OBSERVED |
+| L144 | Layout | — | ここで小文字、字下げ終わり | `［＃ここで小文字、字下げ終わり］` | corpus | OBSERVED |
+| L145 | Layout | — | ここで左から右への横組み終わり | `［＃ここで左から右への横組み終わり］` | corpus | OBSERVED |
+| L146 | Layout | — | ここで文字下げ終わり | `［＃ここで文字下げ終わり］` | corpus | OBSERVED |
+| L147 | Layout | — | ここで本文外横書き終わり | `［＃ここで本文外横書き終わり］` | corpus | OBSERVED |
+| L148 | Layout | — | ここで横書き終わり | `［＃ここで横書き終わり］` | corpus | OBSERVED |
+| L149 | Layout | — | ここで横組みの表終わり | `［＃ここで横組みの表終わり］` | corpus | OBSERVED |
+| L150 | Layout | — | ここで段組、罫囲み終わり | `［＃ここで段組、罫囲み終わり］` | corpus | OBSERVED |
+| L151 | Layout | — | ここで段組み終わり | `［＃ここで段組み終わり］` | corpus | OBSERVED |
+| L152 | Layout | — | ここで段組終わり | `［＃ここで段組終わり］` | corpus | OBSERVED |
+| L153 | Layout | — | ここで表罫囲み終わり | `［＃ここで表罫囲み終わり］` | corpus | OBSERVED |
+| L154 | Layout | — | ここよりN字下げ | `［＃ここよりN字下げ］` | corpus | OBSERVED |
+| L155 | Layout | — | ここより手紙文、N字下げ | `［＃ここより手紙文、N字下げ］` | corpus | OBSERVED |
+| L156 | Layout | — | この後、改ページに続いて「○○」の章があるが、著作権の状態が不明なため、省略する。 | `［＃この後、改ページに続いて「○○」の章があるが、著作権の状態が不明なため、省略する。］` | corpus | OBSERVED |
+| L157 | Layout | — | この行N字下げ | `［＃この行N字下げ］` | corpus | OBSERVED |
+| L158 | Layout | — | この行、下揃え、下からN字上げ | `［＃この行、下揃え、下からN字上げ］` | corpus | OBSERVED |
+| L159 | Layout | — | この行、下揃え、下からN字上げ、相対的に字が小さい | `［＃この行、下揃え、下からN字上げ、相対的に字が小さい］` | corpus | OBSERVED |
+| L160 | Layout | — | この行ここまで相対的に字が小さい、ここからは下揃え、下からN字上げ | `［＃この行ここまで相対的に字が小さい、ここからは下揃え、下からN字上げ］` | corpus | OBSERVED |
+| L161 | Layout | — | この行はポイントを上げ、は地よりN字上げ | `［＃この行はポイントを上げ、は地よりN字上げ］` | corpus | OBSERVED |
+| L162 | Layout | — | この行はポイントを下げ、「○○」は地よりN字上げ | `［＃この行はポイントを下げ、「○○」は地よりN字上げ］` | corpus | OBSERVED |
+| L163 | Layout | — | この行はポイントを下げ、は地よりN字上げ | `［＃この行はポイントを下げ、は地よりN字上げ］` | corpus | OBSERVED |
+| L164 | Layout | — | この行はポイントを下げて、地よりN字上げ | `［＃この行はポイントを下げて、地よりN字上げ］` | corpus | OBSERVED |
+| L165 | Layout | — | この行は下に横組みで | `［＃この行は下に横組みで］` | corpus | OBSERVED |
+| L166 | Layout | — | この行は下揃え一字上げ、名前の部分は一字毎に空きあり | `［＃この行は下揃え一字上げ、名前の部分は一字毎に空きあり］` | corpus | OBSERVED |
+| L167 | Layout | — | この行は底本ではN字下げ | `［＃この行は底本ではN字下げ］` | corpus | OBSERVED |
+| L168 | Layout | — | この行は枠の上に横書き | `［＃この行は枠の上に横書き］` | corpus | OBSERVED |
+| L169 | Layout | — | この行全体はミシン罫囲み | `［＃この行全体はミシン罫囲み］` | corpus | OBSERVED |
+| L170 | Layout | — | この註、N行目以降はN字下げ | `［＃この註、N行目以降はN字下げ］` | corpus | OBSERVED |
+| L171 | Layout | — | これより手紙文、N字下げ | `［＃これより手紙文、N字下げ］` | corpus | OBSERVED |
+| L172 | Layout | — | こ地付き | `［＃こ地付き］` | corpus | OBSERVED |
+| L173 | Layout | — | ページの天地中央 | `［＃ページの天地中央］` | corpus | OBSERVED |
+| L174 | Layout | — | ページの天地左右中央に | `［＃ページの天地左右中央に］` | corpus | OBSERVED |
+| L175 | Layout | — | ページの左右中央に | `［＃ページの左右中央に］` | corpus | OBSERVED |
+| L176 | Layout | — | ページ上段の左右中央 | `［＃ページ上段の左右中央］` | corpus | OBSERVED |
+| L177 | Layout | — | ページ上部横組み終わり | `［＃ページ上部横組み終わり］` | corpus | OBSERVED |
+| L178 | Layout | — | ルビの「○○」は、『谷崎潤一郎全集　第二十巻』（中央公論新社N年N月N日初版発行）では「○○」、『谷崎潤一郎全集　第十五卷』（中央公論社N年N月N日発行）では「○○」 | `［＃ルビの「○○」は、『谷崎潤一郎全集　第二十巻』（中央公論新社N年N月N日初版発行）では「○○」、『谷崎潤一郎全集　第十五卷』（中央公論社N年N月N日発行）では「○○」］` | corpus | OBSERVED |
+| L179 | Layout | — | ルビの「○○」は、『谷崎潤一郎全集　第十九巻』（中央公論新社N年N月N日初版発行）では「○○」、『谷崎潤一郎全集　第十五卷』（中央公論社N年N月N日発行）では「○○」 | `［＃ルビの「○○」は、『谷崎潤一郎全集　第十九巻』（中央公論新社N年N月N日初版発行）では「○○」、『谷崎潤一郎全集　第十五卷』（中央公論社N年N月N日発行）では「○○」］` | corpus | OBSERVED |
+| L180 | Layout | — | ルビの「○○」は、『谷崎潤一郎全集　第十九巻』（中央公論新社N年N月N日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社N年N月N日発行）では「○○」 | `［＃ルビの「○○」は、『谷崎潤一郎全集　第十九巻』（中央公論新社N年N月N日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社N年N月N日発行）では「○○」］` | corpus | OBSERVED |
+| L181 | Layout | — | 一字下げ忘れか？N-N | `［＃一字下げ忘れか？N-N］` | corpus | OBSERVED |
+| L182 | Layout | — | 上記の詞書は、ポイントを下げて中央やや下がり目に | `［＃上記の詞書は、ポイントを下げて中央やや下がり目に］` | corpus | OBSERVED |
+| L183 | Layout | — | 下げて、地付きで | `［＃下げて、地付きで］` | corpus | OBSERVED |
+| L184 | Layout | — | 下げて地付きで | `［＃下げて地付きで］` | corpus | OBSERVED |
+| L185 | Layout | — | 中央寄せ | `［＃中央寄せ］` | corpus | OBSERVED |
+| L186 | Layout | — | 二字下げ終わり | `［＃二字下げ終わり］` | corpus | OBSERVED |
+| L187 | Layout | — | 以下N字下げ | `［＃以下N字下げ］` | corpus | OBSERVED |
+| L188 | Layout | — | 以下、地付き | `［＃以下、地付き］` | corpus | OBSERVED |
+| L189 | Layout | — | 以下の文章は地付き | `［＃以下の文章は地付き］` | corpus | OBSERVED |
+| L190 | Layout | — | 以下地付き | `［＃以下地付き］` | corpus | OBSERVED |
+| L191 | Layout | — | 以降の「○○」で始まる通信文のN行目以降はN字下げ | `［＃以降の「○○」で始まる通信文のN行目以降はN字下げ］` | corpus | OBSERVED |
+| L192 | Layout | — | 列項目名はN段組、N段目 | `［＃列項目名はN段組、N段目］` | corpus | OBSERVED |
+| L193 | Layout | — | 台詞はすべて、折り返しN行目から、天よりN字下げ | `［＃台詞はすべて、折り返しN行目から、天よりN字下げ］` | corpus | OBSERVED |
+| L194 | Layout | — | 地からN字上げ、N行にわたる丸括弧で挟んだN行組み | `［＃地からN字上げ、N行にわたる丸括弧で挟んだN行組み］` | corpus | OBSERVED |
+| L195 | Layout | — | 地から一字上げ | `［＃地から一字上げ］` | corpus | OBSERVED |
+| L196 | Layout | — | 地から五字上げ | `［＃地から五字上げ］` | corpus | OBSERVED |
+| L197 | Layout | — | 地よりN字上げ | `［＃地よりN字上げ］` | corpus | OBSERVED |
+| L198 | Layout | — | 地付き、地よりN字あき | `［＃地付き、地よりN字あき］` | corpus | OBSERVED |
+| L199 | Layout | — | 地付き、地よりN字アキ | `［＃地付き、地よりN字アキ］` | corpus | OBSERVED |
+| L200 | Layout | — | 地付きで | `［＃地付きで］` | corpus | OBSERVED |
+| L201 | Layout | — | 地寄せ | `［＃地寄せ］` | corpus | OBSERVED |
+| L202 | Layout | — | 場面設定の表題、及び「○○」で始まる最初の行以外は、N文字下げた位置で頭を揃える | `［＃場面設定の表題、及び「○○」で始まる最初の行以外は、N文字下げた位置で頭を揃える］` | corpus | OBSERVED |
+| L203 | Layout | — | 天からN字下げ | `［＃天からN字下げ］` | corpus | OBSERVED |
+| L204 | Layout | — | 天からN字下げて | `［＃天からN字下げて］` | corpus | OBSERVED |
+| L205 | Layout | — | 天よりN字下げ、地よりN字上げで | `［＃天よりN字下げ、地よりN字上げで］` | corpus | OBSERVED |
+| L206 | Layout | — | 天よりN字下げて地よりN字上げで | `［＃天よりN字下げて地よりN字上げで］` | corpus | OBSERVED |
+| L207 | Layout | — | 字下げ、地付きここまで | `［＃字下げ、地付きここまで］` | corpus | OBSERVED |
+| L208 | Layout | — | 字下げ終わり | `［＃字下げ終わり］` | corpus | OBSERVED |
+| L209 | Layout | — | 左右中央 | `［＃左右中央］` | corpus | OBSERVED |
+| L210 | Layout | — | 底本ではN字下げ | `［＃底本ではN字下げ］` | corpus | OBSERVED |
+| L211 | Layout | — | 底本ではN字下げしていない | `［＃底本ではN字下げしていない］` | corpus | OBSERVED |
+| L212 | Layout | — | 底本では、「○○」の前で改行して、改行後はじめの一字下げしていない | `［＃底本では、「○○」の前で改行して、改行後はじめの一字下げしていない］` | corpus | OBSERVED |
+| L213 | Layout | — | 底本では、このト書きのみN行目から天よりN字下げ | `［＃底本では、このト書きのみN行目から天よりN字下げ］` | corpus | OBSERVED |
+| L214 | Layout | — | 底本では、この行頭のN字下げなし | `［＃底本では、この行頭のN字下げなし］` | corpus | OBSERVED |
+| L215 | Layout | — | 底本では、この行頭のN字下げ無し | `［＃底本では、この行頭のN字下げ無し］` | corpus | OBSERVED |
+| L216 | Layout | — | 底本では、括弧（「○○」）のある行までN字下げ（N行だけのものは字下げナシ） | `［＃底本では、括弧（「○○」）のある行までN字下げ（N行だけのものは字下げナシ）］` | corpus | OBSERVED |
+| L217 | Layout | — | 底本ではここで改段 | `［＃底本ではここで改段］` | corpus | OBSERVED |
+| L218 | Layout | — | 底本ではこの行N字下げしていない | `［＃底本ではこの行N字下げしていない］` | corpus | OBSERVED |
+| L219 | Layout | — | 改ページ、N字下げで | `［＃改ページ、N字下げで］` | corpus | OBSERVED |
+| L220 | Layout | — | 改ページ、ページの左右中央 | `［＃改ページ、ページの左右中央］` | corpus | OBSERVED |
+| L221 | Layout | — | 改ページ、ページの左右中央に | `［＃改ページ、ページの左右中央に］` | corpus | OBSERVED |
+| L222 | Layout | — | 改丁、左寄せで | `［＃改丁、左寄せで］` | corpus | OBSERVED |
+| L223 | Layout | — | 改丁」
+
+
+序　詩
+［＃改頁 | `［＃改丁」
+
+
+序　詩
+［＃改頁］` | corpus | OBSERVED |
+| L224 | Layout | — | 改行ごとに二字下げ | `［＃改行ごとに二字下げ］` | corpus | OBSERVED |
+| L225 | Layout | — | 改行天付き、折り返してN字下げ | `［＃改行天付き、折り返してN字下げ］` | corpus | OBSERVED |
+| L226 | Layout | — | 改見開き右 | `［＃改見開き右］` | corpus | OBSERVED |
+| L227 | Layout | — | 改頁 | `［＃改頁］` | corpus | OBSERVED |
+| L228 | Layout | — | 数字はN字下げ、説明文はN字下げ | `［＃数字はN字下げ、説明文はN字下げ］` | corpus | OBSERVED |
+| L229 | Layout | — | 文末よりN字上げ揃え | `［＃文末よりN字上げ揃え］` | corpus | OBSERVED |
+| L230 | Layout | — | 最後のN行は底本では字下げなし | `［＃最後のN行は底本では字下げなし］` | corpus | OBSERVED |
+| L231 | Layout | — | 本文の台詞部分はN行目から、その台詞の最後まで天よりN字下げ。 | `［＃本文の台詞部分はN行目から、その台詞の最後まで天よりN字下げ。］` | corpus | OBSERVED |
+| L232 | Layout | — | 本文の台詞部分はN行目から、その台詞の最後まで天よりN字下げ。ト書き部分は天よりN字下げ（ト書きの段落のN行目はN字下げてある） | `［＃本文の台詞部分はN行目から、その台詞の最後まで天よりN字下げ。ト書き部分は天よりN字下げ（ト書きの段落のN行目はN字下げてある）］` | corpus | OBSERVED |
+| L233 | Layout | — | 横書き、「○○」の「○○」と、「○○」の「○○」と「○○」の間にアクセント（∨）、「○○」に上線 | `［＃横書き、「○○」の「○○」と、「○○」の「○○」と「○○」の間にアクセント（∨）、「○○」に上線］` | corpus | OBSERVED |
+| L234 | Layout | — | 横書き、「○○」はアクセント（∨）付き | `［＃横書き、「○○」はアクセント（∨）付き］` | corpus | OBSERVED |
+| L235 | Layout | — | 横組みで、ページの上部、左右中央に | `［＃横組みで、ページの上部、左右中央に］` | corpus | OBSERVED |
+| L236 | Layout | — | 横組みの下に、左右中央縦組みで | `［＃横組みの下に、左右中央縦組みで］` | corpus | OBSERVED |
+| L237 | Layout | — | 次のN項目はN行目以降N字下げ | `［＃次のN項目はN行目以降N字下げ］` | corpus | OBSERVED |
+| L238 | Layout | — | 次行は三字下げ、九字空き地付きで | `［＃次行は三字下げ、九字空き地付きで］` | corpus | OBSERVED |
+| L239 | Layout | — | 次行は四字下げ、一字空き地付きで | `［＃次行は四字下げ、一字空き地付きで］` | corpus | OBSERVED |
+| L240 | Layout | — | 段組み適用外 | `［＃段組み適用外］` | corpus | OBSERVED |
+| L241 | Layout | — | 直線は中央に配置 | `［＃直線は中央に配置］` | corpus | OBSERVED |
+| L242 | Layout | — | 行末からN字上で地付き | `［＃行末からN字上で地付き］` | corpus | OBSERVED |
+| L243 | Layout | — | 表罫囲み内の特に注記のない文字は中文字 | `［＃表罫囲み内の特に注記のない文字は中文字］` | corpus | OBSERVED |
+| L244 | Layout | — | ［＃ここからN字下げ、ただし冒頭の「○○ | `［＃ここからN字下げ、ただし冒頭の「○○` | corpus | OBSERVED |
+| L245 | Layout | ページの左右中央に組んである処理 | ページの左右中央 | `［＃ページの左右中央］` | annotation/layout_3.html; corpus | DOCUMENTED-AND-OBSERVED |
+| L246 | Layout | ページや段をあらためる処理 | 改丁 | `［＃改丁］` | annotation/layout_1.html; annotation/layout_3.html; corpus | DOCUMENTED-AND-OBSERVED |
+| L247 | Layout | ページや段をあらためる処理 | 改段 | `［＃改段］` | annotation/layout_1.html; corpus | DOCUMENTED-AND-OBSERVED |
+| L248 | Layout | ページや段をあらためる処理 | 改見開き | `［＃改見開き］` | annotation/layout_1.html; corpus | DOCUMENTED-AND-OBSERVED |
+| L249 | Layout | 割り注 | ここから割り注 | `［＃ここから割り注］` | annotation/etc.html; annotation/henkoten.html; corpus | DEPRECATED |
+| L250 | Layout | 割り注 | ここで割り注終わり | `［＃ここで割り注終わり］` | annotation/etc.html; annotation/henkoten.html; corpus | DEPRECATED |
+| L251 | Layout | 割り注 | 割り注 | `［＃割り注］` | annotation/etc.html; annotation/henkoten.html; corpus | DEPRECATED |
+| L252 | Layout | 割り注 | 割り注終わり | `［＃割り注終わり］` | annotation/etc.html; annotation/henkoten.html; corpus | DEPRECATED |
+| L253 | Layout | 太字（ゴシック）と斜体（イタリック） | ここからN字下げ | `［＃ここからN字下げ］` | annotation/emphasis.html; annotation/etc.html; annotation/layout_2.html; annotation/layout_3.html; corpus | DOCUMENTED-AND-OBSERVED |
+| L254 | Layout | 太字（ゴシック）と斜体（イタリック） | ここで字下げ終わり | `［＃ここで字下げ終わり］` | annotation/emphasis.html; annotation/etc.html; annotation/heading.html; annotation/henkoten.html; annotation/layout_2.html; annotation/layout_3.html; corpus | DEPRECATED |
+| L255 | Layout | 字下げ | ここからN字下げ、折り返してN字下げ | `［＃ここからN字下げ、折り返してN字下げ］` | annotation/layout_2.html; corpus | DOCUMENTED-AND-OBSERVED |
+| L256 | Layout | 字下げ | ここから○字下げ、折り返して●字下げ | `［＃ここから○字下げ、折り返して●字下げ］` | annotation/layout_2.html | DOCUMENTED |
+| L257 | Layout | 字下げ | ここから地からN字上げ | `［＃ここから地からN字上げ］` | annotation/layout_2.html; corpus | DOCUMENTED-AND-OBSERVED |
+| L258 | Layout | 字下げ | ここから地から○字上げ | `［＃ここから地から○字上げ］` | annotation/layout_2.html | DOCUMENTED |
+| L259 | Layout | 字下げ | ここから地付き | `［＃ここから地付き］` | annotation/layout_2.html; corpus | DOCUMENTED-AND-OBSERVED |
+| L260 | Layout | 字下げ | ここから改行天付き、折り返してN字下げ | `［＃ここから改行天付き、折り返してN字下げ］` | annotation/layout_2.html; corpus | DOCUMENTED-AND-OBSERVED |
+| L261 | Layout | 字下げ | ここから改行天付き、折り返して○字下げ | `［＃ここから改行天付き、折り返して○字下げ］` | annotation/layout_2.html | DOCUMENTED |
+| L262 | Layout | 字下げ | ここで地付き終わり | `［＃ここで地付き終わり］` | annotation/layout_2.html; corpus | DOCUMENTED-AND-OBSERVED |
+| L263 | Layout | 字下げ | ここで字上げ終わり | `［＃ここで字上げ終わり］` | annotation/layout_2.html; corpus | DOCUMENTED-AND-OBSERVED |
+| L264 | Layout | 字下げ | 地から○字上げ | `［＃地から○字上げ］` | annotation/layout_2.html | DOCUMENTED |
+| L265 | Layout | 字下げ | 地付き | `［＃地付き］` | annotation/layout_2.html; corpus | DOCUMENTED-AND-OBSERVED |
+| L266 | Layout | 字詰め | N字下げ | `［＃N字下げ］` | annotation/etc.html; annotation/heading.html; annotation/layout_1.html; annotation/layout_2.html; annotation/layout_3.html; corpus | DOCUMENTED-AND-OBSERVED |
+| L267 | Layout | 字詰め | ここからN字詰め | `［＃ここからN字詰め］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| L268 | Layout | 字詰め | ここから○字下げ | `［＃ここから○字下げ］` | annotation/etc.html; annotation/heading.html; annotation/henkoten.html; annotation/layout_2.html | DEPRECATED |
+| L269 | Layout | 字詰め | ここから○字詰め | `［＃ここから○字詰め］` | annotation/etc.html | DOCUMENTED |
+| L270 | Layout | 字詰め | ここで字詰め終わり | `［＃ここで字詰め終わり］` | annotation/etc.html; annotation/henkoten.html; corpus | DEPRECATED |
+| L271 | Layout | 横組み | 「○○」は横組み | `［＃「○○」は横組み］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| L272 | Layout | 横組み | ここから横組み | `［＃ここから横組み］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| L273 | Layout | 横組み | ここで横組み終わり | `［＃ここで横組み終わり］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| L274 | Layout | 横組み | 横組み | `［＃横組み］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| L275 | Layout | 横組み | 横組み終わり | `［＃横組み終わり］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| L276 | Layout | 空白ページの挿入 | 改ページ | `［＃改ページ］` | annotation/extra.html; annotation/layout_1.html; annotation/layout_2.html; annotation/layout_3.html; corpus | DOCUMENTED-AND-OBSERVED |
+| L277 | Layout | 罫囲み | 「○○」は罫囲み | `［＃「○○」は罫囲み］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| L278 | Layout | 罫囲み | ここから●字詰め | `［＃ここから●字詰め］` | annotation/etc.html; annotation/henkoten.html | DEPRECATED |
+| L279 | Layout | 罫囲み | ここから罫囲み | `［＃ここから罫囲み］` | annotation/etc.html; annotation/henkoten.html; corpus | DEPRECATED |
+| L280 | Layout | 罫囲み | ここで罫囲み終わり | `［＃ここで罫囲み終わり］` | annotation/etc.html; annotation/henkoten.html; corpus | DEPRECATED |
+| L281 | Layout | 罫囲み | 地からN字上げ | `［＃地からN字上げ］` | annotation/etc.html; annotation/layout_1.html; annotation/layout_2.html; corpus | DOCUMENTED-AND-OBSERVED |
+| L282 | Layout | 罫囲み | 罫囲み | `［＃罫囲み］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| L283 | Layout | 罫囲み | 罫囲み終わり | `［＃罫囲み終わり］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| L284 | Layout | 行右小書き、行左小書き文字（縦組み） | 「○○」は行右小書き | `［＃「○○」は行右小書き］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| L285 | Layout | 行右小書き、行左小書き文字（縦組み） | 行右小書き | `［＃行右小書き］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| L286 | Layout | 行右小書き、行左小書き文字（縦組み） | 行右小書き終わり | `［＃行右小書き終わり］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| L287 | Layout | 通常の見出し | ○字下げ | `［＃○字下げ］` | annotation/heading.html; annotation/layout_2.html | DOCUMENTED |
 ### Headings / 見出し
 
-| ID | Feature | Example | Sources | Verdict |
-|----|---------|---------|---------|---------|
-| H1 | ここから大見出し | `［＃ここから大見出し］` | chuki_tag.txt:39; heading | VERIFIED |
-| H2 | ここで大見出し終わり | `［＃ここで大見出し終わり］` | chuki_tag.txt:40; heading | VERIFIED |
-| H3 | ここから中見出し | `［＃ここから中見出し］` | chuki_tag.txt:41; heading | VERIFIED |
-| H4 | ここで中見出し終わり | `［＃ここで中見出し終わり］` | chuki_tag.txt:42; heading | VERIFIED |
-| H5 | ここから小見出し | `［＃ここから小見出し］` | chuki_tag.txt:43; heading | VERIFIED |
-| H6 | ここで小見出し終わり | `［＃ここで小見出し終わり］` | chuki_tag.txt:44; heading | VERIFIED |
-| H7 | 見出し | `［＃見出し］` | chuki_tag.txt:46 | CHUKI-ONLY |
-| H8 | 見出し終わり | `［＃見出し終わり］` | chuki_tag.txt:47 | CHUKI-ONLY |
-| H9 | 大見出し | `［＃大見出し］` | chuki_tag.txt:48; heading | VERIFIED |
-| H10 | 大見出し終わり | `［＃大見出し終わり］` | chuki_tag.txt:49; heading | VERIFIED |
-| H11 | 中見出し | `［＃中見出し］` | chuki_tag.txt:50; heading | VERIFIED |
-| H12 | 中見出し終わり | `［＃中見出し終わり］` | chuki_tag.txt:51; heading | VERIFIED |
-| H13 | 小見出し | `［＃小見出し］` | chuki_tag.txt:52; heading | VERIFIED |
-| H14 | 小見出し終わり | `［＃小見出し終わり］` | chuki_tag.txt:53; heading | VERIFIED |
-| H15 | 同行大見出し | `［＃同行大見出し］` | chuki_tag.txt:54; heading | VERIFIED |
-| H16 | 同行大見出し終わり | `［＃同行大見出し終わり］` | chuki_tag.txt:55; heading | VERIFIED |
-| H17 | 同行中見出し | `［＃同行中見出し］` | chuki_tag.txt:56; heading | VERIFIED |
-| H18 | 同行中見出し終わり | `［＃同行中見出し終わり］` | chuki_tag.txt:57; heading | VERIFIED |
-| H19 | 同行小見出し | `［＃同行小見出し］` | chuki_tag.txt:58; heading | VERIFIED |
-| H20 | 同行小見出し終わり | `［＃同行小見出し終わり］` | chuki_tag.txt:59; heading | VERIFIED |
-| H21 | 窓大見出し | `［＃窓大見出し］` | chuki_tag.txt:60; heading | VERIFIED |
-| H22 | 窓大見出し終わり | `［＃窓大見出し終わり］` | chuki_tag.txt:61; heading | VERIFIED |
-| H23 | 窓中見出し | `［＃窓中見出し］` | chuki_tag.txt:62; heading | VERIFIED |
-| H24 | 窓中見出し終わり | `［＃窓中見出し終わり］` | chuki_tag.txt:63; heading | VERIFIED |
-| H25 | 窓小見出し | `［＃窓小見出し］` | chuki_tag.txt:64; graphics; heading | VERIFIED |
-| H26 | 窓小見出し終わり | `［＃窓小見出し終わり］` | chuki_tag.txt:65; graphics; heading | VERIFIED |
-| H27 | 「○○」は大見出し | `［＃「○○」は大見出し］` | duplication; etc; heading; layout_1; layout_3 | MANUAL-ONLY |
-| H28 | 「○○」は中見出し | `［＃「○○」は中見出し］` | etc; heading; layout_1; layout_2; layout_3 | MANUAL-ONLY |
-| H29 | 「○○」は小見出し | `［＃「○○」は小見出し］` | etc; heading | MANUAL-ONLY |
-| H30 | 「○○」は同行中見出し | `［＃「○○」は同行中見出し］` | heading | MANUAL-ONLY |
-| H31 | 「○○」は同行大見出し | `［＃「○○」は同行大見出し］` | heading | MANUAL-ONLY |
-| H32 | 「○○」は同行小見出し | `［＃「○○」は同行小見出し］` | heading | MANUAL-ONLY |
-| H33 | 「○○」は窓中見出し | `［＃「○○」は窓中見出し］` | heading | MANUAL-ONLY |
-| H34 | 「○○」は窓大見出し | `［＃「○○」は窓大見出し］` | heading | MANUAL-ONLY |
-| H35 | 「○○」は窓小見出し | `［＃「○○」は窓小見出し］` | heading | MANUAL-ONLY |
+| ID | Family | Sub-family | Feature | Example | Sources | Status |
+|----|--------|------------|---------|---------|---------|--------|
+| H1 | Headings | — | 「○○」「○○」「○○」その他」は小見出し | `［＃「○○」「○○」「○○」その他」は小見出し］` | corpus | OBSERVED |
+| H2 | Headings | — | 「○○」「○○」」は中見出し | `［＃「○○」「○○」」は中見出し］` | corpus | OBSERVED |
+| H3 | Headings | — | 「○○」」は中見出し | `［＃「○○」」は中見出し］` | corpus | OBSERVED |
+| H4 | Headings | — | 「○○」」は同行中見出し | `［＃「○○」」は同行中見出し］` | corpus | OBSERVED |
+| H5 | Headings | — | 「○○」」は大見出し | `［＃「○○」」は大見出し］` | corpus | OBSERVED |
+| H6 | Headings | — | 「○○」」は小見出し | `［＃「○○」」は小見出し］` | corpus | OBSERVED |
+| H7 | Headings | — | 「○○」があった」は中見出し | `［＃「○○」があった」は中見出し］` | corpus | OBSERVED |
+| H8 | Headings | — | 「○○」さん」は中見出し | `［＃「○○」さん」は中見出し］` | corpus | OBSERVED |
+| H9 | Headings | — | 「○○」だ」は中見出し | `［＃「○○」だ」は中見出し］` | corpus | OBSERVED |
+| H10 | Headings | — | 「○○」だけ」は中見出し | `［＃「○○」だけ」は中見出し］` | corpus | OBSERVED |
+| H11 | Headings | — | 「○○」で世界的多作家に」は中見出し | `［＃「○○」で世界的多作家に」は中見出し］` | corpus | OBSERVED |
+| H12 | Headings | — | 「○○」で就職依頼状」は中見出し | `［＃「○○」で就職依頼状」は中見出し］` | corpus | OBSERVED |
+| H13 | Headings | — | 「○○」と「○○」」は中見出し | `［＃「○○」と「○○」」は中見出し］` | corpus | OBSERVED |
+| H14 | Headings | — | 「○○」と「○○」」は小見出し | `［＃「○○」と「○○」」は小見出し］` | corpus | OBSERVED |
+| H15 | Headings | — | 「○○」と「○○」に関する俚伝」は中見出し | `［＃「○○」と「○○」に関する俚伝」は中見出し］` | corpus | OBSERVED |
+| H16 | Headings | — | 「○○」と「○○」（一）」は中見出し | `［＃「○○」と「○○」（一）」は中見出し］` | corpus | OBSERVED |
+| H17 | Headings | — | 「○○」と「○○」（三）」は中見出し | `［＃「○○」と「○○」（三）」は中見出し］` | corpus | OBSERVED |
+| H18 | Headings | — | 「○○」と「○○」（二）」は中見出し | `［＃「○○」と「○○」（二）」は中見出し］` | corpus | OBSERVED |
+| H19 | Headings | — | 「○○」というのか？」は大見出し | `［＃「○○」というのか？」は大見出し］` | corpus | OBSERVED |
+| H20 | Headings | — | 「○○」というよりも健全なる個人思想が大切」は中見出し | `［＃「○○」というよりも健全なる個人思想が大切」は中見出し］` | corpus | OBSERVED |
+| H21 | Headings | — | 「○○」という日本語」は中見出し | `［＃「○○」という日本語」は中見出し］` | corpus | OBSERVED |
+| H22 | Headings | — | 「○○」といふこと」は中見出し | `［＃「○○」といふこと」は中見出し］` | corpus | OBSERVED |
+| H23 | Headings | — | 「○○」といふ語の終り」は中見出し | `［＃「○○」といふ語の終り」は中見出し］` | corpus | OBSERVED |
+| H24 | Headings | — | 「○○」とその「○○」」は中見出し | `［＃「○○」とその「○○」」は中見出し］` | corpus | OBSERVED |
+| H25 | Headings | — | 「○○」とは」は中見出し | `［＃「○○」とは」は中見出し］` | corpus | OBSERVED |
+| H26 | Headings | — | 「○○」とは？」は中見出し | `［＃「○○」とは？」は中見出し］` | corpus | OBSERVED |
+| H27 | Headings | — | 「○○」と反問せよ」は中見出し | `［＃「○○」と反問せよ」は中見出し］` | corpus | OBSERVED |
+| H28 | Headings | — | 「○○」と思案外史」は中見出し | `［＃「○○」と思案外史」は中見出し］` | corpus | OBSERVED |
+| H29 | Headings | — | 「○○」と歌曲」は小見出し | `［＃「○○」と歌曲」は小見出し］` | corpus | OBSERVED |
+| H30 | Headings | — | 「○○」と特許法」は中見出し | `［＃「○○」と特許法」は中見出し］` | corpus | OBSERVED |
+| H31 | Headings | — | 「○○」と矢崎嵯峨のやの作品」は中見出し | `［＃「○○」と矢崎嵯峨のやの作品」は中見出し］` | corpus | OBSERVED |
+| H32 | Headings | — | 「○○」におくる言葉」は中見出し | `［＃「○○」におくる言葉」は中見出し］` | corpus | OBSERVED |
+| H33 | Headings | — | 「○○」について」は中見出し | `［＃「○○」について」は中見出し］` | corpus | OBSERVED |
+| H34 | Headings | — | 「○○」について」は大見出し | `［＃「○○」について」は大見出し］` | corpus | OBSERVED |
+| H35 | Headings | — | 「○○」によせて――」は大見出し | `［＃「○○」によせて――」は大見出し］` | corpus | OBSERVED |
+| H36 | Headings | — | 「○○」に主演」は中見出し | `［＃「○○」に主演」は中見出し］` | corpus | OBSERVED |
+| H37 | Headings | — | 「○○」に含まれた二種の考え」は中見出し | `［＃「○○」に含まれた二種の考え」は中見出し］` | corpus | OBSERVED |
+| H38 | Headings | — | 「○○」に大見出し | `［＃「○○」に大見出し］` | corpus | OBSERVED |
+| H39 | Headings | — | 「○○」に就いて」は中見出し | `［＃「○○」に就いて」は中見出し］` | corpus | OBSERVED |
+| H40 | Headings | — | 「○○」に添えて」は中見出し | `［＃「○○」に添えて」は中見出し］` | corpus | OBSERVED |
+| H41 | Headings | — | 「○○」に関する質疑回答」は大見出し | `［＃「○○」に関する質疑回答」は大見出し］` | corpus | OBSERVED |
+| H42 | Headings | — | 「○○」のおもひ出」は中見出し | `［＃「○○」のおもひ出」は中見出し］` | corpus | OBSERVED |
+| H43 | Headings | — | 「○○」のからくり」は大見出し | `［＃「○○」のからくり」は大見出し］` | corpus | OBSERVED |
+| H44 | Headings | — | 「○○」のことば」は小見出し | `［＃「○○」のことば」は小見出し］` | corpus | OBSERVED |
+| H45 | Headings | — | 「○○」の一夜」は中見出し | `［＃「○○」の一夜」は中見出し］` | corpus | OBSERVED |
+| H46 | Headings | — | 「○○」の一節」は小見出し | `［＃「○○」の一節」は小見出し］` | corpus | OBSERVED |
+| H47 | Headings | — | 「○○」の上昇で地震を予知した話」は小見出し | `［＃「○○」の上昇で地震を予知した話」は小見出し］` | corpus | OBSERVED |
+| H48 | Headings | — | 「○○」の人・武蔵」は小見出し | `［＃「○○」の人・武蔵」は小見出し］` | corpus | OBSERVED |
+| H49 | Headings | — | 「○○」の例としてコーヒーのN番目を示す）」は中見出し | `［＃「○○」の例としてコーヒーのN番目を示す）」は中見出し］` | corpus | OBSERVED |
+| H50 | Headings | — | 「○○」の価二百万弗」は同行中見出し | `［＃「○○」の価二百万弗」は同行中見出し］` | corpus | OBSERVED |
+| H51 | Headings | — | 「○○」の初めに」は大見出し | `［＃「○○」の初めに」は大見出し］` | corpus | OBSERVED |
+| H52 | Headings | — | 「○○」の創刊」は大見出し | `［＃「○○」の創刊」は大見出し］` | corpus | OBSERVED |
+| H53 | Headings | — | 「○○」の原則」は中見出し | `［＃「○○」の原則」は中見出し］` | corpus | OBSERVED |
+| H54 | Headings | — | 「○○」の句：」は小見出し | `［＃「○○」の句：」は小見出し］` | corpus | OBSERVED |
+| H55 | Headings | — | 「○○」の命名」は大見出し | `［＃「○○」の命名」は大見出し］` | corpus | OBSERVED |
+| H56 | Headings | — | 「○○」の哲学的概念」は中見出し | `［＃「○○」の哲学的概念」は中見出し］` | corpus | OBSERVED |
+| H57 | Headings | — | 「○○」の問題」は中見出し | `［＃「○○」の問題」は中見出し］` | corpus | OBSERVED |
+| H58 | Headings | — | 「○○」の学名発表」は大見出し | `［＃「○○」の学名発表」は大見出し］` | corpus | OBSERVED |
+| H59 | Headings | — | 「○○」の序詩」は中見出し | `［＃「○○」の序詩」は中見出し］` | corpus | OBSERVED |
+| H60 | Headings | — | 「○○」の店で」は中見出し | `［＃「○○」の店で」は中見出し］` | corpus | OBSERVED |
+| H61 | Headings | — | 「○○」の意味」は中見出し | `［＃「○○」の意味」は中見出し］` | corpus | OBSERVED |
+| H62 | Headings | — | 「○○」の感激」は小見出し | `［＃「○○」の感激」は小見出し］` | corpus | OBSERVED |
+| H63 | Headings | — | 「○○」の抹殺」は中見出し | `［＃「○○」の抹殺」は中見出し］` | corpus | OBSERVED |
+| H64 | Headings | — | 「○○」の文字とその読み方」は中見出し | `［＃「○○」の文字とその読み方」は中見出し］` | corpus | OBSERVED |
+| H65 | Headings | — | 「○○」の新學説」は大見出し | `［＃「○○」の新學説」は大見出し］` | corpus | OBSERVED |
+| H66 | Headings | — | 「○○」の書物」は中見出し | `［＃「○○」の書物」は中見出し］` | corpus | OBSERVED |
+| H67 | Headings | — | 「○○」の気風」は中見出し | `［＃「○○」の気風」は中見出し］` | corpus | OBSERVED |
+| H68 | Headings | — | 「○○」の物語」は中見出し | `［＃「○○」の物語」は中見出し］` | corpus | OBSERVED |
+| H69 | Headings | — | 「○○」の特色」は中見出し | `［＃「○○」の特色」は中見出し］` | corpus | OBSERVED |
+| H70 | Headings | — | 「○○」の王陵」は中見出し | `［＃「○○」の王陵」は中見出し］` | corpus | OBSERVED |
+| H71 | Headings | — | 「○○」の発生」は中見出し | `［＃「○○」の発生」は中見出し］` | corpus | OBSERVED |
+| H72 | Headings | — | 「○○」の発見」は大見出し | `［＃「○○」の発見」は大見出し］` | corpus | OBSERVED |
+| H73 | Headings | — | 「○○」の目的」は中見出し | `［＃「○○」の目的」は中見出し］` | corpus | OBSERVED |
+| H74 | Headings | — | 「○○」の終りに」は中見出し | `［＃「○○」の終りに」は中見出し］` | corpus | OBSERVED |
+| H75 | Headings | — | 「○○」の著者」は中見出し | `［＃「○○」の著者」は中見出し］` | corpus | OBSERVED |
+| H76 | Headings | — | 「○○」の裏話」は中見出し | `［＃「○○」の裏話」は中見出し］` | corpus | OBSERVED |
+| H77 | Headings | — | 「○○」の言葉」は小見出し | `［＃「○○」の言葉」は小見出し］` | corpus | OBSERVED |
+| H78 | Headings | — | 「○○」の語源」は小見出し | `［＃「○○」の語源」は小見出し］` | corpus | OBSERVED |
+| H79 | Headings | — | 「○○」の語源論に止めを刺した新村博士」は小見出し | `［＃「○○」の語源論に止めを刺した新村博士」は小見出し］` | corpus | OBSERVED |
+| H80 | Headings | — | 「○○」の語義」は中見出し | `［＃「○○」の語義」は中見出し］` | corpus | OBSERVED |
+| H81 | Headings | — | 「○○」の論理」は中見出し | `［＃「○○」の論理」は中見出し］` | corpus | OBSERVED |
+| H82 | Headings | — | 「○○」の論理的意義」は小見出し | `［＃「○○」の論理的意義」は小見出し］` | corpus | OBSERVED |
+| H83 | Headings | — | 「○○」の諸版について」は中見出し | `［＃「○○」の諸版について」は中見出し］` | corpus | OBSERVED |
+| H84 | Headings | — | 「○○」の選句について）」は中見出し | `［＃「○○」の選句について）」は中見出し］` | corpus | OBSERVED |
+| H85 | Headings | — | 「○○」の魅力」は中見出し | `［＃「○○」の魅力」は中見出し］` | corpus | OBSERVED |
+| H86 | Headings | — | 「○○」の魅力」は大見出し | `［＃「○○」の魅力」は大見出し］` | corpus | OBSERVED |
+| H87 | Headings | — | 「○○」は中中見出し | `［＃「○○」は中中見出し］` | corpus | OBSERVED |
+| H88 | Headings | — | 「○○」へ来た老水夫」は中見出し | `［＃「○○」へ来た老水夫」は中見出し］` | corpus | OBSERVED |
+| H89 | Headings | — | 「○○」もうひとつの結末」は同行大見出し | `［＃「○○」もうひとつの結末」は同行大見出し］` | corpus | OBSERVED |
+| H90 | Headings | — | 「○○」より（明治三十九年）」は大見出し | `［＃「○○」より（明治三十九年）」は大見出し］` | corpus | OBSERVED |
+| H91 | Headings | — | 「○○」より（明治三十二年）」は大見出し | `［＃「○○」より（明治三十二年）」は大見出し］` | corpus | OBSERVED |
+| H92 | Headings | — | 「○○」より（明治三十八年）」は大見出し | `［＃「○○」より（明治三十八年）」は大見出し］` | corpus | OBSERVED |
+| H93 | Headings | — | 「○○」より（明治三十四年）」は大見出し | `［＃「○○」より（明治三十四年）」は大見出し］` | corpus | OBSERVED |
+| H94 | Headings | — | 「○○」より（明治四十一年）」は大見出し | `［＃「○○」より（明治四十一年）」は大見出し］` | corpus | OBSERVED |
+| H95 | Headings | — | 「○○」より（明治四十二年）」は大見出し | `［＃「○○」より（明治四十二年）」は大見出し］` | corpus | OBSERVED |
+| H96 | Headings | — | 「○○」を持つ楽しみ」は中見出し | `［＃「○○」を持つ楽しみ」は中見出し］` | corpus | OBSERVED |
+| H97 | Headings | — | 「○○」を生む」は中見出し | `［＃「○○」を生む」は中見出し］` | corpus | OBSERVED |
+| H98 | Headings | — | 「○○」を見る」は中見出し | `［＃「○○」を見る」は中見出し］` | corpus | OBSERVED |
+| H99 | Headings | — | 「○○」を見る」は大見出し | `［＃「○○」を見る」は大見出し］` | corpus | OBSERVED |
+| H100 | Headings | — | 「○○」を説く薬草道人」は中見出し | `［＃「○○」を説く薬草道人」は中見出し］` | corpus | OBSERVED |
+| H101 | Headings | — | 「○○」を読む人」は中見出し | `［＃「○○」を読む人」は中見出し］` | corpus | OBSERVED |
+| H102 | Headings | — | 「○○」を讀み初むべきか」は大見出し | `［＃「○○」を讀み初むべきか」は大見出し］` | corpus | OBSERVED |
+| H103 | Headings | — | 「○○」を買った話」は中見出し | `［＃「○○」を買った話」は中見出し］` | corpus | OBSERVED |
+| H104 | Headings | — | 「○○」・「○○」」は大見出し | `［＃「○○」・「○○」」は大見出し］` | corpus | OBSERVED |
+| H105 | Headings | — | 「○○」世」は小見出し | `［＃「○○」世」は小見出し］` | corpus | OBSERVED |
+| H106 | Headings | — | 「○○」以後」は大見出し | `［＃「○○」以後」は大見出し］` | corpus | OBSERVED |
+| H107 | Headings | — | 「○○」初舞台」は中見出し | `［＃「○○」初舞台」は中見出し］` | corpus | OBSERVED |
+| H108 | Headings | — | 「○○」前後」は中見出し | `［＃「○○」前後」は中見出し］` | corpus | OBSERVED |
+| H109 | Headings | — | 「○○」収録分）」は中見出し | `［＃「○○」収録分）」は中見出し］` | corpus | OBSERVED |
+| H110 | Headings | — | 「○○」序」は大見出し | `［＃「○○」序」は大見出し］` | corpus | OBSERVED |
+| H111 | Headings | — | 「○○」愛読」は中見出し | `［＃「○○」愛読」は中見出し］` | corpus | OBSERVED |
+| H112 | Headings | — | 「○○」拾遺」は大見出し | `［＃「○○」拾遺」は大見出し］` | corpus | OBSERVED |
+| H113 | Headings | — | 「○○」敗る」は中見出し | `［＃「○○」敗る」は中見出し］` | corpus | OBSERVED |
+| H114 | Headings | — | 「○○」時代」は中見出し | `［＃「○○」時代」は中見出し］` | corpus | OBSERVED |
+| H115 | Headings | — | 「○○」未定稿」は大見出し | `［＃「○○」未定稿」は大見出し］` | corpus | OBSERVED |
+| H116 | Headings | — | 「○○」条約」は中見出し | `［＃「○○」条約」は中見出し］` | corpus | OBSERVED |
+| H117 | Headings | — | 「○○」株式会社」は大見出し | `［＃「○○」株式会社」は大見出し］` | corpus | OBSERVED |
+| H118 | Headings | — | 「○○」歌手」は中見出し | `［＃「○○」歌手」は中見出し］` | corpus | OBSERVED |
+| H119 | Headings | — | 「○○」減少法」は中見出し | `［＃「○○」減少法」は中見出し］` | corpus | OBSERVED |
+| H120 | Headings | — | 「○○」的イデオロギー論の批判」は大見出し | `［＃「○○」的イデオロギー論の批判」は大見出し］` | corpus | OBSERVED |
+| H121 | Headings | — | 「○○」的イデオロギー論の綱要」は大見出し | `［＃「○○」的イデオロギー論の綱要」は大見出し］` | corpus | OBSERVED |
+| H122 | Headings | — | 「○○」考」は中見出し | `［＃「○○」考」は中見出し］` | corpus | OBSERVED |
+| H123 | Headings | — | 「○○」誕生（一）」は中見出し | `［＃「○○」誕生（一）」は中見出し］` | corpus | OBSERVED |
+| H124 | Headings | — | 「○○」誕生（二）」は中見出し | `［＃「○○」誕生（二）」は中見出し］` | corpus | OBSERVED |
+| H125 | Headings | — | 「○○」読み初めし頃」は中見出し | `［＃「○○」読み初めし頃」は中見出し］` | corpus | OBSERVED |
+| H126 | Headings | — | 「○○」談義」は中見出し | `［＃「○○」談義」は中見出し］` | corpus | OBSERVED |
+| H127 | Headings | — | 「○○」論」は中見出し | `［＃「○○」論」は中見出し］` | corpus | OBSERVED |
+| H128 | Headings | — | 「○○」論〕」は中見出し | `［＃「○○」論〕」は中見出し］` | corpus | OBSERVED |
+| H129 | Headings | — | 「○○」雑話」は大見出し | `［＃「○○」雑話」は大見出し］` | corpus | OBSERVED |
+| H130 | Headings | — | 「○○」）：」は小見出し | `［＃「○○」）：」は小見出し］` | corpus | OBSERVED |
+| H131 | Headings | — | 「○○」？」は中見出し | `［＃「○○」？」は中見出し］` | corpus | OBSERVED |
+| H132 | Headings | — | ここから窓中見出し | `［＃ここから窓中見出し］` | corpus | OBSERVED |
+| H133 | Headings | — | ここで窓中見出し終わり | `［＃ここで窓中見出し終わり］` | corpus | OBSERVED |
+| H134 | Headings | — | ここで見出し終わり | `［＃ここで見出し終わり］` | corpus | OBSERVED |
+| H135 | Headings | — | 小見出し文字 | `［＃小見出し文字］` | corpus | OBSERVED |
+| H136 | Headings | — | 本文中、新聞記事の見出しを模した箇所では、入力者注で文字の大きさを表した。大きさの比率は、見出し文字：小見出し文字：本文の文字＝N：N：N | `［＃本文中、新聞記事の見出しを模した箇所では、入力者注で文字の大きさを表した。大きさの比率は、見出し文字：小見出し文字：本文の文字＝N：N：N］` | corpus | OBSERVED |
+| H137 | Headings | — | 見出し文字 | `［＃見出し文字］` | corpus | OBSERVED |
+| H138 | Headings | キャプション | 窓小見出し | `［＃窓小見出し］` | annotation/graphics.html; annotation/heading.html; corpus | DOCUMENTED-AND-OBSERVED |
+| H139 | Headings | キャプション | 窓小見出し終わり | `［＃窓小見出し終わり］` | annotation/graphics.html; annotation/heading.html; corpus | DOCUMENTED-AND-OBSERVED |
+| H140 | Headings | ルビや強調の注記などが重複してかかる場合 | 「○○」は大見出し | `［＃「○○」は大見出し］` | annotation/duplication.html; annotation/etc.html; annotation/heading.html; annotation/layout_1.html; annotation/layout_3.html; corpus | DOCUMENTED-AND-OBSERVED |
+| H141 | Headings | 同行見出し | 「○○」は同行中見出し | `［＃「○○」は同行中見出し］` | annotation/heading.html; corpus | DOCUMENTED-AND-OBSERVED |
+| H142 | Headings | 同行見出し | 「○○」は同行大見出し | `［＃「○○」は同行大見出し］` | annotation/heading.html; corpus | DOCUMENTED-AND-OBSERVED |
+| H143 | Headings | 同行見出し | 「○○」は同行小見出し | `［＃「○○」は同行小見出し］` | annotation/heading.html; corpus | DOCUMENTED-AND-OBSERVED |
+| H144 | Headings | 同行見出し | 同行中見出し | `［＃同行中見出し］` | annotation/heading.html; corpus | DOCUMENTED-AND-OBSERVED |
+| H145 | Headings | 同行見出し | 同行中見出し終わり | `［＃同行中見出し終わり］` | annotation/heading.html; corpus | DOCUMENTED-AND-OBSERVED |
+| H146 | Headings | 同行見出し | 同行大見出し | `［＃同行大見出し］` | annotation/heading.html; corpus | DOCUMENTED-AND-OBSERVED |
+| H147 | Headings | 同行見出し | 同行大見出し終わり | `［＃同行大見出し終わり］` | annotation/heading.html; corpus | DOCUMENTED-AND-OBSERVED |
+| H148 | Headings | 同行見出し | 同行小見出し | `［＃同行小見出し］` | annotation/heading.html; corpus | DOCUMENTED-AND-OBSERVED |
+| H149 | Headings | 同行見出し | 同行小見出し終わり | `［＃同行小見出し終わり］` | annotation/heading.html; corpus | DOCUMENTED-AND-OBSERVED |
+| H150 | Headings | 字詰め | 「○○」は中見出し | `［＃「○○」は中見出し］` | annotation/etc.html; annotation/heading.html; annotation/layout_1.html; annotation/layout_2.html; annotation/layout_3.html; corpus | DOCUMENTED-AND-OBSERVED |
+| H151 | Headings | 字詰め | 「○○」は小見出し | `［＃「○○」は小見出し］` | annotation/etc.html; annotation/heading.html; corpus | DOCUMENTED-AND-OBSERVED |
+| H152 | Headings | 窓見出し | 「○○」は窓中見出し | `［＃「○○」は窓中見出し］` | annotation/heading.html; corpus | DOCUMENTED-AND-OBSERVED |
+| H153 | Headings | 窓見出し | 「○○」は窓大見出し | `［＃「○○」は窓大見出し］` | annotation/heading.html; corpus | DOCUMENTED-AND-OBSERVED |
+| H154 | Headings | 窓見出し | 「○○」は窓小見出し | `［＃「○○」は窓小見出し］` | annotation/heading.html | DOCUMENTED |
+| H155 | Headings | 窓見出し | 窓中見出し | `［＃窓中見出し］` | annotation/heading.html; corpus | DOCUMENTED-AND-OBSERVED |
+| H156 | Headings | 窓見出し | 窓中見出し終わり | `［＃窓中見出し終わり］` | annotation/heading.html; corpus | DOCUMENTED-AND-OBSERVED |
+| H157 | Headings | 窓見出し | 窓大見出し | `［＃窓大見出し］` | annotation/heading.html | DOCUMENTED |
+| H158 | Headings | 窓見出し | 窓大見出し終わり | `［＃窓大見出し終わり］` | annotation/heading.html | DOCUMENTED |
+| H159 | Headings | 通常の見出し | ここから中見出し | `［＃ここから中見出し］` | annotation/heading.html; corpus | DOCUMENTED-AND-OBSERVED |
+| H160 | Headings | 通常の見出し | ここから大見出し | `［＃ここから大見出し］` | annotation/heading.html; corpus | DOCUMENTED-AND-OBSERVED |
+| H161 | Headings | 通常の見出し | ここから小見出し | `［＃ここから小見出し］` | annotation/heading.html; corpus | DOCUMENTED-AND-OBSERVED |
+| H162 | Headings | 通常の見出し | ここで中見出し終わり | `［＃ここで中見出し終わり］` | annotation/heading.html; corpus | DOCUMENTED-AND-OBSERVED |
+| H163 | Headings | 通常の見出し | ここで大見出し終わり | `［＃ここで大見出し終わり］` | annotation/heading.html; corpus | DOCUMENTED-AND-OBSERVED |
+| H164 | Headings | 通常の見出し | ここで小見出し終わり | `［＃ここで小見出し終わり］` | annotation/heading.html; corpus | DOCUMENTED-AND-OBSERVED |
+| H165 | Headings | 通常の見出し | 中見出し | `［＃中見出し］` | annotation/heading.html; corpus | DOCUMENTED-AND-OBSERVED |
+| H166 | Headings | 通常の見出し | 中見出し終わり | `［＃中見出し終わり］` | annotation/heading.html; corpus | DOCUMENTED-AND-OBSERVED |
+| H167 | Headings | 通常の見出し | 大見出し | `［＃大見出し］` | annotation/heading.html; corpus | DOCUMENTED-AND-OBSERVED |
+| H168 | Headings | 通常の見出し | 大見出し終わり | `［＃大見出し終わり］` | annotation/heading.html; corpus | DOCUMENTED-AND-OBSERVED |
+| H169 | Headings | 通常の見出し | 小見出し | `［＃小見出し］` | annotation/heading.html; corpus | DOCUMENTED-AND-OBSERVED |
+| H170 | Headings | 通常の見出し | 小見出し終わり | `［＃小見出し終わり］` | annotation/heading.html; corpus | DOCUMENTED-AND-OBSERVED |
 ### External Characters / 外字
 
-| ID | Feature | Example | Sources | Verdict |
-|----|---------|---------|---------|---------|
-| E1 | 二の字点、N-N-N | `［＃二の字点、N-N-N］` | etc; external_character | MANUAL-ONLY |
-| E2 | … | `［＃…］` | external_character; henkoten; kunten | MANUAL-ONLY |
-| E3 | 「○○」、U+ND、ページ数-行数 | `［＃「○○」、U+ND、ページ数-行数］` | external_character | MANUAL-ONLY |
-| E4 | 「○○」、ページ数-行数 | `［＃「○○」、ページ数-行数］` | external_character | MANUAL-ONLY |
-| E5 | ギリシア小文字ファイナルSIGMA、N-N-N | `［＃ギリシア小文字ファイナルSIGMA、N-N-N］` | external_character | MANUAL-ONLY |
+| ID | Family | Sub-family | Feature | Example | Sources | Status |
+|----|--------|------------|---------|---------|---------|--------|
+| E1 | Gaiji | — | N分のN、U+NB、N-N | `［＃N分のN、U+NB、N-N］` | corpus | OBSERVED |
+| E2 | Gaiji | — | ε異体字、U+NFN、N-下-N | `［＃ε異体字、U+NFN、N-下-N］` | corpus | OBSERVED |
+| E3 | Gaiji | — | θ異体字、U+NDN、N-上-N | `［＃θ異体字、U+NDN、N-上-N］` | corpus | OBSERVED |
+| E4 | Gaiji | — | θ異体字、U+NDN、N-下-N | `［＃θ異体字、U+NDN、N-下-N］` | corpus | OBSERVED |
+| E5 | Gaiji | — | ※は「○○」、第N水準N-N-N、N-N | `［＃※は「○○」、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E6 | Gaiji | — | □＜×、U+NAN、N-N | `［＃□＜×、U+NAN、N-N］` | corpus | OBSERVED |
+| E7 | Gaiji | — | 「○○」、U+N | `［＃「○○」、U+N］` | corpus | OBSERVED |
+| E8 | Gaiji | — | 「○○」、U+NA | `［＃「○○」、U+NA］` | corpus | OBSERVED |
+| E9 | Gaiji | — | 「○○」、U+NAAC、N-N | `［＃「○○」、U+NAAC、N-N］` | corpus | OBSERVED |
+| E10 | Gaiji | — | 「○○」、U+NAAEN、上-N-N | `［＃「○○」、U+NAAEN、上-N-N］` | corpus | OBSERVED |
+| E11 | Gaiji | — | 「○○」、U+NAAEN、下-N-N | `［＃「○○」、U+NAAEN、下-N-N］` | corpus | OBSERVED |
+| E12 | Gaiji | — | 「○○」、U+NAAN、N-N | `［＃「○○」、U+NAAN、N-N］` | corpus | OBSERVED |
+| E13 | Gaiji | — | 「○○」、U+NAA、N-下-N | `［＃「○○」、U+NAA、N-下-N］` | corpus | OBSERVED |
+| E14 | Gaiji | — | 「○○」、U+NAA、N-本文-N | `［＃「○○」、U+NAA、N-本文-N］` | corpus | OBSERVED |
+| E15 | Gaiji | — | 「○○」、U+NABAE、N-N | `［＃「○○」、U+NABAE、N-N］` | corpus | OBSERVED |
+| E16 | Gaiji | — | 「○○」、U+NABC、N-下-N | `［＃「○○」、U+NABC、N-下-N］` | corpus | OBSERVED |
+| E17 | Gaiji | — | 「○○」、U+NABN、N-N | `［＃「○○」、U+NABN、N-N］` | corpus | OBSERVED |
+| E18 | Gaiji | — | 「○○」、U+NABN、N-下-N | `［＃「○○」、U+NABN、N-下-N］` | corpus | OBSERVED |
+| E19 | Gaiji | — | 「○○」、U+NACN、N-N | `［＃「○○」、U+NACN、N-N］` | corpus | OBSERVED |
+| E20 | Gaiji | — | 「○○」、U+NAC、N-N | `［＃「○○」、U+NAC、N-N］` | corpus | OBSERVED |
+| E21 | Gaiji | — | 「○○」、U+NADAN、N-上-N | `［＃「○○」、U+NADAN、N-上-N］` | corpus | OBSERVED |
+| E22 | Gaiji | — | 「○○」、U+NADB、N-N | `［＃「○○」、U+NADB、N-N］` | corpus | OBSERVED |
+| E23 | Gaiji | — | 「○○」、U+NADN、N-N | `［＃「○○」、U+NADN、N-N］` | corpus | OBSERVED |
+| E24 | Gaiji | — | 「○○」、U+NAD、N-N | `［＃「○○」、U+NAD、N-N］` | corpus | OBSERVED |
+| E25 | Gaiji | — | 「○○」、U+NAD、N-上-N | `［＃「○○」、U+NAD、N-上-N］` | corpus | OBSERVED |
+| E26 | Gaiji | — | 「○○」、U+NAD、N-下-N | `［＃「○○」、U+NAD、N-下-N］` | corpus | OBSERVED |
+| E27 | Gaiji | — | 「○○」、U+NAEA、N-中-N | `［＃「○○」、U+NAEA、N-中-N］` | corpus | OBSERVED |
+| E28 | Gaiji | — | 「○○」、U+NAEB、N-N | `［＃「○○」、U+NAEB、N-N］` | corpus | OBSERVED |
+| E29 | Gaiji | — | 「○○」、U+NAEN、N-N | `［＃「○○」、U+NAEN、N-N］` | corpus | OBSERVED |
+| E30 | Gaiji | — | 「○○」、U+NAE、N-N | `［＃「○○」、U+NAE、N-N］` | corpus | OBSERVED |
+| E31 | Gaiji | — | 「○○」、U+NAFA、N-N | `［＃「○○」、U+NAFA、N-N］` | corpus | OBSERVED |
+| E32 | Gaiji | — | 「○○」、U+NAFN、N巻-N-下-N | `［＃「○○」、U+NAFN、N巻-N-下-N］` | corpus | OBSERVED |
+| E33 | Gaiji | — | 「○○」、U+NAF、N-N | `［＃「○○」、U+NAF、N-N］` | corpus | OBSERVED |
+| E34 | Gaiji | — | 「○○」、U+NANAC、N-上-N | `［＃「○○」、U+NANAC、N-上-N］` | corpus | OBSERVED |
+| E35 | Gaiji | — | 「○○」、U+NANA、N-N | `［＃「○○」、U+NANA、N-N］` | corpus | OBSERVED |
+| E36 | Gaiji | — | 「○○」、U+NANCA、N-N | `［＃「○○」、U+NANCA、N-N］` | corpus | OBSERVED |
+| E37 | Gaiji | — | 「○○」、U+NANCN、N-N | `［＃「○○」、U+NANCN、N-N］` | corpus | OBSERVED |
+| E38 | Gaiji | — | 「○○」、U+NANC、N-N | `［＃「○○」、U+NANC、N-N］` | corpus | OBSERVED |
+| E39 | Gaiji | — | 「○○」、U+NAND、N-N | `［＃「○○」、U+NAND、N-N］` | corpus | OBSERVED |
+| E40 | Gaiji | — | 「○○」、U+NAND、N-註【一四】 | `［＃「○○」、U+NAND、N-註【一四】］` | corpus | OBSERVED |
+| E41 | Gaiji | — | 「○○」、U+NANE、N-N | `［＃「○○」、U+NANE、N-N］` | corpus | OBSERVED |
+| E42 | Gaiji | — | 「○○」、U+NANE、N-N-N | `［＃「○○」、U+NANE、N-N-N］` | corpus | OBSERVED |
+| E43 | Gaiji | — | 「○○」、U+NANE、N-下-N | `［＃「○○」、U+NANE、N-下-N］` | corpus | OBSERVED |
+| E44 | Gaiji | — | 「○○」、U+NANE、N-本文-N | `［＃「○○」、U+NANE、N-本文-N］` | corpus | OBSERVED |
+| E45 | Gaiji | — | 「○○」、U+NANF、N-N | `［＃「○○」、U+NANF、N-N］` | corpus | OBSERVED |
+| E46 | Gaiji | — | 「○○」、U+NAN、 | `［＃「○○」、U+NAN、］` | corpus | OBSERVED |
+| E47 | Gaiji | — | 「○○」、U+NAN、N-N | `［＃「○○」、U+NAN、N-N］` | corpus | OBSERVED |
+| E48 | Gaiji | — | 「○○」、U+NAN、N-N-N | `［＃「○○」、U+NAN、N-N-N］` | corpus | OBSERVED |
+| E49 | Gaiji | — | 「○○」、U+NAN、N-上-N | `［＃「○○」、U+NAN、N-上-N］` | corpus | OBSERVED |
+| E50 | Gaiji | — | 「○○」、U+NAN、N-下-N | `［＃「○○」、U+NAN、N-下-N］` | corpus | OBSERVED |
+| E51 | Gaiji | — | 「○○」、U+NAN、N-下段-N | `［＃「○○」、U+NAN、N-下段-N］` | corpus | OBSERVED |
+| E52 | Gaiji | — | 「○○」、U+NAN、N-本文-N | `［＃「○○」、U+NAN、N-本文-N］` | corpus | OBSERVED |
+| E53 | Gaiji | — | 「○○」、U+NAN、N-註【三五】 | `［＃「○○」、U+NAN、N-註【三五】］` | corpus | OBSERVED |
+| E54 | Gaiji | — | 「○○」、U+NAN、N巻-N-上-N | `［＃「○○」、U+NAN、N巻-N-上-N］` | corpus | OBSERVED |
+| E55 | Gaiji | — | 「○○」、U+NAN、N巻-N-下-N | `［＃「○○」、U+NAN、N巻-N-下-N］` | corpus | OBSERVED |
+| E56 | Gaiji | — | 「○○」、U+NAN、、N巻-N-上-N | `［＃「○○」、U+NAN、、N巻-N-上-N］` | corpus | OBSERVED |
+| E57 | Gaiji | — | 「○○」、U+NA、N-N | `［＃「○○」、U+NA、N-N］` | corpus | OBSERVED |
+| E58 | Gaiji | — | 「○○」、U+NA、N-上-N | `［＃「○○」、U+NA、N-上-N］` | corpus | OBSERVED |
+| E59 | Gaiji | — | 「○○」、U+NA、（三）-N-N | `［＃「○○」、U+NA、（三）-N-N］` | corpus | OBSERVED |
+| E60 | Gaiji | — | 「○○」、U+NA、（二）-N-N | `［＃「○○」、U+NA、（二）-N-N］` | corpus | OBSERVED |
+| E61 | Gaiji | — | 「○○」、U+NB | `［＃「○○」、U+NB］` | corpus | OBSERVED |
+| E62 | Gaiji | — | 「○○」、U+NBAC、N-N | `［＃「○○」、U+NBAC、N-N］` | corpus | OBSERVED |
+| E63 | Gaiji | — | 「○○」、U+NBAF、N-下-N | `［＃「○○」、U+NBAF、N-下-N］` | corpus | OBSERVED |
+| E64 | Gaiji | — | 「○○」、U+NBAN、N-N | `［＃「○○」、U+NBAN、N-N］` | corpus | OBSERVED |
+| E65 | Gaiji | — | 「○○」、U+NBA、N-N | `［＃「○○」、U+NBA、N-N］` | corpus | OBSERVED |
+| E66 | Gaiji | — | 「○○」、U+NBA、N-上-N | `［＃「○○」、U+NBA、N-上-N］` | corpus | OBSERVED |
+| E67 | Gaiji | — | 「○○」、U+NBBN、N-N | `［＃「○○」、U+NBBN、N-N］` | corpus | OBSERVED |
+| E68 | Gaiji | — | 「○○」、U+NBB、N-下-N | `［＃「○○」、U+NBB、N-下-N］` | corpus | OBSERVED |
+| E69 | Gaiji | — | 「○○」、U+NBCB、（三）-N-N | `［＃「○○」、U+NBCB、（三）-N-N］` | corpus | OBSERVED |
+| E70 | Gaiji | — | 「○○」、U+NBCB、（四）-N-N | `［＃「○○」、U+NBCB、（四）-N-N］` | corpus | OBSERVED |
+| E71 | Gaiji | — | 「○○」、U+NBCC、N-N | `［＃「○○」、U+NBCC、N-N］` | corpus | OBSERVED |
+| E72 | Gaiji | — | 「○○」、U+NBCN、N巻-N-上-N | `［＃「○○」、U+NBCN、N巻-N-上-N］` | corpus | OBSERVED |
+| E73 | Gaiji | — | 「○○」、U+NBCN、U+NBCN、N巻-N-上-N | `［＃「○○」、U+NBCN、U+NBCN、N巻-N-上-N］` | corpus | OBSERVED |
+| E74 | Gaiji | — | 「○○」、U+NBC、N-N | `［＃「○○」、U+NBC、N-N］` | corpus | OBSERVED |
+| E75 | Gaiji | — | 「○○」、U+NBDB、N巻-N-上-N | `［＃「○○」、U+NBDB、N巻-N-上-N］` | corpus | OBSERVED |
+| E76 | Gaiji | — | 「○○」、U+NBDF、N-N | `［＃「○○」、U+NBDF、N-N］` | corpus | OBSERVED |
+| E77 | Gaiji | — | 「○○」、U+NBDN、N-N | `［＃「○○」、U+NBDN、N-N］` | corpus | OBSERVED |
+| E78 | Gaiji | — | 「○○」、U+NBDN、N-中-N | `［＃「○○」、U+NBDN、N-中-N］` | corpus | OBSERVED |
+| E79 | Gaiji | — | 「○○」、U+NBD、N-N | `［＃「○○」、U+NBD、N-N］` | corpus | OBSERVED |
+| E80 | Gaiji | — | 「○○」、U+NBEN、N-N | `［＃「○○」、U+NBEN、N-N］` | corpus | OBSERVED |
+| E81 | Gaiji | — | 「○○」、U+NBEN、N-上-N | `［＃「○○」、U+NBEN、N-上-N］` | corpus | OBSERVED |
+| E82 | Gaiji | — | 「○○」、U+NBEN、N-下-N | `［＃「○○」、U+NBEN、N-下-N］` | corpus | OBSERVED |
+| E83 | Gaiji | — | 「○○」、U+NBE、N-N | `［＃「○○」、U+NBE、N-N］` | corpus | OBSERVED |
+| E84 | Gaiji | — | 「○○」、U+NBE、N-下-N | `［＃「○○」、U+NBE、N-下-N］` | corpus | OBSERVED |
+| E85 | Gaiji | — | 「○○」、U+NBE、N巻-N-下-N | `［＃「○○」、U+NBE、N巻-N-下-N］` | corpus | OBSERVED |
+| E86 | Gaiji | — | 「○○」、U+NBFBB、N-N | `［＃「○○」、U+NBFBB、N-N］` | corpus | OBSERVED |
+| E87 | Gaiji | — | 「○○」、U+NBFB、N-N | `［＃「○○」、U+NBFB、N-N］` | corpus | OBSERVED |
+| E88 | Gaiji | — | 「○○」、U+NBFE、N-N | `［＃「○○」、U+NBFE、N-N］` | corpus | OBSERVED |
+| E89 | Gaiji | — | 「○○」、U+NBFN、N-N | `［＃「○○」、U+NBFN、N-N］` | corpus | OBSERVED |
+| E90 | Gaiji | — | 「○○」、U+NBF、N-N | `［＃「○○」、U+NBF、N-N］` | corpus | OBSERVED |
+| E91 | Gaiji | — | 「○○」、U+NBN | `［＃「○○」、U+NBN］` | corpus | OBSERVED |
+| E92 | Gaiji | — | 「○○」、U+NBNBB、N-N | `［＃「○○」、U+NBNBB、N-N］` | corpus | OBSERVED |
+| E93 | Gaiji | — | 「○○」、U+NBNB、N-N | `［＃「○○」、U+NBNB、N-N］` | corpus | OBSERVED |
+| E94 | Gaiji | — | 「○○」、U+NBNB、上-N-N | `［＃「○○」、U+NBNB、上-N-N］` | corpus | OBSERVED |
+| E95 | Gaiji | — | 「○○」、U+NBNCF、N-N | `［＃「○○」、U+NBNCF、N-N］` | corpus | OBSERVED |
+| E96 | Gaiji | — | 「○○」、U+NBNC、N-N | `［＃「○○」、U+NBNC、N-N］` | corpus | OBSERVED |
+| E97 | Gaiji | — | 「○○」、U+NBNC、N-上-N | `［＃「○○」、U+NBNC、N-上-N］` | corpus | OBSERVED |
+| E98 | Gaiji | — | 「○○」、U+NBNC、N-下-N | `［＃「○○」、U+NBNC、N-下-N］` | corpus | OBSERVED |
+| E99 | Gaiji | — | 「○○」、U+NBND、N-N | `［＃「○○」、U+NBND、N-N］` | corpus | OBSERVED |
+| E100 | Gaiji | — | 「○○」、U+NBNEN、N-N | `［＃「○○」、U+NBNEN、N-N］` | corpus | OBSERVED |
+| E101 | Gaiji | — | 「○○」、U+NBNEN、上-N-N | `［＃「○○」、U+NBNEN、上-N-N］` | corpus | OBSERVED |
+| E102 | Gaiji | — | 「○○」、U+NBNE、N-N | `［＃「○○」、U+NBNE、N-N］` | corpus | OBSERVED |
+| E103 | Gaiji | — | 「○○」、U+NBNF、N-N | `［＃「○○」、U+NBNF、N-N］` | corpus | OBSERVED |
+| E104 | Gaiji | — | 「○○」、U+NBNF、N巻-N-下-N | `［＃「○○」、U+NBNF、N巻-N-下-N］` | corpus | OBSERVED |
+| E105 | Gaiji | — | 「○○」、U+NBNF、上-N-N | `［＃「○○」、U+NBNF、上-N-N］` | corpus | OBSERVED |
+| E106 | Gaiji | — | 「○○」、U+NBN、N-N | `［＃「○○」、U+NBN、N-N］` | corpus | OBSERVED |
+| E107 | Gaiji | — | 「○○」、U+NBN、N-上-N | `［＃「○○」、U+NBN、N-上-N］` | corpus | OBSERVED |
+| E108 | Gaiji | — | 「○○」、U+NBN、N-下-N | `［＃「○○」、U+NBN、N-下-N］` | corpus | OBSERVED |
+| E109 | Gaiji | — | 「○○」、U+NBN、N-中-N | `［＃「○○」、U+NBN、N-中-N］` | corpus | OBSERVED |
+| E110 | Gaiji | — | 「○○」、U+NBN、N-註【九一】 | `［＃「○○」、U+NBN、N-註【九一】］` | corpus | OBSERVED |
+| E111 | Gaiji | — | 「○○」、U+NBN、N巻-N-上-N | `［＃「○○」、U+NBN、N巻-N-上-N］` | corpus | OBSERVED |
+| E112 | Gaiji | — | 「○○」、U+NBN、N巻-N-下-N | `［＃「○○」、U+NBN、N巻-N-下-N］` | corpus | OBSERVED |
+| E113 | Gaiji | — | 「○○」、U+NBN、下-N-N | `［＃「○○」、U+NBN、下-N-N］` | corpus | OBSERVED |
+| E114 | Gaiji | — | 「○○」、U+NBN、序言-N | `［＃「○○」、U+NBN、序言-N］` | corpus | OBSERVED |
+| E115 | Gaiji | — | 「○○」、U+NBN、表紙 | `［＃「○○」、U+NBN、表紙］` | corpus | OBSERVED |
+| E116 | Gaiji | — | 「○○」、U+NBN、（四）-N-N | `［＃「○○」、U+NBN、（四）-N-N］` | corpus | OBSERVED |
+| E117 | Gaiji | — | 「○○」、U+NB、N-N | `［＃「○○」、U+NB、N-N］` | corpus | OBSERVED |
+| E118 | Gaiji | — | 「○○」、U+NB、N-上-N | `［＃「○○」、U+NB、N-上-N］` | corpus | OBSERVED |
+| E119 | Gaiji | — | 「○○」、U+NB、N-下-N | `［＃「○○」、U+NB、N-下-N］` | corpus | OBSERVED |
+| E120 | Gaiji | — | 「○○」、U+NB、N-註【三三】 | `［＃「○○」、U+NB、N-註【三三】］` | corpus | OBSERVED |
+| E121 | Gaiji | — | 「○○」、U+NB、N巻-N-上-N | `［＃「○○」、U+NB、N巻-N-上-N］` | corpus | OBSERVED |
+| E122 | Gaiji | — | 「○○」、U+NB、N巻-N-下-N | `［＃「○○」、U+NB、N巻-N-下-N］` | corpus | OBSERVED |
+| E123 | Gaiji | — | 「○○」、U+NCAA、N-N | `［＃「○○」、U+NCAA、N-N］` | corpus | OBSERVED |
+| E124 | Gaiji | — | 「○○」、U+NCA、N-N | `［＃「○○」、U+NCA、N-N］` | corpus | OBSERVED |
+| E125 | Gaiji | — | 「○○」、U+NCBA、N-N | `［＃「○○」、U+NCBA、N-N］` | corpus | OBSERVED |
+| E126 | Gaiji | — | 「○○」、U+NCBB、N-N | `［＃「○○」、U+NCBB、N-N］` | corpus | OBSERVED |
+| E127 | Gaiji | — | 「○○」、U+NCBN、N-N | `［＃「○○」、U+NCBN、N-N］` | corpus | OBSERVED |
+| E128 | Gaiji | — | 「○○」、U+NCBN、N-本文-N | `［＃「○○」、U+NCBN、N-本文-N］` | corpus | OBSERVED |
+| E129 | Gaiji | — | 「○○」、U+NCBN、N巻-N-下-N | `［＃「○○」、U+NCBN、N巻-N-下-N］` | corpus | OBSERVED |
+| E130 | Gaiji | — | 「○○」、U+NCB、N-N | `［＃「○○」、U+NCB、N-N］` | corpus | OBSERVED |
+| E131 | Gaiji | — | 「○○」、U+NCCN、N-N | `［＃「○○」、U+NCCN、N-N］` | corpus | OBSERVED |
+| E132 | Gaiji | — | 「○○」、U+NCC、N-N | `［＃「○○」、U+NCC、N-N］` | corpus | OBSERVED |
+| E133 | Gaiji | — | 「○○」、U+NCDA、N-N | `［＃「○○」、U+NCDA、N-N］` | corpus | OBSERVED |
+| E134 | Gaiji | — | 「○○」、U+NCDB、N-N | `［＃「○○」、U+NCDB、N-N］` | corpus | OBSERVED |
+| E135 | Gaiji | — | 「○○」、U+NCDN、N-N | `［＃「○○」、U+NCDN、N-N］` | corpus | OBSERVED |
+| E136 | Gaiji | — | 「○○」、U+NCDN、N巻-N-上-N | `［＃「○○」、U+NCDN、N巻-N-上-N］` | corpus | OBSERVED |
+| E137 | Gaiji | — | 「○○」、U+NCD、N-N | `［＃「○○」、U+NCD、N-N］` | corpus | OBSERVED |
+| E138 | Gaiji | — | 「○○」、U+NCEF、N-N | `［＃「○○」、U+NCEF、N-N］` | corpus | OBSERVED |
+| E139 | Gaiji | — | 「○○」、U+NCE、N-N | `［＃「○○」、U+NCE、N-N］` | corpus | OBSERVED |
+| E140 | Gaiji | — | 「○○」、U+NCF | `［＃「○○」、U+NCF］` | corpus | OBSERVED |
+| E141 | Gaiji | — | 「○○」、U+NCFD、N-N | `［＃「○○」、U+NCFD、N-N］` | corpus | OBSERVED |
+| E142 | Gaiji | — | 「○○」、U+NCFD、N-下-N | `［＃「○○」、U+NCFD、N-下-N］` | corpus | OBSERVED |
+| E143 | Gaiji | — | 「○○」、U+NCFN、N-N | `［＃「○○」、U+NCFN、N-N］` | corpus | OBSERVED |
+| E144 | Gaiji | — | 「○○」、U+NCFN、N巻-N-上-N | `［＃「○○」、U+NCFN、N巻-N-上-N］` | corpus | OBSERVED |
+| E145 | Gaiji | — | 「○○」、U+NCF、N-N | `［＃「○○」、U+NCF、N-N］` | corpus | OBSERVED |
+| E146 | Gaiji | — | 「○○」、U+NCF、N-上-N | `［＃「○○」、U+NCF、N-上-N］` | corpus | OBSERVED |
+| E147 | Gaiji | — | 「○○」、U+NCF、N-下-N | `［＃「○○」、U+NCF、N-下-N］` | corpus | OBSERVED |
+| E148 | Gaiji | — | 「○○」、U+NCNA、N-N | `［＃「○○」、U+NCNA、N-N］` | corpus | OBSERVED |
+| E149 | Gaiji | — | 「○○」、U+NCNB、N-N | `［＃「○○」、U+NCNB、N-N］` | corpus | OBSERVED |
+| E150 | Gaiji | — | 「○○」、U+NCNB、下-N-N | `［＃「○○」、U+NCNB、下-N-N］` | corpus | OBSERVED |
+| E151 | Gaiji | — | 「○○」、U+NCNC、N-N | `［＃「○○」、U+NCNC、N-N］` | corpus | OBSERVED |
+| E152 | Gaiji | — | 「○○」、U+NCNC、N-下-N | `［＃「○○」、U+NCNC、N-下-N］` | corpus | OBSERVED |
+| E153 | Gaiji | — | 「○○」、U+NCNC、上巻-N-N | `［＃「○○」、U+NCNC、上巻-N-N］` | corpus | OBSERVED |
+| E154 | Gaiji | — | 「○○」、U+NCNC、下巻-N-N | `［＃「○○」、U+NCNC、下巻-N-N］` | corpus | OBSERVED |
+| E155 | Gaiji | — | 「○○」、U+NCND、N-N | `［＃「○○」、U+NCND、N-N］` | corpus | OBSERVED |
+| E156 | Gaiji | — | 「○○」、U+NCNEN、N-N | `［＃「○○」、U+NCNEN、N-N］` | corpus | OBSERVED |
+| E157 | Gaiji | — | 「○○」、U+NCNE、下巻-N-N | `［＃「○○」、U+NCNE、下巻-N-N］` | corpus | OBSERVED |
+| E158 | Gaiji | — | 「○○」、U+NCN、N-N | `［＃「○○」、U+NCN、N-N］` | corpus | OBSERVED |
+| E159 | Gaiji | — | 「○○」、U+NCN、N-N-N | `［＃「○○」、U+NCN、N-N-N］` | corpus | OBSERVED |
+| E160 | Gaiji | — | 「○○」、U+NCN、N-上-N | `［＃「○○」、U+NCN、N-上-N］` | corpus | OBSERVED |
+| E161 | Gaiji | — | 「○○」、U+NCN、N-下-N | `［＃「○○」、U+NCN、N-下-N］` | corpus | OBSERVED |
+| E162 | Gaiji | — | 「○○」、U+NCN、N-下段-N | `［＃「○○」、U+NCN、N-下段-N］` | corpus | OBSERVED |
+| E163 | Gaiji | — | 「○○」、U+NCN、N-本文-N | `［＃「○○」、U+NCN、N-本文-N］` | corpus | OBSERVED |
+| E164 | Gaiji | — | 「○○」、U+NCN、N巻-N-上-N | `［＃「○○」、U+NCN、N巻-N-上-N］` | corpus | OBSERVED |
+| E165 | Gaiji | — | 「○○」、U+NCN、N巻-N-下-N | `［＃「○○」、U+NCN、N巻-N-下-N］` | corpus | OBSERVED |
+| E166 | Gaiji | — | 「○○」、U+NCN、上巻-N-N | `［＃「○○」、U+NCN、上巻-N-N］` | corpus | OBSERVED |
+| E167 | Gaiji | — | 「○○」、U+NC、N-N | `［＃「○○」、U+NC、N-N］` | corpus | OBSERVED |
+| E168 | Gaiji | — | 「○○」、U+NC、N-上-N | `［＃「○○」、U+NC、N-上-N］` | corpus | OBSERVED |
+| E169 | Gaiji | — | 「○○」、U+NC、N-下-N | `［＃「○○」、U+NC、N-下-N］` | corpus | OBSERVED |
+| E170 | Gaiji | — | 「○○」、U+NC、N巻-N-上-N | `［＃「○○」、U+NC、N巻-N-上-N］` | corpus | OBSERVED |
+| E171 | Gaiji | — | 「○○」、U+NC、N巻-N-下-N | `［＃「○○」、U+NC、N巻-N-下-N］` | corpus | OBSERVED |
+| E172 | Gaiji | — | 「○○」、U+NDAB、N-N | `［＃「○○」、U+NDAB、N-N］` | corpus | OBSERVED |
+| E173 | Gaiji | — | 「○○」、U+NDA、N-N | `［＃「○○」、U+NDA、N-N］` | corpus | OBSERVED |
+| E174 | Gaiji | — | 「○○」、U+NDA、下巻-N-N | `［＃「○○」、U+NDA、下巻-N-N］` | corpus | OBSERVED |
+| E175 | Gaiji | — | 「○○」、U+NDBB、N-N | `［＃「○○」、U+NDBB、N-N］` | corpus | OBSERVED |
+| E176 | Gaiji | — | 「○○」、U+NDBN、N-N | `［＃「○○」、U+NDBN、N-N］` | corpus | OBSERVED |
+| E177 | Gaiji | — | 「○○」、U+NDBN、N-上-N | `［＃「○○」、U+NDBN、N-上-N］` | corpus | OBSERVED |
+| E178 | Gaiji | — | 「○○」、U+NDBN、N-下-N | `［＃「○○」、U+NDBN、N-下-N］` | corpus | OBSERVED |
+| E179 | Gaiji | — | 「○○」、U+NDB、N-N | `［＃「○○」、U+NDB、N-N］` | corpus | OBSERVED |
+| E180 | Gaiji | — | 「○○」、U+NDCN、N-N | `［＃「○○」、U+NDCN、N-N］` | corpus | OBSERVED |
+| E181 | Gaiji | — | 「○○」、U+NDC、N-N | `［＃「○○」、U+NDC、N-N］` | corpus | OBSERVED |
+| E182 | Gaiji | — | 「○○」、U+NDC、N-上-N | `［＃「○○」、U+NDC、N-上-N］` | corpus | OBSERVED |
+| E183 | Gaiji | — | 「○○」、U+NDEF、N-N | `［＃「○○」、U+NDEF、N-N］` | corpus | OBSERVED |
+| E184 | Gaiji | — | 「○○」、U+NDE、N-N | `［＃「○○」、U+NDE、N-N］` | corpus | OBSERVED |
+| E185 | Gaiji | — | 「○○」、U+NDE、N-下-N | `［＃「○○」、U+NDE、N-下-N］` | corpus | OBSERVED |
+| E186 | Gaiji | — | 「○○」、U+NDFC、N-N | `［＃「○○」、U+NDFC、N-N］` | corpus | OBSERVED |
+| E187 | Gaiji | — | 「○○」、U+NDFN、N-N | `［＃「○○」、U+NDFN、N-N］` | corpus | OBSERVED |
+| E188 | Gaiji | — | 「○○」、U+NDFN、N-下-N | `［＃「○○」、U+NDFN、N-下-N］` | corpus | OBSERVED |
+| E189 | Gaiji | — | 「○○」、U+NDF、N-N | `［＃「○○」、U+NDF、N-N］` | corpus | OBSERVED |
+| E190 | Gaiji | — | 「○○」、U+NDF、N巻-N-上-N | `［＃「○○」、U+NDF、N巻-N-上-N］` | corpus | OBSERVED |
+| E191 | Gaiji | — | 「○○」、U+NDNA、N-N | `［＃「○○」、U+NDNA、N-N］` | corpus | OBSERVED |
+| E192 | Gaiji | — | 「○○」、U+NDNB、N-N | `［＃「○○」、U+NDNB、N-N］` | corpus | OBSERVED |
+| E193 | Gaiji | — | 「○○」、U+NDNC、N-N | `［＃「○○」、U+NDNC、N-N］` | corpus | OBSERVED |
+| E194 | Gaiji | — | 「○○」、U+NDNC、N-上-N | `［＃「○○」、U+NDNC、N-上-N］` | corpus | OBSERVED |
+| E195 | Gaiji | — | 「○○」、U+NDNC、N-下-N | `［＃「○○」、U+NDNC、N-下-N］` | corpus | OBSERVED |
+| E196 | Gaiji | — | 「○○」、U+NDND、N-N | `［＃「○○」、U+NDND、N-N］` | corpus | OBSERVED |
+| E197 | Gaiji | — | 「○○」、U+NDND、N-上-N | `［＃「○○」、U+NDND、N-上-N］` | corpus | OBSERVED |
+| E198 | Gaiji | — | 「○○」、U+NDNE、N-N | `［＃「○○」、U+NDNE、N-N］` | corpus | OBSERVED |
+| E199 | Gaiji | — | 「○○」、U+NDNFN、N-N | `［＃「○○」、U+NDNFN、N-N］` | corpus | OBSERVED |
+| E200 | Gaiji | — | 「○○」、U+NDNF、N-N | `［＃「○○」、U+NDNF、N-N］` | corpus | OBSERVED |
+| E201 | Gaiji | — | 「○○」、U+NDN、N-N | `［＃「○○」、U+NDN、N-N］` | corpus | OBSERVED |
+| E202 | Gaiji | — | 「○○」、U+NDN、N-上-N | `［＃「○○」、U+NDN、N-上-N］` | corpus | OBSERVED |
+| E203 | Gaiji | — | 「○○」、U+NDN、N-下-N | `［＃「○○」、U+NDN、N-下-N］` | corpus | OBSERVED |
+| E204 | Gaiji | — | 「○○」、U+NDN、N‐N | `［＃「○○」、U+NDN、N‐N］` | corpus | OBSERVED |
+| E205 | Gaiji | — | 「○○」、U+NDN、N巻-N-下-N | `［＃「○○」、U+NDN、N巻-N-下-N］` | corpus | OBSERVED |
+| E206 | Gaiji | — | 「○○」、U+NDN、U+NDN、N-N | `［＃「○○」、U+NDN、U+NDN、N-N］` | corpus | OBSERVED |
+| E207 | Gaiji | — | 「○○」、U+NDN、上巻-N-N | `［＃「○○」、U+NDN、上巻-N-N］` | corpus | OBSERVED |
+| E208 | Gaiji | — | 「○○」、U+NDN、下巻-N-N | `［＃「○○」、U+NDN、下巻-N-N］` | corpus | OBSERVED |
+| E209 | Gaiji | — | 「○○」、U+ND、N-N | `［＃「○○」、U+ND、N-N］` | corpus | OBSERVED |
+| E210 | Gaiji | — | 「○○」、U+ND、N-上-N | `［＃「○○」、U+ND、N-上-N］` | corpus | OBSERVED |
+| E211 | Gaiji | — | 「○○」、U+ND、N-下-N | `［＃「○○」、U+ND、N-下-N］` | corpus | OBSERVED |
+| E212 | Gaiji | — | 「○○」、U+ND、N巻-N-上-N | `［＃「○○」、U+ND、N巻-N-上-N］` | corpus | OBSERVED |
+| E213 | Gaiji | — | 「○○」、U+ND、第N巻-N-N | `［＃「○○」、U+ND、第N巻-N-N］` | corpus | OBSERVED |
+| E214 | Gaiji | — | 「○○」、U+NEANA、N-上-N | `［＃「○○」、U+NEANA、N-上-N］` | corpus | OBSERVED |
+| E215 | Gaiji | — | 「○○」、U+NEAN、N-N | `［＃「○○」、U+NEAN、N-N］` | corpus | OBSERVED |
+| E216 | Gaiji | — | 「○○」、U+NEA、N-N | `［＃「○○」、U+NEA、N-N］` | corpus | OBSERVED |
+| E217 | Gaiji | — | 「○○」、U+NEA、N巻-N-下-N | `［＃「○○」、U+NEA、N巻-N-下-N］` | corpus | OBSERVED |
+| E218 | Gaiji | — | 「○○」、U+NEBCE、N-上-N | `［＃「○○」、U+NEBCE、N-上-N］` | corpus | OBSERVED |
+| E219 | Gaiji | — | 「○○」、U+NEBCN、N-上-N | `［＃「○○」、U+NEBCN、N-上-N］` | corpus | OBSERVED |
+| E220 | Gaiji | — | 「○○」、U+NEBC、N-N | `［＃「○○」、U+NEBC、N-N］` | corpus | OBSERVED |
+| E221 | Gaiji | — | 「○○」、U+NEBC、N巻-N-下-N | `［＃「○○」、U+NEBC、N巻-N-下-N］` | corpus | OBSERVED |
+| E222 | Gaiji | — | 「○○」、U+NEBN、N-N | `［＃「○○」、U+NEBN、N-N］` | corpus | OBSERVED |
+| E223 | Gaiji | — | 「○○」、U+NEBN、N-上-N | `［＃「○○」、U+NEBN、N-上-N］` | corpus | OBSERVED |
+| E224 | Gaiji | — | 「○○」、U+NEBN、N-下-N | `［＃「○○」、U+NEBN、N-下-N］` | corpus | OBSERVED |
+| E225 | Gaiji | — | 「○○」、U+NEB、N-N | `［＃「○○」、U+NEB、N-N］` | corpus | OBSERVED |
+| E226 | Gaiji | — | 「○○」、U+NECB、N-N | `［＃「○○」、U+NECB、N-N］` | corpus | OBSERVED |
+| E227 | Gaiji | — | 「○○」、U+NECF、N-N | `［＃「○○」、U+NECF、N-N］` | corpus | OBSERVED |
+| E228 | Gaiji | — | 「○○」、U+NECF、N-上-N | `［＃「○○」、U+NECF、N-上-N］` | corpus | OBSERVED |
+| E229 | Gaiji | — | 「○○」、U+NECF、N-下-N | `［＃「○○」、U+NECF、N-下-N］` | corpus | OBSERVED |
+| E230 | Gaiji | — | 「○○」、U+NECN、N-N | `［＃「○○」、U+NECN、N-N］` | corpus | OBSERVED |
+| E231 | Gaiji | — | 「○○」、U+NEC、N-N | `［＃「○○」、U+NEC、N-N］` | corpus | OBSERVED |
+| E232 | Gaiji | — | 「○○」、U+NEDB、N-N | `［＃「○○」、U+NEDB、N-N］` | corpus | OBSERVED |
+| E233 | Gaiji | — | 「○○」、U+NEDN、N-N | `［＃「○○」、U+NEDN、N-N］` | corpus | OBSERVED |
+| E234 | Gaiji | — | 「○○」、U+NEDN、N巻-N-上-N | `［＃「○○」、U+NEDN、N巻-N-上-N］` | corpus | OBSERVED |
+| E235 | Gaiji | — | 「○○」、U+NEEB、N-N | `［＃「○○」、U+NEEB、N-N］` | corpus | OBSERVED |
+| E236 | Gaiji | — | 「○○」、U+NEEE、N-N | `［＃「○○」、U+NEEE、N-N］` | corpus | OBSERVED |
+| E237 | Gaiji | — | 「○○」、U+NEE、N-N | `［＃「○○」、U+NEE、N-N］` | corpus | OBSERVED |
+| E238 | Gaiji | — | 「○○」、U+NEFN、N-N | `［＃「○○」、U+NEFN、N-N］` | corpus | OBSERVED |
+| E239 | Gaiji | — | 「○○」、U+NEF、N-N | `［＃「○○」、U+NEF、N-N］` | corpus | OBSERVED |
+| E240 | Gaiji | — | 「○○」、U+NEF、N-下-N | `［＃「○○」、U+NEF、N-下-N］` | corpus | OBSERVED |
+| E241 | Gaiji | — | 「○○」、U+NENA、N-N | `［＃「○○」、U+NENA、N-N］` | corpus | OBSERVED |
+| E242 | Gaiji | — | 「○○」、U+NENA、N-上-N | `［＃「○○」、U+NENA、N-上-N］` | corpus | OBSERVED |
+| E243 | Gaiji | — | 「○○」、U+NENA、N-下-N | `［＃「○○」、U+NENA、N-下-N］` | corpus | OBSERVED |
+| E244 | Gaiji | — | 「○○」、U+NENB、N-N | `［＃「○○」、U+NENB、N-N］` | corpus | OBSERVED |
+| E245 | Gaiji | — | 「○○」、U+NENC、N-下-N | `［＃「○○」、U+NENC、N-下-N］` | corpus | OBSERVED |
+| E246 | Gaiji | — | 「○○」、U+NEND、N-N | `［＃「○○」、U+NEND、N-N］` | corpus | OBSERVED |
+| E247 | Gaiji | — | 「○○」、U+NEND、N-上-N | `［＃「○○」、U+NEND、N-上-N］` | corpus | OBSERVED |
+| E248 | Gaiji | — | 「○○」、U+NEND、N-下-N | `［＃「○○」、U+NEND、N-下-N］` | corpus | OBSERVED |
+| E249 | Gaiji | — | 「○○」、U+NEND、N-中-N | `［＃「○○」、U+NEND、N-中-N］` | corpus | OBSERVED |
+| E250 | Gaiji | — | 「○○」、U+NENF、N-N | `［＃「○○」、U+NENF、N-N］` | corpus | OBSERVED |
+| E251 | Gaiji | — | 「○○」、U+NEN、N-N | `［＃「○○」、U+NEN、N-N］` | corpus | OBSERVED |
+| E252 | Gaiji | — | 「○○」、U+NEN、N-上-N | `［＃「○○」、U+NEN、N-上-N］` | corpus | OBSERVED |
+| E253 | Gaiji | — | 「○○」、U+NEN、N-下-N | `［＃「○○」、U+NEN、N-下-N］` | corpus | OBSERVED |
+| E254 | Gaiji | — | 「○○」、U+NEN、N-本文-N | `［＃「○○」、U+NEN、N-本文-N］` | corpus | OBSERVED |
+| E255 | Gaiji | — | 「○○」、U+NEN、N巻-N-上-N | `［＃「○○」、U+NEN、N巻-N-上-N］` | corpus | OBSERVED |
+| E256 | Gaiji | — | 「○○」、U+NEN、N巻-N-下-N | `［＃「○○」、U+NEN、N巻-N-下-N］` | corpus | OBSERVED |
+| E257 | Gaiji | — | 「○○」、U+NEN、上-N-N | `［＃「○○」、U+NEN、上-N-N］` | corpus | OBSERVED |
+| E258 | Gaiji | — | 「○○」、U+NEN、第N巻-N-N | `［＃「○○」、U+NEN、第N巻-N-N］` | corpus | OBSERVED |
+| E259 | Gaiji | — | 「○○」、U+NE、N-N | `［＃「○○」、U+NE、N-N］` | corpus | OBSERVED |
+| E260 | Gaiji | — | 「○○」、U+NE、N-上-N | `［＃「○○」、U+NE、N-上-N］` | corpus | OBSERVED |
+| E261 | Gaiji | — | 「○○」、U+NE、N-下-N | `［＃「○○」、U+NE、N-下-N］` | corpus | OBSERVED |
+| E262 | Gaiji | — | 「○○」、U+NE、N-図キャプション | `［＃「○○」、U+NE、N-図キャプション］` | corpus | OBSERVED |
+| E263 | Gaiji | — | 「○○」、U+NE、N-本文-N | `［＃「○○」、U+NE、N-本文-N］` | corpus | OBSERVED |
+| E264 | Gaiji | — | 「○○」、U+NE、N巻-N-上-N | `［＃「○○」、U+NE、N巻-N-上-N］` | corpus | OBSERVED |
+| E265 | Gaiji | — | 「○○」、U+NE、N巻-N-下-N | `［＃「○○」、U+NE、N巻-N-下-N］` | corpus | OBSERVED |
+| E266 | Gaiji | — | 「○○」、U+NFAC、N-N | `［＃「○○」、U+NFAC、N-N］` | corpus | OBSERVED |
+| E267 | Gaiji | — | 「○○」、U+NFBE、N-N | `［＃「○○」、U+NFBE、N-N］` | corpus | OBSERVED |
+| E268 | Gaiji | — | 「○○」、U+NFBN、N-N | `［＃「○○」、U+NFBN、N-N］` | corpus | OBSERVED |
+| E269 | Gaiji | — | 「○○」、U+NFBN、N-上-N | `［＃「○○」、U+NFBN、N-上-N］` | corpus | OBSERVED |
+| E270 | Gaiji | — | 「○○」、U+NFBN、N-下-N | `［＃「○○」、U+NFBN、N-下-N］` | corpus | OBSERVED |
+| E271 | Gaiji | — | 「○○」、U+NFB、N-N | `［＃「○○」、U+NFB、N-N］` | corpus | OBSERVED |
+| E272 | Gaiji | — | 「○○」、U+NFCE、N-N | `［＃「○○」、U+NFCE、N-N］` | corpus | OBSERVED |
+| E273 | Gaiji | — | 「○○」、U+NFCN、N-N | `［＃「○○」、U+NFCN、N-N］` | corpus | OBSERVED |
+| E274 | Gaiji | — | 「○○」、U+NFC、N-N | `［＃「○○」、U+NFC、N-N］` | corpus | OBSERVED |
+| E275 | Gaiji | — | 「○○」、U+NFDN、N-N | `［＃「○○」、U+NFDN、N-N］` | corpus | OBSERVED |
+| E276 | Gaiji | — | 「○○」、U+NFD、N-N | `［＃「○○」、U+NFD、N-N］` | corpus | OBSERVED |
+| E277 | Gaiji | — | 「○○」、U+NFEC、N-上-N | `［＃「○○」、U+NFEC、N-上-N］` | corpus | OBSERVED |
+| E278 | Gaiji | — | 「○○」、U+NFEN、N-N | `［＃「○○」、U+NFEN、N-N］` | corpus | OBSERVED |
+| E279 | Gaiji | — | 「○○」、U+NFE、N-N | `［＃「○○」、U+NFE、N-N］` | corpus | OBSERVED |
+| E280 | Gaiji | — | 「○○」、U+NFE、N-下-N | `［＃「○○」、U+NFE、N-下-N］` | corpus | OBSERVED |
+| E281 | Gaiji | — | 「○○」、U+NFE、N巻-N-上-N | `［＃「○○」、U+NFE、N巻-N-上-N］` | corpus | OBSERVED |
+| E282 | Gaiji | — | 「○○」、U+NFE、N巻-N-下-N | `［＃「○○」、U+NFE、N巻-N-下-N］` | corpus | OBSERVED |
+| E283 | Gaiji | — | 「○○」、U+NFFA、N-N | `［＃「○○」、U+NFFA、N-N］` | corpus | OBSERVED |
+| E284 | Gaiji | — | 「○○」、U+NFFN、N-N | `［＃「○○」、U+NFFN、N-N］` | corpus | OBSERVED |
+| E285 | Gaiji | — | 「○○」、U+NFFN、N-上-N | `［＃「○○」、U+NFFN、N-上-N］` | corpus | OBSERVED |
+| E286 | Gaiji | — | 「○○」、U+NFF、N-N | `［＃「○○」、U+NFF、N-N］` | corpus | OBSERVED |
+| E287 | Gaiji | — | 「○○」、U+NFNAE、N-N | `［＃「○○」、U+NFNAE、N-N］` | corpus | OBSERVED |
+| E288 | Gaiji | — | 「○○」、U+NFNC、N-N | `［＃「○○」、U+NFNC、N-N］` | corpus | OBSERVED |
+| E289 | Gaiji | — | 「○○」、U+NFNC、N-上-N | `［＃「○○」、U+NFNC、N-上-N］` | corpus | OBSERVED |
+| E290 | Gaiji | — | 「○○」、U+NFNE、N-N | `［＃「○○」、U+NFNE、N-N］` | corpus | OBSERVED |
+| E291 | Gaiji | — | 「○○」、U+NFNF、N-N | `［＃「○○」、U+NFNF、N-N］` | corpus | OBSERVED |
+| E292 | Gaiji | — | 「○○」、U+NFNF、N巻-N-下-N | `［＃「○○」、U+NFNF、N巻-N-下-N］` | corpus | OBSERVED |
+| E293 | Gaiji | — | 「○○」、U+NFN、N-N | `［＃「○○」、U+NFN、N-N］` | corpus | OBSERVED |
+| E294 | Gaiji | — | 「○○」、U+NFN、N-N-N | `［＃「○○」、U+NFN、N-N-N］` | corpus | OBSERVED |
+| E295 | Gaiji | — | 「○○」、U+NFN、N-上-N | `［＃「○○」、U+NFN、N-上-N］` | corpus | OBSERVED |
+| E296 | Gaiji | — | 「○○」、U+NFN、N-下-N | `［＃「○○」、U+NFN、N-下-N］` | corpus | OBSERVED |
+| E297 | Gaiji | — | 「○○」、U+NFN、N-中-N | `［＃「○○」、U+NFN、N-中-N］` | corpus | OBSERVED |
+| E298 | Gaiji | — | 「○○」、U+NFN、N-本文-N | `［＃「○○」、U+NFN、N-本文-N］` | corpus | OBSERVED |
+| E299 | Gaiji | — | 「○○」、U+NFN、N巻-N-上-N | `［＃「○○」、U+NFN、N巻-N-上-N］` | corpus | OBSERVED |
+| E300 | Gaiji | — | 「○○」、U+NFN、N巻-N-下-N | `［＃「○○」、U+NFN、N巻-N-下-N］` | corpus | OBSERVED |
+| E301 | Gaiji | — | 「○○」、U+NFN、下巻-N-N | `［＃「○○」、U+NFN、下巻-N-N］` | corpus | OBSERVED |
+| E302 | Gaiji | — | 「○○」、U+NFN、目次N-N | `［＃「○○」、U+NFN、目次N-N］` | corpus | OBSERVED |
+| E303 | Gaiji | — | 「○○」、U+NF、N-N | `［＃「○○」、U+NF、N-N］` | corpus | OBSERVED |
+| E304 | Gaiji | — | 「○○」、U+NF、N-N-N | `［＃「○○」、U+NF、N-N-N］` | corpus | OBSERVED |
+| E305 | Gaiji | — | 「○○」、U+NF、N-上-N | `［＃「○○」、U+NF、N-上-N］` | corpus | OBSERVED |
+| E306 | Gaiji | — | 「○○」、U+NF、N-下-N | `［＃「○○」、U+NF、N-下-N］` | corpus | OBSERVED |
+| E307 | Gaiji | — | 「○○」、U+NF、N巻-N-上-N | `［＃「○○」、U+NF、N巻-N-上-N］` | corpus | OBSERVED |
+| E308 | Gaiji | — | 「○○」、U+NF、N巻-N-下-N | `［＃「○○」、U+NF、N巻-N-下-N］` | corpus | OBSERVED |
+| E309 | Gaiji | — | 「○○」、U+NF、X-N | `［＃「○○」、U+NF、X-N］` | corpus | OBSERVED |
+| E310 | Gaiji | — | 「○○」、U+N、M.N.N.N.N.N.N | `［＃「○○」、U+N、M.N.N.N.N.N.N］` | corpus | OBSERVED |
+| E311 | Gaiji | — | 「○○」、U+N、N-N | `［＃「○○」、U+N、N-N］` | corpus | OBSERVED |
+| E312 | Gaiji | — | 「○○」、U+N、N-N-N | `［＃「○○」、U+N、N-N-N］` | corpus | OBSERVED |
+| E313 | Gaiji | — | 「○○」、U+N、N-上-N | `［＃「○○」、U+N、N-上-N］` | corpus | OBSERVED |
+| E314 | Gaiji | — | 「○○」、U+N、N-下-N | `［＃「○○」、U+N、N-下-N］` | corpus | OBSERVED |
+| E315 | Gaiji | — | 「○○」、U+N、N-中-N | `［＃「○○」、U+N、N-中-N］` | corpus | OBSERVED |
+| E316 | Gaiji | — | 「○○」、U+N、N-本文-N | `［＃「○○」、U+N、N-本文-N］` | corpus | OBSERVED |
+| E317 | Gaiji | — | 「○○」、U+N、N-註【五〇】 | `［＃「○○」、U+N、N-註【五〇】］` | corpus | OBSERVED |
+| E318 | Gaiji | — | 「○○」、U+N、N巻-N-上-N | `［＃「○○」、U+N、N巻-N-上-N］` | corpus | OBSERVED |
+| E319 | Gaiji | — | 「○○」、U+N、N巻-N-下-N | `［＃「○○」、U+N、N巻-N-下-N］` | corpus | OBSERVED |
+| E320 | Gaiji | — | 「○○」、U+N、上-N-N | `［＃「○○」、U+N、上-N-N］` | corpus | OBSERVED |
+| E321 | Gaiji | — | 「○○」、U+N、下-N-N | `［＃「○○」、U+N、下-N-N］` | corpus | OBSERVED |
+| E322 | Gaiji | — | 「○○」、U+N、二-N | `［＃「○○」、U+N、二-N］` | corpus | OBSERVED |
+| E323 | Gaiji | — | 「○○」、U+N、第N水準N-N-N | `［＃「○○」、U+N、第N水準N-N-N］` | corpus | OBSERVED |
+| E324 | Gaiji | — | 「○○」、拘の俗字、第N水準N-N-N | `［＃「○○」、拘の俗字、第N水準N-N-N］` | corpus | OBSERVED |
+| E325 | Gaiji | — | 「○○」、第N水準N-N-N、LIV-N | `［＃「○○」、第N水準N-N-N、LIV-N］` | corpus | OBSERVED |
+| E326 | Gaiji | — | 「○○」、第N水準N-N-N、LXII-N | `［＃「○○」、第N水準N-N-N、LXII-N］` | corpus | OBSERVED |
+| E327 | Gaiji | — | 「○○」、第N水準N-N-N、N | `［＃「○○」、第N水準N-N-N、N］` | corpus | OBSERVED |
+| E328 | Gaiji | — | 「○○」、第N水準N-N-N、N-N | `［＃「○○」、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E329 | Gaiji | — | 「○○」、第N水準N-N-N、N-上-N | `［＃「○○」、第N水準N-N-N、N-上-N］` | corpus | OBSERVED |
+| E330 | Gaiji | — | 「○○」、第N水準N-N-N、N-上段-N | `［＃「○○」、第N水準N-N-N、N-上段-N］` | corpus | OBSERVED |
+| E331 | Gaiji | — | 「○○」、第N水準N-N-N、N-下-N | `［＃「○○」、第N水準N-N-N、N-下-N］` | corpus | OBSERVED |
+| E332 | Gaiji | — | 「○○」、第N水準N-N-N、N-下N | `［＃「○○」、第N水準N-N-N、N-下N］` | corpus | OBSERVED |
+| E333 | Gaiji | — | 「○○」、第N水準N-N-N、N-下段-N | `［＃「○○」、第N水準N-N-N、N-下段-N］` | corpus | OBSERVED |
+| E334 | Gaiji | — | 「○○」、第N水準N-N-N、N-中-N | `［＃「○○」、第N水準N-N-N、N-中-N］` | corpus | OBSERVED |
+| E335 | Gaiji | — | 「○○」、第N水準N-N-N、N上-N | `［＃「○○」、第N水準N-N-N、N上-N］` | corpus | OBSERVED |
+| E336 | Gaiji | — | 「○○」、第N水準N-N-N、N上－N | `［＃「○○」、第N水準N-N-N、N上－N］` | corpus | OBSERVED |
+| E337 | Gaiji | — | 「○○」、第N水準N-N-N、N下-N | `［＃「○○」、第N水準N-N-N、N下-N］` | corpus | OBSERVED |
+| E338 | Gaiji | — | 「○○」、第N水準N-N-N、N下－N | `［＃「○○」、第N水準N-N-N、N下－N］` | corpus | OBSERVED |
+| E339 | Gaiji | — | 「○○」、第N水準N-N-N、N－N | `［＃「○○」、第N水準N-N-N、N－N］` | corpus | OBSERVED |
+| E340 | Gaiji | — | 「○○」、第N水準N-N-N、XI-N | `［＃「○○」、第N水準N-N-N、XI-N］` | corpus | OBSERVED |
+| E341 | Gaiji | — | 「○○」、第N水準N-N-N、XIV-N | `［＃「○○」、第N水準N-N-N、XIV-N］` | corpus | OBSERVED |
+| E342 | Gaiji | — | 「○○」、第N水準N-N-N、XN－N | `［＃「○○」、第N水準N-N-N、XN－N］` | corpus | OBSERVED |
+| E343 | Gaiji | — | 「○○」、第N水準N-N-N、XVII-N | `［＃「○○」、第N水準N-N-N、XVII-N］` | corpus | OBSERVED |
+| E344 | Gaiji | — | 「○○」、第N水準N-N-N、XXVIII-N | `［＃「○○」、第N水準N-N-N、XXVIII-N］` | corpus | OBSERVED |
+| E345 | Gaiji | — | 「○○」、第N水準N-N-N、XXX-N | `［＃「○○」、第N水準N-N-N、XXX-N］` | corpus | OBSERVED |
+| E346 | Gaiji | — | 「○○」、第N水準N-N-N、XXXVII-N | `［＃「○○」、第N水準N-N-N、XXXVII-N］` | corpus | OBSERVED |
+| E347 | Gaiji | — | 「○○」、第N水準N-N-N、XXXVIII-N | `［＃「○○」、第N水準N-N-N、XXXVIII-N］` | corpus | OBSERVED |
+| E348 | Gaiji | — | 「○○」、第N水準N-N-N、読みは「○○」、N-N | `［＃「○○」、第N水準N-N-N、読みは「○○」、N-N］` | corpus | OBSERVED |
+| E349 | Gaiji | — | 「○○」、第N水準N-N-N、読みは「○○」、N-上-N | `［＃「○○」、第N水準N-N-N、読みは「○○」、N-上-N］` | corpus | OBSERVED |
+| E350 | Gaiji | — | 「○○」、第N水準N-N-N、読みは「○○」、N上-N | `［＃「○○」、第N水準N-N-N、読みは「○○」、N上-N］` | corpus | OBSERVED |
+| E351 | Gaiji | — | 「○○」、第N水準N-N-N、読みは「○○」「○○」、N-N | `［＃「○○」、第N水準N-N-N、読みは「○○」「○○」、N-N］` | corpus | OBSERVED |
+| E352 | Gaiji | — | 「○○」、第N水準N-N-N」 | `［＃「○○」、第N水準N-N-N」］` | corpus | OBSERVED |
+| E353 | Gaiji | — | 「○○」、読みは「○○」、第N水準N-N-N | `［＃「○○」、読みは「○○」、第N水準N-N-N］` | corpus | OBSERVED |
+| E354 | Gaiji | — | 「○○」、読みは「○○」、第N水準N-N-N、N-N | `［＃「○○」、読みは「○○」、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E355 | Gaiji | — | 「○○」、読みは「○○」、第N水準N-N-N、N-上N | `［＃「○○」、読みは「○○」、第N水準N-N-N、N-上N］` | corpus | OBSERVED |
+| E356 | Gaiji | — | 「○○」、読みは「○○」、第N水準N-N-N、N上-N | `［＃「○○」、読みは「○○」、第N水準N-N-N、N上-N］` | corpus | OBSERVED |
+| E357 | Gaiji | — | 「○○」」、U+NEN、N-N | `［＃「○○」」、U+NEN、N-N］` | corpus | OBSERVED |
+| E358 | Gaiji | — | 「○○」」、第N水準N-N-N | `［＃「○○」」、第N水準N-N-N］` | corpus | OBSERVED |
+| E359 | Gaiji | — | 「○○」から「○○」を取ったもの、読みは「○○」、第N水準N-N-N | `［＃「○○」から「○○」を取ったもの、読みは「○○」、第N水準N-N-N］` | corpus | OBSERVED |
+| E360 | Gaiji | — | 「○○」でつくりの縦棒が下に突き抜けている、第N水準 N-N-N | `［＃「○○」でつくりの縦棒が下に突き抜けている、第N水準 N-N-N］` | corpus | OBSERVED |
+| E361 | Gaiji | — | 「○○」でつくりの縦棒が下に突き抜けている、第N水準N-N-N | `［＃「○○」でつくりの縦棒が下に突き抜けている、第N水準N-N-N］` | corpus | OBSERVED |
+| E362 | Gaiji | — | 「○○」でつくりの縦棒が下に突き抜けている」、第N水準N-N-N | `［＃「○○」でつくりの縦棒が下に突き抜けている」、第N水準N-N-N］` | corpus | OBSERVED |
+| E363 | Gaiji | — | 「○○」でつくりの縦棒が下に突き拔けている、第N水準N-N-N | `［＃「○○」でつくりの縦棒が下に突き拔けている、第N水準N-N-N］` | corpus | OBSERVED |
+| E364 | Gaiji | — | 「○○」でつくりの關棒が下に突き關けている、第N水準N-N-N | `［＃「○○」でつくりの關棒が下に突き關けている、第N水準N-N-N］` | corpus | OBSERVED |
+| E365 | Gaiji | — | 「○○」と「○○」はダブルミュート、第N水準N-N-Nと第N水準N-N-N | `［＃「○○」と「○○」はダブルミュート、第N水準N-N-Nと第N水準N-N-N］` | corpus | OBSERVED |
+| E366 | Gaiji | — | 「○○」に「○○」、第N水準N-N-N | `［＃「○○」に「○○」、第N水準N-N-N］` | corpus | OBSERVED |
+| E367 | Gaiji | — | 「○○」に「○○」に代えて「○○」、第N水準N-N-N | `［＃「○○」に「○○」に代えて「○○」、第N水準N-N-N］` | corpus | OBSERVED |
+| E368 | Gaiji | — | 「○○」にさらに縦棒を一本付け加える、U+NC、N巻-N-上-N | `［＃「○○」にさらに縦棒を一本付け加える、U+NC、N巻-N-上-N］` | corpus | OBSERVED |
+| E369 | Gaiji | — | 「○○」に似た字、第N水準N-N-N | `［＃「○○」に似た字、第N水準N-N-N］` | corpus | OBSERVED |
+| E370 | Gaiji | — | 「○○」の「○○」が「○○」、第N水準N-N-N、N-N | `［＃「○○」の「○○」が「○○」、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E371 | Gaiji | — | 「○○」の「○○」が左、第N水準N-N-N | `［＃「○○」の「○○」が左、第N水準N-N-N］` | corpus | OBSERVED |
+| E372 | Gaiji | — | 「○○」の「○○」が横向き、第N水準N-N-N | `［＃「○○」の「○○」が横向き、第N水準N-N-N］` | corpus | OBSERVED |
+| E373 | Gaiji | — | 「○○」の「○○」にかえて「○○」、第N水準N-N-N | `［＃「○○」の「○○」にかえて「○○」、第N水準N-N-N］` | corpus | OBSERVED |
+| E374 | Gaiji | — | 「○○」の「○○」にかえて「○○」の右上の欠けたもの、第N水準N-N-N | `［＃「○○」の「○○」にかえて「○○」の右上の欠けたもの、第N水準N-N-N］` | corpus | OBSERVED |
+| E375 | Gaiji | — | 「○○」の「○○」に代えて「○○」 | `［＃「○○」の「○○」に代えて「○○」］` | corpus | OBSERVED |
+| E376 | Gaiji | — | 「○○」の「○○」に代えて「○○」N-N | `［＃「○○」の「○○」に代えて「○○」N-N］` | corpus | OBSERVED |
+| E377 | Gaiji | — | 「○○」の「○○」に代えて「○○」、N-N | `［＃「○○」の「○○」に代えて「○○」、N-N］` | corpus | OBSERVED |
+| E378 | Gaiji | — | 「○○」の「○○」に代えて「○○」、N-N-N | `［＃「○○」の「○○」に代えて「○○」、N-N-N］` | corpus | OBSERVED |
+| E379 | Gaiji | — | 「○○」の「○○」に代えて「○○」、N-上-N | `［＃「○○」の「○○」に代えて「○○」、N-上-N］` | corpus | OBSERVED |
+| E380 | Gaiji | — | 「○○」の「○○」に代えて「○○」、N-上段-N | `［＃「○○」の「○○」に代えて「○○」、N-上段-N］` | corpus | OBSERVED |
+| E381 | Gaiji | — | 「○○」の「○○」に代えて「○○」、N-下-N | `［＃「○○」の「○○」に代えて「○○」、N-下-N］` | corpus | OBSERVED |
+| E382 | Gaiji | — | 「○○」の「○○」に代えて「○○」、N-本文-N | `［＃「○○」の「○○」に代えて「○○」、N-本文-N］` | corpus | OBSERVED |
+| E383 | Gaiji | — | 「○○」の「○○」に代えて「○○」、N巻-N-上-N | `［＃「○○」の「○○」に代えて「○○」、N巻-N-上-N］` | corpus | OBSERVED |
+| E384 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NACF、N-N | `［＃「○○」の「○○」に代えて「○○」、U+NACF、N-N］` | corpus | OBSERVED |
+| E385 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NACN、N-N | `［＃「○○」の「○○」に代えて「○○」、U+NACN、N-N］` | corpus | OBSERVED |
+| E386 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NADN、N巻-N-上-N | `［＃「○○」の「○○」に代えて「○○」、U+NADN、N巻-N-上-N］` | corpus | OBSERVED |
+| E387 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NAD、N-N | `［＃「○○」の「○○」に代えて「○○」、U+NAD、N-N］` | corpus | OBSERVED |
+| E388 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NANAC、N-N | `［＃「○○」の「○○」に代えて「○○」、U+NANAC、N-N］` | corpus | OBSERVED |
+| E389 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NAN、N-N | `［＃「○○」の「○○」に代えて「○○」、U+NAN、N-N］` | corpus | OBSERVED |
+| E390 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NA、N-N | `［＃「○○」の「○○」に代えて「○○」、U+NA、N-N］` | corpus | OBSERVED |
+| E391 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NBBC、N-N | `［＃「○○」の「○○」に代えて「○○」、U+NBBC、N-N］` | corpus | OBSERVED |
+| E392 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NBCN、N-N | `［＃「○○」の「○○」に代えて「○○」、U+NBCN、N-N］` | corpus | OBSERVED |
+| E393 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NBDN、N-N | `［＃「○○」の「○○」に代えて「○○」、U+NBDN、N-N］` | corpus | OBSERVED |
+| E394 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NBDN、N-上-N | `［＃「○○」の「○○」に代えて「○○」、U+NBDN、N-上-N］` | corpus | OBSERVED |
+| E395 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NBEN、N-N | `［＃「○○」の「○○」に代えて「○○」、U+NBEN、N-N］` | corpus | OBSERVED |
+| E396 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NBND、N-N | `［＃「○○」の「○○」に代えて「○○」、U+NBND、N-N］` | corpus | OBSERVED |
+| E397 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NBND、N-下-N | `［＃「○○」の「○○」に代えて「○○」、U+NBND、N-下-N］` | corpus | OBSERVED |
+| E398 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NBND、N巻-N-下-N | `［＃「○○」の「○○」に代えて「○○」、U+NBND、N巻-N-下-N］` | corpus | OBSERVED |
+| E399 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NBN、N-N | `［＃「○○」の「○○」に代えて「○○」、U+NBN、N-N］` | corpus | OBSERVED |
+| E400 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NBN、N-下-N | `［＃「○○」の「○○」に代えて「○○」、U+NBN、N-下-N］` | corpus | OBSERVED |
+| E401 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NBN、上巻-N-N | `［＃「○○」の「○○」に代えて「○○」、U+NBN、上巻-N-N］` | corpus | OBSERVED |
+| E402 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NBN、下巻-N-N | `［＃「○○」の「○○」に代えて「○○」、U+NBN、下巻-N-N］` | corpus | OBSERVED |
+| E403 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NCDN、N-N | `［＃「○○」の「○○」に代えて「○○」、U+NCDN、N-N］` | corpus | OBSERVED |
+| E404 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NCDN、N-上-N | `［＃「○○」の「○○」に代えて「○○」、U+NCDN、N-上-N］` | corpus | OBSERVED |
+| E405 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NCDN、表紙 | `［＃「○○」の「○○」に代えて「○○」、U+NCDN、表紙］` | corpus | OBSERVED |
+| E406 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NCEN、N-N | `［＃「○○」の「○○」に代えて「○○」、U+NCEN、N-N］` | corpus | OBSERVED |
+| E407 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NCFN、N-本文-N | `［＃「○○」の「○○」に代えて「○○」、U+NCFN、N-本文-N］` | corpus | OBSERVED |
+| E408 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NCN、N-N | `［＃「○○」の「○○」に代えて「○○」、U+NCN、N-N］` | corpus | OBSERVED |
+| E409 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NC、N-N | `［＃「○○」の「○○」に代えて「○○」、U+NC、N-N］` | corpus | OBSERVED |
+| E410 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NDA、N-N | `［＃「○○」の「○○」に代えて「○○」、U+NDA、N-N］` | corpus | OBSERVED |
+| E411 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NDD、N-N | `［＃「○○」の「○○」に代えて「○○」、U+NDD、N-N］` | corpus | OBSERVED |
+| E412 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NDD、ファイル末注記 | `［＃「○○」の「○○」に代えて「○○」、U+NDD、ファイル末注記］` | corpus | OBSERVED |
+| E413 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NDE | `［＃「○○」の「○○」に代えて「○○」、U+NDE］` | corpus | OBSERVED |
+| E414 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NDE、N-N | `［＃「○○」の「○○」に代えて「○○」、U+NDE、N-N］` | corpus | OBSERVED |
+| E415 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NDE、N-N-上-N | `［＃「○○」の「○○」に代えて「○○」、U+NDE、N-N-上-N］` | corpus | OBSERVED |
+| E416 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NDE、N-上-N | `［＃「○○」の「○○」に代えて「○○」、U+NDE、N-上-N］` | corpus | OBSERVED |
+| E417 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NDE、N-下-N | `［＃「○○」の「○○」に代えて「○○」、U+NDE、N-下-N］` | corpus | OBSERVED |
+| E418 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NDN、N-N | `［＃「○○」の「○○」に代えて「○○」、U+NDN、N-N］` | corpus | OBSERVED |
+| E419 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NDN、N-N-N | `［＃「○○」の「○○」に代えて「○○」、U+NDN、N-N-N］` | corpus | OBSERVED |
+| E420 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NDN、N巻-N-上-N | `［＃「○○」の「○○」に代えて「○○」、U+NDN、N巻-N-上-N］` | corpus | OBSERVED |
+| E421 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+ND、N-N | `［＃「○○」の「○○」に代えて「○○」、U+ND、N-N］` | corpus | OBSERVED |
+| E422 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+ND、N-上-N | `［＃「○○」の「○○」に代えて「○○」、U+ND、N-上-N］` | corpus | OBSERVED |
+| E423 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+ND、N巻-N-下-N | `［＃「○○」の「○○」に代えて「○○」、U+ND、N巻-N-下-N］` | corpus | OBSERVED |
+| E424 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NEA、N-N | `［＃「○○」の「○○」に代えて「○○」、U+NEA、N-N］` | corpus | OBSERVED |
+| E425 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NEA、N-上-N | `［＃「○○」の「○○」に代えて「○○」、U+NEA、N-上-N］` | corpus | OBSERVED |
+| E426 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NEF、N-N | `［＃「○○」の「○○」に代えて「○○」、U+NEF、N-N］` | corpus | OBSERVED |
+| E427 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NENA、N-N | `［＃「○○」の「○○」に代えて「○○」、U+NENA、N-N］` | corpus | OBSERVED |
+| E428 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NENE、N-N | `［＃「○○」の「○○」に代えて「○○」、U+NENE、N-N］` | corpus | OBSERVED |
+| E429 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NENE、下-N-N | `［＃「○○」の「○○」に代えて「○○」、U+NENE、下-N-N］` | corpus | OBSERVED |
+| E430 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NENF、N-N | `［＃「○○」の「○○」に代えて「○○」、U+NENF、N-N］` | corpus | OBSERVED |
+| E431 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NEN、N-N | `［＃「○○」の「○○」に代えて「○○」、U+NEN、N-N］` | corpus | OBSERVED |
+| E432 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NE、N-N | `［＃「○○」の「○○」に代えて「○○」、U+NE、N-N］` | corpus | OBSERVED |
+| E433 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NE、N-上-N | `［＃「○○」の「○○」に代えて「○○」、U+NE、N-上-N］` | corpus | OBSERVED |
+| E434 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NE、N-図のキャプション | `［＃「○○」の「○○」に代えて「○○」、U+NE、N-図のキャプション］` | corpus | OBSERVED |
+| E435 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NE、、N-N | `［＃「○○」の「○○」に代えて「○○」、U+NE、、N-N］` | corpus | OBSERVED |
+| E436 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NFAN、N-N | `［＃「○○」の「○○」に代えて「○○」、U+NFAN、N-N］` | corpus | OBSERVED |
+| E437 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NFAN、N-N-N | `［＃「○○」の「○○」に代えて「○○」、U+NFAN、N-N-N］` | corpus | OBSERVED |
+| E438 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NFBN、N-N | `［＃「○○」の「○○」に代えて「○○」、U+NFBN、N-N］` | corpus | OBSERVED |
+| E439 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NFCN、N-N | `［＃「○○」の「○○」に代えて「○○」、U+NFCN、N-N］` | corpus | OBSERVED |
+| E440 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NFC、N-N | `［＃「○○」の「○○」に代えて「○○」、U+NFC、N-N］` | corpus | OBSERVED |
+| E441 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NFDN、N-N | `［＃「○○」の「○○」に代えて「○○」、U+NFDN、N-N］` | corpus | OBSERVED |
+| E442 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NFE、N-N | `［＃「○○」の「○○」に代えて「○○」、U+NFE、N-N］` | corpus | OBSERVED |
+| E443 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NFNB、N-N | `［＃「○○」の「○○」に代えて「○○」、U+NFNB、N-N］` | corpus | OBSERVED |
+| E444 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NFND、N-N | `［＃「○○」の「○○」に代えて「○○」、U+NFND、N-N］` | corpus | OBSERVED |
+| E445 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NFND、N巻-N-上-N | `［＃「○○」の「○○」に代えて「○○」、U+NFND、N巻-N-上-N］` | corpus | OBSERVED |
+| E446 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NFN、N-N | `［＃「○○」の「○○」に代えて「○○」、U+NFN、N-N］` | corpus | OBSERVED |
+| E447 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NFN、N-上-N | `［＃「○○」の「○○」に代えて「○○」、U+NFN、N-上-N］` | corpus | OBSERVED |
+| E448 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NFN、N-下-N | `［＃「○○」の「○○」に代えて「○○」、U+NFN、N-下-N］` | corpus | OBSERVED |
+| E449 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+NF、N-N | `［＃「○○」の「○○」に代えて「○○」、U+NF、N-N］` | corpus | OBSERVED |
+| E450 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+N、N-N | `［＃「○○」の「○○」に代えて「○○」、U+N、N-N］` | corpus | OBSERVED |
+| E451 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+N、N-上-N | `［＃「○○」の「○○」に代えて「○○」、U+N、N-上-N］` | corpus | OBSERVED |
+| E452 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+N、N-下-N | `［＃「○○」の「○○」に代えて「○○」、U+N、N-下-N］` | corpus | OBSERVED |
+| E453 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U+N、N-註【一二八】 | `［＃「○○」の「○○」に代えて「○○」、U+N、N-註【一二八】］` | corpus | OBSERVED |
+| E454 | Gaiji | — | 「○○」の「○○」に代えて「○○」、U＋NCN、N-上-N | `［＃「○○」の「○○」に代えて「○○」、U＋NCN、N-上-N］` | corpus | OBSERVED |
+| E455 | Gaiji | — | 「○○」の「○○」に代えて「○○」、「○○」に代えて「○○」、N-N | `［＃「○○」の「○○」に代えて「○○」、「○○」に代えて「○○」、N-N］` | corpus | OBSERVED |
+| E456 | Gaiji | — | 「○○」の「○○」に代えて「○○」、「○○」に代えて「○○」、「○○」のN画目とN画目を下に伸ばす、N-N | `［＃「○○」の「○○」に代えて「○○」、「○○」に代えて「○○」、「○○」のN画目とN画目を下に伸ばす、N-N］` | corpus | OBSERVED |
+| E457 | Gaiji | — | 「○○」の「○○」に代えて「○○」、「○○」に代えて「○○」）、第N水準N-N-N | `［＃「○○」の「○○」に代えて「○○」、「○○」に代えて「○○」）、第N水準N-N-N］` | corpus | OBSERVED |
+| E458 | Gaiji | — | 「○○」の「○○」に代えて「○○」、「○○」の俗字、N-N | `［＃「○○」の「○○」に代えて「○○」、「○○」の俗字、N-N］` | corpus | OBSERVED |
+| E459 | Gaiji | — | 「○○」の「○○」に代えて「○○」、下巻-N-N | `［＃「○○」の「○○」に代えて「○○」、下巻-N-N］` | corpus | OBSERVED |
+| E460 | Gaiji | — | 「○○」の「○○」に代えて「○○」、屋号を示す記号、N-N | `［＃「○○」の「○○」に代えて「○○」、屋号を示す記号、N-N］` | corpus | OBSERVED |
+| E461 | Gaiji | — | 「○○」の「○○」に代えて「○○」、第N水準N-N-N | `［＃「○○」の「○○」に代えて「○○」、第N水準N-N-N］` | corpus | OBSERVED |
+| E462 | Gaiji | — | 「○○」の「○○」に代えて「○○」、第N水準N-N-N、N-N | `［＃「○○」の「○○」に代えて「○○」、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E463 | Gaiji | — | 「○○」の「○○」に代えて「○○」、読みは「○○」、N-N | `［＃「○○」の「○○」に代えて「○○」、読みは「○○」、N-N］` | corpus | OBSERVED |
+| E464 | Gaiji | — | 「○○」の「○○」に代えて「○○」、読みは「○○」、第N水準N-N-N | `［＃「○○」の「○○」に代えて「○○」、読みは「○○」、第N水準N-N-N］` | corpus | OBSERVED |
+| E465 | Gaiji | — | 「○○」の「○○」に代えて「○○」、読みは「○○」、第N水準N-N-N、N-上-N | `［＃「○○」の「○○」に代えて「○○」、読みは「○○」、第N水準N-N-N、N-上-N］` | corpus | OBSERVED |
+| E466 | Gaiji | — | 「○○」の「○○」に代えて「○○」」、N-N | `［＃「○○」の「○○」に代えて「○○」」、N-N］` | corpus | OBSERVED |
+| E467 | Gaiji | — | 「○○」の「○○」に代えて「○○」」、U+NAN、N-N | `［＃「○○」の「○○」に代えて「○○」」、U+NAN、N-N］` | corpus | OBSERVED |
+| E468 | Gaiji | — | 「○○」の「○○」に代えて「○○」」、U+NBNE、N巻-N-上-N | `［＃「○○」の「○○」に代えて「○○」」、U+NBNE、N巻-N-上-N］` | corpus | OBSERVED |
+| E469 | Gaiji | — | 「○○」の「○○」に代えて「○○」」、第N水準N-N-N | `［＃「○○」の「○○」に代えて「○○」」、第N水準N-N-N］` | corpus | OBSERVED |
+| E470 | Gaiji | — | 「○○」の「○○」に代えて「○○」から下の横棒を取り、縦棒二本は下までつなげたものをあてる」、「○○」の本字、U+NCN、N巻-N-上-N | `［＃「○○」の「○○」に代えて「○○」から下の横棒を取り、縦棒二本は下までつなげたものをあてる」、「○○」の本字、U+NCN、N巻-N-上-N］` | corpus | OBSERVED |
+| E471 | Gaiji | — | 「○○」の「○○」に代えて「○○」の「○○」が横向き」、U+NBN、N-N | `［＃「○○」の「○○」に代えて「○○」の「○○」が横向き」、U+NBN、N-N］` | corpus | OBSERVED |
+| E472 | Gaiji | — | 「○○」の「○○」に代えて「○○」のつくり、第N水準N-N-N、N下-N | `［＃「○○」の「○○」に代えて「○○」のつくり、第N水準N-N-N、N下-N］` | corpus | OBSERVED |
+| E473 | Gaiji | — | 「○○」の「○○」に代えて「○○」の下の横棒が長いもの、N-N | `［＃「○○」の「○○」に代えて「○○」の下の横棒が長いもの、N-N］` | corpus | OBSERVED |
+| E474 | Gaiji | — | 「○○」の「○○」に代えて「○○」の旧字体、第N水準N-N-N | `［＃「○○」の「○○」に代えて「○○」の旧字体、第N水準N-N-N］` | corpus | OBSERVED |
+| E475 | Gaiji | — | 「○○」の「○○」に代えて「○○」）、「○○」の正字、U+NCA、N-N | `［＃「○○」の「○○」に代えて「○○」）、「○○」の正字、U+NCA、N-N］` | corpus | OBSERVED |
+| E476 | Gaiji | — | 「○○」の「○○」に代えて「○○」）、「○○」の正字」、N-N | `［＃「○○」の「○○」に代えて「○○」）、「○○」の正字」、N-N］` | corpus | OBSERVED |
+| E477 | Gaiji | — | 「○○」の「○○」に代えて「○○」）、「○○」の正字」、U+NCA | `［＃「○○」の「○○」に代えて「○○」）、「○○」の正字」、U+NCA］` | corpus | OBSERVED |
+| E478 | Gaiji | — | 「○○」の「○○」に代えて「○○」）、「○○」の正字」、U+NCA、N-N | `［＃「○○」の「○○」に代えて「○○」）、「○○」の正字」、U+NCA、N-N］` | corpus | OBSERVED |
+| E479 | Gaiji | — | 「○○」の「○○」に代えて「○○」）、「○○」の正字」、U+NCA、N-N-下-N | `［＃「○○」の「○○」に代えて「○○」）、「○○」の正字」、U+NCA、N-N-下-N］` | corpus | OBSERVED |
+| E480 | Gaiji | — | 「○○」の「○○」に代えて「○○」）、「○○」の正字」、U+NCA、N-上-N | `［＃「○○」の「○○」に代えて「○○」）、「○○」の正字」、U+NCA、N-上-N］` | corpus | OBSERVED |
+| E481 | Gaiji | — | 「○○」の「○○」に代えて「○○」）、「○○」の正字」、U+NCA、N-下-N | `［＃「○○」の「○○」に代えて「○○」）、「○○」の正字」、U+NCA、N-下-N］` | corpus | OBSERVED |
+| E482 | Gaiji | — | 「○○」の「○○」に代えて「○○」）、「○○」の正字」、U+NCA、N-中-N | `［＃「○○」の「○○」に代えて「○○」）、「○○」の正字」、U+NCA、N-中-N］` | corpus | OBSERVED |
+| E483 | Gaiji | — | 「○○」の「○○」に代えて「○○」）、「○○」の正字」、U+NCA、N巻-N-下-N | `［＃「○○」の「○○」に代えて「○○」）、「○○」の正字」、U+NCA、N巻-N-下-N］` | corpus | OBSERVED |
+| E484 | Gaiji | — | 「○○」の「○○」に代えて「○○」）、「○○」の正字」、U+NCA、ファイル末注記 | `［＃「○○」の「○○」に代えて「○○」）、「○○」の正字」、U+NCA、ファイル末注記］` | corpus | OBSERVED |
+| E485 | Gaiji | — | 「○○」の「○○」に代えて「○○」）、「○○」の正字」、第N水準N-N-N | `［＃「○○」の「○○」に代えて「○○」）、「○○」の正字」、第N水準N-N-N］` | corpus | OBSERVED |
+| E486 | Gaiji | — | 「○○」の「○○」に代えて「○○」）」、N-N | `［＃「○○」の「○○」に代えて「○○」）」、N-N］` | corpus | OBSERVED |
+| E487 | Gaiji | — | 「○○」の「○○」に代えて「○○」）」、N-上-N | `［＃「○○」の「○○」に代えて「○○」）」、N-上-N］` | corpus | OBSERVED |
+| E488 | Gaiji | — | 「○○」の「○○」に代えて「○○」）」、N-下-N | `［＃「○○」の「○○」に代えて「○○」）」、N-下-N］` | corpus | OBSERVED |
+| E489 | Gaiji | — | 「○○」の「○○」に代えて「○○」）」、U+NF、N-N | `［＃「○○」の「○○」に代えて「○○」）」、U+NF、N-N］` | corpus | OBSERVED |
+| E490 | Gaiji | — | 「○○」の「○○」に代えて「○○」）」、U+N、N-N | `［＃「○○」の「○○」に代えて「○○」）」、U+N、N-N］` | corpus | OBSERVED |
+| E491 | Gaiji | — | 「○○」の「○○」に代えて「○○」）」、第N水準N-N-N | `［＃「○○」の「○○」に代えて「○○」）」、第N水準N-N-N］` | corpus | OBSERVED |
+| E492 | Gaiji | — | 「○○」の「○○」に代えて「○○」））」、第N水準N-N-N | `［＃「○○」の「○○」に代えて「○○」））」、第N水準N-N-N］` | corpus | OBSERVED |
+| E493 | Gaiji | — | 「○○」の「○○」に代えて「○○」）＋栩のつくり」、第N水準N-N-N | `［＃「○○」の「○○」に代えて「○○」）＋栩のつくり」、第N水準N-N-N］` | corpus | OBSERVED |
+| E494 | Gaiji | — | 「○○」の「○○」に代えて「○○」）－儿」、N-N | `［＃「○○」の「○○」に代えて「○○」）－儿」、N-N］` | corpus | OBSERVED |
+| E495 | Gaiji | — | 「○○」の「○○」に変えて「○○」、第N水準N-N-N | `［＃「○○」の「○○」に変えて「○○」、第N水準N-N-N］` | corpus | OBSERVED |
+| E496 | Gaiji | — | 「○○」の「○○」に変えて「○○」」、第N水準N-N-N | `［＃「○○」の「○○」に変えて「○○」」、第N水準N-N-N］` | corpus | OBSERVED |
+| E497 | Gaiji | — | 「○○」の「○○」に変えて「○○」」第N水準N-N-N | `［＃「○○」の「○○」に変えて「○○」」第N水準N-N-N］` | corpus | OBSERVED |
+| E498 | Gaiji | — | 「○○」の「○○」の下に「○○」を入れる」、第N水準N-N-N | `［＃「○○」の「○○」の下に「○○」を入れる」、第N水準N-N-N］` | corpus | OBSERVED |
+| E499 | Gaiji | — | 「○○」の「○○」の下の部分に代えて「○○」、N-N | `［＃「○○」の「○○」の下の部分に代えて「○○」、N-N］` | corpus | OBSERVED |
+| E500 | Gaiji | — | 「○○」の「○○」の代えて「○○」、第N水準N-N-N | `［＃「○○」の「○○」の代えて「○○」、第N水準N-N-N］` | corpus | OBSERVED |
+| E501 | Gaiji | — | 「○○」の「○○」の代わりに「○○」、第N水準N-N-N | `［＃「○○」の「○○」の代わりに「○○」、第N水準N-N-N］` | corpus | OBSERVED |
+| E502 | Gaiji | — | 「○○」の「○○」の代わりに「○○」、第N水準N-N-N、読みは「○○」、N-N | `［＃「○○」の「○○」の代わりに「○○」、第N水準N-N-N、読みは「○○」、N-N］` | corpus | OBSERVED |
+| E503 | Gaiji | — | 「○○」の「○○」の右を取る」、第N水準N-N-N | `［＃「○○」の「○○」の右を取る」、第N水準N-N-N］` | corpus | OBSERVED |
+| E504 | Gaiji | — | 「○○」の「○○」の左側に「○○」、第N水準N-N-N | `［＃「○○」の「○○」の左側に「○○」、第N水準N-N-N］` | corpus | OBSERVED |
+| E505 | Gaiji | — | 「○○」の「○○」を「○○」にしたもの、第N水準N-N-N | `［＃「○○」の「○○」を「○○」にしたもの、第N水準N-N-N］` | corpus | OBSERVED |
+| E506 | Gaiji | — | 「○○」の「○○」を「○○」のそれのように）」、第N水準N-N-N | `［＃「○○」の「○○」を「○○」のそれのように）」、第N水準N-N-N］` | corpus | OBSERVED |
+| E507 | Gaiji | — | 「○○」のあしが「○○」）」、第N水準N-N-N | `［＃「○○」のあしが「○○」）」、第N水準N-N-N］` | corpus | OBSERVED |
+| E508 | Gaiji | — | 「○○」のおいがしらの下が「○○」、第N水準N-N-N | `［＃「○○」のおいがしらの下が「○○」、第N水準N-N-N］` | corpus | OBSERVED |
+| E509 | Gaiji | — | 「○○」のぎょうにんべんにかえて「○○」）」、U+NFNB、N-N | `［＃「○○」のぎょうにんべんにかえて「○○」）」、U+NFNB、N-N］` | corpus | OBSERVED |
+| E510 | Gaiji | — | 「○○」のさんずいに代えて「○○」、N-N | `［＃「○○」のさんずいに代えて「○○」、N-N］` | corpus | OBSERVED |
+| E511 | Gaiji | — | 「○○」のさんずいに代えて「○○」、N-下-N | `［＃「○○」のさんずいに代えて「○○」、N-下-N］` | corpus | OBSERVED |
+| E512 | Gaiji | — | 「○○」のつくり、第N水準N-N-N | `［＃「○○」のつくり、第N水準N-N-N］` | corpus | OBSERVED |
+| E513 | Gaiji | — | 「○○」のつくり」、第N水準N-N-N | `［＃「○○」のつくり」、第N水準N-N-N］` | corpus | OBSERVED |
+| E514 | Gaiji | — | 「○○」のつくりの縦棒が下に突き抜ける、第N水準N-N-N | `［＃「○○」のつくりの縦棒が下に突き抜ける、第N水準N-N-N］` | corpus | OBSERVED |
+| E515 | Gaiji | — | 「○○」のつくりの縦画が下に突き出す、第N水準N-N-N | `［＃「○○」のつくりの縦画が下に突き出す、第N水準N-N-N］` | corpus | OBSERVED |
+| E516 | Gaiji | — | 「○○」のつくり縦棒を下に突き抜ける、第N水準N-N-N | `［＃「○○」のつくり縦棒を下に突き抜ける、第N水準N-N-N］` | corpus | OBSERVED |
+| E517 | Gaiji | — | 「○○」のつくり／鹿」、U+NEN、N-N | `［＃「○○」のつくり／鹿」、U+NEN、N-N］` | corpus | OBSERVED |
+| E518 | Gaiji | — | 「○○」のにんべんに代えて牛へん、第N水準N-N-N | `［＃「○○」のにんべんに代えて牛へん、第N水準N-N-N］` | corpus | OBSERVED |
+| E519 | Gaiji | — | 「○○」の中央部分右側））」、第N水準N-N-N | `［＃「○○」の中央部分右側））」、第N水準N-N-N］` | corpus | OBSERVED |
+| E520 | Gaiji | — | 「○○」の二つの「○○」に代えて「○○」、U+NB、N-N | `［＃「○○」の二つの「○○」に代えて「○○」、U+NB、N-N］` | corpus | OBSERVED |
+| E521 | Gaiji | — | 「○○」の二つの「○○」に代えて「○○」、第N水準N-N-N | `［＃「○○」の二つの「○○」に代えて「○○」、第N水準N-N-N］` | corpus | OBSERVED |
+| E522 | Gaiji | — | 「○○」の二つの「○○」に代えて「○○」、読みは「○○」、第N水準N-N-N | `［＃「○○」の二つの「○○」に代えて「○○」、読みは「○○」、第N水準N-N-N］` | corpus | OBSERVED |
+| E523 | Gaiji | — | 「○○」の二つの「○○」に変えて「○○」、第N水準N-N-N | `［＃「○○」の二つの「○○」に変えて「○○」、第N水準N-N-N］` | corpus | OBSERVED |
+| E524 | Gaiji | — | 「○○」の俗字、U+N、N-N | `［＃「○○」の俗字、U+N、N-N］` | corpus | OBSERVED |
+| E525 | Gaiji | — | 「○○」の偏と旁が逆、第N水準N-N-N | `［＃「○○」の偏と旁が逆、第N水準N-N-N］` | corpus | OBSERVED |
+| E526 | Gaiji | — | 「○○」の左の「○○」に代えて「○○」、N-N | `［＃「○○」の左の「○○」に代えて「○○」、N-N］` | corpus | OBSERVED |
+| E527 | Gaiji | — | 「○○」の左側の「○○」に代えて「○○」、N-N | `［＃「○○」の左側の「○○」に代えて「○○」、N-N］` | corpus | OBSERVED |
+| E528 | Gaiji | — | 「○○」の最後の縦画が下に突き出ている文字、第N水準N-N-N、XLVI-N | `［＃「○○」の最後の縦画が下に突き出ている文字、第N水準N-N-N、XLVI-N］` | corpus | OBSERVED |
+| E529 | Gaiji | — | 「○○」の正字、「○○」の正字、第N水準N-N-N | `［＃「○○」の正字、「○○」の正字、第N水準N-N-N］` | corpus | OBSERVED |
+| E530 | Gaiji | — | 「○○」の正字、第N水準N-N-N | `［＃「○○」の正字、第N水準N-N-N］` | corpus | OBSERVED |
+| E531 | Gaiji | — | 「○○」の正字、第N水準N-N-N、N-N | `［＃「○○」の正字、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E532 | Gaiji | — | 「○○」の正字」、U+NAN、N巻-N-下-N | `［＃「○○」の正字」、U+NAN、N巻-N-下-N］` | corpus | OBSERVED |
+| E533 | Gaiji | — | 「○○」の点の部分が衣、第N水準N-N-N、N上-N | `［＃「○○」の点の部分が衣、第N水準N-N-N、N上-N］` | corpus | OBSERVED |
+| E534 | Gaiji | — | 「○○」の間に「○○」、第N水準N-N-N | `［＃「○○」の間に「○○」、第N水準N-N-N］` | corpus | OBSERVED |
+| E535 | Gaiji | — | 「○○」の間に「○○」）」、第N水準N-N-N | `［＃「○○」の間に「○○」）」、第N水準N-N-N］` | corpus | OBSERVED |
+| E536 | Gaiji | — | 「○○」はNマスに横並び、第N水準N-N-N、N下-N | `［＃「○○」はNマスに横並び、第N水準N-N-N、N下-N］` | corpus | OBSERVED |
+| E537 | Gaiji | — | 「○○」はN字とも「○○」、第N水準N-N-N、N-N | `［＃「○○」はN字とも「○○」、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E538 | Gaiji | — | 「○○」は、「○○」、第N水準N-N-N、N-N | `［＃「○○」は、「○○」、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E539 | Gaiji | — | 「○○」は、「○○」の下に、「○○」の「○○」を「○○」に替えたものを置いた形、第N水準N-N-Nに包摂、N-N | `［＃「○○」は、「○○」の下に、「○○」の「○○」を「○○」に替えたものを置いた形、第N水準N-N-Nに包摂、N-N］` | corpus | OBSERVED |
+| E540 | Gaiji | — | 「○○」は、「○○」の旧字体の「○○」にかえて「○○」、第N水準N-N-N、N-N | `［＃「○○」は、「○○」の旧字体の「○○」にかえて「○○」、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E541 | Gaiji | — | 「○○」は「○○」、第N水準 N-N-N、N-N | `［＃「○○」は「○○」、第N水準 N-N-N、N-N］` | corpus | OBSERVED |
+| E542 | Gaiji | — | 「○○」は「○○」、第N水準N-N-N | `［＃「○○」は「○○」、第N水準N-N-N］` | corpus | OBSERVED |
+| E543 | Gaiji | — | 「○○」は「○○」、第N水準N-N-N、N-N | `［＃「○○」は「○○」、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E544 | Gaiji | — | 「○○」は「○○」、第N水準N-N-N、N-N]
+-------------------------------------------------------
+
+　ゆうべからの雨はとうとう勢いを増して、ひる頃から土砂降りになった。樹の葉は青々と乱れ、室内の物影には、蒼黒い陰影がよどむ。
+　私は窓から、野一面白い花でうごめいている鉄道草の上に、雨のしぶくのを見ていたが、私はいつか知らない土地で、何時｜霽《は》れる［＃底本では「○○」と誤記 | `［＃「○○」は「○○」、第N水準N-N-N、N-N]
+-------------------------------------------------------
+
+　ゆうべからの雨はとうとう勢いを増して、ひる頃から土砂降りになった。樹の葉は青々と乱れ、室内の物影には、蒼黒い陰影がよどむ。
+　私は窓から、野一面白い花でうごめいている鉄道草の上に、雨のしぶくのを見ていたが、私はいつか知らない土地で、何時｜霽《は》れる［＃底本では「○○」と誤記］` | corpus | OBSERVED |
+| E545 | Gaiji | — | 「○○」は「○○」、第N水準N-N-N、N-上-N | `［＃「○○」は「○○」、第N水準N-N-N、N-上-N］` | corpus | OBSERVED |
+| E546 | Gaiji | — | 「○○」は「○○」、第N水準N-N-N、N-上-N、底本はこの字を「○○」のつくり」と作字上の誤り | `［＃「○○」は「○○」、第N水準N-N-N、N-上-N、底本はこの字を「○○」のつくり」と作字上の誤り］` | corpus | OBSERVED |
+| E547 | Gaiji | — | 「○○」は「○○」、第N水準N-N-N、N-上N | `［＃「○○」は「○○」、第N水準N-N-N、N-上N］` | corpus | OBSERVED |
+| E548 | Gaiji | — | 「○○」は「○○」、第N水準N-N-N、N-下-N | `［＃「○○」は「○○」、第N水準N-N-N、N-下-N］` | corpus | OBSERVED |
+| E549 | Gaiji | — | 「○○」は「○○」、第N水準N-N-N、N-下N | `［＃「○○」は「○○」、第N水準N-N-N、N-下N］` | corpus | OBSERVED |
+| E550 | Gaiji | — | 「○○」は「○○」、第N水準N-N-N、読みは「○○」、N-N | `［＃「○○」は「○○」、第N水準N-N-N、読みは「○○」、N-N］` | corpus | OBSERVED |
+| E551 | Gaiji | — | 「○○」は「○○」、第三水準N-N-N、N-N | `［＃「○○」は「○○」、第三水準N-N-N、N-N］` | corpus | OBSERVED |
+| E552 | Gaiji | — | 「○○」は「○○」、第四水準N-N-N、 | `［＃「○○」は「○○」、第四水準N-N-N、］` | corpus | OBSERVED |
+| E553 | Gaiji | — | 「○○」は「○○」、読みは「○○」、第N水準N-N-N、N-N | `［＃「○○」は「○○」、読みは「○○」、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E554 | Gaiji | — | 「○○」は「○○」、読みは「○○」、第N水準N-N-N、N-N」計《はんときばか》り經《へ》て還り去りしが、鬼の樣なる入道も稍々｜涙含《なみだぐ》みてぞ見えにける。相隨ひし人々の、入道と共に還りし跡には、館《やかた》の中《うち》最《い》と靜にて、小松殿の側に侍《はんべ》るものは御子｜維盛《これもり》卿と足助二郎重景のみ。維盛卿は父に向ひ、『先刻｜祖父《そふ》禪門《ぜんもん》の御勸《おんすゝ》めありし宋朝渡來の醫師、聞くが如くんば世にも稀なる名手《めいしゆ》なるに、父上の拒《こば》み給ひしこそ心得ね』。訝《いぶかし》げに尋ぬるを、小松殿は打見やりて、はら／＼と涙を流し、『形ある者は天命あり。三界の教主《けうしゆ》さへ、耆婆《きば》が藥にも及ばずして跋提河《ばつだいが》の涅槃《ねはん》に入り給ひき。佛體ならぬ重盛、まして唯ならぬ身の業繋《ごふけ》なれば、藥石如何でか治するを得べき。唯々父禪門の御身こそ痛ましけれ。位《くらゐ》人臣を極め、一門の榮華は何れの國、何れの代《よ》にも例《ためし》なく、齡六十に越え給へば、出離生死《しゆつりしやうじ》の御營《おんいとなみ》、無上菩提の願ひの外、何御不足《なにごふそく》のあれば、煩惱劫苦《ぼんなうごふく》の浮世に非道の權勢を貧り給ふ淺ましさ。如何に少將、此頃の御擧動《おんふるまひ》を何とか見つる、臣として君を押し籠《こ》め奉るさへあるに、下民の苦を顧みず、遷都の企ありと聞く。そもや平安三百年の都を離れて、何《いづ》こに平家の盛《さか》りあらん。父の非道を子として救ひ得ず、民の怨みを眼《ま》のあたり見る重盛が心苦《こゝろぐる》しさ。思ひ遣《や》れ少將』。
+　維盛卿も、傍らに侍《じ》せる重景も首《かうべ》を垂れて默然《もくねん》たり。内府は病み疲れたる身を脇息《けふそく》に持たせて、少しく笑を含みて重景を見やり給ひ、『いかに二郎、保元《ほうげん》の弓勢《ゆんぜい》、平治《へいぢ》の太刀風《たちかぜ》、今も草木を靡《なび》かす力ありや。盛りと見ゆる世も何《いづ》れ衰ふる時はあり、末は濁りても涸《か》れぬ源には、流れも何時《いつ》か清《す》まんずるぞ。言葉の旨《むね》を忖《はか》り得しか』。重景は愧《はづか》しげに首《かうべ》を俯《ふ》し、『如何でかは』と答へしまゝ、はか／″＼しく應《いらへ》せず。
+　折から一人の青侍《あをざむらひ》廊下に手をつきて、『齋藤左衞門、只今御謁見を給はりたき旨願ひ候が、如何計らひ申さんや』と恐る／＼申上ぐれば、小松殿、『是れへ連《つ》れ參れ』と言ふ。暫くして件の青侍に導かれ、緩端《えんばた》に平伏《へいふく》したる齋藤茂頼、齡七十に近けれども、猶ほ矍鑠《くわくしやく》として健《すこ》やかなる老武者《おいむしや》、右の鬢先より頬を掠《かす》めたる向疵《むかふきず》に、栗毛《くりげ》の琵琶股《びはもゝ》叩いて物語りし昔の武功忍ばれ、籠手《こて》摺《ずれ》に肉落ちて節《ふし》のみ高き太腕は、そも幾その人の首を切り落としけん。肩は山の如く張り、頭は雪の如く白し。『久しや左衞門』、小松殿｜聲懸《こゑか》け給へば、左衞門は窪みし兩眼に涙を浮べ、『茂頼、此の老年に及び、一期の恥辱、不忠の大罪、御詫《おんわび》申さん爲め、御病體を驚かせ參らせて候』。小松殿｜眉《まゆ》を顰め、『何事ぞ』と問ひ給えば、茂頼は無念の顏色にて、『愚息《ぐそく》時頼』、と言ひさして涙をはらはらと流せば、重景は傍らより膝を進め、『時頼殿に何事の候ひしぞ』。『遁世《とんせい》致して候』。
+　是はと驚く維盛・重景、仔細如何にと問ひ寄るを應《こたへ》も得せず、やうやく涙を拭《のご》ひ、『君が山なす久年《きうねん》の御恩に對し、一日の報效をも遂《と》げず、猥りに身を捨つる條、不忠とも不義とも言はん方なき愚息が不所存、茂頼｜此期《このご》に及び、君に合はす面目も候はず』。言ひつゝ懷《ふところ》より取り出す一封の書、『言語に絶えたる亂心にも、君が御事忘れずや、不忠を重ぬる業《わざ》とも知らで、殘しありし此の一通、君の御名を染めたれば、捨てんにも處なく、餘儀なく此《こゝ》に』と差上ぐるを、小松殿は取上げて、『こは予に殘せる時頼が陳情《ちんじやう》よな』と言ひつゝ繰りひろげ、つく／″＼讀み了りて歎息し給い、『あゝ我れのみの浮世にてはなかりしか。――時頼ほどの武士《ものゝふ》も物の哀れに向はん刃《やいば》なしと見ゆるぞ。左衞門、今は嘆きても及ばぬ事、予に於いて聊か憾みなし。禍福はあざなえる繩の如く、世は塞翁《さいをう》が馬、平家の武士も數多きに、時頼こそは中々に嫉《ねたま》しき程の仕合者《しあはせもの》ぞ』。
+
+　　　第十五
+
+　更闌《かうた》けて、天地の間にそよとも音せぬ後夜《ごや》の靜けさ、やゝ傾きし下弦《かげん》の月を追うて、冴え澄める大空を渡る雁の影｜遙《はる》かなり。ふけ行く夜に奧も表も人定まりて、築山《つきやま》の木影《こかげ》に鐵燈《かねとう》の光のみ侘《わび》しげなる御所《ごしよ》の裏局《うらつぼね》、女房曹司の室々も、今を盛りの寢入花《ねいりばな》、對屋《たいや》を照せる燈の火影《ほかげ》に迷うて、妻戸を打つ蟲の音のみ高し。※［＃「○○」は「○○」、第N水準N-N-N、N-N | `［＃「○○」は「○○」、読みは「○○」、第N水準N-N-N、N-N」計《はんときばか》り經《へ》て還り去りしが、鬼の樣なる入道も稍々｜涙含《なみだぐ》みてぞ見えにける。相隨ひし人々の、入道と共に還りし跡には、館《やかた》の中《うち》最《い》と靜にて、小松殿の側に侍《はんべ》るものは御子｜維盛《これもり》卿と足助二郎重景のみ。維盛卿は父に向ひ、『先刻｜祖父《そふ》禪門《ぜんもん》の御勸《おんすゝ》めありし宋朝渡來の醫師、聞くが如くんば世にも稀なる名手《めいしゆ》なるに、父上の拒《こば》み給ひしこそ心得ね』。訝《いぶかし》げに尋ぬるを、小松殿は打見やりて、はら／＼と涙を流し、『形ある者は天命あり。三界の教主《けうしゆ》さへ、耆婆《きば》が藥にも及ばずして跋提河《ばつだいが》の涅槃《ねはん》に入り給ひき。佛體ならぬ重盛、まして唯ならぬ身の業繋《ごふけ》なれば、藥石如何でか治するを得べき。唯々父禪門の御身こそ痛ましけれ。位《くらゐ》人臣を極め、一門の榮華は何れの國、何れの代《よ》にも例《ためし》なく、齡六十に越え給へば、出離生死《しゆつりしやうじ》の御營《おんいとなみ》、無上菩提の願ひの外、何御不足《なにごふそく》のあれば、煩惱劫苦《ぼんなうごふく》の浮世に非道の權勢を貧り給ふ淺ましさ。如何に少將、此頃の御擧動《おんふるまひ》を何とか見つる、臣として君を押し籠《こ》め奉るさへあるに、下民の苦を顧みず、遷都の企ありと聞く。そもや平安三百年の都を離れて、何《いづ》こに平家の盛《さか》りあらん。父の非道を子として救ひ得ず、民の怨みを眼《ま》のあたり見る重盛が心苦《こゝろぐる》しさ。思ひ遣《や》れ少將』。
+　維盛卿も、傍らに侍《じ》せる重景も首《かうべ》を垂れて默然《もくねん》たり。内府は病み疲れたる身を脇息《けふそく》に持たせて、少しく笑を含みて重景を見やり給ひ、『いかに二郎、保元《ほうげん》の弓勢《ゆんぜい》、平治《へいぢ》の太刀風《たちかぜ》、今も草木を靡《なび》かす力ありや。盛りと見ゆる世も何《いづ》れ衰ふる時はあり、末は濁りても涸《か》れぬ源には、流れも何時《いつ》か清《す》まんずるぞ。言葉の旨《むね》を忖《はか》り得しか』。重景は愧《はづか》しげに首《かうべ》を俯《ふ》し、『如何でかは』と答へしまゝ、はか／″＼しく應《いらへ》せず。
+　折から一人の青侍《あをざむらひ》廊下に手をつきて、『齋藤左衞門、只今御謁見を給はりたき旨願ひ候が、如何計らひ申さんや』と恐る／＼申上ぐれば、小松殿、『是れへ連《つ》れ參れ』と言ふ。暫くして件の青侍に導かれ、緩端《えんばた》に平伏《へいふく》したる齋藤茂頼、齡七十に近けれども、猶ほ矍鑠《くわくしやく》として健《すこ》やかなる老武者《おいむしや》、右の鬢先より頬を掠《かす》めたる向疵《むかふきず》に、栗毛《くりげ》の琵琶股《びはもゝ》叩いて物語りし昔の武功忍ばれ、籠手《こて》摺《ずれ》に肉落ちて節《ふし》のみ高き太腕は、そも幾その人の首を切り落としけん。肩は山の如く張り、頭は雪の如く白し。『久しや左衞門』、小松殿｜聲懸《こゑか》け給へば、左衞門は窪みし兩眼に涙を浮べ、『茂頼、此の老年に及び、一期の恥辱、不忠の大罪、御詫《おんわび》申さん爲め、御病體を驚かせ參らせて候』。小松殿｜眉《まゆ》を顰め、『何事ぞ』と問ひ給えば、茂頼は無念の顏色にて、『愚息《ぐそく》時頼』、と言ひさして涙をはらはらと流せば、重景は傍らより膝を進め、『時頼殿に何事の候ひしぞ』。『遁世《とんせい》致して候』。
+　是はと驚く維盛・重景、仔細如何にと問ひ寄るを應《こたへ》も得せず、やうやく涙を拭《のご》ひ、『君が山なす久年《きうねん》の御恩に對し、一日の報效をも遂《と》げず、猥りに身を捨つる條、不忠とも不義とも言はん方なき愚息が不所存、茂頼｜此期《このご》に及び、君に合はす面目も候はず』。言ひつゝ懷《ふところ》より取り出す一封の書、『言語に絶えたる亂心にも、君が御事忘れずや、不忠を重ぬる業《わざ》とも知らで、殘しありし此の一通、君の御名を染めたれば、捨てんにも處なく、餘儀なく此《こゝ》に』と差上ぐるを、小松殿は取上げて、『こは予に殘せる時頼が陳情《ちんじやう》よな』と言ひつゝ繰りひろげ、つく／″＼讀み了りて歎息し給い、『あゝ我れのみの浮世にてはなかりしか。――時頼ほどの武士《ものゝふ》も物の哀れに向はん刃《やいば》なしと見ゆるぞ。左衞門、今は嘆きても及ばぬ事、予に於いて聊か憾みなし。禍福はあざなえる繩の如く、世は塞翁《さいをう》が馬、平家の武士も數多きに、時頼こそは中々に嫉《ねたま》しき程の仕合者《しあはせもの》ぞ』。
+
+　　　第十五
+
+　更闌《かうた》けて、天地の間にそよとも音せぬ後夜《ごや》の靜けさ、やゝ傾きし下弦《かげん》の月を追うて、冴え澄める大空を渡る雁の影｜遙《はる》かなり。ふけ行く夜に奧も表も人定まりて、築山《つきやま》の木影《こかげ》に鐵燈《かねとう》の光のみ侘《わび》しげなる御所《ごしよ》の裏局《うらつぼね》、女房曹司の室々も、今を盛りの寢入花《ねいりばな》、對屋《たいや》を照せる燈の火影《ほかげ》に迷うて、妻戸を打つ蟲の音のみ高し。※［＃「○○」は「○○」、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E555 | Gaiji | — | 「○○」は「○○」「○○」のしめすへんは「○○」」ではなく「○○」、第N水準N-N-N、N-N | `［＃「○○」は「○○」「○○」のしめすへんは「○○」」ではなく「○○」、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E556 | Gaiji | — | 「○○」は「○○」から「○○」を除いた形」、第N水準N-N-N、N-上N | `［＃「○○」は「○○」から「○○」を除いた形」、第N水準N-N-N、N-上N］` | corpus | OBSERVED |
+| E557 | Gaiji | — | 「○○」は「○○」から一、二、三画目を取ったもの」、第N水準N-N-N、N-N | `［＃「○○」は「○○」から一、二、三画目を取ったもの」、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E558 | Gaiji | — | 「○○」は「○○」かんむりの下に「○○」の旧字、第N水準N-N-N、N-N | `［＃「○○」は「○○」かんむりの下に「○○」の旧字、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E559 | Gaiji | — | 「○○」は「○○」でつくりの縦棒が下に突き抜けている、第N水準N-N-N | `［＃「○○」は「○○」でつくりの縦棒が下に突き抜けている、第N水準N-N-N］` | corpus | OBSERVED |
+| E560 | Gaiji | — | 「○○」は「○○」でつくりの縦棒が下に突き抜けている、第N水準N-N-N、N-N | `［＃「○○」は「○○」でつくりの縦棒が下に突き抜けている、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E561 | Gaiji | — | 「○○」は「○○」でつくりの縦棒が下に突き抜けている、第N水準N-N-N、N下-N | `［＃「○○」は「○○」でつくりの縦棒が下に突き抜けている、第N水準N-N-N、N下-N］` | corpus | OBSERVED |
+| E562 | Gaiji | — | 「○○」は「○○」と同義、「○○」、読みは「○○」、第N水準N-N-N、N-N」然《ぼうぜん》として醉へるが如く、布衣《ほい》に立烏帽子せる若殿原《わかとのばら》は、あはれ何處《いづこ》の誰《た》が女子《むすめ》ぞ、花薫《はなかほ》り月霞む宵の手枕《たまくら》に、君が夢路《ゆめぢ》に入らん人こそ世にも果報なる人なれなど、袖褄《そでつま》引合ひてののしり合へるぞ笑止《せうし》なる。
+　榮華の夢に昔を忘れ、細太刀の輕さに風雅の銘を打ちたる六波羅武士の腸をば一指の舞に溶《とろか》したる彼の少女の、滿座の秋波《しうは》に送られて退《まか》り出でしを此夜の宴の終《はて》として、人々思ひ思ひに退出し、中宮もやがて還御《くわんぎよ》あり。跡には春の夜の朧月、殘り惜げに欄干《おばしま》の邊《ほとり》に蛉※［＃「○○」は「○○」、読み「○○」、N-N | `［＃「○○」は「○○」と同義、「○○」、読みは「○○」、第N水準N-N-N、N-N」然《ぼうぜん》として醉へるが如く、布衣《ほい》に立烏帽子せる若殿原《わかとのばら》は、あはれ何處《いづこ》の誰《た》が女子《むすめ》ぞ、花薫《はなかほ》り月霞む宵の手枕《たまくら》に、君が夢路《ゆめぢ》に入らん人こそ世にも果報なる人なれなど、袖褄《そでつま》引合ひてののしり合へるぞ笑止《せうし》なる。
+　榮華の夢に昔を忘れ、細太刀の輕さに風雅の銘を打ちたる六波羅武士の腸をば一指の舞に溶《とろか》したる彼の少女の、滿座の秋波《しうは》に送られて退《まか》り出でしを此夜の宴の終《はて》として、人々思ひ思ひに退出し、中宮もやがて還御《くわんぎよ》あり。跡には春の夜の朧月、殘り惜げに欄干《おばしま》の邊《ほとり》に蛉※［＃「○○」は「○○」、読み「○○」、N-N］` | corpus | OBSERVED |
+| E563 | Gaiji | — | 「○○」は「○○」に「○○」、第N水準N-N-N、N-N | `［＃「○○」は「○○」に「○○」、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E564 | Gaiji | — | 「○○」は「○○」に「○○」、第N水準N-N-N、N-下段N首目 | `［＃「○○」は「○○」に「○○」、第N水準N-N-N、N-下段N首目］` | corpus | OBSERVED |
+| E565 | Gaiji | — | 「○○」は「○○」に「○○」、第N水準N-N-N、PN-下段N首目 | `［＃「○○」は「○○」に「○○」、第N水準N-N-N、PN-下段N首目］` | corpus | OBSERVED |
+| E566 | Gaiji | — | 「○○」は「○○」に「○○」のつくり、第N水準N-N-N、N-N | `［＃「○○」は「○○」に「○○」のつくり、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E567 | Gaiji | — | 「○○」は「○○」のN互換包摂字体のつくり＋「○○」、第N水準N-N-N、N-N | `［＃「○○」は「○○」のN互換包摂字体のつくり＋「○○」、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E568 | Gaiji | — | 「○○」は「○○」の「○○」に代えて「○○」、第N水準N-N-N、N-N | `［＃「○○」は「○○」の「○○」に代えて「○○」、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E569 | Gaiji | — | 「○○」は「○○」の「○○」に代えて「○○」、読みは「○○」、第N水準N-N-N、N-N | `［＃「○○」は「○○」の「○○」に代えて「○○」、読みは「○○」、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E570 | Gaiji | — | 「○○」は「○○」の「○○」のかわりに「○○」、第N水準N-N-N、N-N | `［＃「○○」は「○○」の「○○」のかわりに「○○」、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E571 | Gaiji | — | 「○○」は「○○」の「○○」の代わりに「○○」、第N水準N-N-N、N-N | `［＃「○○」は「○○」の「○○」の代わりに「○○」、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E572 | Gaiji | — | 「○○」は「○○」の「○○」の部分が「○○」、第N水準N-N-N、N-N | `［＃「○○」は「○○」の「○○」の部分が「○○」、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E573 | Gaiji | — | 「○○」は「○○」のつくり」、第N水準N-N-N、N-N | `［＃「○○」は「○○」のつくり」、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E574 | Gaiji | — | 「○○」は「○○」のつくり」、第N水準N-N-N、N-上N | `［＃「○○」は「○○」のつくり」、第N水準N-N-N、N-上N］` | corpus | OBSERVED |
+| E575 | Gaiji | — | 「○○」は「○○」のにんべんが行にんべん、第N水準N-N-N、N-N | `［＃「○○」は「○○」のにんべんが行にんべん、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E576 | Gaiji | — | 「○○」は「○○」のへんの部分＋「○○」」、第N水準N-N-N、N-N | `［＃「○○」は「○○」のへんの部分＋「○○」」、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E577 | Gaiji | — | 「○○」は「○○」のへんの部分＋欠」、第N水準N-N-N、N-N | `［＃「○○」は「○○」のへんの部分＋欠」、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E578 | Gaiji | — | 「○○」は「○○」のへんの部分＋欠」、第N水準N-N-N、「○○」の俗字、N-N | `［＃「○○」は「○○」のへんの部分＋欠」、第N水準N-N-N、「○○」の俗字、N-N］` | corpus | OBSERVED |
+| E579 | Gaiji | — | 「○○」は「○○」のへんの部分＋欠」、第N水準N-N-N、「○○」の俗字、N-欄外 | `［＃「○○」は「○○」のへんの部分＋欠」、第N水準N-N-N、「○○」の俗字、N-欄外］` | corpus | OBSERVED |
+| E580 | Gaiji | — | 「○○」は「○○」の上半分に「○○」、第N水準N-N-N、N-N | `［＃「○○」は「○○」の上半分に「○○」、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E581 | Gaiji | — | 「○○」は「○○」の下に「○○」、第N水準N-N-N、N-N | `［＃「○○」は「○○」の下に「○○」、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E582 | Gaiji | — | 「○○」は「○○」の下に「○○」」、第N水準N-N-N、N-下N | `［＃「○○」は「○○」の下に「○○」」、第N水準N-N-N、N-下N］` | corpus | OBSERVED |
+| E583 | Gaiji | — | 「○○」は「○○」の中に「○○」、第N水準N-N-N、N-上-N | `［＃「○○」は「○○」の中に「○○」、第N水準N-N-N、N-上-N］` | corpus | OBSERVED |
+| E584 | Gaiji | — | 「○○」は「○○」の二つの「○○」に代えて「○○」、読みは「○○」、第N水準N-N-N | `［＃「○○」は「○○」の二つの「○○」に代えて「○○」、読みは「○○」、第N水準N-N-N］` | corpus | OBSERVED |
+| E585 | Gaiji | — | 「○○」は「○○」の左側＋欠」、第N水準N-N-N、N-N | `［＃「○○」は「○○」の左側＋欠」、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E586 | Gaiji | — | 「○○」は「○○」の左側＋欠」第N水準N-N-N、N-N | `［＃「○○」は「○○」の左側＋欠」第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E587 | Gaiji | — | 「○○」は「○○」の本字。第N水準N-N-Nの木へんに代えて女へん。N-N | `［＃「○○」は「○○」の本字。第N水準N-N-Nの木へんに代えて女へん。N-N］` | corpus | OBSERVED |
+| E588 | Gaiji | — | 「○○」は「○○」＋「○○」、第N水準N-N-N、N-N | `［＃「○○」は「○○」＋「○○」、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E589 | Gaiji | — | 「○○」は「○○」＋「○○」、第N水準N-N-N、N－N | `［＃「○○」は「○○」＋「○○」、第N水準N-N-N、N－N］` | corpus | OBSERVED |
+| E590 | Gaiji | — | 「○○」は「○○」＋「○○」、読みは「○○」、第N水準N-N-N、N-N | `［＃「○○」は「○○」＋「○○」、読みは「○○」、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E591 | Gaiji | — | 「○○」は「○○」＋「○○」、読みは「○○」、第N水準N-N-N、N－N | `［＃「○○」は「○○」＋「○○」、読みは「○○」、第N水準N-N-N、N－N］` | corpus | OBSERVED |
+| E592 | Gaiji | — | 「○○」は「○○」＋「○○」の「○○」を、「○○」を挟んで上下に「○○」を二つ並べたような字」、第N水準N-N-N、N-N | `［＃「○○」は「○○」＋「○○」の「○○」を、「○○」を挟んで上下に「○○」を二つ並べたような字」、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E593 | Gaiji | — | 「○○」は「○○」＋「○○」の下に代えて「○○」」、第N水準N-N-N、N-N | `［＃「○○」は「○○」＋「○○」の下に代えて「○○」」、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E594 | Gaiji | — | 「○○」は「○○」＋「○○」をNつ、第N水準N-N-N、N-N | `［＃「○○」は「○○」＋「○○」をNつ、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E595 | Gaiji | — | 「○○」は「○○」＋「○○」を上下に組み合わせる」、第N水準N-N-N、N-N | `［＃「○○」は「○○」＋「○○」を上下に組み合わせる」、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E596 | Gaiji | — | 「○○」は「○○」＋「○○」＋「○○」、読みは「○○」、第N水準N-N-N、N-N | `［＃「○○」は「○○」＋「○○」＋「○○」、読みは「○○」、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E597 | Gaiji | — | 「○○」は「○○」＋下が「○○」」、第N水準N-N-N、読みは「○○」、N-N | `［＃「○○」は「○○」＋下が「○○」」、第N水準N-N-N、読みは「○○」、N-N］` | corpus | OBSERVED |
+| E598 | Gaiji | — | 「○○」はやまいだれ+差、第N水準N-N-N、N-N | `［＃「○○」はやまいだれ+差、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E599 | Gaiji | — | 「○○」は一文字、第N水準N-N-N、N-N | `［＃「○○」は一文字、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E600 | Gaiji | — | 「○○」は二の字点、第N水準N-N-N、N-N | `［＃「○○」は二の字点、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E601 | Gaiji | — | 「○○」は二の字点、第N水準N-N-N、N-上-N | `［＃「○○」は二の字点、第N水準N-N-N、N-上-N］` | corpus | OBSERVED |
+| E602 | Gaiji | — | 「○○」は二の字点、第N水準N-N-N、N-下-N | `［＃「○○」は二の字点、第N水準N-N-N、N-下-N］` | corpus | OBSERVED |
+| E603 | Gaiji | — | 「○○」は二の字点（踊り字）、面区点番号N-N-N、N-N | `［＃「○○」は二の字点（踊り字）、面区点番号N-N-N、N-N］` | corpus | OBSERVED |
+| E604 | Gaiji | — | 「○○」は底本では※［＃「○○」、第N水準N-N-N | `［＃「○○」は底本では※［＃「○○」、第N水準N-N-N］` | corpus | OBSERVED |
+| E605 | Gaiji | — | 「○○」は底本では「○○」、U+NBN、N-N | `［＃「○○」は底本では「○○」、U+NBN、N-N］` | corpus | OBSERVED |
+| E606 | Gaiji | — | 「○○」は底本では「○○」、U+NCN、N-上-N | `［＃「○○」は底本では「○○」、U+NCN、N-上-N］` | corpus | OBSERVED |
+| E607 | Gaiji | — | 「○○」は底本では「○○」、U+NCN、N-下-N | `［＃「○○」は底本では「○○」、U+NCN、N-下-N］` | corpus | OBSERVED |
+| E608 | Gaiji | — | 「○○」は底本では「○○」、U+NFN、N-上-N | `［＃「○○」は底本では「○○」、U+NFN、N-上-N］` | corpus | OBSERVED |
+| E609 | Gaiji | — | 「○○」は底本では「○○」、U+NFN、N-下-N | `［＃「○○」は底本では「○○」、U+NFN、N-下-N］` | corpus | OBSERVED |
+| E610 | Gaiji | — | 「○○」は底本では「○○」、U+N、N-N | `［＃「○○」は底本では「○○」、U+N、N-N］` | corpus | OBSERVED |
+| E611 | Gaiji | — | 「○○」は底本では「○○」、第N水準N-N-N | `［＃「○○」は底本では「○○」、第N水準N-N-N］` | corpus | OBSERVED |
+| E612 | Gaiji | — | 「○○」は底本では「○○」の「○○」に代えて「○○」 | `［＃「○○」は底本では「○○」の「○○」に代えて「○○」］` | corpus | OBSERVED |
+| E613 | Gaiji | — | 「○○」は底本では「○○」の「○○」に代えて「○○」、N-N | `［＃「○○」は底本では「○○」の「○○」に代えて「○○」、N-N］` | corpus | OBSERVED |
+| E614 | Gaiji | — | 「○○」は底本では「○○」の「○○」に代えて「○○」、N-上-N | `［＃「○○」は底本では「○○」の「○○」に代えて「○○」、N-上-N］` | corpus | OBSERVED |
+| E615 | Gaiji | — | 「○○」は底本では「○○」の「○○」に代えて「○○」、N-下-N | `［＃「○○」は底本では「○○」の「○○」に代えて「○○」、N-下-N］` | corpus | OBSERVED |
+| E616 | Gaiji | — | 「○○」は底本では「○○」の「○○」に代えて「○○」、第N水準N-N-N | `［＃「○○」は底本では「○○」の「○○」に代えて「○○」、第N水準N-N-N］` | corpus | OBSERVED |
+| E617 | Gaiji | — | 「○○」は底本では「○○」の「○○」に代えて「○○」、（二）-N-N | `［＃「○○」は底本では「○○」の「○○」に代えて「○○」、（二）-N-N］` | corpus | OBSERVED |
+| E618 | Gaiji | — | 「○○」は底本では「○○」の「○○」に代えて「○○」））」、第N水準N-N-N | `［＃「○○」は底本では「○○」の「○○」に代えて「○○」））」、第N水準N-N-N］` | corpus | OBSERVED |
+| E619 | Gaiji | — | 「○○」は本文の書き下し文では「○○」、U+NAA、N-本文-N | `［＃「○○」は本文の書き下し文では「○○」、U+NAA、N-本文-N］` | corpus | OBSERVED |
+| E620 | Gaiji | — | 「○○」は歌記号、第N水準N-N-N、N-N | `［＃「○○」は歌記号、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E621 | Gaiji | — | 「○○」は草冠に左に酉、右に隹その下にれっか、第N水準N-N-N、N-N | `［＃「○○」は草冠に左に酉、右に隹その下にれっか、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E622 | Gaiji | — | 「○○」を「○○」のそれのように、第N水準N-N-N | `［＃「○○」を「○○」のそれのように、第N水準N-N-N］` | corpus | OBSERVED |
+| E623 | Gaiji | — | 「○○」を左右反転したもの）＋卜」、U+ND、N-N | `［＃「○○」を左右反転したもの）＋卜」、U+ND、N-N］` | corpus | OBSERVED |
+| E624 | Gaiji | — | 「○○」第N水準 N-N-N | `［＃「○○」第N水準 N-N-N］` | corpus | OBSERVED |
+| E625 | Gaiji | — | 「○○」第N水準N-N-N | `［＃「○○」第N水準N-N-N］` | corpus | OBSERVED |
+| E626 | Gaiji | — | 「○○」（咤の俗字）、よみは「○○」、第N水準N-N-N、N-上N | `［＃「○○」（咤の俗字）、よみは「○○」、第N水準N-N-N、N-上N］` | corpus | OBSERVED |
+| E627 | Gaiji | — | 「○○」＋「○○」の「○○」に代えて「○○」、N-N | `［＃「○○」＋「○○」の「○○」に代えて「○○」、N-N］` | corpus | OBSERVED |
+| E628 | Gaiji | — | 「○○」＋攵）／れんが」、第N水準N-N-N | `［＃「○○」＋攵）／れんが」、第N水準N-N-N］` | corpus | OBSERVED |
+| E629 | Gaiji | — | 「○○」＋褞のつくり」、第N水準N-N-N | `［＃「○○」＋褞のつくり」、第N水準N-N-N］` | corpus | OBSERVED |
+| E630 | Gaiji | — | 「○○」／（壘－土）」、第N水準N-N-N | `［＃「○○」／（壘－土）」、第N水準N-N-N］` | corpus | OBSERVED |
+| E631 | Gaiji | — | 「○○」､第N水準N-N-N | `［＃「○○」､第N水準N-N-N］` | corpus | OBSERVED |
+| E632 | Gaiji | — | 〕：入力者注　主に外字の説明や、傍点の位置の指定
+　　　（数字は、底本のページと行数）
+（例）雲※［＃「○○」、第N水準N-N-N、N-N | `［＃〕：入力者注　主に外字の説明や、傍点の位置の指定
+　　　（数字は、底本のページと行数）
+（例）雲※［＃「○○」、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E633 | Gaiji | — | くさかんむり／（月＋曷）」、第N水準N-N-N | `［＃くさかんむり／（月＋曷）」、第N水準N-N-N］` | corpus | OBSERVED |
+| E634 | Gaiji | — | この二重括弧は一文字、以下同様に使用、第N水準N-N-N、N-N | `［＃この二重括弧は一文字、以下同様に使用、第N水準N-N-N、N-N］` | corpus | OBSERVED |
+| E635 | Gaiji | — | さんずい＋懶のつくり、第N水準N-N-N | `［＃さんずい＋懶のつくり、第N水準N-N-N］` | corpus | OBSERVED |
+| E636 | Gaiji | — | てへん＋宛、第N水準N-N-N | `［＃てへん＋宛、第N水準N-N-N］` | corpus | OBSERVED |
+| E637 | Gaiji | — | キリル小文字I、U+N、N-N | `［＃キリル小文字I、U+N、N-N］` | corpus | OBSERVED |
+| E638 | Gaiji | — | ピアノ、U+NDNF、N-N | `［＃ピアノ、U+NDNF、N-N］` | corpus | OBSERVED |
+| E639 | Gaiji | — | フォルテ、U+NDN、N-N | `［＃フォルテ、U+NDN、N-N］` | corpus | OBSERVED |
+| E640 | Gaiji | — | ブリーブ付きИ、U+N | `［＃ブリーブ付きИ、U+N］` | corpus | OBSERVED |
+| E641 | Gaiji | — | 下側の右ダブル引用符、U+NE、N-N | `［＃下側の右ダブル引用符、U+NE、N-N］` | corpus | OBSERVED |
+| E642 | Gaiji | — | 下側の右ダブル引用符、U+NE、N-上-N | `［＃下側の右ダブル引用符、U+NE、N-上-N］` | corpus | OBSERVED |
+| E643 | Gaiji | — | 下側の右ダブル引用符、U+NE、N-下-N | `［＃下側の右ダブル引用符、U+NE、N-下-N］` | corpus | OBSERVED |
+| E644 | Gaiji | — | 丸一、U+N、N-N | `［＃丸一、U+N、N-N］` | corpus | OBSERVED |
+| E645 | Gaiji | — | 丸三、U+N、N-N | `［＃丸三、U+N、N-N］` | corpus | OBSERVED |
+| E646 | Gaiji | — | 丸三、U+N、N-上-N | `［＃丸三、U+N、N-上-N］` | corpus | OBSERVED |
+| E647 | Gaiji | — | 丸二、U+N、N-N | `［＃丸二、U+N、N-N］` | corpus | OBSERVED |
+| E648 | Gaiji | — | 丸八、U+N、N-上-N | `［＃丸八、U+N、N-上-N］` | corpus | OBSERVED |
+| E649 | Gaiji | — | 丸印、U+NE、N-N | `［＃丸印、U+NE、N-N］` | corpus | OBSERVED |
+| E650 | Gaiji | — | 丸印、U+NE、N-下-N | `［＃丸印、U+NE、N-下-N］` | corpus | OBSERVED |
+| E651 | Gaiji | — | 丸有、U+N、N-N | `［＃丸有、U+N、N-N］` | corpus | OBSERVED |
+| E652 | Gaiji | — | 二の字点、N-N-N、N-N | `［＃二の字点、N-N-N、N-N］` | corpus | OBSERVED |
+| E653 | Gaiji | — | 二の字点、面区点番号N-N-N、N-N | `［＃二の字点、面区点番号N-N-N、N-N］` | corpus | OBSERVED |
+| E654 | Gaiji | — | 口＋僉、第N水準N-N-N | `［＃口＋僉、第N水準N-N-N］` | corpus | OBSERVED |
+| E655 | Gaiji | — | 口＋禺、第N水準N-N-N | `［＃口＋禺、第N水準N-N-N］` | corpus | OBSERVED |
+| E656 | Gaiji | — | 実際には「○○」が「○○」に、「○○」、第N水準N-N-N | `［＃実際には「○○」が「○○」に、「○○」、第N水準N-N-N］` | corpus | OBSERVED |
+| E657 | Gaiji | — | 曲アクセントと下書きのι付きω、U+NFFN、N-N | `［＃曲アクセントと下書きのι付きω、U+NFFN、N-N］` | corpus | OBSERVED |
+| E658 | Gaiji | — | 曲アクセント付きα、U+NFBN、N-N | `［＃曲アクセント付きα、U+NFBN、N-N］` | corpus | OBSERVED |
+| E659 | Gaiji | — | 曲アクセント付きα、U+NFBN、N-上-N | `［＃曲アクセント付きα、U+NFBN、N-上-N］` | corpus | OBSERVED |
+| E660 | Gaiji | — | 曲アクセント付きη、U+NFCN、N-N | `［＃曲アクセント付きη、U+NFCN、N-N］` | corpus | OBSERVED |
+| E661 | Gaiji | — | 曲アクセント付きη、U+NFCN、N-下-N | `［＃曲アクセント付きη、U+NFCN、N-下-N］` | corpus | OBSERVED |
+| E662 | Gaiji | — | 曲アクセント付きι、U+NFDN、N-N | `［＃曲アクセント付きι、U+NFDN、N-N］` | corpus | OBSERVED |
+| E663 | Gaiji | — | 曲アクセント付きι、U+NFDN、N-下-N | `［＃曲アクセント付きι、U+NFDN、N-下-N］` | corpus | OBSERVED |
+| E664 | Gaiji | — | 曲アクセント付きυ、U+NFEN、N-N | `［＃曲アクセント付きυ、U+NFEN、N-N］` | corpus | OBSERVED |
+| E665 | Gaiji | — | 曲アクセント付きυ、U+NFEN、N-上-N | `［＃曲アクセント付きυ、U+NFEN、N-上-N］` | corpus | OBSERVED |
+| E666 | Gaiji | — | 曲アクセント付きω、U+NFFN、N-N | `［＃曲アクセント付きω、U+NFFN、N-N］` | corpus | OBSERVED |
+| E667 | Gaiji | — | 曲アクセント付きω、U+NFFN、N-下-N | `［＃曲アクセント付きω、U+NFFN、N-下-N］` | corpus | OBSERVED |
+| E668 | Gaiji | — | 有気記号と曲アクセントと下書きのι付きη、U+NFN、N-N | `［＃有気記号と曲アクセントと下書きのι付きη、U+NFN、N-N］` | corpus | OBSERVED |
+| E669 | Gaiji | — | 有気記号と曲アクセント付きυ、U+NFN、N-N | `［＃有気記号と曲アクセント付きυ、U+NFN、N-N］` | corpus | OBSERVED |
+| E670 | Gaiji | — | 有気記号と鋭アクセント付きε、U+NFN、N-N | `［＃有気記号と鋭アクセント付きε、U+NFN、N-N］` | corpus | OBSERVED |
+| E671 | Gaiji | — | 有気記号と鋭アクセント付きε、U+NFN、N-上-N | `［＃有気記号と鋭アクセント付きε、U+NFN、N-上-N］` | corpus | OBSERVED |
+| E672 | Gaiji | — | 有気記号と鋭アクセント付きο、U+NFN、N-N | `［＃有気記号と鋭アクセント付きο、U+NFN、N-N］` | corpus | OBSERVED |
+| E673 | Gaiji | — | 有気記号と鋭アクセント付きο、U+NFN、N-下-N | `［＃有気記号と鋭アクセント付きο、U+NFN、N-下-N］` | corpus | OBSERVED |
+| E674 | Gaiji | — | 有気記号と鋭アクセント付きυ、U+NFN、N-N | `［＃有気記号と鋭アクセント付きυ、U+NFN、N-N］` | corpus | OBSERVED |
+| E675 | Gaiji | — | 有気記号付きε、U+NFN、N-N | `［＃有気記号付きε、U+NFN、N-N］` | corpus | OBSERVED |
+| E676 | Gaiji | — | 有気記号付きη、U+NFN、N-N | `［＃有気記号付きη、U+NFN、N-N］` | corpus | OBSERVED |
+| E677 | Gaiji | — | 有気記号付きη、U+NFN、N-下-N | `［＃有気記号付きη、U+NFN、N-下-N］` | corpus | OBSERVED |
+| E678 | Gaiji | — | 有気記号付きι、U+NFN、N-N | `［＃有気記号付きι、U+NFN、N-N］` | corpus | OBSERVED |
+| E679 | Gaiji | — | 有気記号付きο、U+NFN、N-N | `［＃有気記号付きο、U+NFN、N-N］` | corpus | OBSERVED |
+| E680 | Gaiji | — | 有気記号付きο、U+NFN、N-上-N | `［＃有気記号付きο、U+NFN、N-上-N］` | corpus | OBSERVED |
+| E681 | Gaiji | — | 有気記号付きο、U+NFN、N-下-N | `［＃有気記号付きο、U+NFN、N-下-N］` | corpus | OBSERVED |
+| E682 | Gaiji | — | 有気記号付きυ、U+NFN、N-N | `［＃有気記号付きυ、U+NFN、N-N］` | corpus | OBSERVED |
+| E683 | Gaiji | — | 有気記号付きυ、U+NFN、N-上-N | `［＃有気記号付きυ、U+NFN、N-上-N］` | corpus | OBSERVED |
+| E684 | Gaiji | — | 有気記号付きυ、U+NFN、N-下-N | `［＃有気記号付きυ、U+NFN、N-下-N］` | corpus | OBSERVED |
+| E685 | Gaiji | — | 有気記号付きω、U+NFN、N-N | `［＃有気記号付きω、U+NFN、N-N］` | corpus | OBSERVED |
+| E686 | Gaiji | — | 有気記号付きω、U+NFN、N-下-N | `［＃有気記号付きω、U+NFN、N-下-N］` | corpus | OBSERVED |
+| E687 | Gaiji | — | 濁点付きの二の字点、コマN-右-N | `［＃濁点付きの二の字点、コマN-右-N］` | corpus | OBSERVED |
+| E688 | Gaiji | — | 濁点付き二の字点、N-N | `［＃濁点付き二の字点、N-N］` | corpus | OBSERVED |
+| E689 | Gaiji | — | 無気記号と曲アクセント付きι、U+NFN、N-上-N | `［＃無気記号と曲アクセント付きι、U+NFN、N-上-N］` | corpus | OBSERVED |
+| E690 | Gaiji | — | 無気記号と曲アクセント付きυ、U+NFN、N-下-N | `［＃無気記号と曲アクセント付きυ、U+NFN、N-下-N］` | corpus | OBSERVED |
+| E691 | Gaiji | — | 無気記号と重アクセント付きο、U+NFN、N-N | `［＃無気記号と重アクセント付きο、U+NFN、N-N］` | corpus | OBSERVED |
+| E692 | Gaiji | — | 無気記号と鋭アクセント付きα、U+NFN、N-N | `［＃無気記号と鋭アクセント付きα、U+NFN、N-N］` | corpus | OBSERVED |
+| E693 | Gaiji | — | 無気記号と鋭アクセント付きα、U+NFN、N-下-N | `［＃無気記号と鋭アクセント付きα、U+NFN、N-下-N］` | corpus | OBSERVED |
+| E694 | Gaiji | — | 無気記号と鋭アクセント付きε、U+NFN、N-N | `［＃無気記号と鋭アクセント付きε、U+NFN、N-N］` | corpus | OBSERVED |
+| E695 | Gaiji | — | 無気記号と鋭アクセント付きε、U+NFN、N-N-N | `［＃無気記号と鋭アクセント付きε、U+NFN、N-N-N］` | corpus | OBSERVED |
+| E696 | Gaiji | — | 無気記号と鋭アクセント付きη、U+NFN、N-N | `［＃無気記号と鋭アクセント付きη、U+NFN、N-N］` | corpus | OBSERVED |
+| E697 | Gaiji | — | 無気記号と鋭アクセント付きι、U+NFN、N-上-N | `［＃無気記号と鋭アクセント付きι、U+NFN、N-上-N］` | corpus | OBSERVED |
+| E698 | Gaiji | — | 無気記号と鋭アクセント付きο、U+NFN、N-N | `［＃無気記号と鋭アクセント付きο、U+NFN、N-N］` | corpus | OBSERVED |
+| E699 | Gaiji | — | 無気記号付きΑ、U+NFN、N-N | `［＃無気記号付きΑ、U+NFN、N-N］` | corpus | OBSERVED |
+| E700 | Gaiji | — | 無気記号付きα、U+NFN、N-N | `［＃無気記号付きα、U+NFN、N-N］` | corpus | OBSERVED |
+| E701 | Gaiji | — | 無気記号付きα、U+NFN、N-上-N | `［＃無気記号付きα、U+NFN、N-上-N］` | corpus | OBSERVED |
+| E702 | Gaiji | — | 無気記号付きε、U+NFN、N-N | `［＃無気記号付きε、U+NFN、N-N］` | corpus | OBSERVED |
+| E703 | Gaiji | — | 無気記号付きε、U+NFN、N-上-N | `［＃無気記号付きε、U+NFN、N-上-N］` | corpus | OBSERVED |
+| E704 | Gaiji | — | 無気記号付きε、U+NFN、N-下-N | `［＃無気記号付きε、U+NFN、N-下-N］` | corpus | OBSERVED |
+| E705 | Gaiji | — | 無気記号付きι、U+NFN、N-N | `［＃無気記号付きι、U+NFN、N-N］` | corpus | OBSERVED |
+| E706 | Gaiji | — | 無気記号付きι、U+NFN、N-上-N | `［＃無気記号付きι、U+NFN、N-上-N］` | corpus | OBSERVED |
+| E707 | Gaiji | — | 無気記号付きι、U+NFN、N-下-N | `［＃無気記号付きι、U+NFN、N-下-N］` | corpus | OBSERVED |
+| E708 | Gaiji | — | 無気記号付きο、U+NFN、N-N | `［＃無気記号付きο、U+NFN、N-N］` | corpus | OBSERVED |
+| E709 | Gaiji | — | 無気記号付きυ、U+NFN、N-N | `［＃無気記号付きυ、U+NFN、N-N］` | corpus | OBSERVED |
+| E710 | Gaiji | — | 無気記号付きυ、U+NFN、N-N-N | `［＃無気記号付きυ、U+NFN、N-N-N］` | corpus | OBSERVED |
+| E711 | Gaiji | — | 白い長方形、U+NAD、N-N | `［＃白い長方形、U+NAD、N-N］` | corpus | OBSERVED |
+| E712 | Gaiji | — | 秋月庵牧之筆の図、※［＃「○○」、U+NFN | `［＃秋月庵牧之筆の図、※［＃「○○」、U+NFN］` | corpus | OBSERVED |
+| E713 | Gaiji | — | 著者所蔵の「○○」の欄外には、「○○」、第N水準N-N-N | `［＃著者所蔵の「○○」の欄外には、「○○」、第N水準N-N-N］` | corpus | OBSERVED |
+| E714 | Gaiji | — | 虫＋礼のつくり、第N水準N-N-N | `［＃虫＋礼のつくり、第N水準N-N-N］` | corpus | OBSERVED |
+| E715 | Gaiji | — | 蝶の虫にかえて土、第N水準N-N-N | `［＃蝶の虫にかえて土、第N水準N-N-N］` | corpus | OBSERVED |
+| E716 | Gaiji | — | 言＋虚、第N水準N-N-N | `［＃言＋虚、第N水準N-N-N］` | corpus | OBSERVED |
+| E717 | Gaiji | — | 農夫頓智借※［＃「○○」、第N水準N-N-N | `［＃農夫頓智借※［＃「○○」、第N水準N-N-N］` | corpus | OBSERVED |
+| E718 | Gaiji | — | 重アクセント付きη、U+NFN、N-N | `［＃重アクセント付きη、U+NFN、N-N］` | corpus | OBSERVED |
+| E719 | Gaiji | — | 重アクセント付きη、U+NFN、N-下-N | `［＃重アクセント付きη、U+NFN、N-下-N］` | corpus | OBSERVED |
+| E720 | Gaiji | — | 重アクセント付きι、U+NFN、N-N | `［＃重アクセント付きι、U+NFN、N-N］` | corpus | OBSERVED |
+| E721 | Gaiji | — | 重アクセント付きι、U+NFN、N-N-N | `［＃重アクセント付きι、U+NFN、N-N-N］` | corpus | OBSERVED |
+| E722 | Gaiji | — | 重アクセント付きι、U+NFN、N-上-N | `［＃重アクセント付きι、U+NFN、N-上-N］` | corpus | OBSERVED |
+| E723 | Gaiji | — | 重アクセント付きι、U+NFN、N-下-N | `［＃重アクセント付きι、U+NFN、N-下-N］` | corpus | OBSERVED |
+| E724 | Gaiji | — | 重アクセント付きο、U+NFN、N-N | `［＃重アクセント付きο、U+NFN、N-N］` | corpus | OBSERVED |
+| E725 | Gaiji | — | 重アクセント付きο、U+NFN、N-上-N | `［＃重アクセント付きο、U+NFN、N-上-N］` | corpus | OBSERVED |
+| E726 | Gaiji | — | 重アクセント付きο、U+NFN、N-下-N | `［＃重アクセント付きο、U+NFN、N-下-N］` | corpus | OBSERVED |
+| E727 | Gaiji | — | 重アクセント付きυ、U+NFNA、N-N | `［＃重アクセント付きυ、U+NFNA、N-N］` | corpus | OBSERVED |
+| E728 | Gaiji | — | 鋭アクセント付きη、U+NFN、N-N | `［＃鋭アクセント付きη、U+NFN、N-N］` | corpus | OBSERVED |
+| E729 | Gaiji | — | 鋭アクセント付きη、U+NFN、N-上-N | `［＃鋭アクセント付きη、U+NFN、N-上-N］` | corpus | OBSERVED |
+| E730 | Gaiji | — | 鋭アクセント付きη、U+NFN、N-下-N | `［＃鋭アクセント付きη、U+NFN、N-下-N］` | corpus | OBSERVED |
+| E731 | Gaiji | — | 鋭アクセント付きι、U+NFN、N-N | `［＃鋭アクセント付きι、U+NFN、N-N］` | corpus | OBSERVED |
+| E732 | Gaiji | — | 鋭アクセント付きι、U+NFN、N-上-N | `［＃鋭アクセント付きι、U+NFN、N-上-N］` | corpus | OBSERVED |
+| E733 | Gaiji | — | 鋭アクセント付きι、U+NFN、N-下-N | `［＃鋭アクセント付きι、U+NFN、N-下-N］` | corpus | OBSERVED |
+| E734 | Gaiji | — | 鋭アクセント付きο、U+NFN、N-N | `［＃鋭アクセント付きο、U+NFN、N-N］` | corpus | OBSERVED |
+| E735 | Gaiji | — | 鋭アクセント付きο、U+NFN、N-上-N | `［＃鋭アクセント付きο、U+NFN、N-上-N］` | corpus | OBSERVED |
+| E736 | Gaiji | — | 鋭アクセント付きο、U+NFN、N-下-N | `［＃鋭アクセント付きο、U+NFN、N-下-N］` | corpus | OBSERVED |
+| E737 | Gaiji | — | 鋭アクセント付きυ、U+NFNB、N-N | `［＃鋭アクセント付きυ、U+NFNB、N-N］` | corpus | OBSERVED |
+| E738 | Gaiji | — | 鋭アクセント付きυ、U+NFNB、N-上-N | `［＃鋭アクセント付きυ、U+NFNB、N-上-N］` | corpus | OBSERVED |
+| E739 | Gaiji | — | 鋭アクセント付きυ、U+NFNB、N-下-N | `［＃鋭アクセント付きυ、U+NFNB、N-下-N］` | corpus | OBSERVED |
+| E740 | Gaiji | — | 鋭アクセント付きω、U+NFND、N-N | `［＃鋭アクセント付きω、U+NFND、N-N］` | corpus | OBSERVED |
+| E741 | Gaiji | — | 鋭アクセント付きω、U+NFND、N-上-N | `［＃鋭アクセント付きω、U+NFND、N-上-N］` | corpus | OBSERVED |
+| E742 | Gaiji | — | 鋭アクセント付きω、U+NFND、N-下-N | `［＃鋭アクセント付きω、U+NFND、N-下-N］` | corpus | OBSERVED |
+| E743 | Gaiji | — | 非N外字：「○○」、ただし「○○」は第N水準N-N-Nのつくりの形、読みは「○○」、N-上-N | `［＃非N外字：「○○」、ただし「○○」は第N水準N-N-Nのつくりの形、読みは「○○」、N-上-N］` | corpus | OBSERVED |
+| E744 | Gaiji | — | 非N外字：「○○」、ただし「○○」は第N水準N-N-Nのつくりの形、読みは「○○」、N-下-N | `［＃非N外字：「○○」、ただし「○○」は第N水準N-N-Nのつくりの形、読みは「○○」、N-下-N］` | corpus | OBSERVED |
+| E745 | Gaiji | — | 鬥＜（（卯／亞の下半分）＋斤）」、第N水準N-N-N | `［＃鬥＜（（卯／亞の下半分）＋斤）」、第N水準N-N-N］` | corpus | OBSERVED |
+| E746 | Gaiji | — | 鮭漁※［＃「○○」、第N水準N-N-N | `［＃鮭漁※［＃「○○」、第N水準N-N-N］` | corpus | OBSERVED |
+| E747 | Gaiji | — | （※［＃「○○」、第N水準N-N-N | `［＃（※［＃「○○」、第N水準N-N-N］` | corpus | OBSERVED |
+| E748 | Gaiji | — | （※［＃二の字点、N-N-N | `［＃（※［＃二の字点、N-N-N］` | corpus | OBSERVED |
+| E749 | Gaiji | — | （ノ／（囗＜メ）／心）＋頁」、第N水準N-N-N | `［＃（ノ／（囗＜メ）／心）＋頁」、第N水準N-N-N］` | corpus | OBSERVED |
+| E750 | Gaiji | — | （利※［＃「○○」、第N水準N-N-N | `［＃（利※［＃「○○」、第N水準N-N-N］` | corpus | OBSERVED |
+| E751 | Gaiji | — | ［＃「○○」の「○○」に代えて「○○ | `［＃「○○」の「○○」に代えて「○○` | corpus | OBSERVED |
+| E752 | Gaiji | アクセント符号付きのラテン・アルファベット | … | `［＃…］` | annotation/external_character.html; annotation/henkoten.html; corpus | DEPRECATED |
+| E753 | Gaiji | ルビとルビのように付く文字 | 「○○」、第N水準N-N-N | `［＃「○○」、第N水準N-N-N］` | annotation/etc.html; annotation/external_character.html; corpus | DOCUMENTED-AND-OBSERVED |
+| E754 | Gaiji | ルビとルビのように付く文字 | 二の字点、N-N-N | `［＃二の字点、N-N-N］` | annotation/etc.html; annotation/external_character.html; corpus | DOCUMENTED-AND-OBSERVED |
+| E755 | Gaiji | 特殊な仮名や記号など | ギリシア小文字ファイナルSIGMA、N-N-N | `［＃ギリシア小文字ファイナルSIGMA、N-N-N］` | annotation/external_character.html; corpus | DOCUMENTED-AND-OBSERVED |
+| E756 | Gaiji | 第１第２水準にない漢字 | 「○○」、U+ND、ページ数-行数 | `［＃「○○」、U+ND、ページ数-行数］` | annotation/external_character.html | DOCUMENTED |
+| E757 | Gaiji | 第１第２水準にない漢字 | 「○○」、ページ数-行数 | `［＃「○○」、ページ数-行数］` | annotation/external_character.html | DOCUMENTED |
 ### Kunten / 訓点
 
-| ID | Feature | Example | Sources | Verdict |
-|----|---------|---------|---------|---------|
-| K1 | 一 | `［＃一］` | chuki_tag.txt:75; kunten | VERIFIED |
-| K2 | 二 | `［＃二］` | chuki_tag.txt:76; kunten | VERIFIED |
-| K3 | 三 | `［＃三］` | chuki_tag.txt:77 | CHUKI-ONLY |
-| K4 | 四 | `［＃四］` | chuki_tag.txt:78 | CHUKI-ONLY |
-| K5 | レ | `［＃レ］` | chuki_tag.txt:79; kunten | VERIFIED |
-| K6 | 一レ | `［＃一レ］` | chuki_tag.txt:80; kunten | VERIFIED |
-| K7 | 二レ | `［＃二レ］` | chuki_tag.txt:81 | CHUKI-ONLY |
-| K8 | 三レ | `［＃三レ］` | chuki_tag.txt:82 | CHUKI-ONLY |
-| K9 | 上レ | `［＃上レ］` | chuki_tag.txt:83; kunten | VERIFIED |
-| K10 | 中レ | `［＃中レ］` | chuki_tag.txt:84 | CHUKI-ONLY |
-| K11 | 下レ | `［＃下レ］` | chuki_tag.txt:85 | CHUKI-ONLY |
-| K12 | 上 | `［＃上］` | chuki_tag.txt:86 | CHUKI-ONLY |
-| K13 | 中 | `［＃中］` | chuki_tag.txt:87 | CHUKI-ONLY |
-| K14 | 下 | `［＃下］` | chuki_tag.txt:88 | CHUKI-ONLY |
-| K15 | 甲 | `［＃甲］` | chuki_tag.txt:89 | CHUKI-ONLY |
-| K16 | 乙 | `［＃乙］` | chuki_tag.txt:90 | CHUKI-ONLY |
-| K17 | 丙 | `［＃丙］` | chuki_tag.txt:91 | CHUKI-ONLY |
-| K18 | 丁 | `［＃丁］` | chuki_tag.txt:92 | CHUKI-ONLY |
-| K19 | 天 | `［＃天］` | chuki_tag.txt:93 | CHUKI-ONLY |
-| K20 | 地 | `［＃地］` | chuki_tag.txt:94 | CHUKI-ONLY |
-| K21 | 人 | `［＃人］` | chuki_tag.txt:95 | CHUKI-ONLY |
-| K22 | 返り点 | `［＃返り点］` | chuki_tag.txt:98 | CHUKI-ONLY |
-| K23 | 返り点終わり | `［＃返り点終わり］` | chuki_tag.txt:99 | CHUKI-ONLY |
-| K24 | （…） | `［＃（…）］` | kunten | MANUAL-ONLY |
-| K25 | （カ） | `［＃（カ）］` | kunten | MANUAL-ONLY |
-| K26 | （シクシテ） | `［＃（シクシテ）］` | kunten | MANUAL-ONLY |
-| K27 | （シミ） | `［＃（シミ）］` | kunten | MANUAL-ONLY |
-| K28 | （ス） | `［＃（ス）］` | kunten | MANUAL-ONLY |
-| K29 | （ダ） | `［＃（ダ）］` | kunten | MANUAL-ONLY |
-| K30 | （テ） | `［＃（テ）］` | kunten | MANUAL-ONLY |
-| K31 | （ト） | `［＃（ト）］` | kunten | MANUAL-ONLY |
-| K32 | （ニハ） | `［＃（ニハ）］` | kunten | MANUAL-ONLY |
-| K33 | （ニ） | `［＃（ニ）］` | kunten | MANUAL-ONLY |
-| K34 | （ノ） | `［＃（ノ）］` | kunten | MANUAL-ONLY |
-| K35 | （ミテ） | `［＃（ミテ）］` | kunten | MANUAL-ONLY |
-| K36 | （ム） | `［＃（ム）］` | kunten | MANUAL-ONLY |
-| K37 | （ヲ） | `［＃（ヲ）］` | kunten | MANUAL-ONLY |
-| K38 | （弖） | `［＃（弖）］` | kunten | MANUAL-ONLY |
-| K39 | （支） | `［＃（支）］` | kunten | MANUAL-ONLY |
-| K40 | （爾） | `［＃（爾）］` | kunten | MANUAL-ONLY |
+| ID | Family | Sub-family | Feature | Example | Sources | Status |
+|----|--------|------------|---------|---------|---------|--------|
+| K1 | Kunten | — | 「○○」の「○○」をのぞいて「○○」は返り点 | `［＃「○○」の「○○」をのぞいて「○○」は返り点］` | corpus | OBSERVED |
+| K2 | Kunten | — | 「○○」は返り点 | `［＃「○○」は返り点］` | corpus | OBSERVED |
+| K3 | Kunten | — | 「○○」内の「○○」は返り点 | `［＃「○○」内の「○○」は返り点］` | corpus | OBSERVED |
+| K4 | Kunten | — | 「○○」内の「○○」は返り点、以下同じ | `［＃「○○」内の「○○」は返り点、以下同じ］` | corpus | OBSERVED |
+| K5 | Kunten | — | 「○○」内の一二は返り点 | `［＃「○○」内の一二は返り点］` | corpus | OBSERVED |
+| K6 | Kunten | — | ここからN字下げ、「○○」の「○○」をのぞいて「○○」は返り点 | `［＃ここからN字下げ、「○○」の「○○」をのぞいて「○○」は返り点］` | corpus | OBSERVED |
+| K7 | Kunten | — | ここからN字下げ、「○○」の「○○」をのぞいて文中の「○○」は返り点 | `［＃ここからN字下げ、「○○」の「○○」をのぞいて文中の「○○」は返り点］` | corpus | OBSERVED |
+| K8 | Kunten | — | ここからN字下げ、「○○」の「○○」をのぞき、「○○」は返り点 | `［＃ここからN字下げ、「○○」の「○○」をのぞき、「○○」は返り点］` | corpus | OBSERVED |
+| K9 | Kunten | — | ここからN字下げ、「○○」の「○○」をのぞき「○○」は返り点 | `［＃ここからN字下げ、「○○」の「○○」をのぞき「○○」は返り点］` | corpus | OBSERVED |
+| K10 | Kunten | — | ここからN字下げ、「○○」は返り点 | `［＃ここからN字下げ、「○○」は返り点］` | corpus | OBSERVED |
+| K11 | Kunten | — | ここからN字下げ、折り返してN字下げ、「○○」「○○」「○○」の「○○」をのぞいて「○○」は返り点 | `［＃ここからN字下げ、折り返してN字下げ、「○○」「○○」「○○」の「○○」をのぞいて「○○」は返り点］` | corpus | OBSERVED |
+| K12 | Kunten | — | ここで字下げ終わり、「○○」は返り点 | `［＃ここで字下げ終わり、「○○」は返り点］` | corpus | OBSERVED |
+| K13 | Kunten | — | 以下、「○○」は返り点 | `［＃以下、「○○」は返り点］` | corpus | OBSERVED |
+| K14 | Kunten | — | 以下「○○」は返り点 | `［＃以下「○○」は返り点］` | corpus | OBSERVED |
+| K15 | Kunten | — | 以下の「○○」内の、「○○」は返り点 | `［＃以下の「○○」内の、「○○」は返り点］` | corpus | OBSERVED |
+| K16 | Kunten | — | 以下の「○○」内の「○○」は返り点 | `［＃以下の「○○」内の「○○」は返り点］` | corpus | OBSERVED |
+| K17 | Kunten | — | 返り点の「○○」あり | `［＃返り点の「○○」あり］` | corpus | OBSERVED |
+| K18 | Kunten | — | 返り点の「○○」の右横に縦棒あり | `［＃返り点の「○○」の右横に縦棒あり］` | corpus | OBSERVED |
+| K19 | Kunten | — | （ツ） | `［＃（ツ）］` | corpus | OBSERVED |
+| K20 | Kunten | — | （フ） | `［＃（フ）］` | corpus | OBSERVED |
+| K21 | Kunten | — | （ヘ） | `［＃（ヘ）］` | corpus | OBSERVED |
+| K22 | Kunten | — | （レ） | `［＃（レ）］` | corpus | OBSERVED |
+| K23 | Kunten | — | （二）は縦中横 | `［＃（二）は縦中横］` | corpus | OBSERVED |
+| K24 | Kunten | — | （二）は自注 | `［＃（二）は自注］` | corpus | OBSERVED |
+| K25 | Kunten | 再読文字 | （カ） | `［＃（カ）］` | annotation/kunten.html; corpus | DOCUMENTED-AND-OBSERVED |
+| K26 | Kunten | 再読文字 | （シクシテ） | `［＃（シクシテ）］` | annotation/kunten.html | DOCUMENTED |
+| K27 | Kunten | 再読文字 | （シミ） | `［＃（シミ）］` | annotation/kunten.html | DOCUMENTED |
+| K28 | Kunten | 再読文字 | （ダ） | `［＃（ダ）］` | annotation/kunten.html; corpus | DOCUMENTED-AND-OBSERVED |
+| K29 | Kunten | 再読文字 | （ト） | `［＃（ト）］` | annotation/kunten.html; corpus | DOCUMENTED-AND-OBSERVED |
+| K30 | Kunten | 再読文字 | （ニハ） | `［＃（ニハ）］` | annotation/kunten.html; corpus | DOCUMENTED-AND-OBSERVED |
+| K31 | Kunten | 再読文字 | （ミテ） | `［＃（ミテ）］` | annotation/kunten.html; corpus | DOCUMENTED-AND-OBSERVED |
+| K32 | Kunten | 再読文字 | （ム） | `［＃（ム）］` | annotation/kunten.html; corpus | DOCUMENTED-AND-OBSERVED |
+| K33 | Kunten | 訓点送り仮名 | （</span>…<span style=「○○」>） | `［＃（</span>…<span style=「○○」>）］` | annotation/kunten.html | DOCUMENTED |
+| K34 | Kunten | 訓点送り仮名 | （</span>…<span style=「○○」>）</span> | `［＃（</span>…<span style=「○○」>）</span>］` | annotation/kunten.html | DOCUMENTED |
+| K35 | Kunten | 訓点送り仮名 | （ス） | `［＃（ス）］` | annotation/kunten.html; corpus | DOCUMENTED-AND-OBSERVED |
+| K36 | Kunten | 訓点送り仮名 | （ニ） | `［＃（ニ）］` | annotation/kunten.html; corpus | DOCUMENTED-AND-OBSERVED |
+| K37 | Kunten | 訓点送り仮名 | （ノ） | `［＃（ノ）］` | annotation/kunten.html; corpus | DOCUMENTED-AND-OBSERVED |
+| K38 | Kunten | 訓点送り仮名 | （弖） | `［＃（弖）］` | annotation/kunten.html; corpus | DOCUMENTED-AND-OBSERVED |
+| K39 | Kunten | 訓点送り仮名 | （支） | `［＃（支）］` | annotation/kunten.html; corpus | DOCUMENTED-AND-OBSERVED |
+| K40 | Kunten | 返り点 | </span>…<span style=「○○」> | `［＃</span>…<span style=「○○」>］` | annotation/kunten.html | DOCUMENTED |
+| K41 | Kunten | 返り点 | レ | `［＃レ］` | annotation/kunten.html; corpus | DOCUMENTED-AND-OBSERVED |
+| K42 | Kunten | 返り点 | 一 | `［＃一］` | annotation/kunten.html; corpus | DOCUMENTED-AND-OBSERVED |
+| K43 | Kunten | 返り点 | 一レ | `［＃一レ］` | annotation/kunten.html; corpus | DOCUMENTED-AND-OBSERVED |
+| K44 | Kunten | 返り点 | 上レ | `［＃上レ］` | annotation/kunten.html; corpus | DOCUMENTED-AND-OBSERVED |
+| K45 | Kunten | 返り点 | 二 | `［＃二］` | annotation/kunten.html; corpus | DOCUMENTED-AND-OBSERVED |
+| K46 | Kunten | 返り点と訓点送り仮名の混在 | （テ） | `［＃（テ）］` | annotation/kunten.html; corpus | DOCUMENTED-AND-OBSERVED |
+| K47 | Kunten | 返り点と訓点送り仮名の混在 | （ヲ） | `［＃（ヲ）］` | annotation/kunten.html; corpus | DOCUMENTED-AND-OBSERVED |
 ### Emphasis / 強調
 
-| ID | Feature | Example | Sources | Verdict |
-|----|---------|---------|---------|---------|
-| M1 | 傍点 | `［＃傍点］` | chuki_tag.txt:103; emphasis | VERIFIED |
-| M2 | 傍点終わり | `［＃傍点終わり］` | chuki_tag.txt:104; emphasis | VERIFIED |
-| M3 | 白ゴマ傍点 | `［＃白ゴマ傍点］` | chuki_tag.txt:106; emphasis | VERIFIED |
-| M4 | 白ゴマ傍点終わり | `［＃白ゴマ傍点終わり］` | chuki_tag.txt:107; emphasis | VERIFIED |
-| M5 | 丸傍点 | `［＃丸傍点］` | chuki_tag.txt:109; emphasis | VERIFIED |
-| M6 | 丸傍点終わり | `［＃丸傍点終わり］` | chuki_tag.txt:110; emphasis | VERIFIED |
-| M7 | 白丸傍点 | `［＃白丸傍点］` | chuki_tag.txt:112; emphasis | VERIFIED |
-| M8 | 白丸傍点終わり | `［＃白丸傍点終わり］` | chuki_tag.txt:113; emphasis | VERIFIED |
-| M9 | 黒三角傍点 | `［＃黒三角傍点］` | chuki_tag.txt:115; emphasis | VERIFIED |
-| M10 | 黒三角傍点終わり | `［＃黒三角傍点終わり］` | chuki_tag.txt:116; emphasis | VERIFIED |
-| M11 | 白三角傍点 | `［＃白三角傍点］` | chuki_tag.txt:118; emphasis | VERIFIED |
-| M12 | 白三角傍点終わり | `［＃白三角傍点終わり］` | chuki_tag.txt:119; emphasis | VERIFIED |
-| M13 | 二重丸傍点 | `［＃二重丸傍点］` | chuki_tag.txt:121; emphasis | VERIFIED |
-| M14 | 二重丸傍点終わり | `［＃二重丸傍点終わり］` | chuki_tag.txt:122; emphasis | VERIFIED |
-| M15 | 蛇の目傍点 | `［＃蛇の目傍点］` | chuki_tag.txt:124; emphasis | VERIFIED |
-| M16 | 蛇の目傍点終わり | `［＃蛇の目傍点終わり］` | chuki_tag.txt:125; emphasis | VERIFIED |
-| M17 | ばつ傍点 | `［＃ばつ傍点］` | chuki_tag.txt:127; emphasis | VERIFIED |
-| M18 | ばつ傍点終わり | `［＃ばつ傍点終わり］` | chuki_tag.txt:128; emphasis | VERIFIED |
-| M19 | ×傍点 | `［＃×傍点］` | chuki_tag.txt:129 | CHUKI-ONLY |
-| M20 | ×傍点終わり | `［＃×傍点終わり］` | chuki_tag.txt:130 | CHUKI-ONLY |
-| M21 | 左に傍点 | `［＃左に傍点］` | chuki_tag.txt:132; emphasis | VERIFIED |
-| M22 | 左に傍点終わり | `［＃左に傍点終わり］` | chuki_tag.txt:133; emphasis | VERIFIED |
-| M23 | 左に白ゴマ傍点 | `［＃左に白ゴマ傍点］` | chuki_tag.txt:135; emphasis | VERIFIED |
-| M24 | 左に白ゴマ傍点終わり | `［＃左に白ゴマ傍点終わり］` | chuki_tag.txt:136; emphasis | VERIFIED |
-| M25 | 左に丸傍点 | `［＃左に丸傍点］` | chuki_tag.txt:138; emphasis | VERIFIED |
-| M26 | 左に丸傍点終わり | `［＃左に丸傍点終わり］` | chuki_tag.txt:139; emphasis | VERIFIED |
-| M27 | 左に白丸傍点 | `［＃左に白丸傍点］` | chuki_tag.txt:141; emphasis | VERIFIED |
-| M28 | 左に白丸傍点終わり | `［＃左に白丸傍点終わり］` | chuki_tag.txt:142; emphasis | VERIFIED |
-| M29 | 左に黒三角傍点 | `［＃左に黒三角傍点］` | chuki_tag.txt:144; emphasis | VERIFIED |
-| M30 | 左に黒三角傍点終わり | `［＃左に黒三角傍点終わり］` | chuki_tag.txt:145; emphasis | VERIFIED |
-| M31 | 左に白三角傍点 | `［＃左に白三角傍点］` | chuki_tag.txt:147; emphasis | VERIFIED |
-| M32 | 左に白三角傍点終わり | `［＃左に白三角傍点終わり］` | chuki_tag.txt:148; emphasis | VERIFIED |
-| M33 | 左に二重丸傍点 | `［＃左に二重丸傍点］` | chuki_tag.txt:150; emphasis | VERIFIED |
-| M34 | 左に二重丸傍点終わり | `［＃左に二重丸傍点終わり］` | chuki_tag.txt:151; emphasis | VERIFIED |
-| M35 | 左に蛇の目傍点 | `［＃左に蛇の目傍点］` | chuki_tag.txt:153; emphasis | VERIFIED |
-| M36 | 左に蛇の目傍点終わり | `［＃左に蛇の目傍点終わり］` | chuki_tag.txt:154; emphasis | VERIFIED |
-| M37 | 左にばつ傍点 | `［＃左にばつ傍点］` | chuki_tag.txt:156; emphasis | VERIFIED |
-| M38 | 左にばつ傍点終わり | `［＃左にばつ傍点終わり］` | chuki_tag.txt:157; emphasis | VERIFIED |
-| M39 | 左に×傍点 | `［＃左に×傍点］` | chuki_tag.txt:158 | CHUKI-ONLY |
-| M40 | 左に×傍点終わり | `［＃左に×傍点終わり］` | chuki_tag.txt:159 | CHUKI-ONLY |
-| M41 | 傍線 | `［＃傍線］` | chuki_tag.txt:163; emphasis | VERIFIED |
-| M42 | 傍線終わり | `［＃傍線終わり］` | chuki_tag.txt:164; emphasis | VERIFIED |
-| M43 | 二重傍線 | `［＃二重傍線］` | chuki_tag.txt:165; emphasis | VERIFIED |
-| M44 | 二重傍線終わり | `［＃二重傍線終わり］` | chuki_tag.txt:166; emphasis | VERIFIED |
-| M45 | 鎖線 | `［＃鎖線］` | chuki_tag.txt:167; emphasis | VERIFIED |
-| M46 | 鎖線終わり | `［＃鎖線終わり］` | chuki_tag.txt:168; emphasis | VERIFIED |
-| M47 | 破線 | `［＃破線］` | chuki_tag.txt:169; emphasis | VERIFIED |
-| M48 | 破線終わり | `［＃破線終わり］` | chuki_tag.txt:170; emphasis | VERIFIED |
-| M49 | 波線 | `［＃波線］` | chuki_tag.txt:171; emphasis | VERIFIED |
-| M50 | 波線終わり | `［＃波線終わり］` | chuki_tag.txt:172; emphasis | VERIFIED |
-| M51 | 左に傍線 | `［＃左に傍線］` | chuki_tag.txt:174; emphasis | VERIFIED |
-| M52 | 左に傍線終わり | `［＃左に傍線終わり］` | chuki_tag.txt:175; emphasis | VERIFIED |
-| M53 | 太字 | `［＃太字］` | chuki_tag.txt:178; emphasis | VERIFIED |
-| M54 | 太字終わり | `［＃太字終わり］` | chuki_tag.txt:179; emphasis | VERIFIED |
-| M55 | ここから太字 | `［＃ここから太字］` | chuki_tag.txt:180; emphasis | VERIFIED |
-| M56 | ここで太字終わり | `［＃ここで太字終わり］` | chuki_tag.txt:181; emphasis | VERIFIED |
-| M57 | ここまで太字 | `［＃ここまで太字］` | chuki_tag.txt:182 | CHUKI-ONLY |
-| M58 | 斜体 | `［＃斜体］` | chuki_tag.txt:185; emphasis | VERIFIED |
-| M59 | 斜体終わり | `［＃斜体終わり］` | chuki_tag.txt:186; emphasis | VERIFIED |
-| M60 | ここから斜体 | `［＃ここから斜体］` | chuki_tag.txt:187; emphasis | VERIFIED |
-| M61 | ここで斜体終わり | `［＃ここで斜体終わり］` | chuki_tag.txt:188; emphasis | VERIFIED |
-| M62 | ゴシック体 | `［＃ゴシック体］` | chuki_tag.txt:191 | CHUKI-ONLY |
-| M63 | ゴシック体終わり | `［＃ゴシック体終わり］` | chuki_tag.txt:192 | CHUKI-ONLY |
-| M64 | ここからゴシック体 | `［＃ここからゴシック体］` | chuki_tag.txt:193 | CHUKI-ONLY |
-| M65 | ここでゴシック体終わり | `［＃ここでゴシック体終わり］` | chuki_tag.txt:194 | CHUKI-ONLY |
-| M66 | ここまでゴシック体 | `［＃ここまでゴシック体］` | chuki_tag.txt:195 | CHUKI-ONLY |
-| M67 | 取消線 | `［＃取消線］` | chuki_tag.txt:198 | CHUKI-ONLY |
-| M68 | 取消線終わり | `［＃取消線終わり］` | chuki_tag.txt:199 | CHUKI-ONLY |
-| M69 | ここから取消線 | `［＃ここから取消線］` | chuki_tag.txt:200 | CHUKI-ONLY |
-| M70 | ここで取消線終わり | `［＃ここで取消線終わり］` | chuki_tag.txt:201 | CHUKI-ONLY |
-| M71 | 取り消し線 | `［＃取り消し線］` | chuki_tag.txt:202 | CHUKI-ONLY |
-| M72 | 取り消し線終わり | `［＃取り消し線終わり］` | chuki_tag.txt:203 | CHUKI-ONLY |
-| M73 | ここから取り消し線 | `［＃ここから取り消し線］` | chuki_tag.txt:204 | CHUKI-ONLY |
-| M74 | ここで取り消し線終わり | `［＃ここで取り消し線終わり］` | chuki_tag.txt:205 | CHUKI-ONLY |
-| M75 | 二重取り消し線 | `［＃二重取り消し線］` | chuki_tag.txt:206 | CHUKI-ONLY |
-| M76 | 二重取り消し線終わり | `［＃二重取り消し線終わり］` | chuki_tag.txt:207 | CHUKI-ONLY |
-| M77 | ここから二重取り消し線 | `［＃ここから二重取り消し線］` | chuki_tag.txt:208 | CHUKI-ONLY |
-| M78 | ここで二重取り消し線終わり | `［＃ここで二重取り消し線終わり］` | chuki_tag.txt:209 | CHUKI-ONLY |
-| M79 | 二重取消線 | `［＃二重取消線］` | chuki_tag.txt:210 | CHUKI-ONLY |
-| M80 | 二重取消線終わり | `［＃二重取消線終わり］` | chuki_tag.txt:211 | CHUKI-ONLY |
-| M81 | ここから二重取消線 | `［＃ここから二重取消線］` | chuki_tag.txt:212 | CHUKI-ONLY |
-| M82 | ここで二重取消線終わり | `［＃ここで二重取消線終わり］` | chuki_tag.txt:213 | CHUKI-ONLY |
-| M83 | 「○○」に傍点 | `［＃「○○」に傍点］` | duplication; emphasis; etc | MANUAL-ONLY |
-| M84 | 「○○」に傍線 | `［＃「○○」に傍線］` | duplication; emphasis | MANUAL-ONLY |
-| M85 | 「○○」に白丸傍点 | `［＃「○○」に白丸傍点］` | duplication; emphasis | MANUAL-ONLY |
-| M86 | 「○○」の左に傍線 | `［＃「○○」の左に傍線］` | duplication; emphasis | MANUAL-ONLY |
-| M87 | 「○○」にばつ傍点 | `［＃「○○」にばつ傍点］` | emphasis | MANUAL-ONLY |
-| M88 | 「○○」に丸傍点 | `［＃「○○」に丸傍点］` | emphasis; etc | MANUAL-ONLY |
-| M89 | 「○○」に二重丸傍点 | `［＃「○○」に二重丸傍点］` | emphasis | MANUAL-ONLY |
-| M90 | 「○○」に二重傍線 | `［＃「○○」に二重傍線］` | emphasis | MANUAL-ONLY |
-| M91 | 「○○」に波線 | `［＃「○○」に波線］` | emphasis | MANUAL-ONLY |
-| M92 | 「○○」に白ゴマ傍点 | `［＃「○○」に白ゴマ傍点］` | emphasis | MANUAL-ONLY |
-| M93 | 「○○」に白三角傍点 | `［＃「○○」に白三角傍点］` | emphasis | MANUAL-ONLY |
-| M94 | 「○○」に破線 | `［＃「○○」に破線］` | emphasis | MANUAL-ONLY |
-| M95 | 「○○」に蛇の目傍点 | `［＃「○○」に蛇の目傍点］` | emphasis | MANUAL-ONLY |
-| M96 | 「○○」に鎖線 | `［＃「○○」に鎖線］` | emphasis | MANUAL-ONLY |
-| M97 | 「○○」に黒三角傍点 | `［＃「○○」に黒三角傍点］` | emphasis | MANUAL-ONLY |
-| M98 | 「○○」の左にばつ傍点 | `［＃「○○」の左にばつ傍点］` | emphasis | MANUAL-ONLY |
-| M99 | 「○○」の左に丸傍点 | `［＃「○○」の左に丸傍点］` | emphasis | MANUAL-ONLY |
-| M100 | 「○○」の左に二重丸傍点 | `［＃「○○」の左に二重丸傍点］` | emphasis | MANUAL-ONLY |
-| M101 | 「○○」の左に二重傍線 | `［＃「○○」の左に二重傍線］` | emphasis | MANUAL-ONLY |
-| M102 | 「○○」の左に傍点 | `［＃「○○」の左に傍点］` | emphasis | MANUAL-ONLY |
-| M103 | 「○○」の左に波線 | `［＃「○○」の左に波線］` | emphasis | MANUAL-ONLY |
-| M104 | 「○○」の左に白ゴマ傍点 | `［＃「○○」の左に白ゴマ傍点］` | emphasis | MANUAL-ONLY |
-| M105 | 「○○」の左に白三角傍点 | `［＃「○○」の左に白三角傍点］` | emphasis | MANUAL-ONLY |
-| M106 | 「○○」の左に白丸傍点 | `［＃「○○」の左に白丸傍点］` | emphasis | MANUAL-ONLY |
-| M107 | 「○○」の左に破線 | `［＃「○○」の左に破線］` | emphasis | MANUAL-ONLY |
-| M108 | 「○○」の左に蛇の目傍点 | `［＃「○○」の左に蛇の目傍点］` | emphasis | MANUAL-ONLY |
-| M109 | 「○○」の左に鎖線 | `［＃「○○」の左に鎖線］` | emphasis | MANUAL-ONLY |
-| M110 | 「○○」の左に黒三角傍点 | `［＃「○○」の左に黒三角傍点］` | emphasis | MANUAL-ONLY |
-| M111 | 「○○」は太字 | `［＃「○○」は太字］` | emphasis; etc | MANUAL-ONLY |
-| M112 | 「○○」は斜体 | `［＃「○○」は斜体］` | emphasis; graphics | MANUAL-ONLY |
-| M113 | 左に二重傍線終わり | `［＃左に二重傍線終わり］` | emphasis | MANUAL-ONLY |
-| M114 | 左に二重傍線 | `［＃左に二重傍線］` | emphasis | MANUAL-ONLY |
-| M115 | 左に波線終わり | `［＃左に波線終わり］` | emphasis | MANUAL-ONLY |
-| M116 | 左に波線 | `［＃左に波線］` | emphasis | MANUAL-ONLY |
-| M117 | 左に破線終わり | `［＃左に破線終わり］` | emphasis | MANUAL-ONLY |
-| M118 | 左に破線 | `［＃左に破線］` | emphasis | MANUAL-ONLY |
-| M119 | 左に鎖線終わり | `［＃左に鎖線終わり］` | emphasis | MANUAL-ONLY |
-| M120 | 左に鎖線 | `［＃左に鎖線］` | emphasis | MANUAL-ONLY |
+| ID | Family | Sub-family | Feature | Example | Sources | Status |
+|----|--------|------------|---------|---------|---------|--------|
+| M1 | Emphasis | — | 「○○」、「○○」の部分はイタリック体 | `［＃「○○」、「○○」の部分はイタリック体］` | corpus | OBSERVED |
+| M2 | Emphasis | — | 「○○」「○○」「○○」「○○」「○○」」は太字 | `［＃「○○」「○○」「○○」「○○」「○○」」は太字］` | corpus | OBSERVED |
+| M3 | Emphasis | — | 「○○」「○○」「○○」「○○」に傍点 | `［＃「○○」「○○」「○○」「○○」に傍点］` | corpus | OBSERVED |
+| M4 | Emphasis | — | 「○○」「○○」「○○」に傍線 | `［＃「○○」「○○」「○○」に傍線］` | corpus | OBSERVED |
+| M5 | Emphasis | — | 「○○」「○○」「○○」はゴシック体 | `［＃「○○」「○○」「○○」はゴシック体］` | corpus | OBSERVED |
+| M6 | Emphasis | — | 「○○」「○○」に傍線 | `［＃「○○」「○○」に傍線］` | corpus | OBSERVED |
+| M7 | Emphasis | — | 「○○」「○○」はN行組み、ゴシック体。「○○」は特大文字、ゴシック体 | `［＃「○○」「○○」はN行組み、ゴシック体。「○○」は特大文字、ゴシック体］` | corpus | OBSERVED |
+| M8 | Emphasis | — | 「○○」」は太字 | `［＃「○○」」は太字］` | corpus | OBSERVED |
+| M9 | Emphasis | — | 「○○」から「○○」まで傍点 | `［＃「○○」から「○○」まで傍点］` | corpus | OBSERVED |
+| M10 | Emphasis | — | 「○○」から「○○」まで大文字、ゴシック体。「○○」は二倍二重ダーシ | `［＃「○○」から「○○」まで大文字、ゴシック体。「○○」は二倍二重ダーシ］` | corpus | OBSERVED |
+| M11 | Emphasis | — | 「○○」と「○○」に傍点 | `［＃「○○」と「○○」に傍点］` | corpus | OBSERVED |
+| M12 | Emphasis | — | 「○○」と「○○」の間に白三角傍点 | `［＃「○○」と「○○」の間に白三角傍点］` | corpus | OBSERVED |
+| M13 | Emphasis | — | 「○○」に×傍点 | `［＃「○○」に×傍点］` | corpus | OBSERVED |
+| M14 | Emphasis | — | 「○○」に×傍点、伏字を起こした文字 | `［＃「○○」に×傍点、伏字を起こした文字］` | corpus | OBSERVED |
+| M15 | Emphasis | — | 「○○」に傍点◎ | `［＃「○○」に傍点◎］` | corpus | OBSERVED |
+| M16 | Emphasis | — | 「○○」に傍点、傍点位置はママ | `［＃「○○」に傍点、傍点位置はママ］` | corpus | OBSERVED |
+| M17 | Emphasis | — | 「○○」に傍点、底本では「○○」に傍点 | `［＃「○○」に傍点、底本では「○○」に傍点］` | corpus | OBSERVED |
+| M18 | Emphasis | — | 「○○」に傍点、罫囲み | `［＃「○○」に傍点、罫囲み］` | corpus | OBSERVED |
+| M19 | Emphasis | — | 「○○」に傍点」山のきつねにばかされて、まいごになったという事件でありました。そのとき、村の人びとは、かねやたいこを鳴らして、山や谷をさがして歩き、ついに、泉谷《いずみだに》の泉の中で、ももひきを頭にかむってがつがつふるえながら、「○○」といっている一文商いやを見つけ出すことができたのでありました。富鉄じいさんはこの話をよく知っていて、こまかく説明しましたが、それもそのはずで、きつねにばかされたのはじぶんのことだったのです。
+　富鉄さんの話を聞いてみれば、きつねにばかされるということも、ありそうに思えました。ろっかん［＃「○○」に傍点 | `［＃「○○」に傍点」山のきつねにばかされて、まいごになったという事件でありました。そのとき、村の人びとは、かねやたいこを鳴らして、山や谷をさがして歩き、ついに、泉谷《いずみだに》の泉の中で、ももひきを頭にかむってがつがつふるえながら、「○○」といっている一文商いやを見つけ出すことができたのでありました。富鉄じいさんはこの話をよく知っていて、こまかく説明しましたが、それもそのはずで、きつねにばかされたのはじぶんのことだったのです。
+　富鉄さんの話を聞いてみれば、きつねにばかされるということも、ありそうに思えました。ろっかん［＃「○○」に傍点］` | corpus | OBSERVED |
+| M20 | Emphasis | — | 「○○」に傍点（白丸） | `［＃「○○」に傍点（白丸）］` | corpus | OBSERVED |
+| M21 | Emphasis | — | 「○○」に採用された割合」に傍線 | `［＃「○○」に採用された割合」に傍線］` | corpus | OBSERVED |
+| M22 | Emphasis | — | 「○○」に白四角傍点 | `［＃「○○」に白四角傍点］` | corpus | OBSERVED |
+| M23 | Emphasis | — | 「○○」に黒丸傍点 | `［＃「○○」に黒丸傍点］` | corpus | OBSERVED |
+| M24 | Emphasis | — | 「○○」の「○○」に傍点 | `［＃「○○」の「○○」に傍点］` | corpus | OBSERVED |
+| M25 | Emphasis | — | 「○○」の「○○」を除く部分に傍点 | `［＃「○○」の「○○」を除く部分に傍点］` | corpus | OBSERVED |
+| M26 | Emphasis | — | 「○○」のことに一寸言及するならば、」は太字 | `［＃「○○」のことに一寸言及するならば、」は太字］` | corpus | OBSERVED |
+| M27 | Emphasis | — | 「○○」の両側に傍線 | `［＃「○○」の両側に傍線］` | corpus | OBSERVED |
+| M28 | Emphasis | — | 「○○」の傍点 | `［＃「○○」の傍点］` | corpus | OBSERVED |
+| M29 | Emphasis | — | 「○○」の傍線は底本では欠落 | `［＃「○○」の傍線は底本では欠落］` | corpus | OBSERVED |
+| M30 | Emphasis | — | 「○○」の部分はイタリック体 | `［＃「○○」の部分はイタリック体］` | corpus | OBSERVED |
+| M31 | Emphasis | — | 「○○」はイタリック体 | `［＃「○○」はイタリック体］` | corpus | OBSERVED |
+| M32 | Emphasis | — | 「○○」はゴシック体 | `［＃「○○」はゴシック体］` | corpus | OBSERVED |
+| M33 | Emphasis | — | 「○○」は傍点 | `［＃「○○」は傍点］` | corpus | OBSERVED |
+| M34 | Emphasis | — | 「○○」は大文字、太字 | `［＃「○○」は大文字、太字］` | corpus | OBSERVED |
+| M35 | Emphasis | — | 「○○」は大文字、太字、「○○」に二重丸傍点 | `［＃「○○」は大文字、太字、「○○」に二重丸傍点］` | corpus | OBSERVED |
+| M36 | Emphasis | — | 「○○」は太字、罫囲み | `［＃「○○」は太字、罫囲み］` | corpus | OBSERVED |
+| M37 | Emphasis | — | 「○○」は斜体字 | `［＃「○○」は斜体字］` | corpus | OBSERVED |
+| M38 | Emphasis | — | 「○○」ゴシック体 | `［＃「○○」ゴシック体］` | corpus | OBSERVED |
+| M39 | Emphasis | — | 「○○」ゴシック体に傍点 | `［＃「○○」ゴシック体に傍点］` | corpus | OBSERVED |
+| M40 | Emphasis | — | 「○○」傍点 | `［＃「○○」傍点］` | corpus | OBSERVED |
+| M41 | Emphasis | — | 「○○」年極購読者に限る」は太字 | `［＃「○○」年極購読者に限る」は太字］` | corpus | OBSERVED |
+| M42 | Emphasis | — | 「○○」終了。）」は太字 | `［＃「○○」終了。）」は太字］` | corpus | OBSERVED |
+| M43 | Emphasis | — | 「○○」～「○○」に傍点 | `［＃「○○」～「○○」に傍点］` | corpus | OBSERVED |
+| M44 | Emphasis | — | 「○○」～「○○」に白三角傍点 | `［＃「○○」～「○○」に白三角傍点］` | corpus | OBSERVED |
+| M45 | Emphasis | — | 「○○」～「○○」に白丸傍点 | `［＃「○○」～「○○」に白丸傍点］` | corpus | OBSERVED |
+| M46 | Emphasis | — | 『独立とは「○○」といふことなり』に傍点 | `［＃『独立とは「○○」といふことなり』に傍点］` | corpus | OBSERVED |
+| M47 | Emphasis | — | ここからN字下げ、ゴシック体 | `［＃ここからN字下げ、ゴシック体］` | corpus | OBSERVED |
+| M48 | Emphasis | — | ここからN字下げ、本文よりひとまわり大きい太ゴシック体 | `［＃ここからN字下げ、本文よりひとまわり大きい太ゴシック体］` | corpus | OBSERVED |
+| M49 | Emphasis | — | ここからN字下げ、破線枠囲み | `［＃ここからN字下げ、破線枠囲み］` | corpus | OBSERVED |
+| M50 | Emphasis | — | この行はゴシック体 | `［＃この行はゴシック体］` | corpus | OBSERVED |
+| M51 | Emphasis | — | ゴシック | `［＃ゴシック］` | corpus | OBSERVED |
+| M52 | Emphasis | — | ゴシック体 | `［＃ゴシック体］` | corpus | OBSERVED |
+| M53 | Emphasis | — | ゴシック体、地付き、地よりN字あげ | `［＃ゴシック体、地付き、地よりN字あげ］` | corpus | OBSERVED |
+| M54 | Emphasis | — | 中文字、ゴシック体 | `［＃中文字、ゴシック体］` | corpus | OBSERVED |
+| M55 | Emphasis | — | 二つ目、三つ目の「○○」は太字 | `［＃二つ目、三つ目の「○○」は太字］` | corpus | OBSERVED |
+| M56 | Emphasis | — | 以下のNつの英文はすべてイタリック文字、横書き | `［＃以下のNつの英文はすべてイタリック文字、横書き］` | corpus | OBSERVED |
+| M57 | Emphasis | — | 前の行とはN.N行アキ、「○○」はゴシック体 | `［＃前の行とはN.N行アキ、「○○」はゴシック体］` | corpus | OBSERVED |
+| M58 | Emphasis | — | 四字傍点（白丸） | `［＃四字傍点（白丸）］` | corpus | OBSERVED |
+| M59 | Emphasis | — | 大文字、太字 | `［＃大文字、太字］` | corpus | OBSERVED |
+| M60 | Emphasis | — | 底本では「○○」に傍点 | `［＃底本では「○○」に傍点］` | corpus | OBSERVED |
+| M61 | Emphasis | — | 底本では「○○」に傍点をしているが、「○○」あるいは「○○」に傍点すべきであろうと思われる | `［＃底本では「○○」に傍点をしているが、「○○」あるいは「○○」に傍点すべきであろうと思われる］` | corpus | OBSERVED |
+| M62 | Emphasis | — | 手書きの波線の図（figN_N.png、横N×縦N）入る | `［＃手書きの波線の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| M63 | Emphasis | — | 次N行は、文字はゴシック体、罫線は全て波線 | `［＃次N行は、文字はゴシック体、罫線は全て波線］` | corpus | OBSERVED |
+| M64 | Emphasis | — | 特大文字、二重丸傍点 | `［＃特大文字、二重丸傍点］` | corpus | OBSERVED |
+| M65 | Emphasis | — | （之天［＃「○○」に白丸傍点 | `［＃（之天［＃「○○」に白丸傍点］` | corpus | OBSERVED |
+| M66 | Emphasis | — | （岐［＃「○○」に白丸傍点 | `［＃（岐［＃「○○」に白丸傍点］` | corpus | OBSERVED |
+| M67 | Emphasis | — | （礼止［＃「○○」に白丸傍点 | `［＃（礼止［＃「○○」に白丸傍点］` | corpus | OBSERVED |
+| M68 | Emphasis | — | （）内の文字全てに傍点、ただし読点をのぞく | `［＃（）内の文字全てに傍点、ただし読点をのぞく］` | corpus | OBSERVED |
+| M69 | Emphasis | ルビや強調の注記などが重複してかかる場合 | 「○○」に傍点 | `［＃「○○」に傍点］` | annotation/duplication.html; annotation/emphasis.html; annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| M70 | Emphasis | ルビや強調の注記などが重複してかかる場合 | 「○○」に傍線 | `［＃「○○」に傍線］` | annotation/duplication.html; annotation/emphasis.html; corpus | DOCUMENTED-AND-OBSERVED |
+| M71 | Emphasis | ルビや強調の注記などが重複してかかる場合 | 「○○」に白丸傍点 | `［＃「○○」に白丸傍点］` | annotation/duplication.html; annotation/emphasis.html; corpus | DOCUMENTED-AND-OBSERVED |
+| M72 | Emphasis | ルビや強調の注記などが重複してかかる場合 | 「○○」の左に傍線 | `［＃「○○」の左に傍線］` | annotation/duplication.html; annotation/emphasis.html; corpus | DOCUMENTED-AND-OBSERVED |
+| M73 | Emphasis | 傍点 | 「○○」にばつ傍点 | `［＃「○○」にばつ傍点］` | annotation/emphasis.html; corpus | DOCUMENTED-AND-OBSERVED |
+| M74 | Emphasis | 傍点 | 「○○」に丸傍点 | `［＃「○○」に丸傍点］` | annotation/emphasis.html; annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| M75 | Emphasis | 傍点 | 「○○」に二重丸傍点 | `［＃「○○」に二重丸傍点］` | annotation/emphasis.html; corpus | DOCUMENTED-AND-OBSERVED |
+| M76 | Emphasis | 傍点 | 「○○」に白ゴマ傍点 | `［＃「○○」に白ゴマ傍点］` | annotation/emphasis.html; corpus | DOCUMENTED-AND-OBSERVED |
+| M77 | Emphasis | 傍点 | 「○○」に白三角傍点 | `［＃「○○」に白三角傍点］` | annotation/emphasis.html; corpus | DOCUMENTED-AND-OBSERVED |
+| M78 | Emphasis | 傍点 | 「○○」に蛇の目傍点 | `［＃「○○」に蛇の目傍点］` | annotation/emphasis.html; corpus | DOCUMENTED-AND-OBSERVED |
+| M79 | Emphasis | 傍点 | 「○○」に黒三角傍点 | `［＃「○○」に黒三角傍点］` | annotation/emphasis.html; corpus | DOCUMENTED-AND-OBSERVED |
+| M80 | Emphasis | 傍点 | 「○○」の左にばつ傍点 | `［＃「○○」の左にばつ傍点］` | annotation/emphasis.html | DOCUMENTED |
+| M81 | Emphasis | 傍点 | 「○○」の左に丸傍点 | `［＃「○○」の左に丸傍点］` | annotation/emphasis.html | DOCUMENTED |
+| M82 | Emphasis | 傍点 | 「○○」の左に二重丸傍点 | `［＃「○○」の左に二重丸傍点］` | annotation/emphasis.html | DOCUMENTED |
+| M83 | Emphasis | 傍点 | 「○○」の左に傍点 | `［＃「○○」の左に傍点］` | annotation/emphasis.html | DOCUMENTED |
+| M84 | Emphasis | 傍点 | 「○○」の左に白ゴマ傍点 | `［＃「○○」の左に白ゴマ傍点］` | annotation/emphasis.html | DOCUMENTED |
+| M85 | Emphasis | 傍点 | 「○○」の左に白三角傍点 | `［＃「○○」の左に白三角傍点］` | annotation/emphasis.html | DOCUMENTED |
+| M86 | Emphasis | 傍点 | 「○○」の左に白丸傍点 | `［＃「○○」の左に白丸傍点］` | annotation/emphasis.html; corpus | DOCUMENTED-AND-OBSERVED |
+| M87 | Emphasis | 傍点 | 「○○」の左に蛇の目傍点 | `［＃「○○」の左に蛇の目傍点］` | annotation/emphasis.html | DOCUMENTED |
+| M88 | Emphasis | 傍点 | 「○○」の左に黒三角傍点 | `［＃「○○」の左に黒三角傍点］` | annotation/emphasis.html | DOCUMENTED |
+| M89 | Emphasis | 傍点 | ばつ傍点 | `［＃ばつ傍点］` | annotation/emphasis.html | DOCUMENTED |
+| M90 | Emphasis | 傍点 | ばつ傍点終わり | `［＃ばつ傍点終わり］` | annotation/emphasis.html | DOCUMENTED |
+| M91 | Emphasis | 傍点 | 丸傍点 | `［＃丸傍点］` | annotation/emphasis.html; corpus | DOCUMENTED-AND-OBSERVED |
+| M92 | Emphasis | 傍点 | 丸傍点終わり | `［＃丸傍点終わり］` | annotation/emphasis.html; corpus | DOCUMENTED-AND-OBSERVED |
+| M93 | Emphasis | 傍点 | 二重丸傍点 | `［＃二重丸傍点］` | annotation/emphasis.html; corpus | DOCUMENTED-AND-OBSERVED |
+| M94 | Emphasis | 傍点 | 二重丸傍点終わり | `［＃二重丸傍点終わり］` | annotation/emphasis.html; corpus | DOCUMENTED-AND-OBSERVED |
+| M95 | Emphasis | 傍点 | 傍点 | `［＃傍点］` | annotation/emphasis.html; corpus | DOCUMENTED-AND-OBSERVED |
+| M96 | Emphasis | 傍点 | 傍点終わり | `［＃傍点終わり］` | annotation/emphasis.html; corpus | DOCUMENTED-AND-OBSERVED |
+| M97 | Emphasis | 傍点 | 左にばつ傍点 | `［＃左にばつ傍点］` | annotation/emphasis.html | DOCUMENTED |
+| M98 | Emphasis | 傍点 | 左にばつ傍点終わり | `［＃左にばつ傍点終わり］` | annotation/emphasis.html | DOCUMENTED |
+| M99 | Emphasis | 傍点 | 左に丸傍点 | `［＃左に丸傍点］` | annotation/emphasis.html | DOCUMENTED |
+| M100 | Emphasis | 傍点 | 左に丸傍点終わり | `［＃左に丸傍点終わり］` | annotation/emphasis.html | DOCUMENTED |
+| M101 | Emphasis | 傍点 | 左に二重丸傍点 | `［＃左に二重丸傍点］` | annotation/emphasis.html | DOCUMENTED |
+| M102 | Emphasis | 傍点 | 左に二重丸傍点終わり | `［＃左に二重丸傍点終わり］` | annotation/emphasis.html | DOCUMENTED |
+| M103 | Emphasis | 傍点 | 左に傍点 | `［＃左に傍点］` | annotation/emphasis.html | DOCUMENTED |
+| M104 | Emphasis | 傍点 | 左に傍点終わり | `［＃左に傍点終わり］` | annotation/emphasis.html | DOCUMENTED |
+| M105 | Emphasis | 傍点 | 左に白ゴマ傍点 | `［＃左に白ゴマ傍点］` | annotation/emphasis.html | DOCUMENTED |
+| M106 | Emphasis | 傍点 | 左に白ゴマ傍点終わり | `［＃左に白ゴマ傍点終わり］` | annotation/emphasis.html | DOCUMENTED |
+| M107 | Emphasis | 傍点 | 左に白三角傍点 | `［＃左に白三角傍点］` | annotation/emphasis.html | DOCUMENTED |
+| M108 | Emphasis | 傍点 | 左に白三角傍点終わり | `［＃左に白三角傍点終わり］` | annotation/emphasis.html | DOCUMENTED |
+| M109 | Emphasis | 傍点 | 左に白丸傍点 | `［＃左に白丸傍点］` | annotation/emphasis.html | DOCUMENTED |
+| M110 | Emphasis | 傍点 | 左に白丸傍点終わり | `［＃左に白丸傍点終わり］` | annotation/emphasis.html | DOCUMENTED |
+| M111 | Emphasis | 傍点 | 左に蛇の目傍点 | `［＃左に蛇の目傍点］` | annotation/emphasis.html | DOCUMENTED |
+| M112 | Emphasis | 傍点 | 左に蛇の目傍点終わり | `［＃左に蛇の目傍点終わり］` | annotation/emphasis.html | DOCUMENTED |
+| M113 | Emphasis | 傍点 | 左に黒三角傍点 | `［＃左に黒三角傍点］` | annotation/emphasis.html | DOCUMENTED |
+| M114 | Emphasis | 傍点 | 左に黒三角傍点終わり | `［＃左に黒三角傍点終わり］` | annotation/emphasis.html | DOCUMENTED |
+| M115 | Emphasis | 傍点 | 白ゴマ傍点 | `［＃白ゴマ傍点］` | annotation/emphasis.html | DOCUMENTED |
+| M116 | Emphasis | 傍点 | 白ゴマ傍点終わり | `［＃白ゴマ傍点終わり］` | annotation/emphasis.html | DOCUMENTED |
+| M117 | Emphasis | 傍点 | 白三角傍点 | `［＃白三角傍点］` | annotation/emphasis.html; corpus | DOCUMENTED-AND-OBSERVED |
+| M118 | Emphasis | 傍点 | 白三角傍点終わり | `［＃白三角傍点終わり］` | annotation/emphasis.html; corpus | DOCUMENTED-AND-OBSERVED |
+| M119 | Emphasis | 傍点 | 白丸傍点 | `［＃白丸傍点］` | annotation/emphasis.html; corpus | DOCUMENTED-AND-OBSERVED |
+| M120 | Emphasis | 傍点 | 白丸傍点終わり | `［＃白丸傍点終わり］` | annotation/emphasis.html; corpus | DOCUMENTED-AND-OBSERVED |
+| M121 | Emphasis | 傍点 | 蛇の目傍点 | `［＃蛇の目傍点］` | annotation/emphasis.html | DOCUMENTED |
+| M122 | Emphasis | 傍点 | 蛇の目傍点終わり | `［＃蛇の目傍点終わり］` | annotation/emphasis.html | DOCUMENTED |
+| M123 | Emphasis | 傍点 | 黒三角傍点 | `［＃黒三角傍点］` | annotation/emphasis.html | DOCUMENTED |
+| M124 | Emphasis | 傍点 | 黒三角傍点終わり | `［＃黒三角傍点終わり］` | annotation/emphasis.html | DOCUMENTED |
+| M125 | Emphasis | 傍線 | 「○○」に二重傍線 | `［＃「○○」に二重傍線］` | annotation/emphasis.html; corpus | DOCUMENTED-AND-OBSERVED |
+| M126 | Emphasis | 傍線 | 「○○」に波線 | `［＃「○○」に波線］` | annotation/emphasis.html; corpus | DOCUMENTED-AND-OBSERVED |
+| M127 | Emphasis | 傍線 | 「○○」に破線 | `［＃「○○」に破線］` | annotation/emphasis.html | DOCUMENTED |
+| M128 | Emphasis | 傍線 | 「○○」に鎖線 | `［＃「○○」に鎖線］` | annotation/emphasis.html | DOCUMENTED |
+| M129 | Emphasis | 傍線 | 「○○」の左に二重傍線 | `［＃「○○」の左に二重傍線］` | annotation/emphasis.html | DOCUMENTED |
+| M130 | Emphasis | 傍線 | 「○○」の左に波線 | `［＃「○○」の左に波線］` | annotation/emphasis.html | DOCUMENTED |
+| M131 | Emphasis | 傍線 | 「○○」の左に破線 | `［＃「○○」の左に破線］` | annotation/emphasis.html | DOCUMENTED |
+| M132 | Emphasis | 傍線 | 「○○」の左に鎖線 | `［＃「○○」の左に鎖線］` | annotation/emphasis.html | DOCUMENTED |
+| M133 | Emphasis | 傍線 | 二重傍線 | `［＃二重傍線］` | annotation/emphasis.html; corpus | DOCUMENTED-AND-OBSERVED |
+| M134 | Emphasis | 傍線 | 二重傍線終わり | `［＃二重傍線終わり］` | annotation/emphasis.html; corpus | DOCUMENTED-AND-OBSERVED |
+| M135 | Emphasis | 傍線 | 傍線 | `［＃傍線］` | annotation/emphasis.html; corpus | DOCUMENTED-AND-OBSERVED |
+| M136 | Emphasis | 傍線 | 傍線終わり | `［＃傍線終わり］` | annotation/emphasis.html; corpus | DOCUMENTED-AND-OBSERVED |
+| M137 | Emphasis | 傍線 | 左に二重傍線 | `［＃左に二重傍線］` | annotation/emphasis.html | DOCUMENTED |
+| M138 | Emphasis | 傍線 | 左に二重傍線終わり | `［＃左に二重傍線終わり］` | annotation/emphasis.html | DOCUMENTED |
+| M139 | Emphasis | 傍線 | 左に傍線 | `［＃左に傍線］` | annotation/emphasis.html; corpus | DOCUMENTED-AND-OBSERVED |
+| M140 | Emphasis | 傍線 | 左に傍線終わり | `［＃左に傍線終わり］` | annotation/emphasis.html; corpus | DOCUMENTED-AND-OBSERVED |
+| M141 | Emphasis | 傍線 | 左に波線 | `［＃左に波線］` | annotation/emphasis.html | DOCUMENTED |
+| M142 | Emphasis | 傍線 | 左に波線終わり | `［＃左に波線終わり］` | annotation/emphasis.html | DOCUMENTED |
+| M143 | Emphasis | 傍線 | 左に破線 | `［＃左に破線］` | annotation/emphasis.html | DOCUMENTED |
+| M144 | Emphasis | 傍線 | 左に破線終わり | `［＃左に破線終わり］` | annotation/emphasis.html | DOCUMENTED |
+| M145 | Emphasis | 傍線 | 左に鎖線 | `［＃左に鎖線］` | annotation/emphasis.html | DOCUMENTED |
+| M146 | Emphasis | 傍線 | 左に鎖線終わり | `［＃左に鎖線終わり］` | annotation/emphasis.html | DOCUMENTED |
+| M147 | Emphasis | 傍線 | 波線 | `［＃波線］` | annotation/emphasis.html | DOCUMENTED |
+| M148 | Emphasis | 傍線 | 波線終わり | `［＃波線終わり］` | annotation/emphasis.html | DOCUMENTED |
+| M149 | Emphasis | 傍線 | 破線 | `［＃破線］` | annotation/emphasis.html | DOCUMENTED |
+| M150 | Emphasis | 傍線 | 破線終わり | `［＃破線終わり］` | annotation/emphasis.html | DOCUMENTED |
+| M151 | Emphasis | 傍線 | 鎖線 | `［＃鎖線］` | annotation/emphasis.html | DOCUMENTED |
+| M152 | Emphasis | 傍線 | 鎖線終わり | `［＃鎖線終わり］` | annotation/emphasis.html | DOCUMENTED |
+| M153 | Emphasis | 太字（ゴシック）と斜体（イタリック） | 「○○」は太字 | `［＃「○○」は太字］` | annotation/emphasis.html; annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| M154 | Emphasis | 太字（ゴシック）と斜体（イタリック） | 「○○」は斜体 | `［＃「○○」は斜体］` | annotation/emphasis.html; annotation/graphics.html; corpus | DOCUMENTED-AND-OBSERVED |
+| M155 | Emphasis | 太字（ゴシック）と斜体（イタリック） | ここから太字 | `［＃ここから太字］` | annotation/emphasis.html; corpus | DOCUMENTED-AND-OBSERVED |
+| M156 | Emphasis | 太字（ゴシック）と斜体（イタリック） | ここから斜体 | `［＃ここから斜体］` | annotation/emphasis.html; corpus | DOCUMENTED-AND-OBSERVED |
+| M157 | Emphasis | 太字（ゴシック）と斜体（イタリック） | ここで太字終わり | `［＃ここで太字終わり］` | annotation/emphasis.html; corpus | DOCUMENTED-AND-OBSERVED |
+| M158 | Emphasis | 太字（ゴシック）と斜体（イタリック） | ここで斜体終わり | `［＃ここで斜体終わり］` | annotation/emphasis.html; corpus | DOCUMENTED-AND-OBSERVED |
+| M159 | Emphasis | 太字（ゴシック）と斜体（イタリック） | 太字 | `［＃太字］` | annotation/emphasis.html; corpus | DOCUMENTED-AND-OBSERVED |
+| M160 | Emphasis | 太字（ゴシック）と斜体（イタリック） | 太字終わり | `［＃太字終わり］` | annotation/emphasis.html; corpus | DOCUMENTED-AND-OBSERVED |
+| M161 | Emphasis | 太字（ゴシック）と斜体（イタリック） | 斜体 | `［＃斜体］` | annotation/emphasis.html; corpus | DOCUMENTED-AND-OBSERVED |
+| M162 | Emphasis | 太字（ゴシック）と斜体（イタリック） | 斜体終わり | `［＃斜体終わり］` | annotation/emphasis.html; corpus | DOCUMENTED-AND-OBSERVED |
 ### Graphics / 画像
 
-| ID | Feature | Example | Sources | Verdict |
-|----|---------|---------|---------|---------|
-| G1 | 「○○」のキャプション付きの図（figN_N.png、横N×縦N）入る | `［＃「○○」のキャプション付きの図（figN_N.png、横N×縦N）入る］` | graphics | MANUAL-ONLY |
-| G2 | 「○○」はキャプション | `［＃「○○」はキャプション］` | graphics | MANUAL-ONLY |
-| G3 | コンドル博士の図（figN_N.png、横N×縦N）入る | `［＃コンドル博士の図（figN_N.png、横N×縦N）入る］` | graphics | MANUAL-ONLY |
-| G4 | 石鏃二つの図（figN_N.png）入る | `［＃石鏃二つの図（figN_N.png）入る］` | graphics | MANUAL-ONLY |
+| ID | Family | Sub-family | Feature | Example | Sources | Status |
+|----|--------|------------|---------|---------|---------|--------|
+| G1 | Graphics | — | A''の図（figN_N.png、横N×縦N）入る | `［＃A''の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G2 | Graphics | — | A'の図（figN_N.png、横N×縦N）入る | `［＃A'の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G3 | Graphics | — | Gonshan の挿絵（figN_N.png、横N×縦N）入る | `［＃Gonshan の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G4 | Graphics | — | John の挿絵（figN_N.png、横N×縦N）入る | `［＃John の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G5 | Graphics | — | N+N/N+N/N+N/N+……………… ad inf.の図（figN_N.png、横N×縦N）入る | `［＃N+N/N+N/N+N/N+……………… ad inf.の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G6 | Graphics | — | N+N/N^N+N/N^N+N/N^N+……………… ad inf.の図（figN_N.png、横N×縦N）入る | `［＃N+N/N^N+N/N^N+N/N^N+……………… ad inf.の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G7 | Graphics | — | N　Nを反時計回りにN度回転　Nを時計回りにN度回転　NをN度回転の図（figN_N.png、横N×縦N）入る | `［＃N　Nを反時計回りにN度回転　Nを時計回りにN度回転　NをN度回転の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G8 | Graphics | — | NをN度回転＋Nの図（figN_N.png、横N×縦N）入る | `［＃NをN度回転＋Nの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G9 | Graphics | — | Nを反時計回りにN度回転＋Nを時計回りにN度回転の図（figN_N.png、横N×縦N）入る | `［＃Nを反時計回りにN度回転＋Nを時計回りにN度回転の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G10 | Graphics | — | Nを時計回りにN度回転＋Nを反時計回りにN度回転の図（figN_N.png、横N×縦N）入る | `［＃Nを時計回りにN度回転＋Nを反時計回りにN度回転の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G11 | Graphics | — | N＋NをN度回転の図（figN_N.png、横N×縦N）入る | `［＃N＋NをN度回転の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G12 | Graphics | — | N／ｗの図（figN_N.png、横N×縦N）入る | `［＃N／ｗの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G13 | Graphics | — | dy／dxの図（figN_N.png、横N×縦N）入る | `［＃dy／dxの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G14 | Graphics | — | 「○○」〉」のキャプション付きの挿絵（figN_N.png、横N×縦N）入る | `［＃「○○」〉」のキャプション付きの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G15 | Graphics | — | 「○○」〉」はキャプション | `［＃「○○」〉」はキャプション］` | corpus | OBSERVED |
+| G16 | Graphics | — | 「○○」「○○」「○○」の関係を円を使って示す図（figN_N.png、横N×縦N）入る | `［＃「○○」「○○」「○○」の関係を円を使って示す図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G17 | Graphics | — | 「○○」「○○」の印の図（figN_N.png、横N×縦N）入る | `［＃「○○」「○○」の印の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G18 | Graphics | — | 「○○」「○○」の図（figN_N.png、横N×縦N）入る | `［＃「○○」「○○」の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G19 | Graphics | — | 「○○」」のキャプション付きの図（figN_N.png、横N×縦N）入る | `［＃「○○」」のキャプション付きの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G20 | Graphics | — | 「○○」から。」のキャプション付きの図（figN_N.png、横N×縦N）入る | `［＃「○○」から。」のキャプション付きの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G21 | Graphics | — | 「○○」た西行が、崇徳院の怨霊と対決する図」のキャプション付きの図（figN_N.png、横N×縦N）入る | `［＃「○○」た西行が、崇徳院の怨霊と対決する図」のキャプション付きの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G22 | Graphics | — | 「○○」と、しばらくしてから王子くんがいった。「○○」〉」のキャプション付きの挿絵（figN_N.png、横N×縦N）入る | `［＃「○○」と、しばらくしてから王子くんがいった。「○○」〉」のキャプション付きの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G23 | Graphics | — | 「○○」と、しばらくしてから王子くんがいった。「○○」〉」はキャプション | `［＃「○○」と、しばらくしてから王子くんがいった。「○○」〉」はキャプション］` | corpus | OBSERVED |
+| G24 | Graphics | — | 「○○」と、その子はいった。「○○」〉」のキャプション付きの挿絵（figN_N.png、横N×縦N）入る | `［＃「○○」と、その子はいった。「○○」〉」のキャプション付きの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G25 | Graphics | — | 「○○」と、その子はいった。「○○」〉」はキャプション | `［＃「○○」と、その子はいった。「○○」〉」はキャプション］` | corpus | OBSERVED |
+| G26 | Graphics | — | 「○○」と逆向きの「○○」がかみ合わさったような形の図（figN_N.png、横N×縦N）入る | `［＃「○○」と逆向きの「○○」がかみ合わさったような形の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G27 | Graphics | — | 「○○」に丸囲みの手書き文字。そこから斜め外向きに四つの矢印がのびている形の図（figN_N.png、横N×縦N）入る | `［＃「○○」に丸囲みの手書き文字。そこから斜め外向きに四つの矢印がのびている形の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G28 | Graphics | — | 「○○」に似た記号の図（figN_N.png）入る | `［＃「○○」に似た記号の図（figN_N.png）入る］` | corpus | OBSERVED |
+| G29 | Graphics | — | 「○○」のなかに折りたたみで入っていたパンフレット」のキャプション付きの図（figN_N.png、横N×縦N）入る | `［＃「○○」のなかに折りたたみで入っていたパンフレット」のキャプション付きの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G30 | Graphics | — | 「○○」のなかに折りたたみで入っていたパンフレット」はキャプション | `［＃「○○」のなかに折りたたみで入っていたパンフレット」はキャプション］` | corpus | OBSERVED |
+| G31 | Graphics | — | 「○○」のキャプション付きの写真（figN_N.png、横N×縦N）入る | `［＃「○○」のキャプション付きの写真（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G32 | Graphics | — | 「○○」のキャプション付きの写真（figN_N.png）入る | `［＃「○○」のキャプション付きの写真（figN_N.png）入る］` | corpus | OBSERVED |
+| G33 | Graphics | — | 「○○」のキャプション付きの口絵写真の地図（figN_N.png、横N×縦N）入る | `［＃「○○」のキャプション付きの口絵写真の地図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G34 | Graphics | — | 「○○」のキャプション付きの図表（figN_N.png）入る | `［＃「○○」のキャプション付きの図表（figN_N.png）入る］` | corpus | OBSERVED |
+| G35 | Graphics | — | 「○○」のキャプション付きの図（figN_N.png、横×縦）入る | `［＃「○○」のキャプション付きの図（figN_N.png、横×縦）入る］` | corpus | OBSERVED |
+| G36 | Graphics | — | 「○○」のキャプション付きの図（figN_N.png）入る | `［＃「○○」のキャプション付きの図（figN_N.png）入る］` | corpus | OBSERVED |
+| G37 | Graphics | — | 「○○」のキャプション付きの図（figN_Npng、横×縦）入る | `［＃「○○」のキャプション付きの図（figN_Npng、横×縦）入る］` | corpus | OBSERVED |
+| G38 | Graphics | — | 「○○」のキャプション付きの宝貝の産地分布図（figN_N.png、横N×縦N）入る | `［＃「○○」のキャプション付きの宝貝の産地分布図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G39 | Graphics | — | 「○○」のキャプション付きの挿図（figN_N.png、横N×縦N）入る | `［＃「○○」のキャプション付きの挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G40 | Graphics | — | 「○○」のキャプション付きの挿絵（figN_N.png、横N×縦N）入る | `［＃「○○」のキャプション付きの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G41 | Graphics | — | 「○○」のキャプション付きの楽譜（figN_N.png）入る | `［＃「○○」のキャプション付きの楽譜（figN_N.png）入る］` | corpus | OBSERVED |
+| G42 | Graphics | — | 「○○」のキャプション付きの河童の図（figN_N.png）入る | `［＃「○○」のキャプション付きの河童の図（figN_N.png）入る］` | corpus | OBSERVED |
+| G43 | Graphics | — | 「○○」のキャプション付きの絵（figN_N.png、横N×縦N）入る | `［＃「○○」のキャプション付きの絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G44 | Graphics | — | 「○○」のキャプション付きの肖像画（figN_N.png）入る | `［＃「○○」のキャプション付きの肖像画（figN_N.png）入る］` | corpus | OBSERVED |
+| G45 | Graphics | — | 「○○」のキャプション付きの表（figN_N.png、横N×縦N）入る | `［＃「○○」のキャプション付きの表（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G46 | Graphics | — | 「○○」のキャプション入りの図（figN_N.png、横N×縦N）入る | `［＃「○○」のキャプション入りの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G47 | Graphics | — | 「○○」のフランス訳（N）より）　ａ＝大動脈、ｂ＝動脈と静脈の吻合、Ｃ＝肝臓、Ｄ＝胃、ｆ＝肝を通った静脈、ｇ＝大静脈、ｈ＝心室間の壁の孔、ｉ＝右心房、Ｉ＝左心房、ｍ＝肺静脈、N＝肺、ｎ＝肺動脈、Ｐ＝右心室」のキャプション付きの図（figN_N.png、横N×縦N）入る | `［＃「○○」のフランス訳（N）より）　ａ＝大動脈、ｂ＝動脈と静脈の吻合、Ｃ＝肝臓、Ｄ＝胃、ｆ＝肝を通った静脈、ｇ＝大静脈、ｈ＝心室間の壁の孔、ｉ＝右心房、Ｉ＝左心房、ｍ＝肺静脈、N＝肺、ｎ＝肺動脈、Ｐ＝右心室」のキャプション付きの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G48 | Graphics | — | 「○○」のページ（アントワープ、N）」のキャプション付きの図（figN_N.png、横N×縦N）入る | `［＃「○○」のページ（アントワープ、N）」のキャプション付きの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G49 | Graphics | — | 「○○」の上下反転の図（figN_N.png、横N×縦N）入る | `［＃「○○」の上下反転の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G50 | Graphics | — | 「○○」の写真（figN_N.png、横N×縦N）入る | `［＃「○○」の写真（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G51 | Graphics | — | 「○○」の函」のキャプション付きの図（figN_N.png、横N×縦N）入る | `［＃「○○」の函」のキャプション付きの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G52 | Graphics | — | 「○○」の函」はキャプション | `［＃「○○」の函」はキャプション］` | corpus | OBSERVED |
+| G53 | Graphics | — | 「○○」の原稿における万代草（Sempervivum tectorum）の図（N世紀）」のキャプション付きの図（figN_N.png、横N×縦N）入る | `［＃「○○」の原稿における万代草（Sempervivum tectorum）の図（N世紀）」のキャプション付きの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G54 | Graphics | — | 「○○」の図表のこと | `［＃「○○」の図表のこと］` | corpus | OBSERVED |
+| G55 | Graphics | — | 「○○」の図（figN_N.png、横N×縦N）入る | `［＃「○○」の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G56 | Graphics | — | 「○○」の図（figN_N.png）入る。「○○」とあるのは底本では「○○」 | `［＃「○○」の図（figN_N.png）入る。「○○」とあるのは底本では「○○」］` | corpus | OBSERVED |
+| G57 | Graphics | — | 「○○」の扉（N）」のキャプション付きの図（figN_N.png、横N×縦N）入る | `［＃「○○」の扉（N）」のキャプション付きの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G58 | Graphics | — | 「○○」の挿絵（figN_N.png、横N×縦N）入る | `［＃「○○」の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G59 | Graphics | — | 「○○」の放免の図（figN_N.png、横N×縦N）入る | `［＃「○○」の放免の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G60 | Graphics | — | 「○○」の新照明法に依る」はキャプション | `［＃「○○」の新照明法に依る」はキャプション］` | corpus | OBSERVED |
+| G61 | Graphics | — | 「○○」の読み札及び絵札の図（figN_N.png、横N×縦N）入る | `［＃「○○」の読み札及び絵札の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G62 | Graphics | — | 「○○」を説明した無底辺三角形の図（figN_N.png）入る | `［＃「○○」を説明した無底辺三角形の図（figN_N.png）入る］` | corpus | OBSERVED |
+| G63 | Graphics | — | 「○○」ロンドン、Nから」のキャプション付きの図（figN_N.png、横N×縦N）入る | `［＃「○○」ロンドン、Nから」のキャプション付きの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G64 | Graphics | — | 「○○」原稿」のキャプション付きの図（figN_N.png、横N×縦N）入る | `［＃「○○」原稿」のキャプション付きの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G65 | Graphics | — | 「○○」原稿」はキャプション | `［＃「○○」原稿」はキャプション］` | corpus | OBSERVED |
+| G66 | Graphics | — | 「○○」書かれた『鬼桃太郎』の序文（紅葉筆）」のキャプション付きの図（figN_N.png、横N×縦N）入る | `［＃「○○」書かれた『鬼桃太郎』の序文（紅葉筆）」のキャプション付きの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G67 | Graphics | — | 「○○」模写」のキャプション付きの図（figN_N.png、横N×縦N）入る | `［＃「○○」模写」のキャプション付きの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G68 | Graphics | — | 「○○」模写」はキャプション | `［＃「○○」模写」はキャプション］` | corpus | OBSERVED |
+| G69 | Graphics | — | 「○○」横断面」のキャプション付きの図（figN_N.png、横N×縦N）入る | `［＃「○○」横断面」のキャプション付きの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G70 | Graphics | — | 「○○」横断面」はキャプション | `［＃「○○」横断面」はキャプション］` | corpus | OBSERVED |
+| G71 | Graphics | — | 「○○」見取図」のキャプション付きの図（figN_N.png、横N×縦N）入る | `［＃「○○」見取図」のキャプション付きの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G72 | Graphics | — | 「○○」見取図」はキャプション | `［＃「○○」見取図」はキャプション］` | corpus | OBSERVED |
+| G73 | Graphics | — | 「○○」（Elzvir edition, N）Nページの対向）」のキャプション付きの図（figN_N.png、横N×縦N）入る | `［＃「○○」（Elzvir edition, N）Nページの対向）」のキャプション付きの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G74 | Graphics | — | 「○○」（N）Nページの対向の木版）」のキャプション付きの図（figN_N.png、横N×縦N）入る | `［＃「○○」（N）Nページの対向の木版）」のキャプション付きの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G75 | Graphics | — | 「○○」（N）」のキャプション付きの図（figN_N.png、横N×縦N）入る | `［＃「○○」（N）」のキャプション付きの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G76 | Graphics | — | 「○○」（N）における血管系についてのガレノスの見解（静脈：Ａ、動脈：Ｂ）」のキャプション付きの図（figN_N.png、横N×縦N）入る | `［＃「○○」（N）における血管系についてのガレノスの見解（静脈：Ａ、動脈：Ｂ）」のキャプション付きの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G77 | Graphics | — | 「○○」（N）の扉」のキャプション付きの図（figN_N.png、横N×縦N）入る | `［＃「○○」（N）の扉」のキャプション付きの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G78 | Graphics | — | 「○○」（N）の扉（＊オスラーはこの本について未完の随筆を書いている）」のキャプション付きの図（figN_N.png、横N×縦N）入る | `［＃「○○」（N）の扉（＊オスラーはこの本について未完の随筆を書いている）」のキャプション付きの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G79 | Graphics | — | 「○○」（N）の表紙」のキャプション付きの図（figN_N.png、横N×縦N）入る | `［＃「○○」（N）の表紙」のキャプション付きの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G80 | Graphics | — | 『岳』の古文の挿図（figN_N.png、横N×縦N）入る | `［＃『岳』の古文の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G81 | Graphics | — | 『曙の人』と『猿の人』の模型の写真（figN_N.png）入る | `［＃『曙の人』と『猿の人』の模型の写真（figN_N.png）入る］` | corpus | OBSERVED |
+| G82 | Graphics | — | あおげらの挿図（figN_N.png、横N×縦N）入る | `［＃あおげらの挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G83 | Graphics | — | あけびの図（figN_N.png）入る | `［＃あけびの図（figN_N.png）入る］` | corpus | OBSERVED |
+| G84 | Graphics | — | あぞ原入湯の挿図（figN_N.png、横N×縦N）入る | `［＃あぞ原入湯の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G85 | Graphics | — | うき世の図（figN_N.png、横N×縦N）入る | `［＃うき世の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G86 | Graphics | — | うさぎの挿絵（figN_N.png、横N×縦N）入る | `［＃うさぎの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G87 | Graphics | — | うの挿絵（figN_N.png、横N×縦N）入る | `［＃うの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G88 | Graphics | — | おうむの挿絵（figN_N.png、横N×縦N）入る | `［＃おうむの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G89 | Graphics | — | おかゆをすする光景の挿絵（figN_N.png）入る | `［＃おかゆをすする光景の挿絵（figN_N.png）入る］` | corpus | OBSERVED |
+| G90 | Graphics | — | おくのほそ道行程圖図（figN_N.png、横N×縦N）入る | `［＃おくのほそ道行程圖図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G91 | Graphics | — | おこじょの挿図（figN_N.png、横N×縦N）入る | `［＃おこじょの挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G92 | Graphics | — | おたまじゃくしの挿絵（figN_N.png、横N×縦N）入る | `［＃おたまじゃくしの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G93 | Graphics | — | お神籤の図（figN_N.png、横N×縦N）入る | `［＃お神籤の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G94 | Graphics | — | お神籤の図（figN_N.png）入る | `［＃お神籤の図（figN_N.png）入る］` | corpus | OBSERVED |
+| G95 | Graphics | — | お花畑の挿図（figN_N.png、横N×縦N）入る | `［＃お花畑の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G96 | Graphics | — | かばの挿絵（figN_N.png、横N×縦N）入る | `［＃かばの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G97 | Graphics | — | かわせみの挿絵（figN_N.png、横N×縦N）入る | `［＃かわせみの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G98 | Graphics | — | かわ沙魚の挿絵（figN_N.png、横N×縦N）入る | `［＃かわ沙魚の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G99 | Graphics | — | がらん堂の一隅の挿図（figN_N.png、横N×縦N）入る | `［＃がらん堂の一隅の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G100 | Graphics | — | きつねの挿絵（figN_N.png、横N×縦N）入る | `［＃きつねの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G101 | Graphics | — | くさり模様の図（figN_N.png、横N×縦N）入る | `［＃くさり模様の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G102 | Graphics | — | くまの挿絵（figN_N.png、横N×縦N）入る | `［＃くまの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G103 | Graphics | — | くろ鶫！の挿絵（figN_N.png、横N×縦N）入る | `［＃くろ鶫！の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G104 | Graphics | — | ここからN字下げ、横組み、図表 | `［＃ここからN字下げ、横組み、図表］` | corpus | OBSERVED |
+| G105 | Graphics | — | ここから図表下部解説文 | `［＃ここから図表下部解説文］` | corpus | OBSERVED |
+| G106 | Graphics | — | ここで図表下部解説文終わり | `［＃ここで図表下部解説文終わり］` | corpus | OBSERVED |
+| G107 | Graphics | — | ここに花園の挿絵あり | `［＃ここに花園の挿絵あり］` | corpus | OBSERVED |
+| G108 | Graphics | — | さるの挿絵（figN_N.png、横N×縦N）入る | `［＃さるの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G109 | Graphics | — | しかの挿絵（figN_N.png、横N×縦N）入る | `［＃しかの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G110 | Graphics | — | ししがえぼしをかぶるときの文字図（figN_N.png、横N×縦N）入る | `［＃ししがえぼしをかぶるときの文字図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G111 | Graphics | — | しらびその挿図（figN_N.png、横N×縦N）入る | `［＃しらびその挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G112 | Graphics | — | しらびの挿図（figN_N.png、横N×縦N）入る | `［＃しらびの挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G113 | Graphics | — | すかりの図（figN_N.png、横N×縦N）入る | `［＃すかりの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G114 | Graphics | — | ぞうの挿絵（figN_N.png、横N×縦N）入る | `［＃ぞうの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G115 | Graphics | — | たかの挿絵（figN_N.png、横N×縦N）入る | `［＃たかの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G116 | Graphics | — | たこあげの挿絵（figN_N.png、横N×縦N）入る | `［＃たこあげの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G117 | Graphics | — | たんぽぽの図（figN_N.png、横N×縦N）入る | `［＃たんぽぽの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G118 | Graphics | — | だいがくの図（figN_N.png）入る | `［＃だいがくの図（figN_N.png）入る］` | corpus | OBSERVED |
+| G119 | Graphics | — | だちょうの挿絵（figN_N.png、横N×縦N）入る | `［＃だちょうの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G120 | Graphics | — | つるの挿絵（figN_N.png、横N×縦N）入る | `［＃つるの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G121 | Graphics | — | とうもろこしの挿絵（figN_N.png、横N×縦N）入る | `［＃とうもろこしの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G122 | Graphics | — | とびらのからくりの図（figN_N.png、横N×縦N）入る | `［＃とびらのからくりの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G123 | Graphics | — | とらの挿絵（figN_N.png、横N×縦N）入る | `［＃とらの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G124 | Graphics | — | にわとりの挿絵（figN_N.png、横N×縦N）入る | `［＃にわとりの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G125 | Graphics | — | にんじんのアルバムの挿絵（figN_N.png、横N×縦N）入る | `［＃にんじんのアルバムの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G126 | Graphics | — | にんじんよりルピック氏への書簡一束ならびにルピック氏よりにんじんへの返事若干の挿絵（figN_N.png、横N×縦N）入る | `［＃にんじんよりルピック氏への書簡一束ならびにルピック氏よりにんじんへの返事若干の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G127 | Graphics | — | ねこの挿絵（figN_N.png、横N×縦N）入る | `［＃ねこの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G128 | Graphics | — | ねまき（ピジャマ）の挿絵（figN_N.png）入る | `［＃ねまき（ピジャマ）の挿絵（figN_N.png）入る］` | corpus | OBSERVED |
+| G129 | Graphics | — | はくちょうの挿絵（figN_N.png、横N×縦N）入る | `［＃はくちょうの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G130 | Graphics | — | はとの挿絵（figN_N.png、横N×縦N）入る | `［＃はとの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G131 | Graphics | — | はりつけの獣の挿図（figN_N.png、横N×縦N）入る | `［＃はりつけの獣の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G132 | Graphics | — | ばったの挿絵（figN_N.png、横N×縦N）入る | `［＃ばったの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G133 | Graphics | — | ひげこの図（figN_N.png）入る | `［＃ひげこの図（figN_N.png）入る］` | corpus | OBSERVED |
+| G134 | Graphics | — | ひめだるまの写真（figN_Npng、横N×縦N）入る | `［＃ひめだるまの写真（figN_Npng、横N×縦N）入る］` | corpus | OBSERVED |
+| G135 | Graphics | — | ひょうの挿絵（figN_N.png、横N×縦N）入る | `［＃ひょうの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G136 | Graphics | — | ふくろうの挿絵（figN_N.png、横N×縦N）入る | `［＃ふくろうの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G137 | Graphics | — | へちまの挿絵（figN_N.png、横N×縦N）入る | `［＃へちまの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G138 | Graphics | — | べにすずめの挿絵（figN_N.png、横N×縦N）入る | `［＃べにすずめの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G139 | Graphics | — | ほうじゃくの挿図（figN_N.png、横N×縦N）入る | `［＃ほうじゃくの挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G140 | Graphics | — | ほっきょくぐまの挿絵（figN_N.png、横N×縦N）入る | `［＃ほっきょくぐまの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G141 | Graphics | — | めぼその巣の挿図（figN_N.png、横N×縦N）入る | `［＃めぼその巣の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G142 | Graphics | — | らいちょうの足跡の挿図（figN_N.png、横N×縦N）入る | `［＃らいちょうの足跡の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G143 | Graphics | — | らくだの挿絵（figN_N.png、横N×縦N）入る | `［＃らくだの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G144 | Graphics | — | アガアトの挿絵（figN_N.png、横N×縦N）入る | `［＃アガアトの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G145 | Graphics | — | アトリエ内の配置図（figN_N.png）入る | `［＃アトリエ内の配置図（figN_N.png）入る］` | corpus | OBSERVED |
+| G146 | Graphics | — | アムンセンの北極横断飛行路図（figN_N.png、横N×縦N）入る | `［＃アムンセンの北極横断飛行路図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G147 | Graphics | — | アラスカの図（figN_N.png、横N×縦N）入る | `［＃アラスカの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G148 | Graphics | — | アーサー・ヒル・ハッサルの図（figN_N.png、横N×縦N）入る | `［＃アーサー・ヒル・ハッサルの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G149 | Graphics | — | イロハニホの五種の事実の図（figN_N.png、横N×縦N）入る | `［＃イロハニホの五種の事実の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G150 | Graphics | — | エゾ松の挿図（figN_N.png、横N×縦N）入る | `［＃エゾ松の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G151 | Graphics | — | エレン夫人の図（figN_N.png、横N×縦N）入る | `［＃エレン夫人の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G152 | Graphics | — | オノリイヌの挿絵（figN_N.png、横N×縦N）入る | `［＃オノリイヌの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G153 | Graphics | — | オルト－チロシン、メタ－チロシン、ホモゲンチジン酸の化学構造式の図（figN_N.png、横N×縦N）入る | `［＃オルト－チロシン、メタ－チロシン、ホモゲンチジン酸の化学構造式の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G154 | Graphics | — | カナリアの挿絵（figN_N.png、横N×縦N）入る | `［＃カナリアの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G155 | Graphics | — | カニの絵の図（figN_N.png、横N×縦N）入る | `［＃カニの絵の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G156 | Graphics | — | ガス燈の図（figN_N.png）入る | `［＃ガス燈の図（figN_N.png）入る］` | corpus | OBSERVED |
+| G157 | Graphics | — | キバタンの挿絵（figN_N.png、横N×縦N）入る | `［＃キバタンの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G158 | Graphics | — | キャプション付きの図N（figN_N.png、横N×縦N）入る | `［＃キャプション付きの図N（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G159 | Graphics | — | キャプション付きの表N（figN_N.png、横N×縦N）入る | `［＃キャプション付きの表N（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G160 | Graphics | — | クリスチナ・ロセチの図（figN_N.png、横N×縦N）入る | `［＃クリスチナ・ロセチの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G161 | Graphics | — | グラスの図（figN_N.png、横N×縦N）入る | `［＃グラスの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G162 | Graphics | — | グリフォンと愛ちやんと海龜の図（figN_N.png、横N×縦N）入る | `［＃グリフォンと愛ちやんと海龜の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G163 | Graphics | — | グリーンランドの図（figN_N.png、横N×縦N）入る | `［＃グリーンランドの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G164 | Graphics | — | グルグル廻りの図（figN_N.png、横N×縦N）入る | `［＃グルグル廻りの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G165 | Graphics | — | ゲンチジン酸、N，N－ジヒドロキシ安息香酸、プロトカテク酸＝N，N－ジヒドロキシ安息香酸の化学構造式の図（figN_N.png、横N×縦N）入る | `［＃ゲンチジン酸、N，N－ジヒドロキシ安息香酸、プロトカテク酸＝N，N－ジヒドロキシ安息香酸の化学構造式の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G166 | Graphics | — | ココアの図（figN_N.png、横N×縦N）入る | `［＃ココアの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G167 | Graphics | — | コンドル博士の図（figN_N.png）入る | `［＃コンドル博士の図（figN_N.png）入る］` | corpus | OBSERVED |
+| G168 | Graphics | — | シエラ・ネバダの高地の図（figN_N.png、横N×縦N）入る | `［＃シエラ・ネバダの高地の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G169 | Graphics | — | シンガポールの風景の挿絵（figN_N.png）入る | `［＃シンガポールの風景の挿絵（figN_N.png）入る］` | corpus | OBSERVED |
+| G170 | Graphics | — | ダリヤの図（figN_N.png、横N×縦N）入る | `［＃ダリヤの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G171 | Graphics | — | チロシン、パラ－ヒドロキシ－フェニルピルビン酸、中間体、ヒドロキノン　ピルビン酸、ホモゲンチジン酸の化学構造式の図（figN_N.png、横N×縦N）入る | `［＃チロシン、パラ－ヒドロキシ－フェニルピルビン酸、中間体、ヒドロキノン　ピルビン酸、ホモゲンチジン酸の化学構造式の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G172 | Graphics | — | チロシン、フェニルアラニン、ホモゲンチジン酸の化学構造式の図（figN_N.png、横N×縦N）入る | `［＃チロシン、フェニルアラニン、ホモゲンチジン酸の化学構造式の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G173 | Graphics | — | トリプトファンの化学構造式の図（figN_N.png、横N×縦N）入る | `［＃トリプトファンの化学構造式の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G174 | Graphics | — | ネバダ州の図（figN_N.png、横N×縦N）入る | `［＃ネバダ州の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G175 | Graphics | — | ハワイ群島の図（figN_N.png、横N×縦N）入る | `［＃ハワイ群島の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G176 | Graphics | — | パラオキシフェニル－α－乳酸とパラオキシフェニルピルビン酸の化学構造式の図（figN_N.png、横N×縦N）入る | `［＃パラオキシフェニル－α－乳酸とパラオキシフェニルピルビン酸の化学構造式の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G177 | Graphics | — | パリでの写真（figN_N.png、横N×縦N）入る | `［＃パリでの写真（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G178 | Graphics | — | パリの手書きの地図（figN_N.png）入る | `［＃パリの手書きの地図（figN_N.png）入る］` | corpus | OBSERVED |
+| G179 | Graphics | — | パンのかけらの挿絵（figN_N.png、横N×縦N）入る | `［＃パンのかけらの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G180 | Graphics | — | ヒドロキノン－α－乳酸＝N，N－ジヒドロキシフェニル－α－乳酸の化学構造式の図（figN_N.png、横N×縦N）入る | `［＃ヒドロキノン－α－乳酸＝N，N－ジヒドロキシフェニル－α－乳酸の化学構造式の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G181 | Graphics | — | ファラデーの墓標の挿絵（figN_N.png、横N×縦N）入る | `［＃ファラデーの墓標の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G182 | Graphics | — | ファラデーの肖像画の挿絵（figN_N.png、横N×縦N）入る | `［＃ファラデーの肖像画の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G183 | Graphics | — | フェニルアラニン、フェニル－α－乳酸、フェニルピルビン酸、フェニル－β－乳酸、フェニルグリセリン酸の化学構造式の図（figN_N.png、横N×縦N）入る | `［＃フェニルアラニン、フェニル－α－乳酸、フェニルピルビン酸、フェニル－β－乳酸、フェニルグリセリン酸の化学構造式の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G184 | Graphics | — | フラスコの図（figN_N.png、横N×縦N）入る | `［＃フラスコの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G185 | Graphics | — | フリーメーソン暗号の図（figN_N.png、横N×縦N）入る | `［＃フリーメーソン暗号の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G186 | Graphics | — | ブドウの図（figN_N.png、横N×縦N）入る | `［＃ブドウの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G187 | Graphics | — | ブリュネットの死の挿絵（figN_N.png、横N×縦N）入る | `［＃ブリュネットの死の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G188 | Graphics | — | ブルタスのごとくの挿絵（figN_N.png、横N×縦N）入る | `［＃ブルタスのごとくの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G189 | Graphics | — | ベースボールの競技場の図（figN_N.png、横N×縦N）入る | `［＃ベースボールの競技場の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G190 | Graphics | — | ペリカンの挿絵（figN_N.png、横N×縦N）入る | `［＃ペリカンの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G191 | Graphics | — | ペンの挿絵（figN_N.png、横N×縦N）入る | `［＃ペンの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G192 | Graphics | — | ホモゲンチジン酸＝N，N－ジヒドロキシフェニル酢酸＝ヒドロキノン－酢酸の化学構造式の図（figN_N.png、横N×縦N）入る | `［＃ホモゲンチジン酸＝N，N－ジヒドロキシフェニル酢酸＝ヒドロキノン－酢酸の化学構造式の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G193 | Graphics | — | ボヘミア周辺地図の図（figN_N.png、横N×縦N）入る | `［＃ボヘミア周辺地図の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G194 | Graphics | — | ボール短册の写真（figN_N.png、横N×縦N）入る | `［＃ボール短册の写真（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G195 | Graphics | — | ポールに日の丸の絵。てっぺんから斜めにN本のロープが下がり、小旗が沢山つけられているの図（figN_N.png、横N×縦N）入る | `［＃ポールに日の丸の絵。てっぺんから斜めにN本のロープが下がり、小旗が沢山つけられているの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G196 | Graphics | — | マチルドの挿絵（figN_N.png、横N×縦N）入る | `［＃マチルドの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G197 | Graphics | — | ミズリイ河流域の図（figN_N.png、横N×縦N）入る | `［＃ミズリイ河流域の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G198 | Graphics | — | メイエルホリド「○○」のまわり舞台の上から見た図（figN_N.png、横N×縦N）入る | `［＃メイエルホリド「○○」のまわり舞台の上から見た図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G199 | Graphics | — | メランコンカーの文字反転の図（figN_N.png、横N×縦N）入る | `［＃メランコンカーの文字反転の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G200 | Graphics | — | メンデレーエフの元素週期表の図（figN_N.png、横N×縦N）入る | `［＃メンデレーエフの元素週期表の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G201 | Graphics | — | モンテーニュの塔の各階平面図（figN_N.png、横N×縦N）入る | `［＃モンテーニュの塔の各階平面図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G202 | Graphics | — | ライオンの挿絵（figN_N.png、横N×縦N）入る | `［＃ライオンの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G203 | Graphics | — | ラクラメソシヤーの文字反転の図（figN_N.png、横N×縦N）入る | `［＃ラクラメソシヤーの文字反転の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G204 | Graphics | — | ラッパの挿絵（figN_N.png、横N×縦N）入る | `［＃ラッパの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G205 | Graphics | — | ラムプの図（figN_N.png、横N×縦N）入る | `［＃ラムプの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G206 | Graphics | — | ランプのホヤの幻影の図（figN_N.png、横N×縦N）入る | `［＃ランプのホヤの幻影の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G207 | Graphics | — | ランプの図（figN_N.png）入る | `［＃ランプの図（figN_N.png）入る］` | corpus | OBSERVED |
+| G208 | Graphics | — | リヴィングストーンとスタンレーの行路図（figN_N.png、横N×縦N）入る | `［＃リヴィングストーンとスタンレーの行路図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G209 | Graphics | — | ワンピースの胴によせるひだの図（figN_N.png）入る | `［＃ワンピースの胴によせるひだの図（figN_N.png）入る］` | corpus | OBSERVED |
+| G210 | Graphics | — | 一八三六年におけるモンテーニュ邸平面図（figN_N.png、横N×縦N）入る | `［＃一八三六年におけるモンテーニュ邸平面図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G211 | Graphics | — | 七面山の不二の挿図（figN_N.png、横N×縦N）入る | `［＃七面山の不二の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G212 | Graphics | — | 七面鳥の挿絵（figN_N.png、横N×縦N）入る | `［＃七面鳥の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G213 | Graphics | — | 上海の図（figN_N.png、横N×縦N）入る | `［＃上海の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G214 | Graphics | — | 下廊下の挿図（figN_N.png、横N×縦N）入る | `［＃下廊下の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G215 | Graphics | — | 下関海戦絵図N（figN_N.png、横N×縦N）入る | `［＃下関海戦絵図N（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G216 | Graphics | — | 両統迭立時代の天皇家系図（figN_N.png、横N×縦N）入る | `［＃両統迭立時代の天皇家系図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G217 | Graphics | — | 中垣（世田ヶ谷時代）の口絵の図（figN_N.png、横N×縦N）入る | `［＃中垣（世田ヶ谷時代）の口絵の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G218 | Graphics | — | 中扉の図（figN_N.png、横N×縦N）入る | `［＃中扉の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G219 | Graphics | — | 中門の写真（figN_N.png、横N×縦N）入る | `［＃中門の写真（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G220 | Graphics | — | 丸＜真の図（figN_N.png、横N×縦N）入る | `［＃丸＜真の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G221 | Graphics | — | 二つの風船のへだたりの図（figN_N.png、横N×縦N）入る | `［＃二つの風船のへだたりの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G222 | Graphics | — | 二十八葉橄欖冠の図（figN_N.png、横N×縦N）入る | `［＃二十八葉橄欖冠の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G223 | Graphics | — | 二本の毛の顕微鏡下の図（figN_N.png、横N×縦N）入る | `［＃二本の毛の顕微鏡下の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G224 | Graphics | — | 二本の角の生えたいびつな方形の枠の上に斜に一本の棒を横たえた図形（figN_N.png、横N×縦N）入る | `［＃二本の角の生えたいびつな方形の枠の上に斜に一本の棒を横たえた図形（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G225 | Graphics | — | 二等辺三角形の家の間取り図（figN_N.png）入る | `［＃二等辺三角形の家の間取り図（figN_N.png）入る］` | corpus | OBSERVED |
+| G226 | Graphics | — | 京山人百樹押印の図（figN_N.png、横N×縦N）入る | `［＃京山人百樹押印の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G227 | Graphics | — | 京水岩瀬百鶴の押印の図（figN_N.png、横N×縦N）入る | `［＃京水岩瀬百鶴の押印の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G228 | Graphics | — | 京水百鶴押印の図（figN_N.png、横N×縦N）入る | `［＃京水百鶴押印の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G229 | Graphics | — | 人の文字の図（figN_N.png、横N×縦N）入る | `［＃人の文字の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G230 | Graphics | — | 人形を抱く女の子の挿絵（figN_N.png、横N×縦N）入る | `［＃人形を抱く女の子の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G231 | Graphics | — | 人物の図（figN_N.png、横N×縦N）入る | `［＃人物の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G232 | Graphics | — | 人生の橋の図（figN_N.png、横N×縦N）入る | `［＃人生の橋の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G233 | Graphics | — | 仇討の挿絵（figN_N.png、横N×縦N）入る | `［＃仇討の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G234 | Graphics | — | 仕切りの板戸の図（figN_N.png、横N×縦N）入る | `［＃仕切りの板戸の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G235 | Graphics | — | 付近一帯の地図の画像（figN_N.png、横N×縦N）入る | `［＃付近一帯の地図の画像（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G236 | Graphics | — | 仙人の湯の挿図（figN_N.png、横N×縦N）入る | `［＃仙人の湯の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G237 | Graphics | — | 仮説決闘の図（figN_N.png、横N×縦N）入る | `［＃仮説決闘の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G238 | Graphics | — | 伸ばした針金の道具の図（figN_N.png、横N×縦N）入る | `［＃伸ばした針金の道具の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G239 | Graphics | — | 伸子と花瓶の位置の図（figN_N.png、横N×縦N）入る | `［＃伸子と花瓶の位置の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G240 | Graphics | — | 余の自宅の略図の図（figN_N.png、横N×縦N）入る | `［＃余の自宅の略図の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G241 | Graphics | — | 倉田家の間取りの図（figN_N.png、横N×縦N）入る | `［＃倉田家の間取りの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G242 | Graphics | — | 倭文荘の例の図（figN_N.png、横N×縦N）入る | `［＃倭文荘の例の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G243 | Graphics | — | 元日の挿絵（figN_N.png、横N×縦N）入る | `［＃元日の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G244 | Graphics | — | 光明氏による枕草子諸本系統の図（figN_N.png、横N×縦N）入る | `［＃光明氏による枕草子諸本系統の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G245 | Graphics | — | 兎の挿絵（figN_N.png、横N×縦N）入る | `［＃兎の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G246 | Graphics | — | 入力者註：底本では「○○」「○○」が共に使われているが、「○○」に統一した。混用すると作者の意図と別の意味が生じると思われるからである。また、書かれた時代から考えると「○○」で統一すべきかもしれないが、この童話を今読むためには「○○」が良いだろうと考えた。 | `［＃入力者註：底本では「○○」「○○」が共に使われているが、「○○」に統一した。混用すると作者の意図と別の意味が生じると思われるからである。また、書かれた時代から考えると「○○」で統一すべきかもしれないが、この童話を今読むためには「○○」が良いだろうと考えた。］` | corpus | OBSERVED |
+| G247 | Graphics | — | 六月賣雪図（figN_N.png、横N×縦N）入る | `［＃六月賣雪図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G248 | Graphics | — | 内、心、外の図（figN_N.png、横N×縦N）入る | `［＃内、心、外の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G249 | Graphics | — | 写真（figN_N.png、横N×縦N）入る | `［＃写真（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G250 | Graphics | — | 切り絵の肖像の挿絵（figN_N.png）入る | `［＃切り絵の肖像の挿絵（figN_N.png）入る］` | corpus | OBSERVED |
+| G251 | Graphics | — | 劔の大窓雪渓の挿図（figN_N.png、横N×縦N）入る | `［＃劔の大窓雪渓の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G252 | Graphics | — | 加役人足寄場絵図（figN_N.png、横N×縦N）入る | `［＃加役人足寄場絵図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G253 | Graphics | — | 動物の図（figN_N.png、横N×縦N）入る | `［＃動物の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G254 | Graphics | — | 化学講義の図（figN_N.png、横N×縦N）入る | `［＃化学講義の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G255 | Graphics | — | 北アメリカの図（figN_N.png、横N×縦N）入る | `［＃北アメリカの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G256 | Graphics | — | 北鎮岳の挿図（figN_N.png、横N×縦N）入る | `［＃北鎮岳の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G257 | Graphics | — | 十二宮の円華窓の図（figN_N.png、横N×縦N）入る | `［＃十二宮の円華窓の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G258 | Graphics | — | 十二宮の解読図（figN_N.png、横N×縦N）入る | `［＃十二宮の解読図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G259 | Graphics | — | 十四郎の居間付近の図（figN_N.png、横N×縦N）入る | `［＃十四郎の居間付近の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G260 | Graphics | — | 叛旗の挿絵（figN_N.png、横N×縦N）入る | `［＃叛旗の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G261 | Graphics | — | 口絵の雪の結晶写真（figN_N.png、横N×縦N）入る | `［＃口絵の雪の結晶写真（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G262 | Graphics | — | 右図の解説文、底本では横組み | `［＃右図の解説文、底本では横組み］` | corpus | OBSERVED |
+| G263 | Graphics | — | 右図の解説文終わり | `［＃右図の解説文終わり］` | corpus | OBSERVED |
+| G264 | Graphics | — | 各人の位置の図（figN_N.png）入る | `［＃各人の位置の図（figN_N.png）入る］` | corpus | OBSERVED |
+| G265 | Graphics | — | 同一の事件に対する罰の相違の図（figN_N.png、横N×縦N）入る | `［＃同一の事件に対する罰の相違の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G266 | Graphics | — | 名づけ親の挿絵（figN_N.png、横N×縦N）入る | `［＃名づけ親の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G267 | Graphics | — | 嘴と翼をもつ河童の図（figN_N.png）入る | `［＃嘴と翼をもつ河童の図（figN_N.png）入る］` | corpus | OBSERVED |
+| G268 | Graphics | — | 四つん這いの河童の図（figN_N.png）入る | `［＃四つん這いの河童の図（figN_N.png）入る］` | corpus | OBSERVED |
+| G269 | Graphics | — | 四人の位置関係を示す図（figN_N.png）入る | `［＃四人の位置関係を示す図（figN_N.png）入る］` | corpus | OBSERVED |
+| G270 | Graphics | — | 四神之御札の図（figN_N.png、横N×縦N）入る | `［＃四神之御札の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G271 | Graphics | — | 回転式拳銃の弾倉の断面図（figN_N.png、横N×縦N）入る | `［＃回転式拳銃の弾倉の断面図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G272 | Graphics | — | 図N、「○○」 | `［＃図N、「○○」］` | corpus | OBSERVED |
+| G273 | Graphics | — | 図N、「○○」に丸囲みの手書き文字。「○○」は小さく頭の部分が「○○」の下隙間に入る | `［＃図N、「○○」に丸囲みの手書き文字。「○○」は小さく頭の部分が「○○」の下隙間に入る］` | corpus | OBSERVED |
+| G274 | Graphics | — | 図N、「○○」の下に小さい「○○」の絵 | `［＃図N、「○○」の下に小さい「○○」の絵］` | corpus | OBSERVED |
+| G275 | Graphics | — | 図N、インク壺の絵 | `［＃図N、インク壺の絵］` | corpus | OBSERVED |
+| G276 | Graphics | — | 図N、中世にヨーロッパで用いられた地図 | `［＃図N、中世にヨーロッパで用いられた地図］` | corpus | OBSERVED |
+| G277 | Graphics | — | 図N、右手前に煙突、煙突には三角の屋根、左奥には家の屋根の左端を描いた絵 | `［＃図N、右手前に煙突、煙突には三角の屋根、左奥には家の屋根の左端を描いた絵］` | corpus | OBSERVED |
+| G278 | Graphics | — | 図N、唇の絵 | `［＃図N、唇の絵］` | corpus | OBSERVED |
+| G279 | Graphics | — | 図N、大畜 | `［＃図N、大畜］` | corpus | OBSERVED |
+| G280 | Graphics | — | 図N、家の間取り | `［＃図N、家の間取り］` | corpus | OBSERVED |
+| G281 | Graphics | — | 図N、家の間取り図。凸形の間取り。左が「○○」、上が「○○」と「○○」、右が部屋と「○○」（濡れ縁と縁側がＬ状になっている）、中央に廊下と階段。 | `［＃図N、家の間取り図。凸形の間取り。左が「○○」、上が「○○」と「○○」、右が部屋と「○○」（濡れ縁と縁側がＬ状になっている）、中央に廊下と階段。］` | corpus | OBSERVED |
+| G282 | Graphics | — | 図N、手書き右下がりの三角 | `［＃図N、手書き右下がりの三角］` | corpus | OBSERVED |
+| G283 | Graphics | — | 図N、手書き縦線N本 | `［＃図N、手書き縦線N本］` | corpus | OBSERVED |
+| G284 | Graphics | — | 図N、油つぼの絵 | `［＃図N、油つぼの絵］` | corpus | OBSERVED |
+| G285 | Graphics | — | 図N、湿度・気温・気圧曲線 | `［＃図N、湿度・気温・気圧曲線］` | corpus | OBSERVED |
+| G286 | Graphics | — | 図N、看板の絵。二等辺三角形の下に縦線 | `［＃図N、看板の絵。二等辺三角形の下に縦線］` | corpus | OBSERVED |
+| G287 | Graphics | — | 図N、眼底の図、二点 | `［＃図N、眼底の図、二点］` | corpus | OBSERVED |
+| G288 | Graphics | — | 図N、知的生活の構造 | `［＃図N、知的生活の構造］` | corpus | OBSERVED |
+| G289 | Graphics | — | 図N、祝い箸の絵 | `［＃図N、祝い箸の絵］` | corpus | OBSERVED |
+| G290 | Graphics | — | 図N、絵「○○」 | `［＃図N、絵「○○」］` | corpus | OBSERVED |
+| G291 | Graphics | — | 図N、絵「○○」の文字、胴に数本の縦縞と「○○」の文字」 | `［＃図N、絵「○○」の文字、胴に数本の縦縞と「○○」の文字」］` | corpus | OBSERVED |
+| G292 | Graphics | — | 図N、縦書き手書きで「○○」。その周りにN重に雲形の線 | `［＃図N、縦書き手書きで「○○」。その周りにN重に雲形の線］` | corpus | OBSERVED |
+| G293 | Graphics | — | 図N、花の絵 | `［＃図N、花の絵］` | corpus | OBSERVED |
+| G294 | Graphics | — | 図N、花マルのようなマーク | `［＃図N、花マルのようなマーク］` | corpus | OBSERVED |
+| G295 | Graphics | — | 図N、花瓶に活けられた花の絵 | `［＃図N、花瓶に活けられた花の絵］` | corpus | OBSERVED |
+| G296 | Graphics | — | 図N、草の絵 | `［＃図N、草の絵］` | corpus | OBSERVED |
+| G297 | Graphics | — | 図N、諸国使者の着席順序 | `［＃図N、諸国使者の着席順序］` | corpus | OBSERVED |
+| G298 | Graphics | — | 図N、顔の絵 | `［＃図N、顔の絵］` | corpus | OBSERVED |
+| G299 | Graphics | — | 図N入る | `［＃図N入る］` | corpus | OBSERVED |
+| G300 | Graphics | — | 図N（figN_N.png、横N×縦N）入る | `［＃図N（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G301 | Graphics | — | 図N～図Nは、右から続く一葉 | `［＃図N～図Nは、右から続く一葉］` | corpus | OBSERVED |
+| G302 | Graphics | — | 図「○○」PN、「○○」PN | `［＃図「○○」PN、「○○」PN］` | corpus | OBSERVED |
+| G303 | Graphics | — | 図「○○」入る、PN | `［＃図「○○」入る、PN］` | corpus | OBSERVED |
+| G304 | Graphics | — | 図が入るが省略。底本Nページ | `［＃図が入るが省略。底本Nページ］` | corpus | OBSERVED |
+| G305 | Graphics | — | 図は省略 | `［＃図は省略］` | corpus | OBSERVED |
+| G306 | Graphics | — | 図形　□（四角）に内接する◆ | `［＃図形　□（四角）に内接する◆］` | corpus | OBSERVED |
+| G307 | Graphics | — | 図版（figN_N.png、横N×縦N）入る | `［＃図版（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G308 | Graphics | — | 図省略 | `［＃図省略］` | corpus | OBSERVED |
+| G309 | Graphics | — | 図（figN_N.png、横N×縦N）入る | `［＃図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G310 | Graphics | — | 図（figN_N.png）入る | `［＃図（figN_N.png）入る］` | corpus | OBSERVED |
+| G311 | Graphics | — | 園丁の図（figN_N.png、横N×縦N）入る | `［＃園丁の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G312 | Graphics | — | 土竜の挿絵（figN_N.png、横N×縦N）入る | `［＃土竜の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G313 | Graphics | — | 地図N（figN_N.png、横N×縦N）入る | `［＃地図N（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G314 | Graphics | — | 地図（figN_N.png、横N×縦N）入る | `［＃地図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G315 | Graphics | — | 地面と野菜の図（figN_N.png、横N×縦N）入る | `［＃地面と野菜の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G316 | Graphics | — | 城の絵図面の図（figN_N.png、横N×縦N）入る | `［＃城の絵図面の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G317 | Graphics | — | 墓こうの周囲の図（figN_N.png、横N×縦N）入る | `［＃墓こうの周囲の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G318 | Graphics | — | 壺の挿絵（figN_N.png、横N×縦N）入る | `［＃壺の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G319 | Graphics | — | 変形児の図（figN_N.png、横N×縦N）入る | `［＃変形児の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G320 | Graphics | — | 夢の宿屋の間取り図（figN_N.png）入る | `［＃夢の宿屋の間取り図（figN_N.png）入る］` | corpus | OBSERVED |
+| G321 | Graphics | — | 大事出来の挿絵（figN_N.png、横N×縦N）入る | `［＃大事出来の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G322 | Graphics | — | 大洞万之丞の家の建てざまの図（figN_N.png、横N×縦N）入る | `［＃大洞万之丞の家の建てざまの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G323 | Graphics | — | 大洞家の平面図（figN_N.png、横N×縦N）入る | `［＃大洞家の平面図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G324 | Graphics | — | 大隈伯爵邸臺所の畫の図（figN_N.png、横N×縦N）入る | `［＃大隈伯爵邸臺所の畫の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G325 | Graphics | — | 天のさかほこの図（figN_N.png、横N×縦N）入る | `［＃天のさかほこの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G326 | Graphics | — | 天のさかほこをまむきに見た図（figN_N.png、横N×縦N）入る | `［＃天のさかほこをまむきに見た図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G327 | Graphics | — | 天女ヶ原の疎林と十勝岳の挿図（figN_N.png、横N×縦N）入る | `［＃天女ヶ原の疎林と十勝岳の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G328 | Graphics | — | 失楽園の間取り図（figN_N.png、横N×縦N）入る | `［＃失楽園の間取り図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G329 | Graphics | — | 奥付裏カットの図（figN_N.png、横N×縦N）入る | `［＃奥付裏カットの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G330 | Graphics | — | 女性と犬の挿絵（figN_N.png、横N×縦N）入る | `［＃女性と犬の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G331 | Graphics | — | 子供が描いた地図入る：星形の都市を川が横断し、鉄道が縦断、中央に運動グラウンドとレーニン記念像、西側と北側に住宅・労働者クラブ、東側に天文学校・小学校（四年制、七年制、九年制）・職業学校・託児所・子供の遊び場・ピオニェールのクラブ、都市の周囲にはソヴェト農場「○○」、川沿いに都市に近い側から皮革工場・織物工場・染工場・紡績工場・発電所・ピオニェール野営所がある。ピオニェール＝開拓者（パイオニア）、旧ソ連の少年団 | `［＃子供が描いた地図入る：星形の都市を川が横断し、鉄道が縦断、中央に運動グラウンドとレーニン記念像、西側と北側に住宅・労働者クラブ、東側に天文学校・小学校（四年制、七年制、九年制）・職業学校・託児所・子供の遊び場・ピオニェールのクラブ、都市の周囲にはソヴェト農場「○○」、川沿いに都市に近い側から皮革工場・織物工場・染工場・紡績工場・発電所・ピオニェール野営所がある。ピオニェール＝開拓者（パイオニア）、旧ソ連の少年団］` | corpus | OBSERVED |
+| G332 | Graphics | — | 孔雀の挿絵（figN_N.png、横N×縦N）入る | `［＃孔雀の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G333 | Graphics | — | 定家、為家の後の系譜の図（figN_N.png、横N×縦N）入る | `［＃定家、為家の後の系譜の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G334 | Graphics | — | 定家に至るまでの系譜の図（figN_N.png、横N×縦N）入る | `［＃定家に至るまでの系譜の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G335 | Graphics | — | 宝剣岳の挿図（figN_N.png、横N×縦N）入る | `［＃宝剣岳の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G336 | Graphics | — | 宝島の地図（figN_N.png、横N×縦N）入る | `［＃宝島の地図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G337 | Graphics | — | 実験の図（figN_N.png、横N×縦N）入る | `［＃実験の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G338 | Graphics | — | 客間の配置図（figN_N.png）入る | `［＃客間の配置図（figN_N.png）入る］` | corpus | OBSERVED |
+| G339 | Graphics | — | 室の見取図に二重の半円を描いた図（figN_N.png、横N×縦N）入る | `［＃室の見取図に二重の半円を描いた図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G340 | Graphics | — | 室内の灯光による柱にかけたる着物の幻影の図（figN_N.png、横N×縦N）入る | `［＃室内の灯光による柱にかけたる着物の幻影の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G341 | Graphics | — | 家の見取り図（figN_N.png、横N×縦N）入る | `［＃家の見取り図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G342 | Graphics | — | 家の近くの公園の挿絵（figN_N.png）入る | `［＃家の近くの公園の挿絵（figN_N.png）入る］` | corpus | OBSERVED |
+| G343 | Graphics | — | 家屋と庭の配置図（figN_N.png）入る | `［＃家屋と庭の配置図（figN_N.png）入る］` | corpus | OBSERVED |
+| G344 | Graphics | — | 家系図（figN_N.png、横N×縦N）入る | `［＃家系図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G345 | Graphics | — | 家鴨の挿絵N（figN_N.png、横N×縦N）入る | `［＃家鴨の挿絵N（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G346 | Graphics | — | 容器の図（figN_N.png、横N×縦N）入る | `［＃容器の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G347 | Graphics | — | 專傳をもつて居る六十四人を本として、東漢二百年間に於ける人材分布の樣子の図（figN_N.png、横N×縦N）入る | `［＃專傳をもつて居る六十四人を本として、東漢二百年間に於ける人材分布の樣子の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G348 | Graphics | — | 小屋の挿絵（figN_N.png、横N×縦N）入る | `［＃小屋の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G349 | Graphics | — | 小紋鳥の挿絵（figN_N.png、横N×縦N）入る | `［＃小紋鳥の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G350 | Graphics | — | 小蜂の挿絵（figN_N.png、横N×縦N）入る | `［＃小蜂の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G351 | Graphics | — | 尾籠ながらの挿絵（figN_N.png、横N×縦N）入る | `［＃尾籠ながらの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G352 | Graphics | — | 屋敷の見取り図の画像（figN_N.png、横N×縦N）入る | `［＃屋敷の見取り図の画像（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G353 | Graphics | — | 山家の冬の図（figN_N.png、横N×縦N）入る | `［＃山家の冬の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G354 | Graphics | — | 山羊の挿絵（figN_N.png、横N×縦N）入る | `［＃山羊の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G355 | Graphics | — | 山車・鉾・山の関係の図（figN_N.png）入る | `［＃山車・鉾・山の関係の図（figN_N.png）入る］` | corpus | OBSERVED |
+| G356 | Graphics | — | 岩つばめの宿の挿図（figN_N.png、横N×縦N）入る | `［＃岩つばめの宿の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G357 | Graphics | — | 峡谷俯瞰の挿図（figN_N.png、横N×縦N）入る | `［＃峡谷俯瞰の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G358 | Graphics | — | 峯頭と枯木の挿図（figN_N.png、横N×縦N）入る | `［＃峯頭と枯木の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G359 | Graphics | — | 嵐山のアトリエの地図（figN_N.png）入る | `［＃嵐山のアトリエの地図（figN_N.png）入る］` | corpus | OBSERVED |
+| G360 | Graphics | — | 左図の解説文、底本では横組み | `［＃左図の解説文、底本では横組み］` | corpus | OBSERVED |
+| G361 | Graphics | — | 左図の解説文終わり | `［＃左図の解説文終わり］` | corpus | OBSERVED |
+| G362 | Graphics | — | 巻紙の図（figN_N.png）入る | `［＃巻紙の図（figN_N.png）入る］` | corpus | OBSERVED |
+| G363 | Graphics | — | 巻頭に梅津只圓翁の写真と合わせてN枚の写真あり | `［＃巻頭に梅津只圓翁の写真と合わせてN枚の写真あり］` | corpus | OBSERVED |
+| G364 | Graphics | — | 帝都防空配置図（figN_N.png、横N×縦N）入る | `［＃帝都防空配置図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G365 | Graphics | — | 幼年の日の挿絵（figN_N.png、横N×縦N）入る | `［＃幼年の日の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G366 | Graphics | — | 幾何学の問題の図（figN_N.png）入る | `［＃幾何学の問題の図（figN_N.png）入る］` | corpus | OBSERVED |
+| G367 | Graphics | — | 底本N頁、左上に図あり | `［＃底本N頁、左上に図あり］` | corpus | OBSERVED |
+| G368 | Graphics | — | 底本N頁に「○○」の図がある | `［＃底本N頁に「○○」の図がある］` | corpus | OBSERVED |
+| G369 | Graphics | — | 底本N頁に図あり | `［＃底本N頁に図あり］` | corpus | OBSERVED |
+| G370 | Graphics | — | 底本N頁に地図あり | `［＃底本N頁に地図あり］` | corpus | OBSERVED |
+| G371 | Graphics | — | 底本N頁上に地図あり | `［＃底本N頁上に地図あり］` | corpus | OBSERVED |
+| G372 | Graphics | — | 底本N頁右上に、持久戦争と決戦戦争の移り変わりを示した図あり | `［＃底本N頁右上に、持久戦争と決戦戦争の移り変わりを示した図あり］` | corpus | OBSERVED |
+| G373 | Graphics | — | 底本N頁右上に図あり | `［＃底本N頁右上に図あり］` | corpus | OBSERVED |
+| G374 | Graphics | — | 底本N頁右上に地図あり | `［＃底本N頁右上に地図あり］` | corpus | OBSERVED |
+| G375 | Graphics | — | 底本N頁左に図あり | `［＃底本N頁左に図あり］` | corpus | OBSERVED |
+| G376 | Graphics | — | 底本N頁左上に図あり | `［＃底本N頁左上に図あり］` | corpus | OBSERVED |
+| G377 | Graphics | — | 底本N頁左上に地図あり | `［＃底本N頁左上に地図あり］` | corpus | OBSERVED |
+| G378 | Graphics | — | 底本ではたらの木の写真入る | `［＃底本ではたらの木の写真入る］` | corpus | OBSERVED |
+| G379 | Graphics | — | 底本ではギボウシの写真入る | `［＃底本ではギボウシの写真入る］` | corpus | OBSERVED |
+| G380 | Graphics | — | 底本には、本文と書後の間に松嶺院の写真が一葉挟まっている | `［＃底本には、本文と書後の間に松嶺院の写真が一葉挟まっている］` | corpus | OBSERVED |
+| G381 | Graphics | — | 庭のなかの挿絵（figN_N.png、横N×縦N）入る | `［＃庭のなかの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G382 | Graphics | — | 庭の猫の挿絵（figN_N.png、横N×縦N）入る | `［＃庭の猫の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G383 | Graphics | — | 引力と距離の関係図（イ）（ロ）（ハ）の図（figN_N.png、横N×縦N）入る | `［＃引力と距離の関係図（イ）（ロ）（ハ）の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G384 | Graphics | — | 彫刻に表された化物の写真（figN_N.png）入る | `［＃彫刻に表された化物の写真（figN_N.png）入る］` | corpus | OBSERVED |
+| G385 | Graphics | — | 影像の猟人の挿絵（figN_N.png、横N×縦N）入る | `［＃影像の猟人の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G386 | Graphics | — | 後ろ向きの河童の図（figN_N.png）入る | `［＃後ろ向きの河童の図（figN_N.png）入る］` | corpus | OBSERVED |
+| G387 | Graphics | — | 後嵯峨天皇の後の系譜の図（figN_N.png、横N×縦N）入る | `［＃後嵯峨天皇の後の系譜の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G388 | Graphics | — | 心体、心象、物界の図（figN_N.png、横N×縦N）入る | `［＃心体、心象、物界の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G389 | Graphics | — | 悪夢の挿絵（figN_N.png、横N×縦N）入る | `［＃悪夢の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G390 | Graphics | — | 情報局の壁の模様の図（figN_N.png）入る | `［＃情報局の壁の模様の図（figN_N.png）入る］` | corpus | OBSERVED |
+| G391 | Graphics | — | 慰霊碑絵図N（figN_N.png、横N×縦N）入る | `［＃慰霊碑絵図N（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G392 | Graphics | — | 所ノ沢の赤石岳の挿図（figN_N.png、横N×縦N）入る | `［＃所ノ沢の赤石岳の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G393 | Graphics | — | 所ノ沢越えの聖岳の挿図（figN_N.png、横N×縦N）入る | `［＃所ノ沢越えの聖岳の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G394 | Graphics | — | 扉の挿絵（figN_N.png、横N×縦N）入る | `［＃扉の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G395 | Graphics | — | 扉の挿絵（figN_Npng、横N×縦N）入る | `［＃扉の挿絵（figN_Npng、横N×縦N）入る］` | corpus | OBSERVED |
+| G396 | Graphics | — | 手帳の図（figN_N.png、横N×縦N）入る | `［＃手帳の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G397 | Graphics | — | 手書きの「○○」のような図（figN_N.png、横N×縦N）入る | `［＃手書きの「○○」のような図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G398 | Graphics | — | 把手のある水差しの絵の図（figN_N.png、横N×縦N）入る | `［＃把手のある水差しの絵の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G399 | Graphics | — | 抽斗式レコードキャビネットの横枠を浅く刳りぬいた図（figN_N.png、横N×縦N）入る | `［＃抽斗式レコードキャビネットの横枠を浅く刳りぬいた図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G400 | Graphics | — | 挿絵N（figN_N.png、横N×縦N）入る | `［＃挿絵N（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G401 | Graphics | — | 挿絵N（figN_N.png、横×縦）入る | `［＃挿絵N（figN_N.png、横×縦）入る］` | corpus | OBSERVED |
+| G402 | Graphics | — | 挿絵（figN_N.png、横N×縦N）入る | `［＃挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G403 | Graphics | — | 挿絵（figN_N.png）入る | `［＃挿絵（figN_N.png）入る］` | corpus | OBSERVED |
+| G404 | Graphics | — | 数字と妙な記号の図（figN_N.png、横N×縦N）入る | `［＃数字と妙な記号の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G405 | Graphics | — | 数寄屋橋夜景の図（figN_N.png）入る | `［＃数寄屋橋夜景の図（figN_N.png）入る］` | corpus | OBSERVED |
+| G406 | Graphics | — | 数式（N立方センチ／N平方キロ＝N.N立方メートル／（N×N,N,N平方メートル）＝N.Nメートル）の図（figN_N.png、横N×縦N）入る | `［＃数式（N立方センチ／N平方キロ＝N.N立方メートル／（N×N,N,N平方メートル）＝N.Nメートル）の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G407 | Graphics | — | 数式（hυ）／（c^N）の図（figN_N.png、横N×縦N）入る | `［＃数式（hυ）／（c^N）の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G408 | Graphics | — | 数式（mc^N＋E）／√（N－v^N／c^N）の図（figN_N.png、横N×縦N）入る | `［＃数式（mc^N＋E）／√（N－v^N／c^N）の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G409 | Graphics | — | 新しい看板の図（figN_N.png、横N×縦N）入る | `［＃新しい看板の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G410 | Graphics | — | 旅客機内の模様の説明図（figN_N.png）入る | `［＃旅客機内の模様の説明図（figN_N.png）入る］` | corpus | OBSERVED |
+| G411 | Graphics | — | 日本近海の海流図（figN_N.png、横N×縦N）入る | `［＃日本近海の海流図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G412 | Graphics | — | 日課の挿絵（figN_N.png、横N×縦N）入る | `［＃日課の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G413 | Graphics | — | 明治五年利根郡荒山噴火の図（figN_N.png、横N×縦N）入る | `［＃明治五年利根郡荒山噴火の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G414 | Graphics | — | 易者用の写真（figN_N.png）入る | `［＃易者用の写真（figN_N.png）入る］` | corpus | OBSERVED |
+| G415 | Graphics | — | 星からすの挿図（figN_N.png、横N×縦N）入る | `［＃星からすの挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G416 | Graphics | — | 星月夜の挿図（figN_N.png、横N×縦N）入る | `［＃星月夜の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G417 | Graphics | — | 春の雪と月光の挿図（figN_N.png、横N×縦N）入る | `［＃春の雪と月光の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G418 | Graphics | — | 昭和新山の出来た経過を示す図入る | `［＃昭和新山の出来た経過を示す図入る］` | corpus | OBSERVED |
+| G419 | Graphics | — | 昼の三味線の図（figN_N.png、横N×縦N）入る | `［＃昼の三味線の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G420 | Graphics | — | 時雨の図（figN_N.png、横N×縦N）入る | `［＃時雨の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G421 | Graphics | — | 暗号文の図（figN_N.png、横N×縦N）入る | `［＃暗号文の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G422 | Graphics | — | 暗号紙片の図（figN_N.png、横N×縦N）入る | `［＃暗号紙片の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G423 | Graphics | — | 暗号解読の図（figN_N.png、横N×縦N）入る | `［＃暗号解読の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G424 | Graphics | — | 暗夜感電の図（figN_N.png、横N×縦N）入る | `［＃暗夜感電の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G425 | Graphics | — | 最初の鴫の挿絵（figN_N.png、横N×縦N）入る | `［＃最初の鴫の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G426 | Graphics | — | 會元及び三及第者の總數二百四十四人に就いて、當時の人材分布の樣子の図（figN_N.png、横N×縦N）入る | `［＃會元及び三及第者の總數二百四十四人に就いて、當時の人材分布の樣子の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G427 | Graphics | — | 月夜の温泉の祭りの挿図（figN_N.png、横N×縦N）入る | `［＃月夜の温泉の祭りの挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G428 | Graphics | — | 朝月が敵をけちらしふみにじる挿絵（figN_N.png、横N×縦N）入る | `［＃朝月が敵をけちらしふみにじる挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G429 | Graphics | — | 朝鮮の木挽の図（figN_N.png、横N×縦N）入る | `［＃朝鮮の木挽の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G430 | Graphics | — | 木々の間から見た山の挿図（figN_N.png、横N×縦N）入る | `［＃木々の間から見た山の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G431 | Graphics | — | 木の葉の嵐の挿絵（figN_N.png、横N×縦N）入る | `［＃木の葉の嵐の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G432 | Graphics | — | 木を三本組み合わせた図（figN_N.png）入る | `［＃木を三本組み合わせた図（figN_N.png）入る］` | corpus | OBSERVED |
+| G433 | Graphics | — | 木曾御岳の種蒔き爺さんの挿図（figN_N.png、横N×縦N）入る | `［＃木曾御岳の種蒔き爺さんの挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G434 | Graphics | — | 木橋の図（figN_N.png、横N×縦N）入る | `［＃木橋の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G435 | Graphics | — | 本の図（figN_N.png、横N×縦N）入る | `［＃本の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G436 | Graphics | — | 本文中、〔上図〕に該当する図（figN_N.png、横N×縦N）入る | `［＃本文中、〔上図〕に該当する図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G437 | Graphics | — | 本文中、〔前ページ下図〕に該当する図（figN_N.png、横N×縦N）入る | `［＃本文中、〔前ページ下図〕に該当する図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G438 | Graphics | — | 朱欒と鳥居の図（figN_N.png、横N×縦N）入る | `［＃朱欒と鳥居の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G439 | Graphics | — | 李の挿絵（figN_N.png、横N×縦N）入る | `［＃李の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G440 | Graphics | — | 枇杷の図（figN_N.png、横N×縦N）入る | `［＃枇杷の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G441 | Graphics | — | 枯枝の動勢の変化の挿図（figN_N.png、横N×縦N）入る | `［＃枯枝の動勢の変化の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G442 | Graphics | — | 柱の図（figN_N.png、横N×縦N）入る | `［＃柱の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G443 | Graphics | — | 栂池峯と白檜の挿図（figN_N.png、横N×縦N）入る | `［＃栂池峯と白檜の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G444 | Graphics | — | 栗鼠の挿絵（figN_N.png、横N×縦N）入る | `［＃栗鼠の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G445 | Graphics | — | 桐の花とカステラの図（figN_N.png、横N×縦N）入る | `［＃桐の花とカステラの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G446 | Graphics | — | 棚田氏の屋敷の見取図（figN_N.png）入る | `［＃棚田氏の屋敷の見取図（figN_N.png）入る］` | corpus | OBSERVED |
+| G447 | Graphics | — | 槍ヶ岳と穂影ノ池の挿図（figN_N.png、横N×縦N）入る | `［＃槍ヶ岳と穂影ノ池の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G448 | Graphics | — | 横浜館内に出ずる幽霊の図（figN_N.png、横N×縦N）入る | `［＃横浜館内に出ずる幽霊の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G449 | Graphics | — | 樹々の一家の挿絵（figN_N.png、横N×縦N）入る | `［＃樹々の一家の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G450 | Graphics | — | 樹木の写真（figN_N.png、横N×縦N）入る | `［＃樹木の写真（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G451 | Graphics | — | 欝金ざくらの花の図（figN_N.png、横N×縦N）入る | `［＃欝金ざくらの花の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G452 | Graphics | — | 死んだ乳母と John との挿絵（figN_N.png、横N×縦N）入る | `［＃死んだ乳母と John との挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G453 | Graphics | — | 殺人現場の図（figN_N.png、横N×縦N）入る | `［＃殺人現場の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G454 | Graphics | — | 殺人現場の図（figN_N.png）入る | `［＃殺人現場の図（figN_N.png）入る］` | corpus | OBSERVED |
+| G455 | Graphics | — | 毛の顕微鏡下の図（figN_N.png、横N×縦N）入る | `［＃毛の顕微鏡下の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G456 | Graphics | — | 毛虫の挿絵（figN_N.png、横N×縦N）入る | `［＃毛虫の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G457 | Graphics | — | 水の虻の挿絵（figN_N.png、横N×縦N）入る | `［＃水の虻の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G458 | Graphics | — | 水村晩秋の図（figN_N.png、横N×縦N）入る | `［＃水村晩秋の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G459 | Graphics | — | 水浴びの挿絵（figN_N.png、横N×縦N）入る | `［＃水浴びの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G460 | Graphics | — | 永久運動をする装置の図（figN_N.png、横N×縦N）入る | `［＃永久運動をする装置の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G461 | Graphics | — | 永代橋の橋脚の図（figN_N.png）入る | `［＃永代橋の橋脚の図（figN_N.png）入る］` | corpus | OBSERVED |
+| G462 | Graphics | — | 池田氏による枕草子諸本系統の図（figN_N.png、横N×縦N）入る | `［＃池田氏による枕草子諸本系統の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G463 | Graphics | — | 河豚の図（figN_N.png、横N×縦N）入る | `［＃河豚の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G464 | Graphics | — | 泉の挿絵（figN_N.png、横N×縦N）入る | `［＃泉の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G465 | Graphics | — | 泪芙藍と磁石の図（figN_N.png、横N×縦N）入る | `［＃泪芙藍と磁石の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G466 | Graphics | — | 浅草大火焼け跡の地図（figN_N.png）入る | `［＃浅草大火焼け跡の地図（figN_N.png）入る］` | corpus | OBSERVED |
+| G467 | Graphics | — | 浴槽の被害者の図（figN_N.png）入る | `［＃浴槽の被害者の図（figN_N.png）入る］` | corpus | OBSERVED |
+| G468 | Graphics | — | 混合食摂取時におけるN人のアルカプトン尿者の毎日のＨ：N比の図（figN_N.png、横N×縦N）入る | `［＃混合食摂取時におけるN人のアルカプトン尿者の毎日のＨ：N比の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G469 | Graphics | — | 清水より劔岳の挿図（figN_N.png、横N×縦N）入る | `［＃清水より劔岳の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G470 | Graphics | — | 清見ヶ原の挿図（figN_N.png、横N×縦N）入る | `［＃清見ヶ原の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G471 | Graphics | — | 湯に浸かる母子の挿図（figN_N.png、横N×縦N）入る | `［＃湯に浸かる母子の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G472 | Graphics | — | 湯呑みの挿絵（figN_N.png、横N×縦N）入る | `［＃湯呑みの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G473 | Graphics | — | 火術弩の仕掛けの図（figN_N.png、横N×縦N）入る | `［＃火術弩の仕掛けの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G474 | Graphics | — | 火術弩の図（figN_N.png、横N×縦N）入る | `［＃火術弩の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G475 | Graphics | — | 火鉢を囲む二人の挿絵（figN_N.png、横N×縦N）入る | `［＃火鉢を囲む二人の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G476 | Graphics | — | 無花果の閉在花穂成立までの歴史的推移を示す図（figN_N.png、横N×縦N）入る | `［＃無花果の閉在花穂成立までの歴史的推移を示す図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G477 | Graphics | — | 燈火広告の図（figN_N.png）入る | `［＃燈火広告の図（figN_N.png）入る］` | corpus | OBSERVED |
+| G478 | Graphics | — | 燕の挿絵（figN_N.png、横N×縦N）入る | `［＃燕の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G479 | Graphics | — | 牛の挿絵（figN_N.png、横N×縦N）入る | `［＃牛の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G480 | Graphics | — | 牝牛の挿絵（figN_N.png、横N×縦N）入る | `［＃牝牛の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G481 | Graphics | — | 牡牛の挿絵（figN_N.png、横N×縦N）入る | `［＃牡牛の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G482 | Graphics | — | 物、生、心の図（figN_N.png、横N×縦N）入る | `［＃物、生、心の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G483 | Graphics | — | 犬の挿絵（figN_N.png、横N×縦N）入る | `［＃犬の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G484 | Graphics | — | 猟にての挿絵（figN_N.png、横N×縦N）入る | `［＃猟にての挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G485 | Graphics | — | 猟期終るの挿絵（figN_N.png、横N×縦N）入る | `［＃猟期終るの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G486 | Graphics | — | 猟銃の挿絵（figN_N.png、横N×縦N）入る | `［＃猟銃の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G487 | Graphics | — | 猫の前肢という結び方の図（figN_N.png、横N×縦N）入る | `［＃猫の前肢という結び方の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G488 | Graphics | — | 猫の挿絵（figN_N.png、横N×縦N）入る | `［＃猫の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G489 | Graphics | — | 猿の挿絵（figN_N.png、横N×縦N）入る | `［＃猿の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G490 | Graphics | — | 玉塚英信のケッタイな詩の図（figN_N.png、横N×縦N）入る | `［＃玉塚英信のケッタイな詩の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G491 | Graphics | — | 王家の紙幣の図、図省略 | `［＃王家の紙幣の図、図省略］` | corpus | OBSERVED |
+| G492 | Graphics | — | 現場の見取図（figN_N.png、横N×縦N）入る | `［＃現場の見取図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G493 | Graphics | — | 理外と理内の図（figN_N.png、横N×縦N）入る | `［＃理外と理内の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G494 | Graphics | — | 琉球列島の地図（figN_N.png、横N×縦N）入る | `［＃琉球列島の地図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G495 | Graphics | — | 生肝取の挿絵（figN_N.png、横N×縦N）入る | `［＃生肝取の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G496 | Graphics | — | 田尻家の常居の平面図（figN_N.png、横N×縦N）入る | `［＃田尻家の常居の平面図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G497 | Graphics | — | 田尻家の平面図（figN_N.png、横N×縦N）入る | `［＃田尻家の平面図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G498 | Graphics | — | 田尻氏の家のさまの図（figN_N.png、横N×縦N）入る | `［＃田尻氏の家のさまの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G499 | Graphics | — | 田尻氏の家の常居の図（figN_N.png、横N×縦N）入る | `［＃田尻氏の家の常居の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G500 | Graphics | — | 田打蟹の図（figN_N.png、横N×縦N）入る | `［＃田打蟹の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G501 | Graphics | — | 甲乙丙丁の思想の図（figN_N.png、横N×縦N）入る | `［＃甲乙丙丁の思想の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G502 | Graphics | — | 男女関係の図（figN_N.png、横N×縦N）入る | `［＃男女関係の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G503 | Graphics | — | 男鹿半島遊跡の地図（figN_N.png、横N×縦N）入る | `［＃男鹿半島遊跡の地図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G504 | Graphics | — | 留別の句の写真（figN_N.png、横N×縦N）入る | `［＃留別の句の写真（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G505 | Graphics | — | 白き露台の図（figN_N.png、横N×縦N）入る | `［＃白き露台の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G506 | Graphics | — | 白兎と愛ちやんの図（figN_N.png、横N×縦N）入る | `［＃白兎と愛ちやんの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G507 | Graphics | — | 白兎の図（figN_N.png、横N×縦N）入る | `［＃白兎の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G508 | Graphics | — | 白堊館の見取図（figN_N.png、横N×縦N）入る | `［＃白堊館の見取図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G509 | Graphics | — | 白牛の図（figN_N.png、横N×縦N）入る | `［＃白牛の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G510 | Graphics | — | 白猫の図（figN_N.png、横N×縦N）入る | `［＃白猫の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G511 | Graphics | — | 白馬大日岳の種蒔き爺さんの挿図（figN_N.png、横N×縦N）入る | `［＃白馬大日岳の種蒔き爺さんの挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G512 | Graphics | — | 白馬岳の代馬の挿図（figN_N.png、横N×縦N）入る | `［＃白馬岳の代馬の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G513 | Graphics | — | 白馬鑓ガ岳の鶴首と鶏の挿図（figN_N.png、横N×縦N）入る | `［＃白馬鑓ガ岳の鶴首と鶏の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G514 | Graphics | — | 白鳥の挿絵N（figN_N.png、横N×縦N）入る | `［＃白鳥の挿絵N（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G515 | Graphics | — | 百貫山八エ門谷の挿図（figN_N.png、横N×縦N）入る | `［＃百貫山八エ門谷の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G516 | Graphics | — | 皀莢の木の図（figN_N.png、横N×縦N）入る | `［＃皀莢の木の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G517 | Graphics | — | 目次の挿絵（figN_N.png、横N×縦N）入る | `［＃目次の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G518 | Graphics | — | 盲人の挿絵（figN_N.png、横N×縦N）入る | `［＃盲人の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G519 | Graphics | — | 眺望鏡の図（figN_N.png、横N×縦N）入る | `［＃眺望鏡の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G520 | Graphics | — | 矢野氏から貰い受けた白端溪硯の図（figN_N.png、横N×縦N）入る | `［＃矢野氏から貰い受けた白端溪硯の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G521 | Graphics | — | 知らん顔の挿絵（figN_N.png、横N×縦N）入る | `［＃知らん顔の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G522 | Graphics | — | 知的生活の構造の図（figN_N.png、横N×縦N）入る | `［＃知的生活の構造の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G523 | Graphics | — | 石の村　硯島の挿図（figN_N.png、横N×縦N）入る | `［＃石の村　硯島の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G524 | Graphics | — | 石上蓮花の図（figN_N.png、横N×縦N）入る | `［＃石上蓮花の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G525 | Graphics | — | 石鏃の分類の図（figN_N.png、横N×縦N）入る | `［＃石鏃の分類の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G526 | Graphics | — | 石鏃二つの図（figN_N.png、横N×縦N）入る | `［＃石鏃二つの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G527 | Graphics | — | 硝子管の図（figN_N.png、横N×縦N）入る | `［＃硝子管の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G528 | Graphics | — | 礼拝堂付近の図（figN_N.png、横N×縦N）入る | `［＃礼拝堂付近の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G529 | Graphics | — | 神代文字之卷の図N（figN_N.png、横N×縦N）入る | `［＃神代文字之卷の図N（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G530 | Graphics | — | 神経組織の図N（figN_N.png、横N×縦N）入る | `［＃神経組織の図N（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G531 | Graphics | — | 私の柱時計の図（figN_N.png、横N×縦N）入る | `［＃私の柱時計の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G532 | Graphics | — | 秋川家の部屋の配置図（figN_N.png）入る | `［＃秋川家の部屋の配置図（figN_N.png）入る］` | corpus | OBSERVED |
+| G533 | Graphics | — | 稜線のらい鳥の挿図（figN_N.png、横N×縦N）入る | `［＃稜線のらい鳥の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G534 | Graphics | — | 種々の幽霊の原因の図（figN_N.png、横N×縦N）入る | `［＃種々の幽霊の原因の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G535 | Graphics | — | 種々の幽霊の図（figN_N.png、横N×縦N）入る | `［＃種々の幽霊の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G536 | Graphics | — | 穂高の長壁と穂影ノ池の挿図（figN_N.png、横N×縦N）入る | `［＃穂高の長壁と穂影ノ池の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G537 | Graphics | — | 窓の挿絵（figN_N.png、横N×縦N）入る | `［＃窓の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G538 | Graphics | — | 童のころ　一の図（figN_N.png、横N×縦N）入る | `［＃童のころ　一の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G539 | Graphics | — | 童のころ　二の図（figN_N.png、横N×縦N）入る | `［＃童のころ　二の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G540 | Graphics | — | 竹屋の木蓮の図（figN_N.png、横N×縦N）入る | `［＃竹屋の木蓮の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G541 | Graphics | — | 竹島の位置の図（figN_N.png、横N×縦N）入る | `［＃竹島の位置の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G542 | Graphics | — | 竹島大概圖の図（figN_N.png、横N×縦N）入る | `［＃竹島大概圖の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G543 | Graphics | — | 竹林の火の図（figN_N.png、横N×縦N）入る | `［＃竹林の火の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G544 | Graphics | — | 第N図（figN_N.png、横N×縦N）入る | `［＃第N図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G545 | Graphics | — | 第一図（figN_N.png、横N×縦N）入る | `［＃第一図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G546 | Graphics | — | 第一図（figN_N.png）入る | `［＃第一図（figN_N.png）入る］` | corpus | OBSERVED |
+| G547 | Graphics | — | 第七図（figN_N.png、横N×縦N）入る | `［＃第七図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G548 | Graphics | — | 第三図（figN_N.png、横N×縦N）入る | `［＃第三図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G549 | Graphics | — | 第三図（figN_N.png）入る | `［＃第三図（figN_N.png）入る］` | corpus | OBSERVED |
+| G550 | Graphics | — | 第三百四　牛の図の挿画（figN_N.png、横N×縦N）入る | `［＃第三百四　牛の図の挿画（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G551 | Graphics | — | 第二十一図（figN_N.png、横N×縦N）入る | `［＃第二十一図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G552 | Graphics | — | 第二十七図（figN_N.png、横N×縦N）入る | `［＃第二十七図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G553 | Graphics | — | 第二十三図（figN_N.png、横N×縦N）入る | `［＃第二十三図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G554 | Graphics | — | 第二十二図（figN_N.png、横N×縦N）入る | `［＃第二十二図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G555 | Graphics | — | 第二十五図（figN_N.png、横N×縦N）入る | `［＃第二十五図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G556 | Graphics | — | 第二十六図（figN_N.png、横N×縦N）入る | `［＃第二十六図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G557 | Graphics | — | 第二十四図（figN_N.png、横N×縦N）入る | `［＃第二十四図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G558 | Graphics | — | 第二図（figN_N.png、横N×縦N）入る | `［＃第二図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G559 | Graphics | — | 第二図（figN_N.png）入る | `［＃第二図（figN_N.png）入る］` | corpus | OBSERVED |
+| G560 | Graphics | — | 第五図（figN_N.png、横N×縦N）入る | `［＃第五図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G561 | Graphics | — | 第八・九・十・及び第十一図（figN_N.png、横N×縦N）入る | `［＃第八・九・十・及び第十一図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G562 | Graphics | — | 第六図（figN_N.png、横N×縦N）入る | `［＃第六図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G563 | Graphics | — | 第十七、十八、十九及び第二十図（figN_N.png、横N×縦N）入る | `［＃第十七、十八、十九及び第二十図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G564 | Graphics | — | 第十三図（figN_N.png、横N×縦N）入る | `［＃第十三図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G565 | Graphics | — | 第十二図（figN_N.png、横N×縦N）入る | `［＃第十二図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G566 | Graphics | — | 第十五図及び第十六図（figN_N.png、横N×縦N）入る | `［＃第十五図及び第十六図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G567 | Graphics | — | 第十四図（figN_N.png、横N×縦N）入る | `［＃第十四図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G568 | Graphics | — | 第四図（figN_N.png、横N×縦N）入る | `［＃第四図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G569 | Graphics | — | 筆算N×N＝N N＋N＝N N＋N＝N N＋N＝Nの図（figN_N.png）入る | `［＃筆算N×N＝N N＋N＝N N＋N＝N N＋N＝Nの図（figN_N.png）入る］` | corpus | OBSERVED |
+| G570 | Graphics | — | 系図（figN_N.png、横N×縦N）入る | `［＃系図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G571 | Graphics | — | 紙全体図（figN_N.png、横N×縦N）入る | `［＃紙全体図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G572 | Graphics | — | 紙片の図、図省略 | `［＃紙片の図、図省略］` | corpus | OBSERVED |
+| G573 | Graphics | — | 紙片の図（figN_N.png）入る | `［＃紙片の図（figN_N.png）入る］` | corpus | OBSERVED |
+| G574 | Graphics | — | 紙片図（figN_N.png、横N×縦N）入る | `［＃紙片図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G575 | Graphics | — | 終局の言葉の挿絵（figN_N.png、横N×縦N）入る | `［＃終局の言葉の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G576 | Graphics | — | 結晶の降下頻度の分類の図（figN_N.png、横N×縦N）入る | `［＃結晶の降下頻度の分類の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G577 | Graphics | — | 緑玉と蜥蜴の図（figN_N.png、横N×縦N）入る | `［＃緑玉と蜥蜴の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G578 | Graphics | — | 縦長の長方形から、上部の角N箇所を斜めに切り取った形の図（figN_N.png、横N×縦N）入る | `［＃縦長の長方形から、上部の角N箇所を斜めに切り取った形の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G579 | Graphics | — | 縮めた針金の道具の図（figN_N.png、横N×縦N）入る | `［＃縮めた針金の道具の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G580 | Graphics | — | 羊の挿絵（figN_N.png、横N×縦N）入る | `［＃羊の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G581 | Graphics | — | 群蝶の舞の図（figN_N.png、横N×縦N）入る | `［＃群蝶の舞の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G582 | Graphics | — | 聖堂の図（figN_N.png、横N×縦N）入る | `［＃聖堂の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G583 | Graphics | — | 脳中の心力の図（figN_N.png、横N×縦N）入る | `［＃脳中の心力の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G584 | Graphics | — | 自分の意見の挿絵（figN_N.png、横N×縦N）入る | `［＃自分の意見の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G585 | Graphics | — | 自然の分配、人為の分配の因果の図（figN_N.png、横N×縦N）入る | `［＃自然の分配、人為の分配の因果の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G586 | Graphics | — | 自鳴鐘の図（figN_N.png、横N×縦N）入る | `［＃自鳴鐘の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G587 | Graphics | — | 興津家の系図（figN_N.png）入る | `［＃興津家の系図（figN_N.png）入る］` | corpus | OBSERVED |
+| G588 | Graphics | — | 舌出人形と黒猫の挿絵（figN_N.png、横N×縦N）入る | `［＃舌出人形と黒猫の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G589 | Graphics | — | 舞台の図（figN_N.png）入る | `［＃舞台の図（figN_N.png）入る］` | corpus | OBSERVED |
+| G590 | Graphics | — | 舞台写真N（figN_N.png、横N×縦N）入る | `［＃舞台写真N（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G591 | Graphics | — | 芋蟲の図（figN_N.png、横N×縦N）入る | `［＃芋蟲の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G592 | Graphics | — | 芥川夫妻と比呂志君の三人が合作した手紙の写真N（figN_N.png、横N×縦N）入る | `［＃芥川夫妻と比呂志君の三人が合作した手紙の写真N（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G593 | Graphics | — | 苜蓿の挿絵（figN_N.png、横N×縦N）入る | `［＃苜蓿の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G594 | Graphics | — | 草木塔の図（figN_N.png）入る | `［＃草木塔の図（figN_N.png）入る］` | corpus | OBSERVED |
+| G595 | Graphics | — | 菜食主義者図解（「○○」の「○○」と「○○」との対応）の図（figN_N.png、横N×縦N）入る | `［＃菜食主義者図解（「○○」の「○○」と「○○」との対応）の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G596 | Graphics | — | 著者自筆の似顔絵の図（figN_N.png、横N×縦N）入る | `［＃著者自筆の似顔絵の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G597 | Graphics | — | 葬儀会場の見取り図（figN_N.png、横N×縦N）入る | `［＃葬儀会場の見取り図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G598 | Graphics | — | 葱と紫蘇の図（figN_N.png、横N×縦N）入る | `［＃葱と紫蘇の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G599 | Graphics | — | 蓮華乗鞍の種蒔き爺さんの挿図（figN_N.png、横N×縦N）入る | `［＃蓮華乗鞍の種蒔き爺さんの挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G600 | Graphics | — | 薬湯の挿図（figN_N.png、横N×縦N）入る | `［＃薬湯の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G601 | Graphics | — | 虫送りの太鼓や鐘の音を表す楽譜の図（figN_N.png、横N×縦N）入る | `［＃虫送りの太鼓や鐘の音を表す楽譜の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G602 | Graphics | — | 虱の挿絵（figN_N.png、横N×縦N）入る | `［＃虱の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G603 | Graphics | — | 蚤の挿絵（figN_N.png、横N×縦N）入る | `［＃蚤の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G604 | Graphics | — | 蚯蚓の挿絵（figN_N.png、横N×縦N）入る | `［＃蚯蚓の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G605 | Graphics | — | 蛇の挿絵（figN_N.png、横N×縦N）入る | `［＃蛇の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G606 | Graphics | — | 蛍の図（figN_N.png、横N×縦N）入る | `［＃蛍の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G607 | Graphics | — | 蛙の挿絵（figN_N.png、横N×縦N）入る | `［＃蛙の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G608 | Graphics | — | 蛙の歩兵と魚の歩兵の図（figN_N.png、横N×縦N）入る | `［＃蛙の歩兵と魚の歩兵の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G609 | Graphics | — | 蜘蛛の挿絵（figN_N.png、横N×縦N）入る | `［＃蜘蛛の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G610 | Graphics | — | 蜥蜴の挿絵（figN_N.png、横N×縦N）入る | `［＃蜥蜴の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G611 | Graphics | — | 蜥蜴の甚公の図（figN_N.png、横N×縦N）入る | `［＃蜥蜴の甚公の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G612 | Graphics | — | 蜻蛉の挿絵（figN_N.png、横N×縦N）入る | `［＃蜻蛉の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G613 | Graphics | — | 蝙蝠の挿絵（figN_N.png、横N×縦N）入る | `［＃蝙蝠の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G614 | Graphics | — | 蝶の挿絵（figN_N.png、横N×縦N）入る | `［＃蝶の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G615 | Graphics | — | 蝸牛の挿絵N（figN_N.png、横N×縦N）入る | `［＃蝸牛の挿絵N（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G616 | Graphics | — | 蟇の挿絵（figN_N.png、横N×縦N）入る | `［＃蟇の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G617 | Graphics | — | 蟋蟀の挿絵（figN_N.png、横N×縦N）入る | `［＃蟋蟀の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G618 | Graphics | — | 蟹と竹の図（figN_N.png、横N×縦N）入る | `［＃蟹と竹の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G619 | Graphics | — | 蟹味噌の図（figN_N.png、横N×縦N）入る | `［＃蟹味噌の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G620 | Graphics | — | 蟻の挿絵（figN_N.png、横N×縦N）入る | `［＃蟻の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G621 | Graphics | — | 蟾蜍と人の図（figN_N.png、横N×縦N）入る | `［＃蟾蜍と人の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G622 | Graphics | — | 蠅の挿絵（figN_N.png、横N×縦N）入る | `［＃蠅の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G623 | Graphics | — | 行きと帰りの挿絵（figN_N.png、横N×縦N）入る | `［＃行きと帰りの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G624 | Graphics | — | 表紙の写真（figN_N.png、横N×縦N）入る | `［＃表紙の写真（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G625 | Graphics | — | 表題の図（figN_N.png、横N×縦N）入る | `［＃表題の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G626 | Graphics | — | 裁判の図（figN_N.png、横N×縦N）入る | `［＃裁判の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G627 | Graphics | — | 裏庭の足跡の図（figN_N.png、横N×縦N）入る | `［＃裏庭の足跡の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G628 | Graphics | — | 裸婦の挿絵（figN_N.png、横N×縦N）入る | `［＃裸婦の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G629 | Graphics | — | 試合の挿絵（figN_N.png、横N×縦N）入る | `［＃試合の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G630 | Graphics | — | 豆手帖の旅の地図（figN_N.png、横N×縦N）入る | `［＃豆手帖の旅の地図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G631 | Graphics | — | 豚の挿絵（figN_N.png、横N×縦N）入る | `［＃豚の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G632 | Graphics | — | 貧乏人の原因別の図表（figN_N.png）入る | `［＃貧乏人の原因別の図表（figN_N.png）入る］` | corpus | OBSERVED |
+| G633 | Graphics | — | 赤い頬ぺたの挿絵（figN_N.png、横N×縦N）入る | `［＃赤い頬ぺたの挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G634 | Graphics | — | 赤石沢の奥に徘徊する残月の挿図（figN_N.png、横N×縦N）入る | `［＃赤石沢の奥に徘徊する残月の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G635 | Graphics | — | 足利家の系図（figN_N.png、横N×縦N）入る | `［＃足利家の系図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G636 | Graphics | — | 足首に描かれた紋様の図（figN_N.png、横N×縦N）入る | `［＃足首に描かれた紋様の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G637 | Graphics | — | 身体検査の図（figN_N.png、横N×縦N）入る | `［＃身体検査の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G638 | Graphics | — | 迷信の系統の図（figN_N.png、横N×縦N）入る | `［＃迷信の系統の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G639 | Graphics | — | 道化の図（figN_N.png、横N×縦N）入る | `［＃道化の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G640 | Graphics | — | 道成寺の図（figN_N.png、横N×縦N）入る | `［＃道成寺の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G641 | Graphics | — | 道標の図（figN_N.png）入る | `［＃道標の図（figN_N.png）入る］` | corpus | OBSERVED |
+| G642 | Graphics | — | 遠野郷本書関係略図（figN_N.png、横N×縦N）入る | `［＃遠野郷本書関係略図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G643 | Graphics | — | 郷里柳河沖ノ端の写真（figN_N.png、横N×縦N）入る | `［＃郷里柳河沖ノ端の写真（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G644 | Graphics | — | 酒罎と鉢植えの図（figN_N.png、横N×縦N）入る | `［＃酒罎と鉢植えの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G645 | Graphics | — | 金庫の挿絵（figN_N.png、横N×縦N）入る | `［＃金庫の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G646 | Graphics | — | 釣針の挿絵（figN_N.png、横N×縦N）入る | `［＃釣針の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G647 | Graphics | — | 銀座の図（figN_N.png、横N×縦N）入る | `［＃銀座の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G648 | Graphics | — | 銀座の夜店の図（figN_N.png、横N×縦N）入る | `［＃銀座の夜店の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G649 | Graphics | — | 銀座の柳の図（figN_N.png、横N×縦N）入る | `［＃銀座の柳の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G650 | Graphics | — | 銀河の挿図（figN_N.png、横N×縦N）入る | `［＃銀河の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G651 | Graphics | — | 銀貨の挿絵（figN_N.png、横N×縦N）入る | `［＃銀貨の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G652 | Graphics | — | 銘酒「○○」広告の図（figN_N.png）入る | `［＃銘酒「○○」広告の図（figN_N.png）入る］` | corpus | OBSERVED |
+| G653 | Graphics | — | 鍋の挿絵（figN_N.png、横N×縦N）入る | `［＃鍋の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G654 | Graphics | — | 閻魔の反射の図（figN_N.png、横N×縦N）入る | `［＃閻魔の反射の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G655 | Graphics | — | 閻魔の咳の図（figN_N.png、横N×縦N）入る | `［＃閻魔の咳の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G656 | Graphics | — | 闇汁の図 | `［＃闇汁の図］` | corpus | OBSERVED |
+| G657 | Graphics | — | 防堤に書かれた符号の図（figN_N.png）入る | `［＃防堤に書かれた符号の図（figN_N.png）入る］` | corpus | OBSERVED |
+| G658 | Graphics | — | 降魔図の中の猪八戒の図（figN_N.png、横N×縦N）入る | `［＃降魔図の中の猪八戒の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G659 | Graphics | — | 隼の挿絵（figN_N.png、横N×縦N）入る | `［＃隼の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G660 | Graphics | — | 雄鶏の挿絵N（figN_N.png、横N×縦N）入る | `［＃雄鶏の挿絵N（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G661 | Graphics | — | 雌鶏の挿絵N（figN_N.png、横N×縦N）入る | `［＃雌鶏の挿絵N（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G662 | Graphics | — | 雪の図（figN_N.png、横N×縦N）入る | `［＃雪の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G663 | Graphics | — | 雪の結晶の種類の図（figN_N.png、横N×縦N）入る | `［＃雪の結晶の種類の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G664 | Graphics | — | 雪中歩行の用具の図（figN_N.png、横N×縦N）入る | `［＃雪中歩行の用具の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G665 | Graphics | — | 雪中歩行の胸あて等の用具図（figN_N.png、横N×縦N）入る | `［＃雪中歩行の胸あて等の用具図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G666 | Graphics | — | 雪中歩行の藁沓等の用具図（figN_N.png、横N×縦N）入る | `［＃雪中歩行の藁沓等の用具図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G667 | Graphics | — | 雲雀の挿絵（figN_N.png、横N×縦N）入る | `［＃雲雀の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G668 | Graphics | — | 雷門付近の地図（figN_N.png）入る | `［＃雷門付近の地図（figN_N.png）入る］` | corpus | OBSERVED |
+| G669 | Graphics | — | 電車と弾丸の速度の関係図（figN_N.png、横N×縦N）入る | `［＃電車と弾丸の速度の関係図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G670 | Graphics | — | 電車の図面（figN_N.png、横N×縦N）入る | `［＃電車の図面（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G671 | Graphics | — | 霧島連峰高千穂峰の図（figN_N.png、横N×縦N）入る | `［＃霧島連峰高千穂峰の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G672 | Graphics | — | 露のおきふしの図（figN_N.png、横N×縦N）入る | `［＃露のおきふしの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G673 | Graphics | — | 青空文庫の構造図（figN_N.png、横N×縦N）入る | `［＃青空文庫の構造図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G674 | Graphics | — | 革命座「○○」の一シーンの図（figN_N.png、横N×縦N）入る | `［＃革命座「○○」の一シーンの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G675 | Graphics | — | 題辞の写真（figN_N.png、横N×縦N）入る | `［＃題辞の写真（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G676 | Graphics | — | 飛行機の上昇限度と高射砲の偉力の図（figN_N.png、横N×縦N）入る | `［＃飛行機の上昇限度と高射砲の偉力の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G677 | Graphics | — | 飛鳥井雅経以降の系譜の図（figN_N.png、横N×縦N）入る | `［＃飛鳥井雅経以降の系譜の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G678 | Graphics | — | 食事の給与と体重増加率の相関図（figN_N.png）入る | `［＃食事の給与と体重増加率の相関図（figN_N.png）入る］` | corpus | OBSERVED |
+| G679 | Graphics | — | 餅の図（figN_N.png、横N×縦N）入る | `［＃餅の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G680 | Graphics | — | 香水の「○○」の図（figN_N.png）入る | `［＃香水の「○○」の図（figN_N.png）入る］` | corpus | OBSERVED |
+| G681 | Graphics | — | 香水の壜に蝋燭の図（figN_N.png、横N×縦N）入る | `［＃香水の壜に蝋燭の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G682 | Graphics | — | 馬の挿絵（figN_N.png、横N×縦N）入る | `［＃馬の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G683 | Graphics | — | 駒ヶ岳崖滝の挿図（figN_N.png、横N×縦N）入る | `［＃駒ヶ岳崖滝の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G684 | Graphics | — | 驢馬の挿絵（figN_N.png、横N×縦N）入る | `［＃驢馬の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G685 | Graphics | — | 髪の毛の挿絵（figN_N.png、横N×縦N）入る | `［＃髪の毛の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G686 | Graphics | — | 鳥のいない鳥籠の挿絵（figN_N.png、横N×縦N）入る | `［＃鳥のいない鳥籠の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G687 | Graphics | — | 鳩の挿絵（figN_N.png、横N×縦N）入る | `［＃鳩の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G688 | Graphics | — | 鳳仙花の図（figN_N.png、横N×縦N）入る | `［＃鳳仙花の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G689 | Graphics | — | 鴉の挿絵（figN_N.png、横N×縦N）入る | `［＃鴉の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G690 | Graphics | — | 鵞鳥の挿絵N（figN_N.png、横N×縦N）入る | `［＃鵞鳥の挿絵N（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G691 | Graphics | — | 鵠沼の芥川の寓居の地図（figN_N.png、横N×縦N）入る | `［＃鵠沼の芥川の寓居の地図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G692 | Graphics | — | 鵲の挿絵N（figN_N.png、横N×縦N）入る | `［＃鵲の挿絵N（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G693 | Graphics | — | 鶏の挿絵（figN_N.png、横N×縦N）入る | `［＃鶏の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G694 | Graphics | — | 鶴嘴の挿絵（figN_N.png、横N×縦N）入る | `［＃鶴嘴の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G695 | Graphics | — | 鶸の巣の挿絵（figN_N.png、横N×縦N）入る | `［＃鶸の巣の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G696 | Graphics | — | 鷓鴣の挿絵N（figN_N.png、横N×縦N）入る | `［＃鷓鴣の挿絵N（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G697 | Graphics | — | 鷓鴣の挿絵（figN_N.png、横N×縦N）入る | `［＃鷓鴣の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G698 | Graphics | — | 鷲羽岳と白檜の林の挿図（figN_N.png、横N×縦N）入る | `［＃鷲羽岳と白檜の林の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G699 | Graphics | — | 鹿の挿絵（figN_N.png、横N×縦N）入る | `［＃鹿の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G700 | Graphics | — | 麗日の図（figN_N.png、横N×縦N）入る | `［＃麗日の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G701 | Graphics | — | 麗日発心の図（figN_N.png、横N×縦N）入る | `［＃麗日発心の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G702 | Graphics | — | 黒岳小舎の挿図（figN_N.png、横N×縦N）入る | `［＃黒岳小舎の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G703 | Graphics | — | 黒死館の邪霊の図（figN_N.png、横N×縦N）入る | `［＃黒死館の邪霊の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G704 | Graphics | — | 黒部の猟師助七の挿図（figN_N.png、横N×縦N）入る | `［＃黒部の猟師助七の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G705 | Graphics | — | 黒部峡谷の岨みちの挿図（figN_N.png、横N×縦N）入る | `［＃黒部峡谷の岨みちの挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G706 | Graphics | — | 黒部川のつりばしの挿図（figN_N.png、横N×縦N）入る | `［＃黒部川のつりばしの挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G707 | Graphics | — | 黒部川の岩魚の挿図（figN_N.png、横N×縦N）入る | `［＃黒部川の岩魚の挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G708 | Graphics | — | 黒部本流猿とびの挿図（figN_N.png、横N×縦N）入る | `［＃黒部本流猿とびの挿図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G709 | Graphics | — | 黒鶫の図（figN_N.png、横N×縦N）入る | `［＃黒鶫の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G710 | Graphics | — | 鼠の挿絵（figN_N.png、横N×縦N）入る | `［＃鼠の挿絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G711 | Graphics | — | 鼠の演説の図（figN_N.png、横N×縦N）入る | `［＃鼠の演説の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G712 | Graphics | — | （上図参照）の図（figN_N.png、横N×縦N）入る | `［＃（上図参照）の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G713 | Graphics | — | Ａ、Ｂ、Ｃの図省略 | `［＃Ａ、Ｂ、Ｃの図省略］` | corpus | OBSERVED |
+| G714 | Graphics | — | ＡＢ、A'B'の直線の図（figN_N.png、横N×縦N）入る | `［＃ＡＢ、A'B'の直線の図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G715 | Graphics | — | Ｈ・Ｓ工場の地図（figN_N.png、横N×縦N）入る | `［＃Ｈ・Ｓ工場の地図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G716 | Graphics | — | ＯＡA'B'Ｂの図（figN_N.png、横N×縦N）入る | `［＃ＯＡA'B'Ｂの図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G717 | Graphics | — | Ｒの中に○がNつ入った図（figN_N.png、横N×縦N）入る | `［＃Ｒの中に○がNつ入った図（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| G718 | Graphics | キャプション | ここからキャプション | `［＃ここからキャプション］` | annotation/graphics.html; corpus | DOCUMENTED-AND-OBSERVED |
+| G719 | Graphics | キャプション | ここでキャプション終わり | `［＃ここでキャプション終わり］` | annotation/graphics.html; corpus | DOCUMENTED-AND-OBSERVED |
+| G720 | Graphics | キャプション | キャプション | `［＃キャプション］` | annotation/graphics.html; corpus | DOCUMENTED-AND-OBSERVED |
+| G721 | Graphics | キャプション | キャプション終わり | `［＃キャプション終わり］` | annotation/graphics.html; corpus | DOCUMENTED-AND-OBSERVED |
+| G722 | Graphics | 写真や図版、挿絵などの画像 | 「○○」のキャプション付きの図（figN_N.png、横N×縦N）入る | `［＃「○○」のキャプション付きの図（figN_N.png、横N×縦N）入る］` | annotation/graphics.html; corpus | DOCUMENTED-AND-OBSERVED |
+| G723 | Graphics | 写真や図版、挿絵などの画像 | 「○○」はキャプション | `［＃「○○」はキャプション］` | annotation/graphics.html; corpus | DOCUMENTED-AND-OBSERVED |
+| G724 | Graphics | 写真や図版、挿絵などの画像 | コンドル博士の図（figN_N.png、横N×縦N）入る | `［＃コンドル博士の図（figN_N.png、横N×縦N）入る］` | annotation/graphics.html | DOCUMENTED |
+| G725 | Graphics | 写真や図版、挿絵などの画像 | 石鏃二つの図（figN_N.png）入る | `［＃石鏃二つの図（figN_N.png）入る］` | annotation/graphics.html | DOCUMENTED |
 ### Other / その他
 
-| ID | Feature | Example | Sources | Verdict |
-|----|---------|---------|---------|---------|
-| O1 | 縦中横 | `［＃縦中横］` | chuki_tag.txt:224; etc | VERIFIED |
-| O2 | 縦中横終わり | `［＃縦中横終わり］` | chuki_tag.txt:225; etc | VERIFIED |
-| O3 | 正立 | `［＃正立］` | chuki_tag.txt:228 | CHUKI-ONLY |
-| O4 | 正立終わり | `［＃正立終わり］` | chuki_tag.txt:229 | CHUKI-ONLY |
-| O5 | ここから割り注 | `［＃ここから割り注］` | chuki_tag.txt:232; etc; henkoten | VERIFIED |
-| O6 | ここで割り注終わり | `［＃ここで割り注終わり］` | chuki_tag.txt:233; etc; henkoten | VERIFIED |
-| O7 | 割り注 | `［＃割り注］` | chuki_tag.txt:234; etc; henkoten | VERIFIED |
-| O8 | 割り注終わり | `［＃割り注終わり］` | chuki_tag.txt:235; etc; henkoten | VERIFIED |
-| O9 | 改行 | `［＃改行］` | chuki_tag.txt:237; etc | VERIFIED |
-| O10 | ここから横組み | `［＃ここから横組み］` | chuki_tag.txt:240; etc | VERIFIED |
-| O11 | ここで横組み終わり | `［＃ここで横組み終わり］` | chuki_tag.txt:241; etc | VERIFIED |
-| O12 | 横組み | `［＃横組み］` | chuki_tag.txt:242; etc | VERIFIED |
-| O13 | 横組み終わり | `［＃横組み終わり］` | chuki_tag.txt:243; etc | VERIFIED |
-| O14 | ここから横書き | `［＃ここから横書き］` | chuki_tag.txt:246 | CHUKI-ONLY |
-| O15 | ここで横書き終わり | `［＃ここで横書き終わり］` | chuki_tag.txt:247 | CHUKI-ONLY |
-| O16 | 行右小書き | `［＃行右小書き］` | chuki_tag.txt:250; etc | VERIFIED |
-| O17 | 行右小書き終わり | `［＃行右小書き終わり］` | chuki_tag.txt:251; etc | VERIFIED |
-| O18 | 行左小書き | `［＃行左小書き］` | chuki_tag.txt:252 | CHUKI-ONLY |
-| O19 | 行左小書き終わり | `［＃行左小書き終わり］` | chuki_tag.txt:253 | CHUKI-ONLY |
-| O20 | 上付き小文字 | `［＃上付き小文字］` | chuki_tag.txt:254; etc | VERIFIED |
-| O21 | 上付き小文字終わり | `［＃上付き小文字終わり］` | chuki_tag.txt:255; etc | VERIFIED |
-| O22 | 下付き小文字 | `［＃下付き小文字］` | chuki_tag.txt:256 | CHUKI-ONLY |
-| O23 | 下付き小文字終わり | `［＃下付き小文字終わり］` | chuki_tag.txt:257 | CHUKI-ONLY |
-| O24 | 小書き | `［＃小書き］` | chuki_tag.txt:258 | CHUKI-ONLY |
-| O25 | 小書き終わり | `［＃小書き終わり］` | chuki_tag.txt:259 | CHUKI-ONLY |
-| O26 | 罫囲み | `［＃罫囲み］` | chuki_tag.txt:262; etc | VERIFIED |
-| O27 | 罫囲み終わり | `［＃罫囲み終わり］` | chuki_tag.txt:263; etc | VERIFIED |
-| O28 | 破線罫囲み | `［＃破線罫囲み］` | chuki_tag.txt:264 | CHUKI-ONLY |
-| O29 | 破線罫囲み終わり | `［＃破線罫囲み終わり］` | chuki_tag.txt:265 | CHUKI-ONLY |
-| O30 | 破線の罫囲み | `［＃破線の罫囲み］` | chuki_tag.txt:266 | CHUKI-ONLY |
-| O31 | 破線の罫囲み終わり | `［＃破線の罫囲み終わり］` | chuki_tag.txt:267 | CHUKI-ONLY |
-| O32 | 枠囲み | `［＃枠囲み］` | chuki_tag.txt:268 | CHUKI-ONLY |
-| O33 | 枠囲み終わり | `［＃枠囲み終わり］` | chuki_tag.txt:269 | CHUKI-ONLY |
-| O34 | 破線枠囲み | `［＃破線枠囲み］` | chuki_tag.txt:270 | CHUKI-ONLY |
-| O35 | 破線枠囲み終わり | `［＃破線枠囲み終わり］` | chuki_tag.txt:271 | CHUKI-ONLY |
-| O36 | ここから罫囲み | `［＃ここから罫囲み］` | chuki_tag.txt:272; etc; henkoten | VERIFIED |
-| O37 | ここで罫囲み終わり | `［＃ここで罫囲み終わり］` | chuki_tag.txt:273; etc; henkoten | VERIFIED |
-| O38 | ここから破線罫囲み | `［＃ここから破線罫囲み］` | chuki_tag.txt:274 | CHUKI-ONLY |
-| O39 | ここで破線罫囲み終わり | `［＃ここで破線罫囲み終わり］` | chuki_tag.txt:275 | CHUKI-ONLY |
-| O40 | ここから枠囲み | `［＃ここから枠囲み］` | chuki_tag.txt:276 | CHUKI-ONLY |
-| O41 | ここで枠囲み終わり | `［＃ここで枠囲み終わり］` | chuki_tag.txt:277 | CHUKI-ONLY |
-| O42 | ここから破線枠囲み | `［＃ここから破線枠囲み］` | chuki_tag.txt:278 | CHUKI-ONLY |
-| O43 | ここで破線枠囲み終わり | `［＃ここで破線枠囲み終わり］` | chuki_tag.txt:279 | CHUKI-ONLY |
-| O44 | １段階大きな文字 | `［＃N段階大きな文字］` | chuki_tag.txt:282; chuki_tag.txt:283; chuki_tag.txt:284; chuki_tag.txt:285; chuki_tag.txt:286; chuki_tag.txt:287; etc | VERIFIED |
-| O45 | 大きな文字終わり | `［＃大きな文字終わり］` | chuki_tag.txt:288; etc | VERIFIED |
-| O46 | ここから１段階大きな文字 | `［＃ここからN段階大きな文字］` | chuki_tag.txt:289; chuki_tag.txt:290; chuki_tag.txt:291; chuki_tag.txt:292; chuki_tag.txt:293; chuki_tag.txt:294; etc | VERIFIED |
-| O47 | ここで大きな文字終わり | `［＃ここで大きな文字終わり］` | chuki_tag.txt:295; etc | VERIFIED |
-| O48 | １段階小さな文字 | `［＃N段階小さな文字］` | chuki_tag.txt:296; chuki_tag.txt:297; chuki_tag.txt:298; chuki_tag.txt:299; chuki_tag.txt:300; chuki_tag.txt:301; etc | VERIFIED |
-| O49 | 小さな文字終わり | `［＃小さな文字終わり］` | chuki_tag.txt:302; etc | VERIFIED |
-| O50 | ここから１段階小さな文字 | `［＃ここからN段階小さな文字］` | chuki_tag.txt:303; chuki_tag.txt:304; chuki_tag.txt:305; chuki_tag.txt:306; chuki_tag.txt:307; chuki_tag.txt:308; etc | VERIFIED |
-| O51 | ここで小さな文字終わり | `［＃ここで小さな文字終わり］` | chuki_tag.txt:309; etc | VERIFIED |
-| O52 | 中央揃え | `［＃中央揃え］` | chuki_tag.txt:316 | CHUKI-ONLY |
-| O53 | ここから中央揃え | `［＃ここから中央揃え］` | chuki_tag.txt:317 | CHUKI-ONLY |
-| O54 | ここで中央揃え終わり | `［＃ここで中央揃え終わり］` | chuki_tag.txt:318 | CHUKI-ONLY |
-| O55 | 中央寄せ | `［＃中央寄せ］` | chuki_tag.txt:319 | CHUKI-ONLY |
-| O56 | 字下げ省略 | `［＃字下げ省略］` | chuki_tag.txt:608 | CHUKI-ONLY |
-| O57 | 折り返し1 | `［＃折り返しN］` | chuki_tag.txt:612; chuki_tag.txt:613; chuki_tag.txt:614 | CHUKI-ONLY |
-| O58 | 字下げ字詰め1 | `［＃字下げ字詰めN］` | chuki_tag.txt:618; chuki_tag.txt:619; chuki_tag.txt:620 | CHUKI-ONLY |
-| O59 | 字下げ複合1 | `［＃字下げ複合N］` | chuki_tag.txt:624; chuki_tag.txt:626 | CHUKI-ONLY |
-| O60 | 字下げ罫囲み | `［＃字下げ罫囲み］` | chuki_tag.txt:629 | CHUKI-ONLY |
-| O61 | 字下げ破線罫囲み | `［＃字下げ破線罫囲み］` | chuki_tag.txt:630 | CHUKI-ONLY |
-| O62 | 字下げ枠囲み | `［＃字下げ枠囲み］` | chuki_tag.txt:631 | CHUKI-ONLY |
-| O63 | 字下げ破線枠囲み | `［＃字下げ破線枠囲み］` | chuki_tag.txt:632 | CHUKI-ONLY |
-| O64 | 字下げ中央揃え | `［＃字下げ中央揃え］` | chuki_tag.txt:633 | CHUKI-ONLY |
-| O65 | 字下げ横書き | `［＃字下げ横書き］` | chuki_tag.txt:634 | CHUKI-ONLY |
-| O66 | 行内地付き | `［＃行内地付き］` | chuki_tag.txt:637 | CHUKI-ONLY |
-| O67 | 行内地付き終わり | `［＃行内地付き終わり］` | chuki_tag.txt:638 | CHUKI-ONLY |
-| O68 | 行内地付き終り | `［＃行内地付き終り］` | chuki_tag.txt:639 | CHUKI-ONLY |
-| O69 | クリア | `［＃クリア］` | chuki_tag.txt:641 | CHUKI-ONLY |
-| O70 | 右クリア | `［＃右クリア］` | chuki_tag.txt:642 | CHUKI-ONLY |
-| O71 | 左クリア | `［＃左クリア］` | chuki_tag.txt:643 | CHUKI-ONLY |
-| O72 | 空行 | `［＃空行］` | chuki_tag.txt:647 | CHUKI-ONLY |
-| O73 | 区切り線 | `［＃区切り線］` | chuki_tag.txt:648 | CHUKI-ONLY |
-| O74 | ここから１字上げ | `［＃ここからN字上げ］` | chuki_tag.txt:651; chuki_tag.txt:652; chuki_tag.txt:653; chuki_tag.txt:654; chuki_tag.txt:655; chuki_tag.txt:656; chuki_tag.txt:657; chuki_tag.txt:658; chuki_tag.txt:659; chuki_tag.txt:660 | CHUKI-ONLY |
-| O75 | 二分アキ | `［＃二分アキ］` | chuki_tag.txt:663 | CHUKI-ONLY |
-| O76 | ここから前書き | `［＃ここから前書き］` | chuki_tag.txt:666 | CHUKI-ONLY |
-| O77 | ここで前書き終わり | `［＃ここで前書き終わり］` | chuki_tag.txt:667 | CHUKI-ONLY |
-| O78 | ここから後書き | `［＃ここから後書き］` | chuki_tag.txt:668 | CHUKI-ONLY |
-| O79 | ここで後書き終わり | `［＃ここで後書き終わり］` | chuki_tag.txt:669 | CHUKI-ONLY |
-| O80 | ルビ開始 | `［＃ルビ開始］` | chuki_tag.txt:673 | CHUKI-ONLY |
-| O81 | ルビ前 | `［＃ルビ前］` | chuki_tag.txt:674 | CHUKI-ONLY |
-| O82 | ルビ後 | `［＃ルビ後］` | chuki_tag.txt:675 | CHUKI-ONLY |
-| O83 | ルビ終了 | `［＃ルビ終了］` | chuki_tag.txt:676 | CHUKI-ONLY |
-| O84 | 画像 | `［＃画像］` | chuki_tag.txt:680 | CHUKI-ONLY |
-| O85 | 画像上 | `［＃画像上］` | chuki_tag.txt:682 | CHUKI-ONLY |
-| O86 | 画像下 | `［＃画像下］` | chuki_tag.txt:683 | CHUKI-ONLY |
-| O87 | 画像幅 | `［＃画像幅］` | chuki_tag.txt:685 | CHUKI-ONLY |
-| O88 | 画像幅上 | `［＃画像幅上］` | chuki_tag.txt:686 | CHUKI-ONLY |
-| O89 | 画像幅下 | `［＃画像幅下］` | chuki_tag.txt:687 | CHUKI-ONLY |
-| O90 | 画像横 | `［＃画像横］` | chuki_tag.txt:689 | CHUKI-ONLY |
-| O91 | 画像縦 | `［＃画像縦］` | chuki_tag.txt:690 | CHUKI-ONLY |
-| O92 | 画像上横 | `［＃画像上横］` | chuki_tag.txt:692 | CHUKI-ONLY |
-| O93 | 画像下横 | `［＃画像下横］` | chuki_tag.txt:693 | CHUKI-ONLY |
-| O94 | 画像浮 | `［＃画像浮］` | chuki_tag.txt:695 | CHUKI-ONLY |
-| O95 | 画像幅浮 | `［＃画像幅浮］` | chuki_tag.txt:696 | CHUKI-ONLY |
-| O96 | 画像単浮 | `［＃画像単浮］` | chuki_tag.txt:698 | CHUKI-ONLY |
-| O97 | 画像単幅浮 | `［＃画像単幅浮］` | chuki_tag.txt:699 | CHUKI-ONLY |
-| O98 | 画像単横浮 | `［＃画像単横浮］` | chuki_tag.txt:700 | CHUKI-ONLY |
-| O99 | 画像単縦浮 | `［＃画像単縦浮］` | chuki_tag.txt:701 | CHUKI-ONLY |
-| O100 | 画像終わり | `［＃画像終わり］` | chuki_tag.txt:704 | CHUKI-ONLY |
-| O101 | キャプション | `［＃キャプション］` | chuki_tag.txt:707; graphics | VERIFIED |
-| O102 | キャプション終わり | `［＃キャプション終わり］` | chuki_tag.txt:708; graphics | VERIFIED |
-| O103 | ここからキャプション | `［＃ここからキャプション］` | chuki_tag.txt:709; graphics | VERIFIED |
-| O104 | ここでキャプション終わり | `［＃ここでキャプション終わり］` | chuki_tag.txt:710; graphics | VERIFIED |
-| O105 | 外字画像 | `［＃外字画像］` | chuki_tag.txt:713 | CHUKI-ONLY |
-| O106 | 表題前 | `［＃表題前］` | chuki_tag.txt:716 | CHUKI-ONLY |
-| O107 | 表題後 | `［＃表題後］` | chuki_tag.txt:717 | CHUKI-ONLY |
-| O108 | 原題前 | `［＃原題前］` | chuki_tag.txt:718 | CHUKI-ONLY |
-| O109 | 原題後 | `［＃原題後］` | chuki_tag.txt:719 | CHUKI-ONLY |
-| O110 | 副題前 | `［＃副題前］` | chuki_tag.txt:720 | CHUKI-ONLY |
-| O111 | 副題後 | `［＃副題後］` | chuki_tag.txt:721 | CHUKI-ONLY |
-| O112 | 副原題前 | `［＃副原題前］` | chuki_tag.txt:722 | CHUKI-ONLY |
-| O113 | 副原題後 | `［＃副原題後］` | chuki_tag.txt:723 | CHUKI-ONLY |
-| O114 | 著者前 | `［＃著者前］` | chuki_tag.txt:724 | CHUKI-ONLY |
-| O115 | 著者後 | `［＃著者後］` | chuki_tag.txt:725 | CHUKI-ONLY |
-| O116 | 副著者前 | `［＃副著者前］` | chuki_tag.txt:726 | CHUKI-ONLY |
-| O117 | 副著者後 | `［＃副著者後］` | chuki_tag.txt:727 | CHUKI-ONLY |
-| O118 | 「○○」の左に「○○」の注記 | `［＃「○○」の左に「○○」の注記］` | duplication; etc | MANUAL-ONLY |
-| O119 | ［＃「○○ | `［＃「○○` | etc | MANUAL-ONLY |
-| O120 | 「○○」、第N水準N-N-N | `［＃「○○」、第N水準N-N-N］` | etc; external_character | MANUAL-ONLY |
-| O121 | 「○○」に「○○」の注記 | `［＃「○○」に「○○」の注記］` | etc; graphics | MANUAL-ONLY |
-| O122 | 「○○」の左に「○○」のルビ | `［＃「○○」の左に「○○」のルビ］` | etc; kunten | MANUAL-ONLY |
-| O123 | 「○○」の注記付き終わり | `［＃「○○」の注記付き終わり］` | etc | MANUAL-ONLY |
-| O124 | 「○○」はN段階大きな文字 | `［＃「○○」はN段階大きな文字］` | etc | MANUAL-ONLY |
-| O125 | 「○○」はN段階小さな文字 | `［＃「○○」はN段階小さな文字］` | etc | MANUAL-ONLY |
-| O126 | 「○○」は●段階大きな文字 | `［＃「○○」は●段階大きな文字］` | etc | MANUAL-ONLY |
-| O127 | 「○○」は●段階小さな文字 | `［＃「○○」は●段階小さな文字］` | etc | MANUAL-ONLY |
-| O128 | 「○○」はママ | `［＃「○○」はママ］` | etc | MANUAL-ONLY |
-| O129 | 「○○」は上付き小文字 | `［＃「○○」は上付き小文字］` | etc | MANUAL-ONLY |
-| O130 | 「○○」は下付き小文字 | `［＃「○○」は下付き小文字］` | etc | MANUAL-ONLY |
-| O131 | 「○○」は底本では「○○」 | `［＃「○○」は底本では「○○」］` | etc | MANUAL-ONLY |
-| O132 | 「○○」は縦中横 | `［＃「○○」は縦中横］` | etc | MANUAL-ONLY |
-| O133 | 「○○」は罫囲み | `［＃「○○」は罫囲み］` | etc | MANUAL-ONLY |
-| O134 | 「○○」は行右小書き | `［＃「○○」は行右小書き］` | etc | MANUAL-ONLY |
-| O135 | 「○○」は行左小書き | `［＃「○○」は行左小書き］` | etc | MANUAL-ONLY |
-| O136 | ここから○段階大きな文字 | `［＃ここから○段階大きな文字］` | etc | MANUAL-ONLY |
-| O137 | ここから○段階小さな文字 | `［＃ここから○段階小さな文字］` | etc | MANUAL-ONLY |
-| O138 | ルビの「○○」はママ | `［＃ルビの「○○」はママ］` | etc | MANUAL-ONLY |
-| O139 | ルビの「○○」は底本では「○○」 | `［＃ルビの「○○」は底本では「○○」］` | etc | MANUAL-ONLY |
-| O140 | ローマ数字N、N-N-N | `［＃ローマ数字N、N-N-N］` | etc; heading | MANUAL-ONLY |
-| O141 | 丸N、N-N-N | `［＃丸N、N-N-N］` | etc | MANUAL-ONLY |
-| O142 | ［＃左に「○○ | `［＃左に「○○` | etc | MANUAL-ONLY |
-| O143 | 左に「○○」のルビ付き終わり | `［＃左に「○○」のルビ付き終わり］` | etc; index | MANUAL-ONLY |
-| O144 | 左に「○○」の注記付き終わり | `［＃左に「○○」の注記付き終わり］` | etc | MANUAL-ONLY |
-| O145 | 左にルビ付き | `［＃左にルビ付き］` | etc; index | MANUAL-ONLY |
-| O146 | 左に注記付き | `［＃左に注記付き］` | etc | MANUAL-ONLY |
-| O147 | 注記付き | `［＃注記付き］` | etc | MANUAL-ONLY |
-| O148 | 井げた、N-N-N | `［＃井げた、N-N-N］` | extra | MANUAL-ONLY |
-| O149 | 始めきっこう（亀甲）括弧、N-N-N | `［＃始めきっこう（亀甲）括弧、N-N-N］` | extra | MANUAL-ONLY |
-| O150 | 始め二重山括弧、N-N-N | `［＃始め二重山括弧、N-N-N］` | extra | MANUAL-ONLY |
-| O151 | 始め角括弧、N-N-N | `［＃始め角括弧、N-N-N］` | extra | MANUAL-ONLY |
-| O152 | 米印、N-N-N | `［＃米印、N-N-N］` | extra | MANUAL-ONLY |
-| O153 | 終わりきっこう（亀甲）括弧、N-N-N | `［＃終わりきっこう（亀甲）括弧、N-N-N］` | extra | MANUAL-ONLY |
-| O154 | 終わり二重山括弧、N-N-N | `［＃終わり二重山括弧、N-N-N］` | extra | MANUAL-ONLY |
-| O155 | 終わり角括弧、N-N-N | `［＃終わり角括弧、N-N-N］` | extra | MANUAL-ONLY |
-| O156 | 縦線、N-N-N | `［＃縦線、N-N-N］` | extra | MANUAL-ONLY |
-| O157 | …終わり | `［＃…終わり］` | henkoten | MANUAL-ONLY |
-| O158 | 「○○」に（は）… | `［＃「○○」に（は）…］` | henkoten | MANUAL-ONLY |
-| O159 | ここから… | `［＃ここから…］` | henkoten | MANUAL-ONLY |
-| O160 | ここで…終わり | `［＃ここで…終わり］` | henkoten | MANUAL-ONLY |
-| O161 | （左に）「○○」の注記付き終わり | `［＃（左に）「○○」の注記付き終わり］` | index | MANUAL-ONLY |
-| O162 | （左に）注記付き | `［＃（左に）注記付き］` | index | MANUAL-ONLY |
+| ID | Family | Sub-family | Feature | Example | Sources | Status |
+|----|--------|------------|---------|---------|---------|--------|
+| O1 | Other | — |  | `［＃］` | corpus | OBSERVED |
+| O2 | Other | — |  s、a、b に続くアラビア数字はすべて下付き小文字、νに続くアラビア数字はすべて上付き小文字 | `［＃ s、a、b に続くアラビア数字はすべて下付き小文字、νに続くアラビア数字はすべて上付き小文字］` | corpus | OBSERVED |
+| O3 | Other | — |  「○○」の一つ目の「○○」は「○○」付き | `［＃ 「○○」の一つ目の「○○」は「○○」付き］` | corpus | OBSERVED |
+| O4 | Other | — |  一つ目の「○○」は「○○」付き | `［＃ 一つ目の「○○」は「○○」付き］` | corpus | OBSERVED |
+| O5 | Other | — |  二つ目の「○○」は「○○」付き | `［＃ 二つ目の「○○」は「○○」付き］` | corpus | OBSERVED |
+| O6 | Other | — |  最後の「○○」は「○○」付き | `［＃ 最後の「○○」は「○○」付き］` | corpus | OBSERVED |
+| O7 | Other | — | Aufklarungのaにウムラウト（¨） | `［＃Aufklarungのaにウムラウト（¨）］` | corpus | OBSERVED |
+| O8 | Other | — | ESH小文字、N-N-N | `［＃ESH小文字、N-N-N］` | corpus | OBSERVED |
+| O9 | Other | — | EZH小文字、N-N-N | `［＃EZH小文字、N-N-N］` | corpus | OBSERVED |
+| O10 | Other | — | HENG小文字、N-N-N | `［＃HENG小文字、N-N-N］` | corpus | OBSERVED |
+| O11 | Other | — | Kuchenのuにウムラウト（¨） | `［＃Kuchenのuにウムラウト（¨）］` | corpus | OBSERVED |
+| O12 | Other | — | N.N／N（figN_N.png、横N×縦N）入る | `［＃N.N／N（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O13 | Other | — | N.N＝N／N（figN_N.png、横N×縦N）入る | `［＃N.N＝N／N（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O14 | Other | — | N×N＝の数式（figN_N.png、横N×縦N）入る | `［＃N×N＝の数式（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O15 | Other | — | Nつの「○○」はNつに繋がる | `［＃Nつの「○○」はNつに繋がる］` | corpus | OBSERVED |
+| O16 | Other | — | Nつの机を』の形に置いて境目に「○○」（figN_N.png、横N×縦N）入る | `［＃Nつの机を』の形に置いて境目に「○○」（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O17 | Other | — | Nつめのmは上ドット付き | `［＃Nつめのmは上ドット付き］` | corpus | OBSERVED |
+| O18 | Other | — | Nつめのrは下ドット付き | `［＃Nつめのrは下ドット付き］` | corpus | OBSERVED |
+| O19 | Other | — | Nつめのrは下ドット付き。sは下ドット付き | `［＃Nつめのrは下ドット付き。sは下ドット付き］` | corpus | OBSERVED |
+| O20 | Other | — | Nつめのsは下ドット付き | `［＃Nつめのsは下ドット付き］` | corpus | OBSERVED |
+| O21 | Other | — | Nつめのtは下ドット付き | `［＃Nつめのtは下ドット付き］` | corpus | OBSERVED |
+| O22 | Other | — | Nつめの「○○」は上付き小文字、「○○」は分数 | `［＃Nつめの「○○」は上付き小文字、「○○」は分数］` | corpus | OBSERVED |
+| O23 | Other | — | NとN／N（figN_N.png、横N×縦N）入る | `［＃NとN／N（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O24 | Other | — | N分のN、N-N-N | `［＃N分のN、N-N-N］` | corpus | OBSERVED |
+| O25 | Other | — | N分のN、N-上-N | `［＃N分のN、N-上-N］` | corpus | OBSERVED |
+| O26 | Other | — | N刷時点では「○○」だが、N刷時点では「○○」に修正されている | `［＃N刷時点では「○○」だが、N刷時点では「○○」に修正されている］` | corpus | OBSERVED |
+| O27 | Other | — | N回り大きな文字 | `［＃N回り大きな文字］` | corpus | OBSERVED |
+| O28 | Other | — | N字アキか改行か判然せず | `［＃N字アキか改行か判然せず］` | corpus | OBSERVED |
+| O29 | Other | — | N字下がる | `［＃N字下がる］` | corpus | OBSERVED |
+| O30 | Other | — | N文字目のοは鋭アクセント付き | `［＃N文字目のοは鋭アクセント付き］` | corpus | OBSERVED |
+| O31 | Other | — | N文字目の「○○」はウムラウト（¨）付き | `［＃N文字目の「○○」はウムラウト（¨）付き］` | corpus | OBSERVED |
+| O32 | Other | — | N文字目の「○○」は下付き小文字、N文字目の「○○」は上付き小文字 | `［＃N文字目の「○○」は下付き小文字、N文字目の「○○」は上付き小文字］` | corpus | OBSERVED |
+| O33 | Other | — | N段目 | `［＃N段目］` | corpus | OBSERVED |
+| O34 | Other | — | N段目、Sinhaのnは上ドット付き | `［＃N段目、Sinhaのnは上ドット付き］` | corpus | OBSERVED |
+| O35 | Other | — | N段目、Sinhaのnは上ドット付き、Visnuのsnはともに下ドット付き | `［＃N段目、Sinhaのnは上ドット付き、Visnuのsnはともに下ドット付き］` | corpus | OBSERVED |
+| O36 | Other | — | N段目、Visnuのsnはともに下ドット付き | `［＃N段目、Visnuのsnはともに下ドット付き］` | corpus | OBSERVED |
+| O37 | Other | — | N行アキは底本ではなし | `［＃N行アキは底本ではなし］` | corpus | OBSERVED |
+| O38 | Other | — | N行目 | `［＃N行目］` | corpus | OBSERVED |
+| O39 | Other | — | N－N＝の数式（figN_N.png、横N×縦N）入る | `［＃N－N＝の数式（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O40 | Other | — | N／Nの数式（figN_N.png、横N×縦N）入る | `［＃N／Nの数式（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O41 | Other | — | N／N（figN_N.png、横N×縦N）入る | `［＃N／N（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O42 | Other | — | N／N＝∞の数式（figN_N.png、横N×縦N）入る | `［＃N／N＝∞の数式（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O43 | Other | — | Pierrot の思い出の扉絵（figN_N.png、横N×縦N）入る | `［＃Pierrot の思い出の扉絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O44 | Other | — | Rは下ドット付き。sは下ドット付き。hは下ドット付き | `［＃Rは下ドット付き。sは下ドット付き。hは下ドット付き］` | corpus | OBSERVED |
+| O45 | Other | — | SCHWA小文字、N-N-N | `［＃SCHWA小文字、N-N-N］` | corpus | OBSERVED |
+| O46 | Other | — | Tは下ドット付き | `［＃Tは下ドット付き］` | corpus | OBSERVED |
+| O47 | Other | — | Universitatのaにウムラウト（¨） | `［＃Universitatのaにウムラウト（¨）］` | corpus | OBSERVED |
+| O48 | Other | — | dは下ドット付き | `［＃dは下ドット付き］` | corpus | OBSERVED |
+| O49 | Other | — | hは下ドット付き | `［＃hは下ドット付き］` | corpus | OBSERVED |
+| O50 | Other | — | mは上ドット付き | `［＃mは上ドット付き］` | corpus | OBSERVED |
+| O51 | Other | — | mは上ドット付き。Nつめのsは下ドット付き | `［＃mは上ドット付き。Nつめのsは下ドット付き］` | corpus | OBSERVED |
+| O52 | Other | — | mは上ドット付き。nは下ドット付き | `［＃mは上ドット付き。nは下ドット付き］` | corpus | OBSERVED |
+| O53 | Other | — | mは下ドット付き | `［＃mは下ドット付き］` | corpus | OBSERVED |
+| O54 | Other | — | nは上ドット付き | `［＃nは上ドット付き］` | corpus | OBSERVED |
+| O55 | Other | — | nは下ドット付き | `［＃nは下ドット付き］` | corpus | OBSERVED |
+| O56 | Other | — | nは下ドット付き。Nつめのdは下ドット付き | `［＃nは下ドット付き。Nつめのdは下ドット付き］` | corpus | OBSERVED |
+| O57 | Other | — | oにアクサン(´)付き | `［＃oにアクサン(´)付き］` | corpus | OBSERVED |
+| O58 | Other | — | rsnはそれぞれ下ドット付き | `［＃rsnはそれぞれ下ドット付き］` | corpus | OBSERVED |
+| O59 | Other | — | rは下ドット付き | `［＃rは下ドット付き］` | corpus | OBSERVED |
+| O60 | Other | — | rは下ドット付き。Nつめのtは下ドット付き | `［＃rは下ドット付き。Nつめのtは下ドット付き］` | corpus | OBSERVED |
+| O61 | Other | — | rは下ドット付き。mは下ドット付き | `［＃rは下ドット付き。mは下ドット付き］` | corpus | OBSERVED |
+| O62 | Other | — | simhaのmは上ドット付き | `［＃simhaのmは上ドット付き］` | corpus | OBSERVED |
+| O63 | Other | — | snはそれぞれ下ドット付き | `［＃snはそれぞれ下ドット付き］` | corpus | OBSERVED |
+| O64 | Other | — | snはともに下ドット付き | `［＃snはともに下ドット付き］` | corpus | OBSERVED |
+| O65 | Other | — | stはともに下ドット付き | `［＃stはともに下ドット付き］` | corpus | OBSERVED |
+| O66 | Other | — | sは下ドット付き | `［＃sは下ドット付き］` | corpus | OBSERVED |
+| O67 | Other | — | tはともに下ドット付き | `［＃tはともに下ドット付き］` | corpus | OBSERVED |
+| O68 | Other | — | tは下ドット付き | `［＃tは下ドット付き］` | corpus | OBSERVED |
+| O69 | Other | — | εに帯気。ιに鋭アクセント | `［＃εに帯気。ιに鋭アクセント］` | corpus | OBSERVED |
+| O70 | Other | — | ηに帯気、ωに曲アクセント | `［＃ηに帯気、ωに曲アクセント］` | corpus | OBSERVED |
+| O71 | Other | — | ηに鋭アクセント | `［＃ηに鋭アクセント］` | corpus | OBSERVED |
+| O72 | Other | — | οに鋭アクセント。σはファイナルシグマ | `［＃οに鋭アクセント。σはファイナルシグマ］` | corpus | OBSERVED |
+| O73 | Other | — | υは帯気の気息記号（‘の上下が逆さまになったような記号）付き、ιはアキュートアクセント（´）付き | `［＃υは帯気の気息記号（‘の上下が逆さまになったような記号）付き、ιはアキュートアクセント（´）付き］` | corpus | OBSERVED |
+| O74 | Other | — | АОМС、モスクワ・ソビエトの行政部 | `［＃АОМС、モスクワ・ソビエトの行政部］` | corpus | OBSERVED |
+| O75 | Other | — | ВОКС、全ソ対外文化連絡協会 | `［＃ВОКС、全ソ対外文化連絡協会］` | corpus | OBSERVED |
+| O76 | Other | — | Госиздат | `［＃Госиздат］` | corpus | OBSERVED |
+| O77 | Other | — | МХАТ、モスクワ芸術座 | `［＃МХАТ、モスクワ芸術座］` | corpus | OBSERVED |
+| O78 | Other | — | моя＝私の愛する人（呼びかけ）、湯浅芳子のこと | `［＃моя＝私の愛する人（呼びかけ）、湯浅芳子のこと］` | corpus | OBSERVED |
+| O79 | Other | — | обед | `［＃обед］` | corpus | OBSERVED |
+| O80 | Other | — | ※は□冠、N-N | `［＃※は□冠、N-N］` | corpus | OBSERVED |
+| O81 | Other | — | △／‥、N-N | `［＃△／‥、N-N］` | corpus | OBSERVED |
+| O82 | Other | — | ○／‥、N-N | `［＃○／‥、N-N］` | corpus | OBSERVED |
+| O83 | Other | — | ○＜〒、N-N | `［＃○＜〒、N-N］` | corpus | OBSERVED |
+| O84 | Other | — | 、N-上段-N | `［＃、N-上段-N］` | corpus | OBSERVED |
+| O85 | Other | — | 、N-下段-N | `［＃、N-下段-N］` | corpus | OBSERVED |
+| O86 | Other | — | 〇・四一キログラム | `［＃〇・四一キログラム］` | corpus | OBSERVED |
+| O87 | Other | — | 《えは》はママ | `［＃《えは》はママ］` | corpus | OBSERVED |
+| O88 | Other | — | 《ヨーロッパ》は底本では《ヨーヨッパ》と誤記 | `［＃《ヨーロッパ》は底本では《ヨーヨッパ》と誤記］` | corpus | OBSERVED |
+| O89 | Other | — | 「○○」 | `［＃「○○」］` | corpus | OBSERVED |
+| O90 | Other | — | 「○○」、N-N | `［＃「○○」、N-N］` | corpus | OBSERVED |
+| O91 | Other | — | 「○○」、N-N-N | `［＃「○○」、N-N-N］` | corpus | OBSERVED |
+| O92 | Other | — | 「○○」、N-N-N、N-N | `［＃「○○」、N-N-N、N-N］` | corpus | OBSERVED |
+| O93 | Other | — | 「○○」、N-N、読みは「○○」か | `［＃「○○」、N-N、読みは「○○」か］` | corpus | OBSERVED |
+| O94 | Other | — | 「○○」、N-上-N | `［＃「○○」、N-上-N］` | corpus | OBSERVED |
+| O95 | Other | — | 「○○」、N-上N | `［＃「○○」、N-上N］` | corpus | OBSERVED |
+| O96 | Other | — | 「○○」、N-上段-N | `［＃「○○」、N-上段-N］` | corpus | OBSERVED |
+| O97 | Other | — | 「○○」、N-下-N | `［＃「○○」、N-下-N］` | corpus | OBSERVED |
+| O98 | Other | — | 「○○」、N-下N | `［＃「○○」、N-下N］` | corpus | OBSERVED |
+| O99 | Other | — | 「○○」、N-下段-N | `［＃「○○」、N-下段-N］` | corpus | OBSERVED |
+| O100 | Other | — | 「○○」、N-中-N | `［＃「○○」、N-中-N］` | corpus | OBSERVED |
+| O101 | Other | — | 「○○」、N-中段-N | `［＃「○○」、N-中段-N］` | corpus | OBSERVED |
+| O102 | Other | — | 「○○」、N-左-N | `［＃「○○」、N-左-N］` | corpus | OBSERVED |
+| O103 | Other | — | 「○○」、N-脚注-N | `［＃「○○」、N-脚注-N］` | corpus | OBSERVED |
+| O104 | Other | — | 「○○」、N巻-N-上-N | `［＃「○○」、N巻-N-上-N］` | corpus | OBSERVED |
+| O105 | Other | — | 「○○」、N巻-N-下-N | `［＃「○○」、N巻-N-下-N］` | corpus | OBSERVED |
+| O106 | Other | — | 「○○」、U-NBNBB、N-N | `［＃「○○」、U-NBNBB、N-N］` | corpus | OBSERVED |
+| O107 | Other | — | 「○○」、U＋N、N-N | `［＃「○○」、U＋N、N-N］` | corpus | OBSERVED |
+| O108 | Other | — | 「○○」、X-N | `［＃「○○」、X-N］` | corpus | OBSERVED |
+| O109 | Other | — | 「○○」、「○○」、「○○」はそれぞれ縦中横、すべての「○○」は上付き小書き | `［＃「○○」、「○○」、「○○」はそれぞれ縦中横、すべての「○○」は上付き小書き］` | corpus | OBSERVED |
+| O110 | Other | — | 「○○」、「○○」の正字、N-上-N | `［＃「○○」、「○○」の正字、N-上-N］` | corpus | OBSERVED |
+| O111 | Other | — | 「○○」、よみは「○○」、N-N | `［＃「○○」、よみは「○○」、N-N］` | corpus | OBSERVED |
+| O112 | Other | — | 「○○」、上-N-N | `［＃「○○」、上-N-N］` | corpus | OBSERVED |
+| O113 | Other | — | 「○○」、上巻-N-N | `［＃「○○」、上巻-N-N］` | corpus | OBSERVED |
+| O114 | Other | — | 「○○」、下-N-N | `［＃「○○」、下-N-N］` | corpus | OBSERVED |
+| O115 | Other | — | 「○○」、下巻-N-N | `［＃「○○」、下巻-N-N］` | corpus | OBSERVED |
+| O116 | Other | — | 「○○」、屋号を示す記号、N-N | `［＃「○○」、屋号を示す記号、N-N］` | corpus | OBSERVED |
+| O117 | Other | — | 「○○」、屋号を示す記号、N-上-N | `［＃「○○」、屋号を示す記号、N-上-N］` | corpus | OBSERVED |
+| O118 | Other | — | 「○○」、屋号を示す記号、N-上-N」 | `［＃「○○」、屋号を示す記号、N-上-N」］` | corpus | OBSERVED |
+| O119 | Other | — | 「○○」、屋号を示す記号、N-上N | `［＃「○○」、屋号を示す記号、N-上N］` | corpus | OBSERVED |
+| O120 | Other | — | 「○○」、屋号を示す記号、N-下-N | `［＃「○○」、屋号を示す記号、N-下-N］` | corpus | OBSERVED |
+| O121 | Other | — | 「○○」、屋号を示す記号、、N-N | `［＃「○○」、屋号を示す記号、、N-N］` | corpus | OBSERVED |
+| O122 | Other | — | 「○○」、意味読みとも不明、N-N | `［＃「○○」、意味読みとも不明、N-N］` | corpus | OBSERVED |
+| O123 | Other | — | 「○○」、目次N-N | `［＃「○○」、目次N-N］` | corpus | OBSERVED |
+| O124 | Other | — | 「○○」、第N水N-N-N | `［＃「○○」、第N水N-N-N］` | corpus | OBSERVED |
+| O125 | Other | — | 「○○」、脱？）」はN段階小さな文字 | `［＃「○○」、脱？）」はN段階小さな文字］` | corpus | OBSERVED |
+| O126 | Other | — | 「○○」、補助N、N-N | `［＃「○○」、補助N、N-N］` | corpus | OBSERVED |
+| O127 | Other | — | 「○○」、読みは「○○」、N-N | `［＃「○○」、読みは「○○」、N-N］` | corpus | OBSERVED |
+| O128 | Other | — | 「○○」、面区点番号N-N-N、N-N | `［＃「○○」、面区点番号N-N-N、N-N］` | corpus | OBSERVED |
+| O129 | Other | — | 「○○」、（三）-N-N | `［＃「○○」、（三）-N-N］` | corpus | OBSERVED |
+| O130 | Other | — | 「○○」、（四）-N-N | `［＃「○○」、（四）-N-N］` | corpus | OBSERVED |
+| O131 | Other | — | 「○○」「○○」「○○」「○○」「○○」「○○」「○○」」はN段階小さな文字 | `［＃「○○」「○○」「○○」「○○」「○○」「○○」「○○」」はN段階小さな文字］` | corpus | OBSERVED |
+| O132 | Other | — | 「○○」「○○」「○○」」はN段階小さな文字 | `［＃「○○」「○○」「○○」」はN段階小さな文字］` | corpus | OBSERVED |
+| O133 | Other | — | 「○○」「○○」「○○」および「○○」のそれぞれの末尾「○○」は、「○○」と「○○」の合字 | `［＃「○○」「○○」「○○」および「○○」のそれぞれの末尾「○○」は、「○○」と「○○」の合字］` | corpus | OBSERVED |
+| O134 | Other | — | 「○○」「○○」「○○」の「○○」はアクサン（´）付き、「○○」はローマ数字のN | `［＃「○○」「○○」「○○」の「○○」はアクサン（´）付き、「○○」はローマ数字のN］` | corpus | OBSERVED |
+| O135 | Other | — | 「○○」「○○」」はN段階小さな文字 | `［＃「○○」「○○」」はN段階小さな文字］` | corpus | OBSERVED |
+| O136 | Other | — | 「○○」「○○」は分数 | `［＃「○○」「○○」は分数］` | corpus | OBSERVED |
+| O137 | Other | — | 「○○」「○○」は縦中横 | `［＃「○○」「○○」は縦中横］` | corpus | OBSERVED |
+| O138 | Other | — | 「○○」「○○」は自由律俳句 | `［＃「○○」「○○」は自由律俳句］` | corpus | OBSERVED |
+| O139 | Other | — | 「○○」」、N-N | `［＃「○○」」、N-N］` | corpus | OBSERVED |
+| O140 | Other | — | 「○○」」、屋号を示す記号、N-N | `［＃「○○」」、屋号を示す記号、N-N］` | corpus | OBSERVED |
+| O141 | Other | — | 「○○」」」はママ | `［＃「○○」」」はママ］` | corpus | OBSERVED |
+| O142 | Other | — | 「○○」」に「○○」の注記 | `［＃「○○」」に「○○」の注記］` | corpus | OBSERVED |
+| O143 | Other | — | 「○○」」はN段階大きな文字 | `［＃「○○」」はN段階大きな文字］` | corpus | OBSERVED |
+| O144 | Other | — | 「○○」」はN段階小さな文字 | `［＃「○○」」はN段階小さな文字］` | corpus | OBSERVED |
+| O145 | Other | — | 「○○」」はママ | `［＃「○○」」はママ］` | corpus | OBSERVED |
+| O146 | Other | — | 「○○」」は底本では「○○」 | `［＃「○○」」は底本では「○○」］` | corpus | OBSERVED |
+| O147 | Other | — | 「○○」」は底本では「○○」、」 | `［＃「○○」」は底本では「○○」、」］` | corpus | OBSERVED |
+| O148 | Other | — | 「○○」」は底本では「○○」。」 | `［＃「○○」」は底本では「○○」。」］` | corpus | OBSERVED |
+| O149 | Other | — | 「○○」」は底本では「○○」」 | `［＃「○○」」は底本では「○○」」］` | corpus | OBSERVED |
+| O150 | Other | — | 「○○」」は底本では「○○」」」 | `［＃「○○」」は底本では「○○」」」］` | corpus | OBSERVED |
+| O151 | Other | — | 「○○」」は底本では「○○」」と誤記 | `［＃「○○」」は底本では「○○」」と誤記］` | corpus | OBSERVED |
+| O152 | Other | — | 「○○」」は底本では欠落 | `［＃「○○」」は底本では欠落］` | corpus | OBSERVED |
+| O153 | Other | — | 「○○」〕」は底本では「○○」 | `［＃「○○」〕」は底本では「○○」］` | corpus | OBSERVED |
+| O154 | Other | — | 「○○」あるいは「○○」か | `［＃「○○」あるいは「○○」か］` | corpus | OBSERVED |
+| O155 | Other | — | 「○○」から六画目をとったもの、N-N | `［＃「○○」から六画目をとったもの、N-N］` | corpus | OBSERVED |
+| O156 | Other | — | 「○○」か？ | `［＃「○○」か？］` | corpus | OBSERVED |
+| O157 | Other | — | 「○○」が」は底本では「○○」 | `［＃「○○」が」は底本では「○○」］` | corpus | OBSERVED |
+| O158 | Other | — | 「○○」がないのはママ | `［＃「○○」がないのはママ］` | corpus | OBSERVED |
+| O159 | Other | — | 「○○」が欠如か | `［＃「○○」が欠如か］` | corpus | OBSERVED |
+| O160 | Other | — | 「○○」が脱落か？ | `［＃「○○」が脱落か？］` | corpus | OBSERVED |
+| O161 | Other | — | 「○○」で「○○」の右側が「○○」」、N-N | `［＃「○○」で「○○」の右側が「○○」」、N-N］` | corpus | OBSERVED |
+| O162 | Other | — | 「○○」で」はママ | `［＃「○○」で」はママ］` | corpus | OBSERVED |
+| O163 | Other | — | 「○○」でつくりの縦棒が下に突き抜けている、N-N | `［＃「○○」でつくりの縦棒が下に突き抜けている、N-N］` | corpus | OBSERVED |
+| O164 | Other | — | 「○○」では底本では「○○」 | `［＃「○○」では底本では「○○」］` | corpus | OBSERVED |
+| O165 | Other | — | 「○○」で縦棒が四本、N-N | `［＃「○○」で縦棒が四本、N-N］` | corpus | OBSERVED |
+| O166 | Other | — | 「○○」と「○○」がN行内でN行に分けられている | `［＃「○○」と「○○」がN行内でN行に分けられている］` | corpus | OBSERVED |
+| O167 | Other | — | 「○○」と「○○」の「○○」はウムラウト（¨）付き | `［＃「○○」と「○○」の「○○」はウムラウト（¨）付き］` | corpus | OBSERVED |
+| O168 | Other | — | 「○○」と「○○」の中間に「○○」 | `［＃「○○」と「○○」の中間に「○○」］` | corpus | OBSERVED |
+| O169 | Other | — | 「○○」と「○○」の句の上には、この二つの句を括る波括弧あり | `［＃「○○」と「○○」の句の上には、この二つの句を括る波括弧あり］` | corpus | OBSERVED |
+| O170 | Other | — | 「○○」と「○○」はN列に並ぶ | `［＃「○○」と「○○」はN列に並ぶ］` | corpus | OBSERVED |
+| O171 | Other | — | 「○○」と「○○」はN行 | `［＃「○○」と「○○」はN行］` | corpus | OBSERVED |
+| O172 | Other | — | 「○○」と「○○」は横並びになっている | `［＃「○○」と「○○」は横並びになっている］` | corpus | OBSERVED |
+| O173 | Other | — | 「○○」と」はママ | `［＃「○○」と」はママ］` | corpus | OBSERVED |
+| O174 | Other | — | 「○○」と」は底本では「○○」　と」 | `［＃「○○」と」は底本では「○○」　と」］` | corpus | OBSERVED |
+| O175 | Other | — | 「○○」と」は底本では「○○」だと」 | `［＃「○○」と」は底本では「○○」だと」］` | corpus | OBSERVED |
+| O176 | Other | — | 「○○」と」は底本では「○○」ると」 | `［＃「○○」と」は底本では「○○」ると」］` | corpus | OBSERVED |
+| O177 | Other | — | 「○○」とあげて」は底本では「○○」　とあげて」 | `［＃「○○」とあげて」は底本では「○○」　とあげて」］` | corpus | OBSERVED |
+| O178 | Other | — | 「○○」という」はママ | `［＃「○○」という」はママ］` | corpus | OBSERVED |
+| O179 | Other | — | 「○○」というのが」は底本では「○○」 | `［＃「○○」というのが」は底本では「○○」］` | corpus | OBSERVED |
+| O180 | Other | — | 「○○」とか」はママ | `［＃「○○」とか」はママ］` | corpus | OBSERVED |
+| O181 | Other | — | 「○○」と云ふ」は底本では「○○」云ふ」 | `［＃「○○」と云ふ」は底本では「○○」云ふ」］` | corpus | OBSERVED |
+| O182 | Other | — | 「○○」と思われるが、底本の通りにする | `［＃「○○」と思われるが、底本の通りにする］` | corpus | OBSERVED |
+| O183 | Other | — | 「○○」と私は医師に話しかけた」は底本では「○○」 | `［＃「○○」と私は医師に話しかけた」は底本では「○○」］` | corpus | OBSERVED |
+| O184 | Other | — | 「○○」と言えば、」は底本では「○○」 | `［＃「○○」と言えば、」は底本では「○○」］` | corpus | OBSERVED |
+| O185 | Other | — | 「○○」なしはママ | `［＃「○○」なしはママ］` | corpus | OBSERVED |
+| O186 | Other | — | 「○○」に、にすいのしんにょうの「○○」、N-N | `［＃「○○」に、にすいのしんにょうの「○○」、N-N］` | corpus | OBSERVED |
+| O187 | Other | — | 「○○」に《フライング・ダッジマン》のルビ | `［＃「○○」に《フライング・ダッジマン》のルビ］` | corpus | OBSERVED |
+| O188 | Other | — | 「○○」に「○○」 | `［＃「○○」に「○○」］` | corpus | OBSERVED |
+| O189 | Other | — | 「○○」に「○○」、N-N | `［＃「○○」に「○○」、N-N］` | corpus | OBSERVED |
+| O190 | Other | — | 「○○」に「○○」、N-上段N | `［＃「○○」に「○○」、N-上段N］` | corpus | OBSERVED |
+| O191 | Other | — | 「○○」に「○○」、N-下段N | `［＃「○○」に「○○」、N-下段N］` | corpus | OBSERVED |
+| O192 | Other | — | 「○○」に「○○」と「○○」、N-N | `［＃「○○」に「○○」と「○○」、N-N］` | corpus | OBSERVED |
+| O193 | Other | — | 「○○」に「○○」と注記 | `［＃「○○」に「○○」と注記］` | corpus | OBSERVED |
+| O194 | Other | — | 「○○」に「○○」の中に「○○」 | `［＃「○○」に「○○」の中に「○○」］` | corpus | OBSERVED |
+| O195 | Other | — | 「○○」に「○○」の傍記 | `［＃「○○」に「○○」の傍記］` | corpus | OBSERVED |
+| O196 | Other | — | 「○○」に「○○」の意」の注記 | `［＃「○○」に「○○」の意」の注記］` | corpus | OBSERVED |
+| O197 | Other | — | 「○○」に「○○」の注 | `［＃「○○」に「○○」の注］` | corpus | OBSERVED |
+| O198 | Other | — | 「○○」に「○○」の注記、底本の親本「○○」で伏字を起こした個所 | `［＃「○○」に「○○」の注記、底本の親本「○○」で伏字を起こした個所］` | corpus | OBSERVED |
+| O199 | Other | — | 「○○」に「○○」の注記、正しくは「○○」 | `［＃「○○」に「○○」の注記、正しくは「○○」］` | corpus | OBSERVED |
+| O200 | Other | — | 「○○」に「○○」の注記がある | `［＃「○○」に「○○」の注記がある］` | corpus | OBSERVED |
+| O201 | Other | — | 「○○」に「○○」の注釈つき | `［＃「○○」に「○○」の注釈つき］` | corpus | OBSERVED |
+| O202 | Other | — | 「○○」に「○○」の著者註 | `［＃「○○」に「○○」の著者註］` | corpus | OBSERVED |
+| O203 | Other | — | 「○○」に「○○」の表記 | `［＃「○○」に「○○」の表記］` | corpus | OBSERVED |
+| O204 | Other | — | 「○○」に「○○」は縦中横 | `［＃「○○」に「○○」は縦中横］` | corpus | OBSERVED |
+| O205 | Other | — | 「○○」に「○○」を加える、N-N | `［＃「○○」に「○○」を加える、N-N］` | corpus | OBSERVED |
+| O206 | Other | — | 「○○」に「○○」印、欄外に校注：「○○」 | `［＃「○○」に「○○」印、欄外に校注：「○○」］` | corpus | OBSERVED |
+| O207 | Other | — | 「○○」に「○○」注記 | `［＃「○○」に「○○」注記］` | corpus | OBSERVED |
+| O208 | Other | — | 「○○」に」は底本では「○○」に」 | `［＃「○○」に」は底本では「○○」に」］` | corpus | OBSERVED |
+| O209 | Other | — | 「○○」に〔ママ〕と傍書 | `［＃「○○」に〔ママ〕と傍書］` | corpus | OBSERVED |
+| O210 | Other | — | 「○○」に〔ママ〕の注記 | `［＃「○○」に〔ママ〕の注記］` | corpus | OBSERVED |
+| O211 | Other | — | 「○○」にさらに縦棒を一本付け加える）」、N-N | `［＃「○○」にさらに縦棒を一本付け加える）」、N-N］` | corpus | OBSERVED |
+| O212 | Other | — | 「○○」にママの注記 | `［＃「○○」にママの注記］` | corpus | OBSERVED |
+| O213 | Other | — | 「○○」にルビ | `［＃「○○」にルビ］` | corpus | OBSERVED |
+| O214 | Other | — | 「○○」に下線 | `［＃「○○」に下線］` | corpus | OBSERVED |
+| O215 | Other | — | 「○○」に似た形（figN_N.png、横N×縦N）入る | `［＃「○○」に似た形（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O216 | Other | — | 「○○」に似た記号、N-N | `［＃「○○」に似た記号、N-N］` | corpus | OBSERVED |
+| O217 | Other | — | 「○○」に同意して」は底本では「○○」に同意して」 | `［＃「○○」に同意して」は底本では「○○」に同意して」］` | corpus | OBSERVED |
+| O218 | Other | — | 「○○」に官、N-N | `［＃「○○」に官、N-N］` | corpus | OBSERVED |
+| O219 | Other | — | 「○○」に対応する注記が底本でも親本でも欠落している | `［＃「○○」に対応する注記が底本でも親本でも欠落している］` | corpus | OBSERVED |
+| O220 | Other | — | 「○○」に屯、N-N | `［＃「○○」に屯、N-N］` | corpus | OBSERVED |
+| O221 | Other | — | 「○○」に巨、N-N | `［＃「○○」に巨、N-N］` | corpus | OBSERVED |
+| O222 | Other | — | 「○○」に敕、N-N | `［＃「○○」に敕、N-N］` | corpus | OBSERVED |
+| O223 | Other | — | 「○○」に果、N-N | `［＃「○○」に果、N-N］` | corpus | OBSERVED |
+| O224 | Other | — | 「○○」に枠囲み | `［＃「○○」に枠囲み］` | corpus | OBSERVED |
+| O225 | Other | — | 「○○」に枠線 | `［＃「○○」に枠線］` | corpus | OBSERVED |
+| O226 | Other | — | 「○○」に栗、N-N | `［＃「○○」に栗、N-N］` | corpus | OBSERVED |
+| O227 | Other | — | 「○○」に校注、「○○」、ただし底本では校注が脱落、底本の親本にて確認 | `［＃「○○」に校注、「○○」、ただし底本では校注が脱落、底本の親本にて確認］` | corpus | OBSERVED |
+| O228 | Other | — | 「○○」に欄外に校注、「○○」 | `［＃「○○」に欄外に校注、「○○」］` | corpus | OBSERVED |
+| O229 | Other | — | 「○○」に欄外校注：裁判官が説諭して示談にせしむること | `［＃「○○」に欄外校注：裁判官が説諭して示談にせしむること］` | corpus | OBSERVED |
+| O230 | Other | — | 「○○」に濁点、N-N-N | `［＃「○○」に濁点、N-N-N］` | corpus | OBSERVED |
+| O231 | Other | — | 「○○」に火を三つ、N-N | `［＃「○○」に火を三つ、N-N］` | corpus | OBSERVED |
+| O232 | Other | — | 「○○」に点 | `［＃「○○」に点］` | corpus | OBSERVED |
+| O233 | Other | — | 「○○」に眞、N-N | `［＃「○○」に眞、N-N］` | corpus | OBSERVED |
+| O234 | Other | — | 「○○」に羅、N-N | `［＃「○○」に羅、N-N］` | corpus | OBSERVED |
+| O235 | Other | — | 「○○」に転載）」はN段階小さな文字 | `［＃「○○」に転載）」はN段階小さな文字］` | corpus | OBSERVED |
+| O236 | Other | — | 「○○」に（死）の注記 | `［＃「○○」に（死）の注記］` | corpus | OBSERVED |
+| O237 | Other | — | 「○○」ねえそれから」はママ | `［＃「○○」ねえそれから」はママ］` | corpus | OBSERVED |
+| O238 | Other | — | 「○○」のNつの「○○」はアクサン（｀）付き | `［＃「○○」のNつの「○○」はアクサン（｀）付き］` | corpus | OBSERVED |
+| O239 | Other | — | 「○○」のN画目までの書きかけの字、N-N | `［＃「○○」のN画目までの書きかけの字、N-N］` | corpus | OBSERVED |
+| O240 | Other | — | 「○○」のN番目の「○○」はアクサン（´）付き | `［＃「○○」のN番目の「○○」はアクサン（´）付き］` | corpus | OBSERVED |
+| O241 | Other | — | 「○○」のrは下ドット付き | `［＃「○○」のrは下ドット付き］` | corpus | OBSERVED |
+| O242 | Other | — | 「○○」の「○○」〕」は底本では「○○」 | `［＃「○○」の「○○」〕」は底本では「○○」］` | corpus | OBSERVED |
+| O243 | Other | — | 「○○」の「○○」が「○○」 | `［＃「○○」の「○○」が「○○」］` | corpus | OBSERVED |
+| O244 | Other | — | 「○○」の「○○」が「○○」、N-N | `［＃「○○」の「○○」が「○○」、N-N］` | corpus | OBSERVED |
+| O245 | Other | — | 「○○」の「○○」と「○○」の「○○」は鋭アクセント（´）付き。「○○」の語尾の「○○」はファイナルシグマ | `［＃「○○」の「○○」と「○○」の「○○」は鋭アクセント（´）付き。「○○」の語尾の「○○」はファイナルシグマ］` | corpus | OBSERVED |
+| O246 | Other | — | 「○○」の「○○」にかえて「○○」のつくり、N-N | `［＃「○○」の「○○」にかえて「○○」のつくり、N-N］` | corpus | OBSERVED |
+| O247 | Other | — | 「○○」の「○○」に変えて「○○」、N-N | `［＃「○○」の「○○」に変えて「○○」、N-N］` | corpus | OBSERVED |
+| O248 | Other | — | 「○○」の「○○」に長音記号 | `［＃「○○」の「○○」に長音記号］` | corpus | OBSERVED |
+| O249 | Other | — | 「○○」の「○○」の「○○」〕」は底本では「○○」 | `［＃「○○」の「○○」の「○○」〕」は底本では「○○」］` | corpus | OBSERVED |
+| O250 | Other | — | 「○○」の「○○」の下に「○○」を加える」、N-N | `［＃「○○」の「○○」の下に「○○」を加える」、N-N］` | corpus | OBSERVED |
+| O251 | Other | — | 「○○」の「○○」の代わりに「○○」、N-N | `［＃「○○」の「○○」の代わりに「○○」、N-N］` | corpus | OBSERVED |
+| O252 | Other | — | 「○○」の「○○」の部分が「○○」 | `［＃「○○」の「○○」の部分が「○○」］` | corpus | OBSERVED |
+| O253 | Other | — | 「○○」の「○○」の部分が「○○」、N-上N | `［＃「○○」の「○○」の部分が「○○」、N-上N］` | corpus | OBSERVED |
+| O254 | Other | — | 「○○」の「○○」の部分が三本、N-N | `［＃「○○」の「○○」の部分が三本、N-N］` | corpus | OBSERVED |
+| O255 | Other | — | 「○○」の「○○」は「○○」付き | `［＃「○○」の「○○」は「○○」付き］` | corpus | OBSERVED |
+| O256 | Other | — | 「○○」の「○○」はアクサン（´）付き | `［＃「○○」の「○○」はアクサン（´）付き］` | corpus | OBSERVED |
+| O257 | Other | — | 「○○」の「○○」はウムラウト（¨）付き | `［＃「○○」の「○○」はウムラウト（¨）付き］` | corpus | OBSERVED |
+| O258 | Other | — | 「○○」の「○○」は小書き | `［＃「○○」の「○○」は小書き］` | corpus | OBSERVED |
+| O259 | Other | — | 「○○」の「○○」は底本では小書き | `［＃「○○」の「○○」は底本では小書き］` | corpus | OBSERVED |
+| O260 | Other | — | 「○○」の「○○」を「○○」のそれのように、N-N | `［＃「○○」の「○○」を「○○」のそれのように、N-N］` | corpus | OBSERVED |
+| O261 | Other | — | 「○○」の」は底本では「○○」の」 | `［＃「○○」の」は底本では「○○」の」］` | corpus | OBSERVED |
+| O262 | Other | — | 「○○」のうち、始めのeはアクサン(´)付き | `［＃「○○」のうち、始めのeはアクサン(´)付き］` | corpus | OBSERVED |
+| O263 | Other | — | 「○○」のくずし字、N-N | `［＃「○○」のくずし字、N-N］` | corpus | OBSERVED |
+| O264 | Other | — | 「○○」のくずし字、N-上-N | `［＃「○○」のくずし字、N-上-N］` | corpus | OBSERVED |
+| O265 | Other | — | 「○○」のころもへんを「○○」に変える、N-N | `［＃「○○」のころもへんを「○○」に変える、N-N］` | corpus | OBSERVED |
+| O266 | Other | — | 「○○」のだ」は底本では「○○」 | `［＃「○○」のだ」は底本では「○○」］` | corpus | OBSERVED |
+| O267 | Other | — | 「○○」のつくり」、N-N | `［＃「○○」のつくり」、N-N］` | corpus | OBSERVED |
+| O268 | Other | — | 「○○」のつくり＋おおざと」、N-N | `［＃「○○」のつくり＋おおざと」、N-N］` | corpus | OBSERVED |
+| O269 | Other | — | 「○○」のへんとつくりが逆、N-N | `［＃「○○」のへんとつくりが逆、N-N］` | corpus | OBSERVED |
+| O270 | Other | — | 「○○」のような形（figN_N.png、横N×縦N）入る | `［＃「○○」のような形（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O271 | Other | — | 「○○」のルビ | `［＃「○○」のルビ］` | corpus | OBSERVED |
+| O272 | Other | — | 「○○」の一つ目の「○○」は「○○」付き、一つ目の「○○」は「○○」付き | `［＃「○○」の一つ目の「○○」は「○○」付き、一つ目の「○○」は「○○」付き］` | corpus | OBSERVED |
+| O273 | Other | — | 「○○」の一画目の後に「○○」を追加し、八画目の点を除いたもの、N-N | `［＃「○○」の一画目の後に「○○」を追加し、八画目の点を除いたもの、N-N］` | corpus | OBSERVED |
+| O274 | Other | — | 「○○」の上に「○○」がつく | `［＃「○○」の上に「○○」がつく］` | corpus | OBSERVED |
+| O275 | Other | — | 「○○」の上下を付けた形（figN_N.png、横N×縦N）入る | `［＃「○○」の上下を付けた形（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O276 | Other | — | 「○○」の上下反転（figN_N.png、横N×縦N）入る | `［＃「○○」の上下反転（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O277 | Other | — | 「○○」の上下左右に外向きに矢印の頭を付けた記号、N-N | `［＃「○○」の上下左右に外向きに矢印の頭を付けた記号、N-N］` | corpus | OBSERVED |
+| O278 | Other | — | 「○○」の下に「○○」 | `［＃「○○」の下に「○○」］` | corpus | OBSERVED |
+| O279 | Other | — | 「○○」の下に「○○」、屋号を示す記号、N-N | `［＃「○○」の下に「○○」、屋号を示す記号、N-N］` | corpus | OBSERVED |
+| O280 | Other | — | 「○○」の下に「○○」のようなもの、読みは「○○」、N-N | `［＃「○○」の下に「○○」のようなもの、読みは「○○」、N-N］` | corpus | OBSERVED |
+| O281 | Other | — | 「○○」の下の横棒が長いもの、N-N | `［＃「○○」の下の横棒が長いもの、N-N］` | corpus | OBSERVED |
+| O282 | Other | — | 「○○」の中に「○○」 | `［＃「○○」の中に「○○」］` | corpus | OBSERVED |
+| O283 | Other | — | 「○○」の中に「○○」、屋号を示す記号、N-N | `［＃「○○」の中に「○○」、屋号を示す記号、N-N］` | corpus | OBSERVED |
+| O284 | Other | — | 「○○」の二つの「○○」は「○○」付き | `［＃「○○」の二つの「○○」は「○○」付き］` | corpus | OBSERVED |
+| O285 | Other | — | 「○○」の位の左に「○○」、N-N | `［＃「○○」の位の左に「○○」、N-N］` | corpus | OBSERVED |
+| O286 | Other | — | 「○○」の別体、N-N | `［＃「○○」の別体、N-N］` | corpus | OBSERVED |
+| O287 | Other | — | 「○○」の前で改行されているのは底本のママ | `［＃「○○」の前で改行されているのは底本のママ］` | corpus | OBSERVED |
+| O288 | Other | — | 「○○」の単位記号、N-N | `［＃「○○」の単位記号、N-N］` | corpus | OBSERVED |
+| O289 | Other | — | 「○○」の句を」は底本では「○○」句を」 | `［＃「○○」の句を」は底本では「○○」句を」］` | corpus | OBSERVED |
+| O290 | Other | — | 「○○」の台に変えて「○○」、N-N | `［＃「○○」の台に変えて「○○」、N-N］` | corpus | OBSERVED |
+| O291 | Other | — | 「○○」の右に「○○」 | `［＃「○○」の右に「○○」］` | corpus | OBSERVED |
+| O292 | Other | — | 「○○」の右上に小さな四角あり | `［＃「○○」の右上に小さな四角あり］` | corpus | OBSERVED |
+| O293 | Other | — | 「○○」の合字、N-N | `［＃「○○」の合字、N-N］` | corpus | OBSERVED |
+| O294 | Other | — | 「○○」の小文字 | `［＃「○○」の小文字］` | corpus | OBSERVED |
+| O295 | Other | — | 「○○」の左からN番目のtは底本では上下逆 | `［＃「○○」の左からN番目のtは底本では上下逆］` | corpus | OBSERVED |
+| O296 | Other | — | 「○○」の左に「○○」の注記」 | `［＃「○○」の左に「○○」の注記」］` | corpus | OBSERVED |
+| O297 | Other | — | 「○○」の左に「○○」は縦中横 | `［＃「○○」の左に「○○」は縦中横］` | corpus | OBSERVED |
+| O298 | Other | — | 「○○」の左の縦棒を取った中に「○○」、屋号を示す記号、N-N | `［＃「○○」の左の縦棒を取った中に「○○」、屋号を示す記号、N-N］` | corpus | OBSERVED |
+| O299 | Other | — | 「○○」の左上が「○○」、N-N | `［＃「○○」の左上が「○○」、N-N］` | corpus | OBSERVED |
+| O300 | Other | — | 「○○」の左側と下側を線で囲った記号、N-N | `［＃「○○」の左側と下側を線で囲った記号、N-N］` | corpus | OBSERVED |
+| O301 | Other | — | 「○○」の左側の「○○」が「○○」、N-N | `［＃「○○」の左側の「○○」が「○○」、N-N］` | corpus | OBSERVED |
+| O302 | Other | — | 「○○」の左右に「○○」）／（十＋十）」、N-N | `［＃「○○」の左右に「○○」）／（十＋十）」、N-N］` | corpus | OBSERVED |
+| O303 | Other | — | 「○○」の帖は冒頭の晶子詞のみで本文はありません。 | `［＃「○○」の帖は冒頭の晶子詞のみで本文はありません。］` | corpus | OBSERVED |
+| O304 | Other | — | 「○○」の手書き文字（figN_N.png、横N×縦N）入る | `［＃「○○」の手書き文字（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O305 | Other | — | 「○○」の文字の入ったハートの絵（figN_N.png、横N×縦N）入る | `［＃「○○」の文字の入ったハートの絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O306 | Other | — | 「○○」の旁は底本では「○○」の旁に同じ形、N-上段-N | `［＃「○○」の旁は底本では「○○」の旁に同じ形、N-上段-N］` | corpus | OBSERVED |
+| O307 | Other | — | 「○○」の最後の画のない字、N-N | `［＃「○○」の最後の画のない字、N-N］` | corpus | OBSERVED |
+| O308 | Other | — | 「○○」の楽譜（figN_N.png、横N×縦N）入る | `［＃「○○」の楽譜（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O309 | Other | — | 「○○」の楽譜（figN_N.png）入る | `［＃「○○」の楽譜（figN_N.png）入る］` | corpus | OBSERVED |
+| O310 | Other | — | 「○○」の歌声が」は底本では「○○」声が」 | `［＃「○○」の歌声が」は底本では「○○」声が」］` | corpus | OBSERVED |
+| O311 | Other | — | 「○○」の注記 | `［＃「○○」の注記］` | corpus | OBSERVED |
+| O312 | Other | — | 「○○」の火へんを炎にしたうえで、へんとつくりをいれかえた字、焔の正字と同字 | `［＃「○○」の火へんを炎にしたうえで、へんとつくりをいれかえた字、焔の正字と同字］` | corpus | OBSERVED |
+| O313 | Other | — | 「○○」の片側のみ、N-N | `［＃「○○」の片側のみ、N-N］` | corpus | OBSERVED |
+| O314 | Other | — | 「○○」の白抜き、N-N | `［＃「○○」の白抜き、N-N］` | corpus | OBSERVED |
+| O315 | Other | — | 「○○」の第二画の白抜き、N-N | `［＃「○○」の第二画の白抜き、N-N］` | corpus | OBSERVED |
+| O316 | Other | — | 「○○」の篆書（figN_N.png）、N-N | `［＃「○○」の篆書（figN_N.png）、N-N］` | corpus | OBSERVED |
+| O317 | Other | — | 「○○」の縦中横 | `［＃「○○」の縦中横］` | corpus | OBSERVED |
+| O318 | Other | — | 「○○」の縦棒の上半分を取ったもの、N-N | `［＃「○○」の縦棒の上半分を取ったもの、N-N］` | corpus | OBSERVED |
+| O319 | Other | — | 「○○」の縦棒は下に突き抜ける）」、N-N | `［＃「○○」の縦棒は下に突き抜ける）」、N-N］` | corpus | OBSERVED |
+| O320 | Other | — | 「○○」の脱落はママ | `［＃「○○」の脱落はママ］` | corpus | OBSERVED |
+| O321 | Other | — | 「○○」の草書体、N-N | `［＃「○○」の草書体、N-N］` | corpus | OBSERVED |
+| O322 | Other | — | 「○○」の草書体文字、N-N | `［＃「○○」の草書体文字、N-N］` | corpus | OBSERVED |
+| O323 | Other | — | 「○○」の草書体文字、N-上-N | `［＃「○○」の草書体文字、N-上-N］` | corpus | OBSERVED |
+| O324 | Other | — | 「○○」の草書体文字、N-下-N | `［＃「○○」の草書体文字、N-下-N］` | corpus | OBSERVED |
+| O325 | Other | — | 「○○」の草書体文字、N-中-N | `［＃「○○」の草書体文字、N-中-N］` | corpus | OBSERVED |
+| O326 | Other | — | 「○○」の草書体文字、コマN-左-N | `［＃「○○」の草書体文字、コマN-左-N］` | corpus | OBSERVED |
+| O327 | Other | — | 「○○」の表題付きの楽譜入る（略） | `［＃「○○」の表題付きの楽譜入る（略）］` | corpus | OBSERVED |
+| O328 | Other | — | 「○○」の誤り？ | `［＃「○○」の誤り？］` | corpus | OBSERVED |
+| O329 | Other | — | 「○○」の誤り？、N-N | `［＃「○○」の誤り？、N-N］` | corpus | OBSERVED |
+| O330 | Other | — | 「○○」の誤植と思われる | `［＃「○○」の誤植と思われる］` | corpus | OBSERVED |
+| O331 | Other | — | 「○○」の誤記か | `［＃「○○」の誤記か］` | corpus | OBSERVED |
+| O332 | Other | — | 「○○」の講演を聞く」はN段階小さな文字 | `［＃「○○」の講演を聞く」はN段階小さな文字］` | corpus | OBSERVED |
+| O333 | Other | — | 「○○」は accent grave（｀）付き | `［＃「○○」は accent grave（｀）付き］` | corpus | OBSERVED |
+| O334 | Other | — | 「○○」はNを表すローマ数字の小文字 | `［＃「○○」はNを表すローマ数字の小文字］` | corpus | OBSERVED |
+| O335 | Other | — | 「○○」はNマスに横並び | `［＃「○○」はNマスに横並び］` | corpus | OBSERVED |
+| O336 | Other | — | 「○○」はN倍の長方形 | `［＃「○○」はN倍の長方形］` | corpus | OBSERVED |
+| O337 | Other | — | 「○○」はN度位右上がり | `［＃「○○」はN度位右上がり］` | corpus | OBSERVED |
+| O338 | Other | — | 「○○」はN度回転 | `［＃「○○」はN度回転］` | corpus | OBSERVED |
+| O339 | Other | — | 「○○」はN日～N日の下に縦中横 | `［＃「○○」はN日～N日の下に縦中横］` | corpus | OBSERVED |
+| O340 | Other | — | 「○○」は○の中にナ」、N-N | `［＃「○○」は○の中にナ」、N-N］` | corpus | OBSERVED |
+| O341 | Other | — | 「○○」は○付き文字 | `［＃「○○」は○付き文字］` | corpus | OBSERVED |
+| O342 | Other | — | 「○○」は、「○○」、N-N | `［＃「○○」は、「○○」、N-N］` | corpus | OBSERVED |
+| O343 | Other | — | 「○○」は、「○○」と「○○」の間に挟まれるような形でポイントを下げてN行で | `［＃「○○」は、「○○」と「○○」の間に挟まれるような形でポイントを下げてN行で］` | corpus | OBSERVED |
+| O344 | Other | — | 「○○」は、つつみがまえに夕 | `［＃「○○」は、つつみがまえに夕］` | corpus | OBSERVED |
+| O345 | Other | — | 「○○」は、底本では「○○」 | `［＃「○○」は、底本では「○○」］` | corpus | OBSERVED |
+| O346 | Other | — | 「○○」は、底本では「○○」」 | `［＃「○○」は、底本では「○○」」］` | corpus | OBSERVED |
+| O347 | Other | — | 「○○」は、底本では欠如 | `［＃「○○」は、底本では欠如］` | corpus | OBSERVED |
+| O348 | Other | — | 「○○」は、石へん＋乞 | `［＃「○○」は、石へん＋乞］` | corpus | OBSERVED |
+| O349 | Other | — | 「○○」は「○○」 | `［＃「○○」は「○○」］` | corpus | OBSERVED |
+| O350 | Other | — | 「○○」は「○○」+「○○」）」、N-N | `［＃「○○」は「○○」+「○○」）」、N-N］` | corpus | OBSERVED |
+| O351 | Other | — | 「○○」は「○○」N-N | `［＃「○○」は「○○」N-N］` | corpus | OBSERVED |
+| O352 | Other | — | 「○○」は「○○」、N-N | `［＃「○○」は「○○」、N-N］` | corpus | OBSERVED |
+| O353 | Other | — | 「○○」は「○○」、N-上-N | `［＃「○○」は「○○」、N-上-N］` | corpus | OBSERVED |
+| O354 | Other | — | 「○○」は「○○」、N-下N | `［＃「○○」は「○○」、N-下N］` | corpus | OBSERVED |
+| O355 | Other | — | 「○○」は「○○」、序-N-N | `［＃「○○」は「○○」、序-N-N］` | corpus | OBSERVED |
+| O356 | Other | — | 「○○」は「○○」、読みは「○○」、N-N | `［＃「○○」は「○○」、読みは「○○」、N-N］` | corpus | OBSERVED |
+| O357 | Other | — | 「○○」は「○○」、読みは「○○」。N-N | `［＃「○○」は「○○」、読みは「○○」。N-N］` | corpus | OBSERVED |
+| O358 | Other | — | 「○○」は「○○」「○○」などの誤記か | `［＃「○○」は「○○」「○○」などの誤記か］` | corpus | OBSERVED |
+| O359 | Other | — | 「○○」は「○○」で、「○○」のかわりに「○○」をあてる」、N-N | `［＃「○○」は「○○」で、「○○」のかわりに「○○」をあてる」、N-N］` | corpus | OBSERVED |
+| O360 | Other | — | 「○○」は「○○」で「○○」のかわりに「○○」をあてる、N-N | `［＃「○○」は「○○」で「○○」のかわりに「○○」をあてる、N-N］` | corpus | OBSERVED |
+| O361 | Other | — | 「○○」は「○○」で「○○」のかわりに「○○」をあてる」、N-N | `［＃「○○」は「○○」で「○○」のかわりに「○○」をあてる」、N-N］` | corpus | OBSERVED |
+| O362 | Other | — | 「○○」は「○○」でつくりの上が「○○」」、N-N | `［＃「○○」は「○○」でつくりの上が「○○」」、N-N］` | corpus | OBSERVED |
+| O363 | Other | — | 「○○」は「○○」でつくりの中の「○○」のかわりに「○○」のつくりをあてる」、N-N | `［＃「○○」は「○○」でつくりの中の「○○」のかわりに「○○」のつくりをあてる」、N-N］` | corpus | OBSERVED |
+| O364 | Other | — | 「○○」は「○○」で下「○○」のかわりに「○○」をあてる」、N-N | `［＃「○○」は「○○」で下「○○」のかわりに「○○」をあてる」、N-N］` | corpus | OBSERVED |
+| O365 | Other | — | 「○○」は「○○」で中に「○○」のかわりに「○○」をあてる」、N-N | `［＃「○○」は「○○」で中に「○○」のかわりに「○○」をあてる」、N-N］` | corpus | OBSERVED |
+| O366 | Other | — | 「○○」は「○○」に「○○」、N-N | `［＃「○○」は「○○」に「○○」、N-N］` | corpus | OBSERVED |
+| O367 | Other | — | 「○○」は「○○」に「○○」、N-下N | `［＃「○○」は「○○」に「○○」、N-下N］` | corpus | OBSERVED |
+| O368 | Other | — | 「○○」は「○○」の「○○」 | `［＃「○○」は「○○」の「○○」］` | corpus | OBSERVED |
+| O369 | Other | — | 「○○」は「○○」の「○○」のかわりに「○○」をあてたもの」、N-N | `［＃「○○」は「○○」の「○○」のかわりに「○○」をあてたもの」、N-N］` | corpus | OBSERVED |
+| O370 | Other | — | 「○○」は「○○」の「○○」の部分が「○○」、読みは「○○」、N-N | `［＃「○○」は「○○」の「○○」の部分が「○○」、読みは「○○」、N-N］` | corpus | OBSERVED |
+| O371 | Other | — | 「○○」は「○○」のくずし字 | `［＃「○○」は「○○」のくずし字］` | corpus | OBSERVED |
+| O372 | Other | — | 「○○」は「○○」のつくり」、N-下N | `［＃「○○」は「○○」のつくり」、N-下N］` | corpus | OBSERVED |
+| O373 | Other | — | 「○○」は「○○」のつくりの縦棒が下に突き抜けている、N-N | `［＃「○○」は「○○」のつくりの縦棒が下に突き抜けている、N-N］` | corpus | OBSERVED |
+| O374 | Other | — | 「○○」は「○○」のにすいを除く部分」、N-N | `［＃「○○」は「○○」のにすいを除く部分」、N-N］` | corpus | OBSERVED |
+| O375 | Other | — | 「○○」は「○○」のへん＋「○○」のつくり」、N-N | `［＃「○○」は「○○」のへん＋「○○」のつくり」、N-N］` | corpus | OBSERVED |
+| O376 | Other | — | 「○○」は「○○」の上付き | `［＃「○○」は「○○」の上付き］` | corpus | OBSERVED |
+| O377 | Other | — | 「○○」は「○○」の下に「○○」、読みは「○○」、N-N | `［＃「○○」は「○○」の下に「○○」、読みは「○○」、N-N］` | corpus | OBSERVED |
+| O378 | Other | — | 「○○」は「○○」の下に「○○」」、N-N | `［＃「○○」は「○○」の下に「○○」」、N-N］` | corpus | OBSERVED |
+| O379 | Other | — | 「○○」は「○○」の下にポイントを下げてN行で | `［＃「○○」は「○○」の下にポイントを下げてN行で］` | corpus | OBSERVED |
+| O380 | Other | — | 「○○」は「○○」の下にポイントを下げてN行で、カッコはそのN行を括る形で | `［＃「○○」は「○○」の下にポイントを下げてN行で、カッコはそのN行を括る形で］` | corpus | OBSERVED |
+| O381 | Other | — | 「○○」は「○○」の中に「○○」、N-下-N | `［＃「○○」は「○○」の中に「○○」、N-下-N］` | corpus | OBSERVED |
+| O382 | Other | — | 「○○」は「○○」の二画目の中に「○○」を入れる、N上-N | `［＃「○○」は「○○」の二画目の中に「○○」を入れる、N上-N］` | corpus | OBSERVED |
+| O383 | Other | — | 「○○」は「○○」の右に「○○」、N-N | `［＃「○○」は「○○」の右に「○○」、N-N］` | corpus | OBSERVED |
+| O384 | Other | — | 「○○」は「○○」の右側に、「○○」は「○○」の右側に、注記するような形で | `［＃「○○」は「○○」の右側に、「○○」は「○○」の右側に、注記するような形で］` | corpus | OBSERVED |
+| O385 | Other | — | 「○○」は「○○」の右側に、「○○」は左側に、注記するような形で | `［＃「○○」は「○○」の右側に、「○○」は左側に、注記するような形で］` | corpus | OBSERVED |
+| O386 | Other | — | 「○○」は「○○」の右側に注記するような形で | `［＃「○○」は「○○」の右側に注記するような形で］` | corpus | OBSERVED |
+| O387 | Other | — | 「○○」は「○○」の寸を土に変えたもの、N-N | `［＃「○○」は「○○」の寸を土に変えたもの、N-N］` | corpus | OBSERVED |
+| O388 | Other | — | 「○○」は「○○」の小書き、N-N | `［＃「○○」は「○○」の小書き、N-N］` | corpus | OBSERVED |
+| O389 | Other | — | 「○○」は「○○」の左側に、「○○」は「○○」の左側に注記するような形で | `［＃「○○」は「○○」の左側に、「○○」は「○○」の左側に注記するような形で］` | corpus | OBSERVED |
+| O390 | Other | — | 「○○」は「○○」の左側に注記するような形で | `［＃「○○」は「○○」の左側に注記するような形で］` | corpus | OBSERVED |
+| O391 | Other | — | 「○○」は「○○」の本字、N-N | `［＃「○○」は「○○」の本字、N-N］` | corpus | OBSERVED |
+| O392 | Other | — | 「○○」は「○○」の略記号、N-N | `［＃「○○」は「○○」の略記号、N-N］` | corpus | OBSERVED |
+| O393 | Other | — | 「○○」は「○○」の略記号、読みは「○○」、N-N | `［＃「○○」は「○○」の略記号、読みは「○○」、N-N］` | corpus | OBSERVED |
+| O394 | Other | — | 「○○」は「○○」の篆書体、読みは「○○」、N-N | `［＃「○○」は「○○」の篆書体、読みは「○○」、N-N］` | corpus | OBSERVED |
+| O395 | Other | — | 「○○」は「○○」の篆書体別体N、読みは「○○」、N-N | `［＃「○○」は「○○」の篆書体別体N、読みは「○○」、N-N］` | corpus | OBSERVED |
+| O396 | Other | — | 「○○」は「○○」の記号の中に入っている | `［＃「○○」は「○○」の記号の中に入っている］` | corpus | OBSERVED |
+| O397 | Other | — | 「○○」は「○○」の誤りか | `［＃「○○」は「○○」の誤りか］` | corpus | OBSERVED |
+| O398 | Other | — | 「○○」は「○○」の誤植か | `［＃「○○」は「○○」の誤植か］` | corpus | OBSERVED |
+| O399 | Other | — | 「○○」は「○○」の誤記か | `［＃「○○」は「○○」の誤記か］` | corpus | OBSERVED |
+| O400 | Other | — | 「○○」は「○○」の誤記と思われる | `［＃「○○」は「○○」の誤記と思われる］` | corpus | OBSERVED |
+| O401 | Other | — | 「○○」は「○○」は縦中横 | `［＃「○○」は「○○」は縦中横］` | corpus | OBSERVED |
+| O402 | Other | — | 「○○」は「○○」付き | `［＃「○○」は「○○」付き］` | corpus | OBSERVED |
+| O403 | Other | — | 「○○」は「○○」付き」 | `［＃「○○」は「○○」付き」］` | corpus | OBSERVED |
+| O404 | Other | — | 「○○」は「○○」囲み | `［＃「○○」は「○○」囲み］` | corpus | OBSERVED |
+| O405 | Other | — | 「○○」は「○○」＋「○○」、トウ、N-N | `［＃「○○」は「○○」＋「○○」、トウ、N-N］` | corpus | OBSERVED |
+| O406 | Other | — | 「○○」は「○○」＋「○○」で、読みは「○○」N-N | `［＃「○○」は「○○」＋「○○」で、読みは「○○」N-N］` | corpus | OBSERVED |
+| O407 | Other | — | 「○○」は」は底本では「○○」 | `［＃「○○」は」は底本では「○○」］` | corpus | OBSERVED |
+| O408 | Other | — | 「○○」はこの後のN行にわたる | `［＃「○○」はこの後のN行にわたる］` | corpus | OBSERVED |
+| O409 | Other | — | 「○○」はすべて下付き小文字 | `［＃「○○」はすべて下付き小文字］` | corpus | OBSERVED |
+| O410 | Other | — | 「○○」はそれぞれ縦中横、数字は上付き小書き | `［＃「○○」はそれぞれ縦中横、数字は上付き小書き］` | corpus | OBSERVED |
+| O411 | Other | — | 「○○」はアキュートアクセント付き | `［＃「○○」はアキュートアクセント付き］` | corpus | OBSERVED |
+| O412 | Other | — | 「○○」はアキュートアクセント付きE、N-N-N | `［＃「○○」はアキュートアクセント付きE、N-N-N］` | corpus | OBSERVED |
+| O413 | Other | — | 「○○」はアクサン（´）付き | `［＃「○○」はアクサン（´）付き］` | corpus | OBSERVED |
+| O414 | Other | — | 「○○」はウムラウト（¨）付き | `［＃「○○」はウムラウト（¨）付き］` | corpus | OBSERVED |
+| O415 | Other | — | 「○○」はゴチック | `［＃「○○」はゴチック］` | corpus | OBSERVED |
+| O416 | Other | — | 「○○」はポイントを下げる | `［＃「○○」はポイントを下げる］` | corpus | OBSERVED |
+| O417 | Other | — | 「○○」はポイント小さく右寄せ | `［＃「○○」はポイント小さく右寄せ］` | corpus | OBSERVED |
+| O418 | Other | — | 「○○」はマクロン付き（-）E小文字 | `［＃「○○」はマクロン付き（-）E小文字］` | corpus | OBSERVED |
+| O419 | Other | — | 「○○」はママ　 | `［＃「○○」はママ　］` | corpus | OBSERVED |
+| O420 | Other | — | 「○○」はママ、「○○」か「○○」であるかの判別付かず | `［＃「○○」はママ、「○○」か「○○」であるかの判別付かず］` | corpus | OBSERVED |
+| O421 | Other | — | 「○○」はママ、『広辞苑』では「○○」 | `［＃「○○」はママ、『広辞苑』では「○○」］` | corpus | OBSERVED |
+| O422 | Other | — | 「○○」はママ。五段目は N□□のN倍だから五段目左端はN以上になります。 | `［＃「○○」はママ。五段目は N□□のN倍だから五段目左端はN以上になります。］` | corpus | OBSERVED |
+| O423 | Other | — | 「○○」はママ」 | `［＃「○○」はママ」］` | corpus | OBSERVED |
+| O424 | Other | — | 「○○」はローマ数字N、N-N-N | `［＃「○○」はローマ数字N、N-N-N］` | corpus | OBSERVED |
+| O425 | Other | — | 「○○」はローマ数字、N-N-N | `［＃「○○」はローマ数字、N-N-N］` | corpus | OBSERVED |
+| O426 | Other | — | 「○○」はローマ数字のN | `［＃「○○」はローマ数字のN］` | corpus | OBSERVED |
+| O427 | Other | — | 「○○」は一字 | `［＃「○○」は一字］` | corpus | OBSERVED |
+| O428 | Other | — | 「○○」は一文字、N-N | `［＃「○○」は一文字、N-N］` | corpus | OBSERVED |
+| O429 | Other | — | 「○○」は一段階小さな文字 | `［＃「○○」は一段階小さな文字］` | corpus | OBSERVED |
+| O430 | Other | — | 「○○」は上「○○」下左「○○」下右「○○」、N-N | `［＃「○○」は上「○○」下左「○○」下右「○○」、N-N］` | corpus | OBSERVED |
+| O431 | Other | — | 「○○」は上に「○○」付き | `［＃「○○」は上に「○○」付き］` | corpus | OBSERVED |
+| O432 | Other | — | 「○○」は上付き | `［＃「○○」は上付き］` | corpus | OBSERVED |
+| O433 | Other | — | 「○○」は上付き小文字、「○○」は分数 | `［＃「○○」は上付き小文字、「○○」は分数］` | corpus | OBSERVED |
+| O434 | Other | — | 「○○」は上付き小文字、「○○」は分数、「○○」は「○○」の上付き | `［＃「○○」は上付き小文字、「○○」は分数、「○○」は「○○」の上付き］` | corpus | OBSERVED |
+| O435 | Other | — | 「○○」は上左上「○○」上左下「○○」上右「○○」下「○○」、読みは「○○」、N-N | `［＃「○○」は上左上「○○」上左下「○○」上右「○○」下「○○」、読みは「○○」、N-N］` | corpus | OBSERVED |
+| O436 | Other | — | 「○○」は上線（￣）付き | `［＃「○○」は上線（￣）付き］` | corpus | OBSERVED |
+| O437 | Other | — | 「○○」は上部に出ている | `［＃「○○」は上部に出ている］` | corpus | OBSERVED |
+| O438 | Other | — | 「○○」は下付き | `［＃「○○」は下付き］` | corpus | OBSERVED |
+| O439 | Other | — | 「○○」は下点付き、N-N | `［＃「○○」は下点付き、N-N］` | corpus | OBSERVED |
+| O440 | Other | — | 「○○」は下線（_）付き、N-表組N行目 | `［＃「○○」は下線（_）付き、N-表組N行目］` | corpus | OBSERVED |
+| O441 | Other | — | 「○○」は以下の本では「○○」。『鏡花全集　卷五』（岩波書店、昭和N年N月N日　第N刷發行）、『鏡花全集　巻四』（春陽堂、大正N年N月N日發行）、『湯島詣』（春陽堂文庫、春陽堂、昭和N年N月N日復刊第一版發行）。『湯島詣』（春陽堂、明治N年N月N日發行）では「○○」 | `［＃「○○」は以下の本では「○○」。『鏡花全集　卷五』（岩波書店、昭和N年N月N日　第N刷發行）、『鏡花全集　巻四』（春陽堂、大正N年N月N日發行）、『湯島詣』（春陽堂文庫、春陽堂、昭和N年N月N日復刊第一版發行）。『湯島詣』（春陽堂、明治N年N月N日發行）では「○○」］` | corpus | OBSERVED |
+| O442 | Other | — | 「○○」は伏せ字 | `［＃「○○」は伏せ字］` | corpus | OBSERVED |
+| O443 | Other | — | 「○○」は分数 | `［＃「○○」は分数］` | corpus | OBSERVED |
+| O444 | Other | — | 「○○」は分数、縦中横 | `［＃「○○」は分数、縦中横］` | corpus | OBSERVED |
+| O445 | Other | — | 「○○」は初出では「○○」 | `［＃「○○」は初出では「○○」］` | corpus | OBSERVED |
+| O446 | Other | — | 「○○」は初刊本「○○」創元社、昭和N年N月N日発行では「○○」 | `［＃「○○」は初刊本「○○」創元社、昭和N年N月N日発行では「○○」］` | corpus | OBSERVED |
+| O447 | Other | — | 「○○」は判読困難につき推定、コマN-左-N | `［＃「○○」は判読困難につき推定、コマN-左-N］` | corpus | OBSERVED |
+| O448 | Other | — | 「○○」は前のN行にわたる | `［＃「○○」は前のN行にわたる］` | corpus | OBSERVED |
+| O449 | Other | — | 「○○」は前のN行にわたる」 | `［＃「○○」は前のN行にわたる」］` | corpus | OBSERVED |
+| O450 | Other | — | 「○○」は半濁音符付きのラ | `［＃「○○」は半濁音符付きのラ］` | corpus | OBSERVED |
+| O451 | Other | — | 「○○」は原文では「○○」と誤記、N-N | `［＃「○○」は原文では「○○」と誤記、N-N］` | corpus | OBSERVED |
+| O452 | Other | — | 「○○」は定本では「○○」 | `［＃「○○」は定本では「○○」］` | corpus | OBSERVED |
+| O453 | Other | — | 「○○」は小さい「○○」 | `［＃「○○」は小さい「○○」］` | corpus | OBSERVED |
+| O454 | Other | — | 「○○」は小さい文字 | `［＃「○○」は小さい文字］` | corpus | OBSERVED |
+| O455 | Other | — | 「○○」は小さめの文字 | `［＃「○○」は小さめの文字］` | corpus | OBSERVED |
+| O456 | Other | — | 「○○」は小文字 | `［＃「○○」は小文字］` | corpus | OBSERVED |
+| O457 | Other | — | 「○○」は小書き | `［＃「○○」は小書き］` | corpus | OBSERVED |
+| O458 | Other | — | 「○○」は小書きの「○○」 | `［＃「○○」は小書きの「○○」］` | corpus | OBSERVED |
+| O459 | Other | — | 「○○」は小書き半濁点付き片仮名フ、N-N-N | `［＃「○○」は小書き半濁点付き片仮名フ、N-N-N］` | corpus | OBSERVED |
+| O460 | Other | — | 「○○」は小書き右寄せ | `［＃「○○」は小書き右寄せ］` | corpus | OBSERVED |
+| O461 | Other | — | 「○○」は小書き片仮名ム、N-N-N | `［＃「○○」は小書き片仮名ム、N-N-N］` | corpus | OBSERVED |
+| O462 | Other | — | 「○○」は崩し字 | `［＃「○○」は崩し字］` | corpus | OBSERVED |
+| O463 | Other | — | 「○○」は工偏の横二画を短くしたようなもの＋竹冠の下に「○○」を置いたもの」、N-N | `［＃「○○」は工偏の横二画を短くしたようなもの＋竹冠の下に「○○」を置いたもの」、N-N］` | corpus | OBSERVED |
+| O464 | Other | — | 「○○」は底本「○○」 | `［＃「○○」は底本「○○」］` | corpus | OBSERVED |
+| O465 | Other | — | 「○○」は底本で「○○」 | `［＃「○○」は底本で「○○」］` | corpus | OBSERVED |
+| O466 | Other | — | 「○○」は底本では、「○○」 | `［＃「○○」は底本では、「○○」］` | corpus | OBSERVED |
+| O467 | Other | — | 「○○」は底本では、カギカッコの中にあったのを訂正 | `［＃「○○」は底本では、カギカッコの中にあったのを訂正］` | corpus | OBSERVED |
+| O468 | Other | — | 「○○」は底本では「○○」N-下段-N | `［＃「○○」は底本では「○○」N-下段-N］` | corpus | OBSERVED |
+| O469 | Other | — | 「○○」は底本では「○○」、N-N | `［＃「○○」は底本では「○○」、N-N］` | corpus | OBSERVED |
+| O470 | Other | — | 「○○」は底本では「○○」、N-上-N | `［＃「○○」は底本では「○○」、N-上-N］` | corpus | OBSERVED |
+| O471 | Other | — | 「○○」は底本では「○○」、N-上段-N | `［＃「○○」は底本では「○○」、N-上段-N］` | corpus | OBSERVED |
+| O472 | Other | — | 「○○」は底本では「○○」、N-下-N | `［＃「○○」は底本では「○○」、N-下-N］` | corpus | OBSERVED |
+| O473 | Other | — | 「○○」は底本では「○○」、N-下段-N | `［＃「○○」は底本では「○○」、N-下段-N］` | corpus | OBSERVED |
+| O474 | Other | — | 「○○」は底本では「○○」、以降同様、N-下段-N | `［＃「○○」は底本では「○○」、以降同様、N-下段-N］` | corpus | OBSERVED |
+| O475 | Other | — | 「○○」は底本では「○○」、正誤表による訂正 | `［＃「○○」は底本では「○○」、正誤表による訂正］` | corpus | OBSERVED |
+| O476 | Other | — | 「○○」は底本では「○○」。【例題一】と同一と考えられるため、【例題一】に合わせました。 | `［＃「○○」は底本では「○○」。【例題一】と同一と考えられるため、【例題一】に合わせました。］` | corpus | OBSERVED |
+| O477 | Other | — | 「○○」は底本では「○○」。以下の本では「○○」。『鏡花全集　卷五』（岩波書店、昭和N年N月N日　第N刷發行）、『湯島詣』（春陽堂、明治N年N月N日發行）。以下の本では「○○」。『鏡花全集　巻四』（春陽堂、大正N年N月N日發行）、『湯島詣』（春陽堂文庫、春陽堂、昭和N年N月N日復刊第一版發行） | `［＃「○○」は底本では「○○」。以下の本では「○○」。『鏡花全集　卷五』（岩波書店、昭和N年N月N日　第N刷發行）、『湯島詣』（春陽堂、明治N年N月N日發行）。以下の本では「○○」。『鏡花全集　巻四』（春陽堂、大正N年N月N日發行）、『湯島詣』（春陽堂文庫、春陽堂、昭和N年N月N日復刊第一版發行）］` | corpus | OBSERVED |
+| O478 | Other | — | 「○○」は底本では「○○」。以下の本では「○○」。『鏡花全集　卷五』（岩波書店、昭和N年N月N日　第N刷發行）、『鏡花全集　巻四』（春陽堂、大正N年N月N日發行）、『湯島詣』（春陽堂、明治N年N月N日發行）、『湯島詣』（春陽堂文庫、春陽堂、昭和N年N月N日復刊第一版發行） | `［＃「○○」は底本では「○○」。以下の本では「○○」。『鏡花全集　卷五』（岩波書店、昭和N年N月N日　第N刷發行）、『鏡花全集　巻四』（春陽堂、大正N年N月N日發行）、『湯島詣』（春陽堂、明治N年N月N日發行）、『湯島詣』（春陽堂文庫、春陽堂、昭和N年N月N日復刊第一版發行）］` | corpus | OBSERVED |
+| O479 | Other | — | 「○○」は底本では「○○」。以下の本では「○○」。『鏡花全集　卷五』（岩波書店、昭和N年N月N日　第N刷發行）『湯島詣』（春陽堂、明治N年N月N日發行）、『鏡花全集　巻四』（春陽堂、大正N年N月N日發行）、『湯島詣』（春陽堂文庫、春陽堂、昭和N年N月N日復刊第一版發行） | `［＃「○○」は底本では「○○」。以下の本では「○○」。『鏡花全集　卷五』（岩波書店、昭和N年N月N日　第N刷發行）『湯島詣』（春陽堂、明治N年N月N日發行）、『鏡花全集　巻四』（春陽堂、大正N年N月N日發行）、『湯島詣』（春陽堂文庫、春陽堂、昭和N年N月N日復刊第一版發行）］` | corpus | OBSERVED |
+| O480 | Other | — | 「○○」は底本では「○○」」 | `［＃「○○」は底本では「○○」」］` | corpus | OBSERVED |
+| O481 | Other | — | 「○○」は底本では「○○」つた | `［＃「○○」は底本では「○○」つた］` | corpus | OBSERVED |
+| O482 | Other | — | 「○○」は底本では「○○」となっている | `［＃「○○」は底本では「○○」となっている］` | corpus | OBSERVED |
+| O483 | Other | — | 「○○」は底本では「○○」となっている。誤記か | `［＃「○○」は底本では「○○」となっている。誤記か］` | corpus | OBSERVED |
+| O484 | Other | — | 「○○」は底本では「○○」と旧仮名遣い、N-N | `［＃「○○」は底本では「○○」と旧仮名遣い、N-N］` | corpus | OBSERVED |
+| O485 | Other | — | 「○○」は底本では「○○」と欠字 | `［＃「○○」は底本では「○○」と欠字］` | corpus | OBSERVED |
+| O486 | Other | — | 「○○」は底本では「○○」と記載 | `［＃「○○」は底本では「○○」と記載］` | corpus | OBSERVED |
+| O487 | Other | — | 「○○」は底本では「○○」と誤植 | `［＃「○○」は底本では「○○」と誤植］` | corpus | OBSERVED |
+| O488 | Other | — | 「○○」は底本では「○○」と誤植、N-上-N | `［＃「○○」は底本では「○○」と誤植、N-上-N］` | corpus | OBSERVED |
+| O489 | Other | — | 「○○」は底本では「○○」と誤記 | `［＃「○○」は底本では「○○」と誤記］` | corpus | OBSERVED |
+| O490 | Other | — | 「○○」は底本では「○○」と誤記、N-N | `［＃「○○」は底本では「○○」と誤記、N-N］` | corpus | OBSERVED |
+| O491 | Other | — | 「○○」は底本では「○○」どうして」 | `［＃「○○」は底本では「○○」どうして」］` | corpus | OBSERVED |
+| O492 | Other | — | 「○○」は底本では「○○」に「○○」の注記 | `［＃「○○」は底本では「○○」に「○○」の注記］` | corpus | OBSERVED |
+| O493 | Other | — | 「○○」は底本では「○○」の | `［＃「○○」は底本では「○○」の］` | corpus | OBSERVED |
+| O494 | Other | — | 「○○」は底本では「○○」の右横に付く | `［＃「○○」は底本では「○○」の右横に付く］` | corpus | OBSERVED |
+| O495 | Other | — | 「○○」は底本では「○○」の転倒 | `［＃「○○」は底本では「○○」の転倒］` | corpus | OBSERVED |
+| O496 | Other | — | 「○○」は底本では「○○」は | `［＃「○○」は底本では「○○」は］` | corpus | OBSERVED |
+| O497 | Other | — | 「○○」は底本では「○○」は」 | `［＃「○○」は底本では「○○」は」］` | corpus | OBSERVED |
+| O498 | Other | — | 「○○」は底本では「○○」（本文は「○○」） | `［＃「○○」は底本では「○○」（本文は「○○」）］` | corpus | OBSERVED |
+| O499 | Other | — | 「○○」は底本では「○○」）」 | `［＃「○○」は底本では「○○」）」］` | corpus | OBSERVED |
+| O500 | Other | — | 「○○」は底本ではなし | `［＃「○○」は底本ではなし］` | corpus | OBSERVED |
+| O501 | Other | — | 「○○」は底本ではデザイン差内の「○○」 | `［＃「○○」は底本ではデザイン差内の「○○」］` | corpus | OBSERVED |
+| O502 | Other | — | 「○○」は底本では一文後にある | `［＃「○○」は底本では一文後にある］` | corpus | OBSERVED |
+| O503 | Other | — | 「○○」は底本では上下逆 | `［＃「○○」は底本では上下逆］` | corpus | OBSERVED |
+| O504 | Other | — | 「○○」は底本では上付き小文字 | `［＃「○○」は底本では上付き小文字］` | corpus | OBSERVED |
+| O505 | Other | — | 「○○」は底本では下付き | `［＃「○○」は底本では下付き］` | corpus | OBSERVED |
+| O506 | Other | — | 「○○」は底本では判読不可 | `［＃「○○」は底本では判読不可］` | corpus | OBSERVED |
+| O507 | Other | — | 「○○」は底本では判読不可。N-上-N | `［＃「○○」は底本では判読不可。N-上-N］` | corpus | OBSERVED |
+| O508 | Other | — | 「○○」は底本では右にN度倒れている | `［＃「○○」は底本では右にN度倒れている］` | corpus | OBSERVED |
+| O509 | Other | — | 「○○」は底本では変体仮名「○○」 | `［＃「○○」は底本では変体仮名「○○」］` | corpus | OBSERVED |
+| O510 | Other | — | 「○○」は底本では左倒し | `［＃「○○」は底本では左倒し］` | corpus | OBSERVED |
+| O511 | Other | — | 「○○」は底本では左右にパーレンのついた「○○」 | `［＃「○○」は底本では左右にパーレンのついた「○○」］` | corpus | OBSERVED |
+| O512 | Other | — | 「○○」は底本では左寄せ | `［＃「○○」は底本では左寄せ］` | corpus | OBSERVED |
+| O513 | Other | — | 「○○」は底本では欠 | `［＃「○○」は底本では欠］` | corpus | OBSERVED |
+| O514 | Other | — | 「○○」は底本では欠如 | `［＃「○○」は底本では欠如］` | corpus | OBSERVED |
+| O515 | Other | — | 「○○」は底本では欠落 | `［＃「○○」は底本では欠落］` | corpus | OBSERVED |
+| O516 | Other | — | 「○○」は底本では欠落、正誤表による訂正 | `［＃「○○」は底本では欠落、正誤表による訂正］` | corpus | OBSERVED |
+| O517 | Other | — | 「○○」は底本では無し。以下の本では「○○」有り。『鏡花全集　卷五』（岩波書店、昭和N年N月N日　第N刷發行）、『鏡花全集　巻四』（春陽堂、大正N年N月N日發行）、『湯島詣』（春陽堂、明治N年N月N日發行）、『湯島詣』（春陽堂文庫、春陽堂、昭和N年N月N日復刊第一版發行） | `［＃「○○」は底本では無し。以下の本では「○○」有り。『鏡花全集　卷五』（岩波書店、昭和N年N月N日　第N刷發行）、『鏡花全集　巻四』（春陽堂、大正N年N月N日發行）、『湯島詣』（春陽堂、明治N年N月N日發行）、『湯島詣』（春陽堂文庫、春陽堂、昭和N年N月N日復刊第一版發行）］` | corpus | OBSERVED |
+| O518 | Other | — | 「○○」は底本では脱字 | `［＃「○○」は底本では脱字］` | corpus | OBSERVED |
+| O519 | Other | — | 「○○」は底本では脱落 | `［＃「○○」は底本では脱落］` | corpus | OBSERVED |
+| O520 | Other | — | 「○○」は底本では記載なし | `［＃「○○」は底本では記載なし］` | corpus | OBSERVED |
+| O521 | Other | — | 「○○」は底本でも脱落 | `［＃「○○」は底本でも脱落］` | corpus | OBSERVED |
+| O522 | Other | — | 「○○」は底本どおり、岩波文庫版では「○○」、N-N | `［＃「○○」は底本どおり、岩波文庫版では「○○」、N-N］` | corpus | OBSERVED |
+| O523 | Other | — | 「○○」は底本の「○○」に掲載 | `［＃「○○」は底本の「○○」に掲載］` | corpus | OBSERVED |
+| O524 | Other | — | 「○○」は底本のまま | `［＃「○○」は底本のまま］` | corpus | OBSERVED |
+| O525 | Other | — | 「○○」は底本のママ。文脈からは「○○」と思われる。 | `［＃「○○」は底本のママ。文脈からは「○○」と思われる。］` | corpus | OBSERVED |
+| O526 | Other | — | 「○○」は底本のママ。文脈上からは「○○」（前出）もしくは「○○」（後出）が妥当と思われる。 | `［＃「○○」は底本のママ。文脈上からは「○○」（前出）もしくは「○○」（後出）が妥当と思われる。］` | corpus | OBSERVED |
+| O527 | Other | — | 「○○」は底本は「○○」 | `［＃「○○」は底本は「○○」］` | corpus | OBSERVED |
+| O528 | Other | — | 「○○」は底本ママ | `［＃「○○」は底本ママ］` | corpus | OBSERVED |
+| O529 | Other | — | 「○○」は手描きの切符の下部の線に結ばれている | `［＃「○○」は手描きの切符の下部の線に結ばれている］` | corpus | OBSERVED |
+| O530 | Other | — | 「○○」は手書き文字 | `［＃「○○」は手書き文字］` | corpus | OBSERVED |
+| O531 | Other | — | 「○○」は指数 | `［＃「○○」は指数］` | corpus | OBSERVED |
+| O532 | Other | — | 「○○」は本文では「○○」 | `［＃「○○」は本文では「○○」］` | corpus | OBSERVED |
+| O533 | Other | — | 「○○」は本文の書き下し文では「○○」 | `［＃「○○」は本文の書き下し文では「○○」］` | corpus | OBSERVED |
+| O534 | Other | — | 「○○」は本文より小さいサイズの文字 | `［＃「○○」は本文より小さいサイズの文字］` | corpus | OBSERVED |
+| O535 | Other | — | 「○○」は本文中の注記 | `［＃「○○」は本文中の注記］` | corpus | OBSERVED |
+| O536 | Other | — | 「○○」は枠囲い | `［＃「○○」は枠囲い］` | corpus | OBSERVED |
+| O537 | Other | — | 「○○」は枠囲み | `［＃「○○」は枠囲み］` | corpus | OBSERVED |
+| O538 | Other | — | 「○○」は桃源社版では「○○」 | `［＃「○○」は桃源社版では「○○」］` | corpus | OBSERVED |
+| O539 | Other | — | 「○○」は横N文字、N-N-N | `［＃「○○」は横N文字、N-N-N］` | corpus | OBSERVED |
+| O540 | Other | — | 「○○」は横一列 | `［＃「○○」は横一列］` | corpus | OBSERVED |
+| O541 | Other | — | 「○○」は欠字 | `［＃「○○」は欠字］` | corpus | OBSERVED |
+| O542 | Other | — | 「○○」は注釈番号 | `［＃「○○」は注釈番号］` | corpus | OBSERVED |
+| O543 | Other | — | 「○○」は注釈記号。欄外に「○○」の注 | `［＃「○○」は注釈記号。欄外に「○○」の注］` | corpus | OBSERVED |
+| O544 | Other | — | 「○○」は点線丸囲み | `［＃「○○」は点線丸囲み］` | corpus | OBSERVED |
+| O545 | Other | — | 「○○」は矢印が下向き | `［＃「○○」は矢印が下向き］` | corpus | OBSERVED |
+| O546 | Other | — | 「○○」は筑摩版では「○○」 | `［＃「○○」は筑摩版では「○○」］` | corpus | OBSERVED |
+| O547 | Other | — | 「○○」は筑摩版では「○○」なし | `［＃「○○」は筑摩版では「○○」なし］` | corpus | OBSERVED |
+| O548 | Other | — | 「○○」は筑摩版では末尾の「○○」なし | `［＃「○○」は筑摩版では末尾の「○○」なし］` | corpus | OBSERVED |
+| O549 | Other | — | 「○○」は篆書体、N-N | `［＃「○○」は篆書体、N-N］` | corpus | OBSERVED |
+| O550 | Other | — | 「○○」は縦中横、「○○」は上付き小書き | `［＃「○○」は縦中横、「○○」は上付き小書き］` | corpus | OBSERVED |
+| O551 | Other | — | 「○○」は縦中横、「○○」は下付き小文字 | `［＃「○○」は縦中横、「○○」は下付き小文字］` | corpus | OBSERVED |
+| O552 | Other | — | 「○○」は縦中横」 | `［＃「○○」は縦中横」］` | corpus | OBSERVED |
+| O553 | Other | — | 「○○」は罫で囲む | `［＃「○○」は罫で囲む］` | corpus | OBSERVED |
+| O554 | Other | — | 「○○」は自注 | `［＃「○○」は自注］` | corpus | OBSERVED |
+| O555 | Other | — | 「○○」は覆面の英字です。 | `［＃「○○」は覆面の英字です。］` | corpus | OBSERVED |
+| O556 | Other | — | 「○○」は誤訳で本当は「○○」 | `［＃「○○」は誤訳で本当は「○○」］` | corpus | OBSERVED |
+| O557 | Other | — | 「○○」は踊り字のゆすり点、N下-N | `［＃「○○」は踊り字のゆすり点、N下-N］` | corpus | OBSERVED |
+| O558 | Other | — | 「○○」はＬ型の直角線 | `［＃「○○」はＬ型の直角線］` | corpus | OBSERVED |
+| O559 | Other | — | 「○○」または「○○」と思われる | `［＃「○○」または「○○」と思われる］` | corpus | OBSERVED |
+| O560 | Other | — | 「○○」をN°回転させたもの＋臣）／一／介」、N-N | `［＃「○○」をN°回転させたもの＋臣）／一／介」、N-N］` | corpus | OBSERVED |
+| O561 | Other | — | 「○○」をN度回転させた形、N-N | `［＃「○○」をN度回転させた形、N-N］` | corpus | OBSERVED |
+| O562 | Other | — | 「○○」を」は底本では「○○」」 | `［＃「○○」を」は底本では「○○」」］` | corpus | OBSERVED |
+| O563 | Other | — | 「○○」を」は底本では「○○」と」 | `［＃「○○」を」は底本では「○○」と」］` | corpus | OBSERVED |
+| O564 | Other | — | 「○○」を全角大とした、屋号を示す記号、N-N | `［＃「○○」を全角大とした、屋号を示す記号、N-N］` | corpus | OBSERVED |
+| O565 | Other | — | 「○○」を崩した変体仮名「○○」、N-N | `［＃「○○」を崩した変体仮名「○○」、N-N］` | corpus | OBSERVED |
+| O566 | Other | — | 「○○」を左右反転したもの、N-N | `［＃「○○」を左右反転したもの、N-N］` | corpus | OBSERVED |
+| O567 | Other | — | 「○○」を左右反転したもの、屋号を示す記号、N-上-N | `［＃「○○」を左右反転したもの、屋号を示す記号、N-上-N］` | corpus | OBSERVED |
+| O568 | Other | — | 「○○」を左右反転したもの、屋号を示す記号、N-下-N | `［＃「○○」を左右反転したもの、屋号を示す記号、N-下-N］` | corpus | OBSERVED |
+| O569 | Other | — | 「○○」を左右反転したもの）＜又」、屋号を示す記号、N-N | `［＃「○○」を左右反転したもの）＜又」、屋号を示す記号、N-N］` | corpus | OBSERVED |
+| O570 | Other | — | 「○○」を左右反転したもの）＜又」、屋号を示す記号、N-上-N | `［＃「○○」を左右反転したもの）＜又」、屋号を示す記号、N-上-N］` | corpus | OBSERVED |
+| O571 | Other | — | 「○○」を左右反転したもの）＜甚」、屋号を示す記号、上巻-N-N | `［＃「○○」を左右反転したもの）＜甚」、屋号を示す記号、上巻-N-N］` | corpus | OBSERVED |
+| O572 | Other | — | 「○○」を左右反転したもの）＜辰」、屋号を示す記号、N-N | `［＃「○○」を左右反転したもの）＜辰」、屋号を示す記号、N-N］` | corpus | OBSERVED |
+| O573 | Other | — | 「○○」を表す「○○」）＜丸」、屋号を示す記号、N-N | `［＃「○○」を表す「○○」）＜丸」、屋号を示す記号、N-N］` | corpus | OBSERVED |
+| O574 | Other | — | 「○○」を表す記号と日付のメモの絵（figN_N.png、横N×縦N）入る | `［＃「○○」を表す記号と日付のメモの絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O575 | Other | — | 「○○」余分か、それとも「○○」か？ | `［＃「○○」余分か、それとも「○○」か？］` | corpus | OBSERVED |
+| O576 | Other | — | 「○○」全体にかかるルビ | `［＃「○○」全体にかかるルビ］` | corpus | OBSERVED |
+| O577 | Other | — | 「○○」底本では「○○」 | `［＃「○○」底本では「○○」］` | corpus | OBSERVED |
+| O578 | Other | — | 「○○」底本のまま、「○○」と思われる | `［＃「○○」底本のまま、「○○」と思われる］` | corpus | OBSERVED |
+| O579 | Other | — | 「○○」略 | `［＃「○○」略］` | corpus | OBSERVED |
+| O580 | Other | — | 「○○」省略 | `［＃「○○」省略］` | corpus | OBSERVED |
+| O581 | Other | — | 「○○」鏑木清方」はN段階小さな文字 | `［＃「○○」鏑木清方」はN段階小さな文字］` | corpus | OBSERVED |
+| O582 | Other | — | 「○○」魚」は底本では「○○」 | `［＃「○○」魚」は底本では「○○」］` | corpus | OBSERVED |
+| O583 | Other | — | 「○○」（figN_N.png、横N×縦N）入る | `［＃「○○」（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O584 | Other | — | 「○○」）」はN段階小さな文字 | `［＃「○○」）」はN段階小さな文字］` | corpus | OBSERVED |
+| O585 | Other | — | 「○○」）」はママ | `［＃「○○」）」はママ］` | corpus | OBSERVED |
+| O586 | Other | — | 「○○」）」は底本では「○○」）」 | `［＃「○○」）」は底本では「○○」）」］` | corpus | OBSERVED |
+| O587 | Other | — | 「○○」＋「○○」、N-下段N | `［＃「○○」＋「○○」、N-下段N］` | corpus | OBSERVED |
+| O588 | Other | — | 「○○」／一」、屋号を示す記号、N-N | `［＃「○○」／一」、屋号を示す記号、N-N］` | corpus | OBSERVED |
+| O589 | Other | — | 【「○○」】と誤記、N-N | `［＃【「○○」】と誤記、N-N］` | corpus | OBSERVED |
+| O590 | Other | — | 【」】は底本では【』】と誤記、N-N | `［＃【」】は底本では【』】と誤記、N-N］` | corpus | OBSERVED |
+| O591 | Other | — | 〔金銭出納録〕の表（figN_N.png、横N×縦N）入る | `［＃〔金銭出納録〕の表（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O592 | Other | — | いる金をとりのけた表（figN_N.png、横N×縦N）入る | `［＃いる金をとりのけた表（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O593 | Other | — | お手伝いさん | `［＃お手伝いさん］` | corpus | OBSERVED |
+| O594 | Other | — | お茶の水附属高等女学校同窓会 | `［＃お茶の水附属高等女学校同窓会］` | corpus | OBSERVED |
+| O595 | Other | — | かしく、N-N | `［＃かしく、N-N］` | corpus | OBSERVED |
+| O596 | Other | — | かしく」の草書体、N-N | `［＃かしく」の草書体、N-N］` | corpus | OBSERVED |
+| O597 | Other | — | ここからページ下部縦組み | `［＃ここからページ下部縦組み］` | corpus | OBSERVED |
+| O598 | Other | — | ここから底本では上段 | `［＃ここから底本では上段］` | corpus | OBSERVED |
+| O599 | Other | — | ここから底本では下段 | `［＃ここから底本では下段］` | corpus | OBSERVED |
+| O600 | Other | — | ここから手書き文字 | `［＃ここから手書き文字］` | corpus | OBSERVED |
+| O601 | Other | — | ここから教科書体 | `［＃ここから教科書体］` | corpus | OBSERVED |
+| O602 | Other | — | ここから紙幣の文字の訳文 | `［＃ここから紙幣の文字の訳文］` | corpus | OBSERVED |
+| O603 | Other | — | ここから罫仕切り、----で挾まれた部分が一つの仕切り内 | `［＃ここから罫仕切り、----で挾まれた部分が一つの仕切り内］` | corpus | OBSERVED |
+| O604 | Other | — | ここから表 | `［＃ここから表］` | corpus | OBSERVED |
+| O605 | Other | — | ここから表組 | `［＃ここから表組］` | corpus | OBSERVED |
+| O606 | Other | — | ここでN段階小さな文字終わり | `［＃ここでN段階小さな文字終わり］` | corpus | OBSERVED |
+| O607 | Other | — | ここで地下げ終わり | `［＃ここで地下げ終わり］` | corpus | OBSERVED |
+| O608 | Other | — | ここで引用文終り | `［＃ここで引用文終り］` | corpus | OBSERVED |
+| O609 | Other | — | ここで引用文終わり | `［＃ここで引用文終わり］` | corpus | OBSERVED |
+| O610 | Other | — | ここで手書き文字終わり | `［＃ここで手書き文字終わり］` | corpus | OBSERVED |
+| O611 | Other | — | ここで教科書体終わり | `［＃ここで教科書体終わり］` | corpus | OBSERVED |
+| O612 | Other | — | ここで罫仕切り終わり | `［＃ここで罫仕切り終わり］` | corpus | OBSERVED |
+| O613 | Other | — | ここで表終わり | `［＃ここで表終わり］` | corpus | OBSERVED |
+| O614 | Other | — | ここで表組終わり | `［＃ここで表組終わり］` | corpus | OBSERVED |
+| O615 | Other | — | ここで訳文終わり | `［＃ここで訳文終わり］` | corpus | OBSERVED |
+| O616 | Other | — | ここに「○○」という注意書きが入る | `［＃ここに「○○」という注意書きが入る］` | corpus | OBSERVED |
+| O617 | Other | — | ここに「○○」と注記 | `［＃ここに「○○」と注記］` | corpus | OBSERVED |
+| O618 | Other | — | ここには室生犀星の詩が引用されている | `［＃ここには室生犀星の詩が引用されている］` | corpus | OBSERVED |
+| O619 | Other | — | ここに土田杏村の「○○」入る | `［＃ここに土田杏村の「○○」入る］` | corpus | OBSERVED |
+| O620 | Other | — | ここに挿し絵入る | `［＃ここに挿し絵入る］` | corpus | OBSERVED |
+| O621 | Other | — | ここに表組入る、別ファイル（densyanokonzatsu_table.txt）参照 | `［＃ここに表組入る、別ファイル（densyanokonzatsu_table.txt）参照］` | corpus | OBSERVED |
+| O622 | Other | — | ここのみ拗音が小さい字「○○」になっている | `［＃ここのみ拗音が小さい字「○○」になっている］` | corpus | OBSERVED |
+| O623 | Other | — | ここまで底本では上段 | `［＃ここまで底本では上段］` | corpus | OBSERVED |
+| O624 | Other | — | ここまで底本では下段 | `［＃ここまで底本では下段］` | corpus | OBSERVED |
+| O625 | Other | — | こと、N-N | `［＃こと、N-N］` | corpus | OBSERVED |
+| O626 | Other | — | こと、N-N-N | `［＃こと、N-N-N］` | corpus | OBSERVED |
+| O627 | Other | — | こと、N-N段-N | `［＃こと、N-N段-N］` | corpus | OBSERVED |
+| O628 | Other | — | こと、N-下-N | `［＃こと、N-下-N］` | corpus | OBSERVED |
+| O629 | Other | — | こと、N-註【四四】 | `［＃こと、N-註【四四】］` | corpus | OBSERVED |
+| O630 | Other | — | この作品は表題と副題のみで、本文はありません。 | `［＃この作品は表題と副題のみで、本文はありません。］` | corpus | OBSERVED |
+| O631 | Other | — | この式は底本では組書き | `［＃この式は底本では組書き］` | corpus | OBSERVED |
+| O632 | Other | — | この日、海野がしたためた遺書を、以下に引く | `［＃この日、海野がしたためた遺書を、以下に引く］` | corpus | OBSERVED |
+| O633 | Other | — | この日付は行末に記す | `［＃この日付は行末に記す］` | corpus | OBSERVED |
+| O634 | Other | — | この歌、二行前の歌に頭揃え。 | `［＃この歌、二行前の歌に頭揃え。］` | corpus | OBSERVED |
+| O635 | Other | — | この行「○○」に挟まれ「○○」で区切られた要素は、底本では真横に並ぶ | `［＃この行「○○」に挟まれ「○○」で区切られた要素は、底本では真横に並ぶ］` | corpus | OBSERVED |
+| O636 | Other | — | この行は底本では天付き | `［＃この行は底本では天付き］` | corpus | OBSERVED |
+| O637 | Other | — | この行は枠囲み | `［＃この行は枠囲み］` | corpus | OBSERVED |
+| O638 | Other | — | この行は注記、N-N | `［＃この行は注記、N-N］` | corpus | OBSERVED |
+| O639 | Other | — | この行は行末よりN字上がり | `［＃この行は行末よりN字上がり］` | corpus | OBSERVED |
+| O640 | Other | — | この読点不適当 | `［＃この読点不適当］` | corpus | OBSERVED |
+| O641 | Other | — | すてっき姿（figN_N.png、横N×縦N）入る | `［＃すてっき姿（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O642 | Other | — | で各歌の頭は全て揃っている。 | `［＃で各歌の頭は全て揃っている。］` | corpus | OBSERVED |
+| O643 | Other | — | はんこ（figN_N.png、横N×縦N）入る | `［＃はんこ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O644 | Other | — | まいらせそうろう、N-N | `［＃まいらせそうろう、N-N］` | corpus | OBSERVED |
+| O645 | Other | — | まいらせそうろう、N-上-N | `［＃まいらせそうろう、N-上-N］` | corpus | OBSERVED |
+| O646 | Other | — | まいらせそろ、N-N | `［＃まいらせそろ、N-N］` | corpus | OBSERVED |
+| O647 | Other | — | ます記号、N-N-N | `［＃ます記号、N-N-N］` | corpus | OBSERVED |
+| O648 | Other | — | まゐらせさうらふ、N-N | `［＃まゐらせさうらふ、N-N］` | corpus | OBSERVED |
+| O649 | Other | — | もんがまえに真の正字。読みは「○○」 | `［＃もんがまえに真の正字。読みは「○○」］` | corpus | OBSERVED |
+| O650 | Other | — | やまいだれの中は「○○」 | `［＃やまいだれの中は「○○」］` | corpus | OBSERVED |
+| O651 | Other | — | より、N-N-N | `［＃より、N-N-N］` | corpus | OBSERVED |
+| O652 | Other | — | るびの「○○」は底本では「○○」 | `［＃るびの「○○」は底本では「○○」］` | corpus | OBSERVED |
+| O653 | Other | — | わがゆく海の挿画（figN_N.png、横N×縦N）入る | `［＃わがゆく海の挿画（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O654 | Other | — | わが息子 | `［＃わが息子］` | corpus | OBSERVED |
+| O655 | Other | — | われらが青春 | `［＃われらが青春］` | corpus | OBSERVED |
+| O656 | Other | — | アキはママ | `［＃アキはママ］` | corpus | OBSERVED |
+| O657 | Other | — | アキュートアクセント付きSCHWA小文字、N-N-N | `［＃アキュートアクセント付きSCHWA小文字、N-N-N］` | corpus | OBSERVED |
+| O658 | Other | — | アコーデオン | `［＃アコーデオン］` | corpus | OBSERVED |
+| O659 | Other | — | アステリズム、N-N-N | `［＃アステリズム、N-N-N］` | corpus | OBSERVED |
+| O660 | Other | — | アダム・スミスの肖像画（figN_N.png）入る | `［＃アダム・スミスの肖像画（figN_N.png）入る］` | corpus | OBSERVED |
+| O661 | Other | — | アラビア数字はすべて下付き小文字 | `［＃アラビア数字はすべて下付き小文字］` | corpus | OBSERVED |
+| O662 | Other | — | アルファベットに続くアラビア数字はすべて下付き小文字、「○○」「○○」は分数 | `［＃アルファベットに続くアラビア数字はすべて下付き小文字、「○○」「○○」は分数］` | corpus | OBSERVED |
+| O663 | Other | — | アレフ、N-N-N | `［＃アレフ、N-N-N］` | corpus | OBSERVED |
+| O664 | Other | — | アークム・ワイリーの肖像画（figN_N.png、横N×縦N）入る | `［＃アークム・ワイリーの肖像画（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O665 | Other | — | エーフェリチェの楽譜一部（figN_N.png、横N×縦N）入る | `［＃エーフェリチェの楽譜一部（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O666 | Other | — | オープンO小文字、N-N-N | `［＃オープンO小文字、N-N-N］` | corpus | OBSERVED |
+| O667 | Other | — | カット「○○」入る。N-上段 | `［＃カット「○○」入る。N-上段］` | corpus | OBSERVED |
+| O668 | Other | — | カット「○○」入る。N-下段 | `［＃カット「○○」入る。N-下段］` | corpus | OBSERVED |
+| O669 | Other | — | カバンを持った男 | `［＃カバンを持った男］` | corpus | OBSERVED |
+| O670 | Other | — | カルタ遊び | `［＃カルタ遊び］` | corpus | OBSERVED |
+| O671 | Other | — | キッコの絵N（figN_N.png、横N×縦N）入る | `［＃キッコの絵N（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O672 | Other | — | キャロン付きA小文字、N-N-N | `［＃キャロン付きA小文字、N-N-N］` | corpus | OBSERVED |
+| O673 | Other | — | キャロン付きC、N-N-N | `［＃キャロン付きC、N-N-N］` | corpus | OBSERVED |
+| O674 | Other | — | キャロン付きC小文字、N-N-N | `［＃キャロン付きC小文字、N-N-N］` | corpus | OBSERVED |
+| O675 | Other | — | キャロン付きE小文字、N-N-N | `［＃キャロン付きE小文字、N-N-N］` | corpus | OBSERVED |
+| O676 | Other | — | キャロン付きO小文字、N-N-N | `［＃キャロン付きO小文字、N-N-N］` | corpus | OBSERVED |
+| O677 | Other | — | キャロン付きR小文字、N-N-N | `［＃キャロン付きR小文字、N-N-N］` | corpus | OBSERVED |
+| O678 | Other | — | キャロン付きS小文字、N-N-N | `［＃キャロン付きS小文字、N-N-N］` | corpus | OBSERVED |
+| O679 | Other | — | キャロン付きU小文字、N-N-N | `［＃キャロン付きU小文字、N-N-N］` | corpus | OBSERVED |
+| O680 | Other | — | グーノー作『ファウスト』の楽譜（figN_N.png、横N×縦N）入る | `［＃グーノー作『ファウスト』の楽譜（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O681 | Other | — | ケーキ | `［＃ケーキ］` | corpus | OBSERVED |
+| O682 | Other | — | コト、N-N-N | `［＃コト、N-N-N］` | corpus | OBSERVED |
+| O683 | Other | — | ゴマ、N-N-N | `［＃ゴマ、N-N-N］` | corpus | OBSERVED |
+| O684 | Other | — | ゴーリキー | `［＃ゴーリキー］` | corpus | OBSERVED |
+| O685 | Other | — | サイコロの三の目の絵（figN_N.png、横N×縦N）入る | `［＃サイコロの三の目の絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O686 | Other | — | サイコロの五の目の絵（figN_N.png、横N×縦N）入る | `［＃サイコロの五の目の絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O687 | Other | — | ササラ獅子舞いの笛の音の表（figN_N.png）入る | `［＃ササラ獅子舞いの笛の音の表（figN_N.png）入る］` | corpus | OBSERVED |
+| O688 | Other | — | サマータイム | `［＃サマータイム］` | corpus | OBSERVED |
+| O689 | Other | — | サーカムフレックスアクセント付きR小文字、N-下-N | `［＃サーカムフレックスアクセント付きR小文字、N-下-N］` | corpus | OBSERVED |
+| O690 | Other | — | スカーフ | `［＃スカーフ］` | corpus | OBSERVED |
+| O691 | Other | — | スクリプトG小文字、有声軟口蓋破裂音、N-N-N | `［＃スクリプトG小文字、有声軟口蓋破裂音、N-N-N］` | corpus | OBSERVED |
+| O692 | Other | — | スケッチ（figN_N.png、横N×縦N）入る | `［＃スケッチ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O693 | Other | — | スフ | `［＃スフ］` | corpus | OBSERVED |
+| O694 | Other | — | チェックマーク、N-N-N | `［＃チェックマーク、N-N-N］` | corpus | OBSERVED |
+| O695 | Other | — | チェレパーノワ＝ヨー子 | `［＃チェレパーノワ＝ヨー子］` | corpus | OBSERVED |
+| O696 | Other | — | チベット文字ta＋音節区切り記号のグリフ（figN_N.png、横N×縦N）入る | `［＃チベット文字ta＋音節区切り記号のグリフ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O697 | Other | — | テキストの中でN種類の文字の大きさを注記している。それぞれの大きさは、特大文字＞大文字＞中文字＞（通常の本文の文字）＞小文字 | `［＃テキストの中でN種類の文字の大きさを注記している。それぞれの大きさは、特大文字＞大文字＞中文字＞（通常の本文の文字）＞小文字］` | corpus | OBSERVED |
+| O698 | Other | — | デーヴァーナーガリー文字（figN_N.png、横N×縦N）入る | `［＃デーヴァーナーガリー文字（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O699 | Other | — | トゥルビン家のありし日 | `［＃トゥルビン家のありし日］` | corpus | OBSERVED |
+| O700 | Other | — | トキ、N-N | `［＃トキ、N-N］` | corpus | OBSERVED |
+| O701 | Other | — | トモ、N-N | `［＃トモ、N-N］` | corpus | OBSERVED |
+| O702 | Other | — | トーキー | `［＃トーキー］` | corpus | OBSERVED |
+| O703 | Other | — | ト音記号、N-N | `［＃ト音記号、N-N］` | corpus | OBSERVED |
+| O704 | Other | — | ドイツの開発した、有翼のロケット爆弾機 | `［＃ドイツの開発した、有翼のロケット爆弾機］` | corpus | OBSERVED |
+| O705 | Other | — | ニコライとズク麿の絵（figN_N.png）入る | `［＃ニコライとズク麿の絵（figN_N.png）入る］` | corpus | OBSERVED |
+| O706 | Other | — | ハイネ詩、シューマン曲『二人の擲弾兵』の楽譜（figN_N.png、横N×縦N）入る | `［＃ハイネ詩、シューマン曲『二人の擲弾兵』の楽譜（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O707 | Other | — | ハングル文字、「○○」、N-N | `［＃ハングル文字、「○○」、N-N］` | corpus | OBSERVED |
+| O708 | Other | — | ハングル文字、「○○」に似た文字、N-N | `［＃ハングル文字、「○○」に似た文字、N-N］` | corpus | OBSERVED |
+| O709 | Other | — | ハングル文字、「○○」＋｜」、N-N | `［＃ハングル文字、「○○」＋｜」、N-N］` | corpus | OBSERVED |
+| O710 | Other | — | バスケツトの中のリヽーの挿画（figN_N.png、横N×縦N）入る | `［＃バスケツトの中のリヽーの挿画（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O711 | Other | — | バチェラー八重子、アイヌ | `［＃バチェラー八重子、アイヌ］` | corpus | OBSERVED |
+| O712 | Other | — | バッハの変ホ短調遁走曲の楽譜（figN_N.png）入る | `［＃バッハの変ホ短調遁走曲の楽譜（figN_N.png）入る］` | corpus | OBSERVED |
+| O713 | Other | — | バード・ストーン大曲馬団のプログラム（figN_N.png、横N×縦N）入る | `［＃バード・ストーン大曲馬団のプログラム（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O714 | Other | — | ビュレット、N-N-N | `［＃ビュレット、N-N-N］` | corpus | OBSERVED |
+| O715 | Other | — | ファイナルシグマ、N-N-N | `［＃ファイナルシグマ、N-N-N］` | corpus | OBSERVED |
+| O716 | Other | — | ブナの木に刻まれていた文字（figN_N.png、横N×縦N）入る | `［＃ブナの木に刻まれていた文字（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O717 | Other | — | ブリーブ付きU小文字、N-N-N | `［＃ブリーブ付きU小文字、N-N-N］` | corpus | OBSERVED |
+| O718 | Other | — | ヘブライ文字「○○」（figN_N.png、横N×縦N）入る | `［＃ヘブライ文字「○○」（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O719 | Other | — | ペレール、両親が滞在していたアパート | `［＃ペレール、両親が滞在していたアパート］` | corpus | OBSERVED |
+| O720 | Other | — | ページ下部縦組み終わり | `［＃ページ下部縦組み終わり］` | corpus | OBSERVED |
+| O721 | Other | — | ホテル名 | `［＃ホテル名］` | corpus | OBSERVED |
+| O722 | Other | — | ポスターN（figN_N.png、横N×縦N）入る | `［＃ポスターN（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O723 | Other | — | ママ | `［＃ママ］` | corpus | OBSERVED |
+| O724 | Other | — | ママ、「○○」又は「○○」？、N-上段-N | `［＃ママ、「○○」又は「○○」？、N-上段-N］` | corpus | OBSERVED |
+| O725 | Other | — | マリアナ基地からのＢN、東京を初偵察 | `［＃マリアナ基地からのＢN、東京を初偵察］` | corpus | OBSERVED |
+| O726 | Other | — | マリアナ基地からのＢN約N機、東京を初爆撃 | `［＃マリアナ基地からのＢN約N機、東京を初爆撃］` | corpus | OBSERVED |
+| O727 | Other | — | ムーンの文字「○○」（figN_N.png）入る | `［＃ムーンの文字「○○」（figN_N.png）入る］` | corpus | OBSERVED |
+| O728 | Other | — | メリー・ツィン | `［＃メリー・ツィン］` | corpus | OBSERVED |
+| O729 | Other | — | モスクワの官営売店 | `［＃モスクワの官営売店］` | corpus | OBSERVED |
+| O730 | Other | — | モスクワプロレタリア作家協会 | `［＃モスクワプロレタリア作家協会］` | corpus | OBSERVED |
+| O731 | Other | — | リットル、N-N-N | `［＃リットル、N-N-N］` | corpus | OBSERVED |
+| O732 | Other | — | リヽーと庄造の挿画（figN_N.png、横N×縦N）入る | `［＃リヽーと庄造の挿画（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O733 | Other | — | ルイバコフ | `［＃ルイバコフ］` | corpus | OBSERVED |
+| O734 | Other | — | ルイバコフの妻 | `［＃ルイバコフの妻］` | corpus | OBSERVED |
+| O735 | Other | — | ルイバコフ家のお手伝い | `［＃ルイバコフ家のお手伝い］` | corpus | OBSERVED |
+| O736 | Other | — | ルビ「○○」の下に「○○」の注記 | `［＃ルビ「○○」の下に「○○」の注記］` | corpus | OBSERVED |
+| O737 | Other | — | ルビ「○○」はママ | `［＃ルビ「○○」はママ］` | corpus | OBSERVED |
+| O738 | Other | — | ルビの「○○」と「○○」の間に「○○」の注記 | `［＃ルビの「○○」と「○○」の間に「○○」の注記］` | corpus | OBSERVED |
+| O739 | Other | — | ルビの「○○」に〈原〉の注記 | `［＃ルビの「○○」に〈原〉の注記］` | corpus | OBSERVED |
+| O740 | Other | — | ルビの「○○」に「○○」の注記 | `［＃ルビの「○○」に「○○」の注記］` | corpus | OBSERVED |
+| O741 | Other | — | ルビの「○○」にママの注記 | `［＃ルビの「○○」にママの注記］` | corpus | OBSERVED |
+| O742 | Other | — | ルビの「○○」の「○○」は底本では左に九十度傾いている | `［＃ルビの「○○」の「○○」は底本では左に九十度傾いている］` | corpus | OBSERVED |
+| O743 | Other | — | ルビの「○○」は、底本では「○○」が左にN度回転 | `［＃ルビの「○○」は、底本では「○○」が左にN度回転］` | corpus | OBSERVED |
+| O744 | Other | — | ルビの「○○」は初出では「○○」 | `［＃ルビの「○○」は初出では「○○」］` | corpus | OBSERVED |
+| O745 | Other | — | ルビの「○○」は底本では 「○○」 | `［＃ルビの「○○」は底本では 「○○」］` | corpus | OBSERVED |
+| O746 | Other | — | ルビの「○○」は底本では、「○○」 | `［＃ルビの「○○」は底本では、「○○」］` | corpus | OBSERVED |
+| O747 | Other | — | ルビの「○○」は底本では「○○」。以下の本では「○○」。『鏡花全集　卷五』（岩波書店、昭和N年N月N日　第N刷發行）、『鏡花全集　巻四』（春陽堂、大正N年N月N日發行）、『湯島詣』（春陽堂文庫、春陽堂、昭和N年N月N日復刊第一版發行） | `［＃ルビの「○○」は底本では「○○」。以下の本では「○○」。『鏡花全集　卷五』（岩波書店、昭和N年N月N日　第N刷發行）、『鏡花全集　巻四』（春陽堂、大正N年N月N日發行）、『湯島詣』（春陽堂文庫、春陽堂、昭和N年N月N日復刊第一版發行）］` | corpus | OBSERVED |
+| O748 | Other | — | ルビの「○○」は底本では「○○」と誤植 | `［＃ルビの「○○」は底本では「○○」と誤植］` | corpus | OBSERVED |
+| O749 | Other | — | ルビの「○○」は底本ではなし | `［＃ルビの「○○」は底本ではなし］` | corpus | OBSERVED |
+| O750 | Other | — | ルビの「○○」は底本ではは「○○」 | `［＃ルビの「○○」は底本ではは「○○」］` | corpus | OBSERVED |
+| O751 | Other | — | ルビの「○○」は底本では上下逆 | `［＃ルビの「○○」は底本では上下逆］` | corpus | OBSERVED |
+| O752 | Other | — | ルビの「○○」は底本では左にN度倒れている | `［＃ルビの「○○」は底本では左にN度倒れている］` | corpus | OBSERVED |
+| O753 | Other | — | ルビの「○○」は底本のママ | `［＃ルビの「○○」は底本のママ］` | corpus | OBSERVED |
+| O754 | Other | — | ルビは「○○」にかかる | `［＃ルビは「○○」にかかる］` | corpus | OBSERVED |
+| O755 | Other | — | ルビは「○○」に付く | `［＃ルビは「○○」に付く］` | corpus | OBSERVED |
+| O756 | Other | — | ルビは「○○」に掛かる | `［＃ルビは「○○」に掛かる］` | corpus | OBSERVED |
+| O757 | Other | — | ルビはママ | `［＃ルビはママ］` | corpus | OBSERVED |
+| O758 | Other | — | ルビは底本ママ | `［＃ルビは底本ママ］` | corpus | OBSERVED |
+| O759 | Other | — | ルビ抜けはママ | `［＃ルビ抜けはママ］` | corpus | OBSERVED |
+| O760 | Other | — | レールが鳴り響く | `［＃レールが鳴り響く］` | corpus | OBSERVED |
+| O761 | Other | — | ロシアプロレタリア作家同盟 | `［＃ロシアプロレタリア作家同盟］` | corpus | OBSERVED |
+| O762 | Other | — | ロマン・キム | `［＃ロマン・キム］` | corpus | OBSERVED |
+| O763 | Other | — | ローマ数字 N、N-N-N | `［＃ローマ数字 N、N-N-N］` | corpus | OBSERVED |
+| O764 | Other | — | ローマ数字III、N-N-N | `［＃ローマ数字III、N-N-N］` | corpus | OBSERVED |
+| O765 | Other | — | ローマ数字II、N-N-N | `［＃ローマ数字II、N-N-N］` | corpus | OBSERVED |
+| O766 | Other | — | ローマ数字IV、N-N-N | `［＃ローマ数字IV、N-N-N］` | corpus | OBSERVED |
+| O767 | Other | — | ローマ数字IX、N-N-N | `［＃ローマ数字IX、N-N-N］` | corpus | OBSERVED |
+| O768 | Other | — | ローマ数字I、N-N-N | `［＃ローマ数字I、N-N-N］` | corpus | OBSERVED |
+| O769 | Other | — | ローマ数字N | `［＃ローマ数字N］` | corpus | OBSERVED |
+| O770 | Other | — | ローマ数字N、N-N | `［＃ローマ数字N、N-N］` | corpus | OBSERVED |
+| O771 | Other | — | ローマ数字N、N-上-N | `［＃ローマ数字N、N-上-N］` | corpus | OBSERVED |
+| O772 | Other | — | ローマ数字N、N-下-N | `［＃ローマ数字N、N-下-N］` | corpus | OBSERVED |
+| O773 | Other | — | ローマ数字N小文字、N-N | `［＃ローマ数字N小文字、N-N］` | corpus | OBSERVED |
+| O774 | Other | — | ローマ数字N小文字、N-N-N | `［＃ローマ数字N小文字、N-N-N］` | corpus | OBSERVED |
+| O775 | Other | — | ローマ数字VIII、N-N-N | `［＃ローマ数字VIII、N-N-N］` | corpus | OBSERVED |
+| O776 | Other | — | ローマ数字VI、N-N-N | `［＃ローマ数字VI、N-N-N］` | corpus | OBSERVED |
+| O777 | Other | — | ローマ数字V、N-N-N | `［＃ローマ数字V、N-N-N］` | corpus | OBSERVED |
+| O778 | Other | — | ローマ数字XI、N-N-N | `［＃ローマ数字XI、N-N-N］` | corpus | OBSERVED |
+| O779 | Other | — | ローマ数字X、N-N-N | `［＃ローマ数字X、N-N-N］` | corpus | OBSERVED |
+| O780 | Other | — | ローマ数字「○○」、N-N-N | `［＃ローマ数字「○○」、N-N-N］` | corpus | OBSERVED |
+| O781 | Other | — | ワンピースの絵（figN_N.png）入る | `［＃ワンピースの絵（figN_N.png）入る］` | corpus | OBSERVED |
+| O782 | Other | — | 一つ目と二つ目の「○○」は「○○」付き | `［＃一つ目と二つ目の「○○」は「○○」付き］` | corpus | OBSERVED |
+| O783 | Other | — | 一つ目の「○○」は「○○」付き | `［＃一つ目の「○○」は「○○」付き］` | corpus | OBSERVED |
+| O784 | Other | — | 一つ目の「○○」は「○○」付き。一つ目の「○○」は「○○」付き | `［＃一つ目の「○○」は「○○」付き。一つ目の「○○」は「○○」付き］` | corpus | OBSERVED |
+| O785 | Other | — | 一つ目の「○○」は「○○」付き」 | `［＃一つ目の「○○」は「○○」付き」］` | corpus | OBSERVED |
+| O786 | Other | — | 一九四二（昭和十七）年一月から五月にかけて、海野は海軍報道班文学挺身隊員として従軍 | `［＃一九四二（昭和十七）年一月から五月にかけて、海野は海軍報道班文学挺身隊員として従軍］` | corpus | OBSERVED |
+| O787 | Other | — | 一番左の□は底本では無し | `［＃一番左の□は底本では無し］` | corpus | OBSERVED |
+| O788 | Other | — | 丁 | `［＃丁］` | corpus | OBSERVED |
+| O789 | Other | — | 七たび生まれ変わって、国に報いるの意 | `［＃七たび生まれ変わって、国に報いるの意］` | corpus | OBSERVED |
+| O790 | Other | — | 七ツ釜之圖（figN_N.png、横N×縦N）入る | `［＃七ツ釜之圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O791 | Other | — | 三 | `［＃三］` | corpus | OBSERVED |
+| O792 | Other | — | 三の目のサイコロと豚の絵（figN_N.png、横N×縦N）入る | `［＃三の目のサイコロと豚の絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O793 | Other | — | 三レ | `［＃三レ］` | corpus | OBSERVED |
+| O794 | Other | — | 三國嶺雪頽の上徃來の圖（figN_N.png、横N×縦N）入る | `［＃三國嶺雪頽の上徃來の圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O795 | Other | — | 三日月のみえる荒狂ふ海を背景にした岩の上に、長い髮で顏をかくしてうなだれてゐながら、巨大な耳をひろげてゐる人の繪（figN_N.png、横N×縦N）入る | `［＃三日月のみえる荒狂ふ海を背景にした岩の上に、長い髮で顏をかくしてうなだれてゐながら、巨大な耳をひろげてゐる人の繪（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O796 | Other | — | 三本の枯れた立木の絵（figN_N.png）入る | `［＃三本の枯れた立木の絵（figN_N.png）入る］` | corpus | OBSERVED |
+| O797 | Other | — | 三毛の墓の楽譜（figN_N.png、横N×縦N）入る | `［＃三毛の墓の楽譜（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O798 | Other | — | 三男 | `［＃三男］` | corpus | OBSERVED |
+| O799 | Other | — | 三男、病臥中 | `［＃三男、病臥中］` | corpus | OBSERVED |
+| O800 | Other | — | 三男、腎臓病で横臥中 | `［＃三男、腎臓病で横臥中］` | corpus | OBSERVED |
+| O801 | Other | — | 上 | `［＃上］` | corpus | OBSERVED |
+| O802 | Other | — | 上に「○○」下に「○○」 | `［＃上に「○○」下に「○○」］` | corpus | OBSERVED |
+| O803 | Other | — | 上に「○○」下に「○○」、N-N | `［＃上に「○○」下に「○○」、N-N］` | corpus | OBSERVED |
+| O804 | Other | — | 上バー付きA小文字、N-N | `［＃上バー付きA小文字、N-N］` | corpus | OBSERVED |
+| O805 | Other | — | 上バー付きE小文字、N-N | `［＃上バー付きE小文字、N-N］` | corpus | OBSERVED |
+| O806 | Other | — | 上バー付きO小文字、N-N | `［＃上バー付きO小文字、N-N］` | corpus | OBSERVED |
+| O807 | Other | — | 上二 | `［＃上二］` | corpus | OBSERVED |
+| O808 | Other | — | 上付バーｍの数式（figN_N.png、横N×縦N）入る | `［＃上付バーｍの数式（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O809 | Other | — | 上付バーｖの数式（figN_N.png、横N×縦N）入る | `［＃上付バーｖの数式（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O810 | Other | — | 上付バーｖ／ｖ＿ｒの数式（figN_N.png、横N×縦N）入る | `［＃上付バーｖ／ｖ＿ｒの数式（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O811 | Other | — | 上方に不鮮明な符号が付いているω、N-N | `［＃上方に不鮮明な符号が付いているω、N-N］` | corpus | OBSERVED |
+| O812 | Other | — | 上記、N、N行目とN行目の「○○」は中文字、それ以外は小文字。N行目「○○」は○付き文字 | `［＃上記、N、N行目とN行目の「○○」は中文字、それ以外は小文字。N行目「○○」は○付き文字］` | corpus | OBSERVED |
+| O813 | Other | — | 上部欄外に「○○」 | `［＃上部欄外に「○○」］` | corpus | OBSERVED |
+| O814 | Other | — | 下 | `［＃下］` | corpus | OBSERVED |
+| O815 | Other | — | 下げて、地よりN字あきで | `［＃下げて、地よりN字あきで］` | corpus | OBSERVED |
+| O816 | Other | — | 下げて地よりN字あきで | `［＃下げて地よりN字あきで］` | corpus | OBSERVED |
+| O817 | Other | — | 下ダイエレシス付きA小文字、N-N | `［＃下ダイエレシス付きA小文字、N-N］` | corpus | OBSERVED |
+| O818 | Other | — | 下ダイエレシス付きO小文字、N-N | `［＃下ダイエレシス付きO小文字、N-N］` | corpus | OBSERVED |
+| O819 | Other | — | 下二 | `［＃下二］` | corpus | OBSERVED |
+| O820 | Other | — | 下島俊一、精一郎の従弟 | `［＃下島俊一、精一郎の従弟］` | corpus | OBSERVED |
+| O821 | Other | — | 下島孝吉、百合子の大叔父 | `［＃下島孝吉、百合子の大叔父］` | corpus | OBSERVED |
+| O822 | Other | — | 不自然な途切れとN行アキは、ママ | `［＃不自然な途切れとN行アキは、ママ］` | corpus | OBSERVED |
+| O823 | Other | — | 丙 | `［＃丙］` | corpus | OBSERVED |
+| O824 | Other | — | 並木道 | `［＃並木道］` | corpus | OBSERVED |
+| O825 | Other | — | 中 | `［＃中］` | corpus | OBSERVED |
+| O826 | Other | — | 中に点のある△を右にN度傾けた三角形（figN_N.png、横N×縦N）入る | `［＃中に点のある△を右にN度傾けた三角形（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O827 | Other | — | 中に点のある△を左にN度傾けた三角形（figN_N.png、横N×縦N）入る | `［＃中に点のある△を左にN度傾けた三角形（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O828 | Other | — | 中に点のある右に傾いた平行四辺形（figN_N.png、横N×縦N）入る | `［＃中に点のある右に傾いた平行四辺形（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O829 | Other | — | 中世の物理の教科書の南画（figN_N.png、横N×縦N）入る | `［＃中世の物理の教科書の南画（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O830 | Other | — | 中山正直、本田道之の弟 | `［＃中山正直、本田道之の弟］` | corpus | OBSERVED |
+| O831 | Other | — | 中川八十勝、電気試験所時代の同僚 | `［＃中川八十勝、電気試験所時代の同僚］` | corpus | OBSERVED |
+| O832 | Other | — | 中扉の画（figN_N.png、横N×縦N）入る | `［＃中扉の画（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O833 | Other | — | 中文字 | `［＃中文字］` | corpus | OBSERVED |
+| O834 | Other | — | 中村吉右衛門、尾上菊五郎 | `［＃中村吉右衛門、尾上菊五郎］` | corpus | OBSERVED |
+| O835 | Other | — | 中村吉蔵 | `［＃中村吉蔵］` | corpus | OBSERVED |
+| O836 | Other | — | 中村武羅夫 | `［＃中村武羅夫］` | corpus | OBSERVED |
+| O837 | Other | — | 中條《ちゅうじょう》英男、中條家三男 | `［＃中條《ちゅうじょう》英男、中條家三男］` | corpus | OBSERVED |
+| O838 | Other | — | 中條健之助、国男・咲枝の次男 | `［＃中條健之助、国男・咲枝の次男］` | corpus | OBSERVED |
+| O839 | Other | — | 中條咲枝 | `［＃中條咲枝］` | corpus | OBSERVED |
+| O840 | Other | — | 中條国男 | `［＃中條国男］` | corpus | OBSERVED |
+| O841 | Other | — | 中條国男、中條家長男 | `［＃中條国男、中條家長男］` | corpus | OBSERVED |
+| O842 | Other | — | 中條国男・咲枝の長男 | `［＃中條国男・咲枝の長男］` | corpus | OBSERVED |
+| O843 | Other | — | 中條太郎 | `［＃中條太郎］` | corpus | OBSERVED |
+| O844 | Other | — | 中條家の女中 | `［＃中條家の女中］` | corpus | OBSERVED |
+| O845 | Other | — | 中條寿江、中條家三女 | `［＃中條寿江、中條家三女］` | corpus | OBSERVED |
+| O846 | Other | — | 中條彌栄、中條家四女 | `［＃中條彌栄、中條家四女］` | corpus | OBSERVED |
+| O847 | Other | — | 中條政恒 | `［＃中條政恒］` | corpus | OBSERVED |
+| O848 | Other | — | 中條泰子 | `［＃中條泰子］` | corpus | OBSERVED |
+| O849 | Other | — | 中條精一郎 | `［＃中條精一郎］` | corpus | OBSERVED |
+| O850 | Other | — | 中條義男、中條家四男 | `［＃中條義男、中條家四男］` | corpus | OBSERVED |
+| O851 | Other | — | 中條華、中條家三女。百合子が長女、次女は千鶴（生後四ヵ月で死亡） | `［＃中條華、中條家三女。百合子が長女、次女は千鶴（生後四ヵ月で死亡）］` | corpus | OBSERVED |
+| O852 | Other | — | 中條葭江 | `［＃中條葭江］` | corpus | OBSERVED |
+| O853 | Other | — | 中條運 | `［＃中條運］` | corpus | OBSERVED |
+| O854 | Other | — | 中條運、父方の祖母 | `［＃中條運、父方の祖母］` | corpus | OBSERVED |
+| O855 | Other | — | 中條道男、中條家次男 | `［＃中條道男、中條家次男］` | corpus | OBSERVED |
+| O856 | Other | — | 中見出終わり | `［＃中見出終わり］` | corpus | OBSERVED |
+| O857 | Other | — | 中野鈴子 | `［＃中野鈴子］` | corpus | OBSERVED |
+| O858 | Other | — | 丸A、N-N | `［＃丸A、N-N］` | corpus | OBSERVED |
+| O859 | Other | — | 丸A大文字、N-N | `［＃丸A大文字、N-N］` | corpus | OBSERVED |
+| O860 | Other | — | 丸A小文字、N-N-N | `［＃丸A小文字、N-N-N］` | corpus | OBSERVED |
+| O861 | Other | — | 丸B、N-N | `［＃丸B、N-N］` | corpus | OBSERVED |
+| O862 | Other | — | 丸B大文字、N-N | `［＃丸B大文字、N-N］` | corpus | OBSERVED |
+| O863 | Other | — | 丸B小文字、N-N-N | `［＃丸B小文字、N-N-N］` | corpus | OBSERVED |
+| O864 | Other | — | 丸C、N-N | `［＃丸C、N-N］` | corpus | OBSERVED |
+| O865 | Other | — | 丸C大文字、N-N | `［＃丸C大文字、N-N］` | corpus | OBSERVED |
+| O866 | Other | — | 丸C小文字、N-N-N | `［＃丸C小文字、N-N-N］` | corpus | OBSERVED |
+| O867 | Other | — | 丸D大文字、N-N | `［＃丸D大文字、N-N］` | corpus | OBSERVED |
+| O868 | Other | — | 丸D小文字、N-N-N | `［＃丸D小文字、N-N-N］` | corpus | OBSERVED |
+| O869 | Other | — | 丸E、N-N | `［＃丸E、N-N］` | corpus | OBSERVED |
+| O870 | Other | — | 丸い、N-N | `［＃丸い、N-N］` | corpus | OBSERVED |
+| O871 | Other | — | 丸い（○の中に「○○」）、N-N | `［＃丸い（○の中に「○○」）、N-N］` | corpus | OBSERVED |
+| O872 | Other | — | 丸サ、N-N-N | `［＃丸サ、N-N-N］` | corpus | OBSERVED |
+| O873 | Other | — | 丸ス、N-N-N | `［＃丸ス、N-N-N］` | corpus | OBSERVED |
+| O874 | Other | — | 丸ツ、N-N-N | `［＃丸ツ、N-N-N］` | corpus | OBSERVED |
+| O875 | Other | — | 丸一、N-N | `［＃丸一、N-N］` | corpus | OBSERVED |
+| O876 | Other | — | 丸三、N-N | `［＃丸三、N-N］` | corpus | OBSERVED |
+| O877 | Other | — | 丸中黒、N-N-N | `［＃丸中黒、N-N-N］` | corpus | OBSERVED |
+| O878 | Other | — | 丸二、N-N | `［＃丸二、N-N］` | corpus | OBSERVED |
+| O879 | Other | — | 丸五 | `［＃丸五］` | corpus | OBSERVED |
+| O880 | Other | — | 丸井、N-N | `［＃丸井、N-N］` | corpus | OBSERVED |
+| O881 | Other | — | 丸付き「○○」、N-N | `［＃丸付き「○○」、N-N］` | corpus | OBSERVED |
+| O882 | Other | — | 丸付きの「○○」、N-下-N | `［＃丸付きの「○○」、N-下-N］` | corpus | OBSERVED |
+| O883 | Other | — | 丸付き公、N-N | `［＃丸付き公、N-N］` | corpus | OBSERVED |
+| O884 | Other | — | 丸付き印、N-下-N | `［＃丸付き印、N-下-N］` | corpus | OBSERVED |
+| O885 | Other | — | 丸付き日、N-N | `［＃丸付き日、N-N］` | corpus | OBSERVED |
+| O886 | Other | — | 丸付き通、N-N | `［＃丸付き通、N-N］` | corpus | OBSERVED |
+| O887 | Other | — | 丸公、N-N | `［＃丸公、N-N］` | corpus | OBSERVED |
+| O888 | Other | — | 丸十、N-N | `［＃丸十、N-N］` | corpus | OBSERVED |
+| O889 | Other | — | 丸協、N-N | `［＃丸協、N-N］` | corpus | OBSERVED |
+| O890 | Other | — | 丸印、N-N | `［＃丸印、N-N］` | corpus | OBSERVED |
+| O891 | Other | — | 丸四 | `［＃丸四］` | corpus | OBSERVED |
+| O892 | Other | — | 丸四、N-N | `［＃丸四、N-N］` | corpus | OBSERVED |
+| O893 | Other | — | 丸大、N-N | `［＃丸大、N-N］` | corpus | OBSERVED |
+| O894 | Other | — | 丸底フラスコのような藁塚の絵（figN_N.png）入る | `［＃丸底フラスコのような藁塚の絵（figN_N.png）入る］` | corpus | OBSERVED |
+| O895 | Other | — | 丸正、屋号を示す記号、N-N | `［＃丸正、屋号を示す記号、N-N］` | corpus | OBSERVED |
+| O896 | Other | — | 丸漢数字五、N-N | `［＃丸漢数字五、N-N］` | corpus | OBSERVED |
+| O897 | Other | — | 丸通、N-N | `［＃丸通、N-N］` | corpus | OBSERVED |
+| O898 | Other | — | 丸鬼、N-N | `［＃丸鬼、N-N］` | corpus | OBSERVED |
+| O899 | Other | — | 久米正雄 | `［＃久米正雄］` | corpus | OBSERVED |
+| O900 | Other | — | 乙 | `［＃乙］` | corpus | OBSERVED |
+| O901 | Other | — | 九品山浄真寺（世田谷）の絵（figN_N.png、横N×縦N）入る | `［＃九品山浄真寺（世田谷）の絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O902 | Other | — | 二つ目と三つ目の「○○」は「○○」付き | `［＃二つ目と三つ目の「○○」は「○○」付き］` | corpus | OBSERVED |
+| O903 | Other | — | 二の字點、N-N-N | `［＃二の字點、N-N-N］` | corpus | OBSERVED |
+| O904 | Other | — | 二レ | `［＃二レ］` | corpus | OBSERVED |
+| O905 | Other | — | 二分ダーシ、N-N-N | `［＃二分ダーシ、N-N-N］` | corpus | OBSERVED |
+| O906 | Other | — | 二十一集の表（figN_N.png、横N×縦N）入る | `［＃二十一集の表（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O907 | Other | — | 二重かっこ閉じ | `［＃二重かっこ閉じ］` | corpus | OBSERVED |
+| O908 | Other | — | 二重かっこ開く | `［＃二重かっこ開く］` | corpus | OBSERVED |
+| O909 | Other | — | 二重三角、N-N | `［＃二重三角、N-N］` | corpus | OBSERVED |
+| O910 | Other | — | 二重和音で四分音符ドと♭ミ（figN_N.png、横N×縦N）入る | `［＃二重和音で四分音符ドと♭ミ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O911 | Other | — | 二重四角、N-N | `［＃二重四角、N-N］` | corpus | OBSERVED |
+| O912 | Other | — | 二重白ゴマ、N-N | `［＃二重白ゴマ、N-N］` | corpus | OBSERVED |
+| O913 | Other | — | 五ヵ年計画 | `［＃五ヵ年計画］` | corpus | OBSERVED |
+| O914 | Other | — | 井戸の絵（figN_N.png、横N×縦N）入る | `［＃井戸の絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O915 | Other | — | 以上、宮原晃一郎による解説 | `［＃以上、宮原晃一郎による解説］` | corpus | OBSERVED |
+| O916 | Other | — | 以下、「○○」から「○○」までは罫線囲み | `［＃以下、「○○」から「○○」までは罫線囲み］` | corpus | OBSERVED |
+| O917 | Other | — | 以下、この段落の数字付き（）は一字扱いである。 | `［＃以下、この段落の数字付き（）は一字扱いである。］` | corpus | OBSERVED |
+| O918 | Other | — | 以下、新聞の切抜き | `［＃以下、新聞の切抜き］` | corpus | OBSERVED |
+| O919 | Other | — | 以下「○○」と「○○」は「○○」の下で二行に分かれ、「○○」「○○」の下に上向きのくくり記号 | `［＃以下「○○」と「○○」は「○○」の下で二行に分かれ、「○○」「○○」の下に上向きのくくり記号］` | corpus | OBSERVED |
+| O920 | Other | — | 以下の「○○」は罫で囲む | `［＃以下の「○○」は罫で囲む］` | corpus | OBSERVED |
+| O921 | Other | — | 以下の括弧内割注 | `［＃以下の括弧内割注］` | corpus | OBSERVED |
+| O922 | Other | — | 伊藤白蓮 | `［＃伊藤白蓮］` | corpus | OBSERVED |
+| O923 | Other | — | 休息の家 | `［＃休息の家］` | corpus | OBSERVED |
+| O924 | Other | — | 佐浦詣堂押圖（figN_N.png、横N×縦N）入る | `［＃佐浦詣堂押圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O925 | Other | — | 便箋右上に花飾り付きのページ数 | `［＃便箋右上に花飾り付きのページ数］` | corpus | OBSERVED |
+| O926 | Other | — | 俊夫の妻 | `［＃俊夫の妻］` | corpus | OBSERVED |
+| O927 | Other | — | 倉知俊夫、咲枝の兄 | `［＃倉知俊夫、咲枝の兄］` | corpus | OBSERVED |
+| O928 | Other | — | 倉知咲枝、百合子の従妹、のちの国男の妻 | `［＃倉知咲枝、百合子の従妹、のちの国男の妻］` | corpus | OBSERVED |
+| O929 | Other | — | 倉知春江、百合子の従妹、父精一郎の妹｜貞《テイ》の娘 | `［＃倉知春江、百合子の従妹、父精一郎の妹｜貞《テイ》の娘］` | corpus | OBSERVED |
+| O930 | Other | — | 倉知緑郎 | `［＃倉知緑郎］` | corpus | OBSERVED |
+| O931 | Other | — | 倉知緑郎、百合子の従弟 | `［＃倉知緑郎、百合子の従弟］` | corpus | OBSERVED |
+| O932 | Other | — | 倉知誠夫、倉知貞の夫 | `［＃倉知誠夫、倉知貞の夫］` | corpus | OBSERVED |
+| O933 | Other | — | 倉知貞 | `［＃倉知貞］` | corpus | OBSERVED |
+| O934 | Other | — | 倉知｜紀《ただし》。百合子の従弟 | `［＃倉知｜紀《ただし》。百合子の従弟］` | corpus | OBSERVED |
+| O935 | Other | — | 偏が「○○」で旁が「○○」 | `［＃偏が「○○」で旁が「○○」］` | corpus | OBSERVED |
+| O936 | Other | — | 光の種類とその出現した時間についての表（figN_N.png、横N×縦N）入る | `［＃光の種類とその出現した時間についての表（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O937 | Other | — | 党員証 | `［＃党員証］` | corpus | OBSERVED |
+| O938 | Other | — | 入力者注(N) | `［＃入力者注(N)］` | corpus | OBSERVED |
+| O939 | Other | — | 入力者註：以下の九ヶ所の底本のミスと思われるものは全集版に合わせて修正した。
+　全集版：東京創元社『定本北條民雄全集・上巻』昭和五十五年刊
+　数字は定本のページ数と行数を示す。「○○」→「○○」
+　N-N「○○」→「○○」
+　N-N「○○」→「○○」
+　N-N「○○」→「○○」
+　N-N「○○」→「○○」
+　N-N「○○」→「○○」
+　N-N「○○」→「○○」
+　N-N「○○」と」→「○○」＜改行＞と」
+　N-N「○○」→「○○」
+　N-N「○○」→「○○」 | `［＃入力者註：以下の九ヶ所の底本のミスと思われるものは全集版に合わせて修正した。
+　全集版：東京創元社『定本北條民雄全集・上巻』昭和五十五年刊
+　数字は定本のページ数と行数を示す。「○○」→「○○」
+　N-N「○○」→「○○」
+　N-N「○○」→「○○」
+　N-N「○○」→「○○」
+　N-N「○○」→「○○」
+　N-N「○○」→「○○」
+　N-N「○○」→「○○」
+　N-N「○○」と」→「○○」＜改行＞と」
+　N-N「○○」→「○○」
+　N-N「○○」→「○○」］` | corpus | OBSERVED |
+| O940 | Other | — | 全日本無産者芸術団体協議会 | `［＃全日本無産者芸術団体協議会］` | corpus | OBSERVED |
+| O941 | Other | — | 全角CC、N-N-N | `［＃全角CC、N-N-N］` | corpus | OBSERVED |
+| O942 | Other | — | 全角CM、N-N-N | `［＃全角CM、N-N-N］` | corpus | OBSERVED |
+| O943 | Other | — | 全角KG、N-N-N | `［＃全角KG、N-N-N］` | corpus | OBSERVED |
+| O944 | Other | — | 全角KM、N-N-N | `［＃全角KM、N-N-N］` | corpus | OBSERVED |
+| O945 | Other | — | 全角アキは底本ではなし | `［＃全角アキは底本ではなし］` | corpus | OBSERVED |
+| O946 | Other | — | 全角キロ、N-N-N | `［＃全角キロ、N-N-N］` | corpus | OBSERVED |
+| O947 | Other | — | 全角グラム、N-N-N | `［＃全角グラム、N-N-N］` | corpus | OBSERVED |
+| O948 | Other | — | 全角センチ、N-N-N | `［＃全角センチ、N-N-N］` | corpus | OBSERVED |
+| O949 | Other | — | 全角トン、N-N-N | `［＃全角トン、N-N-N］` | corpus | OBSERVED |
+| O950 | Other | — | 全角パーセント、N-N-N | `［＃全角パーセント、N-N-N］` | corpus | OBSERVED |
+| O951 | Other | — | 全角メートル、N-N-N | `［＃全角メートル、N-N-N］` | corpus | OBSERVED |
+| O952 | Other | — | 全角リットル、N-N-N | `［＃全角リットル、N-N-N］` | corpus | OBSERVED |
+| O953 | Other | — | 全角空きはママ | `［＃全角空きはママ］` | corpus | OBSERVED |
+| O954 | Other | — | 八十勝 | `［＃八十勝］` | corpus | OBSERVED |
+| O955 | Other | — | 八段目九段目左端「○○」は底本では「○○」 | `［＃八段目九段目左端「○○」は底本では「○○」］` | corpus | OBSERVED |
+| O956 | Other | — | 八段目左端「○○」は底本では「○○」 | `［＃八段目左端「○○」は底本では「○○」］` | corpus | OBSERVED |
+| O957 | Other | — | 公式（figN_N.png）入る | `［＃公式（figN_N.png）入る］` | corpus | OBSERVED |
+| O958 | Other | — | 公職追放 | `［＃公職追放］` | corpus | OBSERVED |
+| O959 | Other | — | 共同印刷 | `［＃共同印刷］` | corpus | OBSERVED |
+| O960 | Other | — | 共産主義者（女） | `［＃共産主義者（女）］` | corpus | OBSERVED |
+| O961 | Other | — | 共産主義青年同盟 | `［＃共産主義青年同盟］` | corpus | OBSERVED |
+| O962 | Other | — | 共産党員 | `［＃共産党員］` | corpus | OBSERVED |
+| O963 | Other | — | 共産党的 | `［＃共産党的］` | corpus | OBSERVED |
+| O964 | Other | — | 再絵N（figN_N.png、横N×縦N）入る | `［＃再絵N（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O965 | Other | — | 列項目名N段目はN段目をそれぞれN分割 | `［＃列項目名N段目はN段目をそれぞれN分割］` | corpus | OBSERVED |
+| O966 | Other | — | 初出の『四季』第四號・昭和十年二月號では「○○」となっている | `［＃初出の『四季』第四號・昭和十年二月號では「○○」となっている］` | corpus | OBSERVED |
+| O967 | Other | — | 初出時「○○」 | `［＃初出時「○○」］` | corpus | OBSERVED |
+| O968 | Other | — | 判読不可、N-N | `［＃判読不可、N-N］` | corpus | OBSERVED |
+| O969 | Other | — | 判読不可、N-N段-N | `［＃判読不可、N-N段-N］` | corpus | OBSERVED |
+| O970 | Other | — | 判読不可、N-上-N | `［＃判読不可、N-上-N］` | corpus | OBSERVED |
+| O971 | Other | — | 判読不可、N-下-N | `［＃判読不可、N-下-N］` | corpus | OBSERVED |
+| O972 | Other | — | 判読不可。「○○」あるいは「○○」か？ | `［＃判読不可。「○○」あるいは「○○」か？］` | corpus | OBSERVED |
+| O973 | Other | — | 前のnは上ドット付き、後のnは下ドット付き | `［＃前のnは上ドット付き、後のnは下ドット付き］` | corpus | OBSERVED |
+| O974 | Other | — | 前の「○○」は「○○」、後の「○○」は「○○」、N-N | `［＃前の「○○」は「○○」、後の「○○」は「○○」、N-N］` | corpus | OBSERVED |
+| O975 | Other | — | 前夫、荒木茂 | `［＃前夫、荒木茂］` | corpus | OBSERVED |
+| O976 | Other | — | 前妻のたか子は、一九二六（大正十五）年に結核で死亡。看病に当たった海野も感染し、いったんは回復したが、一九四二（昭和十七）年に海軍報道班員として南方に派遣された際、再発していた | `［＃前妻のたか子は、一九二六（大正十五）年に結核で死亡。看病に当たった海野も感染し、いったんは回復したが、一九四二（昭和十七）年に海軍報道班員として南方に派遣された際、再発していた］` | corpus | OBSERVED |
+| O977 | Other | — | 前衛 | `［＃前衛］` | corpus | OBSERVED |
+| O978 | Other | — | 前述の振りがなは論文題名の英訳と思われるが、底本では振りがなとして処理している。以下の同例も《》付きの振りがなとして記しておく。 | `［＃前述の振りがなは論文題名の英訳と思われるが、底本では振りがなとして処理している。以下の同例も《》付きの振りがなとして記しておく。］` | corpus | OBSERVED |
+| O979 | Other | — | 剛夫得名玉圖（figN_N.png、横N×縦N）入る | `［＃剛夫得名玉圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O980 | Other | — | 割書 | `［＃割書］` | corpus | OBSERVED |
+| O981 | Other | — | 割書終わり | `［＃割書終わり］` | corpus | OBSERVED |
+| O982 | Other | — | 創元社版では「○○」 | `［＃創元社版では「○○」］` | corpus | OBSERVED |
+| O983 | Other | — | 創元社版は「○○」 | `［＃創元社版は「○○」］` | corpus | OBSERVED |
+| O984 | Other | — | 劇場名 | `［＃劇場名］` | corpus | OBSERVED |
+| O985 | Other | — | 加藤シヅエ | `［＃加藤シヅエ］` | corpus | OBSERVED |
+| O986 | Other | — | 労農赤色海軍 | `［＃労農赤色海軍］` | corpus | OBSERVED |
+| O987 | Other | — | 北村秀雄、湯浅芳子の従弟 | `［＃北村秀雄、湯浅芳子の従弟］` | corpus | OBSERVED |
+| O988 | Other | — | 北高禅師勇気圖（figN_N.png、横N×縦N）入る | `［＃北高禅師勇気圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O989 | Other | — | 区切りの印（figN_N.png、横N×縦N）入る | `［＃区切りの印（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O990 | Other | — | 十月革命 | `［＃十月革命］` | corpus | OBSERVED |
+| O991 | Other | — | 半濁点付き小書き片仮名フ、N-N-N | `［＃半濁点付き小書き片仮名フ、N-N-N］` | corpus | OBSERVED |
+| O992 | Other | — | 半濁点付き平仮名と、N-N | `［＃半濁点付き平仮名と、N-N］` | corpus | OBSERVED |
+| O993 | Other | — | 半濁点付き片仮名カ、N-N-N | `［＃半濁点付き片仮名カ、N-N-N］` | corpus | OBSERVED |
+| O994 | Other | — | 半濁点付き片仮名キ、N-N-N | `［＃半濁点付き片仮名キ、N-N-N］` | corpus | OBSERVED |
+| O995 | Other | — | 半濁点付き片仮名ク、N-N-N | `［＃半濁点付き片仮名ク、N-N-N］` | corpus | OBSERVED |
+| O996 | Other | — | 半濁点付き片仮名ケ、N-N-N | `［＃半濁点付き片仮名ケ、N-N-N］` | corpus | OBSERVED |
+| O997 | Other | — | 半濁点付き片仮名コ、N-N-N | `［＃半濁点付き片仮名コ、N-N-N］` | corpus | OBSERVED |
+| O998 | Other | — | 半濁点付き片仮名ツ、N-N-N | `［＃半濁点付き片仮名ツ、N-N-N］` | corpus | OBSERVED |
+| O999 | Other | — | 半濁点付き片仮名ト、N-N-N | `［＃半濁点付き片仮名ト、N-N-N］` | corpus | OBSERVED |
+| O1000 | Other | — | 協同組合住宅 | `［＃協同組合住宅］` | corpus | OBSERVED |
+| O1001 | Other | — | 南京虫 | `［＃南京虫］` | corpus | OBSERVED |
+| O1002 | Other | — | 印刷不鮮明、N-N | `［＃印刷不鮮明、N-N］` | corpus | OBSERVED |
+| O1003 | Other | — | 印影（figN_N.png、横N×縦N）入る | `［＃印影（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1004 | Other | — | 原文は括弧「○○」を使うが、他の所と一致させるため改める | `［＃原文は括弧「○○」を使うが、他の所と一致させるため改める］` | corpus | OBSERVED |
+| O1005 | Other | — | 原文まま | `［＃原文まま］` | corpus | OBSERVED |
+| O1006 | Other | — | 原阿佐緒 | `［＃原阿佐緒］` | corpus | OBSERVED |
+| O1007 | Other | — | 厳寒 | `［＃厳寒］` | corpus | OBSERVED |
+| O1008 | Other | — | 反宗教 | `［＃反宗教］` | corpus | OBSERVED |
+| O1009 | Other | — | 叢の庄造の挿画（figN_N.png、横N×縦N）入る | `［＃叢の庄造の挿画（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1010 | Other | — | 口絵N（figN_N.png、横N×縦N）入る | `［＃口絵N（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1011 | Other | — | 口絵（figN_N.png、横N×縦N）入る | `［＃口絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1012 | Other | — | 口語自由詩で、民衆の現実を描こうとした、「○○」の詩人 | `［＃口語自由詩で、民衆の現実を描こうとした、「○○」の詩人］` | corpus | OBSERVED |
+| O1013 | Other | — | 古本屋名 | `［＃古本屋名］` | corpus | OBSERVED |
+| O1014 | Other | — | 古田中孝子、母葭江の従妹 | `［＃古田中孝子、母葭江の従妹］` | corpus | OBSERVED |
+| O1015 | Other | — | 句点が抜けていると考えられる | `［＃句点が抜けていると考えられる］` | corpus | OBSERVED |
+| O1016 | Other | — | 右下の部分は「○○」の右下部と同形 | `［＃右下の部分は「○○」の右下部と同形］` | corpus | OBSERVED |
+| O1017 | Other | — | 右下向矢印、N-N-N | `［＃右下向矢印、N-N-N］` | corpus | OBSERVED |
+| O1018 | Other | — | 右向黒三角、N-N-N | `［＃右向黒三角、N-N-N］` | corpus | OBSERVED |
+| O1019 | Other | — | 右寄せ | `［＃右寄せ］` | corpus | OBSERVED |
+| O1020 | Other | — | 右肩下がりのナイフの刀身に横線が一本入っている形（figN_N.png、横N×縦N）入る | `［＃右肩下がりのナイフの刀身に横線が一本入っている形（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1021 | Other | — | 右肩下がりのナイフの刀身のような形（figN_N.png、横N×縦N）入る | `［＃右肩下がりのナイフの刀身のような形（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1022 | Other | — | 司馬江漢銅版画（figN_N.png、横N×縦N）入る | `［＃司馬江漢銅版画（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1023 | Other | — | 各結晶の目方と落下速度との平均値の表（figN_N.png、横N×縦N）入る | `［＃各結晶の目方と落下速度との平均値の表（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1024 | Other | — | 同志 | `［＃同志］` | corpus | OBSERVED |
+| O1025 | Other | — | 同相、N-N-N | `［＃同相、N-N-N］` | corpus | OBSERVED |
+| O1026 | Other | — | 吼えろ、支那 | `［＃吼えろ、支那］` | corpus | OBSERVED |
+| O1027 | Other | — | 呉昌碩 | `［＃呉昌碩］` | corpus | OBSERVED |
+| O1028 | Other | — | 喜重郎 | `［＃喜重郎］` | corpus | OBSERVED |
+| O1029 | Other | — | 四 | `［＃四］` | corpus | OBSERVED |
+| O1030 | Other | — | 四分音符、N-N-N | `［＃四分音符、N-N-N］` | corpus | OBSERVED |
+| O1031 | Other | — | 四分音符ミファレに「○○」の歌詞の楽譜（figN_N.png）入る。 | `［＃四分音符ミファレに「○○」の歌詞の楽譜（figN_N.png）入る。］` | corpus | OBSERVED |
+| O1032 | Other | — | 四角万、N-N | `［＃四角万、N-N］` | corpus | OBSERVED |
+| O1033 | Other | — | 四角印、N-N | `［＃四角印、N-N］` | corpus | OBSERVED |
+| O1034 | Other | — | 国男 | `［＃国男］` | corpus | OBSERVED |
+| O1035 | Other | — | 国際婦人デー | `［＃国際婦人デー］` | corpus | OBSERVED |
+| O1036 | Other | — | 圖中」は底本では「○○」 | `［＃圖中」は底本では「○○」］` | corpus | OBSERVED |
+| O1037 | Other | — | 土曜集会 | `［＃土曜集会］` | corpus | OBSERVED |
+| O1038 | Other | — | 地よりN字上がり | `［＃地よりN字上がり］` | corpus | OBSERVED |
+| O1039 | Other | — | 地震にともなう発光現象の表（figN_N.png、横N×縦N）入る | `［＃地震にともなう発光現象の表（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1040 | Other | — | 垂直二等分線のある白い長方形、N-N | `［＃垂直二等分線のある白い長方形、N-N］` | corpus | OBSERVED |
+| O1041 | Other | — | 埋橋久子の友人、壺井栄ではない | `［＃埋橋久子の友人、壺井栄ではない］` | corpus | OBSERVED |
+| O1042 | Other | — | 堺利彦 | `［＃堺利彦］` | corpus | OBSERVED |
+| O1043 | Other | — | 塚山嶺雪吹圖（figN_N.png、横N×縦N）入る | `［＃塚山嶺雪吹圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1044 | Other | — | 変わり者 | `［＃変わり者］` | corpus | OBSERVED |
+| O1045 | Other | — | 変体仮名あ（figN_N.png、横N×縦N）入る | `［＃変体仮名あ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1046 | Other | — | 変体仮名え、N-N-N | `［＃変体仮名え、N-N-N］` | corpus | OBSERVED |
+| O1047 | Other | — | 変体仮名え、N-一-N | `［＃変体仮名え、N-一-N］` | corpus | OBSERVED |
+| O1048 | Other | — | 変体仮名え、N-七-N | `［＃変体仮名え、N-七-N］` | corpus | OBSERVED |
+| O1049 | Other | — | 変体仮名え、N-三-N | `［＃変体仮名え、N-三-N］` | corpus | OBSERVED |
+| O1050 | Other | — | 変体仮名え、N-五-N | `［＃変体仮名え、N-五-N］` | corpus | OBSERVED |
+| O1051 | Other | — | 変体仮名え、N-四-N | `［＃変体仮名え、N-四-N］` | corpus | OBSERVED |
+| O1052 | Other | — | 変体仮名え、N巻-N-上-N | `［＃変体仮名え、N巻-N-上-N］` | corpus | OBSERVED |
+| O1053 | Other | — | 変体仮名か（figN_N.png、横N×縦N）入る | `［＃変体仮名か（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1054 | Other | — | 変体仮名き（figN_N.png、横N×縦N）入る | `［＃変体仮名き（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1055 | Other | — | 変体仮名く、N-N | `［＃変体仮名く、N-N］` | corpus | OBSERVED |
+| O1056 | Other | — | 変体仮名し、はしがき-N | `［＃変体仮名し、はしがき-N］` | corpus | OBSERVED |
+| O1057 | Other | — | 変体仮名ぞ、N巻-N-下-N | `［＃変体仮名ぞ、N巻-N-下-N］` | corpus | OBSERVED |
+| O1058 | Other | — | 変体仮名の（figN_N.png、横N×縦N）入る | `［＃変体仮名の（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1059 | Other | — | 変体仮名ほ（figN_N.png、横N×縦N）入る | `［＃変体仮名ほ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1060 | Other | — | 変体仮名み（figN_N.png、横N×縦N）入る | `［＃変体仮名み（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1061 | Other | — | 夕食 | `［＃夕食］` | corpus | OBSERVED |
+| O1062 | Other | — | 大文字 | `［＃大文字］` | corpus | OBSERVED |
+| O1063 | Other | — | 大日本帝国一座（figN_N.png、横N×縦N）入る | `［＃大日本帝国一座（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1064 | Other | — | 大杉栄 | `［＃大杉栄］` | corpus | OBSERVED |
+| O1065 | Other | — | 大森咲江 | `［＃大森咲江］` | corpus | OBSERVED |
+| O1066 | Other | — | 大瀧基、大瀧鷹子の長男、百合子の従弟 | `［＃大瀧基、大瀧鷹子の長男、百合子の従弟］` | corpus | OBSERVED |
+| O1067 | Other | — | 大瀧潤家、叔母（父の妹）鷹子の夫 | `［＃大瀧潤家、叔母（父の妹）鷹子の夫］` | corpus | OBSERVED |
+| O1068 | Other | — | 大瀧菊子 | `［＃大瀧菊子］` | corpus | OBSERVED |
+| O1069 | Other | — | 大熊信行 | `［＃大熊信行］` | corpus | OBSERVED |
+| O1070 | Other | — | 大隈伯邸花壇室内食卓真景の口絵（figN_N.png、横N×縦N）入る | `［＃大隈伯邸花壇室内食卓真景の口絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1071 | Other | — | 天付きの「○○」はママ | `［＃天付きの「○○」はママ］` | corpus | OBSERVED |
+| O1072 | Other | — | 天付きはママ | `［＃天付きはママ］` | corpus | OBSERVED |
+| O1073 | Other | — | 天皇、神格化否定の詔勅。いわゆる人間宣言 | `［＃天皇、神格化否定の詔勅。いわゆる人間宣言］` | corpus | OBSERVED |
+| O1074 | Other | — | 天皇の諮問機関、枢密院の異称 | `［＃天皇の諮問機関、枢密院の異称］` | corpus | OBSERVED |
+| O1075 | Other | — | 天長節夜会食卓の真景の口絵（figN_N.png、横N×縦N）入る | `［＃天長節夜会食卓の真景の口絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1076 | Other | — | 太陽マジックのうたの楽譜（figN_N.png）入る | `［＃太陽マジックのうたの楽譜（figN_N.png）入る］` | corpus | OBSERVED |
+| O1077 | Other | — | 夫、荒木茂 | `［＃夫、荒木茂］` | corpus | OBSERVED |
+| O1078 | Other | — | 夫人 | `［＃夫人］` | corpus | OBSERVED |
+| O1079 | Other | — | 奥付（figN_N.png、横N×縦N）入る | `［＃奥付（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1080 | Other | — | 始めダブルミニュート、N-N-N | `［＃始めダブルミニュート、N-N-N］` | corpus | OBSERVED |
+| O1081 | Other | — | 始め二重パーレン、N-N-N | `［＃始め二重パーレン、N-N-N］` | corpus | OBSERVED |
+| O1082 | Other | — | 始め二重山括弧引用記号、始めギュメ、N-N-N | `［＃始め二重山括弧引用記号、始めギュメ、N-N-N］` | corpus | OBSERVED |
+| O1083 | Other | — | 始め二重括弧、N-N-N | `［＃始め二重括弧、N-N-N］` | corpus | OBSERVED |
+| O1084 | Other | — | 娘婿の永田徹郎海軍大尉 | `［＃娘婿の永田徹郎海軍大尉］` | corpus | OBSERVED |
+| O1085 | Other | — | 子供の顔の絵（figN_N.png、横N×縦N）入る | `［＃子供の顔の絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1086 | Other | — | 宇陀児 | `［＃宇陀児］` | corpus | OBSERVED |
+| O1087 | Other | — | 官僚主義 | `［＃官僚主義］` | corpus | OBSERVED |
+| O1088 | Other | — | 実際は五月十日付が最終のたより | `［＃実際は五月十日付が最終のたより］` | corpus | OBSERVED |
+| O1089 | Other | — | 宣伝ビラ | `［＃宣伝ビラ］` | corpus | OBSERVED |
+| O1090 | Other | — | 宮崎の埴輪の絵（figN_N.png、横N×縦N）入る | `［＃宮崎の埴輪の絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1091 | Other | — | 宮本トミ | `［＃宮本トミ］` | corpus | OBSERVED |
+| O1092 | Other | — | 宮本友子 | `［＃宮本友子］` | corpus | OBSERVED |
+| O1093 | Other | — | 宮本多賀子、顕治の従妹 | `［＃宮本多賀子、顕治の従妹］` | corpus | OBSERVED |
+| O1094 | Other | — | 宮本富雄、顕治の従弟 | `［＃宮本富雄、顕治の従弟］` | corpus | OBSERVED |
+| O1095 | Other | — | 宮本捨吉 | `［＃宮本捨吉］` | corpus | OBSERVED |
+| O1096 | Other | — | 宮本百合子の作品「○○」のナースチャのモデル | `［＃宮本百合子の作品「○○」のナースチャのモデル］` | corpus | OBSERVED |
+| O1097 | Other | — | 宮本美代 | `［＃宮本美代］` | corpus | OBSERVED |
+| O1098 | Other | — | 宮本美代、顕治の母 | `［＃宮本美代、顕治の母］` | corpus | OBSERVED |
+| O1099 | Other | — | 宮本輝、達治・友子の長男 | `［＃宮本輝、達治・友子の長男］` | corpus | OBSERVED |
+| O1100 | Other | — | 宮本達治、宮本家の次男、長男は顕治 | `［＃宮本達治、宮本家の次男、長男は顕治］` | corpus | OBSERVED |
+| O1101 | Other | — | 宮本隆治、宮本家の三男 | `［＃宮本隆治、宮本家の三男］` | corpus | OBSERVED |
+| O1102 | Other | — | 宮本顕治 | `［＃宮本顕治］` | corpus | OBSERVED |
+| O1103 | Other | — | 宮本顕治の生家 | `［＃宮本顕治の生家］` | corpus | OBSERVED |
+| O1104 | Other | — | 宮部金吾 | `［＃宮部金吾］` | corpus | OBSERVED |
+| O1105 | Other | — | 家の画（figN_N.png、横N×縦N）入る | `［＃家の画（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1106 | Other | — | 家族全員で死ぬこと | `［＃家族全員で死ぬこと］` | corpus | OBSERVED |
+| O1107 | Other | — | 富樫はつ、中條家書生 | `［＃富樫はつ、中條家書生］` | corpus | OBSERVED |
+| O1108 | Other | — | 寒行者威徳之圖、笈掛岩大氷柱圖（figN_N.png、横N×縦N）入る | `［＃寒行者威徳之圖、笈掛岩大氷柱圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1109 | Other | — | 寿江 | `［＃寿江］` | corpus | OBSERVED |
+| O1110 | Other | — | 射撃 | `［＃射撃］` | corpus | OBSERVED |
+| O1111 | Other | — | 小売店 | `［＃小売店］` | corpus | OBSERVED |
+| O1112 | Other | — | 小文字 | `［＃小文字］` | corpus | OBSERVED |
+| O1113 | Other | — | 小書き半濁点付き片仮名フ、N-N-N | `［＃小書き半濁点付き片仮名フ、N-N-N］` | corpus | OBSERVED |
+| O1114 | Other | — | 小書き平仮名け、N-N-N | `［＃小書き平仮名け、N-N-N］` | corpus | OBSERVED |
+| O1115 | Other | — | 小書き平仮名こ、N-N | `［＃小書き平仮名こ、N-N］` | corpus | OBSERVED |
+| O1116 | Other | — | 小書き平仮名た、N-N | `［＃小書き平仮名た、N-N］` | corpus | OBSERVED |
+| O1117 | Other | — | 小書き平仮名と、N-N | `［＃小書き平仮名と、N-N］` | corpus | OBSERVED |
+| O1118 | Other | — | 小書き平仮名な、N-N | `［＃小書き平仮名な、N-N］` | corpus | OBSERVED |
+| O1119 | Other | — | 小書き平仮名は、N-N | `［＃小書き平仮名は、N-N］` | corpus | OBSERVED |
+| O1120 | Other | — | 小書き平仮名む、N-N | `［＃小書き平仮名む、N-N］` | corpus | OBSERVED |
+| O1121 | Other | — | 小書き平仮名ゑ、N-N | `［＃小書き平仮名ゑ、N-N］` | corpus | OBSERVED |
+| O1122 | Other | — | 小書き平仮名ん、N-N | `［＃小書き平仮名ん、N-N］` | corpus | OBSERVED |
+| O1123 | Other | — | 小書き濁点付き片仮名カ、N-N | `［＃小書き濁点付き片仮名カ、N-N］` | corpus | OBSERVED |
+| O1124 | Other | — | 小書き濁点付き片仮名カ、N-上-N | `［＃小書き濁点付き片仮名カ、N-上-N］` | corpus | OBSERVED |
+| O1125 | Other | — | 小書き濁点付き片仮名カ、N巻-N-N | `［＃小書き濁点付き片仮名カ、N巻-N-N］` | corpus | OBSERVED |
+| O1126 | Other | — | 小書き片仮名ガ | `［＃小書き片仮名ガ］` | corpus | OBSERVED |
+| O1127 | Other | — | 小書き片仮名ガ、N-N | `［＃小書き片仮名ガ、N-N］` | corpus | OBSERVED |
+| O1128 | Other | — | 小書き片仮名ガ、N-上-N | `［＃小書き片仮名ガ、N-上-N］` | corpus | OBSERVED |
+| O1129 | Other | — | 小書き片仮名ク、N-N-N | `［＃小書き片仮名ク、N-N-N］` | corpus | OBSERVED |
+| O1130 | Other | — | 小書き片仮名シ、N-N-N | `［＃小書き片仮名シ、N-N-N］` | corpus | OBSERVED |
+| O1131 | Other | — | 小書き片仮名ス、N-N-N | `［＃小書き片仮名ス、N-N-N］` | corpus | OBSERVED |
+| O1132 | Other | — | 小書き片仮名タ、N-N | `［＃小書き片仮名タ、N-N］` | corpus | OBSERVED |
+| O1133 | Other | — | 小書き片仮名ト、N-N-N | `［＃小書き片仮名ト、N-N-N］` | corpus | OBSERVED |
+| O1134 | Other | — | 小書き片仮名ヌ、N-N-N | `［＃小書き片仮名ヌ、N-N-N］` | corpus | OBSERVED |
+| O1135 | Other | — | 小書き片仮名ノ、N-N | `［＃小書き片仮名ノ、N-N］` | corpus | OBSERVED |
+| O1136 | Other | — | 小書き片仮名ハ、N-N-N | `［＃小書き片仮名ハ、N-N-N］` | corpus | OBSERVED |
+| O1137 | Other | — | 小書き片仮名ヒ、N-N | `［＃小書き片仮名ヒ、N-N］` | corpus | OBSERVED |
+| O1138 | Other | — | 小書き片仮名ヒ、N-N-N | `［＃小書き片仮名ヒ、N-N-N］` | corpus | OBSERVED |
+| O1139 | Other | — | 小書き片仮名フ、N-N-N | `［＃小書き片仮名フ、N-N-N］` | corpus | OBSERVED |
+| O1140 | Other | — | 小書き片仮名ヘ、N-N-N | `［＃小書き片仮名ヘ、N-N-N］` | corpus | OBSERVED |
+| O1141 | Other | — | 小書き片仮名ホ、N-N-N | `［＃小書き片仮名ホ、N-N-N］` | corpus | OBSERVED |
+| O1142 | Other | — | 小書き片仮名マ、N-N | `［＃小書き片仮名マ、N-N］` | corpus | OBSERVED |
+| O1143 | Other | — | 小書き片仮名ム、N-N-N | `［＃小書き片仮名ム、N-N-N］` | corpus | OBSERVED |
+| O1144 | Other | — | 小書き片仮名ラ、N-N-N | `［＃小書き片仮名ラ、N-N-N］` | corpus | OBSERVED |
+| O1145 | Other | — | 小書き片仮名リ、N-N-N | `［＃小書き片仮名リ、N-N-N］` | corpus | OBSERVED |
+| O1146 | Other | — | 小書き片仮名ル、N-N-N | `［＃小書き片仮名ル、N-N-N］` | corpus | OBSERVED |
+| O1147 | Other | — | 小書き片仮名ロ、N-N-N | `［＃小書き片仮名ロ、N-N-N］` | corpus | OBSERVED |
+| O1148 | Other | — | 小書き片仮名ワ、N-N | `［＃小書き片仮名ワ、N-N］` | corpus | OBSERVED |
+| O1149 | Other | — | 小書き片仮名ヰ、N-N | `［＃小書き片仮名ヰ、N-N］` | corpus | OBSERVED |
+| O1150 | Other | — | 小書き片仮名ヰ、N-上-N | `［＃小書き片仮名ヰ、N-上-N］` | corpus | OBSERVED |
+| O1151 | Other | — | 小書き片仮名ヰ、N-下-N | `［＃小書き片仮名ヰ、N-下-N］` | corpus | OBSERVED |
+| O1152 | Other | — | 小書き片仮名ヱ、N-N | `［＃小書き片仮名ヱ、N-N］` | corpus | OBSERVED |
+| O1153 | Other | — | 小書き片仮名ヱ、N-上-N | `［＃小書き片仮名ヱ、N-上-N］` | corpus | OBSERVED |
+| O1154 | Other | — | 小書き片仮名ヱ、N-上段-N | `［＃小書き片仮名ヱ、N-上段-N］` | corpus | OBSERVED |
+| O1155 | Other | — | 小書き片仮名ヱ、N-下-N | `［＃小書き片仮名ヱ、N-下-N］` | corpus | OBSERVED |
+| O1156 | Other | — | 小書き片仮名ヲ | `［＃小書き片仮名ヲ］` | corpus | OBSERVED |
+| O1157 | Other | — | 小書き片仮名ヲ、N-N | `［＃小書き片仮名ヲ、N-N］` | corpus | OBSERVED |
+| O1158 | Other | — | 小書き片仮名ヲ、N-上-N | `［＃小書き片仮名ヲ、N-上-N］` | corpus | OBSERVED |
+| O1159 | Other | — | 小書き片仮名ヲ、N-下-N | `［＃小書き片仮名ヲ、N-下-N］` | corpus | OBSERVED |
+| O1160 | Other | — | 小書き片仮名ン、N-N | `［＃小書き片仮名ン、N-N］` | corpus | OBSERVED |
+| O1161 | Other | — | 小書き片仮名ン、N-上-N | `［＃小書き片仮名ン、N-上-N］` | corpus | OBSERVED |
+| O1162 | Other | — | 小書き片仮名ン、N-下-N | `［＃小書き片仮名ン、N-下-N］` | corpus | OBSERVED |
+| O1163 | Other | — | 小杉放庵 | `［＃小杉放庵］` | corpus | OBSERVED |
+| O1164 | Other | — | 小林房次郎、中條家の書生 | `［＃小林房次郎、中條家の書生］` | corpus | OBSERVED |
+| O1165 | Other | — | 小田切直行、父精一郎の従弟 | `［＃小田切直行、父精一郎の従弟］` | corpus | OBSERVED |
+| O1166 | Other | — | 小説家 | `［＃小説家］` | corpus | OBSERVED |
+| O1167 | Other | — | 少年団 | `［＃少年団］` | corpus | OBSERVED |
+| O1168 | Other | — | 少年団員 | `［＃少年団員］` | corpus | OBSERVED |
+| O1169 | Other | — | 屋上雪掘圖（figN_N.png、横N×縦N）入る | `［＃屋上雪掘圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1170 | Other | — | 山中異獣の圖（figN_N.png、横N×縦N）入る | `［＃山中異獣の圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1171 | Other | — | 山尾市次郎、中條家小作人 | `［＃山尾市次郎、中條家小作人］` | corpus | OBSERVED |
+| O1172 | Other | — | 岡東浩。海野の神戸一中時代の友人。三菱商事勤務。麻布に居住 | `［＃岡東浩。海野の神戸一中時代の友人。三菱商事勤務。麻布に居住］` | corpus | OBSERVED |
+| O1173 | Other | — | 岡田シヅ | `［＃岡田シヅ］` | corpus | OBSERVED |
+| O1174 | Other | — | 岩波文庫の注は、「○○」を著者の書き間違いとし、「○○」であるとする | `［＃岩波文庫の注は、「○○」を著者の書き間違いとし、「○○」であるとする］` | corpus | OBSERVED |
+| O1175 | Other | — | 岩波文庫の注は「○○」とする | `［＃岩波文庫の注は「○○」とする］` | corpus | OBSERVED |
+| O1176 | Other | — | 岩波文庫版では「○○」 | `［＃岩波文庫版では「○○」］` | corpus | OBSERVED |
+| O1177 | Other | — | 島文教場は児童の在籍数の表（figN_N.png、横N×縦N）入る | `［＃島文教場は児童の在籍数の表（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1178 | Other | — | 巾＋兌 | `［＃巾＋兌］` | corpus | OBSERVED |
+| O1179 | Other | — | 市中四月雪解圖（figN_N.png、横N×縦N）入る | `［＃市中四月雪解圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1180 | Other | — | 市川男女蔵＝市川左団次 | `［＃市川男女蔵＝市川左団次］` | corpus | OBSERVED |
+| O1181 | Other | — | 帝国主義 | `［＃帝国主義］` | corpus | OBSERVED |
+| O1182 | Other | — | 年代別作句数の表（figN_N.png、横N×縦N）入る | `［＃年代別作句数の表（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1183 | Other | — | 底本N-N、N-N、N-Nではセブルクルムと表記。ここN-Nでの表記は誤りか | `［＃底本N-N、N-N、N-Nではセブルクルムと表記。ここN-Nでの表記は誤りか］` | corpus | OBSERVED |
+| O1184 | Other | — | 底本N字伏字 | `［＃底本N字伏字］` | corpus | OBSERVED |
+| O1185 | Other | — | 底本N頁に「○○」がある | `［＃底本N頁に「○○」がある］` | corpus | OBSERVED |
+| O1186 | Other | — | 底本N頁に「○○」入る | `［＃底本N頁に「○○」入る］` | corpus | OBSERVED |
+| O1187 | Other | — | 底本N頁に君主の戦争の表あり | `［＃底本N頁に君主の戦争の表あり］` | corpus | OBSERVED |
+| O1188 | Other | — | 底本N頁左上に戦争指導に関する表あり | `［＃底本N頁左上に戦争指導に関する表あり］` | corpus | OBSERVED |
+| O1189 | Other | — | 底本「○○」 | `［＃底本「○○」］` | corpus | OBSERVED |
+| O1190 | Other | — | 底本「○○」。『選集』で「○○」となって居るのに合せて訂正 | `［＃底本「○○」。『選集』で「○○」となって居るのに合せて訂正］` | corpus | OBSERVED |
+| O1191 | Other | — | 底本「○○」。読みにくいので『選集』により訂正 | `［＃底本「○○」。読みにくいので『選集』により訂正］` | corpus | OBSERVED |
+| O1192 | Other | — | 底本「○○」を「○○」に訂正 | `［＃底本「○○」を「○○」に訂正］` | corpus | OBSERVED |
+| O1193 | Other | — | 底本「○○」を修正 | `［＃底本「○○」を修正］` | corpus | OBSERVED |
+| O1194 | Other | — | 底本「○○」を変更 | `［＃底本「○○」を変更］` | corpus | OBSERVED |
+| O1195 | Other | — | 底本「○○」を訂正 | `［＃底本「○○」を訂正］` | corpus | OBSERVED |
+| O1196 | Other | — | 底本が「○○」とルビを付した梵字（figN_N.png、横N×縦N）入る | `［＃底本が「○○」とルビを付した梵字（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1197 | Other | — | 底本が「○○」と注記した梵字（figN_N.png）、N-上-N | `［＃底本が「○○」と注記した梵字（figN_N.png）、N-上-N］` | corpus | OBSERVED |
+| O1198 | Other | — | 底本が「○○」と注記した梵字（figN_N.png）、N-下-N | `［＃底本が「○○」と注記した梵字（figN_N.png）、N-下-N］` | corpus | OBSERVED |
+| O1199 | Other | — | 底本ではN字あき | `［＃底本ではN字あき］` | corpus | OBSERVED |
+| O1200 | Other | — | 底本ではN字分のスペースがない | `［＃底本ではN字分のスペースがない］` | corpus | OBSERVED |
+| O1201 | Other | — | 底本ではN字分の空白 | `［＃底本ではN字分の空白］` | corpus | OBSERVED |
+| O1202 | Other | — | 底本では、この「○○」だけN字上がっている | `［＃底本では、この「○○」だけN字上がっている］` | corpus | OBSERVED |
+| O1203 | Other | — | 底本では、さらに送りがなに「○○」がある | `［＃底本では、さらに送りがなに「○○」がある］` | corpus | OBSERVED |
+| O1204 | Other | — | 底本では、以下の（本邦）と（外国）を並べた表となっている | `［＃底本では、以下の（本邦）と（外国）を並べた表となっている］` | corpus | OBSERVED |
+| O1205 | Other | — | 底本では、改行後はじめの一字さげ無し | `［＃底本では、改行後はじめの一字さげ無し］` | corpus | OBSERVED |
+| O1206 | Other | — | 底本では、改行行頭のアキ、脱落 | `［＃底本では、改行行頭のアキ、脱落］` | corpus | OBSERVED |
+| O1207 | Other | — | 底本では「○○」 | `［＃底本では「○○」］` | corpus | OBSERVED |
+| O1208 | Other | — | 底本では「○○」、N-N | `［＃底本では「○○」、N-N］` | corpus | OBSERVED |
+| O1209 | Other | — | 底本では「○○」が「○○」 | `［＃底本では「○○」が「○○」］` | corpus | OBSERVED |
+| O1210 | Other | — | 底本では「○○」が「○○」、N-N | `［＃底本では「○○」が「○○」、N-N］` | corpus | OBSERVED |
+| O1211 | Other | — | 底本では「○○」が横向き | `［＃底本では「○○」が横向き］` | corpus | OBSERVED |
+| O1212 | Other | — | 底本では「○○」が欠け | `［＃底本では「○○」が欠け］` | corpus | OBSERVED |
+| O1213 | Other | — | 底本では「○○」が欠如 | `［＃底本では「○○」が欠如］` | corpus | OBSERVED |
+| O1214 | Other | — | 底本では「○○」が欠落 | `［＃底本では「○○」が欠落］` | corpus | OBSERVED |
+| O1215 | Other | — | 底本では「○○」が脱字 | `［＃底本では「○○」が脱字］` | corpus | OBSERVED |
+| O1216 | Other | — | 底本では「○○」が脱落 | `［＃底本では「○○」が脱落］` | corpus | OBSERVED |
+| O1217 | Other | — | 底本では「○○」となっている | `［＃底本では「○○」となっている］` | corpus | OBSERVED |
+| O1218 | Other | — | 底本では「○○」と表記 | `［＃底本では「○○」と表記］` | corpus | OBSERVED |
+| O1219 | Other | — | 底本では「○○」と誤植 | `［＃底本では「○○」と誤植］` | corpus | OBSERVED |
+| O1220 | Other | — | 底本では「○○」と誤植、N-下N | `［＃底本では「○○」と誤植、N-下N］` | corpus | OBSERVED |
+| O1221 | Other | — | 底本では「○○」と誤記 | `［＃底本では「○○」と誤記］` | corpus | OBSERVED |
+| O1222 | Other | — | 底本では「○○」と誤記、以下同じ | `［＃底本では「○○」と誤記、以下同じ］` | corpus | OBSERVED |
+| O1223 | Other | — | 底本では「○○」と誤記。入力者注(N) | `［＃底本では「○○」と誤記。入力者注(N)］` | corpus | OBSERVED |
+| O1224 | Other | — | 底本では「○○」なし | `［＃底本では「○○」なし］` | corpus | OBSERVED |
+| O1225 | Other | — | 底本では「○○」の「○○」の部分が「○○」、昭和N年N月N日N刷改版から「○○」をそのまま使用しているため、このまま「○○」を採用 | `［＃底本では「○○」の「○○」の部分が「○○」、昭和N年N月N日N刷改版から「○○」をそのまま使用しているため、このまま「○○」を採用］` | corpus | OBSERVED |
+| O1226 | Other | — | 底本では「○○」の後の全角スペースなし | `［＃底本では「○○」の後の全角スペースなし］` | corpus | OBSERVED |
+| O1227 | Other | — | 底本では「○○」の後はN字アキ | `［＃底本では「○○」の後はN字アキ］` | corpus | OBSERVED |
+| O1228 | Other | — | 底本では「○○」の誤り | `［＃底本では「○○」の誤り］` | corpus | OBSERVED |
+| O1229 | Other | — | 底本では「○○」は「○○」 | `［＃底本では「○○」は「○○」］` | corpus | OBSERVED |
+| O1230 | Other | — | 底本では「○○」は「○○」となっている、N下－N | `［＃底本では「○○」は「○○」となっている、N下－N］` | corpus | OBSERVED |
+| O1231 | Other | — | 底本では「○○」は「○○」と誤植 | `［＃底本では「○○」は「○○」と誤植］` | corpus | OBSERVED |
+| O1232 | Other | — | 底本では「○○」は「○○」と誤記 | `［＃底本では「○○」は「○○」と誤記］` | corpus | OBSERVED |
+| O1233 | Other | — | 底本では「○○」は一字 | `［＃底本では「○○」は一字］` | corpus | OBSERVED |
+| O1234 | Other | — | 底本では「○○」は脱字 | `［＃底本では「○○」は脱字］` | corpus | OBSERVED |
+| O1235 | Other | — | 底本では「○○」は脱落 | `［＃底本では「○○」は脱落］` | corpus | OBSERVED |
+| O1236 | Other | — | 底本では「○○」まで上巻、「○○」から下巻 | `［＃底本では「○○」まで上巻、「○○」から下巻］` | corpus | OBSERVED |
+| O1237 | Other | — | 底本では「○○」を、「○○」を小さくしたものと誤植、N-下N | `［＃底本では「○○」を、「○○」を小さくしたものと誤植、N-下N］` | corpus | OBSERVED |
+| O1238 | Other | — | 底本では「○○」を「○○」と誤植 | `［＃底本では「○○」を「○○」と誤植］` | corpus | OBSERVED |
+| O1239 | Other | — | 底本では「○○」欠如 | `［＃底本では「○○」欠如］` | corpus | OBSERVED |
+| O1240 | Other | — | 底本では「○○」無し、N-N | `［＃底本では「○○」無し、N-N］` | corpus | OBSERVED |
+| O1241 | Other | — | 底本では【」】が欠落 | `［＃底本では【」】が欠落］` | corpus | OBSERVED |
+| O1242 | Other | — | 底本ではここで改行、次行の始めかぎ括弧は天ツキ | `［＃底本ではここで改行、次行の始めかぎ括弧は天ツキ］` | corpus | OBSERVED |
+| O1243 | Other | — | 底本ではここに「○○」 | `［＃底本ではここに「○○」］` | corpus | OBSERVED |
+| O1244 | Other | — | 底本ではここに「○○」あり。「○○」とは「○○」の次にある歌、という内容 | `［＃底本ではここに「○○」あり。「○○」とは「○○」の次にある歌、という内容］` | corpus | OBSERVED |
+| O1245 | Other | — | 底本ではここに「○○」あり。「○○」の歌の最後は普通「○○」と訓む、という内容 | `［＃底本ではここに「○○」あり。「○○」の歌の最後は普通「○○」と訓む、という内容］` | corpus | OBSERVED |
+| O1246 | Other | — | 底本ではここにオグデンによるベーシック・ワードのリストが掲げてあるが、オグデンの著作権は現在保護期間中なので、省略する。 | `［＃底本ではここにオグデンによるベーシック・ワードのリストが掲げてあるが、オグデンの著作権は現在保護期間中なので、省略する。］` | corpus | OBSERVED |
+| O1247 | Other | — | 底本ではここにリンカーンの演説の矢内原忠雄による日本語訳が載っているが、矢内原忠雄の著作権は現在保護期間中なので、省略する。 | `［＃底本ではここにリンカーンの演説の矢内原忠雄による日本語訳が載っているが、矢内原忠雄の著作権は現在保護期間中なので、省略する。］` | corpus | OBSERVED |
+| O1248 | Other | — | 底本ではここに不要な「○○」 | `［＃底本ではここに不要な「○○」］` | corpus | OBSERVED |
+| O1249 | Other | — | 底本ではここに句点 | `［＃底本ではここに句点］` | corpus | OBSERVED |
+| O1250 | Other | — | 底本ではここのみ「○○」。他は「○○」 | `［＃底本ではここのみ「○○」。他は「○○」］` | corpus | OBSERVED |
+| O1251 | Other | — | 底本ではリーダー（……）はダッシュ（――） | `［＃底本ではリーダー（……）はダッシュ（――）］` | corpus | OBSERVED |
+| O1252 | Other | — | 底本ではルビ《な》は「○○」につく形に誤植 | `［＃底本ではルビ《な》は「○○」につく形に誤植］` | corpus | OBSERVED |
+| O1253 | Other | — | 底本ではルビが「○○」 | `［＃底本ではルビが「○○」］` | corpus | OBSERVED |
+| O1254 | Other | — | 底本ではルビの「○○」が抜け | `［＃底本ではルビの「○○」が抜け］` | corpus | OBSERVED |
+| O1255 | Other | — | 底本ではルビは「○○」と誤記 | `［＃底本ではルビは「○○」と誤記］` | corpus | OBSERVED |
+| O1256 | Other | — | 底本ではルビを「○○」と誤記 | `［＃底本ではルビを「○○」と誤記］` | corpus | OBSERVED |
+| O1257 | Other | — | 底本では一字あき | `［＃底本では一字あき］` | corpus | OBSERVED |
+| O1258 | Other | — | 底本では冒頭に「○○」なし | `［＃底本では冒頭に「○○」なし］` | corpus | OBSERVED |
+| O1259 | Other | — | 底本では受けのカギカッコの前に句点あり | `［＃底本では受けのカギカッコの前に句点あり］` | corpus | OBSERVED |
+| O1260 | Other | — | 底本では句点 | `［＃底本では句点］` | corpus | OBSERVED |
+| O1261 | Other | — | 底本では句点、N-N | `［＃底本では句点、N-N］` | corpus | OBSERVED |
+| O1262 | Other | — | 底本では句点が抜けている | `［＃底本では句点が抜けている］` | corpus | OBSERVED |
+| O1263 | Other | — | 底本では句点なし | `［＃底本では句点なし］` | corpus | OBSERVED |
+| O1264 | Other | — | 底本では句読点なし。N-N | `［＃底本では句読点なし。N-N］` | corpus | OBSERVED |
+| O1265 | Other | — | 底本では各項は、「○○」に合わせて均等割付 | `［＃底本では各項は、「○○」に合わせて均等割付］` | corpus | OBSERVED |
+| O1266 | Other | — | 底本では天付き | `［＃底本では天付き］` | corpus | OBSERVED |
+| O1267 | Other | — | 底本では始めと終わりの二重かぎ括弧が脱字 | `［＃底本では始めと終わりの二重かぎ括弧が脱字］` | corpus | OBSERVED |
+| O1268 | Other | — | 底本では始め括弧が脱字、N-上N | `［＃底本では始め括弧が脱字、N-上N］` | corpus | OBSERVED |
+| O1269 | Other | — | 底本では始め括弧は「○○」、N-上N | `［＃底本では始め括弧は「○○」、N-上N］` | corpus | OBSERVED |
+| O1270 | Other | — | 底本では改行なし | `［＃底本では改行なし］` | corpus | OBSERVED |
+| O1271 | Other | — | 底本では続く改行はなし | `［＃底本では続く改行はなし］` | corpus | OBSERVED |
+| O1272 | Other | — | 底本では脱落 | `［＃底本では脱落］` | corpus | OBSERVED |
+| O1273 | Other | — | 底本では読点 | `［＃底本では読点］` | corpus | OBSERVED |
+| O1274 | Other | — | 底本では読点が句点 | `［＃底本では読点が句点］` | corpus | OBSERVED |
+| O1275 | Other | — | 底本では読点ではなく句点になっている | `［＃底本では読点ではなく句点になっている］` | corpus | OBSERVED |
+| O1276 | Other | — | 底本では起こしのカギがヌケ | `［＃底本では起こしのカギがヌケ］` | corpus | OBSERVED |
+| O1277 | Other | — | 底本では閉じ括弧が脱字、N-下N | `［＃底本では閉じ括弧が脱字、N-下N］` | corpus | OBSERVED |
+| O1278 | Other | — | 底本では閉じ括弧は「○○」、N-下N | `［＃底本では閉じ括弧は「○○」、N-下N］` | corpus | OBSERVED |
+| O1279 | Other | — | 底本で第一一六頁にあるのは、例題七です。 | `［＃底本で第一一六頁にあるのは、例題七です。］` | corpus | OBSERVED |
+| O1280 | Other | — | 底本で第二十四頁にあるのは、例題七（底本では例題八）です。 | `［＃底本で第二十四頁にあるのは、例題七（底本では例題八）です。］` | corpus | OBSERVED |
+| O1281 | Other | — | 底本に「○○」なし、N-上段-N | `［＃底本に「○○」なし、N-上段-N］` | corpus | OBSERVED |
+| O1282 | Other | — | 底本には、N字あき | `［＃底本には、N字あき］` | corpus | OBSERVED |
+| O1283 | Other | — | 底本には、本文から離れた位置に「○○」と誤植 | `［＃底本には、本文から離れた位置に「○○」と誤植］` | corpus | OBSERVED |
+| O1284 | Other | — | 底本にはここに「○○」とある | `［＃底本にはここに「○○」とある］` | corpus | OBSERVED |
+| O1285 | Other | — | 底本にはない「○○」を補った | `［＃底本にはない「○○」を補った］` | corpus | OBSERVED |
+| O1286 | Other | — | 底本の「○○」を「○○」に変更 | `［＃底本の「○○」を「○○」に変更］` | corpus | OBSERVED |
+| O1287 | Other | — | 底本の「○○」を「○○」に訂正 | `［＃底本の「○○」を「○○」に訂正］` | corpus | OBSERVED |
+| O1288 | Other | — | 底本の「○○」を削除 | `［＃底本の「○○」を削除］` | corpus | OBSERVED |
+| O1289 | Other | — | 底本の「○○」を変更 | `［＃底本の「○○」を変更］` | corpus | OBSERVED |
+| O1290 | Other | — | 底本の「○○」を訂正 | `［＃底本の「○○」を訂正］` | corpus | OBSERVED |
+| O1291 | Other | — | 底本の『米又は粟』から変更 | `［＃底本の『米又は粟』から変更］` | corpus | OBSERVED |
+| O1292 | Other | — | 底本のまま | `［＃底本のまま］` | corpus | OBSERVED |
+| O1293 | Other | — | 底本のママ | `［＃底本のママ］` | corpus | OBSERVED |
+| O1294 | Other | — | 底本のママ、「○○」ではなく「○○」 | `［＃底本のママ、「○○」ではなく「○○」］` | corpus | OBSERVED |
+| O1295 | Other | — | 底本のママ。 | `［＃底本のママ。］` | corpus | OBSERVED |
+| O1296 | Other | — | 底本のルビは「○○」 | `［＃底本のルビは「○○」］` | corpus | OBSERVED |
+| O1297 | Other | — | 底本のルビは「○○」と誤記、N-上段-N | `［＃底本のルビは「○○」と誤記、N-上段-N］` | corpus | OBSERVED |
+| O1298 | Other | — | 底本の本文にこの注釈場所を示す注釈番号なし | `［＃底本の本文にこの注釈場所を示す注釈番号なし］` | corpus | OBSERVED |
+| O1299 | Other | — | 底本の注によれば… | `［＃底本の注によれば…］` | corpus | OBSERVED |
+| O1300 | Other | — | 底本の注によれば、欠落したN字は初出では「○○」となっている | `［＃底本の注によれば、欠落したN字は初出では「○○」となっている］` | corpus | OBSERVED |
+| O1301 | Other | — | 底本の親本では「○○」とある | `［＃底本の親本では「○○」とある］` | corpus | OBSERVED |
+| O1302 | Other | — | 底本の誤記は岩波文庫、新潮文庫、角川文庫の全てで確認できたもののみ記述した | `［＃底本の誤記は岩波文庫、新潮文庫、角川文庫の全てで確認できたもののみ記述した］` | corpus | OBSERVED |
+| O1303 | Other | — | 底本の閉じ括弧は「○○」、N-上N | `［＃底本の閉じ括弧は「○○」、N-上N］` | corpus | OBSERVED |
+| O1304 | Other | — | 底本の閉じ括弧は「○○」、N-下N | `［＃底本の閉じ括弧は「○○」、N-下N］` | corpus | OBSERVED |
+| O1305 | Other | — | 底本は「○○」 | `［＃底本は「○○」］` | corpus | OBSERVED |
+| O1306 | Other | — | 底本は「○○」、N-N | `［＃底本は「○○」、N-N］` | corpus | OBSERVED |
+| O1307 | Other | — | 底本は「○○」、N-下段-N | `［＃底本は「○○」、N-下段-N］` | corpus | OBSERVED |
+| O1308 | Other | — | 底本は「○○」」を脱字 | `［＃底本は「○○」」を脱字］` | corpus | OBSERVED |
+| O1309 | Other | — | 底本は「○○」が倒字 | `［＃底本は「○○」が倒字］` | corpus | OBSERVED |
+| O1310 | Other | — | 底本は「○○」が正しくは「○○」である旨を注記 | `［＃底本は「○○」が正しくは「○○」である旨を注記］` | corpus | OBSERVED |
+| O1311 | Other | — | 底本は「○○」が脱字 | `［＃底本は「○○」が脱字］` | corpus | OBSERVED |
+| O1312 | Other | — | 底本は「○○」と誤植 | `［＃底本は「○○」と誤植］` | corpus | OBSERVED |
+| O1313 | Other | — | 底本は「○○」と誤植、N-N | `［＃底本は「○○」と誤植、N-N］` | corpus | OBSERVED |
+| O1314 | Other | — | 底本は「○○」の左に「○○」と注記 | `［＃底本は「○○」の左に「○○」と注記］` | corpus | OBSERVED |
+| O1315 | Other | — | 底本は「○○」を「○○」と誤植 | `［＃底本は「○○」を「○○」と誤植］` | corpus | OBSERVED |
+| O1316 | Other | — | 底本はここで改行 | `［＃底本はここで改行］` | corpus | OBSERVED |
+| O1317 | Other | — | 底本はルビを「○○」と誤植 | `［＃底本はルビを「○○」と誤植］` | corpus | OBSERVED |
+| O1318 | Other | — | 底本は午後と誤植 | `［＃底本は午後と誤植］` | corpus | OBSERVED |
+| O1319 | Other | — | 底本は改行天付き | `［＃底本は改行天付き］` | corpus | OBSERVED |
+| O1320 | Other | — | 底本は次行の空きなし | `［＃底本は次行の空きなし］` | corpus | OBSERVED |
+| O1321 | Other | — | 底本ママ | `［＃底本ママ］` | corpus | OBSERVED |
+| O1322 | Other | — | 底本ルビは「○○」、N-上段-N | `［＃底本ルビは「○○」、N-上段-N］` | corpus | OBSERVED |
+| O1323 | Other | — | 底本ルビは「○○」、N-下段-N | `［＃底本ルビは「○○」、N-下段-N］` | corpus | OBSERVED |
+| O1324 | Other | — | 座布団の上のリヽーの挿画（figN_N.png、横N×縦N）入る | `［＃座布団の上のリヽーの挿画（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1325 | Other | — | 庭園 | `［＃庭園］` | corpus | OBSERVED |
+| O1326 | Other | — | 弁護士、政治家。戦後、公職追放処分を受けるが、東京裁判では東条英機の主任弁護士となる | `［＃弁護士、政治家。戦後、公職追放処分を受けるが、東京裁判では東条英機の主任弁護士となる］` | corpus | OBSERVED |
+| O1327 | Other | — | 弁髪の男の絵（figN_N.png、横N×縦N）入る | `［＃弁髪の男の絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1328 | Other | — | 式（figN_N.png、横N×縦N）入る | `［＃式（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1329 | Other | — | 式（figN_N.png）入る | `［＃式（figN_N.png）入る］` | corpus | OBSERVED |
+| O1330 | Other | — | 引用、終わり | `［＃引用、終わり］` | corpus | OBSERVED |
+| O1331 | Other | — | 引用文終わり | `［＃引用文終わり］` | corpus | OBSERVED |
+| O1332 | Other | — | 引用部分伏せ字の原文は、それぞれ「○○」と「○○」 | `［＃引用部分伏せ字の原文は、それぞれ「○○」と「○○」］` | corpus | OBSERVED |
+| O1333 | Other | — | 弘智法印枯骸之圖（figN_N.png、横N×縦N）入る | `［＃弘智法印枯骸之圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1334 | Other | — | 彼は」は底本では「○○」 | `［＃彼は」は底本では「○○」］` | corpus | OBSERVED |
+| O1335 | Other | — | 後のnは下ドット付き | `［＃後のnは下ドット付き］` | corpus | OBSERVED |
+| O1336 | Other | — | 従妹倉知春江の結核療養のための付添人 | `［＃従妹倉知春江の結核療養のための付添人］` | corpus | OBSERVED |
+| O1337 | Other | — | 御機の霊威織女發狂の圖（figN_N.png、横N×縦N）入る | `［＃御機の霊威織女發狂の圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1338 | Other | — | 循環小數を示す「○○」は底本では記載なし | `［＃循環小數を示す「○○」は底本では記載なし］` | corpus | OBSERVED |
+| O1339 | Other | — | 徳岡道三、父精一郎の従弟 | `［＃徳岡道三、父精一郎の従弟］` | corpus | OBSERVED |
+| O1340 | Other | — | 感嘆疑問符、N-N-N | `［＃感嘆疑問符、N-N-N］` | corpus | OBSERVED |
+| O1341 | Other | — | 感嘆符三つ、N-N | `［＃感嘆符三つ、N-N］` | corpus | OBSERVED |
+| O1342 | Other | — | 感嘆符三つ、N-上-N | `［＃感嘆符三つ、N-上-N］` | corpus | OBSERVED |
+| O1343 | Other | — | 感嘆符三つ、N-下-N | `［＃感嘆符三つ、N-下-N］` | corpus | OBSERVED |
+| O1344 | Other | — | 感嘆符二つ、N-N-N | `［＃感嘆符二つ、N-N-N］` | corpus | OBSERVED |
+| O1345 | Other | — | 感嘆符疑問符、N-N-N | `［＃感嘆符疑問符、N-N-N］` | corpus | OBSERVED |
+| O1346 | Other | — | 感情の陰謀 | `［＃感情の陰謀］` | corpus | OBSERVED |
+| O1347 | Other | — | 憤怒 | `［＃憤怒］` | corpus | OBSERVED |
+| O1348 | Other | — | 戦争終結の詔勅を放送 | `［＃戦争終結の詔勅を放送］` | corpus | OBSERVED |
+| O1349 | Other | — | 戦時下食糧統制の一環として配給された、外食券を利用する食堂。現金があっても、券がなければ食べられなかった | `［＃戦時下食糧統制の一環として配給された、外食券を利用する食堂。現金があっても、券がなければ食べられなかった］` | corpus | OBSERVED |
+| O1350 | Other | — | 戯曲「○○」 | `［＃戯曲「○○」］` | corpus | OBSERVED |
+| O1351 | Other | — | 扉絵N（figN_N.png、横N×縦N）入る | `［＃扉絵N（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1352 | Other | — | 扉絵（figN_N.png、横N×縦N）入る | `［＃扉絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1353 | Other | — | 扉（figN_N.png、横N×縦N）入る | `［＃扉（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1354 | Other | — | 手塚英孝 | `［＃手塚英孝］` | corpus | OBSERVED |
+| O1355 | Other | — | 手塚英孝、てっちゃん | `［＃手塚英孝、てっちゃん］` | corpus | OBSERVED |
+| O1356 | Other | — | 手描きの切符の絵（figN_N.png、横N×縦N）入る | `［＃手描きの切符の絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1357 | Other | — | 手書きの文字（figN_N.png、横N×縦N）入る | `［＃手書きの文字（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1358 | Other | — | 手紙訳（figN_N.png、横N×縦N）入る | `［＃手紙訳（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1359 | Other | — | 手紙（figN_N.png、横N×縦N）入る | `［＃手紙（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1360 | Other | — | 括弧は底本では、二行を括る丸括弧 | `［＃括弧は底本では、二行を括る丸括弧］` | corpus | OBSERVED |
+| O1361 | Other | — | 括弧内は「○○」と「○○」の二行になっている | `［＃括弧内は「○○」と「○○」の二行になっている］` | corpus | OBSERVED |
+| O1362 | Other | — | 指示マーク、N-N-N | `［＃指示マーク、N-N-N］` | corpus | OBSERVED |
+| O1363 | Other | — | 掘除積雪之圖（figN_N.png、横N×縦N）入る | `［＃掘除積雪之圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1364 | Other | — | 探偵小説家、生理学者。本名は、林髞 | `［＃探偵小説家、生理学者。本名は、林髞］` | corpus | OBSERVED |
+| O1365 | Other | — | 推理小説家 | `［＃推理小説家］` | corpus | OBSERVED |
+| O1366 | Other | — | 改行はママ | `［＃改行はママ］` | corpus | OBSERVED |
+| O1367 | Other | — | 改行を挿入 | `［＃改行を挿入］` | corpus | OBSERVED |
+| O1368 | Other | — | 改行天付きはママ | `［＃改行天付きはママ］` | corpus | OBSERVED |
+| O1369 | Other | — | 改訂 | `［＃改訂］` | corpus | OBSERVED |
+| O1370 | Other | — | 数式N（figN_N.png、横N×縦N）入る | `［＃数式N（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1371 | Other | — | 数式（（N×N）／（N×N×N）ミリ≒N×N－N［＃「○○」は上付き小文字 | `［＃数式（（N×N）／（N×N×N）ミリ≒N×N－N［＃「○○」は上付き小文字］` | corpus | OBSERVED |
+| O1372 | Other | — | 文学者の相互扶助組織 | `［＃文学者の相互扶助組織］` | corpus | OBSERVED |
+| O1373 | Other | — | 文意から「○○」は「○○」の誤り？ | `［＃文意から「○○」は「○○」の誤り？］` | corpus | OBSERVED |
+| O1374 | Other | — | 文泉堂書店版では「○○」のルビ | `［＃文泉堂書店版では「○○」のルビ］` | corpus | OBSERVED |
+| O1375 | Other | — | 斉神祭事之圖（figN_N.png、横N×縦N）入る | `［＃斉神祭事之圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1376 | Other | — | 斜線に中黒（figN_N.png、横N×縦N）入る | `［＃斜線に中黒（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1377 | Other | — | 斧が交叉した絵（figN_N.png、横N×縦N）入る | `［＃斧が交叉した絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1378 | Other | — | 新興宗教、璽宇教教祖璽光尊、幹部の元横綱双葉山、棋士呉清源ら、食糧管理法違犯により二十一日に逮捕 | `［＃新興宗教、璽宇教教祖璽光尊、幹部の元横綱双葉山、棋士呉清源ら、食糧管理法違犯により二十一日に逮捕］` | corpus | OBSERVED |
+| O1379 | Other | — | 旅行案内書 | `［＃旅行案内書］` | corpus | OBSERVED |
+| O1380 | Other | — | 旅行記録の表（figN_N.png、横N×縦N）入る | `［＃旅行記録の表（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1381 | Other | — | 日の丸の絵（figN_N.png、横N×縦N）入る | `［＃日の丸の絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1382 | Other | — | 日本プロレタリア・エスペランチスト同盟 | `［＃日本プロレタリア・エスペランチスト同盟］` | corpus | OBSERVED |
+| O1383 | Other | — | 日本プロレタリア美術家同盟 | `［＃日本プロレタリア美術家同盟］` | corpus | OBSERVED |
+| O1384 | Other | — | 日本女子大学同窓会 | `［＃日本女子大学同窓会］` | corpus | OBSERVED |
+| O1385 | Other | — | 旺文社文庫版「○○」 | `［＃旺文社文庫版「○○」］` | corpus | OBSERVED |
+| O1386 | Other | — | 明らかな誤字・脱字、判読不能などの箇所の修正は、「○○」筑摩書房　N(平成元)年N月N日初版発行　を参考にした。 | `［＃明らかな誤字・脱字、判読不能などの箇所の修正は、「○○」筑摩書房　N(平成元)年N月N日初版発行　を参考にした。］` | corpus | OBSERVED |
+| O1387 | Other | — | 易の陽爻、横長の矩形一つ、N-N | `［＃易の陽爻、横長の矩形一つ、N-N］` | corpus | OBSERVED |
+| O1388 | Other | — | 映画 | `［＃映画］` | corpus | OBSERVED |
+| O1389 | Other | — | 映画館名 | `［＃映画館名］` | corpus | OBSERVED |
+| O1390 | Other | — | 映画館名、「○○」 | `［＃映画館名、「○○」］` | corpus | OBSERVED |
+| O1391 | Other | — | 昼食 | `［＃昼食］` | corpus | OBSERVED |
+| O1392 | Other | — | 時刻表の画像（figN_N.png、横N×縦N）入る | `［＃時刻表の画像（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1393 | Other | — | 晴彦 | `［＃晴彦］` | corpus | OBSERVED |
+| O1394 | Other | — | 晴彦、長男 | `［＃晴彦、長男］` | corpus | OBSERVED |
+| O1395 | Other | — | 暗号を解いた結果の表（figN_N.png、横N×縦N）入る | `［＃暗号を解いた結果の表（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1396 | Other | — | 暗号書（figN_N.png、横N×縦N）入る | `［＃暗号書（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1397 | Other | — | 暢彦、次男 | `［＃暢彦、次男］` | corpus | OBSERVED |
+| O1398 | Other | — | 最初のαに帯気＋鋭アクセント。ειδενのιに平息＋曲アクセント。ημωνのηに帯気、ωに曲アクセント。単体のηに帯気。ψυχηのηに鋭アクセント | `［＃最初のαに帯気＋鋭アクセント。ειδενのιに平息＋曲アクセント。ημωνのηに帯気、ωに曲アクセント。単体のηに帯気。ψυχηのηに鋭アクセント］` | corpus | OBSERVED |
+| O1399 | Other | — | 最初のαに平息、N文字目のαに鋭アクセント、σはファイナルシグマ | `［＃最初のαに平息、N文字目のαに鋭アクセント、σはファイナルシグマ］` | corpus | OBSERVED |
+| O1400 | Other | — | 最後のmは上ドット付き | `［＃最後のmは上ドット付き］` | corpus | OBSERVED |
+| O1401 | Other | — | 最後の「○○」は「○○」付き | `［＃最後の「○○」は「○○」付き］` | corpus | OBSERVED |
+| O1402 | Other | — | 朝日新聞社カメラマン。一九四二（昭和十七）年に海野が海軍報道班員として従軍した際、共にラバウルに | `［＃朝日新聞社カメラマン。一九四二（昭和十七）年に海野が海軍報道班員として従軍した際、共にラバウルに］` | corpus | OBSERVED |
+| O1403 | Other | — | 朝永 | `［＃朝永］` | corpus | OBSERVED |
+| O1404 | Other | — | 朝永良太 | `［＃朝永良太］` | corpus | OBSERVED |
+| O1405 | Other | — | 木の絵：太い幹、上部に「○○」（幾つかの瘤）、瘤から細い枝が沢山出ている。（figN_N.png、横N×縦N）入る | `［＃木の絵：太い幹、上部に「○○」（幾つかの瘤）、瘤から細い枝が沢山出ている。（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1406 | Other | — | 木村毅 | `［＃木村毅］` | corpus | OBSERVED |
+| O1407 | Other | — | 未完 | `［＃未完］` | corpus | OBSERVED |
+| O1408 | Other | — | 本文中、伏せ字は「○○」で表した。 | `［＃本文中、伏せ字は「○○」で表した。］` | corpus | OBSERVED |
+| O1409 | Other | — | 本田道之 | `［＃本田道之］` | corpus | OBSERVED |
+| O1410 | Other | — | 本田道之、父精一郎の従弟 | `［＃本田道之、父精一郎の従弟］` | corpus | OBSERVED |
+| O1411 | Other | — | 本田龍助、百合子の大叔父 | `［＃本田龍助、百合子の大叔父］` | corpus | OBSERVED |
+| O1412 | Other | — | 本間久子 | `［＃本間久子］` | corpus | OBSERVED |
+| O1413 | Other | — | 村田一夫、夫荒木茂の異母弟 | `［＃村田一夫、夫荒木茂の異母弟］` | corpus | OBSERVED |
+| O1414 | Other | — | 村田安 | `［＃村田安］` | corpus | OBSERVED |
+| O1415 | Other | — | 村田家の長女 | `［＃村田家の長女］` | corpus | OBSERVED |
+| O1416 | Other | — | 村田弥三太郎、荒木茂の父 | `［＃村田弥三太郎、荒木茂の父］` | corpus | OBSERVED |
+| O1417 | Other | — | 村田敏子、荒木茂の姪 | `［＃村田敏子、荒木茂の姪］` | corpus | OBSERVED |
+| O1418 | Other | — | 東久邇宮稔彦首相 | `［＃東久邇宮稔彦首相］` | corpus | OBSERVED |
+| O1419 | Other | — | 東京都世田谷区若林町 | `［＃東京都世田谷区若林町］` | corpus | OBSERVED |
+| O1420 | Other | — | 東京高等師範学校 | `［＃東京高等師範学校］` | corpus | OBSERVED |
+| O1421 | Other | — | 松平正次 | `［＃松平正次］` | corpus | OBSERVED |
+| O1422 | Other | — | 板倉鼎の長女 | `［＃板倉鼎の長女］` | corpus | OBSERVED |
+| O1423 | Other | — | 根津嘉一郎 | `［＃根津嘉一郎］` | corpus | OBSERVED |
+| O1424 | Other | — | 楽譜入る | `［＃楽譜入る］` | corpus | OBSERVED |
+| O1425 | Other | — | 楽譜（figN_N.png）入る | `［＃楽譜（figN_N.png）入る］` | corpus | OBSERVED |
+| O1426 | Other | — | 槍※［＃小書き濁点付き片仮名カ、N-N | `［＃槍※［＃小書き濁点付き片仮名カ、N-N］` | corpus | OBSERVED |
+| O1427 | Other | — | 標識：縦長方形の上が三角、白地に赤の斜め縞。（figN_N.png、横N×縦N）入る | `［＃標識：縦長方形の上が三角、白地に赤の斜め縞。（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1428 | Other | — | 横長の長方形を五つに区切った長屋の絵（figN_N.png）入る | `［＃横長の長方形を五つに区切った長屋の絵（figN_N.png）入る］` | corpus | OBSERVED |
+| O1429 | Other | — | 横須賀鎮守府。鎮守府は、海軍の根拠地に置かれた機関 | `［＃横須賀鎮守府。鎮守府は、海軍の根拠地に置かれた機関］` | corpus | OBSERVED |
+| O1430 | Other | — | 欄外に「○○」の校注あり | `［＃欄外に「○○」の校注あり］` | corpus | OBSERVED |
+| O1431 | Other | — | 欄外に校注：おだやか○平穏○ | `［＃欄外に校注：おだやか○平穏○］` | corpus | OBSERVED |
+| O1432 | Other | — | 欠字、N-N | `［＃欠字、N-N］` | corpus | OBSERVED |
+| O1433 | Other | — | 次の手紙は「○○」として書かれ投函されなかった。底本では第十九巻の巻末に収録 | `［＃次の手紙は「○○」として書かれ投函されなかった。底本では第十九巻の巻末に収録］` | corpus | OBSERVED |
+| O1434 | Other | — | 次の段落には、天地左右にオモテケイ囲み | `［＃次の段落には、天地左右にオモテケイ囲み］` | corpus | OBSERVED |
+| O1435 | Other | — | 次女 | `［＃次女］` | corpus | OBSERVED |
+| O1436 | Other | — | 次男 | `［＃次男］` | corpus | OBSERVED |
+| O1437 | Other | — | 歌記号、N-N-N | `［＃歌記号、N-N-N］` | corpus | OBSERVED |
+| O1438 | Other | — | 正しくは「○○」 | `［＃正しくは「○○」］` | corpus | OBSERVED |
+| O1439 | Other | — | 正三角形と逆正三角形が組み合わさった六芒星（figN_N.png、横N×縦N）入る | `［＃正三角形と逆正三角形が組み合わさった六芒星（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1440 | Other | — | 正保圖（figN_N.png、横N×縦N）入る | `［＃正保圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1441 | Other | — | 正史。探偵小説家 | `［＃正史。探偵小説家］` | corpus | OBSERVED |
+| O1442 | Other | — | 正月鳥追櫓之圖（figN_N.png、横N×縦N）入る | `［＃正月鳥追櫓之圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1443 | Other | — | 正男 | `［＃正男］` | corpus | OBSERVED |
+| O1444 | Other | — | 武者小路実篤のペンネーム | `［＃武者小路実篤のペンネーム］` | corpus | OBSERVED |
+| O1445 | Other | — | 死體解剖の掲示（figN_N.png、横N×縦N）入る | `［＃死體解剖の掲示（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1446 | Other | — | 殺虫剤名 | `［＃殺虫剤名］` | corpus | OBSERVED |
+| O1447 | Other | — | 母 | `［＃母］` | corpus | OBSERVED |
+| O1448 | Other | — | 母葭江の妹 | `［＃母葭江の妹］` | corpus | OBSERVED |
+| O1449 | Other | — | 永田徹郎。長女朝子の婿。元、海軍大尉 | `［＃永田徹郎。長女朝子の婿。元、海軍大尉］` | corpus | OBSERVED |
+| O1450 | Other | — | 江井、中條家の運転手 | `［＃江井、中條家の運転手］` | corpus | OBSERVED |
+| O1451 | Other | — | 江戸川乱歩。探偵小説家 | `［＃江戸川乱歩。探偵小説家］` | corpus | OBSERVED |
+| O1452 | Other | — | 河井醉茗（N-N）の序文あり | `［＃河井醉茗（N-N）の序文あり］` | corpus | OBSERVED |
+| O1453 | Other | — | 河原崎長十郎 | `［＃河原崎長十郎］` | corpus | OBSERVED |
+| O1454 | Other | — | 河郎之舍の印（figN_N.png、横N×縦N）入る | `［＃河郎之舍の印（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1455 | Other | — | 波罫線 | `［＃波罫線］` | corpus | OBSERVED |
+| O1456 | Other | — | 注記の「○○」は底本では欠落 | `［＃注記の「○○」は底本では欠落］` | corpus | OBSERVED |
+| O1457 | Other | — | 洋装店 | `［＃洋装店］` | corpus | OBSERVED |
+| O1458 | Other | — | 洗面器 | `［＃洗面器］` | corpus | OBSERVED |
+| O1459 | Other | — | 流血 | `［＃流血］` | corpus | OBSERVED |
+| O1460 | Other | — | 海軍報道班文学挺身隊 | `［＃海軍報道班文学挺身隊］` | corpus | OBSERVED |
+| O1461 | Other | — | 海野の別ペンネーム | `［＃海野の別ペンネーム］` | corpus | OBSERVED |
+| O1462 | Other | — | 海野夫人 | `［＃海野夫人］` | corpus | OBSERVED |
+| O1463 | Other | — | 海野家のお手伝いさん | `［＃海野家のお手伝いさん］` | corpus | OBSERVED |
+| O1464 | Other | — | 渋海川奇蝶之圖（figN_N.png、横N×縦N）入る | `［＃渋海川奇蝶之圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1465 | Other | — | 渦巻きの絵（figN_N.png、横N×縦N）入る | `［＃渦巻きの絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1466 | Other | — | 湯浅アサ | `［＃湯浅アサ］` | corpus | OBSERVED |
+| O1467 | Other | — | 湯浅善吉 | `［＃湯浅善吉］` | corpus | OBSERVED |
+| O1468 | Other | — | 湯浅善吉、湯浅芳子の父 | `［＃湯浅善吉、湯浅芳子の父］` | corpus | OBSERVED |
+| O1469 | Other | — | 湯浅芳子 | `［＃湯浅芳子］` | corpus | OBSERVED |
+| O1470 | Other | — | 湯浅誠三郎 | `［＃湯浅誠三郎］` | corpus | OBSERVED |
+| O1471 | Other | — | 湯浅貞雄 | `［＃湯浅貞雄］` | corpus | OBSERVED |
+| O1472 | Other | — | 湿布 | `［＃湿布］` | corpus | OBSERVED |
+| O1473 | Other | — | 満蒙開拓移民の指導などに当たった、明治―昭和期の農本主義者 | `［＃満蒙開拓移民の指導などに当たった、明治―昭和期の農本主義者］` | corpus | OBSERVED |
+| O1474 | Other | — | 準 | `［＃準］` | corpus | OBSERVED |
+| O1475 | Other | — | 演説、報告 | `［＃演説、報告］` | corpus | OBSERVED |
+| O1476 | Other | — | 濁点付き井、N-N | `［＃濁点付き井、N-N］` | corpus | OBSERVED |
+| O1477 | Other | — | 濁点付き小書き平仮名か、N-N | `［＃濁点付き小書き平仮名か、N-N］` | corpus | OBSERVED |
+| O1478 | Other | — | 濁点付き小書き平仮名つ | `［＃濁点付き小書き平仮名つ］` | corpus | OBSERVED |
+| O1479 | Other | — | 濁点付き小書き平仮名つ、N-N | `［＃濁点付き小書き平仮名つ、N-N］` | corpus | OBSERVED |
+| O1480 | Other | — | 濁点付き小書き片仮名カ、N-N | `［＃濁点付き小書き片仮名カ、N-N］` | corpus | OBSERVED |
+| O1481 | Other | — | 濁点付き平仮名う、N-N-N | `［＃濁点付き平仮名う、N-N-N］` | corpus | OBSERVED |
+| O1482 | Other | — | 濁点付き片仮名「○○」、N-N-N | `［＃濁点付き片仮名「○○」、N-N-N］` | corpus | OBSERVED |
+| O1483 | Other | — | 濁点付き片仮名ア、N-N | `［＃濁点付き片仮名ア、N-N］` | corpus | OBSERVED |
+| O1484 | Other | — | 濁点付き片仮名エ、N-N | `［＃濁点付き片仮名エ、N-N］` | corpus | OBSERVED |
+| O1485 | Other | — | 濁点付き片仮名オ、N-N | `［＃濁点付き片仮名オ、N-N］` | corpus | OBSERVED |
+| O1486 | Other | — | 濁点付き片仮名ワ、N-N-N | `［＃濁点付き片仮名ワ、N-N-N］` | corpus | OBSERVED |
+| O1487 | Other | — | 濁点付き片仮名ヰ、N-N-N | `［＃濁点付き片仮名ヰ、N-N-N］` | corpus | OBSERVED |
+| O1488 | Other | — | 濁点付き片仮名ヱ、N-N-N | `［＃濁点付き片仮名ヱ、N-N-N］` | corpus | OBSERVED |
+| O1489 | Other | — | 濁点付き片仮名ヲ、N-N-N | `［＃濁点付き片仮名ヲ、N-N-N］` | corpus | OBSERVED |
+| O1490 | Other | — | 濁点付片仮名ヰ、N-N-N | `［＃濁点付片仮名ヰ、N-N-N］` | corpus | OBSERVED |
+| O1491 | Other | — | 濁点着き片仮名「○○」、N-N-N | `［＃濁点着き片仮名「○○」、N-N-N］` | corpus | OBSERVED |
+| O1492 | Other | — | 濁音付き片仮名ワ、N-N-N | `［＃濁音付き片仮名ワ、N-N-N］` | corpus | OBSERVED |
+| O1493 | Other | — | 濁音付き片仮名ヰ、N-N-N | `［＃濁音付き片仮名ヰ、N-N-N］` | corpus | OBSERVED |
+| O1494 | Other | — | 瀧澤秋暁（N-N）の序文あり | `［＃瀧澤秋暁（N-N）の序文あり］` | corpus | OBSERVED |
+| O1495 | Other | — | 灯火管制。夜間、敵機の来襲に備えて、灯りを遮ったり落としたりすこと | `［＃灯火管制。夜間、敵機の来襲に備えて、灯りを遮ったり落としたりすこと］` | corpus | OBSERVED |
+| O1496 | Other | — | 焔の火へんを炎にしたうえで、へんとつくりをいれかえた字、焔の正字と同字 | `［＃焔の火へんを炎にしたうえで、へんとつくりをいれかえた字、焔の正字と同字］` | corpus | OBSERVED |
+| O1497 | Other | — | 熱狂的 | `［＃熱狂的］` | corpus | OBSERVED |
+| O1498 | Other | — | 父 | `［＃父］` | corpus | OBSERVED |
+| O1499 | Other | — | 猫・カーテン・窓の画（figN_N.png、横N×縦N）入る | `［＃猫・カーテン・窓の画（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1500 | Other | — | 現代詩への夕べ | `［＃現代詩への夕べ］` | corpus | OBSERVED |
+| O1501 | Other | — | 現代語訳「○○」 | `［＃現代語訳「○○」］` | corpus | OBSERVED |
+| O1502 | Other | — | 理論物理学者。科学思想家 | `［＃理論物理学者。科学思想家］` | corpus | OBSERVED |
+| O1503 | Other | — | 甥 | `［＃甥］` | corpus | OBSERVED |
+| O1504 | Other | — | 用もないのに廊下をうろつき回ること | `［＃用もないのに廊下をうろつき回ること］` | corpus | OBSERVED |
+| O1505 | Other | — | 田村俊子 | `［＃田村俊子］` | corpus | OBSERVED |
+| O1506 | Other | — | 甲 | `［＃甲］` | corpus | OBSERVED |
+| O1507 | Other | — | 甲之圖（figN_N.png、横N×縦N）入る | `［＃甲之圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1508 | Other | — | 畏に入りて寐る圖（figN_N.png、横N×縦N）入る | `［＃畏に入りて寐る圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1509 | Other | — | 疑問感嘆符、N-N-N | `［＃疑問感嘆符、N-N-N］` | corpus | OBSERVED |
+| O1510 | Other | — | 疑問符一つ感嘆符二つ、N-上-N | `［＃疑問符一つ感嘆符二つ、N-上-N］` | corpus | OBSERVED |
+| O1511 | Other | — | 疑問符三つ、N-N | `［＃疑問符三つ、N-N］` | corpus | OBSERVED |
+| O1512 | Other | — | 疑問符二つ、N-N-N | `［＃疑問符二つ、N-N-N］` | corpus | OBSERVED |
+| O1513 | Other | — | 疑問符感嘆符、N-N-N | `［＃疑問符感嘆符、N-N-N］` | corpus | OBSERVED |
+| O1514 | Other | — | 登苗場山之圖（figN_N.png、横N×縦N）入る | `［＃登苗場山之圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1515 | Other | — | 白ゴマ、N-N-N | `［＃白ゴマ、N-N-N］` | corpus | OBSERVED |
+| O1516 | Other | — | 白ゴマの中に黒ゴマ、N-N | `［＃白ゴマの中に黒ゴマ、N-N］` | corpus | OBSERVED |
+| O1517 | Other | — | 白ゴマ点、N-N | `［＃白ゴマ点、N-N］` | corpus | OBSERVED |
+| O1518 | Other | — | 白ビュレット、N-N-N | `［＃白ビュレット、N-N-N］` | corpus | OBSERVED |
+| O1519 | Other | — | 百合子の実家 | `［＃百合子の実家］` | corpus | OBSERVED |
+| O1520 | Other | — | 百合子の愛称 | `［＃百合子の愛称］` | corpus | OBSERVED |
+| O1521 | Other | — | 目の絵（figN_N.png、横N×縦N）入る | `［＃目の絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1522 | Other | — | 目次のページ数および「○○」「○○」は省略しました | `［＃目次のページ数および「○○」「○○」は省略しました］` | corpus | OBSERVED |
+| O1523 | Other | — | 直角三角、N-N-N | `［＃直角三角、N-N-N］` | corpus | OBSERVED |
+| O1524 | Other | — | 省略 | `［＃省略］` | corpus | OBSERVED |
+| O1525 | Other | — | 短冊の絵入る（figN_N.png、横N×縦N）入る | `［＃短冊の絵入る（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1526 | Other | — | 石橋和訓夫婦 | `［＃石橋和訓夫婦］` | corpus | OBSERVED |
+| O1527 | Other | — | 碓氷峠の絵（figN_N.png、横N×縦N）入る | `［＃碓氷峠の絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1528 | Other | — | 社会民主党の右翼少数派、ボルシェビキ（左翼多数派）と対立 | `［＃社会民主党の右翼少数派、ボルシェビキ（左翼多数派）と対立］` | corpus | OBSERVED |
+| O1529 | Other | — | 祖母運の家の隣人 | `［＃祖母運の家の隣人］` | corpus | OBSERVED |
+| O1530 | Other | — | 神代文字ア（figN_N.png、横N×縦N）入る | `［＃神代文字ア（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1531 | Other | — | 神代文字イ（figN_N.png、横N×縦N）入る | `［＃神代文字イ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1532 | Other | — | 神代文字ウ（figN_N.png、横N×縦N）入る | `［＃神代文字ウ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1533 | Other | — | 神代文字エ（figN_N.png、横N×縦N）入る | `［＃神代文字エ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1534 | Other | — | 神代文字オ（figN_N.png、横N×縦N）入る | `［＃神代文字オ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1535 | Other | — | 神代文字カ（figN_N.png、横N×縦N）入る | `［＃神代文字カ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1536 | Other | — | 神代文字キ（figN_N.png、横N×縦N）入る | `［＃神代文字キ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1537 | Other | — | 神代文字ク（figN_N.png、横N×縦N）入る | `［＃神代文字ク（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1538 | Other | — | 神代文字コ（figN_N.png、横N×縦N）入る | `［＃神代文字コ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1539 | Other | — | 神代文字サ（figN_N.png、横N×縦N）入る | `［＃神代文字サ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1540 | Other | — | 神代文字シ（figN_N.png、横N×縦N）入る | `［＃神代文字シ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1541 | Other | — | 神代文字ス（figN_N.png、横N×縦N）入る | `［＃神代文字ス（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1542 | Other | — | 神代文字セ（figN_N.png、横N×縦N）入る | `［＃神代文字セ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1543 | Other | — | 神代文字ソ（figN_N.png、横N×縦N）入る | `［＃神代文字ソ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1544 | Other | — | 神代文字タ（figN_N.png、横N×縦N）入る | `［＃神代文字タ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1545 | Other | — | 神代文字チ（figN_N.png、横N×縦N）入る | `［＃神代文字チ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1546 | Other | — | 神代文字ツ（figN_N.png、横N×縦N）入る | `［＃神代文字ツ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1547 | Other | — | 神代文字テ（figN_N.png、横N×縦N）入る | `［＃神代文字テ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1548 | Other | — | 神代文字ト（figN_N.png、横N×縦N）入る | `［＃神代文字ト（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1549 | Other | — | 神代文字ナ（figN_N.png、横N×縦N）入る | `［＃神代文字ナ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1550 | Other | — | 神代文字ニ（figN_N.png、横N×縦N）入る | `［＃神代文字ニ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1551 | Other | — | 神代文字ネ（figN_N.png、横N×縦N）入る | `［＃神代文字ネ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1552 | Other | — | 神代文字ノ（figN_N.png、横N×縦N）入る | `［＃神代文字ノ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1553 | Other | — | 神代文字ハ（figN_N.png、横N×縦N）入る | `［＃神代文字ハ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1554 | Other | — | 神代文字ヒ（figN_N.png、横N×縦N）入る | `［＃神代文字ヒ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1555 | Other | — | 神代文字フ（figN_N.png、横N×縦N）入る | `［＃神代文字フ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1556 | Other | — | 神代文字ヘ（figN_N.png、横N×縦N）入る | `［＃神代文字ヘ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1557 | Other | — | 神代文字ホ（figN_N.png、横N×縦N）入る | `［＃神代文字ホ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1558 | Other | — | 神代文字マ（figN_N.png、横N×縦N）入る | `［＃神代文字マ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1559 | Other | — | 神代文字ミ（figN_N.png、横N×縦N）入る | `［＃神代文字ミ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1560 | Other | — | 神代文字ム（figN_N.png、横N×縦N）入る | `［＃神代文字ム（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1561 | Other | — | 神代文字メ（figN_N.png、横N×縦N）入る | `［＃神代文字メ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1562 | Other | — | 神代文字モ（figN_N.png、横N×縦N）入る | `［＃神代文字モ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1563 | Other | — | 神代文字ヤ（figN_N.png、横N×縦N）入る | `［＃神代文字ヤ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1564 | Other | — | 神代文字ユ（figN_N.png、横N×縦N）入る | `［＃神代文字ユ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1565 | Other | — | 神代文字ヨ（figN_N.png、横N×縦N）入る | `［＃神代文字ヨ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1566 | Other | — | 神代文字ラ（figN_N.png、横N×縦N）入る | `［＃神代文字ラ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1567 | Other | — | 神代文字リ（figN_N.png、横N×縦N）入る | `［＃神代文字リ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1568 | Other | — | 神代文字ル（figN_N.png、横N×縦N）入る | `［＃神代文字ル（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1569 | Other | — | 神代文字レ（figN_N.png、横N×縦N）入る | `［＃神代文字レ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1570 | Other | — | 神代文字ロ（figN_N.png、横N×縦N）入る | `［＃神代文字ロ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1571 | Other | — | 神代文字ワ（figN_N.png、横N×縦N）入る | `［＃神代文字ワ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1572 | Other | — | 神代文字ヲ（figN_N.png、横N×縦N）入る | `［＃神代文字ヲ（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1573 | Other | — | 神代文字ン（figN_N.png、横N×縦N）入る | `［＃神代文字ン（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1574 | Other | — | 神奈川県国府津の海岸に中條家の別荘があった | `［＃神奈川県国府津の海岸に中條家の別荘があった］` | corpus | OBSERVED |
+| O1575 | Other | — | 神沢フミ | `［＃神沢フミ］` | corpus | OBSERVED |
+| O1576 | Other | — | 神近市子 | `［＃神近市子］` | corpus | OBSERVED |
+| O1577 | Other | — | 福地源一郎 | `［＃福地源一郎］` | corpus | OBSERVED |
+| O1578 | Other | — | 秋山絶壁の圖、同猿飛橋の圖（figN_N.png、横N×縦N）入る | `［＃秋山絶壁の圖、同猿飛橋の圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1579 | Other | — | 移動演劇隊桜隊。広島滞在中、原爆に遭う | `［＃移動演劇隊桜隊。広島滞在中、原爆に遭う］` | corpus | OBSERVED |
+| O1580 | Other | — | 空白はママ | `［＃空白はママ］` | corpus | OBSERVED |
+| O1581 | Other | — | 空白は底本では「○○」 | `［＃空白は底本では「○○」］` | corpus | OBSERVED |
+| O1582 | Other | — | 空白は底本では欠落 | `［＃空白は底本では欠落］` | corpus | OBSERVED |
+| O1583 | Other | — | 窓の挿画（figN_N.png、横N×縦N）入る | `［＃窓の挿画（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1584 | Other | — | 窪川稲子の家のお手伝い | `［＃窪川稲子の家のお手伝い］` | corpus | OBSERVED |
+| O1585 | Other | — | 窪川達枝、窪川鶴次郎・稲子の長女 | `［＃窪川達枝、窪川鶴次郎・稲子の長女］` | corpus | OBSERVED |
+| O1586 | Other | — | 窪川鶴次郎・稲子の長男 | `［＃窪川鶴次郎・稲子の長男］` | corpus | OBSERVED |
+| O1587 | Other | — | 竹内栖鳳 | `［＃竹内栖鳳］` | corpus | OBSERVED |
+| O1588 | Other | — | 竹村書房 | `［＃竹村書房］` | corpus | OBSERVED |
+| O1589 | Other | — | 第一次世界大戦の休戦記念日 | `［＃第一次世界大戦の休戦記念日］` | corpus | OBSERVED |
+| O1590 | Other | — | 第一段「○○」は底本では「○○」 | `［＃第一段「○○」は底本では「○○」］` | corpus | OBSERVED |
+| O1591 | Other | — | 第一段目「○○」は底本では「○○」 | `［＃第一段目「○○」は底本では「○○」］` | corpus | OBSERVED |
+| O1592 | Other | — | 第一章第五節（二〇）のこと | `［＃第一章第五節（二〇）のこと］` | corpus | OBSERVED |
+| O1593 | Other | — | 第七段「○○」は底本では「○○」 | `［＃第七段「○○」は底本では「○○」］` | corpus | OBSERVED |
+| O1594 | Other | — | 第七段目「○○」は底本では「○○」 | `［＃第七段目「○○」は底本では「○○」］` | corpus | OBSERVED |
+| O1595 | Other | — | 第三段「○○」は底本では「○○」 | `［＃第三段「○○」は底本では「○○」］` | corpus | OBSERVED |
+| O1596 | Other | — | 第三段目「○○」は底本では「○○」 | `［＃第三段目「○○」は底本では「○○」］` | corpus | OBSERVED |
+| O1597 | Other | — | 第三百二十八　門前の人の挿画（figN_N.png、横N×縦N）入る | `［＃第三百二十八　門前の人の挿画（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1598 | Other | — | 第三百五十六　琴一曲の挿画（figN_N.png、横N×縦N）入る | `［＃第三百五十六　琴一曲の挿画（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1599 | Other | — | 第三百四十一　鳥の食べ頃の挿画（figN_N.png、横N×縦N）入る | `［＃第三百四十一　鳥の食べ頃の挿画（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1600 | Other | — | 第九章冒頭部分（五六）のこと | `［＃第九章冒頭部分（五六）のこと］` | corpus | OBSERVED |
+| O1601 | Other | — | 第二段「○○」と第三段「○○」は底本ではこの位置になく、第三段の下に「○○」 | `［＃第二段「○○」と第三段「○○」は底本ではこの位置になく、第三段の下に「○○」］` | corpus | OBSERVED |
+| O1602 | Other | — | 第二段の「○○」は底本では「○○」 | `［＃第二段の「○○」は底本では「○○」］` | corpus | OBSERVED |
+| O1603 | Other | — | 第二段の被除數「○○」は底本では「○○」 | `［＃第二段の被除數「○○」は底本では「○○」］` | corpus | OBSERVED |
+| O1604 | Other | — | 第二段の除數「○○」は底本では「○○」 | `［＃第二段の除數「○○」は底本では「○○」］` | corpus | OBSERVED |
+| O1605 | Other | — | 第二段目の被除數「○○」は底本では「○○」 | `［＃第二段目の被除數「○○」は底本では「○○」］` | corpus | OBSERVED |
+| O1606 | Other | — | 第二百一　大混雑の挿画（figN_N.png、横N×縦N）入る | `［＃第二百一　大混雑の挿画（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1607 | Other | — | 第二百三十一　暑中の飲物の挿画（figN_N.png、横N×縦N）入る | `［＃第二百三十一　暑中の飲物の挿画（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1608 | Other | — | 第二百三十四　月の夜の挿画（figN_N.png、横N×縦N）入る | `［＃第二百三十四　月の夜の挿画（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1609 | Other | — | 第二百九十七　松茸山の挿画（figN_N.png、横N×縦N）入る | `［＃第二百九十七　松茸山の挿画（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1610 | Other | — | 第二百二十三　吃逆の薬の挿画（figN_N.png、横N×縦N）入る | `［＃第二百二十三　吃逆の薬の挿画（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1611 | Other | — | 第二百五十五　珈琲ケーキの挿画（figN_N.png、横N×縦N）入る | `［＃第二百五十五　珈琲ケーキの挿画（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1612 | Other | — | 第二百十七　ソーダ松魚の挿画（figN_N.png、横N×縦N）入る | `［＃第二百十七　ソーダ松魚の挿画（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1613 | Other | — | 第二百四十四　アイスクリームの挿画（figN_N.png、横N×縦N）入る | `［＃第二百四十四　アイスクリームの挿画（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1614 | Other | — | 第二章後ろから数えて三段落目のこと | `［＃第二章後ろから数えて三段落目のこと］` | corpus | OBSERVED |
+| O1615 | Other | — | 第二章（二五）の最後の段落のこと | `［＃第二章（二五）の最後の段落のこと］` | corpus | OBSERVED |
+| O1616 | Other | — | 第二章（二四）のこと | `［＃第二章（二四）のこと］` | corpus | OBSERVED |
+| O1617 | Other | — | 第五段「○○」は底本では「○○」 | `［＃第五段「○○」は底本では「○○」］` | corpus | OBSERVED |
+| O1618 | Other | — | 第八十六通常議会 | `［＃第八十六通常議会］` | corpus | OBSERVED |
+| O1619 | Other | — | 第六章第九段落目以降のこと | `［＃第六章第九段落目以降のこと］` | corpus | OBSERVED |
+| O1620 | Other | — | 第四段「○○」は底本では「○○」 | `［＃第四段「○○」は底本では「○○」］` | corpus | OBSERVED |
+| O1621 | Other | — | 第四段目「○○」は底本では「○○」 | `［＃第四段目「○○」は底本では「○○」］` | corpus | OBSERVED |
+| O1622 | Other | — | 第百八十八　蠅取器械の挿画（figN_N.png、横N×縦N）入る | `［＃第百八十八　蠅取器械の挿画（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1623 | Other | — | 筑摩版ではここに「○○」が入る | `［＃筑摩版ではここに「○○」が入る］` | corpus | OBSERVED |
+| O1624 | Other | — | 篆書の「○○」の文字（figN_N.png、横N×縦N）入る | `［＃篆書の「○○」の文字（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1625 | Other | — | 終り二重括弧、N-N-N | `［＃終り二重括弧、N-N-N］` | corpus | OBSERVED |
+| O1626 | Other | — | 終わりダブルミニュート、N-N-N | `［＃終わりダブルミニュート、N-N-N］` | corpus | OBSERVED |
+| O1627 | Other | — | 終わり二重パーレン、N-N-N | `［＃終わり二重パーレン、N-N-N］` | corpus | OBSERVED |
+| O1628 | Other | — | 終わり二重山括弧引用記号、終わりギュメ、N-N-N | `［＃終わり二重山括弧引用記号、終わりギュメ、N-N-N］` | corpus | OBSERVED |
+| O1629 | Other | — | 終わり二重括弧、N-N-N | `［＃終わり二重括弧、N-N-N］` | corpus | OBSERVED |
+| O1630 | Other | — | 終わり二重括弧、N-N-N、N-N | `［＃終わり二重括弧、N-N-N、N-N］` | corpus | OBSERVED |
+| O1631 | Other | — | 終電の別称 | `［＃終電の別称］` | corpus | OBSERVED |
+| O1632 | Other | — | 結晶形と気温と水温と過飽和比の表（figN_N.png、横N×縦N）入る | `［＃結晶形と気温と水温と過飽和比の表（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1633 | Other | — | 統一労働総同盟 | `［＃統一労働総同盟］` | corpus | OBSERVED |
+| O1634 | Other | — | 絶壁掻網の圖（figN_N.png、横N×縦N）入る | `［＃絶壁掻網の圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1635 | Other | — | 網野菊 | `［＃網野菊］` | corpus | OBSERVED |
+| O1636 | Other | — | 線分ABの数式（figN_N.png、横N×縦N）入る | `［＃線分ABの数式（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1637 | Other | — | 縋を穿て雪行圖（figN_N.png、横N×縦N）入る | `［＃縋を穿て雪行圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1638 | Other | — | 縦Nmm、横Nmmの楕円（figN_N.png、横N×縦N）入る | `［＃縦Nmm、横Nmmの楕円（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1639 | Other | — | 縦棒N本の＄（figN_N.png、横N×縦N）入る | `［＃縦棒N本の＄（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1640 | Other | — | 縦長の「○○」を右から、その鏡像を左から寄せて、Ｍ字形に重ねたような記号、N-N | `［＃縦長の「○○」を右から、その鏡像を左から寄せて、Ｍ字形に重ねたような記号、N-N］` | corpus | OBSERVED |
+| O1641 | Other | — | 縦長の丸六つの絵入る（figN_N.png、横N×縦N）入る | `［＃縦長の丸六つの絵入る（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1642 | Other | — | 縦長の二重丸（figN_N.png、横N×縦N）入る | `［＃縦長の二重丸（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1643 | Other | — | 縦長の長方形を六つに区切った長屋の絵（figN_N.png）入る | `［＃縦長の長方形を六つに区切った長屋の絵（figN_N.png）入る］` | corpus | OBSERVED |
+| O1644 | Other | — | 罫内の「○○」は「○○」、屋号を示す記号、N-下-N | `［＃罫内の「○○」は「○○」、屋号を示す記号、N-下-N］` | corpus | OBSERVED |
+| O1645 | Other | — | 罫線の部分は、「○○」「○○」で括る | `［＃罫線の部分は、「○○」「○○」で括る］` | corpus | OBSERVED |
+| O1646 | Other | — | 美治郎 | `［＃美治郎］` | corpus | OBSERVED |
+| O1647 | Other | — | 群鯨參詣圖（figN_N.png、横N×縦N）入る | `［＃群鯨參詣圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1648 | Other | — | 老農語徃事圖、熊助樵夫之圖（figN_N.png、横N×縦N）入る | `［＃老農語徃事圖、熊助樵夫之圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1649 | Other | — | 聯想診断の記録の表（figN_N.png、横N×縦N）入る | `［＃聯想診断の記録の表（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1650 | Other | — | 船名「○○」 | `［＃船名「○○」］` | corpus | OBSERVED |
+| O1651 | Other | — | 芭蕉翁訪凍雲圖（figN_N.png、横N×縦N）入る | `［＃芭蕉翁訪凍雲圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1652 | Other | — | 花N（figN_N.png、横N×縦N）入る | `［＃花N（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1653 | Other | — | 花水祝浴水畧圖（figN_N.png、横N×縦N）入る | `［＃花水祝浴水畧圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1654 | Other | — | 花飾りで囲まれた「○○」の縦書き手書き文字（figN_N.png）入る | `［＃花飾りで囲まれた「○○」の縦書き手書き文字（figN_N.png）入る］` | corpus | OBSERVED |
+| O1655 | Other | — | 芳雄。原子核の研究に取り組み、理化学研究所に日本初のサイクロトロンを建設した物理学者 | `［＃芳雄。原子核の研究に取り組み、理化学研究所に日本初のサイクロトロンを建設した物理学者］` | corpus | OBSERVED |
+| O1656 | Other | — | 苅田《かんだ》アサノ | `［＃苅田《かんだ》アサノ］` | corpus | OBSERVED |
+| O1657 | Other | — | 英男の家庭教師 | `［＃英男の家庭教師］` | corpus | OBSERVED |
+| O1658 | Other | — | 茂木惣兵衛、後出の清ベエは誤記 | `［＃茂木惣兵衛、後出の清ベエは誤記］` | corpus | OBSERVED |
+| O1659 | Other | — | 荒木茂、宮本百合子の最初の夫 | `［＃荒木茂、宮本百合子の最初の夫］` | corpus | OBSERVED |
+| O1660 | Other | — | 萩原喜一郎、隣家 | `［＃萩原喜一郎、隣家］` | corpus | OBSERVED |
+| O1661 | Other | — | 著者註の「○○」が欠字 | `［＃著者註の「○○」が欠字］` | corpus | OBSERVED |
+| O1662 | Other | — | 葵 | `［＃葵］` | corpus | OBSERVED |
+| O1663 | Other | — | 蓄音機 | `［＃蓄音機］` | corpus | OBSERVED |
+| O1664 | Other | — | 藩史の系譜（figN_N.png、横N×縦N）入る | `［＃藩史の系譜（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1665 | Other | — | 蛇の目、N-N-N | `［＃蛇の目、N-N-N］` | corpus | OBSERVED |
+| O1666 | Other | — | 血の日曜日 | `［＃血の日曜日］` | corpus | OBSERVED |
+| O1667 | Other | — | 行項目名のタイトル | `［＃行項目名のタイトル］` | corpus | OBSERVED |
+| O1668 | Other | — | 表紙絵（figN_N.png、横N×縦N）入る | `［＃表紙絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1669 | Other | — | 表紙（figN_.png、横N×縦N）入る | `［＃表紙（figN_.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1670 | Other | — | 表紙（figN_N.png、横N×縦N）入る | `［＃表紙（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1671 | Other | — | 表（figN_N.png）入る | `［＃表（figN_N.png）入る］` | corpus | OBSERVED |
+| O1672 | Other | — | 裏表紙（figN_N.png、横N×縦N）入る | `［＃裏表紙（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1673 | Other | — | 西村一彰、母葭江の兄 | `［＃西村一彰、母葭江の兄］` | corpus | OBSERVED |
+| O1674 | Other | — | 西村千賀子、母方の祖母 | `［＃西村千賀子、母方の祖母］` | corpus | OBSERVED |
+| O1675 | Other | — | 西村茂樹 | `［＃西村茂樹］` | corpus | OBSERVED |
+| O1676 | Other | — | 西村茂樹、母方の祖父、倫理学者 | `［＃西村茂樹、母方の祖父、倫理学者］` | corpus | OBSERVED |
+| O1677 | Other | — | 覚え書き、ノート | `［＃覚え書き、ノート］` | corpus | OBSERVED |
+| O1678 | Other | — | 解剖学者。随筆家 | `［＃解剖学者。随筆家］` | corpus | OBSERVED |
+| O1679 | Other | — | 記号（figN_N.png、横N×縦N）入る | `［＃記号（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1680 | Other | — | 誠之尋常小学校、百合子の母校 | `［＃誠之尋常小学校、百合子の母校］` | corpus | OBSERVED |
+| O1681 | Other | — | 読みは「○○」 | `［＃読みは「○○」］` | corpus | OBSERVED |
+| O1682 | Other | — | 読点はママ | `［＃読点はママ］` | corpus | OBSERVED |
+| O1683 | Other | — | 謙 | `［＃謙］` | corpus | OBSERVED |
+| O1684 | Other | — | 豊竹昇之助、女義太夫 | `［＃豊竹昇之助、女義太夫］` | corpus | OBSERVED |
+| O1685 | Other | — | 貞の末息子 | `［＃貞の末息子］` | corpus | OBSERVED |
+| O1686 | Other | — | 財布（figN_N.png、横N×縦N）入る | `［＃財布（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1687 | Other | — | 貴志（康一） | `［＃貴志（康一）］` | corpus | OBSERVED |
+| O1688 | Other | — | 赤いけし | `［＃赤いけし］` | corpus | OBSERVED |
+| O1689 | Other | — | 超国家主義団体 | `［＃超国家主義団体］` | corpus | OBSERVED |
+| O1690 | Other | — | 辻馬車 | `［＃辻馬車］` | corpus | OBSERVED |
+| O1691 | Other | — | 逆三角形と三角形が向き合っている形（figN_N.png、横N×縦N）入る | `［＃逆三角形と三角形が向き合っている形（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1692 | Other | — | 逆感嘆符、N-N-N | `［＃逆感嘆符、N-N-N］` | corpus | OBSERVED |
+| O1693 | Other | — | 通りの名 | `［＃通りの名］` | corpus | OBSERVED |
+| O1694 | Other | — | 里見勝蔵 | `［＃里見勝蔵］` | corpus | OBSERVED |
+| O1695 | Other | — | 重アクセント付きα、N-N-N | `［＃重アクセント付きα、N-N-N］` | corpus | OBSERVED |
+| O1696 | Other | — | 重アクセント付きε、N-N-N | `［＃重アクセント付きε、N-N-N］` | corpus | OBSERVED |
+| O1697 | Other | — | 野上彌生子 | `［＃野上彌生子］` | corpus | OBSERVED |
+| O1698 | Other | — | 野上豊一郎 | `［＃野上豊一郎］` | corpus | OBSERVED |
+| O1699 | Other | — | 釐の里を牛にしたもの、N-N | `［＃釐の里を牛にしたもの、N-N］` | corpus | OBSERVED |
+| O1700 | Other | — | 金融緊急措置令。新円発行、旧円預金は封鎖 | `［＃金融緊急措置令。新円発行、旧円預金は封鎖］` | corpus | OBSERVED |
+| O1701 | Other | — | 金貨（figN_N.png、横N×縦N）入る | `［＃金貨（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1702 | Other | — | 金銭出納録の表（figN_N.png、横N×縦N）入る | `［＃金銭出納録の表（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1703 | Other | — | 金馬と小金馬の対談がここにはいる。 | `［＃金馬と小金馬の対談がここにはいる。］` | corpus | OBSERVED |
+| O1704 | Other | — | 鈴蘭の歌の挿画（figN_N.png、横N×縦N）入る | `［＃鈴蘭の歌の挿画（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1705 | Other | — | 鋭アクセント付きα、N-N-N | `［＃鋭アクセント付きα、N-N-N］` | corpus | OBSERVED |
+| O1706 | Other | — | 鋭アクセント付きε、N-N-N | `［＃鋭アクセント付きε、N-N-N］` | corpus | OBSERVED |
+| O1707 | Other | — | 長女 | `［＃長女］` | corpus | OBSERVED |
+| O1708 | Other | — | 長女、朝子の婿の永田徹郎海軍大尉 | `［＃長女、朝子の婿の永田徹郎海軍大尉］` | corpus | OBSERVED |
+| O1709 | Other | — | 長女、永田徹郎海軍大尉夫人 | `［＃長女、永田徹郎海軍大尉夫人］` | corpus | OBSERVED |
+| O1710 | Other | — | 長男 | `［＃長男］` | corpus | OBSERVED |
+| O1711 | Other | — | 長谷川如是閑 | `［＃長谷川如是閑］` | corpus | OBSERVED |
+| O1712 | Other | — | 阪額野陣之圖（figN_N.png、横N×縦N）入る | `［＃阪額野陣之圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1713 | Other | — | 防空壕（figN_N.png、横N×縦N）入る | `［＃防空壕（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1714 | Other | — | 降伏文書の調印式場として使われた | `［＃降伏文書の調印式場として使われた］` | corpus | OBSERVED |
+| O1715 | Other | — | 陽子、次女 | `［＃陽子、次女］` | corpus | OBSERVED |
+| O1716 | Other | — | 階級章　星（figN_N.png、横N×縦N）入る | `［＃階級章　星（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1717 | Other | — | 集団農場 | `［＃集団農場］` | corpus | OBSERVED |
+| O1718 | Other | — | 雪ン堂の圖（figN_N.png、横N×縦N）入る | `［＃雪ン堂の圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1719 | Other | — | 雪中幽霊之圖（figN_N.png、横N×縦N）入る | `［＃雪中幽霊之圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1720 | Other | — | 雪中捕熊圖、農人夫婦逢吹雪圖（figN_N.png、横N×縦N）入る | `［＃雪中捕熊圖、農人夫婦逢吹雪圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1721 | Other | — | 雪中晒縮圖（figN_N.png、横N×縦N）入る | `［＃雪中晒縮圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1722 | Other | — | 雪中洪水之圖（figN_N.png、横N×縦N）入る | `［＃雪中洪水之圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1723 | Other | — | 雪中演場を造圖（figN_N.png、横N×縦N）入る | `［＃雪中演場を造圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1724 | Other | — | 雪中狼入人家圖（figN_N.png、横N×縦N）入る | `［＃雪中狼入人家圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1725 | Other | — | 雪窓座頭を降す圖（figN_N.png、横N×縦N）入る | `［＃雪窓座頭を降す圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1726 | Other | — | 雪蛆の圖（figN_N.png、横N×縦N）入る | `［＃雪蛆の圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1727 | Other | — | 青山杉作 | `［＃青山杉作］` | corpus | OBSERVED |
+| O1728 | Other | — | 青鞜 | `［＃青鞜］` | corpus | OBSERVED |
+| O1729 | Other | — | 音名「○○」の全音符を表わす楽譜（figN_N.png、横N×縦N）入る | `［＃音名「○○」の全音符を表わす楽譜（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1730 | Other | — | 音符（figN_N.png、横N×縦N）入る | `［＃音符（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1731 | Other | — | 頁N（figN_N.png、横N×縦N）入る | `［＃頁N（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1732 | Other | — | 項目名 | `［＃項目名］` | corpus | OBSERVED |
+| O1733 | Other | — | 顕微鏡を以て雪状を審に視る圖（figN_N.png、横N×縦N）入る | `［＃顕微鏡を以て雪状を審に視る圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1734 | Other | — | 風俗、生活様式 | `［＃風俗、生活様式］` | corpus | OBSERVED |
+| O1735 | Other | — | 風呂 | `［＃風呂］` | corpus | OBSERVED |
+| O1736 | Other | — | 風車の絵（figN_N.png、横N×縦N）入る | `［＃風車の絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1737 | Other | — | 食後の休息時間 | `［＃食後の休息時間］` | corpus | OBSERVED |
+| O1738 | Other | — | 食料品店名 | `［＃食料品店名］` | corpus | OBSERVED |
+| O1739 | Other | — | 馬と鹿の絵（figN_N.png、横N×縦N）入る | `［＃馬と鹿の絵（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1740 | Other | — | 馬三つの文字（figN_N.png、横N×縦N）入る | `［＃馬三つの文字（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1741 | Other | — | 驛中の正月積雪の圖（figN_N.png、横N×縦N）入る | `［＃驛中の正月積雪の圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1742 | Other | — | 驛中積雪之圖（figN_N.png、横N×縦N）入る | `［＃驛中積雪之圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1743 | Other | — | 高太郎 | `［＃高太郎］` | corpus | OBSERVED |
+| O1744 | Other | — | 鬼趣圖（figN_N.png、横N×縦N）入る | `［＃鬼趣圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1745 | Other | — | 鮭の縮圖（figN_N.png、横N×縦N）入る | `［＃鮭の縮圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1746 | Other | — | 鮭洲を走る圖（figN_N.png、横N×縦N）入る | `［＃鮭洲を走る圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1747 | Other | — | 鮭漁打切の圖（figN_N.png、横N×縦N）入る | `［＃鮭漁打切の圖（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1748 | Other | — | 鳥四つの文字（figN_N.png、横N×縦N）入る | `［＃鳥四つの文字（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O1749 | Other | — | 黒丸N、N-N-N | `［＃黒丸N、N-N-N］` | corpus | OBSERVED |
+| O1750 | Other | — | 黒田鵬心 | `［＃黒田鵬心］` | corpus | OBSERVED |
+| O1751 | Other | — | （N）は縦中横 | `［＃（N）は縦中横］` | corpus | OBSERVED |
+| O1752 | Other | — | （…） | `［＃（…）］` | corpus | OBSERVED |
+| O1753 | Other | — | （か） | `［＃（か）］` | corpus | OBSERVED |
+| O1754 | Other | — | （と） | `［＃（と）］` | corpus | OBSERVED |
+| O1755 | Other | — | （に） | `［＃（に）］` | corpus | OBSERVED |
+| O1756 | Other | — | （の） | `［＃（の）］` | corpus | OBSERVED |
+| O1757 | Other | — | （へ） | `［＃（へ）］` | corpus | OBSERVED |
+| O1758 | Other | — | （を脱カ）の注記 | `［＃（を脱カ）の注記］` | corpus | OBSERVED |
+| O1759 | Other | — | （ん） | `［＃（ん）］` | corpus | OBSERVED |
+| O1760 | Other | — | （アリテ） | `［＃（アリテ）］` | corpus | OBSERVED |
+| O1761 | Other | — | （アリ） | `［＃（アリ）］` | corpus | OBSERVED |
+| O1762 | Other | — | （イカンゾ） | `［＃（イカンゾ）］` | corpus | OBSERVED |
+| O1763 | Other | — | （イテ） | `［＃（イテ）］` | corpus | OBSERVED |
+| O1764 | Other | — | （イデ） | `［＃（イデ）］` | corpus | OBSERVED |
+| O1765 | Other | — | （イロヒ） | `［＃（イロヒ）］` | corpus | OBSERVED |
+| O1766 | Other | — | （イ） | `［＃（イ）］` | corpus | OBSERVED |
+| O1767 | Other | — | （イ）は縦中横 | `［＃（イ）は縦中横］` | corpus | OBSERVED |
+| O1768 | Other | — | （ウスルヲ） | `［＃（ウスルヲ）］` | corpus | OBSERVED |
+| O1769 | Other | — | （ウテハ） | `［＃（ウテハ）］` | corpus | OBSERVED |
+| O1770 | Other | — | （ウテ） | `［＃（ウテ）］` | corpus | OBSERVED |
+| O1771 | Other | — | （ウ） | `［＃（ウ）］` | corpus | OBSERVED |
+| O1772 | Other | — | （エ） | `［＃（エ）］` | corpus | OBSERVED |
+| O1773 | Other | — | （カス） | `［＃（カス）］` | corpus | OBSERVED |
+| O1774 | Other | — | （カニ） | `［＃（カニ）］` | corpus | OBSERVED |
+| O1775 | Other | — | （カハ） | `［＃（カハ）］` | corpus | OBSERVED |
+| O1776 | Other | — | （カラ） | `［＃（カラ）］` | corpus | OBSERVED |
+| O1777 | Other | — | （カント） | `［＃（カント）］` | corpus | OBSERVED |
+| O1778 | Other | — | （カン） | `［＃（カン）］` | corpus | OBSERVED |
+| O1779 | Other | — | （ガ） | `［＃（ガ）］` | corpus | OBSERVED |
+| O1780 | Other | — | （キガ） | `［＃（キガ）］` | corpus | OBSERVED |
+| O1781 | Other | — | （キコト） | `［＃（キコト）］` | corpus | OBSERVED |
+| O1782 | Other | — | （キザルヲ） | `［＃（キザルヲ）］` | corpus | OBSERVED |
+| O1783 | Other | — | （キテ） | `［＃（キテ）］` | corpus | OBSERVED |
+| O1784 | Other | — | （キニ） | `［＃（キニ）］` | corpus | OBSERVED |
+| O1785 | Other | — | （キハ） | `［＃（キハ）］` | corpus | OBSERVED |
+| O1786 | Other | — | （キモ） | `［＃（キモ）］` | corpus | OBSERVED |
+| O1787 | Other | — | （キヨリモ） | `［＃（キヨリモ）］` | corpus | OBSERVED |
+| O1788 | Other | — | （キヲ） | `［＃（キヲ）］` | corpus | OBSERVED |
+| O1789 | Other | — | （キ） | `［＃（キ）］` | corpus | OBSERVED |
+| O1790 | Other | — | （ギシ） | `［＃（ギシ）］` | corpus | OBSERVED |
+| O1791 | Other | — | （ギ） | `［＃（ギ）］` | corpus | OBSERVED |
+| O1792 | Other | — | （クシテ） | `［＃（クシテ）］` | corpus | OBSERVED |
+| O1793 | Other | — | （クス） | `［＃（クス）］` | corpus | OBSERVED |
+| O1794 | Other | — | （クセバ） | `［＃（クセバ）］` | corpus | OBSERVED |
+| O1795 | Other | — | （クトキハ） | `［＃（クトキハ）］` | corpus | OBSERVED |
+| O1796 | Other | — | （クト） | `［＃（クト）］` | corpus | OBSERVED |
+| O1797 | Other | — | （クナラン） | `［＃（クナラン）］` | corpus | OBSERVED |
+| O1798 | Other | — | （クニ） | `［＃（クニ）］` | corpus | OBSERVED |
+| O1799 | Other | — | （クノ） | `［＃（クノ）］` | corpus | OBSERVED |
+| O1800 | Other | — | （クハ） | `［＃（クハ）］` | corpus | OBSERVED |
+| O1801 | Other | — | （クバ） | `［＃（クバ）］` | corpus | OBSERVED |
+| O1802 | Other | — | （クマデ） | `［＃（クマデ）］` | corpus | OBSERVED |
+| O1803 | Other | — | （クモノ） | `［＃（クモノ）］` | corpus | OBSERVED |
+| O1804 | Other | — | （クルコトモ） | `［＃（クルコトモ）］` | corpus | OBSERVED |
+| O1805 | Other | — | （クルノ） | `［＃（クルノ）］` | corpus | OBSERVED |
+| O1806 | Other | — | （クルヲ） | `［＃（クルヲ）］` | corpus | OBSERVED |
+| O1807 | Other | — | （クヲ） | `［＃（クヲ）］` | corpus | OBSERVED |
+| O1808 | Other | — | （クンバ） | `［＃（クンバ）］` | corpus | OBSERVED |
+| O1809 | Other | — | （ク） | `［＃（ク）］` | corpus | OBSERVED |
+| O1810 | Other | — | （グモ） | `［＃（グモ）］` | corpus | OBSERVED |
+| O1811 | Other | — | （グ） | `［＃（グ）］` | corpus | OBSERVED |
+| O1812 | Other | — | （ケリ） | `［＃（ケリ）］` | corpus | OBSERVED |
+| O1813 | Other | — | （ケ） | `［＃（ケ）］` | corpus | OBSERVED |
+| O1814 | Other | — | （ゲテ） | `［＃（ゲテ）］` | corpus | OBSERVED |
+| O1815 | Other | — | （ゲント） | `［＃（ゲント）］` | corpus | OBSERVED |
+| O1816 | Other | — | （ゲ） | `［＃（ゲ）］` | corpus | OBSERVED |
+| O1817 | Other | — | （コノム） | `［＃（コノム）］` | corpus | OBSERVED |
+| O1818 | Other | — | （サニ） | `［＃（サニ）］` | corpus | OBSERVED |
+| O1819 | Other | — | （サント） | `［＃（サント）］` | corpus | OBSERVED |
+| O1820 | Other | — | （サン） | `［＃（サン）］` | corpus | OBSERVED |
+| O1821 | Other | — | （サ） | `［＃（サ）］` | corpus | OBSERVED |
+| O1822 | Other | — | （ザル） | `［＃（ザル）］` | corpus | OBSERVED |
+| O1823 | Other | — | （シク） | `［＃（シク）］` | corpus | OBSERVED |
+| O1824 | Other | — | （シタモウ） | `［＃（シタモウ）］` | corpus | OBSERVED |
+| O1825 | Other | — | （シテハ） | `［＃（シテハ）］` | corpus | OBSERVED |
+| O1826 | Other | — | （シテ） | `［＃（シテ）］` | corpus | OBSERVED |
+| O1827 | Other | — | （シト） | `［＃（シト）］` | corpus | OBSERVED |
+| O1828 | Other | — | （シム） | `［＃（シム）］` | corpus | OBSERVED |
+| O1829 | Other | — | （シメ） | `［＃（シメ）］` | corpus | OBSERVED |
+| O1830 | Other | — | （シモ） | `［＃（シモ）］` | corpus | OBSERVED |
+| O1831 | Other | — | （シ） | `［＃（シ）］` | corpus | OBSERVED |
+| O1832 | Other | — | （ジウセバ） | `［＃（ジウセバ）］` | corpus | OBSERVED |
+| O1833 | Other | — | （ジク） | `［＃（ジク）］` | corpus | OBSERVED |
+| O1834 | Other | — | （ジテ） | `［＃（ジテ）］` | corpus | OBSERVED |
+| O1835 | Other | — | （ジ） | `［＃（ジ）］` | corpus | OBSERVED |
+| O1836 | Other | — | （スコトヲ） | `［＃（スコトヲ）］` | corpus | OBSERVED |
+| O1837 | Other | — | （ストハ） | `［＃（ストハ）］` | corpus | OBSERVED |
+| O1838 | Other | — | （スト） | `［＃（スト）］` | corpus | OBSERVED |
+| O1839 | Other | — | （スニ） | `［＃（スニ）］` | corpus | OBSERVED |
+| O1840 | Other | — | （スマデ） | `［＃（スマデ）］` | corpus | OBSERVED |
+| O1841 | Other | — | （スルコトヲ） | `［＃（スルコトヲ）］` | corpus | OBSERVED |
+| O1842 | Other | — | （スルコト） | `［＃（スルコト）］` | corpus | OBSERVED |
+| O1843 | Other | — | （スルニ） | `［＃（スルニ）］` | corpus | OBSERVED |
+| O1844 | Other | — | （スルノ） | `［＃（スルノ）］` | corpus | OBSERVED |
+| O1845 | Other | — | （スルヲ） | `［＃（スルヲ）］` | corpus | OBSERVED |
+| O1846 | Other | — | （スル） | `［＃（スル）］` | corpus | OBSERVED |
+| O1847 | Other | — | （スレバ） | `［＃（スレバ）］` | corpus | OBSERVED |
+| O1848 | Other | — | （ズト） | `［＃（ズト）］` | corpus | OBSERVED |
+| O1849 | Other | — | （ズハ） | `［＃（ズハ）］` | corpus | OBSERVED |
+| O1850 | Other | — | （ズル） | `［＃（ズル）］` | corpus | OBSERVED |
+| O1851 | Other | — | （ズ） | `［＃（ズ）］` | corpus | OBSERVED |
+| O1852 | Other | — | （セバ） | `［＃（セバ）］` | corpus | OBSERVED |
+| O1853 | Other | — | （セム） | `［＃（セム）］` | corpus | OBSERVED |
+| O1854 | Other | — | （セヨ） | `［＃（セヨ）］` | corpus | OBSERVED |
+| O1855 | Other | — | （セリ） | `［＃（セリ）］` | corpus | OBSERVED |
+| O1856 | Other | — | （セント） | `［＃（セント）］` | corpus | OBSERVED |
+| O1857 | Other | — | （センヤ） | `［＃（センヤ）］` | corpus | OBSERVED |
+| O1858 | Other | — | （セン） | `［＃（セン）］` | corpus | OBSERVED |
+| O1859 | Other | — | （セ） | `［＃（セ）］` | corpus | OBSERVED |
+| O1860 | Other | — | （ゼヨ） | `［＃（ゼヨ）］` | corpus | OBSERVED |
+| O1861 | Other | — | （ゼラル） | `［＃（ゼラル）］` | corpus | OBSERVED |
+| O1862 | Other | — | （ゼリ） | `［＃（ゼリ）］` | corpus | OBSERVED |
+| O1863 | Other | — | （ゼ） | `［＃（ゼ）］` | corpus | OBSERVED |
+| O1864 | Other | — | （ソ） | `［＃（ソ）］` | corpus | OBSERVED |
+| O1865 | Other | — | （ゾ） | `［＃（ゾ）］` | corpus | OBSERVED |
+| O1866 | Other | — | （タナリ） | `［＃（タナリ）］` | corpus | OBSERVED |
+| O1867 | Other | — | （タビ） | `［＃（タビ）］` | corpus | OBSERVED |
+| O1868 | Other | — | （タモウ） | `［＃（タモウ）］` | corpus | OBSERVED |
+| O1869 | Other | — | （タラ） | `［＃（タラ）］` | corpus | OBSERVED |
+| O1870 | Other | — | （タリ） | `［＃（タリ）］` | corpus | OBSERVED |
+| O1871 | Other | — | （タル） | `［＃（タル）］` | corpus | OBSERVED |
+| O1872 | Other | — | （タン） | `［＃（タン）］` | corpus | OBSERVED |
+| O1873 | Other | — | （タ） | `［＃（タ）］` | corpus | OBSERVED |
+| O1874 | Other | — | （チテ） | `［＃（チテ）］` | corpus | OBSERVED |
+| O1875 | Other | — | （チ） | `［＃（チ）］` | corpus | OBSERVED |
+| O1876 | Other | — | （ッテ） | `［＃（ッテ）］` | corpus | OBSERVED |
+| O1877 | Other | — | （ッ） | `［＃（ッ）］` | corpus | OBSERVED |
+| O1878 | Other | — | （ツカン） | `［＃（ツカン）］` | corpus | OBSERVED |
+| O1879 | Other | — | （ツコト） | `［＃（ツコト）］` | corpus | OBSERVED |
+| O1880 | Other | — | （ツテ） | `［＃（ツテ）］` | corpus | OBSERVED |
+| O1881 | Other | — | （ツノ） | `［＃（ツノ）］` | corpus | OBSERVED |
+| O1882 | Other | — | （ツル） | `［＃（ツル）］` | corpus | OBSERVED |
+| O1883 | Other | — | （ヅカラ） | `［＃（ヅカラ）］` | corpus | OBSERVED |
+| O1884 | Other | — | （ヅルコト） | `［＃（ヅルコト）］` | corpus | OBSERVED |
+| O1885 | Other | — | （ヅ） | `［＃（ヅ）］` | corpus | OBSERVED |
+| O1886 | Other | — | （テシ） | `［＃（テシ）］` | corpus | OBSERVED |
+| O1887 | Other | — | （テス） | `［＃（テス）］` | corpus | OBSERVED |
+| O1888 | Other | — | （テテ） | `［＃（テテ）］` | corpus | OBSERVED |
+| O1889 | Other | — | （テノ） | `［＃（テノ）］` | corpus | OBSERVED |
+| O1890 | Other | — | （テハ） | `［＃（テハ）］` | corpus | OBSERVED |
+| O1891 | Other | — | （デテ） | `［＃（デテ）］` | corpus | OBSERVED |
+| O1892 | Other | — | （デ） | `［＃（デ）］` | corpus | OBSERVED |
+| O1893 | Other | — | （トキハ） | `［＃（トキハ）］` | corpus | OBSERVED |
+| O1894 | Other | — | （トシテ） | `［＃（トシテ）］` | corpus | OBSERVED |
+| O1895 | Other | — | （トシ） | `［＃（トシ）］` | corpus | OBSERVED |
+| O1896 | Other | — | （トスル） | `［＃（トスル）］` | corpus | OBSERVED |
+| O1897 | Other | — | （トス） | `［＃（トス）］` | corpus | OBSERVED |
+| O1898 | Other | — | （トセ） | `［＃（トセ）］` | corpus | OBSERVED |
+| O1899 | Other | — | （トニ） | `［＃（トニ）］` | corpus | OBSERVED |
+| O1900 | Other | — | （トハ） | `［＃（トハ）］` | corpus | OBSERVED |
+| O1901 | Other | — | （トヲ） | `［＃（トヲ）］` | corpus | OBSERVED |
+| O1902 | Other | — | （ドモ） | `［＃（ドモ）］` | corpus | OBSERVED |
+| O1903 | Other | — | （ナカラ） | `［＃（ナカラ）］` | corpus | OBSERVED |
+| O1904 | Other | — | （ナラム） | `［＃（ナラム）］` | corpus | OBSERVED |
+| O1905 | Other | — | （ナラント） | `［＃（ナラント）］` | corpus | OBSERVED |
+| O1906 | Other | — | （ナラン） | `［＃（ナラン）］` | corpus | OBSERVED |
+| O1907 | Other | — | （ナラ） | `［＃（ナラ）］` | corpus | OBSERVED |
+| O1908 | Other | — | （ナリト） | `［＃（ナリト）］` | corpus | OBSERVED |
+| O1909 | Other | — | （ナリ） | `［＃（ナリ）］` | corpus | OBSERVED |
+| O1910 | Other | — | （ナルニ） | `［＃（ナルニ）］` | corpus | OBSERVED |
+| O1911 | Other | — | （ナルハ） | `［＃（ナルハ）］` | corpus | OBSERVED |
+| O1912 | Other | — | （ナルヤ） | `［＃（ナルヤ）］` | corpus | OBSERVED |
+| O1913 | Other | — | （ナルヲ） | `［＃（ナルヲ）］` | corpus | OBSERVED |
+| O1914 | Other | — | （ナル） | `［＃（ナル）］` | corpus | OBSERVED |
+| O1915 | Other | — | （ナ） | `［＃（ナ）］` | corpus | OBSERVED |
+| O1916 | Other | — | （ニカケ） | `［＃（ニカケ）］` | corpus | OBSERVED |
+| O1917 | Other | — | （ニシテ） | `［＃（ニシテ）］` | corpus | OBSERVED |
+| O1918 | Other | — | （ニシ） | `［＃（ニシ）］` | corpus | OBSERVED |
+| O1919 | Other | — | （ニス） | `［＃（ニス）］` | corpus | OBSERVED |
+| O1920 | Other | — | （ニセバ） | `［＃（ニセバ）］` | corpus | OBSERVED |
+| O1921 | Other | — | （ヌ） | `［＃（ヌ）］` | corpus | OBSERVED |
+| O1922 | Other | — | （ネキ） | `［＃（ネキ）］` | corpus | OBSERVED |
+| O1923 | Other | — | （ネク） | `［＃（ネク）］` | corpus | OBSERVED |
+| O1924 | Other | — | （ネテ） | `［＃（ネテ）］` | corpus | OBSERVED |
+| O1925 | Other | — | （ノミ） | `［＃（ノミ）］` | corpus | OBSERVED |
+| O1926 | Other | — | （ハク） | `［＃（ハク）］` | corpus | OBSERVED |
+| O1927 | Other | — | （ハリテ） | `［＃（ハリテ）］` | corpus | OBSERVED |
+| O1928 | Other | — | （ハル） | `［＃（ハル）］` | corpus | OBSERVED |
+| O1929 | Other | — | （ハレ） | `［＃（ハレ）］` | corpus | OBSERVED |
+| O1930 | Other | — | （ハント） | `［＃（ハント）］` | corpus | OBSERVED |
+| O1931 | Other | — | （ハン） | `［＃（ハン）］` | corpus | OBSERVED |
+| O1932 | Other | — | （ハヾ） | `［＃（ハヾ）］` | corpus | OBSERVED |
+| O1933 | Other | — | （ハ） | `［＃（ハ）］` | corpus | OBSERVED |
+| O1934 | Other | — | （バカリ） | `［＃（バカリ）］` | corpus | OBSERVED |
+| O1935 | Other | — | （バ） | `［＃（バ）］` | corpus | OBSERVED |
+| O1936 | Other | — | （ヒテ） | `［＃（ヒテ）］` | corpus | OBSERVED |
+| O1937 | Other | — | （ヒ） | `［＃（ヒ）］` | corpus | OBSERVED |
+| O1938 | Other | — | （ビカ） | `［＃（ビカ）］` | corpus | OBSERVED |
+| O1939 | Other | — | （ビテ） | `［＃（ビテ）］` | corpus | OBSERVED |
+| O1940 | Other | — | （ビン） | `［＃（ビン）］` | corpus | OBSERVED |
+| O1941 | Other | — | （ビ） | `［＃（ビ）］` | corpus | OBSERVED |
+| O1942 | Other | — | （フコト） | `［＃（フコト）］` | corpus | OBSERVED |
+| O1943 | Other | — | （フシ） | `［＃（フシ）］` | corpus | OBSERVED |
+| O1944 | Other | — | （フテ） | `［＃（フテ）］` | corpus | OBSERVED |
+| O1945 | Other | — | （フト） | `［＃（フト）］` | corpus | OBSERVED |
+| O1946 | Other | — | （フニ） | `［＃（フニ）］` | corpus | OBSERVED |
+| O1947 | Other | — | （フハ） | `［＃（フハ）］` | corpus | OBSERVED |
+| O1948 | Other | — | （フルニ） | `［＃（フルニ）］` | corpus | OBSERVED |
+| O1949 | Other | — | （フル） | `［＃（フル）］` | corpus | OBSERVED |
+| O1950 | Other | — | （ブト） | `［＃（ブト）］` | corpus | OBSERVED |
+| O1951 | Other | — | （ブ） | `［＃（ブ）］` | corpus | OBSERVED |
+| O1952 | Other | — | （ヘテ） | `［＃（ヘテ）］` | corpus | OBSERVED |
+| O1953 | Other | — | （ヘバ） | `［＃（ヘバ）］` | corpus | OBSERVED |
+| O1954 | Other | — | （ヘリ） | `［＃（ヘリ）］` | corpus | OBSERVED |
+| O1955 | Other | — | （ベカラ） | `［＃（ベカラ）］` | corpus | OBSERVED |
+| O1956 | Other | — | （ベ） | `［＃（ベ）］` | corpus | OBSERVED |
+| O1957 | Other | — | （ホ） | `［＃（ホ）］` | corpus | OBSERVED |
+| O1958 | Other | — | （マシテ） | `［＃（マシテ）］` | corpus | OBSERVED |
+| O1959 | Other | — | （マス） | `［＃（マス）］` | corpus | OBSERVED |
+| O1960 | Other | — | （マツテ） | `［＃（マツテ）］` | corpus | OBSERVED |
+| O1961 | Other | — | （マバ） | `［＃（マバ）］` | corpus | OBSERVED |
+| O1962 | Other | — | （マラ） | `［＃（マラ）］` | corpus | OBSERVED |
+| O1963 | Other | — | （マリ） | `［＃（マリ）］` | corpus | OBSERVED |
+| O1964 | Other | — | （マル） | `［＃（マル）］` | corpus | OBSERVED |
+| O1965 | Other | — | （マ） | `［＃（マ）］` | corpus | OBSERVED |
+| O1966 | Other | — | （ミ） | `［＃（ミ）］` | corpus | OBSERVED |
+| O1967 | Other | — | （ムニ） | `［＃（ムニ）］` | corpus | OBSERVED |
+| O1968 | Other | — | （ムノ） | `［＃（ムノ）］` | corpus | OBSERVED |
+| O1969 | Other | — | （ムモ） | `［＃（ムモ）］` | corpus | OBSERVED |
+| O1970 | Other | — | （ムル） | `［＃（ムル）］` | corpus | OBSERVED |
+| O1971 | Other | — | （ムヲ） | `［＃（ムヲ）］` | corpus | OBSERVED |
+| O1972 | Other | — | （メシ） | `［＃（メシ）］` | corpus | OBSERVED |
+| O1973 | Other | — | （メス） | `［＃（メス）］` | corpus | OBSERVED |
+| O1974 | Other | — | （メテ） | `［＃（メテ）］` | corpus | OBSERVED |
+| O1975 | Other | — | （メニ） | `［＃（メニ）］` | corpus | OBSERVED |
+| O1976 | Other | — | （メノミ） | `［＃（メノミ）］` | corpus | OBSERVED |
+| O1977 | Other | — | （メバ） | `［＃（メバ）］` | corpus | OBSERVED |
+| O1978 | Other | — | （メヨ） | `［＃（メヨ）］` | corpus | OBSERVED |
+| O1979 | Other | — | （メル） | `［＃（メル）］` | corpus | OBSERVED |
+| O1980 | Other | — | （メント） | `［＃（メント）］` | corpus | OBSERVED |
+| O1981 | Other | — | （メンニ） | `［＃（メンニ）］` | corpus | OBSERVED |
+| O1982 | Other | — | （メン） | `［＃（メン）］` | corpus | OBSERVED |
+| O1983 | Other | — | （メ） | `［＃（メ）］` | corpus | OBSERVED |
+| O1984 | Other | — | （モ） | `［＃（モ）］` | corpus | OBSERVED |
+| O1985 | Other | — | （ヤ） | `［＃（ヤ）］` | corpus | OBSERVED |
+| O1986 | Other | — | （ユルニ） | `［＃（ユルニ）］` | corpus | OBSERVED |
+| O1987 | Other | — | （ユ） | `［＃（ユ）］` | corpus | OBSERVED |
+| O1988 | Other | — | （ヨリモ） | `［＃（ヨリモ）］` | corpus | OBSERVED |
+| O1989 | Other | — | （ヨリ） | `［＃（ヨリ）］` | corpus | OBSERVED |
+| O1990 | Other | — | （ヨ） | `［＃（ヨ）］` | corpus | OBSERVED |
+| O1991 | Other | — | （ラク） | `［＃（ラク）］` | corpus | OBSERVED |
+| O1992 | Other | — | （ラシム） | `［＃（ラシム）］` | corpus | OBSERVED |
+| O1993 | Other | — | （ラシメバ） | `［＃（ラシメバ）］` | corpus | OBSERVED |
+| O1994 | Other | — | （ラズ） | `［＃（ラズ）］` | corpus | OBSERVED |
+| O1995 | Other | — | （ラセタマヘト） | `［＃（ラセタマヘト）］` | corpus | OBSERVED |
+| O1996 | Other | — | （ラニ） | `［＃（ラニ）］` | corpus | OBSERVED |
+| O1997 | Other | — | （ラバ） | `［＃（ラバ）］` | corpus | OBSERVED |
+| O1998 | Other | — | （ラマト） | `［＃（ラマト）］` | corpus | OBSERVED |
+| O1999 | Other | — | （ラルヲ） | `［＃（ラルヲ）］` | corpus | OBSERVED |
+| O2000 | Other | — | （ラント） | `［＃（ラント）］` | corpus | OBSERVED |
+| O2001 | Other | — | （ランニ） | `［＃（ランニ）］` | corpus | OBSERVED |
+| O2002 | Other | — | （ラン） | `［＃（ラン）］` | corpus | OBSERVED |
+| O2003 | Other | — | （ラ） | `［＃（ラ）］` | corpus | OBSERVED |
+| O2004 | Other | — | （リキ） | `［＃（リキ）］` | corpus | OBSERVED |
+| O2005 | Other | — | （リテ） | `［＃（リテ）］` | corpus | OBSERVED |
+| O2006 | Other | — | （リト） | `［＃（リト）］` | corpus | OBSERVED |
+| O2007 | Other | — | （リニ） | `［＃（リニ）］` | corpus | OBSERVED |
+| O2008 | Other | — | （リヲ） | `［＃（リヲ）］` | corpus | OBSERVED |
+| O2009 | Other | — | （リ） | `［＃（リ）］` | corpus | OBSERVED |
+| O2010 | Other | — | （ルガ） | `［＃（ルガ）］` | corpus | OBSERVED |
+| O2011 | Other | — | （ルコトヲ） | `［＃（ルコトヲ）］` | corpus | OBSERVED |
+| O2012 | Other | — | （ルコト） | `［＃（ルコト）］` | corpus | OBSERVED |
+| O2013 | Other | — | （ルト） | `［＃（ルト）］` | corpus | OBSERVED |
+| O2014 | Other | — | （ルナリ） | `［＃（ルナリ）］` | corpus | OBSERVED |
+| O2015 | Other | — | （ルニ） | `［＃（ルニ）］` | corpus | OBSERVED |
+| O2016 | Other | — | （ルノ） | `［＃（ルノ）］` | corpus | OBSERVED |
+| O2017 | Other | — | （ルハ） | `［＃（ルハ）］` | corpus | OBSERVED |
+| O2018 | Other | — | （ルモ） | `［＃（ルモ）］` | corpus | OBSERVED |
+| O2019 | Other | — | （ルヤ） | `［＃（ルヤ）］` | corpus | OBSERVED |
+| O2020 | Other | — | （ルル） | `［＃（ルル）］` | corpus | OBSERVED |
+| O2021 | Other | — | （ルヲ） | `［＃（ルヲ）］` | corpus | OBSERVED |
+| O2022 | Other | — | （ルヽ） | `［＃（ルヽ）］` | corpus | OBSERVED |
+| O2023 | Other | — | （ル） | `［＃（ル）］` | corpus | OBSERVED |
+| O2024 | Other | — | （レカ） | `［＃（レカ）］` | corpus | OBSERVED |
+| O2025 | Other | — | （レシトキ） | `［＃（レシトキ）］` | corpus | OBSERVED |
+| O2026 | Other | — | （レタル） | `［＃（レタル）］` | corpus | OBSERVED |
+| O2027 | Other | — | （レテ） | `［＃（レテ）］` | corpus | OBSERVED |
+| O2028 | Other | — | （レドモ） | `［＃（レドモ）］` | corpus | OBSERVED |
+| O2029 | Other | — | （レハ） | `［＃（レハ）］` | corpus | OBSERVED |
+| O2030 | Other | — | （レバ） | `［＃（レバ）］` | corpus | OBSERVED |
+| O2031 | Other | — | （レル） | `［＃（レル）］` | corpus | OBSERVED |
+| O2032 | Other | — | （レント） | `［＃（レント）］` | corpus | OBSERVED |
+| O2033 | Other | — | （レン） | `［＃（レン）］` | corpus | OBSERVED |
+| O2034 | Other | — | （ロニ） | `［＃（ロニ）］` | corpus | OBSERVED |
+| O2035 | Other | — | （ワバ） | `［＃（ワバ）］` | corpus | OBSERVED |
+| O2036 | Other | — | （ヰ） | `［＃（ヰ）］` | corpus | OBSERVED |
+| O2037 | Other | — | （ヲイタダキテ） | `［＃（ヲイタダキテ）］` | corpus | OBSERVED |
+| O2038 | Other | — | （ヲカ） | `［＃（ヲカ）］` | corpus | OBSERVED |
+| O2039 | Other | — | （ヲシテ） | `［＃（ヲシテ）］` | corpus | OBSERVED |
+| O2040 | Other | — | （ヲヤ） | `［＃（ヲヤ）］` | corpus | OBSERVED |
+| O2041 | Other | — | （ンカ） | `［＃（ンカ）］` | corpus | OBSERVED |
+| O2042 | Other | — | （ンコトヲ） | `［＃（ンコトヲ）］` | corpus | OBSERVED |
+| O2043 | Other | — | （ンズル） | `［＃（ンズル）］` | corpus | OBSERVED |
+| O2044 | Other | — | （ンズ） | `［＃（ンズ）］` | corpus | OBSERVED |
+| O2045 | Other | — | （ンデ） | `［＃（ンデ）］` | corpus | OBSERVED |
+| O2046 | Other | — | （ントハ） | `［＃（ントハ）］` | corpus | OBSERVED |
+| O2047 | Other | — | （ント） | `［＃（ント）］` | corpus | OBSERVED |
+| O2048 | Other | — | （ンド） | `［＃（ンド）］` | corpus | OBSERVED |
+| O2049 | Other | — | （ンナル） | `［＃（ンナル）］` | corpus | OBSERVED |
+| O2050 | Other | — | （ンヌ） | `［＃（ンヌ）］` | corpus | OBSERVED |
+| O2051 | Other | — | （ンヤ） | `［＃（ンヤ）］` | corpus | OBSERVED |
+| O2052 | Other | — | （ン） | `［＃（ン）］` | corpus | OBSERVED |
+| O2053 | Other | — | （一音） | `［＃（一音）］` | corpus | OBSERVED |
+| O2054 | Other | — | （一）は縦中横 | `［＃（一）は縦中横］` | corpus | OBSERVED |
+| O2055 | Other | — | （一）は自注 | `［＃（一）は自注］` | corpus | OBSERVED |
+| O2056 | Other | — | （七）は縦中横 | `［＃（七）は縦中横］` | corpus | OBSERVED |
+| O2057 | Other | — | （三）は縦中横 | `［＃（三）は縦中横］` | corpus | OBSERVED |
+| O2058 | Other | — | （三）は自注 | `［＃（三）は自注］` | corpus | OBSERVED |
+| O2059 | Other | — | （与） | `［＃（与）］` | corpus | OBSERVED |
+| O2060 | Other | — | （世） | `［＃（世）］` | corpus | OBSERVED |
+| O2061 | Other | — | （个） | `［＃（个）］` | corpus | OBSERVED |
+| O2062 | Other | — | （乃至） | `［＃（乃至）］` | corpus | OBSERVED |
+| O2063 | Other | — | （乃） | `［＃（乃）］` | corpus | OBSERVED |
+| O2064 | Other | — | （久） | `［＃（久）］` | corpus | OBSERVED |
+| O2065 | Other | — | （之） | `［＃（之）］` | corpus | OBSERVED |
+| O2066 | Other | — | （乎） | `［＃（乎）］` | corpus | OBSERVED |
+| O2067 | Other | — | （云々） | `［＃（云々）］` | corpus | OBSERVED |
+| O2068 | Other | — | （云云） | `［＃（云云）］` | corpus | OBSERVED |
+| O2069 | Other | — | （五）は自注 | `［＃（五）は自注］` | corpus | OBSERVED |
+| O2070 | Other | — | （仁） | `［＃（仁）］` | corpus | OBSERVED |
+| O2071 | Other | — | （伊） | `［＃（伊）］` | corpus | OBSERVED |
+| O2072 | Other | — | （伎） | `［＃（伎）］` | corpus | OBSERVED |
+| O2073 | Other | — | （保利《ホリ》） | `［＃（保利《ホリ》）］` | corpus | OBSERVED |
+| O2074 | Other | — | （倍利） | `［＃（倍利）］` | corpus | OBSERVED |
+| O2075 | Other | — | （備） | `［＃（備）］` | corpus | OBSERVED |
+| O2076 | Other | — | （六）は自注 | `［＃（六）は自注］` | corpus | OBSERVED |
+| O2077 | Other | — | （十一）は縦中横、「○○」は縦組み | `［＃（十一）は縦中横、「○○」は縦組み］` | corpus | OBSERVED |
+| O2078 | Other | — | （可在月） | `［＃（可在月）］` | corpus | OBSERVED |
+| O2079 | Other | — | （和名之比） | `［＃（和名之比）］` | corpus | OBSERVED |
+| O2080 | Other | — | （四）は縦中横 | `［＃（四）は縦中横］` | corpus | OBSERVED |
+| O2081 | Other | — | （四）は自注 | `［＃（四）は自注］` | corpus | OBSERVED |
+| O2082 | Other | — | （多利） | `［＃（多利）］` | corpus | OBSERVED |
+| O2083 | Other | — | （天支） | `［＃（天支）］` | corpus | OBSERVED |
+| O2084 | Other | — | （天） | `［＃（天）］` | corpus | OBSERVED |
+| O2085 | Other | — | （夫） | `［＃（夫）］` | corpus | OBSERVED |
+| O2086 | Other | — | （子） | `［＃（子）］` | corpus | OBSERVED |
+| O2087 | Other | — | （尓） | `［＃（尓）］` | corpus | OBSERVED |
+| O2088 | Other | — | （布） | `［＃（布）］` | corpus | OBSERVED |
+| O2089 | Other | — | （并） | `［＃（并）］` | corpus | OBSERVED |
+| O2090 | Other | — | （引） | `［＃（引）］` | corpus | OBSERVED |
+| O2091 | Other | — | （弥） | `［＃（弥）］` | corpus | OBSERVED |
+| O2092 | Other | — | （志） | `［＃（志）］` | corpus | OBSERVED |
+| O2093 | Other | — | （我云々） | `［＃（我云々）］` | corpus | OBSERVED |
+| O2094 | Other | — | （於） | `［＃（於）］` | corpus | OBSERVED |
+| O2095 | Other | — | （止（波）） | `［＃（止（波））］` | corpus | OBSERVED |
+| O2096 | Other | — | （止） | `［＃（止）］` | corpus | OBSERVED |
+| O2097 | Other | — | （武） | `［＃（武）］` | corpus | OBSERVED |
+| O2098 | Other | — | （母） | `［＃（母）］` | corpus | OBSERVED |
+| O2099 | Other | — | （比） | `［＃（比）］` | corpus | OBSERVED |
+| O2100 | Other | — | （江） | `［＃（江）］` | corpus | OBSERVED |
+| O2101 | Other | — | （波） | `［＃（波）］` | corpus | OBSERVED |
+| O2102 | Other | — | （流） | `［＃（流）］` | corpus | OBSERVED |
+| O2103 | Other | — | （爾） | `［＃（爾）］` | corpus | OBSERVED |
+| O2104 | Other | — | （牟） | `［＃（牟）］` | corpus | OBSERVED |
+| O2105 | Other | — | （理） | `［＃（理）］` | corpus | OBSERVED |
+| O2106 | Other | — | （留） | `［＃（留）］` | corpus | OBSERVED |
+| O2107 | Other | — | （登） | `［＃（登）］` | corpus | OBSERVED |
+| O2108 | Other | — | （礼） | `［＃（礼）］` | corpus | OBSERVED |
+| O2109 | Other | — | （米） | `［＃（米）］` | corpus | OBSERVED |
+| O2110 | Other | — | （約） | `［＃（約）］` | corpus | OBSERVED |
+| O2111 | Other | — | （美） | `［＃（美）］` | corpus | OBSERVED |
+| O2112 | Other | — | （而） | `［＃（而）］` | corpus | OBSERVED |
+| O2113 | Other | — | （能） | `［＃（能）］` | corpus | OBSERVED |
+| O2114 | Other | — | （自利） | `［＃（自利）］` | corpus | OBSERVED |
+| O2115 | Other | — | （自） | `［＃（自）］` | corpus | OBSERVED |
+| O2116 | Other | — | （遠） | `［＃（遠）］` | corpus | OBSERVED |
+| O2117 | Other | — | （里） | `［＃（里）］` | corpus | OBSERVED |
+| O2118 | Other | — | （閇） | `［＃（閇）］` | corpus | OBSERVED |
+| O2119 | Other | — | （須） | `［＃（須）］` | corpus | OBSERVED |
+| O2120 | Other | — | （Ｆ・Ｏ）は下揃え | `［＃（Ｆ・Ｏ）は下揃え］` | corpus | OBSERVED |
+| O2121 | Other | — | ＝の右側「○○」は底本では「○○」 | `［＃＝の右側「○○」は底本では「○○」］` | corpus | OBSERVED |
+| O2122 | Other | — | ＪＲとなった国電の旧称 | `［＃ＪＲとなった国電の旧称］` | corpus | OBSERVED |
+| O2123 | Other | — | Ｓ＿ａの数式（figN_N.png、横N×縦N）入る | `［＃Ｓ＿ａの数式（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O2124 | Other | — | Ｓ＿ｗの数式（figN_N.png、横N×縦N）入る | `［＃Ｓ＿ｗの数式（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O2125 | Other | — | Ｓ＿ｗ－Ｓ＿ａの数式（figN_N.png、横N×縦N）入る | `［＃Ｓ＿ｗ－Ｓ＿ａの数式（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O2126 | Other | — | Ｓ＿ｗ／Ｓ＿ａの数式（figN_N.png、横N×縦N）入る | `［＃Ｓ＿ｗ／Ｓ＿ａの数式（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O2127 | Other | — | Ｔ＿Nの数式（figN_N.png、横N×縦N）入る | `［＃Ｔ＿Nの数式（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O2128 | Other | — | Ｔ＿ａの数式（figN_N.png、横N×縦N）入る | `［＃Ｔ＿ａの数式（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O2129 | Other | — | Ｔ＿ｒの数式（figN_N.png、横N×縦N）入る | `［＃Ｔ＿ｒの数式（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O2130 | Other | — | Ｔ＿ｗの数式（figN_N.png、横N×縦N）入る | `［＃Ｔ＿ｗの数式（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O2131 | Other | — | ［愛」に「○○」の注記 | `［＃［愛」に「○○」の注記］` | corpus | OBSERVED |
+| O2132 | Other | — | ［＃「○○」」は底本では「○○ | `［＃「○○」」は底本では「○○` | corpus | OBSERVED |
+| O2133 | Other | — | ［＃「○○」に「○○ | `［＃「○○」に「○○` | corpus | OBSERVED |
+| O2134 | Other | — | ［＃「○○」の正字、「○○ | `［＃「○○」の正字、「○○` | corpus | OBSERVED |
+| O2135 | Other | — | ［＃「○○」は底本では「○○ | `［＃「○○」は底本では「○○` | corpus | OBSERVED |
+| O2136 | Other | — | ［＃罫内の「○○」は「○○ | `［＃罫内の「○○」は「○○` | corpus | OBSERVED |
+| O2137 | Other | — | ［＃著者所蔵の「○○」の欄外には、「○○ | `［＃著者所蔵の「○○」の欄外には、「○○` | corpus | OBSERVED |
+| O2138 | Other | — | ｓの数式（figN_N.png、横N×縦N）入る | `［＃ｓの数式（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O2139 | Other | — | ｓ＝Ｓ＿ｗ／Ｓ＿ａの数式（figN_N.png、横N×縦N）入る | `［＃ｓ＝Ｓ＿ｗ／Ｓ＿ａの数式（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O2140 | Other | — | ｖ＿ｒの数式（figN_N.png、横N×縦N）入る | `［＃ｖ＿ｒの数式（figN_N.png、横N×縦N）入る］` | corpus | OBSERVED |
+| O2141 | Other | ルビとルビのように付く文字 | 「○○」の左に「○○」のルビ | `［＃「○○」の左に「○○」のルビ］` | annotation/etc.html; annotation/kunten.html; corpus | DOCUMENTED-AND-OBSERVED |
+| O2142 | Other | ルビとルビのように付く文字 | 「○○」の注記付き終わり | `［＃「○○」の注記付き終わり］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| O2143 | Other | ルビとルビのように付く文字 | 左に「○○」のルビ付き終わり | `［＃左に「○○」のルビ付き終わり］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| O2144 | Other | ルビとルビのように付く文字 | 左に「○○」の注記付き終わり | `［＃左に「○○」の注記付き終わり］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| O2145 | Other | ルビとルビのように付く文字 | 左にルビ付き | `［＃左にルビ付き］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| O2146 | Other | ルビとルビのように付く文字 | 左に注記付き | `［＃左に注記付き］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| O2147 | Other | ルビとルビのように付く文字 | 注記付き | `［＃注記付き］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| O2148 | Other | ルビとルビのように付く文字 | ［＃「○○ | `［＃「○○` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| O2149 | Other | ルビとルビのように付く文字 | ［＃左に「○○ | `［＃左に「○○` | annotation/etc.html | DOCUMENTED |
+| O2150 | Other | 上付き小文字、下付き小文字（横組み） | 「○○」は上付き小文字 | `［＃「○○」は上付き小文字］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| O2151 | Other | 上付き小文字、下付き小文字（横組み） | 「○○」は下付き小文字 | `［＃「○○」は下付き小文字］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| O2152 | Other | 上付き小文字、下付き小文字（横組み） | 上付き小文字 | `［＃上付き小文字］` | annotation/etc.html | DOCUMENTED |
+| O2153 | Other | 上付き小文字、下付き小文字（横組み） | 上付き小文字終わり | `［＃上付き小文字終わり］` | annotation/etc.html | DOCUMENTED |
+| O2154 | Other | 割り注 | 改行 | `［＃改行］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| O2155 | Other | 文字サイズ | N段階大きな文字 | `［＃N段階大きな文字］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| O2156 | Other | 文字サイズ | N段階小さな文字 | `［＃N段階小さな文字］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| O2157 | Other | 文字サイズ | 「○○」はN段階大きな文字 | `［＃「○○」はN段階大きな文字］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| O2158 | Other | 文字サイズ | 「○○」はN段階小さな文字 | `［＃「○○」はN段階小さな文字］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| O2159 | Other | 文字サイズ | 「○○」は●段階大きな文字 | `［＃「○○」は●段階大きな文字］` | annotation/etc.html | DOCUMENTED |
+| O2160 | Other | 文字サイズ | 「○○」は●段階小さな文字 | `［＃「○○」は●段階小さな文字］` | annotation/etc.html | DOCUMENTED |
+| O2161 | Other | 文字サイズ | ここからN段階大きな文字 | `［＃ここからN段階大きな文字］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| O2162 | Other | 文字サイズ | ここからN段階小さな文字 | `［＃ここからN段階小さな文字］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| O2163 | Other | 文字サイズ | ここから○段階大きな文字 | `［＃ここから○段階大きな文字］` | annotation/etc.html | DOCUMENTED |
+| O2164 | Other | 文字サイズ | ここから○段階小さな文字 | `［＃ここから○段階小さな文字］` | annotation/etc.html | DOCUMENTED |
+| O2165 | Other | 文字サイズ | ここで大きな文字終わり | `［＃ここで大きな文字終わり］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| O2166 | Other | 文字サイズ | ここで小さな文字終わり | `［＃ここで小さな文字終わり］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| O2167 | Other | 文字サイズ | 大きな文字終わり | `［＃大きな文字終わり］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| O2168 | Other | 文字サイズ | 小さな文字終わり | `［＃小さな文字終わり］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| O2169 | Other | 本文終わり | 本文終わり | `［＃本文終わり］` | annotation/extra.html; corpus | DOCUMENTED-AND-OBSERVED |
+| O2170 | Other | 縦組み中で横に並んだ文字 | 「○○」は縦中横 | `［＃「○○」は縦中横］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| O2171 | Other | 縦組み中で横に並んだ文字 | ローマ数字N、N-N-N | `［＃ローマ数字N、N-N-N］` | annotation/etc.html; annotation/heading.html; corpus | DOCUMENTED-AND-OBSERVED |
+| O2172 | Other | 縦組み中で横に並んだ文字 | 縦中横 | `［＃縦中横］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| O2173 | Other | 縦組み中で横に並んだ文字 | 縦中横終わり | `［＃縦中横終わり］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| O2174 | Other | 行右小書き、行左小書き文字（縦組み） | 「○○」は行左小書き | `［＃「○○」は行左小書き］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| O2175 | Other | 行右小書き、行左小書き文字（縦組み） | 丸N、N-N-N | `［＃丸N、N-N-N］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| O2176 | Other | 訂正と「ママ」 | 「○○」に「○○」の注記 | `［＃「○○」に「○○」の注記］` | annotation/etc.html; annotation/graphics.html; corpus | DOCUMENTED-AND-OBSERVED |
+| O2177 | Other | 訂正と「ママ」 | 「○○」はママ | `［＃「○○」はママ］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| O2178 | Other | 訂正と「ママ」 | 「○○」は底本では「○○」 | `［＃「○○」は底本では「○○」］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| O2179 | Other | 訂正と「ママ」 | ルビの「○○」はママ | `［＃ルビの「○○」はママ］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| O2180 | Other | 訂正と「ママ」 | ルビの「○○」は底本では「○○」 | `［＃ルビの「○○」は底本では「○○」］` | annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+| O2181 | Other | 青空文庫ファイルで使えなかった文字 | 井げた、N-N-N | `［＃井げた、N-N-N］` | annotation/extra.html | DOCUMENTED |
+| O2182 | Other | 青空文庫ファイルで使えなかった文字 | 始めきっこう（亀甲）括弧、N-N-N | `［＃始めきっこう（亀甲）括弧、N-N-N］` | annotation/extra.html; corpus | DOCUMENTED-AND-OBSERVED |
+| O2183 | Other | 青空文庫ファイルで使えなかった文字 | 始め二重山括弧、N-N-N | `［＃始め二重山括弧、N-N-N］` | annotation/extra.html; corpus | DOCUMENTED-AND-OBSERVED |
+| O2184 | Other | 青空文庫ファイルで使えなかった文字 | 始め角括弧、N-N-N | `［＃始め角括弧、N-N-N］` | annotation/extra.html; corpus | DOCUMENTED-AND-OBSERVED |
+| O2185 | Other | 青空文庫ファイルで使えなかった文字 | 米印、N-N-N | `［＃米印、N-N-N］` | annotation/extra.html | DOCUMENTED |
+| O2186 | Other | 青空文庫ファイルで使えなかった文字 | 終わりきっこう（亀甲）括弧、N-N-N | `［＃終わりきっこう（亀甲）括弧、N-N-N］` | annotation/extra.html; corpus | DOCUMENTED-AND-OBSERVED |
+| O2187 | Other | 青空文庫ファイルで使えなかった文字 | 終わり二重山括弧、N-N-N | `［＃終わり二重山括弧、N-N-N］` | annotation/extra.html; corpus | DOCUMENTED-AND-OBSERVED |
+| O2188 | Other | 青空文庫ファイルで使えなかった文字 | 終わり角括弧、N-N-N | `［＃終わり角括弧、N-N-N］` | annotation/extra.html; corpus | DOCUMENTED-AND-OBSERVED |
+| O2189 | Other | 青空文庫ファイルで使えなかった文字 | 縦線、N-N-N | `［＃縦線、N-N-N］` | annotation/extra.html | DOCUMENTED |
+### Duplication / 重複
+
+| ID | Family | Sub-family | Feature | Example | Sources | Status |
+|----|--------|------------|---------|---------|---------|--------|
+| Dp1 | Duplication | — | 「○○」は底本では「○○」と「○○」が重複 | `［＃「○○」は底本では「○○」と「○○」が重複］` | corpus | OBSERVED |
+| Dp2 | Duplication | — | 「○○」は底本では重複 | `［＃「○○」は底本では重複］` | corpus | OBSERVED |
+| Dp3 | Duplication | — | 底本では「○○」が重複 | `［＃底本では「○○」が重複］` | corpus | OBSERVED |
+| Dp4 | Duplication | — | 底本では「○○」は重複 | `［＃底本では「○○」は重複］` | corpus | OBSERVED |
+| Dp5 | Duplication | ルビや強調の注記などが重複してかかる場合 | 「○○」の左に「○○」の注記 | `［＃「○○」の左に「○○」の注記］` | annotation/duplication.html; annotation/etc.html; corpus | DOCUMENTED-AND-OBSERVED |
+### Deprecation / 変更点
+
+| ID | Family | Sub-family | Feature | Example | Sources | Status |
+|----|--------|------------|---------|---------|---------|--------|
+| Hc1 | Deprecation | テキスト版注記の変更点 | …終わり | `［＃…終わり］` | annotation/henkoten.html | DEPRECATED |
+| Hc2 | Deprecation | テキスト版注記の変更点 | 「○○」に（は）… | `［＃「○○」に（は）…］` | annotation/henkoten.html | DEPRECATED |
+| Hc3 | Deprecation | テキスト版注記の変更点 | ここから… | `［＃ここから…］` | annotation/henkoten.html | DEPRECATED |
+| Hc4 | Deprecation | テキスト版注記の変更点 | ここから○字下げ、●字詰め、罫囲み | `［＃ここから○字下げ、●字詰め、罫囲み］` | annotation/henkoten.html | DEPRECATED |
+| Hc5 | Deprecation | テキスト版注記の変更点 | ここで…終わり | `［＃ここで…終わり］` | annotation/henkoten.html | DEPRECATED |

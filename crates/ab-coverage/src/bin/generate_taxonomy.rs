@@ -1,34 +1,40 @@
 //! Taxonomy generator for Aozora Bunko parser features.
 //!
-//! Reads canonical sources (`chuki_tag.txt` and `annotation/*.html`) at runtime,
-//! produces a generated feature-taxonomy table, and verifies it against the
+//! Reads authoritative sources at runtime:
+//!   - `annotation/*.html` from aozora.gr.jp (the spec)
+//!   - real corpus `cards/*/files/*.zip` (zipped SHIFT_JIS text files)
+//!
+//! Produces a generated feature-taxonomy table and verifies it against the
 //! hand-written §0 of `PARSER_REPORT.md`.
+//!
+//! Non-authoritative `chuki_tag.txt` is deliberately not read.
 
 use anyhow::{Context, Result};
 use clap::Parser;
+use encoding_rs::SHIFT_JIS;
 use regex::Regex;
-use std::collections::{HashMap, HashSet};
-use std::fs::{self, File};
-use std::io::{BufRead, BufReader};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
+use std::fs;
+use std::io::Read;
 use std::path::{Path, PathBuf};
+use walkdir::WalkDir;
+use zip::ZipArchive;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-enum Verdict {
-    Verified,
-    ChukiOnly,
-    ManualOnly,
-    Unverified,
-    NoMarker,
+enum Status {
+    Documented,
+    Observed,
+    DocumentedAndObserved,
+    Deprecated,
 }
 
-impl std::fmt::Display for Verdict {
+impl std::fmt::Display for Status {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s = match self {
-            Verdict::Verified => "VERIFIED",
-            Verdict::ChukiOnly => "CHUKI-ONLY",
-            Verdict::ManualOnly => "MANUAL-ONLY",
-            Verdict::Unverified => "UNVERIFIED",
-            Verdict::NoMarker => "NO-MARKER",
+            Status::Documented => "DOCUMENTED",
+            Status::Observed => "OBSERVED",
+            Status::DocumentedAndObserved => "DOCUMENTED-AND-OBSERVED",
+            Status::Deprecated => "DEPRECATED",
         };
         write!(f, "{}", s)
     }
@@ -38,18 +44,23 @@ impl std::fmt::Display for Verdict {
 struct Feature {
     id: String,
     family: String,
+    sub_family: String,
     name: String,
-    marker_examples: Vec<String>,
-    sources: Vec<String>,
-    verdict: Verdict,
+    marker_example: String,
+    manual_pages: BTreeSet<String>,
+    observed: bool,
+    status: Status,
 }
 
+#[derive(Debug, Clone)]
 struct FeatureBuilder {
     family: String,
+    sub_family: String,
     name: String,
-    marker_examples: Vec<String>,
-    chuki_lines: Vec<usize>,
-    manual_pages: Vec<String>,
+    marker_example: String,
+    manual_pages: BTreeSet<String>,
+    observed: bool,
+    is_deprecated: bool,
 }
 
 fn family_rank(family: &str) -> usize {
@@ -61,7 +72,9 @@ fn family_rank(family: &str) -> usize {
         "Emphasis" => 4,
         "Graphics" => 5,
         "Other" => 6,
-        _ => 7,
+        "Duplication" => 7,
+        "Deprecation" => 8,
+        _ => 9,
     }
 }
 
@@ -74,6 +87,8 @@ fn family_prefix(family: &str) -> &'static str {
         "Emphasis" => "M",
         "Graphics" => "G",
         "Other" => "O",
+        "Duplication" => "Dp",
+        "Deprecation" => "Hc",
         _ => "X",
     }
 }
@@ -87,6 +102,8 @@ fn section_title(family: &str) -> &str {
         "Emphasis" => "Emphasis / 強調",
         "Graphics" => "Graphics / 画像",
         "Other" => "Other / その他",
+        "Duplication" => "Duplication / 重複",
+        "Deprecation" => "Deprecation / 変更点",
         _ => family,
     }
 }
@@ -130,70 +147,7 @@ fn normalize(s: &str) -> String {
     out
 }
 
-fn extract_header_text(line: &str) -> Option<&str> {
-    let start = line.find("####")?;
-    let end = line.rfind("####")?;
-    if end <= start + 3 {
-        return None;
-    }
-    let text = line[start + 4..end].trim();
-    if text.is_empty() {
-        return None;
-    }
-    Some(text)
-}
-
-fn family_from_header(text: &str) -> String {
-    let t = text.trim();
-    if t.contains("改ページ") || t.contains("左右中央") || t.contains("字下げ") {
-        "Layout".to_string()
-    } else if t.contains("見出し") {
-        "Headings".to_string()
-    } else if t.contains("外字") {
-        "Gaiji".to_string()
-    } else if t.contains("訓点") || t.contains("返り点") {
-        "Kunten".to_string()
-    } else if t.contains("強調") {
-        "Emphasis".to_string()
-    } else if t.contains("画像") {
-        "Graphics".to_string()
-    } else if t.contains("その他") || t.contains("番外") {
-        "Other".to_string()
-    } else {
-        "Other".to_string()
-    }
-}
-
-/// Parse `chuki_tag.txt`.
-///
-/// Returns `(family, marker_name, line_number)` for each marker row, tracking
-/// `#### ... ####` category headers as the current family.
-fn parse_chuki_tag(path: impl AsRef<Path>) -> Result<Vec<(String, String, usize)>> {
-    let file = File::open(path).context("opening chuki_tag.txt")?;
-    let reader = BufReader::new(file);
-    let mut family = "Other".to_string();
-    let mut out = Vec::new();
-    for (i, line) in reader.lines().enumerate() {
-        let line = line.context("reading chuki_tag.txt")?;
-        if line.trim().is_empty() {
-            continue;
-        }
-        if let Some(header_text) = extract_header_text(&line) {
-            family = family_from_header(header_text);
-            continue;
-        }
-        if line.starts_with('#') {
-            continue;
-        }
-        let name = line.split('\t').next().unwrap_or("").trim().to_string();
-        if name.is_empty() {
-            continue;
-        }
-        out.push((family.clone(), name, i + 1));
-    }
-    Ok(out)
-}
-
+/// Map an annotation page filename stem to its top-level family.
 fn page_family(page: &str) -> String {
     match page {
         "layout_1" | "layout_2" | "layout_3" => "Layout",
@@ -202,21 +156,37 @@ fn page_family(page: &str) -> String {
         "kunten" => "Kunten",
         "emphasis" => "Emphasis",
         "graphics" => "Graphics",
+        "duplication" => "Duplication",
+        "henkoten" => "Deprecation",
+        "etc" | "extra" | "index" => "Other",
         _ => "Other",
     }
     .to_string()
 }
 
+/// Infer a marker's family from its content.
 fn family_from_marker(marker: &str) -> String {
-    // Prefer the semantics of the marker itself, falling back to the page family.
     if marker.contains("見出し") {
         "Headings".to_string()
-    } else if marker.contains("外字") || marker.contains("二の字点") {
+    } else if marker.contains("外字")
+        || marker.contains("二の字点")
+        || marker.contains("U+")
+        || marker.contains("JIS")
+        || marker.contains("水準")
+        || marker.contains("に代えて")
+    {
         "Gaiji".to_string()
     } else if marker.contains("訓点")
         || marker.contains("返り点")
         || marker.contains("送り仮名")
         || marker.contains("再読")
+        || marker.contains("（ツ）")
+        || marker.contains("（フ）")
+        || marker.contains("（二）")
+        || marker.contains("（テ）")
+        || marker.contains("（レ）")
+        || marker.contains("（ヘ）")
+        || marker.contains("（カ）")
     {
         "Kunten".to_string()
     } else if marker.contains("傍点")
@@ -228,38 +198,82 @@ fn family_from_marker(marker: &str) -> String {
         || marker.contains("太字")
         || marker.contains("斜体")
         || marker.contains("ゴシック")
+        || marker.contains("イタリック")
     {
         "Emphasis".to_string()
-    } else if marker.contains("図") || marker.contains("キャプション") || marker.contains("挿絵")
+    } else if marker.contains("図")
+        || marker.contains("キャプション")
+        || marker.contains("挿絵")
+        || marker.contains("写真")
     {
         "Graphics".to_string()
     } else if marker.contains("字下げ")
         || marker.contains("改ページ")
+        || marker.contains("改頁")
         || marker.contains("改丁")
         || marker.contains("改段")
         || marker.contains("改見開き")
         || marker.contains("左右中央")
         || marker.contains("地付")
+        || marker.contains("地寄せ")
         || marker.contains("字上げ")
         || marker.contains("字詰め")
         || marker.contains("段組")
         || marker.contains("中央")
         || marker.contains("横組")
         || marker.contains("横書")
+        || marker.contains("同行")
+        || marker.contains("窓見出し")
+        || marker.contains("割り注")
+        || marker.contains("行右小書き")
+        || marker.contains("罫囲み")
+        || marker.contains("文字サイズ")
     {
         "Layout".to_string()
+    } else if marker.contains("重複") || marker.contains("重ねて") {
+        "Duplication".to_string()
     } else {
         "Other".to_string()
     }
 }
 
+/// Resolve the family for a marker encountered on a given annotation page.
+///
+/// If a forced family is supplied (e.g. henkoten is always Deprecation), use
+/// it; otherwise prefer content-based inference and fall back to the page
+/// family.
+fn resolve_family(marker: &str, page: &str, forced: Option<&str>) -> String {
+    if let Some(f) = forced {
+        return f.to_string();
+    }
+    let inferred = family_from_marker(marker);
+    if inferred != "Other" {
+        inferred
+    } else {
+        page_family(page)
+    }
+}
+
+/// Strip simple HTML tags from a snippet.
+fn strip_tags(html: &str) -> String {
+    let tag_re = Regex::new(r"<[^>]*>").expect("constant regex");
+    tag_re.replace_all(html, "").trim().to_string()
+}
+
 /// Parse the annotation/`*.html` directory.
 ///
-/// Returns a map from normalized marker to the list of page filenames where it
-/// appears. HTML tags are stripped before marker extraction.
-fn parse_manual_annotation(dir: impl AsRef<Path>) -> Result<HashMap<String, Vec<String>>> {
-    let marker_re = Regex::new(r"［＃([^］]*)］").expect("constant regex");
-    let html_re = Regex::new(r"<[^>]*>").expect("constant regex");
+/// Returns a map from normalized marker to a builder. HTML tags are stripped
+/// for marker extraction, but headings are parsed first so each marker carries
+/// the nearest preceding `<h2>`/`<h3>` as its sub-family. `index.html` is
+/// skipped; `henkoten.html` is processed last and only contributes a
+/// deprecation flag/source page without overriding a marker's family.
+fn parse_manual_annotation(dir: impl AsRef<Path>) -> Result<BTreeMap<String, FeatureBuilder>> {
+    // Match h1/h2/h3 headings explicitly (no backreferences; the regex crate
+    // does not support them) and ［＃...］ markers, in document order.
+    let heading_marker_re = Regex::new(
+        r"(?is)<h1(?:\s[^>]*)?>(.*?)</h1>|<h2(?:\s[^>]*)?>(.*?)</h2>|<h3(?:\s[^>]*)?>(.*?)</h3>|［＃([^］]*)］",
+    )
+    .expect("constant regex");
 
     let mut entries: Vec<_> = fs::read_dir(dir.as_ref())
         .context("reading annotation directory")?
@@ -267,8 +281,10 @@ fn parse_manual_annotation(dir: impl AsRef<Path>) -> Result<HashMap<String, Vec<
         .collect();
     entries.sort_by_key(|e| e.file_name());
 
-    let mut map: HashMap<String, Vec<String>> = HashMap::new();
-    for entry in entries {
+    let mut builders: BTreeMap<String, FeatureBuilder> = BTreeMap::new();
+
+    // First pass: every page except index and henkoten.
+    for entry in &entries {
         let path = entry.path();
         if path.extension().and_then(|s| s.to_str()) != Some("html") {
             continue;
@@ -278,183 +294,273 @@ fn parse_manual_annotation(dir: impl AsRef<Path>) -> Result<HashMap<String, Vec<
             .and_then(|s| s.to_str())
             .unwrap_or("unknown")
             .to_string();
-        let raw =
-            fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
-        let text = html_re.replace_all(&raw, "");
-        for cap in marker_re.captures_iter(&text) {
-            let inner = &cap[1];
-            let marker = format!("［＃{}］", inner);
+        if page == "index" || page == "henkoten" {
+            continue;
+        }
+        process_annotation_page(&path, &page, &heading_marker_re, &mut builders, false, None)?;
+    }
+
+    // Second pass: henkoten contributes only deprecation status/source.
+    for entry in &entries {
+        let path = entry.path();
+        if path.extension().and_then(|s| s.to_str()) != Some("html") {
+            continue;
+        }
+        let page = path
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("unknown")
+            .to_string();
+        if page != "henkoten" {
+            continue;
+        }
+        process_annotation_page(
+            &path,
+            &page,
+            &heading_marker_re,
+            &mut builders,
+            true,
+            Some("Deprecation"),
+        )?;
+    }
+
+    Ok(builders)
+}
+
+fn process_annotation_page(
+    path: &Path,
+    page: &str,
+    re: &Regex,
+    builders: &mut BTreeMap<String, FeatureBuilder>,
+    is_deprecated: bool,
+    forced_family: Option<&str>,
+) -> Result<()> {
+    let raw = fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
+    let source_page = format!("annotation/{}.html", page);
+
+    let mut current_sub = String::new();
+    for cap in re.captures_iter(&raw) {
+        // Heading groups 1/2/3 correspond to h1/h2/h3; marker is group 4.
+        if cap.get(1).is_some() || cap.get(2).is_some() || cap.get(3).is_some() {
+            // Track h2/h3 as sub-family scopes; h1 is the page title.
+            let level = if cap.get(1).is_some() {
+                1
+            } else if cap.get(2).is_some() {
+                2
+            } else {
+                3
+            };
+            if level == 2 || level == 3 {
+                let text = strip_tags(cap.get(level).expect("matched heading group").as_str());
+                if !text.is_empty() {
+                    current_sub = text.split_whitespace().collect::<Vec<_>>().join(" ");
+                }
+            }
+        } else if let Some(inner) = cap.get(4) {
+            let marker = format!("［＃{}］", inner.as_str());
             let norm = normalize(&marker);
             if norm.is_empty() {
                 continue;
             }
-            let pages = map.entry(norm).or_default();
-            if !pages.contains(&page) {
-                pages.push(page.clone());
-            }
-        }
-    }
-    Ok(map)
-}
-
-/// Build features from the union of chuki and manual markers.
-fn build_features(
-    chuki: Vec<(String, String, usize)>,
-    manual: HashMap<String, Vec<String>>,
-) -> Vec<Feature> {
-    let mut by_key: HashMap<String, FeatureBuilder> = HashMap::new();
-    let mut insertion_order: Vec<String> = Vec::new();
-
-    // Chuki entries first, preserving file order.
-    for (family, name, lineno) in chuki {
-        let marker = format!("［＃{}］", name);
-        let key = normalize(&marker);
-        if key.is_empty() {
-            continue;
-        }
-        by_key.entry(key.clone()).or_insert_with(|| {
-            insertion_order.push(key.clone());
-            FeatureBuilder {
-                family: family.clone(),
-                name: name.clone(),
-                marker_examples: vec![key.clone()],
-                chuki_lines: Vec::new(),
-                manual_pages: Vec::new(),
-            }
-        });
-        let fb = by_key.get_mut(&key).unwrap();
-        fb.marker_examples[0] = key.clone();
-        fb.chuki_lines.push(lineno);
-        // If family was missing (shouldn't happen for chuki), update.
-        if fb.family != family {
-            fb.family = family;
-        }
-    }
-
-    // Manual entries added after all chuki entries.
-    let mut manual_keys: Vec<String> = manual.keys().cloned().collect();
-    manual_keys.sort();
-    for key in manual_keys {
-        let pages = manual.get(&key).cloned().unwrap_or_default();
-        by_key.entry(key.clone()).or_insert_with(|| {
-            insertion_order.push(key.clone());
-            let family = {
-                let inferred = family_from_marker(&key);
-                if inferred != "Other" {
-                    inferred
-                } else {
-                    page_family(pages.first().map(String::as_str).unwrap_or("other"))
-                }
+            let family = resolve_family(&norm, page, forced_family);
+            let sub_family = if current_sub.is_empty() {
+                "—".to_string()
+            } else {
+                current_sub.clone()
             };
-            let inner = key
+            let name = norm
                 .strip_prefix('［')
                 .and_then(|s| s.strip_suffix('］'))
-                .map(|s| s.strip_prefix('＃').unwrap_or(s))
-                .unwrap_or(&key);
-            FeatureBuilder {
-                family,
-                name: inner.to_string(),
-                marker_examples: vec![key.clone()],
-                chuki_lines: Vec::new(),
-                manual_pages: Vec::new(),
-            }
-        });
-        let fb = by_key.get_mut(&key).unwrap();
-        for page in pages {
-            if !fb.manual_pages.contains(&page) {
-                fb.manual_pages.push(page);
+                .and_then(|s| s.strip_prefix('＃'))
+                .unwrap_or(&norm)
+                .to_string();
+
+            let builder = builders
+                .entry(norm.clone())
+                .or_insert_with(|| FeatureBuilder {
+                    family,
+                    sub_family,
+                    name,
+                    marker_example: norm.clone(),
+                    manual_pages: BTreeSet::new(),
+                    observed: false,
+                    is_deprecated: false,
+                });
+            builder.manual_pages.insert(source_page.clone());
+            if is_deprecated {
+                builder.is_deprecated = true;
             }
         }
     }
+    Ok(())
+}
 
-    let mut builders: Vec<FeatureBuilder> = insertion_order
+/// Walk the real corpus and collect normalized marker forms observed in text.
+///
+/// The corpus is expected as `*.zip` files, each containing one or more
+/// SHIFT_JIS-encoded `.txt` members. If `limit` is non-zero, processing stops
+/// after that many zip files (useful for quick tests; full runs use 0).
+fn parse_corpus(dir: impl AsRef<Path>, limit: usize) -> Result<BTreeSet<String>> {
+    let marker_re = Regex::new(r"［＃([^］]*)］").expect("constant regex");
+    let mut observed: BTreeSet<String> = BTreeSet::new();
+    let mut files_read = 0usize;
+
+    for entry in WalkDir::new(dir.as_ref())
+        .sort_by_file_name()
         .into_iter()
-        .map(|k| by_key.remove(&k).expect("key in map"))
-        .collect();
+        .filter_map(|e| e.ok())
+    {
+        if !entry.file_type().is_file() {
+            continue;
+        }
+        let path = entry.path();
+        if path
+            .extension()
+            .and_then(|s| s.to_str())
+            .map(|s| s.eq_ignore_ascii_case("zip"))
+            != Some(true)
+        {
+            continue;
+        }
 
-    // Assign deterministic, family-sequential IDs.
-    builders.sort_by(|a, b| {
-        let ra = family_rank(&a.family);
-        let rb = family_rank(&b.family);
-        ra.cmp(&rb).then_with(|| {
-            let a_chuki = a.chuki_lines.iter().min().copied();
-            let b_chuki = b.chuki_lines.iter().min().copied();
-            match (a_chuki, b_chuki) {
-                (Some(al), Some(bl)) => al.cmp(&bl),
-                (Some(_), None) => std::cmp::Ordering::Less,
-                (None, Some(_)) => std::cmp::Ordering::Greater,
-                (None, None) => {
-                    let ap = a.manual_pages.first().cloned().unwrap_or_default();
-                    let bp = b.manual_pages.first().cloned().unwrap_or_default();
-                    ap.cmp(&bp)
-                }
-            }
-        })
-    });
-
-    let mut counters: HashMap<String, usize> = HashMap::new();
-    let mut features = Vec::with_capacity(builders.len());
-    for b in builders {
-        let count = counters.entry(b.family.clone()).or_insert(1);
-        let id = format!("{}{}", family_prefix(&b.family), *count);
-        *count += 1;
-
-        let verdict = if b.chuki_lines.is_empty() && b.manual_pages.is_empty() {
-            Verdict::NoMarker
-        } else if !b.chuki_lines.is_empty() && !b.manual_pages.is_empty() {
-            Verdict::Verified
-        } else if !b.chuki_lines.is_empty() {
-            Verdict::ChukiOnly
-        } else {
-            Verdict::ManualOnly
+        let file = match fs::File::open(path) {
+            Ok(f) => f,
+            Err(_) => continue,
+        };
+        let mut archive = match ZipArchive::new(file) {
+            Ok(a) => a,
+            Err(_) => continue,
         };
 
-        let mut sources: Vec<String> = b
-            .chuki_lines
-            .iter()
-            .map(|l| format!("chuki_tag.txt:{}", l))
-            .collect();
-        sources.extend(b.manual_pages);
+        for i in 0..archive.len() {
+            let mut zf = match archive.by_index(i) {
+                Ok(z) => z,
+                Err(_) => continue,
+            };
+            let name_raw = zf.name_raw();
+            let (name, _, _) = SHIFT_JIS.decode(name_raw);
+            if !name.to_lowercase().ends_with(".txt") {
+                continue;
+            }
+            let mut bytes = Vec::new();
+            if zf.read_to_end(&mut bytes).is_err() {
+                continue;
+            }
+            let (text, _, _) = SHIFT_JIS.decode(&bytes);
+            for cap in marker_re.captures_iter(&text) {
+                let inner = &cap[1];
+                let marker = format!("［＃{}］", inner);
+                let norm = normalize(&marker);
+                if !norm.is_empty() {
+                    observed.insert(norm);
+                }
+            }
+        }
 
-        features.push(Feature {
-            id,
-            family: b.family,
-            name: b.name,
-            marker_examples: b.marker_examples,
-            sources,
-            verdict,
-        });
+        files_read += 1;
+        if limit > 0 && files_read >= limit {
+            break;
+        }
     }
 
-    features
+    Ok(observed)
+}
+
+/// Merge annotation builders with observed corpus markers and assign IDs.
+fn build_features(
+    mut builders: BTreeMap<String, FeatureBuilder>,
+    observed: BTreeSet<String>,
+) -> Vec<Feature> {
+    for norm in observed {
+        let builder = builders.entry(norm.clone()).or_insert_with(|| {
+            let family = family_from_marker(&norm);
+            let inner = norm
+                .strip_prefix('［')
+                .and_then(|s| s.strip_suffix('］'))
+                .and_then(|s| s.strip_prefix('＃'))
+                .unwrap_or(&norm);
+            FeatureBuilder {
+                family,
+                sub_family: "—".to_string(),
+                name: inner.to_string(),
+                marker_example: norm.clone(),
+                manual_pages: BTreeSet::new(),
+                observed: false,
+                is_deprecated: false,
+            }
+        });
+        builder.observed = true;
+    }
+
+    let mut list: Vec<FeatureBuilder> = builders.into_values().collect();
+    list.sort_by(|a, b| {
+        family_rank(&a.family)
+            .cmp(&family_rank(&b.family))
+            .then(a.family.cmp(&b.family))
+            .then(a.sub_family.cmp(&b.sub_family))
+            .then(a.name.cmp(&b.name))
+    });
+
+    let mut counters: BTreeMap<String, usize> = BTreeMap::new();
+    list.into_iter()
+        .map(|b| {
+            let count = counters.entry(b.family.clone()).or_insert(1);
+            let id = format!("{}{}", family_prefix(&b.family), *count);
+            *count += 1;
+
+            let status = if b.is_deprecated {
+                Status::Deprecated
+            } else if !b.manual_pages.is_empty() && b.observed {
+                Status::DocumentedAndObserved
+            } else if b.observed {
+                Status::Observed
+            } else {
+                Status::Documented
+            };
+
+            Feature {
+                id,
+                family: b.family,
+                sub_family: b.sub_family,
+                name: b.name,
+                marker_example: b.marker_example,
+                manual_pages: b.manual_pages,
+                observed: b.observed,
+                status,
+            }
+        })
+        .collect()
 }
 
 fn emit_markdown(features: &[Feature]) -> String {
     let mut out = String::new();
     out.push_str("# Generated Aozora Bunko Feature Taxonomy\n\n");
-    out.push_str("Derived from the canonical sources `chuki_tag.txt` and `annotation/*.html`.\n\n");
+    out.push_str(
+        "Derived from `annotation/*.html` (aozora.gr.jp authoritative spec) and real corpus observation.\n",
+    );
+    out.push_str("Third-party converter tables are not used as sources.\n\n");
 
     let mut current_family = String::new();
     for f in features {
         if f.family != current_family {
             current_family = f.family.clone();
             out.push_str(&format!("### {}\n\n", section_title(&current_family)));
-            out.push_str("| ID | Feature | Example | Sources | Verdict |\n");
-            out.push_str("|----|---------|---------|---------|---------|\n");
+            out.push_str("| ID | Family | Sub-family | Feature | Example | Sources | Status |\n");
+            out.push_str("|----|--------|------------|---------|---------|---------|--------|\n");
         }
-        let example = if f.marker_examples.is_empty() {
+        let example = format!("`{}`", f.marker_example);
+        let mut sources: Vec<String> = f.manual_pages.iter().cloned().collect();
+        if f.observed {
+            sources.push("corpus".to_string());
+        }
+        let sources_str = if sources.is_empty() {
             "—".to_string()
         } else {
-            format!("`{}`", f.marker_examples.join("`, `"))
-        };
-        let sources = if f.sources.is_empty() {
-            "—".to_string()
-        } else {
-            f.sources.join("; ")
+            sources.join("; ")
         };
         out.push_str(&format!(
-            "| {} | {} | {} | {} | {} |\n",
-            f.id, f.name, example, sources, f.verdict
+            "| {} | {} | {} | {} | {} | {} | {} |\n",
+            f.id, f.family, f.sub_family, f.name, example, sources_str, f.status
         ));
     }
     out
@@ -466,16 +572,20 @@ fn emit_markdown(features: &[Feature]) -> String {
     about = "Generate an Aozora Bunko feature taxonomy table"
 )]
 struct Args {
-    #[arg(
-        long,
-        default_value = "references/parsers/AozoraEpub3-JDK21/chuki_tag.txt"
-    )]
-    chuki: PathBuf,
-
     #[arg(long, default_value = "/home/bor/Dependencies/aozorabunko/annotation")]
     annotation_dir: PathBuf,
 
-    #[arg(long, default_value = "references/PARSER_REPORT.md")]
+    #[arg(long)]
+    corpus_dir: Option<PathBuf>,
+
+    /// Maximum number of corpus zip files to read (0 = unlimited).
+    #[arg(long, default_value = "0")]
+    corpus_limit: usize,
+
+    #[arg(
+        long,
+        default_value = "/home/bor/Projects/abc/references/PARSER_REPORT.md"
+    )]
     reference: PathBuf,
 
     #[arg(long)]
@@ -561,67 +671,66 @@ fn matches_source(marker: &str, set: &HashSet<String>) -> bool {
 
 fn verify_section0(
     refs: &[ReferenceFeature],
-    chuki_set: &HashSet<String>,
     manual_set: &HashSet<String>,
+    observed_set: &HashSet<String>,
 ) -> Vec<(String, String, Vec<String>)> {
-    let mut counts: HashMap<Verdict, usize> = HashMap::new();
+    let mut counts: HashMap<Status, usize> = HashMap::new();
     let mut unverified: Vec<(String, String, Vec<String>)> = Vec::new();
 
     for rf in refs {
-        let verdict = if rf.markers.is_empty() {
-            Verdict::NoMarker
+        let status = if rf.markers.is_empty() {
+            Status::Documented
         } else {
-            let in_chuki = rf.markers.iter().any(|m| matches_source(m, chuki_set));
             let in_manual = rf.markers.iter().any(|m| matches_source(m, manual_set));
-            if in_chuki && in_manual {
-                Verdict::Verified
-            } else if in_chuki {
-                Verdict::ChukiOnly
+            let in_observed = rf.markers.iter().any(|m| matches_source(m, observed_set));
+            if in_manual && in_observed {
+                Status::DocumentedAndObserved
             } else if in_manual {
-                Verdict::ManualOnly
+                Status::Documented
+            } else if in_observed {
+                Status::Observed
             } else {
-                Verdict::Unverified
+                Status::Deprecated
             }
         };
-        *counts.entry(verdict).or_default() += 1;
-        if verdict == Verdict::Unverified {
+        *counts.entry(status).or_default() += 1;
+        if status == Status::Deprecated {
             unverified.push((rf.id.clone(), rf.name.clone(), rf.markers.clone()));
         }
     }
 
     eprintln!("# PARSER_REPORT §0 verification\n");
-    eprintln!("Canonical sources loaded:");
-    eprintln!(
-        "  chuki_tag.txt:        {} distinct normalized markers",
-        chuki_set.len()
-    );
+    eprintln!("Sources loaded:");
     eprintln!(
         "  annotation/*.html:    {} distinct normalized markers",
         manual_set.len()
+    );
+    eprintln!(
+        "  corpus:               {} distinct normalized markers",
+        observed_set.len()
     );
     eprintln!(
         "  PARSER_REPORT §0:     {} feature rows parsed\n",
         refs.len()
     );
 
-    eprintln!("## Summary counts (disjoint 5-way partition)\n");
+    eprintln!("## Summary counts\n");
     let total = refs.len();
-    for v in [
-        Verdict::Verified,
-        Verdict::ChukiOnly,
-        Verdict::ManualOnly,
-        Verdict::Unverified,
-        Verdict::NoMarker,
+    for s in [
+        Status::Documented,
+        Status::Observed,
+        Status::DocumentedAndObserved,
+        Status::Deprecated,
     ] {
         eprintln!(
-            "  {:14}: {:3}",
-            v.to_string(),
-            counts.get(&v).copied().unwrap_or(0)
+            "  {:26}: {:3}",
+            s.to_string(),
+            counts.get(&s).copied().unwrap_or(0)
         );
     }
-    eprintln!("  {:14}: {:3}", "TOTAL", total);
+    eprintln!("  {:26}: {:3}", "TOTAL", total);
 
-    eprintln!("\n## UNVERIFIED features\n");
+    eprintln!("\n## Unmatched reference rows\n");
     if unverified.is_empty() {
         eprintln!("  (none)");
     } else {
@@ -645,11 +754,18 @@ fn verify_section0(
 fn main() -> Result<()> {
     let args = Args::parse();
 
-    let chuki = parse_chuki_tag(&args.chuki)?;
-    let manual = parse_manual_annotation(&args.annotation_dir)?;
-    let features = build_features(chuki.clone(), manual.clone());
+    let annotation_builders = parse_manual_annotation(&args.annotation_dir)?;
+    let manual_set: HashSet<String> = annotation_builders.keys().cloned().collect();
 
+    let observed: BTreeSet<String> = if let Some(corpus_dir) = &args.corpus_dir {
+        parse_corpus(corpus_dir, args.corpus_limit)?
+    } else {
+        BTreeSet::new()
+    };
+
+    let features = build_features(annotation_builders, observed.clone());
     let markdown = emit_markdown(&features);
+
     if let Some(out_path) = args.write {
         if let Some(parent) = out_path.parent() {
             fs::create_dir_all(parent).context("creating output directory")?;
@@ -665,16 +781,10 @@ fn main() -> Result<()> {
         println!("{}", markdown);
     }
 
-    // Build canonical source sets for verification.
-    let chuki_set: HashSet<String> = chuki
-        .iter()
-        .map(|(_, name, _)| normalize(&format!("［＃{}］", name)))
-        .collect();
-    let manual_set: HashSet<String> = manual.keys().cloned().collect();
-
     if args.reference.exists() {
+        let observed_set: HashSet<String> = observed.into_iter().collect();
         let refs = parse_section0(&args.reference)?;
-        verify_section0(&refs, &chuki_set, &manual_set);
+        verify_section0(&refs, &manual_set, &observed_set);
     } else {
         eprintln!(
             "Skipping PARSER_REPORT §0 verification ({} not found)",
@@ -688,26 +798,35 @@ fn main() -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::fs::File;
     use std::io::Write;
 
+    fn tmp_path(name: &str) -> PathBuf {
+        std::env::temp_dir().join(format!("{}_{}", name, std::process::id()))
+    }
+
     #[test]
-    fn parses_chuki_header_and_rows() {
-        let tmp = std::env::temp_dir().join(format!("chuki_test_{}.txt", std::process::id()));
+    fn parses_annotation_page_headings_and_markers() {
+        let tmp = tmp_path("annotation_test");
+        fs::create_dir_all(&tmp).unwrap();
+        let html = tmp.join("test_emphasis.html");
         {
-            let mut f = File::create(&tmp).unwrap();
-            let content = "# comment\n#### 見出し ####\n大見出し\t<div class=\"chap1\">\t1\n# another comment\n中見出し\t<span>\t2\n";
+            let mut f = fs::File::create(&html).unwrap();
+            let content = "<h2>強調</h2>\n<h3>傍点</h3>\n<p>例：○○［＃「テスト」に傍点］を使う。</p>\n<h3>傍線</h3>\n<p>［＃「サンプル」に傍線］</p>\n";
             f.write_all(content.as_bytes()).unwrap();
         }
-        let got = parse_chuki_tag(&tmp).unwrap();
-        std::fs::remove_file(&tmp).ok();
-        assert_eq!(
-            got,
-            vec![
-                ("Headings".to_string(), "大見出し".to_string(), 3usize),
-                ("Headings".to_string(), "中見出し".to_string(), 5usize),
-            ]
-        );
+        let got = parse_manual_annotation(&tmp).unwrap();
+        std::fs::remove_dir_all(&tmp).ok();
+
+        assert_eq!(got.len(), 2);
+        let point = got
+            .get("［＃「○○」に傍点］")
+            .expect("傍 point marker present");
+        assert_eq!(point.family, "Emphasis");
+        assert_eq!(point.sub_family, "傍点");
+        assert!(point.manual_pages.contains("annotation/test_emphasis.html"));
+
+        let line = got.get("［＃「○○」に傍線］").expect("傍線 marker present");
+        assert_eq!(line.sub_family, "傍線");
     }
 
     #[test]
@@ -722,24 +841,13 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
-    fn l13_dangumi_is_unverified() {
-        // Requires the real (gitignored) canonical sources and PARSER_REPORT.md.
-        let chuki = parse_chuki_tag("references/parsers/AozoraEpub3-JDK21/chuki_tag.txt").unwrap();
-        let manual =
-            parse_manual_annotation("/home/bor/Dependencies/aozorabunko/annotation").unwrap();
-        let chuki_set: HashSet<String> = chuki
-            .iter()
-            .map(|(_, name, _)| normalize(&format!("［＃{}］", name)))
-            .collect();
-        let manual_set: HashSet<String> = manual.keys().cloned().collect();
-        let refs = parse_section0(Path::new("references/PARSER_REPORT.md")).unwrap();
-        let unverified = verify_section0(&refs, &chuki_set, &manual_set);
-        assert!(
-            unverified
-                .iter()
-                .any(|(id, name, _)| id == "L13" && name.contains("段組")),
-            "L13 段組み should be UNVERIFIED"
+    fn status_display_values() {
+        assert_eq!(format!("{}", Status::Documented), "DOCUMENTED");
+        assert_eq!(format!("{}", Status::Observed), "OBSERVED");
+        assert_eq!(
+            format!("{}", Status::DocumentedAndObserved),
+            "DOCUMENTED-AND-OBSERVED"
         );
+        assert_eq!(format!("{}", Status::Deprecated), "DEPRECATED");
     }
 }

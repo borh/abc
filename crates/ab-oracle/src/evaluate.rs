@@ -14,7 +14,7 @@ pub struct CaseEvaluation {
     pub failures: Vec<String>,
 }
 
-#[must_use] 
+#[must_use]
 pub fn schema_status(aat: &Value) -> String {
     if ab_check::check::validate_aat_value(aat).is_ok() {
         "pass".to_owned()
@@ -23,7 +23,7 @@ pub fn schema_status(aat: &Value) -> String {
     }
 }
 
-#[must_use] 
+#[must_use]
 pub fn visible_text(document: &AatDocument) -> String {
     document.visible_text()
 }
@@ -37,7 +37,7 @@ fn evidence_strength_rank(kind: EvidenceKind) -> u8 {
     }
 }
 
-#[must_use] 
+#[must_use]
 pub fn evidence_strength(case: &OracleCase, evidence: &[Evidence]) -> &'static str {
     let linked = evidence
         .iter()
@@ -56,7 +56,7 @@ pub fn evidence_strength(case: &OracleCase, evidence: &[Evidence]) -> &'static s
     }
 }
 
-#[must_use] 
+#[must_use]
 pub fn evaluate_case(
     case: &OracleCase,
     all_evidence: &[Evidence],

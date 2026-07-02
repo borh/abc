@@ -1,14 +1,14 @@
-mod summary_body;
 mod compact;
 mod nway;
 mod patterns;
+mod summary_body;
 mod types;
 mod warehouse;
 mod write;
 
 pub use compact::*;
 pub use nway::*;
-pub use types::*;
 pub(crate) use types::WAREHOUSE_CORE_FEATURE_KEYS;
+pub use types::*;
 pub use warehouse::*;
 pub use write::*;

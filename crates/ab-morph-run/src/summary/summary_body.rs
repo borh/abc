@@ -18,6 +18,7 @@ use parquet::basic::{Compression, ZstdLevel};
 use parquet::file::properties::WriterProperties;
 use serde::Deserialize;
 
+use super::types::*;
 use crate::compact::{ComparisonSummaryRow, is_whitespace_only};
 use crate::nway::{
     NwayComparisonRow, NwayFeatureScopeRow, NwayFeatureValueGroupRow, NwayPatternCountOutputRow,
@@ -26,7 +27,6 @@ use crate::nway::{
 use crate::output::for_each_jsonl_or_zst_line;
 use crate::script::{ScriptCategory, classify_text};
 use crate::warehouse::schema::WarehouseTable;
-use super::types::*;
 
 #[derive(Debug, Default)]
 pub(crate) struct Accumulator {
@@ -1663,7 +1663,10 @@ fn run_duckdb_statement(run_dir: &Path, sql: String, context: &str) -> Result<bo
     Ok(true)
 }
 
-pub(crate) fn warehouse_pattern_duckdb_sql(run_dir: &Path, options: &WarehousePatternOptions) -> String {
+pub(crate) fn warehouse_pattern_duckdb_sql(
+    run_dir: &Path,
+    options: &WarehousePatternOptions,
+) -> String {
     let regions = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegions);
     let analyzers = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegionAnalyzers);
     let features = duckdb_table_path_literal(run_dir, WarehouseTable::NwayFeatureDiffs);
@@ -2951,7 +2954,11 @@ impl NwayAccumulator {
         self.variable_boundary_count += row.variable_boundary_count;
     }
 
-    pub(super) fn push_warehouse_region(&mut self, region: &WarehouseRegionKey, flags: WarehouseRegionFlags) {
+    pub(super) fn push_warehouse_region(
+        &mut self,
+        region: &WarehouseRegionKey,
+        flags: WarehouseRegionFlags,
+    ) {
         self.source_ids.insert(region.source_id.clone());
         self.text_ids.insert(region.text_id.clone());
         self.rows = self.source_ids.len();

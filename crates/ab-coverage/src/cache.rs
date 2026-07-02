@@ -112,7 +112,7 @@ pub fn compute_adapter_sha(inputs: &AdapterFingerprintInputs) -> Result<String> 
     Ok(hex(&outer.finalize()))
 }
 
-#[must_use] 
+#[must_use]
 pub fn input_sha(bytes: &[u8]) -> String {
     hex(&Sha256::digest(bytes))
 }
@@ -138,7 +138,7 @@ impl ParserCache {
         }
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn entry_path(&self, parser_id: &str, adapter_sha: &str, input_sha: &str) -> PathBuf {
         self.root
             .join(parser_id)

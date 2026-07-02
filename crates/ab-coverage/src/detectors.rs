@@ -22,7 +22,7 @@ pub struct DetectorRegistry {
 }
 
 impl DetectorRegistry {
-    #[must_use] 
+    #[must_use]
     pub fn from_matrix(rows: &[Row]) -> Self {
         let mut detectors = HashMap::new();
         for row in rows {
@@ -32,7 +32,7 @@ impl DetectorRegistry {
         Self { detectors }
     }
 
-    #[must_use] 
+    #[must_use]
     pub fn detect(&self, row_id: &str, ctx: &DetectorContext<'_>) -> u64 {
         match self.detectors.get(row_id) {
             Some(d) => d.run(ctx),

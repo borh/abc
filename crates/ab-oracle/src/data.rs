@@ -149,7 +149,7 @@ pub fn load_upstream_observations(path: &Path) -> Result<UpstreamObservations> {
 }
 
 impl OracleCase {
-    #[must_use] 
+    #[must_use]
     pub fn current_review_status(&self) -> ReviewStatus {
         self.review
             .last()
@@ -159,7 +159,7 @@ impl OracleCase {
 }
 
 impl ReviewStatus {
-    #[must_use] 
+    #[must_use]
     pub fn as_str(self) -> &'static str {
         match self {
             ReviewStatus::Draft => "draft",

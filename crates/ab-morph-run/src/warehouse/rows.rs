@@ -3,11 +3,11 @@ use std::ops::Range;
 #[cfg(test)]
 use ab_morph_diff::MorphDiffError;
 use ab_morph_diff::{Analysis, NwayFeatureScope, NwayRegion, visit_nway_regions_with_source_text};
-use anyhow::Result as AnyhowResult;
 use ab_warehouse::schema::{
     AnalysisRow, MorphemeFeatureRow, MorphemeRow, NwayFeatureDiffRow, NwayRegionAnalyzerRow,
     NwayRegionRow, SourceRow,
 };
+use anyhow::Result as AnyhowResult;
 
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub(crate) struct NwayFactRows {

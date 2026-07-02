@@ -3,10 +3,8 @@ use std::collections::BTreeSet;
 use clap::ValueEnum;
 use serde::Serialize;
 
+use crate::nway::{NwayFeatureScopeRow, NwayFeatureValueGroupRow, NwaySegmentationGroupRow};
 use crate::script::ScriptCategory;
-use crate::nway::{
-    NwayFeatureScopeRow, NwayFeatureValueGroupRow, NwaySegmentationGroupRow,
-};
 
 pub(crate) const WAREHOUSE_CORE_FEATURE_KEYS: &[&str] = &["pos1", "pos2", "pos3", "pos4"];
 

@@ -46,7 +46,7 @@ pub fn decode_source_bytes(bytes: &[u8]) -> Result<DecodedSource> {
     })
 }
 
-#[must_use] 
+#[must_use]
 pub fn hex_sha256(bytes: &[u8]) -> String {
     let mut hasher = Sha256::new();
     hasher.update(bytes);

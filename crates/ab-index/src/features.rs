@@ -107,7 +107,7 @@ mod tests {
         let path = temp_file("feature-patterns-test.toml");
         fs::write(
             &path,
-        "\n[features.ruby]\npattern = '《[^》]+》'\ndescription = 'Ruby'\n",
+            "\n[features.ruby]\npattern = '《[^》]+》'\ndescription = 'Ruby'\n",
         )
         .unwrap();
 

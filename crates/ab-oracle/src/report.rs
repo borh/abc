@@ -48,7 +48,7 @@ pub fn read_json_report(path: &Path) -> Result<OracleReport> {
         .with_context(|| format!("failed to parse report {}", path.display()))
 }
 
-#[must_use] 
+#[must_use]
 pub fn render_markdown(report: &OracleReport) -> String {
     let mut out = String::from(
         "| case_id | adapter | schema_status | upstream_status | oracle_status | oracle_review_status | oracle_evidence_strength | failures |\n\

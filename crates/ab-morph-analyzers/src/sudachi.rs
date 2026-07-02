@@ -259,18 +259,18 @@ where
         );
     }
 
-        let _ = features.insert(
-            "dictionary_form".into(),
-            feature_value(morpheme.dictionary_form()),
-        );
-        let _ = features.insert(
-            "normalized_form".into(),
-            feature_value(morpheme.normalized_form()),
-        );
-        let _ = features.insert(
-            "reading_form".into(),
-            feature_value(morpheme.reading_form()),
-        );
+    let _ = features.insert(
+        "dictionary_form".into(),
+        feature_value(morpheme.dictionary_form()),
+    );
+    let _ = features.insert(
+        "normalized_form".into(),
+        feature_value(morpheme.normalized_form()),
+    );
+    let _ = features.insert(
+        "reading_form".into(),
+        feature_value(morpheme.reading_form()),
+    );
 
     features
 }

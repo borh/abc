@@ -2,11 +2,11 @@ use std::io::Write;
 use std::path::Path;
 use std::process::Command;
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 
 use super::{
-    NwayPatternKind, WarehouseFeatureProfile, WarehousePatternExampleOptions,
-    WarehousePatternOptions, WAREHOUSE_CORE_FEATURE_KEYS,
+    NwayPatternKind, WAREHOUSE_CORE_FEATURE_KEYS, WarehouseFeatureProfile,
+    WarehousePatternExampleOptions, WarehousePatternOptions,
 };
 
 /// Writes N-way pattern summaries from DuckDB output.
@@ -22,7 +22,12 @@ pub fn write_warehouse_nway_patterns_duckdb_tsv<W: Write>(
 ) -> Result<bool> {
     if super::warehouse::warehouse_feature_pattern_counts_available(run_dir, options) {
         let sql = super::warehouse::warehouse_feature_pattern_counts_duckdb_sql(run_dir, options);
-        return run_duckdb_tsv(run_dir, &sql, &mut writer, "warehouse feature pattern counts");
+        return run_duckdb_tsv(
+            run_dir,
+            &sql,
+            &mut writer,
+            "warehouse feature pattern counts",
+        );
     }
     if options.kind == NwayPatternKind::Feature
         && options.feature_profile == WarehouseFeatureProfile::Core

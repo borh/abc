@@ -925,7 +925,10 @@ pub(crate) fn run_analyze_aat_warehouse_parallel(
     merge_warehouse_shard_runs(&options, &shard_run_dirs)?;
     report.record_warning(
         "warehouse_merge",
-        format!("ab-morph-run: warehouse merge complete run_id={}", options.run_id),
+        format!(
+            "ab-morph-run: warehouse merge complete run_id={}",
+            options.run_id
+        ),
     );
     fs::remove_dir_all(&temp_root)
         .with_context(|| format!("failed to remove {}", temp_root.display()))?;
@@ -1025,14 +1028,19 @@ impl WarehouseWorkQueue {
     }
 }
 
-pub(crate) fn take_warehouse_work_batch(queue: &Arc<Mutex<WarehouseWorkQueue>>) -> Option<WarehouseWorkBatch> {
+pub(crate) fn take_warehouse_work_batch(
+    queue: &Arc<Mutex<WarehouseWorkQueue>>,
+) -> Option<WarehouseWorkBatch> {
     queue
         .lock()
         .expect("warehouse work queue poisoned")
         .take_batch()
 }
 
-pub(crate) fn complete_warehouse_work_batch(queue: &Arc<Mutex<WarehouseWorkQueue>>, is_large: bool) {
+pub(crate) fn complete_warehouse_work_batch(
+    queue: &Arc<Mutex<WarehouseWorkQueue>>,
+    is_large: bool,
+) {
     queue
         .lock()
         .expect("warehouse work queue poisoned")

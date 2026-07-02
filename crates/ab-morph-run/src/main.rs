@@ -1514,7 +1514,10 @@ mod tests {
             PathBuf::from("scratch/morph-warehouse/runs/full-2026-05-01")
         );
         assert_eq!(group_by, ab_morph_run::CompactSummaryGroupBy::TextId);
-        assert_eq!(sort_by, ab_morph_run::NwaySummarySort::VariableBoundaryCount);
+        assert_eq!(
+            sort_by,
+            ab_morph_run::NwaySummarySort::VariableBoundaryCount
+        );
         assert_eq!(exclude_text_id, vec!["JISTABLE"]);
         assert_eq!(limit, 15);
         assert!(json);
@@ -1663,7 +1666,10 @@ mod tests {
         assert_eq!(kind, ab_morph_run::NwayPatternKind::Feature);
         assert_eq!(pattern, "pos1 whole_region 名詞=>vibrato ; 動詞=>sudachi-a");
         assert_eq!(feature_key, Some("pos1".to_owned()));
-        assert_eq!(feature_profile, ab_morph_run::WarehouseFeatureProfile::Schema);
+        assert_eq!(
+            feature_profile,
+            ab_morph_run::WarehouseFeatureProfile::Schema
+        );
         assert_eq!(filter, ab_morph_run::WarehouseTextFilter::LexicalOnly);
         assert_eq!(limit, 15);
         assert!(json);

@@ -11,7 +11,7 @@ pub struct EvidenceIndex<'a> {
     pub duplicate_ids: Vec<String>,
 }
 
-#[must_use] 
+#[must_use]
 pub fn build_evidence_index(cases: &OracleCases) -> EvidenceIndex<'_> {
     let mut evidence = std::collections::BTreeMap::new();
     let mut duplicate_ids = Vec::new();
@@ -26,7 +26,7 @@ pub fn build_evidence_index(cases: &OracleCases) -> EvidenceIndex<'_> {
     }
 }
 
-#[must_use] 
+#[must_use]
 pub fn validate_case_quality(
     case: &OracleCase,
     evidence_index: &EvidenceIndex<'_>,
@@ -96,7 +96,7 @@ pub fn validate_case_quality(
     errors
 }
 
-#[must_use] 
+#[must_use]
 pub fn validate_oracle_quality(cases: &OracleCases) -> Vec<OracleQualityError> {
     let evidence_index = build_evidence_index(cases);
     let mut errors = Vec::new();

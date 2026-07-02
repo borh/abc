@@ -126,7 +126,7 @@ pub fn read_index(path: &Path) -> Result<Index> {
     Ok(serde_json::from_reader(file)?)
 }
 
-#[must_use] 
+#[must_use]
 pub fn query_any(index: &Index, features: &[String]) -> Vec<String> {
     let mut ids = Vec::new();
     for feature in features {
@@ -139,7 +139,7 @@ pub fn query_any(index: &Index, features: &[String]) -> Vec<String> {
     ids
 }
 
-#[must_use] 
+#[must_use]
 pub fn query_all(index: &Index, features: &[String]) -> Vec<String> {
     let Some((first, rest)) = features.split_first() else {
         return Vec::new();
@@ -162,7 +162,7 @@ pub fn query_all(index: &Index, features: &[String]) -> Vec<String> {
         .collect()
 }
 
-#[must_use] 
+#[must_use]
 pub fn sample(index: &Index, limit: usize, features: &[String]) -> Vec<String> {
     let mut ids = query_any(index, features);
     if ids.len() > limit {

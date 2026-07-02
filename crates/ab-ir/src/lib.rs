@@ -1028,12 +1028,7 @@ fn collect_visible(value: &Inline, out: &mut String) {
         fn enter_text(&mut self, value: &str, _provenance: &Provenance) {
             self.0.push_str(value);
         }
-        fn enter_text_meta(
-            &mut self,
-            value: &str,
-            _attrs: &[StyleAttr],
-            _provenance: &Provenance,
-        ) {
+        fn enter_text_meta(&mut self, value: &str, _attrs: &[StyleAttr], _provenance: &Provenance) {
             self.0.push_str(value);
         }
         fn enter_gaiji_ref(&mut self, gaiji: &GaijiRef) {
@@ -1073,7 +1068,13 @@ fn collect_provenance(value: &Inline, counts: &mut ProvenanceCounts) {
         fn enter_gaiji_ref(&mut self, gaiji: &GaijiRef) {
             self.0.increment(&gaiji.provenance);
         }
-        fn enter_ruby(&mut self, _base: &[Inline], _reading: &str, _placement: &RubyPlacement, provenance: &Provenance) {
+        fn enter_ruby(
+            &mut self,
+            _base: &[Inline],
+            _reading: &str,
+            _placement: &RubyPlacement,
+            provenance: &Provenance,
+        ) {
             self.0.increment(provenance);
         }
         fn enter_style(
@@ -1097,10 +1098,20 @@ fn collect_provenance(value: &Inline, counts: &mut ProvenanceCounts) {
         ) {
             self.0.increment(provenance);
         }
-        fn enter_warigaki(&mut self, _upper: &[Inline], _lower: &[Inline], provenance: &Provenance) {
+        fn enter_warigaki(
+            &mut self,
+            _upper: &[Inline],
+            _lower: &[Inline],
+            provenance: &Provenance,
+        ) {
             self.0.increment(provenance);
         }
-        fn enter_figure_ref(&mut self, _source: &str, _caption: &[Inline], provenance: &Provenance) {
+        fn enter_figure_ref(
+            &mut self,
+            _source: &str,
+            _caption: &[Inline],
+            provenance: &Provenance,
+        ) {
             self.0.increment(provenance);
         }
         fn enter_accent(&mut self, _resolved: &str, provenance: &Provenance) {
@@ -1129,9 +1140,7 @@ impl ProvenanceCounts {
 }
 
 fn inline_visible_text(content: &[Inline]) -> String {
-    let mut visitor = VisibleCollector {
-        out: String::new(),
-    };
+    let mut visitor = VisibleCollector { out: String::new() };
     for child in content {
         walk_inline(&mut visitor, child);
     }

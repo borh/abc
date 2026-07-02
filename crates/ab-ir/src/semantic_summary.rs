@@ -3,7 +3,10 @@ use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
-use crate::{block_content, walk_inline, Inline, InlineVisitor, GaijiRef, Block, BreakKind, ProjectionWarning};
+use crate::{
+    Block, BreakKind, GaijiRef, Inline, InlineVisitor, ProjectionWarning, block_content,
+    walk_inline,
+};
 
 /// Parser-neutral semantic summary serialized into AAT `meta.semantic_summary`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

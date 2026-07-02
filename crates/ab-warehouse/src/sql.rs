@@ -24,15 +24,13 @@ pub fn write_schema_sql(warehouse_dir: &Path) -> Result<()> {
 /// Returns an error if canonicalization or SQL rendering fails, or if the output
 /// file cannot be written.
 pub fn write_run_views_sql(output_run_dir: &Path, final_run_dir: &Path) -> Result<()> {
-    let final_run_dir = final_run_dir
-        .canonicalize()
-        .or_else(|_| {
-            if final_run_dir.is_absolute() {
-                Ok(final_run_dir.to_path_buf())
-            } else {
-                std::env::current_dir().map(|cwd| cwd.join(final_run_dir))
-            }
-        })?;
+    let final_run_dir = final_run_dir.canonicalize().or_else(|_| {
+        if final_run_dir.is_absolute() {
+            Ok(final_run_dir.to_path_buf())
+        } else {
+            std::env::current_dir().map(|cwd| cwd.join(final_run_dir))
+        }
+    })?;
     let final_run_dir = final_run_dir
         .to_string_lossy()
         .replace('\\', "\\\\")

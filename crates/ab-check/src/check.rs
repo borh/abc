@@ -583,7 +583,7 @@ fn default_confidence(name: &str) -> &'static str {
     }
 }
 
-#[must_use] 
+#[must_use]
 pub fn report_to_value(report: &CheckReport) -> Value {
     json!(report)
 }

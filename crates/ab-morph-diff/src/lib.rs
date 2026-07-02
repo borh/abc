@@ -9,8 +9,7 @@ mod validate;
 
 pub use error::MorphDiffError;
 pub use model::{
-    AnalyzerWarning,
-    AlignedMorpheme, Analysis, AnalyzerId, ChangedValue, CompactComparison,
+    AlignedMorpheme, Analysis, AnalyzerId, AnalyzerWarning, ChangedValue, CompactComparison,
     CompactComparisonExample, CompactExampleKind, CompactFeatureChange, Comparison,
     ComparisonStats, CoverageMismatch, CoverageMismatchKind, FeatureDiff, FeatureKey, FeatureMap,
     FeatureValue, Morpheme, NwayAnalyzerRegion, NwayComparison, NwayFeatureGroup, NwayFeatureScope,
@@ -269,8 +268,7 @@ mod tests {
         assert_eq!(comparison.feature_diffs.len(), 1);
         assert_eq!(comparison.feature_diffs[0].region_index, 1);
         assert_eq!(
-            comparison
-                .feature_diffs[0]
+            comparison.feature_diffs[0]
                 .changed
                 .get("pos")
                 .expect("feature diff should include pos"),
@@ -430,10 +428,7 @@ mod tests {
             crate::compare_nway_with_source_text(&analyses, source, &["pos1".into()]).unwrap();
 
         assert_eq!(comparison.regions.len(), 1);
-        assert_eq!(
-            comparison.regions[0].feature_groups[0].key.as_ref(),
-            "pos1"
-        );
+        assert_eq!(comparison.regions[0].feature_groups[0].key.as_ref(), "pos1");
         assert_eq!(comparison.regions[0].feature_groups[0].values.len(), 2);
         assert_eq!(comparison.stats.regions_with_feature_disagreement, 1);
     }

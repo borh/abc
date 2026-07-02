@@ -5,9 +5,7 @@ pub use super::summary_body::{
     summarize_warehouse_nway, summarize_warehouse_nway_patterns, summarize_warehouse_pairwise,
     summarize_warehouse_pattern_examples, summarize_warehouse_regions,
 };
-use super::{
-    WarehousePatternExampleOptions, WarehousePatternOptions, WarehouseRegionOptions,
-};
+use super::{WarehousePatternExampleOptions, WarehousePatternOptions, WarehouseRegionOptions};
 
 pub fn warehouse_feature_pattern_counts_available(
     run_dir: &Path,

@@ -42,10 +42,7 @@ impl WarehouseWriter {
         Self::create_for_tables(paths, WarehouseTable::ALL)
     }
 
-    pub fn create_for_tables(
-        paths: WarehousePaths,
-        tables: &[WarehouseTable],
-    ) -> Result<Self> {
+    pub fn create_for_tables(paths: WarehousePaths, tables: &[WarehouseTable]) -> Result<Self> {
         if paths.final_dir.exists() {
             bail!("warehouse run {} already exists", paths.run_id);
         }
@@ -286,10 +283,7 @@ impl WarehouseWriter {
         )
     }
 
-    pub fn append_nway_region_analyzers(
-        &mut self,
-        rows: &[NwayRegionAnalyzerRow],
-    ) -> Result<()> {
+    pub fn append_nway_region_analyzers(&mut self, rows: &[NwayRegionAnalyzerRow]) -> Result<()> {
         if rows.is_empty() {
             return Ok(());
         }
@@ -337,10 +331,7 @@ impl WarehouseWriter {
         )
     }
 
-    pub fn append_feature_pattern_counts(
-        &mut self,
-        rows: &[FeaturePatternCountRow],
-    ) -> Result<()> {
+    pub fn append_feature_pattern_counts(&mut self, rows: &[FeaturePatternCountRow]) -> Result<()> {
         if rows.is_empty() {
             return Ok(());
         }
@@ -386,11 +377,7 @@ impl WarehouseWriter {
     }
 
     #[cfg(test)]
-    pub fn append_record_batch(
-        &mut self,
-        table: WarehouseTable,
-        batch: RecordBatch,
-    ) -> Result<()> {
+    pub fn append_record_batch(&mut self, table: WarehouseTable, batch: RecordBatch) -> Result<()> {
         match table {
             WarehouseTable::Runs => self
                 .runs

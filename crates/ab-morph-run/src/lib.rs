@@ -1,7 +1,7 @@
 mod compact;
 mod nway;
-mod output;
 mod options;
+mod output;
 mod pipeline;
 mod script;
 mod select;
@@ -22,13 +22,11 @@ use ab_morph_diff::{
 };
 use ab_plaintext::{PlainTextDocument, from_aat_value};
 use anyhow::{Context, Result, bail};
+pub use options::{OutputProfile, WarehouseProfile};
+use options::{SerialProgress, SerialRunOptions, WarehouseParallelOptions, WarehouseRunOptions};
 use output::{open_output_writer, read_jsonl_or_zst_to_string};
 use serde::Serialize;
 use serde_json::Value;
-pub use options::{OutputProfile, WarehouseProfile};
-use options::{
-    SerialProgress, SerialRunOptions, WarehouseParallelOptions, WarehouseRunOptions,
-};
 use warehouse::schema::{
     ErrorRow as WarehouseErrorRow, FeaturePatternCountRow, NwayFeatureDiffRow, NwayRegionRow,
     RunAnalyzerRow, RunRow, WarehousePaths, WarehouseTable,
@@ -42,6 +40,7 @@ const WAREHOUSE_REGULAR_BATCH_SIZE: usize = 32;
 pub use nway::{NwayFeatureScopeRow, NwayFeatureValueGroupRow, NwaySegmentationGroupRow};
 pub use script::ScriptCategory;
 pub use select::resolve_source_id_aat_paths;
+pub(crate) use summary::WAREHOUSE_CORE_FEATURE_KEYS;
 pub use summary::{
     CompactDifferenceKindFilter, CompactDifferenceSummaryOptions, CompactDifferenceSummaryRow,
     CompactExampleFilter, CompactExampleSummaryOptions, CompactExampleSummaryRow,
@@ -60,7 +59,6 @@ pub use summary::{
     summarize_warehouse_regions, write_warehouse_nway_patterns_duckdb_tsv,
     write_warehouse_pattern_examples_duckdb_tsv, write_warehouse_regions_duckdb_tsv,
 };
-pub(crate) use summary::WAREHOUSE_CORE_FEATURE_KEYS;
 
 /// Run the selected analysis pipeline over AAT input(s).
 ///
@@ -212,10 +210,7 @@ pub fn run_analyze_aat_selected(
 
 #[cfg(test)]
 pub(crate) use pipeline::{
-    filter_resume_inputs,
-    partition_inputs,
-    symlink_input_file,
-    WarehouseWorkQueue,
+    WarehouseWorkQueue, filter_resume_inputs, partition_inputs, symlink_input_file,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]

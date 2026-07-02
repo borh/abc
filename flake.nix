@@ -381,6 +381,32 @@
             mkdir -p "$out"
             echo "schemas/tei-profile.{rng,sch} match the ODD-derived artifacts." > "$out/result.txt"
           '';
+
+          adr0001-invariants = pkgs.runCommand "abc-adr0001-invariants"
+            { nativeBuildInputs = [ pkgs.z3 ]; }
+            ''
+              # ADR 0001: verify the manifest-identity invariants with Z3.
+              # Each .smt2 file is a counterexample-seeking query; Z3 must
+              # report `unsat` (no counterexample exists) for the invariant
+              # to hold. Runs offline so it works in the Nix sandbox / CI.
+              # See docs/adr/0001-invariants.README.md for the rationale and
+              # the list of invariants (R1 reproducibility-conflict,
+              # R2 non-circularity; R3 null-dimension is covered by the
+              # canonicalization fixture, not a solver).
+              for spec in ${./docs/adr/r1-reproducibility-conflict.smt2} ${./docs/adr/r2-non-circularity.smt2}; do
+                result="$(z3 "$spec")"
+                case "$result" in
+                  unsat) ;;
+                  *)
+                    echo "ADR 0001 invariant check FAILED for $spec:" >&2
+                    echo "$result" >&2
+                    exit 1
+                    ;;
+                esac
+              done
+              mkdir -p "$out"
+              echo "ADR 0001 manifest-identity invariants verified (Z3 reports unsat for both counterexample queries)." > "$out/result.txt"
+            '';
         }
       );
 

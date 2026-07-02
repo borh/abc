@@ -1,0 +1,242 @@
+# PARSER_REPORT §0 verification
+
+Canonical sources loaded:
+  chuki_tag.txt:        293 distinct normalized markers
+  annotation/*.html:    326 distinct normalized markers
+  PARSER_REPORT §0:     85 feature rows parsed
+
+## Per-feature verdicts
+
+| ID | Family | Feature | Verdict | Markers (normalized) |
+|----|--------|---------|---------|------------------------|
+| L1 | Layout / レイアウト | 改丁 | VERIFIED | 改丁 |
+| L2 | Layout / レイアウト | 改ページ | VERIFIED | 改ページ |
+| L3 | Layout / レイアウト | 改見開き | MANUAL-ONLY | 改見開き |
+| L4 | Layout / レイアウト | 改段 | VERIFIED | 改段 |
+| L5 | Layout / レイアウト | ページの左右中央 | VERIFIED | ページの左右中央, 改ページ |
+| L6 | Layout / レイアウト | 1行字下げ | VERIFIED | N字下げ |
+| L7 | Layout / レイアウト | ブロック字下げ | VERIFIED | ここからN字下げ, ここで字下げ終わり |
+| L8 | Layout / レイアウト | ぶら下げ（折り返し字下げ） | VERIFIED | ここから改行天付き、折り返してN字下げ |
+| L9 | Layout / レイアウト | 天から字下げ | VERIFIED | 天からN字下げ |
+| L10 | Layout / レイアウト | 地付き | VERIFIED | 地付き, ここから地付き |
+| L11 | Layout / レイアウト | 地寄せ / 字上げ | VERIFIED | 地からN字上げ, 下げて、地よりN字あきで |
+| L12 | Layout / レイアウト | 字詰め | VERIFIED | ここからN字詰め |
+| L13 | Layout / レイアウト | 段組み | UNVERIFIED | ここからN段組み |
+| H1 | Headings / 見出し | 大見出し (block + inline) | NO-MARKER | — |
+| H2 | Headings / 見出し | 中見出し (block + inline) | NO-MARKER | — |
+| H3 | Headings / 見出し | 小見出し (block + inline) | NO-MARKER | — |
+| H4 | Headings / 見出し | 同行大見出し | NO-MARKER | — |
+| H5 | Headings / 見出し | 同行中見出し | NO-MARKER | — |
+| H6 | Headings / 見出し | 同行小見出し | NO-MARKER | — |
+| H7 | Headings / 見出し | 窓大見出し | NO-MARKER | — |
+| H8 | Headings / 見出し | 窓中見出し | NO-MARKER | — |
+| H9 | Headings / 見出し | 窓小見出し | NO-MARKER | — |
+| E1 | External Characters / 外字 | JIS第3/4水準漢字 | NO-MARKER | — |
+| E2 | External Characters / 外字 | UCS (Unicode) | NO-MARKER | — |
+| E3 | External Characters / 外字 | 特殊記号（ギリシア文字等） | NO-MARKER | — |
+| E4 | External Characters / 外字 | 二の字点 | NO-MARKER | — |
+| E5 | External Characters / 外字 | 濁点付き二の字点 | NO-MARKER | — |
+| E6 | External Characters / 外字 | その他特殊（井げた、括弧類等） | NO-MARKER | — |
+| E7 | External Characters / 外字 | アクセント分解ラテン文字 | NO-MARKER | — |
+| K1 | Kunten / 訓点 | 返り点 (一, 二, 三, 四, 上, 中, 下, 天, 地, 人, 甲, 乙, 丙, 丁, レ, 一レ, 上レ…) | NO-MARKER | — |
+| K2 | Kunten / 訓点 | 訓点送り仮名 | NO-MARKER | — |
+| K3 | Kunten / 訓点 | 再読文字 | NO-MARKER | — |
+| M1 | Emphasis / 強調 | 傍点 | NO-MARKER | — |
+| M2 | Emphasis / 強調 | 白ゴマ傍点 | NO-MARKER | — |
+| M3 | Emphasis / 強調 | 丸傍点 | NO-MARKER | — |
+| M4 | Emphasis / 強調 | 白丸傍点 | NO-MARKER | — |
+| M5 | Emphasis / 強調 | 黒三角傍点 | NO-MARKER | — |
+| M6 | Emphasis / 強調 | 白三角傍点 | NO-MARKER | — |
+| M7 | Emphasis / 強調 | 二重丸傍点 | NO-MARKER | — |
+| M8 | Emphasis / 強調 | 蛇の目傍点 | NO-MARKER | — |
+| M9 | Emphasis / 強調 | ばつ傍点 / ×傍点 | NO-MARKER | — |
+| M10 | Emphasis / 強調 | 左に傍点 (all variants) | NO-MARKER | — |
+| M11 | Emphasis / 強調 | 傍線 | NO-MARKER | — |
+| M12 | Emphasis / 強調 | 二重傍線 | NO-MARKER | — |
+| M13 | Emphasis / 強調 | 鎖線 | NO-MARKER | — |
+| M14 | Emphasis / 強調 | 破線 | NO-MARKER | — |
+| M15 | Emphasis / 強調 | 波線 | NO-MARKER | — |
+| M16 | Emphasis / 強調 | 左に傍線 (all variants) | NO-MARKER | — |
+| M17 | Emphasis / 強調 | 取消線 / 取り消し線 | NO-MARKER | — |
+| M18 | Emphasis / 強調 | 二重取消線 | NO-MARKER | — |
+| M19 | Emphasis / 強調 | 太字 / ゴシック体 | NO-MARKER | — |
+| M20 | Emphasis / 強調 | 斜体 / イタリック | NO-MARKER | — |
+| G1 | Graphics / 画像 | 図（挿絵） | NO-MARKER | — |
+| G2 | Graphics / 画像 | サイズ付き図 | NO-MARKER | — |
+| G3 | Graphics / 画像 | キャプション付き図 | NO-MARKER | — |
+| G4 | Graphics / 画像 | キャプション（独立） | NO-MARKER | — |
+| O1 | Other / その他 | ルビ (`《》`, `｜…《》`) | NO-MARKER | — |
+| O2 | Other / その他 | 縦中横 | NO-MARKER | — |
+| O3 | Other / その他 | 割り注 | NO-MARKER | — |
+| O4 | Other / その他 | 行右小書き | NO-MARKER | — |
+| O5 | Other / その他 | 行左小書き | NO-MARKER | — |
+| O6 | Other / その他 | 上付き小文字 | NO-MARKER | — |
+| O7 | Other / その他 | 下付き小文字 | NO-MARKER | — |
+| O8 | Other / その他 | 小書き | NO-MARKER | — |
+| O9 | Other / その他 | 字詰め | NO-MARKER | — |
+| O10 | Other / その他 | 罫囲み | NO-MARKER | — |
+| O11 | Other / その他 | 破線罫囲み / 破線の罫囲み | NO-MARKER | — |
+| O12 | Other / その他 | 枠囲み | NO-MARKER | — |
+| O13 | Other / その他 | 破線枠囲み | NO-MARKER | — |
+| O14 | Other / その他 | 横組み | NO-MARKER | — |
+| O15 | Other / その他 | 横書き (AozoraEpub3 extension) | NO-MARKER | — |
+| O16 | Other / その他 | 文字サイズ大 (1–6段階) | NO-MARKER | — |
+| O17 | Other / その他 | 文字サイズ小 (1–6段階) | NO-MARKER | — |
+| O18 | Other / その他 | ママ | NO-MARKER | — |
+| O19 | Other / その他 | 底本注記 | NO-MARKER | — |
+| O20 | Other / その他 | 改行 | NO-MARKER | — |
+| O21 | Other / その他 | 本文終わり | NO-MARKER | — |
+| O22 | Other / その他 | 注記付き範囲 | NO-MARKER | — |
+| O23 | Other / その他 | 左に注記付き範囲 | NO-MARKER | — |
+| O24 | Other / その他 | 左ルビ | NO-MARKER | — |
+| O25 | Other / その他 | ルビの底本注記 | NO-MARKER | — |
+| O26 | Other / その他 | ローマ数字 | NO-MARKER | — |
+| O27 | Other / その他 | 正立 (仕様外) | NO-MARKER | — |
+| O28 | Other / その他 | 分数 / 合字 / 篆書体 / ローマ数字 (inline字体) | NO-MARKER | — |
+| O29 | Other / その他 | 二重罫囲み | NO-MARKER | — |
+
+## Summary counts (disjoint 5-way partition)
+
+  VERIFIED      :  11
+  CHUKI-ONLY    :   0
+  MANUAL-ONLY   :   1
+  UNVERIFIED    :   1
+  NO-MARKER     :  72
+  TOTAL         :  85
+
+Markers verified against >=1 canonical source: 12/13 (92.3%) of feature rows that carry a marker.
+
+## UNVERIFIED features (claim not corroborated by either source)
+
+  L13  段組み  -> ['ここからN段組み']
+
+## Coverage gaps: canonical markers NOT represented in PARSER_REPORT §0
+
+  chuki_tag-only gaps:  256 markers
+  manual-only gaps:     309 markers
+
+  --- chuki_tag markers absent from §0 (showing up to 60) ---
+    N段階大きな文字
+    N段階小さな文字
+    ×傍点
+    ×傍点終わり
+    ここからN字上げ
+    ここからN段階大きな文字
+    ここからN段階小さな文字
+    ここからキャプション
+    ここからゴシック体
+    ここから中央揃え
+    ここから中見出し
+    ここから二重取り消し線
+    ここから二重取消線
+    ここから前書き
+    ここから割り注
+    ここから取り消し線
+    ここから取消線
+    ここから大見出し
+    ここから太字
+    ここから小見出し
+    ここから後書き
+    ここから斜体
+    ここから枠囲み
+    ここから横書き
+    ここから横組み
+    ここから破線枠囲み
+    ここから破線罫囲み
+    ここから罫囲み
+    ここでキャプション終わり
+    ここでゴシック体終わり
+    ここで中央揃え終わり
+    ここで中見出し終わり
+    ここで二重取り消し線終わり
+    ここで二重取消線終わり
+    ここで前書き終わり
+    ここで割り注終わり
+    ここで取り消し線終わり
+    ここで取消線終わり
+    ここで大きな文字終わり
+    ここで大見出し終わり
+    ここで太字終わり
+    ここで字上げ終わり
+    ここで字下げ終り
+    ここで字詰め終り
+    ここで字詰め終わり
+    ここで小さな文字終わり
+    ここで小見出し終わり
+    ここで後書き終わり
+    ここで斜体終わり
+    ここで枠囲み終わり
+    ここで横書き終わり
+    ここで横組み終わり
+    ここで破線枠囲み終わり
+    ここで破線罫囲み終わり
+    ここで罫囲み終わり
+    ここまでゴシック体
+    ここまで太字
+    ばつ傍点
+    ばつ傍点終わり
+    キャプション
+    ... (196 more omitted)
+
+  --- annotation/*.html markers absent from §0 (showing up to 60) ---
+    N段階大きな文字
+    N段階小さな文字
+    …
+    …終わり
+    ○字下げ
+    「Decne」は斜体
+    「Nothing from nothing ever yet was born.」は斜体
+    「N　最近まで、私はフランスにいた」は中見出し
+    「N」は上付き小文字
+    「N」は下付き小文字
+    「N」は縦中横
+    「○○○○○」は同行中見出し
+    「○○○○○」は同行大見出し
+    「○○○○○」は同行小見出し
+    「○○○○○」は窓中見出し
+    「○○○○○」は窓大見出し
+    「○○○○○」は窓小見出し
+    「○○《まるまる》」は中見出し
+    「○○」に傍点
+    「○○」に傍線
+    「○○」に（は）…
+    「○○」の左に傍点
+    「○○」の左に傍線
+    「○○」は●段階大きな文字
+    「○○」は●段階小さな文字
+    「○○」は中見出し
+    「○○」は大見出し
+    「○○」は太字
+    「○○」は小見出し
+    「○○」は斜体
+    「○○」は横組み
+    「○○」は縦中横
+    「○○」は罫囲み
+    「てへん＋劣」、第N水準N-N-N
+    「ひもじゅうない」に傍点
+    「カムサツカ」に傍点
+    「キ劇の」は罫囲み
+    「スハフ」は横組み
+    「一」は中見出し
+    「上　先生と私」は大見出し
+    「傍線」に傍線
+    「入藏を思ひ立ツた原因」は同行中見出し
+    「口＋世」、U+ND、ページ数-行数
+    「喋」に「ママ」の注記
+    「土へん＋竒」、ページ数-行数
+    「大焼き」に傍点
+    「大空文庫」に「ママ」の注記
+    「大空文庫」の左に「ママ」の注記
+    「学問のすゝめ　八編」は大見出し
+    「尺」に「〔呎〕」の注記
+    「左眼」に丸傍点
+    「広場へに」はママ
+    「待ち合いで警官の不意打ちを喰う」は中見出し
+    「待つ」は太字
+    「我心をもって他人の身を制すべからず」は中見出し
+    「文明論之概略　巻之一」は大見出し
+    「木＋靈」、第N水準N-N-N
+    「未」の左に「ザル」のルビ
+    「本ト麟太郎※［＃コト、N-N-N
+    「本日記事解禁」はN段階小さな文字
+    ... (249 more omitted)

@@ -93,23 +93,37 @@ parts_json="$out_dir/parts.json"
   echo "\"total_parquet_bytes\":$(du -sb "$warehouse_run_dir" 2>/dev/null | awk '{print $1}'),"
   echo "\"tables\":["
   first=1
-  # Warehouse layout is FLAT: <table>.parquet files directly under the run
-  # dir (verified via find on a real run). Iterate files, one row per table.
+  # Warehouse layout is MIXED: a table may be a flat `<table>.parquet` file
+  # OR a `<table>.parquet/` directory containing `part-NNNNN.parquet` shards.
+  # Aggregate per table across either shape.
   shopt -s nullglob
-  for f in "$warehouse_run_dir"/*.parquet; do
-    name="$(basename "$f" .parquet)"
+  # Collect distinct table names from both files and directories.
+  declare -A seen
+  for entry in "$warehouse_run_dir"/*.parquet "$warehouse_run_dir"/*.parquet/; do
+    [[ -e "$entry" ]] || continue
+    name="$(basename "$entry" .parquet)"
+    [[ -n "${seen[$name]:-}" ]] && continue
+    seen[$name]=1
+    if [[ -d "$warehouse_run_dir/$name.parquet" ]]; then
+      glob="$warehouse_run_dir/$name.parquet/*.parquet"
+      part_count="$(find "$warehouse_run_dir/$name.parquet" -name '*.parquet' | wc -l | tr -d ' ')"
+    else
+      glob="$warehouse_run_dir/$name.parquet"
+      part_count=1
+    fi
     stats="$(duckdb -noheader -list -c "
       SELECT
-        COUNT(DISTINCT row_group_id) AS row_groups,
-        COALESCE(SUM(row_group_compressed_bytes),0) AS compressed_bytes,
-        COALESCE(SUM(row_group_num_rows),0) AS num_rows
-      FROM parquet_metadata('$f');" 2>/dev/null || echo "0|0|0")"
+        COUNT(*) AS row_groups,
+        COALESCE(SUM(row_group_num_rows),0) AS num_rows,
+        COALESCE(SUM(total_compressed_size),0) AS compressed_bytes
+      FROM parquet_metadata('$glob');" 2>/dev/null || echo "0|0|0")"
     row_groups="$(echo "$stats" | cut -d'|' -f1)"
-    bytes="$(echo "$stats" | cut -d'|' -f2)"
-    rows="$(echo "$stats" | cut -d'|' -f3)"
+    rows="$(echo "$stats" | cut -d'|' -f2)"
+    bytes="$(echo "$stats" | cut -d'|' -f3)"
+    median_part_bytes="$(awk -v b="$bytes" -v p="$part_count" 'BEGIN{if(p>0){printf "%d",b/p}else{print 0}}')"
     [[ $first -eq 1 ]] || echo ","
-    printf '  {"table":"%s","row_groups":%s,"compressed_bytes":%s,"num_rows":%s}' \
-      "$name" "$row_groups" "$bytes" "$rows"
+    printf '  {"table":"%s","parts":%s,"row_groups":%s,"compressed_bytes":%s,"num_rows":%s,"median_part_bytes":%s}' \
+      "$name" "$part_count" "$row_groups" "$bytes" "$rows" "$median_part_bytes"
     first=0
   done
   shopt -u nullglob
@@ -134,7 +148,10 @@ speedup="$(jq -r --argjson scaling "$scaling_json" \
   --argjson primary_j "$primary_j" \
   -n '( ($scaling | map(select(.jobs == 1)) | first | .wall_seconds) as $one |
         ( ($scaling | map(select(.jobs == $primary_j)) | first | .wall_seconds) as $peak |
-        (if ($peak // 0) == 0 then 0 else ($one / $peak) end) ) )')"
+        (if ($one // null) == null or ($peak // 0) == 0 then null else ($one / $peak) end) ) )')"
+if [[ -z "$speedup" || "$speedup" == "null" ]]; then
+  speedup="null"
+fi
 
 jq -n \
   --arg generated_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \

@@ -29,5 +29,7 @@ jq -e '.primary.jobs == 1' "$out_dir/summary.json"
 jq -e '.primary.wall_seconds | type == "number"' "$out_dir/summary.json"
 jq -e '.parts.total_parquet_parts | type == "number"' "$out_dir/summary.json"
 jq -e '(.scaling | length) == 2' "$out_dir/summary.json"
-jq -e '.scaling_speedup_primary_over_single | type == "number"' "$out_dir/summary.json"
+# speedup may be null or a number on the tiny synthetic corpus (sub-second runs).
+# Accept either; the shape assertion is the point, not the value.
+jq -e '.scaling_speedup_primary_over_single | (. == null) or (type == "number")' "$out_dir/summary.json"
 echo "smoke ok"

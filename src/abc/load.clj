@@ -60,7 +60,7 @@
     (aozora/merge-entities entities)))
 
 (defn persist-db!
-  ([] (persist-db! xtdb/node))
+  ([] (persist-db! (xtdb/node)))
   ([node]
    (let [{:keys [works persons]} (aozora-bunko-db abc.config/aozora-bunko-path)]
      (timbre/debug "Persisting" (count works) "works to" node)
@@ -234,7 +234,7 @@
 (def !times (atom []))
 
 (defn persist-texts!
-  ([] (persist-texts! xtdb/node))
+  ([] (persist-texts! (xtdb/node)))
   ([a-node]
    (let [work-partitions (into [] (partition-all 100) (xtdb/all-works))]
      (timbre/debug "Persisting over" (count work-partitions) "partitions")

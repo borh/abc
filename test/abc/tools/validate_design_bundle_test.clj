@@ -114,6 +114,20 @@
           (assoc complete-manifest-inputs "work_content_hash" "nope")
           "test")))))
 
+(deftest validate-json-schemas-includes-aat-mapping-contracts-test
+  (testing "design-bundle schema pass validates the AAT mapping and divergence contracts"
+    (let [checked-paths (atom [])]
+      (with-redefs [validate/schema-valid! (fn [_schema path]
+                                             (swap! checked-paths conj path)
+                                             nil)
+                    validate/validate-json! (fn [& _args] nil)
+                    validate/validate-json-lines! (fn [& _args] nil)
+                    validate/validation-errors (fn [& _args] [:expected-error])]
+        (validate/validate-json-schemas! [])
+        (is (every? (set @checked-paths)
+                    ["schemas/aat-parser-ir-mapping.schema.json"
+                     "schemas/aat-parser-ir-divergence.schema.json"]))))))
+
 (deftest comparison-report-schema-test
   (testing "accepts a well-formed comparison report"
     (is (= :ok (am/explain-or-throw!

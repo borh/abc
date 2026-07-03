@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/abc/schemas/aat-parser-ir-divergence.schema.json",
+  "title": "AAT to Parser-IR Divergence Record",
+  "type": "object",
+  "required": ["rule_id", "category", "message", "count", "first_path"],
+  "additionalProperties": false,
+  "properties": {
+    "rule_id": { "type": "string", "pattern": "^[A-Z]+-[0-9]+$" },
+    "category": { "enum": ["LOSS", "INVENTION", "AMBIGUITY", "UNSUPPORTED", "STRUCTURAL"] },
+    "aat_pointer": { "type": ["string", "null"] },
+    "parser_ir_pointer": { "type": ["string", "null"] },
+    "source_value": { "type": ["string", "integer", "boolean", "null"] },
+    "target_value": { "type": ["string", "integer", "boolean", "null"] },
+    "message": { "type": "string" },
+    "count": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Occurrences of this rule in this work (per-rule aggregation; full-corpus probe Finding I)."
+    },
+    "first_path": {
+      "type": ["string", "null"],
+      "description": "AAT pointer to the first occurrence, for debugging."
+    }
+  }
+}

@@ -79,6 +79,8 @@
         run-summary-schema (files/read-json "schemas/run-summary.schema.json")
         manifest-inputs-schema (files/read-json "schemas/manifest-inputs.schema.json")
         comparison-report-schema (files/read-json "schemas/comparison-report.schema.json")
+        aat-parser-ir-mapping-schema (files/read-json "schemas/aat-parser-ir-mapping.schema.json")
+        aat-parser-ir-divergence-schema (files/read-json "schemas/aat-parser-ir-divergence.schema.json")
         tei-validation-result-schema (files/read-json "schemas/tei-validation-result.schema.json")
         iiif-applicability-schema (files/read-json "schemas/iiif-applicability.schema.json")
         person-drift-event-schema (files/read-json "schemas/person-drift-event.schema.json")
@@ -89,6 +91,8 @@
                            ["schemas/run-summary.schema.json" run-summary-schema]
                            ["schemas/manifest-inputs.schema.json" manifest-inputs-schema]
                            ["schemas/comparison-report.schema.json" comparison-report-schema]
+                           ["schemas/aat-parser-ir-mapping.schema.json" aat-parser-ir-mapping-schema]
+                           ["schemas/aat-parser-ir-divergence.schema.json" aat-parser-ir-divergence-schema]
                            ["schemas/tei-validation-result.schema.json" tei-validation-result-schema]
                            ["schemas/iiif-applicability.schema.json" iiif-applicability-schema]
                            ["schemas/person-drift-event.schema.json" person-drift-event-schema]

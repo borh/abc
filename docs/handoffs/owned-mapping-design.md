@@ -89,7 +89,7 @@ which AAT fields are faithful and which are synthesized.
       "properties": {
         "rule_id": { "type": "string", "pattern": "^[A-Z]+-[0-9]+$" },
         "category": { "enum": ["LOSS", "INVENTION", "AMBIGUITY", "UNSUPPORTED", "STRUCTURAL"] },
-        "aat_pointer": { "type": "string" },
+        "aat_pointer": { "type": ["string", "null"] },
         "parser_ir_pointer": { "type": ["string", "null"] },
         "action": { "enum": ["drop", "project", "invent", "flatten", "refuse"] },
         "description": { "type": "string" }

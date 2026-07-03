@@ -5,6 +5,7 @@ use std::{
 };
 
 use anyhow::{Context, Result};
+use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use walkdir::WalkDir;
 
@@ -101,23 +102,29 @@ pub fn compare_report_dirs(a: &Path, b: &Path) -> Result<CompareSummary> {
 }
 
 fn read_reports(root: &Path) -> Result<BTreeMap<String, CheckReport>> {
-    let mut loaded = Vec::new();
-    for entry in WalkDir::new(root) {
-        let entry = entry?;
-        if !entry.file_type().is_file()
-            || entry
-                .path()
-                .extension()
-                .is_none_or(|extension| extension != "json")
-        {
-            continue;
-        }
-        let bytes = fs::read(entry.path())
-            .with_context(|| format!("failed to read {}", entry.path().display()))?;
-        let report: CheckReport = serde_json::from_slice(&bytes)
-            .with_context(|| format!("failed to parse {}", entry.path().display()))?;
-        loaded.push((entry.path().to_owned(), report));
-    }
+    let entries: Vec<_> = WalkDir::new(root)
+        .into_iter()
+        .filter_map(|entry| entry.ok())
+        .filter(|entry| {
+            entry.file_type().is_file()
+                && entry
+                    .path()
+                    .extension()
+                    .is_some_and(|extension| extension == "json")
+        })
+        .map(|entry| entry.path().to_owned())
+        .collect();
+
+    let loaded: Vec<(std::path::PathBuf, CheckReport)> = entries
+        .par_iter()
+        .map(|path| {
+            let bytes = fs::read(path)
+                .with_context(|| format!("failed to read {}", path.display()))?;
+            let report: CheckReport = serde_json::from_slice(&bytes)
+                .with_context(|| format!("failed to parse {}", path.display()))?;
+            Ok::<_, anyhow::Error>((path.to_owned(), report))
+        })
+        .collect::<Result<_>>()?;
 
     let mut work_id_counts = BTreeMap::new();
     for (_, report) in &loaded {

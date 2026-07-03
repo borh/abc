@@ -8,6 +8,7 @@ use ab_diff_utils::{
     FirstDifference, first_difference, hash_bytes, hash_json, hash_string_sequence,
 };
 use anyhow::{Context, Result};
+use rayon::prelude::*;
 use rustc_hash::FxHashMap;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -303,33 +304,46 @@ pub fn compare_aat_dirs_with_limit(
 }
 
 fn read_aat_summaries(root: &Path) -> Result<BTreeMap<String, AatSummary>> {
-    let mut loaded = Vec::new();
-    for entry in WalkDir::new(root) {
-        let entry = entry?;
-        if !entry.file_type().is_file()
-            || entry
-                .path()
-                .extension()
-                .is_none_or(|extension| extension != "json")
-        {
-            continue;
-        }
-        let bytes = fs::read(entry.path())
-            .with_context(|| format!("failed to read {}", entry.path().display()))?;
-        let root: AatRoot = serde_json::from_slice(&bytes)
-            .with_context(|| format!("failed to parse {}", entry.path().display()))?;
-        loaded.push((entry.path().to_owned(), root));
-    }
+    let entries: Vec<std::path::PathBuf> = WalkDir::new(root)
+        .into_iter()
+        .filter_map(|entry| entry.ok())
+        .filter(|entry| {
+            entry.file_type().is_file()
+                && entry
+                    .path()
+                    .extension()
+                    .is_some_and(|extension| extension == "json")
+        })
+        .map(|entry| entry.path().to_owned())
+        .collect();
+
+    let loaded: Vec<(std::path::PathBuf, AatRoot)> = entries
+        .par_iter()
+        .map(|path| {
+            let bytes = fs::read(path)
+                .with_context(|| format!("failed to read {}", path.display()))?;
+            let root: AatRoot = serde_json::from_slice(&bytes)
+                .with_context(|| format!("failed to parse {}", path.display()))?;
+            Ok::<_, anyhow::Error>((path.to_owned(), root))
+        })
+        .collect::<Result<_>>()?;
 
     let mut work_id_counts = BTreeMap::new();
     for (_, root) in &loaded {
         *work_id_counts.entry(root.work_id.clone()).or_insert(0usize) += 1;
     }
 
+    let summaries: Vec<(String, AatSummary)> = loaded
+        .into_par_iter()
+        .map(|(path, root)| {
+            let key = aat_key(&work_id_counts, &path, &root);
+            summarize(root).map(|summary| (key, summary))
+        })
+        .collect::<Result<_>>()?;
+
     let mut out = BTreeMap::new();
-    for (path, root) in loaded {
-        let key = aat_key(&work_id_counts, &path, &root);
-        out.insert(key, summarize(root)?);
+    for (key, summary) in summaries {
+        out.insert(key, summary);
     }
     Ok(out)
 }

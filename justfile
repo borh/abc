@@ -128,6 +128,15 @@ upstream-xhtml-full JOBS="0" MAX_CARDS="0" TRIAGE_LIMIT="100":
 	@jobs="{{JOBS}}"; if [ "$jobs" = "0" ]; then jobs="$(nproc)"; fi; \
 	"{{repo_root}}/reports/aat-fidelity/run-upstream-xhtml-full.sh" --aozora-root "{{repo_root}}/references/aozorabunko" --out-dir "{{ab_db_root}}/aat-fidelity/upstream-xhtml-full" --db "{{ab_db_root}}/aat-fidelity/cross-adapter/fidelity.duckdb" --report-id upstream-xhtml-full --jobs "$jobs" --max-cards "{{MAX_CARDS}}" --triage-limit "{{TRIAGE_LIMIT}}"
 
+aozora2html-aat-full DIR="" JOBS="0" TIMEOUT="180s" REPORT_ID="" WORK_IDS="" FEATURES="":
+	@run_dir="{{DIR}}"; if [ -z "$run_dir" ]; then run_dir="{{ab_db_root}}/aat-corpus/aozora2html-full-$(date -u +%Y%m%dT%H%M%SZ)"; fi; \
+	jobs="{{JOBS}}"; if [ "$jobs" = "0" ]; then jobs="$(nproc)"; fi; \
+	report_id="{{REPORT_ID}}"; if [ -z "$report_id" ]; then report_id="aozora2html-full-$(date -u +%F)"; fi; \
+	args=(--out-dir "$run_dir" --jobs "$jobs" --timeout "{{TIMEOUT}}" --report-id "$report_id" --force); \
+	if [ -n "{{WORK_IDS}}" ]; then args+=(--work-ids "{{WORK_IDS}}"); fi; \
+	if [ -n "{{FEATURES}}" ]; then args+=(--features "{{FEATURES}}"); fi; \
+	"{{repo_root}}/reports/aat-fidelity/run-aozora2html-aat-full.sh" "${args[@]}"
+
 fidelity-full-run DIR="" JOBS="0" MAX_CARDS="0" TRIAGE_LIMIT="100":
 	@run_dir="{{DIR}}"; if [ -z "$run_dir" ]; then run_dir="{{ab_db_root}}/aat-fidelity/run-$(date -u +%F_%H%M%S)"; fi; \
 	mkdir -p "$run_dir/cross-adapter" "$run_dir/upstream-xhtml-full" "$run_dir/aat-fidelity"; \

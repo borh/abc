@@ -56,6 +56,56 @@ cat > "$aat_dir/policy.json" <<'JSON'
 }
 JSON
 
+cat > "$aat_dir/nested-warigaki.json" <<'JSON'
+{
+  "version": 1,
+  "work_id": "nested-warigaki",
+  "meta": {
+    "adapter": "fixture",
+    "adapter_version": "fixture 0.1.0",
+    "source_encoding": "utf-8",
+    "source_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "parse_complete": true,
+    "warnings": []
+  },
+  "blocks": [
+    {
+      "kind": "jisage_block",
+      "children": [
+        {
+          "kind": "paragraph",
+          "content": [
+            {
+              "kind": "style",
+              "style_type": "kaeriten",
+              "content": [
+                {
+                  "kind": "warigaki",
+                  "upper": [{ "kind": "text", "value": "甲" }],
+                  "lower": [{ "kind": "text", "value": "乙" }]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "heading",
+          "level": 1,
+          "style": "fixture",
+          "content": [
+            {
+              "kind": "warigaki",
+              "upper": [{ "kind": "text", "value": "丙" }],
+              "lower": [{ "kind": "text", "value": "丁" }]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+JSON
+
 uv run --isolated --no-project --with 'jsonschema>=4.0' \
   "$repo_root/reports/aat-fidelity/aat_parser_ir_mapping/generate.py" \
   --aat-dir "$aat_dir" \
@@ -65,7 +115,11 @@ uv run --isolated --no-project --with 'jsonschema>=4.0' \
   --summary-json "$out_dir/summary.json"
 
 jq -e '.mapping_version == "0.1.1"' "$out_dir/mapping.json"
+jq -e '.files_with_warigaki == 2' "$out_dir/summary.json"
 jq -e 'any(.transform_rule_descriptions[]; .category == "UNSUPPORTED" and (.description | test("warigaki")))' "$out_dir/mapping.json"
+jq -e 'any(.transform_rule_descriptions[]; .category == "UNSUPPORTED" and .aat_pointer == "blocks[].children[].content[].content[].warigaki")' "$out_dir/mapping.json"
+jq -e 'any(.transform_rule_descriptions[]; .category == "UNSUPPORTED" and .aat_pointer == "blocks[].children[].heading.content[].warigaki")' "$out_dir/mapping.json"
+jq -e 'all(.transform_rule_descriptions[]; (.category != "LOSS") or ((.description | contains("warigaki")) | not))' "$out_dir/mapping.json"
 jq -e 'any(.transform_rule_descriptions[]; .category == "AMBIGUITY" and .parser_ir_pointer == "span")' "$out_dir/mapping.json"
 jq -e 'any(.transform_rule_descriptions[]; .aat_pointer == "blocks[].content[].gaiji.description" and .parser_ir_pointer == "gaiji.raw_marker")' "$out_dir/mapping.json"
 jq -e 'any(.transform_rule_descriptions[]; .category == "LOSS" and .aat_pointer == "blocks[].content[].ruby.base_content")' "$out_dir/mapping.json"
@@ -96,6 +150,20 @@ validate_contract.validate_mapping_contract(
     },
     schema,
 )
+for pointer in [
+    "blocks.content.gaiji.description",
+    "blocks[].content.gaiji.description",
+    "meta.warnings.line",
+]:
+    try:
+        validate_contract.validate_mapping_contract(
+            {"transform_rule_descriptions": [{"rule_id": "A-98", "aat_pointer": pointer}]},
+            schema,
+        )
+    except validate_contract.MappingContractError:
+        pass
+    else:
+        raise AssertionError(f"invalid pointer accepted: {pointer}")
 PY
 
 python3 - <<PY
@@ -113,6 +181,24 @@ spans = [node["span"] for node in nodes]
 assert spans, "fixture should emit parser-IR nodes"
 assert any(span["end"] > 0 for span in spans), spans
 for previous, current in zip(spans, spans[1:]):
-    assert current["start"] >= previous["start"], spans
+    assert current["start"] >= previous["end"], spans
     assert current["end"] >= current["start"], spans
+
+nested = json.loads((Path("$aat_dir") / "nested-warigaki.json").read_text())
+ledger, nested_nodes, _block_kinds, _inline_kinds, has_warigaki = generate.map_aat_document(nested)
+assert has_warigaki, ledger
+assert any(
+    entry["category"] == "UNSUPPORTED" and "warigaki" in entry["aat"]
+    for entry in ledger
+), ledger
+assert any(
+    node.get("type") == "emphasis" and node.get("text") == "甲乙"
+    for node in nested_nodes
+), nested_nodes
+assert any(
+    node.get("type") == "heading" and node.get("text") == "丙丁"
+    for node in nested_nodes
+), nested_nodes
+nested_spans = [node["span"] for node in nested_nodes]
+assert any(span["end"] > span["start"] for span in nested_spans), nested_spans
 PY

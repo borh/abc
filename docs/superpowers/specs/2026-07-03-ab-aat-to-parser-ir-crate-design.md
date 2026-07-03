@@ -79,7 +79,7 @@ Evidence:
   required spans on every node.
 - Observed: ABC owns a per-entry divergence record schema at
   `../abc/schemas/aat-parser-ir-divergence.schema.json`.
-- Observed: The corrected generated mapping has 119 measured folded rule
+- Observed: The corrected generated mapping has 118 measured folded rule
   buckets across aozora-rs plus current aozora2html evidence. The aozora-rs-only
   gate still has zero `UNSUPPORTED` files.
 - Observed: aozora2html can emit warigaki, and parser-IR has no warigaki node.

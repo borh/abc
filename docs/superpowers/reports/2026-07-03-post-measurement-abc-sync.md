@@ -18,7 +18,7 @@ Reviewer decision: accept the 32 `source_index_only_candidates` listed below as 
 - target parser-IR schema hash: `sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396`
 - aozora-rs measured corpus: 17,894 files scanned, 0 files with `UNSUPPORTED`
 - combined generated mapping corpus: 35,583 files scanned across aozora-rs plus current aozora2html evidence
-- generated mapping rules: 119
+- generated mapping rules: 118
 - generated mapper policy: `ruby.direction` projects directly, `style` maps to parser-IR `emphasis`, `windows-31j-lossy` maps to `source.encoding = Shift_JIS` with an `AMBIGUITY` ledger entry, measured aozora2html warigaki emits `UNSUPPORTED`, and missing-span fallback emits `AMBIGUITY`
 
 Do not hand-copy the historical 27-rule table. The mapping artifact is generated from executable policy and measured folded corpus buckets.

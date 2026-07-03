@@ -22,18 +22,24 @@ CATEGORIES = ("LOSS", "AMBIGUITY", "INVENTION", "UNSUPPORTED", "STRUCTURAL")
 def walk_inline_kinds(block: dict) -> list[str]:
     kinds: list[str] = []
 
-    def visit(node: dict) -> None:
+    def visit_inline(node: dict) -> None:
         kind = node.get("kind")
         if kind is not None:
             kinds.append(kind)
         for key in ("content", "base_content", "reading_content", "upper", "lower"):
             for child in node.get(key, []) or []:
                 if isinstance(child, dict):
-                    visit(child)
+                    visit_inline(child)
 
-    for child in block.get("content", []) or []:
-        if isinstance(child, dict):
-            visit(child)
+    def visit_block(node: dict) -> None:
+        for child in node.get("content", []) or []:
+            if isinstance(child, dict):
+                visit_inline(child)
+        for child in node.get("children", []) or []:
+            if isinstance(child, dict):
+                visit_block(child)
+
+    visit_block(block)
     return kinds
 
 

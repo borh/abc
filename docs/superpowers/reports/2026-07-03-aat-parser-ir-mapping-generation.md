@@ -8,20 +8,20 @@ Date: 2026-07-03
 |---|---:|
 | files scanned | 35583 |
 | files failed to parse | 0 |
-| files with UNSUPPORTED | 1012 |
-| files with warigaki | 192 |
+| files with UNSUPPORTED | 1024 |
+| files with warigaki | 243 |
 | total parser-IR nodes emitted | 16230882 |
-| total ledger entries | 27322032 |
-| generated mapping rules | 119 |
+| total ledger entries | 27322031 |
+| generated mapping rules | 118 |
 
 ## Category Counts
 
 | Category | Count |
 |---|---:|
-| LOSS | 344869 |
+| LOSS | 344669 |
 | AMBIGUITY | 16722096 |
 | INVENTION | 7043185 |
-| UNSUPPORTED | 14031 |
+| UNSUPPORTED | 14230 |
 | STRUCTURAL | 3197851 |
 
 ## Schema Hashes

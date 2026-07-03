@@ -114,7 +114,7 @@ def _pointer_allowed(
         return False
 
     if node.get("type") == "array":
-        return _pointer_allowed(schema, node["items"], segments, index, seen)
+        return False
 
     if node.get("type") == "object" or "properties" in node:
         segment = segments[index]
@@ -131,6 +131,8 @@ def _pointer_allowed(
             if child.get("type") != "array":
                 return False
             return _pointer_allowed(schema, child["items"], segments, index + 1, seen)
+        if child.get("type") == "array":
+            return index + 1 == len(segments)
         return _pointer_allowed(schema, child, segments, index + 1, seen)
 
     return False

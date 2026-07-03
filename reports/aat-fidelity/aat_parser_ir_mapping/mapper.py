@@ -118,6 +118,14 @@ def text_projection(node, ledger_list, path):
     if kind in ("style", "font_size", "tcy", "keigakomi", "yokogumi", "caption"):
         return "".join(text_projection(child, ledger_list, f"{path}.content[{i}]")
                        for i, child in enumerate(node.get("content", [])))
+    if kind == "warigaki":
+        ledger_list.append(ledger("UNSUPPORTED", f"{path}.warigaki",
+                                  "(emphasis.text)", "parser-IR has no warigaki node; style text projection flattened upper/lower visible text"))
+        return "".join(
+            text_projection(child, ledger_list, f"{path}.{group}[{i}]")
+            for group in ("upper", "lower")
+            for i, child in enumerate(node.get(group, []))
+        )
     ledger_list.append(ledger("LOSS", f"{path}.{kind}",
                               "(emphasis.text)", f"style text projection dropped inline kind '{kind}'"))
     return ""
@@ -277,8 +285,9 @@ def map_block(block, nodes, ledger_list, offset, path):
             if child.get("kind") == "text":
                 parts.append(child.get("value", ""))
             else:
-                ledger_list.append(ledger("LOSS", f"{path}.heading.content[{i}].{child.get('kind')}",
-                                          "(none)", "non-text inline inside heading flattened to text projection; structure lost"))
+                if child.get("kind") != "warigaki":
+                    ledger_list.append(ledger("LOSS", f"{path}.heading.content[{i}].{child.get('kind')}",
+                                              "(none)", "non-text inline inside heading flattened to text projection; structure lost"))
                 parts.append(text_projection(child, ledger_list, f"{path}.heading.content[{i}]"))
         level = block.get("level", 1)
         # AAT level max 3, parser-IR max 6 -> fits, but range divergence recorded.

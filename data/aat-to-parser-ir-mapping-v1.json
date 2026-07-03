@@ -417,21 +417,13 @@
     {
       "rule_id": "L-10",
       "category": "LOSS",
-      "aat_pointer": "blocks[].children[].content[].content[].content[].content[].warigaki",
-      "parser_ir_pointer": "(emphasis.text)",
-      "action": "drop",
-      "description": "Observed 1 occurrence; first_path=blocks[946].children[0].content[1].content[1].content[0].content[0].warigaki. style text projection dropped inline kind 'warigaki'"
-    },
-    {
-      "rule_id": "L-11",
-      "category": "LOSS",
       "aat_pointer": "blocks[].children[].content[].content[].content[].raw",
       "parser_ir_pointer": "(emphasis.text)",
       "action": "drop",
       "description": "Observed 1 occurrence; first_path=blocks[4].children[0].content[1].content[1].content[1].raw. style text projection dropped inline kind 'raw'"
     },
     {
-      "rule_id": "L-12",
+      "rule_id": "L-11",
       "category": "LOSS",
       "aat_pointer": "blocks[].children[].content[].content[].content[].ruby.reading",
       "parser_ir_pointer": "(emphasis.text)",
@@ -439,15 +431,7 @@
       "description": "Observed 53 occurrences; first_path=blocks[216].children[0].content[0].content[0].content[1].ruby.reading. style text projection kept ruby base text only; reading not represented inside emphasis.text"
     },
     {
-      "rule_id": "L-13",
-      "category": "LOSS",
-      "aat_pointer": "blocks[].children[].content[].content[].content[].warigaki",
-      "parser_ir_pointer": "(emphasis.text)",
-      "action": "drop",
-      "description": "Observed 2 occurrences; first_path=blocks[48].children[0].content[1].content[1].content[5].warigaki. style text projection dropped inline kind 'warigaki'"
-    },
-    {
-      "rule_id": "L-14",
+      "rule_id": "L-12",
       "category": "LOSS",
       "aat_pointer": "blocks[].children[].content[].content[].figure",
       "parser_ir_pointer": "(emphasis.text)",
@@ -455,7 +439,7 @@
       "description": "Observed 2 occurrences; first_path=blocks[206].children[0].content[1].content[3].figure. style text projection dropped inline kind 'figure'"
     },
     {
-      "rule_id": "L-15",
+      "rule_id": "L-13",
       "category": "LOSS",
       "aat_pointer": "blocks[].children[].content[].content[].raw",
       "parser_ir_pointer": "(emphasis.text)",
@@ -463,7 +447,7 @@
       "description": "Observed 772 occurrences; first_path=blocks[3].children[0].content[1].content[2].raw. style text projection dropped inline kind 'raw'"
     },
     {
-      "rule_id": "L-16",
+      "rule_id": "L-14",
       "category": "LOSS",
       "aat_pointer": "blocks[].children[].content[].content[].ruby.reading",
       "parser_ir_pointer": "(emphasis.text)",
@@ -471,15 +455,7 @@
       "description": "Observed 3612 occurrences; first_path=blocks[37].children[0].content[0].content[0].ruby.reading. style text projection kept ruby base text only; reading not represented inside emphasis.text"
     },
     {
-      "rule_id": "L-17",
-      "category": "LOSS",
-      "aat_pointer": "blocks[].children[].content[].content[].warigaki",
-      "parser_ir_pointer": "(emphasis.text)",
-      "action": "drop",
-      "description": "Observed 54 occurrences; first_path=blocks[1].children[0].content[1].content[23].warigaki. style text projection dropped inline kind 'warigaki'"
-    },
-    {
-      "rule_id": "L-18",
+      "rule_id": "L-15",
       "category": "LOSS",
       "aat_pointer": "blocks[].children[].content[].figure.css_class",
       "parser_ir_pointer": null,
@@ -487,7 +463,7 @@
       "description": "Observed 556 occurrences; first_path=blocks[27].children[0].content[0].figure.css_class. css_class=illustration dropped; parser-IR image has no such field"
     },
     {
-      "rule_id": "L-19",
+      "rule_id": "L-16",
       "category": "LOSS",
       "aat_pointer": "blocks[].children[].content[].figure.height",
       "parser_ir_pointer": null,
@@ -495,7 +471,7 @@
       "description": "Observed 551 occurrences; first_path=blocks[27].children[0].content[0].figure.height. height=44 dropped; parser-IR image has no such field"
     },
     {
-      "rule_id": "L-20",
+      "rule_id": "L-17",
       "category": "LOSS",
       "aat_pointer": "blocks[].children[].content[].figure.width",
       "parser_ir_pointer": null,
@@ -503,7 +479,7 @@
       "description": "Observed 551 occurrences; first_path=blocks[27].children[0].content[0].figure.width. width=346 dropped; parser-IR image has no such field"
     },
     {
-      "rule_id": "L-21",
+      "rule_id": "L-18",
       "category": "LOSS",
       "aat_pointer": "blocks[].children[].content[].gaiji.unresolved_reason",
       "parser_ir_pointer": null,
@@ -511,7 +487,7 @@
       "description": "Observed 1738 occurrences; first_path=blocks[25].children[4].content[1].gaiji.unresolved_reason. unresolved_reason='image_fallback' has no parser-IR field"
     },
     {
-      "rule_id": "L-22",
+      "rule_id": "L-19",
       "category": "LOSS",
       "aat_pointer": "blocks[].children[].content[].ruby.base_content",
       "parser_ir_pointer": null,
@@ -519,7 +495,7 @@
       "description": "Observed 575 occurrences; first_path=blocks[16].children[0].content[1].ruby.base_content. nested ruby base_content substructure flattened away"
     },
     {
-      "rule_id": "L-23",
+      "rule_id": "L-20",
       "category": "LOSS",
       "aat_pointer": "blocks[].children[].heading.content[].font_size",
       "parser_ir_pointer": null,
@@ -527,7 +503,7 @@
       "description": "Observed 9 occurrences; first_path=blocks[1081].children[0].heading.content[1].font_size. non-text inline inside heading flattened to text projection; structure lost"
     },
     {
-      "rule_id": "L-24",
+      "rule_id": "L-21",
       "category": "LOSS",
       "aat_pointer": "blocks[].children[].heading.content[].gaiji",
       "parser_ir_pointer": null,
@@ -535,7 +511,7 @@
       "description": "Observed 20 occurrences; first_path=blocks[1].children[0].heading.content[1].gaiji. non-text inline inside heading flattened to text projection; structure lost"
     },
     {
-      "rule_id": "L-25",
+      "rule_id": "L-22",
       "category": "LOSS",
       "aat_pointer": "blocks[].children[].heading.content[].keigakomi",
       "parser_ir_pointer": null,
@@ -543,7 +519,7 @@
       "description": "Observed 1 occurrence; first_path=blocks[154].children[0].heading.content[0].keigakomi. non-text inline inside heading flattened to text projection; structure lost"
     },
     {
-      "rule_id": "L-26",
+      "rule_id": "L-23",
       "category": "LOSS",
       "aat_pointer": "blocks[].children[].heading.content[].raw",
       "parser_ir_pointer": "(emphasis.text)",
@@ -551,7 +527,7 @@
       "description": "Observed 117 occurrences; first_path=blocks[1081].children[0].heading.content[3].raw. style text projection dropped inline kind 'raw'"
     },
     {
-      "rule_id": "L-27",
+      "rule_id": "L-24",
       "category": "LOSS",
       "aat_pointer": "blocks[].children[].heading.content[].raw",
       "parser_ir_pointer": null,
@@ -559,7 +535,7 @@
       "description": "Observed 117 occurrences; first_path=blocks[1081].children[0].heading.content[3].raw. non-text inline inside heading flattened to text projection; structure lost"
     },
     {
-      "rule_id": "L-28",
+      "rule_id": "L-25",
       "category": "LOSS",
       "aat_pointer": "blocks[].children[].heading.content[].ruby",
       "parser_ir_pointer": null,
@@ -567,7 +543,7 @@
       "description": "Observed 615 occurrences; first_path=blocks[0].children[0].heading.content[1].ruby. non-text inline inside heading flattened to text projection; structure lost"
     },
     {
-      "rule_id": "L-29",
+      "rule_id": "L-26",
       "category": "LOSS",
       "aat_pointer": "blocks[].children[].heading.content[].ruby.reading",
       "parser_ir_pointer": "(emphasis.text)",
@@ -575,7 +551,7 @@
       "description": "Observed 615 occurrences; first_path=blocks[0].children[0].heading.content[1].ruby.reading. style text projection kept ruby base text only; reading not represented inside emphasis.text"
     },
     {
-      "rule_id": "L-30",
+      "rule_id": "L-27",
       "category": "LOSS",
       "aat_pointer": "blocks[].children[].heading.content[].style",
       "parser_ir_pointer": null,
@@ -583,23 +559,7 @@
       "description": "Observed 37 occurrences; first_path=blocks[17].children[0].heading.content[1].style. non-text inline inside heading flattened to text projection; structure lost"
     },
     {
-      "rule_id": "L-31",
-      "category": "LOSS",
-      "aat_pointer": "blocks[].children[].heading.content[].warigaki",
-      "parser_ir_pointer": "(emphasis.text)",
-      "action": "drop",
-      "description": "Observed 1 occurrence; first_path=blocks[13].children[0].heading.content[0].warigaki. style text projection dropped inline kind 'warigaki'"
-    },
-    {
-      "rule_id": "L-32",
-      "category": "LOSS",
-      "aat_pointer": "blocks[].children[].heading.content[].warigaki",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 1 occurrence; first_path=blocks[13].children[0].heading.content[0].warigaki. non-text inline inside heading flattened to text projection; structure lost"
-    },
-    {
-      "rule_id": "L-33",
+      "rule_id": "L-28",
       "category": "LOSS",
       "aat_pointer": "blocks[].children[].heading.style",
       "parser_ir_pointer": null,
@@ -607,7 +567,7 @@
       "description": "Observed 7564 occurrences; first_path=blocks[16].children[0].heading.style. heading.style='normal' dropped"
     },
     {
-      "rule_id": "L-34",
+      "rule_id": "L-29",
       "category": "LOSS",
       "aat_pointer": "blocks[].content[].content[].content[].content[].content[].ruby.reading",
       "parser_ir_pointer": "(emphasis.text)",
@@ -615,7 +575,7 @@
       "description": "Observed 8 occurrences; first_path=blocks[531].content[0].content[0].content[0].content[0].content[3].ruby.reading. style text projection kept ruby base text only; reading not represented inside emphasis.text"
     },
     {
-      "rule_id": "L-35",
+      "rule_id": "L-30",
       "category": "LOSS",
       "aat_pointer": "blocks[].content[].content[].content[].content[].ruby.reading",
       "parser_ir_pointer": "(emphasis.text)",
@@ -623,7 +583,7 @@
       "description": "Observed 20 occurrences; first_path=blocks[72].content[0].content[0].content[0].content[1].ruby.reading. style text projection kept ruby base text only; reading not represented inside emphasis.text"
     },
     {
-      "rule_id": "L-36",
+      "rule_id": "L-31",
       "category": "LOSS",
       "aat_pointer": "blocks[].content[].content[].content[].raw",
       "parser_ir_pointer": "(emphasis.text)",
@@ -631,7 +591,7 @@
       "description": "Observed 130 occurrences; first_path=blocks[235].content[1].content[13].content[2].raw. style text projection dropped inline kind 'raw'"
     },
     {
-      "rule_id": "L-37",
+      "rule_id": "L-32",
       "category": "LOSS",
       "aat_pointer": "blocks[].content[].content[].content[].ruby.reading",
       "parser_ir_pointer": "(emphasis.text)",
@@ -639,15 +599,7 @@
       "description": "Observed 375 occurrences; first_path=blocks[115].content[0].content[0].content[3].ruby.reading. style text projection kept ruby base text only; reading not represented inside emphasis.text"
     },
     {
-      "rule_id": "L-38",
-      "category": "LOSS",
-      "aat_pointer": "blocks[].content[].content[].content[].warigaki",
-      "parser_ir_pointer": "(emphasis.text)",
-      "action": "drop",
-      "description": "Observed 2 occurrences; first_path=blocks[4].content[1].content[0].content[1].warigaki. style text projection dropped inline kind 'warigaki'"
-    },
-    {
-      "rule_id": "L-39",
+      "rule_id": "L-33",
       "category": "LOSS",
       "aat_pointer": "blocks[].content[].content[].figure",
       "parser_ir_pointer": "(emphasis.text)",
@@ -655,7 +607,7 @@
       "description": "Observed 21 occurrences; first_path=blocks[2].content[1].content[1].figure. style text projection dropped inline kind 'figure'"
     },
     {
-      "rule_id": "L-40",
+      "rule_id": "L-34",
       "category": "LOSS",
       "aat_pointer": "blocks[].content[].content[].raw",
       "parser_ir_pointer": "(emphasis.text)",
@@ -663,7 +615,7 @@
       "description": "Observed 1934 occurrences; first_path=blocks[108].content[1].content[1].raw. style text projection dropped inline kind 'raw'"
     },
     {
-      "rule_id": "L-41",
+      "rule_id": "L-35",
       "category": "LOSS",
       "aat_pointer": "blocks[].content[].content[].ruby.reading",
       "parser_ir_pointer": "(emphasis.text)",
@@ -671,15 +623,7 @@
       "description": "Observed 40104 occurrences; first_path=blocks[1].content[0].content[6].ruby.reading. style text projection kept ruby base text only; reading not represented inside emphasis.text"
     },
     {
-      "rule_id": "L-42",
-      "category": "LOSS",
-      "aat_pointer": "blocks[].content[].content[].warigaki",
-      "parser_ir_pointer": "(emphasis.text)",
-      "action": "drop",
-      "description": "Observed 139 occurrences; first_path=blocks[3].content[1].content[1].warigaki. style text projection dropped inline kind 'warigaki'"
-    },
-    {
-      "rule_id": "L-43",
+      "rule_id": "L-36",
       "category": "LOSS",
       "aat_pointer": "blocks[].content[].figure.caption",
       "parser_ir_pointer": null,
@@ -687,7 +631,7 @@
       "description": "Observed 618 occurrences; first_path=blocks[38].content[0].figure.caption. nested figure caption[] dropped (could be emitted as caption node, scope target ambiguous)"
     },
     {
-      "rule_id": "L-44",
+      "rule_id": "L-37",
       "category": "LOSS",
       "aat_pointer": "blocks[].content[].figure.css_class",
       "parser_ir_pointer": null,
@@ -695,7 +639,7 @@
       "description": "Observed 3485 occurrences; first_path=blocks[5].content[1].figure.css_class. css_class=illustration dropped; parser-IR image has no such field"
     },
     {
-      "rule_id": "L-45",
+      "rule_id": "L-38",
       "category": "LOSS",
       "aat_pointer": "blocks[].content[].figure.height",
       "parser_ir_pointer": null,
@@ -703,7 +647,7 @@
       "description": "Observed 3357 occurrences; first_path=blocks[5].content[1].figure.height. height=829 dropped; parser-IR image has no such field"
     },
     {
-      "rule_id": "L-46",
+      "rule_id": "L-39",
       "category": "LOSS",
       "aat_pointer": "blocks[].content[].figure.width",
       "parser_ir_pointer": null,
@@ -711,7 +655,7 @@
       "description": "Observed 3357 occurrences; first_path=blocks[5].content[1].figure.width. width=570 dropped; parser-IR image has no such field"
     },
     {
-      "rule_id": "L-47",
+      "rule_id": "L-40",
       "category": "LOSS",
       "aat_pointer": "blocks[].content[].gaiji.unresolved_reason",
       "parser_ir_pointer": null,
@@ -719,7 +663,7 @@
       "description": "Observed 18927 occurrences; first_path=blocks[5].content[3].gaiji.unresolved_reason. unresolved_reason='unresolved' has no parser-IR field"
     },
     {
-      "rule_id": "L-48",
+      "rule_id": "L-41",
       "category": "LOSS",
       "aat_pointer": "blocks[].content[].ruby.base_content",
       "parser_ir_pointer": null,
@@ -727,7 +671,7 @@
       "description": "Observed 10004 occurrences; first_path=blocks[5].content[15].ruby.base_content. nested ruby base_content substructure flattened away"
     },
     {
-      "rule_id": "L-49",
+      "rule_id": "L-42",
       "category": "LOSS",
       "aat_pointer": "blocks[].heading.content[].gaiji",
       "parser_ir_pointer": null,
@@ -735,7 +679,7 @@
       "description": "Observed 10 occurrences; first_path=blocks[515].heading.content[0].gaiji. non-text inline inside heading flattened to text projection; structure lost"
     },
     {
-      "rule_id": "L-50",
+      "rule_id": "L-43",
       "category": "LOSS",
       "aat_pointer": "blocks[].heading.content[].raw",
       "parser_ir_pointer": "(emphasis.text)",
@@ -743,7 +687,7 @@
       "description": "Observed 5 occurrences; first_path=blocks[0].heading.content[1].raw. style text projection dropped inline kind 'raw'"
     },
     {
-      "rule_id": "L-51",
+      "rule_id": "L-44",
       "category": "LOSS",
       "aat_pointer": "blocks[].heading.content[].raw",
       "parser_ir_pointer": null,
@@ -751,7 +695,7 @@
       "description": "Observed 5 occurrences; first_path=blocks[0].heading.content[1].raw. non-text inline inside heading flattened to text projection; structure lost"
     },
     {
-      "rule_id": "L-52",
+      "rule_id": "L-45",
       "category": "LOSS",
       "aat_pointer": "blocks[].heading.content[].ruby",
       "parser_ir_pointer": null,
@@ -759,7 +703,7 @@
       "description": "Observed 62 occurrences; first_path=blocks[1116].heading.content[1].ruby. non-text inline inside heading flattened to text projection; structure lost"
     },
     {
-      "rule_id": "L-53",
+      "rule_id": "L-46",
       "category": "LOSS",
       "aat_pointer": "blocks[].heading.content[].ruby.reading",
       "parser_ir_pointer": "(emphasis.text)",
@@ -767,7 +711,7 @@
       "description": "Observed 62 occurrences; first_path=blocks[1116].heading.content[1].ruby.reading. style text projection kept ruby base text only; reading not represented inside emphasis.text"
     },
     {
-      "rule_id": "L-54",
+      "rule_id": "L-47",
       "category": "LOSS",
       "aat_pointer": "blocks[].heading.content[].style",
       "parser_ir_pointer": null,
@@ -775,7 +719,7 @@
       "description": "Observed 3 occurrences; first_path=blocks[650].heading.content[1].style. non-text inline inside heading flattened to text projection; structure lost"
     },
     {
-      "rule_id": "L-55",
+      "rule_id": "L-48",
       "category": "LOSS",
       "aat_pointer": "blocks[].heading.style",
       "parser_ir_pointer": null,
@@ -783,7 +727,7 @@
       "description": "Observed 9210 occurrences; first_path=blocks[1].heading.style. heading.style='handled_elsewhere' dropped"
     },
     {
-      "rule_id": "L-56",
+      "rule_id": "L-49",
       "category": "LOSS",
       "aat_pointer": "meta.adapter",
       "parser_ir_pointer": null,
@@ -791,7 +735,7 @@
       "description": "Observed 35583 occurrences; first_path=meta.adapter. adapter='aozora-rs' dropped; parser-IR carries no producer identity / parse status"
     },
     {
-      "rule_id": "L-57",
+      "rule_id": "L-50",
       "category": "LOSS",
       "aat_pointer": "meta.adapter_version",
       "parser_ir_pointer": null,
@@ -799,7 +743,7 @@
       "description": "Observed 35583 occurrences; first_path=meta.adapter_version. adapter_version='aozora-rs-adapter 0.1.0 2b4e8d1' dropped; parser-IR carries no producer identity / parse status"
     },
     {
-      "rule_id": "L-58",
+      "rule_id": "L-51",
       "category": "LOSS",
       "aat_pointer": "meta.metrics",
       "parser_ir_pointer": null,
@@ -807,7 +751,7 @@
       "description": "Observed 17894 occurrences; first_path=meta.metrics. performance/fallback metrics dropped; adapter-fidelity concern not representable"
     },
     {
-      "rule_id": "L-59",
+      "rule_id": "L-52",
       "category": "LOSS",
       "aat_pointer": "meta.parse_complete",
       "parser_ir_pointer": null,
@@ -815,7 +759,7 @@
       "description": "Observed 35583 occurrences; first_path=meta.parse_complete. parse_complete=True dropped; parser-IR carries no producer identity / parse status"
     },
     {
-      "rule_id": "L-60",
+      "rule_id": "L-53",
       "category": "LOSS",
       "aat_pointer": "meta.semantic_summary",
       "parser_ir_pointer": null,
@@ -905,13 +849,37 @@
     {
       "rule_id": "U-03",
       "category": "UNSUPPORTED",
+      "aat_pointer": "blocks[].children[].content[].content[].content[].content[].warigaki",
+      "parser_ir_pointer": "(emphasis.text)",
+      "action": "drop",
+      "description": "Observed 1 occurrence; first_path=blocks[946].children[0].content[1].content[1].content[0].content[0].warigaki. parser-IR has no warigaki node; style text projection flattened upper/lower visible text"
+    },
+    {
+      "rule_id": "U-04",
+      "category": "UNSUPPORTED",
+      "aat_pointer": "blocks[].children[].content[].content[].content[].warigaki",
+      "parser_ir_pointer": "(emphasis.text)",
+      "action": "drop",
+      "description": "Observed 2 occurrences; first_path=blocks[48].children[0].content[1].content[1].content[5].warigaki. parser-IR has no warigaki node; style text projection flattened upper/lower visible text"
+    },
+    {
+      "rule_id": "U-05",
+      "category": "UNSUPPORTED",
+      "aat_pointer": "blocks[].children[].content[].content[].warigaki",
+      "parser_ir_pointer": "(emphasis.text)",
+      "action": "drop",
+      "description": "Observed 54 occurrences; first_path=blocks[1].children[0].content[1].content[23].warigaki. parser-IR has no warigaki node; style text projection flattened upper/lower visible text"
+    },
+    {
+      "rule_id": "U-06",
+      "category": "UNSUPPORTED",
       "aat_pointer": "blocks[].children[].content[].font_size",
       "parser_ir_pointer": "emphasis(?)",
       "action": "drop",
       "description": "Observed 5828 occurrences; first_path=blocks[4].children[0].content[0].font_size. inline_container kind 'font_size' has no first-class parser-IR node; only emphasis.text/style exist"
     },
     {
-      "rule_id": "U-04",
+      "rule_id": "U-07",
       "category": "UNSUPPORTED",
       "aat_pointer": "blocks[].children[].content[].keigakomi",
       "parser_ir_pointer": "emphasis(?)",
@@ -919,7 +887,7 @@
       "description": "Observed 165 occurrences; first_path=blocks[645].children[0].content[0].keigakomi. inline_container kind 'keigakomi' has no first-class parser-IR node; only emphasis.text/style exist"
     },
     {
-      "rule_id": "U-05",
+      "rule_id": "U-08",
       "category": "UNSUPPORTED",
       "aat_pointer": "blocks[].children[].content[].warigaki",
       "parser_ir_pointer": null,
@@ -927,7 +895,15 @@
       "description": "Observed 411 occurrences; first_path=blocks[13].children[2].content[5].warigaki. parser-IR has no warigaki node; upper/lower flattened to text nodes, split-line structure lost"
     },
     {
-      "rule_id": "U-06",
+      "rule_id": "U-09",
+      "category": "UNSUPPORTED",
+      "aat_pointer": "blocks[].children[].heading.content[].warigaki",
+      "parser_ir_pointer": "(emphasis.text)",
+      "action": "drop",
+      "description": "Observed 1 occurrence; first_path=blocks[13].children[0].heading.content[0].warigaki. parser-IR has no warigaki node; style text projection flattened upper/lower visible text"
+    },
+    {
+      "rule_id": "U-10",
       "category": "UNSUPPORTED",
       "aat_pointer": "blocks[].content[].caption",
       "parser_ir_pointer": "emphasis(?)",
@@ -935,7 +911,23 @@
       "description": "Observed 61 occurrences; first_path=blocks[61].content[1].caption. inline_container kind 'caption' has no first-class parser-IR node; only emphasis.text/style exist"
     },
     {
-      "rule_id": "U-07",
+      "rule_id": "U-11",
+      "category": "UNSUPPORTED",
+      "aat_pointer": "blocks[].content[].content[].content[].warigaki",
+      "parser_ir_pointer": "(emphasis.text)",
+      "action": "drop",
+      "description": "Observed 2 occurrences; first_path=blocks[4].content[1].content[0].content[1].warigaki. parser-IR has no warigaki node; style text projection flattened upper/lower visible text"
+    },
+    {
+      "rule_id": "U-12",
+      "category": "UNSUPPORTED",
+      "aat_pointer": "blocks[].content[].content[].warigaki",
+      "parser_ir_pointer": "(emphasis.text)",
+      "action": "drop",
+      "description": "Observed 139 occurrences; first_path=blocks[3].content[1].content[1].warigaki. parser-IR has no warigaki node; style text projection flattened upper/lower visible text"
+    },
+    {
+      "rule_id": "U-13",
       "category": "UNSUPPORTED",
       "aat_pointer": "blocks[].content[].font_size",
       "parser_ir_pointer": "emphasis(?)",
@@ -943,7 +935,7 @@
       "description": "Observed 5990 occurrences; first_path=blocks[2].content[1].font_size. inline_container kind 'font_size' has no first-class parser-IR node; only emphasis.text/style exist"
     },
     {
-      "rule_id": "U-08",
+      "rule_id": "U-14",
       "category": "UNSUPPORTED",
       "aat_pointer": "blocks[].content[].keigakomi",
       "parser_ir_pointer": "emphasis(?)",
@@ -951,7 +943,7 @@
       "description": "Observed 152 occurrences; first_path=blocks[14].content[0].keigakomi. inline_container kind 'keigakomi' has no first-class parser-IR node; only emphasis.text/style exist"
     },
     {
-      "rule_id": "U-09",
+      "rule_id": "U-15",
       "category": "UNSUPPORTED",
       "aat_pointer": "blocks[].content[].warigaki",
       "parser_ir_pointer": null,

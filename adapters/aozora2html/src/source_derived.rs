@@ -83,7 +83,9 @@ fn normalize_figure_alt(raw: &str) -> String {
     let trimmed = raw.trim();
     if let Some(end) = trimmed.find('」') {
         if trimmed.starts_with('「') && end > 0 {
-            return trimmed[1..end].trim().to_string();
+            // '「' is a multibyte char; slice from after it (byte 3) up to the first
+            // '」' byte offset. Both bounds are char boundaries, so the slice is safe.
+            return trimmed['「'.len_utf8()..end].trim().to_string();
         }
     }
     let normalized = figure_alt_suffix_re().replace_all(trimmed, "").to_string();
@@ -2066,5 +2068,23 @@ mod tests {
                 ],
             })],
         );
+    }
+
+    #[test]
+    fn source_derived_normalize_figure_alt_strips_brackets_around_multibyte_content() {
+        // source_derived::normalize_figure_alt has the same byte-slice panic class as
+        // the xhtml_mapper helper. Its guard is find('」') first + starts_with('「')
+        // + end > 0, so any alt of the form 「...」... panics. Char-aware slicing must
+        // return the content up to the first '」'.
+        assert_eq!(super::normalize_figure_alt("「図書館」"), "図書館");
+    }
+
+    #[test]
+    fn source_derived_normalize_figure_alt_no_trailing_bracket_falls_back() {
+        // source_derived's branch DOES enter for 「外」中 (no trailing 」): find('」')
+        // is Some, starts_with('「') is true, end > 0. Char-aware slicing returns 外.
+        // This locks the source_derived call path; it differs from the xhtml_mapper
+        // fallback for this input, so the two helpers must NOT be merged.
+        assert_eq!(super::normalize_figure_alt("「外」中"), "外");
     }
 }

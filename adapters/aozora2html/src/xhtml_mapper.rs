@@ -316,13 +316,16 @@ fn normalize_optional_int(value: &str) -> Option<i64> {
 }
 
 fn normalize_figure_alt(raw: &str) -> String {
-    let mut text = raw.trim();
+    let text = raw.trim();
     if text.starts_with('「') && text.ends_with('」') {
-        if let Some(idx) = text.find('」') {
-            return text[1..idx].to_string();
+        // '「' is a multibyte char; skip it by char length, then slice up to the
+        // first '」'. find('」') returns a byte offset that is a char boundary in a
+        // string starting at a char boundary, so the slice is safe.
+        let rest = &text['「'.len_utf8()..];
+        if let Some(rel) = rest.find('」') {
+            return rest[..rel].to_string();
         }
     }
-    text = text.trim();
     let re = figure_alt_suffix_re();
     let normalized = re.replace_all(text, "").to_string();
     normalized.trim().trim_matches('「').trim_matches('」').to_string()
@@ -1085,4 +1088,28 @@ pub fn map_blocks_from_xhtml_bytes(
         .unwrap_or(root);
     let blocks = map_blocks_from_container(body, warnings, summary);
     Ok((blocks, false))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::normalize_figure_alt;
+
+    #[test]
+    fn normalize_figure_alt_strips_brackets_around_multibyte_content() {
+        // '「' and '」' are 3-byte UTF-8 chars. Byte slicing text[1..idx] used to panic
+        // because byte 1 falls inside '「'. Char-aware slicing must return the inner text.
+        assert_eq!(normalize_figure_alt("「図書館」"), "図書館");
+    }
+
+    #[test]
+    fn normalize_figure_alt_content_up_to_first_closing_bracket() {
+        // Behavior-preserving vs the original text.find('」'): the content up to the
+        // FIRST '」' is returned. The xhtml_mapper guard requires ends_with('」').
+        assert_eq!(normalize_figure_alt("「外」中」"), "外");
+    }
+
+    #[test]
+    fn normalize_figure_alt_passes_through_unbracketed_text() {
+        assert_eq!(normalize_figure_alt("plain alt"), "plain alt");
+    }
 }

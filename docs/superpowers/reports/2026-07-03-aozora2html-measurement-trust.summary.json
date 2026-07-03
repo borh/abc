@@ -2636,12 +2636,12 @@
   },
   "bucket_counts": {
     "warigaki": {
-      "observed_in_aat": 275,
+      "observed_in_aat": 277,
       "adapter_timeout_or_protocol_error": 32,
       "schema_invalid_or_no_aat": 0,
       "parse_incomplete": 5,
       "report_failed_other_property": 16,
-      "source_feature_without_aat_observation": 31
+      "source_feature_without_aat_observation": 29
     },
     "kunten": {
       "observed_in_aat": 435,
@@ -2707,6 +2707,7 @@
         "000296_1864",
         "000296_45664",
         "000296_46668",
+        "000296_47149",
         "000296_47343",
         "000296_50268",
         "000301_1872",
@@ -2832,6 +2833,7 @@
         "001266_47238",
         "001295_47207",
         "001310_51841",
+        "001313_47601",
         "001320_48270",
         "001323_48280",
         "001341_49633",
@@ -2994,7 +2996,6 @@
       "source_feature_without_aat_observation": [
         "000106_57905",
         "000121_45086",
-        "000296_47149",
         "000416_47410",
         "000754_48376",
         "000933_47549",
@@ -3021,7 +3022,6 @@
         "001095_43223",
         "001231_46296",
         "001231_46297",
-        "001313_47601",
         "001383_58152"
       ]
     },
@@ -3697,11 +3697,11 @@
     "policy_incomplete_union": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/worksets/policy-incomplete-union.json"
   },
   "retry": {
-    "run_dir": "/db/ab-validator/aat-corpus/aozora2html-source-feature-gap-20260703T082427Z",
-    "report_id": "aozora2html-source-feature-gap-2026-07-03",
+    "run_dir": "/db/ab-validator/aat-corpus/aozora2html-final-four-gap-20260703T091523Z",
+    "report_id": "aozora2html-final-four-gap-2026-07-03",
     "aat_observed_counts": {
-      "warigaki_works": 34,
-      "warigaki_nodes": 154,
+      "warigaki_works": 36,
+      "warigaki_nodes": 206,
       "kunten_works": 5,
       "kunten_nodes": 364,
       "kunten_semantic_observations": 364,

@@ -15,6 +15,7 @@ mkdir -p \
   "$corpus/cards/000002/files" \
   "$corpus/cards/000003/files" \
   "$corpus/cards/000004/files" \
+  "$corpus/cards/000005/files" \
   "$residual" \
   "$generated"
 
@@ -73,6 +74,10 @@ write_zip(
     "混在 ［＃返り点甲］ ［＃レ］ ［＃訓点送り仮名「ト」］ ［＃（ノ）］\n",
     encoding="utf-8",
 )
+(corpus / "cards/000005/files/title_next_line_author_note.txt").write_text(
+    "※題名の次行に「［＃ここから割り注］京都文科大學教授［＃改行］文學博士［＃ここで割り注終わり］　松本文三郎君」と著者名が表記されています。\n",
+    encoding="utf-8",
+)
 PY
 
 cat > "$run/index.json" <<JSON
@@ -81,7 +86,7 @@ cat > "$run/index.json" <<JSON
   "corpus_root": "$corpus",
   "corpus_hash": "sha256:smoke",
   "generated_at": "2026-07-03T00:00:00Z",
-  "works_count": 7,
+  "works_count": 8,
   "works": [
     {
       "id": "war-koko",
@@ -131,10 +136,17 @@ cat > "$run/index.json" <<JSON
       "html_path": "cards/000004/files/kunten_mixed.html",
       "features": ["kaeriten", "okurigana"],
       "feature_lines": {"kaeriten": [1], "okurigana": [1]}
+    },
+    {
+      "id": "title-next-line-author-note",
+      "txt_path": "cards/000005/files/title_next_line_author_note.txt",
+      "html_path": "cards/000005/files/title_next_line_author_note.html",
+      "features": ["warigaki"],
+      "feature_lines": {"warigaki": [1]}
     }
   ],
   "by_feature": {
-    "warigaki": ["war-koko", "war-compact", "unknown-hit", "hybrid-overlap"],
+    "warigaki": ["war-koko", "war-compact", "unknown-hit", "hybrid-overlap", "title-next-line-author-note"],
     "kaeriten": ["kun-compact", "hybrid-overlap", "kun-mixed"],
     "okurigana": ["oku-note", "kun-mixed"]
   }
@@ -144,6 +156,7 @@ JSON
 cat > "$residual/warigaki-source_feature_without_aat_observation.json" <<'JSON'
 [
   "hybrid-overlap",
+  "title-next-line-author-note",
   "unknown-hit",
   "war-compact",
   "war-koko"
@@ -187,8 +200,8 @@ python3 "$repo_root/reports/aat-fidelity/classify-aozora2html-source-feature-gap
   --summary-json "$generated/source-feature-gap-classification.summary.json" \
   --worksets-dir "$worksets"
 
-jq -e '.marker_class_counts["warigaki.koko_start_end"] == 1' "$generated/source-feature-gap-classification.summary.json"
-jq -e '.marker_class_counts["warigaki.with_source_line_break"] == 1' "$generated/source-feature-gap-classification.summary.json"
+jq -e '.marker_class_counts["warigaki.koko_start_end"] == 2' "$generated/source-feature-gap-classification.summary.json"
+jq -e '.marker_class_counts["warigaki.with_source_line_break"] == 2' "$generated/source-feature-gap-classification.summary.json"
 jq -e '.marker_class_counts["warigaki.compact_start_end"] == 2' "$generated/source-feature-gap-classification.summary.json"
 jq -e '.marker_class_counts["kunten.kaeriten.compact"] == 4' "$generated/source-feature-gap-classification.summary.json"
 jq -e '.marker_class_counts["kunten.kaeriten.named"] == 2' "$generated/source-feature-gap-classification.summary.json"
@@ -196,8 +209,9 @@ jq -e '.marker_class_counts["kunten.okurigana.parenthesized"] == 3' "$generated/
 jq -e '.marker_class_counts["kunten.okurigana.named"] == 2' "$generated/source-feature-gap-classification.summary.json"
 jq -e '.marker_class_counts.unknown == 1' "$generated/source-feature-gap-classification.summary.json"
 jq -e '.context_hint_counts.body_candidate == 7' "$generated/source-feature-gap-classification.summary.json"
-jq -e '.context_hint_counts.base_text_note == 2' "$generated/source-feature-gap-classification.summary.json"
+jq -e '.context_hint_counts.base_text_note == 3' "$generated/source-feature-gap-classification.summary.json"
 jq -e '.works["oku-note"].context_hints == ["base_text_note"]' "$generated/source-feature-gap-classification.summary.json"
+jq -e '.works["title-next-line-author-note"].context_hints == ["base_text_note"]' "$generated/source-feature-gap-classification.summary.json"
 jq -e '.works["hybrid-overlap"].context_hints == ["base_text_note", "body_candidate"]' "$generated/source-feature-gap-classification.summary.json"
 jq -e '.works["kun-mixed"].marker_classes == ["kunten.kaeriten.compact", "kunten.kaeriten.named", "kunten.okurigana.named", "kunten.okurigana.parenthesized"]' "$generated/source-feature-gap-classification.summary.json"
 jq -e '.worksets["warigaki.adapter_obligation_candidates"] == "'"$worksets"'/warigaki-adapter-obligation-candidates.json"' "$generated/source-feature-gap-classification.summary.json"
@@ -208,5 +222,5 @@ jq -e '.worksets["source_index_only_candidates"] == "'"$worksets"'/source-featur
 jq -e '. == ["war-compact", "war-koko"]' "$worksets/warigaki-adapter-obligation-candidates.json"
 jq -e '. == ["hybrid-overlap", "kun-compact", "kun-mixed"]' "$worksets/kunten-adapter-obligation-candidates.json"
 jq -e '. == ["hybrid-overlap", "kun-compact", "kun-mixed", "war-compact", "war-koko"]' "$worksets/source-feature-gap-adapter-obligation-union.json"
-jq -e '. == ["oku-note"]' "$worksets/source-feature-gap-source-index-only-candidates.json"
+jq -e '. == ["oku-note", "title-next-line-author-note"]' "$worksets/source-feature-gap-source-index-only-candidates.json"
 jq -e '. == ["unknown-hit"]' "$worksets/source-feature-gap-unknown-union.json"

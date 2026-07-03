@@ -1,9 +1,9 @@
 # Aozora2html Policy Residual Triage
 
 - run_dir: `/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z`
-- retry_run_dir: `/db/ab-validator/aat-corpus/aozora2html-source-feature-gap-20260703T082427Z`
+- retry_run_dir: `/db/ab-validator/aat-corpus/aozora2html-final-four-gap-20260703T091523Z`
 - audit_summary: `docs/superpowers/reports/2026-07-03-aozora2html-measurement-trust.summary.json`
-- residual_union_count: 266
+- residual_union_count: 264
 
 ## Residual Bucket Counts
 
@@ -13,7 +13,7 @@
 | warigaki | schema_invalid_or_no_aat | 0 | schema or AAT persistence fix |
 | warigaki | parse_incomplete | 5 | adapter parse-completeness fix |
 | warigaki | report_failed_other_property | 16 | adapter-oracle characterization |
-| warigaki | source_feature_without_aat_observation | 31 | source detector versus adapter observation triage |
+| warigaki | source_feature_without_aat_observation | 29 | source detector versus adapter observation triage |
 | kunten | adapter_timeout_or_protocol_error | 36 | adapter timeout diagnosis |
 | kunten | schema_invalid_or_no_aat | 0 | schema or AAT persistence fix |
 | kunten | parse_incomplete | 10 | adapter parse-completeness fix |
@@ -28,7 +28,7 @@
 | warigaki | schema_invalid_or_no_aat | 0 | 0 | 0 | 0 |  |  | schema or AAT persistence failure |
 | warigaki | parse_incomplete | 5 | 5 | 5 | 0 | gaiji_resolution:5, parse_completeness:5, ruby_completeness:5 | baseline:5 | parse-completeness failure |
 | warigaki | report_failed_other_property | 16 | 16 | 16 | 0 | gaiji_resolution:2, ruby_completeness:1, visible_text_body_order:15 | baseline:16 | AAT present but non-policy property failures need oracle characterization |
-| warigaki | source_feature_without_aat_observation | 31 | 31 | 31 | 31 |  | baseline:27, retry:4 | valid AAT without family observation; adapter/source-feature mapping candidate |
+| warigaki | source_feature_without_aat_observation | 29 | 29 | 29 | 29 |  | baseline:27, retry:2 | valid AAT without family observation; adapter/source-feature mapping candidate |
 | kunten | adapter_timeout_or_protocol_error | 36 | 36 | 0 | 0 | adapter_timeout:36 | baseline:36 | adapter runtime/protocol failure |
 | kunten | schema_invalid_or_no_aat | 0 | 0 | 0 | 0 |  |  | schema or AAT persistence failure |
 | kunten | parse_incomplete | 10 | 10 | 10 | 0 | gaiji_resolution:10, parse_completeness:10, ruby_completeness:10 | baseline:10 | parse-completeness failure |
@@ -101,7 +101,6 @@ Next action: source detector versus adapter observation triage
 |---|---|---|---|---|---|---|---|
 | 000106_57905 | baseline | warigaki:279 | gaiji.marker, gaiji_ruby.inline_base, ruby.basic |  | `check-reports/aozora2html-adapter/000106_57905-d4c02a20ee39.json` | `aat/aozora2html-adapter/000106_57905-d4c02a20ee39.json` | source detector versus adapter observation triage |
 | 000121_45086 | baseline | warigaki:2269 | gaiji.marker, ruby.basic |  | `check-reports/aozora2html-adapter/000121_45086-1a5c986d414a.json` | `aat/aozora2html-adapter/000121_45086-1a5c986d414a.json` | source detector versus adapter observation triage |
-| 000296_47149 | retry | warigaki:21, warigaki:34 | ruby.basic |  | `check-reports/aozora2html-adapter/000296_47149-6902a2409f29.json` | `aat/aozora2html-adapter/000296_47149-6902a2409f29.json` | source detector versus adapter observation triage |
 | 000416_47410 | baseline | warigaki:374 | ruby.basic |  | `check-reports/aozora2html-adapter/000416_47410-657b7e22f1a5.json` | `aat/aozora2html-adapter/000416_47410-657b7e22f1a5.json` | source detector versus adapter observation triage |
 | 000754_48376 | baseline | warigaki:122 | gaiji.marker, gaiji_ruby.inline_base, ruby.basic |  | `check-reports/aozora2html-adapter/000754_48376-324688ac5877.json` | `aat/aozora2html-adapter/000754_48376-324688ac5877.json` | source detector versus adapter observation triage |
 | 000933_47549 | baseline | warigaki:68 | gaiji.marker, kunten.kaeriten, ruby.basic |  | `check-reports/aozora2html-adapter/000933_47549-bd7f8686f785.json` | `aat/aozora2html-adapter/000933_47549-bd7f8686f785.json` | source detector versus adapter observation triage |
@@ -114,6 +113,7 @@ Next action: source detector versus adapter observation triage
 | 001095_43209 | baseline | warigaki:15, warigaki:305, warigaki:306 | ruby.basic |  | `check-reports/aozora2html-adapter/001095_43209-d54cc59d4ee9.json` | `aat/aozora2html-adapter/001095_43209-d54cc59d4ee9.json` | source detector versus adapter observation triage |
 | 001095_43210 | baseline | warigaki:15, warigaki:442, warigaki:443 | ruby.basic |  | `check-reports/aozora2html-adapter/001095_43210-433f96fc10f2.json` | `aat/aozora2html-adapter/001095_43210-433f96fc10f2.json` | source detector versus adapter observation triage |
 | 001095_43211 | baseline | warigaki:12, warigaki:248, warigaki:249 | ruby.basic |  | `check-reports/aozora2html-adapter/001095_43211-5d30b342e8d6.json` | `aat/aozora2html-adapter/001095_43211-5d30b342e8d6.json` | source detector versus adapter observation triage |
+| 001095_43212 | baseline | warigaki:15, warigaki:334, warigaki:335 | ruby.basic |  | `check-reports/aozora2html-adapter/001095_43212-0a94f7b02220.json` | `aat/aozora2html-adapter/001095_43212-0a94f7b02220.json` | source detector versus adapter observation triage |
 
 ### kunten adapter_timeout_or_protocol_error
 

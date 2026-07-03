@@ -416,16 +416,43 @@ fn find_html_sibling(path: &Path, corpus_root: &Path) -> Result<Option<String>> 
     let Some(parent) = path.parent() else {
         return Ok(None);
     };
+    let source_work_prefix = path
+        .file_stem()
+        .and_then(|stem| stem.to_str())
+        .and_then(|stem| stem.split('_').next());
+    let mut candidates = Vec::new();
     for entry in fs::read_dir(parent)? {
         let entry = entry?;
         let candidate = entry.path();
         if candidate.extension().is_some_and(|ext| {
             ext.eq_ignore_ascii_case("html") || ext.eq_ignore_ascii_case("xhtml")
         }) {
-            let rel = candidate.strip_prefix(corpus_root)?;
-            return Ok(Some(normalize_relative_path(rel)));
+            candidates.push(candidate);
         }
     }
+    candidates.sort();
+
+    if let Some(source_work_prefix) = source_work_prefix {
+        for candidate in &candidates {
+            let Some(html_work_prefix) = candidate
+                .file_stem()
+                .and_then(|stem| stem.to_str())
+                .and_then(|stem| stem.split('_').next())
+            else {
+                continue;
+            };
+            if html_work_prefix == source_work_prefix {
+                let rel = candidate.strip_prefix(corpus_root)?;
+                return Ok(Some(normalize_relative_path(rel)));
+            }
+        }
+    }
+
+    if let Some(candidate) = candidates.first() {
+        let rel = candidate.strip_prefix(corpus_root)?;
+        return Ok(Some(normalize_relative_path(rel)));
+    }
+
     Ok(None)
 }
 

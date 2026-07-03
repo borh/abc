@@ -1,7 +1,7 @@
 # Aozora2html Policy Samples
 
 - run_dir: `/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z`
-- retry_run_dir: `/db/ab-validator/aat-corpus/aozora2html-source-feature-gap-20260703T082427Z`
+- retry_run_dir: `/db/ab-validator/aat-corpus/aozora2html-final-four-gap-20260703T091523Z`
 - audit: `docs/superpowers/reports/2026-07-03-aozora2html-measurement-trust.md`
 - limit_per_bucket: 10
 
@@ -66,7 +66,6 @@
 |---|---|---|---|---|---|---|---|---|
 | 000106_57905 | baseline | `check-reports/aozora2html-adapter/000106_57905-d4c02a20ee39.json` | `aat/aozora2html-adapter/000106_57905-d4c02a20ee39.json` | `` |  |  |  | `{}` |
 | 000121_45086 | baseline | `check-reports/aozora2html-adapter/000121_45086-1a5c986d414a.json` | `aat/aozora2html-adapter/000121_45086-1a5c986d414a.json` | `` |  |  |  | `{}` |
-| 000296_47149 | retry | `check-reports/aozora2html-adapter/000296_47149-6902a2409f29.json` | `aat/aozora2html-adapter/000296_47149-6902a2409f29.json` | `` |  |  |  | `{}` |
 | 000416_47410 | baseline | `check-reports/aozora2html-adapter/000416_47410-657b7e22f1a5.json` | `aat/aozora2html-adapter/000416_47410-657b7e22f1a5.json` | `` |  |  |  | `{}` |
 | 000754_48376 | baseline | `check-reports/aozora2html-adapter/000754_48376-324688ac5877.json` | `aat/aozora2html-adapter/000754_48376-324688ac5877.json` | `` |  |  |  | `{}` |
 | 000933_47549 | baseline | `check-reports/aozora2html-adapter/000933_47549-bd7f8686f785.json` | `aat/aozora2html-adapter/000933_47549-bd7f8686f785.json` | `` |  |  |  | `{}` |
@@ -74,6 +73,7 @@
 | 001095_43204 | baseline | `check-reports/aozora2html-adapter/001095_43204-f900f5a3a78d.json` | `aat/aozora2html-adapter/001095_43204-f900f5a3a78d.json` | `` |  |  |  | `{}` |
 | 001095_43205 | baseline | `check-reports/aozora2html-adapter/001095_43205-ce1539fea3a6.json` | `aat/aozora2html-adapter/001095_43205-ce1539fea3a6.json` | `` |  |  |  | `{}` |
 | 001095_43206 | baseline | `check-reports/aozora2html-adapter/001095_43206-b09f54b68b1d.json` | `aat/aozora2html-adapter/001095_43206-b09f54b68b1d.json` | `` |  |  |  | `{}` |
+| 001095_43207 | baseline | `check-reports/aozora2html-adapter/001095_43207-e1ff696f32a9.json` | `aat/aozora2html-adapter/001095_43207-e1ff696f32a9.json` | `` |  |  |  | `{}` |
 
 ## Observed kunten
 

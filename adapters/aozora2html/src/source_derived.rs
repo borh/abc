@@ -717,6 +717,32 @@ fn source_derived_warigaki_content(
     None
 }
 
+fn normalize_inline_container_warigaki_notes(
+    content: Vec<Value>,
+    summary: &mut SourceDerivedSummary,
+) -> Vec<Value> {
+    let normalized = content
+        .into_iter()
+        .map(|node| normalize_inline_node_warigaki_notes(node, summary))
+        .collect::<Vec<_>>();
+    source_derived_warigaki_content(&normalized, summary).unwrap_or(normalized)
+}
+
+fn normalize_inline_node_warigaki_notes(
+    node: Value,
+    summary: &mut SourceDerivedSummary,
+) -> Value {
+    let Some(content) = node.get("content").and_then(Value::as_array) else {
+        return node;
+    };
+    let normalized_content = normalize_inline_container_warigaki_notes(content.clone(), summary);
+    let mut cloned = node;
+    if let Some(obj) = cloned.as_object_mut() {
+        obj.insert("content".to_string(), Value::Array(normalized_content));
+    }
+    cloned
+}
+
 fn paragraph_is_note(content: &[Value], note_text: &str) -> bool {
     let meaningful = content
         .iter()
@@ -794,16 +820,14 @@ fn normalize_source_derived_paragraph(
         content = strip_newline_only_text(&content);
     }
 
+    content = normalize_inline_container_warigaki_notes(content, summary);
+
     if let Some(gaiji_content) = source_derived_gaiji_content(&content, source_text, summary) {
         return vec![json!({"kind":"paragraph","content":gaiji_content})];
     }
 
     if let Some(inlined) = source_derived_inlined_gaiji_content(&content, source_text, summary) {
         return vec![json!({"kind":"paragraph","content":inlined})];
-    }
-
-    if let Some(warigaki_content) = source_derived_warigaki_content(&content, summary) {
-        return vec![json!({"kind":"paragraph","content":warigaki_content})];
     }
 
     let meaningful: Vec<&Value> = content
@@ -1842,6 +1866,55 @@ mod tests {
                     ],
                 }],
                 "x-indent":1,
+            })],
+        );
+    }
+
+    #[test]
+    fn warigaki_notes_are_source_derived_inside_unmapped_inline_container() {
+        let blocks = vec![json!({
+            "kind":"paragraph",
+            "content":[{
+                "kind":"style",
+                "style_type":"unmapped-div",
+                "content":[
+                    {"kind":"text","value":"法律学"},
+                    {
+                        "kind":"style",
+                        "style_type":"notes",
+                        "content":[{"kind":"text","value":"［＃ここから割り注］"}],
+                    },
+                    {"kind":"text","value":"これらの順序をおい原書を翻訳せざるべからず。我が輩の任なり"},
+                    {
+                        "kind":"style",
+                        "style_type":"notes",
+                        "content":[{"kind":"text","value":"［＃ここで割り注終わり］"}],
+                    },
+                    {"kind":"text","value":"等"},
+                ],
+                "x-aozora2html-unmapped":"div",
+            }],
+        })];
+
+        assert_eq!(
+            normalize(&blocks, "full source"),
+            vec![json!({
+                "kind":"paragraph",
+                "content":[{
+                    "kind":"style",
+                    "style_type":"unmapped-div",
+                    "content":[
+                        {"kind":"text","value":"法律学"},
+                        {
+                            "kind":"warigaki",
+                            "upper":[{"kind":"text","value":"これらの順序をおい原書を翻訳せざるべからず。我が輩の任なり"}],
+                            "lower":[],
+                            "x-provenance":"source-derived",
+                        },
+                        {"kind":"text","value":"等"},
+                    ],
+                    "x-aozora2html-unmapped":"div",
+                }],
             })],
         );
     }

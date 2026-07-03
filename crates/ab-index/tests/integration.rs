@@ -98,6 +98,40 @@ fn indexes_first_text_entry_from_aozora_zip() {
 }
 
 #[test]
+fn indexes_html_sibling_with_matching_source_work_prefix() {
+    let root = std::env::temp_dir().join(format!("ab-index-html-sibling-{}", std::process::id()));
+    let files = root.join("cards/000296/files");
+    fs::create_dir_all(&files).unwrap();
+    write_zip_text(&files.join("1864_ruby_61551.zip"), "old.txt", "古い本文");
+    fs::write(files.join("1864_61590.html"), "<html>old</html>").unwrap();
+    write_zip_text(
+        &files.join("47149_ruby_27921.zip"),
+        "gakkono_setsu.txt",
+        "法律学［＃ここから割り注］注［＃ここで割り注終わり］",
+    );
+    fs::write(files.join("47149_27961.html"), "<html>current</html>").unwrap();
+
+    let patterns = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../data/feature-patterns.toml")
+        .canonicalize()
+        .unwrap();
+    let detector = FeatureDetector::from_toml(&patterns).unwrap();
+    let index = build_index(&root, &detector).unwrap();
+
+    let work = index
+        .works
+        .iter()
+        .find(|work| work.id == "000296_47149")
+        .unwrap();
+    assert_eq!(
+        work.html_path.as_deref(),
+        Some("cards/000296/files/47149_27961.html")
+    );
+
+    let _ = fs::remove_dir_all(root);
+}
+
+#[test]
 fn indexes_misnamed_zip_with_txt_extension() {
     let root = std::env::temp_dir().join(format!("ab-index-misnamed-zip-{}", std::process::id()));
     let files = root.join("cards/001030/files");

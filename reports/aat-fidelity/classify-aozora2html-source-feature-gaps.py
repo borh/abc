@@ -30,7 +30,7 @@ NON_BODY_HINTS = ("notation_example", "base_text_note", "publication_or_editor_n
 KUNTEN_FEATURES = ("kaeriten", "okurigana")
 CONTEXT_HINT_PATTERNS = {
     "notation_example": ("（例）", "：返り点"),
-    "base_text_note": ("題は底本では", "底本では"),
+    "base_text_note": ("題は底本では", "題名の次行", "底本では"),
     "publication_or_editor_note": ("初出", "ファイル末", "入力"),
 }
 WARIAKI_MARKERS = {

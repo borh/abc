@@ -2,7 +2,7 @@
 
 - run_dir: `/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z`
 - report_id: `aozora2html-full-2026-07-03`
-- retry run: `/db/ab-validator/aat-corpus/aozora2html-source-feature-gap-20260703T082427Z`
+- retry run: `/db/ab-validator/aat-corpus/aozora2html-final-four-gap-20260703T091523Z`
 
 ## Source Counts
 
@@ -25,12 +25,12 @@
 
 | Bucket | Works |
 |---|---:|
-| observed_in_aat | 275 |
+| observed_in_aat | 277 |
 | adapter_timeout_or_protocol_error | 32 |
 | schema_invalid_or_no_aat | 0 |
 | parse_incomplete | 5 |
 | report_failed_other_property | 16 |
-| source_feature_without_aat_observation | 31 |
+| source_feature_without_aat_observation | 29 |
 
 ## warigaki Failure Overlap
 

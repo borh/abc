@@ -1,6 +1,6 @@
 {
   "run_dir": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z",
-  "retry_run_dir": "/db/ab-validator/aat-corpus/aozora2html-source-feature-gap-20260703T082427Z",
+  "retry_run_dir": "/db/ab-validator/aat-corpus/aozora2html-final-four-gap-20260703T091523Z",
   "sample_counts": {
     "warigaki": {
       "observed_in_aat": 10,

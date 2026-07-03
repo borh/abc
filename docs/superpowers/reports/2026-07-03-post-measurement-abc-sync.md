@@ -4,11 +4,11 @@ Date: 2026-07-03
 
 ## Verdict
 
-`MEASUREMENT_BLOCKED`
+`CLI_READY_WITH_LOWER_BOUND_CAVEAT`
 
-The generated AAT-to-parser-IR mapping evidence is ready, but the current aozora2html policy measurement is still not decision-complete after the source-feature-gap retry. Do not start the owned `crates/ab-aat-to-parser-ir` CLI plan yet.
+The generated AAT-to-parser-IR mapping evidence is ready, and the refreshed aozora2html source-feature gap measurement no longer has clean adapter-obligation or unknown clean gaps. The follow-up `crates/ab-aat-to-parser-ir` CLI plan may start, scoped to the generated mapping artifact and the v1 drop-sidecar behavior for unsupported critical constructs.
 
-The gate stays blocked because clean adapter-obligation candidates still remain in `source_feature_without_aat_observation` after retry. The source-index-only residuals can be recorded as a lower-bound caveat, but that does not override the remaining clean adapter-obligation gap.
+Reviewer decision: accept the 32 `source_index_only_candidates` listed below as outside the body adapter obligation for this gate. These works remain a lower-bound caveat for full-source feature accounting, not a blocker for the v1 AAT-to-parser-IR CLI.
 
 ## Mapping Evidence
 
@@ -17,7 +17,7 @@ The gate stays blocked because clean adapter-obligation candidates still remain 
 - target parser-IR schema hash: `sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396`
 - aozora-rs measured corpus: 17,894 files scanned, 0 files with `UNSUPPORTED`
 - generated mapping rules: 25
-- policy changes in the generated mapper: `ruby.direction` projects directly, `style` maps to parser-IR `emphasis`, and `windows-31j-lossy` maps to `source.encoding = Shift_JIS` with an `AMBIGUITY` ledger entry
+- generated mapper policy: `ruby.direction` projects directly, `style` maps to parser-IR `emphasis`, and `windows-31j-lossy` maps to `source.encoding = Shift_JIS` with an `AMBIGUITY` ledger entry
 
 Do not hand-copy the historical 27-rule table. The mapping artifact is generated from executable policy and measured folded corpus buckets.
 
@@ -25,9 +25,11 @@ Do not hand-copy the historical 27-rule table. The mapping artifact is generated
 
 Baseline run: `/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z`
 
-Targeted retry run: `/db/ab-validator/aat-corpus/aozora2html-source-feature-gap-20260703T082427Z`
+Final targeted retry run: `/db/ab-validator/aat-corpus/aozora2html-final-four-gap-20260703T091523Z`
 
-Targeted retry workset: `/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/source-feature-gap-worksets/source-feature-gap-adapter-obligation-union.json` (38 works)
+Final targeted retry workset: `/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/source-feature-gap-worksets/source-feature-gap-final-four-retry-38.json` (38 works)
+
+Current clean adapter-obligation workset: `/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/source-feature-gap-worksets/source-feature-gap-adapter-obligation-union.json` (0 works)
 
 Full-run metrics before trust classification:
 
@@ -51,31 +53,42 @@ Source feature counts from the trust audit:
 | kunten union | 635 |
 | policy union | 878 |
 
-Merged trust buckets after retry:
+Merged trust buckets after the final retry:
 
 | Family | observed_in_aat | adapter_timeout_or_protocol_error | schema_invalid_or_no_aat | parse_incomplete | report_failed_other_property | source_feature_without_aat_observation |
 |---|---:|---:|---:|---:|---:|---:|
-| warigaki | 275 | 32 | 0 | 5 | 16 | 31 |
+| warigaki | 277 | 32 | 0 | 5 | 16 | 29 |
 | kunten | 435 | 36 | 0 | 10 | 151 | 3 |
 
-Clean source-feature bucket before/after:
+Clean source-feature bucket before/final-after:
 
-| Family | Before | After | Delta |
+| Family | Before | Final after | Delta |
 |---|---:|---:|---:|
-| warigaki | 65 | 31 | -34 |
+| warigaki | 65 | 29 | -36 |
 | kunten | 3 | 3 | 0 |
-| union | 68 | 34 | -34 |
+| union | 68 | 32 | -36 |
 
-Classifier-backed clean-gap status after retry:
+The final retry added two warigaki observations that were previously missing in clean adapter-obligation works: `000296_47149` and `001313_47601`. The remaining two reviewed works, `001231_46296` and `001231_46297`, are now classified as title-next-line source notes, not body adapter obligations.
 
-- marker classification counts: `warigaki.koko_start_end=110`, `warigaki.compact_start_end=63`, `warigaki.with_source_line_break=11`, `kunten.kaeriten.compact=7`, `kunten.okurigana.parenthesized=5`
-- adapter-obligation candidates: 38 before retry, 4 still clean after retry
-- source-index-only candidates: 30, all still present as clean residuals
-- unknown clean gaps: 0 before retry, 0 after retry
+## Clean-Gap Classification
 
-The retry cleared 34 of the 38 targeted clean adapter-obligation candidates. Four clean adapter-obligation works still remain in `source_feature_without_aat_observation`: `000296_47149`, `001231_46296`, `001231_46297`, and `001313_47601`.
+Source-feature gap classification report: `docs/superpowers/reports/2026-07-03-aozora2html-source-feature-gap-classification.md`
 
-## Blocking Buckets
+Current classifier-backed clean-gap status:
+
+- adapter-obligation candidates: 0 warigaki, 0 kunten, 0 union
+- source-index-only candidates: 32
+- unknown clean gaps: 0
+- marker classification counts: `warigaki.compact_start_end=63`, `warigaki.koko_start_end=3`, `warigaki.with_source_line_break=3`, `kunten.kaeriten.compact=7`, `kunten.okurigana.parenthesized=5`
+- context hint counts: `base_text_note=31`, `notation_example=21`, `publication_or_editor_note=22`
+
+Accepted source-index-only workset: `/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/source-feature-gap-worksets/source-feature-gap-source-index-only-candidates.json`
+
+Accepted source-index-only work IDs:
+
+`000106_57905`, `000121_45086`, `000416_47410`, `000712_52955`, `000712_52957`, `000754_48376`, `000933_47549`, `001095_43203`, `001095_43204`, `001095_43205`, `001095_43206`, `001095_43207`, `001095_43208`, `001095_43209`, `001095_43210`, `001095_43211`, `001095_43212`, `001095_43213`, `001095_43214`, `001095_43215`, `001095_43216`, `001095_43217`, `001095_43218`, `001095_43219`, `001095_43220`, `001095_43221`, `001095_43222`, `001095_43223`, `001231_46296`, `001231_46297`, `001383_56944`, `001383_58152`
+
+## Residual Buckets
 
 Generated worksets:
 
@@ -83,29 +96,20 @@ Generated worksets:
 - kunten incomplete: `/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/worksets/kunten-incomplete.json` (22 works)
 - policy incomplete union: `/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/worksets/policy-incomplete-union.json` (32 works)
 
-Blocking residual buckets:
+Residual triage report: `docs/superpowers/reports/2026-07-03-aozora2html-policy-residual-triage.md`
+
+Residual bucket counts:
 
 - warigaki `adapter_timeout_or_protocol_error`: 32 works
 - warigaki `parse_incomplete`: 5 works
 - warigaki `report_failed_other_property`: 16 works
-- warigaki `source_feature_without_aat_observation`: 31 works
+- warigaki `source_feature_without_aat_observation`: 29 works, all accepted source-index-only
 - kunten `adapter_timeout_or_protocol_error`: 36 works
 - kunten `parse_incomplete`: 10 works
 - kunten `report_failed_other_property`: 151 works
-- kunten `source_feature_without_aat_observation`: 3 works
+- kunten `source_feature_without_aat_observation`: 3 works, all accepted source-index-only
 
-Residual triage report: `docs/superpowers/reports/2026-07-03-aozora2html-policy-residual-triage.md`
-
-The `source_feature_without_aat_observation` buckets remain the clean policy-specific adapter-emission blocker. After retry they contain 31 warigaki works and 3 kunten works with reports present, AAT present, and clean check reports, but no matching family observation in AAT.
-
-Source-index-only scope decision:
-
-- accepted scope: the 30 `source_index_only_candidates` are outside the body adapter obligation for this gate and may be carried as an explicit lower-bound caveat list
-- non-accepted scope: the 4 remaining adapter-obligation candidates are still in scope for measurement completion, so the verdict cannot move to `CLI_READY_WITH_LOWER_BOUND_CAVEAT`
-
-The `report_failed_other_property` buckets remain characterized separately. They changed only slightly from 17 to 16 warigaki works and from 153 to 151 kunten works. Their failures are still dominated by `visible_text_body_order` with small `gaiji_resolution` and `ruby_completeness` tails, so they remain adapter-oracle characterization work.
-
-The parse-incomplete buckets are unchanged at 5 warigaki and 10 kunten works. The timeout/protocol buckets did not stay flat; they rose from 7 to 32 warigaki works and from 12 to 36 kunten works in the merged audit, so they remain separate runtime stability work rather than evidence for a lower-bound acceptance.
+The timeout/protocol, parse-incomplete, and report-failed buckets remain follow-up adapter/runtime/oracle characterization work. They do not change the clean body adapter-obligation conclusion above; policy counts for aozora2html remain lower bounds until those buckets are separately resolved.
 
 ## Failure Overlap
 
@@ -125,8 +129,6 @@ Sample report: `docs/superpowers/reports/2026-07-03-aozora2html-policy-samples.m
 
 ## Next Gate
 
-Before a follow-up `crates/ab-aat-to-parser-ir` implementation plan starts, the 4 remaining clean adapter-obligation works in `source_feature_without_aat_observation` must be resolved and the audit, sample, and residual triage reports must be regenerated.
+The next allowed implementation plan is `crates/ab-aat-to-parser-ir`, using the generated `data/aat-to-parser-ir-mapping-v1.json` artifact and validating against ABC's mapping schema. Keep manifest identity and compatibility-registry hardening behind that generated mapping artifact and its release-smoke checks.
 
-A human reviewer still needs to record the lower-bound decision that explicitly names the 30 accepted `source_index_only_candidates` and separately assigns follow-up work for the 4 still-blocking adapter-obligation works and the timeout/runtime buckets, but that decision is only the accepted caveat for source-index-only scope and does not open the CLI plan while the 4 adapter-obligation gaps remain.
-
-Until then, manifest identity and compatibility-registry hardening remain paused.
+Separate follow-up work should characterize timeout/protocol, parse-incomplete, and report-failed buckets. Do not bundle those runtime/oracle investigations into the parser-IR CLI implementation.

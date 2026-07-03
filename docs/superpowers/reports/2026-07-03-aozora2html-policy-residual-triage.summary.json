@@ -1,6 +1,6 @@
 {
   "run_dir": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z",
-  "retry_run_dir": "/db/ab-validator/aat-corpus/aozora2html-source-feature-gap-20260703T082427Z",
+  "retry_run_dir": "/db/ab-validator/aat-corpus/aozora2html-final-four-gap-20260703T091523Z",
   "audit_summary_json": "docs/superpowers/reports/2026-07-03-aozora2html-measurement-trust.summary.json",
   "worksets_dir": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/residual-worksets",
   "bucket_counts": {
@@ -9,7 +9,7 @@
       "schema_invalid_or_no_aat": 0,
       "parse_incomplete": 5,
       "report_failed_other_property": 16,
-      "source_feature_without_aat_observation": 31
+      "source_feature_without_aat_observation": 29
     },
     "kunten": {
       "adapter_timeout_or_protocol_error": 36,
@@ -71,14 +71,14 @@
         }
       },
       "source_feature_without_aat_observation": {
-        "works": 31,
-        "report_present": 31,
-        "aat_present": 31,
-        "clean_reports": 31,
+        "works": 29,
+        "report_present": 29,
+        "aat_present": 29,
+        "clean_reports": 29,
         "failed_properties": {},
         "evidence_runs": {
           "baseline": 27,
-          "retry": 4
+          "retry": 2
         }
       }
     },
@@ -143,7 +143,7 @@
       }
     }
   },
-  "residual_union_count": 266,
+  "residual_union_count": 264,
   "worksets": {
     "warigaki.adapter_timeout_or_protocol_error": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/residual-worksets/warigaki-adapter_timeout_or_protocol_error.json",
     "warigaki.schema_invalid_or_no_aat": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/residual-worksets/warigaki-schema_invalid_or_no_aat.json",

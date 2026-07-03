@@ -51,6 +51,16 @@ def walk_nodes(value: Any, path: str = "$") -> list[tuple[str, dict[str, Any]]]:
     return out
 
 
+def is_kunten_node(node: dict[str, Any]) -> bool:
+    return (
+        node.get("style_type") in {"kaeriten", "okurigana"}
+        or (
+            node.get("kind") == "ruby"
+            and node.get("x-annotation-type") == "okurigana"
+        )
+    )
+
+
 def preview_node(node: dict[str, Any]) -> dict[str, Any]:
     preview: dict[str, Any] = {}
     for key, value in node.items():
@@ -133,12 +143,17 @@ def find_observed_sample(
                     "syntax_id": "",
                     "node_preview": preview_node(node),
                 }
-            if family == "kunten" and node.get("style_type") in {"kaeriten", "okurigana"}:
+            if family == "kunten" and is_kunten_node(node):
+                syntax_suffix = (
+                    node.get("style_type")
+                    if node.get("style_type") in {"kaeriten", "okurigana"}
+                    else node.get("x-annotation-type")
+                )
                 return {
                     "aat_path": str(path.relative_to(run_dir)),
                     "node_path": node_path,
                     "node_kind": str(node.get("kind", "")),
-                    "syntax_id": f"kunten.{node.get('style_type')}",
+                    "syntax_id": f"kunten.{syntax_suffix}",
                     "node_preview": preview_node(node),
                 }
         syntax = (

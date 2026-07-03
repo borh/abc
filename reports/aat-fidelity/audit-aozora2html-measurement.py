@@ -136,6 +136,16 @@ def walk_nodes(value: Any, path: str = "$") -> list[tuple[str, dict[str, Any]]]:
     return out
 
 
+def is_kunten_node(node: dict[str, Any]) -> bool:
+    return (
+        node.get("style_type") in {"kaeriten", "okurigana"}
+        or (
+            node.get("kind") == "ruby"
+            and node.get("x-annotation-type") == "okurigana"
+        )
+    )
+
+
 def semantic_kunten_count(aat: dict[str, Any]) -> int:
     syntax = (
         aat.get("meta", {})
@@ -184,7 +194,7 @@ def scan_aat_observations(run_dir: Path) -> dict[str, dict[str, Any]]:
         for _node_path, node in walk_nodes(aat):
             if node.get("kind") == "warigaki":
                 current["warigaki_nodes"] += 1
-            if node.get("style_type") in {"kaeriten", "okurigana"}:
+            if is_kunten_node(node):
                 current["kunten_nodes"] += 1
     return observations
 
@@ -431,7 +441,9 @@ def summarize_observations(observations: dict[str, dict[str, Any]]) -> dict[str,
             for item in observations.values()
         ),
         "kunten_observations": sum(
-            int(item.get("kunten_nodes", 0)) for item in observations.values()
+            int(item.get("kunten_nodes", 0))
+            + int(item.get("kunten_semantic_observations", 0))
+            for item in observations.values()
         ),
     }
 

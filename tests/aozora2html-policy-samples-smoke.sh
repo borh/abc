@@ -41,12 +41,12 @@ cat > "$run/index.json" <<'JSON'
   "corpus_root": "fixture",
   "corpus_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
   "generated_at": "2026-07-03T00:00:00Z",
-  "works_count": 6,
+  "works_count": 7,
   "works": [],
   "by_feature": {
     "warigaki": ["work-war-ok", "work-war-missing", "work-war-timeout"],
     "kaeriten": ["work-kun-ok", "work-kun-timeout", "work-kun-retry-ok"],
-    "okurigana": []
+    "okurigana": ["work-kun-ruby"]
   }
 }
 JSON
@@ -85,6 +85,7 @@ write_report work-war-timeout "$timeout_results"
 write_report work-kun-ok "$pass_results"
 write_report work-kun-timeout "$timeout_results"
 write_report work-kun-retry-ok "$timeout_results"
+write_report work-kun-ruby "$pass_results"
 write_report work-war-ok-shadow '{
   "poison_prefix_failure": {"pass": false, "message": "must not be attributed to work-war-ok", "confidence": "strict"}
 }'
@@ -156,6 +157,31 @@ cat > "$run/aat/fixture-adapter/work-kun-ok.json" <<'JSON'
         ]
       }
     }
+  }
+}
+JSON
+
+cat > "$run/aat/fixture-adapter/work-kun-ruby.json" <<'JSON'
+{
+  "version": 1,
+  "work_id": "work-kun-ruby",
+  "blocks": [
+    {
+      "kind": "paragraph",
+      "content": [
+        {
+          "kind": "ruby",
+          "x-annotation-type": "okurigana",
+          "base_content": [{"kind": "text", "value": "送"}],
+          "reading_content": [{"kind": "text", "value": "おく"}]
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "adapter": "fixture-adapter",
+    "adapter_version": "fixture 1.0",
+    "parse_complete": true
   }
 }
 JSON
@@ -257,6 +283,8 @@ rg -n "adapter_timeout_or_protocol_error" "$samples/policy-samples.md"
 rg -n "work-war-ok" "$samples/policy-samples.md"
 rg -n "work-war-timeout" "$samples/policy-samples.md"
 rg -n "work-kun-ok" "$samples/policy-samples.md"
+rg -n "work-kun-ruby" "$samples/policy-samples.md"
+rg -n '"x-annotation-type": "okurigana"' "$samples/policy-samples.md"
 rg -n "work-kun-retry-ok" "$samples/policy-samples.md"
 rg -n "work-war-missing" "$samples/policy-samples.md"
 rg -n "work-kun-timeout" "$samples/policy-samples.md"
@@ -270,5 +298,5 @@ jq -e '.limit_per_bucket == 10 and (.sample_counts | type == "object")' "$sample
 jq -e '.retry_run_dir == "'$retry'"' "$samples/policy-samples.summary.json"
 jq -e '.sample_counts.warigaki.observed_in_aat == 2' "$samples/policy-samples.summary.json"
 jq -e '.sample_counts.warigaki.source_feature_without_aat_observation == 1' "$samples/policy-samples.summary.json"
-jq -e '.sample_counts.kunten.observed_in_aat == 2' "$samples/policy-samples.summary.json"
+jq -e '.sample_counts.kunten.observed_in_aat == 3' "$samples/policy-samples.summary.json"
 jq -e '.sample_counts.kunten.adapter_timeout_or_protocol_error == 1' "$samples/policy-samples.summary.json"

@@ -49,12 +49,18 @@ cat > "$base/index.json" <<'JSON'
   "corpus_root": "fixture",
   "corpus_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
   "generated_at": "2026-07-03T00:00:00Z",
-  "works_count": 5,
+  "works_count": 7,
   "works": [],
   "by_feature": {
     "warigaki": ["work-war-missing", "work-war-ok"],
     "kaeriten": ["work-kun-ok", "work-kun-overlap"],
-    "okurigana": ["work-kun-ok", "work-kun-overlap", "work-retry-kun"]
+    "okurigana": [
+      "work-kun-ok",
+      "work-kun-overlap",
+      "work-retry-kun",
+      "work-kun-ruby",
+      "work-kun-semantic-only"
+    ]
   }
 }
 JSON
@@ -113,6 +119,8 @@ write_report "$base" work-war-missing "$pass_results"
 write_report "$base" work-kun-ok "$pass_results"
 write_report "$base" work-kun-overlap "$parse_incomplete_results"
 write_report "$base" work-retry-kun "$timeout_results"
+write_report "$base" work-kun-ruby "$pass_results"
+write_report "$base" work-kun-semantic-only "$pass_results"
 
 write_report "$retry" work-retry-kun "$pass_results"
 write_report "$other" work-war-other-failure "$other_failure_results"
@@ -198,6 +206,51 @@ cat > "$base/aat/fixture-adapter/work-kun-overlap.json" <<'JSON'
 }
 JSON
 
+cat > "$base/aat/fixture-adapter/work-kun-ruby.json" <<'JSON'
+{
+  "version": 1,
+  "work_id": "work-kun-ruby",
+  "blocks": [
+    {
+      "kind": "paragraph",
+      "content": [
+        {
+          "kind": "ruby",
+          "x-annotation-type": "okurigana",
+          "base_content": [{"kind": "text", "value": "送"}],
+          "reading_content": [{"kind": "text", "value": "おく"}]
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "adapter": "fixture-adapter",
+    "adapter_version": "fixture 1.0",
+    "parse_complete": true
+  }
+}
+JSON
+
+cat > "$base/aat/fixture-adapter/work-kun-semantic-only.json" <<'JSON'
+{
+  "version": 1,
+  "work_id": "work-kun-semantic-only",
+  "blocks": [{"kind": "paragraph", "content": [{"kind": "text", "value": "義"}]}],
+  "meta": {
+    "adapter": "fixture-adapter",
+    "adapter_version": "fixture 1.0",
+    "parse_complete": true,
+    "semantic_summary": {
+      "syntax": {
+        "kunten.okurigana": [
+          {"kind": "okurigana", "provenance": "semantic-only", "value": "義"}
+        ]
+      }
+    }
+  }
+}
+JSON
+
 cat > "$retry/aat/fixture-adapter/work-retry-kun.json" <<'JSON'
 {
   "version": 1,
@@ -272,10 +325,16 @@ python3 "$repo_root/reports/aat-fidelity/audit-aozora2html-measurement.py" \
   --summary-json "$audit_out/audit.summary.json" \
   --worksets-dir "$audit_out/worksets"
 
-jq -e '.source_counts.kunten == 3' "$audit_out/audit.summary.json"
+jq -e '.source_counts.kunten == 5' "$audit_out/audit.summary.json"
 jq -e '.source_counts.kunten != (.source_sets.kaeriten | length) + (.source_sets.okurigana | length)' "$audit_out/audit.summary.json"
+jq -e '.bucket_counts.kunten.observed_in_aat == 3' "$audit_out/audit.summary.json"
 jq -e '.bucket_counts.kunten.adapter_timeout_or_protocol_error == 1' "$audit_out/audit.summary.json"
 jq -e '.bucket_counts.kunten.parse_incomplete == 1' "$audit_out/audit.summary.json"
+jq -e '.buckets.kunten.observed_in_aat | index("work-kun-ruby")' "$audit_out/audit.summary.json"
+jq -e '.buckets.kunten.observed_in_aat | index("work-kun-semantic-only")' "$audit_out/audit.summary.json"
+jq -e '(.buckets.kunten.source_feature_without_aat_observation | index("work-kun-ruby")) == null' "$audit_out/audit.summary.json"
+jq -e '(.buckets.kunten.source_feature_without_aat_observation | index("work-kun-semantic-only")) == null' "$audit_out/audit.summary.json"
+jq -e '.aat_observed_counts.kunten_observations == 4' "$audit_out/audit.summary.json"
 jq -e '.bucket_counts.warigaki.source_feature_without_aat_observation == 1' "$audit_out/audit.summary.json"
 jq -e 'type == "array" and all(.[]; type == "string")' "$audit_out/worksets/policy-incomplete-union.json"
 rg -n "source kunten works" "$audit_out/audit.md"
@@ -287,7 +346,7 @@ python3 "$repo_root/reports/aat-fidelity/audit-aozora2html-measurement.py" \
   --summary-json "$audit_out/audit-retry.summary.json" \
   --worksets-dir "$audit_out/retry-worksets"
 
-jq -e '.bucket_counts.kunten.observed_in_aat == 2' "$audit_out/audit-retry.summary.json"
+jq -e '.bucket_counts.kunten.observed_in_aat == 4' "$audit_out/audit-retry.summary.json"
 jq -e '.bucket_counts.kunten.adapter_timeout_or_protocol_error == 0' "$audit_out/audit-retry.summary.json"
 rg -n "retry run" "$audit_out/audit-retry.md"
 

@@ -260,8 +260,8 @@ rg -n "work-kun-ok" "$samples/policy-samples.md"
 rg -n "work-kun-retry-ok" "$samples/policy-samples.md"
 rg -n "work-war-missing" "$samples/policy-samples.md"
 rg -n "work-kun-timeout" "$samples/policy-samples.md"
-rg -n "work-war-timeout | retry" "$samples/policy-samples.md"
-rg -n "work-kun-retry-ok | retry" "$samples/policy-samples.md"
+rg -n -F "work-war-timeout | retry" "$samples/policy-samples.md"
+rg -n -F "work-kun-retry-ok | retry" "$samples/policy-samples.md"
 if rg -n "poison_prefix_failure" "$samples/policy-samples.md"; then
   echo "prefix-matched shadow report polluted work-war-ok sample" >&2
   exit 1

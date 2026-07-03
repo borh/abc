@@ -17,12 +17,14 @@ files = sorted(glob.glob(os.path.join(AAT_DIR, "*.json")))
 print(f"scanning {len(files)} real AAT documents", file=sys.stderr)
 
 cat_counter = Counter()              # category -> total entries
-note_counter = Counter()             # (category, aat, parser_ir, note) -> count
+note_counter = Counter()             # (category, aat bucket, parser_ir, note) -> count
+unsupported_bucket_counter = Counter()
 files_with_unsupported = 0
 files_with_any_ledger = 0
 per_file_entry_counts = Counter()    # bucketed entry-count per file
 unsupported_examples = []
 sample_per_cat = defaultdict(list)
+first_path_by_rule = {}
 files_failed_to_parse = 0
 total_nodes_emitted = 0
 total_blocks_scanned = 0
@@ -75,10 +77,13 @@ for i, path in enumerate(files):
     had_unsupported = False
     for e in ledger_list:
         cat_counter[e["category"]] += 1
-        key = (e["category"], e["aat"], e["parser_ir"], e["note"][:80])
+        aat_bucket = mapper.aat_pointer_bucket(e["aat"])
+        key = (e["category"], aat_bucket, e["parser_ir"], e["note"][:80])
         note_counter[key] += 1
+        first_path_by_rule.setdefault(key, e["aat"])
         if e["category"] == "UNSUPPORTED":
             had_unsupported = True
+            unsupported_bucket_counter[aat_bucket] += 1
             if len(unsupported_examples) < 10:
                 unsupported_examples.append((path, e))
         if len(sample_per_cat[e["category"]]) < 3:
@@ -110,9 +115,10 @@ print(f"total ledger entries across corpus: {total}")
 for c in ("LOSS", "AMBIGUITY", "INVENTION", "UNSUPPORTED", "STRUCTURAL"):
     print(f"  {c}: {cat_counter.get(c, 0)}  ({100*cat_counter.get(c,0)/max(total,1):.1f}%)")
 print()
-print("--- TOP DIVERGENCE RULES (by frequency) ---")
+print("--- TOP DIVERGENCE RULES (by frequency, occurrence indices folded) ---")
 for (cat, aat, pir, note), c in note_counter.most_common(20):
-    print(f"  [{c:>7}] {cat:12} | {aat[:40]:40} | {pir[:30]:30} | {note}")
+    first_path = first_path_by_rule[(cat, aat, pir, note)]
+    print(f"  [{c:>7}] {cat:12} | {aat[:46]:46} | {pir[:30]:30} | first={first_path[:46]:46} | {note}")
 print()
 print("--- per-file entry-count distribution ---")
 for cnt, files in sorted(per_file_entry_counts.items()):
@@ -121,6 +127,13 @@ print()
 print("--- UNSUPPORTED examples ---")
 for path, e in unsupported_examples:
     print(f"  {os.path.basename(path)}: {e}")
+print()
+print("--- UNSUPPORTED by AAT pointer bucket ---")
+if unsupported_bucket_counter:
+    for aat, c in unsupported_bucket_counter.most_common():
+        print(f"  [{c:>7}] {aat}")
+else:
+    print("  (none)")
 print()
 print("--- sample entry per category ---")
 for cat in ("LOSS", "AMBIGUITY", "INVENTION", "UNSUPPORTED", "STRUCTURAL"):

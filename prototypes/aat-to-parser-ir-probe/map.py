@@ -22,12 +22,12 @@ Structural transform rule (flat-nodes vs nested-blocks):
 
 Run: python3 map.py aat-sample.json
 """
-import json, sys, copy
+import json, re, sys
 
 # Hardcoded ABC parser-IR target identity (INVENTION: producer must pinch
 # ABC's schema_hash; AAT carries no such identifier).
 PARSER_IR_SCHEMA_ID = "https://w3id.org/abc/schemas/parser-ir.schema.json"
-PARSER_IR_SCHEMA_HASH = "sha256:13e3127fe8eaa0649f83fd5c12e11923115810b454c6d3d22996b00e1218623f"
+PARSER_IR_SCHEMA_HASH = "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"
 
 ENC_MAP = {
     "utf-8": "UTF-8",
@@ -39,6 +39,11 @@ ENC_MAP = {
 
 def ledger(category, aat, target, note):
     return {"category": category, "aat": aat, "parser_ir": target, "note": note}
+
+
+def aat_pointer_bucket(pointer):
+    """Fold occurrence-specific paths into rule-ish AAT pointers for aggregation."""
+    return re.sub(r"\[[0-9]+\]", "[]", pointer.split("=", 1)[0])
 
 
 def map_span(aat_span, offset):
@@ -54,6 +59,27 @@ def map_span(aat_span, offset):
     }
 
 
+def text_projection(node, ledger_list, path):
+    """Best-effort display text projection for parser-IR nodes that only hold text."""
+    kind = node.get("kind")
+    if kind == "text":
+        return node.get("value", "")
+    if kind == "ruby":
+        ledger_list.append(ledger("LOSS", f"{path}.ruby.reading",
+                                  "(emphasis.text)", "style text projection kept ruby base text only; reading not represented inside emphasis.text"))
+        return node.get("base", "")
+    if kind == "gaiji":
+        ledger_list.append(ledger("AMBIGUITY", f"{path}.gaiji.resolved",
+                                  "(emphasis.text)", "style text projection used resolved gaiji string when available"))
+        return node.get("resolved") or ""
+    if kind in ("style", "font_size", "tcy", "keigakomi", "yokogumi", "caption"):
+        return "".join(text_projection(child, ledger_list, f"{path}.content[{i}]")
+                       for i, child in enumerate(node.get("content", [])))
+    ledger_list.append(ledger("LOSS", f"{path}.{kind}",
+                              "(emphasis.text)", f"style text projection dropped inline kind '{kind}'"))
+    return ""
+
+
 def map_inline(node, offset, ledger_list, path):
     kind = node.get("kind")
     span = node.get("span")
@@ -65,19 +91,19 @@ def map_inline(node, offset, ledger_list, path):
         }
 
     if kind == "ruby":
-        # direction has no parser-IR home; base_content/reading_content nesting lost.
+        # base_content/reading_content nesting is still outside parser-IR's ruby shape.
         scope = "explicit"  # INVENTION: AAT has no scope; default to explicit.
         ledger_list.append(ledger("INVENTION", f"{path}.ruby.scope", "ruby.scope",
                                   "AAT has no scope field; defaulted to 'explicit'"))
-        if "direction" in node and node["direction"] is not None:
-            ledger_list.append(ledger("LOSS", f"{path}.ruby.direction",
-                                      "(none)", f"direction={node['direction']} dropped; parser-IR ruby has no direction"))
         if node.get("base_content") or node.get("reading_content"):
             ledger_list.append(ledger("LOSS", f"{path}.ruby.base_content/reading_content",
                                       "(none)", "nested ruby substructure flattened away"))
         return {
             "type": "ruby", "span": pir_span,
-            "ruby": {"base": node.get("base", ""), "reading": node.get("reading", ""), "scope": scope},
+            "ruby": {"base": node.get("base", ""),
+                     "reading": node.get("reading", ""),
+                     "scope": scope,
+                     "direction": node.get("direction")},
         }
 
     if kind == "gaiji":
@@ -155,8 +181,17 @@ def map_inline(node, offset, ledger_list, path):
                                   "(none)", "parser-IR has no raw node; faithful escape hatch dropped"))
         return None
 
-    # inline_container kinds: style, font_size, tcy, keigakomi, yokogumi, caption
-    if kind in ("style", "font_size", "tcy", "keigakomi", "yokogumi", "caption"):
+    if kind == "style":
+        ledger_list.append(ledger("AMBIGUITY", f"{path}.style",
+                                  "emphasis", "style inline_container mapped to emphasis; parser-IR does not preserve nested inline container identity"))
+        return {
+            "type": "emphasis", "span": pir_span,
+            "text": text_projection(node, ledger_list, path),
+            "style": node.get("style_type", ""),
+        }
+
+    # inline_container kinds: font_size, tcy, keigakomi, yokogumi, caption
+    if kind in ("font_size", "tcy", "keigakomi", "yokogumi", "caption"):
         ledger_list.append(ledger("UNSUPPORTED", f"{path}.{kind}",
                                   "emphasis(?)", f"inline_container kind '{kind}' has no first-class parser-IR node; only emphasis.text/style exist"))
         return None

@@ -724,7 +724,7 @@ The same check applies to the mapping schema hash.
     assert the output validates against ABC's `schemas/parser-ir.schema.json`
     and `schemas/aat-parser-ir-divergence.schema.json`.
   - Assert `warigaki` (and any UNSUPPORTED construct) records a critical-severity divergence in default mode and continues; assert the release-smoke gate (ADR 0006) fails on any critical-severity divergence record. There is no `--strict` flag — strictness is bound to release mode, not a CLI option.
-  - Assert `style` nodes map to `emphasis` (I-09) and produce **zero UNSUPPORTED entries** on a real aozora-rs AAT (full-corpus probe Finding G — the synthesized sample passed but real data exposed the `style` gap).
+  - Assert `style` nodes map to `emphasis` (I-09) and produce **zero `style` UNSUPPORTED entries** on a real aozora-rs AAT (full-corpus probe Finding G — the synthesized sample passed but real data exposed the `style` gap). The 2026-07-03 ADR 0024 + I-09 probe leaves three non-style UNSUPPORTED records for `meta.source_encoding=windows-31j-lossy`; treat those as a source-encoding policy question, not a node-mapping failure.
 - [ ] **Step 7:** Run:
   ```bash
   cargo test -p ab-aat-to-parser-ir
@@ -872,8 +872,11 @@ refuted three assumptions and confirmed two. Applied corrections:
    synthesized 27-entry ledger (Finding C).
 
 5. **Task 7 Step 6 regression assertion strengthened**: must assert zero
-   UNSUPPORTED on a real aozora-rs AAT after I-09, not just the synthesized
-   sample (which passed despite the `style` gap).
+   `style` UNSUPPORTED on a real aozora-rs AAT after I-09, not just the
+   synthesized sample (which passed despite the `style` gap). Follow-up
+   measurement on 2026-07-03 leaves three non-style UNSUPPORTED records for
+   `meta.source_encoding=windows-31j-lossy`, so the honest target is
+   "style fixed; source-encoding lossiness still unresolved."
 
 Deferred, unchanged: warigaki-in-parser-IR vocabulary decision; R3
 null-dimension (covered by canonicalization fixture, not a solver).

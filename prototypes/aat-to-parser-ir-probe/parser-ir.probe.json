@@ -1,6 +1,6 @@
 {
   "schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-  "schema_hash": "sha256:13e3127fe8eaa0649f83fd5c12e11923115810b454c6d3d22996b00e1218623f",
+  "schema_hash": "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396",
   "source": {
     "work_content_hash": "sha256:c19d82fc7243788aeb44fbc74ba2450fe149d9318a05705bd1046a134376bafb",
     "source_path": null,
@@ -40,7 +40,8 @@
       "ruby": {
         "base": "猫",
         "reading": "ねこ",
-        "scope": "explicit"
+        "scope": "explicit",
+        "direction": "right"
       }
     },
     {

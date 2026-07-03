@@ -51,12 +51,12 @@ Sample output (first lines):
 === GENERATED parser-ir.json (probe) ===
 {
   "schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-  "schema_hash": "sha256:13e3127fe8eaa0649f83fd5c12e11923115810b454c6d3d22996b00e1218623f",
+  "schema_hash": "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396",
   ...
   "nodes": [
     { "type": "heading", "span": {...}, "text": "第一章", "level": 1 },
     { "type": "text",    "span": {...}, "text": "吾輩は" },
-    { "type": "ruby",    "span": {...}, "ruby": { "base": "猫", "reading": "ねこ", "scope": "explicit" } },
+    { "type": "ruby",    "span": {...}, "ruby": { "base": "猫", "reading": "ねこ", "scope": "explicit", "direction": "right" } },
     ...
 ```
 
@@ -67,11 +67,11 @@ the point: *mappability is not the question; information loss is*.
 
 ## Divergence ledger
 
-Total entries: **27**. Per category:
+Total entries: **26**. Per category:
 
 | Category | Count |
 | --- | --- |
-| LOSS | 10 |
+| LOSS | 9 |
 | AMBIGUITY | 4 |
 | INVENTION | 8 |
 | UNSUPPORTED | 1 |
@@ -87,7 +87,6 @@ Reproduced here:
 | blocks[0].heading.style | (none) | LOSS | heading.style='main' dropped |
 | blocks[1][block=paragraph] | (none) | STRUCTURAL | block container of kind 'paragraph' has no parser-IR node; boundary + span + style lost, only inlines emitted |
 | blocks[1].content[1].ruby.scope | ruby.scope | INVENTION | AAT has no scope field; defaulted to 'explicit' |
-| blocks[1].content[1].ruby.direction | (none) | LOSS | direction=right dropped; parser-IR ruby has no direction |
 | blocks[1].content[3].gaiji.raw_marker | gaiji.raw_marker | INVENTION | AAT has no raw source marker; used description as raw_marker |
 | blocks[1].content[3].gaiji.resolved | gaiji.resolved | AMBIGUITY | AAT resolved is string (the chosen char); parser-IR resolved is boolean (was it resolved?) |
 | blocks[1].content[3].gaiji.unicode | gaiji.unicode | LOSS | AAT does not separate unicode codepoint from resolved string |

@@ -142,9 +142,51 @@ this scale is storage noise; a per-work summary
 | 2 (UNSUPPORTED default) | **Demote `refuse` → `drop-sidecar` + critical-severity record** by default; add explicit `--strict` for refuse. | Finding H: refuse would halt 30.6% of works. |
 | 2 (new rule I-09) | Add STYLE→EMPHASIS mapping (`style_type` → `emphasis.style`, preserve children). | Finding G: 28,492 nodes in 5,474 files. |
 | 2 (LOSS-11/12) | Add `meta.metrics` / `meta.semantic_summary` LOSS entries (fire every file). | Confirms real-corpus-validation Finding C at scale. |
-| 4 (Task 7) | Regression test must map a real aozora-rs AAT and assert **zero UNSUPPORTED after I-09**, not just the synthesized sample. | The synthesized sample passed; real data exposed the `style` gap. |
+| 4 (Task 7) | Regression test must map a real aozora-rs AAT and assert **zero `style` UNSUPPORTED after I-09**, not just the synthesized sample. | The synthesized sample passed; real data exposed the `style` gap. |
 
 ---
 
 *Probe: `prototypes/aat-to-parser-ir-probe/batch_aggregate.py`. Raw output:
 `docs/handoffs/_probe-full-corpus-raw.txt`. Run 2026-07-02.*
+
+## 7. Follow-up run: ADR 0024 + I-09 probe (2026-07-03)
+
+Raw output: `docs/handoffs/_probe-full-corpus-adr0024-i09-raw.txt`.
+
+Changes from the 2026-07-02 run:
+
+- `ruby.direction` now projects directly into parser-IR `ruby.direction` per
+  ADR 0024, so the previous `ruby.direction` LOSS class disappears.
+- `style` inline containers now map to parser-IR `emphasis` with
+  `style_type` preserved as `emphasis.style` (I-09), so the 28,492 `style`
+  entries move from UNSUPPORTED to AMBIGUITY.
+- `batch_aggregate.py` now folds occurrence indices in top-rule reporting and
+  buckets UNSUPPORTED entries by AAT pointer, so the report measures rule
+  classes instead of producing a path-by-path manual inventory.
+
+Measured results over the same 17,894 aozora-rs AAT files:
+
+| Metric | Value |
+|---|---:|
+| files scanned | 17,894 |
+| files failed to parse | 0 |
+| files with UNSUPPORTED | 3 |
+| files with warigaki | 0 |
+| total parser-IR nodes emitted | 7,828,615 |
+| total ledger entries across corpus | 4,781,187 |
+
+| Category | Count | % |
+|---|---:|---:|
+| INVENTION | 3,864,599 | 80.8% |
+| STRUCTURAL | 645,618 | 13.5% |
+| LOSS | 159,855 | 3.3% |
+| AMBIGUITY | 111,112 | 2.3% |
+| UNSUPPORTED | 3 | 0.0% |
+
+The remaining UNSUPPORTED entries are not `style` or warigaki. All three are
+`meta.source_encoding=windows-31j-lossy`, folded to AAT pointer bucket
+`meta.source_encoding`.
+
+Next inference: I-09 solves the load-bearing node-mapping issue for aozora-rs.
+The residual UNSUPPORTED policy is now a source-encoding/lossiness question,
+not evidence for a broad hand-written AAT node mapping table.

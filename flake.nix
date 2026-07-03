@@ -308,6 +308,23 @@
               echo "ABC focused Clojure tests passed with clj-nix dependency cache." > "$out/result.txt"
             '';
 
+          aat-parser-ir-probe-tests = pkgs.runCommand "abc-aat-parser-ir-probe-tests"
+            {
+              nativeBuildInputs = [
+                pkgs.python3
+              ];
+            }
+            ''
+              cp -R ${./.} source
+              chmod -R u+w source
+              cd source
+
+              python3 -m unittest prototypes/aat-to-parser-ir-probe/test_probe_mapping.py
+
+              mkdir -p "$out"
+              echo "AAT parser-IR probe tests passed." > "$out/result.txt"
+            '';
+
           contract-surface = pkgs.runCommand "abc-contract-surface-check" { } ''
             test -f ${./resources/abc/ndc9.edn.xz}
             test -f ${./nix/clj-nix-deps.edn}

@@ -396,11 +396,19 @@
 
 (defn- validate-drift-invalid-fixture! [fixture expected-codes]
   (let [result (validate-drift-fixture-result fixture)
-        actual (set (map :code (:failures result)))]
+        failures (:failures result)
+        actual (set (map :code failures))
+        unknown (set/difference actual person-drift/failure-codes)]
     (when-not (= :error (:status result))
       (throw (ex-info "expected invalid drift fixture to fail"
                       {:fixture fixture
                        :result result})))
+    (when (seq unknown)
+      (throw (ex-info "unknown drift validation failure codes"
+                      {:fixture fixture
+                       :known (sort person-drift/failure-codes)
+                       :unknown (sort unknown)
+                       :failures failures})))
     (when-not (= expected-codes actual)
       (throw (ex-info "unexpected drift validation failure set"
                       {:fixture fixture

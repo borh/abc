@@ -490,3 +490,15 @@
     (is (thrown? clojure.lang.ExceptionInfo
                  (validate/validate-drift-fixtures!
                   {"fixtures/v0/invalid/drift/invalid-agent" #{}})))))
+
+(deftest validate-drift-fixtures-rejects-unknown-actual-failure-codes-test
+  (testing "drift fixture runner rejects emitted codes outside the registry even when expected exactly"
+    (with-redefs [validate/validate-drift-fixture-result
+                  (fn [_fixture]
+                    {:status :error
+                     :failures [{:code :not-a-registered-drift-code}]})]
+      (is (thrown-with-msg?
+           clojure.lang.ExceptionInfo
+           #"unknown drift validation failure codes"
+           (validate/validate-drift-fixtures!
+            {"synthetic-drift-fixture" #{:not-a-registered-drift-code}}))))))

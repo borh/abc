@@ -37,6 +37,29 @@
 (def drift-editor-curie "abc:DriftEditor")
 (def allowed-role-curies #{drift-editor-curie})
 
+(def failure-codes
+  "Authoritative set of person-drift validation failure codes emitted by this namespace."
+  #{:duplicate-snapshot-id
+    :event-missing-from-participant-index
+    :exception
+    :generated-not-sorted
+    :index-target-missing
+    :invalid-agent-iri
+    :invalid-had-role
+    :missing-rdf-type
+    :orphan-event-file
+    :participant-in-both-used-and-generated
+    :participant-not-covered
+    :participants-not-sorted
+    :rdf-participant-prov-mismatch
+    :schema-hash-mismatch
+    :shacl-violation
+    :snapshot-prefix-usage-mismatch
+    :unexpected-rdf-type
+    :unknown-snapshot-reference
+    :unresolved-curie-prefix
+    :used-not-sorted})
+
 (defn resolve-role-curie [role]
   (rdf-prefixes/resolve-curie role))
 

@@ -1,7 +1,7 @@
 # ab-aat-to-parser-ir Crate Design
 
 Date: 2026-07-03
-Status: blocked pending protocol corrections
+Status: proposed after protocol corrections
 
 ## Problem
 
@@ -20,36 +20,41 @@ in a deterministic divergence sidecar.
 The prior version of this spec was too optimistic. Review found three blocking
 protocol issues:
 
-- the current mapping artifact has no `UNSUPPORTED` rule, so default warigaki
+- the then-current mapping artifact had no `UNSUPPORTED` rule, so default warigaki
   drop-sidecar behavior is not a measured production rule;
 - the ABC divergence record schema already exists and is incompatible with the
   proposed local sidecar entry shape;
-- span synthesis and several mapping pointers are not represented honestly in
-  the current mapping artifact.
+- span synthesis and several mapping pointers were not represented honestly in
+  the then-current mapping artifact.
 
-Until those protocol issues are resolved, this crate is a deepening candidate,
-not an implementation-ready module.
+Those protocol issues are now resolved by the `0.1.1` mapping protocol
+correction artifact. This crate remains a deep module candidate, and the next
+implementation must consume the corrected artifact rather than reopening the
+mapping policy.
 
 ## Review Corrections
 
-Accepted blockers:
+Protocol correction status: `data/aat-to-parser-ir-mapping-v1.json` now carries
+`mapping_version = 0.1.1`, includes measured aozora2html `UNSUPPORTED`
+warigaki evidence, uses `abc-legacy-json-c14n-v0`, and validates against the
+local AAT pointer contract.
 
-- B1: current mapping has no `UNSUPPORTED` rule. A production conversion using
-  `UnmeasuredDivergencePolicy::Refuse` must refuse warigaki under the current
-  mapping. A test that expects warigaki to emit `U-01` cannot run against
-  `data/aat-to-parser-ir-mapping-v1.json`.
+Resolved blockers:
+
+- B1: the corrected mapping includes measured `UNSUPPORTED` rules from the
+  current aozora2html corpus, including warigaki. A production conversion may
+  emit measured unsupported records. Unmeasured unsupported buckets still use
+  `UnmeasuredDivergencePolicy::Refuse` by default.
 - B3: `../abc/schemas/aat-parser-ir-divergence.schema.json` already exists and
   owns the per-record divergence shape. A local same-named schema would create a
   protocol collision.
-- S1/S2: missing AAT spans are common, parser-IR requires spans, and an
-  `INVENTION` sidecar entry conflicts with the current taxonomy's
-  `records_sidecar = false`. Span synthesis needs an explicit measured rule or
-  a separate span policy before implementation.
-- S3: two current mapping pointers do not correspond to AAT schema fields:
-  `blocks[].content[].gaiji.raw_marker` and
-  `blocks[].content[].gaiji.unicode`. The former should point at
-  `gaiji.description`; the latter is a derived absence/policy choice and should
-  not pretend to resolve to an AAT field.
+- S1/S2: missing AAT spans are common, parser-IR requires spans, and the
+  corrected mapping records missing span synthesis as `AMBIGUITY`, not
+  `INVENTION`. The Python generator advances synthesized offsets by projected
+  UTF-8 byte length and records the approximation.
+- S3: invalid gaiji pointers are corrected: `gaiji.raw_marker` is sourced from
+  `gaiji.description`, and `gaiji.unicode` is recorded as a derived absence
+  with no AAT pointer.
 - S4: `meta.metrics` and `meta.semantic_summary` are mapped as `LOSS` but the
   proposed sidecar did not preserve them structurally.
 
@@ -74,8 +79,9 @@ Evidence:
   required spans on every node.
 - Observed: ABC owns a per-entry divergence record schema at
   `../abc/schemas/aat-parser-ir-divergence.schema.json`.
-- Observed: The generated mapping has 25 measured folded rule buckets and no
-  `UNSUPPORTED` bucket for the aozora-rs corpus.
+- Observed: The corrected generated mapping has 118 measured folded rule
+  buckets across aozora-rs plus current aozora2html evidence. The aozora-rs-only
+  gate still has zero `UNSUPPORTED` files.
 - Observed: aozora2html can emit warigaki, and parser-IR has no warigaki node.
 - Observed: production AAT spans are mostly absent (`docs/aat-span-audit.md`).
 - Inferred: A generic interpreter for `transform_rule_descriptions` would be a
@@ -102,9 +108,8 @@ Hickey hazard check:
 Deepening acceptance verdict:
 
 The interface shape `convert(request) -> ConversionOutput` is still a good deep
-module seam. The crate should not be implemented until the protocol gates below
-are resolved, because the current artifacts do not yet make warigaki, span
-synthesis, or divergence sidecar ownership explicit enough for the risk.
+module seam. The protocol gates below are now explicit enough to start the Rust
+crate implementation against the corrected mapping artifact.
 
 ## Non-Goals
 
@@ -191,7 +196,7 @@ Proposed bundle shape:
   "work_id": "000000_00000",
   "mapping": {
     "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
-    "mapping_version": "0.1.0",
+    "mapping_version": "0.1.1",
     "mapping_schema_hash": "sha256:..."
   },
   "target": {
@@ -232,82 +237,56 @@ Proposed bundle shape:
 }
 ```
 
-### Gate 3: Regenerate Mapping v1.1 or Refuse Warigaki by Default
+### Gate 3: Mapping v1.1 Production Warigaki Policy
 
-The current mapping has no `UNSUPPORTED` rule.
+Resolved: the corrected mapping v1.1 includes measured `UNSUPPORTED` rules from
+current aozora2html evidence, including warigaki.
 
-Production behavior for the current mapping:
+Production behavior for the corrected mapping:
 
 - `UnmeasuredDivergencePolicy::Refuse` is the default.
-- AAT documents containing warigaki must refuse under the current mapping.
-- No production test should expect `U-01` unless a regenerated mapping artifact
-  contains a measured `UNSUPPORTED` warigaki rule.
-
-Two acceptable paths:
-
-1. Regenerate a mapping v1.1 from measured inputs that include current
-   aozora2html AATs, producing a real `UNSUPPORTED` warigaki rule. Then
-   production conversion may use `drop-sidecar` for warigaki.
-2. Keep mapping v1.0 and treat warigaki as exploratory. The only test that
-   emits an `UNSUPPORTED` warigaki record must run with
-   `UnmeasuredDivergencePolicy::RecordExploratory`, use a synthesized rule id
-   such as `U-00`, and clearly mark the bundle as exploratory.
-
-The implementation plan should prefer path 1 if the CLI is expected to handle
-aozora2html warigaki as production input. It should prefer path 2 only for a
-diagnostic prototype.
+- AAT documents containing measured warigaki buckets may emit `UNSUPPORTED`
+  divergence records using mapping artifact rule ids.
+- AAT documents containing unmeasured unsupported buckets must refuse unless
+  explicitly run under `UnmeasuredDivergencePolicy::RecordExploratory`.
 
 ### Gate 4: Fix Mapping Pointers
 
-Before strict mapping preflight is enabled, regenerate the mapping artifact so
-that `aat_pointer` values either resolve to fields in `data/aat-schema.json` or
-are explicitly null for derived absence/policy rules.
+Resolved: strict mapping preflight is enabled in the generator. Non-null
+`aat_pointer` values must resolve to fields in `data/aat-schema.json`; derived
+absence/policy rules use null.
 
-Known current defects:
+Resolved defects:
 
-- `blocks[].content[].gaiji.raw_marker` should point at
-  `blocks[].content[].gaiji.description`, because AAT has no `raw_marker`.
-- `blocks[].content[].gaiji.unicode` should not pretend to be an AAT field.
-  AAT currently carries `resolved` as a string/null and does not separate a
-  Unicode codepoint field.
+- `blocks[].content[].gaiji.raw_marker` now points at
+  `blocks[].content[].gaiji.description`.
+- `blocks[].content[].gaiji.unicode` is represented as a derived absence with
+  no AAT pointer.
 
-Implementation preflight after v1.1:
+Implementation preflight:
 
 - resolve every non-null `aat_pointer` against `data/aat-schema.json` using the
   folded pointer syntax;
-- reject pointers that cannot be resolved unless the mapping schema has grown a
-  way to mark them as derived.
+- reject pointers that cannot be resolved.
 
-### Gate 5: Decide Span Synthesis as Mapping Policy
+### Gate 5: Span Synthesis Mapping Policy
 
 Parser-IR requires `span.start` and `span.end` on every node. Production AAT
 spans are mostly absent.
 
-The current mapping does not record a span synthesis rule, so a strict
-"every divergence matches one measured rule" guard cannot honestly emit
-zero-width spans and also claim the mapping is complete.
+Resolved: the corrected mapping v1.1 records missing-span synthesis as measured
+`AMBIGUITY` buckets. The generator aggregates count and first path by folded
+rule so sidecars do not need one schema-level rule per node.
 
-Required decision before implementation:
-
-- add a measured span rule to mapping v1.1, probably `AMBIGUITY` or
-  `STRUCTURAL`, with per-work aggregation rather than one sidecar record per
-  node; or
-- define span synthesis as a target-construction invariant outside the
-  divergence taxonomy and document why it is not a divergence.
-
-The first option is preferred because it keeps invented target coordinates
-auditable. It should aggregate count and first_path per work to avoid millions
-of nearly identical sidecar entries.
-
-V1 span value policy, once the gate is resolved:
+V1 span value policy:
 
 - if AAT span exists: `start = byte_start`, `end = byte_end`,
   `line = line_start`, `column = null`,
   `coordinate_system = decoded_utf8`;
-- if AAT span is absent: synthesize a zero-width decoded-UTF8 span at the latest
-  known offset and record/aggregate the chosen span rule;
-- dropping `line_end` should be recorded under the same span rule or an
-  explicit `LOSS` rule if multi-line spans are observed.
+- if AAT span is absent: synthesize a decoded-UTF8 fallback span from the latest
+  known offset to `offset + projected_visible_text_utf8_len`, and
+  record/aggregate the `AMBIGUITY` span rule;
+- dropping observed `line_end` is recorded as an explicit `LOSS` rule.
 
 ## Design Alternatives
 
@@ -464,14 +443,15 @@ Measured current rules include:
 - AAT paragraph/heading block containers -> no parser-IR container node; emit
   contained nodes in document order and record `STRUCTURAL`.
 
-Rules that require v1.1 correction before production:
+Rules corrected by v1.1 before production:
 
-- AAT `warigaki` -> parser-IR has no warigaki node. Under v1.0 this must
-  refuse by default. Under a measured v1.1 `UNSUPPORTED` rule it may
-  `drop-sidecar` and preserve child visible text where possible.
-- AAT spans absent -> parser-IR requires spans. This needs the span policy gate.
-- AAT `gaiji.unicode` loss -> current pointer is invalid; v1.1 must express
-  this as derived absence/policy, not an AAT field path.
+- AAT `warigaki` -> parser-IR has no warigaki node. Under measured v1.1
+  `UNSUPPORTED` rules it may `drop-sidecar` and preserve child visible text
+  where possible.
+- AAT spans absent -> parser-IR requires spans. v1.1 records synthesized
+  decoded-UTF8 fallback spans as `AMBIGUITY`.
+- AAT `gaiji.unicode` loss -> v1.1 expresses this as derived absence/policy,
+  not an AAT field path.
 
 Kunten policy:
 
@@ -543,10 +523,9 @@ Interface-level tests:
 - `windows-31j-lossy` maps to `Shift_JIS` and records `AMBIGUITY`.
 - `source.work_content_hash` projection records `A-06` `AMBIGUITY`.
 - heading level projection records `A-04` `AMBIGUITY`.
-- current mapping v1.0 refuses warigaki under `Refuse`.
-- if mapping v1.1 contains measured warigaki `UNSUPPORTED`, warigaki structure
-  is absent from parser-IR, child visible text is preserved when possible, and
-  the bundle has a valid ABC divergence record.
+- current mapping v1.1 emits measured warigaki `UNSUPPORTED`: warigaki
+  structure is absent from parser-IR, child visible text is preserved when
+  possible, and the bundle has a valid ABC divergence record.
 - if exploratory mode is kept, warigaki exploratory output uses a synthesized
   `U-00` record and is not accepted as production evidence.
 - kunten style emits parser-IR `emphasis` plus sidecar `AMBIGUITY`.
@@ -566,17 +545,8 @@ Smoke tests:
 
 ## Next Route
 
-Do not write the `crates/ab-aat-to-parser-ir` implementation plan yet.
-
-Next work should be a protocol-correction plan:
-
-1. Pin `abc-legacy-json-c14n-v0` in code/tests and report docs.
-2. Define the divergence bundle schema around ABC's existing per-entry record
-   schema.
-3. Regenerate mapping v1.1 or explicitly keep warigaki exploratory/refusing.
-4. Fix invalid mapping pointers.
-5. Add a measured span synthesis rule or document span synthesis as an
-   out-of-taxonomy target construction invariant.
+The next work may be the `crates/ab-aat-to-parser-ir` implementation plan using
+the corrected `data/aat-to-parser-ir-mapping-v1.json` artifact.
 
 After those corrections, the six-slice implementation plan is:
 

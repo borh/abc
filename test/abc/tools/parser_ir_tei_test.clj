@@ -17,6 +17,11 @@
                  (vocab/node-types (files/read-json "schemas/parser-ir.schema.json"))
                  "TEI"
                  parser-ir-tei/covered-node-types)))
+    (is (= parser-ir-tei/covered-node-types
+           (some-> (ns-resolve 'abc.tools.parser-ir-tei 'node-renderers)
+                   deref
+                   keys
+                   set)))
     (is (= (policy/renderer-covered-node-types (policy/load-policy policy-path) "tei")
            parser-ir-tei/covered-node-types))))
 
@@ -55,3 +60,14 @@
           result (parser-ir-tei/render parser-ir)]
       (is (= ["gaiji-b" "gaiji-a"]
              (mapv :xml-id (:char_declarations result)))))))
+
+(deftest gaiji-without-reference-declaration-contract-test
+  (testing "gaiji without reference generates a span-derived id and preserves the raw marker"
+    (let [parser-ir {"nodes" [{"type" "gaiji"
+                               "span" {"start" 12 "end" 34}
+                               "gaiji" {"raw_marker" "[?]" "resolved" false}}]}
+          result (parser-ir-tei/render parser-ir)]
+      (is (= [{:xml-id "gaiji-12-34" :raw-marker "[?]"}]
+             (:char_declarations result)))
+      (is (some #(= [:g {:ref "#gaiji-12-34"}] %)
+                (hiccup-nodes (:body result)))))))

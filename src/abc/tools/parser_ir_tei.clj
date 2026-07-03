@@ -47,12 +47,10 @@
            (contains? gaiji "raw_marker"))
       (assoc :raw-marker (get gaiji "raw_marker")))))
 
-(defmulti ^:private render-node (fn [_acc node] (get node "type")))
-
-(defmethod render-node "text" [acc node]
+(defn- render-text-node [acc node]
   (append-inline acc (get node "text")))
 
-(defmethod render-node "ruby" [acc node]
+(defn- render-ruby-node [acc node]
   (let [ruby (get node "ruby")]
     (append-inline acc
                    (cond-> [:ruby]
@@ -62,29 +60,29 @@
                      (conj [:rb (get ruby "base")]
                            [:rt (get ruby "reading")])))))
 
-(defmethod render-node "gaiji" [acc node]
+(defn- render-gaiji-node [acc node]
   (let [declaration (gaiji-declaration node)]
     (-> acc
         (register-char-declaration declaration)
         (append-inline [:g {:ref (str "#" (:xml-id declaration))}]))))
 
-(defmethod render-node "editor-note" [acc node]
+(defn- render-editor-note-node [acc node]
   (let [note (get node "note")]
     (append-inline acc
                    [:note {:type (get note "category")}
                     (get note "raw")])))
 
-(defmethod render-node "emphasis" [acc node]
+(defn- render-emphasis-node [acc node]
   (append-inline acc
                  [:hi {:rend (get node "style")}
                   (get node "text")]))
 
-(defmethod render-node "heading" [acc node]
+(defn- render-heading-node [acc node]
   (append-block acc
                 [:head {:n (str (get node "level"))}
                  (get node "text")]))
 
-(defmethod render-node "indentation" [acc node]
+(defn- render-indentation-node [acc node]
   (if (present-text? (get node "text"))
     (append-inline acc
                    [:seg {:type "indentation"
@@ -92,29 +90,46 @@
                     (get node "text")])
     (mark-omitted acc "indentation")))
 
-(defmethod render-node "page-break" [acc node]
+(defn- render-page-break-node [acc node]
   (append-block acc
                 (cond-> [:pb]
                   (some? (get node "page_number"))
                   (conj {:n (get node "page_number")}))))
 
-(defmethod render-node "image" [acc node]
+(defn- render-image-node [acc node]
   (append-block acc
                 (cond-> [:figure
                          [:graphic {:url (get node "src")}]]
                   (present-text? (get node "alt"))
                   (conj [:figDesc (get node "alt")]))))
 
-(defmethod render-node "caption" [acc node]
+(defn- render-caption-node [acc node]
   (append-block acc [:figDesc (get node "text")]))
 
-(defmethod render-node "quote" [acc node]
+(defn- render-quote-node [acc node]
   (if (present-text? (get node "text"))
     (append-inline acc [:quote (get node "text")])
     (mark-omitted acc "quote")))
 
-(defmethod render-node :default [acc _node]
-  acc)
+(def ^:private node-renderers
+  {"text" render-text-node
+   "ruby" render-ruby-node
+   "gaiji" render-gaiji-node
+   "editor-note" render-editor-note-node
+   "emphasis" render-emphasis-node
+   "heading" render-heading-node
+   "indentation" render-indentation-node
+   "page-break" render-page-break-node
+   "image" render-image-node
+   "caption" render-caption-node
+   "quote" render-quote-node})
+
+(defn- render-node [acc node]
+  (let [node-type (get node "type")]
+    (if-let [render-node-fn (get node-renderers node-type)]
+      (render-node-fn acc node)
+      (throw (ex-info "Unsupported TEI parser-IR node type"
+                      {:node-type node-type})))))
 
 (defn render [parser-ir]
   (let [result (reduce (fn [acc node]
@@ -135,14 +150,4 @@
      :omitted (:omitted result)}))
 
 (def covered-node-types
-  #{"caption"
-    "editor-note"
-    "emphasis"
-    "gaiji"
-    "heading"
-    "image"
-    "indentation"
-    "page-break"
-    "quote"
-    "ruby"
-    "text"})
+  (set (keys node-renderers)))

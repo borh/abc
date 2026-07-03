@@ -21,6 +21,13 @@ use crate::schema::{
 
 const WAREHOUSE_MAX_ROW_GROUP_SIZE: usize = 50_000;
 
+/// Merge-time compaction threshold (§3.12):
+/// coalesce a staged table iff it has more than this many parts AND the
+/// true median part is smaller than `COMPACTION_MAX_MEDIAN_PART_BYTES`.
+/// Values from `docs/superpowers/reports/2026-07-03-morph-perf-decision.md`.
+pub(crate) const COMPACTION_MIN_PART_COUNT: usize = 64;
+pub(crate) const COMPACTION_MAX_MEDIAN_PART_BYTES: u64 = 1_048_576; // 1 MiB
+
 pub struct WarehouseWriter {
     paths: WarehousePaths,
     runs: Option<ArrowWriter<File>>,
@@ -499,6 +506,91 @@ pub fn parquet_table_row_count(run_dir: &Path, table: WarehouseTable) -> Result<
     parquet_file_row_count(&path)
 }
 
+/// Compact a table's staged parts into a single parquet file when it has many
+/// small parts. Threshold: `part_count > 64 AND median_part_bytes < 1 MiB`
+/// (§3.12 decision). Large tables (median ≥ 1 MiB) are returned untouched.
+///
+/// Implementation: because `WarehouseWriter::create_for_tables` wipes its
+/// staging dir, the coalesced output is written to a **same-filesystem
+/// sibling temp dir** (`<paths.warehouse_dir>/.compact-<run_id>-<table>`),
+/// finalized there (staging→final via `finalize_staging_run`), then the
+/// single coalesced part is moved into the real staging dir, replacing the
+/// many small parts. Same-FS `fs::rename` is atomic; `fs::copy` is the
+/// fallback only if rename fails across mounts.
+///
+/// Returns `true` if the table was compacted, `false` if it was left as-is.
+///
+/// # Errors
+///
+/// Returns an error if staging can't be read, the coalesce writer fails, or
+/// the part replacement can't be completed.
+pub fn compact_staged_table(paths: &WarehousePaths, table: WarehouseTable) -> Result<bool> {
+    let staged = paths.staging_dir.join(table.file_name());
+    if !staged.is_dir() {
+        return Ok(false);
+    }
+    let sizes = parquet_table_part_sizes(&staged)?;
+    if sizes.len() <= COMPACTION_MIN_PART_COUNT {
+        return Ok(false);
+    }
+    let median = sizes[sizes.len() / 2];
+    if median >= COMPACTION_MAX_MEDIAN_PART_BYTES {
+        eprintln!(
+            "warehouse compaction: skipping {} ({} parts, median {}B ≥ {}B)",
+            table.file_name(), sizes.len(), median, COMPACTION_MAX_MEDIAN_PART_BYTES
+        );
+        return Ok(false);
+    }
+    eprintln!(
+        "warehouse compaction: compacting {} ({} parts, median {}B) → 1 file",
+        table.file_name(), sizes.len(), median
+    );
+    let part_paths = parquet_table_part_paths(&staged)?;
+
+    // Coalesce into a same-FS sibling temp dir so rename is atomic.
+    let compact_dir = paths.warehouse_dir.join(format!(
+        ".compact-{}-{}",
+        paths.run_id,
+        table.file_name()
+    ));
+    if compact_dir.exists() {
+        fs::remove_dir_all(&compact_dir)
+            .with_context(|| format!("remove stale {}", compact_dir.display()))?;
+    }
+    let compact_paths = WarehousePaths::new(&compact_dir, "compact");
+    let mut writer = WarehouseWriter::create_for_tables(compact_paths.clone(), &[table])?;
+    for part in &part_paths {
+        append_parquet_table_file(&mut writer, table, part)?;
+    }
+    writer.finalize()?;
+    // finalize moved compact_paths.staging_dir → compact_paths.final_dir;
+    // the single coalesced parquet file is at final_dir/<table.file_name()>
+    // (the writer writes one part file for one writer instance). views.sql
+    // (also emitted by finalize) is ignored below — only `.parquet` files are
+    // moved back into the real staging dir.
+    //
+    // Replace the staged parts: delete old, move coalesced in.
+    for part in &part_paths {
+        fs::remove_file(part).with_context(|| format!("remove staged {}", part.display()))?;
+    }
+    for entry in fs::read_dir(&compact_paths.final_dir)? {
+        let entry = entry?;
+        if entry.path().extension().is_some_and(|x| x == "parquet") {
+            let dest = staged.join(entry.file_name());
+            fs::rename(entry.path(), &dest).with_context(|| {
+                format!(
+                    "move coalesced {} → {}",
+                    entry.path().display(),
+                    dest.display()
+                )
+            })?;
+        }
+    }
+    // Clean up the temp compact dir (its staging dir was already moved by finalize).
+    let _ = fs::remove_dir_all(&compact_dir);
+    Ok(true)
+}
+
 pub fn stage_parquet_table_part(
     staging_run_dir: &Path,
     table: WarehouseTable,
@@ -890,6 +982,7 @@ fn errors_schema() -> Arc<Schema> {
 
 #[cfg(test)]
 mod tests {
+    use std::io::Write;
     use std::time::{SystemTime, UNIX_EPOCH};
 
     use parquet::arrow::arrow_reader::ParquetRecordBatchReaderBuilder;
@@ -1138,6 +1231,52 @@ mod tests {
         )
         .unwrap();
         writer.close().unwrap();
+    }
+
+    #[test]
+    fn compact_staged_table_coalesces_many_small_parts_into_one_file() {
+        // Build a staging dir with 65 tiny part files for Sources — just over the
+        // 64-part threshold, each well under 1 MiB median.
+        let root = temp_dir("compact-many-small");
+        let paths = WarehousePaths::new(&root, "r");
+        let sources_staged = paths.staging_dir.join(WarehouseTable::Sources.file_name());
+        fs::create_dir_all(&sources_staged).unwrap();
+        for i in 0..65u32 {
+            let path = sources_staged.join(format!("part-{i:05}.parquet"));
+            write_sources_part(&path, &format!("s{i}"), 1); // tiny readable parquet
+        }
+        let compacted = compact_staged_table(&paths, WarehouseTable::Sources).unwrap();
+        assert!(compacted, "should compact (65 parts, median <1 MiB)");
+        let remaining: Vec<_> = fs::read_dir(&sources_staged)
+            .unwrap()
+            .filter_map(Result::ok)
+            .filter(|e| e.path().extension().is_some_and(|x| x == "parquet"))
+            .collect();
+        assert_eq!(remaining.len(), 1, "coalesced to a single file");
+    }
+
+    #[test]
+    fn compact_staged_table_skips_when_median_too_large() {
+        // 65 parts but each >1 MiB → median ≥ 1 MiB → skip (no compaction).
+        let root = temp_dir("compact-skip-large");
+        let paths = WarehousePaths::new(&root, "r");
+        let sources_staged = paths.staging_dir.join(WarehouseTable::Sources.file_name());
+        fs::create_dir_all(&sources_staged).unwrap();
+        for i in 0..65u32 {
+            let path = sources_staged.join(format!("part-{i:05}.parquet"));
+            write_sources_part(&path, &format!("s{i}"), 1);
+            // Pad the file to >1 MiB so median crosses threshold.
+            let mut f = std::fs::OpenOptions::new().append(true).open(&path).unwrap();
+            f.write_all(&vec![0u8; 1_100_000]).unwrap();
+        }
+        let compacted = compact_staged_table(&paths, WarehouseTable::Sources).unwrap();
+        assert!(!compacted, "should NOT compact (median ≥1 MiB)");
+        let remaining: Vec<_> = fs::read_dir(&sources_staged)
+            .unwrap()
+            .filter_map(Result::ok)
+            .filter(|e| e.path().extension().is_some_and(|x| x == "parquet"))
+            .collect();
+        assert_eq!(remaining.len(), 65, "parts unchanged");
     }
 
     #[test]

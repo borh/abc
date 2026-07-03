@@ -208,10 +208,33 @@ fn process_work(
 
 fn decode_source(bytes: &[u8]) -> String {
     use encoding_rs::SHIFT_JIS;
+    // Canonical decode (ab-check::encoding::decode_source_bytes and
+    // ab-index::encoding::decode_source_bytes) strips a UTF-8 BOM before
+    // decoding. ab-coverage previously returned the BOM as part of the text,
+    // drifting from canonical. Strip it here; the shared-module extraction
+    // that unifies all three sites is tracked as a separate behavior-preserving
+    // follow-up (audit §3.3).
+    let bytes = bytes.strip_prefix(b"\xef\xbb\xbf").unwrap_or(bytes);
     if std::str::from_utf8(bytes).is_ok() {
         return String::from_utf8_lossy(bytes).into_owned();
     }
     SHIFT_JIS.decode(bytes).0.into_owned()
+}
+
+#[cfg(test)]
+mod decode_source_tests {
+    use super::decode_source;
+
+    // Canonical decode (ab-check::encoding::decode_source_bytes and
+    // ab-index::encoding::decode_source_bytes) strips a UTF-8 BOM before
+    // returning text, and classifies the encoding as `utf-8-bom`. ab-coverage's
+    // `decode_source` diverged: it returns the BOM bytes as part of the text.
+    // This test pins the canonical text behavior so the drift is observable.
+    #[test]
+    fn strips_utf8_bom_like_canonical_decode() {
+        let decoded = decode_source(b"\xef\xbb\xbfabc");
+        assert_eq!(decoded, "abc", "UTF-8 BOM must be stripped (canonical)");
+    }
 }
 
 fn read_indexed_source_bytes(corpus_root: &Path, indexed_path: &str) -> Result<Vec<u8>> {

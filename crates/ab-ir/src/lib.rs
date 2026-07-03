@@ -434,13 +434,7 @@ impl Inline {
         placement: RubyPlacement,
         provenance: Provenance,
     ) -> Self {
-        Self::Ruby {
-            base,
-            reading: reading.into(),
-            placement,
-            attrs: Vec::new(),
-            provenance,
-        }
+        Self::ruby_with_attrs(base, reading, placement, Vec::new(), provenance)
     }
 
     #[must_use]

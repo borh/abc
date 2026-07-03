@@ -1,5 +1,6 @@
 {
   "run_dir": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z",
+  "retry_run_dir": "/db/ab-validator/aat-corpus/aozora2html-policy-retry-20260703T055526Z",
   "sample_counts": {
     "warigaki": {
       "observed_in_aat": 10,

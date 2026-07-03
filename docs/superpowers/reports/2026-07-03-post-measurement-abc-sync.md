@@ -70,12 +70,16 @@ Blocking residual buckets:
 
 - warigaki `adapter_timeout_or_protocol_error`: 7 works
 - warigaki `parse_incomplete`: 5 works
+- warigaki `report_failed_other_property`: 17 works
 - warigaki `source_feature_without_aat_observation`: 65 works
 - kunten `adapter_timeout_or_protocol_error`: 12 works
 - kunten `parse_incomplete`: 10 works
+- kunten `report_failed_other_property`: 153 works
 - kunten `source_feature_without_aat_observation`: 3 works
 
 The `source_feature_without_aat_observation` buckets mean the adapter produced valid-enough AAT for those works but no matching policy observation. Those buckets need adapter/policy investigation, not just another timeout increase.
+
+The `report_failed_other_property` buckets are also policy-relevant residuals. They have AAT evidence, but overlapping failures such as visible text order, gaiji resolution, or ruby completeness still need characterization before the measurement can be treated as a durable policy gate.
 
 ## Failure Overlap
 

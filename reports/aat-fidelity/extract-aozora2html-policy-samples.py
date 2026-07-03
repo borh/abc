@@ -167,35 +167,74 @@ def find_observed_sample(
     }
 
 
+def has_observed_sample(observed: dict[str, Any]) -> bool:
+    return bool(observed["aat_path"])
+
+
+def sample_evidence(
+    *,
+    family: str,
+    bucket: str,
+    work_id: str,
+    run_dir: Path,
+    retry_run_dir: Path | None,
+) -> tuple[str, Path, dict[str, Any]]:
+    if bucket == "observed_in_aat":
+        observed = find_observed_sample(family=family, work_id=work_id, run_dir=run_dir)
+        if has_observed_sample(observed):
+            return "baseline", run_dir, observed
+        if retry_run_dir is not None:
+            retry_observed = find_observed_sample(
+                family=family,
+                work_id=work_id,
+                run_dir=retry_run_dir,
+            )
+            if has_observed_sample(retry_observed):
+                return "retry", retry_run_dir, retry_observed
+        return "baseline", run_dir, observed
+
+    evidence_label = "baseline"
+    evidence_dir = run_dir
+    if retry_run_dir is not None and report_payloads_for_work(work_id, retry_run_dir):
+        evidence_label = "retry"
+        evidence_dir = retry_run_dir
+    paths = aat_paths_for_work(work_id, evidence_dir)
+    return evidence_label, evidence_dir, {
+        "aat_path": str(paths[0].relative_to(evidence_dir)) if paths else "",
+        "node_path": "",
+        "node_kind": "",
+        "syntax_id": "",
+        "node_preview": {},
+    }
+
+
 def sample_row(
     *,
     family: str,
     bucket: str,
     work_id: str,
     run_dir: Path,
+    retry_run_dir: Path | None,
 ) -> dict[str, Any]:
-    if bucket == "observed_in_aat":
-        observed = find_observed_sample(family=family, work_id=work_id, run_dir=run_dir)
-    else:
-        paths = aat_paths_for_work(work_id, run_dir)
-        observed = {
-            "aat_path": str(paths[0].relative_to(run_dir)) if paths else "",
-            "node_path": "",
-            "node_kind": "",
-            "syntax_id": "",
-            "node_preview": {},
-        }
+    evidence_label, evidence_dir, observed = sample_evidence(
+        family=family,
+        bucket=bucket,
+        work_id=work_id,
+        run_dir=run_dir,
+        retry_run_dir=retry_run_dir,
+    )
     return {
         "family": family,
         "bucket": bucket,
         "work_id": work_id,
-        "report_path": first_report_path(work_id, run_dir),
+        "evidence_run": evidence_label,
+        "report_path": first_report_path(work_id, evidence_dir),
         "aat_path": observed["aat_path"],
         "node_path": observed["node_path"],
         "node_kind": observed["node_kind"],
         "syntax_id": observed["syntax_id"],
         "node_preview": observed["node_preview"],
-        "failure_properties": load_report_failed_properties(work_id, run_dir),
+        "failure_properties": load_report_failed_properties(work_id, evidence_dir),
     }
 
 
@@ -205,10 +244,17 @@ def sample_bucket(
     bucket: str,
     work_ids: list[str],
     run_dir: Path,
+    retry_run_dir: Path | None,
     limit: int,
 ) -> list[dict[str, Any]]:
     return [
-        sample_row(family=family, bucket=bucket, work_id=work_id, run_dir=run_dir)
+        sample_row(
+            family=family,
+            bucket=bucket,
+            work_id=work_id,
+            run_dir=run_dir,
+            retry_run_dir=retry_run_dir,
+        )
         for work_id in sorted(work_ids)[:limit]
     ]
 
@@ -217,8 +263,8 @@ def markdown_table(rows: list[dict[str, Any]]) -> list[str]:
     if not rows:
         return ["_No samples._", ""]
     lines = [
-        "| Work ID | Report | AAT | Node Path | Kind | Syntax | Failures | Preview |",
-        "|---|---|---|---|---|---|---|---|",
+        "| Work ID | Run | Report | AAT | Node Path | Kind | Syntax | Failures | Preview |",
+        "|---|---|---|---|---|---|---|---|---|",
     ]
     for row in rows:
         preview = json.dumps(row["node_preview"], ensure_ascii=False, sort_keys=True)
@@ -226,8 +272,9 @@ def markdown_table(rows: list[dict[str, Any]]) -> list[str]:
             preview = preview[:177] + "..."
         failures = ", ".join(row["failure_properties"])
         lines.append(
-            "| {work_id} | `{report}` | `{aat}` | `{node_path}` | {kind} | {syntax} | {failures} | `{preview}` |".format(
+            "| {work_id} | {run} | `{report}` | `{aat}` | `{node_path}` | {kind} | {syntax} | {failures} | `{preview}` |".format(
                 work_id=row["work_id"],
+                run=row["evidence_run"],
                 report=row["report_path"],
                 aat=row["aat_path"],
                 node_path=row["node_path"],
@@ -264,6 +311,10 @@ def main() -> int:
 
     run_dir = args.run_dir.resolve()
     summary = read_json(args.audit_summary_json)
+    retry_run_dir = None
+    retry = summary.get("retry")
+    if isinstance(retry, dict) and isinstance(retry.get("run_dir"), str):
+        retry_run_dir = Path(retry["run_dir"]).resolve()
     buckets = summary.get("buckets", {})
     if not isinstance(buckets, dict):
         raise SystemExit("audit summary lacks buckets object")
@@ -285,6 +336,7 @@ def main() -> int:
                 bucket=bucket,
                 work_ids=[str(work_id) for work_id in work_ids],
                 run_dir=run_dir,
+                retry_run_dir=retry_run_dir,
                 limit=args.limit_per_bucket,
             )
             samples[family][bucket] = rows
@@ -294,6 +346,7 @@ def main() -> int:
         "# Aozora2html Policy Samples",
         "",
         f"- run_dir: `{run_dir}`",
+        f"- retry_run_dir: `{retry_run_dir}`" if retry_run_dir is not None else "- retry_run_dir: null",
         f"- audit: `{args.audit_md}`",
         f"- limit_per_bucket: {args.limit_per_bucket}",
         "",
@@ -311,6 +364,7 @@ def main() -> int:
 
     output_summary = {
         "run_dir": str(run_dir),
+        "retry_run_dir": str(retry_run_dir) if retry_run_dir is not None else None,
         "sample_counts": sample_counts,
         "families": list(FAMILIES),
         "buckets_sampled": list(BUCKETS),

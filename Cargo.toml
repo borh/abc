@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "crates/ab-source-syntax",
+    "crates/ab-encoding",
     "crates/ab-ir",
     "crates/ab-index",
     "crates/ab-check",
@@ -40,6 +41,7 @@ ab-warehouse = { path = "crates/ab-warehouse" }
 ab-ir = { path = "crates/ab-ir" }
 ab-check = { path = "crates/ab-check" }
 ab-source-syntax = { path = "crates/ab-source-syntax" }
+ab-encoding = { path = "crates/ab-encoding" }
 chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4.5", features = ["derive"] }
 criterion = "0.8"

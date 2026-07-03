@@ -6,18 +6,17 @@ version = 4
 name = "ab-check"
 version = "0.1.0"
 dependencies = [
+ "ab-encoding",
  "ab-plaintext",
  "ab-source-syntax",
  "anyhow",
  "clap",
  "criterion",
- "encoding_rs",
  "flate2",
  "jsonschema",
  "rayon",
  "serde",
  "serde_json",
- "sha2 0.10.9",
  "tempfile",
  "unicode-normalization",
  "zip",
@@ -69,14 +68,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "ab-encoding"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "encoding_rs",
+ "serde",
+ "sha2 0.10.9",
+]
+
+[[package]]
 name = "ab-index"
 version = "0.1.0"
 dependencies = [
+ "ab-encoding",
  "anyhow",
  "chrono",
  "clap",
  "criterion",
- "encoding_rs",
  "flate2",
  "rayon",
  "regex",

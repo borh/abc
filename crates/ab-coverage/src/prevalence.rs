@@ -208,12 +208,14 @@ fn process_work(
 
 fn decode_source(bytes: &[u8]) -> String {
     use encoding_rs::SHIFT_JIS;
-    // Canonical decode (ab-check::encoding::decode_source_bytes and
-    // ab-index::encoding::decode_source_bytes) strips a UTF-8 BOM before
-    // decoding. ab-coverage previously returned the BOM as part of the text,
-    // drifting from canonical. Strip it here; the shared-module extraction
-    // that unifies all three sites is tracked as a separate behavior-preserving
-    // follow-up (audit §3.3).
+    // Canonical decode lives in `ab-encoding::decode_source_bytes`, shared by
+    // ab-check and ab-index. ab-coverage only needs the decoded text (not
+    // `raw_sha256` or the `encoding` classification) and is infallible here,
+    // so it keeps a local text-only fast path instead of computing a SHA-256
+    // per source. The BOM-strip matches canonical (audit §3.3 bug fix, commit
+    // 813817b). Fully unifying onto `ab_encoding::decode_source_bytes` is a
+    // shape change gated on whether prevalence should surface `raw_sha256` /
+    // propagate the BOM-but-invalid-utf8 error — deferred.
     let bytes = bytes.strip_prefix(b"\xef\xbb\xbf").unwrap_or(bytes);
     if std::str::from_utf8(bytes).is_ok() {
         return String::from_utf8_lossy(bytes).into_owned();

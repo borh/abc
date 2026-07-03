@@ -12,6 +12,7 @@
    [abc.tools.manifest-to-rdf :as manifest-to-rdf]
    [abc.tools.manifest :as manifest]
    [abc.tools.materialize-import :as materialize]
+   [abc.tools.materialize-publication :as publication]
    [abc.tools.schema :as schema]
    [abc.tools.metadata-record :as metadata-record]
    [abc.tools.person-drift :as person-drift]
@@ -539,6 +540,30 @@
   (run-command! "git-cliff" "--config" "cliff.toml" "--unreleased" "--strip" "header"
                 "--output" "/tmp/abc-changelog-check.md"))
 
+(defn validate-publication-output! [publication-output]
+  (let [manifest-schema (files/read-json "schemas/manifest.schema.json")
+        validation-result-schema (files/read-json "schemas/tei-validation-result.schema.json")
+        plain-file (:plaintext publication-output)
+        tei-file (:tei publication-output)
+        validation-result-file (:tei-validation-result publication-output)]
+    (when-not (and (.exists plain-file) (pos? (.length plain-file)))
+      (throw (ex-info "parser-IR publication plain.txt must exist and be non-empty"
+                      {:path (str plain-file)})))
+    (run-command! "xmllint" "--noout" (str tei-file))
+    (validate-tei! (System/getenv "TEI_SCHEMA_PATH") [tei-file])
+    (validate-tei! "schemas/tei-profile.rng" [tei-file])
+    (let [{:keys [findings]} (schematron/validate! {:schema-path "schemas/tei-profile.sch"
+                                                     :xml-path (str tei-file)
+                                                     :label (str tei-file)})
+          errors (filter schematron-error? findings)]
+      (when (seq errors)
+        (throw (ex-info "generated parser-IR publication TEI has Schematron errors"
+                        {:errors (mapv render-schematron-finding errors)}))))
+    (doseq [manifest-file [(:plaintext-manifest publication-output)
+                           (:tei-manifest publication-output)]]
+      (validate-json! manifest-schema manifest-file))
+    (validate-json! validation-result-schema validation-result-file)))
+
 ;; Spec format: "<severity>: <focus> <path> — <message> (<label>)".
 ;; We append "[<source>]" because the source shape IRI is high-signal
 ;; for debugging and the spec did not pin punctuation, only fields.
@@ -665,30 +690,52 @@
                          :ttl-path ttl-path}))))))
 
 (defn validate-design-bundle! []
-  (let [materialized-dir (.toFile (java.nio.file.Files/createTempDirectory
-                                   "abc-materialized-import"
-                                   (make-array java.nio.file.attribute.FileAttribute 0)))]
+  (let [temp-dir (.toFile (java.nio.file.Files/createTempDirectory
+                           "abc-design-bundle"
+                           (make-array java.nio.file.attribute.FileAttribute 0)))
+        materialized-dir (io/file temp-dir "materialized-import")
+        publication-dir (io/file temp-dir "publication")]
     (try
       (tel/log! :info "==> Materializing imported ab-validator output")
       (let [materialized (materialize/materialize-import!
                           {:input-dir (files/path "examples" "ab-validator-output")
                            :output-dir materialized-dir
-                           :generated-at materialize/default-generated-at})]
+                           :generated-at materialize/default-generated-at})
+            publication-output (publication/materialize-publication!
+                                {:parser-ir-path "examples/v0/example-work/parser-ir.json"
+                                 :source-manifest-path "examples/v0/example-work/source.manifest.json"
+                                 :metadata-record-path "examples/v0/example-work/metadata-record.json"
+                                 :persons-dir "examples/v0/example-persons"
+                                 :output-dir publication-dir
+                                 :generated-at publication/default-generated-at})]
         (tel/log! :info "materialized import ok")
+        (tel/log! :info "parser-IR publication materialization ok")
         (tel/log! :info "==> Validating JSON schemas and examples")
-        (validate-json-schemas! (vals materialized))
+        (validate-json-schemas! (concat (vals materialized)
+                                        [(:plaintext-manifest publication-output)
+                                         (:tei-manifest publication-output)]))
         (tel/log! :info "json schema validation ok")
+        (tel/log! :info "==> Checking parser-IR publication output")
+        (validate-publication-output! publication-output)
+        (tel/log! :info "parser-IR publication output ok")
         (tel/log! :info "==> Checking materialized manifest index")
         (manifest-index/validate-no-reproducibility-conflicts!
-         (manifest-index/index-manifest-files (vals materialized)))
+         (manifest-index/index-manifest-files
+          (concat (vals materialized)
+                  [(:plaintext-manifest publication-output)
+                   (:tei-manifest publication-output)])))
         (tel/log! :info "materialized manifest index ok")
         (tel/log! :info "==> Checking materialized RDF views")
-        (doseq [manifest-path (vals materialized)]
+        (doseq [manifest-path (concat (vals materialized)
+                                      [(:plaintext-manifest publication-output)
+                                       (:tei-manifest publication-output)])]
           (manifest-to-rdf/manifest->ttl (files/read-json manifest-path)))
         (tel/log! :info "materialized RDF views ok")
         (tel/log! :info "==> Validating SHACL shapes")
         (let [shapes (shacl/load-shapes-graph)
               targets (concat (vals materialized)
+                              [(:plaintext-manifest publication-output)
+                               (:tei-manifest publication-output)]
                               ["examples/v0/example-work/manifest.json"
                                "examples/v0/example-work/failure-manifest.example.json"])]
           (validate-shacl! shapes targets))
@@ -814,7 +861,7 @@
       (tel/log! :info "git-cliff config ok")
       (tel/log! :info "design bundle validation ok")
       (finally
-        (doseq [file (reverse (file-seq materialized-dir))]
+        (doseq [file (reverse (file-seq temp-dir))]
           (.delete file))))))
 
 (defn -main [& _args]

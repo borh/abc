@@ -196,8 +196,14 @@
     (nil? v) nil
     :else (str v)))
 
+(defn hiccup->xml-string
+  "Serialise TEI hiccup to an XML string. The TEI namespace is the
+  default; xml: prefix is bound to the XML namespace."
+  [hiccup]
+  (xml/emit-str (->xml-element hiccup)))
+
 (defn emit-xml
   "Serialise a hiccup TEI header to an XML string. The TEI namespace
   is the default; xml: prefix is bound to the XML namespace."
   [hiccup]
-  (xml/emit-str (->xml-element hiccup)))
+  (hiccup->xml-string hiccup))

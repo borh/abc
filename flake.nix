@@ -122,6 +122,16 @@
             meta.description = "Materialize imported ab-validator output as ABC manifests";
           };
 
+          materialize-publication = {
+            type = "app";
+            program = toString (
+              pkgs.writeShellScript "abc-materialize-publication" ''
+                exec ${pkgs.clojure}/bin/clojure -M:abc/materialize-publication "$@"
+              ''
+            );
+            meta.description = "Materialize parser-IR publication plaintext and TEI artifacts";
+          };
+
           manifest-to-rdf = {
             type = "app";
             program = toString (
@@ -343,7 +353,12 @@
             test -f ${./src/abc/tools/manifest_index.clj}
             test -f ${./src/abc/tools/logging.clj}
             test -f ${./src/abc/tools/manifest_to_rdf.clj}
+            test -f ${./src/abc/tools/materialize_publication.clj}
             test -f ${./src/abc/tools/metadata_record.clj}
+            test -f ${./src/abc/tools/parser_ir_plaintext.clj}
+            test -f ${./src/abc/tools/parser_ir_publication_policy.clj}
+            test -f ${./src/abc/tools/parser_ir_tei.clj}
+            test -f ${./src/abc/tools/parser_ir_vocabulary.clj}
             test -f ${./src/abc/tools/person_drift_history.clj}
             test -f ${./src/abc/tools/person_record.clj}
             test -f ${./src/abc/tools/rdf_prefixes.clj}
@@ -363,6 +378,11 @@
             test -f ${./test/abc/tools/manifest_index_test.clj}
             test -f ${./test/abc/tools/manifest_to_rdf_test.clj}
             test -f ${./test/abc/tools/materialize_import_test.clj}
+            test -f ${./test/abc/tools/materialize_publication_test.clj}
+            test -f ${./test/abc/tools/parser_ir_plaintext_test.clj}
+            test -f ${./test/abc/tools/parser_ir_publication_policy_test.clj}
+            test -f ${./test/abc/tools/parser_ir_tei_test.clj}
+            test -f ${./test/abc/tools/parser_ir_vocabulary_test.clj}
             test -f ${./test/abc/tools/aozora_csv_test.clj}
             test -f ${./test/abc/tools/aozora_history_audit_test.clj}
             test -f ${./test/abc/git_blob_test.clj}
@@ -374,9 +394,11 @@
             test -f ${./test/abc/tools/shacl_test.clj}
             test -f ${./test/abc/tools/tei_test.clj}
             test -f ${./test/abc/tools/tei_header_test.clj}
+            test -f ${./test/abc/tools/tei_header_unit_test.clj}
             test -f ${./examples/v0/example-work/metadata-record.json}
             test -f ${./examples/v0/example-work/metadata-record.ttl}
             test -f ${./examples/v0/example-persons/000879.json}
+            test -f ${./data/parser-ir-publication-policy-v0.json}
             test -f ${./test/abc/tools/validate_design_bundle_test.clj}
             test -f ${./test/abc/annotation_schema_test.clj}
             test -f ${./test/abc/text_test.clj}

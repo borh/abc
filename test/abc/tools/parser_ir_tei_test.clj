@@ -28,11 +28,13 @@
 (deftest render-body-shape-test
   (testing "TEI renderer returns explicit text/body/paragraph shape"
     (let [result (parser-ir-tei/render all-node-parser-ir)
-          [text-node [body-node & body-children]] (:body result)]
+          [text-node [body-node first-div]] (:body result)
+          [div-node head-node & div-children] first-div]
       (is (= :text text-node))
       (is (= :body body-node))
-      (is (= :head (ffirst body-children)))
-      (is (some #(= :p (first %)) body-children))
+      (is (= :div div-node))
+      (is (= :head (first head-node)))
+      (is (some #(= :p (first %)) div-children))
       (is (seq (:char_declarations result)))
       (is (= {"heading" 1 "text" 1 "ruby" 1 "gaiji" 2 "editor-note" 1
               "emphasis" 1 "indentation" 1 "page-break" 1 "image" 1
@@ -50,6 +52,16 @@
                                 (:char_declarations result)))))
       (is (some #(= [:g {:ref "#example-gaiji"}] %)
                 (hiccup-nodes (:body result)))))))
+
+(deftest trailing-heading-starts-a-new-division-test
+  (testing "headings after paragraph content keep source order by starting a later div"
+    (let [result (parser-ir-tei/render
+                  (files/read-json "examples/v0/example-work/parser-ir.json"))
+          [_ [body-node first-child second-child]] (:body result)]
+      (is (= :body body-node))
+      (is (= :p (first first-child)))
+      (is (= :div (first second-child)))
+      (is (= :head (first (second second-child)))))))
 
 (deftest char-declaration-order-test
   (testing "char declarations are first-appearance ordered and deduplicated"

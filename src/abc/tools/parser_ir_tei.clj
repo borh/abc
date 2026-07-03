@@ -10,15 +10,26 @@
 (defn- append-inline [acc node]
   (update acc :current-paragraph conj node))
 
+(defn- append-structural-child [acc node]
+  (if (seq (:current-division acc))
+    (update acc :current-division conj node)
+    (update acc :body-children conj node)))
+
 (defn- flush-paragraph [acc]
   (if (seq (:current-paragraph acc))
+    (assoc (append-structural-child acc (into [:p] (:current-paragraph acc)))
+           :current-paragraph [])
+    acc))
+
+(defn- flush-division [acc]
+  (if (seq (:current-division acc))
     (-> acc
-        (update :body-children conj (into [:p] (:current-paragraph acc)))
-        (assoc :current-paragraph []))
+        (update :body-children conj (into [:div] (:current-division acc)))
+        (assoc :current-division []))
     acc))
 
 (defn- append-block [acc node]
-  (update (flush-paragraph acc) :body-children conj node))
+  (append-structural-child (flush-paragraph acc) node))
 
 (defn- count-node [acc node-type]
   (update acc :node_counts update node-type (fnil inc 0)))
@@ -77,9 +88,12 @@
                   (get node "text")]))
 
 (defn- render-heading-node [acc node]
-  (append-block acc
-                [:head {:n (str (get node "level"))}
-                 (get node "text")]))
+  (-> acc
+      flush-paragraph
+      flush-division
+      (update :current-division conj
+              [:head {:n (str (get node "level"))}
+               (get node "text")])))
 
 (defn- render-indentation-node [acc node]
   (if (present-text? (get node "text"))
@@ -136,13 +150,16 @@
                              (count-node (get node "type"))
                              (render-node node)))
                        {:body-children []
+                        :current-division []
                         :current-paragraph []
                         :char_declarations []
                         :char-declaration-ids #{}
                         :node_counts {}
                         :omitted []}
                        (get parser-ir "nodes"))
-        result (flush-paragraph result)]
+        result (-> result
+                   flush-paragraph
+                   flush-division)]
     {:body [:text (into [:body] (:body-children result))]
      :char_declarations (:char_declarations result)
      :node_counts (:node_counts result)

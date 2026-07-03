@@ -111,13 +111,27 @@
    (publication-stmt work)
    (source-desc work)])
 
-(defn- encoding-desc []
-  [:encodingDesc
-   [:charDecl
-    [:char {:xml/id "example-gaiji"}
-     [:localProp {:name "charName"
-                  :value "Example unresolved Aozora gaiji fixture"}]
-     [:desc "Design fixture for preserving an unresolved gaiji marker."]]]])
+(defn- declaration->char [declaration]
+  (cond-> [:char {:xml/id (:xml-id declaration)}]
+    (:unicode declaration)
+    (conj [:mapping {:type "unicode"} (:unicode declaration)])
+
+    (:raw-marker declaration)
+    (conj [:localProp {:name "rawMarker"
+                       :value (:raw-marker declaration)}])
+
+    (:name declaration)
+    (conj [:localProp {:name "charName"
+                       :value (:name declaration)}])
+
+    (:desc declaration)
+    (conj [:desc (:desc declaration)])))
+
+(defn- encoding-desc [declarations]
+  (when (seq declarations)
+    [:encodingDesc
+     (into [:charDecl]
+           (map declaration->char declarations))]))
 
 (defn- profile-desc [work]
   [:profileDesc
@@ -136,10 +150,10 @@
 
   Role and person are kept separate at every level inside this builder;
   the relation_to_work value never enters the person body."
-  [{:keys [work contributors]}]
+  [{:keys [work contributors char-declarations]}]
   [:teiHeader
    (file-desc work contributors)
-   (encoding-desc)
+   (encoding-desc char-declarations)
    (profile-desc work)])
 
 ;; ---------------------------------------------------------------------------

@@ -31,6 +31,11 @@
       flake = false;
     };
 
+    aozorabunko-src = {
+      url = "github:aozorabunko/aozorabunko/0e9ea3e586eb0aa34039fabfc85a407d2f98b165";
+      flake = false;
+    };
+
     reference-aozora-epub3-src = {
       url = "github:AozoraEpub3-JDK21/AozoraEpub3-JDK21";
       flake = false;
@@ -47,6 +52,7 @@
       reference-aozora-rs-src,
       reference-aozora2-src,
       reference-aozorabunko-extractor-src,
+      aozorabunko-src,
       flake-utils,
       rust-overlay,
     }:
@@ -448,13 +454,11 @@
           pkgs.python3.pkgs.pytest
         ];
 
-        pythonWithAatSchemaDeps = pkgs.python3.withPackages (
-          ps: [
-            ps.jsonschema
-            ps.tomli
-            ps.pytest
-          ]
-        );
+        pythonWithAatSchemaDeps = pkgs.python3.withPackages (ps: [
+          ps.jsonschema
+          ps.tomli
+          ps.pytest
+        ]);
 
         aozora2htmlRustParityShell = pkgs.writeShellApplication {
           name = "aozora2html-rust-parity";
@@ -472,20 +476,23 @@
           '';
         };
 
-        aozora2htmlRustParityCheck = pkgs.runCommand "aozora2html-rust-parity-check" {
-          nativeBuildInputs = [
-            rustToolchain
-            pythonWithAatSchemaDeps
-          ];
-        } ''
-          work_dir="$(mktemp -d)"
-          cp -R "${source}" "$work_dir/source"
-          chmod -R +w "$work_dir/source"
-          cd "$work_dir/source"
-          cargo build --manifest-path "$work_dir/source/adapters/aozora2html/Cargo.toml" --release
-          python3 -m pytest "$work_dir/source/adapters/aozora2html/tests/test_mapper.py" -vv
-          touch "$out"
-        '';
+        aozora2htmlRustParityCheck =
+          pkgs.runCommand "aozora2html-rust-parity-check"
+            {
+              nativeBuildInputs = [
+                rustToolchain
+                pythonWithAatSchemaDeps
+              ];
+            }
+            ''
+              work_dir="$(mktemp -d)"
+              cp -R "${source}" "$work_dir/source"
+              chmod -R +w "$work_dir/source"
+              cd "$work_dir/source"
+              cargo build --manifest-path "$work_dir/source/adapters/aozora2html/Cargo.toml" --release
+              python3 -m pytest "$work_dir/source/adapters/aozora2html/tests/test_mapper.py" -vv
+              touch "$out"
+            '';
 
         aatOracleDataSchemaSmokeShell = pkgs.writeShellApplication {
           name = "aat-oracle-data-schema-smoke";
@@ -498,15 +505,18 @@
           '';
         };
 
-        aatOracleDataSchemaSmokeCheck = pkgs.runCommand "aat-oracle-data-schema-smoke-check" {
-          nativeBuildInputs = [
-            pythonWithAatSchemaDeps
-          ];
-        } ''
-          export AB_VALIDATOR_DIRECT_PYTHON=1
-          bash "${source}/tests/aat-oracle-data-schema-smoke.sh"
-          touch "$out"
-        '';
+        aatOracleDataSchemaSmokeCheck =
+          pkgs.runCommand "aat-oracle-data-schema-smoke-check"
+            {
+              nativeBuildInputs = [
+                pythonWithAatSchemaDeps
+              ];
+            }
+            ''
+              export AB_VALIDATOR_DIRECT_PYTHON=1
+              bash "${source}/tests/aat-oracle-data-schema-smoke.sh"
+              touch "$out"
+            '';
 
         adapterFidelityNotesSchemaSmokeShell = pkgs.writeShellApplication {
           name = "adapter-fidelity-notes-schema-smoke";
@@ -519,15 +529,62 @@
           '';
         };
 
-        adapterFidelityNotesSchemaSmokeCheck = pkgs.runCommand "adapter-fidelity-notes-schema-smoke-check" {
-          nativeBuildInputs = [
-            pythonWithAatSchemaDeps
+        adapterFidelityNotesSchemaSmokeCheck =
+          pkgs.runCommand "adapter-fidelity-notes-schema-smoke-check"
+            {
+              nativeBuildInputs = [
+                pythonWithAatSchemaDeps
+              ];
+            }
+            ''
+              export AB_VALIDATOR_DIRECT_PYTHON=1
+              bash "${source}/tests/adapter-fidelity-notes-schema-smoke.sh"
+              touch "$out"
+            '';
+
+        taxonomyGenerator = rustPlatform.buildRustPackage {
+          pname = "ab-taxonomy-generator";
+          version = "0.1.0";
+
+          src = source;
+          cargoDeps = abCargoDeps;
+
+          cargoBuildFlags = [
+            "--package"
+            "ab-coverage"
+            "--bin"
+            "generate_taxonomy"
           ];
-        } ''
-          export AB_VALIDATOR_DIRECT_PYTHON=1
-          bash "${source}/tests/adapter-fidelity-notes-schema-smoke.sh"
-          touch "$out"
-        '';
+
+          doCheck = false;
+        };
+
+        taxonomyDriftCheck =
+          pkgs.runCommand "taxonomy-drift-check"
+            {
+              nativeBuildInputs = [
+                taxonomyGenerator
+                pkgs.diffutils
+              ];
+            }
+            ''
+              generated="$TMPDIR/generated-feature-taxonomy.md"
+
+              generate_taxonomy \
+                --annotation-dir "${aozorabunko-src}/annotation" \
+                --corpus-dir "${aozorabunko-src}/cards" \
+                --corpus-limit 0 \
+                --reference "$TMPDIR/parser-report-not-present.md" \
+                --write "$generated"
+
+              if ! cmp -s "${source}/data/generated-feature-taxonomy.md" "$generated"; then
+                echo "data/generated-feature-taxonomy.md is out of date. Regenerated diff:" >&2
+                diff -u --binary "${source}/data/generated-feature-taxonomy.md" "$generated" >&2
+                exit 1
+              fi
+
+              touch "$out"
+            '';
       in
       {
         packages = {
@@ -567,6 +624,7 @@
           aat-oracle-data-schema-smoke = aatOracleDataSchemaSmokeCheck;
           aozora2html-rust-parity = aozora2htmlRustParityCheck;
           adapter-fidelity-notes-schema-smoke = adapterFidelityNotesSchemaSmokeCheck;
+          taxonomy-drift = taxonomyDriftCheck;
         };
 
         devShells = {

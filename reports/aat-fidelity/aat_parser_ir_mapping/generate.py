@@ -14,6 +14,7 @@ sys.path.insert(0, str(SCRIPT_DIR))
 
 import mapper
 import mapping_doc
+import validate_contract
 
 CATEGORIES = ("LOSS", "AMBIGUITY", "INVENTION", "UNSUPPORTED", "STRUCTURAL")
 
@@ -134,6 +135,7 @@ def write_report(summary: dict, report_path: Path) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
+    repo_root = SCRIPT_DIR.parents[2]
     parser.add_argument("--aat-dir", type=Path, required=True)
     parser.add_argument("--abc-root", type=Path, default=Path("../abc"))
     parser.add_argument("--out", type=Path, required=True)
@@ -141,6 +143,7 @@ def main() -> int:
     parser.add_argument("--report-md", type=Path)
     parser.add_argument("--assert-zero-unsupported", action="store_true")
     parser.add_argument("--mapping-version", default="0.1.1")
+    parser.add_argument("--aat-schema", type=Path, default=repo_root / "data/aat-schema.json")
     args = parser.parse_args()
 
     files = sorted(args.aat_dir.glob("*.json"))
@@ -195,6 +198,13 @@ def main() -> int:
         mapping_version=args.mapping_version,
     )
     validate_mapping(mapping_document, args.abc_root.resolve())
+    aat_schema_path = args.aat_schema
+    if not aat_schema_path.is_absolute():
+        aat_schema_path = repo_root / aat_schema_path
+    validate_contract.validate_mapping_contract(
+        mapping_document,
+        json.loads(aat_schema_path.read_text(encoding="utf-8")),
+    )
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     mapping_doc.write_mapping_document(mapping_document, args.out)

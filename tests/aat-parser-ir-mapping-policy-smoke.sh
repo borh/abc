@@ -70,6 +70,20 @@ import sys
 
 repo_root = Path("$repo_root")
 sys.path.insert(0, str(repo_root / "reports/aat-fidelity/aat_parser_ir_mapping"))
+import validate_contract
+
+mapping = json.loads(Path("$out_dir/mapping.json").read_text())
+schema = json.loads((repo_root / "data/aat-schema.json").read_text())
+validate_contract.validate_mapping_contract(mapping, schema)
+PY
+
+python3 - <<PY
+import json
+from pathlib import Path
+import sys
+
+repo_root = Path("$repo_root")
+sys.path.insert(0, str(repo_root / "reports/aat-fidelity/aat_parser_ir_mapping"))
 import generate
 
 aat = json.loads((Path("$aat_dir") / "policy.json").read_text())

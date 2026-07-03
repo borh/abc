@@ -7,11 +7,13 @@ repo_root="$(cd "$(dirname "$0")/.." && pwd)"
 out="${AB_DB_ROOT:-/db/ab-validator}/aat-fidelity/aozora2html-measurement-audit-smoke"
 base="$out/base"
 retry="$out/retry"
+other="$out/other"
 audit_out="$out/audit"
 
 rm -rf "$out"
 mkdir -p "$base/check-reports/fixture-adapter" "$base/aat/fixture-adapter" \
   "$retry/check-reports/fixture-adapter" "$retry/aat/fixture-adapter" \
+  "$other/check-reports/fixture-adapter" "$other/aat/fixture-adapter" \
   "$audit_out"
 
 duckdb_bin="$(aat_duckdb_bin)"
@@ -28,6 +30,14 @@ JSON
 cat > "$retry/metadata.json" <<'JSON'
 {
   "report_id": "smoke-retry",
+  "adapter": "fixture-adapter",
+  "adapter_version": "fixture 1.0"
+}
+JSON
+
+cat > "$other/metadata.json" <<'JSON'
+{
+  "report_id": "smoke-other-failure-only",
   "adapter": "fixture-adapter",
   "adapter_version": "fixture 1.0"
 }
@@ -50,6 +60,22 @@ cat > "$base/index.json" <<'JSON'
 JSON
 
 cp "$base/index.json" "$retry/index.json"
+
+cat > "$other/index.json" <<'JSON'
+{
+  "version": 1,
+  "corpus_root": "fixture",
+  "corpus_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "generated_at": "2026-07-03T00:00:00Z",
+  "works_count": 1,
+  "works": [],
+  "by_feature": {
+    "warigaki": ["work-war-other-failure"],
+    "kaeriten": [],
+    "okurigana": []
+  }
+}
+JSON
 
 write_report() {
   local root="$1"
@@ -76,6 +102,11 @@ parse_incomplete_results='{
 timeout_results='{
   "adapter_timeout": {"pass": false, "message": "adapter timed out", "confidence": "strict"}
 }'
+other_failure_results='{
+  "schema_valid": {"pass": true, "confidence": "strict"},
+  "parse_completeness": {"pass": true, "confidence": "strict"},
+  "visible_text_body_order": {"pass": false, "message": "AAT visible text projection is not accounted for in source order", "confidence": "strict"}
+}'
 
 write_report "$base" work-war-ok "$pass_results"
 write_report "$base" work-war-missing "$pass_results"
@@ -84,6 +115,7 @@ write_report "$base" work-kun-overlap "$parse_incomplete_results"
 write_report "$base" work-retry-kun "$timeout_results"
 
 write_report "$retry" work-retry-kun "$pass_results"
+write_report "$other" work-war-other-failure "$other_failure_results"
 
 cat > "$base/aat/fixture-adapter/work-war-ok.json" <<'JSON'
 {
@@ -197,6 +229,19 @@ cat > "$retry/aat/fixture-adapter/work-retry-kun.json" <<'JSON'
 }
 JSON
 
+cat > "$other/aat/fixture-adapter/work-war-other-failure.json" <<'JSON'
+{
+  "version": 1,
+  "work_id": "work-war-other-failure",
+  "blocks": [{"kind": "paragraph", "content": [{"kind": "text", "value": "plain"}]}],
+  "meta": {
+    "adapter": "fixture-adapter",
+    "adapter_version": "fixture 1.0",
+    "parse_complete": true
+  }
+}
+JSON
+
 uv run --isolated --no-project --with 'duckdb>=1.1' \
   "$repo_root/reports/aat-fidelity/build-aat-batch-triage.py" \
   --reports-dir "$base/check-reports" \
@@ -212,6 +257,14 @@ uv run --isolated --no-project --with 'duckdb>=1.1' \
   --db "$retry/fidelity.duckdb" \
   --report-id smoke-retry \
   --out-dir "$retry/triage"
+
+uv run --isolated --no-project --with 'duckdb>=1.1' \
+  "$repo_root/reports/aat-fidelity/build-aat-batch-triage.py" \
+  --reports-dir "$other/check-reports" \
+  --aat-dir "$other/aat" \
+  --db "$other/fidelity.duckdb" \
+  --report-id smoke-other-failure-only \
+  --out-dir "$other/triage"
 
 python3 "$repo_root/reports/aat-fidelity/audit-aozora2html-measurement.py" \
   --run-dir "$base" \
@@ -237,3 +290,13 @@ python3 "$repo_root/reports/aat-fidelity/audit-aozora2html-measurement.py" \
 jq -e '.bucket_counts.kunten.observed_in_aat == 2' "$audit_out/audit-retry.summary.json"
 jq -e '.bucket_counts.kunten.adapter_timeout_or_protocol_error == 0' "$audit_out/audit-retry.summary.json"
 rg -n "retry run" "$audit_out/audit-retry.md"
+
+python3 "$repo_root/reports/aat-fidelity/audit-aozora2html-measurement.py" \
+  --run-dir "$other" \
+  --out-md "$audit_out/audit-other-failure-only.md" \
+  --summary-json "$audit_out/audit-other-failure-only.summary.json" \
+  --worksets-dir "$audit_out/other-failure-only-worksets"
+
+jq -e '.bucket_counts.warigaki.report_failed_other_property == 1' "$audit_out/audit-other-failure-only.summary.json"
+jq -e '.verdict_inputs.has_policy_relevant_residuals == true' "$audit_out/audit-other-failure-only.summary.json"
+jq -e '.verdict_inputs.has_source_feature_without_aat_observation == false' "$audit_out/audit-other-failure-only.summary.json"

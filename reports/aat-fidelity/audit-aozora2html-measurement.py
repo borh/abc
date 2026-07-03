@@ -24,6 +24,9 @@ INCOMPLETE_BUCKETS = {
     "schema_invalid_or_no_aat",
     "parse_incomplete",
 }
+POLICY_RELEVANT_RESIDUAL_BUCKETS = INCOMPLETE_BUCKETS | {
+    "report_failed_other_property",
+}
 ADAPTER_ERROR_PROPERTIES = {
     "adapter_timeout",
     "adapter_protocol_error",
@@ -580,7 +583,7 @@ def main() -> int:
             "has_policy_relevant_residuals": any(
                 bucket_counts[family][bucket] > 0
                 for family in ("warigaki", "kunten")
-                for bucket in INCOMPLETE_BUCKETS
+                for bucket in POLICY_RELEVANT_RESIDUAL_BUCKETS
             ),
             "has_source_feature_without_aat_observation": any(
                 bucket_counts[family]["source_feature_without_aat_observation"] > 0

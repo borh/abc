@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use ab_aat_to_parser_ir::{
-    MappingDocument, SchemaSet,
+    ConversionOptions, ConversionRequest, MappingDocument, SchemaSet,
     divergence::{AatMeta, DivergenceRecorder},
     mapping::MappingRule,
     schema::{schema_hash, validate_value},
@@ -25,6 +25,17 @@ fn schemas_and_mapping() -> (SchemaSet, MappingDocument) {
     let mapping =
         MappingDocument::from_path(&repo.join("data/aat-to-parser-ir-mapping-v1.json")).unwrap();
     (schemas, mapping)
+}
+
+fn base_meta(source_encoding: &str, source_hash: &str) -> Value {
+    json!({
+        "adapter": "fixture",
+        "adapter_version": "fixture 0.1.0",
+        "source_encoding": source_encoding,
+        "source_hash": source_hash,
+        "parse_complete": true,
+        "warnings": []
+    })
 }
 
 #[test]
@@ -188,4 +199,224 @@ fn divergence_records_aggregate_by_mapping_rule_and_validate_against_abc_schema(
         "ABC divergence record",
     )
     .unwrap();
+}
+
+#[test]
+fn converts_text_ruby_gaiji_and_validates_parser_ir() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let aat = json!({
+        "version": 1,
+        "work_id": "minimal",
+        "meta": base_meta(
+            "utf-8",
+            "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        ),
+        "blocks": [{
+            "kind": "paragraph",
+            "content": [
+                {"kind": "text", "value": "A"},
+                {"kind": "ruby", "base": "B", "reading": "bee", "direction": "right"},
+                {"kind": "gaiji", "description": "[gaiji]", "resolved": "G", "jis_code": "1-2-3", "unresolved_reason": null}
+            ]
+        }]
+    });
+
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: ConversionOptions::default(),
+    })
+    .unwrap();
+
+    assert_eq!(
+        output
+            .parser_ir
+            .pointer("/nodes/0/type")
+            .and_then(Value::as_str),
+        Some("text")
+    );
+    assert_eq!(
+        output
+            .parser_ir
+            .pointer("/nodes/1/ruby/direction")
+            .and_then(Value::as_str),
+        Some("right")
+    );
+    assert_eq!(
+        output
+            .parser_ir
+            .pointer("/nodes/2/gaiji/raw_marker")
+            .and_then(Value::as_str),
+        Some("[gaiji]")
+    );
+    assert!(output.emitted_rule_ids.contains("A-18"));
+    assert!(
+        !output
+            .divergence_bundle
+            .pointer("/records")
+            .and_then(Value::as_array)
+            .unwrap()
+            .iter()
+            .any(|record| record["message"]
+                .as_str()
+                .unwrap_or("")
+                .contains("direction"))
+    );
+
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
+#[test]
+fn measured_policy_projects_style_heading_warning_and_warigaki() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let mut meta = base_meta(
+        "windows-31j-lossy",
+        "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+    );
+    meta["warnings"] = json!([{ "message": "fixture warning", "line": 2 }]);
+    let aat = json!({
+        "version": 1,
+        "work_id": "policy",
+        "meta": meta,
+        "blocks": [
+            {
+                "kind": "jisage_block",
+                "children": [{
+                    "kind": "heading",
+                    "level": 1,
+                    "style": "normal",
+                    "content": [{
+                        "kind": "warigaki",
+                        "upper": [{"kind": "text", "value": "U"}],
+                        "lower": [{"kind": "text", "value": "L"}]
+                    }]
+                }]
+            },
+            {
+                "kind": "paragraph",
+                "content": [
+                    {"kind": "style", "style_type": "kaeriten", "content": [{"kind": "text", "value": "K"}]},
+                    {"kind": "warigaki", "upper": [{"kind": "text", "value": "X"}], "lower": [{"kind": "text", "value": "Y"}]}
+                ]
+            }
+        ]
+    });
+
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: ConversionOptions::default(),
+    })
+    .unwrap();
+
+    let nodes = output.parser_ir["nodes"].as_array().unwrap();
+    assert!(
+        nodes
+            .iter()
+            .any(|node| node["type"] == "heading" && node["text"] == "UL")
+    );
+    assert!(nodes.iter().any(|node| node["type"] == "emphasis"
+        && node["style"] == "kaeriten"
+        && node["text"] == "K"));
+    assert!(
+        nodes
+            .iter()
+            .any(|node| node["type"] == "text" && node["text"] == "X")
+    );
+    assert!(
+        nodes
+            .iter()
+            .any(|node| node["type"] == "text" && node["text"] == "Y")
+    );
+    assert_eq!(
+        output
+            .parser_ir
+            .pointer("/source/encoding")
+            .and_then(Value::as_str),
+        Some("Shift_JIS")
+    );
+    assert_eq!(
+        output
+            .parser_ir
+            .pointer("/warnings/0/code")
+            .and_then(Value::as_str),
+        Some("AAT_WARNING")
+    );
+    assert!(output.emitted_rule_ids.contains("U-09"));
+    assert!(output.emitted_rule_ids.contains("A-27"));
+    assert!(
+        !output
+            .divergence_bundle
+            .pointer("/records")
+            .and_then(Value::as_array)
+            .unwrap()
+            .iter()
+            .any(|record| record["parser_ir_pointer"] == "warnings[].span.line")
+    );
+
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
+#[test]
+fn unmeasured_inline_kind_refuses_by_default() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let aat = json!({
+        "version": 1,
+        "work_id": "unknown",
+        "meta": base_meta(
+            "utf-8",
+            "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+        ),
+        "blocks": [{"kind": "paragraph", "content": [{"kind": "x-local-fixture", "value": "x"}]}]
+    });
+
+    let error = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas,
+        options: ConversionOptions {
+            validate_input_aat: false,
+            ..ConversionOptions::default()
+        },
+    })
+    .unwrap_err()
+    .to_string();
+
+    assert!(error.contains("unsupported inline kind"));
+}
+
+#[test]
+fn converts_checked_in_real_measured_aat_fixtures() {
+    let (schemas, _) = schemas_and_mapping();
+    let repo = repo_root();
+    let mapping_path = repo.join("data/aat-to-parser-ir-mapping-v1.json");
+
+    for fixture in [
+        "tests/fixtures/aat-parser-ir/real-aozora-rs-sample.aat.json",
+        "tests/fixtures/aat-parser-ir/real-aozora2html-sample.aat.json",
+    ] {
+        let aat = ab_aat_to_parser_ir::schema::read_json(&repo.join(fixture)).unwrap();
+        let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+            aat,
+            mapping: MappingDocument::from_path(&mapping_path).unwrap(),
+            schemas: schemas.clone(),
+            options: ConversionOptions::default(),
+        })
+        .unwrap_or_else(|error| panic!("{fixture} failed conversion: {error:#}"));
+
+        let node_count = output
+            .parser_ir
+            .pointer("/nodes")
+            .and_then(Value::as_array)
+            .map_or(0, Vec::len);
+        assert!(node_count > 0, "{fixture} produced no parser-IR nodes");
+        assert!(
+            !output.emitted_rule_ids.is_empty(),
+            "{fixture} did not exercise any measured divergence rule"
+        );
+        validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+        validate_value(&schemas.bundle_schema, &output.divergence_bundle, "bundle").unwrap();
+    }
 }

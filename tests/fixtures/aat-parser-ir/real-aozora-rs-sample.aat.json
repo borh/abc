@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "work_id": "real-aozora-rs-sample",
+  "meta": {
+    "adapter": "aozora-rs",
+    "adapter_version": "aozora-rs-adapter 0.1.0 measured-fixture",
+    "source_encoding": "utf-8",
+    "source_hash": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+    "parse_complete": true,
+    "warnings": []
+  },
+  "blocks": [
+    {
+      "kind": "paragraph",
+      "content": [
+        {
+          "kind": "text",
+          "value": "A"
+        },
+        {
+          "kind": "ruby",
+          "base": "B",
+          "reading": "bee",
+          "direction": "right"
+        },
+        {
+          "kind": "gaiji",
+          "description": "[gaiji]",
+          "resolved": "G",
+          "jis_code": "1-2-3",
+          "unresolved_reason": null
+        }
+      ]
+    }
+  ]
+}

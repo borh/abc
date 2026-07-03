@@ -1,0 +1,76 @@
+{
+  "version": 1,
+  "work_id": "real-aozora2html-sample",
+  "meta": {
+    "adapter": "aozora2html",
+    "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1 measured-fixture",
+    "source_encoding": "windows-31j-lossy",
+    "source_hash": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+    "parse_complete": true,
+    "warnings": [
+      {
+        "message": "fixture warning",
+        "line": 2
+      }
+    ]
+  },
+  "blocks": [
+    {
+      "kind": "jisage_block",
+      "children": [
+        {
+          "kind": "heading",
+          "level": 1,
+          "style": "normal",
+          "content": [
+            {
+              "kind": "warigaki",
+              "upper": [
+                {
+                  "kind": "text",
+                  "value": "U"
+                }
+              ],
+              "lower": [
+                {
+                  "kind": "text",
+                  "value": "L"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "kind": "paragraph",
+      "content": [
+        {
+          "kind": "style",
+          "style_type": "kaeriten",
+          "content": [
+            {
+              "kind": "text",
+              "value": "K"
+            }
+          ]
+        },
+        {
+          "kind": "warigaki",
+          "upper": [
+            {
+              "kind": "text",
+              "value": "X"
+            }
+          ],
+          "lower": [
+            {
+              "kind": "text",
+              "value": "Y"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

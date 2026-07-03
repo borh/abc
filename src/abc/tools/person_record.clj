@@ -5,8 +5,7 @@
   fields explicit as JSON null. record->graph renders a single
   Person as FOAF + RDA Group 2 triples plus an EDTF-typed echo of
   the canonical date string per ADR 0015."
-  (:require [abc.tools.files :as files]
-            [abc.tools.hash :as hash]
+  (:require [abc.tools.hash :as hash]
             [abc.tools.malli :as am]
             [abc.tools.manifest-to-rdf :as manifest-to-rdf]
             [abc.tools.rdf-prefixes :as rdf-prefixes]

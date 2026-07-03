@@ -19,7 +19,7 @@
   (append-text acc (or (get-in node ["gaiji" "unicode"])
                        (get-in node ["gaiji" "raw_marker"]))))
 
-(defn- render-editor-note-node [acc node]
+(defn- render-editor-note-node [acc _node]
   (mark-omitted acc "editor-note"))
 
 (defn- render-emphasis-node [acc node]
@@ -33,7 +33,7 @@
     (append-text acc (get node "text"))
     (mark-omitted acc "indentation")))
 
-(defn- render-page-break-node [acc node]
+(defn- render-page-break-node [acc _node]
   (append-text acc "\n"))
 
 (defn- render-image-node [acc node]
@@ -63,11 +63,11 @@
    "quote" render-quote-node})
 
 (defn- render-node [acc node]
-  (let [node-type (get node "type")]
-    (let [acc (update acc :node_counts update node-type (fnil inc 0))]
-      (if-let [render-node-fn (get node-renderers node-type)]
-        (render-node-fn acc node)
-        acc))))
+  (let [node-type (get node "type")
+        acc (update acc :node_counts update node-type (fnil inc 0))]
+    (if-let [render-node-fn (get node-renderers node-type)]
+      (render-node-fn acc node)
+      acc)))
 
 (defn render [parser-ir]
   (reduce render-node

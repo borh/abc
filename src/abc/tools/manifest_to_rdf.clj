@@ -13,8 +13,7 @@
    [clojure.tools.cli :as cli]
    [taoensso.telemere :as tel])
   (:import [org.apache.jena.datatypes.xsd XSDDatatype]
-           [org.apache.jena.graph Node Triple NodeFactory]
-           [java.io ByteArrayOutputStream]))
+           [org.apache.jena.graph Node Triple NodeFactory]))
 
 ;; ---------------------------------------------------------------------------
 ;; Prefix declarations

@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd "$(dirname "${BASH_SOURCE[0]}")/.."
+
+exec nix run nixpkgs#clj-kondo -- \
+  --lint src/abc/tools test/abc/tools \
+  --fail-level error

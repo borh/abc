@@ -34,7 +34,8 @@
   suited to CLI tools. Sync dispatch so messages flush before
   System/exit. Idempotent."
   []
-  filters-installed
+  (when-not filters-installed
+    (throw (IllegalStateException. "Telemere namespace filters were not installed")))
   (tel/remove-handler! :default/console)
   (tel/add-handler! :abc/cli
                     (tel/handler:console

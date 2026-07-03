@@ -15,7 +15,8 @@
             [abc.tools.jcs :as jcs]
             [abc.tools.json :as abc-json]
             [charred.api :as json]
-            [clojure.java.io :as io])
+            [clojure.java.io :as io]
+            [clojure.string :as string])
   (:import [com.apicatalog.jsonld JsonLd]
            [com.apicatalog.jsonld.document JsonDocument]
            [com.apicatalog.jsonld.http.media MediaType]
@@ -62,7 +63,7 @@
     (.readAllBytes in)))
 
 (defn- artifact-uri [artifact-id]
-  (str artifact-base-uri (clojure.string/replace artifact-id #"^sha256:" "sha256-")))
+  (str artifact-base-uri (string/replace artifact-id #"^sha256:" "sha256-")))
 
 (defn record->linked-art
   "Build the deterministic Linked Art candidate map from `manifest`
@@ -98,11 +99,12 @@
                     "type" "DigitalObject"
                     "_label" "Aozora Bunko card"}]}))
 
-(defn- ^DocumentLoader local-context-loader
+(defn- local-context-loader
   "Return a titanium DocumentLoader that resolves only the ABC public
   context URI from in-memory bytes and refuses every other URL. This
   pins the harness to the committed `contexts/abc-v0.jsonld` and
   prevents network fetches in the sandbox."
+  ^DocumentLoader
   [^bytes context-bytes]
   (let [allowed (URI/create context-public-uri)]
     (reify DocumentLoader

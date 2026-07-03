@@ -5,7 +5,7 @@
             [abc.tools.manifest :as manifest]
             [abc.tools.person-drift :as drift]
             [abc.tools.schema :as schema]
-            [clojure.test :refer [deftest is testing use-fixtures]]))
+            [clojure.test :refer [deftest is use-fixtures]]))
 
 (use-fixtures :once (fn [f] (am/install!) (f)))
 

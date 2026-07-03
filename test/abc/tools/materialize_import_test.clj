@@ -4,7 +4,7 @@
             [abc.tools.materialize-import :as materialize]
             [charred.api :as json]
             [clojure.java.io :as io]
-            [clojure.test :refer [deftest is testing]])
+            [clojure.test :refer [deftest is]])
   (:import [java.nio.file Files]
            [java.nio.file.attribute FileAttribute]))
 

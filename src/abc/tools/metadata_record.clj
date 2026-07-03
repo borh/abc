@@ -7,8 +7,7 @@
   vocabulary is the resolved table from the spec (BIBO + Schema.org
   for work; FOAF + RDA Group 2 for person; Dublin Core throughout;
   abc: for project-specific concepts)."
-  (:require [abc.tools.files :as files]
-            [abc.tools.hash :as hash]
+  (:require [abc.tools.hash :as hash]
             [abc.tools.malli :as am]
             [abc.tools.manifest :as manifest]
             [abc.tools.manifest-to-rdf :as manifest-to-rdf]

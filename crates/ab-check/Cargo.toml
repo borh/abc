@@ -27,6 +27,10 @@ zip.workspace = true
 criterion.workspace = true
 tempfile.workspace = true
 
+[[example]]
+name = "vtbo_locate"
+path = "examples/vtbo_locate.rs"
+
 [[bench]]
 name = "aat_json_io"
 harness = false

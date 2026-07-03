@@ -15,5 +15,5 @@ jobs:
       - name: Validate design bundle
         run: |
           nix run \
-            --override-input local-pkgs path:$GITHUB_WORKSPACE/nix/ci-empty-local-pkgs \
+            --override-input local-pkgs "path:${GITHUB_WORKSPACE}/nix/ci-empty-local-pkgs" \
             .#validate-design-bundle

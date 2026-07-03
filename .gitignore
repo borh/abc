@@ -25,6 +25,7 @@ pom.xml.asc
 .direnv/
 .lsp/
 .clj-kondo/
+/.worktrees/
 
 # Archived superpowers plans (completed, not committed)
 docs/superpowers/plans/archive/

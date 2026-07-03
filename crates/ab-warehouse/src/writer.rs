@@ -515,8 +515,8 @@ pub fn parquet_table_row_count(run_dir: &Path, table: WarehouseTable) -> Result<
 /// sibling temp dir** (`<paths.warehouse_dir>/.compact-<run_id>-<table>`),
 /// finalized there (staging→final via `finalize_staging_run`), then the
 /// single coalesced part is moved into the real staging dir, replacing the
-/// many small parts. Same-FS `fs::rename` is atomic; `fs::copy` is the
-/// fallback only if rename fails across mounts.
+/// many small parts. Same-FS `fs::rename` is atomic; both paths are under
+/// `paths.warehouse_dir`, so no cross-filesystem fallback is needed.
 ///
 /// Returns `true` if the table was compacted, `false` if it was left as-is.
 ///
@@ -587,7 +587,12 @@ pub fn compact_staged_table(paths: &WarehousePaths, table: WarehouseTable) -> Re
         }
     }
     // Clean up the temp compact dir (its staging dir was already moved by finalize).
-    let _ = fs::remove_dir_all(&compact_dir);
+    if let Err(e) = fs::remove_dir_all(&compact_dir) {
+        eprintln!(
+            "warehouse compaction: failed to clean up temp dir {}: {e}",
+            compact_dir.display()
+        );
+    }
     Ok(true)
 }
 

@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build a Rust library and CLI that converts measured AAT v1 JSON into ABC parser-IR JSON plus a deterministic divergence bundle.
+**Goal:** Build a Rust library and CLI that converts measured AAT v1 JSON into ABC parser-IR JSON plus a deterministic divergence bundle, with explicit refusal when runtime divergence identity is not present in the measured mapping artifact.
 
-**Architecture:** Implement a measured policy engine, not a generic mapping DSL and not a hard-coded rule table. Rust traversal code projects AAT values into parser-IR, but every divergence record is authorized by `data/aat-to-parser-ir-mapping-v1.json` through folded pointer/category lookup. The public seam is `convert(request) -> ConversionOutput`; callers do not know about traversal, span synthesis, schema identity, or divergence aggregation.
+**Architecture:** Implement a measured policy engine, not a generic mapping DSL and not a hard-coded rule table. This plan is not a clean "deepen" until it closes the traversal/protocol gates below: the mapping identity is depth-faithful replay of the generator's folded paths, not merely semantic loss taxonomy. Rust traversal code projects AAT values into parser-IR, but every divergence record is authorized by `data/aat-to-parser-ir-mapping-v1.json` through folded pointer/category/target lookup. The public seam is `convert(request) -> ConversionOutput`; callers do not know about traversal, span synthesis, schema identity, or divergence aggregation.
 
 **Tech Stack:** Rust 2024, `serde`, `serde_json`, `jsonschema`, `clap`, `anyhow`, `sha2`, `regex`, local `ab-check` AAT validation, ABC JSON schemas from `../abc/schemas`.
 
@@ -19,11 +19,31 @@
 - ABC owns divergence record shape at `../abc/schemas/aat-parser-ir-divergence.schema.json`; ab-validator owns only `data/aat-parser-ir-divergence-bundle-v1.schema.json`.
 - `records[]` items must have no fields outside ABC's record schema.
 - Default unmeasured divergence behavior is `UnmeasuredDivergencePolicy::Refuse`.
+- AAT validation must call `ab_check::check::validate_aat_value`; the `ab_check::aat` module does not expose that function.
 - `ruby.direction` is direct projection after ADR 0024 and must not emit an L-02-style loss.
 - Keep parser-IR `derived_from` unset in v1; current measured mapping records adapter provenance as lost and bundle-preserved.
+- Runtime traversal must reproduce the generator's folded path protocol: replace numeric indexes with `[]`, strip any `=value` suffix, preserve `children[]` depth, and preserve pseudo parser-IR pointers such as `(none)` and `(emphasis.text)`.
+- `children[]` traversal is mandatory before the converter is considered real-input capable. Mapping v1.1 has 59 folded rules under `children[]`; a content-only block traversal is structurally wrong.
+- The mapping guard authorizes emitted records only. It does not prove that every applicable measured divergence was emitted, so the plan must add applicability tests for known measured rules and a documented coverage limitation.
+- Do not emit divergence records that mapping v1.1 does not authorize. In v1, that means no `span.line_end -> span.line`, no `meta.warnings[].line -> warnings[].span.line`, and no `quote_block`/`caption_block` structural records unless the mapping artifact is extended.
+- Warigaki is context-sensitive in the mapping. Plain block-content warigaki records with `parser_ir_pointer = null`; nested emphasis/heading contexts that measure `(emphasis.text)` must record that exact target pointer.
+- CLI default `--abc-root` must be resolved from `CARGO_MANIFEST_DIR`/repo root as `repo_root.join("../abc")`, not from the caller's current working directory.
 - Flake checks must not write to `/db` or require runtime network access.
+- Pure flake schema validation must use an explicit `abc-src = { url = "path:../abc"; flake = false; }` input or an explicitly vendored schema copy. Do not have a derivation reach through `$PWD/../abc`.
 
 ---
+
+## Incorporated Review Corrections
+
+The critical review is accepted as a protocol/trust-boundary correction, not as ordinary polish. The implementation route is **Upstream Design + fake-seam/trust risk** until these gates are represented in the work:
+
+- C1: Fix the AAT validation path to `ab_check::check::validate_aat_value`.
+- C2/M1: Treat folded AAT pointer depth as rule identity. Implement `children[]` traversal and nested fixtures before claiming real-input support.
+- C3: Remove or defer unmeasured divergence emissions for `span.line_end`, warning line spans, `quote_block`, and `caption_block`; handle heading/nested warigaki with the measured `(emphasis.text)` target pointer.
+- M2: Record that the mapping guard is one-directional. Add applicability tests for measured divergences that the converter must emit, including `gaiji.jis_code -> gaiji.reference`.
+- M3: Pin generator/consumer folding compatibility with a test over concrete first-path examples.
+- M5: Add checked-in real measured AAT fixtures from aozora-rs and aozora2html buckets. The flake check uses those fixtures and never reads `/db`.
+- M6/M7: Replace previously vague flake wiring and CWD-relative ABC defaults with concrete Nix and CLI behavior.
 
 ## Design Synthesis
 
@@ -32,6 +52,7 @@
 - AAT JSON is the adapter contract in this repo.
 - ABC parser-IR is the downstream conversion contract for ABC TEI/plaintext publication.
 - The current mapping artifact is generated from measured aozora-rs and aozora2html buckets.
+- The generated mapping's `(category, folded_aat_pointer, parser_ir_pointer)` key is depth-sensitive identity. Two semantically similar losses at different nesting depths are different measured rules.
 - aozora2html warigaki is measured as `UNSUPPORTED`; parser-IR has no warigaki node.
 - Production AAT spans are often absent; parser-IR spans are required.
 - The Python mapper in `reports/aat-fidelity/aat_parser_ir_mapping/mapper.py` is disposable prior art, not production code.
@@ -41,14 +62,17 @@
 - Implement the accepted Alternative C from the spec: measured policy engine with mapping guard.
 - Fold runtime AAT occurrence paths with the same rule as `mapping_doc.py`: replace `[number]` with `[]`, then strip any `=value` suffix.
 - Build divergence rule identity from `(category, folded_aat_pointer, parser_ir_pointer)`.
+- Preserve path depth as part of rule identity for v1. Do not semantically collapse all warigaki, style, heading, or gaiji losses into one rule.
 - Use runtime first occurrence paths for `first_path`; use the mapping rule text, minus the generated corpus prefix, as the deterministic `message`.
 - Aggregate divergence records per work and per mapping rule.
+- Treat unsupported or lossy constructs without a measured mapping rule as outside v1 support under `Refuse`.
 
 **Still Unknown, Consciously Deferred**
 
 - Whether a future mapping should populate parser-IR `derived_from`.
 - Whether ABC should add first-class warigaki/kunten nodes to parser-IR.
 - Whether a later mapping protocol should grow executable transform expressions.
+- Whether a later mapping should collapse depth-specialized rules into semantic rule families.
 - Whether batch conversion needs resumable manifests; v1 only needs a single-document CLI.
 
 ## Evidence Ledger
@@ -66,7 +90,7 @@
 
 | Actor | Objective | Current obstacle | Capability when solved | How the design supports it |
 |---|---|---|---|---|
-| Parser comparison operator | Compare existing parsers through a shared downstream shape | AAT captures adapter output, ABC uses parser-IR | Convert any schema-valid AAT into parser-IR plus losses | CLI validates input, target schema, and divergence bundle |
+| Parser comparison operator | Compare existing parsers through a shared downstream shape | AAT captures adapter output, ABC uses parser-IR | Convert measured AAT inputs whose divergence keys are authorized by mapping v1.1 | CLI validates input, target schema, and divergence bundle |
 | ABC publication pipeline | Drive TEI/plaintext from parser-IR | ABC needs parser-IR fixtures and provenance | Consume deterministic parser-IR artifacts | Output validates against `../abc/schemas/parser-ir.schema.json` |
 | Mapping maintainer | Detect when conversion logic outpaces measurement | Rust code can emit new divergence buckets accidentally | Refuse unmeasured divergence by default | `MappingIndex` authorizes runtime records from the generated artifact |
 | Future parser implementer | Know which AAT constructs are unsupported or ambiguous | Loss is easy to hide in conversion output | Read per-work divergence records | Aggregator records count and first runtime path per rule |
@@ -76,15 +100,15 @@
 | Criterion | Status Quo | Direct Rust Port | Generic Mapping Interpreter | Measured Policy Engine With Mapping Guard |
 |---|---|---|---|---|
 | Data-driven behavior | No conversion tool exists | Copies probe behavior but rule drift is unchecked | Could be data-driven only after a real DSL exists | Uses generated measured mapping as runtime authorization |
-| Manual mapping risk | None because no implementation | High: rule ids and loss cases tend to become hand tables | Medium: the DSL itself becomes a new manual protocol | Low: traversal is code, divergence identity is artifact-backed |
+| Manual mapping risk | None because no implementation | High: rule ids and loss cases tend to become hand tables | Medium: the DSL itself becomes a new manual protocol | Medium: emitted records are artifact-backed, but omission coverage must be tested |
 | Complexity | Low short-term, no value | Low initial code, weak boundary | High surface area before evidence supports it | Moderate, with one deep module seam |
 | ABC compatibility | No artifacts | Possible but sidecar drift likely | Unknown until DSL semantics are specified | Validates parser-IR, ABC records, and local bundle |
-| Revisit trigger | ABC cannot test parser-IR publication flow | Probe and Rust results diverge | Mapping schema adds executable transforms | Mapping artifact changes categories or parser-IR schema |
+| Revisit trigger | ABC cannot test parser-IR publication flow | Probe and Rust results diverge | Mapping schema adds executable transforms | Mapping artifact changes categories, parser-IR schema changes, or generator folding/depth convention changes |
 
 ## File Structure
 
 - Modify `Cargo.toml`: add workspace member and workspace dependency for `ab-aat-to-parser-ir`.
-- Modify `flake.nix`: expose package, app, and sandbox-pure smoke check.
+- Modify `flake.nix`: add an explicit `abc-src` schema input, expose package/app, and add sandbox-pure smoke check.
 - Create `crates/ab-aat-to-parser-ir/Cargo.toml`: crate metadata and dependencies.
 - Create `crates/ab-aat-to-parser-ir/src/lib.rs`: public conversion interface and module exports.
 - Create `crates/ab-aat-to-parser-ir/src/schema.rs`: schema loading, `abc-legacy-json-c14n-v0`, JSON Schema validation.
@@ -93,6 +117,8 @@
 - Create `crates/ab-aat-to-parser-ir/src/convert.rs`: AAT traversal, parser-IR construction, span synthesis.
 - Create `crates/ab-aat-to-parser-ir/src/main.rs`: thin CLI wrapper.
 - Create `crates/ab-aat-to-parser-ir/tests/integration.rs`: library and CLI-level integration tests.
+- Create `tests/fixtures/aat-parser-ir/real-aozora-rs-sample.aat.json`: checked-in measured AAT fixture.
+- Create `tests/fixtures/aat-parser-ir/real-aozora2html-sample.aat.json`: checked-in measured AAT fixture with at least one policy bucket.
 - Create `tests/aat-to-parser-ir-cli-smoke.sh`: checked-in fixture smoke for Nix.
 
 ## Component Interfaces
@@ -119,6 +145,7 @@ pub enum UnmeasuredDivergencePolicy {
 pub struct ConversionOutput {
     pub parser_ir: serde_json::Value,
     pub divergence_bundle: serde_json::Value,
+    pub emitted_rule_ids: std::collections::BTreeSet<String>,
 }
 
 pub fn convert(request: ConversionRequest) -> anyhow::Result<ConversionOutput>;
@@ -143,15 +170,21 @@ pub fn convert(request: ConversionRequest) -> anyhow::Result<ConversionOutput>;
 - [ ] **Step 1: Add the failing schema hash tests**
 
 ```rust
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use ab_aat_to_parser_ir::schema::{schema_hash, SchemaSet};
 use serde_json::Value;
 
+fn abc_root(repo: &Path) -> PathBuf {
+    std::env::var_os("AB_ABC_ROOT")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| repo.join("../abc"))
+}
+
 #[test]
 fn legacy_schema_hashes_match_mapping_artifact() {
     let repo = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let abc = repo.join("../abc");
+    let abc = abc_root(&repo);
     let schemas = SchemaSet::load(&repo, &abc).unwrap();
 
     assert_eq!(
@@ -223,7 +256,6 @@ categories = ["text-processing"]
 
 [dependencies]
 ab-check = { workspace = true }
-ab-diff-utils = { workspace = true }
 anyhow = { workspace = true }
 clap = { workspace = true }
 jsonschema = { workspace = true }
@@ -347,7 +379,7 @@ use ab_aat_to_parser_ir::{MappingDocument, SchemaSet};
 #[test]
 fn mapping_preflight_accepts_checked_in_v1_1_artifact() {
     let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let abc = repo.join("../abc");
+    let abc = abc_root(&repo);
     let schemas = SchemaSet::load(&repo, &abc).unwrap();
     let mapping = MappingDocument::from_path(&repo.join("data/aat-to-parser-ir-mapping-v1.json")).unwrap();
 
@@ -365,7 +397,7 @@ fn mapping_preflight_accepts_checked_in_v1_1_artifact() {
 #[test]
 fn mapping_preflight_rejects_wrong_target_schema_hash() {
     let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let abc = repo.join("../abc");
+    let abc = abc_root(&repo);
     let schemas = SchemaSet::load(&repo, &abc).unwrap();
     let mut mapping = MappingDocument::from_path(&repo.join("data/aat-to-parser-ir-mapping-v1.json")).unwrap();
     mapping.target_parser_ir_schema_hash = format!("sha256:{}", "0".repeat(64));
@@ -378,7 +410,7 @@ fn mapping_preflight_rejects_wrong_target_schema_hash() {
 #[test]
 fn mapping_preflight_rejects_stale_gaiji_pointers() {
     let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let abc = repo.join("../abc");
+    let abc = abc_root(&repo);
     let schemas = SchemaSet::load(&repo, &abc).unwrap();
     let mut mapping = MappingDocument::from_path(&repo.join("data/aat-to-parser-ir-mapping-v1.json")).unwrap();
     mapping.transform_rule_descriptions.push(ab_aat_to_parser_ir::mapping::MappingRule {
@@ -395,6 +427,25 @@ fn mapping_preflight_rejects_stale_gaiji_pointers() {
     assert!(error.contains("A-99"));
     assert!(error.contains("gaiji.raw_marker"));
 }
+
+#[test]
+fn folded_pointer_protocol_matches_generator_examples() {
+    use ab_aat_to_parser_ir::mapping::fold_aat_pointer;
+
+    assert_eq!(
+        fold_aat_pointer("blocks[3].children[1].heading.content[0].warigaki"),
+        "blocks[].children[].heading.content[].warigaki"
+    );
+    assert_eq!(
+        fold_aat_pointer("blocks[9].content[2].content[0].warigaki"),
+        "blocks[].content[].content[].warigaki"
+    );
+    assert_eq!(
+        fold_aat_pointer("meta.source_encoding=windows-31j-lossy"),
+        "meta.source_encoding"
+    );
+    assert_eq!(fold_aat_pointer("(emphasis.text)"), "(emphasis.text)");
+}
 ```
 
 - [ ] **Step 2: Run the focused test and verify it fails**
@@ -407,7 +458,12 @@ Expected: FAIL because `mapping.rs` is not implemented.
 
 ```rust
 // crates/ab-aat-to-parser-ir/src/mapping.rs
-use std::{collections::{BTreeMap, BTreeSet}, fs, path::Path};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    fs,
+    path::Path,
+    sync::OnceLock,
+};
 
 use anyhow::{bail, Context, Result};
 use regex::Regex;
@@ -506,6 +562,20 @@ impl MappingDocument {
 }
 
 impl MappingIndex {
+    pub fn has_rule(
+        &self,
+        category: &str,
+        aat_pointer: Option<&str>,
+        parser_ir_pointer: Option<&str>,
+    ) -> bool {
+        let key = (
+            category.to_owned(),
+            aat_pointer.map(fold_aat_pointer),
+            parser_ir_pointer.map(ToOwned::to_owned),
+        );
+        self.rules.contains_key(&key)
+    }
+
     pub fn require_rule(
         &self,
         category: &str,
@@ -528,7 +598,8 @@ impl MappingIndex {
 }
 
 pub fn fold_aat_pointer(pointer: &str) -> String {
-    let index_re = Regex::new(r"\[[0-9]+\]").expect("valid index regex");
+    static INDEX_RE: OnceLock<Regex> = OnceLock::new();
+    let index_re = INDEX_RE.get_or_init(|| Regex::new(r"\[[0-9]+\]").expect("valid index regex"));
     let folded = index_re.replace_all(pointer.trim_start_matches("$."), "[]").to_string();
     folded
         .split_once('=')
@@ -560,6 +631,14 @@ fn collect_paths(schema: &Value, node: &Value, prefix: &str, out: &mut BTreeSet<
             collect_paths(schema, resolved, prefix, out, depth + 1);
         }
         return;
+    }
+    for keyword in ["allOf", "anyOf"] {
+        if let Some(branches) = node.get(keyword).and_then(Value::as_array) {
+            for branch in branches {
+                collect_paths(schema, branch, prefix, out, depth + 1);
+            }
+            return;
+        }
     }
     if node.get("type").and_then(Value::as_str) == Some("array") {
         if !prefix.is_empty() {
@@ -646,6 +725,7 @@ git commit -m "feat: guard aat parser-ir mapping preflight"
 **Interfaces:**
 - Consumes: `MappingIndex`
 - Produces: `DivergenceRecorder::record(category: &str, aat_pointer: Option<&str>, parser_ir_pointer: Option<&str>, source_value: Option<Value>, target_value: Option<Value>) -> anyhow::Result<()>`
+- Produces: `DivergenceRecorder::emitted_rule_ids(&self) -> BTreeSet<String>` for fixture-level applicability checks.
 - Produces: `DivergenceRecorder::bundle(work: AatMeta, schemas: &SchemaSet, mapping: &MappingDocument) -> anyhow::Result<Value>`
 
 - [ ] **Step 1: Add failing aggregation and schema tests**
@@ -654,7 +734,7 @@ git commit -m "feat: guard aat parser-ir mapping preflight"
 #[test]
 fn divergence_records_aggregate_by_mapping_rule_and_validate_against_abc_schema() {
     let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let abc = repo.join("../abc");
+    let abc = abc_root(&repo);
     let schemas = SchemaSet::load(&repo, &abc).unwrap();
     let mapping = MappingDocument::from_path(&repo.join("data/aat-to-parser-ir-mapping-v1.json")).unwrap();
     let index = mapping.preflight(&schemas).unwrap();
@@ -699,6 +779,7 @@ Expected: FAIL because `DivergenceRecorder` is not implemented.
 ```rust
 // crates/ab-aat-to-parser-ir/src/divergence.rs
 use std::collections::BTreeMap;
+use std::collections::BTreeSet;
 
 use anyhow::Result;
 use serde_json::{json, Value};
@@ -758,6 +839,10 @@ impl DivergenceRecorder {
         });
         entry.count += 1;
         Ok(())
+    }
+
+    pub fn emitted_rule_ids(&self) -> BTreeSet<String> {
+        self.records.keys().cloned().collect()
     }
 
     pub fn bundle(self, meta: AatMeta, schemas: &SchemaSet, mapping: &MappingDocument) -> Result<Value> {
@@ -828,6 +913,8 @@ fn rule_message(description: &str) -> String {
 }
 ```
 
+Implementation note: aggregation keeps `source_value` and `target_value` from the first occurrence of a rule and increments `count` for later occurrences. That is a deliberate v1 evidence tradeoff; tests must assert `first_path` and `count`, not expect every occurrence value in the bundle.
+
 - [ ] **Step 4: Run the focused test and verify it passes**
 
 Run: `cargo test -p ab-aat-to-parser-ir divergence_records_aggregate -- --nocapture`
@@ -858,7 +945,7 @@ git commit -m "feat: aggregate parser-ir divergence bundle"
 #[test]
 fn converts_text_ruby_gaiji_and_validates_parser_ir() {
     let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let abc = repo.join("../abc");
+    let abc = abc_root(&repo);
     let schemas = SchemaSet::load(&repo, &abc).unwrap();
     let mapping = MappingDocument::from_path(&repo.join("data/aat-to-parser-ir-mapping-v1.json")).unwrap();
     let aat = serde_json::json!({
@@ -877,7 +964,7 @@ fn converts_text_ruby_gaiji_and_validates_parser_ir() {
             "content": [
                 {"kind": "text", "value": "吾輩"},
                 {"kind": "ruby", "base": "猫", "reading": "ねこ", "direction": "right"},
-                {"kind": "gaiji", "description": "※［＃猫］", "resolved": "猫", "jis_code": null, "unresolved_reason": null}
+                {"kind": "gaiji", "description": "※［＃猫］", "resolved": "猫", "jis_code": "1-2-3", "unresolved_reason": null}
             ]
         }]
     });
@@ -892,6 +979,7 @@ fn converts_text_ruby_gaiji_and_validates_parser_ir() {
     assert_eq!(output.parser_ir.pointer("/nodes/0/type").and_then(serde_json::Value::as_str), Some("text"));
     assert_eq!(output.parser_ir.pointer("/nodes/1/ruby/direction").and_then(serde_json::Value::as_str), Some("right"));
     assert_eq!(output.parser_ir.pointer("/nodes/2/gaiji/raw_marker").and_then(serde_json::Value::as_str), Some("※［＃猫］"));
+    assert!(output.emitted_rule_ids.contains("A-18"), "gaiji.jis_code ambiguity must not be silently omitted");
     assert!(!output.divergence_bundle["records"].as_array().unwrap().iter().any(|record| {
         record["message"].as_str().unwrap_or("").contains("direction")
     }));
@@ -954,11 +1042,12 @@ pub enum UnmeasuredDivergencePolicy {
 pub struct ConversionOutput {
     pub parser_ir: Value,
     pub divergence_bundle: Value,
+    pub emitted_rule_ids: std::collections::BTreeSet<String>,
 }
 
 pub fn convert(request: ConversionRequest) -> Result<ConversionOutput> {
     if request.options.validate_input_aat {
-        ab_check::aat::validate_aat_value(&request.aat)?;
+        ab_check::check::validate_aat_value(&request.aat)?;
     }
 
     let index = request.mapping.preflight(&request.schemas)?;
@@ -988,28 +1077,53 @@ pub fn convert(request: ConversionRequest) -> Result<ConversionOutput> {
         validate_value(&request.schemas.parser_ir_schema, &parser_ir, "parser-IR")?;
     }
 
+    let emitted_rule_ids = recorder.emitted_rule_ids();
     let divergence_bundle = recorder.bundle(aat_meta(&request.aat), &request.schemas, &request.mapping)?;
-    Ok(ConversionOutput { parser_ir, divergence_bundle })
+    Ok(ConversionOutput { parser_ir, divergence_bundle, emitted_rule_ids })
 }
 ```
 
 Continue this step with private helpers:
 
 ```rust
-fn map_block(block: &Value, nodes: &mut Vec<Value>, recorder: &mut DivergenceRecorder, offset: u64, path: &str) -> Result<u64> {
-    let block_pointer = format!("{path}.{}", block["kind"].as_str().unwrap_or("unknown"));
+fn map_block(
+    block: &Value,
+    nodes: &mut Vec<Value>,
+    recorder: &mut DivergenceRecorder,
+    offset: u64,
+    path: &str,
+) -> Result<u64> {
+    let kind = block["kind"].as_str().unwrap_or("unknown");
+    let block_pointer = format!("{path}.{kind}");
     recorder.record("STRUCTURAL", Some(block_pointer.as_str()), None, None, None)?;
     let mut current = offset;
-    match block["kind"].as_str().unwrap_or("") {
+    match kind {
         "paragraph" => {
-            for (index, child) in block["content"].as_array().into_iter().flatten().enumerate() {
-                if let Some((node, next)) = map_inline(child, recorder, current, &format!("{path}.content[{index}]"))? {
-                    nodes.push(node);
-                    current = next;
-                }
-            }
+            current = map_inline_content(block.get("content"), nodes, recorder, current, &format!("{path}.content"))?;
         }
         other => bail!("unsupported block kind in minimal slice: {other}"),
+    }
+
+    for (index, child_block) in block["children"].as_array().into_iter().flatten().enumerate() {
+        current = map_block(child_block, nodes, recorder, current, &format!("{path}.children[{index}]"))?;
+    }
+
+    Ok(current)
+}
+
+fn map_inline_content(
+    content: Option<&Value>,
+    nodes: &mut Vec<Value>,
+    recorder: &mut DivergenceRecorder,
+    offset: u64,
+    path: &str,
+) -> Result<u64> {
+    let mut current = offset;
+    for (index, child) in content.and_then(Value::as_array).into_iter().flatten().enumerate() {
+        if let Some((node, next)) = map_inline(child, recorder, current, &format!("{path}[{index}]"))? {
+            nodes.push(node);
+            current = next;
+        }
     }
     Ok(current)
 }
@@ -1046,6 +1160,16 @@ fn map_inline(node: &Value, recorder: &mut DivergenceRecorder, offset: u64, path
             let resolved_pointer = format!("{path}.gaiji.resolved");
             recorder.record("INVENTION", Some(description_pointer.as_str()), Some("gaiji.raw_marker"), None, None)?;
             recorder.record("AMBIGUITY", Some(resolved_pointer.as_str()), Some("gaiji.resolved"), None, None)?;
+            if node.get("jis_code").is_some_and(|value| !value.is_null()) {
+                let jis_pointer = format!("{path}.gaiji.jis_code");
+                recorder.record(
+                    "AMBIGUITY",
+                    Some(jis_pointer.as_str()),
+                    Some("gaiji.reference"),
+                    node.get("jis_code").cloned(),
+                    node.get("jis_code").cloned(),
+                )?;
+            }
             recorder.record("LOSS", None, Some("gaiji.unicode"), None, Some(Value::Null))?;
             Ok(Some((json!({
                 "type": "gaiji",
@@ -1090,10 +1214,6 @@ fn map_span(
             "coordinate_system": "decoded_utf8",
         }));
     };
-    if span.get("line_end") != span.get("line_start") && !span.get("line_end").unwrap_or(&Value::Null).is_null() {
-        let line_end_pointer = format!("{path}.span.line_end");
-        recorder.record("LOSS", Some(line_end_pointer.as_str()), Some("span.line"), None, None)?;
-    }
     Ok(json!({
         "start": span.get("byte_start").and_then(Value::as_u64).unwrap_or(fallback_start),
         "end": span.get("byte_end").and_then(Value::as_u64).unwrap_or(fallback_end),
@@ -1103,6 +1223,10 @@ fn map_span(
     }))
 }
 
+// `line_end` is intentionally not recorded in v1 because mapping v1.1 has no
+// measured `span.line_end -> span.line` rule. Preserve `line_start` as
+// `span.line`; defer multi-line span loss recording until the mapping grows a
+// rule for it.
 fn map_source(aat: &Value, recorder: &mut DivergenceRecorder) -> Result<Value> {
     let meta = &aat["meta"];
     let source_encoding = meta["source_encoding"].as_str().unwrap_or("utf-8");
@@ -1141,9 +1265,6 @@ fn map_warnings(aat: &Value, recorder: &mut DivergenceRecorder) -> Result<Value>
     for warning in aat.pointer("/meta/warnings").and_then(Value::as_array).into_iter().flatten() {
         recorder.record("INVENTION", None, Some("warnings[].severity"), None, Some(json!("warning")))?;
         recorder.record("INVENTION", None, Some("warnings[].code"), None, Some(json!("AAT_WARNING")))?;
-        if warning.get("line").is_some() {
-            recorder.record("AMBIGUITY", Some("meta.warnings[].line"), Some("warnings[].span.line"), warning.get("line").cloned(), None)?;
-        }
         warnings.push(json!({
             "severity": "warning",
             "code": "AAT_WARNING",
@@ -1193,7 +1314,8 @@ git commit -m "feat: convert minimal aat nodes to parser-ir"
 
 **Interfaces:**
 - Consumes: `convert`
-- Produces: measured handling for `style`, `heading`, `jisage_block`, `quote_block`, `caption_block`, `warigaki`, `meta.warnings`, and lossy encoding ambiguity.
+- Produces: measured handling for `style`, `heading`, `jisage_block`, `warigaki`, `meta.warnings`, and lossy encoding ambiguity.
+- Produces: explicit v1 refusal/defer behavior for unmeasured `quote_block`, `caption_block`, warning line spans, and span line-end loss.
 
 - [ ] **Step 1: Add failing measured policy tests**
 
@@ -1201,7 +1323,7 @@ git commit -m "feat: convert minimal aat nodes to parser-ir"
 #[test]
 fn measured_policy_projects_style_kunten_heading_warning_and_warigaki() {
     let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let abc = repo.join("../abc");
+    let abc = abc_root(&repo);
     let schemas = SchemaSet::load(&repo, &abc).unwrap();
     let mapping = MappingDocument::from_path(&repo.join("data/aat-to-parser-ir-mapping-v1.json")).unwrap();
     let aat = serde_json::json!({
@@ -1217,10 +1339,14 @@ fn measured_policy_projects_style_kunten_heading_warning_and_warigaki() {
         },
         "blocks": [
             {
-                "kind": "heading",
-                "level": 1,
-                "style": "fixture",
-                "content": [{ "kind": "warigaki", "upper": [{"kind": "text", "value": "上"}], "lower": [{"kind": "text", "value": "下"}] }]
+                "kind": "paragraph",
+                "content": [{"kind": "text", "value": "前"}],
+                "children": [{
+                    "kind": "heading",
+                    "level": 1,
+                    "style": "fixture",
+                    "content": [{ "kind": "warigaki", "upper": [{"kind": "text", "value": "上"}], "lower": [{"kind": "text", "value": "下"}] }]
+                }]
             },
             {
                 "kind": "paragraph",
@@ -1249,6 +1375,10 @@ fn measured_policy_projects_style_kunten_heading_warning_and_warigaki() {
     assert!(output.divergence_bundle["records"].as_array().unwrap().iter().any(|record| {
         record["category"] == "UNSUPPORTED" && record["message"].as_str().unwrap_or("").contains("warigaki")
     }));
+    assert!(output.emitted_rule_ids.contains("U-09"), "nested heading warigaki must use the measured (emphasis.text) target rule");
+    assert!(!output.divergence_bundle["records"].as_array().unwrap().iter().any(|record| {
+        record["parser_ir_pointer"] == "warnings[].span.line"
+    }), "warning line spans are not measured in mapping v1.1");
 }
 ```
 
@@ -1276,12 +1406,12 @@ Add these behaviors:
 - `style`: project nested visible text into parser-IR `emphasis`, record `AMBIGUITY` for style to emphasis.
 - `style_type = "kaeriten"` and `style_type = "okurigana"`: same `style -> emphasis` behavior; do not create a separate manual kunten rule table.
 - `heading`: concatenate projected content into one `heading.text`, record heading level `AMBIGUITY`, record heading style `LOSS` when present.
-- `warigaki`: record measured `UNSUPPORTED`, flatten `upper` then `lower` into visible child nodes when children are representable.
+- `warigaki`: record measured `UNSUPPORTED`, flatten `upper` then `lower` into visible child nodes when children are representable. Select the `parser_ir_pointer` by folded path: use `None` for rules such as `U-15`/`U-08`, and `(emphasis.text)` for nested emphasis/heading paths such as `U-09`/`U-11`/`U-12`.
 - `jisage_block`: emit `indentation` with depth `1`, record `INVENTION`.
-- `quote_block`: emit `quote` with `marker_type = "unknown"`, record `AMBIGUITY`.
-- `caption_block`: recurse children and record `AMBIGUITY` for caption target loss.
+- `quote_block`: do not emit a divergence record in v1 unless the mapping artifact grows a measured `quote_block` rule. Under `Refuse`, either project only measured children or return an explicit unsupported-block error; do not invent `AMBIGUITY`.
+- `caption_block`: do not emit a divergence record in v1 unless the mapping artifact grows a measured `caption_block` rule. Existing measured `caption` rules are for caption inline/figure pointers, not block-level caption.
 - `meta.source_encoding = "windows-31j-lossy"`: output `Shift_JIS`, record `AMBIGUITY`.
-- `meta.warnings[]`: output diagnostics with `severity = "warning"` and `code = "AAT_WARNING"`, record required inventions.
+- `meta.warnings[]`: output diagnostics with `severity = "warning"` and `code = "AAT_WARNING"`, record required inventions. Ignore warning line spans in v1 because mapping v1.1 has no `meta.warnings[].line` rule.
 
 - [ ] **Step 4: Add default refusal test for unmeasured divergence**
 
@@ -1289,7 +1419,7 @@ Add these behaviors:
 #[test]
 fn unmeasured_inline_kind_refuses_by_default() {
     let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let abc = repo.join("../abc");
+    let abc = abc_root(&repo);
     let schemas = SchemaSet::load(&repo, &abc).unwrap();
     let mapping = MappingDocument::from_path(&repo.join("data/aat-to-parser-ir-mapping-v1.json")).unwrap();
     let aat = serde_json::json!({
@@ -1332,7 +1462,76 @@ git add crates/ab-aat-to-parser-ir/src/convert.rs crates/ab-aat-to-parser-ir/src
 git commit -m "feat: cover measured aat parser-ir policies"
 ```
 
-### Task 6: CLI, Smoke Check, And Final Verification
+### Task 6: Checked-In Real Measured Fixture Gate
+
+**Files:**
+- Create: `tests/fixtures/aat-parser-ir/real-aozora-rs-sample.aat.json`
+- Create: `tests/fixtures/aat-parser-ir/real-aozora2html-sample.aat.json`
+- Create: `tests/fixtures/aat-parser-ir/README.md`
+- Modify: `crates/ab-aat-to-parser-ir/tests/integration.rs`
+
+**Interfaces:**
+- Consumes: `convert`
+- Produces: a stable, sandbox-pure real-input regression gate independent of `/db`.
+
+- [ ] **Step 1: Add checked-in measured fixtures**
+
+Choose one real AAT JSON file from the local aozora-rs measured corpus and one real AAT JSON file from the aozora2html full run, then copy/minimize them only enough to keep schema validity and the measured construct under test. Do not point tests directly at `/db`.
+
+Fixture requirements:
+
+- `real-aozora-rs-sample.aat.json`: contains at least text/ruby/gaiji or style evidence from the measured aozora-rs corpus.
+- `real-aozora2html-sample.aat.json`: contains at least one aozora2html measured policy bucket, preferably warigaki or a `children[]` depth path.
+- `README.md`: records the source run directory, source filename/work id, and the mapping version used to select it.
+
+- [ ] **Step 2: Add the real-fixture conversion test**
+
+```rust
+#[test]
+fn converts_checked_in_real_measured_aat_fixtures() {
+    let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let abc = abc_root(&repo);
+    let schemas = SchemaSet::load(&repo, &abc).unwrap();
+    let mapping_path = repo.join("data/aat-to-parser-ir-mapping-v1.json");
+
+    for fixture in [
+        "tests/fixtures/aat-parser-ir/real-aozora-rs-sample.aat.json",
+        "tests/fixtures/aat-parser-ir/real-aozora2html-sample.aat.json",
+    ] {
+        let aat = ab_aat_to_parser_ir::schema::read_json(&repo.join(fixture)).unwrap();
+        let output = ab_aat_to_parser_ir::convert(ab_aat_to_parser_ir::ConversionRequest {
+            aat,
+            mapping: MappingDocument::from_path(&mapping_path).unwrap(),
+            schemas: schemas.clone(),
+            options: ab_aat_to_parser_ir::ConversionOptions::default(),
+        }).unwrap_or_else(|error| panic!("{fixture} failed conversion: {error:#}"));
+
+        let node_count = output.parser_ir["nodes"].as_array().map_or(0, |nodes| nodes.len());
+        assert!(node_count > 0, "{fixture} produced no parser-IR nodes");
+        assert!(
+            !output.emitted_rule_ids.is_empty(),
+            "{fixture} did not exercise any measured divergence rule"
+        );
+        ab_aat_to_parser_ir::schema::validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+        ab_aat_to_parser_ir::schema::validate_value(&schemas.bundle_schema, &output.divergence_bundle, "bundle").unwrap();
+    }
+}
+```
+
+- [ ] **Step 3: Run the focused test and verify it passes**
+
+Run: `cargo test -p ab-aat-to-parser-ir converts_checked_in_real_measured -- --nocapture`
+
+Expected: PASS. If this fails with `unmeasured divergence`, do not weaken `MappingIndex`; either fix traversal/pointer target selection or document the unsupported construct and choose a narrower measured fixture.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add tests/fixtures/aat-parser-ir crates/ab-aat-to-parser-ir/tests/integration.rs
+git commit -m "test: add measured aat parser-ir fixtures"
+```
+
+### Task 7: CLI, Smoke Check, And Final Verification
 
 **Files:**
 - Create: `crates/ab-aat-to-parser-ir/src/main.rs`
@@ -1342,7 +1541,7 @@ git commit -m "feat: cover measured aat parser-ir policies"
 
 **Interfaces:**
 - Consumes: `convert`
-- Produces: `ab-aat-to-parser-ir convert --aat ... --mapping ... --parser-ir-out ... --divergence-out ... --abc-root ...`
+- Produces: `ab-aat-to-parser-ir convert --aat <path> --mapping <path> --parser-ir-out <path> --divergence-out <path> --abc-root <path>`
 
 - [ ] **Step 1: Add failing CLI integration test**
 
@@ -1350,6 +1549,7 @@ git commit -m "feat: cover measured aat parser-ir policies"
 #[test]
 fn cli_convert_writes_parser_ir_and_divergence_bundle() {
     let repo = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let abc = abc_root(&repo);
     let temp = tempfile::tempdir().unwrap();
     let aat = temp.path().join("input.aat.json");
     let parser_ir = temp.path().join("parser-ir.json");
@@ -1374,7 +1574,7 @@ fn cli_convert_writes_parser_ir_and_divergence_bundle() {
         .arg("--mapping").arg(repo.join("data/aat-to-parser-ir-mapping-v1.json"))
         .arg("--parser-ir-out").arg(&parser_ir)
         .arg("--divergence-out").arg(&divergence)
-        .arg("--abc-root").arg(repo.join("../abc"))
+        .arg("--abc-root").arg(abc)
         .status()
         .unwrap();
 
@@ -1417,8 +1617,8 @@ enum Command {
         parser_ir_out: PathBuf,
         #[arg(long)]
         divergence_out: PathBuf,
-        #[arg(long, default_value = "../abc")]
-        abc_root: PathBuf,
+        #[arg(long)]
+        abc_root: Option<PathBuf>,
     },
 }
 
@@ -1427,6 +1627,7 @@ fn main() -> Result<()> {
     match args.command {
         Command::Convert { aat, mapping, parser_ir_out, divergence_out, abc_root } => {
             let repo_root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+            let abc_root = abc_root.unwrap_or_else(|| repo_root.join("../abc"));
             let aat = ab_aat_to_parser_ir::schema::read_json(&aat)?;
             let mapping = MappingDocument::from_path(&mapping)?;
             let schemas = SchemaSet::load(&repo_root, &abc_root)?;
@@ -1458,6 +1659,7 @@ tempfile = { workspace = true }
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+abc_root="${AB_ABC_ROOT:-$repo_root/../abc}"
 out_dir="${TMPDIR:-/tmp}/ab-validator-aat-to-parser-ir-smoke"
 rm -rf "$out_dir"
 mkdir -p "$out_dir"
@@ -1487,25 +1689,151 @@ cat > "$aat" <<'JSON'
 }
 JSON
 
-cargo run --package ab-aat-to-parser-ir -- convert \
+cargo_args=()
+if [ -n "${CARGO_ARGS:-}" ]; then
+  # shellcheck disable=SC2206
+  cargo_args=(${CARGO_ARGS})
+fi
+
+"${CARGO:-cargo}" "${cargo_args[@]}" run --package ab-aat-to-parser-ir -- convert \
   --aat "$aat" \
   --mapping "$repo_root/data/aat-to-parser-ir-mapping-v1.json" \
   --parser-ir-out "$out_dir/parser-ir.json" \
   --divergence-out "$out_dir/divergence.json" \
-  --abc-root "$repo_root/../abc"
+  --abc-root "$abc_root"
 
 jq -e '.schema_id == "https://w3id.org/abc/schemas/parser-ir.schema.json"' "$out_dir/parser-ir.json"
 jq -e '.mapping.mapping_version == "0.1.1"' "$out_dir/divergence.json"
 jq -e 'all(.records[]; .rule_id != null and .message != null and .count >= 1)' "$out_dir/divergence.json"
+
+python3 - "$abc_root/schemas/parser-ir.schema.json" \
+  "$abc_root/schemas/aat-parser-ir-divergence.schema.json" \
+  "$repo_root/data/aat-parser-ir-divergence-bundle-v1.schema.json" \
+  "$out_dir/parser-ir.json" \
+  "$out_dir/divergence.json" <<'PY'
+import json
+import sys
+
+import jsonschema
+
+parser_schema_path, record_schema_path, bundle_schema_path, parser_ir_path, bundle_path = sys.argv[1:]
+with open(parser_schema_path, encoding="utf-8") as handle:
+    parser_schema = json.load(handle)
+with open(record_schema_path, encoding="utf-8") as handle:
+    record_schema = json.load(handle)
+with open(bundle_schema_path, encoding="utf-8") as handle:
+    bundle_schema = json.load(handle)
+with open(parser_ir_path, encoding="utf-8") as handle:
+    parser_ir = json.load(handle)
+with open(bundle_path, encoding="utf-8") as handle:
+    bundle = json.load(handle)
+
+jsonschema.validate(parser_ir, parser_schema)
+jsonschema.validate(bundle, bundle_schema)
+for record in bundle["records"]:
+    jsonschema.validate(record, record_schema)
+PY
 ```
 
 - [ ] **Step 5: Wire flake package, app, and check**
 
-Add `abAatToParserIrCheck` as a runCommand that sets `TMPDIR` and runs the smoke script without `/db` writes. Add package/app entries for the workspace package if the repo wants direct `nix run .#ab-aat-to-parser-ir`; otherwise the smoke check can use the workspace check derivation.
-
-Expected flake check entry:
+Add this explicit ABC schema input inside the existing `inputs` attrset. Do not let a pure derivation rely on the checkout's parent directory:
 
 ```nix
+abc-src = {
+  url = "path:../abc";
+  flake = false;
+};
+```
+
+Add `abc-src` to the existing `outputs` argument set:
+
+```nix
+outputs =
+  {
+    self,
+    nixpkgs,
+    abc-src,
+  }:
+```
+
+Add a package and smoke check in the existing `let` block. The check must use vendored Cargo dependencies, `TMPDIR`, and `AB_ABC_ROOT=${abc-src}`:
+
+Also add `AB_ABC_ROOT = "${abc-src}";` to the existing `abValidator` and `workspaceCheck` derivations so `nix flake check` can run the new Rust tests without reading a sibling checkout outside the store.
+
+```nix
+abAatToParserIr =
+  if hasCargoManifest && hasCargoLock then
+    rustPlatform.buildRustPackage {
+      pname = "ab-aat-to-parser-ir";
+      version = "0.1.0";
+
+      src = source;
+      cargoDeps = abCargoDeps;
+      cargoBuildFlags = [
+        "--package"
+        "ab-aat-to-parser-ir"
+      ];
+      doCheck = false;
+    }
+  else
+    pkgs.writeShellApplication {
+      name = "ab-aat-to-parser-ir";
+      text = "echo 'Rust workspace not scaffolded' >&2; exit 1";
+    };
+
+abAatToParserIrCheck =
+  pkgs.runCommand "ab-aat-to-parser-ir-smoke-check"
+    {
+      nativeBuildInputs = [
+        rustToolchain
+        pkgs.pkg-config
+        pkgs.jq
+        pythonWithAatSchemaDeps
+        pkgs.zstd
+      ];
+      buildInputs = [
+        pkgs.pdfium-binaries
+      ]
+      ++ lib.optionals pkgs.stdenv.isDarwin [
+        pkgs.libiconv
+        pkgs.darwin.apple_sdk.frameworks.Security
+        pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
+      ];
+    }
+    ''
+      work_dir="$(mktemp -d)"
+      cp -R "${source}" "$work_dir/source"
+      chmod -R +w "$work_dir/source"
+      cd "$work_dir/source"
+
+      export TMPDIR="$work_dir/tmp"
+      mkdir -p "$TMPDIR"
+      export CARGO_HOME="$TMPDIR/cargo-home"
+      export CARGO_NET_OFFLINE=true
+      export AB_ABC_ROOT="${abc-src}"
+      export AB_AOZORA_RS_GAIJI_MENKUTEN_PATH="${aozoraRsGaijiMenkuten}"
+      export AB_AOZORA_RS_GAIJI_CHUKI_PDF="${aozoraRsGaijiChukiPdf}"
+      export AB_AOZORA_RS_GAIJI_PDFIUM_DIR="${pkgs.pdfium-binaries}/lib"
+      export CARGO_ARGS="--offline --config source.crates-io.replace-with=vendored-sources --config source.vendored-sources.directory=${abCargoDeps}"
+
+      bash tests/aat-to-parser-ir-cli-smoke.sh
+      touch "$out"
+    '';
+```
+
+Add package/app/check entries:
+
+
+```nix
+packages = {
+  ab-aat-to-parser-ir = abAatToParserIr;
+};
+
+apps.ab-aat-to-parser-ir = flake-utils.lib.mkApp {
+  drv = abAatToParserIr;
+};
+
 checks = {
   aat-to-parser-ir-smoke = abAatToParserIrCheck;
 };
@@ -1534,7 +1862,8 @@ git commit -m "feat: add aat to parser-ir cli"
 
 ## Self-Review Notes
 
-- Spec coverage: the plan covers schema hash preflight, ABC-owned divergence records, bundle schema, measured warigaki `UNSUPPORTED`, stale gaiji pointer rejection, span synthesis ambiguity, direct `ruby.direction`, and sandbox-pure smoke verification.
-- Manual mapping risk: all production divergence rule ids come from `MappingIndex`; implementation code may name categories and pointers but must not name rule ids.
-- Integration scope: fixture smoke validates representative text/ruby flow. Full-corpus conversion and ABC manifest publication remain downstream work after the CLI exists.
+- Route: this remains an upstream protocol/trust-boundary plan until Tasks 2, 5, and 6 prove folding conformance, `children[]` traversal, and real measured fixtures. Do not treat `convert(request)` as an accepted deep seam before those gates pass.
+- Spec coverage: the plan covers schema hash preflight, ABC-owned divergence records, bundle schema, measured warigaki `UNSUPPORTED`, stale gaiji pointer rejection, span synthesis ambiguity, direct `ruby.direction`, depth-faithful traversal, and sandbox-pure smoke verification.
+- Manual mapping risk: emitted production divergence rule ids come from `MappingIndex`; implementation code may name categories and pointers but must not name rule ids. Applicability omissions are not solved by the guard, so fixtures assert specific measured rules such as A-18 and U-09.
+- Integration scope: checked-in smoke validates text/ruby flow, and checked-in real measured fixtures validate at least one aozora-rs and one aozora2html input without `/db`. Full-corpus conversion and ABC manifest publication remain downstream work after the CLI exists.
 - Incubation note: parser-IR `derived_from` remains intentionally unset until the generated mapping artifact says provenance is projected rather than lost.

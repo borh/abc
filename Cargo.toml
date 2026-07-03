@@ -14,6 +14,7 @@ members = [
     "crates/ab-morph-run",
     "crates/ab-warehouse",
     "crates/ab-oracle",
+    "crates/ab-aat-to-parser-ir",
 ]
 resolver = "2"
 exclude = [
@@ -42,6 +43,7 @@ ab-ir = { path = "crates/ab-ir" }
 ab-check = { path = "crates/ab-check" }
 ab-source-syntax = { path = "crates/ab-source-syntax" }
 ab-encoding = { path = "crates/ab-encoding" }
+ab-aat-to-parser-ir = { path = "crates/ab-aat-to-parser-ir" }
 chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4.5", features = ["derive"] }
 criterion = "0.8"

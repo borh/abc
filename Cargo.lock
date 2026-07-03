@@ -3,6 +3,21 @@
 version = 4
 
 [[package]]
+name = "ab-aat-to-parser-ir"
+version = "0.1.0"
+dependencies = [
+ "ab-check",
+ "anyhow",
+ "clap",
+ "jsonschema",
+ "regex",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "tempfile",
+]
+
+[[package]]
 name = "ab-check"
 version = "0.1.0"
 dependencies = [

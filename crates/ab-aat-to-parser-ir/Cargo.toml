@@ -1,0 +1,23 @@
+[package]
+name = "ab-aat-to-parser-ir"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Convert measured AAT v1 JSON into ABC parser-IR plus divergence evidence"
+repository = "https://github.com/your-org/ab-validator"
+readme = "../../README.md"
+keywords = ["japanese", "text-processing", "parser-ir"]
+categories = ["text-processing"]
+
+[dependencies]
+ab-check = { workspace = true }
+anyhow = { workspace = true }
+clap = { workspace = true }
+jsonschema = { workspace = true }
+regex = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

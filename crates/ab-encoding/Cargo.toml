@@ -1,0 +1,20 @@
+[package]
+name = "ab-encoding"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Canonical source-byte decoder (UTF-8 BOM / Windows-31J) with SHA-256"
+repository = "https://github.com/your-org/ab-validator"
+readme = false
+
+[dependencies]
+anyhow.workspace = true
+encoding_rs.workspace = true
+serde = { workspace = true, optional = true }
+sha2.workspace = true
+
+[features]
+default = []
+# Enables `Serialize`/`Deserialize` on `DecodedSource` for crates that persist it
+# (e.g. ab-index's parquet rows). ab-check does not need this.
+serde = ["dep:serde"]

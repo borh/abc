@@ -12,15 +12,14 @@ categories = ["text-processing"]
 [dependencies]
 ab-plaintext.workspace = true
 ab-source-syntax.workspace = true
+ab-encoding.workspace = true
 anyhow.workspace = true
 clap.workspace = true
-encoding_rs.workspace = true
 flate2.workspace = true
 jsonschema.workspace = true
 rayon.workspace = true
 serde.workspace = true
 serde_json.workspace = true
-sha2.workspace = true
 unicode-normalization.workspace = true
 zip.workspace = true
 

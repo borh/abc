@@ -11,6 +11,11 @@
        set))
 
 (defn coverage-errors [expected-node-types renderer-name covered-node-types]
-  (->> (set/difference expected-node-types covered-node-types)
-       sort
-       (mapv #(str renderer-name " renderer is missing parser-IR node policy for " %))))
+  (let [missing-node-types (set/difference expected-node-types covered-node-types)
+        unexpected-node-types (set/difference covered-node-types expected-node-types)]
+    (->> (concat
+          (map #(str renderer-name " renderer is missing parser-IR node policy for " %)
+               (sort missing-node-types))
+          (map #(str renderer-name " renderer has unexpected parser-IR node policy for " %)
+               (sort unexpected-node-types)))
+         vec)))

@@ -13,7 +13,8 @@ Files:
 - `parser-ir.json`: parser IR fixture covering text, ruby, gaiji, editor note,
   and heading nodes.
 - `warnings.jsonl`: warning sidecar fixture.
-- `tei.xml`: TEI output fixture.
+- `plain.txt`: parser-IR-driven plaintext publication fixture.
+- `tei.xml`: parser-IR-driven TEI publication fixture.
 - `validation.json`: validation result sidecar fixture. No JSON Schema exists
   for this sidecar yet.
 - `tei-validation-result.json`: ADR 0012 TEI validation-result sidecar target
@@ -31,6 +32,16 @@ Files:
 Provenance note: the source artifact is modeled as an extracted/described view
 of the pinned corpus snapshot, so it lists the corpus snapshot in both
 `provenance.used` and `provenance.was_derived_from`.
+
+Publication note: `plain.txt` and `tei.xml` are generated from `parser-ir.json`
+by `abc.tools.materialize-publication`. The generated publication manifests and
+TEI validation-result sidecar are validated by the design-bundle gate from a
+temporary materializer output directory; they are not checked into this fixture
+directory in the tracer bullet.
+
+Coverage note: this example exercises 5 of 11 current parser-IR node types
+(`text`, `ruby`, `gaiji`, `editor-note`, `heading`). Synthetic renderer tests
+exercise the full current node-policy set.
 
 Selection criteria for the real work:
 

@@ -50,6 +50,7 @@ bound the choices.
 | CI smoke corpus | `docs/v0-design-bundle/ci-smoke-corpus.md` | Define representative PR gate corpus | Keeps target runtime under five minutes |
 | Canonicalization fixtures | `fixtures/canonicalization/` | Cross-implementation identity checks | Includes canonical identity object and expected hash policy |
 | Example bundle fixture | `examples/v0/example-work/` | Target layout for one Aozora work | Includes success and failure design fixtures |
+| Parser-IR plaintext fixture | `examples/v0/example-work/plain.txt` | Generated plaintext publication view from parser IR | Recreated by `abc.tools.materialize-publication` |
 | ab-validator output fixture | `examples/ab-validator-output/` | Imported parser-evaluation output contract | Validates parser IR, diagnostics, run summary, and manifest inputs |
 
 ## Sequencing

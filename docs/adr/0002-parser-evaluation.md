@@ -7,9 +7,10 @@ Source: `docs/high-level-architecture-note.md` v0.5
 
 ## Implementation Status
 
-Still Draft. ABC now validates an imported parser-IR fixture at the file
-boundary, but no parser candidate reports have been produced or accepted, and
-the repo still does not execute or select a parser candidate.
+Still Draft. Parser candidate comparison remains in `../ab-validator`. ABC now
+owns the downstream publication consumer contract: parser-IR can be validated,
+materialized, and rendered to publication artifacts without executing parser
+candidates locally.
 
 ## Context
 

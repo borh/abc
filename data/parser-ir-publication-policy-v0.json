@@ -1,0 +1,38 @@
+{
+  "policy_id": "https://w3id.org/abc/policies/parser-ir-publication-v0",
+  "policy_version": "0.1.0",
+  "renderers": {
+    "plaintext": {
+      "output_format": "UTF-8 text/plain; parser-IR node order; no trailing newline added by policy",
+      "node_policies": {
+        "text": "append text",
+        "ruby": "append ruby.base",
+        "gaiji": "append gaiji.unicode when present, otherwise gaiji.raw_marker",
+        "editor-note": "omit and report",
+        "emphasis": "append text",
+        "heading": "surround text with newlines",
+        "indentation": "append text when present, otherwise omit and report",
+        "page-break": "append newline",
+        "image": "append alt when present, otherwise omit and report",
+        "caption": "append text",
+        "quote": "append text when present, otherwise omit and report"
+      }
+    },
+    "tei": {
+      "output_format": "TEI P5 XML body hiccup rendered under the ABC TEI profile",
+      "node_policies": {
+        "text": "paragraph inline text",
+        "ruby": "ruby rb/rt with optional direction place",
+        "gaiji": "g ref resolves to charDecl",
+        "editor-note": "note",
+        "emphasis": "hi",
+        "heading": "body head",
+        "indentation": "seg type indentation",
+        "page-break": "pb",
+        "image": "figure graphic with optional figDesc",
+        "caption": "figDesc",
+        "quote": "quote"
+      }
+    }
+  }
+}

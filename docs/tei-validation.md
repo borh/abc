@@ -94,3 +94,6 @@ for the toolchain pin and canonicalization rationale.
 TEI validation-result JSON records both validation layers, rule IDs, severities,
 toolchain metadata, and whether warnings were policy-allowed. The artifact
 manifest references this sidecar with role `validation-result`.
+
+The parser-IR publication materializer generates TEI from parser-IR body nodes
+and validates it through the same project Relax NG and Schematron gates.

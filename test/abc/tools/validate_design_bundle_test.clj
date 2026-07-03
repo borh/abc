@@ -589,9 +589,13 @@
                                        :xml-path (str tmp)
                                        :label "warn"})
                 warnings (filter #(= :warning (:severity %)) violations)]
-            (if (seq warnings)
-              (is (nil? (validate/validate-tei! schema-path [(str tmp)]))
-                  "harness must not throw when only warnings are present")
+            (is (empty? (filter #(#{:error :fatal} (:severity %)) violations))
+                "fixture must not contain TEI errors")
+            (is (nil? (validate/validate-tei! schema-path [(str tmp)]))
+                (if (seq warnings)
+                  "harness must not throw when only warnings are present"
+                  "harness must not throw when this fixture is clean under the current Jing version"))
+            (when-not (seq warnings)
               (println "validate-tei-warning-partition-test: no warnings"
                        "in this fixture under Jing 20241231; severities seen:"
                        (vec (distinct (map :severity violations))))))

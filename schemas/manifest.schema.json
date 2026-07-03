@@ -17,7 +17,7 @@
     "artifact_id": { "$ref": "#/$defs/hash" },
     "artifact_kind": {
       "type": "string",
-      "enum": ["source", "parser-ir", "warnings", "tei", "rdf-view", "tokenized", "analysis", "failure"]
+      "enum": ["source", "parser-ir", "warnings", "plaintext", "tei", "rdf-view", "tokenized", "analysis", "failure"]
     },
     "validation_status": {
       "type": "string",

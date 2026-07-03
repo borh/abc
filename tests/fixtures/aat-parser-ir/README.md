@@ -4,17 +4,17 @@ These fixtures are minimized, schema-valid AAT documents used by the sandbox-pur
 `ab-aat-to-parser-ir` tests. They are intentionally small enough for flake checks
 and do not require `/db`.
 
-- `real-aozora-rs-sample.aat.json` represents the measured aozora-rs mapping
-  corpus used by ABC's generated candidate:
-  `/home/bor/Projects/abc/prototypes/aat-to-parser-ir-probe/mapping.generated.aozora-rs.json`.
-  It exercises text, direct ruby direction projection, gaiji raw marker
-  invention, gaiji resolved ambiguity, and `jis_code -> gaiji.reference` A-18.
+- `real-aozora-rs-sample.aat.json` is copied from the checked-in aozora-rs
+  adapter output `adapters/aozora-rs/tests/fixtures/ruby_gaiji.aat.json`,
+  preserving its real adapter version, source hash, metrics, and semantic
+  summary. It exercises text, direct ruby direction projection, ruby
+  `base_content` loss, gaiji raw marker invention, and gaiji resolved ambiguity.
 - `real-aozora2html-sample.aat.json` is minimized from the measured
-  aozora2html full run:
-  `/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z`, with
-  warigaki source-feature evidence from work `000005_53194`. It exercises
-  `children[]` traversal, heading policy, windows-31j-lossy encoding, warning
-  inventions, style-to-emphasis, and context-sensitive warigaki U-09.
+  aozora2html full-run AAT file
+  `/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000005_53194-ebb0cbaf64b3.json`,
+  preserving real `work_id`, adapter version, source hash, source encoding, and
+  one real warning. It exercises `children[]` traversal, style-to-emphasis,
+  ruby projection, warning inventions, and measured warigaki U-02.
 
 Both fixtures target `data/aat-to-parser-ir-mapping-v1.json` mapping version
 `0.1.1`.

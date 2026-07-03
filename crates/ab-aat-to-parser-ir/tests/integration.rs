@@ -15,7 +15,7 @@ fn repo_root() -> PathBuf {
 fn abc_root(repo: &Path) -> PathBuf {
     std::env::var_os("AB_ABC_ROOT")
         .map(PathBuf::from)
-        .unwrap_or_else(|| repo.join("../abc"))
+        .unwrap_or_else(|| repo.join("data/abc-schemas"))
 }
 
 fn schemas_and_mapping() -> (SchemaSet, MappingDocument) {
@@ -360,6 +360,60 @@ fn measured_policy_projects_style_heading_warning_and_warigaki() {
 }
 
 #[test]
+fn heading_visible_projection_records_measured_flattening_losses() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let aat = json!({
+        "version": 1,
+        "work_id": "heading-losses",
+        "meta": base_meta(
+            "utf-8",
+            "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+        ),
+        "blocks": [
+            {
+                "kind": "jisage_block",
+                "children": [
+                    {
+                        "kind": "heading",
+                        "level": 2,
+                        "style": "normal",
+                        "content": [
+                            {"kind": "font_size", "size_type": "large", "level": 1, "content": [{"kind": "text", "value": "F"}]},
+                            {"kind": "gaiji", "description": "gaiji", "resolved": "G", "unresolved_reason": null},
+                            {"kind": "ruby", "base": "R", "reading": "read"},
+                            {"kind": "style", "style_type": "bold", "content": [{"kind": "text", "value": "S"}]},
+                            {"kind": "raw", "source": "[raw]"}
+                        ]
+                    }
+                ]
+            }
+        ]
+    });
+
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: ConversionOptions::default(),
+    })
+    .unwrap();
+
+    for expected in ["L-20", "L-21", "L-23", "L-24", "L-25", "L-26", "L-27"] {
+        assert!(
+            output.emitted_rule_ids.contains(expected),
+            "missing measured heading flattening rule {expected}"
+        );
+    }
+    let heading = output
+        .parser_ir
+        .pointer("/nodes/1")
+        .expect("heading node should follow indentation node");
+    assert_eq!(heading["type"], "heading");
+    assert_eq!(heading["text"], "FGRS");
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
+#[test]
 fn unmeasured_inline_kind_refuses_by_default() {
     let (schemas, mapping) = schemas_and_mapping();
     let aat = json!({
@@ -465,4 +519,53 @@ fn cli_convert_writes_parser_ir_and_divergence_bundle() {
     assert!(status.success());
     assert!(parser_ir.exists());
     assert!(divergence.exists());
+}
+
+#[test]
+fn cli_default_roots_follow_mapping_path_not_current_directory() {
+    let repo = repo_root();
+    let temp = tempfile::tempdir().unwrap();
+    let fake_cwd = temp.path().join("fake-repo");
+    let fake_data = fake_cwd.join("data");
+    std::fs::create_dir_all(&fake_data).unwrap();
+    std::fs::write(fake_data.join("aat-schema.json"), "{}").unwrap();
+
+    let aat = temp.path().join("input.aat.json");
+    let parser_ir = temp.path().join("parser-ir.json");
+    let divergence = temp.path().join("divergence.json");
+    std::fs::write(
+        &aat,
+        r#"{
+  "version": 1,
+  "work_id": "cli-root",
+  "meta": {
+    "adapter": "fixture",
+    "adapter_version": "fixture 0.1.0",
+    "source_encoding": "utf-8",
+    "source_hash": "sha256:8888888888888888888888888888888888888888888888888888888888888888",
+    "parse_complete": true,
+    "warnings": []
+  },
+  "blocks": [{"kind": "paragraph", "content": [{"kind": "text", "value": "A"}]}]
+}"#,
+    )
+    .unwrap();
+
+    let status = std::process::Command::new(env!("CARGO_BIN_EXE_ab-aat-to-parser-ir"))
+        .current_dir(&fake_cwd)
+        .arg("convert")
+        .arg("--aat")
+        .arg(&aat)
+        .arg("--mapping")
+        .arg(repo.join("data/aat-to-parser-ir-mapping-v1.json"))
+        .arg("--parser-ir-out")
+        .arg(&parser_ir)
+        .arg("--divergence-out")
+        .arg(&divergence)
+        .status()
+        .unwrap();
+
+    assert!(status.success());
+    assert!(parser_ir.is_file());
+    assert!(divergence.is_file());
 }

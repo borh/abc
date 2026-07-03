@@ -21,7 +21,6 @@ pub struct ConversionRequest {
 pub struct ConversionOptions {
     pub validate_input_aat: bool,
     pub validate_output_parser_ir: bool,
-    pub on_unmeasured_divergence: UnmeasuredDivergencePolicy,
 }
 
 impl Default for ConversionOptions {
@@ -29,15 +28,8 @@ impl Default for ConversionOptions {
         Self {
             validate_input_aat: true,
             validate_output_parser_ir: true,
-            on_unmeasured_divergence: UnmeasuredDivergencePolicy::Refuse,
         }
     }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum UnmeasuredDivergencePolicy {
-    Refuse,
-    RecordExploratory,
 }
 
 #[derive(Debug, Clone)]
@@ -476,6 +468,13 @@ fn visible_inline_text(
     match node["kind"].as_str().unwrap_or("") {
         "text" => Ok(node["value"].as_str().unwrap_or("").to_owned()),
         "ruby" => {
+            let container_pointer = format!("{path}.ruby");
+            record_measured_loss(
+                recorder,
+                container_pointer.as_str(),
+                None,
+                Some(json!("ruby")),
+            )?;
             let reading_pointer = format!("{path}.ruby.reading");
             if recorder.has_rule("LOSS", Some(reading_pointer.as_str()), target_pointer) {
                 recorder.record(
@@ -489,6 +488,13 @@ fn visible_inline_text(
             Ok(node["base"].as_str().unwrap_or("").to_owned())
         }
         "gaiji" => {
+            let container_pointer = format!("{path}.gaiji");
+            record_measured_loss(
+                recorder,
+                container_pointer.as_str(),
+                None,
+                Some(json!("gaiji")),
+            )?;
             let resolved_pointer = format!("{path}.gaiji.resolved");
             if recorder.has_rule("AMBIGUITY", Some(resolved_pointer.as_str()), target_pointer) {
                 recorder.record(
@@ -505,12 +511,22 @@ fn visible_inline_text(
                 .unwrap_or("")
                 .to_owned())
         }
-        "style" | "font_size" | "keigakomi" | "caption" => visible_content_text(
-            node.get("content"),
-            recorder,
-            &format!("{path}.content"),
-            target_pointer,
-        ),
+        "style" | "font_size" | "keigakomi" | "caption" => {
+            let kind = node["kind"].as_str().unwrap_or("");
+            let container_pointer = format!("{path}.{kind}");
+            record_measured_loss(
+                recorder,
+                container_pointer.as_str(),
+                None,
+                Some(json!(kind)),
+            )?;
+            visible_content_text(
+                node.get("content"),
+                recorder,
+                &format!("{path}.content"),
+                target_pointer,
+            )
+        }
         "warigaki" => {
             let warigaki_pointer = format!("{path}.warigaki");
             let target = match warigaki_target(recorder, &warigaki_pointer) {
@@ -540,6 +556,12 @@ fn visible_inline_text(
         }
         "raw" => {
             let raw_pointer = format!("{path}.raw");
+            record_measured_loss(
+                recorder,
+                raw_pointer.as_str(),
+                None,
+                node.get("source").cloned(),
+            )?;
             if recorder.has_rule("LOSS", Some(raw_pointer.as_str()), target_pointer) {
                 recorder.record(
                     "LOSS",
@@ -566,6 +588,24 @@ fn visible_inline_text(
         }
         other => bail!("unsupported inline kind in visible projection: {other}"),
     }
+}
+
+fn record_measured_loss(
+    recorder: &mut DivergenceRecorder,
+    aat_pointer: &str,
+    parser_ir_pointer: Option<&str>,
+    source_value: Option<Value>,
+) -> Result<()> {
+    if recorder.has_rule("LOSS", Some(aat_pointer), parser_ir_pointer) {
+        recorder.record(
+            "LOSS",
+            Some(aat_pointer),
+            parser_ir_pointer,
+            source_value,
+            None,
+        )?;
+    }
+    Ok(())
 }
 
 fn warigaki_target<'a>(

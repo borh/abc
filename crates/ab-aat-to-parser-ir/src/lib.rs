@@ -3,8 +3,6 @@ pub mod divergence;
 pub mod mapping;
 pub mod schema;
 
-pub use convert::{
-    ConversionOptions, ConversionOutput, ConversionRequest, UnmeasuredDivergencePolicy, convert,
-};
+pub use convert::{ConversionOptions, ConversionOutput, ConversionRequest, convert};
 pub use mapping::MappingDocument;
 pub use schema::SchemaSet;

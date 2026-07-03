@@ -6,7 +6,7 @@
 
 **Architecture:** Implement a measured policy engine, not a generic mapping DSL and not a hard-coded rule table. This plan is not a clean "deepen" until it closes the traversal/protocol gates below: the mapping identity is depth-faithful replay of the generator's folded paths, not merely semantic loss taxonomy. Rust traversal code projects AAT values into parser-IR, but every divergence record is authorized by `data/aat-to-parser-ir-mapping-v1.json` through folded pointer/category/target lookup. The public seam is `convert(request) -> ConversionOutput`; callers do not know about traversal, span synthesis, schema identity, or divergence aggregation.
 
-**Tech Stack:** Rust 2024, `serde`, `serde_json`, `jsonschema`, `clap`, `anyhow`, `sha2`, `regex`, local `ab-check` AAT validation, ABC JSON schemas from `../abc/schemas`.
+**Tech Stack:** Rust 2024, `serde`, `serde_json`, `jsonschema`, `clap`, `anyhow`, `sha2`, `regex`, local `ab-check` AAT validation, ABC JSON schemas from the vendored snapshot under `data/abc-schemas/schemas` with `--abc-root`/`AB_ABC_ROOT` override.
 
 ## Global Constraints
 
@@ -16,9 +16,9 @@
 - Compute schema hashes with `abc-legacy-json-c14n-v0`: parse JSON, serialize sorted compact UTF-8 JSON, escape every `/` as `\/`, SHA-256, prefix `sha256:`.
 - Preflight must reproduce `mapping_schema_hash = sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4`.
 - Preflight must reproduce `target_parser_ir_schema_hash = sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396`.
-- ABC owns divergence record shape at `../abc/schemas/aat-parser-ir-divergence.schema.json`; ab-validator owns only `data/aat-parser-ir-divergence-bundle-v1.schema.json`.
+- ABC owns divergence record shape. ab-validator vendors the measured ABC schema snapshot under `data/abc-schemas/schemas` for pure checks and owns only `data/aat-parser-ir-divergence-bundle-v1.schema.json`.
 - `records[]` items must have no fields outside ABC's record schema.
-- Default unmeasured divergence behavior is `UnmeasuredDivergencePolicy::Refuse`.
+- Default unmeasured divergence behavior is refuse-by-default; v1 exposes no exploratory runtime mode.
 - AAT validation must call `ab_check::check::validate_aat_value`; the `ab_check::aat` module does not expose that function.
 - `ruby.direction` is direct projection after ADR 0024 and must not emit an L-02-style loss.
 - Keep parser-IR `derived_from` unset in v1; current measured mapping records adapter provenance as lost and bundle-preserved.
@@ -27,9 +27,9 @@
 - The mapping guard authorizes emitted records only. It does not prove that every applicable measured divergence was emitted, so the plan must add applicability tests for known measured rules and a documented coverage limitation.
 - Do not emit divergence records that mapping v1.1 does not authorize. In v1, that means no `span.line_end -> span.line`, no `meta.warnings[].line -> warnings[].span.line`, and no `quote_block`/`caption_block` structural records unless the mapping artifact is extended.
 - Warigaki is context-sensitive in the mapping. Plain block-content warigaki records with `parser_ir_pointer = null`; nested emphasis/heading contexts that measure `(emphasis.text)` must record that exact target pointer.
-- CLI default `--abc-root` must be resolved from `CARGO_MANIFEST_DIR`/repo root as `repo_root.join("../abc")`, not from the caller's current working directory.
+- CLI default `--abc-root` must resolve from the mapping file/repo root as `repo_root.join("data/abc-schemas")`, not from the caller's current working directory. Explicit `--abc-root` and `AB_ABC_ROOT` still override it.
 - Flake checks must not write to `/db` or require runtime network access.
-- Pure flake schema validation must use an explicit `abc-src = { url = "path:../abc"; flake = false; }` input or an explicitly vendored schema copy. Do not have a derivation reach through `$PWD/../abc`.
+- Pure flake schema validation must use the explicitly vendored schema copy. Do not have a derivation reach through `$PWD/../abc` or lock an absolute local ABC checkout.
 
 ---
 
@@ -81,7 +81,7 @@ The critical review is accepted as a protocol/trust-boundary correction, not as 
 |---|---|---|---|---|---|
 | Mapping v1.1 is the authority for this crate | Observation | `docs/superpowers/specs/2026-07-03-ab-aat-to-parser-ir-crate-design.md` | High | Validate mapping against ABC schema | Manual mappings could drift from measured evidence |
 | Mapping document uses `transform_rule_descriptions[]` | Observation | `jq 'keys' data/aat-to-parser-ir-mapping-v1.json` | High | Unit test deserializes this exact field | Wrong model would silently skip rules |
-| ABC record schema allows only rule/category/message/count/first_path plus optional pointers and values | Observation | `../abc/schemas/aat-parser-ir-divergence.schema.json` | High | Schema validation test | Sidecar incompatibility with ABC |
+| ABC record schema allows only rule/category/message/count/first_path plus optional pointers and values | Observation | `data/abc-schemas/schemas/aat-parser-ir-divergence.schema.json` | High | Schema validation test | Sidecar incompatibility with ABC |
 | Missing AAT spans are an AMBIGUITY, not an INVENTION | Decision | Corrected mapping spec Gate 5 | High | Conversion test asserts span rule category | Incorrect loss taxonomy |
 | Direct projection of `ruby.direction` is safe | Decision | Post-ADR 0024 correction | High | Conversion test asserts no divergence for direction | Reintroduces stale review finding |
 | Generic mapping interpreter is premature | Inference | Mapping rules are descriptive strings | Medium | Revisit if mapping schema grows executable transforms | Overbuilds a fake seam |
@@ -91,7 +91,7 @@ The critical review is accepted as a protocol/trust-boundary correction, not as 
 | Actor | Objective | Current obstacle | Capability when solved | How the design supports it |
 |---|---|---|---|---|
 | Parser comparison operator | Compare existing parsers through a shared downstream shape | AAT captures adapter output, ABC uses parser-IR | Convert measured AAT inputs whose divergence keys are authorized by mapping v1.1 | CLI validates input, target schema, and divergence bundle |
-| ABC publication pipeline | Drive TEI/plaintext from parser-IR | ABC needs parser-IR fixtures and provenance | Consume deterministic parser-IR artifacts | Output validates against `../abc/schemas/parser-ir.schema.json` |
+| ABC publication pipeline | Drive TEI/plaintext from parser-IR | ABC needs parser-IR fixtures and provenance | Consume deterministic parser-IR artifacts | Output validates against `data/abc-schemas/schemas/parser-ir.schema.json` or explicit `--abc-root` |
 | Mapping maintainer | Detect when conversion logic outpaces measurement | Rust code can emit new divergence buckets accidentally | Refuse unmeasured divergence by default | `MappingIndex` authorizes runtime records from the generated artifact |
 | Future parser implementer | Know which AAT constructs are unsupported or ambiguous | Loss is easy to hide in conversion output | Read per-work divergence records | Aggregator records count and first runtime path per rule |
 
@@ -108,7 +108,8 @@ The critical review is accepted as a protocol/trust-boundary correction, not as 
 ## File Structure
 
 - Modify `Cargo.toml`: add workspace member and workspace dependency for `ab-aat-to-parser-ir`.
-- Modify `flake.nix`: add an explicit `abc-src` schema input, expose package/app, and add sandbox-pure smoke check.
+- Modify `flake.nix`: use the vendored ABC schema snapshot, expose package/app, and add sandbox-pure smoke check.
+- Create `data/abc-schemas/`: minimal vendored ABC schema snapshot used by pure checks.
 - Create `crates/ab-aat-to-parser-ir/Cargo.toml`: crate metadata and dependencies.
 - Create `crates/ab-aat-to-parser-ir/src/lib.rs`: public conversion interface and module exports.
 - Create `crates/ab-aat-to-parser-ir/src/schema.rs`: schema loading, `abc-legacy-json-c14n-v0`, JSON Schema validation.
@@ -134,12 +135,6 @@ pub struct ConversionRequest {
 pub struct ConversionOptions {
     pub validate_input_aat: bool,
     pub validate_output_parser_ir: bool,
-    pub on_unmeasured_divergence: UnmeasuredDivergencePolicy,
-}
-
-pub enum UnmeasuredDivergencePolicy {
-    Refuse,
-    RecordExploratory,
 }
 
 pub struct ConversionOutput {
@@ -178,7 +173,7 @@ use serde_json::Value;
 fn abc_root(repo: &Path) -> PathBuf {
     std::env::var_os("AB_ABC_ROOT")
         .map(PathBuf::from)
-        .unwrap_or_else(|| repo.join("../abc"))
+        .unwrap_or_else(|| repo.join("data/abc-schemas"))
 }
 
 #[test]
@@ -274,7 +269,7 @@ pub mod divergence;
 pub mod mapping;
 pub mod schema;
 
-pub use convert::{convert, ConversionOptions, ConversionOutput, ConversionRequest, UnmeasuredDivergencePolicy};
+pub use convert::{convert, ConversionOptions, ConversionOutput, ConversionRequest};
 pub use mapping::MappingDocument;
 pub use schema::SchemaSet;
 ```
@@ -1019,7 +1014,6 @@ pub struct ConversionRequest {
 pub struct ConversionOptions {
     pub validate_input_aat: bool,
     pub validate_output_parser_ir: bool,
-    pub on_unmeasured_divergence: UnmeasuredDivergencePolicy,
 }
 
 impl Default for ConversionOptions {
@@ -1027,15 +1021,8 @@ impl Default for ConversionOptions {
         Self {
             validate_input_aat: true,
             validate_output_parser_ir: true,
-            on_unmeasured_divergence: UnmeasuredDivergencePolicy::Refuse,
         }
     }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum UnmeasuredDivergencePolicy {
-    Refuse,
-    RecordExploratory,
 }
 
 #[derive(Debug, Clone)]
@@ -1626,8 +1613,10 @@ fn main() -> Result<()> {
     let args = Args::parse();
     match args.command {
         Command::Convert { aat, mapping, parser_ir_out, divergence_out, abc_root } => {
-            let repo_root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
-            let abc_root = abc_root.unwrap_or_else(|| repo_root.join("../abc"));
+            let repo_root = resolve_repo_root(&mapping)?;
+            let abc_root = abc_root
+                .or_else(|| std::env::var_os("AB_ABC_ROOT").map(PathBuf::from))
+                .unwrap_or_else(|| repo_root.join("data/abc-schemas"));
             let aat = ab_aat_to_parser_ir::schema::read_json(&aat)?;
             let mapping = MappingDocument::from_path(&mapping)?;
             let schemas = SchemaSet::load(&repo_root, &abc_root)?;
@@ -1642,6 +1631,35 @@ fn main() -> Result<()> {
         }
     }
     Ok(())
+}
+
+fn resolve_repo_root(mapping: &std::path::Path) -> Result<PathBuf> {
+    if let Some(value) = std::env::var_os("AB_VALIDATOR_REPO_ROOT") {
+        return Ok(PathBuf::from(value));
+    }
+
+    let cwd = std::env::current_dir()?;
+    if let Some(mapping_dir) = mapping.parent()
+        && mapping_dir.file_name().and_then(|name| name.to_str()) == Some("data")
+        && let Some(candidate) = mapping_dir.parent()
+    {
+        let candidate = if candidate.as_os_str().is_empty() {
+            cwd.clone()
+        } else if candidate.is_absolute() {
+            candidate.to_path_buf()
+        } else {
+            cwd.join(candidate)
+        };
+        if candidate.join("data/aat-schema.json").is_file() {
+            return Ok(candidate);
+        }
+    }
+
+    if cwd.join("data/aat-schema.json").is_file() {
+        return Ok(cwd);
+    }
+
+    Ok(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../.."))
 }
 ```
 
@@ -1659,7 +1677,7 @@ tempfile = { workspace = true }
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-abc_root="${AB_ABC_ROOT:-$repo_root/../abc}"
+abc_root="${AB_ABC_ROOT:-$repo_root/data/abc-schemas}"
 out_dir="${TMPDIR:-/tmp}/ab-validator-aat-to-parser-ir-smoke"
 rm -rf "$out_dir"
 mkdir -p "$out_dir"
@@ -1737,29 +1755,19 @@ PY
 
 - [ ] **Step 5: Wire flake package, app, and check**
 
-Add this explicit ABC schema input inside the existing `inputs` attrset. Do not let a pure derivation rely on the checkout's parent directory:
+Vendor the ABC schemas required by this crate into `data/abc-schemas/schemas/`:
 
-```nix
-abc-src = {
-  url = "path:../abc";
-  flake = false;
-};
+```text
+data/abc-schemas/schemas/aat-parser-ir-divergence.schema.json
+data/abc-schemas/schemas/aat-parser-ir-mapping.schema.json
+data/abc-schemas/schemas/parser-ir.schema.json
 ```
 
-Add `abc-src` to the existing `outputs` argument set:
+The snapshot must be byte-identical to the ABC schemas used to generate mapping v1.1, and the schema-hash tests must continue to reproduce the mapping artifact hashes. Do not add a `path:../abc` flake input and do not lock an absolute local checkout.
 
-```nix
-outputs =
-  {
-    self,
-    nixpkgs,
-    abc-src,
-  }:
-```
+Add a package and smoke check in the existing `let` block. The check must use vendored Cargo dependencies, `TMPDIR`, and `AB_ABC_ROOT=${source}/data/abc-schemas`:
 
-Add a package and smoke check in the existing `let` block. The check must use vendored Cargo dependencies, `TMPDIR`, and `AB_ABC_ROOT=${abc-src}`:
-
-Also add `AB_ABC_ROOT = "${abc-src}";` to the existing `abValidator` and `workspaceCheck` derivations so `nix flake check` can run the new Rust tests without reading a sibling checkout outside the store.
+Also add `AB_ABC_ROOT = "${source}/data/abc-schemas";` to the existing `abValidator` and `workspaceCheck` derivations so `nix flake check` can run the new Rust tests without reading a sibling checkout outside the store.
 
 ```nix
 abAatToParserIr =
@@ -1811,7 +1819,7 @@ abAatToParserIrCheck =
       mkdir -p "$TMPDIR"
       export CARGO_HOME="$TMPDIR/cargo-home"
       export CARGO_NET_OFFLINE=true
-      export AB_ABC_ROOT="${abc-src}"
+      export AB_ABC_ROOT="${source}/data/abc-schemas"
       export AB_AOZORA_RS_GAIJI_MENKUTEN_PATH="${aozoraRsGaijiMenkuten}"
       export AB_AOZORA_RS_GAIJI_CHUKI_PDF="${aozoraRsGaijiChukiPdf}"
       export AB_AOZORA_RS_GAIJI_PDFIUM_DIR="${pkgs.pdfium-binaries}/lib"

@@ -39,7 +39,9 @@ fn main() -> Result<()> {
             abc_root,
         } => {
             let repo_root = resolve_repo_root(&mapping)?;
-            let abc_root = abc_root.unwrap_or_else(|| repo_root.join("../abc"));
+            let abc_root = abc_root
+                .or_else(|| std::env::var_os("AB_ABC_ROOT").map(PathBuf::from))
+                .unwrap_or_else(|| repo_root.join("data/abc-schemas"));
             let aat = ab_aat_to_parser_ir::schema::read_json(&aat)?;
             let mapping = MappingDocument::from_path(&mapping)?;
             let schemas = SchemaSet::load(&repo_root, &abc_root)?;
@@ -68,10 +70,6 @@ fn resolve_repo_root(mapping: &std::path::Path) -> Result<PathBuf> {
     }
 
     let cwd = std::env::current_dir().context("failed to read current directory")?;
-    if cwd.join("data/aat-schema.json").is_file() {
-        return Ok(cwd);
-    }
-
     if let Some(mapping_dir) = mapping.parent()
         && mapping_dir.file_name().and_then(|name| name.to_str()) == Some("data")
         && let Some(candidate) = mapping_dir.parent()
@@ -86,6 +84,10 @@ fn resolve_repo_root(mapping: &std::path::Path) -> Result<PathBuf> {
         if candidate.join("data/aat-schema.json").is_file() {
             return Ok(candidate);
         }
+    }
+
+    if cwd.join("data/aat-schema.json").is_file() {
+        return Ok(cwd);
     }
 
     Ok(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../.."))

@@ -1,76 +1,199 @@
 {
   "version": 1,
-  "work_id": "real-aozora2html-sample",
+  "work_id": "000005_53194",
   "meta": {
     "adapter": "aozora2html",
-    "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1 measured-fixture",
-    "source_encoding": "windows-31j-lossy",
-    "source_hash": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+    "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1",
+    "source_encoding": "windows-31j",
+    "source_hash": "sha256:296cd806ac46e93855dd25c2aebe7b22fd163a278f98daf9f43c40808d6ade94",
     "parse_complete": true,
     "warnings": [
       {
-        "message": "fixture warning",
-        "line": 2
+        "message": "unmapped XHTML element <h4>",
+        "path": "/blocks/.../h4"
       }
     ]
   },
   "blocks": [
     {
-      "kind": "jisage_block",
-      "children": [
-        {
-          "kind": "heading",
-          "level": 1,
-          "style": "normal",
-          "content": [
-            {
-              "kind": "warigaki",
-              "upper": [
-                {
-                  "kind": "text",
-                  "value": "U"
-                }
-              ],
-              "lower": [
-                {
-                  "kind": "text",
-                  "value": "L"
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "kind": "paragraph",
       "content": [
         {
-          "kind": "style",
-          "style_type": "kaeriten",
+          "kind": "text",
+          "value": "\n"
+        },
+        {
           "content": [
             {
               "kind": "text",
-              "value": "K"
+              "value": "［＃ページの左右中央］"
+            }
+          ],
+          "kind": "style",
+          "style_type": "notes"
+        }
+      ],
+      "kind": "paragraph"
+    },
+    {
+      "children": [
+        {
+          "content": [
+            {
+              "kind": "text",
+              "value": "Ｐ・Ｖ・アンネンコフに"
+            },
+            {
+              "base": "捧",
+              "direction": "right",
+              "kind": "ruby",
+              "reading": "ささ"
+            },
+            {
+              "kind": "text",
+              "value": "げる"
+            }
+          ],
+          "kind": "paragraph"
+        }
+      ],
+      "kind": "jisage_block",
+      "x-indent": 4
+    },
+    {
+      "content": [
+        {
+          "kind": "text",
+          "value": "\n　わたしは毎日、夕方になると、"
+        },
+        {
+          "base": "鉄砲",
+          "direction": "right",
+          "kind": "ruby",
+          "reading": "てっぽう"
+        },
+        {
+          "kind": "text",
+          "value": "を持ってうちの庭をぶらついて、"
+        },
+        {
+          "base": "鴉",
+          "direction": "right",
+          "kind": "ruby",
+          "reading": "からす"
+        },
+        {
+          "kind": "text",
+          "value": "の番人をするのが習慣だった。――この油断のない、"
+        },
+        {
+          "base": "貪欲",
+          "direction": "right",
+          "kind": "ruby",
+          "reading": "どんよく"
+        },
+        {
+          "kind": "text",
+          "value": "で"
+        },
+        {
+          "base": "悪賢",
+          "direction": "right",
+          "kind": "ruby",
+          "reading": "わるがしこ"
+        },
+        {
+          "kind": "text",
+          "value": "い鳥に対して、わたしはずっと前から"
+        },
+        {
+          "base": "憎悪",
+          "direction": "right",
+          "kind": "ruby",
+          "reading": "ぞうお"
+        },
+        {
+          "kind": "text",
+          "value": "をいだいていたのである。さて今しがた話に出た日も、わたしはやはり庭へ出て行って――"
+        },
+        {
+          "base": "並木道",
+          "direction": "right",
+          "kind": "ruby",
+          "reading": "なみきみち"
+        },
+        {
+          "kind": "text",
+          "value": "という並木道をむなしく歩き回ったあげく（鴉はわたしをちゃんと知っていて、ただ遠くの方できれぎれに鳴くばかりだった）、ふと低い"
+        },
+        {
+          "base": "垣根",
+          "direction": "right",
+          "kind": "ruby",
+          "reading": "かきね"
+        },
+        {
+          "kind": "text",
+          "value": "に近づいた。それは、右手の"
+        },
+        {
+          "base": "傍屋",
+          "direction": "right",
+          "kind": "ruby",
+          "reading": "はなれ"
+        },
+        {
+          "kind": "text",
+          "value": "の向うへ延びて、その家に属している細い帯のような庭と、"
+        },
+        {
+          "content": [
+            {
+              "kind": "text",
+              "value": "うちの"
+            }
+          ],
+          "kind": "style",
+          "style_type": "sesame_dot"
+        },
+        {
+          "kind": "text",
+          "value": "領分との境を成しているのだった。わたしは、うなだれて歩いていた。すると不意に、がやがやと人声がした。わたしはひょいと垣根ごしに"
+        },
+        {
+          "base": "眺",
+          "direction": "right",
+          "kind": "ruby",
+          "reading": "なが"
+        },
+        {
+          "kind": "text",
+          "value": "めて――化石したようになってしまった。……奇妙な光景がわたしの眼に映ったのである。"
+        }
+      ],
+      "kind": "paragraph"
+    },
+    {
+      "content": [
+        {
+          "kind": "text",
+          "value": "\n　わたしは腰を下ろして、『グルジヤの丘の上』（"
+        },
+        {
+          "kind": "warigaki",
+          "lower": [],
+          "upper": [
+            {
+              "kind": "text",
+              "value": "訳注　プーシキンがカフカーズをさまよいながら、遠い恋人を思って作った抒情詩。その大意は、「グルジヤの丘の上、夜露かかり、アラグヴァの流れ、わが前にざわめく。われはわびしく楽しく、わが悲しみは明るし。わが悲しみは、ただひとり君の姿にみたされて……このわびごころ、何ものの乱し騒がすものもなし。かくて胸は、またも燃え、恋いわたる……愛さでやまぬ胸なれば。」"
             }
           ]
         },
         {
-          "kind": "warigaki",
-          "upper": [
-            {
-              "kind": "text",
-              "value": "X"
-            }
-          ],
-          "lower": [
-            {
-              "kind": "text",
-              "value": "Y"
-            }
-          ]
+          "kind": "text",
+          "value": "）を朗読した。"
         }
-      ]
+      ],
+      "kind": "paragraph"
     }
   ]
 }

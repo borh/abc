@@ -36,11 +36,6 @@
       flake = false;
     };
 
-    abc-src = {
-      url = "git+file:../abc";
-      flake = false;
-    };
-
     reference-aozora-epub3-src = {
       url = "github:AozoraEpub3-JDK21/AozoraEpub3-JDK21";
       flake = false;
@@ -58,7 +53,6 @@
       reference-aozora2-src,
       reference-aozorabunko-extractor-src,
       aozorabunko-src,
-      abc-src,
       flake-utils,
       rust-overlay,
     }:
@@ -426,7 +420,7 @@
               AB_AOZORA_RS_GAIJI_MENKUTEN_PATH = "${aozoraRsGaijiMenkuten}";
               AB_AOZORA_RS_GAIJI_CHUKI_PDF = "${aozoraRsGaijiChukiPdf}";
               AB_AOZORA_RS_GAIJI_PDFIUM_DIR = "${pkgs.pdfium-binaries}/lib";
-              AB_ABC_ROOT = "${abc-src}";
+              AB_ABC_ROOT = "${source}/data/abc-schemas";
 
               preCheck = vibratoDictionaryPreCheck;
               doCheck = true;
@@ -473,7 +467,7 @@
               AB_AOZORA_RS_GAIJI_MENKUTEN_PATH = "${aozoraRsGaijiMenkuten}";
               AB_AOZORA_RS_GAIJI_CHUKI_PDF = "${aozoraRsGaijiChukiPdf}";
               AB_AOZORA_RS_GAIJI_PDFIUM_DIR = "${pkgs.pdfium-binaries}/lib";
-              AB_ABC_ROOT = "${abc-src}";
+              AB_ABC_ROOT = "${source}/data/abc-schemas";
 
               cargoBuildFlags = [ "--workspace" ];
               cargoTestFlags = [
@@ -686,7 +680,7 @@
               AB_AOZORA_RS_GAIJI_MENKUTEN_PATH = "${aozoraRsGaijiMenkuten}";
               AB_AOZORA_RS_GAIJI_CHUKI_PDF = "${aozoraRsGaijiChukiPdf}";
               AB_AOZORA_RS_GAIJI_PDFIUM_DIR = "${pkgs.pdfium-binaries}/lib";
-              AB_ABC_ROOT = "${abc-src}";
+              AB_ABC_ROOT = "${source}/data/abc-schemas";
 
               cargoBuildFlags = [
                 "--package"
@@ -719,7 +713,7 @@
 
               export TMPDIR="$work_dir/tmp"
               mkdir -p "$TMPDIR"
-              export AB_ABC_ROOT="${abc-src}"
+              export AB_ABC_ROOT="${source}/data/abc-schemas"
               export AB_AAT_TO_PARSER_IR_BIN="${abAatToParserIr}/bin/ab-aat-to-parser-ir"
 
               bash tests/aat-to-parser-ir-cli-smoke.sh

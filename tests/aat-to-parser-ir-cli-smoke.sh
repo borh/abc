@@ -2,7 +2,7 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-abc_root="${AB_ABC_ROOT:-$repo_root/../abc}"
+abc_root="${AB_ABC_ROOT:-$repo_root/data/abc-schemas}"
 out_dir="${TMPDIR:-/tmp}/ab-validator-aat-to-parser-ir-smoke"
 rm -rf "$out_dir"
 mkdir -p "$out_dir"

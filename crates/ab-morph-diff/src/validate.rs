@@ -1,5 +1,6 @@
 use std::ops::Range;
 
+use crate::CharByteMap;
 use crate::{Analysis, MorphDiffError};
 
 /// Verifies an analysis structure is internally consistent.
@@ -22,6 +23,7 @@ pub fn validate_analysis_against_source(
     analysis: &Analysis,
     source_text: &str,
 ) -> Result<(), MorphDiffError> {
+    let char_map = CharByteMap::new(source_text);
     for (index, morpheme) in analysis.morphemes.iter().enumerate() {
         if morpheme.byte_span.start >= morpheme.byte_span.end
             || morpheme.byte_span.end > source_text.len()
@@ -54,7 +56,7 @@ pub fn validate_analysis_against_source(
             }
         }
 
-        let expected_char_span = byte_span_to_char_span(source_text, morpheme.byte_span.clone())
+        let expected_char_span = byte_span_to_char_span(&char_map, morpheme.byte_span.clone())
             .ok_or_else(|| MorphDiffError::InvalidByteSpan {
                 analyzer: analysis.analyzer.clone(),
                 text_id: analysis.text_id.clone(),
@@ -78,16 +80,12 @@ pub fn validate_analysis_against_source(
     Ok(())
 }
 
-fn byte_span_to_char_span(source: &str, byte_span: Range<usize>) -> Option<Range<usize>> {
-    if byte_span.start > byte_span.end
-        || byte_span.end > source.len()
-        || !source.is_char_boundary(byte_span.start)
-        || !source.is_char_boundary(byte_span.end)
-    {
+fn byte_span_to_char_span(char_map: &CharByteMap, byte_span: Range<usize>) -> Option<Range<usize>> {
+    if byte_span.start > byte_span.end {
         return None;
     }
-    let start = source[..byte_span.start].chars().count();
-    let end = source[..byte_span.end].chars().count();
+    let start = char_map.char_count_at_byte(byte_span.start);
+    let end = char_map.char_count_at_byte(byte_span.end);
     Some(start..end)
 }
 

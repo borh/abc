@@ -1,4 +1,5 @@
 mod align;
+mod char_map;
 mod error;
 mod features;
 mod model;
@@ -7,6 +8,7 @@ mod stats;
 mod streaming;
 mod validate;
 
+pub use char_map::CharByteMap;
 pub use error::MorphDiffError;
 pub use model::{
     AlignedMorpheme, Analysis, AnalyzerId, AnalyzerWarning, ChangedValue, CompactComparison,

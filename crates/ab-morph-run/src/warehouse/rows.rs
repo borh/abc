@@ -128,8 +128,9 @@ pub(crate) fn nway_fact_rows(
         .map(|analysis| analysis.text_id.clone())
         .unwrap_or_default();
     let mut rows = NwayFactRows::default();
+    let char_map = ab_morph_diff::CharByteMap::new(source_text);
     visit_nway_regions_with_source_text(analyses, source_text, &[], |region| {
-        push_region_rows(run_id, source_id, &text_id, source_text, region, &mut rows);
+        push_region_rows(run_id, source_id, &text_id, source_text, &char_map, region, &mut rows);
     })?;
     Ok(rows)
 }
@@ -152,11 +153,12 @@ where
     let batch_region_limit = batch_region_limit.max(1);
     let mut rows = NwayFactRows::default();
     let mut flush_error = None;
+    let char_map = ab_morph_diff::CharByteMap::new(source_text);
     visit_nway_regions_with_source_text(analyses, source_text, &[], |region| {
         if flush_error.is_some() {
             return;
         }
-        push_region_rows(run_id, source_id, &text_id, source_text, region, &mut rows);
+        push_region_rows(run_id, source_id, &text_id, source_text, &char_map, region, &mut rows);
         if rows.regions.len() >= batch_region_limit {
             if let Err(error) = on_batch(&rows) {
                 flush_error = Some(error);
@@ -190,10 +192,11 @@ fn push_region_rows(
     source_id: &str,
     text_id: &str,
     source_text: &str,
+    char_map: &ab_morph_diff::CharByteMap,
     region: &NwayRegion,
     rows: &mut NwayFactRows,
 ) {
-    let byte_span = byte_span_from_char_span(source_text, &region.text_span);
+    let byte_span = byte_span_from_char_span(char_map, &region.text_span);
     let excerpt = &source_text[byte_span.clone()];
     rows.regions.push(NwayRegionRow {
         run_id: run_id.to_owned(),
@@ -264,18 +267,20 @@ fn feature_scope_parts(scope: &NwayFeatureScope) -> (String, Option<u64>, Option
     }
 }
 
-fn byte_span_from_char_span(source_text: &str, char_span: &Range<usize>) -> Range<usize> {
-    let start = byte_offset_for_char(source_text, char_span.start);
-    let end = byte_offset_for_char(source_text, char_span.end);
+fn byte_span_from_char_span(
+    char_map: &ab_morph_diff::CharByteMap,
+    char_span: &Range<usize>,
+) -> Range<usize> {
+    // Mirrors the legacy `char_indices().nth(i).unwrap_or(source_text.len())`:
+    // a char index past the end clamps to source.len().
+    let source_byte_len = char_map.source_byte_len();
+    let start = char_map
+        .byte_offset_at_char(char_span.start)
+        .unwrap_or(source_byte_len);
+    let end = char_map
+        .byte_offset_at_char(char_span.end)
+        .unwrap_or(source_byte_len);
     start..end
-}
-
-fn byte_offset_for_char(source_text: &str, char_index: usize) -> usize {
-    source_text
-        .char_indices()
-        .map(|(byte_index, _)| byte_index)
-        .nth(char_index)
-        .unwrap_or(source_text.len())
 }
 
 #[cfg(test)]

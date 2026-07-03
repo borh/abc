@@ -103,13 +103,15 @@ impl MorphAnalyzer for VaporettoAnalyzer {
         self.predictor.predict(&mut sentence);
         sentence.fill_tags();
 
+        let char_map = ab_morph_diff::CharByteMap::new(&document.text);
+        let analyzer_id = &self.analyzer_id;
         let morphemes = sentence
             .iter_tokens()
             .map(|token| {
                 let byte_span =
-                    char_range_to_byte_range(&document.text, token.start(), token.end()).map_err(
+                    char_range_to_byte_range(&char_map, token.start(), token.end()).map_err(
                         |message| AnalyzerError::Tokenize {
-                            analyzer: self.analyzer_id.clone(),
+                            analyzer: analyzer_id.clone(),
                             message,
                         },
                     )?;
@@ -241,33 +243,20 @@ fn workspace_path(path: impl AsRef<Path>) -> PathBuf {
 }
 
 fn char_range_to_byte_range(
-    text: &str,
+    char_map: &ab_morph_diff::CharByteMap,
     start_char: usize,
     end_char: usize,
 ) -> Result<std::ops::Range<usize>, String> {
-    let start = char_offset_to_byte_index(text, start_char)
+    let start = char_map
+        .byte_offset_at_char(start_char)
         .ok_or_else(|| format!("start char offset {start_char} is invalid"))?;
-    let end = char_offset_to_byte_index(text, end_char).ok_or_else(|| {
+    let end = char_map.byte_offset_at_char(end_char).ok_or_else(|| {
         format!(
             "end char offset {end_char} is invalid, source has {} chars",
-            text.chars().count()
+            char_map.char_count()
         )
     })?;
     Ok(start..end)
-}
-
-fn char_offset_to_byte_index(text: &str, char_offset: usize) -> Option<usize> {
-    if char_offset == 0 {
-        return Some(0);
-    }
-
-    for (index, (byte_index, _)) in text.char_indices().enumerate() {
-        if index == char_offset {
-            return Some(byte_index);
-        }
-    }
-
-    (char_offset == text.chars().count()).then_some(text.len())
 }
 
 #[cfg(test)]

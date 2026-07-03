@@ -1,6 +1,6 @@
 use std::ops::Range;
 
-use ab_morph_diff::{Analysis, AnalyzerId, FeatureMap, Morpheme, TextId};
+use ab_morph_diff::{Analysis, AnalyzerId, CharByteMap, FeatureMap, Morpheme, TextId};
 
 use crate::AnalyzerError;
 
@@ -34,6 +34,7 @@ pub(crate) fn build_morphemes_from_tokens(
     source_text: &str,
     tokens: impl IntoIterator<Item = RawToken>,
 ) -> Result<Vec<Morpheme>, AnalyzerError> {
+    let char_map = CharByteMap::new(source_text);
     let mut cursor = 0usize;
     let mut morphemes = Vec::new();
 
@@ -54,8 +55,8 @@ pub(crate) fn build_morphemes_from_tokens(
         };
 
         let surface = source_text[byte_span.clone()].to_owned();
-        let char_start = byte_to_char_offset(source_text, byte_span.start);
-        let char_end = byte_to_char_offset(source_text, byte_span.end);
+        let char_start = char_map.char_count_at_byte(byte_span.start);
+        let char_end = char_map.char_count_at_byte(byte_span.end);
         cursor = byte_span.end;
 
         morphemes.push(Morpheme {
@@ -125,10 +126,6 @@ fn find_sequential_span(
             expected_surface: surface.to_owned(),
         })
     }
-}
-
-fn byte_to_char_offset(source_text: &str, byte_offset: usize) -> usize {
-    source_text[..byte_offset].chars().count()
 }
 
 #[cfg(test)]

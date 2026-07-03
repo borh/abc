@@ -5,7 +5,7 @@ use serde_json::{Value, json};
 
 use crate::{
     divergence::{AatMeta, DivergenceRecorder},
-    mapping::MappingDocument,
+    mapping::{MappingDocument, MappingIndex},
     schema::{SchemaSet, validate_value},
 };
 
@@ -39,18 +39,54 @@ pub struct ConversionOutput {
     pub emitted_rule_ids: BTreeSet<String>,
 }
 
-pub fn convert(request: ConversionRequest) -> Result<ConversionOutput> {
-    if request.options.validate_input_aat {
-        ab_check::check::validate_aat_value(&request.aat)?;
+#[derive(Debug, Clone)]
+pub struct PreparedConverter {
+    mapping: MappingDocument,
+    schemas: SchemaSet,
+    index: MappingIndex,
+}
+
+impl PreparedConverter {
+    pub fn new(mapping: MappingDocument, schemas: SchemaSet) -> Result<Self> {
+        let index = mapping.preflight(&schemas)?;
+        Ok(Self {
+            mapping,
+            schemas,
+            index,
+        })
     }
 
-    let index = request.mapping.preflight(&request.schemas)?;
+    pub fn convert(&self, aat: Value, options: ConversionOptions) -> Result<ConversionOutput> {
+        convert_preflighted(
+            aat,
+            &self.mapping,
+            &self.schemas,
+            self.index.clone(),
+            options,
+        )
+    }
+}
+
+pub fn convert(request: ConversionRequest) -> Result<ConversionOutput> {
+    PreparedConverter::new(request.mapping, request.schemas)?.convert(request.aat, request.options)
+}
+
+fn convert_preflighted(
+    aat: Value,
+    mapping: &MappingDocument,
+    schemas: &SchemaSet,
+    index: MappingIndex,
+    options: ConversionOptions,
+) -> Result<ConversionOutput> {
+    if options.validate_input_aat {
+        ab_check::check::validate_aat_value(&aat)?;
+    }
+
     let mut recorder = DivergenceRecorder::new(index);
     let mut nodes = Vec::new();
     let mut offset = 0_u64;
 
-    for (block_index, block) in request
-        .aat
+    for (block_index, block) in aat
         .pointer("/blocks")
         .and_then(Value::as_array)
         .into_iter()
@@ -66,27 +102,26 @@ pub fn convert(request: ConversionRequest) -> Result<ConversionOutput> {
         )?;
     }
 
-    let source = map_source(&request.aat, &mut recorder)?;
+    let source = map_source(&aat, &mut recorder)?;
     recorder.record("INVENTION", None, Some("schema_id/schema_hash"), None, None)?;
-    let warnings = map_warnings(&request.aat, &mut recorder)?;
+    let warnings = map_warnings(&aat, &mut recorder)?;
     recorder.record("INVENTION", None, Some("errors[]"), None, None)?;
 
     let parser_ir = json!({
-        "schema_id": request.mapping.target_parser_ir_schema_id,
-        "schema_hash": request.mapping.target_parser_ir_schema_hash,
+        "schema_id": mapping.target_parser_ir_schema_id,
+        "schema_hash": mapping.target_parser_ir_schema_hash,
         "source": source,
         "nodes": nodes,
         "warnings": warnings,
         "errors": [],
     });
 
-    if request.options.validate_output_parser_ir {
-        validate_value(&request.schemas.parser_ir_schema, &parser_ir, "parser-IR")?;
+    if options.validate_output_parser_ir {
+        validate_value(&schemas.parser_ir_schema, &parser_ir, "parser-IR")?;
     }
 
     let emitted_rule_ids = recorder.emitted_rule_ids();
-    let divergence_bundle =
-        recorder.bundle(aat_meta(&request.aat), &request.schemas, &request.mapping)?;
+    let divergence_bundle = recorder.bundle(aat_meta(&aat), schemas, mapping)?;
     Ok(ConversionOutput {
         parser_ir,
         divergence_bundle,

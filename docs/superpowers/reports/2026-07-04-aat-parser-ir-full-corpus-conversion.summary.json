@@ -1,0 +1,956 @@
+{
+  "generated_unix_seconds": 1783122082,
+  "mapping": {
+    "path": "data/aat-to-parser-ir-mapping-v1.json",
+    "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
+    "mapping_version": "0.1.1",
+    "mapping_schema_hash": "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4",
+    "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
+    "target_parser_ir_schema_hash": "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396",
+    "rules_total": 118
+  },
+  "inputs": [
+    {
+      "label": "aozora-rs-adapter",
+      "aat_dir": "scratch/morph-full-corpus/aats/aozora-rs-adapter",
+      "files": 17894
+    },
+    {
+      "label": "aozora2html-adapter",
+      "aat_dir": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter",
+      "files": 17689
+    }
+  ],
+  "totals": {
+    "files_attempted": 35583,
+    "files_succeeded": 35123,
+    "files_failed": 460,
+    "parser_ir_nodes": 15672849,
+    "divergence_records": 599338,
+    "divergence_occurrences": 29225729,
+    "elapsed_seconds": 11.715
+  },
+  "by_corpus": {
+    "aozora-rs-adapter": {
+      "files_attempted": 17894,
+      "files_succeeded": 17894,
+      "files_failed": 0,
+      "parser_ir_nodes": 7828615,
+      "divergence_records": 288039,
+      "divergence_occurrences": 13246894
+    },
+    "aozora2html-adapter": {
+      "files_attempted": 17689,
+      "files_succeeded": 17229,
+      "files_failed": 460,
+      "parser_ir_nodes": 7844234,
+      "divergence_records": 311299,
+      "divergence_occurrences": 15978835
+    }
+  },
+  "categories": {
+    "AMBIGUITY": 19049053,
+    "INVENTION": 6820640,
+    "LOSS": 319530,
+    "STRUCTURAL": 3025276,
+    "UNSUPPORTED": 11230
+  },
+  "rule_coverage": {
+    "rules_total": 118,
+    "rules_emitted": 98,
+    "rules_missing": [
+      "I-08",
+      "I-09",
+      "I-12",
+      "L-03",
+      "L-04",
+      "L-05",
+      "L-06",
+      "L-08",
+      "L-10",
+      "L-15",
+      "L-16",
+      "L-17",
+      "L-22",
+      "L-29",
+      "L-36",
+      "L-37",
+      "L-38",
+      "L-39",
+      "U-02",
+      "U-10"
+    ],
+    "rules_by_id": {
+      "A-01": {
+        "category": "AMBIGUITY",
+        "files": 58,
+        "occurrences": 293
+      },
+      "A-02": {
+        "category": "AMBIGUITY",
+        "files": 18,
+        "occurrences": 57
+      },
+      "A-03": {
+        "category": "AMBIGUITY",
+        "files": 4,
+        "occurrences": 4
+      },
+      "A-04": {
+        "category": "AMBIGUITY",
+        "files": 60,
+        "occurrences": 236
+      },
+      "A-05": {
+        "category": "AMBIGUITY",
+        "files": 6,
+        "occurrences": 17
+      },
+      "A-06": {
+        "category": "AMBIGUITY",
+        "files": 113,
+        "occurrences": 438
+      },
+      "A-07": {
+        "category": "AMBIGUITY",
+        "files": 410,
+        "occurrences": 1587
+      },
+      "A-08": {
+        "category": "AMBIGUITY",
+        "files": 6166,
+        "occurrences": 270555
+      },
+      "A-09": {
+        "category": "AMBIGUITY",
+        "files": 3833,
+        "occurrences": 57991
+      },
+      "A-10": {
+        "category": "AMBIGUITY",
+        "files": 2,
+        "occurrences": 2
+      },
+      "A-11": {
+        "category": "AMBIGUITY",
+        "files": 50,
+        "occurrences": 180
+      },
+      "A-12": {
+        "category": "AMBIGUITY",
+        "files": 10,
+        "occurrences": 19
+      },
+      "A-13": {
+        "category": "AMBIGUITY",
+        "files": 2933,
+        "occurrences": 6707
+      },
+      "A-14": {
+        "category": "AMBIGUITY",
+        "files": 6194,
+        "occurrences": 144603
+      },
+      "A-15": {
+        "category": "AMBIGUITY",
+        "files": 3,
+        "occurrences": 39
+      },
+      "A-16": {
+        "category": "AMBIGUITY",
+        "files": 45,
+        "occurrences": 332
+      },
+      "A-17": {
+        "category": "AMBIGUITY",
+        "files": 270,
+        "occurrences": 1832
+      },
+      "A-18": {
+        "category": "AMBIGUITY",
+        "files": 1,
+        "occurrences": 2
+      },
+      "A-19": {
+        "category": "AMBIGUITY",
+        "files": 9028,
+        "occurrences": 74104
+      },
+      "A-20": {
+        "category": "AMBIGUITY",
+        "files": 35011,
+        "occurrences": 15299514
+      },
+      "A-21": {
+        "category": "AMBIGUITY",
+        "files": 16605,
+        "occurrences": 265164
+      },
+      "A-22": {
+        "category": "AMBIGUITY",
+        "files": 1,
+        "occurrences": 1
+      },
+      "A-23": {
+        "category": "AMBIGUITY",
+        "files": 161,
+        "occurrences": 863
+      },
+      "A-24": {
+        "category": "AMBIGUITY",
+        "files": 1,
+        "occurrences": 1
+      },
+      "A-25": {
+        "category": "AMBIGUITY",
+        "files": 1326,
+        "occurrences": 8948
+      },
+      "A-26": {
+        "category": "AMBIGUITY",
+        "files": 35018,
+        "occurrences": 2880437
+      },
+      "A-27": {
+        "category": "AMBIGUITY",
+        "files": 4,
+        "occurrences": 4
+      },
+      "A-28": {
+        "category": "AMBIGUITY",
+        "files": 35123,
+        "occurrences": 35123
+      },
+      "I-01": {
+        "category": "INVENTION",
+        "files": 35123,
+        "occurrences": 35123
+      },
+      "I-02": {
+        "category": "INVENTION",
+        "files": 27888,
+        "occurrences": 6025849
+      },
+      "I-03": {
+        "category": "INVENTION",
+        "files": 35123,
+        "occurrences": 35123
+      },
+      "I-04": {
+        "category": "INVENTION",
+        "files": 35123,
+        "occurrences": 35123
+      },
+      "I-05": {
+        "category": "INVENTION",
+        "files": 16178,
+        "occurrences": 246413
+      },
+      "I-06": {
+        "category": "INVENTION",
+        "files": 16178,
+        "occurrences": 246413
+      },
+      "I-07": {
+        "category": "INVENTION",
+        "files": 35123,
+        "occurrences": 35123
+      },
+      "I-08": {
+        "category": "INVENTION",
+        "files": 0,
+        "occurrences": 0
+      },
+      "I-09": {
+        "category": "INVENTION",
+        "files": 0,
+        "occurrences": 0
+      },
+      "I-10": {
+        "category": "INVENTION",
+        "files": 410,
+        "occurrences": 1587
+      },
+      "I-11": {
+        "category": "INVENTION",
+        "files": 60,
+        "occurrences": 235
+      },
+      "I-12": {
+        "category": "INVENTION",
+        "files": 0,
+        "occurrences": 0
+      },
+      "I-13": {
+        "category": "INVENTION",
+        "files": 9028,
+        "occurrences": 74104
+      },
+      "I-14": {
+        "category": "INVENTION",
+        "files": 6194,
+        "occurrences": 85547
+      },
+      "L-01": {
+        "category": "LOSS",
+        "files": 9167,
+        "occurrences": 75691
+      },
+      "L-02": {
+        "category": "LOSS",
+        "files": 4,
+        "occurrences": 18
+      },
+      "L-03": {
+        "category": "LOSS",
+        "files": 0,
+        "occurrences": 0
+      },
+      "L-04": {
+        "category": "LOSS",
+        "files": 0,
+        "occurrences": 0
+      },
+      "L-05": {
+        "category": "LOSS",
+        "files": 0,
+        "occurrences": 0
+      },
+      "L-06": {
+        "category": "LOSS",
+        "files": 0,
+        "occurrences": 0
+      },
+      "L-07": {
+        "category": "LOSS",
+        "files": 4,
+        "occurrences": 4
+      },
+      "L-08": {
+        "category": "LOSS",
+        "files": 0,
+        "occurrences": 0
+      },
+      "L-09": {
+        "category": "LOSS",
+        "files": 2,
+        "occurrences": 7
+      },
+      "L-10": {
+        "category": "LOSS",
+        "files": 0,
+        "occurrences": 0
+      },
+      "L-11": {
+        "category": "LOSS",
+        "files": 23,
+        "occurrences": 47
+      },
+      "L-12": {
+        "category": "LOSS",
+        "files": 1,
+        "occurrences": 1
+      },
+      "L-13": {
+        "category": "LOSS",
+        "files": 120,
+        "occurrences": 685
+      },
+      "L-14": {
+        "category": "LOSS",
+        "files": 325,
+        "occurrences": 2920
+      },
+      "L-15": {
+        "category": "LOSS",
+        "files": 0,
+        "occurrences": 0
+      },
+      "L-16": {
+        "category": "LOSS",
+        "files": 0,
+        "occurrences": 0
+      },
+      "L-17": {
+        "category": "LOSS",
+        "files": 0,
+        "occurrences": 0
+      },
+      "L-18": {
+        "category": "LOSS",
+        "files": 392,
+        "occurrences": 1480
+      },
+      "L-19": {
+        "category": "LOSS",
+        "files": 209,
+        "occurrences": 447
+      },
+      "L-20": {
+        "category": "LOSS",
+        "files": 5,
+        "occurrences": 8
+      },
+      "L-21": {
+        "category": "LOSS",
+        "files": 10,
+        "occurrences": 19
+      },
+      "L-22": {
+        "category": "LOSS",
+        "files": 0,
+        "occurrences": 0
+      },
+      "L-23": {
+        "category": "LOSS",
+        "files": 20,
+        "occurrences": 102
+      },
+      "L-24": {
+        "category": "LOSS",
+        "files": 20,
+        "occurrences": 102
+      },
+      "L-25": {
+        "category": "LOSS",
+        "files": 120,
+        "occurrences": 533
+      },
+      "L-26": {
+        "category": "LOSS",
+        "files": 120,
+        "occurrences": 533
+      },
+      "L-27": {
+        "category": "LOSS",
+        "files": 8,
+        "occurrences": 25
+      },
+      "L-28": {
+        "category": "LOSS",
+        "files": 2933,
+        "occurrences": 6707
+      },
+      "L-29": {
+        "category": "LOSS",
+        "files": 0,
+        "occurrences": 0
+      },
+      "L-30": {
+        "category": "LOSS",
+        "files": 7,
+        "occurrences": 17
+      },
+      "L-31": {
+        "category": "LOSS",
+        "files": 14,
+        "occurrences": 128
+      },
+      "L-32": {
+        "category": "LOSS",
+        "files": 48,
+        "occurrences": 267
+      },
+      "L-33": {
+        "category": "LOSS",
+        "files": 6,
+        "occurrences": 7
+      },
+      "L-34": {
+        "category": "LOSS",
+        "files": 68,
+        "occurrences": 910
+      },
+      "L-35": {
+        "category": "LOSS",
+        "files": 943,
+        "occurrences": 37862
+      },
+      "L-36": {
+        "category": "LOSS",
+        "files": 0,
+        "occurrences": 0
+      },
+      "L-37": {
+        "category": "LOSS",
+        "files": 0,
+        "occurrences": 0
+      },
+      "L-38": {
+        "category": "LOSS",
+        "files": 0,
+        "occurrences": 0
+      },
+      "L-39": {
+        "category": "LOSS",
+        "files": 0,
+        "occurrences": 0
+      },
+      "L-40": {
+        "category": "LOSS",
+        "files": 3322,
+        "occurrences": 17310
+      },
+      "L-41": {
+        "category": "LOSS",
+        "files": 2842,
+        "occurrences": 9108
+      },
+      "L-42": {
+        "category": "LOSS",
+        "files": 1,
+        "occurrences": 1
+      },
+      "L-43": {
+        "category": "LOSS",
+        "files": 1,
+        "occurrences": 2
+      },
+      "L-44": {
+        "category": "LOSS",
+        "files": 1,
+        "occurrences": 2
+      },
+      "L-45": {
+        "category": "LOSS",
+        "files": 12,
+        "occurrences": 62
+      },
+      "L-46": {
+        "category": "LOSS",
+        "files": 12,
+        "occurrences": 62
+      },
+      "L-47": {
+        "category": "LOSS",
+        "files": 1,
+        "occurrences": 2
+      },
+      "L-48": {
+        "category": "LOSS",
+        "files": 1326,
+        "occurrences": 8948
+      },
+      "L-49": {
+        "category": "LOSS",
+        "files": 35123,
+        "occurrences": 35123
+      },
+      "L-50": {
+        "category": "LOSS",
+        "files": 35123,
+        "occurrences": 35123
+      },
+      "L-51": {
+        "category": "LOSS",
+        "files": 17894,
+        "occurrences": 17894
+      },
+      "L-52": {
+        "category": "LOSS",
+        "files": 35123,
+        "occurrences": 35123
+      },
+      "L-53": {
+        "category": "LOSS",
+        "files": 32250,
+        "occurrences": 32250
+      },
+      "S-01": {
+        "category": "STRUCTURAL",
+        "files": 4,
+        "occurrences": 4
+      },
+      "S-02": {
+        "category": "STRUCTURAL",
+        "files": 58,
+        "occurrences": 232
+      },
+      "S-03": {
+        "category": "STRUCTURAL",
+        "files": 2933,
+        "occurrences": 6707
+      },
+      "S-04": {
+        "category": "STRUCTURAL",
+        "files": 60,
+        "occurrences": 235
+      },
+      "S-05": {
+        "category": "STRUCTURAL",
+        "files": 6166,
+        "occurrences": 137661
+      },
+      "S-06": {
+        "category": "STRUCTURAL",
+        "files": 1326,
+        "occurrences": 8948
+      },
+      "S-07": {
+        "category": "STRUCTURAL",
+        "files": 6194,
+        "occurrences": 85547
+      },
+      "S-08": {
+        "category": "STRUCTURAL",
+        "files": 35011,
+        "occurrences": 2785942
+      },
+      "U-01": {
+        "category": "UNSUPPORTED",
+        "files": 9,
+        "occurrences": 41
+      },
+      "U-02": {
+        "category": "UNSUPPORTED",
+        "files": 0,
+        "occurrences": 0
+      },
+      "U-03": {
+        "category": "UNSUPPORTED",
+        "files": 1,
+        "occurrences": 1
+      },
+      "U-04": {
+        "category": "UNSUPPORTED",
+        "files": 1,
+        "occurrences": 2
+      },
+      "U-05": {
+        "category": "UNSUPPORTED",
+        "files": 5,
+        "occurrences": 22
+      },
+      "U-06": {
+        "category": "UNSUPPORTED",
+        "files": 299,
+        "occurrences": 4708
+      },
+      "U-07": {
+        "category": "UNSUPPORTED",
+        "files": 24,
+        "occurrences": 141
+      },
+      "U-08": {
+        "category": "UNSUPPORTED",
+        "files": 50,
+        "occurrences": 180
+      },
+      "U-09": {
+        "category": "UNSUPPORTED",
+        "files": 1,
+        "occurrences": 1
+      },
+      "U-10": {
+        "category": "UNSUPPORTED",
+        "files": 0,
+        "occurrences": 0
+      },
+      "U-11": {
+        "category": "UNSUPPORTED",
+        "files": 2,
+        "occurrences": 2
+      },
+      "U-12": {
+        "category": "UNSUPPORTED",
+        "files": 11,
+        "occurrences": 96
+      },
+      "U-13": {
+        "category": "UNSUPPORTED",
+        "files": 500,
+        "occurrences": 5031
+      },
+      "U-14": {
+        "category": "UNSUPPORTED",
+        "files": 40,
+        "occurrences": 142
+      },
+      "U-15": {
+        "category": "UNSUPPORTED",
+        "files": 161,
+        "occurrences": 863
+      }
+    }
+  },
+  "top_errors": [
+    {
+      "message": "unsupported inline kind: figure",
+      "count": 460,
+      "samples": [
+        {
+          "corpus": "aozora2html-adapter",
+          "path": "000009_226-7771d96568b3.json"
+        },
+        {
+          "corpus": "aozora2html-adapter",
+          "path": "000009_50711-f70596fd94c9.json"
+        },
+        {
+          "corpus": "aozora2html-adapter",
+          "path": "000009_50712-3bd98c23f17b.json"
+        },
+        {
+          "corpus": "aozora2html-adapter",
+          "path": "000009_50713-8c9159c8c915.json"
+        },
+        {
+          "corpus": "aozora2html-adapter",
+          "path": "000009_50714-588859399991.json"
+        }
+      ]
+    }
+  ],
+  "failure_samples": [
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000009_226-7771d96568b3.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000009_50711-f70596fd94c9.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000009_50712-3bd98c23f17b.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000009_50713-8c9159c8c915.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000009_50714-588859399991.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000009_50715-0bd4eab2b77d.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000009_50716-4a0d93059ac8.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000009_50717-0eeb5853dc3a.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000009_50718-3bd33a2d1f82.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000009_54910-42cf7cd96173.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000009_54911-2cb75e442e4d.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000009_54912-7ebf88db448d.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000009_54913-d76c2d5a30f2.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000009_54914-e26a90bf5379.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000009_54915-01f287655c90.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000009_55881-f4df11665cda.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000009_55882-1cadf9cd2bfd.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000009_57322-eb1ac8e18a2d.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000009_61393-46f69ce5ba94.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000009_61394-7bfd13580c25.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000009_8-5db3c281b807.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000014_728-af8280acaa59.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000019_194-5219b1146dad.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000019_42378-fd25eeedeb58.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000019_42379-2c7b3481e08a.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000019_42380-e06a90ced089.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000019_42381-e359d7f661b1.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000019_42382-c81f40a971a8.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000019_42383-b9c20f2eaa0d.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000019_42384-efc54318f404.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000019_42385-fe87380e7e80.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000019_42387-a4296dd29b5b.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000019_44423-c9eca98ed7aa.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000019_46318-23650845f06c.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000019_46319-90f61566f086.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000019_58861-bf697ebc4b79.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000019_62693-2ece272dce7e.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000025_1144-dc8e42a7bbde.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000025_61236-2e637e23447b.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000034_55507-30a9658433b4.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000040_47287-6819a6d8336a.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000042_1684-e38fc64b1764.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000042_24394-b2136b763458.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000042_2441-f3f17aaff217.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000042_42702-7d3c7ce67ced.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000042_42705-3d7bc3b96c41.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000051_50021-da59112a0542.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000058_57440-fd9d6f0c6c51.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000061_510-7c87649c3a47.json",
+      "message": "unsupported inline kind: figure"
+    },
+    {
+      "corpus": "aozora2html-adapter",
+      "path": "000063_385-d4fb3dee4ba1.json",
+      "message": "unsupported inline kind: figure"
+    }
+  ]
+}

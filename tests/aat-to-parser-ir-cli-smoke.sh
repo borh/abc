@@ -83,3 +83,28 @@ jsonschema.validate(bundle, bundle_schema)
 for record in bundle["records"]:
     jsonschema.validate(record, record_schema)
 PY
+
+audit_dir="$out_dir/audit-corpus"
+mkdir -p "$audit_dir"
+cp "$aat" "$audit_dir/pass.aat.json"
+
+audit_args=(
+  audit-corpus
+  --aat-dir "$audit_dir"
+  --mapping "$repo_root/data/aat-to-parser-ir-mapping-v1.json"
+  --summary-json "$out_dir/audit-summary.json"
+  --report-md "$out_dir/audit-report.md"
+  --jobs 2
+  --abc-root "$abc_root"
+)
+
+if [ -n "${AB_AAT_TO_PARSER_IR_BIN:-}" ]; then
+  "$AB_AAT_TO_PARSER_IR_BIN" "${audit_args[@]}"
+else
+  "${CARGO:-cargo}" "${cargo_args[@]}" run --package ab-aat-to-parser-ir -- "${audit_args[@]}"
+fi
+
+jq -e '.totals.files_attempted == 1' "$out_dir/audit-summary.json"
+jq -e '.totals.files_succeeded == 1' "$out_dir/audit-summary.json"
+jq -e '.totals.files_failed == 0' "$out_dir/audit-summary.json"
+grep -n 'Full-Corpus AAT Parser-IR Conversion Audit' "$out_dir/audit-report.md"

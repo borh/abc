@@ -1,10 +1,10 @@
 use std::path::PathBuf;
 
-use ab_aat_to_parser_ir::{
-    ConversionOptions, ConversionRequest, MappingDocument, SchemaSet, convert,
-};
+use ab_aat_to_parser_ir::{ConversionOptions, MappingDocument, PreparedConverter, SchemaSet};
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
+
+mod audit;
 
 #[derive(Debug, Parser)]
 struct Args {
@@ -23,6 +23,20 @@ enum Command {
         parser_ir_out: PathBuf,
         #[arg(long)]
         divergence_out: PathBuf,
+        #[arg(long)]
+        abc_root: Option<PathBuf>,
+    },
+    AuditCorpus {
+        #[arg(long = "aat-dir", required = true)]
+        aat_dirs: Vec<PathBuf>,
+        #[arg(long)]
+        mapping: PathBuf,
+        #[arg(long)]
+        summary_json: PathBuf,
+        #[arg(long)]
+        report_md: PathBuf,
+        #[arg(long, default_value_t = 0)]
+        jobs: usize,
         #[arg(long)]
         abc_root: Option<PathBuf>,
     },
@@ -45,12 +59,8 @@ fn main() -> Result<()> {
             let aat = ab_aat_to_parser_ir::schema::read_json(&aat)?;
             let mapping = MappingDocument::from_path(&mapping)?;
             let schemas = SchemaSet::load(&repo_root, &abc_root)?;
-            let output = convert(ConversionRequest {
-                aat,
-                mapping,
-                schemas,
-                options: ConversionOptions::default(),
-            })?;
+            let output = PreparedConverter::new(mapping, schemas)?
+                .convert(aat, ConversionOptions::default())?;
             std::fs::write(
                 parser_ir_out,
                 serde_json::to_string_pretty(&output.parser_ir)? + "\n",
@@ -59,6 +69,31 @@ fn main() -> Result<()> {
                 divergence_out,
                 serde_json::to_string_pretty(&output.divergence_bundle)? + "\n",
             )?;
+        }
+        Command::AuditCorpus {
+            aat_dirs,
+            mapping,
+            summary_json,
+            report_md,
+            jobs,
+            abc_root,
+        } => {
+            let repo_root = resolve_repo_root(&mapping)?;
+            let summary = audit::run_audit(audit::CorpusAuditConfig {
+                aat_dirs,
+                mapping_path: mapping,
+                summary_json,
+                report_md,
+                abc_root,
+                repo_root,
+                jobs,
+            })?;
+            eprintln!(
+                "audited {} AAT files: {} succeeded, {} failed",
+                summary.files_attempted(),
+                summary.files_succeeded(),
+                summary.files_failed()
+            );
         }
     }
     Ok(())

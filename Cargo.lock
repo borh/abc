@@ -10,6 +10,7 @@ dependencies = [
  "anyhow",
  "clap",
  "jsonschema",
+ "rayon",
  "regex",
  "serde",
  "serde_json",

@@ -522,6 +522,84 @@ fn cli_convert_writes_parser_ir_and_divergence_bundle() {
 }
 
 #[test]
+fn cli_audit_corpus_reports_successes_and_failures() {
+    let repo = repo_root();
+    let abc = abc_root(&repo);
+    let temp = tempfile::tempdir().unwrap();
+    let aat_dir = temp.path().join("aat");
+    std::fs::create_dir_all(&aat_dir).unwrap();
+    let summary = temp.path().join("summary.json");
+    let report = temp.path().join("report.md");
+
+    std::fs::write(
+        aat_dir.join("pass.aat.json"),
+        r#"{
+  "version": 1,
+  "work_id": "audit-pass",
+  "meta": {
+    "adapter": "fixture",
+    "adapter_version": "fixture 0.1.0",
+    "source_encoding": "utf-8",
+    "source_hash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+    "parse_complete": true,
+    "warnings": []
+  },
+  "blocks": [{"kind": "paragraph", "content": [{"kind": "text", "value": "A"}]}]
+}"#,
+    )
+    .unwrap();
+    std::fs::write(
+        aat_dir.join("fail.aat.json"),
+        r#"{
+  "version": 1,
+  "work_id": "audit-fail",
+  "meta": {
+    "adapter": "fixture",
+    "adapter_version": "fixture 0.1.0",
+    "source_encoding": "utf-8",
+    "source_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "parse_complete": true,
+    "warnings": []
+  },
+  "blocks": [{"kind": "quote_block", "children": [{"kind": "paragraph", "content": [{"kind": "text", "value": "Q"}]}]}]
+}"#,
+    )
+    .unwrap();
+
+    let status = std::process::Command::new(env!("CARGO_BIN_EXE_ab-aat-to-parser-ir"))
+        .arg("audit-corpus")
+        .arg("--aat-dir")
+        .arg(&aat_dir)
+        .arg("--mapping")
+        .arg(repo.join("data/aat-to-parser-ir-mapping-v1.json"))
+        .arg("--summary-json")
+        .arg(&summary)
+        .arg("--report-md")
+        .arg(&report)
+        .arg("--jobs")
+        .arg("2")
+        .arg("--abc-root")
+        .arg(abc)
+        .status()
+        .unwrap();
+
+    assert!(status.success());
+    let summary: Value = ab_aat_to_parser_ir::schema::read_json(&summary).unwrap();
+    assert_eq!(summary.pointer("/totals/files_attempted"), Some(&json!(2)));
+    assert_eq!(summary.pointer("/totals/files_succeeded"), Some(&json!(1)));
+    assert_eq!(summary.pointer("/totals/files_failed"), Some(&json!(1)));
+    assert_eq!(
+        summary
+            .pointer("/top_errors/0/count")
+            .and_then(Value::as_u64),
+        Some(1)
+    );
+    assert!(report.is_file());
+    let report_text = std::fs::read_to_string(&report).unwrap();
+    assert!(report_text.contains("Full-Corpus AAT Parser-IR Conversion Audit"));
+}
+
+#[test]
 fn cli_default_roots_follow_mapping_path_not_current_directory() {
     let repo = repo_root();
     let temp = tempfile::tempdir().unwrap();

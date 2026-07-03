@@ -11,6 +11,9 @@ __pycache__/
 # Local scratch directory for benchmark/run outputs (kept out of /tmp/)
 scratch/
 
+# Local worktrees (isolated workspaces)
+.worktrees/
+
 # Local tool state
 .cargo/.*
 .cargo/git/

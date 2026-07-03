@@ -8,6 +8,25 @@
   "properties": {
     "schema_id": { "type": "string" },
     "schema_hash": { "$ref": "#/$defs/hash" },
+    "derived_from": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": [
+        "aat_version",
+        "aat_adapter",
+        "mapping_id",
+        "mapping_version",
+        "mapping_schema_hash"
+      ],
+      "properties": {
+        "aat_version": { "type": "integer", "minimum": 1 },
+        "aat_adapter": { "type": "string" },
+        "aat_adapter_version": { "type": ["string", "null"] },
+        "mapping_id": { "type": "string", "format": "uri" },
+        "mapping_version": { "type": "string" },
+        "mapping_schema_hash": { "$ref": "#/$defs/hash" }
+      }
+    },
     "source": {
       "type": "object",
       "required": ["work_content_hash", "encoding", "normalization"],

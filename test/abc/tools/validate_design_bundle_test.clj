@@ -155,9 +155,9 @@
 (deftest schema-hash-errors-test
   (is (empty?
        (validate/schema-hash-errors
-        {"parser_ir_schema_hash" "sha256:b22d3f24676d443972a543305a2536783762d6a102c42b2efafbf92849d16f13"
+        {"parser_ir_schema_hash" "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"
          "diagnostic_schema_hash" "sha256:e21ef2abdbf64b6fc920b4ef9a3df0e426b7bcc1cad0a6bbdd654f41e8ff302d"})))
-  (is (= ["ab-validator parser_ir_schema_hash sha256:0000000000000000000000000000000000000000000000000000000000000004 does not match ABC parser IR schema hash sha256:b22d3f24676d443972a543305a2536783762d6a102c42b2efafbf92849d16f13"
+  (is (= ["ab-validator parser_ir_schema_hash sha256:0000000000000000000000000000000000000000000000000000000000000004 does not match ABC parser IR schema hash sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"
           "ab-validator diagnostic_schema_hash sha256:0000000000000000000000000000000000000000000000000000000000000008 does not match ABC diagnostic schema hash sha256:e21ef2abdbf64b6fc920b4ef9a3df0e426b7bcc1cad0a6bbdd654f41e8ff302d"]
          (validate/schema-hash-errors
           {"parser_ir_schema_hash" (files/example-hash "04")
@@ -166,10 +166,24 @@
 (deftest parser-ir-schema-hash-errors-test
   (is (empty?
        (validate/parser-ir-schema-hash-errors
-        {"schema_hash" "sha256:b22d3f24676d443972a543305a2536783762d6a102c42b2efafbf92849d16f13"})))
-  (is (= ["ab-validator parser IR schema_hash sha256:0000000000000000000000000000000000000000000000000000000000000004 does not match ABC parser IR schema hash sha256:b22d3f24676d443972a543305a2536783762d6a102c42b2efafbf92849d16f13"]
+        {"schema_hash" "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"})))
+  (is (= ["ab-validator parser IR schema_hash sha256:0000000000000000000000000000000000000000000000000000000000000004 does not match ABC parser IR schema hash sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"]
          (validate/parser-ir-schema-hash-errors
           {"schema_hash" (files/example-hash "04")}))))
+
+(deftest parser-ir-schema-accepts-derived-from-test
+  (testing "AAT-derived parser IR may record mapping provenance"
+    (let [schema (files/read-json "schemas/parser-ir.schema.json")
+          parser-ir (files/read-json "examples/ab-validator-output/parser-ir.json")
+          derived-from {"aat_version" 1
+                        "aat_adapter" "aozora2html"
+                        "aat_adapter_version" "aozora2html-adapter 0.1.0 gem-3.0.1"
+                        "mapping_id" "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1"
+                        "mapping_version" "1.0.0"
+                        "mapping_schema_hash" (files/example-hash "09")}]
+      (is (nil? (validate/validation-errors
+                 schema
+                 (assoc parser-ir "derived_from" derived-from)))))))
 
 (deftest validate-shacl-smoke-test
   (testing "validate-design-bundle SHACL pass conforms for the example success manifest"

@@ -10,14 +10,18 @@ from collections import Counter, defaultdict
 # import the probe mapper as a module
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import map as mapper
+import mapping_doc
 
 AAT_DIR = "/home/bor/Projects/ab-validator/scratch/morph-full-corpus/aats/aozora-rs-adapter"
+MAPPING_OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                           "mapping.generated.aozora-rs.json")
 
 files = sorted(glob.glob(os.path.join(AAT_DIR, "*.json")))
 print(f"scanning {len(files)} real AAT documents", file=sys.stderr)
 
 cat_counter = Counter()              # category -> total entries
 note_counter = Counter()             # (category, aat bucket, parser_ir, note) -> count
+mapping_rule_counter = Counter()     # (category, aat bucket, parser_ir) -> count
 unsupported_bucket_counter = Counter()
 files_with_unsupported = 0
 files_with_any_ledger = 0
@@ -25,6 +29,7 @@ per_file_entry_counts = Counter()    # bucketed entry-count per file
 unsupported_examples = []
 sample_per_cat = defaultdict(list)
 first_path_by_rule = {}
+first_note_by_mapping_rule = {}
 files_failed_to_parse = 0
 total_nodes_emitted = 0
 total_blocks_scanned = 0
@@ -78,9 +83,13 @@ for i, path in enumerate(files):
     for e in ledger_list:
         cat_counter[e["category"]] += 1
         aat_bucket = mapper.aat_pointer_bucket(e["aat"])
-        key = (e["category"], aat_bucket, e["parser_ir"], e["note"][:80])
+        key = (e["category"], aat_bucket, e["parser_ir"], e["note"])
         note_counter[key] += 1
         first_path_by_rule.setdefault(key, e["aat"])
+        mapping_key = (e["category"], aat_bucket, e["parser_ir"])
+        mapping_rule_counter[mapping_key] += 1
+        first_path_by_rule.setdefault(mapping_key, e["aat"])
+        first_note_by_mapping_rule.setdefault(mapping_key, e["note"])
         if e["category"] == "UNSUPPORTED":
             had_unsupported = True
             unsupported_bucket_counter[aat_bucket] += 1
@@ -139,3 +148,11 @@ print("--- sample entry per category ---")
 for cat in ("LOSS", "AMBIGUITY", "INVENTION", "UNSUPPORTED", "STRUCTURAL"):
     for e in sample_per_cat.get(cat, []):
         print(f"  {cat}: {e}")
+
+mapping_document = mapping_doc.build_mapping_document_from_counts(
+    mapping_rule_counter, first_path_by_rule, first_note_by_mapping_rule)
+mapping_doc.write_mapping_document(mapping_document, MAPPING_OUT)
+print()
+print("--- generated mapping document ---")
+print(f"  path: {MAPPING_OUT}")
+print(f"  rules: {len(mapping_document['transform_rule_descriptions'])}")

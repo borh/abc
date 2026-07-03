@@ -190,3 +190,48 @@ The remaining UNSUPPORTED entries are not `style` or warigaki. All three are
 Next inference: I-09 solves the load-bearing node-mapping issue for aozora-rs.
 The residual UNSUPPORTED policy is now a source-encoding/lossiness question,
 not evidence for a broad hand-written AAT node mapping table.
+
+## 8. Follow-up run: source-encoding policy + generated mapping candidate (2026-07-03)
+
+Raw output: `docs/handoffs/_probe-full-corpus-adr0024-i09-encoding-raw.txt`.
+Generated candidate:
+`prototypes/aat-to-parser-ir-probe/mapping.generated.aozora-rs.json`.
+
+Policy change from §7: `windows-31j-lossy` now projects to parser-IR
+`source.encoding = "Shift_JIS"` and records an AMBIGUITY ledger entry. The
+source family is known; only the lossy-decoding qualifier has no parser-IR
+field.
+
+Measured results over the same 17,894 aozora-rs AAT files:
+
+| Metric | Value |
+|---|---:|
+| files scanned | 17,894 |
+| files failed to parse | 0 |
+| files with UNSUPPORTED | 0 |
+| files with warigaki | 0 |
+| total parser-IR nodes emitted | 7,828,615 |
+| total ledger entries across corpus | 4,781,187 |
+
+| Category | Count | % |
+|---|---:|---:|
+| INVENTION | 3,864,599 | 80.8% |
+| STRUCTURAL | 645,618 | 13.5% |
+| LOSS | 159,855 | 3.3% |
+| AMBIGUITY | 111,115 | 2.3% |
+| UNSUPPORTED | 0 | 0.0% |
+
+The generated mapping candidate has 25 observed rule buckets, validates
+against `schemas/aat-parser-ir-mapping.schema.json`, and embeds live schema
+hashes:
+
+- mapping schema hash:
+  `sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4`
+- target parser-IR schema hash:
+  `sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396`
+
+Next inference: for the measured aozora-rs corpus, the mapping table should be
+generated from folded rule buckets, not hand-transcribed from the synthesized
+sample ledger. Unobserved adapter shapes such as `warigaki` remain policy
+questions for aozora2html measurement, not reasons to expand the aozora-rs
+mapping candidate manually.

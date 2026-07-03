@@ -101,10 +101,17 @@ which AAT fields are faithful and which are synthesized.
 
 ### 1.3 Mapping document v1 instance (`ab-validator/data/aat-to-parser-ir-mapping-v1.json`)
 
-The live instance embeds the 27 probe ledger entries as rules. Placeholder
-hashes (`<hash-of-abc-mapping-schema>`, `<hash-of-parser-ir-schema>`) must be
-replaced with the real JCS schema hashes after the dependent schemas are
-finalized (see Task 7, Step 1).
+Historical draft: the live instance embedded the 27 synthesized probe ledger
+entries as rules. **Errata 2026-07-03:** do not hand-transcribe this table as
+the production starting point. The current ABC probe now generates
+`prototypes/aat-to-parser-ir-probe/mapping.generated.aozora-rs.json` from
+folded, measured aozora-rs rule buckets: 25 observed rules, zero UNSUPPORTED,
+live mapping-schema hash
+`sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4`,
+and live parser-IR schema hash
+`sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396`.
+Use the generated candidate as evidence; treat the JSON below as historical
+design context until an ab-validator-owned generator lands.
 
 ```json
 {
@@ -687,7 +694,12 @@ The same check applies to the mapping schema hash.
 
 **Steps:**
 
-- [ ] **Step 1:** Create `data/aat-to-parser-ir-mapping-v1.json` exactly as in §1.3.
+- [ ] **Step 1:** Create `data/aat-to-parser-ir-mapping-v1.json` from a
+  generated rule-bucket candidate, not by hand-copying the historical §1.3
+  table. ABC's current probe candidate is
+  `prototypes/aat-to-parser-ir-probe/mapping.generated.aozora-rs.json`; an
+  ab-validator implementation should regenerate the equivalent from its mapper
+  rules and measured corpus evidence.
   Compute and fill:
   - `mapping_schema_hash` = JCS hash of ABC's `schemas/aat-parser-ir-mapping.schema.json`.
   - `target_parser_ir_schema_hash` = JCS hash of ABC's `schemas/parser-ir.schema.json`.
@@ -724,7 +736,7 @@ The same check applies to the mapping schema hash.
     assert the output validates against ABC's `schemas/parser-ir.schema.json`
     and `schemas/aat-parser-ir-divergence.schema.json`.
   - Assert `warigaki` (and any UNSUPPORTED construct) records a critical-severity divergence in default mode and continues; assert the release-smoke gate (ADR 0006) fails on any critical-severity divergence record. There is no `--strict` flag — strictness is bound to release mode, not a CLI option.
-  - Assert `style` nodes map to `emphasis` (I-09) and produce **zero `style` UNSUPPORTED entries** on a real aozora-rs AAT (full-corpus probe Finding G — the synthesized sample passed but real data exposed the `style` gap). The 2026-07-03 ADR 0024 + I-09 probe leaves three non-style UNSUPPORTED records for `meta.source_encoding=windows-31j-lossy`; treat those as a source-encoding policy question, not a node-mapping failure.
+  - Assert `style` nodes map to `emphasis` (I-09) and produce **zero UNSUPPORTED entries** on a real aozora-rs AAT. The 2026-07-03 source-encoding policy probe maps `meta.source_encoding=windows-31j-lossy` to parser-IR `Shift_JIS` with an AMBIGUITY sidecar entry, so the measured aozora-rs corpus now has zero UNSUPPORTED records.
 - [ ] **Step 7:** Run:
   ```bash
   cargo test -p ab-aat-to-parser-ir
@@ -872,11 +884,11 @@ refuted three assumptions and confirmed two. Applied corrections:
    synthesized 27-entry ledger (Finding C).
 
 5. **Task 7 Step 6 regression assertion strengthened**: must assert zero
-   `style` UNSUPPORTED on a real aozora-rs AAT after I-09, not just the
-   synthesized sample (which passed despite the `style` gap). Follow-up
-   measurement on 2026-07-03 leaves three non-style UNSUPPORTED records for
-   `meta.source_encoding=windows-31j-lossy`, so the honest target is
-   "style fixed; source-encoding lossiness still unresolved."
+   UNSUPPORTED on a real aozora-rs AAT after I-09 and the source-encoding
+   policy update, not just the synthesized sample. Follow-up measurement on
+   2026-07-03 maps `meta.source_encoding=windows-31j-lossy` to parser-IR
+   `Shift_JIS` with an AMBIGUITY sidecar entry, leaving zero measured
+   aozora-rs UNSUPPORTED records.
 
 Deferred, unchanged: warigaki-in-parser-IR vocabulary decision; R3
 null-dimension (covered by canonicalization fixture, not a solver).

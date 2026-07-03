@@ -31,9 +31,14 @@ PARSER_IR_SCHEMA_HASH = "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c
 
 ENC_MAP = {
     "utf-8": "UTF-8",
-    "utf-8-bom": None,        # UNSUPPORTED target enum
+    "utf-8-bom": "UTF-8",
     "windows-31j": "Shift_JIS",
-    "windows-31j-lossy": None,  # UNSUPPORTED target enum
+    "windows-31j-lossy": "Shift_JIS",
+}
+
+ENC_DIVERGENCE = {
+    "utf-8-bom": "source encoding has a BOM marker; parser-IR records only UTF-8",
+    "windows-31j-lossy": "source decoding was lossy; parser-IR records only the Shift_JIS source family",
 }
 
 
@@ -43,7 +48,8 @@ def ledger(category, aat, target, note):
 
 def aat_pointer_bucket(pointer):
     """Fold occurrence-specific paths into rule-ish AAT pointers for aggregation."""
-    return re.sub(r"\[[0-9]+\]", "[]", pointer.split("=", 1)[0])
+    bucket = re.sub(r"\[[0-9]+\]", "[]", pointer)
+    return re.sub(r"^([A-Za-z0-9_.]+)=.*$", r"\1", bucket)
 
 
 def map_span(aat_span, offset):
@@ -282,6 +288,9 @@ def map_meta_source(aat, ledger_list):
         ledger_list.append(ledger("UNSUPPORTED", f"meta.source_encoding={enc_in}",
                                   "source.encoding", f"encoding '{enc_in}' has no parser-IR enum value"))
         enc_out = "unknown"
+    elif enc_in in ENC_DIVERGENCE:
+        ledger_list.append(ledger("AMBIGUITY", f"meta.source_encoding={enc_in}",
+                                  "source.encoding", ENC_DIVERGENCE[enc_in]))
     # work_content_hash vs source_hash: different semantics (content vs raw source bytes)
     ledger_list.append(ledger("AMBIGUITY", "meta.source_hash",
                               "source.work_content_hash",

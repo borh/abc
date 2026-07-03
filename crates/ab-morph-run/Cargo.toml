@@ -28,6 +28,10 @@ zstd.workspace = true
 criterion.workspace = true
 tempfile.workspace = true
 
+[features]
+# Deterministic fixture analyzers for package integration and binary tests.
+test-analyzer = []
+
 [[bench]]
 name = "analyze_aat"
 harness = false

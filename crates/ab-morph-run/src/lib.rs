@@ -219,9 +219,9 @@ enum AnalyzerSpec {
     Vibrato(Option<String>),
     Vaporetto(Option<String>),
     Sudachi(SudachiMode),
-    #[cfg(test)]
+    #[cfg(any(test, feature = "test-analyzer"))]
     TestSingle,
-    #[cfg(test)]
+    #[cfg(any(test, feature = "test-analyzer"))]
     TestSplit,
 }
 
@@ -246,9 +246,9 @@ impl AnalyzerSpec {
                         "sudachi-a" => Ok(Self::Sudachi(SudachiMode::A)),
                         "sudachi-b" => Ok(Self::Sudachi(SudachiMode::B)),
                         "sudachi-c" => Ok(Self::Sudachi(SudachiMode::C)),
-                        #[cfg(test)]
+                        #[cfg(any(test, feature = "test-analyzer"))]
                         "test:single" => Ok(Self::TestSingle),
-                        #[cfg(test)]
+                        #[cfg(any(test, feature = "test-analyzer"))]
                         "test:split" => Ok(Self::TestSplit),
                         other => bail!("unknown analyzer `{other}`"),
                     }
@@ -266,9 +266,9 @@ impl AnalyzerSpec {
             Self::Sudachi(SudachiMode::A) => "sudachi-a".to_owned(),
             Self::Sudachi(SudachiMode::B) => "sudachi-b".to_owned(),
             Self::Sudachi(SudachiMode::C) => "sudachi-c".to_owned(),
-            #[cfg(test)]
+            #[cfg(any(test, feature = "test-analyzer"))]
             Self::TestSingle => "test:single".to_owned(),
-            #[cfg(test)]
+            #[cfg(any(test, feature = "test-analyzer"))]
             Self::TestSplit => "test:split".to_owned(),
         }
     }
@@ -278,7 +278,7 @@ impl AnalyzerSpec {
             Self::Vibrato(_) => "vibrato",
             Self::Vaporetto(_) => "vaporetto",
             Self::Sudachi(_) => "sudachi",
-            #[cfg(test)]
+            #[cfg(any(test, feature = "test-analyzer"))]
             Self::TestSingle | Self::TestSplit => "test",
         }
     }
@@ -292,9 +292,9 @@ impl AnalyzerSpec {
             Self::Sudachi(SudachiMode::A) => "sudachi-a".to_owned(),
             Self::Sudachi(SudachiMode::B) => "sudachi-b".to_owned(),
             Self::Sudachi(SudachiMode::C) => "sudachi-c".to_owned(),
-            #[cfg(test)]
+            #[cfg(any(test, feature = "test-analyzer"))]
             Self::TestSingle => "test:single".to_owned(),
-            #[cfg(test)]
+            #[cfg(any(test, feature = "test-analyzer"))]
             Self::TestSplit => "test:split".to_owned(),
         }
     }
@@ -403,11 +403,11 @@ fn load_analyzers(specs: &[AnalyzerSpec]) -> Result<Vec<Arc<LoadedAnalyzer>>> {
                     ),
                 )));
             }
-            #[cfg(test)]
+            #[cfg(any(test, feature = "test-analyzer"))]
             AnalyzerSpec::TestSingle => {
                 analyzers.push(Arc::new(LoadedAnalyzer::Test(TestAnalyzerKind::Single)));
             }
-            #[cfg(test)]
+            #[cfg(any(test, feature = "test-analyzer"))]
             AnalyzerSpec::TestSplit => {
                 analyzers.push(Arc::new(LoadedAnalyzer::Test(TestAnalyzerKind::Split)));
             }
@@ -1002,11 +1002,11 @@ enum LoadedAnalyzer {
     Vibrato(VibratoAnalyzer),
     Vaporetto(Box<VaporettoAnalyzer>),
     Sudachi(SudachiAnalyzer),
-    #[cfg(test)]
+    #[cfg(any(test, feature = "test-analyzer"))]
     Test(TestAnalyzerKind),
 }
 
-#[cfg(test)]
+#[cfg(any(test, feature = "test-analyzer"))]
 #[derive(Debug, Clone, Copy)]
 enum TestAnalyzerKind {
     Single,
@@ -1019,9 +1019,9 @@ impl LoadedAnalyzer {
             Self::Vibrato(analyzer) => analyzer.analyzer_id(),
             Self::Vaporetto(analyzer) => analyzer.analyzer_id(),
             Self::Sudachi(analyzer) => analyzer.analyzer_id(),
-            #[cfg(test)]
+            #[cfg(any(test, feature = "test-analyzer"))]
             Self::Test(TestAnalyzerKind::Single) => "test:single",
-            #[cfg(test)]
+            #[cfg(any(test, feature = "test-analyzer"))]
             Self::Test(TestAnalyzerKind::Split) => "test:split",
         }
     }
@@ -1031,13 +1031,13 @@ impl LoadedAnalyzer {
             Self::Vibrato(analyzer) => Ok(analyzer.analyze(document)?),
             Self::Vaporetto(analyzer) => Ok(analyzer.analyze(document)?),
             Self::Sudachi(analyzer) => Ok(analyzer.analyze(document)?),
-            #[cfg(test)]
+            #[cfg(any(test, feature = "test-analyzer"))]
             Self::Test(kind) => Ok(test_analysis(*kind, document)),
         }
     }
 }
 
-#[cfg(test)]
+#[cfg(any(test, feature = "test-analyzer"))]
 fn test_analysis(kind: TestAnalyzerKind, document: &PlainTextDocument) -> Analysis {
     let mut morphemes = Vec::new();
     match kind {
@@ -1072,7 +1072,7 @@ fn test_analysis(kind: TestAnalyzerKind, document: &PlainTextDocument) -> Analys
     }
 }
 
-#[cfg(test)]
+#[cfg(any(test, feature = "test-analyzer"))]
 fn test_morpheme(
     surface: String,
     byte_span: std::ops::Range<usize>,
@@ -1413,7 +1413,7 @@ mod tests {
             vec![input],
             "aat_dir",
             &aat_dir.display().to_string(),
-            &["vibrato".to_owned()],
+            &["test:single".to_owned()],
             &out.join("analyses.jsonl"),
             None,
             Some(&out.join("errors.jsonl")),
@@ -1715,7 +1715,7 @@ mod tests {
         run_analyze_aat(
             None,
             Some(&aat_dir),
-            &["vibrato".to_owned()],
+            &["test:single".to_owned()],
             &analyses,
             Some(&comparisons),
             Some(&errors),
@@ -1751,7 +1751,7 @@ mod tests {
         run_analyze_aat(
             None,
             Some(&aat_dir),
-            &["vibrato".to_owned()],
+            &["test:single".to_owned()],
             &analyses,
             Some(&comparisons),
             Some(&errors),
@@ -1791,7 +1791,7 @@ mod tests {
         run_analyze_aat(
             None,
             Some(&aat_dir),
-            &["vibrato".to_owned()],
+            &["test:single".to_owned()],
             &analyses,
             Some(&comparisons),
             Some(&errors),
@@ -1810,7 +1810,7 @@ mod tests {
         run_analyze_aat(
             None,
             Some(&aat_dir),
-            &["vibrato".to_owned()],
+            &["test:single".to_owned()],
             &analyses,
             Some(&comparisons),
             Some(&errors),
@@ -1848,7 +1848,7 @@ mod tests {
         run_analyze_aat(
             None,
             Some(&aat_dir),
-            &["vibrato".to_owned()],
+            &["test:single".to_owned()],
             &dir.join("analyses.jsonl"),
             Some(&dir.join("comparisons.jsonl")),
             Some(&dir.join("errors.jsonl")),
@@ -1881,7 +1881,7 @@ mod tests {
         run_analyze_aat_with_nway(
             None,
             Some(&aat_dir),
-            &["vibrato".to_owned()],
+            &["test:single".to_owned()],
             &dir.join("analyses.jsonl"),
             None,
             Some(&dir.join("errors.jsonl")),

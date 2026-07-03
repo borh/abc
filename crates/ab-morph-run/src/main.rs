@@ -1879,7 +1879,7 @@ mod tests {
         run_rerun_full(
             &aat_dir,
             &["source-a".to_owned()],
-            &["vibrato".to_owned()],
+            &["test:single".to_owned()],
             &out,
             1,
             None,
@@ -1908,7 +1908,7 @@ mod tests {
         run_rerun_full(
             &aat_dir,
             &["source-a".to_owned()],
-            &["vibrato".to_owned()],
+            &["test:single".to_owned()],
             &out,
             1,
             None,

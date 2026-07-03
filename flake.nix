@@ -288,6 +288,57 @@
           cp -R ${sudachiRustSource}/resources "$out/resources"
         '';
 
+        aozora2htmlCargoDeps = rustPlatform.importCargoLock {
+          lockFile = ./adapters/aozora2html/Cargo.lock;
+        };
+
+        aozora2htmlGem = pkgs.fetchurl {
+          url = "https://rubygems.org/downloads/aozora2html-3.0.1.gem";
+          hash = "sha256-TcEQby6RGtCW8GG8jDIUB55LUoDSvP3tX95BfW3OuEE=";
+        };
+
+        rubyWithAozora2htmlRuntime = pkgs.ruby.withPackages (gems: [
+          gems.rubyzip
+        ]);
+
+        aozora2htmlParser = pkgs.stdenvNoCC.mkDerivation {
+          pname = "aozora2html-parser";
+          version = "3.0.1";
+
+          nativeBuildInputs = [
+            pkgs.makeWrapper
+            rubyWithAozora2htmlRuntime
+          ];
+
+          dontUnpack = true;
+
+          installPhase = ''
+            runHook preInstall
+
+            export HOME="$TMPDIR"
+            gem install \
+              --local \
+              --ignore-dependencies \
+              --install-dir "$out/lib/ruby/gems" \
+              --bindir "$out/libexec/bin" \
+              --no-document \
+              ${aozora2htmlGem}
+
+            substituteInPlace "$out/libexec/bin/aozora2html" \
+              --replace-fail "#! ruby" "#! ${rubyWithAozora2htmlRuntime}/bin/ruby"
+
+            wrapProgram "$out/libexec/bin/aozora2html" \
+              --prefix PATH : "${lib.makeBinPath [ rubyWithAozora2htmlRuntime ]}" \
+              --set GEM_HOME "$out/lib/ruby/gems" \
+              --prefix GEM_PATH : "$out/lib/ruby/gems"
+
+            mkdir -p "$out/bin"
+            ln -s "$out/libexec/bin/aozora2html" "$out/bin/aozora2html"
+
+            runHook postInstall
+          '';
+        };
+
         vibratoDictionaryPreCheck = ''
           if [ -z "''${AB_VIBRATO_DICT:-}" ]; then
             for dir in "${source}/dictionary/compiled" "${source}/dictionary/optimized"; do
@@ -417,8 +468,11 @@
               AB_AOZORA_RS_GAIJI_PDFIUM_DIR = "${pkgs.pdfium-binaries}/lib";
 
               cargoBuildFlags = [ "--workspace" ];
-              cargoTestFlags = [ "--workspace" ];
-              preCheck = vibratoDictionaryPreCheck;
+              cargoTestFlags = [
+                "--workspace"
+                "--features"
+                "ab-morph-run/test-analyzer"
+              ];
               doCheck = true;
             }
           else
@@ -463,6 +517,7 @@
         aozora2htmlRustParityShell = pkgs.writeShellApplication {
           name = "aozora2html-rust-parity";
           runtimeInputs = [
+            pkgs.perl
             rustToolchain
             pythonWithAatSchemaDeps
           ];
@@ -471,7 +526,11 @@
             if [ ! -d "$repo_root/adapters/aozora2html" ]; then
               repo_root="${source}"
             fi
-            cargo build --manifest-path "$repo_root/adapters/aozora2html/Cargo.toml" --release
+            export AB_AOZORA2HTML_BIN="${aozora2htmlParser}/bin/aozora2html"
+            cargo \
+              --config "source.crates-io.replace-with='vendored-sources'" \
+              --config "source.vendored-sources.directory='${aozora2htmlCargoDeps}'" \
+              build --manifest-path "$repo_root/adapters/aozora2html/Cargo.toml" --release --offline
             python3 -m pytest "$repo_root/adapters/aozora2html/tests/test_mapper.py" -vv
           '';
         };
@@ -480,6 +539,7 @@
           pkgs.runCommand "aozora2html-rust-parity-check"
             {
               nativeBuildInputs = [
+                pkgs.perl
                 rustToolchain
                 pythonWithAatSchemaDeps
               ];
@@ -489,7 +549,11 @@
               cp -R "${source}" "$work_dir/source"
               chmod -R +w "$work_dir/source"
               cd "$work_dir/source"
-              cargo build --manifest-path "$work_dir/source/adapters/aozora2html/Cargo.toml" --release
+              export AB_AOZORA2HTML_BIN="${aozora2htmlParser}/bin/aozora2html"
+              cargo \
+                --config "source.crates-io.replace-with='vendored-sources'" \
+                --config "source.vendored-sources.directory='${aozora2htmlCargoDeps}'" \
+                build --manifest-path "$work_dir/source/adapters/aozora2html/Cargo.toml" --release --offline
               python3 -m pytest "$work_dir/source/adapters/aozora2html/tests/test_mapper.py" -vv
               touch "$out"
             '';
@@ -514,6 +578,7 @@
             }
             ''
               export AB_VALIDATOR_DIRECT_PYTHON=1
+              export AB_DB_ROOT="$TMPDIR/ab-validator"
               bash "${source}/tests/aat-oracle-data-schema-smoke.sh"
               touch "$out"
             '';
@@ -538,6 +603,7 @@
             }
             ''
               export AB_VALIDATOR_DIRECT_PYTHON=1
+              export AB_DB_ROOT="$TMPDIR/ab-validator"
               bash "${source}/tests/adapter-fidelity-notes-schema-smoke.sh"
               touch "$out"
             '';

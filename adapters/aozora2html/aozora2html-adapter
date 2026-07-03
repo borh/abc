@@ -5,6 +5,7 @@ REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 GEM_NAME="aozora2html"
 GEM_VERSION="3.0.1"
 GEM_HOME_DIR="${AB_VALIDATOR_GEM_HOME:-/db/ab-validator/gems/aozora2html-$GEM_VERSION}"
+AOZORA2HTML_BIN="${AB_AOZORA2HTML_BIN:-}"
 RUST_MAPPER_BIN="$REPO_ROOT/adapters/aozora2html/target/release/aozora2html-adapter"
 AOZORA2HTML_FLAKE="${REPO_ROOT}#aozora2html"
 
@@ -63,6 +64,11 @@ trap 'rm -f "$stdin_raw" "$parser_sjis_src" "$crlf_src" "$xhtml" "$sjis_src" "$p
 # Capture its exit and let the Rust mapper emit a parse_complete=false envelope so
 # ab-check sees a valid AAT instead of empty stdout.
 run_aozora2html_parser() {
+  if [[ -n "$AOZORA2HTML_BIN" ]]; then
+    "$AOZORA2HTML_BIN" --error-utf8 --use-unicode "$crlf_src" "$xhtml"
+    return
+  fi
+
   nix develop "$AOZORA2HTML_FLAKE" --command bash -lc \
     "set -euo pipefail
      export GEM_HOME='$GEM_HOME_DIR'

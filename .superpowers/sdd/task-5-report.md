@@ -164,3 +164,52 @@ Observed result:
 
 - Exit code: `0`
 - Final line: `design bundle validation ok`
+
+## Controller Follow-Up Fix
+
+### Scope
+
+- Added a regression that the example fixture's referenced `example-gaiji`
+  declaration preserves `:raw-marker "※［＃例字］"`.
+- Updated `gaiji-declaration` so `raw_marker` is preserved whenever present,
+  including referenced gaiji. This prevents Task 6 materialized TEI from
+  producing an empty `<char>` declaration for unresolved referenced gaiji.
+
+### RED
+
+Command:
+
+```bash
+bin/kaocha --focus abc.tools.parser-ir-tei-test
+```
+
+Observed result:
+
+- Exit code: `1`
+- `5 tests, 15 assertions, 1 failures.`
+- Relevant failure: expected `"※［＃例字］"` but actual `:raw-marker` for
+  `example-gaiji` was `nil`.
+
+### GREEN
+
+Focused command:
+
+```bash
+bin/kaocha --focus abc.tools.parser-ir-tei-test --focus abc.tools.tei-header-unit-test
+```
+
+Observed result:
+
+- Exit code: `0`
+- `6 tests, 18 assertions, 0 failures.`
+
+Validation command:
+
+```bash
+nix run .#validate-design-bundle
+```
+
+Observed result:
+
+- Exit code: `0`
+- Final line: `design bundle validation ok`

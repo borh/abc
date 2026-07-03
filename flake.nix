@@ -36,6 +36,11 @@
       flake = false;
     };
 
+    abc-src = {
+      url = "git+file:../abc";
+      flake = false;
+    };
+
     reference-aozora-epub3-src = {
       url = "github:AozoraEpub3-JDK21/AozoraEpub3-JDK21";
       flake = false;
@@ -53,6 +58,7 @@
       reference-aozora2-src,
       reference-aozorabunko-extractor-src,
       aozorabunko-src,
+      abc-src,
       flake-utils,
       rust-overlay,
     }:
@@ -420,6 +426,7 @@
               AB_AOZORA_RS_GAIJI_MENKUTEN_PATH = "${aozoraRsGaijiMenkuten}";
               AB_AOZORA_RS_GAIJI_CHUKI_PDF = "${aozoraRsGaijiChukiPdf}";
               AB_AOZORA_RS_GAIJI_PDFIUM_DIR = "${pkgs.pdfium-binaries}/lib";
+              AB_ABC_ROOT = "${abc-src}";
 
               preCheck = vibratoDictionaryPreCheck;
               doCheck = true;
@@ -466,6 +473,7 @@
               AB_AOZORA_RS_GAIJI_MENKUTEN_PATH = "${aozoraRsGaijiMenkuten}";
               AB_AOZORA_RS_GAIJI_CHUKI_PDF = "${aozoraRsGaijiChukiPdf}";
               AB_AOZORA_RS_GAIJI_PDFIUM_DIR = "${pkgs.pdfium-binaries}/lib";
+              AB_ABC_ROOT = "${abc-src}";
 
               cargoBuildFlags = [ "--workspace" ];
               cargoTestFlags = [
@@ -651,11 +659,78 @@
 
               touch "$out"
             '';
+
+        abAatToParserIr =
+          if hasCargoManifest && hasCargoLock then
+            rustPlatform.buildRustPackage {
+              pname = "ab-aat-to-parser-ir";
+              version = "0.1.0";
+
+              src = source;
+              cargoDeps = abCargoDeps;
+
+              nativeBuildInputs = [
+                pkgs.pkg-config
+                pkgs.zstd
+              ];
+
+              buildInputs = [
+                pkgs.pdfium-binaries
+              ]
+              ++ lib.optionals pkgs.stdenv.isDarwin [
+                pkgs.libiconv
+                pkgs.darwin.apple_sdk.frameworks.Security
+                pkgs.darwin.apple_sdk.frameworks.SystemConfiguration
+              ];
+
+              AB_AOZORA_RS_GAIJI_MENKUTEN_PATH = "${aozoraRsGaijiMenkuten}";
+              AB_AOZORA_RS_GAIJI_CHUKI_PDF = "${aozoraRsGaijiChukiPdf}";
+              AB_AOZORA_RS_GAIJI_PDFIUM_DIR = "${pkgs.pdfium-binaries}/lib";
+              AB_ABC_ROOT = "${abc-src}";
+
+              cargoBuildFlags = [
+                "--package"
+                "ab-aat-to-parser-ir"
+              ];
+              doCheck = false;
+            }
+          else
+            pkgs.writeShellApplication {
+              name = "ab-aat-to-parser-ir";
+              text = ''
+                echo 'Rust workspace not scaffolded' >&2
+                exit 1
+              '';
+            };
+
+        abAatToParserIrCheck =
+          pkgs.runCommand "ab-aat-to-parser-ir-smoke-check"
+            {
+              nativeBuildInputs = [
+                pkgs.jq
+                pythonWithAatSchemaDeps
+              ];
+            }
+            ''
+              work_dir="$(mktemp -d)"
+              cp -R "${source}" "$work_dir/source"
+              chmod -R +w "$work_dir/source"
+              cd "$work_dir/source"
+
+              export TMPDIR="$work_dir/tmp"
+              mkdir -p "$TMPDIR"
+              export AB_ABC_ROOT="${abc-src}"
+              export AB_AAT_TO_PARSER_IR_BIN="${abAatToParserIr}/bin/ab-aat-to-parser-ir"
+
+              bash tests/aat-to-parser-ir-cli-smoke.sh
+              touch "$out"
+            '';
       in
       {
         packages = {
           default = abValidator;
           ab-validator = abValidator;
+          ab-aat-to-parser-ir = abAatToParserIr;
           reference-aozora2 = referenceAozora2;
           reference-aozora-rs = referenceAozoraRs;
           reference-aozora-parser-js = referenceAozoraParserJs;
@@ -677,6 +752,10 @@
           drv = aozora2htmlRustParityShell;
         };
 
+        apps.ab-aat-to-parser-ir = flake-utils.lib.mkApp {
+          drv = abAatToParserIr;
+        };
+
         apps.adapter-fidelity-notes-schema-smoke = flake-utils.lib.mkApp {
           drv = adapterFidelityNotesSchemaSmokeShell;
         };
@@ -691,6 +770,7 @@
           aozora2html-rust-parity = aozora2htmlRustParityCheck;
           adapter-fidelity-notes-schema-smoke = adapterFidelityNotesSchemaSmokeCheck;
           taxonomy-drift = taxonomyDriftCheck;
+          aat-to-parser-ir-smoke = abAatToParserIrCheck;
         };
 
         devShells = {

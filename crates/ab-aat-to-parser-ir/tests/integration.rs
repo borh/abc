@@ -420,3 +420,49 @@ fn converts_checked_in_real_measured_aat_fixtures() {
         validate_value(&schemas.bundle_schema, &output.divergence_bundle, "bundle").unwrap();
     }
 }
+
+#[test]
+fn cli_convert_writes_parser_ir_and_divergence_bundle() {
+    let repo = repo_root();
+    let abc = abc_root(&repo);
+    let temp = tempfile::tempdir().unwrap();
+    let aat = temp.path().join("input.aat.json");
+    let parser_ir = temp.path().join("parser-ir.json");
+    let divergence = temp.path().join("divergence.json");
+    std::fs::write(
+        &aat,
+        r#"{
+  "version": 1,
+  "work_id": "cli",
+  "meta": {
+    "adapter": "fixture",
+    "adapter_version": "fixture 0.1.0",
+    "source_encoding": "utf-8",
+    "source_hash": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+    "parse_complete": true,
+    "warnings": []
+  },
+  "blocks": [{"kind": "paragraph", "content": [{"kind": "text", "value": "A"}]}]
+}"#,
+    )
+    .unwrap();
+
+    let status = std::process::Command::new(env!("CARGO_BIN_EXE_ab-aat-to-parser-ir"))
+        .arg("convert")
+        .arg("--aat")
+        .arg(&aat)
+        .arg("--mapping")
+        .arg(repo.join("data/aat-to-parser-ir-mapping-v1.json"))
+        .arg("--parser-ir-out")
+        .arg(&parser_ir)
+        .arg("--divergence-out")
+        .arg(&divergence)
+        .arg("--abc-root")
+        .arg(abc)
+        .status()
+        .unwrap();
+
+    assert!(status.success());
+    assert!(parser_ir.exists());
+    assert!(divergence.exists());
+}

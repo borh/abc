@@ -1,5 +1,21 @@
 {
   "nodes": {
+    "abc-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1783080903,
+        "narHash": "sha256-Wx8ZqLrr7OjlOz4p/T8bG1AP2XJm4eGZ3Vcrd3l5SJg=",
+        "ref": "refs/heads/main",
+        "rev": "fdb901dbbeaaa406e83eff77a9e5312c9f219fe4",
+        "revCount": 203,
+        "type": "git",
+        "url": "file:/home/bor/Projects/abc"
+      },
+      "original": {
+        "type": "git",
+        "url": "file:../abc"
+      }
+    },
     "aozorabunko-src": {
       "flake": false,
       "locked": {
@@ -133,6 +149,7 @@
     },
     "root": {
       "inputs": {
+        "abc-src": "abc-src",
         "aozorabunko-src": "aozorabunko-src",
         "flake-utils": "flake-utils",
         "nixpkgs": "nixpkgs",

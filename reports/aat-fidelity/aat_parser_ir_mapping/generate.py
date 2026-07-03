@@ -14,6 +14,7 @@ sys.path.insert(0, str(SCRIPT_DIR))
 
 import mapper
 import mapping_doc
+import validate_contract
 
 CATEGORIES = ("LOSS", "AMBIGUITY", "INVENTION", "UNSUPPORTED", "STRUCTURAL")
 
@@ -21,18 +22,24 @@ CATEGORIES = ("LOSS", "AMBIGUITY", "INVENTION", "UNSUPPORTED", "STRUCTURAL")
 def walk_inline_kinds(block: dict) -> list[str]:
     kinds: list[str] = []
 
-    def visit(node: dict) -> None:
+    def visit_inline(node: dict) -> None:
         kind = node.get("kind")
         if kind is not None:
             kinds.append(kind)
         for key in ("content", "base_content", "reading_content", "upper", "lower"):
             for child in node.get(key, []) or []:
                 if isinstance(child, dict):
-                    visit(child)
+                    visit_inline(child)
 
-    for child in block.get("content", []) or []:
-        if isinstance(child, dict):
-            visit(child)
+    def visit_block(node: dict) -> None:
+        for child in node.get("content", []) or []:
+            if isinstance(child, dict):
+                visit_inline(child)
+        for child in node.get("children", []) or []:
+            if isinstance(child, dict):
+                visit_block(child)
+
+    visit_block(block)
     return kinds
 
 
@@ -49,7 +56,7 @@ def map_aat_document(aat: dict) -> tuple[list[dict], list[dict], Counter, Counte
         document_inline_kinds = walk_inline_kinds(block)
         inline_kinds.update(document_inline_kinds)
         has_warigaki = has_warigaki or "warigaki" in document_inline_kinds
-        mapper.map_block(block, nodes, ledger_list, offset, f"blocks[{index}]")
+        offset = mapper.map_block(block, nodes, ledger_list, offset, f"blocks[{index}]")
 
     mapper.map_meta_source(aat, ledger_list)
     ledger_list.append(
@@ -128,23 +135,32 @@ def write_report(summary: dict, report_path: Path) -> None:
             "",
         ]
     )
+    lines.extend(["", "## Inputs", ""])
+    lines.extend(f"- `{path}`" for path in summary["aat_dirs"])
+    lines.append("")
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text("\n".join(lines))
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--aat-dir", type=Path, required=True)
+    repo_root = SCRIPT_DIR.parents[2]
+    parser.add_argument("--aat-dir", type=Path, action="append", required=True)
     parser.add_argument("--abc-root", type=Path, default=Path("../abc"))
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--summary-json", type=Path, required=True)
     parser.add_argument("--report-md", type=Path)
     parser.add_argument("--assert-zero-unsupported", action="store_true")
+    parser.add_argument("--mapping-version", default="0.1.1")
+    parser.add_argument("--aat-schema", type=Path, default=repo_root / "data/aat-schema.json")
     args = parser.parse_args()
 
-    files = sorted(args.aat_dir.glob("*.json"))
+    files = []
+    for aat_dir in args.aat_dir:
+        files.extend(sorted(aat_dir.glob("*.json")))
     if not files:
-        raise SystemExit(f"no AAT JSON files found under {args.aat_dir}")
+        dirs = ", ".join(str(path) for path in args.aat_dir)
+        raise SystemExit(f"no AAT JSON files found under: {dirs}")
 
     category_counts: Counter = Counter()
     mapping_rule_counter: Counter = Counter()
@@ -191,8 +207,16 @@ def main() -> int:
         first_path_by_rule,
         first_note_by_rule,
         repo_root=args.abc_root.resolve(),
+        mapping_version=args.mapping_version,
     )
     validate_mapping(mapping_document, args.abc_root.resolve())
+    aat_schema_path = args.aat_schema
+    if not aat_schema_path.is_absolute():
+        aat_schema_path = repo_root / aat_schema_path
+    validate_contract.validate_mapping_contract(
+        mapping_document,
+        json.loads(aat_schema_path.read_text(encoding="utf-8")),
+    )
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     mapping_doc.write_mapping_document(mapping_document, args.out)
@@ -214,10 +238,12 @@ def main() -> int:
         "generated_mapping_rules": len(
             mapping_document["transform_rule_descriptions"]
         ),
+        "mapping_version": mapping_document["mapping_version"],
         "mapping_schema_hash": mapping_document["mapping_schema_hash"],
         "target_parser_ir_schema_hash": mapping_document[
             "target_parser_ir_schema_hash"
         ],
+        "aat_dirs": [str(path) for path in args.aat_dir],
         "mapping_path": str(args.out),
     }
 

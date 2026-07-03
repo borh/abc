@@ -1,7 +1,7 @@
 # aozora-rs `block_content_mut` drift — finding
 
 Date: 2026-07-03
-Status: open (needs decision)
+Status: **decided** (see `docs/handoffs/aozora2html-buckets-and-aozora-rs-path.md`)
 Audit ref: `docs/handoffs/crates-optimization-audit.md` §2.8
 Resolves-to: NOT a code fix — a decision on aozora-rs's maintenance path.
 
@@ -22,7 +22,7 @@ verification, and states the decision that is still open.
 
 ## Verified evidence (post-audit re-check, 2026-07-03)
 
-- `crates/ab-ir/src/lib.rs:1159` defines `pub fn block_content(block: &Block) -> &[Inline]`. It matches `Block::Break { .. } => &[]`.
+- `crates/ab-ir/src/lib.rs:1153` defines `pub fn block_content(block: &Block) -> &[Inline]`. It matches `Block::Break { .. } => &[]`.
 - `crates/ab-ir/src/lib.rs` does **not** define `block_content_mut`. `rg "fn block_content_mut" crates/ab-ir/` → 0 hits.
 - `adapters/aozora-rs/src/aat.rs:464,642,753` call `ab_ir::block_content_mut(...)`.
   (The audit also cited lines 2006, 2199, 2240; those are `block_content` — the

@@ -1,9 +1,7 @@
 (ns abc.stats
   (:require
-    [parallel.core :as p]
     [clojure.string :as string]
-    [net.cgrand.xforms :as x]
-    [clj-mecab.parse :as mecab]))
+    [net.cgrand.xforms :as x]))
 
 (defn yules-k
   "Measures distribution of tokens across types."
@@ -16,7 +14,7 @@
                   (/ 1 N)))))
 
 (defn hapax [xs]
-  (count (filter (fn [[_ f]] (= 1 f)) (p/frequencies xs))))
+  (count (filter (fn [[_ f]] (= 1 f)) (frequencies xs))))
 
 (defn ttr [xs]
   (double (/ (count (distinct xs))
@@ -38,15 +36,18 @@
   (if (> (count xs) window-size)
     (average (map ttr (partition window-size xs)))))
 
+(defn- parse-sentence [s]
+  ((requiring-resolve 'clj-mecab.parse/parse-sentence) s))
+
 (defn compute-text
   "Tokenizes input text `s` and returns a map containing words "
   [s]
   (into {}
         (comp
-          (map mecab/parse-sentence)
+          (map parse-sentence)
           (x/transjuxt {:tokens           (x/reduce (fn ([] []) ([a] a) ([a x] (x/into a (:mecab.features/orth x)))))
                         :sentence-lengths (x/reduce (fn ([] []) ([a] a) ([a x] (conj a (count x)))))}))
-        (string/split #"\n+" s)))
+        (string/split s #"\n+")))
 
 (defn doc-to-token-map [doc]
   (into {}

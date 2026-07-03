@@ -336,9 +336,19 @@
 
 (def ^:private tei-skip-flag "ABC_TEI_SCHEMA_SKIP")
 
+(defn- tei-schema-tests-skipped?
+  []
+  (= "1" (System/getenv tei-skip-flag)))
+
+(defn- assert-tei-schema-test-skipped!
+  []
+  (is (tei-schema-tests-skipped?)
+      (str "TEI schema-backed test skipped because " tei-skip-flag "=1")))
+
 (deftest validate-tei-smoke-test
   (testing "validate-tei! returns nil for the example fixture when TEI_SCHEMA_PATH is set"
-    (when-not (= "1" (System/getenv tei-skip-flag))
+    (if (tei-schema-tests-skipped?)
+      (assert-tei-schema-test-skipped!)
       (let [schema-path (System/getenv "TEI_SCHEMA_PATH")]
         (when-not schema-path
           (throw (ex-info "TEI_SCHEMA_PATH must be set to run validate-tei-smoke-test."
@@ -568,7 +578,8 @@
 
 (deftest validate-tei-warning-partition-test
   (testing "validate-tei! does not throw when only warnings are present"
-    (when-not (= "1" (System/getenv tei-skip-flag))
+    (if (tei-schema-tests-skipped?)
+      (assert-tei-schema-test-skipped!)
       (let [schema-path (System/getenv "TEI_SCHEMA_PATH")
             tmp (java.io.File/createTempFile "abc-tei-warn" ".xml")]
         (try

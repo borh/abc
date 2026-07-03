@@ -1,5 +1,6 @@
 (ns abc.text-test
-  (:require [abc.text :as text]
+  (:require [abc.stats :as stats]
+            [abc.text :as text]
             [clojure.test :refer [deftest is testing]]))
 
 (deftest split-japanese-sentence-test
@@ -21,3 +22,9 @@
          (text/normalize-nfkc "ＡＢＣ１２３")))
   (is (= "ＡＢＣ１２３"
          (text/convert-half-to-fullwidth "ABC123"))))
+
+(deftest compute-text-splits-lines-before-tokenizing-test
+  (testing "compute-text tokenizes each newline-delimited input line"
+    (with-redefs [abc.stats/parse-sentence (fn [_line] [#:mecab.features{:orth "token"}])]
+      (let [{:keys [sentence-lengths]} (stats/compute-text "猫\n犬")]
+        (is (= [1 1] sentence-lengths))))))

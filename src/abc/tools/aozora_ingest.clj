@@ -4,13 +4,13 @@
   Validates the result against the schema and asserts schema-hash
   self-consistency before writing. Optionally refreshes a manifest
   (Task 11)."
+  (:refer-clojure :exclude [run!])
   (:require [abc.tools.aozora-csv :as ac]
             [abc.tools.files :as files]
             [abc.tools.hash :as hash]
             [abc.tools.json :as json]
             [abc.tools.logging :as logging]
             [abc.tools.malli :as am]
-            [abc.tools.manifest :as manifest]
             [abc.tools.metadata-record :as metadata-record]
             [abc.tools.person-record :as person-record]
             [abc.tools.schema :as schema]

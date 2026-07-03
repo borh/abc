@@ -22,6 +22,22 @@
         "type": "github"
       }
     },
+    "crane": {
+      "locked": {
+        "lastModified": 1779041105,
+        "narHash": "sha256-nnGD2f8OlAZT2i5OfwikJsw+ifWfiA4d6A8BWlgOXV0=",
+        "owner": "ipetkov",
+        "repo": "crane",
+        "rev": "10e6e3cb966f7cfcc789fe5eee7a85f3188ce08b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ipetkov",
+        "ref": "v0.23.4",
+        "repo": "crane",
+        "type": "github"
+      }
+    },
     "devshell": {
       "inputs": {
         "nixpkgs": [
@@ -64,8 +80,8 @@
     "local-pkgs": {
       "flake": false,
       "locked": {
-        "lastModified": 1777101635,
-        "narHash": "sha256-O+o81IGk3S59S++Yo+sScuXeht7/dmR+/ZMFJyyZWDM=",
+        "lastModified": 1782996551,
+        "narHash": "sha256-r2UDbY3NZHztw+7yUDGKXPzsqnTn/4lRtQr6PvZcmvA=",
         "path": "/home/bor/Projects/nix/pkgs",
         "type": "path"
       },
@@ -98,11 +114,11 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1776877367,
-        "narHash": "sha256-EHq1/OX139R1RvBzOJ0aMRT3xnWyqtHBRUBuO1gFzjI=",
+        "lastModified": 1782723713,
+        "narHash": "sha256-oPXCU/SSUokcGaJREHibG1CBX3+s/W7orDWQOZDsEeQ=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "0726a0ecb6d4e08f6adced58726b95db924cef57",
+        "rev": "b5aa0fbd538984f6e3d201be0005b4463d8b09f8",
         "type": "github"
       },
       "original": {
@@ -127,6 +143,7 @@
     "root": {
       "inputs": {
         "clj-nix": "clj-nix",
+        "crane": "crane",
         "local-pkgs": "local-pkgs",
         "nixpkgs": "nixpkgs"
       }

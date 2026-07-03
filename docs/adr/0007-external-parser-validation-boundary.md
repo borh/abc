@@ -1,10 +1,21 @@
 # ADR 0007: External Parser Validation Boundary
 
-Status: Draft
+Status: Accepted
 Date: 2026-04-26
+Accepted: 2026-07-03
 Supersedes: none
 Source: `docs/high-level-architecture-note.md` v0.5,
 `docs/adr/0002-parser-evaluation.md`, and `../ab-validator`
+
+## Implementation Status
+
+Accepted after the ABC-side boundary fixture became part of the design-bundle
+gate. `nix run .#validate-design-bundle` validates
+`examples/ab-validator-output/` without requiring `../ab-validator`: JSON
+Schema covers the imported parser IR, diagnostics, run summary, manifest
+inputs, and comparison report, while `validate-ab-validator-output!` checks the
+producer-declared parser-IR and diagnostic schema hashes plus run-summary and
+comparison-report structure.
 
 ## Context
 

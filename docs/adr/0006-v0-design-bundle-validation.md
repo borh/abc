@@ -9,11 +9,18 @@ Source: `docs/high-level-architecture-note.md` v0.5 and
 
 ## Implementation Status
 
-As of 2026-04-28 the validation CLI also runs:
+As of 2026-07-03 the validation CLI runs:
 
-- TEI P5 4.11.0 RelaxNG validation via Jing in-process (schema pinned through
-  `pkgs.fetchurl` and exported as `TEI_SCHEMA_PATH`). See archived plan
+- TEI P5 4.11.0 Relax NG compatibility validation via Jing in-process
+  (schema pinned through `pkgs.fetchurl` and exported as `TEI_SCHEMA_PATH`).
+  See archived plan
   `docs/superpowers/plans/archive/2026-04-27-tei-relaxng-validation.md`.
+- Project TEI validation against `schemas/tei-profile.rng`, derived from the
+  canonical `schemas/tei-profile.odd` per ADR 0012.
+- Project Schematron validation against `schemas/tei-profile.sch`, also
+  derived from the canonical ODD. The harness checks the declared rule universe
+  and the negative/warning fixture partition rather than treating the
+  Schematron artifact as a stub.
 - SHACL validation of the RDF/PROV-O view against `schemas/manifest.shacl.ttl`
   for every manifest the harness produces or carries as a fixture, including
   `MetadataRecordWorkShape` / `MetadataRecordPersonShape`. See archived plan
@@ -23,17 +30,17 @@ As of 2026-04-28 the validation CLI also runs:
   `docs/superpowers/plans/archive/2026-04-27-metadata-data-model.md`.
 
 The remaining `release-smoke` items are signature verification, provenance
-verification, and archive/mirror hash verification. The TEI step still
-validates against the full `tei_all.rng`; ADR 0012 supersedes that TEI profile
-stub status by requiring `schemas/tei-profile.odd` to become the source for
-both project-specific Relax NG and Schematron validation artifacts.
+verification, and archive/mirror hash verification. The full `tei_all.rng`
+step is retained as a compatibility baseline; it is no longer the only TEI
+validation target.
 
 ## Context
 
-The v0 design bundle now contains JSON Schemas, SHACL shapes, a TEI ODD stub,
-canonicalization fixtures, example manifests, example parser IR, an RDF view,
-and changelog tooling. These files were validated manually during review, but
-manual checks are not enough once implementation starts.
+The v0 design bundle now contains JSON Schemas, SHACL shapes, a canonical TEI
+ODD with derived Relax NG and Schematron artifacts, canonicalization fixtures,
+example manifests, example parser IR, an RDF view, and changelog tooling. These
+files were validated manually during review, but manual checks are not enough
+once implementation starts.
 
 The first implementation step should make the design bundle mechanically
 checkable without committing to a parser runtime, database, RDF store, or corpus
@@ -77,10 +84,13 @@ The current implementation validates:
 - The example parser IR validates against the parser IR schema.
 - Canonicalization fixture hashes match the expected digest values.
 - Array-ordering negative fixtures produce different digests.
-- `schemas/tei-profile.odd` and `examples/v0/example-work/tei.xml` are
-  well-formed XML.
-- `schemas/tei-profile.sch` exists as the Schematron target artifact once ADR
-  0012 is implemented by the harness.
+- `schemas/tei-profile.odd` is the canonical project TEI contract, with
+  generated `schemas/tei-profile.rng` and `schemas/tei-profile.sch` artifacts
+  checked by the harness.
+- The example TEI and TEI fixture corpus validate against the project Relax NG
+  target where structurally valid.
+- The project Schematron fixture partition validates negative and warning
+  fixtures against the ODD-declared rule universe.
 - `cliff.toml` is accepted by `git-cliff`.
 
 The validation CLI is intentionally a smoke gate. It has three named levels:
@@ -96,12 +106,10 @@ The validation CLI is intentionally a smoke gate. It has three named levels:
   Status above.)
 
 The current command implements `design-smoke`, the imported-output parts of
-`contract-smoke`, TEI RelaxNG validation against the upstream `tei_all.rng`,
-and SHACL validation of every manifest's RDF view. ADR 0012 changes the TEI
-target from upstream-only Relax NG to ODD-derived Relax NG plus Schematron, but
-the harness must still prove reproducible generation before the upstream schema
-can be removed as the compatibility baseline. It does not yet prove that any
-parser candidate satisfies the IR contract.
+`contract-smoke`, TEI Relax NG compatibility validation against upstream
+`tei_all.rng`, ODD-derived project Relax NG validation, ODD-derived project
+Schematron validation, and SHACL validation of every manifest's RDF view. It
+does not yet prove that any parser candidate satisfies the IR contract.
 
 ## Runtime Policy
 

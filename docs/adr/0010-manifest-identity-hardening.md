@@ -1,11 +1,23 @@
 # ADR 0010: Manifest Identity Hardening
 
-Status: Draft
+Status: Accepted
 Date: 2026-04-26
+Accepted: 2026-07-03
 Supersedes: none
 Amends: ADR 0001, ADR 0009
 Source: `docs/adr/0001-manifest-identity.md` and
 `docs/adr/0009-imported-output-materialization.md`
+
+## Implementation Status
+
+Accepted after manifest identity and schema hashing moved to the shared JCS
+path. `abc.tools.manifest/schema-hash` computes schema identity from parsed
+JSON Schema values, `artifact-id` hashes the RFC 8785/JCS identity object,
+`materialize-import!` records that schema hash in generated manifests, and
+`validate-design-bundle` fails imported fixtures whose producer-declared parser
+IR or diagnostic schema hashes do not match ABC's checked-in schemas. Focused
+materialization tests cover schema hashing, artifact identity, generated
+content hashes, deterministic output, and generated-at independence.
 
 ## Context
 

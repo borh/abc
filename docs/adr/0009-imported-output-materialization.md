@@ -1,10 +1,20 @@
 # ADR 0009: Imported Parser Output Materialization
 
-Status: Draft
+Status: Accepted
 Date: 2026-04-26
+Accepted: 2026-07-03
 Supersedes: none
 Source: `docs/adr/0007-external-parser-validation-boundary.md` and
 `docs/adr/0008-abc-tools-runtime.md`
+
+## Implementation Status
+
+Accepted after `abc.tools.materialize-import/materialize-import!` became the
+live materialization path and the design-bundle gate began exercising it. The
+command reads `examples/ab-validator-output/`, writes parser-IR and warnings
+manifests, computes real content hashes and byte lengths, and is run inside
+`validate-design-bundle` against a temporary output directory before validating
+the generated manifests, manifest index, RDF views, and SHACL shapes.
 
 ## Context
 

@@ -1,7 +1,20 @@
 # ADR 0015: Temporal Modeling for Bibliographic Dates
 
-Status: Draft
+Status: Accepted
 Date: 2026-04-29
+Accepted: 2026-07-03
+
+## Implementation Status
+
+Accepted after the temporal model became the live person-record contract.
+`schemas/person-record.schema.json` admits the constrained EDTF lexical union
+for `date_of_birth` and `date_of_death` plus audited `parse_corrections`;
+`abc.tools.aozora-csv/parse-date` normalizes partial dates, recoverable
+lexical defects, BCE notation, and unknown sentinels; `abc.tools.person-record`
+emits precision-typed RDA Group 2 literals where XSD has a faithful datatype and
+parallel `abc:EDTF` echoes; and `schemas/manifest.shacl.ttl` enforces the RDF
+date/datatype shape. ADR 0016 later widens the same path for EDTF Level 1
+decade and century forms.
 
 ## Context
 

@@ -5,6 +5,12 @@ Date: 2026-04-26
 Supersedes: none
 Source: `docs/high-level-architecture-note.md` v0.5
 
+## Implementation Status
+
+Still Draft. The v0 file/CLI surface, run-summary schema, and local validation
+gate exist, but the broader operational runtime choices, full-corpus storage
+evaluation, and distributed publication policy remain undecided.
+
 ## Context
 
 ABC may eventually use Rust parsers, JVM validation, RDF tooling, Nix, query

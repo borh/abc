@@ -5,6 +5,12 @@ Date: 2026-04-26
 Supersedes: none
 Source: `docs/high-level-architecture-note.md` v0.5
 
+## Implementation Status
+
+Still Draft. ABC exposes Nix apps and checks for the v0 toolchain, but the
+bounded-workset policy and cost-envelope acceptance criteria have not been
+measured and accepted for smoke-corpus materialization.
+
 ## Context
 
 Nix is attractive for deterministic builds, pinned toolchains, and cacheable

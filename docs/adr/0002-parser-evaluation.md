@@ -5,6 +5,12 @@ Date: 2026-04-26
 Supersedes: none
 Source: `docs/high-level-architecture-note.md` v0.5
 
+## Implementation Status
+
+Still Draft. ABC now validates an imported parser-IR fixture at the file
+boundary, but no parser candidate reports have been produced or accepted, and
+the repo still does not execute or select a parser candidate.
+
 ## Context
 
 ABC should not assume the parser is greenfield. Candidate implementations

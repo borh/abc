@@ -5,6 +5,12 @@ Date: 2026-04-26
 Supersedes: none
 Source: `docs/high-level-architecture-note.md` v0.5
 
+## Implementation Status
+
+Still Draft. Manifest schemas reserve release-security surface such as
+signatures, but the release verification workflow, provenance attestation
+format, and public-release trust policy are not implemented.
+
 ## Context
 
 Content addressing detects accidental drift but does not prove that a release

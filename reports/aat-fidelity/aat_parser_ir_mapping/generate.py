@@ -49,7 +49,7 @@ def map_aat_document(aat: dict) -> tuple[list[dict], list[dict], Counter, Counte
         document_inline_kinds = walk_inline_kinds(block)
         inline_kinds.update(document_inline_kinds)
         has_warigaki = has_warigaki or "warigaki" in document_inline_kinds
-        mapper.map_block(block, nodes, ledger_list, offset, f"blocks[{index}]")
+        offset = mapper.map_block(block, nodes, ledger_list, offset, f"blocks[{index}]")
 
     mapper.map_meta_source(aat, ledger_list)
     ledger_list.append(
@@ -140,6 +140,7 @@ def main() -> int:
     parser.add_argument("--summary-json", type=Path, required=True)
     parser.add_argument("--report-md", type=Path)
     parser.add_argument("--assert-zero-unsupported", action="store_true")
+    parser.add_argument("--mapping-version", default="0.1.1")
     args = parser.parse_args()
 
     files = sorted(args.aat_dir.glob("*.json"))
@@ -191,6 +192,7 @@ def main() -> int:
         first_path_by_rule,
         first_note_by_rule,
         repo_root=args.abc_root.resolve(),
+        mapping_version=args.mapping_version,
     )
     validate_mapping(mapping_document, args.abc_root.resolve())
 
@@ -214,6 +216,7 @@ def main() -> int:
         "generated_mapping_rules": len(
             mapping_document["transform_rule_descriptions"]
         ),
+        "mapping_version": mapping_document["mapping_version"],
         "mapping_schema_hash": mapping_document["mapping_schema_hash"],
         "target_parser_ir_schema_hash": mapping_document[
             "target_parser_ir_schema_hash"

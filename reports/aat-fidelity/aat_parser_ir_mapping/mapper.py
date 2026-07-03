@@ -14,11 +14,10 @@ Structural transform rule (flat-nodes vs nested-blocks):
   - Block containers (paragraph/heading/block_container) are NOT emitted as
     parser-IR nodes; parser-IR has no paragraph/block concept. Their *inline*
     children are emitted; the block boundary itself is recorded as a LOSS entry.
-  - A running `offset` advances by the AAT byte_end - byte_start of each
-    emitted inline to give parser-IR `span.start/end` (char-ish offsets), since
-    parser-IR span semantics are unspecified in schema while AAT spans are
-    decoded-UTF8 byte offsets. line is taken from AAT line_start; column is
-    unknown (null). This is itself an AMBIGUITY entry (see STRUCTURAL/SPAN).
+  - A running `offset` advances by emitted parser-IR node span end. When AAT
+    spans are absent, the fallback end is the projected visible text's UTF-8
+    byte length. This keeps synthesized spans monotonic and records the
+    approximation as an AMBIGUITY entry.
 
 Run: python3 map.py aat-sample.json
 """
@@ -52,16 +51,54 @@ def aat_pointer_bucket(pointer):
     return re.sub(r"^([A-Za-z0-9_.]+)=.*$", r"\1", bucket)
 
 
-def map_span(aat_span, offset):
-    """AAT decoded-utf8 byte offsets -> parser-IR start/end (proxy char offsets)
-    + line. column unknown."""
+def utf8_len(value):
+    return len((value or "").encode("utf-8"))
+
+
+def span_end(span, fallback_end):
+    if span is None:
+        return fallback_end
+    return span.get("byte_end", fallback_end)
+
+
+def map_span(aat_span, fallback_start, fallback_end, ledger_list, path):
+    """AAT decoded-utf8 byte offsets -> parser-IR span.
+
+    Production AAT spans are mostly absent. Parser-IR requires spans, so missing
+    spans are an explicit AMBIGUITY bucket rather than an INVENTION sidecar. The
+    fallback end advances by projected UTF-8 byte length.
+    """
     if aat_span is None:
-        return {"start": offset, "end": offset, "line": None, "column": None}
+        ledger_list.append(
+            ledger(
+                "AMBIGUITY",
+                f"{path}.span",
+                "span",
+                "AAT node has no serialized span; parser-IR requires decoded_utf8 span, so a projected UTF-8 fallback span was synthesized",
+            )
+        )
+        return {
+            "start": fallback_start,
+            "end": fallback_end,
+            "line": None,
+            "column": None,
+            "coordinate_system": "decoded_utf8",
+        }
+    if aat_span.get("line_end") not in (None, aat_span.get("line_start")):
+        ledger_list.append(
+            ledger(
+                "LOSS",
+                f"{path}.span.line_end",
+                "span.line",
+                "AAT span has line_end but parser-IR span carries only one line field",
+            )
+        )
     return {
-        "start": aat_span.get("byte_start", offset),
-        "end": aat_span.get("byte_end", offset),
+        "start": aat_span.get("byte_start", fallback_start),
+        "end": aat_span.get("byte_end", fallback_end),
         "line": aat_span.get("line_start"),
         "column": None,
+        "coordinate_system": "decoded_utf8",
     }
 
 
@@ -89,36 +126,44 @@ def text_projection(node, ledger_list, path):
 def map_inline(node, offset, ledger_list, path):
     kind = node.get("kind")
     span = node.get("span")
-    pir_span = map_span(span, offset)
 
     if kind == "text":
+        value = node.get("value", "")
+        fallback_end = offset + utf8_len(value)
+        pir_span = map_span(span, offset, fallback_end, ledger_list, path)
         return {
-            "type": "text", "span": pir_span, "text": node.get("value", ""),
-        }
+            "type": "text", "span": pir_span, "text": value,
+        }, span_end(span, fallback_end)
 
     if kind == "ruby":
         # base_content/reading_content nesting is still outside parser-IR's ruby shape.
+        base = node.get("base", "")
+        fallback_end = offset + utf8_len(base)
+        pir_span = map_span(span, offset, fallback_end, ledger_list, path)
         scope = "explicit"  # INVENTION: AAT has no scope; default to explicit.
-        ledger_list.append(ledger("INVENTION", f"{path}.ruby.scope", "ruby.scope",
+        ledger_list.append(ledger("INVENTION", "(none)", "ruby.scope",
                                   "AAT has no scope field; defaulted to 'explicit'"))
         if node.get("base_content") or node.get("reading_content"):
             ledger_list.append(ledger("LOSS", f"{path}.ruby.base_content/reading_content",
                                       "(none)", "nested ruby substructure flattened away"))
         return {
             "type": "ruby", "span": pir_span,
-            "ruby": {"base": node.get("base", ""),
+            "ruby": {"base": base,
                      "reading": node.get("reading", ""),
                      "scope": scope,
                      "direction": node.get("direction")},
-        }
+        }, span_end(span, fallback_end)
 
     if kind == "gaiji":
+        visible = node.get("resolved") or node.get("description", "")
+        fallback_end = offset + utf8_len(visible)
+        pir_span = map_span(span, offset, fallback_end, ledger_list, path)
         # AAT resolved = string|null; parser-IR resolved = boolean
         resolved_str = node.get("resolved")
         resolved_bool = bool(resolved_str) if resolved_str is not None else False
         mac = node.get("raw_marker")
         # raw_marker INVENTION: AAT gives description, not the source marker.
-        ledger_list.append(ledger("INVENTION", f"{path}.gaiji.raw_marker",
+        ledger_list.append(ledger("INVENTION", f"{path}.gaiji.description",
                                   "gaiji.raw_marker", "AAT has no raw source marker; used description as raw_marker"))
         # resolved semantic mismatch
         ledger_list.append(ledger("AMBIGUITY", f"{path}.gaiji.resolved",
@@ -127,7 +172,7 @@ def map_inline(node, offset, ledger_list, path):
             ledger_list.append(ledger("LOSS", f"{path}.gaiji.unresolved_reason",
                                       "(none)", f"unresolved_reason='{node['unresolved_reason']}' has no parser-IR field"))
         # unicode: AAT may embed in resolved string; cannot extract
-        ledger_list.append(ledger("LOSS", f"{path}.gaiji.unicode",
+        ledger_list.append(ledger("LOSS", "(none)",
                                   "gaiji.unicode", "AAT does not separate unicode codepoint from resolved string"))
         # jis_code -> reference (semantic stretch)
         if node.get("jis_code"):
@@ -143,11 +188,13 @@ def map_inline(node, offset, ledger_list, path):
                 "image_or_glyph_fallback": None,
                 "resolved": resolved_bool,
             },
-        }
+        }, span_end(span, fallback_end)
 
     if kind == "accent":
         # parser-IR has no accent node; closest is emphasis(text, style).
         text = node.get("resolved") or node.get("name", "")
+        fallback_end = offset + utf8_len(text)
+        pir_span = map_span(span, offset, fallback_end, ledger_list, path)
         ledger_list.append(ledger("AMBIGUITY", f"{path}.accent",
                                   "emphasis", "accent mapped to emphasis; accent code/name semantics not preserved"))
         ledger_list.append(ledger("INVENTION", f"{path}.accent.code",
@@ -158,10 +205,13 @@ def map_inline(node, offset, ledger_list, path):
         return {
             "type": "emphasis", "span": pir_span,
             "text": text, "style": node.get("code", ""),
-        }
+        }, span_end(span, fallback_end)
 
     if kind == "figure":
         # parser-IR image: src, alt, path_hint. filename->src is a name, not a resolved path.
+        src = node.get("filename", "")
+        fallback_end = offset + utf8_len(src)
+        pir_span = map_span(span, offset, fallback_end, ledger_list, path)
         ledger_list.append(ledger("INVENTION", f"{path}.figure.filename",
                                   "image.src", "filename is not a resolved source path; used as src"))
         for f in ("css_class", "width", "height"):
@@ -173,44 +223,47 @@ def map_inline(node, offset, ledger_list, path):
                                       "(none)", "nested figure caption[] dropped (could be emitted as caption node, scope target ambiguous)"))
         return {
             "type": "image", "span": pir_span,
-            "src": node.get("filename", ""), "alt": node.get("alt"), "path_hint": None,
-        }
+            "src": src, "alt": node.get("alt"), "path_hint": None,
+        }, span_end(span, fallback_end)
 
     if kind == "warigaki":
         # No parser-IR warigaki. Best-effort: flatten upper then lower as text nodes; structure lost.
         ledger_list.append(ledger("UNSUPPORTED", f"{path}.warigaki",
                                   "(none)", "parser-IR has no warigaki node; upper/lower flattened to text nodes, split-line structure lost"))
-        return None  # caller emits child text nodes inline
+        return None, span_end(span, offset)  # caller emits child text nodes inline
 
     if kind == "raw":
         ledger_list.append(ledger("UNSUPPORTED", f"{path}.raw",
                                   "(none)", "parser-IR has no raw node; faithful escape hatch dropped"))
-        return None
+        return None, span_end(span, offset + utf8_len(node.get("source", "")))
 
     if kind == "style":
+        projected_text = text_projection(node, ledger_list, path)
+        fallback_end = offset + utf8_len(projected_text)
+        pir_span = map_span(span, offset, fallback_end, ledger_list, path)
         ledger_list.append(ledger("AMBIGUITY", f"{path}.style",
                                   "emphasis", "style inline_container mapped to emphasis; parser-IR does not preserve nested inline container identity"))
         return {
             "type": "emphasis", "span": pir_span,
-            "text": text_projection(node, ledger_list, path),
+            "text": projected_text,
             "style": node.get("style_type", ""),
-        }
+        }, span_end(span, fallback_end)
 
     # inline_container kinds: font_size, tcy, keigakomi, yokogumi, caption
     if kind in ("font_size", "tcy", "keigakomi", "yokogumi", "caption"):
         ledger_list.append(ledger("UNSUPPORTED", f"{path}.{kind}",
                                   "emphasis(?)", f"inline_container kind '{kind}' has no first-class parser-IR node; only emphasis.text/style exist"))
-        return None
+        return None, span_end(span, offset + utf8_len(text_projection(node, ledger_list, path)))
 
     ledger_list.append(ledger("UNSUPPORTED", f"{path}.{kind}", "(none)",
                               f"unknown inline kind '{kind}' has no parser-IR equivalent"))
-    return None
+    return None, span_end(span, offset)
 
 
 def map_block(block, nodes, ledger_list, offset, path):
     kind = block.get("kind")
     # Every block boundary is a LOSS: parser-IR has no paragraph/block node.
-    ledger_list.append(ledger("STRUCTURAL", f"{path}[block={kind}]",
+    ledger_list.append(ledger("STRUCTURAL", f"{path}.{kind}",
                               "(none)", f"block container of kind '{kind}' has no parser-IR node; boundary + span + style lost, only inlines emitted"))
 
     if kind == "heading":
@@ -221,8 +274,9 @@ def map_block(block, nodes, ledger_list, offset, path):
             if child.get("kind") == "text":
                 parts.append(child.get("value", ""))
             else:
-                ledger_list.append(ledger("LOSS", f"{path}.heading.content[{i}]={child.get('kind')}",
+                ledger_list.append(ledger("LOSS", f"{path}.heading.content[{i}].{child.get('kind')}",
                                           "(none)", "non-text inline inside heading flattened to text projection; structure lost"))
+                parts.append(text_projection(child, ledger_list, f"{path}.heading.content[{i}]"))
         level = block.get("level", 1)
         # AAT level max 3, parser-IR max 6 -> fits, but range divergence recorded.
         ledger_list.append(ledger("AMBIGUITY", f"{path}.heading.level",
@@ -230,10 +284,15 @@ def map_block(block, nodes, ledger_list, offset, path):
         if block.get("style"):
             ledger_list.append(ledger("LOSS", f"{path}.heading.style",
                                       "(none)", f"heading.style='{block['style']}' dropped"))
+        heading_text = "".join(parts)
+        fallback_end = offset + utf8_len(heading_text)
         nodes.append({
-            "type": "heading", "span": map_span(block.get("span"), offset),
-            "text": "".join(parts), "level": level,
+            "type": "heading",
+            "span": map_span(block.get("span"), offset, fallback_end, ledger_list, path),
+            "text": heading_text,
+            "level": level,
         })
+        offset = span_end(block.get("span"), fallback_end)
 
     elif kind == "paragraph":
         for i, child in enumerate(block.get("content", [])):
@@ -244,11 +303,16 @@ def map_block(block, nodes, ledger_list, offset, path):
                 # flatten upper/lower
                 for grp in ("upper", "lower"):
                     for j, sub in enumerate(child.get(grp, [])):
-                        n = map_inline(sub, offset, ledger_list, f"{cpath}.warigaki.{grp}[{j}]")
+                        n, offset = map_inline(
+                            sub,
+                            offset,
+                            ledger_list,
+                            f"{cpath}.warigaki.{grp}[{j}]",
+                        )
                         if n is not None:
                             nodes.append(n)
             else:
-                n = map_inline(child, offset, ledger_list, cpath)
+                n, offset = map_inline(child, offset, ledger_list, cpath)
                 if n is not None:
                     nodes.append(n)
 
@@ -258,13 +322,17 @@ def map_block(block, nodes, ledger_list, offset, path):
         if kind == "jisage_block":
             ledger_list.append(ledger("INVENTION", f"{path}.jisage_block",
                                       "indentation", "mapped to indentation node; depth unknown -> defaulted 1"))
-            nodes.append({"type": "indentation", "span": map_span(block.get("span"), offset),
+            fallback_end = offset
+            nodes.append({"type": "indentation", "span": map_span(block.get("span"), offset, fallback_end, ledger_list, path),
                           "depth": 1, "text": None})
+            offset = span_end(block.get("span"), fallback_end)
         elif kind == "quote_block":
             ledger_list.append(ledger("AMBIGUITY", f"{path}.quote_block",
                                       "quote", "quote_block container vs quote open/close/inline marker node; nesting semantics differ"))
-            nodes.append({"type": "quote", "span": map_span(block.get("span"), offset),
+            fallback_end = offset
+            nodes.append({"type": "quote", "span": map_span(block.get("span"), offset, fallback_end, ledger_list, path),
                           "marker_type": "unknown", "nesting_level": None, "text": None})
+            offset = span_end(block.get("span"), fallback_end)
         elif kind == "caption_block":
             ledger_list.append(ledger("AMBIGUITY", f"{path}.caption_block",
                                       "caption", "caption_block vs caption node (text+target); target linkage lost"))
@@ -272,11 +340,12 @@ def map_block(block, nodes, ledger_list, offset, path):
             ledger_list.append(ledger("UNSUPPORTED", f"{path}.{kind}",
                                       "(none)", f"block_container kind '{kind}' has no parser-IR equivalent"))
         for i, child in enumerate(block.get("children", [])):
-            map_block(child, nodes, ledger_list, offset, f"{path}.children[{i}]")
+            offset = map_block(child, nodes, ledger_list, offset, f"{path}.children[{i}]")
 
     else:
         ledger_list.append(ledger("UNSUPPORTED", f"{path}.{kind}",
                                   "(none)", f"unknown block kind '{kind}'"))
+    return offset
 
 
 def map_meta_source(aat, ledger_list):
@@ -325,9 +394,9 @@ def map_warnings(aat, ledger_list):
     out = []
     for w in aat.get("meta", {}).get("warnings", []):
         # parser-IR diagnostic requires severity + code. AAT warning has only message(+line/path).
-        ledger_list.append(ledger("INVENTION", "meta.warnings[].severity",
+        ledger_list.append(ledger("INVENTION", "(none)",
                                   "warnings[].severity", "AAT warning has no severity -> defaulted 'warning'"))
-        ledger_list.append(ledger("INVENTION", "meta.warnings[].code",
+        ledger_list.append(ledger("INVENTION", "(none)",
                                   "warnings[].code", "AAT warning has no code -> defaulted 'AAT_WARNING'"))
         if w.get("line"):
             ledger_list.append(ledger("AMBIGUITY", "meta.warnings[].line",
@@ -349,7 +418,7 @@ def main():
     nodes = []
     offset = 0
     for i, block in enumerate(aat.get("blocks", [])):
-        map_block(block, nodes, ledger_list, offset, f"blocks[{i}]")
+        offset = map_block(block, nodes, ledger_list, offset, f"blocks[{i}]")
 
     source = map_meta_source(aat, ledger_list)
     # Top-level identity: schema_id/schema_hash INVENTION (AAT has only version=1)

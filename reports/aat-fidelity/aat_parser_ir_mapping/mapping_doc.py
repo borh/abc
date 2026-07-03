@@ -84,7 +84,13 @@ def summarize_ledger(ledger_entries):
     return counts, first_path, first_note
 
 
-def build_mapping_document_from_counts(rule_counts, first_path_by_rule, first_note_by_rule, repo_root=REPO_ROOT):
+def build_mapping_document_from_counts(
+    rule_counts,
+    first_path_by_rule,
+    first_note_by_rule,
+    repo_root=REPO_ROOT,
+    mapping_version="0.1.1",
+):
     rules = []
     for category in CATEGORY_ORDER:
         category_keys = sorted(key for key in rule_counts if key[0] == category)
@@ -106,7 +112,7 @@ def build_mapping_document_from_counts(rule_counts, first_path_by_rule, first_no
 
     return {
         "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
-        "mapping_version": "0.1.0",
+        "mapping_version": mapping_version,
         "mapping_schema_hash": c14n.schema_hash(repo_root / "schemas" / "aat-parser-ir-mapping.schema.json"),
         "source_aat_version": 1,
         "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
@@ -116,9 +122,15 @@ def build_mapping_document_from_counts(rule_counts, first_path_by_rule, first_no
     }
 
 
-def build_mapping_document(ledger_entries, repo_root=REPO_ROOT):
+def build_mapping_document(ledger_entries, repo_root=REPO_ROOT, mapping_version="0.1.1"):
     counts, first_path, first_note = summarize_ledger(ledger_entries)
-    return build_mapping_document_from_counts(counts, first_path, first_note, repo_root)
+    return build_mapping_document_from_counts(
+        counts,
+        first_path,
+        first_note,
+        repo_root,
+        mapping_version=mapping_version,
+    )
 
 
 def write_mapping_document(doc, path):
@@ -131,10 +143,11 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("ledger_json", help="JSON file containing an array of probe ledger entries")
     parser.add_argument("--out", default=str(PROBE_DIR / "mapping.generated.json"))
+    parser.add_argument("--mapping-version", default="0.1.1")
     args = parser.parse_args()
 
     with open(args.ledger_json, encoding="utf-8") as f:
-        doc = build_mapping_document(json.load(f))
+        doc = build_mapping_document(json.load(f), mapping_version=args.mapping_version)
     write_mapping_document(doc, args.out)
 
 

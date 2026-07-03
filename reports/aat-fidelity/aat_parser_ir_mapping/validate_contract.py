@@ -80,14 +80,69 @@ def fold_pointer(pointer: str) -> str:
     return _INDEX_RE.sub("[]", pointer)
 
 
+def _split_segment(segment: str) -> tuple[str, bool]:
+    if segment.endswith("[]"):
+        return segment[:-2], True
+    return segment, False
+
+
+def _pointer_allowed(
+    schema: dict,
+    node: dict,
+    segments: list[str],
+    index: int = 0,
+    seen: frozenset[tuple[int, int]] = frozenset(),
+) -> bool:
+    if index == len(segments):
+        return True
+    node = _deref(schema, node)
+    key = (id(node), index)
+    if key in seen:
+        return False
+    seen = seen | {key}
+
+    if "oneOf" in node:
+        segment = segments[index]
+        for child in node["oneOf"]:
+            resolved = _deref(schema, child)
+            if segment in _kind_values(resolved) and _pointer_allowed(
+                schema, resolved, segments, index + 1, seen
+            ):
+                return True
+            if _pointer_allowed(schema, resolved, segments, index, seen):
+                return True
+        return False
+
+    if node.get("type") == "array":
+        return _pointer_allowed(schema, node["items"], segments, index, seen)
+
+    if node.get("type") == "object" or "properties" in node:
+        segment = segments[index]
+        if segment in _kind_values(node):
+            return _pointer_allowed(schema, node, segments, index + 1, seen)
+
+        name, wants_array = _split_segment(segment)
+        child = node.get("properties", {}).get(name)
+        if child is None:
+            return False
+
+        child = _deref(schema, child)
+        if wants_array:
+            if child.get("type") != "array":
+                return False
+            return _pointer_allowed(schema, child["items"], segments, index + 1, seen)
+        return _pointer_allowed(schema, child, segments, index + 1, seen)
+
+    return False
+
+
 def validate_mapping_contract(mapping: dict, aat_schema: dict) -> None:
-    allowed = allowed_aat_pointers(aat_schema)
     for rule in mapping.get("transform_rule_descriptions", []):
         pointer = rule.get("aat_pointer")
         if pointer is None:
             continue
         folded = fold_pointer(pointer)
-        if folded not in allowed:
+        if not _pointer_allowed(aat_schema, aat_schema, folded.split(".")):
             raise MappingContractError(
                 f"{rule.get('rule_id')} has non-schema AAT pointer {pointer!r}"
             )

@@ -42,6 +42,13 @@ cat > "$aat_dir/policy.json" <<'JSON'
           "kind": "style",
           "style_type": "kaeriten",
           "content": [{ "kind": "text", "value": "レ" }]
+        },
+        {
+          "kind": "ruby",
+          "base": "漢",
+          "reading": "かん",
+          "base_content": [{ "kind": "text", "value": "漢" }],
+          "reading_content": [{ "kind": "text", "value": "かん" }]
         }
       ]
     }
@@ -61,7 +68,10 @@ jq -e '.mapping_version == "0.1.1"' "$out_dir/mapping.json"
 jq -e 'any(.transform_rule_descriptions[]; .category == "UNSUPPORTED" and (.description | test("warigaki")))' "$out_dir/mapping.json"
 jq -e 'any(.transform_rule_descriptions[]; .category == "AMBIGUITY" and .parser_ir_pointer == "span")' "$out_dir/mapping.json"
 jq -e 'any(.transform_rule_descriptions[]; .aat_pointer == "blocks[].content[].gaiji.description" and .parser_ir_pointer == "gaiji.raw_marker")' "$out_dir/mapping.json"
+jq -e 'any(.transform_rule_descriptions[]; .category == "LOSS" and .aat_pointer == "blocks[].content[].ruby.base_content")' "$out_dir/mapping.json"
+jq -e 'any(.transform_rule_descriptions[]; .category == "LOSS" and .aat_pointer == "blocks[].content[].ruby.reading_content")' "$out_dir/mapping.json"
 jq -e 'all(.transform_rule_descriptions[]; .aat_pointer != "blocks[].content[].gaiji.raw_marker" and .aat_pointer != "blocks[].content[].gaiji.unicode")' "$out_dir/mapping.json"
+jq -e 'all(.transform_rule_descriptions[]; (.aat_pointer // "") | contains("/") | not)' "$out_dir/mapping.json"
 
 python3 - <<PY
 import json
@@ -75,6 +85,17 @@ import validate_contract
 mapping = json.loads(Path("$out_dir/mapping.json").read_text())
 schema = json.loads((repo_root / "data/aat-schema.json").read_text())
 validate_contract.validate_mapping_contract(mapping, schema)
+validate_contract.validate_mapping_contract(
+    {
+        "transform_rule_descriptions": [
+            {
+                "rule_id": "A-99",
+                "aat_pointer": "blocks[].children[].content[].content[].content[].gaiji.resolved",
+            }
+        ]
+    },
+    schema,
+)
 PY
 
 python3 - <<PY

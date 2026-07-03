@@ -143,9 +143,12 @@ def map_inline(node, offset, ledger_list, path):
         scope = "explicit"  # INVENTION: AAT has no scope; default to explicit.
         ledger_list.append(ledger("INVENTION", "(none)", "ruby.scope",
                                   "AAT has no scope field; defaulted to 'explicit'"))
-        if node.get("base_content") or node.get("reading_content"):
-            ledger_list.append(ledger("LOSS", f"{path}.ruby.base_content/reading_content",
-                                      "(none)", "nested ruby substructure flattened away"))
+        if node.get("base_content"):
+            ledger_list.append(ledger("LOSS", f"{path}.ruby.base_content",
+                                      "(none)", "nested ruby base_content substructure flattened away"))
+        if node.get("reading_content"):
+            ledger_list.append(ledger("LOSS", f"{path}.ruby.reading_content",
+                                      "(none)", "nested ruby reading_content substructure flattened away"))
         return {
             "type": "ruby", "span": pir_span,
             "ruby": {"base": base,

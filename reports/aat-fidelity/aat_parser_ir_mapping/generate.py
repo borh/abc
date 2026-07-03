@@ -129,6 +129,9 @@ def write_report(summary: dict, report_path: Path) -> None:
             "",
         ]
     )
+    lines.extend(["", "## Inputs", ""])
+    lines.extend(f"- `{path}`" for path in summary["aat_dirs"])
+    lines.append("")
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text("\n".join(lines))
 
@@ -136,7 +139,7 @@ def write_report(summary: dict, report_path: Path) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser()
     repo_root = SCRIPT_DIR.parents[2]
-    parser.add_argument("--aat-dir", type=Path, required=True)
+    parser.add_argument("--aat-dir", type=Path, action="append", required=True)
     parser.add_argument("--abc-root", type=Path, default=Path("../abc"))
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--summary-json", type=Path, required=True)
@@ -146,9 +149,12 @@ def main() -> int:
     parser.add_argument("--aat-schema", type=Path, default=repo_root / "data/aat-schema.json")
     args = parser.parse_args()
 
-    files = sorted(args.aat_dir.glob("*.json"))
+    files = []
+    for aat_dir in args.aat_dir:
+        files.extend(sorted(aat_dir.glob("*.json")))
     if not files:
-        raise SystemExit(f"no AAT JSON files found under {args.aat_dir}")
+        dirs = ", ".join(str(path) for path in args.aat_dir)
+        raise SystemExit(f"no AAT JSON files found under: {dirs}")
 
     category_counts: Counter = Counter()
     mapping_rule_counter: Counter = Counter()
@@ -231,6 +237,7 @@ def main() -> int:
         "target_parser_ir_schema_hash": mapping_document[
             "target_parser_ir_schema_hash"
         ],
+        "aat_dirs": [str(path) for path in args.aat_dir],
         "mapping_path": str(args.out),
     }
 

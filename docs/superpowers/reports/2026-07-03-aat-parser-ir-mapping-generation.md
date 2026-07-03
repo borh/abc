@@ -35,3 +35,5 @@ Date: 2026-07-03
 - `style` maps to parser-IR `emphasis`.
 - `windows-31j-lossy` maps to parser-IR `source.encoding = Shift_JIS` with an `AMBIGUITY` entry.
 - Generated mapping is derived from folded measured rule buckets, not the historical 27-rule synthesized table.
+
+Mapping and adapter-boundary follow-up: `docs/superpowers/specs/2026-07-03-mapping-and-adapter-boundary-decision.md`.

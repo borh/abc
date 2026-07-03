@@ -38,3 +38,5 @@ Run directory: `/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z`
 - worktree status captured at metadata time: `M flake.nix
 ?? crates/README.md
 ?? docs/handoffs/`
+
+Mapping and adapter-boundary follow-up: `docs/superpowers/specs/2026-07-03-mapping-and-adapter-boundary-decision.md`.

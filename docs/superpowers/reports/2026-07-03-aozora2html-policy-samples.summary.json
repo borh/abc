@@ -1,10 +1,10 @@
 {
   "run_dir": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z",
-  "retry_run_dir": "/db/ab-validator/aat-corpus/aozora2html-policy-retry-20260703T055526Z",
+  "retry_run_dir": "/db/ab-validator/aat-corpus/aozora2html-source-feature-gap-20260703T082427Z",
   "sample_counts": {
     "warigaki": {
       "observed_in_aat": 10,
-      "adapter_timeout_or_protocol_error": 7,
+      "adapter_timeout_or_protocol_error": 10,
       "schema_invalid_or_no_aat": 0,
       "parse_incomplete": 5,
       "report_failed_other_property": 10,

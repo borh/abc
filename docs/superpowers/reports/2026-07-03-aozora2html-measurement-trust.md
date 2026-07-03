@@ -2,7 +2,7 @@
 
 - run_dir: `/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z`
 - report_id: `aozora2html-full-2026-07-03`
-- retry run: `/db/ab-validator/aat-corpus/aozora2html-policy-retry-20260703T055526Z`
+- retry run: `/db/ab-validator/aat-corpus/aozora2html-source-feature-gap-20260703T082427Z`
 
 ## Source Counts
 
@@ -19,18 +19,18 @@
 | kunten works | 464 |
 | kunten nodes | 22504 |
 | kunten semantic observations | 23174 |
-| kunten observations | 22504 |
+| kunten observations | 45678 |
 
 ## warigaki Trust Buckets
 
 | Bucket | Works |
 |---|---:|
-| observed_in_aat | 265 |
-| adapter_timeout_or_protocol_error | 7 |
+| observed_in_aat | 275 |
+| adapter_timeout_or_protocol_error | 32 |
 | schema_invalid_or_no_aat | 0 |
 | parse_incomplete | 5 |
-| report_failed_other_property | 17 |
-| source_feature_without_aat_observation | 65 |
+| report_failed_other_property | 16 |
+| source_feature_without_aat_observation | 31 |
 
 ## warigaki Failure Overlap
 
@@ -47,11 +47,11 @@
 
 | Bucket | Works |
 |---|---:|
-| observed_in_aat | 457 |
-| adapter_timeout_or_protocol_error | 12 |
+| observed_in_aat | 435 |
+| adapter_timeout_or_protocol_error | 36 |
 | schema_invalid_or_no_aat | 0 |
 | parse_incomplete | 10 |
-| report_failed_other_property | 153 |
+| report_failed_other_property | 151 |
 | source_feature_without_aat_observation | 3 |
 
 ## kunten Failure Overlap

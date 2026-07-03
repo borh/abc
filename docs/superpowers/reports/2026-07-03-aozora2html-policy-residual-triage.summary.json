@@ -1,37 +1,37 @@
 {
   "run_dir": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z",
-  "retry_run_dir": "/db/ab-validator/aat-corpus/aozora2html-policy-retry-20260703T055526Z",
+  "retry_run_dir": "/db/ab-validator/aat-corpus/aozora2html-source-feature-gap-20260703T082427Z",
   "audit_summary_json": "docs/superpowers/reports/2026-07-03-aozora2html-measurement-trust.summary.json",
   "worksets_dir": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/residual-worksets",
   "bucket_counts": {
     "warigaki": {
-      "adapter_timeout_or_protocol_error": 7,
+      "adapter_timeout_or_protocol_error": 32,
       "schema_invalid_or_no_aat": 0,
       "parse_incomplete": 5,
-      "report_failed_other_property": 17,
-      "source_feature_without_aat_observation": 65
+      "report_failed_other_property": 16,
+      "source_feature_without_aat_observation": 31
     },
     "kunten": {
-      "adapter_timeout_or_protocol_error": 12,
+      "adapter_timeout_or_protocol_error": 36,
       "schema_invalid_or_no_aat": 0,
       "parse_incomplete": 10,
-      "report_failed_other_property": 153,
+      "report_failed_other_property": 151,
       "source_feature_without_aat_observation": 3
     }
   },
   "bucket_evidence": {
     "warigaki": {
       "adapter_timeout_or_protocol_error": {
-        "works": 7,
-        "report_present": 7,
+        "works": 32,
+        "report_present": 32,
         "aat_present": 0,
         "clean_reports": 0,
         "failed_properties": {
           "adapter_protocol_error": 1,
-          "adapter_timeout": 6
+          "adapter_timeout": 31
         },
         "evidence_runs": {
-          "retry": 7
+          "baseline": 32
         }
       },
       "schema_invalid_or_no_aat": {
@@ -53,47 +53,46 @@
           "ruby_completeness": 5
         },
         "evidence_runs": {
-          "retry": 5
+          "baseline": 5
         }
       },
       "report_failed_other_property": {
-        "works": 17,
-        "report_present": 17,
-        "aat_present": 17,
+        "works": 16,
+        "report_present": 16,
+        "aat_present": 16,
         "clean_reports": 0,
         "failed_properties": {
           "gaiji_resolution": 2,
           "ruby_completeness": 1,
-          "visible_text_body_order": 16
+          "visible_text_body_order": 15
         },
         "evidence_runs": {
-          "baseline": 16,
-          "retry": 1
+          "baseline": 16
         }
       },
       "source_feature_without_aat_observation": {
-        "works": 65,
-        "report_present": 65,
-        "aat_present": 65,
-        "clean_reports": 65,
+        "works": 31,
+        "report_present": 31,
+        "aat_present": 31,
+        "clean_reports": 31,
         "failed_properties": {},
         "evidence_runs": {
-          "baseline": 63,
-          "retry": 2
+          "baseline": 27,
+          "retry": 4
         }
       }
     },
     "kunten": {
       "adapter_timeout_or_protocol_error": {
-        "works": 12,
-        "report_present": 12,
+        "works": 36,
+        "report_present": 36,
         "aat_present": 0,
         "clean_reports": 0,
         "failed_properties": {
-          "adapter_timeout": 12
+          "adapter_timeout": 36
         },
         "evidence_runs": {
-          "retry": 12
+          "baseline": 36
         }
       },
       "schema_invalid_or_no_aat": {
@@ -115,22 +114,21 @@
           "ruby_completeness": 10
         },
         "evidence_runs": {
-          "retry": 10
+          "baseline": 10
         }
       },
       "report_failed_other_property": {
-        "works": 153,
-        "report_present": 153,
-        "aat_present": 153,
+        "works": 151,
+        "report_present": 151,
+        "aat_present": 151,
         "clean_reports": 0,
         "failed_properties": {
-          "gaiji_resolution": 5,
+          "gaiji_resolution": 4,
           "ruby_completeness": 1,
-          "visible_text_body_order": 153
+          "visible_text_body_order": 151
         },
         "evidence_runs": {
-          "baseline": 151,
-          "retry": 2
+          "baseline": 151
         }
       },
       "source_feature_without_aat_observation": {
@@ -145,7 +143,7 @@
       }
     }
   },
-  "residual_union_count": 264,
+  "residual_union_count": 266,
   "worksets": {
     "warigaki.adapter_timeout_or_protocol_error": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/residual-worksets/warigaki-adapter_timeout_or_protocol_error.json",
     "warigaki.schema_invalid_or_no_aat": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/residual-worksets/warigaki-schema_invalid_or_no_aat.json",

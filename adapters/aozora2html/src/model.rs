@@ -134,5 +134,3 @@ pub struct DecodedSource {
     pub encoding: &'static str,
     pub source_hash: String,
 }
-
-#[derive(Debug, Serialize, Deserialize)]

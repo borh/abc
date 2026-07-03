@@ -2,8 +2,9 @@ use std::ops::Range;
 use std::path::Path;
 
 use ab_morph_diff::{
-    Analysis, ChangedValue, CompactComparison, CompactComparisonExample, CompactExampleKind,
-    CompactFeatureChange, Comparison, CoverageMismatchKind, FeatureDiff, Region, SegmentationKind,
+    Analysis, AnalyzerId, ChangedValue, CompactComparison, CompactComparisonExample,
+    CompactExampleKind, CompactFeatureChange, Comparison, ComparisonStats, CoverageMismatchKind,
+    FeatureDiff, Region, SegmentationKind, TextId,
 };
 use serde::{Deserialize, Serialize};
 
@@ -72,15 +73,20 @@ pub(crate) struct ComparisonSummaryRow {
 }
 
 impl ComparisonSummaryRow {
-    #[cfg(test)]
-    pub(crate) fn from_comparison(source_id: String, comparison: &Comparison) -> Self {
-        let stats = &comparison.stats;
+    fn from_parts(
+        source_id: String,
+        text_id: TextId,
+        from_analyzer: AnalyzerId,
+        to_analyzer: AnalyzerId,
+        stats: &ComparisonStats,
+        source_script_category: ScriptCategory,
+    ) -> Self {
         Self {
             source_id,
-            text_id: comparison.text_id.clone(),
-            source_script_category: ScriptCategory::Other,
-            from_analyzer: comparison.from_analyzer.clone(),
-            to_analyzer: comparison.to_analyzer.clone(),
+            text_id,
+            source_script_category,
+            from_analyzer,
+            to_analyzer,
             from_morphemes: stats.from_morphemes,
             to_morphemes: stats.to_morphemes,
             one_to_one_regions: stats.one_to_one_regions,
@@ -102,37 +108,31 @@ impl ComparisonSummaryRow {
         }
     }
 
+    #[cfg(test)]
+    pub(crate) fn from_comparison(source_id: String, comparison: &Comparison) -> Self {
+        Self::from_parts(
+            source_id,
+            comparison.text_id.clone(),
+            comparison.from_analyzer.clone(),
+            comparison.to_analyzer.clone(),
+            &comparison.stats,
+            ScriptCategory::Other,
+        )
+    }
+
     pub(crate) fn from_compact_comparison(
         source_id: String,
         comparison: &CompactComparison,
         source_text: &str,
     ) -> Self {
-        let stats = &comparison.stats;
-        Self {
+        Self::from_parts(
             source_id,
-            text_id: comparison.text_id.clone(),
-            source_script_category: classify_text(source_text),
-            from_analyzer: comparison.from_analyzer.clone(),
-            to_analyzer: comparison.to_analyzer.clone(),
-            from_morphemes: stats.from_morphemes,
-            to_morphemes: stats.to_morphemes,
-            one_to_one_regions: stats.one_to_one_regions,
-            one_to_one_with_feature_differences: stats.one_to_one_with_feature_differences,
-            segmentation_regions: stats.segmentation_regions,
-            whitespace_segmentation_regions: stats.whitespace_segmentation_regions,
-            lexical_segmentation_regions: stats.lexical_segmentation_regions,
-            coverage_mismatch_regions: stats.coverage_mismatch_regions,
-            split_regions: stats.split_regions,
-            merge_regions: stats.merge_regions,
-            resegment_regions: stats.resegment_regions,
-            whitespace_feature_diff_regions: stats.whitespace_feature_diff_regions,
-            lexical_feature_diff_regions: stats.lexical_feature_diff_regions,
-            from_morphemes_in_segmentation: stats.from_morphemes_in_segmentation,
-            to_morphemes_in_segmentation: stats.to_morphemes_in_segmentation,
-            boundary_precision: stats.boundary_precision,
-            boundary_recall: stats.boundary_recall,
-            boundary_f1: stats.boundary_f1,
-        }
+            comparison.text_id.clone(),
+            comparison.from_analyzer.clone(),
+            comparison.to_analyzer.clone(),
+            &comparison.stats,
+            classify_text(source_text),
+        )
     }
 }
 

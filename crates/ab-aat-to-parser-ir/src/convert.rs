@@ -408,6 +408,7 @@ fn map_inline_to_nodes(
             Ok(end)
         }
         "warigaki" => map_warigaki_to_nodes(node, nodes, recorder, offset, path),
+        "figure" => map_figure_to_node(node, nodes, recorder, offset, path),
         "font_size" | "keigakomi" | "caption" => {
             let kind = node["kind"].as_str().unwrap_or("");
             let pointer = format!("{path}.{kind}");
@@ -435,6 +436,65 @@ fn map_inline_to_nodes(
             Ok(end)
         }
         other => bail!("unsupported inline kind: {other}"),
+    }
+}
+
+fn map_figure_to_node(
+    node: &Value,
+    nodes: &mut Vec<Value>,
+    recorder: &mut DivergenceRecorder,
+    offset: u64,
+    path: &str,
+) -> Result<u64> {
+    let filename_pointer = format!("{path}.figure.filename");
+    let filename = node["filename"].as_str().unwrap_or("");
+    recorder.record(
+        "INVENTION",
+        Some(filename_pointer.as_str()),
+        Some("image.src"),
+        node.get("filename").cloned(),
+        Some(json!(filename)),
+    )?;
+
+    record_optional_figure_loss(node, recorder, path, "caption")?;
+    record_optional_figure_loss(node, recorder, path, "css_class")?;
+    record_optional_figure_loss(node, recorder, path, "height")?;
+    record_optional_figure_loss(node, recorder, path, "width")?;
+
+    let span = map_span(node.get("span"), offset, offset, recorder, path)?;
+    nodes.push(json!({
+        "type": "image",
+        "span": span,
+        "src": filename,
+        "alt": node.get("alt").cloned().unwrap_or(Value::Null),
+    }));
+    Ok(offset)
+}
+
+fn record_optional_figure_loss(
+    node: &Value,
+    recorder: &mut DivergenceRecorder,
+    path: &str,
+    field: &str,
+) -> Result<()> {
+    if node.get(field).is_some_and(|value| !value.is_null()) {
+        let pointer = format!("{path}.figure.{field}");
+        recorder.record(
+            "LOSS",
+            Some(pointer.as_str()),
+            None,
+            node.get(field).and_then(scalar_divergence_value),
+            None,
+        )?;
+    }
+    Ok(())
+}
+
+fn scalar_divergence_value(value: &Value) -> Option<Value> {
+    if value.is_boolean() || value.is_i64() || value.is_u64() || value.is_string() {
+        Some(value.clone())
+    } else {
+        None
     }
 }
 

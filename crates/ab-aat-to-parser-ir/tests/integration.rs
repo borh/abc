@@ -268,6 +268,60 @@ fn converts_text_ruby_gaiji_and_validates_parser_ir() {
 }
 
 #[test]
+fn projects_measured_figure_inline_to_image_node() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let aat = json!({
+        "version": 1,
+        "work_id": "figure",
+        "meta": base_meta(
+            "utf-8",
+            "sha256:1212121212121212121212121212121212121212121212121212121212121212",
+        ),
+        "blocks": [{
+            "kind": "paragraph",
+            "content": [
+                {"kind": "text", "value": "A"},
+                {
+                    "kind": "figure",
+                    "filename": "figures/001.png",
+                    "alt": "Figure alt",
+                    "css_class": "illustration",
+                    "width": 640,
+                    "height": 480,
+                    "caption": [{"kind": "text", "value": "caption"}]
+                },
+                {"kind": "text", "value": "B"}
+            ]
+        }]
+    });
+
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: ConversionOptions::default(),
+    })
+    .unwrap();
+
+    let nodes = output.parser_ir["nodes"].as_array().unwrap();
+    assert_eq!(nodes[1]["type"], "image");
+    assert_eq!(nodes[1]["src"], "figures/001.png");
+    assert_eq!(nodes[1]["alt"], "Figure alt");
+    assert_eq!(nodes[1]["span"]["start"], 1);
+    assert_eq!(nodes[1]["span"]["end"], 1);
+    assert_eq!(nodes[2]["text"], "B");
+    assert_eq!(nodes[2]["span"]["start"], 1);
+    for expected in ["I-12", "L-36", "L-37", "L-38", "L-39"] {
+        assert!(
+            output.emitted_rule_ids.contains(expected),
+            "missing measured figure rule {expected}"
+        );
+    }
+
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
+#[test]
 fn measured_policy_projects_style_heading_warning_and_warigaki() {
     let (schemas, mapping) = schemas_and_mapping();
     let mut meta = base_meta(

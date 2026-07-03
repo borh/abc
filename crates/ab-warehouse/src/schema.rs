@@ -1,4 +1,5 @@
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 pub const SCHEMA_VERSION: u32 = 1;
 
@@ -252,10 +253,10 @@ pub struct AnalysisRow {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MorphemeRow {
-    pub run_id: String,
-    pub source_id: String,
-    pub text_id: String,
-    pub analyzer_id: String,
+    pub run_id: Arc<str>,
+    pub source_id: Arc<str>,
+    pub text_id: Arc<str>,
+    pub analyzer_id: Arc<str>,
     pub morpheme_index: u64,
     pub byte_start: u64,
     pub byte_end: u64,
@@ -266,10 +267,10 @@ pub struct MorphemeRow {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MorphemeFeatureRow {
-    pub run_id: String,
-    pub source_id: String,
-    pub text_id: String,
-    pub analyzer_id: String,
+    pub run_id: Arc<str>,
+    pub source_id: Arc<str>,
+    pub text_id: Arc<str>,
+    pub analyzer_id: Arc<str>,
     pub morpheme_index: u64,
     pub feature_key: String,
     pub feature_value: Option<String>,

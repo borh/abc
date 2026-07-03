@@ -57,6 +57,13 @@ pub(crate) fn morpheme_rows_for_range(
     analysis: &Analysis,
     range: Range<usize>,
 ) -> Vec<MorphemeRow> {
+    // The four id columns are constant across the whole analysis; share one
+    // Arc<str> per column and bump the refcount per row instead of cloning a
+    // fresh String per morpheme.
+    let run_id = std::sync::Arc::<str>::from(run_id);
+    let source_id = std::sync::Arc::<str>::from(source_id);
+    let text_id = std::sync::Arc::<str>::from(analysis.text_id.as_ref());
+    let analyzer_id = std::sync::Arc::<str>::from(analysis.analyzer.as_ref());
     analysis
         .morphemes
         .iter()
@@ -64,10 +71,10 @@ pub(crate) fn morpheme_rows_for_range(
         .skip(range.start)
         .take(range.end.saturating_sub(range.start))
         .map(|(index, morpheme)| MorphemeRow {
-            run_id: run_id.to_owned(),
-            source_id: source_id.to_owned(),
-            text_id: analysis.text_id.clone(),
-            analyzer_id: analysis.analyzer.clone(),
+            run_id: std::sync::Arc::clone(&run_id),
+            source_id: std::sync::Arc::clone(&source_id),
+            text_id: std::sync::Arc::clone(&text_id),
+            analyzer_id: std::sync::Arc::clone(&analyzer_id),
             morpheme_index: index as u64,
             byte_start: morpheme.byte_span.start as u64,
             byte_end: morpheme.byte_span.end as u64,
@@ -93,6 +100,10 @@ pub(crate) fn morpheme_feature_rows_for_range(
     analysis: &Analysis,
     range: Range<usize>,
 ) -> Vec<MorphemeFeatureRow> {
+    let run_id = std::sync::Arc::<str>::from(run_id);
+    let source_id = std::sync::Arc::<str>::from(source_id);
+    let text_id = std::sync::Arc::<str>::from(analysis.text_id.as_ref());
+    let analyzer_id = std::sync::Arc::<str>::from(analysis.analyzer.as_ref());
     analysis
         .morphemes
         .iter()
@@ -100,14 +111,18 @@ pub(crate) fn morpheme_feature_rows_for_range(
         .skip(range.start)
         .take(range.end.saturating_sub(range.start))
         .flat_map(|(index, morpheme)| {
+            let run_id = std::sync::Arc::clone(&run_id);
+            let source_id = std::sync::Arc::clone(&source_id);
+            let text_id = std::sync::Arc::clone(&text_id);
+            let analyzer_id = std::sync::Arc::clone(&analyzer_id);
             morpheme
                 .features
                 .iter()
                 .map(move |(key, value)| MorphemeFeatureRow {
-                    run_id: run_id.to_owned(),
-                    source_id: source_id.to_owned(),
-                    text_id: analysis.text_id.clone(),
-                    analyzer_id: analysis.analyzer.clone(),
+                    run_id: std::sync::Arc::clone(&run_id),
+                    source_id: std::sync::Arc::clone(&source_id),
+                    text_id: std::sync::Arc::clone(&text_id),
+                    analyzer_id: std::sync::Arc::clone(&analyzer_id),
                     morpheme_index: index as u64,
                     feature_key: key.to_string(),
                     feature_value: value.as_ref().map(ToString::to_string),

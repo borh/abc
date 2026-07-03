@@ -26,11 +26,11 @@
 
 - Create `reports/aat-fidelity/aat_parser_ir_mapping/c14n.py`: shared canonical JSON and schema-hash implementation.
 - Modify `reports/aat-fidelity/aat_parser_ir_mapping/mapping_doc.py`: consume `c14n.schema_hash`, accept `mapping_version`, keep stable path but emit `0.1.1`.
-- Modify `reports/aat-fidelity/aat_parser_ir_mapping/mapper.py`: correct invalid AAT pointers, add explicit missing-span ledger, and keep warigaki as a measured `UNSUPPORTED` rule only when measured inputs contain it.
+- Modify `reports/aat-fidelity/aat_parser_ir_mapping/mapper.py`: correct invalid AAT pointers, add explicit missing-span ledger, advance synthesized span offsets by projected UTF-8 byte length, and keep warigaki as a measured `UNSUPPORTED` rule only when measured inputs contain it.
 - Modify `reports/aat-fidelity/aat_parser_ir_mapping/generate.py`: accept multiple `--aat-dir`, pass `mapping_version`, validate pointer contracts, and report input dirs.
 - Create `reports/aat-fidelity/aat_parser_ir_mapping/validate_contract.py`: validate generated mappings against ABC schema and AAT pointer grammar.
 - Create `data/aat-parser-ir-divergence-bundle-v1.schema.json`: local bundle schema whose `records[]` shape matches ABC's per-entry divergence record schema.
-- Modify `tests/aat-parser-ir-mapping-smoke.sh`: cover c14n hashes, aozora-rs zero-unsupported evidence, and generated `0.1.1` artifact checks.
+- Modify `tests/aat-parser-ir-mapping-smoke.sh`: cover c14n hashes, aozora-rs zero-unsupported evidence, generated `0.1.1` artifact checks, and required rule-identity checks that replace the old fixed 25-rule invariant.
 - Create `tests/aat-parser-ir-schema-hash-smoke.sh`: direct hash canonicalization smoke.
 - Create `tests/aat-parser-ir-divergence-bundle-smoke.sh`: validates bundle schema plus ABC per-record schema compatibility.
 - Create `tests/aat-parser-ir-mapping-policy-smoke.sh`: small fixture proving span, pointer, and warigaki mapping policy before the full run.
@@ -64,7 +64,7 @@ Create `reports/aat-fidelity/aat_parser_ir_mapping/c14n.py`:
 abc-legacy-json-c14n-v0:
 1. parse JSON;
 2. serialize UTF-8 JSON with sorted object keys and compact separators;
-3. escape "/" as "\\/";
+3. escape every "/" as "\\/", including slashes inside string values;
 4. SHA-256 the resulting bytes and prefix with "sha256:".
 """
 
@@ -426,7 +426,7 @@ git commit -m "feat: define parser-ir divergence bundle schema"
 
 ---
 
-### Task 3: Correct Mapper Ledger Policy
+### Task 3: Correct Mapper Ledger and Span Policy
 
 **Files:**
 - Modify: `reports/aat-fidelity/aat_parser_ir_mapping/mapper.py`
@@ -487,14 +487,28 @@ doc = build_mapping_document(json.load(f), mapping_version=args.mapping_version)
 
 - [ ] **Step 2: Emit missing-span ambiguity ledger entries**
 
-In `reports/aat-fidelity/aat_parser_ir_mapping/mapper.py`, replace `map_span` with:
+In `reports/aat-fidelity/aat_parser_ir_mapping/mapper.py`, add these helpers above `map_span`:
 
 ```python
-def map_span(aat_span, offset, ledger_list, path):
+def utf8_len(value):
+    return len((value or "").encode("utf-8"))
+
+
+def span_end(span, fallback_end):
+    if span is None:
+        return fallback_end
+    return span.get("byte_end", fallback_end)
+```
+
+Then replace `map_span` with:
+
+```python
+def map_span(aat_span, fallback_start, fallback_end, ledger_list, path):
     """AAT decoded-utf8 byte offsets -> parser-IR span.
 
     Production AAT spans are mostly absent. Parser-IR requires spans, so missing
-    spans are an explicit AMBIGUITY bucket rather than an INVENTION sidecar.
+    spans are an explicit AMBIGUITY bucket rather than an INVENTION sidecar. The
+    fallback end advances by projected UTF-8 byte length.
     """
     if aat_span is None:
         ledger_list.append(
@@ -502,12 +516,12 @@ def map_span(aat_span, offset, ledger_list, path):
                 "AMBIGUITY",
                 f"{path}.span",
                 "span",
-                "AAT node has no serialized span; parser-IR requires decoded_utf8 span, so a zero-width span was synthesized",
+                "AAT node has no serialized span; parser-IR requires decoded_utf8 span, so a projected UTF-8 fallback span was synthesized",
             )
         )
         return {
-            "start": offset,
-            "end": offset,
+            "start": fallback_start,
+            "end": fallback_end,
             "line": None,
             "column": None,
             "coordinate_system": "decoded_utf8",
@@ -522,33 +536,193 @@ def map_span(aat_span, offset, ledger_list, path):
             )
         )
     return {
-        "start": aat_span.get("byte_start", offset),
-        "end": aat_span.get("byte_end", offset),
+        "start": aat_span.get("byte_start", fallback_start),
+        "end": aat_span.get("byte_end", fallback_end),
         "line": aat_span.get("line_start"),
         "column": None,
         "coordinate_system": "decoded_utf8",
     }
 ```
 
-Then update all call sites:
+Then update `map_inline` so it returns `(node_or_none, next_offset)`, not just a node. Replace the beginning and the `text` branch with:
 
 ```python
-pir_span = map_span(span, offset, ledger_list, path)
+def map_inline(node, offset, ledger_list, path):
+    kind = node.get("kind")
+    span = node.get("span")
+
+    if kind == "text":
+        value = node.get("value", "")
+        fallback_end = offset + utf8_len(value)
+        pir_span = map_span(span, offset, fallback_end, ledger_list, path)
+        return {
+            "type": "text", "span": pir_span, "text": value,
+        }, span_end(span, fallback_end)
+```
+
+For the `ruby` branch, compute the fallback from the projected base before constructing the node:
+
+```python
+base = node.get("base", "")
+fallback_end = offset + utf8_len(base)
+pir_span = map_span(span, offset, fallback_end, ledger_list, path)
+```
+
+and end the branch with:
+
+```python
+        }, span_end(span, fallback_end)
+```
+
+For the `gaiji` branch, compute the fallback from the visible resolved string when present, otherwise from the description:
+
+```python
+visible = node.get("resolved") or node.get("description", "")
+fallback_end = offset + utf8_len(visible)
+pir_span = map_span(span, offset, fallback_end, ledger_list, path)
+```
+
+and end the branch with:
+
+```python
+        }, span_end(span, fallback_end)
+```
+
+For the `accent`, `figure`, and `style` branches, compute `fallback_end` from the projected text or filename before calling `map_span`, then return `(node, span_end(span, fallback_end))`. For example, the `style` branch should become:
+
+```python
+    if kind == "style":
+        projected_text = text_projection(node, ledger_list, path)
+        fallback_end = offset + utf8_len(projected_text)
+        pir_span = map_span(span, offset, fallback_end, ledger_list, path)
+        ledger_list.append(ledger("AMBIGUITY", f"{path}.style",
+                                  "emphasis", "style inline_container mapped to emphasis; parser-IR does not preserve nested inline container identity"))
+        return {
+            "type": "emphasis", "span": pir_span,
+            "text": projected_text,
+            "style": node.get("style_type", ""),
+        }, span_end(span, fallback_end)
+```
+
+For dropped inline nodes, return `(None, next_offset)` rather than `None`. Use visible text projection for dropped containers and source length for raw nodes:
+
+```python
+    if kind == "warigaki":
+        ledger_list.append(ledger("UNSUPPORTED", f"{path}.warigaki",
+                                  "(none)", "parser-IR has no warigaki node; upper/lower flattened to text nodes, split-line structure lost"))
+        return None, span_end(span, offset)
+
+    if kind == "raw":
+        ledger_list.append(ledger("UNSUPPORTED", f"{path}.raw",
+                                  "(none)", "parser-IR has no raw node; faithful escape hatch dropped"))
+        return None, span_end(span, offset + utf8_len(node.get("source", "")))
+
+    if kind in ("font_size", "tcy", "keigakomi", "yokogumi", "caption"):
+        ledger_list.append(ledger("UNSUPPORTED", f"{path}.{kind}",
+                                  "emphasis(?)", f"inline_container kind '{kind}' has no first-class parser-IR node; only emphasis.text/style exist"))
+        return None, span_end(span, offset + utf8_len(text_projection(node, ledger_list, path)))
+```
+
+For the final unknown-kind branch, return:
+
+```python
+    return None, span_end(span, offset)
+```
+
+Then update every `map_inline` caller to thread offsets. In the paragraph branch:
+
+```python
+        for i, child in enumerate(block.get("content", [])):
+            cpath = f"{path}.content[{i}]"
+            if child.get("kind") == "warigaki":
+                ledger_list.append(ledger("UNSUPPORTED", f"{cpath}.warigaki",
+                                          "(none)", "parser-IR has no warigaki node; upper/lower flattened to text nodes, split-line structure lost"))
+                for grp in ("upper", "lower"):
+                    for j, sub in enumerate(child.get(grp, [])):
+                        n, offset = map_inline(
+                            sub,
+                            offset,
+                            ledger_list,
+                            f"{cpath}.warigaki.{grp}[{j}]",
+                        )
+                        if n is not None:
+                            nodes.append(n)
+            else:
+                n, offset = map_inline(child, offset, ledger_list, cpath)
+                if n is not None:
+                    nodes.append(n)
+```
+
+Change `map_block` to return the next offset. For heading, compute the fallback from concatenated heading text:
+
+```python
+        heading_text = "".join(parts)
+        fallback_end = offset + utf8_len(heading_text)
+        nodes.append({
+            "type": "heading",
+            "span": map_span(block.get("span"), offset, fallback_end, ledger_list, path),
+            "text": heading_text,
+            "level": level,
+        })
+        offset = span_end(block.get("span"), fallback_end)
+```
+
+For block container nodes, update the span calls and recurse with offset assignment:
+
+```python
+            fallback_end = offset
+            nodes.append({"type": "indentation", "span": map_span(block.get("span"), offset, fallback_end, ledger_list, path),
+                          "depth": 1, "text": None})
+            offset = span_end(block.get("span"), fallback_end)
 ```
 
 ```python
-"type": "indentation", "span": map_span(block.get("span"), offset, ledger_list, path),
+        for i, child in enumerate(block.get("children", [])):
+            offset = map_block(child, nodes, ledger_list, offset, f"{path}.children[{i}]")
 ```
+
+End `map_block` with:
 
 ```python
-"type": "quote", "span": map_span(block.get("span"), offset, ledger_list, path),
+    return offset
 ```
+
+Finally, in `generate.py`'s `map_aat_document`, change:
 
 ```python
-"type": "heading", "span": map_span(block.get("span"), offset, ledger_list, path),
+mapper.map_block(block, nodes, ledger_list, offset, f"blocks[{index}]")
 ```
 
-- [ ] **Step 3: Correct invalid gaiji and invented-field pointers**
+to:
+
+```python
+offset = mapper.map_block(block, nodes, ledger_list, offset, f"blocks[{index}]")
+```
+
+Make the same assignment in `mapper.py`'s `main()`.
+
+- [ ] **Step 3: Remove the stale offset claim from the probe docstring**
+
+In the top docstring of `mapper.py`, replace:
+
+```python
+  - A running `offset` advances by the AAT byte_end - byte_start of each
+    emitted inline to give parser-IR `span.start/end` (char-ish offsets), since
+    parser-IR span semantics are unspecified in schema while AAT spans are
+    decoded-UTF8 byte offsets. line is taken from AAT line_start; column is
+    unknown (null). This is itself an AMBIGUITY entry (see STRUCTURAL/SPAN).
+```
+
+with:
+
+```python
+  - A running `offset` advances by emitted parser-IR node span end. When AAT
+    spans are absent, the fallback end is the projected visible text's UTF-8
+    byte length. This keeps synthesized spans monotonic and records the
+    approximation as an AMBIGUITY entry.
+```
+
+- [ ] **Step 4: Correct invalid gaiji and invented-field pointers**
 
 In `mapper.py`, change the ruby scope ledger from:
 
@@ -601,7 +775,7 @@ ledger_list.append(ledger("INVENTION", "(none)",
                           "warnings[].code", "AAT warning has no code -> defaulted 'AAT_WARNING'"))
 ```
 
-- [ ] **Step 4: Correct block semantic pointer shapes**
+- [ ] **Step 5: Correct block semantic pointer shapes**
 
 In `map_block`, change the structural ledger from:
 
@@ -633,7 +807,7 @@ ledger_list.append(ledger("LOSS", f"{path}.heading.content[{i}].{child.get('kind
 
 Keep `heading.level` and `heading.style` paths; Task 4's pointer validator treats kind-qualified paths as valid AAT pointer grammar.
 
-- [ ] **Step 5: Let `generate.py` accept a mapping version**
+- [ ] **Step 6: Let `generate.py` accept a mapping version**
 
 In `reports/aat-fidelity/aat_parser_ir_mapping/generate.py`, add:
 
@@ -659,7 +833,7 @@ Add the version to the summary:
 "mapping_version": mapping_document["mapping_version"],
 ```
 
-- [ ] **Step 6: Add a policy smoke fixture**
+- [ ] **Step 7: Add a policy smoke fixture**
 
 Create `tests/aat-parser-ir-mapping-policy-smoke.sh`:
 
@@ -728,6 +902,25 @@ jq -e 'any(.transform_rule_descriptions[]; .category == "UNSUPPORTED" and (.desc
 jq -e 'any(.transform_rule_descriptions[]; .category == "AMBIGUITY" and .parser_ir_pointer == "span")' "$out_dir/mapping.json"
 jq -e 'any(.transform_rule_descriptions[]; .aat_pointer == "blocks[].content[].gaiji.description" and .parser_ir_pointer == "gaiji.raw_marker")' "$out_dir/mapping.json"
 jq -e 'all(.transform_rule_descriptions[]; .aat_pointer != "blocks[].content[].gaiji.raw_marker" and .aat_pointer != "blocks[].content[].gaiji.unicode")' "$out_dir/mapping.json"
+
+python3 - <<PY
+import json
+from pathlib import Path
+import sys
+
+repo_root = Path("$repo_root")
+sys.path.insert(0, str(repo_root / "reports/aat-fidelity/aat_parser_ir_mapping"))
+import generate
+
+aat = json.loads((Path("$aat_dir") / "policy.json").read_text())
+_ledger, nodes, _block_kinds, _inline_kinds, _has_warigaki = generate.map_aat_document(aat)
+spans = [node["span"] for node in nodes]
+assert spans, "fixture should emit parser-IR nodes"
+assert any(span["end"] > 0 for span in spans), spans
+for previous, current in zip(spans, spans[1:]):
+    assert current["start"] >= previous["start"], spans
+    assert current["end"] >= current["start"], spans
+PY
 ```
 
 Make it executable:
@@ -736,7 +929,7 @@ Make it executable:
 chmod +x tests/aat-parser-ir-mapping-policy-smoke.sh
 ```
 
-- [ ] **Step 7: Run the policy smoke**
+- [ ] **Step 8: Run the policy smoke**
 
 Run:
 
@@ -744,9 +937,9 @@ Run:
 bash tests/aat-parser-ir-mapping-policy-smoke.sh
 ```
 
-Expected: command exits 0 and the generated fixture mapping contains `UNSUPPORTED`, `span`, and corrected gaiji description rules.
+Expected: command exits 0, the generated fixture mapping contains `UNSUPPORTED`, `span`, and corrected gaiji description rules, and the parser-IR nodes produced by the probe have monotonic synthesized spans with at least one non-zero end offset.
 
-- [ ] **Step 8: Commit Task 3**
+- [ ] **Step 9: Commit Task 3**
 
 ```bash
 git add \
@@ -779,6 +972,9 @@ from __future__ import annotations
 
 import re
 
+MAX_POINTER_DEPTH = 12
+MAX_ARRAY_DEPTH = 6
+
 
 class MappingContractError(ValueError):
     pass
@@ -794,30 +990,41 @@ def _deref(schema: dict, node: dict) -> dict:
     return schema["$defs"][ref[len(prefix):]]
 
 
-def _kind_const(node: dict) -> str | None:
+def _kind_values(node: dict) -> list[str]:
     kind = node.get("properties", {}).get("kind", {})
     if "const" in kind:
-        return kind["const"]
+        return [kind["const"]]
     enum = kind.get("enum")
-    if isinstance(enum, list) and len(enum) == 1:
-        return enum[0]
-    return None
+    if isinstance(enum, list):
+        return [value for value in enum if isinstance(value, str)]
+    return []
 
 
-def _collect_paths(schema: dict, node: dict, prefix: str, out: set[str]) -> None:
+def _collect_paths(
+    schema: dict,
+    node: dict,
+    prefix: str,
+    out: set[str],
+    depth: int = 0,
+) -> None:
+    if depth > MAX_POINTER_DEPTH:
+        return
     node = _deref(schema, node)
     if "oneOf" in node:
         for child in node["oneOf"]:
             resolved = _deref(schema, child)
-            kind = _kind_const(resolved)
-            if kind and prefix:
+            for kind in _kind_values(resolved):
+                if not prefix:
+                    continue
                 out.add(f"{prefix}.{kind}")
-                _collect_paths(schema, resolved, f"{prefix}.{kind}", out)
-            _collect_paths(schema, resolved, prefix, out)
+                _collect_paths(schema, resolved, f"{prefix}.{kind}", out, depth + 1)
+            _collect_paths(schema, resolved, prefix, out, depth + 1)
         return
     if node.get("type") == "array":
         out.add(prefix)
-        _collect_paths(schema, node["items"], f"{prefix}[]", out)
+        if prefix.count("[]") >= MAX_ARRAY_DEPTH:
+            return
+        _collect_paths(schema, node["items"], f"{prefix}[]", out, depth + 1)
         return
     if node.get("type") == "object" or "properties" in node:
         if prefix:
@@ -827,7 +1034,7 @@ def _collect_paths(schema: dict, node: dict, prefix: str, out: set[str]) -> None
                 continue
             child_prefix = f"{prefix}.{name}" if prefix else name
             out.add(child_prefix)
-            _collect_paths(schema, child, child_prefix, out)
+            _collect_paths(schema, child, child_prefix, out, depth + 1)
 
 
 def allowed_aat_pointers(aat_schema: dict) -> set[str]:
@@ -864,10 +1071,11 @@ In `generate.py`, add:
 import validate_contract
 ```
 
-Add an argument:
+Add an argument that resolves by default from this repository, not from the caller's current directory:
 
 ```python
-parser.add_argument("--aat-schema", type=Path, default=Path("data/aat-schema.json"))
+repo_root = SCRIPT_DIR.parents[2]
+parser.add_argument("--aat-schema", type=Path, default=repo_root / "data/aat-schema.json")
 ```
 
 After `validate_mapping(mapping_document, args.abc_root.resolve())`, add:
@@ -875,7 +1083,7 @@ After `validate_mapping(mapping_document, args.abc_root.resolve())`, add:
 ```python
 aat_schema_path = args.aat_schema
 if not aat_schema_path.is_absolute():
-    aat_schema_path = Path.cwd() / aat_schema_path
+    aat_schema_path = repo_root / aat_schema_path
 validate_contract.validate_mapping_contract(
     mapping_document,
     json.loads(aat_schema_path.read_text(encoding="utf-8")),
@@ -1022,6 +1230,8 @@ jq -e '.mapping_schema_hash == "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26f
 jq -e '.target_parser_ir_schema_hash == "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"' "$out_dir/summary.json"
 jq -e 'any(.transform_rule_descriptions[]; .category == "UNSUPPORTED" and (.description | test("warigaki")))' "$out_dir/mapping.json"
 jq -e 'any(.transform_rule_descriptions[]; .category == "AMBIGUITY" and .parser_ir_pointer == "span")' "$out_dir/mapping.json"
+jq -e 'any(.transform_rule_descriptions[]; .aat_pointer == "blocks[].content[].gaiji.description" and .parser_ir_pointer == "gaiji.raw_marker")' "$out_dir/mapping.json"
+jq -e 'any(.transform_rule_descriptions[]; .category == "AMBIGUITY" and .aat_pointer == "meta.source_hash" and .parser_ir_pointer == "source.work_content_hash")' "$out_dir/mapping.json"
 jq -e 'all(.transform_rule_descriptions[]; .aat_pointer != "blocks[].content[].gaiji.raw_marker" and .aat_pointer != "blocks[].content[].gaiji.unicode")' "$out_dir/mapping.json"
 ```
 
@@ -1053,6 +1263,8 @@ jq -e '.mapping_schema_hash == "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26f
 jq -e '.target_parser_ir_schema_hash == "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"' data/aat-to-parser-ir-mapping-v1.json
 jq -e 'any(.transform_rule_descriptions[]; .category == "UNSUPPORTED" and (.description | test("warigaki")))' data/aat-to-parser-ir-mapping-v1.json
 jq -e 'any(.transform_rule_descriptions[]; .category == "AMBIGUITY" and .parser_ir_pointer == "span")' data/aat-to-parser-ir-mapping-v1.json
+jq -e 'any(.transform_rule_descriptions[]; .aat_pointer == "blocks[].content[].gaiji.description" and .parser_ir_pointer == "gaiji.raw_marker")' data/aat-to-parser-ir-mapping-v1.json
+jq -e 'any(.transform_rule_descriptions[]; .category == "AMBIGUITY" and .aat_pointer == "meta.source_hash" and .parser_ir_pointer == "source.work_content_hash")' data/aat-to-parser-ir-mapping-v1.json
 jq -e 'all(.transform_rule_descriptions[]; .aat_pointer != "blocks[].content[].gaiji.raw_marker" and .aat_pointer != "blocks[].content[].gaiji.unicode")' data/aat-to-parser-ir-mapping-v1.json
 ```
 
@@ -1077,6 +1289,8 @@ Then add a short note under `## Review Corrections`:
 ```markdown
 Protocol correction status: `data/aat-to-parser-ir-mapping-v1.json` now carries `mapping_version = 0.1.1`, includes measured aozora2html `UNSUPPORTED` warigaki evidence, uses `abc-legacy-json-c14n-v0`, and validates against the local AAT pointer contract.
 ```
+
+Also update the divergence bundle example in that spec so every `mapping_version` example is `"0.1.1"`, not `"0.1.0"`.
 
 - [ ] **Step 6: Run mapping smokes**
 
@@ -1155,7 +1369,7 @@ bash tests/aat-parser-ir-mapping-smoke.sh
 
 Expected: all commands exit 0.
 
-- [ ] **Step 4: Run broad report smokes that depend on mapping**
+- [ ] **Step 4: Run broad report regression smokes**
 
 Run:
 
@@ -1204,6 +1418,6 @@ Do not start that crate implementation in the same execution unless explicitly a
 
 ## Self-Review
 
-- Spec coverage: Gate 1 is Task 1; Gate 2 is Task 2; Gate 3 is Task 5; Gate 4 is Tasks 3-4; Gate 5 is Tasks 3 and 5. The final route to the Rust crate is Task 6.
+- Spec coverage: Gate 1 is Task 1; Gate 2 is Task 2; Gate 3 is Task 5; Gate 4 is Tasks 3-4 with a terminating pointer validator and multi-value block-container kind expansion; Gate 5 is Task 3 plus Task 5 with a span rule and a smoke assertion that synthesized spans advance beyond `0,0`. The final route to the Rust crate is Task 6.
 - Red-flag scan: every new file has full content and every modification has exact snippets.
 - Type consistency: `mapping_version`, `abc-legacy-json-c14n-v0`, `records[]`, `preserved_aat_meta`, `UnmeasuredDivergencePolicy::Refuse`, and `RecordExploratory` names match the corrected design spec.

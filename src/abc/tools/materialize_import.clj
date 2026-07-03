@@ -22,9 +22,24 @@
               events)
         "warning")))
 
+(defn- sidecar [role file media-type path-hint]
+  {"role" role
+   "hash" (str "sha256:" (files/sha256-file file))
+   "media_type" media-type
+   "path_hint" path-hint})
+
+(defn- parser-ir-sidecars [input-dir]
+  (let [warnings-file (imported-file input-dir "warnings.jsonl")
+        divergence-file (imported-file input-dir "divergence.jsonl")]
+    (cond-> [(sidecar "warnings" warnings-file "application/jsonl" "warnings.jsonl")]
+      (.exists divergence-file)
+      (conj (sidecar "mapping-divergence"
+                     divergence-file
+                     "application/jsonl"
+                     "divergence.jsonl")))))
+
 (defn parser-ir-manifest [input-dir manifest-inputs generated-at]
   (let [parser-ir-file (imported-file input-dir "parser-ir.json")
-        warnings-file (imported-file input-dir "warnings.jsonl")
         manifest-schema-hash (manifest/schema-hash "schemas/manifest.schema.json")
         identity-object (manifest/identity-object
                          manifest-inputs
@@ -38,10 +53,7 @@
                                  "application/json"
                                  "parser-ir.json"
                                  files/sha256-file)
-      :sidecars [{"role" "warnings"
-                  "hash" (str "sha256:" (files/sha256-file warnings-file))
-                  "media_type" "application/jsonl"
-                  "path_hint" "warnings.jsonl"}]
+      :sidecars (parser-ir-sidecars input-dir)
       :generated-at generated-at
       :activity-id "https://w3id.org/abc/activity/materialize-imported-parser-ir"
       :agent "abc.tools.materialize-import"
@@ -49,6 +61,7 @@
       :used [(get manifest-inputs "work_content_hash")
              (get manifest-inputs "parser_build_hash")
              (get manifest-inputs "parser_config_hash")
+             (get manifest-inputs "mapping_hash")
              (get manifest-inputs "parser_ir_schema_hash")]
       :was-derived-from [(get manifest-inputs "work_content_hash")]
       :notes "Generated from imported ab-validator parser IR output."})))

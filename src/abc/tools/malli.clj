@@ -60,6 +60,7 @@
                ["producer" "producer_version" "work_id"
                 "corpus_snapshot_hash" "work_content_hash"
                 "parser_build_hash" "parser_config_hash"
+                "mapping_hash"
                 "parser_ir_schema_hash" "diagnostic_schema_hash"
                 "warning_sidecar_hash" "run_summary_hash"
                 "comparison_report_hash"]))]

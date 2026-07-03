@@ -10,6 +10,7 @@
     "metadata_record_hash": null,
     "parser_build_hash": null,
     "parser_config_hash": null,
+    "aat_parser_ir_mapping_hash": null,
     "parser_ir_schema_hash": null,
     "tei_profile_hash": null,
     "tokenizer_build_hash": null,

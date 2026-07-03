@@ -8,6 +8,26 @@
   (:import [java.nio.file Files]
            [java.nio.file.attribute FileAttribute]))
 
+(def ^:private mapping-hash
+  "sha256:af2aac0855b0ab42111b7a05aae7a6c337963446a7bc620d2c11790e524fbb03")
+
+(defn- temp-manifest-inputs [overrides]
+  (merge
+   {"producer" "ab-validator"
+    "producer_version" "0.0.0"
+    "work_id" "fixture"
+    "corpus_snapshot_hash" "sha256:f00000000000000000000000000000000000000000000000000000000000000f"
+    "work_content_hash" "sha256:f100000000000000000000000000000000000000000000000000000000000001"
+    "parser_build_hash" "sha256:f200000000000000000000000000000000000000000000000000000000000002"
+    "parser_config_hash" "sha256:f300000000000000000000000000000000000000000000000000000000000003"
+    "mapping_hash" mapping-hash
+    "parser_ir_schema_hash" "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"
+    "diagnostic_schema_hash" "sha256:e21ef2abdbf64b6fc920b4ef9a3df0e426b7bcc1cad0a6bbdd654f41e8ff302d"
+    "warning_sidecar_hash" "sha256:f500000000000000000000000000000000000000000000000000000000000005"
+    "run_summary_hash" "sha256:f600000000000000000000000000000000000000000000000000000000000006"
+    "comparison_report_hash" "sha256:f700000000000000000000000000000000000000000000000000000000000007"}
+   overrides))
+
 (deftest v0-identity-json-test
   (is (= "{\"a\":null,\"b\":\"x\",\"c\":\"quote\\\"slash\\\\\"}"
          (manifest/v0-identity-json {"b" "x"
@@ -15,7 +35,7 @@
                                      "c" "quote\"slash\\"}))))
 
 (deftest schema-hash-test
-  (is (= "sha256:1c3f2fb966c7afe3bc0886a09bce68a7c5f4a8ffbb3377ee863a720d68906b5e"
+  (is (= "sha256:ccef47420c1f2ce1f892b7e3a1e9f9b8eeca2b74e903ec3695edbb9c82ef94e0"
          (manifest/schema-hash "schemas/manifest.schema.json")))
   (is (not= (str "sha256:" (files/sha256-file "schemas/manifest.schema.json"))
             (manifest/schema-hash "schemas/manifest.schema.json"))))
@@ -70,6 +90,13 @@
                (get-in warnings-manifest ["manifest_identity_object" "manifest_schema_hash"])))
         (is (= (get-in parser-manifest ["manifest_identity_object" "parser_ir_schema_hash"])
                (get-in warnings-manifest ["manifest_identity_object" "parser_ir_schema_hash"])))
+        (is (= mapping-hash
+               (get-in parser-manifest ["manifest_identity_object" "aat_parser_ir_mapping_hash"])))
+        (is (= mapping-hash
+               (get-in warnings-manifest ["manifest_identity_object" "aat_parser_ir_mapping_hash"])))
+        (is (some #{mapping-hash} (get-in parser-manifest ["provenance" "used"])))
+        (is (not-any? #(= "mapping-divergence" (get % "role"))
+                      (get parser-manifest "sidecars")))
         (is (= (str "sha256:" (files/sha256-file "examples/ab-validator-output/parser-ir.json"))
                (get-in parser-manifest ["content" "content_hash"])))
         (is (= (str "sha256:" (files/sha256-file "examples/ab-validator-output/warnings.jsonl"))
@@ -93,18 +120,7 @@
       ;; Write minimal supporting files into a temp input dir
       (spit (io/file input-file "manifest-inputs.json")
             (charred.api/write-json-str
-             {"producer" "ab-validator"
-              "producer_version" "0.0.0"
-              "work_id" "fixture-status"
-              "corpus_snapshot_hash" "sha256:f00000000000000000000000000000000000000000000000000000000000000f"
-              "work_content_hash" "sha256:f100000000000000000000000000000000000000000000000000000000000001"
-              "parser_build_hash" "sha256:f200000000000000000000000000000000000000000000000000000000000002"
-              "parser_config_hash" "sha256:f300000000000000000000000000000000000000000000000000000000000003"
-              "parser_ir_schema_hash" "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"
-              "diagnostic_schema_hash" "sha256:e21ef2abdbf64b6fc920b4ef9a3df0e426b7bcc1cad0a6bbdd654f41e8ff302d"
-              "warning_sidecar_hash" "sha256:f500000000000000000000000000000000000000000000000000000000000005"
-              "run_summary_hash" "sha256:f600000000000000000000000000000000000000000000000000000000000006"
-              "comparison_report_hash" "sha256:f700000000000000000000000000000000000000000000000000000000000007"}))
+             (temp-manifest-inputs {"work_id" "fixture-status"})))
       (spit (io/file input-file "parser-ir.json") "{}")
       (spit (io/file input-file "warnings.jsonl") "")
       (spit (io/file input-file "run-summary.jsonl")
@@ -130,18 +146,7 @@
     (try
       (spit (io/file input-file "manifest-inputs.json")
             (charred.api/write-json-str
-             {"producer" "ab-validator"
-              "producer_version" "0.0.0"
-              "work_id" "fixture-fallback"
-              "corpus_snapshot_hash" "sha256:f00000000000000000000000000000000000000000000000000000000000000f"
-              "work_content_hash" "sha256:f100000000000000000000000000000000000000000000000000000000000001"
-              "parser_build_hash" "sha256:f200000000000000000000000000000000000000000000000000000000000002"
-              "parser_config_hash" "sha256:f300000000000000000000000000000000000000000000000000000000000003"
-              "parser_ir_schema_hash" "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"
-              "diagnostic_schema_hash" "sha256:e21ef2abdbf64b6fc920b4ef9a3df0e426b7bcc1cad0a6bbdd654f41e8ff302d"
-              "warning_sidecar_hash" "sha256:f500000000000000000000000000000000000000000000000000000000000005"
-              "run_summary_hash" "sha256:f600000000000000000000000000000000000000000000000000000000000006"
-              "comparison_report_hash" "sha256:f700000000000000000000000000000000000000000000000000000000000007"}))
+             (temp-manifest-inputs {"work_id" "fixture-fallback"})))
       (spit (io/file input-file "parser-ir.json") "{}")
       (spit (io/file input-file "warnings.jsonl") "")
       ;; No run-summary.jsonl
@@ -151,6 +156,34 @@
         :generated-at "2026-04-26T00:00:00Z"})
       (let [parser-manifest (files/read-json (io/file out-file "parser-ir.manifest.json"))]
         (is (= "warning" (get parser-manifest "validation_status"))))
+      (finally
+        (doseq [f (reverse (file-seq out-file))] (.delete f))
+        (doseq [f (reverse (file-seq input-file))] (.delete f))))))
+
+(deftest parser-manifest-includes-divergence-sidecar-when-present-test
+  (let [input-dir (Files/createTempDirectory "abc-materialize-divergence" (make-array FileAttribute 0))
+        out-dir (Files/createTempDirectory "abc-materialize-divergence-out" (make-array FileAttribute 0))
+        input-file (.toFile input-dir)
+        out-file (.toFile out-dir)]
+    (try
+      (spit (io/file input-file "manifest-inputs.json")
+            (charred.api/write-json-str
+             (temp-manifest-inputs {"work_id" "fixture-divergence"})))
+      (spit (io/file input-file "parser-ir.json") "{}")
+      (spit (io/file input-file "warnings.jsonl") "")
+      (spit (io/file input-file "divergence.jsonl") "{\"mapping_rule_id\":\"r1\"}\n")
+      (materialize/materialize-import!
+       {:input-dir input-file
+        :output-dir out-file
+        :generated-at "2026-04-26T00:00:00Z"})
+      (let [parser-manifest (files/read-json (io/file out-file "parser-ir.manifest.json"))
+            sidecar (first (filter #(= "mapping-divergence" (get % "role"))
+                                   (get parser-manifest "sidecars")))]
+        (is (= {"role" "mapping-divergence"
+                "hash" (str "sha256:" (files/sha256-file (io/file input-file "divergence.jsonl")))
+                "media_type" "application/jsonl"
+                "path_hint" "divergence.jsonl"}
+               sidecar)))
       (finally
         (doseq [f (reverse (file-seq out-file))] (.delete f))
         (doseq [f (reverse (file-seq input-file))] (.delete f))))))

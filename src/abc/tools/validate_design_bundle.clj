@@ -3,6 +3,7 @@
             ;; before deps that emit chatty INFO logs (Aristotle/Jena/
             ;; Apache SSHD) get pulled in by other requires.
    [abc.tools.logging :as logging]
+   [abc.tools.aat-parser-ir-compat :as compat]
    [abc.tools.files :as files]
    [abc.tools.iiif :as iiif]
    [abc.tools.linked-art :as linked-art]
@@ -45,6 +46,72 @@
      (when (not= expected-parser-ir actual-parser-ir)
        [(str "ab-validator parser IR schema_hash " actual-parser-ir
              " does not match ABC parser IR schema hash " expected-parser-ir)]))))
+
+(defn compatibility-query [parser-ir manifest-inputs]
+  (let [derived-from (get parser-ir "derived_from")]
+    {:aat_version (get derived-from "aat_version")
+     :aat_adapter (get derived-from "aat_adapter")
+     :aat_adapter_version (get derived-from "aat_adapter_version")
+     :mapping_id (get derived-from "mapping_id")
+     :mapping_version (get derived-from "mapping_version")
+     :mapping_hash (get manifest-inputs "mapping_hash")
+     :mapping_schema_hash (get derived-from "mapping_schema_hash")
+     :parser_ir_schema_id (get parser-ir "schema_id")
+     :parser_ir_schema_hash (get parser-ir "schema_hash")}))
+
+(def compatibility-derived-from-keys
+  ["aat_version"
+   "aat_adapter"
+   "aat_adapter_version"
+   "mapping_id"
+   "mapping_version"
+   "mapping_schema_hash"])
+
+(defn missing-derived-from-key-errors [derived-from]
+  (->> compatibility-derived-from-keys
+       (remove #(contains? derived-from %))
+       (mapv #(str "AAT parser-IR compatibility requires parser IR derived_from." %))))
+
+(defn compatibility-mismatch-error [{:keys [aat_adapter
+                                            aat_version
+                                            mapping_id
+                                            mapping_version
+                                            mapping_hash
+                                            mapping_schema_hash
+                                            parser_ir_schema_id
+                                            parser_ir_schema_hash]}]
+  (str "AAT parser-IR compatibility registry has no entry for adapter " aat_adapter
+       ", AAT version " aat_version
+       ", mapping " mapping_id " " mapping_version
+       ", mapping hash " mapping_hash
+       ", mapping schema hash " mapping_schema_hash
+       ", parser IR schema id " parser_ir_schema_id
+       ", parser IR schema hash " parser_ir_schema_hash))
+
+(defn compatibility-errors
+  ([parser-ir manifest-inputs]
+   (compatibility-errors (compat/load-registry) parser-ir manifest-inputs))
+  ([registry parser-ir manifest-inputs]
+   (let [derived-from (get parser-ir "derived_from")
+         mapping-hash (get manifest-inputs "mapping_hash")]
+     (vec
+      (cond
+        (and (nil? derived-from) (nil? mapping-hash))
+        []
+
+        (nil? derived-from)
+        ["AAT parser-IR compatibility requires parser IR derived_from when manifest inputs mapping_hash is present"]
+
+        (nil? mapping-hash)
+        ["AAT parser-IR compatibility requires manifest inputs mapping_hash when parser IR derived_from is present"]
+
+        :else
+        (let [missing-key-errors (missing-derived-from-key-errors derived-from)]
+          (if (seq missing-key-errors)
+            missing-key-errors
+            (let [query (compatibility-query parser-ir manifest-inputs)]
+              (when-not (compat/compatible? registry query)
+                [(compatibility-mismatch-error query)])))))))))
 
 (defn validation-errors [schema value]
   (schema/validation-errors schema value))
@@ -135,13 +202,13 @@
                     {:errors errors}))))
 
 (defn validate-ab-validator-output! []
-  (let [manifest-inputs (files/read-json (files/path "examples" "ab-validator-output" "manifest-inputs.json"))]
+  (let [manifest-inputs (files/read-json (files/path "examples" "ab-validator-output" "manifest-inputs.json"))
+        parser-ir (files/read-json (files/path "examples" "ab-validator-output" "parser-ir.json"))]
     (am/explain-or-throw! ::am/manifest-inputs manifest-inputs
                           "ab-validator manifest inputs")
-    (check-errors! (schema-hash-errors manifest-inputs)))
-  (check-errors!
-   (parser-ir-schema-hash-errors
-    (files/read-json (files/path "examples" "ab-validator-output" "parser-ir.json"))))
+    (check-errors! (schema-hash-errors manifest-inputs))
+    (check-errors! (parser-ir-schema-hash-errors parser-ir))
+    (check-errors! (compatibility-errors parser-ir manifest-inputs)))
   (am/explain-or-throw! ::am/run-summary-events
                         (files/read-json-lines (files/path "examples" "ab-validator-output" "run-summary.jsonl"))
                         "ab-validator run summary")
@@ -150,7 +217,7 @@
                         "ab-validator comparison report"))
 
 (defn validate-canonicalization! []
-  (let [expected "9d49ff018a43ac2b24323276424cc325e3a5d0a22716144c8800f9fec0911f0a"
+  (let [expected "667a3bfa5ab9a5e52a88e2e7de15506936a13c5d6c33825b8983861787bbcdea"
         actual (files/sha256-file (files/path "fixtures" "canonicalization"
                                               "manifest-identity-object.canonical.json"))
         array-a (files/sha256-file (files/path "fixtures" "canonicalization"

@@ -7,6 +7,19 @@
 > records Option C with an owned, schema-addressable mapping and hands it
 > off to implementation.
 
+> **Current coordination note (2026-07-03):** ABC now has a generated,
+> measured aozora-rs candidate at
+> `prototypes/aat-to-parser-ir-probe/mapping.generated.aozora-rs.json`.
+> Treat that file as comparison evidence and an acceptance fixture, not as a
+> hand-transcribed production mapping. The production mapping document and CLI
+> were restored in the sibling `../ab-validator` repo. ABC now gates the
+> imported fixture with the producer-owned mapping document hash
+> `sha256:af2aac0855b0ab42111b7a05aae7a6c337963446a7bc620d2c11790e524fbb03`
+> and an adapter-scoped compatibility registry entry for measured
+> `aozora-rs-adapter` evidence. This registry entry is not adapter-neutral:
+> aozora2html warigaki/kunten policy remains a separate measured vocabulary
+> question.
+
 ## 1. Owned mapping artifact spec
 
 ### 1.1 Where the artifacts live
@@ -251,7 +264,7 @@ policy per category is:
 | **INVENTION** | 8 | invent per documented rule | value-level: yes; schema-level: no | Filling required parser-IR fields is necessary. Value-level inventions (ruby scope, raw marker, emphasis style, image src) encode producer choices and are recorded. Schema-level inventions (schema identity, normalization default, null source_path, empty errors) are pure mapping constants. |
 | **UNSUPPORTED** | 1 (warigaki) + style nodes (mapped via I-09, not UNSUPPORTED) | **drop-sidecar** + critical severity (mode-bound: dev default; release-smoke fails on critical-severity records) | yes | Full-corpus probe (`docs/handoffs/full-corpus-probe.md` Finding G/H): the mapper's `style` UNSUPPORTED fires 28,492× across 5,474 files (30.6% of the corpus) — a hard `refuse` default would halt ingestion of ~1 in 3 works. Warigaki fires 0× in real aozora-rs output (17,894 docs). Demote default to `drop-sidecar`; add STYLE→EMPHASIS rule (I-09) so `style` maps rather than refuses. |
 
-> **POLICY NOTE (mode-binding).** Strictness is bound to release mode, not a CLI flag. Development builds default to **drop-sidecar** (so a single rare construct doesn't halt ingestion); **release-smoke** (ADR 0006) fails on any divergence record with `severity=critical`. This converts the policy from operator-discipline into a gate — there is no `--strict` flag to forget to set. The warigaki-specific note still applies: warigaki fires 0× in real aozora-rs data, so the real unmeasured risk this gate addresses is aozora2html `style` nodes (Finding G), not warigaki.
+> **POLICY NOTE (mode-binding).** Strictness is bound to release mode, not a CLI flag. Development builds default to **drop-sidecar** (so a single rare construct doesn't halt ingestion); **release-smoke** (ADR 0006) fails on any divergence record with `severity=critical`. This converts the policy from operator-discipline into a gate — there is no `--strict` flag to forget to set. The warigaki-specific note still applies: warigaki fires 0× in real aozora-rs data. After the ADR 0024/I-09/source-encoding follow-up probes, aozora-rs has zero measured UNSUPPORTED records; remaining warigaki policy claims require aozora2html measurement.
 
 ### Per-entry disposition using probe ledger IDs
 
@@ -680,6 +693,12 @@ The same check applies to the mapping schema hash.
 
 ### Task 7: ab-validator mapping document and CLI
 
+**Current status (2026-07-03):** execute this in the sibling `../ab-validator`
+session, not by manually copying the historical §1.3 JSON block. ABC's local
+generated candidate is only the comparison target and schema-validation
+fixture until ab-validator regenerates the producer-owned artifact from its
+restored measurement path.
+
 **Files (ab-validator repo):**
 - Create: `data/aat-to-parser-ir-mapping-v1.json`
 - Create: `crates/ab-aat-to-parser-ir/Cargo.toml`
@@ -925,8 +944,9 @@ operator-discipline into a gate — there is no `--strict` flag to forget to
 set. Applied to the U-01 disposition, the §2 loss-handling policy, Task 7
 Step 5 (the ab-validator mapping crate default CLI behavior), and the §5
 deferred-decisions warigaki annotation. The warigaki-specific note is
-preserved: warigaki fires 0× in real aozora-rs data, so the real unmeasured
-risk the gate guards is aozora2html `style` nodes (Finding G), not warigaki.
+preserved: warigaki fires 0× in real aozora-rs data. After the ADR 0024/I-09
+and source-encoding probes, aozora-rs has zero measured UNSUPPORTED records;
+remaining warigaki policy claims require aozora2html measurement.
 
 ---
 

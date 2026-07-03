@@ -23,6 +23,7 @@
     "output_format_spec_hash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
     "parser_build_hash": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
     "parser_config_hash": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+    "aat_parser_ir_mapping_hash": null,
     "parser_ir_schema_hash": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
     "tei_profile_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
     "tokenizer_build_hash": null,

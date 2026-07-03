@@ -5,6 +5,13 @@
 > `docs/handoffs/real-corpus-validation.md` from sample-based to
 > corpus-scale measurement, and overturns two of its findings.
 
+> **Current reading guide (2026-07-03):** §8 is the current measured state for
+> the aozora-rs corpus: zero measured `UNSUPPORTED` records and a generated
+> 25-rule mapping candidate. §§2-7 are preserved as historical probe evidence
+> showing how the mapper moved from sampled/manual assumptions to the current
+> generated candidate; do not use their intermediate `UNSUPPORTED` counts as
+> the current gate condition.
+
 ## 1. Method
 
 `prototypes/aat-to-parser-ir-probe/batch_aggregate.py` imports the probe
@@ -13,7 +20,7 @@ mapper's functions in-process and runs them over every file in
 No subprocess; no file clobber. Aggregates ledger entries across all 17,894
 documents. Raw output: `docs/handoffs/_probe-full-corpus-raw.txt`.
 
-## 2. Corpus-scale facts (measured, not sampled)
+## 2. Historical baseline: corpus-scale facts before ADR 0024/I-09 fixes
 
 | Metric | Value |
 |---|---:|
@@ -41,7 +48,7 @@ output uses only 2 block kinds and 4 inline kinds. The synthesized 27-entry
 ledger's `accent`/`figure`/`warigaki`/`caption`/`tcy`/etc. are all genuinely
 absent.
 
-## 3. Divergence category distribution (measured)
+## 3. Historical baseline divergence category distribution
 
 | Category | Count | % |
 |---|---:|---:|
@@ -125,13 +132,16 @@ this scale is storage noise; a per-work summary
 `{rule_id, category, count, first_path}` captures the same information in
 ~constant size per work. This changes §1.1 of the owned-mapping-design spec.
 
-## 5. What the corpus probe did NOT settle
+## 5. Historical open questions after the first full-corpus run
 
 | Question | Why | Next probe needed |
 |---|---|---|
 | Does aozora2html emit warigaki across a full corpus? | No aozora2html full-corpus AAT run exists locally (every aat dir is aozora-rs). | Run aozora2html over corpus, re-run the aggregate. |
-| Is `style` the *only* node aozora-rs classifies UNSUPPORTED? | The 28,495 UNUPPORTED entries are all `style` (sample inspection), but I did not exhaustively classify all 28,495 by aat pointer. | A 1-line counter in batch_aggregate.py: bucket UNSUPPORTED by `aat` prefix. |
+| Is `style` the *only* node aozora-rs classifies UNSUPPORTED? | The 28,495 UNSUPPORTED entries are all `style` (sample inspection), but I did not exhaustively classify all 28,495 by aat pointer. | A 1-line counter in batch_aggregate.py: bucket UNSUPPORTED by `aat` prefix. |
 | Real loss magnitude for the *designed* mapping (with I-09 added)? | The probe mapper lacks I-09, so its UNSUPPORTED count overstates real loss. | Re-run after patching map.py to map `style`→`emphasis`. |
+
+Rows 2 and 3 were resolved by the follow-up runs in §§7-8. The aozora2html
+warigaki question remains open and requires a separate adapter measurement.
 
 ## 6. Net refinements to owned-mapping-design.md
 

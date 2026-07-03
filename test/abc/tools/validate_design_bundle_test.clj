@@ -1,5 +1,6 @@
 (ns abc.tools.validate-design-bundle-test
-  (:require [abc.tools.files :as files]
+  (:require [abc.tools.aat-parser-ir-compat :as compat]
+            [abc.tools.files :as files]
             [abc.tools.malli :as am]
             [abc.tools.manifest-to-rdf :as manifest-to-rdf]
             [abc.tools.shacl :as shacl]
@@ -34,6 +35,7 @@
    "work_content_hash" (files/example-hash "01")
    "parser_build_hash" (files/example-hash "02")
    "parser_config_hash" (files/example-hash "03")
+   "mapping_hash" "sha256:af2aac0855b0ab42111b7a05aae7a6c337963446a7bc620d2c11790e524fbb03"
    "parser_ir_schema_hash" (files/example-hash "04")
    "diagnostic_schema_hash" (files/example-hash "08")
    "warning_sidecar_hash" (files/example-hash "05")
@@ -106,6 +108,13 @@
          clojure.lang.ExceptionInfo #"missing required keys"
          (am/explain-or-throw!
           ::am/manifest-inputs {"producer" "ab-validator"} "test"))))
+  (testing "requires the AAT parser-IR mapping document hash"
+    (is (thrown-with-msg?
+         clojure.lang.ExceptionInfo #"missing required keys"
+         (am/explain-or-throw!
+          ::am/manifest-inputs
+          (dissoc complete-manifest-inputs "mapping_hash")
+          "test"))))
   (testing "rejects invalid hash values"
     (is (thrown-with-msg?
          clojure.lang.ExceptionInfo #"sha256: hash"
@@ -184,6 +193,75 @@
       (is (nil? (validate/validation-errors
                  schema
                  (assoc parser-ir "derived_from" derived-from)))))))
+
+(def ^:private valid-compat-query
+  {:aat_version 1
+   :aat_adapter "aozora-rs-adapter"
+   :aat_adapter_version nil
+   :mapping_id "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe"
+   :mapping_version "0.1.0"
+   :mapping_hash "sha256:af2aac0855b0ab42111b7a05aae7a6c337963446a7bc620d2c11790e524fbb03"
+   :mapping_schema_hash "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4"
+   :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
+   :parser_ir_schema_hash "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"})
+
+(def ^:private valid-derived-from
+  {"aat_version" 1
+   "aat_adapter" "aozora-rs-adapter"
+   "aat_adapter_version" nil
+   "mapping_id" "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe"
+   "mapping_version" "0.1.0"
+   "mapping_schema_hash" "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4"})
+
+(deftest aat-parser-ir-compatibility-test
+  (let [registry (compat/load-registry)]
+    (testing "matches only the measured adapter-scoped registry entry"
+      (is (true? (compat/compatible? registry valid-compat-query)))
+      (doseq [[k v] [[:aat_version 2]
+                     [:aat_adapter "aozora2html"]
+                     [:aat_adapter_version "aozora-rs-adapter 9.9.9"]
+                     [:mapping_id "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/other"]
+                     [:mapping_version "9.9.9"]
+                     [:mapping_hash (files/example-hash "99")]
+                     [:mapping_schema_hash (files/example-hash "98")]
+                     [:parser_ir_schema_id "https://w3id.org/abc/schemas/other-parser-ir.schema.json"]
+                     [:parser_ir_schema_hash (files/example-hash "97")]]]
+        (is (false? (compat/compatible? registry (assoc valid-compat-query k v)))
+            (str "registry must reject mismatched " k))))))
+
+(deftest compatibility-errors-test
+  (testing "does not check compatibility when no AAT mapping metadata is present"
+    (is (empty? (validate/compatibility-errors
+                 {"schema_id" "https://w3id.org/abc/schemas/parser-ir.schema.json"
+                  "schema_hash" "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"}
+                 {}))))
+  (testing "requires derived_from when manifest inputs carry mapping_hash"
+    (is (= ["AAT parser-IR compatibility requires parser IR derived_from when manifest inputs mapping_hash is present"]
+           (validate/compatibility-errors
+            {"schema_id" "https://w3id.org/abc/schemas/parser-ir.schema.json"
+             "schema_hash" "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"}
+            {"mapping_hash" "sha256:af2aac0855b0ab42111b7a05aae7a6c337963446a7bc620d2c11790e524fbb03"}))))
+  (testing "requires mapping_hash when parser IR carries derived_from"
+    (is (= ["AAT parser-IR compatibility requires manifest inputs mapping_hash when parser IR derived_from is present"]
+           (validate/compatibility-errors
+            {"schema_id" "https://w3id.org/abc/schemas/parser-ir.schema.json"
+             "schema_hash" "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"
+             "derived_from" valid-derived-from}
+            {}))))
+  (testing "requires explicit adapter version key even when the value is null"
+    (is (= ["AAT parser-IR compatibility requires parser IR derived_from.aat_adapter_version"]
+           (validate/compatibility-errors
+            {"schema_id" "https://w3id.org/abc/schemas/parser-ir.schema.json"
+             "schema_hash" "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"
+             "derived_from" (dissoc valid-derived-from "aat_adapter_version")}
+            {"mapping_hash" "sha256:af2aac0855b0ab42111b7a05aae7a6c337963446a7bc620d2c11790e524fbb03"}))))
+  (testing "rejects adapter mismatch against registry"
+    (is (= ["AAT parser-IR compatibility registry has no entry for adapter aozora2html, AAT version 1, mapping https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe 0.1.0, mapping hash sha256:af2aac0855b0ab42111b7a05aae7a6c337963446a7bc620d2c11790e524fbb03, mapping schema hash sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4, parser IR schema id https://w3id.org/abc/schemas/parser-ir.schema.json, parser IR schema hash sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"]
+           (validate/compatibility-errors
+            {"schema_id" "https://w3id.org/abc/schemas/parser-ir.schema.json"
+             "schema_hash" "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"
+             "derived_from" (assoc valid-derived-from "aat_adapter" "aozora2html")}
+            {"mapping_hash" "sha256:af2aac0855b0ab42111b7a05aae7a6c337963446a7bc620d2c11790e524fbb03"})))))
 
 (deftest validate-shacl-smoke-test
   (testing "validate-design-bundle SHACL pass conforms for the example success manifest"

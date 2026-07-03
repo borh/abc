@@ -41,6 +41,7 @@
    "metadata_record_hash"
    "parser_build_hash"
    "parser_config_hash"
+   "aat_parser_ir_mapping_hash"
    "parser_ir_schema_hash"
    "tei_profile_hash"
    "tokenizer_build_hash"
@@ -58,6 +59,7 @@
                     "metadata_record_hash" nil
                     "parser_build_hash" (get manifest-inputs k)
                     "parser_config_hash" (get manifest-inputs k)
+                    "aat_parser_ir_mapping_hash" (get manifest-inputs "mapping_hash")
                     "parser_ir_schema_hash" (get manifest-inputs k)
                     "tei_profile_hash" nil
                     "tokenizer_build_hash" nil

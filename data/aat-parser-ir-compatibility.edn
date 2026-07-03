@@ -1,0 +1,16 @@
+{:entries
+ [{:aat_version 1
+   :aat_adapter "aozora-rs-adapter"
+   :aat_adapter_version nil
+   :mapping_id "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe"
+   :mapping_version "0.1.0"
+   :mapping_hash "sha256:af2aac0855b0ab42111b7a05aae7a6c337963446a7bc620d2c11790e524fbb03"
+   :mapping_schema_hash "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4"
+   :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
+   :parser_ir_schema_hash "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"
+   :evidence_scope {:adapter "aozora-rs-adapter"
+                    :corpus "aozora-rs full corpus"
+                    :files_scanned 17894
+                    :files_with_unsupported 0
+                    :generated_rules 25}
+   :compatibility "lossy"}]}

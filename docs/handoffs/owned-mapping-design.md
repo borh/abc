@@ -800,22 +800,26 @@ restored measurement path.
 ### Task 9: Record the decision in an ADR
 
 **Files:**
-- Create: `docs/adr/0023-aat-parser-ir-owned-mapping.md`
+- Create: `docs/adr/0023-owned-aat-parser-ir-mapping.md`
 
 **Steps:**
 
-- [ ] **Step 1:** Write ADR summarizing:
+- [x] **Step 1:** Write ADR summarizing:
   - Probe verdict and why Option C was selected.
   - Mapping ownership (ab-validator) vs schema ownership (ABC).
   - Loss-handling policy by category.
   - Three-axis versioning and registry design.
   - Deferred decisions (see §5).
-- [ ] **Step 2:** Run final gates:
+- [x] **Step 2:** Run final gates:
   ```bash
   nix run .#validate-design-bundle
   nix flake check
   ```
   Expected: both pass.
+
+Status 2026-07-03: recorded as ADR 0023. Final gates for the implementation
+slice are tracked in
+`docs/superpowers/plans/2026-07-03-aat-compatibility-registry-hardening.md`.
 
 ## 5. Explicitly deferred decisions
 
@@ -831,7 +835,11 @@ ADRs or TEI vocabulary work:
    entry can be added. (Annotated per `docs/handoffs/full-corpus-probe.md`:
    warigaki fires 0× in 17,894 real aozora-rs AAT documents; the original
    `refuse` default was demoted because the same UNSUPPORTED category caught
-   `style` nodes at 30.6% of the corpus.)
+   `style` nodes at 30.6% of the corpus.) Separate aozora2html measurement
+   in `../ab-validator` found warigaki in 243 works / 4,050 nodes. That is a
+   vocabulary-decision input only; it does not authorize an aozora2html
+   compatibility registry entry without a producer-owned mapping document hash
+   and policy.
 
 1b. **Whether `kunten` (訓点 — 返り点 / 送り仮名 / 再読文字) should be added to
    AAT v1 and parser-IR.** Per `docs/handoffs/aozora-manual-integration-audit.md`
@@ -845,7 +853,10 @@ ADRs or TEI vocabulary work:
    warigaki, adding it is a vocabulary decision deferred to a later AAT v2 /
    parser-IR ADR; the v1 mapping records the loss rather than inventing it.
    Frequency is low (classical-text subset) but non-zero — surfacing it here
-   prevents v1 from silently losing the construct.
+   prevents v1 from silently losing the construct. Separate aozora2html
+   measurement in `../ab-validator` found kunten in 472 works / 22,504
+   observations; those counts sharpen the priority of the vocabulary decision
+   but are not a mapping rule by themselves.
 
 2. **Whether AAT `meta.metrics`, `meta.semantic_summary`, or `x-provenance`
    should flow into parser-IR or manifest provenance.**

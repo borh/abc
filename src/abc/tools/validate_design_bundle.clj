@@ -192,6 +192,7 @@
                       validation-sidecars)
         (throw (ex-info "example TEI manifest must reference tei-validation-result.json"
                         {:manifest "examples/v0/example-work/manifest.json"}))))
+    (compat/validate-registry! (compat/load-registry))
     (when-not (validation-errors manifest-schema {})
       (throw (ex-info "manifest schema accepted an empty object"
                       {:schema "schemas/manifest.schema.json"})))))

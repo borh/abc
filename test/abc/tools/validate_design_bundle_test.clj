@@ -125,17 +125,23 @@
 
 (deftest validate-json-schemas-includes-aat-mapping-contracts-test
   (testing "design-bundle schema pass validates the AAT mapping and divergence contracts"
-    (let [checked-paths (atom [])]
+    (let [checked-paths (atom [])
+          registry-checked (atom nil)]
       (with-redefs [validate/schema-valid! (fn [_schema path]
                                              (swap! checked-paths conj path)
                                              nil)
                     validate/validate-json! (fn [& _args] nil)
                     validate/validate-json-lines! (fn [& _args] nil)
-                    validate/validation-errors (fn [& _args] [:expected-error])]
+                    validate/validation-errors (fn [& _args] [:expected-error])
+                    compat/load-registry (fn [] {:entries []})
+                    compat/validate-registry! (fn [registry]
+                                                (reset! registry-checked registry)
+                                                :ok)]
         (validate/validate-json-schemas! [])
         (is (every? (set @checked-paths)
                     ["schemas/aat-parser-ir-mapping.schema.json"
-                     "schemas/aat-parser-ir-divergence.schema.json"]))))))
+                     "schemas/aat-parser-ir-divergence.schema.json"]))
+        (is (= {:entries []} @registry-checked))))))
 
 (deftest comparison-report-schema-test
   (testing "accepts a well-formed comparison report"
@@ -205,6 +211,15 @@
    :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
    :parser_ir_schema_hash "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"})
 
+(def ^:private valid-registry-entry
+  (assoc valid-compat-query
+         :evidence_scope {:adapter "aozora-rs-adapter"
+                          :corpus "aozora-rs full corpus"
+                          :files_scanned 17894
+                          :files_with_unsupported 0
+                          :generated_rules 25}
+         :compatibility "lossy"))
+
 (def ^:private valid-derived-from
   {"aat_version" 1
    "aat_adapter" "aozora-rs-adapter"
@@ -213,10 +228,49 @@
    "mapping_version" "0.1.0"
    "mapping_schema_hash" "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4"})
 
+(defn- has-error?
+  [pattern errors]
+  (boolean (some #(re-find pattern %) errors)))
+
+(deftest aat-parser-ir-registry-validation-test
+  (testing "accepts the measured adapter-scoped registry shape"
+    (is (empty? (compat/registry-errors {:entries [valid-registry-entry]}))))
+  (testing "rejects entries without evidence scope"
+    (is (has-error? #"entry 0 is missing :evidence_scope"
+                    (compat/registry-errors
+                     {:entries [(dissoc valid-registry-entry :evidence_scope)]}))))
+  (testing "rejects adapter-neutral wildcard claims"
+    (is (has-error? #":aat_adapter must name a concrete adapter"
+                    (compat/registry-errors
+                     {:entries [(assoc valid-registry-entry :aat_adapter "*")]}))))
+  (testing "rejects malformed hashes"
+    (is (has-error? #":mapping_hash must be a sha256 hash"
+                    (compat/registry-errors
+                     {:entries [(assoc valid-registry-entry :mapping_hash "sha256:not-a-real-hash")]}))))
+  (testing "requires evidence scope to match the adapter claim"
+    (is (has-error? #":evidence_scope :adapter must equal :aat_adapter"
+                    (compat/registry-errors
+                     {:entries [(assoc-in valid-registry-entry
+                                          [:evidence_scope :adapter]
+                                          "aozora2html")]}))))
+  (testing "rejects duplicate compatibility match keys"
+    (is (has-error? #"duplicates entry 0 compatibility keys"
+                    (compat/registry-errors
+                     {:entries [valid-registry-entry
+                                (assoc-in valid-registry-entry
+                                          [:evidence_scope :corpus]
+                                          "duplicate corpus note")]})))))
+
 (deftest aat-parser-ir-compatibility-test
   (let [registry (compat/load-registry)]
     (testing "matches only the measured adapter-scoped registry entry"
       (is (true? (compat/compatible? registry valid-compat-query)))
+      (is (false? (compat/compatible?
+                   registry
+                   (assoc valid-compat-query
+                          :aat_adapter "aozora2html"
+                          :aat_adapter_version "aozora2html-adapter 0.1.0 gem-3.0.1")))
+          "aozora-rs evidence must not authorize aozora2html output")
       (doseq [[k v] [[:aat_version 2]
                      [:aat_adapter "aozora2html"]
                      [:aat_adapter_version "aozora-rs-adapter 9.9.9"]

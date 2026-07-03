@@ -320,8 +320,8 @@ fn read_aat_summaries(root: &Path) -> Result<BTreeMap<String, AatSummary>> {
     let loaded: Vec<(std::path::PathBuf, AatRoot)> = entries
         .par_iter()
         .map(|path| {
-            let bytes = fs::read(path)
-                .with_context(|| format!("failed to read {}", path.display()))?;
+            let bytes =
+                fs::read(path).with_context(|| format!("failed to read {}", path.display()))?;
             let root: AatRoot = serde_json::from_slice(&bytes)
                 .with_context(|| format!("failed to parse {}", path.display()))?;
             Ok::<_, anyhow::Error>((path.to_owned(), root))

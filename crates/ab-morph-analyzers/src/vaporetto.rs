@@ -108,13 +108,11 @@ impl MorphAnalyzer for VaporettoAnalyzer {
         let morphemes = sentence
             .iter_tokens()
             .map(|token| {
-                let byte_span =
-                    char_range_to_byte_range(&char_map, token.start(), token.end()).map_err(
-                        |message| AnalyzerError::Tokenize {
-                            analyzer: analyzer_id.clone(),
-                            message,
-                        },
-                    )?;
+                let byte_span = char_range_to_byte_range(&char_map, token.start(), token.end())
+                    .map_err(|message| AnalyzerError::Tokenize {
+                        analyzer: analyzer_id.clone(),
+                        message,
+                    })?;
 
                 Ok(RawToken {
                     emitted_surface: token.surface().to_owned(),

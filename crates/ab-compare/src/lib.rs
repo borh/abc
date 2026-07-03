@@ -118,8 +118,8 @@ fn read_reports(root: &Path) -> Result<BTreeMap<String, CheckReport>> {
     let loaded: Vec<(std::path::PathBuf, CheckReport)> = entries
         .par_iter()
         .map(|path| {
-            let bytes = fs::read(path)
-                .with_context(|| format!("failed to read {}", path.display()))?;
+            let bytes =
+                fs::read(path).with_context(|| format!("failed to read {}", path.display()))?;
             let report: CheckReport = serde_json::from_slice(&bytes)
                 .with_context(|| format!("failed to parse {}", path.display()))?;
             Ok::<_, anyhow::Error>((path.to_owned(), report))

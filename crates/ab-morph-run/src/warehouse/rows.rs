@@ -145,7 +145,15 @@ pub(crate) fn nway_fact_rows(
     let mut rows = NwayFactRows::default();
     let char_map = ab_morph_diff::CharByteMap::new(source_text);
     visit_nway_regions_with_source_text(analyses, source_text, &[], |region| {
-        push_region_rows(run_id, source_id, &text_id, source_text, &char_map, region, &mut rows);
+        push_region_rows(
+            run_id,
+            source_id,
+            &text_id,
+            source_text,
+            &char_map,
+            region,
+            &mut rows,
+        );
     })?;
     Ok(rows)
 }
@@ -173,7 +181,15 @@ where
         if flush_error.is_some() {
             return;
         }
-        push_region_rows(run_id, source_id, &text_id, source_text, &char_map, region, &mut rows);
+        push_region_rows(
+            run_id,
+            source_id,
+            &text_id,
+            source_text,
+            &char_map,
+            region,
+            &mut rows,
+        );
         if rows.regions.len() >= batch_region_limit {
             if let Err(error) = on_batch(&rows) {
                 flush_error = Some(error);

@@ -77,9 +77,13 @@ Blocking residual buckets:
 - kunten `report_failed_other_property`: 153 works
 - kunten `source_feature_without_aat_observation`: 3 works
 
-The `source_feature_without_aat_observation` buckets mean the adapter produced valid-enough AAT for those works but no matching policy observation. Those buckets need adapter/policy investigation, not just another timeout increase.
+Residual triage report: `docs/superpowers/reports/2026-07-03-aozora2html-policy-residual-triage.md`
 
-The `report_failed_other_property` buckets are also policy-relevant residuals. They have AAT evidence, but overlapping failures such as visible text order, gaiji resolution, or ruby completeness still need characterization before the measurement can be treated as a durable policy gate.
+The `source_feature_without_aat_observation` buckets are the clean policy-specific adapter-emission blocker. The residual triage found 65 warigaki works and 3 kunten works with reports present, AAT present, and clean check reports, but no matching family observation in AAT. That pattern is consistent with source markers being detected in the index but not emitted as warigaki/kunten observations by the adapter.
+
+The `report_failed_other_property` buckets are now characterized separately. All 17 warigaki works and all 153 kunten works have reports and AAT present, but they are not clean enough to classify as source-feature-only emission gaps because their reports fail other properties. Their failures are dominated by `visible_text_body_order` with small `gaiji_resolution` and `ruby_completeness` tails, so they remain adapter-oracle characterization work. They still require a reviewer decision before any lower-bound caveat can unblock CLI work.
+
+The retry-backed incomplete family buckets remain runtime or parse-completeness work: 7 warigaki and 12 kunten timeout/protocol bucket entries have no AAT, while 5 warigaki and 10 kunten parse-incomplete entries have AAT but fail `parse_completeness`, `gaiji_resolution`, and `ruby_completeness`.
 
 ## Failure Overlap
 
@@ -101,7 +105,7 @@ Sample report: `docs/superpowers/reports/2026-07-03-aozora2html-policy-samples.m
 
 Before a follow-up `crates/ab-aat-to-parser-ir` implementation plan starts, one of these must happen:
 
-1. The residual aozora2html policy buckets are fixed or characterized, then the audit and sample reports are regenerated.
+1. The source-feature emission gap is fixed or explicitly accepted for the 65 warigaki and 3 kunten `source_feature_without_aat_observation` works, then the audit, sample, and residual triage reports are regenerated.
 2. A human reviewer records `CLI_READY_WITH_LOWER_BOUND_CAVEAT` with a `Reviewer decision:` line naming the accepted known-gap list.
 
 Until then, manifest identity and compatibility-registry hardening remain paused.

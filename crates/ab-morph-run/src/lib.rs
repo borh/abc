@@ -210,7 +210,8 @@ pub fn run_analyze_aat_selected(
 
 #[cfg(test)]
 pub(crate) use pipeline::{
-    WarehouseWorkQueue, filter_resume_inputs, partition_inputs, symlink_input_file,
+    WarehouseWorkQueue, filter_resume_inputs, merge_warehouse_shard_runs, partition_inputs,
+    symlink_input_file,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -1952,6 +1953,67 @@ mod tests {
         assert_eq!(report.feature_values.total_occurrences, 4);
         assert_eq!(report.feature_values.unique_values, 2);
         assert!(report.feature_keys.duplicate_bytes > 0);
+    }
+
+    #[test]
+    fn merge_warehouse_shard_runs_coalesces_small_part_tables() {
+        use warehouse::schema::SourceRow;
+        let root = temp_dir("merge-coalesce");
+        let warehouse_dir = root.join("wh");
+        // 65 shards, each with a tiny 1-row sources.parquet -> 65 staged parts,
+        // median well under 1 MiB -> compaction triggers.
+        let mut shard_run_dirs = Vec::new();
+        for i in 0..65u64 {
+            let shard_dir = root.join(format!("shard-{i}"));
+            let shard_paths = WarehousePaths::new(&shard_dir, "shard");
+            let mut writer = WarehouseWriter::create(shard_paths.clone()).unwrap();
+            writer
+                .append_sources(&[SourceRow {
+                    run_id: "r".to_owned(),
+                    source_id: format!("s{i}"),
+                    text_id: format!("t{i}"),
+                    aat_path: format!("aat/{i}.json"),
+                    source_bytes: 1,
+                    source_chars: 1,
+                }])
+                .unwrap();
+            writer.finalize().unwrap();
+            shard_run_dirs.push(shard_paths.final_dir);
+        }
+
+        let options = WarehouseParallelOptions {
+            warehouse_dir: warehouse_dir.clone(),
+            run_id: "merged".to_owned(),
+            jobs: 1,
+            input_mode: "test",
+            input_path: "test".to_owned(),
+            analyzer_rows: vec![],
+            warehouse_profile: WarehouseProfile::Full,
+        };
+        merge_warehouse_shard_runs(&options, &shard_run_dirs).unwrap();
+
+        let merged = WarehousePaths::new(&warehouse_dir, "merged");
+        let sources_dir = merged
+            .final_dir
+            .join(WarehouseTable::Sources.file_name());
+        let sources_parts: Vec<_> = fs::read_dir(&sources_dir)
+            .unwrap()
+            .filter_map(Result::ok)
+            .filter(|entry| {
+                entry
+                    .path()
+                    .extension()
+                    .is_some_and(|ext| ext == "parquet")
+            })
+            .collect();
+        assert_eq!(
+            sources_parts.len(),
+            1,
+            "sources should be coalesced to 1 file, got {}",
+            sources_parts.len()
+        );
+
+        let _ = fs::remove_dir_all(root);
     }
 
     fn run_default(

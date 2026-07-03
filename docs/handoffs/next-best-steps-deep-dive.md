@@ -11,8 +11,10 @@
   - `d9d24f8 docs: preserve parser mapping handoff evidence`
   - `2a09630 fix(parser-ir): complete ADR 0024 fixture cascade`
 - `nix run .#validate-design-bundle` passes.
-- `nix flake check` passes. The command reports all checks passed, omitting
-  incompatible `aarch64-linux` checks.
+- `nix flake check` was run without `--no-build`; it reports all checks passed
+  on the current `x86_64-linux` system and omits incompatible `aarch64-linux`
+  checks. Nix may reuse already-built store paths, but this was not an
+  evaluation-only check.
 
 ## Triage Result
 

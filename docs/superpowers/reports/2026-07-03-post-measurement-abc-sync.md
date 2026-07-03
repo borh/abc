@@ -125,9 +125,8 @@ Sample report: `docs/superpowers/reports/2026-07-03-aozora2html-policy-samples.m
 
 ## Next Gate
 
-Before a follow-up `crates/ab-aat-to-parser-ir` implementation plan starts, one of these must happen:
+Before a follow-up `crates/ab-aat-to-parser-ir` implementation plan starts, the 4 remaining clean adapter-obligation works in `source_feature_without_aat_observation` must be resolved and the audit, sample, and residual triage reports must be regenerated.
 
-1. The 4 remaining clean adapter-obligation works in `source_feature_without_aat_observation` are resolved, then the audit, sample, and residual triage reports are regenerated.
-2. A human reviewer records a lower-bound decision that explicitly names the 30 accepted `source_index_only_candidates` while separately assigning follow-up work for the 4 still-blocking adapter-obligation works and the timeout/runtime buckets.
+A human reviewer still needs to record the lower-bound decision that explicitly names the 30 accepted `source_index_only_candidates` and separately assigns follow-up work for the 4 still-blocking adapter-obligation works and the timeout/runtime buckets, but that decision is only the accepted caveat for source-index-only scope and does not open the CLI plan while the 4 adapter-obligation gaps remain.
 
 Until then, manifest identity and compatibility-registry hardening remain paused.

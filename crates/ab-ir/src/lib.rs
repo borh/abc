@@ -510,27 +510,6 @@ impl Inline {
     }
 
     #[must_use]
-    pub fn dakuten_gaiji(
-        source: impl Into<String>,
-        description: impl Into<String>,
-        base: impl Into<String>,
-        mark: DakutenMark,
-        resolved: Option<String>,
-    ) -> Self {
-        Self::GaijiRef(GaijiRef {
-            source: source.into(),
-            description: description.into(),
-            description_format: Some("dakuten-variant".to_owned()),
-            kind: GaijiKind::DakutenVariant {
-                base: base.into(),
-                mark,
-            },
-            resolved,
-            provenance: Provenance::Parser,
-        })
-    }
-
-    #[must_use]
     pub fn style(style_type: &'static str, content: Vec<Inline>) -> Self {
         Self::Style {
             style_type,
@@ -1273,13 +1252,17 @@ mod tests {
         let image = GaijiKind::Image {
             path: "gaiji/1-15/1-15-23.png".to_owned(),
         };
-        let dakuten = Inline::dakuten_gaiji(
-            "※［＃濁点付きワ］",
-            "濁点付きワ",
-            "ワ",
-            DakutenMark::Voicing,
-            Some("ワ゛".to_owned()),
-        );
+        let dakuten = Inline::gaiji_ref(GaijiRef {
+            source: "※［＃濁点付きワ］".to_owned(),
+            description: "濁点付きワ".to_owned(),
+            description_format: Some("dakuten-variant".to_owned()),
+            kind: GaijiKind::DakutenVariant {
+                base: "ワ".to_owned(),
+                mark: DakutenMark::Voicing,
+            },
+            resolved: Some("ワ゛".to_owned()),
+            provenance: Provenance::Parser,
+        });
 
         assert_eq!(
             ivs,

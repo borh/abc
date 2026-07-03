@@ -376,7 +376,13 @@ impl WarehouseWriter {
         )
     }
 
-    #[cfg(test)]
+    /// Write a raw `RecordBatch` into the parquet writer for `table`. Used by
+    /// merge-time compaction (via [`append_parquet_table_file`]) to stream
+    /// batches read from staged parts into the destination writer.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the underlying writer fails to write the batch.
     pub fn append_record_batch(&mut self, table: WarehouseTable, batch: RecordBatch) -> Result<()> {
         match table {
             WarehouseTable::Runs => self
@@ -455,7 +461,13 @@ impl WarehouseWriter {
     }
 }
 
-#[cfg(test)]
+/// Append every row from a parquet file into `writer`'s table, re-using the
+/// writer's `WAREHOUSE_MAX_ROW_GROUP_SIZE` row-group sizing. Used by merge-time
+/// compaction to coalesce many tiny staged parts into one well-sized file.
+///
+/// # Errors
+///
+/// Returns an error if `path` cannot be opened or its batches fail to write.
 pub fn append_parquet_table_file(
     writer: &mut WarehouseWriter,
     table: WarehouseTable,
@@ -534,6 +546,24 @@ fn parquet_table_part_paths(dataset_dir: &Path) -> Result<Vec<std::path::PathBuf
     });
     paths.sort();
     Ok(paths)
+}
+
+/// Sorted on-disk byte sizes of `.parquet` files in `dir` (ignoring non-parquet
+/// files like `views.sql`). Used by merge compaction to compute the true median
+/// part size for the threshold decision.
+///
+/// # Errors
+///
+/// Returns an error if `dir` cannot be read or a part cannot be stat'd.
+pub fn parquet_table_part_sizes(dir: &Path) -> Result<Vec<u64>> {
+    let paths = parquet_table_part_paths(dir)?;
+    let mut sizes: Vec<u64> = paths
+        .iter()
+        .map(|p| fs::metadata(p).map(|m| m.len()))
+        .collect::<std::result::Result<Vec<_>, _>>()
+        .with_context(|| format!("failed to stat parts in {}", dir.display()))?;
+    sizes.sort_unstable();
+    Ok(sizes)
 }
 
 fn move_or_copy_parquet_part(source: &Path, destination: &Path) -> Result<()> {
@@ -1108,6 +1138,17 @@ mod tests {
         )
         .unwrap();
         writer.close().unwrap();
+    }
+
+    #[test]
+    fn parquet_table_part_sizes_returns_sorted_sizes_ignoring_non_parquet() {
+        let root = temp_dir("part-sizes");
+        fs::create_dir_all(&root).unwrap();
+        fs::write(root.join("part-00001.parquet"), b"longer-junk-bytes").unwrap();
+        fs::write(root.join("part-00000.parquet"), b"short").unwrap();
+        fs::write(root.join("views.sql"), b"select 1").unwrap();
+        let sizes = parquet_table_part_sizes(&root).unwrap();
+        assert_eq!(sizes, vec![b"short".len() as u64, b"longer-junk-bytes".len() as u64]);
     }
 
     fn row_group_count(path: &Path) -> usize {

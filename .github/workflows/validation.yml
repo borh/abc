@@ -8,20 +8,12 @@ jobs:
   design-bundle:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: cachix/install-nix-action@v31
-
-      - name: Stub local-only flake input
-        run: |
-          mkdir -p /tmp/abc-empty-local-pkgs
-          cat > /tmp/abc-empty-local-pkgs/default.nix <<'NIX'
-          { pkgs ? null }:
-          {}
-          NIX
 
       - name: Validate design bundle
         run: |
           nix run \
-            --override-input local-pkgs path:/tmp/abc-empty-local-pkgs \
+            --override-input local-pkgs path:$GITHUB_WORKSPACE/nix/ci-empty-local-pkgs \
             .#validate-design-bundle

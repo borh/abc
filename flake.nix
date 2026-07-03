@@ -39,6 +39,14 @@
         };
     in
     {
+      formatter = forAllSystems (
+        system:
+        let
+          pkgs = import nixpkgs { inherit system; };
+        in
+        pkgs.nixfmt
+      );
+
       apps = forAllSystems (
         system:
         let

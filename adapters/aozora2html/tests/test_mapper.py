@@ -548,7 +548,7 @@ def test_layout_source_markers_are_source_derived(
 
 
 @pytest.mark.parametrize(
-    ("source", "expected_blocks"),
+    ("source", "expected_blocks", "expected_syntax"),
     [
         (
             "本文に［＃割書］注［＃割書終わり］が入る。",
@@ -565,6 +565,83 @@ def test_layout_source_markers_are_source_derived(
                     {"kind": "text", "value": "が入る。"},
                 ],
             }],
+            [{
+                "kind": "warigaki",
+                "value": {
+                    "lower_projection": "",
+                    "upper_projection": "注",
+                },
+                "provenance": "source-derived",
+            }],
+        ),
+        (
+            "米《べー》リンスキー［＃ここから割り注］魯国の批評家［＃ここで割り注終わり］",
+            [{
+                "kind": "paragraph",
+                "content": [
+                    {
+                        "kind": "ruby",
+                        "base": "米",
+                        "reading": "べー",
+                        "direction": "right",
+                    },
+                    {"kind": "text", "value": "リンスキー"},
+                    {
+                        "kind": "warigaki",
+                        "upper": [{"kind": "text", "value": "魯国の批評家"}],
+                        "lower": [],
+                        "x-provenance": "source-derived",
+                    },
+                ],
+            }],
+            [{
+                "kind": "warigaki",
+                "value": {
+                    "lower_projection": "",
+                    "upper_projection": "魯国の批評家",
+                },
+                "provenance": "source-derived",
+            }],
+        ),
+        (
+            "［＃ここから割り注］上［＃改行］下［＃ここで割り注終わり］",
+            [{
+                "kind": "paragraph",
+                "content": [{
+                    "kind": "warigaki",
+                    "upper": [{"kind": "text", "value": "上"}],
+                    "lower": [{"kind": "text", "value": "下"}],
+                    "x-provenance": "source-derived",
+                }],
+            }],
+            [{
+                "kind": "warigaki",
+                "value": {
+                    "lower_projection": "下",
+                    "upper_projection": "上",
+                },
+                "provenance": "source-derived",
+            }],
+        ),
+        (
+            "［＃割り注］注［＃割り注終わり］",
+            [{
+                "kind": "paragraph",
+                "content": [{
+                    "kind": "warigaki",
+                    "upper": [{"kind": "text", "value": "注"}],
+                    "lower": [],
+                    "x-provenance": "source-derived",
+                }],
+            }],
+            [{
+                "kind": "warigaki",
+                "value": {
+                    "lower_projection": "",
+                    "upper_projection": "注",
+                },
+                "provenance": "source-derived",
+            }],
         ),
         (
             "［＃ここからキャプション］\n猫の図\n［＃ここでキャプション終わり］",
@@ -576,17 +653,19 @@ def test_layout_source_markers_are_source_derived(
                 }],
                 "x-provenance": "source-derived",
             }],
+            None,
         ),
     ],
 )
 def test_warigaki_and_caption_source_markers_are_source_derived(
-    source: str, expected_blocks: list[dict],
+    source: str, expected_blocks: list[dict], expected_syntax: list[dict] | None,
 ) -> None:
     raw = _run(source.encode("utf-8"), "--mode", "aat")
     aat = json.loads(raw)
     jsonschema.validate(aat, SCHEMA)
 
     assert aat["blocks"] == expected_blocks
+    assert aat["meta"]["semantic_summary"]["syntax"].get("warigaki.parenthetical") == expected_syntax
 
 
 @pytest.mark.parametrize(

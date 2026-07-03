@@ -101,7 +101,8 @@ Captured during fixture review (`tests/fixtures/*.xhtml`):
 - **Reviewed source-note recoveries use source markers as the oracle bridge.**
   The adapter now reconstructs the reviewed subset of ruby placement,
   annotation ruby, kunten, one-line indentation, TCY/yokogumi, caption
-  blocks, parenthetical warigaki, front-reference boten, and editor-note
+  blocks, warigaki markers (`［＃割り注］...`, `［＃ここから割り注］...`,
+  `［＃割書］...`), front-reference boten, and editor-note
   metadata from the original source text when the XHTML output flattens those
   constructs. These recoveries are intentionally conservative and carry
   `x-provenance = "source-derived"` where the AAT node has no direct XHTML
@@ -113,10 +114,14 @@ Captured during fixture review (`tests/fixtures/*.xhtml`):
   `<img>` elements become AAT `figure` nodes. If the immediately following
   paragraph is only a rendered caption span, the adapter attaches that caption
   to the figure with `x-caption-provenance = "source-derived"`.
-- **Warichu is split from rendered warichu text.** `［＃割り注］上行／下行［＃割り注終わり］`
-  comes through as `<span class="warichu">（上行／下行）</span>`. The adapter
-  maps that XHTML class to AAT `warigaki`, splitting on `／` or `/` when
-  present and leaving `lower` empty otherwise.
+- **Warichu is split from rendered text or source markers.** Rendered
+  `<span class="warichu">（上行／下行）</span>` still maps to AAT `warigaki`.
+  When the upstream XHTML leaves source-note markers such as
+  `［＃ここから割り注］...［＃ここで割り注終わり］`,
+  `［＃割り注］...［＃割り注終わり］`, or `［＃割書］...［＃割書終わり］`,
+  the adapter reconstructs the same `warigaki` node from the source-derived
+  path, splitting on the first `［＃改行］`, `／`, or `/` and leaving `lower`
+  empty when no split marker is present.
 - **Decoration classes are normalized to AAT terms.** Rendered class names
   such as `futoji`, `shatai`, `white_sesame_dot`, `underline_double`, `dai2`,
   and `keigakomi` are parser-specific XHTML vocabulary. The adapter maps the

@@ -630,6 +630,93 @@ fn paragraph_line_break_text(content: &[Value]) -> Option<String> {
     Some(format!("{}\n{}", value_text(before), value_text(after)))
 }
 
+fn split_warigaki_inner_text(inner: &str) -> (String, String) {
+    let mut split = None;
+    for marker in ["［＃改行］", "／", "/"] {
+        if let Some(idx) = inner.find(marker) {
+            if split.is_none_or(|(best, _): (usize, &str)| idx < best) {
+                split = Some((idx, marker));
+            }
+        }
+    }
+
+    if let Some((idx, marker)) = split {
+        (
+            inner[..idx].to_string(),
+            inner[idx + marker.len()..].to_string(),
+        )
+    } else {
+        (inner.to_string(), String::new())
+    }
+}
+
+fn record_source_derived_warigaki(
+    summary: &mut SourceDerivedSummary,
+    upper: &str,
+    lower: &str,
+) -> Value {
+    summary.push_syntax(
+        "warigaki.parenthetical",
+        json!({
+            "kind": "warigaki",
+            "value": {
+                "upper_projection": upper,
+                "lower_projection": lower,
+            },
+            "provenance": "source-derived",
+        }),
+    );
+
+    json!({
+        "kind":"warigaki",
+        "upper": if upper.is_empty() { Value::Array(Vec::new()) } else { json!([{"kind":"text","value":upper}]) },
+        "lower": if lower.is_empty() { Value::Array(Vec::new()) } else { json!([{"kind":"text","value":lower}]) },
+        "x-provenance":"source-derived",
+    })
+}
+
+fn source_derived_warigaki_content(
+    content: &[Value],
+    summary: &mut SourceDerivedSummary,
+) -> Option<Vec<Value>> {
+    let markers = [
+        ("［＃ここから割り注］", "［＃ここで割り注終わり］"),
+        ("［＃割り注］", "［＃割り注終わり］"),
+    ];
+
+    for (start_marker, end_marker) in markers {
+        let Some(start) = content.iter().position(|node| node_is_note(node, start_marker)) else {
+            continue;
+        };
+        let Some(end) = content
+            .iter()
+            .enumerate()
+            .skip(start + 1)
+            .find_map(|(idx, node)| node_is_note(node, end_marker).then_some(idx)) else {
+            continue;
+        };
+
+        let inner = &content[start + 1..end];
+        let mut normalized_inner = String::new();
+        for node in inner {
+            if node_is_note(node, "［＃改行］") {
+                normalized_inner.push_str("［＃改行］");
+            } else {
+                normalized_inner.push_str(&inline_visible_text(std::slice::from_ref(node)));
+            }
+        }
+        let (upper, lower) = split_warigaki_inner_text(&normalized_inner);
+
+        let mut out = Vec::with_capacity(content.len() - (end - start) + 1);
+        out.extend(content[..start].iter().cloned());
+        out.push(record_source_derived_warigaki(summary, &upper, &lower));
+        out.extend(content[end + 1..].iter().cloned());
+        return Some(compact_inline(out));
+    }
+
+    None
+}
+
 fn paragraph_is_note(content: &[Value], note_text: &str) -> bool {
     let meaningful = content
         .iter()
@@ -713,6 +800,10 @@ fn normalize_source_derived_paragraph(
 
     if let Some(inlined) = source_derived_inlined_gaiji_content(&content, source_text, summary) {
         return vec![json!({"kind":"paragraph","content":inlined})];
+    }
+
+    if let Some(warigaki_content) = source_derived_warigaki_content(&content, summary) {
+        return vec![json!({"kind":"paragraph","content":warigaki_content})];
     }
 
     let meaningful: Vec<&Value> = content
@@ -1120,28 +1211,8 @@ fn source_derived_inline_content(
         }
     }
 
-    if let Some(m) = warigaki_inline_re().captures(source) {
-        let pre = m.name("pre").map(|it| it.as_str()).unwrap_or_default();
-        let upper = m.name("upper").map(|it| it.as_str()).unwrap_or_default();
-        let post = m.name("post").map(|it| it.as_str()).unwrap_or_default();
-        summary.push_syntax(
-            "warigaki.parenthetical",
-            json!({
-                "kind": "warigaki",
-                "value": {"upper_projection":upper,"lower_projection":""},
-                "provenance": "source-derived",
-            }),
-        );
-        return Some(compact_inline(vec![
-            json!({"kind":"text","value":pre}),
-            json!({
-                "kind":"warigaki",
-                "upper":[{"kind":"text","value":upper}],
-                "lower":[],
-                "x-provenance":"source-derived",
-            }),
-            json!({"kind":"text","value":post}),
-        ]));
+    if let Some(content) = source_derived_warigaki_from_text(source, summary) {
+        return Some(content);
     }
 
     source_derived_ruby_and_reference_content(source, summary)
@@ -1567,9 +1638,44 @@ fn tcy_inline_re() -> &'static Regex {
     RE.get_or_init(|| Regex::new(r#"^(?P<target>.+?)［＃「(?P<quoted>.+?)」の縦中横］$"#).unwrap())
 }
 
-fn warigaki_inline_re() -> &'static Regex {
-    static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| Regex::new(r"^(?P<pre>.*?)［＃割書］(?P<upper>.*?)［＃割書終わり］(?P<post>.*)$").unwrap())
+fn source_derived_warigaki_from_text(
+    source: &str,
+    summary: &mut SourceDerivedSummary,
+) -> Option<Vec<Value>> {
+    if source.contains('\n') || source.contains('\r') {
+        return None;
+    }
+
+    let markers = [
+        ("［＃ここから割り注］", "［＃ここで割り注終わり］"),
+        ("［＃割り注］", "［＃割り注終わり］"),
+        ("［＃割書］", "［＃割書終わり］"),
+    ];
+
+    for (start_marker, end_marker) in markers {
+        let Some(start) = source.find(start_marker) else {
+            continue;
+        };
+        let inner_start = start + start_marker.len();
+        let Some(rel_end) = source[inner_start..].find(end_marker) else {
+            continue;
+        };
+        let end = inner_start + rel_end;
+        let pre = &source[..start];
+        let inner = &source[inner_start..end];
+        let post = &source[end + end_marker.len()..];
+        if pre.contains('《') || pre.contains('》') || post.contains('《') || post.contains('》') {
+            continue;
+        }
+        let (upper, lower) = split_warigaki_inner_text(inner);
+        return Some(compact_inline(vec![
+            json!({"kind":"text","value":pre}),
+            record_source_derived_warigaki(summary, &upper, &lower),
+            json!({"kind":"text","value":post}),
+        ]));
+    }
+
+    None
 }
 
 fn nested_ruby_note_re() -> &'static Regex {

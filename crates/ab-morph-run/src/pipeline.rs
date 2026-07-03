@@ -1051,7 +1051,7 @@ pub(crate) fn bounded_large_lane_count(jobs: usize) -> usize {
     (jobs / 4).max(1)
 }
 
-fn merge_warehouse_shard_runs(
+pub(crate) fn merge_warehouse_shard_runs(
     options: &WarehouseParallelOptions,
     shard_run_dirs: &[PathBuf],
 ) -> Result<()> {
@@ -1078,6 +1078,12 @@ fn merge_warehouse_shard_runs(
                 &run_dir.join(table.file_name()),
             )?;
         }
+    }
+    // §3.12: coalesce small-part tables (analyses, sources, feature_pattern_counts
+    // on the full corpus) into a single file each. Large tables are skipped
+    // inside compact_staged_table.
+    for &table in options.warehouse_profile.merged_data_tables() {
+        warehouse::writer::compact_staged_table(&paths, table)?;
     }
     writer.append_runs(&[RunRow {
         schema_version: warehouse::schema::SCHEMA_VERSION,

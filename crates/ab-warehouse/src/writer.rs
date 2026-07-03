@@ -390,7 +390,11 @@ impl WarehouseWriter {
     /// # Errors
     ///
     /// Returns an error if the underlying writer fails to write the batch.
-    pub fn append_record_batch(&mut self, table: WarehouseTable, batch: RecordBatch) -> Result<()> {
+    pub(crate) fn append_record_batch(
+        &mut self,
+        table: WarehouseTable,
+        batch: RecordBatch,
+    ) -> Result<()> {
         match table {
             WarehouseTable::Runs => self
                 .runs
@@ -475,7 +479,7 @@ impl WarehouseWriter {
 /// # Errors
 ///
 /// Returns an error if `path` cannot be opened or its batches fail to write.
-pub fn append_parquet_table_file(
+pub(crate) fn append_parquet_table_file(
     writer: &mut WarehouseWriter,
     table: WarehouseTable,
     path: &Path,
@@ -570,25 +574,48 @@ pub fn compact_staged_table(paths: &WarehousePaths, table: WarehouseTable) -> Re
     // finalize moved compact_paths.staging_dir → compact_paths.final_dir;
     // the single coalesced parquet file is at final_dir/<table.file_name()>
     // (the writer writes one part file for one writer instance). views.sql
-    // (also emitted by finalize) is ignored below — only `.parquet` files are
-    // moved back into the real staging dir.
+    // (also emitted by finalize) is left behind in the temp dir and removed
+    // by the cleanup at the end.
+    let compacted_dir = compact_paths.final_dir.join(table.file_name());
     //
-    // Replace the staged parts: delete old, move coalesced in.
-    for part in &part_paths {
-        fs::remove_file(part).with_context(|| format!("remove staged {}", part.display()))?;
+    // Two-phase replacement: move the original staged dir aside FIRST (keeping
+    // originals intact for recovery), create a fresh staged dir, move the
+    // coalesced file in, THEN drop the backups. Same-FS renames are atomic, so
+    // either the originals or the replacement is always present on disk.
+    let backup_dir = paths.warehouse_dir.join(format!(
+        ".staged-backup-{}-{}",
+        paths.run_id,
+        table.file_name()
+    ));
+    if backup_dir.exists() {
+        fs::remove_dir_all(&backup_dir)
+            .with_context(|| format!("remove stale {}", backup_dir.display()))?;
     }
-    for entry in fs::read_dir(&compact_paths.final_dir)? {
-        let entry = entry?;
-        if entry.path().extension().is_some_and(|x| x == "parquet") {
-            let dest = staged.join(entry.file_name());
-            fs::rename(entry.path(), &dest).with_context(|| {
-                format!(
-                    "move coalesced {} → {}",
-                    entry.path().display(),
-                    dest.display()
-                )
-            })?;
-        }
+    // Move the whole original staged dir aside.
+    fs::rename(&staged, &backup_dir).with_context(|| {
+        format!(
+            "move {} aside to {}",
+            staged.display(),
+            backup_dir.display()
+        )
+    })?;
+    // Fresh staged dir to receive the coalesced file.
+    fs::create_dir_all(&staged).with_context(|| format!("recreate {}", staged.display()))?;
+    // The writer produces exactly one coalesced part file; move it in.
+    let dest = staged.join(table.file_name());
+    fs::rename(&compacted_dir, &dest).with_context(|| {
+        format!(
+            "move coalesced {} → {}",
+            compacted_dir.display(),
+            dest.display()
+        )
+    })?;
+    // Replacement committed; originals no longer needed.
+    if let Err(e) = fs::remove_dir_all(&backup_dir) {
+        eprintln!(
+            "warehouse compaction: failed to clean up backup dir {}: {e}",
+            backup_dir.display()
+        );
     }
     // Clean up the temp compact dir (its staging dir was already moved by finalize).
     if let Err(e) = fs::remove_dir_all(&compact_dir) {
@@ -656,7 +683,7 @@ fn parquet_table_part_paths(dataset_dir: &Path) -> Result<Vec<std::path::PathBuf
 /// # Errors
 ///
 /// Returns an error if `dir` cannot be read or a part cannot be stat'd.
-pub fn parquet_table_part_sizes(dir: &Path) -> Result<Vec<u64>> {
+pub(crate) fn parquet_table_part_sizes(dir: &Path) -> Result<Vec<u64>> {
     let paths = parquet_table_part_paths(dir)?;
     let mut sizes: Vec<u64> = paths
         .iter()

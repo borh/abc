@@ -140,26 +140,24 @@ def classify_kunten_line(
     named_kaeriten = short_markers_for_regex(NAMED_KAERITEN_RE, line)
     if named_kaeriten:
         classes["kunten.kaeriten.named"] = named_kaeriten
-    else:
-        compact_kaeriten = [
-            marker
-            for marker in short_markers_for_regex(kaeriten_pattern, line)
-            if not marker.startswith("［＃返り点")
-        ]
-        if compact_kaeriten:
-            classes["kunten.kaeriten.compact"] = compact_kaeriten
+    compact_kaeriten = [
+        marker
+        for marker in short_markers_for_regex(kaeriten_pattern, line)
+        if not marker.startswith("［＃返り点")
+    ]
+    if compact_kaeriten:
+        classes["kunten.kaeriten.compact"] = compact_kaeriten
 
     named_okurigana = short_markers_for_regex(NAMED_OKURIGANA_RE, line)
     if named_okurigana:
         classes["kunten.okurigana.named"] = named_okurigana
-    else:
-        parenthesized = [
-            marker
-            for marker in short_markers_for_regex(okurigana_pattern, line)
-            if marker.startswith("［＃（") and marker.endswith("）］")
-        ]
-        if parenthesized:
-            classes["kunten.okurigana.parenthesized"] = parenthesized
+    parenthesized = [
+        marker
+        for marker in short_markers_for_regex(okurigana_pattern, line)
+        if marker.startswith("［＃（") and marker.endswith("）］")
+    ]
+    if parenthesized:
+        classes["kunten.okurigana.parenthesized"] = parenthesized
     return classes
 
 
@@ -277,6 +275,7 @@ def main() -> int:
     context_hint_counts: Counter[str] = Counter()
     family_marker_counts: dict[str, Counter[str]] = {family: Counter() for family in FAMILIES}
     family_context_counts: dict[str, Counter[str]] = {family: Counter() for family in FAMILIES}
+    family_body_candidates: dict[str, set[str]] = {family: set() for family in FAMILIES}
 
     warigaki_adapter_obligation: set[str] = set()
     kunten_adapter_obligation: set[str] = set()
@@ -316,11 +315,12 @@ def main() -> int:
             work_marker_classes: set[str] = set(work_summary["marker_classes"])
             work_context_hints: set[str] = set(work_summary["context_hints"])
             has_unreadable_line = False
+            family_has_body = False
 
             for line_number, feature in feature_line_numbers(family, work):
                 if line_number < 1 or line_number > len(lines):
                     marker_classes = ["unknown"]
-                    context_hints = [BODY_HINT]
+                    context_hints = []
                     markers: list[str] = []
                     has_unreadable_line = True
                     work_summary["errors"].append(f"unreadable_source_line:{line_number}")
@@ -350,23 +350,33 @@ def main() -> int:
                     work_context_hints.add(context_hint)
                     context_hint_counts[context_hint] += 1
                     family_context_counts[family][context_hint] += 1
+                    if context_hint == BODY_HINT:
+                        family_has_body = True
+            if family_has_body:
+                family_body_candidates[family].add(work_id)
+            if has_unreadable_line:
+                work_marker_classes.add("unknown")
 
             work_summary["line_records"].extend(line_records)
             work_summary["marker_classes"] = sorted(work_marker_classes)
             work_summary["context_hints"] = sorted(work_context_hints)
 
-            has_unknown = "unknown" in work_marker_classes or has_unreadable_line
-            has_body = BODY_HINT in work_context_hints
+    for work_id, work_summary in works_summary.items():
+        work_marker_classes = set(work_summary["marker_classes"])
+        work_context_hints = set(work_summary["context_hints"])
+        has_unknown = "unknown" in work_marker_classes
+        has_body = BODY_HINT in work_context_hints
 
-            if has_unknown:
-                unknown_union.add(work_id)
-            elif has_body:
-                if family == "warigaki":
-                    warigaki_adapter_obligation.add(work_id)
-                else:
-                    kunten_adapter_obligation.add(work_id)
-            else:
-                source_index_only.add(work_id)
+        if has_unknown:
+            unknown_union.add(work_id)
+            continue
+        if has_body:
+            if work_id in family_body_candidates["warigaki"]:
+                warigaki_adapter_obligation.add(work_id)
+            if work_id in family_body_candidates["kunten"]:
+                kunten_adapter_obligation.add(work_id)
+            continue
+        source_index_only.add(work_id)
 
     worksets = {
         "warigaki.adapter_obligation_candidates": str(args.worksets_dir / "warigaki-adapter-obligation-candidates.json"),

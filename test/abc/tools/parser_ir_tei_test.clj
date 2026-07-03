@@ -45,6 +45,9 @@
                   (files/read-json "examples/v0/example-work/parser-ir.json"))]
       (is (some #(= "example-gaiji" (:xml-id %))
                 (:char_declarations result)))
+      (is (= "※［＃例字］"
+             (:raw-marker (some #(when (= "example-gaiji" (:xml-id %)) %)
+                                (:char_declarations result)))))
       (is (some #(= [:g {:ref "#example-gaiji"}] %)
                 (hiccup-nodes (:body result)))))))
 

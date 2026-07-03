@@ -43,8 +43,7 @@
       (contains? gaiji "unicode")
       (assoc :unicode (get gaiji "unicode"))
 
-      (and (not (get gaiji "reference"))
-           (contains? gaiji "raw_marker"))
+      (contains? gaiji "raw_marker")
       (assoc :raw-marker (get gaiji "raw_marker")))))
 
 (defn- render-text-node [acc node]

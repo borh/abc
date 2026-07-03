@@ -6,28 +6,67 @@
 (defn- mark-omitted [acc node-type]
   (update acc :omitted conj {:type node-type :policy "omitted"}))
 
+(defn- present-text? [text]
+  (seq text))
+
+(defn- render-text-node [acc node]
+  (append-text acc (get node "text")))
+
+(defn- render-ruby-node [acc node]
+  (append-text acc (get-in node ["ruby" "base"])))
+
+(defn- render-gaiji-node [acc node]
+  (append-text acc (or (get-in node ["gaiji" "unicode"])
+                       (get-in node ["gaiji" "raw_marker"]))))
+
+(defn- render-editor-note-node [acc node]
+  (mark-omitted acc "editor-note"))
+
+(defn- render-emphasis-node [acc node]
+  (append-text acc (get node "text")))
+
+(defn- render-heading-node [acc node]
+  (append-text acc (str "\n" (or (get node "text") "") "\n")))
+
+(defn- render-indentation-node [acc node]
+  (if (present-text? (get node "text"))
+    (append-text acc (get node "text"))
+    (mark-omitted acc "indentation")))
+
+(defn- render-page-break-node [acc node]
+  (append-text acc "\n"))
+
+(defn- render-image-node [acc node]
+  (if (present-text? (get node "alt"))
+    (append-text acc (get node "alt"))
+    (mark-omitted acc "image")))
+
+(defn- render-caption-node [acc node]
+  (append-text acc (get node "text")))
+
+(defn- render-quote-node [acc node]
+  (if (present-text? (get node "text"))
+    (append-text acc (get node "text"))
+    (mark-omitted acc "quote")))
+
+(def ^:private node-renderers
+  {"text" render-text-node
+   "ruby" render-ruby-node
+   "gaiji" render-gaiji-node
+   "editor-note" render-editor-note-node
+   "emphasis" render-emphasis-node
+   "heading" render-heading-node
+   "indentation" render-indentation-node
+   "page-break" render-page-break-node
+   "image" render-image-node
+   "caption" render-caption-node
+   "quote" render-quote-node})
+
 (defn- render-node [acc node]
   (let [node-type (get node "type")]
     (let [acc (update acc :node_counts update node-type (fnil inc 0))]
-      (case node-type
-        "text" (append-text acc (get node "text"))
-        "ruby" (append-text acc (get-in node ["ruby" "base"]))
-        "gaiji" (append-text acc (or (get-in node ["gaiji" "unicode"])
-                                     (get-in node ["gaiji" "raw_marker"])))
-        "editor-note" (mark-omitted acc node-type)
-        "emphasis" (append-text acc (get node "text"))
-        "heading" (append-text acc (str "\n" (or (get node "text") "") "\n"))
-        "indentation" (if-let [text (get node "text")]
-                        (append-text acc text)
-                        (mark-omitted acc node-type))
-        "page-break" (append-text acc "\n")
-        "image" (if-let [alt (get node "alt")]
-                  (append-text acc alt)
-                  (mark-omitted acc node-type))
-        "caption" (append-text acc (get node "text"))
-        "quote" (if-let [text (get node "text")]
-                  (append-text acc text)
-                  (mark-omitted acc node-type))
+      (if-let [render-node-fn (get node-renderers node-type)]
+        (render-node-fn acc node)
         acc))))
 
 (defn render [parser-ir]
@@ -41,5 +80,4 @@
   (:text (render parser-ir)))
 
 (def covered-node-types
-  #{"text" "ruby" "gaiji" "editor-note" "emphasis" "heading"
-    "indentation" "page-break" "image" "caption" "quote"})
+  (set (keys node-renderers)))

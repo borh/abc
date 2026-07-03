@@ -28,10 +28,31 @@
    "warnings" []
    "errors" []})
 
+(def omitted-metadata-parser-ir
+  {"schema_id" "https://w3id.org/abc/schemas/parser-ir.schema.json"
+   "schema_hash" "sha256:0000000000000000000000000000000000000000000000000000000000000001"
+   "source" {"work_content_hash" "sha256:0000000000000000000000000000000000000000000000000000000000000002"
+             "encoding" "Shift_JIS"
+             "normalization" "source"}
+   "nodes" [{"type" "indentation" "span" {"start" 0 "end" 1} "depth" 2 "text" ""}
+            {"type" "image" "span" {"start" 1 "end" 2} "src" "fig.png"}
+            {"type" "quote" "span" {"start" 2 "end" 3} "marker_type" "inline" "text" ""}]
+   "warnings" []
+   "errors" []})
+
 (deftest render-string-test
   (testing "plaintext renders visible text policy for every current node type"
     (is (= "\nH\nABX※［＃y］CD\nALTCAPQ"
            (plaintext/render-string all-node-parser-ir)))))
+
+(deftest render-omits-empty-or-missing-policy-metadata-test
+  (testing "plaintext omits policy-required metadata when node payload is empty or missing"
+    (is (= {:text ""
+            :node_counts {"indentation" 1 "image" 1 "quote" 1}
+            :omitted [{:type "indentation" :policy "omitted"}
+                      {:type "image" :policy "omitted"}
+                      {:type "quote" :policy "omitted"}]}
+           (plaintext/render omitted-metadata-parser-ir)))))
 
 (deftest render-metadata-test
   (testing "render returns omitted node notes"

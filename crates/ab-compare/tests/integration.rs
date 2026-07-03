@@ -203,8 +203,8 @@ fn triage_report_buckets_differences_by_feature_and_metrics() {
         stage_totals_ms: BTreeMap::new(),
         fallback_reason_counts: BTreeMap::from([("projection_mismatch".to_owned(), 1)]),
         node_totals: BTreeMap::from([
-            ("source_supplement".to_owned(), 12),
-            ("source_fallback".to_owned(), 1),
+            ("source_supplement", 12),
+            ("source_fallback", 1),
         ]),
         slowest_works: Vec::new(),
         source_supplement_hotspots: vec![ab_compare::metrics::NodeHotspot {
@@ -231,7 +231,7 @@ fn triage_report_buckets_differences_by_feature_and_metrics() {
             source_fallback_nodes: 1,
             total_ms: 11.0,
             dominant_stage: "fallback_build".to_owned(),
-            stages_ms: BTreeMap::from([("fallback_build".to_owned(), 8.0)]),
+            stages_ms: BTreeMap::from([("fallback_build", 8.0)]),
         }],
     };
 

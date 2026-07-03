@@ -79,7 +79,7 @@ pub struct FallbackHotspot {
     pub source_fallback_nodes: usize,
     pub total_ms: f64,
     pub dominant_stage: String,
-    pub stages_ms: BTreeMap<String, f64>,
+    pub stages_ms: BTreeMap<&'static str, f64>,
 }
 
 pub fn build_triage_report(

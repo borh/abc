@@ -10,8 +10,8 @@ pub struct MetricsSummary {
     pub works: usize,
     pub fallbacks: usize,
     pub fallback_reason_counts: BTreeMap<String, usize>,
-    pub stage_totals_ms: BTreeMap<String, f64>,
-    pub node_totals: BTreeMap<String, usize>,
+    pub stage_totals_ms: BTreeMap<&'static str, f64>,
+    pub node_totals: BTreeMap<&'static str, usize>,
     pub slowest_works: Vec<SlowWork>,
     pub source_supplement_hotspots: Vec<NodeHotspot>,
     pub source_fallback_hotspots: Vec<NodeHotspot>,
@@ -24,7 +24,7 @@ pub struct SlowWork {
     pub total_ms: f64,
     pub dominant_stage: String,
     pub fallback_used: bool,
-    pub stages_ms: BTreeMap<String, f64>,
+    pub stages_ms: BTreeMap<&'static str, f64>,
 }
 
 #[derive(Debug, Serialize)]
@@ -33,7 +33,7 @@ pub struct NodeHotspot {
     pub nodes: usize,
     pub total_ms: f64,
     pub fallback_used: bool,
-    pub stages_ms: BTreeMap<String, f64>,
+    pub stages_ms: BTreeMap<&'static str, f64>,
 }
 
 #[derive(Debug, Serialize)]
@@ -47,7 +47,7 @@ pub struct FallbackHotspot {
     pub source_fallback_nodes: usize,
     pub total_ms: f64,
     pub dominant_stage: String,
-    pub stages_ms: BTreeMap<String, f64>,
+    pub stages_ms: BTreeMap<&'static str, f64>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -135,8 +135,8 @@ pub fn summarize_aat_metrics(root: &Path) -> Result<MetricsSummary> {
         }
 
         let stage_map = stages(&root.meta.metrics);
-        for (name, value) in &stage_map {
-            *stage_totals_ms.entry(name.clone()).or_insert(0.0) += value;
+        for (&name, &value) in &stage_map {
+            *stage_totals_ms.entry(name).or_insert(0.0) += value;
         }
         for (name, value) in node_counts(&root.meta.metrics) {
             *node_totals.entry(name).or_insert(0) += value;
@@ -231,38 +231,32 @@ fn fallback_reason(metrics: &AatMetrics) -> &str {
     }
 }
 
-fn dominant_stage(stages: &BTreeMap<String, f64>) -> String {
+fn dominant_stage(stages: &BTreeMap<&'static str, f64>) -> String {
     stages
         .iter()
         .max_by(|a, b| a.1.total_cmp(b.1))
-        .map(|(name, _)| name.clone())
+        .map(|(name, _)| (*name).to_owned())
         .unwrap_or_default()
 }
 
-fn stages(metrics: &AatMetrics) -> BTreeMap<String, f64> {
+fn stages(metrics: &AatMetrics) -> BTreeMap<&'static str, f64> {
     BTreeMap::from([
-        ("decode".to_owned(), metrics.decode_ms),
-        ("body_selection".to_owned(), metrics.body_selection_ms),
-        ("tokenize".to_owned(), metrics.tokenize_ms),
-        ("scopenize".to_owned(), metrics.scopenize_ms),
-        ("retokenize".to_owned(), metrics.retokenize_ms),
-        ("aat_build".to_owned(), metrics.aat_build_ms),
-        ("projection_check".to_owned(), metrics.projection_check_ms),
-        ("fallback_build".to_owned(), metrics.fallback_build_ms),
+        ("decode", metrics.decode_ms),
+        ("body_selection", metrics.body_selection_ms),
+        ("tokenize", metrics.tokenize_ms),
+        ("scopenize", metrics.scopenize_ms),
+        ("retokenize", metrics.retokenize_ms),
+        ("aat_build", metrics.aat_build_ms),
+        ("projection_check", metrics.projection_check_ms),
+        ("fallback_build", metrics.fallback_build_ms),
     ])
 }
 
-fn node_counts(metrics: &AatMetrics) -> BTreeMap<String, usize> {
+fn node_counts(metrics: &AatMetrics) -> BTreeMap<&'static str, usize> {
     BTreeMap::from([
-        ("parser".to_owned(), metrics.parser_nodes),
-        (
-            "parser_normalized".to_owned(),
-            metrics.parser_normalized_nodes,
-        ),
-        (
-            "source_supplement".to_owned(),
-            metrics.source_supplement_nodes,
-        ),
-        ("source_fallback".to_owned(), metrics.source_fallback_nodes),
+        ("parser", metrics.parser_nodes),
+        ("parser_normalized", metrics.parser_normalized_nodes),
+        ("source_supplement", metrics.source_supplement_nodes),
+        ("source_fallback", metrics.source_fallback_nodes),
     ])
 }

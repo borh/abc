@@ -87,11 +87,11 @@ pattern = '［＃ここから[^］]+］|［＃ここで[^］]+終わり］'
 description = "Generic start/end annotation"
 
 [features.okurigana]
-pattern = '［＃「[^」]+」の左に「[^」]+」］'
-description = "Okurigana or side annotation"
+pattern = '［＃「[^」]+」の左に「[^」]+」］|［＃（[ァ-ヴーぁ-ゖ一-龯々〆ヵヶ]{1,12}）］'
+description = "Okurigana, reread, or side annotation"
 
 [features.kaeriten]
-pattern = '［＃返り点］|［＃レ点］'
+pattern = '［＃(?:返り点)?[一二三四五六七八九十レ上中下甲乙丙丁天地人]+］|［＃レ点］'
 description = "Kanbun return marks"
 
 [features.accent]

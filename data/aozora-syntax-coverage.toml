@@ -1191,8 +1191,8 @@ priority = 2
 category = "inline_annotation"
 feature_keys = ["kaeriten"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/kaeriten.rb"]
-source_examples = ["［＃返り点一］", "［＃返り点上］", "［＃返り点甲］", "（レ）"]
-source_patterns = ['［＃返り点[一二三四五六七八九十レ上中下甲乙丙丁天地人]+］']
+source_examples = ["［＃レ］", "［＃一］", "［＃二］", "［＃上］", "［＃返り点一］"]
+source_patterns = ['［＃(?:返り点)?[一二三四五六七八九十レ上中下甲乙丙丁天地人]+］', '［＃レ点］']
 ir_nodes = []
 aat_nodes = ["style"]
 tei_projection = "hi rend=kaeriten"
@@ -1238,7 +1238,7 @@ notes = "sub.kaeriten maps to style_type=kaeriten and is preserved in ruby base_
 works_with_feature = 0
 total_occurrences = 0
 detector_id = "kunten_kaeriten"
-coverage_basis = "full_corpus"
+coverage_basis = "not_run"
 sample_works = []
 
 [[syntax]]
@@ -1247,8 +1247,8 @@ priority = 2
 category = "inline_annotation"
 feature_keys = ["okurigana"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/okurigana.rb"]
-source_examples = ["［＃訓点送り仮名「読」］", "（読）"]
-source_patterns = ['［＃訓点送り仮名「[^」]+」］', '［＃送り仮名「[^」]+」］']
+source_examples = ["［＃（ノ）］", "［＃（ス）］", "［＃（レント）］", "［＃訓点送り仮名「読」］"]
+source_patterns = ['［＃（[ァ-ヴーぁ-ゖ一-龯々〆ヵヶ]{1,12}）］', '［＃訓点送り仮名「[^」]+」］', '［＃送り仮名「[^」]+」］']
 ir_nodes = []
 aat_nodes = ["ruby"]
 tei_projection = "hi rend=okurigana"
@@ -1294,7 +1294,7 @@ notes = "sup.okurigana unmapped"
 works_with_feature = 0
 total_occurrences = 0
 detector_id = "kunten_okurigana"
-coverage_basis = "full_corpus"
+coverage_basis = "not_run"
 sample_works = []
 
 [[syntax]]

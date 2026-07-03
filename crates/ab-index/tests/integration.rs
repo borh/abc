@@ -262,6 +262,53 @@ fn syntax_coverage_feature_keys_exist_in_feature_patterns() {
     }
 }
 
+#[test]
+fn detects_real_kunten_fixture_spellings() {
+    let fixture = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../tests/fixtures/kunten-source-excerpt.txt")
+        .canonicalize()
+        .unwrap();
+    let text = fs::read_to_string(fixture).unwrap();
+    let patterns = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../data/feature-patterns.toml")
+        .canonicalize()
+        .unwrap();
+    let detector = FeatureDetector::from_toml(&patterns).unwrap();
+    let detected = detector.detect(&text);
+
+    let kaeriten = detected
+        .get("kaeriten")
+        .expect("real fixture must detect compact kaeriten markers");
+    let okurigana = detected
+        .get("okurigana")
+        .expect("real fixture must detect compact okurigana markers");
+
+    assert!(
+        text.lines()
+            .enumerate()
+            .any(|(idx, line)| kaeriten.contains(&(idx + 1)) && line.contains("［＃レ］")),
+        "kaeriten detector must match bare return-point marker ［＃レ］"
+    );
+    assert!(
+        text.lines()
+            .enumerate()
+            .any(|(idx, line)| kaeriten.contains(&(idx + 1)) && line.contains("［＃一］")),
+        "kaeriten detector must match bare return-point marker ［＃一］"
+    );
+    assert!(
+        text.lines()
+            .enumerate()
+            .any(|(idx, line)| okurigana.contains(&(idx + 1)) && line.contains("［＃（ノ）］")),
+        "okurigana detector must match parenthesized marker ［＃（ノ）］"
+    );
+    assert!(
+        text.lines()
+            .enumerate()
+            .any(|(idx, line)| okurigana.contains(&(idx + 1)) && line.contains("［＃（ス）］")),
+        "okurigana detector must match parenthesized marker ［＃（ス）］"
+    );
+}
+
 fn write_zip_text(path: &Path, name: &str, text: &str) {
     let file = fs::File::create(path).unwrap();
     let mut zip = zip::ZipWriter::new(file);

@@ -96,6 +96,40 @@ fn oracle_case_syntax_rows_exist_and_link_back() {
 }
 
 #[test]
+fn kunten_rows_detect_real_fixture_spellings() {
+    use ab_coverage::detectors::{DetectorContext, DetectorRegistry};
+
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let registry = DetectorRegistry::from_matrix(matrix.rows());
+    let fixture = matrix_path()
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .join("tests/fixtures/kunten-source-excerpt.txt");
+    let source = std::fs::read_to_string(&fixture).expect("read kunten fixture");
+    let empty_aat = serde_json::json!({
+        "version": 1,
+        "work_id": "kunten-fixture",
+        "blocks": [],
+        "meta": {"adapter": "fixture", "adapter_version": "fixture"}
+    });
+    let ctx = DetectorContext {
+        aat: &empty_aat,
+        source: &source,
+    };
+
+    assert!(
+        registry.detect("kunten.kaeriten", &ctx) > 0,
+        "kunten.kaeriten must not false-zero on compact real fixture markers"
+    );
+    assert!(
+        registry.detect("kunten.okurigana", &ctx) > 0,
+        "kunten.okurigana must not false-zero on compact real fixture markers"
+    );
+}
+
+#[test]
 fn forbidden_combinations_rejected() {
     use std::collections::BTreeMap;
     let mut parsers = BTreeMap::new();

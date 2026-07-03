@@ -3,7 +3,7 @@
   "sample_counts": {
     "warigaki": {
       "observed_in_aat": 10,
-      "adapter_timeout_or_protocol_error": 10,
+      "adapter_timeout_or_protocol_error": 7,
       "schema_invalid_or_no_aat": 0,
       "parse_incomplete": 5,
       "report_failed_other_property": 10,

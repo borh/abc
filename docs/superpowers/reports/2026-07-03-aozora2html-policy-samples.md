@@ -16,23 +16,20 @@
 | 000083_46289 | `check-reports/aozora2html-adapter/000083_46289-16b111c5dae5.json` | `aat/aozora2html-adapter/000083_46289-16b111c5dae5.json` | `$.blocks[50].content[3]` | warigaki |  | visible_text_body_order | `{"kind": "warigaki"}` |
 | 000093_525 | `check-reports/aozora2html-adapter/000093_525-a4f389b18ad3.json` | `aat/aozora2html-adapter/000093_525-dea69ff600ac.json` | `$.blocks[6].content[1]` | warigaki |  |  | `{"kind": "warigaki"}` |
 | 000094_2525 | `check-reports/aozora2html-adapter/000094_2525-9c05271ce1b8.json` | `aat/aozora2html-adapter/000094_2525-9c05271ce1b8.json` | `$.blocks[93].content[1]` | warigaki |  | visible_text_body_order | `{"kind": "warigaki"}` |
+| 000096_2093 | `check-reports/aozora2html-adapter/000096_2093-71cae78a6bed.json` | `` | `` |  |  | adapter_timeout | `{}` |
 | 000106_52958 | `check-reports/aozora2html-adapter/000106_52958-e1c80d087fdd.json` | `aat/aozora2html-adapter/000106_52958-e1c80d087fdd.json` | `$.blocks[942].content[5]` | warigaki |  | gaiji_resolution, visible_text_body_order | `{"kind": "warigaki"}` |
-| 000106_56858 | `check-reports/aozora2html-adapter/000106_56858-b4d3a3c5ac6e.json` | `aat/aozora2html-adapter/000106_56858-b4d3a3c5ac6e.json` | `$.blocks[1].children[0].content[1].content[23]` | warigaki |  | visible_text_body_order | `{"kind": "warigaki"}` |
 
 ## warigaki adapter_timeout_or_protocol_error
 
 | Work ID | Report | AAT | Node Path | Kind | Syntax | Failures | Preview |
 |---|---|---|---|---|---|---|---|
-| 000006_1869 | `check-reports/aozora2html-adapter/000006_1869-62320f0f4474.json` | `` | `` |  |  | adapter_timeout | `{}` |
-| 000077_1323 | `check-reports/aozora2html-adapter/000077_1323-b51132c1dd72.json` | `` | `` |  |  | adapter_timeout | `{}` |
-| 000081_47027 | `check-reports/aozora2html-adapter/000081_47027-a6a7780bf470.json` | `` | `` |  |  | adapter_timeout | `{}` |
-| 000096_2093 | `check-reports/aozora2html-adapter/000096_2093-71cae78a6bed.json` | `` | `` |  |  | adapter_timeout | `{}` |
-| 000106_56910 | `check-reports/aozora2html-adapter/000106_56910-e74ada484515.json` | `` | `` |  |  | adapter_timeout | `{}` |
-| 000118_614 | `check-reports/aozora2html-adapter/000118_614-ee8775977dc9.json` | `` | `` |  |  | adapter_timeout | `{}` |
 | 000125_1317 | `check-reports/aozora2html-adapter/000125_1317-75eca9fa8fae.json` | `` | `` |  |  | adapter_protocol_error | `{}` |
-| 000179_943 | `check-reports/aozora2html-adapter/000179_943-0c3f07a107dd.json` | `` | `` |  |  | adapter_timeout | `{}` |
-| 000207_24382 | `check-reports/aozora2html-adapter/000207_24382-96674b532103.json` | `` | `` |  |  | adapter_timeout | `{}` |
-| 000207_42217 | `check-reports/aozora2html-adapter/000207_42217-8e421e57608e.json` | `` | `` |  |  | adapter_timeout | `{}` |
+| 000279_1704 | `check-reports/aozora2html-adapter/000279_1704-e64286701ace.json` | `` | `` |  |  | adapter_timeout | `{}` |
+| 000311_33187 | `check-reports/aozora2html-adapter/000311_33187-503307d11b89.json` | `` | `` |  |  | adapter_timeout | `{}` |
+| 000961_4820 | `check-reports/aozora2html-adapter/000961_4820-1fa47562950a.json` | `` | `` |  |  | adapter_timeout | `{}` |
+| 001111_42789 | `check-reports/aozora2html-adapter/001111_42789-1e2257edc5d5.json` | `` | `` |  |  | adapter_timeout | `{}` |
+| 001411_59071 | `check-reports/aozora2html-adapter/001411_59071-23ad926fa543.json` | `` | `` |  |  | adapter_timeout | `{}` |
+| 001518_51731 | `check-reports/aozora2html-adapter/001518_51731-53223fbef36e.json` | `` | `` |  |  | adapter_timeout | `{}` |
 
 ## warigaki parse_incomplete
 
@@ -48,6 +45,7 @@
 
 | Work ID | Report | AAT | Node Path | Kind | Syntax | Failures | Preview |
 |---|---|---|---|---|---|---|---|
+| 000077_1323 | `check-reports/aozora2html-adapter/000077_1323-b51132c1dd72.json` | `` | `` |  |  | adapter_timeout | `{}` |
 | 000082_49526 | `check-reports/aozora2html-adapter/000082_49526-0ce076982149.json` | `aat/aozora2html-adapter/000082_49526-0ce076982149.json` | `` |  |  | visible_text_body_order | `{}` |
 | 000146_48313 | `check-reports/aozora2html-adapter/000146_48313-c0fb76f5a906.json` | `aat/aozora2html-adapter/000146_48313-c0fb76f5a906.json` | `` |  |  | visible_text_body_order | `{}` |
 | 000157_43445 | `check-reports/aozora2html-adapter/000157_43445-78d601d2bde4.json` | `aat/aozora2html-adapter/000157_43445-78d601d2bde4.json` | `` |  |  | gaiji_resolution, ruby_completeness | `{}` |
@@ -57,52 +55,51 @@
 | 000933_47186 | `check-reports/aozora2html-adapter/000933_47186-9e15a76bb944.json` | `aat/aozora2html-adapter/000933_47186-9e15a76bb944.json` | `` |  |  | visible_text_body_order | `{}` |
 | 001059_5075 | `check-reports/aozora2html-adapter/001059_5075-31637c1f95b9.json` | `aat/aozora2html-adapter/001059_5075-31637c1f95b9.json` | `` |  |  | visible_text_body_order | `{}` |
 | 001123_42930 | `check-reports/aozora2html-adapter/001123_42930-2b0719322fb7.json` | `aat/aozora2html-adapter/001123_42930-2b0719322fb7.json` | `` |  |  | visible_text_body_order | `{}` |
-| 001127_45250 | `check-reports/aozora2html-adapter/001127_45250-a17afcbe1bda.json` | `aat/aozora2html-adapter/001127_45250-a17afcbe1bda.json` | `` |  |  | visible_text_body_order | `{}` |
 
 ## Warigaki source feature without AAT observation
 
 | Work ID | Report | AAT | Node Path | Kind | Syntax | Failures | Preview |
 |---|---|---|---|---|---|---|---|
 | 000006_1868 | `check-reports/aozora2html-adapter/000006_1868-e598e91a19ff.json` | `aat/aozora2html-adapter/000006_1868-e598e91a19ff.json` | `` |  |  |  | `{}` |
+| 000006_1869 | `check-reports/aozora2html-adapter/000006_1869-62320f0f4474.json` | `` | `` |  |  | adapter_timeout | `{}` |
 | 000075_4250 | `check-reports/aozora2html-adapter/000075_4250-7e32f80f0150.json` | `aat/aozora2html-adapter/000075_4250-7e32f80f0150.json` | `` |  |  |  | `{}` |
+| 000081_47027 | `check-reports/aozora2html-adapter/000081_47027-a6a7780bf470.json` | `` | `` |  |  | adapter_timeout | `{}` |
 | 000106_57905 | `check-reports/aozora2html-adapter/000106_57905-d4c02a20ee39.json` | `aat/aozora2html-adapter/000106_57905-d4c02a20ee39.json` | `` |  |  |  | `{}` |
 | 000121_45086 | `check-reports/aozora2html-adapter/000121_45086-1a5c986d414a.json` | `aat/aozora2html-adapter/000121_45086-1a5c986d414a.json` | `` |  |  |  | `{}` |
 | 000125_43656 | `check-reports/aozora2html-adapter/000125_43656-72671814e76e.json` | `aat/aozora2html-adapter/000125_43656-72671814e76e.json` | `` |  |  |  | `{}` |
 | 000125_45230 | `check-reports/aozora2html-adapter/000125_45230-80ae1c6a2cc4.json` | `aat/aozora2html-adapter/000125_45230-80ae1c6a2cc4.json` | `` |  |  |  | `{}` |
 | 000146_47356 | `check-reports/aozora2html-adapter/000146_47356-fca1bd12d2a6.json` | `aat/aozora2html-adapter/000146_47356-fca1bd12d2a6.json` | `` |  |  |  | `{}` |
 | 000146_48131 | `check-reports/aozora2html-adapter/000146_48131-e0cc23d97452.json` | `aat/aozora2html-adapter/000146_48131-e0cc23d97452.json` | `` |  |  |  | `{}` |
-| 000284_2226 | `check-reports/aozora2html-adapter/000284_2226-b56fd371b06f.json` | `aat/aozora2html-adapter/000284_2226-b56fd371b06f.json` | `` |  |  |  | `{}` |
-| 000284_2942 | `check-reports/aozora2html-adapter/000284_2942-2854527a09a0.json` | `aat/aozora2html-adapter/000284_2942-2854527a09a0.json` | `` |  |  |  | `{}` |
 
 ## Observed kunten
 
 | Work ID | Report | AAT | Node Path | Kind | Syntax | Failures | Preview |
 |---|---|---|---|---|---|---|---|
+| 000006_1869 | `check-reports/aozora2html-adapter/000006_1869-62320f0f4474.json` | `` | `` |  |  | adapter_timeout | `{}` |
 | 000038_1408 | `check-reports/aozora2html-adapter/000038_1408-77f192c358bc.json` | `aat/aozora2html-adapter/000038_1408-77f192c358bc.json` | `$.blocks[3].content[68]` | style | kunten.kaeriten |  | `{"kind": "style", "style_type": "kaeriten", "x-marker": "レ", "x-provenance": "parser"}` |
 | 000042_1694 | `check-reports/aozora2html-adapter/000042_1694-eb8c88c4846e.json` | `aat/aozora2html-adapter/000042_1694-eb8c88c4846e.json` | `$.blocks[8].content[1].base_content[1]` | style | kunten.kaeriten |  | `{"kind": "style", "style_type": "kaeriten", "x-marker": "レ", "x-provenance": "parser"}` |
 | 000050_3581 | `check-reports/aozora2html-adapter/000050_3581-405fd70ec41b.json` | `aat/aozora2html-adapter/000050_3581-405fd70ec41b.json` | `$.blocks[43].content[1].base_content[1]` | style | kunten.kaeriten |  | `{"kind": "style", "style_type": "kaeriten", "x-marker": "レ", "x-provenance": "parser"}` |
 | 000051_1436 | `check-reports/aozora2html-adapter/000051_1436-8276953442b7.json` | `aat/aozora2html-adapter/000051_1436-8276953442b7.json` | `$.blocks[4].content[3].base_content[1]` | style | kunten.kaeriten | visible_text_body_order | `{"kind": "style", "style_type": "kaeriten", "x-marker": "レ", "x-provenance": "parser"}` |
+| 000051_1452 | `check-reports/aozora2html-adapter/000051_1452-b93481005b4d.json` | `` | `` |  |  | adapter_timeout | `{}` |
 | 000051_2709 | `check-reports/aozora2html-adapter/000051_2709-bef45ad83cdd.json` | `aat/aozora2html-adapter/000051_2709-bef45ad83cdd.json` | `$.blocks[33].content[49]` | style | kunten.kaeriten | visible_text_body_order | `{"kind": "style", "style_type": "kaeriten", "x-marker": "レ", "x-provenance": "parser"}` |
 | 000051_3199 | `check-reports/aozora2html-adapter/000051_3199-d0530bb2dec9.json` | `aat/aozora2html-adapter/000051_3199-d0530bb2dec9.json` | `$.blocks[22].content[17]` | style | kunten.kaeriten | visible_text_body_order | `{"kind": "style", "style_type": "kaeriten", "x-marker": "レ", "x-provenance": "parser"}` |
 | 000051_3556 | `check-reports/aozora2html-adapter/000051_3556-dccca57b90c6.json` | `aat/aozora2html-adapter/000051_3556-dccca57b90c6.json` | `$.blocks[1].content[9].base_content[1]` | style | kunten.kaeriten | visible_text_body_order | `{"kind": "style", "style_type": "kaeriten", "x-marker": "二", "x-provenance": "parser"}` |
-| 000051_43787 | `check-reports/aozora2html-adapter/000051_43787-d0420844828e.json` | `aat/aozora2html-adapter/000051_43787-d0420844828e.json` | `$.blocks[4].content[1].base_content[1]` | style | kunten.kaeriten | gaiji_resolution, visible_text_body_order | `{"kind": "style", "style_type": "kaeriten", "x-marker": "レ", "x-provenance": "parser"}` |
-| 000051_4652 | `check-reports/aozora2html-adapter/000051_4652-94398990e2c6.json` | `aat/aozora2html-adapter/000051_4652-94398990e2c6.json` | `$.blocks[3].content[20].base_content[1]` | style | kunten.kaeriten |  | `{"kind": "style", "style_type": "kaeriten", "x-marker": "二", "x-provenance": "parser"}` |
-| 000052_5036 | `check-reports/aozora2html-adapter/000052_5036-a5f78fddcbe9.json` | `aat/aozora2html-adapter/000052_5036-a5f78fddcbe9.json` | `$.blocks[52].content[23].base_content[1]` | style | kunten.kaeriten |  | `{"kind": "style", "style_type": "kaeriten", "x-marker": "二", "x-provenance": "parser"}` |
+| 000051_4331 | `check-reports/aozora2html-adapter/000051_4331-6b7b2b7c90f8.json` | `` | `` |  |  | adapter_timeout | `{}` |
 
 ## kunten adapter_timeout_or_protocol_error
 
 | Work ID | Report | AAT | Node Path | Kind | Syntax | Failures | Preview |
 |---|---|---|---|---|---|---|---|
-| 000006_1869 | `check-reports/aozora2html-adapter/000006_1869-62320f0f4474.json` | `` | `` |  |  | adapter_timeout | `{}` |
-| 000051_1452 | `check-reports/aozora2html-adapter/000051_1452-b93481005b4d.json` | `` | `` |  |  | adapter_timeout | `{}` |
-| 000051_4331 | `check-reports/aozora2html-adapter/000051_4331-6b7b2b7c90f8.json` | `` | `` |  |  | adapter_timeout | `{}` |
-| 000096_2093 | `check-reports/aozora2html-adapter/000096_2093-71cae78a6bed.json` | `` | `` |  |  | adapter_timeout | `{}` |
 | 000129_2084 | `check-reports/aozora2html-adapter/000129_2084-1731cdb61106.json` | `` | `` |  |  | adapter_timeout | `{}` |
 | 000148_761 | `check-reports/aozora2html-adapter/000148_761-de1bc43c7072.json` | `` | `` |  |  | adapter_timeout | `{}` |
-| 000150_52090 | `check-reports/aozora2html-adapter/000150_52090-f7a25d6982c7.json` | `` | `` |  |  | adapter_timeout | `{}` |
-| 000255_1403 | `check-reports/aozora2html-adapter/000255_1403-7e59069231b9.json` | `` | `` |  |  | adapter_timeout | `{}` |
-| 000320_43481 | `check-reports/aozora2html-adapter/000320_43481-b0ddcc6a02ed.json` | `` | `` |  |  | adapter_timeout | `{}` |
-| 000933_47550 | `check-reports/aozora2html-adapter/000933_47550-70e0b2b8bbb0.json` | `` | `` |  |  | adapter_timeout | `{}` |
+| 001025_50909 | `check-reports/aozora2html-adapter/001025_50909-dabf470f1f18.json` | `` | `` |  |  | adapter_timeout | `{}` |
+| 001266_46820 | `check-reports/aozora2html-adapter/001266_46820-80ffbd27db9f.json` | `` | `` |  |  | adapter_timeout | `{}` |
+| 001562_52399 | `check-reports/aozora2html-adapter/001562_52399-697e4904cd6e.json` | `` | `` |  |  | adapter_timeout | `{}` |
+| 001562_52410 | `check-reports/aozora2html-adapter/001562_52410-3b287943927c.json` | `` | `` |  |  | adapter_timeout | `{}` |
+| 001562_52414 | `check-reports/aozora2html-adapter/001562_52414-1cff9ab1fbc0.json` | `` | `` |  |  | adapter_timeout | `{}` |
+| 001562_52415 | `check-reports/aozora2html-adapter/001562_52415-8885c8158a3d.json` | `` | `` |  |  | adapter_timeout | `{}` |
+| 001562_52417 | `check-reports/aozora2html-adapter/001562_52417-3594c8ea4be4.json` | `` | `` |  |  | adapter_timeout | `{}` |
+| 001562_52418 | `check-reports/aozora2html-adapter/001562_52418-be449c4fe82f.json` | `` | `` |  |  | adapter_timeout | `{}` |
 
 ## kunten parse_incomplete
 

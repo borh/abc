@@ -1993,18 +1993,11 @@ mod tests {
         merge_warehouse_shard_runs(&options, &shard_run_dirs).unwrap();
 
         let merged = WarehousePaths::new(&warehouse_dir, "merged");
-        let sources_dir = merged
-            .final_dir
-            .join(WarehouseTable::Sources.file_name());
+        let sources_dir = merged.final_dir.join(WarehouseTable::Sources.file_name());
         let sources_parts: Vec<_> = fs::read_dir(&sources_dir)
             .unwrap()
             .filter_map(Result::ok)
-            .filter(|entry| {
-                entry
-                    .path()
-                    .extension()
-                    .is_some_and(|ext| ext == "parquet")
-            })
+            .filter(|entry| entry.path().extension().is_some_and(|ext| ext == "parquet"))
             .collect();
         assert_eq!(
             sources_parts.len(),

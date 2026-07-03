@@ -537,22 +537,26 @@ pub fn compact_staged_table(paths: &WarehousePaths, table: WarehouseTable) -> Re
     if median >= COMPACTION_MAX_MEDIAN_PART_BYTES {
         eprintln!(
             "warehouse compaction: skipping {} ({} parts, median {}B ≥ {}B)",
-            table.file_name(), sizes.len(), median, COMPACTION_MAX_MEDIAN_PART_BYTES
+            table.file_name(),
+            sizes.len(),
+            median,
+            COMPACTION_MAX_MEDIAN_PART_BYTES
         );
         return Ok(false);
     }
     eprintln!(
         "warehouse compaction: compacting {} ({} parts, median {}B) → 1 file",
-        table.file_name(), sizes.len(), median
+        table.file_name(),
+        sizes.len(),
+        median
     );
     let part_paths = parquet_table_part_paths(&staged)?;
 
     // Coalesce into a same-FS sibling temp dir so rename is atomic.
-    let compact_dir = paths.warehouse_dir.join(format!(
-        ".compact-{}-{}",
-        paths.run_id,
-        table.file_name()
-    ));
+    let compact_dir =
+        paths
+            .warehouse_dir
+            .join(format!(".compact-{}-{}", paths.run_id, table.file_name()));
     if compact_dir.exists() {
         fs::remove_dir_all(&compact_dir)
             .with_context(|| format!("remove stale {}", compact_dir.display()))?;
@@ -1271,7 +1275,10 @@ mod tests {
             let path = sources_staged.join(format!("part-{i:05}.parquet"));
             write_sources_part(&path, &format!("s{i}"), 1);
             // Pad the file to >1 MiB so median crosses threshold.
-            let mut f = std::fs::OpenOptions::new().append(true).open(&path).unwrap();
+            let mut f = std::fs::OpenOptions::new()
+                .append(true)
+                .open(&path)
+                .unwrap();
             f.write_all(&vec![0u8; 1_100_000]).unwrap();
         }
         let compacted = compact_staged_table(&paths, WarehouseTable::Sources).unwrap();
@@ -1292,7 +1299,10 @@ mod tests {
         fs::write(root.join("part-00000.parquet"), b"short").unwrap();
         fs::write(root.join("views.sql"), b"select 1").unwrap();
         let sizes = parquet_table_part_sizes(&root).unwrap();
-        assert_eq!(sizes, vec![b"short".len() as u64, b"longer-junk-bytes".len() as u64]);
+        assert_eq!(
+            sizes,
+            vec![b"short".len() as u64, b"longer-junk-bytes".len() as u64]
+        );
     }
 
     fn row_group_count(path: &Path) -> usize {

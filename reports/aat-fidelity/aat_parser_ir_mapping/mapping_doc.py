@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Generate a disposable AAT->parser-IR mapping document from measured rules."""
 import argparse
-import hashlib
 import json
 import re
 from collections import Counter
 from pathlib import Path
+
+import c14n
 
 
 PROBE_DIR = Path(__file__).resolve().parent
@@ -59,16 +60,6 @@ def aat_pointer_bucket(pointer):
     return re.sub(r"^([A-Za-z0-9_.]+)=.*$", r"\1", bucket)
 
 
-def canonical_json(value):
-    # Mirrors the repo's current Clojure JCS writer for this schema-only subset.
-    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).replace("/", "\\/")
-
-
-def schema_hash(path):
-    with open(path, encoding="utf-8") as f:
-        return "sha256:" + hashlib.sha256(canonical_json(json.load(f)).encode("utf-8")).hexdigest()
-
-
 def parser_ir_pointer(value):
     return None if value == "(none)" else value
 
@@ -116,10 +107,10 @@ def build_mapping_document_from_counts(rule_counts, first_path_by_rule, first_no
     return {
         "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
         "mapping_version": "0.1.0",
-        "mapping_schema_hash": schema_hash(repo_root / "schemas" / "aat-parser-ir-mapping.schema.json"),
+        "mapping_schema_hash": c14n.schema_hash(repo_root / "schemas" / "aat-parser-ir-mapping.schema.json"),
         "source_aat_version": 1,
         "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-        "target_parser_ir_schema_hash": schema_hash(repo_root / "schemas" / "parser-ir.schema.json"),
+        "target_parser_ir_schema_hash": c14n.schema_hash(repo_root / "schemas" / "parser-ir.schema.json"),
         "transform_rule_descriptions": rules,
         "loss_taxonomy": LOSS_TAXONOMY,
     }

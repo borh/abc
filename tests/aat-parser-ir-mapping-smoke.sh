@@ -9,6 +9,8 @@ abc_root="$repo_root/../abc"
 rm -rf "$out_dir"
 mkdir -p "$out_dir"
 
+bash "$repo_root/tests/aat-parser-ir-schema-hash-smoke.sh"
+
 uv run --isolated --no-project --with 'jsonschema>=4.0' \
   "$repo_root/reports/aat-fidelity/aat_parser_ir_mapping/generate.py" \
   --aat-dir "$aat_dir" \

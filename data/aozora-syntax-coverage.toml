@@ -1018,6 +1018,70 @@ coverage_basis = "full_corpus"
 sample_works = ["000491_2698", "000287_3062", "000287_3061", "000219_2932", "000869_2707"]
 
 [[syntax]]
+id = "source.note_label"
+priority = 2
+category = "source_annotation"
+feature_keys = ["source_note", "source_label", "role_label"]
+reference_sources = ["docs/superpowers/specs/2026-07-04-parser-ir-level3-structure-delta.md", "docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
+source_examples = ["［＃劇場名］", "［＃長男］", "［＃探偵小説家、生理学者。本名は、林髞］"]
+source_patterns = ['［＃[^］]*(劇場名|ホテル名|お手伝いさん|夫人|スカーフ|小説家|生理学者|長男|次男|三男|長女|次女|三女|従弟|従妹)[^］]*］']
+ir_nodes = ["source-note"]
+aat_nodes = ["raw"]
+tei_projection = "note type=source-label or typed role/name markup after editorial enrichment"
+plaintext_projection = "source_note_or_drop_from_body_base_text"
+comparison_projection = "source_note_or_drop_from_body_base_text"
+validation_properties = ["source_note_label_preservation"]
+adapter_expectations = ["preserve source label marker or surface text"]
+oracle_cases = []
+status = "needs_research"
+status_reason = "Aozora corpus contains bracketed role/title/object labels that are TEI-representable as source notes, but semantic role/name enrichment remains outside the source-authority gate."
+
+[syntax.representability]
+source_inventory_row = "source.note_label"
+status = "raw_preserved"
+aat_nodes = ["raw"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:119"
+notes = "The gate records source-side labels as raw-preserved source-note material. It does not claim named-entity or cast-list enrichment; those remain downstream editorial TEI decisions."
+
+[syntax.parsers.aozora2]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes label notes; parser-specific typed behavior remains to be measured."
+
+[syntax.parsers.aozora-rs]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes label notes; parser-specific typed behavior remains to be measured."
+
+[syntax.parsers.aozora2html]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes label notes; parser-specific typed behavior remains to be measured."
+
+[syntax.adapters.aozora2]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed source-label AAT projection has been measured."
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed source-label AAT projection has been measured."
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed source-label AAT projection has been measured."
+
+[syntax.corpus_prevalence]
+works_with_feature = 0
+total_occurrences = 0
+detector_id = "source_note_label"
+coverage_basis = "not_run"
+sample_works = []
+
+[[syntax]]
 id = "gaiji.unicode_codepoint"
 priority = 2
 category = "glyph"

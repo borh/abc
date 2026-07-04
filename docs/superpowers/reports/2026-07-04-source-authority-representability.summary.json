@@ -3,8 +3,8 @@
   "works_scanned": 17894,
   "works_failed": 0,
   "markers_total": 4324663,
-  "unknown_markers_total": 16339,
-  "unallowlisted_unknown_markers_total": 1469,
+  "unknown_markers_total": 16258,
+  "unallowlisted_unknown_markers_total": 1388,
   "allowlisted_unknown_markers_total": 14870,
   "rows": {
     "accent.dotted_letter": {
@@ -456,6 +456,17 @@
         "000146_50202"
       ]
     },
+    "source.note_label": {
+      "works_with_marker": 76,
+      "occurrences": 169,
+      "sample_works": [
+        "000037_319",
+        "000067_59327",
+        "000083_43270",
+        "000106_52391",
+        "000106_56857"
+      ]
+    },
     "structure.table": {
       "works_with_marker": 5,
       "occurrences": 32,
@@ -486,7 +497,7 @@
       ]
     }
   },
-  "unknown_classes_total": 1174,
+  "unknown_classes_total": 1124,
   "unknown_classes_truncated": true,
   "unknown_classes": [
     {
@@ -513,19 +524,6 @@
       "unallowlisted_occurrences": 7,
       "sample_works": [
         "000150_46617"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃劇場名］",
-      "body": "劇場名",
-      "occurrences": 6,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 6,
-      "sample_works": [
-        "000311_46245",
-        "000311_46246",
-        "000311_46248"
       ]
     },
     {
@@ -589,18 +587,6 @@
       "unallowlisted_occurrences": 5,
       "sample_works": [
         "000280_1706"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ホテル名］",
-      "body": "ホテル名",
-      "occurrences": 5,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 5,
-      "sample_works": [
-        "000311_46245",
-        "000311_46247"
       ]
     },
     {
@@ -687,19 +673,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃お手伝いさん］",
-      "body": "お手伝いさん",
-      "occurrences": 4,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 4,
-      "sample_works": [
-        "000160_1255",
-        "000311_46244",
-        "000311_4833"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃右寄せ］",
       "body": "右寄せ",
       "occurrences": 4,
@@ -707,17 +680,6 @@
       "unallowlisted_occurrences": 4,
       "sample_works": [
         "000025_1144"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃夫人］",
-      "body": "夫人",
-      "occurrences": 4,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 4,
-      "sample_works": [
-        "000160_1255"
       ]
     },
     {
@@ -881,18 +843,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃スカーフ］",
-      "body": "スカーフ",
-      "occurrences": 3,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 3,
-      "sample_works": [
-        "000311_46246",
-        "000311_46247"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃ルビの「しふ」は初出では「しう」］",
       "body": "ルビの「しふ」は初出では「しう」",
       "occurrences": 3,
@@ -900,17 +850,6 @@
       "unallowlisted_occurrences": 3,
       "sample_works": [
         "000885_51307"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃三男］",
-      "body": "三男",
-      "occurrences": 3,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 3,
-      "sample_works": [
-        "000160_1255"
       ]
     },
     {
@@ -948,28 +887,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃小説家］",
-      "body": "小説家",
-      "occurrences": 3,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 3,
-      "sample_works": [
-        "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃次男］",
-      "body": "次男",
-      "occurrences": 3,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 3,
-      "sample_works": [
-        "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃見出し文字］",
       "body": "見出し文字",
       "occurrences": 3,
@@ -977,28 +894,6 @@
       "unallowlisted_occurrences": 3,
       "sample_works": [
         "000096_1115"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃長女］",
-      "body": "長女",
-      "occurrences": 3,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 3,
-      "sample_works": [
-        "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃長男］",
-      "body": "長男",
-      "occurrences": 3,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 3,
-      "sample_works": [
-        "000160_1255"
       ]
     },
     {
@@ -2023,17 +1918,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃大瀧基、大瀧鷹子の長男、百合子の従弟］",
-      "body": "大瀧基、大瀧鷹子の長男、百合子の従弟",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_46240"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃天より３１字下げ、地より２字上げで］",
       "body": "天より３１字下げ、地より２字上げで",
       "occurrences": 2,
@@ -2113,17 +1997,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃暢彦、次男］",
-      "body": "暢彦、次男",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃本文の台詞部分は２行目から、その台詞の最後まで天より１字下げ。］",
       "body": "本文の台詞部分は２行目から、その台詞の最後まで天より１字下げ。",
       "occurrences": 2,
@@ -2138,17 +2011,6 @@
       "kind": "CommandFullwidth",
       "raw": "［＃村田安］",
       "body": "村田安",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_46240"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃村田家の長女］",
-      "body": "村田家の長女",
       "occurrences": 2,
       "allowlisted_occurrences": 0,
       "unallowlisted_occurrences": 2,
@@ -2222,17 +2084,6 @@
       "unallowlisted_occurrences": 2,
       "sample_works": [
         "000160_876"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃次女］",
-      "body": "次女",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000160_1255"
       ]
     },
     {
@@ -8985,28 +8836,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃三男、病臥中］",
-      "body": "三男、病臥中",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃三男、腎臓病で横臥中］",
-      "body": "三男、腎臓病で横臥中",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃上記、１、２行目と４行目の「志村浩太郎　印」は中文字、それ以外は小文字。４行目「印」は○付き文字］",
       "body": "上記、１、２行目と４行目の「志村浩太郎　印」は中文字、それ以外は小文字。４行目「印」は○付き文字",
       "occurrences": 1,
@@ -9036,17 +8865,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000236_4300"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃下島俊一、精一郎の従弟］",
-      "body": "下島俊一、精一郎の従弟",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46241"
       ]
     },
     {
@@ -9128,17 +8946,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃中條健之助、国男・咲枝の次男］",
-      "body": "中條健之助、国男・咲枝の次男",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46256"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃中條咲枝］",
       "body": "中條咲枝",
       "occurrences": 1,
@@ -9146,28 +8953,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000311_46252"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃中條国男、中條家長男］",
-      "body": "中條国男、中條家長男",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_4832"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃中條国男・咲枝の長男］",
-      "body": "中條国男・咲枝の長男",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46251"
       ]
     },
     {
@@ -9190,17 +8975,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000311_46235"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃中條寿江、中條家三女］",
-      "body": "中條寿江、中條家三女",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46236"
       ]
     },
     {
@@ -9238,17 +9012,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃中條華、中條家三女。百合子が長女、次女は千鶴（生後四ヵ月で死亡）］",
-      "body": "中條華、中條家三女。百合子が長女、次女は千鶴（生後四ヵ月で死亡）",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_4832"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃中條葭江］",
       "body": "中條葭江",
       "occurrences": 1,
@@ -9278,17 +9041,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000311_4833"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃中條道男、中條家次男］",
-      "body": "中條道男、中條家次男",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_4832"
       ]
     },
     {
@@ -9513,28 +9265,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃倉知咲枝、百合子の従妹、のちの国男の妻］",
-      "body": "倉知咲枝、百合子の従妹、のちの国男の妻",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46242"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃倉知緑郎、百合子の従弟］",
-      "body": "倉知緑郎、百合子の従弟",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_4833"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃倉知緑郎］",
       "body": "倉知緑郎",
       "occurrences": 1,
@@ -9755,17 +9485,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃北村秀雄、湯浅芳子の従弟］",
-      "body": "北村秀雄、湯浅芳子の従弟",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_4833"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃十月革命］",
       "body": "十月革命",
       "occurrences": 1,
@@ -9861,17 +9580,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000311_46248"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃古田中孝子、母葭江の従妹］",
-      "body": "古田中孝子、母葭江の従妹",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46237"
       ]
     },
     {
@@ -10745,28 +10453,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃宮本多賀子、顕治の従妹］",
-      "body": "宮本多賀子、顕治の従妹",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46252"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃宮本富雄、顕治の従弟］",
-      "body": "宮本富雄、顕治の従弟",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46252"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃宮本捨吉］",
       "body": "宮本捨吉",
       "occurrences": 1,
@@ -10802,39 +10488,6 @@
       "kind": "CommandFullwidth",
       "raw": "［＃宮本美代］",
       "body": "宮本美代",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46252"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃宮本輝、達治・友子の長男］",
-      "body": "宮本輝、達治・友子の長男",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃宮本達治、宮本家の次男、長男は顕治］",
-      "body": "宮本達治、宮本家の次男、長男は顕治",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46252"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃宮本隆治、宮本家の三男］",
-      "body": "宮本隆治、宮本家の三男",
       "occurrences": 1,
       "allowlisted_occurrences": 0,
       "unallowlisted_occurrences": 1,
@@ -10939,17 +10592,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000311_46244"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃小田切直行、父精一郎の従弟］",
-      "body": "小田切直行、父精一郎の従弟",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46236"
       ]
     },
     {
@@ -11119,28 +10761,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃従妹倉知春江の結核療養のための付添人］",
-      "body": "従妹倉知春江の結核療養のための付添人",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46242"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃徳岡道三、父精一郎の従弟］",
-      "body": "徳岡道三、父精一郎の従弟",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46236"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃感情の陰謀］",
       "body": "感情の陰謀",
       "occurrences": 1,
@@ -11236,28 +10856,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000243_1328"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃探偵小説家、生理学者。本名は、林髞］",
-      "body": "探偵小説家、生理学者。本名は、林髞",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃推理小説家］",
-      "body": "推理小説家",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000160_1255"
       ]
     },
     {
@@ -11449,17 +11047,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃晴彦、長男］",
-      "body": "晴彦、長男",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃晴彦］",
       "body": "晴彦",
       "occurrences": 1,
@@ -11537,13 +11124,431 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃本田道之、父精一郎の従弟］",
-      "body": "本田道之、父精一郎の従弟",
+      "raw": "［＃本田道之］",
+      "body": "本田道之",
       "occurrences": 1,
       "allowlisted_occurrences": 0,
       "unallowlisted_occurrences": 1,
       "sample_works": [
-        "000311_46235"
+        "000311_46236"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃本田龍助、百合子の大叔父］",
+      "body": "本田龍助、百合子の大叔父",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_4833"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃本間久子］",
+      "body": "本間久子",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46252"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃村田一夫、夫荒木茂の異母弟］",
+      "body": "村田一夫、夫荒木茂の異母弟",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46239"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃東久邇宮稔彦首相］",
+      "body": "東久邇宮稔彦首相",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000160_1255"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃東京都世田谷区若林町］",
+      "body": "東京都世田谷区若林町",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000160_1255"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃東京高等師範学校］",
+      "body": "東京高等師範学校",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_4833"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃根津嘉一郎］",
+      "body": "根津嘉一郎",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46247"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃楽譜入る］",
+      "body": "楽譜入る",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_2020"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃横書き、「ディース」の「ー」と、「イーズ」の「イ」と「ー」の間にアクセント（∨）、「アルーム」に上線］",
+      "body": "横書き、「ディース」の「ー」と、「イーズ」の「イ」と「ー」の間にアクセント（∨）、「アルーム」に上線",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_2020"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃横須賀鎮守府。鎮守府は、海軍の根拠地に置かれた機関］",
+      "body": "横須賀鎮守府。鎮守府は、海軍の根拠地に置かれた機関",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000160_1255"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃欄外に「玉葉集巻十八、雑五、従三位爲子」の校注あり］",
+      "body": "欄外に「玉葉集巻十八、雑五、従三位爲子」の校注あり",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000989_351"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃欄外に校注：おだやか○平穏○］",
+      "body": "欄外に校注：おだやか○平穏○",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000989_2614"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃次の３項目は２行目以降１字下げ］",
+      "body": "次の３項目は２行目以降１字下げ",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000096_2100"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃次行は三字下げ、九字空き地付きで］",
+      "body": "次行は三字下げ、九字空き地付きで",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000331_2613"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃次３行は、文字はゴシック体、罫線は全て波線］",
+      "body": "次３行は、文字はゴシック体、罫線は全て波線",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000096_2117"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃正しくは「All Quiet on the Western Front」］",
+      "body": "正しくは「All Quiet on the Western Front」",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46247"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃正男］",
+      "body": "正男",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000160_1255"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃武者小路実篤のペンネーム］",
+      "body": "武者小路実篤のペンネーム",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46239"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃殺虫剤名］",
+      "body": "殺虫剤名",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46246"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃母葭江の妹］",
+      "body": "母葭江の妹",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46243"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃江井、中條家の運転手］",
+      "body": "江井、中條家の運転手",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46243"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃河原崎長十郎］",
+      "body": "河原崎長十郎",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46246"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃波罫線］",
+      "body": "波罫線",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000096_2117"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃洋装店］",
+      "body": "洋装店",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46244"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃洗面器］",
+      "body": "洗面器",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46246"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃流血］",
+      "body": "流血",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46248"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃海軍報道班文学挺身隊］",
+      "body": "海軍報道班文学挺身隊",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000160_1255"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃海野の別ペンネーム］",
+      "body": "海野の別ペンネーム",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000160_1255"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃湯浅アサ］",
+      "body": "湯浅アサ",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_4833"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃湯浅善吉、湯浅芳子の父］",
+      "body": "湯浅善吉、湯浅芳子の父",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46245"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃湯浅善吉］",
+      "body": "湯浅善吉",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_4833"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃湯浅芳子］",
+      "body": "湯浅芳子",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46243"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃湯浅誠三郎］",
+      "body": "湯浅誠三郎",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_4833"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃湯浅貞雄］",
+      "body": "湯浅貞雄",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_4833"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃湿布］",
+      "body": "湿布",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46248"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃満蒙開拓移民の指導などに当たった、明治―昭和期の農本主義者］",
+      "body": "満蒙開拓移民の指導などに当たった、明治―昭和期の農本主義者",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000160_1255"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃準］",
+      "body": "準",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000160_1255"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃演説、報告］",
+      "body": "演説、報告",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46246"
       ]
     }
   ],
@@ -12252,13 +12257,13 @@
   "decode_failures": [],
   "representability": {
     "typed_occurrences": 4566724,
-    "raw_preserved_occurrences": 36666,
+    "raw_preserved_occurrences": 36835,
     "out_of_body_occurrences": 950,
     "unsupported_occurrences": 13920,
     "needs_research_occurrences": 0
   },
   "strict_errors": [
-    "1469 unallowlisted source markers"
+    "1388 unallowlisted source markers"
   ],
   "inputs": {
     "matrix": "/home/bor/Projects/ab-validator/data/aozora-syntax-coverage.toml",

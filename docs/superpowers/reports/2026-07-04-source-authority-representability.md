@@ -5,7 +5,7 @@
 - source_authority_gate: `SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED`
 - note: this is not a passing representability gate; durable representability claims remain blocked until strict_errors is empty.
 - strict_errors:
-  - 1469 unallowlisted source markers
+  - 1388 unallowlisted source markers
 
 ## Scope
 
@@ -16,14 +16,14 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 - works_scanned: 17894
 - works_failed: 0
 - markers_total: 4324663
-- unknown_markers_total: 16339
-- unallowlisted_unknown_markers_total: 1469
+- unknown_markers_total: 16258
+- unallowlisted_unknown_markers_total: 1388
 - allowlisted_unknown_markers_total: 14870
 
 ## Representability
 
 - typed_occurrences: 4566724
-- raw_preserved_occurrences: 36666
+- raw_preserved_occurrences: 36835
 - out_of_body_occurrences: 950
 - unsupported_occurrences: 13920
 - needs_research_occurrences: 0
@@ -73,6 +73,7 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | reference.frontref | 682 | 3920 | 000006_46659, 000012_2585, 000012_4316, 000022_197, 000026_46578 |
 | ruby.basic | 14321 | 3608407 | 000005_5, 000005_53194, 000005_55215, 000005_55216, 000005_55217 |
 | ruby.placement_directional | 31 | 312 | 000034_1213, 000050_3581, 000129_694, 000146_49258, 000146_50202 |
+| source.note_label | 76 | 169 | 000037_319, 000067_59327, 000083_43270, 000106_52391, 000106_56857 |
 | structure.table | 5 | 32 | 000042_2345, 000042_2348, 000096_2100, 000311_3466, 001149_45455 |
 | warichu.basic | 361 | 6601 | 000005_53194, 000006_1868, 000006_1869, 000034_519, 000038_42202 |
 | warigaki.parenthetical | 1 | 1 | 000034_519 |
@@ -184,19 +185,17 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 
 ## Unknown Source Marker Classes
 
-Showing 50 report rows of 1174 total classes. JSON carries 1000 top classes. truncated: true
+Showing 50 report rows of 1124 total classes. JSON carries 1000 top classes. truncated: true
 
 | kind | raw | occurrences | unallowlisted | allowlisted | samples |
 |---|---|---:|---:|---:|---|
 | MalformedAccentNotation | 〔 | 56 | 56 | 0 | 000026_219, 000034_55507, 000081_4416, 000081_50764, 000091_522 |
 | CommandFullwidth | ［＃「地付き］ | 7 | 7 | 0 | 000150_46617 |
-| CommandFullwidth | ［＃劇場名］ | 6 | 6 | 0 | 000311_46245, 000311_46246, 000311_46248 |
 | CommandFullwidth | ［＃左にルビ付き］ | 6 | 6 | 0 | 000933_47550, 001930_58400, 001932_59114 |
 | MalformedCommand | ［＃ | 6 | 6 | 0 | 000081_4461, 000106_2415, 000121_1754, 000148_798, 000331_2663 |
 | CommandFullwidth | ［＃「”」は下付き］ | 5 | 5 | 0 | 000019_4376, 000129_688, 000136_42754 |
 | CommandFullwidth | ［＃「阿」は一段階小さな文字］ | 5 | 5 | 0 | 000081_47027 |
 | CommandFullwidth | ［＃これより手紙文、１字下げ］ | 5 | 5 | 0 | 000280_1706 |
-| CommandFullwidth | ［＃ホテル名］ | 5 | 5 | 0 | 000311_46245, 000311_46247 |
 | CommandFullwidth | ［＃未完］ | 5 | 5 | 0 | 000311_1983, 000311_2879, 000311_3023, 000311_3027, 000311_3080 |
 | CommandFullwidth | ［＃直線は中央に配置］ | 5 | 5 | 0 | 000129_2298 |
 | CommandFullwidth | ［＃「〃」は上部に出ている］ | 4 | 4 | 0 | 000305_1896 |
@@ -204,9 +203,7 @@ Showing 50 report rows of 1174 total classes. JSON carries 1000 top classes. tru
 | CommandFullwidth | ［＃「エ」は小さい「ヱ」］ | 4 | 4 | 0 | 000124_658 |
 | CommandFullwidth | ［＃「競吟」は上部に出ている］ | 4 | 4 | 0 | 000305_1896 |
 | CommandFullwidth | ［＃「（１）」は注釈番号］ | 4 | 4 | 0 | 000042_2347, 000042_2354 |
-| CommandFullwidth | ［＃お手伝いさん］ | 4 | 4 | 0 | 000160_1255, 000311_46244, 000311_4833 |
 | CommandFullwidth | ［＃右寄せ］ | 4 | 4 | 0 | 000025_1144 |
-| CommandFullwidth | ［＃夫人］ | 4 | 4 | 0 | 000160_1255 |
 | CommandFullwidth | ［＃引用文終わり］ | 4 | 4 | 0 | 000034_233 |
 | CommandFullwidth | ［＃「x2」、「y2」、「x2」はそれぞれ縦中横、すべての「2」は上付き小書き］ | 3 | 3 | 0 | 000148_1102 |
 | CommandFullwidth | ［＃「うどん」と「きそば」は２列に並ぶ］ | 3 | 3 | 0 | 000311_4205, 000311_4206 |
@@ -221,23 +218,27 @@ Showing 50 report rows of 1174 total classes. JSON carries 1000 top classes. tru
 | CommandFullwidth | ［＃ここで１段階小さな文字終わり］ | 3 | 3 | 0 | 000258_62443, 000923_47850 |
 | CommandFullwidth | ［＃この行ここまで相対的に字が小さい、ここからは下揃え、下から３字上げ］ | 3 | 3 | 0 | 000280_1706 |
 | CommandFullwidth | ［＃アラビア数字はすべて下付き小文字］ | 3 | 3 | 0 | 000042_2345 |
-| CommandFullwidth | ［＃スカーフ］ | 3 | 3 | 0 | 000311_46246, 000311_46247 |
 | CommandFullwidth | ［＃ルビの「しふ」は初出では「しう」］ | 3 | 3 | 0 | 000885_51307 |
-| CommandFullwidth | ［＃三男］ | 3 | 3 | 0 | 000160_1255 |
 | CommandFullwidth | ［＃以下の括弧内割注］ | 3 | 3 | 0 | 000165_2392 |
 | CommandFullwidth | ［＃天より３２字下げて地より３字上げで］ | 3 | 3 | 0 | 000182_946 |
 | CommandFullwidth | ［＃小見出し文字］ | 3 | 3 | 0 | 000096_1115 |
-| CommandFullwidth | ［＃小説家］ | 3 | 3 | 0 | 000160_1255 |
-| CommandFullwidth | ［＃次男］ | 3 | 3 | 0 | 000160_1255 |
 | CommandFullwidth | ［＃見出し文字］ | 3 | 3 | 0 | 000096_1115 |
-| CommandFullwidth | ［＃長女］ | 3 | 3 | 0 | 000160_1255 |
-| CommandFullwidth | ［＃長男］ | 3 | 3 | 0 | 000160_1255 |
 | CommandFullwidth | ［＃「1」はすべて下付き小文字］ | 2 | 2 | 0 | 000042_2345 |
 | CommandFullwidth | ［＃「IV」はローマ数字の４］ | 2 | 2 | 0 | 000301_1872 |
 | CommandFullwidth | ［＃「“」は下付き］ | 2 | 2 | 0 | 000129_688 |
 | CommandFullwidth | ［＃「※」は「たけかんむり＋隻」、17-8］ | 2 | 2 | 0 | 000051_361 |
 | CommandFullwidth | ［＃「※」は「つつみがまえ（勹）」＋「夕」で、読みは「そうそう」67-6］ | 2 | 2 | 0 | 000074_431 |
 | CommandFullwidth | ［＃「」内の「レ」は返り点］ | 2 | 2 | 0 | 000301_1872 |
+| CommandFullwidth | ［＃「」内の「一二」は返り点］ | 2 | 2 | 0 | 000301_1872 |
+| CommandFullwidth | ［＃「ただ」と「咲」は２列に並ぶ］ | 2 | 2 | 0 | 000311_4198 |
+| CommandFullwidth | ［＃「み」余分か、それとも「見」か？］ | 2 | 2 | 0 | 000012_223 |
+| CommandFullwidth | ［＃「一三九頁」は「應神天皇」の「天の日矛」］ | 2 | 2 | 0 | 001518_51731 |
+| CommandFullwidth | ［＃「一八二頁」は「清寧天皇・顯宗天皇・仁賢天皇」の「志自牟の新室樂」］ | 2 | 2 | 0 | 001518_51731 |
+| CommandFullwidth | ［＃「三八頁」は「須佐の男の命」の「系譜」］ | 2 | 2 | 0 | 001518_51731 |
+| CommandFullwidth | ［＃「九〇頁」は「綏靖天皇以後八代」の「開化天皇」］ | 2 | 2 | 0 | 001518_51731 |
+| CommandFullwidth | ［＃「九四頁」は「崇神天皇」の「將軍の派遣」］ | 2 | 2 | 0 | 001518_51731 |
+| CommandFullwidth | ［＃「二七頁」は「伊耶那岐の命と伊耶那美の命」の「身禊」］ | 2 | 2 | 0 | 001518_51731 |
+| CommandFullwidth | ［＃「二四頁」は「伊耶那岐の命と伊耶那美の命」の「黄泉の國」］ | 2 | 2 | 0 | 001518_51731 |
 
 ## Decode Failures
 

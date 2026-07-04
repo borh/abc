@@ -916,6 +916,38 @@ fn source_inventory_classifies_glyph_variant_notes() {
 }
 
 #[test]
+fn source_inventory_classifies_source_note_labels() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = [
+        "［＃劇場名］",
+        "［＃ホテル名］",
+        "［＃お手伝いさん］",
+        "［＃夫人］",
+        "［＃長男］",
+        "［＃暢彦、次男］",
+        "［＃中條華、中條家三女。百合子が長女、次女は千鶴（生後四ヵ月で死亡）］",
+        "［＃探偵小説家、生理学者。本名は、林髞］",
+        "［＃スカーフ］",
+    ]
+    .join("\n");
+    let summary = inventory_document("fixture", &source, &patterns);
+
+    assert_eq!(
+        summary.unknown_examples,
+        [],
+        "source label notes should be reviewed source-authority markers"
+    );
+    assert_eq!(
+        summary
+            .row_counts
+            .get("source.note_label")
+            .map(|count| count.occurrences),
+        Some(9)
+    );
+}
+
+#[test]
 fn source_inventory_classifies_page_center_layout_variants() {
     let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
     let patterns = patterns_from_rows(matrix.rows());

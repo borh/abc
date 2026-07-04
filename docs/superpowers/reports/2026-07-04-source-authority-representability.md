@@ -5,16 +5,6 @@
 - source_authority_gate: `SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED`
 - note: this is not a passing representability gate; durable representability claims remain blocked until strict_errors is empty.
 - strict_errors:
-  - source inventory row caption.block has occurrences but no representability table
-  - source inventory row caption.inline has occurrences but no representability table
-  - source inventory row decoration.boten has occurrences but no representability table
-  - source inventory row decoration.bousen has occurrences but no representability table
-  - source inventory row decoration.direction_override has occurrences but no representability table
-  - source inventory row emphasis.basic has representability.status = needs_research
-  - source inventory row figure.image_inline has occurrences but no representability table
-  - source inventory row gaiji.jis_code has occurrences but no representability table
-  - source inventory row gaiji.un_embed has occurrences but no representability table
-  - source inventory row gaiji.unicode_codepoint has occurrences but no representability table
   - source inventory row heading.dogyo has occurrences but no representability table
   - source inventory row heading.mado has occurrences but no representability table
   - source inventory row iteration.kunoji has occurrences but no representability table
@@ -41,11 +31,11 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 
 ## Representability
 
-- typed_occurrences: 4120173
-- raw_preserved_occurrences: 25007
+- typed_occurrences: 4364879
+- raw_preserved_occurrences: 25072
 - out_of_body_occurrences: 0
 - unsupported_occurrences: 13920
-- needs_research_occurrences: 157495
+- needs_research_occurrences: 0
 
 ## Rows
 

@@ -373,11 +373,11 @@ sample_works = ["000281_3597", "001161_43624", "001670_55342", "000281_3598", "0
 
 [syntax.representability]
 source_inventory_row = "emphasis.basic"
-status = "needs_research"
-aat_nodes = []
+status = "typed"
+aat_nodes = ["style"]
 raw_fallback = true
-evidence = "docs/superpowers/plans/2026-07-04-source-authority-representability-gate.md"
-notes = "Priority-1 emphasis spans several style variants; source-inventory classification still needs review before a typed claim."
+evidence = "docs/aat-contract.md:124"
+notes = "AAT has typed style nodes for emphasis scopes; subrows track variant fidelity, while raw fallback covers adapters that collapse or drop specific style details."
 
 [[syntax]]
 id = "indentation.basic"
@@ -964,6 +964,14 @@ oracle_cases = ["gaiji.unicode.u546d"]
 status = "needs_research"
 status_reason = "U+ form sub-case of gaiji.marker; aozora2html uses jis2ucs.yml"
 
+[syntax.representability]
+source_inventory_row = "gaiji.unicode_codepoint"
+status = "typed"
+aat_nodes = ["gaiji"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:120"
+notes = "AAT has a typed gaiji node and TEI can preserve the codepoint as g/charDecl evidence; raw fallback covers parser or adapter resolution gaps."
+
 [syntax.parsers.aozora2]
 recognition = "parsed"
 evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:52"
@@ -1019,6 +1027,14 @@ adapter_expectations = ["resolve via jis2ucs table"]
 oracle_cases = ["gaiji.jis.2-13-47"]
 status = "needs_research"
 status_reason = "JIS X 0213 code form of gaiji"
+
+[syntax.representability]
+source_inventory_row = "gaiji.jis_code"
+status = "typed"
+aat_nodes = ["gaiji"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:120"
+notes = "JIS-coded gaiji can be represented as typed gaiji and projected to TEI g with a reference; raw fallback covers unresolved table lookups and lossy adapters."
 
 [syntax.parsers.aozora2]
 recognition = "parsed"
@@ -1131,6 +1147,14 @@ adapter_expectations = ["fall back to descriptive note"]
 oracle_cases = ["gaiji.un_embed.description_only"]
 status = "needs_research"
 status_reason = "gaiji with description but no JIS/Unicode mapping"
+
+[syntax.representability]
+source_inventory_row = "gaiji.un_embed"
+status = "typed"
+aat_nodes = ["gaiji"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:120"
+notes = "Description-only gaiji can still be represented as a typed gaiji node and TEI g/charDecl description; raw fallback preserves source text when adapters cannot resolve it."
 
 [syntax.parsers.aozora2]
 recognition = "parsed"
@@ -1580,6 +1604,14 @@ oracle_cases = ["decoration.boten.white_sesame"]
 status = "needs_research"
 status_reason = "boten (emphasis dots); sub-case of emphasis.basic with variant kinds"
 
+[syntax.representability]
+source_inventory_row = "decoration.boten"
+status = "typed"
+aat_nodes = ["style"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:124"
+notes = "AAT style nodes can carry boten style_type and TEI can preserve boten as hi rend metadata; raw fallback covers variant loss such as sesame/circle/triangle collapse."
+
 [syntax.parsers.aozora2]
 recognition = "parsed"
 evidence = "references/parsers/aozora2/crates/aozora-core/src/node/style.rs:6"
@@ -1635,6 +1667,14 @@ adapter_expectations = ["preserve line variant (single/double/wavy/chain)"]
 oracle_cases = ["decoration.bousen.double"]
 status = "needs_research"
 status_reason = "bousen (sideline) variants"
+
+[syntax.representability]
+source_inventory_row = "decoration.bousen"
+status = "typed"
+aat_nodes = ["style"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:124"
+notes = "AAT style nodes can carry bousen style_type and TEI can preserve the line styling as hi rend metadata; raw fallback covers adapters that collapse line variants."
 
 [syntax.parsers.aozora2]
 recognition = "parsed"
@@ -1883,6 +1923,14 @@ adapter_expectations = ["preserve placement attribute on dot/line"]
 oracle_cases = ["decoration.direction_override.left_boten"]
 status = "needs_research"
 status_reason = "boten/bousen with directional placement override"
+
+[syntax.representability]
+source_inventory_row = "decoration.direction_override"
+status = "raw_preserved"
+aat_nodes = ["style"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:124"
+notes = "The underlying style can be represented, but AAT has no explicit placement field for left/under overrides yet; source preservation is the reviewed v1 guarantee until that placement policy is typed."
 
 [syntax.parsers.aozora2]
 recognition = "parsed"
@@ -2436,6 +2484,14 @@ oracle_cases = ["caption.inline.basic"]
 status = "needs_research"
 status_reason = "inline-form caption; sub-case of figure.image_caption"
 
+[syntax.representability]
+source_inventory_row = "caption.inline"
+status = "typed"
+aat_nodes = ["caption"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:129"
+notes = "AAT has a typed inline caption node and TEI can preserve it as figure/head; raw fallback covers adapters that flatten or drop caption structure."
+
 [syntax.parsers.aozora2]
 recognition = "parsed"
 evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:104"
@@ -2492,6 +2548,14 @@ oracle_cases = ["caption.block.basic"]
 status = "needs_research"
 status_reason = "block-form caption"
 
+[syntax.representability]
+source_inventory_row = "caption.block"
+status = "typed"
+aat_nodes = ["caption_block"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:108"
+notes = "AAT has a caption_block container and TEI can preserve it as figure/head; raw fallback covers parsers/adapters that do not distinguish block caption scope."
+
 [syntax.parsers.aozora2]
 recognition = "parsed"
 evidence = "references/parsers/aozora2/crates/aozora-core/src/parser/block_parser.rs:107"
@@ -2547,6 +2611,14 @@ adapter_expectations = ["preserve src, dimensions, alt"]
 oracle_cases = ["figure.image_inline.basic"]
 status = "needs_research"
 status_reason = "inline image without caption"
+
+[syntax.representability]
+source_inventory_row = "figure.image_inline"
+status = "typed"
+aat_nodes = ["figure"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:122"
+notes = "AAT has a typed figure node and TEI can preserve filename/graphic intent; raw fallback covers adapter paths that flatten image metadata."
 
 [syntax.parsers.aozora2]
 recognition = "parsed"

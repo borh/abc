@@ -273,6 +273,129 @@ fn annotation_rows_have_reviewed_representability() {
 }
 
 #[test]
+fn gaiji_subform_rows_have_typed_representability() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    for row_id in [
+        "gaiji.unicode_codepoint",
+        "gaiji.jis_code",
+        "gaiji.un_embed",
+    ] {
+        let row = matrix
+            .rows()
+            .iter()
+            .find(|row| row.id == row_id)
+            .unwrap_or_else(|| panic!("{row_id} row"));
+        let representability = row
+            .representability
+            .as_ref()
+            .unwrap_or_else(|| panic!("{row_id} needs a reviewed representability cell"));
+
+        assert_eq!(representability.status, RepresentabilityStatus::Typed);
+        assert!(representability.raw_fallback);
+        assert!(
+            representability
+                .aat_nodes
+                .iter()
+                .any(|candidate| candidate == "gaiji"),
+            "{row_id} should preserve a typed gaiji node when adapters/parser expose it"
+        );
+        assert!(
+            row.tei_projection.contains("g"),
+            "{row_id} needs a TEI g projection"
+        );
+    }
+}
+
+#[test]
+fn media_rows_have_typed_representability() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    for (row_id, expected_node, expected_projection) in [
+        ("caption.inline", "caption", "head"),
+        ("caption.block", "caption_block", "figure"),
+        ("figure.image_inline", "figure", "graphic"),
+    ] {
+        let row = matrix
+            .rows()
+            .iter()
+            .find(|row| row.id == row_id)
+            .unwrap_or_else(|| panic!("{row_id} row"));
+        let representability = row
+            .representability
+            .as_ref()
+            .unwrap_or_else(|| panic!("{row_id} needs a reviewed representability cell"));
+
+        assert_eq!(representability.status, RepresentabilityStatus::Typed);
+        assert!(representability.raw_fallback);
+        assert!(
+            representability
+                .aat_nodes
+                .iter()
+                .any(|candidate| candidate == expected_node),
+            "{row_id} should preserve {expected_node} when adapters/parser expose it"
+        );
+        assert!(
+            row.tei_projection.contains(expected_projection),
+            "{row_id} needs a TEI projection preserving {expected_projection}"
+        );
+    }
+}
+
+#[test]
+fn emphasis_and_decoration_rows_have_reviewed_representability() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    for (row_id, expected_status, expected_node, expected_projection) in [
+        (
+            "emphasis.basic",
+            RepresentabilityStatus::Typed,
+            "style",
+            "hi",
+        ),
+        (
+            "decoration.boten",
+            RepresentabilityStatus::Typed,
+            "style",
+            "boten",
+        ),
+        (
+            "decoration.bousen",
+            RepresentabilityStatus::Typed,
+            "style",
+            "bousen",
+        ),
+        (
+            "decoration.direction_override",
+            RepresentabilityStatus::RawPreserved,
+            "style",
+            "place",
+        ),
+    ] {
+        let row = matrix
+            .rows()
+            .iter()
+            .find(|row| row.id == row_id)
+            .unwrap_or_else(|| panic!("{row_id} row"));
+        let representability = row
+            .representability
+            .as_ref()
+            .unwrap_or_else(|| panic!("{row_id} needs a reviewed representability cell"));
+
+        assert_eq!(representability.status, expected_status);
+        assert!(representability.raw_fallback);
+        assert!(
+            representability
+                .aat_nodes
+                .iter()
+                .any(|candidate| candidate == expected_node),
+            "{row_id} should preserve {expected_node} when adapters/parser expose it"
+        );
+        assert!(
+            row.tei_projection.contains(expected_projection),
+            "{row_id} needs a TEI projection preserving {expected_projection}"
+        );
+    }
+}
+
+#[test]
 fn source_inventory_classifies_indentation_corpus_variants() {
     let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
     let patterns = patterns_from_rows(matrix.rows());

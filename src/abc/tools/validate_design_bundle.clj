@@ -15,6 +15,7 @@
    [abc.tools.materialize-publication :as publication]
    [abc.tools.schema :as schema]
    [abc.tools.metadata-record :as metadata-record]
+   [abc.tools.parser-evidence :as parser-evidence]
    [abc.tools.person-drift :as person-drift]
    [abc.tools.person-record :as person-record]
    [abc.tools.shacl :as shacl]
@@ -250,6 +251,7 @@
         (throw (ex-info "example TEI manifest must reference tei-validation-result.json"
                         {:manifest "examples/v0/example-work/manifest.json"}))))
     (compat/validate-registry! (compat/load-registry))
+    (parser-evidence/validate-index! (parser-evidence/load-index))
     (when-not (validation-errors manifest-schema {})
       (throw (ex-info "manifest schema accepted an empty object"
                       {:schema "schemas/manifest.schema.json"})))))

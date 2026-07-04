@@ -3,6 +3,7 @@
             [abc.tools.files :as files]
             [abc.tools.malli :as am]
             [abc.tools.manifest-to-rdf :as manifest-to-rdf]
+            [abc.tools.parser-evidence :as parser-evidence]
             [abc.tools.shacl :as shacl]
             [abc.tools.validate-design-bundle :as validate]
             [clojure.test :refer [deftest is testing use-fixtures]]))
@@ -141,7 +142,8 @@
 (deftest validate-json-schemas-includes-aat-mapping-contracts-test
   (testing "design-bundle schema pass validates the AAT mapping and divergence contracts"
     (let [checked-paths (atom [])
-          registry-checked (atom nil)]
+          registry-checked (atom nil)
+          parser-evidence-checked (atom nil)]
       (with-redefs [validate/schema-valid! (fn [_schema path]
                                              (swap! checked-paths conj path)
                                              nil)
@@ -155,13 +157,18 @@
                     compat/load-registry (fn [] {:entries []})
                     compat/validate-registry! (fn [registry]
                                                 (reset! registry-checked registry)
-                                                :ok)]
+                                                :ok)
+                    parser-evidence/load-index (fn [] {:entries []})
+                    parser-evidence/validate-index! (fn [index]
+                                                      (reset! parser-evidence-checked index)
+                                                      :ok)]
         (validate/validate-json-schemas! [])
         (is (every? (set @checked-paths)
                     ["schemas/aat-parser-ir-mapping.schema.json"
                      "schemas/aat-parser-ir-divergence.schema.json"
                      "schemas/aat-parser-ir-divergence-bundle.schema.json"]))
-        (is (= {:entries []} @registry-checked))))))
+        (is (= {:entries []} @registry-checked))
+        (is (= {:entries []} @parser-evidence-checked))))))
 
 (deftest comparison-report-schema-test
   (testing "accepts a well-formed comparison report"

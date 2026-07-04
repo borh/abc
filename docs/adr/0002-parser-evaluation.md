@@ -22,11 +22,17 @@ rather than only downstream conversion evidence.
 
 Follow-up citation note:
 `docs/handoffs/parser-evidence-citation-contract.md` defines the proposed
-ABC-side citation contract for `../ab-validator` reports. It separates
+ABC-side citation contract for producer measurement reports. It separates
 conversion compatibility, parser selection, and comparator/oracle evidence.
 Until that policy is accepted, ABC may cite the July 4 conversion reports as
 publication-boundary evidence but should not claim that ADR 0002 has selected a
 canonical parser.
+
+Monorepo note: future repository consolidation should remove only the physical
+checkout boundary, not the logical producer/consumer boundary. The provisional
+machine-readable index `data/parser-evidence-citations.edn` therefore records
+logical workspace-relative evidence paths plus report hashes, while current
+`../ab-validator` paths remain temporary locators.
 
 ## Context
 

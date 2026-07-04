@@ -13,16 +13,30 @@ parser-IR conversion compatibility are not the same decision.
 This handoff defines the narrow citation contract needed before ADR 0002 can
 move from "candidate criteria" to an accepted evidence policy.
 
+## Monorepo Boundary
+
+The planned monorepo migration removes the physical `../ab-validator` checkout
+boundary, not the logical boundary between producer measurement and ABC
+publication admission. ABC should therefore record evidence by logical
+workspace-relative component paths such as
+`ab-validator/docs/superpowers/reports/...`, with current `../ab-validator/...`
+paths treated only as temporary locators.
+
+The first machine-readable index for that policy is
+`data/parser-evidence-citations.edn`. It is validated by
+`nix run .#validate-design-bundle` and keeps report hashes next to their
+logical component paths.
+
 ## Current Evidence
 
-| Evidence | Path | SHA-256 | What ABC may cite |
+| Evidence | Logical path | SHA-256 | What ABC may cite |
 |---|---|---|---|
-| Parser-IR conversion sync | `../ab-validator/docs/superpowers/reports/2026-07-04-post-parser-ir-conversion-sync.md` | `sha256:bf0910f5316efc2cd528f504c0cbd16816ca993e7ccb2b99122aab8a71359527` | Verdict `PARSER_IR_CONVERTER_CORPUS_CLEAN`, mapping/version/hash, admitted adapter tuples, caveats |
-| Full-corpus conversion audit | `../ab-validator/docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.md` | `sha256:be908c4061e49a01003b8f1e49b564da9a782671f421091189620aa787e37a49` | 35,583 attempted, 35,583 succeeded, 0 failed; per-adapter conversion counts; divergence categories |
-| ABC compatibility candidates | `../ab-validator/docs/superpowers/reports/2026-07-04-aat-parser-ir-compatibility-candidates.edn` | `sha256:58ec66fb9357563896a89ddfb92ed4917178c1acc03f55a1142f1ab78cae2ffe` | Exact adapter/version registry candidates for ABC admission |
-| Parser performance measurement | `../ab-validator/docs/superpowers/reports/2026-07-04-parser-performance-measurement.md` | `sha256:4603fc0f3f175dc2524e0ac1b4f312df020cecfda5728cc8fbfe04f0337d49cd` | Bounded parser timing evidence and DNF policy, especially largest-five comparison |
-| Coverage report | `../ab-validator/docs/coverage-report.md` | `sha256:f52e2347c1ba859eb9b2227812e17b3f720ff271d98b144b477ed3adfcb56c7c` | Parser recognition and AAT-fidelity feature matrix |
-| Adapter fidelity matrix | `../ab-validator/docs/adapter-fidelity.md` | `sha256:39bc788b8e81b4972936b6ceb435c07e9707e2030894ca1f39811eb0ddd2e819` | Direct vs indirect adapter-fidelity caveats |
+| Parser-IR conversion sync | `ab-validator/docs/superpowers/reports/2026-07-04-post-parser-ir-conversion-sync.md` | `sha256:bf0910f5316efc2cd528f504c0cbd16816ca993e7ccb2b99122aab8a71359527` | Verdict `PARSER_IR_CONVERTER_CORPUS_CLEAN`, mapping/version/hash, admitted adapter tuples, caveats |
+| Full-corpus conversion audit | `ab-validator/docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.md` | `sha256:be908c4061e49a01003b8f1e49b564da9a782671f421091189620aa787e37a49` | 35,583 attempted, 35,583 succeeded, 0 failed; per-adapter conversion counts; divergence categories |
+| ABC compatibility candidates | `ab-validator/docs/superpowers/reports/2026-07-04-aat-parser-ir-compatibility-candidates.edn` | `sha256:58ec66fb9357563896a89ddfb92ed4917178c1acc03f55a1142f1ab78cae2ffe` | Exact adapter/version registry candidates for ABC admission |
+| Parser performance measurement | `ab-validator/docs/superpowers/reports/2026-07-04-parser-performance-measurement.md` | `sha256:4603fc0f3f175dc2524e0ac1b4f312df020cecfda5728cc8fbfe04f0337d49cd` | Bounded parser timing evidence and DNF policy, especially largest-five comparison |
+| Coverage report | `ab-validator/docs/coverage-report.md` | `sha256:f52e2347c1ba859eb9b2227812e17b3f720ff271d98b144b477ed3adfcb56c7c` | Parser recognition and AAT-fidelity feature matrix |
+| Adapter fidelity matrix | `ab-validator/docs/adapter-fidelity.md` | `sha256:39bc788b8e81b4972936b6ceb435c07e9707e2030894ca1f39811eb0ddd2e819` | Direct vs indirect adapter-fidelity caveats |
 
 ## Evidence Classes
 
@@ -50,6 +64,7 @@ ABC should cite producer evidence in three separate classes:
 An ABC parser-evidence citation should record:
 
 - report path relative to `../ab-validator`;
+- logical workspace-relative path;
 - report SHA-256;
 - adapter name;
 - exact adapter version string, with no wildcards;
@@ -62,8 +77,8 @@ An ABC parser-evidence citation should record:
 - explicit caveats, especially indirect adapter paths and lower-bound
   residuals.
 
-ABC should never cite only a prose verdict when a report hash and identity
-tuple are available.
+ABC should never cite only a prose verdict when a logical path, report hash,
+and identity tuple are available.
 
 ## Current Interpretation
 
@@ -115,7 +130,8 @@ It is an evidence-policy update that:
 ## Next Work
 
 1. Update ADR 0002 with this evidence-policy boundary.
-2. Decide whether to import a small parser-candidate evidence index into ABC or
-   keep report hashes in ADR prose.
+2. Promote `data/parser-evidence-citations.edn` from provisional index to the
+   accepted ADR 0002 citation index when the parser-selection policy is
+   accepted.
 3. For the paper, cite compatibility evidence and caveats, not parser
    selection finality.

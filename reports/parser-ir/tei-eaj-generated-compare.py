@@ -308,6 +308,56 @@ def paragraph_delta_bucket(generated: int | None, tei_eaj: int | None) -> str:
     return "under_split"
 
 
+def nullable_delta(left: int | None, right: int | None) -> int | None:
+    if left is None or right is None:
+        return None
+    return left - right
+
+
+def paragraph_origin_bucket(
+    *,
+    aat_paragraph_blocks: int | None,
+    parser_ir_paragraphs: int | None,
+    generated_body_p: int | None,
+    tei_eaj_body_p: int | None,
+) -> str:
+    if generated_body_p is None or tei_eaj_body_p is None:
+        return "unknown"
+    if generated_body_p == tei_eaj_body_p:
+        return "aligned"
+    if parser_ir_paragraphs is not None and generated_body_p != parser_ir_paragraphs:
+        return "renderer_paragraph_mismatch"
+    if (
+        aat_paragraph_blocks is not None
+        and parser_ir_paragraphs is not None
+        and aat_paragraph_blocks != parser_ir_paragraphs
+    ):
+        return "converter_paragraph_mismatch"
+    if aat_paragraph_blocks is None:
+        return "unknown"
+    if aat_paragraph_blocks == 1 and tei_eaj_body_p > 1:
+        return "adapter_collapsed"
+    if aat_paragraph_blocks < tei_eaj_body_p:
+        return "adapter_under_segmented"
+    if aat_paragraph_blocks > tei_eaj_body_p:
+        return "adapter_over_segmented"
+    return "unclassified"
+
+
+def aat_summary(candidate: dict[str, Any]) -> dict[str, Any]:
+    aat = candidate.get("aat", {})
+    return {
+        "block_count": aat.get("block_count"),
+        "block_kinds": aat.get("block_kinds", {}),
+        "paragraph_blocks": aat.get("paragraph_blocks"),
+        "final_block_kind": aat.get("final_block_kind"),
+        "final_source_attribution_candidate": aat.get(
+            "final_source_attribution_candidate"
+        ),
+        "hints_count": len(aat.get("hints", [])),
+    }
+
+
 def run_checked(command: list[str], *, cwd: pathlib.Path | None = None) -> None:
     subprocess.run(command, cwd=cwd, check=True)
 
@@ -382,6 +432,15 @@ def materialize_row(
 
     generated_body_p = generated["body_p_count"]
     tei_eaj_body_p = tei_eaj["body_p_count"]
+    aat = aat_summary(candidate)
+    parser_ir_paragraph_count = len(parser_ir.get("paragraphs", []))
+    paragraph_origin = paragraph_origin_bucket(
+        aat_paragraph_blocks=aat["paragraph_blocks"],
+        parser_ir_paragraphs=parser_ir_paragraph_count,
+        generated_body_p=generated_body_p,
+        tei_eaj_body_p=tei_eaj_body_p,
+    )
+
     return {
         "work_id": row.get("tei", {}).get("work_id"),
         "title": row.get("tei", {}).get("title"),
@@ -392,6 +451,7 @@ def materialize_row(
             "adapter": candidate.get("aat", {}).get("adapter"),
             "adapter_version": candidate.get("aat", {}).get("adapter_version"),
         },
+        "aat": aat,
         "materialization": {
             "status": validation.get("status"),
             "findings_count": len(validation.get("findings", [])),
@@ -399,7 +459,7 @@ def materialize_row(
         "parser_ir": {
             "schema_hash": parser_ir.get("schema_hash"),
             "nodes": len(parser_ir.get("nodes", [])),
-            "paragraph_count": len(parser_ir.get("paragraphs", [])),
+            "paragraph_count": parser_ir_paragraph_count,
             "source_note_count": len(source_note_texts),
         },
         "generated_tei": {
@@ -418,6 +478,15 @@ def materialize_row(
         },
         "deltas": {
             "body_p_count": generated_body_p - tei_eaj_body_p,
+            "generated_vs_parser_ir_body_p_count": nullable_delta(
+                generated_body_p, parser_ir_paragraph_count
+            ),
+            "parser_ir_paragraph_count_vs_aat_paragraph_blocks": nullable_delta(
+                parser_ir_paragraph_count, aat["paragraph_blocks"]
+            ),
+            "aat_paragraph_blocks_vs_tei_eaj_body_p_count": nullable_delta(
+                aat["paragraph_blocks"], tei_eaj_body_p
+            ),
             "body_note_count": generated["body_note_count"] - tei_eaj["body_note_count"],
             "back_source_note_count": generated["back_source_note_count"]
             - tei_eaj["back_source_note_count"],
@@ -427,6 +496,7 @@ def materialize_row(
             "paragraph_delta_bucket": paragraph_delta_bucket(
                 generated_body_p, tei_eaj_body_p
             ),
+            "paragraph_origin_bucket": paragraph_origin,
             "source_note_body_excluded": bool(non_empty_source_notes)
             and not source_note_in_body,
             "source_note_back_present": bool(non_empty_source_notes)
@@ -480,6 +550,18 @@ def render_markdown(summary: dict[str, Any]) -> str:
     lines.extend(
         [
             "",
+            "## Paragraph Origin Buckets",
+            "",
+            "| bucket | rows |",
+            "|---|---:|",
+        ]
+    )
+    for bucket, count in sorted(summary["paragraph_origin_buckets"].items()):
+        lines.append(f"| {bucket} | {count} |")
+
+    lines.extend(
+        [
+            "",
             "## Body Text Relation Buckets",
             "",
             "| relation | rows |",
@@ -517,6 +599,19 @@ def render_markdown(summary: dict[str, Any]) -> str:
     lines.extend(
         [
             "",
+            "## Adapter Paragraph Origin Buckets",
+            "",
+            "| adapter | bucket | rows |",
+            "|---|---|---:|",
+        ]
+    )
+    for adapter, buckets in sorted(summary["adapter_paragraph_origin_buckets"].items()):
+        for bucket, count in sorted(buckets.items()):
+            lines.append(f"| {adapter} | {bucket} | {count} |")
+
+    lines.extend(
+        [
+            "",
             "## Adapter Body Text Match Buckets",
             "",
             "| adapter | bucket | rows |",
@@ -532,8 +627,8 @@ def render_markdown(summary: dict[str, Any]) -> str:
             "",
             "## Rows",
             "",
-            "| work_id | TEI-EAJ file | adapter | generated body p | TEI-EAJ body p | delta | bucket | base text | best text match | source note |",
-            "|---|---|---|---:|---:|---:|---|---|---|---|",
+            "| work_id | TEI-EAJ file | adapter | AAT p | parser-IR p | generated body p | TEI-EAJ body p | delta | bucket | origin | base text | best text match | source note |",
+            "|---|---|---|---:|---:|---:|---:|---:|---|---|---|---|---|",
         ]
     )
     for row in summary["rows"]:
@@ -545,14 +640,17 @@ def render_markdown(summary: dict[str, Any]) -> str:
                 else "not-back"
             )
         lines.append(
-            "| {work_id} | `{tei_eaj_file}` | {adapter} | {generated} | {tei_eaj} | {delta} | {bucket} | {body_text} | {body_text_match} | {source_note} |".format(
+            "| {work_id} | `{tei_eaj_file}` | {adapter} | {aat_p} | {parser_ir_p} | {generated} | {tei_eaj} | {delta} | {bucket} | {origin} | {body_text} | {body_text_match} | {source_note} |".format(
                 work_id=row.get("work_id"),
                 tei_eaj_file=row.get("tei_eaj_file"),
                 adapter=row["selected_aat"].get("adapter"),
+                aat_p=row.get("aat", {}).get("paragraph_blocks"),
+                parser_ir_p=row["parser_ir"]["paragraph_count"],
                 generated=row["generated_tei"]["body_p_count"],
                 tei_eaj=row["tei_eaj"]["body_p_count"],
                 delta=row["deltas"]["body_p_count"],
                 bucket=row["classification"]["paragraph_delta_bucket"],
+                origin=row["classification"].get("paragraph_origin_bucket"),
                 body_text=row.get("text", {}).get("body_base_text_relation"),
                 body_text_match=row.get("text", {}).get("body_text_match_bucket"),
                 source_note=source_note,
@@ -632,14 +730,15 @@ def main() -> int:
                     {
                         "work_id": row.get("tei", {}).get("work_id"),
                         "tei_eaj_file": tei_file,
-                        "selected_aat": {
-                            "label": candidate.get("label"),
-                            "path": candidate.get("path"),
-                            "adapter": candidate.get("aat", {}).get("adapter"),
+                    "selected_aat": {
+                        "label": candidate.get("label"),
+                        "path": candidate.get("path"),
+                        "adapter": candidate.get("aat", {}).get("adapter"),
                             "adapter_version": candidate.get("aat", {}).get(
                                 "adapter_version"
                             ),
                         },
+                        "aat": aat_summary(candidate),
                         "materialization": {
                             "status": "failed",
                             "returncode": error.returncode,
@@ -651,9 +750,11 @@ def main() -> int:
                 )
 
     buckets: dict[str, int] = {}
+    paragraph_origin_buckets: dict[str, int] = {}
     body_text_buckets: dict[str, int] = {}
     body_text_match_buckets: dict[str, int] = {}
     adapter_paragraph_delta_buckets: dict[str, dict[str, int]] = {}
+    adapter_paragraph_origin_buckets: dict[str, dict[str, int]] = {}
     adapter_body_text_match_buckets: dict[str, dict[str, int]] = {}
     materialized = 0
     for row in rows:
@@ -661,6 +762,11 @@ def main() -> int:
         bucket = row.get("classification", {}).get("paragraph_delta_bucket", "unknown")
         increment_bucket(buckets, bucket)
         increment_nested_bucket(adapter_paragraph_delta_buckets, adapter, bucket)
+        origin_bucket = row.get("classification", {}).get(
+            "paragraph_origin_bucket", "unknown"
+        )
+        increment_bucket(paragraph_origin_buckets, origin_bucket)
+        increment_nested_bucket(adapter_paragraph_origin_buckets, adapter, origin_bucket)
         relation = row.get("text", {}).get("body_base_text_relation", "unknown")
         increment_bucket(body_text_buckets, relation)
         match_bucket = row.get("text", {}).get("body_text_match_bucket", "unknown")
@@ -689,9 +795,11 @@ def main() -> int:
             "rows_skipped": len(skipped),
         },
         "paragraph_delta_buckets": buckets,
+        "paragraph_origin_buckets": paragraph_origin_buckets,
         "body_text_relation_buckets": body_text_buckets,
         "body_text_match_buckets": body_text_match_buckets,
         "adapter_paragraph_delta_buckets": adapter_paragraph_delta_buckets,
+        "adapter_paragraph_origin_buckets": adapter_paragraph_origin_buckets,
         "adapter_body_text_match_buckets": adapter_body_text_match_buckets,
         "rows": rows,
         "skipped": skipped,

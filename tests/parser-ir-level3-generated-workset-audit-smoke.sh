@@ -133,7 +133,14 @@ jq -e '.totals.materialization_succeeded == 2' "$out_dir/audit/summary.json" >/d
 jq -e '([.rows[].selected_aat.adapter] | unique | length) == 2' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.rows[0].generated_tei.body_p_count >= 1' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.rows[0].tei_eaj.body_p_count == 2' "$out_dir/audit/summary.json" >/dev/null
+jq -e '.rows[0].aat.paragraph_blocks >= 1' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.rows[0].classification.paragraph_delta_bucket != null' "$out_dir/audit/summary.json" >/dev/null
+jq -e '.rows[0].classification.paragraph_origin_bucket != null' "$out_dir/audit/summary.json" >/dev/null
+jq -e '.rows[0].deltas.generated_vs_parser_ir_body_p_count != null' "$out_dir/audit/summary.json" >/dev/null
+jq -e '.rows[0].deltas.aat_paragraph_blocks_vs_tei_eaj_body_p_count != null' "$out_dir/audit/summary.json" >/dev/null
+jq -e '.paragraph_origin_buckets | type == "object"' "$out_dir/audit/summary.json" >/dev/null
+jq -e '.adapter_paragraph_origin_buckets.aozora2html | type == "object"' "$out_dir/audit/summary.json" >/dev/null
+jq -e '.adapter_paragraph_origin_buckets["aozora-rs"] | type == "object"' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.adapter_paragraph_delta_buckets.aozora2html | type == "object"' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.adapter_paragraph_delta_buckets["aozora-rs"] | type == "object"' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.adapter_body_text_match_buckets.aozora2html | type == "object"' "$out_dir/audit/summary.json" >/dev/null
@@ -149,6 +156,8 @@ grep -n "Generated Parser-IR TEI vs TEI-EAJ Workset Audit" "$out_dir/audit/repor
 grep -n "Body Text Relation Buckets" "$out_dir/audit/report.md"
 grep -n "Body Text Match Buckets" "$out_dir/audit/report.md"
 grep -n "Adapter Paragraph Delta Buckets" "$out_dir/audit/report.md"
+grep -n "Paragraph Origin Buckets" "$out_dir/audit/report.md"
+grep -n "Adapter Paragraph Origin Buckets" "$out_dir/audit/report.md"
 grep -n "Adapter Body Text Match Buckets" "$out_dir/audit/report.md"
 
 echo "parser-IR Level 3 generated workset audit smoke ok: $out_dir/audit"

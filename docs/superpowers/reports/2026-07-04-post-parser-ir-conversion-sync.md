@@ -172,6 +172,25 @@ Paragraph deltas by adapter:
 | aozora-rs | 6 | 35 | 0 | 16 |
 | aozora2 | 0 | 0 | 0 | 2 |
 
+Paragraph-origin classification across the matrix:
+
+| origin | rows |
+|---|---:|
+| adapter over-segmented | 123 |
+| adapter collapsed | 18 |
+| adapter under-segmented | 7 |
+| renderer paragraph mismatch | 7 |
+| aligned | 18 |
+
+Paragraph origin by adapter:
+
+| adapter | adapter over | adapter under | adapter collapsed | renderer mismatch | aligned |
+|---|---:|---:|---:|---:|---:|
+| aozora2html | 42 | 5 | 0 | 5 | 5 |
+| aozora-epub3 | 46 | 2 | 0 | 2 | 7 |
+| aozora-rs | 35 | 0 | 16 | 0 | 6 |
+| aozora2 | 0 | 0 | 2 | 0 | 0 |
+
 Best text-surface residuals by adapter:
 
 | adapter | still different | strict base equal | ruby/parenthetical-policy explainable |
@@ -181,12 +200,15 @@ Best text-surface residuals by adapter:
 | aozora-rs | 28 | 2 | 27 |
 | aozora2 | 0 | 0 | 2 |
 
-Interpretation: paragraph segmentation is an adapter-specific fidelity problem,
-not a single-parser anomaly. `aozora2html` and `aozora-epub3` mostly over-split,
-while `aozora-rs` and `aozora2` expose collapsed paragraph behavior. Text
-alignment also differs by parser: `aozora2html` and `aozora-rs` often reduce to
-ruby/parenthetical policy, while `aozora-epub3` has the largest true residual
-body-text mismatch bucket.
+Interpretation: paragraph segmentation is primarily an adapter/source-structure
+fidelity problem, not a parser-IR schema gap. AAT paragraph-block counts already
+match parser-IR paragraph counts in the dominant path; 148/173 matrix rows have
+their TEI-EAJ paragraph mismatch before IR. The remaining 7 renderer mismatch
+rows are smaller deltas where parser-IR paragraphs outnumber generated body
+paragraphs; the Melos rows are the known source-attribution/back-matter case in
+that bucket. Text alignment also differs by parser: `aozora2html` and
+`aozora-rs` often reduce to ruby/parenthetical policy, while `aozora-epub3` has
+the largest true residual body-text mismatch bucket.
 
 Adapter-version matching is exact. A future adapter-version tuple requires a
 new measured conversion-audit entry rather than wildcard or prefix registry
@@ -231,7 +253,11 @@ Proceed with residual adapter/evidence characterization:
   artifacts instead of the single-row probe,
 - use `docs/superpowers/reports/2026-07-04-tei-eaj-structural-gap-analysis.md`
   as the current gap classification,
-- use the generated-TEI matrix buckets to prioritize adapter-specific paragraph
-  segmentation fixes, source-text fidelity, and TEI-EAJ text-policy alignment,
+- fix adapter paragraph segmentation first, because 148/173 matrix rows already
+  have the paragraph mismatch at AAT paragraph-block evidence before parser-IR,
+- separately inspect the 7 renderer paragraph mismatch rows where parser-IR
+  paragraphs do not all become generated body paragraphs,
+- use the generated-TEI matrix text buckets to prioritize source-text fidelity
+  and TEI-EAJ text-policy alignment,
 - continue source-authority representability work before making stronger claims
   about all Aozora markdown constructs.

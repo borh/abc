@@ -77,7 +77,10 @@
       "deltas": {
         "body_p_count": -139,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": -139
       },
       "text": {
         "body_base_text_relation": "different",
@@ -120,7 +123,20 @@
       "classification": {
         "paragraph_delta_bucket": "under_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_under_segmented"
+      },
+      "aat": {
+        "block_count": 48,
+        "block_kinds": {
+          "heading": 1,
+          "jisage_block": 17,
+          "paragraph": 30
+        },
+        "paragraph_blocks": 30,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 6
       }
     },
     {
@@ -160,7 +176,10 @@
       "deltas": {
         "body_p_count": 61,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 61
       },
       "text": {
         "body_base_text_relation": "different",
@@ -203,7 +222,18 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 62,
+        "block_kinds": {
+          "paragraph": 62
+        },
+        "paragraph_blocks": 62,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 4
       }
     },
     {
@@ -243,7 +273,10 @@
       "deltas": {
         "body_p_count": 2,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 2
       },
       "text": {
         "body_base_text_relation": "different",
@@ -286,7 +319,18 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 8,
+        "block_kinds": {
+          "paragraph": 8
+        },
+        "paragraph_blocks": 8,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 0
       }
     },
     {
@@ -326,7 +370,10 @@
       "deltas": {
         "body_p_count": 28,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 28
       },
       "text": {
         "body_base_text_relation": "different",
@@ -369,7 +416,18 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 29,
+        "block_kinds": {
+          "paragraph": 29
+        },
+        "paragraph_blocks": 29,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 0
       }
     },
     {
@@ -409,7 +467,10 @@
       "deltas": {
         "body_p_count": 0,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -452,7 +513,18 @@
       "classification": {
         "paragraph_delta_bucket": "exact",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "aligned"
+      },
+      "aat": {
+        "block_count": 28,
+        "block_kinds": {
+          "paragraph": 28
+        },
+        "paragraph_blocks": 28,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 4
       }
     },
     {
@@ -492,7 +564,10 @@
       "deltas": {
         "body_p_count": 1,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 1
       },
       "text": {
         "body_base_text_relation": "different",
@@ -535,7 +610,18 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 4,
+        "block_kinds": {
+          "paragraph": 4
+        },
+        "paragraph_blocks": 4,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
       }
     },
     {
@@ -575,7 +661,10 @@
       "deltas": {
         "body_p_count": 2,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 2
       },
       "text": {
         "body_base_text_relation": "different",
@@ -618,7 +707,20 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 37,
+        "block_kinds": {
+          "heading": 1,
+          "jisage_block": 4,
+          "paragraph": 32
+        },
+        "paragraph_blocks": 32,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 7
       }
     },
     {
@@ -658,7 +760,10 @@
       "deltas": {
         "body_p_count": 160,
         "body_note_count": -1,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 160
       },
       "text": {
         "body_base_text_relation": "different",
@@ -701,7 +806,18 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 186,
+        "block_kinds": {
+          "paragraph": 186
+        },
+        "paragraph_blocks": 186,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 1
       }
     },
     {
@@ -741,7 +857,10 @@
       "deltas": {
         "body_p_count": 4,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 4
       },
       "text": {
         "body_base_text_relation": "different",
@@ -784,7 +903,18 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 6,
+        "block_kinds": {
+          "paragraph": 6
+        },
+        "paragraph_blocks": 6,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
       }
     },
     {
@@ -824,7 +954,10 @@
       "deltas": {
         "body_p_count": 9,
         "body_note_count": -1,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 9
       },
       "text": {
         "body_base_text_relation": "different",
@@ -867,7 +1000,19 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 27,
+        "block_kinds": {
+          "jisage_block": 1,
+          "paragraph": 26
+        },
+        "paragraph_blocks": 26,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 1
       }
     },
     {
@@ -907,7 +1052,10 @@
       "deltas": {
         "body_p_count": 12,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 12
       },
       "text": {
         "body_base_text_relation": "different",
@@ -950,7 +1098,18 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 18,
+        "block_kinds": {
+          "paragraph": 18
+        },
+        "paragraph_blocks": 18,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 0
       }
     },
     {
@@ -990,7 +1149,10 @@
       "deltas": {
         "body_p_count": 0,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -1033,7 +1195,18 @@
       "classification": {
         "paragraph_delta_bucket": "exact",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "aligned"
+      },
+      "aat": {
+        "block_count": 5,
+        "block_kinds": {
+          "paragraph": 5
+        },
+        "paragraph_blocks": 5,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 1
       }
     },
     {
@@ -1073,7 +1246,10 @@
       "deltas": {
         "body_p_count": 0,
         "body_note_count": -3,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -1116,7 +1292,18 @@
       "classification": {
         "paragraph_delta_bucket": "exact",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "aligned"
+      },
+      "aat": {
+        "block_count": 8,
+        "block_kinds": {
+          "paragraph": 8
+        },
+        "paragraph_blocks": 8,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 1
       }
     },
     {
@@ -1156,7 +1343,10 @@
       "deltas": {
         "body_p_count": 399,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": -6,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 405
       },
       "text": {
         "body_base_text_relation": "different",
@@ -1199,7 +1389,20 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "renderer_paragraph_mismatch"
+      },
+      "aat": {
+        "block_count": 420,
+        "block_kinds": {
+          "heading": 1,
+          "jisage_block": 7,
+          "paragraph": 412
+        },
+        "paragraph_blocks": 412,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 7
       }
     },
     {
@@ -1239,7 +1442,10 @@
       "deltas": {
         "body_p_count": 0,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -1282,7 +1488,18 @@
       "classification": {
         "paragraph_delta_bucket": "exact",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "aligned"
+      },
+      "aat": {
+        "block_count": 76,
+        "block_kinds": {
+          "paragraph": 76
+        },
+        "paragraph_blocks": 76,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 0
       }
     },
     {
@@ -1322,7 +1539,10 @@
       "deltas": {
         "body_p_count": 4,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 4
       },
       "text": {
         "body_base_text_relation": "generated_contains_tei_eaj",
@@ -1365,7 +1585,18 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 5,
+        "block_kinds": {
+          "paragraph": 5
+        },
+        "paragraph_blocks": 5,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 0
       }
     },
     {
@@ -1405,7 +1636,10 @@
       "deltas": {
         "body_p_count": 19,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 19
       },
       "text": {
         "body_base_text_relation": "different",
@@ -1448,7 +1682,19 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 21,
+        "block_kinds": {
+          "jisage_block": 1,
+          "paragraph": 20
+        },
+        "paragraph_blocks": 20,
+        "final_block_kind": "jisage_block",
+        "final_source_attribution_candidate": false,
+        "hints_count": 0
       }
     },
     {
@@ -1488,7 +1734,10 @@
       "deltas": {
         "body_p_count": -110,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": -110
       },
       "text": {
         "body_base_text_relation": "different",
@@ -1531,7 +1780,20 @@
       "classification": {
         "paragraph_delta_bucket": "under_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_under_segmented"
+      },
+      "aat": {
+        "block_count": 26,
+        "block_kinds": {
+          "heading": 1,
+          "jisage_block": 9,
+          "paragraph": 16
+        },
+        "paragraph_blocks": 16,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 7
       }
     },
     {
@@ -1571,7 +1833,10 @@
       "deltas": {
         "body_p_count": 7,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 7
       },
       "text": {
         "body_base_text_relation": "different",
@@ -1614,7 +1879,18 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 8,
+        "block_kinds": {
+          "paragraph": 8
+        },
+        "paragraph_blocks": 8,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
       }
     },
     {
@@ -1654,7 +1930,10 @@
       "deltas": {
         "body_p_count": 8,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 8
       },
       "text": {
         "body_base_text_relation": "different",
@@ -1697,7 +1976,18 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 9,
+        "block_kinds": {
+          "paragraph": 9
+        },
+        "paragraph_blocks": 9,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
       }
     },
     {
@@ -1737,7 +2027,10 @@
       "deltas": {
         "body_p_count": 1,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 1
       },
       "text": {
         "body_base_text_relation": "different",
@@ -1780,7 +2073,18 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 9,
+        "block_kinds": {
+          "paragraph": 9
+        },
+        "paragraph_blocks": 9,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
       }
     },
     {
@@ -1820,7 +2124,10 @@
       "deltas": {
         "body_p_count": 12,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 12
       },
       "text": {
         "body_base_text_relation": "different",
@@ -1863,7 +2170,18 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 13,
+        "block_kinds": {
+          "paragraph": 13
+        },
+        "paragraph_blocks": 13,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 4
       }
     },
     {
@@ -1903,7 +2221,10 @@
       "deltas": {
         "body_p_count": 6,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 6
       },
       "text": {
         "body_base_text_relation": "equal",
@@ -1942,7 +2263,18 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 7,
+        "block_kinds": {
+          "paragraph": 7
+        },
+        "paragraph_blocks": 7,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
       }
     },
     {
@@ -1982,7 +2314,10 @@
       "deltas": {
         "body_p_count": 4,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 4
       },
       "text": {
         "body_base_text_relation": "different",
@@ -2025,7 +2360,18 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 5,
+        "block_kinds": {
+          "paragraph": 5
+        },
+        "paragraph_blocks": 5,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
       }
     },
     {
@@ -2065,7 +2411,10 @@
       "deltas": {
         "body_p_count": 10,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 10
       },
       "text": {
         "body_base_text_relation": "different",
@@ -2108,7 +2457,18 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 11,
+        "block_kinds": {
+          "paragraph": 11
+        },
+        "paragraph_blocks": 11,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
       }
     },
     {
@@ -2148,7 +2508,10 @@
       "deltas": {
         "body_p_count": 12,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 12
       },
       "text": {
         "body_base_text_relation": "different",
@@ -2191,7 +2554,18 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 13,
+        "block_kinds": {
+          "paragraph": 13
+        },
+        "paragraph_blocks": 13,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 4
       }
     },
     {
@@ -2231,7 +2605,10 @@
       "deltas": {
         "body_p_count": 9,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 9
       },
       "text": {
         "body_base_text_relation": "different",
@@ -2274,7 +2651,18 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 10,
+        "block_kinds": {
+          "paragraph": 10
+        },
+        "paragraph_blocks": 10,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
       }
     },
     {
@@ -2314,7 +2702,10 @@
       "deltas": {
         "body_p_count": 9,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 9
       },
       "text": {
         "body_base_text_relation": "different",
@@ -2357,7 +2748,18 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 10,
+        "block_kinds": {
+          "paragraph": 10
+        },
+        "paragraph_blocks": 10,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
       }
     },
     {
@@ -2397,7 +2799,10 @@
       "deltas": {
         "body_p_count": 5,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 5
       },
       "text": {
         "body_base_text_relation": "different",
@@ -2440,7 +2845,18 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 6,
+        "block_kinds": {
+          "paragraph": 6
+        },
+        "paragraph_blocks": 6,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
       }
     },
     {
@@ -2480,7 +2896,10 @@
       "deltas": {
         "body_p_count": 6,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 6
       },
       "text": {
         "body_base_text_relation": "different",
@@ -2523,7 +2942,18 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 7,
+        "block_kinds": {
+          "paragraph": 7
+        },
+        "paragraph_blocks": 7,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
       }
     },
     {
@@ -2563,7 +2993,10 @@
       "deltas": {
         "body_p_count": 10,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 10
       },
       "text": {
         "body_base_text_relation": "different",
@@ -2606,7 +3039,18 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 11,
+        "block_kinds": {
+          "paragraph": 11
+        },
+        "paragraph_blocks": 11,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 4
       }
     },
     {
@@ -2646,7 +3090,10 @@
       "deltas": {
         "body_p_count": 5,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 5
       },
       "text": {
         "body_base_text_relation": "different",
@@ -2689,7 +3136,18 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 6,
+        "block_kinds": {
+          "paragraph": 6
+        },
+        "paragraph_blocks": 6,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
       }
     },
     {
@@ -2729,7 +3187,10 @@
       "deltas": {
         "body_p_count": 9,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 9
       },
       "text": {
         "body_base_text_relation": "different",
@@ -2772,7 +3233,18 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 10,
+        "block_kinds": {
+          "paragraph": 10
+        },
+        "paragraph_blocks": 10,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
       }
     },
     {
@@ -2812,7 +3284,10 @@
       "deltas": {
         "body_p_count": 8,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 8
       },
       "text": {
         "body_base_text_relation": "different",
@@ -2855,7 +3330,18 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 9,
+        "block_kinds": {
+          "paragraph": 9
+        },
+        "paragraph_blocks": 9,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
       }
     },
     {
@@ -2895,7 +3381,10 @@
       "deltas": {
         "body_p_count": 11,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 11
       },
       "text": {
         "body_base_text_relation": "different",
@@ -2938,7 +3427,19 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 14,
+        "block_kinds": {
+          "jisage_block": 2,
+          "paragraph": 12
+        },
+        "paragraph_blocks": 12,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
       }
     },
     {
@@ -2978,7 +3479,10 @@
       "deltas": {
         "body_p_count": 13,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 13
       },
       "text": {
         "body_base_text_relation": "different",
@@ -3021,7 +3525,19 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 16,
+        "block_kinds": {
+          "jisage_block": 2,
+          "paragraph": 14
+        },
+        "paragraph_blocks": 14,
+        "final_block_kind": "jisage_block",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
       }
     },
     {
@@ -3061,7 +3577,10 @@
       "deltas": {
         "body_p_count": 7,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 7
       },
       "text": {
         "body_base_text_relation": "different",
@@ -3104,7 +3623,19 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 9,
+        "block_kinds": {
+          "jisage_block": 1,
+          "paragraph": 8
+        },
+        "paragraph_blocks": 8,
+        "final_block_kind": "jisage_block",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
       }
     },
     {
@@ -3144,7 +3675,10 @@
       "deltas": {
         "body_p_count": 3,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 3
       },
       "text": {
         "body_base_text_relation": "different",
@@ -3187,7 +3721,19 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 5,
+        "block_kinds": {
+          "jisage_block": 1,
+          "paragraph": 4
+        },
+        "paragraph_blocks": 4,
+        "final_block_kind": "jisage_block",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
       }
     },
     {
@@ -3227,7 +3773,10 @@
       "deltas": {
         "body_p_count": -2,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": -2
       },
       "text": {
         "body_base_text_relation": "different",
@@ -3270,7 +3819,18 @@
       "classification": {
         "paragraph_delta_bucket": "under_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_under_segmented"
+      },
+      "aat": {
+        "block_count": 134,
+        "block_kinds": {
+          "paragraph": 134
+        },
+        "paragraph_blocks": 134,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 4
       }
     },
     {
@@ -3310,7 +3870,10 @@
       "deltas": {
         "body_p_count": 5,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 5
       },
       "text": {
         "body_base_text_relation": "different",
@@ -3353,7 +3916,18 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 62,
+        "block_kinds": {
+          "paragraph": 62
+        },
+        "paragraph_blocks": 62,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 4
       }
     },
     {
@@ -3393,7 +3967,10 @@
       "deltas": {
         "body_p_count": 57,
         "body_note_count": 0,
-        "back_source_note_count": 1
+        "back_source_note_count": 1,
+        "generated_vs_parser_ir_body_p_count": -1,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 58
       },
       "text": {
         "body_base_text_relation": "equal",
@@ -3432,7 +4009,18 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": true,
-        "source_note_back_present": true
+        "source_note_back_present": true,
+        "paragraph_origin_bucket": "renderer_paragraph_mismatch"
+      },
+      "aat": {
+        "block_count": 75,
+        "block_kinds": {
+          "paragraph": 75
+        },
+        "paragraph_blocks": 75,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": true,
+        "hints_count": 3
       }
     },
     {
@@ -3472,7 +4060,10 @@
       "deltas": {
         "body_p_count": 57,
         "body_note_count": 0,
-        "back_source_note_count": 1
+        "back_source_note_count": 1,
+        "generated_vs_parser_ir_body_p_count": -1,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 58
       },
       "text": {
         "body_base_text_relation": "equal",
@@ -3511,7 +4102,18 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": true,
-        "source_note_back_present": true
+        "source_note_back_present": true,
+        "paragraph_origin_bucket": "renderer_paragraph_mismatch"
+      },
+      "aat": {
+        "block_count": 75,
+        "block_kinds": {
+          "paragraph": 75
+        },
+        "paragraph_blocks": 75,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": true,
+        "hints_count": 3
       }
     },
     {
@@ -3551,7 +4153,10 @@
       "deltas": {
         "body_p_count": 35,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 35
       },
       "text": {
         "body_base_text_relation": "different",
@@ -3594,7 +4199,18 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 39,
+        "block_kinds": {
+          "paragraph": 39
+        },
+        "paragraph_blocks": 39,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 0
       }
     },
     {
@@ -3634,7 +4250,10 @@
       "deltas": {
         "body_p_count": 3,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 3
       },
       "text": {
         "body_base_text_relation": "different",
@@ -3677,7 +4296,20 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 20,
+        "block_kinds": {
+          "heading": 1,
+          "jisage_block": 4,
+          "paragraph": 15
+        },
+        "paragraph_blocks": 15,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
       }
     },
     {
@@ -3717,7 +4349,10 @@
       "deltas": {
         "body_p_count": -49,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": -49
       },
       "text": {
         "body_base_text_relation": "different",
@@ -3760,7 +4395,19 @@
       "classification": {
         "paragraph_delta_bucket": "under_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_under_segmented"
+      },
+      "aat": {
+        "block_count": 75,
+        "block_kinds": {
+          "jisage_block": 14,
+          "paragraph": 61
+        },
+        "paragraph_blocks": 61,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 4
       }
     },
     {
@@ -3800,7 +4447,10 @@
       "deltas": {
         "body_p_count": -124,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": -124
       },
       "text": {
         "body_base_text_relation": "different",
@@ -3843,7 +4493,20 @@
       "classification": {
         "paragraph_delta_bucket": "under_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_under_segmented"
+      },
+      "aat": {
+        "block_count": 48,
+        "block_kinds": {
+          "heading": 1,
+          "jisage_block": 17,
+          "paragraph": 30
+        },
+        "paragraph_blocks": 30,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 6
       }
     },
     {
@@ -3883,7 +4546,10 @@
       "deltas": {
         "body_p_count": -30,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": -1,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": -29
       },
       "text": {
         "body_base_text_relation": "different",
@@ -3926,7 +4592,19 @@
       "classification": {
         "paragraph_delta_bucket": "under_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "renderer_paragraph_mismatch"
+      },
+      "aat": {
+        "block_count": 469,
+        "block_kinds": {
+          "jisage_block": 2,
+          "paragraph": 467
+        },
+        "paragraph_blocks": 467,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
       }
     },
     {
@@ -3966,7 +4644,10 @@
       "deltas": {
         "body_p_count": 160,
         "body_note_count": -1,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 160
       },
       "text": {
         "body_base_text_relation": "different",
@@ -4009,7 +4690,18 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 186,
+        "block_kinds": {
+          "paragraph": 186
+        },
+        "paragraph_blocks": 186,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 1
       }
     },
     {
@@ -4049,7 +4741,10 @@
       "deltas": {
         "body_p_count": 9,
         "body_note_count": -1,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 9
       },
       "text": {
         "body_base_text_relation": "different",
@@ -4092,7 +4787,19 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 29,
+        "block_kinds": {
+          "jisage_block": 2,
+          "paragraph": 27
+        },
+        "paragraph_blocks": 27,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
       }
     },
     {
@@ -4132,7 +4839,10 @@
       "deltas": {
         "body_p_count": 11,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 11
       },
       "text": {
         "body_base_text_relation": "different",
@@ -4175,7 +4885,18 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 134,
+        "block_kinds": {
+          "paragraph": 134
+        },
+        "paragraph_blocks": 134,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 4
       }
     },
     {
@@ -4215,7 +4936,10 @@
       "deltas": {
         "body_p_count": 421,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 421
       },
       "text": {
         "body_base_text_relation": "different",
@@ -4258,7 +4982,19 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 618,
+        "block_kinds": {
+          "jisage_block": 168,
+          "paragraph": 450
+        },
+        "paragraph_blocks": 450,
+        "final_block_kind": "jisage_block",
+        "final_source_attribution_candidate": false,
+        "hints_count": 5
       }
     },
     {
@@ -4298,7 +5034,10 @@
       "deltas": {
         "body_p_count": 74,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 74
       },
       "text": {
         "body_base_text_relation": "different",
@@ -4341,7 +5080,18 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 77,
+        "block_kinds": {
+          "paragraph": 77
+        },
+        "paragraph_blocks": 77,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 0
       }
     },
     {
@@ -4381,7 +5131,10 @@
       "deltas": {
         "body_p_count": 50,
         "body_note_count": -20,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 50
       },
       "text": {
         "body_base_text_relation": "different",
@@ -4424,7 +5177,19 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 77,
+        "block_kinds": {
+          "jisage_block": 3,
+          "paragraph": 74
+        },
+        "paragraph_blocks": 74,
+        "final_block_kind": "jisage_block",
+        "final_source_attribution_candidate": false,
+        "hints_count": 1
       }
     },
     {
@@ -4464,7 +5229,10 @@
       "deltas": {
         "body_p_count": 61,
         "body_note_count": -2,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 61
       },
       "text": {
         "body_base_text_relation": "different",
@@ -4507,7 +5275,19 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 77,
+        "block_kinds": {
+          "jisage_block": 3,
+          "paragraph": 74
+        },
+        "paragraph_blocks": 74,
+        "final_block_kind": "jisage_block",
+        "final_source_attribution_candidate": false,
+        "hints_count": 1
       }
     },
     {
@@ -4547,7 +5327,10 @@
       "deltas": {
         "body_p_count": 66,
         "body_note_count": -1,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 66
       },
       "text": {
         "body_base_text_relation": "different",
@@ -4590,7 +5373,19 @@
       "classification": {
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "adapter_over_segmented"
+      },
+      "aat": {
+        "block_count": 77,
+        "block_kinds": {
+          "jisage_block": 3,
+          "paragraph": 74
+        },
+        "paragraph_blocks": 74,
+        "final_block_kind": "jisage_block",
+        "final_source_attribution_candidate": false,
+        "hints_count": 1
       }
     },
     {
@@ -4630,7 +5425,10 @@
       "deltas": {
         "body_p_count": -17,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": -2,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": -15
       },
       "text": {
         "body_base_text_relation": "different",
@@ -4673,7 +5471,19 @@
       "classification": {
         "paragraph_delta_bucket": "under_split",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "renderer_paragraph_mismatch"
+      },
+      "aat": {
+        "block_count": 93,
+        "block_kinds": {
+          "jisage_block": 19,
+          "paragraph": 74
+        },
+        "paragraph_blocks": 74,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
       }
     },
     {
@@ -4713,7 +5523,10 @@
       "deltas": {
         "body_p_count": 0,
         "body_note_count": 0,
-        "back_source_note_count": 0
+        "back_source_note_count": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -4756,7 +5569,18 @@
       "classification": {
         "paragraph_delta_bucket": "exact",
         "source_note_body_excluded": false,
-        "source_note_back_present": false
+        "source_note_back_present": false,
+        "paragraph_origin_bucket": "aligned"
+      },
+      "aat": {
+        "block_count": 15,
+        "block_kinds": {
+          "paragraph": 15
+        },
+        "paragraph_blocks": 15,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 0
       }
     }
   ],
@@ -4781,5 +5605,37 @@
       "tei_eaj_file": "data/etc/校異源氏物語_header更新版.xml",
       "reason": "no_materializable_aat"
     }
-  ]
+  ],
+  "paragraph_origin_buckets": {
+    "adapter_under_segmented": 5,
+    "adapter_over_segmented": 42,
+    "aligned": 5,
+    "renderer_paragraph_mismatch": 5
+  },
+  "adapter_paragraph_delta_buckets": {
+    "aozora2html": {
+      "under_split": 7,
+      "over_split": 45,
+      "exact": 5
+    }
+  },
+  "adapter_paragraph_origin_buckets": {
+    "aozora2html": {
+      "adapter_under_segmented": 5,
+      "adapter_over_segmented": 42,
+      "aligned": 5,
+      "renderer_paragraph_mismatch": 5
+    }
+  },
+  "adapter_body_text_match_buckets": {
+    "aozora2html": {
+      "different": 26,
+      "ruby_expanded_parenless_equal": 19,
+      "ruby_expanded_parenless_generated_contains_tei_eaj": 5,
+      "ruby_expanded_parenless_tei_eaj_contains_generated": 2,
+      "ruby_expanded_equal": 1,
+      "base_equal": 3,
+      "base_drop_parentheticals_equal": 1
+    }
+  }
 }

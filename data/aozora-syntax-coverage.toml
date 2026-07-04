@@ -1400,7 +1400,7 @@ category = "glyph"
 feature_keys = ["glyph_variant", "diacritic", "fraction", "script_glyph"]
 reference_sources = ["references/aozorabunko/rules/kijyunn.html", "P4suta/aozora-notation-spec@b60665fd50b596c967254f99b61f418495656fef:src/notation/script-glyphs.md", "P4suta/aozora-notation-spec@b60665fd50b596c967254f99b61f418495656fef:src/notation/fraction.md"]
 source_examples = ["［＃「e」はアクサン（´）付き］", "［＃「?!」は一字］", "［＃「1/4」は分数］"]
-source_patterns = ['［＃[^］]*(「[^」]+」|[A-Za-zΑ-ωα-ωηωεισοψ])[^］]*(上に「[^」]+」付き|下に「[^」]+」付き|「[^」]+」付き|アクサン|ウムラウト|帯気|曲アクセント|鋭アクセント|平息|ファイナルシグマ)[^］]*］', '［＃[^］]*(一字|指数|分数|覆面の英字|矢印が下向き|右横に縦棒あり|の中に「[^」]+」|右に「[^」]+」|小さい「[^」]+」|ローマ数字|○付き文字|正字と同字|記号の中に入っている|「※」は|１マスに横並び)[^］]*］']
+source_patterns = ['［＃[^］]*(「[^」]+」|[A-Za-zΑ-ωα-ωηωεισοψ])[^］]*(上に「[^」]+」付き|下に「[^」]+」付き|「[^」]+」付き|アクサン|ウムラウト|帯気|曲アクセント|鋭アクセント|平息|ファイナルシグマ|accent grave|マクロン|長音記号|下ドット|アキュートアクセント|合字|くずし字)[^］]*］', '［＃[^］]*(一字|指数|分数|覆面の英字|矢印が下向き|右横に縦棒あり|の中に「[^」]+」|右に「[^」]+」|小さい「[^」]+」|ローマ数字|○付き文字|正字と同字|記号の中に入っている|「※」は|１マスに横並び|上に「[^」]+」がつく|２倍の長方形)[^］]*］']
 ir_nodes = []
 aat_nodes = ["raw"]
 tei_projection = "note type=glyph or g with charDecl"
@@ -1648,7 +1648,7 @@ category = "inline_annotation"
 feature_keys = ["kaeriten"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/kaeriten.rb"]
 source_examples = ["［＃レ］", "［＃一］", "［＃二］", "［＃上］", "［＃返り点一］"]
-source_patterns = ['［＃(?:返り点)?[一二三四五六七八九十レ上中下甲乙丙丁天地人]+］', '［＃レ点］', '［＃「[^」]*」は返り点］', '［＃「」内の「[^」]+」は返り点］', '［＃以下の「」内の「[^」]+」は返り点］']
+source_patterns = ['［＃(?:返り点)?[一二三四五六七八九十レ上中下甲乙丙丁天地人]+］', '［＃レ点］', '［＃「[^」]*」は返り点］', '［＃「」内の「[^」]+」は返り点(、以下同じ)?］', '［＃「」内の[一二三四五六七八九十レ上中下甲乙丙丁天地人]+は返り点］', '［＃以下の「」内の「[^」]+」は返り点］']
 ir_nodes = []
 aat_nodes = ["style"]
 tei_projection = "hi rend=kaeriten"
@@ -2024,7 +2024,7 @@ category = "inline_annotation"
 feature_keys = ["bosen"]
 reference_sources = ["references/parsers/aozora2html/yml/command_table.yml"]
 source_examples = ["［＃「語」に傍線］", "［＃二重傍線］", "［＃鎖傍線］"]
-source_patterns = ['［＃「[^\n]+」に(二重|鎖|波)?傍線］', '［＃(二重|鎖|波)?傍線］', '［＃(ここで)?(二重|鎖|波)?傍線終わり］', '［＃左に傍線(終わり)?］']
+source_patterns = ['［＃「[^\n]+」に(二重|鎖|波)?傍線］', '［＃「[^\n]+」に[上下]線］', '［＃「[^\n]+」は[上下]線[^］]*］', '［＃(二重|鎖|波)?傍線］', '［＃(ここで)?(二重|鎖|波)?傍線終わり］', '［＃左に傍線(終わり)?］']
 ir_nodes = ["Inline::Style"]
 aat_nodes = ["style"]
 tei_projection = "hi rend=bousen"
@@ -2088,7 +2088,7 @@ category = "inline_annotation"
 feature_keys = ["bold", "italic"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html.rb"]
 source_examples = ["［＃ここから太字］", "［＃ここから斜体］", "「text」の太字", "「text」の斜体"]
-source_patterns = ['［＃ここから(太字|斜体)］', '［＃(ここで)?(太字|斜体)終わり］', '「[^」]+」の(太字|斜体)', '［＃[^］]*「[^\n]+」は(太字|斜体)］', '［＃「[^\n]+」の部分は(イタリック体|太字)］', '［＃(この行は)?ゴシック体］', '［＃「[^\n]+」は?ゴシック体］', '［＃大文字、太字］']
+source_patterns = ['［＃ここから(太字|斜体)］', '［＃(ここで)?(太字|斜体)終わり］', '「[^」]+」の(太字|斜体)', '［＃[^］]*「[^\n]+」は(太字|斜体|斜体字|イタリック体)］', '［＃「[^\n]+」の部分は(イタリック体|太字)］', '［＃(この行は)?ゴシック体］', '［＃「[^\n]+」は?ゴシック体］', '［＃大文字、太字］']
 ir_nodes = ["Inline::Style", "Block::Style"]
 aat_nodes = ["style"]
 tei_projection = "hi rend=bold|italic"

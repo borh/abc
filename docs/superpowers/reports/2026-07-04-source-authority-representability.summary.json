@@ -3,8 +3,8 @@
   "works_scanned": 17894,
   "works_failed": 0,
   "markers_total": 4323915,
-  "unknown_markers_total": 15540,
-  "unallowlisted_unknown_markers_total": 670,
+  "unknown_markers_total": 15522,
+  "unallowlisted_unknown_markers_total": 652,
   "allowlisted_unknown_markers_total": 14870,
   "rows": {
     "accent.dotted_letter": {
@@ -83,8 +83,8 @@
       ]
     },
     "decoration.bold_italic": {
-      "works_with_marker": 314,
-      "occurrences": 8752,
+      "works_with_marker": 316,
+      "occurrences": 8754,
       "sample_works": [
         "000020_4487",
         "000020_46404",
@@ -105,8 +105,8 @@
       ]
     },
     "decoration.bousen": {
-      "works_with_marker": 322,
-      "occurrences": 18111,
+      "works_with_marker": 324,
+      "occurrences": 18116,
       "sample_works": [
         "000006_1869",
         "000013_11",
@@ -237,14 +237,14 @@
       ]
     },
     "glyph.variant_note": {
-      "works_with_marker": 1158,
-      "occurrences": 3950,
+      "works_with_marker": 1173,
+      "occurrences": 4046,
       "sample_works": [
+        "000006_1869",
         "000008_1083",
         "000011_55301",
         "000011_889",
-        "000011_899",
-        "000011_9"
+        "000011_899"
       ]
     },
     "heading.basic": {
@@ -359,7 +359,7 @@
     },
     "kunten.kaeriten": {
       "works_with_marker": 490,
-      "occurrences": 27953,
+      "occurrences": 27955,
       "sample_works": [
         "000006_1869",
         "000038_1408",
@@ -517,7 +517,7 @@
       ]
     }
   },
-  "unknown_classes_total": 654,
+  "unknown_classes_total": 636,
   "unknown_classes_truncated": false,
   "unknown_classes": [
     {
@@ -817,50 +817,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「A」は accent grave（｀）付き］",
-      "body": "「A」は accent grave（｀）付き",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000136_731"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「Miss　B. A. Bae.」は斜体字］",
-      "body": "「Miss　B. A. Bae.」は斜体字",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000165_891"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「Novae」「discendae」「docendae」および「Jurisprudentiae」のそれぞれの末尾「ae」は、「a」と「e」の合字］",
-      "body": "「Novae」「discendae」「docendae」および「Jurisprudentiae」のそれぞれの末尾「ae」は、「a」と「e」の合字",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000301_1872"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「P = 0.07693694」は上線（￣）付き］",
-      "body": "「P = 0.07693694」は上線（￣）付き",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000042_2345"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「San」は３０度位右上がり］",
       "body": "「San」は３０度位右上がり",
       "occurrences": 1,
@@ -868,61 +824,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000879_2324"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「est」に下線］",
-      "body": "「est」に下線",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000809_43012"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「e」はマクロン付き（-）E小文字］",
-      "body": "「e」はマクロン付き（-）E小文字",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000281_1711"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「for the reason」はイタリック体］",
-      "body": "「for the reason」はイタリック体",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000301_1872"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「mao」の「a」に長音記号］",
-      "body": "「mao」の「a」に長音記号",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000125_1067"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「prthu」のrは下ドット付き］",
-      "body": "「prthu」のrは下ドット付き",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001096_43554"
       ]
     },
     {
@@ -949,50 +850,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「u」の上に「^」がつく］",
-      "body": "「u」の上に「^」がつく",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000301_1872"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「v」は下線（_）付き、181-表組2行目］",
-      "body": "「v」は下線（_）付き、181-表組2行目",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000042_2345"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「ο」はアキュートアクセント付き］",
-      "body": "「ο」はアキュートアクセント付き",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001099_46996"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「□□」は２倍の長方形］",
-      "body": "「□□」は２倍の長方形",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000091_522"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「　」は欠字］",
       "body": "「　」は欠字",
       "occurrences": 1,
@@ -1011,28 +868,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000160_3524"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「」内の「レ一二」は返り点、以下同じ］",
-      "body": "「」内の「レ一二」は返り点、以下同じ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000301_1872"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「」内の一二は返り点］",
-      "body": "「」内の一二は返り点",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000301_1872"
       ]
     },
     {
@@ -1066,17 +901,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000305_1896"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「え」は「江」のくずし字］",
-      "body": "「え」は「江」のくずし字",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000305_43618"
       ]
     },
     {
@@ -7450,17 +7274,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃４段目、Sinhaのnは上ドット付き、Visnuのsnはともに下ドット付き］",
-      "body": "４段目、Sinhaのnは上ドット付き、Visnuのsnはともに下ドット付き",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001096_43554"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃６字下がる］",
       "body": "６字下がる",
       "occurrences": 1,
@@ -7468,17 +7281,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000106_2415"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃６段目、Visnuのsnはともに下ドット付き］",
-      "body": "６段目、Visnuのsnはともに下ドット付き",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001096_43554"
       ]
     },
     {
@@ -7785,13 +7587,6 @@
     },
     {
       "work_id": "000042_2345",
-      "line": 85,
-      "kind": "CommandFullwidth",
-      "raw": "［＃「v」は下線（_）付き、181-表組2行目］",
-      "body": "「v」は下線（_）付き、181-表組2行目"
-    },
-    {
-      "work_id": "000042_2345",
       "line": 89,
       "kind": "CommandFullwidth",
       "raw": "［＃「t」は下点付き、182-6］",
@@ -7803,13 +7598,6 @@
       "kind": "CommandFullwidth",
       "raw": "［＃２文字目の「i」は下付き小文字、４文字目の「i」は上付き小文字］",
       "body": "２文字目の「i」は下付き小文字、４文字目の「i」は上付き小文字"
-    },
-    {
-      "work_id": "000042_2345",
-      "line": 109,
-      "kind": "CommandFullwidth",
-      "raw": "［＃「P = 0.07693694」は上線（￣）付き］",
-      "body": "「P = 0.07693694」は上線（￣）付き"
     },
     {
       "work_id": "000042_2471",
@@ -8027,13 +7815,6 @@
       "kind": "CommandFullwidth",
       "raw": "［＃「直木」と「菊池」の中間に「手直り表」］",
       "body": "「直木」と「菊池」の中間に「手直り表」"
-    },
-    {
-      "work_id": "000091_522",
-      "line": 912,
-      "kind": "CommandFullwidth",
-      "raw": "［＃「□□」は２倍の長方形］",
-      "body": "「□□」は２倍の長方形"
     },
     {
       "work_id": "000091_522",
@@ -8440,18 +8221,39 @@
       "kind": "CommandFullwidth",
       "raw": "［＃「神近市子」はゴチック］",
       "body": "「神近市子」はゴチック"
+    },
+    {
+      "work_id": "000124_654",
+      "line": 587,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「山本有三」はゴチック］",
+      "body": "「山本有三」はゴチック"
+    },
+    {
+      "work_id": "000124_654",
+      "line": 590,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「森山啓」はゴチック］",
+      "body": "「森山啓」はゴチック"
+    },
+    {
+      "work_id": "000124_654",
+      "line": 594,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「長谷川如是閑」はゴチック］",
+      "body": "「長谷川如是閑」はゴチック"
     }
   ],
   "decode_failures": [],
   "representability": {
-    "typed_occurrences": 4569763,
-    "raw_preserved_occurrences": 41614,
+    "typed_occurrences": 4569772,
+    "raw_preserved_occurrences": 41710,
     "out_of_body_occurrences": 950,
     "unsupported_occurrences": 13920,
     "needs_research_occurrences": 0
   },
   "strict_errors": [
-    "670 unallowlisted source markers"
+    "652 unallowlisted source markers"
   ],
   "inputs": {
     "matrix": "/home/bor/Projects/ab-validator/data/aozora-syntax-coverage.toml",

@@ -140,6 +140,8 @@ fn source_inventory_classifies_kunten_source_note_variants() {
         "［＃「」内の「レ」は返り点］",
         "［＃「」内の「一二」は返り点］",
         "［＃以下の「」内の「レ一二」は返り点］",
+        "［＃「」内の「レ一二」は返り点、以下同じ］",
+        "［＃「」内の一二は返り点］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -154,7 +156,7 @@ fn source_inventory_classifies_kunten_source_note_variants() {
             .row_counts
             .get("kunten.kaeriten")
             .map(|count| count.occurrences),
-        Some(4)
+        Some(6)
     );
 }
 
@@ -1033,6 +1035,15 @@ fn source_inventory_classifies_glyph_variant_notes() {
         "［＃「※」は「たけかんむり＋隻」、17-8］",
         "［＃「※」は「つつみがまえ（勹）」＋「夕」で、読みは「そうそう」67-6］",
         "［＃「！？」は１マスに横並び］",
+        "［＃「A」は accent grave（｀）付き］",
+        "［＃「e」はマクロン付き（-）E小文字］",
+        "［＃「mao」の「a」に長音記号］",
+        "［＃「prthu」のrは下ドット付き］",
+        "［＃「u」の上に「^」がつく］",
+        "［＃「ο」はアキュートアクセント付き］",
+        "［＃「Novae」「discendae」「docendae」および「Jurisprudentiae」のそれぞれの末尾「ae」は、「a」と「e」の合字］",
+        "［＃「□□」は２倍の長方形］",
+        "［＃「え」は「江」のくずし字］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -1047,7 +1058,7 @@ fn source_inventory_classifies_glyph_variant_notes() {
             .row_counts
             .get("glyph.variant_note")
             .map(|count| count.occurrences),
-        Some(22)
+        Some(31)
     );
 }
 
@@ -1267,6 +1278,11 @@ fn source_inventory_classifies_layout_and_inline_style_corpus_variants() {
         "［＃「-λt」は「e」の上付き］",
         "［＃「一ノ戸」の「ノ」は小書き］",
         "［＃「ココア入リ」は本文より小さいサイズの文字］",
+        "［＃「Miss　B. A. Bae.」は斜体字］",
+        "［＃「for the reason」はイタリック体］",
+        "［＃「P = 0.07693694」は上線（￣）付き］",
+        "［＃「v」は下線（_）付き、181-表組2行目］",
+        "［＃「est」に下線］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -1279,8 +1295,8 @@ fn source_inventory_classifies_layout_and_inline_style_corpus_variants() {
     for (row_id, expected) in [
         ("indentation.burasage", 2),
         ("decoration.font_size", 7),
-        ("decoration.bold_italic", 3),
-        ("decoration.bousen", 2),
+        ("decoration.bold_italic", 5),
+        ("decoration.bousen", 5),
         ("layout.tcy", 4),
         ("layout.yokogumi", 5),
     ] {

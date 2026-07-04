@@ -29,10 +29,68 @@
     (is (seq errors) "schema must reject a manifest whose identity object nests artifact_id")
     ;; The error must be specifically about the nested artifact_id (via the
     ;; additionalProperties:false on $defs/identityObject), not an unrelated
-    ;; field — otherwise the fixture passes for the wrong reason. m3 errors are
-    ;; maps; str them and assert the path mentions the offending property.
+    ;; field — otherwise the fixture passes for the wrong reason. m3 errors
+    ;; are maps; str them and assert the path mentions the offending property.
     (is (some #(re-find #"(?i)manifest_identity_object|artifact_id|additionalProperties"
                        (str %))
               (map str errors))
         (str "error path must target manifest_identity_object/artifact_id; got: "
              (pr-str errors)))))
+
+;; Layer D — R1 reproducibility conflict, bound to the REAL oracle
+;; (manifest-index/reproducibility-conflicts). Replaces vacuous
+;; r1-reproducibility-conflict.smt2 — see
+;; docs/handoffs/formal-verification-assessment-critique.md §2.
+
+(def ^:private success-statuses #{"passed" "warning"})
+
+(defn- successful? [entry]
+  ;; Mirrors manifest-index/successful-entry? verbatim — do not recompute.
+  ;; (src/abc/tools/manifest_index.clj:6-7: successful-statuses #{"passed" "warning"}).
+  (contains? success-statuses (get entry "validation_status")))
+
+(def gen-conflict-tuple
+  "Generate a [m1 m2 expected-conflict?] tuple. m1, m2 are manifest-index
+   entries (validation_status/content_hash/artifact_id/manifest_path). A
+   conflict exists iff both are successful, share artifact_id, and differ on
+   content_hash. expected? is computed from the ACTUAL generated hash equality
+   (not a separate same-hash? flag) so the generator and the oracle see the
+   same inputs. Statuses are drawn from the REAL schema enum
+   schemas/manifest.schema.json (not-run/passed/warning/failed) and success is
+   decided by the REAL predicate (#{passed warning})."
+  (gen/bind
+    (gen/tuple gen/string-alphanumeric                  ; artifact_id
+               gen/string-alphanumeric                  ; content_hash_1
+               gen/string-alphanumeric                  ; content_hash_2 (independent)
+               (gen/elements ["passed" "warning"])      ; m1 status (always successful)
+               (gen/elements ["passed" "warning" "failed" "not-run"])) ; m2 status
+    (fn [[id h1 h2 m1-status m2-status]]
+      (let [m1 {"validation_status" m1-status
+                "content_hash" h1
+                "artifact_id" id
+                "manifest_path" "/m1"}
+            m2 {"validation_status" m2-status
+                "content_hash" h2
+                "artifact_id" id
+                "manifest_path" "/m2"}
+            ;; expected? derived from the actual generated values, using the
+            ;; REAL success predicate and REAL string equality on hashes.
+            expected? (and (successful? m1) (successful? m2)
+                           (not= h1 h2))]
+        (gen/return [m1 m2 expected?])))))
+
+(def reproducibility-property
+  (prop/for-all [[m1 m2 expected?] gen-conflict-tuple]
+    (let [entries [m1 m2]
+          conflicts (manifest-index/reproducibility-conflicts entries)
+          ;; boolean() — (seq conflicts) is a seq or nil, not a boolean, so
+          ;; (= expected? (seq conflicts)) would compare true to a seq and be
+          ;; wrong on the satisfying case. Coerce to boolean.
+          detected? (boolean (seq conflicts))]
+      (= expected? detected?))))
+
+(deftest r1-reproducibility-conflict-property-test
+  (testing "real oracle detects conflict iff both success, same id, different hash"
+    (let [result (tc/quick-check 200 reproducibility-property)]
+      (is (:pass? result)
+          (str "property failed:\n" (pr-str result))))))

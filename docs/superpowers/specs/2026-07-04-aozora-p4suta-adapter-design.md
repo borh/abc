@@ -22,10 +22,28 @@ and `aozora-rs`.
 
 | Finding | Route | Status |
 |---|---|---|
-| Direction/seam choice unsettled; high cost-of-being-wrong; unverified assumptions about aozora's surfaces | `hammock-driven-design` | This spec |
-| Provenance, dep pinning, contract-leak, gaiji faithfulness policy | `rich-hickey-review` | Queued after direction confirmed |
-| Shared AAT-builder abstraction across now-5 mappers | `deepening-review` | Queued after adapter exists |
+| Direction/seam choice unsettled; high cost-of-being-wrong; unverified assumptions about aozora's surfaces | `hammock-driven-design` | This spec — seam settled (§2.3) |
+| Provenance, dep pinning, contract-leak, gaiji faithfulness policy, two-coordinate-system reconciliation, version pin grounding | `rich-hickey-review` | Folded into this revision (§4.1.1, §4.2, §4.4, U4, §5); see response table below |
+| Shared AAT-builder abstraction across now-5 mappers | `deepening-review` | Queued after adapter exists (§8 caveat now noted) |
 | Adapter already at one implementation; no braided cleanup in existing code | (no `codebase-simplification`) | N/A |
+
+### rich-hickey-review response
+
+All empirical claims were verified against the codebase (`receiving-code-review`
+discipline: verify, then act) before amending.
+
+| # | Finding | Severity | Resolution |
+|---|---|---|---|
+| 1 | Version pin ungrounded (workspace `version = 0.4.1` ≠ checkout HEAD) | Blocker (overstated) | Verified: `git tag` lists `v0.4.1`; `git describe` = `v0.4.1-235-g5df2cfa`; HEAD `5df2cfa` is 235 commits past the tag; workspace `version = "0.4.1"` is stale metadata, not an absent tag. **Corrected: pin an exact commit SHA; U4 now states this and §5 cites the SHA, not the stale 0.4.1 label.** |
+| 2 | `"no ab-*"` policy stricter than the established Direct-tier pattern | Strong suggestion | Verified: `aozora2` depends on `ab-source-syntax`; `aozora-rs` used `ab-ir`+`ab-source-syntax`; only `aozora2html`/`aozora-epub3` are zero-`ab-*`. `decode_source_bytes` is duplicated 3× already. **Adopted graded policy (§3, §4, §4.4).** |
+| 3 | Library `Tree` surface asserted, not verified; mapper complexity hidden | Strong suggestion | Verified `SourceNodeOwned`/`NodeRefOwned`/`ContainerPair`/`PairLink` shapes. The mapper **must reconcile two coordinate systems** (source vs normalized). **Added §4.1.1 traversal sketch.** |
+| 4 | Drift mitigation conflates harness stability with measurement continuity | Question | **Added to §5 matrix row: schema-stable but node-kind projections may drift across upstream versions.** |
+| 5 | Direct-fidelity tier unqualified | Strong suggestion | **§5 row is now "Provisional Direct" pending U1 characterization gate.** |
+| 6 | House-style gaps vs epub3 design (wire contract, test strategy, `--mode html` fidelity) | Strong suggestion | **Added §4.5 wire contract, §4.6 `--mode html` fidelity note, §9 test strategy, §10 build/Nix, §11 files-to-modify, §12 falsifier table.** |
+| 7 | Smoke-check reproducibility hazard | Strong suggestion | **§10 pins smoke fixtures to the already-pinned aozora reference checkout (conformance fixtures), not to TEI-EAJ counterparts or `/db`.** |
+| 8 | Shared-builder deferral misses AST-vs-XHTML distinction | Nit | **Added sentence to §8.** |
+| 9 | Provenance routing well-executed; risk calibration tight enough | Nit | Acknowledged; U1/U4 risk re-leveled to blocking-for-fidelity-claim, non-blocking-for-seam. |
+| 10 | Drift-mitigation framing precision | Nit | **§4.2 reworded to name the ab-ir-preemption path explicitly.** |
 
 ---
 

@@ -7,6 +7,10 @@
       url = "path:/home/bor/Projects/nix/pkgs";
       flake = false;
     };
+    tei-eaj-aozora-tei = {
+      url = "github:TEI-EAJ/aozora_tei";
+      flake = false;
+    };
     clj-nix = {
       url = "github:jlesquembre/clj-nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -20,6 +24,7 @@
     {
       nixpkgs,
       local-pkgs,
+      tei-eaj-aozora-tei,
       clj-nix,
       crane,
       ...
@@ -253,6 +258,75 @@
             );
             meta.description = "Regenerate schemas/tei-profile.{rng,sch} from schemas/tei-profile.odd via TEI Stylesheets";
           };
+
+          tei-eaj-aozora-tei-source = {
+            type = "app";
+            program = toString (
+              pkgs.writeShellScript "abc-tei-eaj-aozora-tei-source" ''
+                printf '%s\n' ${tei-eaj-aozora-tei}
+              ''
+            );
+            meta.description = "Print the pinned TEI-EAJ/aozora_tei comparison source path";
+          };
+
+          tei-eaj-aozora-melos-report = {
+            type = "app";
+            program = toString (
+              pkgs.writeShellScript "abc-tei-eaj-aozora-melos-report" ''
+                set -euo pipefail
+                output="''${1:-docs/handoffs/tei-eaj-aozora-melos-comparison-report.md}"
+                exec ${pkgs.python3}/bin/python3 ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
+                  --report melos \
+                  --abc paper/demo-melos-real/tei.xml \
+                  --tei-eaj-root ${tei-eaj-aozora-tei} \
+                  --source-rev 77a675fc2771936f9544505d922d4cd45075338c \
+                  --output "$output"
+              ''
+            );
+            meta.description = "Regenerate the ABC vs TEI-EAJ Melos comparison report";
+          };
+
+          tei-eaj-aozora-all-work-report = {
+            type = "app";
+            program = toString (
+              pkgs.writeShellScript "abc-tei-eaj-aozora-all-work-report" ''
+                set -euo pipefail
+                output="''${1:-docs/handoffs/tei-eaj-aozora-all-work-comparison-report.md}"
+                exec ${pkgs.python3}/bin/python3 ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
+                  --report all-work \
+                  --abc-tei-dir paper \
+                  --tei-eaj-root ${tei-eaj-aozora-tei} \
+                  --source-rev 77a675fc2771936f9544505d922d4cd45075338c \
+                  --output "$output"
+              ''
+            );
+            meta.description = "Regenerate the all-work ABC vs TEI-EAJ comparison report";
+          };
+
+          tei-eaj-aozora-reports = {
+            type = "app";
+            program = toString (
+              pkgs.writeShellScript "abc-tei-eaj-aozora-reports" ''
+                set -euo pipefail
+                melos_output="''${1:-docs/handoffs/tei-eaj-aozora-melos-comparison-report.md}"
+                all_work_output="''${2:-docs/handoffs/tei-eaj-aozora-all-work-comparison-report.md}"
+                ${pkgs.python3}/bin/python3 ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
+                  --report melos \
+                  --abc paper/demo-melos-real/tei.xml \
+                  --tei-eaj-root ${tei-eaj-aozora-tei} \
+                  --source-rev 77a675fc2771936f9544505d922d4cd45075338c \
+                  --output "$melos_output"
+                ${pkgs.python3}/bin/python3 ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
+                  --report all-work \
+                  --abc-tei-dir paper \
+                  --tei-eaj-root ${tei-eaj-aozora-tei} \
+                  --source-rev 77a675fc2771936f9544505d922d4cd45075338c \
+                  --output "$all_work_output"
+                printf 'Updated %s\nUpdated %s\n' "$melos_output" "$all_work_output"
+              ''
+            );
+            meta.description = "Regenerate both TEI-EAJ comparison reports";
+          };
         }
       );
 
@@ -387,6 +461,8 @@
             test -f ${./src/abc/tools/aozora_history_audit.clj}
             test -f ${./src/abc/tools/aozora_ingest.clj}
             test -f ${./src/abc/git.clj}
+            test -f ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py}
+            test -f ${./prototypes/tei-eaj-comparison/test_tei_eaj_compare.py}
             test -f ${./src/abc/tools/manifest_index.clj}
             test -f ${./src/abc/tools/logging.clj}
             test -f ${./src/abc/tools/manifest_to_rdf.clj}
@@ -458,6 +534,66 @@
             echo "schemas/tei-profile.{rng,sch} match the ODD-derived artifacts." > "$out/result.txt"
           '';
 
+          tei-eaj-aozora-comparison-source = pkgs.runCommand "abc-tei-eaj-aozora-comparison-source" { } ''
+            test -f ${tei-eaj-aozora-tei}/README.md
+            test -f ${tei-eaj-aozora-tei}/data/complete/tei_lib_lv4/1567_tei.xml
+            test -f ${tei-eaj-aozora-tei}/data/complete/tei_lib_lv4/1567_header_updated.xml
+            grep -q "走れメロス" ${tei-eaj-aozora-tei}/data/complete/tei_lib_lv4/1567_tei.xml
+            grep -q "Best Practice for TEI in Libraries" ${tei-eaj-aozora-tei}/README.md
+            mkdir -p "$out"
+            echo "Pinned TEI-EAJ/aozora_tei comparison source includes the Melos Level 4 fixtures." > "$out/result.txt"
+          '';
+
+          tei-eaj-comparison-probe-tests =
+            pkgs.runCommand "abc-tei-eaj-comparison-probe-tests" { nativeBuildInputs = [ pkgs.python3 ]; }
+              ''
+                cp -R ${./prototypes/tei-eaj-comparison} probe
+                chmod -R u+w probe
+                python3 -m unittest discover -s probe -p 'test_*.py'
+                mkdir -p "$out"
+                echo "TEI-EAJ comparison probe tests passed." > "$out/result.txt"
+              '';
+
+          tei-eaj-aozora-report-generation =
+            pkgs.runCommand "abc-tei-eaj-aozora-report-generation" { nativeBuildInputs = [ pkgs.python3 ]; }
+              ''
+                set -euo pipefail
+                mkdir -p abc
+                cat > abc/melos.xml <<'XML'
+                <?xml version="1.0" encoding="UTF-8"?>
+                <TEI xmlns="http://www.tei-c.org/ns/1.0">
+                  <teiHeader>
+                    <fileDesc>
+                      <titleStmt><title>走れメロス</title></titleStmt>
+                      <publicationStmt><idno type="aozora-work-id">001567</idno></publicationStmt>
+                      <sourceDesc><p>source</p></sourceDesc>
+                    </fileDesc>
+                  </teiHeader>
+                  <text><body><p>メロス</p></body></text>
+                </TEI>
+                XML
+                python3 ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
+                  --report melos \
+                  --abc abc/melos.xml \
+                  --tei-eaj-root ${tei-eaj-aozora-tei} \
+                  --source-rev 77a675fc2771936f9544505d922d4cd45075338c \
+                  --output melos.md
+                python3 ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
+                  --report all-work \
+                  --abc-tei 1567=abc/melos.xml \
+                  --tei-eaj-root ${tei-eaj-aozora-tei} \
+                  --source-rev 77a675fc2771936f9544505d922d4cd45075338c \
+                  --output all-work.md
+                grep -q "TEI-EAJ Melos files found: 2" melos.md
+                grep -q "TEI-EAJ XML files scanned: 62" all-work.md
+                grep -q "Compared TEI-EAJ files: 2" all-work.md
+                grep -q "Missing ABC counterparts: 55" all-work.md
+                grep -q "TEI-EAJ files without candidate work IDs: 5" all-work.md
+                mkdir -p "$out"
+                cp melos.md all-work.md "$out"/
+                echo "TEI-EAJ comparison reports regenerate against the pinned source." > "$out/result.txt"
+              '';
+
           adr-acceptance-criteria = pkgs.runCommand "abc-adr-acceptance-criteria" { } ''
             cp -R ${./.} source
             chmod -R u+w source
@@ -466,15 +602,16 @@
             mkdir -p "$out"
             echo "ADR acceptance-criteria lint passed (ratcheted)." > "$out/result.txt"
           '';
-          focused-test-coverage = pkgs.runCommand "abc-focused-test-coverage"
-            { nativeBuildInputs = [ pkgs.python3 ]; } ''
-            cp -R ${./.} source
-            chmod -R u+w source
-            cd source
-            bash nix/check-focused-test-coverage.sh
-            mkdir -p "$out"
-            echo "focused-test allowlist covers all *_test.clj (ratcheted)." > "$out/result.txt"
-          '';
+          focused-test-coverage =
+            pkgs.runCommand "abc-focused-test-coverage" { nativeBuildInputs = [ pkgs.python3 ]; }
+              ''
+                cp -R ${./.} source
+                chmod -R u+w source
+                cd source
+                bash nix/check-focused-test-coverage.sh
+                mkdir -p "$out"
+                echo "focused-test allowlist covers all *_test.clj (ratcheted)." > "$out/result.txt"
+              '';
           swi-prolog-smoke =
             pkgs.runCommand "abc-swi-prolog-smoke" { nativeBuildInputs = [ pkgs.swi-prolog ]; }
               ''

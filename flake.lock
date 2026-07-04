@@ -145,7 +145,24 @@
         "clj-nix": "clj-nix",
         "crane": "crane",
         "local-pkgs": "local-pkgs",
-        "nixpkgs": "nixpkgs"
+        "nixpkgs": "nixpkgs",
+        "tei-eaj-aozora-tei": "tei-eaj-aozora-tei"
+      }
+    },
+    "tei-eaj-aozora-tei": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1764241777,
+        "narHash": "sha256-pWiv4ScVRDwzcW1SyCBio9mHMsSLVyVwkqw0GSzIUO8=",
+        "owner": "TEI-EAJ",
+        "repo": "aozora_tei",
+        "rev": "77a675fc2771936f9544505d922d4cd45075338c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "TEI-EAJ",
+        "repo": "aozora_tei",
+        "type": "github"
       }
     }
   },

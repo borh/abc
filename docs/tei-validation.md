@@ -16,6 +16,33 @@ and Schematron files are derived validation artifacts. Generator versions and
 stylesheet/toolchain hashes are recorded in validation run metadata unless a
 later ADR promotes them into profile identity.
 
+## TEI-EAJ Level Vocabulary
+
+ABC uses TEI-EAJ materials in two different roles:
+
+- `https://github.com/TEI-EAJ/jp_guidelines/wiki` is the authoritative
+  Japanese TEI markup style reference. Markup-style decisions should cite the
+  relevant guideline page when possible.
+- `TEI-EAJ/aozora_tei` is the pinned comparison corpus. ABC uses its Level 2-5
+  vocabulary when planning TEI depth. The pinned comparison source is recorded
+  in `docs/handoffs/tei-eaj-aozora-comparison.md`.
+- `docs/handoffs/tei-eaj-aozora-all-work-comparison-report.md` enumerates all
+  pinned TEI-EAJ XML files and compares every file with a discovered ABC TEI
+  counterpart. `docs/handoffs/tei-eaj-aozora-melos-comparison-report.md`
+  remains the focused Melos view.
+
+| Level | Planning meaning for ABC |
+| --- | --- |
+| Level 2 | Source-preserving Aozora transcription with core source markup retained. |
+| Level 3 | Basic structural units are parser-backed values. For ABC this includes paragraph boundaries and source-note/source-attribution blocks. |
+| Level 4 | Curated semantic enrichment such as people, places, roles, references, and speech attribution. |
+| Level 5 | Scholarly edition or specialized corpus markup, outside generated publication TEI unless separately declared. |
+
+The current parser-IR-derived TEI is not yet a Level 3 claim for prose works
+like `走れメロス`: body text and ruby are preserved, but paragraph structure
+and the final source attribution note must be preserved by parser-IR before the
+TEI renderer can publish them without guessing.
+
 ## Rule Inventory
 
 | Rule ID | Constraint | Severity | Why it matters |

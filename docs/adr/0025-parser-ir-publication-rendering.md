@@ -54,6 +54,23 @@ layout detail.
 Renderer coverage is schema-derived and fails closed when parser-IR adds node
 types.
 
+ABC uses the TEI-EAJ `aozora_tei` Level 2-5 vocabulary when discussing TEI
+depth. The current publication renderer is a source-preserving Level 2-oriented
+renderer with native TEI ruby and validation gates; it must not be described as
+Level 3 for prose works until parser-IR carries paragraph boundaries and source
+attribution/source-note blocks as producer-preserved structure.
+
+Japanese TEI markup-style decisions should cite the TEI-EAJ Japanese Guidelines
+wiki (`https://github.com/TEI-EAJ/jp_guidelines/wiki`) when they depend on
+Japanese TEI convention rather than only on ABC pipeline mechanics.
+
+`TEI-EAJ/aozora_tei` is the canonical external comparison corpus for this
+distinction. ABC pins it as the non-flake input `tei-eaj-aozora-tei`, and the
+all-work and focused Melos comparison reports are documented in
+`docs/handoffs/tei-eaj-aozora-comparison.md`. The all-work report treats
+missing ABC counterparts as materialization backlog; it does not collapse
+coverage gaps into parser or renderer mismatches.
+
 ## Consequences
 
 ABC can validate and publish parser-IR-derived artifacts without executing

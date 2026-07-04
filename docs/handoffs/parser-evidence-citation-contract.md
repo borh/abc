@@ -80,6 +80,27 @@ An ABC parser-evidence citation should record:
 ABC should never cite only a prose verdict when a logical path, report hash,
 and identity tuple are available.
 
+## Mapping Version Transition
+
+The current citable conversion-compatibility evidence is for mapping version
+`0.2.0` and mapping hash
+`sha256:68b0868b25f3b072a47d781099178bf2a31e4b16c561814f5e13e3801714d089`.
+
+`ab-validator` is expected to emit a follow-up mapping version `0.2.1`. ABC
+should not edit existing `0.2.0` citations or registry rows in place. The
+`0.2.1` transition needs a fresh producer evidence set:
+
+- updated mapping hash and converter report hash;
+- updated compatibility-candidates EDN report hash;
+- new adapter-version-exact registry rows in
+  `data/aat-parser-ir-compatibility.edn`;
+- updated `data/parser-evidence-citations.edn` entries for the new reports;
+- regenerated paper-demo parser-IR, divergence, source snapshot, and publication
+  manifests if the paper demo moves from `0.2.0` to `0.2.1`.
+
+Until those artifacts exist, `0.2.0` remains the current admitted ABC evidence
+chain and `0.2.1` should be described only as pending.
+
 ## Current Interpretation
 
 The July 4 conversion evidence is enough to support ABC's parser-IR

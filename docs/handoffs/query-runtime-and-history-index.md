@@ -25,6 +25,11 @@ provisional direction is:
 - XTDB v2 or Dolt-like stores only if ABC later needs a durable bitemporal
   application database, not merely snapshot comparison.
 
+The planned monorepo migration removes a physical checkout boundary, not these
+logical boundaries. Query packs may index both `abc/...` and `ab-validator/...`
+component paths in one workspace, but the source of identity remains the
+canonical files and hashes rather than the generated database.
+
 ## Problem
 
 ABC has two related but distinct query needs:

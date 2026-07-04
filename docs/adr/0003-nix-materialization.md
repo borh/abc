@@ -28,6 +28,11 @@ for shape tests and the paper demo, but not for an honest representative
 generate a disposable representative manifest fixture and include TEI render /
 validation costs from the ADR 0025 publication path.
 
+Monorepo note: repository consolidation should make bounded source snapshots
+easier to assemble, but it does not relax the materialization policy. Release
+manifests still need content-addressed source snapshots, and ADR 0003 still
+needs a representative cost envelope before acceptance.
+
 ## Context
 
 Nix is attractive for deterministic builds, pinned toolchains, and cacheable

@@ -21,18 +21,26 @@ ab-validator's measured parser-candidate reports as parser-selection evidence
 rather than only downstream conversion evidence.
 
 Follow-up citation note:
-`docs/handoffs/parser-evidence-citation-contract.md` defines the proposed
-ABC-side citation contract for producer measurement reports. It separates
-conversion compatibility, parser selection, and comparator/oracle evidence.
-Until that policy is accepted, ABC may cite the July 4 conversion reports as
-publication-boundary evidence but should not claim that ADR 0002 has selected a
-canonical parser.
+`docs/handoffs/parser-evidence-citation-contract.md` defines the ABC-side
+citation contract for producer measurement reports. The provisional
+machine-readable index `data/parser-evidence-citations.edn` is now validated by
+`nix run .#validate-design-bundle` and separates conversion compatibility,
+parser selection, and comparator/oracle evidence. ABC may cite the July 4
+conversion reports as publication-boundary evidence, but should not claim that
+ADR 0002 has selected a canonical parser until parser-selection entries move
+from provisional evidence to an accepted policy decision.
 
 Monorepo note: future repository consolidation should remove only the physical
 checkout boundary, not the logical producer/consumer boundary. The provisional
 machine-readable index `data/parser-evidence-citations.edn` therefore records
 logical workspace-relative evidence paths plus report hashes, while current
 `../ab-validator` paths remain temporary locators.
+
+Mapping transition note: the current admitted conversion evidence is for mapping
+version `0.2.0`. If `ab-validator` publishes mapping version `0.2.1`, ABC needs
+new report hashes, new exact adapter-version compatibility candidates, and new
+registry admissions before the paper or this ADR cites `0.2.1` as accepted
+evidence.
 
 ## Context
 

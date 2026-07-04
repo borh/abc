@@ -282,6 +282,11 @@
       "properties": {
         "kind": { "const": "raw" },
         "source": { "type": "string" },
+        "x-provenance": {
+          "type": "string",
+          "enum": ["parser-derived", "source-derived", "adapter-derived"]
+        },
+        "x-source-marker-kind": { "type": "string" },
         "span": { "$ref": "#/$defs/span" }
       }
     },

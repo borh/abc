@@ -112,6 +112,60 @@ fn aat_schema_accepts_semantic_summary_metadata() {
 }
 
 #[test]
+fn aat_schema_documents_raw_source_marker_extensions() {
+    let manifest = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let schema_doc: Value = serde_json::from_str(
+        &fs::read_to_string(manifest.join("../../data/aat-schema.json")).unwrap(),
+    )
+    .unwrap();
+    let raw_properties = &schema_doc["$defs"]["raw"]["properties"];
+
+    assert_eq!(
+        raw_properties["x-provenance"]["enum"],
+        serde_json::json!(["parser-derived", "source-derived", "adapter-derived"])
+    );
+    assert_eq!(
+        raw_properties["x-source-marker-kind"]["type"],
+        serde_json::json!("string")
+    );
+
+    let schema = schema_validator().unwrap();
+    let value = serde_json::json!({
+        "version": 1,
+        "work_id": "raw_source_marker_fixture",
+        "blocks": [
+            {
+                "kind": "paragraph",
+                "content": [
+                    {
+                        "kind": "raw",
+                        "source": "［＃未知の注記］",
+                        "x-provenance": "source-derived",
+                        "x-source-marker-kind": "CommandFullwidth",
+                        "span": {
+                            "line_start": 1,
+                            "line_end": 1,
+                            "byte_start": 0,
+                            "byte_end": 24
+                        }
+                    }
+                ]
+            }
+        ],
+        "meta": {
+            "adapter": "fixture",
+            "adapter_version": "fixture",
+            "source_encoding": "utf-8",
+            "source_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+            "parse_complete": true,
+            "warnings": []
+        }
+    });
+
+    assert!(schema.validate(&value).is_ok());
+}
+
+#[test]
 fn test_adapter_ruby_output_passes_core_properties() {
     let manifest = Path::new(env!("CARGO_MANIFEST_DIR"));
     let adapter = manifest.join("../../adapters/test-adapter/test-adapter");

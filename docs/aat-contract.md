@@ -129,6 +129,20 @@ inline content through `content`.
 | `caption` | `kind`, `content` | `span`, `x-*` | child projection | Inline caption. |
 | `warigaki` | `kind`, `upper`, `lower` | `span`, `x-*` | upper then lower child projection | Split-line note/warigaki. |
 
+### Source Marker Preservation
+
+AAT v1 has two levels of source representability:
+
+1. Typed representation: a source marker maps to a semantic AAT node such as
+   `ruby`, `gaiji`, `figure`, `style`, `tcy`, `keigakomi`, or `warigaki`.
+2. Raw preservation: a source marker that cannot be typed must be represented
+   as `raw` with the original marker text in `source`, `x-provenance =
+   "source-derived"` when recovered from source text, and a source span when the
+   adapter has source bytes.
+
+Parser agreement is not sufficient evidence for AAT representability. The
+source-inventory gate over raw Aozora text is the authority.
+
 Gaiji fields:
 
 | Field | Type | Meaning |

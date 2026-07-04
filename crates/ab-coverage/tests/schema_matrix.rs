@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use ab_coverage::matrix::RepresentabilityStatus;
+use ab_coverage::source_inventory::{inventory_document, patterns_from_rows};
 use ab_coverage::{
     AdapterCell, CorpusPrevalence, CoverageBasis, CoverageMatrix, ParserCell, Recognition,
     RowAatFidelity, RowError, SchemaValidator, ValidationOptions,
@@ -128,6 +129,53 @@ fn kunten_rows_detect_real_fixture_spellings() {
         registry.detect("kunten.okurigana", &ctx) > 0,
         "kunten.okurigana must not false-zero on compact real fixture markers"
     );
+}
+
+#[test]
+fn source_inventory_classifies_common_corpus_command_variants() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = [
+        "［＃ここで字下げ終わり］",
+        "［＃地から１字上げ］",
+        "［＃ここから改行天付き、折り返して１字下げ］",
+        "［＃小さな文字終わり］",
+        "［＃１段階小さな文字］",
+        "［＃中見出し終わり］",
+        "［＃太字終わり］",
+        "［＃割り注終わり］",
+        "［＃横組み終わり］",
+        "［＃「（c）」は縦中横］",
+        "［＃改丁］",
+        "［＃改段］",
+        "［＃キャプション終わり］",
+    ]
+    .join("\n");
+    let summary = inventory_document("fixture", &source, &patterns);
+
+    assert_eq!(
+        summary.unknown_examples,
+        [],
+        "known corpus command variants should not remain unknown"
+    );
+    for row_id in [
+        "indentation.jisage_block",
+        "indentation.chitsuki",
+        "indentation.burasage",
+        "decoration.font_size",
+        "heading.basic",
+        "decoration.bold_italic",
+        "warichu.basic",
+        "layout.yokogumi",
+        "layout.tcy",
+        "break.page_line",
+        "caption.block",
+    ] {
+        assert!(
+            summary.row_counts.contains_key(row_id),
+            "expected source inventory row {row_id}"
+        );
+    }
 }
 
 #[test]

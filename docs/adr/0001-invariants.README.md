@@ -1,5 +1,16 @@
 ; ADR 0001 — Manifest Identity: solver-checked invariants.
 ;
+; ⚠ USEFULNESS CAVEAT (see docs/handoffs/formal-verification-assessment-critique.md):
+;   These files are `P ∧ ¬P` tautologies (mode-B vacuity) — the invariant is
+;   STIPULATED, not derived from the schema/code. Their `unsat` is true for any
+;   claim, including circular identity (R2 stripped models exactly that,
+;   satisfiably). They prove the author's transcription is self-consistent,
+;   nothing about manifests. The actual invariant is guarded by:
+;   `nix run .#validate-design-bundle` against schemas/manifest.schema.json.
+;   A mode-A mutation-vacuity gate (`nix build .#checks.x86_64-linux.adr-invariants-vacuity`)
+;   catches a different class (unreachable counterexamples); it does NOT
+;   catch the mode-B defect of these files.
+;
 ; Source: docs/adr/0001-manifest-identity.md (Accepted 2026-04-28)
 ; Gate:   `nix run .#adr0001-invariants` (see flake.nix checks.adr0001-invariants)
 ;

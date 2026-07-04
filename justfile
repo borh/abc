@@ -157,6 +157,13 @@ aat-to-parser-ir-full-audit JOBS="24" REPORT_MD="docs/superpowers/reports/2026-0
 		--jobs "{{JOBS}}" \
 		--abc-root "{{repo_root}}/data/abc-schemas"
 
+parser-ir-level3-publication-smoke:
+	@bash "{{repo_root}}/tests/parser-ir-level3-publication-smoke.sh"
+
+parser-ir-level3-melos-publication-smoke AAT="":
+	@aat="{{AAT}}"; if [ -z "$aat" ]; then aat="{{aozora2html_full_aat_dir}}/000035_1567-32ff5a089d67.json"; fi; \
+	AB_LEVEL3_AAT="$aat" AB_LEVEL3_EXPECT_SOURCE_NOTE=1 bash "{{repo_root}}/tests/parser-ir-level3-publication-smoke.sh"
+
 tei-eaj-structural-expansion JOBS="24" REPORT_MD="docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.summary.json":
 	@test -f "{{tei_eaj_workset}}" || { echo "missing TEI-EAJ workset export: {{tei_eaj_workset}}" >&2; exit 2; }
 	@cargo build -p ab-aat-to-parser-ir --release --jobs "{{JOBS}}"

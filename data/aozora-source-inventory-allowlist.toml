@@ -6,7 +6,7 @@
 [[allow]]
 id = "terminal-provenance-note"
 kind = "SegmentBoundaryTerminalProvenance"
-body_pattern = "^底本[：:]"
+raw_pattern = "^［＃地付き］"
 scope = "out_of_body"
 reason = "Terminal bibliography/provenance metadata is not body AAT."
 evidence = "docs/aat-contract.md"

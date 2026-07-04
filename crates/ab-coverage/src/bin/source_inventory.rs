@@ -1,4 +1,5 @@
 use std::{
+    cmp::Reverse,
     collections::{BTreeMap, BTreeSet},
     fs,
     path::{Path, PathBuf},
@@ -14,6 +15,9 @@ use clap::Parser;
 use rayon::prelude::*;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
+
+const UNKNOWN_CLASS_OUTPUT_LIMIT: usize = 1000;
+const UNKNOWN_CLASS_REPORT_LIMIT: usize = 50;
 
 #[derive(Parser, Debug)]
 #[command(version, about = "Source-authority Aozora marker inventory.")]
@@ -44,6 +48,7 @@ struct Cli {
 
 #[derive(Debug, Default, Serialize)]
 struct InventoryOutput {
+    gate_status: String,
     works_scanned: u64,
     works_failed: u64,
     markers_total: u64,
@@ -51,9 +56,13 @@ struct InventoryOutput {
     unallowlisted_unknown_markers_total: u64,
     allowlisted_unknown_markers_total: u64,
     rows: BTreeMap<String, RowOutput>,
+    unknown_classes_total: u64,
+    unknown_classes_truncated: bool,
+    unknown_classes: Vec<UnknownClassOutput>,
     unknown_examples: Vec<UnknownMarkerExample>,
     decode_failures: Vec<DecodeFailure>,
     representability: RepresentabilityOutput,
+    strict_errors: Vec<String>,
     inputs: Inputs,
 }
 
@@ -69,6 +78,17 @@ struct DecodeFailure {
     work_id: String,
     indexed_path: String,
     error: String,
+}
+
+#[derive(Debug, Default, Serialize)]
+struct UnknownClassOutput {
+    kind: String,
+    raw: String,
+    body: String,
+    occurrences: u64,
+    allowlisted_occurrences: u64,
+    unallowlisted_occurrences: u64,
+    sample_works: Vec<String>,
 }
 
 #[derive(Debug, Default, Serialize)]
@@ -158,6 +178,7 @@ fn main() -> Result<()> {
         ..InventoryOutput::default()
     };
     let mut unknown_work_ids = BTreeSet::new();
+    let mut unknown_classes = BTreeMap::new();
     let mut strict_errors = Vec::new();
 
     let work_results = work_entries
@@ -184,12 +205,14 @@ fn main() -> Result<()> {
                     unknown_work_ids.insert(work_id.clone());
                     if let Some(rule) = matching_allowlist_rule(&example, &allowlist) {
                         output.allowlisted_unknown_markers_total += 1;
+                        observe_unknown_class(&mut unknown_classes, &work_id, &example, true);
                         observe_allowlisted_representability(
                             &mut output.representability,
                             &rule.rule,
                         );
                     } else {
                         output.unallowlisted_unknown_markers_total += 1;
+                        observe_unknown_class(&mut unknown_classes, &work_id, &example, false);
                         if output.unknown_examples.len() < 100 {
                             output.unknown_examples.push(example);
                         }
@@ -212,12 +235,27 @@ fn main() -> Result<()> {
     }
 
     observe_row_representability(&mut output, &rows_by_id, &mut strict_errors);
+    if output.works_failed > 0 {
+        strict_errors.push(format!(
+            "{} works failed source inventory read/decode",
+            output.works_failed
+        ));
+    }
     if output.unallowlisted_unknown_markers_total > 0 {
         strict_errors.push(format!(
             "{} unallowlisted source markers",
             output.unallowlisted_unknown_markers_total
         ));
     }
+    let unknown_classes = sorted_unknown_classes(unknown_classes);
+    output.unknown_classes_total = unknown_classes.len() as u64;
+    output.unknown_classes_truncated = unknown_classes.len() > UNKNOWN_CLASS_OUTPUT_LIMIT;
+    output.unknown_classes = unknown_classes
+        .into_iter()
+        .take(UNKNOWN_CLASS_OUTPUT_LIMIT)
+        .collect();
+    output.strict_errors = strict_errors.clone();
+    output.gate_status = source_authority_gate_status(&output).to_owned();
 
     write_json(&cli.output_json, &output)?;
     write_report(&cli.report_md, &output)?;
@@ -376,6 +414,48 @@ fn observe_allowlisted_representability(
     }
 }
 
+fn observe_unknown_class(
+    classes: &mut BTreeMap<String, UnknownClassOutput>,
+    work_id: &str,
+    example: &UnknownMarkerExample,
+    allowlisted: bool,
+) {
+    let key = format!(
+        "{}\u{1f}{}\u{1f}{}",
+        example.kind, example.raw, example.body
+    );
+    let class = classes.entry(key).or_insert_with(|| UnknownClassOutput {
+        kind: example.kind.clone(),
+        raw: example.raw.clone(),
+        body: example.body.clone(),
+        ..UnknownClassOutput::default()
+    });
+    class.occurrences += 1;
+    if allowlisted {
+        class.allowlisted_occurrences += 1;
+    } else {
+        class.unallowlisted_occurrences += 1;
+    }
+    if class.sample_works.len() < 5 && !class.sample_works.iter().any(|sample| sample == work_id) {
+        class.sample_works.push(work_id.to_owned());
+    }
+}
+
+fn sorted_unknown_classes(
+    classes: BTreeMap<String, UnknownClassOutput>,
+) -> Vec<UnknownClassOutput> {
+    let mut classes = classes.into_values().collect::<Vec<_>>();
+    classes.sort_by_key(|class| {
+        (
+            Reverse(class.unallowlisted_occurrences),
+            Reverse(class.occurrences),
+            class.kind.clone(),
+            class.raw.clone(),
+        )
+    });
+    classes
+}
+
 fn observe_row_representability(
     output: &mut InventoryOutput,
     rows_by_id: &BTreeMap<&str, &Row>,
@@ -425,6 +505,18 @@ fn observe_row_representability(
     }
 }
 
+fn source_authority_gate_status(output: &InventoryOutput) -> &'static str {
+    if output.works_failed == 0
+        && output.unallowlisted_unknown_markers_total == 0
+        && output.representability.needs_research_occurrences == 0
+        && output.strict_errors.is_empty()
+    {
+        "SOURCE_AUTHORITY_GATE_PASS"
+    } else {
+        "SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED"
+    }
+}
+
 fn write_json<T: Serialize>(path: &Path, value: &T) -> Result<()> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).with_context(|| format!("create {}", parent.display()))?;
@@ -439,7 +531,26 @@ fn write_report(path: &Path, output: &InventoryOutput) -> Result<()> {
     }
     let mut report = String::new();
     report.push_str("# Source Authority Representability Inventory\n\n");
-    report.push_str("## Summary\n\n");
+    report.push_str("## Verdict\n\n");
+    report.push_str(&format!(
+        "- source_authority_gate: `{}`\n",
+        output.gate_status
+    ));
+    if output.gate_status == "SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED" {
+        report.push_str(
+            "- note: this is not a passing representability gate; durable representability claims remain blocked until strict_errors is empty.\n",
+        );
+    }
+    if output.strict_errors.is_empty() {
+        report.push_str("- strict_errors: none\n");
+    } else {
+        report.push_str("- strict_errors:\n");
+        for error in &output.strict_errors {
+            report.push_str(&format!("  - {}\n", escape_md(error)));
+        }
+    }
+
+    report.push_str("\n## Summary\n\n");
     report.push_str(&format!("- works_scanned: {}\n", output.works_scanned));
     report.push_str(&format!("- works_failed: {}\n", output.works_failed));
     report.push_str(&format!("- markers_total: {}\n", output.markers_total));
@@ -505,6 +616,37 @@ fn write_report(path: &Path, output: &InventoryOutput) -> Result<()> {
                 example.kind,
                 escape_md(&example.raw),
                 escape_md(&example.body)
+            ));
+        }
+    }
+
+    report.push_str("\n## Unknown Source Marker Classes\n\n");
+    if output.unknown_classes.is_empty() {
+        report.push_str("None.\n");
+    } else {
+        let report_rows = output.unknown_classes.len().min(UNKNOWN_CLASS_REPORT_LIMIT);
+        report.push_str(&format!(
+            "Showing {} report rows of {} total classes. JSON carries {} top classes. truncated: {}\n\n",
+            report_rows,
+            output.unknown_classes_total,
+            output.unknown_classes.len(),
+            output.unknown_classes_truncated
+        ));
+        report.push_str("| kind | raw | occurrences | unallowlisted | allowlisted | samples |\n");
+        report.push_str("|---|---|---:|---:|---:|---|\n");
+        for class in output
+            .unknown_classes
+            .iter()
+            .take(UNKNOWN_CLASS_REPORT_LIMIT)
+        {
+            report.push_str(&format!(
+                "| {} | {} | {} | {} | {} | {} |\n",
+                class.kind,
+                escape_md(&class.raw),
+                class.occurrences,
+                class.unallowlisted_occurrences,
+                class.allowlisted_occurrences,
+                class.sample_works.join(", ")
             ));
         }
     }

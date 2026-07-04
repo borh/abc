@@ -960,7 +960,7 @@ If no durable index exists, first run the existing index target used by the AAT 
 Run:
 
 ```bash
-just source-inventory-full 24 INDEX=/path/to/index.json CORPUS=/path/to/aozorabunko
+just source-inventory-full 24 /path/to/index.json /path/to/aozorabunko
 ```
 
 Expected:
@@ -968,6 +968,7 @@ Expected:
 - JSON summary is written to `docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json`.
 - Markdown report is written to `docs/superpowers/reports/2026-07-04-source-authority-representability.md`.
 - Unknown marker workset is written under `/db/ab-validator/source-inventory/unknown-workset.json`.
+- The target runs with `--strict-representability`: it exits nonzero after writing outputs while unallowlisted unknown markers, reached `needs_research` rows, or reached rows without representability remain.
 
 - [ ] **Step 2: Review unknown marker classes**
 
@@ -982,10 +983,10 @@ Open the Markdown report. For each unknown marker class:
 Run:
 
 ```bash
-just source-inventory-full 24 INDEX=/path/to/index.json CORPUS=/path/to/aozorabunko
+just source-inventory-full 24 /path/to/index.json /path/to/aozorabunko
 ```
 
-Expected: unknown markers are either zero or match reviewed allowlist entries. The report must say which.
+Expected: unknown markers are either zero or match reviewed allowlist entries, reached source-inventory rows have non-`needs_research` representability, and the report says `SOURCE_AUTHORITY_GATE_PASS`. Until then the report must say `SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED`.
 
 - [ ] **Step 4: Update post-parser-IR sync report**
 
@@ -997,7 +998,10 @@ In `docs/superpowers/reports/2026-07-04-post-parser-ir-conversion-sync.md`, add:
 Parser-IR conversion evidence over four adapters is not a proof that AAT can
 represent the Aozora source language. The source-authority inventory at
 `docs/superpowers/reports/2026-07-04-source-authority-representability.md`
-is the representability gate. Parser evidence remains triangulation only.
+is the representability gate, and the current run is failing:
+`SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED`. Parser evidence remains
+triangulation only until the source inventory has no unallowlisted unknown
+markers and no reached `needs_research` representability rows.
 ```
 
 - [ ] **Step 5: Verify**

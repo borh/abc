@@ -3,6 +3,7 @@
   "$id": "https://example.com/ab-validator/aozora-source-inventory.schema.json",
   "type": "object",
   "required": [
+    "gate_status",
     "works_scanned",
     "works_failed",
     "markers_total",
@@ -10,11 +11,22 @@
     "unallowlisted_unknown_markers_total",
     "allowlisted_unknown_markers_total",
     "rows",
+    "unknown_classes_total",
+    "unknown_classes_truncated",
+    "unknown_classes",
     "unknown_examples",
     "representability",
+    "strict_errors",
     "inputs"
   ],
   "properties": {
+    "gate_status": {
+      "type": "string",
+      "enum": [
+        "SOURCE_AUTHORITY_GATE_PASS",
+        "SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED"
+      ]
+    },
     "works_scanned": { "type": "integer", "minimum": 0 },
     "works_failed": { "type": "integer", "minimum": 0 },
     "markers_total": { "type": "integer", "minimum": 0 },
@@ -29,6 +41,38 @@
         "properties": {
           "works_with_marker": { "type": "integer", "minimum": 0 },
           "occurrences": { "type": "integer", "minimum": 0 },
+          "sample_works": {
+            "type": "array",
+            "items": { "type": "string" },
+            "maxItems": 5
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "unknown_classes_total": { "type": "integer", "minimum": 0 },
+    "unknown_classes_truncated": { "type": "boolean" },
+    "unknown_classes": {
+      "type": "array",
+      "maxItems": 1000,
+      "items": {
+        "type": "object",
+        "required": [
+          "kind",
+          "raw",
+          "body",
+          "occurrences",
+          "allowlisted_occurrences",
+          "unallowlisted_occurrences",
+          "sample_works"
+        ],
+        "properties": {
+          "kind": { "type": "string" },
+          "raw": { "type": "string" },
+          "body": { "type": "string" },
+          "occurrences": { "type": "integer", "minimum": 0 },
+          "allowlisted_occurrences": { "type": "integer", "minimum": 0 },
+          "unallowlisted_occurrences": { "type": "integer", "minimum": 0 },
           "sample_works": {
             "type": "array",
             "items": { "type": "string" },
@@ -70,6 +114,10 @@
         "needs_research_occurrences": { "type": "integer", "minimum": 0 }
       },
       "additionalProperties": false
+    },
+    "strict_errors": {
+      "type": "array",
+      "items": { "type": "string" }
     },
     "inputs": { "type": "object" }
   },

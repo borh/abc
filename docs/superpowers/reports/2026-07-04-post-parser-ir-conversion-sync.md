@@ -83,7 +83,10 @@ matching.
 Parser-IR conversion evidence over four adapters is not a proof that AAT can
 represent the Aozora source language. The source-authority inventory at
 `docs/superpowers/reports/2026-07-04-source-authority-representability.md`
-is the representability gate. Parser evidence remains triangulation only.
+is the representability gate, and the current run is failing:
+`SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED`. Parser evidence remains
+triangulation only until the source inventory has no unallowlisted unknown
+markers and no reached `needs_research` representability rows.
 
 ## Release Surface
 

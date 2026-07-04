@@ -18,7 +18,7 @@ cat > "$out_dir/corpus/cards/000001/files/1.txt" <<'TXT'
 TXT
 
 cat > "$out_dir/corpus/cards/000002/files/2.txt" <<'TXT'
-［＃未知の注記
+［＃未知の注記］
 TXT
 
 cat > "$out_dir/index.json" <<'JSON'
@@ -43,12 +43,16 @@ jq -e '.markers_total == 4' "$out_dir/source-inventory.json"
 jq -e '.unknown_markers_total == 1' "$out_dir/source-inventory.json"
 jq -e '.unallowlisted_unknown_markers_total == 1' "$out_dir/source-inventory.json"
 jq -e '.allowlisted_unknown_markers_total == 0' "$out_dir/source-inventory.json"
-jq -e 'any(.unknown_examples[]; .kind == "MalformedCommand" and .raw == "［＃")' "$out_dir/source-inventory.json"
+jq -e '.gate_status == "SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED"' "$out_dir/source-inventory.json"
+jq -e '.unknown_classes_total == 1' "$out_dir/source-inventory.json"
+jq -e '.unknown_classes_truncated == false' "$out_dir/source-inventory.json"
+jq -e 'any(.unknown_examples[]; .kind == "CommandFullwidth" and .raw == "［＃未知の注記］")' "$out_dir/source-inventory.json"
+jq -e 'any(.unknown_classes[]; .kind == "CommandFullwidth" and .raw == "［＃未知の注記］" and .unallowlisted_occurrences == 1)' "$out_dir/source-inventory.json"
 jq -e '.rows["ruby.basic"].occurrences >= 1' "$out_dir/source-inventory.json"
 jq -e '.rows["gaiji.marker"].occurrences >= 1' "$out_dir/source-inventory.json"
 jq -e '.rows["layout.yokogumi"].occurrences >= 1' "$out_dir/source-inventory.json"
 jq -e '. == ["000002_2"]' "$out_dir/unknown-workset.json"
-rg -n "Unknown Source Markers|MalformedCommand" "$out_dir/source-inventory.md"
+rg -n "SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED|Unknown Source Marker Classes|Showing 1 report rows of 1 total classes|CommandFullwidth" "$out_dir/source-inventory.md"
 
 if RUST_BACKTRACE=0 "${inventory_cmd[@]}" \
   --matrix "$repo_root/data/aozora-syntax-coverage.toml" \

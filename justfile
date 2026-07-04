@@ -136,7 +136,8 @@ source-inventory-full JOBS="24" INDEX="" CORPUS="":
 		--jobs "{{JOBS}}" \
 		--output-json "{{repo_root}}/docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json" \
 		--report-md "{{repo_root}}/docs/superpowers/reports/2026-07-04-source-authority-representability.md" \
-		--unknown-workset "{{ab_db_root}}/source-inventory/unknown-workset.json"
+		--unknown-workset "{{ab_db_root}}/source-inventory/unknown-workset.json" \
+		--strict-representability
 
 aat-to-parser-ir-full-audit JOBS="24" REPORT_MD="docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.summary.json" COMPAT_EDN="docs/superpowers/reports/2026-07-04-aat-parser-ir-compatibility-candidates.edn":
 	@cargo build -p ab-aat-to-parser-ir --release --jobs "{{JOBS}}"

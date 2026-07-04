@@ -51,14 +51,26 @@ pub fn inventory_document(
     patterns: &[SourceInventoryPattern],
 ) -> SourceInventorySummary {
     let compiled_patterns = compile_patterns(patterns);
+    let markers = source_markers(text);
     let mut summary = SourceInventorySummary {
         work_id: work_id.to_owned(),
         ..SourceInventorySummary::default()
     };
 
-    for marker in source_markers(text) {
+    for (index, marker) in markers.iter().enumerate() {
         summary.markers_total += 1;
         let mut matched = matching_rows(marker.raw, &compiled_patterns);
+        if let Some(next_marker) = markers.get(index + 1)
+            && marker.span.end == next_marker.span.start
+        {
+            append_composite_matching_rows(
+                &mut matched,
+                &text[marker.span.start..next_marker.span.end],
+                marker.raw,
+                next_marker.raw,
+                &compiled_patterns,
+            );
+        }
         if matched.is_empty() {
             match marker.kind {
                 SourceMarkerKind::RubyExplicit | SourceMarkerKind::RubyImplicit => {
@@ -97,6 +109,9 @@ struct CompiledSourceInventoryPattern {
 fn compile_patterns(patterns: &[SourceInventoryPattern]) -> Vec<CompiledSourceInventoryPattern> {
     patterns
         .iter()
+        // This row documents a research bucket; using it as a classifier hides
+        // otherwise-unreviewed Aozora commands from the source-authority gate.
+        .filter(|pattern| pattern.row_id != "editor_note.unmapped")
         .map(|pattern| CompiledSourceInventoryPattern {
             row_id: pattern.row_id.clone(),
             source_patterns: pattern
@@ -114,20 +129,52 @@ fn compile_patterns(patterns: &[SourceInventoryPattern]) -> Vec<CompiledSourceIn
 
 fn matching_rows(raw: &str, patterns: &[CompiledSourceInventoryPattern]) -> Vec<String> {
     let mut rows = Vec::new();
+    append_matching_rows(&mut rows, raw, patterns);
+    rows
+}
+
+fn append_matching_rows(
+    rows: &mut Vec<String>,
+    raw: &str,
+    patterns: &[CompiledSourceInventoryPattern],
+) {
     for pattern in patterns {
         if pattern
             .source_patterns
             .iter()
             .any(|source_pattern| source_pattern.is_match(raw))
+            && !rows.contains(&pattern.row_id)
         {
             rows.push(pattern.row_id.clone());
         }
     }
-    rows
+}
+
+fn append_composite_matching_rows(
+    rows: &mut Vec<String>,
+    raw: &str,
+    left_raw: &str,
+    right_raw: &str,
+    patterns: &[CompiledSourceInventoryPattern],
+) {
+    for pattern in patterns {
+        let matches_composite = pattern
+            .source_patterns
+            .iter()
+            .any(|source_pattern| source_pattern.is_match(raw));
+        let matches_part = pattern.source_patterns.iter().any(|source_pattern| {
+            source_pattern.is_match(left_raw) || source_pattern.is_match(right_raw)
+        });
+        if matches_composite && !matches_part && !rows.contains(&pattern.row_id) {
+            rows.push(pattern.row_id.clone());
+        }
+    }
 }
 
 fn add_default_match(rows: &mut Vec<String>, patterns: &[SourceInventoryPattern], row_id: &str) {
-    if patterns.iter().any(|pattern| pattern.row_id == row_id) {
+    if patterns.iter().any(|pattern| pattern.row_id == row_id)
+        && !rows.iter().any(|row| row == row_id)
+    {
         rows.push(row_id.to_owned());
     }
 }
@@ -164,6 +211,36 @@ mod tests {
         assert_eq!(summary.unknown_examples[0].work_id, "w1");
         assert_eq!(summary.unknown_examples[0].raw, "［＃謎の注記］");
         assert_eq!(summary.unknown_examples[0].body, "謎の注記");
+    }
+
+    #[test]
+    fn catch_all_editor_note_row_does_not_hide_unmapped_commands() {
+        let patterns = vec![
+            pattern("editor_note.unmapped", vec![r"［＃[^］]+］"]),
+            pattern("layout.yokogumi", vec![r"［＃ここから横組み］"]),
+        ];
+        let summary = inventory_document("w1", "［＃謎の注記］", &patterns);
+
+        assert_eq!(summary.markers_total, 1);
+        assert_eq!(summary.unknown_examples.len(), 1);
+        assert_eq!(summary.unknown_examples[0].raw, "［＃謎の注記］");
+        assert!(!summary.row_counts.contains_key("editor_note.unmapped"));
+    }
+
+    #[test]
+    fn adjacent_markers_can_classify_composite_source_patterns() {
+        let patterns = vec![
+            pattern("gaiji.marker", vec![r"※［＃[^］]+］"]),
+            pattern("ruby.basic", vec![r"《[^》]+》"]),
+            pattern("gaiji_ruby.inline_base", vec![r"※［＃[^］]+］《[^》]+》"]),
+        ];
+        let summary = inventory_document("w1", "※［＃「口＋世」、U+546D］《おくび》", &patterns);
+
+        assert_eq!(summary.markers_total, 2);
+        assert_eq!(summary.row_counts["gaiji.marker"].occurrences, 1);
+        assert_eq!(summary.row_counts["ruby.basic"].occurrences, 1);
+        assert_eq!(summary.row_counts["gaiji_ruby.inline_base"].occurrences, 1);
+        assert!(summary.unknown_examples.is_empty());
     }
 
     #[test]

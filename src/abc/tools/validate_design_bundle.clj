@@ -48,7 +48,7 @@
        [(str "ab-validator parser IR schema_hash " actual-parser-ir
              " does not match ABC parser IR schema hash " expected-parser-ir)]))))
 
-(defn compatibility-query [parser-ir manifest-inputs]
+(defn derived-from-compatibility-query [parser-ir manifest-inputs]
   (let [derived-from (get parser-ir "derived_from")]
     {:aat_version (get derived-from "aat_version")
      :aat_adapter (get derived-from "aat_adapter")
@@ -59,6 +59,22 @@
      :mapping_schema_hash (get derived-from "mapping_schema_hash")
      :parser_ir_schema_id (get parser-ir "schema_id")
      :parser_ir_schema_hash (get parser-ir "schema_hash")}))
+
+(defn divergence-bundle-compatibility-query [parser-ir manifest-inputs divergence-bundle]
+  (let [mapping (get divergence-bundle "mapping")
+        target (get divergence-bundle "target")
+        aat (get divergence-bundle "aat")]
+    {:aat_version (get aat "version")
+     :aat_adapter (get aat "adapter")
+     :aat_adapter_version (get aat "adapter_version")
+     :mapping_id (get mapping "mapping_id")
+     :mapping_version (get mapping "mapping_version")
+     :mapping_hash (get manifest-inputs "mapping_hash")
+     :mapping_schema_hash (get mapping "mapping_schema_hash")
+     :parser_ir_schema_id (or (get target "parser_ir_schema_id")
+                              (get parser-ir "schema_id"))
+     :parser_ir_schema_hash (or (get target "parser_ir_schema_hash")
+                                (get parser-ir "schema_hash"))}))
 
 (def compatibility-derived-from-keys
   ["aat_version"
@@ -72,6 +88,23 @@
   (->> compatibility-derived-from-keys
        (remove #(contains? derived-from %))
        (mapv #(str "AAT parser-IR compatibility requires parser IR derived_from." %))))
+
+(defn divergence-bundle-target-errors [parser-ir divergence-bundle]
+  (let [target (get divergence-bundle "target")]
+    (vec
+     (concat
+      (when (not= (get parser-ir "schema_id")
+                  (get target "parser_ir_schema_id"))
+        [(str "AAT parser-IR divergence bundle target parser_ir_schema_id "
+              (get target "parser_ir_schema_id")
+              " does not match parser IR schema_id "
+              (get parser-ir "schema_id"))])
+      (when (not= (get parser-ir "schema_hash")
+                  (get target "parser_ir_schema_hash"))
+        [(str "AAT parser-IR divergence bundle target parser_ir_schema_hash "
+              (get target "parser_ir_schema_hash")
+              " does not match parser IR schema_hash "
+              (get parser-ir "schema_hash"))])))))
 
 (defn compatibility-mismatch-error [{:keys [aat_adapter
                                             aat_version
@@ -91,28 +124,40 @@
 
 (defn compatibility-errors
   ([parser-ir manifest-inputs]
-   (compatibility-errors (compat/load-registry) parser-ir manifest-inputs))
+   (compatibility-errors (compat/load-registry) parser-ir manifest-inputs nil))
   ([registry parser-ir manifest-inputs]
+   (compatibility-errors registry parser-ir manifest-inputs nil))
+  ([registry parser-ir manifest-inputs divergence-bundle]
    (let [derived-from (get parser-ir "derived_from")
          mapping-hash (get manifest-inputs "mapping_hash")]
      (vec
       (cond
-        (and (nil? derived-from) (nil? mapping-hash))
+        (and (nil? derived-from) (nil? divergence-bundle) (nil? mapping-hash))
         []
 
-        (nil? derived-from)
-        ["AAT parser-IR compatibility requires parser IR derived_from when manifest inputs mapping_hash is present"]
-
         (nil? mapping-hash)
-        ["AAT parser-IR compatibility requires manifest inputs mapping_hash when parser IR derived_from is present"]
+        ["AAT parser-IR compatibility requires manifest inputs mapping_hash when parser IR mapping provenance is present"]
+
+        (and (nil? derived-from) (nil? divergence-bundle))
+        ["AAT parser-IR compatibility requires parser IR derived_from or divergence bundle when manifest inputs mapping_hash is present"]
 
         :else
-        (let [missing-key-errors (missing-derived-from-key-errors derived-from)]
-          (if (seq missing-key-errors)
-            missing-key-errors
-            (let [query (compatibility-query parser-ir manifest-inputs)]
-              (when-not (compat/compatible? registry query)
-                [(compatibility-mismatch-error query)])))))))))
+        (let [metadata-errors (concat
+                               (when derived-from
+                                 (missing-derived-from-key-errors derived-from))
+                               (when divergence-bundle
+                                 (divergence-bundle-target-errors parser-ir divergence-bundle)))]
+          (if (seq metadata-errors)
+            metadata-errors
+            (let [queries (cond-> []
+                            derived-from
+                            (conj (derived-from-compatibility-query parser-ir manifest-inputs))
+                            divergence-bundle
+                            (conj (divergence-bundle-compatibility-query
+                                   parser-ir manifest-inputs divergence-bundle)))]
+              (->> queries
+                   (remove #(compat/compatible? registry %))
+                   (mapv compatibility-mismatch-error))))))))))
 
 (defn validation-errors [schema value]
   (schema/validation-errors schema value))
@@ -140,6 +185,11 @@
                       {:command command
                        :exit-code exit-code})))))
 
+(defn check-errors! [errors]
+  (when (seq errors)
+    (throw (ex-info (string/join "\n" errors)
+                    {:errors errors}))))
+
 (defn validate-json-schemas! [extra-manifest-paths]
   (let [manifest-schema (files/read-json "schemas/manifest.schema.json")
         parser-ir-schema (files/read-json "schemas/parser-ir.schema.json")
@@ -149,6 +199,7 @@
         comparison-report-schema (files/read-json "schemas/comparison-report.schema.json")
         aat-parser-ir-mapping-schema (files/read-json "schemas/aat-parser-ir-mapping.schema.json")
         aat-parser-ir-divergence-schema (files/read-json "schemas/aat-parser-ir-divergence.schema.json")
+        aat-parser-ir-divergence-bundle-schema (files/read-json "schemas/aat-parser-ir-divergence-bundle.schema.json")
         tei-validation-result-schema (files/read-json "schemas/tei-validation-result.schema.json")
         iiif-applicability-schema (files/read-json "schemas/iiif-applicability.schema.json")
         person-drift-event-schema (files/read-json "schemas/person-drift-event.schema.json")
@@ -161,6 +212,7 @@
                            ["schemas/comparison-report.schema.json" comparison-report-schema]
                            ["schemas/aat-parser-ir-mapping.schema.json" aat-parser-ir-mapping-schema]
                            ["schemas/aat-parser-ir-divergence.schema.json" aat-parser-ir-divergence-schema]
+                           ["schemas/aat-parser-ir-divergence-bundle.schema.json" aat-parser-ir-divergence-bundle-schema]
                            ["schemas/tei-validation-result.schema.json" tei-validation-result-schema]
                            ["schemas/iiif-applicability.schema.json" iiif-applicability-schema]
                            ["schemas/person-drift-event.schema.json" person-drift-event-schema]
@@ -184,6 +236,10 @@
                     "examples/ab-validator-output/manifest-inputs.json")
     (validate-json! comparison-report-schema
                     "examples/ab-validator-output/comparison-report.json")
+    (validate-json! aat-parser-ir-divergence-bundle-schema
+                    "examples/ab-validator-output/divergence.json")
+    (doseq [record (get (files/read-json "examples/ab-validator-output/divergence.json") "records")]
+      (check-errors! (validation-errors aat-parser-ir-divergence-schema record)))
     (validate-json! tei-validation-result-schema
                     "examples/v0/example-work/tei-validation-result.json")
     (let [manifest (files/read-json "examples/v0/example-work/manifest.json")
@@ -198,19 +254,20 @@
       (throw (ex-info "manifest schema accepted an empty object"
                       {:schema "schemas/manifest.schema.json"})))))
 
-(defn check-errors! [errors]
-  (when (seq errors)
-    (throw (ex-info (string/join "\n" errors)
-                    {:errors errors}))))
-
 (defn validate-ab-validator-output! []
   (let [manifest-inputs (files/read-json (files/path "examples" "ab-validator-output" "manifest-inputs.json"))
-        parser-ir (files/read-json (files/path "examples" "ab-validator-output" "parser-ir.json"))]
+        parser-ir (files/read-json (files/path "examples" "ab-validator-output" "parser-ir.json"))
+        divergence-file (files/path "examples" "ab-validator-output" "divergence.json")
+        divergence-bundle (when (.exists divergence-file)
+                            (files/read-json divergence-file))]
     (am/explain-or-throw! ::am/manifest-inputs manifest-inputs
                           "ab-validator manifest inputs")
     (check-errors! (schema-hash-errors manifest-inputs))
     (check-errors! (parser-ir-schema-hash-errors parser-ir))
-    (check-errors! (compatibility-errors parser-ir manifest-inputs)))
+    (check-errors! (compatibility-errors (compat/load-registry)
+                                         parser-ir
+                                         manifest-inputs
+                                         divergence-bundle)))
   (am/explain-or-throw! ::am/run-summary-events
                         (files/read-json-lines (files/path "examples" "ab-validator-output" "run-summary.jsonl"))
                         "ab-validator run summary")

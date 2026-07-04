@@ -20,12 +20,29 @@
 (def required-entry-keys
   (conj match-keys :evidence_scope :compatibility))
 
-(def required-evidence-scope-keys
+(def required-evidence-scope-common-keys
   [:adapter
    :corpus
-   :files_scanned
-   :files_with_unsupported
+   :evidence_type
+   :files_scanned])
+
+(def required-mapping-generation-evidence-keys
+  [:files_with_unsupported
    :generated_rules])
+
+(def required-conversion-audit-evidence-keys
+  [:files_succeeded
+   :files_failed
+   :parser_ir_nodes
+   :divergence_records
+   :divergence_occurrences
+   :rules_total
+   :rules_emitted
+   :rules_missing
+   :unsupported_occurrences])
+
+(def evidence-types
+  #{:mapping-generation :conversion-audit})
 
 (def hash-keys
   [:mapping_hash
@@ -75,36 +92,73 @@
             " :evidence_scope must be a map")]
 
       :else
-      (vec
-       (concat
-        (->> required-evidence-scope-keys
-             (remove #(contains? scope %))
-             (map #(str "AAT parser-IR compatibility registry entry " idx
-                        " :evidence_scope is missing " %)))
-        (when (and (contains? scope :adapter)
-                   (not= (:aat_adapter entry) (:adapter scope)))
-          [(str "AAT parser-IR compatibility registry entry " idx
-                " :evidence_scope :adapter must equal :aat_adapter")])
-        (when (and (contains? scope :adapter)
-                   (not (concrete-adapter? (:adapter scope))))
-          [(str "AAT parser-IR compatibility registry entry " idx
-                " :evidence_scope :adapter must name a concrete adapter")])
-        (when (and (contains? scope :corpus)
-                   (not (nonblank-string? (:corpus scope))))
-          [(str "AAT parser-IR compatibility registry entry " idx
-                " :evidence_scope :corpus must be a non-empty string")])
-        (when (and (contains? scope :files_scanned)
-                   (not (positive-int? (:files_scanned scope))))
-          [(str "AAT parser-IR compatibility registry entry " idx
-                " :evidence_scope :files_scanned must be a positive integer")])
-        (when (and (contains? scope :files_with_unsupported)
-                   (not (nonnegative-int? (:files_with_unsupported scope))))
-          [(str "AAT parser-IR compatibility registry entry " idx
-                " :evidence_scope :files_with_unsupported must be a non-negative integer")])
-        (when (and (contains? scope :generated_rules)
-                   (not (positive-int? (:generated_rules scope))))
-          [(str "AAT parser-IR compatibility registry entry " idx
-                " :evidence_scope :generated_rules must be a positive integer")]))))))
+      (let [evidence-type (:evidence_type scope)
+            mode-required-keys (case evidence-type
+                                 :mapping-generation required-mapping-generation-evidence-keys
+                                 :conversion-audit required-conversion-audit-evidence-keys
+                                 [])]
+        (vec
+         (concat
+          (->> (concat required-evidence-scope-common-keys mode-required-keys)
+               (remove #(contains? scope %))
+               (map #(str "AAT parser-IR compatibility registry entry " idx
+                          " :evidence_scope is missing " %)))
+          (when (and (contains? scope :evidence_type)
+                     (not (contains? evidence-types evidence-type)))
+            [(str "AAT parser-IR compatibility registry entry " idx
+                  " :evidence_scope :evidence_type must be mapping-generation or conversion-audit")])
+          (when (and (contains? scope :adapter)
+                     (not= (:aat_adapter entry) (:adapter scope)))
+            [(str "AAT parser-IR compatibility registry entry " idx
+                  " :evidence_scope :adapter must equal :aat_adapter")])
+          (when (and (contains? scope :adapter_version)
+                     (not= (:aat_adapter_version entry) (:adapter_version scope)))
+            [(str "AAT parser-IR compatibility registry entry " idx
+                  " :evidence_scope :adapter_version must equal :aat_adapter_version")])
+          (when (and (contains? scope :adapter)
+                     (not (concrete-adapter? (:adapter scope))))
+            [(str "AAT parser-IR compatibility registry entry " idx
+                  " :evidence_scope :adapter must name a concrete adapter")])
+          (when (and (contains? scope :adapter_version)
+                     (some? (:adapter_version scope))
+                     (not (concrete-adapter? (:adapter_version scope))))
+            [(str "AAT parser-IR compatibility registry entry " idx
+                  " :evidence_scope :adapter_version must be null or a concrete adapter version")])
+          (when (and (contains? scope :corpus)
+                     (not (nonblank-string? (:corpus scope))))
+            [(str "AAT parser-IR compatibility registry entry " idx
+                  " :evidence_scope :corpus must be a non-empty string")])
+          (when (and (contains? scope :files_scanned)
+                     (not (positive-int? (:files_scanned scope))))
+            [(str "AAT parser-IR compatibility registry entry " idx
+                  " :evidence_scope :files_scanned must be a positive integer")])
+          (when (and (contains? scope :files_with_unsupported)
+                     (not (nonnegative-int? (:files_with_unsupported scope))))
+            [(str "AAT parser-IR compatibility registry entry " idx
+                  " :evidence_scope :files_with_unsupported must be a non-negative integer")])
+          (when (and (contains? scope :generated_rules)
+                     (not (positive-int? (:generated_rules scope))))
+            [(str "AAT parser-IR compatibility registry entry " idx
+                  " :evidence_scope :generated_rules must be a positive integer")])
+          (for [k required-conversion-audit-evidence-keys
+                :when (and (contains? scope k)
+                           (not (nonnegative-int? (get scope k))))]
+            (str "AAT parser-IR compatibility registry entry " idx
+                 " :evidence_scope " k " must be a non-negative integer"))
+          (when (and (= :conversion-audit evidence-type)
+                     (every? #(contains? scope %)
+                             [:files_scanned :files_succeeded :files_failed])
+                     (not= (:files_scanned scope)
+                           (+ (:files_succeeded scope) (:files_failed scope))))
+            [(str "AAT parser-IR compatibility registry entry " idx
+                  " :evidence_scope files_scanned must equal files_succeeded plus files_failed")])
+          (when (and (= :conversion-audit evidence-type)
+                     (every? #(contains? scope %)
+                             [:rules_total :rules_emitted :rules_missing])
+                     (not= (:rules_total scope)
+                           (+ (:rules_emitted scope) (:rules_missing scope))))
+            [(str "AAT parser-IR compatibility registry entry " idx
+                  " :evidence_scope rules_total must equal rules_emitted plus rules_missing")])))))))
 
 (defn- entry-errors
   [idx entry]

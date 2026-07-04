@@ -12,9 +12,10 @@ Source: `docs/adr/0007-external-parser-validation-boundary.md` and
 Accepted after `abc.tools.materialize-import/materialize-import!` became the
 live materialization path and the design-bundle gate began exercising it. The
 command reads `examples/ab-validator-output/`, writes parser-IR and warnings
-manifests, computes real content hashes and byte lengths, and is run inside
-`validate-design-bundle` against a temporary output directory before validating
-the generated manifests, manifest index, RDF views, and SHACL shapes.
+manifests, attaches an optional mapping-divergence sidecar, computes real
+content hashes and byte lengths, and is run inside `validate-design-bundle`
+against a temporary output directory before validating the generated manifests,
+manifest index, RDF views, and SHACL shapes.
 
 ## Context
 
@@ -41,7 +42,8 @@ The command reads:
 
 - `manifest-inputs.json`,
 - `parser-ir.json`,
-- `warnings.jsonl`.
+- `warnings.jsonl`,
+- optional `divergence.json` or legacy `divergence.jsonl`.
 
 It writes:
 
@@ -73,6 +75,9 @@ not the ArtifactID canonicalization algorithm.
 - Generated parser IR and warnings manifests validate against
   `schemas/manifest.schema.json`.
 - Generated content hashes match the actual imported files.
+- The parser-IR manifest includes `divergence.json` as a
+  `mapping-divergence` sidecar when present, falling back to legacy
+  `divergence.jsonl`.
 - Generated artifact IDs are distinct from content hashes.
 - Producer-supplied parser IR and diagnostic schema hashes match the checked-in
   ABC schemas used for validation, unless a registered compatibility rule

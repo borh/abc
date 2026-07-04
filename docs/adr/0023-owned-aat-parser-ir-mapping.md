@@ -38,10 +38,12 @@ Use the owned mapping split described as Option C in
 The mapping document hash is identity-bearing. `manifest-inputs.json` carries
 `mapping_hash`, and materialized parser-IR manifests copy it into
 `manifest_identity_object.aat_parser_ir_mapping_hash`. The mapping schema hash
-is provenance-only and stays in parser-IR `derived_from.mapping_schema_hash`.
+is provenance-only and is carried by AAT mapping provenance.
 
-Parser-IR emitted from AAT records `derived_from` with AAT version, adapter,
-adapter version, mapping id, mapping version, and mapping schema hash. ABC
+Parser-IR emitted from AAT may carry legacy mapping provenance in
+`parser-ir.json` `derived_from`. The completed `ab-aat-to-parser-ir` converter
+instead publishes mapping provenance in `divergence.json`, alongside the
+adapter, target parser-IR schema identity, and per-work divergence records. ABC
 matches that provenance plus `mapping_hash` against
 `data/aat-parser-ir-compatibility.edn`. Registry matches are exact over:
 
@@ -52,8 +54,11 @@ matches that provenance plus `mapping_hash` against
 
 Registry entries are adapter-scoped evidence claims, not adapter-neutral
 schema claims. Wildcard or "any adapter" entries are invalid. Each entry must
-carry an `evidence_scope` with the measured adapter, corpus, scanned file
-count, unsupported count, and generated rule count.
+carry an `evidence_scope` with the measured adapter, corpus, evidence type, and
+mode-specific measured counts. Historical `:mapping-generation` evidence keeps
+the generated rule count and unsupported-file count. Current
+`:conversion-audit` evidence records file success/failure counts, parser-IR
+node counts, divergence counts, rule coverage, and unsupported occurrences.
 
 Loss handling remains auditable and mode-bound. Divergence records are
 aggregated per rule with count and first path. Development behavior may record
@@ -77,8 +82,9 @@ dimension.
 ### Add adapter-neutral compatibility entries
 
 Rejected because aozora-rs and aozora2html expose different measured AAT
-vocabulary. The aozora2html warigaki and kunten counts require producer policy
-before ABC can accept a registry entry for that adapter.
+vocabulary. The compatibility registry accepts each adapter only when
+producer-owned measurement evidence exists for that adapter and mapping
+version.
 
 ### Make `UNSUPPORTED` refuse by default
 
@@ -94,8 +100,11 @@ AAT-derived parser-IR. Adding a new adapter or mapping version requires a
 producer-owned mapping document hash and a measured registry entry scoped to
 that adapter.
 
-The current checked-in registry entry authorizes only the measured
-`aozora-rs-adapter` path. It does not authorize aozora2html output.
+The checked-in registry keeps the older `0.1.0` `aozora-rs-adapter`
+mapping-generation entry for legacy `derived_from` fixtures. It also authorizes
+the completed `0.1.1` conversion-audit evidence for `aozora-rs` and
+`aozora2html` using canonical mapping hash
+`sha256:4c0d3eb53942b4e1e14a6efc614bab99e391e90d85b817e090b42d02c05ba22e`.
 
 ## Deferred Decisions
 

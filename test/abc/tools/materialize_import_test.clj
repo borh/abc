@@ -9,7 +9,7 @@
            [java.nio.file.attribute FileAttribute]))
 
 (def ^:private mapping-hash
-  "sha256:af2aac0855b0ab42111b7a05aae7a6c337963446a7bc620d2c11790e524fbb03")
+  "sha256:4c0d3eb53942b4e1e14a6efc614bab99e391e90d85b817e090b42d02c05ba22e")
 
 (defn- temp-manifest-inputs [overrides]
   (merge
@@ -95,8 +95,12 @@
         (is (= mapping-hash
                (get-in warnings-manifest ["manifest_identity_object" "aat_parser_ir_mapping_hash"])))
         (is (some #{mapping-hash} (get-in parser-manifest ["provenance" "used"])))
-        (is (not-any? #(= "mapping-divergence" (get % "role"))
-                      (get parser-manifest "sidecars")))
+        (is (= {"role" "mapping-divergence"
+                "hash" (str "sha256:" (files/sha256-file "examples/ab-validator-output/divergence.json"))
+                "media_type" "application/json"
+                "path_hint" "divergence.json"}
+               (first (filter #(= "mapping-divergence" (get % "role"))
+                              (get parser-manifest "sidecars")))))
         (is (= (str "sha256:" (files/sha256-file "examples/ab-validator-output/parser-ir.json"))
                (get-in parser-manifest ["content" "content_hash"])))
         (is (= (str "sha256:" (files/sha256-file "examples/ab-validator-output/warnings.jsonl"))
@@ -160,7 +164,7 @@
         (doseq [f (reverse (file-seq out-file))] (.delete f))
         (doseq [f (reverse (file-seq input-file))] (.delete f))))))
 
-(deftest parser-manifest-includes-divergence-sidecar-when-present-test
+(deftest parser-manifest-includes-legacy-divergence-sidecar-when-jsonl-present-test
   (let [input-dir (Files/createTempDirectory "abc-materialize-divergence" (make-array FileAttribute 0))
         out-dir (Files/createTempDirectory "abc-materialize-divergence-out" (make-array FileAttribute 0))
         input-file (.toFile input-dir)

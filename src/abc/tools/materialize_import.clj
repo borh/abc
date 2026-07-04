@@ -30,9 +30,17 @@
 
 (defn- parser-ir-sidecars [input-dir]
   (let [warnings-file (imported-file input-dir "warnings.jsonl")
+        divergence-bundle-file (imported-file input-dir "divergence.json")
         divergence-file (imported-file input-dir "divergence.jsonl")]
     (cond-> [(sidecar "warnings" warnings-file "application/jsonl" "warnings.jsonl")]
-      (.exists divergence-file)
+      (.exists divergence-bundle-file)
+      (conj (sidecar "mapping-divergence"
+                     divergence-bundle-file
+                     "application/json"
+                     "divergence.json"))
+
+      (and (not (.exists divergence-bundle-file))
+           (.exists divergence-file))
       (conj (sidecar "mapping-divergence"
                      divergence-file
                      "application/jsonl"

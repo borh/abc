@@ -103,9 +103,8 @@
   (let [errors (schema/validation-errors
                 (files/read-json drift/event-schema-path)
                 event)]
-    (when (nil? errors)
-      (throw (ex-info (str "expected schema to reject " label)
-                      {:event event})))
+    (is (seq errors)
+        (str "expected schema to reject " label))
     errors))
 
 (deftest event-schema-rejects-split-with-zero-predecessors-test

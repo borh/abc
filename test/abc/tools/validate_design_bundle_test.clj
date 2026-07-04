@@ -27,6 +27,18 @@
       (finally
         (.delete file)))))
 
+(def ^:private old-mapping-hash
+  "sha256:af2aac0855b0ab42111b7a05aae7a6c337963446a7bc620d2c11790e524fbb03")
+
+(def ^:private current-mapping-hash
+  "sha256:4c0d3eb53942b4e1e14a6efc614bab99e391e90d85b817e090b42d02c05ba22e")
+
+(def ^:private mapping-schema-hash
+  "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4")
+
+(def ^:private parser-ir-schema-hash
+  "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396")
+
 (def ^:private complete-manifest-inputs
   {"producer" "ab-validator"
    "producer_version" "0.0.0"
@@ -35,7 +47,7 @@
    "work_content_hash" (files/example-hash "01")
    "parser_build_hash" (files/example-hash "02")
    "parser_config_hash" (files/example-hash "03")
-   "mapping_hash" "sha256:af2aac0855b0ab42111b7a05aae7a6c337963446a7bc620d2c11790e524fbb03"
+   "mapping_hash" current-mapping-hash
    "parser_ir_schema_hash" (files/example-hash "04")
    "diagnostic_schema_hash" (files/example-hash "08")
    "warning_sidecar_hash" (files/example-hash "05")
@@ -132,7 +144,11 @@
                                              nil)
                     validate/validate-json! (fn [& _args] nil)
                     validate/validate-json-lines! (fn [& _args] nil)
-                    validate/validation-errors (fn [& _args] [:expected-error])
+                    validate/validation-errors (fn [_schema value]
+                                                 (if (and (map? value)
+                                                          (contains? value "rule_id"))
+                                                   nil
+                                                   [:expected-error]))
                     compat/load-registry (fn [] {:entries []})
                     compat/validate-registry! (fn [registry]
                                                 (reset! registry-checked registry)
@@ -140,7 +156,8 @@
         (validate/validate-json-schemas! [])
         (is (every? (set @checked-paths)
                     ["schemas/aat-parser-ir-mapping.schema.json"
-                     "schemas/aat-parser-ir-divergence.schema.json"]))
+                     "schemas/aat-parser-ir-divergence.schema.json"
+                     "schemas/aat-parser-ir-divergence-bundle.schema.json"]))
         (is (= {:entries []} @registry-checked))))))
 
 (deftest comparison-report-schema-test
@@ -200,24 +217,83 @@
                  schema
                  (assoc parser-ir "derived_from" derived-from)))))))
 
-(def ^:private valid-compat-query
+(def ^:private old-compat-query
   {:aat_version 1
    :aat_adapter "aozora-rs-adapter"
    :aat_adapter_version nil
    :mapping_id "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe"
    :mapping_version "0.1.0"
-   :mapping_hash "sha256:af2aac0855b0ab42111b7a05aae7a6c337963446a7bc620d2c11790e524fbb03"
-   :mapping_schema_hash "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4"
+   :mapping_hash old-mapping-hash
+   :mapping_schema_hash mapping-schema-hash
    :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
-   :parser_ir_schema_hash "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"})
+   :parser_ir_schema_hash parser-ir-schema-hash})
 
-(def ^:private valid-registry-entry
-  (assoc valid-compat-query
+(def ^:private old-registry-entry
+  (assoc old-compat-query
          :evidence_scope {:adapter "aozora-rs-adapter"
+                          :evidence_type :mapping-generation
                           :corpus "aozora-rs full corpus"
                           :files_scanned 17894
                           :files_with_unsupported 0
                           :generated_rules 25}
+         :compatibility "lossy"))
+
+(def ^:private current-rs-compat-query
+  {:aat_version 1
+   :aat_adapter "aozora-rs"
+   :aat_adapter_version "aozora-rs-adapter 0.1.0 aozora-rs-v0.6.0"
+   :mapping_id "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe"
+   :mapping_version "0.1.1"
+   :mapping_hash current-mapping-hash
+   :mapping_schema_hash mapping-schema-hash
+   :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
+   :parser_ir_schema_hash parser-ir-schema-hash})
+
+(def ^:private current-rs-registry-entry
+  (assoc current-rs-compat-query
+         :evidence_scope {:adapter "aozora-rs"
+                          :adapter_version "aozora-rs-adapter 0.1.0 aozora-rs-v0.6.0"
+                          :evidence_type :conversion-audit
+                          :corpus "aozora-rs full corpus"
+                          :files_scanned 17894
+                          :files_succeeded 17894
+                          :files_failed 0
+                          :parser_ir_nodes 7828615
+                          :divergence_records 288039
+                          :divergence_occurrences 13246894
+                          :rules_total 118
+                          :rules_emitted 28
+                          :rules_missing 90
+                          :unsupported_occurrences 0}
+         :compatibility "lossy"))
+
+(def ^:private current-html-compat-query
+  {:aat_version 1
+   :aat_adapter "aozora2html"
+   :aat_adapter_version "aozora2html-adapter 0.1.0 gem-3.0.1"
+   :mapping_id "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe"
+   :mapping_version "0.1.1"
+   :mapping_hash current-mapping-hash
+   :mapping_schema_hash mapping-schema-hash
+   :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
+   :parser_ir_schema_hash parser-ir-schema-hash})
+
+(def ^:private current-html-registry-entry
+  (assoc current-html-compat-query
+         :evidence_scope {:adapter "aozora2html"
+                          :adapter_version "aozora2html-adapter 0.1.0 gem-3.0.1"
+                          :evidence_type :conversion-audit
+                          :corpus "aozora2html full corpus"
+                          :files_scanned 17689
+                          :files_succeeded 17689
+                          :files_failed 0
+                          :parser_ir_nodes 8414559
+                          :divergence_records 324294
+                          :divergence_occurrences 17172155
+                          :rules_total 118
+                          :rules_emitted 117
+                          :rules_missing 1
+                          :unsupported_occurrences 14230}
          :compatibility "lossy"))
 
 (def ^:private valid-derived-from
@@ -226,53 +302,99 @@
    "aat_adapter_version" nil
    "mapping_id" "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe"
    "mapping_version" "0.1.0"
-   "mapping_schema_hash" "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4"})
+   "mapping_schema_hash" mapping-schema-hash})
+
+(def ^:private valid-divergence-bundle
+  {"schema_id" "https://abc.local/schemas/aat-parser-ir-divergence-bundle-v1.json"
+   "schema_version" "0.1.0"
+   "work_id" "fixture"
+   "mapping" {"mapping_id" "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe"
+              "mapping_version" "0.1.1"
+              "mapping_schema_hash" mapping-schema-hash}
+   "target" {"parser_ir_schema_id" "https://w3id.org/abc/schemas/parser-ir.schema.json"
+             "parser_ir_schema_hash" parser-ir-schema-hash}
+   "aat" {"version" 1
+          "adapter" "aozora2html"
+          "adapter_version" "aozora2html-adapter 0.1.0 gem-3.0.1"
+          "source_hash" (files/example-hash "01")
+          "parse_complete" true}
+   "preserved_aat_meta" {"metrics" nil
+                         "semantic_summary" nil}
+   "summary" {"LOSS" 0
+              "INVENTION" 0
+              "AMBIGUITY" 0
+              "UNSUPPORTED" 0
+              "STRUCTURAL" 0}
+   "records" []})
 
 (defn- has-error?
   [pattern errors]
   (boolean (some #(re-find pattern %) errors)))
 
 (deftest aat-parser-ir-registry-validation-test
-  (testing "accepts the measured adapter-scoped registry shape"
-    (is (empty? (compat/registry-errors {:entries [valid-registry-entry]}))))
+  (testing "accepts the measured adapter-scoped registry shapes"
+    (is (empty? (compat/registry-errors {:entries [old-registry-entry
+                                                   current-rs-registry-entry
+                                                   current-html-registry-entry]}))))
   (testing "rejects entries without evidence scope"
     (is (has-error? #"entry 0 is missing :evidence_scope"
                     (compat/registry-errors
-                     {:entries [(dissoc valid-registry-entry :evidence_scope)]}))))
+                     {:entries [(dissoc old-registry-entry :evidence_scope)]}))))
+  (testing "rejects entries without an evidence type"
+    (is (has-error? #":evidence_scope is missing :evidence_type"
+                    (compat/registry-errors
+                     {:entries [(update old-registry-entry
+                                        :evidence_scope
+                                        dissoc
+                                        :evidence_type)]}))))
   (testing "rejects adapter-neutral wildcard claims"
     (is (has-error? #":aat_adapter must name a concrete adapter"
                     (compat/registry-errors
-                     {:entries [(assoc valid-registry-entry :aat_adapter "*")]}))))
+                     {:entries [(assoc old-registry-entry :aat_adapter "*")]}))))
   (testing "rejects malformed hashes"
     (is (has-error? #":mapping_hash must be a sha256 hash"
                     (compat/registry-errors
-                     {:entries [(assoc valid-registry-entry :mapping_hash "sha256:not-a-real-hash")]}))))
+                     {:entries [(assoc old-registry-entry :mapping_hash "sha256:not-a-real-hash")]}))))
   (testing "requires evidence scope to match the adapter claim"
     (is (has-error? #":evidence_scope :adapter must equal :aat_adapter"
                     (compat/registry-errors
-                     {:entries [(assoc-in valid-registry-entry
+                     {:entries [(assoc-in old-registry-entry
                                           [:evidence_scope :adapter]
                                           "aozora2html")]}))))
+  (testing "requires conversion file counts to cohere"
+    (is (has-error? #"files_scanned must equal files_succeeded plus files_failed"
+                    (compat/registry-errors
+                     {:entries [(assoc-in current-html-registry-entry
+                                          [:evidence_scope :files_succeeded]
+                                          1)]}))))
+  (testing "requires conversion rule counts to cohere"
+    (is (has-error? #"rules_total must equal rules_emitted plus rules_missing"
+                    (compat/registry-errors
+                     {:entries [(assoc-in current-html-registry-entry
+                                          [:evidence_scope :rules_missing]
+                                          2)]}))))
   (testing "rejects duplicate compatibility match keys"
     (is (has-error? #"duplicates entry 0 compatibility keys"
                     (compat/registry-errors
-                     {:entries [valid-registry-entry
-                                (assoc-in valid-registry-entry
+                     {:entries [old-registry-entry
+                                (assoc-in old-registry-entry
                                           [:evidence_scope :corpus]
                                           "duplicate corpus note")]})))))
 
 (deftest aat-parser-ir-compatibility-test
   (let [registry (compat/load-registry)]
-    (testing "matches only the measured adapter-scoped registry entry"
-      (is (true? (compat/compatible? registry valid-compat-query)))
+    (testing "matches measured adapter-scoped registry entries"
+      (is (true? (compat/compatible? registry old-compat-query)))
+      (is (true? (compat/compatible? registry current-rs-compat-query)))
+      (is (true? (compat/compatible? registry current-html-compat-query)))
       (is (false? (compat/compatible?
                    registry
-                   (assoc valid-compat-query
+                   (assoc old-compat-query
                           :aat_adapter "aozora2html"
                           :aat_adapter_version "aozora2html-adapter 0.1.0 gem-3.0.1")))
-          "aozora-rs evidence must not authorize aozora2html output")
+          "the old aozora-rs mapping-generation evidence must not authorize current aozora2html output")
       (doseq [[k v] [[:aat_version 2]
-                     [:aat_adapter "aozora2html"]
+                     [:aat_adapter "other-adapter"]
                      [:aat_adapter_version "aozora-rs-adapter 9.9.9"]
                      [:mapping_id "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/other"]
                      [:mapping_version "9.9.9"]
@@ -280,7 +402,7 @@
                      [:mapping_schema_hash (files/example-hash "98")]
                      [:parser_ir_schema_id "https://w3id.org/abc/schemas/other-parser-ir.schema.json"]
                      [:parser_ir_schema_hash (files/example-hash "97")]]]
-        (is (false? (compat/compatible? registry (assoc valid-compat-query k v)))
+        (is (false? (compat/compatible? registry (assoc current-html-compat-query k v)))
             (str "registry must reject mismatched " k))))))
 
 (deftest compatibility-errors-test
@@ -289,33 +411,57 @@
                  {"schema_id" "https://w3id.org/abc/schemas/parser-ir.schema.json"
                   "schema_hash" "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"}
                  {}))))
-  (testing "requires derived_from when manifest inputs carry mapping_hash"
-    (is (= ["AAT parser-IR compatibility requires parser IR derived_from when manifest inputs mapping_hash is present"]
+  (testing "requires derived_from or divergence bundle when manifest inputs carry mapping_hash"
+    (is (= ["AAT parser-IR compatibility requires parser IR derived_from or divergence bundle when manifest inputs mapping_hash is present"]
            (validate/compatibility-errors
             {"schema_id" "https://w3id.org/abc/schemas/parser-ir.schema.json"
-             "schema_hash" "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"}
-            {"mapping_hash" "sha256:af2aac0855b0ab42111b7a05aae7a6c337963446a7bc620d2c11790e524fbb03"}))))
-  (testing "requires mapping_hash when parser IR carries derived_from"
-    (is (= ["AAT parser-IR compatibility requires manifest inputs mapping_hash when parser IR derived_from is present"]
+             "schema_hash" parser-ir-schema-hash}
+            {"mapping_hash" old-mapping-hash}))))
+  (testing "requires mapping_hash when mapping provenance is present"
+    (is (= ["AAT parser-IR compatibility requires manifest inputs mapping_hash when parser IR mapping provenance is present"]
            (validate/compatibility-errors
             {"schema_id" "https://w3id.org/abc/schemas/parser-ir.schema.json"
-             "schema_hash" "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"
+             "schema_hash" parser-ir-schema-hash
              "derived_from" valid-derived-from}
             {}))))
   (testing "requires explicit adapter version key even when the value is null"
     (is (= ["AAT parser-IR compatibility requires parser IR derived_from.aat_adapter_version"]
            (validate/compatibility-errors
             {"schema_id" "https://w3id.org/abc/schemas/parser-ir.schema.json"
-             "schema_hash" "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"
+             "schema_hash" parser-ir-schema-hash
              "derived_from" (dissoc valid-derived-from "aat_adapter_version")}
-            {"mapping_hash" "sha256:af2aac0855b0ab42111b7a05aae7a6c337963446a7bc620d2c11790e524fbb03"}))))
-  (testing "rejects adapter mismatch against registry"
-    (is (= ["AAT parser-IR compatibility registry has no entry for adapter aozora2html, AAT version 1, mapping https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe 0.1.0, mapping hash sha256:af2aac0855b0ab42111b7a05aae7a6c337963446a7bc620d2c11790e524fbb03, mapping schema hash sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4, parser IR schema id https://w3id.org/abc/schemas/parser-ir.schema.json, parser IR schema hash sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"]
+            {"mapping_hash" old-mapping-hash}))))
+  (testing "accepts legacy derived_from provenance"
+    (is (empty? (validate/compatibility-errors
+                 {"schema_id" "https://w3id.org/abc/schemas/parser-ir.schema.json"
+                  "schema_hash" parser-ir-schema-hash
+                  "derived_from" valid-derived-from}
+                 {"mapping_hash" old-mapping-hash}))))
+  (testing "accepts divergence bundle provenance"
+    (is (empty? (validate/compatibility-errors
+                 (compat/load-registry)
+                 {"schema_id" "https://w3id.org/abc/schemas/parser-ir.schema.json"
+                  "schema_hash" parser-ir-schema-hash}
+                 {"mapping_hash" current-mapping-hash}
+                 valid-divergence-bundle))))
+  (testing "rejects divergence bundle target mismatch"
+    (is (= ["AAT parser-IR divergence bundle target parser_ir_schema_hash sha256:0000000000000000000000000000000000000000000000000000000000000099 does not match parser IR schema_hash sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"]
            (validate/compatibility-errors
+            (compat/load-registry)
             {"schema_id" "https://w3id.org/abc/schemas/parser-ir.schema.json"
-             "schema_hash" "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"
-             "derived_from" (assoc valid-derived-from "aat_adapter" "aozora2html")}
-            {"mapping_hash" "sha256:af2aac0855b0ab42111b7a05aae7a6c337963446a7bc620d2c11790e524fbb03"})))))
+             "schema_hash" parser-ir-schema-hash}
+            {"mapping_hash" current-mapping-hash}
+            (assoc-in valid-divergence-bundle
+                      ["target" "parser_ir_schema_hash"]
+                      (files/example-hash "99"))))))
+  (testing "rejects adapter mismatch against registry"
+    (is (= ["AAT parser-IR compatibility registry has no entry for adapter aozora2, AAT version 1, mapping https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe 0.1.1, mapping hash sha256:4c0d3eb53942b4e1e14a6efc614bab99e391e90d85b817e090b42d02c05ba22e, mapping schema hash sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4, parser IR schema id https://w3id.org/abc/schemas/parser-ir.schema.json, parser IR schema hash sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"]
+           (validate/compatibility-errors
+            (compat/load-registry)
+            {"schema_id" "https://w3id.org/abc/schemas/parser-ir.schema.json"
+             "schema_hash" parser-ir-schema-hash}
+            {"mapping_hash" current-mapping-hash}
+            (assoc-in valid-divergence-bundle ["aat" "adapter"] "aozora2"))))))
 
 (deftest validate-shacl-smoke-test
   (testing "validate-design-bundle SHACL pass conforms for the example success manifest"

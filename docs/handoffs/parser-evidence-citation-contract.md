@@ -31,9 +31,9 @@ logical component paths.
 
 | Evidence | Logical path | SHA-256 | What ABC may cite |
 |---|---|---|---|
-| Parser-IR conversion sync | `ab-validator/docs/superpowers/reports/2026-07-04-post-parser-ir-conversion-sync.md` | `sha256:bf0910f5316efc2cd528f504c0cbd16816ca993e7ccb2b99122aab8a71359527` | Verdict `PARSER_IR_CONVERTER_CORPUS_CLEAN`, mapping/version/hash, admitted adapter tuples, caveats |
-| Full-corpus conversion audit | `ab-validator/docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.md` | `sha256:be908c4061e49a01003b8f1e49b564da9a782671f421091189620aa787e37a49` | 35,583 attempted, 35,583 succeeded, 0 failed; per-adapter conversion counts; divergence categories |
-| ABC compatibility candidates | `ab-validator/docs/superpowers/reports/2026-07-04-aat-parser-ir-compatibility-candidates.edn` | `sha256:58ec66fb9357563896a89ddfb92ed4917178c1acc03f55a1142f1ab78cae2ffe` | Exact adapter/version registry candidates for ABC admission |
+| Parser-IR conversion sync | `ab-validator/docs/superpowers/reports/2026-07-04-post-parser-ir-conversion-sync.md` | `sha256:a8f27f56ffceaacbbcde1d80d823b8e5727186790d6ebc841a45966f1db1761c` | Verdict `PARSER_IR_CONVERTER_CORPUS_CLEAN`, mapping/version/hash, admitted adapter tuples, caveats |
+| Full-corpus conversion audit | `ab-validator/docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.md` | `sha256:d03afdce19adef4c5a44d7a8caa628fa3b8cc8fc0f0599d047aed261cc9ad7a7` | 53,427 attempted, 53,427 succeeded, 0 failed; per-adapter conversion counts; divergence categories |
+| ABC compatibility candidates | `ab-validator/docs/superpowers/reports/2026-07-04-aat-parser-ir-compatibility-candidates.edn` | `sha256:c00481ab65239098a072112dd8c803f0203c6d5776d67864215491715a9616e6` | Exact adapter/version registry candidates for ABC admission |
 | Parser performance measurement | `ab-validator/docs/superpowers/reports/2026-07-04-parser-performance-measurement.md` | `sha256:4603fc0f3f175dc2524e0ac1b4f312df020cecfda5728cc8fbfe04f0337d49cd` | Bounded parser timing evidence and DNF policy, especially largest-five comparison |
 | Coverage report | `ab-validator/docs/coverage-report.md` | `sha256:f52e2347c1ba859eb9b2227812e17b3f720ff271d98b144b477ed3adfcb56c7c` | Parser recognition and AAT-fidelity feature matrix |
 | Adapter fidelity matrix | `ab-validator/docs/adapter-fidelity.md` | `sha256:39bc788b8e81b4972936b6ceb435c07e9707e2030894ca1f39811eb0ddd2e819` | Direct vs indirect adapter-fidelity caveats |
@@ -45,11 +45,13 @@ ABC should cite producer evidence in three separate classes:
 1. **Compatibility evidence**: proves a measured adapter/version/mapping tuple
    can produce parser-IR that ABC admits and can publish. This is now strong
    for:
+   - `aozora-epub3`, adapter version
+     `aozora-epub3-adapter 0.1.0 AozoraEpub3-JDK21-1.3.4-jdk21`;
    - `aozora-rs`, adapter version `aozora-rs-adapter 0.1.0 2b4e8d1`;
    - `aozora2html`, adapter version `aozora2html-adapter 0.1.0 gem-3.0.1`;
-   - mapping version `0.2.0`;
+   - mapping version `0.2.1`;
    - mapping hash
-     `sha256:68b0868b25f3b072a47d781099178bf2a31e4b16c561814f5e13e3801714d089`.
+     `sha256:b508665af72c237fc60f00b720f80db2b16148aa64b5d1cc723a2948ee576390`.
 2. **Parser-selection evidence**: compares parser candidates against ADR 0002
    criteria: syntax coverage, fatal failures, structured diagnostics, span
    coverage, performance, packaging, license, and reversibility. This is not
@@ -82,24 +84,21 @@ and identity tuple are available.
 
 ## Mapping Version Transition
 
-The current citable conversion-compatibility evidence is for mapping version
-`0.2.0` and mapping hash
-`sha256:68b0868b25f3b072a47d781099178bf2a31e4b16c561814f5e13e3801714d089`.
+ABC now admits the `0.2.1` producer evidence as a new mapping identity. The
+older `0.2.0` citations and registry rows remain historical admitted evidence;
+they were not mutated in place.
 
-`ab-validator` is expected to emit a follow-up mapping version `0.2.1`. ABC
-should not edit existing `0.2.0` citations or registry rows in place. The
-`0.2.1` transition needs a fresh producer evidence set:
+Current paper-demo mapping identity:
 
-- updated mapping hash and converter report hash;
-- updated compatibility-candidates EDN report hash;
-- new adapter-version-exact registry rows in
-  `data/aat-parser-ir-compatibility.edn`;
-- updated `data/parser-evidence-citations.edn` entries for the new reports;
-- regenerated paper-demo parser-IR, divergence, source snapshot, and publication
-  manifests if the paper demo moves from `0.2.0` to `0.2.1`.
+- mapping version `0.2.1`;
+- mapping hash
+  `sha256:b508665af72c237fc60f00b720f80db2b16148aa64b5d1cc723a2948ee576390`;
+- three exact adapter-version conversion-audit candidates:
+  `aozora-epub3`, `aozora-rs`, and `aozora2html`.
 
-Until those artifacts exist, `0.2.0` remains the current admitted ABC evidence
-chain and `0.2.1` should be described only as pending.
+A future mapping version still needs the same refresh gate: fresh report hashes,
+fresh compatibility candidates, new registry rows, parser-evidence entries, and
+regenerated paper-demo manifests before ABC cites it as accepted evidence.
 
 ## Current Interpretation
 

@@ -197,7 +197,8 @@ Parser-IR conversion evidence:
 |---|---:|---|
 | aozora-rs-adapter | 17,894 | 17,894 succeeded, 0 failed |
 | aozora2html-adapter | 17,689 | 17,689 succeeded, 0 failed |
-| combined | 35,583 | 35,583 succeeded, 0 failed |
+| aozora-epub3-adapter | 17,844 | 17,844 succeeded, 0 failed |
+| combined | 53,427 | 53,427 succeeded, 0 failed |
 
 Policy residual evidence:
 
@@ -220,7 +221,8 @@ Other relevant measurements:
 For ABC's paper:
 
 - It is safe to claim the measured AAT-to-parser-IR conversion is corpus-clean
-  for the two admitted adapter/version tuples and mapping hash.
+  for the three admitted adapter/version tuples and mapping hash
+  `sha256:b508665af72c237fc60f00b720f80db2b16148aa64b5d1cc723a2948ee576390`.
 - It is not safe to claim aozora2html warigaki/kunten policy evidence is a
   complete corpus oracle. That evidence remains a lower bound because
   residual runtime, parse-completeness, visible-text order, and

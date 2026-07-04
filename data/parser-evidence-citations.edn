@@ -27,6 +27,30 @@
    :sha256 "sha256:58ec66fb9357563896a89ddfb92ed4917178c1acc03f55a1142f1ab78cae2ffe"
    :status :citable
    :summary "Exact adapter/version compatibility candidates admitted by ABC for mapping version 0.2.0."}
+  {:evidence_id "ab-validator/parser-ir-conversion-sync-2026-07-04-mapping-0.2.1"
+   :evidence_class :conversion-compatibility
+   :producer_component "ab-validator"
+   :logical_path "ab-validator/docs/superpowers/reports/2026-07-04-post-parser-ir-conversion-sync.md"
+   :current_external_path "../ab-validator/docs/superpowers/reports/2026-07-04-post-parser-ir-conversion-sync.md"
+   :sha256 "sha256:a8f27f56ffceaacbbcde1d80d823b8e5727186790d6ebc841a45966f1db1761c"
+   :status :citable
+   :summary "Parser-IR converter corpus-clean sync for mapping version 0.2.1 and admitted aozora-epub3 / aozora-rs / aozora2html adapter tuples."}
+  {:evidence_id "ab-validator/aat-parser-ir-full-corpus-conversion-2026-07-04-mapping-0.2.1"
+   :evidence_class :conversion-compatibility
+   :producer_component "ab-validator"
+   :logical_path "ab-validator/docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.md"
+   :current_external_path "../ab-validator/docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.md"
+   :sha256 "sha256:d03afdce19adef4c5a44d7a8caa628fa3b8cc8fc0f0599d047aed261cc9ad7a7"
+   :status :citable
+   :summary "Full-corpus AAT to parser-IR conversion audit for mapping version 0.2.1: 53,427 attempted, 53,427 succeeded, 0 failed."}
+  {:evidence_id "ab-validator/aat-parser-ir-compatibility-candidates-2026-07-04-mapping-0.2.1"
+   :evidence_class :conversion-compatibility
+   :producer_component "ab-validator"
+   :logical_path "ab-validator/docs/superpowers/reports/2026-07-04-aat-parser-ir-compatibility-candidates.edn"
+   :current_external_path "../ab-validator/docs/superpowers/reports/2026-07-04-aat-parser-ir-compatibility-candidates.edn"
+   :sha256 "sha256:c00481ab65239098a072112dd8c803f0203c6d5776d67864215491715a9616e6"
+   :status :citable
+   :summary "Exact adapter/version compatibility candidates admitted by ABC for mapping version 0.2.1."}
   {:evidence_id "ab-validator/parser-performance-measurement-2026-07-04"
    :evidence_class :parser-selection
    :producer_component "ab-validator"

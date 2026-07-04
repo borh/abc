@@ -36,11 +36,11 @@ machine-readable index `data/parser-evidence-citations.edn` therefore records
 logical workspace-relative evidence paths plus report hashes, while current
 `../ab-validator` paths remain temporary locators.
 
-Mapping transition note: the current admitted conversion evidence is for mapping
-version `0.2.0`. If `ab-validator` publishes mapping version `0.2.1`, ABC needs
-new report hashes, new exact adapter-version compatibility candidates, and new
-registry admissions before the paper or this ADR cites `0.2.1` as accepted
-evidence.
+Mapping transition note: ABC now admits mapping version `0.2.1` as a separate
+conversion-compatibility identity with fresh producer report hashes and exact
+adapter-version registry rows for `aozora-epub3`, `aozora-rs`, and
+`aozora2html`. The earlier `0.2.0` rows remain historical admitted evidence and
+were not rewritten.
 
 ## Context
 

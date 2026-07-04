@@ -37,6 +37,9 @@
 (def ^:private v2-mapping-hash
   "sha256:68b0868b25f3b072a47d781099178bf2a31e4b16c561814f5e13e3801714d089")
 
+(def ^:private v3-mapping-hash
+  "sha256:b508665af72c237fc60f00b720f80db2b16148aa64b5d1cc723a2948ee576390")
+
 (def ^:private mapping-schema-hash
   "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4")
 
@@ -364,6 +367,93 @@
                           :unsupported_occurrences 14230}
          :compatibility "lossy"))
 
+(def ^:private v3-epub3-compat-query
+  {:aat_version 1
+   :aat_adapter "aozora-epub3"
+   :aat_adapter_version "aozora-epub3-adapter 0.1.0 AozoraEpub3-JDK21-1.3.4-jdk21"
+   :mapping_id "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe"
+   :mapping_version "0.2.1"
+   :mapping_hash v3-mapping-hash
+   :mapping_schema_hash mapping-schema-hash
+   :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
+   :parser_ir_schema_hash parser-ir-schema-hash})
+
+(def ^:private v3-epub3-registry-entry
+  (assoc v3-epub3-compat-query
+         :evidence_scope {:evidence_type :conversion-audit
+                          :adapter "aozora-epub3"
+                          :adapter_version "aozora-epub3-adapter 0.1.0 AozoraEpub3-JDK21-1.3.4-jdk21"
+                          :corpus "aozora-epub3-adapter"
+                          :files_scanned 17844
+                          :files_succeeded 17844
+                          :files_failed 0
+                          :parser_ir_nodes 10670874
+                          :divergence_records 243318
+                          :divergence_occurrences 24679754
+                          :rules_total 130
+                          :rules_emitted 64
+                          :rules_missing 66
+                          :unsupported_occurrences 13234}
+         :compatibility "lossy"))
+
+(def ^:private v3-rs-compat-query
+  {:aat_version 1
+   :aat_adapter "aozora-rs"
+   :aat_adapter_version "aozora-rs-adapter 0.1.0 2b4e8d1"
+   :mapping_id "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe"
+   :mapping_version "0.2.1"
+   :mapping_hash v3-mapping-hash
+   :mapping_schema_hash mapping-schema-hash
+   :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
+   :parser_ir_schema_hash parser-ir-schema-hash})
+
+(def ^:private v3-rs-registry-entry
+  (assoc v3-rs-compat-query
+         :evidence_scope {:evidence_type :conversion-audit
+                          :adapter "aozora-rs"
+                          :adapter_version "aozora-rs-adapter 0.1.0 2b4e8d1"
+                          :corpus "aozora-rs-adapter"
+                          :files_scanned 17894
+                          :files_succeeded 17894
+                          :files_failed 0
+                          :parser_ir_nodes 7828615
+                          :divergence_records 252251
+                          :divergence_occurrences 13211106
+                          :rules_total 130
+                          :rules_emitted 26
+                          :rules_missing 104
+                          :unsupported_occurrences 0}
+         :compatibility "lossy"))
+
+(def ^:private v3-html-compat-query
+  {:aat_version 1
+   :aat_adapter "aozora2html"
+   :aat_adapter_version "aozora2html-adapter 0.1.0 gem-3.0.1"
+   :mapping_id "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe"
+   :mapping_version "0.2.1"
+   :mapping_hash v3-mapping-hash
+   :mapping_schema_hash mapping-schema-hash
+   :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
+   :parser_ir_schema_hash parser-ir-schema-hash})
+
+(def ^:private v3-html-registry-entry
+  (assoc v3-html-compat-query
+         :evidence_scope {:evidence_type :conversion-audit
+                          :adapter "aozora2html"
+                          :adapter_version "aozora2html-adapter 0.1.0 gem-3.0.1"
+                          :corpus "aozora2html-adapter"
+                          :files_scanned 17689
+                          :files_succeeded 17689
+                          :files_failed 0
+                          :parser_ir_nodes 8414559
+                          :divergence_records 288916
+                          :divergence_occurrences 17136777
+                          :rules_total 130
+                          :rules_emitted 115
+                          :rules_missing 15
+                          :unsupported_occurrences 14230}
+         :compatibility "lossy"))
+
 (def ^:private valid-derived-from
   {"aat_version" 1
    "aat_adapter" "aozora-rs-adapter"
@@ -405,7 +495,10 @@
                                                    current-rs-registry-entry
                                                    current-html-registry-entry
                                                    v2-rs-registry-entry
-                                                   v2-html-registry-entry]}))))
+                                                   v2-html-registry-entry
+                                                   v3-epub3-registry-entry
+                                                   v3-rs-registry-entry
+                                                   v3-html-registry-entry]}))))
   (testing "rejects entries without evidence scope"
     (is (has-error? #"entry 0 is missing :evidence_scope"
                     (compat/registry-errors
@@ -459,6 +552,9 @@
       (is (true? (compat/compatible? registry current-html-compat-query)))
       (is (true? (compat/compatible? registry v2-rs-compat-query)))
       (is (true? (compat/compatible? registry v2-html-compat-query)))
+      (is (true? (compat/compatible? registry v3-epub3-compat-query)))
+      (is (true? (compat/compatible? registry v3-rs-compat-query)))
+      (is (true? (compat/compatible? registry v3-html-compat-query)))
       (let [entry-for (fn [adapter adapter-version]
                         (->> (:entries registry)
                              (filter #(and (= adapter (:aat_adapter %))
@@ -467,8 +563,8 @@
                              first))
             aozora-rs-entry (entry-for "aozora-rs" "aozora-rs-adapter 0.1.0 2b4e8d1")
             aozora2html-entry (entry-for "aozora2html" "aozora2html-adapter 0.1.0 gem-3.0.1")]
-        (is (some? aozora-rs-entry) "missing current aozora-rs registry entry")
-        (is (some? aozora2html-entry) "missing current aozora2html registry entry")
+        (is (some? aozora-rs-entry) "missing 0.2.0 aozora-rs registry entry")
+        (is (some? aozora2html-entry) "missing 0.2.0 aozora2html registry entry")
         (is (= (:mapping_hash aozora-rs-entry) (:mapping_hash aozora2html-entry))
             "both adapter entries must point at the same measured mapping document")
         (is (= v2-mapping-hash (:mapping_hash aozora-rs-entry)))
@@ -511,6 +607,17 @@
            (compat/admission-report
             {:entries [old-registry-entry v2-rs-registry-entry v2-html-registry-entry]}
             {:entries [v2-rs-registry-entry v2-html-registry-entry]}))))
+  (testing "reports when current 0.2.1 producer candidates are admitted exactly"
+    (is (= {:status :admitted
+            :candidate-count 3
+            :admitted [v3-epub3-registry-entry v3-rs-registry-entry v3-html-registry-entry]
+            :missing []
+            :conflicts []
+            :registry-errors []
+            :candidate-errors []}
+           (compat/admission-report
+            {:entries [v3-epub3-registry-entry v3-rs-registry-entry v3-html-registry-entry]}
+            {:entries [v3-epub3-registry-entry v3-rs-registry-entry v3-html-registry-entry]}))))
   (testing "reports missing producer candidates"
     (is (= :missing
            (:status

@@ -614,6 +614,10 @@ fn structural_probe_detects_melos_level3_gap() {
         item.aat.final_visible_text.as_deref(),
         Some("（古伝説と、シルレルの詩から。）")
     );
+    assert_eq!(
+        item.aat.final_source_attribution_text.as_deref(),
+        Some("（古伝説と、シルレルの詩から。）")
+    );
     assert!(item.aat.final_source_attribution_candidate);
     assert!(item.conversion.success);
     assert!(!item.parser_ir.paragraphs_represented);

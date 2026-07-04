@@ -72,6 +72,7 @@ pub struct AatStructuralSummary {
     pub paragraph_blocks: u64,
     pub final_block_kind: Option<String>,
     pub final_visible_text: Option<String>,
+    pub final_source_attribution_text: Option<String>,
     pub final_source_attribution_candidate: bool,
     pub hints: Vec<String>,
 }
@@ -267,8 +268,14 @@ pub fn render_markdown(summary: &StructuralProbeSummary) -> String {
             "- block kinds: `{}`\n",
             serde_json::to_string(&input.aat.block_kinds).unwrap_or_else(|_| "{}".to_owned())
         ));
+        if let Some(text) = &input.aat.final_source_attribution_text {
+            out.push_str(&format!("- final attribution text: `{}`\n", md_code(text)));
+        }
         if let Some(text) = &input.aat.final_visible_text {
-            out.push_str(&format!("- final visible text: `{}`\n", md_code(text)));
+            out.push_str(&format!(
+                "- final visible text: `{}`\n",
+                md_code(&preview_text(text, 180))
+            ));
         }
         if !input.aat.hints.is_empty() {
             out.push_str(&format!(
@@ -324,9 +331,10 @@ fn summarize_aat(aat: &Value) -> AatStructuralSummary {
         .map(visible_text)
         .map(|text| normalize_visible_text(&text))
         .filter(|text| !text.is_empty());
-    let final_source_attribution_candidate = final_visible_text
+    let final_source_attribution_text = final_visible_text
         .as_deref()
-        .is_some_and(is_source_attribution_candidate);
+        .and_then(final_attribution_text);
+    let final_source_attribution_candidate = final_source_attribution_text.is_some();
     let mut hints = BTreeSet::new();
     collect_aat_hints(aat, &mut hints);
     let meta = &aat["meta"];
@@ -343,6 +351,7 @@ fn summarize_aat(aat: &Value) -> AatStructuralSummary {
             .and_then(|block| block["kind"].as_str())
             .map(ToOwned::to_owned),
         final_visible_text,
+        final_source_attribution_text,
         final_source_attribution_candidate,
         hints: hints.into_iter().collect(),
     }
@@ -556,8 +565,20 @@ fn normalize_visible_text(text: &str) -> String {
         .collect()
 }
 
-fn is_source_attribution_candidate(text: &str) -> bool {
-    text.starts_with('（') && text.ends_with('）') && text.contains("から")
+fn final_attribution_text(text: &str) -> Option<String> {
+    if !text.ends_with('）') {
+        return None;
+    }
+    let start = text
+        .char_indices()
+        .rev()
+        .find_map(|(index, ch)| if ch == '（' { Some(index) } else { None })?;
+    let candidate = &text[start..];
+    if candidate.contains("から") {
+        Some(candidate.to_owned())
+    } else {
+        None
+    }
 }
 
 fn collect_aat_hints(value: &Value, hints: &mut BTreeSet<String>) {
@@ -616,4 +637,16 @@ fn md_cell(value: &str) -> String {
 
 fn md_code(value: &str) -> String {
     value.replace('`', "\\`")
+}
+
+fn preview_text(value: &str, max_chars: usize) -> String {
+    let mut preview = String::new();
+    for (index, ch) in value.chars().enumerate() {
+        if index == max_chars {
+            preview.push_str("...");
+            return preview;
+        }
+        preview.push(ch);
+    }
+    preview
 }

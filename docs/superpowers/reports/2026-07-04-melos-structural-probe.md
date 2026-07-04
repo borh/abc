@@ -10,11 +10,11 @@ Measurement-only probe for paragraph segmentation and final source-attribution r
 
 ## Totals
 
-- inputs: 3
-- conversions succeeded: 3
+- inputs: 4
+- conversions succeeded: 4
 - conversions failed: 0
-- paragraph gap inputs: 3
-- source-attribution gap inputs: 3
+- paragraph gap inputs: 4
+- source-attribution gap inputs: 4
 - residual-free inputs: 0
 
 ## Inputs
@@ -22,6 +22,7 @@ Measurement-only probe for paragraph segmentation and final source-attribution r
 | label | adapter | paragraphs in AAT | final attribution candidate | parser-IR paragraph | parser-IR source attribution | residual free |
 |---|---|---:|---:|---:|---:|---:|
 | aozora-rs | aozora-rs | 79 | true | false | false | false |
+| aozora2 | aozora2 | 1 | true | false | false | false |
 | aozora2html | aozora2html | 75 | true | false | false | false |
 | aozora-epub3 | aozora-epub3 | 75 | true | false | false | false |
 
@@ -33,6 +34,7 @@ Measurement-only probe for paragraph segmentation and final source-attribution r
 - work: `000035_1567`
 - adapter: `aozora-rs` `aozora-rs-adapter 0.1.0 2b4e8d1`
 - block kinds: `{"paragraph":79}`
+- final attribution text: `（古伝説と、シルレルの詩から。）`
 - final visible text: `（古伝説と、シルレルの詩から。）`
 - AAT hints: `style:low_flying`
 - parser-IR node kinds: `{"emphasis":1,"ruby":88,"text":166}`
@@ -42,12 +44,29 @@ Measurement-only probe for paragraph segmentation and final source-attribution r
 - verdict note: final parenthetical attribution is visible text, not a source-attribution/source-note parser-IR node
 - verdict note: paragraph boundaries are present as measured STRUCTURAL divergence records
 
+### aozora2
+
+- path: `/db/ab-validator/aat-corpus/aozora2-melos/aozora2-adapter/000035_1567-32ff5a089d67.json`
+- work: `000035_1567`
+- adapter: `aozora2` `aozora2-adapter 0.1.0 aozora-core-0.7.1`
+- block kinds: `{"paragraph":1}`
+- final attribution text: `（古伝説と、シルレルの詩から。）`
+- final visible text: `メロスは激怒した。必ず、かの邪智暴虐の王を除かなければならぬと決意した。メロスには政治がわからぬ。メロスは、村の牧人である。笛を吹き、羊と遊んで暮して来た。けれども邪悪に対しては、人一倍に敏感であった。きょう未明メロスは村を出発し、野を越え山越え、十里はなれた此のシラクスの市にやって来た。メロスには父も、母も無い。女房も無い。十六の、内気な妹と二人暮しだ。こ...`
+- AAT hints: `style:chitsuki`
+- parser-IR node kinds: `{"emphasis":1,"text":1}`
+- paragraph structural records:
+  - `S-10` count=1 pointer=`blocks[].paragraph`
+- verdict note: AAT preserved 1 paragraph block(s), but parser-IR has no explicit paragraph node
+- verdict note: final parenthetical attribution is visible text, not a source-attribution/source-note parser-IR node
+- verdict note: paragraph boundaries are present as measured STRUCTURAL divergence records
+
 ### aozora2html
 
 - path: `/db/ab-validator/aat-corpus/aozora2html-full-20260704T014828Z-300s/aat/aozora2html-adapter/000035_1567-32ff5a089d67.json`
 - work: `000035_1567`
 - adapter: `aozora2html` `aozora2html-adapter 0.1.0 gem-3.0.1`
 - block kinds: `{"paragraph":75}`
+- final attribution text: `（古伝説と、シルレルの詩から。）`
 - final visible text: `（古伝説と、シルレルの詩から。）`
 - AAT hints: `style:unmapped-div; warning:unmapped XHTML element <div>; x-aozora2html-unmapped:div`
 - parser-IR node kinds: `{"emphasis":1,"ruby":88,"text":164}`
@@ -63,6 +82,7 @@ Measurement-only probe for paragraph segmentation and final source-attribution r
 - work: `000035_1567`
 - adapter: `aozora-epub3` `aozora-epub3-adapter 0.1.0 AozoraEpub3-JDK21-1.3.4-jdk21`
 - block kinds: `{"paragraph":75}`
+- final attribution text: `（古伝説と、シルレルの詩から。）`
 - final visible text: `（古伝説と、シルレルの詩から。）`
 - parser-IR node kinds: `{"ruby":88,"text":163}`
 - paragraph structural records:

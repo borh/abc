@@ -111,8 +111,11 @@ jq -e '.inputs[0].verdict.residual_free == false' "$out_dir/structural-summary.j
 - [x] **Step 3: Add Just recipe**
 
 Add `melos-structural-probe` with overridable `AB_MELOS_AOZORA_RS_AAT`,
-`AB_MELOS_AOZORA2HTML_AAT`, and `AB_MELOS_AOZORA_EPUB3_AAT` environment
-variables.
+`AB_MELOS_AOZORA2_AAT`, `AB_MELOS_AOZORA2HTML_AAT`, and
+`AB_MELOS_AOZORA_EPUB3_AAT` environment variables. Generate the default
+`aozora2` Melos AAT from
+`references/aozorabunko/cards/000035/files/1567_ruby_4948.zip` when the local
+`/db` artifact is missing.
 
 ### Task 3: Local Melos Measurement Report
 
@@ -134,9 +137,12 @@ just melos-structural-probe
 
 - [x] **Step 2: Verify report content**
 
-Check the JSON records at least aozora-rs, aozora2html, and aozora-epub3 when
-their local AAT files exist, and that each successful Melos conversion reports
-the paragraph/source-attribution Level 3 gap.
+Check the JSON records aozora-rs, aozora2, aozora2html, and aozora-epub3 when
+their local AAT files exist. The expected adapter-side distinction is that
+aozora2 preserves the final attribution text but collapses Melos into one
+paragraph block, while the other local adapters preserve 75-79 paragraph blocks.
+Every successful Melos conversion should still report the parser-IR
+paragraph/source-attribution Level 3 gap.
 
 - [x] **Step 3: Full verification**
 

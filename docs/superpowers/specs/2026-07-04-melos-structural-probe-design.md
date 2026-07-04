@@ -45,8 +45,13 @@ The probe accepts one or more labelled AAT JSON files. Local operator runs shoul
 use the current Melos AAT files when available:
 
 - `scratch/morph-full-corpus/aats/aozora-rs-adapter/000035_1567-32ff5a089d67.json`
+- `/db/ab-validator/aat-corpus/aozora2-melos/aozora2-adapter/000035_1567-32ff5a089d67.json`
 - `/db/ab-validator/aat-corpus/aozora2html-full-20260704T014828Z-300s/aat/aozora2html-adapter/000035_1567-32ff5a089d67.json`
 - `/db/ab-validator/aat-corpus/aozora-epub3-full-20260704T050652Z-300s/aat/aozora-epub3-adapter/000035_1567-32ff5a089d67.json`
+
+The `aozora2` Melos AAT may be generated locally from
+`references/aozorabunko/cards/000035/files/1567_ruby_4948.zip` because this
+repo does not currently keep a full-corpus `aozora2` AAT directory.
 
 CI and flake checks must use synthetic fixture AAT only and must not read `/db`.
 

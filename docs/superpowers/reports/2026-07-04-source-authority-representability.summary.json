@@ -3,8 +3,8 @@
   "works_scanned": 17894,
   "works_failed": 0,
   "markers_total": 4323915,
-  "unknown_markers_total": 15509,
-  "unallowlisted_unknown_markers_total": 639,
+  "unknown_markers_total": 15475,
+  "unallowlisted_unknown_markers_total": 605,
   "allowlisted_unknown_markers_total": 14870,
   "rows": {
     "accent.dotted_letter": {
@@ -29,7 +29,7 @@
     },
     "annotation.chuuki": {
       "works_with_marker": 5508,
-      "occurrences": 35325,
+      "occurrences": 35341,
       "sample_works": [
         "000005_53194",
         "000006_1869",
@@ -94,8 +94,8 @@
       ]
     },
     "decoration.boten": {
-      "works_with_marker": 6235,
-      "occurrences": 129067,
+      "works_with_marker": 6236,
+      "occurrences": 129082,
       "sample_works": [
         "000005_53194",
         "000006_382",
@@ -138,8 +138,8 @@
       ]
     },
     "decoration.keigakomi": {
-      "works_with_marker": 146,
-      "occurrences": 692,
+      "works_with_marker": 151,
+      "occurrences": 698,
       "sample_works": [
         "000043_341",
         "000063_385",
@@ -237,8 +237,8 @@
       ]
     },
     "glyph.variant_note": {
-      "works_with_marker": 1176,
-      "occurrences": 4052,
+      "works_with_marker": 1178,
+      "occurrences": 4079,
       "sample_works": [
         "000006_1869",
         "000008_1083",
@@ -517,7 +517,7 @@
       ]
     }
   },
-  "unknown_classes_total": 623,
+  "unknown_classes_total": 589,
   "unknown_classes_truncated": false,
   "unknown_classes": [
     {
@@ -795,39 +795,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「!!!」は一文字、111-18］",
-      "body": "「!!!」は一文字、111-18",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000280_1706"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「!!!」は一文字、95-13］",
-      "body": "「!!!」は一文字、95-13",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000280_1706"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「あめとう」に欄外に校注、「アメリカ唐桟の略」］",
-      "body": "「あめとう」に欄外に校注、「アメリカ唐桟の略」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000989_4054"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「うらみ思ひ」は、「刈萱の穗にあらはれぬ」と「かな」の間に挟まれるような形でポイントを下げて２行で］",
       "body": "「うらみ思ひ」は、「刈萱の穗にあらはれぬ」と「かな」の間に挟まれるような形でポイントを下げて２行で",
       "occurrences": 1,
@@ -839,83 +806,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「お前のような不孝者は」か？］",
-      "body": "「お前のような不孝者は」か？",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000124_655"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「かしく」は崩し字］",
-      "body": "「かしく」は崩し字",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001529_50685"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「けし」の傍点］",
-      "body": "「けし」の傍点",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000121_3040"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「しぶしぶ」は傍点］",
-      "body": "「しぶしぶ」は傍点",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001579_53947"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「じぶんで」は傍点］",
-      "body": "「じぶんで」は傍点",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001505_54919"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「た」と「ふ」の間に白三角傍点］",
-      "body": "「た」と「ふ」の間に白三角傍点",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000146_48509"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「てまえ」あるいは「てめえ」か］",
-      "body": "「てまえ」あるいは「てめえ」か",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000989_1490"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「どこやらに」と「稻妻に」の句の上には、この二つの句を括る波括弧あり］",
       "body": "「どこやらに」と「稻妻に」の句の上には、この二つの句を括る波括弧あり",
       "occurrences": 1,
@@ -923,17 +813,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000305_1896"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「どんどん」に欄外に校注、「三橋の側にあった不忍池の水の落口」］",
-      "body": "「どんどん」に欄外に校注、「三橋の側にあった不忍池の水の落口」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000989_354"
       ]
     },
     {
@@ -960,28 +839,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「は」と「う」の間に白三角傍点］",
-      "body": "「は」と「う」の間に白三角傍点",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000146_48509"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「ひと」は傍点］",
-      "body": "「ひと」は傍点",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001154_52302"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「や闇吹き入れるにまぶれて白し」は、「夕顏」と「三日の月」の間に挟まれるような形でポイントを下げて２行で］",
       "body": "「や闇吹き入れるにまぶれて白し」は、「夕顏」と「三日の月」の間に挟まれるような形でポイントを下げて２行で",
       "occurrences": 1,
@@ -989,39 +846,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000305_1896"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「ア」に点］",
-      "body": "「ア」に点",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000874_3213"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「クリティカル・エッセイ」の「・」を除く部分に傍点］",
-      "body": "「クリティカル・エッセイ」の「・」を除く部分に傍点",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000281_1710"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「グレコの絵との連想」に枠囲み］",
-      "body": "「グレコの絵との連想」に枠囲み",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_4228"
       ]
     },
     {
@@ -1048,17 +872,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「シ」の右上に小さな四角あり］",
-      "body": "「シ」の右上に小さな四角あり",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000301_1872"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「ジップ」は桃源社版では「ジッブ」］",
       "body": "「ジップ」は桃源社版では「ジッブ」",
       "occurrences": 1,
@@ -1066,17 +879,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000125_1321"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「ソヴェト同盟ヲ守レ！」に枠線］",
-      "body": "「ソヴェト同盟ヲ守レ！」に枠線",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_1979"
       ]
     },
     {
@@ -1433,17 +1235,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「仰願寺」に欄外に校注、「小さき一種のろうそく江戸山谷の仰願寺にて用いはじめしより云う」］",
-      "body": "「仰願寺」に欄外に校注、「小さき一種のろうそく江戸山谷の仰願寺にて用いはじめしより云う」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000989_354"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「佐土布都の神」は本文の書き下し文では「佐士布都の神」］",
       "body": "「佐土布都の神」は本文の書き下し文では「佐士布都の神」",
       "occurrences": 1,
@@ -1521,17 +1312,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「勧解」に欄外校注：裁判官が説諭して示談にせしむること］",
-      "body": "「勧解」に欄外校注：裁判官が説諭して示談にせしむること",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000989_1490"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「北原白秋」はゴチック］",
       "body": "「北原白秋」はゴチック",
       "occurrences": 1,
@@ -1583,17 +1363,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000096_2100"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「合理化する」か？］",
-      "body": "「合理化する」か？",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000124_658"
       ]
     },
     {
@@ -1895,17 +1664,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「彼」に枠囲み］",
-      "body": "「彼」に枠囲み",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_4240"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「徳永直」はゴチック］",
       "body": "「徳永直」はゴチック",
       "occurrences": 1,
@@ -1946,17 +1704,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000124_654"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「愛刀週間」に枠囲み］",
-      "body": "「愛刀週間」に枠囲み",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_4220"
       ]
     },
     {
@@ -2016,17 +1763,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「支部長」に枠囲み］",
-      "body": "「支部長」に枠囲み",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_4213"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「文字結　青」はポイントを下げる］",
       "body": "「文字結　青」はポイントを下げる",
       "occurrences": 1,
@@ -2034,17 +1770,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000305_1896"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「文学的表象・文学的影像」の「・」を除く部分に傍点］",
-      "body": "「文学的表象・文学的影像」の「・」を除く部分に傍点",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000281_1711"
       ]
     },
     {
@@ -2067,17 +1792,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000096_2100"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「新興河上」に枠囲み］",
-      "body": "「新興河上」に枠囲み",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_4213"
       ]
     },
     {
@@ -2566,50 +2280,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「耳こじり」に欄外に校注、「みじかいわきざし」］",
-      "body": "「耳こじり」に欄外に校注、「みじかいわきざし」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000989_354"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「自」と「然」の間に白三角傍点］",
-      "body": "「自」と「然」の間に白三角傍点",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000146_48509"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「自分＝モラル＝文学」の「＝」を除く部分に傍点］",
-      "body": "「自分＝モラル＝文学」の「＝」を除く部分に傍点",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000281_1711"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「自律・自由・人格・性格」の「・」を除く部分に傍点］",
-      "body": "「自律・自由・人格・性格」の「・」を除く部分に傍点",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000281_1711"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「舟橋聖一」はゴチック］",
       "body": "「舟橋聖一」はゴチック",
       "occurrences": 1,
@@ -2676,17 +2346,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「行・実践」の「・」を除く部分に傍点］",
-      "body": "「行・実践」の「・」を除く部分に傍点",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000281_1711"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「複」の文字の下から２字下げ、横組み右揃えで］",
       "body": "「複」の文字の下から２字下げ、横組み右揃えで",
       "occurrences": 1,
@@ -2694,17 +2353,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「評論・批評・批判」の「・」を除く部分に傍点］",
-      "body": "「評論・批評・批判」の「・」を除く部分に傍点",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000281_1710"
       ]
     },
     {
@@ -2760,17 +2408,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000124_654"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「道徳・モラル」の「・」を除く部分に傍点］",
-      "body": "「道徳・モラル」の「・」を除く部分に傍点",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000281_1711"
       ]
     },
     {
@@ -5899,17 +5536,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃欄外に校注：おだやか○平穏○］",
-      "body": "欄外に校注：おだやか○平穏○",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000989_2614"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃次の３項目は２行目以降１字下げ］",
       "body": "次の３項目は２行目以降１字下げ",
       "occurrences": 1,
@@ -7912,13 +7538,6 @@
       "body": "［＃"
     },
     {
-      "work_id": "000121_3040",
-      "line": 49,
-      "kind": "CommandFullwidth",
-      "raw": "［＃「けし」の傍点］",
-      "body": "「けし」の傍点"
-    },
-    {
       "work_id": "000124_46195",
       "line": 96,
       "kind": "EditorialNoteBottomTextCorrection",
@@ -8099,18 +7718,25 @@
       "kind": "CommandFullwidth",
       "raw": "［＃「谷崎潤一郎」はゴチック］",
       "body": "「谷崎潤一郎」はゴチック"
+    },
+    {
+      "work_id": "000124_654",
+      "line": 609,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「宇野浩二」はゴチック］",
+      "body": "「宇野浩二」はゴチック"
     }
   ],
   "decode_failures": [],
   "representability": {
-    "typed_occurrences": 4569778,
-    "raw_preserved_occurrences": 41721,
+    "typed_occurrences": 4569799,
+    "raw_preserved_occurrences": 41764,
     "out_of_body_occurrences": 950,
     "unsupported_occurrences": 13920,
     "needs_research_occurrences": 0
   },
   "strict_errors": [
-    "639 unallowlisted source markers"
+    "605 unallowlisted source markers"
   ],
   "inputs": {
     "matrix": "/home/bor/Projects/ab-validator/data/aozora-syntax-coverage.toml",

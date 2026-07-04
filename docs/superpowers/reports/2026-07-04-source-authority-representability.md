@@ -5,7 +5,7 @@
 - source_authority_gate: `SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED`
 - note: this is not a passing representability gate; durable representability claims remain blocked until strict_errors is empty.
 - strict_errors:
-  - 639 unallowlisted source markers
+  - 605 unallowlisted source markers
 
 ## Scope
 
@@ -16,14 +16,14 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 - works_scanned: 17894
 - works_failed: 0
 - markers_total: 4323915
-- unknown_markers_total: 15509
-- unallowlisted_unknown_markers_total: 639
+- unknown_markers_total: 15475
+- unallowlisted_unknown_markers_total: 605
 - allowlisted_unknown_markers_total: 14870
 
 ## Representability
 
-- typed_occurrences: 4569778
-- raw_preserved_occurrences: 41721
+- typed_occurrences: 4569799
+- raw_preserved_occurrences: 41764
 - out_of_body_occurrences: 950
 - unsupported_occurrences: 13920
 - needs_research_occurrences: 0
@@ -34,17 +34,17 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 |---|---:|---:|---|
 | accent.dotted_letter | 3 | 93 | 001096_42686, 001096_43554, 001096_43672 |
 | annotation.bouki | 12 | 127 | 000031_2846, 000037_2848, 000156_2699, 000219_2932, 000287_3061 |
-| annotation.chuuki | 5508 | 35325 | 000005_53194, 000006_1869, 000006_3310, 000006_4627, 000006_46659 |
+| annotation.chuuki | 5508 | 35341 | 000005_53194, 000006_1869, 000006_3310, 000006_4627, 000006_46659 |
 | break.line_explicit | 47 | 161 | 000075_4250, 000081_47027, 000083_46289, 000106_56858, 000106_57905 |
 | break.page_line | 943 | 9228 | 000005_53194, 000006_1869, 000009_55881, 000011_889, 000011_899 |
 | caption.block | 48 | 1726 | 000058_57440, 000091_50354, 000125_1321, 000165_49567, 000226_1150 |
 | caption.inline | 143 | 2397 | 000014_728, 000058_57440, 000067_1768, 000067_1788, 000067_1789 |
 | decoration.bold_italic | 316 | 8754 | 000020_4487, 000020_46404, 000025_1144, 000025_56503, 000026_50241 |
-| decoration.boten | 6235 | 129067 | 000005_53194, 000006_382, 000006_383, 000006_58819, 000008_1083 |
+| decoration.boten | 6236 | 129082 | 000005_53194, 000006_382, 000006_383, 000006_58819, 000008_1083 |
 | decoration.bousen | 324 | 18116 | 000006_1869, 000013_11, 000019_4376, 000034_55507, 000038_1408 |
 | decoration.direction_override | 6 | 65 | 000096_935, 000866_3039, 001094_42603, 001242_46444, 001467_50733 |
 | decoration.font_size | 1219 | 51477 | 000006_1869, 000008_58922, 000011_899, 000019_4376, 000019_58861 |
-| decoration.keigakomi | 146 | 692 | 000043_341, 000063_385, 000067_1789, 000072_408, 000072_864 |
+| decoration.keigakomi | 151 | 698 | 000043_341, 000063_385, 000067_1789, 000072_408, 000072_864 |
 | emphasis.basic | 6576 | 157493 | 000005_53194, 000006_1869, 000006_382, 000006_383, 000006_58819 |
 | figure.image_caption | 103 | 1777 | 000019_42378, 000019_42379, 000019_42380, 000019_42381, 000019_42382 |
 | figure.image_inline | 521 | 5860 | 000009_226, 000009_45340, 000009_50711, 000009_50712, 000009_50713 |
@@ -53,7 +53,7 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | gaiji.un_embed | 38 | 144 | 000019_4376, 000025_kantou, 000038_323, 000040_1326, 000040_737 |
 | gaiji.unicode_codepoint | 631 | 3714 | 000008_47357, 000008_47386, 000020_55103, 000022_42254, 000023_1698 |
 | gaiji_ruby.inline_base | 2799 | 13450 | 000005_5, 000006_1869, 000006_3310, 000008_1083, 000008_47357 |
-| glyph.variant_note | 1176 | 4052 | 000006_1869, 000008_1083, 000011_55301, 000011_889, 000011_899 |
+| glyph.variant_note | 1178 | 4079 | 000006_1869, 000008_1083, 000011_55301, 000011_889, 000011_899 |
 | heading.basic | 3696 | 80591 | 000005_53194, 000006_58819, 000008_1083, 000008_47357, 000008_47386 |
 | heading.dogyo | 142 | 11839 | 000011_899, 000058_59060, 000067_1790, 000067_4869, 000081_1058 |
 | heading.mado | 6 | 1680 | 000255_47342, 000296_1864, 000961_4820, 001402_49946, 001404_49966 |
@@ -157,7 +157,6 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | 000113_4327 | 1718 | CommandFullwidth | ［＃改見開き右］ | 改見開き右 |
 | 000119_43813 | 279 | EditorialNoteBottomTextCorrection | 」は底本では「機會主義者」の左側に注記されています。\n入力：桑田康正\n校正：小林繁雄\n2005年1月20日作成\n青空文庫作成ファイル：\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\n | 」は底本では「機會主義者」の左側に注記されています。\n入力：桑田康正\n校正：小林繁雄\n2005年1月20日作成\n青空文庫作成ファイル：\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\n |
 | 000121_1754 | 174 | MalformedCommand | ［＃ | ［＃ |
-| 000121_3040 | 49 | CommandFullwidth | ［＃「けし」の傍点］ | 「けし」の傍点 |
 | 000124_46195 | 96 | EditorialNoteBottomTextCorrection | 」は底本では「三十をすぎた。不良老年の癖に、」となっていますが、底本第五巻月報の「訂正」にしたがって変更しました。\n入力：八巻美恵\n校正：浜野　智\n2006年3月1日作成\n青空文庫作成ファイル：\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\n | 」は底本では「三十をすぎた。不良老年の癖に、」となっていますが、底本第五巻月報の「訂正」にしたがって変更しました。\n入力：八巻美恵\n校正：浜野　智\n2006年3月1日作成\n青空文庫作成ファイル：\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\n |
 | 000124_651 | 664 | CommandFullwidth | ［＃「七夕」「真つすぐな街」は自由律俳句］ | 「七夕」「真つすぐな街」は自由律俳句 |
 | 000124_652 | 380 | CommandFullwidth | ［＃右下の部分は「蝎」の右下部と同形］ | 右下の部分は「蝎」の右下部と同形 |
@@ -184,10 +183,11 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | 000124_654 | 602 | CommandFullwidth | ［＃「武田麟太郎」はゴチック］ | 「武田麟太郎」はゴチック |
 | 000124_654 | 604 | CommandFullwidth | ［＃「林芙美子」はゴチック］ | 「林芙美子」はゴチック |
 | 000124_654 | 608 | CommandFullwidth | ［＃「谷崎潤一郎」はゴチック］ | 「谷崎潤一郎」はゴチック |
+| 000124_654 | 609 | CommandFullwidth | ［＃「宇野浩二」はゴチック］ | 「宇野浩二」はゴチック |
 
 ## Unknown Source Marker Classes
 
-Showing 50 report rows of 623 total classes. JSON carries 623 top classes. truncated: false
+Showing 50 report rows of 589 total classes. JSON carries 589 top classes. truncated: false
 
 | kind | raw | occurrences | unallowlisted | allowlisted | samples |
 |---|---|---:|---:|---:|---|
@@ -215,32 +215,32 @@ Showing 50 report rows of 623 total classes. JSON carries 623 top classes. trunc
 | CommandFullwidth | ［＃、93-下段-9］ | 1 | 1 | 0 | 000160_875 |
 | CommandFullwidth | ［＃、94-下段-19］ | 1 | 1 | 0 | 000160_875 |
 | CommandFullwidth | ［＃〇・四一キログラム］ | 1 | 1 | 0 | 000311_46247 |
-| CommandFullwidth | ［＃「!!!」は一文字、111-18］ | 1 | 1 | 0 | 000280_1706 |
-| CommandFullwidth | ［＃「!!!」は一文字、95-13］ | 1 | 1 | 0 | 000280_1706 |
-| CommandFullwidth | ［＃「あめとう」に欄外に校注、「アメリカ唐桟の略」］ | 1 | 1 | 0 | 000989_4054 |
 | CommandFullwidth | ［＃「うらみ思ひ」は、「刈萱の穗にあらはれぬ」と「かな」の間に挟まれるような形でポイントを下げて２行で］ | 1 | 1 | 0 | 000305_1896 |
-| CommandFullwidth | ［＃「お前のような不孝者は」か？］ | 1 | 1 | 0 | 000124_655 |
-| CommandFullwidth | ［＃「かしく」は崩し字］ | 1 | 1 | 0 | 001529_50685 |
-| CommandFullwidth | ［＃「けし」の傍点］ | 1 | 1 | 0 | 000121_3040 |
-| CommandFullwidth | ［＃「しぶしぶ」は傍点］ | 1 | 1 | 0 | 001579_53947 |
-| CommandFullwidth | ［＃「じぶんで」は傍点］ | 1 | 1 | 0 | 001505_54919 |
-| CommandFullwidth | ［＃「た」と「ふ」の間に白三角傍点］ | 1 | 1 | 0 | 000146_48509 |
-| CommandFullwidth | ［＃「てまえ」あるいは「てめえ」か］ | 1 | 1 | 0 | 000989_1490 |
 | CommandFullwidth | ［＃「どこやらに」と「稻妻に」の句の上には、この二つの句を括る波括弧あり］ | 1 | 1 | 0 | 000305_1896 |
-| CommandFullwidth | ［＃「どんどん」に欄外に校注、「三橋の側にあった不忍池の水の落口」］ | 1 | 1 | 0 | 000989_354 |
 | CommandFullwidth | ［＃「な」は判読困難につき推定、コマ25-左-3］ | 1 | 1 | 0 | 000212_4840 |
 | CommandFullwidth | ［＃「ねませ和子よの譜」の表題付きの楽譜入る（略）］ | 1 | 1 | 0 | 000311_15949 |
-| CommandFullwidth | ［＃「は」と「う」の間に白三角傍点］ | 1 | 1 | 0 | 000146_48509 |
-| CommandFullwidth | ［＃「ひと」は傍点］ | 1 | 1 | 0 | 001154_52302 |
 | CommandFullwidth | ［＃「や闇吹き入れるにまぶれて白し」は、「夕顏」と「三日の月」の間に挟まれるような形でポイントを下げて２行で］ | 1 | 1 | 0 | 000305_1896 |
-| CommandFullwidth | ［＃「ア」に点］ | 1 | 1 | 0 | 000874_3213 |
-| CommandFullwidth | ［＃「クリティカル・エッセイ」の「・」を除く部分に傍点］ | 1 | 1 | 0 | 000281_1710 |
-| CommandFullwidth | ［＃「グレコの絵との連想」に枠囲み］ | 1 | 1 | 0 | 000311_4228 |
 | CommandFullwidth | ［＃「ココ」は手描きの切符の下部の線に結ばれている］ | 1 | 1 | 0 | 000311_46246 |
 | CommandFullwidth | ［＃「ココノトコロハ三拝九拝シテアル部分」は２日～10日の下に縦中横］ | 1 | 1 | 0 | 000311_33188 |
-| CommandFullwidth | ［＃「シ」の右上に小さな四角あり］ | 1 | 1 | 0 | 000301_1872 |
 | CommandFullwidth | ［＃「ジップ」は桃源社版では「ジッブ」］ | 1 | 1 | 0 | 000125_1321 |
-| CommandFullwidth | ［＃「ソヴェト同盟ヲ守レ！」に枠線］ | 1 | 1 | 0 | 000311_1979 |
+| CommandFullwidth | ［＃「ノ句　繋がれて牛も眠るやもゝの花」は「牛飼も牛も眠るや桃の花」の下にポイントを下げて２行で］ | 1 | 1 | 0 | 000305_1896 |
+| CommandFullwidth | ［＃「ベネズェラ」は本文では「ベネズエラ」］ | 1 | 1 | 0 | 001395_51364 |
+| CommandFullwidth | ［＃「マリニヨリの」は本文では「マリニョリの」］ | 1 | 1 | 0 | 001395_51364 |
+| CommandFullwidth | ［＃「ムツセメルリ」は本文では「ムッセメルリ」］ | 1 | 1 | 0 | 001395_51364 |
+| CommandFullwidth | ［＃「ヤンに傍点］ | 1 | 1 | 0 | 000008_1083 |
+| CommandFullwidth | ［＃「一」は「□」囲み］ | 1 | 1 | 0 | 000081_43733 |
+| CommandFullwidth | ［＃「一五四・六」の両側に傍線］ | 1 | 1 | 0 | 001164_43670 |
+| CommandFullwidth | ［＃「一体だ」に波線］ | 1 | 1 | 0 | 000311_46247 |
+| CommandFullwidth | ［＃「一作　夏菊や木曾の旅人やせにけり」は「夏菊や旅人やせる木曾の宿」の下にポイントを下げて２行で］ | 1 | 1 | 0 | 000305_1896 |
+| CommandFullwidth | ［＃「一作　藻を刈てはひでる舟の螢哉」は「藻を刈るや螢はひ出る舟の端」の下にポイントを下げて２行で］ | 1 | 1 | 0 | 000305_1896 |
+| CommandFullwidth | ［＃「一六三・七」の両側に傍線］ | 1 | 1 | 0 | 001164_43670 |
+| CommandFullwidth | ［＃「一千円」は大文字、太字］ | 1 | 1 | 0 | 000096_2100 |
+| CommandFullwidth | ［＃「一四五・五」の両側に傍線］ | 1 | 1 | 0 | 001164_43670 |
+| CommandFullwidth | ［＃「一言」の「一」をのぞいて「レ一二三」は返り点］ | 1 | 1 | 0 | 000301_1872 |
+| CommandFullwidth | ［＃「七夕」「真つすぐな街」は自由律俳句］ | 1 | 1 | 0 | 000124_651 |
+| CommandFullwidth | ［＃「三」は「□」囲み］ | 1 | 1 | 0 | 000081_43733 |
+| CommandFullwidth | ［＃「三六六ページ」は「清寧天皇・顯宗天皇・仁賢天皇」の「シジムの新築祝い」］ | 1 | 1 | 0 | 001518_51732 |
+| CommandFullwidth | ［＃「三好十郎」はゴチック］ | 1 | 1 | 0 | 000124_654 |
 
 ## Decode Failures
 

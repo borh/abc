@@ -306,6 +306,13 @@ fn source_inventory_classifies_boten_corpus_variants() {
         "［＃「自然の諸事物を」～「表象である」に傍点］",
         "［＃「革命」に×傍点、伏字を起こした文字］",
         "［＃「ほ」に傍点、罫囲み］",
+        "［＃「けし」の傍点］",
+        "［＃「しぶしぶ」は傍点］",
+        "［＃「じぶんで」は傍点］",
+        "［＃「た」と「ふ」の間に白三角傍点］",
+        "［＃「は」と「う」の間に白三角傍点］",
+        "［＃「クリティカル・エッセイ」の「・」を除く部分に傍点］",
+        "［＃「ア」に点］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -320,7 +327,7 @@ fn source_inventory_classifies_boten_corpus_variants() {
             .row_counts
             .get("decoration.boten")
             .map(|count| count.occurrences),
-        Some(6)
+        Some(13)
     );
 }
 
@@ -373,6 +380,8 @@ fn source_inventory_classifies_heading_and_keigakomi_corpus_variants() {
         "［＃「住友　第一」は枠囲み］",
         "［＃「」は中見出し］",
         "［＃「おぼつかぐら」は太字、罫囲み］",
+        "［＃「グレコの絵との連想」に枠囲み］",
+        "［＃「ソヴェト同盟ヲ守レ！」に枠線］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -394,7 +403,7 @@ fn source_inventory_classifies_heading_and_keigakomi_corpus_variants() {
             .row_counts
             .get("decoration.keigakomi")
             .map(|count| count.occurrences),
-        Some(7)
+        Some(9)
     );
 }
 
@@ -488,6 +497,10 @@ fn source_inventory_classifies_annotation_editor_notes() {
         "［＃「起上り」にルビ］",
         "［＃「【例題五】」は定本では「【例題六】］",
         "［＃「お伽話」のルビ］",
+        "［＃「あめとう」に欄外に校注、「アメリカ唐桟の略」］",
+        "［＃「どんどん」に欄外に校注、「三橋の側にあった不忍池の水の落口」］",
+        "［＃「お前のような不孝者は」か？］",
+        "［＃「てまえ」あるいは「てめえ」か］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -502,7 +515,7 @@ fn source_inventory_classifies_annotation_editor_notes() {
             .row_counts
             .get("annotation.chuuki")
             .map(|count| count.occurrences),
-        Some(36)
+        Some(40)
     );
 }
 
@@ -1050,6 +1063,9 @@ fn source_inventory_classifies_glyph_variant_notes() {
         "［＃「え」は「江」のくずし字］",
         "［＃「t」は下点付き、182-6］",
         "［＃「　」は欠字］",
+        "［＃「かしく」は崩し字］",
+        "［＃「シ」の右上に小さな四角あり］",
+        "［＃「!!!」は一文字、111-18］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -1064,7 +1080,7 @@ fn source_inventory_classifies_glyph_variant_notes() {
             .row_counts
             .get("glyph.variant_note")
             .map(|count| count.occurrences),
-        Some(33)
+        Some(36)
     );
 }
 

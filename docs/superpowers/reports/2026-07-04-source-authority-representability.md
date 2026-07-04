@@ -5,7 +5,7 @@
 - source_authority_gate: `SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED`
 - note: this is not a passing representability gate; durable representability claims remain blocked until strict_errors is empty.
 - strict_errors:
-  - 1715 unallowlisted source markers
+  - 1676 unallowlisted source markers
 
 ## Scope
 
@@ -16,14 +16,14 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 - works_scanned: 17894
 - works_failed: 0
 - markers_total: 4324663
-- unknown_markers_total: 16585
-- unallowlisted_unknown_markers_total: 1715
+- unknown_markers_total: 16546
+- unallowlisted_unknown_markers_total: 1676
 - allowlisted_unknown_markers_total: 14870
 
 ## Representability
 
-- typed_occurrences: 4567524
-- raw_preserved_occurrences: 35428
+- typed_occurrences: 4566724
+- raw_preserved_occurrences: 36301
 - out_of_body_occurrences: 950
 - unsupported_occurrences: 13920
 - needs_research_occurrences: 0
@@ -36,7 +36,7 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | annotation.bouki | 12 | 127 | 000031_2846, 000037_2848, 000156_2699, 000219_2932, 000287_3061 |
 | annotation.chuuki | 5487 | 35063 | 000005_53194, 000006_1869, 000006_3310, 000006_4627, 000006_46659 |
 | break.line_explicit | 47 | 161 | 000075_4250, 000081_47027, 000083_46289, 000106_56858, 000106_57905 |
-| break.page_line | 943 | 10028 | 000005_53194, 000006_1869, 000009_55881, 000011_889, 000011_899 |
+| break.page_line | 943 | 9228 | 000005_53194, 000006_1869, 000009_55881, 000011_889, 000011_899 |
 | caption.block | 47 | 1722 | 000058_57440, 000091_50354, 000125_1321, 000165_49567, 000226_1150 |
 | caption.inline | 143 | 2397 | 000014_728, 000058_57440, 000067_1768, 000067_1788, 000067_1789 |
 | decoration.bold_italic | 161 | 5264 | 000025_1144, 000026_50241, 000026_55916, 000035_279, 000035_52380 |
@@ -65,6 +65,7 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | iteration.kunoji | 1125 | 10700 | 000006_58810, 000006_58819, 000008_47357, 000012_1092, 000012_24448 |
 | kunten.kaeriten | 488 | 28082 | 000006_1869, 000038_1408, 000042_1694, 000050_3581, 000051_1436 |
 | kunten.okurigana | 256 | 6562 | 000026_50238, 000026_50242, 000026_50259, 000026_51893, 000026_55774 |
+| layout.center_page | 259 | 873 | 000005_53194, 000009_55881, 000011_899, 000025_47220, 000026_219 |
 | layout.multicolumn | 15 | 48 | 000061_377, 000081_45631, 000096_2100, 000158_4854, 000308_46589 |
 | layout.tcy | 724 | 19796 | 000014_728, 000020_2223, 000020_46404, 000023_55306, 000023_55324 |
 | layout.yokogumi | 413 | 3663 | 000019_59374, 000026_50239, 000026_55717, 000026_55732, 000026_55738 |
@@ -182,12 +183,11 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 
 ## Unknown Source Marker Classes
 
-Showing 50 report rows of 1302 total classes. JSON carries 1000 top classes. truncated: true
+Showing 50 report rows of 1288 total classes. JSON carries 1000 top classes. truncated: true
 
 | kind | raw | occurrences | unallowlisted | allowlisted | samples |
 |---|---|---:|---:|---:|---|
 | MalformedAccentNotation | 〔 | 56 | 56 | 0 | 000026_219, 000034_55507, 000081_4416, 000081_50764, 000091_522 |
-| CommandFullwidth | ［＃ここからページの左右中央］ | 11 | 11 | 0 | 000885_2557 |
 | CommandFullwidth | ［＃「ル」は上に「⌒」付き］ | 9 | 9 | 0 | 000564_52368 |
 | CommandFullwidth | ［＃「?!」は一字］ | 7 | 7 | 0 | 000125_1320 |
 | CommandFullwidth | ［＃「地付き］ | 7 | 7 | 0 | 000150_46617 |
@@ -196,8 +196,6 @@ Showing 50 report rows of 1302 total classes. JSON carries 1000 top classes. tru
 | CommandFullwidth | ［＃「2」は指数］ | 6 | 6 | 0 | 000096_2110 |
 | CommandFullwidth | ［＃劇場名］ | 6 | 6 | 0 | 000311_46245, 000311_46246, 000311_46248 |
 | CommandFullwidth | ［＃左にルビ付き］ | 6 | 6 | 0 | 000933_47550, 001930_58400, 001932_59114 |
-| CommandFullwidth | ［＃改ページ、ページの左右中央に］ | 6 | 6 | 0 | 000065_393 |
-| CommandFullwidth | ［＃横組みで、ページの上部、左右中央に］ | 6 | 6 | 0 | 000065_393 |
 | MalformedCommand | ［＃ | 6 | 6 | 0 | 000081_4461, 000106_2415, 000121_1754, 000148_798, 000331_2663 |
 | CommandFullwidth | ［＃ 最後の「e」は「´」付き］ | 5 | 5 | 0 | 000129_2522 |
 | CommandFullwidth | ［＃「e」はアクサン（´）付き］ | 5 | 5 | 0 | 000129_2547, 000301_1872 |
@@ -220,7 +218,6 @@ Showing 50 report rows of 1302 total classes. JSON carries 1000 top classes. tru
 | CommandFullwidth | ［＃右寄せ］ | 4 | 4 | 0 | 000025_1144 |
 | CommandFullwidth | ［＃夫人］ | 4 | 4 | 0 | 000160_1255 |
 | CommandFullwidth | ［＃引用文終わり］ | 4 | 4 | 0 | 000034_233 |
-| CommandFullwidth | ［＃改丁、左寄せで］ | 4 | 4 | 0 | 000160_1255 |
 | CommandFullwidth | ［＃最後の「e」は「´」付き］ | 4 | 4 | 0 | 000129_2522 |
 | CommandFullwidth | ［＃εに帯気。ιに鋭アクセント］ | 3 | 3 | 0 | 000065_393 |
 | CommandFullwidth | ［＃ηに鋭アクセント］ | 3 | 3 | 0 | 000065_393 |
@@ -236,6 +233,10 @@ Showing 50 report rows of 1302 total classes. JSON carries 1000 top classes. tru
 | CommandFullwidth | ［＃「せり吟」は上部に出ている］ | 3 | 3 | 0 | 000305_1896 |
 | CommandFullwidth | ［＃「レ」は返り点］ | 3 | 3 | 0 | 000284_2609 |
 | CommandFullwidth | ［＃「一六八頁」は「安康天皇」の「市の邊の押齒の王」］ | 3 | 3 | 0 | 001518_51731 |
+| CommandFullwidth | ［＃「Ｏ」は覆面の英字です。］ | 3 | 3 | 0 | 000160_43532, 000160_43533 |
+| CommandFullwidth | ［＃「｝（同時に）」は前２行の中央、下に］ | 3 | 3 | 0 | 000827_3411 |
+| CommandFullwidth | ［＃ここから引用文、３字下げ］ | 3 | 3 | 0 | 000034_233 |
+| CommandFullwidth | ［＃ここで字下げ、枠囲み終わり］ | 3 | 3 | 0 | 000311_2726, 000933_18403 |
 
 ## Decode Failures
 

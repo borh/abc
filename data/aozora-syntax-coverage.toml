@@ -586,7 +586,7 @@ reference_sources = [
   "references/aozorabunko/rules/kijyunn.html",
 ]
 source_examples = ["［＃改ページ］", "［＃改行］"]
-source_patterns = ['［＃(改ページ|改頁|改丁|改段|改見開き)］|［＃ページの左右中央］', '［＃改行］']
+source_patterns = ['［＃(改ページ|改頁|改丁|改段|改見開き)(、[^］]+)?］', '［＃改行］']
 ir_nodes = ["Inline::Break", "Block::Milestone"]
 aat_nodes = ["paragraph"]
 tei_projection = "pb/lb"
@@ -642,6 +642,70 @@ aat_nodes = ["paragraph", "text"]
 raw_fallback = true
 evidence = "crates/ab-aat-to-parser-ir/tests/integration.rs; ../abc/test/abc/tools/parser_ir_tei_test.clj"
 notes = "AAT source-derived page breaks project to parser-IR page-break and TEI pb; source-derived explicit line breaks project to parser-IR line-break and TEI lb."
+
+[[syntax]]
+id = "layout.center_page"
+priority = 2
+category = "layout"
+feature_keys = ["center_page", "alignment"]
+reference_sources = ["references/aozorabunko/rules/kijyunn.html", "P4suta/aozora-notation-spec@b60665fd50b596c967254f99b61f418495656fef:src/notation/layout.md", "P4suta/aozora-notation-spec@b60665fd50b596c967254f99b61f418495656fef:conformance/vectors/center_page/vector.json"]
+source_examples = ["［＃ページの左右中央］", "［＃ここからページの左右中央］", "［＃中央揃え］"]
+source_patterns = ['［＃(ここから)?ページの左右中央に?］', '［＃ページ(の天地左右中央|上段の左右中央|の天地中央)］', '［＃左右中央］', '［＃中央(寄せ|揃え)］', '［＃[^］]*(ページの(上部|下部)、)?左右中央(に|縦組みで)?[^］]*］']
+ir_nodes = []
+aat_nodes = ["raw"]
+tei_projection = "p or seg rend=center"
+plaintext_projection = "content_only"
+comparison_projection = "content_only"
+validation_properties = ["single_line_scope"]
+adapter_expectations = ["preserve page-centering marker or center alignment"]
+oracle_cases = []
+status = "needs_research"
+status_reason = "Page-centering markers are corpus-observed layout directives; current AAT/parser-IR typed center support has not been measured."
+
+[syntax.representability]
+source_inventory_row = "layout.center_page"
+status = "raw_preserved"
+aat_nodes = ["raw"]
+raw_fallback = true
+evidence = "P4suta/aozora-notation-spec@b60665fd50b596c967254f99b61f418495656fef:src/notation/layout.md"
+notes = "TEI P5 can preserve page centering as rend=center on a paragraph or segment. v1 records source-authority coverage as raw-preserved until adapters expose a typed center alignment node."
+
+[syntax.parsers.aozora2]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes page-center markers; parser-specific typed behavior remains to be measured."
+
+[syntax.parsers.aozora-rs]
+recognition = "parsed"
+evidence = "references/parsers/aozora-rs/aozora-rs/aozora-rs-core/src/tokenizer/note/wholeline.rs:41"
+notes = "wholeline parser recognizes page centering, but the current AAT projection does not preserve a typed center node."
+
+[syntax.parsers.aozora2html]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes page-center markers; parser-specific typed behavior remains to be measured."
+
+[syntax.adapters.aozora2]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed page-center AAT projection has been measured."
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "dropped"
+evidence = "adapters/aozora-rs/src/aat.rs:238"
+notes = "AAT projection flushes paragraphs for wholeline/single break handling and does not preserve a typed center node."
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed page-center AAT projection has been measured."
+
+[syntax.corpus_prevalence]
+works_with_feature = 0
+total_occurrences = 0
+detector_id = "layout_center_page"
+coverage_basis = "not_run"
+sample_works = []
 
 # =============================================================================
 # Priority 2 rows (added 2026-04-28; sourced from references/parsers/aozora2html

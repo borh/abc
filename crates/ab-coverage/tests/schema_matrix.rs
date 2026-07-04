@@ -881,6 +881,44 @@ fn source_inventory_classifies_dotted_letter_variants() {
 }
 
 #[test]
+fn source_inventory_classifies_page_center_layout_variants() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = [
+        "［＃ページの左右中央］",
+        "［＃ページの左右中央に］",
+        "［＃ここからページの左右中央］",
+        "［＃左右中央］",
+        "［＃中央寄せ］",
+        "［＃改ページ、ページの左右中央に］",
+        "［＃横組みで、ページの上部、左右中央に］",
+    ]
+    .join("\n");
+    let summary = inventory_document("fixture", &source, &patterns);
+
+    assert_eq!(
+        summary.unknown_examples,
+        [],
+        "known page-center layout variants should not remain unknown"
+    );
+    assert_eq!(
+        summary
+            .row_counts
+            .get("layout.center_page")
+            .map(|count| count.occurrences),
+        Some(7)
+    );
+    assert_eq!(
+        summary
+            .row_counts
+            .get("break.page_line")
+            .map(|count| count.occurrences),
+        Some(1),
+        "combined page-break plus center marker should still count the break"
+    );
+}
+
+#[test]
 fn source_inventory_classifies_layout_and_inline_style_corpus_variants() {
     let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
     let patterns = patterns_from_rows(matrix.rows());

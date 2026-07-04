@@ -3,8 +3,8 @@
   "works_scanned": 17894,
   "works_failed": 0,
   "markers_total": 4324663,
-  "unknown_markers_total": 16585,
-  "unallowlisted_unknown_markers_total": 1715,
+  "unknown_markers_total": 16546,
+  "unallowlisted_unknown_markers_total": 1676,
   "allowlisted_unknown_markers_total": 14870,
   "rows": {
     "accent.dotted_letter": {
@@ -51,7 +51,7 @@
     },
     "break.page_line": {
       "works_with_marker": 943,
-      "occurrences": 10028,
+      "occurrences": 9228,
       "sample_works": [
         "000005_53194",
         "000006_1869",
@@ -368,6 +368,17 @@
         "000026_55774"
       ]
     },
+    "layout.center_page": {
+      "works_with_marker": 259,
+      "occurrences": 873,
+      "sample_works": [
+        "000005_53194",
+        "000009_55881",
+        "000011_899",
+        "000025_47220",
+        "000026_219"
+      ]
+    },
     "layout.multicolumn": {
       "works_with_marker": 15,
       "occurrences": 48,
@@ -464,7 +475,7 @@
       ]
     }
   },
-  "unknown_classes_total": 1302,
+  "unknown_classes_total": 1288,
   "unknown_classes_truncated": true,
   "unknown_classes": [
     {
@@ -480,17 +491,6 @@
         "000081_4416",
         "000081_50764",
         "000091_522"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここからページの左右中央］",
-      "body": "ここからページの左右中央",
-      "occurrences": 11,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 11,
-      "sample_works": [
-        "000885_2557"
       ]
     },
     {
@@ -583,28 +583,6 @@
         "000933_47550",
         "001930_58400",
         "001932_59114"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃改ページ、ページの左右中央に］",
-      "body": "改ページ、ページの左右中央に",
-      "occurrences": 6,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 6,
-      "sample_works": [
-        "000065_393"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃横組みで、ページの上部、左右中央に］",
-      "body": "横組みで、ページの上部、左右中央に",
-      "occurrences": 6,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 6,
-      "sample_works": [
-        "000065_393"
       ]
     },
     {
@@ -862,17 +840,6 @@
       "unallowlisted_occurrences": 4,
       "sample_works": [
         "000034_233"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃改丁、左寄せで］",
-      "body": "改丁、左寄せで",
-      "occurrences": 4,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 4,
-      "sample_works": [
-        "000160_1255"
       ]
     },
     {
@@ -2490,18 +2457,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃左右中央］",
-      "body": "左右中央",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "001093_42590",
-        "001093_42595"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃改行を挿入］",
       "body": "改行を挿入",
       "occurrences": 2,
@@ -2623,17 +2578,6 @@
       "unallowlisted_occurrences": 2,
       "sample_works": [
         "000311_2020"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃横組みの下に、左右中央縦組みで］",
-      "body": "横組みの下に、左右中央縦組みで",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000160_1255"
       ]
     },
     {
@@ -8496,17 +8440,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「，」は天地左右中央］",
-      "body": "「，」は天地左右中央",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000050_3586"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「０／０」は分数］",
       "body": "「０／０」は分数",
       "occurrences": 1,
@@ -9893,50 +9826,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃ページの天地中央］",
-      "body": "ページの天地中央",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001421_50423"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ページの天地左右中央に］",
-      "body": "ページの天地左右中央に",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000283_1726"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ページの左右中央に］",
-      "body": "ページの左右中央に",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000318_2086"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ページ上段の左右中央］",
-      "body": "ページ上段の左右中央",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000281_3596"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃ページ上部横組み終わり］",
       "body": "ページ上部横組み終わり",
       "occurrences": 1,
@@ -10362,17 +10251,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000311_46236"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃中央寄せ］",
-      "body": "中央寄せ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000148_775"
       ]
     },
     {
@@ -11529,6 +11407,138 @@
       "sample_works": [
         "000866_3039"
       ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃図２、「のり」に丸囲みの手書き文字。「り」は小さく頭の部分が「の」の下隙間に入る］",
+      "body": "図２、「のり」に丸囲みの手書き文字。「り」は小さく頭の部分が「の」の下隙間に入る",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_33186"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃図２、「十」の下に小さい「○」の絵］",
+      "body": "図２、「十」の下に小さい「○」の絵",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_33188"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃図２、「本館見取り図」］",
+      "body": "図２、「本館見取り図」",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_4212"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃図２、手書き右下がりの三角］",
+      "body": "図２、手書き右下がりの三角",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_33190"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃図２、絵「欄間の硝子の形」］",
+      "body": "図２、絵「欄間の硝子の形」",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_4222"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃図２、花マルのようなマーク］",
+      "body": "図２、花マルのようなマーク",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_33189"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃図２入る］",
+      "body": "図２入る",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000009_45340"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃図３、右手前に煙突、煙突には三角の屋根、左奥には家の屋根の左端を描いた絵］",
+      "body": "図３、右手前に煙突、煙突には三角の屋根、左奥には家の屋根の左端を描いた絵",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_33188"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃図３、草の絵］",
+      "body": "図３、草の絵",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_33189"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃図３入る］",
+      "body": "図３入る",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000009_45340"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃図４入る］",
+      "body": "図４入る",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000009_45340"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃図５、手書き縦線５本］",
+      "body": "図５、手書き縦線５本",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_33189"
+      ]
     }
   ],
   "unknown_examples": [
@@ -12235,14 +12245,14 @@
   ],
   "decode_failures": [],
   "representability": {
-    "typed_occurrences": 4567524,
-    "raw_preserved_occurrences": 35428,
+    "typed_occurrences": 4566724,
+    "raw_preserved_occurrences": 36301,
     "out_of_body_occurrences": 950,
     "unsupported_occurrences": 13920,
     "needs_research_occurrences": 0
   },
   "strict_errors": [
-    "1715 unallowlisted source markers"
+    "1676 unallowlisted source markers"
   ],
   "inputs": {
     "matrix": "/home/bor/Projects/ab-validator/data/aozora-syntax-coverage.toml",

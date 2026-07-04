@@ -269,6 +269,12 @@
           };
         };
 
+        # Two variants of mecab-dic-converter: one with pointer_width_64
+        # stripped (compatible with ab-validator's vibrato-rkyv for small
+        # dictionaries) and one with pointer_width_64 enabled (required for
+        # large dictionaries like unidic-novel whose matrix dimensions overflow
+        # 32-bit types).
+
         mecabDicConverter = rustPlatform.buildRustPackage {
           pname = "mecab-dic-converter";
           version = "0.1.0";
@@ -295,6 +301,7 @@
             unidicSrc = pkgs.fetchzip {
               inherit url hash;
               name = "${name}-src";
+              stripRoot = false;
             };
           in
           pkgs.runCommand "vibrato-dict-${name}-202512"
@@ -330,14 +337,14 @@
 
         vibratoDictQkana = buildUnidicVibratoDict {
           name = "unidic-qkana";
-          url = "https://clrd.ninjal.ac.jp/unidic_archive/2512/unidic-qkana-202512.zip";
-          hash = "sha256-9ACb0FASGtARYtyAU7BfsbiA25fQjuGWlatzLR2Y4I4=";
+          url = "https://clrd.ninjal.ac.jp/unidic_archive/2512/unidic-qkana-v202512.zip";
+          hash = "sha256-bzlybu2NBEFCsfTjU05LIke3wxS6Lfm4HJoS8EOrv2U=";
         };
 
         vibratoDictKindaiBungo = buildUnidicVibratoDict {
           name = "unidic-kindai-bungo";
-          url = "https://clrd.ninjal.ac.jp/unidic_archive/2512/unidic-kindai-bungo-202512.zip";
-          hash = "sha256-Lo/1zHJ6teqPukegFo9U6MRi0BI+JYm6YlqvaStX+2Q=";
+          url = "https://clrd.ninjal.ac.jp/unidic_archive/2512/unidic-kindai-bungo-v202512.zip";
+          hash = "sha256-92+UbTLIuatnm65S+528yK+4A3T93ZFlOQ5+1C71D0c=";
         };
 
         # Combined package: all built vibrato dictionaries.
@@ -1038,6 +1045,16 @@
                 done
               }
               export -f vibrato-dict-link
+
+              # Bootstrap: if no vibrato dictionaries are linked, build the
+              # default cwj dictionary automatically. This runs once per
+              # checkout; subsequent shells see the existing symlink.
+              if ! compgen -G "dictionary/compiled/*.dic.zst" > /dev/null && \
+                 ! compgen -G "dictionary/compiled/*.dic" > /dev/null; then
+                echo "" >&2
+                echo "No vibrato dictionaries found. Building default (unidic-cwj) …" >&2
+                vibrato-dict-link cwj
+              fi
             '';
           };
 

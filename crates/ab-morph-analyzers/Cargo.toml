@@ -12,6 +12,7 @@ categories = ["text-processing"]
 [dependencies]
 ab-morph-diff.workspace = true
 ab-plaintext.workspace = true
+rkyv.workspace = true
 serde.workspace = true
 sudachi.workspace = true
 vaporetto.workspace = true

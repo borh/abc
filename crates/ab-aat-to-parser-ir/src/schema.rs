@@ -60,9 +60,13 @@ fn sorted_json_text(value: &Value) -> Result<String> {
     Ok(String::from_utf8(bytes)?)
 }
 
-pub fn schema_hash(value: &Value) -> Result<String> {
+pub fn abc_legacy_json_hash(value: &Value) -> Result<String> {
     let payload = abc_legacy_json_c14n_v0(value)?;
     let mut hasher = Sha256::new();
     hasher.update(payload);
     Ok(format!("sha256:{:x}", hasher.finalize()))
+}
+
+pub fn schema_hash(value: &Value) -> Result<String> {
+    abc_legacy_json_hash(value)
 }

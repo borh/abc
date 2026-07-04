@@ -5,10 +5,12 @@ use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::schema::{SchemaSet, schema_hash, validate_value};
+use crate::schema::{SchemaSet, abc_legacy_json_hash, schema_hash, validate_value};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct MappingDocument {
+    #[serde(skip)]
+    pub document_hash: String,
     pub mapping_id: String,
     pub mapping_version: String,
     pub mapping_schema_hash: String,
@@ -45,7 +47,14 @@ impl MappingDocument {
     pub fn from_path(path: &Path) -> Result<Self> {
         let text = fs::read_to_string(path)
             .with_context(|| format!("failed to read {}", path.display()))?;
-        serde_json::from_str(&text).with_context(|| format!("failed to parse {}", path.display()))
+        let value: Value = serde_json::from_str(&text)
+            .with_context(|| format!("failed to parse {}", path.display()))?;
+        let document_hash = abc_legacy_json_hash(&value)
+            .with_context(|| format!("failed to hash {}", path.display()))?;
+        let mut document: Self = serde_json::from_value(value)
+            .with_context(|| format!("failed to decode {}", path.display()))?;
+        document.document_hash = document_hash;
+        Ok(document)
     }
 
     pub fn preflight(&self, schemas: &SchemaSet) -> Result<MappingIndex> {
@@ -109,6 +118,28 @@ impl MappingDocument {
             }
         }
         Ok(MappingIndex { rules })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::schema::{abc_legacy_json_hash, read_json};
+    use std::path::PathBuf;
+
+    fn repo_root() -> PathBuf {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
+    }
+
+    #[test]
+    fn from_path_computes_mapping_document_hash() {
+        let path = repo_root().join("data/aat-to-parser-ir-mapping-v1.json");
+        let mapping = MappingDocument::from_path(&path).expect("mapping loads");
+        let value = read_json(&path).expect("mapping json reads");
+        let expected = abc_legacy_json_hash(&value).expect("hash computes");
+        assert_eq!(mapping.document_hash, expected);
+        assert!(mapping.document_hash.starts_with("sha256:"));
+        assert_eq!(mapping.document_hash.len(), "sha256:".len() + 64);
     }
 }
 

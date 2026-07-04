@@ -862,6 +862,114 @@ fn tei_eaj_structural_expansion_classifies_parser_ir_and_evidence_gaps() {
 }
 
 #[test]
+fn tei_eaj_structural_expansion_maps_tei_file_ids_to_aozora_work_ids() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let temp = tempfile::tempdir().unwrap();
+    let aat_dir = temp.path().join("aat");
+    std::fs::create_dir_all(&aat_dir).unwrap();
+    let aat_path = aat_dir.join("000879_104-fixture.json");
+    let aat = json!({
+        "version": 1,
+        "work_id": "000879_104",
+        "meta": base_meta(
+            "utf-8",
+            "sha256:5858585858585858585858585858585858585858585858585858585858585858",
+        ),
+        "blocks": [
+            {
+                "kind": "paragraph",
+                "content": [{"kind": "text", "value": "長崎小品一。"}]
+            },
+            {
+                "kind": "paragraph",
+                "content": [{"kind": "text", "value": "長崎小品二。"}]
+            }
+        ]
+    });
+    std::fs::write(&aat_path, serde_json::to_string_pretty(&aat).unwrap()).unwrap();
+
+    let workset_path = temp.path().join("tei-eaj-workset.json");
+    let workset = json!({
+        "schema_version": "tei-eaj-aozora-workset-export-v1",
+        "summary": {
+            "tei_eaj_file_count": 2,
+            "tei_eaj_work_id_count": 1,
+            "compared_file_count": 0,
+            "missing_counterpart_count": 2,
+            "no_work_id_count": 0
+        },
+        "candidate_work_ids": ["15099"],
+        "missing_abc_counterpart_work_ids": ["15099"],
+        "no_work_id_files": [],
+        "files": [
+            {
+                "abc_body_base_text_length": null,
+                "abc_note_count": null,
+                "abc_p_count": null,
+                "abc_tei": null,
+                "base_text_equal": null,
+                "comparison_status": "missing_abc_counterpart",
+                "first_difference": null,
+                "level": "Level 3",
+                "state": "complete",
+                "tei_eaj_body_base_text_length": 100,
+                "tei_eaj_file": "data/complete/tei_lib_lv3/15099_tei.xml",
+                "tei_eaj_note_count": 0,
+                "tei_eaj_p_count": 1,
+                "title": "長崎小品",
+                "work_id": "15099"
+            },
+            {
+                "abc_body_base_text_length": null,
+                "abc_note_count": null,
+                "abc_p_count": null,
+                "abc_tei": null,
+                "base_text_equal": null,
+                "comparison_status": "missing_abc_counterpart",
+                "first_difference": null,
+                "level": "Level 4",
+                "state": "complete",
+                "tei_eaj_body_base_text_length": 200,
+                "tei_eaj_file": "data/complete/tei_lib_lv4/104_15099.xml",
+                "tei_eaj_note_count": 0,
+                "tei_eaj_p_count": 57,
+                "title": "長崎小品",
+                "work_id": "15099"
+            }
+        ]
+    });
+    std::fs::write(
+        &workset_path,
+        serde_json::to_string_pretty(&workset).unwrap(),
+    )
+    .unwrap();
+
+    let summary = ab_aat_to_parser_ir::structural_probe::run_tei_eaj_structural_expansion(
+        ab_aat_to_parser_ir::structural_probe::TeiEajStructuralExpansionConfig {
+            workset_path,
+            aat_dirs: vec![
+                ab_aat_to_parser_ir::structural_probe::StructuralProbeInput {
+                    label: "fixture-adapter".to_owned(),
+                    path: aat_dir,
+                },
+            ],
+            mapping,
+            schemas,
+        },
+    )
+    .unwrap();
+
+    assert_eq!(summary.totals.rows_with_aat_evidence, 2);
+    assert_eq!(summary.totals.evidence_gap_rows, 0);
+    assert!(summary.rows.iter().all(|row| row.aat_inputs.len() == 1));
+    assert!(summary.rows.iter().all(|row| {
+        row.aat_inputs[0].label == "fixture-adapter:15099"
+            && row.aat_inputs[0].aat.work_id.as_deref() == Some("000879_104")
+            && !row.classification.evidence_gap
+    }));
+}
+
+#[test]
 fn heading_visible_projection_records_measured_flattening_losses() {
     let (schemas, mapping) = schemas_and_mapping();
     let aat = json!({

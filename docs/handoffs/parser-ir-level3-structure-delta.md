@@ -24,8 +24,8 @@ ab-validator has consumed that contract:
 The refreshed full-corpus conversion audit reports 53,427 successful
 conversions and zero conversion failures against mapping `0.2.2`. The refreshed
 whole-repository TEI-EAJ/aozora_tei structural expansion reports 62 TEI-EAJ
-rows, 55 rows with AAT evidence, zero parser-IR gap rows, 17 adapter gap rows,
-and 7 evidence gap rows. ABC compatibility admission against the new hash
+rows, 57 rows with AAT evidence, zero parser-IR gap rows, 18 adapter gap rows,
+and 5 evidence gap rows. ABC compatibility admission against the new hash
 remains the next cross-repo step.
 
 ## Original Message For ABC (Historical)

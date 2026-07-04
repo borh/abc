@@ -89,10 +89,10 @@ TEI-EAJ/aozora_tei workset comparison:
 |---|---:|
 | TEI-EAJ files | 62 |
 | candidate work IDs | 50 |
-| rows with AAT evidence | 55 |
+| rows with AAT evidence | 57 |
 | parser-IR gap rows | 0 |
-| adapter gap rows | 17 |
-| evidence gap rows | 7 |
+| adapter gap rows | 18 |
+| evidence gap rows | 5 |
 
 Interpretation: Level 3 parser-IR paragraph/source-note representation is no
 longer the row-level blocker for the TEI-EAJ workset. Remaining structural work
@@ -133,7 +133,9 @@ Proceed with ABC admission and residual adapter/evidence characterization:
 - ask ABC to admit the three `0.2.2` conversion-audit candidates,
 - keep the whole TEI-EAJ/aozora_tei structural expansion as the Level 3
   comparison artifact instead of the Melos-only probe,
-- characterize the 17 adapter gap rows and 7 evidence gap rows in the
-  TEI-EAJ expansion,
+- use `docs/superpowers/reports/2026-07-04-tei-eaj-structural-gap-analysis.md`
+  as the current gap classification,
+- add paragraph-count delta buckets to the TEI-EAJ expansion so non-collapsed
+  adapter disagreement remains visible,
 - continue source-authority representability work before making stronger claims
   about all Aozora markdown constructs.

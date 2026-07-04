@@ -304,12 +304,8 @@ pub fn run_tei_eaj_structural_expansion(
         })?;
     let mapping_summary = mapping_summary(&config.mapping);
     let converter = PreparedConverter::new(config.mapping, config.schemas)?;
-    let target_work_ids = workset
-        .files
-        .iter()
-        .filter_map(|row| row.work_id.clone())
-        .collect::<BTreeSet<_>>();
-    let aat_index = index_aat_dirs(&config.aat_dirs, &target_work_ids)?;
+    let work_id_aliases = tei_eaj_work_id_aliases(&workset);
+    let aat_index = index_aat_dirs(&config.aat_dirs, &work_id_aliases)?;
 
     let mut rows = Vec::new();
     let tei_eaj_source_root = workset
@@ -712,7 +708,7 @@ fn summarize_structural_input(
 
 fn index_aat_dirs(
     dirs: &[StructuralProbeInput],
-    target_work_ids: &BTreeSet<String>,
+    work_id_aliases: &BTreeMap<String, String>,
 ) -> Result<BTreeMap<String, Vec<StructuralProbeInput>>> {
     let mut index: BTreeMap<String, Vec<StructuralProbeInput>> = BTreeMap::new();
     for dir in dirs {
@@ -730,13 +726,16 @@ fn index_aat_dirs(
             if !path.is_file() || path.extension().and_then(|ext| ext.to_str()) != Some("json") {
                 continue;
             }
+            let mut matched_work_ids = BTreeSet::new();
             for work_id in work_ids_from_aat_path(&path) {
-                if target_work_ids.contains(&work_id) {
+                if let Some(target_work_id) = work_id_aliases.get(&work_id)
+                    && matched_work_ids.insert(target_work_id.clone())
+                {
                     index
-                        .entry(work_id.clone())
+                        .entry(target_work_id.clone())
                         .or_default()
                         .push(StructuralProbeInput {
-                            label: format!("{}:{work_id}", dir.label),
+                            label: format!("{}:{target_work_id}", dir.label),
                             path: path.clone(),
                         });
                 }
@@ -744,6 +743,59 @@ fn index_aat_dirs(
         }
     }
     Ok(index)
+}
+
+fn tei_eaj_work_id_aliases(workset: &TeiEajWorksetExport) -> BTreeMap<String, String> {
+    let mut aliases: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    for row in &workset.files {
+        let Some(work_id) = row.work_id.as_deref() else {
+            continue;
+        };
+        aliases
+            .entry(work_id.to_owned())
+            .or_default()
+            .insert(work_id.to_owned());
+        for alias in tei_eaj_file_id_aliases(&row.tei_eaj_file, work_id) {
+            aliases.entry(alias).or_default().insert(work_id.to_owned());
+        }
+    }
+
+    aliases
+        .into_iter()
+        .filter_map(|(alias, work_ids)| {
+            let mut work_ids = work_ids.into_iter();
+            let work_id = work_ids.next()?;
+            if work_ids.next().is_none() {
+                Some((alias, work_id))
+            } else {
+                None
+            }
+        })
+        .collect()
+}
+
+fn tei_eaj_file_id_aliases(tei_eaj_file: &str, work_id: &str) -> BTreeSet<String> {
+    let Some(stem) = Path::new(tei_eaj_file)
+        .file_stem()
+        .and_then(|stem| stem.to_str())
+    else {
+        return BTreeSet::new();
+    };
+    let numeric_tokens: Vec<&str> = stem
+        .split(|ch: char| !ch.is_ascii_digit())
+        .filter(|part| !part.is_empty())
+        .collect();
+    if !numeric_tokens.iter().any(|token| *token == work_id) {
+        return BTreeSet::new();
+    }
+
+    numeric_tokens
+        .into_iter()
+        // Avoid unsafe aliases from suffixes like 4244-1_tei.xml; ABC should
+        // eventually export durable source aliases instead of relying on this.
+        .filter(|token| *token != work_id && token.len() >= 3)
+        .map(ToOwned::to_owned)
+        .collect()
 }
 
 fn work_ids_from_aat_path(path: &Path) -> Vec<String> {

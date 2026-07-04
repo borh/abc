@@ -22,18 +22,18 @@ Measurement-only expansion over ABC's TEI-EAJ workset export. TEI-EAJ is compari
 
 ## Totals
 
-- rows with AAT evidence: 55
+- rows with AAT evidence: 57
 - parser-IR gap rows: 0
-- adapter gap rows: 17
+- adapter gap rows: 18
 - source-attribution gap rows: 0
-- evidence gap rows: 7
+- evidence gap rows: 5
 
 ## Rows
 
 | work_id | title | status | TEI p | ABC p | AAT inputs | parser-IR gap | evidence gap | adapter gap | source attribution gap |
 |---|---|---|---:|---:|---:|---:|---:|---:|---:|
 | 1126 | 三つの宝 | missing_abc_counterpart | 169 | unknown | 3 | false | false | true | false |
-| 15099 | 長崎小品 | missing_abc_counterpart | 1 | unknown | 0 | false | true | false | false |
+| 15099 | 長崎小品 | missing_abc_counterpart | 1 | unknown | 3 | false | false | false | false |
 | 15938 | 元禄時代小説第一巻「本朝二十不孝」ぬきほ（言文一致訳） | missing_abc_counterpart | 6 | unknown | 3 | false | false | false | false |
 | 236 | ア、秋 | missing_abc_counterpart | 1 | unknown | 3 | false | false | false | false |
 | 2509 | 天災と国防 | missing_abc_counterpart | 28 | unknown | 3 | false | false | true | false |
@@ -71,7 +71,7 @@ Measurement-only expansion over ABC's TEI-EAJ workset export. TEI-EAJ is compari
 | 57047 | 書簡 武部ツタ宛 | missing_abc_counterpart | 1 | unknown | 3 | false | false | false | false |
 | 57048 | 書簡 武部ツタ宛 | missing_abc_counterpart | 1 | unknown | 3 | false | false | false | false |
 | 86 | 二人小町 | missing_abc_counterpart | 136 | unknown | 3 | false | false | false | false |
-| 15099 | 長崎小品 | missing_abc_counterpart | 57 | unknown | 0 | false | true | false | false |
+| 15099 | 長崎小品 | missing_abc_counterpart | 57 | unknown | 3 | false | false | true | false |
 | 1567 | 走れメロス | compared | 22 | 1 | 4 | false | false | true | false |
 | 1567 | 走れメロス | compared | 19 | 1 | 4 | false | false | true | false |
 | 45245 | 高瀬舟 | missing_abc_counterpart | 4 | unknown | 3 | false | false | false | false |
@@ -105,12 +105,6 @@ Measurement-only expansion over ABC's TEI-EAJ workset export. TEI-EAJ is compari
 - AAT `aozora-rs:1126`: paragraphs=1, final attribution=false, conversion=true
 - AAT `aozora2html:1126`: paragraphs=30, final attribution=false, conversion=true
 - AAT `aozora-epub3:1126`: paragraphs=154, final attribution=false, conversion=true
-
-### 15099 長崎小品
-
-- TEI-EAJ file: `data/complete/tei_lib_lv3/15099_tei.xml`
-- owners: `evidence`
-- no AAT evidence found for this TEI-EAJ work ID
 
 ### 2509 天災と国防
 
@@ -160,8 +154,11 @@ Measurement-only expansion over ABC's TEI-EAJ workset export. TEI-EAJ is compari
 ### 15099 長崎小品
 
 - TEI-EAJ file: `data/complete/tei_lib_lv4/104_15099.xml`
-- owners: `evidence`
-- no AAT evidence found for this TEI-EAJ work ID
+- owners: `adapter`
+- data/complete/tei_lib_lv4/104_15099.xml has 57 TEI-EAJ paragraph(s), but 1 AAT paragraph block(s) in aozora-rs:15099
+- AAT `aozora-rs:15099`: paragraphs=1, final attribution=false, conversion=true
+- AAT `aozora2html:15099`: paragraphs=62, final attribution=false, conversion=true
+- AAT `aozora-epub3:15099`: paragraphs=62, final attribution=false, conversion=true
 
 ### 1567 走れメロス
 

@@ -550,6 +550,18 @@
             mkdir -p "$out"
             echo "ADR acceptance-criteria lint passed (ratcheted)." > "$out/result.txt"
           '';
+          swi-prolog-smoke =
+            pkgs.runCommand "abc-swi-prolog-smoke" { nativeBuildInputs = [ pkgs.swi-prolog ]; }
+              ''
+                # SWI-Prolog is the pinned CI dialect for Layer C (design spec §7.5).
+                # chiasmus_verify prolog is exploratory/manual only; this pin makes
+                # the dialect (negation, tabling, module syntax, CLI, repro) a build input.
+                cat > "$TMPDIR/smoke.pl" <<'PL'
+                :- initialization(main).
+                main :- write('swipl ok'), nl, halt.
+                PL
+                swipl --quiet -t main -f "$TMPDIR/smoke.pl" > "$out"
+              '';
         }
       );
 

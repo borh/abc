@@ -462,6 +462,7 @@ fn summarize(
     let mut evidence_by_identity =
         BTreeMap::<CompatibilityIdentity, CompatibilityEvidenceScope>::new();
     let mut rule_ids_by_identity = BTreeMap::<CompatibilityIdentity, BTreeSet<String>>::new();
+    let mut identities_by_corpus = BTreeMap::<String, BTreeSet<CompatibilityIdentity>>::new();
 
     for result in results {
         totals.files_attempted += 1;
@@ -493,6 +494,10 @@ fn summarize(
                         rules_total,
                         ..CompatibilityEvidenceScope::default()
                     });
+                identities_by_corpus
+                    .entry(result.corpus.clone())
+                    .or_default()
+                    .insert(compatibility_identity.clone());
                 evidence.files_scanned += 1;
                 evidence.files_succeeded += 1;
                 evidence.parser_ir_nodes += success.parser_ir_nodes;
@@ -537,6 +542,26 @@ fn summarize(
                     });
                 }
             }
+        }
+    }
+
+    for (corpus, identities) in identities_by_corpus {
+        if identities.len() != 1 {
+            continue;
+        }
+        let Some(failed) = by_corpus.get(&corpus).map(|totals| totals.files_failed) else {
+            continue;
+        };
+        if failed == 0 {
+            continue;
+        }
+        let identity = identities
+            .iter()
+            .next()
+            .expect("len checked above for sole corpus identity");
+        if let Some(evidence) = evidence_by_identity.get_mut(identity) {
+            evidence.files_scanned += failed;
+            evidence.files_failed += failed;
         }
     }
 

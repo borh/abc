@@ -111,11 +111,11 @@ uv run --isolated --no-project --with 'jsonschema>=4.0' \
   "$repo_root/reports/aat-fidelity/aat_parser_ir_mapping/generate.py" \
   --aat-dir "$aat_dir" \
   --abc-root "$abc_root" \
-  --mapping-version 0.2.2 \
+  --mapping-version 0.2.3 \
   --out "$out_dir/mapping.json" \
   --summary-json "$out_dir/summary.json"
 
-jq -e '.mapping_version == "0.2.2"' "$out_dir/mapping.json"
+jq -e '.mapping_version == "0.2.3"' "$out_dir/mapping.json"
 jq -e 'all(.transform_rule_descriptions[]; (.category != "STRUCTURAL") or ((.aat_pointer // "") | contains("paragraph") | not))' "$out_dir/mapping.json"
 jq -e 'all(.transform_rule_descriptions[]; .aat_pointer != "meta.adapter" and .aat_pointer != "meta.adapter_version")' "$out_dir/mapping.json"
 jq -e 'any(.transform_rule_descriptions[]; .category == "LOSS" and .aat_pointer == "meta.parse_complete")' "$out_dir/mapping.json"

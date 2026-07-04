@@ -637,11 +637,11 @@ sample_works = ["000042_1684", "001529_546", "001670_55342", "001693_55317", "00
 
 [syntax.representability]
 source_inventory_row = "break.page_line"
-status = "needs_research"
-aat_nodes = []
+status = "typed"
+aat_nodes = ["paragraph", "text"]
 raw_fallback = true
-evidence = "docs/superpowers/plans/2026-07-04-source-authority-representability-gate.md"
-notes = "Priority-1 page and line break markers need source-authority review before choosing typed metadata versus raw preservation."
+evidence = "crates/ab-aat-to-parser-ir/tests/integration.rs; ../abc/test/abc/tools/parser_ir_tei_test.clj"
+notes = "AAT source-derived page breaks project to parser-IR page-break and TEI pb; source-derived explicit line breaks project to parser-IR line-break and TEI lb."
 
 # =============================================================================
 # Priority 2 rows (added 2026-04-28; sourced from references/parsers/aozora2html
@@ -2625,8 +2625,8 @@ comparison_projection = "whitespace_normalized"
 validation_properties = []
 adapter_expectations = ["emit explicit line break"]
 oracle_cases = ["break.line_explicit.basic"]
-status = "needs_research"
-status_reason = "explicit line break; sub-case of break.page_line"
+status = "partial"
+status_reason = "explicit line breaks now have typed parser-IR and TEI projection; adapter support is still uneven"
 
 [syntax.parsers.aozora2]
 recognition = "unrecognised"
@@ -2664,3 +2664,11 @@ total_occurrences = 165
 detector_id = "break_line_explicit"
 coverage_basis = "full_corpus"
 sample_works = ["002240_61619", "002177_60663", "000866_3039", "001508_51404", "000799_60993"]
+
+[syntax.representability]
+source_inventory_row = "break.line_explicit"
+status = "typed"
+aat_nodes = ["text"]
+raw_fallback = true
+evidence = "crates/ab-aat-to-parser-ir/tests/integration.rs; ../abc/test/abc/tools/parser_ir_tei_test.clj"
+notes = "Source-derived AAT text with x-break-kind = line is projected as parser-IR line-break and TEI lb while preserving surrounding text nodes."

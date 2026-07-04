@@ -92,6 +92,7 @@
         { "$ref": "#/$defs/headingNode" },
         { "$ref": "#/$defs/indentationNode" },
         { "$ref": "#/$defs/pageBreakNode" },
+        { "$ref": "#/$defs/lineBreakNode" },
         { "$ref": "#/$defs/imageNode" },
         { "$ref": "#/$defs/captionNode" },
         { "$ref": "#/$defs/quoteNode" },
@@ -263,6 +264,21 @@
             "span": { "$ref": "#/$defs/span" },
             "marker": { "type": "string" },
             "page_number": { "type": ["integer", "null"], "minimum": 1 }
+          }
+        }
+      ]
+    },
+    "lineBreakNode": {
+      "allOf": [
+        { "$ref": "#/$defs/baseNode" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "span", "marker"],
+          "properties": {
+            "type": { "const": "line-break" },
+            "span": { "$ref": "#/$defs/span" },
+            "marker": { "type": "string" }
           }
         }
       ]

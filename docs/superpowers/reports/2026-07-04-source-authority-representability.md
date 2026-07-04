@@ -7,8 +7,6 @@
 - strict_errors:
   - source inventory row annotation.bouki has occurrences but no representability table
   - source inventory row annotation.chuuki has occurrences but no representability table
-  - source inventory row break.line_explicit has occurrences but no representability table
-  - source inventory row break.page_line has representability.status = needs_research
   - source inventory row caption.block has occurrences but no representability table
   - source inventory row caption.inline has occurrences but no representability table
   - source inventory row decoration.bold_italic has occurrences but no representability table
@@ -53,11 +51,11 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 
 ## Representability
 
-- typed_occurrences: 3758493
+- typed_occurrences: 3766700
 - raw_preserved_occurrences: 0
 - out_of_body_occurrences: 0
 - unsupported_occurrences: 0
-- needs_research_occurrences: 299935
+- needs_research_occurrences: 291889
 
 ## Rows
 

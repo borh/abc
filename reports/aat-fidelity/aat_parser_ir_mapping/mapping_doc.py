@@ -89,7 +89,7 @@ def build_mapping_document_from_counts(
     first_path_by_rule,
     first_note_by_rule,
     repo_root=REPO_ROOT,
-    mapping_version="0.2.1",
+    mapping_version="0.2.3",
 ):
     rules = []
     for category in CATEGORY_ORDER:
@@ -122,7 +122,7 @@ def build_mapping_document_from_counts(
     }
 
 
-def build_mapping_document(ledger_entries, repo_root=REPO_ROOT, mapping_version="0.2.1"):
+def build_mapping_document(ledger_entries, repo_root=REPO_ROOT, mapping_version="0.2.3"):
     counts, first_path, first_note = summarize_ledger(ledger_entries)
     return build_mapping_document_from_counts(
         counts,
@@ -143,7 +143,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("ledger_json", help="JSON file containing an array of probe ledger entries")
     parser.add_argument("--out", default=str(PROBE_DIR / "mapping.generated.json"))
-    parser.add_argument("--mapping-version", default="0.2.1")
+    parser.add_argument("--mapping-version", default="0.2.3")
     args = parser.parse_args()
 
     with open(args.ledger_json, encoding="utf-8") as f:

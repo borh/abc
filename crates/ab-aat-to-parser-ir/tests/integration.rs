@@ -4,7 +4,7 @@ use ab_aat_to_parser_ir::{
     ConversionOptions, ConversionRequest, MappingDocument, SchemaSet,
     divergence::{AatMeta, DivergenceRecorder},
     mapping::MappingRule,
-    schema::{schema_hash, validate_value},
+    schema::{read_json, schema_hash, validate_value},
 };
 use serde_json::{Value, json};
 
@@ -72,7 +72,7 @@ fn legacy_schema_hashes_match_mapping_artifact() {
     );
     assert_eq!(
         schema_hash(&schemas.parser_ir_schema).unwrap(),
-        "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2"
+        "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d"
     );
 }
 
@@ -87,12 +87,47 @@ fn legacy_canonicalization_escapes_slashes() {
 }
 
 #[test]
+fn read_json_accepts_deeply_nested_aat_values() {
+    let temp = tempfile::tempdir().unwrap();
+    let path = temp.path().join("deep.aat.json");
+    let mut inline = r#"{"kind":"text","value":"本文"}"#.to_owned();
+    for _ in 0..140 {
+        inline = format!(r#"{{"kind":"style","style_type":"nested","content":[{inline}]}}"#);
+    }
+    std::fs::write(
+        &path,
+        format!(
+            r#"{{
+                "version": 1,
+                "work_id": "deep_fixture",
+                "blocks": [
+                    {{"kind": "paragraph", "content": [{inline}]}}
+                ],
+                "meta": {{
+                    "adapter": "fixture",
+                    "adapter_version": "fixture",
+                    "source_encoding": "utf-8",
+                    "source_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+                    "parse_complete": true,
+                    "warnings": []
+                }}
+            }}"#
+        ),
+    )
+    .unwrap();
+
+    let value = read_json(&path).unwrap();
+
+    assert_eq!(value["work_id"], "deep_fixture");
+}
+
+#[test]
 fn mapping_preflight_accepts_checked_in_v2_artifact() {
     let (schemas, mapping) = schemas_and_mapping();
 
     let index = mapping.preflight(&schemas).unwrap();
 
-    assert_eq!(mapping.mapping_version, "0.2.2");
+    assert_eq!(mapping.mapping_version, "0.2.3");
     assert_eq!(mapping.transform_rule_descriptions.len(), 127);
     assert!(
         !mapping
@@ -390,6 +425,81 @@ fn projects_source_derived_page_break_paragraph_to_page_break_node() {
     assert_eq!(
         output.parser_ir.pointer("/paragraphs/0/node_range/end"),
         Some(&json!(2))
+    );
+
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
+#[test]
+fn projects_source_derived_line_break_inline_to_line_break_node() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let aat = json!({
+        "version": 1,
+        "work_id": "line-break",
+        "meta": base_meta(
+            "utf-8",
+            "sha256:1212121212121212121212121212121212121212121212121212121212121212",
+        ),
+        "blocks": [{
+            "kind": "paragraph",
+            "content": [
+                {
+                    "kind": "text",
+                    "value": "前\n",
+                    "x-break-kind": "line",
+                    "x-provenance": "source-derived"
+                },
+                {"kind": "text", "value": "後"}
+            ]
+        }]
+    });
+
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: ConversionOptions::default(),
+    })
+    .unwrap();
+
+    assert_eq!(
+        output
+            .parser_ir
+            .pointer("/nodes/0/type")
+            .and_then(Value::as_str),
+        Some("text")
+    );
+    assert_eq!(
+        output
+            .parser_ir
+            .pointer("/nodes/0/text")
+            .and_then(Value::as_str),
+        Some("前")
+    );
+    assert_eq!(
+        output
+            .parser_ir
+            .pointer("/nodes/1/type")
+            .and_then(Value::as_str),
+        Some("line-break")
+    );
+    assert_eq!(
+        output
+            .parser_ir
+            .pointer("/nodes/1/marker")
+            .and_then(Value::as_str),
+        Some("line")
+    );
+    assert_eq!(
+        output
+            .parser_ir
+            .pointer("/nodes/2/text")
+            .and_then(Value::as_str),
+        Some("後")
+    );
+    assert_eq!(
+        output.parser_ir.pointer("/paragraphs/0/node_range"),
+        Some(&json!({"start":0,"end":3}))
     );
 
     validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
@@ -1291,6 +1401,18 @@ fn cli_audit_corpus_reports_successes_and_failures() {
     assert_eq!(summary.pointer("/totals/files_attempted"), Some(&json!(2)));
     assert_eq!(summary.pointer("/totals/files_succeeded"), Some(&json!(1)));
     assert_eq!(summary.pointer("/totals/files_failed"), Some(&json!(1)));
+    assert_eq!(
+        summary.pointer("/compatibility_candidates/0/evidence_scope/files_scanned"),
+        Some(&json!(2))
+    );
+    assert_eq!(
+        summary.pointer("/compatibility_candidates/0/evidence_scope/files_succeeded"),
+        Some(&json!(1))
+    );
+    assert_eq!(
+        summary.pointer("/compatibility_candidates/0/evidence_scope/files_failed"),
+        Some(&json!(1))
+    );
     assert_eq!(
         summary
             .pointer("/top_errors/0/count")

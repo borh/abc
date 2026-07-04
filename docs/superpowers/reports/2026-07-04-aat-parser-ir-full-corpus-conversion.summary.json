@@ -1,13 +1,13 @@
 {
-  "generated_unix_seconds": 1783160722,
+  "generated_unix_seconds": 1783172545,
   "mapping": {
     "path": "/home/bor/Projects/ab-validator/data/aat-to-parser-ir-mapping-v1.json",
     "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
-    "mapping_version": "0.2.2",
-    "mapping_hash": "sha256:17fb33db137f23ae30325558545ae364d21488d773aed733df1af012af6658c0",
+    "mapping_version": "0.2.3",
+    "mapping_hash": "sha256:21791c841557ced968464b38e42971e22830edb0efdb0be6faf285761532f770",
     "mapping_schema_hash": "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4",
     "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-    "target_parser_ir_schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+    "target_parser_ir_schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
     "rules_total": 127
   },
   "inputs": [
@@ -18,8 +18,8 @@
     },
     {
       "label": "aozora2-adapter",
-      "aat_dir": "/db/ab-validator/aat-corpus/aozora2-melos/aozora2-adapter",
-      "files": 1
+      "aat_dir": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter",
+      "files": 17874
     },
     {
       "label": "aozora2html-adapter",
@@ -33,13 +33,13 @@
     }
   ],
   "totals": {
-    "files_attempted": 53428,
-    "files_succeeded": 53428,
-    "files_failed": 0,
-    "parser_ir_nodes": 26907268,
-    "divergence_records": 674111,
-    "divergence_occurrences": 42482734,
-    "elapsed_seconds": 24.095
+    "files_attempted": 71301,
+    "files_succeeded": 67415,
+    "files_failed": 3886,
+    "parser_ir_nodes": 28494053,
+    "divergence_records": 829660,
+    "divergence_occurrences": 46816666,
+    "elapsed_seconds": 24.818
   },
   "by_corpus": {
     "aozora-epub3-adapter": {
@@ -59,28 +59,28 @@
       "divergence_occurrences": 11926731
     },
     "aozora2-adapter": {
-      "files_attempted": 1,
-      "files_succeeded": 1,
-      "files_failed": 0,
-      "parser_ir_nodes": 2,
-      "divergence_records": 9,
-      "divergence_occurrences": 97
+      "files_attempted": 17874,
+      "files_succeeded": 13988,
+      "files_failed": 3886,
+      "parser_ir_nodes": 1582155,
+      "divergence_records": 155517,
+      "divergence_occurrences": 4329397
     },
     "aozora2html-adapter": {
       "files_attempted": 17689,
       "files_succeeded": 17689,
       "files_failed": 0,
-      "parser_ir_nodes": 8414553,
-      "divergence_records": 250288,
-      "divergence_occurrences": 12241492
+      "parser_ir_nodes": 8419185,
+      "divergence_records": 250329,
+      "divergence_occurrences": 12246124
     }
   },
   "categories": {
-    "AMBIGUITY": 27635555,
-    "INVENTION": 10688558,
-    "LOSS": 3815548,
-    "STRUCTURAL": 315609,
-    "UNSUPPORTED": 27464
+    "AMBIGUITY": 29335276,
+    "INVENTION": 11473725,
+    "LOSS": 5622535,
+    "STRUCTURAL": 352862,
+    "UNSUPPORTED": 32268
   },
   "rule_coverage": {
     "rules_total": 127,
@@ -89,13 +89,13 @@
     "rules_by_id": {
       "A-01": {
         "category": "AMBIGUITY",
-        "files": 154,
-        "occurrences": 2531
+        "files": 165,
+        "occurrences": 2567
       },
       "A-02": {
         "category": "AMBIGUITY",
-        "files": 32,
-        "occurrences": 100
+        "files": 38,
+        "occurrences": 112
       },
       "A-03": {
         "category": "AMBIGUITY",
@@ -109,28 +109,28 @@
       },
       "A-05": {
         "category": "AMBIGUITY",
-        "files": 6,
-        "occurrences": 17
+        "files": 7,
+        "occurrences": 18
       },
       "A-06": {
         "category": "AMBIGUITY",
-        "files": 135,
-        "occurrences": 554
+        "files": 143,
+        "occurrences": 566
       },
       "A-07": {
         "category": "AMBIGUITY",
-        "files": 453,
-        "occurrences": 1887
+        "files": 579,
+        "occurrences": 2232
       },
       "A-08": {
         "category": "AMBIGUITY",
-        "files": 11604,
-        "occurrences": 870800
+        "files": 13649,
+        "occurrences": 910469
       },
       "A-09": {
         "category": "AMBIGUITY",
-        "files": 4804,
-        "occurrences": 77062
+        "files": 5096,
+        "occurrences": 77976
       },
       "A-10": {
         "category": "AMBIGUITY",
@@ -139,8 +139,8 @@
       },
       "A-11": {
         "category": "AMBIGUITY",
-        "files": 66,
-        "occurrences": 411
+        "files": 85,
+        "occurrences": 551
       },
       "A-12": {
         "category": "AMBIGUITY",
@@ -149,48 +149,48 @@
       },
       "A-13": {
         "category": "AMBIGUITY",
-        "files": 6613,
-        "occurrences": 71397
+        "files": 6620,
+        "occurrences": 71404
       },
       "A-14": {
         "category": "AMBIGUITY",
-        "files": 6643,
-        "occurrences": 72174
+        "files": 6656,
+        "occurrences": 72191
       },
       "A-15": {
         "category": "AMBIGUITY",
-        "files": 3,
-        "occurrences": 39
+        "files": 30,
+        "occurrences": 85
       },
       "A-16": {
         "category": "AMBIGUITY",
-        "files": 49,
-        "occurrences": 345
+        "files": 137,
+        "occurrences": 563
       },
       "A-17": {
         "category": "AMBIGUITY",
-        "files": 306,
-        "occurrences": 2194
+        "files": 1389,
+        "occurrences": 9403
       },
       "A-18": {
         "category": "AMBIGUITY",
-        "files": 1,
-        "occurrences": 2
+        "files": 1041,
+        "occurrences": 3955
       },
       "A-19": {
         "category": "AMBIGUITY",
-        "files": 9191,
-        "occurrences": 76048
+        "files": 10362,
+        "occurrences": 80528
       },
       "A-20": {
         "category": "AMBIGUITY",
-        "files": 53135,
-        "occurrences": 25716762
+        "files": 67114,
+        "occurrences": 27221781
       },
       "A-21": {
         "category": "AMBIGUITY",
-        "files": 23400,
-        "occurrences": 431765
+        "files": 32044,
+        "occurrences": 485189
       },
       "A-22": {
         "category": "AMBIGUITY",
@@ -199,23 +199,23 @@
       },
       "A-23": {
         "category": "AMBIGUITY",
-        "files": 180,
-        "occurrences": 1328
+        "files": 221,
+        "occurrences": 1430
       },
       "A-24": {
         "category": "AMBIGUITY",
-        "files": 2,
-        "occurrences": 10
+        "files": 4,
+        "occurrences": 17
       },
       "A-25": {
         "category": "AMBIGUITY",
-        "files": 1651,
-        "occurrences": 13394
+        "files": 4012,
+        "occurrences": 41715
       },
       "A-26": {
         "category": "AMBIGUITY",
-        "files": 14933,
-        "occurrences": 243236
+        "files": 18836,
+        "occurrences": 285038
       },
       "A-27": {
         "category": "AMBIGUITY",
@@ -224,28 +224,28 @@
       },
       "A-28": {
         "category": "AMBIGUITY",
-        "files": 53428,
-        "occurrences": 53428
+        "files": 67415,
+        "occurrences": 67415
       },
       "I-01": {
         "category": "INVENTION",
-        "files": 53428,
-        "occurrences": 53428
+        "files": 67415,
+        "occurrences": 67415
       },
       "I-02": {
         "category": "INVENTION",
-        "files": 42477,
-        "occurrences": 9631655
+        "files": 50249,
+        "occurrences": 10347033
       },
       "I-03": {
         "category": "INVENTION",
-        "files": 53428,
-        "occurrences": 53428
+        "files": 67415,
+        "occurrences": 67415
       },
       "I-04": {
         "category": "INVENTION",
-        "files": 53428,
-        "occurrences": 53428
+        "files": 67415,
+        "occurrences": 67415
       },
       "I-05": {
         "category": "INVENTION",
@@ -259,8 +259,8 @@
       },
       "I-07": {
         "category": "INVENTION",
-        "files": 53428,
-        "occurrences": 53428
+        "files": 67415,
+        "occurrences": 67415
       },
       "I-08": {
         "category": "INVENTION",
@@ -269,38 +269,38 @@
       },
       "I-09": {
         "category": "INVENTION",
-        "files": 27,
-        "occurrences": 556
+        "files": 31,
+        "occurrences": 561
       },
       "I-10": {
         "category": "INVENTION",
-        "files": 453,
-        "occurrences": 1887
+        "files": 579,
+        "occurrences": 2232
       },
       "I-11": {
         "category": "INVENTION",
-        "files": 110,
-        "occurrences": 777
+        "files": 115,
+        "occurrences": 782
       },
       "I-12": {
         "category": "INVENTION",
-        "files": 484,
-        "occurrences": 3790
+        "files": 567,
+        "occurrences": 3945
       },
       "I-13": {
         "category": "INVENTION",
-        "files": 9191,
-        "occurrences": 76048
+        "files": 10362,
+        "occurrences": 80528
       },
       "I-14": {
         "category": "INVENTION",
-        "files": 13616,
-        "occurrences": 229830
+        "files": 15647,
+        "occurrences": 238681
       },
       "L-01": {
         "category": "LOSS",
-        "files": 9338,
-        "occurrences": 77935
+        "files": 10571,
+        "occurrences": 82760
       },
       "L-02": {
         "category": "LOSS",
@@ -324,8 +324,8 @@
       },
       "L-06": {
         "category": "LOSS",
-        "files": 19,
-        "occurrences": 74
+        "files": 20,
+        "occurrences": 76
       },
       "L-07": {
         "category": "LOSS",
@@ -349,23 +349,23 @@
       },
       "L-11": {
         "category": "LOSS",
-        "files": 1,
-        "occurrences": 1
+        "files": 3,
+        "occurrences": 31
       },
       "L-12": {
         "category": "LOSS",
-        "files": 3,
-        "occurrences": 10
+        "files": 8,
+        "occurrences": 41
       },
       "L-13": {
         "category": "LOSS",
-        "files": 1,
-        "occurrences": 1
+        "files": 2,
+        "occurrences": 2
       },
       "L-14": {
         "category": "LOSS",
-        "files": 27,
-        "occurrences": 53
+        "files": 41,
+        "occurrences": 217
       },
       "L-15": {
         "category": "LOSS",
@@ -374,38 +374,38 @@
       },
       "L-16": {
         "category": "LOSS",
-        "files": 136,
-        "occurrences": 772
+        "files": 146,
+        "occurrences": 1617
       },
       "L-17": {
         "category": "LOSS",
-        "files": 390,
-        "occurrences": 3687
+        "files": 458,
+        "occurrences": 4751
       },
       "L-18": {
         "category": "LOSS",
-        "files": 27,
-        "occurrences": 556
+        "files": 31,
+        "occurrences": 561
       },
       "L-19": {
         "category": "LOSS",
-        "files": 22,
-        "occurrences": 551
+        "files": 25,
+        "occurrences": 555
       },
       "L-20": {
         "category": "LOSS",
-        "files": 22,
-        "occurrences": 551
+        "files": 25,
+        "occurrences": 555
       },
       "L-21": {
         "category": "LOSS",
-        "files": 430,
-        "occurrences": 1738
+        "files": 445,
+        "occurrences": 1762
       },
       "L-22": {
         "category": "LOSS",
-        "files": 2859,
-        "occurrences": 119277
+        "files": 3924,
+        "occurrences": 134076
       },
       "L-23": {
         "category": "LOSS",
@@ -454,113 +454,113 @@
       },
       "L-32": {
         "category": "LOSS",
-        "files": 6613,
-        "occurrences": 71397
+        "files": 6620,
+        "occurrences": 71404
       },
       "L-33": {
         "category": "LOSS",
-        "files": 1,
-        "occurrences": 8
+        "files": 78,
+        "occurrences": 1377
       },
       "L-34": {
         "category": "LOSS",
-        "files": 8,
-        "occurrences": 20
+        "files": 143,
+        "occurrences": 2707
       },
       "L-35": {
         "category": "LOSS",
-        "files": 15,
-        "occurrences": 130
+        "files": 72,
+        "occurrences": 275
       },
       "L-36": {
         "category": "LOSS",
-        "files": 58,
-        "occurrences": 375
+        "files": 437,
+        "occurrences": 20691
       },
       "L-37": {
         "category": "LOSS",
-        "files": 8,
-        "occurrences": 21
+        "files": 94,
+        "occurrences": 202
       },
       "L-38": {
         "category": "LOSS",
-        "files": 103,
-        "occurrences": 1934
+        "files": 1176,
+        "occurrences": 4964
       },
       "L-39": {
         "category": "LOSS",
-        "files": 1055,
-        "occurrences": 40530
+        "files": 6202,
+        "occurrences": 1046749
       },
       "L-40": {
         "category": "LOSS",
-        "files": 112,
-        "occurrences": 618
+        "files": 135,
+        "occurrences": 682
       },
       "L-41": {
         "category": "LOSS",
-        "files": 484,
-        "occurrences": 3790
+        "files": 567,
+        "occurrences": 3945
       },
       "L-42": {
         "category": "LOSS",
-        "files": 437,
-        "occurrences": 3662
+        "files": 502,
+        "occurrences": 3785
       },
       "L-43": {
         "category": "LOSS",
-        "files": 437,
-        "occurrences": 3662
+        "files": 502,
+        "occurrences": 3785
       },
       "L-44": {
         "category": "LOSS",
-        "files": 3482,
-        "occurrences": 18927
+        "files": 3639,
+        "occurrences": 19360
       },
       "L-45": {
         "category": "LOSS",
-        "files": 16819,
-        "occurrences": 3334020
+        "files": 24504,
+        "occurrences": 4034597
       },
       "L-46": {
         "category": "LOSS",
-        "files": 2,
-        "occurrences": 10
+        "files": 4,
+        "occurrences": 17
       },
       "L-47": {
         "category": "LOSS",
-        "files": 2,
-        "occurrences": 5
+        "files": 5,
+        "occurrences": 32
       },
       "L-48": {
         "category": "LOSS",
-        "files": 2,
-        "occurrences": 5
+        "files": 5,
+        "occurrences": 32
       },
       "L-49": {
         "category": "LOSS",
-        "files": 60,
-        "occurrences": 352
+        "files": 213,
+        "occurrences": 3811
       },
       "L-50": {
         "category": "LOSS",
-        "files": 60,
-        "occurrences": 352
+        "files": 213,
+        "occurrences": 3811
       },
       "L-51": {
         "category": "LOSS",
-        "files": 9,
-        "occurrences": 17
+        "files": 86,
+        "occurrences": 432
       },
       "L-52": {
         "category": "LOSS",
-        "files": 8,
-        "occurrences": 73
+        "files": 17,
+        "occurrences": 131
       },
       "L-53": {
         "category": "LOSS",
-        "files": 1651,
-        "occurrences": 13394
+        "files": 4012,
+        "occurrences": 41715
       },
       "L-54": {
         "category": "LOSS",
@@ -569,8 +569,8 @@
       },
       "L-55": {
         "category": "LOSS",
-        "files": 53428,
-        "occurrences": 53428
+        "files": 67415,
+        "occurrences": 67415
       },
       "L-56": {
         "category": "LOSS",
@@ -584,38 +584,38 @@
       },
       "S-02": {
         "category": "STRUCTURAL",
-        "files": 6613,
-        "occurrences": 71397
+        "files": 6620,
+        "occurrences": 71404
       },
       "S-03": {
         "category": "STRUCTURAL",
-        "files": 110,
-        "occurrences": 777
+        "files": 115,
+        "occurrences": 782
       },
       "S-04": {
         "category": "STRUCTURAL",
-        "files": 70,
-        "occurrences": 132
+        "files": 76,
+        "occurrences": 148
       },
       "S-05": {
         "category": "STRUCTURAL",
-        "files": 1651,
-        "occurrences": 13394
+        "files": 4012,
+        "occurrences": 41715
       },
       "S-06": {
         "category": "STRUCTURAL",
-        "files": 13616,
-        "occurrences": 229830
+        "files": 15647,
+        "occurrences": 238681
       },
       "S-07": {
         "category": "STRUCTURAL",
-        "files": 34,
-        "occurrences": 58
+        "files": 49,
+        "occurrences": 90
       },
       "S-08": {
         "category": "STRUCTURAL",
-        "files": 1,
-        "occurrences": 1
+        "files": 15,
+        "occurrences": 22
       },
       "U-01": {
         "category": "UNSUPPORTED",
@@ -644,13 +644,13 @@
       },
       "U-06": {
         "category": "UNSUPPORTED",
-        "files": 8,
-        "occurrences": 54
+        "files": 9,
+        "occurrences": 56
       },
       "U-07": {
         "category": "UNSUPPORTED",
-        "files": 346,
-        "occurrences": 5828
+        "files": 433,
+        "occurrences": 7744
       },
       "U-08": {
         "category": "UNSUPPORTED",
@@ -659,13 +659,13 @@
       },
       "U-09": {
         "category": "UNSUPPORTED",
-        "files": 156,
-        "occurrences": 2723
+        "files": 175,
+        "occurrences": 2889
       },
       "U-10": {
         "category": "UNSUPPORTED",
-        "files": 66,
-        "occurrences": 411
+        "files": 85,
+        "occurrences": 547
       },
       "U-11": {
         "category": "UNSUPPORTED",
@@ -674,8 +674,8 @@
       },
       "U-12": {
         "category": "UNSUPPORTED",
-        "files": 70,
-        "occurrences": 132
+        "files": 76,
+        "occurrences": 148
       },
       "U-13": {
         "category": "UNSUPPORTED",
@@ -684,43 +684,43 @@
       },
       "U-14": {
         "category": "UNSUPPORTED",
-        "files": 2,
-        "occurrences": 2
+        "files": 10,
+        "occurrences": 28
       },
       "U-15": {
         "category": "UNSUPPORTED",
-        "files": 15,
-        "occurrences": 139
+        "files": 60,
+        "occurrences": 252
       },
       "U-16": {
         "category": "UNSUPPORTED",
-        "files": 557,
-        "occurrences": 5990
+        "files": 1016,
+        "occurrences": 7711
       },
       "U-17": {
         "category": "UNSUPPORTED",
-        "files": 47,
-        "occurrences": 152
+        "files": 48,
+        "occurrences": 161
       },
       "U-18": {
         "category": "UNSUPPORTED",
-        "files": 448,
-        "occurrences": 10311
+        "files": 638,
+        "occurrences": 10871
       },
       "U-19": {
         "category": "UNSUPPORTED",
-        "files": 180,
-        "occurrences": 1328
+        "files": 221,
+        "occurrences": 1414
       },
       "U-20": {
         "category": "UNSUPPORTED",
-        "files": 34,
-        "occurrences": 58
+        "files": 49,
+        "occurrences": 90
       },
       "U-21": {
         "category": "UNSUPPORTED",
-        "files": 1,
-        "occurrences": 1
+        "files": 15,
+        "occurrences": 22
       }
     }
   },
@@ -730,11 +730,11 @@
       "aat_adapter": "aozora-epub3",
       "aat_adapter_version": "aozora-epub3-adapter 0.1.0 AozoraEpub3-JDK21-1.3.4-jdk21",
       "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
-      "mapping_version": "0.2.2",
-      "mapping_hash": "sha256:17fb33db137f23ae30325558545ae364d21488d773aed733df1af012af6658c0",
+      "mapping_version": "0.2.3",
+      "mapping_hash": "sha256:21791c841557ced968464b38e42971e22830edb0efdb0be6faf285761532f770",
       "mapping_schema_hash": "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4",
       "parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-      "parser_ir_schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+      "parser_ir_schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
       "evidence_scope": {
         "evidence_type": "conversion-audit",
         "adapter": "aozora-epub3",
@@ -758,11 +758,11 @@
       "aat_adapter": "aozora-rs",
       "aat_adapter_version": "aozora-rs-adapter 0.1.0 2b4e8d1",
       "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
-      "mapping_version": "0.2.2",
-      "mapping_hash": "sha256:17fb33db137f23ae30325558545ae364d21488d773aed733df1af012af6658c0",
+      "mapping_version": "0.2.3",
+      "mapping_hash": "sha256:21791c841557ced968464b38e42971e22830edb0efdb0be6faf285761532f770",
       "mapping_schema_hash": "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4",
       "parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-      "parser_ir_schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+      "parser_ir_schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
       "evidence_scope": {
         "evidence_type": "conversion-audit",
         "adapter": "aozora-rs",
@@ -786,26 +786,26 @@
       "aat_adapter": "aozora2",
       "aat_adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1",
       "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
-      "mapping_version": "0.2.2",
-      "mapping_hash": "sha256:17fb33db137f23ae30325558545ae364d21488d773aed733df1af012af6658c0",
+      "mapping_version": "0.2.3",
+      "mapping_hash": "sha256:21791c841557ced968464b38e42971e22830edb0efdb0be6faf285761532f770",
       "mapping_schema_hash": "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4",
       "parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-      "parser_ir_schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+      "parser_ir_schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
       "evidence_scope": {
         "evidence_type": "conversion-audit",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1",
         "corpus": "aozora2-adapter",
-        "files_scanned": 1,
-        "files_succeeded": 1,
-        "files_failed": 0,
-        "parser_ir_nodes": 2,
-        "divergence_records": 9,
-        "divergence_occurrences": 97,
+        "files_scanned": 17874,
+        "files_succeeded": 13988,
+        "files_failed": 3886,
+        "parser_ir_nodes": 1582155,
+        "divergence_records": 155517,
+        "divergence_occurrences": 4329397,
         "rules_total": 127,
-        "rules_emitted": 9,
-        "rules_missing": 118,
-        "unsupported_occurrences": 0
+        "rules_emitted": 89,
+        "rules_missing": 38,
+        "unsupported_occurrences": 4804
       },
       "compatibility": "lossy"
     },
@@ -814,11 +814,11 @@
       "aat_adapter": "aozora2html",
       "aat_adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1",
       "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
-      "mapping_version": "0.2.2",
-      "mapping_hash": "sha256:17fb33db137f23ae30325558545ae364d21488d773aed733df1af012af6658c0",
+      "mapping_version": "0.2.3",
+      "mapping_hash": "sha256:21791c841557ced968464b38e42971e22830edb0efdb0be6faf285761532f770",
       "mapping_schema_hash": "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4",
       "parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-      "parser_ir_schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+      "parser_ir_schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
       "evidence_scope": {
         "evidence_type": "conversion-audit",
         "adapter": "aozora2html",
@@ -827,9 +827,9 @@
         "files_scanned": 17689,
         "files_succeeded": 17689,
         "files_failed": 0,
-        "parser_ir_nodes": 8414553,
-        "divergence_records": 250288,
-        "divergence_occurrences": 12241492,
+        "parser_ir_nodes": 8419185,
+        "divergence_records": 250329,
+        "divergence_occurrences": 12246124,
         "rules_total": 127,
         "rules_emitted": 112,
         "rules_missing": 15,
@@ -838,6 +838,766 @@
       "compatibility": "lossy"
     }
   ],
-  "top_errors": [],
-  "failure_samples": []
+  "top_errors": [
+    {
+      "message": "unsupported inline kind: raw",
+      "count": 2990,
+      "samples": [
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000006_1869-62320f0f4474.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000006_4627-ded0d23b15b9.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000008_1083-bf767c36e951.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000008_47374-9c929d4f4d67.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000008_47386-49ed3c33666b.json"
+        }
+      ]
+    },
+    {
+      "message": "unsupported inline kind in source attribution projection: accent",
+      "count": 128,
+      "samples": [
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000020_745-bce191ee0ece.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000026_50241-af65ef658680.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000026_55717-3ba0b0630fd5.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000042_1682-4401cf92d836.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000042_2453-83567d45101e.json"
+        }
+      ]
+    },
+    {
+      "message": "unsupported inline kind: accent",
+      "count": 94,
+      "samples": [
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000026_50245-e840465144a2.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000027_523-e22ef286b8e7.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000035_2277-b04f7f121e1a.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000075_4250-7e32f80f0150.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000076_45641-e69c2d20d152.json"
+        }
+      ]
+    },
+    {
+      "message": "unsupported inline kind in visible projection: accent",
+      "count": 58,
+      "samples": [
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000026_55732-e162f2f7263b.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000026_55739-075fc7322e7b.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000042_2469-3372cea4b938.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000042_42768-2a6afe487bf8.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000065_393-58fae23a2747.json"
+        }
+      ]
+    },
+    {
+      "message": "AAT schema validation failed at /blocks/2: {\"content\":[{\"content\":[{\"kind\":\"_page_break\"}],\"kind\":\"style\",\"style_type\":\"jisage_line\",\"x-indent\":3}],\"kind\":\"paragraph\"} is not valid under any of the schemas listed in the 'oneOf' keyword",
+      "count": 13,
+      "samples": [
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000026_894-a581b59ea241.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001154_52085-360b82b3a358.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001393_55880-9b509ae4d8b4.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001506_52459-848d36385487.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001558_52689-086e5fee8352.json"
+        }
+      ]
+    },
+    {
+      "message": "unmeasured divergence: category=STRUCTURAL aat_pointer=blocks[].children[].yokogumi_block parser_ir_pointer=null",
+      "count": 10,
+      "samples": [
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000051_4331-6b7b2b7c90f8.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000146_49621-4ef3deeff66d.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000169_2582-42f9d81b9f9d.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000183_45359-2e59fb5fc00d.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000183_45375-4a04a61ec324.json"
+        }
+      ]
+    },
+    {
+      "message": "AAT schema validation failed at /blocks/2: {\"content\":[{\"content\":[{\"kind\":\"_page_break\"}],\"kind\":\"style\",\"style_type\":\"jisage_line\",\"x-indent\":5}],\"kind\":\"paragraph\"} is not valid under any of the schemas listed in the 'oneOf' keyword",
+      "count": 9,
+      "samples": [
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000035_58054-a105276ee66f.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000050_4561-0de58b79c513.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000050_50110-652f7ebc7d8c.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000888_33205-f9e1e3877a72.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001154_46989-8739dbd7f687.json"
+        }
+      ]
+    },
+    {
+      "message": "unsupported block kind without measured v1 divergence rule: caption_block",
+      "count": 9,
+      "samples": [
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000058_57440-fd9d6f0c6c51.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000448_55729-f621cbdeea07.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001492_51195-3f9f5beb37de.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001548_52232-2a72fadd0e1a.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001569_61447-b0864851f689.json"
+        }
+      ]
+    },
+    {
+      "message": "AAT schema validation failed at /blocks/1: {\"content\":[{\"content\":[{\"kind\":\"_page_break\"}],\"kind\":\"style\",\"style_type\":\"jisage_line\",\"x-indent\":5}],\"kind\":\"paragraph\"} is not valid under any of the schemas listed in the 'oneOf' keyword",
+      "count": 8,
+      "samples": [
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000050_50102-1de4c2efe644.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000067_641-a1edf2acd386.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000922_47099-0bee13490cf7.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001021_50119-245447465457.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001154_52302-68551bde3692.json"
+        }
+      ]
+    },
+    {
+      "message": "AAT schema validation failed at /blocks/2: {\"content\":[{\"content\":[{\"kind\":\"_page_break\"}],\"kind\":\"style\",\"style_type\":\"jisage_line\",\"x-indent\":4}],\"kind\":\"paragraph\"} is not valid under any of the schemas listed in the 'oneOf' keyword",
+      "count": 8,
+      "samples": [
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000074_56504-7f54f210c27e.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000082_49527-a2aee4bea75e.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000082_49544-ff9c3e9f69a9.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001154_44302-97fc55b16b97.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001157_49845-0034c188a7b3.json"
+        }
+      ]
+    },
+    {
+      "message": "AAT schema validation failed at /blocks/2: {\"content\":[{\"content\":[{\"kind\":\"_page_break\"}],\"kind\":\"style\",\"style_type\":\"jisage_line\",\"x-indent\":7}],\"kind\":\"paragraph\"} is not valid under any of the schemas listed in the 'oneOf' keyword",
+      "count": 8,
+      "samples": [
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000050_48392-bf3de88905a8.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000050_48400-bc422b70ed02.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001154_44778-0a45df29c1f8.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001154_44781-0533e4f594e2.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001154_44783-bcea154679be.json"
+        }
+      ]
+    },
+    {
+      "message": "unmeasured divergence: category=INVENTION aat_pointer=blocks[].content[].warigaki.upper[].gaiji.description parser_ir_pointer=gaiji.raw_marker",
+      "count": 8,
+      "samples": [
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001127_43836-11b94a10d99f.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001127_50702-a825bbf9a742.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001127_50703-cf0b89035b2f.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001341_54185-da3fab9bb441.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001344_50580-beb3c54d871d.json"
+        }
+      ]
+    },
+    {
+      "message": "AAT schema validation failed at /blocks/2: {\"content\":[{\"content\":[{\"kind\":\"_page_break\"}],\"kind\":\"style\",\"style_type\":\"jisage_line\",\"x-indent\":2}],\"kind\":\"paragraph\"} is not valid under any of the schemas listed in the 'oneOf' keyword",
+      "count": 6,
+      "samples": [
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000106_52354-8507b23f79f0.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000106_52370-2f5f475180bd.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000106_53493-2641a2391907.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001097_49825-a45c90aa56eb.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001154_44774-b3bb879b388f.json"
+        }
+      ]
+    },
+    {
+      "message": "AAT schema validation failed at /blocks/3: {\"content\":[{\"content\":[{\"kind\":\"_page_break\"}],\"kind\":\"style\",\"style_type\":\"jisage_line\",\"x-indent\":2}],\"kind\":\"paragraph\"} is not valid under any of the schemas listed in the 'oneOf' keyword",
+      "count": 6,
+      "samples": [
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000067_1789-aae6d58f40b1.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000106_52353-1686b97a0729.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001726_56081-ef6c814ac72c.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001726_56083-53e23043ce07.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001726_56085-92cdb1e940fb.json"
+        }
+      ]
+    },
+    {
+      "message": "unmeasured divergence: category=UNSUPPORTED aat_pointer=blocks[].content[].content[].content[].content[].content[].warigaki parser_ir_pointer=(emphasis.text)",
+      "count": 6,
+      "samples": [
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000908_51428-a7c512660dad.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000908_51431-19532976e120.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000908_51854-29c5ef4dbc51.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000908_51929-aeed627205bb.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000908_51941-e63f547d8fcd.json"
+        }
+      ]
+    },
+    {
+      "message": "unmeasured divergence: category=UNSUPPORTED aat_pointer=blocks[].heading.content[].warigaki parser_ir_pointer=(emphasis.text)",
+      "count": 6,
+      "samples": [
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001524_51918-13454376355b.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001524_51919-e5443561ac8a.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001524_51920-84deac9a013f.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001524_51921-f8d3ac01c1ac.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001524_51922-f7eb17bb77fa.json"
+        }
+      ]
+    },
+    {
+      "message": "unsupported inline kind in source attribution projection: yokogumi",
+      "count": 5,
+      "samples": [
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000026_50239-f4c2d8bb9024.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000035_312-cb6505044b26.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000035_313-586a212e52ce.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000311_2029-716e98653b00.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001166_43826-0b22f1c3dae6.json"
+        }
+      ]
+    },
+    {
+      "message": "AAT schema validation failed at /blocks/2: {\"content\":[{\"content\":[{\"kind\":\"_page_break\"}],\"kind\":\"style\",\"style_type\":\"jisage_line\",\"x-indent\":1}],\"kind\":\"paragraph\"} is not valid under any of the schemas listed in the 'oneOf' keyword",
+      "count": 4,
+      "samples": [
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000072_408-22fa0af57a9f.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000885_51307-d71bdc6627be.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001529_546-84eef7ac6431.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001848_59608-b08264acd57e.json"
+        }
+      ]
+    },
+    {
+      "message": "AAT schema validation failed at /blocks/3: {\"content\":[{\"content\":[{\"kind\":\"_page_break\"}],\"kind\":\"style\",\"style_type\":\"jisage_line\",\"x-indent\":7}],\"kind\":\"paragraph\"} is not valid under any of the schemas listed in the 'oneOf' keyword",
+      "count": 4,
+      "samples": [
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001154_51828-a65dede5c37f.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001154_51835-9d7dca0d3ea8.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001154_52089-e25eaa61c9e2.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001154_52309-c1af2773bb57.json"
+        }
+      ]
+    },
+    {
+      "message": "unmeasured divergence: category=UNSUPPORTED aat_pointer=blocks[].heading.content[].content[].warigaki parser_ir_pointer=(emphasis.text)",
+      "count": 4,
+      "samples": [
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001469_50753-073c7b7fdf12.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001511_51407-45fdbda89a25.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001835_57257-98b8083a41b2.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "001995_59048-ce70ab1d8c49.json"
+        }
+      ]
+    }
+  ],
+  "failure_samples": [
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000006_1869-62320f0f4474.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000006_4627-ded0d23b15b9.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000008_1083-bf767c36e951.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000008_47374-9c929d4f4d67.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000008_47386-49ed3c33666b.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000009_226-7771d96568b3.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000009_42929-f0f7ff036246.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000009_43028-cc484d1dc264.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000009_43056-80425d7b6392.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000009_43497-4d15dc523f93.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000009_43498-84246c6d4982.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000009_43522-19039e8f33b5.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000009_43523-08e4293be7fb.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000009_43524-08e343a3961f.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000009_45340-06021e5a5cc7.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000009_50711-f70596fd94c9.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000009_50712-3bd98c23f17b.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000009_50713-8c9159c8c915.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000009_50714-588859399991.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000009_50715-0bd4eab2b77d.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000009_50716-4a0d93059ac8.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000009_50717-0eeb5853dc3a.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000009_50718-3bd33a2d1f82.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000009_54910-42cf7cd96173.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000009_54911-2cb75e442e4d.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000009_54912-7ebf88db448d.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000009_54913-d76c2d5a30f2.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000009_54914-e26a90bf5379.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000009_54915-01f287655c90.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000009_55881-f4df11665cda.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000009_55882-1cadf9cd2bfd.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000009_57322-eb1ac8e18a2d.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000009_61393-46f69ce5ba94.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000009_61394-7bfd13580c25.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000009_8-5db3c281b807.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000011_55301-915f23ca52bf.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000011_889-8a691eba9355.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000011_899-bc8b5148d0e0.json",
+      "message": "AAT schema validation failed at /blocks/1: {\"content\":[{\"content\":[{\"kind\":\"text\",\"value\":\"優しき歌　\"},{\"description\":\"ローマ数字1、1-13-21\",\"jis_code\":\"1-13-21\",\"kind\":\"gaiji\",\"resolved\":\"Ⅰ\",\"unresolved_reason\":null},{\"kind\":\"raw\",\"source\":\"BlockEnd(Midashi)\"},{\"base\":\"風信子\",\"base_content\":[{\"kind\":\"text\",\"value\":\"風信子\"}],\"direction\":\"right\",\"kind\":\"ruby\",\"reading\":\"ヒヤシンス\",\"reading_content\":[{\"kind\":\"text\",\"value\":\"ヒヤシンス\"}]},{\"kind\":\"text\",\"value\":\"叢書　第四篇\\r\\n\\r\\n\"},{\"kind\":\"_page_break\"}],\"kind\":\"style\",\"style_type\":\"jisage_line\",\"x-indent\":1}],\"kind\":\"paragraph\"} is not valid under any of the schemas listed in the 'oneOf' keyword"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000012_1092-1c3a5aac467e.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000012_24448-32312eb2c779.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000012_33200-32660f9eb979.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000012_48628-4fde87720d42.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000013_11-62419a345fca.json",
+      "message": "AAT schema validation failed at /blocks/1: {\"content\":[{\"content\":[{\"kind\":\"text\",\"value\":\"　私は、友が無くては、耐へられぬのです。しかし、私には、ありません。この貧しい詩を、これを、読んでくださる方の胸へ捧げます。そして、私を、あなたの友にしてください。\\r\\n\"},{\"kind\":\"_page_break\"}],\"kind\":\"style\",\"style_type\":\"jisage_line\",\"x-indent\":2}],\"kind\":\"paragraph\"} is not valid under any of the schemas listed in the 'oneOf' keyword"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000014_12-e0352951f32f.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000014_728-af8280acaa59.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000019_194-5219b1146dad.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000019_42379-2c7b3481e08a.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000019_42380-e06a90ced089.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000019_42381-e359d7f661b1.json",
+      "message": "unsupported inline kind: raw"
+    },
+    {
+      "corpus": "aozora2-adapter",
+      "path": "000019_42382-c81f40a971a8.json",
+      "message": "unsupported inline kind: raw"
+    }
+  ]
 }

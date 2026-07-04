@@ -1,7 +1,7 @@
 use std::{fs, path::Path};
 
 use anyhow::{Context, Result};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 
@@ -31,9 +31,15 @@ impl SchemaSet {
 }
 
 pub fn read_json(path: &Path) -> Result<Value> {
-    let text =
-        fs::read_to_string(path).with_context(|| format!("failed to read {}", path.display()))?;
-    serde_json::from_str(&text).with_context(|| format!("failed to parse {}", path.display()))
+    let bytes = fs::read(path).with_context(|| format!("failed to read {}", path.display()))?;
+    parse_json_value(&bytes).with_context(|| format!("failed to parse {}", path.display()))
+}
+
+pub fn parse_json_value(bytes: &[u8]) -> Result<Value> {
+    let mut deserializer = serde_json::Deserializer::from_slice(bytes);
+    deserializer.disable_recursion_limit();
+    let deserializer = serde_stacker::Deserializer::new(&mut deserializer);
+    Value::deserialize(deserializer).map_err(Into::into)
 }
 
 pub fn validate_value(schema: &Value, value: &Value, label: &str) -> Result<()> {

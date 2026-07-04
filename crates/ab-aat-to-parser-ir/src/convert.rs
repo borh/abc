@@ -488,6 +488,9 @@ fn map_inline_to_nodes(
 ) -> Result<u64> {
     match node["kind"].as_str().unwrap_or("") {
         "text" => {
+            if is_source_derived_line_break_text(node) {
+                return map_source_derived_line_break_text(node, nodes, recorder, offset, path);
+            }
             let text = node["value"].as_str().unwrap_or("");
             let end = offset + utf8_len(text);
             let span = map_span(node.get("span"), offset, end, recorder, path)?;
@@ -654,6 +657,56 @@ fn map_inline_to_nodes(
         }
         other => bail!("unsupported inline kind: {other}"),
     }
+}
+
+fn is_source_derived_line_break_text(node: &Value) -> bool {
+    node.get("x-break-kind").and_then(Value::as_str) == Some("line")
+}
+
+fn map_source_derived_line_break_text(
+    node: &Value,
+    nodes: &mut Vec<Value>,
+    recorder: &mut DivergenceRecorder,
+    offset: u64,
+    path: &str,
+) -> Result<u64> {
+    let mut current = offset;
+    let mut pending = String::new();
+    for ch in node["value"].as_str().unwrap_or("").chars() {
+        if ch == '\n' {
+            if !pending.is_empty() {
+                current = push_text_node(&pending, nodes, recorder, current, path)?;
+                pending.clear();
+            }
+            let end = current + utf8_len("\n");
+            let span = map_span(None, current, end, recorder, path)?;
+            nodes.push(json!({
+                "type": "line-break",
+                "span": span,
+                "marker": node.get("x-break-marker").and_then(Value::as_str).unwrap_or("line"),
+            }));
+            current = end;
+        } else {
+            pending.push(ch);
+        }
+    }
+    if !pending.is_empty() {
+        current = push_text_node(&pending, nodes, recorder, current, path)?;
+    }
+    Ok(current)
+}
+
+fn push_text_node(
+    text: &str,
+    nodes: &mut Vec<Value>,
+    recorder: &mut DivergenceRecorder,
+    offset: u64,
+    path: &str,
+) -> Result<u64> {
+    let end = offset + utf8_len(text);
+    let span = map_span(None, offset, end, recorder, path)?;
+    nodes.push(json!({"type": "text", "span": span, "text": text}));
+    Ok(end)
 }
 
 fn map_figure_to_node(

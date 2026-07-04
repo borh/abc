@@ -108,6 +108,13 @@ pub fn validate_aat_value(aat: &Value) -> Result<()> {
     })
 }
 
+fn parse_json_value(bytes: &[u8]) -> Result<Value> {
+    let mut deserializer = serde_json::Deserializer::from_slice(bytes);
+    deserializer.disable_recursion_limit();
+    let deserializer = serde_stacker::Deserializer::new(&mut deserializer);
+    Value::deserialize(deserializer).map_err(Into::into)
+}
+
 /// Validate one text+aat pair and produce a report.
 ///
 /// # Errors
@@ -123,9 +130,10 @@ pub fn check_single(
     let txt_bytes =
         fs::read(txt_path).with_context(|| format!("failed to read {}", txt_path.display()))?;
     let decoded = decode_source_bytes(&txt_bytes)?;
-    let aat: Value = serde_json::from_slice(
+    let aat = parse_json_value(
         &fs::read(aat_path).with_context(|| format!("failed to read {}", aat_path.display()))?,
-    )?;
+    )
+    .with_context(|| format!("failed to parse {}", aat_path.display()))?;
     let report = check_value(&decoded.text, &aat, validator);
     write_report(&report, output)?;
     Ok(report)
@@ -359,7 +367,9 @@ fn invoke_and_check(
             let stderr = join_reader(stderr_reader, "stderr")?;
             return match status.code() {
                 Some(code) if code == 0 || code == 2 => {
-                    let mut aat: Value = serde_json::from_slice(&stdout)?;
+                    let mut aat = parse_json_value(&stdout).with_context(|| {
+                        format!("failed to parse adapter AAT JSON for {work_id}")
+                    })?;
                     if let Some(root) = aat.as_object_mut() {
                         root.insert("work_id".to_owned(), Value::String(work_id.to_owned()));
                     }

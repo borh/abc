@@ -17,12 +17,12 @@ cat > "$bundle" <<'JSON'
   "work_id": "fixture",
   "mapping": {
     "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
-    "mapping_version": "0.2.2",
+    "mapping_version": "0.2.3",
     "mapping_schema_hash": "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4"
   },
   "target": {
     "parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-    "parser_ir_schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2"
+    "parser_ir_schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d"
   },
   "aat": {
     "version": 1,

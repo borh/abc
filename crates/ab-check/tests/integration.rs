@@ -3,7 +3,7 @@ use std::{fs, path::Path, process::Command};
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 
-use ab_check::check::schema_validator;
+use ab_check::check::{check_single, schema_validator};
 use serde_json::Value;
 
 #[test]
@@ -109,6 +109,44 @@ fn aat_schema_accepts_semantic_summary_metadata() {
     });
 
     assert!(schema.validate(&value).is_ok());
+}
+
+#[test]
+fn check_single_accepts_deeply_nested_aat_json() {
+    let temp = tempfile::tempdir().unwrap();
+    let txt_path = temp.path().join("source.txt");
+    let aat_path = temp.path().join("deep.aat.json");
+    fs::write(&txt_path, "本文").unwrap();
+
+    let mut inline = r#"{"kind":"text","value":"本文"}"#.to_owned();
+    for _ in 0..140 {
+        inline = format!(r#"{{"kind":"style","style_type":"nested","content":[{inline}]}}"#);
+    }
+    let aat = format!(
+        r#"{{
+            "version": 1,
+            "work_id": "deep_fixture",
+            "blocks": [
+                {{"kind": "paragraph", "content": [{inline}]}}
+            ],
+            "meta": {{
+                "adapter": "fixture",
+                "adapter_version": "fixture",
+                "source_encoding": "utf-8",
+                "source_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+                "parse_complete": true,
+                "warnings": []
+            }}
+        }}"#
+    );
+    fs::write(&aat_path, aat).unwrap();
+
+    let schema = schema_validator().unwrap();
+    let report_path = temp.path().join("report.json");
+    let report = check_single(&txt_path, &aat_path, Some(&report_path), schema).unwrap();
+
+    assert_eq!(report.work_id, "deep_fixture");
+    assert!(report.results["schema_valid"].pass);
 }
 
 #[test]

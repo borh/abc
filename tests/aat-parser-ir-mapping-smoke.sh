@@ -17,7 +17,7 @@ uv run --isolated --no-project --with 'jsonschema>=4.0' \
   "$repo_root/reports/aat-fidelity/aat_parser_ir_mapping/generate.py" \
   --aat-dir "$aat_dir" \
   --abc-root "$abc_root" \
-  --mapping-version 0.2.2 \
+  --mapping-version 0.2.3 \
   --out "$out_dir/aozora-rs-only.mapping.json" \
   --summary-json "$out_dir/aozora-rs-only.summary.json" \
   --assert-zero-unsupported
@@ -34,15 +34,15 @@ uv run --isolated --no-project --with 'jsonschema>=4.0' \
   --aat-dir "$aozora2html_dir" \
   --aat-dir "$aozora_epub3_dir" \
   --abc-root "$abc_root" \
-  --mapping-version 0.2.2 \
+  --mapping-version 0.2.3 \
   --out "$out_dir/mapping.json" \
   --summary-json "$out_dir/summary.json"
 
-jq -e '.mapping_version == "0.2.2"' "$out_dir/mapping.json"
+jq -e '.mapping_version == "0.2.3"' "$out_dir/mapping.json"
 jq -e 'all(.transform_rule_descriptions[]; .aat_pointer != "meta.adapter" and .aat_pointer != "meta.adapter_version")' "$out_dir/mapping.json"
 jq -e 'any(.transform_rule_descriptions[]; .category == "LOSS" and .aat_pointer == "meta.parse_complete")' "$out_dir/mapping.json"
 jq -e '.mapping_schema_hash == "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4"' "$out_dir/summary.json"
-jq -e '.target_parser_ir_schema_hash == "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2"' "$out_dir/summary.json"
+jq -e '.target_parser_ir_schema_hash == "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d"' "$out_dir/summary.json"
 jq -e 'all(.transform_rule_descriptions[]; (.category != "STRUCTURAL") or ((.aat_pointer // "") | contains("paragraph") | not))' "$out_dir/mapping.json"
 jq -e 'any(.transform_rule_descriptions[]; .category == "UNSUPPORTED" and (.description | test("warigaki")))' "$out_dir/mapping.json"
 jq -e 'any(.transform_rule_descriptions[]; .category == "AMBIGUITY" and .parser_ir_pointer == "span")' "$out_dir/mapping.json"

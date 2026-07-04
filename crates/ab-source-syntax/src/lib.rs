@@ -468,6 +468,9 @@ fn scan_next_marker(txt: &str, offset: usize, line: usize) -> Option<RawMarker<'
     if rest.starts_with('〔') {
         let body_start = offset + '〔'.len_utf8();
         if let Some(body_end) = marker_end_on_same_line(txt, body_start, '〕') {
+            if body_start == body_end {
+                return None;
+            }
             let marker_end = body_end + '〕'.len_utf8();
             return Some(raw_marker(
                 txt,
@@ -1278,6 +1281,15 @@ mod tests {
                 .all(|marker| marker.kind != SourceMarkerKind::MalformedRuby),
             "legend delimiter bars are literal boilerplate, not malformed ruby markers: {markers:?}"
         );
+    }
+
+    #[test]
+    fn source_markers_ignore_empty_accent_brackets() {
+        let markers = source_markers("〔〕：アクセント分解された欧文をかこむ\n〔e'tude〕");
+
+        assert_eq!(markers.len(), 1);
+        assert_eq!(markers[0].kind, SourceMarkerKind::AccentNotation);
+        assert_eq!(markers[0].raw, "〔e'tude〕");
     }
 
     #[test]

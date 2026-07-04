@@ -2,9 +2,9 @@
   "gate_status": "SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED",
   "works_scanned": 17894,
   "works_failed": 0,
-  "markers_total": 4326014,
-  "unknown_markers_total": 35793,
-  "unallowlisted_unknown_markers_total": 21873,
+  "markers_total": 4325244,
+  "unknown_markers_total": 35023,
+  "unallowlisted_unknown_markers_total": 21103,
   "allowlisted_unknown_markers_total": 13920,
   "rows": {
     "annotation.bouki": {
@@ -429,24 +429,9 @@
       ]
     }
   },
-  "unknown_classes_total": 14343,
+  "unknown_classes_total": 14342,
   "unknown_classes_truncated": true,
   "unknown_classes": [
-    {
-      "kind": "AccentNotation",
-      "raw": "〔〕",
-      "body": "",
-      "occurrences": 770,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 770,
-      "sample_works": [
-        "000020_745",
-        "000026_50241",
-        "000026_50245",
-        "000026_50255",
-        "000026_51891"
-      ]
-    },
     {
       "kind": "MalformedRuby",
       "raw": "｜",
@@ -12034,6 +12019,17 @@
       "sample_works": [
         "001655_54264"
       ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃「八」ゴシック体］",
+      "body": "「八」ゴシック体",
+      "occurrences": 2,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 2,
+      "sample_works": [
+        "000125_666"
+      ]
     }
   ],
   "unknown_examples": [
@@ -12776,7 +12772,7 @@
     "source inventory row reference.frontref has occurrences but no representability table",
     "source inventory row ruby.placement_directional has occurrences but no representability table",
     "source inventory row warigaki.parenthetical has occurrences but no representability table",
-    "21873 unallowlisted source markers"
+    "21103 unallowlisted source markers"
   ],
   "inputs": {
     "matrix": "/home/bor/Projects/ab-validator/data/aozora-syntax-coverage.toml",

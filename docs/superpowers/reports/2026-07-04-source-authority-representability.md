@@ -34,7 +34,7 @@
   - source inventory row reference.frontref has occurrences but no representability table
   - source inventory row ruby.placement_directional has occurrences but no representability table
   - source inventory row warigaki.parenthetical has occurrences but no representability table
-  - 21873 unallowlisted source markers
+  - 21103 unallowlisted source markers
 
 ## Scope
 
@@ -44,9 +44,9 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 
 - works_scanned: 17894
 - works_failed: 0
-- markers_total: 4326014
-- unknown_markers_total: 35793
-- unallowlisted_unknown_markers_total: 21873
+- markers_total: 4325244
+- unknown_markers_total: 35023
+- unallowlisted_unknown_markers_total: 21103
 - allowlisted_unknown_markers_total: 13920
 
 ## Representability
@@ -208,11 +208,10 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 
 ## Unknown Source Marker Classes
 
-Showing 50 report rows of 14343 total classes. JSON carries 1000 top classes. truncated: true
+Showing 50 report rows of 14342 total classes. JSON carries 1000 top classes. truncated: true
 
 | kind | raw | occurrences | unallowlisted | allowlisted | samples |
 |---|---|---:|---:|---:|---|
-| AccentNotation | 〔〕 | 770 | 770 | 0 | 000020_745, 000026_50241, 000026_50245, 000026_50255, 000026_51891 |
 | MalformedRuby | ｜ | 581 | 581 | 0 | 000008_58922, 000009_43028, 000034_519, 000040_47288, 000067_395 |
 | CommandFullwidth | ［＃…］ | 465 | 465 | 0 | 000038_1408, 000042_1694, 000050_3581, 000051_1436, 000051_1452 |
 | CommandFullwidth | ［＃本文終わり］ | 243 | 243 | 0 | 000009_226, 000009_50711, 000009_50712, 000009_50713, 000009_50714 |
@@ -262,6 +261,7 @@ Showing 50 report rows of 14343 total classes. JSON carries 1000 top classes. tr
 | CommandFullwidth | ［＃「ツァー」に×傍点］ | 16 | 16 | 0 | 000311_3149 |
 | CommandFullwidth | ［＃「革命」にばつ傍点］ | 16 | 16 | 0 | 001311_53951, 001422_50296, 001471_55570, 001618_54002, 001627_54064 |
 | CommandFullwidth | ［＃「独裁」に×傍点］ | 15 | 15 | 0 | 000311_3149 |
+| CommandFullwidth | ［＃sは下ドット付き］ | 14 | 14 | 0 | 001096_42686, 001096_43672 |
 
 ## Decode Failures
 

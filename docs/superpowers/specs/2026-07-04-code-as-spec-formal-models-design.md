@@ -112,13 +112,25 @@ An ADR whose acceptance criteria are prose "MUST" clauses with no executable
 condemnation is not accepted. The R3 property test (`48c4c65`) is the exemplar
 referenced by the template.
 
-### 5.3 Enforcement
+### 5.3 Enforcement (ratcheted)
 
-- **Review time:** reviewer checks each acceptance criterion names an executable
-  path. (Cultural, but the exemplar makes the bar concrete.)
-- **CI time:** a Nix check scans ADR files for an "Acceptance Criteria" section
-  and asserts each invariant clause is followed by a path matching
-  `fixtures/|test/|out/facts/`. Lint, not proof — but it makes omission loud.
+A repo-wide scan finds 17 existing ADRs with an "Acceptance Criteria" section
+but no `fixtures/|test/|facts/` path. Retrofitting all of them is out of scope.
+Instead the lint is **ratcheted with an allowlist**:
+
+- **Allowlist:** `docs/adr/.acceptance-legacy-allowlist` lists the 17 existing
+  ADRs (0001, 0002, 0003, 0004, 0005, 0006, 0007, 0008, 0009, 0010, 0012,
+  0013, 0014, 0017, 0018, 0020, 0022) that pre-date this gate. Each carries a
+  ref-returning exception explaining which of its invariants are covered by
+  which new/old executable path and which are genuinely prose-only.
+- **Hard rule (forward):** any ADR added or modified after this gate lands MUST
+  satisfy the executable-p condemnation per invariant; the build fails otherwise.
+- **Migration set (retroactive):** the ADRs whose invariants this design
+  re-routes to executable gates (0001, 0020 — and any others the plan touches)
+  are removed from the allowlist in the same commit that lands their
+  replacement, so a later regression can't quietly drop the executable path.
+- **Review time:** reviewers cite the matching executable path when approving;
+  the lint is a machine backstop, not a substitute for review.
 
 ## 6. Layer D — Property-based testing against the real validator
 
@@ -144,7 +156,7 @@ tightest loop and matches how `48c4c65`'s mutation test already worked.
 The highest-profile vacuous SMT. Replacement:
 
 - **Generator:** produce pairs of success manifests sharing an
-  `artifact_identity_object` (generated from `schemas/manifest.schema.json`)
+  `manifest_identity_object` (generated from `schemas/manifest.schema.json`)
   but with mutated `content.content_hash`. Also generate the negative space
   (same identity, same hash → must pass; different identity → must pass).
 - **Oracle:** the real release validator (`validate-design-bundle` /
@@ -175,24 +187,47 @@ depends on real data, not a transcribed model.
 
 ### 7.2 Boundary (per the agreed decision)
 
-**Checked-in generated facts** at `out/facts/prolog/`, governed by ADR 0011
-(generated-fixture policy): regenerated from source artifacts in CI, byte-stable,
-diffable, reviewable. This is the cross-artifact relational model made
-inspectable — a Prolog query failure can be debugged against concrete facts
-committed to the repo.
+**Checked-in generated facts** at `fixtures/v0/facts/prolog/`, governed by ADR
+0011 (generated-fixture policy): regenerated from source artifacts in CI,
+byte-stable, diffable, reviewable. This is the cross-artifact relational model
+made inspectable — a Prolog query failure can be debugged against concrete
+facts committed to the repo.
 
 Concretely: a Clojure emitter (`abc.tools.facts.emit-prolog`, new) reads the
-real manifest/drift/person-record corpus and writes `out/facts/prolog/*.pl`.
-A Nix gate runs SWI-Prolog (or `chiasmus_verify` prolog) against the fact set
-plus a committed query file `docs/adr/<invariant>.pl`.
+real manifest/drift/person-record corpus and writes
+`fixtures/v0/facts/prolog/*.pl`. A Nix gate runs SWI-Prolog (see §7.5) against
+the fact set plus a committed query file `docs/adr/<invariant>.pl`.
+
+### 7.5 Dialect (pinned): SWI-Prolog
+
+The CI dialect is **SWI-Prolog** (`swi-prolog` in nixpkgs), pinned at plan
+time to a concrete nixpkgs revision for reproducibility. The pin is made now,
+not deferred, because dialect affects negation (`\+`), tabling (`:- table`),
+module syntax, CLI behavior, and Nix reproducibility — all of which shape the
+emitter and query authoring. `chiasmus_verify` prolog remains available as an
+**exploratory/manual path** for ad-hoc queries during development, but it is
+not the CI dialect; the gate runs `swipl` directly so the dialect is fixed in
+the Nix derivation, not in an MCP server.
+
+Deferred to plan level only: file layout (one `.pl` per artifact type vs one
+corpus-wide `.pl`) and the Kaocha test selector for any Clojure-side property
+tests. Dialect itself is settled here.
 
 ### 7.3 Cross-artifact invariants to cover (the reason this layer exists)
 
 1. **Position L (ADR 0020):** `manifest_identity_object` is unchanged by the
    presence of any drift event. Facts: `manifest_identity/2` from the real
-   manifest, `drift_event/1` from the drift log. Query: `manifest_identity(X, H1),
-   drift_event(E), recompute_identity_after_event(E, H2), H1 \= H2` → must fail
-   (no Drift event rotates manifest identity).
+   manifest, `drift_event/1` from the drift log. **Identity facts are emitted
+   by the Clojure emitter using the repo's real manifest-identity function**
+   (the same code path that computes `artifact_id`), and Prolog only *compares*
+   emitted facts — it never recomputes identity. This avoids hidden
+   hand-translation: a Prolog `recompute_identity_after_event/2` would risk
+   restating manifest identity logic by hand; instead the emitter writes
+   `manifest_identity_after(Manifest, Event, Hash)` facts for the post-event
+   state computed in Clojure, and the query is
+   `manifest_identity(M, H1), manifest_identity_after(M, E, H2), H1 \= H2`
+   → must fail (no drift event rotates manifest identity). All identity
+   arithmetic stays in the single real implementation.
 2. **Person_id referential integrity:** every `person_id` in a manifest's
    `contributors[]` Either resolves to a committed `person_record` or to a
    successor in the drift log. Facts: `contributor/2`, `person_record/1`,
@@ -221,9 +256,10 @@ Once each of R1/R2/R3 has its real-artifact replacement landed and green in CI:
   invariants live in the schemas/tests/Prolog, documented in-line).
 - **Remove** the `checks.adr0001-invariants` and `checks.adr0020-drift-cardinality`
   Nix gates (they enforced the vacuous files).
-- **Keep** `checks.adr-invariants-vacuity` only if a future cross-rule SMT
-  arrives that needs the mode-A guardrail; otherwise retire it alongside the
-  SMT files. Default: retire with them (no SMT → no vacuity to guard).
+- **Delete** `checks.adr-invariants-vacuity` alongside the SMT files (no SMT
+  → no vacuity to guard; dormant guardrails become ceremony). If a future
+  cross-rule SMT (§8.2) is introduced, reintroduce a scoped vacuity gate **in
+  the same commit** as that SMT. Do not leave it lying dormant.
 
 ### 8.2 Reservation (the one regime SMT is honest)
 
@@ -269,7 +305,11 @@ For single-rule files SMT is always trivially consistent; do not reintroduce it.
 
 ## 12. Open questions deferred to plan (not design) level
 
-- Exact Prolog dialect/SWI vs `chiasmus_verify` prolog for Layer C's CI gate.
-- Whether `abc.tools.facts.emit-prolog` emits one `.pl` per artifact type or
-  one corpus-wide `.pl`.
-- Kaocha test selector for the property tests (separate suite vs in-tree).
+Two previously-deferred items are now pinned in §7.5: the CI Prolog dialect
+(SWI-Prolog) and the fact-emitter location (`fixtures/v0/facts/prolog/`).
+What remains for the plan:
+
+- File layout: one `.pl` per artifact type vs one corpus-wide `.pl` (not a
+  design decision; both satisfy the design rule).
+- Kaocha test selector for the Layer D property tests (separate suite vs
+  in-tree).

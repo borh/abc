@@ -562,6 +562,32 @@
                 PL
                 swipl --quiet -t main -f "$TMPDIR/smoke.pl" > "$out"
               '';
+          prolog-cross-artifact =
+            pkgs.runCommand "abc-prolog-cross-artifact" { nativeBuildInputs = [ pkgs.swi-prolog ]; }
+              ''
+                set -euo pipefail
+                cp -R ${./.} source
+                chmod -R u+w source
+                cd source
+                # Reads COMMITTED fact files (regenerated & byte-checked by the
+                # clj-nix-focused-tests derivation via the emitter). swipl only —
+                # the Clojure byte-compare lives in clj-nix-focused-tests, which
+                # has the offline cljDepsCache + deps.edn replacement setup. A plain
+                # `clojure -e` here would fail the Nix sandbox's offline classpath.
+                # Invocation: -g "(Goal -> halt(0) ; halt(1))" -t halt -s FILE...
+                # halt/1 takes an integer, not a goal (the "halt(\+ Goal)" form
+                # is a type error); -s (script-load) the fact + query files so the
+                # predicates are visible to the goal.
+                swipl -q -g "(\\+ violating_dup_identity(_) -> halt(0) ; halt(1))" -t halt \
+                      -s fixtures/v0/facts/prolog/manifest_identity.pl \
+                      -s docs/adr/manifest-identity-emitter-sanity.pl
+                swipl -q -g "(\\+ dangling_person(_) -> halt(0) ; halt(1))" -t halt \
+                      -s fixtures/v0/facts/prolog/person_records.pl \
+                      -s fixtures/v0/facts/prolog/drift.pl \
+                      -s docs/adr/person-id-referential-integrity.pl
+                mkdir -p "$out"
+                echo "Prolog cross-artifact gates hold: emitter sanity + person-id referential integrity (SWI-Prolog)." > "$out/result.txt"
+              '';
         }
       );
 

@@ -83,3 +83,20 @@
     (run! #(.delete (java.io.File. (str tmp2 "/" %)))
           ["manifest_identity.pl" "drift.pl" "person_records.pl"])
     (.delete (java.io.File. tmp2))))
+
+(deftest committed-facts-match-real-corpus-test
+  ;; Layer C CI guard (Task 6 Step 3): the committed fixtures/v0/facts/prolog/*.pl
+  ;; files must equal a fresh emit. Regression: corpus changed and committed
+  ;; .pl files were not regenerated. Runs under clj-nix-focused-tests (which has
+  ;; the offline Clojure deps); the SWI Nix gate (Task 6 Step 5) is swipl-only.
+  (let [tmp (str (Files/createTempDirectory
+                    "abc-facts-committed" (make-array FileAttribute 0)))]
+    (facts/emit-prolog! tmp)
+    (doseq [f ["manifest_identity.pl" "drift.pl" "person_records.pl"]]
+      (is (= (slurp (str "fixtures/v0/facts/prolog/" f))
+             (slurp (str tmp "/" f)))
+          (str "committed " f " diverges from real corpus; regenerate via "
+               "abc.tools.facts/emit-prolog! on fixtures/v0/facts/prolog")))
+    (run! #(.delete (java.io.File. (str tmp "/" %)))
+          ["manifest_identity.pl" "drift.pl" "person_records.pl"])
+    (.delete (java.io.File. tmp))))

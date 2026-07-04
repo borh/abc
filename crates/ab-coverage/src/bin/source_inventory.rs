@@ -477,6 +477,12 @@ fn observe_row_representability(
             ));
             continue;
         };
+        if representability_requires_tei_projection(cell.status) && !has_tei_projection(row) {
+            strict_errors.push(format!(
+                "source inventory row {row_id} has representability.status = {} but no tei_projection",
+                cell.status.as_str()
+            ));
+        }
         match cell.status {
             RepresentabilityStatus::Typed => {
                 if cell.aat_nodes.is_empty() {
@@ -503,6 +509,20 @@ fn observe_row_representability(
             }
         }
     }
+}
+
+fn representability_requires_tei_projection(status: RepresentabilityStatus) -> bool {
+    matches!(
+        status,
+        RepresentabilityStatus::Typed
+            | RepresentabilityStatus::RawPreserved
+            | RepresentabilityStatus::OutOfBody
+    )
+}
+
+fn has_tei_projection(row: &Row) -> bool {
+    let projection = row.tei_projection.trim();
+    !projection.is_empty() && !projection.eq_ignore_ascii_case("n/a")
 }
 
 fn source_authority_gate_status(output: &InventoryOutput) -> &'static str {
@@ -549,6 +569,11 @@ fn write_report(path: &Path, output: &InventoryOutput) -> Result<()> {
             report.push_str(&format!("  - {}\n", escape_md(error)));
         }
     }
+
+    report.push_str("\n## Scope\n\n");
+    report.push_str(
+        "This is a source-markup authority gate: every reached explicit Aozora Bunko marker must have a reviewed representation and, for represented rows, a TEI P5 projection target. Semantic TEI enrichment such as named-entity, speech, role, or place annotation is outside this gate and remains a downstream editorial layer.\n",
+    );
 
     report.push_str("\n## Summary\n\n");
     report.push_str(&format!("- works_scanned: {}\n", output.works_scanned));

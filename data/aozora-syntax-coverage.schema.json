@@ -43,7 +43,10 @@
         "source_patterns": { "type": "array", "items": { "type": "string" } },
         "ir_nodes": { "type": "array", "items": { "type": "string" } },
         "aat_nodes": { "type": "array", "items": { "type": "string" } },
-        "tei_projection": { "type": "string" },
+        "tei_projection": {
+          "type": "string",
+          "description": "TEI P5 projection target for this explicit Aozora source marker. Required to be non-empty for typed, raw_preserved, and out_of_body representability claims."
+        },
         "plaintext_projection": { "type": "string" },
         "comparison_projection": { "type": "string" },
         "validation_properties": { "type": "array", "items": { "type": "string" } },
@@ -68,6 +71,31 @@
         "representability": { "$ref": "#/$defs/RepresentabilityCell" },
         "corpus_prevalence": { "$ref": "#/$defs/CorpusPrevalence" }
       },
+      "allOf": [
+        {
+          "if": {
+            "required": ["representability"],
+            "properties": {
+              "representability": {
+                "required": ["status"],
+                "properties": {
+                  "status": {
+                    "enum": ["typed", "raw_preserved", "out_of_body"]
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "tei_projection": {
+                "pattern": "\\S",
+                "not": { "pattern": "^[Nn]/[Aa]$" }
+              }
+            }
+          }
+        }
+      ],
       "additionalProperties": false
     },
     "SyntaxStatus": {

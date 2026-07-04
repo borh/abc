@@ -156,6 +156,16 @@ fn validate_representability(row: &Row, row_ids: &BTreeSet<&str>, errors: &mut V
         });
     }
 
+    if representability_requires_tei_projection(cell.status) && !has_tei_projection(row) {
+        errors.push(RowError {
+            row_id: row.id.clone(),
+            message: format!(
+                "representability.status = \"{}\" requires non-empty tei_projection",
+                cell.status.as_str()
+            ),
+        });
+    }
+
     match cell.status {
         RepresentabilityStatus::Typed if cell.aat_nodes.is_empty() => {
             errors.push(RowError {
@@ -172,6 +182,20 @@ fn validate_representability(row: &Row, row_ids: &BTreeSet<&str>, errors: &mut V
         }
         _ => {}
     }
+}
+
+fn representability_requires_tei_projection(status: RepresentabilityStatus) -> bool {
+    matches!(
+        status,
+        RepresentabilityStatus::Typed
+            | RepresentabilityStatus::RawPreserved
+            | RepresentabilityStatus::OutOfBody
+    )
+}
+
+fn has_tei_projection(row: &Row) -> bool {
+    let projection = row.tei_projection.trim();
+    !projection.is_empty() && !projection.eq_ignore_ascii_case("n/a")
 }
 
 fn check_combination(

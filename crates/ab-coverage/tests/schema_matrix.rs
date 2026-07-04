@@ -161,7 +161,7 @@ fn forbidden_combinations_rejected() {
         source_patterns: vec![],
         ir_nodes: vec![],
         aat_nodes: vec![],
-        tei_projection: String::new(),
+        tei_projection: "fixture-tei".to_owned(),
         plaintext_projection: String::new(),
         comparison_projection: String::new(),
         validation_properties: vec![],
@@ -210,7 +210,7 @@ source_examples = []
 source_patterns = []
 ir_nodes = []
 aat_nodes = ["ruby"]
-tei_projection = ""
+tei_projection = "ruby/rb/rt"
 plaintext_projection = ""
 comparison_projection = ""
 validation_properties = []
@@ -239,6 +239,45 @@ notes = "fixture"
     assert!(representability.raw_fallback);
     assert_eq!(representability.evidence, "fixture");
     assert_eq!(representability.notes, "fixture");
+}
+
+#[test]
+fn schema_matrix_rejects_represented_source_row_without_tei_projection() {
+    let matrix = matrix_from_toml_str(
+        "representability-without-tei-projection",
+        r#"
+[[syntax]]
+id = "fixture.typed_without_tei"
+priority = 1
+category = "fixture"
+feature_keys = []
+reference_sources = []
+source_examples = []
+source_patterns = []
+ir_nodes = []
+aat_nodes = ["ruby"]
+tei_projection = ""
+plaintext_projection = ""
+comparison_projection = ""
+validation_properties = []
+adapter_expectations = []
+status = "needs_research"
+status_reason = "fixture"
+
+[syntax.representability]
+source_inventory_row = "fixture.typed_without_tei"
+status = "typed"
+aat_nodes = ["ruby"]
+raw_fallback = true
+"#,
+    );
+    let errors = SchemaValidator::validate(&matrix, ValidationOptions::lenient());
+
+    assert!(
+        errors.iter().any(|e| e.message.contains("tei_projection")),
+        "expected tei_projection error, got: {:?}",
+        errors
+    );
 }
 
 #[test]

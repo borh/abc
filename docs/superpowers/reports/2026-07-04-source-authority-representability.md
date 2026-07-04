@@ -38,6 +38,10 @@
   - source inventory row warigaki.parenthetical has occurrences but no representability table
   - 224028 unallowlisted source markers
 
+## Scope
+
+This is a source-markup authority gate: every reached explicit Aozora Bunko marker must have a reviewed representation and, for represented rows, a TEI P5 projection target. Semantic TEI enrichment such as named-entity, speech, role, or place annotation is outside this gate and remains a downstream editorial layer.
+
 ## Summary
 
 - works_scanned: 17894

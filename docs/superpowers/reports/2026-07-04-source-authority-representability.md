@@ -5,7 +5,7 @@
 - source_authority_gate: `SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED`
 - note: this is not a passing representability gate; durable representability claims remain blocked until strict_errors is empty.
 - strict_errors:
-  - 1934 unallowlisted source markers
+  - 1828 unallowlisted source markers
 
 ## Scope
 
@@ -16,13 +16,13 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 - works_scanned: 17894
 - works_failed: 0
 - markers_total: 4324663
-- unknown_markers_total: 16804
-- unallowlisted_unknown_markers_total: 1934
+- unknown_markers_total: 16698
+- unallowlisted_unknown_markers_total: 1828
 - allowlisted_unknown_markers_total: 14870
 
 ## Representability
 
-- typed_occurrences: 4567369
+- typed_occurrences: 4567498
 - raw_preserved_occurrences: 35335
 - out_of_body_occurrences: 950
 - unsupported_occurrences: 13920
@@ -38,11 +38,11 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | break.page_line | 943 | 10028 | 000005_53194, 000006_1869, 000009_55881, 000011_889, 000011_899 |
 | caption.block | 47 | 1722 | 000058_57440, 000091_50354, 000125_1321, 000165_49567, 000226_1150 |
 | caption.inline | 143 | 2397 | 000014_728, 000058_57440, 000067_1768, 000067_1788, 000067_1789 |
-| decoration.bold_italic | 159 | 5257 | 000025_1144, 000026_50241, 000026_55916, 000035_279, 000035_52380 |
-| decoration.boten | 6234 | 128972 | 000005_53194, 000006_382, 000006_383, 000006_58819, 000008_1083 |
-| decoration.bousen | 320 | 18103 | 000006_1869, 000013_11, 000019_4376, 000034_55507, 000038_1408 |
+| decoration.bold_italic | 161 | 5264 | 000025_1144, 000026_50241, 000026_55916, 000035_279, 000035_52380 |
+| decoration.boten | 6235 | 129069 | 000005_53194, 000006_382, 000006_383, 000006_58819, 000008_1083 |
+| decoration.bousen | 322 | 18111 | 000006_1869, 000013_11, 000019_4376, 000034_55507, 000038_1408 |
 | decoration.direction_override | 6 | 65 | 000096_935, 000866_3039, 001094_42603, 001242_46444, 001467_50733 |
-| decoration.font_size | 1197 | 51389 | 000006_1869, 000008_58922, 000011_899, 000019_58861, 000019_59261 |
+| decoration.font_size | 1203 | 51406 | 000006_1869, 000008_58922, 000011_899, 000019_58861, 000019_59261 |
 | decoration.keigakomi | 138 | 677 | 000063_385, 000067_1789, 000072_408, 000072_864, 000096_2093 |
 | emphasis.basic | 6576 | 157495 | 000005_53194, 000006_1869, 000006_382, 000006_383, 000006_58819 |
 | figure.image_caption | 103 | 1777 | 000019_42378, 000019_42379, 000019_42380, 000019_42381, 000019_42382 |
@@ -176,12 +176,12 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | 000035_1566 | 23 | CommandFullwidth | ［＃地から２字上げ、２行にわたる丸括弧で挟んだ２行組み］ | 地から２字上げ、２行にわたる丸括弧で挟んだ２行組み |
 | 000035_296 | 11 | CommandFullwidth | ［＃ここから引用文、８字下げ］ | ここから引用文、８字下げ |
 | 000037_1417 | 258 | CommandFullwidth | ［＃岩波文庫版では「殺され」］ | 岩波文庫版では「殺され」 |
-| 000038_324 | 8 | CommandFullwidth | ［＃「ワット」「ステブンソン」「ヱヂソン」に傍線］ | 「ワット」「ステブンソン」「ヱヂソン」に傍線 |
-| 000038_324 | 50 | CommandFullwidth | ［＃「ワット」「ステブンソン」「ヱヂソン」に傍線］ | 「ワット」「ステブンソン」「ヱヂソン」に傍線 |
+| 000038_327 | 143 | CommandFullwidth | ［＃改行ごとに二字下げ］ | 改行ごとに二字下げ |
+| 000038_327 | 143 | CommandFullwidth | ［＃二字下げ終わり］ | 二字下げ終わり |
 
 ## Unknown Source Marker Classes
 
-Showing 50 report rows of 1408 total classes. JSON carries 1000 top classes. truncated: true
+Showing 50 report rows of 1340 total classes. JSON carries 1000 top classes. truncated: true
 
 | kind | raw | occurrences | unallowlisted | allowlisted | samples |
 |---|---|---:|---:|---:|---|
@@ -198,7 +198,6 @@ Showing 50 report rows of 1408 total classes. JSON carries 1000 top classes. tru
 | CommandFullwidth | ［＃一つ目の「e」は「´」付き］ | 7 | 7 | 0 | 000129_2522 |
 | CommandFullwidth | ［＃ηに帯気、ωに曲アクセント］ | 6 | 6 | 0 | 000065_393 |
 | CommandFullwidth | ［＃「2」は指数］ | 6 | 6 | 0 | 000096_2110 |
-| CommandFullwidth | ［＃「ヱ」は小文字］ | 6 | 6 | 0 | 000124_2421, 000124_662 |
 | CommandFullwidth | ［＃劇場名］ | 6 | 6 | 0 | 000311_46245, 000311_46246, 000311_46248 |
 | CommandFullwidth | ［＃左にルビ付き］ | 6 | 6 | 0 | 000933_47550, 001930_58400, 001932_59114 |
 | CommandFullwidth | ［＃改ページ、ページの左右中央に］ | 6 | 6 | 0 | 000065_393 |
@@ -235,6 +234,7 @@ Showing 50 report rows of 1408 total classes. JSON carries 1000 top classes. tru
 | CommandFullwidth | ［＃εに帯気。ιに鋭アクセント］ | 3 | 3 | 0 | 000065_393 |
 | CommandFullwidth | ［＃ηに鋭アクセント］ | 3 | 3 | 0 | 000065_393 |
 | CommandFullwidth | ［＃οに鋭アクセント。σはファイナルシグマ］ | 3 | 3 | 0 | 000065_393 |
+| CommandFullwidth | ［＃「1/14」は分数］ | 3 | 3 | 0 | 000042_2345 |
 
 ## Decode Failures
 

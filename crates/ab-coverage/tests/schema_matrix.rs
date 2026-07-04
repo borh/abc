@@ -857,6 +857,48 @@ fn source_inventory_classifies_layout_and_inline_style_corpus_variants() {
 }
 
 #[test]
+fn source_inventory_classifies_inline_style_variant_spellings() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = [
+        "［＃「先祖と共に」に傍点◎］",
+        "［＃「五月四日」に傍点（白丸）］",
+        "［＃四字傍点（白丸）］",
+        "［＃「松島」に蛇の目傍点］",
+        "［＃「しん」傍点］",
+        "［＃「ワット」「ステブンソン」「ヱヂソン」に傍線］",
+        "［＃「ヱ」は小文字］",
+        "［＃「ヱ」の小文字］",
+        "［＃「のうえ」は小さい文字］",
+        "［＃「九」ゴシック体］",
+        "［＃「受賞図書」「著者」「出版元」はゴシック体］",
+    ]
+    .join("\n");
+    let summary = inventory_document("fixture", &source, &patterns);
+
+    assert_eq!(
+        summary.unknown_examples,
+        [],
+        "known inline style spelling variants should not remain unknown"
+    );
+    for (row_id, expected) in [
+        ("decoration.boten", 5),
+        ("decoration.bousen", 1),
+        ("decoration.font_size", 3),
+        ("decoration.bold_italic", 2),
+    ] {
+        assert_eq!(
+            summary
+                .row_counts
+                .get(row_id)
+                .map(|count| count.occurrences),
+            Some(expected),
+            "expected source inventory row {row_id}"
+        );
+    }
+}
+
+#[test]
 fn decoration_font_size_has_typed_representability() {
     let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
     let row = matrix

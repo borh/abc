@@ -1451,6 +1451,101 @@ fn source_inventory_classifies_residual_source_context_notes() {
 }
 
 #[test]
+fn source_inventory_classifies_residual_inline_layout_and_style_notes() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = [
+        "［＃「３字下げ」］",
+        "［＃場面設定の表題、及び「Ｔ」で始まる最初の行以外は、１文字下げた位置で頭を揃える］",
+        "［＃「幕。」は地付き］",
+        "［＃「幕。」は地付け］",
+        "［＃「江」はポイント小さく右寄せ］",
+        "［＃「約」は小さめの文字］",
+        "［＃「細字の部分」は割り注で処理］",
+        "［＃ここで小文字、字下げ終わり］",
+        "［＃下げて、地付きで］",
+        "［＃天から２８字下げて］",
+        "［＃本文の台詞部分は２行目から、その台詞の最後まで天より１字下げ。ト書き部分は天より４字下げ（ト書きの段落の１行目は４字下げてある）］",
+    ]
+    .join("\n");
+    let summary = inventory_document("fixture", &source, &patterns);
+
+    assert_eq!(
+        summary.unknown_examples,
+        [],
+        "residual inline layout/style source markers should not remain unknown"
+    );
+    for row_id in [
+        "indentation.jisage_block",
+        "indentation.chitsuki",
+        "decoration.font_size",
+        "warichu.basic",
+        "annotation.layout_note",
+    ] {
+        assert!(
+            summary.row_counts.contains_key(row_id),
+            "expected source inventory row {row_id}"
+        );
+    }
+}
+
+#[test]
+fn source_inventory_classifies_residual_source_label_name_notes() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = [
+        "［＃わが息子］",
+        "［＃われらが青春］",
+        "［＃アコーデオン］",
+        "［＃カバンを持った男］",
+        "［＃カルタ遊び］",
+        "［＃ケーキ］",
+        "［＃サマータイム］",
+        "［＃バチェラー八重子、アイヌ］",
+        "［＃ペレール、両親が滞在していたアパート］",
+        "［＃メリー・ツィン］",
+        "［＃モスクワの官営売店］",
+        "［＃モスクワプロレタリア作家協会］",
+        "［＃ルイバコフの妻］",
+        "［＃ロシアプロレタリア作家同盟］",
+        "［＃中山正直、本田道之の弟］",
+        "［＃中川八十勝、電気試験所時代の同僚］",
+        "［＃中村吉右衛門、尾上菊五郎］",
+        "［＃中村吉蔵］",
+        "［＃久米正雄］",
+        "［＃五ヵ年計画］",
+        "［＃伊藤白蓮］",
+        "［＃全日本無産者芸術団体協議会］",
+        "［＃八十勝］",
+        "［＃共産主義青年同盟］",
+        "［＃宮本トミ］",
+        "［＃宮本友子］",
+        "［＃宮本捨吉］",
+        "［＃宮本顕治の生家］",
+        "［＃富樫はつ、中條家書生］",
+        "［＃小林房次郎、中條家の書生］",
+        "［＃山尾市次郎、中條家小作人］",
+        "［＃岡東浩。海野の神戸一中時代の友人。三菱商事勤務。麻布に居住］",
+        "［＃弁護士、政治家。戦後、公職追放処分を受けるが、東京裁判では東条英機の主任弁護士となる］",
+    ]
+    .join("\n");
+    let summary = inventory_document("fixture", &source, &patterns);
+
+    assert_eq!(
+        summary.unknown_examples,
+        [],
+        "residual source label/name notes should be reviewed source-authority markers"
+    );
+    assert_eq!(
+        summary
+            .row_counts
+            .get("source.note_label")
+            .map(|count| count.occurrences),
+        Some(33)
+    );
+}
+
+#[test]
 fn source_inventory_classifies_tail_positioning_and_caption_variants() {
     let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
     let patterns = patterns_from_rows(matrix.rows());

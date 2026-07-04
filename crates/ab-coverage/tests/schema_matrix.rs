@@ -851,6 +851,36 @@ fn source_inventory_classifies_font_size_subscript_variants() {
 }
 
 #[test]
+fn source_inventory_classifies_dotted_letter_variants() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = [
+        "Sam［＃mは上ドット付き］",
+        "Sas［＃sは下ドット付き］",
+        "Sisa［＃２つめのsは下ドット付き］",
+        "Visnu［＃snはともに下ドット付き］",
+        "Samsa［＃mは上ドット付き。２つめのsは下ドット付き］",
+        "Konkana［＃前のnは上ドット付き、後のnは下ドット付き］",
+        "Ta［＃Tは下ドット付き］",
+    ]
+    .join("\n");
+    let summary = inventory_document("fixture", &source, &patterns);
+
+    assert_eq!(
+        summary.unknown_examples,
+        [],
+        "known dotted-letter corpus variants should not remain unknown"
+    );
+    assert_eq!(
+        summary
+            .row_counts
+            .get("accent.dotted_letter")
+            .map(|count| count.occurrences),
+        Some(7)
+    );
+}
+
+#[test]
 fn source_inventory_classifies_layout_and_inline_style_corpus_variants() {
     let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
     let patterns = patterns_from_rows(matrix.rows());

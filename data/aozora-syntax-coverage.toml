@@ -1322,6 +1322,70 @@ coverage_basis = "full_corpus"
 sample_works = []
 
 [[syntax]]
+id = "accent.dotted_letter"
+priority = 2
+category = "glyph"
+feature_keys = ["accent_dot", "diacritic", "emphasis"]
+reference_sources = ["P4suta/aozora-notation-spec@b60665fd50b596c967254f99b61f418495656fef:src/notation/accent-dot.md", "P4suta/aozora-notation-spec@b60665fd50b596c967254f99b61f418495656fef:conformance/vectors/accent_dot_below/vector.json"]
+source_examples = ["［＃mは上ドット付き］", "［＃sは下ドット付き］", "［＃２つめのsは下ドット付き］"]
+source_patterns = ['［＃(([前後]の|最後の|[０-９0-9]+つめの)?[A-Za-z]+は(ともに|それぞれ)?[上下]ドット付き)([。、]([前後]の|最後の|[０-９0-9]+つめの)?[A-Za-z]+は(ともに|それぞれ)?[上下]ドット付き)*］']
+ir_nodes = []
+aat_nodes = ["raw"]
+tei_projection = "hi rend=accent-dot or g with charDecl"
+plaintext_projection = "resolved_character_or_source"
+comparison_projection = "resolved_character_or_source"
+validation_properties = ["forward_reference_resolution"]
+adapter_expectations = ["preserve dotted-letter directive or resolved glyph"]
+oracle_cases = []
+status = "needs_research"
+status_reason = "Dotted Sanskrit/Pali letter directives are corpus-observed and independently specified by P4suta's draft notation vectors, but current AAT/parser-IR typed support has not been measured."
+
+[syntax.representability]
+source_inventory_row = "accent.dotted_letter"
+status = "raw_preserved"
+aat_nodes = ["raw"]
+raw_fallback = true
+evidence = "P4suta/aozora-notation-spec@b60665fd50b596c967254f99b61f418495656fef:src/notation/accent-dot.md"
+notes = "TEI P5 can preserve the construct as a highlighted dotted-letter span or character declaration; v1 source-authority coverage records it as raw-preserved until adapters expose a typed dotted-letter node."
+
+[syntax.parsers.aozora2]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes dotted-letter markers; parser-specific typed behavior remains to be measured."
+
+[syntax.parsers.aozora-rs]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes dotted-letter markers; parser-specific typed behavior remains to be measured."
+
+[syntax.parsers.aozora2html]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes dotted-letter markers; parser-specific typed behavior remains to be measured."
+
+[syntax.adapters.aozora2]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed dotted-letter AAT projection has been measured."
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed dotted-letter AAT projection has been measured."
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed dotted-letter AAT projection has been measured."
+
+[syntax.corpus_prevalence]
+works_with_feature = 0
+total_occurrences = 0
+detector_id = "accent_dotted_letter"
+coverage_basis = "not_run"
+sample_works = []
+
+[[syntax]]
 id = "kunten.kaeriten"
 priority = 2
 category = "inline_annotation"

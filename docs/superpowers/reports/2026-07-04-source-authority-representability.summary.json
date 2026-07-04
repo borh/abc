@@ -3,10 +3,19 @@
   "works_scanned": 17894,
   "works_failed": 0,
   "markers_total": 4324663,
-  "unknown_markers_total": 16672,
-  "unallowlisted_unknown_markers_total": 1802,
+  "unknown_markers_total": 16585,
+  "unallowlisted_unknown_markers_total": 1715,
   "allowlisted_unknown_markers_total": 14870,
   "rows": {
+    "accent.dotted_letter": {
+      "works_with_marker": 3,
+      "occurrences": 93,
+      "sample_works": [
+        "001096_42686",
+        "001096_43554",
+        "001096_43672"
+      ]
+    },
     "annotation.bouki": {
       "works_with_marker": 12,
       "occurrences": 127,
@@ -455,7 +464,7 @@
       ]
     }
   },
-  "unknown_classes_total": 1330,
+  "unknown_classes_total": 1302,
   "unknown_classes_truncated": true,
   "unknown_classes": [
     {
@@ -471,41 +480,6 @@
         "000081_4416",
         "000081_50764",
         "000091_522"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃sは下ドット付き］",
-      "body": "sは下ドット付き",
-      "occurrences": 14,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 14,
-      "sample_works": [
-        "001096_42686",
-        "001096_43672"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃mは上ドット付き］",
-      "body": "mは上ドット付き",
-      "occurrences": 12,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 12,
-      "sample_works": [
-        "001096_43672"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃nは上ドット付き］",
-      "body": "nは上ドット付き",
-      "occurrences": 12,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 12,
-      "sample_works": [
-        "001096_42686",
-        "001096_43554"
       ]
     },
     {
@@ -528,30 +502,6 @@
       "unallowlisted_occurrences": 9,
       "sample_works": [
         "000564_52368"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃mは上ドット付き。２つめのsは下ドット付き］",
-      "body": "mは上ドット付き。２つめのsは下ドット付き",
-      "occurrences": 8,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 8,
-      "sample_works": [
-        "001096_43672"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃tは下ドット付き］",
-      "body": "tは下ドット付き",
-      "occurrences": 7,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 7,
-      "sample_works": [
-        "001096_42686",
-        "001096_43554",
-        "001096_43672"
       ]
     },
     {
@@ -803,18 +753,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃rは下ドット付き］",
-      "body": "rは下ドット付き",
-      "occurrences": 4,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 4,
-      "sample_works": [
-        "001096_42686",
-        "001096_43672"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「〃」は上部に出ている］",
       "body": "「〃」は上部に出ている",
       "occurrences": 4,
@@ -946,30 +884,6 @@
       "unallowlisted_occurrences": 4,
       "sample_works": [
         "000129_2522"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃hは下ドット付き］",
-      "body": "hは下ドット付き",
-      "occurrences": 3,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 3,
-      "sample_works": [
-        "001096_42686",
-        "001096_43554"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃nは下ドット付き］",
-      "body": "nは下ドット付き",
-      "occurrences": 3,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 3,
-      "sample_works": [
-        "001096_43554",
-        "001096_43672"
       ]
     },
     {
@@ -1401,17 +1315,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃１つめのrは下ドット付き。sは下ドット付き］",
-      "body": "１つめのrは下ドット付き。sは下ドット付き",
-      "occurrences": 3,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 3,
-      "sample_works": [
-        "001096_43672"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃２つめの「4」は上付き小文字、「1/144」は分数］",
       "body": "２つめの「4」は上付き小文字、「1/144」は分数",
       "occurrences": 3,
@@ -1419,17 +1322,6 @@
       "unallowlisted_occurrences": 3,
       "sample_works": [
         "000042_2345"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃nは下ドット付き。２つめのdは下ドット付き］",
-      "body": "nは下ドット付き。２つめのdは下ドット付き",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "001096_43672"
       ]
     },
     {
@@ -2656,17 +2548,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃最後のmは上ドット付き］",
-      "body": "最後のmは上ドット付き",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "001096_42686"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃本文の台詞部分は２行目から、その台詞の最後まで天より１字下げ。］",
       "body": "本文の台詞部分は２行目から、その台詞の最後まで天より１字下げ。",
       "occurrences": 2,
@@ -3016,28 +2897,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃Rは下ドット付き。sは下ドット付き。hは下ドット付き］",
-      "body": "Rは下ドット付き。sは下ドット付き。hは下ドット付き",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001096_43672"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃Tは下ドット付き］",
-      "body": "Tは下ドット付き",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001096_42686"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃Universitatのaにウムラウト（¨）］",
       "body": "Universitatのaにウムラウト（¨）",
       "occurrences": 1,
@@ -3045,28 +2904,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000281_1710"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃dは下ドット付き］",
-      "body": "dは下ドット付き",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001096_43672"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃mは上ドット付き。nは下ドット付き］",
-      "body": "mは上ドット付き。nは下ドット付き",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001096_43672"
       ]
     },
     {
@@ -3082,28 +2919,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃rsnはそれぞれ下ドット付き］",
-      "body": "rsnはそれぞれ下ドット付き",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001096_43554"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃rは下ドット付き。２つめのtは下ドット付き］",
-      "body": "rは下ドット付き。２つめのtは下ドット付き",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001096_43672"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃simhaのmは上ドット付き］",
       "body": "simhaのmは上ドット付き",
       "occurrences": 1,
@@ -3111,50 +2926,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "001096_42686"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃snはそれぞれ下ドット付き］",
-      "body": "snはそれぞれ下ドット付き",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001096_43554"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃snはともに下ドット付き］",
-      "body": "snはともに下ドット付き",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001096_43554"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃stはともに下ドット付き］",
-      "body": "stはともに下ドット付き",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001096_43554"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃tはともに下ドット付き］",
-      "body": "tはともに下ドット付き",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001096_43554"
       ]
     },
     {
@@ -11233,17 +11004,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃前のnは上ドット付き、後のnは下ドット付き］",
-      "body": "前のnは上ドット付き、後のnは下ドット付き",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001096_43554"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃前の行とは0.5行アキ、「犯人の第三告白」はゴシック体］",
       "body": "前の行とは0.5行アキ、「犯人の第三告白」はゴシック体",
       "occurrences": 1,
@@ -11526,6 +11286,248 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000311_33188"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃図12、看板の絵。二等辺三角形の下に縦線］",
+      "body": "図12、看板の絵。二等辺三角形の下に縦線",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_33188"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃図13、唇の絵］",
+      "body": "図13、唇の絵",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_33188"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃図14、顔の絵］",
+      "body": "図14、顔の絵",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_33188"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃図「ソヴェト選挙系統」入る、P516］",
+      "body": "図「ソヴェト選挙系統」入る、P516",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_3149"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃図「ロシア社会主義連邦ソヴェト共和国中央及地方機関ノ交互関係」P524、「我国之国家機構図」P525］",
+      "body": "図「ロシア社会主義連邦ソヴェト共和国中央及地方機関ノ交互関係」P524、「我国之国家機構図」P525",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_3149"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃図１、「工場内の見取り図」］",
+      "body": "図１、「工場内の見取り図」",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_4212"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃図１、中世にヨーロッパで用いられた地図］",
+      "body": "図１、中世にヨーロッパで用いられた地図",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000372_4314"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃図１、大畜］",
+      "body": "図１、大畜",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000372_4708"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃図１、家の間取り図。凸形の間取り。左が「台所」、上が「茶の間」と「ヌレエン（濡れ縁）」、右が部屋と「縁側」（濡れ縁と縁側がＬ状になっている）、中央に廊下と階段。］",
+      "body": "図１、家の間取り図。凸形の間取り。左が「台所」、上が「茶の間」と「ヌレエン（濡れ縁）」、右が部屋と「縁側」（濡れ縁と縁側がＬ状になっている）、中央に廊下と階段。",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_33190"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃図１、家の間取り］",
+      "body": "図１、家の間取り",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_4171"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃図１、油つぼの絵］",
+      "body": "図１、油つぼの絵",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_33192"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃図１、湿度・気温・気圧曲線］",
+      "body": "図１、湿度・気温・気圧曲線",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000160_1233"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃図１、眼底の図、二点］",
+      "body": "図１、眼底の図、二点",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_33191"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃図１、知的生活の構造］",
+      "body": "図１、知的生活の構造",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000025_1144"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃図１、祝い箸の絵］",
+      "body": "図１、祝い箸の絵",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_33188"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃図１、絵「四つの棟」］",
+      "body": "図１、絵「四つの棟」",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_4222"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃図１、絵「黄金虫。頭に「朱と金」の文字、胴に数本の縦縞と「縞」の文字」］",
+      "body": "図１、絵「黄金虫。頭に「朱と金」の文字、胴に数本の縦縞と「縞」の文字」",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_4207"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃図１、縦書き手書きで「文芸評論集」。その周りに２重に雲形の線］",
+      "body": "図１、縦書き手書きで「文芸評論集」。その周りに２重に雲形の線",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_33186"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃図１、花マルのようなマーク］",
+      "body": "図１、花マルのようなマーク",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_33189"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃図１、諸国使者の着席順序］",
+      "body": "図１、諸国使者の着席順序",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000372_2612"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃図１入る］",
+      "body": "図１入る",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000009_45340"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃図１～図３は、右から続く一葉］",
+      "body": "図１～図３は、右から続く一葉",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000866_3039"
       ]
     }
   ],
@@ -12234,13 +12236,13 @@
   "decode_failures": [],
   "representability": {
     "typed_occurrences": 4567524,
-    "raw_preserved_occurrences": 35335,
+    "raw_preserved_occurrences": 35428,
     "out_of_body_occurrences": 950,
     "unsupported_occurrences": 13920,
     "needs_research_occurrences": 0
   },
   "strict_errors": [
-    "1802 unallowlisted source markers"
+    "1715 unallowlisted source markers"
   ],
   "inputs": {
     "matrix": "/home/bor/Projects/ab-validator/data/aozora-syntax-coverage.toml",

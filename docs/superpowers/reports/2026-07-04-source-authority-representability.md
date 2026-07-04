@@ -5,7 +5,7 @@
 - source_authority_gate: `SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED`
 - note: this is not a passing representability gate; durable representability claims remain blocked until strict_errors is empty.
 - strict_errors:
-  - 1802 unallowlisted source markers
+  - 1715 unallowlisted source markers
 
 ## Scope
 
@@ -16,14 +16,14 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 - works_scanned: 17894
 - works_failed: 0
 - markers_total: 4324663
-- unknown_markers_total: 16672
-- unallowlisted_unknown_markers_total: 1802
+- unknown_markers_total: 16585
+- unallowlisted_unknown_markers_total: 1715
 - allowlisted_unknown_markers_total: 14870
 
 ## Representability
 
 - typed_occurrences: 4567524
-- raw_preserved_occurrences: 35335
+- raw_preserved_occurrences: 35428
 - out_of_body_occurrences: 950
 - unsupported_occurrences: 13920
 - needs_research_occurrences: 0
@@ -32,6 +32,7 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 
 | row | works | occurrences | samples |
 |---|---:|---:|---|
+| accent.dotted_letter | 3 | 93 | 001096_42686, 001096_43554, 001096_43672 |
 | annotation.bouki | 12 | 127 | 000031_2846, 000037_2848, 000156_2699, 000219_2932, 000287_3061 |
 | annotation.chuuki | 5487 | 35063 | 000005_53194, 000006_1869, 000006_3310, 000006_4627, 000006_46659 |
 | break.line_explicit | 47 | 161 | 000075_4250, 000081_47027, 000083_46289, 000106_56858, 000106_57905 |
@@ -181,18 +182,13 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 
 ## Unknown Source Marker Classes
 
-Showing 50 report rows of 1330 total classes. JSON carries 1000 top classes. truncated: true
+Showing 50 report rows of 1302 total classes. JSON carries 1000 top classes. truncated: true
 
 | kind | raw | occurrences | unallowlisted | allowlisted | samples |
 |---|---|---:|---:|---:|---|
 | MalformedAccentNotation | 〔 | 56 | 56 | 0 | 000026_219, 000034_55507, 000081_4416, 000081_50764, 000091_522 |
-| CommandFullwidth | ［＃sは下ドット付き］ | 14 | 14 | 0 | 001096_42686, 001096_43672 |
-| CommandFullwidth | ［＃mは上ドット付き］ | 12 | 12 | 0 | 001096_43672 |
-| CommandFullwidth | ［＃nは上ドット付き］ | 12 | 12 | 0 | 001096_42686, 001096_43554 |
 | CommandFullwidth | ［＃ここからページの左右中央］ | 11 | 11 | 0 | 000885_2557 |
 | CommandFullwidth | ［＃「ル」は上に「⌒」付き］ | 9 | 9 | 0 | 000564_52368 |
-| CommandFullwidth | ［＃mは上ドット付き。２つめのsは下ドット付き］ | 8 | 8 | 0 | 001096_43672 |
-| CommandFullwidth | ［＃tは下ドット付き］ | 7 | 7 | 0 | 001096_42686, 001096_43554, 001096_43672 |
 | CommandFullwidth | ［＃「?!」は一字］ | 7 | 7 | 0 | 000125_1320 |
 | CommandFullwidth | ［＃「地付き］ | 7 | 7 | 0 | 000150_46617 |
 | CommandFullwidth | ［＃一つ目の「e」は「´」付き］ | 7 | 7 | 0 | 000129_2522 |
@@ -214,7 +210,6 @@ Showing 50 report rows of 1330 total classes. JSON carries 1000 top classes. tru
 | CommandFullwidth | ［＃未完］ | 5 | 5 | 0 | 000311_1983, 000311_2879, 000311_3023, 000311_3027, 000311_3080 |
 | CommandFullwidth | ［＃直線は中央に配置］ | 5 | 5 | 0 | 000129_2298 |
 | CommandFullwidth | ［＃ 一つ目の「e」は「´」付き］ | 4 | 4 | 0 | 000129_2522 |
-| CommandFullwidth | ［＃rは下ドット付き］ | 4 | 4 | 0 | 001096_42686, 001096_43672 |
 | CommandFullwidth | ［＃「〃」は上部に出ている］ | 4 | 4 | 0 | 000305_1896 |
 | CommandFullwidth | ［＃「ちへ」の右に「）」］ | 4 | 4 | 0 | 000232_60242 |
 | CommandFullwidth | ［＃「エ」は小さい「ヱ」］ | 4 | 4 | 0 | 000124_658 |
@@ -227,14 +222,20 @@ Showing 50 report rows of 1330 total classes. JSON carries 1000 top classes. tru
 | CommandFullwidth | ［＃引用文終わり］ | 4 | 4 | 0 | 000034_233 |
 | CommandFullwidth | ［＃改丁、左寄せで］ | 4 | 4 | 0 | 000160_1255 |
 | CommandFullwidth | ［＃最後の「e」は「´」付き］ | 4 | 4 | 0 | 000129_2522 |
-| CommandFullwidth | ［＃hは下ドット付き］ | 3 | 3 | 0 | 001096_42686, 001096_43554 |
-| CommandFullwidth | ［＃nは下ドット付き］ | 3 | 3 | 0 | 001096_43554, 001096_43672 |
 | CommandFullwidth | ［＃εに帯気。ιに鋭アクセント］ | 3 | 3 | 0 | 000065_393 |
 | CommandFullwidth | ［＃ηに鋭アクセント］ | 3 | 3 | 0 | 000065_393 |
 | CommandFullwidth | ［＃οに鋭アクセント。σはファイナルシグマ］ | 3 | 3 | 0 | 000065_393 |
 | CommandFullwidth | ［＃「1/14」は分数］ | 3 | 3 | 0 | 000042_2345 |
 | CommandFullwidth | ［＃「1/4」は分数］ | 3 | 3 | 0 | 000042_2345, 000183_45359 |
 | CommandFullwidth | ［＃「2」は上付き小文字、「1/142」は分数］ | 3 | 3 | 0 | 000042_2345 |
+| CommandFullwidth | ［＃「3」は上付き小文字、「1/143」は分数］ | 3 | 3 | 0 | 000042_2345 |
+| CommandFullwidth | ［＃「o」はウムラウト（¨）付き］ | 3 | 3 | 0 | 000182_946, 000301_1872 |
+| CommandFullwidth | ［＃「x2」、「y2」、「x2」はそれぞれ縦中横、すべての「2」は上付き小書き］ | 3 | 3 | 0 | 000148_1102 |
+| CommandFullwidth | ［＃「√」の中に「６」］ | 3 | 3 | 0 | 001569_59194 |
+| CommandFullwidth | ［＃「うどん」と「きそば」は２列に並ぶ］ | 3 | 3 | 0 | 000311_4205, 000311_4206 |
+| CommandFullwidth | ［＃「せり吟」は上部に出ている］ | 3 | 3 | 0 | 000305_1896 |
+| CommandFullwidth | ［＃「レ」は返り点］ | 3 | 3 | 0 | 000284_2609 |
+| CommandFullwidth | ［＃「一六八頁」は「安康天皇」の「市の邊の押齒の王」］ | 3 | 3 | 0 | 001518_51731 |
 
 ## Decode Failures
 

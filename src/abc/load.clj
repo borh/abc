@@ -226,17 +226,19 @@
     (timbre/debug (pretty-demunge expr) (into [] (filter keyword? args)) duration)
     {:duration duration :result result}))
 
-(defn work-id->document [id]
-  (when-let [text (extract-text (xtdb/work-id-to-url id))]
-    (try (:result (with-time-duration annotation/parse-text text id))
-         (catch Exception e (timbre/error (format "Failed parsing %s with error %s" id e))))))
+(defn work-id->document
+  ([id] (work-id->document (xtdb/node) id))
+  ([node id]
+   (when-let [text (extract-text (xtdb/work-id-to-url id :node node))]
+     (try (:result (with-time-duration annotation/parse-text text id))
+          (catch Exception e (timbre/error (format "Failed parsing %s with error %s" id e)))))))
 
 (def !times (atom []))
 
 (defn persist-texts!
   ([] (persist-texts! (xtdb/node)))
   ([a-node]
-   (let [work-partitions (into [] (partition-all 100) (xtdb/all-works))]
+   (let [work-partitions (into [] (partition-all 100) (xtdb/all-works :node a-node))]
      (timbre/debug "Persisting over" (count work-partitions) "partitions")
      (cp/with-shutdown!
        [pool (cp/threadpool (.. Runtime getRuntime availableProcessors))]
@@ -249,7 +251,7 @@
                (map #_pool
                 (fn [id]
                   (timbre/debug id)
-                  (let [{:keys [duration result]} (with-time-duration work-id->document id)]
+                  (let [{:keys [duration result]} (with-time-duration work-id->document a-node id)]
                     (swap! !times conj duration)
                     (let [doc result]
                       (when (nil? (:document/metadata doc))

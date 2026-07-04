@@ -2,13 +2,14 @@
 
 Status: Draft planning bundle
 Date: 2026-04-26
-Source RFC: `docs/high-level-architecture-note.md` v0.5.1
+Architecture surface: `docs/architecture.md`
+Design survey: `docs/design-survey.md`
 
-This bundle turns the architecture note into concrete planning artifacts. It
-does not implement the corpus pipeline. Its job is to make the first
-implementation small enough to review: one manifest schema, one parser IR
-schema, one TEI profile stub, one example artifact bundle, and the ADRs that
-bound the choices.
+This bundle turns the accepted architecture surface into concrete planning and
+validation artifacts. The historical source RFC is retained at
+`docs/high-level-architecture-note.md`, but accepted obligations should be read
+through `docs/architecture.md`; unelected alternatives and measurement triggers
+should be read through `docs/design-survey.md`.
 
 ## Deliverables
 
@@ -60,7 +61,8 @@ bound the choices.
    unified around ODD-derived Relax NG plus Schematron.
 3. Adopt ADR 0007 after the imported-output schemas are accepted.
 4. Adopt ADR 0009 and ADR 0010 after materialized identity behavior is reconciled.
-5. Keep ADR 0002, ADR 0003, ADR 0004, ADR 0005, and ADR 0011 Draft until their gates are exercised by implementation.
+5. Keep ADR 0002, ADR 0003, ADR 0004, and ADR 0005 Draft until their gates
+   are exercised by implementation.
 6. Validate the example manifest against `schemas/manifest.schema.json`.
 7. Validate the parser IR fixture against `schemas/parser-ir.schema.json`.
 8. Generate the RDF view from the JSON manifest using the mapping rules.

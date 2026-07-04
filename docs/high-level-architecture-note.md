@@ -4,6 +4,12 @@ Date: 2026-04-26
 Status: Draft RFC
 Version: 0.5.1
 
+> Historical note: accepted architecture has been promoted to
+> `docs/architecture.md`. Still-open surveyed alternatives and their promotion
+> triggers live in `docs/design-survey.md`. This file is retained as the
+> original RFC/source survey and should not be treated as the current
+> implementation-obligation surface.
+
 This note captures a direction for ABC while the language, storage, parser,
 and pipeline choices are still open. It is intentionally high-level, but not
 choice-free. The goal is to separate durable project responsibilities from

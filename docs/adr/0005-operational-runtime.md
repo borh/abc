@@ -19,6 +19,14 @@ the recommended next ADR shape: separate reproducibility materialization from
 operational orchestration, storage/packing, query runtime, API/service, and
 retention/archive decisions.
 
+Follow-up query-runtime note:
+`docs/handoffs/query-runtime-and-history-index.md` separates completed XTDB v1
+retirement from query-runtime selection. It records a small SQLite-vs-DuckDB
+query-pack probe and recommends keeping generated indexes as derived views over
+canonical files until an ADR accepts a concrete runtime. TEI generation remains
+part of parser-IR publication rendering, not this query-runtime replacement
+track.
+
 ## Context
 
 ABC may eventually use Rust parsers, JVM validation, RDF tooling, Nix, query

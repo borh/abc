@@ -80,8 +80,20 @@ and an ADR selects the runtime, packaging mechanism, and validation fixtures.
 ## Query Runtime
 
 Potential query runtimes include plain files plus indexes, generated SQLite,
-SPARQL/RDF stores, XTDB, Dolt-like snapshot stores, DataFusion/Arrow, DuckDB,
-and hybrid layouts. The architecture does not select one for v0.
+SPARQL/RDF stores, XTDB v2-style bitemporal stores, Dolt-like snapshot stores,
+DataFusion/Arrow, DuckDB, and hybrid layouts. XTDB v1 is retired and is not a
+candidate. The architecture does not select a query runtime for v0.
+
+`docs/handoffs/query-runtime-and-history-index.md` records the first bounded
+query-pack probe over Aozora history scan output and paper-demo manifests. Its
+provisional direction keeps canonical truth in ordinary files, uses generated
+query packs as disposable indexes, prefers SQLite for small coordinate/history
+lookup, and keeps DuckDB/Parquet for analytical facts.
+
+TEI generation is not part of the query-runtime decision. It is the accepted
+parser-IR publication-rendering path from ADR 0025; a future query pack may
+index TEI artifact manifests and validation results, but does not own TEI
+creation.
 
 Promotion trigger: access-pattern evidence shows coordinate lookup,
 provenance traversal, corpus evolution, full-text search, or analytical scans
@@ -190,7 +202,8 @@ or ADR.
 - W3C SHACL 1.2 and SHACL-DS
 - Multiformats CID and IPLD
 - Horned-OWL, OWLAPI, Tawny-OWL, and Plow.pm
-- XTDB, Dolt, SQLite, DuckDB, DataFusion/Arrow, and RDF stores
+- XTDB v2-style bitemporal stores, Dolt, SQLite, DuckDB,
+  DataFusion/Arrow, and RDF stores
 - DVC and MLflow
 - SLSA, in-toto, Sigstore, and Cosign
 - IIIF Presentation API and Linked Art model references where publication

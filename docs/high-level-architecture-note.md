@@ -621,7 +621,7 @@ preference:
 | Query Need | Likely Storage |
 | --- | --- |
 | Lookup artifact by coordinate or hash | SQLite or file index over manifests |
-| Traverse provenance chains | SPARQL over Turtle, Apache Jena, RDF store, or XTDB |
+| Traverse provenance chains | SPARQL over Turtle, Apache Jena, RDF store, or bitemporal store |
 | Query corpus evolution over time | XTDB v2, Dolt-like store, or custom snapshot index |
 | Full-text search over TEI/plaintext | SQLite FTS, OpenSearch, Tantivy, or similar |
 | Analytical scans over tokens/features | Arrow/DataFusion, Parquet, DuckDB, or columnar files |
@@ -970,8 +970,9 @@ remaining useful for experiment workflows.
 ### Query Runtime
 
 The query runtime should be chosen after manifest shape and access patterns are
-clear. Candidates include plain files plus indexes, SQLite, XTDB, RDF stores,
-DataFusion/Arrow, or a hybrid.
+clear. Candidates include plain files plus indexes, SQLite, XTDB v2-style
+bitemporal stores, RDF stores, DataFusion/Arrow, DuckDB, or a hybrid. XTDB v1
+is retired and is not a candidate.
 
 ## Current Repository Reading
 
@@ -985,7 +986,9 @@ should carry forward equally:
 - Lift/replace: `abc.annotation` as reference behavior and test cases for
   ruby, gaiji, plaintext, and sentence handling. It should not remain the
   production parser if a Rust or external parser becomes canonical.
-- Replace/redesign: `abc.tei` should be rebuilt around a published TEI ODD,
+- Replace/redesign: legacy `abc.tei` should not be the publication path. The
+  current TEI generation surface is `abc.tools.parser-ir-tei` plus
+  `abc.tools.materialize-publication`, backed by the published TEI ODD,
   TEI P5 ruby support, provenance, and validation-first output.
 - Replace/redesign: `abc.load` should become manifest-aware ingestion and
   batch orchestration rather than ad hoc persistence.

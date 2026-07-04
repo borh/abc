@@ -21,6 +21,13 @@ acceptance criteria because it does not measure real manifests, cold builds,
 incremental rebuilds, failure-sidecar attribution, source snapshot costs, or
 the recorded CI runner.
 
+Post-XTDB-removal note: `docs/handoffs/bounded-workset-index-design.md` now
+records a checked-in manifest fixture audit. The current ABC tree is sufficient
+for shape tests and the paper demo, but not for an honest representative
+100/1,000/5,000-work materialization probe. The next ADR 0003 probe should
+generate a disposable representative manifest fixture and include TEI render /
+validation costs from the ADR 0025 publication path.
+
 ## Context
 
 Nix is attractive for deterministic builds, pinned toolchains, and cacheable

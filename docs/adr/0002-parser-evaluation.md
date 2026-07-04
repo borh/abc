@@ -20,6 +20,14 @@ parser-IR boundary, but this ADR remains Draft until ABC decides how to cite
 ab-validator's measured parser-candidate reports as parser-selection evidence
 rather than only downstream conversion evidence.
 
+Follow-up citation note:
+`docs/handoffs/parser-evidence-citation-contract.md` defines the proposed
+ABC-side citation contract for `../ab-validator` reports. It separates
+conversion compatibility, parser selection, and comparator/oracle evidence.
+Until that policy is accepted, ABC may cite the July 4 conversion reports as
+publication-boundary evidence but should not claim that ADR 0002 has selected a
+canonical parser.
+
 ## Context
 
 ABC should not assume the parser is greenfield. Candidate implementations

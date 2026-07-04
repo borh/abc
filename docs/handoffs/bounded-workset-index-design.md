@@ -10,6 +10,15 @@
 > recorded in `docs/handoffs/measurement-probes-2026-07-04.md`. It keeps
 > Alternatives A, B, and C alive, but it does not satisfy the cold-build,
 > incremental rebuild, failure-sidecar, or CI-runner acceptance criteria.
+>
+> Post-XTDB-removal fixture audit: the checked-in ABC tree currently has only a
+> small manifest set: the v0 example, invalid fixtures, and the Rashomon/Melos
+> paper-demo publication manifests. That is enough to test manifest shape, but
+> not enough to honestly call a 100/1,000/5,000-work run representative. The
+> next ADR 0003 probe should generate a disposable representative manifest
+> fixture from real source-snapshot/work metadata and include TEI render and
+> validation outputs, rather than repeating the two paper works as if they were
+> a corpus.
 
 ## 1. Problem Statement
 
@@ -203,6 +212,10 @@ none have final acceptance measurements in ABC:
   `docs/adr/0002-parser-evaluation.md:54-58`.
 - TEI render time and output size per work; tokenized output size per work —
   `docs/high-level-architecture-note.md:758-759`.
+- TEI generation now has a concrete layer boundary: parser-IR publication
+  rendering (`abc.tools.parser-ir-tei`) plus materialization/validation
+  (`abc.tools.materialize-publication`). ADR 0003 should measure its render and
+  validation costs as materialization costs, not as query-runtime costs.
 - Nix evaluation time and peak memory for a one-derivation-per-work layout
   versus a batch/requested-set layout on 100/1,000/5,000-work subsets has a
   first synthetic measurement, but still needs representative manifest,

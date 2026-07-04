@@ -256,7 +256,7 @@ reference_sources = [
   "references/aozorabunko/rules/kijyunn.html",
 ]
 source_examples = ["［＃大見出し］", "［＃「見出し」は中見出し］"]
-source_patterns = ['［＃「[^\n]+」は[大中小]見出し］', '［＃(ここから|ここで)?[大中小]見出し?(終わり)?］', '［＃ここで見出し終わり］', '［＃[大中小]?見出し文字］']
+source_patterns = ['［＃「[^\n]*」は[大中小]見出し］', '［＃(ここから|ここで)?[大中小]見出し?(終わり)?］', '［＃ここで見出し終わり］', '［＃[大中小]?見出し文字］']
 ir_nodes = ["Block::Heading"]
 aat_nodes = ["heading"]
 tei_projection = "head"
@@ -896,7 +896,7 @@ category = "inline_annotation"
 feature_keys = ["editor_note"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html.rb"]
 source_examples = ["「base」の「annotation」の注記", "「text」の注記付き"]
-source_patterns = ['「[^」]+」の「[^」]+」の注記', '「[^」]+」の注記付き', '〔[^〕]+〕', '［＃[^］]*(底本|ママ|誤植|誤記|誤り|誤訳|欠落|欠如|脱落|脱字|省略|伏字|伏せ字|註|注記|初出では|初出時|初出の|余分か|全集|筑摩版|創元社版|岩波文庫の注|岩波文庫版|旺文社文庫版|改行を挿入|原文まま|本文はありません|抜けていると考えられる)[^］]*］', '［＃ルビは「[^」]+」にかかる］', '［＃ルビは「[^」]+」に付く］', '［＃「[^」]+」にルビ］', '［＃入力者注\([０-９0-9]+\)］', '［ルビの「[^」]+」は底本では「[^」]+」］']
+source_patterns = ['「[^」]+」の「[^」]+」の注記', '「[^」]+」の注記付き', '〔[^〕]+〕', '［＃[^］]*(底本|ママ|誤植|誤記|誤り|誤訳|欠落|欠如|脱落|脱字|省略|伏字|伏せ字|註|注記|初出では|初出時|初出の|余分か|全集|定本|筑摩版|創元社版|岩波文庫の注|岩波文庫版|旺文社文庫版|改行を挿入|原文まま|本文はありません|抜けていると考えられる)[^］]*］', '［＃ルビは「[^」]+」にかかる］', '［＃ルビは「[^」]+」に付く］', '［＃「[^」]+」にルビ］', '［＃「[^」]+」のルビ］', '［＃入力者注\([０-９0-9]+\)］', '［ルビの「[^」]+」は底本では「[^」]+」］']
 ir_nodes = []
 aat_nodes = ["ruby"]
 tei_projection = "note or ruby"
@@ -1400,7 +1400,7 @@ category = "glyph"
 feature_keys = ["glyph_variant", "diacritic", "fraction", "script_glyph"]
 reference_sources = ["references/aozorabunko/rules/kijyunn.html", "P4suta/aozora-notation-spec@b60665fd50b596c967254f99b61f418495656fef:src/notation/script-glyphs.md", "P4suta/aozora-notation-spec@b60665fd50b596c967254f99b61f418495656fef:src/notation/fraction.md"]
 source_examples = ["［＃「e」はアクサン（´）付き］", "［＃「?!」は一字］", "［＃「1/4」は分数］"]
-source_patterns = ['［＃[^］]*(「[^」]+」|[A-Za-zΑ-ωα-ωηωεισοψ])[^］]*(上に「[^」]+」付き|下に「[^」]+」付き|「[^」]+」付き|アクサン|ウムラウト|帯気|曲アクセント|鋭アクセント|平息|ファイナルシグマ|accent grave|マクロン|長音記号|下ドット|アキュートアクセント|合字|くずし字)[^］]*］', '［＃[^］]*(一字|指数|分数|覆面の英字|矢印が下向き|右横に縦棒あり|の中に「[^」]+」|右に「[^」]+」|小さい「[^」]+」|ローマ数字|○付き文字|正字と同字|記号の中に入っている|「※」は|１マスに横並び|上に「[^」]+」がつく|２倍の長方形)[^］]*］']
+source_patterns = ['［＃[^］]*(「[^」]+」|[A-Za-zΑ-ωα-ωηωεισοψ])[^］]*(上に「[^」]+」付き|下に「[^」]+」付き|「[^」]+」付き|アクサン|ウムラウト|帯気|曲アクセント|鋭アクセント|平息|ファイナルシグマ|accent grave|マクロン|長音記号|下ドット|下点|アキュートアクセント|合字|くずし字)[^］]*］', '［＃[^］]*(一字|指数|分数|覆面の英字|矢印が下向き|右横に縦棒あり|の中に「[^」]+」|右に「[^」]+」|小さい「[^」]+」|ローマ数字|○付き文字|正字と同字|記号の中に入っている|「※」は|１マスに横並び|上に「[^」]+」がつく|２倍の長方形|欠字)[^］]*］']
 ir_nodes = []
 aat_nodes = ["raw"]
 tei_projection = "note type=glyph or g with charDecl"
@@ -2170,6 +2170,7 @@ source_patterns = [
   '［＃「[^」]+」は上部に出ている］',
   '［＃「[^」]+」は「[^」]+」の[上下]付き(小文字|小書き)?］',
   '［＃「[^」]+」は本文より小さいサイズの文字］',
+  '［＃「[^」]+」は[０-９0-9一二三四五六七八九十]+度位右上がり］',
   '［＃ここで[大中小]?[０-９0-9一二三四五六七八九十]+段階(小さ|大き)な文字終わり］',
   '［＃[０-９0-9一二三四五六七八九十]+回り大きな文字］',
   '［＃[大中小]文字］',
@@ -2241,7 +2242,7 @@ category = "inline_annotation"
 feature_keys = ["keigakomi"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/keigakomi.rb", "references/parsers/aozora2html/lib/aozora2html/tag/inline_keigakomi.rb"]
 source_examples = ["［＃ここから罫囲み］", "［＃ここで罫囲み終わり］", "「text」の罫囲み"]
-source_patterns = ['［＃ここから罫囲み］', '［＃(ここで)?罫囲み(終わり)?］', '［＃ここで字下げ、(枠|罫)囲み終わり］', '「[^\n]+」[のは]罫囲み', '［＃「[^\n]+」は枠囲み］']
+source_patterns = ['［＃ここから罫囲み］', '［＃(ここで)?罫囲み(終わり)?］', '［＃ここで字下げ、(枠|罫)囲み終わり］', '「[^\n]+」[のは]罫囲み', '［＃「[^\n]+」は枠囲み］', '［＃「[^\n]+」は[^］]*罫囲み］']
 ir_nodes = ["Inline::Style", "Block::Style"]
 aat_nodes = ["keigakomi"]
 tei_projection = "ab rend=keigakomi"

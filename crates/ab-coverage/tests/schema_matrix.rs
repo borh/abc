@@ -371,6 +371,8 @@ fn source_inventory_classifies_heading_and_keigakomi_corpus_variants() {
         "［＃ここで字下げ、枠囲み終わり］",
         "［＃ここで字下げ、罫囲み終わり］",
         "［＃「住友　第一」は枠囲み］",
+        "［＃「」は中見出し］",
+        "［＃「おぼつかぐら」は太字、罫囲み］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -385,14 +387,14 @@ fn source_inventory_classifies_heading_and_keigakomi_corpus_variants() {
             .row_counts
             .get("heading.basic")
             .map(|count| count.occurrences),
-        Some(5)
+        Some(6)
     );
     assert_eq!(
         summary
             .row_counts
             .get("decoration.keigakomi")
             .map(|count| count.occurrences),
-        Some(6)
+        Some(7)
     );
 }
 
@@ -484,6 +486,8 @@ fn source_inventory_classifies_annotation_editor_notes() {
         "［＃「雲隠れ」の帖は冒頭の晶子詞のみで本文はありません。］",
         "［＃ルビは「弄び物」に付く］",
         "［＃「起上り」にルビ］",
+        "［＃「【例題五】」は定本では「【例題六】］",
+        "［＃「お伽話」のルビ］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -498,7 +502,7 @@ fn source_inventory_classifies_annotation_editor_notes() {
             .row_counts
             .get("annotation.chuuki")
             .map(|count| count.occurrences),
-        Some(34)
+        Some(36)
     );
 }
 
@@ -1044,6 +1048,8 @@ fn source_inventory_classifies_glyph_variant_notes() {
         "［＃「Novae」「discendae」「docendae」および「Jurisprudentiae」のそれぞれの末尾「ae」は、「a」と「e」の合字］",
         "［＃「□□」は２倍の長方形］",
         "［＃「え」は「江」のくずし字］",
+        "［＃「t」は下点付き、182-6］",
+        "［＃「　」は欠字］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -1058,7 +1064,7 @@ fn source_inventory_classifies_glyph_variant_notes() {
             .row_counts
             .get("glyph.variant_note")
             .map(|count| count.occurrences),
-        Some(31)
+        Some(33)
     );
 }
 
@@ -1283,6 +1289,8 @@ fn source_inventory_classifies_layout_and_inline_style_corpus_variants() {
         "［＃「P = 0.07693694」は上線（￣）付き］",
         "［＃「v」は下線（_）付き、181-表組2行目］",
         "［＃「est」に下線］",
+        "［＃「San」は３０度位右上がり］",
+        "［＃「show」は３０度位右上がり］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -1294,7 +1302,7 @@ fn source_inventory_classifies_layout_and_inline_style_corpus_variants() {
     );
     for (row_id, expected) in [
         ("indentation.burasage", 2),
-        ("decoration.font_size", 7),
+        ("decoration.font_size", 9),
         ("decoration.bold_italic", 5),
         ("decoration.bousen", 5),
         ("layout.tcy", 4),

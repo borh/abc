@@ -3,8 +3,8 @@
   "works_scanned": 17894,
   "works_failed": 0,
   "markers_total": 4323915,
-  "unknown_markers_total": 15522,
-  "unallowlisted_unknown_markers_total": 652,
+  "unknown_markers_total": 15509,
+  "unallowlisted_unknown_markers_total": 639,
   "allowlisted_unknown_markers_total": 14870,
   "rows": {
     "accent.dotted_letter": {
@@ -28,8 +28,8 @@
       ]
     },
     "annotation.chuuki": {
-      "works_with_marker": 5507,
-      "occurrences": 35320,
+      "works_with_marker": 5508,
+      "occurrences": 35325,
       "sample_works": [
         "000005_53194",
         "000006_1869",
@@ -127,8 +127,8 @@
       ]
     },
     "decoration.font_size": {
-      "works_with_marker": 1218,
-      "occurrences": 51475,
+      "works_with_marker": 1219,
+      "occurrences": 51477,
       "sample_works": [
         "000006_1869",
         "000008_58922",
@@ -139,7 +139,7 @@
     },
     "decoration.keigakomi": {
       "works_with_marker": 146,
-      "occurrences": 689,
+      "occurrences": 692,
       "sample_works": [
         "000043_341",
         "000063_385",
@@ -237,8 +237,8 @@
       ]
     },
     "glyph.variant_note": {
-      "works_with_marker": 1173,
-      "occurrences": 4046,
+      "works_with_marker": 1176,
+      "occurrences": 4052,
       "sample_works": [
         "000006_1869",
         "000008_1083",
@@ -249,7 +249,7 @@
     },
     "heading.basic": {
       "works_with_marker": 3696,
-      "occurrences": 80590,
+      "occurrences": 80591,
       "sample_works": [
         "000005_53194",
         "000006_58819",
@@ -517,7 +517,7 @@
       ]
     }
   },
-  "unknown_classes_total": 636,
+  "unknown_classes_total": 623,
   "unknown_classes_truncated": false,
   "unknown_classes": [
     {
@@ -817,72 +817,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「San」は３０度位右上がり］",
-      "body": "「San」は３０度位右上がり",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000879_2324"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「show」は３０度位右上がり］",
-      "body": "「show」は３０度位右上がり",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000879_2324"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「t」は下点付き、182-6］",
-      "body": "「t」は下点付き、182-6",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000042_2345"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「　」は欠字］",
-      "body": "「　」は欠字",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_16003"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「」は中見出し］",
-      "body": "「」は中見出し",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000160_3524"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「【例題五】」は定本では「【例題六】」］",
-      "body": "「【例題五】」は定本では「【例題六】」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000160_43532"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「あめとう」に欄外に校注、「アメリカ唐桟の略」］",
       "body": "「あめとう」に欄外に校注、「アメリカ唐桟の略」",
       "occurrences": 1,
@@ -901,28 +835,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000305_1896"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「おぼつかぐら」は太字、罫囲み］",
-      "body": "「おぼつかぐら」は太字、罫囲み",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000933_47176"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「お伽話」のルビ］",
-      "body": "「お伽話」のルビ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000096_2100"
       ]
     },
     {
@@ -1066,17 +978,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "001154_52302"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「まやのくに」は太字、罫囲み］",
-      "body": "「まやのくに」は太字、罫囲み",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000933_47176"
       ]
     },
     {
@@ -1587,17 +1488,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「八月十日」は二重罫囲み］",
-      "body": "「八月十日」は二重罫囲み",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000146_49148"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「内田百間」はゴチック］",
       "body": "「内田百間」はゴチック",
       "occurrences": 1,
@@ -1719,17 +1609,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「名を云え」のルビ］",
-      "body": "「名を云え」のルビ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000096_2100"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「嘘の効用」］",
       "body": "「嘘の効用」",
       "occurrences": 1,
@@ -1748,17 +1627,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000081_43733"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「地底の蜃気楼」のルビ］",
-      "body": "「地底の蜃気楼」のルビ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000096_2100"
       ]
     },
     {
@@ -1814,17 +1682,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000124_654"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「失礼です」のルビ］",
-      "body": "「失礼です」のルビ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_1970"
       ]
     },
     {
@@ -7587,13 +7444,6 @@
     },
     {
       "work_id": "000042_2345",
-      "line": 89,
-      "kind": "CommandFullwidth",
-      "raw": "［＃「t」は下点付き、182-6］",
-      "body": "「t」は下点付き、182-6"
-    },
-    {
-      "work_id": "000042_2345",
       "line": 94,
       "kind": "CommandFullwidth",
       "raw": "［＃２文字目の「i」は下付き小文字、４文字目の「i」は上付き小文字］",
@@ -7971,27 +7821,6 @@
       "body": "「五百円宛」は大文字、太字"
     },
     {
-      "work_id": "000096_2100",
-      "line": 2013,
-      "kind": "CommandFullwidth",
-      "raw": "［＃「お伽話」のルビ］",
-      "body": "「お伽話」のルビ"
-    },
-    {
-      "work_id": "000096_2100",
-      "line": 2013,
-      "kind": "CommandFullwidth",
-      "raw": "［＃「地底の蜃気楼」のルビ］",
-      "body": "「地底の蜃気楼」のルビ"
-    },
-    {
-      "work_id": "000096_2100",
-      "line": 2095,
-      "kind": "CommandFullwidth",
-      "raw": "［＃「名を云え」のルビ］",
-      "body": "「名を云え」のルビ"
-    },
-    {
       "work_id": "000096_2117",
       "line": 21,
       "kind": "CommandFullwidth",
@@ -8242,18 +8071,46 @@
       "kind": "CommandFullwidth",
       "raw": "［＃「長谷川如是閑」はゴチック］",
       "body": "「長谷川如是閑」はゴチック"
+    },
+    {
+      "work_id": "000124_654",
+      "line": 598,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「北川冬彦」はゴチック］",
+      "body": "「北川冬彦」はゴチック"
+    },
+    {
+      "work_id": "000124_654",
+      "line": 602,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「武田麟太郎」はゴチック］",
+      "body": "「武田麟太郎」はゴチック"
+    },
+    {
+      "work_id": "000124_654",
+      "line": 604,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「林芙美子」はゴチック］",
+      "body": "「林芙美子」はゴチック"
+    },
+    {
+      "work_id": "000124_654",
+      "line": 608,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「谷崎潤一郎」はゴチック］",
+      "body": "「谷崎潤一郎」はゴチック"
     }
   ],
   "decode_failures": [],
   "representability": {
-    "typed_occurrences": 4569772,
-    "raw_preserved_occurrences": 41710,
+    "typed_occurrences": 4569778,
+    "raw_preserved_occurrences": 41721,
     "out_of_body_occurrences": 950,
     "unsupported_occurrences": 13920,
     "needs_research_occurrences": 0
   },
   "strict_errors": [
-    "652 unallowlisted source markers"
+    "639 unallowlisted source markers"
   ],
   "inputs": {
     "matrix": "/home/bor/Projects/ab-validator/data/aozora-syntax-coverage.toml",

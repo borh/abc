@@ -5,7 +5,7 @@
 - source_authority_gate: `SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED`
 - note: this is not a passing representability gate; durable representability claims remain blocked until strict_errors is empty.
 - strict_errors:
-  - 652 unallowlisted source markers
+  - 639 unallowlisted source markers
 
 ## Scope
 
@@ -16,14 +16,14 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 - works_scanned: 17894
 - works_failed: 0
 - markers_total: 4323915
-- unknown_markers_total: 15522
-- unallowlisted_unknown_markers_total: 652
+- unknown_markers_total: 15509
+- unallowlisted_unknown_markers_total: 639
 - allowlisted_unknown_markers_total: 14870
 
 ## Representability
 
-- typed_occurrences: 4569772
-- raw_preserved_occurrences: 41710
+- typed_occurrences: 4569778
+- raw_preserved_occurrences: 41721
 - out_of_body_occurrences: 950
 - unsupported_occurrences: 13920
 - needs_research_occurrences: 0
@@ -34,7 +34,7 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 |---|---:|---:|---|
 | accent.dotted_letter | 3 | 93 | 001096_42686, 001096_43554, 001096_43672 |
 | annotation.bouki | 12 | 127 | 000031_2846, 000037_2848, 000156_2699, 000219_2932, 000287_3061 |
-| annotation.chuuki | 5507 | 35320 | 000005_53194, 000006_1869, 000006_3310, 000006_4627, 000006_46659 |
+| annotation.chuuki | 5508 | 35325 | 000005_53194, 000006_1869, 000006_3310, 000006_4627, 000006_46659 |
 | break.line_explicit | 47 | 161 | 000075_4250, 000081_47027, 000083_46289, 000106_56858, 000106_57905 |
 | break.page_line | 943 | 9228 | 000005_53194, 000006_1869, 000009_55881, 000011_889, 000011_899 |
 | caption.block | 48 | 1726 | 000058_57440, 000091_50354, 000125_1321, 000165_49567, 000226_1150 |
@@ -43,8 +43,8 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | decoration.boten | 6235 | 129067 | 000005_53194, 000006_382, 000006_383, 000006_58819, 000008_1083 |
 | decoration.bousen | 324 | 18116 | 000006_1869, 000013_11, 000019_4376, 000034_55507, 000038_1408 |
 | decoration.direction_override | 6 | 65 | 000096_935, 000866_3039, 001094_42603, 001242_46444, 001467_50733 |
-| decoration.font_size | 1218 | 51475 | 000006_1869, 000008_58922, 000011_899, 000019_4376, 000019_58861 |
-| decoration.keigakomi | 146 | 689 | 000043_341, 000063_385, 000067_1789, 000072_408, 000072_864 |
+| decoration.font_size | 1219 | 51477 | 000006_1869, 000008_58922, 000011_899, 000019_4376, 000019_58861 |
+| decoration.keigakomi | 146 | 692 | 000043_341, 000063_385, 000067_1789, 000072_408, 000072_864 |
 | emphasis.basic | 6576 | 157493 | 000005_53194, 000006_1869, 000006_382, 000006_383, 000006_58819 |
 | figure.image_caption | 103 | 1777 | 000019_42378, 000019_42379, 000019_42380, 000019_42381, 000019_42382 |
 | figure.image_inline | 521 | 5860 | 000009_226, 000009_45340, 000009_50711, 000009_50712, 000009_50713 |
@@ -53,8 +53,8 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | gaiji.un_embed | 38 | 144 | 000019_4376, 000025_kantou, 000038_323, 000040_1326, 000040_737 |
 | gaiji.unicode_codepoint | 631 | 3714 | 000008_47357, 000008_47386, 000020_55103, 000022_42254, 000023_1698 |
 | gaiji_ruby.inline_base | 2799 | 13450 | 000005_5, 000006_1869, 000006_3310, 000008_1083, 000008_47357 |
-| glyph.variant_note | 1173 | 4046 | 000006_1869, 000008_1083, 000011_55301, 000011_889, 000011_899 |
-| heading.basic | 3696 | 80590 | 000005_53194, 000006_58819, 000008_1083, 000008_47357, 000008_47386 |
+| glyph.variant_note | 1176 | 4052 | 000006_1869, 000008_1083, 000011_55301, 000011_889, 000011_899 |
+| heading.basic | 3696 | 80591 | 000005_53194, 000006_58819, 000008_1083, 000008_47357, 000008_47386 |
 | heading.dogyo | 142 | 11839 | 000011_899, 000058_59060, 000067_1790, 000067_4869, 000081_1058 |
 | heading.mado | 6 | 1680 | 000255_47342, 000296_1864, 000961_4820, 001402_49946, 001404_49966 |
 | indentation.basic | 8169 | 134393 | 000005_5, 000005_53194, 000006_1868, 000006_1869, 000006_3310 |
@@ -90,7 +90,6 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | 000034_1212 | 11 | CommandFullwidth | ［＃『独立とは「独り立つ」といふことなり』に傍点］ | 『独立とは「独り立つ」といふことなり』に傍点 |
 | 000034_519 | 40 | CommandFullwidth | ［＃割書終わり］ | 割書終わり |
 | 000035_1566 | 23 | CommandFullwidth | ［＃地から２字上げ、２行にわたる丸括弧で挟んだ２行組み］ | 地から２字上げ、２行にわたる丸括弧で挟んだ２行組み |
-| 000042_2345 | 89 | CommandFullwidth | ［＃「t」は下点付き、182-6］ | 「t」は下点付き、182-6 |
 | 000042_2345 | 94 | CommandFullwidth | ［＃２文字目の「i」は下付き小文字、４文字目の「i」は上付き小文字］ | ２文字目の「i」は下付き小文字、４文字目の「i」は上付き小文字 |
 | 000042_2471 | 78 | CommandFullwidth | ［＃「岩波日本」と「文学講座」が１行内で２行に分けられている］ | 「岩波日本」と「文学講座」が１行内で２行に分けられている |
 | 000048_358 | 45 | CommandFullwidth | ［＃印刷不鮮明、87-14］ | 印刷不鮮明、87-14 |
@@ -145,9 +144,6 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | 000096_2100 | 1211 | CommandFullwidth | ［＃ここでプログラム（表罫囲み）終わり］ | ここでプログラム（表罫囲み）終わり |
 | 000096_2100 | 1336 | CommandFullwidth | ［＃「一千円」は大文字、太字］ | 「一千円」は大文字、太字 |
 | 000096_2100 | 1336 | CommandFullwidth | ［＃「五百円宛」は大文字、太字］ | 「五百円宛」は大文字、太字 |
-| 000096_2100 | 2013 | CommandFullwidth | ［＃「お伽話」のルビ］ | 「お伽話」のルビ |
-| 000096_2100 | 2013 | CommandFullwidth | ［＃「地底の蜃気楼」のルビ］ | 「地底の蜃気楼」のルビ |
-| 000096_2100 | 2095 | CommandFullwidth | ［＃「名を云え」のルビ］ | 「名を云え」のルビ |
 | 000096_2117 | 21 | CommandFullwidth | ［＃次３行は、文字はゴシック体、罫線は全て波線］ | 次３行は、文字はゴシック体、罫線は全て波線 |
 | 000096_2117 | 30 | CommandFullwidth | ［＃ゴシック体、地付き、地より２字あげ］ | ゴシック体、地付き、地より２字あげ |
 | 000096_2117 | 35 | CommandFullwidth | ［＃波罫線］ | 波罫線 |
@@ -184,10 +180,14 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | 000124_654 | 587 | CommandFullwidth | ［＃「山本有三」はゴチック］ | 「山本有三」はゴチック |
 | 000124_654 | 590 | CommandFullwidth | ［＃「森山啓」はゴチック］ | 「森山啓」はゴチック |
 | 000124_654 | 594 | CommandFullwidth | ［＃「長谷川如是閑」はゴチック］ | 「長谷川如是閑」はゴチック |
+| 000124_654 | 598 | CommandFullwidth | ［＃「北川冬彦」はゴチック］ | 「北川冬彦」はゴチック |
+| 000124_654 | 602 | CommandFullwidth | ［＃「武田麟太郎」はゴチック］ | 「武田麟太郎」はゴチック |
+| 000124_654 | 604 | CommandFullwidth | ［＃「林芙美子」はゴチック］ | 「林芙美子」はゴチック |
+| 000124_654 | 608 | CommandFullwidth | ［＃「谷崎潤一郎」はゴチック］ | 「谷崎潤一郎」はゴチック |
 
 ## Unknown Source Marker Classes
 
-Showing 50 report rows of 636 total classes. JSON carries 636 top classes. truncated: false
+Showing 50 report rows of 623 total classes. JSON carries 623 top classes. truncated: false
 
 | kind | raw | occurrences | unallowlisted | allowlisted | samples |
 |---|---|---:|---:|---:|---|
@@ -217,16 +217,8 @@ Showing 50 report rows of 636 total classes. JSON carries 636 top classes. trunc
 | CommandFullwidth | ［＃〇・四一キログラム］ | 1 | 1 | 0 | 000311_46247 |
 | CommandFullwidth | ［＃「!!!」は一文字、111-18］ | 1 | 1 | 0 | 000280_1706 |
 | CommandFullwidth | ［＃「!!!」は一文字、95-13］ | 1 | 1 | 0 | 000280_1706 |
-| CommandFullwidth | ［＃「San」は３０度位右上がり］ | 1 | 1 | 0 | 000879_2324 |
-| CommandFullwidth | ［＃「show」は３０度位右上がり］ | 1 | 1 | 0 | 000879_2324 |
-| CommandFullwidth | ［＃「t」は下点付き、182-6］ | 1 | 1 | 0 | 000042_2345 |
-| CommandFullwidth | ［＃「　」は欠字］ | 1 | 1 | 0 | 000311_16003 |
-| CommandFullwidth | ［＃「」は中見出し］ | 1 | 1 | 0 | 000160_3524 |
-| CommandFullwidth | ［＃「【例題五】」は定本では「【例題六】」］ | 1 | 1 | 0 | 000160_43532 |
 | CommandFullwidth | ［＃「あめとう」に欄外に校注、「アメリカ唐桟の略」］ | 1 | 1 | 0 | 000989_4054 |
 | CommandFullwidth | ［＃「うらみ思ひ」は、「刈萱の穗にあらはれぬ」と「かな」の間に挟まれるような形でポイントを下げて２行で］ | 1 | 1 | 0 | 000305_1896 |
-| CommandFullwidth | ［＃「おぼつかぐら」は太字、罫囲み］ | 1 | 1 | 0 | 000933_47176 |
-| CommandFullwidth | ［＃「お伽話」のルビ］ | 1 | 1 | 0 | 000096_2100 |
 | CommandFullwidth | ［＃「お前のような不孝者は」か？］ | 1 | 1 | 0 | 000124_655 |
 | CommandFullwidth | ［＃「かしく」は崩し字］ | 1 | 1 | 0 | 001529_50685 |
 | CommandFullwidth | ［＃「けし」の傍点］ | 1 | 1 | 0 | 000121_3040 |
@@ -240,7 +232,15 @@ Showing 50 report rows of 636 total classes. JSON carries 636 top classes. trunc
 | CommandFullwidth | ［＃「ねませ和子よの譜」の表題付きの楽譜入る（略）］ | 1 | 1 | 0 | 000311_15949 |
 | CommandFullwidth | ［＃「は」と「う」の間に白三角傍点］ | 1 | 1 | 0 | 000146_48509 |
 | CommandFullwidth | ［＃「ひと」は傍点］ | 1 | 1 | 0 | 001154_52302 |
-| CommandFullwidth | ［＃「まやのくに」は太字、罫囲み］ | 1 | 1 | 0 | 000933_47176 |
+| CommandFullwidth | ［＃「や闇吹き入れるにまぶれて白し」は、「夕顏」と「三日の月」の間に挟まれるような形でポイントを下げて２行で］ | 1 | 1 | 0 | 000305_1896 |
+| CommandFullwidth | ［＃「ア」に点］ | 1 | 1 | 0 | 000874_3213 |
+| CommandFullwidth | ［＃「クリティカル・エッセイ」の「・」を除く部分に傍点］ | 1 | 1 | 0 | 000281_1710 |
+| CommandFullwidth | ［＃「グレコの絵との連想」に枠囲み］ | 1 | 1 | 0 | 000311_4228 |
+| CommandFullwidth | ［＃「ココ」は手描きの切符の下部の線に結ばれている］ | 1 | 1 | 0 | 000311_46246 |
+| CommandFullwidth | ［＃「ココノトコロハ三拝九拝シテアル部分」は２日～10日の下に縦中横］ | 1 | 1 | 0 | 000311_33188 |
+| CommandFullwidth | ［＃「シ」の右上に小さな四角あり］ | 1 | 1 | 0 | 000301_1872 |
+| CommandFullwidth | ［＃「ジップ」は桃源社版では「ジッブ」］ | 1 | 1 | 0 | 000125_1321 |
+| CommandFullwidth | ［＃「ソヴェト同盟ヲ守レ！」に枠線］ | 1 | 1 | 0 | 000311_1979 |
 
 ## Decode Failures
 

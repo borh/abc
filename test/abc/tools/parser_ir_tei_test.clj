@@ -38,8 +38,62 @@
       (is (seq (:char_declarations result)))
       (is (= {"heading" 1 "text" 1 "ruby" 1 "gaiji" 2 "editor-note" 1
               "emphasis" 1 "indentation" 1 "page-break" 1 "image" 1
-              "caption" 1 "quote" 1}
+              "caption" 1 "quote" 1 "source-note" 1}
              (:node_counts result))))))
+
+(def ^:private level3-parser-ir
+  {"schema_id" "https://w3id.org/abc/schemas/parser-ir.schema.json"
+   "schema_hash" "sha256:0000000000000000000000000000000000000000000000000000000000000001"
+   "source" {"work_content_hash" "sha256:0000000000000000000000000000000000000000000000000000000000000002"
+             "encoding" "Shift_JIS"
+             "normalization" "source"}
+   "nodes" [{"type" "text" "span" {"start" 0 "end" 12} "text" "第一段"}
+            {"type" "text" "span" {"start" 12 "end" 24} "text" "第二段"}
+            {"type" "source-note"
+             "span" {"start" 24 "end" 64}
+             "text" "（古伝説と、シルレルの詩から。）"
+             "note_type" "source-attribution"
+             "placement" "back"
+             "classification" "heuristic"
+             "source_pointer" "blocks[78]"}]
+   "paragraphs" [{"id" "p000000"
+                  "span" {"start" 0 "end" 12 "coordinate_system" "decoded_utf8"}
+                  "span_source" "direct"
+                  "node_range" {"start" 0 "end" 1}
+                  "role" "body"
+                  "source_pointer" "blocks[0]"
+                  "classification" "direct"}
+                 {"id" "p000001"
+                  "span" {"start" 12 "end" 24 "coordinate_system" "decoded_utf8"}
+                  "span_source" "direct"
+                  "node_range" {"start" 1 "end" 2}
+                  "role" "body"
+                  "source_pointer" "blocks[1]"
+                  "classification" "direct"}
+                 {"id" "p000002"
+                  "span" {"start" 24 "end" 64 "coordinate_system" "decoded_utf8"}
+                  "span_source" "direct"
+                  "node_range" {"start" 2 "end" 3}
+                  "role" "source-note"
+                  "source_pointer" "blocks[78]"
+                  "classification" "heuristic"}]
+   "warnings" []
+   "errors" []})
+
+(deftest paragraph-table-renders-body-paragraphs-and-back-source-note-test
+  (testing "paragraphs[] drives Level 3 body paragraph boundaries and source-note placement"
+    (let [result (parser-ir-tei/render level3-parser-ir)]
+      (is (= [:text
+              [:body
+               [:p "第一段"]
+               [:p "第二段"]]
+              [:back
+               [:div {:type "source"}
+                [:note {:type "source-attribution"} "（古伝説と、シルレルの詩から。）"]]]]
+             (:body result)))
+      (is (= {"text" 2 "source-note" 1}
+             (:node_counts result)))
+      (is (empty? (:omitted result))))))
 
 (deftest gaiji-reference-declaration-contract-test
   (testing "fixture gaiji.reference is preserved as ref and charDecl id"

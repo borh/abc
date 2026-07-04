@@ -15,7 +15,8 @@
         "page-break": "append newline",
         "image": "append alt when present, otherwise omit and report",
         "caption": "append text",
-        "quote": "append text when present, otherwise omit and report"
+        "quote": "append text when present, otherwise omit and report",
+        "source-note": "append front/back source notes outside body text; append body source notes inline"
       }
     },
     "tei": {
@@ -31,7 +32,8 @@
         "page-break": "pb",
         "image": "figure graphic with optional figDesc",
         "caption": "figDesc",
-        "quote": "quote"
+        "quote": "quote",
+        "source-note": "source note routed by placement"
       }
     }
   }

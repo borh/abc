@@ -24,7 +24,10 @@
             {"type" "page-break" "span" {"start" 8 "end" 9} "marker" "［＃改ページ］"}
             {"type" "image" "span" {"start" 9 "end" 10} "src" "fig.png" "alt" "ALT"}
             {"type" "caption" "span" {"start" 10 "end" 11} "text" "CAP"}
-            {"type" "quote" "span" {"start" 11 "end" 12} "marker_type" "inline" "text" "Q"}]
+            {"type" "quote" "span" {"start" 11 "end" 12} "marker_type" "inline" "text" "Q"}
+            {"type" "source-note" "span" {"start" 12 "end" 13}
+             "text" "SRC" "note_type" "source-attribution" "placement" "back"
+             "classification" "direct" "source_pointer" "blocks[3]"}]
    "warnings" []
    "errors" []})
 
@@ -42,8 +45,21 @@
 
 (deftest render-string-test
   (testing "plaintext renders visible text policy for every current node type"
-    (is (= "\nH\nABX※［＃y］CD\nALTCAPQ"
+    (is (= "\nH\nABX※［＃y］CD\nALTCAPQ\n\nSRC"
            (plaintext/render-string all-node-parser-ir)))))
+
+(deftest source-note-back-matter-is-separated-test
+  (testing "back-placement source notes are rendered after the body text"
+    (is (= "Body\n\n（古伝説と、シルレルの詩から。）"
+           (plaintext/render-string
+            {"nodes" [{"type" "text" "span" {"start" 0 "end" 4} "text" "Body"}
+                      {"type" "source-note"
+                       "span" {"start" 4 "end" 20}
+                       "text" "（古伝説と、シルレルの詩から。）"
+                       "note_type" "source-attribution"
+                       "placement" "back"
+                       "classification" "heuristic"
+                       "source_pointer" "blocks[78]"}]})))))
 
 (deftest render-omits-empty-or-missing-policy-metadata-test
   (testing "plaintext omits policy-required metadata when node payload is empty or missing"
@@ -60,7 +76,7 @@
       (is (= "editor-note" (:type (first (:omitted result)))))
       (is (= {"heading" 1 "text" 1 "ruby" 1 "gaiji" 2 "editor-note" 1
               "emphasis" 1 "indentation" 1 "page-break" 1 "image" 1
-              "caption" 1 "quote" 1}
+              "caption" 1 "quote" 1 "source-note" 1}
              (:node_counts result))))))
 
 (deftest coverage-test

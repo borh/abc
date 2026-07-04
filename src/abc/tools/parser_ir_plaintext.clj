@@ -1,4 +1,5 @@
-(ns abc.tools.parser-ir-plaintext)
+(ns abc.tools.parser-ir-plaintext
+  (:require [clojure.string :as string]))
 
 (defn- append-text [acc node-text]
   (update acc :text str (or node-text "")))
@@ -8,6 +9,11 @@
 
 (defn- present-text? [text]
   (seq text))
+
+(defn- append-separated-note [acc key node-text]
+  (if (present-text? node-text)
+    (update acc key conj node-text)
+    acc))
 
 (defn- render-text-node [acc node]
   (append-text acc (get node "text")))
@@ -49,6 +55,15 @@
     (append-text acc (get node "text"))
     (mark-omitted acc "quote")))
 
+(defn- render-source-note-node [acc node]
+  (if-not (present-text? (get node "text"))
+    (mark-omitted acc "source-note")
+    (case (get node "placement")
+      "front" (append-separated-note acc :front_notes (get node "text"))
+      "body" (append-text acc (get node "text"))
+      "back" (append-separated-note acc :source_notes (get node "text"))
+      (mark-omitted acc "source-note"))))
+
 (def ^:private node-renderers
   {"text" render-text-node
    "ruby" render-ruby-node
@@ -60,7 +75,8 @@
    "page-break" render-page-break-node
    "image" render-image-node
    "caption" render-caption-node
-   "quote" render-quote-node})
+   "quote" render-quote-node
+   "source-note" render-source-note-node})
 
 (defn- render-node [acc node]
   (let [node-type (get node "type")
@@ -70,11 +86,22 @@
       acc)))
 
 (defn render [parser-ir]
-  (reduce render-node
-          {:text ""
-           :node_counts {}
-           :omitted []}
-          (get parser-ir "nodes")))
+  (let [{:keys [text front_notes source_notes node_counts omitted]}
+        (reduce render-node
+                {:text ""
+                 :front_notes []
+                 :source_notes []
+                 :node_counts {}
+                 :omitted []}
+                (get parser-ir "nodes"))
+        text (str (when (seq front_notes)
+                    (str (string/join "\n" front_notes) "\n\n"))
+                  text
+                  (when (seq source_notes)
+                    (str "\n\n" (string/join "\n" source_notes))))]
+    {:text text
+     :node_counts node_counts
+     :omitted omitted}))
 
 (defn render-string [parser-ir]
   (:text (render parser-ir)))

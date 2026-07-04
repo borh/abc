@@ -110,6 +110,7 @@ fn convert_preflighted(
     let parser_ir = json!({
         "schema_id": mapping.target_parser_ir_schema_id,
         "schema_hash": mapping.target_parser_ir_schema_hash,
+        "derived_from": derived_from(&aat, mapping)?,
         "source": source,
         "nodes": nodes,
         "warnings": warnings,
@@ -775,6 +776,24 @@ fn map_span(
     }))
 }
 
+fn derived_from(aat: &Value, mapping: &MappingDocument) -> Result<Value> {
+    let meta = &aat["meta"];
+    let Some(aat_version) = aat["version"].as_u64() else {
+        bail!("AAT version is required for parser-IR derived_from");
+    };
+    let Some(adapter) = meta["adapter"].as_str() else {
+        bail!("AAT meta.adapter is required for parser-IR derived_from");
+    };
+    Ok(json!({
+        "aat_version": aat_version,
+        "aat_adapter": adapter,
+        "aat_adapter_version": meta.get("adapter_version").and_then(Value::as_str),
+        "mapping_id": mapping.mapping_id,
+        "mapping_version": mapping.mapping_version,
+        "mapping_schema_hash": mapping.mapping_schema_hash,
+    }))
+}
+
 fn map_source(aat: &Value, recorder: &mut DivergenceRecorder) -> Result<Value> {
     let meta = &aat["meta"];
     let source_encoding = meta["source_encoding"].as_str().unwrap_or("utf-8");
@@ -814,7 +833,7 @@ fn map_source(aat: &Value, recorder: &mut DivergenceRecorder) -> Result<Value> {
         None,
         Some(Value::Null),
     )?;
-    for field in ["adapter", "adapter_version", "parse_complete"] {
+    for field in ["parse_complete"] {
         let field_pointer = format!("meta.{field}");
         recorder.record(
             "LOSS",

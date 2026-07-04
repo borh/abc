@@ -42,12 +42,29 @@
 ;; r1-reproducibility-conflict.smt2 — see
 ;; docs/handoffs/formal-verification-assessment-critique.md §2.
 
-(def ^:private success-statuses #{"passed" "warning"})
+;; Note: success-statuses and the schema status enum are referenced from the
+;; REAL sources (manifest-index/successful-statuses def + the schema file),
+;; NOT re-transcribed. Re-transcribing would re-introduce the mode-B sin this
+;; test exists to catch: a regression widening the real predicate (e.g.
+;; accepting "retrying") would silently diverge between generator and oracle.
+;; Design spec §7.3: no hand-translated restatement of an oracle's contract.
+
+(def ^:private schema-status-enum
+  ;; The REAL manifest schema enum, loaded once at ns-load. Drawing from this
+  ;; (not a hand-transcribed vector) binds the generator to the real schema
+  ;; contract — a schema regression (adding a status) reaches the generator.
+  (-> (files/read-json "schemas/manifest.schema.json")
+      (get-in ["properties" "validation_status" "enum"])))
+
+(def ^:private successful-statuses-vec
+  ;; vec of the REAL successful-statuses set (manifest-index/successful-statuses,
+  ;; src/abc/tools/manifest_index.clj:4). vec because gen/elements takes a seq.
+  (vec manifest-index/successful-statuses))
 
 (defn- successful? [entry]
-  ;; Mirrors manifest-index/successful-entry? verbatim — do not recompute.
-  ;; (src/abc/tools/manifest_index.clj:6-7: successful-statuses #{"passed" "warning"}).
-  (contains? success-statuses (get entry "validation_status")))
+  ;; Delegate to the REAL predicate (manifest-index/successful-entry?). Do NOT
+  ;; re-transcribe its logic — design §7.3 forbids hand-translated restatements.
+  (manifest-index/successful-entry? entry))
 
 (def gen-conflict-tuple
   "Generate a [m1 m2 expected-conflict?] tuple. m1, m2 are manifest-index
@@ -62,8 +79,8 @@
     (gen/tuple gen/string-alphanumeric                  ; artifact_id
                gen/string-alphanumeric                  ; content_hash_1
                gen/string-alphanumeric                  ; content_hash_2 (independent)
-               (gen/elements ["passed" "warning"])      ; m1 status (always successful)
-               (gen/elements ["passed" "warning" "failed" "not-run"])) ; m2 status
+               (gen/elements successful-statuses-vec)    ; m1 status (always successful)
+               (gen/elements schema-status-enum))        ; m2 status (any real enum value)
     (fn [[id h1 h2 m1-status m2-status]]
       (let [m1 {"validation_status" m1-status
                 "content_hash" h1

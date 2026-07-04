@@ -1,0 +1,28 @@
+# Legacy allowlist for nix/check-focused-test-coverage.sh.
+#
+# Each line is either blank, a comment (#), or a namespace symbol optionally
+# followed by "  # reason". The guard treats these namespaces as explicitly
+# excluded from :abc/focused-test; every OTHER test/**/*_test.clj namespace MUST
+# be registered in nix/clj-nix-deps.edn (require + run-tests) or CI fails.
+#
+# These namespaces are excluded because their transitive dependencies are not
+# available in the Nix sandbox classpath (built from deps-lock.json) or on the
+# CI filesystem. The :abc/focused-test alias can only run namespaces whose
+# entire transitive dep graph is present in the pinned cljDepsCache; these are
+# not, so registering them would break the whole focused-test run at load time.
+# Root cause worth a separate cleanup: deps-lock.json is missing java-time,
+# me.raynes/fs, clj-mecab, and the XTDB/node libs that several of these pull in.
+#
+# Until the classpath cache divergence is fixed, these stay excluded & listed
+# here so the guard's ratchet is honest: a NEW unregistered test still fails CI.
+
+abc.core-test          # stub: 0 deftests, 3 lines (require-only, never had tests)
+abc.owl-test           # all deftests inside (comment …); needs :hermit OWL reasoner (not on classpath)
+abc.html-test          # single ^:kaocha/skip empty deftest (Aozora parsing moved out of Clojure)
+abc.aozora-test        # transitively requires java-time (absent from deps-lock.json cache)
+abc.annotation-test    # transitively requires clj-mecab (external mecab binary + absent lib)
+abc.tei-test           # directly requires abc.xtdb → me.raynes/fs (absent from cache)
+abc.xtdb-test          # directly requires abc.xtdb → me.raynes/fs (absent from cache)
+abc.db-test            # live XTDB node + aozora-bunko DB; deftests commented or ^:kaocha/skip
+abc.load-test          # aozora-bunko-db fixture (needs full corpus DB on disk)
+abc.git-test           # load-aozora-bunko-git (needs the real aozora-bunko git repo)

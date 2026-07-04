@@ -44,6 +44,7 @@ pub enum SourceMarkerKind {
     CommandFullwidth,
     CommandAscii,
     AccentNotation,
+    BracketNote,
     EditorialNoteRubyCorrection,
     EditorialNoteBottomTextCorrection,
     SegmentBoundaryTerminalProvenance,
@@ -226,6 +227,7 @@ fn scan_markers(txt: &str) -> Vec<RawMarker<'_>> {
     while offset < txt.len() {
         if let Some(marker) = scan_next_marker(txt, offset, line) {
             let end = marker.span.end;
+            line += count_newlines(&txt[offset..end]);
             markers.push(marker);
             offset = end;
             continue;
@@ -458,17 +460,18 @@ fn scan_next_marker(txt: &str, offset: usize, line: usize) -> Option<RawMarker<'
     }
     if rest.starts_with('〔') {
         let body_start = offset + '〔'.len_utf8();
-        if let Some(body_end) = marker_end_on_same_line(txt, body_start, '〕') {
+        if let Some(body_end) = marker_end(txt, body_start, '〕') {
             if body_start == body_end {
                 return None;
             }
             let marker_end = body_end + '〕'.len_utf8();
+            let body = &txt[body_start..body_end];
             return Some(raw_marker(
                 txt,
                 offset,
                 marker_end,
                 line,
-                SourceMarkerKind::AccentNotation,
+                bracket_marker_kind(body),
                 body_start,
                 body_end,
                 RawMarkerEvent::PreserveText,
@@ -843,6 +846,27 @@ fn marker_end_on_same_line(text: &str, content_start: usize, end_marker: char) -
         }
     }
     None
+}
+
+fn marker_end(text: &str, content_start: usize, end_marker: char) -> Option<usize> {
+    for (offset, ch) in text[content_start..].char_indices() {
+        if ch == end_marker {
+            return Some(content_start + offset);
+        }
+    }
+    None
+}
+
+fn bracket_marker_kind(body: &str) -> SourceMarkerKind {
+    if body.is_ascii() && !body.contains(['\r', '\n']) {
+        SourceMarkerKind::AccentNotation
+    } else {
+        SourceMarkerKind::BracketNote
+    }
+}
+
+fn count_newlines(value: &str) -> usize {
+    value.bytes().filter(|byte| *byte == b'\n').count()
 }
 
 fn command_end_on_same_line(text: &str, content_start: usize, end_marker: char) -> Option<usize> {
@@ -1288,6 +1312,25 @@ mod tests {
         assert_eq!(markers.len(), 1);
         assert_eq!(markers[0].kind, SourceMarkerKind::AccentNotation);
         assert_eq!(markers[0].raw, "〔e'tude〕");
+    }
+
+    #[test]
+    fn source_markers_capture_multiline_bracket_notes() {
+        let text = "〔空しき秋二十数篇は散佚して今はなし。その第十二のみ、諸井\n三郎の作曲によりて残りしものなり。〕\n［＃地付き］（fixture）\n底本：fixture";
+        let markers = source_markers(text);
+
+        assert_eq!(markers.len(), 2);
+        assert_eq!(markers[0].kind, SourceMarkerKind::BracketNote);
+        assert_eq!(
+            markers[0].raw,
+            "〔空しき秋二十数篇は散佚して今はなし。その第十二のみ、諸井\n三郎の作曲によりて残りしものなり。〕"
+        );
+        assert_eq!(markers[0].span.line, 1);
+        assert_eq!(
+            markers[1].kind,
+            SourceMarkerKind::SegmentBoundaryTerminalProvenance
+        );
+        assert_eq!(markers[1].span.line, 3);
     }
 
     #[test]

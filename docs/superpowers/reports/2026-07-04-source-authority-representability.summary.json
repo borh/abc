@@ -2,9 +2,9 @@
   "gate_status": "SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED",
   "works_scanned": 17894,
   "works_failed": 0,
-  "markers_total": 4324663,
-  "unknown_markers_total": 16217,
-  "unallowlisted_unknown_markers_total": 1347,
+  "markers_total": 4323915,
+  "unknown_markers_total": 16167,
+  "unallowlisted_unknown_markers_total": 1297,
   "allowlisted_unknown_markers_total": 14870,
   "rows": {
     "accent.dotted_letter": {
@@ -28,8 +28,8 @@
       ]
     },
     "annotation.chuuki": {
-      "works_with_marker": 5487,
-      "occurrences": 35063,
+      "works_with_marker": 5489,
+      "occurrences": 35101,
       "sample_works": [
         "000005_53194",
         "000006_1869",
@@ -95,7 +95,7 @@
     },
     "decoration.boten": {
       "works_with_marker": 6235,
-      "occurrences": 129069,
+      "occurrences": 129067,
       "sample_works": [
         "000005_53194",
         "000006_382",
@@ -150,7 +150,7 @@
     },
     "emphasis.basic": {
       "works_with_marker": 6576,
-      "occurrences": 157495,
+      "occurrences": 157493,
       "sample_works": [
         "000005_53194",
         "000006_1869",
@@ -183,7 +183,7 @@
     },
     "gaiji.jis_code": {
       "works_with_marker": 5772,
-      "occurrences": 55331,
+      "occurrences": 55322,
       "sample_works": [
         "000005_5",
         "000006_1869",
@@ -193,8 +193,8 @@
       ]
     },
     "gaiji.marker": {
-      "works_with_marker": 5930,
-      "occurrences": 62372,
+      "works_with_marker": 5931,
+      "occurrences": 62355,
       "sample_works": [
         "000005_5",
         "000006_1868",
@@ -216,7 +216,7 @@
     },
     "gaiji.unicode_codepoint": {
       "works_with_marker": 631,
-      "occurrences": 3719,
+      "occurrences": 3714,
       "sample_works": [
         "000008_47357",
         "000008_47386",
@@ -227,7 +227,7 @@
     },
     "gaiji_ruby.inline_base": {
       "works_with_marker": 2799,
-      "occurrences": 13451,
+      "occurrences": 13450,
       "sample_works": [
         "000005_5",
         "000006_1869",
@@ -282,7 +282,7 @@
     },
     "indentation.basic": {
       "works_with_marker": 8169,
-      "occurrences": 134394,
+      "occurrences": 134393,
       "sample_works": [
         "000005_5",
         "000005_53194",
@@ -304,7 +304,7 @@
     },
     "indentation.chitsuki": {
       "works_with_marker": 6245,
-      "occurrences": 20292,
+      "occurrences": 20291,
       "sample_works": [
         "000006_1868",
         "000006_1869",
@@ -315,7 +315,7 @@
     },
     "indentation.jisage_block": {
       "works_with_marker": 4605,
-      "occurrences": 94975,
+      "occurrences": 94964,
       "sample_works": [
         "000005_5",
         "000005_53194",
@@ -348,7 +348,7 @@
     },
     "iteration.kunoji": {
       "works_with_marker": 1125,
-      "occurrences": 10700,
+      "occurrences": 10701,
       "sample_works": [
         "000006_58810",
         "000006_58819",
@@ -359,7 +359,7 @@
     },
     "kunten.kaeriten": {
       "works_with_marker": 488,
-      "occurrences": 28082,
+      "occurrences": 27939,
       "sample_works": [
         "000006_1869",
         "000038_1408",
@@ -403,7 +403,7 @@
     },
     "layout.tcy": {
       "works_with_marker": 724,
-      "occurrences": 19796,
+      "occurrences": 19785,
       "sample_works": [
         "000014_728",
         "000020_2223",
@@ -436,7 +436,7 @@
     },
     "ruby.basic": {
       "works_with_marker": 14321,
-      "occurrences": 3608407,
+      "occurrences": 3607926,
       "sample_works": [
         "000005_5",
         "000005_53194",
@@ -501,21 +501,6 @@
   "unknown_classes_truncated": true,
   "unknown_classes": [
     {
-      "kind": "MalformedAccentNotation",
-      "raw": "〔",
-      "body": "〔",
-      "occurrences": 56,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 56,
-      "sample_works": [
-        "000026_219",
-        "000034_55507",
-        "000081_4416",
-        "000081_50764",
-        "000091_522"
-      ]
-    },
-    {
       "kind": "CommandFullwidth",
       "raw": "［＃「地付き］",
       "body": "「地付き",
@@ -524,6 +509,21 @@
       "unallowlisted_occurrences": 7,
       "sample_works": [
         "000150_46617"
+      ]
+    },
+    {
+      "kind": "MalformedAccentNotation",
+      "raw": "〔",
+      "body": "〔",
+      "occurrences": 6,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 6,
+      "sample_works": [
+        "000091_522",
+        "000311_16002",
+        "001341_60380",
+        "001341_60385",
+        "001404_49966"
       ]
     },
     {
@@ -11921,13 +11921,6 @@
       "body": "図１、知的生活の構造"
     },
     {
-      "work_id": "000026_219",
-      "line": 592,
-      "kind": "MalformedAccentNotation",
-      "raw": "〔",
-      "body": "〔"
-    },
-    {
       "work_id": "000026_50241",
       "line": 66,
       "kind": "CommandFullwidth",
@@ -12145,20 +12138,6 @@
       "body": "割書終わり"
     },
     {
-      "work_id": "000034_55507",
-      "line": 114,
-      "kind": "MalformedAccentNotation",
-      "raw": "〔",
-      "body": "〔"
-    },
-    {
-      "work_id": "000034_55507",
-      "line": 214,
-      "kind": "MalformedAccentNotation",
-      "raw": "〔",
-      "body": "〔"
-    },
-    {
       "work_id": "000035_1566",
       "line": 23,
       "kind": "CommandFullwidth",
@@ -12248,18 +12227,39 @@
       "kind": "CommandFullwidth",
       "raw": "［＃「（１）」は注釈番号］",
       "body": "「（１）」は注釈番号"
+    },
+    {
+      "work_id": "000042_2347",
+      "line": 24,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「（１）」は注釈番号］",
+      "body": "「（１）」は注釈番号"
+    },
+    {
+      "work_id": "000042_2347",
+      "line": 40,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「（２）」は注釈番号］",
+      "body": "「（２）」は注釈番号"
+    },
+    {
+      "work_id": "000042_2347",
+      "line": 43,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「（３）」は注釈番号］",
+      "body": "「（３）」は注釈番号"
     }
   ],
   "decode_failures": [],
   "representability": {
-    "typed_occurrences": 4566768,
-    "raw_preserved_occurrences": 36835,
+    "typed_occurrences": 4566085,
+    "raw_preserved_occurrences": 36873,
     "out_of_body_occurrences": 950,
     "unsupported_occurrences": 13920,
     "needs_research_occurrences": 0
   },
   "strict_errors": [
-    "1347 unallowlisted source markers"
+    "1297 unallowlisted source markers"
   ],
   "inputs": {
     "matrix": "/home/bor/Projects/ab-validator/data/aozora-syntax-coverage.toml",

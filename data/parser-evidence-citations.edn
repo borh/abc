@@ -51,6 +51,22 @@
    :sha256 "sha256:c00481ab65239098a072112dd8c803f0203c6d5776d67864215491715a9616e6"
    :status :citable
    :summary "Exact adapter/version compatibility candidates admitted by ABC for mapping version 0.2.1."}
+  {:evidence_id "ab-validator/aat-parser-ir-full-corpus-conversion-2026-07-04-mapping-0.2.3"
+   :evidence_class :conversion-compatibility
+   :producer_component "ab-validator"
+   :logical_path "ab-validator/docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.md"
+   :current_external_path "../ab-validator/docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.md"
+   :sha256 "sha256:f669c97ca26f770a446b4a2432dc5af2b27e807ccecaf2488fc58e6bea57dfa9"
+   :status :citable
+   :summary "Full-corpus AAT to parser-IR conversion audit for mapping version 0.2.3: 71,301 attempted, 67,415 succeeded, 3,886 failed; includes full aozora2 evidence."}
+  {:evidence_id "ab-validator/aat-parser-ir-compatibility-candidates-2026-07-04-mapping-0.2.3"
+   :evidence_class :conversion-compatibility
+   :producer_component "ab-validator"
+   :logical_path "ab-validator/docs/superpowers/reports/2026-07-04-aat-parser-ir-compatibility-candidates.edn"
+   :current_external_path "../ab-validator/docs/superpowers/reports/2026-07-04-aat-parser-ir-compatibility-candidates.edn"
+   :sha256 "sha256:ca33cad372dba629e5b679c97e924a6418bcf83ab7bfa53f8a192103d6f1911d"
+   :status :citable
+   :summary "Exact adapter/version compatibility candidates admitted by ABC for mapping version 0.2.3, including aozora2 full-run failures in evidence scope."}
   {:evidence_id "ab-validator/parser-performance-measurement-2026-07-04"
    :evidence_class :parser-selection
    :producer_component "ab-validator"

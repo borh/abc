@@ -41,7 +41,7 @@
   "sha256:b508665af72c237fc60f00b720f80db2b16148aa64b5d1cc723a2948ee576390")
 
 (def ^:private v4-mapping-hash
-  "sha256:17fb33db137f23ae30325558545ae364d21488d773aed733df1af012af6658c0")
+  "sha256:21791c841557ced968464b38e42971e22830edb0efdb0be6faf285761532f770")
 
 (def ^:private mapping-schema-hash
   "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4")
@@ -569,7 +569,7 @@
    :aat_adapter "aozora-epub3"
    :aat_adapter_version "aozora-epub3-adapter 0.1.0 AozoraEpub3-JDK21-1.3.4-jdk21"
    :mapping_id "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe"
-   :mapping_version "0.2.2"
+   :mapping_version "0.2.3"
    :mapping_hash v4-mapping-hash
    :mapping_schema_hash mapping-schema-hash
    :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
@@ -598,7 +598,7 @@
    :aat_adapter "aozora-rs"
    :aat_adapter_version "aozora-rs-adapter 0.1.0 2b4e8d1"
    :mapping_id "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe"
-   :mapping_version "0.2.2"
+   :mapping_version "0.2.3"
    :mapping_hash v4-mapping-hash
    :mapping_schema_hash mapping-schema-hash
    :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
@@ -627,7 +627,7 @@
    :aat_adapter "aozora2"
    :aat_adapter_version "aozora2-adapter 0.1.0 aozora-core-0.7.1"
    :mapping_id "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe"
-   :mapping_version "0.2.2"
+   :mapping_version "0.2.3"
    :mapping_hash v4-mapping-hash
    :mapping_schema_hash mapping-schema-hash
    :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
@@ -639,16 +639,16 @@
                           :adapter "aozora2"
                           :adapter_version "aozora2-adapter 0.1.0 aozora-core-0.7.1"
                           :corpus "aozora2-adapter"
-                          :files_scanned 1
-                          :files_succeeded 1
-                          :files_failed 0
-                          :parser_ir_nodes 2
-                          :divergence_records 9
-                          :divergence_occurrences 97
+                          :files_scanned 17874
+                          :files_succeeded 13988
+                          :files_failed 3886
+                          :parser_ir_nodes 1582155
+                          :divergence_records 155517
+                          :divergence_occurrences 4329397
                           :rules_total 127
-                          :rules_emitted 9
-                          :rules_missing 118
-                          :unsupported_occurrences 0}
+                          :rules_emitted 89
+                          :rules_missing 38
+                          :unsupported_occurrences 4804}
          :compatibility "lossy"))
 
 (def ^:private v4-html-compat-query
@@ -656,7 +656,7 @@
    :aat_adapter "aozora2html"
    :aat_adapter_version "aozora2html-adapter 0.1.0 gem-3.0.1"
    :mapping_id "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe"
-   :mapping_version "0.2.2"
+   :mapping_version "0.2.3"
    :mapping_hash v4-mapping-hash
    :mapping_schema_hash mapping-schema-hash
    :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
@@ -671,9 +671,9 @@
                           :files_scanned 17689
                           :files_succeeded 17689
                           :files_failed 0
-                          :parser_ir_nodes 8414553
-                          :divergence_records 250288
-                          :divergence_occurrences 12241492
+                          :parser_ir_nodes 8419185
+                          :divergence_records 250329
+                          :divergence_occurrences 12246124
                           :rules_total 127
                           :rules_emitted 112
                           :rules_missing 15
@@ -852,7 +852,7 @@
            (compat/admission-report
             {:entries [v3-epub3-registry-entry v3-rs-registry-entry v3-html-registry-entry]}
             {:entries [v3-epub3-registry-entry v3-rs-registry-entry v3-html-registry-entry]}))))
-  (testing "reports when current 0.2.2 Level 3 producer candidates are admitted exactly"
+  (testing "reports when current 0.2.3 Level 3 producer candidates are admitted exactly"
     (is (= {:status :admitted
             :candidate-count 4
             :admitted [v4-epub3-registry-entry

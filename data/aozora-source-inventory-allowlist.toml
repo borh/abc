@@ -18,3 +18,27 @@ raw_pattern = "^［＃］$"
 scope = "malformed_noise"
 reason = "Empty fullwidth command marker occurs in Aozora boilerplate that explains input annotations, not as body transcription markup."
 evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+
+[[allow]]
+id = "boilerplate-kaeriten-placeholder"
+kind = "CommandFullwidth"
+raw_pattern = "^［＃…］$"
+scope = "out_of_body"
+reason = "Aozora header legends use this placeholder to explain return-point notation; it is not body transcription markup."
+evidence = "scratch/ab-index.json:000038_1408"
+
+[[allow]]
+id = "boilerplate-okurigana-placeholder"
+kind = "CommandFullwidth"
+raw_pattern = "^［＃（…）］$"
+scope = "out_of_body"
+reason = "Aozora header legends use this placeholder to explain kunten okurigana notation; it is not body transcription markup."
+evidence = "scratch/ab-index.json:000026_50238"
+
+[[allow]]
+id = "body-end-boundary"
+kind = "CommandFullwidth"
+raw_pattern = "^［＃本文終わり］$"
+scope = "out_of_body"
+reason = "The marker separates body text from bibliographic/provenance metadata and is not itself body AAT."
+evidence = "scratch/ab-index.json:000009_226"

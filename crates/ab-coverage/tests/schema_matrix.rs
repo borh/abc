@@ -219,6 +219,54 @@ fn source_inventory_classifies_next_high_volume_command_variants() {
 }
 
 #[test]
+fn source_inventory_classifies_source_authority_tail_style_layout_variants() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = [
+        "［＃ここから２字下げ、小さい活字］",
+        "［＃ここで字下げ終わり、小さい活字も終わり］",
+        "［＃ここで地付き終わり］",
+        "［＃ここで字上げ終わり］",
+        "［＃地より１字上げ］",
+        "［＃ここから地から２字上げ］",
+        "［＃「ん」は小書き］",
+        "［＃大文字］",
+        "［＃中文字］",
+        "［＃大文字、太字］",
+        "［＃この行はゴシック体］",
+        "［＃ゴシック体］",
+        "［＃白三角傍点］",
+        "［＃白三角傍点終わり］",
+        "［＃二重傍線終わり］",
+        "［＃「〃」は横組み］",
+        "［＃「？！」は横一列］",
+    ]
+    .join("\n");
+    let summary = inventory_document("fixture", &source, &patterns);
+
+    assert_eq!(
+        summary.unknown_examples,
+        [],
+        "known tail style/layout corpus variants should not remain unknown"
+    );
+    for row_id in [
+        "decoration.boten",
+        "decoration.bold_italic",
+        "decoration.bousen",
+        "decoration.font_size",
+        "indentation.chitsuki",
+        "indentation.jisage_block",
+        "layout.tcy",
+        "layout.yokogumi",
+    ] {
+        assert!(
+            summary.row_counts.contains_key(row_id),
+            "expected source inventory row {row_id}"
+        );
+    }
+}
+
+#[test]
 fn source_inventory_classifies_annotation_editor_notes() {
     let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
     let patterns = patterns_from_rows(matrix.rows());

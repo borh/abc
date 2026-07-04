@@ -1640,7 +1640,7 @@ category = "inline_annotation"
 feature_keys = ["boten", "sesame"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html.rb", "references/parsers/aozora2html/yml/command_table.yml"]
 source_examples = ["［＃「語」に傍点］", "［＃白ゴマ傍点］", "［＃丸傍点］"]
-source_patterns = ['［＃「[^」]+」に[白黒丸]?ゴマ?傍点］', '［＃[白黒丸]?ゴマ?傍点］', '［＃(ここで)?傍点終わり］']
+source_patterns = ['［＃「[^」]+」に[白黒丸]?ゴマ?傍点］', '［＃[白黒丸]?ゴマ?傍点］', '［＃(白三角|黒三角)?傍点］', '［＃(ここで)?(白三角|黒三角)?傍点終わり］']
 ir_nodes = ["Inline::Style"]
 aat_nodes = ["style"]
 tei_projection = "hi rend=boten"
@@ -1704,7 +1704,7 @@ category = "inline_annotation"
 feature_keys = ["bosen"]
 reference_sources = ["references/parsers/aozora2html/yml/command_table.yml"]
 source_examples = ["［＃「語」に傍線］", "［＃二重傍線］", "［＃鎖傍線］"]
-source_patterns = ['［＃「[^」]+」に(二重|鎖|波)?傍線］', '［＃(二重|鎖|波)?傍線］', '［＃(ここで)?傍線終わり］']
+source_patterns = ['［＃「[^」]+」に(二重|鎖|波)?傍線］', '［＃(二重|鎖|波)?傍線］', '［＃(ここで)?(二重|鎖|波)?傍線終わり］']
 ir_nodes = ["Inline::Style"]
 aat_nodes = ["style"]
 tei_projection = "hi rend=bousen"
@@ -1768,7 +1768,7 @@ category = "inline_annotation"
 feature_keys = ["bold", "italic"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html.rb"]
 source_examples = ["［＃ここから太字］", "［＃ここから斜体］", "「text」の太字", "「text」の斜体"]
-source_patterns = ['［＃ここから(太字|斜体)］', '［＃(ここで)?(太字|斜体)終わり］', '「[^」]+」の(太字|斜体)']
+source_patterns = ['［＃ここから(太字|斜体)］', '［＃(ここで)?(太字|斜体)終わり］', '「[^」]+」の(太字|斜体)', '［＃(この行は)?ゴシック体］', '［＃「[^」]+」はゴシック体］', '［＃大文字、太字］']
 ir_nodes = ["Inline::Style", "Block::Style"]
 aat_nodes = ["style"]
 tei_projection = "hi rend=bold|italic"
@@ -1832,7 +1832,7 @@ category = "inline_annotation"
 feature_keys = ["font_size"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/font_size.rb", "references/parsers/aozora2html/lib/aozora2html/tag/inline_font_size.rb"]
 source_examples = ["［＃ここから小3段階大な文字］", "「text」の中2段階大な文字"]
-source_patterns = ['［＃ここから[大中小]?[０-９0-9]+段階(小さ|大き)な文字］', '［＃[大中小]?[０-９0-9]+段階(小さ|大き)な文字］', '［＃「[^」]+」は[大中小]?[０-９0-9]+段階(小さ|大き)な文字］', '［＃(ここで)?(小さな|大きな)文字終わり］', '［＃行右小書き(終わり)?］', '［＃「[^」]+」は行右小書き］', '［＃「[^」]+」は[上下]付き小文字］', '「[^」]+」の[大中小]?[０-９0-9]+段階(小さ|大き)な文字']
+source_patterns = ['［＃ここから[大中小]?[０-９0-9]+段階(小さ|大き)な文字］', '［＃[大中小]?[０-９0-9]+段階(小さ|大き)な文字］', '［＃「[^」]+」は[大中小]?[０-９0-9]+段階(小さ|大き)な文字］', '［＃(ここで)?(小さな|大きな)文字終わり］', '［＃行右小書き(終わり)?］', '［＃「[^」]+」は行右小書き］', '［＃「[^」]+」は[上下]付き小文字］', '［＃「[^」]+」は小書き］', '［＃[大中小]文字］', '［＃大文字、太字］', '小さい活字', '小さい活字も終わり', '「[^」]+」の[大中小]?[０-９0-9]+段階(小さ|大き)な文字']
 ir_nodes = ["Inline::Style", "Block::Style"]
 aat_nodes = ["font_size"]
 tei_projection = "hi rend=fontsize"
@@ -2024,7 +2024,7 @@ category = "layout"
 feature_keys = ["jisage_block"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/jisage.rb", "references/parsers/aozora2html/lib/aozora2html/tag/multiline_jisage.rb"]
 source_examples = ["［＃ここから2字下げ］", "［＃ここで2字下げ終わり］"]
-source_patterns = ['［＃ここから[０-９0-9]+字下げ］', '［＃ここから[０-９0-9]+字下げ、１行[０-９0-9]+字組みで］', '［＃ここから[０-９0-9]+字下げ、[０-９0-9]+字詰め］', '［＃ここで([０-９0-9]+字|字)?下げ終わり］', '［＃ここで字下げ、[０-９0-9]+字組み終わり］']
+source_patterns = ['［＃ここから[０-９0-9]+字下げ］', '［＃ここから[０-９0-9]+字下げ、１行[０-９0-9]+字組みで］', '［＃ここから[０-９0-9]+字下げ、[０-９0-9]+字詰め］', '［＃ここから[０-９0-9]+字下げ、[^］]+］', '［＃ここで([０-９0-9]+字|字)?下げ終わり］', '［＃ここで字下げ終わり、[^］]+終わり］', '［＃ここで字下げ、[０-９0-9]+字組み終わり］']
 ir_nodes = ["Block::Layout"]
 aat_nodes = ["jisage_block"]
 tei_projection = "p rend=jisage"
@@ -2152,7 +2152,7 @@ category = "layout"
 feature_keys = ["chitsuki"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/chitsuki.rb"]
 source_examples = ["［＃ここから地付き］", "［＃ここから2字上げ］", "［＃この行地付き］"]
-source_patterns = ['［＃(ここから|この行)?(地付き|[０-９0-9]+字上げ)］', '［＃地から[０-９0-9]+字上げ］']
+source_patterns = ['［＃(ここから|この行)?(地付き|[０-９0-9]+字上げ)］', '［＃(ここから)?地から[０-９0-9]+字上げ］', '［＃地より[０-９0-9]+字上げ］', '［＃ここで(地付き|字上げ)終わり］']
 ir_nodes = ["Block::Layout"]
 aat_nodes = ["style"]
 tei_projection = "p rend=chitsuki"
@@ -2344,7 +2344,7 @@ category = "layout"
 feature_keys = ["yokogumi"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/multiline_yokogumi.rb", "references/parsers/aozora2html/lib/aozora2html/tag/inline_yokogumi.rb"]
 source_examples = ["［＃ここから横組み］", "「ABC」の横組み"]
-source_patterns = ['［＃ここから横組み］', '［＃横組み］', '［＃(ここで)?横組み終わり］', '「[^」]+」の横組み']
+source_patterns = ['［＃ここから横組み］', '［＃横組み］', '［＃(ここで)?横組み終わり］', '「[^」]+」の横組み', '［＃「[^」]+」は横組み］']
 ir_nodes = ["Block::Layout", "Inline::Style"]
 aat_nodes = ["yokogumi"]
 tei_projection = "ab rend=yokogumi"
@@ -2408,7 +2408,7 @@ category = "layout"
 feature_keys = ["tcy"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/dir.rb"]
 source_examples = ["「12」の縦中横", "［＃ここから縦中横］"]
-source_patterns = ['「[^」]+」(の|は)縦中横', '［＃(ここから)?縦中横］', '［＃(ここで)?縦中横終わり］']
+source_patterns = ['「[^」]+」(の|は)縦中横', '［＃(ここから)?縦中横］', '［＃(ここで)?縦中横終わり］', '［＃「[^」]+」は横一列］']
 ir_nodes = ["Inline::Style", "Block::Style"]
 aat_nodes = ["tcy"]
 tei_projection = "hi rend=tcy"

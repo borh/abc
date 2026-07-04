@@ -425,16 +425,7 @@ fn scan_next_marker(txt: &str, offset: usize, line: usize) -> Option<RawMarker<'
                 }),
             ));
         }
-        return Some(raw_marker(
-            txt,
-            offset,
-            base_start,
-            line,
-            SourceMarkerKind::MalformedRuby,
-            offset,
-            base_start,
-            RawMarkerEvent::SkipBytes('｜'.len_utf8()),
-        ));
+        return None;
     }
     if rest.starts_with('《') {
         let reading_start = offset + '《'.len_utf8();
@@ -1252,7 +1243,7 @@ mod tests {
             "※［＃未完了\n※[#broken\n［＃ここから割り注\n[#broken\n｜未完了\n《未完了\n〔未完了";
         let markers = source_markers(text);
 
-        assert_eq!(markers.len(), 7);
+        assert_eq!(markers.len(), 6);
         assert_eq!(markers[0].kind, SourceMarkerKind::MalformedGaiji);
         assert_eq!(markers[0].raw, "※［＃");
         assert_eq!(markers[1].kind, SourceMarkerKind::MalformedGaijiAscii);
@@ -1261,12 +1252,19 @@ mod tests {
         assert_eq!(markers[2].raw, "［＃");
         assert_eq!(markers[3].kind, SourceMarkerKind::MalformedCommandAscii);
         assert_eq!(markers[3].raw, "[#");
-        assert_eq!(markers[4].kind, SourceMarkerKind::MalformedRuby);
-        assert_eq!(markers[4].raw, "｜");
-        assert_eq!(markers[5].kind, SourceMarkerKind::MalformedImplicitRuby);
-        assert_eq!(markers[5].raw, "《");
-        assert_eq!(markers[6].kind, SourceMarkerKind::MalformedAccentNotation);
-        assert_eq!(markers[6].raw, "〔");
+        assert_eq!(markers[4].kind, SourceMarkerKind::MalformedImplicitRuby);
+        assert_eq!(markers[4].raw, "《");
+        assert_eq!(markers[5].kind, SourceMarkerKind::MalformedAccentNotation);
+        assert_eq!(markers[5].raw, "〔");
+    }
+
+    #[test]
+    fn source_markers_ignore_bare_ruby_base_bars() {
+        let markers = source_markers("本文｜そのまま\n｜未完了\n｜吾輩《わがはい》");
+
+        assert_eq!(markers.len(), 1);
+        assert_eq!(markers[0].kind, SourceMarkerKind::RubyExplicit);
+        assert_eq!(markers[0].raw, "｜吾輩《わがはい》");
     }
 
     #[test]

@@ -13,7 +13,6 @@
   - source inventory row decoration.boten has occurrences but no representability table
   - source inventory row decoration.bousen has occurrences but no representability table
   - source inventory row decoration.direction_override has occurrences but no representability table
-  - source inventory row decoration.font_size has occurrences but no representability table
   - source inventory row decoration.keigakomi has occurrences but no representability table
   - source inventory row emphasis.basic has representability.status = needs_research
   - source inventory row figure.image_inline has occurrences but no representability table
@@ -36,7 +35,7 @@
   - source inventory row reference.frontref has occurrences but no representability table
   - source inventory row ruby.placement_directional has occurrences but no representability table
   - source inventory row warigaki.parenthetical has occurrences but no representability table
-  - 38448 unallowlisted source markers
+  - 31280 unallowlisted source markers
 
 ## Scope
 
@@ -47,13 +46,13 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 - works_scanned: 17894
 - works_failed: 0
 - markers_total: 4335091
-- unknown_markers_total: 52368
-- unallowlisted_unknown_markers_total: 38448
+- unknown_markers_total: 45200
+- unallowlisted_unknown_markers_total: 31280
 - allowlisted_unknown_markers_total: 13920
 
 ## Representability
 
-- typed_occurrences: 3783133
+- typed_occurrences: 3834230
 - raw_preserved_occurrences: 0
 - out_of_body_occurrences: 0
 - unsupported_occurrences: 13920
@@ -73,7 +72,7 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | decoration.boten | 79 | 1376 | 000034_56908, 000042_61014, 000042_61015, 000042_61019, 000048_45476 |
 | decoration.bousen | 317 | 18067 | 000006_1869, 000013_11, 000019_4376, 000034_55507, 000038_1408 |
 | decoration.direction_override | 6 | 65 | 000096_935, 000866_3039, 001094_42603, 001242_46444, 001467_50733 |
-| decoration.font_size | 997 | 43905 | 000011_899, 000019_58861, 000019_59261, 000019_59375, 000023_55325 |
+| decoration.font_size | 1166 | 51097 | 000008_58922, 000011_899, 000019_58861, 000019_59261, 000019_59375 |
 | decoration.keigakomi | 106 | 200 | 000067_1789, 000072_408, 000096_2093, 000096_2100, 000096_2117 |
 | emphasis.basic | 6576 | 157495 | 000005_53194, 000006_1869, 000006_382, 000006_383, 000006_58819 |
 | figure.image_caption | 103 | 1777 | 000019_42378, 000019_42379, 000019_42380, 000019_42381, 000019_42382 |
@@ -210,60 +209,60 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 
 ## Unknown Source Marker Classes
 
-Showing 50 report rows of 15925 total classes. JSON carries 1000 top classes. truncated: true
+Showing 50 report rows of 14345 total classes. JSON carries 1000 top classes. truncated: true
 
 | kind | raw | occurrences | unallowlisted | allowlisted | samples |
 |---|---|---:|---:|---:|---|
 | MalformedRuby | ｜ | 9658 | 9658 | 0 | 000005_5, 000005_53194, 000006_1868, 000006_1869, 000006_3310 |
 | AccentNotation | 〔〕 | 770 | 770 | 0 | 000020_745, 000026_50241, 000026_50245, 000026_50255, 000026_51891 |
-| CommandFullwidth | ［＃「b」は下付き小文字］ | 708 | 708 | 0 | 001185_45210 |
-| CommandFullwidth | ［＃「a」は下付き小文字］ | 666 | 666 | 0 | 001185_45210 |
 | CommandFullwidth | ［＃…］ | 465 | 465 | 0 | 000038_1408, 000042_1694, 000050_3581, 000051_1436, 000051_1452 |
-| CommandFullwidth | ［＃「大字」は１段階小さな文字］ | 462 | 462 | 0 | 001566_58320, 001566_58447, 001566_58544, 001566_58777 |
-| CommandFullwidth | ［＃「字」は１段階小さな文字］ | 388 | 388 | 0 | 001566_58447, 001566_58544 |
-| CommandFullwidth | ［＃「d」は下付き小文字］ | 336 | 336 | 0 | 001185_45210 |
-| CommandFullwidth | ［＃「p」は下付き小文字］ | 286 | 286 | 0 | 001185_45210 |
-| CommandFullwidth | ［＃「c」は下付き小文字］ | 273 | 273 | 0 | 001185_45210 |
 | CommandFullwidth | ［＃本文終わり］ | 243 | 243 | 0 | 000009_226, 000009_50711, 000009_50712, 000009_50713, 000009_50714 |
-| CommandFullwidth | ［＃「t」は下付き小文字］ | 242 | 242 | 0 | 001185_45210 |
 | CommandFullwidth | ［＃（…）］ | 242 | 242 | 0 | 000026_50238, 000026_50242, 000026_50259, 000026_51893, 000026_55774 |
-| CommandFullwidth | ［＃「k」は下付き小文字］ | 199 | 199 | 0 | 001185_45210 |
 | CommandFullwidth | ［＃ここで罫囲み終わり］ | 194 | 194 | 0 | 000067_1789, 000072_408, 000096_2093, 000096_2100, 000096_2117 |
 | CommandFullwidth | ［＃改行天付き、折り返して１字下げ］ | 187 | 187 | 0 | 000272_1805, 001154_51829, 001726_56089 |
 | CommandFullwidth | ［＃ここで太字終わり］ | 184 | 184 | 0 | 000026_55916, 000035_52380, 000072_54444, 000096_2117, 000113_4325 |
-| CommandFullwidth | ［＃「1」は下付き小文字］ | 181 | 181 | 0 | 000042_2345, 000148_789, 000281_3598, 000281_43266, 001185_45210 |
 | CommandFullwidth | ［＃ここから３字下げ、１行２０字組みで］ | 178 | 178 | 0 | 000321_2169 |
 | CommandFullwidth | ［＃ここで字下げ、２０字組み終わり］ | 178 | 178 | 0 | 000321_2169 |
 | CommandFullwidth | ［＃縦中横終わり］ | 165 | 165 | 0 | 000061_377, 000081_47029, 000081_60685, 000094_2525, 000226_1150 |
 | CommandFullwidth | ［＃縦中横］ | 165 | 165 | 0 | 000061_377, 000081_47029, 000081_60685, 000094_2525, 000226_1150 |
-| CommandFullwidth | ［＃大きな文字終わり］ | 158 | 158 | 0 | 000019_59261, 000034_55507, 000050_4561, 000096_2093, 000096_2100 |
-| CommandFullwidth | ［＃「a,1」は下付き小文字］ | 148 | 148 | 0 | 001185_45210 |
-| CommandFullwidth | ［＃「b,1」は下付き小文字］ | 117 | 117 | 0 | 001185_45210 |
 | CommandFullwidth | ［＃天から２字下げ］ | 116 | 116 | 0 | 000051_3330, 000067_2843, 000074_3565, 000076_448, 000082_43090 |
 | CommandFullwidth | ［＃天から３字下げ］ | 89 | 89 | 0 | 000025_202, 000025_216, 000074_3565, 000081_1935, 000082_49529 |
-| CommandFullwidth | ［＃「2」は下付き小文字］ | 83 | 83 | 0 | 000081_47029, 000106_49617, 000106_53493, 000148_789, 000226_1150 |
 | CommandFullwidth | ［＃ここから２字下げ、２２字詰め］ | 73 | 73 | 0 | 000885_2560 |
-| CommandFullwidth | ［＃「d,1」は下付き小文字］ | 64 | 64 | 0 | 001185_45210 |
 | MalformedAccentNotation | 〔 | 56 | 56 | 0 | 000026_219, 000034_55507, 000081_4416, 000081_50764, 000091_522 |
-| CommandFullwidth | ［＃「2」は上付き小文字］ | 55 | 55 | 0 | 000094_42338, 000106_2415, 000129_45224, 000226_1150, 000281_3598 |
-| CommandFullwidth | ［＃「3」は下付き小文字］ | 54 | 54 | 0 | 000106_49617, 000148_789, 000281_3598, 001185_45210, 001569_57451 |
-| CommandFullwidth | ［＃「a,b」は下付き小文字］ | 53 | 53 | 0 | 001185_45210 |
 | CommandFullwidth | ［＃「、」は底本では「。」］ | 48 | 48 | 0 | 000019_42380, 000019_42382, 000019_42383, 000019_42384, 000019_42385 |
 | CommandFullwidth | ［＃ここから２字下げ、小さい活字］ | 48 | 48 | 0 | 000051_4620 |
 | CommandFullwidth | ［＃ここで字下げ終わり、小さい活字も終わり］ | 48 | 48 | 0 | 000051_4620 |
-| CommandFullwidth | ［＃「r,1」は下付き小文字］ | 47 | 47 | 0 | 001185_45210 |
-| CommandFullwidth | ［＃「c,b」は下付き小文字］ | 46 | 46 | 0 | 001185_45210 |
-| CommandFullwidth | ［＃「c,1」は下付き小文字］ | 44 | 44 | 0 | 001185_45210 |
 | CommandFullwidth | ［＃ここで地付き終わり］ | 42 | 42 | 0 | 000067_859, 000072_54444, 000082_43042, 000082_43050, 000106_59473 |
-| CommandFullwidth | ［＃「子」は１段階小さな文字］ | 41 | 41 | 0 | 000165_3622 |
-| CommandFullwidth | ［＃「b,a」は下付き小文字］ | 40 | 40 | 0 | 001185_45210 |
 | CommandFullwidth | ［＃「ん」は小書き］ | 40 | 40 | 0 | 000081_1940, 000081_4415, 000081_4416, 000081_4424, 000081_4441 |
 | CommandFullwidth | ［＃天から４字下げ］ | 37 | 37 | 0 | 000050_45755, 000051_47086, 000081_46600, 000081_48221, 000083_1090 |
-| CommandFullwidth | ［＃「a,2」は下付き小文字］ | 34 | 34 | 0 | 001185_45210 |
 | CommandFullwidth | ［＃ルビは「悪魔の尿溜」にかかる］ | 34 | 34 | 0 | 000125_1320 |
 | CommandFullwidth | ［＃ここで字上げ終わり］ | 33 | 33 | 0 | 000035_1586, 000081_1935, 000082_49526, 000083_1090, 000096_2093 |
-| CommandFullwidth | ［＃「a,3」は下付き小文字］ | 32 | 32 | 0 | 001185_45210 |
-| CommandFullwidth | ［＃「小字」は１段階小さな文字］ | 32 | 32 | 0 | 001566_58447, 001566_58544 |
+| CommandFullwidth | ［＃ここで斜体終わり］ | 32 | 32 | 0 | 000025_1144, 000075_47964, 001030_47879, 001030_4816, 001030_55421 |
+| CommandFullwidth | ［＃ルビは「天母生上の雲湖」にかかる］ | 32 | 32 | 0 | 000125_665 |
+| CommandFullwidth | ［＃この行はゴシック体］ | 29 | 29 | 0 | 000281_1710, 000311_4211, 000311_4232 |
+| CommandFullwidth | ［＃ここから天付き、折り返して１字下げ］ | 26 | 26 | 0 | 001154_44776, 001471_55564, 001471_55567, 001471_55575 |
+| CommandFullwidth | ［＃「天皇制」に×傍点］ | 25 | 25 | 0 | 000311_3149 |
+| CommandFullwidth | ［＃罫囲み終わり］ | 25 | 25 | 0 | 000063_385, 000106_53493, 000125_1317, 000311_2734, 000866_3039 |
+| CommandFullwidth | ［＃罫囲み］ | 25 | 25 | 0 | 000063_385, 000106_53493, 000125_1317, 000311_2734, 000866_3039 |
+| CommandFullwidth | ［＃「（訳注）」は行左小書き］ | 23 | 23 | 0 | 002265_62680, 002265_62681, 002265_62687, 002265_62688 |
+| CommandFullwidth | ［＃「。」は底本では「、」］ | 21 | 21 | 0 | 000037_1418, 000082_964, 000125_4317, 000158_4709, 000158_836 |
+| CommandFullwidth | ［＃ここから地から２字上げ］ | 21 | 21 | 0 | 000035_1586, 000096_2093, 000124_1315, 000158_1504, 000448_46417 |
+| CommandFullwidth | ［＃ママ］ | 21 | 21 | 0 | 000023_2951, 000034_519, 000040_380, 000111_557, 000111_566 |
+| CommandFullwidth | ［＃白三角傍点終わり］ | 21 | 21 | 0 | 000034_56908 |
+| CommandFullwidth | ［＃白三角傍点］ | 21 | 21 | 0 | 000034_56908 |
+| CommandFullwidth | ［＃ここから２字下げ、ゴシック体］ | 20 | 20 | 0 | 000035_307 |
+| CommandFullwidth | ［＃ここから２字下げ、２０字詰め］ | 20 | 20 | 0 | 000885_2560 |
+| CommandFullwidth | ［＃ゴシック体］ | 20 | 20 | 0 | 000096_1115, 000096_2100, 000311_2018, 000311_2023, 000311_2024 |
+| CommandFullwidth | ［＃二重傍線終わり］ | 20 | 20 | 0 | 000279_1704, 001257_60357, 001509_51405 |
+| CommandFullwidth | ［＃「〃」は横組み］ | 18 | 18 | 0 | 000281_3595, 000281_3598 |
+| CommandFullwidth | ［＃中見出終わり］ | 18 | 18 | 0 | 000296_58605, 000989_353, 001799_59015 |
+| CommandFullwidth | ［＃大文字］ | 18 | 18 | 0 | 000096_2100 |
+| CommandFullwidth | ［＃「。」は底本では欠落］ | 17 | 17 | 0 | 000009_43523, 000019_42382, 000294_1858, 001048_45381, 001090_42307 |
+| CommandFullwidth | ［＃「？！」は横一列］ | 17 | 17 | 0 | 000125_665 |
+| CommandFullwidth | ［＃ここから１字下げ、２３字詰め］ | 17 | 17 | 0 | 000885_2560 |
+| CommandFullwidth | ［＃ここから２段組み］ | 17 | 17 | 0 | 000061_377, 000311_46235, 000885_2557, 000908_51734, 001021_50117 |
+| CommandFullwidth | ［＃入力者注(5)］ | 17 | 17 | 0 | 000137_733 |
+| CommandFullwidth | ［＃「ツァー」に×傍点］ | 16 | 16 | 0 | 000311_3149 |
 
 ## Decode Failures
 

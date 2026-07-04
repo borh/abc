@@ -1720,7 +1720,7 @@ category = "inline_annotation"
 feature_keys = ["font_size"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/font_size.rb", "references/parsers/aozora2html/lib/aozora2html/tag/inline_font_size.rb"]
 source_examples = ["［＃ここから小3段階大な文字］", "「text」の中2段階大な文字"]
-source_patterns = ['［＃ここから[大中小]?[０-９0-9]+段階(小さ|大き)な文字］', '［＃[大中小]?[０-９0-9]+段階(小さ|大き)な文字］', '［＃(ここで)?小さな文字終わり］', '［＃行右小書き(終わり)?］', '［＃「[^」]+」は行右小書き］', '「[^」]+」の[大中小]?[０-９0-9]+段階(小さ|大き)な文字']
+source_patterns = ['［＃ここから[大中小]?[０-９0-9]+段階(小さ|大き)な文字］', '［＃[大中小]?[０-９0-9]+段階(小さ|大き)な文字］', '［＃「[^」]+」は[大中小]?[０-９0-9]+段階(小さ|大き)な文字］', '［＃(ここで)?(小さな|大きな)文字終わり］', '［＃行右小書き(終わり)?］', '［＃「[^」]+」は行右小書き］', '［＃「[^」]+」は[上下]付き小文字］', '「[^」]+」の[大中小]?[０-９0-9]+段階(小さ|大き)な文字']
 ir_nodes = ["Inline::Style", "Block::Style"]
 aat_nodes = ["font_size"]
 tei_projection = "hi rend=fontsize"
@@ -1768,6 +1768,14 @@ total_occurrences = 11561
 detector_id = "decoration_font_size"
 coverage_basis = "full_corpus"
 sample_works = ["001977_60827", "002168_51895", "001569_56726", "001869_57569", "001924_58230"]
+
+[syntax.representability]
+source_inventory_row = "decoration.font_size"
+status = "typed"
+aat_nodes = ["font_size", "style"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:125"
+notes = "AAT has a typed font_size inline container with size_type/level/content; style fallback covers parser adapters that collapse font-size to style."
 
 [[syntax]]
 id = "decoration.keigakomi"

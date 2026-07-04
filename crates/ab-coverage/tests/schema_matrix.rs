@@ -219,6 +219,60 @@ fn source_inventory_classifies_next_high_volume_command_variants() {
 }
 
 #[test]
+fn source_inventory_classifies_font_size_subscript_variants() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = [
+        "［＃「b」は下付き小文字］",
+        "［＃「a,1」は下付き小文字］",
+        "［＃「大字」は１段階小さな文字］",
+        "［＃大きな文字終わり］",
+    ]
+    .join("\n");
+    let summary = inventory_document("fixture", &source, &patterns);
+
+    assert_eq!(
+        summary.unknown_examples,
+        [],
+        "known font-size and subscript corpus variants should not remain unknown"
+    );
+    assert_eq!(
+        summary
+            .row_counts
+            .get("decoration.font_size")
+            .map(|count| count.occurrences),
+        Some(4)
+    );
+}
+
+#[test]
+fn decoration_font_size_has_typed_representability() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let row = matrix
+        .rows()
+        .iter()
+        .find(|row| row.id == "decoration.font_size")
+        .expect("decoration.font_size row");
+    let representability = row
+        .representability
+        .as_ref()
+        .expect("decoration.font_size needs a reviewed representability cell");
+
+    assert_eq!(representability.status, RepresentabilityStatus::Typed);
+    assert!(representability.raw_fallback);
+    assert!(
+        representability
+            .aat_nodes
+            .iter()
+            .any(|node| node == "font_size")
+    );
+    assert!(
+        row.tei_projection.contains("hi"),
+        "font-size source markers need a TEI P5 hi projection"
+    );
+}
+
+#[test]
 fn forbidden_combinations_rejected() {
     use std::collections::BTreeMap;
     let mut parsers = BTreeMap::new();

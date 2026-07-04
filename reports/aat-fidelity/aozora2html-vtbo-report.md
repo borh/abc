@@ -16,9 +16,9 @@ then finds the first projection char that is not a subsequence of the source.
 
 ## Sample findings (first 20)
 
-Run with `AB_AOZORA2HTML_VTBO_SAMPLE=20`; `characterized 21 works` (the loop
-counts one extra row beyond 20 because the sample bound is checked after the
-increment). 20 per-work `.txt` outputs were written.
+Run with `AB_AOZORA2HTML_VTBO_SAMPLE=20`; 20 per-work `.txt` outputs were
+written. The table below summarizes the recurring patterns observed in that
+sample rather than listing every output row.
 
 divergence indices observed (work_id, index, divergence char, one-line
 context from the projection window):

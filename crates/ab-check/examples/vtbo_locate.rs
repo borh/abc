@@ -92,8 +92,18 @@ fn main() -> anyhow::Result<()> {
             let send = (si + args.context).min(s.len());
             println!("divergence_at_projection_index={}", pi);
             println!("source_cursor_consumed={}", si);
-            println!("projection[{}..{}]={}", pstart, pend, p[pstart..pend].iter().collect::<String>());
-            println!("source[{}..{}]={}", sstart, send, s[sstart..send].iter().collect::<String>());
+            println!(
+                "projection[{}..{}]={}",
+                pstart,
+                pend,
+                p[pstart..pend].iter().collect::<String>()
+            );
+            println!(
+                "source[{}..{}]={}",
+                sstart,
+                send,
+                s[sstart..send].iter().collect::<String>()
+            );
             Ok(())
         }
     }

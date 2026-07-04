@@ -29,6 +29,13 @@ def classify(message: str) -> str:
     return "other"
 
 
+def markdown_cell(message: str, limit: int = 240) -> str:
+    clean = re.sub(r"\s+", " ", message.strip())
+    if len(clean) > limit:
+        clean = clean[: limit - 3].rstrip() + "..."
+    return clean.replace("|", "\\|")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("aat_dir")
@@ -62,7 +69,7 @@ def main() -> int:
     ]
     for cls in CLASSES:
         wids = buckets.get(cls, [])
-        ex = (examples.get(cls, "") or "").replace("|", "\\|")
+        ex = markdown_cell(examples.get(cls, "") or "")
         lines.append(f"| {cls} | {len(wids)} | {ex} |")
     lines.append(f"| **Total** | **{sum(len(v) for v in buckets.values())}** | |")
     lines.append("")

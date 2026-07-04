@@ -40,8 +40,7 @@ PY
 count=0
 while IFS=$'\t' read -r wid archive entry; do
   [[ -z "$wid" ]] && continue
-  count=$((count + 1))
-  [[ "$sample" -ne 0 && "$count" -gt "$sample" ]] && break
+  [[ "$sample" -ne 0 && "$count" -ge "$sample" ]] && break
   # AAT files are suffixed (000081_4418-04cb6bb131bc.json); glob by work_id prefix.
   aat=$(ls "$aat_dir/$wid"*.json 2>/dev/null | head -1 || true)
   [[ -f "$aat" ]] || continue
@@ -64,6 +63,7 @@ PY
   cargo run -p ab-check --example vtbo_locate -- --aat "$aat" --source "$src" --context 60 \
     > "$out_dir/$wid.txt" 2>/dev/null || true
   rm -f "$src"
+  count=$((count + 1))
 done < "$out_dir/failing_works.tsv"
 
 echo "characterized $count works; individual outputs in $out_dir/*.txt"

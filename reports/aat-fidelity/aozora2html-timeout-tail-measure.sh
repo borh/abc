@@ -61,8 +61,12 @@ while IFS=$'\t' read -r wid archive entry size; do
 import zipfile, sys
 archive, entry, out = sys.argv[1], sys.argv[2], sys.argv[3]
 with zipfile.ZipFile(archive) as z:
-    data = z.read(entry) if entry else max(z.infolist(), key=lambda i: i.file_size)
-    open(out, "wb").write(data if isinstance(data, bytes) else data)
+    if entry:
+        data = z.read(entry)
+    else:
+        info = max(z.infolist(), key=lambda i: i.file_size)
+        data = z.read(info)
+    open(out, "wb").write(data)
 PY
   start=$(date +%s)
   if timeout "$limit_s" "$adapter" --mode aat < "$tmp" > "/tmp/out.$$.json" 2> "/tmp/err.$$.json"; then

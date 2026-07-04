@@ -5,15 +5,6 @@
 - source_authority_gate: `SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED`
 - note: this is not a passing representability gate; durable representability claims remain blocked until strict_errors is empty.
 - strict_errors:
-  - source inventory row heading.dogyo has occurrences but no representability table
-  - source inventory row heading.mado has occurrences but no representability table
-  - source inventory row iteration.kunoji has occurrences but no representability table
-  - source inventory row kunten.kaeriten has occurrences but no representability table
-  - source inventory row kunten.okurigana has occurrences but no representability table
-  - source inventory row layout.yokogumi has occurrences but no representability table
-  - source inventory row reference.frontref has occurrences but no representability table
-  - source inventory row ruby.placement_directional has occurrences but no representability table
-  - source inventory row warigaki.parenthetical has occurrences but no representability table
   - 12973 unallowlisted source markers
 
 ## Scope
@@ -31,7 +22,7 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 
 ## Representability
 
-- typed_occurrences: 4364879
+- typed_occurrences: 4431524
 - raw_preserved_occurrences: 25072
 - out_of_body_occurrences: 0
 - unsupported_occurrences: 13920

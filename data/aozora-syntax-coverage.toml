@@ -724,6 +724,14 @@ oracle_cases = ["ruby.placement.left"]
 status = "needs_research"
 status_reason = "directional ruby placement (left/below)"
 
+[syntax.representability]
+source_inventory_row = "ruby.placement_directional"
+status = "typed"
+aat_nodes = ["ruby"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:119"
+notes = "AAT ruby has a direction field, and TEI can preserve directional placement with ruby placement metadata; raw fallback covers adapters that still drop direction."
+
 [syntax.parsers.aozora2]
 recognition = "parsed"
 evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:28"
@@ -1212,6 +1220,14 @@ oracle_cases = ["iteration.kunoji.basic"]
 status = "needs_research"
 status_reason = "kunoji iteration mark; aozora2html flags via @chuuki_table without inline transform"
 
+[syntax.representability]
+source_inventory_row = "iteration.kunoji"
+status = "typed"
+aat_nodes = ["gaiji"]
+raw_fallback = true
+evidence = "data/aat-oracle-cases.toml:558; docs/aat-contract.md:120"
+notes = "Reviewed oracle evidence represents kunoji as a typed gaiji resolved to the Unicode vertical kana repeat mark; raw fallback covers parsers/adapters that still treat the slash glyphs as text."
+
 [syntax.parsers.aozora2]
 recognition = "unrecognised"
 evidence = ""
@@ -1324,6 +1340,14 @@ oracle_cases = ["kunten.kaeriten.basic"]
 status = "needs_research"
 status_reason = "classical Chinese return-point marker"
 
+[syntax.representability]
+source_inventory_row = "kunten.kaeriten"
+status = "typed"
+aat_nodes = ["style"]
+raw_fallback = true
+evidence = "data/aat-oracle-cases.toml:614; docs/aat-contract.md:124"
+notes = "Reviewed oracle evidence represents return points as style_type=kaeriten with source marker metadata; raw fallback covers adapter paths that drop kunten."
+
 [syntax.parsers.aozora2]
 recognition = "parsed"
 evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:128"
@@ -1379,6 +1403,14 @@ adapter_expectations = ["preserve okurigana marker"]
 oracle_cases = ["kunten.okurigana.basic"]
 status = "needs_research"
 status_reason = "kunten okurigana mark"
+
+[syntax.representability]
+source_inventory_row = "kunten.okurigana"
+status = "typed"
+aat_nodes = ["ruby"]
+raw_fallback = true
+evidence = "data/aat-oracle-cases.toml:641; docs/aat-contract.md:119"
+notes = "Reviewed oracle evidence represents okurigana as an empty-base ruby with x-annotation-type=okurigana; raw fallback covers adapter paths that drop compact or named markers."
 
 [syntax.parsers.aozora2]
 recognition = "parsed"
@@ -1492,6 +1524,14 @@ oracle_cases = ["heading.dogyo.medium"]
 status = "needs_research"
 status_reason = "dogyo (same-line) heading variant"
 
+[syntax.representability]
+source_inventory_row = "heading.dogyo"
+status = "typed"
+aat_nodes = ["heading"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:103"
+notes = "AAT heading carries a style field and TEI can preserve dogyo as head rend metadata; raw fallback covers adapters that drop the variant."
+
 [syntax.parsers.aozora2]
 recognition = "parsed"
 evidence = "references/parsers/aozora2/crates/aozora-core/src/node/midashi.rs:1"
@@ -1547,6 +1587,14 @@ adapter_expectations = ["preserve framed heading variant"]
 oracle_cases = ["heading.mado.small"]
 status = "needs_research"
 status_reason = "mado (framed) heading variant"
+
+[syntax.representability]
+source_inventory_row = "heading.mado"
+status = "typed"
+aat_nodes = ["heading"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:103"
+notes = "AAT heading carries a style field and TEI can preserve mado as head rend metadata; raw fallback covers adapters that drop the variant."
 
 [syntax.parsers.aozora2]
 recognition = "parsed"
@@ -2308,6 +2356,14 @@ oracle_cases = ["layout.yokogumi.inline"]
 status = "needs_research"
 status_reason = "horizontal-in-vertical block + inline forms"
 
+[syntax.representability]
+source_inventory_row = "layout.yokogumi"
+status = "typed"
+aat_nodes = ["yokogumi"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:127"
+notes = "AAT has a typed yokogumi inline container and TEI can preserve horizontal composition with rend metadata; raw fallback covers adapters that do not recover the scope."
+
 [syntax.parsers.aozora2]
 recognition = "parsed"
 evidence = "references/parsers/aozora2/crates/aozora-core/src/node/mod.rs:98"
@@ -2427,6 +2483,14 @@ adapter_expectations = ["distinguish from warichu"]
 oracle_cases = ["warigaki.parenthetical.basic"]
 status = "needs_research"
 status_reason = "warigaki (parenthetical aside); related to but distinct from warichu"
+
+[syntax.representability]
+source_inventory_row = "warigaki.parenthetical"
+status = "typed"
+aat_nodes = ["warigaki"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:130"
+notes = "AAT has a typed warigaki node and TEI can preserve the aside as warigaki rendition; raw fallback covers parsers/adapters that conflate or drop the parenthetical form."
 
 [syntax.parsers.aozora2]
 recognition = "parsed"
@@ -2731,6 +2795,14 @@ adapter_expectations = ["resolve forward reference target"]
 oracle_cases = ["reference.frontref.boten"]
 status = "needs_research"
 status_reason = "front-reference style application via PAT_FRONTREF"
+
+[syntax.representability]
+source_inventory_row = "reference.frontref"
+status = "typed"
+aat_nodes = ["style"]
+raw_fallback = true
+evidence = "data/aat-oracle-cases.toml:1347; docs/aat-contract.md:124"
+notes = "Reviewed oracle evidence represents front references as style nodes with x-frontref metadata; raw fallback covers parsers/adapters that cannot attach the later annotation target."
 
 [syntax.parsers.aozora2]
 recognition = "normalised"

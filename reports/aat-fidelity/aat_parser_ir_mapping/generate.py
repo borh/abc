@@ -126,6 +126,12 @@ def write_report(summary: dict, report_path: Path) -> None:
             f"- mapping schema hash: `{summary['mapping_schema_hash']}`",
             f"- target parser-IR schema hash: `{summary['target_parser_ir_schema_hash']}`",
             "",
+            "## Identity Projection",
+            "",
+            "- `version`, `meta.adapter`, and `meta.adapter_version` project into parser-IR `derived_from`.",
+            "- `mapping_id`, `mapping_version`, and `mapping_schema_hash` project from the mapping document into parser-IR `derived_from`.",
+            "- `mapping_hash` remains an external manifest input and is not stored inside parser-IR `derived_from`.",
+            "",
             "## Policy Checks",
             "",
             "- `ruby.direction` projects directly into parser-IR.",
@@ -151,7 +157,7 @@ def main() -> int:
     parser.add_argument("--summary-json", type=Path, required=True)
     parser.add_argument("--report-md", type=Path)
     parser.add_argument("--assert-zero-unsupported", action="store_true")
-    parser.add_argument("--mapping-version", default="0.1.1")
+    parser.add_argument("--mapping-version", default="0.2.0")
     parser.add_argument("--aat-schema", type=Path, default=repo_root / "data/aat-schema.json")
     args = parser.parse_args()
 
@@ -243,6 +249,12 @@ def main() -> int:
         "target_parser_ir_schema_hash": mapping_document[
             "target_parser_ir_schema_hash"
         ],
+        "identity_projection": {
+            "parser_ir_pointer": "derived_from",
+            "aat_pointers": ["version", "meta.adapter", "meta.adapter_version"],
+            "mapping_pointers": ["mapping_id", "mapping_version", "mapping_schema_hash"],
+            "mapping_hash_source": "manifest-inputs.mapping_hash",
+        },
         "aat_dirs": [str(path) for path in args.aat_dir],
         "mapping_path": str(args.out),
     }

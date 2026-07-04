@@ -388,10 +388,10 @@ def map_meta_source(aat, ledger_list):
         "encoding": enc_out,
         "normalization": "source",
     }
-    # Producer identity / fidelity metadata has no parser-IR home.
-    for f in ("adapter", "adapter_version", "parse_complete"):
-        ledger_list.append(ledger("LOSS", f"meta.{f}", "(none)",
-                                  f"{f}={meta.get(f)!r} dropped; parser-IR carries no producer identity / parse status"))
+    # Producer identity now projects to parser-IR derived_from. parse_complete
+    # remains adapter-fidelity metadata preserved in the divergence bundle.
+    ledger_list.append(ledger("LOSS", "meta.parse_complete", "(none)",
+                              f"parse_complete={meta.get('parse_complete')!r} preserved in divergence bundle; parser-IR derived_from does not model parse completeness"))
     # metrics: heavy fidelity block dropped entirely
     if meta.get("metrics"):
         ledger_list.append(ledger("LOSS", "meta.metrics",

@@ -110,11 +110,15 @@ uv run --isolated --no-project --with 'jsonschema>=4.0' \
   "$repo_root/reports/aat-fidelity/aat_parser_ir_mapping/generate.py" \
   --aat-dir "$aat_dir" \
   --abc-root "$repo_root/../abc" \
-  --mapping-version 0.1.1 \
+  --mapping-version 0.2.0 \
   --out "$out_dir/mapping.json" \
   --summary-json "$out_dir/summary.json"
 
-jq -e '.mapping_version == "0.1.1"' "$out_dir/mapping.json"
+jq -e '.mapping_version == "0.2.0"' "$out_dir/mapping.json"
+jq -e 'all(.transform_rule_descriptions[]; .aat_pointer != "meta.adapter" and .aat_pointer != "meta.adapter_version")' "$out_dir/mapping.json"
+jq -e 'any(.transform_rule_descriptions[]; .category == "LOSS" and .aat_pointer == "meta.parse_complete")' "$out_dir/mapping.json"
+jq -e '.identity_projection.parser_ir_pointer == "derived_from"' "$out_dir/summary.json"
+jq -e '.identity_projection.aat_pointers == ["version", "meta.adapter", "meta.adapter_version"]' "$out_dir/summary.json"
 jq -e '.files_with_warigaki == 2' "$out_dir/summary.json"
 jq -e 'any(.transform_rule_descriptions[]; .category == "UNSUPPORTED" and (.description | test("warigaki")))' "$out_dir/mapping.json"
 jq -e 'any(.transform_rule_descriptions[]; .category == "UNSUPPORTED" and .aat_pointer == "blocks[].children[].content[].content[].warigaki")' "$out_dir/mapping.json"

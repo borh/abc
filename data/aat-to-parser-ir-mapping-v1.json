@@ -1,6 +1,6 @@
 {
   "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
-  "mapping_version": "0.1.1",
+  "mapping_version": "0.2.0",
   "mapping_schema_hash": "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4",
   "source_aat_version": 1,
   "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
@@ -729,37 +729,21 @@
     {
       "rule_id": "L-49",
       "category": "LOSS",
-      "aat_pointer": "meta.adapter",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 35583 occurrences; first_path=meta.adapter. adapter='aozora-rs' dropped; parser-IR carries no producer identity / parse status"
-    },
-    {
-      "rule_id": "L-50",
-      "category": "LOSS",
-      "aat_pointer": "meta.adapter_version",
-      "parser_ir_pointer": null,
-      "action": "drop",
-      "description": "Observed 35583 occurrences; first_path=meta.adapter_version. adapter_version='aozora-rs-adapter 0.1.0 2b4e8d1' dropped; parser-IR carries no producer identity / parse status"
-    },
-    {
-      "rule_id": "L-51",
-      "category": "LOSS",
       "aat_pointer": "meta.metrics",
       "parser_ir_pointer": null,
       "action": "drop",
       "description": "Observed 17894 occurrences; first_path=meta.metrics. performance/fallback metrics dropped; adapter-fidelity concern not representable"
     },
     {
-      "rule_id": "L-52",
+      "rule_id": "L-50",
       "category": "LOSS",
       "aat_pointer": "meta.parse_complete",
       "parser_ir_pointer": null,
       "action": "drop",
-      "description": "Observed 35583 occurrences; first_path=meta.parse_complete. parse_complete=True dropped; parser-IR carries no producer identity / parse status"
+      "description": "Observed 35583 occurrences; first_path=meta.parse_complete. parse_complete=True preserved in divergence bundle; parser-IR derived_from does not model parse completeness"
     },
     {
-      "rule_id": "L-53",
+      "rule_id": "L-51",
       "category": "LOSS",
       "aat_pointer": "meta.semantic_summary",
       "parser_ir_pointer": null,

@@ -4,8 +4,8 @@
   "works_failed": 0,
   "markers_total": 4335091,
   "unknown_markers_total": 52368,
-  "unallowlisted_unknown_markers_total": 52368,
-  "allowlisted_unknown_markers_total": 0,
+  "unallowlisted_unknown_markers_total": 38448,
+  "allowlisted_unknown_markers_total": 13920,
   "rows": {
     "annotation.bouki": {
       "works_with_marker": 12,
@@ -432,21 +432,6 @@
   "unknown_classes_total": 15925,
   "unknown_classes_truncated": true,
   "unknown_classes": [
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃］",
-      "body": "",
-      "occurrences": 13920,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 13920,
-      "sample_works": [
-        "000005_5",
-        "000005_53194",
-        "000006_1868",
-        "000006_1869",
-        "000006_3310"
-      ]
-    },
     {
       "kind": "MalformedRuby",
       "raw": "｜",
@@ -12106,6 +12091,17 @@
       "sample_works": [
         "001670_55342"
       ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃「ヤマニ」はママ］",
+      "body": "「ヤマニ」はママ",
+      "occurrences": 2,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 2,
+      "sample_works": [
+        "000076_46940"
+      ]
     }
   ],
   "unknown_examples": [
@@ -12117,25 +12113,11 @@
       "body": "｜"
     },
     {
-      "work_id": "000005_5",
-      "line": 14,
-      "kind": "CommandFullwidth",
-      "raw": "［＃］",
-      "body": ""
-    },
-    {
       "work_id": "000005_53194",
       "line": 11,
       "kind": "MalformedRuby",
       "raw": "｜",
       "body": "｜"
-    },
-    {
-      "work_id": "000005_53194",
-      "line": 14,
-      "kind": "CommandFullwidth",
-      "raw": "［＃］",
-      "body": ""
     },
     {
       "work_id": "000005_53194",
@@ -12152,25 +12134,11 @@
       "body": "｜"
     },
     {
-      "work_id": "000006_1868",
-      "line": 13,
-      "kind": "CommandFullwidth",
-      "raw": "［＃］",
-      "body": ""
-    },
-    {
       "work_id": "000006_1869",
       "line": 10,
       "kind": "MalformedRuby",
       "raw": "｜",
       "body": "｜"
-    },
-    {
-      "work_id": "000006_1869",
-      "line": 13,
-      "kind": "CommandFullwidth",
-      "raw": "［＃］",
-      "body": ""
     },
     {
       "work_id": "000006_1869",
@@ -12237,38 +12205,17 @@
     },
     {
       "work_id": "000006_3310",
-      "line": 13,
-      "kind": "CommandFullwidth",
-      "raw": "［＃］",
-      "body": ""
-    },
-    {
-      "work_id": "000006_3310",
       "line": 316,
       "kind": "CommandFullwidth",
       "raw": "［＃「涕」はママ］",
       "body": "「涕」はママ"
     },
     {
-      "work_id": "000006_3311",
-      "line": 10,
-      "kind": "CommandFullwidth",
-      "raw": "［＃］",
-      "body": ""
-    },
-    {
       "work_id": "000006_382",
       "line": 10,
       "kind": "MalformedRuby",
       "raw": "｜",
       "body": "｜"
-    },
-    {
-      "work_id": "000006_382",
-      "line": 13,
-      "kind": "CommandFullwidth",
-      "raw": "［＃］",
-      "body": ""
     },
     {
       "work_id": "000006_383",
@@ -12278,32 +12225,11 @@
       "body": "｜"
     },
     {
-      "work_id": "000006_383",
-      "line": 13,
-      "kind": "CommandFullwidth",
-      "raw": "［＃］",
-      "body": ""
-    },
-    {
       "work_id": "000006_384",
       "line": 10,
       "kind": "MalformedRuby",
       "raw": "｜",
       "body": "｜"
-    },
-    {
-      "work_id": "000006_384",
-      "line": 13,
-      "kind": "CommandFullwidth",
-      "raw": "［＃］",
-      "body": ""
-    },
-    {
-      "work_id": "000006_4627",
-      "line": 11,
-      "kind": "CommandFullwidth",
-      "raw": "［＃］",
-      "body": ""
     },
     {
       "work_id": "000006_4627",
@@ -12320,39 +12246,11 @@
       "body": "｜"
     },
     {
-      "work_id": "000006_46659",
-      "line": 13,
-      "kind": "CommandFullwidth",
-      "raw": "［＃］",
-      "body": ""
-    },
-    {
       "work_id": "000006_58819",
       "line": 10,
       "kind": "MalformedRuby",
       "raw": "｜",
       "body": "｜"
-    },
-    {
-      "work_id": "000006_58819",
-      "line": 13,
-      "kind": "CommandFullwidth",
-      "raw": "［＃］",
-      "body": ""
-    },
-    {
-      "work_id": "000006_901",
-      "line": 10,
-      "kind": "CommandFullwidth",
-      "raw": "［＃］",
-      "body": ""
-    },
-    {
-      "work_id": "000008_1083",
-      "line": 10,
-      "kind": "CommandFullwidth",
-      "raw": "［＃］",
-      "body": ""
     },
     {
       "work_id": "000008_1083",
@@ -12503,13 +12401,6 @@
     },
     {
       "work_id": "000008_1083",
-      "line": 10,
-      "kind": "CommandFullwidth",
-      "raw": "［＃］",
-      "body": ""
-    },
-    {
-      "work_id": "000008_1083",
       "line": 67,
       "kind": "CommandFullwidth",
       "raw": "［＃「　がやがやと」は底本では「がやがやと」］",
@@ -12628,25 +12519,11 @@
       "body": "｜"
     },
     {
-      "work_id": "000008_18327",
-      "line": 13,
-      "kind": "CommandFullwidth",
-      "raw": "［＃］",
-      "body": ""
-    },
-    {
       "work_id": "000008_2688",
       "line": 10,
       "kind": "MalformedRuby",
       "raw": "｜",
       "body": "｜"
-    },
-    {
-      "work_id": "000008_2688",
-      "line": 13,
-      "kind": "CommandFullwidth",
-      "raw": "［＃］",
-      "body": ""
     },
     {
       "work_id": "000008_407",
@@ -12656,25 +12533,11 @@
       "body": "｜"
     },
     {
-      "work_id": "000008_407",
-      "line": 13,
-      "kind": "CommandFullwidth",
-      "raw": "［＃］",
-      "body": ""
-    },
-    {
       "work_id": "000008_47357",
       "line": 10,
       "kind": "MalformedRuby",
       "raw": "｜",
       "body": "｜"
-    },
-    {
-      "work_id": "000008_47357",
-      "line": 13,
-      "kind": "CommandFullwidth",
-      "raw": "［＃］",
-      "body": ""
     },
     {
       "work_id": "000008_47357",
@@ -12769,13 +12632,6 @@
     },
     {
       "work_id": "000008_47361",
-      "line": 13,
-      "kind": "CommandFullwidth",
-      "raw": "［＃］",
-      "body": ""
-    },
-    {
-      "work_id": "000008_47361",
       "line": 101,
       "kind": "CommandFullwidth",
       "raw": "［＃「無理矢理に」は底本では「無理失理に」］",
@@ -12790,13 +12646,6 @@
     },
     {
       "work_id": "000008_47374",
-      "line": 10,
-      "kind": "CommandFullwidth",
-      "raw": "［＃］",
-      "body": ""
-    },
-    {
-      "work_id": "000008_47374",
       "line": 73,
       "kind": "CommandFullwidth",
       "raw": "［＃「奎吾に」は底本では「奎吉に」］",
@@ -12804,10 +12653,157 @@
     },
     {
       "work_id": "000008_47382",
-      "line": 10,
+      "line": 74,
       "kind": "CommandFullwidth",
-      "raw": "［＃］",
-      "body": ""
+      "raw": "［＃「視覺を」は底本では「視角を」］",
+      "body": "「視覺を」は底本では「視角を」"
+    },
+    {
+      "work_id": "000008_47382",
+      "line": 85,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「表情の」は底本では「衣情の」］",
+      "body": "「表情の」は底本では「衣情の」"
+    },
+    {
+      "work_id": "000008_47383",
+      "line": 134,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「持ち得ず」は底本では「待ち得ず」］",
+      "body": "「持ち得ず」は底本では「待ち得ず」"
+    },
+    {
+      "work_id": "000008_47384",
+      "line": 10,
+      "kind": "MalformedRuby",
+      "raw": "｜",
+      "body": "｜"
+    },
+    {
+      "work_id": "000008_47386",
+      "line": 10,
+      "kind": "MalformedRuby",
+      "raw": "｜",
+      "body": "｜"
+    },
+    {
+      "work_id": "000008_47386",
+      "line": 83,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「讀み上げる」は底本では「讀め上げる」］",
+      "body": "「讀み上げる」は底本では「讀め上げる」"
+    },
+    {
+      "work_id": "000008_47386",
+      "line": 128,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「石黒を」は底本では「石黒は」］",
+      "body": "「石黒を」は底本では「石黒は」"
+    },
+    {
+      "work_id": "000008_47386",
+      "line": 135,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「時々」は底本では「時時」］",
+      "body": "「時々」は底本では「時時」"
+    },
+    {
+      "work_id": "000008_47386",
+      "line": 138,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「ながめられた。」は底本では「ながめられた、」］",
+      "body": "「ながめられた。」は底本では「ながめられた、」"
+    },
+    {
+      "work_id": "000008_47386",
+      "line": 253,
+      "kind": "CommandFullwidth",
+      "raw": "［＃ルビの「いつとき」は底本では「ひつとき」］",
+      "body": "ルビの「いつとき」は底本では「ひつとき」"
+    },
+    {
+      "work_id": "000008_47386",
+      "line": 334,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「專賣制度」は底本では「專賣度度」］",
+      "body": "「專賣制度」は底本では「專賣度度」"
+    },
+    {
+      "work_id": "000008_47386",
+      "line": 337,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「ゐます」は底本では「るます」］",
+      "body": "「ゐます」は底本では「るます」"
+    },
+    {
+      "work_id": "000008_47386",
+      "line": 448,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「伊貝にしたって」はママ］",
+      "body": "「伊貝にしたって」はママ"
+    },
+    {
+      "work_id": "000008_47386",
+      "line": 535,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「矢張」は底本では「失張」］",
+      "body": "「矢張」は底本では「失張」"
+    },
+    {
+      "work_id": "000008_47386",
+      "line": 561,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「いふやうなところ」は底本では「いやうなところ」］",
+      "body": "「いふやうなところ」は底本では「いやうなところ」"
+    },
+    {
+      "work_id": "000008_47386",
+      "line": 1069,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「だつた」は底本では「たつた」］",
+      "body": "「だつた」は底本では「たつた」"
+    },
+    {
+      "work_id": "000008_47386",
+      "line": 1352,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「煩累から」は底本では「煩累がら」］",
+      "body": "「煩累から」は底本では「煩累がら」"
+    },
+    {
+      "work_id": "000008_47386",
+      "line": 1662,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「時々」は底本では「時時」］",
+      "body": "「時々」は底本では「時時」"
+    },
+    {
+      "work_id": "000008_47386",
+      "line": 1773,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「しかし」は底本では「ししか」］",
+      "body": "「しかし」は底本では「ししか」"
+    },
+    {
+      "work_id": "000008_47386",
+      "line": 1819,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「シヤヴエル」は底本では「シヤヴェル」］",
+      "body": "「シヤヴエル」は底本では「シヤヴェル」"
+    },
+    {
+      "work_id": "000008_47386",
+      "line": 1869,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「急ぎはじめた」は底本では「急きはじめた」］",
+      "body": "「急ぎはじめた」は底本では「急きはじめた」"
+    },
+    {
+      "work_id": "000008_47386",
+      "line": 2039,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「佗しい」は底本では「侘しい」］",
+      "body": "「佗しい」は底本では「侘しい」"
     }
   ],
   "decode_failures": [],
@@ -12815,7 +12811,7 @@
     "typed_occurrences": 3783133,
     "raw_preserved_occurrences": 0,
     "out_of_body_occurrences": 0,
-    "unsupported_occurrences": 0,
+    "unsupported_occurrences": 13920,
     "needs_research_occurrences": 291889
   },
   "strict_errors": [
@@ -12850,7 +12846,7 @@
     "source inventory row reference.frontref has occurrences but no representability table",
     "source inventory row ruby.placement_directional has occurrences but no representability table",
     "source inventory row warigaki.parenthetical has occurrences but no representability table",
-    "52368 unallowlisted source markers"
+    "38448 unallowlisted source markers"
   ],
   "inputs": {
     "matrix": "/home/bor/Projects/ab-validator/data/aozora-syntax-coverage.toml",

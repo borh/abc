@@ -13,6 +13,7 @@ fi
 
 cat > "$out_dir/corpus/pass/cards/000001/files/1.txt" <<'TXT'
 吾輩《わがはい》
+［＃］：入力者注　主に外字の説明や、傍点の位置の指定
 [#fixture raw preserved]
 TXT
 
@@ -32,6 +33,14 @@ body_pattern = "^fixture raw preserved$"
 scope = "unsupported_v1"
 reason = "Fixture marker exercises raw-preserved strict gate accounting."
 evidence = "tests/source-representability-gate-smoke.sh"
+
+[[allow]]
+id = "fixture-empty-command-legend"
+kind = "CommandFullwidth"
+raw_pattern = "^［＃］$"
+scope = "malformed_noise"
+reason = "Fixture marker exercises malformed-noise allowlist accounting for Aozora boilerplate."
+evidence = "tests/source-representability-gate-smoke.sh"
 TOML
 
 "${inventory_cmd[@]}" \
@@ -45,7 +54,8 @@ TOML
 
 jq -e '.representability.typed_occurrences >= 1' "$out_dir/pass.json"
 jq -e '.representability.raw_preserved_occurrences >= 1' "$out_dir/pass.json"
-jq -e '.allowlisted_unknown_markers_total >= 1' "$out_dir/pass.json"
+jq -e '.representability.unsupported_occurrences >= 1' "$out_dir/pass.json"
+jq -e '.allowlisted_unknown_markers_total >= 2' "$out_dir/pass.json"
 jq -e '.unallowlisted_unknown_markers_total == 0' "$out_dir/pass.json"
 jq -e '.gate_status == "SOURCE_AUTHORITY_GATE_PASS"' "$out_dir/pass.json"
 rg -n "source-markup authority gate|Semantic TEI enrichment" "$out_dir/pass.md"

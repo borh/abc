@@ -10,3 +10,11 @@ raw_pattern = "^［＃地付き］"
 scope = "out_of_body"
 reason = "Terminal bibliography/provenance metadata is not body AAT."
 evidence = "docs/aat-contract.md"
+
+[[allow]]
+id = "boilerplate-empty-command-legend"
+kind = "CommandFullwidth"
+raw_pattern = "^［＃］$"
+scope = "malformed_noise"
+reason = "Empty fullwidth command marker occurs in Aozora boilerplate that explains input annotations, not as body transcription markup."
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"

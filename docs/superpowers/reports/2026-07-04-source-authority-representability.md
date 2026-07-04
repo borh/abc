@@ -5,7 +5,7 @@
 - source_authority_gate: `SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED`
 - note: this is not a passing representability gate; durable representability claims remain blocked until strict_errors is empty.
 - strict_errors:
-  - 1290 unallowlisted source markers
+  - 1240 unallowlisted source markers
 
 ## Scope
 
@@ -16,14 +16,14 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 - works_scanned: 17894
 - works_failed: 0
 - markers_total: 4323915
-- unknown_markers_total: 16160
-- unallowlisted_unknown_markers_total: 1290
+- unknown_markers_total: 16110
+- unallowlisted_unknown_markers_total: 1240
 - allowlisted_unknown_markers_total: 14870
 
 ## Representability
 
-- typed_occurrences: 4566092
-- raw_preserved_occurrences: 36873
+- typed_occurrences: 4566108
+- raw_preserved_occurrences: 36923
 - out_of_body_occurrences: 950
 - unsupported_occurrences: 13920
 - needs_research_occurrences: 0
@@ -59,21 +59,22 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | heading.mado | 6 | 1680 | 000255_47342, 000296_1864, 000961_4820, 001402_49946, 001404_49966 |
 | indentation.basic | 8169 | 134393 | 000005_5, 000005_53194, 000006_1868, 000006_1869, 000006_3310 |
 | indentation.burasage | 1209 | 13265 | 000006_3311, 000006_58819, 000008_47386, 000009_55881, 000019_4376 |
-| indentation.chitsuki | 6245 | 20298 | 000006_1868, 000006_1869, 000006_3310, 000006_3311, 000006_382 |
+| indentation.chitsuki | 6247 | 20302 | 000006_1868, 000006_1869, 000006_3310, 000006_3311, 000006_382 |
 | indentation.jisage_block | 4605 | 94964 | 000005_5, 000005_53194, 000006_1868, 000006_1869, 000006_3310 |
 | indentation.jisage_oneline | 121 | 278 | 000025_202, 000025_216, 000035_235, 000035_266, 000038_42207 |
 | indentation.jizume | 242 | 3239 | 000026_55781, 000034_55507, 000040_47289, 000050_48400, 000055_56499 |
 | iteration.kunoji | 1125 | 10701 | 000006_58810, 000006_58819, 000008_47357, 000012_1092, 000012_24448 |
-| kunten.kaeriten | 488 | 27939 | 000006_1869, 000038_1408, 000042_1694, 000050_3581, 000051_1436 |
+| kunten.kaeriten | 490 | 27951 | 000006_1869, 000038_1408, 000042_1694, 000050_3581, 000051_1436 |
 | kunten.okurigana | 256 | 6562 | 000026_50238, 000026_50242, 000026_50259, 000026_51893, 000026_55774 |
-| layout.center_page | 259 | 873 | 000005_53194, 000009_55881, 000011_899, 000025_47220, 000026_219 |
+| layout.center_page | 260 | 878 | 000005_53194, 000009_55881, 000011_899, 000025_47220, 000026_219 |
 | layout.multicolumn | 15 | 48 | 000061_377, 000081_45631, 000096_2100, 000158_4854, 000308_46589 |
 | layout.tcy | 724 | 19785 | 000014_728, 000020_2223, 000020_46404, 000023_55306, 000023_55324 |
 | layout.yokogumi | 413 | 3663 | 000019_59374, 000026_50239, 000026_55717, 000026_55732, 000026_55738 |
 | reference.frontref | 682 | 3920 | 000006_46659, 000012_2585, 000012_4316, 000022_197, 000026_46578 |
 | ruby.basic | 14321 | 3607926 | 000005_5, 000005_53194, 000005_55215, 000005_55216, 000005_55217 |
 | ruby.placement_directional | 31 | 318 | 000034_1213, 000050_3581, 000129_694, 000146_49258, 000146_50202 |
-| source.note_label | 76 | 169 | 000037_319, 000067_59327, 000083_43270, 000106_52391, 000106_56857 |
+| source.note_label | 95 | 199 | 000034_56908, 000037_319, 000042_2347, 000042_2354, 000067_59327 |
+| structure.quote_block | 3 | 15 | 000034_233, 000035_296, 000280_1706 |
 | structure.table | 5 | 32 | 000042_2345, 000042_2348, 000096_2100, 000311_3466, 001149_45455 |
 | warichu.basic | 361 | 6601 | 000005_53194, 000006_1868, 000006_1869, 000034_519, 000038_42202 |
 | warigaki.parenthetical | 1 | 1 | 000034_519 |
@@ -128,12 +129,8 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | 000023_55385 | 122 | CommandFullwidth | ［＃「（昭和５年９月「文芸春秋」）」は１段階小さな文字］ | 「（昭和５年９月「文芸春秋」）」は１段階小さな文字 |
 | 000023_55402 | 217 | CommandFullwidth | ［＃「（昭和３年１月「中央公論」）」は１段階小さな文字］ | 「（昭和３年１月「中央公論」）」は１段階小さな文字 |
 | 000025_1144 | 18 | CommandFullwidth | ［＃ここから左から右への横組み］ | ここから左から右への横組み |
-| 000025_1144 | 24 | CommandFullwidth | ［＃右寄せ］ | 右寄せ |
-| 000025_1144 | 32 | CommandFullwidth | ［＃右寄せ］ | 右寄せ |
 | 000025_1144 | 34 | CommandFullwidth | ［＃ここで左から右への横組み終わり］ | ここで左から右への横組み終わり |
 | 000025_1144 | 18 | CommandFullwidth | ［＃以下の２つの英文はすべてイタリック文字、横書き］ | 以下の２つの英文はすべてイタリック文字、横書き |
-| 000025_1144 | 23 | CommandFullwidth | ［＃右寄せ］ | 右寄せ |
-| 000025_1144 | 31 | CommandFullwidth | ［＃右寄せ］ | 右寄せ |
 | 000025_1144 | 220 | CommandFullwidth | ［＃図１、知的生活の構造］ | 図１、知的生活の構造 |
 | 000026_50241 | 66 | CommandFullwidth | ［＃「近頃流行の、「文学と政治」のことに一寸言及するならば、」は太字］ | 「近頃流行の、「文学と政治」のことに一寸言及するならば、」は太字 |
 | 000031_863 | 23 | CommandFullwidth | ［＃「奥深く」は筑摩版では「奥深く広く」］ | 「奥深く」は筑摩版では「奥深く広く」 |
@@ -156,18 +153,8 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | 000031_863 | 1538 | CommandFullwidth | ［＃「ピク」は筑摩版では「ビク」］ | 「ピク」は筑摩版では「ビク」 |
 | 000031_863 | 1606 | CommandFullwidth | ［＃「。」は筑摩版では「、」］ | 「。」は筑摩版では「、」 |
 | 000034_1212 | 11 | CommandFullwidth | ［＃『独立とは「独り立つ」といふことなり』に傍点］ | 『独立とは「独り立つ」といふことなり』に傍点 |
-| 000034_233 | 9 | CommandFullwidth | ［＃ここから引用文、３字下げ、３行アキ］ | ここから引用文、３字下げ、３行アキ |
-| 000034_233 | 12 | CommandFullwidth | ［＃ここから引用文、３字下げ、３行アキ］ | ここから引用文、３字下げ、３行アキ |
-| 000034_233 | 22 | CommandFullwidth | ［＃引用文終わり］ | 引用文終わり |
-| 000034_233 | 40 | CommandFullwidth | ［＃ここから引用文、３字下げ］ | ここから引用文、３字下げ |
-| 000034_233 | 43 | CommandFullwidth | ［＃引用文終わり］ | 引用文終わり |
-| 000034_233 | 54 | CommandFullwidth | ［＃ここから引用文、３字下げ］ | ここから引用文、３字下げ |
-| 000034_233 | 56 | CommandFullwidth | ［＃引用文終わり］ | 引用文終わり |
-| 000034_233 | 58 | CommandFullwidth | ［＃ここから引用文、３字下げ］ | ここから引用文、３字下げ |
-| 000034_233 | 60 | CommandFullwidth | ［＃引用文終わり］ | 引用文終わり |
 | 000034_519 | 40 | CommandFullwidth | ［＃割書終わり］ | 割書終わり |
 | 000035_1566 | 23 | CommandFullwidth | ［＃地から２字上げ、２行にわたる丸括弧で挟んだ２行組み］ | 地から２字上げ、２行にわたる丸括弧で挟んだ２行組み |
-| 000035_296 | 11 | CommandFullwidth | ［＃ここから引用文、８字下げ］ | ここから引用文、８字下げ |
 | 000037_1417 | 258 | CommandFullwidth | ［＃岩波文庫版では「殺され」］ | 岩波文庫版では「殺され」 |
 | 000038_336 | 138 | CommandFullwidth | ［＃「霙」の誤り？、400-7］ | 「霙」の誤り？、400-7 |
 | 000040_380 | 41 | CommandFullwidth | ［＃「３」は「√」の記号の中に入っている］ | 「３」は「√」の記号の中に入っている |
@@ -178,33 +165,39 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | 000042_2345 | 89 | CommandFullwidth | ［＃「t」は下点付き、182-6］ | 「t」は下点付き、182-6 |
 | 000042_2345 | 94 | CommandFullwidth | ［＃２文字目の「i」は下付き小文字、４文字目の「i」は上付き小文字］ | ２文字目の「i」は下付き小文字、４文字目の「i」は上付き小文字 |
 | 000042_2345 | 109 | CommandFullwidth | ［＃「P = 0.07693694」は上線（￣）付き］ | 「P = 0.07693694」は上線（￣）付き |
-| 000042_2347 | 14 | CommandFullwidth | ［＃「（１）」は注釈番号］ | 「（１）」は注釈番号 |
-| 000042_2347 | 24 | CommandFullwidth | ［＃「（１）」は注釈番号］ | 「（１）」は注釈番号 |
-| 000042_2347 | 40 | CommandFullwidth | ［＃「（２）」は注釈番号］ | 「（２）」は注釈番号 |
-| 000042_2347 | 43 | CommandFullwidth | ［＃「（３）」は注釈番号］ | 「（３）」は注釈番号 |
+| 000042_2347 | 105 | CommandFullwidth | ［＃「Nothing from nothing ever yet was born」の部分はイタリック体］ | 「Nothing from nothing ever yet was born」の部分はイタリック体 |
+| 000042_2347 | 109 | CommandFullwidth | ［＃「Thus easier 'tis」の部分はイタリック体］ | 「Thus easier 'tis」の部分はイタリック体 |
+| 000042_2347 | 135 | CommandFullwidth | ［＃「preserved」の部分はイタリック体］ | 「preserved」の部分はイタリック体 |
+| 000042_2347 | 136 | CommandFullwidth | ［＃「proper motions」の部分はイタリック体］ | 「proper motions」の部分はイタリック体 |
+| 000042_2347 | 168 | CommandFullwidth | ［＃「finite tale of shapes」の部分はイタリック体］ | 「finite tale of shapes」の部分はイタリック体 |
+| 000042_2347 | 200 | CommandFullwidth | ［＃「animus」、「mens」の部分はイタリック体］ | 「animus」、「mens」の部分はイタリック体 |
+| 000042_2347 | 201 | CommandFullwidth | ［＃「anima」の部分はイタリック体］ | 「anima」の部分はイタリック体 |
+| 000042_2347 | 249 | CommandFullwidth | ［＃「One status after other」の部分はイタリック体］ | 「One status after other」の部分はイタリック体 |
+| 000042_2449 | 42 | CommandFullwidth | ［＃ここに表組入る、別ファイル（densyanokonzatsu_table.txt）参照］ | ここに表組入る、別ファイル（densyanokonzatsu_table.txt）参照 |
+| 000042_2455 | 25 | CommandFullwidth | ［＃「ココア入リ」は本文より小さいサイズの文字］ | 「ココア入リ」は本文より小さいサイズの文字 |
+| 000042_2471 | 78 | CommandFullwidth | ［＃「岩波日本」と「文学講座」が１行内で２行に分けられている］ | 「岩波日本」と「文学講座」が１行内で２行に分けられている |
+| 000043_341 | 36 | CommandFullwidth | ［＃「恋愛相談所」は枠囲み］ | 「恋愛相談所」は枠囲み |
+| 000048_358 | 45 | CommandFullwidth | ［＃印刷不鮮明、87-14］ | 印刷不鮮明、87-14 |
+| 000048_358 | 66 | CommandFullwidth | ［＃句点が抜けていると考えられる］ | 句点が抜けていると考えられる |
+| 000050_48399 | 484 | CommandFullwidth | ［＃「、」は以下の本では「。」。『鏡花全集　卷五』（岩波書店、昭和49年3月4日　第2刷發行）、『鏡花全集　巻四』（春陽堂、大正15年9月25日發行）、『湯島詣』（春陽堂文庫、春陽堂、昭和22年10月20日復刊第一版發行）。『湯島詣』（春陽堂、明治32年11月23日發行）では「、」］ | 「、」は以下の本では「。」。『鏡花全集　卷五』（岩波書店、昭和49年3月4日　第2刷發行）、『鏡花全集　巻四』（春陽堂、大正15年9月25日發行）、『湯島詣』（春陽堂文庫、春陽堂、昭和22年10月20日復刊第一版發行）。『湯島詣』（春陽堂、明治32年11月23日發行）では「、」 |
+| 000050_48399 | 1070 | CommandFullwidth | ［＃「と」は以下の本では「と、」。『鏡花全集　卷五』（岩波書店、昭和49年3月4日　第2刷發行）、『鏡花全集　巻四』（春陽堂、大正15年9月25日發行）、『湯島詣』（春陽堂文庫、春陽堂、昭和22年10月20日復刊第一版發行）。『湯島詣』（春陽堂、明治32年11月23日發行）では「と」］ | 「と」は以下の本では「と、」。『鏡花全集　卷五』（岩波書店、昭和49年3月4日　第2刷發行）、『鏡花全集　巻四』（春陽堂、大正15年9月25日發行）、『湯島詣』（春陽堂文庫、春陽堂、昭和22年10月20日復刊第一版發行）。『湯島詣』（春陽堂、明治32年11月23日發行）では「と」 |
+| 000051_3508 | 148 | CommandFullwidth | ［＃以下地付き］ | 以下地付き |
+| 000051_361 | 15 | CommandFullwidth | ［＃「※」は「たけかんむり＋隻」、17-8］ | 「※」は「たけかんむり＋隻」、17-8 |
 
 ## Unknown Source Marker Classes
 
-Showing 50 report rows of 1107 total classes. JSON carries 1000 top classes. truncated: true
+Showing 50 report rows of 1085 total classes. JSON carries 1000 top classes. truncated: true
 
 | kind | raw | occurrences | unallowlisted | allowlisted | samples |
 |---|---|---:|---:|---:|---|
 | MalformedAccentNotation | 〔 | 6 | 6 | 0 | 000091_522, 000311_16002, 001341_60380, 001341_60385, 001404_49966 |
 | MalformedCommand | ［＃ | 6 | 6 | 0 | 000081_4461, 000106_2415, 000121_1754, 000148_798, 000331_2663 |
-| CommandFullwidth | ［＃これより手紙文、１字下げ］ | 5 | 5 | 0 | 000280_1706 |
-| CommandFullwidth | ［＃未完］ | 5 | 5 | 0 | 000311_1983, 000311_2879, 000311_3023, 000311_3027, 000311_3080 |
-| CommandFullwidth | ［＃直線は中央に配置］ | 5 | 5 | 0 | 000129_2298 |
 | CommandFullwidth | ［＃「ちへ」の右に「）」］ | 4 | 4 | 0 | 000232_60242 |
 | CommandFullwidth | ［＃「エ」は小さい「ヱ」］ | 4 | 4 | 0 | 000124_658 |
-| CommandFullwidth | ［＃「（１）」は注釈番号］ | 4 | 4 | 0 | 000042_2347, 000042_2354 |
-| CommandFullwidth | ［＃右寄せ］ | 4 | 4 | 0 | 000025_1144 |
-| CommandFullwidth | ［＃引用文終わり］ | 4 | 4 | 0 | 000034_233 |
 | CommandFullwidth | ［＃「x2」、「y2」、「x2」はそれぞれ縦中横、すべての「2」は上付き小書き］ | 3 | 3 | 0 | 000148_1102 |
 | CommandFullwidth | ［＃「うどん」と「きそば」は２列に並ぶ］ | 3 | 3 | 0 | 000311_4205, 000311_4206 |
-| CommandFullwidth | ［＃「レ」は返り点］ | 3 | 3 | 0 | 000284_2609 |
 | CommandFullwidth | ［＃「一六八頁」は「安康天皇」の「市の邊の押齒の王」］ | 3 | 3 | 0 | 001518_51731 |
 | CommandFullwidth | ［＃「｝（同時に）」は前２行の中央、下に］ | 3 | 3 | 0 | 000827_3411 |
-| CommandFullwidth | ［＃ここから引用文、３字下げ］ | 3 | 3 | 0 | 000034_233 |
 | CommandFullwidth | ［＃ここで字下げ、枠囲み終わり］ | 3 | 3 | 0 | 000311_2726, 000933_18403 |
 | CommandFullwidth | ［＃ここで字下げ、横組み終わり］ | 3 | 3 | 0 | 000160_1255 |
 | CommandFullwidth | ［＃ここで字下げ、罫囲み終わり］ | 3 | 3 | 0 | 000125_45231, 000283_3226, 000283_4343 |
@@ -218,8 +211,6 @@ Showing 50 report rows of 1107 total classes. JSON carries 1000 top classes. tru
 | CommandFullwidth | ［＃「IV」はローマ数字の４］ | 2 | 2 | 0 | 000301_1872 |
 | CommandFullwidth | ［＃「※」は「たけかんむり＋隻」、17-8］ | 2 | 2 | 0 | 000051_361 |
 | CommandFullwidth | ［＃「※」は「つつみがまえ（勹）」＋「夕」で、読みは「そうそう」67-6］ | 2 | 2 | 0 | 000074_431 |
-| CommandFullwidth | ［＃「」内の「レ」は返り点］ | 2 | 2 | 0 | 000301_1872 |
-| CommandFullwidth | ［＃「」内の「一二」は返り点］ | 2 | 2 | 0 | 000301_1872 |
 | CommandFullwidth | ［＃「ただ」と「咲」は２列に並ぶ］ | 2 | 2 | 0 | 000311_4198 |
 | CommandFullwidth | ［＃「み」余分か、それとも「見」か？］ | 2 | 2 | 0 | 000012_223 |
 | CommandFullwidth | ［＃「一三九頁」は「應神天皇」の「天の日矛」］ | 2 | 2 | 0 | 001518_51731 |
@@ -239,6 +230,16 @@ Showing 50 report rows of 1107 total classes. JSON carries 1000 top classes. tru
 | CommandFullwidth | ［＃「桑原隲蔵全集」］ | 2 | 2 | 0 | 000372_3666, 000372_3667 |
 | CommandFullwidth | ［＃「權次」と「權六」は横並びになっている］ | 2 | 2 | 0 | 000082_1309 |
 | CommandFullwidth | ［＃「焔」の火へんを炎にしたうえで、へんとつくりをいれかえた字、焔の正字と同字］ | 2 | 2 | 0 | 000124_660 |
+| CommandFullwidth | ［＃「田島校長＝０」は横書き］ | 2 | 2 | 0 | 000153_4097, 000153_45462 |
+| CommandFullwidth | ［＃「直木」と「菊池」の中間に「手直り表」］ | 2 | 2 | 0 | 000083_3329 |
+| CommandFullwidth | ［＃「言」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「云」］ | 2 | 2 | 0 | 001383_57416 |
+| CommandFullwidth | ［＃「赤江米子氏」と「母の或部分」は２列に並ぶ］ | 2 | 2 | 0 | 000311_4191 |
+| CommandFullwidth | ［＃「起上り」にルビ］ | 2 | 2 | 0 | 000126_669 |
+| CommandFullwidth | ［＃「黄泉の使！　黄泉の使！」は２行の中央、括弧は２行にわたる波括弧］ | 2 | 2 | 0 | 000879_86 |
+| CommandFullwidth | ［＃「！？」は１マスに横並び］ | 2 | 2 | 0 | 000255_1405 |
+| CommandFullwidth | ［＃「（「ギヨオテ傳」）」は１段階小さな文字］ | 2 | 2 | 0 | 001030_47947 |
+| CommandFullwidth | ［＃「３」は「√」の記号の中に入っている］ | 2 | 2 | 0 | 000040_380 |
+| CommandFullwidth | ［＃「３字下げ」］ | 2 | 2 | 0 | 001749_55798 |
 
 ## Decode Failures
 

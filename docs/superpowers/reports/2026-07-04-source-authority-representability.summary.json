@@ -3,8 +3,8 @@
   "works_scanned": 17894,
   "works_failed": 0,
   "markers_total": 4323915,
-  "unknown_markers_total": 16160,
-  "unallowlisted_unknown_markers_total": 1290,
+  "unknown_markers_total": 16110,
+  "unallowlisted_unknown_markers_total": 1240,
   "allowlisted_unknown_markers_total": 14870,
   "rows": {
     "accent.dotted_letter": {
@@ -303,8 +303,8 @@
       ]
     },
     "indentation.chitsuki": {
-      "works_with_marker": 6245,
-      "occurrences": 20298,
+      "works_with_marker": 6247,
+      "occurrences": 20302,
       "sample_works": [
         "000006_1868",
         "000006_1869",
@@ -358,8 +358,8 @@
       ]
     },
     "kunten.kaeriten": {
-      "works_with_marker": 488,
-      "occurrences": 27939,
+      "works_with_marker": 490,
+      "occurrences": 27951,
       "sample_works": [
         "000006_1869",
         "000038_1408",
@@ -380,8 +380,8 @@
       ]
     },
     "layout.center_page": {
-      "works_with_marker": 259,
-      "occurrences": 873,
+      "works_with_marker": 260,
+      "occurrences": 878,
       "sample_works": [
         "000005_53194",
         "000009_55881",
@@ -457,14 +457,23 @@
       ]
     },
     "source.note_label": {
-      "works_with_marker": 76,
-      "occurrences": 169,
+      "works_with_marker": 95,
+      "occurrences": 199,
       "sample_works": [
+        "000034_56908",
         "000037_319",
-        "000067_59327",
-        "000083_43270",
-        "000106_52391",
-        "000106_56857"
+        "000042_2347",
+        "000042_2354",
+        "000067_59327"
+      ]
+    },
+    "structure.quote_block": {
+      "works_with_marker": 3,
+      "occurrences": 15,
+      "sample_works": [
+        "000034_233",
+        "000035_296",
+        "000280_1706"
       ]
     },
     "structure.table": {
@@ -497,7 +506,7 @@
       ]
     }
   },
-  "unknown_classes_total": 1107,
+  "unknown_classes_total": 1085,
   "unknown_classes_truncated": true,
   "unknown_classes": [
     {
@@ -532,43 +541,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃これより手紙文、１字下げ］",
-      "body": "これより手紙文、１字下げ",
-      "occurrences": 5,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 5,
-      "sample_works": [
-        "000280_1706"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃未完］",
-      "body": "未完",
-      "occurrences": 5,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 5,
-      "sample_works": [
-        "000311_1983",
-        "000311_2879",
-        "000311_3023",
-        "000311_3027",
-        "000311_3080"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃直線は中央に配置］",
-      "body": "直線は中央に配置",
-      "occurrences": 5,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 5,
-      "sample_works": [
-        "000129_2298"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「ちへ」の右に「）」］",
       "body": "「ちへ」の右に「）」",
       "occurrences": 4,
@@ -587,40 +559,6 @@
       "unallowlisted_occurrences": 4,
       "sample_works": [
         "000124_658"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「（１）」は注釈番号］",
-      "body": "「（１）」は注釈番号",
-      "occurrences": 4,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 4,
-      "sample_works": [
-        "000042_2347",
-        "000042_2354"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃右寄せ］",
-      "body": "右寄せ",
-      "occurrences": 4,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 4,
-      "sample_works": [
-        "000025_1144"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃引用文終わり］",
-      "body": "引用文終わり",
-      "occurrences": 4,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 4,
-      "sample_works": [
-        "000034_233"
       ]
     },
     {
@@ -648,17 +586,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「レ」は返り点］",
-      "body": "「レ」は返り点",
-      "occurrences": 3,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 3,
-      "sample_works": [
-        "000284_2609"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「一六八頁」は「安康天皇」の「市の邊の押齒の王」］",
       "body": "「一六八頁」は「安康天皇」の「市の邊の押齒の王」",
       "occurrences": 3,
@@ -677,17 +604,6 @@
       "unallowlisted_occurrences": 3,
       "sample_works": [
         "000827_3411"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから引用文、３字下げ］",
-      "body": "ここから引用文、３字下げ",
-      "occurrences": 3,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 3,
-      "sample_works": [
-        "000034_233"
       ]
     },
     {
@@ -835,28 +751,6 @@
       "unallowlisted_occurrences": 2,
       "sample_works": [
         "000074_431"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「」内の「レ」は返り点］",
-      "body": "「」内の「レ」は返り点",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000301_1872"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「」内の「一二」は返り点］",
-      "body": "「」内の「一二」は返り点",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000301_1872"
       ]
     },
     {
@@ -1223,17 +1117,6 @@
       "unallowlisted_occurrences": 2,
       "sample_works": [
         "000250_18353"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから引用文、３字下げ、３行アキ］",
-      "body": "ここから引用文、３字下げ、３行アキ",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000034_233"
       ]
     },
     {
@@ -2793,17 +2676,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「」内の「レ一二」は返り点］",
-      "body": "「」内の「レ一二」は返り点",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000301_1872"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「」内の一二は返り点］",
       "body": "「」内の一二は返り点",
       "occurrences": 1,
@@ -3816,17 +3688,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「レ一二」は返り点］",
-      "body": "「レ一二」は返り点",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000301_1872"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「一〇二頁」は「垂仁天皇」の「本牟智和氣の御子」］",
       "body": "「一〇二頁」は「垂仁天皇」の「本牟智和氣の御子」",
       "occurrences": 1,
@@ -3867,17 +3728,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000081_43733"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「一」は返り点］",
-      "body": "「一」は返り点",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000284_2609"
       ]
     },
     {
@@ -4373,17 +4223,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000081_43733"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「二」は返り点］",
-      "body": "「二」は返り点",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000284_2609"
       ]
     },
     {
@@ -7039,72 +6878,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「（２）」は注釈番号］",
-      "body": "「（２）」は注釈番号",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000042_2347"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「（３）」は注釈番号］",
-      "body": "「（３）」は注釈番号",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000042_2347"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「（４）」は注釈番号］",
-      "body": "「（４）」は注釈番号",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000042_2347"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「（５）」は注釈番号］",
-      "body": "「（５）」は注釈番号",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000042_2347"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「（６）」は注釈番号］",
-      "body": "「（６）」は注釈番号",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000042_2347"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「（７）」は注釈番号］",
-      "body": "「（７）」は注釈番号",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000042_2347"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「＊」は注釈記号。欄外に「釜の製造元」の注］",
       "body": "「＊」は注釈記号。欄外に「釜の製造元」の注",
       "occurrences": 1,
@@ -7431,17 +7204,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000989_351"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから引用文、８字下げ］",
-      "body": "ここから引用文、８字下げ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000035_296"
       ]
     },
     {
@@ -11546,6 +11308,248 @@
       "sample_works": [
         "000160_1255"
       ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃窪川稲子の家のお手伝い］",
+      "body": "窪川稲子の家のお手伝い",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46253"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃竹内栖鳳］",
+      "body": "竹内栖鳳",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46247"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃竹村書房］",
+      "body": "竹村書房",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46252"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃第一次世界大戦の休戦記念日］",
+      "body": "第一次世界大戦の休戦記念日",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46247"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃第一章第五節（二〇）のこと］",
+      "body": "第一章第五節（二〇）のこと",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "001164_43670"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃第九章冒頭部分（五六）のこと］",
+      "body": "第九章冒頭部分（五六）のこと",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "001164_43670"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃第二章後ろから数えて三段落目のこと］",
+      "body": "第二章後ろから数えて三段落目のこと",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "001164_43670"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃第二章（二五）の最後の段落のこと］",
+      "body": "第二章（二五）の最後の段落のこと",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "001164_43670"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃第二章（二四）のこと］",
+      "body": "第二章（二四）のこと",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "001164_43670"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃第八十六通常議会］",
+      "body": "第八十六通常議会",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000160_1255"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃第六章第九段落目以降のこと］",
+      "body": "第六章第九段落目以降のこと",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "001164_43670"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃筑摩版ではここに「彼は」が入る］",
+      "body": "筑摩版ではここに「彼は」が入る",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000031_863"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃終電の別称］",
+      "body": "終電の別称",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000160_1255"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃統一労働総同盟］",
+      "body": "統一労働総同盟",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46247"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃網野菊］",
+      "body": "網野菊",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46243"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃罫線の部分は、「｛」「｝」で括る］",
+      "body": "罫線の部分は、「｛」「｝」で括る",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000305_3608"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃美治郎］",
+      "body": "美治郎",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000160_1255"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃船名「香取丸」］",
+      "body": "船名「香取丸」",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46247"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃芳雄。原子核の研究に取り組み、理化学研究所に日本初のサイクロトロンを建設した物理学者］",
+      "body": "芳雄。原子核の研究に取り組み、理化学研究所に日本初のサイクロトロンを建設した物理学者",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000160_1255"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃荒木茂、宮本百合子の最初の夫］",
+      "body": "荒木茂、宮本百合子の最初の夫",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46238"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃萩原喜一郎、隣家］",
+      "body": "萩原喜一郎、隣家",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000160_1255"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃葵］",
+      "body": "葵",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000160_1255"
+      ]
     }
   ],
   "unknown_examples": [
@@ -11873,20 +11877,6 @@
     },
     {
       "work_id": "000025_1144",
-      "line": 24,
-      "kind": "CommandFullwidth",
-      "raw": "［＃右寄せ］",
-      "body": "右寄せ"
-    },
-    {
-      "work_id": "000025_1144",
-      "line": 32,
-      "kind": "CommandFullwidth",
-      "raw": "［＃右寄せ］",
-      "body": "右寄せ"
-    },
-    {
-      "work_id": "000025_1144",
       "line": 34,
       "kind": "CommandFullwidth",
       "raw": "［＃ここで左から右への横組み終わり］",
@@ -11898,20 +11888,6 @@
       "kind": "CommandFullwidth",
       "raw": "［＃以下の２つの英文はすべてイタリック文字、横書き］",
       "body": "以下の２つの英文はすべてイタリック文字、横書き"
-    },
-    {
-      "work_id": "000025_1144",
-      "line": 23,
-      "kind": "CommandFullwidth",
-      "raw": "［＃右寄せ］",
-      "body": "右寄せ"
-    },
-    {
-      "work_id": "000025_1144",
-      "line": 31,
-      "kind": "CommandFullwidth",
-      "raw": "［＃右寄せ］",
-      "body": "右寄せ"
     },
     {
       "work_id": "000025_1144",
@@ -12068,69 +12044,6 @@
       "body": "『独立とは「独り立つ」といふことなり』に傍点"
     },
     {
-      "work_id": "000034_233",
-      "line": 9,
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから引用文、３字下げ、３行アキ］",
-      "body": "ここから引用文、３字下げ、３行アキ"
-    },
-    {
-      "work_id": "000034_233",
-      "line": 12,
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから引用文、３字下げ、３行アキ］",
-      "body": "ここから引用文、３字下げ、３行アキ"
-    },
-    {
-      "work_id": "000034_233",
-      "line": 22,
-      "kind": "CommandFullwidth",
-      "raw": "［＃引用文終わり］",
-      "body": "引用文終わり"
-    },
-    {
-      "work_id": "000034_233",
-      "line": 40,
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから引用文、３字下げ］",
-      "body": "ここから引用文、３字下げ"
-    },
-    {
-      "work_id": "000034_233",
-      "line": 43,
-      "kind": "CommandFullwidth",
-      "raw": "［＃引用文終わり］",
-      "body": "引用文終わり"
-    },
-    {
-      "work_id": "000034_233",
-      "line": 54,
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから引用文、３字下げ］",
-      "body": "ここから引用文、３字下げ"
-    },
-    {
-      "work_id": "000034_233",
-      "line": 56,
-      "kind": "CommandFullwidth",
-      "raw": "［＃引用文終わり］",
-      "body": "引用文終わり"
-    },
-    {
-      "work_id": "000034_233",
-      "line": 58,
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから引用文、３字下げ］",
-      "body": "ここから引用文、３字下げ"
-    },
-    {
-      "work_id": "000034_233",
-      "line": 60,
-      "kind": "CommandFullwidth",
-      "raw": "［＃引用文終わり］",
-      "body": "引用文終わり"
-    },
-    {
       "work_id": "000034_519",
       "line": 40,
       "kind": "CommandFullwidth",
@@ -12143,13 +12056,6 @@
       "kind": "CommandFullwidth",
       "raw": "［＃地から２字上げ、２行にわたる丸括弧で挟んだ２行組み］",
       "body": "地から２字上げ、２行にわたる丸括弧で挟んだ２行組み"
-    },
-    {
-      "work_id": "000035_296",
-      "line": 11,
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから引用文、８字下げ］",
-      "body": "ここから引用文、８字下げ"
     },
     {
       "work_id": "000037_1417",
@@ -12223,43 +12129,141 @@
     },
     {
       "work_id": "000042_2347",
-      "line": 14,
+      "line": 105,
       "kind": "CommandFullwidth",
-      "raw": "［＃「（１）」は注釈番号］",
-      "body": "「（１）」は注釈番号"
+      "raw": "［＃「Nothing from nothing ever yet was born」の部分はイタリック体］",
+      "body": "「Nothing from nothing ever yet was born」の部分はイタリック体"
     },
     {
       "work_id": "000042_2347",
-      "line": 24,
+      "line": 109,
       "kind": "CommandFullwidth",
-      "raw": "［＃「（１）」は注釈番号］",
-      "body": "「（１）」は注釈番号"
+      "raw": "［＃「Thus easier 'tis」の部分はイタリック体］",
+      "body": "「Thus easier 'tis」の部分はイタリック体"
     },
     {
       "work_id": "000042_2347",
-      "line": 40,
+      "line": 135,
       "kind": "CommandFullwidth",
-      "raw": "［＃「（２）」は注釈番号］",
-      "body": "「（２）」は注釈番号"
+      "raw": "［＃「preserved」の部分はイタリック体］",
+      "body": "「preserved」の部分はイタリック体"
     },
     {
       "work_id": "000042_2347",
-      "line": 43,
+      "line": 136,
       "kind": "CommandFullwidth",
-      "raw": "［＃「（３）」は注釈番号］",
-      "body": "「（３）」は注釈番号"
+      "raw": "［＃「proper motions」の部分はイタリック体］",
+      "body": "「proper motions」の部分はイタリック体"
+    },
+    {
+      "work_id": "000042_2347",
+      "line": 168,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「finite tale of shapes」の部分はイタリック体］",
+      "body": "「finite tale of shapes」の部分はイタリック体"
+    },
+    {
+      "work_id": "000042_2347",
+      "line": 200,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「animus」、「mens」の部分はイタリック体］",
+      "body": "「animus」、「mens」の部分はイタリック体"
+    },
+    {
+      "work_id": "000042_2347",
+      "line": 201,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「anima」の部分はイタリック体］",
+      "body": "「anima」の部分はイタリック体"
+    },
+    {
+      "work_id": "000042_2347",
+      "line": 249,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「One status after other」の部分はイタリック体］",
+      "body": "「One status after other」の部分はイタリック体"
+    },
+    {
+      "work_id": "000042_2449",
+      "line": 42,
+      "kind": "CommandFullwidth",
+      "raw": "［＃ここに表組入る、別ファイル（densyanokonzatsu_table.txt）参照］",
+      "body": "ここに表組入る、別ファイル（densyanokonzatsu_table.txt）参照"
+    },
+    {
+      "work_id": "000042_2455",
+      "line": 25,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「ココア入リ」は本文より小さいサイズの文字］",
+      "body": "「ココア入リ」は本文より小さいサイズの文字"
+    },
+    {
+      "work_id": "000042_2471",
+      "line": 78,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「岩波日本」と「文学講座」が１行内で２行に分けられている］",
+      "body": "「岩波日本」と「文学講座」が１行内で２行に分けられている"
+    },
+    {
+      "work_id": "000043_341",
+      "line": 36,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「恋愛相談所」は枠囲み］",
+      "body": "「恋愛相談所」は枠囲み"
+    },
+    {
+      "work_id": "000048_358",
+      "line": 45,
+      "kind": "CommandFullwidth",
+      "raw": "［＃印刷不鮮明、87-14］",
+      "body": "印刷不鮮明、87-14"
+    },
+    {
+      "work_id": "000048_358",
+      "line": 66,
+      "kind": "CommandFullwidth",
+      "raw": "［＃句点が抜けていると考えられる］",
+      "body": "句点が抜けていると考えられる"
+    },
+    {
+      "work_id": "000050_48399",
+      "line": 484,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「、」は以下の本では「。」。『鏡花全集　卷五』（岩波書店、昭和49年3月4日　第2刷發行）、『鏡花全集　巻四』（春陽堂、大正15年9月25日發行）、『湯島詣』（春陽堂文庫、春陽堂、昭和22年10月20日復刊第一版發行）。『湯島詣』（春陽堂、明治32年11月23日發行）では「、」］",
+      "body": "「、」は以下の本では「。」。『鏡花全集　卷五』（岩波書店、昭和49年3月4日　第2刷發行）、『鏡花全集　巻四』（春陽堂、大正15年9月25日發行）、『湯島詣』（春陽堂文庫、春陽堂、昭和22年10月20日復刊第一版發行）。『湯島詣』（春陽堂、明治32年11月23日發行）では「、」"
+    },
+    {
+      "work_id": "000050_48399",
+      "line": 1070,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「と」は以下の本では「と、」。『鏡花全集　卷五』（岩波書店、昭和49年3月4日　第2刷發行）、『鏡花全集　巻四』（春陽堂、大正15年9月25日發行）、『湯島詣』（春陽堂文庫、春陽堂、昭和22年10月20日復刊第一版發行）。『湯島詣』（春陽堂、明治32年11月23日發行）では「と」］",
+      "body": "「と」は以下の本では「と、」。『鏡花全集　卷五』（岩波書店、昭和49年3月4日　第2刷發行）、『鏡花全集　巻四』（春陽堂、大正15年9月25日發行）、『湯島詣』（春陽堂文庫、春陽堂、昭和22年10月20日復刊第一版發行）。『湯島詣』（春陽堂、明治32年11月23日發行）では「と」"
+    },
+    {
+      "work_id": "000051_3508",
+      "line": 148,
+      "kind": "CommandFullwidth",
+      "raw": "［＃以下地付き］",
+      "body": "以下地付き"
+    },
+    {
+      "work_id": "000051_361",
+      "line": 15,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「※」は「たけかんむり＋隻」、17-8］",
+      "body": "「※」は「たけかんむり＋隻」、17-8"
     }
   ],
   "decode_failures": [],
   "representability": {
-    "typed_occurrences": 4566092,
-    "raw_preserved_occurrences": 36873,
+    "typed_occurrences": 4566108,
+    "raw_preserved_occurrences": 36923,
     "out_of_body_occurrences": 950,
     "unsupported_occurrences": 13920,
     "needs_research_occurrences": 0
   },
   "strict_errors": [
-    "1290 unallowlisted source markers"
+    "1240 unallowlisted source markers"
   ],
   "inputs": {
     "matrix": "/home/bor/Projects/ab-validator/data/aozora-syntax-coverage.toml",

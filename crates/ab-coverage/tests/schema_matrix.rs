@@ -132,6 +132,32 @@ fn kunten_rows_detect_real_fixture_spellings() {
 }
 
 #[test]
+fn source_inventory_classifies_kunten_source_note_variants() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = [
+        "［＃「レ」は返り点］",
+        "［＃「」内の「レ」は返り点］",
+        "［＃「」内の「一二」は返り点］",
+    ]
+    .join("\n");
+    let summary = inventory_document("fixture", &source, &patterns);
+
+    assert_eq!(
+        summary.unknown_examples,
+        [],
+        "known return-point source note variants should not remain unknown"
+    );
+    assert_eq!(
+        summary
+            .row_counts
+            .get("kunten.kaeriten")
+            .map(|count| count.occurrences),
+        Some(3)
+    );
+}
+
+#[test]
 fn source_inventory_classifies_common_corpus_command_variants() {
     let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
     let patterns = patterns_from_rows(matrix.rows());
@@ -787,6 +813,7 @@ fn source_inventory_classifies_chitsuki_alignment_corpus_variants() {
         "［＃地付き、地より３字アキ］",
         "［＃地付きで］",
         "［＃「地付き］",
+        "［＃右寄せ］",
         "［＃地より２字上がり］",
         "［＃文末より１字上げ揃え］",
         "［＃「訳者」は文末より１字上げ揃え］",
@@ -804,7 +831,7 @@ fn source_inventory_classifies_chitsuki_alignment_corpus_variants() {
             .row_counts
             .get("indentation.chitsuki")
             .map(|count| count.occurrences),
-        Some(9)
+        Some(10)
     );
 }
 
@@ -957,6 +984,8 @@ fn source_inventory_classifies_source_note_labels() {
         "［＃中條華、中條家三女。百合子が長女、次女は千鶴（生後四ヵ月で死亡）］",
         "［＃探偵小説家、生理学者。本名は、林髞］",
         "［＃スカーフ］",
+        "［＃未完］",
+        "［＃「（１）」は注釈番号］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -971,7 +1000,34 @@ fn source_inventory_classifies_source_note_labels() {
             .row_counts
             .get("source.note_label")
             .map(|count| count.occurrences),
-        Some(9)
+        Some(11)
+    );
+}
+
+#[test]
+fn source_inventory_classifies_quote_and_letter_block_markers() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = [
+        "［＃これより手紙文、１字下げ］",
+        "［＃ここから引用文、３字下げ］",
+        "［＃ここから引用文、３字下げ、３行アキ］",
+        "［＃引用文終わり］",
+    ]
+    .join("\n");
+    let summary = inventory_document("fixture", &source, &patterns);
+
+    assert_eq!(
+        summary.unknown_examples,
+        [],
+        "known quote and letter block markers should not remain unknown"
+    );
+    assert_eq!(
+        summary
+            .row_counts
+            .get("structure.quote_block")
+            .map(|count| count.occurrences),
+        Some(4)
     );
 }
 
@@ -985,6 +1041,7 @@ fn source_inventory_classifies_page_center_layout_variants() {
         "［＃ここからページの左右中央］",
         "［＃左右中央］",
         "［＃中央寄せ］",
+        "［＃直線は中央に配置］",
         "［＃改ページ、ページの左右中央に］",
         "［＃横組みで、ページの上部、左右中央に］",
     ]
@@ -1001,7 +1058,7 @@ fn source_inventory_classifies_page_center_layout_variants() {
             .row_counts
             .get("layout.center_page")
             .map(|count| count.occurrences),
-        Some(7)
+        Some(8)
     );
     assert_eq!(
         summary

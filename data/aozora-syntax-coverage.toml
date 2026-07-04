@@ -650,7 +650,7 @@ category = "layout"
 feature_keys = ["center_page", "alignment"]
 reference_sources = ["references/aozorabunko/rules/kijyunn.html", "P4suta/aozora-notation-spec@b60665fd50b596c967254f99b61f418495656fef:src/notation/layout.md", "P4suta/aozora-notation-spec@b60665fd50b596c967254f99b61f418495656fef:conformance/vectors/center_page/vector.json"]
 source_examples = ["［＃ページの左右中央］", "［＃ここからページの左右中央］", "［＃中央揃え］"]
-source_patterns = ['［＃(ここから)?ページの左右中央に?］', '［＃ページ(の天地左右中央|上段の左右中央|の天地中央)］', '［＃左右中央］', '［＃中央(寄せ|揃え)］', '［＃[^］]*(ページの(上部|下部)、)?左右中央(に|縦組みで)?[^］]*］']
+source_patterns = ['［＃(ここから)?ページの左右中央に?］', '［＃ページ(の天地左右中央|上段の左右中央|の天地中央)］', '［＃左右中央］', '［＃中央(寄せ|揃え)］', '［＃[^］]*(ページの(上部|下部)、)?左右中央(に|縦組みで)?[^］]*］', '［＃[^］]*中央に配置］']
 ir_nodes = []
 aat_nodes = ["raw"]
 tei_projection = "p or seg rend=center"
@@ -1024,7 +1024,7 @@ category = "source_annotation"
 feature_keys = ["source_note", "source_label", "role_label"]
 reference_sources = ["docs/superpowers/specs/2026-07-04-parser-ir-level3-structure-delta.md", "docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
 source_examples = ["［＃劇場名］", "［＃長男］", "［＃探偵小説家、生理学者。本名は、林髞］"]
-source_patterns = ['［＃[^］]*(劇場名|ホテル名|お手伝いさん|夫人|スカーフ|小説家|生理学者|長男|次男|三男|長女|次女|三女|従弟|従妹)[^］]*］']
+source_patterns = ['［＃[^］]*(劇場名|ホテル名|お手伝いさん|夫人|スカーフ|小説家|生理学者|長男|次男|三男|長女|次女|三女|従弟|従妹|未完|注釈番号)[^］]*］']
 ir_nodes = ["source-note"]
 aat_nodes = ["raw"]
 tei_projection = "note type=source-label or typed role/name markup after editorial enrichment"
@@ -1584,7 +1584,7 @@ category = "inline_annotation"
 feature_keys = ["kaeriten"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/kaeriten.rb"]
 source_examples = ["［＃レ］", "［＃一］", "［＃二］", "［＃上］", "［＃返り点一］"]
-source_patterns = ['［＃(?:返り点)?[一二三四五六七八九十レ上中下甲乙丙丁天地人]+］', '［＃レ点］']
+source_patterns = ['［＃(?:返り点)?[一二三四五六七八九十レ上中下甲乙丙丁天地人]+］', '［＃レ点］', '［＃「[^」]*」は返り点］', '［＃「」内の「[^」]+」は返り点］']
 ir_nodes = []
 aat_nodes = ["style"]
 tei_projection = "hi rend=kaeriten"
@@ -2426,7 +2426,7 @@ category = "layout"
 feature_keys = ["chitsuki"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/chitsuki.rb"]
 source_examples = ["［＃ここから地付き］", "［＃ここから2字上げ］", "［＃この行地付き］"]
-source_patterns = ['［＃(ここから|この行)?(地付き|[０-９0-9]+字上げ)］', '［＃「地付き］', '［＃(ここから)?地から[０-９0-9]+字上げ］', '［＃地より[０-９0-9]+字(上げ|上がり)］', '［＃ここで(地付き|字上げ)終わり］', '［＃下げて、?地より[０-９0-9]+字あきで］', '［＃[０-９0-9]+字下げ、地より[０-９0-9]+字あきで］', '［＃地付き、地より[０-９0-9]+字(アキ|あき)］', '［＃地付きで］', '［＃(「[^\n]+」は)?文末より[０-９0-9]+字上げ揃え］']
+source_patterns = ['［＃(ここから|この行)?(地付き|右寄せ|[０-９0-9]+字上げ)］', '［＃「地付き］', '［＃(ここから)?地から[０-９0-9]+字上げ］', '［＃地より[０-９0-9]+字(上げ|上がり)］', '［＃ここで(地付き|字上げ)終わり］', '［＃下げて、?地より[０-９0-9]+字あきで］', '［＃[０-９0-9]+字下げ、地より[０-９0-9]+字あきで］', '［＃地付き、地より[０-９0-9]+字(アキ|あき)］', '［＃地付きで］', '［＃(「[^\n]+」は)?文末より[０-９0-9]+字上げ揃え］']
 ir_nodes = ["Block::Layout"]
 aat_nodes = ["style"]
 tei_projection = "p rend=chitsuki"
@@ -2802,6 +2802,70 @@ aat_nodes = ["raw"]
 raw_fallback = true
 evidence = "data/aat-schema.json:277"
 notes = "TEI can represent multi-column layout as a division or block with column rendition metadata, but AAT/parser-IR do not yet have typed multi-column nodes. The reviewed v1 guarantee is source-derived raw marker preservation."
+
+[[syntax]]
+id = "structure.quote_block"
+priority = 2
+category = "structure"
+feature_keys = ["quote_block", "letter_block"]
+reference_sources = ["docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
+source_examples = ["［＃ここから引用文、３字下げ］", "［＃引用文終わり］", "［＃これより手紙文、１字下げ］"]
+source_patterns = ['［＃ここから引用文、[０-９0-9]+字下げ(、[０-９0-9]+行アキ)?］', '［＃引用文終わり］', '［＃(これより|ここから)手紙文、[０-９0-9]+字下げ］']
+ir_nodes = ["Raw"]
+aat_nodes = ["raw"]
+tei_projection = "quote or div type=letter"
+plaintext_projection = "content_only"
+comparison_projection = "content_only"
+validation_properties = ["block_scope_balance"]
+adapter_expectations = ["preserve raw quote/letter block marker until typed AAT/parser-IR support lands"]
+oracle_cases = []
+status = "not_modeled"
+status_reason = "Aozora quote and letter block markers have TEI P5 projections, but AAT/parser-IR currently only preserve them as source-derived raw marker evidence."
+
+[syntax.parsers.aozora2]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes quote/letter block markers; parser-specific typed behavior not yet measured."
+
+[syntax.parsers.aozora-rs]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes quote/letter block markers; parser-specific typed behavior not yet measured."
+
+[syntax.parsers.aozora2html]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes quote/letter block markers; parser-specific typed behavior not yet measured."
+
+[syntax.adapters.aozora2]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed quote/letter block AAT contract exists; adapter behavior remains to be measured."
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed quote/letter block AAT contract exists; adapter behavior remains to be measured."
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed quote/letter block AAT contract exists; adapter behavior remains to be measured."
+
+[syntax.corpus_prevalence]
+works_with_feature = 0
+total_occurrences = 0
+detector_id = "structure_quote_block"
+coverage_basis = "not_run"
+sample_works = []
+
+[syntax.representability]
+source_inventory_row = "structure.quote_block"
+status = "raw_preserved"
+aat_nodes = ["raw"]
+raw_fallback = true
+evidence = "data/aat-schema.json:277"
+notes = "TEI can represent source quote and letter blocks as quote or typed div material. The reviewed v1 guarantee is source-derived raw marker preservation until typed AAT/parser-IR structure lands."
 
 [[syntax]]
 id = "structure.table"

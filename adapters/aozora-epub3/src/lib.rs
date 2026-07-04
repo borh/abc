@@ -6,8 +6,8 @@ pub mod source_derived;
 pub mod xhtml_mapper;
 
 pub use model::{
-    parse_failure_envelope, DecodedSource, MappingInput, XhtmlDocument, XhtmlDocumentKind,
-    ADAPTER_NAME, ADAPTER_VERSION, CLI_VERSION,
+    ADAPTER_NAME, ADAPTER_VERSION, CLI_VERSION, DecodedSource, MappingInput, XhtmlDocument,
+    XhtmlDocumentKind, parse_failure_envelope,
 };
 
 pub use xhtml_mapper::{map_to_aat, map_to_html};

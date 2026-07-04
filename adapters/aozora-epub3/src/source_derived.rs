@@ -22,12 +22,16 @@ pub fn apply_source_derived_recovery(blocks: &mut Vec<Value>, source_text: &str)
     recover_warichu(blocks, source_text);
 }
 
-fn recover_gaiji(blocks: &mut Vec<Value>, source_text: &str) {
+fn recover_gaiji(blocks: &mut [Value], source_text: &str) {
     // Matches markers like `※［＃「口＋世」、U+546D］`. Captures the inner
     // description and the resolved code point `U+XXXX`.
     let re = regex::Regex::new(r"※［＃(?P<desc>[^］]+)、U\+(?P<code>[0-9A-Fa-f]{4,6})］").unwrap();
     for caps in re.captures_iter(source_text) {
-        let desc = caps.name("desc").map(|m| m.as_str()).unwrap_or("").to_string();
+        let desc = caps
+            .name("desc")
+            .map(|m| m.as_str())
+            .unwrap_or("")
+            .to_string();
         let Some(code_u) = caps
             .name("code")
             .and_then(|m| u32::from_str_radix(m.as_str(), 16).ok())
@@ -55,26 +59,26 @@ fn recover_gaiji(blocks: &mut Vec<Value>, source_text: &str) {
 fn swap_first_matching_text(blocks: &mut [Value], needle: &str, replacement: Value) {
     for block in blocks.iter_mut() {
         let kind = block.get("kind").and_then(Value::as_str).unwrap_or("");
-        if kind == "paragraph" || kind == "heading" {
-            if let Some(content) = block.get_mut("content").and_then(Value::as_array_mut) {
-                if content.iter_mut().any(|n| {
-                    if n.get("kind").and_then(Value::as_str) == Some("text")
-                        && n.get("value").and_then(Value::as_str) == Some(needle)
-                    {
-                        *n = replacement.clone();
-                        true
-                    } else {
-                        false
-                    }
-                }) {
-                    return;
+        if (kind == "paragraph" || kind == "heading")
+            && let Some(content) = block.get_mut("content").and_then(Value::as_array_mut)
+            && content.iter_mut().any(|n| {
+                if n.get("kind").and_then(Value::as_str) == Some("text")
+                    && n.get("value").and_then(Value::as_str) == Some(needle)
+                {
+                    *n = replacement.clone();
+                    true
+                } else {
+                    false
                 }
-            }
+            })
+        {
+            return;
         }
     }
 }
 
 fn recover_figures(blocks: &mut Vec<Value>, source_text: &str) {
+    // Note: takes &mut Vec (not &[Value]) because the figure-insert path may push a new paragraph onto blocks.
     // Matches `挿絵（filename.png、横123×縦456）入る` style markers.
     let re = regex::Regex::new(
         r"挿絵（(?P<filename>[^、]+)、横(?P<width>[０-９0-9]+)×縦(?P<height>[０-９0-9]+)）入る",
@@ -82,12 +86,8 @@ fn recover_figures(blocks: &mut Vec<Value>, source_text: &str) {
     .unwrap();
     for caps in re.captures_iter(source_text) {
         let filename = caps.name("filename").map(|m| m.as_str()).unwrap_or("");
-        let width = caps
-            .name("width")
-            .map(|m| parse_aozora_int(m.as_str()));
-        let height = caps
-            .name("height")
-            .map(|m| parse_aozora_int(m.as_str()));
+        let width = caps.name("width").map(|m| parse_aozora_int(m.as_str()));
+        let height = caps.name("height").map(|m| parse_aozora_int(m.as_str()));
         let width = width.unwrap_or(0);
         let height = height.unwrap_or(0);
         enrich_or_insert_figure(blocks, filename, width, height);
@@ -98,10 +98,10 @@ fn enrich_or_insert_figure(blocks: &mut Vec<Value>, filename: &str, width: i64, 
     // Walk all inline content arrays looking for a matching figure node.
     let mut found = false;
     for block in blocks.iter_mut() {
-        if let Some(content) = block.get_mut("content").and_then(Value::as_array_mut) {
-            if enrich_figure_in_arr(content, filename, width, height) {
-                found = true;
-            }
+        if let Some(content) = block.get_mut("content").and_then(Value::as_array_mut)
+            && enrich_figure_in_arr(content, filename, width, height)
+        {
+            found = true;
         }
     }
     if !found {
@@ -133,25 +133,25 @@ fn enrich_figure_in_arr(content: &mut [Value], filename: &str, width: i64, heigh
                 .and_then(Value::as_str)
                 .unwrap_or_default();
             let basename = existing.rsplit('/').next().unwrap_or(existing);
-            if basename == filename {
-                if let Some(obj) = node.as_object_mut() {
-                    if !obj.contains_key("width") {
-                        obj.insert("width".to_string(), Value::from(width));
-                    }
-                    if !obj.contains_key("height") {
-                        obj.insert("height".to_string(), Value::from(height));
-                    }
-                    obj.insert(
-                        "x-provenance".to_string(),
-                        Value::String("source-derived".to_string()),
-                    );
-                    found = true;
+            if basename == filename
+                && let Some(obj) = node.as_object_mut()
+            {
+                if !obj.contains_key("width") {
+                    obj.insert("width".to_string(), Value::from(width));
                 }
-            }
-        } else if let Some(children) = node.get_mut("children").and_then(Value::as_array_mut) {
-            if enrich_figure_in_arr(children, filename, width, height) {
+                if !obj.contains_key("height") {
+                    obj.insert("height".to_string(), Value::from(height));
+                }
+                obj.insert(
+                    "x-provenance".to_string(),
+                    Value::String("source-derived".to_string()),
+                );
                 found = true;
             }
+        } else if let Some(children) = node.get_mut("children").and_then(Value::as_array_mut)
+            && enrich_figure_in_arr(children, filename, width, height)
+        {
+            found = true;
         }
     }
     found

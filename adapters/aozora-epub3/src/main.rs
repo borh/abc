@@ -4,7 +4,7 @@ use std::process;
 
 use anyhow::Result;
 use aozora_epub3_adapter::{
-    map_to_aat, map_to_html, MappingInput, XhtmlDocument, XhtmlDocumentKind, CLI_VERSION,
+    CLI_VERSION, MappingInput, XhtmlDocument, XhtmlDocumentKind, map_to_aat, map_to_html,
 };
 use clap::{Parser, ValueEnum};
 

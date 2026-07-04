@@ -1,4 +1,4 @@
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 pub const ADAPTER_NAME: &str = "aozora-epub3";
 pub const ADAPTER_VERSION: &str = "aozora-epub3-adapter 0.1.0 AozoraEpub3-JDK21-1.3.4-jdk21";

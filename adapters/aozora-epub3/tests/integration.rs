@@ -104,9 +104,15 @@ fn parser_failed_flag_exits_code_two_and_emits_incomplete_aat() {
             "--mode",
             "aat",
             "--source",
-            concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/paragraph.xhtml"),
+            concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/tests/fixtures/paragraph.xhtml"
+            ),
             "--xhtml",
-            concat!(env!("CARGO_MANIFEST_DIR"), "/tests/fixtures/paragraph.xhtml"),
+            concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/tests/fixtures/paragraph.xhtml"
+            ),
             "--parser-failed",
             "--parser-error-file",
             "/dev/null",

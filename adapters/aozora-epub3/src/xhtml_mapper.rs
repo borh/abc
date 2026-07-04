@@ -7,7 +7,7 @@
 
 use anyhow::{Context, Result};
 use roxmltree::{Document, Node};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 use crate::decode::decode_source_bytes;
 use crate::model::{MappingInput, XhtmlDocumentKind};
@@ -119,16 +119,18 @@ fn node_class<'a>(node: Node<'a, 'a>) -> &'a str {
 }
 
 fn class_with_prefix<'a>(node: Node<'a, 'a>, prefix: &str) -> Option<&'a str> {
-    node_class(node).split_whitespace().find(|c| c.starts_with(prefix))
+    node_class(node)
+        .split_whitespace()
+        .find(|c| c.starts_with(prefix))
 }
 
 fn text_only<'a>(node: Node<'a, 'a>) -> String {
     let mut out = String::new();
     for d in node.descendants() {
-        if d.is_text() {
-            if let Some(t) = d.text() {
-                out.push_str(t);
-            }
+        if d.is_text()
+            && let Some(t) = d.text()
+        {
+            out.push_str(t);
         }
     }
     out
@@ -137,7 +139,11 @@ fn text_only<'a>(node: Node<'a, 'a>) -> String {
 fn paragraph_has_content(nodes: &[Value]) -> bool {
     nodes.iter().any(|n| {
         if n.get("kind").and_then(Value::as_str) == Some("text") {
-            !n.get("value").and_then(Value::as_str).unwrap_or_default().trim().is_empty()
+            !n.get("value")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .trim()
+                .is_empty()
         } else {
             true
         }
@@ -160,10 +166,10 @@ fn walk_inline_children<'a>(node: Node<'a, 'a>) -> Vec<Value> {
     }
     for child in node.children().filter(|c| c.is_element()) {
         out.extend(map_inline(child));
-        if let Some(tail) = child.tail() {
-            if !tail.is_empty() {
-                out.push(json!({"kind": "text", "value": tail}));
-            }
+        if let Some(tail) = child.tail()
+            && !tail.is_empty()
+        {
+            out.push(json!({"kind": "text", "value": tail}));
         }
     }
     out
@@ -235,20 +241,20 @@ fn map_ruby<'a>(node: Node<'a, 'a>) -> Value {
 fn walk_inline_children_but_ruby<'a>(node: Node<'a, 'a>) -> Vec<Value> {
     // base_content excludes the <rt> text.
     let mut out = Vec::new();
-    if let Some(text) = node.text() {
-        if !text.is_empty() {
-            out.push(json!({"kind": "text", "value": text}));
-        }
+    if let Some(text) = node.text()
+        && !text.is_empty()
+    {
+        out.push(json!({"kind": "text", "value": text}));
     }
     for child in node.children().filter(|c| c.is_element()) {
         if node_name(child) == "rt" {
             continue;
         }
         out.extend(map_inline(child));
-        if let Some(tail) = child.tail() {
-            if !tail.is_empty() {
-                out.push(json!({"kind": "text", "value": tail}));
-            }
+        if let Some(tail) = child.tail()
+            && !tail.is_empty()
+        {
+            out.push(json!({"kind": "text", "value": tail}));
         }
     }
     out
@@ -267,7 +273,11 @@ fn map_img<'a>(node: Node<'a, 'a>) -> Value {
             "x-provenance": "parser",
         });
     }
-    let filename = src.rsplit('/').next().filter(|s| !s.is_empty()).unwrap_or(src);
+    let filename = src
+        .rsplit('/')
+        .next()
+        .filter(|s| !s.is_empty())
+        .unwrap_or(src);
     let width = node.attribute("width").and_then(|s| s.parse::<i64>().ok());
     let height = node.attribute("height").and_then(|s| s.parse::<i64>().ok());
     let mut figure = json!({
@@ -293,32 +303,51 @@ fn map_span<'a>(node: Node<'a, 'a>) -> Vec<Value> {
     let cls = node_class(node);
     let tokens: Vec<&str> = cls.split_whitespace().collect();
 
-    if tokens.iter().any(|t| *t == "b") {
+    if tokens.contains(&"b") {
         return vec![style_node("bold", content)];
     }
-    if tokens.iter().any(|t| *t == "i") {
+    if tokens.contains(&"i") {
         return vec![style_node("italic", content)];
     }
-    if let Some(boten) = tokens.iter().find(|t| matches!(**t,
-        "sesame" | "dot" | "open_sesame" | "open_dot" | "double_open_sesame" | "double_open_dot")) {
+    if let Some(boten) = tokens.iter().find(|t| {
+        matches!(
+            **t,
+            "sesame"
+                | "dot"
+                | "open_sesame"
+                | "open_dot"
+                | "double_open_sesame"
+                | "double_open_dot"
+        )
+    }) {
         let mut node = style_node("boten", content);
         if let Some(obj) = node.as_object_mut() {
-            obj.insert("x-boten-kind".to_string(), Value::String((*boten).to_string()));
+            obj.insert(
+                "x-boten-kind".to_string(),
+                Value::String((*boten).to_string()),
+            );
         }
         return vec![node];
     }
-    if let Some(line) = tokens.iter().find(|t| matches!(**t, "underline" | "double_underline")) {
-        let kind = if *line == "double_underline" { "double" } else { "single" };
+    if let Some(line) = tokens
+        .iter()
+        .find(|t| matches!(**t, "underline" | "double_underline"))
+    {
+        let kind = if *line == "double_underline" {
+            "double"
+        } else {
+            "single"
+        };
         let mut node = style_node("bousen", content);
         if let Some(obj) = node.as_object_mut() {
             obj.insert("x-line-kind".to_string(), Value::String(kind.to_string()));
         }
         return vec![node];
     }
-    if tokens.iter().any(|t| *t == "tcy") {
+    if tokens.contains(&"tcy") {
         return vec![json!({"kind": "tcy", "content": content})];
     }
-    if tokens.iter().any(|t| *t == "wrc") {
+    if tokens.contains(&"wrc") {
         // AozoraEpub3 `wrc` is the warichu wrapper span. Schema `warigaki`
         // requires upper/lower which cannot be reconstructed reliably from
         // rendered split spans here; emit as a style marker so the round-trip
@@ -364,15 +393,15 @@ fn map_body_children<'a>(body: Node<'a, 'a>) -> Vec<Value> {
     // Direct text/trailing text under <body> is uncommon; wrap stray inlines.
     let mut pending: Vec<Value> = Vec::new();
     let flush = |blocks: &mut Vec<Value>, pending: &mut Vec<Value>| {
-        if paragraph_has_content(&pending) {
+        if paragraph_has_content(pending) {
             blocks.push(json!({"kind": "paragraph", "content": pending.clone()}));
         }
         pending.clear();
     };
-    if let Some(text) = body.text() {
-        if !text.trim().is_empty() {
-            pending.push(json!({"kind": "text", "value": text}));
-        }
+    if let Some(text) = body.text()
+        && !text.trim().is_empty()
+    {
+        pending.push(json!({"kind": "text", "value": text}));
     }
     for child in body.children().filter(|c| c.is_element()) {
         let produced = map_block(child);
@@ -383,10 +412,10 @@ fn map_body_children<'a>(body: Node<'a, 'a>) -> Vec<Value> {
         // text first so order is preserved.
         flush(&mut blocks, &mut pending);
         blocks.extend(produced);
-        if let Some(tail) = child.tail() {
-            if !tail.trim().is_empty() {
-                pending.push(json!({"kind": "text", "value": tail}));
-            }
+        if let Some(tail) = child.tail()
+            && !tail.trim().is_empty()
+        {
+            pending.push(json!({"kind": "text", "value": tail}));
         }
     }
     flush(&mut blocks, &mut pending);
@@ -421,39 +450,39 @@ fn map_block<'a>(node: Node<'a, 'a>) -> Vec<Value> {
         let cls = node_class(node);
         let tokens: Vec<&str> = cls.split_whitespace().collect();
 
-        if tokens.iter().any(|t| *t == "chap1") {
+        if tokens.contains(&"chap1") {
             return vec![heading(1, "normal", node)];
         }
-        if tokens.iter().any(|t| *t == "chap2") {
+        if tokens.contains(&"chap2") {
             return vec![heading(2, "normal", node)];
         }
-        if tokens.iter().any(|t| *t == "chap3") {
+        if tokens.contains(&"chap3") {
             return vec![heading(3, "normal", node)];
         }
-        if let Some(c) = class_with_prefix(node, "pt") {
-            if let Some(indent) = c.strip_prefix("pt").and_then(|s| s.parse::<i64>().ok()) {
-                return vec![json!({
-                    "kind": "jisage_block",
-                    "children": map_body_children(node),
-                    "x-indent": indent,
-                })];
-            }
+        if let Some(c) = class_with_prefix(node, "pt")
+            && let Some(indent) = c.strip_prefix("pt").and_then(|s| s.parse::<i64>().ok())
+        {
+            return vec![json!({
+                "kind": "jisage_block",
+                "children": map_body_children(node),
+                "x-indent": indent,
+            })];
         }
-        if tokens.iter().any(|t| *t == "border") {
+        if tokens.contains(&"border") {
             return vec![json!({
                 "kind": "keigakomi_block",
                 "children": map_body_children(node),
                 "x-border-kind": "solid",
             })];
         }
-        if tokens.iter().any(|t| *t == "dashed_border") {
+        if tokens.contains(&"dashed_border") {
             return vec![json!({
                 "kind": "keigakomi_block",
                 "children": map_body_children(node),
                 "x-border-kind": "dashed",
             })];
         }
-        if tokens.iter().any(|t| *t == "yoko") {
+        if tokens.contains(&"yoko") {
             return vec![json!({
                 "kind": "yokogumi_block",
                 "children": map_body_children(node),
@@ -556,8 +585,7 @@ mod tests {
 
     fn input_from_fixture(name: &str) -> MappingInput {
         let path = format!("tests/fixtures/{name}");
-        let bytes = std::fs::read(&path)
-            .unwrap_or_else(|e| panic!("read {path}: {e}"));
+        let bytes = std::fs::read(&path).unwrap_or_else(|e| panic!("read {path}: {e}"));
         MappingInput {
             source_bytes: b"test".to_vec(),
             xhtml_documents: vec![XhtmlDocument {
@@ -593,14 +621,12 @@ mod tests {
 
     #[test]
     fn maps_heading_chap2() {
-        assert_eq!(
-            blocks("heading_chap2.xhtml")[0]["level"], json!(2));
+        assert_eq!(blocks("heading_chap2.xhtml")[0]["level"], json!(2));
     }
 
     #[test]
     fn maps_heading_chap3() {
-        assert_eq!(
-            blocks("heading_chap3.xhtml")[0]["level"], json!(3));
+        assert_eq!(blocks("heading_chap3.xhtml")[0]["level"], json!(3));
     }
 
     #[test]
@@ -818,7 +844,12 @@ mod tests {
         assert_eq!(aat["meta"]["parse_complete"], json!(false));
         assert_eq!(aat["meta"]["adapter"], json!("aozora-epub3"));
         assert!(aat["blocks"].as_array().unwrap().is_empty());
-        assert!(aat["meta"]["warnings"][0]["message"].as_str().unwrap().contains("boom"));
+        assert!(
+            aat["meta"]["warnings"][0]["message"]
+                .as_str()
+                .unwrap()
+                .contains("boom")
+        );
     }
 
     #[test]
@@ -826,8 +857,14 @@ mod tests {
         let input = MappingInput {
             source_bytes: vec![],
             xhtml_documents: vec![
-                XhtmlDocument { bytes: b"<body>A</body>".to_vec(), kind: XhtmlDocumentKind::BodySection },
-                XhtmlDocument { bytes: b"<body>B</body>".to_vec(), kind: XhtmlDocumentKind::Colophon },
+                XhtmlDocument {
+                    bytes: b"<body>A</body>".to_vec(),
+                    kind: XhtmlDocumentKind::BodySection,
+                },
+                XhtmlDocument {
+                    bytes: b"<body>B</body>".to_vec(),
+                    kind: XhtmlDocumentKind::Colophon,
+                },
             ],
             parser_failed: false,
             parser_error_message: None,

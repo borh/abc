@@ -156,6 +156,16 @@
             meta.description = "Materialize parser-IR publication plaintext and TEI artifacts";
           };
 
+          materialize-source-snapshot = {
+            type = "app";
+            program = toString (
+              pkgs.writeShellScript "abc-materialize-source-snapshot" ''
+                exec ${pkgs.clojure}/bin/clojure -M:abc/materialize-source-snapshot "$@"
+              ''
+            );
+            meta.description = "Materialize a source corpus snapshot and source manifests";
+          };
+
           manifest-to-rdf = {
             type = "app";
             program = toString (

@@ -492,6 +492,42 @@
         (is (false? (compat/compatible? registry (assoc current-html-compat-query k v)))
             (str "registry must reject mismatched " k))))))
 
+(deftest aat-parser-ir-compatibility-admission-report-test
+  (testing "reports when producer candidates are already admitted exactly"
+    (is (= {:status :admitted
+            :candidate-count 2
+            :admitted [v2-rs-registry-entry v2-html-registry-entry]
+            :missing []
+            :conflicts []
+            :registry-errors []
+            :candidate-errors []}
+           (compat/admission-report
+            {:entries [old-registry-entry v2-rs-registry-entry v2-html-registry-entry]}
+            {:entries [v2-rs-registry-entry v2-html-registry-entry]}))))
+  (testing "reports missing producer candidates"
+    (is (= :missing
+           (:status
+            (compat/admission-report
+             {:entries [v2-rs-registry-entry]}
+             {:entries [v2-rs-registry-entry v2-html-registry-entry]})))))
+  (testing "reports same compatibility identity with changed evidence as a conflict"
+    (let [candidate (assoc-in v2-rs-registry-entry
+                              [:evidence_scope :corpus]
+                              "re-audited corpus")
+          report (compat/admission-report
+                  {:entries [v2-rs-registry-entry]}
+                  {:entries [candidate]})]
+      (is (= :conflict (:status report)))
+      (is (= [{:registry v2-rs-registry-entry
+               :candidate candidate}]
+             (:conflicts report)))))
+  (testing "validates producer candidate files before comparing them"
+    (let [report (compat/admission-report
+                  {:entries [v2-rs-registry-entry]}
+                  {:entries [(dissoc v2-rs-registry-entry :evidence_scope)]})]
+      (is (= :invalid-candidates (:status report)))
+      (is (has-error? #"missing :evidence_scope" (:candidate-errors report))))))
+
 (deftest compatibility-errors-test
   (testing "does not check compatibility when no AAT mapping metadata is present"
     (is (empty? (validate/compatibility-errors

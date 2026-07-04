@@ -62,13 +62,16 @@
 
 (defn- render-ruby-node [acc node]
   (let [ruby (get node "ruby")]
-    (append-inline acc
-                   (cond-> [:ruby]
-                     (get ruby "direction")
-                     (conj {:place (get ruby "direction")})
-                     true
-                     (conj [:rb (get ruby "base")]
-                           [:rt (get ruby "reading")])))))
+    (if (and (present-text? (get ruby "base"))
+             (present-text? (get ruby "reading")))
+      (append-inline acc
+                     (cond-> [:ruby]
+                       (get ruby "direction")
+                       (conj {:rend (get ruby "direction")})
+                       true
+                       (conj [:rb (get ruby "base")]
+                             [:rt (get ruby "reading")])))
+      (mark-omitted acc "ruby"))))
 
 (defn- render-gaiji-node [acc node]
   (let [declaration (gaiji-declaration node)]

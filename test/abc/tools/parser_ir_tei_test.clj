@@ -53,6 +53,33 @@
       (is (some #(= [:g {:ref "#example-gaiji"}] %)
                 (hiccup-nodes (:body result)))))))
 
+(deftest ruby-direction-uses-profile-valid-rend-test
+  (testing "ruby direction is preserved without TEI-invalid place attributes"
+    (let [result (parser-ir-tei/render
+                  {"nodes" [{"type" "ruby"
+                             "span" {"start" 0 "end" 3}
+                             "ruby" {"base" "下人"
+                                     "reading" "げにん"
+                                     "direction" "right"}}]})
+          ruby-node (some #(when (= :ruby (first %)) %)
+                          (hiccup-nodes (:body result)))]
+      (is (= [:ruby {:rend "right"} [:rb "下人"] [:rt "げにん"]]
+             ruby-node))
+      (is (not (contains? (second ruby-node) :place))))))
+
+(deftest empty-ruby-base-is-omitted-test
+  (testing "ruby with no source base does not emit TEI-invalid empty rb"
+    (let [result (parser-ir-tei/render
+                  {"nodes" [{"type" "ruby"
+                             "span" {"start" 7 "end" 7}
+                             "ruby" {"base" ""
+                                     "reading" "ね"
+                                     "direction" "right"}}]})]
+      (is (not-any? #(= :ruby (first %))
+                    (hiccup-nodes (:body result))))
+      (is (= [{:type "ruby" :policy "omitted"}]
+             (:omitted result))))))
+
 (deftest trailing-heading-starts-a-new-division-test
   (testing "headings after paragraph content keep source order by starting a later div"
     (let [result (parser-ir-tei/render

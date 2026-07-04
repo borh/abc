@@ -90,10 +90,12 @@
   :abc/validate-design-bundle {:main-opts ["-m" "abc.tools.validate-design-bundle"]}
   :abc/materialize-import {:main-opts ["-m" "abc.tools.materialize-import"]}
   :abc/materialize-publication {:main-opts ["-m" "abc.tools.materialize-publication"]}
+  :abc/materialize-source-snapshot {:main-opts ["-m" "abc.tools.materialize-source-snapshot"]}
   :abc/manifest-to-rdf {:main-opts ["-m" "abc.tools.manifest-to-rdf"]}
   :abc/aozora-ingest {:main-opts ["-m" "abc.tools.aozora-ingest"]}
   :abc/validate-corpus {:main-opts ["-m" "abc.tools.validate-corpus"]}
   :abc/person-drift-history {:main-opts ["-m" "abc.tools.person-drift-history"]}
   :abc/aozora-history-audit {:main-opts ["-m" "abc.tools.aozora-history-audit"]}
+  :abc/aat-compat-admission {:main-opts ["-m" "abc.tools.aat-parser-ir-compat"]}
   :update {:deps {com.github.liquidz/antq {:mvn/version "2.11.1276"}}
            :main-opts ["-m" "antq.core"]}}}

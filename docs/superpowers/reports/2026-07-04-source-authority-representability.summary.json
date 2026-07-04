@@ -3,8 +3,8 @@
   "works_scanned": 17894,
   "works_failed": 0,
   "markers_total": 4323915,
-  "unknown_markers_total": 15590,
-  "unallowlisted_unknown_markers_total": 720,
+  "unknown_markers_total": 15540,
+  "unallowlisted_unknown_markers_total": 670,
   "allowlisted_unknown_markers_total": 14870,
   "rows": {
     "accent.dotted_letter": {
@@ -28,8 +28,8 @@
       ]
     },
     "annotation.chuuki": {
-      "works_with_marker": 5504,
-      "occurrences": 35299,
+      "works_with_marker": 5507,
+      "occurrences": 35320,
       "sample_works": [
         "000005_53194",
         "000006_1869",
@@ -359,7 +359,7 @@
     },
     "kunten.kaeriten": {
       "works_with_marker": 490,
-      "occurrences": 27951,
+      "occurrences": 27953,
       "sample_works": [
         "000006_1869",
         "000038_1408",
@@ -457,8 +457,8 @@
       ]
     },
     "source.note_label": {
-      "works_with_marker": 419,
-      "occurrences": 985,
+      "works_with_marker": 421,
+      "occurrences": 1003,
       "sample_works": [
         "000008_1083",
         "000012_198",
@@ -488,14 +488,14 @@
       ]
     },
     "structure.table": {
-      "works_with_marker": 5,
-      "occurrences": 32,
+      "works_with_marker": 6,
+      "occurrences": 41,
       "sample_works": [
         "000042_2345",
         "000042_2348",
+        "000042_2449",
         "000096_2100",
-        "000311_3466",
-        "001149_45455"
+        "000311_3466"
       ]
     },
     "warichu.basic": {
@@ -517,7 +517,7 @@
       ]
     }
   },
-  "unknown_classes_total": 688,
+  "unknown_classes_total": 654,
   "unknown_classes_truncated": false,
   "unknown_classes": [
     {
@@ -574,17 +574,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「起上り」にルビ］",
-      "body": "「起上り」にルビ",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000126_669"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「３字下げ」］",
       "body": "「３字下げ」",
       "occurrences": 2,
@@ -607,75 +596,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃この作品は表題と副題のみで、本文はありません。］",
-      "body": "この作品は表題と副題のみで、本文はありません。",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000293_48490"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ルビは「弄び物」に付く］",
-      "body": "ルビは「弄び物」に付く",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000125_666"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃以下の「」内の「レ一二」は返り点］",
-      "body": "以下の「」内の「レ一二」は返り点",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000301_1872"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃労農赤色海軍］",
-      "body": "労農赤色海軍",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_46246",
-        "000311_46247"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃協同組合住宅］",
-      "body": "協同組合住宅",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_46246",
-        "000311_46247"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃吼えろ、支那］",
-      "body": "吼えろ、支那",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_46246",
-        "000311_4834"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃場面設定の表題、及び「Ｔ」で始まる最初の行以外は、１文字下げた位置で頭を揃える］",
       "body": "場面設定の表題、及び「Ｔ」で始まる最初の行以外は、１文字下げた位置で頭を揃える",
       "occurrences": 2,
@@ -694,51 +614,6 @@
       "unallowlisted_occurrences": 2,
       "sample_works": [
         "000058_371"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃宮本顕治］",
-      "body": "宮本顕治",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_46249"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃村田安］",
-      "body": "村田安",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_46240"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃村田敏子、荒木茂の姪］",
-      "body": "村田敏子、荒木茂の姪",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_46240"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃松平正次］",
-      "body": "松平正次",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_46239",
-        "000311_46253"
       ]
     },
     {
@@ -766,29 +641,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃西村茂樹］",
-      "body": "西村茂樹",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_46236",
-        "000311_46241"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃辻馬車］",
-      "body": "辻馬車",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_46246"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃（ルヽ）］",
       "body": "（ルヽ）",
       "occurrences": 2,
@@ -796,39 +648,6 @@
       "unallowlisted_occurrences": 2,
       "sample_works": [
         "001341_50287"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃１行目］",
-      "body": "１行目",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_3466"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃２行目］",
-      "body": "２行目",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_3466"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃３行目］",
-      "body": "３行目",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_3466"
       ]
     },
     {
@@ -1295,17 +1114,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「お茶」にルビ］",
-      "body": "「お茶」にルビ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000126_669"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「かしく」は崩し字］",
       "body": "「かしく」は崩し字",
       "occurrences": 1,
@@ -1368,17 +1176,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000989_1490"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「どうしたの」にルビ］",
-      "body": "「どうしたの」にルビ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000126_669"
       ]
     },
     {
@@ -1478,17 +1275,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000874_3213"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「インチキ英語」にルビ］",
-      "body": "「インチキ英語」にルビ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000126_669"
       ]
     },
     {
@@ -2120,17 +1906,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「哀れな人達」にルビ］",
-      "body": "「哀れな人達」にルビ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000126_669"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「嘘の効用」］",
       "body": "「嘘の効用」",
       "occurrences": 1,
@@ -2230,28 +2005,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「奇妙な幕間狂言」にルビ］",
-      "body": "「奇妙な幕間狂言」にルビ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000126_669"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「女の子達」にルビ］",
-      "body": "「女の子達」にルビ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000126_669"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「宇野浩二」はゴチック］",
       "body": "「宇野浩二」はゴチック",
       "occurrences": 1,
@@ -2259,17 +2012,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000124_654"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「宜しい」にルビ］",
-      "body": "「宜しい」にルビ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_3688"
       ]
     },
     {
@@ -2406,17 +2148,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「市場通り」にルビ］",
-      "body": "「市場通り」にルビ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000126_669"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「幕。」は地より１字上げ］",
       "body": "「幕。」は地より１字上げ",
       "occurrences": 1,
@@ -2534,17 +2265,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000124_654"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「悪魔に喰われろ」にルビ］",
-      "body": "「悪魔に喰われろ」にルビ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_3883"
       ]
     },
     {
@@ -2699,17 +2419,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000207_42284"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「朝の駆足」にルビ］",
-      "body": "「朝の駆足」にルビ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000126_669"
       ]
     },
     {
@@ -3176,17 +2885,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「繰返し」にルビ］",
-      "body": "「繰返し」にルビ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000126_669"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「耳こじり」に欄外に校注、「みじかいわきざし」］",
       "body": "「耳こじり」に欄外に校注、「みじかいわきざし」",
       "occurrences": 1,
@@ -3418,17 +3116,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「金の鍵」にルビ］",
-      "body": "「金の鍵」にルビ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000126_669"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「長谷川如是閑」はゴチック］",
       "body": "「長谷川如是閑」はゴチック",
       "occurrences": 1,
@@ -3436,17 +3123,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000124_654"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「雲隠れ」の帖は冒頭の晶子詞のみで本文はありません。］",
-      "body": "「雲隠れ」の帖は冒頭の晶子詞のみで本文はありません。",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000052_5058"
       ]
     },
     {
@@ -3495,17 +3171,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「高く強く速く頑張れ」にルビ］",
-      "body": "「高く強く速く頑張れ」にルビ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000126_669"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「高し立つや」は、「冬枯のうしろに」と「不二の山」の間に挟まれるような形でポイントを下げて２行で］",
       "body": "「高し立つや」は、「冬枯のうしろに」と「不二の山」の間に挟まれるような形でポイントを下げて２行で",
       "occurrences": 1,
@@ -3524,17 +3189,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000124_654"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「黒ん坊」にルビ］",
-      "body": "「黒ん坊」にルビ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000126_669"
       ]
     },
     {
@@ -4382,17 +4036,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000370_2544"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここに表組入る、別ファイル（densyanokonzatsu_table.txt）参照］",
-      "body": "ここに表組入る、別ファイル（densyanokonzatsu_table.txt）参照",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000042_2449"
       ]
     },
     {
@@ -7818,28 +7461,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃４行目］",
-      "body": "４行目",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_3466"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃５行目］",
-      "body": "５行目",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_3466"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃６字下がる］",
       "body": "６字下がる",
       "occurrences": 1,
@@ -8191,13 +7812,6 @@
       "body": "「P = 0.07693694」は上線（￣）付き"
     },
     {
-      "work_id": "000042_2449",
-      "line": 42,
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここに表組入る、別ファイル（densyanokonzatsu_table.txt）参照］",
-      "body": "ここに表組入る、別ファイル（densyanokonzatsu_table.txt）参照"
-    },
-    {
       "work_id": "000042_2471",
       "line": 78,
       "kind": "CommandFullwidth",
@@ -8224,13 +7838,6 @@
       "kind": "CommandFullwidth",
       "raw": "［＃以下、地付き］",
       "body": "以下、地付き"
-    },
-    {
-      "work_id": "000052_5058",
-      "line": 16,
-      "kind": "CommandFullwidth",
-      "raw": "［＃「雲隠れ」の帖は冒頭の晶子詞のみで本文はありません。］",
-      "body": "「雲隠れ」の帖は冒頭の晶子詞のみで本文はありません。"
     },
     {
       "work_id": "000058_371",
@@ -8819,18 +8426,32 @@
       "kind": "CommandFullwidth",
       "raw": "［＃「平田小六」はゴチック］",
       "body": "「平田小六」はゴチック"
+    },
+    {
+      "work_id": "000124_654",
+      "line": 573,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「青野季吉」はゴチック］",
+      "body": "「青野季吉」はゴチック"
+    },
+    {
+      "work_id": "000124_654",
+      "line": 585,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「神近市子」はゴチック］",
+      "body": "「神近市子」はゴチック"
     }
   ],
   "decode_failures": [],
   "representability": {
-    "typed_occurrences": 4569761,
-    "raw_preserved_occurrences": 41566,
+    "typed_occurrences": 4569763,
+    "raw_preserved_occurrences": 41614,
     "out_of_body_occurrences": 950,
     "unsupported_occurrences": 13920,
     "needs_research_occurrences": 0
   },
   "strict_errors": [
-    "720 unallowlisted source markers"
+    "670 unallowlisted source markers"
   ],
   "inputs": {
     "matrix": "/home/bor/Projects/ab-validator/data/aozora-syntax-coverage.toml",

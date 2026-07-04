@@ -139,6 +139,7 @@ fn source_inventory_classifies_kunten_source_note_variants() {
         "［＃「レ」は返り点］",
         "［＃「」内の「レ」は返り点］",
         "［＃「」内の「一二」は返り点］",
+        "［＃以下の「」内の「レ一二」は返り点］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -153,7 +154,7 @@ fn source_inventory_classifies_kunten_source_note_variants() {
             .row_counts
             .get("kunten.kaeriten")
             .map(|count| count.occurrences),
-        Some(3)
+        Some(4)
     );
 }
 
@@ -413,6 +414,10 @@ fn source_inventory_classifies_table_and_multicolumn_corpus_variants() {
         "［＃「ただ」と「咲」は２列に並ぶ］",
         "［＃「赤江米子氏」と「母の或部分」は２列に並ぶ］",
         "［＃「權次」と「權六」は横並びになっている］",
+        "［＃１行目］",
+        "［＃２行目］",
+        "［＃３行目］",
+        "［＃ここに表組入る、別ファイル（densyanokonzatsu_table.txt）参照］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -434,7 +439,7 @@ fn source_inventory_classifies_table_and_multicolumn_corpus_variants() {
             .row_counts
             .get("structure.table")
             .map(|count| count.occurrences),
-        Some(6)
+        Some(10)
     );
 }
 
@@ -473,6 +478,10 @@ fn source_inventory_classifies_annotation_editor_notes() {
         "［＃岩波文庫版では「殺され」］",
         "［＃旺文社文庫版「なんぼ土産にするとかって」］",
         "［＃句点が抜けていると考えられる］",
+        "［＃この作品は表題と副題のみで、本文はありません。］",
+        "［＃「雲隠れ」の帖は冒頭の晶子詞のみで本文はありません。］",
+        "［＃ルビは「弄び物」に付く］",
+        "［＃「起上り」にルビ］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -487,7 +496,7 @@ fn source_inventory_classifies_annotation_editor_notes() {
             .row_counts
             .get("annotation.chuuki")
             .map(|count| count.occurrences),
-        Some(30)
+        Some(34)
     );
 }
 
@@ -1068,6 +1077,15 @@ fn source_inventory_classifies_source_note_labels() {
         "［＃並木道］",
         "［＃昼食］",
         "［＃国男］",
+        "［＃宮本顕治］",
+        "［＃村田安］",
+        "［＃村田敏子、荒木茂の姪］",
+        "［＃松平正次］",
+        "［＃労農赤色海軍］",
+        "［＃協同組合住宅］",
+        "［＃吼えろ、支那］",
+        "［＃西村茂樹］",
+        "［＃辻馬車］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -1082,7 +1100,7 @@ fn source_inventory_classifies_source_note_labels() {
             .row_counts
             .get("source.note_label")
             .map(|count| count.occurrences),
-        Some(21)
+        Some(30)
     );
 }
 

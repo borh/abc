@@ -2,6 +2,9 @@ use serde_json::{json, Value};
 
 pub const ADAPTER_NAME: &str = "aozora-epub3";
 pub const ADAPTER_VERSION: &str = "aozora-epub3-adapter 0.1.0 AozoraEpub3-JDK21-1.3.4-jdk21";
+/// Version string for the `--version` CLI flag (clap prepends the binary
+/// name), so the printed line is `<name> <CLI_VERSION>` = the full adapter id.
+pub const CLI_VERSION: &str = "0.1.0 AozoraEpub3-JDK21-1.3.4-jdk21";
 
 #[derive(Debug)]
 pub struct DecodedSource {

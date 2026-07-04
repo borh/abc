@@ -36,7 +36,7 @@
 - `fixtures/v0/facts/prolog/manifest_identity.pl` — emitted-by-emitter fact file (generated, checked in, byte-stable).
 - `fixtures/v0/facts/prolog/drift.pl` — emitted-by-emitter fact file.
 - `fixtures/v0/facts/prolog/person_records.pl` — emitted-by-emitter fact file.
-- `docs/adr/position-l-rotation.pl` — committed SWI-Prolog query: no drift event rotates manifest identity.
+- `docs/adr/manifest-identity-emitter-sanity.pl` — committed SWI-Prolog query (emitter sanity, NOT Position L — see Task 6 header).
 - `docs/adr/person-id-referential-integrity.pl` — committed query: no dangling contributor.
 - `docs/adr/.acceptance-legacy-allowlist` — ratchet allowlist (17 existing ADRs).
 - `nix/check-acceptance-criteria.sh` — the F-layer lint.
@@ -94,7 +94,15 @@ Create `test/abc/tools/code_as_spec_test.clj`:
   (let [schema (files/read-json manifest/manifest-schema-path)
         fixture (files/read-json nested-id-fixture-path)
         errors (schema/validation-errors schema fixture)]
-    (is (seq errors) "schema must reject a manifest whose identity object nests artifact_id")))
+    (is (seq errors) "schema must reject a manifest whose identity object nests artifact_id")
+    ;; The error must be specifically about the nested artifact_id, not an
+    ;; unrelated field — otherwise the fixture passes for the wrong reason
+    ;; (Medium finding: fixture must be otherwise valid).
+    (is (some #(re-find #"manifest_identity_object.*artifact_id|additionalProperties"
+                       (str %))
+              (map str errors))
+        (str "error path must target manifest_identity_object/artifact_id; got: "
+             (pr-str errors)))))
 ```
 
 - [ ] **Step 2: Run test to verify it fails (fixture does not exist yet)**
@@ -109,10 +117,9 @@ Create `fixtures/v0/invalid/manifest-nested-artifact-id/manifest.json` — a min
 ```json
 {
   "manifest_schema_id": "https://w3id.org/abc/schemas/manifest.schema.json",
-  "manifest_schema_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
   "artifact_id": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
-  "artifact_kind": "work",
-  "validation_status": "success",
+  "artifact_kind": "tei",
+  "validation_status": "passed",
   "manifest_identity_object": {
     "manifest_schema_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
     "corpus_snapshot_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
@@ -137,12 +144,19 @@ Create `fixtures/v0/invalid/manifest-nested-artifact-id/manifest.json` — a min
                  "agent": "https://w3id.org/abc/agents/test",
                  "plan_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
                  "used": [], "was_derived_from": []},
-  "license": null, "signatures": [], "superseded_by": null,
-  "generated_at": "2026-04-26T00:00:00Z"
+  "license": null, "signatures": [], "superseded_by": null
 }
 ```
 
-The `artifact_id` line inside `manifest_identity_object` is the violation.
+The `artifact_id` line inside `manifest_identity_object` is the violation. The
+fixture is otherwise schema-valid: top-level keys are exactly the schema's
+defined set (verified against `examples/v0/example-work/manifest.json`),
+`validation_status` is in the real enum
+`schemas/manifest.schema.json` `["not-run","passed","warning","failed"]`, and
+`artifact_kind` is a real enum value. This ensures the schema rejects the
+fixture *for the nested artifact_id*, not for an unrelated extra field.
+(`manifest_schema_hash` and `generated_at` were removed from the top level —
+the real manifest has neither.)
 
 - [ ] **Step 4: Run test to verify it passes**
 
@@ -193,12 +207,14 @@ Create `docs/adr/.acceptance-legacy-allowlist` (one ADR basename per line):
 0008-abc-tools-runtime.md
 0009-imported-output-materialization.md
 0010-manifest-identity-hardening.md
+0011-generated-fixture-policy.md
 0012-tei-odd-schematron-validation.md
 0013-cultural-heritage-lod-profile.md
 0014-iiif-applicability.md
 0017-vocabulary-review.md
 0018-predicate-rename-batch-1.md
 0020-person-identity-drift-data-model.md
+0021-person-identity-drift-harness.md
 0022-upstream-ingest-drift-awareness.md
 ```
 
@@ -211,7 +227,9 @@ Create `nix/check-acceptance-criteria.sh`:
 # Layer F: every ADR with an "Acceptance Criteria" section must name an
 # executable condemnation (fixtures/|test/|facts/) per invariant clause —
 # unless the ADR is on the legacy allowlist. Ratcheted: forward rule for
-# new/changed ADRs; allowlist exempts the 17 pre-existing ADRs.
+# new/changed ADRs; allowlist exempts the 19 pre-existing ADRs (0001-0010,
+# 0011-0014, 0017-0018, 0020-0022) whose Acceptance Criteria pre-date this
+# gate. Verified 2026-07-04 against docs/adr/0*.md.
 set -euo pipefail
 
 adr_dir="docs/adr"
@@ -261,11 +279,36 @@ Create `test/abc/tools/acceptance_criteria_lint_test.clj`:
     (is (zero? exit) (str "lint failed on current repo:\n" msg))))
 
 (deftest acceptance-lint-fails-when-path-removed-test
-  (testing "mutating a non-allowlisted ADR to drop its executable path fails the lint"
-    ;; This is a characterization test: it confirms the lint bites.
-    ;; Implementation: copy docs/adr, strip a fixture path from a non-allowlisted
-    ;; ADR that has one, run lint, expect non-zero. Filled in during Step 4.
-    (is true "TODO: characterize once at least one non-allowlisted ADR has a path")))
+  (testing "a non-allowlisted ADR with an Acceptance Criteria section but no
+            executable path fails the lint — using a TEMP ADR corpus so the
+            real repo is untouched"
+    ;; Mutation test against a temp corpus: copy docs/adr to a tmp dir,
+    ;; write a synthetic ADR with prose-only Acceptance Criteria, run the
+    ;; lint pointed at the tmp dir, assert non-zero exit. This is the
+    ;; non-vacuous form of the self-test.
+    (let [tmp (str (java.nio.file.Files/createTempDirectory
+                     "abc-adr-lint" (make-array java.nio.file.attribute.FileAttribute 0)))
+          adr-tmp (str tmp "/adr")]
+      (doseq [f (.listFiles (java.io.File. "docs/adr"))
+              :when (.isFile f)]
+        (clojure.java.io/copy f (java.io.File. (str adr-tmp "/" (.getName f)))))
+      (spit (str adr-tmp "/9999-synthetic.md")
+            "# ADR 9999: Synthetic\n\n## Acceptance Criteria\n\n- The system MUST do X.\n")
+      (let [{:keys [exit out err]}
+            (clojure.java.shell/sh "bash" "-c"
+                                   (str "adr_dir=" adr-tmp " allowlist=" adr-tmp
+                                        "/.acceptance-legacy-allowlist; "
+                                        "for f in \"$adr_dir\"/0*.md; do "
+                                        "b=$(basename \"$f\"); "
+                                        "grep -qF \"$b\" \"$allowlist\" && continue; "
+                                        "grep -qi '^## Acceptance Criteria' \"$f\" || continue; "
+                                        "section=$(sed -n '/^## Acceptance Criteria/,/^## /p' \"$f\"); "
+                                        "printf '%s\n' \"$section\" | grep -qE 'fixtures/|test/|facts/' || exit 1; "
+                                        "done; exit 0"))]
+        ;; The synthetic 9999 ADR has no executable path and is not allowlisted
+        ;; → the inline loop should exit 1 (via `exit 1`).
+        (is (not (zero? exit))
+            (str "lint should have failed on the synthetic prose-only ADR; out=" out " err=" err))))))
 ```
 
 - [ ] **Step 4: Run the lint — verify it passes on current repo**
@@ -361,7 +404,14 @@ git commit -m "ci: pin SWI-Prolog for Layer C cross-artifact queries (spec §7.5
 - Read-only (oracle): `src/abc/tools/manifest_index.clj:32` `reproducibility-conflicts` (`[entries] -> vector of conflict maps`) and `validate-no-reproducibility-conflicts!` (`[entries] -> true | throws`).
 
 **Interfaces:**
-- Consumes: `manifest-index/reproducibility-conflicts` is the REAL oracle. Its input is a vector of "entries" (maps) each with keys `validation_status` (successful ⇔ `(get % "validation_status")` matches `"success"` per `successful-entry?`), `content_hash`, `artifact_id`, `manifest_path`.
+- Consumes: `manifest-index/reproducibility-conflicts` is the REAL oracle. Its
+  input is a vector of "entries" (maps) each with keys `validation_status`,
+  `content_hash`, `artifact_id`, `manifest_path`. The real `successful-entry?`
+  (`src/abc/tools/manifest_index.clj:6-7`) treats a status as successful iff it
+  is in `#{"passed" "warning"}` — NOT `"success"`. The manifest schema enum
+  (`schemas/manifest.schema.json`) is `["not-run","passed","warning","failed"]`.
+  The generator MUST draw statuses from this real enum and compute success via
+  the real predicate, or the property characterizes the wrong oracle.
 - Produces: a `test.check` property that, for generated `(m1, m2)` entry pairs, asserts the oracle detects a conflict iff `artifact_id` matches and `content_hash` differs.
 
 - [ ] **Step 1: Write the failing property test**
@@ -387,34 +437,47 @@ Append to `test/abc/tools/code_as_spec_test.clj`:
 ;; r1-reproducibility-conflict.smt2 — see
 ;; docs/handoffs/formal-verification-assessment-critique.md §2.
 
+(def ^:private success-statuses #{"passed" "warning"})
+
+(defn- successful? [entry]
+  ;; Mirrors manifest-index/successful-entry? verbatim — do not recompute.
+  (contains? success-statuses (get entry "validation_status")))
+
 (def gen-conflict-tuple
   "Generate a [m1 m2 expected-conflict?] tuple. m1, m2 are manifest-index
-   entries (maps with validation_status/content_hash/artifact_id/manifest_path).
-   A conflict exists iff both succeed, share artifact_id, and differ on hash."
+   entries. A conflict exists iff both are successful, share artifact_id,
+   and differ on content_hash. expected? is computed from the ACTUAL generated
+   hash equality (not a separate same-hash? flag) so the generator and the
+   oracle see the same inputs."
   (gen/bind
-    (gen/tuple gen/string-alphanumeric   ; artifact_id
-               gen/string-alphanumeric   ; content_hash_1
-               gen/string-alphanumeric   ; content_hash_2
-               (gen/elements [true false]) ; same-hash?
-               (gen/elements [true false])) ; both-success? (simplify: success=true)
-    (fn [[id h1 h2 same-hash? both-success?]]
-      (let [h2 (if same-hash? h1 h2)]
-        (gen/return
-          [{"validation_status" "success"
-            "content_hash" h1
-            "artifact_id" id
-            "manifest_path" (str "/m1")}
-           {"validation_status" (if both-success? "success" "failure")
-            "content_hash" h2
-            "artifact_id" id
-            "manifest_path" (str "/m2")}
-           (and both-success? (not same-hash?)])))))
+    (gen/tuple gen/string-alphanumeric                  ; artifact_id
+               gen/string-alphanumeric                  ; content_hash_1
+               gen/string-alphanumeric                  ; content_hash_2 (independent)
+               (gen/elements ["passed" "warning"])      ; m1 status (always successful)
+               (gen/elements ["passed" "warning" "failed" "not-run"])) ; m2 status
+    (fn [[id h1 h2 m1-status m2-status]]
+      (let [m1 {"validation_status" m1-status
+                "content_hash" h1
+                "artifact_id" id
+                "manifest_path" "/m1"}
+            m2 {"validation_status" m2-status
+                "content_hash" h2
+                "artifact_id" id
+                "manifest_path" "/m2"}
+            ;; expected? derived from the actual generated values, using the
+            ;; REAL success predicate and REAL string equality on hashes.
+            expected? (and (successful? m1) (successful? m2)
+                           (not= h1 h2))]
+        (gen/return [m1 m2 expected?])))))
 
 (def reproducibility-property
   (prop/for-all [[m1 m2 expected?] gen-conflict-tuple]
     (let [entries [m1 m2]
           conflicts (manifest-index/reproducibility-conflicts entries)
-          detected? (seq conflicts)]
+          ;; boolean() — (seq conflicts) is a seq or nil, not a boolean, so
+          ;; (= expected? (seq conflicts)) would compare true to a seq and be
+          ;; wrong on the satisfying case. Coerce to boolean.
+          detected? (boolean (seq conflicts))]
       (= expected? detected?))))
 
 (deftest r1-reproducibility-conflict-property-test
@@ -424,7 +487,15 @@ Append to `test/abc/tools/code_as_spec_test.clj`:
           (str "property failed:\n" (pr-str result))))))
 ```
 
-Note: the generator above must match the real `successful-entry?` predicate — verify its exact behavior at `src/abc/tools/manifest_index.clj` (grep `successful-entry`) before finalizing; the generator's `both-success?` flag must align with what the predicate counts as successful. If `successful-entry?` checks more than `"validation_status" = "success"`, adjust the generator to match the real predicate.
+Note: the generator above is aligned to the REAL `successful-entry?`
+predicate (`src/abc/tools/manifest_index.clj:6-7`, statuses
+#{"passed" "warning"}) and the REAL schema enum
+(`schemas/manifest.schema.json`:
+`["not-run","passed","warning","failed"]`). `expected?` is computed from actual
+generated hash equality, not a separate flag. `detected?` is
+`(boolean (seq conflicts))`. These three fixes (real statuses, boolean
+coercion, expected-from-equality) are the Blocker R1 remediation — without them
+the property characterizes a non-existent oracle.
 
 - [ ] **Step 2: Run the test — verify it passes (no failure expected; this is characterization of a real oracle)**
 
@@ -482,7 +553,8 @@ Create `test/abc/tools/facts_test.clj`:
 (deftest emit-prolog-writes-manifest-identity-facts-test
   (facts/emit-prolog! @tmp-dir)
   (let [content (slurp (str @tmp-dir "/manifest_identity.pl"))
-        facts (re-seq #"manifest_identity\([^,]+,\s*sha256:[0-9a-f]+\)\." content)]
+        ;; Args are single-quoted atoms: '...'
+        facts (re-seq #"manifest_identity\('[^']+',[^)]+sha256:[0-9a-f]+'\)\." content)]
     (is (seq facts) "must emit at least one manifest_identity/2 fact")))
 
 (deftest emit-prolog-uses-real-artifact-id-test
@@ -490,8 +562,23 @@ Create `test/abc/tools/facts_test.clj`:
   ;; The emitted hash must equal manifest/artifact-id on the real identity object.
   ;; This guards against hidden hand-translation in Prolog (design §7.3).
   (let [content (slurp (str @tmp-dir "/manifest_identity.pl"))]
-    (is (re-find #"manifest_identity\([^,]+,\s*sha256:[0-9a-f]{64}\)\." content)
+    (is (re-find #"sha256:[0-9a-f]{64}" content)
         "emitted hash is the real artifact-id shape")))
+
+(deftest emit-prolog-quotes-person-ids-test
+  (facts/emit-prolog! @tmp-dir)
+  ;; All args single-quoted — bare 000879 would corrupt to 879 in SWI.
+  (let [content (slurp (str @tmp-dir "/person_records.pl"))]
+    (is (re-find #"person_record\('000879'\)\." content)
+        "person_id must be quoted to survive SWI parsing intact")))
+
+(deftest emit-prolog-writes-drift-successor-facts-test
+  (facts/emit-prolog! @tmp-dir)
+  ;; Task 7 depends on drift_successor/2 — guard that it's actually emitted
+  ;; (Blocker: Task 5 used to promise it but only wrote person_record/1).
+  (let [content (slurp (str @tmp-dir "/person_records.pl"))]
+    (is (re-find #"drift_successor\('[^']+'[^)]*\)\." content)
+        "must emit drift_successor/2 facts resolved from prov.used/was_generated_by")))
 ```
 
 - [ ] **Step 2: Run test — verify it fails (`facts` namespace does not exist)**
@@ -524,41 +611,104 @@ Create `src/abc/tools/facts.clj`:
 (def ^:private example-persons-dir
   "examples/v0/example-persons")
 
+;; All Prolog string args are emitted as single-quoted atoms with `'` doubled
+;; to `''`. This is CRITICAL: bare `000879` parses as the integer 879, and
+;; `abc-000000000001` parses as the arithmetic expression abc-1. Real IDs
+;; (person_id, artifact_id, drift_event_id, manifest_path) are strings — quote
+;; them or the facts lose identity.
+(defn- prolog-atom [s]
+  (str "'" (.replace (str s) "'" "''") "'"))
+
+(defn- ensure-dir! [out-dir]
+  (.mkdirs (io/file out-dir)))
+
+(defn- write-lines! [out-dir filename lines]
+  ;; Sort for byte-stability across .listFiles orderings (Blocker: medium).
+  ;; Parent dir created up-front; empty corpus writes an empty file (not none).
+  (spit (io/file out-dir filename) (str/join "\n" (sort lines)) :append false))
+
 (defn- emit-manifest-identity-facts! [out-dir]
   (let [lines (for [path example-manifests
                     :let [m (files/read-json path)
                           id-obj (get m "manifest_identity_object")
                           hash (manifest/artifact-id id-obj)]]
-                (format "manifest_identity('%s', %s)." path hash))]
-    (spit (str out-dir "/manifest_identity.pl") (str/join "\n" lines) :append false)))
+                (format "manifest_identity(%s, %s)."
+                        (prolog-atom path) (prolog-atom hash)))]
+    (write-lines! out-dir "manifest_identity.pl" lines)))
 
 (defn- emit-drift-facts! [out-dir]
   (let [dir (io/file example-drift-events-dir)
-        lines (for [f (.listFiles dir)
-                    :when (.isFile f)
+        files (->> (.listFiles dir)
+                   (filter #(.isFile %))
+                   (sort-by #(.getName %)))
+        lines (for [f files
                     :let [ev (files/read-json f)
                           id (get ev "drift_event_id")]]
-                (format "drift_event(%s)." id))]
-    (spit (str out-dir "/drift.pl") (str/join "\n" lines) :append false)))
+                (format "drift_event(%s)." (prolog-atom id)))]
+    (write-lines! out-dir "drift.pl" lines)))
+
+(defn- participant-by-snapshot [event]
+  ;; snapshot_id -> person_id, for resolving prov.used / was_generated_by
+  ;; references back to participants[].person_id.
+  (into {} (for [p (get event "participants")]
+             [(get p "snapshot_id") (get p "person_id")])))
 
 (defn- emit-person-record-facts! [out-dir]
-  ;; person_record/1 from person-record files; drift_successor/2 from drift
-  ;; events' participants. Real corpus is the source — no hand-transcription.
+  ;; person_record/1 from person-record files.
   (let [persons (io/file example-persons-dir)
-        record-lines (for [f (.listFiles persons)
-                           :when (and (.isFile f) (str/ends-with? (.getName f) ".json"))
+        record-files (->> (.listFiles persons)
+                          (filter #(and (.isFile %)
+                                        (str/ends-with? (.getName %) ".json")))
+                          (sort-by #(.getName %)))
+        record-lines (for [f record-files
                            :let [r (files/read-json f)
                                  pid (get r "person_id")]]
-                       (format "person_record(%s)." pid))]
-    (spit (str out-dir "/person_records.pl") (str/join "\n" record-lines) :append false)))
+                       (format "person_record(%s)." (prolog-atom pid)))]
+    (write-lines! out-dir "person_records.pl" record-lines)
+    ;; drift_successor/2: for each drift event, every post- participant
+    ;; (successor) is a successor of every pre- participant (predecessor).
+    ;; Resolved by mapping prov.used (pre snapshot_ids) and
+    ;; prov.was_generated_by (post snapshot_ids) through participants to
+    ;; person_ids. Real corpus is the source — no hand-transcription.
+    (let [event-files (->> (.listFiles (io/file example-drift-events-dir))
+                           (filter #(.isFile %))
+                           (sort-by #(.getName %)))
+          successor-lines (for [f event-files
+                                :let [ev (files/read-json f)
+                                      snap->pid (participant-by-snapshot ev)
+                                      pre-pids (for [s (get-in ev ["prov" "used"])]
+                                                 (get snap->pid s))
+                                      post-pids (for [s (get-in ev ["prov" "was_generated_by"])]
+                                                  (get snap->pid s))
+                                      post (set (remove nil? post-pids))
+                                      pre (set (remove nil? pre-pids))]
+                                succ post
+                                pred pre]
+                            (format "drift_successor(%s, %s)."
+                                    (prolog-atom pred) (prolog-atom succ)))]
+      ;; Append drift_successor/2 facts to the same file (separated by a comment).
+      (let [existing (slurp (io/file out-dir "person_records.pl"))
+            all-lines (str existing (when (seq successor-lines)
+                                      (str "\n\n% drift_successor/2 emitted from prov.used / was_generated_by\n"
+                                           (str/join "\n" (sort successor-lines)))))]
+        (spit (io/file out-dir "person_records.pl") all-lines)))))
 
 (defn emit-prolog! [out-dir]
+  (ensure-dir! out-dir)
   (emit-manifest-identity-facts! out-dir)
   (emit-drift-facts! out-dir)
   (emit-person-record-facts! out-dir))
 ```
 
-Note: the example paths and the exact shape of person-record files must be verified against the real corpus at execution time (run `ls examples/v0/example-persons/` and `cat` one record). Adjust the emitter to the real file layout; do NOT change the Prolog fact shape without updating the query files in Task 6.
+Note: the emitter now writes BOTH `person_record/1` AND `drift_successor/2`
+(needed by Task 7), quotes every string arg as a single-quoted SWI atom
+(`'` doubled — bare `000879` would parse as integer 879, `abc-...` as an
+arithmetic expr), sorts files by name for byte-stability, and creates the
+output directory up-front. Verify the real person-record file shape
+(`examples/v0/example-persons/000879.json` has `person_id: "000879"`) and
+the real drift-event `prov` shape (`used`, `was_generated_by` arrays of
+snapshot_ids resolvable through `participants[].snapshot_id`) at execution
+time before finalizing the successor resolution.
 
 - [ ] **Step 4: Run the tests — verify they pass**
 
@@ -574,73 +724,93 @@ git commit -m "feat(facts): Prolog fact emitter reading real corpus (Layer C, Cl
 
 ---
 
-## Task 6: Position L Prolog query + Nix gate (Layer C — SWI side)
+## Task 6: Manifest-identity-emitter sanity Prolog gate (Layer C — SWI side)
+
+> **Honesty note (Blocker Position-L remediation):** the gate in this task is
+> an **emitter sanity check** — it asserts no duplicate `manifest_identity/2`
+> facts exist for the same manifest path. It does **NOT** prove ADR 0020
+> Position L ("drift events do not rotate `manifest_identity_object`").
+> Position L is enforced **structurally** today: drift events live in
+> separate files (`_events/*.json`) that the manifest schema never references
+> as identity inputs, so a drift event cannot rotate identity by construction.
+> A real before/after Prolog proof of Position L would require the emitter to
+> model a hypothetical post-drift identity (defining what identity *would be*
+> if drift entered the identity object), which ADR 0020 forbids — that modeling
+> is future work, not this task. **Do not claim this gate replaces Position L**
+> in Task 8/9; claim only emitter sanity.
 
 **Files:**
 - Create: `fixtures/v0/facts/prolog/manifest_identity.pl` (emitted by a Nix check invoking the emitter, then committed; byte-stable per ADR 0011)
 - Create: `fixtures/v0/facts/prolog/drift.pl`
 - Create: `fixtures/v0/facts/prolog/person_records.pl`
-- Create: `docs/adr/position-l-rotation.pl` — committed query
+- Create: `docs/adr/manifest-identity-emitter-sanity.pl` — committed query (renamed honestly from `position-l-rotation.pl`).
 - Modify: `flake.nix` — `checks.prolog-facts` (emits + commits facts) and `checks.prolog-cross-artifact` (runs the query)
 
 **Interfaces:**
 - Consumes: `facts/emit-prolog!` (Task 5); `pkgs.swi-prolog` (Task 3).
-- Produces: a Nix check that emits facts from real artifacts, commits them (so they're reviewable), and runs SWI-Prolog querying cross-artifact invariants.
+- Produces: a Nix check `prolog-cross-artifact` that runs SWI-Prolog against the committed fact files + the query. The Clojure-side byte-compare (committed facts vs freshly-emitted) runs under the existing `clj-nix-focused-tests` derivation (which has the `cljDepsCache` + `deps.edn` replacement setup) — NOT in this Nix gate. This gate shells to `swipl` only; it does not shell to `clojure`, so it avoids the Nix-sandbox offline-dependency failure the plain `clojure -e` would hit.
 
-- [ ] **Step 1: Write the Position L query**
+- [ ] **Step 1: Write the emitter-sanity query**
 
-Create `docs/adr/position-l-rotation.pl`:
+Create `docs/adr/manifest-identity-emitter-sanity.pl`:
 
 ```prolog
-% ADR 0020 Position L: drift events MUST NOT rotate manifest_identity_object.
-% Drift events are an audit sidecar; the manifest identity computed from a
-% real manifest is the source of truth.
+% Emitter sanity: no duplicate manifest_identity/2 facts for the same manifest
+% path. This is NOT a proof of ADR 0020 Position L — see the task header. It
+% guards that the emitter (Task 5) didn't write two different identity hashes
+% for one manifest, which would make downstream Prolog comparisons meaningless.
 %
-% Design §7.3: identity facts are EMITTED by the Clojure emitter using the
-% real manifest/artifact-id. Prolog only compares — it never recomputes
-% identity (which would risk hand-translating the hash function).
-%
-% Query: are there any (manifest, drift event) pairs whose post-event identity
-% differs from the pre-event identity? Since the emitter writes one
-% manifest_identity/2 fact per real manifest at emit time, and drift events
-% do not rewrite manifests, every manifest's identity hash is by construction
-% independent of any drift_event/1. A violation would require the emitter to
-% emit two different hashes for the same manifest — guarded below.
+% Design §7.3: identity facts are EMITTED by the Clojure emitter using the real
+% manifest/artifact-id. Prolog only compares emitted facts.
 
 :- use_module(library(lists)).
 
-% The current design emits one identity per manifest; if that invariant is
-% ever violated (two hashes for the same manifest), this predicate succeeds:
+% A violation: two different hashes claimed for the same manifest path.
 violating_dup_identity(Manifest) :-
     manifest_identity(Manifest, H1),
     manifest_identity(Manifest, H2),
     H1 \= H2.
 
-% Run: swipl -q -t "halt(\+ violating_dup_identity(_))" position-l-rotation.pl
+% Run: swipl -q -t "halt(\+ violating_dup_identity(_))" manifest_identity.pl
 % Exit 0 (halt(true)) = no violation; exit 1 (halt(false)) = violation found.
 ```
 
-Note: the query above is the minimal honest version — it asserts the emitter doesn't emit conflicting identities for the same manifest. A fuller Position-L query (predrift-vs-postdrift identity comparison) requires the emitter to write `manifest_identity_after/3` facts computed in Clojure for the post-drift state; if the design later wants that, Task 5 must extend the emitter. For now, the single-fact-per-manifest invariant is the real, emit-time check.
+Note: this is the **minimal honest** version — emitter sanity only. A fuller
+Position-L query (pre-drift-vs-post-drift identity comparison) would require
+the emitter to model a hypothetical post-drift identity, which ADR 0020
+forbids; that is future work, NOT claimed by this task.
 
-- [ ] **Step 2: Emit the committed fact files (manually, by running the emitter)</b>
+- [ ] **Step 2: Emit the committed fact files (developer step, OUTSIDE Nix)**
 
-Run, from the repo root:
+The committed `fixtures/v0/facts/prolog/*.pl` files are regenerated by a
+developer running the emitter locally, then committed. They are NOT regenerated
+inside a Nix check — the Nix sandbox's offline dependency setup
+(`cljDepsCache` + `deps.edn` replacement, flake.nix:312-345) lives only in the
+`clj-nix-focused-tests` derivation. To regenerate, from the repo root:
 
 ```bash
-clojure -X abc.tools.facts/emit-prolog-x :dir '"fixtures/v0/facts/prolog"'
+mkdir -p fixtures/v0/facts/prolog
+clojure -M:abc/dev -e "(require '[abc.tools.facts :as f]) (f/emit-prolog! \"fixtures/v0/facts/prolog\")"
 ```
 
-If `emit-prolog!` is arity-1 not `-X`-compatible, add a thin `-X` wrapper, or run:
+(Use whichever alias provides a classpath with `org.clojure/test.check`; if
+none exists yet, add a `:abc/dev` alias to `deps.edn`, or invoke via
+`clojure -M:test` if that alias exists. The point is: this is a local
+reproducible Clojure invocation, not a Nix-shell invocation.)
 
-```bash
-clojure -e "(require '[abc.tools.facts :as f]) (f/emit-prolog! \"fixtures/v0/facts/prolog\")"
-```
+Verify the three `.pl` files exist, contain real `sha256:...` hashes, and that
+IDs are single-quoted (`'000879'`, not `000879`).
 
-Verify the three `.pl` files exist and contain real `sha256:...` hashes.
+The CI guard against stale committed facts is Step 3's byte-compare test,
+which runs under `clj-nix-focused-tests` (which HAS the offline-deps setup)
+and re-emits to a temp dir, diffing against committed. So: developer regenerates
++ commits; CI verifies committed matches a fresh emit.
 
-- [ ] **Step 3: Write the failing Nix check test**
+- [ ] **Step 3: Write the byte-compare test (runs under clj-nix-focused-tests)**
 
-The Nix check will: (a) re-emit facts into a temp dir, (b) byte-compare against the committed files (catching silent corpus drift), (c) run the SWI-Prolog query. For the test, add to `test/abc/tools/facts_test.clj`:
+The `clj-nix-focused-tests` derivation already has the `cljDepsCache` +
+`deps.edn` replacement + `ABC_TEI_SCHEMA_SKIP=1` setup (flake.nix:312-345),
+so the Clojure emitter runs correctly there. Add to `test/abc/tools/facts_test.clj`:
 
 ```clojure
 (deftest committed-facts-match-real-corpus-test
@@ -653,37 +823,41 @@ The Nix check will: (a) re-emit facts into a temp dir, (b) byte-compare against 
             (str "committed " f " diverges from real corpus; regenerate via the emitter"))))))
 ```
 
+This is the CI guard that committed facts aren't stale (regression: corpus
+changed, committed `.pl` not regenerated). It runs in the derivation that has
+the offline Clojure deps — NOT in the swipl-only Nix gate.
+
 - [ ] **Step 4: Run the test — verify it passes**
 
 Run: `nix build .#checks.x86_64-linux.clj-nix-focused-tests --no-link 2>&1 | tail -20`
 Expected: PASS (the committed facts match freshly-emitted facts from the real corpus).
 
-- [ ] **Step 5: Add the Nix gate**
+- [ ] **Step 5: Add the Nix gate (swipl-only, no Clojure)**
 
-In `flake.nix`:
+In `flake.nix`. Note: `nativeBuildInputs` has ONLY `swi-prolog` (no `clojure`)
+— the Clojure byte-compare is in Step 3's test under `clj-nix-focused-tests`,
+which already has the offline-deps setup. This gate only runs swipl against
+committed facts. (Blocker High remediation: a plain `clojure -e` here would
+fail in the Nix sandbox without the `cljDepsCache` pattern.)
 
 ```nix
           prolog-cross-artifact =
             pkgs.runCommand "abc-prolog-cross-artifact"
-              { nativeBuildInputs = [ pkgs.swi-prolog pkgs.clojure ]; }
+              { nativeBuildInputs = [ pkgs.swi-prolog ]; }
               ''
                 set -euo pipefail
-                # Identity facts are EMITTED by the Clojure emitter using the
-                # real manifest identity function; Prolog only compares.
-                export ABC_TEI_SCHEMA_SKIP=1
-                clojure -e "(require '[abc.tools.facts :as f]) (f/emit-prolog! \"$TMPDIR/facts\")"
-                # Byte-compare emitted facts against committed (catches corpus drift).
-                for f in manifest_identity.pl drift.pl person_records.pl; do
-                  diff -u "fixtures/v0/facts/prolog/$f" "$TMPDIR/facts/$f"
-                done
-                # Run the Position L query. halt(true) = no violation = exit 0.
+                # Reads COMMITTED fact files (regenerated & byte-checked by the
+                # clj-nix-focused-tests derivation via the emitter). swipl only.
                 swipl --quiet -t "halt(\\+ violating_dup_identity(_))" \
                       -c fixtures/v0/facts/prolog/manifest_identity.pl \
-                      -c docs/adr/position-l-rotation.pl
+                      -c docs/adr/manifest-identity-emitter-sanity.pl
                 mkdir -p "$out"
-                echo "Position L cross-artifact invariant holds (SWI-Prolog)." > "$out/result.txt"
+                echo "Manifest-identity-emitter sanity holds (SWI-Prolog)." > "$out/result.txt"
               '';
 ```
+
+(Step 7 (Task 7) extends this gate to also load `person_records.pl` + `drift.pl`
+and run the referential-integrity query.)
 
 - [ ] **Step 6: Run the Nix gate**
 
@@ -692,15 +866,23 @@ Expected: PASS.
 
 - [ ] **Step 7: Mutation-test that the gate bites**
 
-Edit `fixtures/v0/facts/prolog/manifest_identity.pl` and add a second `manifest_identity('examples/v0/example-work/manifest.json', sha256:deadbeef...).` line with a different hash for the same manifest. Re-run the Nix gate. Expected: FAIL — `violating_dup_identity` succeeds, halt(false) → exit 1. Restore the file. Re-run. Expected: PASS.
+Edit `fixtures/v0/facts/prolog/manifest_identity.pl` and add a second
+`manifest_identity('examples/v0/example-work/manifest.json', 'sha256:deadbeef...').`
+line with a different hash for the same manifest. Re-run the Nix gate. Expected:
+FAIL — `violating_dup_identity` succeeds, halt(false) → exit 1. Restore the
+file. Re-run. Expected: PASS.
 
 - [ ] **Step 8: Commit**
 
 ```bash
-git add fixtures/v0/facts/prolog/*.pl docs/adr/position-l-rotation.pl \
+git add fixtures/v0/facts/prolog/*.pl docs/adr/manifest-identity-emitter-sanity.pl \
         test/abc/tools/facts_test.clj flake.nix
-git commit -m "feat(ci): SWI-Prolog Position L cross-artifact gate (Layer C)"
+git commit -m "feat(ci): SWI-Prolog manifest-identity-emitter sanity gate (Layer C)"
 ```
+
+(Commit message says "emitter sanity", NOT "Position L" — honesty per the task
+header. Position L remains enforced structurally + via the manifest schema; a
+real Prolog proof is future work.)
 
 ---
 
@@ -718,25 +900,35 @@ git commit -m "feat(ci): SWI-Prolog Position L cross-artifact gate (Layer C)"
 Create `docs/adr/person-id-referential-integrity.pl`:
 
 ```prolog
-% Referential integrity: every person_id appearing as a drift successor must
-% resolve to either a committed person_record or a drift successor in the log.
-% (If Task 5 does not yet emit contributor/2 facts, this predicate covers the
-% drift-successor-only case and is extended when contributor facts are added.)
+% Referential integrity: every person_id appearing in a drift_successor/2
+% fact (as either predecessor or successor) must resolve to a committed
+% person_record/1. Task 5's emitter resolves successors from prov.used /
+% was_generated_by through participants[].snapshot_id. A dangling person_id
+% means a drift event references a person not present in the corpus.
 :- use_module(library(lists)).
 
-dangling_successor(Pid) :-
-    drift_successor(Pid, _),
+% A person_id mentioned by drift_successor/2 in either argument but with no
+% committed person_record/1 fact.
+dangling_person(Pid) :-
+    ( drift_successor(Pid, _) ; drift_successor(_, Pid) ),
     \+ person_record(Pid).
 
-% Run: swipl -q -t "halt(\+ dangling_successor(_))" person-id-referential-integrity.pl
+% Run: swipl -q -t "halt(\+ dangling_person(_))" -c person_records.pl -c drift.pl -c person-id-referential-integrity.pl
 ```
+
+Note: `drift_successor/2` is emitted by Task 5 (Blocker remediation: it was
+promised but originally absent). Person_ids are single-quoted atoms (`'000879'`)
+so `\=` and unification compare string atoms, not corrupted integers.
 
 - [ ] **Step 2: Extend the Nix gate to run both queries**
 
-In `flake.nix` `prolog-cross-artifact`, after the Position L swipl call, add:
+In `flake.nix` `prolog-cross-artifact` (Task 6 Step 5), after the
+emitter-sanity swipl call, add a second swipl call that loads
+`person_records.pl` (which now contains both `person_record/1` and
+`drift_successor/2`) and `drift.pl`:
 
 ```nix
-                swipl --quiet -t "halt(\\+ dangling_successor(_))" \
+                swipl --quiet -t "halt(\\+ dangling_person(_))" \
                       -c fixtures/v0/facts/prolog/person_records.pl \
                       -c fixtures/v0/facts/prolog/drift.pl \
                       -c docs/adr/person-id-referential-integrity.pl
@@ -781,8 +973,16 @@ docs/superpowers/specs/2026-07-04-code-as-spec-formal-models-design.md):
 | r1-reproducibility-conflict.smt2 | test/abc/tools/code_as_spec_test.clj — test.check property against manifest-index/reproducibility-conflicts (Layer D) |
 | r2-non-circularity.smt2 | fixtures/v0/invalid/manifest-nested-artifact-id/ + fixture-battery test (Layer A) |
 | r3-drift-cardinality.smt2 | test/abc/tools/person_drift_test.clj — six-mode schema cardinality test (already shipped 48c4c65) |
-| (cross-artifact, new) | docs/adr/{position-l-rotation,person-id-referential-integrity}.pl — SWI-Prolog over emitted facts (Layer C) |
+| (cross-artifact, new) | docs/adr/manifest-identity-emitter-sanity.pl — SWI-Prolog emitter sanity (NO dup manifest_identity facts); docs/adr/person-id-referential-integrity.pl — person_id referential integrity over emitted facts (Layer C). **NOT** a proof of ADR 0020 Position L — see note below. |
 | (process gate, new) | nix/check-acceptance-criteria.sh — ratcheted ADR-acceptance lint (Layer F) |
+
+**Honesty note:** the Prolog gate is an emitter-sanity + referential-integrity
+check, NOT a proof of ADR 0020 Position L ("drift events do not rotate
+`manifest_identity_object`"). Position L is enforced structurally: drift
+events live in separate files the manifest schema never references as identity
+inputs. A real before/after Prolog proof of Position L would require modeling a
+hypothetical post-drift identity that ADR 0020 forbids — future work, not claimed
+by this resolution.
 
 Each replacement is mutation-tested to confirm its verdict changes on a real
 regression. The three .smt2 files, their Nix gates, and 0001-invariants.README.md
@@ -834,17 +1034,22 @@ git rm docs/adr/r1-reproducibility-conflict.smt2 \
 
 Edit `flake.nix`: delete the `adr0001-invariants`, `adr0020-drift-cardinality`, and `adr-invariants-vacuity` `pkgs.runCommand` blocks. Run `nix fmt flake.nix`.
 
-- [ ] **Step 4: Verify the flake still builds the remaining checks**
+- [ ] **Step 4: Verify the flake is clean after deleting checks**
 
-Run:
+Selected-check builds aren't enough after deleting Nix outputs — a stale
+reference elsewhere could survive. Run a full flake check + the design-bundle
+runtime (which the deleted SMT gates used to shadow):
 
 ```bash
-nix build .#checks.x86_64-linux.adr-acceptance-criteria \
-          .#checks.x86_64-linux.prolog-cross-artifact \
-          .#checks.x86_64-linux.swi-prolog-smoke --no-link 2>&1 | tail -5
+# Full flake check catches stale references to deleted checks.
+nix flake check --print-build-logs 2>&1 | tail -20
+# The design-bundle runtime is the real invariant carrier for manifest
+# identity (ADR 0001). Confirm it still runs end-to-end after the sweep.
+nix run .#validate-design-bundle 2>&1 | tail -20
 ```
 
-Expected: all PASS.
+Expected: `nix flake check` exits 0; `validate-design-bundle` succeeds. If
+either fails, the sweep left a dangling reference — fix before committing.
 
 - [ ] **Step 5: Commit**
 
@@ -864,20 +1069,37 @@ remains that takes a hand-transcribed restatement of a prose spec as input."
 
 **1. Spec coverage:**
 - Layer A (schemas-as-spec + fixtures) → Task 1 (R2). R3 already shipped (`48c4c65`). ✅
-- Layer F (ADR-acceptance lint, ratcheted) → Task 2. ✅
-- Layer D (test.check, R1) → Task 4. ✅
-- Layer C (Prolog over emitted facts; Position L + person-id referential integrity) → Tasks 5, 6, 7. ✅
+- Layer F (ADR-acceptance lint, ratcheted) → Task 2. Allowlist has 19 ADRs (0001-0010, 0011-0014, 0017-0018, 0020-0022). ✅
+- Layer D (test.check, R1) → Task 4. Generator aligned to real `successful-entry?` (`#{passed warning}`), real schema enum; `expected?` from actual hash equality; `detected?` = `(boolean (seq conflicts))`. ✅
+- Layer C (Prolog over emitted facts) → Tasks 5, 6, 7. Task 6 is **emitter sanity** (honestly named, NOT a Position L proof); Task 7 is person-id referential integrity. ✅
 - Layer G (delete SMT on replacement) → Task 9. ✅
 - SWI-Prolog pin (spec §7.5) → Task 3. ✅
 - Facts location `fixtures/v0/facts/prolog/` → Tasks 5, 6. ✅
 - "Delete not dormant" vacuity gate → Task 9 deletes it. ✅
-- Ratchet allowlist (17 ADRs) → Task 2. ✅
-- Position L no-hand-translation (Clojure emits identity, Prolog compares) → Task 5 emitter + Task 6 query docstring. ✅
+- Ratchet allowlist (19 ADRs, incl. 0011/0021) → Task 2. ✅
+- Position L — NOT claimed by any Prolog gate (Task 6 header + Task 8 honesty note). Enforced structurally; real proof is future work. ✅
 - Errata `manifest_identity_object` (not `artifact_identity_object`) → reflected in Global Constraints and Task 5. ✅
+- Nix Clojure offline-deps pattern → Task 6 Step 3 byte-compare runs under `clj-nix-focused-tests`; Task 6 Step 5 Nix gate is swipl-only (no `clojure -e`). ✅
+- Prolog ID quoting (single-quoted atoms) → Task 5 `prolog-atom` helper; Task 5 `emit-prolog-quotes-person-ids-test`. ✅
+- `drift_successor/2` actually emitted (not just promised) → Task 5 emitter + `emit-prolog-writes-drift-successor-facts-test`. ✅
+- Byte-stability (sort files, mkdir parents) → Task 5 `write-lines!` + `ensure-dir!`. ✅
+- Task 9 broadened verification (`nix flake check` + `validate-design-bundle`) → Task 9 Step 4. ✅
 
-**2. Placeholder scan:** Task 4's generator notes that `successful-entry?` must be verified at execution time (concrete file path given). Task 5's example paths must be verified against real corpus (concrete commands given). Task 6 Step 1 documents the minimal-vs-fuller Position L query honestly. No "TBD"/"implement later"/"similar to Task N". One `TODO` exists in Task 2 Step 3's placeholder test body — that is intentional scaffolding filled in by the mutation step; flagged for the implementer.
+**2. Placeholder scan:** No "TBD"/"implement later"/"similar to Task N". The
+former `(is true "TODO...")` in Task 2 Step 3 is REPLACED by a non-vacuous
+temp-corpus mutation test. Task 4's generator is fully specified against the
+real predicate (no "verify at execution time" hedge — the exact enum and
+statuses are given). Task 6 Step 1 honestly labels itself emitter-sanity, not
+Position L.
 
-**3. Type consistency:** `facts/emit-prolog!` arity-1 vector-of-strings throughout (Task 5 def, Task 6 Step 2 invocation, Task 6 Step 5 Nix invocation). `reproducibility-conflicts` takes `entries` (vector of maps) — Task 4 generator produces that shape. `manifest/artifact-id` takes `identity-object` (map) — Task 5 calls it on `(get m "manifest_identity_object")`. Prolog fact shapes: `manifest_identity/2`, `drift_event/1`, `person_record/1`, `drift_successor/2` — consistent across Task 5, Task 6, Task 7.
+**3. Type consistency:** `facts/emit-prolog!` arity-1 throughout (Task 5 def,
+Task 6 Step 2 developer invocation, Task 6 Step 3 byte-compare test).
+`reproducibility-conflicts` takes `entries` (vector of maps) — Task 4 generator
+produces that shape. `manifest/artifact-id` takes `identity-object` (map) —
+Task 5 calls it on `(get m "manifest_identity_object")`. Prolog fact shapes:
+`manifest_identity/2`, `drift_event/1`, `person_record/1`, `drift_successor/2`
+— consistent across Task 5, Task 6, Task 7. All Prolog string args
+single-quoted via `prolog-atom`.
 
 ---
 

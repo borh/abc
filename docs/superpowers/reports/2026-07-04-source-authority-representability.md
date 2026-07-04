@@ -5,7 +5,7 @@
 - source_authority_gate: `SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED`
 - note: this is not a passing representability gate; durable representability claims remain blocked until strict_errors is empty.
 - strict_errors:
-  - 10519 unallowlisted source markers
+  - 9069 unallowlisted source markers
 
 ## Scope
 
@@ -16,13 +16,13 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 - works_scanned: 17894
 - works_failed: 0
 - markers_total: 4324663
-- unknown_markers_total: 25389
-- unallowlisted_unknown_markers_total: 10519
+- unknown_markers_total: 23939
+- unallowlisted_unknown_markers_total: 9069
 - allowlisted_unknown_markers_total: 14870
 
 ## Representability
 
-- typed_occurrences: 4439156
+- typed_occurrences: 4565366
 - raw_preserved_occurrences: 25072
 - out_of_body_occurrences: 950
 - unsupported_occurrences: 13920
@@ -39,7 +39,7 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | caption.block | 47 | 1722 | 000058_57440, 000091_50354, 000125_1321, 000165_49567, 000226_1150 |
 | caption.inline | 136 | 1040 | 000014_728, 000067_1768, 000067_1788, 000067_1789, 000093_1916 |
 | decoration.bold_italic | 159 | 5257 | 000025_1144, 000026_50241, 000026_55916, 000035_279, 000035_52380 |
-| decoration.boten | 79 | 2762 | 000034_56908, 000042_61014, 000042_61015, 000042_61019, 000048_45476 |
+| decoration.boten | 6234 | 128972 | 000005_53194, 000006_382, 000006_383, 000006_58819, 000008_1083 |
 | decoration.bousen | 317 | 18087 | 000006_1869, 000013_11, 000019_4376, 000034_55507, 000038_1408 |
 | decoration.direction_override | 6 | 65 | 000096_935, 000866_3039, 001094_42603, 001242_46444, 001467_50733 |
 | decoration.font_size | 1195 | 51342 | 000008_58922, 000011_899, 000019_58861, 000019_59261, 000019_59375 |
@@ -179,44 +179,34 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 
 ## Unknown Source Marker Classes
 
-Showing 50 report rows of 8312 total classes. JSON carries 1000 top classes. truncated: true
+Showing 50 report rows of 7376 total classes. JSON carries 1000 top classes. truncated: true
 
 | kind | raw | occurrences | unallowlisted | allowlisted | samples |
 |---|---|---:|---:|---:|---|
 | MalformedAccentNotation | 〔 | 56 | 56 | 0 | 000026_219, 000034_55507, 000081_4416, 000081_50764, 000091_522 |
 | CommandFullwidth | ［＃ここから天付き、折り返して１字下げ］ | 26 | 26 | 0 | 001154_44776, 001471_55564, 001471_55567, 001471_55575 |
-| CommandFullwidth | ［＃「天皇制」に×傍点］ | 25 | 25 | 0 | 000311_3149 |
 | CommandFullwidth | ［＃「（訳注）」は行左小書き］ | 23 | 23 | 0 | 002265_62680, 002265_62681, 002265_62687, 002265_62688 |
 | CommandFullwidth | ［＃中見出終わり］ | 18 | 18 | 0 | 000296_58605, 000989_353, 001799_59015 |
 | CommandFullwidth | ［＃「。」は底本では欠落］ | 17 | 17 | 0 | 000009_43523, 000019_42382, 000294_1858, 001048_45381, 001090_42307 |
 | CommandFullwidth | ［＃ここから２段組み］ | 17 | 17 | 0 | 000061_377, 000311_46235, 000885_2557, 000908_51734, 001021_50117 |
-| CommandFullwidth | ［＃「ツァー」に×傍点］ | 16 | 16 | 0 | 000311_3149 |
-| CommandFullwidth | ［＃「革命」にばつ傍点］ | 16 | 16 | 0 | 001311_53951, 001422_50296, 001471_55570, 001618_54002, 001627_54064 |
-| CommandFullwidth | ［＃「独裁」に×傍点］ | 15 | 15 | 0 | 000311_3149 |
 | CommandFullwidth | ［＃sは下ドット付き］ | 14 | 14 | 0 | 001096_42686, 001096_43672 |
 | CommandFullwidth | ［＃「。」は底本では脱落］ | 14 | 14 | 0 | 000320_2562, 000885_2549, 000885_2550, 000885_2551, 000885_2554 |
-| CommandFullwidth | ［＃「十三人」に白三角傍点］ | 14 | 14 | 0 | 000183_52746 |
 | CommandFullwidth | ［＃「詫び」は底本では「詑び」と誤植］ | 14 | 14 | 0 | 000111_1479, 000111_565, 000111_566 |
 | CommandFullwidth | ［＃ここで段組み終わり］ | 14 | 14 | 0 | 000061_377, 000096_2100, 000311_46235, 000885_2557, 000908_51734 |
 | CommandFullwidth | ［＃「「」は底本では欠落］ | 13 | 13 | 0 | 000019_42380, 000019_42385, 000022_4873, 001090_42307, 001123_42940 |
-| CommandFullwidth | ［＃「天皇」に×傍点］ | 13 | 13 | 0 | 000311_2850, 000311_3149 |
 | CommandFullwidth | ［＃mは上ドット付き］ | 12 | 12 | 0 | 001096_43672 |
 | CommandFullwidth | ［＃nは上ドット付き］ | 12 | 12 | 0 | 001096_42686, 001096_43554 |
 | CommandFullwidth | ［＃「　　」は罫囲み］ | 12 | 12 | 0 | 000125_1317, 000146_50413, 000908_51960, 001344_54437, 001344_54856 |
 | CommandFullwidth | ［＃「、」は底本では欠落］ | 11 | 11 | 0 | 000009_42929, 000294_1858, 001090_42307, 001123_43496 |
-| CommandFullwidth | ［＃「革命」に×傍点］ | 11 | 11 | 0 | 000311_3149, 000311_3150, 000311_3893 |
 | CommandFullwidth | ［＃ここからページの左右中央］ | 11 | 11 | 0 | 000885_2557 |
 | CommandFullwidth | ［＃底本のまま］ | 11 | 11 | 0 | 000125_666 |
 | CommandFullwidth | ［＃「。」はママ］ | 10 | 10 | 0 | 000037_1418, 000082_1020, 000137_51868, 000255_1405, 000255_43721 |
 | CommandFullwidth | ［＃「。」は底本ではなし］ | 10 | 10 | 0 | 000048_43617, 000048_43626 |
-| CommandFullwidth | ［＃「署」にばつ傍点］ | 10 | 10 | 0 | 001627_54063 |
 | CommandFullwidth | ［＃ここから表］ | 10 | 10 | 0 | 001149_45455 |
 | CommandFullwidth | ［＃ここで表終わり］ | 10 | 10 | 0 | 001149_45455 |
 | CommandFullwidth | ［＃「」」は底本では欠落］ | 9 | 9 | 0 | 000009_42929, 000009_43523, 000019_42382, 000019_42385, 001048_45381 |
 | CommandFullwidth | ［＃「ル」は上に「⌒」付き］ | 9 | 9 | 0 | 000564_52368 |
 | CommandFullwidth | ［＃「引」は小書き右寄せ］ | 9 | 9 | 0 | 000006_1869, 000050_48400 |
-| CommandFullwidth | ［＃「戦争」にばつ傍点］ | 9 | 9 | 0 | 001471_54053, 001620_54013, 001627_54067, 001643_54103, 001655_54264 |
-| CommandFullwidth | ［＃「殺」にばつ傍点］ | 9 | 9 | 0 | 001471_54053, 001620_54013, 001627_54063, 001643_54103, 001655_54266 |
 | CommandFullwidth | ［＃「花」は罫囲み］ | 9 | 9 | 0 | 001310_55609 |
 | CommandFullwidth | ［＃「註」略］ | 9 | 9 | 0 | 000072_408 |
 | CommandFullwidth | ［＃下げて、地より１字あきで］ | 9 | 9 | 0 | 000165_2394, 000165_2395, 000660_4055, 000885_3629, 000885_3630 |
@@ -233,6 +223,16 @@ Showing 50 report rows of 8312 total classes. JSON carries 1000 top classes. tru
 | CommandFullwidth | ［＃「?!」は一字］ | 7 | 7 | 0 | 000125_1320 |
 | CommandFullwidth | ［＃「、」はママ］ | 7 | 7 | 0 | 000037_1418, 000154_42324, 000207_47129, 000906_42393, 001474_57881 |
 | CommandFullwidth | ［＃「だった」はママ］ | 7 | 7 | 0 | 000121_45080, 000146_50413, 000325_45519, 000997_46897, 001383_58841 |
+| CommandFullwidth | ［＃「なって」はママ］ | 7 | 7 | 0 | 000146_50202, 000416_56962, 001157_49847, 001770_57996 |
+| CommandFullwidth | ［＃「地付き］ | 7 | 7 | 0 | 000150_46617 |
+| CommandFullwidth | ［＃「訳者」は文末より１字上げ揃え］ | 7 | 7 | 0 | 000235_2259 |
+| CommandFullwidth | ［＃一つ目の「e」は「´」付き］ | 7 | 7 | 0 | 000129_2522 |
+| CommandFullwidth | ［＃底本では「西ケ輪」］ | 7 | 7 | 0 | 000169_1273 |
+| CommandFullwidth | ［＃ηに帯気、ωに曲アクセント］ | 6 | 6 | 0 | 000065_393 |
+| CommandFullwidth | ［＃「2」は指数］ | 6 | 6 | 0 | 000096_2110 |
+| CommandFullwidth | ［＃「い」に「ママ」注記］ | 6 | 6 | 0 | 000874_3213 |
+| CommandFullwidth | ［＃「ヱ」は小文字］ | 6 | 6 | 0 | 000124_2421, 000124_662 |
+| CommandFullwidth | ［＃「一抔」はママ］ | 6 | 6 | 0 | 000989_350, 001402_49940 |
 
 ## Decode Failures
 

@@ -267,6 +267,35 @@ fn source_inventory_classifies_source_authority_tail_style_layout_variants() {
 }
 
 #[test]
+fn source_inventory_classifies_boten_corpus_variants() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = [
+        "［＃「天皇制」に×傍点］",
+        "［＃「革命」にばつ傍点］",
+        "［＃「十三人」に白三角傍点］",
+        "［＃「自然の諸事物を」～「表象である」に傍点］",
+        "［＃「革命」に×傍点、伏字を起こした文字］",
+        "［＃「ほ」に傍点、罫囲み］",
+    ]
+    .join("\n");
+    let summary = inventory_document("fixture", &source, &patterns);
+
+    assert_eq!(
+        summary.unknown_examples,
+        [],
+        "known corpus boten variants should not remain unknown"
+    );
+    assert_eq!(
+        summary
+            .row_counts
+            .get("decoration.boten")
+            .map(|count| count.occurrences),
+        Some(6)
+    );
+}
+
+#[test]
 fn source_inventory_classifies_annotation_editor_notes() {
     let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
     let patterns = patterns_from_rows(matrix.rows());

@@ -22,10 +22,11 @@
             {"type" "emphasis" "span" {"start" 6 "end" 7} "text" "C" "style" "boten"}
             {"type" "indentation" "span" {"start" 7 "end" 8} "depth" 2 "text" "D"}
             {"type" "page-break" "span" {"start" 8 "end" 9} "marker" "［＃改ページ］"}
-            {"type" "image" "span" {"start" 9 "end" 10} "src" "fig.png" "alt" "ALT"}
-            {"type" "caption" "span" {"start" 10 "end" 11} "text" "CAP"}
-            {"type" "quote" "span" {"start" 11 "end" 12} "marker_type" "inline" "text" "Q"}
-            {"type" "source-note" "span" {"start" 12 "end" 13}
+            {"type" "line-break" "span" {"start" 9 "end" 10} "marker" "［＃改行］"}
+            {"type" "image" "span" {"start" 10 "end" 11} "src" "fig.png" "alt" "ALT"}
+            {"type" "caption" "span" {"start" 11 "end" 12} "text" "CAP"}
+            {"type" "quote" "span" {"start" 12 "end" 13} "marker_type" "inline" "text" "Q"}
+            {"type" "source-note" "span" {"start" 13 "end" 14}
              "text" "SRC" "note_type" "source-attribution" "placement" "back"
              "classification" "direct" "source_pointer" "blocks[3]"}]
    "warnings" []
@@ -45,7 +46,7 @@
 
 (deftest render-string-test
   (testing "plaintext renders visible text policy for every current node type"
-    (is (= "\nH\nABX※［＃y］CD\nALTCAPQ\n\nSRC"
+    (is (= "\nH\nABX※［＃y］CD\n\nALTCAPQ\n\nSRC"
            (plaintext/render-string all-node-parser-ir)))))
 
 (deftest source-note-back-matter-is-separated-test
@@ -75,8 +76,8 @@
     (let [result (plaintext/render all-node-parser-ir)]
       (is (= "editor-note" (:type (first (:omitted result)))))
       (is (= {"heading" 1 "text" 1 "ruby" 1 "gaiji" 2 "editor-note" 1
-              "emphasis" 1 "indentation" 1 "page-break" 1 "image" 1
-              "caption" 1 "quote" 1 "source-note" 1}
+              "emphasis" 1 "indentation" 1 "page-break" 1 "line-break" 1
+              "image" 1 "caption" 1 "quote" 1 "source-note" 1}
              (:node_counts result))))))
 
 (deftest coverage-test

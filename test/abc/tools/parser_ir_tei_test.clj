@@ -37,9 +37,26 @@
       (is (some #(= :p (first %)) div-children))
       (is (seq (:char_declarations result)))
       (is (= {"heading" 1 "text" 1 "ruby" 1 "gaiji" 2 "editor-note" 1
-              "emphasis" 1 "indentation" 1 "page-break" 1 "image" 1
-              "caption" 1 "quote" 1 "source-note" 1}
+              "emphasis" 1 "indentation" 1 "page-break" 1 "line-break" 1
+              "image" 1 "caption" 1 "quote" 1 "source-note" 1}
              (:node_counts result))))))
+
+(deftest line-break-renders-as-tei-lb-test
+  (testing "explicit source line breaks project to the TEI P5 lb milestone"
+    (let [result (parser-ir-tei/render
+                  {"nodes" [{"type" "text"
+                             "span" {"start" 0 "end" 3}
+                             "text" "前"}
+                            {"type" "line-break"
+                             "span" {"start" 3 "end" 8}
+                             "marker" "［＃改行］"}
+                            {"type" "text"
+                             "span" {"start" 8 "end" 11}
+                             "text" "後"}]})
+          paragraph (some #(when (= :p (first %)) %) (hiccup-nodes (:body result)))]
+      (is (= [:p "前" [:lb] "後"] paragraph))
+      (is (= {"text" 2 "line-break" 1} (:node_counts result)))
+      (is (empty? (:omitted result))))))
 
 (def ^:private level3-parser-ir
   {"schema_id" "https://w3id.org/abc/schemas/parser-ir.schema.json"

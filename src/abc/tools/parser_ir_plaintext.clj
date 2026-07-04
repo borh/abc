@@ -42,6 +42,9 @@
 (defn- render-page-break-node [acc _node]
   (append-text acc "\n"))
 
+(defn- render-line-break-node [acc _node]
+  (append-text acc "\n"))
+
 (defn- render-image-node [acc node]
   (if (present-text? (get node "alt"))
     (append-text acc (get node "alt"))
@@ -73,6 +76,7 @@
    "heading" render-heading-node
    "indentation" render-indentation-node
    "page-break" render-page-break-node
+   "line-break" render-line-break-node
    "image" render-image-node
    "caption" render-caption-node
    "quote" render-quote-node

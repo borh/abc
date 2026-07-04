@@ -50,7 +50,7 @@
   "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396")
 
 (def ^:private current-parser-ir-schema-hash
-  "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2")
+  "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d")
 
 (def ^:private parser-ir-schema-hash
   legacy-parser-ir-schema-hash)
@@ -251,8 +251,12 @@
                                "span" {"start" 0 "end" 12
                                        "coordinate_system" "decoded_utf8"}
                                "text" "第一段"}
+                              {"type" "line-break"
+                               "span" {"start" 12 "end" 17
+                                       "coordinate_system" "decoded_utf8"}
+                               "marker" "［＃改行］"}
                               {"type" "source-note"
-                               "span" {"start" 12 "end" 52
+                               "span" {"start" 17 "end" 57
                                        "coordinate_system" "decoded_utf8"}
                                "text" "（古伝説と、シルレルの詩から。）"
                                "note_type" "source-attribution"
@@ -263,15 +267,15 @@
                                     "span" {"start" 0 "end" 12
                                             "coordinate_system" "decoded_utf8"}
                                     "span_source" "direct"
-                                    "node_range" {"start" 0 "end" 1}
+                                    "node_range" {"start" 0 "end" 2}
                                     "role" "body"
                                     "source_pointer" "blocks[0]"
                                     "classification" "direct"}
                                    {"id" "p000001"
-                                    "span" {"start" 12 "end" 52
+                                    "span" {"start" 17 "end" 57
                                             "coordinate_system" "decoded_utf8"}
                                     "span_source" "direct"
-                                    "node_range" {"start" 1 "end" 2}
+                                    "node_range" {"start" 2 "end" 3}
                                     "role" "source-note"
                                     "source_pointer" "blocks[78]"
                                     "classification" "heuristic"}]

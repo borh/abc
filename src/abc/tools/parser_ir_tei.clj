@@ -116,6 +116,9 @@
                   (some? (get node "page_number"))
                   (conj {:n (get node "page_number")}))))
 
+(defn- render-line-break-node [acc _node]
+  (append-inline acc [:lb]))
+
 (defn- render-image-node [acc node]
   (append-block acc
                 (cond-> [:figure
@@ -155,6 +158,7 @@
    "heading" render-heading-node
    "indentation" render-indentation-node
    "page-break" render-page-break-node
+   "line-break" render-line-break-node
    "image" render-image-node
    "caption" render-caption-node
    "quote" render-quote-node

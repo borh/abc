@@ -273,6 +273,108 @@ fn decoration_font_size_has_typed_representability() {
 }
 
 #[test]
+fn source_inventory_classifies_bold_italic_corpus_closing_markers() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = ["［＃ここで太字終わり］", "［＃ここで斜体終わり］"].join("\n");
+    let summary = inventory_document("fixture", &source, &patterns);
+
+    assert_eq!(
+        summary.unknown_examples,
+        [],
+        "known bold/italic corpus closing markers should not remain unknown"
+    );
+    assert_eq!(
+        summary
+            .row_counts
+            .get("decoration.bold_italic")
+            .map(|count| count.occurrences),
+        Some(2)
+    );
+}
+
+#[test]
+fn decoration_bold_italic_has_typed_representability() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let row = matrix
+        .rows()
+        .iter()
+        .find(|row| row.id == "decoration.bold_italic")
+        .expect("decoration.bold_italic row");
+    let representability = row
+        .representability
+        .as_ref()
+        .expect("decoration.bold_italic needs a reviewed representability cell");
+
+    assert_eq!(representability.status, RepresentabilityStatus::Typed);
+    assert!(representability.raw_fallback);
+    assert!(
+        representability
+            .aat_nodes
+            .iter()
+            .any(|node| node == "style")
+    );
+    assert!(
+        row.tei_projection.contains("bold") && row.tei_projection.contains("italic"),
+        "bold/italic source markers need TEI P5 hi rend projections"
+    );
+}
+
+#[test]
+fn source_inventory_classifies_keigakomi_block_markers() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = [
+        "［＃罫囲み］",
+        "［＃罫囲み終わり］",
+        "［＃ここから罫囲み］",
+        "［＃ここで罫囲み終わり］",
+    ]
+    .join("\n");
+    let summary = inventory_document("fixture", &source, &patterns);
+
+    assert_eq!(
+        summary.unknown_examples,
+        [],
+        "known keigakomi corpus markers should not remain unknown"
+    );
+    assert_eq!(
+        summary
+            .row_counts
+            .get("decoration.keigakomi")
+            .map(|count| count.occurrences),
+        Some(4)
+    );
+}
+
+#[test]
+fn decoration_keigakomi_has_typed_representability() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let row = matrix
+        .rows()
+        .iter()
+        .find(|row| row.id == "decoration.keigakomi")
+        .expect("decoration.keigakomi row");
+    let representability = row
+        .representability
+        .as_ref()
+        .expect("decoration.keigakomi needs a reviewed representability cell");
+
+    assert_eq!(representability.status, RepresentabilityStatus::Typed);
+    assert!(representability.raw_fallback);
+    assert!(
+        representability
+            .aat_nodes
+            .iter()
+            .any(|node| node == "keigakomi")
+    );
+    assert!(
+        row.tei_projection.contains("keigakomi"),
+        "keigakomi source markers need a TEI projection preserving the ruled-box intent"
+    );
+}
+
+#[test]
 fn source_inventory_classifies_tcy_block_markers() {
     let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
     let patterns = patterns_from_rows(matrix.rows());

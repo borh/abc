@@ -3,8 +3,8 @@
   "works_scanned": 17894,
   "works_failed": 0,
   "markers_total": 4325244,
-  "unknown_markers_total": 35023,
-  "unallowlisted_unknown_markers_total": 21103,
+  "unknown_markers_total": 34563,
+  "unallowlisted_unknown_markers_total": 20643,
   "allowlisted_unknown_markers_total": 13920,
   "rows": {
     "annotation.bouki": {
@@ -75,7 +75,7 @@
     },
     "decoration.bold_italic": {
       "works_with_marker": 141,
-      "occurrences": 4889,
+      "occurrences": 5105,
       "sample_works": [
         "000025_1144",
         "000026_50241",
@@ -129,14 +129,14 @@
       ]
     },
     "decoration.keigakomi": {
-      "works_with_marker": 106,
-      "occurrences": 200,
+      "works_with_marker": 112,
+      "occurrences": 444,
       "sample_works": [
+        "000063_385",
         "000067_1789",
         "000072_408",
         "000096_2093",
-        "000096_2100",
-        "000096_2117"
+        "000096_2100"
       ]
     },
     "emphasis.basic": {
@@ -429,7 +429,7 @@
       ]
     }
   },
-  "unknown_classes_total": 14342,
+  "unknown_classes_total": 14337,
   "unknown_classes_truncated": true,
   "unknown_classes": [
     {
@@ -494,21 +494,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃ここで罫囲み終わり］",
-      "body": "ここで罫囲み終わり",
-      "occurrences": 194,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 194,
-      "sample_works": [
-        "000067_1789",
-        "000072_408",
-        "000096_2093",
-        "000096_2100",
-        "000096_2117"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃改行天付き、折り返して１字下げ］",
       "body": "改行天付き、折り返して１字下げ",
       "occurrences": 187,
@@ -518,21 +503,6 @@
         "000272_1805",
         "001154_51829",
         "001726_56089"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここで太字終わり］",
-      "body": "ここで太字終わり",
-      "occurrences": 184,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 184,
-      "sample_works": [
-        "000026_55916",
-        "000035_52380",
-        "000072_54444",
-        "000096_2117",
-        "000113_4325"
       ]
     },
     {
@@ -723,21 +693,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃ここで斜体終わり］",
-      "body": "ここで斜体終わり",
-      "occurrences": 32,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 32,
-      "sample_works": [
-        "000025_1144",
-        "000075_47964",
-        "001030_47879",
-        "001030_4816",
-        "001030_55421"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃ルビは「天母生上の雲湖」にかかる］",
       "body": "ルビは「天母生上の雲湖」にかかる",
       "occurrences": 32,
@@ -783,36 +738,6 @@
       "unallowlisted_occurrences": 25,
       "sample_works": [
         "000311_3149"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃罫囲み終わり］",
-      "body": "罫囲み終わり",
-      "occurrences": 25,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 25,
-      "sample_works": [
-        "000063_385",
-        "000106_53493",
-        "000125_1317",
-        "000311_2734",
-        "000866_3039"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃罫囲み］",
-      "body": "罫囲み",
-      "occurrences": 25,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 25,
-      "sample_works": [
-        "000063_385",
-        "000106_53493",
-        "000125_1317",
-        "000311_2734",
-        "000866_3039"
       ]
     },
     {
@@ -12030,6 +11955,61 @@
       "sample_works": [
         "000125_666"
       ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃「八ッ当りを」はママ］",
+      "body": "「八ッ当りを」はママ",
+      "occurrences": 2,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 2,
+      "sample_works": [
+        "000026_55784"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃「八一九六―二〇〇〇」はママ］",
+      "body": "「八一九六―二〇〇〇」はママ",
+      "occurrences": 2,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 2,
+      "sample_works": [
+        "001670_55342"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃「八代将軍」は底本では「八大将軍」］",
+      "body": "「八代将軍」は底本では「八大将軍」",
+      "occurrences": 2,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 2,
+      "sample_works": [
+        "000082_43544"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃「公園へ行く道」に白三角傍点］",
+      "body": "「公園へ行く道」に白三角傍点",
+      "occurrences": 2,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 2,
+      "sample_works": [
+        "000183_52746"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃「公文書や」は底本では「公文章や」］",
+      "body": "「公文書や」は底本では「公文章や」",
+      "occurrences": 2,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 2,
+      "sample_works": [
+        "001311_49706"
+      ]
     }
   ],
   "unknown_examples": [
@@ -12736,7 +12716,7 @@
   ],
   "decode_failures": [],
   "representability": {
-    "typed_occurrences": 3853976,
+    "typed_occurrences": 3859525,
     "raw_preserved_occurrences": 0,
     "out_of_body_occurrences": 0,
     "unsupported_occurrences": 13920,
@@ -12747,11 +12727,9 @@
     "source inventory row annotation.chuuki has occurrences but no representability table",
     "source inventory row caption.block has occurrences but no representability table",
     "source inventory row caption.inline has occurrences but no representability table",
-    "source inventory row decoration.bold_italic has occurrences but no representability table",
     "source inventory row decoration.boten has occurrences but no representability table",
     "source inventory row decoration.bousen has occurrences but no representability table",
     "source inventory row decoration.direction_override has occurrences but no representability table",
-    "source inventory row decoration.keigakomi has occurrences but no representability table",
     "source inventory row emphasis.basic has representability.status = needs_research",
     "source inventory row figure.image_inline has occurrences but no representability table",
     "source inventory row gaiji.jis_code has occurrences but no representability table",
@@ -12772,7 +12750,7 @@
     "source inventory row reference.frontref has occurrences but no representability table",
     "source inventory row ruby.placement_directional has occurrences but no representability table",
     "source inventory row warigaki.parenthetical has occurrences but no representability table",
-    "21103 unallowlisted source markers"
+    "20643 unallowlisted source markers"
   ],
   "inputs": {
     "matrix": "/home/bor/Projects/ab-validator/data/aozora-syntax-coverage.toml",

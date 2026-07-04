@@ -1664,7 +1664,7 @@ category = "inline_annotation"
 feature_keys = ["bold", "italic"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html.rb"]
 source_examples = ["［＃ここから太字］", "［＃ここから斜体］", "「text」の太字", "「text」の斜体"]
-source_patterns = ['［＃ここから(太字|斜体)］', '［＃(太字|斜体)終わり］', '「[^」]+」の(太字|斜体)']
+source_patterns = ['［＃ここから(太字|斜体)］', '［＃(ここで)?(太字|斜体)終わり］', '「[^」]+」の(太字|斜体)']
 ir_nodes = ["Inline::Style", "Block::Style"]
 aat_nodes = ["style"]
 tei_projection = "hi rend=bold|italic"
@@ -1712,6 +1712,14 @@ total_occurrences = 8257
 detector_id = "decoration_bold_italic"
 coverage_basis = "full_corpus"
 sample_works = ["001784_56525", "000748_46576", "000035_52380", "000072_54444", "000113_4327"]
+
+[syntax.representability]
+source_inventory_row = "decoration.bold_italic"
+status = "typed"
+aat_nodes = ["style"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:124"
+notes = "AAT style containers carry bold/italic style_type when adapters preserve the scope; raw fallback covers adapters that still collapse or drop inline variants."
 
 [[syntax]]
 id = "decoration.font_size"
@@ -1783,8 +1791,8 @@ priority = 2
 category = "inline_annotation"
 feature_keys = ["keigakomi"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/keigakomi.rb", "references/parsers/aozora2html/lib/aozora2html/tag/inline_keigakomi.rb"]
-source_examples = ["［＃ここから罫囲み］", "「text」の罫囲み"]
-source_patterns = ['［＃ここから罫囲み］', '「[^」]+」の罫囲み']
+source_examples = ["［＃ここから罫囲み］", "［＃ここで罫囲み終わり］", "「text」の罫囲み"]
+source_patterns = ['［＃ここから罫囲み］', '［＃(ここで)?罫囲み(終わり)?］', '「[^」]+」の罫囲み']
 ir_nodes = ["Inline::Style", "Block::Style"]
 aat_nodes = ["keigakomi"]
 tei_projection = "ab rend=keigakomi"
@@ -1832,6 +1840,14 @@ total_occurrences = 458
 detector_id = "decoration_keigakomi"
 coverage_basis = "full_corpus"
 sample_works = ["000160_45621", "001095_42626", "001779_58486", "001095_43163", "001779_57517"]
+
+[syntax.representability]
+source_inventory_row = "decoration.keigakomi"
+status = "typed"
+aat_nodes = ["keigakomi", "style"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:137"
+notes = "AAT permits keigakomi inline containers and style fallback; TEI can preserve the ruled-box intent as rend metadata while parser adapters remain lossy."
 
 [[syntax]]
 id = "decoration.direction_override"

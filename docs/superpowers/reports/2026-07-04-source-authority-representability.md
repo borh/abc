@@ -9,11 +9,9 @@
   - source inventory row annotation.chuuki has occurrences but no representability table
   - source inventory row caption.block has occurrences but no representability table
   - source inventory row caption.inline has occurrences but no representability table
-  - source inventory row decoration.bold_italic has occurrences but no representability table
   - source inventory row decoration.boten has occurrences but no representability table
   - source inventory row decoration.bousen has occurrences but no representability table
   - source inventory row decoration.direction_override has occurrences but no representability table
-  - source inventory row decoration.keigakomi has occurrences but no representability table
   - source inventory row emphasis.basic has representability.status = needs_research
   - source inventory row figure.image_inline has occurrences but no representability table
   - source inventory row gaiji.jis_code has occurrences but no representability table
@@ -34,7 +32,7 @@
   - source inventory row reference.frontref has occurrences but no representability table
   - source inventory row ruby.placement_directional has occurrences but no representability table
   - source inventory row warigaki.parenthetical has occurrences but no representability table
-  - 21103 unallowlisted source markers
+  - 20643 unallowlisted source markers
 
 ## Scope
 
@@ -45,13 +43,13 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 - works_scanned: 17894
 - works_failed: 0
 - markers_total: 4325244
-- unknown_markers_total: 35023
-- unallowlisted_unknown_markers_total: 21103
+- unknown_markers_total: 34563
+- unallowlisted_unknown_markers_total: 20643
 - allowlisted_unknown_markers_total: 13920
 
 ## Representability
 
-- typed_occurrences: 3853976
+- typed_occurrences: 3859525
 - raw_preserved_occurrences: 0
 - out_of_body_occurrences: 0
 - unsupported_occurrences: 13920
@@ -67,12 +65,12 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | break.page_line | 943 | 10028 | 000005_53194, 000006_1869, 000009_55881, 000011_889, 000011_899 |
 | caption.block | 47 | 1722 | 000058_57440, 000091_50354, 000125_1321, 000165_49567, 000226_1150 |
 | caption.inline | 136 | 1040 | 000014_728, 000067_1768, 000067_1788, 000067_1789, 000093_1916 |
-| decoration.bold_italic | 141 | 4889 | 000025_1144, 000026_50241, 000026_55916, 000035_52380, 000067_1789 |
+| decoration.bold_italic | 141 | 5105 | 000025_1144, 000026_50241, 000026_55916, 000035_52380, 000067_1789 |
 | decoration.boten | 79 | 1376 | 000034_56908, 000042_61014, 000042_61015, 000042_61019, 000048_45476 |
 | decoration.bousen | 317 | 18067 | 000006_1869, 000013_11, 000019_4376, 000034_55507, 000038_1408 |
 | decoration.direction_override | 6 | 65 | 000096_935, 000866_3039, 001094_42603, 001242_46444, 001467_50733 |
 | decoration.font_size | 1166 | 51097 | 000008_58922, 000011_899, 000019_58861, 000019_59261, 000019_59375 |
-| decoration.keigakomi | 106 | 200 | 000067_1789, 000072_408, 000096_2093, 000096_2100, 000096_2117 |
+| decoration.keigakomi | 112 | 444 | 000063_385, 000067_1789, 000072_408, 000096_2093, 000096_2100 |
 | emphasis.basic | 6576 | 157495 | 000005_53194, 000006_1869, 000006_382, 000006_383, 000006_58819 |
 | figure.image_caption | 103 | 1777 | 000019_42378, 000019_42379, 000019_42380, 000019_42381, 000019_42382 |
 | figure.image_inline | 504 | 5812 | 000009_226, 000009_50711, 000009_50712, 000009_50713, 000009_50714 |
@@ -208,7 +206,7 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 
 ## Unknown Source Marker Classes
 
-Showing 50 report rows of 14342 total classes. JSON carries 1000 top classes. truncated: true
+Showing 50 report rows of 14337 total classes. JSON carries 1000 top classes. truncated: true
 
 | kind | raw | occurrences | unallowlisted | allowlisted | samples |
 |---|---|---:|---:|---:|---|
@@ -216,9 +214,7 @@ Showing 50 report rows of 14342 total classes. JSON carries 1000 top classes. tr
 | CommandFullwidth | ［＃…］ | 465 | 465 | 0 | 000038_1408, 000042_1694, 000050_3581, 000051_1436, 000051_1452 |
 | CommandFullwidth | ［＃本文終わり］ | 243 | 243 | 0 | 000009_226, 000009_50711, 000009_50712, 000009_50713, 000009_50714 |
 | CommandFullwidth | ［＃（…）］ | 242 | 242 | 0 | 000026_50238, 000026_50242, 000026_50259, 000026_51893, 000026_55774 |
-| CommandFullwidth | ［＃ここで罫囲み終わり］ | 194 | 194 | 0 | 000067_1789, 000072_408, 000096_2093, 000096_2100, 000096_2117 |
 | CommandFullwidth | ［＃改行天付き、折り返して１字下げ］ | 187 | 187 | 0 | 000272_1805, 001154_51829, 001726_56089 |
-| CommandFullwidth | ［＃ここで太字終わり］ | 184 | 184 | 0 | 000026_55916, 000035_52380, 000072_54444, 000096_2117, 000113_4325 |
 | CommandFullwidth | ［＃ここから３字下げ、１行２０字組みで］ | 178 | 178 | 0 | 000321_2169 |
 | CommandFullwidth | ［＃ここで字下げ、２０字組み終わり］ | 178 | 178 | 0 | 000321_2169 |
 | CommandFullwidth | ［＃天から２字下げ］ | 116 | 116 | 0 | 000051_3330, 000067_2843, 000074_3565, 000076_448, 000082_43090 |
@@ -233,13 +229,10 @@ Showing 50 report rows of 14342 total classes. JSON carries 1000 top classes. tr
 | CommandFullwidth | ［＃天から４字下げ］ | 37 | 37 | 0 | 000050_45755, 000051_47086, 000081_46600, 000081_48221, 000083_1090 |
 | CommandFullwidth | ［＃ルビは「悪魔の尿溜」にかかる］ | 34 | 34 | 0 | 000125_1320 |
 | CommandFullwidth | ［＃ここで字上げ終わり］ | 33 | 33 | 0 | 000035_1586, 000081_1935, 000082_49526, 000083_1090, 000096_2093 |
-| CommandFullwidth | ［＃ここで斜体終わり］ | 32 | 32 | 0 | 000025_1144, 000075_47964, 001030_47879, 001030_4816, 001030_55421 |
 | CommandFullwidth | ［＃ルビは「天母生上の雲湖」にかかる］ | 32 | 32 | 0 | 000125_665 |
 | CommandFullwidth | ［＃この行はゴシック体］ | 29 | 29 | 0 | 000281_1710, 000311_4211, 000311_4232 |
 | CommandFullwidth | ［＃ここから天付き、折り返して１字下げ］ | 26 | 26 | 0 | 001154_44776, 001471_55564, 001471_55567, 001471_55575 |
 | CommandFullwidth | ［＃「天皇制」に×傍点］ | 25 | 25 | 0 | 000311_3149 |
-| CommandFullwidth | ［＃罫囲み終わり］ | 25 | 25 | 0 | 000063_385, 000106_53493, 000125_1317, 000311_2734, 000866_3039 |
-| CommandFullwidth | ［＃罫囲み］ | 25 | 25 | 0 | 000063_385, 000106_53493, 000125_1317, 000311_2734, 000866_3039 |
 | CommandFullwidth | ［＃「（訳注）」は行左小書き］ | 23 | 23 | 0 | 002265_62680, 002265_62681, 002265_62687, 002265_62688 |
 | CommandFullwidth | ［＃「。」は底本では「、」］ | 21 | 21 | 0 | 000037_1418, 000082_964, 000125_4317, 000158_4709, 000158_836 |
 | CommandFullwidth | ［＃ここから地から２字上げ］ | 21 | 21 | 0 | 000035_1586, 000096_2093, 000124_1315, 000158_1504, 000448_46417 |
@@ -262,6 +255,11 @@ Showing 50 report rows of 14342 total classes. JSON carries 1000 top classes. tr
 | CommandFullwidth | ［＃「革命」にばつ傍点］ | 16 | 16 | 0 | 001311_53951, 001422_50296, 001471_55570, 001618_54002, 001627_54064 |
 | CommandFullwidth | ［＃「独裁」に×傍点］ | 15 | 15 | 0 | 000311_3149 |
 | CommandFullwidth | ［＃sは下ドット付き］ | 14 | 14 | 0 | 001096_42686, 001096_43672 |
+| CommandFullwidth | ［＃「!?」は横一列］ | 14 | 14 | 0 | 000111_566, 000111_567, 000111_568 |
+| CommandFullwidth | ［＃「。」は底本では脱落］ | 14 | 14 | 0 | 000320_2562, 000885_2549, 000885_2550, 000885_2551, 000885_2554 |
+| CommandFullwidth | ［＃「〃　〃」は横組み］ | 14 | 14 | 0 | 000281_3598 |
+| CommandFullwidth | ［＃「な」は小書き］ | 14 | 14 | 0 | 000081_4424 |
+| CommandFullwidth | ［＃「十三人」に白三角傍点］ | 14 | 14 | 0 | 000183_52746 |
 
 ## Decode Failures
 

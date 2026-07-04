@@ -433,7 +433,6 @@
                 cp -R ${./.} source
                 chmod -R u+w source
                 cd source
-                cp ${./nix/clj-nix-deps.edn} deps.edn
 
                 export HOME="${cljDepsCache}"
                 export JAVA_TOOL_OPTIONS="-Duser.home=${cljDepsCache}"
@@ -442,17 +441,16 @@
                 export XDG_CONFIG_HOME="$TMPDIR/xdg-config"
                 export GITLIBS="$HOME/.gitlibs"
 
-                # The Nix sandbox has no network access; tests that need
-                # the upstream TEI RelaxNG schema (fetched at app build
-                # time, not at test time) skip cleanly when this flag is
-                # set. End-to-end TEI validation runs via the
+                # The Nix sandbox has no network access; tests needing the upstream
+                # TEI RelaxNG schema (fetched at app build time, not test time) skip
+                # via this flag. End-to-end TEI validation runs via the
                 # `nix run .#validate-design-bundle` app, not here.
                 export ABC_TEI_SCHEMA_SKIP=1
 
-                clojure -M:abc/focused-test
+                clojure -M:test:kaocha -m kaocha.runner
 
                 mkdir -p "$out"
-                echo "ABC focused Clojure tests passed with clj-nix dependency cache." > "$out/result.txt"
+                echo "ABC Clojure tests passed with clj-nix dependency cache (kaocha auto-discovery)." > "$out/result.txt"
               '';
 
           aat-parser-ir-probe-tests =

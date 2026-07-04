@@ -59,9 +59,11 @@ four, without breaking the adapter boundary decision.
 The integration must:
 
 1. Emit AAT JSON conforming to `data/aat-schema.json` — the normative
-   contract — and depend on **no `ab-*` crate as a contract**. (`ab-ir` may
-   be used only as an optional in-workspace convenience, never as the
-   stable external adapter API.)
+   contract. The `ab-*` dependency policy is graded (§4.4; matches the
+   proven Direct-tier pattern): **`ab-ir` is forbidden** (the drift path
+   that sank `aozora-rs`); `ab-source-syntax` and `ab-encoding` are
+   permitted as in-workspace conveniences following `aozora2`. None of
+   these is the contract — the JSON schema is.
 2. Match the existing adapter wire contract: stdin honbun bytes → AAT JSON
    on stdout, `--version`, `--mode {aat,html}`, exit-code semantics.
 3. Be classifiable as **Direct** fidelity in `docs/adapter-fidelity.md`
@@ -159,7 +161,7 @@ Use this repository in two ways:
 | Goal | How we satisfy it |
 |---|---|
 | Direct fidelity | Map `Tree::source_nodes` / `pairs` / `container_pairs` / `diagnostics` → AAT; record upstream gaiji resolution as-emitted (no inline oracle patching). |
-| Boundary compliance | Adapter emits AAT JSON validated against `data/aat-schema.json`; depends on `aozora` + `aozora-encoding` only; depends on **no `ab-*` crate** (the schema-only path proven by `aozora2html`). |
+| Boundary compliance | Adapter emits AAT JSON validated against `data/aat-schema.json`. Dependency policy (§4.4): `aozora`+`aozora-encoding` always; `ab-source-syntax` permitted as in-workspace convenience (the `aozora2` Direct-tier pattern); **`ab-ir` forbidden** (the drift path that sank `aozora-rs`). The contract is the schema, not any Rust type. |
 | Drift safety | Pin an exact aozora rev in `flake.nix`; vendor lockfile; the adapter contract is AAT JSON, never the upstream Rust AST. If `aozora`'s AST API changes, only the mapper changes — the harness boundary is unaffected. |
 | Adapter parity | Same CLI contract, same `meta` fields, same exit-code semantics as `aozora-epub3-adapter` and `aozora2html-adapter`. |
 | Reproducibility | Nix builds the pinned reference `aozora` crate offline from a vendored lockfile; flake smoke check mirrors `aozora-epub3-smoke-check`. |
@@ -171,7 +173,7 @@ Use this repository in two ways:
 
 ```
 adapters/aozora/
-  Cargo.toml          # depends on aozora + aozora-encoding (pinned); no ab-*
+  Cargo.toml          # aozora + aozora-encoding; ab-source-syntax/ab-encoding allowed as non-contract helpers
   src/
     main.rs            # stdin → Tree → AAT JSON / HTML; --version, --mode
     lib.rs             # mapper entry: Tree -> serde_json::Value AAT
@@ -202,19 +204,71 @@ benches/
   `Tree::to_html_with()` wrapped in the same AAT `meta` envelope used by
   the other adapters.
 
+### 4.1.1 Tree traversal sketch (mapper design surface)
+
+This is the verified type surface the mapper must walk. It is the most
+complex part of the adapter and the part Finding 3 flagged as hidden.
+
+`Document::new(src).parse()` borrows an `OwnedLexOutput` via `Tree`:
+
+```text
+OwnedLexOutput {
+  sanitized: String,          // verbatim post-sanitize source
+  normalized: String,         // PUA-sentinel-injected normalized text
+  source_nodes: Vec<SourceNodeOwned>,   // SOURCE coordinates, sorted by start
+  pairs: Vec<PairLink>,                 // SOURCE coordinates (PairKind)
+  container_pairs: Vec<ContainerPair>,  // NORMALIZED coordinates
+  diagnostics: Vec<Diagnostic>,
+  registry: RegistryOwned,
+  store: NodeStore,                      // backs StrId payloads
+}
+
+SourceNodeOwned { source_span: Span /*src*/, node: NodeRefOwned }
+NodeRefOwned = Inline(NodeOwned) | BlockLeaf(NodeOwned)
+            | BlockOpen(RegionFormat) | BlockClose(RegionClose)
+PairKind     = Bracket | Ruby | AngleQuote | Tortoise | Quote   // src coords
+ContainerPair { kind: RegionFormat, open, close: NormalizedOffset }  // norm coords
+```
+
+**The crux:** `source_nodes` and `pairs` are in **source coordinates**
+(`source_span` indexes `sanitized`); `container_pairs` open/close are in
+**normalized coordinates** (index `normalized`, which carries PUA sentinels).
+This is the same two-coordinate-system reconciliation the subprocess seam
+was rejected for (§4.3) — but in-Rust it is bounded and verifiable, not
+lossy cross-surface JSON re-derivation. The mapper's job:
+
+1. Build the AAT block tree from `source_nodes` (`BlockOpen`/`BlockLeaf`/
+   `BlockClose` carry `RegionFormat`/`NodeOwned`) keyed on `source_span`.
+2. Attach ruby/bouten/bracket nesting from `pairs` (same source coords).
+3. Reconcile `container_pairs` (normalized) back to source spans via the
+   sentinel positions the registry exposes — the bridge is the sentinel→
+   source-span map in `RegistryOwned`, not a heuristic. (Implementation
+   must confirm `RegistryOwned` exposes this map or use `Tree` helpers;
+   U1/U3 characterize this before the mapper ships.)
+4. Project `diagnostics` severities → AAT `meta.parse_complete` / warnings
+   (U3 settles the mapping).
+
+This sketch is intentionally not an implementation. It exists to confirm the
+library seam is coherent and to name the reconciliation the mapper owns,
+so implementation does not rediscover the two-coordinate problem.
+
 ### 4.2 Why library seam, and the drift mitigation
 
-The library seam is the same choice `aozora-rs` made, and `aozora-rs`
-broke — but it broke because it depended on **`ab-ir` Rust internals as if
-they were a contract**, not because it depended on its upstream parser's
-AST. This adapter depends on:
+This adapter **preemptively avoids the `ab-ir` dependency path** that the
+2026-07-03 boundary decision names as the failure mode. `aozora-rs` broke
+not because it depended on its upstream parser's AST — `aozora-rs-core`
+v0.6.0 via git tag is still fine — but because it depended on `ab-ir` Rust
+internals as if they were a contract (`ab_ir::block_content_mut`, `Block::
+Break`). The `aozora-rs` README's stated revival path is to migrate to AAT
+JSON output while keeping the upstream parser dep.
 
-- its **upstream parser's** AST (necessary for Direct fidelity; pinned to a
-  rev, drift is bounded to mapper edits and never reaches the harness), and
-- **no `ab-*` crate at all** (schema-only, the proven `aozora2html` path).
-
-So the `aozora-rs` failure mode cannot recur here: the harness boundary is
-AAT JSON, and `ab-ir` is not on the dependency graph.
+This adapter follows that path from day one: it depends on its upstream
+parser's AST (necessary for Direct fidelity; pinned to a rev so drift is
+bounded to mapper edits and never reaches the harness boundary) and on
+**no `ab-ir`** (graded policy, §4.4). The harness boundary is AAT JSON; if
+`aozora`'s AST API changes, only the mapper changes. Per §5, this keeps the
+*contract* stable; *measurement continuity* across upstream rev bumps is a
+separate, documented concern (re-run + diff, not a stability claim).
 
 ### 4.3 Why not the subprocess seams (rejected)
 
@@ -234,7 +288,7 @@ AAT JSON, and `ab-ir` is not on the dependency graph.
 
 | Adapter | Faithfulness level | Upstream dependency | Entry point used | Preserved behavior | Known fidelity gaps / limits |
 |---|---|---|---|---|---|
-| `aozora` | Direct | `aozora` crate v0.4.1 (P4suta), pinned rev | `Document::new → Tree::source_nodes` / `pairs` / `container_pairs` / `diagnostics`; upstream gaiji resolver | Parser-normalized nodes, upstream gaiji resolution (incl. unresolved results), ruby/gaiji nesting, bouten metadata, container kinds, diagnostics → parse-status. | Characterization pending (§6 unknown U1). Aozora headings are not Pandoc `Header` upstream; adapter must emit AAT heading directly from `container_pairs` kind, not via Pandoc. |
+| `aozora` | **Provisional** Direct | `aozora` crate, pinned commit (U4; v0.4.1 tag exists, HEAD is 235 commits past it) | `Document::new → Tree::source_nodes` / `pairs` / `container_pairs` / `diagnostics`; upstream gaiji resolver | Parser-normalized nodes, upstream gaiji resolution (incl. unresolved results), ruby/gaiji nesting, bouten metadata, container kinds, diagnostics → parse-status. | **Provisional pending U1 characterization** (no warigaki/yokogumi/caption in the parser's own fixture set; must characterize from TEI-EAJ all-work + corpus). Aozora headings are not Pandoc `Header` upstream; adapter must emit AAT heading directly from `container_pairs` kind, not via Pandoc. **Measurement-continuity caveat:** AAT output is schema-stable across upstream parser versions, but node-kind projections may drift if upstream renames/splits kinds or changes gaiji resolution format; re-run full-corpus AAT and diff when bumping the pinned rev. |
 
 ---
 
@@ -260,10 +314,17 @@ resolved during implementation, before the smoke / fidelity gates pass.
 - **U3 — `parse_complete` / failure mapping.** Confirm how `Tree::diagnostics`
   severities map to AAT `meta.parse_complete` / warnings, matching the
   `aozora-epub3` `[ERROR]`/`[WARN]` policy.
-- **U4 — Pin rev.** Choose an exact `aozora` rev (commit SHA; there is no
-  release tag at 0.4.1 on the cloned checkout as observed) for the
-  `flake.nix` input and the `Cargo.toml` git dep. Must be verified
-  reproducible offline.
+- **U4 — Pin rev.** Verified: `git tag` lists `v0.4.1`; `git describe`
+  = `v0.4.1-235-g5df2cfa`; HEAD `5df2cfa` ("chore: correct 4 crate
+  descriptions") is 235 commits past the tag; the workspace manifest's
+  `version = "0.4.1"` is stale metadata, not an absent tag. Before
+  implementation, pick the pin target explicitly: either the `v0.4.1` tag
+  commit (stable, older) or a later commit SHA whose API surface the
+  mapper is written against (requires recording that SHA and the
+  `git describe` offset). The flake.nix input and the `Cargo.toml` git dep
+  must reference the **same** commit; verify an offline flake build
+  reproduces. Whichever is chosen, the §5 matrix row cites the SHA, never
+  the stale `0.4.1` package label.
 - **U5 — TEI-EAJ counterpart source inputs.** The ABC workset export names
   TEI-EAJ files with candidate Aozora work IDs, but most local ABC
   counterparts are still missing. Before using this adapter for Level 3 TEI
@@ -292,8 +353,9 @@ resolved during implementation, before the smoke / fidelity gates pass.
   gate only local fixture smoke until the pinning and licensing path is
   settled.
 - `docs/adapter-fidelity.md` gains the row in §5.
-- `crates/README.md` adapter-facing note is unaffected (no new `ab-*`
-  adapter helper is introduced; the schema remains the contract).
+- `crates/README.md` adapter-facing note is unaffected: no new
+  contract-bearing `ab-*` adapter helper is introduced; the schema remains
+  the contract.
 - The `aozora-rs` broken-adapter maintenance notice is unchanged; this
   adapter does not revive it.
 

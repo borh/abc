@@ -787,6 +787,45 @@ fn source_inventory_classifies_font_size_subscript_variants() {
 }
 
 #[test]
+fn source_inventory_classifies_layout_and_inline_style_corpus_variants() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = [
+        "［＃ここから天付き、折り返して１字下げ］",
+        "［＃ここから天付き、折り返して２字下げ］",
+        "［＃「（訳注）」は行左小書き］",
+        "［＃「一」は行左小書き］",
+        "［＃「引」は小書き右寄せ］",
+        "［＃左に傍線］",
+        "［＃左に傍線終わり］",
+        "［＃（一）は縦中横］",
+    ]
+    .join("\n");
+    let summary = inventory_document("fixture", &source, &patterns);
+
+    assert_eq!(
+        summary.unknown_examples,
+        [],
+        "known layout and inline-style corpus variants should not remain unknown"
+    );
+    for (row_id, expected) in [
+        ("indentation.burasage", 2),
+        ("decoration.font_size", 3),
+        ("decoration.bousen", 2),
+        ("layout.tcy", 1),
+    ] {
+        assert_eq!(
+            summary
+                .row_counts
+                .get(row_id)
+                .map(|count| count.occurrences),
+            Some(expected),
+            "expected source inventory row {row_id}"
+        );
+    }
+}
+
+#[test]
 fn decoration_font_size_has_typed_representability() {
     let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
     let row = matrix

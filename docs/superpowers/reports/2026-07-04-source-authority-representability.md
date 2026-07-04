@@ -5,7 +5,7 @@
 - source_authority_gate: `SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED`
 - note: this is not a passing representability gate; durable representability claims remain blocked until strict_errors is empty.
 - strict_errors:
-  - 2100 unallowlisted source markers
+  - 1994 unallowlisted source markers
 
 ## Scope
 
@@ -16,13 +16,13 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 - works_scanned: 17894
 - works_failed: 0
 - markers_total: 4324663
-- unknown_markers_total: 16970
-- unallowlisted_unknown_markers_total: 2100
+- unknown_markers_total: 16864
+- unallowlisted_unknown_markers_total: 1994
 - allowlisted_unknown_markers_total: 14870
 
 ## Representability
 
-- typed_occurrences: 4567202
+- typed_occurrences: 4567309
 - raw_preserved_occurrences: 35335
 - out_of_body_occurrences: 950
 - unsupported_occurrences: 13920
@@ -40,9 +40,9 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | caption.inline | 143 | 2397 | 000014_728, 000058_57440, 000067_1768, 000067_1788, 000067_1789 |
 | decoration.bold_italic | 159 | 5257 | 000025_1144, 000026_50241, 000026_55916, 000035_279, 000035_52380 |
 | decoration.boten | 6234 | 128972 | 000005_53194, 000006_382, 000006_383, 000006_58819, 000008_1083 |
-| decoration.bousen | 317 | 18087 | 000006_1869, 000013_11, 000019_4376, 000034_55507, 000038_1408 |
+| decoration.bousen | 320 | 18103 | 000006_1869, 000013_11, 000019_4376, 000034_55507, 000038_1408 |
 | decoration.direction_override | 6 | 65 | 000096_935, 000866_3039, 001094_42603, 001242_46444, 001467_50733 |
-| decoration.font_size | 1195 | 51342 | 000008_58922, 000011_899, 000019_58861, 000019_59261, 000019_59375 |
+| decoration.font_size | 1197 | 51389 | 000006_1869, 000008_58922, 000011_899, 000019_58861, 000019_59261 |
 | decoration.keigakomi | 138 | 677 | 000063_385, 000067_1789, 000072_408, 000072_864, 000096_2093 |
 | emphasis.basic | 6576 | 157495 | 000005_53194, 000006_1869, 000006_382, 000006_383, 000006_58819 |
 | figure.image_caption | 103 | 1777 | 000019_42378, 000019_42379, 000019_42380, 000019_42381, 000019_42382 |
@@ -56,7 +56,7 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | heading.dogyo | 142 | 11839 | 000011_899, 000058_59060, 000067_1790, 000067_4869, 000081_1058 |
 | heading.mado | 6 | 1680 | 000255_47342, 000296_1864, 000961_4820, 001402_49946, 001404_49966 |
 | indentation.basic | 8169 | 134394 | 000005_5, 000005_53194, 000006_1868, 000006_1869, 000006_3310 |
-| indentation.burasage | 1203 | 13236 | 000006_3311, 000006_58819, 000008_47386, 000009_55881, 000019_4376 |
+| indentation.burasage | 1209 | 13265 | 000006_3311, 000006_58819, 000008_47386, 000009_55881, 000019_4376 |
 | indentation.chitsuki | 6217 | 20232 | 000006_1868, 000006_1869, 000006_3310, 000006_3311, 000006_382 |
 | indentation.jisage_block | 4603 | 94949 | 000005_5, 000005_53194, 000006_1868, 000006_1869, 000006_3310 |
 | indentation.jisage_oneline | 121 | 278 | 000025_202, 000025_216, 000035_235, 000035_266, 000038_42207 |
@@ -65,7 +65,7 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | kunten.kaeriten | 488 | 28082 | 000006_1869, 000038_1408, 000042_1694, 000050_3581, 000051_1436 |
 | kunten.okurigana | 256 | 6562 | 000026_50238, 000026_50242, 000026_50259, 000026_51893, 000026_55774 |
 | layout.multicolumn | 15 | 48 | 000061_377, 000081_45631, 000096_2100, 000158_4854, 000308_46589 |
-| layout.tcy | 722 | 19781 | 000014_728, 000020_2223, 000020_46404, 000023_55306, 000023_55324 |
+| layout.tcy | 724 | 19796 | 000014_728, 000020_2223, 000020_46404, 000023_55306, 000023_55324 |
 | layout.yokogumi | 413 | 3663 | 000019_59374, 000026_50239, 000026_55717, 000026_55732, 000026_55738 |
 | reference.frontref | 682 | 3920 | 000006_46659, 000012_2585, 000012_4316, 000022_197, 000026_46578 |
 | ruby.basic | 14321 | 3608407 | 000005_5, 000005_53194, 000005_55215, 000005_55216, 000005_55217 |
@@ -78,14 +78,6 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 
 | work_id | line | kind | raw | body |
 |---|---:|---|---|---|
-| 000006_1869 | 917 | CommandFullwidth | ［＃「引」は小書き右寄せ］ | 「引」は小書き右寄せ |
-| 000006_1869 | 993 | CommandFullwidth | ［＃「引」は小書き右寄せ］ | 「引」は小書き右寄せ |
-| 000006_1869 | 993 | CommandFullwidth | ［＃「引」は小書き右寄せ］ | 「引」は小書き右寄せ |
-| 000006_1869 | 1558 | CommandFullwidth | ［＃「引」は小書き右寄せ］ | 「引」は小書き右寄せ |
-| 000006_1869 | 1558 | CommandFullwidth | ［＃「引」は小書き右寄せ］ | 「引」は小書き右寄せ |
-| 000006_1869 | 1558 | CommandFullwidth | ［＃「引」は小書き右寄せ］ | 「引」は小書き右寄せ |
-| 000006_1869 | 1559 | CommandFullwidth | ［＃「引」は小書き右寄せ］ | 「引」は小書き右寄せ |
-| 000006_1869 | 1559 | CommandFullwidth | ［＃「引」は小書き右寄せ］ | 「引」は小書き右寄せ |
 | 000008_1083 | 209 | CommandFullwidth | ［＃「ヤンに傍点］ | 「ヤンに傍点 |
 | 000008_1083 | 248 | CommandFullwidth | ［＃２０字下げて、地より１字あきで］ | ２０字下げて、地より１字あきで |
 | 000008_1083 | 256 | CommandFullwidth | ［＃初出時「………………………行ぐ奴からさかしまに……………やるまでよ！」］ | 初出時「………………………行ぐ奴からさかしまに……………やるまでよ！」 |
@@ -178,27 +170,29 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | 000034_233 | 43 | CommandFullwidth | ［＃引用文終わり］ | 引用文終わり |
 | 000034_233 | 54 | CommandFullwidth | ［＃ここから引用文、３字下げ］ | ここから引用文、３字下げ |
 | 000034_233 | 56 | CommandFullwidth | ［＃引用文終わり］ | 引用文終わり |
+| 000034_233 | 58 | CommandFullwidth | ［＃ここから引用文、３字下げ］ | ここから引用文、３字下げ |
+| 000034_233 | 60 | CommandFullwidth | ［＃引用文終わり］ | 引用文終わり |
+| 000034_519 | 40 | CommandFullwidth | ［＃割書終わり］ | 割書終わり |
+| 000034_55507 | 114 | MalformedAccentNotation | 〔 | 〔 |
+| 000034_55507 | 214 | MalformedAccentNotation | 〔 | 〔 |
+| 000035_1566 | 23 | CommandFullwidth | ［＃地から２字上げ、２行にわたる丸括弧で挟んだ２行組み］ | 地から２字上げ、２行にわたる丸括弧で挟んだ２行組み |
+| 000035_1573 | 46 | CommandFullwidth | ［＃地付き、地より２字あき］ | 地付き、地より２字あき |
+| 000035_296 | 11 | CommandFullwidth | ［＃ここから引用文、８字下げ］ | ここから引用文、８字下げ |
 
 ## Unknown Source Marker Classes
 
-Showing 50 report rows of 1445 total classes. JSON carries 1000 top classes. truncated: true
+Showing 50 report rows of 1427 total classes. JSON carries 1000 top classes. truncated: true
 
 | kind | raw | occurrences | unallowlisted | allowlisted | samples |
 |---|---|---:|---:|---:|---|
 | MalformedAccentNotation | 〔 | 56 | 56 | 0 | 000026_219, 000034_55507, 000081_4416, 000081_50764, 000091_522 |
-| CommandFullwidth | ［＃ここから天付き、折り返して１字下げ］ | 26 | 26 | 0 | 001154_44776, 001471_55564, 001471_55567, 001471_55575 |
-| CommandFullwidth | ［＃「（訳注）」は行左小書き］ | 23 | 23 | 0 | 002265_62680, 002265_62681, 002265_62687, 002265_62688 |
 | CommandFullwidth | ［＃sは下ドット付き］ | 14 | 14 | 0 | 001096_42686, 001096_43672 |
 | CommandFullwidth | ［＃mは上ドット付き］ | 12 | 12 | 0 | 001096_43672 |
 | CommandFullwidth | ［＃nは上ドット付き］ | 12 | 12 | 0 | 001096_42686, 001096_43554 |
 | CommandFullwidth | ［＃ここからページの左右中央］ | 11 | 11 | 0 | 000885_2557 |
 | CommandFullwidth | ［＃「ル」は上に「⌒」付き］ | 9 | 9 | 0 | 000564_52368 |
-| CommandFullwidth | ［＃「引」は小書き右寄せ］ | 9 | 9 | 0 | 000006_1869, 000050_48400 |
 | CommandFullwidth | ［＃下げて、地より１字あきで］ | 9 | 9 | 0 | 000165_2394, 000165_2395, 000660_4055, 000885_3629, 000885_3630 |
 | CommandFullwidth | ［＃mは上ドット付き。２つめのsは下ドット付き］ | 8 | 8 | 0 | 001096_43672 |
-| CommandFullwidth | ［＃左に傍線終わり］ | 8 | 8 | 0 | 000908_51929, 001094_42603, 001508_51403 |
-| CommandFullwidth | ［＃左に傍線］ | 8 | 8 | 0 | 000908_51929, 001094_42603, 001508_51403 |
-| CommandFullwidth | ［＃（一）は縦中横］ | 8 | 8 | 0 | 000148_1102, 000311_4179, 000311_4212, 000311_4213 |
 | CommandFullwidth | ［＃tは下ドット付き］ | 7 | 7 | 0 | 001096_42686, 001096_43554, 001096_43672 |
 | CommandFullwidth | ［＃「?!」は一字］ | 7 | 7 | 0 | 000125_1320 |
 | CommandFullwidth | ［＃「地付き］ | 7 | 7 | 0 | 000150_46617 |
@@ -233,8 +227,14 @@ Showing 50 report rows of 1445 total classes. JSON carries 1000 top classes. tru
 | CommandFullwidth | ［＃「ちへ」の右に「）」］ | 4 | 4 | 0 | 000232_60242 |
 | CommandFullwidth | ［＃「エ」は小さい「ヱ」］ | 4 | 4 | 0 | 000124_658 |
 | CommandFullwidth | ［＃「リ」は上に「⌒」付き］ | 4 | 4 | 0 | 000564_52368 |
-| CommandFullwidth | ［＃「一」は行左小書き］ | 4 | 4 | 0 | 000866_3039 |
-| CommandFullwidth | ［＃「二」は行左小書き］ | 4 | 4 | 0 | 000866_3039 |
+| CommandFullwidth | ［＃「競吟」は上部に出ている］ | 4 | 4 | 0 | 000305_1896 |
+| CommandFullwidth | ［＃「（１）」は注釈番号］ | 4 | 4 | 0 | 000042_2347, 000042_2354 |
+| CommandFullwidth | ［＃お手伝いさん］ | 4 | 4 | 0 | 000160_1255, 000311_46244, 000311_4833 |
+| CommandFullwidth | ［＃右寄せ］ | 4 | 4 | 0 | 000025_1144 |
+| CommandFullwidth | ［＃地より２字上がり］ | 4 | 4 | 0 | 000137_2944, 000164_2948, 000295_2953 |
+| CommandFullwidth | ［＃夫人］ | 4 | 4 | 0 | 000160_1255 |
+| CommandFullwidth | ［＃引用文終わり］ | 4 | 4 | 0 | 000034_233 |
+| CommandFullwidth | ［＃改丁、左寄せで］ | 4 | 4 | 0 | 000160_1255 |
 
 ## Decode Failures
 

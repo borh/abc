@@ -3,7 +3,6 @@
              [aozora :as aozora]
              [tei :as tei]
              [load :as load]
-             [db :as db]
              [git :as git]
              [config :as config]
              [owl :as owl]]
@@ -56,12 +55,7 @@
   (when-not (fs/directory? output)
     (fs/mkdir output))
   (let [ttl-file-path (fs/file output "aozora-bunko.ttl")]
-    #_(db/save-graph! ttl-file-path
-                    (->> input
-                         load/aozora-bunko-db
-                         load/aozora-bunko-db-coll
-                         db/to-triples
-                         db/to-graph))))
+    ttl-file-path))
 
 (defn -main [& args]
   (let [{:keys [options exit-message ok?]} (validate-args args)]

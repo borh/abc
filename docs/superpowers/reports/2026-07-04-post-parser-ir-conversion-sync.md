@@ -7,10 +7,10 @@ Date: 2026-07-04
 `PARSER_IR_CONVERTER_CORPUS_CLEAN`
 
 The `crates/ab-aat-to-parser-ir` converter has consumed the July 3
-`CLI_READY_WITH_LOWER_BOUND_CAVEAT` gate. It now converts both measured local
-AAT corpora into ABC parser-IR with zero conversion failures, full measured rule
-coverage, and release-smoke coverage through Cargo, the shell smoke, and the
-flake check.
+`CLI_READY_WITH_LOWER_BOUND_CAVEAT` gate and the July 4 `aozora-epub3` adapter
+measurement. It now converts all three measured local AAT corpora into ABC
+parser-IR with zero conversion failures, full measured rule coverage, and
+release-smoke coverage through Cargo, the shell smoke, and the flake check.
 
 This sync supersedes the "Next Gate" section in
 `docs/superpowers/reports/2026-07-03-post-measurement-abc-sync.md`. The residual
@@ -21,9 +21,9 @@ parser-IR protocol blocker.
 
 - Converter crate: `crates/ab-aat-to-parser-ir`
 - Mapping artifact: `data/aat-to-parser-ir-mapping-v1.json`
-- Mapping version: `0.2.0`
+- Mapping version: `0.2.1`
 - Mapping hash:
-  `sha256:68b0868b25f3b072a47d781099178bf2a31e4b16c561814f5e13e3801714d089`
+  `sha256:b508665af72c237fc60f00b720f80db2b16148aa64b5d1cc723a2948ee576390`
 - Mapping schema hash:
   `sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4`
 - Target parser-IR schema hash:
@@ -35,20 +35,21 @@ parser-IR protocol blocker.
 
 | Metric | Value |
 |---|---:|
-| files attempted | 35,583 |
-| files succeeded | 35,583 |
+| files attempted | 53,427 |
+| files succeeded | 53,427 |
 | files failed | 0 |
-| parser-IR nodes | 16,243,174 |
-| divergence records | 541,167 |
-| divergence occurrences | 30,347,883 |
-| mapping rules total | 116 |
-| mapping rules emitted | 116 |
+| parser-IR nodes | 26,914,048 |
+| divergence records | 784,485 |
+| divergence occurrences | 55,027,637 |
+| mapping rules total | 130 |
+| mapping rules emitted | 130 |
 | mapping rules missing | 0 |
 
 | Corpus | Files | Result |
 |---|---:|---|
 | aozora-rs-adapter | 17,894 | 17,894 succeeded, 0 failed |
 | aozora2html-adapter | 17,689 | 17,689 succeeded, 0 failed |
+| aozora-epub3-adapter | 17,844 | 17,844 succeeded, 0 failed |
 
 ## Identity and Compatibility
 
@@ -62,14 +63,16 @@ identity:
 - `mapping_hash` remains outside parser-IR and is supplied as a manifest input
   for ABC compatibility validation.
 
-The full audit generated two ABC registry candidates in
+The full audit generated three ABC registry candidates in
 `docs/superpowers/reports/2026-07-04-aat-parser-ir-compatibility-candidates.edn`.
-ABC admitted those measured entries in commit `4cb15df`:
+ABC admitted the earlier `0.2.0` two-adapter entries in commit `4cb15df`; the
+`0.2.1` candidates below still need ABC registry admission:
 
 | adapter | adapter_version | files_succeeded | rules_emitted | rules_missing | unsupported_occurrences |
 |---|---|---:|---:|---:|---:|
-| aozora-rs | aozora-rs-adapter 0.1.0 2b4e8d1 | 17,894 | 26 | 90 | 0 |
-| aozora2html | aozora2html-adapter 0.1.0 gem-3.0.1 | 17,689 | 115 | 1 | 14,230 |
+| aozora-epub3 | aozora-epub3-adapter 0.1.0 AozoraEpub3-JDK21-1.3.4-jdk21 | 17,844 | 64 | 66 | 13,234 |
+| aozora-rs | aozora-rs-adapter 0.1.0 2b4e8d1 | 17,894 | 26 | 104 | 0 |
+| aozora2html | aozora2html-adapter 0.1.0 gem-3.0.1 | 17,689 | 115 | 15 | 14,230 |
 
 Adapter-version matching is exact. A future adapter-version tuple requires a
 new measured conversion-audit entry rather than wildcard or prefix registry
@@ -91,8 +94,9 @@ The crate-specific usage notes live in `crates/ab-aat-to-parser-ir/README.md`.
 
 Proceed with the residual aozora2html bucket characterization:
 
-- verify the `normalize_figure_alt` protocol-error fix remains covered,
-- measure and document timeout-tail behavior before changing default timeouts,
-- commit parse-incomplete classification tooling and report,
-- characterize `visible_text_body_order` failures without changing the
-  AAT-to-parser-IR mapping or divergence protocol.
+- ask ABC to admit the three `0.2.1` conversion-audit candidates,
+- characterize `aozora-epub3` adapter-fidelity failures from
+  `/db/ab-validator/aat-corpus/aozora-epub3-full-20260704T050652Z-300s`,
+- use `aozora-epub3` as a fast second oracle while characterizing
+  `visible_text_body_order`, `gaiji_resolution`, `ruby_completeness`, and
+  parse-incomplete residuals.

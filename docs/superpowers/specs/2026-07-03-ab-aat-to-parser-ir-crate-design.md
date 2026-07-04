@@ -28,15 +28,17 @@ protocol issues:
   the then-current mapping artifact.
 
 Those protocol issues were resolved by the `0.1.1` mapping protocol correction
-artifact. The current `0.2.0` mapping adds measured producer-identity
-projection into parser-IR `derived_from` and keeps ABC as the compatibility
-registry owner.
+artifact. The `0.2.0` mapping added measured producer-identity projection into
+parser-IR `derived_from`; the current `0.2.1` mapping extends that measured
+surface with aozora-epub3 `tcy`, `keigakomi_block`, and `yokogumi_block`
+evidence while keeping ABC as the compatibility registry owner.
 
 ## Review Corrections
 
 Protocol correction status: `data/aat-to-parser-ir-mapping-v1.json` now carries
-`mapping_version = 0.2.0`, includes measured aozora2html `UNSUPPORTED`
-warigaki evidence, projects `version`, `meta.adapter`, and
+`mapping_version = 0.2.1`, includes measured aozora2html `UNSUPPORTED`
+warigaki evidence, includes measured aozora-epub3 `tcy` and block-container
+evidence, projects `version`, `meta.adapter`, and
 `meta.adapter_version` into parser-IR `derived_from`, uses
 `abc-legacy-json-c14n-v0`, and validates against the local AAT pointer
 contract.
@@ -81,9 +83,10 @@ Evidence:
   required spans on every node.
 - Observed: ABC owns a per-entry divergence record schema at
   `../abc/schemas/aat-parser-ir-divergence.schema.json`.
-- Observed: The corrected generated mapping has 116 measured folded rule
-  buckets across aozora-rs plus current aozora2html evidence. The aozora-rs-only
-  gate still has zero `UNSUPPORTED` files.
+- Observed: The corrected generated mapping has 130 measured folded rule
+  buckets across aozora-rs, current aozora2html evidence, and current
+  aozora-epub3 evidence. The aozora-rs-only gate still has zero `UNSUPPORTED`
+  files.
 - Observed: aozora2html can emit warigaki, and parser-IR has no warigaki node.
 - Observed: production AAT spans are mostly absent (`docs/aat-span-audit.md`).
 - Inferred: A generic interpreter for `transform_rule_descriptions` would be a
@@ -199,7 +202,7 @@ Proposed bundle shape:
   "work_id": "000000_00000",
   "mapping": {
     "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
-    "mapping_version": "0.2.0",
+    "mapping_version": "0.2.1",
     "mapping_schema_hash": "sha256:..."
   },
   "target": {
@@ -417,9 +420,9 @@ Top-level fields:
 
 Important crux:
 
-Mapping version `0.2.0` projects AAT producer identity into parser-IR
-`derived_from`: `version` -> `aat_version`, `meta.adapter` -> `aat_adapter`,
-and `meta.adapter_version` -> `aat_adapter_version`. The mapping document also
+Mapping version `0.2.1` preserves the producer-identity behavior introduced in
+`0.2.0`: `version` -> `aat_version`, `meta.adapter` -> `aat_adapter`, and
+`meta.adapter_version` -> `aat_adapter_version`. The mapping document also
 contributes `mapping_id`, `mapping_version`, and `mapping_schema_hash`.
 `mapping_hash` is deliberately not serialized inside parser-IR; ABC combines
 `derived_from` with manifest input `mapping_hash` and admits exact

@@ -235,6 +235,36 @@ fn map_block(
                 )?;
             }
         }
+        "keigakomi_block" | "yokogumi_block" => {
+            recorder.record(
+                "STRUCTURAL",
+                Some(structural_pointer.as_str()),
+                None,
+                None,
+                None,
+            )?;
+            recorder.record(
+                "UNSUPPORTED",
+                Some(structural_pointer.as_str()),
+                None,
+                None,
+                None,
+            )?;
+            for (index, child) in block["children"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .enumerate()
+            {
+                current = map_block(
+                    child,
+                    nodes,
+                    recorder,
+                    current,
+                    &format!("{path}.children[{index}]"),
+                )?;
+            }
+        }
         "quote_block" | "caption_block" => {
             bail!("unsupported block kind without measured v1 divergence rule: {kind}");
         }
@@ -410,7 +440,7 @@ fn map_inline_to_nodes(
         }
         "warigaki" => map_warigaki_to_nodes(node, nodes, recorder, offset, path),
         "figure" => map_figure_to_node(node, nodes, recorder, offset, path),
-        "font_size" | "keigakomi" | "caption" => {
+        "font_size" | "tcy" | "keigakomi" | "caption" => {
             let kind = node["kind"].as_str().unwrap_or("");
             let pointer = format!("{path}.{kind}");
             recorder.record(
@@ -607,7 +637,7 @@ fn visible_inline_text(
                 .unwrap_or("")
                 .to_owned())
         }
-        "style" | "font_size" | "keigakomi" | "caption" => {
+        "style" | "font_size" | "tcy" | "keigakomi" | "caption" => {
             let kind = node["kind"].as_str().unwrap_or("");
             let container_pointer = format!("{path}.{kind}");
             record_measured_loss(

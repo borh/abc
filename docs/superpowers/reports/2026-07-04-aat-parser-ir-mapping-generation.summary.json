@@ -1,38 +1,41 @@
 {
-  "files_scanned": 35583,
+  "files_scanned": 53427,
   "files_failed_to_parse": 0,
-  "files_with_unsupported": 1024,
+  "files_with_unsupported": 1630,
   "files_with_warigaki": 243,
-  "total_blocks_scanned": 3033760,
-  "total_inline_nodes_scanned": 16678336,
-  "total_parser_ir_nodes_emitted": 16230882,
-  "total_ledger_entries": 27250865,
+  "total_blocks_scanned": 6090077,
+  "total_inline_nodes_scanned": 30842160,
+  "total_parser_ir_nodes_emitted": 26888713,
+  "total_ledger_entries": 48734891,
   "category_counts": {
-    "LOSS": 273503,
-    "AMBIGUITY": 16722096,
-    "INVENTION": 7043185,
-    "UNSUPPORTED": 14230,
-    "STRUCTURAL": 3197851
+    "LOSS": 3815445,
+    "AMBIGUITY": 27617002,
+    "INVENTION": 10691975,
+    "UNSUPPORTED": 27464,
+    "STRUCTURAL": 6583005
   },
   "block_kind_counts": {
-    "paragraph": 2928604,
-    "heading": 9210,
-    "jisage_block": 95946
+    "paragraph": 5846794,
+    "heading": 13394,
+    "jisage_block": 229830,
+    "keigakomi_block": 58,
+    "yokogumi_block": 1
   },
   "inline_kind_counts": {
-    "text": 9957880,
-    "ruby": 6237164,
+    "text": 20507601,
+    "ruby": 9686031,
     "gaiji": 91915,
-    "style": 369089,
+    "style": 520415,
     "warigaki": 1938,
     "font_size": 12796,
-    "figure": 4111,
+    "figure": 4416,
     "raw": 2959,
     "keigakomi": 420,
-    "caption": 64
+    "caption": 64,
+    "tcy": 13605
   },
-  "generated_mapping_rules": 116,
-  "mapping_version": "0.2.0",
+  "generated_mapping_rules": 130,
+  "mapping_version": "0.2.1",
   "mapping_schema_hash": "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4",
   "target_parser_ir_schema_hash": "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396",
   "identity_projection": {
@@ -50,8 +53,9 @@
     "mapping_hash_source": "manifest-inputs.mapping_hash"
   },
   "aat_dirs": [
-    "scratch/morph-full-corpus/aats/aozora-rs-adapter",
-    "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter"
+    "/home/bor/Projects/ab-validator/scratch/morph-full-corpus/aats/aozora-rs-adapter",
+    "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter",
+    "/db/ab-validator/aat-corpus/aozora-epub3-full-20260704T050652Z-300s/aat/aozora-epub3-adapter"
   ],
-  "mapping_path": "data/aat-to-parser-ir-mapping-v1.json"
+  "mapping_path": "/home/bor/Projects/ab-validator/data/aat-to-parser-ir-mapping-v1.json"
 }

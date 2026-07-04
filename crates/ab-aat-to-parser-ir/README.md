@@ -28,6 +28,7 @@ Audit a corpus:
 cargo run -p ab-aat-to-parser-ir -- audit-corpus \
   --aat-dir scratch/morph-full-corpus/aats/aozora-rs-adapter \
   --aat-dir /db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter \
+  --aat-dir /db/ab-validator/aat-corpus/aozora-epub3-full-20260704T050652Z-300s/aat/aozora-epub3-adapter \
   --mapping data/aat-to-parser-ir-mapping-v1.json \
   --summary-json docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.summary.json \
   --report-md docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.md \
@@ -40,9 +41,9 @@ is `checks.<system>.aat-to-parser-ir-smoke`.
 
 ## Current Evidence
 
-- Mapping version: `0.2.0`
+- Mapping version: `0.2.1`
 - Mapping hash:
-  `sha256:68b0868b25f3b072a47d781099178bf2a31e4b16c561814f5e13e3801714d089`
+  `sha256:b508665af72c237fc60f00b720f80db2b16148aa64b5d1cc723a2948ee576390`
 - Mapping schema hash:
   `sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4`
 - Parser-IR schema hash:

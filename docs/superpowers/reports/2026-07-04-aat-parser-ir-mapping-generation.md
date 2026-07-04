@@ -6,23 +6,23 @@ Date: 2026-07-03
 
 | Metric | Value |
 |---|---:|
-| files scanned | 35583 |
+| files scanned | 53427 |
 | files failed to parse | 0 |
-| files with UNSUPPORTED | 1024 |
+| files with UNSUPPORTED | 1630 |
 | files with warigaki | 243 |
-| total parser-IR nodes emitted | 16230882 |
-| total ledger entries | 27250865 |
-| generated mapping rules | 116 |
+| total parser-IR nodes emitted | 26888713 |
+| total ledger entries | 48734891 |
+| generated mapping rules | 130 |
 
 ## Category Counts
 
 | Category | Count |
 |---|---:|
-| LOSS | 273503 |
-| AMBIGUITY | 16722096 |
-| INVENTION | 7043185 |
-| UNSUPPORTED | 14230 |
-| STRUCTURAL | 3197851 |
+| LOSS | 3815445 |
+| AMBIGUITY | 27617002 |
+| INVENTION | 10691975 |
+| UNSUPPORTED | 27464 |
+| STRUCTURAL | 6583005 |
 
 ## Schema Hashes
 
@@ -45,5 +45,6 @@ Date: 2026-07-03
 
 ## Inputs
 
-- `scratch/morph-full-corpus/aats/aozora-rs-adapter`
+- `/home/bor/Projects/ab-validator/scratch/morph-full-corpus/aats/aozora-rs-adapter`
 - `/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter`
+- `/db/ab-validator/aat-corpus/aozora-epub3-full-20260704T050652Z-300s/aat/aozora-epub3-adapter`

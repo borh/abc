@@ -38,6 +38,28 @@ fn base_meta(source_encoding: &str, source_hash: &str) -> Value {
     })
 }
 
+fn has_divergence_record(
+    output: &ab_aat_to_parser_ir::ConversionOutput,
+    category: &str,
+    aat_pointer: &str,
+    parser_ir_pointer: Option<&str>,
+) -> bool {
+    output
+        .divergence_bundle
+        .pointer("/records")
+        .and_then(Value::as_array)
+        .expect("divergence bundle records")
+        .iter()
+        .any(|record| {
+            record["category"] == category
+                && record["aat_pointer"] == aat_pointer
+                && match parser_ir_pointer {
+                    Some(pointer) => record["parser_ir_pointer"] == pointer,
+                    None => record["parser_ir_pointer"].is_null(),
+                }
+        })
+}
+
 #[test]
 fn legacy_schema_hashes_match_mapping_artifact() {
     let repo = repo_root();
@@ -70,8 +92,8 @@ fn mapping_preflight_accepts_checked_in_v2_artifact() {
 
     let index = mapping.preflight(&schemas).unwrap();
 
-    assert_eq!(mapping.mapping_version, "0.2.0");
-    assert_eq!(mapping.transform_rule_descriptions.len(), 116);
+    assert_eq!(mapping.mapping_version, "0.2.1");
+    assert_eq!(mapping.transform_rule_descriptions.len(), 130);
     assert!(
         index
             .require_rule("UNSUPPORTED", Some("blocks[].content[].warigaki"), None)
@@ -311,10 +333,20 @@ fn projects_measured_figure_inline_to_image_node() {
     assert_eq!(nodes[1]["span"]["end"], 1);
     assert_eq!(nodes[2]["text"], "B");
     assert_eq!(nodes[2]["span"]["start"], 1);
-    for expected in ["I-12", "L-36", "L-37", "L-38", "L-39"] {
+    for (category, aat_pointer, parser_ir_pointer) in [
+        (
+            "INVENTION",
+            "blocks[].content[].figure.filename",
+            Some("image.src"),
+        ),
+        ("LOSS", "blocks[].content[].figure.caption", None),
+        ("LOSS", "blocks[].content[].figure.css_class", None),
+        ("LOSS", "blocks[].content[].figure.height", None),
+        ("LOSS", "blocks[].content[].figure.width", None),
+    ] {
         assert!(
-            output.emitted_rule_ids.contains(expected),
-            "missing measured figure rule {expected}"
+            has_divergence_record(&output, category, aat_pointer, parser_ir_pointer),
+            "missing measured figure divergence {category} {aat_pointer:?} {parser_ir_pointer:?}"
         );
     }
 
@@ -398,8 +430,18 @@ fn measured_policy_projects_style_heading_warning_and_warigaki() {
             .and_then(Value::as_str),
         Some("AAT_WARNING")
     );
-    assert!(output.emitted_rule_ids.contains("U-09"));
-    assert!(output.emitted_rule_ids.contains("A-27"));
+    assert!(has_divergence_record(
+        &output,
+        "UNSUPPORTED",
+        "blocks[].children[].heading.content[].warigaki",
+        Some("(emphasis.text)")
+    ));
+    assert!(has_divergence_record(
+        &output,
+        "AMBIGUITY",
+        "meta.source_encoding",
+        Some("source.encoding")
+    ));
     assert!(
         !output
             .divergence_bundle
@@ -408,6 +450,114 @@ fn measured_policy_projects_style_heading_warning_and_warigaki() {
             .unwrap()
             .iter()
             .any(|record| record["parser_ir_pointer"] == "warnings[].span.line")
+    );
+
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
+#[test]
+fn measured_policy_flattens_epub3_tcy_and_block_containers() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let aat = json!({
+        "version": 1,
+        "work_id": "epub3-containers",
+        "meta": base_meta(
+            "utf-8",
+            "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+        ),
+        "blocks": [
+            {
+                "kind": "paragraph",
+                "content": [
+                    {"kind": "text", "value": "第"},
+                    {"kind": "tcy", "content": [{"kind": "text", "value": "10"}]},
+                    {"kind": "text", "value": "章"}
+                ]
+            },
+            {
+                "kind": "keigakomi_block",
+                "children": []
+            },
+            {
+                "kind": "yokogumi_block",
+                "children": [
+                    {
+                        "kind": "paragraph",
+                        "content": [{"kind": "text", "value": "横組"}]
+                    }
+                ]
+            }
+        ]
+    });
+
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: ConversionOptions::default(),
+    })
+    .unwrap();
+
+    let projected_text = output
+        .parser_ir
+        .pointer("/nodes")
+        .and_then(Value::as_array)
+        .unwrap()
+        .iter()
+        .filter_map(|node| {
+            if node["type"] == "text" || node["type"] == "emphasis" {
+                node["text"].as_str()
+            } else {
+                None
+            }
+        })
+        .collect::<String>();
+    assert_eq!(projected_text, "第10章横組");
+
+    assert!(
+        output
+            .divergence_bundle
+            .pointer("/records")
+            .and_then(Value::as_array)
+            .unwrap()
+            .iter()
+            .any(|record| {
+                record["category"] == "UNSUPPORTED"
+                    && record["aat_pointer"]
+                        .as_str()
+                        .is_some_and(|pointer| pointer.contains("tcy"))
+            }),
+        "expected measured tcy unsupported divergence"
+    );
+    assert!(
+        output
+            .divergence_bundle
+            .pointer("/records")
+            .and_then(Value::as_array)
+            .unwrap()
+            .iter()
+            .any(|record| {
+                record["category"] == "UNSUPPORTED"
+                    && record["aat_pointer"]
+                        .as_str()
+                        .is_some_and(|pointer| pointer.contains("keigakomi_block"))
+            }),
+        "expected measured keigakomi_block unsupported divergence"
+    );
+    assert!(
+        output
+            .divergence_bundle
+            .pointer("/records")
+            .and_then(Value::as_array)
+            .unwrap()
+            .iter()
+            .any(|record| {
+                record["category"] == "UNSUPPORTED"
+                    && record["aat_pointer"]
+                        .as_str()
+                        .is_some_and(|pointer| pointer.contains("yokogumi_block"))
+            }),
+        "expected measured yokogumi_block unsupported divergence"
     );
 
     validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
@@ -452,10 +602,30 @@ fn heading_visible_projection_records_measured_flattening_losses() {
     })
     .unwrap();
 
-    for expected in ["L-20", "L-21", "L-23", "L-24", "L-25", "L-26", "L-27"] {
+    for (category, aat_pointer, parser_ir_pointer) in [
+        (
+            "LOSS",
+            "blocks[].children[].heading.content[].font_size",
+            None,
+        ),
+        ("LOSS", "blocks[].children[].heading.content[].gaiji", None),
+        (
+            "LOSS",
+            "blocks[].children[].heading.content[].raw",
+            Some("(emphasis.text)"),
+        ),
+        ("LOSS", "blocks[].children[].heading.content[].raw", None),
+        ("LOSS", "blocks[].children[].heading.content[].ruby", None),
+        (
+            "LOSS",
+            "blocks[].children[].heading.content[].ruby.reading",
+            Some("(emphasis.text)"),
+        ),
+        ("LOSS", "blocks[].children[].heading.content[].style", None),
+    ] {
         assert!(
-            output.emitted_rule_ids.contains(expected),
-            "missing measured heading flattening rule {expected}"
+            has_divergence_record(&output, category, aat_pointer, parser_ir_pointer),
+            "missing measured heading flattening divergence {category} {aat_pointer:?} {parser_ir_pointer:?}"
         );
     }
     let heading = output

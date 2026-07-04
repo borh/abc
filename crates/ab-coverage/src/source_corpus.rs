@@ -19,7 +19,20 @@ pub struct SourceWork {
     pub decoded: DecodedSource,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SourceIndexEntry {
+    pub work_id: String,
+    pub indexed_path: String,
+}
+
 pub fn load_index(path: &Path) -> Result<BTreeMap<String, String>> {
+    Ok(load_index_entries(path)?
+        .into_iter()
+        .map(|entry| (entry.work_id, entry.indexed_path))
+        .collect())
+}
+
+pub fn load_index_entries(path: &Path) -> Result<Vec<SourceIndexEntry>> {
     let index_bytes = fs::read(path).with_context(|| format!("read index {}", path.display()))?;
     let index_doc: Value = serde_json::from_slice(&index_bytes)
         .with_context(|| format!("parse index {}", path.display()))?;
@@ -28,7 +41,7 @@ pub fn load_index(path: &Path) -> Result<BTreeMap<String, String>> {
         .and_then(Value::as_array)
         .ok_or_else(|| anyhow::anyhow!("index has no .works array"))?;
 
-    let mut id_to_path = BTreeMap::new();
+    let mut entries = Vec::new();
     for work in works {
         let id = work
             .get("id")
@@ -42,9 +55,12 @@ pub fn load_index(path: &Path) -> Result<BTreeMap<String, String>> {
             .ok_or_else(|| {
                 anyhow::anyhow!("work {id} missing txt_path/indexed_path/source_path")
             })?;
-        id_to_path.insert(id.to_owned(), indexed_path.to_owned());
+        entries.push(SourceIndexEntry {
+            work_id: id.to_owned(),
+            indexed_path: indexed_path.to_owned(),
+        });
     }
-    Ok(id_to_path)
+    Ok(entries)
 }
 
 pub fn read_source_work(
@@ -125,6 +141,29 @@ mod tests {
         assert_eq!(index["w1"], "cards/1/files/1.txt");
         assert_eq!(index["w2"], "cards/2/files/2.zip::2.txt");
         assert_eq!(index["w3"], "cards/3/files/3.txt");
+    }
+
+    #[test]
+    fn load_index_entries_preserves_duplicate_work_ids() {
+        let path = temp_file("source-index-duplicates.json");
+        std::fs::write(
+            &path,
+            r#"{
+                "works": [
+                    {"id": "w1", "txt_path": "cards/1/files/1.txt"},
+                    {"id": "w1", "txt_path": "cards/1/files/1_ruby.txt"}
+                ]
+            }"#,
+        )
+        .unwrap();
+
+        let entries = load_index_entries(&path).unwrap();
+
+        assert_eq!(entries.len(), 2);
+        assert_eq!(entries[0].work_id, "w1");
+        assert_eq!(entries[0].indexed_path, "cards/1/files/1.txt");
+        assert_eq!(entries[1].work_id, "w1");
+        assert_eq!(entries[1].indexed_path, "cards/1/files/1_ruby.txt");
     }
 
     #[test]

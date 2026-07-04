@@ -6,7 +6,7 @@ use std::{
 
 use ab_coverage::{
     matrix::{CoverageMatrix, RepresentabilityStatus, Row},
-    source_corpus::{load_index, read_source_work},
+    source_corpus::{SourceIndexEntry, load_index_entries, read_source_work},
     source_inventory::{UnknownMarkerExample, inventory_document, patterns_from_rows},
 };
 use anyhow::{Context, Result, bail};
@@ -140,9 +140,9 @@ fn main() -> Result<()> {
         .iter()
         .map(|row| (row.id.as_str(), row))
         .collect::<BTreeMap<_, _>>();
-    let index = load_index(&cli.index)?;
+    let index_entries = load_index_entries(&cli.index)?;
     let allowlist = load_allowlist(cli.allowlist.as_deref())?;
-    let work_ids = load_work_ids(cli.work_ids.as_deref(), &index)?;
+    let work_entries = load_work_entries(cli.work_ids.as_deref(), &index_entries)?;
 
     let mut output = InventoryOutput {
         inputs: Inputs {
@@ -160,9 +160,9 @@ fn main() -> Result<()> {
     let mut unknown_work_ids = BTreeSet::new();
     let mut strict_errors = Vec::new();
 
-    let work_results = work_ids
+    let work_results = work_entries
         .par_iter()
-        .map(|work_id| scan_work(work_id, &cli.corpus, &index, &patterns))
+        .map(|entry| scan_work(entry, &cli.corpus, &patterns))
         .collect::<Vec<_>>();
 
     for result in work_results {
@@ -243,39 +243,55 @@ fn main() -> Result<()> {
 }
 
 fn scan_work(
-    work_id: &str,
+    entry: &SourceIndexEntry,
     corpus: &Path,
-    index: &BTreeMap<String, String>,
     patterns: &[ab_coverage::source_inventory::SourceInventoryPattern],
 ) -> WorkInventoryResult {
-    let Some(indexed_path) = index.get(work_id) else {
-        return WorkInventoryResult::Failed {
-            work_id: work_id.to_owned(),
-            indexed_path: String::new(),
-            error: "work id missing from index".to_owned(),
-        };
-    };
-    match read_source_work(corpus, work_id, indexed_path) {
+    match read_source_work(corpus, &entry.work_id, &entry.indexed_path) {
         Ok(work) => WorkInventoryResult::Scanned {
-            work_id: work_id.to_owned(),
-            summary: inventory_document(work_id, &work.decoded.text, patterns),
+            work_id: entry.work_id.clone(),
+            summary: inventory_document(&entry.work_id, &work.decoded.text, patterns),
         },
         Err(err) => WorkInventoryResult::Failed {
-            work_id: work_id.to_owned(),
-            indexed_path: indexed_path.clone(),
+            work_id: entry.work_id.clone(),
+            indexed_path: entry.indexed_path.clone(),
             error: format!("{err:#}"),
         },
     }
 }
 
-fn load_work_ids(path: Option<&Path>, index: &BTreeMap<String, String>) -> Result<Vec<String>> {
+fn load_work_entries(
+    path: Option<&Path>,
+    entries: &[SourceIndexEntry],
+) -> Result<Vec<SourceIndexEntry>> {
     if let Some(path) = path {
         let bytes = fs::read(path).with_context(|| format!("read {}", path.display()))?;
         let ids: Vec<String> = serde_json::from_slice(&bytes)
             .with_context(|| format!("parse work id array {}", path.display()))?;
-        return Ok(ids);
+        let requested = ids.into_iter().collect::<BTreeSet<_>>();
+        let selected = entries
+            .iter()
+            .filter(|entry| requested.contains(&entry.work_id))
+            .cloned()
+            .collect::<Vec<_>>();
+        let selected_ids = selected
+            .iter()
+            .map(|entry| entry.work_id.as_str())
+            .collect::<BTreeSet<_>>();
+        let missing = requested
+            .iter()
+            .filter(|id| !selected_ids.contains(id.as_str()))
+            .cloned()
+            .collect::<Vec<_>>();
+        if !missing.is_empty() {
+            bail!(
+                "--work-ids contains ids missing from index: {}",
+                missing.join(", ")
+            );
+        }
+        return Ok(selected);
     }
-    Ok(index.keys().cloned().collect())
+    Ok(entries.to_vec())
 }
 
 fn load_allowlist(path: Option<&Path>) -> Result<Vec<CompiledAllowRule>> {

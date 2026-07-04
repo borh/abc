@@ -78,6 +78,13 @@ Adapter-version matching is exact. A future adapter-version tuple requires a
 new measured conversion-audit entry rather than wildcard or prefix registry
 matching.
 
+## Source Authority Caveat
+
+Parser-IR conversion evidence over four adapters is not a proof that AAT can
+represent the Aozora source language. The source-authority inventory at
+`docs/superpowers/reports/2026-07-04-source-authority-representability.md`
+is the representability gate. Parser evidence remains triangulation only.
+
 ## Release Surface
 
 The converter is exposed as:

@@ -433,7 +433,6 @@
                 cp -R ${./.} source
                 chmod -R u+w source
                 cd source
-                cp ${./nix/clj-nix-deps.edn} deps.edn
 
                 export HOME="${cljDepsCache}"
                 export JAVA_TOOL_OPTIONS="-Duser.home=${cljDepsCache}"
@@ -442,17 +441,16 @@
                 export XDG_CONFIG_HOME="$TMPDIR/xdg-config"
                 export GITLIBS="$HOME/.gitlibs"
 
-                # The Nix sandbox has no network access; tests that need
-                # the upstream TEI RelaxNG schema (fetched at app build
-                # time, not at test time) skip cleanly when this flag is
-                # set. End-to-end TEI validation runs via the
+                # The Nix sandbox has no network access; tests needing the upstream
+                # TEI RelaxNG schema (fetched at app build time, not test time) skip
+                # via this flag. End-to-end TEI validation runs via the
                 # `nix run .#validate-design-bundle` app, not here.
                 export ABC_TEI_SCHEMA_SKIP=1
 
-                clojure -M:abc/focused-test
+                clojure -M:test:kaocha -m kaocha.runner
 
                 mkdir -p "$out"
-                echo "ABC focused Clojure tests passed with clj-nix dependency cache." > "$out/result.txt"
+                echo "ABC Clojure tests passed with clj-nix dependency cache (kaocha auto-discovery)." > "$out/result.txt"
               '';
 
           aat-parser-ir-probe-tests =
@@ -475,7 +473,6 @@
 
           contract-surface = pkgs.runCommand "abc-contract-surface-check" { } ''
             test -f ${./resources/abc/ndc9.edn.xz}
-            test -f ${./nix/clj-nix-deps.edn}
             test -f ${./deps-lock.json}
             test -f ${./src/abc/annotation/schema.clj}
             test -f ${./src/abc/text.clj}
@@ -654,16 +651,6 @@
             mkdir -p "$out"
             echo "ADR acceptance-criteria lint passed (ratcheted)." > "$out/result.txt"
           '';
-          focused-test-coverage =
-            pkgs.runCommand "abc-focused-test-coverage" { nativeBuildInputs = [ pkgs.python3 ]; }
-              ''
-                cp -R ${./.} source
-                chmod -R u+w source
-                cd source
-                bash nix/check-focused-test-coverage.sh
-                mkdir -p "$out"
-                echo "focused-test allowlist covers all *_test.clj (ratcheted)." > "$out/result.txt"
-              '';
           swi-prolog-smoke =
             pkgs.runCommand "abc-swi-prolog-smoke" { nativeBuildInputs = [ pkgs.swi-prolog ]; }
               ''
@@ -716,14 +703,6 @@
             ];
           };
 
-          mecab = pkgs.mecab.overrideAttrs (oldAttrs: {
-            postInstall = (oldAttrs.postInstall or "") + ''
-              rm -f $out/lib/mecab/dic/unidi-cwj $out/lib/mecab/dic/unidic-cwj
-              ln -s ${pkgs.unidic-cwj}/share/mecab/dic/unidic-cwj $out/lib/mecab/dic/unidic-cwj
-            '';
-          });
-          unidic = pkgs.unidic-cwj;
-          mecabDicDir = "${unidic}/share/mecab/dic/unidic-cwj";
         in
         {
           default = pkgs.mkShell {
@@ -733,29 +712,8 @@
               git-cliff
               jdk21
               jq
-              mecab
-              unidic
               libxml2
             ];
-
-            LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [
-              mecab
-              pkgs.systemd
-            ];
-
-            MECABRC = "${mecab}/etc/mecabrc";
-            MECAB_DICDIR = mecabDicDir;
-
-            shellHook = ''
-              export LD_LIBRARY_PATH="${
-                pkgs.lib.makeLibraryPath [
-                  mecab
-                  pkgs.systemd
-                ]
-              }:''${LD_LIBRARY_PATH:-}"
-              export MECABRC="${mecab}/etc/mecabrc"
-              export MECAB_DICDIR="${mecabDicDir}"
-            '';
           };
 
           validation = pkgs.mkShell {

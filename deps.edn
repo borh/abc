@@ -10,8 +10,6 @@
   clj-commons/fs                             {:mvn/version "1.6.312"}
   babashka/fs                                {:mvn/version "0.5.34"}
   com.ibm.icu/icu4j                          {:mvn/version "78.3"}
-  clj-mecab/clj-mecab                        {:mvn/version "1.0.102"}
-
   org.apache.commons/commons-compress        {:mvn/version "1.28.0"}
   com.cnuernber/charred                      {:mvn/version "1.039"}
   clojure.java-time/clojure.java-time        {:mvn/version "1.4.3"}
@@ -33,9 +31,11 @@
   org.eclipse.jgit/org.eclipse.jgit.ssh.apache {:mvn/version "7.7.0.202606012155-r"}
 
   uk.org.russet/tawny-owl                    {:mvn/version "2.3.3"
-                                              :exclusions [org.slf4j/slf4j-nop]}
+                                              :exclusions [org.slf4j/slf4j-nop
+                                                           org.apache.logging.log4j/log4j]}
   net.sourceforge.owlapi/owlapi-distribution {:mvn/version "5.5.1"
-                                              :exclusions [org.slf4j/slf4j-nop]}
+                                              :exclusions [org.slf4j/slf4j-nop
+                                                           org.apache.logging.log4j/log4j]}
 
   org.graalvm.js/js-language                 {:mvn/version "24.2.2"}
   org.clojars.jules_gosnell/m3               {:mvn/version "1.0.0-beta3"

@@ -42,3 +42,6 @@ docs/superpowers/plans/archive/
 /resources/*.tokens
 /resources/*Lexer.java
 /resources/*Parser.java
+
+# Local scratch logs
+tmp/

@@ -4,46 +4,42 @@ The Aozora Bunko corpus Converter (ABC) is a library and system for converting t
 
 ## Usage
 
-Use either the build tool [Boot](http://boot-clj.com/) or the official [Clojure CLI tools](https://clojure.org/guides/getting_started).
+Uses the [Clojure CLI tools](https://clojure.org/guides/getting_started). Tool entry points are defined as `:abc/*` aliases in `deps.edn`; the runnable tools live under `src/abc/tools/`. A Nix flake provides a reproducible dev shell and CI checks.
 
 ### CLI
 
-Extracting LOD from a local clone of the Aozora Bunko repository:
-
 ```bash
-clojure -m abc.core -i ../../Dependencies/aozorabunko -o dist
-```
+# dev shell (clojure, git, git-cliff, jdk21, jq, libxml2)
+nix develop
 
-This will save a Turtle-formatted file `aozora-bunko.ttl` under `dist/`.
+# run a tool, e.g. validate the design bundle
+clojure -M:abc/validate-design-bundle
+# or: nix run .#validate-design-bundle
+```
 
 ### Interactive Access
 
-For CLI tools:
-
 ```bash
-clj
+nix develop -c clojure
+# or: clojure   (if the CLI is installed outside Nix)
 ```
 
-For boot:
-
-```bash
-boot dev
-```
-
-And then connect with your favorite editor.
+Then connect with your editor.
 
 ## Testing
 
 Run all tests:
 
 ```bash
-clojure -Atest:runner
+clojure -M:test:kaocha -m kaocha.runner
+# or: ./bin/kaocha
 ```
 
-Continuously running test process for use during development:
+In the Nix sandbox / CI, tests run via the `clj-nix-focused-tests` check with
+clj-nix's offline classpath:
 
 ```bash
-boot watch deps-test bat-test
+nix build .#checks.x86_64-linux.clj-nix-focused-tests
 ```
 
 ## License

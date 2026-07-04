@@ -327,6 +327,42 @@ fn source_inventory_classifies_caption_inline_corpus_variants() {
 }
 
 #[test]
+fn source_inventory_classifies_heading_and_keigakomi_corpus_variants() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = [
+        "［＃中見出終わり］",
+        "［＃「希い――「原爆の図」によせて――」は大見出し］",
+        "［＃「インターネット図書館「青空文庫」の特色」は中見出し］",
+        "［＃「　　」は罫囲み］",
+        "［＃「花」は罫囲み］",
+        "［＃「ＧＯＴＯ」は罫囲み］",
+    ]
+    .join("\n");
+    let summary = inventory_document("fixture", &source, &patterns);
+
+    assert_eq!(
+        summary.unknown_examples,
+        [],
+        "known corpus heading and keigakomi variants should not remain unknown"
+    );
+    assert_eq!(
+        summary
+            .row_counts
+            .get("heading.basic")
+            .map(|count| count.occurrences),
+        Some(3)
+    );
+    assert_eq!(
+        summary
+            .row_counts
+            .get("decoration.keigakomi")
+            .map(|count| count.occurrences),
+        Some(3)
+    );
+}
+
+#[test]
 fn source_inventory_classifies_table_and_multicolumn_corpus_variants() {
     let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
     let patterns = patterns_from_rows(matrix.rows());

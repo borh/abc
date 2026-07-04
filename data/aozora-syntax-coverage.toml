@@ -256,7 +256,7 @@ reference_sources = [
   "references/aozorabunko/rules/kijyunn.html",
 ]
 source_examples = ["［＃大見出し］", "［＃「見出し」は中見出し］"]
-source_patterns = ['［＃「[^」]+」は[大中小]見出し］', '［＃(ここから|ここで)?[大中小]見出し(終わり)?］']
+source_patterns = ['［＃「[^\n]+」は[大中小]見出し］', '［＃(ここから|ここで)?[大中小]見出し?(終わり)?］']
 ir_nodes = ["Block::Heading"]
 aat_nodes = ["heading"]
 tei_projection = "head"
@@ -1896,7 +1896,7 @@ category = "inline_annotation"
 feature_keys = ["keigakomi"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/keigakomi.rb", "references/parsers/aozora2html/lib/aozora2html/tag/inline_keigakomi.rb"]
 source_examples = ["［＃ここから罫囲み］", "［＃ここで罫囲み終わり］", "「text」の罫囲み"]
-source_patterns = ['［＃ここから罫囲み］', '［＃(ここで)?罫囲み(終わり)?］', '「[^」]+」の罫囲み']
+source_patterns = ['［＃ここから罫囲み］', '［＃(ここで)?罫囲み(終わり)?］', '「[^\n]+」[のは]罫囲み']
 ir_nodes = ["Inline::Style", "Block::Style"]
 aat_nodes = ["keigakomi"]
 tei_projection = "ab rend=keigakomi"

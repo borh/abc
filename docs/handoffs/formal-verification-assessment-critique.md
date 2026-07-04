@@ -249,3 +249,45 @@ Probes run 2026-07-04. All findings reproducible by re-running the tool calls
 in §2.2, §2.3, and §5. Companion implementation: `flake.nix`
 `checks.adr-invariants-vacuity`; block markers added to the three committed
 `.smt2` files.*
+
+## 9. Resolution (2026-07-04)
+
+The mode-B vacuity identified in §2 is resolved by replacing each vacuous SMT
+file with a gate that reads a real artifact (design:
+docs/superpowers/specs/2026-07-04-code-as-spec-formal-models-design.md):
+
+| Old vacuous file | Replacement (reads real artifact) |
+|---|---|
+| r1-reproducibility-conflict.smt2 | `test/abc/tools/code_as_spec_test.clj` — `r1-reproducibility-conflict-property-test`, a test.check property (200 trials) against `manifest-index/reproducibility-conflicts` (Layer D) |
+| r2-non-circularity.smt2 | `fixtures/v0/invalid/manifest-nested-artifact-id/manifest.json` + `r2-manifest-schema-rejects-nested-artifact-id-test` in `code_as_spec_test.clj` — asserts the real JSON Schema's `$defs/identityObject` (additionalProperties:false, fixed 13-key set) rejects the violation (Layer A) |
+| r3-drift-cardinality.smt2 | `test/abc/tools/person_drift_test.clj` — six-mode schema cardinality test (already shipped `48c4c65`) |
+| (cross-artifact, new) | `docs/adr/manifest-identity-emitter-sanity.pl` — SWI-Prolog emitter sanity (no duplicate `manifest_identity/2` facts); `docs/adr/person-id-referential-integrity.pl` — `person_id` referential integrity over emitted facts (Layer C). See honesty note below. |
+| (process gate, new) | `nix/check-acceptance-criteria.sh` + `docs/adr/.acceptance-legacy-allowlist` — ratcheted ADR-acceptance lint (Layer F) |
+
+**Honesty note:** the Prolog gate is an emitter-sanity + referential-integrity
+check, NOT a proof of ADR 0020 Position L ("drift events do not rotate
+`manifest_identity_object`"). Position L is enforced structurally: drift
+events live in separate `_events/*.json` files that the manifest schema never
+references as identity inputs, so a drift event cannot rotate identity by
+construction. A real before/after Prolog proof of Position L would require
+the emitter to model a hypothetical post-drift identity (defining what
+identity *would be* if drift entered the identity object), which ADR 0020
+forbids — that is future work, not claimed by this resolution.
+
+Each replacement is mutation-tested to confirm its verdict changes on a real
+regression (Box's usefulness test): R1 — break the oracle's conflict threshold
+→ property fails with a shrunk counterexample; R2 — remove the nested
+`artifact_id` → schema accepts the fixture and the test fails; emitter
+sanity — append a duplicate `manifest_identity` line → exit 1; referential
+integrity — delete a `person_record` referenced by `drift_successor` →
+exit 1; ADR lint — add a prose-only non-allowlisted ADR → exit 1.
+
+The three `.smt2` files, `0001-invariants.README.md`, and the
+`adr0001-invariants` / `adr0020-drift-cardinality` / `adr-invariants-vacuity`
+Nix checks are deleted in Task 9 of the plan once the replacements are green
+in CI. No model remains that takes a hand-transcribed restatement of a prose
+spec as input.
+
+*Companion implementation commits: Worktree `code-as-spec-formal-models`
+(`a915824` R2, `435d957` R1, `3d0ab11` ADR lint, `ca34945` SWI pin,
+`81b865b` emitter, `19e76c1` Prolog gates).*

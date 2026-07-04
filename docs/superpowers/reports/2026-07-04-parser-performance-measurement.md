@@ -19,10 +19,8 @@ that does not finish within that budget records a DNF result.
   `/db/ab-validator/aat-corpus/aozora2html-full-20260704T014828Z-300s/worksets/adapter-timeout-300s.json`
 - Largest-five performance workset:
   `/db/ab-validator/aat-corpus/aozora2html-full-20260704T014828Z-300s/worksets/adapter-timeout-300s-largest-5.json`
-- Cross-parser performance output:
-  `/db/ab-validator/aat-corpus/aozora2html-full-20260704T014828Z-300s/triage/outputs/parser-performance-largest5-60s-v2`
-- Stage-split performance output:
-  `/db/ab-validator/aat-corpus/aozora2html-full-20260704T014828Z-300s/triage/outputs/parser-performance-stage-top1-60s-v2`
+- Corrected cross-parser and stage-split performance output:
+  `/db/ab-validator/aat-corpus/aozora2html-full-20260704T014828Z-300s/triage/outputs/parser-performance-largest5-60s-v5`
 
 ## Refreshed Full-Run Result
 
@@ -75,29 +73,43 @@ default.
 
 The largest five 300s-timeout works were measured under a 60s per-parser budget
 using the generic performance harness. `full_adapter` is the comparable axis.
+For `aozora2html`, this is the timed Ruby XHTML generation plus Rust XHTML-to-AAT
+mapper pipeline.
 
 | adapter | attempted | ok | timeout | median wall s | max wall s | max RSS KB |
 |---|---:|---:|---:|---:|---:|---:|
-| aozora-rs | 5 | 5 | 0 | 0.150 | 0.340 | 313,832 |
-| aozora2 | 5 | 3 | 2 | 16.320 | 33.630 | 112,148 |
-| aozora2html | 5 | 0 | 5 | DNF | DNF | 178,684 |
+| aozora-rs | 5 | 5 | 0 | 0.150 | 0.330 | 314,364 |
+| aozora-epub3 | 5 | 5 | 0 | 0.850 | 1.010 | 216,776 |
+| aozora2html | 5 | 5 | 0 | 6.110 | 28.270 | 298,064 |
+| aozora2 | 5 | 3 | 2 | 16.170 | 33.150 | 112,016 |
 
 Per-work highlights:
 
-| work_id | bytes | aozora-rs | aozora2 | aozora2html |
-|---|---:|---:|---:|---:|
-| 000311_2012 | 1,742,057 | 0.04s | 0.53s | DNF 60s |
-| 001562_56146 | 1,676,607 | 0.24s | DNF 60s | DNF 60s |
-| 001562_56145 | 1,433,847 | 0.34s | DNF 60s | DNF 60s |
-| 001562_33224 | 1,347,264 | 0.15s | 33.63s | DNF 60s |
-| 001562_57875 | 1,298,242 | 0.11s | 16.32s | DNF 60s |
+| work_id | bytes | aozora-rs | aozora-epub3 | aozora2 | aozora2html |
+|---|---:|---:|---:|---:|---:|
+| 000311_2012 | 1,742,057 | 0.04s | 0.85s | 0.54s | 28.27s |
+| 001562_56146 | 1,676,607 | 0.23s | 1.01s | DNF 60s | 21.32s |
+| 001562_56145 | 1,433,847 | 0.33s | 1.01s | DNF 60s | 4.91s |
+| 001562_33224 | 1,347,264 | 0.15s | 0.85s | 33.15s | 5.78s |
+| 001562_57875 | 1,298,242 | 0.12s | 0.81s | 16.17s | 6.11s |
 
-Interpretation: `aozora-rs` is the only local parser path that remains
-comfortably viable on this large-file tail under a frequent-comparison budget.
-`aozora2` is mixed: much faster than `aozora2html` on some files, but it also
-DNFs on two of the five largest cases. `aozora2html` DNFs on all five within the
-60s comparison budget and previously timed out on the same works at the 300s
-full-run budget.
+Interpretation: after fixing the Rust mapper's JIS lookup table reload, the
+`aozora2html` pipeline completes all five largest timeout-tail files inside the
+60s comparison budget. `aozora-rs` remains fastest on this sample, and the
+Java-backed `aozora-epub3` adapter is also comfortably inside the frequent
+comparison budget. `aozora2` is mixed: it is fast on the largest file, but it
+still DNFs on two of the five largest cases within the 60s budget.
+
+## aozora2html Mapper Root Cause
+
+The first stage split showed Ruby XHTML generation completing quickly while the
+Rust XHTML-to-AAT mapper DNFed. Profiling the retained largest work
+(`000311_2012`) showed the mapper repeatedly rebuilding `jis2ucs.yml` for every
+gaiji lookup. The fix caches the parsed JIS-to-Unicode table with `OnceLock`.
+
+This was a measurement correction, not production optimization work: the old
+DNF mixed parser cost with an avoidable adapter bug and therefore contaminated
+the comparison.
 
 ## aozora2html Stage Split
 
@@ -106,14 +118,14 @@ was run with the same 60s budget:
 
 | stage | result | wall s | max RSS KB |
 |---|---|---:|---:|
-| full adapter | DNF | 60.00 | 50,616 |
-| Ruby XHTML generator | ok | 4.78 | 32,484 |
-| Rust XHTML mapper | DNF | 60.00 | 50,412 |
+| full adapter | ok | 28.27 | 85,300 |
+| Ruby XHTML generator | ok | 4.77 | 33,012 |
+| Rust XHTML mapper | ok | 23.58 | 85,904 |
 
-Interpretation: for this representative largest timeout work, the observed
-aozora2html bottleneck is not Ruby XHTML generation; it is the Rust XHTML-to-AAT
-mapper path. This is guidance for future Rust parser design and oracle-cost
-planning, not an instruction to optimize aozora2html as a production parser.
+Interpretation: for this representative largest timeout work, Ruby XHTML
+generation is not the bottleneck. The Rust mapper remains the expensive stage,
+but after caching the JIS lookup table it completes within the 60s diagnostic
+budget.
 
 ## Follow-Ups
 

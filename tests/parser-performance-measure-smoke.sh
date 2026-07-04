@@ -71,8 +71,8 @@ chmod +x "$tmp/fake-adapter-a"
 cat > "$tmp/fake-adapter-b" <<'SH'
 #!/usr/bin/env bash
 set -euo pipefail
-cat >/dev/null
-printf '{"version":1,"meta":{"adapter":"parser-b","parse_complete":true},"blocks":[]}\n'
+echo "fake-adapter-b should not be used for the aozora2html pipeline" >&2
+exit 44
 SH
 chmod +x "$tmp/fake-adapter-b"
 

@@ -60,18 +60,28 @@ def main() -> int:
     for work in works:
         source = read_work_bytes(work)
         for adapter in adapters:
-            measurements.append(
-                measure_command(
-                    time_bin=args.time_bin,
-                    label=adapter.label,
-                    stage="full_adapter",
-                    command=adapter.command,
-                    stdin_bytes=source,
-                    timeout_s=args.limit_s,
-                    work=work,
-                    out_dir=out_dir,
+            if adapter.label == args.aozora2html_label:
+                measurements.append(
+                    measure_aozora2html_full(
+                        args=args,
+                        source=source,
+                        work=work,
+                        out_dir=out_dir,
+                    )
                 )
-            )
+            else:
+                measurements.append(
+                    measure_command(
+                        time_bin=args.time_bin,
+                        label=adapter.label,
+                        stage="full_adapter",
+                        command=adapter.command,
+                        stdin_bytes=source,
+                        timeout_s=args.limit_s,
+                        work=work,
+                        out_dir=out_dir,
+                    )
+                )
 
     if args.aozora2html_label:
         selected = works[: args.stage_split_sample]
@@ -337,6 +347,60 @@ def persist_failure_artifacts(
         (failures / f"{safe}.stdout").write_bytes(stdout_path.read_bytes())
     if stderr_path.exists():
         (failures / f"{safe}.stderr").write_bytes(stderr_path.read_bytes())
+
+
+def measure_aozora2html_full(
+    *,
+    args: argparse.Namespace,
+    source: bytes,
+    work: Work,
+    out_dir: pathlib.Path,
+) -> dict[str, Any]:
+    if args.aozora2html_bin is None or args.mapper_bin is None:
+        raise SystemExit(
+            "--aozora2html-label requires --aozora2html-bin and --mapper-bin for full-pipeline measurement"
+        )
+
+    with tempfile.TemporaryDirectory(prefix="aozora2html-full-") as td:
+        tmp = pathlib.Path(td)
+        stdin_raw = tmp / "stdin.raw"
+        parser_src = tmp / "parser.sjis"
+        crlf_src = tmp / "parser.txt"
+        xhtml = tmp / "out.html"
+        script = tmp / "run.sh"
+        stdin_raw.write_bytes(source)
+        write_aozora2html_parser_input(source, parser_src, crlf_src)
+        script.write_text(
+            "\n".join(
+                [
+                    "#!/usr/bin/env bash",
+                    "set -euo pipefail",
+                    f"export GEM_HOME={shlex.quote(str(args.aozora2html_gem_home))}",
+                    f"export GEM_PATH={shlex.quote(str(args.aozora2html_gem_home))}",
+                    f"export PATH={shlex.quote(str(args.aozora2html_gem_home / 'bin'))}:$PATH",
+                    (
+                        f"{shlex.quote(str(args.aozora2html_bin))} --error-utf8 --use-unicode "
+                        f"{shlex.quote(str(crlf_src))} {shlex.quote(str(xhtml))}"
+                    ),
+                    (
+                        f"{shlex.quote(str(args.mapper_bin))} --source {shlex.quote(str(stdin_raw))} "
+                        f"--xhtml {shlex.quote(str(xhtml))} --mode aat"
+                    ),
+                    "",
+                ]
+            )
+        )
+        script.chmod(0o755)
+        return measure_command(
+            time_bin=args.time_bin,
+            label=args.aozora2html_label,
+            stage="full_adapter",
+            command=[str(script)],
+            stdin_bytes=b"",
+            timeout_s=args.limit_s,
+            work=work,
+            out_dir=out_dir,
+        )
 
 
 def measure_aozora2html_stages(

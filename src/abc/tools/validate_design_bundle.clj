@@ -27,6 +27,16 @@
    [clojure.string :as string]
    [taoensso.telemere :as tel]))
 
+(def legacy-parser-ir-schema-hashes
+  #{"sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"})
+
+(defn accepted-parser-ir-schema-hashes []
+  (conj legacy-parser-ir-schema-hashes
+        (manifest/schema-hash "schemas/parser-ir.schema.json")))
+
+(defn- parser-ir-schema-hash-accepted? [value]
+  (contains? (accepted-parser-ir-schema-hashes) value))
+
 (defn schema-hash-errors [manifest-inputs]
   (let [expected-parser-ir (manifest/schema-hash "schemas/parser-ir.schema.json")
         expected-diagnostic (manifest/schema-hash "schemas/diagnostic.schema.json")
@@ -34,7 +44,8 @@
         actual-diagnostic (get manifest-inputs "diagnostic_schema_hash")]
     (vec
      (concat
-      (when (and actual-parser-ir (not= expected-parser-ir actual-parser-ir))
+      (when (and actual-parser-ir
+                 (not (parser-ir-schema-hash-accepted? actual-parser-ir)))
         [(str "ab-validator parser_ir_schema_hash " actual-parser-ir
               " does not match ABC parser IR schema hash " expected-parser-ir)])
       (when (and actual-diagnostic (not= expected-diagnostic actual-diagnostic))
@@ -45,9 +56,71 @@
   (let [expected-parser-ir (manifest/schema-hash "schemas/parser-ir.schema.json")
         actual-parser-ir (get parser-ir "schema_hash")]
     (vec
-     (when (not= expected-parser-ir actual-parser-ir)
+     (when (not (parser-ir-schema-hash-accepted? actual-parser-ir))
        [(str "ab-validator parser IR schema_hash " actual-parser-ir
              " does not match ABC parser IR schema hash " expected-parser-ir)]))))
+
+(defn- duplicate-paragraph-id-errors [paragraphs]
+  (->> paragraphs
+       (map #(get % "id"))
+       frequencies
+       (keep (fn [[paragraph-id count]]
+               (when (> count 1)
+                 (str "parser IR paragraphs[] contains duplicate id " paragraph-id))))
+       sort))
+
+(defn- node-range-label [start end]
+  (str start ".." end))
+
+(defn- source-note-node-in-range? [nodes start end]
+  (boolean
+   (some #(= "source-note" (get % "type"))
+         (subvec nodes start end))))
+
+(defn parser-ir-paragraph-coherence-errors [parser-ir]
+  (let [nodes (vec (get parser-ir "nodes" []))
+        paragraphs (vec (get parser-ir "paragraphs" []))]
+    (vec
+     (concat
+      (duplicate-paragraph-id-errors paragraphs)
+      (loop [remaining paragraphs
+             previous-end 0
+             errors []]
+        (if-let [paragraph (first remaining)]
+          (let [paragraph-id (get paragraph "id")
+                node-range (get paragraph "node_range")
+                start (get node-range "start")
+                end (get node-range "end")
+                outside? (not (and (integer? start)
+                                   (integer? end)
+                                   (<= 0 start end (count nodes))))
+                non-monotonic? (and (integer? start)
+                                    (< start previous-end))
+                source-note-missing? (and (not outside?)
+                                          (= "source-note" (get paragraph "role"))
+                                          (= "direct" (get paragraph "classification"))
+                                          (not (source-note-node-in-range?
+                                                nodes start end)))
+                errors (cond-> errors
+                         outside?
+                         (conj (str "parser IR paragraph " paragraph-id
+                                    " node_range " (node-range-label start end)
+                                    " is outside nodes[] length " (count nodes)))
+
+                         (and (not outside?) non-monotonic?)
+                         (conj (str "parser IR paragraph " paragraph-id
+                                    " node_range starts before previous paragraph end "
+                                    previous-end))
+
+                         source-note-missing?
+                         (conj (str "parser IR paragraph " paragraph-id
+                                    " has role source-note but no source-note node in node_range")))]
+            (recur (rest remaining)
+                   (if (and (integer? end) (not outside?))
+                     end
+                     previous-end)
+                   errors))
+          errors))))))
 
 (defn derived-from-compatibility-query [parser-ir manifest-inputs]
   (let [derived-from (get parser-ir "derived_from")]
@@ -266,6 +339,7 @@
                           "ab-validator manifest inputs")
     (check-errors! (schema-hash-errors manifest-inputs))
     (check-errors! (parser-ir-schema-hash-errors parser-ir))
+    (check-errors! (parser-ir-paragraph-coherence-errors parser-ir))
     (check-errors! (compatibility-errors (compat/load-registry)
                                          parser-ir
                                          manifest-inputs

@@ -43,8 +43,14 @@
 (def ^:private mapping-schema-hash
   "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4")
 
-(def ^:private parser-ir-schema-hash
+(def ^:private legacy-parser-ir-schema-hash
   "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396")
+
+(def ^:private current-parser-ir-schema-hash
+  "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2")
+
+(def ^:private parser-ir-schema-hash
+  legacy-parser-ir-schema-hash)
 
 (def ^:private complete-manifest-inputs
   {"producer" "ab-validator"
@@ -200,9 +206,9 @@
 (deftest schema-hash-errors-test
   (is (empty?
        (validate/schema-hash-errors
-        {"parser_ir_schema_hash" "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"
+        {"parser_ir_schema_hash" legacy-parser-ir-schema-hash
          "diagnostic_schema_hash" "sha256:e21ef2abdbf64b6fc920b4ef9a3df0e426b7bcc1cad0a6bbdd654f41e8ff302d"})))
-  (is (= ["ab-validator parser_ir_schema_hash sha256:0000000000000000000000000000000000000000000000000000000000000004 does not match ABC parser IR schema hash sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"
+  (is (= [(str "ab-validator parser_ir_schema_hash sha256:0000000000000000000000000000000000000000000000000000000000000004 does not match ABC parser IR schema hash " current-parser-ir-schema-hash)
           "ab-validator diagnostic_schema_hash sha256:0000000000000000000000000000000000000000000000000000000000000008 does not match ABC diagnostic schema hash sha256:e21ef2abdbf64b6fc920b4ef9a3df0e426b7bcc1cad0a6bbdd654f41e8ff302d"]
          (validate/schema-hash-errors
           {"parser_ir_schema_hash" (files/example-hash "04")
@@ -211,8 +217,8 @@
 (deftest parser-ir-schema-hash-errors-test
   (is (empty?
        (validate/parser-ir-schema-hash-errors
-        {"schema_hash" "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"})))
-  (is (= ["ab-validator parser IR schema_hash sha256:0000000000000000000000000000000000000000000000000000000000000004 does not match ABC parser IR schema hash sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"]
+        {"schema_hash" legacy-parser-ir-schema-hash})))
+  (is (= [(str "ab-validator parser IR schema_hash sha256:0000000000000000000000000000000000000000000000000000000000000004 does not match ABC parser IR schema hash " current-parser-ir-schema-hash)]
          (validate/parser-ir-schema-hash-errors
           {"schema_hash" (files/example-hash "04")}))))
 
@@ -229,6 +235,103 @@
       (is (nil? (validate/validation-errors
                  schema
                  (assoc parser-ir "derived_from" derived-from)))))))
+
+(deftest parser-ir-schema-accepts-level3-paragraphs-test
+  (testing "parser IR may carry paragraph ranges and source-note nodes for Level 3 publication structure"
+    (let [schema (files/read-json "schemas/parser-ir.schema.json")
+          parser-ir {"schema_id" "https://w3id.org/abc/schemas/parser-ir.schema.json"
+                     "schema_hash" current-parser-ir-schema-hash
+                     "source" {"work_content_hash" (files/example-hash "01")
+                               "encoding" "Shift_JIS"
+                               "normalization" "source"}
+                     "nodes" [{"type" "text"
+                               "span" {"start" 0 "end" 12
+                                       "coordinate_system" "decoded_utf8"}
+                               "text" "第一段"}
+                              {"type" "source-note"
+                               "span" {"start" 12 "end" 52
+                                       "coordinate_system" "decoded_utf8"}
+                               "text" "（古伝説と、シルレルの詩から。）"
+                               "note_type" "source-attribution"
+                               "placement" "back"
+                               "classification" "heuristic"
+                               "source_pointer" "blocks[78]"}]
+                     "paragraphs" [{"id" "p000000"
+                                    "span" {"start" 0 "end" 12
+                                            "coordinate_system" "decoded_utf8"}
+                                    "span_source" "direct"
+                                    "node_range" {"start" 0 "end" 1}
+                                    "role" "body"
+                                    "source_pointer" "blocks[0]"
+                                    "classification" "direct"}
+                                   {"id" "p000001"
+                                    "span" {"start" 12 "end" 52
+                                            "coordinate_system" "decoded_utf8"}
+                                    "span_source" "direct"
+                                    "node_range" {"start" 1 "end" 2}
+                                    "role" "source-note"
+                                    "source_pointer" "blocks[78]"
+                                    "classification" "heuristic"}]
+                     "warnings" []
+                     "errors" []}]
+      (is (nil? (validate/validation-errors schema parser-ir))))))
+
+(def ^:private level3-parser-ir-fixture
+  {"nodes" [{"type" "text"
+             "span" {"start" 0 "end" 12}
+             "text" "第一段"}
+            {"type" "source-note"
+             "span" {"start" 12 "end" 52}
+             "text" "（古伝説と、シルレルの詩から。）"
+             "note_type" "source-attribution"
+             "placement" "back"
+             "classification" "heuristic"
+             "source_pointer" "blocks[78]"}]
+   "paragraphs" [{"id" "p000000"
+                  "span" {"start" 0 "end" 12}
+                  "span_source" "direct"
+                  "node_range" {"start" 0 "end" 1}
+                  "role" "body"
+                  "source_pointer" "blocks[0]"
+                  "classification" "direct"}
+                 {"id" "p000001"
+                  "span" {"start" 12 "end" 52}
+                  "span_source" "direct"
+                  "node_range" {"start" 1 "end" 2}
+                  "role" "source-note"
+                  "source_pointer" "blocks[78]"
+                  "classification" "heuristic"}]})
+
+(deftest parser-ir-paragraph-coherence-errors-test
+  (testing "accepts coherent paragraph ranges"
+    (is (empty? (validate/parser-ir-paragraph-coherence-errors
+                 level3-parser-ir-fixture))))
+  (testing "rejects duplicate paragraph ids"
+    (is (= ["parser IR paragraphs[] contains duplicate id p000000"]
+           (validate/parser-ir-paragraph-coherence-errors
+            (assoc level3-parser-ir-fixture
+                   "paragraphs"
+                   [(first (get level3-parser-ir-fixture "paragraphs"))
+                    (assoc (second (get level3-parser-ir-fixture "paragraphs"))
+                           "id" "p000000")])))))
+  (testing "rejects ranges outside nodes[]"
+    (is (= ["parser IR paragraph p000000 node_range 0..3 is outside nodes[] length 2"]
+           (validate/parser-ir-paragraph-coherence-errors
+            (assoc-in level3-parser-ir-fixture
+                      ["paragraphs" 0 "node_range"]
+                      {"start" 0 "end" 3})))))
+  (testing "rejects overlapping or non-monotonic ranges"
+    (is (= ["parser IR paragraph p000001 node_range starts before previous paragraph end 1"]
+           (validate/parser-ir-paragraph-coherence-errors
+            (assoc-in level3-parser-ir-fixture
+                      ["paragraphs" 1 "node_range"]
+                      {"start" 0 "end" 2})))))
+  (testing "direct source-note paragraphs must contain a source-note node"
+    (is (= ["parser IR paragraph p000001 has role source-note but no source-note node in node_range"]
+           (validate/parser-ir-paragraph-coherence-errors
+            (-> level3-parser-ir-fixture
+                (assoc-in ["nodes" 1 "type"] "text")
+                (assoc-in ["paragraphs" 1 "classification"] "direct")))))))
 
 (def ^:private old-compat-query
   {:aat_version 1

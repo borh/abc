@@ -15,6 +15,10 @@
     (update acc :current-division conj node)
     (update acc :body-children conj node)))
 
+(defn- source-note-hiccup [node]
+  [:note {:type (get node "note_type")}
+   (get node "text")])
+
 (defn- flush-paragraph [acc]
   (if (seq (:current-paragraph acc))
     (assoc (append-structural-child acc (into [:p] (:current-paragraph acc)))
@@ -127,6 +131,21 @@
     (append-inline acc [:quote (get node "text")])
     (mark-omitted acc "quote")))
 
+(defn- render-source-note-node [acc node]
+  (if-not (present-text? (get node "text"))
+    (mark-omitted acc "source-note")
+    (case (get node "placement")
+      "front" (-> acc
+                  flush-paragraph
+                  flush-division
+                  (update :front-notes conj (source-note-hiccup node)))
+      "body" (append-inline acc (source-note-hiccup node))
+      "back" (-> acc
+                 flush-paragraph
+                 flush-division
+                 (update :back-notes conj (source-note-hiccup node)))
+      (mark-omitted acc "source-note"))))
+
 (def ^:private node-renderers
   {"text" render-text-node
    "ruby" render-ruby-node
@@ -138,7 +157,8 @@
    "page-break" render-page-break-node
    "image" render-image-node
    "caption" render-caption-node
-   "quote" render-quote-node})
+   "quote" render-quote-node
+   "source-note" render-source-note-node})
 
 (defn- render-node [acc node]
   (let [node-type (get node "type")]
@@ -147,26 +167,96 @@
       (throw (ex-info "Unsupported TEI parser-IR node type"
                       {:node-type node-type})))))
 
-(defn render [parser-ir]
-  (let [result (reduce (fn [acc node]
-                         (-> acc
-                             (count-node (get node "type"))
-                             (render-node node)))
-                       {:body-children []
-                        :current-division []
-                        :current-paragraph []
-                        :char_declarations []
-                        :char-declaration-ids #{}
-                        :node_counts {}
-                        :omitted []}
-                       (get parser-ir "nodes"))
-        result (-> result
+(defn- initial-acc []
+  {:body-children []
+   :current-division []
+   :current-paragraph []
+   :front-notes []
+   :back-notes []
+   :char_declarations []
+   :char-declaration-ids #{}
+   :node_counts {}
+   :omitted []})
+
+(defn- render-node-seq [acc nodes]
+  (reduce (fn [acc node]
+            (-> acc
+                (count-node (get node "type"))
+                (render-node node)))
+          acc
+          nodes))
+
+(defn- tei-source-div [notes]
+  (into [:div {:type "source"}] notes))
+
+(defn- tei-text [result]
+  (into [:text]
+        (concat
+         (when (seq (:front-notes result))
+           [[:front (tei-source-div (:front-notes result))]])
+         [(into [:body] (:body-children result))]
+         (when (seq (:back-notes result))
+           [[:back (tei-source-div (:back-notes result))]]))))
+
+(defn- finalize-result [result]
+  (let [result (-> result
                    flush-paragraph
                    flush-division)]
-    {:body [:text (into [:body] (:body-children result))]
+    {:body (tei-text result)
      :char_declarations (:char_declarations result)
      :node_counts (:node_counts result)
      :omitted (:omitted result)}))
+
+(defn- paragraph-range [paragraph]
+  (get paragraph "node_range"))
+
+(defn- validate-paragraph-ranges! [nodes paragraphs]
+  (loop [remaining paragraphs
+         prior-end 0]
+    (when-let [paragraph (first remaining)]
+      (let [{start "start" end "end"} (paragraph-range paragraph)]
+        (when-not (and (integer? start)
+                       (integer? end)
+                       (<= 0 start end (count nodes))
+                       (<= prior-end start))
+          (throw (ex-info "Invalid parser-IR paragraph node_range"
+                          {:paragraph paragraph
+                           :nodes-count (count nodes)
+                           :prior-end prior-end})))
+        (recur (rest remaining) end)))))
+
+(defn- render-paragraph-row [nodes acc paragraph]
+  (let [{start "start" end "end"} (paragraph-range paragraph)
+        node-slice (subvec nodes start end)]
+    (case (get paragraph "role")
+      "body" (-> acc
+                 (render-node-seq node-slice)
+                 flush-paragraph)
+      "source-note" (-> acc
+                        flush-paragraph
+                        (render-node-seq node-slice)
+                        flush-paragraph)
+      (-> acc
+          (render-node-seq node-slice)
+          flush-paragraph))))
+
+(defn- render-with-paragraphs [nodes paragraphs]
+  (validate-paragraph-ranges! nodes paragraphs)
+  (finalize-result
+   (reduce (partial render-paragraph-row nodes)
+           (initial-acc)
+           paragraphs)))
+
+(defn- render-flat [nodes]
+  (finalize-result
+   (render-node-seq (initial-acc) nodes)))
+
+(defn render [parser-ir]
+  (let [nodes (vec (get parser-ir "nodes"))
+        paragraphs (seq (get parser-ir "paragraphs"))]
+    (if paragraphs
+      (render-with-paragraphs nodes (vec paragraphs))
+      (render-flat nodes))))
 
 (def covered-node-types
   (set (keys node-renderers)))

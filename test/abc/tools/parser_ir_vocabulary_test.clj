@@ -5,7 +5,7 @@
 
 (def expected-node-types
   #{"text" "ruby" "gaiji" "editor-note" "emphasis" "heading"
-    "indentation" "page-break" "image" "caption" "quote"})
+    "indentation" "page-break" "image" "caption" "quote" "source-note"})
 
 (deftest node-types-come-from-parser-ir-schema-test
   (testing "current parser-IR node vocabulary is derived from schema consts"

@@ -1344,6 +1344,113 @@ fn source_inventory_classifies_residual_layout_media_and_decoration_notes() {
 }
 
 #[test]
+fn source_inventory_classifies_residual_layout_and_typeface_scope_markers() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = [
+        "［＃ここからページ上部横組み］",
+        "［＃ページ上部横組み終わり］",
+        "［＃ここから本文外に横書き］",
+        "［＃ここで本文外横書き終わり］",
+        "［＃ここから横書き］",
+        "［＃ここで横書き終わり］",
+        "［＃ここから横組みの表］",
+        "［＃ここで横組みの表終わり］",
+        "［＃ここから２段組、上段］",
+        "［＃ここで２段組、上段終わり］",
+        "［＃ここから２段組、下段］",
+        "［＃ここで２段組、下段終わり］",
+        "［＃ここから手書き文字］",
+        "［＃ここで手書き文字終わり］",
+        "［＃ここから教科書体］",
+        "［＃ここで教科書体終わり］",
+        "［＃「百合子」は手書き文字］",
+        "［＃「顯治様」は手書き文字］",
+    ]
+    .join("\n");
+    let summary = inventory_document("fixture", &source, &patterns);
+
+    assert_eq!(
+        summary.unknown_examples,
+        [],
+        "residual layout and typeface source markers should not remain unknown"
+    );
+    for row_id in [
+        "layout.yokogumi",
+        "structure.table",
+        "layout.multicolumn",
+        "decoration.typeface",
+    ] {
+        assert!(
+            summary.row_counts.contains_key(row_id),
+            "expected source inventory row {row_id}"
+        );
+    }
+}
+
+#[test]
+fn source_inventory_classifies_residual_layout_annotation_notes() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = [
+        "［＃「どこやらに」と「稻妻に」の句の上には、この二つの句を括る波括弧あり］",
+        "［＃「堀割になれて」と「堀割に風の」の句の上には、この二つの句を括る波括弧あり］",
+        "［＃「｝に等しく、」は前の５行にわたる］",
+        "［＃「｝であろう、」は前の６行にわたる」］",
+        "［＃以下「Ａ」と「Ｂ」は「油」の下で二行に分かれ、「Ａ」「Ｂ」の下に上向きのくくり記号］",
+        "［＃「直木」と「菊池」の中間に「手直り表」］",
+        "［＃「独立性をもたせたのは」と「はっきりさせたのは、」は２行］",
+    ]
+    .join("\n");
+    let summary = inventory_document("fixture", &source, &patterns);
+
+    assert_eq!(
+        summary.unknown_examples,
+        [],
+        "residual source layout annotations should be reviewed source-authority markers"
+    );
+    assert_eq!(
+        summary
+            .row_counts
+            .get("annotation.layout_note")
+            .map(|count| count.occurrences),
+        Some(7)
+    );
+}
+
+#[test]
+fn source_inventory_classifies_residual_source_context_notes() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = [
+        "［＃この日、海野がしたためた遺書を、以下に引く］",
+        "［＃ここには室生犀星の詩が引用されている］",
+        "［＃ここに土田杏村の「跋」入る］",
+        "［＃以上、宮原晃一郎による解説］",
+        "［＃以下、新聞の切抜き］",
+        "［＃ドイツの開発した、有翼のロケット爆弾機］",
+        "［＃マリアナ基地からのＢ29、東京を初偵察］",
+        "［＃天皇、神格化否定の詔勅。いわゆる人間宣言］",
+        "［＃実際は五月十日付が最終のたより］",
+    ]
+    .join("\n");
+    let summary = inventory_document("fixture", &source, &patterns);
+
+    assert_eq!(
+        summary.unknown_examples,
+        [],
+        "residual source context notes should be reviewed source-authority markers"
+    );
+    assert_eq!(
+        summary
+            .row_counts
+            .get("source.note_label")
+            .map(|count| count.occurrences),
+        Some(9)
+    );
+}
+
+#[test]
 fn source_inventory_classifies_tail_positioning_and_caption_variants() {
     let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
     let patterns = patterns_from_rows(matrix.rows());

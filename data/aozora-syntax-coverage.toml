@@ -1018,13 +1018,77 @@ coverage_basis = "full_corpus"
 sample_works = ["000491_2698", "000287_3062", "000287_3061", "000219_2932", "000869_2707"]
 
 [[syntax]]
+id = "annotation.layout_note"
+priority = 2
+category = "source_annotation"
+feature_keys = ["source_note", "layout_note", "metamark"]
+reference_sources = ["docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
+source_examples = ["［＃「A」と「B」の句の上には、この二つの句を括る波括弧あり］", "［＃「｝」は前の５行にわたる］"]
+source_patterns = ['［＃「[^\n]+」と「[^\n]+」の句の上には、この二つの句を括る波括弧あり］', '［＃「[^\n]+」は前の[０-９0-9一二三四五六七八九十]+行にわたる」?］', '［＃以下「[^\n]+」と「[^\n]+」は「[^\n]+」の下で二行に分かれ、「[^\n]+」「[^\n]+」の下に上向きのくくり記号］', '［＃「[^\n]+」と「[^\n]+」の中間に「[^\n]+」］', '［＃「[^\n]+」と「[^\n]+」は[０-９0-9一二三四五六七八九十]+行］']
+ir_nodes = ["source-note"]
+aat_nodes = ["raw"]
+tei_projection = "note or metamark/span"
+plaintext_projection = "source_note_or_drop_from_body_base_text"
+comparison_projection = "source_note_or_drop_from_body_base_text"
+validation_properties = ["source_note_label_preservation"]
+adapter_expectations = ["preserve layout/metamark note marker or surface text"]
+oracle_cases = []
+status = "needs_research"
+status_reason = "Aozora source carries explicit layout/metamark annotations such as brace spans and multi-line bracket notes; v1 reviews these as raw-preserved TEI-representable notes."
+
+[syntax.representability]
+source_inventory_row = "annotation.layout_note"
+status = "raw_preserved"
+aat_nodes = ["raw"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:119"
+notes = "The source-authority gate records layout/metamark notes as raw-preserved material. Typed span/metamark modeling remains a parser-IR vocabulary follow-up."
+
+[syntax.parsers.aozora2]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes layout/metamark notes; parser-specific typed behavior not yet measured."
+
+[syntax.parsers.aozora-rs]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes layout/metamark notes; parser-specific typed behavior not yet measured."
+
+[syntax.parsers.aozora2html]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes layout/metamark notes; parser-specific typed behavior not yet measured."
+
+[syntax.adapters.aozora2]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed layout/metamark AAT contract exists; adapter behavior remains to be measured."
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed layout/metamark AAT contract exists; adapter behavior remains to be measured."
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed layout/metamark AAT contract exists; adapter behavior remains to be measured."
+
+[syntax.corpus_prevalence]
+works_with_feature = 0
+total_occurrences = 0
+detector_id = "annotation_layout_note"
+coverage_basis = "not_run"
+sample_works = []
+
+[[syntax]]
 id = "source.note_label"
 priority = 2
 category = "source_annotation"
 feature_keys = ["source_note", "source_label", "role_label"]
 reference_sources = ["docs/superpowers/specs/2026-07-04-parser-ir-level3-structure-delta.md", "docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
 source_examples = ["［＃劇場名］", "［＃長男］", "［＃探偵小説家、生理学者。本名は、林髞］"]
-source_patterns = ['［＃[^］]*(劇場名|ホテル名|お手伝いさん|夫人|スカーフ|小説家|生理学者|長男|次男|三男|長女|次女|三女|従弟|従妹|家庭教師|父|母|甥|夫|ゴーリキー|トゥルビン家のありし日|並木道|昼食|国男|未完|注釈番号)[^］]*］', '［＃(中條|倉知)[^］]*］', '［＃(宮本顕治|村田安|村田敏子、荒木茂の姪|松平正次|労農赤色海軍|協同組合住宅|吼えろ、支那|西村茂樹|辻馬車)］', '［＃[А-Яа-яЁё]+(、[^］]+|＝[^］]+)?］', '［＃[^］]*(同窓会|の意|別称|学者|随筆家|科学思想家|＝[^］]+|死ぬこと)[^］]*］']
+source_patterns = ['［＃[^］]*(劇場名|ホテル名|お手伝いさん|夫人|スカーフ|小説家|生理学者|長男|次男|三男|長女|次女|三女|従弟|従妹|家庭教師|父|母|甥|夫|ゴーリキー|トゥルビン家のありし日|並木道|昼食|国男|未完|注釈番号)[^］]*］', '［＃(中條|倉知)[^］]*］', '［＃(宮本顕治|村田安|村田敏子、荒木茂の姪|松平正次|労農赤色海軍|協同組合住宅|吼えろ、支那|西村茂樹|辻馬車)］', '［＃[А-Яа-яЁё]+(、[^］]+|＝[^］]+)?］', '［＃[^］]*(同窓会|の意|別称|学者|随筆家|科学思想家|＝[^］]+|死ぬこと)[^］]*］', '［＃(この日、[^］]+|ここには[^］]+引用されている|ここに[^］]+「[^」]+」入る|以上、[^］]+による解説|以下、新聞の切抜き|ドイツの開発した、[^］]+|マリアナ基地からの[^］]+|天皇、[^］]+|実際は[^］]+最終のたより)］']
 ir_nodes = ["source-note"]
 aat_nodes = ["raw"]
 tei_projection = "note type=source-label or typed role/name markup after editorial enrichment"
@@ -2146,6 +2210,70 @@ evidence = "docs/aat-contract.md:124"
 notes = "AAT style containers carry bold/italic style_type when adapters preserve the scope; raw fallback covers adapters that still collapse or drop inline variants."
 
 [[syntax]]
+id = "decoration.typeface"
+priority = 2
+category = "inline_annotation"
+feature_keys = ["typeface", "handwritten", "kyokashotai"]
+reference_sources = ["docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
+source_examples = ["［＃ここから手書き文字］", "［＃ここから教科書体］", "［＃「text」は手書き文字］"]
+source_patterns = ['［＃ここから(手書き文字|教科書体)］', '［＃ここで(手書き文字|教科書体)終わり］', '［＃「[^\n]+」は手書き文字］']
+ir_nodes = ["Inline::Style", "Block::Style"]
+aat_nodes = ["style", "raw"]
+tei_projection = "hi rend=typeface"
+plaintext_projection = "content_only"
+comparison_projection = "content_only"
+validation_properties = ["style_scope_balance"]
+adapter_expectations = ["preserve typeface/style scope or raw marker"]
+oracle_cases = []
+status = "needs_research"
+status_reason = "Aozora source carries typeface style markers beyond bold/italic, including handwritten and textbook face; v1 keeps them reviewed and raw-preserved until typed style vocabulary is expanded."
+
+[syntax.representability]
+source_inventory_row = "decoration.typeface"
+status = "raw_preserved"
+aat_nodes = ["raw"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:119"
+notes = "TEI can preserve these as rendition/style metadata, but current AAT/parser-IR style vocabulary does not have reviewed handwritten/kyokashotai values."
+
+[syntax.parsers.aozora2]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes typeface markers; parser-specific typed behavior not yet measured."
+
+[syntax.parsers.aozora-rs]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes typeface markers; parser-specific typed behavior not yet measured."
+
+[syntax.parsers.aozora2html]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes typeface markers; parser-specific typed behavior not yet measured."
+
+[syntax.adapters.aozora2]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No reviewed typeface-style AAT contract exists; adapter behavior remains to be measured."
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No reviewed typeface-style AAT contract exists; adapter behavior remains to be measured."
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No reviewed typeface-style AAT contract exists; adapter behavior remains to be measured."
+
+[syntax.corpus_prevalence]
+works_with_feature = 0
+total_occurrences = 0
+detector_id = "decoration_typeface"
+coverage_basis = "not_run"
+sample_works = []
+
+[[syntax]]
 id = "decoration.font_size"
 priority = 2
 category = "inline_annotation"
@@ -2695,7 +2823,7 @@ category = "layout"
 feature_keys = ["yokogumi"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/multiline_yokogumi.rb", "references/parsers/aozora2html/lib/aozora2html/tag/inline_yokogumi.rb"]
 source_examples = ["［＃ここから横組み］", "「ABC」の横組み"]
-source_patterns = ['［＃ここから横組み］', '［＃横組み］', '［＃(ここで)?横組み終わり］', '［＃ここ(から|で)左から右への横組み(終わり)?］', '［＃ここで字下げ、横組み終わり］', '「[^」]+」の横組み', '［＃「[^」]+」は横組み］', '［＃「[^\n]+」は横書き］', '［＃横書き、[^］]+］', '［＃以下の[^］]*横書き］', '［＃[^］]*横組み右揃え[^］]*］']
+source_patterns = ['［＃ここから横組み］', '［＃横組み］', '［＃(ここで)?横組み終わり］', '［＃ここ(から|で)左から右への横組み(終わり)?］', '［＃ここで字下げ、横組み終わり］', '「[^」]+」の横組み', '［＃「[^」]+」は横組み］', '［＃「[^\n]+」は横書き］', '［＃横書き、[^］]+］', '［＃以下の[^］]*横書き］', '［＃[^］]*横組み右揃え[^］]*］', '［＃(ここから|ここで)?ページ上部横組み(終わり)?］', '［＃ここから本文外に横書き］', '［＃ここで本文外横書き終わり］', '［＃ここから横書き］', '［＃ここで横書き終わり］']
 ir_nodes = ["Block::Layout", "Inline::Style"]
 aat_nodes = ["yokogumi"]
 tei_projection = "ab rend=yokogumi"
@@ -2823,7 +2951,7 @@ category = "layout"
 feature_keys = ["multicolumn", "dan-gumi"]
 reference_sources = ["references/aozorabunko/rules/kijyunn.html", "docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
 source_examples = ["［＃ここから２段組み］", "［＃ここで段組み終わり］"]
-source_patterns = ['［＃ここから[０-９0-9]+段組み?］', '［＃ここで([０-９0-9]+段組み?|段組み?)終わり］', '［＃段組み適用外］', '［＃「[^\n]+」と「[^\n]+」は[０-９0-9]+列に並ぶ］', '［＃「[^\n]+」と「[^\n]+」は横並びになっている］', '［＃[０-９0-9]+段目］', '［＃[^］]*１行内で[０-９0-9]+行に分けられている］', '［＃[^］]*[０-９0-9]+行組み[^］]*］', '［＃ここから[０-９0-9]+段組み、段間に罫］', '［＃ここで[０-９0-9]+段組み、罫囲み終わり］']
+source_patterns = ['［＃ここから[０-９0-9]+段組み?］', '［＃ここで([０-９0-9]+段組み?|段組み?)終わり］', '［＃段組み適用外］', '［＃「[^\n]+」と「[^\n]+」は[０-９0-9]+列に並ぶ］', '［＃「[^\n]+」と「[^\n]+」は横並びになっている］', '［＃[０-９0-9]+段目］', '［＃[^］]*１行内で[０-９0-9]+行に分けられている］', '［＃[^］]*[０-９0-9]+行組み[^］]*］', '［＃ここから[０-９0-9]+段組み、段間に罫］', '［＃ここで[０-９0-9]+段組み、罫囲み終わり］', '［＃ここから[０-９0-9]+段組、[上下]段］', '［＃ここで[０-９0-9]+段組、[上下]段終わり］']
 ir_nodes = ["Raw"]
 aat_nodes = ["raw"]
 tei_projection = "div rend=columns"
@@ -2951,7 +3079,7 @@ category = "structure"
 feature_keys = ["table", "table_group", "table_border"]
 reference_sources = ["references/aozorabunko/rules/kijyunn.html", "docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
 source_examples = ["［＃ここから表］", "［＃ここで表終わり］", "［＃ここから表組］"]
-source_patterns = ['［＃ここから表(組|罫囲み)?］', '［＃ここで表(組|罫囲み)?終わり］', '［＃ここで字下げ、表罫囲み終わり］', '［＃ここからプログラム、表罫囲み］', '［＃ここでプログラム（表罫囲み）終わり］', '［＃[０-９0-9一二三四五六七八九十]+行目］', '［＃ここに表組入る、別ファイル（[^）]+）参照］']
+source_patterns = ['［＃ここから表(組|罫囲み)?］', '［＃ここで表(組|罫囲み)?終わり］', '［＃ここで字下げ、表罫囲み終わり］', '［＃ここからプログラム、表罫囲み］', '［＃ここでプログラム（表罫囲み）終わり］', '［＃[０-９0-9一二三四五六七八九十]+行目］', '［＃ここに表組入る、別ファイル（[^）]+）参照］', '［＃ここから横組みの表］', '［＃ここで横組みの表終わり］']
 ir_nodes = ["Raw"]
 aat_nodes = ["raw"]
 tei_projection = "table"

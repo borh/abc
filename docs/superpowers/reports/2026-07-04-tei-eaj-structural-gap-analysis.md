@@ -134,7 +134,7 @@ compatibility gates.
 
 1. Source-authority representability must pass or have explicit waivers. The
    current source-authority report is still
-   `SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED`, with 352 unallowlisted
+   `SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED`, with 308 unallowlisted
    source markers. Four parser outputs are triangulation, not proof that all
    Aozora source constructs are representable.
 

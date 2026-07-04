@@ -3,8 +3,8 @@
   "works_scanned": 17894,
   "works_failed": 0,
   "markers_total": 4323915,
-  "unknown_markers_total": 15222,
-  "unallowlisted_unknown_markers_total": 352,
+  "unknown_markers_total": 15178,
+  "unallowlisted_unknown_markers_total": 308,
   "allowlisted_unknown_markers_total": 14870,
   "rows": {
     "accent.dotted_letter": {
@@ -36,6 +36,17 @@
         "000006_3310",
         "000006_4627",
         "000006_46659"
+      ]
+    },
+    "annotation.layout_note": {
+      "works_with_marker": 6,
+      "occurrences": 16,
+      "sample_works": [
+        "000083_3329",
+        "000259_3554",
+        "000305_1896",
+        "000311_33193",
+        "001164_43670"
       ]
     },
     "break.line_explicit": {
@@ -146,6 +157,15 @@
         "000067_1789",
         "000072_408",
         "000072_864"
+      ]
+    },
+    "decoration.typeface": {
+      "works_with_marker": 3,
+      "occurrences": 6,
+      "sample_works": [
+        "000212_4839",
+        "000311_33191",
+        "001917_61172"
       ]
     },
     "emphasis.basic": {
@@ -391,8 +411,8 @@
       ]
     },
     "layout.multicolumn": {
-      "works_with_marker": 25,
-      "occurrences": 68,
+      "works_with_marker": 26,
+      "occurrences": 72,
       "sample_works": [
         "000035_1566",
         "000042_2471",
@@ -413,8 +433,8 @@
       ]
     },
     "layout.yokogumi": {
-      "works_with_marker": 421,
-      "occurrences": 3684,
+      "works_with_marker": 423,
+      "occurrences": 3690,
       "sample_works": [
         "000019_59374",
         "000025_1144",
@@ -457,8 +477,8 @@
       ]
     },
     "source.note_label": {
-      "works_with_marker": 527,
-      "occurrences": 1336,
+      "works_with_marker": 531,
+      "occurrences": 1346,
       "sample_works": [
         "000008_1083",
         "000012_198",
@@ -490,14 +510,14 @@
       ]
     },
     "structure.table": {
-      "works_with_marker": 6,
-      "occurrences": 44,
+      "works_with_marker": 7,
+      "occurrences": 46,
       "sample_works": [
         "000042_2345",
         "000042_2348",
         "000042_2449",
         "000096_2100",
-        "000311_3466"
+        "000311_2745"
       ]
     },
     "warichu.basic": {
@@ -519,7 +539,7 @@
       ]
     }
   },
-  "unknown_classes_total": 340,
+  "unknown_classes_total": 298,
   "unknown_classes_truncated": false,
   "unknown_classes": [
     {
@@ -554,17 +574,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「直木」と「菊池」の中間に「手直り表」］",
-      "body": "「直木」と「菊池」の中間に「手直り表」",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000083_3329"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「３字下げ」］",
       "body": "「３字下げ」",
       "occurrences": 2,
@@ -572,17 +581,6 @@
       "unallowlisted_occurrences": 2,
       "sample_works": [
         "001749_55798"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「｝に等しく、」は前の５行にわたる］",
-      "body": "「｝に等しく、」は前の５行にわたる",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "001164_43670"
       ]
     },
     {
@@ -632,17 +630,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「どこやらに」と「稻妻に」の句の上には、この二つの句を括る波括弧あり］",
-      "body": "「どこやらに」と「稻妻に」の句の上には、この二つの句を括る波括弧あり",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000305_1896"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「ココ」は手描きの切符の下部の線に結ばれている］",
       "body": "「ココ」は手描きの切符の下部の線に結ばれている",
       "occurrences": 1,
@@ -687,28 +674,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「堀割になれて」と「堀割に風の」の句の上には、この二つの句を括る波括弧あり］",
-      "body": "「堀割になれて」と「堀割に風の」の句の上には、この二つの句を括る波括弧あり",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000305_1896"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「大木に」と「くひついて」の句の上には、この二つの句を括る波括弧あり］",
-      "body": "「大木に」と「くひついて」の句の上には、この二つの句を括る波括弧あり",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000305_1896"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「幕。」は地付き］",
       "body": "「幕。」は地付き",
       "occurrences": 1,
@@ -742,17 +707,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「枯あしの」と「鴨ねるや」の句の上には、この二つの句を括る波括弧あり］",
-      "body": "「枯あしの」と「鴨ねるや」の句の上には、この二つの句を括る波括弧あり",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000305_1896"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「検察官」］",
       "body": "「検察官」",
       "occurrences": 1,
@@ -775,28 +729,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「浮世へ」と「どの村へ」の句の上には、この二つの句を括る波括弧あり］",
-      "body": "「浮世へ」と「どの村へ」の句の上には、この二つの句を括る波括弧あり",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000305_1896"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「独立性をもたせたのは」と「はっきりさせたのは、」は２行］",
-      "body": "「独立性をもたせたのは」と「はっきりさせたのは、」は２行",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_33193"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「甚四郎」は枠囲い］",
       "body": "「甚四郎」は枠囲い",
       "occurrences": 1,
@@ -804,17 +736,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000726_4533"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「百合子」は手書き文字］",
-      "body": "「百合子」は手書き文字",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_33191"
       ]
     },
     {
@@ -837,17 +758,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "002043_59605"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「笹の葉の」と「しばらくは」の句の上には、この二つの句を括る波括弧あり］",
-      "body": "「笹の葉の」と「しばらくは」の句の上には、この二つの句を括る波括弧あり",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000305_1896"
       ]
     },
     {
@@ -892,17 +802,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000148_1104"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「顯治様」は手書き文字］",
-      "body": "「顯治様」は手書き文字",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_33191"
       ]
     },
     {
@@ -962,50 +861,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「｝であろう、」は前の６行にわたる」］",
-      "body": "「｝であろう、」は前の６行にわたる」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001164_43670"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「｝であろうから。」は前の５行にわたる］",
-      "body": "「｝であろうから。」は前の５行にわたる",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001164_43670"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「｝に下落するであろう」は前の４行にわたる］",
-      "body": "「｝に下落するであろう」は前の４行にわたる",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001164_43670"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「｝に増加されるであろう。」は前の６行にわたる］",
-      "body": "「｝に増加されるであろう。」は前の６行にわたる",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001164_43670"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「｝一八〇」はこの後の５行にわたる］",
       "body": "「｝一八〇」はこの後の５行にわたる",
       "occurrences": 1,
@@ -1017,17 +872,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃ここからページ上部横組み］",
-      "body": "ここからページ上部横組み",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000250_18353"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃ここからページ下部縦組み］",
       "body": "ここからページ下部縦組み",
       "occurrences": 1,
@@ -1035,61 +879,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000250_18353"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから手書き文字］",
-      "body": "ここから手書き文字",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000212_4839"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから教科書体］",
-      "body": "ここから教科書体",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001917_61172"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから本文外に横書き］",
-      "body": "ここから本文外に横書き",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_3169"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから横書き］",
-      "body": "ここから横書き",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_3923"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから横組みの表］",
-      "body": "ここから横組みの表",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_2745"
       ]
     },
     {
@@ -1112,28 +901,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000311_4212"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから２段組、上段］",
-      "body": "ここから２段組、上段",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000230_55635"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから２段組、下段］",
-      "body": "ここから２段組、下段",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000230_55635"
       ]
     },
     {
@@ -1215,61 +982,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃ここで手書き文字終わり］",
-      "body": "ここで手書き文字終わり",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000212_4839"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここで教科書体終わり］",
-      "body": "ここで教科書体終わり",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001917_61172"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここで本文外横書き終わり］",
-      "body": "ここで本文外横書き終わり",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_3169"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここで横書き終わり］",
-      "body": "ここで横書き終わり",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_3923"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここで横組みの表終わり］",
-      "body": "ここで横組みの表終わり",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_2745"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃ここで段組、罫囲み終わり］",
       "body": "ここで段組、罫囲み終わり",
       "occurrences": 1,
@@ -1303,28 +1015,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃ここで２段組、上段終わり］",
-      "body": "ここで２段組、上段終わり",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000230_55635"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここで２段組、下段終わり］",
-      "body": "ここで２段組、下段終わり",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000230_55635"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃ここに「下ニ詳ナリ」という注意書きが入る］",
       "body": "ここに「下ニ詳ナリ」という注意書きが入る",
       "occurrences": 1,
@@ -1332,39 +1022,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000301_1872"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここには室生犀星の詩が引用されている］",
-      "body": "ここには室生犀星の詩が引用されている",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000067_1790"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここに土田杏村の「跋」入る］",
-      "body": "ここに土田杏村の「跋」入る",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000136_42754"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃この日、海野がしたためた遺書を、以下に引く］",
-      "body": "この日、海野がしたためた遺書を、以下に引く",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000160_1255"
       ]
     },
     {
@@ -1512,17 +1169,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃ドイツの開発した、有翼のロケット爆弾機］",
-      "body": "ドイツの開発した、有翼のロケット爆弾機",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃バチェラー八重子、アイヌ］",
       "body": "バチェラー八重子、アイヌ",
       "occurrences": 1,
@@ -1545,17 +1191,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃ページ上部横組み終わり］",
-      "body": "ページ上部横組み終わり",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000250_18353"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃ページ下部縦組み終わり］",
       "body": "ページ下部縦組み終わり",
       "occurrences": 1,
@@ -1563,28 +1198,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000250_18353"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃マリアナ基地からのＢ29、東京を初偵察］",
-      "body": "マリアナ基地からのＢ29、東京を初偵察",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃マリアナ基地からのＢ29約70機、東京を初爆撃］",
-      "body": "マリアナ基地からのＢ29約70機、東京を初爆撃",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000160_1255"
       ]
     },
     {
@@ -1816,39 +1429,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000311_46248"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃以上、宮原晃一郎による解説］",
-      "body": "以上、宮原晃一郎による解説",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001158_43615"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃以下、新聞の切抜き］",
-      "body": "以下、新聞の切抜き",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃以下「Ａ」と「Ｂ」は「油」の下で二行に分かれ、「Ａ」「Ｂ」の下に上向きのくくり記号］",
-      "body": "以下「Ａ」と「Ｂ」は「油」の下で二行に分かれ、「Ａ」「Ｂ」の下に上向きのくくり記号",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000259_3554"
       ]
     },
     {
@@ -2348,17 +1928,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃天皇、神格化否定の詔勅。いわゆる人間宣言］",
-      "body": "天皇、神格化否定の詔勅。いわゆる人間宣言",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃天皇の諮問機関、枢密院の異称］",
       "body": "天皇の諮問機関、枢密院の異称",
       "occurrences": 1,
@@ -2399,17 +1968,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000311_4834"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃実際は五月十日付が最終のたより］",
-      "body": "実際は五月十日付が最終のたより",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_33184"
       ]
     },
     {
@@ -4304,13 +3862,6 @@
       "body": "印刷不鮮明、87-14"
     },
     {
-      "work_id": "000067_1790",
-      "line": 346,
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここには室生犀星の詩が引用されている］",
-      "body": "ここには室生犀星の詩が引用されている"
-    },
-    {
       "work_id": "000072_864",
       "line": 15,
       "kind": "CommandFullwidth",
@@ -4337,20 +3888,6 @@
       "kind": "CommandFullwidth",
       "raw": "［＃ここで字下げ終わり」］",
       "body": "ここで字下げ終わり」"
-    },
-    {
-      "work_id": "000083_3329",
-      "line": 34,
-      "kind": "CommandFullwidth",
-      "raw": "［＃「直木」と「菊池」の中間に「手直り表」］",
-      "body": "「直木」と「菊池」の中間に「手直り表」"
-    },
-    {
-      "work_id": "000083_3329",
-      "line": 40,
-      "kind": "CommandFullwidth",
-      "raw": "［＃「直木」と「菊池」の中間に「手直り表」］",
-      "body": "「直木」と「菊池」の中間に「手直り表」"
     },
     {
       "work_id": "000091_522",
@@ -4437,13 +3974,6 @@
       "body": "「七夕」「真つすぐな街」は自由律俳句"
     },
     {
-      "work_id": "000136_42754",
-      "line": 2645,
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここに土田杏村の「跋」入る］",
-      "body": "ここに土田杏村の「跋」入る"
-    },
-    {
       "work_id": "000148_1104",
       "line": 100,
       "kind": "CommandFullwidth",
@@ -4505,20 +4035,6 @@
       "kind": "EditorialNoteBottomTextCorrection",
       "raw": "」は底本では「語して」でしたが、親本を参照して直しました。\r\n入力：Hiroshi_O\r\n校正：門田裕志、小林繁雄\r\n2003年7月24日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
       "body": "」は底本では「語して」でしたが、親本を参照して直しました。\r\n入力：Hiroshi_O\r\n校正：門田裕志、小林繁雄\r\n2003年7月24日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n"
-    },
-    {
-      "work_id": "000160_1255",
-      "line": 34,
-      "kind": "CommandFullwidth",
-      "raw": "［＃マリアナ基地からのＢ29、東京を初偵察］",
-      "body": "マリアナ基地からのＢ29、東京を初偵察"
-    },
-    {
-      "work_id": "000160_1255",
-      "line": 41,
-      "kind": "CommandFullwidth",
-      "raw": "［＃マリアナ基地からのＢ29約70機、東京を初爆撃］",
-      "body": "マリアナ基地からのＢ29約70機、東京を初爆撃"
     },
     {
       "work_id": "000160_1255",
@@ -4634,13 +4150,6 @@
     },
     {
       "work_id": "000160_1255",
-      "line": 831,
-      "kind": "CommandFullwidth",
-      "raw": "［＃以下、新聞の切抜き］",
-      "body": "以下、新聞の切抜き"
-    },
-    {
-      "work_id": "000160_1255",
       "line": 868,
       "kind": "CommandFullwidth",
       "raw": "［＃八十勝］",
@@ -4662,24 +4171,10 @@
     },
     {
       "work_id": "000160_1255",
-      "line": 969,
-      "kind": "CommandFullwidth",
-      "raw": "［＃ドイツの開発した、有翼のロケット爆弾機］",
-      "body": "ドイツの開発した、有翼のロケット爆弾機"
-    },
-    {
-      "work_id": "000160_1255",
       "line": 1017,
       "kind": "CommandFullwidth",
       "raw": "［＃海軍報道班文学挺身隊］",
       "body": "海軍報道班文学挺身隊"
-    },
-    {
-      "work_id": "000160_1255",
-      "line": 1043,
-      "kind": "CommandFullwidth",
-      "raw": "［＃この日、海野がしたためた遺書を、以下に引く］",
-      "body": "この日、海野がしたためた遺書を、以下に引く"
     },
     {
       "work_id": "000160_1255",
@@ -4764,13 +4259,6 @@
       "kind": "CommandFullwidth",
       "raw": "［＃喜重郎］",
       "body": "喜重郎"
-    },
-    {
-      "work_id": "000160_1255",
-      "line": 1361,
-      "kind": "CommandFullwidth",
-      "raw": "［＃天皇、神格化否定の詔勅。いわゆる人間宣言］",
-      "body": "天皇、神格化否定の詔勅。いわゆる人間宣言"
     },
     {
       "work_id": "000160_1255",
@@ -4871,53 +4359,11 @@
       "body": "１９字下げて"
     },
     {
-      "work_id": "000212_4839",
-      "line": 25,
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから手書き文字］",
-      "body": "ここから手書き文字"
-    },
-    {
-      "work_id": "000212_4839",
-      "line": 30,
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここで手書き文字終わり］",
-      "body": "ここで手書き文字終わり"
-    },
-    {
       "work_id": "000221_1096",
       "line": 31,
       "kind": "CommandFullwidth",
       "raw": "［＃ここで小文字、字下げ終わり］",
       "body": "ここで小文字、字下げ終わり"
-    },
-    {
-      "work_id": "000230_55635",
-      "line": 588,
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから２段組、上段］",
-      "body": "ここから２段組、上段"
-    },
-    {
-      "work_id": "000230_55635",
-      "line": 594,
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここで２段組、上段終わり］",
-      "body": "ここで２段組、上段終わり"
-    },
-    {
-      "work_id": "000230_55635",
-      "line": 595,
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから２段組、下段］",
-      "body": "ここから２段組、下段"
-    },
-    {
-      "work_id": "000230_55635",
-      "line": 601,
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここで２段組、下段終わり］",
-      "body": "ここで２段組、下段終わり"
     },
     {
       "work_id": "000236_4300",
@@ -4963,20 +4409,6 @@
     },
     {
       "work_id": "000250_18353",
-      "line": 945,
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここからページ上部横組み］",
-      "body": "ここからページ上部横組み"
-    },
-    {
-      "work_id": "000250_18353",
-      "line": 949,
-      "kind": "CommandFullwidth",
-      "raw": "［＃ページ上部横組み終わり］",
-      "body": "ページ上部横組み終わり"
-    },
-    {
-      "work_id": "000250_18353",
       "line": 951,
       "kind": "CommandFullwidth",
       "raw": "［＃ここからページ下部縦組み］",
@@ -4988,18 +4420,144 @@
       "kind": "CommandFullwidth",
       "raw": "［＃ページ下部縦組み終わり］",
       "body": "ページ下部縦組み終わり"
+    },
+    {
+      "work_id": "000250_4644",
+      "line": 281,
+      "kind": "CommandFullwidth",
+      "raw": "［＃原文は括弧「〔〕」を使うが、他の所と一致させるため改める］",
+      "body": "原文は括弧「〔〕」を使うが、他の所と一致させるため改める"
+    },
+    {
+      "work_id": "000255_43625",
+      "line": 438,
+      "kind": "EditorialNoteBottomTextCorrection",
+      "raw": "」は底本では「主人」の前で改行し、「主人例によって」の段落が天付きになっていましたが、「くらしっく時代小説10　国枝史郎集」にならって改行を取りました。\r\n※底本には以下に挙げるように誤植が疑われる箇所がありましたが、「くらしっく時代小説10　国枝史郎集」でも同様で正しい形を判定することに困難を感じたので底本通りとし、ママ注記を付けました。\r\n○たじろいた所：「たじろいだ」の誤植か。\r\n※「綺麗」と「奇麗」の混在は底本通りにしました。\r\n※底本は、物を数える際や地名などに用いる「ヶ」（区点番号5-86）を、大振りにつくっています。\r\n入力：ロクス・ソルス\r\n校正：門田裕志、小林繁雄\r\n2004年12月13日作成\r\n2009年2月27日修正\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
+      "body": "」は底本では「主人」の前で改行し、「主人例によって」の段落が天付きになっていましたが、「くらしっく時代小説10　国枝史郎集」にならって改行を取りました。\r\n※底本には以下に挙げるように誤植が疑われる箇所がありましたが、「くらしっく時代小説10　国枝史郎集」でも同様で正しい形を判定することに困難を感じたので底本通りとし、ママ注記を付けました。\r\n○たじろいた所：「たじろいだ」の誤植か。\r\n※「綺麗」と「奇麗」の混在は底本通りにしました。\r\n※底本は、物を数える際や地名などに用いる「ヶ」（区点番号5-86）を、大振りにつくっています。\r\n入力：ロクス・ソルス\r\n校正：門田裕志、小林繁雄\r\n2004年12月13日作成\r\n2009年2月27日修正\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n"
+    },
+    {
+      "work_id": "000256_2590",
+      "line": 384,
+      "kind": "CommandFullwidth",
+      "raw": "［＃（）内の文字全てに傍点、ただし読点をのぞく］",
+      "body": "（）内の文字全てに傍点、ただし読点をのぞく"
+    },
+    {
+      "work_id": "000271_1556",
+      "line": 137,
+      "kind": "MalformedGaiji",
+      "raw": "※［＃",
+      "body": "※［＃"
+    },
+    {
+      "work_id": "000284_2226",
+      "line": 13,
+      "kind": "CommandFullwidth",
+      "raw": "［＃（一）は自注］",
+      "body": "（一）は自注"
+    },
+    {
+      "work_id": "000284_2226",
+      "line": 13,
+      "kind": "CommandFullwidth",
+      "raw": "［＃（二）は自注］",
+      "body": "（二）は自注"
+    },
+    {
+      "work_id": "000284_2226",
+      "line": 13,
+      "kind": "CommandFullwidth",
+      "raw": "［＃（三）は自注］",
+      "body": "（三）は自注"
+    },
+    {
+      "work_id": "000284_2226",
+      "line": 14,
+      "kind": "CommandFullwidth",
+      "raw": "［＃（四）は自注］",
+      "body": "（四）は自注"
+    },
+    {
+      "work_id": "000284_2226",
+      "line": 15,
+      "kind": "CommandFullwidth",
+      "raw": "［＃（五）は自注］",
+      "body": "（五）は自注"
+    },
+    {
+      "work_id": "000284_2226",
+      "line": 15,
+      "kind": "CommandFullwidth",
+      "raw": "［＃（六）は自注］",
+      "body": "（六）は自注"
+    },
+    {
+      "work_id": "000284_2665",
+      "line": 38,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「（一）」は自注］",
+      "body": "「（一）」は自注"
+    },
+    {
+      "work_id": "000301_1872",
+      "line": 230,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「江」はポイント小さく右寄せ］",
+      "body": "「江」はポイント小さく右寄せ"
+    },
+    {
+      "work_id": "000301_1872",
+      "line": 836,
+      "kind": "CommandFullwidth",
+      "raw": "［＃ここに「下ニ詳ナリ」という注意書きが入る］",
+      "body": "ここに「下ニ詳ナリ」という注意書きが入る"
+    },
+    {
+      "work_id": "000301_1872",
+      "line": 1158,
+      "kind": "CommandFullwidth",
+      "raw": "［＃天から２８字下げて］",
+      "body": "天から２８字下げて"
+    },
+    {
+      "work_id": "000301_1872",
+      "line": 1583,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「約」は小さめの文字］",
+      "body": "「約」は小さめの文字"
+    },
+    {
+      "work_id": "000305_3608",
+      "line": 26,
+      "kind": "CommandFullwidth",
+      "raw": "［＃罫線の部分は、「｛」「｝」で括る］",
+      "body": "罫線の部分は、「｛」「｝」で括る"
+    },
+    {
+      "work_id": "000305_42171",
+      "line": 42,
+      "kind": "CommandFullwidth",
+      "raw": "［＃ここか３字下げ］",
+      "body": "ここか３字下げ"
+    },
+    {
+      "work_id": "000305_43618",
+      "line": 15,
+      "kind": "CommandFullwidth",
+      "raw": "［＃闇汁の図］",
+      "body": "闇汁の図"
     }
   ],
   "decode_failures": [],
   "representability": {
-    "typed_occurrences": 4570046,
-    "raw_preserved_occurrences": 45688,
+    "typed_occurrences": 4570052,
+    "raw_preserved_occurrences": 45726,
     "out_of_body_occurrences": 950,
     "unsupported_occurrences": 13920,
     "needs_research_occurrences": 0
   },
   "strict_errors": [
-    "352 unallowlisted source markers"
+    "308 unallowlisted source markers"
   ],
   "inputs": {
     "matrix": "/home/bor/Projects/ab-validator/data/aozora-syntax-coverage.toml",

@@ -161,6 +161,7 @@ pub struct ConversionProbeSummary {
 pub struct ParserIrStructuralSummary {
     pub node_count: u64,
     pub node_kinds: BTreeMap<String, u64>,
+    pub paragraph_count: u64,
     pub paragraphs_represented: bool,
     pub source_attribution_represented: bool,
 }
@@ -586,6 +587,10 @@ pub fn render_markdown(summary: &StructuralProbeSummary) -> String {
             "- parser-IR node kinds: `{}`\n",
             serde_json::to_string(&input.parser_ir.node_kinds).unwrap_or_else(|_| "{}".to_owned())
         ));
+        out.push_str(&format!(
+            "- parser-IR paragraphs[] rows: {}\n",
+            input.parser_ir.paragraph_count
+        ));
         if !input.divergence.paragraph_structural_records.is_empty() {
             out.push_str("- paragraph structural records:\n");
             for record in &input.divergence.paragraph_structural_records {
@@ -848,7 +853,7 @@ fn classify_tei_eaj_row(
         if input.aat.paragraph_blocks > 0 && !input.parser_ir.paragraphs_represented {
             classification.parser_ir_gap = true;
             classification.notes.push(format!(
-                "{} preserves {} AAT paragraph block(s), but parser-IR has no explicit paragraph representation",
+                "{} preserves {} AAT paragraph block(s), but parser-IR has no explicit paragraphs[] representation",
                 input.label, input.aat.paragraph_blocks
             ));
         }
@@ -933,9 +938,11 @@ fn summarize_parser_ir(parser_ir: &Value) -> ParserIrStructuralSummary {
         }
     }
     let node_count = node_kinds.values().sum();
-    let paragraphs_represented = node_kinds
-        .keys()
-        .any(|kind| matches!(kind.as_str(), "paragraph" | "paragraph-boundary"));
+    let paragraph_count = parser_ir
+        .pointer("/paragraphs")
+        .and_then(Value::as_array)
+        .map_or(0, |paragraphs| paragraphs.len() as u64);
+    let paragraphs_represented = paragraph_count > 0;
     let source_attribution_represented = parser_ir
         .pointer("/nodes")
         .and_then(Value::as_array)
@@ -946,6 +953,7 @@ fn summarize_parser_ir(parser_ir: &Value) -> ParserIrStructuralSummary {
     ParserIrStructuralSummary {
         node_count,
         node_kinds,
+        paragraph_count,
         paragraphs_represented,
         source_attribution_represented,
     }
@@ -1007,7 +1015,7 @@ fn structural_verdict(
     }
     if aat.paragraph_blocks > 0 && !parser_ir.paragraphs_represented {
         notes.push(format!(
-            "AAT preserved {} paragraph block(s), but parser-IR has no explicit paragraph node",
+            "AAT preserved {} paragraph block(s), but parser-IR has no explicit paragraphs[] row",
             aat.paragraph_blocks
         ));
     }

@@ -84,21 +84,25 @@ fn convert_preflighted(
 
     let mut recorder = DivergenceRecorder::new(index);
     let mut nodes = Vec::new();
+    let mut paragraphs = Vec::new();
     let mut offset = 0_u64;
 
-    for (block_index, block) in aat
+    let blocks: Vec<&Value> = aat
         .pointer("/blocks")
         .and_then(Value::as_array)
         .into_iter()
         .flatten()
-        .enumerate()
-    {
+        .collect();
+    let top_level_block_count = blocks.len();
+    for (block_index, block) in blocks.into_iter().enumerate() {
         offset = map_block(
             block,
             &mut nodes,
+            &mut paragraphs,
             &mut recorder,
             offset,
             &format!("blocks[{block_index}]"),
+            block_index + 1 == top_level_block_count,
         )?;
     }
 
@@ -113,6 +117,7 @@ fn convert_preflighted(
         "derived_from": derived_from(&aat, mapping)?,
         "source": source,
         "nodes": nodes,
+        "paragraphs": paragraphs,
         "warnings": warnings,
         "errors": [],
     });
@@ -133,30 +138,79 @@ fn convert_preflighted(
 fn map_block(
     block: &Value,
     nodes: &mut Vec<Value>,
+    paragraphs: &mut Vec<Value>,
     recorder: &mut DivergenceRecorder,
     offset: u64,
     path: &str,
+    is_final_top_level: bool,
 ) -> Result<u64> {
     let kind = block["kind"].as_str().unwrap_or("unknown");
     let structural_pointer = format!("{path}.{kind}");
     let mut current = offset;
     match kind {
         "paragraph" => {
-            recorder.record(
-                "STRUCTURAL",
-                Some(structural_pointer.as_str()),
-                None,
-                None,
-                None,
-            )?;
-            record_missing_span(block.get("span"), recorder, path)?;
-            current = map_inline_content(
-                block.get("content"),
+            let paragraph_id = format!("p{:06}", paragraphs.len());
+            let node_start = nodes.len();
+            let source_note_text = if is_final_top_level {
+                source_attribution_text(block)?
+            } else {
+                None
+            };
+            let role;
+            let classification;
+            if source_note_text.is_some() {
+                let text = visible_content_text(
+                    block.get("content"),
+                    recorder,
+                    &format!("{path}.content"),
+                    Some("source-note.text"),
+                )?;
+                let end = current + utf8_len(&text);
+                let span = map_span(block.get("span"), current, end, recorder, path)?;
+                nodes.push(json!({
+                    "type": "source-note",
+                    "span": span,
+                    "text": text,
+                    "note_type": "source-attribution",
+                    "placement": "back",
+                    "classification": "heuristic",
+                    "source_pointer": path,
+                }));
+                current = end;
+                role = "source-note";
+                classification = "heuristic";
+            } else {
+                current = map_inline_content(
+                    block.get("content"),
+                    nodes,
+                    recorder,
+                    current,
+                    &format!("{path}.content"),
+                )?;
+                role = "body";
+                classification = "direct";
+            }
+            let node_end = nodes.len();
+            let (span, span_source) = paragraph_span(
+                block.get("span"),
                 nodes,
-                recorder,
+                node_start,
+                node_end,
+                offset,
                 current,
-                &format!("{path}.content"),
             )?;
+            paragraphs.push(json!({
+                "id": paragraph_id,
+                "span": span,
+                "span_source": span_source,
+                "node_range": {
+                    "start": node_start,
+                    "end": node_end,
+                },
+                "role": role,
+                "source_pointer": path,
+                "classification": classification,
+            }));
         }
         "heading" => {
             recorder.record(
@@ -229,9 +283,11 @@ fn map_block(
                 current = map_block(
                     child,
                     nodes,
+                    paragraphs,
                     recorder,
                     current,
                     &format!("{path}.children[{index}]"),
+                    false,
                 )?;
             }
         }
@@ -259,9 +315,11 @@ fn map_block(
                 current = map_block(
                     child,
                     nodes,
+                    paragraphs,
                     recorder,
                     current,
                     &format!("{path}.children[{index}]"),
+                    false,
                 )?;
             }
         }
@@ -271,6 +329,114 @@ fn map_block(
         other => bail!("unsupported block kind: {other}"),
     }
     Ok(current)
+}
+
+fn paragraph_span(
+    block_span: Option<&Value>,
+    nodes: &[Value],
+    node_start: usize,
+    node_end: usize,
+    fallback_start: u64,
+    fallback_end: u64,
+) -> Result<(Value, &'static str)> {
+    if let Some(span) = block_span {
+        return Ok((
+            json!({
+                "start": span.get("byte_start").and_then(Value::as_u64).unwrap_or(fallback_start),
+                "end": span.get("byte_end").and_then(Value::as_u64).unwrap_or(fallback_end),
+                "line": span.get("line_start").cloned().unwrap_or(Value::Null),
+                "column": null,
+                "coordinate_system": "decoded_utf8",
+            }),
+            "direct",
+        ));
+    }
+    if node_start < node_end
+        && let (Some(first), Some(last)) = (nodes.get(node_start), nodes.get(node_end - 1))
+    {
+        let start = first
+            .pointer("/span/start")
+            .and_then(Value::as_u64)
+            .unwrap_or(fallback_start);
+        let end = last
+            .pointer("/span/end")
+            .and_then(Value::as_u64)
+            .unwrap_or(fallback_end);
+        let line = first.pointer("/span/line").cloned().unwrap_or(Value::Null);
+        let column = first
+            .pointer("/span/column")
+            .cloned()
+            .unwrap_or(Value::Null);
+        return Ok((
+            json!({
+                "start": start,
+                "end": end,
+                "line": line,
+                "column": column,
+                "coordinate_system": "decoded_utf8",
+            }),
+            "derived",
+        ));
+    }
+    Ok((
+        json!({
+            "start": fallback_start,
+            "end": fallback_end,
+            "line": null,
+            "column": null,
+            "coordinate_system": "decoded_utf8",
+        }),
+        "synthesized",
+    ))
+}
+
+fn source_attribution_text(block: &Value) -> Result<Option<String>> {
+    let text = plain_visible_content_text(block.get("content"))?;
+    if is_source_attribution_text(&text) {
+        Ok(Some(text))
+    } else {
+        Ok(None)
+    }
+}
+
+fn is_source_attribution_text(text: &str) -> bool {
+    let trimmed = text.trim();
+    trimmed.starts_with('（')
+        && trimmed.ends_with('）')
+        && (trimmed.contains("から。")
+            || trimmed.contains("から）")
+            || trimmed.contains("から。）"))
+}
+
+fn plain_visible_content_text(content: Option<&Value>) -> Result<String> {
+    let mut text = String::new();
+    for child in content.and_then(Value::as_array).into_iter().flatten() {
+        text.push_str(&plain_visible_inline_text(child)?);
+    }
+    Ok(text)
+}
+
+fn plain_visible_inline_text(node: &Value) -> Result<String> {
+    match node["kind"].as_str().unwrap_or("") {
+        "text" => Ok(node["value"].as_str().unwrap_or("").to_owned()),
+        "ruby" => Ok(node["base"].as_str().unwrap_or("").to_owned()),
+        "gaiji" => Ok(node["resolved"]
+            .as_str()
+            .or_else(|| node["description"].as_str())
+            .unwrap_or("")
+            .to_owned()),
+        "style" | "font_size" | "tcy" | "keigakomi" | "caption" => {
+            plain_visible_content_text(node.get("content"))
+        }
+        "warigaki" => {
+            let upper = plain_visible_content_text(node.get("upper"))?;
+            let lower = plain_visible_content_text(node.get("lower"))?;
+            Ok(format!("{upper}{lower}"))
+        }
+        "raw" => Ok(String::new()),
+        "figure" => Ok(node["alt"].as_str().unwrap_or("").to_owned()),
+        other => bail!("unsupported inline kind in source attribution projection: {other}"),
+    }
 }
 
 fn map_inline_content(
@@ -749,26 +915,6 @@ fn warigaki_target<'a>(
     } else {
         bail!("unmeasured warigaki divergence at {warigaki_pointer}")
     }
-}
-
-fn record_missing_span(
-    aat_span: Option<&Value>,
-    recorder: &mut DivergenceRecorder,
-    path: &str,
-) -> Result<()> {
-    if aat_span.is_none() {
-        let span_pointer = format!("{path}.span");
-        if recorder.has_rule("AMBIGUITY", Some(span_pointer.as_str()), Some("span")) {
-            recorder.record(
-                "AMBIGUITY",
-                Some(span_pointer.as_str()),
-                Some("span"),
-                None,
-                None,
-            )?;
-        }
-    }
-    Ok(())
 }
 
 fn map_span(

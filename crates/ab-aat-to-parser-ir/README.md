@@ -41,13 +41,13 @@ is `checks.<system>.aat-to-parser-ir-smoke`.
 
 ## Current Evidence
 
-- Mapping version: `0.2.1`
+- Mapping version: `0.2.2`
 - Mapping hash:
-  `sha256:b508665af72c237fc60f00b720f80db2b16148aa64b5d1cc723a2948ee576390`
+  `sha256:17fb33db137f23ae30325558545ae364d21488d773aed733df1af012af6658c0`
 - Mapping schema hash:
   `sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4`
 - Parser-IR schema hash:
-  `sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396`
+  `sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2`
 - Latest full-corpus conversion audit:
   `docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.md`
 

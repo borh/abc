@@ -6,13 +6,13 @@
   "total_blocks_scanned": 6090077,
   "total_inline_nodes_scanned": 30842160,
   "total_parser_ir_nodes_emitted": 26888713,
-  "total_ledger_entries": 48734891,
+  "total_ledger_entries": 42467495,
   "category_counts": {
     "LOSS": 3815445,
     "AMBIGUITY": 27617002,
     "INVENTION": 10691975,
     "UNSUPPORTED": 27464,
-    "STRUCTURAL": 6583005
+    "STRUCTURAL": 315609
   },
   "block_kind_counts": {
     "paragraph": 5846794,
@@ -34,10 +34,10 @@
     "caption": 64,
     "tcy": 13605
   },
-  "generated_mapping_rules": 130,
-  "mapping_version": "0.2.1",
+  "generated_mapping_rules": 127,
+  "mapping_version": "0.2.2",
   "mapping_schema_hash": "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4",
-  "target_parser_ir_schema_hash": "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396",
+  "target_parser_ir_schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
   "identity_projection": {
     "parser_ir_pointer": "derived_from",
     "aat_pointers": [
@@ -57,5 +57,5 @@
     "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter",
     "/db/ab-validator/aat-corpus/aozora-epub3-full-20260704T050652Z-300s/aat/aozora-epub3-adapter"
   ],
-  "mapping_path": "/home/bor/Projects/ab-validator/data/aat-to-parser-ir-mapping-v1.json"
+  "mapping_path": "data/aat-to-parser-ir-mapping-v1.json"
 }

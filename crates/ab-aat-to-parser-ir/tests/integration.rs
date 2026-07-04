@@ -72,7 +72,7 @@ fn legacy_schema_hashes_match_mapping_artifact() {
     );
     assert_eq!(
         schema_hash(&schemas.parser_ir_schema).unwrap(),
-        "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"
+        "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2"
     );
 }
 
@@ -92,8 +92,19 @@ fn mapping_preflight_accepts_checked_in_v2_artifact() {
 
     let index = mapping.preflight(&schemas).unwrap();
 
-    assert_eq!(mapping.mapping_version, "0.2.1");
-    assert_eq!(mapping.transform_rule_descriptions.len(), 130);
+    assert_eq!(mapping.mapping_version, "0.2.2");
+    assert_eq!(mapping.transform_rule_descriptions.len(), 127);
+    assert!(
+        !mapping
+            .transform_rule_descriptions
+            .iter()
+            .any(|rule| rule.category == "STRUCTURAL"
+                && rule
+                    .aat_pointer
+                    .as_deref()
+                    .is_some_and(|pointer| pointer.contains("paragraph"))),
+        "paragraph blocks should be represented by parser-IR paragraphs[], not STRUCTURAL loss"
+    );
     assert!(
         index
             .require_rule("UNSUPPORTED", Some("blocks[].content[].warigaki"), None)
@@ -271,6 +282,28 @@ fn converts_text_ruby_gaiji_and_validates_parser_ir() {
             .pointer("/nodes/2/gaiji/raw_marker")
             .and_then(Value::as_str),
         Some("[gaiji]")
+    );
+    assert_eq!(
+        output.parser_ir.pointer("/paragraphs/0/node_range/start"),
+        Some(&json!(0))
+    );
+    assert_eq!(
+        output.parser_ir.pointer("/paragraphs/0/node_range/end"),
+        Some(&json!(3))
+    );
+    assert_eq!(
+        output
+            .parser_ir
+            .pointer("/paragraphs/0/span_source")
+            .and_then(Value::as_str),
+        Some("derived")
+    );
+    assert_eq!(
+        output
+            .parser_ir
+            .pointer("/paragraphs/0/role")
+            .and_then(Value::as_str),
+        Some("body")
     );
     assert!(output.emitted_rule_ids.contains("A-18"));
     assert!(
@@ -620,15 +653,11 @@ fn structural_probe_detects_melos_level3_gap() {
     );
     assert!(item.aat.final_source_attribution_candidate);
     assert!(item.conversion.success);
-    assert!(!item.parser_ir.paragraphs_represented);
-    assert!(!item.parser_ir.source_attribution_represented);
-    assert!(!item.verdict.residual_free);
-    assert!(
-        item.divergence
-            .paragraph_structural_records
-            .iter()
-            .any(|record| record.rule_id == "S-10" && record.count == 2)
-    );
+    assert_eq!(item.parser_ir.paragraph_count, 2);
+    assert!(item.parser_ir.paragraphs_represented);
+    assert!(item.parser_ir.source_attribution_represented);
+    assert!(item.verdict.residual_free);
+    assert!(item.divergence.paragraph_structural_records.is_empty());
 }
 
 #[test]
@@ -764,7 +793,7 @@ fn tei_eaj_structural_expansion_classifies_parser_ir_and_evidence_gaps() {
     );
     assert_eq!(summary.totals.tei_eaj_files, 2);
     assert_eq!(summary.totals.rows_with_aat_evidence, 1);
-    assert_eq!(summary.totals.parser_ir_gap_rows, 1);
+    assert_eq!(summary.totals.parser_ir_gap_rows, 0);
     assert_eq!(summary.totals.evidence_gap_rows, 1);
 
     let melos = summary
@@ -774,8 +803,8 @@ fn tei_eaj_structural_expansion_classifies_parser_ir_and_evidence_gaps() {
         .unwrap();
     assert_eq!(melos.tei.tei_eaj_p_count, Some(19));
     assert_eq!(melos.aat_inputs.len(), 1);
-    assert!(melos.classification.parser_ir_gap);
-    assert!(melos.classification.source_attribution_gap);
+    assert!(!melos.classification.parser_ir_gap);
+    assert!(!melos.classification.source_attribution_gap);
     assert!(!melos.classification.evidence_gap);
 
     let missing = summary
@@ -798,7 +827,7 @@ fn tei_eaj_structural_expansion_classifies_parser_ir_and_evidence_gaps() {
     let markdown =
         ab_aat_to_parser_ir::structural_probe::render_tei_eaj_expansion_markdown(&summary);
     assert!(markdown.contains("# TEI-EAJ Structural Expansion"));
-    assert!(markdown.contains("| 1567 | 走れメロス | compared | 19 | 1 | 1 | true |"));
+    assert!(markdown.contains("| 1567 | 走れメロス | compared | 19 | 1 | 1 | false |"));
     assert!(markdown.contains("parser-IR gap"));
     assert!(markdown.contains("evidence gap"));
 }
@@ -1206,7 +1235,11 @@ fn cli_tei_eaj_structural_expansion_writes_reports() {
     assert_eq!(summary.pointer("/totals/tei_eaj_files"), Some(&json!(1)));
     assert_eq!(
         summary.pointer("/totals/parser_ir_gap_rows"),
-        Some(&json!(1))
+        Some(&json!(0))
+    );
+    assert_eq!(
+        summary.pointer("/totals/source_attribution_gap_rows"),
+        Some(&json!(0))
     );
     assert_eq!(
         summary.pointer("/rows/0/tei/tei_eaj_p_count"),

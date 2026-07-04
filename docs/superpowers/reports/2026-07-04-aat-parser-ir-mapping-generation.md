@@ -11,8 +11,8 @@ Date: 2026-07-03
 | files with UNSUPPORTED | 1630 |
 | files with warigaki | 243 |
 | total parser-IR nodes emitted | 26888713 |
-| total ledger entries | 48734891 |
-| generated mapping rules | 130 |
+| total ledger entries | 42467495 |
+| generated mapping rules | 127 |
 
 ## Category Counts
 
@@ -22,12 +22,12 @@ Date: 2026-07-03
 | AMBIGUITY | 27617002 |
 | INVENTION | 10691975 |
 | UNSUPPORTED | 27464 |
-| STRUCTURAL | 6583005 |
+| STRUCTURAL | 315609 |
 
 ## Schema Hashes
 
 - mapping schema hash: `sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4`
-- target parser-IR schema hash: `sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396`
+- target parser-IR schema hash: `sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2`
 
 ## Identity Projection
 

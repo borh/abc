@@ -42,6 +42,11 @@
       "type": "array",
       "items": { "$ref": "#/$defs/node" }
     },
+    "paragraphs": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/paragraph" },
+      "default": []
+    },
     "warnings": {
       "type": "array",
       "items": { "$ref": "#/$defs/diagnostic" }
@@ -89,8 +94,32 @@
         { "$ref": "#/$defs/pageBreakNode" },
         { "$ref": "#/$defs/imageNode" },
         { "$ref": "#/$defs/captionNode" },
-        { "$ref": "#/$defs/quoteNode" }
+        { "$ref": "#/$defs/quoteNode" },
+        { "$ref": "#/$defs/sourceNoteNode" }
       ]
+    },
+    "nodeRange": {
+      "type": "object",
+      "required": ["start", "end"],
+      "additionalProperties": false,
+      "properties": {
+        "start": { "type": "integer", "minimum": 0 },
+        "end": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "paragraph": {
+      "type": "object",
+      "required": ["id", "span", "span_source", "node_range", "role", "source_pointer", "classification"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^p[0-9]{6}$" },
+        "span": { "$ref": "#/$defs/span" },
+        "span_source": { "type": "string", "enum": ["direct", "derived", "synthesized", "unknown"] },
+        "node_range": { "$ref": "#/$defs/nodeRange" },
+        "role": { "type": "string", "enum": ["body", "source-note", "unknown"] },
+        "source_pointer": { "type": ["string", "null"] },
+        "classification": { "type": "string", "enum": ["direct", "heuristic", "unknown"] }
+      }
     },
     "textNode": {
       "allOf": [
@@ -284,6 +313,25 @@
             "marker_type": { "type": "string", "enum": ["open", "close", "inline", "unknown"] },
             "nesting_level": { "type": ["integer", "null"], "minimum": 0 },
             "text": { "type": ["string", "null"] }
+          }
+        }
+      ]
+    },
+    "sourceNoteNode": {
+      "allOf": [
+        { "$ref": "#/$defs/baseNode" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "span", "text", "note_type", "placement", "classification", "source_pointer"],
+          "properties": {
+            "type": { "const": "source-note" },
+            "span": { "$ref": "#/$defs/span" },
+            "text": { "type": "string" },
+            "note_type": { "type": "string", "enum": ["source-attribution", "bibliographic-note", "transcriber-note", "unknown"] },
+            "placement": { "type": "string", "enum": ["front", "body", "back", "unknown"] },
+            "classification": { "type": "string", "enum": ["direct", "heuristic", "unknown"] },
+            "source_pointer": { "type": ["string", "null"] }
           }
         }
       ]

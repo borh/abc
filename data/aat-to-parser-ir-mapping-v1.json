@@ -1,10 +1,10 @@
 {
   "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
-  "mapping_version": "0.2.1",
+  "mapping_version": "0.2.2",
   "mapping_schema_hash": "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4",
   "source_aat_version": 1,
   "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-  "target_parser_ir_schema_hash": "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396",
+  "target_parser_ir_schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
   "transform_rule_descriptions": [
     {
       "rule_id": "A-01",
@@ -801,21 +801,13 @@
     {
       "rule_id": "S-02",
       "category": "STRUCTURAL",
-      "aat_pointer": "blocks[].children[].children[].paragraph",
-      "parser_ir_pointer": null,
-      "action": "flatten",
-      "description": "Observed 2245 occurrences; first_path=blocks[369].children[1].children[0].paragraph. block container of kind 'paragraph' has no parser-IR node; boundary + span + style lost, only inlines emitted"
-    },
-    {
-      "rule_id": "S-03",
-      "category": "STRUCTURAL",
       "aat_pointer": "blocks[].children[].heading",
       "parser_ir_pointer": null,
       "action": "flatten",
       "description": "Observed 71397 occurrences; first_path=blocks[16].children[0].heading. block container of kind 'heading' has no parser-IR node; boundary + span + style lost, only inlines emitted"
     },
     {
-      "rule_id": "S-04",
+      "rule_id": "S-03",
       "category": "STRUCTURAL",
       "aat_pointer": "blocks[].children[].jisage_block",
       "parser_ir_pointer": null,
@@ -823,7 +815,7 @@
       "description": "Observed 777 occurrences; first_path=blocks[369].children[1].jisage_block. block container of kind 'jisage_block' has no parser-IR node; boundary + span + style lost, only inlines emitted"
     },
     {
-      "rule_id": "S-05",
+      "rule_id": "S-04",
       "category": "STRUCTURAL",
       "aat_pointer": "blocks[].children[].keigakomi_block",
       "parser_ir_pointer": null,
@@ -831,15 +823,7 @@
       "description": "Observed 132 occurrences; first_path=blocks[574].children[0].keigakomi_block. block container of kind 'keigakomi_block' has no parser-IR node; boundary + span + style lost, only inlines emitted"
     },
     {
-      "rule_id": "S-06",
-      "category": "STRUCTURAL",
-      "aat_pointer": "blocks[].children[].paragraph",
-      "parser_ir_pointer": null,
-      "action": "flatten",
-      "description": "Observed 418357 occurrences; first_path=blocks[0].children[0].paragraph. block container of kind 'paragraph' has no parser-IR node; boundary + span + style lost, only inlines emitted"
-    },
-    {
-      "rule_id": "S-07",
+      "rule_id": "S-05",
       "category": "STRUCTURAL",
       "aat_pointer": "blocks[].heading",
       "parser_ir_pointer": null,
@@ -847,7 +831,7 @@
       "description": "Observed 13394 occurrences; first_path=blocks[1].heading. block container of kind 'heading' has no parser-IR node; boundary + span + style lost, only inlines emitted"
     },
     {
-      "rule_id": "S-08",
+      "rule_id": "S-06",
       "category": "STRUCTURAL",
       "aat_pointer": "blocks[].jisage_block",
       "parser_ir_pointer": null,
@@ -855,7 +839,7 @@
       "description": "Observed 229830 occurrences; first_path=blocks[0].jisage_block. block container of kind 'jisage_block' has no parser-IR node; boundary + span + style lost, only inlines emitted"
     },
     {
-      "rule_id": "S-09",
+      "rule_id": "S-07",
       "category": "STRUCTURAL",
       "aat_pointer": "blocks[].keigakomi_block",
       "parser_ir_pointer": null,
@@ -863,15 +847,7 @@
       "description": "Observed 58 occurrences; first_path=blocks[4].keigakomi_block. block container of kind 'keigakomi_block' has no parser-IR node; boundary + span + style lost, only inlines emitted"
     },
     {
-      "rule_id": "S-10",
-      "category": "STRUCTURAL",
-      "aat_pointer": "blocks[].paragraph",
-      "parser_ir_pointer": null,
-      "action": "flatten",
-      "description": "Observed 5846794 occurrences; first_path=blocks[0].paragraph. block container of kind 'paragraph' has no parser-IR node; boundary + span + style lost, only inlines emitted"
-    },
-    {
-      "rule_id": "S-11",
+      "rule_id": "S-08",
       "category": "STRUCTURAL",
       "aat_pointer": "blocks[].yokogumi_block",
       "parser_ir_pointer": null,

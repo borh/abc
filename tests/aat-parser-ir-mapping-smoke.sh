@@ -3,8 +3,10 @@ set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 out_dir="${AB_DB_ROOT:-/db/ab-validator}/aat-fidelity/aat-parser-ir-mapping-smoke"
-aat_dir="${AB_AOZORA_RS_AAT_DIR:-$repo_root/scratch/morph-full-corpus/aats/aozora-rs-adapter}"
-abc_root="$repo_root/../abc"
+git_common_dir="$(git -C "$repo_root" rev-parse --path-format=absolute --git-common-dir)"
+repo_storage_root="$(cd "$git_common_dir/.." && pwd)"
+aat_dir="${AB_AOZORA_RS_AAT_DIR:-$repo_storage_root/scratch/morph-full-corpus/aats/aozora-rs-adapter}"
+abc_root="${AB_ABC_ROOT:-$repo_root/data/abc-schemas}"
 
 rm -rf "$out_dir"
 mkdir -p "$out_dir"
@@ -15,7 +17,7 @@ uv run --isolated --no-project --with 'jsonschema>=4.0' \
   "$repo_root/reports/aat-fidelity/aat_parser_ir_mapping/generate.py" \
   --aat-dir "$aat_dir" \
   --abc-root "$abc_root" \
-  --mapping-version 0.2.1 \
+  --mapping-version 0.2.2 \
   --out "$out_dir/aozora-rs-only.mapping.json" \
   --summary-json "$out_dir/aozora-rs-only.summary.json" \
   --assert-zero-unsupported
@@ -32,15 +34,16 @@ uv run --isolated --no-project --with 'jsonschema>=4.0' \
   --aat-dir "$aozora2html_dir" \
   --aat-dir "$aozora_epub3_dir" \
   --abc-root "$abc_root" \
-  --mapping-version 0.2.1 \
+  --mapping-version 0.2.2 \
   --out "$out_dir/mapping.json" \
   --summary-json "$out_dir/summary.json"
 
-jq -e '.mapping_version == "0.2.1"' "$out_dir/mapping.json"
+jq -e '.mapping_version == "0.2.2"' "$out_dir/mapping.json"
 jq -e 'all(.transform_rule_descriptions[]; .aat_pointer != "meta.adapter" and .aat_pointer != "meta.adapter_version")' "$out_dir/mapping.json"
 jq -e 'any(.transform_rule_descriptions[]; .category == "LOSS" and .aat_pointer == "meta.parse_complete")' "$out_dir/mapping.json"
 jq -e '.mapping_schema_hash == "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4"' "$out_dir/summary.json"
-jq -e '.target_parser_ir_schema_hash == "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"' "$out_dir/summary.json"
+jq -e '.target_parser_ir_schema_hash == "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2"' "$out_dir/summary.json"
+jq -e 'all(.transform_rule_descriptions[]; (.category != "STRUCTURAL") or ((.aat_pointer // "") | contains("paragraph") | not))' "$out_dir/mapping.json"
 jq -e 'any(.transform_rule_descriptions[]; .category == "UNSUPPORTED" and (.description | test("warigaki")))' "$out_dir/mapping.json"
 jq -e 'any(.transform_rule_descriptions[]; .category == "AMBIGUITY" and .parser_ir_pointer == "span")' "$out_dir/mapping.json"
 jq -e 'any(.transform_rule_descriptions[]; .aat_pointer == "blocks[].content[].gaiji.description" and .parser_ir_pointer == "gaiji.raw_marker")' "$out_dir/mapping.json"

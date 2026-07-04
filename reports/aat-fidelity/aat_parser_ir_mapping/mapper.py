@@ -11,9 +11,10 @@ Categories: LOSS, AMBIGUITY, INVENTION, UNSUPPORTED, STRUCTURAL.
 Structural transform rule (flat-nodes vs nested-blocks):
   - Flatten `blocks[].content[]` (and `blocks[].children[]` for block_containers)
     into a single parser-IR `nodes[]` in document order.
-  - Block containers (paragraph/heading/block_container) are NOT emitted as
-    parser-IR nodes; parser-IR has no paragraph/block concept. Their *inline*
-    children are emitted; the block boundary itself is recorded as a LOSS entry.
+  - Paragraph block boundaries are emitted by parser-IR v1.1 as top-level
+    `paragraphs[]` ranges. Other block containers are NOT emitted as parser-IR
+    nodes; their *inline* children are emitted and the block boundary itself is
+    recorded as a STRUCTURAL entry.
   - A running `offset` advances by emitted parser-IR node span end. When AAT
     spans are absent, the fallback end is the projected visible text's UTF-8
     byte length. This keeps synthesized spans monotonic and records the
@@ -273,9 +274,11 @@ def map_inline(node, offset, ledger_list, path):
 
 def map_block(block, nodes, ledger_list, offset, path):
     kind = block.get("kind")
-    # Every block boundary is a LOSS: parser-IR has no paragraph/block node.
-    ledger_list.append(ledger("STRUCTURAL", f"{path}.{kind}",
-                              "(none)", f"block container of kind '{kind}' has no parser-IR node; boundary + span + style lost, only inlines emitted"))
+    if kind != "paragraph":
+        # Non-paragraph block boundaries are still not first-class parser-IR
+        # structures. Paragraphs are represented by top-level paragraphs[].
+        ledger_list.append(ledger("STRUCTURAL", f"{path}.{kind}",
+                                  "(none)", f"block container of kind '{kind}' has no parser-IR node; boundary + span + style lost, only inlines emitted"))
 
     if kind == "heading":
         # parser-IR heading: single text string + level. AAT heading has content[] inlines.

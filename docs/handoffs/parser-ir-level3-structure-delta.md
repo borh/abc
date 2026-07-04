@@ -2,7 +2,31 @@
 
 Date: 2026-07-04
 
-## Message For ABC
+## Current Status
+
+ABC has landed the Level 3 parser-IR schema/rendering delta in local commit
+`940d11f feat(parser-ir): add level 3 paragraph structure`.
+ab-validator has consumed that contract:
+
+- synced parser-IR schema hash:
+  `sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2`,
+- regenerated `data/aat-to-parser-ir-mapping-v1.json` as mapping version
+  `0.2.2`,
+- regenerated mapping document hash:
+  `sha256:17fb33db137f23ae30325558545ae364d21488d773aed733df1af012af6658c0`,
+- generated mapping rules: 127,
+- `blocks[].paragraph` no longer appears as `STRUCTURAL` loss,
+- `ab-aat-to-parser-ir` now emits top-level `paragraphs[]` rows for AAT
+  paragraph blocks,
+- final top-level Melos-style source attribution emits a `source-note` node and
+  a `role = "source-note"` paragraph row.
+
+The current fixture-level structural probe now reports zero parser-IR gap rows
+when adapter/AAT evidence has paragraph structure and a final source attribution
+candidate. Full-corpus conversion audit and ABC compatibility admission against
+the new hash remain the next measurement step.
+
+## Original Message For ABC
 
 ab-validator's current evidence says parser-IR cannot yet honestly claim Level 3 paragraph/source-note structure. The gap is now a parser-IR protocol gap, not just a parser measurement gap.
 
@@ -26,7 +50,7 @@ The hard renderer step should be specified as a two-path TEI renderer:
 - `front`: render in front matter,
 - `unknown`: render through an explicit diagnostic policy, not as ordinary body text.
 
-## Evidence
+## Pre-Delta Evidence
 
 - `docs/superpowers/reports/2026-07-04-melos-structural-probe.md`
   - 4 adapters measured for Melos.
@@ -39,9 +63,9 @@ The hard renderer step should be specified as a two-path TEI renderer:
   - 17 adapter gap rows.
   - 2 source-attribution gap rows.
   - 7 evidence gap rows.
-- `data/aat-to-parser-ir-mapping-v1.json`
+- pre-delta `data/aat-to-parser-ir-mapping-v1.json`
   - `S-10` records `blocks[].paragraph` as `STRUCTURAL` loss.
-- `data/abc-schemas/schemas/parser-ir.schema.json`
+- pre-delta `data/abc-schemas/schemas/parser-ir.schema.json`
   - current node union has no paragraph/range/source-note representation.
 
 ## Proposed Shape
@@ -104,7 +128,8 @@ Keep old-schema compatibility entries valid. Add new Level 3 compatibility regis
 
 After ABC lands the schema:
 
-- sync `data/abc-schemas/schemas/parser-ir.schema.json`,
-- regenerate mapping against the new schema hash,
-- update `ab-aat-to-parser-ir` to emit `paragraphs[]` and `source-note`,
-- rerun the full conversion audit, Melos structural probe, and TEI-EAJ structural expansion.
+- [x] sync `data/abc-schemas/schemas/parser-ir.schema.json`,
+- [x] regenerate mapping against the new schema hash,
+- [x] update `ab-aat-to-parser-ir` to emit `paragraphs[]` and `source-note`,
+- [ ] rerun the full conversion audit, Melos structural probe, and TEI-EAJ
+  structural expansion against local full-corpus inputs.

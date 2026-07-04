@@ -32,8 +32,6 @@ pom.xml.asc
 docs/superpowers/plans/archive/
 
 # Local/generated corpus and conversion artifacts
-/data/dev/
-/data/test/
 /out/
 /result
 

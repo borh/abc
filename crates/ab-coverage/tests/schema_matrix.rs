@@ -363,6 +363,11 @@ fn source_inventory_classifies_heading_and_keigakomi_corpus_variants() {
         "［＃「　　」は罫囲み］",
         "［＃「花」は罫囲み］",
         "［＃「ＧＯＴＯ」は罫囲み］",
+        "［＃小見出し文字］",
+        "［＃見出し文字］",
+        "［＃ここで字下げ、枠囲み終わり］",
+        "［＃ここで字下げ、罫囲み終わり］",
+        "［＃「住友　第一」は枠囲み］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -377,14 +382,14 @@ fn source_inventory_classifies_heading_and_keigakomi_corpus_variants() {
             .row_counts
             .get("heading.basic")
             .map(|count| count.occurrences),
-        Some(3)
+        Some(5)
     );
     assert_eq!(
         summary
             .row_counts
             .get("decoration.keigakomi")
             .map(|count| count.occurrences),
-        Some(3)
+        Some(6)
     );
 }
 
@@ -404,6 +409,10 @@ fn source_inventory_classifies_table_and_multicolumn_corpus_variants() {
         "［＃ここで表組終わり］",
         "［＃ここから表罫囲み］",
         "［＃ここで表罫囲み終わり］",
+        "［＃「うどん」と「きそば」は２列に並ぶ］",
+        "［＃「ただ」と「咲」は２列に並ぶ］",
+        "［＃「赤江米子氏」と「母の或部分」は２列に並ぶ］",
+        "［＃「權次」と「權六」は横並びになっている］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -418,7 +427,7 @@ fn source_inventory_classifies_table_and_multicolumn_corpus_variants() {
             .row_counts
             .get("layout.multicolumn")
             .map(|count| count.occurrences),
-        Some(5)
+        Some(9)
     );
     assert_eq!(
         summary
@@ -815,6 +824,9 @@ fn source_inventory_classifies_chitsuki_alignment_corpus_variants() {
         "［＃「地付き］",
         "［＃右寄せ］",
         "［＃地より２字上がり］",
+        "［＃この行は行末より１字上がり］",
+        "［＃下げて地付きで］",
+        "［＃地寄せ］",
         "［＃文末より１字上げ揃え］",
         "［＃「訳者」は文末より１字上げ揃え］",
     ]
@@ -831,7 +843,7 @@ fn source_inventory_classifies_chitsuki_alignment_corpus_variants() {
             .row_counts
             .get("indentation.chitsuki")
             .map(|count| count.occurrences),
-        Some(10)
+        Some(13)
     );
 }
 
@@ -887,6 +899,9 @@ fn source_inventory_classifies_font_size_subscript_variants() {
         "［＃「〃」は上部に出ている］",
         "［＃「競吟」は上部に出ている］",
         "［＃大きな文字終わり］",
+        "［＃ここで１段階小さな文字終わり］",
+        "［＃「（「ギヨオテ傳」）」は１段階小さな文字］",
+        "［＃「Ａｎ」はそれぞれ縦中横、数字は上付き小書き］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -901,7 +916,7 @@ fn source_inventory_classifies_font_size_subscript_variants() {
             .row_counts
             .get("decoration.font_size")
             .map(|count| count.occurrences),
-        Some(10)
+        Some(13)
     );
 }
 
@@ -952,6 +967,13 @@ fn source_inventory_classifies_glyph_variant_notes() {
         "［＃「♂」は矢印が下向き］",
         "［＃「Ｏ」は覆面の英字です。］",
         "［＃返り点の「二」の右横に縦棒あり］",
+        "［＃「ちへ」の右に「）」］",
+        "［＃「エ」は小さい「ヱ」］",
+        "［＃「IV」はローマ数字の４］",
+        "［＃「井」は○付き文字］",
+        "［＃「印」は○付き文字］",
+        "［＃「焔」の火へんを炎にしたうえで、へんとつくりをいれかえた字、焔の正字と同字］",
+        "［＃「３」は「√」の記号の中に入っている］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -966,7 +988,7 @@ fn source_inventory_classifies_glyph_variant_notes() {
             .row_counts
             .get("glyph.variant_note")
             .map(|count| count.occurrences),
-        Some(12)
+        Some(19)
     );
 }
 
@@ -1013,6 +1035,8 @@ fn source_inventory_classifies_quote_and_letter_block_markers() {
         "［＃ここから引用文、３字下げ］",
         "［＃ここから引用文、３字下げ、３行アキ］",
         "［＃引用文終わり］",
+        "［＃ここで引用文終り］",
+        "［＃ここより手紙文、１字下げ］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -1027,8 +1051,44 @@ fn source_inventory_classifies_quote_and_letter_block_markers() {
             .row_counts
             .get("structure.quote_block")
             .map(|count| count.occurrences),
-        Some(4)
+        Some(6)
     );
+}
+
+#[test]
+fn source_inventory_classifies_tail_positioning_and_caption_variants() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = [
+        "［＃以下の括弧内割注］",
+        "［＃天より３２字下げて地より３字上げで］",
+        "［＃「序にかえて」全体、天より２字下げ］",
+        "［＃ここから最後まで１字下げ］",
+        "［＃ここで１字下げ終わり］",
+        "［＃ここで文字下げ終わり］",
+        "［＃ここから図表下部解説文］",
+        "［＃ここで図表下部解説文終わり］",
+        "［＃ここで見出し終わり］",
+    ]
+    .join("\n");
+    let summary = inventory_document("fixture", &source, &patterns);
+
+    assert_eq!(
+        summary.unknown_examples,
+        [],
+        "known tail positioning and caption variants should not remain unknown"
+    );
+    for row_id in [
+        "warichu.basic",
+        "indentation.jisage_block",
+        "caption.block",
+        "heading.basic",
+    ] {
+        assert!(
+            summary.row_counts.contains_key(row_id),
+            "expected source inventory row {row_id}"
+        );
+    }
 }
 
 #[test]
@@ -1083,6 +1143,10 @@ fn source_inventory_classifies_layout_and_inline_style_corpus_variants() {
         "［＃左に傍線］",
         "［＃左に傍線終わり］",
         "［＃（一）は縦中横］",
+        "［＃「Ａｎ」はそれぞれ縦中横、数字は上付き小書き］",
+        "［＃「田島校長＝０」は横書き］",
+        "［＃「Ａ＋Ａ×Ｂ：Ｂ＋Ｂ×Ａ」は横書き］",
+        "［＃横書き、「誰」はアクセント（∨）付き］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -1094,9 +1158,10 @@ fn source_inventory_classifies_layout_and_inline_style_corpus_variants() {
     );
     for (row_id, expected) in [
         ("indentation.burasage", 2),
-        ("decoration.font_size", 3),
+        ("decoration.font_size", 4),
         ("decoration.bousen", 2),
-        ("layout.tcy", 1),
+        ("layout.tcy", 2),
+        ("layout.yokogumi", 3),
     ] {
         assert_eq!(
             summary

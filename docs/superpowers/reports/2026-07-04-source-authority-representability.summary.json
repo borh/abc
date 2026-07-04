@@ -3,8 +3,8 @@
   "works_scanned": 17894,
   "works_failed": 0,
   "markers_total": 4323915,
-  "unknown_markers_total": 16110,
-  "unallowlisted_unknown_markers_total": 1240,
+  "unknown_markers_total": 15989,
+  "unallowlisted_unknown_markers_total": 1119,
   "allowlisted_unknown_markers_total": 14870,
   "rows": {
     "accent.dotted_letter": {
@@ -61,8 +61,8 @@
       ]
     },
     "caption.block": {
-      "works_with_marker": 47,
-      "occurrences": 1722,
+      "works_with_marker": 48,
+      "occurrences": 1726,
       "sample_works": [
         "000058_57440",
         "000091_50354",
@@ -127,8 +127,8 @@
       ]
     },
     "decoration.font_size": {
-      "works_with_marker": 1208,
-      "occurrences": 51444,
+      "works_with_marker": 1215,
+      "occurrences": 51467,
       "sample_works": [
         "000006_1869",
         "000008_58922",
@@ -138,14 +138,14 @@
       ]
     },
     "decoration.keigakomi": {
-      "works_with_marker": 138,
-      "occurrences": 677,
+      "works_with_marker": 146,
+      "occurrences": 689,
       "sample_works": [
+        "000043_341",
         "000063_385",
         "000067_1789",
         "000072_408",
-        "000072_864",
-        "000096_2093"
+        "000072_864"
       ]
     },
     "emphasis.basic": {
@@ -237,19 +237,19 @@
       ]
     },
     "glyph.variant_note": {
-      "works_with_marker": 118,
-      "occurrences": 365,
+      "works_with_marker": 1063,
+      "occurrences": 3123,
       "sample_works": [
-        "000012_10",
-        "000026_55782",
-        "000040_1326",
-        "000040_380",
-        "000042_2345"
+        "000011_55301",
+        "000011_889",
+        "000011_899",
+        "000011_9",
+        "000012_10"
       ]
     },
     "heading.basic": {
-      "works_with_marker": 3695,
-      "occurrences": 80582,
+      "works_with_marker": 3696,
+      "occurrences": 80590,
       "sample_works": [
         "000005_53194",
         "000006_58819",
@@ -303,8 +303,8 @@
       ]
     },
     "indentation.chitsuki": {
-      "works_with_marker": 6247,
-      "occurrences": 20302,
+      "works_with_marker": 6251,
+      "occurrences": 20308,
       "sample_works": [
         "000006_1868",
         "000006_1869",
@@ -315,7 +315,7 @@
     },
     "indentation.jisage_block": {
       "works_with_marker": 4605,
-      "occurrences": 94964,
+      "occurrences": 94978,
       "sample_works": [
         "000005_5",
         "000005_53194",
@@ -391,19 +391,19 @@
       ]
     },
     "layout.multicolumn": {
-      "works_with_marker": 15,
-      "occurrences": 48,
+      "works_with_marker": 22,
+      "occurrences": 60,
       "sample_works": [
         "000061_377",
         "000081_45631",
+        "000082_1309",
         "000096_2100",
-        "000158_4854",
-        "000308_46589"
+        "000158_4854"
       ]
     },
     "layout.tcy": {
       "works_with_marker": 724,
-      "occurrences": 19785,
+      "occurrences": 19787,
       "sample_works": [
         "000014_728",
         "000020_2223",
@@ -413,8 +413,8 @@
       ]
     },
     "layout.yokogumi": {
-      "works_with_marker": 413,
-      "occurrences": 3663,
+      "works_with_marker": 419,
+      "occurrences": 3675,
       "sample_works": [
         "000019_59374",
         "000026_50239",
@@ -468,11 +468,12 @@
       ]
     },
     "structure.quote_block": {
-      "works_with_marker": 3,
-      "occurrences": 15,
+      "works_with_marker": 5,
+      "occurrences": 19,
       "sample_works": [
         "000034_233",
         "000035_296",
+        "000137_733",
         "000280_1706"
       ]
     },
@@ -488,8 +489,8 @@
       ]
     },
     "warichu.basic": {
-      "works_with_marker": 361,
-      "occurrences": 6601,
+      "works_with_marker": 362,
+      "occurrences": 6604,
       "sample_works": [
         "000005_53194",
         "000006_1868",
@@ -506,7 +507,7 @@
       ]
     }
   },
-  "unknown_classes_total": 1085,
+  "unknown_classes_total": 1014,
   "unknown_classes_truncated": true,
   "unknown_classes": [
     {
@@ -541,28 +542,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「ちへ」の右に「）」］",
-      "body": "「ちへ」の右に「）」",
-      "occurrences": 4,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 4,
-      "sample_works": [
-        "000232_60242"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「エ」は小さい「ヱ」］",
-      "body": "「エ」は小さい「ヱ」",
-      "occurrences": 4,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 4,
-      "sample_works": [
-        "000124_658"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「x2」、「y2」、「x2」はそれぞれ縦中横、すべての「2」は上付き小書き］",
       "body": "「x2」、「y2」、「x2」はそれぞれ縦中横、すべての「2」は上付き小書き",
       "occurrences": 3,
@@ -570,18 +549,6 @@
       "unallowlisted_occurrences": 3,
       "sample_works": [
         "000148_1102"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「うどん」と「きそば」は２列に並ぶ］",
-      "body": "「うどん」と「きそば」は２列に並ぶ",
-      "occurrences": 3,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 3,
-      "sample_works": [
-        "000311_4205",
-        "000311_4206"
       ]
     },
     {
@@ -608,54 +575,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃ここで字下げ、枠囲み終わり］",
-      "body": "ここで字下げ、枠囲み終わり",
-      "occurrences": 3,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 3,
-      "sample_works": [
-        "000311_2726",
-        "000933_18403"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここで字下げ、横組み終わり］",
-      "body": "ここで字下げ、横組み終わり",
-      "occurrences": 3,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 3,
-      "sample_works": [
-        "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここで字下げ、罫囲み終わり］",
-      "body": "ここで字下げ、罫囲み終わり",
-      "occurrences": 3,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 3,
-      "sample_works": [
-        "000125_45231",
-        "000283_3226",
-        "000283_4343"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここで１段階小さな文字終わり］",
-      "body": "ここで１段階小さな文字終わり",
-      "occurrences": 3,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 3,
-      "sample_works": [
-        "000258_62443",
-        "000923_47850"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃この行ここまで相対的に字が小さい、ここからは下揃え、下から３字上げ］",
       "body": "この行ここまで相対的に字が小さい、ここからは下揃え、下から３字上げ",
       "occurrences": 3,
@@ -678,61 +597,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃以下の括弧内割注］",
-      "body": "以下の括弧内割注",
-      "occurrences": 3,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 3,
-      "sample_works": [
-        "000165_2392"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃天より３２字下げて地より３字上げで］",
-      "body": "天より３２字下げて地より３字上げで",
-      "occurrences": 3,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 3,
-      "sample_works": [
-        "000182_946"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃小見出し文字］",
-      "body": "小見出し文字",
-      "occurrences": 3,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 3,
-      "sample_works": [
-        "000096_1115"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃見出し文字］",
-      "body": "見出し文字",
-      "occurrences": 3,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 3,
-      "sample_works": [
-        "000096_1115"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「IV」はローマ数字の４］",
-      "body": "「IV」はローマ数字の４",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000301_1872"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「※」は「たけかんむり＋隻」、17-8］",
       "body": "「※」は「たけかんむり＋隻」、17-8",
       "occurrences": 2,
@@ -751,17 +615,6 @@
       "unallowlisted_occurrences": 2,
       "sample_works": [
         "000074_431"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「ただ」と「咲」は２列に並ぶ］",
-      "body": "「ただ」と「咲」は２列に並ぶ",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_4198"
       ]
     },
     {
@@ -876,40 +729,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「井」は○付き文字］",
-      "body": "「井」は○付き文字",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_1972"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「住友　第一」は枠囲み］",
-      "body": "「住友　第一」は枠囲み",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_4212"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「印」は○付き文字］",
-      "body": "「印」は○付き文字",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000096_1115",
-        "000096_2100"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「四二頁」は「大國主の神」の「根の堅州國」］",
       "body": "「四二頁」は「大國主の神」の「根の堅州國」",
       "occurrences": 2,
@@ -917,17 +736,6 @@
       "unallowlisted_occurrences": 2,
       "sample_works": [
         "001518_51731"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「序にかえて」全体、天より２字下げ］",
-      "body": "「序にかえて」全体、天より２字下げ",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_2025"
       ]
     },
     {
@@ -940,40 +748,6 @@
       "sample_works": [
         "000372_3666",
         "000372_3667"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「權次」と「權六」は横並びになっている］",
-      "body": "「權次」と「權六」は横並びになっている",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000082_1309"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「焔」の火へんを炎にしたうえで、へんとつくりをいれかえた字、焔の正字と同字］",
-      "body": "「焔」の火へんを炎にしたうえで、へんとつくりをいれかえた字、焔の正字と同字",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000124_660"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「田島校長＝０」は横書き］",
-      "body": "「田島校長＝０」は横書き",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000153_4097",
-        "000153_45462"
       ]
     },
     {
@@ -996,17 +770,6 @@
       "unallowlisted_occurrences": 2,
       "sample_works": [
         "001383_57416"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「赤江米子氏」と「母の或部分」は２列に並ぶ］",
-      "body": "「赤江米子氏」と「母の或部分」は２列に並ぶ",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_4191"
       ]
     },
     {
@@ -1044,28 +807,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「（「ギヨオテ傳」）」は１段階小さな文字］",
-      "body": "「（「ギヨオテ傳」）」は１段階小さな文字",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "001030_47947"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「３」は「√」の記号の中に入っている］",
-      "body": "「３」は「√」の記号の中に入っている",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000040_380"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「３字下げ」］",
       "body": "「３字下げ」",
       "occurrences": 2,
@@ -1073,28 +814,6 @@
       "unallowlisted_occurrences": 2,
       "sample_works": [
         "001749_55798"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「Ａ＋Ａ×Ｂ：Ｂ＋Ｂ×Ａ」は横書き］",
-      "body": "「Ａ＋Ａ×Ｂ：Ｂ＋Ｂ×Ａ」は横書き",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_3074"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「Ａｎ」はそれぞれ縦中横、数字は上付き小書き］",
-      "body": "「Ａｎ」はそれぞれ縦中横、数字は上付き小書き",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000148_1102"
       ]
     },
     {
@@ -1110,17 +829,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃ここから図表下部解説文］",
-      "body": "ここから図表下部解説文",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000250_18353"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃ここから改行１字下げ、折り返して２字下げ］",
       "body": "ここから改行１字下げ、折り返して２字下げ",
       "occurrences": 2,
@@ -1129,86 +837,6 @@
       "sample_works": [
         "000311_4238",
         "001585_53485"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから最後まで１字下げ］",
-      "body": "ここから最後まで１字下げ",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_3730",
-        "000311_3835"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここで図表下部解説文終わり］",
-      "body": "ここで図表下部解説文終わり",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000250_18353"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここで引用文終り］",
-      "body": "ここで引用文終り",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000137_733"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここで文字下げ終わり］",
-      "body": "ここで文字下げ終わり",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000310_1911"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここで見出し終わり］",
-      "body": "ここで見出し終わり",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "001030_4806",
-        "001030_4812"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここで１字下げ終わり］",
-      "body": "ここで１字下げ終わり",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000052_5071",
-        "001918_61170"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここより手紙文、１字下げ］",
-      "body": "ここより手紙文、１字下げ",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000280_1706"
       ]
     },
     {
@@ -1242,18 +870,6 @@
       "unallowlisted_occurrences": 2,
       "sample_works": [
         "000256_1413"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃この行は行末より１字上がり］",
-      "body": "この行は行末より１字上がり",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000156_2701",
-        "000156_2703"
       ]
     },
     {
@@ -1309,17 +925,6 @@
       "unallowlisted_occurrences": 2,
       "sample_works": [
         "000885_2165"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃下げて地付きで］",
-      "body": "下げて地付きで",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000111_1480"
       ]
     },
     {
@@ -1665,17 +1270,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃地寄せ］",
-      "body": "地寄せ",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000148_764"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃場面設定の表題、及び「Ｔ」で始まる最初の行以外は、１文字下げた位置で頭を揃える］",
       "body": "場面設定の表題、及び「Ｔ」で始まる最初の行以外は、１文字下げた位置で頭を揃える",
       "occurrences": 2,
@@ -1819,17 +1413,6 @@
       "sample_works": [
         "000311_46239",
         "000311_46253"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃横書き、「誰」はアクセント（∨）付き］",
-      "body": "横書き、「誰」はアクセント（∨）付き",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_2020"
       ]
     },
     {
@@ -2214,17 +1797,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「II」はローマ数字の２］",
-      "body": "「II」はローマ数字の２",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000301_1872"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「Miss　B. A. Bae.」は斜体字］",
       "body": "「Miss　B. A. Bae.」は斜体字",
       "occurrences": 1,
@@ -2456,17 +2028,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「xxxiii」は33を表すローマ数字の小文字］",
-      "body": "「xxxiii」は33を表すローマ数字の小文字",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000301_1872"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「ο」はアキュートアクセント付き］",
       "body": "「ο」はアキュートアクセント付き",
       "occurrences": 1,
@@ -2555,28 +2116,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「「かつら文楽」」は２段階大きな文字］",
-      "body": "「「かつら文楽」」は２段階大きな文字",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001313_47601"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「「三遊亭圓生」」は２段階大きな文字］",
-      "body": "「「三遊亭圓生」」は２段階大きな文字",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001313_47601"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「「十三」「十二」「十一」「十」「九」」は太字］",
       "body": "「「十三」「十二」「十一」「十」「九」」は太字",
       "occurrences": 1,
@@ -2606,50 +2145,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "001224_46076"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「「春の水」「春の氷」「鶯」「耕」「初午」「二月」「長閑」」は１段階小さな文字］",
-      "body": "「「春の水」「春の氷」「鶯」「耕」「初午」「二月」「長閑」」は１段階小さな文字",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001310_55509"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「「春雨」「藤の花」」は１段階小さな文字］",
-      "body": "「「春雨」「藤の花」」は１段階小さな文字",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001310_55509"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「「東風」「鷲の巣」「梅」」は１段階小さな文字］",
-      "body": "「「東風」「鷲の巣」「梅」」は１段階小さな文字",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001310_55509"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「「歌舞伎」鏑木清方」は１段階小さな文字］",
-      "body": "「「歌舞伎」鏑木清方」は１段階小さな文字",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000933_47786"
       ]
     },
     {
@@ -3028,17 +2523,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「しめりをふくんで」と「しめっぽく」は２列に並ぶ］",
-      "body": "「しめりをふくんで」と「しめっぽく」は２列に並ぶ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_4217"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「しもうてて、」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「しまうてゝ」（読点無し）］",
       "body": "「しもうてて、」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「しまうてゝ」（読点無し）",
       "occurrences": 1,
@@ -3068,17 +2552,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000031_863"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「しらおか」は横書き］",
-      "body": "「しらおか」は横書き",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_3891"
       ]
     },
     {
@@ -3479,17 +2952,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「ェ」は小さい「ヱ」］",
-      "body": "「ェ」は小さい「ヱ」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000124_658"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「クリティカル・エッセイ」の「・」を除く部分に傍点］",
       "body": "「クリティカル・エッセイ」の「・」を除く部分に傍点",
       "occurrences": 1,
@@ -3673,17 +3135,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000008_1083"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「ラッパ」と「捲線」は２列に並ぶ］",
-      "body": "「ラッパ」と「捲線」は２列に並ぶ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_4212"
       ]
     },
     {
@@ -4513,17 +3964,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「冬ごもり」は枠囲み］",
-      "body": "「冬ごもり」は枠囲み",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000146_48509"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「出なかった」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）では「でなかつた」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「出なかつた」］",
       "body": "「出なかった」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）では「でなかつた」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「出なかつた」",
       "occurrences": 1,
@@ -4630,28 +4070,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000124_654"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「十一月二十四日於長崎県立図書館、課題「港」」は１段階小さな文字］",
-      "body": "「十一月二十四日於長崎県立図書館、課題「港」」は１段階小さな文字",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001059_56884"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「十一月十七日於茂吉宅、課題「坂」」は１段階小さな文字］",
-      "body": "「十一月十七日於茂吉宅、課題「坂」」は１段階小さな文字",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001059_56884"
       ]
     },
     {
@@ -4839,17 +4257,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "001383_57416"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「夜古賀十二郎氏の「長崎美術史」の講演を聞く」は１段階小さな文字］",
-      "body": "「夜古賀十二郎氏の「長崎美術史」の講演を聞く」は１段階小さな文字",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001059_56884"
       ]
     },
     {
@@ -5206,17 +4613,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「年の暮」は枠囲み］",
-      "body": "「年の暮」は枠囲み",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000146_48509"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「広津和郎」はゴチック］",
       "body": "「広津和郎」はゴチック",
       "occurrences": 1,
@@ -5323,17 +4719,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000124_654"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「恋愛相談所」は枠囲み］",
-      "body": "「恋愛相談所」は枠囲み",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000043_341"
       ]
     },
     {
@@ -5488,17 +4873,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000281_1711"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「文学＋経済・政治に関する階級的理解＝プロレタリア文学」は横書き］",
-      "body": "「文学＋経済・政治に関する階級的理解＝プロレタリア文学」は横書き",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_3027"
       ]
     },
     {
@@ -6328,17 +5702,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「行乞」は枠囲み］",
-      "body": "「行乞」は枠囲み",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000146_48509"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「袖こむらさき」は初出では「袖ぞむらさき」］",
       "body": "「袖こむらさき」は初出では「袖ぞむらさき」",
       "occurrences": 1,
@@ -6537,17 +5900,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「長吉」と「仁助」は横並びになっている］",
-      "body": "「長吉」と「仁助」は横並びになっている",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000082_1309"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「長谷川如是閑」はゴチック］",
       "body": "「長谷川如是閑」はゴチック",
       "occurrences": 1,
@@ -6691,17 +6043,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「（「故人が」、脱？）」は１段階小さな文字］",
-      "body": "「（「故人が」、脱？）」は１段階小さな文字",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000118_49769"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「（その僧の親達に）」はポイントを下げる］",
       "body": "「（その僧の親達に）」はポイントを下げる",
       "occurrences": 1,
@@ -6746,61 +6087,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「（昭和２年３月「中央公論」）」は１段階小さな文字］",
-      "body": "「（昭和２年３月「中央公論」）」は１段階小さな文字",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000023_55380"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「（昭和２年５月「文芸春秋」）」は１段階小さな文字］",
-      "body": "「（昭和２年５月「文芸春秋」）」は１段階小さな文字",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000023_55372"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「（昭和３年１月「中央公論」）」は１段階小さな文字］",
-      "body": "「（昭和３年１月「中央公論」）」は１段階小さな文字",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000023_55402"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「（昭和４年５月「文芸春秋」）」は１段階小さな文字］",
-      "body": "「（昭和４年５月「文芸春秋」）」は１段階小さな文字",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000023_55376"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「（昭和５年９月「文芸春秋」）」は１段階小さな文字］",
-      "body": "「（昭和５年９月「文芸春秋」）」は１段階小さな文字",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000023_55385"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「（梯や水より上を五月雨）」は「改」の下にポイントを下げて２行で、カッコはその２行を括る形で］",
       "body": "「（梯や水より上を五月雨）」は「改」の下にポイントを下げて２行で、カッコはその２行を括る形で",
       "occurrences": 1,
@@ -6808,17 +6094,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000305_1896"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「（橋本進吉博士著作集第一巻「国語学概論」に転載）」は１段階小さな文字］",
-      "body": "「（橋本進吉博士著作集第一巻「国語学概論」に転載）」は１段階小さな文字",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001968_58881"
       ]
     },
     {
@@ -7626,17 +6901,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃ここで３字下げ終わり］",
-      "body": "ここで３字下げ終わり",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001670_55342"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃ここに「下ニ詳ナリ」という注意書きが入る］",
       "body": "ここに「下ニ詳ナリ」という注意書きが入る",
       "occurrences": 1,
@@ -8403,17 +7667,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃上記、１、２行目と４行目の「志村浩太郎　印」は中文字、それ以外は小文字。４行目「印」は○付き文字］",
-      "body": "上記、１、２行目と４行目の「志村浩太郎　印」は中文字、それ以外は小文字。４行目「印」は○付き文字",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000096_2100"
       ]
     },
     {
@@ -9496,17 +8749,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃図２、「十」の下に小さい「○」の絵］",
-      "body": "図２、「十」の下に小さい「○」の絵",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_33188"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃図２、「本館見取り図」］",
       "body": "図２、「本館見取り図」",
       "occurrences": 1,
@@ -9877,17 +9119,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000219_1074"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃天より３６字下げて地より３字上げで］",
-      "body": "天より３６字下げて地より３字上げで",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000182_946"
       ]
     },
     {
@@ -10794,17 +10025,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃横書き、「ディース」の「ー」と、「イーズ」の「イ」と「ー」の間にアクセント（∨）、「アルーム」に上線］",
-      "body": "横書き、「ディース」の「ー」と、「イーズ」の「イ」と「ー」の間にアクセント（∨）、「アルーム」に上線",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_2020"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃横須賀鎮守府。鎮守府は、海軍の根拠地に置かれた機関］",
       "body": "横須賀鎮守府。鎮守府は、海軍の根拠地に置かれた機関",
       "occurrences": 1,
@@ -11131,17 +10351,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃焔の火へんを炎にしたうえで、へんとつくりをいれかえた字、焔の正字と同字］",
-      "body": "焔の火へんを炎にしたうえで、へんとつくりをいれかえた字、焔の正字と同字",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000124_659"
       ]
     },
     {
@@ -11550,6 +10759,787 @@
       "sample_works": [
         "000160_1255"
       ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃蓄音機］",
+      "body": "蓄音機",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46248"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃血の日曜日］",
+      "body": "血の日曜日",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46248"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃行末から１字上で地付き］",
+      "body": "行末から１字上で地付き",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000989_348"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃行項目名のタイトル］",
+      "body": "行項目名のタイトル",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_3466"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃西村一彰、母葭江の兄］",
+      "body": "西村一彰、母葭江の兄",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46236"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃西村千賀子、母方の祖母］",
+      "body": "西村千賀子、母方の祖母",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46235"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃西村茂樹、母方の祖父、倫理学者］",
+      "body": "西村茂樹、母方の祖父、倫理学者",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46235"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃覚え書き、ノート］",
+      "body": "覚え書き、ノート",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46247"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃解剖学者。随筆家］",
+      "body": "解剖学者。随筆家",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000160_1255"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃誠之尋常小学校、百合子の母校］",
+      "body": "誠之尋常小学校、百合子の母校",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46237"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃読みは「つね」］",
+      "body": "読みは「つね」",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000169_1273"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃謙］",
+      "body": "謙",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000160_1255"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃豊竹昇之助、女義太夫］",
+      "body": "豊竹昇之助、女義太夫",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46244"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃貞の末息子］",
+      "body": "貞の末息子",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46242"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃貴志（康一）］",
+      "body": "貴志（康一）",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46251"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃赤いけし］",
+      "body": "赤いけし",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46246"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃超国家主義団体］",
+      "body": "超国家主義団体",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000160_1255"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃返り点の「上」あり］",
+      "body": "返り点の「上」あり",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000301_1872"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃返り点の「下」あり］",
+      "body": "返り点の「下」あり",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000301_1872"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃通りの名］",
+      "body": "通りの名",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46246"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃里見勝蔵］",
+      "body": "里見勝蔵",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_4833"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃野上彌生子］",
+      "body": "野上彌生子",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46249"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃野上豊一郎］",
+      "body": "野上豊一郎",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46242"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃金融緊急措置令。新円発行、旧円預金は封鎖］",
+      "body": "金融緊急措置令。新円発行、旧円預金は封鎖",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000160_1255"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃金馬と小金馬の対談がここにはいる。］",
+      "body": "金馬と小金馬の対談がここにはいる。",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "001805_58834"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃長谷川如是閑］",
+      "body": "長谷川如是閑",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46244"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃闇汁の図］",
+      "body": "闇汁の図",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000305_43618"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃降伏文書の調印式場として使われた］",
+      "body": "降伏文書の調印式場として使われた",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000160_1255"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃集団農場］",
+      "body": "集団農場",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46248"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃青山杉作］",
+      "body": "青山杉作",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46244"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃青鞜］",
+      "body": "青鞜",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46246"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃項目名］",
+      "body": "項目名",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_3466"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃風俗、生活様式］",
+      "body": "風俗、生活様式",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46248"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃風呂］",
+      "body": "風呂",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46248"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃食後の休息時間］",
+      "body": "食後の休息時間",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46247"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃食料品店名］",
+      "body": "食料品店名",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46246"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃高太郎］",
+      "body": "高太郎",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000160_1255"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃黒田鵬心］",
+      "body": "黒田鵬心",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46236"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃（ハヾ）］",
+      "body": "（ハヾ）",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000933_18397"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃（一）は自注］",
+      "body": "（一）は自注",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000284_2226"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃（三）は自注］",
+      "body": "（三）は自注",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000284_2226"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃（二）は自注］",
+      "body": "（二）は自注",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000284_2226"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃（五）は自注］",
+      "body": "（五）は自注",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000284_2226"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃（六）は自注］",
+      "body": "（六）は自注",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000284_2226"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃（四）は自注］",
+      "body": "（四）は自注",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000284_2226"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃（止（波））］",
+      "body": "（止（波））",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000933_47180"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃（）内の文字全てに傍点、ただし読点をのぞく］",
+      "body": "（）内の文字全てに傍点、ただし読点をのぞく",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000256_2590"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃（Ｆ・Ｏ）は下揃え］",
+      "body": "（Ｆ・Ｏ）は下揃え",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000072_864"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃１字アキか改行か判然せず］",
+      "body": "１字アキか改行か判然せず",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000879_145"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃１段目］",
+      "body": "１段目",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000081_45631"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃１１字下げて、地より３字上げて］",
+      "body": "１１字下げて、地より３字上げて",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000301_1872"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃１９字下げて］",
+      "body": "１９字下げて",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000182_946"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃２文字目の「i」は下付き小文字、４文字目の「i」は上付き小文字］",
+      "body": "２文字目の「i」は下付き小文字、４文字目の「i」は上付き小文字",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000042_2345"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃２段目］",
+      "body": "２段目",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000081_45631"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃２０字下げて、地より１字あきで］",
+      "body": "２０字下げて、地より１字あきで",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000008_1083"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃２０字下げて、地より３字上げで］",
+      "body": "２０字下げて、地より３字上げで",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000301_1872"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃２８字下げて、地より３字上げて］",
+      "body": "２８字下げて、地より３字上げて",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000301_1872"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃３つの「｛」は１つに繋がる］",
+      "body": "３つの「｛」は１つに繋がる",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_4212"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃４段目、Sinhaのnは上ドット付き、Visnuのsnはともに下ドット付き］",
+      "body": "４段目、Sinhaのnは上ドット付き、Visnuのsnはともに下ドット付き",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "001096_43554"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃４行目］",
+      "body": "４行目",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_3466"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃５行目］",
+      "body": "５行目",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_3466"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃６字下がる］",
+      "body": "６字下がる",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000106_2415"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃６段目、Visnuのsnはともに下ドット付き］",
+      "body": "６段目、Visnuのsnはともに下ドット付き",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "001096_43554"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃７段目、Sinhaのnは上ドット付き］",
+      "body": "７段目、Sinhaのnは上ドット付き",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "001096_43554"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃ＪＲとなった国電の旧称］",
+      "body": "ＪＲとなった国電の旧称",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000160_1255"
+      ]
+    },
+    {
+      "kind": "EditorialNoteBottomTextCorrection",
+      "raw": "」はママ注記としました。「大丈夫で」には原文の意味もあるので注記はつけていません。\r\n入力：砂場清隆\r\n校正：えにしだ\r\n2019年10月28日作成\r\n2020年3月19日修正\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（https://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
+      "body": "」はママ注記としました。「大丈夫で」には原文の意味もあるので注記はつけていません。\r\n入力：砂場清隆\r\n校正：えにしだ\r\n2019年10月28日作成\r\n2020年3月19日修正\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（https://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "001257_53680"
+      ]
+    },
+    {
+      "kind": "EditorialNoteBottomTextCorrection",
+      "raw": "」はママ］",
+      "body": "」はママ］",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "001529_50685"
+      ]
+    },
+    {
+      "kind": "EditorialNoteBottomTextCorrection",
+      "raw": "」は底本では「amiticiae」］",
+      "body": "」は底本では「amiticiae」］",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000148_789"
+      ]
+    },
+    {
+      "kind": "EditorialNoteBottomTextCorrection",
+      "raw": "」は底本では「　ルミ」と誤植］",
+      "body": "」は底本では「　ルミ」と誤植］",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000236_4300"
+      ]
+    },
+    {
+      "kind": "EditorialNoteBottomTextCorrection",
+      "raw": "」は底本では「すいぶん」でしたが、親本を参照して直しました。\r\n入力：Hiroshi_O\r\n校正：門田裕志、小林繁雄\r\n2003年8月3日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
+      "body": "」は底本では「すいぶん」でしたが、親本を参照して直しました。\r\n入力：Hiroshi_O\r\n校正：門田裕志、小林繁雄\r\n2003年8月3日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000154_1640"
+      ]
+    },
+    {
+      "kind": "EditorialNoteBottomTextCorrection",
+      "raw": "」は底本では「それそれ」でしたが、親本を参照して直しました。\r\n入力：鈴木厚司\r\n校正：多羅尾伴内\r\n2003年8月27日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
+      "body": "」は底本では「それそれ」でしたが、親本を参照して直しました。\r\n入力：鈴木厚司\r\n校正：多羅尾伴内\r\n2003年8月27日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000154_4287"
+      ]
     }
   ],
   "unknown_examples": [
@@ -11834,41 +11824,6 @@
       "body": "原文まま"
     },
     {
-      "work_id": "000023_55372",
-      "line": 71,
-      "kind": "CommandFullwidth",
-      "raw": "［＃「（昭和２年５月「文芸春秋」）」は１段階小さな文字］",
-      "body": "「（昭和２年５月「文芸春秋」）」は１段階小さな文字"
-    },
-    {
-      "work_id": "000023_55376",
-      "line": 118,
-      "kind": "CommandFullwidth",
-      "raw": "［＃「（昭和４年５月「文芸春秋」）」は１段階小さな文字］",
-      "body": "「（昭和４年５月「文芸春秋」）」は１段階小さな文字"
-    },
-    {
-      "work_id": "000023_55380",
-      "line": 147,
-      "kind": "CommandFullwidth",
-      "raw": "［＃「（昭和２年３月「中央公論」）」は１段階小さな文字］",
-      "body": "「（昭和２年３月「中央公論」）」は１段階小さな文字"
-    },
-    {
-      "work_id": "000023_55385",
-      "line": 122,
-      "kind": "CommandFullwidth",
-      "raw": "［＃「（昭和５年９月「文芸春秋」）」は１段階小さな文字］",
-      "body": "「（昭和５年９月「文芸春秋」）」は１段階小さな文字"
-    },
-    {
-      "work_id": "000023_55402",
-      "line": 217,
-      "kind": "CommandFullwidth",
-      "raw": "［＃「（昭和３年１月「中央公論」）」は１段階小さな文字］",
-      "body": "「（昭和３年１月「中央公論」）」は１段階小さな文字"
-    },
-    {
       "work_id": "000025_1144",
       "line": 18,
       "kind": "CommandFullwidth",
@@ -12072,20 +12027,6 @@
       "body": "「霙」の誤り？、400-7"
     },
     {
-      "work_id": "000040_380",
-      "line": 41,
-      "kind": "CommandFullwidth",
-      "raw": "［＃「３」は「√」の記号の中に入っている］",
-      "body": "「３」は「√」の記号の中に入っている"
-    },
-    {
-      "work_id": "000040_380",
-      "line": 35,
-      "kind": "CommandFullwidth",
-      "raw": "［＃「３」は「√」の記号の中に入っている］",
-      "body": "「３」は「√」の記号の中に入っている"
-    },
-    {
       "work_id": "000042_2345",
       "line": 41,
       "kind": "CommandFullwidth",
@@ -12205,13 +12146,6 @@
       "body": "「岩波日本」と「文学講座」が１行内で２行に分けられている"
     },
     {
-      "work_id": "000043_341",
-      "line": 36,
-      "kind": "CommandFullwidth",
-      "raw": "［＃「恋愛相談所」は枠囲み］",
-      "body": "「恋愛相談所」は枠囲み"
-    },
-    {
       "work_id": "000048_358",
       "line": 45,
       "kind": "CommandFullwidth",
@@ -12252,18 +12186,74 @@
       "kind": "CommandFullwidth",
       "raw": "［＃「※」は「たけかんむり＋隻」、17-8］",
       "body": "「※」は「たけかんむり＋隻」、17-8"
+    },
+    {
+      "work_id": "000051_361",
+      "line": 9,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「※」は「たけかんむり＋隻」、17-8］",
+      "body": "「※」は「たけかんむり＋隻」、17-8"
+    },
+    {
+      "work_id": "000051_3611",
+      "line": 29,
+      "kind": "CommandFullwidth",
+      "raw": "［＃以下、地付き］",
+      "body": "以下、地付き"
+    },
+    {
+      "work_id": "000051_830",
+      "line": 68,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「一ノ戸」の「ノ」は小書き］",
+      "body": "「一ノ戸」の「ノ」は小書き"
+    },
+    {
+      "work_id": "000052_5058",
+      "line": 16,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「雲隠れ」の帖は冒頭の晶子詞のみで本文はありません。］",
+      "body": "「雲隠れ」の帖は冒頭の晶子詞のみで本文はありません。"
+    },
+    {
+      "work_id": "000058_371",
+      "line": 107,
+      "kind": "CommandFullwidth",
+      "raw": "［＃天より３１字下げ、地より２字上げで］",
+      "body": "天より３１字下げ、地より２字上げで"
+    },
+    {
+      "work_id": "000058_371",
+      "line": 101,
+      "kind": "CommandFullwidth",
+      "raw": "［＃天より３１字下げ、地より２字上げで］",
+      "body": "天より３１字下げ、地より２字上げで"
+    },
+    {
+      "work_id": "000061_510",
+      "line": 213,
+      "kind": "CommandFullwidth",
+      "raw": "［＃ここから１０字下げ折り返して１７字下げ］",
+      "body": "ここから１０字下げ折り返して１７字下げ"
+    },
+    {
+      "work_id": "000067_1790",
+      "line": 346,
+      "kind": "CommandFullwidth",
+      "raw": "［＃ここには室生犀星の詩が引用されている］",
+      "body": "ここには室生犀星の詩が引用されている"
     }
   ],
   "decode_failures": [],
   "representability": {
-    "typed_occurrences": 4566108,
-    "raw_preserved_occurrences": 36923,
+    "typed_occurrences": 4566192,
+    "raw_preserved_occurrences": 39697,
     "out_of_body_occurrences": 950,
     "unsupported_occurrences": 13920,
     "needs_research_occurrences": 0
   },
   "strict_errors": [
-    "1240 unallowlisted source markers"
+    "1119 unallowlisted source markers"
   ],
   "inputs": {
     "matrix": "/home/bor/Projects/ab-validator/data/aozora-syntax-coverage.toml",

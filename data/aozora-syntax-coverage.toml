@@ -256,7 +256,7 @@ reference_sources = [
   "references/aozorabunko/rules/kijyunn.html",
 ]
 source_examples = ["［＃大見出し］", "［＃「見出し」は中見出し］"]
-source_patterns = ['［＃「[^\n]+」は[大中小]見出し］', '［＃(ここから|ここで)?[大中小]見出し?(終わり)?］']
+source_patterns = ['［＃「[^\n]+」は[大中小]見出し］', '［＃(ここから|ここで)?[大中小]見出し?(終わり)?］', '［＃ここで見出し終わり］', '［＃[大中小]?見出し文字］']
 ir_nodes = ["Block::Heading"]
 aat_nodes = ["heading"]
 tei_projection = "head"
@@ -454,7 +454,7 @@ reference_sources = [
   "references/aozorabunko/rules/kijyunn.html",
 ]
 source_examples = ["［＃割り注］", "［＃ここから割り注］"]
-source_patterns = ['［＃割り注］|［＃ここから割り注］', '［＃(ここで)?割り注終わり］']
+source_patterns = ['［＃割り注］|［＃ここから割り注］', '［＃(ここで)?割り注終わり］', '［＃以下の括弧内割注］']
 ir_nodes = ["Inline::Warichu", "Block::Warichu"]
 aat_nodes = ["style"]
 tei_projection = "note or seg with rendition"
@@ -1336,7 +1336,7 @@ category = "glyph"
 feature_keys = ["glyph_variant", "diacritic", "fraction", "script_glyph"]
 reference_sources = ["references/aozorabunko/rules/kijyunn.html", "P4suta/aozora-notation-spec@b60665fd50b596c967254f99b61f418495656fef:src/notation/script-glyphs.md", "P4suta/aozora-notation-spec@b60665fd50b596c967254f99b61f418495656fef:src/notation/fraction.md"]
 source_examples = ["［＃「e」はアクサン（´）付き］", "［＃「?!」は一字］", "［＃「1/4」は分数］"]
-source_patterns = ['［＃[^］]*(「[^」]+」|[A-Za-zΑ-ωα-ωηωεισοψ])[^］]*(上に「[^」]+」付き|下に「[^」]+」付き|「[^」]+」付き|アクサン|ウムラウト|帯気|曲アクセント|鋭アクセント|平息|ファイナルシグマ)[^］]*］', '［＃[^］]*(一字|指数|分数|覆面の英字|矢印が下向き|右横に縦棒あり|の中に「[^」]+」)[^］]*］']
+source_patterns = ['［＃[^］]*(「[^」]+」|[A-Za-zΑ-ωα-ωηωεισοψ])[^］]*(上に「[^」]+」付き|下に「[^」]+」付き|「[^」]+」付き|アクサン|ウムラウト|帯気|曲アクセント|鋭アクセント|平息|ファイナルシグマ)[^］]*］', '［＃[^］]*(一字|指数|分数|覆面の英字|矢印が下向き|右横に縦棒あり|の中に「[^」]+」|右に「[^」]+」|小さい「[^」]+」|ローマ数字|○付き文字|正字と同字|記号の中に入っている)[^］]*］']
 ir_nodes = []
 aat_nodes = ["raw"]
 tei_projection = "note type=glyph or g with charDecl"
@@ -2097,10 +2097,13 @@ source_patterns = [
   '［＃「[^\n]+」は行[左右]小書き］',
   '［＃「[^\n]+」は小書き右寄せ］',
   '［＃「[^」]+」は(すべて)?[上下]付き(小文字|小書き)?］',
+  '［＃「[^」]+」はそれぞれ縦中横、数字は[上下]付き小書き］',
   '［＃[^］]+すべて[上下]付き小文字[^］]*］',
   '［＃「[^」]+」は小書き］',
   '［＃「[^\n]+」[はの]小(さい)?文字］',
+  '［＃「[^\n]+」は[大中小]?[０-９0-9一二三四五六七八九十]+段階(小さ|大き)な文字］',
   '［＃「[^」]+」は上部に出ている］',
+  '［＃ここで[大中小]?[０-９0-9一二三四五六七八九十]+段階(小さ|大き)な文字終わり］',
   '［＃[大中小]文字］',
   '［＃大文字、太字］',
   '小さい活字',
@@ -2170,7 +2173,7 @@ category = "inline_annotation"
 feature_keys = ["keigakomi"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/keigakomi.rb", "references/parsers/aozora2html/lib/aozora2html/tag/inline_keigakomi.rb"]
 source_examples = ["［＃ここから罫囲み］", "［＃ここで罫囲み終わり］", "「text」の罫囲み"]
-source_patterns = ['［＃ここから罫囲み］', '［＃(ここで)?罫囲み(終わり)?］', '「[^\n]+」[のは]罫囲み']
+source_patterns = ['［＃ここから罫囲み］', '［＃(ここで)?罫囲み(終わり)?］', '［＃ここで字下げ、(枠|罫)囲み終わり］', '「[^\n]+」[のは]罫囲み', '［＃「[^\n]+」は枠囲み］']
 ir_nodes = ["Inline::Style", "Block::Style"]
 aat_nodes = ["keigakomi"]
 tei_projection = "ab rend=keigakomi"
@@ -2298,7 +2301,7 @@ category = "layout"
 feature_keys = ["jisage_block"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/jisage.rb", "references/parsers/aozora2html/lib/aozora2html/tag/multiline_jisage.rb"]
 source_examples = ["［＃ここから2字下げ］", "［＃ここで2字下げ終わり］"]
-source_patterns = ['［＃ここから[０-９0-9一二三四五六七八九十]+字下げ］', '［＃(ここより|以下)[０-９0-9一二三四五六七八九十]+字下げ］', '［＃ここから[０-９0-9]+字下げ、１行[０-９0-9]+字組みで］', '［＃ここから[０-９0-9]+字下げ、[０-９0-9]+字詰め］', '［＃ここから[０-９0-9]+字下げ、[^］]+］', '［＃改行ごとに[０-９0-9一二三四五六七八九十]+字下げ］', '［＃([０-９0-9一二三四五六七八九十]+字|字)?下げ(ここまで|終わり|終り)］', '［＃ここで字下げ(おわり|終り|終わり)］', '［＃ここで字下げ終わり、[^］]+終わり］', '［＃ここで字下げ、[０-９0-9]+字組み終わり］']
+source_patterns = ['［＃ここから[０-９0-9一二三四五六七八九十]+字下げ］', '［＃(ここより|以下)[０-９0-9一二三四五六七八九十]+字下げ］', '［＃ここから最後まで[０-９0-9一二三四五六七八九十]+字下げ］', '［＃ここから[０-９0-9]+字下げ、１行[０-９0-9]+字組みで］', '［＃ここから[０-９0-9]+字下げ、[０-９0-9]+字詰め］', '［＃ここから[０-９0-9]+字下げ、[^］]+］', '［＃「[^\n]+」全体、天より[０-９0-9一二三四五六七八九十]+字下げ］', '［＃天より[０-９0-9一二三四五六七八九十]+字下げて地より[０-９0-9一二三四五六七八九十]+字上げで］', '［＃改行ごとに[０-９0-9一二三四五六七八九十]+字下げ］', '［＃([０-９0-9一二三四五六七八九十]+字|字)?下げ(ここまで|終わり|終り)］', '［＃ここで[０-９0-9一二三四五六七八九十]+字下げ終わり］', '［＃ここで字下げ(おわり|終り|終わり)］', '［＃ここで文字下げ終わり］', '［＃ここで字下げ終わり、[^］]+終わり］', '［＃ここで字下げ、[０-９0-9]+字組み終わり］']
 ir_nodes = ["Block::Layout"]
 aat_nodes = ["jisage_block"]
 tei_projection = "p rend=jisage"
@@ -2426,7 +2429,7 @@ category = "layout"
 feature_keys = ["chitsuki"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/chitsuki.rb"]
 source_examples = ["［＃ここから地付き］", "［＃ここから2字上げ］", "［＃この行地付き］"]
-source_patterns = ['［＃(ここから|この行)?(地付き|右寄せ|[０-９0-9]+字上げ)］', '［＃「地付き］', '［＃(ここから)?地から[０-９0-9]+字上げ］', '［＃地より[０-９0-9]+字(上げ|上がり)］', '［＃ここで(地付き|字上げ)終わり］', '［＃下げて、?地より[０-９0-9]+字あきで］', '［＃[０-９0-9]+字下げ、地より[０-９0-9]+字あきで］', '［＃地付き、地より[０-９0-9]+字(アキ|あき)］', '［＃地付きで］', '［＃(「[^\n]+」は)?文末より[０-９0-9]+字上げ揃え］']
+source_patterns = ['［＃(ここから|この行)?(地付き|右寄せ|[０-９0-9]+字上げ)］', '［＃「地付き］', '［＃(ここから)?地から[０-９0-9]+字上げ］', '［＃地より[０-９0-9]+字(上げ|上がり)］', '［＃ここで(地付き|字上げ)終わり］', '［＃下げて、?地より[０-９0-9]+字あきで］', '［＃[０-９0-9]+字下げ、地より[０-９0-9]+字あきで］', '［＃地付き、地より[０-９0-9]+字(アキ|あき)］', '［＃地付きで］', '［＃下げて地付きで］', '［＃地寄せ］', '［＃この行は行末より[０-９0-9]+字上がり］', '［＃(「[^\n]+」は)?文末より[０-９0-9]+字上げ揃え］']
 ir_nodes = ["Block::Layout"]
 aat_nodes = ["style"]
 tei_projection = "p rend=chitsuki"
@@ -2618,7 +2621,7 @@ category = "layout"
 feature_keys = ["yokogumi"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/multiline_yokogumi.rb", "references/parsers/aozora2html/lib/aozora2html/tag/inline_yokogumi.rb"]
 source_examples = ["［＃ここから横組み］", "「ABC」の横組み"]
-source_patterns = ['［＃ここから横組み］', '［＃横組み］', '［＃(ここで)?横組み終わり］', '「[^」]+」の横組み', '［＃「[^」]+」は横組み］']
+source_patterns = ['［＃ここから横組み］', '［＃横組み］', '［＃(ここで)?横組み終わり］', '［＃ここで字下げ、横組み終わり］', '「[^」]+」の横組み', '［＃「[^」]+」は横組み］', '［＃「[^\n]+」は横書き］', '［＃横書き、[^］]+］']
 ir_nodes = ["Block::Layout", "Inline::Style"]
 aat_nodes = ["yokogumi"]
 tei_projection = "ab rend=yokogumi"
@@ -2682,7 +2685,7 @@ category = "layout"
 feature_keys = ["tcy"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/dir.rb"]
 source_examples = ["「12」の縦中横", "［＃ここから縦中横］"]
-source_patterns = ['「[^」]+」(の|は)縦中横', '［＃(ここから)?縦中横］', '［＃(ここで)?縦中横終わり］', '［＃「[^」]+」は横一列］', '［＃（[^\n]+）は縦中横］']
+source_patterns = ['「[^」]+」(の|は)縦中横', '［＃(ここから)?縦中横］', '［＃(ここで)?縦中横終わり］', '［＃「[^」]+」は横一列］', '［＃「[^」]+」はそれぞれ縦中横[^］]*］', '［＃（[^\n]+）は縦中横］']
 ir_nodes = ["Inline::Style", "Block::Style"]
 aat_nodes = ["tcy"]
 tei_projection = "hi rend=tcy"
@@ -2746,7 +2749,7 @@ category = "layout"
 feature_keys = ["multicolumn", "dan-gumi"]
 reference_sources = ["references/aozorabunko/rules/kijyunn.html", "docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
 source_examples = ["［＃ここから２段組み］", "［＃ここで段組み終わり］"]
-source_patterns = ['［＃ここから[０-９0-9]+段組み?］', '［＃ここで([０-９0-9]+段組み?|段組み?)終わり］', '［＃段組み適用外］']
+source_patterns = ['［＃ここから[０-９0-9]+段組み?］', '［＃ここで([０-９0-9]+段組み?|段組み?)終わり］', '［＃段組み適用外］', '［＃「[^\n]+」と「[^\n]+」は[０-９0-9]+列に並ぶ］', '［＃「[^\n]+」と「[^\n]+」は横並びになっている］']
 ir_nodes = ["Raw"]
 aat_nodes = ["raw"]
 tei_projection = "div rend=columns"
@@ -2810,7 +2813,7 @@ category = "structure"
 feature_keys = ["quote_block", "letter_block"]
 reference_sources = ["docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
 source_examples = ["［＃ここから引用文、３字下げ］", "［＃引用文終わり］", "［＃これより手紙文、１字下げ］"]
-source_patterns = ['［＃ここから引用文、[０-９0-9]+字下げ(、[０-９0-9]+行アキ)?］', '［＃引用文終わり］', '［＃(これより|ここから)手紙文、[０-９0-9]+字下げ］']
+source_patterns = ['［＃ここから引用文、[０-９0-9]+字下げ(、[０-９0-9]+行アキ)?］', '［＃(引用文終わり|ここで引用文終り)］', '［＃(これより|ここより|ここから)手紙文、[０-９0-9]+字下げ］']
 ir_nodes = ["Raw"]
 aat_nodes = ["raw"]
 tei_projection = "quote or div type=letter"
@@ -3066,7 +3069,7 @@ category = "media"
 feature_keys = ["caption"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/multiline_caption.rb"]
 source_examples = ["［＃ここからキャプション］", "［＃ここでキャプション終わり］"]
-source_patterns = ['［＃ここからキャプション］', '［＃(ここで)?キャプション終わり］']
+source_patterns = ['［＃ここからキャプション］', '［＃(ここで)?キャプション終わり］', '［＃ここから図表下部解説文］', '［＃ここで図表下部解説文終わり］']
 ir_nodes = ["Block::Figure", "Inline::Caption"]
 aat_nodes = ["caption_block"]
 tei_projection = "figure/head"

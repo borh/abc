@@ -201,6 +201,17 @@ Best text-surface residuals by adapter:
 | aozora-rs | 28 | 2 | 27 |
 | aozora2 | 0 | 0 | 2 |
 
+TEI-EAJ structural profiles across the matrix:
+
+| profile | rows |
+|---|---:|
+| plain prose | 81 |
+| drama | 30 |
+| Level 4 enrichment | 29 |
+| notes | 21 |
+| front/back matter | 6 |
+| verse | 6 |
+
 Interpretation: paragraph segmentation is primarily an adapter/source-structure
 fidelity problem, not a parser-IR schema gap. AAT paragraph-block counts already
 match parser-IR paragraph counts in the dominant path; 148/173 matrix rows have
@@ -209,7 +220,11 @@ bucket now resolves into 4 expected source-note back-matter routes and 3
 aozora2html source-derived page-break projections; no generic ABC TEI paragraph
 renderer loss remains in the matrix. Text alignment also differs by parser:
 `aozora2html` and `aozora-rs` often reduce to ruby/parenthetical policy, while
-`aozora-epub3` has the largest true residual body-text mismatch bucket.
+`aozora-epub3` has the largest true residual body-text mismatch bucket. The
+next Level 3 admission gate should be profile-aware: plain prose can be judged
+on paragraph/source-note/text policy, while drama, verse, notes, front/back
+matter, and Level 4 enrichment need separate policy decisions instead of raw
+`<p>` count parity.
 
 Adapter-version matching is exact. A future adapter-version tuple requires a
 new measured conversion-audit entry rather than wildcard or prefix registry

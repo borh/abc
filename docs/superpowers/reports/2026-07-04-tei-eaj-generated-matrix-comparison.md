@@ -52,6 +52,42 @@ This report materializes ABC TEI from parser-IR, then compares the generated TEI
 | ruby_expanded_parenless_generated_contains_tei_eaj | 9 |
 | ruby_expanded_parenless_tei_eaj_contains_generated | 2 |
 
+## TEI-EAJ Structure Profile Buckets
+
+| profile | rows |
+|---|---:|
+| drama | 30 |
+| front_back_matter | 6 |
+| lv4_enrichment | 29 |
+| notes | 21 |
+| plain_prose | 81 |
+| verse | 6 |
+
+## Paragraph Origin by TEI-EAJ Profile
+
+| profile | origin | rows |
+|---|---|---:|
+| drama | adapter_collapsed | 8 |
+| drama | adapter_over_segmented | 12 |
+| drama | adapter_under_segmented | 7 |
+| drama | aligned | 1 |
+| drama | page_break_projection | 2 |
+| front_back_matter | adapter_over_segmented | 5 |
+| front_back_matter | aligned | 1 |
+| lv4_enrichment | adapter_collapsed | 2 |
+| lv4_enrichment | adapter_over_segmented | 17 |
+| lv4_enrichment | aligned | 6 |
+| lv4_enrichment | source_note_back_routing | 4 |
+| notes | adapter_collapsed | 5 |
+| notes | adapter_over_segmented | 14 |
+| notes | aligned | 2 |
+| plain_prose | adapter_collapsed | 1 |
+| plain_prose | adapter_over_segmented | 72 |
+| plain_prose | aligned | 8 |
+| verse | adapter_collapsed | 2 |
+| verse | adapter_over_segmented | 3 |
+| verse | page_break_projection | 1 |
+
 ## Adapter Paragraph Delta Buckets
 
 | adapter | bucket | rows |

@@ -21,6 +21,30 @@ from typing import Any
 
 TEI = "{http://www.tei-c.org/ns/1.0}"
 
+TEI_STRUCTURE_TAGS = (
+    "front",
+    "body",
+    "back",
+    "div",
+    "p",
+    "sp",
+    "speaker",
+    "stage",
+    "castList",
+    "castItem",
+    "role",
+    "roleName",
+    "said",
+    "l",
+    "lg",
+    "note",
+    "pb",
+    "lb",
+    "persName",
+    "placeName",
+    "rs",
+)
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -90,6 +114,46 @@ def descendants(parent: ET.Element | None, local: str) -> list[ET.Element]:
         for node in parent.iter()
         if node.tag == wanted or local_name(node.tag) == local
     ]
+
+
+def tag_counts(parent: ET.Element | None) -> dict[str, int]:
+    if parent is None:
+        return {}
+    counts: dict[str, int] = {}
+    for node in parent.iter():
+        name = local_name(node.tag)
+        counts[name] = counts.get(name, 0) + 1
+    return counts
+
+
+def selected_tag_counts(counts: dict[str, int]) -> dict[str, int]:
+    return {tag: counts[tag] for tag in TEI_STRUCTURE_TAGS if counts.get(tag)}
+
+
+def tei_structure_profiles(
+    body_counts: dict[str, int],
+    document_counts: dict[str, int],
+    *,
+    back_source_note_count: int,
+) -> list[str]:
+    profiles: list[str] = []
+    if any(
+        body_counts.get(tag, 0)
+        for tag in ("sp", "speaker", "stage", "castList", "castItem", "role")
+    ):
+        profiles.append("drama")
+    if any(body_counts.get(tag, 0) for tag in ("l", "lg")):
+        profiles.append("verse")
+    if any(
+        body_counts.get(tag, 0)
+        for tag in ("said", "persName", "placeName", "roleName", "rs")
+    ):
+        profiles.append("lv4_enrichment")
+    if body_counts.get("note", 0) or back_source_note_count:
+        profiles.append("notes")
+    if document_counts.get("front", 0) or document_counts.get("back", 0):
+        profiles.append("front_back_matter")
+    return profiles or ["plain_prose"]
 
 
 def text_of(node: ET.Element | None) -> str:
@@ -230,17 +294,28 @@ def tei_counts(path: pathlib.Path) -> dict[str, Any]:
     root = ET.parse(path).getroot()
     body = first_descendant(root, "body")
     back = first_descendant(root, "back")
+    document_tag_counts = selected_tag_counts(tag_counts(root))
+    body_tag_counts = selected_tag_counts(tag_counts(body))
     body_notes = descendants(body, "note")
     back_notes = descendants(back, "note")
     back_source_notes = [
         note for note in back_notes if note.attrib.get("type") == "source-attribution"
     ]
+    structure_profiles = tei_structure_profiles(
+        body_tag_counts,
+        document_tag_counts,
+        back_source_note_count=len(back_source_notes),
+    )
     return {
         "path": str(path),
         "body_p_count": len(descendants(body, "p")),
         "body_note_count": len(body_notes),
         "back_note_count": len(back_notes),
         "back_source_note_count": len(back_source_notes),
+        "body_tag_counts": body_tag_counts,
+        "document_tag_counts": document_tag_counts,
+        "structure_profile": structure_profiles[0],
+        "structure_profiles": structure_profiles,
         "body_text": text_of(body),
         "body_base_text": base_text_of(body),
         "body_ruby_expanded_text": base_text_of(body, {"note", "rp"}),
@@ -558,6 +633,10 @@ def materialize_row(
             "body_note_count": tei_eaj["body_note_count"],
             "back_note_count": tei_eaj["back_note_count"],
             "back_source_note_count": tei_eaj["back_source_note_count"],
+            "body_tag_counts": tei_eaj["body_tag_counts"],
+            "document_tag_counts": tei_eaj["document_tag_counts"],
+            "structure_profile": tei_eaj["structure_profile"],
+            "structure_profiles": tei_eaj["structure_profiles"],
             "workset_p_count": row.get("tei", {}).get("tei_eaj_p_count"),
             "workset_note_count": row.get("tei", {}).get("tei_eaj_note_count"),
         },
@@ -604,6 +683,17 @@ def increment_nested_bucket(
 ) -> None:
     nested = buckets.setdefault(key, {})
     nested[bucket] = nested.get(bucket, 0) + 1
+
+
+def increment_double_nested_bucket(
+    buckets: dict[str, dict[str, dict[str, int]]],
+    outer_key: str,
+    inner_key: str,
+    bucket: str,
+) -> None:
+    outer = buckets.setdefault(outer_key, {})
+    inner = outer.setdefault(inner_key, {})
+    inner[bucket] = inner.get(bucket, 0) + 1
 
 
 def render_markdown(summary: dict[str, Any]) -> str:
@@ -667,6 +757,33 @@ def render_markdown(summary: dict[str, Any]) -> str:
     )
     for bucket, count in sorted(summary["body_text_match_buckets"].items()):
         lines.append(f"| {bucket} | {count} |")
+
+    lines.extend(
+        [
+            "",
+            "## TEI-EAJ Structure Profile Buckets",
+            "",
+            "| profile | rows |",
+            "|---|---:|",
+        ]
+    )
+    for profile, count in sorted(summary["tei_eaj_structure_profile_buckets"].items()):
+        lines.append(f"| {profile} | {count} |")
+
+    lines.extend(
+        [
+            "",
+            "## Paragraph Origin by TEI-EAJ Profile",
+            "",
+            "| profile | origin | rows |",
+            "|---|---|---:|",
+        ]
+    )
+    for profile, buckets in sorted(
+        summary["paragraph_origin_by_tei_eaj_profile"].items()
+    ):
+        for bucket, count in sorted(buckets.items()):
+            lines.append(f"| {profile} | {bucket} | {count} |")
 
     lines.extend(
         [
@@ -841,6 +958,11 @@ def main() -> int:
     adapter_paragraph_delta_buckets: dict[str, dict[str, int]] = {}
     adapter_paragraph_origin_buckets: dict[str, dict[str, int]] = {}
     adapter_body_text_match_buckets: dict[str, dict[str, int]] = {}
+    tei_eaj_structure_profile_buckets: dict[str, int] = {}
+    paragraph_origin_by_tei_eaj_profile: dict[str, dict[str, int]] = {}
+    adapter_paragraph_origin_by_tei_eaj_profile: dict[
+        str, dict[str, dict[str, int]]
+    ] = {}
     materialized = 0
     for row in rows:
         adapter = row.get("selected_aat", {}).get("adapter") or "unknown"
@@ -852,6 +974,21 @@ def main() -> int:
         )
         increment_bucket(paragraph_origin_buckets, origin_bucket)
         increment_nested_bucket(adapter_paragraph_origin_buckets, adapter, origin_bucket)
+        structure_profile = row.get("tei_eaj", {}).get(
+            "structure_profile", "unknown"
+        )
+        increment_bucket(tei_eaj_structure_profile_buckets, structure_profile)
+        increment_nested_bucket(
+            paragraph_origin_by_tei_eaj_profile,
+            structure_profile,
+            origin_bucket,
+        )
+        increment_double_nested_bucket(
+            adapter_paragraph_origin_by_tei_eaj_profile,
+            adapter,
+            structure_profile,
+            origin_bucket,
+        )
         relation = row.get("text", {}).get("body_base_text_relation", "unknown")
         increment_bucket(body_text_buckets, relation)
         match_bucket = row.get("text", {}).get("body_text_match_bucket", "unknown")
@@ -883,6 +1020,11 @@ def main() -> int:
         "paragraph_origin_buckets": paragraph_origin_buckets,
         "body_text_relation_buckets": body_text_buckets,
         "body_text_match_buckets": body_text_match_buckets,
+        "tei_eaj_structure_profile_buckets": tei_eaj_structure_profile_buckets,
+        "paragraph_origin_by_tei_eaj_profile": paragraph_origin_by_tei_eaj_profile,
+        "adapter_paragraph_origin_by_tei_eaj_profile": (
+            adapter_paragraph_origin_by_tei_eaj_profile
+        ),
         "adapter_paragraph_delta_buckets": adapter_paragraph_delta_buckets,
         "adapter_paragraph_origin_buckets": adapter_paragraph_origin_buckets,
         "adapter_body_text_match_buckets": adapter_body_text_match_buckets,

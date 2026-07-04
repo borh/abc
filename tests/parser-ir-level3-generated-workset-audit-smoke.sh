@@ -133,6 +133,9 @@ jq -e '.totals.materialization_succeeded == 2' "$out_dir/audit/summary.json" >/d
 jq -e '([.rows[].selected_aat.adapter] | unique | length) == 2' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.rows[0].generated_tei.body_p_count >= 1' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.rows[0].tei_eaj.body_p_count == 2' "$out_dir/audit/summary.json" >/dev/null
+jq -e '.rows[0].tei_eaj.structure_profile == "plain_prose"' "$out_dir/audit/summary.json" >/dev/null
+jq -e '.rows[0].tei_eaj.structure_profiles == ["plain_prose"]' "$out_dir/audit/summary.json" >/dev/null
+jq -e '.rows[0].tei_eaj.body_tag_counts.p == 2' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.rows[0].aat.paragraph_blocks >= 1' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.rows[0].classification.paragraph_delta_bucket != null' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.rows[0].classification.paragraph_origin_bucket != null' "$out_dir/audit/summary.json" >/dev/null
@@ -143,6 +146,8 @@ jq -e '.rows[0].paragraph_rendering.source_note_back_ranges != null' "$out_dir/a
 jq -e '.rows[0].deltas.generated_vs_parser_ir_body_p_count != null' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.rows[0].deltas.aat_paragraph_blocks_vs_tei_eaj_body_p_count != null' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.paragraph_origin_buckets | type == "object"' "$out_dir/audit/summary.json" >/dev/null
+jq -e '.tei_eaj_structure_profile_buckets.plain_prose == 2' "$out_dir/audit/summary.json" >/dev/null
+jq -e '.paragraph_origin_by_tei_eaj_profile.plain_prose | type == "object"' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.adapter_paragraph_origin_buckets.aozora2html | type == "object"' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.adapter_paragraph_origin_buckets["aozora-rs"] | type == "object"' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.adapter_paragraph_delta_buckets.aozora2html | type == "object"' "$out_dir/audit/summary.json" >/dev/null
@@ -159,6 +164,8 @@ jq -e '.rows[0].text.surface_relations.ruby_expanded_parenless.relation != null'
 grep -n "Generated Parser-IR TEI vs TEI-EAJ Workset Audit" "$out_dir/audit/report.md"
 grep -n "Body Text Relation Buckets" "$out_dir/audit/report.md"
 grep -n "Body Text Match Buckets" "$out_dir/audit/report.md"
+grep -n "TEI-EAJ Structure Profile Buckets" "$out_dir/audit/report.md"
+grep -n "Paragraph Origin by TEI-EAJ Profile" "$out_dir/audit/report.md"
 grep -n "Adapter Paragraph Delta Buckets" "$out_dir/audit/report.md"
 grep -n "Paragraph Origin Buckets" "$out_dir/audit/report.md"
 grep -n "Adapter Paragraph Origin Buckets" "$out_dir/audit/report.md"

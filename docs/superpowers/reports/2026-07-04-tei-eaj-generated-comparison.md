@@ -50,6 +50,35 @@ This report materializes ABC TEI from parser-IR, then compares the generated TEI
 | ruby_expanded_parenless_generated_contains_tei_eaj | 5 |
 | ruby_expanded_parenless_tei_eaj_contains_generated | 2 |
 
+## TEI-EAJ Structure Profile Buckets
+
+| profile | rows |
+|---|---:|
+| drama | 10 |
+| front_back_matter | 2 |
+| lv4_enrichment | 9 |
+| notes | 7 |
+| plain_prose | 27 |
+| verse | 2 |
+
+## Paragraph Origin by TEI-EAJ Profile
+
+| profile | origin | rows |
+|---|---|---:|
+| drama | adapter_over_segmented | 3 |
+| drama | adapter_under_segmented | 5 |
+| drama | page_break_projection | 2 |
+| front_back_matter | adapter_over_segmented | 2 |
+| lv4_enrichment | adapter_over_segmented | 5 |
+| lv4_enrichment | aligned | 2 |
+| lv4_enrichment | source_note_back_routing | 2 |
+| notes | adapter_over_segmented | 6 |
+| notes | aligned | 1 |
+| plain_prose | adapter_over_segmented | 25 |
+| plain_prose | aligned | 2 |
+| verse | adapter_over_segmented | 1 |
+| verse | page_break_projection | 1 |
+
 ## Adapter Paragraph Delta Buckets
 
 | adapter | bucket | rows |

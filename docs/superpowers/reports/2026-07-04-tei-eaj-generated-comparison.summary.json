@@ -48,6 +48,70 @@
     "base_equal": 3,
     "base_drop_parentheticals_equal": 1
   },
+  "tei_eaj_structure_profile_buckets": {
+    "drama": 10,
+    "plain_prose": 27,
+    "front_back_matter": 2,
+    "notes": 7,
+    "lv4_enrichment": 9,
+    "verse": 2
+  },
+  "paragraph_origin_by_tei_eaj_profile": {
+    "drama": {
+      "adapter_under_segmented": 5,
+      "adapter_over_segmented": 3,
+      "page_break_projection": 2
+    },
+    "plain_prose": {
+      "adapter_over_segmented": 25,
+      "aligned": 2
+    },
+    "front_back_matter": {
+      "adapter_over_segmented": 2
+    },
+    "notes": {
+      "adapter_over_segmented": 6,
+      "aligned": 1
+    },
+    "lv4_enrichment": {
+      "adapter_over_segmented": 5,
+      "aligned": 2,
+      "source_note_back_routing": 2
+    },
+    "verse": {
+      "adapter_over_segmented": 1,
+      "page_break_projection": 1
+    }
+  },
+  "adapter_paragraph_origin_by_tei_eaj_profile": {
+    "aozora2html": {
+      "drama": {
+        "adapter_under_segmented": 5,
+        "adapter_over_segmented": 3,
+        "page_break_projection": 2
+      },
+      "plain_prose": {
+        "adapter_over_segmented": 25,
+        "aligned": 2
+      },
+      "front_back_matter": {
+        "adapter_over_segmented": 2
+      },
+      "notes": {
+        "adapter_over_segmented": 6,
+        "aligned": 1
+      },
+      "lv4_enrichment": {
+        "adapter_over_segmented": 5,
+        "aligned": 2,
+        "source_note_back_routing": 2
+      },
+      "verse": {
+        "adapter_over_segmented": 1,
+        "page_break_projection": 1
+      }
+    }
+  },
   "adapter_paragraph_delta_buckets": {
     "aozora2html": {
       "under_split": 7,
@@ -131,6 +195,33 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "div": 3,
+          "p": 169,
+          "sp": 138,
+          "speaker": 138,
+          "stage": 57,
+          "lb": 14
+        },
+        "document_tag_counts": {
+          "front": 1,
+          "body": 1,
+          "back": 1,
+          "div": 4,
+          "p": 172,
+          "sp": 138,
+          "speaker": 138,
+          "stage": 57,
+          "note": 1,
+          "lb": 25,
+          "persName": 11
+        },
+        "structure_profile": "drama",
+        "structure_profiles": [
+          "drama",
+          "front_back_matter"
+        ],
         "workset_p_count": 169,
         "workset_note_count": 0
       },
@@ -240,6 +331,21 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "p": 1,
+          "lb": 67
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "p": 2,
+          "note": 1,
+          "lb": 75
+        },
+        "structure_profile": "plain_prose",
+        "structure_profiles": [
+          "plain_prose"
+        ],
         "workset_p_count": 1,
         "workset_note_count": 0
       },
@@ -349,6 +455,22 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "div": 2,
+          "p": 6
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "div": 2,
+          "p": 7,
+          "note": 1,
+          "lb": 8
+        },
+        "structure_profile": "plain_prose",
+        "structure_profiles": [
+          "plain_prose"
+        ],
         "workset_p_count": 6,
         "workset_note_count": 0
       },
@@ -458,6 +580,21 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "p": 1,
+          "lb": 29
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "p": 2,
+          "note": 1,
+          "lb": 39
+        },
+        "structure_profile": "plain_prose",
+        "structure_profiles": [
+          "plain_prose"
+        ],
         "workset_p_count": 1,
         "workset_note_count": 0
       },
@@ -567,6 +704,20 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "p": 28
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "p": 29,
+          "note": 1,
+          "lb": 14
+        },
+        "structure_profile": "plain_prose",
+        "structure_profiles": [
+          "plain_prose"
+        ],
         "workset_p_count": 28,
         "workset_note_count": 0
       },
@@ -676,6 +827,24 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "div": 1,
+          "p": 3,
+          "lb": 3
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "back": 1,
+          "div": 2,
+          "p": 5,
+          "note": 1,
+          "lb": 13
+        },
+        "structure_profile": "front_back_matter",
+        "structure_profiles": [
+          "front_back_matter"
+        ],
         "workset_p_count": 3,
         "workset_note_count": 0
       },
@@ -787,6 +956,22 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "div": 4,
+          "p": 30
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "div": 4,
+          "p": 31,
+          "note": 1,
+          "lb": 8
+        },
+        "structure_profile": "plain_prose",
+        "structure_profiles": [
+          "plain_prose"
+        ],
         "workset_p_count": 30,
         "workset_note_count": 0
       },
@@ -896,6 +1081,25 @@
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "div": 1,
+          "p": 26,
+          "note": 1,
+          "lb": 41
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "div": 1,
+          "p": 27,
+          "note": 2,
+          "lb": 56,
+          "persName": 2
+        },
+        "structure_profile": "notes",
+        "structure_profiles": [
+          "notes"
+        ],
         "workset_p_count": 26,
         "workset_note_count": 1
       },
@@ -1005,6 +1209,25 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "p": 2,
+          "lb": 2,
+          "persName": 2
+        },
+        "document_tag_counts": {
+          "front": 1,
+          "body": 1,
+          "p": 4,
+          "note": 1,
+          "lb": 10,
+          "persName": 6
+        },
+        "structure_profile": "lv4_enrichment",
+        "structure_profiles": [
+          "lv4_enrichment",
+          "front_back_matter"
+        ],
         "workset_p_count": 2,
         "workset_note_count": 0
       },
@@ -1115,6 +1338,25 @@
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "p": 17,
+          "l": 1,
+          "note": 1,
+          "lb": 41
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "p": 18,
+          "l": 1,
+          "note": 2,
+          "lb": 53
+        },
+        "structure_profile": "verse",
+        "structure_profiles": [
+          "verse",
+          "notes"
+        ],
         "workset_p_count": 17,
         "workset_note_count": 1
       },
@@ -1224,6 +1466,21 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "p": 6,
+          "lb": 18
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "p": 6,
+          "note": 1,
+          "lb": 28
+        },
+        "structure_profile": "plain_prose",
+        "structure_profiles": [
+          "plain_prose"
+        ],
         "workset_p_count": 6,
         "workset_note_count": 0
       },
@@ -1333,6 +1590,20 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "p": 5
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "p": 6,
+          "note": 1,
+          "lb": 8
+        },
+        "structure_profile": "plain_prose",
+        "structure_profiles": [
+          "plain_prose"
+        ],
         "workset_p_count": 5,
         "workset_note_count": 0
       },
@@ -1442,6 +1713,23 @@
         "body_note_count": 3,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "p": 8,
+          "note": 3,
+          "lb": 8
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "p": 9,
+          "note": 4,
+          "lb": 17,
+          "persName": 2
+        },
+        "structure_profile": "notes",
+        "structure_profiles": [
+          "notes"
+        ],
         "workset_p_count": 8,
         "workset_note_count": 3
       },
@@ -1553,6 +1841,25 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "div": 7,
+          "p": 7,
+          "l": 399,
+          "lb": 5
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "div": 7,
+          "p": 8,
+          "l": 399,
+          "note": 1,
+          "lb": 23
+        },
+        "structure_profile": "verse",
+        "structure_profiles": [
+          "verse"
+        ],
         "workset_p_count": 7,
         "workset_note_count": 0
       },
@@ -1662,6 +1969,25 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "p": 76,
+          "said": 55
+        },
+        "document_tag_counts": {
+          "front": 1,
+          "body": 1,
+          "p": 78,
+          "said": 55,
+          "note": 1,
+          "lb": 13,
+          "persName": 4
+        },
+        "structure_profile": "lv4_enrichment",
+        "structure_profiles": [
+          "lv4_enrichment",
+          "front_back_matter"
+        ],
         "workset_p_count": 76,
         "workset_note_count": 0
       },
@@ -1771,6 +2097,21 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "p": 1,
+          "lb": 3
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "p": 2,
+          "note": 1,
+          "lb": 11
+        },
+        "structure_profile": "plain_prose",
+        "structure_profiles": [
+          "plain_prose"
+        ],
         "workset_p_count": 1,
         "workset_note_count": 0
       },
@@ -1881,6 +2222,23 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "p": 1,
+          "lb": 25
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "back": 1,
+          "div": 1,
+          "p": 3,
+          "note": 1,
+          "lb": 36
+        },
+        "structure_profile": "front_back_matter",
+        "structure_profiles": [
+          "front_back_matter"
+        ],
         "workset_p_count": 1,
         "workset_note_count": 0
       },
@@ -1992,6 +2350,34 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "div": 2,
+          "p": 126,
+          "sp": 115,
+          "speaker": 115,
+          "stage": 41
+        },
+        "document_tag_counts": {
+          "front": 1,
+          "body": 1,
+          "back": 1,
+          "div": 3,
+          "p": 129,
+          "sp": 115,
+          "speaker": 115,
+          "stage": 41,
+          "castList": 1,
+          "castItem": 3,
+          "note": 1,
+          "lb": 8,
+          "persName": 3
+        },
+        "structure_profile": "drama",
+        "structure_profiles": [
+          "drama",
+          "front_back_matter"
+        ],
         "workset_p_count": 126,
         "workset_note_count": 0
       },
@@ -2101,6 +2487,23 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "p": 1,
+          "lb": 12
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "p": 2,
+          "note": 1,
+          "lb": 23,
+          "persName": 2,
+          "placeName": 2
+        },
+        "structure_profile": "plain_prose",
+        "structure_profiles": [
+          "plain_prose"
+        ],
         "workset_p_count": 1,
         "workset_note_count": 0
       },
@@ -2210,6 +2613,23 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "p": 1,
+          "lb": 13
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "p": 2,
+          "note": 1,
+          "lb": 23,
+          "persName": 2,
+          "placeName": 2
+        },
+        "structure_profile": "plain_prose",
+        "structure_profiles": [
+          "plain_prose"
+        ],
         "workset_p_count": 1,
         "workset_note_count": 0
       },
@@ -2319,6 +2739,22 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "p": 8
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "p": 9,
+          "note": 1,
+          "lb": 10,
+          "persName": 2,
+          "placeName": 2
+        },
+        "structure_profile": "plain_prose",
+        "structure_profiles": [
+          "plain_prose"
+        ],
         "workset_p_count": 8,
         "workset_note_count": 0
       },
@@ -2428,6 +2864,23 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "p": 1,
+          "lb": 17
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "p": 2,
+          "note": 1,
+          "lb": 27,
+          "persName": 2,
+          "placeName": 2
+        },
+        "structure_profile": "plain_prose",
+        "structure_profiles": [
+          "plain_prose"
+        ],
         "workset_p_count": 1,
         "workset_note_count": 0
       },
@@ -2537,6 +2990,23 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "p": 1,
+          "lb": 11
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "p": 2,
+          "note": 1,
+          "lb": 20,
+          "persName": 2,
+          "placeName": 2
+        },
+        "structure_profile": "plain_prose",
+        "structure_profiles": [
+          "plain_prose"
+        ],
         "workset_p_count": 1,
         "workset_note_count": 0
       },
@@ -2642,6 +3112,23 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "p": 1,
+          "lb": 9
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "p": 2,
+          "note": 1,
+          "lb": 18,
+          "persName": 2,
+          "placeName": 2
+        },
+        "structure_profile": "plain_prose",
+        "structure_profiles": [
+          "plain_prose"
+        ],
         "workset_p_count": 1,
         "workset_note_count": 0
       },
@@ -2751,6 +3238,23 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "p": 1,
+          "lb": 15
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "p": 2,
+          "note": 1,
+          "lb": 25,
+          "persName": 2,
+          "placeName": 2
+        },
+        "structure_profile": "plain_prose",
+        "structure_profiles": [
+          "plain_prose"
+        ],
         "workset_p_count": 1,
         "workset_note_count": 0
       },
@@ -2860,6 +3364,23 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "p": 1,
+          "lb": 17
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "p": 2,
+          "note": 1,
+          "lb": 28,
+          "persName": 2,
+          "placeName": 2
+        },
+        "structure_profile": "plain_prose",
+        "structure_profiles": [
+          "plain_prose"
+        ],
         "workset_p_count": 1,
         "workset_note_count": 0
       },
@@ -2969,6 +3490,23 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "p": 1,
+          "lb": 14
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "p": 2,
+          "note": 1,
+          "lb": 23,
+          "persName": 2,
+          "placeName": 2
+        },
+        "structure_profile": "plain_prose",
+        "structure_profiles": [
+          "plain_prose"
+        ],
         "workset_p_count": 1,
         "workset_note_count": 0
       },
@@ -3078,6 +3616,23 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "p": 1,
+          "lb": 14
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "p": 2,
+          "note": 1,
+          "lb": 24,
+          "persName": 1,
+          "placeName": 3
+        },
+        "structure_profile": "plain_prose",
+        "structure_profiles": [
+          "plain_prose"
+        ],
         "workset_p_count": 1,
         "workset_note_count": 0
       },
@@ -3187,6 +3742,23 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "p": 1,
+          "lb": 10
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "p": 2,
+          "note": 1,
+          "lb": 20,
+          "persName": 2,
+          "placeName": 2
+        },
+        "structure_profile": "plain_prose",
+        "structure_profiles": [
+          "plain_prose"
+        ],
         "workset_p_count": 1,
         "workset_note_count": 0
       },
@@ -3296,6 +3868,23 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "p": 1,
+          "lb": 11
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "p": 2,
+          "note": 1,
+          "lb": 21,
+          "persName": 2,
+          "placeName": 2
+        },
+        "structure_profile": "plain_prose",
+        "structure_profiles": [
+          "plain_prose"
+        ],
         "workset_p_count": 1,
         "workset_note_count": 0
       },
@@ -3405,6 +3994,23 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "p": 1,
+          "lb": 16
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "p": 2,
+          "note": 1,
+          "lb": 26,
+          "persName": 2,
+          "placeName": 2
+        },
+        "structure_profile": "plain_prose",
+        "structure_profiles": [
+          "plain_prose"
+        ],
         "workset_p_count": 1,
         "workset_note_count": 0
       },
@@ -3514,6 +4120,23 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "p": 1,
+          "lb": 10
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "p": 2,
+          "note": 1,
+          "lb": 20,
+          "persName": 2,
+          "placeName": 2
+        },
+        "structure_profile": "plain_prose",
+        "structure_profiles": [
+          "plain_prose"
+        ],
         "workset_p_count": 1,
         "workset_note_count": 0
       },
@@ -3623,6 +4246,23 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "p": 1,
+          "lb": 14
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "p": 2,
+          "note": 1,
+          "lb": 23,
+          "persName": 2,
+          "placeName": 2
+        },
+        "structure_profile": "plain_prose",
+        "structure_profiles": [
+          "plain_prose"
+        ],
         "workset_p_count": 1,
         "workset_note_count": 0
       },
@@ -3732,6 +4372,23 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "p": 1,
+          "lb": 13
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "p": 2,
+          "note": 1,
+          "lb": 22,
+          "persName": 2,
+          "placeName": 2
+        },
+        "structure_profile": "plain_prose",
+        "structure_profiles": [
+          "plain_prose"
+        ],
         "workset_p_count": 1,
         "workset_note_count": 0
       },
@@ -3842,6 +4499,22 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "p": 1
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "p": 3,
+          "note": 1,
+          "lb": 12,
+          "persName": 2,
+          "placeName": 2
+        },
+        "structure_profile": "plain_prose",
+        "structure_profiles": [
+          "plain_prose"
+        ],
         "workset_p_count": 1,
         "workset_note_count": 0
       },
@@ -3952,6 +4625,23 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "p": 1,
+          "lb": 17
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "p": 2,
+          "note": 1,
+          "lb": 25,
+          "persName": 2,
+          "placeName": 2
+        },
+        "structure_profile": "plain_prose",
+        "structure_profiles": [
+          "plain_prose"
+        ],
         "workset_p_count": 1,
         "workset_note_count": 0
       },
@@ -4062,6 +4752,23 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "p": 1,
+          "lb": 11
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "p": 2,
+          "note": 1,
+          "lb": 18,
+          "persName": 2,
+          "placeName": 2
+        },
+        "structure_profile": "plain_prose",
+        "structure_profiles": [
+          "plain_prose"
+        ],
         "workset_p_count": 1,
         "workset_note_count": 0
       },
@@ -4172,6 +4879,24 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "p": 1,
+          "lb": 7,
+          "placeName": 1
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "p": 2,
+          "note": 1,
+          "lb": 17,
+          "persName": 2,
+          "placeName": 3
+        },
+        "structure_profile": "lv4_enrichment",
+        "structure_profiles": [
+          "lv4_enrichment"
+        ],
         "workset_p_count": 1,
         "workset_note_count": 0
       },
@@ -4281,6 +5006,33 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "div": 4,
+          "p": 136,
+          "sp": 122,
+          "speaker": 122,
+          "stage": 58,
+          "lb": 7
+        },
+        "document_tag_counts": {
+          "front": 1,
+          "body": 1,
+          "back": 1,
+          "div": 5,
+          "p": 139,
+          "sp": 122,
+          "speaker": 122,
+          "stage": 58,
+          "note": 1,
+          "lb": 21,
+          "persName": 4
+        },
+        "structure_profile": "drama",
+        "structure_profiles": [
+          "drama",
+          "front_back_matter"
+        ],
         "workset_p_count": 136,
         "workset_note_count": 0
       },
@@ -4390,6 +5142,33 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "div": 1,
+          "p": 57,
+          "sp": 57,
+          "speaker": 57,
+          "stage": 3,
+          "lb": 5
+        },
+        "document_tag_counts": {
+          "front": 1,
+          "body": 1,
+          "back": 1,
+          "div": 2,
+          "p": 60,
+          "sp": 57,
+          "speaker": 57,
+          "stage": 3,
+          "note": 1,
+          "lb": 13,
+          "persName": 13
+        },
+        "structure_profile": "drama",
+        "structure_profiles": [
+          "drama",
+          "front_back_matter"
+        ],
         "workset_p_count": 57,
         "workset_note_count": 0
       },
@@ -4499,6 +5278,32 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "p": 17,
+          "roleName": 13,
+          "said": 59,
+          "persName": 97,
+          "placeName": 24,
+          "rs": 181
+        },
+        "document_tag_counts": {
+          "front": 1,
+          "body": 1,
+          "p": 22,
+          "roleName": 13,
+          "said": 59,
+          "note": 3,
+          "lb": 11,
+          "persName": 104,
+          "placeName": 24,
+          "rs": 182
+        },
+        "structure_profile": "lv4_enrichment",
+        "structure_profiles": [
+          "lv4_enrichment",
+          "front_back_matter"
+        ],
         "workset_p_count": 22,
         "workset_note_count": 3
       },
@@ -4604,6 +5409,30 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "p": 17,
+          "roleName": 16,
+          "said": 59,
+          "persName": 215,
+          "placeName": 51,
+          "rs": 87
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "back": 1,
+          "p": 19,
+          "roleName": 16,
+          "said": 59,
+          "persName": 229,
+          "placeName": 51,
+          "rs": 87
+        },
+        "structure_profile": "lv4_enrichment",
+        "structure_profiles": [
+          "lv4_enrichment",
+          "front_back_matter"
+        ],
         "workset_p_count": 19,
         "workset_note_count": 0
       },
@@ -4709,6 +5538,24 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "p": 4,
+          "said": 11
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "p": 5,
+          "said": 11,
+          "note": 7,
+          "lb": 12,
+          "persName": 7,
+          "placeName": 5
+        },
+        "structure_profile": "lv4_enrichment",
+        "structure_profiles": [
+          "lv4_enrichment"
+        ],
         "workset_p_count": 4,
         "workset_note_count": 0
       },
@@ -4820,6 +5667,28 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "div": 4,
+          "p": 12,
+          "roleName": 1,
+          "persName": 18,
+          "placeName": 13
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "div": 4,
+          "p": 13,
+          "roleName": 1,
+          "note": 1,
+          "lb": 12,
+          "persName": 20,
+          "placeName": 13
+        },
+        "structure_profile": "lv4_enrichment",
+        "structure_profiles": [
+          "lv4_enrichment"
+        ],
         "workset_p_count": 12,
         "workset_note_count": 0
       },
@@ -4930,6 +5799,39 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "div": 1,
+          "p": 110,
+          "sp": 37,
+          "speaker": 37,
+          "stage": 9,
+          "l": 13,
+          "lg": 3,
+          "lb": 27,
+          "persName": 62
+        },
+        "document_tag_counts": {
+          "front": 1,
+          "body": 1,
+          "div": 1,
+          "p": 112,
+          "sp": 37,
+          "speaker": 37,
+          "stage": 9,
+          "l": 13,
+          "lg": 3,
+          "note": 1,
+          "lb": 37,
+          "persName": 66
+        },
+        "structure_profile": "drama",
+        "structure_profiles": [
+          "drama",
+          "verse",
+          "lv4_enrichment",
+          "front_back_matter"
+        ],
         "workset_p_count": 110,
         "workset_note_count": 0
       },
@@ -5041,6 +5943,32 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "div": 115,
+          "p": 154,
+          "sp": 36,
+          "speaker": 36,
+          "stage": 3,
+          "lb": 17
+        },
+        "document_tag_counts": {
+          "front": 1,
+          "body": 1,
+          "div": 115,
+          "p": 156,
+          "sp": 36,
+          "speaker": 36,
+          "stage": 3,
+          "note": 1,
+          "lb": 28,
+          "persName": 11
+        },
+        "structure_profile": "drama",
+        "structure_profiles": [
+          "drama",
+          "front_back_matter"
+        ],
         "workset_p_count": 155,
         "workset_note_count": 0
       },
@@ -5151,6 +6079,38 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "div": 9,
+          "p": 496,
+          "sp": 399,
+          "speaker": 399,
+          "stage": 19,
+          "lb": 6,
+          "persName": 2190,
+          "placeName": 93,
+          "rs": 1
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "back": 1,
+          "div": 10,
+          "p": 498,
+          "sp": 399,
+          "speaker": 399,
+          "stage": 19,
+          "note": 1,
+          "lb": 16,
+          "persName": 2190,
+          "placeName": 96,
+          "rs": 1
+        },
+        "structure_profile": "drama",
+        "structure_profiles": [
+          "drama",
+          "lv4_enrichment",
+          "front_back_matter"
+        ],
         "workset_p_count": 496,
         "workset_note_count": 0
       },
@@ -5260,6 +6220,25 @@
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "div": 1,
+          "p": 26,
+          "note": 1,
+          "lb": 41
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "div": 1,
+          "p": 27,
+          "note": 2,
+          "lb": 56,
+          "persName": 2
+        },
+        "structure_profile": "notes",
+        "structure_profiles": [
+          "notes"
+        ],
         "workset_p_count": 26,
         "workset_note_count": 1
       },
@@ -5370,6 +6349,25 @@
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "div": 1,
+          "p": 18,
+          "note": 1,
+          "lb": 27
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "div": 1,
+          "p": 19,
+          "note": 2,
+          "lb": 39,
+          "persName": 2
+        },
+        "structure_profile": "notes",
+        "structure_profiles": [
+          "notes"
+        ],
         "workset_p_count": 18,
         "workset_note_count": 1
       },
@@ -5479,6 +6477,30 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "div": 1,
+          "p": 123,
+          "sp": 122,
+          "speaker": 122,
+          "lb": 21
+        },
+        "document_tag_counts": {
+          "front": 1,
+          "body": 1,
+          "div": 1,
+          "p": 125,
+          "sp": 122,
+          "speaker": 122,
+          "note": 1,
+          "lb": 35,
+          "persName": 6
+        },
+        "structure_profile": "drama",
+        "structure_profiles": [
+          "drama",
+          "front_back_matter"
+        ],
         "workset_p_count": 123,
         "workset_note_count": 0
       },
@@ -5589,6 +6611,33 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "div": 14,
+          "p": 29,
+          "sp": 16,
+          "speaker": 16,
+          "stage": 9,
+          "lb": 336
+        },
+        "document_tag_counts": {
+          "front": 1,
+          "body": 1,
+          "div": 15,
+          "p": 34,
+          "sp": 16,
+          "speaker": 16,
+          "stage": 9,
+          "note": 2,
+          "lb": 350,
+          "persName": 45,
+          "placeName": 5
+        },
+        "structure_profile": "drama",
+        "structure_profiles": [
+          "drama",
+          "front_back_matter"
+        ],
         "workset_p_count": 29,
         "workset_note_count": 0
       },
@@ -5698,6 +6747,27 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "div": 3,
+          "p": 3,
+          "lb": 9,
+          "persName": 1,
+          "placeName": 2
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "div": 3,
+          "p": 4,
+          "note": 1,
+          "lb": 24,
+          "persName": 3,
+          "placeName": 4
+        },
+        "structure_profile": "lv4_enrichment",
+        "structure_profiles": [
+          "lv4_enrichment"
+        ],
         "workset_p_count": 3,
         "workset_note_count": 0
       },
@@ -5808,6 +6878,22 @@
         "body_note_count": 20,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "p": 24,
+          "note": 20
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "p": 25,
+          "note": 22,
+          "lb": 13,
+          "persName": 2
+        },
+        "structure_profile": "notes",
+        "structure_profiles": [
+          "notes"
+        ],
         "workset_p_count": 24,
         "workset_note_count": 20
       },
@@ -5918,6 +7004,22 @@
         "body_note_count": 2,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "p": 13,
+          "note": 2
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "p": 14,
+          "note": 3,
+          "lb": 13,
+          "persName": 2
+        },
+        "structure_profile": "notes",
+        "structure_profiles": [
+          "notes"
+        ],
         "workset_p_count": 13,
         "workset_note_count": 2
       },
@@ -6028,6 +7130,22 @@
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "p": 8,
+          "note": 1
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "p": 9,
+          "note": 2,
+          "lb": 13,
+          "persName": 2
+        },
+        "structure_profile": "notes",
+        "structure_profiles": [
+          "notes"
+        ],
         "workset_p_count": 8,
         "workset_note_count": 1
       },
@@ -6138,6 +7256,34 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "div": 3,
+          "p": 89,
+          "sp": 89,
+          "speaker": 87,
+          "stage": 16,
+          "lb": 51
+        },
+        "document_tag_counts": {
+          "front": 1,
+          "body": 1,
+          "div": 3,
+          "p": 93,
+          "sp": 89,
+          "speaker": 87,
+          "stage": 16,
+          "castList": 1,
+          "castItem": 5,
+          "role": 5,
+          "note": 1,
+          "lb": 76
+        },
+        "structure_profile": "drama",
+        "structure_profiles": [
+          "drama",
+          "front_back_matter"
+        ],
         "workset_p_count": 89,
         "workset_note_count": 0
       },
@@ -6247,6 +7393,25 @@
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
+        "body_tag_counts": {
+          "body": 1,
+          "p": 15,
+          "placeName": 3,
+          "rs": 1
+        },
+        "document_tag_counts": {
+          "body": 1,
+          "p": 16,
+          "note": 1,
+          "lb": 10,
+          "persName": 2,
+          "placeName": 3,
+          "rs": 1
+        },
+        "structure_profile": "lv4_enrichment",
+        "structure_profiles": [
+          "lv4_enrichment"
+        ],
         "workset_p_count": 15,
         "workset_note_count": 0
       },

@@ -4,19 +4,31 @@ Date: 2026-07-04
 
 ## Verdict
 
-`PARSER_IR_LEVEL3_REPRESENTABLE_WITH_ADAPTER_FIDELITY_GAPS`
+`PARSER_IR_LEVEL3_REPRESENTABLE_WITH_ADAPTER_AND_SOURCE_AUTHORITY_GAPS`
 
-After mapping TEI-EAJ file identifiers to Aozora corpus IDs, the whole
-TEI-EAJ/aozora_tei comparison has no row-level parser-IR gap:
+Parser-IR can now carry Level 3 paragraph/source-note structure when the AAT
+input supplies it. The whole pinned TEI-EAJ/aozora_tei comparison no longer has
+a row-level parser-IR representability gap:
 
 | Metric | Value |
 |---|---:|
 | TEI-EAJ rows | 62 |
+| candidate work IDs | 50 |
 | rows with AAT evidence | 57 |
 | parser-IR gap rows | 0 |
 | source-attribution gap rows | 0 |
 | adapter gap rows | 18 |
 | evidence gap rows | 5 |
+
+This is not yet a full Level 3 TEI admission claim. The remaining blockers are
+now evidence and policy blockers:
+
+- source-authority representability is still failing,
+- adapter paragraph fidelity is inconsistent,
+- TEI-EAJ uses drama, verse, note, front/back, and Level 4 enrichment profiles
+  that cannot be judged by paragraph-count parity alone,
+- one parser input, `aozora2`, is currently Melos-scoped rather than broad
+  workset evidence.
 
 The two former `15099` evidence gaps were false negatives. TEI-EAJ identifies
 the work as `15099`, while the measured Aozora corpora materialize the same
@@ -27,6 +39,79 @@ receive AAT evidence from:
 - `aozora-rs:15099` -> AAT `work_id = "000879_104"`,
 - `aozora2html:15099` -> AAT `work_id = "000879_104"`,
 - `aozora-epub3:15099` -> AAT `work_id = "000879_104"`.
+
+## Four-Adapter Matrix
+
+The generated-TEI matrix materializes every available parser input per TEI-EAJ
+row through parser-IR and ABC TEI:
+
+| Metric | Value |
+|---|---:|
+| TEI-EAJ rows attempted | 57 |
+| parser-input rows attempted | 173 |
+| materialization succeeded | 173 |
+| materialization failed | 0 |
+| rows skipped | 5 |
+
+Adapter coverage:
+
+| adapter | rows | evidence scope |
+|---|---:|---|
+| aozora2html | 57 | broad TEI-EAJ workset |
+| aozora-epub3 | 57 | broad TEI-EAJ workset |
+| aozora-rs | 57 | broad TEI-EAJ workset |
+| aozora2 | 2 | Melos-scoped only |
+
+Paragraph origin across the matrix:
+
+| origin | rows |
+|---|---:|
+| adapter_over_segmented | 123 |
+| adapter_collapsed | 18 |
+| adapter_under_segmented | 7 |
+| aligned | 18 |
+| source_note_back_routing | 4 |
+| page_break_projection | 3 |
+
+Interpretation: parser-IR paragraph recognition is no longer the generic loss
+point. In the dominant path, AAT paragraph-block counts match parser-IR
+paragraph counts, and generated TEI body paragraph counts follow parser-IR
+except for expected source-note back routing and page-break projection. The
+remaining paragraph disagreement is already present at the adapter/AAT boundary
+or is a TEI-EAJ profile-policy question.
+
+## TEI-EAJ Structural Profiles
+
+The generated comparison now records TEI-EAJ body/document tag counts and a
+primary structural profile for every materialized row. Profile buckets across
+the 173 parser-input rows:
+
+| profile | rows |
+|---|---:|
+| plain_prose | 81 |
+| drama | 30 |
+| lv4_enrichment | 29 |
+| notes | 21 |
+| front_back_matter | 6 |
+| verse | 6 |
+
+Paragraph origin by TEI-EAJ profile:
+
+| profile | adapter collapsed | adapter over | adapter under | aligned | page break | source-note back |
+|---|---:|---:|---:|---:|---:|---:|
+| drama | 8 | 12 | 7 | 1 | 2 | 0 |
+| plain_prose | 1 | 72 | 0 | 8 | 0 | 0 |
+| lv4_enrichment | 2 | 17 | 0 | 6 | 0 | 4 |
+| notes | 5 | 14 | 0 | 2 | 0 | 0 |
+| front_back_matter | 0 | 5 | 0 | 1 | 0 | 0 |
+| verse | 2 | 3 | 0 | 0 | 1 | 0 |
+
+This profile split explains why "same TEI-EAJ `<p>` count" is the wrong Level 3
+gate. For example, `1805` is a drama row: TEI-EAJ contains `sp`, `speaker`, and
+`stage`, while AAT adapters expose very different paragraph-like units. The
+right next step is to decide which TEI-EAJ structures are Level 3 parser
+requirements and which are Level 4/editorial enrichment or adapter-specific
+segmentation policy.
 
 ## Remaining Evidence Gaps
 
@@ -41,84 +126,59 @@ workset export. These are not parser-IR representability conclusions.
 | 勢理客村湧川親雲上勤職書 | `data/etc/Curriculum vitae of Wakugawa Pēchin, Jitchaku Village.xml` | etc | 4 |
 | 校異源氏物語・きりつぼ | `data/etc/校異源氏物語_header更新版.xml` | etc | 1 |
 
-These rows should be classified by ABC as either out-of-scope for Aozora parser
-compatibility, or supplied with an explicit source-material mapping. They should
-not block parser-IR Level 3 admission for Aozora-derived evidence.
+ABC should classify these rows as out-of-scope for Aozora parser compatibility
+or provide explicit source-material mappings before they are used in parser
+compatibility gates.
 
-## Adapter Gaps
+## Current Blockers to Level 3 TEI Generation
 
-The 18 adapter gaps are collapse-to-one cases: TEI-EAJ has more than one body
-paragraph, but at least one measured adapter AAT has zero or one paragraph
-block.
+1. Source-authority representability must pass or have explicit waivers. The
+   current source-authority report is still
+   `SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED`, with 224,028 unallowlisted
+   source markers and many reached rows lacking representability annotations.
+   Four parser outputs are triangulation, not proof that all Aozora source
+   constructs are representable.
 
-| adapter | collapsed rows |
-|---|---:|
-| aozora-rs | 16 |
-| aozora2 | 2 |
-| aozora2html | 0 |
-| aozora-epub3 | 0 |
+2. Adapter paragraph fidelity must be profile-aware. The broad adapters preserve
+   enough paragraph data to prove parser-IR can carry it, but not enough to claim
+   TEI-EAJ paragraph fidelity. `aozora-rs` still has 16 collapse rows. `aozora2`
+   has only the 2 Melos rows. `aozora2html` and `aozora-epub3` mostly over-split,
+   but those over-splits mix plain prose, drama, verse, notes, and enrichment.
 
-Flagged rows:
+3. TEI-EAJ structural profiles need admission policy. Drama (`sp`, `speaker`,
+   `stage`), verse (`l`, `lg`), notes, front/back matter, and Level 4 enrichment
+   (`said`, `persName`, `placeName`, `roleName`) should not all be reduced to
+   body paragraph counts. Level 3 should require explicit paragraph/source-note
+   representation for prose, then separately classify richer structures as
+   Level 3 requirements, Level 4 enrichment, or out-of-scope comparison evidence.
 
-| work_id | title | TEI-EAJ file | TEI p | collapsed adapter(s) | other AAT paragraph counts |
-|---|---|---|---:|---|---|
-| 1126 | 三つの宝 | `data/complete/tei_lib_lv3/1126_tei.xml` | 169 | aozora-rs:1 | aozora2html:30, aozora-epub3:154 |
-| 2509 | 天災と国防 | `data/complete/tei_lib_lv3/2509_tei.xml` | 28 | aozora-rs:1 | aozora2html:28, aozora-epub3:28 |
-| 4464 | 秋田街道 | `data/complete/tei_lib_lv3/4464_tei.xml` | 17 | aozora-rs:1 | aozora2html:26, aozora-epub3:26 |
-| 50502 | 北海道に就いての印象 | `data/complete/tei_lib_lv3/50502_tei.xml` | 8 | aozora-rs:1 | aozora2html:8, aozora-epub3:8 |
-| 51307 | みだれ髪 | `data/complete/tei_lib_lv3/51307_tei.xml` | 7 | aozora-rs:1 | aozora2html:412, aozora-epub3:400 |
-| 55783 | 夢 | `data/complete/tei_lib_lv3/55783_tei.xml` | 126 | aozora-rs:1 | aozora2html:16, aozora-epub3:127 |
-| 15099 | 長崎小品 | `data/complete/tei_lib_lv4/104_15099.xml` | 57 | aozora-rs:1 | aozora2html:62, aozora-epub3:62 |
-| 1567 | 走れメロス | `data/complete/tei_lib_lv4/1567_header_updated.xml` | 22 | aozora2:1 | aozora-rs:79, aozora2html:75, aozora-epub3:75 |
-| 1567 | 走れメロス | `data/complete/tei_lib_lv4/1567_tei.xml` | 19 | aozora2:1 | aozora-rs:79, aozora2html:75, aozora-epub3:75 |
-| 7928 | 旅人（一幕） | `data/complete/tei_lib_lv4/7928_tei.xml` | 110 | aozora-rs:1 | aozora2html:61, aozora-epub3:148 |
-| 1126 | 三つの宝 | `data/draft/tei_lib_lv3/1126_tei.xml` | 155 | aozora-rs:1 | aozora2html:30, aozora-epub3:154 |
-| 1576 | 新ハムレット | `data/draft/tei_lib_lv3/1576_tei.xml` | 496 | aozora-rs:1 | aozora2html:467, aozora-epub3:529 |
-| 52208 | 帝大聖書研究会終講の辞 | `data/draft/tei_lib_lv3/52208_tei.xml` | 18 | aozora-rs:1 | aozora2html:27, aozora-epub3:27 |
-| 1805 | 安重根 | `data/draft/tei_lib_lv4/1805_tei.xml` | 29 | aozora-rs:1 | aozora2html:450, aozora-epub3:880 |
-| 4244 | 獄中への手紙 | `data/draft/tei_lib_lv4/4244-1_tei.xml` | 24 | aozora-rs:1 | aozora2html:74, aozora-epub3:74 |
-| 4244 | 獄中への手紙 | `data/draft/tei_lib_lv4/4244-3_tei.xml` | 13 | aozora-rs:1 | aozora2html:74, aozora-epub3:74 |
-| 4244 | 獄中への手紙 | `data/draft/tei_lib_lv4/4244-4_tei.xml` | 8 | aozora-rs:1 | aozora2html:74, aozora-epub3:74 |
-| 46453 | 春 | `data/draft/tei_lib_lv4/46453_tei.xml` | 89 | aozora-rs:1 | aozora2html:74, aozora-epub3:145 |
+4. Text-policy residuals remain separate from paragraph recognition. The matrix
+   still has 104 rows in the `different` best-text-match bucket. Some rows reduce
+   under ruby/parenthetical normalization, but true text residuals need their own
+   source-text fidelity analysis before they can be used as publication gates.
 
-## Paragraph Count Blindspot
+5. Durable work identity still belongs in ABC. The local TEI-EAJ filename alias
+   for `15099` is useful evidence, but ABC should own source aliases for durable
+   compatibility records.
 
-The current `adapter_gap` flag is intentionally narrow: it detects collapsed
-paragraph evidence, not paragraph-boundary accuracy. On the 34 evidence-backed
-rows with more than one TEI-EAJ paragraph, the best available adapter count is:
+## Recommended Bridge to Level 3
 
-| best adapter delta vs. TEI-EAJ p count | rows |
-|---|---:|
-| exact | 6 |
-| 1 paragraph off | 4 |
-| 2-5 paragraphs off | 5 |
-| 6-10 paragraphs off | 4 |
-| more than 10 paragraphs off | 15 |
-
-Adapter-level paragraph count profile over those 34 rows:
-
-| adapter | exact | <=5 off | >=10 off | collapsed |
-|---|---:|---:|---:|---:|
-| aozora-rs | 0 | 4 | 24 | 16 |
-| aozora2html | 5 | 13 | 19 | 0 |
-| aozora-epub3 | 6 | 14 | 18 | 0 |
-| aozora2 | 0 | 0 | 2 | 2 |
-
-This means parser-IR can now represent Level 3 paragraph/source-note structure
-when AAT supplies it, but the current adapter evidence is not strong enough to
-claim paragraph-boundary fidelity against TEI-EAJ. That is an adapter/parser
-candidate evaluation problem, not a parser-IR schema problem.
-
-## Next Steps
-
-1. Keep the TEI-EAJ ID aliasing in ab-validator, but ask ABC to export explicit
-   source aliases where possible. The local filename heuristic is conservative
-   and useful, but ABC is the better owner for durable workset identity.
-2. Extend the TEI-EAJ expansion summary with paragraph-count delta buckets
-   (`best_delta`, per-adapter delta, and exact/near/far counts), so future runs
-   do not hide non-collapsed paragraph disagreement behind `adapter_gap=false`.
-3. Treat the 16 aozora-rs collapse rows and 2 aozora2 collapse rows as adapter
-   fidelity gaps. They do not block parser-IR Level 3 representability, but they
-   are useful parser-candidate comparison evidence.
-4. Ask ABC to classify the 5 no-work-ID TEI-EAJ rows as out-of-scope or provide
-   source mappings before using them in parser compatibility gates.
+1. Keep `parser-ir` paragraph/source-note support as accepted infrastructure:
+   generated TEI materialization is clean over the 173-row matrix.
+2. Move the admission gate from raw paragraph-count parity to a profile-aware
+   gate:
+   - plain prose: require populated `paragraphs[]`, source-note routing, and a
+     declared text policy,
+   - drama/verse: require an explicit decision on whether speaker/stage/line
+     structure is Level 3 or deferred,
+   - Level 4 enrichment: keep named entities and `said`-style markup outside
+     parser compatibility unless ABC promotes them.
+3. Resolve source-authority strict errors before claiming all Aozora markdown is
+   representable.
+4. Fix adapter fidelity in this order:
+   - `aozora-rs` collapse rows,
+   - `aozora2` workset coverage or explicit Melos-only scope,
+   - high-delta plain-prose over-splits,
+   - drama/verse rows after the TEI profile policy is decided.
+5. Ask ABC to classify the 5 no-work-ID TEI-EAJ rows and to export explicit
+   source aliases where available.

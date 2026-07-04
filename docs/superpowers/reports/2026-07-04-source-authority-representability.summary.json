@@ -3,8 +3,8 @@
   "works_scanned": 17894,
   "works_failed": 0,
   "markers_total": 4323915,
-  "unknown_markers_total": 15320,
-  "unallowlisted_unknown_markers_total": 450,
+  "unknown_markers_total": 15269,
+  "unallowlisted_unknown_markers_total": 399,
   "allowlisted_unknown_markers_total": 14870,
   "rows": {
     "accent.dotted_letter": {
@@ -29,7 +29,7 @@
     },
     "annotation.chuuki": {
       "works_with_marker": 5508,
-      "occurrences": 35352,
+      "occurrences": 35358,
       "sample_works": [
         "000005_53194",
         "000006_1869",
@@ -105,8 +105,8 @@
       ]
     },
     "decoration.bousen": {
-      "works_with_marker": 324,
-      "occurrences": 18116,
+      "works_with_marker": 326,
+      "occurrences": 18125,
       "sample_works": [
         "000006_1869",
         "000013_11",
@@ -127,8 +127,8 @@
       ]
     },
     "decoration.font_size": {
-      "works_with_marker": 1219,
-      "occurrences": 51478,
+      "works_with_marker": 1220,
+      "occurrences": 51501,
       "sample_works": [
         "000006_1869",
         "000008_58922",
@@ -171,8 +171,8 @@
       ]
     },
     "figure.image_inline": {
-      "works_with_marker": 521,
-      "occurrences": 5860,
+      "works_with_marker": 526,
+      "occurrences": 5870,
       "sample_works": [
         "000009_226",
         "000009_45340",
@@ -359,7 +359,7 @@
     },
     "kunten.kaeriten": {
       "works_with_marker": 490,
-      "occurrences": 27955,
+      "occurrences": 27987,
       "sample_works": [
         "000006_1869",
         "000038_1408",
@@ -402,8 +402,8 @@
       ]
     },
     "layout.tcy": {
-      "works_with_marker": 724,
-      "occurrences": 19792,
+      "works_with_marker": 725,
+      "occurrences": 19794,
       "sample_works": [
         "000014_728",
         "000020_2223",
@@ -518,7 +518,7 @@
       ]
     }
   },
-  "unknown_classes_total": 438,
+  "unknown_classes_total": 387,
   "unknown_classes_truncated": false,
   "unknown_classes": [
     {
@@ -697,52 +697,8 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「うらみ思ひ」は、「刈萱の穗にあらはれぬ」と「かな」の間に挟まれるような形でポイントを下げて２行で］",
-      "body": "「うらみ思ひ」は、「刈萱の穗にあらはれぬ」と「かな」の間に挟まれるような形でポイントを下げて２行で",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000305_1896"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「どこやらに」と「稻妻に」の句の上には、この二つの句を括る波括弧あり］",
       "body": "「どこやらに」と「稻妻に」の句の上には、この二つの句を括る波括弧あり",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000305_1896"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「な」は判読困難につき推定、コマ25-左-3］",
-      "body": "「な」は判読困難につき推定、コマ25-左-3",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000212_4840"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「ねませ和子よの譜」の表題付きの楽譜入る（略）］",
-      "body": "「ねませ和子よの譜」の表題付きの楽譜入る（略）",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_15949"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「や闇吹き入れるにまぶれて白し」は、「夕顏」と「三日の月」の間に挟まれるような形でポイントを下げて２行で］",
-      "body": "「や闇吹き入れるにまぶれて白し」は、「夕顏」と「三日の月」の間に挟まれるような形でポイントを下げて２行で",
       "occurrences": 1,
       "allowlisted_occurrences": 0,
       "unallowlisted_occurrences": 1,
@@ -763,61 +719,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「ココノトコロハ三拝九拝シテアル部分」は２日～10日の下に縦中横］",
-      "body": "「ココノトコロハ三拝九拝シテアル部分」は２日～10日の下に縦中横",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_33188"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「ノ句　繋がれて牛も眠るやもゝの花」は「牛飼も牛も眠るや桃の花」の下にポイントを下げて２行で］",
-      "body": "「ノ句　繋がれて牛も眠るやもゝの花」は「牛飼も牛も眠るや桃の花」の下にポイントを下げて２行で",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000305_1896"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「ベネズェラ」は本文では「ベネズエラ」］",
-      "body": "「ベネズェラ」は本文では「ベネズエラ」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001395_51364"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「マリニヨリの」は本文では「マリニョリの」］",
-      "body": "「マリニヨリの」は本文では「マリニョリの」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001395_51364"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「ムツセメルリ」は本文では「ムッセメルリ」］",
-      "body": "「ムツセメルリ」は本文では「ムッセメルリ」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001395_51364"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「ヤンに傍点］",
       "body": "「ヤンに傍点",
       "occurrences": 1,
@@ -825,83 +726,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000008_1083"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「一五四・六」の両側に傍線］",
-      "body": "「一五四・六」の両側に傍線",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001164_43670"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「一体だ」に波線］",
-      "body": "「一体だ」に波線",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46247"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「一作　夏菊や木曾の旅人やせにけり」は「夏菊や旅人やせる木曾の宿」の下にポイントを下げて２行で］",
-      "body": "「一作　夏菊や木曾の旅人やせにけり」は「夏菊や旅人やせる木曾の宿」の下にポイントを下げて２行で",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000305_1896"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「一作　藻を刈てはひでる舟の螢哉」は「藻を刈るや螢はひ出る舟の端」の下にポイントを下げて２行で］",
-      "body": "「一作　藻を刈てはひでる舟の螢哉」は「藻を刈るや螢はひ出る舟の端」の下にポイントを下げて２行で",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000305_1896"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「一六三・七」の両側に傍線］",
-      "body": "「一六三・七」の両側に傍線",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001164_43670"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「一四五・五」の両側に傍線］",
-      "body": "「一四五・五」の両側に傍線",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001164_43670"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「一言」の「一」をのぞいて「レ一二三」は返り点］",
-      "body": "「一言」の「一」をのぞいて「レ一二三」は返り点",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000301_1872"
       ]
     },
     {
@@ -983,28 +807,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「志賀政治局追放せず」に波線］",
-      "body": "「志賀政治局追放せず」に波線",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46263"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「我黒ノ句ニ　名月に後むいたるかゝし哉」は「名月やうしろむいたる石佛」の下にポイントを下げて２行で］",
-      "body": "「我黒ノ句ニ　名月に後むいたるかゝし哉」は「名月やうしろむいたる石佛」の下にポイントを下げて２行で",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000305_1896"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「才助」は枠囲い］",
       "body": "「才助」は枠囲い",
       "occurrences": 1,
@@ -1012,61 +814,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000726_4533"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「把握するのである。」は初刊本「人生論ノート」創元社、昭和16年8月11日発行では「把握するのである。しかしながら愛するといふことは如何に困難であるか。」］",
-      "body": "「把握するのである。」は初刊本「人生論ノート」創元社、昭和16年8月11日発行では「把握するのである。しかしながら愛するといふことは如何に困難であるか。」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000218_1914"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「文字結　青」はポイントを下げる］",
-      "body": "「文字結　青」はポイントを下げる",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000305_1896"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「曉臺ノ句　風早し二つにわれてむら千鳥」は「帆柱や二つにわれてむら千鳥」の下にポイントを下げて２行で］",
-      "body": "「曉臺ノ句　風早し二つにわれてむら千鳥」は「帆柱や二つにわれてむら千鳥」の下にポイントを下げて２行で",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000305_1896"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「月二」は１８０度回転］",
-      "body": "「月二」は１８０度回転",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000207_42284"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「本誌」は「改造」］",
-      "body": "「本誌」は「改造」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000169_1273"
       ]
     },
     {
@@ -1093,17 +840,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「樗堂ノ句　荷をつけてしぐるゝ馬や軒の下」は「新宿に荷馬ならぶや夕時雨」の下にポイントを下げて２行で］",
-      "body": "「樗堂ノ句　荷をつけてしぐるゝ馬や軒の下」は「新宿に荷馬ならぶや夕時雨」の下にポイントを下げて２行で",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000305_1896"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「江」はポイント小さく右寄せ］",
       "body": "「江」はポイント小さく右寄せ",
       "occurrences": 1,
@@ -1117,39 +853,6 @@
       "kind": "CommandFullwidth",
       "raw": "［＃「浮世へ」と「どの村へ」の句の上には、この二つの句を括る波括弧あり］",
       "body": "「浮世へ」と「どの村へ」の句の上には、この二つの句を括る波括弧あり",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000305_1896"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「渭橋の句に　たれこめて蠅うつのみそ五月雨」は「はたごやに蠅うつ客や五月雨」の下にポイントを下げて２行で］",
-      "body": "「渭橋の句に　たれこめて蠅うつのみそ五月雨」は「はたごやに蠅うつ客や五月雨」の下にポイントを下げて２行で",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000305_1896"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「無しょう」に波線］",
-      "body": "「無しょう」に波線",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_15945"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「牙ふりたてる岩ふみはづす」は、「猪の」と「吹雪哉」の間に挟まれるような形でポイントを下げて２行で］",
-      "body": "「牙ふりたてる岩ふみはづす」は、「猪の」と「吹雪哉」の間に挟まれるような形でポイントを下げて２行で",
       "occurrences": 1,
       "allowlisted_occurrences": 0,
       "unallowlisted_occurrences": 1,
@@ -1203,17 +906,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「秋の風初しくれ」は「いつしかに桑の葉黒し」の下にポイントを下げて２行で］",
-      "body": "「秋の風初しくれ」は「いつしかに桑の葉黒し」の下にポイントを下げて２行で",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000305_1896"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「第二十章　必死の努力」は中中見出し］",
       "body": "「第二十章　必死の努力」は中中見出し",
       "occurrences": 1,
@@ -1227,17 +919,6 @@
       "kind": "CommandFullwidth",
       "raw": "［＃「笹の葉の」と「しばらくは」の句の上には、この二つの句を括る波括弧あり］",
       "body": "「笹の葉の」と「しばらくは」の句の上には、この二つの句を括る波括弧あり",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000305_1896"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「米つくよめ御かな顏出す臼のおと」は「山吹の中に」の下にポイントを下げて２行で］",
-      "body": "「米つくよめ御かな顏出す臼のおと」は「山吹の中に」の下にポイントを下げて２行で",
       "occurrences": 1,
       "allowlisted_occurrences": 0,
       "unallowlisted_occurrences": 1,
@@ -1324,28 +1005,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「高し立つや」は、「冬枯のうしろに」と「不二の山」の間に挟まれるような形でポイントを下げて２行で］",
-      "body": "「高し立つや」は、「冬枯のうしろに」と「不二の山」の間に挟まれるような形でポイントを下げて２行で",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000305_1896"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「（その僧の親達に）」はポイントを下げる］",
-      "body": "「（その僧の親達に）」はポイントを下げる",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000885_2165"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「（一）」は自注］",
       "body": "「（一）」は自注",
       "occurrences": 1,
@@ -1353,61 +1012,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000284_2665"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「（以下六首赤城山に遊びける夏）」はポイントを下げる］",
-      "body": "「（以下六首赤城山に遊びける夏）」はポイントを下げる",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000885_2165"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「（嵐雪の句に　石女の雛かしつくそ哀也）」は「石女の鬼燈ちぎる哀れ也」の下にポイントを下げて２行で、カッコはその２行を括る形で］",
-      "body": "「（嵐雪の句に　石女の雛かしつくそ哀也）」は「石女の鬼燈ちぎる哀れ也」の下にポイントを下げて２行で、カッコはその２行を括る形で",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000305_1896"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「（梯や水より上を五月雨）」は「改」の下にポイントを下げて２行で、カッコはその２行を括る形で］",
-      "body": "「（梯や水より上を五月雨）」は「改」の下にポイントを下げて２行で、カッコはその２行を括る形で",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000305_1896"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「（禰津少尉の旅順二〇三高地の役に歿しけるに）」はポイントを下げる］",
-      "body": "「（禰津少尉の旅順二〇三高地の役に歿しけるに）」はポイントを下げる",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000885_2165"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「（西の京なる岡直道の君の追悼に）」はポイントを下げる］",
-      "body": "「（西の京なる岡直道の君の追悼に）」はポイントを下げる",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000885_2165"
       ]
     },
     {
@@ -1775,17 +1379,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃ここで字下げ終わり、「レ」は返り点］",
-      "body": "ここで字下げ終わり、「レ」は返り点",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000301_1872"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃ここで字下げ終わり」］",
       "body": "ここで字下げ終わり」",
       "occurrences": 1,
@@ -1962,28 +1555,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃ここに挿し絵入る］",
-      "body": "ここに挿し絵入る",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000157_834"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここに花園の挿絵あり］",
-      "body": "ここに花園の挿絵あり",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000370_2544"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃ここのみ拗音が小さい字「っ」になっている］",
       "body": "ここのみ拗音が小さい字「っ」になっている",
       "occurrences": 1,
@@ -2083,17 +1654,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃ひめだるまの写真（fig45338_01png、横441×縦233）入る］",
-      "body": "ひめだるまの写真（fig45338_01png、横441×縦233）入る",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001198_45338"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃わが息子］",
       "body": "わが息子",
       "occurrences": 1,
@@ -2123,72 +1683,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000311_4834"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃カット「先生の恰好」入る。35-下段］",
-      "body": "カット「先生の恰好」入る。35-下段",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃カット「手書きの図」入る。44-上段］",
-      "body": "カット「手書きの図」入る。44-上段",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃カット「手書きの地図」入る。41-下段］",
-      "body": "カット「手書きの地図」入る。41-下段",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃カット「服装の図」入る。17-下段］",
-      "body": "カット「服装の図」入る。17-下段",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃カット「焼夷弾の図」入る。16-上段］",
-      "body": "カット「焼夷弾の図」入る。16-上段",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃カット「甘藷植えの図」入る。54-上段］",
-      "body": "カット「甘藷植えの図」入る。54-上段",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000160_1255"
       ]
     },
     {
@@ -2611,17 +2105,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃以下、「レ一二」は返り点］",
-      "body": "以下、「レ一二」は返り点",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000301_1872"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃以下、新聞の切抜き］",
       "body": "以下、新聞の切抜き",
       "occurrences": 1,
@@ -2633,17 +2116,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃以下「レ一二」は返り点］",
-      "body": "以下「レ一二」は返り点",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000301_1872"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃以下「Ａ」と「Ｂ」は「油」の下で二行に分かれ、「Ａ」「Ｂ」の下に上向きのくくり記号］",
       "body": "以下「Ａ」と「Ｂ」は「油」の下で二行に分かれ、「Ａ」「Ｂ」の下に上向きのくくり記号",
       "occurrences": 1,
@@ -2651,17 +2123,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000259_3554"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃以下の「」内の、「レ一二」は返り点］",
-      "body": "以下の「」内の、「レ一二」は返り点",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000301_1872"
       ]
     },
     {
@@ -4723,28 +4184,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃返り点の「上」あり］",
-      "body": "返り点の「上」あり",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000301_1872"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃返り点の「下」あり］",
-      "body": "返り点の「下」あり",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000301_1872"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃通りの名］",
       "body": "通りの名",
       "occurrences": 1,
@@ -5605,13 +5044,6 @@
       "body": "」は底本では「語して」でしたが、親本を参照して直しました。\r\n入力：Hiroshi_O\r\n校正：門田裕志、小林繁雄\r\n2003年7月24日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n"
     },
     {
-      "work_id": "000157_834",
-      "line": 281,
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここに挿し絵入る］",
-      "body": "ここに挿し絵入る"
-    },
-    {
       "work_id": "000160_1255",
       "line": 34,
       "kind": "CommandFullwidth",
@@ -5645,20 +5077,6 @@
       "kind": "CommandFullwidth",
       "raw": "［＃灯火管制。夜間、敵機の来襲に備えて、灯りを遮ったり落としたりすこと］",
       "body": "灯火管制。夜間、敵機の来襲に備えて、灯りを遮ったり落としたりすこと"
-    },
-    {
-      "work_id": "000160_1255",
-      "line": 85,
-      "kind": "CommandFullwidth",
-      "raw": "［＃カット「焼夷弾の図」入る。16-上段］",
-      "body": "カット「焼夷弾の図」入る。16-上段"
-    },
-    {
-      "work_id": "000160_1255",
-      "line": 100,
-      "kind": "CommandFullwidth",
-      "raw": "［＃カット「服装の図」入る。17-下段］",
-      "body": "カット「服装の図」入る。17-下段"
     },
     {
       "work_id": "000160_1255",
@@ -5718,13 +5136,6 @@
     },
     {
       "work_id": "000160_1255",
-      "line": 457,
-      "kind": "CommandFullwidth",
-      "raw": "［＃カット「先生の恰好」入る。35-下段］",
-      "body": "カット「先生の恰好」入る。35-下段"
-    },
-    {
-      "work_id": "000160_1255",
       "line": 513,
       "kind": "CommandFullwidth",
       "raw": "［＃天皇の諮問機関、枢密院の異称］",
@@ -5736,20 +5147,6 @@
       "kind": "CommandFullwidth",
       "raw": "［＃戦時下食糧統制の一環として配給された、外食券を利用する食堂。現金があっても、券がなければ食べられなかった］",
       "body": "戦時下食糧統制の一環として配給された、外食券を利用する食堂。現金があっても、券がなければ食べられなかった"
-    },
-    {
-      "work_id": "000160_1255",
-      "line": 538,
-      "kind": "CommandFullwidth",
-      "raw": "［＃カット「手書きの地図」入る。41-下段］",
-      "body": "カット「手書きの地図」入る。41-下段"
-    },
-    {
-      "work_id": "000160_1255",
-      "line": 579,
-      "kind": "CommandFullwidth",
-      "raw": "［＃カット「手書きの図」入る。44-上段］",
-      "body": "カット「手書きの図」入る。44-上段"
     },
     {
       "work_id": "000160_1255",
@@ -5771,13 +5168,6 @@
       "kind": "CommandFullwidth",
       "raw": "［＃満蒙開拓移民の指導などに当たった、明治―昭和期の農本主義者］",
       "body": "満蒙開拓移民の指導などに当たった、明治―昭和期の農本主義者"
-    },
-    {
-      "work_id": "000160_1255",
-      "line": 766,
-      "kind": "CommandFullwidth",
-      "raw": "［＃カット「甘藷植えの図」入る。54-上段］",
-      "body": "カット「甘藷植えの図」入る。54-上段"
     },
     {
       "work_id": "000160_1255",
@@ -6065,18 +5455,67 @@
       "kind": "CommandFullwidth",
       "raw": "［＃ここのみ拗音が小さい字「っ」になっている］",
       "body": "ここのみ拗音が小さい字「っ」になっている"
+    },
+    {
+      "work_id": "000169_1273",
+      "line": 684,
+      "kind": "CommandFullwidth",
+      "raw": "［＃読みは「つね」］",
+      "body": "読みは「つね」"
+    },
+    {
+      "work_id": "000182_946",
+      "line": 24,
+      "kind": "CommandFullwidth",
+      "raw": "［＃１９字下げて］",
+      "body": "１９字下げて"
+    },
+    {
+      "work_id": "000212_4839",
+      "line": 25,
+      "kind": "CommandFullwidth",
+      "raw": "［＃ここから手書き文字］",
+      "body": "ここから手書き文字"
+    },
+    {
+      "work_id": "000212_4839",
+      "line": 30,
+      "kind": "CommandFullwidth",
+      "raw": "［＃ここで手書き文字終わり］",
+      "body": "ここで手書き文字終わり"
+    },
+    {
+      "work_id": "000214_1670",
+      "line": 241,
+      "kind": "CommandFullwidth",
+      "raw": "［＃ここから３　字下げ］",
+      "body": "ここから３　字下げ"
+    },
+    {
+      "work_id": "000221_1096",
+      "line": 29,
+      "kind": "CommandFullwidth",
+      "raw": "［＃ここから小文字、２字下げ。冒頭のみ１字下げ］",
+      "body": "ここから小文字、２字下げ。冒頭のみ１字下げ"
+    },
+    {
+      "work_id": "000221_1096",
+      "line": 31,
+      "kind": "CommandFullwidth",
+      "raw": "［＃ここで小文字、字下げ終わり］",
+      "body": "ここで小文字、字下げ終わり"
     }
   ],
   "decode_failures": [],
   "representability": {
-    "typed_occurrences": 4569924,
-    "raw_preserved_occurrences": 45348,
+    "typed_occurrences": 4570000,
+    "raw_preserved_occurrences": 45354,
     "out_of_body_occurrences": 950,
     "unsupported_occurrences": 13920,
     "needs_research_occurrences": 0
   },
   "strict_errors": [
-    "450 unallowlisted source markers"
+    "399 unallowlisted source markers"
   ],
   "inputs": {
     "matrix": "/home/bor/Projects/ab-validator/data/aozora-syntax-coverage.toml",

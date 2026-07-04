@@ -142,6 +142,13 @@ fn source_inventory_classifies_kunten_source_note_variants() {
         "［＃以下の「」内の「レ一二」は返り点］",
         "［＃「」内の「レ一二」は返り点、以下同じ］",
         "［＃「」内の一二は返り点］",
+        "［＃「一言」の「一」をのぞいて「レ一二三」は返り点］",
+        "［＃ここで字下げ終わり、「レ」は返り点］",
+        "［＃以下、「レ一二」は返り点］",
+        "［＃以下「レ一二」は返り点］",
+        "［＃以下の「」内の、「レ一二」は返り点］",
+        "［＃返り点の「上」あり］",
+        "［＃返り点の「下」あり］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -156,7 +163,7 @@ fn source_inventory_classifies_kunten_source_note_variants() {
             .row_counts
             .get("kunten.kaeriten")
             .map(|count| count.occurrences),
-        Some(6)
+        Some(13)
     );
 }
 
@@ -565,6 +572,12 @@ fn source_inventory_classifies_annotation_editor_notes() {
         "［＃「色々に盛装して」または「色々な盛装をして」と思われる］",
         "［＃「今の天皇」は「大正天皇」］",
         "［＃「佐土布都の神」は本文の書き下し文では「佐士布都の神」］",
+        "［＃「ベネズェラ」は本文では「ベネズエラ」］",
+        "［＃「マリニヨリの」は本文では「マリニョリの」］",
+        "［＃「ムツセメルリ」は本文では「ムッセメルリ」］",
+        "［＃「把握するのである。」は初刊本「人生論ノート」創元社、昭和16年8月11日発行では「把握するのである。しかしながら愛するといふことは如何に困難であるか。」］",
+        "［＃「本誌」は「改造」］",
+        "［＃「な」は判読困難につき推定、コマ25-左-3］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -579,7 +592,7 @@ fn source_inventory_classifies_annotation_editor_notes() {
             .row_counts
             .get("annotation.chuuki")
             .map(|count| count.occurrences),
-        Some(44)
+        Some(50)
     );
 }
 
@@ -1288,6 +1301,11 @@ fn source_inventory_classifies_dialogue_indent_and_figure_variants() {
         "［＃図形　□（四角）に内接する◆］",
         "［＃図４、花の絵］",
         "［＃図６入る］",
+        "［＃ここに挿し絵入る］",
+        "［＃ここに花園の挿絵あり］",
+        "［＃ひめだるまの写真（fig45338_01png、横441×縦233）入る］",
+        "［＃カット「手書きの図」入る。44-上段］",
+        "［＃「ねませ和子よの譜」の表題付きの楽譜入る（略）］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -1381,6 +1399,13 @@ fn source_inventory_classifies_layout_and_inline_style_corpus_variants() {
         "［＃「est」に下線］",
         "［＃「San」は３０度位右上がり］",
         "［＃「show」は３０度位右上がり］",
+        "［＃「一五四・六」の両側に傍線］",
+        "［＃「一体だ」に波線］",
+        "［＃「月二」は１８０度回転］",
+        "［＃「ココノトコロハ三拝九拝シテアル部分」は２日～10日の下に縦中横］",
+        "［＃「うらみ思ひ」は、「刈萱の穗にあらはれぬ」と「かな」の間に挟まれるような形でポイントを下げて２行で］",
+        "［＃「文字結　青」はポイントを下げる］",
+        "［＃「曉臺ノ句　風早し二つにわれてむら千鳥」は「帆柱や二つにわれてむら千鳥」の下にポイントを下げて２行で］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -1392,10 +1417,10 @@ fn source_inventory_classifies_layout_and_inline_style_corpus_variants() {
     );
     for (row_id, expected) in [
         ("indentation.burasage", 2),
-        ("decoration.font_size", 9),
+        ("decoration.font_size", 12),
         ("decoration.bold_italic", 5),
-        ("decoration.bousen", 5),
-        ("layout.tcy", 4),
+        ("decoration.bousen", 7),
+        ("layout.tcy", 6),
         ("layout.yokogumi", 5),
     ] {
         assert_eq!(

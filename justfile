@@ -570,6 +570,60 @@ morph-warehouse-build-latest-report PROFILE="full" LIMIT="50":
 	"{{repo_root}}/reports/morph-warehouse/build-report.sh" "$run_dir" "$out_dir" "{{LIMIT}}"; \
 	echo "$out_dir"
 
+# ── Vibrato dictionary builds (self-contained via Nix + mecab-dic-converter) ──
+# Each recipe fetches the NINJAL Unidic zip and converts MeCab → vibrato .dic.zst
+# via mecab-dic-converter. The output is symlinked into dictionary/compiled/ so
+# the analyzer auto-discovers it.
+
+dictionary-build-cwj:
+	@nix build .#vibrato-dict-cwj --no-link --print-out-paths | while read -r out; do \
+		for dict in "$$out"/share/vibrato/*.dic.zst; do \
+			[ -f "$$dict" ] || continue; \
+			ln -sf "$$dict" "{{vibrato_compiled_dir}}/$$(basename "$$dict")"; \
+			echo "  linked $$(basename "$$dict")"; \
+		done; \
+	done
+
+dictionary-build-csj:
+	@nix build .#vibrato-dict-csj --no-link --print-out-paths | while read -r out; do \
+		for dict in "$$out"/share/vibrato/*.dic.zst; do \
+			[ -f "$$dict" ] || continue; \
+			ln -sf "$$dict" "{{vibrato_compiled_dir}}/$$(basename "$$dict")"; \
+			echo "  linked $$(basename "$$dict")"; \
+		done; \
+	done
+
+dictionary-build-novel:
+	@nix build .#vibrato-dict-novel --no-link --print-out-paths | while read -r out; do \
+		for dict in "$$out"/share/vibrato/*.dic.zst; do \
+			[ -f "$$dict" ] || continue; \
+			ln -sf "$$dict" "{{vibrato_compiled_dir}}/$$(basename "$$dict")"; \
+			echo "  linked $$(basename "$$dict")"; \
+		done; \
+	done
+
+dictionary-build-qkana:
+	@nix build .#vibrato-dict-qkana --no-link --print-out-paths | while read -r out; do \
+		for dict in "$$out"/share/vibrato/*.dic.zst; do \
+			[ -f "$$dict" ] || continue; \
+			ln -sf "$$dict" "{{vibrato_compiled_dir}}/$$(basename "$$dict")"; \
+			echo "  linked $$(basename "$$dict")"; \
+		done; \
+	done
+
+dictionary-build-kindai-bungo:
+	@nix build .#vibrato-dict-kindai-bungo --no-link --print-out-paths | while read -r out; do \
+		for dict in "$$out"/share/vibrato/*.dic.zst; do \
+			[ -f "$$dict" ] || continue; \
+			ln -sf "$$dict" "{{vibrato_compiled_dir}}/$$(basename "$$dict")"; \
+			echo "  linked $$(basename "$$dict")"; \
+		done; \
+	done
+
+# Build all available vibrato dictionaries and link them.
+dictionary-build-all: dictionary-build-cwj dictionary-build-csj dictionary-build-novel dictionary-build-qkana dictionary-build-kindai-bungo
+	@echo "All vibrato dictionaries built and linked."
+
 morph-vibrato-dictionary-status:
 	@printf "Available dictionary source snapshots:\n"
 	@if [ -d "{{repo_root}}/dictionary/unidic-sources" ]; then \

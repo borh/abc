@@ -41,6 +41,11 @@
       flake = false;
     };
 
+    mecab-dic-converter-src = {
+      url = "github:tomokane/mecab-dic-converter/d24dcf25ce47170ca9e661c003b5d3345e98dac9";
+      flake = false;
+    };
+
   };
 
   outputs =
@@ -53,6 +58,7 @@
       reference-aozora2-src,
       reference-aozorabunko-extractor-src,
       aozorabunko-src,
+      mecab-dic-converter-src,
       flake-utils,
       rust-overlay,
     }:
@@ -252,6 +258,99 @@
               ln -s system_full.dic "$out/share/sudachi/system.dic"
               runHook postInstall
             '';
+
+        # ── mecab-dic-converter: MeCab compiled dict → vibrato .dic.zst ──
+
+        mecabDicConverterCargoLock = {
+          lockFile = mecab-dic-converter-src + "/Cargo.lock";
+          outputHashes = {
+            "vibrato-rkyv-0.7.7" = "sha256-M6ALFpSjs9M+6tvCmn2ZTevUS7NBL6RmnE5GB/qVMEo=";
+            "crawdad-rkyv-0.4.0-rkyv.2" = "sha256-FlSXUYHNFUIuEK4sLhbCKJsgRm/EKnHDu7VPpdpvu10=";
+          };
+        };
+
+        mecabDicConverter = rustPlatform.buildRustPackage {
+          pname = "mecab-dic-converter";
+          version = "0.1.0";
+
+          src = mecab-dic-converter-src;
+          cargoLock = mecabDicConverterCargoLock;
+
+          buildFeatures = [ "vibrato-export" ];
+
+          # Tests require MeCab dictionary files at specific paths.
+          doCheck = false;
+
+          meta.description = "Convert compiled MeCab dictionaries to Vibrato/Lindera formats";
+        };
+
+        # Build a vibrato .dic.zst from a NINJAL Unidic zip (MeCab format).
+        buildUnidicVibratoDict =
+          {
+            name,
+            url,
+            hash,
+          }:
+          let
+            unidicSrc = pkgs.fetchzip {
+              inherit url hash;
+              name = "${name}-src";
+            };
+          in
+          pkgs.runCommand "vibrato-dict-${name}-202512"
+            {
+              nativeBuildInputs = [ mecabDicConverter ];
+            }
+            ''
+              mkdir -p "$out/share/vibrato"
+              mecab-dic-converter build-vibrato \
+                --dictionary-root ${unidicSrc} \
+                --output "$out/share/vibrato/${name}-202512.dic.zst"
+            '';
+
+        # ── Individual vibrato dictionary packages ──
+
+        vibratoDictCwj = buildUnidicVibratoDict {
+          name = "unidic-cwj";
+          url = "https://clrd.ninjal.ac.jp/unidic_archive/2512/unidic-cwj-202512.zip";
+          hash = "sha256-lNvcTlhqSWoLPF104eS7r08Dw5SQYRwzTQXy6DxdfjM=";
+        };
+
+        vibratoDictCsj = buildUnidicVibratoDict {
+          name = "unidic-csj";
+          url = "https://clrd.ninjal.ac.jp/unidic_archive/2512/unidic-csj-202512.zip";
+          hash = "sha256-W0toSrgD8R+KLWos1XuaR3qJhiiYLXtwyd1sUvuYFAM=";
+        };
+
+        vibratoDictNovel = buildUnidicVibratoDict {
+          name = "unidic-novel";
+          url = "https://clrd.ninjal.ac.jp/unidic_archive/2512/unidic-novel-v202512.zip";
+          hash = "sha256-19wqA64F2CJFYaHzZTMCxOcwYoOTd6C98GHa5b/RUH8=";
+        };
+
+        vibratoDictQkana = buildUnidicVibratoDict {
+          name = "unidic-qkana";
+          url = "https://clrd.ninjal.ac.jp/unidic_archive/2512/unidic-qkana-202512.zip";
+          hash = "sha256-9ACb0FASGtARYtyAU7BfsbiA25fQjuGWlatzLR2Y4I4=";
+        };
+
+        vibratoDictKindaiBungo = buildUnidicVibratoDict {
+          name = "unidic-kindai-bungo";
+          url = "https://clrd.ninjal.ac.jp/unidic_archive/2512/unidic-kindai-bungo-202512.zip";
+          hash = "sha256-Lo/1zHJ6teqPukegFo9U6MRi0BI+JYm6YlqvaStX+2Q=";
+        };
+
+        # Combined package: all built vibrato dictionaries.
+        vibratoDictionaries = pkgs.symlinkJoin {
+          name = "vibrato-dictionaries";
+          paths = [
+            vibratoDictCwj
+            vibratoDictCsj
+            vibratoDictNovel
+            vibratoDictQkana
+            vibratoDictKindaiBungo
+          ];
+        };
 
         aozoraRsGaijiMenkuten = pkgs.fetchurl {
           url = "https://x0213.org/codetable/jisx0213-2004-std.txt";
@@ -858,6 +957,13 @@
           reference-aozora-epub3 = referenceAozoraEpub3;
           reference-parsers = referenceParsers;
           sudachi-dictionary-full = sudachiDictionaryFull;
+          mecab-dic-converter = mecabDicConverter;
+          vibrato-dict-cwj = vibratoDictCwj;
+          vibrato-dict-csj = vibratoDictCsj;
+          vibrato-dict-novel = vibratoDictNovel;
+          vibrato-dict-qkana = vibratoDictQkana;
+          vibrato-dict-kindai-bungo = vibratoDictKindaiBungo;
+          vibrato-dictionaries = vibratoDictionaries;
         };
 
         apps.default = flake-utils.lib.mkApp {
@@ -910,6 +1016,28 @@
             shellHook = ''
               export CARGO_HOME="''${CARGO_HOME:-$PWD/.cargo}"
               export RUST_BACKTRACE="1"
+
+              # Create dictionary directories so the analyzer can discover
+              # symlinked dictionaries at runtime.
+              mkdir -p dictionary/compiled dictionary/optimized
+
+              # Build a vibrato dictionary from NINJAL and symlink it into
+              # dictionary/compiled/ so the analyzer auto-discovers it.
+              # Usage: vibrato-dict-link cwj
+              #        vibrato-dict-link novel
+              vibrato-dict-link() {
+                local name="''${1:-cwj}"
+                local pkg="vibrato-dict-$name"
+                echo "building .#$pkg ..." >&2
+                nix build ".#$pkg" --no-link --print-out-paths | while read -r out; do
+                  for dict in "$out"/share/vibrato/*.dic.zst; do
+                    [ -f "$dict" ] || continue
+                    ln -sf "$dict" "dictionary/compiled/$(basename "$dict")"
+                    echo "  linked $(basename "$dict")" >&2
+                  done
+                done
+              }
+              export -f vibrato-dict-link
             '';
           };
 

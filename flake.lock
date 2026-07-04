@@ -35,6 +35,23 @@
         "type": "github"
       }
     },
+    "mecab-dic-converter-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1777975318,
+        "narHash": "sha256-L02lXaS/ULm+zpKMm3Fji2vpdKiAvl4dWJL6O4Fcgcg=",
+        "owner": "tomokane",
+        "repo": "mecab-dic-converter",
+        "rev": "d24dcf25ce47170ca9e661c003b5d3345e98dac9",
+        "type": "github"
+      },
+      "original": {
+        "owner": "tomokane",
+        "repo": "mecab-dic-converter",
+        "rev": "d24dcf25ce47170ca9e661c003b5d3345e98dac9",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1782723713,
@@ -135,6 +152,7 @@
       "inputs": {
         "aozorabunko-src": "aozorabunko-src",
         "flake-utils": "flake-utils",
+        "mecab-dic-converter-src": "mecab-dic-converter-src",
         "nixpkgs": "nixpkgs",
         "reference-aozora-epub3-src": "reference-aozora-epub3-src",
         "reference-aozora-parser-js-src": "reference-aozora-parser-js-src",

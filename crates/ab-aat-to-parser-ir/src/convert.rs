@@ -149,6 +149,17 @@ fn map_block(
     let mut current = offset;
     match kind {
         "paragraph" => {
+            if is_source_derived_page_break(block) {
+                let span = map_span(block.get("span"), current, current, recorder, path)?;
+                nodes.push(json!({
+                    "type": "page-break",
+                    "span": span,
+                    "marker": "page",
+                    "page_number": null,
+                }));
+                return Ok(current);
+            }
+
             let paragraph_id = format!("p{:06}", paragraphs.len());
             let node_start = nodes.len();
             let source_note_text = if is_final_top_level {
@@ -329,6 +340,15 @@ fn map_block(
         other => bail!("unsupported block kind: {other}"),
     }
     Ok(current)
+}
+
+fn is_source_derived_page_break(block: &Value) -> bool {
+    block.get("x-break-kind").and_then(Value::as_str) == Some("page")
+        && block.get("x-provenance").and_then(Value::as_str) == Some("source-derived")
+        && block
+            .get("content")
+            .and_then(Value::as_array)
+            .is_some_and(Vec::is_empty)
 }
 
 fn paragraph_span(

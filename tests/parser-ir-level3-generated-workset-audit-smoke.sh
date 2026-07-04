@@ -138,6 +138,7 @@ jq -e '.rows[0].classification.paragraph_delta_bucket != null' "$out_dir/audit/s
 jq -e '.rows[0].classification.paragraph_origin_bucket != null' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.rows[0].paragraph_rendering.body_ranges != null' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.rows[0].paragraph_rendering.empty_body_ranges != null' "$out_dir/audit/summary.json" >/dev/null
+jq -e '.rows[0].paragraph_rendering.page_break_nodes != null' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.rows[0].paragraph_rendering.source_note_back_ranges != null' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.rows[0].deltas.generated_vs_parser_ir_body_p_count != null' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.rows[0].deltas.aat_paragraph_blocks_vs_tei_eaj_body_p_count != null' "$out_dir/audit/summary.json" >/dev/null

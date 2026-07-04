@@ -11,11 +11,13 @@
       "aozora-rs",
       "aozora2"
     ],
+    "candidate_mode": "selected",
     "max_rows": 0,
     "tei_eaj_file_filter": []
   },
   "totals": {
     "rows_attempted": 57,
+    "tei_eaj_rows_attempted": 57,
     "materialization_succeeded": 57,
     "materialization_failed": 0,
     "rows_skipped": 5
@@ -24,6 +26,13 @@
     "under_split": 7,
     "over_split": 45,
     "exact": 5
+  },
+  "paragraph_origin_buckets": {
+    "adapter_under_segmented": 5,
+    "adapter_over_segmented": 42,
+    "aligned": 5,
+    "page_break_projection": 3,
+    "source_note_back_routing": 2
   },
   "body_text_relation_buckets": {
     "different": 53,
@@ -39,6 +48,33 @@
     "base_equal": 3,
     "base_drop_parentheticals_equal": 1
   },
+  "adapter_paragraph_delta_buckets": {
+    "aozora2html": {
+      "under_split": 7,
+      "over_split": 45,
+      "exact": 5
+    }
+  },
+  "adapter_paragraph_origin_buckets": {
+    "aozora2html": {
+      "adapter_under_segmented": 5,
+      "adapter_over_segmented": 42,
+      "aligned": 5,
+      "page_break_projection": 3,
+      "source_note_back_routing": 2
+    }
+  },
+  "adapter_body_text_match_buckets": {
+    "aozora2html": {
+      "different": 26,
+      "ruby_expanded_parenless_equal": 19,
+      "ruby_expanded_parenless_generated_contains_tei_eaj": 5,
+      "ruby_expanded_parenless_tei_eaj_contains_generated": 2,
+      "ruby_expanded_equal": 1,
+      "base_equal": 3,
+      "base_drop_parentheticals_equal": 1
+    }
+  },
   "rows": [
     {
       "work_id": "1126",
@@ -50,6 +86,18 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 48,
+        "block_kinds": {
+          "heading": 1,
+          "jisage_block": 17,
+          "paragraph": 30
+        },
+        "paragraph_blocks": 30,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 6
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -59,6 +107,18 @@
         "nodes": 380,
         "paragraph_count": 30,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 30,
+        "page_break_nodes": 0,
+        "body_ranges": 30,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 30,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 30,
@@ -76,11 +136,11 @@
       },
       "deltas": {
         "body_p_count": -139,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": -139
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": -139,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -122,32 +182,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "under_split",
+        "paragraph_origin_bucket": "adapter_under_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_under_segmented"
-      },
-      "aat": {
-        "block_count": 48,
-        "block_kinds": {
-          "heading": 1,
-          "jisage_block": 17,
-          "paragraph": 30
-        },
-        "paragraph_blocks": 30,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 6
-      },
-      "paragraph_rendering": {
-        "total_ranges": 30,
-        "body_ranges": 30,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 30,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -160,6 +197,16 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 62,
+        "block_kinds": {
+          "paragraph": 62
+        },
+        "paragraph_blocks": 62,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 4
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -169,6 +216,18 @@
         "nodes": 317,
         "paragraph_count": 62,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 62,
+        "page_break_nodes": 0,
+        "body_ranges": 62,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 62,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 62,
@@ -186,11 +245,11 @@
       },
       "deltas": {
         "body_p_count": 61,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 61
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 61,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -232,30 +291,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 62,
-        "block_kinds": {
-          "paragraph": 62
-        },
-        "paragraph_blocks": 62,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 4
-      },
-      "paragraph_rendering": {
-        "total_ranges": 62,
-        "body_ranges": 62,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 62,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -268,6 +306,16 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 8,
+        "block_kinds": {
+          "paragraph": 8
+        },
+        "paragraph_blocks": 8,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 0
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -277,6 +325,18 @@
         "nodes": 16,
         "paragraph_count": 8,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 8,
+        "page_break_nodes": 0,
+        "body_ranges": 8,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 8,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 8,
@@ -294,11 +354,11 @@
       },
       "deltas": {
         "body_p_count": 2,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 2
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 2,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -340,30 +400,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 8,
-        "block_kinds": {
-          "paragraph": 8
-        },
-        "paragraph_blocks": 8,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 0
-      },
-      "paragraph_rendering": {
-        "total_ranges": 8,
-        "body_ranges": 8,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 8,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -376,6 +415,16 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 29,
+        "block_kinds": {
+          "paragraph": 29
+        },
+        "paragraph_blocks": 29,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 0
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -385,6 +434,18 @@
         "nodes": 49,
         "paragraph_count": 29,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 29,
+        "page_break_nodes": 0,
+        "body_ranges": 29,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 29,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 29,
@@ -402,11 +463,11 @@
       },
       "deltas": {
         "body_p_count": 28,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 28
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 28,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -448,30 +509,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 29,
-        "block_kinds": {
-          "paragraph": 29
-        },
-        "paragraph_blocks": 29,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 0
-      },
-      "paragraph_rendering": {
-        "total_ranges": 29,
-        "body_ranges": 29,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 29,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -484,6 +524,16 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 28,
+        "block_kinds": {
+          "paragraph": 28
+        },
+        "paragraph_blocks": 28,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 4
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -493,6 +543,18 @@
         "nodes": 152,
         "paragraph_count": 28,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 28,
+        "page_break_nodes": 0,
+        "body_ranges": 28,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 28,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 28,
@@ -510,11 +572,11 @@
       },
       "deltas": {
         "body_p_count": 0,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 0
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 0,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -556,30 +618,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "exact",
+        "paragraph_origin_bucket": "aligned",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "aligned"
-      },
-      "aat": {
-        "block_count": 28,
-        "block_kinds": {
-          "paragraph": 28
-        },
-        "paragraph_blocks": 28,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 4
-      },
-      "paragraph_rendering": {
-        "total_ranges": 28,
-        "body_ranges": 28,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 28,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -592,6 +633,16 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 4,
+        "block_kinds": {
+          "paragraph": 4
+        },
+        "paragraph_blocks": 4,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -601,6 +652,18 @@
         "nodes": 8,
         "paragraph_count": 4,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 4,
+        "page_break_nodes": 0,
+        "body_ranges": 4,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 4,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 4,
@@ -618,11 +681,11 @@
       },
       "deltas": {
         "body_p_count": 1,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 1
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 1,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -664,30 +727,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 4,
-        "block_kinds": {
-          "paragraph": 4
-        },
-        "paragraph_blocks": 4,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 3
-      },
-      "paragraph_rendering": {
-        "total_ranges": 4,
-        "body_ranges": 4,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 4,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -700,6 +742,18 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 37,
+        "block_kinds": {
+          "heading": 1,
+          "jisage_block": 4,
+          "paragraph": 32
+        },
+        "paragraph_blocks": 32,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 7
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -709,6 +763,18 @@
         "nodes": 89,
         "paragraph_count": 32,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 32,
+        "page_break_nodes": 0,
+        "body_ranges": 32,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 32,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 32,
@@ -726,11 +792,11 @@
       },
       "deltas": {
         "body_p_count": 2,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 2
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 2,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -772,32 +838,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 37,
-        "block_kinds": {
-          "heading": 1,
-          "jisage_block": 4,
-          "paragraph": 32
-        },
-        "paragraph_blocks": 32,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 7
-      },
-      "paragraph_rendering": {
-        "total_ranges": 32,
-        "body_ranges": 32,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 32,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -810,6 +853,16 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 186,
+        "block_kinds": {
+          "paragraph": 186
+        },
+        "paragraph_blocks": 186,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 1
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -819,6 +872,18 @@
         "nodes": 497,
         "paragraph_count": 186,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 186,
+        "page_break_nodes": 0,
+        "body_ranges": 186,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 186,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 186,
@@ -836,11 +901,11 @@
       },
       "deltas": {
         "body_p_count": 160,
-        "body_note_count": -1,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 160
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 160,
+        "body_note_count": -1,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -882,30 +947,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 186,
-        "block_kinds": {
-          "paragraph": 186
-        },
-        "paragraph_blocks": 186,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 1
-      },
-      "paragraph_rendering": {
-        "total_ranges": 186,
-        "body_ranges": 186,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 186,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -918,6 +962,16 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 6,
+        "block_kinds": {
+          "paragraph": 6
+        },
+        "paragraph_blocks": 6,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -927,6 +981,18 @@
         "nodes": 28,
         "paragraph_count": 6,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 6,
+        "page_break_nodes": 0,
+        "body_ranges": 6,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 6,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 6,
@@ -944,11 +1010,11 @@
       },
       "deltas": {
         "body_p_count": 4,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 4
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 4,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -990,30 +1056,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 6,
-        "block_kinds": {
-          "paragraph": 6
-        },
-        "paragraph_blocks": 6,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 3
-      },
-      "paragraph_rendering": {
-        "total_ranges": 6,
-        "body_ranges": 6,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 6,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -1026,6 +1071,17 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 27,
+        "block_kinds": {
+          "jisage_block": 1,
+          "paragraph": 26
+        },
+        "paragraph_blocks": 26,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 1
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -1035,6 +1091,18 @@
         "nodes": 111,
         "paragraph_count": 26,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 26,
+        "page_break_nodes": 0,
+        "body_ranges": 26,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 26,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 26,
@@ -1052,11 +1120,11 @@
       },
       "deltas": {
         "body_p_count": 9,
-        "body_note_count": -1,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 9
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 9,
+        "body_note_count": -1,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -1098,31 +1166,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 27,
-        "block_kinds": {
-          "jisage_block": 1,
-          "paragraph": 26
-        },
-        "paragraph_blocks": 26,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 1
-      },
-      "paragraph_rendering": {
-        "total_ranges": 26,
-        "body_ranges": 26,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 26,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -1135,6 +1181,16 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 18,
+        "block_kinds": {
+          "paragraph": 18
+        },
+        "paragraph_blocks": 18,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 0
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -1144,6 +1200,18 @@
         "nodes": 20,
         "paragraph_count": 18,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 18,
+        "page_break_nodes": 0,
+        "body_ranges": 18,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 18,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 18,
@@ -1161,11 +1229,11 @@
       },
       "deltas": {
         "body_p_count": 12,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 12
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 12,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -1207,30 +1275,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 18,
-        "block_kinds": {
-          "paragraph": 18
-        },
-        "paragraph_blocks": 18,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 0
-      },
-      "paragraph_rendering": {
-        "total_ranges": 18,
-        "body_ranges": 18,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 18,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -1243,6 +1290,16 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 5,
+        "block_kinds": {
+          "paragraph": 5
+        },
+        "paragraph_blocks": 5,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 1
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -1252,6 +1309,18 @@
         "nodes": 13,
         "paragraph_count": 5,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 5,
+        "page_break_nodes": 0,
+        "body_ranges": 5,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 5,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 5,
@@ -1269,11 +1338,11 @@
       },
       "deltas": {
         "body_p_count": 0,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 0
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 0,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -1315,30 +1384,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "exact",
+        "paragraph_origin_bucket": "aligned",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "aligned"
-      },
-      "aat": {
-        "block_count": 5,
-        "block_kinds": {
-          "paragraph": 5
-        },
-        "paragraph_blocks": 5,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 1
-      },
-      "paragraph_rendering": {
-        "total_ranges": 5,
-        "body_ranges": 5,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 5,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -1351,6 +1399,16 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 8,
+        "block_kinds": {
+          "paragraph": 8
+        },
+        "paragraph_blocks": 8,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 1
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -1360,6 +1418,18 @@
         "nodes": 22,
         "paragraph_count": 8,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 8,
+        "page_break_nodes": 0,
+        "body_ranges": 8,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 8,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 8,
@@ -1377,11 +1447,11 @@
       },
       "deltas": {
         "body_p_count": 0,
-        "body_note_count": -3,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 0
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 0,
+        "body_note_count": -3,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -1423,30 +1493,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "exact",
+        "paragraph_origin_bucket": "aligned",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "aligned"
-      },
-      "aat": {
-        "block_count": 8,
-        "block_kinds": {
-          "paragraph": 8
-        },
-        "paragraph_blocks": 8,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 1
-      },
-      "paragraph_rendering": {
-        "total_ranges": 8,
-        "body_ranges": 8,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 8,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -1459,15 +1508,39 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 420,
+        "block_kinds": {
+          "heading": 1,
+          "jisage_block": 7,
+          "paragraph": 412
+        },
+        "paragraph_blocks": 412,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 7
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
       },
       "parser_ir": {
         "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
-        "nodes": 1316,
-        "paragraph_count": 412,
+        "nodes": 1322,
+        "paragraph_count": 406,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 406,
+        "page_break_nodes": 6,
+        "body_ranges": 406,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 406,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 406,
@@ -1485,11 +1558,11 @@
       },
       "deltas": {
         "body_p_count": 399,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": -6,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 405,
         "body_note_count": 0,
-        "back_source_note_count": 0,
-        "generated_vs_parser_ir_body_p_count": -6,
-        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 405
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -1531,32 +1604,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "page_break_projection",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "empty_body_paragraph_range"
-      },
-      "aat": {
-        "block_count": 420,
-        "block_kinds": {
-          "heading": 1,
-          "jisage_block": 7,
-          "paragraph": 412
-        },
-        "paragraph_blocks": 412,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 7
-      },
-      "paragraph_rendering": {
-        "total_ranges": 412,
-        "body_ranges": 412,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 6,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 406,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -1569,6 +1619,16 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 76,
+        "block_kinds": {
+          "paragraph": 76
+        },
+        "paragraph_blocks": 76,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 0
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -1578,6 +1638,18 @@
         "nodes": 667,
         "paragraph_count": 76,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 76,
+        "page_break_nodes": 0,
+        "body_ranges": 76,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 76,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 76,
@@ -1595,11 +1667,11 @@
       },
       "deltas": {
         "body_p_count": 0,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 0
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 0,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -1641,30 +1713,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "exact",
+        "paragraph_origin_bucket": "aligned",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "aligned"
-      },
-      "aat": {
-        "block_count": 76,
-        "block_kinds": {
-          "paragraph": 76
-        },
-        "paragraph_blocks": 76,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 0
-      },
-      "paragraph_rendering": {
-        "total_ranges": 76,
-        "body_ranges": 76,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 76,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -1677,6 +1728,16 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 5,
+        "block_kinds": {
+          "paragraph": 5
+        },
+        "paragraph_blocks": 5,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 0
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -1686,6 +1747,18 @@
         "nodes": 5,
         "paragraph_count": 5,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 5,
+        "page_break_nodes": 0,
+        "body_ranges": 5,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 5,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 5,
@@ -1703,11 +1776,11 @@
       },
       "deltas": {
         "body_p_count": 4,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 4
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 4,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "generated_contains_tei_eaj",
@@ -1749,30 +1822,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 5,
-        "block_kinds": {
-          "paragraph": 5
-        },
-        "paragraph_blocks": 5,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 0
-      },
-      "paragraph_rendering": {
-        "total_ranges": 5,
-        "body_ranges": 5,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 5,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -1785,6 +1837,17 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 21,
+        "block_kinds": {
+          "jisage_block": 1,
+          "paragraph": 20
+        },
+        "paragraph_blocks": 20,
+        "final_block_kind": "jisage_block",
+        "final_source_attribution_candidate": false,
+        "hints_count": 0
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -1794,6 +1857,18 @@
         "nodes": 33,
         "paragraph_count": 20,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 20,
+        "page_break_nodes": 0,
+        "body_ranges": 20,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 20,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 20,
@@ -1811,11 +1886,11 @@
       },
       "deltas": {
         "body_p_count": 19,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 19
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 19,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -1857,31 +1932,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 21,
-        "block_kinds": {
-          "jisage_block": 1,
-          "paragraph": 20
-        },
-        "paragraph_blocks": 20,
-        "final_block_kind": "jisage_block",
-        "final_source_attribution_candidate": false,
-        "hints_count": 0
-      },
-      "paragraph_rendering": {
-        "total_ranges": 20,
-        "body_ranges": 20,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 20,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -1894,6 +1947,18 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 26,
+        "block_kinds": {
+          "heading": 1,
+          "jisage_block": 9,
+          "paragraph": 16
+        },
+        "paragraph_blocks": 16,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 7
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -1903,6 +1968,18 @@
         "nodes": 260,
         "paragraph_count": 16,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 16,
+        "page_break_nodes": 0,
+        "body_ranges": 16,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 16,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 16,
@@ -1920,11 +1997,11 @@
       },
       "deltas": {
         "body_p_count": -110,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": -110
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": -110,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -1966,32 +2043,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "under_split",
+        "paragraph_origin_bucket": "adapter_under_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_under_segmented"
-      },
-      "aat": {
-        "block_count": 26,
-        "block_kinds": {
-          "heading": 1,
-          "jisage_block": 9,
-          "paragraph": 16
-        },
-        "paragraph_blocks": 16,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 7
-      },
-      "paragraph_rendering": {
-        "total_ranges": 16,
-        "body_ranges": 16,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 16,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -2004,6 +2058,16 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 8,
+        "block_kinds": {
+          "paragraph": 8
+        },
+        "paragraph_blocks": 8,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -2013,6 +2077,18 @@
         "nodes": 12,
         "paragraph_count": 8,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 8,
+        "page_break_nodes": 0,
+        "body_ranges": 8,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 8,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 8,
@@ -2030,11 +2106,11 @@
       },
       "deltas": {
         "body_p_count": 7,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 7
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 7,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -2076,30 +2152,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 8,
-        "block_kinds": {
-          "paragraph": 8
-        },
-        "paragraph_blocks": 8,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 3
-      },
-      "paragraph_rendering": {
-        "total_ranges": 8,
-        "body_ranges": 8,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 8,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -2112,6 +2167,16 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 9,
+        "block_kinds": {
+          "paragraph": 9
+        },
+        "paragraph_blocks": 9,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -2121,6 +2186,18 @@
         "nodes": 25,
         "paragraph_count": 9,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 9,
+        "page_break_nodes": 0,
+        "body_ranges": 9,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 9,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 9,
@@ -2138,11 +2215,11 @@
       },
       "deltas": {
         "body_p_count": 8,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 8
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 8,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -2184,30 +2261,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 9,
-        "block_kinds": {
-          "paragraph": 9
-        },
-        "paragraph_blocks": 9,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 3
-      },
-      "paragraph_rendering": {
-        "total_ranges": 9,
-        "body_ranges": 9,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 9,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -2220,6 +2276,16 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 9,
+        "block_kinds": {
+          "paragraph": 9
+        },
+        "paragraph_blocks": 9,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -2229,6 +2295,18 @@
         "nodes": 19,
         "paragraph_count": 9,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 9,
+        "page_break_nodes": 0,
+        "body_ranges": 9,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 9,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 9,
@@ -2246,11 +2324,11 @@
       },
       "deltas": {
         "body_p_count": 1,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 1
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 1,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -2292,30 +2370,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 9,
-        "block_kinds": {
-          "paragraph": 9
-        },
-        "paragraph_blocks": 9,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 3
-      },
-      "paragraph_rendering": {
-        "total_ranges": 9,
-        "body_ranges": 9,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 9,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -2328,6 +2385,16 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 13,
+        "block_kinds": {
+          "paragraph": 13
+        },
+        "paragraph_blocks": 13,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 4
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -2337,6 +2404,18 @@
         "nodes": 33,
         "paragraph_count": 13,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 13,
+        "page_break_nodes": 0,
+        "body_ranges": 13,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 13,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 13,
@@ -2354,11 +2433,11 @@
       },
       "deltas": {
         "body_p_count": 12,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 12
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 12,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -2400,30 +2479,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 13,
-        "block_kinds": {
-          "paragraph": 13
-        },
-        "paragraph_blocks": 13,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 4
-      },
-      "paragraph_rendering": {
-        "total_ranges": 13,
-        "body_ranges": 13,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 13,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -2436,6 +2494,16 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 7,
+        "block_kinds": {
+          "paragraph": 7
+        },
+        "paragraph_blocks": 7,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -2445,6 +2513,18 @@
         "nodes": 13,
         "paragraph_count": 7,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 7,
+        "page_break_nodes": 0,
+        "body_ranges": 7,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 7,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 7,
@@ -2462,11 +2542,11 @@
       },
       "deltas": {
         "body_p_count": 6,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 6
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 6,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "equal",
@@ -2504,30 +2584,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 7,
-        "block_kinds": {
-          "paragraph": 7
-        },
-        "paragraph_blocks": 7,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 3
-      },
-      "paragraph_rendering": {
-        "total_ranges": 7,
-        "body_ranges": 7,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 7,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -2540,6 +2599,16 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 5,
+        "block_kinds": {
+          "paragraph": 5
+        },
+        "paragraph_blocks": 5,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -2549,6 +2618,18 @@
         "nodes": 15,
         "paragraph_count": 5,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 5,
+        "page_break_nodes": 0,
+        "body_ranges": 5,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 5,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 5,
@@ -2566,11 +2647,11 @@
       },
       "deltas": {
         "body_p_count": 4,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 4
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 4,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -2612,30 +2693,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 5,
-        "block_kinds": {
-          "paragraph": 5
-        },
-        "paragraph_blocks": 5,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 3
-      },
-      "paragraph_rendering": {
-        "total_ranges": 5,
-        "body_ranges": 5,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 5,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -2648,6 +2708,16 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 11,
+        "block_kinds": {
+          "paragraph": 11
+        },
+        "paragraph_blocks": 11,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -2657,6 +2727,18 @@
         "nodes": 29,
         "paragraph_count": 11,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 11,
+        "page_break_nodes": 0,
+        "body_ranges": 11,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 11,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 11,
@@ -2674,11 +2756,11 @@
       },
       "deltas": {
         "body_p_count": 10,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 10
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 10,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -2720,30 +2802,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 11,
-        "block_kinds": {
-          "paragraph": 11
-        },
-        "paragraph_blocks": 11,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 3
-      },
-      "paragraph_rendering": {
-        "total_ranges": 11,
-        "body_ranges": 11,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 11,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -2756,6 +2817,16 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 13,
+        "block_kinds": {
+          "paragraph": 13
+        },
+        "paragraph_blocks": 13,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 4
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -2765,6 +2836,18 @@
         "nodes": 35,
         "paragraph_count": 13,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 13,
+        "page_break_nodes": 0,
+        "body_ranges": 13,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 13,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 13,
@@ -2782,11 +2865,11 @@
       },
       "deltas": {
         "body_p_count": 12,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 12
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 12,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -2828,30 +2911,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 13,
-        "block_kinds": {
-          "paragraph": 13
-        },
-        "paragraph_blocks": 13,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 4
-      },
-      "paragraph_rendering": {
-        "total_ranges": 13,
-        "body_ranges": 13,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 13,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -2864,6 +2926,16 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 10,
+        "block_kinds": {
+          "paragraph": 10
+        },
+        "paragraph_blocks": 10,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -2873,6 +2945,18 @@
         "nodes": 26,
         "paragraph_count": 10,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 10,
+        "page_break_nodes": 0,
+        "body_ranges": 10,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 10,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 10,
@@ -2890,11 +2974,11 @@
       },
       "deltas": {
         "body_p_count": 9,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 9
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 9,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -2936,30 +3020,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 10,
-        "block_kinds": {
-          "paragraph": 10
-        },
-        "paragraph_blocks": 10,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 3
-      },
-      "paragraph_rendering": {
-        "total_ranges": 10,
-        "body_ranges": 10,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 10,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -2972,6 +3035,16 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 10,
+        "block_kinds": {
+          "paragraph": 10
+        },
+        "paragraph_blocks": 10,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -2981,6 +3054,18 @@
         "nodes": 30,
         "paragraph_count": 10,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 10,
+        "page_break_nodes": 0,
+        "body_ranges": 10,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 10,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 10,
@@ -2998,11 +3083,11 @@
       },
       "deltas": {
         "body_p_count": 9,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 9
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 9,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -3044,30 +3129,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 10,
-        "block_kinds": {
-          "paragraph": 10
-        },
-        "paragraph_blocks": 10,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 3
-      },
-      "paragraph_rendering": {
-        "total_ranges": 10,
-        "body_ranges": 10,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 10,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -3080,6 +3144,16 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 6,
+        "block_kinds": {
+          "paragraph": 6
+        },
+        "paragraph_blocks": 6,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -3089,6 +3163,18 @@
         "nodes": 16,
         "paragraph_count": 6,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 6,
+        "page_break_nodes": 0,
+        "body_ranges": 6,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 6,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 6,
@@ -3106,11 +3192,11 @@
       },
       "deltas": {
         "body_p_count": 5,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 5
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 5,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -3152,30 +3238,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 6,
-        "block_kinds": {
-          "paragraph": 6
-        },
-        "paragraph_blocks": 6,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 3
-      },
-      "paragraph_rendering": {
-        "total_ranges": 6,
-        "body_ranges": 6,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 6,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -3188,6 +3253,16 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 7,
+        "block_kinds": {
+          "paragraph": 7
+        },
+        "paragraph_blocks": 7,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -3197,6 +3272,18 @@
         "nodes": 15,
         "paragraph_count": 7,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 7,
+        "page_break_nodes": 0,
+        "body_ranges": 7,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 7,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 7,
@@ -3214,11 +3301,11 @@
       },
       "deltas": {
         "body_p_count": 6,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 6
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 6,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -3260,30 +3347,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 7,
-        "block_kinds": {
-          "paragraph": 7
-        },
-        "paragraph_blocks": 7,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 3
-      },
-      "paragraph_rendering": {
-        "total_ranges": 7,
-        "body_ranges": 7,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 7,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -3296,6 +3362,16 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 11,
+        "block_kinds": {
+          "paragraph": 11
+        },
+        "paragraph_blocks": 11,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 4
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -3305,6 +3381,18 @@
         "nodes": 31,
         "paragraph_count": 11,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 11,
+        "page_break_nodes": 0,
+        "body_ranges": 11,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 11,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 11,
@@ -3322,11 +3410,11 @@
       },
       "deltas": {
         "body_p_count": 10,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 10
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 10,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -3368,30 +3456,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 11,
-        "block_kinds": {
-          "paragraph": 11
-        },
-        "paragraph_blocks": 11,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 4
-      },
-      "paragraph_rendering": {
-        "total_ranges": 11,
-        "body_ranges": 11,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 11,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -3404,6 +3471,16 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 6,
+        "block_kinds": {
+          "paragraph": 6
+        },
+        "paragraph_blocks": 6,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -3413,6 +3490,18 @@
         "nodes": 16,
         "paragraph_count": 6,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 6,
+        "page_break_nodes": 0,
+        "body_ranges": 6,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 6,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 6,
@@ -3430,11 +3519,11 @@
       },
       "deltas": {
         "body_p_count": 5,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 5
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 5,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -3476,30 +3565,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 6,
-        "block_kinds": {
-          "paragraph": 6
-        },
-        "paragraph_blocks": 6,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 3
-      },
-      "paragraph_rendering": {
-        "total_ranges": 6,
-        "body_ranges": 6,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 6,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -3512,6 +3580,16 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 10,
+        "block_kinds": {
+          "paragraph": 10
+        },
+        "paragraph_blocks": 10,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -3521,6 +3599,18 @@
         "nodes": 20,
         "paragraph_count": 10,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 10,
+        "page_break_nodes": 0,
+        "body_ranges": 10,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 10,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 10,
@@ -3538,11 +3628,11 @@
       },
       "deltas": {
         "body_p_count": 9,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 9
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 9,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -3584,30 +3674,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 10,
-        "block_kinds": {
-          "paragraph": 10
-        },
-        "paragraph_blocks": 10,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 3
-      },
-      "paragraph_rendering": {
-        "total_ranges": 10,
-        "body_ranges": 10,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 10,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -3620,6 +3689,16 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 9,
+        "block_kinds": {
+          "paragraph": 9
+        },
+        "paragraph_blocks": 9,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -3629,6 +3708,18 @@
         "nodes": 25,
         "paragraph_count": 9,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 9,
+        "page_break_nodes": 0,
+        "body_ranges": 9,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 9,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 9,
@@ -3646,11 +3737,11 @@
       },
       "deltas": {
         "body_p_count": 8,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 8
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 8,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -3692,30 +3783,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 9,
-        "block_kinds": {
-          "paragraph": 9
-        },
-        "paragraph_blocks": 9,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 3
-      },
-      "paragraph_rendering": {
-        "total_ranges": 9,
-        "body_ranges": 9,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 9,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -3728,6 +3798,17 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 14,
+        "block_kinds": {
+          "jisage_block": 2,
+          "paragraph": 12
+        },
+        "paragraph_blocks": 12,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -3737,6 +3818,18 @@
         "nodes": 30,
         "paragraph_count": 12,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 12,
+        "page_break_nodes": 0,
+        "body_ranges": 12,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 12,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 12,
@@ -3754,11 +3847,11 @@
       },
       "deltas": {
         "body_p_count": 11,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 11
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 11,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -3800,31 +3893,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 14,
-        "block_kinds": {
-          "jisage_block": 2,
-          "paragraph": 12
-        },
-        "paragraph_blocks": 12,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 3
-      },
-      "paragraph_rendering": {
-        "total_ranges": 12,
-        "body_ranges": 12,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 12,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -3837,6 +3908,17 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 16,
+        "block_kinds": {
+          "jisage_block": 2,
+          "paragraph": 14
+        },
+        "paragraph_blocks": 14,
+        "final_block_kind": "jisage_block",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -3846,6 +3928,18 @@
         "nodes": 41,
         "paragraph_count": 14,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 14,
+        "page_break_nodes": 0,
+        "body_ranges": 14,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 14,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 14,
@@ -3863,11 +3957,11 @@
       },
       "deltas": {
         "body_p_count": 13,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 13
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 13,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -3909,31 +4003,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 16,
-        "block_kinds": {
-          "jisage_block": 2,
-          "paragraph": 14
-        },
-        "paragraph_blocks": 14,
-        "final_block_kind": "jisage_block",
-        "final_source_attribution_candidate": false,
-        "hints_count": 3
-      },
-      "paragraph_rendering": {
-        "total_ranges": 14,
-        "body_ranges": 14,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 14,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -3946,6 +4018,17 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 9,
+        "block_kinds": {
+          "jisage_block": 1,
+          "paragraph": 8
+        },
+        "paragraph_blocks": 8,
+        "final_block_kind": "jisage_block",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -3955,6 +4038,18 @@
         "nodes": 13,
         "paragraph_count": 8,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 8,
+        "page_break_nodes": 0,
+        "body_ranges": 8,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 8,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 8,
@@ -3972,11 +4067,11 @@
       },
       "deltas": {
         "body_p_count": 7,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 7
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 7,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -4018,31 +4113,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 9,
-        "block_kinds": {
-          "jisage_block": 1,
-          "paragraph": 8
-        },
-        "paragraph_blocks": 8,
-        "final_block_kind": "jisage_block",
-        "final_source_attribution_candidate": false,
-        "hints_count": 3
-      },
-      "paragraph_rendering": {
-        "total_ranges": 8,
-        "body_ranges": 8,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 8,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -4055,6 +4128,17 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 5,
+        "block_kinds": {
+          "jisage_block": 1,
+          "paragraph": 4
+        },
+        "paragraph_blocks": 4,
+        "final_block_kind": "jisage_block",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -4064,6 +4148,18 @@
         "nodes": 13,
         "paragraph_count": 4,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 4,
+        "page_break_nodes": 0,
+        "body_ranges": 4,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 4,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 4,
@@ -4081,11 +4177,11 @@
       },
       "deltas": {
         "body_p_count": 3,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 3
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 3,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -4127,31 +4223,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 5,
-        "block_kinds": {
-          "jisage_block": 1,
-          "paragraph": 4
-        },
-        "paragraph_blocks": 4,
-        "final_block_kind": "jisage_block",
-        "final_source_attribution_candidate": false,
-        "hints_count": 3
-      },
-      "paragraph_rendering": {
-        "total_ranges": 4,
-        "body_ranges": 4,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 4,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -4164,6 +4238,16 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 134,
+        "block_kinds": {
+          "paragraph": 134
+        },
+        "paragraph_blocks": 134,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 4
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -4173,6 +4257,18 @@
         "nodes": 506,
         "paragraph_count": 134,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 134,
+        "page_break_nodes": 0,
+        "body_ranges": 134,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 134,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 134,
@@ -4190,11 +4286,11 @@
       },
       "deltas": {
         "body_p_count": -2,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": -2
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": -2,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -4236,30 +4332,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "under_split",
+        "paragraph_origin_bucket": "adapter_under_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_under_segmented"
-      },
-      "aat": {
-        "block_count": 134,
-        "block_kinds": {
-          "paragraph": 134
-        },
-        "paragraph_blocks": 134,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 4
-      },
-      "paragraph_rendering": {
-        "total_ranges": 134,
-        "body_ranges": 134,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 134,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -4272,6 +4347,16 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 62,
+        "block_kinds": {
+          "paragraph": 62
+        },
+        "paragraph_blocks": 62,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 4
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -4281,6 +4366,18 @@
         "nodes": 317,
         "paragraph_count": 62,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 62,
+        "page_break_nodes": 0,
+        "body_ranges": 62,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 62,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 62,
@@ -4298,11 +4395,11 @@
       },
       "deltas": {
         "body_p_count": 5,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 5
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 5,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -4344,30 +4441,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 62,
-        "block_kinds": {
-          "paragraph": 62
-        },
-        "paragraph_blocks": 62,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 4
-      },
-      "paragraph_rendering": {
-        "total_ranges": 62,
-        "body_ranges": 62,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 62,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -4380,6 +4456,16 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 75,
+        "block_kinds": {
+          "paragraph": 75
+        },
+        "paragraph_blocks": 75,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": true,
+        "hints_count": 3
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -4389,6 +4475,18 @@
         "nodes": 251,
         "paragraph_count": 75,
         "source_note_count": 1
+      },
+      "paragraph_rendering": {
+        "total_ranges": 75,
+        "page_break_nodes": 0,
+        "body_ranges": 74,
+        "source_note_ranges": 1,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 74,
+        "source_note_back_ranges": 1,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 74,
@@ -4406,11 +4504,11 @@
       },
       "deltas": {
         "body_p_count": 57,
-        "body_note_count": 0,
-        "back_source_note_count": 1,
         "generated_vs_parser_ir_body_p_count": -1,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 58
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 58,
+        "body_note_count": 0,
+        "back_source_note_count": 1
       },
       "text": {
         "body_base_text_relation": "equal",
@@ -4448,30 +4546,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "source_note_back_routing",
         "source_note_body_excluded": true,
-        "source_note_back_present": true,
-        "paragraph_origin_bucket": "source_note_back_routing"
-      },
-      "aat": {
-        "block_count": 75,
-        "block_kinds": {
-          "paragraph": 75
-        },
-        "paragraph_blocks": 75,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": true,
-        "hints_count": 3
-      },
-      "paragraph_rendering": {
-        "total_ranges": 75,
-        "body_ranges": 74,
-        "source_note_ranges": 1,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 74,
-        "source_note_back_ranges": 1,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": true
       }
     },
     {
@@ -4484,6 +4561,16 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 75,
+        "block_kinds": {
+          "paragraph": 75
+        },
+        "paragraph_blocks": 75,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": true,
+        "hints_count": 3
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -4493,6 +4580,18 @@
         "nodes": 251,
         "paragraph_count": 75,
         "source_note_count": 1
+      },
+      "paragraph_rendering": {
+        "total_ranges": 75,
+        "page_break_nodes": 0,
+        "body_ranges": 74,
+        "source_note_ranges": 1,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 74,
+        "source_note_back_ranges": 1,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 74,
@@ -4510,11 +4609,11 @@
       },
       "deltas": {
         "body_p_count": 57,
-        "body_note_count": 0,
-        "back_source_note_count": 1,
         "generated_vs_parser_ir_body_p_count": -1,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 58
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 58,
+        "body_note_count": 0,
+        "back_source_note_count": 1
       },
       "text": {
         "body_base_text_relation": "equal",
@@ -4552,30 +4651,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "source_note_back_routing",
         "source_note_body_excluded": true,
-        "source_note_back_present": true,
-        "paragraph_origin_bucket": "source_note_back_routing"
-      },
-      "aat": {
-        "block_count": 75,
-        "block_kinds": {
-          "paragraph": 75
-        },
-        "paragraph_blocks": 75,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": true,
-        "hints_count": 3
-      },
-      "paragraph_rendering": {
-        "total_ranges": 75,
-        "body_ranges": 74,
-        "source_note_ranges": 1,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 74,
-        "source_note_back_ranges": 1,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": true
       }
     },
     {
@@ -4588,6 +4666,16 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 39,
+        "block_kinds": {
+          "paragraph": 39
+        },
+        "paragraph_blocks": 39,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 0
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -4597,6 +4685,18 @@
         "nodes": 285,
         "paragraph_count": 39,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 39,
+        "page_break_nodes": 0,
+        "body_ranges": 39,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 39,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 39,
@@ -4614,11 +4714,11 @@
       },
       "deltas": {
         "body_p_count": 35,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 35
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 35,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -4660,30 +4760,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 39,
-        "block_kinds": {
-          "paragraph": 39
-        },
-        "paragraph_blocks": 39,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 0
-      },
-      "paragraph_rendering": {
-        "total_ranges": 39,
-        "body_ranges": 39,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 39,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -4696,6 +4775,18 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 20,
+        "block_kinds": {
+          "heading": 1,
+          "jisage_block": 4,
+          "paragraph": 15
+        },
+        "paragraph_blocks": 15,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -4705,6 +4796,18 @@
         "nodes": 64,
         "paragraph_count": 15,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 15,
+        "page_break_nodes": 0,
+        "body_ranges": 15,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 15,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 15,
@@ -4722,11 +4825,11 @@
       },
       "deltas": {
         "body_p_count": 3,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 3
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 3,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -4768,32 +4871,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 20,
-        "block_kinds": {
-          "heading": 1,
-          "jisage_block": 4,
-          "paragraph": 15
-        },
-        "paragraph_blocks": 15,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 3
-      },
-      "paragraph_rendering": {
-        "total_ranges": 15,
-        "body_ranges": 15,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 15,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -4806,6 +4886,17 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 75,
+        "block_kinds": {
+          "jisage_block": 14,
+          "paragraph": 61
+        },
+        "paragraph_blocks": 61,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 4
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -4815,6 +4906,18 @@
         "nodes": 273,
         "paragraph_count": 61,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 61,
+        "page_break_nodes": 0,
+        "body_ranges": 61,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 61,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 61,
@@ -4832,11 +4935,11 @@
       },
       "deltas": {
         "body_p_count": -49,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": -49
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": -49,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -4878,31 +4981,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "under_split",
+        "paragraph_origin_bucket": "adapter_under_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_under_segmented"
-      },
-      "aat": {
-        "block_count": 75,
-        "block_kinds": {
-          "jisage_block": 14,
-          "paragraph": 61
-        },
-        "paragraph_blocks": 61,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 4
-      },
-      "paragraph_rendering": {
-        "total_ranges": 61,
-        "body_ranges": 61,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 61,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -4915,6 +4996,18 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 48,
+        "block_kinds": {
+          "heading": 1,
+          "jisage_block": 17,
+          "paragraph": 30
+        },
+        "paragraph_blocks": 30,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 6
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -4924,6 +5017,18 @@
         "nodes": 380,
         "paragraph_count": 30,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 30,
+        "page_break_nodes": 0,
+        "body_ranges": 30,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 30,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 30,
@@ -4941,11 +5046,11 @@
       },
       "deltas": {
         "body_p_count": -124,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": -124
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": -124,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -4987,32 +5092,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "under_split",
+        "paragraph_origin_bucket": "adapter_under_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_under_segmented"
-      },
-      "aat": {
-        "block_count": 48,
-        "block_kinds": {
-          "heading": 1,
-          "jisage_block": 17,
-          "paragraph": 30
-        },
-        "paragraph_blocks": 30,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 6
-      },
-      "paragraph_rendering": {
-        "total_ranges": 30,
-        "body_ranges": 30,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 30,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -5025,15 +5107,38 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 469,
+        "block_kinds": {
+          "jisage_block": 2,
+          "paragraph": 467
+        },
+        "paragraph_blocks": 467,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
       },
       "parser_ir": {
         "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
-        "nodes": 2078,
-        "paragraph_count": 467,
+        "nodes": 2079,
+        "paragraph_count": 466,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 466,
+        "page_break_nodes": 1,
+        "body_ranges": 466,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 466,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 466,
@@ -5051,11 +5156,11 @@
       },
       "deltas": {
         "body_p_count": -30,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": -1,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": -29,
         "body_note_count": 0,
-        "back_source_note_count": 0,
-        "generated_vs_parser_ir_body_p_count": -1,
-        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": -29
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -5097,31 +5202,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "under_split",
+        "paragraph_origin_bucket": "page_break_projection",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "empty_body_paragraph_range"
-      },
-      "aat": {
-        "block_count": 469,
-        "block_kinds": {
-          "jisage_block": 2,
-          "paragraph": 467
-        },
-        "paragraph_blocks": 467,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 3
-      },
-      "paragraph_rendering": {
-        "total_ranges": 467,
-        "body_ranges": 467,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 1,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 466,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -5134,6 +5217,16 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 186,
+        "block_kinds": {
+          "paragraph": 186
+        },
+        "paragraph_blocks": 186,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 1
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -5143,6 +5236,18 @@
         "nodes": 497,
         "paragraph_count": 186,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 186,
+        "page_break_nodes": 0,
+        "body_ranges": 186,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 186,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 186,
@@ -5160,11 +5265,11 @@
       },
       "deltas": {
         "body_p_count": 160,
-        "body_note_count": -1,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 160
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 160,
+        "body_note_count": -1,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -5206,30 +5311,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 186,
-        "block_kinds": {
-          "paragraph": 186
-        },
-        "paragraph_blocks": 186,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 1
-      },
-      "paragraph_rendering": {
-        "total_ranges": 186,
-        "body_ranges": 186,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 186,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -5242,6 +5326,17 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 29,
+        "block_kinds": {
+          "jisage_block": 2,
+          "paragraph": 27
+        },
+        "paragraph_blocks": 27,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -5251,6 +5346,18 @@
         "nodes": 59,
         "paragraph_count": 27,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 27,
+        "page_break_nodes": 0,
+        "body_ranges": 27,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 27,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 27,
@@ -5268,11 +5375,11 @@
       },
       "deltas": {
         "body_p_count": 9,
-        "body_note_count": -1,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 9
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 9,
+        "body_note_count": -1,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -5314,31 +5421,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 29,
-        "block_kinds": {
-          "jisage_block": 2,
-          "paragraph": 27
-        },
-        "paragraph_blocks": 27,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 3
-      },
-      "paragraph_rendering": {
-        "total_ranges": 27,
-        "body_ranges": 27,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 27,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -5351,6 +5436,16 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 134,
+        "block_kinds": {
+          "paragraph": 134
+        },
+        "paragraph_blocks": 134,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 4
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -5360,6 +5455,18 @@
         "nodes": 506,
         "paragraph_count": 134,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 134,
+        "page_break_nodes": 0,
+        "body_ranges": 134,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 134,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 134,
@@ -5377,11 +5484,11 @@
       },
       "deltas": {
         "body_p_count": 11,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 11
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 11,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -5423,30 +5530,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 134,
-        "block_kinds": {
-          "paragraph": 134
-        },
-        "paragraph_blocks": 134,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 4
-      },
-      "paragraph_rendering": {
-        "total_ranges": 134,
-        "body_ranges": 134,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 134,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -5459,6 +5545,17 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 618,
+        "block_kinds": {
+          "jisage_block": 168,
+          "paragraph": 450
+        },
+        "paragraph_blocks": 450,
+        "final_block_kind": "jisage_block",
+        "final_source_attribution_candidate": false,
+        "hints_count": 5
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -5468,6 +5565,18 @@
         "nodes": 1884,
         "paragraph_count": 450,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 450,
+        "page_break_nodes": 0,
+        "body_ranges": 450,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 450,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 450,
@@ -5485,11 +5594,11 @@
       },
       "deltas": {
         "body_p_count": 421,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 421
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 421,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -5531,31 +5640,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 618,
-        "block_kinds": {
-          "jisage_block": 168,
-          "paragraph": 450
-        },
-        "paragraph_blocks": 450,
-        "final_block_kind": "jisage_block",
-        "final_source_attribution_candidate": false,
-        "hints_count": 5
-      },
-      "paragraph_rendering": {
-        "total_ranges": 450,
-        "body_ranges": 450,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 450,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -5568,6 +5655,16 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 77,
+        "block_kinds": {
+          "paragraph": 77
+        },
+        "paragraph_blocks": 77,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 0
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -5577,6 +5674,18 @@
         "nodes": 113,
         "paragraph_count": 77,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 77,
+        "page_break_nodes": 0,
+        "body_ranges": 77,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 77,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 77,
@@ -5594,11 +5703,11 @@
       },
       "deltas": {
         "body_p_count": 74,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 74
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 74,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -5640,30 +5749,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 77,
-        "block_kinds": {
-          "paragraph": 77
-        },
-        "paragraph_blocks": 77,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 0
-      },
-      "paragraph_rendering": {
-        "total_ranges": 77,
-        "body_ranges": 77,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 77,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -5676,6 +5764,17 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 77,
+        "block_kinds": {
+          "jisage_block": 3,
+          "paragraph": 74
+        },
+        "paragraph_blocks": 74,
+        "final_block_kind": "jisage_block",
+        "final_source_attribution_candidate": false,
+        "hints_count": 1
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -5685,6 +5784,18 @@
         "nodes": 131,
         "paragraph_count": 74,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 74,
+        "page_break_nodes": 0,
+        "body_ranges": 74,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 74,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 74,
@@ -5702,11 +5813,11 @@
       },
       "deltas": {
         "body_p_count": 50,
-        "body_note_count": -20,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 50
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 50,
+        "body_note_count": -20,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -5748,31 +5859,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 77,
-        "block_kinds": {
-          "jisage_block": 3,
-          "paragraph": 74
-        },
-        "paragraph_blocks": 74,
-        "final_block_kind": "jisage_block",
-        "final_source_attribution_candidate": false,
-        "hints_count": 1
-      },
-      "paragraph_rendering": {
-        "total_ranges": 74,
-        "body_ranges": 74,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 74,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -5785,6 +5874,17 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 77,
+        "block_kinds": {
+          "jisage_block": 3,
+          "paragraph": 74
+        },
+        "paragraph_blocks": 74,
+        "final_block_kind": "jisage_block",
+        "final_source_attribution_candidate": false,
+        "hints_count": 1
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -5794,6 +5894,18 @@
         "nodes": 131,
         "paragraph_count": 74,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 74,
+        "page_break_nodes": 0,
+        "body_ranges": 74,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 74,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 74,
@@ -5811,11 +5923,11 @@
       },
       "deltas": {
         "body_p_count": 61,
-        "body_note_count": -2,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 61
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 61,
+        "body_note_count": -2,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -5857,31 +5969,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 77,
-        "block_kinds": {
-          "jisage_block": 3,
-          "paragraph": 74
-        },
-        "paragraph_blocks": 74,
-        "final_block_kind": "jisage_block",
-        "final_source_attribution_candidate": false,
-        "hints_count": 1
-      },
-      "paragraph_rendering": {
-        "total_ranges": 74,
-        "body_ranges": 74,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 74,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -5894,6 +5984,17 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 77,
+        "block_kinds": {
+          "jisage_block": 3,
+          "paragraph": 74
+        },
+        "paragraph_blocks": 74,
+        "final_block_kind": "jisage_block",
+        "final_source_attribution_candidate": false,
+        "hints_count": 1
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -5903,6 +6004,18 @@
         "nodes": 131,
         "paragraph_count": 74,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 74,
+        "page_break_nodes": 0,
+        "body_ranges": 74,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 74,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 74,
@@ -5920,11 +6033,11 @@
       },
       "deltas": {
         "body_p_count": 66,
-        "body_note_count": -1,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 66
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 66,
+        "body_note_count": -1,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -5966,31 +6079,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
+        "paragraph_origin_bucket": "adapter_over_segmented",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "adapter_over_segmented"
-      },
-      "aat": {
-        "block_count": 77,
-        "block_kinds": {
-          "jisage_block": 3,
-          "paragraph": 74
-        },
-        "paragraph_blocks": 74,
-        "final_block_kind": "jisage_block",
-        "final_source_attribution_candidate": false,
-        "hints_count": 1
-      },
-      "paragraph_rendering": {
-        "total_ranges": 74,
-        "body_ranges": 74,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 74,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -6003,15 +6094,38 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 93,
+        "block_kinds": {
+          "jisage_block": 19,
+          "paragraph": 74
+        },
+        "paragraph_blocks": 74,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 3
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
       },
       "parser_ir": {
         "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
-        "nodes": 333,
-        "paragraph_count": 74,
+        "nodes": 335,
+        "paragraph_count": 72,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 72,
+        "page_break_nodes": 2,
+        "body_ranges": 72,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 72,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 72,
@@ -6029,11 +6143,11 @@
       },
       "deltas": {
         "body_p_count": -17,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": -2,
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": -15,
         "body_note_count": 0,
-        "back_source_note_count": 0,
-        "generated_vs_parser_ir_body_p_count": -2,
-        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": -15
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -6075,31 +6189,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "under_split",
+        "paragraph_origin_bucket": "page_break_projection",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "empty_body_paragraph_range"
-      },
-      "aat": {
-        "block_count": 93,
-        "block_kinds": {
-          "jisage_block": 19,
-          "paragraph": 74
-        },
-        "paragraph_blocks": 74,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 3
-      },
-      "paragraph_rendering": {
-        "total_ranges": 74,
-        "body_ranges": 74,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 2,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 72,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     },
     {
@@ -6112,6 +6204,16 @@
         "adapter": "aozora2html",
         "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
       },
+      "aat": {
+        "block_count": 15,
+        "block_kinds": {
+          "paragraph": 15
+        },
+        "paragraph_blocks": 15,
+        "final_block_kind": "paragraph",
+        "final_source_attribution_candidate": false,
+        "hints_count": 0
+      },
       "materialization": {
         "status": "passed",
         "findings_count": 0
@@ -6121,6 +6223,18 @@
         "nodes": 15,
         "paragraph_count": 15,
         "source_note_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 15,
+        "page_break_nodes": 0,
+        "body_ranges": 15,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 15,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       },
       "generated_tei": {
         "body_p_count": 15,
@@ -6138,11 +6252,11 @@
       },
       "deltas": {
         "body_p_count": 0,
-        "body_note_count": 0,
-        "back_source_note_count": 0,
         "generated_vs_parser_ir_body_p_count": 0,
         "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
-        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 0
+        "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 0,
+        "body_note_count": 0,
+        "back_source_note_count": 0
       },
       "text": {
         "body_base_text_relation": "different",
@@ -6184,30 +6298,9 @@
       },
       "classification": {
         "paragraph_delta_bucket": "exact",
+        "paragraph_origin_bucket": "aligned",
         "source_note_body_excluded": false,
-        "source_note_back_present": false,
-        "paragraph_origin_bucket": "aligned"
-      },
-      "aat": {
-        "block_count": 15,
-        "block_kinds": {
-          "paragraph": 15
-        },
-        "paragraph_blocks": 15,
-        "final_block_kind": "paragraph",
-        "final_source_attribution_candidate": false,
-        "hints_count": 0
-      },
-      "paragraph_rendering": {
-        "total_ranges": 15,
-        "body_ranges": 15,
-        "source_note_ranges": 0,
-        "empty_body_ranges": 0,
-        "structural_only_body_ranges": 0,
-        "body_ranges_with_inline_content": 15,
-        "source_note_back_ranges": 0,
-        "source_note_front_ranges": 0,
-        "source_note_body_ranges": 0
+        "source_note_back_present": false
       }
     }
   ],
@@ -6232,39 +6325,5 @@
       "tei_eaj_file": "data/etc/校異源氏物語_header更新版.xml",
       "reason": "no_materializable_aat"
     }
-  ],
-  "paragraph_origin_buckets": {
-    "adapter_under_segmented": 5,
-    "adapter_over_segmented": 42,
-    "aligned": 5,
-    "empty_body_paragraph_range": 3,
-    "source_note_back_routing": 2
-  },
-  "adapter_paragraph_delta_buckets": {
-    "aozora2html": {
-      "under_split": 7,
-      "over_split": 45,
-      "exact": 5
-    }
-  },
-  "adapter_paragraph_origin_buckets": {
-    "aozora2html": {
-      "adapter_under_segmented": 5,
-      "adapter_over_segmented": 42,
-      "aligned": 5,
-      "empty_body_paragraph_range": 3,
-      "source_note_back_routing": 2
-    }
-  },
-  "adapter_body_text_match_buckets": {
-    "aozora2html": {
-      "different": 26,
-      "ruby_expanded_parenless_equal": 19,
-      "ruby_expanded_parenless_generated_contains_tei_eaj": 5,
-      "ruby_expanded_parenless_tei_eaj_contains_generated": 2,
-      "ruby_expanded_equal": 1,
-      "base_equal": 3,
-      "base_drop_parentheticals_equal": 1
-    }
-  }
+  ]
 }

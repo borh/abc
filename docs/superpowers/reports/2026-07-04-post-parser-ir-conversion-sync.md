@@ -180,12 +180,12 @@ Paragraph-origin classification across the matrix:
 | adapter collapsed | 18 |
 | adapter under-segmented | 7 |
 | source-note back routing | 4 |
-| empty body paragraph range | 3 |
+| page-break projection | 3 |
 | aligned | 18 |
 
 Paragraph origin by adapter:
 
-| adapter | adapter over | adapter under | adapter collapsed | source-note back | empty body range | aligned |
+| adapter | adapter over | adapter under | adapter collapsed | source-note back | page-break projection | aligned |
 |---|---:|---:|---:|---:|---:|---:|
 | aozora2html | 42 | 5 | 0 | 2 | 3 | 5 |
 | aozora-epub3 | 46 | 2 | 0 | 2 | 0 | 7 |
@@ -205,9 +205,9 @@ Interpretation: paragraph segmentation is primarily an adapter/source-structure
 fidelity problem, not a parser-IR schema gap. AAT paragraph-block counts already
 match parser-IR paragraph counts in the dominant path; 148/173 matrix rows have
 their TEI-EAJ paragraph mismatch before IR. The prior 7-row renderer mismatch
-bucket splits into 4 expected source-note back-matter routes and 3 rows with
-empty parser-IR body paragraph ranges; no generic ABC TEI paragraph renderer
-loss remains in the matrix. Text alignment also differs by parser:
+bucket now resolves into 4 expected source-note back-matter routes and 3
+aozora2html source-derived page-break projections; no generic ABC TEI paragraph
+renderer loss remains in the matrix. Text alignment also differs by parser:
 `aozora2html` and `aozora-rs` often reduce to ruby/parenthetical policy, while
 `aozora-epub3` has the largest true residual body-text mismatch bucket.
 
@@ -256,8 +256,8 @@ Proceed with residual adapter/evidence characterization:
   as the current gap classification,
 - fix adapter paragraph segmentation first, because 148/173 matrix rows already
   have the paragraph mismatch at AAT paragraph-block evidence before parser-IR,
-- decide whether parser-IR conversion should suppress or explicitly classify
-  empty body paragraph ranges, currently 3 matrix rows and 9 paragraph ranges,
+- keep page-break projection classified separately from body paragraph
+  segmentation, currently 3 matrix rows and 9 page-break nodes,
 - use the generated-TEI matrix text buckets to prioritize source-text fidelity
   and TEI-EAJ text-policy alignment,
 - continue source-authority representability work before making stronger claims

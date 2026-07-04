@@ -29,7 +29,7 @@ This report materializes ABC TEI from parser-IR, then compares the generated TEI
 | adapter_over_segmented | 123 |
 | adapter_under_segmented | 7 |
 | aligned | 18 |
-| empty_body_paragraph_range | 3 |
+| page_break_projection | 3 |
 | source_note_back_routing | 4 |
 
 ## Body Text Relation Buckets
@@ -82,7 +82,7 @@ This report materializes ABC TEI from parser-IR, then compares the generated TEI
 | aozora2html | adapter_over_segmented | 42 |
 | aozora2html | adapter_under_segmented | 5 |
 | aozora2html | aligned | 5 |
-| aozora2html | empty_body_paragraph_range | 3 |
+| aozora2html | page_break_projection | 3 |
 | aozora2html | source_note_back_routing | 2 |
 
 ## Adapter Body Text Match Buckets
@@ -152,7 +152,7 @@ This report materializes ABC TEI from parser-IR, then compares the generated TEI
 | 50502 | `data/complete/tei_lib_lv3/50502_tei.xml` | aozora2html | 8 | 8 | 8 | 8 | 0 | exact | aligned | different | different | - |
 | 50502 | `data/complete/tei_lib_lv3/50502_tei.xml` | aozora-epub3 | 8 | 8 | 8 | 8 | 0 | exact | aligned | different | different | - |
 | 50502 | `data/complete/tei_lib_lv3/50502_tei.xml` | aozora-rs | 1 | 1 | 1 | 8 | -7 | collapsed | adapter_collapsed | different | different | - |
-| 51307 | `data/complete/tei_lib_lv3/51307_tei.xml` | aozora2html | 412 | 412 | 406 | 7 | 399 | over_split | empty_body_paragraph_range | different | different | - |
+| 51307 | `data/complete/tei_lib_lv3/51307_tei.xml` | aozora2html | 412 | 406 | 406 | 7 | 399 | over_split | page_break_projection | different | different | - |
 | 51307 | `data/complete/tei_lib_lv3/51307_tei.xml` | aozora-epub3 | 400 | 400 | 400 | 7 | 393 | over_split | adapter_over_segmented | different | different | - |
 | 51307 | `data/complete/tei_lib_lv3/51307_tei.xml` | aozora-rs | 1 | 1 | 1 | 7 | -6 | collapsed | adapter_collapsed | different | different | - |
 | 51520 | `data/complete/tei_lib_lv3/51520_tei.xml` | aozora2html | 76 | 76 | 76 | 76 | 0 | exact | aligned | different | ruby_expanded_parenless_equal | - |
@@ -253,7 +253,7 @@ This report materializes ABC TEI from parser-IR, then compares the generated TEI
 | 1126 | `data/draft/tei_lib_lv3/1126_tei.xml` | aozora2html | 30 | 30 | 30 | 154 | -124 | under_split | adapter_under_segmented | different | different | - |
 | 1126 | `data/draft/tei_lib_lv3/1126_tei.xml` | aozora-epub3 | 154 | 154 | 154 | 154 | 0 | exact | aligned | different | different | - |
 | 1126 | `data/draft/tei_lib_lv3/1126_tei.xml` | aozora-rs | 1 | 1 | 1 | 154 | -153 | collapsed | adapter_collapsed | different | ruby_expanded_parenless_equal | - |
-| 1576 | `data/draft/tei_lib_lv3/1576_tei.xml` | aozora2html | 467 | 467 | 466 | 496 | -30 | under_split | empty_body_paragraph_range | different | different | - |
+| 1576 | `data/draft/tei_lib_lv3/1576_tei.xml` | aozora2html | 467 | 466 | 466 | 496 | -30 | under_split | page_break_projection | different | different | - |
 | 1576 | `data/draft/tei_lib_lv3/1576_tei.xml` | aozora-epub3 | 529 | 529 | 529 | 496 | 33 | over_split | adapter_over_segmented | different | different | - |
 | 1576 | `data/draft/tei_lib_lv3/1576_tei.xml` | aozora-rs | 1 | 1 | 1 | 496 | -495 | collapsed | adapter_collapsed | different | different | - |
 | 43563 | `data/draft/tei_lib_lv3/43563_tei.xml` | aozora2html | 186 | 186 | 186 | 26 | 160 | over_split | adapter_over_segmented | different | different | - |
@@ -280,7 +280,7 @@ This report materializes ABC TEI from parser-IR, then compares the generated TEI
 | 4244 | `data/draft/tei_lib_lv4/4244-4_tei.xml` | aozora2html | 74 | 74 | 74 | 8 | 66 | over_split | adapter_over_segmented | different | different | - |
 | 4244 | `data/draft/tei_lib_lv4/4244-4_tei.xml` | aozora-epub3 | 74 | 74 | 74 | 8 | 66 | over_split | adapter_over_segmented | different | different | - |
 | 4244 | `data/draft/tei_lib_lv4/4244-4_tei.xml` | aozora-rs | 1 | 1 | 1 | 8 | -7 | collapsed | adapter_collapsed | different | different | - |
-| 46453 | `data/draft/tei_lib_lv4/46453_tei.xml` | aozora2html | 74 | 74 | 72 | 89 | -17 | under_split | empty_body_paragraph_range | different | different | - |
+| 46453 | `data/draft/tei_lib_lv4/46453_tei.xml` | aozora2html | 74 | 72 | 72 | 89 | -17 | under_split | page_break_projection | different | different | - |
 | 46453 | `data/draft/tei_lib_lv4/46453_tei.xml` | aozora-epub3 | 145 | 145 | 145 | 89 | 56 | over_split | adapter_over_segmented | different | different | - |
 | 46453 | `data/draft/tei_lib_lv4/46453_tei.xml` | aozora-rs | 1 | 1 | 1 | 89 | -88 | collapsed | adapter_collapsed | different | different | - |
 | 54457 | `data/draft/tei_lib_lv4/54457_tei.xml` | aozora2html | 15 | 15 | 15 | 15 | 0 | exact | aligned | different | different | - |

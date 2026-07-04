@@ -2526,21 +2526,22 @@
             "error": null
           },
           "parser_ir": {
-            "node_count": 1316,
+            "node_count": 1322,
             "node_kinds": {
               "emphasis": 43,
               "heading": 1,
               "indentation": 7,
+              "page-break": 6,
               "ruby": 445,
               "text": 820
             },
-            "paragraph_count": 412,
+            "paragraph_count": 406,
             "paragraphs_represented": true,
             "source_attribution_represented": false
           },
           "divergence": {
             "categories": {
-              "AMBIGUITY": 1361,
+              "AMBIGUITY": 1367,
               "INVENTION": 470,
               "LOSS": 4,
               "STRUCTURAL": 8,
@@ -8831,20 +8832,21 @@
             "error": null
           },
           "parser_ir": {
-            "node_count": 2078,
+            "node_count": 2079,
             "node_kinds": {
               "emphasis": 80,
               "indentation": 2,
+              "page-break": 1,
               "ruby": 725,
               "text": 1271
             },
-            "paragraph_count": 467,
+            "paragraph_count": 466,
             "paragraphs_represented": true,
             "source_attribution_represented": false
           },
           "divergence": {
             "categories": {
-              "AMBIGUITY": 2159,
+              "AMBIGUITY": 2160,
               "INVENTION": 891,
               "LOSS": 24,
               "STRUCTURAL": 2,
@@ -10516,20 +10518,21 @@
             "error": null
           },
           "parser_ir": {
-            "node_count": 333,
+            "node_count": 335,
             "node_kinds": {
               "emphasis": 88,
               "indentation": 19,
+              "page-break": 2,
               "ruby": 33,
               "text": 193
             },
-            "paragraph_count": 74,
+            "paragraph_count": 72,
             "paragraphs_represented": true,
             "source_attribution_represented": false
           },
           "divergence": {
             "categories": {
-              "AMBIGUITY": 422,
+              "AMBIGUITY": 424,
               "INVENTION": 232,
               "LOSS": 35,
               "STRUCTURAL": 19,

@@ -345,6 +345,13 @@ def paragraph_origin_bucket(
         and parser_ir_paragraphs is not None
         and aat_paragraph_blocks != parser_ir_paragraphs
     ):
+        rendering = paragraph_rendering or {}
+        if (
+            aat_paragraph_blocks > parser_ir_paragraphs
+            and aat_paragraph_blocks - parser_ir_paragraphs
+            == rendering.get("page_break_nodes")
+        ):
+            return "page_break_projection"
         return "converter_paragraph_mismatch"
     if aat_paragraph_blocks is None:
         return "unknown"
@@ -376,6 +383,7 @@ def paragraph_rendering_summary(parser_ir: dict[str, Any]) -> dict[str, Any]:
     paragraphs = parser_ir.get("paragraphs", [])
     summary = {
         "total_ranges": len(paragraphs),
+        "page_break_nodes": sum(1 for node in nodes if node.get("type") == "page-break"),
         "body_ranges": 0,
         "source_note_ranges": 0,
         "empty_body_ranges": 0,

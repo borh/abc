@@ -323,6 +323,79 @@ fn converts_text_ruby_gaiji_and_validates_parser_ir() {
 }
 
 #[test]
+fn projects_source_derived_page_break_paragraph_to_page_break_node() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let aat = json!({
+        "version": 1,
+        "work_id": "page-break",
+        "meta": base_meta(
+            "utf-8",
+            "sha256:1212121212121212121212121212121212121212121212121212121212121212",
+        ),
+        "blocks": [
+            {
+                "kind": "paragraph",
+                "content": [],
+                "x-break-kind": "page",
+                "x-provenance": "source-derived"
+            },
+            {
+                "kind": "paragraph",
+                "content": [{"kind": "text", "value": "本文"}]
+            }
+        ]
+    });
+
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: ConversionOptions::default(),
+    })
+    .unwrap();
+
+    assert_eq!(
+        output
+            .parser_ir
+            .pointer("/nodes/0/type")
+            .and_then(Value::as_str),
+        Some("page-break")
+    );
+    assert_eq!(
+        output
+            .parser_ir
+            .pointer("/nodes/0/marker")
+            .and_then(Value::as_str),
+        Some("page")
+    );
+    assert_eq!(
+        output
+            .parser_ir
+            .pointer("/nodes/1/type")
+            .and_then(Value::as_str),
+        Some("text")
+    );
+    assert_eq!(
+        output
+            .parser_ir
+            .pointer("/paragraphs")
+            .and_then(Value::as_array)
+            .map(Vec::len),
+        Some(1)
+    );
+    assert_eq!(
+        output.parser_ir.pointer("/paragraphs/0/node_range/start"),
+        Some(&json!(1))
+    );
+    assert_eq!(
+        output.parser_ir.pointer("/paragraphs/0/node_range/end"),
+        Some(&json!(2))
+    );
+
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
+#[test]
 fn projects_measured_figure_inline_to_image_node() {
     let (schemas, mapping) = schemas_and_mapping();
     let aat = json!({

@@ -5,7 +5,7 @@
 - source_authority_gate: `SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED`
 - note: this is not a passing representability gate; durable representability claims remain blocked until strict_errors is empty.
 - strict_errors:
-  - 399 unallowlisted source markers
+  - 352 unallowlisted source markers
 
 ## Scope
 
@@ -16,14 +16,14 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 - works_scanned: 17894
 - works_failed: 0
 - markers_total: 4323915
-- unknown_markers_total: 15269
-- unallowlisted_unknown_markers_total: 399
+- unknown_markers_total: 15222
+- unallowlisted_unknown_markers_total: 352
 - allowlisted_unknown_markers_total: 14870
 
 ## Representability
 
-- typed_occurrences: 4570000
-- raw_preserved_occurrences: 45354
+- typed_occurrences: 4570046
+- raw_preserved_occurrences: 45688
 - out_of_body_occurrences: 950
 - unsupported_occurrences: 13920
 - needs_research_occurrences: 0
@@ -39,15 +39,15 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | break.page_line | 943 | 9229 | 000005_53194, 000006_1869, 000009_55881, 000011_889, 000011_899 |
 | caption.block | 48 | 1726 | 000058_57440, 000091_50354, 000125_1321, 000165_49567, 000226_1150 |
 | caption.inline | 143 | 2397 | 000014_728, 000058_57440, 000067_1768, 000067_1788, 000067_1789 |
-| decoration.bold_italic | 317 | 8827 | 000020_4487, 000020_46404, 000025_1144, 000025_56503, 000026_50241 |
+| decoration.bold_italic | 319 | 8829 | 000020_4487, 000020_46404, 000025_1144, 000025_56503, 000026_50241 |
 | decoration.boten | 6236 | 129086 | 000005_53194, 000006_382, 000006_383, 000006_58819, 000008_1083 |
-| decoration.bousen | 326 | 18125 | 000006_1869, 000013_11, 000019_4376, 000034_55507, 000038_1408 |
+| decoration.bousen | 327 | 18127 | 000006_1869, 000013_11, 000019_4376, 000034_55507, 000038_1408 |
 | decoration.direction_override | 6 | 65 | 000096_935, 000866_3039, 001094_42603, 001242_46444, 001467_50733 |
-| decoration.font_size | 1220 | 51501 | 000006_1869, 000008_58922, 000011_899, 000019_4376, 000019_58861 |
+| decoration.font_size | 1223 | 51505 | 000006_1869, 000008_58922, 000011_899, 000019_4376, 000019_58861 |
 | decoration.keigakomi | 157 | 717 | 000043_341, 000063_385, 000067_1789, 000072_408, 000072_864 |
 | emphasis.basic | 6576 | 157493 | 000005_53194, 000006_1869, 000006_382, 000006_383, 000006_58819 |
 | figure.image_caption | 103 | 1777 | 000019_42378, 000019_42379, 000019_42380, 000019_42381, 000019_42382 |
-| figure.image_inline | 526 | 5870 | 000009_226, 000009_45340, 000009_50711, 000009_50712, 000009_50713 |
+| figure.image_inline | 531 | 5877 | 000009_226, 000009_45340, 000009_50711, 000009_50712, 000009_50713 |
 | gaiji.jis_code | 5772 | 55322 | 000005_5, 000006_1869, 000006_3310, 000006_383, 000006_384 |
 | gaiji.marker | 5931 | 62355 | 000005_5, 000006_1868, 000006_1869, 000006_3310, 000006_383 |
 | gaiji.un_embed | 38 | 144 | 000019_4376, 000025_kantou, 000038_323, 000040_1326, 000040_737 |
@@ -58,9 +58,9 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | heading.dogyo | 142 | 11839 | 000011_899, 000058_59060, 000067_1790, 000067_4869, 000081_1058 |
 | heading.mado | 6 | 1680 | 000255_47342, 000296_1864, 000961_4820, 001402_49946, 001404_49966 |
 | indentation.basic | 8169 | 134393 | 000005_5, 000005_53194, 000006_1868, 000006_1869, 000006_3310 |
-| indentation.burasage | 1217 | 13277 | 000006_3311, 000006_58819, 000008_47386, 000009_55881, 000019_4376 |
-| indentation.chitsuki | 6266 | 20337 | 000006_1868, 000006_1869, 000006_3310, 000006_3311, 000006_382 |
-| indentation.jisage_block | 4605 | 94978 | 000005_5, 000005_53194, 000006_1868, 000006_1869, 000006_3310 |
+| indentation.burasage | 1217 | 13278 | 000006_3311, 000006_58819, 000008_47386, 000009_55881, 000019_4376 |
+| indentation.chitsuki | 6274 | 20354 | 000006_1868, 000006_1869, 000006_3310, 000006_3311, 000006_382 |
+| indentation.jisage_block | 4606 | 94985 | 000005_5, 000005_53194, 000006_1868, 000006_1869, 000006_3310 |
 | indentation.jisage_oneline | 122 | 279 | 000025_202, 000025_216, 000035_235, 000035_266, 000038_42207 |
 | indentation.jizume | 242 | 3239 | 000026_55781, 000034_55507, 000040_47289, 000050_48400, 000055_56499 |
 | iteration.kunoji | 1125 | 10701 | 000006_58810, 000006_58819, 000008_47357, 000012_1092, 000012_24448 |
@@ -69,13 +69,13 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | layout.center_page | 263 | 885 | 000005_53194, 000009_55881, 000011_899, 000025_47220, 000026_219 |
 | layout.multicolumn | 25 | 68 | 000035_1566, 000042_2471, 000061_377, 000081_45631, 000082_1309 |
 | layout.tcy | 725 | 19794 | 000014_728, 000020_2223, 000020_46404, 000023_55306, 000023_55324 |
-| layout.yokogumi | 421 | 3678 | 000019_59374, 000025_1144, 000026_50239, 000026_55717, 000026_55732 |
+| layout.yokogumi | 421 | 3684 | 000019_59374, 000025_1144, 000026_50239, 000026_55717, 000026_55732 |
 | reference.frontref | 682 | 3920 | 000006_46659, 000012_2585, 000012_4316, 000022_197, 000026_46578 |
 | ruby.basic | 14321 | 3607926 | 000005_5, 000005_53194, 000005_55215, 000005_55216, 000005_55217 |
 | ruby.placement_directional | 31 | 318 | 000034_1213, 000050_3581, 000129_694, 000146_49258, 000146_50202 |
-| source.note_label | 421 | 1003 | 000008_1083, 000012_198, 000013_542, 000019_4376, 000031_863 |
+| source.note_label | 527 | 1336 | 000008_1083, 000012_198, 000013_542, 000019_4376, 000026_50239 |
 | source.page_reference | 6 | 58 | 000160_875, 000989_351, 000989_352, 000989_42687, 001518_51731 |
-| structure.quote_block | 5 | 19 | 000034_233, 000035_296, 000137_733, 000280_1706 |
+| structure.quote_block | 6 | 20 | 000034_233, 000035_296, 000137_733, 000280_1706, 000989_351 |
 | structure.table | 6 | 44 | 000042_2345, 000042_2348, 000042_2449, 000096_2100, 000311_3466 |
 | warichu.basic | 362 | 6604 | 000005_53194, 000006_1868, 000006_1869, 000034_519, 000038_42202 |
 | warigaki.parenthetical | 1 | 2 | 000034_519 |
@@ -95,14 +95,11 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | 000083_3329 | 40 | CommandFullwidth | ［＃「直木」と「菊池」の中間に「手直り表」］ | 「直木」と「菊池」の中間に「手直り表」 |
 | 000091_522 | 2522 | MalformedAccentNotation | 〔 | 〔 |
 | 000091_522 | 2524 | MalformedAccentNotation | 〔 | 〔 |
-| 000096_1115 | 17 | CommandFullwidth | ［＃本文中、新聞記事の見出しを模した箇所では、入力者注で文字の大きさを表した。大きさの比率は、見出し文字：小見出し文字：本文の文字＝５：４：３］ | 本文中、新聞記事の見出しを模した箇所では、入力者注で文字の大きさを表した。大きさの比率は、見出し文字：小見出し文字：本文の文字＝５：４：３ |
 | 000096_1115 | 461 | CommandFullwidth | ［＃前の行とは0.5行アキ、「犯人の第二告白」はゴシック体］ | 前の行とは0.5行アキ、「犯人の第二告白」はゴシック体 |
 | 000096_1115 | 469 | CommandFullwidth | ［＃前の行とは0.5行アキ、「犯人の第三告白」はゴシック体］ | 前の行とは0.5行アキ、「犯人の第三告白」はゴシック体 |
 | 000096_2100 | 1190 | CommandFullwidth | ［＃中文字、ゴシック体］ | 中文字、ゴシック体 |
-| 000096_2117 | 21 | CommandFullwidth | ［＃次３行は、文字はゴシック体、罫線は全て波線］ | 次３行は、文字はゴシック体、罫線は全て波線 |
 | 000096_2117 | 35 | CommandFullwidth | ［＃波罫線］ | 波罫線 |
 | 000096_2117 | 639 | CommandFullwidth | ［＃ルビは「？符」に掛かる］ | ルビは「？符」に掛かる |
-| 000096_2142 | 917 | CommandFullwidth | ［＃巻頭に梅津只圓翁の写真と合わせて３枚の写真あり］ | 巻頭に梅津只圓翁の写真と合わせて３枚の写真あり |
 | 000106_2415 | 391 | MalformedCommand | ［＃ | ［＃ |
 | 000119_43813 | 279 | EditorialNoteBottomTextCorrection | 」は底本では「機會主義者」の左側に注記されています。\n入力：桑田康正\n校正：小林繁雄\n2005年1月20日作成\n青空文庫作成ファイル：\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\n | 」は底本では「機會主義者」の左側に注記されています。\n入力：桑田康正\n校正：小林繁雄\n2005年1月20日作成\n青空文庫作成ファイル：\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\n |
 | 000121_1754 | 174 | MalformedCommand | ［＃ | ［＃ |
@@ -128,7 +125,6 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | 000160_1255 | 185 | CommandFullwidth | ［＃朝日新聞社カメラマン。一九四二（昭和十七）年に海野が海軍報道班員として従軍した際、共にラバウルに］ | 朝日新聞社カメラマン。一九四二（昭和十七）年に海野が海軍報道班員として従軍した際、共にラバウルに |
 | 000160_1255 | 258 | CommandFullwidth | ［＃ＪＲとなった国電の旧称］ | ＪＲとなった国電の旧称 |
 | 000160_1255 | 260 | CommandFullwidth | ［＃娘婿の永田徹郎海軍大尉］ | 娘婿の永田徹郎海軍大尉 |
-| 000160_1255 | 303 | CommandFullwidth | ［＃「複」の文字の下から２字下げ、横組み右揃えで］ | 「複」の文字の下から２字下げ、横組み右揃えで |
 | 000160_1255 | 383 | CommandFullwidth | ［＃横須賀鎮守府。鎮守府は、海軍の根拠地に置かれた機関］ | 横須賀鎮守府。鎮守府は、海軍の根拠地に置かれた機関 |
 | 000160_1255 | 454 | CommandFullwidth | ［＃晴彦］ | 晴彦 |
 | 000160_1255 | 513 | CommandFullwidth | ［＃天皇の諮問機関、枢密院の異称］ | 天皇の諮問機関、枢密院の異称 |
@@ -141,12 +137,8 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | 000160_1255 | 868 | CommandFullwidth | ［＃八十勝］ | 八十勝 |
 | 000160_1255 | 868 | CommandFullwidth | ［＃朝永］ | 朝永 |
 | 000160_1255 | 892 | CommandFullwidth | ［＃朝永良太］ | 朝永良太 |
-| 000160_1255 | 932 | CommandFullwidth | ［＃終電の別称］ | 終電の別称 |
 | 000160_1255 | 969 | CommandFullwidth | ［＃ドイツの開発した、有翼のロケット爆弾機］ | ドイツの開発した、有翼のロケット爆弾機 |
-| 000160_1255 | 1014 | CommandFullwidth | ［＃芳雄。原子核の研究に取り組み、理化学研究所に日本初のサイクロトロンを建設した物理学者］ | 芳雄。原子核の研究に取り組み、理化学研究所に日本初のサイクロトロンを建設した物理学者 |
 | 000160_1255 | 1017 | CommandFullwidth | ［＃海軍報道班文学挺身隊］ | 海軍報道班文学挺身隊 |
-| 000160_1255 | 1029 | CommandFullwidth | ［＃家族全員で死ぬこと］ | 家族全員で死ぬこと |
-| 000160_1255 | 1033 | CommandFullwidth | ［＃七たび生まれ変わって、国に報いるの意］ | 七たび生まれ変わって、国に報いるの意 |
 | 000160_1255 | 1043 | CommandFullwidth | ［＃この日、海野がしたためた遺書を、以下に引く］ | この日、海野がしたためた遺書を、以下に引く |
 | 000160_1255 | 1085 | CommandFullwidth | ［＃引用、終わり］ | 引用、終わり |
 | 000160_1255 | 1104 | CommandFullwidth | ［＃戦争終結の詔勅を放送］ | 戦争終結の詔勅を放送 |
@@ -168,26 +160,34 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | 000160_1255 | 1441 | CommandFullwidth | ［＃金融緊急措置令。新円発行、旧円預金は封鎖］ | 金融緊急措置令。新円発行、旧円預金は封鎖 |
 | 000160_1255 | 1460 | CommandFullwidth | ［＃前妻のたか子は、一九二六（大正十五）年に結核で死亡。看病に当たった海野も感染し、いったんは回復したが、一九四二（昭和十七）年に海軍報道班員として南方に派遣された際、再発していた］ | 前妻のたか子は、一九二六（大正十五）年に結核で死亡。看病に当たった海野も感染し、いったんは回復したが、一九四二（昭和十七）年に海軍報道班員として南方に派遣された際、再発していた |
 | 000160_1255 | 1479 | CommandFullwidth | ［＃海野の別ペンネーム］ | 海野の別ペンネーム |
-| 000160_1255 | 1553 | CommandFullwidth | ［＃解剖学者。随筆家］ | 解剖学者。随筆家 |
-| 000160_1255 | 1566 | CommandFullwidth | ［＃理論物理学者。科学思想家］ | 理論物理学者。科学思想家 |
 | 000160_1255 | 1567 | CommandFullwidth | ［＃謙］ | 謙 |
 | 000160_1255 | 1628 | CommandFullwidth | ［＃高太郎］ | 高太郎 |
 | 000160_1255 | 1678 | CommandFullwidth | ［＃新興宗教、璽宇教教祖璽光尊、幹部の元横綱双葉山、棋士呉清源ら、食糧管理法違犯により二十一日に逮捕］ | 新興宗教、璽宇教教祖璽光尊、幹部の元横綱双葉山、棋士呉清源ら、食糧管理法違犯により二十一日に逮捕 |
-| 000160_2719 | 48 | CommandFullwidth | ［＃ゴシック］ | ゴシック |
 | 000160_875 | 1396 | CommandFullwidth | ［＃以降の「――」で始まる通信文の2行目以降は2字下げ］ | 以降の「――」で始まる通信文の2行目以降は2字下げ |
 | 000162_4649 | 143 | CommandFullwidth | ［＃ここで地下げ終わり］ | ここで地下げ終わり |
-| 000162_886 | 29 | CommandFullwidth | ［＃ここのみ拗音が小さい字「っ」になっている］ | ここのみ拗音が小さい字「っ」になっている |
 | 000169_1273 | 684 | CommandFullwidth | ［＃読みは「つね」］ | 読みは「つね」 |
 | 000182_946 | 24 | CommandFullwidth | ［＃１９字下げて］ | １９字下げて |
 | 000212_4839 | 25 | CommandFullwidth | ［＃ここから手書き文字］ | ここから手書き文字 |
 | 000212_4839 | 30 | CommandFullwidth | ［＃ここで手書き文字終わり］ | ここで手書き文字終わり |
-| 000214_1670 | 241 | CommandFullwidth | ［＃ここから３　字下げ］ | ここから３　字下げ |
-| 000221_1096 | 29 | CommandFullwidth | ［＃ここから小文字、２字下げ。冒頭のみ１字下げ］ | ここから小文字、２字下げ。冒頭のみ１字下げ |
 | 000221_1096 | 31 | CommandFullwidth | ［＃ここで小文字、字下げ終わり］ | ここで小文字、字下げ終わり |
+| 000230_55635 | 588 | CommandFullwidth | ［＃ここから２段組、上段］ | ここから２段組、上段 |
+| 000230_55635 | 594 | CommandFullwidth | ［＃ここで２段組、上段終わり］ | ここで２段組、上段終わり |
+| 000230_55635 | 595 | CommandFullwidth | ［＃ここから２段組、下段］ | ここから２段組、下段 |
+| 000230_55635 | 601 | CommandFullwidth | ［＃ここで２段組、下段終わり］ | ここで２段組、下段終わり |
+| 000236_4300 | 130 | EditorialNoteBottomTextCorrection | 」は底本では「　ルミ」と誤植］ | 」は底本では「　ルミ」と誤植］ |
+| 000236_4300 | 174 | CommandFullwidth | ［＃下げて、地付きで］ | 下げて、地付きで |
+| 000243_1328 | 112 | CommandFullwidth | ［＃括弧内は「染付」と「赤繪」の二行になっている］ | 括弧内は「染付」と「赤繪」の二行になっている |
+| 000250_18353 | 232 | CommandFullwidth | ［＃「諸国における富の分配」の図表のこと］ | 「諸国における富の分配」の図表のこと |
+| 000250_18353 | 444 | CommandFullwidth | ［＃左図の解説文終わり］ | 左図の解説文終わり |
+| 000250_18353 | 447 | CommandFullwidth | ［＃右図の解説文終わり］ | 右図の解説文終わり |
+| 000250_18353 | 945 | CommandFullwidth | ［＃ここからページ上部横組み］ | ここからページ上部横組み |
+| 000250_18353 | 949 | CommandFullwidth | ［＃ページ上部横組み終わり］ | ページ上部横組み終わり |
+| 000250_18353 | 951 | CommandFullwidth | ［＃ここからページ下部縦組み］ | ここからページ下部縦組み |
+| 000250_18353 | 955 | CommandFullwidth | ［＃ページ下部縦組み終わり］ | ページ下部縦組み終わり |
 
 ## Unknown Source Marker Classes
 
-Showing 50 report rows of 387 total classes. JSON carries 387 top classes. truncated: false
+Showing 50 report rows of 340 total classes. JSON carries 340 top classes. truncated: false
 
 | kind | raw | occurrences | unallowlisted | allowlisted | samples |
 |---|---|---:|---:|---:|---|
@@ -199,12 +199,6 @@ Showing 50 report rows of 387 total classes. JSON carries 387 top classes. trunc
 | CommandFullwidth | ［＃場面設定の表題、及び「Ｔ」で始まる最初の行以外は、１文字下げた位置で頭を揃える］ | 2 | 2 | 0 | 000072_864 |
 | CommandFullwidth | ［＃現代語訳「さびしい林の中の草の庵にひとり坐して暁をむかえると、折から仏・法・僧の三宝を唱える一羽の鳥の声を聞いた。一羽の鳥ですらすでに三宝を唱える声があるのだから、これを聞く自分にも、これに応じて仏心を発揮する心がある。有情の鳥声・人心、非情の行雲・流水、すべてこの山にあるものは法身如来の仏徳を開顕して悟りの境地に入っている」］ | 2 | 2 | 0 | 001271_60608, 001271_60609 |
 | CommandFullwidth | ［＃（ルヽ）］ | 2 | 2 | 0 | 001341_50287 |
-| CommandFullwidth | ［＃АОМС、モスクワ・ソビエトの行政部］ | 1 | 1 | 0 | 000311_46248 |
-| CommandFullwidth | ［＃ВОКС、全ソ対外文化連絡協会］ | 1 | 1 | 0 | 000311_46245 |
-| CommandFullwidth | ［＃Госиздат］ | 1 | 1 | 0 | 000311_46247 |
-| CommandFullwidth | ［＃МХАТ、モスクワ芸術座］ | 1 | 1 | 0 | 000311_46246 |
-| CommandFullwidth | ［＃моя＝私の愛する人（呼びかけ）、湯浅芳子のこと］ | 1 | 1 | 0 | 000311_4833 |
-| CommandFullwidth | ［＃обед］ | 1 | 1 | 0 | 000311_46246 |
 | CommandFullwidth | ［＃〇・四一キログラム］ | 1 | 1 | 0 | 000311_46247 |
 | CommandFullwidth | ［＃「どこやらに」と「稻妻に」の句の上には、この二つの句を括る波括弧あり］ | 1 | 1 | 0 | 000305_1896 |
 | CommandFullwidth | ［＃「ココ」は手描きの切符の下部の線に結ばれている］ | 1 | 1 | 0 | 000311_46246 |
@@ -213,7 +207,6 @@ Showing 50 report rows of 387 total classes. JSON carries 387 top classes. trunc
 | CommandFullwidth | ［＃「嘘の効用」］ | 1 | 1 | 0 | 000922_47099 |
 | CommandFullwidth | ［＃「堀割になれて」と「堀割に風の」の句の上には、この二つの句を括る波括弧あり］ | 1 | 1 | 0 | 000305_1896 |
 | CommandFullwidth | ［＃「大木に」と「くひついて」の句の上には、この二つの句を括る波括弧あり］ | 1 | 1 | 0 | 000305_1896 |
-| CommandFullwidth | ［＃「幕。」は地より１字上げ］ | 1 | 1 | 0 | 000311_2023 |
 | CommandFullwidth | ［＃「幕。」は地付き］ | 1 | 1 | 0 | 000311_2023 |
 | CommandFullwidth | ［＃「幕。」は地付け］ | 1 | 1 | 0 | 000311_2024 |
 | CommandFullwidth | ［＃「才助」は枠囲い］ | 1 | 1 | 0 | 000726_4533 |
@@ -229,18 +222,25 @@ Showing 50 report rows of 387 total classes. JSON carries 387 top classes. trunc
 | CommandFullwidth | ［＃「笹の葉の」と「しばらくは」の句の上には、この二つの句を括る波括弧あり］ | 1 | 1 | 0 | 000305_1896 |
 | CommandFullwidth | ［＃「約」は小さめの文字］ | 1 | 1 | 0 | 000301_1872 |
 | CommandFullwidth | ［＃「細字の部分」は割り注で処理］ | 1 | 1 | 0 | 000933_47196 |
-| CommandFullwidth | ［＃「著　者」は天より４０字下げ、地より２字上げ］ | 1 | 1 | 0 | 000311_2025 |
-| CommandFullwidth | ［＃「複」の文字の下から２字下げ、横組み右揃えで］ | 1 | 1 | 0 | 000160_1255 |
 | CommandFullwidth | ［＃「諸国における富の分配」の図表のこと］ | 1 | 1 | 0 | 000250_18353 |
 | CommandFullwidth | ［＃「郷－即のへん」、232-1］ | 1 | 1 | 0 | 000148_1104 |
 | CommandFullwidth | ［＃「顯治様」は手書き文字］ | 1 | 1 | 0 | 000311_33191 |
 | CommandFullwidth | ［＃「（一）」は自注］ | 1 | 1 | 0 | 000284_2665 |
 | CommandFullwidth | ［＃「＊」は注釈記号。欄外に「釜の製造元」の注］ | 1 | 1 | 0 | 000989_52244 |
 | CommandFullwidth | ［＃「＋」は点線丸囲み］ | 1 | 1 | 0 | 000933_47195 |
-| CommandFullwidth | ［＃「１９字下げて地より３字上げで］ | 1 | 1 | 0 | 000301_1872 |
 | CommandFullwidth | ［＃「［途中略］ | 1 | 1 | 0 | 001657_54333 |
 | CommandFullwidth | ［＃「［Ａ］ | 1 | 1 | 0 | 001402_49946 |
 | CommandFullwidth | ［＃「｝であろう、」は前の６行にわたる」］ | 1 | 1 | 0 | 001164_43670 |
+| CommandFullwidth | ［＃「｝であろうから。」は前の５行にわたる］ | 1 | 1 | 0 | 001164_43670 |
+| CommandFullwidth | ［＃「｝に下落するであろう」は前の４行にわたる］ | 1 | 1 | 0 | 001164_43670 |
+| CommandFullwidth | ［＃「｝に増加されるであろう。」は前の６行にわたる］ | 1 | 1 | 0 | 001164_43670 |
+| CommandFullwidth | ［＃「｝一八〇」はこの後の５行にわたる］ | 1 | 1 | 0 | 001164_43670 |
+| CommandFullwidth | ［＃ここからページ上部横組み］ | 1 | 1 | 0 | 000250_18353 |
+| CommandFullwidth | ［＃ここからページ下部縦組み］ | 1 | 1 | 0 | 000250_18353 |
+| CommandFullwidth | ［＃ここから手書き文字］ | 1 | 1 | 0 | 000212_4839 |
+| CommandFullwidth | ［＃ここから教科書体］ | 1 | 1 | 0 | 001917_61172 |
+| CommandFullwidth | ［＃ここから本文外に横書き］ | 1 | 1 | 0 | 000311_3169 |
+| CommandFullwidth | ［＃ここから横書き］ | 1 | 1 | 0 | 000311_3923 |
 
 ## Decode Failures
 

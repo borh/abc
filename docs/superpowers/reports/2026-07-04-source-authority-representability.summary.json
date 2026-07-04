@@ -3,8 +3,8 @@
   "works_scanned": 17894,
   "works_failed": 0,
   "markers_total": 4323915,
-  "unknown_markers_total": 15269,
-  "unallowlisted_unknown_markers_total": 399,
+  "unknown_markers_total": 15222,
+  "unallowlisted_unknown_markers_total": 352,
   "allowlisted_unknown_markers_total": 14870,
   "rows": {
     "accent.dotted_letter": {
@@ -83,8 +83,8 @@
       ]
     },
     "decoration.bold_italic": {
-      "works_with_marker": 317,
-      "occurrences": 8827,
+      "works_with_marker": 319,
+      "occurrences": 8829,
       "sample_works": [
         "000020_4487",
         "000020_46404",
@@ -105,8 +105,8 @@
       ]
     },
     "decoration.bousen": {
-      "works_with_marker": 326,
-      "occurrences": 18125,
+      "works_with_marker": 327,
+      "occurrences": 18127,
       "sample_works": [
         "000006_1869",
         "000013_11",
@@ -127,8 +127,8 @@
       ]
     },
     "decoration.font_size": {
-      "works_with_marker": 1220,
-      "occurrences": 51501,
+      "works_with_marker": 1223,
+      "occurrences": 51505,
       "sample_works": [
         "000006_1869",
         "000008_58922",
@@ -171,8 +171,8 @@
       ]
     },
     "figure.image_inline": {
-      "works_with_marker": 526,
-      "occurrences": 5870,
+      "works_with_marker": 531,
+      "occurrences": 5877,
       "sample_works": [
         "000009_226",
         "000009_45340",
@@ -293,7 +293,7 @@
     },
     "indentation.burasage": {
       "works_with_marker": 1217,
-      "occurrences": 13277,
+      "occurrences": 13278,
       "sample_works": [
         "000006_3311",
         "000006_58819",
@@ -303,8 +303,8 @@
       ]
     },
     "indentation.chitsuki": {
-      "works_with_marker": 6266,
-      "occurrences": 20337,
+      "works_with_marker": 6274,
+      "occurrences": 20354,
       "sample_works": [
         "000006_1868",
         "000006_1869",
@@ -314,8 +314,8 @@
       ]
     },
     "indentation.jisage_block": {
-      "works_with_marker": 4605,
-      "occurrences": 94978,
+      "works_with_marker": 4606,
+      "occurrences": 94985,
       "sample_works": [
         "000005_5",
         "000005_53194",
@@ -414,7 +414,7 @@
     },
     "layout.yokogumi": {
       "works_with_marker": 421,
-      "occurrences": 3678,
+      "occurrences": 3684,
       "sample_works": [
         "000019_59374",
         "000025_1144",
@@ -457,14 +457,14 @@
       ]
     },
     "source.note_label": {
-      "works_with_marker": 421,
-      "occurrences": 1003,
+      "works_with_marker": 527,
+      "occurrences": 1336,
       "sample_works": [
         "000008_1083",
         "000012_198",
         "000013_542",
         "000019_4376",
-        "000031_863"
+        "000026_50239"
       ]
     },
     "source.page_reference": {
@@ -479,13 +479,14 @@
       ]
     },
     "structure.quote_block": {
-      "works_with_marker": 5,
-      "occurrences": 19,
+      "works_with_marker": 6,
+      "occurrences": 20,
       "sample_works": [
         "000034_233",
         "000035_296",
         "000137_733",
-        "000280_1706"
+        "000280_1706",
+        "000989_351"
       ]
     },
     "structure.table": {
@@ -518,7 +519,7 @@
       ]
     }
   },
-  "unknown_classes_total": 387,
+  "unknown_classes_total": 340,
   "unknown_classes_truncated": false,
   "unknown_classes": [
     {
@@ -620,72 +621,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃АОМС、モスクワ・ソビエトの行政部］",
-      "body": "АОМС、モスクワ・ソビエトの行政部",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46248"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ВОКС、全ソ対外文化連絡協会］",
-      "body": "ВОКС、全ソ対外文化連絡協会",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46245"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃Госиздат］",
-      "body": "Госиздат",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46247"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃МХАТ、モスクワ芸術座］",
-      "body": "МХАТ、モスクワ芸術座",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46246"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃моя＝私の愛する人（呼びかけ）、湯浅芳子のこと］",
-      "body": "моя＝私の愛する人（呼びかけ）、湯浅芳子のこと",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_4833"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃обед］",
-      "body": "обед",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46246"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃〇・四一キログラム］",
       "body": "〇・四一キログラム",
       "occurrences": 1,
@@ -770,17 +705,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000305_1896"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「幕。」は地より１字上げ］",
-      "body": "「幕。」は地より１字上げ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_2023"
       ]
     },
     {
@@ -950,28 +874,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「著　者」は天より４０字下げ、地より２字上げ］",
-      "body": "「著　者」は天より４０字下げ、地より２字上げ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_2025"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「複」の文字の下から２字下げ、横組み右揃えで］",
-      "body": "「複」の文字の下から２字下げ、横組み右揃えで",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「諸国における富の分配」の図表のこと］",
       "body": "「諸国における富の分配」の図表のこと",
       "occurrences": 1,
@@ -1034,17 +936,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000933_47195"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「１９字下げて地より３字上げで］",
-      "body": "「１９字下げて地より３字上げで",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000301_1872"
       ]
     },
     {
@@ -1126,17 +1017,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃お茶の水附属高等女学校同窓会］",
-      "body": "お茶の水附属高等女学校同窓会",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46236"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃ここからページ上部横組み］",
       "body": "ここからページ上部横組み",
       "occurrences": 1,
@@ -1155,50 +1035,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000250_18353"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから天付き折り返して１字下げ］",
-      "body": "ここから天付き折り返して１字下げ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001154_46852"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから字下げ］",
-      "body": "ここから字下げ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001311_47942"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから小文字、２字下げ。冒頭のみ１字下げ］",
-      "body": "ここから小文字、２字下げ。冒頭のみ１字下げ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000221_1096"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから引用文、３字下げ、はじめの「一」のみ２字下げ］",
-      "body": "ここから引用文、３字下げ、はじめの「一」のみ２字下げ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000989_351"
       ]
     },
     {
@@ -1280,17 +1116,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃ここから２字下げ　］",
-      "body": "ここから２字下げ　",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000874_3397"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃ここから２段組、上段］",
       "body": "ここから２段組、上段",
       "occurrences": 1,
@@ -1309,28 +1134,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000230_55635"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから３　字下げ］",
-      "body": "ここから３　字下げ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000214_1670"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから４字下げ。鍵括弧のついた台詞のみ、３字下げ。］",
-      "body": "ここから４字下げ。鍵括弧のついた台詞のみ、３字下げ。",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_2023"
       ]
     },
     {
@@ -1555,17 +1358,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃ここのみ拗音が小さい字「っ」になっている］",
-      "body": "ここのみ拗音が小さい字「っ」になっている",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000162_886"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃この日、海野がしたためた遺書を、以下に引く］",
       "body": "この日、海野がしたためた遺書を、以下に引く",
       "occurrences": 1,
@@ -1573,39 +1365,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃この行はポイントを上げ、は地より３字上げ］",
-      "body": "この行はポイントを上げ、は地より３字上げ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000280_1706"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃この行はポイントを下げ、「昔の武蔵野今は東京府下」は地より１１字上げ］",
-      "body": "この行はポイントを下げ、「昔の武蔵野今は東京府下」は地より１１字上げ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000280_1706"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃この行はポイントを下げ、は地より７字上げ］",
-      "body": "この行はポイントを下げ、は地より７字上げ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000280_1706"
       ]
     },
     {
@@ -1720,17 +1479,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃ゴシック］",
-      "body": "ゴシック",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000160_2719"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃サマータイム］",
       "body": "サマータイム",
       "occurrences": 1,
@@ -1749,17 +1497,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000311_46253"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃チェレパーノワ＝ヨー子］",
-      "body": "チェレパーノワ＝ヨー子",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46246"
       ]
     },
     {
@@ -1964,17 +1701,6 @@
       "kind": "CommandFullwidth",
       "raw": "［＃一九四二（昭和十七）年一月から五月にかけて、海野は海軍報道班文学挺身隊員として従軍］",
       "body": "一九四二（昭和十七）年一月から五月にかけて、海野は海軍報道班文学挺身隊員として従軍",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃七たび生まれ変わって、国に報いるの意］",
-      "body": "七たび生まれ変わって、国に報いるの意",
       "occurrences": 1,
       "allowlisted_occurrences": 0,
       "unallowlisted_occurrences": 1,
@@ -2490,17 +2216,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃図「ソヴェト選挙系統」入る、P516］",
-      "body": "図「ソヴェト選挙系統」入る、P516",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_3149"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃図「ロシア社会主義連邦ソヴェト共和国中央及地方機関ノ交互関係」P524、「我国之国家機構図」P525］",
       "body": "図「ロシア社会主義連邦ソヴェト共和国中央及地方機関ノ交互関係」P524、「我国之国家機構図」P525",
       "occurrences": 1,
@@ -2508,17 +2223,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000311_3149"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図１～図３は、右から続く一葉］",
-      "body": "図１～図３は、右から続く一葉",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000866_3039"
       ]
     },
     {
@@ -2541,17 +2245,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000311_46246"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃地から五字上げ］",
-      "body": "地から五字上げ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001124_43022"
       ]
     },
     {
@@ -2688,28 +2381,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃子供が描いた地図入る：星形の都市を川が横断し、鉄道が縦断、中央に運動グラウンドとレーニン記念像、西側と北側に住宅・労働者クラブ、東側に天文学校・小学校（四年制、七年制、九年制）・職業学校・託児所・子供の遊び場・ピオニェールのクラブ、都市の周囲にはソヴェト農場「ピオニェール」、川沿いに都市に近い側から皮革工場・織物工場・染工場・紡績工場・発電所・ピオニェール野営所がある。ピオニェール＝開拓者（パイオニア）、旧ソ連の少年団］",
-      "body": "子供が描いた地図入る：星形の都市を川が横断し、鉄道が縦断、中央に運動グラウンドとレーニン記念像、西側と北側に住宅・労働者クラブ、東側に天文学校・小学校（四年制、七年制、九年制）・職業学校・託児所・子供の遊び場・ピオニェールのクラブ、都市の周囲にはソヴェト農場「ピオニェール」、川沿いに都市に近い側から皮革工場・織物工場・染工場・紡績工場・発電所・ピオニェール野営所がある。ピオニェール＝開拓者（パイオニア）、旧ソ連の少年団",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_2644"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃字下げ、地付きここまで］",
-      "body": "字下げ、地付きここまで",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000331_2613"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃宇陀児］",
       "body": "宇陀児",
       "occurrences": 1,
@@ -2827,17 +2498,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000311_46244"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃家族全員で死ぬこと］",
-      "body": "家族全員で死ぬこと",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000160_1255"
       ]
     },
     {
@@ -2974,28 +2634,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃巻頭に梅津只圓翁の写真と合わせて３枚の写真あり］",
-      "body": "巻頭に梅津只圓翁の写真と合わせて３枚の写真あり",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000096_2142"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃市川男女蔵＝市川左団次］",
-      "body": "市川男女蔵＝市川左団次",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46241"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃帝国主義］",
       "body": "帝国主義",
       "occurrences": 1,
@@ -3095,17 +2733,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃扉の挿絵（fig49192_01png、横356×縦292）入る］",
-      "body": "扉の挿絵（fig49192_01png、横356×縦292）入る",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000924_49192"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃手塚英孝、てっちゃん］",
       "body": "手塚英孝、てっちゃん",
       "occurrences": 1,
@@ -3146,17 +2773,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "001520_54958"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃文学者の相互扶助組織］",
-      "body": "文学者の相互扶助組織",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46248"
       ]
     },
     {
@@ -3205,17 +2821,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃日本女子大学同窓会］",
-      "body": "日本女子大学同窓会",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46236"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃映画館名、「穂」］",
       "body": "映画館名、「穂」",
       "occurrences": 1,
@@ -3245,17 +2850,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000311_46246"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃昭和新山の出来た経過を示す図入る］",
-      "body": "昭和新山の出来た経過を示す図入る",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001569_57309"
       ]
     },
     {
@@ -3326,17 +2920,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃本文中、新聞記事の見出しを模した箇所では、入力者注で文字の大きさを表した。大きさの比率は、見出し文字：小見出し文字：本文の文字＝５：４：３］",
-      "body": "本文中、新聞記事の見出しを模した箇所では、入力者注で文字の大きさを表した。大きさの比率は、見出し文字：小見出し文字：本文の文字＝５：４：３",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000096_1115"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃本田道之］",
       "body": "本田道之",
       "occurrences": 1,
@@ -3403,17 +2986,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃楽譜入る］",
-      "body": "楽譜入る",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_2020"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃横須賀鎮守府。鎮守府は、海軍の根拠地に置かれた機関］",
       "body": "横須賀鎮守府。鎮守府は、海軍の根拠地に置かれた機関",
       "occurrences": 1,
@@ -3432,17 +3004,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000331_2613"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃次３行は、文字はゴシック体、罫線は全て波線］",
-      "body": "次３行は、文字はゴシック体、罫線は全て波線",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000096_2117"
       ]
     },
     {
@@ -3711,17 +3272,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃理論物理学者。科学思想家］",
-      "body": "理論物理学者。科学思想家",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃用もないのに廊下をうろつき回ること］",
       "body": "用もないのに廊下をうろつき回ること",
       "occurrences": 1,
@@ -3953,17 +3503,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃終電の別称］",
-      "body": "終電の別称",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃統一労働総同盟］",
       "body": "統一労働総同盟",
       "occurrences": 1,
@@ -4015,17 +3554,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000311_46247"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃芳雄。原子核の研究に取り組み、理化学研究所に日本初のサイクロトロンを建設した物理学者］",
-      "body": "芳雄。原子核の研究に取り組み、理化学研究所に日本初のサイクロトロンを建設した物理学者",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000160_1255"
       ]
     },
     {
@@ -4103,17 +3631,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000311_46247"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃解剖学者。随筆家］",
-      "body": "解剖学者。随筆家",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000160_1255"
       ]
     },
     {
@@ -4503,17 +4020,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃１１字下げて、地より３字上げて］",
-      "body": "１１字下げて、地より３字上げて",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000301_1872"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃１９字下げて］",
       "body": "１９字下げて",
       "occurrences": 1,
@@ -4521,28 +4027,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000182_946"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃２０字下げて、地より３字上げで］",
-      "body": "２０字下げて、地より３字上げで",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000301_1872"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃２８字下げて、地より３字上げて］",
-      "body": "２８字下げて、地より３字上げて",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000301_1872"
       ]
     },
     {
@@ -4884,13 +4368,6 @@
     },
     {
       "work_id": "000096_1115",
-      "line": 17,
-      "kind": "CommandFullwidth",
-      "raw": "［＃本文中、新聞記事の見出しを模した箇所では、入力者注で文字の大きさを表した。大きさの比率は、見出し文字：小見出し文字：本文の文字＝５：４：３］",
-      "body": "本文中、新聞記事の見出しを模した箇所では、入力者注で文字の大きさを表した。大きさの比率は、見出し文字：小見出し文字：本文の文字＝５：４：３"
-    },
-    {
-      "work_id": "000096_1115",
       "line": 461,
       "kind": "CommandFullwidth",
       "raw": "［＃前の行とは0.5行アキ、「犯人の第二告白」はゴシック体］",
@@ -4912,13 +4389,6 @@
     },
     {
       "work_id": "000096_2117",
-      "line": 21,
-      "kind": "CommandFullwidth",
-      "raw": "［＃次３行は、文字はゴシック体、罫線は全て波線］",
-      "body": "次３行は、文字はゴシック体、罫線は全て波線"
-    },
-    {
-      "work_id": "000096_2117",
       "line": 35,
       "kind": "CommandFullwidth",
       "raw": "［＃波罫線］",
@@ -4930,13 +4400,6 @@
       "kind": "CommandFullwidth",
       "raw": "［＃ルビは「？符」に掛かる］",
       "body": "ルビは「？符」に掛かる"
-    },
-    {
-      "work_id": "000096_2142",
-      "line": 917,
-      "kind": "CommandFullwidth",
-      "raw": "［＃巻頭に梅津只圓翁の写真と合わせて３枚の写真あり］",
-      "body": "巻頭に梅津只圓翁の写真と合わせて３枚の写真あり"
     },
     {
       "work_id": "000106_2415",
@@ -5115,13 +4578,6 @@
     },
     {
       "work_id": "000160_1255",
-      "line": 303,
-      "kind": "CommandFullwidth",
-      "raw": "［＃「複」の文字の下から２字下げ、横組み右揃えで］",
-      "body": "「複」の文字の下から２字下げ、横組み右揃えで"
-    },
-    {
-      "work_id": "000160_1255",
       "line": 383,
       "kind": "CommandFullwidth",
       "raw": "［＃横須賀鎮守府。鎮守府は、海軍の根拠地に置かれた機関］",
@@ -5206,13 +4662,6 @@
     },
     {
       "work_id": "000160_1255",
-      "line": 932,
-      "kind": "CommandFullwidth",
-      "raw": "［＃終電の別称］",
-      "body": "終電の別称"
-    },
-    {
-      "work_id": "000160_1255",
       "line": 969,
       "kind": "CommandFullwidth",
       "raw": "［＃ドイツの開発した、有翼のロケット爆弾機］",
@@ -5220,31 +4669,10 @@
     },
     {
       "work_id": "000160_1255",
-      "line": 1014,
-      "kind": "CommandFullwidth",
-      "raw": "［＃芳雄。原子核の研究に取り組み、理化学研究所に日本初のサイクロトロンを建設した物理学者］",
-      "body": "芳雄。原子核の研究に取り組み、理化学研究所に日本初のサイクロトロンを建設した物理学者"
-    },
-    {
-      "work_id": "000160_1255",
       "line": 1017,
       "kind": "CommandFullwidth",
       "raw": "［＃海軍報道班文学挺身隊］",
       "body": "海軍報道班文学挺身隊"
-    },
-    {
-      "work_id": "000160_1255",
-      "line": 1029,
-      "kind": "CommandFullwidth",
-      "raw": "［＃家族全員で死ぬこと］",
-      "body": "家族全員で死ぬこと"
-    },
-    {
-      "work_id": "000160_1255",
-      "line": 1033,
-      "kind": "CommandFullwidth",
-      "raw": "［＃七たび生まれ変わって、国に報いるの意］",
-      "body": "七たび生まれ変わって、国に報いるの意"
     },
     {
       "work_id": "000160_1255",
@@ -5395,20 +4823,6 @@
     },
     {
       "work_id": "000160_1255",
-      "line": 1553,
-      "kind": "CommandFullwidth",
-      "raw": "［＃解剖学者。随筆家］",
-      "body": "解剖学者。随筆家"
-    },
-    {
-      "work_id": "000160_1255",
-      "line": 1566,
-      "kind": "CommandFullwidth",
-      "raw": "［＃理論物理学者。科学思想家］",
-      "body": "理論物理学者。科学思想家"
-    },
-    {
-      "work_id": "000160_1255",
       "line": 1567,
       "kind": "CommandFullwidth",
       "raw": "［＃謙］",
@@ -5429,13 +4843,6 @@
       "body": "新興宗教、璽宇教教祖璽光尊、幹部の元横綱双葉山、棋士呉清源ら、食糧管理法違犯により二十一日に逮捕"
     },
     {
-      "work_id": "000160_2719",
-      "line": 48,
-      "kind": "CommandFullwidth",
-      "raw": "［＃ゴシック］",
-      "body": "ゴシック"
-    },
-    {
       "work_id": "000160_875",
       "line": 1396,
       "kind": "CommandFullwidth",
@@ -5448,13 +4855,6 @@
       "kind": "CommandFullwidth",
       "raw": "［＃ここで地下げ終わり］",
       "body": "ここで地下げ終わり"
-    },
-    {
-      "work_id": "000162_886",
-      "line": 29,
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここのみ拗音が小さい字「っ」になっている］",
-      "body": "ここのみ拗音が小さい字「っ」になっている"
     },
     {
       "work_id": "000169_1273",
@@ -5485,37 +4885,121 @@
       "body": "ここで手書き文字終わり"
     },
     {
-      "work_id": "000214_1670",
-      "line": 241,
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから３　字下げ］",
-      "body": "ここから３　字下げ"
-    },
-    {
-      "work_id": "000221_1096",
-      "line": 29,
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから小文字、２字下げ。冒頭のみ１字下げ］",
-      "body": "ここから小文字、２字下げ。冒頭のみ１字下げ"
-    },
-    {
       "work_id": "000221_1096",
       "line": 31,
       "kind": "CommandFullwidth",
       "raw": "［＃ここで小文字、字下げ終わり］",
       "body": "ここで小文字、字下げ終わり"
+    },
+    {
+      "work_id": "000230_55635",
+      "line": 588,
+      "kind": "CommandFullwidth",
+      "raw": "［＃ここから２段組、上段］",
+      "body": "ここから２段組、上段"
+    },
+    {
+      "work_id": "000230_55635",
+      "line": 594,
+      "kind": "CommandFullwidth",
+      "raw": "［＃ここで２段組、上段終わり］",
+      "body": "ここで２段組、上段終わり"
+    },
+    {
+      "work_id": "000230_55635",
+      "line": 595,
+      "kind": "CommandFullwidth",
+      "raw": "［＃ここから２段組、下段］",
+      "body": "ここから２段組、下段"
+    },
+    {
+      "work_id": "000230_55635",
+      "line": 601,
+      "kind": "CommandFullwidth",
+      "raw": "［＃ここで２段組、下段終わり］",
+      "body": "ここで２段組、下段終わり"
+    },
+    {
+      "work_id": "000236_4300",
+      "line": 130,
+      "kind": "EditorialNoteBottomTextCorrection",
+      "raw": "」は底本では「　ルミ」と誤植］",
+      "body": "」は底本では「　ルミ」と誤植］"
+    },
+    {
+      "work_id": "000236_4300",
+      "line": 174,
+      "kind": "CommandFullwidth",
+      "raw": "［＃下げて、地付きで］",
+      "body": "下げて、地付きで"
+    },
+    {
+      "work_id": "000243_1328",
+      "line": 112,
+      "kind": "CommandFullwidth",
+      "raw": "［＃括弧内は「染付」と「赤繪」の二行になっている］",
+      "body": "括弧内は「染付」と「赤繪」の二行になっている"
+    },
+    {
+      "work_id": "000250_18353",
+      "line": 232,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「諸国における富の分配」の図表のこと］",
+      "body": "「諸国における富の分配」の図表のこと"
+    },
+    {
+      "work_id": "000250_18353",
+      "line": 444,
+      "kind": "CommandFullwidth",
+      "raw": "［＃左図の解説文終わり］",
+      "body": "左図の解説文終わり"
+    },
+    {
+      "work_id": "000250_18353",
+      "line": 447,
+      "kind": "CommandFullwidth",
+      "raw": "［＃右図の解説文終わり］",
+      "body": "右図の解説文終わり"
+    },
+    {
+      "work_id": "000250_18353",
+      "line": 945,
+      "kind": "CommandFullwidth",
+      "raw": "［＃ここからページ上部横組み］",
+      "body": "ここからページ上部横組み"
+    },
+    {
+      "work_id": "000250_18353",
+      "line": 949,
+      "kind": "CommandFullwidth",
+      "raw": "［＃ページ上部横組み終わり］",
+      "body": "ページ上部横組み終わり"
+    },
+    {
+      "work_id": "000250_18353",
+      "line": 951,
+      "kind": "CommandFullwidth",
+      "raw": "［＃ここからページ下部縦組み］",
+      "body": "ここからページ下部縦組み"
+    },
+    {
+      "work_id": "000250_18353",
+      "line": 955,
+      "kind": "CommandFullwidth",
+      "raw": "［＃ページ下部縦組み終わり］",
+      "body": "ページ下部縦組み終わり"
     }
   ],
   "decode_failures": [],
   "representability": {
-    "typed_occurrences": 4570000,
-    "raw_preserved_occurrences": 45354,
+    "typed_occurrences": 4570046,
+    "raw_preserved_occurrences": 45688,
     "out_of_body_occurrences": 950,
     "unsupported_occurrences": 13920,
     "needs_research_occurrences": 0
   },
   "strict_errors": [
-    "399 unallowlisted source markers"
+    "352 unallowlisted source markers"
   ],
   "inputs": {
     "matrix": "/home/bor/Projects/ab-validator/data/aozora-syntax-coverage.toml",

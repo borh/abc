@@ -1225,6 +1225,43 @@ fn source_inventory_classifies_source_note_labels() {
 }
 
 #[test]
+fn source_inventory_classifies_residual_source_label_gloss_notes() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = [
+        "［＃АОМС、モスクワ・ソビエトの行政部］",
+        "［＃ВОКС、全ソ対外文化連絡協会］",
+        "［＃Госиздат］",
+        "［＃МХАТ、モスクワ芸術座］",
+        "［＃моя＝私の愛する人（呼びかけ）、湯浅芳子のこと］",
+        "［＃обед］",
+        "［＃お茶の水附属高等女学校同窓会］",
+        "［＃七たび生まれ変わって、国に報いるの意］",
+        "［＃終電の別称］",
+        "［＃解剖学者。随筆家］",
+        "［＃理論物理学者。科学思想家］",
+        "［＃チェレパーノワ＝ヨー子］",
+        "［＃家族全員で死ぬこと］",
+        "［＃市川男女蔵＝市川左団次］",
+    ]
+    .join("\n");
+    let summary = inventory_document("fixture", &source, &patterns);
+
+    assert_eq!(
+        summary.unknown_examples,
+        [],
+        "residual glossary/source-label notes should be reviewed source-authority markers"
+    );
+    assert_eq!(
+        summary
+            .row_counts
+            .get("source.note_label")
+            .map(|count| count.occurrences),
+        Some(14)
+    );
+}
+
+#[test]
 fn source_inventory_classifies_quote_and_letter_block_markers() {
     let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
     let patterns = patterns_from_rows(matrix.rows());
@@ -1251,6 +1288,59 @@ fn source_inventory_classifies_quote_and_letter_block_markers() {
             .map(|count| count.occurrences),
         Some(6)
     );
+}
+
+#[test]
+fn source_inventory_classifies_residual_layout_media_and_decoration_notes() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = [
+        "［＃「著　者」は天より４０字下げ、地より２字上げ］",
+        "［＃「複」の文字の下から２字下げ、横組み右揃えで］",
+        "［＃ここから天付き折り返して１字下げ］",
+        "［＃ここから字下げ］",
+        "［＃ここから小文字、２字下げ。冒頭のみ１字下げ］",
+        "［＃ここから引用文、３字下げ、はじめの「一」のみ２字下げ］",
+        "［＃ここから２字下げ　］",
+        "［＃ここから３　字下げ］",
+        "［＃ここから４字下げ。鍵括弧のついた台詞のみ、３字下げ。］",
+        "［＃地から五字上げ］",
+        "［＃字下げ、地付きここまで］",
+        "［＃図「ソヴェト選挙系統」入る、P516］",
+        "［＃図１～図３は、右から続く一葉］",
+        "［＃子供が描いた地図入る：星形の都市を川が横断し、鉄道が縦断、中央に運動グラウンドとレーニン記念像、西側と北側に住宅・労働者クラブ、東側に天文学校・小学校（四年制、七年制、九年制）・職業学校・託児所・子供の遊び場・ピオニェールのクラブ、都市の周囲にはソヴェト農場「ピオニェール」、川沿いに都市に近い側から皮革工場・織物工場・染工場・紡績工場・発電所・ピオニェール野営所がある。ピオニェール＝開拓者（パイオニア）、旧ソ連の少年団］",
+        "［＃巻頭に梅津只圓翁の写真と合わせて３枚の写真あり］",
+        "［＃扉の挿絵（fig49192_01png、横356×縦292）入る］",
+        "［＃昭和新山の出来た経過を示す図入る］",
+        "［＃楽譜入る］",
+        "［＃この行はポイントを下げ、「昔の武蔵野今は東京府下」は地より１１字上げ］",
+        "［＃ここのみ拗音が小さい字「っ」になっている］",
+        "［＃次３行は、文字はゴシック体、罫線は全て波線］",
+    ]
+    .join("\n");
+    let summary = inventory_document("fixture", &source, &patterns);
+
+    assert_eq!(
+        summary.unknown_examples,
+        [],
+        "residual layout, media, and decoration source notes should not remain unknown"
+    );
+    for row_id in [
+        "indentation.jisage_block",
+        "indentation.burasage",
+        "indentation.chitsuki",
+        "structure.quote_block",
+        "layout.yokogumi",
+        "figure.image_inline",
+        "decoration.font_size",
+        "decoration.bold_italic",
+        "decoration.bousen",
+    ] {
+        assert!(
+            summary.row_counts.contains_key(row_id),
+            "expected source inventory row {row_id}"
+        );
+    }
 }
 
 #[test]

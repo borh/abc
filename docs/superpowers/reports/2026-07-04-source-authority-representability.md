@@ -5,7 +5,7 @@
 - source_authority_gate: `SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED`
 - note: this is not a passing representability gate; durable representability claims remain blocked until strict_errors is empty.
 - strict_errors:
-  - 1994 unallowlisted source markers
+  - 1934 unallowlisted source markers
 
 ## Scope
 
@@ -16,13 +16,13 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 - works_scanned: 17894
 - works_failed: 0
 - markers_total: 4324663
-- unknown_markers_total: 16864
-- unallowlisted_unknown_markers_total: 1994
+- unknown_markers_total: 16804
+- unallowlisted_unknown_markers_total: 1934
 - allowlisted_unknown_markers_total: 14870
 
 ## Representability
 
-- typed_occurrences: 4567309
+- typed_occurrences: 4567369
 - raw_preserved_occurrences: 35335
 - out_of_body_occurrences: 950
 - unsupported_occurrences: 13920
@@ -57,7 +57,7 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | heading.mado | 6 | 1680 | 000255_47342, 000296_1864, 000961_4820, 001402_49946, 001404_49966 |
 | indentation.basic | 8169 | 134394 | 000005_5, 000005_53194, 000006_1868, 000006_1869, 000006_3310 |
 | indentation.burasage | 1209 | 13265 | 000006_3311, 000006_58819, 000008_47386, 000009_55881, 000019_4376 |
-| indentation.chitsuki | 6217 | 20232 | 000006_1868, 000006_1869, 000006_3310, 000006_3311, 000006_382 |
+| indentation.chitsuki | 6245 | 20292 | 000006_1868, 000006_1869, 000006_3310, 000006_3311, 000006_382 |
 | indentation.jisage_block | 4603 | 94949 | 000005_5, 000005_53194, 000006_1868, 000006_1869, 000006_3310 |
 | indentation.jisage_oneline | 121 | 278 | 000025_202, 000025_216, 000035_235, 000035_266, 000038_42207 |
 | indentation.jizume | 242 | 3239 | 000026_55781, 000034_55507, 000040_47289, 000050_48400, 000055_56499 |
@@ -126,8 +126,6 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | 000022_197 | 48 | CommandFullwidth | ［＃原文まま］ | 原文まま |
 | 000023_1698 | 1194 | CommandFullwidth | ［＃字下げ終わり］ | 字下げ終わり |
 | 000023_1698 | 1363 | CommandFullwidth | ［＃字下げ終わり］ | 字下げ終わり |
-| 000023_1698 | 1768 | CommandFullwidth | ［＃地付きで］ | 地付きで |
-| 000023_2951 | 77 | CommandFullwidth | ［＃地より３字上がり］ | 地より３字上がり |
 | 000023_55372 | 71 | CommandFullwidth | ［＃「（昭和２年５月「文芸春秋」）」は１段階小さな文字］ | 「（昭和２年５月「文芸春秋」）」は１段階小さな文字 |
 | 000023_55376 | 118 | CommandFullwidth | ［＃「（昭和４年５月「文芸春秋」）」は１段階小さな文字］ | 「（昭和４年５月「文芸春秋」）」は１段階小さな文字 |
 | 000023_55380 | 147 | CommandFullwidth | ［＃「（昭和２年３月「中央公論」）」は１段階小さな文字］ | 「（昭和２年３月「中央公論」）」は１段階小さな文字 |
@@ -176,12 +174,14 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | 000034_55507 | 114 | MalformedAccentNotation | 〔 | 〔 |
 | 000034_55507 | 214 | MalformedAccentNotation | 〔 | 〔 |
 | 000035_1566 | 23 | CommandFullwidth | ［＃地から２字上げ、２行にわたる丸括弧で挟んだ２行組み］ | 地から２字上げ、２行にわたる丸括弧で挟んだ２行組み |
-| 000035_1573 | 46 | CommandFullwidth | ［＃地付き、地より２字あき］ | 地付き、地より２字あき |
 | 000035_296 | 11 | CommandFullwidth | ［＃ここから引用文、８字下げ］ | ここから引用文、８字下げ |
+| 000037_1417 | 258 | CommandFullwidth | ［＃岩波文庫版では「殺され」］ | 岩波文庫版では「殺され」 |
+| 000038_324 | 8 | CommandFullwidth | ［＃「ワット」「ステブンソン」「ヱヂソン」に傍線］ | 「ワット」「ステブンソン」「ヱヂソン」に傍線 |
+| 000038_324 | 50 | CommandFullwidth | ［＃「ワット」「ステブンソン」「ヱヂソン」に傍線］ | 「ワット」「ステブンソン」「ヱヂソン」に傍線 |
 
 ## Unknown Source Marker Classes
 
-Showing 50 report rows of 1427 total classes. JSON carries 1000 top classes. truncated: true
+Showing 50 report rows of 1408 total classes. JSON carries 1000 top classes. truncated: true
 
 | kind | raw | occurrences | unallowlisted | allowlisted | samples |
 |---|---|---:|---:|---:|---|
@@ -191,20 +191,15 @@ Showing 50 report rows of 1427 total classes. JSON carries 1000 top classes. tru
 | CommandFullwidth | ［＃nは上ドット付き］ | 12 | 12 | 0 | 001096_42686, 001096_43554 |
 | CommandFullwidth | ［＃ここからページの左右中央］ | 11 | 11 | 0 | 000885_2557 |
 | CommandFullwidth | ［＃「ル」は上に「⌒」付き］ | 9 | 9 | 0 | 000564_52368 |
-| CommandFullwidth | ［＃下げて、地より１字あきで］ | 9 | 9 | 0 | 000165_2394, 000165_2395, 000660_4055, 000885_3629, 000885_3630 |
 | CommandFullwidth | ［＃mは上ドット付き。２つめのsは下ドット付き］ | 8 | 8 | 0 | 001096_43672 |
 | CommandFullwidth | ［＃tは下ドット付き］ | 7 | 7 | 0 | 001096_42686, 001096_43554, 001096_43672 |
 | CommandFullwidth | ［＃「?!」は一字］ | 7 | 7 | 0 | 000125_1320 |
 | CommandFullwidth | ［＃「地付き］ | 7 | 7 | 0 | 000150_46617 |
-| CommandFullwidth | ［＃「訳者」は文末より１字上げ揃え］ | 7 | 7 | 0 | 000235_2259 |
 | CommandFullwidth | ［＃一つ目の「e」は「´」付き］ | 7 | 7 | 0 | 000129_2522 |
 | CommandFullwidth | ［＃ηに帯気、ωに曲アクセント］ | 6 | 6 | 0 | 000065_393 |
 | CommandFullwidth | ［＃「2」は指数］ | 6 | 6 | 0 | 000096_2110 |
 | CommandFullwidth | ［＃「ヱ」は小文字］ | 6 | 6 | 0 | 000124_2421, 000124_662 |
-| CommandFullwidth | ［＃下げて地より２字あきで］ | 6 | 6 | 0 | 000827_3406, 000827_3411 |
 | CommandFullwidth | ［＃劇場名］ | 6 | 6 | 0 | 000311_46245, 000311_46246, 000311_46248 |
-| CommandFullwidth | ［＃地付き、地より３字アキ］ | 6 | 6 | 0 | 000096_2100 |
-| CommandFullwidth | ［＃地付きで］ | 6 | 6 | 0 | 000023_1698, 000160_1255, 000885_2559 |
 | CommandFullwidth | ［＃左にルビ付き］ | 6 | 6 | 0 | 000933_47550, 001930_58400, 001932_59114 |
 | CommandFullwidth | ［＃改ページ、ページの左右中央に］ | 6 | 6 | 0 | 000065_393 |
 | CommandFullwidth | ［＃横組みで、ページの上部、左右中央に］ | 6 | 6 | 0 | 000065_393 |
@@ -231,10 +226,15 @@ Showing 50 report rows of 1427 total classes. JSON carries 1000 top classes. tru
 | CommandFullwidth | ［＃「（１）」は注釈番号］ | 4 | 4 | 0 | 000042_2347, 000042_2354 |
 | CommandFullwidth | ［＃お手伝いさん］ | 4 | 4 | 0 | 000160_1255, 000311_46244, 000311_4833 |
 | CommandFullwidth | ［＃右寄せ］ | 4 | 4 | 0 | 000025_1144 |
-| CommandFullwidth | ［＃地より２字上がり］ | 4 | 4 | 0 | 000137_2944, 000164_2948, 000295_2953 |
 | CommandFullwidth | ［＃夫人］ | 4 | 4 | 0 | 000160_1255 |
 | CommandFullwidth | ［＃引用文終わり］ | 4 | 4 | 0 | 000034_233 |
 | CommandFullwidth | ［＃改丁、左寄せで］ | 4 | 4 | 0 | 000160_1255 |
+| CommandFullwidth | ［＃最後の「e」は「´」付き］ | 4 | 4 | 0 | 000129_2522 |
+| CommandFullwidth | ［＃hは下ドット付き］ | 3 | 3 | 0 | 001096_42686, 001096_43554 |
+| CommandFullwidth | ［＃nは下ドット付き］ | 3 | 3 | 0 | 001096_43554, 001096_43672 |
+| CommandFullwidth | ［＃εに帯気。ιに鋭アクセント］ | 3 | 3 | 0 | 000065_393 |
+| CommandFullwidth | ［＃ηに鋭アクセント］ | 3 | 3 | 0 | 000065_393 |
+| CommandFullwidth | ［＃οに鋭アクセント。σはファイナルシグマ］ | 3 | 3 | 0 | 000065_393 |
 
 ## Decode Failures
 

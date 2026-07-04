@@ -3,8 +3,8 @@
   "works_scanned": 17894,
   "works_failed": 0,
   "markers_total": 4324663,
-  "unknown_markers_total": 16864,
-  "unallowlisted_unknown_markers_total": 1994,
+  "unknown_markers_total": 16804,
+  "unallowlisted_unknown_markers_total": 1934,
   "allowlisted_unknown_markers_total": 14870,
   "rows": {
     "annotation.bouki": {
@@ -283,8 +283,8 @@
       ]
     },
     "indentation.chitsuki": {
-      "works_with_marker": 6217,
-      "occurrences": 20232,
+      "works_with_marker": 6245,
+      "occurrences": 20292,
       "sample_works": [
         "000006_1868",
         "000006_1869",
@@ -455,7 +455,7 @@
       ]
     }
   },
-  "unknown_classes_total": 1427,
+  "unknown_classes_total": 1408,
   "unknown_classes_truncated": true,
   "unknown_classes": [
     {
@@ -532,21 +532,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃下げて、地より１字あきで］",
-      "body": "下げて、地より１字あきで",
-      "occurrences": 9,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 9,
-      "sample_works": [
-        "000165_2394",
-        "000165_2395",
-        "000660_4055",
-        "000885_3629",
-        "000885_3630"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃mは上ドット付き。２つめのsは下ドット付き］",
       "body": "mは上ドット付き。２つめのsは下ドット付き",
       "occurrences": 8,
@@ -589,17 +574,6 @@
       "unallowlisted_occurrences": 7,
       "sample_works": [
         "000150_46617"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「訳者」は文末より１字上げ揃え］",
-      "body": "「訳者」は文末より１字上げ揃え",
-      "occurrences": 7,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 7,
-      "sample_works": [
-        "000235_2259"
       ]
     },
     {
@@ -649,18 +623,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃下げて地より２字あきで］",
-      "body": "下げて地より２字あきで",
-      "occurrences": 6,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 6,
-      "sample_works": [
-        "000827_3406",
-        "000827_3411"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃劇場名］",
       "body": "劇場名",
       "occurrences": 6,
@@ -670,30 +632,6 @@
         "000311_46245",
         "000311_46246",
         "000311_46248"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃地付き、地より３字アキ］",
-      "body": "地付き、地より３字アキ",
-      "occurrences": 6,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 6,
-      "sample_works": [
-        "000096_2100"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃地付きで］",
-      "body": "地付きで",
-      "occurrences": 6,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 6,
-      "sample_works": [
-        "000023_1698",
-        "000160_1255",
-        "000885_2559"
       ]
     },
     {
@@ -1005,19 +943,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃地より２字上がり］",
-      "body": "地より２字上がり",
-      "occurrences": 4,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 4,
-      "sample_works": [
-        "000137_2944",
-        "000164_2948",
-        "000295_2953"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃夫人］",
       "body": "夫人",
       "occurrences": 4,
@@ -1047,17 +972,6 @@
       "unallowlisted_occurrences": 4,
       "sample_works": [
         "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃文末より１字上げ揃え］",
-      "body": "文末より１字上げ揃え",
-      "occurrences": 4,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 4,
-      "sample_works": [
-        "000235_2259"
       ]
     },
     {
@@ -1439,18 +1353,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃地より2字上がり］",
-      "body": "地より2字上がり",
-      "occurrences": 3,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 3,
-      "sample_works": [
-        "000118_2952",
-        "000158_2949"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃天より３２字下げて地より３字上げで］",
       "body": "天より３２字下げて地より３字上げで",
       "occurrences": 3,
@@ -1579,19 +1481,6 @@
       "unallowlisted_occurrences": 3,
       "sample_works": [
         "000042_2345"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃２１字下げ、地より２字あきで］",
-      "body": "２１字下げ、地より２字あきで",
-      "occurrences": 3,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 3,
-      "sample_works": [
-        "000221_1859",
-        "000221_1860",
-        "000221_1861"
       ]
     },
     {
@@ -3092,17 +2981,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃地付き、地より５字アキ］",
-      "body": "地付き、地より５字アキ",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000096_2100"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃地寄せ］",
       "body": "地寄せ",
       "occurrences": 2,
@@ -3528,17 +3406,6 @@
       "unallowlisted_occurrences": 2,
       "sample_works": [
         "000311_3466"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃２９字下げ、地より１字あきで］",
-      "body": "２９字下げ、地より１字あきで",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000051_361"
       ]
     },
     {
@@ -11548,6 +11415,127 @@
       "sample_works": [
         "000908_51396"
       ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃下げて、地付きで］",
+      "body": "下げて、地付きで",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000236_4300"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃下島俊一、精一郎の従弟］",
+      "body": "下島俊一、精一郎の従弟",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46241"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃下島孝吉、百合子の大叔父］",
+      "body": "下島孝吉、百合子の大叔父",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46236"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃中央寄せ］",
+      "body": "中央寄せ",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000148_775"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃中山正直、本田道之の弟］",
+      "body": "中山正直、本田道之の弟",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46244"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃中川八十勝、電気試験所時代の同僚］",
+      "body": "中川八十勝、電気試験所時代の同僚",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000160_1255"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃中文字、ゴシック体］",
+      "body": "中文字、ゴシック体",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000096_2100"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃中村吉右衛門、尾上菊五郎］",
+      "body": "中村吉右衛門、尾上菊五郎",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_4833"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃中村吉蔵］",
+      "body": "中村吉蔵",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46244"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃中村武羅夫］",
+      "body": "中村武羅夫",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46247"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃中條健之助、国男・咲枝の次男］",
+      "body": "中條健之助、国男・咲枝の次男",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46256"
+      ]
     }
   ],
   "unknown_examples": [
@@ -11888,20 +11876,6 @@
       "body": "字下げ終わり"
     },
     {
-      "work_id": "000023_1698",
-      "line": 1768,
-      "kind": "CommandFullwidth",
-      "raw": "［＃地付きで］",
-      "body": "地付きで"
-    },
-    {
-      "work_id": "000023_2951",
-      "line": 77,
-      "kind": "CommandFullwidth",
-      "raw": "［＃地より３字上がり］",
-      "body": "地より３字上がり"
-    },
-    {
       "work_id": "000023_55372",
       "line": 71,
       "kind": "CommandFullwidth",
@@ -12238,30 +12212,44 @@
       "body": "地から２字上げ、２行にわたる丸括弧で挟んだ２行組み"
     },
     {
-      "work_id": "000035_1573",
-      "line": 46,
-      "kind": "CommandFullwidth",
-      "raw": "［＃地付き、地より２字あき］",
-      "body": "地付き、地より２字あき"
-    },
-    {
       "work_id": "000035_296",
       "line": 11,
       "kind": "CommandFullwidth",
       "raw": "［＃ここから引用文、８字下げ］",
       "body": "ここから引用文、８字下げ"
+    },
+    {
+      "work_id": "000037_1417",
+      "line": 258,
+      "kind": "CommandFullwidth",
+      "raw": "［＃岩波文庫版では「殺され」］",
+      "body": "岩波文庫版では「殺され」"
+    },
+    {
+      "work_id": "000038_324",
+      "line": 8,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「ワット」「ステブンソン」「ヱヂソン」に傍線］",
+      "body": "「ワット」「ステブンソン」「ヱヂソン」に傍線"
+    },
+    {
+      "work_id": "000038_324",
+      "line": 50,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「ワット」「ステブンソン」「ヱヂソン」に傍線］",
+      "body": "「ワット」「ステブンソン」「ヱヂソン」に傍線"
     }
   ],
   "decode_failures": [],
   "representability": {
-    "typed_occurrences": 4567309,
+    "typed_occurrences": 4567369,
     "raw_preserved_occurrences": 35335,
     "out_of_body_occurrences": 950,
     "unsupported_occurrences": 13920,
     "needs_research_occurrences": 0
   },
   "strict_errors": [
-    "1994 unallowlisted source markers"
+    "1934 unallowlisted source markers"
   ],
   "inputs": {
     "matrix": "/home/bor/Projects/ab-validator/data/aozora-syntax-coverage.toml",

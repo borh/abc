@@ -2152,7 +2152,7 @@ category = "layout"
 feature_keys = ["chitsuki"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/chitsuki.rb"]
 source_examples = ["［＃ここから地付き］", "［＃ここから2字上げ］", "［＃この行地付き］"]
-source_patterns = ['［＃(ここから|この行)?(地付き|[０-９0-9]+字上げ)］', '［＃(ここから)?地から[０-９0-9]+字上げ］', '［＃地より[０-９0-9]+字上げ］', '［＃ここで(地付き|字上げ)終わり］']
+source_patterns = ['［＃(ここから|この行)?(地付き|[０-９0-9]+字上げ)］', '［＃(ここから)?地から[０-９0-9]+字上げ］', '［＃地より[０-９0-9]+字(上げ|上がり)］', '［＃ここで(地付き|字上げ)終わり］', '［＃下げて、?地より[０-９0-9]+字あきで］', '［＃[０-９0-9]+字下げ、地より[０-９0-9]+字あきで］', '［＃地付き、地より[０-９0-9]+字(アキ|あき)］', '［＃地付きで］', '［＃(「[^\n]+」は)?文末より[０-９0-9]+字上げ揃え］']
 ir_nodes = ["Block::Layout"]
 aat_nodes = ["style"]
 tei_projection = "p rend=chitsuki"

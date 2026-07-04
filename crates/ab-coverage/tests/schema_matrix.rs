@@ -723,6 +723,37 @@ fn source_inventory_classifies_indentation_corpus_variants() {
 }
 
 #[test]
+fn source_inventory_classifies_chitsuki_alignment_corpus_variants() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = [
+        "［＃下げて、地より１字あきで］",
+        "［＃下げて地より２字あきで］",
+        "［＃２１字下げ、地より２字あきで］",
+        "［＃地付き、地より３字アキ］",
+        "［＃地付きで］",
+        "［＃地より２字上がり］",
+        "［＃文末より１字上げ揃え］",
+        "［＃「訳者」は文末より１字上げ揃え］",
+    ]
+    .join("\n");
+    let summary = inventory_document("fixture", &source, &patterns);
+
+    assert_eq!(
+        summary.unknown_examples,
+        [],
+        "known chitsuki/right-alignment corpus variants should not remain unknown"
+    );
+    assert_eq!(
+        summary
+            .row_counts
+            .get("indentation.chitsuki")
+            .map(|count| count.occurrences),
+        Some(8)
+    );
+}
+
+#[test]
 fn indentation_rows_have_typed_representability() {
     let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
     for (row_id, node, projection) in [

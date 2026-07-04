@@ -35,6 +35,35 @@ pub enum SourceEventKind<'a> {
     },
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum SourceMarkerKind {
+    RubyExplicit,
+    RubyImplicit,
+    GaijiFullwidth,
+    GaijiAscii,
+    CommandFullwidth,
+    CommandAscii,
+    AccentNotation,
+    EditorialNoteRubyCorrection,
+    EditorialNoteBottomTextCorrection,
+    SegmentBoundaryTerminalProvenance,
+    MalformedGaiji,
+    MalformedGaijiAscii,
+    MalformedCommand,
+    MalformedCommandAscii,
+    MalformedRuby,
+    MalformedImplicitRuby,
+    MalformedAccentNotation,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SourceMarker<'a> {
+    pub span: SourceSpan,
+    pub raw: &'a str,
+    pub body: &'a str,
+    pub kind: SourceMarkerKind,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum EditorialNoteKind<'a> {
     RubyCorrection {
@@ -106,6 +135,19 @@ pub fn comparison_lossy_body_from_events(events: &[SourceEvent<'_>]) -> String {
 }
 
 #[must_use]
+pub fn source_markers(txt: &str) -> Vec<SourceMarker<'_>> {
+    scan_markers(txt)
+        .into_iter()
+        .map(|marker| SourceMarker {
+            span: marker.span,
+            raw: marker.raw,
+            body: marker.body,
+            kind: marker.kind,
+        })
+        .collect()
+}
+
+#[must_use]
 pub fn source_events(txt: &str) -> Vec<SourceEvent<'_>> {
     let mut events = Vec::new();
     let mut offset = 0;
@@ -113,158 +155,31 @@ pub fn source_events(txt: &str) -> Vec<SourceEvent<'_>> {
     let mut text_start_line = 1;
     let mut line = 1;
     while offset < txt.len() {
+        if let Some(marker) = scan_next_marker(txt, offset, line) {
+            match marker.event {
+                RawMarkerEvent::Emit(kind) => {
+                    push_text_event(txt, &mut events, &mut text_start, text_start_line, offset);
+                    events.push(SourceEvent {
+                        span: marker.span,
+                        kind,
+                    });
+                    offset = marker.span.end;
+                    text_start = offset;
+                    text_start_line = line;
+                    continue;
+                }
+                RawMarkerEvent::SkipBytes(bytes) => {
+                    push_text_event(txt, &mut events, &mut text_start, text_start_line, offset);
+                    offset += bytes;
+                    text_start = offset;
+                    text_start_line = line;
+                    continue;
+                }
+                RawMarkerEvent::PreserveText => {}
+            }
+        }
+
         let rest = &txt[offset..];
-
-        if let Some(note_end) = bottom_text_correction_note_end(txt, offset) {
-            push_text_event(txt, &mut events, &mut text_start, text_start_line, offset);
-            events.push(SourceEvent {
-                span: span_for(offset, note_end, line),
-                kind: SourceEventKind::EditorialNote {
-                    raw: &txt[offset..note_end],
-                    kind: EditorialNoteKind::BottomTextCorrection,
-                },
-            });
-            offset = note_end;
-            text_start = offset;
-            text_start_line = line;
-            continue;
-        }
-        if let Some((note_end, target, source)) = ruby_correction_note_bounds(txt, offset) {
-            push_text_event(txt, &mut events, &mut text_start, text_start_line, offset);
-            events.push(SourceEvent {
-                span: span_for(offset, note_end, line),
-                kind: SourceEventKind::EditorialNote {
-                    raw: &txt[offset..note_end],
-                    kind: EditorialNoteKind::RubyCorrection {
-                        target_reading: target,
-                        source_reading: source,
-                    },
-                },
-            });
-            offset = note_end;
-            text_start = offset;
-            text_start_line = line;
-            continue;
-        }
-        if let Some(note_end) = terminal_provenance_note_end(txt, offset) {
-            push_text_event(txt, &mut events, &mut text_start, text_start_line, offset);
-            events.push(SourceEvent {
-                span: span_for(offset, note_end, line),
-                kind: SourceEventKind::SegmentBoundary {
-                    kind: SegmentBoundaryKind::TerminalProvenanceNote,
-                },
-            });
-            offset = note_end;
-            text_start = offset;
-            text_start_line = line;
-            continue;
-        }
-        if rest.starts_with("※［＃") {
-            let content_start = offset + "※［＃".len();
-            if let Some(content_end) = marker_end_on_same_line(txt, content_start, '］') {
-                let marker_end = content_end + '］'.len_utf8();
-                push_text_event(txt, &mut events, &mut text_start, text_start_line, offset);
-                events.push(SourceEvent {
-                    span: span_for(offset, marker_end, line),
-                    kind: SourceEventKind::Gaiji {
-                        description: &txt[content_start..content_end],
-                    },
-                });
-                offset = marker_end;
-                text_start = offset;
-                text_start_line = line;
-                continue;
-            }
-        }
-        if rest.starts_with("※[#") {
-            let content_start = offset + "※[#".len();
-            if let Some(content_end) = marker_end_on_same_line(txt, content_start, ']') {
-                let marker_end = content_end + 1;
-                push_text_event(txt, &mut events, &mut text_start, text_start_line, offset);
-                events.push(SourceEvent {
-                    span: span_for(offset, marker_end, line),
-                    kind: SourceEventKind::Gaiji {
-                        description: &txt[content_start..content_end],
-                    },
-                });
-                offset = marker_end;
-                text_start = offset;
-                text_start_line = line;
-                continue;
-            }
-        }
-        if rest.starts_with("［＃") {
-            let content_start = offset + "［＃".len();
-            if let Some(content_end) = command_end_on_same_line(txt, content_start, '］') {
-                let marker_end = content_end + '］'.len_utf8();
-                push_text_event(txt, &mut events, &mut text_start, text_start_line, offset);
-                events.push(SourceEvent {
-                    span: span_for(offset, marker_end, line),
-                    kind: SourceEventKind::Command {
-                        body: &txt[content_start..content_end],
-                    },
-                });
-                offset = marker_end;
-                text_start = offset;
-                text_start_line = line;
-                continue;
-            }
-        }
-        if rest.starts_with("[#") {
-            let content_start = offset + "[#".len();
-            if let Some(content_end) = command_end_on_same_line(txt, content_start, ']') {
-                let marker_end = content_end + 1;
-                push_text_event(txt, &mut events, &mut text_start, text_start_line, offset);
-                events.push(SourceEvent {
-                    span: span_for(offset, marker_end, line),
-                    kind: SourceEventKind::Command {
-                        body: &txt[content_start..content_end],
-                    },
-                });
-                offset = marker_end;
-                text_start = offset;
-                text_start_line = line;
-                continue;
-            }
-        }
-        if rest.starts_with('｜') {
-            let base_start = offset + '｜'.len_utf8();
-            if let Some((base_end, reading_start, reading_end, marker_end)) =
-                explicit_ruby_bounds(txt, base_start)
-            {
-                push_text_event(txt, &mut events, &mut text_start, text_start_line, offset);
-                events.push(SourceEvent {
-                    span: span_for(offset, marker_end, line),
-                    kind: SourceEventKind::Ruby {
-                        base_source: Some(&txt[base_start..base_end]),
-                        reading: &txt[reading_start..reading_end],
-                    },
-                });
-                offset = marker_end;
-                text_start = offset;
-                text_start_line = line;
-                continue;
-            }
-        }
-        if rest.starts_with('《') {
-            let reading_start = offset + '《'.len_utf8();
-            if let Some(reading_end) = marker_end_on_same_line(txt, reading_start, '》') {
-                let marker_end = reading_end + '》'.len_utf8();
-                push_text_event(txt, &mut events, &mut text_start, text_start_line, offset);
-                events.push(SourceEvent {
-                    span: span_for(offset, marker_end, line),
-                    kind: SourceEventKind::Ruby {
-                        base_source: None,
-                        reading: &txt[reading_start..reading_end],
-                    },
-                });
-                offset = marker_end;
-                text_start = offset;
-                text_start_line = line;
-                continue;
-            }
-        }
-
         let ch = rest.chars().next().expect("non-empty rest has a char");
         if matches!(ch, '※' | '｜') {
             push_text_event(txt, &mut events, &mut text_start, text_start_line, offset);
@@ -286,6 +201,315 @@ pub fn source_events(txt: &str) -> Vec<SourceEvent<'_>> {
         txt.len(),
     );
     events
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct RawMarker<'a> {
+    span: SourceSpan,
+    raw: &'a str,
+    body: &'a str,
+    kind: SourceMarkerKind,
+    event: RawMarkerEvent<'a>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum RawMarkerEvent<'a> {
+    Emit(SourceEventKind<'a>),
+    PreserveText,
+    SkipBytes(usize),
+}
+
+fn scan_markers(txt: &str) -> Vec<RawMarker<'_>> {
+    let mut markers = Vec::new();
+    let mut offset = 0;
+    let mut line = 1;
+    while offset < txt.len() {
+        if let Some(marker) = scan_next_marker(txt, offset, line) {
+            let end = marker.span.end;
+            markers.push(marker);
+            offset = end;
+            continue;
+        }
+
+        let rest = &txt[offset..];
+        let ch = rest.chars().next().expect("non-empty rest has a char");
+        offset += ch.len_utf8();
+        if ch == '\n' {
+            line += 1;
+        }
+    }
+    markers
+}
+
+fn scan_next_marker(txt: &str, offset: usize, line: usize) -> Option<RawMarker<'_>> {
+    let rest = &txt[offset..];
+
+    if let Some(note_end) = bottom_text_correction_note_end(txt, offset) {
+        return Some(raw_marker(
+            txt,
+            offset,
+            note_end,
+            line,
+            SourceMarkerKind::EditorialNoteBottomTextCorrection,
+            offset,
+            note_end,
+            RawMarkerEvent::Emit(SourceEventKind::EditorialNote {
+                raw: &txt[offset..note_end],
+                kind: EditorialNoteKind::BottomTextCorrection,
+            }),
+        ));
+    }
+    if let Some((note_end, target, source)) = ruby_correction_note_bounds(txt, offset) {
+        return Some(raw_marker(
+            txt,
+            offset,
+            note_end,
+            line,
+            SourceMarkerKind::EditorialNoteRubyCorrection,
+            offset,
+            note_end,
+            RawMarkerEvent::Emit(SourceEventKind::EditorialNote {
+                raw: &txt[offset..note_end],
+                kind: EditorialNoteKind::RubyCorrection {
+                    target_reading: target,
+                    source_reading: source,
+                },
+            }),
+        ));
+    }
+    if let Some(note_end) = terminal_provenance_note_end(txt, offset) {
+        return Some(raw_marker(
+            txt,
+            offset,
+            note_end,
+            line,
+            SourceMarkerKind::SegmentBoundaryTerminalProvenance,
+            offset,
+            note_end,
+            RawMarkerEvent::Emit(SourceEventKind::SegmentBoundary {
+                kind: SegmentBoundaryKind::TerminalProvenanceNote,
+            }),
+        ));
+    }
+    if rest.starts_with("※［＃") {
+        let content_start = offset + "※［＃".len();
+        if let Some(content_end) = marker_end_on_same_line(txt, content_start, '］') {
+            let marker_end = content_end + '］'.len_utf8();
+            return Some(raw_marker(
+                txt,
+                offset,
+                marker_end,
+                line,
+                SourceMarkerKind::GaijiFullwidth,
+                content_start,
+                content_end,
+                RawMarkerEvent::Emit(SourceEventKind::Gaiji {
+                    description: &txt[content_start..content_end],
+                }),
+            ));
+        }
+        return Some(raw_marker(
+            txt,
+            offset,
+            content_start,
+            line,
+            SourceMarkerKind::MalformedGaiji,
+            offset,
+            content_start,
+            RawMarkerEvent::SkipBytes('※'.len_utf8()),
+        ));
+    }
+    if rest.starts_with("※[#") {
+        let content_start = offset + "※[#".len();
+        if let Some(content_end) = marker_end_on_same_line(txt, content_start, ']') {
+            let marker_end = content_end + 1;
+            return Some(raw_marker(
+                txt,
+                offset,
+                marker_end,
+                line,
+                SourceMarkerKind::GaijiAscii,
+                content_start,
+                content_end,
+                RawMarkerEvent::Emit(SourceEventKind::Gaiji {
+                    description: &txt[content_start..content_end],
+                }),
+            ));
+        }
+        return Some(raw_marker(
+            txt,
+            offset,
+            content_start,
+            line,
+            SourceMarkerKind::MalformedGaijiAscii,
+            offset,
+            content_start,
+            RawMarkerEvent::SkipBytes('※'.len_utf8()),
+        ));
+    }
+    if rest.starts_with("［＃") {
+        let content_start = offset + "［＃".len();
+        if let Some(content_end) = command_end_on_same_line(txt, content_start, '］') {
+            let marker_end = content_end + '］'.len_utf8();
+            return Some(raw_marker(
+                txt,
+                offset,
+                marker_end,
+                line,
+                SourceMarkerKind::CommandFullwidth,
+                content_start,
+                content_end,
+                RawMarkerEvent::Emit(SourceEventKind::Command {
+                    body: &txt[content_start..content_end],
+                }),
+            ));
+        }
+        return Some(raw_marker(
+            txt,
+            offset,
+            content_start,
+            line,
+            SourceMarkerKind::MalformedCommand,
+            offset,
+            content_start,
+            RawMarkerEvent::PreserveText,
+        ));
+    }
+    if rest.starts_with("[#") {
+        let content_start = offset + "[#".len();
+        if let Some(content_end) = command_end_on_same_line(txt, content_start, ']') {
+            let marker_end = content_end + 1;
+            return Some(raw_marker(
+                txt,
+                offset,
+                marker_end,
+                line,
+                SourceMarkerKind::CommandAscii,
+                content_start,
+                content_end,
+                RawMarkerEvent::Emit(SourceEventKind::Command {
+                    body: &txt[content_start..content_end],
+                }),
+            ));
+        }
+        return Some(raw_marker(
+            txt,
+            offset,
+            content_start,
+            line,
+            SourceMarkerKind::MalformedCommandAscii,
+            offset,
+            content_start,
+            RawMarkerEvent::PreserveText,
+        ));
+    }
+    if rest.starts_with('｜') {
+        let base_start = offset + '｜'.len_utf8();
+        if let Some((base_end, reading_start, reading_end, marker_end)) =
+            explicit_ruby_bounds(txt, base_start)
+        {
+            return Some(raw_marker(
+                txt,
+                offset,
+                marker_end,
+                line,
+                SourceMarkerKind::RubyExplicit,
+                base_start,
+                marker_end,
+                RawMarkerEvent::Emit(SourceEventKind::Ruby {
+                    base_source: Some(&txt[base_start..base_end]),
+                    reading: &txt[reading_start..reading_end],
+                }),
+            ));
+        }
+        return Some(raw_marker(
+            txt,
+            offset,
+            base_start,
+            line,
+            SourceMarkerKind::MalformedRuby,
+            offset,
+            base_start,
+            RawMarkerEvent::SkipBytes('｜'.len_utf8()),
+        ));
+    }
+    if rest.starts_with('《') {
+        let reading_start = offset + '《'.len_utf8();
+        if let Some(reading_end) = marker_end_on_same_line(txt, reading_start, '》') {
+            let marker_end = reading_end + '》'.len_utf8();
+            return Some(raw_marker(
+                txt,
+                offset,
+                marker_end,
+                line,
+                SourceMarkerKind::RubyImplicit,
+                reading_start,
+                reading_end,
+                RawMarkerEvent::Emit(SourceEventKind::Ruby {
+                    base_source: None,
+                    reading: &txt[reading_start..reading_end],
+                }),
+            ));
+        }
+        return Some(raw_marker(
+            txt,
+            offset,
+            reading_start,
+            line,
+            SourceMarkerKind::MalformedImplicitRuby,
+            offset,
+            reading_start,
+            RawMarkerEvent::PreserveText,
+        ));
+    }
+    if rest.starts_with('〔') {
+        let body_start = offset + '〔'.len_utf8();
+        if let Some(body_end) = marker_end_on_same_line(txt, body_start, '〕') {
+            let marker_end = body_end + '〕'.len_utf8();
+            return Some(raw_marker(
+                txt,
+                offset,
+                marker_end,
+                line,
+                SourceMarkerKind::AccentNotation,
+                body_start,
+                body_end,
+                RawMarkerEvent::PreserveText,
+            ));
+        }
+        return Some(raw_marker(
+            txt,
+            offset,
+            body_start,
+            line,
+            SourceMarkerKind::MalformedAccentNotation,
+            offset,
+            body_start,
+            RawMarkerEvent::PreserveText,
+        ));
+    }
+
+    None
+}
+
+#[allow(clippy::too_many_arguments)]
+fn raw_marker<'a>(
+    txt: &'a str,
+    start: usize,
+    end: usize,
+    line: usize,
+    kind: SourceMarkerKind,
+    body_start: usize,
+    body_end: usize,
+    event: RawMarkerEvent<'a>,
+) -> RawMarker<'a> {
+    RawMarker {
+        span: span_for(start, end, line),
+        raw: &txt[start..end],
+        body: &txt[body_start..body_end],
+        kind,
+        event,
+    }
 }
 
 #[must_use]
@@ -979,6 +1203,84 @@ mod tests {
         assert_eq!(
             comparison_lossy_body(body),
             "私のお話は之で終りといたします。\n\n底本：「ある英語教師の思い出」"
+        );
+    }
+
+    #[test]
+    fn source_markers_return_raw_marker_body_and_span() {
+        let text = "吾輩《わがはい》\n※［＃「口＋世」、U+546D］\n［＃ここから横組み］\n〔e'tude〕\n［＃地付き］（fixture）\n底本：fixture";
+        let markers = source_markers(text);
+
+        assert_eq!(markers.len(), 5);
+        assert_eq!(markers[0].kind, SourceMarkerKind::RubyImplicit);
+        assert_eq!(markers[0].raw, "《わがはい》");
+        assert_eq!(markers[0].body, "わがはい");
+        assert_eq!(markers[0].span.line, 1);
+
+        assert_eq!(markers[1].kind, SourceMarkerKind::GaijiFullwidth);
+        assert_eq!(markers[1].raw, "※［＃「口＋世」、U+546D］");
+        assert_eq!(markers[1].body, "「口＋世」、U+546D");
+        assert_eq!(markers[1].span.line, 2);
+
+        assert_eq!(markers[2].kind, SourceMarkerKind::CommandFullwidth);
+        assert_eq!(markers[2].body, "ここから横組み");
+
+        assert_eq!(markers[3].kind, SourceMarkerKind::AccentNotation);
+        assert_eq!(markers[3].raw, "〔e'tude〕");
+        assert_eq!(markers[3].body, "e'tude");
+
+        assert_eq!(
+            markers[4].kind,
+            SourceMarkerKind::SegmentBoundaryTerminalProvenance
+        );
+        assert_eq!(markers[4].raw, "［＃地付き］（fixture）");
+    }
+
+    #[test]
+    fn source_markers_surface_malformed_starts() {
+        let text =
+            "※［＃未完了\n※[#broken\n［＃ここから割り注\n[#broken\n｜未完了\n《未完了\n〔未完了";
+        let markers = source_markers(text);
+
+        assert_eq!(markers.len(), 7);
+        assert_eq!(markers[0].kind, SourceMarkerKind::MalformedGaiji);
+        assert_eq!(markers[0].raw, "※［＃");
+        assert_eq!(markers[1].kind, SourceMarkerKind::MalformedGaijiAscii);
+        assert_eq!(markers[1].raw, "※[#");
+        assert_eq!(markers[2].kind, SourceMarkerKind::MalformedCommand);
+        assert_eq!(markers[2].raw, "［＃");
+        assert_eq!(markers[3].kind, SourceMarkerKind::MalformedCommandAscii);
+        assert_eq!(markers[3].raw, "[#");
+        assert_eq!(markers[4].kind, SourceMarkerKind::MalformedRuby);
+        assert_eq!(markers[4].raw, "｜");
+        assert_eq!(markers[5].kind, SourceMarkerKind::MalformedImplicitRuby);
+        assert_eq!(markers[5].raw, "《");
+        assert_eq!(markers[6].kind, SourceMarkerKind::MalformedAccentNotation);
+        assert_eq!(markers[6].raw, "〔");
+    }
+
+    #[test]
+    fn source_markers_share_recognition_with_source_events() {
+        let text =
+            "｜吾輩《わがはい》\n※［＃「口＋世」、U+546D］\n［ルビの「おもて」は底本では「うら」］";
+        let markers = source_markers(text);
+        let events = source_events(text);
+
+        assert_eq!(markers.len(), 3);
+        assert!(
+            events
+                .iter()
+                .any(|event| matches!(event.kind, SourceEventKind::Ruby { .. }))
+        );
+        assert!(
+            events
+                .iter()
+                .any(|event| matches!(event.kind, SourceEventKind::Gaiji { .. }))
+        );
+        assert!(
+            events
+                .iter()
+                .any(|event| matches!(event.kind, SourceEventKind::EditorialNote { .. }))
         );
     }
 

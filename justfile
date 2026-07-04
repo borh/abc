@@ -822,3 +822,20 @@ morph-vibrato-dictionary-audit:
 		fi; \
 		printf '%s,%s,%s,%s,%s\n' "$name" "$status" "$versioned_compiled" "$optimized" "$notes"; \
 	done | sort
+
+# ---- aozora-epub3 adapter ---------------------------------------------------
+
+aozora-epub3-jar:
+	@cd "{{repo_root}}/references/parsers/AozoraEpub3-JDK21" && ./gradlew jar
+
+aozora-epub3-build PROFILE="release":
+	@cargo build --manifest-path "{{repo_root}}/adapters/aozora-epub3/Cargo.toml" --{{PROFILE}}
+
+aozora-epub3-test:
+	@cargo test --manifest-path "{{repo_root}}/adapters/aozora-epub3/Cargo.toml"
+
+aozora-epub3-smoke: aozora-epub3-build
+	@printf 'テスト作品\nテスト著者\n\n-------------------------------------------------------\n凡例\n-------------------------------------------------------\n\n吾輩《わがはい》は猫である。\n\n底本：テスト出版\n' \
+	  | "{{repo_root}}/adapters/aozora-epub3/aozora-epub3-adapter" --mode aat \
+	  | jq -e '.meta.adapter == "aozora-epub3" and .meta.parse_complete == true and (.blocks | length >= 1)' >/dev/null
+	@echo "aozora-epub3 smoke ok"

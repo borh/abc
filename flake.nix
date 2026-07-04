@@ -542,6 +542,14 @@
                 mkdir -p "$out"
                 echo "ADR invariant vacuity guardrail passed: each counterexample is reachable when P is stripped (mode-A)." > "$out/result.txt"
               '';
+          adr-acceptance-criteria = pkgs.runCommand "abc-adr-acceptance-criteria" { } ''
+            cp -R ${./.} source
+            chmod -R u+w source
+            cd source
+            bash nix/check-acceptance-criteria.sh
+            mkdir -p "$out"
+            echo "ADR acceptance-criteria lint passed (ratcheted)." > "$out/result.txt"
+          '';
         }
       );
 

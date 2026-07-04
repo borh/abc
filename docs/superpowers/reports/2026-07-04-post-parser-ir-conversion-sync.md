@@ -115,6 +115,27 @@ The remaining measured gap is paragraph segmentation fidelity: generated TEI
 has 74 body paragraphs for `data/complete/tei_lib_lv4/1567_tei.xml`, while
 TEI-EAJ has 17 body paragraphs and 19 total `p` elements in the workset count.
 
+The same comparison now runs over the TEI-EAJ workset with:
+
+```sh
+just parser-ir-level3-tei-eaj-generated-audit
+```
+
+Committed measurement:
+
+- report:
+  `docs/superpowers/reports/2026-07-04-tei-eaj-generated-comparison.md`
+- summary:
+  `docs/superpowers/reports/2026-07-04-tei-eaj-generated-comparison.summary.json`
+- generated per-row TEI artifacts:
+  `/db/ab-validator/parser-ir/tei-eaj-generated-comparison/`
+
+Current result: 57 selected rows materialized through parser-IR and ABC TEI, 0
+materialization failures, 5 rows skipped for missing/nonmaterializable evidence.
+Paragraph deltas are 5 exact, 45 over-split, and 7 under-split. This makes the
+next Level 3 blocker a measured paragraph segmentation/alignment problem, not a
+parser-IR schema-validity or source-note-placement problem.
+
 Adapter-version matching is exact. A future adapter-version tuple requires a
 new measured conversion-audit entry rather than wildcard or prefix registry
 matching.
@@ -149,11 +170,11 @@ Proceed with residual adapter/evidence characterization:
 
 - carry the local ABC `0.2.2` compatibility admission (`59731aa`) wherever the
   ABC registry is synced,
-- keep the whole TEI-EAJ/aozora_tei structural expansion as the Level 3
-  comparison artifact instead of the Melos-only probe,
+- keep the whole TEI-EAJ/aozora_tei structural expansion and generated-TEI
+  comparison as the Level 3 artifacts instead of the Melos-only probe,
 - use `docs/superpowers/reports/2026-07-04-tei-eaj-structural-gap-analysis.md`
   as the current gap classification,
-- add paragraph-count delta buckets to the TEI-EAJ expansion so non-collapsed
-  adapter disagreement remains visible,
+- use the generated-TEI paragraph delta buckets to prioritize adapter paragraph
+  segmentation and TEI-EAJ alignment work,
 - continue source-authority representability work before making stronger claims
   about all Aozora markdown constructs.

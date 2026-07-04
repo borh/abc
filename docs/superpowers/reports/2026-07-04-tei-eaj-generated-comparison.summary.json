@@ -1,0 +1,2617 @@
+{
+  "schema_version": "tei-eaj-generated-comparison-v1",
+  "inputs": {
+    "workset": "/home/bor/Projects/ab-validator/../abc/docs/handoffs/tei-eaj-aozora-workset-export.json",
+    "structural_summary": "/home/bor/Projects/ab-validator/docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.summary.json",
+    "mapping": "/home/bor/Projects/ab-validator/data/aat-to-parser-ir-mapping-v1.json",
+    "abc_root": "/home/bor/Projects/ab-validator/../abc",
+    "adapter_preference": [
+      "aozora2html",
+      "aozora-epub3",
+      "aozora-rs",
+      "aozora2"
+    ],
+    "max_rows": 0,
+    "tei_eaj_file_filter": []
+  },
+  "totals": {
+    "rows_attempted": 57,
+    "materialization_succeeded": 57,
+    "materialization_failed": 0,
+    "rows_skipped": 5
+  },
+  "paragraph_delta_buckets": {
+    "under_split": 7,
+    "over_split": 45,
+    "exact": 5
+  },
+  "rows": [
+    {
+      "work_id": "1126",
+      "title": "三つの宝",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/1126_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:1126",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000879_1126-2eb9d89b1bc6.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 380,
+        "paragraph_count": 30,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 30,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 169,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 169,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": -139,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "under_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "15099",
+      "title": "長崎小品",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/15099_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:15099",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000879_104-1eebd42c07d1.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 317,
+        "paragraph_count": 62,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 62,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 1,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 1,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 61,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "15938",
+      "title": "元禄時代小説第一巻「本朝二十不孝」ぬきほ（言文一致訳）",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/15938_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:15938",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/001216_15938-072aebb8aaac.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 16,
+        "paragraph_count": 8,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 8,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 6,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 6,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 2,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "236",
+      "title": "ア、秋",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/236_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:236",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000035_236-fcca4599ee8c.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 49,
+        "paragraph_count": 29,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 29,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 1,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 1,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 28,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "2509",
+      "title": "天災と国防",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/2509_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:2509",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000042_2509-e7c32f5f6938.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 152,
+        "paragraph_count": 28,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 28,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 28,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 28,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 0,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "exact",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "42320",
+      "title": "西洋にはない",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/42320_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:42320",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000148_42320-de4903f7e13c.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 8,
+        "paragraph_count": 4,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 4,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 3,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 3,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 1,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "43077",
+      "title": "地震雑感",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/43077_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:43077",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000042_43077-63de64d77122.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 89,
+        "paragraph_count": 32,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 32,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 30,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 30,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 2,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "43563",
+      "title": "デンマルク国の話: 信仰と樹木とをもって国を救いし話",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/43563_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:43563",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000255_43563-77090d11e36e.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 497,
+        "paragraph_count": 186,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 186,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 26,
+        "body_note_count": 1,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 26,
+        "workset_note_count": 1
+      },
+      "deltas": {
+        "body_p_count": 160,
+        "body_note_count": -1,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "4411",
+      "title": "岩波茂雄宛書簡",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/4411_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:4411",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000287_4411-78854b2fc44c.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 28,
+        "paragraph_count": 6,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 6,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 2,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 2,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 4,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "4464",
+      "title": "秋田街道",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/4464_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:4464",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000081_4464-919dc160fa30.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 111,
+        "paragraph_count": 26,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 26,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 17,
+        "body_note_count": 1,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 17,
+        "workset_note_count": 1
+      },
+      "deltas": {
+        "body_p_count": 9,
+        "body_note_count": -1,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "45093",
+      "title": "乳母車",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/45093_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:45093",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000121_45093-a53841cd43b0.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 20,
+        "paragraph_count": 18,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 18,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 6,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 6,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 12,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "4872",
+      "title": "愛読書の印象",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/4872_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:4872",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000879_4872-3da7771d8346.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 13,
+        "paragraph_count": 5,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 5,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 5,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 5,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 0,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "exact",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "50502",
+      "title": "北海道に就いての印象",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/50502_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:50502",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000025_50502-a448e6a63530.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 22,
+        "paragraph_count": 8,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 8,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 8,
+        "body_note_count": 3,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 8,
+        "workset_note_count": 3
+      },
+      "deltas": {
+        "body_p_count": 0,
+        "body_note_count": -3,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "exact",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "51307",
+      "title": "みだれ髪",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/51307_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:51307",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000885_51307-d71bdc6627be.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 1316,
+        "paragraph_count": 412,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 406,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 7,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 7,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 399,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "51520",
+      "title": "かたい大きな手",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/51520_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:51520",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/001475_51520-2dee741cd556.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 667,
+        "paragraph_count": 76,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 76,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 76,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 76,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 0,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "exact",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "53386",
+      "title": "〔月光の鉛のなかに〕",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/53386_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:53386",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000081_53386-bed1991cc09b.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 5,
+        "paragraph_count": 5,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 5,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 1,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 1,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 4,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "53617",
+      "title": "巡禮紀行",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/53617_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:53617",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000067_53617-860fa3126c73.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 33,
+        "paragraph_count": 20,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 20,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 1,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 1,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 19,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "55783",
+      "title": "夢",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/55783_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:55783",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000026_55783-baa51aac9537.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 260,
+        "paragraph_count": 16,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 16,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 126,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 126,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": -110,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "under_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "56996",
+      "title": "書簡 山田邦子宛",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/56996_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:56996",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000416_56996-c1cc77ec50de.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 12,
+        "paragraph_count": 8,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 8,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 1,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 1,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 7,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "56998",
+      "title": "書簡 大杉栄宛",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/56998_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:56998",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000416_56998-2027aaa76365.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 25,
+        "paragraph_count": 9,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 9,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 1,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 1,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 8,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "56999",
+      "title": "書簡 大杉栄宛",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/56999_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:56999",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000416_56999-f7880fe16da7.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 19,
+        "paragraph_count": 9,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 9,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 8,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 8,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 1,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "57001",
+      "title": "書簡 大杉栄宛",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/57001_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:57001",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000416_57001-50f98274141f.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 33,
+        "paragraph_count": 13,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 13,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 1,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 1,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 12,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "57002",
+      "title": "書簡 大杉栄宛",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/57002_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:57002",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000416_57002-5849bfe19515.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 13,
+        "paragraph_count": 7,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 7,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 1,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 1,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 6,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "57003",
+      "title": "書簡 大杉栄宛",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/57003_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:57003",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000416_57003-9ed614ebc5cf.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 15,
+        "paragraph_count": 5,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 5,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 1,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 1,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 4,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "57004",
+      "title": "書簡 大杉栄宛",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/57004_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:57004",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000416_57004-700e1e687044.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 29,
+        "paragraph_count": 11,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 11,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 1,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 1,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 10,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "57005",
+      "title": "書簡 大杉栄宛",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/57005_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:57005",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000416_57005-52c78f31f48c.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 35,
+        "paragraph_count": 13,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 13,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 1,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 1,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 12,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "57006",
+      "title": "書簡 大杉栄宛",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/57006_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:57006",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000416_57006-270bcef7bd2f.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 26,
+        "paragraph_count": 10,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 10,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 1,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 1,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 9,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "57037",
+      "title": "書簡 大杉栄宛",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/57037_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:57037",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000416_57037-e4beced6f287.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 30,
+        "paragraph_count": 10,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 10,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 1,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 1,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 9,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "57038",
+      "title": "書簡 大杉栄宛",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/57038_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:57038",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000416_57038-85d5e6a94550.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 16,
+        "paragraph_count": 6,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 6,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 1,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 1,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 5,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "57039",
+      "title": "書簡 大杉栄宛",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/57039_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:57039",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000416_57039-4e811a6546ec.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 15,
+        "paragraph_count": 7,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 7,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 1,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 1,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 6,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "57040",
+      "title": "書簡 大杉栄宛",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/57040_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:57040",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000416_57040-954b0fdf4c5a.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 31,
+        "paragraph_count": 11,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 11,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 1,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 1,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 10,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "57041",
+      "title": "書簡 大杉栄宛",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/57041_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:57041",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000416_57041-35497cca8a87.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 16,
+        "paragraph_count": 6,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 6,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 1,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 1,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 5,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "57042",
+      "title": "書簡 大杉栄宛",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/57042_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:57042",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000416_57042-7da306ecbf7f.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 20,
+        "paragraph_count": 10,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 10,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 1,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 1,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 9,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "57043",
+      "title": "書簡 大杉栄宛",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/57043_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:57043",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000416_57043-ae8c56c30897.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 25,
+        "paragraph_count": 9,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 9,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 1,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 1,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 8,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "57044",
+      "title": "書簡 大杉栄宛",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/57044_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:57044",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000416_57044-257ead63b5d7.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 30,
+        "paragraph_count": 12,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 12,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 1,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 1,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 11,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "57046",
+      "title": "書簡 木村荘太宛",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/57046_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:57046",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000416_57046-b29dabcbcc48.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 41,
+        "paragraph_count": 14,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 14,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 1,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 1,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 13,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "57047",
+      "title": "書簡 武部ツタ宛",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/57047_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:57047",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000416_57047-31cb641c5a23.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 13,
+        "paragraph_count": 8,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 8,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 1,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 1,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 7,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "57048",
+      "title": "書簡 武部ツタ宛",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/57048_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:57048",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000416_57048-85e00484d743.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 13,
+        "paragraph_count": 4,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 4,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 1,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 1,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 3,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "86",
+      "title": "二人小町",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/86_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:86",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000879_86-700a96bab280.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 506,
+        "paragraph_count": 134,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 134,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 136,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 136,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": -2,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "under_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "15099",
+      "title": "長崎小品",
+      "tei_eaj_file": "data/complete/tei_lib_lv4/104_15099.xml",
+      "selected_aat": {
+        "label": "aozora2html:15099",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000879_104-1eebd42c07d1.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 317,
+        "paragraph_count": 62,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 62,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 57,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 57,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 5,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "1567",
+      "title": "走れメロス",
+      "tei_eaj_file": "data/complete/tei_lib_lv4/1567_header_updated.xml",
+      "selected_aat": {
+        "label": "aozora2html:1567",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000035_1567-32ff5a089d67.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 251,
+        "paragraph_count": 75,
+        "source_note_count": 1
+      },
+      "generated_tei": {
+        "body_p_count": 74,
+        "body_note_count": 0,
+        "back_note_count": 1,
+        "back_source_note_count": 1
+      },
+      "tei_eaj": {
+        "body_p_count": 17,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 22,
+        "workset_note_count": 3
+      },
+      "deltas": {
+        "body_p_count": 57,
+        "body_note_count": 0,
+        "back_source_note_count": 1
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": true,
+        "source_note_back_present": true
+      }
+    },
+    {
+      "work_id": "1567",
+      "title": "走れメロス",
+      "tei_eaj_file": "data/complete/tei_lib_lv4/1567_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:1567",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000035_1567-32ff5a089d67.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 251,
+        "paragraph_count": 75,
+        "source_note_count": 1
+      },
+      "generated_tei": {
+        "body_p_count": 74,
+        "body_note_count": 0,
+        "back_note_count": 1,
+        "back_source_note_count": 1
+      },
+      "tei_eaj": {
+        "body_p_count": 17,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 19,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 57,
+        "body_note_count": 0,
+        "back_source_note_count": 1
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": true,
+        "source_note_back_present": true
+      }
+    },
+    {
+      "work_id": "45245",
+      "title": "高瀬舟",
+      "tei_eaj_file": "data/complete/tei_lib_lv4/45245_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:45245",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000129_45245-57a2c88a17df.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 285,
+        "paragraph_count": 39,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 39,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 4,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 4,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 35,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "50362",
+      "title": "黒船来航",
+      "tei_eaj_file": "data/complete/tei_lib_lv4/50362_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:50362",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/001263_50362-00333f142617.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 64,
+        "paragraph_count": 15,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 15,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 12,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 12,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 3,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "7928",
+      "title": "旅人（一幕）",
+      "tei_eaj_file": "data/complete/tei_lib_lv4/7928_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:7928",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000311_7928-a4f7c45eb01b.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 273,
+        "paragraph_count": 61,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 61,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 110,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 110,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": -49,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "under_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "1126",
+      "title": "三つの宝",
+      "tei_eaj_file": "data/draft/tei_lib_lv3/1126_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:1126",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000879_1126-2eb9d89b1bc6.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 380,
+        "paragraph_count": 30,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 30,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 154,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 155,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": -124,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "under_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "1576",
+      "title": "新ハムレット",
+      "tei_eaj_file": "data/draft/tei_lib_lv3/1576_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:1576",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000035_1576-8b6c528b582b.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 2078,
+        "paragraph_count": 467,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 466,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 496,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 496,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": -30,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "under_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "43563",
+      "title": "デンマルク国の話: 信仰と樹木とをもって国を救いし話",
+      "tei_eaj_file": "data/draft/tei_lib_lv3/43563_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:43563",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000255_43563-77090d11e36e.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 497,
+        "paragraph_count": 186,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 186,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 26,
+        "body_note_count": 1,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 26,
+        "workset_note_count": 1
+      },
+      "deltas": {
+        "body_p_count": 160,
+        "body_note_count": -1,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "52208",
+      "title": "帝大聖書研究会終講の辞",
+      "tei_eaj_file": "data/draft/tei_lib_lv3/52208_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:52208",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/001538_52208-9d9b0d97e03f.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 59,
+        "paragraph_count": 27,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 27,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 18,
+        "body_note_count": 1,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 18,
+        "workset_note_count": 1
+      },
+      "deltas": {
+        "body_p_count": 9,
+        "body_note_count": -1,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "86",
+      "title": "二人小町",
+      "tei_eaj_file": "data/draft/tei_lib_lv3/86_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:86",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000879_86-700a96bab280.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 506,
+        "paragraph_count": 134,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 134,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 123,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 123,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 11,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "1805",
+      "title": "安重根",
+      "tei_eaj_file": "data/draft/tei_lib_lv4/1805_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:1805",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000272_1805-551c374ecc32.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 1884,
+        "paragraph_count": 450,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 450,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 29,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 29,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 421,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "2571",
+      "title": "鈴木三重吉宛書簡―明治三十九年",
+      "tei_eaj_file": "data/draft/tei_lib_lv4/2571_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:2571",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000020_2571-d579d65b2d9f.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 113,
+        "paragraph_count": 77,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 77,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 3,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 3,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 74,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "4244",
+      "title": "獄中への手紙",
+      "tei_eaj_file": "data/draft/tei_lib_lv4/4244-1_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:4244",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000311_4244-cf9a5aa050ee.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 131,
+        "paragraph_count": 74,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 74,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 24,
+        "body_note_count": 20,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 24,
+        "workset_note_count": 20
+      },
+      "deltas": {
+        "body_p_count": 50,
+        "body_note_count": -20,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "4244",
+      "title": "獄中への手紙",
+      "tei_eaj_file": "data/draft/tei_lib_lv4/4244-3_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:4244",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000311_4244-cf9a5aa050ee.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 131,
+        "paragraph_count": 74,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 74,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 13,
+        "body_note_count": 2,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 13,
+        "workset_note_count": 2
+      },
+      "deltas": {
+        "body_p_count": 61,
+        "body_note_count": -2,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "4244",
+      "title": "獄中への手紙",
+      "tei_eaj_file": "data/draft/tei_lib_lv4/4244-4_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:4244",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000311_4244-cf9a5aa050ee.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 131,
+        "paragraph_count": 74,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 74,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 8,
+        "body_note_count": 1,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 8,
+        "workset_note_count": 1
+      },
+      "deltas": {
+        "body_p_count": 66,
+        "body_note_count": -1,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "over_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "46453",
+      "title": "春",
+      "tei_eaj_file": "data/draft/tei_lib_lv4/46453_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:46453",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/000212_46453-12b8b654a392.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 333,
+        "paragraph_count": 74,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 72,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 89,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 89,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": -17,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "under_split",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    },
+    {
+      "work_id": "54457",
+      "title": "秋の暮",
+      "tei_eaj_file": "data/draft/tei_lib_lv4/54457_tei.xml",
+      "selected_aat": {
+        "label": "aozora2html:54457",
+        "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter/001668_54457-49c91f8ee388.json",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1"
+      },
+      "materialization": {
+        "status": "passed",
+        "findings_count": 0
+      },
+      "parser_ir": {
+        "schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+        "nodes": 15,
+        "paragraph_count": 15,
+        "source_note_count": 0
+      },
+      "generated_tei": {
+        "body_p_count": 15,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "tei_eaj": {
+        "body_p_count": 15,
+        "body_note_count": 0,
+        "back_note_count": 0,
+        "back_source_note_count": 0,
+        "workset_p_count": 15,
+        "workset_note_count": 0
+      },
+      "deltas": {
+        "body_p_count": 0,
+        "body_note_count": 0,
+        "back_source_note_count": 0
+      },
+      "classification": {
+        "paragraph_delta_bucket": "exact",
+        "source_note_body_excluded": false,
+        "source_note_back_present": false
+      }
+    }
+  ],
+  "skipped": [
+    {
+      "tei_eaj_file": "data/draft/tei_lib_lv2/01.xml",
+      "reason": "no_materializable_aat"
+    },
+    {
+      "tei_eaj_file": "data/draft/tei_lib_lv2/02.xml",
+      "reason": "no_materializable_aat"
+    },
+    {
+      "tei_eaj_file": "data/draft/tei_lib_lv2/yosano_genji_kiritsubo_ids.xml",
+      "reason": "no_materializable_aat"
+    },
+    {
+      "tei_eaj_file": "data/etc/Curriculum vitae of Wakugawa Pēchin, Jitchaku Village.xml",
+      "reason": "no_materializable_aat"
+    },
+    {
+      "tei_eaj_file": "data/etc/校異源氏物語_header更新版.xml",
+      "reason": "no_materializable_aat"
+    }
+  ]
+}

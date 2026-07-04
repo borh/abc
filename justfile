@@ -168,6 +168,22 @@ parser-ir-level3-melos-eaj-compare-smoke AAT="" TEI_EAJ_FILE="data/complete/tei_
 	@aat="{{AAT}}"; if [ -z "$aat" ]; then aat="{{aozora2html_full_aat_dir}}/000035_1567-32ff5a089d67.json"; fi; \
 	AB_LEVEL3_AAT="$aat" AB_LEVEL3_TEI_EAJ_FILE="{{TEI_EAJ_FILE}}" bash "{{repo_root}}/tests/parser-ir-level3-tei-eaj-compare-smoke.sh"
 
+parser-ir-level3-generated-workset-audit-smoke:
+	@bash "{{repo_root}}/tests/parser-ir-level3-generated-workset-audit-smoke.sh"
+
+parser-ir-level3-tei-eaj-generated-audit MAX_ROWS="0" OUT_DIR="" STRUCTURAL_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.summary.json":
+	@cargo build -p ab-aat-to-parser-ir --release
+	@out_dir="{{OUT_DIR}}"; if [ -z "$out_dir" ]; then out_dir="{{ab_db_root}}/parser-ir/tei-eaj-generated-comparison"; fi; \
+	python3 "{{repo_root}}/reports/parser-ir/tei-eaj-generated-compare.py" \
+		--workset "{{tei_eaj_workset}}" \
+		--structural-summary "{{repo_root}}/{{STRUCTURAL_SUMMARY}}" \
+		--mapping "{{repo_root}}/data/aat-to-parser-ir-mapping-v1.json" \
+		--converter-bin "{{repo_root}}/target/release/ab-aat-to-parser-ir" \
+		--abc-root "{{repo_root}}/../abc" \
+		--abc-schema-root "{{repo_root}}/data/abc-schemas" \
+		--out-dir "$out_dir" \
+		--max-rows "{{MAX_ROWS}}"
+
 tei-eaj-structural-expansion JOBS="24" REPORT_MD="docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.summary.json":
 	@test -f "{{tei_eaj_workset}}" || { echo "missing TEI-EAJ workset export: {{tei_eaj_workset}}" >&2; exit 2; }
 	@cargo build -p ab-aat-to-parser-ir --release --jobs "{{JOBS}}"

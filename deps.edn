@@ -10,8 +10,6 @@
   clj-commons/fs                             {:mvn/version "1.6.312"}
   babashka/fs                                {:mvn/version "0.5.34"}
   com.ibm.icu/icu4j                          {:mvn/version "78.3"}
-  clj-mecab/clj-mecab                        {:mvn/version "1.0.102"}
-
   org.apache.commons/commons-compress        {:mvn/version "1.28.0"}
   com.cnuernber/charred                      {:mvn/version "1.039"}
   clojure.java-time/clojure.java-time        {:mvn/version "1.4.3"}

@@ -2,7 +2,6 @@
   (:require [malli.core :as m]
             [abc.annotation.schema :as annotation-schema]
             [abc.text :as text]
-            [clj-mecab.parse :as mecab]
             [clojure.string :as str]
             [abc.aozora :as aozora]
             [abc.stats :as stats]
@@ -436,9 +435,10 @@
     {:sentence/tags           #{}
      :sentence/annotated-text annotated-text
      :sentence/text           plaintext
-     :sentence/tokens         (mapv (fn [m position] (assoc m :mecab.features/position position))
-                                    (mecab/parse-sentence plaintext)
-                                    (range))}))
+     ;; Tokens (mecab morphemes) are produced by the Rust ab-validator parser,
+     ;; not in Clojure. Kept empty here; see :mecab.features/* schema in
+     ;; abc.annotation.schema for the contract the external parser conforms to.
+     :sentence/tokens         []}))
 
 (defn add-tags [paragraphs]
   (into []

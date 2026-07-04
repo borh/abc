@@ -23,8 +23,9 @@
   (is (= "ＡＢＣ１２３"
          (text/convert-half-to-fullwidth "ABC123"))))
 
-(deftest compute-text-splits-lines-before-tokenizing-test
-  (testing "compute-text tokenizes each newline-delimited input line"
-    (with-redefs [abc.stats/parse-sentence (fn [_line] [#:mecab.features{:orth "token"}])]
-      (let [{:keys [sentence-lengths]} (stats/compute-text "猫\n犬")]
-        (is (= [1 1] sentence-lengths))))))
+(deftest compute-text-splits-lines-into-sentence-lengths-test
+  (testing "compute-text returns per-line token counts as sentence-lengths"
+    (let [result (stats/compute-text {"猫" [#:mecab.features{:orth "token"}]
+                                      "犬" [#:mecab.features{:orth "token"}]})]
+      (is (= 1 (get-in result ["猫" :sentence-lengths])))
+      (is (= 1 (get-in result ["犬" :sentence-lengths]))))))

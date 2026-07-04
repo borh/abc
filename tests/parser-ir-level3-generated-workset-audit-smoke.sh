@@ -84,6 +84,28 @@ cat > "$out_dir/structural-summary.json" <<JSON
           "verdict": {
             "residual_free": true
           }
+        },
+        {
+          "label": "aozora-rs:fixture",
+          "path": "$repo_root/tests/fixtures/aat-parser-ir/real-aozora-rs-sample.aat.json",
+          "aat": {
+            "adapter": "aozora-rs",
+            "adapter_version": "fixture",
+            "paragraph_blocks": 1,
+            "final_source_attribution_candidate": false
+          },
+          "conversion": {
+            "success": true,
+            "error": null
+          },
+          "parser_ir": {
+            "paragraph_count": 1,
+            "paragraphs_represented": true,
+            "source_attribution_represented": false
+          },
+          "verdict": {
+            "residual_free": true
+          }
         }
       ]
     }
@@ -101,13 +123,21 @@ python3 "$repo_root/reports/parser-ir/tei-eaj-generated-compare.py" \
   --abc-root "$abc_root" \
   --abc-schema-root "$repo_root/data/abc-schemas" \
   --out-dir "$out_dir/audit" \
+  --candidate-mode all \
   --max-rows 1
 
-jq -e '.totals.rows_attempted == 1' "$out_dir/audit/summary.json" >/dev/null
-jq -e '.totals.materialization_succeeded == 1' "$out_dir/audit/summary.json" >/dev/null
+jq -e '.inputs.candidate_mode == "all"' "$out_dir/audit/summary.json" >/dev/null
+jq -e '.totals.rows_attempted == 2' "$out_dir/audit/summary.json" >/dev/null
+jq -e '.totals.tei_eaj_rows_attempted == 1' "$out_dir/audit/summary.json" >/dev/null
+jq -e '.totals.materialization_succeeded == 2' "$out_dir/audit/summary.json" >/dev/null
+jq -e '([.rows[].selected_aat.adapter] | unique | length) == 2' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.rows[0].generated_tei.body_p_count >= 1' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.rows[0].tei_eaj.body_p_count == 2' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.rows[0].classification.paragraph_delta_bucket != null' "$out_dir/audit/summary.json" >/dev/null
+jq -e '.adapter_paragraph_delta_buckets.aozora2html | type == "object"' "$out_dir/audit/summary.json" >/dev/null
+jq -e '.adapter_paragraph_delta_buckets["aozora-rs"] | type == "object"' "$out_dir/audit/summary.json" >/dev/null
+jq -e '.adapter_body_text_match_buckets.aozora2html | type == "object"' "$out_dir/audit/summary.json" >/dev/null
+jq -e '.adapter_body_text_match_buckets["aozora-rs"] | type == "object"' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.body_text_relation_buckets | type == "object"' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.rows[0].text.body_base_text_relation != null' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.rows[0].text.generated_body_base_text_length > 0' "$out_dir/audit/summary.json" >/dev/null
@@ -118,5 +148,7 @@ jq -e '.rows[0].text.surface_relations.ruby_expanded_parenless.relation != null'
 grep -n "Generated Parser-IR TEI vs TEI-EAJ Workset Audit" "$out_dir/audit/report.md"
 grep -n "Body Text Relation Buckets" "$out_dir/audit/report.md"
 grep -n "Body Text Match Buckets" "$out_dir/audit/report.md"
+grep -n "Adapter Paragraph Delta Buckets" "$out_dir/audit/report.md"
+grep -n "Adapter Body Text Match Buckets" "$out_dir/audit/report.md"
 
 echo "parser-IR Level 3 generated workset audit smoke ok: $out_dir/audit"

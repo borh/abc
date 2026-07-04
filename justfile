@@ -184,6 +184,20 @@ parser-ir-level3-tei-eaj-generated-audit MAX_ROWS="0" OUT_DIR="" STRUCTURAL_SUMM
 		--out-dir "$out_dir" \
 		--max-rows "{{MAX_ROWS}}"
 
+parser-ir-level3-tei-eaj-generated-matrix-audit MAX_ROWS="0" OUT_DIR="" STRUCTURAL_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.summary.json":
+	@cargo build -p ab-aat-to-parser-ir --release
+	@out_dir="{{OUT_DIR}}"; if [ -z "$out_dir" ]; then out_dir="{{ab_db_root}}/parser-ir/tei-eaj-generated-matrix-comparison"; fi; \
+	python3 "{{repo_root}}/reports/parser-ir/tei-eaj-generated-compare.py" \
+		--workset "{{tei_eaj_workset}}" \
+		--structural-summary "{{repo_root}}/{{STRUCTURAL_SUMMARY}}" \
+		--mapping "{{repo_root}}/data/aat-to-parser-ir-mapping-v1.json" \
+		--converter-bin "{{repo_root}}/target/release/ab-aat-to-parser-ir" \
+		--abc-root "{{repo_root}}/../abc" \
+		--abc-schema-root "{{repo_root}}/data/abc-schemas" \
+		--out-dir "$out_dir" \
+		--candidate-mode all \
+		--max-rows "{{MAX_ROWS}}"
+
 tei-eaj-structural-expansion JOBS="24" REPORT_MD="docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.summary.json":
 	@test -f "{{tei_eaj_workset}}" || { echo "missing TEI-EAJ workset export: {{tei_eaj_workset}}" >&2; exit 2; }
 	@cargo build -p ab-aat-to-parser-ir --release --jobs "{{JOBS}}"

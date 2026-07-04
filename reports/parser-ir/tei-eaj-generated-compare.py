@@ -39,6 +39,12 @@ def parse_args() -> argparse.Namespace:
         help="Comma-separated adapter preference for candidate AAT selection.",
     )
     parser.add_argument(
+        "--candidate-mode",
+        choices=["selected", "all"],
+        default="selected",
+        help="Materialize only the preferred AAT candidate, or all materializable candidates per TEI-EAJ row.",
+    )
+    parser.add_argument(
         "--metadata-record",
         default="examples/v0/example-work/metadata-record.json",
         type=pathlib.Path,
@@ -257,10 +263,10 @@ def adapter_rank(adapter: str | None, preference: dict[str, int]) -> int:
     return preference.get(adapter, len(preference) + 100)
 
 
-def select_candidate(
+def materializable_candidates(
     row: dict[str, Any],
     preference: dict[str, int],
-) -> dict[str, Any] | None:
+) -> list[dict[str, Any]]:
     candidates = []
     for candidate in row.get("aat_inputs", []):
         if not candidate.get("conversion", {}).get("success"):
@@ -285,10 +291,8 @@ def select_candidate(
                 candidate,
             )
         )
-    if not candidates:
-        return None
     candidates.sort(key=lambda item: item[:4])
-    return candidates[0][-1]
+    return [item[-1] for item in candidates]
 
 
 def paragraph_delta_bucket(generated: int | None, tei_eaj: int | None) -> str:
@@ -431,6 +435,22 @@ def materialize_row(
     }
 
 
+def increment_bucket(
+    buckets: dict[str, int],
+    bucket: str,
+) -> None:
+    buckets[bucket] = buckets.get(bucket, 0) + 1
+
+
+def increment_nested_bucket(
+    buckets: dict[str, dict[str, int]],
+    key: str,
+    bucket: str,
+) -> None:
+    nested = buckets.setdefault(key, {})
+    nested[bucket] = nested.get(bucket, 0) + 1
+
+
 def render_markdown(summary: dict[str, Any]) -> str:
     lines = [
         "# Generated Parser-IR TEI vs TEI-EAJ Workset Audit",
@@ -480,6 +500,32 @@ def render_markdown(summary: dict[str, Any]) -> str:
     )
     for bucket, count in sorted(summary["body_text_match_buckets"].items()):
         lines.append(f"| {bucket} | {count} |")
+
+    lines.extend(
+        [
+            "",
+            "## Adapter Paragraph Delta Buckets",
+            "",
+            "| adapter | bucket | rows |",
+            "|---|---|---:|",
+        ]
+    )
+    for adapter, buckets in sorted(summary["adapter_paragraph_delta_buckets"].items()):
+        for bucket, count in sorted(buckets.items()):
+            lines.append(f"| {adapter} | {bucket} | {count} |")
+
+    lines.extend(
+        [
+            "",
+            "## Adapter Body Text Match Buckets",
+            "",
+            "| adapter | bucket | rows |",
+            "|---|---|---:|",
+        ]
+    )
+    for adapter, buckets in sorted(summary["adapter_body_text_match_buckets"].items()):
+        for bucket, count in sorted(buckets.items()):
+            lines.append(f"| {adapter} | {bucket} | {count} |")
 
     lines.extend(
         [
@@ -541,7 +587,7 @@ def main() -> int:
     workset_files = {row["tei_eaj_file"]: row for row in workset.get("files", [])}
     rows = []
     skipped = []
-    attempted = 0
+    tei_eaj_rows_attempted = 0
 
     for row in structural.get("rows", []):
         tei_file = row_key(row)
@@ -555,55 +601,71 @@ def main() -> int:
         if not tei_eaj_path.is_file():
             skipped.append({"tei_eaj_file": tei_file, "reason": "tei_eaj_missing"})
             continue
-        candidate = select_candidate(row, preference)
-        if candidate is None:
+        candidates = materializable_candidates(row, preference)
+        if not candidates:
             skipped.append(
                 {"tei_eaj_file": tei_file, "reason": "no_materializable_aat"}
             )
             continue
-        if args.max_rows and attempted >= args.max_rows:
+        if args.max_rows and tei_eaj_rows_attempted >= args.max_rows:
             continue
 
-        attempted += 1
+        tei_eaj_rows_attempted += 1
+        if args.candidate_mode == "selected":
+            candidates = candidates[:1]
+
         work_id = str(row.get("tei", {}).get("work_id") or "unknown")
-        row_dir = args.out_dir / "rows" / sanitize(f"{attempted:04d}_{work_id}_{tei_file}")
-        row_dir.mkdir(parents=True, exist_ok=True)
-        try:
-            rows.append(materialize_row(args, row, candidate, tei_eaj_path, row_dir))
-        except subprocess.CalledProcessError as error:
-            rows.append(
-                {
-                    "work_id": row.get("tei", {}).get("work_id"),
-                    "tei_eaj_file": tei_file,
-                    "selected_aat": {
-                        "label": candidate.get("label"),
-                        "path": candidate.get("path"),
-                        "adapter": candidate.get("aat", {}).get("adapter"),
-                        "adapter_version": candidate.get("aat", {}).get("adapter_version"),
-                    },
-                    "materialization": {
-                        "status": "failed",
-                        "returncode": error.returncode,
-                    },
-                    "classification": {
-                        "paragraph_delta_bucket": "materialization_failed"
-                    },
-                }
+        for candidate_index, candidate in enumerate(candidates, start=1):
+            adapter = candidate.get("aat", {}).get("adapter") or "unknown"
+            row_dir = (
+                args.out_dir
+                / "rows"
+                / sanitize(
+                    f"{tei_eaj_rows_attempted:04d}_{candidate_index:02d}_{adapter}_{work_id}_{tei_file}"
+                )
             )
+            row_dir.mkdir(parents=True, exist_ok=True)
+            try:
+                rows.append(materialize_row(args, row, candidate, tei_eaj_path, row_dir))
+            except subprocess.CalledProcessError as error:
+                rows.append(
+                    {
+                        "work_id": row.get("tei", {}).get("work_id"),
+                        "tei_eaj_file": tei_file,
+                        "selected_aat": {
+                            "label": candidate.get("label"),
+                            "path": candidate.get("path"),
+                            "adapter": candidate.get("aat", {}).get("adapter"),
+                            "adapter_version": candidate.get("aat", {}).get(
+                                "adapter_version"
+                            ),
+                        },
+                        "materialization": {
+                            "status": "failed",
+                            "returncode": error.returncode,
+                        },
+                        "classification": {
+                            "paragraph_delta_bucket": "materialization_failed"
+                        },
+                    }
+                )
 
     buckets: dict[str, int] = {}
     body_text_buckets: dict[str, int] = {}
     body_text_match_buckets: dict[str, int] = {}
+    adapter_paragraph_delta_buckets: dict[str, dict[str, int]] = {}
+    adapter_body_text_match_buckets: dict[str, dict[str, int]] = {}
     materialized = 0
     for row in rows:
+        adapter = row.get("selected_aat", {}).get("adapter") or "unknown"
         bucket = row.get("classification", {}).get("paragraph_delta_bucket", "unknown")
-        buckets[bucket] = buckets.get(bucket, 0) + 1
+        increment_bucket(buckets, bucket)
+        increment_nested_bucket(adapter_paragraph_delta_buckets, adapter, bucket)
         relation = row.get("text", {}).get("body_base_text_relation", "unknown")
-        body_text_buckets[relation] = body_text_buckets.get(relation, 0) + 1
+        increment_bucket(body_text_buckets, relation)
         match_bucket = row.get("text", {}).get("body_text_match_bucket", "unknown")
-        body_text_match_buckets[match_bucket] = (
-            body_text_match_buckets.get(match_bucket, 0) + 1
-        )
+        increment_bucket(body_text_match_buckets, match_bucket)
+        increment_nested_bucket(adapter_body_text_match_buckets, adapter, match_bucket)
         if row.get("materialization", {}).get("status") == "passed":
             materialized += 1
 
@@ -615,11 +677,13 @@ def main() -> int:
             "mapping": str(args.mapping),
             "abc_root": str(args.abc_root),
             "adapter_preference": list(preference.keys()),
+            "candidate_mode": args.candidate_mode,
             "max_rows": args.max_rows,
             "tei_eaj_file_filter": args.tei_eaj_file,
         },
         "totals": {
             "rows_attempted": len(rows),
+            "tei_eaj_rows_attempted": tei_eaj_rows_attempted,
             "materialization_succeeded": materialized,
             "materialization_failed": len(rows) - materialized,
             "rows_skipped": len(skipped),
@@ -627,6 +691,8 @@ def main() -> int:
         "paragraph_delta_buckets": buckets,
         "body_text_relation_buckets": body_text_buckets,
         "body_text_match_buckets": body_text_match_buckets,
+        "adapter_paragraph_delta_buckets": adapter_paragraph_delta_buckets,
+        "adapter_body_text_match_buckets": adapter_body_text_match_buckets,
         "rows": rows,
         "skipped": skipped,
     }

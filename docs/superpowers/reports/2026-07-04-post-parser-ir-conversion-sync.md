@@ -103,19 +103,15 @@ is adapter/evidence coverage: materialize missing ABC counterparts and improve
 adapter paragraph/source-note preservation where TEI-EAJ exposes richer
 structure than a specific adapter AAT.
 
-Generated TEI is now smoke-tested against a TEI-EAJ comparison row with:
+Generated TEI is still smoke-tested against a single TEI-EAJ comparison row
+with:
 
 ```sh
 just parser-ir-level3-melos-eaj-compare-smoke
 ```
 
-The current Melos `aozora2html` path materializes ABC TEI that validates and
-routes the final source attribution to `<back><note type="source-attribution">`.
-The remaining measured gap is paragraph segmentation fidelity: generated TEI
-has 74 body paragraphs for `data/complete/tei_lib_lv4/1567_tei.xml`, while
-TEI-EAJ has 17 body paragraphs and 19 total `p` elements in the workset count.
-
-The same comparison now runs over the TEI-EAJ workset with:
+The same comparison runs over the TEI-EAJ workset in selected-candidate mode
+with:
 
 ```sh
 just parser-ir-level3-tei-eaj-generated-audit
@@ -145,6 +141,53 @@ blocker a measured paragraph segmentation plus narrower TEI-EAJ text-policy and
 content-alignment problem, not a parser-IR schema-validity or
 source-note-placement problem.
 
+The all-parser matrix comparison now runs over every materializable parser input
+for each TEI-EAJ row with:
+
+```sh
+just parser-ir-level3-tei-eaj-generated-matrix-audit
+```
+
+Committed matrix measurement:
+
+- report:
+  `docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.md`
+- summary:
+  `docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.summary.json`
+- generated per-row TEI artifacts:
+  `/db/ab-validator/parser-ir/tei-eaj-generated-matrix-comparison/`
+
+Current matrix result: 57 TEI-EAJ rows expanded to 173 parser-input rows, 173
+materialized through parser-IR and ABC TEI, 0 materialization failures, and 5
+rows skipped for missing/nonmaterializable evidence. Candidate coverage is 57
+rows each for `aozora2html`, `aozora-epub3`, and `aozora-rs`, plus 2 rows for
+`aozora2`.
+
+Paragraph deltas by adapter:
+
+| adapter | exact | over-split | under-split | collapsed |
+|---|---:|---:|---:|---:|
+| aozora2html | 5 | 45 | 7 | 0 |
+| aozora-epub3 | 7 | 48 | 2 | 0 |
+| aozora-rs | 6 | 35 | 0 | 16 |
+| aozora2 | 0 | 0 | 0 | 2 |
+
+Best text-surface residuals by adapter:
+
+| adapter | still different | strict base equal | ruby/parenthetical-policy explainable |
+|---|---:|---:|---:|
+| aozora2html | 26 | 3 | 28 |
+| aozora-epub3 | 50 | 1 | 6 |
+| aozora-rs | 28 | 2 | 27 |
+| aozora2 | 0 | 0 | 2 |
+
+Interpretation: paragraph segmentation is an adapter-specific fidelity problem,
+not a single-parser anomaly. `aozora2html` and `aozora-epub3` mostly over-split,
+while `aozora-rs` and `aozora2` expose collapsed paragraph behavior. Text
+alignment also differs by parser: `aozora2html` and `aozora-rs` often reduce to
+ruby/parenthetical policy, while `aozora-epub3` has the largest true residual
+body-text mismatch bucket.
+
 Adapter-version matching is exact. A future adapter-version tuple requires a
 new measured conversion-audit entry rather than wildcard or prefix registry
 matching.
@@ -170,6 +213,10 @@ The converter is exposed as:
 - Just full-audit target: `just aat-to-parser-ir-full-audit 24`
 - Just Level 3 TEI-EAJ comparison target:
   `just parser-ir-level3-melos-eaj-compare-smoke`
+- Just Level 3 TEI-EAJ selected-candidate audit:
+  `just parser-ir-level3-tei-eaj-generated-audit`
+- Just Level 3 TEI-EAJ all-parser matrix audit:
+  `just parser-ir-level3-tei-eaj-generated-matrix-audit`
 
 The crate-specific usage notes live in `crates/ab-aat-to-parser-ir/README.md`.
 
@@ -179,12 +226,12 @@ Proceed with residual adapter/evidence characterization:
 
 - carry the local ABC `0.2.2` compatibility admission (`59731aa`) wherever the
   ABC registry is synced,
-- keep the whole TEI-EAJ/aozora_tei structural expansion and generated-TEI
-  comparison as the Level 3 artifacts instead of the Melos-only probe,
+- keep the whole TEI-EAJ/aozora_tei structural expansion, selected-candidate
+  generated-TEI comparison, and all-parser generated-TEI matrix as the Level 3
+  artifacts instead of the single-row probe,
 - use `docs/superpowers/reports/2026-07-04-tei-eaj-structural-gap-analysis.md`
   as the current gap classification,
-- use the generated-TEI paragraph and body-text relation buckets to prioritize
-  adapter paragraph segmentation, source-text fidelity, and TEI-EAJ alignment
-  work,
+- use the generated-TEI matrix buckets to prioritize adapter-specific paragraph
+  segmentation fixes, source-text fidelity, and TEI-EAJ text-policy alignment,
 - continue source-authority representability work before making stronger claims
   about all Aozora markdown constructs.

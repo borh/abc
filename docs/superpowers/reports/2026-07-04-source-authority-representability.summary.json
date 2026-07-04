@@ -3,8 +3,8 @@
   "works_scanned": 17894,
   "works_failed": 0,
   "markers_total": 4323915,
-  "unknown_markers_total": 16167,
-  "unallowlisted_unknown_markers_total": 1297,
+  "unknown_markers_total": 16160,
+  "unallowlisted_unknown_markers_total": 1290,
   "allowlisted_unknown_markers_total": 14870,
   "rows": {
     "accent.dotted_letter": {
@@ -304,7 +304,7 @@
     },
     "indentation.chitsuki": {
       "works_with_marker": 6245,
-      "occurrences": 20291,
+      "occurrences": 20298,
       "sample_works": [
         "000006_1868",
         "000006_1869",
@@ -497,20 +497,9 @@
       ]
     }
   },
-  "unknown_classes_total": 1108,
+  "unknown_classes_total": 1107,
   "unknown_classes_truncated": true,
   "unknown_classes": [
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「地付き］",
-      "body": "「地付き",
-      "occurrences": 7,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 7,
-      "sample_works": [
-        "000150_46617"
-      ]
-    },
     {
       "kind": "MalformedAccentNotation",
       "raw": "〔",
@@ -11546,6 +11535,17 @@
       "sample_works": [
         "000311_46241"
       ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃移動演劇隊桜隊。広島滞在中、原爆に遭う］",
+      "body": "移動演劇隊桜隊。広島滞在中、原爆に遭う",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000160_1255"
+      ]
     }
   ],
   "unknown_examples": [
@@ -12252,14 +12252,14 @@
   ],
   "decode_failures": [],
   "representability": {
-    "typed_occurrences": 4566085,
+    "typed_occurrences": 4566092,
     "raw_preserved_occurrences": 36873,
     "out_of_body_occurrences": 950,
     "unsupported_occurrences": 13920,
     "needs_research_occurrences": 0
   },
   "strict_errors": [
-    "1297 unallowlisted source markers"
+    "1290 unallowlisted source markers"
   ],
   "inputs": {
     "matrix": "/home/bor/Projects/ab-validator/data/aozora-syntax-coverage.toml",

@@ -5,7 +5,7 @@
 - source_authority_gate: `SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED`
 - note: this is not a passing representability gate; durable representability claims remain blocked until strict_errors is empty.
 - strict_errors:
-  - 1297 unallowlisted source markers
+  - 1290 unallowlisted source markers
 
 ## Scope
 
@@ -16,13 +16,13 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 - works_scanned: 17894
 - works_failed: 0
 - markers_total: 4323915
-- unknown_markers_total: 16167
-- unallowlisted_unknown_markers_total: 1297
+- unknown_markers_total: 16160
+- unallowlisted_unknown_markers_total: 1290
 - allowlisted_unknown_markers_total: 14870
 
 ## Representability
 
-- typed_occurrences: 4566085
+- typed_occurrences: 4566092
 - raw_preserved_occurrences: 36873
 - out_of_body_occurrences: 950
 - unsupported_occurrences: 13920
@@ -59,7 +59,7 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | heading.mado | 6 | 1680 | 000255_47342, 000296_1864, 000961_4820, 001402_49946, 001404_49966 |
 | indentation.basic | 8169 | 134393 | 000005_5, 000005_53194, 000006_1868, 000006_1869, 000006_3310 |
 | indentation.burasage | 1209 | 13265 | 000006_3311, 000006_58819, 000008_47386, 000009_55881, 000019_4376 |
-| indentation.chitsuki | 6245 | 20291 | 000006_1868, 000006_1869, 000006_3310, 000006_3311, 000006_382 |
+| indentation.chitsuki | 6245 | 20298 | 000006_1868, 000006_1869, 000006_3310, 000006_3311, 000006_382 |
 | indentation.jisage_block | 4605 | 94964 | 000005_5, 000005_53194, 000006_1868, 000006_1869, 000006_3310 |
 | indentation.jisage_oneline | 121 | 278 | 000025_202, 000025_216, 000035_235, 000035_266, 000038_42207 |
 | indentation.jizume | 242 | 3239 | 000026_55781, 000034_55507, 000040_47289, 000050_48400, 000055_56499 |
@@ -185,11 +185,10 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 
 ## Unknown Source Marker Classes
 
-Showing 50 report rows of 1108 total classes. JSON carries 1000 top classes. truncated: true
+Showing 50 report rows of 1107 total classes. JSON carries 1000 top classes. truncated: true
 
 | kind | raw | occurrences | unallowlisted | allowlisted | samples |
 |---|---|---:|---:|---:|---|
-| CommandFullwidth | ［＃「地付き］ | 7 | 7 | 0 | 000150_46617 |
 | MalformedAccentNotation | 〔 | 6 | 6 | 0 | 000091_522, 000311_16002, 001341_60380, 001341_60385, 001404_49966 |
 | MalformedCommand | ［＃ | 6 | 6 | 0 | 000081_4461, 000106_2415, 000121_1754, 000148_798, 000331_2663 |
 | CommandFullwidth | ［＃これより手紙文、１字下げ］ | 5 | 5 | 0 | 000280_1706 |
@@ -239,6 +238,7 @@ Showing 50 report rows of 1108 total classes. JSON carries 1000 top classes. tru
 | CommandFullwidth | ［＃「序にかえて」全体、天より２字下げ］ | 2 | 2 | 0 | 000311_2025 |
 | CommandFullwidth | ［＃「桑原隲蔵全集」］ | 2 | 2 | 0 | 000372_3666, 000372_3667 |
 | CommandFullwidth | ［＃「權次」と「權六」は横並びになっている］ | 2 | 2 | 0 | 000082_1309 |
+| CommandFullwidth | ［＃「焔」の火へんを炎にしたうえで、へんとつくりをいれかえた字、焔の正字と同字］ | 2 | 2 | 0 | 000124_660 |
 
 ## Decode Failures
 

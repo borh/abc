@@ -134,10 +134,9 @@ compatibility gates.
 
 1. Source-authority representability must pass or have explicit waivers. The
    current source-authority report is still
-   `SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED`, with 224,028 unallowlisted
-   source markers and many reached rows lacking representability annotations.
-   Four parser outputs are triangulation, not proof that all Aozora source
-   constructs are representable.
+   `SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED`, with 1,290 unallowlisted
+   source markers. Four parser outputs are triangulation, not proof that all
+   Aozora source constructs are representable.
 
 2. Adapter paragraph fidelity must be profile-aware. The broad adapters preserve
    enough paragraph data to prove parser-IR can carry it, but not enough to claim

@@ -786,6 +786,7 @@ fn source_inventory_classifies_chitsuki_alignment_corpus_variants() {
         "［＃２１字下げ、地より２字あきで］",
         "［＃地付き、地より３字アキ］",
         "［＃地付きで］",
+        "［＃「地付き］",
         "［＃地より２字上がり］",
         "［＃文末より１字上げ揃え］",
         "［＃「訳者」は文末より１字上げ揃え］",
@@ -803,7 +804,7 @@ fn source_inventory_classifies_chitsuki_alignment_corpus_variants() {
             .row_counts
             .get("indentation.chitsuki")
             .map(|count| count.occurrences),
-        Some(8)
+        Some(9)
     );
 }
 

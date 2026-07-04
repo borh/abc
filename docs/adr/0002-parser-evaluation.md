@@ -30,6 +30,15 @@ conversion reports as publication-boundary evidence, but should not claim that
 ADR 0002 has selected a canonical parser until parser-selection entries move
 from provisional evidence to an accepted policy decision.
 
+Policy boundary update: while this ADR remains Draft, ABC treats
+`docs/handoffs/parser-evidence-citation-contract.md` as the controlling
+producer-evidence citation policy for downstream publication work. Evidence is
+citable only when it has a logical workspace-relative path, SHA-256 report
+hash, exact adapter/version identity, mapping identity, and explicit evidence
+class. Compatibility evidence can justify ABC admission and publication
+rendering. Parser-selection evidence must still come from parser-candidate
+reports that address this ADR's gates directly.
+
 Monorepo note: future repository consolidation should remove only the physical
 checkout boundary, not the logical producer/consumer boundary. The provisional
 machine-readable index `data/parser-evidence-citations.edn` therefore records
@@ -41,6 +50,30 @@ conversion-compatibility identity with fresh producer report hashes and exact
 adapter-version registry rows for `aozora-epub3`, `aozora-rs`, and
 `aozora2html`. The earlier `0.2.0` rows remain historical admitted evidence and
 were not rewritten.
+
+TEI comparison note: the TEI-EAJ all-work comparison artifacts are downstream
+publication evidence, not parser-selection evidence. They identify publication
+gaps that require parser-IR support, especially paragraph and source-note
+structure, but they do not by themselves select a parser candidate. See
+`docs/handoffs/tei-eaj-aozora-comparison.md` and the machine-readable workset
+export `docs/handoffs/tei-eaj-aozora-workset-export.json`.
+
+## Evidence Policy Boundary
+
+ABC separates producer evidence into three classes:
+
+- **Compatibility evidence**: measured adapter/version/mapping/parser-IR tuples
+  that ABC can admit through `data/aat-parser-ir-compatibility.edn`.
+- **Parser-selection evidence**: candidate reports that evaluate parser behavior
+  against this ADR's criteria: source-span coverage, unsupported syntax,
+  diagnostics, fatal failures, performance, packaging, and reversibility.
+- **Comparator/oracle evidence**: rendered-output or residual-bucket evidence
+  that explains disagreement but does not select a direct source parser.
+
+The accepted downstream publication boundary may cite compatibility evidence
+now. Parser selection stays open until at least one serious parser candidate
+has a parser-selection report recorded by logical path and hash in
+`data/parser-evidence-citations.edn` or its accepted successor.
 
 ## Context
 
@@ -130,6 +163,13 @@ recommendation:
 ## Acceptance Criteria
 
 - A candidate report exists for each serious parser option.
+- Parser-selection reports cited by ABC have a logical workspace-relative path,
+  SHA-256 hash, exact parser/adapter version, corpus label, success/failure
+  counts, and explicit caveats.
+- Conversion-compatibility reports are cited as compatibility evidence, not as
+  parser-selection acceptance.
+- Comparator/oracle reports are cited as explanatory evidence, not as direct
+  parser-selection acceptance.
 - At least one candidate can produce or map into `schemas/parser-ir.schema.json`.
 - Candidate reports include warning sidecar references and diagnostic
   aggregation output.

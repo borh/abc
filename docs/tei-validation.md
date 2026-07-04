@@ -30,6 +30,8 @@ ABC uses TEI-EAJ materials in two different roles:
   pinned TEI-EAJ XML files and compares every file with a discovered ABC TEI
   counterpart. `docs/handoffs/tei-eaj-aozora-melos-comparison-report.md`
   remains the focused Melos view.
+- `docs/handoffs/tei-eaj-aozora-workset-export.json` is the machine-readable
+  all-work target list for parser-IR/materialization follow-up work.
 
 | Level | Planning meaning for ABC |
 | --- | --- |

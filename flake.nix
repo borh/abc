@@ -303,6 +303,24 @@
             meta.description = "Regenerate the all-work ABC vs TEI-EAJ comparison report";
           };
 
+          tei-eaj-aozora-workset-json = {
+            type = "app";
+            program = toString (
+              pkgs.writeShellScript "abc-tei-eaj-aozora-workset-json" ''
+                set -euo pipefail
+                output="''${1:-docs/handoffs/tei-eaj-aozora-workset-export.json}"
+                exec ${pkgs.python3}/bin/python3 ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
+                  --report all-work \
+                  --format json \
+                  --abc-tei-dir paper \
+                  --tei-eaj-root ${tei-eaj-aozora-tei} \
+                  --source-rev 77a675fc2771936f9544505d922d4cd45075338c \
+                  --output "$output"
+              ''
+            );
+            meta.description = "Regenerate the machine-readable TEI-EAJ workset export";
+          };
+
           tei-eaj-aozora-reports = {
             type = "app";
             program = toString (
@@ -310,6 +328,7 @@
                 set -euo pipefail
                 melos_output="''${1:-docs/handoffs/tei-eaj-aozora-melos-comparison-report.md}"
                 all_work_output="''${2:-docs/handoffs/tei-eaj-aozora-all-work-comparison-report.md}"
+                workset_json_output="''${3:-docs/handoffs/tei-eaj-aozora-workset-export.json}"
                 ${pkgs.python3}/bin/python3 ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
                   --report melos \
                   --abc paper/demo-melos-real/tei.xml \
@@ -322,10 +341,18 @@
                   --tei-eaj-root ${tei-eaj-aozora-tei} \
                   --source-rev 77a675fc2771936f9544505d922d4cd45075338c \
                   --output "$all_work_output"
-                printf 'Updated %s\nUpdated %s\n' "$melos_output" "$all_work_output"
+                ${pkgs.python3}/bin/python3 ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
+                  --report all-work \
+                  --format json \
+                  --abc-tei-dir paper \
+                  --tei-eaj-root ${tei-eaj-aozora-tei} \
+                  --source-rev 77a675fc2771936f9544505d922d4cd45075338c \
+                  --output "$workset_json_output"
+                printf 'Updated %s\nUpdated %s\nUpdated %s\n' \
+                  "$melos_output" "$all_work_output" "$workset_json_output"
               ''
             );
-            meta.description = "Regenerate both TEI-EAJ comparison reports";
+            meta.description = "Regenerate TEI-EAJ comparison Markdown and JSON reports";
           };
         }
       );
@@ -584,13 +611,38 @@
                   --tei-eaj-root ${tei-eaj-aozora-tei} \
                   --source-rev 77a675fc2771936f9544505d922d4cd45075338c \
                   --output all-work.md
+                python3 ${./prototypes/tei-eaj-comparison/tei_eaj_compare.py} \
+                  --report all-work \
+                  --format json \
+                  --abc-tei 1567=abc/melos.xml \
+                  --tei-eaj-root ${tei-eaj-aozora-tei} \
+                  --source-rev 77a675fc2771936f9544505d922d4cd45075338c \
+                  --output workset.json
                 grep -q "TEI-EAJ Melos files found: 2" melos.md
                 grep -q "TEI-EAJ XML files scanned: 62" all-work.md
                 grep -q "Compared TEI-EAJ files: 2" all-work.md
                 grep -q "Missing ABC counterparts: 55" all-work.md
                 grep -q "TEI-EAJ files without candidate work IDs: 5" all-work.md
+                python3 - <<'PY'
+                import json
+
+                with open("workset.json", encoding="utf-8") as fh:
+                    export = json.load(fh)
+
+                assert export["schema_version"] == "tei-eaj-aozora-workset-export-v1"
+                assert export["summary"]["tei_eaj_file_count"] == 62
+                assert export["summary"]["tei_eaj_work_id_count"] == 50
+                assert export["summary"]["compared_file_count"] == 2
+                assert export["summary"]["missing_counterpart_count"] == 55
+                assert export["summary"]["no_work_id_count"] == 5
+                assert export["missing_abc_counterpart_work_ids"]
+                assert "1567" in export["candidate_work_ids"]
+                assert any(row["tei_eaj_file"] == "data/complete/tei_lib_lv4/1567_tei.xml"
+                           and row["comparison_status"] == "compared"
+                           for row in export["files"])
+                PY
                 mkdir -p "$out"
-                cp melos.md all-work.md "$out"/
+                cp melos.md all-work.md workset.json "$out"/
                 echo "TEI-EAJ comparison reports regenerate against the pinned source." > "$out/result.txt"
               '';
 

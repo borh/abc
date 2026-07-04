@@ -29,9 +29,13 @@ Comparison corpus:
   `nix run .#tei-eaj-aozora-melos-report`
 - Regenerate the all-work coverage/comparison report:
   `nix run .#tei-eaj-aozora-all-work-report`
+- Regenerate the machine-readable all-work handoff:
+  `nix run .#tei-eaj-aozora-workset-json`
 - Current reports:
   - `docs/handoffs/tei-eaj-aozora-all-work-comparison-report.md`
   - `docs/handoffs/tei-eaj-aozora-melos-comparison-report.md`
+- Machine-readable workset export:
+  `docs/handoffs/tei-eaj-aozora-workset-export.json`
 - Melos comparison files:
   - `data/complete/tei_lib_lv4/1567_tei.xml`
   - `data/complete/tei_lib_lv4/1567_header_updated.xml`
@@ -45,10 +49,12 @@ tooling is automatically exercised even though `paper/` is intentionally
 gitignored.
 
 The pinned checkout currently contains 62 XML files overall. The all-work
-report enumerates all 62 complete, draft, and etc XML files. In the current
-local paper workset it discovers ABC TEI counterparts for work IDs `127` and
-`1567`; only `1567` appears in TEI-EAJ, so the literal comparison still covers
-the two Level 4 Melos files above. The other 60 rows are materialization
+report and JSON workset export enumerate all 62 complete, draft, and etc XML
+files. In the current local paper workset they discover ABC TEI counterparts
+for work IDs `127` and `1567`; only `1567` appears in TEI-EAJ, so the literal
+comparison still covers the two Level 4 Melos files above. The remaining
+uncompared rows split into 55 missing ABC counterparts and 5 files without
+candidate work IDs. These rows are materialization/source-identification
 coverage backlog, not text mismatches. No draft Melos TEI file exists in the
 current pinned revision. Draft material is still included in the all-work
 coverage table.
@@ -104,7 +110,9 @@ Do not use `aozora_tei` as:
 2. Generate ABC publication TEI for the remaining TEI-EAJ work IDs where the
    source work is available in the parser-IR workset; then rerun
    `nix run .#tei-eaj-aozora-reports` to convert missing-counterpart rows into
-   concrete text/structure comparisons.
+   concrete text/structure comparisons. Use
+   `docs/handoffs/tei-eaj-aozora-workset-export.json` as the machine-readable
+   target list for that work.
 3. Add an `ab-validator` probe against Melos comparing ABC parser-IR structural
    output to the TEI-EAJ Level 4 Melos files at the paragraph/source-note level.
 4. Keep Level 4 entity and speech attribution as a separate enrichment track

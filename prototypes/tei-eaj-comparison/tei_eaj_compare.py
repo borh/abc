@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import collections
+import json
 import pathlib
 import re
 import sys
@@ -689,6 +690,78 @@ def render_all_work_markdown(report):
     return "\n".join(lines) + "\n"
 
 
+def comparison_status(row):
+    return "compared" if row.get("abc_path") else row["missing_reason"]
+
+
+def workset_export_row(row):
+    counts = row.get("feature_counts") or {}
+    p_counts = counts.get("p", {})
+    note_counts = counts.get("note", {})
+    return {
+        "work_id": row["work_id"],
+        "tei_eaj_file": row["relpath"],
+        "state": row["state"],
+        "level": row["level"],
+        "title": row["title"],
+        "abc_tei": row["abc_path"],
+        "comparison_status": comparison_status(row),
+        "base_text_equal": row["base_text_equal"],
+        "abc_body_base_text_length": row["abc_body_base_text_length"],
+        "tei_eaj_body_base_text_length": row["tei_eaj_body_base_text_length"],
+        "abc_p_count": p_counts.get("abc"),
+        "tei_eaj_p_count": p_counts.get("tei_eaj"),
+        "abc_note_count": note_counts.get("abc"),
+        "tei_eaj_note_count": note_counts.get("tei_eaj"),
+        "first_difference": row["first_difference"],
+    }
+
+
+def workset_export(report):
+    files = [workset_export_row(row) for row in report["all_work_rows"]]
+    return {
+        "schema_version": "tei-eaj-aozora-workset-export-v1",
+        "tei_eaj_source": {
+            "root": report["tei_eaj_root"],
+            "revision": report["tei_eaj_source_rev"],
+        },
+        "abc_inputs": {
+            "tei_specs": report["abc_tei_specs"],
+            "tei_dirs": report["abc_tei_dirs"],
+            "counterparts": [
+                {"work_id": work_id, "path": path}
+                for work_id, path in report["abc_counterparts"].items()
+            ],
+        },
+        "summary": {
+            "tei_eaj_file_count": report["tei_eaj_file_count"],
+            "tei_eaj_work_id_count": report["tei_eaj_work_id_count"],
+            "abc_counterpart_count": report["abc_counterpart_count"],
+            "compared_file_count": report["compared_file_count"],
+            "missing_counterpart_count": report["missing_counterpart_count"],
+            "no_work_id_count": report["no_work_id_count"],
+            "uncompared_file_count": report["uncompared_file_count"],
+            "base_text_equal_count": report["base_text_equal_count"],
+            "base_text_mismatch_count": report["base_text_mismatch_count"],
+        },
+        "candidate_work_ids": sorted({row["work_id"] for row in report["all_work_rows"] if row["work_id"]}, key=int),
+        "missing_abc_counterpart_work_ids": sorted(
+            {row["work_id"] for row in report["all_work_rows"] if row["missing_reason"] == "missing_abc_counterpart"},
+            key=int,
+        ),
+        "no_work_id_files": [
+            row["relpath"]
+            for row in report["all_work_rows"]
+            if row["missing_reason"] == "no_tei_eaj_work_id"
+        ],
+        "files": files,
+    }
+
+
+def render_workset_json(report):
+    return json.dumps(workset_export(report), ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Compare ABC TEI with pinned TEI-EAJ/aozora_tei files.")
     parser.add_argument("--report", choices=["melos", "all-work"], default="melos", help="Report to generate")
@@ -697,26 +770,29 @@ def main(argv=None):
     parser.add_argument("--abc-tei-dir", action="append", default=[], help="Directory to scan recursively for ABC TEI counterparts")
     parser.add_argument("--tei-eaj-root", required=True, help="Pinned TEI-EAJ/aozora_tei checkout root")
     parser.add_argument("--source-rev", default=None, help="Pinned TEI-EAJ source revision")
-    parser.add_argument("--output", default=None, help="Markdown report output path; stdout when omitted")
+    parser.add_argument("--format", choices=["markdown", "json"], default="markdown", help="Output format")
+    parser.add_argument("--output", default=None, help="Report output path; stdout when omitted")
     args = parser.parse_args(argv)
 
     if args.report == "melos":
+        if args.format != "markdown":
+            parser.error("--format json is only supported for --report all-work")
         if not args.abc:
             parser.error("--abc is required for --report melos")
         report = build_report(args.abc, args.tei_eaj_root, args.source_rev)
-        markdown = render_markdown(report)
+        output_text = render_markdown(report)
     else:
         abc_tei_specs = list(args.abc_tei)
         if args.abc:
             abc_tei_specs.append(args.abc)
         report = build_all_work_report(abc_tei_specs, args.abc_tei_dir, args.tei_eaj_root, args.source_rev)
-        markdown = render_all_work_markdown(report)
+        output_text = render_workset_json(report) if args.format == "json" else render_all_work_markdown(report)
     if args.output:
         output = pathlib.Path(args.output)
         output.parent.mkdir(parents=True, exist_ok=True)
-        output.write_text(markdown, encoding="utf-8")
+        output.write_text(output_text, encoding="utf-8")
     else:
-        sys.stdout.write(markdown)
+        sys.stdout.write(output_text)
 
 
 if __name__ == "__main__":

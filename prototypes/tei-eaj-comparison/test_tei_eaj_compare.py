@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import importlib.util
+import json
 import pathlib
 import tempfile
 import textwrap
@@ -185,6 +186,42 @@ class TeiEajCompareTest(unittest.TestCase):
         self.assertEqual(1, report["abc_counterpart_count"])
         self.assertEqual("1567", report["all_work_rows"][0]["work_id"])
         self.assertTrue(report["all_work_rows"][0]["base_text_equal"])
+
+    def test_renders_machine_readable_workset_export(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = pathlib.Path(td)
+            abc = self.write_xml(root, "abc/001567.xml", "走れメロス", "<p>メロス邪智暴虐</p>")
+            self.write_xml(root, "data/complete/tei_lib_lv4/1567_tei.xml", "走れメロス", "<p>メロス邪智暴虐</p>")
+            self.write_xml(root, "data/complete/tei_lib_lv3/86_tei.xml", "二人小町", "<p>二人小町</p>")
+            self.write_xml(root, "data/draft/tei_lib_lv2/01.xml", "源氏物語 第1冊", "<p>桐壺</p>")
+
+            report = probe.build_all_work_report([f"1567={abc}"], [], root, source_rev="probe-rev")
+            export = probe.workset_export(report)
+            rendered = json.loads(probe.render_workset_json(report))
+
+        self.assertEqual("tei-eaj-aozora-workset-export-v1", export["schema_version"])
+        self.assertEqual(export, rendered)
+        self.assertEqual(
+            {
+                "tei_eaj_file_count": 3,
+                "tei_eaj_work_id_count": 2,
+                "abc_counterpart_count": 1,
+                "compared_file_count": 1,
+                "missing_counterpart_count": 1,
+                "no_work_id_count": 1,
+                "uncompared_file_count": 2,
+                "base_text_equal_count": 1,
+                "base_text_mismatch_count": 0,
+            },
+            export["summary"],
+        )
+        self.assertEqual(["86", "1567"], export["candidate_work_ids"])
+        self.assertEqual(["86"], export["missing_abc_counterpart_work_ids"])
+        self.assertEqual(["data/draft/tei_lib_lv2/01.xml"], export["no_work_id_files"])
+        self.assertEqual(
+            ["missing_abc_counterpart", "compared", "no_tei_eaj_work_id"],
+            [row["comparison_status"] for row in export["files"]],
+        )
 
 
 if __name__ == "__main__":

@@ -320,12 +320,25 @@ def paragraph_origin_bucket(
     parser_ir_paragraphs: int | None,
     generated_body_p: int | None,
     tei_eaj_body_p: int | None,
+    paragraph_rendering: dict[str, Any] | None = None,
 ) -> str:
     if generated_body_p is None or tei_eaj_body_p is None:
         return "unknown"
     if generated_body_p == tei_eaj_body_p:
         return "aligned"
     if parser_ir_paragraphs is not None and generated_body_p != parser_ir_paragraphs:
+        missing_generated = parser_ir_paragraphs - generated_body_p
+        rendering = paragraph_rendering or {}
+        if (
+            missing_generated > 0
+            and rendering.get("source_note_back_ranges") == missing_generated
+        ):
+            return "source_note_back_routing"
+        if (
+            missing_generated > 0
+            and rendering.get("empty_body_ranges") == missing_generated
+        ):
+            return "empty_body_paragraph_range"
         return "renderer_paragraph_mismatch"
     if (
         aat_paragraph_blocks is not None
@@ -342,6 +355,67 @@ def paragraph_origin_bucket(
     if aat_paragraph_blocks > tei_eaj_body_p:
         return "adapter_over_segmented"
     return "unclassified"
+
+
+def node_renders_body_p_content(node: dict[str, Any]) -> bool:
+    node_type = node.get("type")
+    if node_type in {"text", "gaiji", "editor-note", "emphasis"}:
+        return True
+    if node_type == "ruby":
+        ruby = node.get("ruby", {})
+        return bool(ruby.get("base") and ruby.get("reading"))
+    if node_type in {"indentation", "quote"}:
+        return bool(node.get("text"))
+    if node_type == "source-note":
+        return node.get("placement") == "body" and bool(node.get("text"))
+    return False
+
+
+def paragraph_rendering_summary(parser_ir: dict[str, Any]) -> dict[str, Any]:
+    nodes = parser_ir.get("nodes", [])
+    paragraphs = parser_ir.get("paragraphs", [])
+    summary = {
+        "total_ranges": len(paragraphs),
+        "body_ranges": 0,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 0,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0,
+    }
+    for paragraph in paragraphs:
+        role = paragraph.get("role")
+        node_range = paragraph.get("node_range", {})
+        start = node_range.get("start")
+        end = node_range.get("end")
+        if not isinstance(start, int) or not isinstance(end, int):
+            continue
+        node_slice = nodes[start:end]
+        if role == "source-note":
+            summary["source_note_ranges"] += 1
+            placements = {
+                node.get("placement")
+                for node in node_slice
+                if node.get("type") == "source-note"
+            }
+            if "back" in placements:
+                summary["source_note_back_ranges"] += 1
+            if "front" in placements:
+                summary["source_note_front_ranges"] += 1
+            if "body" in placements:
+                summary["source_note_body_ranges"] += 1
+            continue
+        if role == "body":
+            summary["body_ranges"] += 1
+            if start == end:
+                summary["empty_body_ranges"] += 1
+            elif any(node_renders_body_p_content(node) for node in node_slice):
+                summary["body_ranges_with_inline_content"] += 1
+            else:
+                summary["structural_only_body_ranges"] += 1
+    return summary
 
 
 def aat_summary(candidate: dict[str, Any]) -> dict[str, Any]:
@@ -434,11 +508,13 @@ def materialize_row(
     tei_eaj_body_p = tei_eaj["body_p_count"]
     aat = aat_summary(candidate)
     parser_ir_paragraph_count = len(parser_ir.get("paragraphs", []))
+    paragraph_rendering = paragraph_rendering_summary(parser_ir)
     paragraph_origin = paragraph_origin_bucket(
         aat_paragraph_blocks=aat["paragraph_blocks"],
         parser_ir_paragraphs=parser_ir_paragraph_count,
         generated_body_p=generated_body_p,
         tei_eaj_body_p=tei_eaj_body_p,
+        paragraph_rendering=paragraph_rendering,
     )
 
     return {
@@ -462,6 +538,7 @@ def materialize_row(
             "paragraph_count": parser_ir_paragraph_count,
             "source_note_count": len(source_note_texts),
         },
+        "paragraph_rendering": paragraph_rendering,
         "generated_tei": {
             "body_p_count": generated_body_p,
             "body_note_count": generated["body_note_count"],

@@ -26,7 +26,8 @@ This report materializes ABC TEI from parser-IR, then compares the generated TEI
 | adapter_over_segmented | 42 |
 | adapter_under_segmented | 5 |
 | aligned | 5 |
-| renderer_paragraph_mismatch | 5 |
+| empty_body_paragraph_range | 3 |
+| source_note_back_routing | 2 |
 
 ## Body Text Relation Buckets
 
@@ -63,7 +64,8 @@ This report materializes ABC TEI from parser-IR, then compares the generated TEI
 | aozora2html | adapter_over_segmented | 42 |
 | aozora2html | adapter_under_segmented | 5 |
 | aozora2html | aligned | 5 |
-| aozora2html | renderer_paragraph_mismatch | 5 |
+| aozora2html | empty_body_paragraph_range | 3 |
+| aozora2html | source_note_back_routing | 2 |
 
 ## Adapter Body Text Match Buckets
 
@@ -94,7 +96,7 @@ This report materializes ABC TEI from parser-IR, then compares the generated TEI
 | 45093 | `data/complete/tei_lib_lv3/45093_tei.xml` | aozora2html | 18 | 18 | 18 | 6 | 12 | over_split | adapter_over_segmented | different | ruby_expanded_parenless_equal | - |
 | 4872 | `data/complete/tei_lib_lv3/4872_tei.xml` | aozora2html | 5 | 5 | 5 | 5 | 0 | exact | aligned | different | ruby_expanded_equal | - |
 | 50502 | `data/complete/tei_lib_lv3/50502_tei.xml` | aozora2html | 8 | 8 | 8 | 8 | 0 | exact | aligned | different | different | - |
-| 51307 | `data/complete/tei_lib_lv3/51307_tei.xml` | aozora2html | 412 | 412 | 406 | 7 | 399 | over_split | renderer_paragraph_mismatch | different | different | - |
+| 51307 | `data/complete/tei_lib_lv3/51307_tei.xml` | aozora2html | 412 | 412 | 406 | 7 | 399 | over_split | empty_body_paragraph_range | different | different | - |
 | 51520 | `data/complete/tei_lib_lv3/51520_tei.xml` | aozora2html | 76 | 76 | 76 | 76 | 0 | exact | aligned | different | ruby_expanded_parenless_equal | - |
 | 53386 | `data/complete/tei_lib_lv3/53386_tei.xml` | aozora2html | 5 | 5 | 5 | 1 | 4 | over_split | adapter_over_segmented | generated_contains_tei_eaj | ruby_expanded_parenless_generated_contains_tei_eaj | - |
 | 53617 | `data/complete/tei_lib_lv3/53617_tei.xml` | aozora2html | 20 | 20 | 20 | 1 | 19 | over_split | adapter_over_segmented | different | ruby_expanded_parenless_generated_contains_tei_eaj | - |
@@ -121,13 +123,13 @@ This report materializes ABC TEI from parser-IR, then compares the generated TEI
 | 57048 | `data/complete/tei_lib_lv3/57048_tei.xml` | aozora2html | 4 | 4 | 4 | 1 | 3 | over_split | adapter_over_segmented | different | different | - |
 | 86 | `data/complete/tei_lib_lv3/86_tei.xml` | aozora2html | 134 | 134 | 134 | 136 | -2 | under_split | adapter_under_segmented | different | ruby_expanded_parenless_generated_contains_tei_eaj | - |
 | 15099 | `data/complete/tei_lib_lv4/104_15099.xml` | aozora2html | 62 | 62 | 62 | 57 | 5 | over_split | adapter_over_segmented | different | different | - |
-| 1567 | `data/complete/tei_lib_lv4/1567_header_updated.xml` | aozora2html | 75 | 75 | 74 | 17 | 57 | over_split | renderer_paragraph_mismatch | equal | base_equal | back |
-| 1567 | `data/complete/tei_lib_lv4/1567_tei.xml` | aozora2html | 75 | 75 | 74 | 17 | 57 | over_split | renderer_paragraph_mismatch | equal | base_equal | back |
+| 1567 | `data/complete/tei_lib_lv4/1567_header_updated.xml` | aozora2html | 75 | 75 | 74 | 17 | 57 | over_split | source_note_back_routing | equal | base_equal | back |
+| 1567 | `data/complete/tei_lib_lv4/1567_tei.xml` | aozora2html | 75 | 75 | 74 | 17 | 57 | over_split | source_note_back_routing | equal | base_equal | back |
 | 45245 | `data/complete/tei_lib_lv4/45245_tei.xml` | aozora2html | 39 | 39 | 39 | 4 | 35 | over_split | adapter_over_segmented | different | different | - |
 | 50362 | `data/complete/tei_lib_lv4/50362_tei.xml` | aozora2html | 15 | 15 | 15 | 12 | 3 | over_split | adapter_over_segmented | different | ruby_expanded_parenless_tei_eaj_contains_generated | - |
 | 7928 | `data/complete/tei_lib_lv4/7928_tei.xml` | aozora2html | 61 | 61 | 61 | 110 | -49 | under_split | adapter_under_segmented | different | different | - |
 | 1126 | `data/draft/tei_lib_lv3/1126_tei.xml` | aozora2html | 30 | 30 | 30 | 154 | -124 | under_split | adapter_under_segmented | different | different | - |
-| 1576 | `data/draft/tei_lib_lv3/1576_tei.xml` | aozora2html | 467 | 467 | 466 | 496 | -30 | under_split | renderer_paragraph_mismatch | different | different | - |
+| 1576 | `data/draft/tei_lib_lv3/1576_tei.xml` | aozora2html | 467 | 467 | 466 | 496 | -30 | under_split | empty_body_paragraph_range | different | different | - |
 | 43563 | `data/draft/tei_lib_lv3/43563_tei.xml` | aozora2html | 186 | 186 | 186 | 26 | 160 | over_split | adapter_over_segmented | different | different | - |
 | 52208 | `data/draft/tei_lib_lv3/52208_tei.xml` | aozora2html | 27 | 27 | 27 | 18 | 9 | over_split | adapter_over_segmented | different | different | - |
 | 86 | `data/draft/tei_lib_lv3/86_tei.xml` | aozora2html | 134 | 134 | 134 | 123 | 11 | over_split | adapter_over_segmented | different | ruby_expanded_parenless_equal | - |
@@ -136,5 +138,5 @@ This report materializes ABC TEI from parser-IR, then compares the generated TEI
 | 4244 | `data/draft/tei_lib_lv4/4244-1_tei.xml` | aozora2html | 74 | 74 | 74 | 24 | 50 | over_split | adapter_over_segmented | different | different | - |
 | 4244 | `data/draft/tei_lib_lv4/4244-3_tei.xml` | aozora2html | 74 | 74 | 74 | 13 | 61 | over_split | adapter_over_segmented | different | different | - |
 | 4244 | `data/draft/tei_lib_lv4/4244-4_tei.xml` | aozora2html | 74 | 74 | 74 | 8 | 66 | over_split | adapter_over_segmented | different | different | - |
-| 46453 | `data/draft/tei_lib_lv4/46453_tei.xml` | aozora2html | 74 | 74 | 72 | 89 | -17 | under_split | renderer_paragraph_mismatch | different | different | - |
+| 46453 | `data/draft/tei_lib_lv4/46453_tei.xml` | aozora2html | 74 | 74 | 72 | 89 | -17 | under_split | empty_body_paragraph_range | different | different | - |
 | 54457 | `data/draft/tei_lib_lv4/54457_tei.xml` | aozora2html | 15 | 15 | 15 | 15 | 0 | exact | aligned | different | different | - |

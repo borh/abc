@@ -137,6 +137,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 6
+      },
+      "paragraph_rendering": {
+        "total_ranges": 30,
+        "body_ranges": 30,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 30,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -234,6 +245,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 4
+      },
+      "paragraph_rendering": {
+        "total_ranges": 62,
+        "body_ranges": 62,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 62,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -331,6 +353,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 8,
+        "body_ranges": 8,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 8,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -428,6 +461,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 29,
+        "body_ranges": 29,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 29,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -525,6 +569,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 4
+      },
+      "paragraph_rendering": {
+        "total_ranges": 28,
+        "body_ranges": 28,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 28,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -622,6 +677,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 3
+      },
+      "paragraph_rendering": {
+        "total_ranges": 4,
+        "body_ranges": 4,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 4,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -721,6 +787,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 7
+      },
+      "paragraph_rendering": {
+        "total_ranges": 32,
+        "body_ranges": 32,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 32,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -818,6 +895,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 1
+      },
+      "paragraph_rendering": {
+        "total_ranges": 186,
+        "body_ranges": 186,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 186,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -915,6 +1003,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 3
+      },
+      "paragraph_rendering": {
+        "total_ranges": 6,
+        "body_ranges": 6,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 6,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -1013,6 +1112,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 1
+      },
+      "paragraph_rendering": {
+        "total_ranges": 26,
+        "body_ranges": 26,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 26,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -1110,6 +1220,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 18,
+        "body_ranges": 18,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 18,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -1207,6 +1328,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 1
+      },
+      "paragraph_rendering": {
+        "total_ranges": 5,
+        "body_ranges": 5,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 5,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -1304,6 +1436,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 1
+      },
+      "paragraph_rendering": {
+        "total_ranges": 8,
+        "body_ranges": 8,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 8,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -1390,7 +1533,7 @@
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": false,
         "source_note_back_present": false,
-        "paragraph_origin_bucket": "renderer_paragraph_mismatch"
+        "paragraph_origin_bucket": "empty_body_paragraph_range"
       },
       "aat": {
         "block_count": 420,
@@ -1403,6 +1546,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 7
+      },
+      "paragraph_rendering": {
+        "total_ranges": 412,
+        "body_ranges": 412,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 6,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 406,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -1500,6 +1654,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 76,
+        "body_ranges": 76,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 76,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -1597,6 +1762,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 5,
+        "body_ranges": 5,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 5,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -1695,6 +1871,17 @@
         "final_block_kind": "jisage_block",
         "final_source_attribution_candidate": false,
         "hints_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 20,
+        "body_ranges": 20,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 20,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -1794,6 +1981,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 7
+      },
+      "paragraph_rendering": {
+        "total_ranges": 16,
+        "body_ranges": 16,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 16,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -1891,6 +2089,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 3
+      },
+      "paragraph_rendering": {
+        "total_ranges": 8,
+        "body_ranges": 8,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 8,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -1988,6 +2197,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 3
+      },
+      "paragraph_rendering": {
+        "total_ranges": 9,
+        "body_ranges": 9,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 9,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -2085,6 +2305,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 3
+      },
+      "paragraph_rendering": {
+        "total_ranges": 9,
+        "body_ranges": 9,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 9,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -2182,6 +2413,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 4
+      },
+      "paragraph_rendering": {
+        "total_ranges": 13,
+        "body_ranges": 13,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 13,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -2275,6 +2517,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 3
+      },
+      "paragraph_rendering": {
+        "total_ranges": 7,
+        "body_ranges": 7,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 7,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -2372,6 +2625,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 3
+      },
+      "paragraph_rendering": {
+        "total_ranges": 5,
+        "body_ranges": 5,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 5,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -2469,6 +2733,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 3
+      },
+      "paragraph_rendering": {
+        "total_ranges": 11,
+        "body_ranges": 11,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 11,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -2566,6 +2841,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 4
+      },
+      "paragraph_rendering": {
+        "total_ranges": 13,
+        "body_ranges": 13,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 13,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -2663,6 +2949,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 3
+      },
+      "paragraph_rendering": {
+        "total_ranges": 10,
+        "body_ranges": 10,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 10,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -2760,6 +3057,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 3
+      },
+      "paragraph_rendering": {
+        "total_ranges": 10,
+        "body_ranges": 10,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 10,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -2857,6 +3165,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 3
+      },
+      "paragraph_rendering": {
+        "total_ranges": 6,
+        "body_ranges": 6,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 6,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -2954,6 +3273,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 3
+      },
+      "paragraph_rendering": {
+        "total_ranges": 7,
+        "body_ranges": 7,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 7,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -3051,6 +3381,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 4
+      },
+      "paragraph_rendering": {
+        "total_ranges": 11,
+        "body_ranges": 11,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 11,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -3148,6 +3489,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 3
+      },
+      "paragraph_rendering": {
+        "total_ranges": 6,
+        "body_ranges": 6,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 6,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -3245,6 +3597,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 3
+      },
+      "paragraph_rendering": {
+        "total_ranges": 10,
+        "body_ranges": 10,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 10,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -3342,6 +3705,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 3
+      },
+      "paragraph_rendering": {
+        "total_ranges": 9,
+        "body_ranges": 9,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 9,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -3440,6 +3814,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 3
+      },
+      "paragraph_rendering": {
+        "total_ranges": 12,
+        "body_ranges": 12,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 12,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -3538,6 +3923,17 @@
         "final_block_kind": "jisage_block",
         "final_source_attribution_candidate": false,
         "hints_count": 3
+      },
+      "paragraph_rendering": {
+        "total_ranges": 14,
+        "body_ranges": 14,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 14,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -3636,6 +4032,17 @@
         "final_block_kind": "jisage_block",
         "final_source_attribution_candidate": false,
         "hints_count": 3
+      },
+      "paragraph_rendering": {
+        "total_ranges": 8,
+        "body_ranges": 8,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 8,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -3734,6 +4141,17 @@
         "final_block_kind": "jisage_block",
         "final_source_attribution_candidate": false,
         "hints_count": 3
+      },
+      "paragraph_rendering": {
+        "total_ranges": 4,
+        "body_ranges": 4,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 4,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -3831,6 +4249,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 4
+      },
+      "paragraph_rendering": {
+        "total_ranges": 134,
+        "body_ranges": 134,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 134,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -3928,6 +4357,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 4
+      },
+      "paragraph_rendering": {
+        "total_ranges": 62,
+        "body_ranges": 62,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 62,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -4010,7 +4450,7 @@
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": true,
         "source_note_back_present": true,
-        "paragraph_origin_bucket": "renderer_paragraph_mismatch"
+        "paragraph_origin_bucket": "source_note_back_routing"
       },
       "aat": {
         "block_count": 75,
@@ -4021,6 +4461,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": true,
         "hints_count": 3
+      },
+      "paragraph_rendering": {
+        "total_ranges": 75,
+        "body_ranges": 74,
+        "source_note_ranges": 1,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 74,
+        "source_note_back_ranges": 1,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -4103,7 +4554,7 @@
         "paragraph_delta_bucket": "over_split",
         "source_note_body_excluded": true,
         "source_note_back_present": true,
-        "paragraph_origin_bucket": "renderer_paragraph_mismatch"
+        "paragraph_origin_bucket": "source_note_back_routing"
       },
       "aat": {
         "block_count": 75,
@@ -4114,6 +4565,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": true,
         "hints_count": 3
+      },
+      "paragraph_rendering": {
+        "total_ranges": 75,
+        "body_ranges": 74,
+        "source_note_ranges": 1,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 74,
+        "source_note_back_ranges": 1,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -4211,6 +4673,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 39,
+        "body_ranges": 39,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 39,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -4310,6 +4783,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 3
+      },
+      "paragraph_rendering": {
+        "total_ranges": 15,
+        "body_ranges": 15,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 15,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -4408,6 +4892,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 4
+      },
+      "paragraph_rendering": {
+        "total_ranges": 61,
+        "body_ranges": 61,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 61,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -4507,6 +5002,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 6
+      },
+      "paragraph_rendering": {
+        "total_ranges": 30,
+        "body_ranges": 30,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 30,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -4593,7 +5099,7 @@
         "paragraph_delta_bucket": "under_split",
         "source_note_body_excluded": false,
         "source_note_back_present": false,
-        "paragraph_origin_bucket": "renderer_paragraph_mismatch"
+        "paragraph_origin_bucket": "empty_body_paragraph_range"
       },
       "aat": {
         "block_count": 469,
@@ -4605,6 +5111,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 3
+      },
+      "paragraph_rendering": {
+        "total_ranges": 467,
+        "body_ranges": 467,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 1,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 466,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -4702,6 +5219,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 1
+      },
+      "paragraph_rendering": {
+        "total_ranges": 186,
+        "body_ranges": 186,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 186,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -4800,6 +5328,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 3
+      },
+      "paragraph_rendering": {
+        "total_ranges": 27,
+        "body_ranges": 27,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 27,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -4897,6 +5436,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 4
+      },
+      "paragraph_rendering": {
+        "total_ranges": 134,
+        "body_ranges": 134,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 134,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -4995,6 +5545,17 @@
         "final_block_kind": "jisage_block",
         "final_source_attribution_candidate": false,
         "hints_count": 5
+      },
+      "paragraph_rendering": {
+        "total_ranges": 450,
+        "body_ranges": 450,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 450,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -5092,6 +5653,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 77,
+        "body_ranges": 77,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 77,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -5190,6 +5762,17 @@
         "final_block_kind": "jisage_block",
         "final_source_attribution_candidate": false,
         "hints_count": 1
+      },
+      "paragraph_rendering": {
+        "total_ranges": 74,
+        "body_ranges": 74,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 74,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -5288,6 +5871,17 @@
         "final_block_kind": "jisage_block",
         "final_source_attribution_candidate": false,
         "hints_count": 1
+      },
+      "paragraph_rendering": {
+        "total_ranges": 74,
+        "body_ranges": 74,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 74,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -5386,6 +5980,17 @@
         "final_block_kind": "jisage_block",
         "final_source_attribution_candidate": false,
         "hints_count": 1
+      },
+      "paragraph_rendering": {
+        "total_ranges": 74,
+        "body_ranges": 74,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 74,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -5472,7 +6077,7 @@
         "paragraph_delta_bucket": "under_split",
         "source_note_body_excluded": false,
         "source_note_back_present": false,
-        "paragraph_origin_bucket": "renderer_paragraph_mismatch"
+        "paragraph_origin_bucket": "empty_body_paragraph_range"
       },
       "aat": {
         "block_count": 93,
@@ -5484,6 +6089,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 3
+      },
+      "paragraph_rendering": {
+        "total_ranges": 74,
+        "body_ranges": 74,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 2,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 72,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     },
     {
@@ -5581,6 +6197,17 @@
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
         "hints_count": 0
+      },
+      "paragraph_rendering": {
+        "total_ranges": 15,
+        "body_ranges": 15,
+        "source_note_ranges": 0,
+        "empty_body_ranges": 0,
+        "structural_only_body_ranges": 0,
+        "body_ranges_with_inline_content": 15,
+        "source_note_back_ranges": 0,
+        "source_note_front_ranges": 0,
+        "source_note_body_ranges": 0
       }
     }
   ],
@@ -5610,7 +6237,8 @@
     "adapter_under_segmented": 5,
     "adapter_over_segmented": 42,
     "aligned": 5,
-    "renderer_paragraph_mismatch": 5
+    "empty_body_paragraph_range": 3,
+    "source_note_back_routing": 2
   },
   "adapter_paragraph_delta_buckets": {
     "aozora2html": {
@@ -5624,7 +6252,8 @@
       "adapter_under_segmented": 5,
       "adapter_over_segmented": 42,
       "aligned": 5,
-      "renderer_paragraph_mismatch": 5
+      "empty_body_paragraph_range": 3,
+      "source_note_back_routing": 2
     }
   },
   "adapter_body_text_match_buckets": {

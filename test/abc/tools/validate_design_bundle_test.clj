@@ -33,6 +33,9 @@
 (def ^:private current-mapping-hash
   "sha256:4c0d3eb53942b4e1e14a6efc614bab99e391e90d85b817e090b42d02c05ba22e")
 
+(def ^:private v2-mapping-hash
+  "sha256:68b0868b25f3b072a47d781099178bf2a31e4b16c561814f5e13e3801714d089")
+
 (def ^:private mapping-schema-hash
   "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4")
 
@@ -296,6 +299,64 @@
                           :unsupported_occurrences 14230}
          :compatibility "lossy"))
 
+(def ^:private v2-rs-compat-query
+  {:aat_version 1
+   :aat_adapter "aozora-rs"
+   :aat_adapter_version "aozora-rs-adapter 0.1.0 2b4e8d1"
+   :mapping_id "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe"
+   :mapping_version "0.2.0"
+   :mapping_hash v2-mapping-hash
+   :mapping_schema_hash mapping-schema-hash
+   :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
+   :parser_ir_schema_hash parser-ir-schema-hash})
+
+(def ^:private v2-rs-registry-entry
+  (assoc v2-rs-compat-query
+         :evidence_scope {:evidence_type :conversion-audit
+                          :adapter "aozora-rs"
+                          :adapter_version "aozora-rs-adapter 0.1.0 2b4e8d1"
+                          :corpus "aozora-rs-adapter"
+                          :files_scanned 17894
+                          :files_succeeded 17894
+                          :files_failed 0
+                          :parser_ir_nodes 7828615
+                          :divergence_records 252251
+                          :divergence_occurrences 13211106
+                          :rules_total 116
+                          :rules_emitted 26
+                          :rules_missing 90
+                          :unsupported_occurrences 0}
+         :compatibility "lossy"))
+
+(def ^:private v2-html-compat-query
+  {:aat_version 1
+   :aat_adapter "aozora2html"
+   :aat_adapter_version "aozora2html-adapter 0.1.0 gem-3.0.1"
+   :mapping_id "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe"
+   :mapping_version "0.2.0"
+   :mapping_hash v2-mapping-hash
+   :mapping_schema_hash mapping-schema-hash
+   :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
+   :parser_ir_schema_hash parser-ir-schema-hash})
+
+(def ^:private v2-html-registry-entry
+  (assoc v2-html-compat-query
+         :evidence_scope {:evidence_type :conversion-audit
+                          :adapter "aozora2html"
+                          :adapter_version "aozora2html-adapter 0.1.0 gem-3.0.1"
+                          :corpus "aozora2html-adapter"
+                          :files_scanned 17689
+                          :files_succeeded 17689
+                          :files_failed 0
+                          :parser_ir_nodes 8414559
+                          :divergence_records 288916
+                          :divergence_occurrences 17136777
+                          :rules_total 116
+                          :rules_emitted 115
+                          :rules_missing 1
+                          :unsupported_occurrences 14230}
+         :compatibility "lossy"))
+
 (def ^:private valid-derived-from
   {"aat_version" 1
    "aat_adapter" "aozora-rs-adapter"
@@ -335,7 +396,9 @@
   (testing "accepts the measured adapter-scoped registry shapes"
     (is (empty? (compat/registry-errors {:entries [old-registry-entry
                                                    current-rs-registry-entry
-                                                   current-html-registry-entry]}))))
+                                                   current-html-registry-entry
+                                                   v2-rs-registry-entry
+                                                   v2-html-registry-entry]}))))
   (testing "rejects entries without evidence scope"
     (is (has-error? #"entry 0 is missing :evidence_scope"
                     (compat/registry-errors
@@ -387,6 +450,30 @@
       (is (true? (compat/compatible? registry old-compat-query)))
       (is (true? (compat/compatible? registry current-rs-compat-query)))
       (is (true? (compat/compatible? registry current-html-compat-query)))
+      (is (true? (compat/compatible? registry v2-rs-compat-query)))
+      (is (true? (compat/compatible? registry v2-html-compat-query)))
+      (let [entry-for (fn [adapter adapter-version]
+                        (->> (:entries registry)
+                             (filter #(and (= adapter (:aat_adapter %))
+                                           (= adapter-version (:aat_adapter_version %))
+                                           (= "0.2.0" (:mapping_version %))))
+                             first))
+            aozora-rs-entry (entry-for "aozora-rs" "aozora-rs-adapter 0.1.0 2b4e8d1")
+            aozora2html-entry (entry-for "aozora2html" "aozora2html-adapter 0.1.0 gem-3.0.1")]
+        (is (some? aozora-rs-entry) "missing current aozora-rs registry entry")
+        (is (some? aozora2html-entry) "missing current aozora2html registry entry")
+        (is (= (:mapping_hash aozora-rs-entry) (:mapping_hash aozora2html-entry))
+            "both adapter entries must point at the same measured mapping document")
+        (is (= v2-mapping-hash (:mapping_hash aozora-rs-entry)))
+        (doseq [entry [aozora-rs-entry aozora2html-entry]]
+          (is (true? (compat/compatible? registry (select-keys entry compat/match-keys))))
+          (is (= :conversion-audit (get-in entry [:evidence_scope :evidence_type])))
+          (is (= (get-in entry [:evidence_scope :files_scanned])
+                 (+ (get-in entry [:evidence_scope :files_succeeded])
+                    (get-in entry [:evidence_scope :files_failed]))))
+          (is (= (get-in entry [:evidence_scope :rules_total])
+                 (+ (get-in entry [:evidence_scope :rules_emitted])
+                    (get-in entry [:evidence_scope :rules_missing]))))))
       (is (false? (compat/compatible?
                    registry
                    (assoc old-compat-query

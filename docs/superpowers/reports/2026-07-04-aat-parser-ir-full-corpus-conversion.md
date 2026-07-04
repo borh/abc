@@ -1,7 +1,8 @@
 # Full-Corpus AAT Parser-IR Conversion Audit
 
-- generated_unix_seconds: `1783122755`
-- mapping: `https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe` `0.1.1`
+- generated_unix_seconds: `1783127952`
+- mapping: `https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe` `0.2.0`
+- mapping_hash: `sha256:68b0868b25f3b072a47d781099178bf2a31e4b16c561814f5e13e3801714d089`
 - mapping_schema_hash: `sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4`
 - target_parser_ir_schema_hash: `sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396`
 
@@ -9,21 +10,21 @@
 
 | files_attempted | files_succeeded | files_failed | parser_ir_nodes | divergence_records | divergence_occurrences | elapsed_seconds |
 |---:|---:|---:|---:|---:|---:|---:|
-| 35583 | 35583 | 0 | 16243174 | 612333 | 30419049 | 10.554 |
+| 35583 | 35583 | 0 | 16243174 | 541167 | 30347883 | 10.660 |
 
 ## Inputs
 
 | label | files | aat_dir |
 |---|---:|---|
-| aozora-rs-adapter | 17894 | `scratch/morph-full-corpus/aats/aozora-rs-adapter` |
+| aozora-rs-adapter | 17894 | `/home/bor/Projects/ab-validator/.worktrees/parser-ir-identity-compat-hardening/scratch/morph-full-corpus/aats/aozora-rs-adapter` |
 | aozora2html-adapter | 17689 | `/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter` |
 
 ## Corpus Results
 
 | corpus | attempted | succeeded | failed | parser_ir_nodes | divergence_occurrences |
 |---|---:|---:|---:|---:|---:|
-| aozora-rs-adapter | 17894 | 17894 | 0 | 7828615 | 13246894 |
-| aozora2html-adapter | 17689 | 17689 | 0 | 8414559 | 17172155 |
+| aozora-rs-adapter | 17894 | 17894 | 0 | 7828615 | 13211106 |
+| aozora2html-adapter | 17689 | 17689 | 0 | 8414559 | 17136777 |
 
 ## Divergence Categories
 
@@ -31,14 +32,21 @@
 |---|---:|
 | AMBIGUITY | 19819114 |
 | INVENTION | 7043185 |
-| LOSS | 344669 |
+| LOSS | 273503 |
 | STRUCTURAL | 3197851 |
 | UNSUPPORTED | 14230 |
 
+## Compatibility Candidates
+
+| adapter | adapter_version | mapping_version | mapping_hash | files_succeeded | files_failed | rules_emitted | rules_missing | unsupported_occurrences |
+|---|---|---|---|---:|---:|---:|---:|---:|
+| aozora-rs | aozora-rs-adapter 0.1.0 2b4e8d1 | 0.2.0 | `sha256:68b0868b25f3b072a47d781099178bf2a31e4b16c561814f5e13e3801714d089` | 17894 | 0 | 26 | 90 | 0 |
+| aozora2html | aozora2html-adapter 0.1.0 gem-3.0.1 | 0.2.0 | `sha256:68b0868b25f3b072a47d781099178bf2a31e4b16c561814f5e13e3801714d089` | 17689 | 0 | 115 | 1 | 14230 |
+
 ## Rule Coverage
 
-- rules_total: `118`
-- rules_emitted: `118`
+- rules_total: `116`
+- rules_emitted: `116`
 - rules_missing: `0`
 
 | rule_id | category | files | occurrences |
@@ -133,11 +141,9 @@
 | L-46 | LOSS | 12 | 62 |
 | L-47 | LOSS | 2 | 3 |
 | L-48 | LOSS | 1379 | 9210 |
-| L-49 | LOSS | 35583 | 35583 |
+| L-49 | LOSS | 17894 | 17894 |
 | L-50 | LOSS | 35583 | 35583 |
-| L-51 | LOSS | 17894 | 17894 |
-| L-52 | LOSS | 35583 | 35583 |
-| L-53 | LOSS | 32710 | 32710 |
+| L-51 | LOSS | 32710 | 32710 |
 | S-01 | STRUCTURAL | 4 | 4 |
 | S-02 | STRUCTURAL | 69 | 398 |
 | S-03 | STRUCTURAL | 3104 | 7564 |

@@ -1,6 +1,6 @@
 # AAT Parser-IR Conversion Audit
 
-- generated_unix_seconds: `1783172545`
+- generated_unix_seconds: `1783174070`
 - mapping: `https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe` `0.2.3`
 - mapping_hash: `sha256:21791c841557ced968464b38e42971e22830edb0efdb0be6faf285761532f770`
 - mapping_schema_hash: `sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4`
@@ -10,7 +10,7 @@
 
 | files_attempted | files_succeeded | files_failed | parser_ir_nodes | divergence_records | divergence_occurrences | elapsed_seconds |
 |---:|---:|---:|---:|---:|---:|---:|
-| 71301 | 67415 | 3886 | 28494053 | 829660 | 46816666 | 24.818 |
+| 71301 | 67415 | 3886 | 28494053 | 829660 | 46816666 | 22.834 |
 
 ## Inputs
 

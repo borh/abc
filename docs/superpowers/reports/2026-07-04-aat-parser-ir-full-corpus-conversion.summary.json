@@ -1,5 +1,5 @@
 {
-  "generated_unix_seconds": 1783172545,
+  "generated_unix_seconds": 1783174070,
   "mapping": {
     "path": "/home/bor/Projects/ab-validator/data/aat-to-parser-ir-mapping-v1.json",
     "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
@@ -39,7 +39,7 @@
     "parser_ir_nodes": 28494053,
     "divergence_records": 829660,
     "divergence_occurrences": 46816666,
-    "elapsed_seconds": 24.818
+    "elapsed_seconds": 22.834
   },
   "by_corpus": {
     "aozora-epub3-adapter": {

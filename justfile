@@ -4,6 +4,7 @@ repo_root := `pwd`
 ab_db_root := env_var_or_default("AB_DB_ROOT", "/db/ab-validator")
 morph_warehouse_dir := env_var_or_default("AB_MORPH_WAREHOUSE_DIR", "/db/ab-validator/morph-warehouse")
 morph_warehouse_aat_dir := env_var_or_default("AB_MORPH_WAREHOUSE_AAT_DIR", "/db/ab-validator/aat-corpus/aozora2html-aat/aozora2html-adapter")
+aozora2html_full_aat_dir := env_var_or_default("AB_AOZORA2HTML_AAT_DIR", ab_db_root + "/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter")
 aozora2html_flake := repo_root + "#aozora2html"
 vibrato_dictionary_root := repo_root + "/dictionary"
 vibrato_unidic_sources := vibrato_dictionary_root + "/unidic-sources"
@@ -108,14 +109,15 @@ aat-to-parser-ir-flake-smoke:
 	@system="$(nix eval --impure --raw --expr builtins.currentSystem)"; \
 	nix build "{{repo_root}}#checks.$system.aat-to-parser-ir-smoke" --print-build-logs
 
-aat-to-parser-ir-full-audit JOBS="24" REPORT_MD="docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.summary.json":
+aat-to-parser-ir-full-audit JOBS="24" REPORT_MD="docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.summary.json" COMPAT_EDN="docs/superpowers/reports/2026-07-04-aat-parser-ir-compatibility-candidates.edn":
 	@cargo build -p ab-aat-to-parser-ir --release --jobs "{{JOBS}}"
 	@"{{repo_root}}/target/release/ab-aat-to-parser-ir" audit-corpus \
 		--aat-dir "{{repo_root}}/scratch/morph-full-corpus/aats/aozora-rs-adapter" \
-		--aat-dir "{{ab_db_root}}/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter" \
+		--aat-dir "{{aozora2html_full_aat_dir}}" \
 		--mapping "{{repo_root}}/data/aat-to-parser-ir-mapping-v1.json" \
 		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
 		--report-md "{{repo_root}}/{{REPORT_MD}}" \
+		--compat-edn-out "{{repo_root}}/{{COMPAT_EDN}}" \
 		--jobs "{{JOBS}}" \
 		--abc-root "{{repo_root}}/data/abc-schemas"
 

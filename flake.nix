@@ -701,6 +701,8 @@
           pkgs.runCommand "ab-aat-to-parser-ir-smoke-check"
             {
               nativeBuildInputs = [
+                pkgs.babashka
+                pkgs.clojure
                 pkgs.jq
                 pythonWithAatSchemaDeps
               ];
@@ -713,6 +715,8 @@
 
               export TMPDIR="$work_dir/tmp"
               mkdir -p "$TMPDIR"
+              export HOME="$work_dir/home"
+              mkdir -p "$HOME"
               export AB_ABC_ROOT="${source}/data/abc-schemas"
               export AB_AAT_TO_PARSER_IR_BIN="${abAatToParserIr}/bin/ab-aat-to-parser-ir"
 

@@ -35,6 +35,8 @@ enum Command {
         summary_json: PathBuf,
         #[arg(long)]
         report_md: PathBuf,
+        #[arg(long)]
+        compat_edn_out: Option<PathBuf>,
         #[arg(long, default_value_t = 0)]
         jobs: usize,
         #[arg(long)]
@@ -75,6 +77,7 @@ fn main() -> Result<()> {
             mapping,
             summary_json,
             report_md,
+            compat_edn_out,
             jobs,
             abc_root,
         } => {
@@ -84,6 +87,7 @@ fn main() -> Result<()> {
                 mapping_path: mapping,
                 summary_json,
                 report_md,
+                compat_edn_out,
                 abc_root,
                 repo_root,
                 jobs,

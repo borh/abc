@@ -115,6 +115,7 @@ audit_args=(
   --mapping "$repo_root/data/aat-to-parser-ir-mapping-v1.json"
   --summary-json "$out_dir/audit-summary.json"
   --report-md "$out_dir/audit-report.md"
+  --compat-edn-out "$out_dir/compatibility-candidates.edn"
   --jobs 2
   --abc-root "$abc_root"
 )
@@ -128,4 +129,22 @@ fi
 jq -e '.totals.files_attempted == 1' "$out_dir/audit-summary.json"
 jq -e '.totals.files_succeeded == 1' "$out_dir/audit-summary.json"
 jq -e '.totals.files_failed == 0' "$out_dir/audit-summary.json"
+jq -e '.mapping.mapping_hash | test("^sha256:[0-9a-f]{64}$")' "$out_dir/audit-summary.json"
+jq -e '.compatibility_candidates | length == 1' "$out_dir/audit-summary.json"
+jq -e '.compatibility_candidates[0].aat_adapter == "fixture"' "$out_dir/audit-summary.json"
+jq -e '.compatibility_candidates[0].aat_adapter_version == "fixture 0.1.0"' "$out_dir/audit-summary.json"
+jq -e '.compatibility_candidates[0].mapping_hash == .mapping.mapping_hash' "$out_dir/audit-summary.json"
+jq -e '.compatibility_candidates[0].evidence_scope.evidence_type == "conversion-audit"' "$out_dir/audit-summary.json"
+jq -e '.compatibility_candidates[0].evidence_scope.files_scanned == 1' "$out_dir/audit-summary.json"
+jq -e '.compatibility_candidates[0].evidence_scope.files_succeeded == 1' "$out_dir/audit-summary.json"
+jq -e '.compatibility_candidates[0].evidence_scope.files_failed == 0' "$out_dir/audit-summary.json"
+jq -e '.compatibility_candidates[0].evidence_scope.unsupported_occurrences == 0' "$out_dir/audit-summary.json"
 grep -n 'Full-Corpus AAT Parser-IR Conversion Audit' "$out_dir/audit-report.md"
+grep -n ':evidence_type :conversion-audit' "$out_dir/compatibility-candidates.edn"
+grep -n ':aat_adapter "fixture"' "$out_dir/compatibility-candidates.edn"
+edn_parse_expr='(require '"'"'[clojure.edn :as edn]) (edn/read-string (slurp (System/getenv "COMPAT_EDN")))'
+if command -v bb >/dev/null 2>&1; then
+  COMPAT_EDN="$out_dir/compatibility-candidates.edn" bb -e "$edn_parse_expr"
+else
+  COMPAT_EDN="$out_dir/compatibility-candidates.edn" clojure -M -e "$edn_parse_expr"
+fi

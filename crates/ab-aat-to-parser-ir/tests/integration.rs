@@ -65,13 +65,13 @@ fn legacy_canonicalization_escapes_slashes() {
 }
 
 #[test]
-fn mapping_preflight_accepts_checked_in_v1_1_artifact() {
+fn mapping_preflight_accepts_checked_in_v2_artifact() {
     let (schemas, mapping) = schemas_and_mapping();
 
     let index = mapping.preflight(&schemas).unwrap();
 
-    assert_eq!(mapping.mapping_version, "0.1.1");
-    assert_eq!(mapping.transform_rule_descriptions.len(), 118);
+    assert_eq!(mapping.mapping_version, "0.2.0");
+    assert_eq!(mapping.transform_rule_descriptions.len(), 116);
     assert!(
         index
             .require_rule("UNSUPPORTED", Some("blocks[].content[].warigaki"), None)

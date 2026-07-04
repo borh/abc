@@ -19,6 +19,7 @@ pub struct CorpusAuditConfig {
     pub mapping_path: PathBuf,
     pub summary_json: PathBuf,
     pub report_md: PathBuf,
+    pub compat_edn_out: Option<PathBuf>,
     pub abc_root: Option<PathBuf>,
     pub repo_root: PathBuf,
     pub jobs: usize,
@@ -33,6 +34,7 @@ pub struct AuditSummary {
     by_corpus: BTreeMap<String, CorpusTotals>,
     categories: BTreeMap<String, u64>,
     rule_coverage: RuleCoverage,
+    compatibility_candidates: Vec<CompatibilityCandidate>,
     top_errors: Vec<ErrorGroup>,
     failure_samples: Vec<FailureSample>,
 }
@@ -42,6 +44,7 @@ struct MappingSummary {
     path: String,
     mapping_id: String,
     mapping_version: String,
+    mapping_hash: String,
     mapping_schema_hash: String,
     target_parser_ir_schema_id: String,
     target_parser_ir_schema_hash: String,
@@ -91,6 +94,52 @@ struct RuleStats {
     occurrences: u64,
 }
 
+#[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Serialize)]
+struct CompatibilityIdentity {
+    aat_version: u64,
+    aat_adapter: String,
+    aat_adapter_version: Option<String>,
+    mapping_id: String,
+    mapping_version: String,
+    mapping_hash: String,
+    mapping_schema_hash: String,
+    parser_ir_schema_id: String,
+    parser_ir_schema_hash: String,
+}
+
+#[derive(Debug, Serialize)]
+struct CompatibilityCandidate {
+    aat_version: u64,
+    aat_adapter: String,
+    aat_adapter_version: Option<String>,
+    mapping_id: String,
+    mapping_version: String,
+    mapping_hash: String,
+    mapping_schema_hash: String,
+    parser_ir_schema_id: String,
+    parser_ir_schema_hash: String,
+    evidence_scope: CompatibilityEvidenceScope,
+    compatibility: String,
+}
+
+#[derive(Debug, Default, Serialize)]
+struct CompatibilityEvidenceScope {
+    evidence_type: String,
+    adapter: String,
+    adapter_version: Option<String>,
+    corpus: String,
+    files_scanned: u64,
+    files_succeeded: u64,
+    files_failed: u64,
+    parser_ir_nodes: u64,
+    divergence_records: u64,
+    divergence_occurrences: u64,
+    rules_total: u64,
+    rules_emitted: u64,
+    rules_missing: u64,
+    unsupported_occurrences: u64,
+}
+
 #[derive(Debug, Serialize)]
 struct ErrorGroup {
     message: String,
@@ -126,6 +175,7 @@ struct FileSuccess {
     category_occurrences: BTreeMap<String, u64>,
     rule_occurrences: BTreeMap<String, u64>,
     emitted_rule_ids: BTreeSet<String>,
+    compatibility_identity: CompatibilityIdentity,
 }
 
 #[derive(Debug)]
@@ -151,6 +201,7 @@ pub fn run_audit(config: CorpusAuditConfig) -> Result<AuditSummary> {
         .unwrap_or_else(|| config.repo_root.join("data/abc-schemas"));
     let schemas = SchemaSet::load(&config.repo_root, &abc_root)?;
     let converter = PreparedConverter::new(mapping.clone(), schemas)?;
+    let mapping_hash = mapping.document_hash.clone();
     let inputs = collect_inputs(&config.aat_dirs)?;
     let files: Vec<AuditFile> = inputs
         .iter()
@@ -170,7 +221,7 @@ pub fn run_audit(config: CorpusAuditConfig) -> Result<AuditSummary> {
     let results = if config.jobs == 0 {
         files
             .par_iter()
-            .map(|file| audit_file(file, &converter))
+            .map(|file| audit_file(file, &converter, mapping_hash.as_str()))
             .collect::<Vec<_>>()
     } else {
         rayon::ThreadPoolBuilder::new()
@@ -180,7 +231,7 @@ pub fn run_audit(config: CorpusAuditConfig) -> Result<AuditSummary> {
             .install(|| {
                 files
                     .par_iter()
-                    .map(|file| audit_file(file, &converter))
+                    .map(|file| audit_file(file, &converter, mapping_hash.as_str()))
                     .collect::<Vec<_>>()
             })
     };
@@ -271,7 +322,11 @@ fn collect_json_files(dir: &Path) -> Result<Vec<PathBuf>> {
     Ok(files)
 }
 
-fn audit_file(file: &AuditFile, converter: &PreparedConverter) -> AuditFileResult {
+fn audit_file(
+    file: &AuditFile,
+    converter: &PreparedConverter,
+    mapping_hash: &str,
+) -> AuditFileResult {
     let relative_path = file
         .path
         .strip_prefix(&file.root)
@@ -287,7 +342,7 @@ fn audit_file(file: &AuditFile, converter: &PreparedConverter) -> AuditFileResul
             },
         )
     }) {
-        Ok(output) => FileOutcome::Success(summarize_output(&output)),
+        Ok(output) => FileOutcome::Success(summarize_output(&output, mapping_hash)),
         Err(error) => FileOutcome::Failure {
             message: format!("{error:#}"),
         },
@@ -299,7 +354,10 @@ fn audit_file(file: &AuditFile, converter: &PreparedConverter) -> AuditFileResul
     }
 }
 
-fn summarize_output(output: &ab_aat_to_parser_ir::ConversionOutput) -> FileSuccess {
+fn summarize_output(
+    output: &ab_aat_to_parser_ir::ConversionOutput,
+    mapping_hash: &str,
+) -> FileSuccess {
     let parser_ir_nodes = output
         .parser_ir
         .pointer("/nodes")
@@ -325,6 +383,41 @@ fn summarize_output(output: &ab_aat_to_parser_ir::ConversionOutput) -> FileSucce
             *rule_occurrences.entry(rule_id.to_owned()).or_insert(0) += count;
         }
     }
+    let derived_from = &output.parser_ir["derived_from"];
+    let compatibility_identity = CompatibilityIdentity {
+        aat_version: derived_from["aat_version"]
+            .as_u64()
+            .expect("validated parser-IR derived_from.aat_version"),
+        aat_adapter: derived_from["aat_adapter"]
+            .as_str()
+            .expect("validated parser-IR derived_from.aat_adapter")
+            .to_owned(),
+        aat_adapter_version: derived_from
+            .get("aat_adapter_version")
+            .and_then(Value::as_str)
+            .map(ToOwned::to_owned),
+        mapping_id: derived_from["mapping_id"]
+            .as_str()
+            .expect("validated parser-IR derived_from.mapping_id")
+            .to_owned(),
+        mapping_version: derived_from["mapping_version"]
+            .as_str()
+            .expect("validated parser-IR derived_from.mapping_version")
+            .to_owned(),
+        mapping_hash: mapping_hash.to_owned(),
+        mapping_schema_hash: derived_from["mapping_schema_hash"]
+            .as_str()
+            .expect("validated parser-IR derived_from.mapping_schema_hash")
+            .to_owned(),
+        parser_ir_schema_id: output.parser_ir["schema_id"]
+            .as_str()
+            .expect("validated parser-IR schema_id")
+            .to_owned(),
+        parser_ir_schema_hash: output.parser_ir["schema_hash"]
+            .as_str()
+            .expect("validated parser-IR schema_hash")
+            .to_owned(),
+    };
     FileSuccess {
         parser_ir_nodes,
         divergence_records,
@@ -332,6 +425,7 @@ fn summarize_output(output: &ab_aat_to_parser_ir::ConversionOutput) -> FileSucce
         category_occurrences,
         rule_occurrences,
         emitted_rule_ids: output.emitted_rule_ids.clone(),
+        compatibility_identity,
     }
 }
 
@@ -348,6 +442,7 @@ fn summarize(
     };
     let mut by_corpus = BTreeMap::<String, CorpusTotals>::new();
     let mut categories = BTreeMap::<String, u64>::new();
+    let rules_total = mapping.transform_rule_descriptions.len() as u64;
     let mut rules_by_id = mapping
         .transform_rule_descriptions
         .iter()
@@ -364,6 +459,9 @@ fn summarize(
         .collect::<BTreeMap<_, _>>();
     let mut error_groups = BTreeMap::<String, (u64, Vec<FileSample>)>::new();
     let mut failure_samples = Vec::new();
+    let mut evidence_by_identity =
+        BTreeMap::<CompatibilityIdentity, CompatibilityEvidenceScope>::new();
+    let mut rule_ids_by_identity = BTreeMap::<CompatibilityIdentity, BTreeSet<String>>::new();
 
     for result in results {
         totals.files_attempted += 1;
@@ -379,11 +477,37 @@ fn summarize(
                 corpus_totals.parser_ir_nodes += success.parser_ir_nodes;
                 corpus_totals.divergence_records += success.divergence_records;
                 corpus_totals.divergence_occurrences += success.divergence_occurrences;
+                let unsupported_occurrences = success
+                    .category_occurrences
+                    .get("UNSUPPORTED")
+                    .copied()
+                    .unwrap_or(0);
+                let compatibility_identity = success.compatibility_identity.clone();
+                let evidence = evidence_by_identity
+                    .entry(compatibility_identity.clone())
+                    .or_insert_with(|| CompatibilityEvidenceScope {
+                        evidence_type: "conversion-audit".to_owned(),
+                        adapter: compatibility_identity.aat_adapter.clone(),
+                        adapter_version: compatibility_identity.aat_adapter_version.clone(),
+                        corpus: result.corpus.clone(),
+                        rules_total,
+                        ..CompatibilityEvidenceScope::default()
+                    });
+                evidence.files_scanned += 1;
+                evidence.files_succeeded += 1;
+                evidence.parser_ir_nodes += success.parser_ir_nodes;
+                evidence.divergence_records += success.divergence_records;
+                evidence.divergence_occurrences += success.divergence_occurrences;
+                evidence.unsupported_occurrences += unsupported_occurrences;
+                rule_ids_by_identity
+                    .entry(compatibility_identity)
+                    .or_default()
+                    .extend(success.emitted_rule_ids.iter().cloned());
                 for (category, count) in success.category_occurrences {
                     *categories.entry(category).or_insert(0) += count;
                 }
-                for rule_id in success.emitted_rule_ids {
-                    if let Some(stats) = rules_by_id.get_mut(&rule_id) {
+                for rule_id in &success.emitted_rule_ids {
+                    if let Some(stats) = rules_by_id.get_mut(rule_id) {
                         stats.files += 1;
                     }
                 }
@@ -438,6 +562,31 @@ fn summarize(
         .collect::<Vec<_>>();
     let rules_emitted = rules_by_id.len() as u64 - rules_missing.len() as u64;
 
+    for (identity, evidence) in &mut evidence_by_identity {
+        let emitted = rule_ids_by_identity
+            .get(identity)
+            .map_or(0, |rule_ids| rule_ids.len() as u64);
+        evidence.rules_emitted = emitted;
+        evidence.rules_missing = evidence.rules_total.saturating_sub(emitted);
+    }
+    let compatibility_candidates = evidence_by_identity
+        .into_iter()
+        .map(|(identity, evidence_scope)| CompatibilityCandidate {
+            aat_version: identity.aat_version,
+            aat_adapter: identity.aat_adapter,
+            aat_adapter_version: identity.aat_adapter_version,
+            mapping_id: identity.mapping_id,
+            mapping_version: identity.mapping_version,
+            mapping_hash: identity.mapping_hash,
+            mapping_schema_hash: identity.mapping_schema_hash,
+            parser_ir_schema_id: identity.parser_ir_schema_id,
+            parser_ir_schema_hash: identity.parser_ir_schema_hash,
+            evidence_scope,
+            compatibility: "lossy".to_owned(),
+        })
+        .collect::<Vec<_>>();
+    let mapping_hash = mapping.document_hash.clone();
+
     Ok(AuditSummary {
         generated_unix_seconds: std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -447,10 +596,11 @@ fn summarize(
             path: config.mapping_path.display().to_string(),
             mapping_id: mapping.mapping_id,
             mapping_version: mapping.mapping_version,
+            mapping_hash,
             mapping_schema_hash: mapping.mapping_schema_hash,
             target_parser_ir_schema_id: mapping.target_parser_ir_schema_id,
             target_parser_ir_schema_hash: mapping.target_parser_ir_schema_hash,
-            rules_total: mapping.transform_rule_descriptions.len() as u64,
+            rules_total,
         },
         inputs: inputs
             .into_iter()
@@ -469,6 +619,7 @@ fn summarize(
             rules_missing,
             rules_by_id,
         },
+        compatibility_candidates,
         top_errors,
         failure_samples,
     })
@@ -490,6 +641,14 @@ fn write_outputs(config: &CorpusAuditConfig, summary: &AuditSummary) -> Result<(
     .with_context(|| format!("failed to write {}", config.summary_json.display()))?;
     fs::write(&config.report_md, render_report(summary))
         .with_context(|| format!("failed to write {}", config.report_md.display()))?;
+    if let Some(path) = &config.compat_edn_out {
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent)
+                .with_context(|| format!("failed to create {}", parent.display()))?;
+        }
+        fs::write(path, render_compatibility_candidates_edn(summary))
+            .with_context(|| format!("failed to write {}", path.display()))?;
+    }
     Ok(())
 }
 
@@ -503,6 +662,10 @@ fn render_report(summary: &AuditSummary) -> String {
     out.push_str(&format!(
         "- mapping: `{}` `{}`\n",
         summary.mapping.mapping_id, summary.mapping.mapping_version
+    ));
+    out.push_str(&format!(
+        "- mapping_hash: `{}`\n",
+        summary.mapping.mapping_hash
     ));
     out.push_str(&format!(
         "- mapping_schema_hash: `{}`\n",
@@ -563,6 +726,30 @@ fn render_report(summary: &AuditSummary) -> String {
         out.push_str(&format!("| {} | {} |\n", table_cell(category), count));
     }
     out.push('\n');
+
+    out.push_str("## Compatibility Candidates\n\n");
+    if summary.compatibility_candidates.is_empty() {
+        out.push_str("No compatibility candidates were emitted.\n\n");
+    } else {
+        out.push_str("| adapter | adapter_version | mapping_version | mapping_hash | files_succeeded | files_failed | rules_emitted | rules_missing | unsupported_occurrences |\n");
+        out.push_str("|---|---|---|---|---:|---:|---:|---:|---:|\n");
+        for candidate in &summary.compatibility_candidates {
+            let scope = &candidate.evidence_scope;
+            out.push_str(&format!(
+                "| {} | {} | {} | `{}` | {} | {} | {} | {} | {} |\n",
+                table_cell(&candidate.aat_adapter),
+                table_cell(candidate.aat_adapter_version.as_deref().unwrap_or("")),
+                table_cell(&candidate.mapping_version),
+                candidate.mapping_hash,
+                scope.files_succeeded,
+                scope.files_failed,
+                scope.rules_emitted,
+                scope.rules_missing,
+                scope.unsupported_occurrences,
+            ));
+        }
+        out.push('\n');
+    }
 
     out.push_str("## Rule Coverage\n\n");
     out.push_str(&format!(
@@ -627,6 +814,67 @@ fn table_cell(value: &str) -> String {
         .replace('|', "\\|")
         .replace('\n', "<br>")
         .replace('\r', "")
+}
+
+fn edn_quote(value: &str) -> String {
+    let mut out = String::from("\"");
+    for ch in value.chars() {
+        match ch {
+            '\\' => out.push_str("\\\\"),
+            '"' => out.push_str("\\\""),
+            '\n' => out.push_str("\\n"),
+            '\r' => out.push_str("\\r"),
+            '\t' => out.push_str("\\t"),
+            '\u{08}' => out.push_str("\\b"),
+            '\u{0c}' => out.push_str("\\f"),
+            ch if ch.is_control() => out.push_str(&format!("\\u{:04x}", ch as u32)),
+            ch => out.push(ch),
+        }
+    }
+    out.push('"');
+    out
+}
+
+fn edn_option_string(value: Option<&str>) -> String {
+    value.map(edn_quote).unwrap_or_else(|| "nil".to_owned())
+}
+
+fn render_compatibility_candidates_edn(summary: &AuditSummary) -> String {
+    let mut out = String::from("{:entries\n [");
+    for (index, candidate) in summary.compatibility_candidates.iter().enumerate() {
+        if index > 0 {
+            out.push('\n');
+        }
+        let scope = &candidate.evidence_scope;
+        out.push_str(&format!(
+            "{{:aat_version {}\n  :aat_adapter {}\n  :aat_adapter_version {}\n  :mapping_id {}\n  :mapping_version {}\n  :mapping_hash {}\n  :mapping_schema_hash {}\n  :parser_ir_schema_id {}\n  :parser_ir_schema_hash {}\n  :evidence_scope {{:evidence_type :conversion-audit\n                   :adapter {}\n                   :adapter_version {}\n                   :corpus {}\n                   :files_scanned {}\n                   :files_succeeded {}\n                   :files_failed {}\n                   :parser_ir_nodes {}\n                   :divergence_records {}\n                   :divergence_occurrences {}\n                   :rules_total {}\n                   :rules_emitted {}\n                   :rules_missing {}\n                   :unsupported_occurrences {}}}\n  :compatibility {}}}",
+            candidate.aat_version,
+            edn_quote(&candidate.aat_adapter),
+            edn_option_string(candidate.aat_adapter_version.as_deref()),
+            edn_quote(&candidate.mapping_id),
+            edn_quote(&candidate.mapping_version),
+            edn_quote(&candidate.mapping_hash),
+            edn_quote(&candidate.mapping_schema_hash),
+            edn_quote(&candidate.parser_ir_schema_id),
+            edn_quote(&candidate.parser_ir_schema_hash),
+            edn_quote(&scope.adapter),
+            edn_option_string(scope.adapter_version.as_deref()),
+            edn_quote(&scope.corpus),
+            scope.files_scanned,
+            scope.files_succeeded,
+            scope.files_failed,
+            scope.parser_ir_nodes,
+            scope.divergence_records,
+            scope.divergence_occurrences,
+            scope.rules_total,
+            scope.rules_emitted,
+            scope.rules_missing,
+            scope.unsupported_occurrences,
+            edn_quote(&candidate.compatibility),
+        ));
+    }
+    out.push_str("]}\n");
+    out
 }
 
 fn round_seconds(seconds: f64) -> f64 {

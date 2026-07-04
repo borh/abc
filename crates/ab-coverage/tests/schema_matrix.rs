@@ -346,6 +346,17 @@ fn source_inventory_classifies_annotation_editor_notes() {
         "［＃ルビは「悪魔の尿溜」にかかる］",
         "［＃入力者注(5)］",
         "［ルビの「おもて」は底本では「うら」］",
+        "［＃「。」は底本では欠落］",
+        "［＃「詫び」は底本では「詑び」と誤植］",
+        "［＃底本のまま］",
+        "［＃「。」はママ］",
+        "［＃ルビ抜けはママ］",
+        "［＃「い」に「ママ」注記］",
+        "［＃「註」略］",
+        "［＃「Ｂ圖」省略］",
+        "［＃本文中、伏せ字は「＊」で表した。］",
+        "［＃底本２字伏字］",
+        "［＃図が入るが省略。底本44ページ］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -360,7 +371,7 @@ fn source_inventory_classifies_annotation_editor_notes() {
             .row_counts
             .get("annotation.chuuki")
             .map(|count| count.occurrences),
-        Some(5)
+        Some(16)
     );
 }
 

@@ -1,7 +1,7 @@
 {
-  "generated_unix_seconds": 1783158583,
+  "generated_unix_seconds": 1783160722,
   "mapping": {
-    "path": "/home/bor/Projects/ab-validator/.worktrees/parser-ir-evidence-refresh/data/aat-to-parser-ir-mapping-v1.json",
+    "path": "/home/bor/Projects/ab-validator/data/aat-to-parser-ir-mapping-v1.json",
     "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
     "mapping_version": "0.2.2",
     "mapping_hash": "sha256:17fb33db137f23ae30325558545ae364d21488d773aed733df1af012af6658c0",
@@ -17,6 +17,11 @@
       "files": 17894
     },
     {
+      "label": "aozora2-adapter",
+      "aat_dir": "/db/ab-validator/aat-corpus/aozora2-melos/aozora2-adapter",
+      "files": 1
+    },
+    {
       "label": "aozora2html-adapter",
       "aat_dir": "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter",
       "files": 17689
@@ -28,13 +33,13 @@
     }
   ],
   "totals": {
-    "files_attempted": 53427,
-    "files_succeeded": 53427,
+    "files_attempted": 53428,
+    "files_succeeded": 53428,
     "files_failed": 0,
-    "parser_ir_nodes": 26907266,
-    "divergence_records": 674102,
-    "divergence_occurrences": 42482637,
-    "elapsed_seconds": 23.303
+    "parser_ir_nodes": 26907268,
+    "divergence_records": 674111,
+    "divergence_occurrences": 42482734,
+    "elapsed_seconds": 24.095
   },
   "by_corpus": {
     "aozora-epub3-adapter": {
@@ -53,6 +58,14 @@
       "divergence_records": 217665,
       "divergence_occurrences": 11926731
     },
+    "aozora2-adapter": {
+      "files_attempted": 1,
+      "files_succeeded": 1,
+      "files_failed": 0,
+      "parser_ir_nodes": 2,
+      "divergence_records": 9,
+      "divergence_occurrences": 97
+    },
     "aozora2html-adapter": {
       "files_attempted": 17689,
       "files_succeeded": 17689,
@@ -63,9 +76,9 @@
     }
   },
   "categories": {
-    "AMBIGUITY": 27635551,
-    "INVENTION": 10688554,
-    "LOSS": 3815459,
+    "AMBIGUITY": 27635555,
+    "INVENTION": 10688558,
+    "LOSS": 3815548,
     "STRUCTURAL": 315609,
     "UNSUPPORTED": 27464
   },
@@ -171,13 +184,13 @@
       },
       "A-20": {
         "category": "AMBIGUITY",
-        "files": 53134,
-        "occurrences": 25716760
+        "files": 53135,
+        "occurrences": 25716762
       },
       "A-21": {
         "category": "AMBIGUITY",
-        "files": 23399,
-        "occurrences": 431764
+        "files": 23400,
+        "occurrences": 431765
       },
       "A-22": {
         "category": "AMBIGUITY",
@@ -211,13 +224,13 @@
       },
       "A-28": {
         "category": "AMBIGUITY",
-        "files": 53427,
-        "occurrences": 53427
+        "files": 53428,
+        "occurrences": 53428
       },
       "I-01": {
         "category": "INVENTION",
-        "files": 53427,
-        "occurrences": 53427
+        "files": 53428,
+        "occurrences": 53428
       },
       "I-02": {
         "category": "INVENTION",
@@ -226,13 +239,13 @@
       },
       "I-03": {
         "category": "INVENTION",
-        "files": 53427,
-        "occurrences": 53427
+        "files": 53428,
+        "occurrences": 53428
       },
       "I-04": {
         "category": "INVENTION",
-        "files": 53427,
-        "occurrences": 53427
+        "files": 53428,
+        "occurrences": 53428
       },
       "I-05": {
         "category": "INVENTION",
@@ -246,8 +259,8 @@
       },
       "I-07": {
         "category": "INVENTION",
-        "files": 53427,
-        "occurrences": 53427
+        "files": 53428,
+        "occurrences": 53428
       },
       "I-08": {
         "category": "INVENTION",
@@ -476,8 +489,8 @@
       },
       "L-39": {
         "category": "LOSS",
-        "files": 1054,
-        "occurrences": 40442
+        "files": 1055,
+        "occurrences": 40530
       },
       "L-40": {
         "category": "LOSS",
@@ -556,8 +569,8 @@
       },
       "L-55": {
         "category": "LOSS",
-        "files": 53427,
-        "occurrences": 53427
+        "files": 53428,
+        "occurrences": 53428
       },
       "L-56": {
         "category": "LOSS",
@@ -764,6 +777,34 @@
         "rules_total": 127,
         "rules_emitted": 25,
         "rules_missing": 102,
+        "unsupported_occurrences": 0
+      },
+      "compatibility": "lossy"
+    },
+    {
+      "aat_version": 1,
+      "aat_adapter": "aozora2",
+      "aat_adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1",
+      "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
+      "mapping_version": "0.2.2",
+      "mapping_hash": "sha256:17fb33db137f23ae30325558545ae364d21488d773aed733df1af012af6658c0",
+      "mapping_schema_hash": "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4",
+      "parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
+      "parser_ir_schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+      "evidence_scope": {
+        "evidence_type": "conversion-audit",
+        "adapter": "aozora2",
+        "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1",
+        "corpus": "aozora2-adapter",
+        "files_scanned": 1,
+        "files_succeeded": 1,
+        "files_failed": 0,
+        "parser_ir_nodes": 2,
+        "divergence_records": 9,
+        "divergence_occurrences": 97,
+        "rules_total": 127,
+        "rules_emitted": 9,
+        "rules_missing": 118,
         "unsupported_occurrences": 0
       },
       "compatibility": "lossy"

@@ -48,6 +48,30 @@
                    :unsupported_occurrences 0}
   :compatibility "lossy"}
 {:aat_version 1
+  :aat_adapter "aozora2"
+  :aat_adapter_version "aozora2-adapter 0.1.0 aozora-core-0.7.1"
+  :mapping_id "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe"
+  :mapping_version "0.2.2"
+  :mapping_hash "sha256:17fb33db137f23ae30325558545ae364d21488d773aed733df1af012af6658c0"
+  :mapping_schema_hash "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4"
+  :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
+  :parser_ir_schema_hash "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2"
+  :evidence_scope {:evidence_type :conversion-audit
+                   :adapter "aozora2"
+                   :adapter_version "aozora2-adapter 0.1.0 aozora-core-0.7.1"
+                   :corpus "aozora2-adapter"
+                   :files_scanned 1
+                   :files_succeeded 1
+                   :files_failed 0
+                   :parser_ir_nodes 2
+                   :divergence_records 9
+                   :divergence_occurrences 97
+                   :rules_total 127
+                   :rules_emitted 9
+                   :rules_missing 118
+                   :unsupported_occurrences 0}
+  :compatibility "lossy"}
+{:aat_version 1
   :aat_adapter "aozora2html"
   :aat_adapter_version "aozora2html-adapter 0.1.0 gem-3.0.1"
   :mapping_id "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe"

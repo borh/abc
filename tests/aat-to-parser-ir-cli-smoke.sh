@@ -141,7 +141,7 @@ jq -e '.compatibility_candidates[0].evidence_scope.files_scanned == 1' "$out_dir
 jq -e '.compatibility_candidates[0].evidence_scope.files_succeeded == 1' "$out_dir/audit-summary.json"
 jq -e '.compatibility_candidates[0].evidence_scope.files_failed == 0' "$out_dir/audit-summary.json"
 jq -e '.compatibility_candidates[0].evidence_scope.unsupported_occurrences == 0' "$out_dir/audit-summary.json"
-grep -n 'Full-Corpus AAT Parser-IR Conversion Audit' "$out_dir/audit-report.md"
+grep -n '^# AAT Parser-IR Conversion Audit$' "$out_dir/audit-report.md"
 grep -n ':evidence_type :conversion-audit' "$out_dir/compatibility-candidates.edn"
 grep -n ':aat_adapter "fixture"' "$out_dir/compatibility-candidates.edn"
 edn_parse_expr='(require '"'"'[clojure.edn :as edn]) (edn/read-string (slurp (System/getenv "COMPAT_EDN")))'

@@ -6,6 +6,7 @@ ab_db_root := env_var_or_default("AB_DB_ROOT", "/db/ab-validator")
 morph_warehouse_dir := env_var_or_default("AB_MORPH_WAREHOUSE_DIR", "/db/ab-validator/morph-warehouse")
 morph_warehouse_aat_dir := env_var_or_default("AB_MORPH_WAREHOUSE_AAT_DIR", "/db/ab-validator/aat-corpus/aozora2html-aat/aozora2html-adapter")
 aozora_rs_full_aat_dir := env_var_or_default("AB_AOZORA_RS_AAT_DIR", repo_storage_root + "/scratch/morph-full-corpus/aats/aozora-rs-adapter")
+aozora2_melos_aat_dir := env_var_or_default("AB_AOZORA2_AAT_DIR", ab_db_root + "/aat-corpus/aozora2-melos/aozora2-adapter")
 aozora2html_full_aat_dir := env_var_or_default("AB_AOZORA2HTML_AAT_DIR", ab_db_root + "/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter")
 aozora_epub3_full_aat_dir := env_var_or_default("AB_AOZORA_EPUB3_AAT_DIR", ab_db_root + "/aat-corpus/aozora-epub3-full-20260704T050652Z-300s/aat/aozora-epub3-adapter")
 tei_eaj_workset := env_var_or_default("AB_TEI_EAJ_WORKSET", repo_storage_root + "/../abc/docs/handoffs/tei-eaj-aozora-workset-export.json")
@@ -146,6 +147,7 @@ aat-to-parser-ir-full-audit JOBS="24" REPORT_MD="docs/superpowers/reports/2026-0
 	@cargo build -p ab-aat-to-parser-ir --release --jobs "{{JOBS}}"
 	@"{{repo_root}}/target/release/ab-aat-to-parser-ir" audit-corpus \
 		--aat-dir "{{aozora_rs_full_aat_dir}}" \
+		--aat-dir "{{aozora2_melos_aat_dir}}" \
 		--aat-dir "{{aozora2html_full_aat_dir}}" \
 		--aat-dir "{{aozora_epub3_full_aat_dir}}" \
 		--mapping "{{repo_root}}/data/aat-to-parser-ir-mapping-v1.json" \
@@ -161,7 +163,7 @@ tei-eaj-structural-expansion JOBS="24" REPORT_MD="docs/superpowers/reports/2026-
 	@"{{repo_root}}/target/release/ab-aat-to-parser-ir" tei-eaj-structural-expansion \
 		--workset "{{tei_eaj_workset}}" \
 		--aat-dir "aozora-rs={{aozora_rs_full_aat_dir}}" \
-		--aat-dir "aozora2={{ab_db_root}}/aat-corpus/aozora2-melos/aozora2-adapter" \
+		--aat-dir "aozora2={{aozora2_melos_aat_dir}}" \
 		--aat-dir "aozora2html={{aozora2html_full_aat_dir}}" \
 		--aat-dir "aozora-epub3={{aozora_epub3_full_aat_dir}}" \
 		--mapping "{{repo_root}}/data/aat-to-parser-ir-mapping-v1.json" \

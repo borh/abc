@@ -654,7 +654,7 @@ fn write_outputs(config: &CorpusAuditConfig, summary: &AuditSummary) -> Result<(
 
 fn render_report(summary: &AuditSummary) -> String {
     let mut out = String::new();
-    out.push_str("# Full-Corpus AAT Parser-IR Conversion Audit\n\n");
+    out.push_str("# AAT Parser-IR Conversion Audit\n\n");
     out.push_str(&format!(
         "- generated_unix_seconds: `{}`\n",
         summary.generated_unix_seconds

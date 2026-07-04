@@ -1226,7 +1226,10 @@ fn cli_audit_corpus_reports_successes_and_failures() {
     );
     assert!(report.is_file());
     let report_text = std::fs::read_to_string(&report).unwrap();
-    assert!(report_text.contains("Full-Corpus AAT Parser-IR Conversion Audit"));
+    assert_eq!(
+        report_text.lines().next(),
+        Some("# AAT Parser-IR Conversion Audit")
+    );
 }
 
 #[test]

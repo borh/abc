@@ -1,6 +1,6 @@
-# Full-Corpus AAT Parser-IR Conversion Audit
+# AAT Parser-IR Conversion Audit
 
-- generated_unix_seconds: `1783158583`
+- generated_unix_seconds: `1783160722`
 - mapping: `https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe` `0.2.2`
 - mapping_hash: `sha256:17fb33db137f23ae30325558545ae364d21488d773aed733df1af012af6658c0`
 - mapping_schema_hash: `sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4`
@@ -10,13 +10,14 @@
 
 | files_attempted | files_succeeded | files_failed | parser_ir_nodes | divergence_records | divergence_occurrences | elapsed_seconds |
 |---:|---:|---:|---:|---:|---:|---:|
-| 53427 | 53427 | 0 | 26907266 | 674102 | 42482637 | 23.303 |
+| 53428 | 53428 | 0 | 26907268 | 674111 | 42482734 | 24.095 |
 
 ## Inputs
 
 | label | files | aat_dir |
 |---|---:|---|
 | aozora-rs-adapter | 17894 | `/home/bor/Projects/ab-validator/scratch/morph-full-corpus/aats/aozora-rs-adapter` |
+| aozora2-adapter | 1 | `/db/ab-validator/aat-corpus/aozora2-melos/aozora2-adapter` |
 | aozora2html-adapter | 17689 | `/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter` |
 | aozora-epub3-adapter | 17844 | `/db/ab-validator/aat-corpus/aozora-epub3-full-20260704T050652Z-300s/aat/aozora-epub3-adapter` |
 
@@ -26,15 +27,16 @@
 |---|---:|---:|---:|---:|---:|
 | aozora-epub3-adapter | 17844 | 17844 | 0 | 10670874 | 18314414 |
 | aozora-rs-adapter | 17894 | 17894 | 0 | 7821839 | 11926731 |
+| aozora2-adapter | 1 | 1 | 0 | 2 | 97 |
 | aozora2html-adapter | 17689 | 17689 | 0 | 8414553 | 12241492 |
 
 ## Divergence Categories
 
 | category | occurrences |
 |---|---:|
-| AMBIGUITY | 27635551 |
-| INVENTION | 10688554 |
-| LOSS | 3815459 |
+| AMBIGUITY | 27635555 |
+| INVENTION | 10688558 |
+| LOSS | 3815548 |
 | STRUCTURAL | 315609 |
 | UNSUPPORTED | 27464 |
 
@@ -44,6 +46,7 @@
 |---|---|---|---|---:|---:|---:|---:|---:|
 | aozora-epub3 | aozora-epub3-adapter 0.1.0 AozoraEpub3-JDK21-1.3.4-jdk21 | 0.2.2 | `sha256:17fb33db137f23ae30325558545ae364d21488d773aed733df1af012af6658c0` | 17844 | 0 | 61 | 66 | 13234 |
 | aozora-rs | aozora-rs-adapter 0.1.0 2b4e8d1 | 0.2.2 | `sha256:17fb33db137f23ae30325558545ae364d21488d773aed733df1af012af6658c0` | 17894 | 0 | 25 | 102 | 0 |
+| aozora2 | aozora2-adapter 0.1.0 aozora-core-0.7.1 | 0.2.2 | `sha256:17fb33db137f23ae30325558545ae364d21488d773aed733df1af012af6658c0` | 1 | 0 | 9 | 118 | 0 |
 | aozora2html | aozora2html-adapter 0.1.0 gem-3.0.1 | 0.2.2 | `sha256:17fb33db137f23ae30325558545ae364d21488d773aed733df1af012af6658c0` | 17689 | 0 | 112 | 15 | 14230 |
 
 ## Rule Coverage
@@ -73,22 +76,22 @@
 | A-17 | AMBIGUITY | 306 | 2194 |
 | A-18 | AMBIGUITY | 1 | 2 |
 | A-19 | AMBIGUITY | 9191 | 76048 |
-| A-20 | AMBIGUITY | 53134 | 25716760 |
-| A-21 | AMBIGUITY | 23399 | 431764 |
+| A-20 | AMBIGUITY | 53135 | 25716762 |
+| A-21 | AMBIGUITY | 23400 | 431765 |
 | A-22 | AMBIGUITY | 3 | 4 |
 | A-23 | AMBIGUITY | 180 | 1328 |
 | A-24 | AMBIGUITY | 2 | 10 |
 | A-25 | AMBIGUITY | 1651 | 13394 |
 | A-26 | AMBIGUITY | 14933 | 243236 |
 | A-27 | AMBIGUITY | 5 | 5 |
-| A-28 | AMBIGUITY | 53427 | 53427 |
-| I-01 | INVENTION | 53427 | 53427 |
+| A-28 | AMBIGUITY | 53428 | 53428 |
+| I-01 | INVENTION | 53428 | 53428 |
 | I-02 | INVENTION | 42477 | 9631655 |
-| I-03 | INVENTION | 53427 | 53427 |
-| I-04 | INVENTION | 53427 | 53427 |
+| I-03 | INVENTION | 53428 | 53428 |
+| I-04 | INVENTION | 53428 | 53428 |
 | I-05 | INVENTION | 16563 | 265128 |
 | I-06 | INVENTION | 16563 | 265128 |
-| I-07 | INVENTION | 53427 | 53427 |
+| I-07 | INVENTION | 53428 | 53428 |
 | I-08 | INVENTION | 1 | 47 |
 | I-09 | INVENTION | 27 | 556 |
 | I-10 | INVENTION | 453 | 1887 |
@@ -134,7 +137,7 @@
 | L-36 | LOSS | 58 | 375 |
 | L-37 | LOSS | 8 | 21 |
 | L-38 | LOSS | 103 | 1934 |
-| L-39 | LOSS | 1054 | 40442 |
+| L-39 | LOSS | 1055 | 40530 |
 | L-40 | LOSS | 112 | 618 |
 | L-41 | LOSS | 484 | 3790 |
 | L-42 | LOSS | 437 | 3662 |
@@ -150,7 +153,7 @@
 | L-52 | LOSS | 8 | 73 |
 | L-53 | LOSS | 1651 | 13394 |
 | L-54 | LOSS | 17894 | 17894 |
-| L-55 | LOSS | 53427 | 53427 |
+| L-55 | LOSS | 53428 | 53428 |
 | L-56 | LOSS | 32710 | 32710 |
 | S-01 | STRUCTURAL | 18 | 20 |
 | S-02 | STRUCTURAL | 6613 | 71397 |

@@ -160,6 +160,18 @@ aozora2html-aat-full DIR="" JOBS="0" TIMEOUT="180s" REPORT_ID="" WORK_IDS="" FEA
 	if [ -n "{{FEATURES}}" ]; then args+=(--features "{{FEATURES}}"); fi; \
 	"{{repo_root}}/reports/aat-fidelity/run-aozora2html-aat-full.sh" "${args[@]}"
 
+aozora-epub3-aat-full DIR="" JOBS="0" TIMEOUT="300s" REPORT_ID="" WORK_IDS="" FEATURES="":
+	@run_dir="{{DIR}}"; if [ -z "$run_dir" ]; then run_dir="{{ab_db_root}}/aat-corpus/aozora-epub3-full-$(date -u +%Y%m%dT%H%M%SZ)"; fi; \
+	jobs="{{JOBS}}"; if [ "$jobs" = "0" ]; then jobs="$(nproc)"; fi; \
+	report_id="{{REPORT_ID}}"; if [ -z "$report_id" ]; then report_id="aozora-epub3-full-$(date -u +%F)"; fi; \
+	args=(--out-dir "$run_dir" --jobs "$jobs" --timeout "{{TIMEOUT}}" --report-id "$report_id" --force); \
+	if [ -n "{{WORK_IDS}}" ]; then args+=(--work-ids "{{WORK_IDS}}"); fi; \
+	if [ -n "{{FEATURES}}" ]; then args+=(--features "{{FEATURES}}"); fi; \
+	"{{repo_root}}/reports/aat-fidelity/run-aozora-epub3-aat-full.sh" "${args[@]}"
+
+aozora-epub3-aat-full-smoke:
+	@bash "{{repo_root}}/tests/aozora-epub3-aat-full-smoke.sh"
+
 fidelity-full-run DIR="" JOBS="0" MAX_CARDS="0" TRIAGE_LIMIT="100":
 	@run_dir="{{DIR}}"; if [ -z "$run_dir" ]; then run_dir="{{ab_db_root}}/aat-fidelity/run-$(date -u +%F_%H%M%S)"; fi; \
 	mkdir -p "$run_dir/cross-adapter" "$run_dir/upstream-xhtml-full" "$run_dir/aat-fidelity"; \

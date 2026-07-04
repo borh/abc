@@ -38,6 +38,7 @@ impl AdapterFingerprintInputs {
             "aozora2" => repo_root.join("adapters/aozora2"),
             "aozora-rs" => repo_root.join("adapters/aozora-rs"),
             "aozora2html" => repo_root.join("adapters/aozora2html"),
+            "aozora-epub3" => repo_root.join("adapters/aozora-epub3"),
             other => anyhow::bail!("unknown parser id: {other}"),
         };
         Ok(Self {
@@ -226,7 +227,7 @@ mod tests {
     fn parser_fingerprint_inputs_do_not_depend_on_reference_checkouts() {
         let repo = tempdir();
 
-        for parser_id in ["aozora2", "aozora-rs", "aozora2html"] {
+        for parser_id in ["aozora2", "aozora-rs", "aozora2html", "aozora-epub3"] {
             let inputs = AdapterFingerprintInputs::for_parser(&repo, parser_id).unwrap();
 
             assert_eq!(inputs.source_roots.len(), 1);

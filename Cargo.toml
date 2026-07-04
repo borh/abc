@@ -21,6 +21,7 @@ exclude = [
     "adapters/aozora2",
     "adapters/aozora2html",
     "adapters/aozora-rs",
+    "adapters/aozora-epub3",
     "references",
 ]
 

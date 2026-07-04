@@ -292,6 +292,12 @@
           lockFile = ./adapters/aozora2html/Cargo.lock;
         };
 
+        # Vendored crate deps for the excluded aozora-epub3 adapter crate, so
+        # the smoke check can build the mapper fully offline in the Nix store.
+        aozoraEpub3CargoDeps = rustPlatform.importCargoLock {
+          lockFile = ./adapters/aozora-epub3/Cargo.lock;
+        };
+
         aozora2htmlGem = pkgs.fetchurl {
           url = "https://rubygems.org/downloads/aozora2html-3.0.1.gem";
           hash = "sha256-TcEQby6RGtCW8GG8jDIUB55LUoDSvP3tX95BfW3OuEE=";
@@ -723,6 +729,56 @@
               bash tests/aat-to-parser-ir-cli-smoke.sh
               touch "$out"
             '';
+
+        # Reproducible adapter check: build the mapper fully offline from the
+        # vendored cargo deps and validate fixture-driven AAT against
+        # data/aat-schema.json. This checks the Rust mapper only -- the
+        # AozoraEpub3 JAR cannot be built/pinned in Nix yet (see
+        # referenceAozoraEpub3), so the full wrapper+JAR smoke runs via
+        # `just aozora-epub3-smoke` and tests/aozora-epub3-adapter-smoke.sh
+        # against a locally-built JAR.
+        aozoraEpub3SmokeCheck =
+          pkgs.runCommand "aozora-epub3-smoke-check"
+            {
+              nativeBuildInputs = [
+                rustToolchain
+                pythonWithAatSchemaDeps
+                pkgs.jq
+              ];
+            }
+            ''
+              work_dir="$(mktemp -d)"
+              cp -R "${source}" "$work_dir/source"
+              chmod -R +w "$work_dir/source"
+              cd "$work_dir/source"
+
+              cargo \
+                --config "source.crates-io.replace-with='vendored-sources'" \
+                --config "source.vendored-sources.directory='${aozoraEpub3CargoDeps}'" \
+                build --manifest-path "$work_dir/source/adapters/aozora-epub3/Cargo.toml" --release --offline
+
+              bin="$work_dir/source/adapters/aozora-epub3/target/release/aozora-epub3-adapter"
+              printf 'test' > "$work_dir/src.txt"
+              python3 - "$bin" "$work_dir/src.txt" "$work_dir/source/data/aat-schema.json" "$work_dir/source/adapters/aozora-epub3/tests/fixtures" <<'PY'
+import json, subprocess, sys, glob
+from pathlib import Path
+bin_p, src, schema_p, fx_dir = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+schema = json.loads(Path(schema_p).read_text())
+import jsonschema
+fixtures = sorted(glob.glob(str(fx_dir) + "/*.xhtml"))
+assert fixtures, "no fixtures found at " + fx_dir
+for fx in fixtures:
+    out = subprocess.run(
+        [bin_p, "--mode", "aat", "--source", src, "--xhtml", fx],
+        capture_output=True,
+    )
+    assert out.returncode in (0, 2), f"{fx}: rc={out.returncode} {out.stderr.decode()[:200]}"
+    aat = json.loads(out.stdout)
+    jsonschema.validate(aat, schema)
+print(f"aozora-epub3 smoke: {len(fixtures)} fixtures schema-valid")
+PY
+              touch "$out"
+            '';
       in
       {
         packages = {
@@ -766,6 +822,7 @@
           reference-parser-metadata = nonRustReferenceMetadata;
           aat-oracle-data-schema-smoke = aatOracleDataSchemaSmokeCheck;
           aozora2html-rust-parity = aozora2htmlRustParityCheck;
+          aozora-epub3-smoke = aozoraEpub3SmokeCheck;
           adapter-fidelity-notes-schema-smoke = adapterFidelityNotesSchemaSmokeCheck;
           taxonomy-drift = taxonomyDriftCheck;
           aat-to-parser-ir-smoke = abAatToParserIrCheck;
@@ -790,6 +847,20 @@
 
           aozora2html = pkgs.mkShell {
             packages = aozora2htmlTools;
+          };
+
+          # Provides the toolchain to build the JAR locally and run the full
+          # wrapper smoke. Set AB_AOZORAEPUB3_JAR to override the JAR path.
+          aozora-epub3 = pkgs.mkShell {
+            packages = [
+              rustToolchain
+              pkgs.jdk21
+              pkgs.gradle
+              pkgs.jq
+              pkgs.unzip
+              pkgs.python3
+            ];
+            RUST_SRC_PATH = "${rustToolchain}/lib/rustlib/src/rust/library";
           };
 
           reference-parsers = referenceParserShell;

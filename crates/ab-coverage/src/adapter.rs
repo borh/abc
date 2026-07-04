@@ -31,6 +31,7 @@ impl AdapterBinary {
             "aozora2" => repo_root.join("adapters/aozora2/target/release/aozora2-adapter"),
             "aozora-rs" => repo_root.join("adapters/aozora-rs/target/release/aozora-rs-adapter"),
             "aozora2html" => repo_root.join("adapters/aozora2html/aozora2html-adapter"),
+            "aozora-epub3" => repo_root.join("adapters/aozora-epub3/aozora-epub3-adapter"),
             other => bail!("unknown parser id: {other}"),
         };
         Ok(Self {

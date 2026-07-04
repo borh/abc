@@ -1,0 +1,154 @@
+#!/usr/bin/env bash
+#
+# aozora-epub3-adapter — run AozoraEpub3-JDK21 on stdin raw work bytes and
+# project the resulting EPUB body XHTML into AAT JSON (or HTML) via the Rust
+# mapper binary.
+set -euo pipefail
+
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+MAPPER_BIN="${REPO_ROOT}/adapters/aozora-epub3/target/release/aozora-epub3-adapter"
+JAR_PATH="${AB_AOZORAEPUB3_JAR:-${REPO_ROOT}/references/parsers/AozoraEpub3-JDK21/build/libs/AozoraEpub3.jar}"
+
+if [[ "${1:-}" == "--version" ]]; then
+  exec "$MAPPER_BIN" --version
+fi
+
+if [[ ! -x "$MAPPER_BIN" ]]; then
+  echo "mapper binary not found: $MAPPER_BIN" >&2
+  echo "build it with: cargo build --manifest-path $REPO_ROOT/adapters/aozora-epub3/Cargo.toml --release" >&2
+  exit 1
+fi
+
+if [[ ! -f "$JAR_PATH" ]]; then
+  echo "AozoraEpub3.jar not found: $JAR_PATH" >&2
+  echo "build it with: (cd $REPO_ROOT/references/parsers/AozoraEpub3-JDK21 && ./gradlew jar)" >&2
+  echo "or set AB_AOZORAEPUB3_JAR" >&2
+  exit 1
+fi
+
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "python3 is required for package.opf parsing" >&2
+  exit 1
+fi
+if ! command -v unzip >/dev/null 2>&1; then
+  echo "unzip is required for EPUB extraction" >&2
+  exit 1
+fi
+
+mode="aat"
+if [[ "${1:-}" == "--mode" && $# -ge 2 ]]; then
+  mode="$2"
+fi
+
+tmpdir="$(mktemp -d)"
+stdin_raw="${tmpdir}/stdin.raw"
+stdin_for_parser="${tmpdir}/stdin.txt"
+parser_out="${tmpdir}/epub-out"
+parser_err="${tmpdir}/parser.err"
+trap 'rm -rf "$tmpdir"; if [[ -n "${TMP_EPUBDIR:-}" ]]; then rm -rf "$TMP_EPUBDIR"; fi' EXIT
+
+cat > "$stdin_raw"
+
+# Encoding detection: UTF-8 BOM, UTF-8, otherwise assume Shift-JIS (no -enc).
+enc_args=()
+if head -c 3 "$stdin_raw" | od -An -tx1 | tr -d ' \n' | grep -q '^efbbbf'; then
+  tail -c +4 "$stdin_raw" > "$stdin_for_parser"
+  enc_args+=("-enc" "UTF-8")
+elif iconv -f UTF-8 -t UTF-8 "$stdin_raw" >/dev/null 2>&1; then
+  cp "$stdin_raw" "$stdin_for_parser"
+  enc_args+=("-enc" "UTF-8")
+else
+  cp "$stdin_raw" "$stdin_for_parser"
+  # Shift-JIS input: AozoraEpub3 assumes Shift-JIS by default.
+fi
+
+mkdir -p "$parser_out"
+
+parser_rc=0
+java_args=(-jar "$JAR_PATH" -d "$parser_out")
+# `-enc` and its value must be two separate argv elements, not one string.
+java_args+=("${enc_args[@]}")
+java "${java_args[@]}" "$stdin_for_parser" > "$parser_err" 2>&1 || parser_rc=$?
+
+epub_file="$(find "$parser_out" -maxdepth 1 -name '*.epub' | head -n 1)"
+if [[ -z "$epub_file" || ! -f "$epub_file" ]]; then
+  echo "AozoraEpub3 did not produce an EPUB file" >&2
+  cat "$parser_err" >&2 || true
+  exit 1
+fi
+
+TMP_EPUBDIR="$tmpdir/epub"
+epub_dir="$TMP_EPUBDIR"
+mkdir -p "$epub_dir"
+unzip -q "$epub_file" -d "$epub_dir"
+
+xhtml_body_args=()
+xhtml_colophon_args=()
+package_opf="${epub_dir}/OPS/package.opf"
+
+if [[ -f "$package_opf" ]]; then
+  python3 - "$package_opf" "$epub_dir" > "${tmpdir}/xhtml-list.txt" <<'PY'
+import sys
+import xml.etree.ElementTree as ET
+
+opf_path, epub_dir = sys.argv[1], sys.argv[2]
+ns = {"opf": "http://www.idpf.org/2007/opf"}
+tree = ET.parse(opf_path)
+manifest = {item.get("id"): item for item in tree.findall(".//opf:item", ns)}
+spine = tree.findall(".//opf:itemref", ns)
+items = []
+for itemref in spine:
+    idref = itemref.get("idref")
+    item = manifest.get(idref)
+    if item is None:
+        continue
+    href = item.get("href")
+    if href is None:
+        continue
+    props = item.get("properties", "")
+    if "nav" in props:
+        continue
+    if href in ("xhtml/nav.xhtml", "xhtml/cover.xhtml", "xhtml/title.xhtml"):
+        continue
+    items.append("{}/OPS/{}".format(epub_dir, href))
+
+# Colophon is only split out when there is more than one content item, so
+# single-body works (the common case) are not misclassified as colophon.
+n = len(items)
+for idx, path in enumerate(items):
+    kind = "colophon" if n >= 2 and idx == n - 1 else "body"
+    print("{}\t{}".format(kind, path))
+PY
+  while IFS=$'\t' read -r kind path; do
+    if [[ "$kind" == "colophon" ]]; then
+      xhtml_colophon_args+=(--xhtml-colophon "$path")
+    else
+      xhtml_body_args+=(--xhtml "$path")
+    fi
+  done < "${tmpdir}/xhtml-list.txt"
+else
+  # Fallback: numeric filename order, last file treated as colophon only
+  # when there is more than one body XHTML.
+  mapfile -t xhtml_files < <(find "$epub_dir/OPS/xhtml" -name '[0-9]*.xhtml' 2>/dev/null | sort -V)
+  n=${#xhtml_files[@]}
+  if [[ $n -gt 0 ]]; then
+    last=$((n - 1))
+    for i in "${!xhtml_files[@]}"; do
+      if [[ "$i" -eq "$last" && $n -ge 2 ]]; then
+        xhtml_colophon_args+=(--xhtml-colophon "${xhtml_files[$i]}")
+      else
+        xhtml_body_args+=(--xhtml "${xhtml_files[$i]}")
+      fi
+    done
+  fi
+fi
+
+parse_complete_arg=()
+if [[ "$parser_rc" -ne 0 ]] || grep -q '^\[ERROR\]' "$parser_err"; then
+  parse_complete_arg=(--parser-failed --parser-error-file "$parser_err")
+fi
+
+exec "$MAPPER_BIN" --mode "$mode" --source "$stdin_raw" \
+  "${xhtml_body_args[@]}" \
+  "${xhtml_colophon_args[@]}" \
+  "${parse_complete_arg[@]}"

@@ -65,3 +65,27 @@ syntax_row_ids = ["gaiji.marker", "ruby.basic", "heading.basic", "layout.yokogum
 status = "active"
 summary = "Full local upstream-XHTML comparison uses references/aozorabunko only: report_id upstream-xhtml-full loaded 17,601 observations with 15,231 rendered-body proxy rows (6,321 raw XHTML matches plus 8,910 normalized main_text matches), 2,179 main_text mismatches, 58 local_adapter_error rows, 132 upstream_missing_main_text rows, and 1 both_missing_main_text row."
 evidence = "reports/aat-fidelity/upstream-xhtml-full-summary.md"
+
+[[note]]
+id = "aozora-epub3-html-derived"
+adapter = "aozora-epub3"
+syntax_row_ids = []
+status = "active"
+summary = "--mode html emits extracted/filtered body XHTML from the EPUB, not raw upstream parser output like aozora2html."
+evidence = "docs/superpowers/specs/2026-07-04-aozora-epub3-adapter-design.md"
+
+[[note]]
+id = "aozora-epub3-halfwidth-numeral-annotations"
+adapter = "aozora-epub3"
+syntax_row_ids = ["indentation.jisage_block"]
+status = "active"
+summary = "AozoraEpub3 requires full-width numerals in some annotations (e.g. ［＃ここから２字下げ］). Half-width variants are logged as unsupported."
+evidence = "docs/handoffs/adding-aozora2-aozoraepub3-parser-support.md"
+
+[[note]]
+id = "aozora-epub3-warichu-malformed"
+adapter = "aozora-epub3"
+syntax_row_ids = ["warichu.basic"]
+status = "active"
+summary = "AozoraEpub3 1.3.4-jdk21 emits malformed HTML for warichu blocks and reports [ERROR] 割り注終わりなし; source-derived warichu recovery is a no-op because the schema warigaki kind needs upper/lower rows unrecoverable from rendered split spans."
+evidence = "docs/handoffs/adding-aozora2-aozoraepub3-parser-support.md"

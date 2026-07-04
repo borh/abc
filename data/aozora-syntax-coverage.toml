@@ -650,7 +650,7 @@ category = "layout"
 feature_keys = ["center_page", "alignment"]
 reference_sources = ["references/aozorabunko/rules/kijyunn.html", "P4suta/aozora-notation-spec@b60665fd50b596c967254f99b61f418495656fef:src/notation/layout.md", "P4suta/aozora-notation-spec@b60665fd50b596c967254f99b61f418495656fef:conformance/vectors/center_page/vector.json"]
 source_examples = ["［＃ページの左右中央］", "［＃ここからページの左右中央］", "［＃中央揃え］"]
-source_patterns = ['［＃(ここから)?ページの左右中央に?］', '［＃ページ(の天地左右中央|上段の左右中央|の天地中央)］', '［＃左右中央］', '［＃中央(寄せ|揃え)］', '［＃[^］]*(ページの(上部|下部)、)?左右中央(に|縦組みで)?[^］]*］', '［＃[^］]*中央に配置］']
+source_patterns = ['［＃(ここから)?ページの左右中央に?］', '［＃ページ(の天地左右中央|上段の左右中央|の天地中央)］', '［＃左右中央］', '［＃中央(寄せ|揃え)］', '［＃[^］]*(ページの(上部|下部)、)?左右中央(に|縦組みで)?[^］]*］', '［＃[^］]*中央に配置］', '［＃[^］]*[０-９0-9]+行の中央[^］]*］', '［＃[^］]*中央やや下がり目[^］]*］']
 ir_nodes = []
 aat_nodes = ["raw"]
 tei_projection = "p or seg rend=center"
@@ -896,7 +896,7 @@ category = "inline_annotation"
 feature_keys = ["editor_note"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html.rb"]
 source_examples = ["「base」の「annotation」の注記", "「text」の注記付き"]
-source_patterns = ['「[^」]+」の「[^」]+」の注記', '「[^」]+」の注記付き', '〔[^〕]+〕', '［＃[^］]*(底本|ママ|誤植|誤記|誤り|欠落|欠如|脱落|脱字|省略|伏字|伏せ字|註|注記|初出では|余分か|全集|創元社版|岩波文庫の注|改行を挿入|原文まま)[^］]*］', '［＃ルビは「[^」]+」にかかる］', '［＃入力者注\([０-９0-9]+\)］', '［ルビの「[^」]+」は底本では「[^」]+」］']
+source_patterns = ['「[^」]+」の「[^」]+」の注記', '「[^」]+」の注記付き', '〔[^〕]+〕', '［＃[^］]*(底本|ママ|誤植|誤記|誤り|誤訳|欠落|欠如|脱落|脱字|省略|伏字|伏せ字|註|注記|初出では|初出時|初出の|余分か|全集|筑摩版|創元社版|岩波文庫の注|岩波文庫版|旺文社文庫版|改行を挿入|原文まま|抜けていると考えられる)[^］]*］', '［＃ルビは「[^」]+」にかかる］', '［＃入力者注\([０-９0-9]+\)］', '［ルビの「[^」]+」は底本では「[^」]+」］']
 ir_nodes = []
 aat_nodes = ["ruby"]
 tei_projection = "note or ruby"
@@ -2088,7 +2088,7 @@ category = "inline_annotation"
 feature_keys = ["bold", "italic"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html.rb"]
 source_examples = ["［＃ここから太字］", "［＃ここから斜体］", "「text」の太字", "「text」の斜体"]
-source_patterns = ['［＃ここから(太字|斜体)］', '［＃(ここで)?(太字|斜体)終わり］', '「[^」]+」の(太字|斜体)', '［＃(この行は)?ゴシック体］', '［＃「[^\n]+」は?ゴシック体］', '［＃大文字、太字］']
+source_patterns = ['［＃ここから(太字|斜体)］', '［＃(ここで)?(太字|斜体)終わり］', '「[^」]+」の(太字|斜体)', '［＃[^］]*「[^\n]+」は(太字|斜体)］', '［＃「[^\n]+」の部分は(イタリック体|太字)］', '［＃(この行は)?ゴシック体］', '［＃「[^\n]+」は?ゴシック体］', '［＃大文字、太字］']
 ir_nodes = ["Inline::Style", "Block::Style"]
 aat_nodes = ["style"]
 tei_projection = "hi rend=bold|italic"
@@ -2165,8 +2165,11 @@ source_patterns = [
   '［＃[^］]+すべて[上下]付き小文字[^］]*］',
   '［＃「[^」]+」は小書き］',
   '［＃「[^\n]+」[はの]小(さい)?文字］',
+  '［＃「[^」]+」の「[^」]+」は小書き］',
   '［＃「[^\n]+」は[大中小]?[０-９0-9一二三四五六七八九十]+段階(小さ|大き)な文字］',
   '［＃「[^」]+」は上部に出ている］',
+  '［＃「[^」]+」は「[^」]+」の[上下]付き(小文字|小書き)?］',
+  '［＃「[^」]+」は本文より小さいサイズの文字］',
   '［＃ここで[大中小]?[０-９0-9一二三四五六七八九十]+段階(小さ|大き)な文字終わり］',
   '［＃[０-９0-9一二三四五六七八九十]+回り大きな文字］',
   '［＃[大中小]文字］',
@@ -2686,7 +2689,7 @@ category = "layout"
 feature_keys = ["yokogumi"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/multiline_yokogumi.rb", "references/parsers/aozora2html/lib/aozora2html/tag/inline_yokogumi.rb"]
 source_examples = ["［＃ここから横組み］", "「ABC」の横組み"]
-source_patterns = ['［＃ここから横組み］', '［＃横組み］', '［＃(ここで)?横組み終わり］', '［＃ここで字下げ、横組み終わり］', '「[^」]+」の横組み', '［＃「[^」]+」は横組み］', '［＃「[^\n]+」は横書き］', '［＃横書き、[^］]+］']
+source_patterns = ['［＃ここから横組み］', '［＃横組み］', '［＃(ここで)?横組み終わり］', '［＃ここ(から|で)左から右への横組み(終わり)?］', '［＃ここで字下げ、横組み終わり］', '「[^」]+」の横組み', '［＃「[^」]+」は横組み］', '［＃「[^\n]+」は横書き］', '［＃横書き、[^］]+］']
 ir_nodes = ["Block::Layout", "Inline::Style"]
 aat_nodes = ["yokogumi"]
 tei_projection = "ab rend=yokogumi"

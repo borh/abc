@@ -466,6 +466,13 @@ fn source_inventory_classifies_annotation_editor_notes() {
         "［＃岩波文庫の注は「翌三年十二月の誤り」とする］",
         "［＃改行を挿入］",
         "［＃原文まま］",
+        "［＃初出時「………………………行ぐ奴からさかしまに……………やるまでよ！」］",
+        "［＃初出の『四季』第四號・昭和十年二月號では「孤獨を愛する人にとつて」となっている］",
+        "［＃「弟」は誤訳で本当は「兄」］",
+        "［＃「奥深く」は筑摩版では「奥深く広く」］",
+        "［＃岩波文庫版では「殺され」］",
+        "［＃旺文社文庫版「なんぼ土産にするとかって」］",
+        "［＃句点が抜けていると考えられる］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -480,7 +487,7 @@ fn source_inventory_classifies_annotation_editor_notes() {
             .row_counts
             .get("annotation.chuuki")
             .map(|count| count.occurrences),
-        Some(23)
+        Some(30)
     );
 }
 
@@ -1186,6 +1193,9 @@ fn source_inventory_classifies_page_center_layout_variants() {
         "［＃直線は中央に配置］",
         "［＃改ページ、ページの左右中央に］",
         "［＃横組みで、ページの上部、左右中央に］",
+        "［＃「｝（同時に）」は前２行の中央、下に］",
+        "［＃「黄泉の使！　黄泉の使！」は２行の中央、括弧は２行にわたる波括弧］",
+        "［＃上記の詞書は、ポイントを下げて中央やや下がり目に］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -1200,7 +1210,7 @@ fn source_inventory_classifies_page_center_layout_variants() {
             .row_counts
             .get("layout.center_page")
             .map(|count| count.occurrences),
-        Some(8)
+        Some(11)
     );
     assert_eq!(
         summary
@@ -1228,9 +1238,17 @@ fn source_inventory_classifies_layout_and_inline_style_corpus_variants() {
         "［＃「Ａｎ」はそれぞれ縦中横、数字は上付き小書き］",
         "［＃「x2」、「y2」、「x2」はそれぞれ縦中横、すべての「2」は上付き小書き］",
         "［＃（十一）は縦中横、「十一」は縦組み］",
+        "［＃ここから左から右への横組み］",
+        "［＃ここで左から右への横組み終わり］",
         "［＃「田島校長＝０」は横書き］",
         "［＃「Ａ＋Ａ×Ｂ：Ｂ＋Ｂ×Ａ」は横書き］",
         "［＃横書き、「誰」はアクセント（∨）付き］",
+        "［＃「近頃流行の、「文学と政治」のことに一寸言及するならば、」は太字］",
+        "［＃「Nothing from nothing ever yet was born」の部分はイタリック体］",
+        "［＃二つ目、三つ目の「？」は太字］",
+        "［＃「-λt」は「e」の上付き］",
+        "［＃「一ノ戸」の「ノ」は小書き］",
+        "［＃「ココア入リ」は本文より小さいサイズの文字］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -1242,10 +1260,11 @@ fn source_inventory_classifies_layout_and_inline_style_corpus_variants() {
     );
     for (row_id, expected) in [
         ("indentation.burasage", 2),
-        ("decoration.font_size", 4),
+        ("decoration.font_size", 7),
+        ("decoration.bold_italic", 3),
         ("decoration.bousen", 2),
         ("layout.tcy", 4),
-        ("layout.yokogumi", 3),
+        ("layout.yokogumi", 5),
     ] {
         assert_eq!(
             summary

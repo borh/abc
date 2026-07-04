@@ -37,9 +37,6 @@
   net.sourceforge.owlapi/owlapi-distribution {:mvn/version "5.5.1"
                                               :exclusions [org.slf4j/slf4j-nop]}
 
-  com.xtdb/xtdb-core                         {:mvn/version "1.24.5"}
-  com.xtdb/xtdb-rocksdb                      {:mvn/version "1.24.5"}
-
   org.graalvm.js/js-language                 {:mvn/version "24.2.2"}
   org.clojars.jules_gosnell/m3               {:mvn/version "1.0.0-beta3"
                                               :exclusions [org.graalvm.polyglot/js

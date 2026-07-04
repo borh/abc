@@ -101,6 +101,24 @@ fidelity-cross-summary-smoke:
 aat-batch-triage-smoke:
 	@bash tests/aat-batch-triage-smoke.sh
 
+aat-to-parser-ir-smoke:
+	@bash tests/aat-to-parser-ir-cli-smoke.sh
+
+aat-to-parser-ir-flake-smoke:
+	@system="$(nix eval --impure --raw --expr builtins.currentSystem)"; \
+	nix build "{{repo_root}}#checks.$system.aat-to-parser-ir-smoke" --print-build-logs
+
+aat-to-parser-ir-full-audit JOBS="24" REPORT_MD="docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.summary.json":
+	@cargo build -p ab-aat-to-parser-ir --release --jobs "{{JOBS}}"
+	@"{{repo_root}}/target/release/ab-aat-to-parser-ir" audit-corpus \
+		--aat-dir "{{repo_root}}/scratch/morph-full-corpus/aats/aozora-rs-adapter" \
+		--aat-dir "{{ab_db_root}}/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter" \
+		--mapping "{{repo_root}}/data/aat-to-parser-ir-mapping-v1.json" \
+		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
+		--report-md "{{repo_root}}/{{REPORT_MD}}" \
+		--jobs "{{JOBS}}" \
+		--abc-root "{{repo_root}}/data/abc-schemas"
+
 upstream-xhtml-full-smoke:
 	@bash tests/aat-fidelity-upstream-xhtml-full-run-smoke.sh
 

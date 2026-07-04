@@ -5,7 +5,7 @@ edition.workspace = true
 license.workspace = true
 description = "Convert measured AAT v1 JSON into ABC parser-IR plus divergence evidence"
 repository = "https://github.com/your-org/ab-validator"
-readme = "../../README.md"
+readme = "README.md"
 keywords = ["japanese", "text-processing", "parser-ir"]
 categories = ["text-processing"]
 

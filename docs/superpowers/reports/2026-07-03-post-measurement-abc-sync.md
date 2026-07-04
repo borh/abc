@@ -2,6 +2,14 @@
 
 Date: 2026-07-03
 
+## 2026-07-04 Update
+
+This gate has been consumed by the implemented `crates/ab-aat-to-parser-ir`
+converter. The current release-sync artifact is
+`docs/superpowers/reports/2026-07-04-post-parser-ir-conversion-sync.md`, and
+the full-corpus conversion audit is
+`docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.md`.
+
 ## Verdict
 
 `CLI_READY_WITH_LOWER_BOUND_CAVEAT`

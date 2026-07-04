@@ -1,6 +1,6 @@
 # ab-validator workspace crates
 
-This directory contains the 13 Rust crates listed in the root `Cargo.toml`.
+This directory contains the 15 Rust crates listed in the root `Cargo.toml`.
 Adapter checkouts under `adapters/` are separate vendored crates and are not
 workspace members.
 
@@ -21,6 +21,7 @@ the contract and should not be treated as version-stable adapter APIs.
 | Crate | Purpose |
 | --- | --- |
 | `ab-source-syntax` | Lowest-level Aozora source tokenizer: source events, source spans, lossy comparison body extraction, and source annotations. Used by adapters and source-projection checks. |
+| `ab-encoding` | Shared encoding labels and normalization helpers used by source readers and validation code. |
 | `ab-ir` | Parser-neutral block/inline IR, AAT JSON projection helpers, visible projection, provenance counts, and AAT selector support. Optional typed helper; the JSON schema remains the adapter contract. |
 
 ## Text and morphology pipeline
@@ -38,6 +39,7 @@ the contract and should not be treated as version-stable adapter APIs.
 | Crate | Purpose |
 | --- | --- |
 | `ab-check` | CLI and backend for AAT schema validity, source projection, encoding, and parser invariant checks. |
+| `ab-aat-to-parser-ir` | CLI and library for converting measured AAT v1 JSON into ABC parser-IR plus divergence evidence authorized by `data/aat-to-parser-ir-mapping-v1.json`. |
 | `ab-compare` | CLI for comparing two `ab-check` report directories; uses shared diff utilities. |
 | `ab-coverage` | Coverage matrix tooling and merge CLI for Aozora syntax coverage data. |
 | `ab-oracle` | Oracle correctness evaluation, audits, reports, and review-state handling. |

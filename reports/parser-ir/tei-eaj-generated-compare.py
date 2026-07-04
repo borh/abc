@@ -92,6 +92,66 @@ def text_of(node: ET.Element | None) -> str:
     return "".join(node.itertext())
 
 
+def base_text_of(node: ET.Element | None) -> str:
+    if node is None:
+        return ""
+    skipped = {"note", "rp", "rt"}
+    parts: list[str] = []
+
+    def walk(element: ET.Element) -> None:
+        if local_name(element.tag) in skipped:
+            if element.tail:
+                parts.append(element.tail)
+            return
+        if element.text:
+            parts.append(element.text)
+        for child in list(element):
+            walk(child)
+        if element.tail:
+            parts.append(element.tail)
+
+    walk(node)
+    return "".join(parts)
+
+
+def normalize_body_text(text: str) -> str:
+    return re.sub(r"\s+", "", text)
+
+
+def body_text_comparison(generated_text: str, tei_eaj_text: str) -> dict[str, Any]:
+    generated = normalize_body_text(generated_text)
+    tei_eaj = normalize_body_text(tei_eaj_text)
+    if generated == tei_eaj:
+        relation = "equal"
+    elif tei_eaj and tei_eaj in generated:
+        relation = "generated_contains_tei_eaj"
+    elif generated and generated in tei_eaj:
+        relation = "tei_eaj_contains_generated"
+    else:
+        relation = "different"
+
+    first_diff = None
+    if relation != "equal":
+        offset = 0
+        for left, right in zip(generated, tei_eaj):
+            if left != right:
+                break
+            offset += 1
+        first_diff = {
+            "offset": offset,
+            "generated_preview": generated[offset : offset + 48],
+            "tei_eaj_preview": tei_eaj[offset : offset + 48],
+        }
+
+    return {
+        "body_base_text_relation": relation,
+        "generated_body_base_text_length": len(generated),
+        "tei_eaj_body_base_text_length": len(tei_eaj),
+        "body_base_text_length_delta": len(generated) - len(tei_eaj),
+        "body_base_text_first_diff": first_diff,
+    }
+
+
 def tei_counts(path: pathlib.Path) -> dict[str, Any]:
     root = ET.parse(path).getroot()
     body = first_descendant(root, "body")
@@ -108,6 +168,7 @@ def tei_counts(path: pathlib.Path) -> dict[str, Any]:
         "back_note_count": len(back_notes),
         "back_source_note_count": len(back_source_notes),
         "body_text": text_of(body),
+        "body_base_text": base_text_of(body),
         "back_text": text_of(back),
     }
 
@@ -239,6 +300,7 @@ def materialize_row(
     source_note_in_back = any(
         text in generated["back_text"] for text in non_empty_source_notes
     )
+    text = body_text_comparison(generated["body_base_text"], tei_eaj["body_base_text"])
 
     generated_body_p = generated["body_p_count"]
     tei_eaj_body_p = tei_eaj["body_p_count"]
@@ -282,6 +344,7 @@ def materialize_row(
             "back_source_note_count": generated["back_source_note_count"]
             - tei_eaj["back_source_note_count"],
         },
+        "text": text,
         "classification": {
             "paragraph_delta_bucket": paragraph_delta_bucket(
                 generated_body_p, tei_eaj_body_p
@@ -323,10 +386,22 @@ def render_markdown(summary: dict[str, Any]) -> str:
     lines.extend(
         [
             "",
+            "## Body Text Relation Buckets",
+            "",
+            "| relation | rows |",
+            "|---|---:|",
+        ]
+    )
+    for relation, count in sorted(summary["body_text_relation_buckets"].items()):
+        lines.append(f"| {relation} | {count} |")
+
+    lines.extend(
+        [
+            "",
             "## Rows",
             "",
-            "| work_id | TEI-EAJ file | adapter | generated body p | TEI-EAJ body p | delta | bucket | source note |",
-            "|---|---|---|---:|---:|---:|---|---|",
+            "| work_id | TEI-EAJ file | adapter | generated body p | TEI-EAJ body p | delta | bucket | body text | source note |",
+            "|---|---|---|---:|---:|---:|---|---|---|",
         ]
     )
     for row in summary["rows"]:
@@ -338,7 +413,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
                 else "not-back"
             )
         lines.append(
-            "| {work_id} | `{tei_eaj_file}` | {adapter} | {generated} | {tei_eaj} | {delta} | {bucket} | {source_note} |".format(
+            "| {work_id} | `{tei_eaj_file}` | {adapter} | {generated} | {tei_eaj} | {delta} | {bucket} | {body_text} | {source_note} |".format(
                 work_id=row.get("work_id"),
                 tei_eaj_file=row.get("tei_eaj_file"),
                 adapter=row["selected_aat"].get("adapter"),
@@ -346,6 +421,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
                 tei_eaj=row["tei_eaj"]["body_p_count"],
                 delta=row["deltas"]["body_p_count"],
                 bucket=row["classification"]["paragraph_delta_bucket"],
+                body_text=row.get("text", {}).get("body_base_text_relation"),
                 source_note=source_note,
             )
         )
@@ -429,10 +505,13 @@ def main() -> int:
             )
 
     buckets: dict[str, int] = {}
+    body_text_buckets: dict[str, int] = {}
     materialized = 0
     for row in rows:
         bucket = row.get("classification", {}).get("paragraph_delta_bucket", "unknown")
         buckets[bucket] = buckets.get(bucket, 0) + 1
+        relation = row.get("text", {}).get("body_base_text_relation", "unknown")
+        body_text_buckets[relation] = body_text_buckets.get(relation, 0) + 1
         if row.get("materialization", {}).get("status") == "passed":
             materialized += 1
 
@@ -454,6 +533,7 @@ def main() -> int:
             "rows_skipped": len(skipped),
         },
         "paragraph_delta_buckets": buckets,
+        "body_text_relation_buckets": body_text_buckets,
         "rows": rows,
         "skipped": skipped,
     }

@@ -132,9 +132,12 @@ Committed measurement:
 
 Current result: 57 selected rows materialized through parser-IR and ABC TEI, 0
 materialization failures, 5 rows skipped for missing/nonmaterializable evidence.
-Paragraph deltas are 5 exact, 45 over-split, and 7 under-split. This makes the
-next Level 3 blocker a measured paragraph segmentation/alignment problem, not a
-parser-IR schema-validity or source-note-placement problem.
+Paragraph deltas are 5 exact, 45 over-split, and 7 under-split. Normalized
+body-base-text relation, after skipping notes/ruby `rp`/`rt`, is 3 equal, 1
+generated-contains-TEI-EAJ, and 53 different. This makes the next Level 3
+blocker a measured paragraph segmentation plus TEI-EAJ text-policy/content
+alignment problem, not a parser-IR schema-validity or source-note-placement
+problem.
 
 Adapter-version matching is exact. A future adapter-version tuple requires a
 new measured conversion-audit entry rather than wildcard or prefix registry
@@ -174,7 +177,8 @@ Proceed with residual adapter/evidence characterization:
   comparison as the Level 3 artifacts instead of the Melos-only probe,
 - use `docs/superpowers/reports/2026-07-04-tei-eaj-structural-gap-analysis.md`
   as the current gap classification,
-- use the generated-TEI paragraph delta buckets to prioritize adapter paragraph
-  segmentation and TEI-EAJ alignment work,
+- use the generated-TEI paragraph and body-text relation buckets to prioritize
+  adapter paragraph segmentation, source-text fidelity, and TEI-EAJ alignment
+  work,
 - continue source-authority representability work before making stronger claims
   about all Aozora markdown constructs.

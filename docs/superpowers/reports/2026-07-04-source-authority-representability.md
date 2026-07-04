@@ -5,8 +5,6 @@
 - source_authority_gate: `SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED`
 - note: this is not a passing representability gate; durable representability claims remain blocked until strict_errors is empty.
 - strict_errors:
-  - source inventory row annotation.bouki has occurrences but no representability table
-  - source inventory row annotation.chuuki has occurrences but no representability table
   - source inventory row caption.block has occurrences but no representability table
   - source inventory row caption.inline has occurrences but no representability table
   - source inventory row decoration.boten has occurrences but no representability table
@@ -26,7 +24,7 @@
   - source inventory row reference.frontref has occurrences but no representability table
   - source inventory row ruby.placement_directional has occurrences but no representability table
   - source inventory row warigaki.parenthetical has occurrences but no representability table
-  - 19687 unallowlisted source markers
+  - 12973 unallowlisted source markers
 
 ## Scope
 
@@ -37,14 +35,14 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 - works_scanned: 17894
 - works_failed: 0
 - markers_total: 4325244
-- unknown_markers_total: 33607
-- unallowlisted_unknown_markers_total: 19687
+- unknown_markers_total: 26893
+- unallowlisted_unknown_markers_total: 12973
 - allowlisted_unknown_markers_total: 13920
 
 ## Representability
 
 - typed_occurrences: 4120173
-- raw_preserved_occurrences: 0
+- raw_preserved_occurrences: 25007
 - out_of_body_occurrences: 0
 - unsupported_occurrences: 13920
 - needs_research_occurrences: 157495
@@ -54,7 +52,7 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | row | works | occurrences | samples |
 |---|---:|---:|---|
 | annotation.bouki | 12 | 127 | 000031_2846, 000037_2848, 000156_2699, 000219_2932, 000287_3061 |
-| annotation.chuuki | 2265 | 17608 | 000006_4627, 000006_47064, 000019_4376, 000020_745, 000026_219 |
+| annotation.chuuki | 3932 | 24880 | 000006_1869, 000006_4627, 000006_47064, 000008_1083, 000008_47357 |
 | break.line_explicit | 47 | 161 | 000075_4250, 000081_47027, 000083_46289, 000106_56858, 000106_57905 |
 | break.page_line | 943 | 10028 | 000005_53194, 000006_1869, 000009_55881, 000011_889, 000011_899 |
 | caption.block | 47 | 1722 | 000058_57440, 000091_50354, 000125_1321, 000165_49567, 000226_1150 |
@@ -107,7 +105,6 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | 000006_1869 | 1559 | CommandFullwidth | ［＃「引」は小書き右寄せ］ | 「引」は小書き右寄せ |
 | 000006_1869 | 1559 | CommandFullwidth | ［＃「引」は小書き右寄せ］ | 「引」は小書き右寄せ |
 | 000006_3310 | 316 | CommandFullwidth | ［＃「涕」はママ］ | 「涕」はママ |
-| 000006_4627 | 37 | CommandFullwidth | ［＃「齷齪」は底本では「齷齦」］ | 「齷齪」は底本では「齷齦」 |
 | 000008_1083 | 11 | CommandFullwidth | ［＃底本は「俵」を「依」と誤植］ | 底本は「俵」を「依」と誤植 |
 | 000008_1083 | 66 | CommandFullwidth | ［＃底本は改行天付き］ | 底本は改行天付き |
 | 000008_1083 | 92 | CommandFullwidth | ［＃底本は「俵」を「依」と誤植］ | 底本は「俵」を「依」と誤植 |
@@ -129,10 +126,6 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | 000008_1083 | 265 | CommandFullwidth | ［＃初出時「こないだみてえに折角かたまって………も」］ | 初出時「こないだみてえに折角かたまって………も」 |
 | 000008_1083 | 267 | CommandFullwidth | ［＃創元社版は「小船頭」］ | 創元社版は「小船頭」 |
 | 000008_1083 | 268 | CommandFullwidth | ［＃創元社版では「破損」］ | 創元社版では「破損」 |
-| 000008_1083 | 67 | CommandFullwidth | ［＃「　がやがやと」は底本では「がやがやと」］ | 「　がやがやと」は底本では「がやがやと」 |
-| 000008_1083 | 93 | CommandFullwidth | ［＃「四俵も」は底本では「四依も」］ | 「四俵も」は底本では「四依も」 |
-| 000008_1083 | 93 | CommandFullwidth | ［＃「ままくらってる」は底本では「まくらってる」］ | 「ままくらってる」は底本では「まくらってる」 |
-| 000008_1083 | 113 | CommandFullwidth | ［＃「舟の上に仁王立ちになった船頭は」は底本では「舟の上に仁王立ち船頭は」］ | 「舟の上に仁王立ちになった船頭は」は底本では「舟の上に仁王立ち船頭は」 |
 | 000008_1083 | 260 | CommandFullwidth | ［＃初出時「………………………行ぐ奴からさかしまに……………やるまでよ！」］ | 初出時「………………………行ぐ奴からさかしまに……………やるまでよ！」 |
 | 000008_1083 | 261 | CommandFullwidth | ［＃初出時「……よ、……に目がつかんかい、地主に。」］ | 初出時「……よ、……に目がつかんかい、地主に。」 |
 | 000008_1083 | 262 | CommandFullwidth | ［＃初出時「貧乏人同士みんなして……………………。」］ | 初出時「貧乏人同士みんなして……………………。」 |
@@ -145,62 +138,67 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | 000008_1083 | 269 | CommandFullwidth | ［＃初出時「こないだみてえに折角かたまって………も」］ | 初出時「こないだみてえに折角かたまって………も」 |
 | 000008_1083 | 271 | CommandFullwidth | ［＃創元社版は「小船頭」］ | 創元社版は「小船頭」 |
 | 000008_1083 | 272 | CommandFullwidth | ［＃創元社版では「破損」］ | 創元社版では「破損」 |
-| 000008_47357 | 68 | CommandFullwidth | ［＃「そのうち」は底本では「そのち」］ | 「そのうち」は底本では「そのち」 |
-| 000008_47357 | 237 | CommandFullwidth | ［＃「知らなかつた。」は底本では「知らなかた。」］ | 「知らなかつた。」は底本では「知らなかた。」 |
 | 000008_47357 | 367 | CommandFullwidth | ［＃「』」は、底本では「」」］ | 「』」は、底本では「」」 |
 | 000008_47357 | 467 | CommandFullwidth | ［＃「コップ」はママ］ | 「コップ」はママ |
-| 000008_47357 | 522 | CommandFullwidth | ［＃「あるのです」は底本では「あるのでず」］ | 「あるのです」は底本では「あるのでず」 |
-| 000008_47357 | 567 | CommandFullwidth | ［＃「耕作する」は底本では「耕かるこ作」］ | 「耕作する」は底本では「耕かるこ作」 |
-| 000008_47357 | 567 | CommandFullwidth | ［＃「かかることが」は底本では「かことが」］ | 「かかることが」は底本では「かことが」 |
-| 000008_47357 | 1121 | CommandFullwidth | ［＃「待たれた」は底本では「待た。れた」］ | 「待たれた」は底本では「待た。れた」 |
 | 000008_47357 | 1138 | CommandFullwidth | ［＃「」とあげて」は底本では「」　とあげて」］ | 「」とあげて」は底本では「」　とあげて」 |
-| 000008_47357 | 1221 | CommandFullwidth | ［＃「やがて、」は底本では「やがて　」］ | 「やがて、」は底本では「やがて　」 |
-| 000008_47357 | 1268 | CommandFullwidth | ［＃「あらうか？　さうして人々は」は底本では「あらうか？さうして人々は」］ | 「あらうか？　さうして人々は」は底本では「あらうか？さうして人々は」 |
-| 000008_47357 | 1376 | CommandFullwidth | ［＃「そして、」は底本では「そして。」］ | 「そして、」は底本では「そして。」 |
-| 000008_47361 | 101 | CommandFullwidth | ［＃「無理矢理に」は底本では「無理失理に」］ | 「無理矢理に」は底本では「無理失理に」 |
-| 000008_47361 | 158 | CommandFullwidth | ［＃「ときから」は底本では「とから」］ | 「ときから」は底本では「とから」 |
-| 000008_47374 | 73 | CommandFullwidth | ［＃「奎吾に」は底本では「奎吉に」］ | 「奎吾に」は底本では「奎吉に」 |
-| 000008_47382 | 74 | CommandFullwidth | ［＃「視覺を」は底本では「視角を」］ | 「視覺を」は底本では「視角を」 |
-| 000008_47382 | 85 | CommandFullwidth | ［＃「表情の」は底本では「衣情の」］ | 「表情の」は底本では「衣情の」 |
-| 000008_47383 | 134 | CommandFullwidth | ［＃「持ち得ず」は底本では「待ち得ず」］ | 「持ち得ず」は底本では「待ち得ず」 |
-| 000008_47386 | 83 | CommandFullwidth | ［＃「讀み上げる」は底本では「讀め上げる」］ | 「讀み上げる」は底本では「讀め上げる」 |
-| 000008_47386 | 128 | CommandFullwidth | ［＃「石黒を」は底本では「石黒は」］ | 「石黒を」は底本では「石黒は」 |
-| 000008_47386 | 135 | CommandFullwidth | ［＃「時々」は底本では「時時」］ | 「時々」は底本では「時時」 |
-| 000008_47386 | 138 | CommandFullwidth | ［＃「ながめられた。」は底本では「ながめられた、」］ | 「ながめられた。」は底本では「ながめられた、」 |
 | 000008_47386 | 253 | CommandFullwidth | ［＃ルビの「いつとき」は底本では「ひつとき」］ | ルビの「いつとき」は底本では「ひつとき」 |
-| 000008_47386 | 334 | CommandFullwidth | ［＃「專賣制度」は底本では「專賣度度」］ | 「專賣制度」は底本では「專賣度度」 |
-| 000008_47386 | 337 | CommandFullwidth | ［＃「ゐます」は底本では「るます」］ | 「ゐます」は底本では「るます」 |
 | 000008_47386 | 448 | CommandFullwidth | ［＃「伊貝にしたって」はママ］ | 「伊貝にしたって」はママ |
-| 000008_47386 | 535 | CommandFullwidth | ［＃「矢張」は底本では「失張」］ | 「矢張」は底本では「失張」 |
-| 000008_47386 | 561 | CommandFullwidth | ［＃「いふやうなところ」は底本では「いやうなところ」］ | 「いふやうなところ」は底本では「いやうなところ」 |
-| 000008_47386 | 1069 | CommandFullwidth | ［＃「だつた」は底本では「たつた」］ | 「だつた」は底本では「たつた」 |
-| 000008_47386 | 1352 | CommandFullwidth | ［＃「煩累から」は底本では「煩累がら」］ | 「煩累から」は底本では「煩累がら」 |
-| 000008_47386 | 1662 | CommandFullwidth | ［＃「時々」は底本では「時時」］ | 「時々」は底本では「時時」 |
-| 000008_47386 | 1773 | CommandFullwidth | ［＃「しかし」は底本では「ししか」］ | 「しかし」は底本では「ししか」 |
-| 000008_47386 | 1819 | CommandFullwidth | ［＃「シヤヴエル」は底本では「シヤヴェル」］ | 「シヤヴエル」は底本では「シヤヴェル」 |
-| 000008_47386 | 1869 | CommandFullwidth | ［＃「急ぎはじめた」は底本では「急きはじめた」］ | 「急ぎはじめた」は底本では「急きはじめた」 |
-| 000008_47386 | 2039 | CommandFullwidth | ［＃「佗しい」は底本では「侘しい」］ | 「佗しい」は底本では「侘しい」 |
-| 000008_47386 | 2093 | CommandFullwidth | ［＃「曖昧で」は底本では「曖眛で」］ | 「曖昧で」は底本では「曖眛で」 |
-| 000008_47386 | 2100 | CommandFullwidth | ［＃「あるし……。」は底本では「あるし……」］ | 「あるし……。」は底本では「あるし……」 |
-| 000008_47386 | 2133 | CommandFullwidth | ［＃「微笑までが」は底本では「徴笑までが」］ | 「微笑までが」は底本では「徴笑までが」 |
-| 000008_47386 | 2156 | CommandFullwidth | ［＃「帶びてゐる」は底本では「味びてゐる」］ | 「帶びてゐる」は底本では「味びてゐる」 |
-| 000008_47386 | 2215 | CommandFullwidth | ［＃「子供の」は底本では「小供の」］ | 「子供の」は底本では「小供の」 |
-| 000008_47386 | 2326 | CommandFullwidth | ［＃「出て來て、」は底本では「出て來て」］ | 「出て來て、」は底本では「出て來て」 |
 | 000008_58922 | 20 | MalformedRuby | ｜ | ｜ |
 | 000008_58922 | 20 | MalformedRuby | ｜ | ｜ |
 | 000009_226 | 314 | CommandFullwidth | ［＃本文終わり］ | 本文終わり |
 | 000009_42929 | 16 | CommandFullwidth | ［＃「」」は底本では欠落］ | 「」」は底本では欠落 |
 | 000009_42929 | 53 | CommandFullwidth | ［＃「」」は底本では欠落］ | 「」」は底本では欠落 |
-| 000009_42929 | 60 | CommandFullwidth | ［＃「に」は底本では「た」］ | 「に」は底本では「た」 |
 | 000009_42929 | 93 | CommandFullwidth | ［＃「「」は底本では一文後にある］ | 「「」は底本では一文後にある |
 | 000009_42929 | 114 | CommandFullwidth | ［＃空白は底本では「「」］ | 空白は底本では「「」 |
 | 000009_42929 | 114 | CommandFullwidth | ［＃「。」は底本では「」」］ | 「。」は底本では「」」 |
 | 000009_42929 | 174 | CommandFullwidth | ［＃「、」は底本では欠落］ | 「、」は底本では欠落 |
-| 000009_42929 | 306 | CommandFullwidth | ［＃「プ」は底本では「ブ」］ | 「プ」は底本では「ブ」 |
+| 000009_43028 | 99 | MalformedRuby | ｜ | ｜ |
+| 000009_43497 | 166 | CommandFullwidth | ［＃「小さいな」はママ］ | 「小さいな」はママ |
+| 000009_43522 | 71 | CommandFullwidth | ［＃「弟」は誤訳で本当は「兄」］ | 「弟」は誤訳で本当は「兄」 |
+| 000009_43522 | 100 | CommandFullwidth | ［＃「・」は底本では欠落］ | 「・」は底本では欠落 |
+| 000009_43523 | 100 | CommandFullwidth | ［＃「。」は底本では欠落］ | 「。」は底本では欠落 |
+| 000009_43523 | 209 | CommandFullwidth | ［＃「」」は底本では欠落］ | 「」」は底本では欠落 |
+| 000009_45340 | 58 | CommandFullwidth | ［＃図１入る］ | 図１入る |
+| 000009_45340 | 95 | CommandFullwidth | ［＃図２入る］ | 図２入る |
+| 000009_45340 | 99 | CommandFullwidth | ［＃図３入る］ | 図３入る |
+| 000009_45340 | 108 | CommandFullwidth | ［＃図４入る］ | 図４入る |
+| 000009_45340 | 127 | CommandFullwidth | ［＃図５入る］ | 図５入る |
+| 000009_45340 | 246 | CommandFullwidth | ［＃図６入る］ | 図６入る |
+| 000009_45340 | 246 | CommandFullwidth | ［＃図６入る］ | 図６入る |
+| 000009_45340 | 248 | CommandFullwidth | ［＃図７入る］ | 図７入る |
+| 000009_45340 | 337 | CommandFullwidth | ［＃図８入る］ | 図８入る |
+| 000009_50711 | 252 | CommandFullwidth | ［＃本文終わり］ | 本文終わり |
+| 000009_50712 | 261 | CommandFullwidth | ［＃本文終わり］ | 本文終わり |
+| 000009_50713 | 253 | CommandFullwidth | ［＃本文終わり］ | 本文終わり |
+| 000009_50714 | 14 | CommandFullwidth | ［＃ここから２字下げ、地から３字下げ］ | ここから２字下げ、地から３字下げ |
+| 000009_50714 | 17 | CommandFullwidth | ［＃ここから２字下げ、地から３字下げ］ | ここから２字下げ、地から３字下げ |
+| 000009_50714 | 188 | CommandFullwidth | ［＃本文終わり］ | 本文終わり |
+| 000009_50715 | 210 | CommandFullwidth | ［＃本文終わり］ | 本文終わり |
+| 000009_50716 | 184 | CommandFullwidth | ［＃本文終わり］ | 本文終わり |
+| 000009_50717 | 287 | CommandFullwidth | ［＃本文終わり］ | 本文終わり |
+| 000009_50718 | 209 | CommandFullwidth | ［＃本文終わり］ | 本文終わり |
+| 000009_54910 | 162 | CommandFullwidth | ［＃本文終わり］ | 本文終わり |
+| 000009_54911 | 154 | CommandFullwidth | ［＃本文終わり］ | 本文終わり |
+| 000009_54912 | 227 | CommandFullwidth | ［＃本文終わり］ | 本文終わり |
+| 000009_54913 | 217 | CommandFullwidth | ［＃本文終わり］ | 本文終わり |
+| 000009_54914 | 187 | CommandFullwidth | ［＃本文終わり］ | 本文終わり |
+| 000009_54915 | 238 | CommandFullwidth | ［＃本文終わり］ | 本文終わり |
+| 000009_55881 | 189 | CommandFullwidth | ［＃ここで字下げおわり］ | ここで字下げおわり |
+| 000009_55881 | 951 | CommandFullwidth | ［＃本文終わり］ | 本文終わり |
+| 000009_55882 | 236 | CommandFullwidth | ［＃本文終わり］ | 本文終わり |
+| 000009_57322 | 217 | CommandFullwidth | ［＃本文終わり］ | 本文終わり |
+| 000009_61393 | 273 | CommandFullwidth | ［＃本文終わり］ | 本文終わり |
+| 000009_61394 | 173 | CommandFullwidth | ［＃本文終わり］ | 本文終わり |
+| 000009_8 | 259 | CommandFullwidth | ［＃本文終わり］ | 本文終わり |
+| 000011_55301 | 80 | CommandFullwidth | ［＃「そうなつたかは」はママ］ | 「そうなつたかは」はママ |
+| 000011_889 | 11 | CommandFullwidth | ［＃ここから２字下げ、横書き］ | ここから２字下げ、横書き |
+| 000011_889 | 14 | CommandFullwidth | ［＃ここから２字下げ、横書き］ | ここから２字下げ、横書き |
+| 000011_889 | 175 | CommandFullwidth | ［＃ここから２字下げ、横書き］ | ここから２字下げ、横書き |
+| 000012_10 | 32 | CommandFullwidth | ［＃一字下げ忘れか？200-14］ | 一字下げ忘れか？200-14 |
 
 ## Unknown Source Marker Classes
 
-Showing 50 report rows of 14307 total classes. JSON carries 1000 top classes. truncated: true
+Showing 50 report rows of 8545 total classes. JSON carries 1000 top classes. truncated: true
 
 | kind | raw | occurrences | unallowlisted | allowlisted | samples |
 |---|---|---:|---:|---:|---|
@@ -209,21 +207,16 @@ Showing 50 report rows of 14307 total classes. JSON carries 1000 top classes. tr
 | CommandFullwidth | ［＃本文終わり］ | 243 | 243 | 0 | 000009_226, 000009_50711, 000009_50712, 000009_50713, 000009_50714 |
 | CommandFullwidth | ［＃（…）］ | 242 | 242 | 0 | 000026_50238, 000026_50242, 000026_50259, 000026_51893, 000026_55774 |
 | MalformedAccentNotation | 〔 | 56 | 56 | 0 | 000026_219, 000034_55507, 000081_4416, 000081_50764, 000091_522 |
-| CommandFullwidth | ［＃「、」は底本では「。」］ | 48 | 48 | 0 | 000019_42380, 000019_42382, 000019_42383, 000019_42384, 000019_42385 |
 | CommandFullwidth | ［＃ここから２字下げ、小さい活字］ | 48 | 48 | 0 | 000051_4620 |
 | CommandFullwidth | ［＃ここで字下げ終わり、小さい活字も終わり］ | 48 | 48 | 0 | 000051_4620 |
 | CommandFullwidth | ［＃ここで地付き終わり］ | 42 | 42 | 0 | 000067_859, 000072_54444, 000082_43042, 000082_43050, 000106_59473 |
 | CommandFullwidth | ［＃「ん」は小書き］ | 40 | 40 | 0 | 000081_1940, 000081_4415, 000081_4416, 000081_4424, 000081_4441 |
-| CommandFullwidth | ［＃ルビは「悪魔の尿溜」にかかる］ | 34 | 34 | 0 | 000125_1320 |
 | CommandFullwidth | ［＃ここで字上げ終わり］ | 33 | 33 | 0 | 000035_1586, 000081_1935, 000082_49526, 000083_1090, 000096_2093 |
-| CommandFullwidth | ［＃ルビは「天母生上の雲湖」にかかる］ | 32 | 32 | 0 | 000125_665 |
 | CommandFullwidth | ［＃この行はゴシック体］ | 29 | 29 | 0 | 000281_1710, 000311_4211, 000311_4232 |
 | CommandFullwidth | ［＃ここから天付き、折り返して１字下げ］ | 26 | 26 | 0 | 001154_44776, 001471_55564, 001471_55567, 001471_55575 |
 | CommandFullwidth | ［＃「天皇制」に×傍点］ | 25 | 25 | 0 | 000311_3149 |
 | CommandFullwidth | ［＃「（訳注）」は行左小書き］ | 23 | 23 | 0 | 002265_62680, 002265_62681, 002265_62687, 002265_62688 |
-| CommandFullwidth | ［＃「。」は底本では「、」］ | 21 | 21 | 0 | 000037_1418, 000082_964, 000125_4317, 000158_4709, 000158_836 |
 | CommandFullwidth | ［＃ここから地から２字上げ］ | 21 | 21 | 0 | 000035_1586, 000096_2093, 000124_1315, 000158_1504, 000448_46417 |
-| CommandFullwidth | ［＃ママ］ | 21 | 21 | 0 | 000023_2951, 000034_519, 000040_380, 000111_557, 000111_566 |
 | CommandFullwidth | ［＃白三角傍点終わり］ | 21 | 21 | 0 | 000034_56908 |
 | CommandFullwidth | ［＃白三角傍点］ | 21 | 21 | 0 | 000034_56908 |
 | CommandFullwidth | ［＃ここから２字下げ、ゴシック体］ | 20 | 20 | 0 | 000035_307 |
@@ -235,7 +228,6 @@ Showing 50 report rows of 14307 total classes. JSON carries 1000 top classes. tr
 | CommandFullwidth | ［＃「。」は底本では欠落］ | 17 | 17 | 0 | 000009_43523, 000019_42382, 000294_1858, 001048_45381, 001090_42307 |
 | CommandFullwidth | ［＃「？！」は横一列］ | 17 | 17 | 0 | 000125_665 |
 | CommandFullwidth | ［＃ここから２段組み］ | 17 | 17 | 0 | 000061_377, 000311_46235, 000885_2557, 000908_51734, 001021_50117 |
-| CommandFullwidth | ［＃入力者注(5)］ | 17 | 17 | 0 | 000137_733 |
 | CommandFullwidth | ［＃「ツァー」に×傍点］ | 16 | 16 | 0 | 000311_3149 |
 | CommandFullwidth | ［＃「革命」にばつ傍点］ | 16 | 16 | 0 | 001311_53951, 001422_50296, 001471_55570, 001618_54002, 001627_54064 |
 | CommandFullwidth | ［＃「独裁」に×傍点］ | 15 | 15 | 0 | 000311_3149 |
@@ -254,6 +246,12 @@ Showing 50 report rows of 14307 total classes. JSON carries 1000 top classes. tr
 | CommandFullwidth | ［＃地より１字上げ］ | 13 | 13 | 0 | 000035_1578, 000216_2518, 000284_2609, 000286_1758, 000885_2165 |
 | CommandFullwidth | ［＃大文字、太字］ | 13 | 13 | 0 | 000096_2100 |
 | CommandFullwidth | ［＃mは上ドット付き］ | 12 | 12 | 0 | 001096_43672 |
+| CommandFullwidth | ［＃nは上ドット付き］ | 12 | 12 | 0 | 001096_42686, 001096_43554 |
+| CommandFullwidth | ［＃「　　」は罫囲み］ | 12 | 12 | 0 | 000125_1317, 000146_50413, 000908_51960, 001344_54437, 001344_54856 |
+| CommandFullwidth | ［＃「、」は底本では欠落］ | 11 | 11 | 0 | 000009_42929, 000294_1858, 001090_42307, 001123_43496 |
+| CommandFullwidth | ［＃「ン」は小書き］ | 11 | 11 | 0 | 000081_1940, 000082_1306 |
+| CommandFullwidth | ［＃「革命」に×傍点］ | 11 | 11 | 0 | 000311_3149, 000311_3150, 000311_3893 |
+| CommandFullwidth | ［＃ここからページの左右中央］ | 11 | 11 | 0 | 000885_2557 |
 
 ## Decode Failures
 

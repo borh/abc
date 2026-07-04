@@ -824,7 +824,7 @@ category = "inline_annotation"
 feature_keys = ["editor_note"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html.rb"]
 source_examples = ["「base」の「annotation」の注記", "「text」の注記付き"]
-source_patterns = ['「[^」]+」の「[^」]+」の注記', '「[^」]+」の注記付き', '〔[^〕]+〕']
+source_patterns = ['「[^」]+」の「[^」]+」の注記', '「[^」]+」の注記付き', '〔[^〕]+〕', '［＃「[^」]+」は底本では「[^」]+」］', '［＃ママ］', '［＃ルビは「[^」]+」にかかる］', '［＃入力者注\([０-９0-9]+\)］', '［ルビの「[^」]+」は底本では「[^」]+」］']
 ir_nodes = []
 aat_nodes = ["ruby"]
 tei_projection = "note or ruby"
@@ -835,6 +835,14 @@ adapter_expectations = ["preserve annotation as ruby-like attachment"]
 oracle_cases = ["annotation.chuuki.basic"]
 status = "needs_research"
 status_reason = "PAT_CHUUKI in lib/aozora2html.rb; uses ruby rearrangement"
+
+[syntax.representability]
+source_inventory_row = "annotation.chuuki"
+status = "raw_preserved"
+aat_nodes = ["ruby"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:119"
+notes = "Editorial annotations have TEI note/ruby projections, but current adapters drop common forms; source text must remain the authority until a typed source-note policy lands."
 
 [syntax.parsers.aozora2]
 recognition = "parsed"
@@ -891,6 +899,14 @@ adapter_expectations = ["preserve marginal gloss"]
 oracle_cases = ["annotation.bouki.basic"]
 status = "needs_research"
 status_reason = "single-character side gloss; PAT_BOUKI in lib/aozora2html.rb"
+
+[syntax.representability]
+source_inventory_row = "annotation.bouki"
+status = "raw_preserved"
+aat_nodes = ["ruby"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:119"
+notes = "Side gloss annotations can project to TEI notes, but current adapter evidence is lossy; raw source preservation is the reviewed v1 guarantee."
 
 [syntax.parsers.aozora2]
 recognition = "parsed"

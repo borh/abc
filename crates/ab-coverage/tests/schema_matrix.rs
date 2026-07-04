@@ -219,6 +219,60 @@ fn source_inventory_classifies_next_high_volume_command_variants() {
 }
 
 #[test]
+fn source_inventory_classifies_annotation_editor_notes() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = [
+        "［＃「、」は底本では「。」］",
+        "［＃ママ］",
+        "［＃ルビは「悪魔の尿溜」にかかる］",
+        "［＃入力者注(5)］",
+        "［ルビの「おもて」は底本では「うら」］",
+    ]
+    .join("\n");
+    let summary = inventory_document("fixture", &source, &patterns);
+
+    assert_eq!(
+        summary.unknown_examples,
+        [],
+        "known editorial annotation markers should not remain unknown"
+    );
+    assert_eq!(
+        summary
+            .row_counts
+            .get("annotation.chuuki")
+            .map(|count| count.occurrences),
+        Some(5)
+    );
+}
+
+#[test]
+fn annotation_rows_have_reviewed_representability() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    for row_id in ["annotation.chuuki", "annotation.bouki"] {
+        let row = matrix
+            .rows()
+            .iter()
+            .find(|row| row.id == row_id)
+            .unwrap_or_else(|| panic!("{row_id} row"));
+        let representability = row
+            .representability
+            .as_ref()
+            .unwrap_or_else(|| panic!("{row_id} needs a reviewed representability cell"));
+
+        assert_eq!(
+            representability.status,
+            RepresentabilityStatus::RawPreserved
+        );
+        assert!(representability.raw_fallback);
+        assert!(
+            row.tei_projection.contains("note"),
+            "{row_id} needs a TEI note projection"
+        );
+    }
+}
+
+#[test]
 fn source_inventory_classifies_indentation_corpus_variants() {
     let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
     let patterns = patterns_from_rows(matrix.rows());

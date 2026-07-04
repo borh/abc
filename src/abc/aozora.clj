@@ -307,15 +307,9 @@
     s
     (keyword "abc.aozora" s)))
 
-(defn to-xtdb-id [s]
-  (if (url? s)
-    s
-    (keyword "abc.aozora" s)))
-
 (defn to-subject [subj m]
   (remove-nils
-   (assoc m :rdf/about (to-id subj)
-          :xt/id (to-xtdb-id subj))))
+   (assoc m :rdf/about (to-id subj))))
 
 (defn record-to-entities [m]
   (let [g (partial get m)

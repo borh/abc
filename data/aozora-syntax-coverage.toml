@@ -2466,6 +2466,134 @@ evidence = "docs/aat-contract.md:126"
 notes = "AAT has a typed tcy inline container; parser-IR currently flattens to emphasis/text with divergence, while TEI projection preserves the layout intent as hi rend=tcy."
 
 [[syntax]]
+id = "layout.multicolumn"
+priority = 2
+category = "layout"
+feature_keys = ["multicolumn", "dan-gumi"]
+reference_sources = ["references/aozorabunko/rules/kijyunn.html", "docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
+source_examples = ["［＃ここから２段組み］", "［＃ここで段組み終わり］"]
+source_patterns = ['［＃ここから[０-９0-9]+段組み?］', '［＃ここで([０-９0-9]+段組み?|段組み?)終わり］', '［＃段組み適用外］']
+ir_nodes = ["Raw"]
+aat_nodes = ["raw"]
+tei_projection = "div rend=columns"
+plaintext_projection = "content_only"
+comparison_projection = "content_only"
+validation_properties = ["block_scope_balance"]
+adapter_expectations = ["preserve raw multi-column marker until typed AAT/parser-IR support lands"]
+oracle_cases = []
+status = "not_modeled"
+status_reason = "Aozora multi-column layout has a TEI P5 projection, but AAT/parser-IR currently only preserve it as source-derived raw marker evidence."
+
+[syntax.parsers.aozora2]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes multi-column markers; parser-specific typed behavior not yet measured."
+
+[syntax.parsers.aozora-rs]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes multi-column markers; parser-specific typed behavior not yet measured."
+
+[syntax.parsers.aozora2html]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes multi-column markers; parser-specific typed behavior not yet measured."
+
+[syntax.adapters.aozora2]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed multi-column AAT contract exists; adapter behavior remains to be measured."
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed multi-column AAT contract exists; adapter behavior remains to be measured."
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed multi-column AAT contract exists; adapter behavior remains to be measured."
+
+[syntax.corpus_prevalence]
+works_with_feature = 0
+total_occurrences = 0
+detector_id = "layout_multicolumn"
+coverage_basis = "not_run"
+sample_works = []
+
+[syntax.representability]
+source_inventory_row = "layout.multicolumn"
+status = "raw_preserved"
+aat_nodes = ["raw"]
+raw_fallback = true
+evidence = "data/aat-schema.json:277"
+notes = "TEI can represent multi-column layout as a division or block with column rendition metadata, but AAT/parser-IR do not yet have typed multi-column nodes. The reviewed v1 guarantee is source-derived raw marker preservation."
+
+[[syntax]]
+id = "structure.table"
+priority = 2
+category = "structure"
+feature_keys = ["table", "table_group", "table_border"]
+reference_sources = ["references/aozorabunko/rules/kijyunn.html", "docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
+source_examples = ["［＃ここから表］", "［＃ここで表終わり］", "［＃ここから表組］"]
+source_patterns = ['［＃ここから表(組|罫囲み)?］', '［＃ここで表(組|罫囲み)?終わり］']
+ir_nodes = ["Raw"]
+aat_nodes = ["raw"]
+tei_projection = "table"
+plaintext_projection = "content_only"
+comparison_projection = "content_only"
+validation_properties = ["block_scope_balance"]
+adapter_expectations = ["preserve raw table marker until typed AAT/parser-IR table support lands"]
+oracle_cases = []
+status = "not_modeled"
+status_reason = "Aozora table blocks have a TEI P5 projection, but AAT/parser-IR currently only preserve them as source-derived raw marker evidence."
+
+[syntax.parsers.aozora2]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes table markers; parser-specific typed behavior not yet measured."
+
+[syntax.parsers.aozora-rs]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes table markers; parser-specific typed behavior not yet measured."
+
+[syntax.parsers.aozora2html]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes table markers; parser-specific typed behavior not yet measured."
+
+[syntax.adapters.aozora2]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed table AAT contract exists; adapter behavior remains to be measured."
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed table AAT contract exists; adapter behavior remains to be measured."
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed table AAT contract exists; adapter behavior remains to be measured."
+
+[syntax.corpus_prevalence]
+works_with_feature = 0
+total_occurrences = 0
+detector_id = "structure_table"
+coverage_basis = "not_run"
+sample_works = []
+
+[syntax.representability]
+source_inventory_row = "structure.table"
+status = "raw_preserved"
+aat_nodes = ["raw"]
+raw_fallback = true
+evidence = "data/aat-schema.json:277"
+notes = "TEI P5 can represent tables directly, but AAT/parser-IR do not yet have typed table nodes. The reviewed v1 guarantee is source-derived raw marker preservation."
+
+[[syntax]]
 id = "warigaki.parenthetical"
 priority = 2
 category = "inline_annotation"

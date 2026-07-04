@@ -296,6 +296,47 @@ fn source_inventory_classifies_boten_corpus_variants() {
 }
 
 #[test]
+fn source_inventory_classifies_table_and_multicolumn_corpus_variants() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = [
+        "［＃ここから２段組み］",
+        "［＃ここで段組み終わり］",
+        "［＃ここから２段組］",
+        "［＃ここで段組終わり］",
+        "［＃段組み適用外］",
+        "［＃ここから表］",
+        "［＃ここで表終わり］",
+        "［＃ここから表組］",
+        "［＃ここで表組終わり］",
+        "［＃ここから表罫囲み］",
+        "［＃ここで表罫囲み終わり］",
+    ]
+    .join("\n");
+    let summary = inventory_document("fixture", &source, &patterns);
+
+    assert_eq!(
+        summary.unknown_examples,
+        [],
+        "known corpus table and multi-column markers should not remain unknown"
+    );
+    assert_eq!(
+        summary
+            .row_counts
+            .get("layout.multicolumn")
+            .map(|count| count.occurrences),
+        Some(5)
+    );
+    assert_eq!(
+        summary
+            .row_counts
+            .get("structure.table")
+            .map(|count| count.occurrences),
+        Some(6)
+    );
+}
+
+#[test]
 fn source_inventory_classifies_annotation_editor_notes() {
     let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
     let patterns = patterns_from_rows(matrix.rows());
@@ -321,6 +362,34 @@ fn source_inventory_classifies_annotation_editor_notes() {
             .map(|count| count.occurrences),
         Some(5)
     );
+}
+
+#[test]
+fn table_and_multicolumn_rows_have_raw_preserved_representability() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    for (row_id, expected_projection) in
+        [("layout.multicolumn", "div"), ("structure.table", "table")]
+    {
+        let row = matrix
+            .rows()
+            .iter()
+            .find(|row| row.id == row_id)
+            .unwrap_or_else(|| panic!("{row_id} row"));
+        let representability = row
+            .representability
+            .as_ref()
+            .unwrap_or_else(|| panic!("{row_id} needs a reviewed representability cell"));
+
+        assert_eq!(
+            representability.status,
+            RepresentabilityStatus::RawPreserved
+        );
+        assert!(representability.raw_fallback);
+        assert!(
+            row.tei_projection.contains(expected_projection),
+            "{row_id} needs a TEI projection preserving {expected_projection}"
+        );
+    }
 }
 
 #[test]

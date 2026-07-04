@@ -5,7 +5,7 @@
 - source_authority_gate: `SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED`
 - note: this is not a passing representability gate; durable representability claims remain blocked until strict_errors is empty.
 - strict_errors:
-  - 9069 unallowlisted source markers
+  - 8989 unallowlisted source markers
 
 ## Scope
 
@@ -16,14 +16,14 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 - works_scanned: 17894
 - works_failed: 0
 - markers_total: 4324663
-- unknown_markers_total: 23939
-- unallowlisted_unknown_markers_total: 9069
+- unknown_markers_total: 23859
+- unallowlisted_unknown_markers_total: 8989
 - allowlisted_unknown_markers_total: 14870
 
 ## Representability
 
 - typed_occurrences: 4565366
-- raw_preserved_occurrences: 25072
+- raw_preserved_occurrences: 25152
 - out_of_body_occurrences: 950
 - unsupported_occurrences: 13920
 - needs_research_occurrences: 0
@@ -64,11 +64,13 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | iteration.kunoji | 1125 | 10700 | 000006_58810, 000006_58819, 000008_47357, 000012_1092, 000012_24448 |
 | kunten.kaeriten | 488 | 28082 | 000006_1869, 000038_1408, 000042_1694, 000050_3581, 000051_1436 |
 | kunten.okurigana | 256 | 6562 | 000026_50238, 000026_50242, 000026_50259, 000026_51893, 000026_55774 |
+| layout.multicolumn | 15 | 48 | 000061_377, 000081_45631, 000096_2100, 000158_4854, 000308_46589 |
 | layout.tcy | 722 | 19781 | 000014_728, 000020_2223, 000020_46404, 000023_55306, 000023_55324 |
 | layout.yokogumi | 413 | 3663 | 000019_59374, 000026_50239, 000026_55717, 000026_55732, 000026_55738 |
 | reference.frontref | 682 | 3920 | 000006_46659, 000012_2585, 000012_4316, 000022_197, 000026_46578 |
 | ruby.basic | 14321 | 3608407 | 000005_5, 000005_53194, 000005_55215, 000005_55216, 000005_55217 |
 | ruby.placement_directional | 31 | 312 | 000034_1213, 000050_3581, 000129_694, 000146_49258, 000146_50202 |
+| structure.table | 5 | 32 | 000042_2345, 000042_2348, 000096_2100, 000311_3466, 001149_45455 |
 | warichu.basic | 361 | 6601 | 000005_53194, 000006_1868, 000006_1869, 000034_519, 000038_42202 |
 | warigaki.parenthetical | 1 | 1 | 000034_519 |
 
@@ -179,7 +181,7 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 
 ## Unknown Source Marker Classes
 
-Showing 50 report rows of 7376 total classes. JSON carries 1000 top classes. truncated: true
+Showing 50 report rows of 7362 total classes. JSON carries 1000 top classes. truncated: true
 
 | kind | raw | occurrences | unallowlisted | allowlisted | samples |
 |---|---|---:|---:|---:|---|
@@ -188,11 +190,9 @@ Showing 50 report rows of 7376 total classes. JSON carries 1000 top classes. tru
 | CommandFullwidth | ［＃「（訳注）」は行左小書き］ | 23 | 23 | 0 | 002265_62680, 002265_62681, 002265_62687, 002265_62688 |
 | CommandFullwidth | ［＃中見出終わり］ | 18 | 18 | 0 | 000296_58605, 000989_353, 001799_59015 |
 | CommandFullwidth | ［＃「。」は底本では欠落］ | 17 | 17 | 0 | 000009_43523, 000019_42382, 000294_1858, 001048_45381, 001090_42307 |
-| CommandFullwidth | ［＃ここから２段組み］ | 17 | 17 | 0 | 000061_377, 000311_46235, 000885_2557, 000908_51734, 001021_50117 |
 | CommandFullwidth | ［＃sは下ドット付き］ | 14 | 14 | 0 | 001096_42686, 001096_43672 |
 | CommandFullwidth | ［＃「。」は底本では脱落］ | 14 | 14 | 0 | 000320_2562, 000885_2549, 000885_2550, 000885_2551, 000885_2554 |
 | CommandFullwidth | ［＃「詫び」は底本では「詑び」と誤植］ | 14 | 14 | 0 | 000111_1479, 000111_565, 000111_566 |
-| CommandFullwidth | ［＃ここで段組み終わり］ | 14 | 14 | 0 | 000061_377, 000096_2100, 000311_46235, 000885_2557, 000908_51734 |
 | CommandFullwidth | ［＃「「」は底本では欠落］ | 13 | 13 | 0 | 000019_42380, 000019_42385, 000022_4873, 001090_42307, 001123_42940 |
 | CommandFullwidth | ［＃mは上ドット付き］ | 12 | 12 | 0 | 001096_43672 |
 | CommandFullwidth | ［＃nは上ドット付き］ | 12 | 12 | 0 | 001096_42686, 001096_43554 |
@@ -202,8 +202,6 @@ Showing 50 report rows of 7376 total classes. JSON carries 1000 top classes. tru
 | CommandFullwidth | ［＃底本のまま］ | 11 | 11 | 0 | 000125_666 |
 | CommandFullwidth | ［＃「。」はママ］ | 10 | 10 | 0 | 000037_1418, 000082_1020, 000137_51868, 000255_1405, 000255_43721 |
 | CommandFullwidth | ［＃「。」は底本ではなし］ | 10 | 10 | 0 | 000048_43617, 000048_43626 |
-| CommandFullwidth | ［＃ここから表］ | 10 | 10 | 0 | 001149_45455 |
-| CommandFullwidth | ［＃ここで表終わり］ | 10 | 10 | 0 | 001149_45455 |
 | CommandFullwidth | ［＃「」」は底本では欠落］ | 9 | 9 | 0 | 000009_42929, 000009_43523, 000019_42382, 000019_42385, 001048_45381 |
 | CommandFullwidth | ［＃「ル」は上に「⌒」付き］ | 9 | 9 | 0 | 000564_52368 |
 | CommandFullwidth | ［＃「引」は小書き右寄せ］ | 9 | 9 | 0 | 000006_1869, 000050_48400 |
@@ -233,6 +231,10 @@ Showing 50 report rows of 7376 total classes. JSON carries 1000 top classes. tru
 | CommandFullwidth | ［＃「い」に「ママ」注記］ | 6 | 6 | 0 | 000874_3213 |
 | CommandFullwidth | ［＃「ヱ」は小文字］ | 6 | 6 | 0 | 000124_2421, 000124_662 |
 | CommandFullwidth | ［＃「一抔」はママ］ | 6 | 6 | 0 | 000989_350, 001402_49940 |
+| CommandFullwidth | ［＃「灸」は底本では「炙」となっている］ | 6 | 6 | 0 | 000040_1326 |
+| CommandFullwidth | ［＃「第一図」はキャプション］ | 6 | 6 | 0 | 000239_51897, 001428_50328, 001569_57860, 001569_59219, 001569_59220 |
+| CommandFullwidth | ［＃「綺麗」は底本では「奇麗」となっている］ | 6 | 6 | 0 | 000281_1710, 000281_3670 |
+| CommandFullwidth | ［＃「首実験を」はママ］ | 6 | 6 | 0 | 000260_1432, 001224_46076, 001224_46126, 001529_60795 |
 
 ## Decode Failures
 

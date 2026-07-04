@@ -3,8 +3,8 @@
   "works_scanned": 17894,
   "works_failed": 0,
   "markers_total": 4324663,
-  "unknown_markers_total": 23939,
-  "unallowlisted_unknown_markers_total": 9069,
+  "unknown_markers_total": 23859,
+  "unallowlisted_unknown_markers_total": 8989,
   "allowlisted_unknown_markers_total": 14870,
   "rows": {
     "annotation.bouki": {
@@ -359,6 +359,17 @@
         "000026_55774"
       ]
     },
+    "layout.multicolumn": {
+      "works_with_marker": 15,
+      "occurrences": 48,
+      "sample_works": [
+        "000061_377",
+        "000081_45631",
+        "000096_2100",
+        "000158_4854",
+        "000308_46589"
+      ]
+    },
     "layout.tcy": {
       "works_with_marker": 722,
       "occurrences": 19781,
@@ -414,6 +425,17 @@
         "000146_50202"
       ]
     },
+    "structure.table": {
+      "works_with_marker": 5,
+      "occurrences": 32,
+      "sample_works": [
+        "000042_2345",
+        "000042_2348",
+        "000096_2100",
+        "000311_3466",
+        "001149_45455"
+      ]
+    },
     "warichu.basic": {
       "works_with_marker": 361,
       "occurrences": 6601,
@@ -433,7 +455,7 @@
       ]
     }
   },
-  "unknown_classes_total": 7376,
+  "unknown_classes_total": 7362,
   "unknown_classes_truncated": true,
   "unknown_classes": [
     {
@@ -509,21 +531,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃ここから２段組み］",
-      "body": "ここから２段組み",
-      "occurrences": 17,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 17,
-      "sample_works": [
-        "000061_377",
-        "000311_46235",
-        "000885_2557",
-        "000908_51734",
-        "001021_50117"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃sは下ドット付き］",
       "body": "sは下ドット付き",
       "occurrences": 14,
@@ -560,21 +567,6 @@
         "000111_1479",
         "000111_565",
         "000111_566"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここで段組み終わり］",
-      "body": "ここで段組み終わり",
-      "occurrences": 14,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 14,
-      "sample_works": [
-        "000061_377",
-        "000096_2100",
-        "000311_46235",
-        "000885_2557",
-        "000908_51734"
       ]
     },
     {
@@ -691,28 +683,6 @@
       "sample_works": [
         "000048_43617",
         "000048_43626"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから表］",
-      "body": "ここから表",
-      "occurrences": 10,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 10,
-      "sample_works": [
-        "001149_45455"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここで表終わり］",
-      "body": "ここで表終わり",
-      "occurrences": 10,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 10,
-      "sample_works": [
-        "001149_45455"
       ]
     },
     {
@@ -1443,21 +1413,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃ここで２段組み終わり］",
-      "body": "ここで２段組み終わり",
-      "occurrences": 5,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 5,
-      "sample_works": [
-        "000311_2643",
-        "001021_50117",
-        "001311_48123",
-        "001311_49690",
-        "001311_49855"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃これより手紙文、１字下げ］",
       "body": "これより手紙文、１字下げ",
       "occurrences": 5,
@@ -1892,20 +1847,6 @@
         "000160_1255",
         "000311_46244",
         "000311_4833"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから２段組］",
-      "body": "ここから２段組",
-      "occurrences": 4,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 4,
-      "sample_works": [
-        "000081_45631",
-        "000308_46589",
-        "000879_49328",
-        "000908_51409"
       ]
     },
     {
@@ -2713,30 +2654,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃ここから表組］",
-      "body": "ここから表組",
-      "occurrences": 3,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 3,
-      "sample_works": [
-        "000042_2345",
-        "000042_2348"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから表罫囲み］",
-      "body": "ここから表罫囲み",
-      "occurrences": 3,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 3,
-      "sample_works": [
-        "000096_2100",
-        "000311_3466"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃ここで字下げ、枠囲み終わり］",
       "body": "ここで字下げ、枠囲み終わり",
       "occurrences": 3,
@@ -2782,43 +2699,6 @@
         "000009_55881",
         "000052_5068",
         "000416_47406"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここで段組終わり］",
-      "body": "ここで段組終わり",
-      "occurrences": 3,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 3,
-      "sample_works": [
-        "000081_45631",
-        "000879_49328",
-        "000908_51409"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここで表組終わり］",
-      "body": "ここで表組終わり",
-      "occurrences": 3,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 3,
-      "sample_works": [
-        "000042_2345",
-        "000042_2348"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここで表罫囲み終わり］",
-      "body": "ここで表罫囲み終わり",
-      "occurrences": 3,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 3,
-      "sample_works": [
-        "000096_2100",
-        "000311_3466"
       ]
     },
     {
@@ -3267,17 +3147,6 @@
       "unallowlisted_occurrences": 3,
       "sample_works": [
         "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃段組み適用外］",
-      "body": "段組み適用外",
-      "occurrences": 3,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 3,
-      "sample_works": [
-        "000096_2100"
       ]
     },
     {
@@ -11786,6 +11655,138 @@
       "sample_works": [
         "000042_2345"
       ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃「P.260」は底本で「S. 260」］",
+      "body": "「P.260」は底本で「S. 260」",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "001402_49940"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃「Poetic_of_Aristatea」はママ］",
+      "body": "「Poetic_of_Aristatea」はママ",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46243"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃「S 40―42, 44, 48」はママ］",
+      "body": "「S 40―42, 44, 48」はママ",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000281_3595"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃「San」は３０度位右上がり］",
+      "body": "「San」は３０度位右上がり",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000879_2324"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃「Semi-」「Memo-」「Dele-」の「e」はアクサン（´）付き、「IV」はローマ数字の４］",
+      "body": "「Semi-」「Memo-」「Dele-」の「e」はアクサン（´）付き、「IV」はローマ数字の４",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000301_1872"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃「Shakspeare Bacon の」はママ］",
+      "body": "「Shakspeare Bacon の」はママ",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46243"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃「Sir Edward Ribhard Henry が」はママ］",
+      "body": "「Sir Edward Ribhard Henry が」はママ",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "001779_57502"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃「Sir Wiliam James Herschel は」はママ］",
+      "body": "「Sir Wiliam James Herschel は」はママ",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "001779_57502"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃「Sloe-Leaves（スローの葉）」はキャプション］",
+      "body": "「Sloe-Leaves（スローの葉）」はキャプション",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "001657_54333"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃「Student Shakspeare だが」はママ］",
+      "body": "「Student Shakspeare だが」はママ",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46243"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃「Tea-Leaves（茶葉）」はキャプション］",
+      "body": "「Tea-Leaves（茶葉）」はキャプション",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "001657_54333"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃「The Master of Mystery の」はママ］",
+      "body": "「The Master of Mystery の」はママ",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "001779_57502"
+      ]
     }
   ],
   "unknown_examples": [
@@ -12493,13 +12494,13 @@
   "decode_failures": [],
   "representability": {
     "typed_occurrences": 4565366,
-    "raw_preserved_occurrences": 25072,
+    "raw_preserved_occurrences": 25152,
     "out_of_body_occurrences": 950,
     "unsupported_occurrences": 13920,
     "needs_research_occurrences": 0
   },
   "strict_errors": [
-    "9069 unallowlisted source markers"
+    "8989 unallowlisted source markers"
   ],
   "inputs": {
     "matrix": "/home/bor/Projects/ab-validator/data/aozora-syntax-coverage.toml",

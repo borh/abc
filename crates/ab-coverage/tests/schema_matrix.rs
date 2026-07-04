@@ -264,11 +264,18 @@ fn source_inventory_classifies_source_authority_tail_style_layout_variants() {
         "［＃大文字、太字］",
         "［＃この行はゴシック体］",
         "［＃ゴシック体］",
+        "［＃「井伏鱒二」はゴチック］",
+        "［＃「一千円」は大文字、太字］",
         "［＃白三角傍点］",
         "［＃白三角傍点終わり］",
         "［＃二重傍線終わり］",
         "［＃「〃」は横組み］",
         "［＃「？！」は横一列］",
+        "［＃２０字下げて、地より１字あきで］",
+        "［＃天より３１字下げ、地より２字上げで］",
+        "［＃以下地付き］",
+        "［＃以下、地付き］",
+        "［＃２文字目の「i」は下付き小文字、４文字目の「i」は上付き小文字］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -313,6 +320,8 @@ fn source_inventory_classifies_boten_corpus_variants() {
         "［＃「は」と「う」の間に白三角傍点］",
         "［＃「クリティカル・エッセイ」の「・」を除く部分に傍点］",
         "［＃「ア」に点］",
+        "［＃『独立とは「独り立つ」といふことなり』に傍点］",
+        "［＃「右手の袖口を」から「ズボンを穿いて」まで傍点］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -327,7 +336,7 @@ fn source_inventory_classifies_boten_corpus_variants() {
             .row_counts
             .get("decoration.boten")
             .map(|count| count.occurrences),
-        Some(13)
+        Some(15)
     );
 }
 
@@ -382,6 +391,11 @@ fn source_inventory_classifies_heading_and_keigakomi_corpus_variants() {
         "［＃「おぼつかぐら」は太字、罫囲み］",
         "［＃「グレコの絵との連想」に枠囲み］",
         "［＃「ソヴェト同盟ヲ守レ！」に枠線］",
+        "［＃「一」は「□」囲み］",
+        "［＃「拝観料」は罫で囲む］",
+        "［＃以下の「残怨白紅花盛　余多人切支丹寺」は罫で囲む］",
+        "［＃次の段落には、天地左右にオモテケイ囲み］",
+        "［＃この行全体はミシン罫囲み］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -403,7 +417,7 @@ fn source_inventory_classifies_heading_and_keigakomi_corpus_variants() {
             .row_counts
             .get("decoration.keigakomi")
             .map(|count| count.occurrences),
-        Some(9)
+        Some(14)
     );
 }
 
@@ -453,6 +467,27 @@ fn source_inventory_classifies_table_and_multicolumn_corpus_variants() {
             .get("structure.table")
             .map(|count| count.occurrences),
         Some(10)
+    );
+}
+
+#[test]
+fn source_inventory_classifies_warigaki_corpus_variants() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = ["［＃割書］", "［＃割書終わり］", "「注」の割書"].join("\n");
+    let summary = inventory_document("fixture", &source, &patterns);
+
+    assert_eq!(
+        summary.unknown_examples,
+        [],
+        "known corpus warigaki markers should not remain unknown"
+    );
+    assert_eq!(
+        summary
+            .row_counts
+            .get("warigaki.parenthetical")
+            .map(|count| count.occurrences),
+        Some(2)
     );
 }
 

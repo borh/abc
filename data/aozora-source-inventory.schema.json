@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/ab-validator/aozora-source-inventory.schema.json",
+  "type": "object",
+  "required": [
+    "works_scanned",
+    "works_failed",
+    "markers_total",
+    "unknown_markers_total",
+    "unallowlisted_unknown_markers_total",
+    "allowlisted_unknown_markers_total",
+    "rows",
+    "unknown_examples",
+    "representability",
+    "inputs"
+  ],
+  "properties": {
+    "works_scanned": { "type": "integer", "minimum": 0 },
+    "works_failed": { "type": "integer", "minimum": 0 },
+    "markers_total": { "type": "integer", "minimum": 0 },
+    "unknown_markers_total": { "type": "integer", "minimum": 0 },
+    "unallowlisted_unknown_markers_total": { "type": "integer", "minimum": 0 },
+    "allowlisted_unknown_markers_total": { "type": "integer", "minimum": 0 },
+    "rows": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["works_with_marker", "occurrences", "sample_works"],
+        "properties": {
+          "works_with_marker": { "type": "integer", "minimum": 0 },
+          "occurrences": { "type": "integer", "minimum": 0 },
+          "sample_works": {
+            "type": "array",
+            "items": { "type": "string" },
+            "maxItems": 5
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "unknown_examples": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["work_id", "line", "kind", "raw", "body"],
+        "properties": {
+          "work_id": { "type": "string" },
+          "line": { "type": "integer", "minimum": 1 },
+          "kind": { "type": "string" },
+          "raw": { "type": "string" },
+          "body": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "representability": {
+      "type": "object",
+      "required": [
+        "typed_occurrences",
+        "raw_preserved_occurrences",
+        "out_of_body_occurrences",
+        "unsupported_occurrences",
+        "needs_research_occurrences"
+      ],
+      "properties": {
+        "typed_occurrences": { "type": "integer", "minimum": 0 },
+        "raw_preserved_occurrences": { "type": "integer", "minimum": 0 },
+        "out_of_body_occurrences": { "type": "integer", "minimum": 0 },
+        "unsupported_occurrences": { "type": "integer", "minimum": 0 },
+        "needs_research_occurrences": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "inputs": { "type": "object" }
+  },
+  "additionalProperties": true
+}

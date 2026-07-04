@@ -633,6 +633,72 @@
           doCheck = false;
         };
 
+        sourceInventoryBin = rustPlatform.buildRustPackage {
+          pname = "ab-source-inventory";
+          version = "0.1.0";
+
+          src = source;
+          cargoDeps = abCargoDeps;
+
+          cargoBuildFlags = [
+            "--package"
+            "ab-coverage"
+            "--bin"
+            "ab-source-inventory"
+          ];
+
+          doCheck = false;
+        };
+
+        sourceInventorySmokeCheck =
+          pkgs.runCommand "source-inventory-smoke-check"
+            {
+              nativeBuildInputs = [
+                sourceInventoryBin
+                pkgs.jq
+                pkgs.ripgrep
+              ];
+            }
+            ''
+              work_dir="$(mktemp -d)"
+              cp -R "${source}" "$work_dir/source"
+              chmod -R +w "$work_dir/source"
+              cd "$work_dir/source"
+
+              export TMPDIR="$work_dir/tmp"
+              mkdir -p "$TMPDIR"
+              export HOME="$work_dir/home"
+              mkdir -p "$HOME"
+              export AB_SOURCE_INVENTORY_BIN="${sourceInventoryBin}/bin/ab-source-inventory"
+
+              bash tests/source-inventory-smoke.sh
+              touch "$out"
+            '';
+
+        sourceRepresentabilityGateCheck =
+          pkgs.runCommand "source-representability-gate-check"
+            {
+              nativeBuildInputs = [
+                sourceInventoryBin
+                pkgs.jq
+              ];
+            }
+            ''
+              work_dir="$(mktemp -d)"
+              cp -R "${source}" "$work_dir/source"
+              chmod -R +w "$work_dir/source"
+              cd "$work_dir/source"
+
+              export TMPDIR="$work_dir/tmp"
+              mkdir -p "$TMPDIR"
+              export HOME="$work_dir/home"
+              mkdir -p "$HOME"
+              export AB_SOURCE_INVENTORY_BIN="${sourceInventoryBin}/bin/ab-source-inventory"
+
+              bash tests/source-representability-gate-smoke.sh
+              touch "$out"
+            '';
+
         taxonomyDriftCheck =
           pkgs.runCommand "taxonomy-drift-check"
             {
@@ -747,37 +813,37 @@
               ];
             }
             ''
-              work_dir="$(mktemp -d)"
-              cp -R "${source}" "$work_dir/source"
-              chmod -R +w "$work_dir/source"
-              cd "$work_dir/source"
+                            work_dir="$(mktemp -d)"
+                            cp -R "${source}" "$work_dir/source"
+                            chmod -R +w "$work_dir/source"
+                            cd "$work_dir/source"
 
-              cargo \
-                --config "source.crates-io.replace-with='vendored-sources'" \
-                --config "source.vendored-sources.directory='${aozoraEpub3CargoDeps}'" \
-                build --manifest-path "$work_dir/source/adapters/aozora-epub3/Cargo.toml" --release --offline
+                            cargo \
+                              --config "source.crates-io.replace-with='vendored-sources'" \
+                              --config "source.vendored-sources.directory='${aozoraEpub3CargoDeps}'" \
+                              build --manifest-path "$work_dir/source/adapters/aozora-epub3/Cargo.toml" --release --offline
 
-              bin="$work_dir/source/adapters/aozora-epub3/target/release/aozora-epub3-adapter"
-              printf 'test' > "$work_dir/src.txt"
-              python3 - "$bin" "$work_dir/src.txt" "$work_dir/source/data/aat-schema.json" "$work_dir/source/adapters/aozora-epub3/tests/fixtures" <<'PY'
-import json, subprocess, sys, glob
-from pathlib import Path
-bin_p, src, schema_p, fx_dir = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
-schema = json.loads(Path(schema_p).read_text())
-import jsonschema
-fixtures = sorted(glob.glob(str(fx_dir) + "/*.xhtml"))
-assert fixtures, "no fixtures found at " + fx_dir
-for fx in fixtures:
-    out = subprocess.run(
-        [bin_p, "--mode", "aat", "--source", src, "--xhtml", fx],
-        capture_output=True,
-    )
-    assert out.returncode in (0, 2), f"{fx}: rc={out.returncode} {out.stderr.decode()[:200]}"
-    aat = json.loads(out.stdout)
-    jsonschema.validate(aat, schema)
-print(f"aozora-epub3 smoke: {len(fixtures)} fixtures schema-valid")
-PY
-              touch "$out"
+                            bin="$work_dir/source/adapters/aozora-epub3/target/release/aozora-epub3-adapter"
+                            printf 'test' > "$work_dir/src.txt"
+                            python3 - "$bin" "$work_dir/src.txt" "$work_dir/source/data/aat-schema.json" "$work_dir/source/adapters/aozora-epub3/tests/fixtures" <<'PY'
+              import json, subprocess, sys, glob
+              from pathlib import Path
+              bin_p, src, schema_p, fx_dir = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+              schema = json.loads(Path(schema_p).read_text())
+              import jsonschema
+              fixtures = sorted(glob.glob(str(fx_dir) + "/*.xhtml"))
+              assert fixtures, "no fixtures found at " + fx_dir
+              for fx in fixtures:
+                  out = subprocess.run(
+                      [bin_p, "--mode", "aat", "--source", src, "--xhtml", fx],
+                      capture_output=True,
+                  )
+                  assert out.returncode in (0, 2), f"{fx}: rc={out.returncode} {out.stderr.decode()[:200]}"
+                  aat = json.loads(out.stdout)
+                  jsonschema.validate(aat, schema)
+              print(f"aozora-epub3 smoke: {len(fixtures)} fixtures schema-valid")
+              PY
+                            touch "$out"
             '';
       in
       {
@@ -826,6 +892,8 @@ PY
           adapter-fidelity-notes-schema-smoke = adapterFidelityNotesSchemaSmokeCheck;
           taxonomy-drift = taxonomyDriftCheck;
           aat-to-parser-ir-smoke = abAatToParserIrCheck;
+          source-inventory-smoke = sourceInventorySmokeCheck;
+          source-representability-gate = sourceRepresentabilityGateCheck;
         };
 
         devShells = {

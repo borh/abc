@@ -1,0 +1,12 @@
+# Reviewed source markers that are inventory-visible but do not block the v1
+# representability gate. Each entry must match by kind plus either body_pattern
+# or raw_pattern. Use this only for out-of-body, malformed corpus noise, or
+# intentionally unsupported-v1 markers.
+
+[[allow]]
+id = "terminal-provenance-note"
+kind = "SegmentBoundaryTerminalProvenance"
+body_pattern = "^底本[：:]"
+scope = "out_of_body"
+reason = "Terminal bibliography/provenance metadata is not body AAT."
+evidence = "docs/aat-contract.md"

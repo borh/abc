@@ -113,6 +113,31 @@ aat-to-parser-ir-flake-smoke:
 parser-performance-smoke:
 	@bash tests/parser-performance-measure-smoke.sh
 
+source-inventory-smoke:
+	@bash "{{repo_root}}/tests/source-inventory-smoke.sh"
+
+source-representability-gate-smoke:
+	@bash "{{repo_root}}/tests/source-representability-gate-smoke.sh"
+
+source-inventory-flake-smoke:
+	@system="$(nix eval --impure --raw --expr builtins.currentSystem)"; \
+	nix build "{{repo_root}}#checks.$system.source-inventory-smoke" --print-build-logs
+
+source-inventory-full JOBS="24" INDEX="" CORPUS="":
+	@test -n "{{INDEX}}" || { echo "INDEX=/path/to/index.json is required" >&2; exit 2; }
+	@test -n "{{CORPUS}}" || { echo "CORPUS=/path/to/aozorabunko is required" >&2; exit 2; }
+	@cargo build -p ab-coverage --bin ab-source-inventory --release --jobs "{{JOBS}}"
+	@mkdir -p "{{ab_db_root}}/source-inventory"
+	@"{{repo_root}}/target/release/ab-source-inventory" \
+		--matrix "{{repo_root}}/data/aozora-syntax-coverage.toml" \
+		--index "{{INDEX}}" \
+		--corpus "{{CORPUS}}" \
+		--allowlist "{{repo_root}}/data/aozora-source-inventory-allowlist.toml" \
+		--jobs "{{JOBS}}" \
+		--output-json "{{repo_root}}/docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json" \
+		--report-md "{{repo_root}}/docs/superpowers/reports/2026-07-04-source-authority-representability.md" \
+		--unknown-workset "{{ab_db_root}}/source-inventory/unknown-workset.json"
+
 aat-to-parser-ir-full-audit JOBS="24" REPORT_MD="docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.summary.json" COMPAT_EDN="docs/superpowers/reports/2026-07-04-aat-parser-ir-compatibility-candidates.edn":
 	@cargo build -p ab-aat-to-parser-ir --release --jobs "{{JOBS}}"
 	@"{{repo_root}}/target/release/ab-aat-to-parser-ir" audit-corpus \

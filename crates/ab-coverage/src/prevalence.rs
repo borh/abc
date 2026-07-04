@@ -6,24 +6,20 @@
 
 use std::{
     collections::BTreeMap,
-    fs,
-    io::Read,
     path::{Path, PathBuf},
     sync::Mutex,
     time::Duration,
 };
 
-use anyhow::{Context, Result, bail};
-use flate2::read::DeflateDecoder;
+use anyhow::{Context, Result};
 use rayon::prelude::*;
 use serde_json::Value;
-use zip::CompressionMethod;
-use zip::ZipArchive;
 
 use crate::{
     adapter::AdapterBinary,
     cache::{AdapterFingerprintInputs, ParserCache, compute_adapter_sha, input_sha},
     detectors::{DetectorContext, DetectorRegistry},
+    source_corpus::read_source_work,
 };
 
 #[derive(Debug, Clone)]
@@ -182,99 +178,27 @@ fn process_work(
     index_resolver: &dyn IndexResolver,
 ) -> Result<(Value, String)> {
     let indexed_path = index_resolver.resolve(work_id)?;
-    let source_bytes = read_indexed_source_bytes(corpus_root, &indexed_path)?;
-    let key = input_sha(&source_bytes);
+    let source = read_source_work(corpus_root, work_id, &indexed_path)?;
+    let key = input_sha(&source.bytes);
 
     let aat_bytes = if use_cache {
         if let Some(bytes) = cache.read(&adapter.parser_id, adapter_sha, &key)? {
             bytes
         } else {
             let bytes = adapter
-                .invoke(&source_bytes, timeout)
+                .invoke(&source.bytes, timeout)
                 .with_context(|| format!("invoke {} on {work_id}", adapter.parser_id))?;
             cache.write(&adapter.parser_id, adapter_sha, &key, &bytes)?;
             bytes
         }
     } else {
         adapter
-            .invoke(&source_bytes, timeout)
+            .invoke(&source.bytes, timeout)
             .with_context(|| format!("invoke {} on {work_id}", adapter.parser_id))?
     };
     let aat: Value =
         serde_json::from_slice(&aat_bytes).with_context(|| format!("parse AAT for {work_id}"))?;
-    let source = decode_source(&source_bytes);
-    Ok((aat, source))
-}
-
-fn decode_source(bytes: &[u8]) -> String {
-    use encoding_rs::SHIFT_JIS;
-    // Canonical decode lives in `ab-encoding::decode_source_bytes`, shared by
-    // ab-check and ab-index. ab-coverage only needs the decoded text (not
-    // `raw_sha256` or the `encoding` classification) and is infallible here,
-    // so it keeps a local text-only fast path instead of computing a SHA-256
-    // per source. The BOM-strip matches canonical (audit §3.3 bug fix, commit
-    // 813817b). Fully unifying onto `ab_encoding::decode_source_bytes` is a
-    // shape change gated on whether prevalence should surface `raw_sha256` /
-    // propagate the BOM-but-invalid-utf8 error — deferred.
-    let bytes = bytes.strip_prefix(b"\xef\xbb\xbf").unwrap_or(bytes);
-    if std::str::from_utf8(bytes).is_ok() {
-        return String::from_utf8_lossy(bytes).into_owned();
-    }
-    SHIFT_JIS.decode(bytes).0.into_owned()
-}
-
-#[cfg(test)]
-mod decode_source_tests {
-    use super::decode_source;
-
-    // Canonical decode (ab-check::encoding::decode_source_bytes and
-    // ab-index::encoding::decode_source_bytes) strips a UTF-8 BOM before
-    // returning text, and classifies the encoding as `utf-8-bom`. ab-coverage's
-    // `decode_source` diverged: it returns the BOM bytes as part of the text.
-    // This test pins the canonical text behavior so the drift is observable.
-    #[test]
-    fn strips_utf8_bom_like_canonical_decode() {
-        let decoded = decode_source(b"\xef\xbb\xbfabc");
-        assert_eq!(decoded, "abc", "UTF-8 BOM must be stripped (canonical)");
-    }
-}
-
-fn read_indexed_source_bytes(corpus_root: &Path, indexed_path: &str) -> Result<Vec<u8>> {
-    if let Some((archive, entry)) = indexed_path.split_once("::") {
-        return read_zip_entry_bytes(&corpus_root.join(archive), entry);
-    }
-    let path = corpus_root.join(indexed_path);
-    fs::read(&path).with_context(|| format!("read {}", path.display()))
-}
-
-fn read_zip_entry_bytes(archive: &Path, entry_name: &str) -> Result<Vec<u8>> {
-    let file = fs::File::open(archive).with_context(|| format!("open {}", archive.display()))?;
-    let mut zip =
-        ZipArchive::new(file).with_context(|| format!("read zip {}", archive.display()))?;
-    for idx in 0..zip.len() {
-        let mut entry = zip
-            .by_index_raw(idx)
-            .with_context(|| format!("read entry {idx} in {}", archive.display()))?;
-        if entry.name() != entry_name {
-            continue;
-        }
-        if entry.encrypted() {
-            bail!("encrypted zip entry {entry_name} not supported");
-        }
-        let mut compressed = Vec::new();
-        entry.read_to_end(&mut compressed)?;
-        return match entry.compression() {
-            CompressionMethod::Stored => Ok(compressed),
-            CompressionMethod::Deflated => {
-                let mut decoder = DeflateDecoder::new(&compressed[..]);
-                let mut out = Vec::new();
-                decoder.read_to_end(&mut out)?;
-                Ok(out)
-            }
-            method => bail!("unsupported zip method {method:?} for {entry_name}"),
-        };
-    }
-    bail!("zip entry {entry_name} not found in {}", archive.display())
+    Ok((aat, source.decoded.text))
 }
 
 #[derive(Debug)]

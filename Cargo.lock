@@ -58,6 +58,8 @@ dependencies = [
 name = "ab-coverage"
 version = "0.1.0"
 dependencies = [
+ "ab-encoding",
+ "ab-source-syntax",
  "anyhow",
  "clap",
  "encoding_rs",

@@ -10,6 +10,8 @@ keywords = ["japanese", "text-processing", "coverage", "dataset"]
 categories = ["text-processing"]
 
 [dependencies]
+ab-encoding.workspace = true
+ab-source-syntax.workspace = true
 anyhow.workspace = true
 clap.workspace = true
 encoding_rs.workspace = true
@@ -31,6 +33,10 @@ path = "src/bin/merge.rs"
 [[bin]]
 name = "ab-coverage"
 path = "src/bin/coverage.rs"
+
+[[bin]]
+name = "ab-source-inventory"
+path = "src/bin/source_inventory.rs"
 
 [[bin]]
 name = "generate_taxonomy"

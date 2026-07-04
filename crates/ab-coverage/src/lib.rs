@@ -10,6 +10,8 @@ pub mod matrix;
 pub mod merge;
 pub mod prevalence;
 pub mod schema;
+pub mod source_corpus;
+pub mod source_inventory;
 
 pub use matrix::{
     AdapterCell, CorpusPrevalence, CoverageBasis, CoverageMatrix, ParserCell, Recognition, Row,

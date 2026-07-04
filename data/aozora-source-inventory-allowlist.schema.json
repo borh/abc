@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/ab-validator/aozora-source-inventory-allowlist.schema.json",
+  "type": "object",
+  "required": ["allow"],
+  "properties": {
+    "allow": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "kind", "scope", "reason", "evidence"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "kind": { "type": "string", "minLength": 1 },
+          "body_pattern": { "type": "string" },
+          "raw_pattern": { "type": "string" },
+          "scope": {
+            "type": "string",
+            "enum": ["out_of_body", "malformed_noise", "unsupported_v1"]
+          },
+          "reason": { "type": "string", "minLength": 1 },
+          "evidence": { "type": "string", "minLength": 1 }
+        },
+        "anyOf": [
+          { "required": ["body_pattern"] },
+          { "required": ["raw_pattern"] }
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

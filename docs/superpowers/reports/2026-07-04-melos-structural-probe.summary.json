@@ -1,0 +1,214 @@
+{
+  "mapping": {
+    "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
+    "mapping_version": "0.2.1",
+    "mapping_hash": "sha256:b508665af72c237fc60f00b720f80db2b16148aa64b5d1cc723a2948ee576390",
+    "mapping_schema_hash": "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4",
+    "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
+    "target_parser_ir_schema_hash": "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"
+  },
+  "totals": {
+    "inputs": 3,
+    "conversions_succeeded": 3,
+    "conversions_failed": 0,
+    "paragraph_gap_inputs": 3,
+    "source_attribution_gap_inputs": 3,
+    "residual_free_inputs": 0
+  },
+  "inputs": [
+    {
+      "label": "aozora-rs",
+      "path": "/home/bor/Projects/ab-validator/scratch/morph-full-corpus/aats/aozora-rs-adapter/000035_1567-32ff5a089d67.json",
+      "aat": {
+        "work_id": "000035_1567",
+        "adapter": "aozora-rs",
+        "adapter_version": "aozora-rs-adapter 0.1.0 2b4e8d1",
+        "parse_complete": true,
+        "block_count": 79,
+        "block_kinds": {
+          "paragraph": 79
+        },
+        "paragraph_blocks": 79,
+        "final_block_kind": "paragraph",
+        "final_visible_text": "（古伝説と、シルレルの詩から。）",
+        "final_source_attribution_candidate": true,
+        "hints": [
+          "style:low_flying"
+        ]
+      },
+      "conversion": {
+        "success": true,
+        "error": null
+      },
+      "parser_ir": {
+        "node_count": 255,
+        "node_kinds": {
+          "emphasis": 1,
+          "ruby": 88,
+          "text": 166
+        },
+        "paragraphs_represented": false,
+        "source_attribution_represented": false
+      },
+      "divergence": {
+        "categories": {
+          "AMBIGUITY": 336,
+          "INVENTION": 92,
+          "LOSS": 3,
+          "STRUCTURAL": 79,
+          "UNSUPPORTED": 0
+        },
+        "paragraph_structural_records": [
+          {
+            "rule_id": "S-10",
+            "category": "STRUCTURAL",
+            "aat_pointer": "blocks[].paragraph",
+            "parser_ir_pointer": null,
+            "count": 79,
+            "first_path": "blocks[0].paragraph",
+            "message": "block container of kind 'paragraph' has no parser-IR node; boundary + span + style lost, only inlines emitted"
+          }
+        ]
+      },
+      "verdict": {
+        "paragraphs_represented_in_parser_ir": false,
+        "source_attribution_represented_in_parser_ir": false,
+        "residual_free": false,
+        "notes": [
+          "AAT preserved 79 paragraph block(s), but parser-IR has no explicit paragraph node",
+          "final parenthetical attribution is visible text, not a source-attribution/source-note parser-IR node",
+          "paragraph boundaries are present as measured STRUCTURAL divergence records"
+        ]
+      }
+    },
+    {
+      "label": "aozora2html",
+      "path": "/db/ab-validator/aat-corpus/aozora2html-full-20260704T014828Z-300s/aat/aozora2html-adapter/000035_1567-32ff5a089d67.json",
+      "aat": {
+        "work_id": "000035_1567",
+        "adapter": "aozora2html",
+        "adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1",
+        "parse_complete": true,
+        "block_count": 75,
+        "block_kinds": {
+          "paragraph": 75
+        },
+        "paragraph_blocks": 75,
+        "final_block_kind": "paragraph",
+        "final_visible_text": "（古伝説と、シルレルの詩から。）",
+        "final_source_attribution_candidate": true,
+        "hints": [
+          "style:unmapped-div",
+          "warning:unmapped XHTML element <div>",
+          "x-aozora2html-unmapped:div"
+        ]
+      },
+      "conversion": {
+        "success": true,
+        "error": null
+      },
+      "parser_ir": {
+        "node_count": 253,
+        "node_kinds": {
+          "emphasis": 1,
+          "ruby": 88,
+          "text": 164
+        },
+        "paragraphs_represented": false,
+        "source_attribution_represented": false
+      },
+      "divergence": {
+        "categories": {
+          "AMBIGUITY": 330,
+          "INVENTION": 94,
+          "LOSS": 2,
+          "STRUCTURAL": 75,
+          "UNSUPPORTED": 0
+        },
+        "paragraph_structural_records": [
+          {
+            "rule_id": "S-10",
+            "category": "STRUCTURAL",
+            "aat_pointer": "blocks[].paragraph",
+            "parser_ir_pointer": null,
+            "count": 75,
+            "first_path": "blocks[0].paragraph",
+            "message": "block container of kind 'paragraph' has no parser-IR node; boundary + span + style lost, only inlines emitted"
+          }
+        ]
+      },
+      "verdict": {
+        "paragraphs_represented_in_parser_ir": false,
+        "source_attribution_represented_in_parser_ir": false,
+        "residual_free": false,
+        "notes": [
+          "AAT preserved 75 paragraph block(s), but parser-IR has no explicit paragraph node",
+          "final parenthetical attribution is visible text, not a source-attribution/source-note parser-IR node",
+          "paragraph boundaries are present as measured STRUCTURAL divergence records"
+        ]
+      }
+    },
+    {
+      "label": "aozora-epub3",
+      "path": "/db/ab-validator/aat-corpus/aozora-epub3-full-20260704T050652Z-300s/aat/aozora-epub3-adapter/000035_1567-32ff5a089d67.json",
+      "aat": {
+        "work_id": "000035_1567",
+        "adapter": "aozora-epub3",
+        "adapter_version": "aozora-epub3-adapter 0.1.0 AozoraEpub3-JDK21-1.3.4-jdk21",
+        "parse_complete": true,
+        "block_count": 75,
+        "block_kinds": {
+          "paragraph": 75
+        },
+        "paragraph_blocks": 75,
+        "final_block_kind": "paragraph",
+        "final_visible_text": "（古伝説と、シルレルの詩から。）",
+        "final_source_attribution_candidate": true,
+        "hints": []
+      },
+      "conversion": {
+        "success": true,
+        "error": null
+      },
+      "parser_ir": {
+        "node_count": 251,
+        "node_kinds": {
+          "ruby": 88,
+          "text": 163
+        },
+        "paragraphs_represented": false,
+        "source_attribution_represented": false
+      },
+      "divergence": {
+        "categories": {
+          "AMBIGUITY": 327,
+          "INVENTION": 92,
+          "LOSS": 89,
+          "STRUCTURAL": 75,
+          "UNSUPPORTED": 0
+        },
+        "paragraph_structural_records": [
+          {
+            "rule_id": "S-10",
+            "category": "STRUCTURAL",
+            "aat_pointer": "blocks[].paragraph",
+            "parser_ir_pointer": null,
+            "count": 75,
+            "first_path": "blocks[0].paragraph",
+            "message": "block container of kind 'paragraph' has no parser-IR node; boundary + span + style lost, only inlines emitted"
+          }
+        ]
+      },
+      "verdict": {
+        "paragraphs_represented_in_parser_ir": false,
+        "source_attribution_represented_in_parser_ir": false,
+        "residual_free": false,
+        "notes": [
+          "AAT preserved 75 paragraph block(s), but parser-IR has no explicit paragraph node",
+          "final parenthetical attribution is visible text, not a source-attribution/source-note parser-IR node",
+          "paragraph boundaries are present as measured STRUCTURAL divergence records"
+        ]
+      }
+    }
+  ]
+}

@@ -1,6 +1,12 @@
 use std::path::PathBuf;
 
-use ab_aat_to_parser_ir::{ConversionOptions, MappingDocument, PreparedConverter, SchemaSet};
+use ab_aat_to_parser_ir::{
+    ConversionOptions, MappingDocument, PreparedConverter, SchemaSet,
+    structural_probe::{
+        StructuralProbeConfig, parse_input_spec, run_structural_probe,
+        write_structural_probe_reports,
+    },
+};
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 
@@ -39,6 +45,18 @@ enum Command {
         compat_edn_out: Option<PathBuf>,
         #[arg(long, default_value_t = 0)]
         jobs: usize,
+        #[arg(long)]
+        abc_root: Option<PathBuf>,
+    },
+    StructuralProbe {
+        #[arg(long = "aat", required = true)]
+        aat_inputs: Vec<String>,
+        #[arg(long)]
+        mapping: PathBuf,
+        #[arg(long)]
+        summary_json: PathBuf,
+        #[arg(long)]
+        report_md: PathBuf,
         #[arg(long)]
         abc_root: Option<PathBuf>,
     },
@@ -97,6 +115,36 @@ fn main() -> Result<()> {
                 summary.files_attempted(),
                 summary.files_succeeded(),
                 summary.files_failed()
+            );
+        }
+        Command::StructuralProbe {
+            aat_inputs,
+            mapping,
+            summary_json,
+            report_md,
+            abc_root,
+        } => {
+            let repo_root = resolve_repo_root(&mapping)?;
+            let abc_root = abc_root
+                .or_else(|| std::env::var_os("AB_ABC_ROOT").map(PathBuf::from))
+                .unwrap_or_else(|| repo_root.join("data/abc-schemas"));
+            let inputs = aat_inputs
+                .iter()
+                .map(|spec| parse_input_spec(spec))
+                .collect::<Result<Vec<_>>>()?;
+            let mapping = MappingDocument::from_path(&mapping)?;
+            let schemas = SchemaSet::load(&repo_root, &abc_root)?;
+            let summary = run_structural_probe(StructuralProbeConfig {
+                inputs,
+                mapping,
+                schemas,
+            })?;
+            write_structural_probe_reports(&summary, &summary_json, &report_md)?;
+            eprintln!(
+                "probed {} AAT inputs: {} conversion(s) succeeded, {} failed",
+                summary.totals.inputs,
+                summary.totals.conversions_succeeded,
+                summary.totals.conversions_failed
             );
         }
     }

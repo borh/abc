@@ -564,6 +564,70 @@ fn measured_policy_flattens_epub3_tcy_and_block_containers() {
 }
 
 #[test]
+fn structural_probe_detects_melos_level3_gap() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let temp = tempfile::tempdir().unwrap();
+    let aat_path = temp.path().join("melos.aat.json");
+    let aat = json!({
+        "version": 1,
+        "work_id": "000035_1567",
+        "meta": base_meta(
+            "utf-8",
+            "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+        ),
+        "blocks": [
+            {
+                "kind": "paragraph",
+                "content": [
+                    {"kind": "text", "value": "メロスは激怒した。"}
+                ]
+            },
+            {
+                "kind": "paragraph",
+                "content": [
+                    {"kind": "text", "value": "（古伝説と、シルレルの詩から。）"}
+                ]
+            }
+        ]
+    });
+    std::fs::write(&aat_path, serde_json::to_string_pretty(&aat).unwrap()).unwrap();
+
+    let summary = ab_aat_to_parser_ir::structural_probe::run_structural_probe(
+        ab_aat_to_parser_ir::structural_probe::StructuralProbeConfig {
+            inputs: vec![
+                ab_aat_to_parser_ir::structural_probe::StructuralProbeInput {
+                    label: "fixture".to_owned(),
+                    path: aat_path,
+                },
+            ],
+            mapping,
+            schemas,
+        },
+    )
+    .unwrap();
+
+    assert_eq!(summary.totals.inputs, 1);
+    let item = &summary.inputs[0];
+    assert_eq!(item.label, "fixture");
+    assert_eq!(item.aat.paragraph_blocks, 2);
+    assert_eq!(
+        item.aat.final_visible_text.as_deref(),
+        Some("（古伝説と、シルレルの詩から。）")
+    );
+    assert!(item.aat.final_source_attribution_candidate);
+    assert!(item.conversion.success);
+    assert!(!item.parser_ir.paragraphs_represented);
+    assert!(!item.parser_ir.source_attribution_represented);
+    assert!(!item.verdict.residual_free);
+    assert!(
+        item.divergence
+            .paragraph_structural_records
+            .iter()
+            .any(|record| record.rule_id == "S-10" && record.count == 2)
+    );
+}
+
+#[test]
 fn heading_visible_projection_records_measured_flattening_losses() {
     let (schemas, mapping) = schemas_and_mapping();
     let aat = json!({

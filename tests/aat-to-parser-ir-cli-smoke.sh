@@ -148,3 +148,58 @@ if command -v bb >/dev/null 2>&1; then
 else
   COMPAT_EDN="$out_dir/compatibility-candidates.edn" clojure -M -e "$edn_parse_expr"
 fi
+
+structural_aat="$out_dir/structural.aat.json"
+cat > "$structural_aat" <<'JSON'
+{
+  "version": 1,
+  "work_id": "000035_1567",
+  "meta": {
+    "adapter": "fixture",
+    "adapter_version": "fixture 0.1.0",
+    "source_encoding": "utf-8",
+    "source_hash": "sha256:8888888888888888888888888888888888888888888888888888888888888888",
+    "parse_complete": true,
+    "warnings": []
+  },
+  "blocks": [
+    {
+      "kind": "paragraph",
+      "content": [
+        { "kind": "text", "value": "メロスは激怒した。" }
+      ]
+    },
+    {
+      "kind": "paragraph",
+      "content": [
+        { "kind": "text", "value": "（古伝説と、シルレルの詩から。）" }
+      ]
+    }
+  ]
+}
+JSON
+
+structural_args=(
+  structural-probe
+  --aat "fixture=$structural_aat"
+  --mapping "$repo_root/data/aat-to-parser-ir-mapping-v1.json"
+  --summary-json "$out_dir/structural-summary.json"
+  --report-md "$out_dir/structural-report.md"
+  --abc-root "$abc_root"
+)
+
+if [ -n "${AB_AAT_TO_PARSER_IR_BIN:-}" ]; then
+  "$AB_AAT_TO_PARSER_IR_BIN" "${structural_args[@]}"
+else
+  "${CARGO:-cargo}" "${cargo_args[@]}" run --package ab-aat-to-parser-ir -- "${structural_args[@]}"
+fi
+
+jq -e '.totals.inputs == 1' "$out_dir/structural-summary.json"
+jq -e '.totals.conversions_succeeded == 1' "$out_dir/structural-summary.json"
+jq -e '.inputs[0].aat.paragraph_blocks == 2' "$out_dir/structural-summary.json"
+jq -e '.inputs[0].aat.final_source_attribution_candidate == true' "$out_dir/structural-summary.json"
+jq -e '.inputs[0].parser_ir.paragraphs_represented == false' "$out_dir/structural-summary.json"
+jq -e '.inputs[0].parser_ir.source_attribution_represented == false' "$out_dir/structural-summary.json"
+jq -e '.inputs[0].verdict.residual_free == false' "$out_dir/structural-summary.json"
+jq -e 'any(.inputs[0].divergence.paragraph_structural_records[]; .rule_id == "S-10" and .count == 2)' "$out_dir/structural-summary.json"
+grep -n 'Melos Structural Probe' "$out_dir/structural-report.md"

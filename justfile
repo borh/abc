@@ -6,6 +6,9 @@ morph_warehouse_dir := env_var_or_default("AB_MORPH_WAREHOUSE_DIR", "/db/ab-vali
 morph_warehouse_aat_dir := env_var_or_default("AB_MORPH_WAREHOUSE_AAT_DIR", "/db/ab-validator/aat-corpus/aozora2html-aat/aozora2html-adapter")
 aozora2html_full_aat_dir := env_var_or_default("AB_AOZORA2HTML_AAT_DIR", ab_db_root + "/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter")
 aozora_epub3_full_aat_dir := env_var_or_default("AB_AOZORA_EPUB3_AAT_DIR", ab_db_root + "/aat-corpus/aozora-epub3-full-20260704T050652Z-300s/aat/aozora-epub3-adapter")
+melos_aozora_rs_aat := env_var_or_default("AB_MELOS_AOZORA_RS_AAT", repo_root + "/scratch/morph-full-corpus/aats/aozora-rs-adapter/000035_1567-32ff5a089d67.json")
+melos_aozora2html_aat := env_var_or_default("AB_MELOS_AOZORA2HTML_AAT", aozora2html_full_aat_dir + "/000035_1567-32ff5a089d67.json")
+melos_aozora_epub3_aat := env_var_or_default("AB_MELOS_AOZORA_EPUB3_AAT", aozora_epub3_full_aat_dir + "/000035_1567-32ff5a089d67.json")
 aozora2html_flake := repo_root + "#aozora2html"
 vibrato_dictionary_root := repo_root + "/dictionary"
 vibrato_unidic_sources := vibrato_dictionary_root + "/unidic-sources"
@@ -150,6 +153,23 @@ aat-to-parser-ir-full-audit JOBS="24" REPORT_MD="docs/superpowers/reports/2026-0
 		--report-md "{{repo_root}}/{{REPORT_MD}}" \
 		--compat-edn-out "{{repo_root}}/{{COMPAT_EDN}}" \
 		--jobs "{{JOBS}}" \
+		--abc-root "{{repo_root}}/data/abc-schemas"
+
+melos-structural-probe JOBS="24" REPORT_MD="docs/superpowers/reports/2026-07-04-melos-structural-probe.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-04-melos-structural-probe.summary.json":
+	@cargo build -p ab-aat-to-parser-ir --release --jobs "{{JOBS}}"
+	@aozora_rs="{{melos_aozora_rs_aat}}"; \
+	aozora2html="{{melos_aozora2html_aat}}"; \
+	aozora_epub3="{{melos_aozora_epub3_aat}}"; \
+	args=(); \
+	if [ -f "$aozora_rs" ]; then args+=(--aat "aozora-rs=$aozora_rs"); else echo "skip missing aozora-rs Melos AAT: $aozora_rs" >&2; fi; \
+	if [ -f "$aozora2html" ]; then args+=(--aat "aozora2html=$aozora2html"); else echo "skip missing aozora2html Melos AAT: $aozora2html" >&2; fi; \
+	if [ -f "$aozora_epub3" ]; then args+=(--aat "aozora-epub3=$aozora_epub3"); else echo "skip missing aozora-epub3 Melos AAT: $aozora_epub3" >&2; fi; \
+	if [ "${#args[@]}" -eq 0 ]; then echo "no Melos AAT inputs found" >&2; exit 2; fi; \
+	"{{repo_root}}/target/release/ab-aat-to-parser-ir" structural-probe \
+		"${args[@]}" \
+		--mapping "{{repo_root}}/data/aat-to-parser-ir-mapping-v1.json" \
+		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
+		--report-md "{{repo_root}}/{{REPORT_MD}}" \
 		--abc-root "{{repo_root}}/data/abc-schemas"
 
 upstream-xhtml-full-smoke:

@@ -296,6 +296,37 @@ fn source_inventory_classifies_boten_corpus_variants() {
 }
 
 #[test]
+fn source_inventory_classifies_caption_inline_corpus_variants() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = [
+        "［＃「第一図」はキャプション］",
+        "［＃「第二図」はキャプション］",
+        "［＃「第２図」はキャプション］",
+        "［＃「●ブリュームリスアルプ」はキャプション］",
+        "［＃「乗馬陥泥の難」はキャプション］",
+        "［＃「丹後地震に伴へる郷村断層」はキャプション］",
+        "［＃「「歌留多」の函」はキャプション］",
+        "［＃「〈「それこそ、ひどい仕事だよ。」〉」はキャプション］",
+    ]
+    .join("\n");
+    let summary = inventory_document("fixture", &source, &patterns);
+
+    assert_eq!(
+        summary.unknown_examples,
+        [],
+        "known corpus inline-caption command variants should not remain unknown"
+    );
+    assert_eq!(
+        summary
+            .row_counts
+            .get("caption.inline")
+            .map(|count| count.occurrences),
+        Some(8)
+    );
+}
+
+#[test]
 fn source_inventory_classifies_table_and_multicolumn_corpus_variants() {
     let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
     let patterns = patterns_from_rows(matrix.rows());

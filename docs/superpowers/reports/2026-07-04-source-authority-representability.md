@@ -5,7 +5,7 @@
 - source_authority_gate: `SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED`
 - note: this is not a passing representability gate; durable representability claims remain blocked until strict_errors is empty.
 - strict_errors:
-  - 3111 unallowlisted source markers
+  - 2575 unallowlisted source markers
 
 ## Scope
 
@@ -16,13 +16,13 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 - works_scanned: 17894
 - works_failed: 0
 - markers_total: 4324663
-- unknown_markers_total: 17981
-- unallowlisted_unknown_markers_total: 3111
+- unknown_markers_total: 17445
+- unallowlisted_unknown_markers_total: 2575
 - allowlisted_unknown_markers_total: 14870
 
 ## Representability
 
-- typed_occurrences: 4565366
+- typed_occurrences: 4566723
 - raw_preserved_occurrences: 35335
 - out_of_body_occurrences: 950
 - unsupported_occurrences: 13920
@@ -37,7 +37,7 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | break.line_explicit | 47 | 161 | 000075_4250, 000081_47027, 000083_46289, 000106_56858, 000106_57905 |
 | break.page_line | 943 | 10028 | 000005_53194, 000006_1869, 000009_55881, 000011_889, 000011_899 |
 | caption.block | 47 | 1722 | 000058_57440, 000091_50354, 000125_1321, 000165_49567, 000226_1150 |
-| caption.inline | 136 | 1040 | 000014_728, 000067_1768, 000067_1788, 000067_1789, 000093_1916 |
+| caption.inline | 143 | 2397 | 000014_728, 000058_57440, 000067_1768, 000067_1788, 000067_1789 |
 | decoration.bold_italic | 159 | 5257 | 000025_1144, 000026_50241, 000026_55916, 000035_279, 000035_52380 |
 | decoration.boten | 6234 | 128972 | 000005_53194, 000006_382, 000006_383, 000006_58819, 000008_1083 |
 | decoration.bousen | 317 | 18087 | 000006_1869, 000013_11, 000019_4376, 000034_55507, 000038_1408 |
@@ -128,7 +128,6 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | 000012_10 | 85 | CommandFullwidth | ［＃一字下げ忘れか？211-6］ | 一字下げ忘れか？211-6 |
 | 000012_223 | 11 | CommandFullwidth | ［＃「み」余分か、それとも「見」か？］ | 「み」余分か、それとも「見」か？ |
 | 000012_223 | 21 | CommandFullwidth | ［＃「み」余分か、それとも「見」か？］ | 「み」余分か、それとも「見」か？ |
-| 000014_728 | 73 | CommandFullwidth | ［＃「村の博突打　1914年」はキャプション］ | 「村の博突打　1914年」はキャプション |
 | 000019_4376 | 96 | CommandFullwidth | ［＃「”」は下付き］ | 「”」は下付き |
 | 000019_4376 | 105 | CommandFullwidth | ［＃「”」は下付き］ | 「”」は下付き |
 | 000022_197 | 55 | CommandFullwidth | ［＃原文まま］ | 原文まま |
@@ -178,10 +177,11 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | 000034_233 | 40 | CommandFullwidth | ［＃ここから引用文、３字下げ］ | ここから引用文、３字下げ |
 | 000034_233 | 43 | CommandFullwidth | ［＃引用文終わり］ | 引用文終わり |
 | 000034_233 | 54 | CommandFullwidth | ［＃ここから引用文、３字下げ］ | ここから引用文、３字下げ |
+| 000034_233 | 56 | CommandFullwidth | ［＃引用文終わり］ | 引用文終わり |
 
 ## Unknown Source Marker Classes
 
-Showing 50 report rows of 2339 total classes. JSON carries 1000 top classes. truncated: true
+Showing 50 report rows of 1838 total classes. JSON carries 1000 top classes. truncated: true
 
 | kind | raw | occurrences | unallowlisted | allowlisted | samples |
 |---|---|---:|---:|---:|---|
@@ -211,7 +211,6 @@ Showing 50 report rows of 2339 total classes. JSON carries 1000 top classes. tru
 | CommandFullwidth | ［＃ηに帯気、ωに曲アクセント］ | 6 | 6 | 0 | 000065_393 |
 | CommandFullwidth | ［＃「2」は指数］ | 6 | 6 | 0 | 000096_2110 |
 | CommandFullwidth | ［＃「ヱ」は小文字］ | 6 | 6 | 0 | 000124_2421, 000124_662 |
-| CommandFullwidth | ［＃「第一図」はキャプション］ | 6 | 6 | 0 | 000239_51897, 001428_50328, 001569_57860, 001569_59219, 001569_59220 |
 | CommandFullwidth | ［＃下げて地より２字あきで］ | 6 | 6 | 0 | 000827_3406, 000827_3411 |
 | CommandFullwidth | ［＃劇場名］ | 6 | 6 | 0 | 000311_46245, 000311_46246, 000311_46248 |
 | CommandFullwidth | ［＃地付き、地より３字アキ］ | 6 | 6 | 0 | 000096_2100 |
@@ -226,8 +225,6 @@ Showing 50 report rows of 2339 total classes. JSON carries 1000 top classes. tru
 | CommandFullwidth | ［＃「√」の中に「５」］ | 5 | 5 | 0 | 001569_59194 |
 | CommandFullwidth | ［＃「♂」は矢印が下向き］ | 5 | 5 | 0 | 000081_45631 |
 | CommandFullwidth | ［＃「　　　　」は罫囲み］ | 5 | 5 | 0 | 000125_1317 |
-| CommandFullwidth | ［＃「第三図」はキャプション］ | 5 | 5 | 0 | 000239_51897, 001569_57860, 001569_59219, 001569_59220, 001779_57502 |
-| CommandFullwidth | ［＃「第二図」はキャプション］ | 5 | 5 | 0 | 000239_51897, 001569_57860, 001569_59219, 001569_59220, 001779_57502 |
 | CommandFullwidth | ［＃「阿」は一段階小さな文字］ | 5 | 5 | 0 | 000081_47027 |
 | CommandFullwidth | ［＃これより手紙文、１字下げ］ | 5 | 5 | 0 | 000280_1706 |
 | CommandFullwidth | ［＃ホテル名］ | 5 | 5 | 0 | 000311_46245, 000311_46247 |
@@ -235,6 +232,9 @@ Showing 50 report rows of 2339 total classes. JSON carries 1000 top classes. tru
 | CommandFullwidth | ［＃未完］ | 5 | 5 | 0 | 000311_1983, 000311_2879, 000311_3023, 000311_3027, 000311_3080 |
 | CommandFullwidth | ［＃直線は中央に配置］ | 5 | 5 | 0 | 000129_2298 |
 | CommandFullwidth | ［＃１字下げここまで］ | 5 | 5 | 0 | 000280_1706 |
+| CommandFullwidth | ［＃ 一つ目の「e」は「´」付き］ | 4 | 4 | 0 | 000129_2522 |
+| CommandFullwidth | ［＃rは下ドット付き］ | 4 | 4 | 0 | 001096_42686, 001096_43672 |
+| CommandFullwidth | ［＃「〃」は上部に出ている］ | 4 | 4 | 0 | 000305_1896 |
 
 ## Decode Failures
 

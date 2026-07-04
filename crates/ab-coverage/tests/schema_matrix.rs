@@ -276,6 +276,18 @@ fn source_inventory_classifies_source_authority_tail_style_layout_variants() {
         "［＃以下地付き］",
         "［＃以下、地付き］",
         "［＃２文字目の「i」は下付き小文字、４文字目の「i」は上付き小文字］",
+        "［＃以下の２つの英文はすべてイタリック文字、横書き］",
+        "［＃（Ｆ・Ｏ）は下揃え］",
+        "［＃この歌、二行前の歌に頭揃え。］",
+        "［＃で各歌の頭は全て揃っている。］",
+        "［＃次の３項目は２行目以降１字下げ］",
+        "［＃「頓首　敬白」は地付き、地より３字アキ］",
+        "［＃「（裏面欧文番組略）」は地付き、地より１字アキ］",
+        "［＃ゴシック体、地付き、地より２字あげ］",
+        "［＃『江馬兆策識」』は地付き］",
+        "［＃ここから１０字下げ折り返して１７字下げ］",
+        "［＃６字下がる］",
+        "［＃改見開き右］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -322,6 +334,7 @@ fn source_inventory_classifies_boten_corpus_variants() {
         "［＃「ア」に点］",
         "［＃『独立とは「独り立つ」といふことなり』に傍点］",
         "［＃「右手の袖口を」から「ズボンを穿いて」まで傍点］",
+        "［＃「私の生き方」に白四角傍点］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -336,7 +349,7 @@ fn source_inventory_classifies_boten_corpus_variants() {
             .row_counts
             .get("decoration.boten")
             .map(|count| count.occurrences),
-        Some(15)
+        Some(16)
     );
 }
 
@@ -396,6 +409,8 @@ fn source_inventory_classifies_heading_and_keigakomi_corpus_variants() {
         "［＃以下の「残怨白紅花盛　余多人切支丹寺」は罫で囲む］",
         "［＃次の段落には、天地左右にオモテケイ囲み］",
         "［＃この行全体はミシン罫囲み］",
+        "［＃「小沼農場」に大見出し］",
+        "［＃以下、「次ぎの…」から「…困ります。」までは罫線囲み］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -410,14 +425,14 @@ fn source_inventory_classifies_heading_and_keigakomi_corpus_variants() {
             .row_counts
             .get("heading.basic")
             .map(|count| count.occurrences),
-        Some(6)
+        Some(7)
     );
     assert_eq!(
         summary
             .row_counts
             .get("decoration.keigakomi")
             .map(|count| count.occurrences),
-        Some(14)
+        Some(15)
     );
 }
 
@@ -441,10 +456,20 @@ fn source_inventory_classifies_table_and_multicolumn_corpus_variants() {
         "［＃「ただ」と「咲」は２列に並ぶ］",
         "［＃「赤江米子氏」と「母の或部分」は２列に並ぶ］",
         "［＃「權次」と「權六」は横並びになっている］",
+        "［＃１段目］",
+        "［＃２段目］",
+        "［＃「岩波日本」と「文学講座」が１行内で２行に分けられている］",
+        "［＃「午後一時開演」「同　五時終了」は２行組み、地付き］",
+        "［＃「新来朝」「五国聯合」は２行組み、ゴシック体。「バード・ストーン一座大曲馬」は特大文字、ゴシック体］",
+        "［＃ここから２段組み、段間に罫］",
+        "［＃ここで２段組み、罫囲み終わり］",
         "［＃１行目］",
         "［＃２行目］",
         "［＃３行目］",
         "［＃ここに表組入る、別ファイル（densyanokonzatsu_table.txt）参照］",
+        "［＃ここで字下げ、表罫囲み終わり］",
+        "［＃ここからプログラム、表罫囲み］",
+        "［＃ここでプログラム（表罫囲み）終わり］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -459,14 +484,14 @@ fn source_inventory_classifies_table_and_multicolumn_corpus_variants() {
             .row_counts
             .get("layout.multicolumn")
             .map(|count| count.occurrences),
-        Some(9)
+        Some(16)
     );
     assert_eq!(
         summary
             .row_counts
             .get("structure.table")
             .map(|count| count.occurrences),
-        Some(10)
+        Some(13)
     );
 }
 
@@ -536,6 +561,10 @@ fn source_inventory_classifies_annotation_editor_notes() {
         "［＃「どんどん」に欄外に校注、「三橋の側にあった不忍池の水の落口」］",
         "［＃「お前のような不孝者は」か？］",
         "［＃「てまえ」あるいは「てめえ」か］",
+        "［＃「ジップ」は桃源社版では「ジッブ」］",
+        "［＃「色々に盛装して」または「色々な盛装をして」と思われる］",
+        "［＃「今の天皇」は「大正天皇」］",
+        "［＃「佐土布都の神」は本文の書き下し文では「佐士布都の神」］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -550,7 +579,7 @@ fn source_inventory_classifies_annotation_editor_notes() {
             .row_counts
             .get("annotation.chuuki")
             .map(|count| count.occurrences),
-        Some(40)
+        Some(44)
     );
 }
 
@@ -563,6 +592,10 @@ fn source_inventory_classifies_source_page_reference_notes() {
         "［＃「一三九頁」は「應神天皇」の「天の日矛」］",
         "［＃「二七頁」は「伊耶那岐の命と伊耶那美の命」の「身禊」］",
         "［＃欄外に「続千載集巻四、秋上、太政大臣。」の校注あり］",
+        "［＃、87-上段-7］",
+        "［＃、94-下段-19］",
+        "［＃「三六六ページ」は「清寧天皇・顯宗天皇・仁賢天皇」の「シジムの新築祝い」］",
+        "［＃「二三〇頁」は「大國主の神」］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -577,7 +610,7 @@ fn source_inventory_classifies_source_page_reference_notes() {
             .row_counts
             .get("source.page_reference")
             .map(|count| count.occurrences),
-        Some(4)
+        Some(8)
     );
 }
 
@@ -1101,6 +1134,12 @@ fn source_inventory_classifies_glyph_variant_notes() {
         "［＃「かしく」は崩し字］",
         "［＃「シ」の右上に小さな四角あり］",
         "［＃「!!!」は一文字、111-18］",
+        "［＃simhaのmは上ドット付き］",
+        "［＃右下の部分は「蝎」の右下部と同形］",
+        "［＃やまいだれの中は「間」］",
+        "［＃「楫」に「ほこづくり」を加える、55-12］",
+        "［＃「漱」の「欠」に代えて「攵」］",
+        "［＃「入場料」から「七円」まで大文字、ゴシック体。「＝＝」は二倍二重ダーシ］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -1115,7 +1154,7 @@ fn source_inventory_classifies_glyph_variant_notes() {
             .row_counts
             .get("glyph.variant_note")
             .map(|count| count.occurrences),
-        Some(36)
+        Some(42)
     );
 }
 

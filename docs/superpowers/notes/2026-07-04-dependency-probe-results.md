@@ -59,13 +59,14 @@ is a dedicated SaxonJ `12.9` probe before any jump to `13.0`.
 
 XTDB:
 
-- `abc.xtdb` / `abc.load` own the XTDB runtime dependency.
-- Task 4 removed startup-on-require for `abc.xtdb`.
-- `timeout 10s clojure -M:test -e "(require 'abc.xtdb) (println :xtdb-required)"`
-  exits `0`.
-- `abc.load` still does not make a standalone child process exit promptly, but
-  the narrower probes show that the remaining process hold comes from
-  `abc.annotation`, not XTDB.
+- **Removed 2026-07-04.** `abc.xtdb`, `abc.db`, the XTDB-backed half of
+  `abc.load`, and the vestigial `:xt/id`/`to-xtdb-id` surface in `abc.aozora`
+  were deleted; `com.xtdb/xtdb-core` and `com.xtdb/xtdb-rocksdb` were dropped
+  from `deps.edn`. XTDB was retired, not upgraded to v2. See plan
+  `docs/superpowers/plans/2026-07-04-remove-xtdb.md`.
+- The prior "startup-on-require" finding is moot: the namespace no longer exists.
+- The `abc.annotation` process-hold noted in the earlier probe is unrelated
+  to XTDB and is unchanged.
 
 Tawny/OWL:
 

@@ -989,9 +989,9 @@ should carry forward equally:
   TEI P5 ruby support, provenance, and validation-first output.
 - Replace/redesign: `abc.load` should become manifest-aware ingestion and
   batch orchestration rather than ad hoc persistence.
-- Retire or demote: `abc.xtdb` and `abc.git` as central architecture. They may
-  remain useful experiments or query/cache backends, but they conflict with a
-  manifest-first model if treated as the source of identity.
+- Retired (2026-07-04): `abc.xtdb` is deleted; XTDB is no longer a dependency.
+  `abc.git` is not central architecture. A future query runtime may be chosen
+  by ADR when access patterns require it; until then XTDB is not a candidate.
 
 These should be treated as design evidence, not final architecture. Some code
 may become reference behavior, some may be replaced, and some may be lifted

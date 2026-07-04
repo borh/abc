@@ -31,7 +31,6 @@ normal `git status`:
 | `aozora_lod_data/`, `aozora_lod_data.zip` | downloaded/generated data snapshot |
 | `canopy/` | vendored/downloaded parser generator archive |
 | `extern/` | external checkouts/vendor experiments |
-| `data/dev/`, `data/test/` | local XTDB/RocksDB-style stores |
 | `old-build-boot` | old build backup |
 | `resources/*.interp`, `resources/*.tokens`, generated Java lexer/parser files | ANTLR generated outputs |
 

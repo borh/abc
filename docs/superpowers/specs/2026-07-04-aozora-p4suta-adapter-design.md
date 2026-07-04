@@ -282,6 +282,76 @@ separate, documented concern (re-run + diff, not a stability claim).
   complexity/faithfulness regression versus the library seam, which is
   cheap here (§2.1) and is the established Direct-adapter shape.
 
+### 4.4 `ab-*` dependency policy (graded)
+
+Verified against the codebase before fixing this spec. The established
+Direct-tier pattern is **not** zero-`ab-*`:
+
+| Adapter | `ab-ir` | `ab-source-syntax` | `ab-encoding` |
+|---|---|---|---|
+| `aozora2` (Direct, live) | no | **yes** | (own impl) |
+| `aozora-rs` (Direct, broken) | **yes** | yes | (own impl) |
+| `aozora2html` (Indirect, live) | no | no | (own impl) |
+| `aozora-epub3` (Indirect, live) | no | no | (own impl) |
+
+Policy for `aozora`:
+
+- **`ab-ir`: forbidden.** This is the drift path that sank `aozora-rs`. The
+  2026-07-03 boundary decision names `ab-ir` as not version-disciplined as
+  an external contract.
+- **`ab-source-syntax`: permitted**, as an in-workspace convenience,
+  matching `aozora2` (the live Direct adapter). Used for `SourceEvent` /
+  lossy-comparison-body extraction. Not the contract.
+- **`ab-encoding`: permitted**, if the adapter wants shared encoding labels.
+  `aozora`'s own `aozora-encoding::decode_auto` already covers Shift_JIS/
+  UTF-8 detection, so this is likely unnecessary.
+- **The contract is `data/aat-schema.json`** regardless of which `ab-*`
+  helpers are on the dep graph.
+
+**`decode_source_bytes` duplication.** This function (UTF-8-BOM / UTF-8 /
+Shift_JIS-with-`had_errors` decode + `source_hash`) is currently copied in
+`aozora2`, `aozora2html`, and `aozora-epub3` (3 copies). This adapter
+becomes either the 4th copy or the trigger to extract a shared helper. The
+ deferred extraction is owned by `deepening-review` (§8); the **first
+ landing slice duplicates** to keep the adapter self-contained and not
+ entangle with a refactor across live adapters. Extraction is a separate,
+ behavior-preserving change after this adapter exists.
+
+### 4.5 Adapter wire contract
+
+Matches `aozora-epub3-adapter` / `aozora2html-adapter`:
+
+- **Invocation:** reads honbun bytes on stdin; writes AAT JSON to stdout.
+- **`--version`:** prints adapter name + version + pinned upstream SHA. Hard-coded in the Rust mapper; does **not** shell out to `aozora` (no upstream-process dependency for version, matching `aozora-epub3`).
+- **`--mode aat` (default):** emit AAT JSON validated against `data/aat-schema.json`.
+- **`--mode html`:** see §4.6.
+- **Exit codes:** `0` successful parse (AAT emitted regardless of
+  diagnostics); non-zero `2` on unrecoverable upstream error (encoding
+  failure, panic). Upstream `diagnostics` severities map to `meta` fields,
+  not to exit codes (U3).
+- **No file-system coupling:** the mapper is value-based (bytes in, AAT value
+  out), matching the epub3 design's seam-1 decision. Any temp-file handling
+  lives only in a thin shell wrapper if one is needed for the harness, not
+  in the mapper.
+
+### 4.6 `--mode html` fidelity note
+
+The existing adapters differ semantically in `--mode html`, and this
+adapter's tier must be stated explicitly (matches epub3 §8 pattern):
+
+| Adapter | `--mode html` source | Tier |
+|---|---|---|
+| `aozora2html` | raw upstream XHTML (gem-rendered) | upstream-faithful HTML |
+| `aozora-epub3` | derived: filtered body-text concatenation from EPUB XHTML | derived extraction, not raw upstream |
+| `aozora` (this spec) | `Tree::to_html_with()` — the parser's own HTML renderer | **upstream renderer output (Direct)** |
+
+So `aozora --mode html` is upstream-faithful HTML in body, like
+`aozora2html` and unlike `aozora-epub3`. The harness wrapping (AAT `meta`
+envelope) is delivery packaging, not a transformation of the HTML body;
+`ab-render-diff` must compare only the body, not the envelope, and must not
+cross-compare `aozora`'s upstream HTML against `aozora-epub3`'s derived
+HTML as if both were upstream-faithful.
+
 ---
 
 ## 5. Fidelity matrix row (to add to `docs/adapter-fidelity.md`)
@@ -381,11 +451,95 @@ resolved during implementation, before the smoke / fidelity gates pass.
   the gates for this system's representability and TEI claims.
 - **Premature shared AAT-builder across the now-5 mappers.** Deferred to
   `deepening-review` after this adapter exists; proposing it now would
-  create a one-implementation seam.
+  create a one-implementation seam. **Deepening caveat:** this adapter's
+  mapper is AST→AAT (Rust `Tree` → AAT), whereas `aozora2html`/`aozora-epub3`
+  mappers are XHTML→AAT. A shared builder across the full set is likely
+  limited to encoding / hashing / AAT-envelope primitives, **not** the
+  DOM-or-AST mapping engine; the review must check whether a shared builder
+  is even applicable across a mixed AST+XHTML adapter set before
+  extracting one.
 
 ---
 
-## 9. Incubation note
+## 9. Test strategy
+
+Three tiers, matching the epub3 design's §10:
+
+1. **Mapper unit tests** (`adapters/aozora/tests/`): value-based — bytes in,
+   AAT `serde_json::Value` out. Cover one fixture per AAT axis from the
+   aozora conformance set (`references/parsers/aozora/crates/aozora-
+   conformance/fixtures/render/`). Each fixture asserts schema validity
+   (`data/aat-schema.json`) + a focused projection check (ruby nesting,
+   gaiji resolution, container kind). These do **not** read `/db`.
+2. **Wrapper integration tests** (`tests/aozora-adapter-smoke.sh`):
+   stdin→stdout end-to-end, `--version` does not shell out, `--mode aat`
+   schema-validates, `--mode html` body matches `Tree::to_html_with`.
+3. **Cross-adapter comparison** (gated, not unit): the `--aat-dir aozora=…`
+   entry in `justfile` cross-adapter recipes feeds `ab-check` +
+   `reports/aat-fidelity/run-cross-adapter-report.sh`. This is measurement,
+   not a test gate; failures produce evidence, not build breakage.
+
+Acceptance gate for direct fidelity: U1 characterization (TEI-EAJ all-work
++ full-corpus AAT) completes and §5 matrix row graduates from
+**Provisional** to **Direct** (or is downgraded to Direct-incomplete with
+recorded gaps).
+
+## 10. Build and Nix design
+
+Mirrors `aozora-epub3-smoke-check`:
+
+- **flake input:** `reference-aozora-p4suta-src = { url = "github:P4suta/aozora/<rev-or-sha>"; flake = false; }`, pinned to the U4 commit.
+- **vendored deps:** `rustPlatform.importCargoLock` with the aozora repo's
+  `Cargo.lock` (same pattern as `aozora2htmlCargoDeps`).
+- **adapter package:** an `aozoraAdapter` derivation building
+  `adapters/aozora/Cargo.toml` offline against the vendored sources.
+- **smoke check:** `aozora-smoke-check` `runCommand` mirroring
+  `aozora-epub3-smoke-check`. **Smoke fixtures are the already-pinned
+  aozora reference checkout's conformance fixtures only** — not TEI-EAJ
+  counterparts, not `/db`, not the melos zip. This keeps the smoke check
+  reproducible and offline (Finding 7 resolution). TEI-EAJ / corpus
+  comparison is operator-run measurement, not CI.
+- **`Cargo.toml` exclusion:** add `adapters/aozora` to the root workspace
+  `exclude` (alongside the other adapters), so the workspace does not
+  compile it; it builds standalone with the pinned upstream dep.
+- **justfile:** `aozora-build`, `aozora-test`, `aozora-smoke` recipes
+  mirroring `aozora-epub3-*`, and a cross-adapter recipe
+  `--aat-dir aozora={{aozora_full_aat_dir}}`.
+
+## 11. Files to create / modify
+
+Create:
+- `adapters/aozora/Cargo.toml`, `Cargo.lock`
+- `adapters/aozora/src/{main.rs,lib.rs,aat.rs,gaiji.rs,source.rs}`
+- `adapters/aozora/tests/smoke.rs`
+- `adapters/aozora/benches/adapter_bench.rs` (optional, parity with aozora-rs)
+- `tests/aozora-adapter-smoke.sh`
+
+Modify:
+- `flake.nix`: add `reference-aozora-p4suta-src` input, `aozoraAdapter`
+  package, `aozora-smoke-check` runCommand.
+- `Cargo.toml` (root): add `"adapters/aozora"` to `exclude`.
+- `justfile`: add `aozora-build`/`aozora-test`/`aozora-smoke` recipes,
+  `aozora_full_aat_dir` env var, and the cross-adapter `--aat-dir aozora=…`
+  entry.
+- `docs/adapter-fidelity.md`: add the §5 row (Provisional Direct).
+
+Not modified:
+- `crates/README.md` adapter-facing note (no new `ab-*` adapter helper).
+- `adapters/aozora-rs/` (broken-by-decision, unchanged).
+
+## 12. Open unknowns with falsifiers
+
+| ID | Question | Falsifier (what would flip the direction/tier) |
+|---|---|---|
+| U1 | Does `Tree` expose every AAT axis the matrix demands (warigaki, yokogumi, caption, jisage, keigakomi, chitsuki, jizume, burasage, scoped tcy, block bold/italic/font-size)? | TEI-EAJ all-work + corpus run shows a projected axis is absent or unprojectable → matrix row downgrades to **Direct-incomplete** with named gaps. |
+| U2 | How many JIS-form gaiji remain unresolved upstream? | Gaiji fixture subset + corpus shows a measurable upstream-unresolved rate → recorded in matrix row's caveat (mirrors `aozora-rs` gap). |
+| U3 | How do `Tree::diagnostics` severities map to `meta.parse_complete` / warnings? | No clean severity→AAT-status mapping exists → mapper defines an explicit mapping table (matches `aozora-epub3` `[ERROR]`/`[WARN]` policy) and records it. |
+| U4 | Which exact commit does the adapter pin? | Offline flake build fails to reproduce against the chosen SHA → re-pin. The §5 row cites a SHA that is not the pinned commit → blocker. |
+| U5 | Are TEI-EAJ counterpart Aozora sources materialized for Level 3 evidence? | Counterparts missing at measurement time → adapter cannot produce Level 3 TEI evidence for those works (recorded as measurement limitation, not a build failure). |
+| U6 | Is `aozora-notation-spec` vendored/pinned, and does the vector runner compare projections? | `must`-level vector fails against the adapter → adapter blocker (not a measurement note). `should`/`may` divergence → warning only. |
+
+## 13. Incubation note
 
 This spec is provisional per `hammock-driven-design`. The seam decision is
 firm (decisive probe evidence in §2); the recorded unknowns U1–U6 are

@@ -5,7 +5,7 @@
 - source_authority_gate: `SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED`
 - note: this is not a passing representability gate; durable representability claims remain blocked until strict_errors is empty.
 - strict_errors:
-  - 1828 unallowlisted source markers
+  - 1802 unallowlisted source markers
 
 ## Scope
 
@@ -16,13 +16,13 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 - works_scanned: 17894
 - works_failed: 0
 - markers_total: 4324663
-- unknown_markers_total: 16698
-- unallowlisted_unknown_markers_total: 1828
+- unknown_markers_total: 16672
+- unallowlisted_unknown_markers_total: 1802
 - allowlisted_unknown_markers_total: 14870
 
 ## Representability
 
-- typed_occurrences: 4567498
+- typed_occurrences: 4567524
 - raw_preserved_occurrences: 35335
 - out_of_body_occurrences: 950
 - unsupported_occurrences: 13920
@@ -58,7 +58,7 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | indentation.basic | 8169 | 134394 | 000005_5, 000005_53194, 000006_1868, 000006_1869, 000006_3310 |
 | indentation.burasage | 1209 | 13265 | 000006_3311, 000006_58819, 000008_47386, 000009_55881, 000019_4376 |
 | indentation.chitsuki | 6245 | 20292 | 000006_1868, 000006_1869, 000006_3310, 000006_3311, 000006_382 |
-| indentation.jisage_block | 4603 | 94949 | 000005_5, 000005_53194, 000006_1868, 000006_1869, 000006_3310 |
+| indentation.jisage_block | 4605 | 94975 | 000005_5, 000005_53194, 000006_1868, 000006_1869, 000006_3310 |
 | indentation.jisage_oneline | 121 | 278 | 000025_202, 000025_216, 000035_235, 000035_266, 000038_42207 |
 | indentation.jizume | 242 | 3239 | 000026_55781, 000034_55507, 000040_47289, 000050_48400, 000055_56499 |
 | iteration.kunoji | 1125 | 10700 | 000006_58810, 000006_58819, 000008_47357, 000012_1092, 000012_24448 |
@@ -114,7 +114,6 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | 000009_45340 | 246 | CommandFullwidth | ［＃図６入る］ | 図６入る |
 | 000009_45340 | 248 | CommandFullwidth | ［＃図７入る］ | 図７入る |
 | 000009_45340 | 337 | CommandFullwidth | ［＃図８入る］ | 図８入る |
-| 000009_55881 | 189 | CommandFullwidth | ［＃ここで字下げおわり］ | ここで字下げおわり |
 | 000012_10 | 32 | CommandFullwidth | ［＃一字下げ忘れか？200-14］ | 一字下げ忘れか？200-14 |
 | 000012_10 | 64 | CommandFullwidth | ［＃一字下げ忘れか？207-4］ | 一字下げ忘れか？207-4 |
 | 000012_10 | 85 | CommandFullwidth | ［＃一字下げ忘れか？211-6］ | 一字下げ忘れか？211-6 |
@@ -124,8 +123,6 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | 000019_4376 | 105 | CommandFullwidth | ［＃「”」は下付き］ | 「”」は下付き |
 | 000022_197 | 55 | CommandFullwidth | ［＃原文まま］ | 原文まま |
 | 000022_197 | 48 | CommandFullwidth | ［＃原文まま］ | 原文まま |
-| 000023_1698 | 1194 | CommandFullwidth | ［＃字下げ終わり］ | 字下げ終わり |
-| 000023_1698 | 1363 | CommandFullwidth | ［＃字下げ終わり］ | 字下げ終わり |
 | 000023_55372 | 71 | CommandFullwidth | ［＃「（昭和２年５月「文芸春秋」）」は１段階小さな文字］ | 「（昭和２年５月「文芸春秋」）」は１段階小さな文字 |
 | 000023_55376 | 118 | CommandFullwidth | ［＃「（昭和４年５月「文芸春秋」）」は１段階小さな文字］ | 「（昭和４年５月「文芸春秋」）」は１段階小さな文字 |
 | 000023_55380 | 147 | CommandFullwidth | ［＃「（昭和２年３月「中央公論」）」は１段階小さな文字］ | 「（昭和２年３月「中央公論」）」は１段階小さな文字 |
@@ -176,12 +173,15 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | 000035_1566 | 23 | CommandFullwidth | ［＃地から２字上げ、２行にわたる丸括弧で挟んだ２行組み］ | 地から２字上げ、２行にわたる丸括弧で挟んだ２行組み |
 | 000035_296 | 11 | CommandFullwidth | ［＃ここから引用文、８字下げ］ | ここから引用文、８字下げ |
 | 000037_1417 | 258 | CommandFullwidth | ［＃岩波文庫版では「殺され」］ | 岩波文庫版では「殺され」 |
-| 000038_327 | 143 | CommandFullwidth | ［＃改行ごとに二字下げ］ | 改行ごとに二字下げ |
-| 000038_327 | 143 | CommandFullwidth | ［＃二字下げ終わり］ | 二字下げ終わり |
+| 000038_336 | 138 | CommandFullwidth | ［＃「霙」の誤り？、400-7］ | 「霙」の誤り？、400-7 |
+| 000040_380 | 41 | CommandFullwidth | ［＃「３」は「√」の記号の中に入っている］ | 「３」は「√」の記号の中に入っている |
+| 000040_380 | 35 | CommandFullwidth | ［＃「３」は「√」の記号の中に入っている］ | 「３」は「√」の記号の中に入っている |
+| 000042_2345 | 37 | CommandFullwidth | ［＃「1/4πDt」は分数］ | 「1/4πDt」は分数 |
+| 000042_2345 | 37 | CommandFullwidth | ［＃「2」は上付き小文字、「r2/4Dt」は分数、「-r2/4Dt」は「e」の上付き］ | 「2」は上付き小文字、「r2/4Dt」は分数、「-r2/4Dt」は「e」の上付き |
 
 ## Unknown Source Marker Classes
 
-Showing 50 report rows of 1340 total classes. JSON carries 1000 top classes. truncated: true
+Showing 50 report rows of 1330 total classes. JSON carries 1000 top classes. truncated: true
 
 | kind | raw | occurrences | unallowlisted | allowlisted | samples |
 |---|---|---:|---:|---:|---|
@@ -211,10 +211,8 @@ Showing 50 report rows of 1340 total classes. JSON carries 1000 top classes. tru
 | CommandFullwidth | ［＃「阿」は一段階小さな文字］ | 5 | 5 | 0 | 000081_47027 |
 | CommandFullwidth | ［＃これより手紙文、１字下げ］ | 5 | 5 | 0 | 000280_1706 |
 | CommandFullwidth | ［＃ホテル名］ | 5 | 5 | 0 | 000311_46245, 000311_46247 |
-| CommandFullwidth | ［＃字下げ終わり］ | 5 | 5 | 0 | 000023_1698, 000106_4850, 000903_43866, 001885_59516 |
 | CommandFullwidth | ［＃未完］ | 5 | 5 | 0 | 000311_1983, 000311_2879, 000311_3023, 000311_3027, 000311_3080 |
 | CommandFullwidth | ［＃直線は中央に配置］ | 5 | 5 | 0 | 000129_2298 |
-| CommandFullwidth | ［＃１字下げここまで］ | 5 | 5 | 0 | 000280_1706 |
 | CommandFullwidth | ［＃ 一つ目の「e」は「´」付き］ | 4 | 4 | 0 | 000129_2522 |
 | CommandFullwidth | ［＃rは下ドット付き］ | 4 | 4 | 0 | 001096_42686, 001096_43672 |
 | CommandFullwidth | ［＃「〃」は上部に出ている］ | 4 | 4 | 0 | 000305_1896 |
@@ -235,6 +233,8 @@ Showing 50 report rows of 1340 total classes. JSON carries 1000 top classes. tru
 | CommandFullwidth | ［＃ηに鋭アクセント］ | 3 | 3 | 0 | 000065_393 |
 | CommandFullwidth | ［＃οに鋭アクセント。σはファイナルシグマ］ | 3 | 3 | 0 | 000065_393 |
 | CommandFullwidth | ［＃「1/14」は分数］ | 3 | 3 | 0 | 000042_2345 |
+| CommandFullwidth | ［＃「1/4」は分数］ | 3 | 3 | 0 | 000042_2345, 000183_45359 |
+| CommandFullwidth | ［＃「2」は上付き小文字、「1/142」は分数］ | 3 | 3 | 0 | 000042_2345 |
 
 ## Decode Failures
 

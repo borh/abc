@@ -723,6 +723,39 @@ fn source_inventory_classifies_indentation_corpus_variants() {
 }
 
 #[test]
+fn source_inventory_classifies_jisage_wording_variants() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = [
+        "［＃字下げ終わり］",
+        "［＃1字下げ終わり］",
+        "［＃１字下げここまで］",
+        "［＃ここで字下げおわり］",
+        "［＃ここで字下げ終り］",
+        "［＃ここより１字下げ］",
+        "［＃以下３字下げ］",
+        "［＃ここから一字下げ］",
+        "［＃改行ごとに二字下げ］",
+        "［＃二字下げ終わり］",
+    ]
+    .join("\n");
+    let summary = inventory_document("fixture", &source, &patterns);
+
+    assert_eq!(
+        summary.unknown_examples,
+        [],
+        "known jisage wording variants should not remain unknown"
+    );
+    assert_eq!(
+        summary
+            .row_counts
+            .get("indentation.jisage_block")
+            .map(|count| count.occurrences),
+        Some(10)
+    );
+}
+
+#[test]
 fn source_inventory_classifies_chitsuki_alignment_corpus_variants() {
     let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
     let patterns = patterns_from_rows(matrix.rows());

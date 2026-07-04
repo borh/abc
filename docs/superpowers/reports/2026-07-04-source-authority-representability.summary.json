@@ -3,8 +3,8 @@
   "works_scanned": 17894,
   "works_failed": 0,
   "markers_total": 4324663,
-  "unknown_markers_total": 16698,
-  "unallowlisted_unknown_markers_total": 1828,
+  "unknown_markers_total": 16672,
+  "unallowlisted_unknown_markers_total": 1802,
   "allowlisted_unknown_markers_total": 14870,
   "rows": {
     "annotation.bouki": {
@@ -294,8 +294,8 @@
       ]
     },
     "indentation.jisage_block": {
-      "works_with_marker": 4603,
-      "occurrences": 94949,
+      "works_with_marker": 4605,
+      "occurrences": 94975,
       "sample_works": [
         "000005_5",
         "000005_53194",
@@ -455,7 +455,7 @@
       ]
     }
   },
-  "unknown_classes_total": 1340,
+  "unknown_classes_total": 1330,
   "unknown_classes_truncated": true,
   "unknown_classes": [
     {
@@ -766,20 +766,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃字下げ終わり］",
-      "body": "字下げ終わり",
-      "occurrences": 5,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 5,
-      "sample_works": [
-        "000023_1698",
-        "000106_4850",
-        "000903_43866",
-        "001885_59516"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃未完］",
       "body": "未完",
       "occurrences": 5,
@@ -802,17 +788,6 @@
       "unallowlisted_occurrences": 5,
       "sample_works": [
         "000129_2298"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃１字下げここまで］",
-      "body": "１字下げここまで",
-      "occurrences": 5,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 5,
-      "sample_works": [
-        "000280_1706"
       ]
     },
     {
@@ -1226,19 +1201,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃ここで字下げおわり］",
-      "body": "ここで字下げおわり",
-      "occurrences": 3,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 3,
-      "sample_works": [
-        "000009_55881",
-        "000052_5068",
-        "000416_47406"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃ここで１段階小さな文字終わり］",
       "body": "ここで１段階小さな文字終わり",
       "occurrences": 3,
@@ -1325,18 +1287,6 @@
       "unallowlisted_occurrences": 3,
       "sample_works": [
         "000165_2392"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃以下３字下げ］",
-      "body": "以下３字下げ",
-      "occurrences": 3,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 3,
-      "sample_works": [
-        "000827_3411",
-        "000906_42415"
       ]
     },
     {
@@ -1469,17 +1419,6 @@
       "unallowlisted_occurrences": 3,
       "sample_works": [
         "000042_2345"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃1字下げ終わり］",
-      "body": "1字下げ終わり",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000280_1706"
       ]
     },
     {
@@ -1972,18 +1911,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃ここから一字下げ］",
-      "body": "ここから一字下げ",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000218_5007",
-        "000320_2168"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃ここから図表下部解説文］",
       "body": "ここから図表下部解説文",
       "occurrences": 2,
@@ -2052,18 +1979,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃ここで字下げ終り］",
-      "body": "ここで字下げ終り",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000997_46918",
-        "001421_50424"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃ここで引用文終り］",
       "body": "ここで引用文終り",
       "occurrences": 2,
@@ -2094,6 +2009,18 @@
       "sample_works": [
         "001030_4806",
         "001030_4812"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃ここで１字下げ終わり］",
+      "body": "ここで１字下げ終わり",
+      "occurrences": 2,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 2,
+      "sample_works": [
+        "000052_5071",
+        "001918_61170"
       ]
     },
     {
@@ -2297,17 +2224,6 @@
       "unallowlisted_occurrences": 2,
       "sample_works": [
         "000262_2245"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃二字下げ終わり］",
-      "body": "二字下げ終わり",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000038_327"
       ]
     },
     {
@@ -2690,17 +2606,6 @@
       "sample_works": [
         "001093_42590",
         "001093_42595"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃改行ごとに二字下げ］",
-      "body": "改行ごとに二字下げ",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000038_327"
       ]
     },
     {
@@ -9227,17 +9132,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃ここから二字下げ］",
-      "body": "ここから二字下げ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001311_49829"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃ここから天付き折り返して１字下げ］",
       "body": "ここから天付き折り返して１字下げ",
       "occurrences": 1,
@@ -9733,6 +9627,17 @@
     },
     {
       "kind": "CommandFullwidth",
+      "raw": "［＃ここで３字下げ終わり］",
+      "body": "ここで３字下げ終わり",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "001670_55342"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
       "raw": "［＃ここに「下ニ詳ナリ」という注意書きが入る］",
       "body": "ここに「下ニ詳ナリ」という注意書きが入る",
       "occurrences": 1,
@@ -9806,17 +9711,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000162_886"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここより１字下げ］",
-      "body": "ここより１字下げ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000052_5068"
       ]
     },
     {
@@ -11108,17 +11002,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃以下１字下げ］",
-      "body": "以下１字下げ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000280_1706"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃以降の「――」で始まる通信文の2行目以降は2字下げ］",
       "body": "以降の「――」で始まる通信文の2行目以降は2字下げ",
       "occurrences": 1,
@@ -11534,6 +11417,116 @@
       "sample_works": [
         "000160_1255"
       ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃古本屋名］",
+      "body": "古本屋名",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46248"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃古田中孝子、母葭江の従妹］",
+      "body": "古田中孝子、母葭江の従妹",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46237"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃句点が抜けていると考えられる］",
+      "body": "句点が抜けていると考えられる",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000048_358"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃右下の部分は「蝎」の右下部と同形］",
+      "body": "右下の部分は「蝎」の右下部と同形",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000124_652"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃右図の解説文終わり］",
+      "body": "右図の解説文終わり",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000250_18353"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃同志］",
+      "body": "同志",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46246"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃呉昌碩］",
+      "body": "呉昌碩",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46244"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃喜重郎］",
+      "body": "喜重郎",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000160_1255"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃図10、花瓶に活けられた花の絵］",
+      "body": "図10、花瓶に活けられた花の絵",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_33188"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃図11、インク壺の絵］",
+      "body": "図11、インク壺の絵",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_33188"
+      ]
     }
   ],
   "unknown_examples": [
@@ -11790,13 +11783,6 @@
       "body": "図８入る"
     },
     {
-      "work_id": "000009_55881",
-      "line": 189,
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここで字下げおわり］",
-      "body": "ここで字下げおわり"
-    },
-    {
       "work_id": "000012_10",
       "line": 32,
       "kind": "CommandFullwidth",
@@ -11858,20 +11844,6 @@
       "kind": "CommandFullwidth",
       "raw": "［＃原文まま］",
       "body": "原文まま"
-    },
-    {
-      "work_id": "000023_1698",
-      "line": 1194,
-      "kind": "CommandFullwidth",
-      "raw": "［＃字下げ終わり］",
-      "body": "字下げ終わり"
-    },
-    {
-      "work_id": "000023_1698",
-      "line": 1363,
-      "kind": "CommandFullwidth",
-      "raw": "［＃字下げ終わり］",
-      "body": "字下げ終わり"
     },
     {
       "work_id": "000023_55372",
@@ -12224,30 +12196,51 @@
       "body": "岩波文庫版では「殺され」"
     },
     {
-      "work_id": "000038_327",
-      "line": 143,
+      "work_id": "000038_336",
+      "line": 138,
       "kind": "CommandFullwidth",
-      "raw": "［＃改行ごとに二字下げ］",
-      "body": "改行ごとに二字下げ"
+      "raw": "［＃「霙」の誤り？、400-7］",
+      "body": "「霙」の誤り？、400-7"
     },
     {
-      "work_id": "000038_327",
-      "line": 143,
+      "work_id": "000040_380",
+      "line": 41,
       "kind": "CommandFullwidth",
-      "raw": "［＃二字下げ終わり］",
-      "body": "二字下げ終わり"
+      "raw": "［＃「３」は「√」の記号の中に入っている］",
+      "body": "「３」は「√」の記号の中に入っている"
+    },
+    {
+      "work_id": "000040_380",
+      "line": 35,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「３」は「√」の記号の中に入っている］",
+      "body": "「３」は「√」の記号の中に入っている"
+    },
+    {
+      "work_id": "000042_2345",
+      "line": 37,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「1/4πDt」は分数］",
+      "body": "「1/4πDt」は分数"
+    },
+    {
+      "work_id": "000042_2345",
+      "line": 37,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「2」は上付き小文字、「r2/4Dt」は分数、「-r2/4Dt」は「e」の上付き］",
+      "body": "「2」は上付き小文字、「r2/4Dt」は分数、「-r2/4Dt」は「e」の上付き"
     }
   ],
   "decode_failures": [],
   "representability": {
-    "typed_occurrences": 4567498,
+    "typed_occurrences": 4567524,
     "raw_preserved_occurrences": 35335,
     "out_of_body_occurrences": 950,
     "unsupported_occurrences": 13920,
     "needs_research_occurrences": 0
   },
   "strict_errors": [
-    "1828 unallowlisted source markers"
+    "1802 unallowlisted source markers"
   ],
   "inputs": {
     "matrix": "/home/bor/Projects/ab-validator/data/aozora-syntax-coverage.toml",

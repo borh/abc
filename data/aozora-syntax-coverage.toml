@@ -2087,11 +2087,29 @@ priority = 2
 category = "inline_annotation"
 feature_keys = ["font_size"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/font_size.rb", "references/parsers/aozora2html/lib/aozora2html/tag/inline_font_size.rb"]
-source_examples = ["［＃ここから小3段階大な文字］", "「text」の中2段階大な文字"]
-source_patterns = ['［＃ここから[大中小]?[０-９0-9]+段階(小さ|大き)な文字］', '［＃[大中小]?[０-９0-9]+段階(小さ|大き)な文字］', '［＃「[^」]+」は[大中小]?[０-９0-9]+段階(小さ|大き)な文字］', '［＃(ここで)?(小さな|大きな)文字終わり］', '［＃行右小書き(終わり)?］', '［＃「[^\n]+」は行[左右]小書き］', '［＃「[^\n]+」は小書き右寄せ］', '［＃「[^」]+」は[上下]付き小文字］', '［＃「[^」]+」は小書き］', '［＃「[^\n]+」[はの]小(さい)?文字］', '［＃[大中小]文字］', '［＃大文字、太字］', '小さい活字', '小さい活字も終わり', '「[^」]+」の[大中小]?[０-９0-9]+段階(小さ|大き)な文字']
+source_examples = ["［＃ここから小3段階大な文字］", "「text」の中2段階大な文字", "［＃「”」は下付き］"]
+source_patterns = [
+  '［＃ここから[大中小]?[０-９0-9一二三四五六七八九十]+段階(小さ|大き)な文字］',
+  '［＃[大中小]?[０-９0-9一二三四五六七八九十]+段階(小さ|大き)な文字］',
+  '［＃「[^」]+」は[大中小]?[０-９0-9一二三四五六七八九十]+段階(小さ|大き)な文字］',
+  '［＃(ここで)?(小さな|大きな)文字終わり］',
+  '［＃行右小書き(終わり)?］',
+  '［＃「[^\n]+」は行[左右]小書き］',
+  '［＃「[^\n]+」は小書き右寄せ］',
+  '［＃「[^」]+」は(すべて)?[上下]付き(小文字|小書き)?］',
+  '［＃[^］]+すべて[上下]付き小文字[^］]*］',
+  '［＃「[^」]+」は小書き］',
+  '［＃「[^\n]+」[はの]小(さい)?文字］',
+  '［＃「[^」]+」は上部に出ている］',
+  '［＃[大中小]文字］',
+  '［＃大文字、太字］',
+  '小さい活字',
+  '小さい活字も終わり',
+  '「[^」]+」の[大中小]?[０-９0-9一二三四五六七八九十]+段階(小さ|大き)な文字',
+]
 ir_nodes = ["Inline::Style", "Block::Style"]
 aat_nodes = ["font_size"]
-tei_projection = "hi rend=fontsize"
+tei_projection = "hi rend=fontsize|subscript|superscript|raised"
 plaintext_projection = "content_only"
 comparison_projection = "content_only"
 validation_properties = ["style_scope_balance"]

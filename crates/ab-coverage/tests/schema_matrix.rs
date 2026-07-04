@@ -851,7 +851,13 @@ fn source_inventory_classifies_font_size_subscript_variants() {
     let source = [
         "［＃「b」は下付き小文字］",
         "［＃「a,1」は下付き小文字］",
+        "［＃「”」は下付き］",
+        "［＃「1」はすべて下付き小文字］",
+        "［＃アラビア数字はすべて下付き小文字］",
         "［＃「大字」は１段階小さな文字］",
+        "［＃「阿」は一段階小さな文字］",
+        "［＃「〃」は上部に出ている］",
+        "［＃「競吟」は上部に出ている］",
         "［＃大きな文字終わり］",
     ]
     .join("\n");
@@ -867,7 +873,7 @@ fn source_inventory_classifies_font_size_subscript_variants() {
             .row_counts
             .get("decoration.font_size")
             .map(|count| count.occurrences),
-        Some(4)
+        Some(10)
     );
 }
 

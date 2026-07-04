@@ -3,8 +3,8 @@
   "works_scanned": 17894,
   "works_failed": 0,
   "markers_total": 4324663,
-  "unknown_markers_total": 16252,
-  "unallowlisted_unknown_markers_total": 1382,
+  "unknown_markers_total": 16217,
+  "unallowlisted_unknown_markers_total": 1347,
   "allowlisted_unknown_markers_total": 14870,
   "rows": {
     "accent.dotted_letter": {
@@ -127,14 +127,14 @@
       ]
     },
     "decoration.font_size": {
-      "works_with_marker": 1203,
-      "occurrences": 51406,
+      "works_with_marker": 1208,
+      "occurrences": 51444,
       "sample_works": [
         "000006_1869",
         "000008_58922",
         "000011_899",
-        "000019_58861",
-        "000019_59261"
+        "000019_4376",
+        "000019_58861"
       ]
     },
     "decoration.keigakomi": {
@@ -497,7 +497,7 @@
       ]
     }
   },
-  "unknown_classes_total": 1123,
+  "unknown_classes_total": 1108,
   "unknown_classes_truncated": true,
   "unknown_classes": [
     {
@@ -543,30 +543,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「”」は下付き］",
-      "body": "「”」は下付き",
-      "occurrences": 5,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 5,
-      "sample_works": [
-        "000019_4376",
-        "000129_688",
-        "000136_42754"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「阿」は一段階小さな文字］",
-      "body": "「阿」は一段階小さな文字",
-      "occurrences": 5,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 5,
-      "sample_works": [
-        "000081_47027"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃これより手紙文、１字下げ］",
       "body": "これより手紙文、１字下げ",
       "occurrences": 5,
@@ -604,17 +580,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「〃」は上部に出ている］",
-      "body": "「〃」は上部に出ている",
-      "occurrences": 4,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 4,
-      "sample_works": [
-        "000305_1896"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「ちへ」の右に「）」］",
       "body": "「ちへ」の右に「）」",
       "occurrences": 4,
@@ -633,17 +598,6 @@
       "unallowlisted_occurrences": 4,
       "sample_works": [
         "000124_658"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「競吟」は上部に出ている］",
-      "body": "「競吟」は上部に出ている",
-      "occurrences": 4,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 4,
-      "sample_works": [
-        "000305_1896"
       ]
     },
     {
@@ -701,17 +655,6 @@
       "sample_works": [
         "000311_4205",
         "000311_4206"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「せり吟」は上部に出ている］",
-      "body": "「せり吟」は上部に出ている",
-      "occurrences": 3,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 3,
-      "sample_works": [
-        "000305_1896"
       ]
     },
     {
@@ -819,17 +762,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃アラビア数字はすべて下付き小文字］",
-      "body": "アラビア数字はすべて下付き小文字",
-      "occurrences": 3,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 3,
-      "sample_works": [
-        "000042_2345"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃ルビの「しふ」は初出では「しう」］",
       "body": "ルビの「しふ」は初出では「しう」",
       "occurrences": 3,
@@ -885,17 +817,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「1」はすべて下付き小文字］",
-      "body": "「1」はすべて下付き小文字",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000042_2345"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「IV」はローマ数字の４］",
       "body": "「IV」はローマ数字の４",
       "occurrences": 2,
@@ -903,17 +824,6 @@
       "unallowlisted_occurrences": 2,
       "sample_works": [
         "000301_1872"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「“」は下付き］",
-      "body": "「“」は下付き",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000129_688"
       ]
     },
     {
@@ -2234,17 +2144,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃ s、a、b に続くアラビア数字はすべて下付き小文字、νに続くアラビア数字はすべて上付き小文字］",
-      "body": " s、a、b に続くアラビア数字はすべて下付き小文字、νに続くアラビア数字はすべて上付き小文字",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000042_2345"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃simhaのmは上ドット付き］",
       "body": "simhaのmは上ドット付き",
       "occurrences": 1,
@@ -2421,30 +2320,8 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「-6」は上付き］",
-      "body": "「-6」は上付き",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001569_53219"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「-λt」は「e」の上付き］",
       "body": "「-λt」は「e」の上付き",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000042_2345"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「5」はすべて下付き小文字］",
-      "body": "「5」はすべて下付き小文字",
       "occurrences": 1,
       "allowlisted_occurrences": 0,
       "unallowlisted_occurrences": 1,
@@ -2615,17 +2492,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000301_1872"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「i」はすべて下付き小文字］",
-      "body": "「i」はすべて下付き小文字",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000042_2345"
       ]
     },
     {
@@ -5853,17 +5719,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「春」は上部に出ている］",
-      "body": "「春」は上部に出ている",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000305_1896"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「景色」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）では「景気」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「景色」］",
       "body": "「景色」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）では「景気」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「景色」",
       "occurrences": 1,
@@ -6113,17 +5968,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000885_51307"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「水結」は上部に出ている］",
-      "body": "「水結」は上部に出ている",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000305_1896"
       ]
     },
     {
@@ -7169,17 +7013,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000885_2165"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「（秋季）」は上部に出ている］",
-      "body": "「（秋季）」は上部に出ている",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000305_1896"
       ]
     },
     {
@@ -11548,6 +11381,171 @@
       "sample_works": [
         "000160_1255"
       ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃焔の火へんを炎にしたうえで、へんとつくりをいれかえた字、焔の正字と同字］",
+      "body": "焔の火へんを炎にしたうえで、へんとつくりをいれかえた字、焔の正字と同字",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000124_659"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃熱狂的］",
+      "body": "熱狂的",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46248"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃現代詩への夕べ］",
+      "body": "現代詩への夕べ",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46248"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃理論物理学者。科学思想家］",
+      "body": "理論物理学者。科学思想家",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000160_1255"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃用もないのに廊下をうろつき回ること］",
+      "body": "用もないのに廊下をうろつき回ること",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000160_1255"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃田村俊子］",
+      "body": "田村俊子",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46252"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃百合子の実家］",
+      "body": "百合子の実家",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46239"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃百合子の愛称］",
+      "body": "百合子の愛称",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_4833"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃石橋和訓夫婦］",
+      "body": "石橋和訓夫婦",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46244"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃社会民主党の右翼少数派、ボルシェビキ（左翼多数派）と対立］",
+      "body": "社会民主党の右翼少数派、ボルシェビキ（左翼多数派）と対立",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46248"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃祖母運の家の隣人］",
+      "body": "祖母運の家の隣人",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46236"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃神奈川県国府津の海岸に中條家の別荘があった］",
+      "body": "神奈川県国府津の海岸に中條家の別荘があった",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_4833"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃神沢フミ］",
+      "body": "神沢フミ",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_4833"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃神近市子］",
+      "body": "神近市子",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46242"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃福地源一郎］",
+      "body": "福地源一郎",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000311_46241"
+      ]
     }
   ],
   "unknown_examples": [
@@ -11816,20 +11814,6 @@
       "kind": "CommandFullwidth",
       "raw": "［＃「み」余分か、それとも「見」か？］",
       "body": "「み」余分か、それとも「見」か？"
-    },
-    {
-      "work_id": "000019_4376",
-      "line": 96,
-      "kind": "CommandFullwidth",
-      "raw": "［＃「”」は下付き］",
-      "body": "「”」は下付き"
-    },
-    {
-      "work_id": "000019_4376",
-      "line": 105,
-      "kind": "CommandFullwidth",
-      "raw": "［＃「”」は下付き］",
-      "body": "「”」は下付き"
     },
     {
       "work_id": "000022_197",
@@ -12248,20 +12232,34 @@
       "work_id": "000042_2345",
       "line": 94,
       "kind": "CommandFullwidth",
-      "raw": "［＃アラビア数字はすべて下付き小文字］",
-      "body": "アラビア数字はすべて下付き小文字"
+      "raw": "［＃２文字目の「i」は下付き小文字、４文字目の「i」は上付き小文字］",
+      "body": "２文字目の「i」は下付き小文字、４文字目の「i」は上付き小文字"
+    },
+    {
+      "work_id": "000042_2345",
+      "line": 109,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「P = 0.07693694」は上線（￣）付き］",
+      "body": "「P = 0.07693694」は上線（￣）付き"
+    },
+    {
+      "work_id": "000042_2347",
+      "line": 14,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「（１）」は注釈番号］",
+      "body": "「（１）」は注釈番号"
     }
   ],
   "decode_failures": [],
   "representability": {
-    "typed_occurrences": 4566730,
+    "typed_occurrences": 4566768,
     "raw_preserved_occurrences": 36835,
     "out_of_body_occurrences": 950,
     "unsupported_occurrences": 13920,
     "needs_research_occurrences": 0
   },
   "strict_errors": [
-    "1382 unallowlisted source markers"
+    "1347 unallowlisted source markers"
   ],
   "inputs": {
     "matrix": "/home/bor/Projects/ab-validator/data/aozora-syntax-coverage.toml",

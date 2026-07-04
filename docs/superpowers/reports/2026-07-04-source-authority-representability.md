@@ -5,7 +5,7 @@
 - source_authority_gate: `SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED`
 - note: this is not a passing representability gate; durable representability claims remain blocked until strict_errors is empty.
 - strict_errors:
-  - 1382 unallowlisted source markers
+  - 1347 unallowlisted source markers
 
 ## Scope
 
@@ -16,13 +16,13 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 - works_scanned: 17894
 - works_failed: 0
 - markers_total: 4324663
-- unknown_markers_total: 16252
-- unallowlisted_unknown_markers_total: 1382
+- unknown_markers_total: 16217
+- unallowlisted_unknown_markers_total: 1347
 - allowlisted_unknown_markers_total: 14870
 
 ## Representability
 
-- typed_occurrences: 4566730
+- typed_occurrences: 4566768
 - raw_preserved_occurrences: 36835
 - out_of_body_occurrences: 950
 - unsupported_occurrences: 13920
@@ -43,7 +43,7 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | decoration.boten | 6235 | 129069 | 000005_53194, 000006_382, 000006_383, 000006_58819, 000008_1083 |
 | decoration.bousen | 322 | 18111 | 000006_1869, 000013_11, 000019_4376, 000034_55507, 000038_1408 |
 | decoration.direction_override | 6 | 65 | 000096_935, 000866_3039, 001094_42603, 001242_46444, 001467_50733 |
-| decoration.font_size | 1203 | 51406 | 000006_1869, 000008_58922, 000011_899, 000019_58861, 000019_59261 |
+| decoration.font_size | 1208 | 51444 | 000006_1869, 000008_58922, 000011_899, 000019_4376, 000019_58861 |
 | decoration.keigakomi | 138 | 677 | 000063_385, 000067_1789, 000072_408, 000072_864, 000096_2093 |
 | emphasis.basic | 6576 | 157495 | 000005_53194, 000006_1869, 000006_382, 000006_383, 000006_58819 |
 | figure.image_caption | 103 | 1777 | 000019_42378, 000019_42379, 000019_42380, 000019_42381, 000019_42382 |
@@ -120,8 +120,6 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | 000009_45340 | 337 | CommandFullwidth | ［＃図８入る］ | 図８入る |
 | 000012_223 | 11 | CommandFullwidth | ［＃「み」余分か、それとも「見」か？］ | 「み」余分か、それとも「見」か？ |
 | 000012_223 | 21 | CommandFullwidth | ［＃「み」余分か、それとも「見」か？］ | 「み」余分か、それとも「見」か？ |
-| 000019_4376 | 96 | CommandFullwidth | ［＃「”」は下付き］ | 「”」は下付き |
-| 000019_4376 | 105 | CommandFullwidth | ［＃「”」は下付き］ | 「”」は下付き |
 | 000022_197 | 55 | CommandFullwidth | ［＃原文まま］ | 原文まま |
 | 000022_197 | 48 | CommandFullwidth | ［＃原文まま］ | 原文まま |
 | 000023_55372 | 71 | CommandFullwidth | ［＃「（昭和２年５月「文芸春秋」）」は１段階小さな文字］ | 「（昭和２年５月「文芸春秋」）」は１段階小さな文字 |
@@ -181,32 +179,29 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | 000042_2345 | 45 | CommandFullwidth | ［＃「-(r2/4Dt+λt)」は「e」の上付き］ | 「-(r2/4Dt+λt)」は「e」の上付き |
 | 000042_2345 | 85 | CommandFullwidth | ［＃「v」は下線（_）付き、181-表組2行目］ | 「v」は下線（_）付き、181-表組2行目 |
 | 000042_2345 | 89 | CommandFullwidth | ［＃「t」は下点付き、182-6］ | 「t」は下点付き、182-6 |
-| 000042_2345 | 94 | CommandFullwidth | ［＃アラビア数字はすべて下付き小文字］ | アラビア数字はすべて下付き小文字 |
+| 000042_2345 | 94 | CommandFullwidth | ［＃２文字目の「i」は下付き小文字、４文字目の「i」は上付き小文字］ | ２文字目の「i」は下付き小文字、４文字目の「i」は上付き小文字 |
+| 000042_2345 | 109 | CommandFullwidth | ［＃「P = 0.07693694」は上線（￣）付き］ | 「P = 0.07693694」は上線（￣）付き |
+| 000042_2347 | 14 | CommandFullwidth | ［＃「（１）」は注釈番号］ | 「（１）」は注釈番号 |
 
 ## Unknown Source Marker Classes
 
-Showing 50 report rows of 1123 total classes. JSON carries 1000 top classes. truncated: true
+Showing 50 report rows of 1108 total classes. JSON carries 1000 top classes. truncated: true
 
 | kind | raw | occurrences | unallowlisted | allowlisted | samples |
 |---|---|---:|---:|---:|---|
 | MalformedAccentNotation | 〔 | 56 | 56 | 0 | 000026_219, 000034_55507, 000081_4416, 000081_50764, 000091_522 |
 | CommandFullwidth | ［＃「地付き］ | 7 | 7 | 0 | 000150_46617 |
 | MalformedCommand | ［＃ | 6 | 6 | 0 | 000081_4461, 000106_2415, 000121_1754, 000148_798, 000331_2663 |
-| CommandFullwidth | ［＃「”」は下付き］ | 5 | 5 | 0 | 000019_4376, 000129_688, 000136_42754 |
-| CommandFullwidth | ［＃「阿」は一段階小さな文字］ | 5 | 5 | 0 | 000081_47027 |
 | CommandFullwidth | ［＃これより手紙文、１字下げ］ | 5 | 5 | 0 | 000280_1706 |
 | CommandFullwidth | ［＃未完］ | 5 | 5 | 0 | 000311_1983, 000311_2879, 000311_3023, 000311_3027, 000311_3080 |
 | CommandFullwidth | ［＃直線は中央に配置］ | 5 | 5 | 0 | 000129_2298 |
-| CommandFullwidth | ［＃「〃」は上部に出ている］ | 4 | 4 | 0 | 000305_1896 |
 | CommandFullwidth | ［＃「ちへ」の右に「）」］ | 4 | 4 | 0 | 000232_60242 |
 | CommandFullwidth | ［＃「エ」は小さい「ヱ」］ | 4 | 4 | 0 | 000124_658 |
-| CommandFullwidth | ［＃「競吟」は上部に出ている］ | 4 | 4 | 0 | 000305_1896 |
 | CommandFullwidth | ［＃「（１）」は注釈番号］ | 4 | 4 | 0 | 000042_2347, 000042_2354 |
 | CommandFullwidth | ［＃右寄せ］ | 4 | 4 | 0 | 000025_1144 |
 | CommandFullwidth | ［＃引用文終わり］ | 4 | 4 | 0 | 000034_233 |
 | CommandFullwidth | ［＃「x2」、「y2」、「x2」はそれぞれ縦中横、すべての「2」は上付き小書き］ | 3 | 3 | 0 | 000148_1102 |
 | CommandFullwidth | ［＃「うどん」と「きそば」は２列に並ぶ］ | 3 | 3 | 0 | 000311_4205, 000311_4206 |
-| CommandFullwidth | ［＃「せり吟」は上部に出ている］ | 3 | 3 | 0 | 000305_1896 |
 | CommandFullwidth | ［＃「レ」は返り点］ | 3 | 3 | 0 | 000284_2609 |
 | CommandFullwidth | ［＃「一六八頁」は「安康天皇」の「市の邊の押齒の王」］ | 3 | 3 | 0 | 001518_51731 |
 | CommandFullwidth | ［＃「｝（同時に）」は前２行の中央、下に］ | 3 | 3 | 0 | 000827_3411 |
@@ -216,15 +211,12 @@ Showing 50 report rows of 1123 total classes. JSON carries 1000 top classes. tru
 | CommandFullwidth | ［＃ここで字下げ、罫囲み終わり］ | 3 | 3 | 0 | 000125_45231, 000283_3226, 000283_4343 |
 | CommandFullwidth | ［＃ここで１段階小さな文字終わり］ | 3 | 3 | 0 | 000258_62443, 000923_47850 |
 | CommandFullwidth | ［＃この行ここまで相対的に字が小さい、ここからは下揃え、下から３字上げ］ | 3 | 3 | 0 | 000280_1706 |
-| CommandFullwidth | ［＃アラビア数字はすべて下付き小文字］ | 3 | 3 | 0 | 000042_2345 |
 | CommandFullwidth | ［＃ルビの「しふ」は初出では「しう」］ | 3 | 3 | 0 | 000885_51307 |
 | CommandFullwidth | ［＃以下の括弧内割注］ | 3 | 3 | 0 | 000165_2392 |
 | CommandFullwidth | ［＃天より３２字下げて地より３字上げで］ | 3 | 3 | 0 | 000182_946 |
 | CommandFullwidth | ［＃小見出し文字］ | 3 | 3 | 0 | 000096_1115 |
 | CommandFullwidth | ［＃見出し文字］ | 3 | 3 | 0 | 000096_1115 |
-| CommandFullwidth | ［＃「1」はすべて下付き小文字］ | 2 | 2 | 0 | 000042_2345 |
 | CommandFullwidth | ［＃「IV」はローマ数字の４］ | 2 | 2 | 0 | 000301_1872 |
-| CommandFullwidth | ［＃「“」は下付き］ | 2 | 2 | 0 | 000129_688 |
 | CommandFullwidth | ［＃「※」は「たけかんむり＋隻」、17-8］ | 2 | 2 | 0 | 000051_361 |
 | CommandFullwidth | ［＃「※」は「つつみがまえ（勹）」＋「夕」で、読みは「そうそう」67-6］ | 2 | 2 | 0 | 000074_431 |
 | CommandFullwidth | ［＃「」内の「レ」は返り点］ | 2 | 2 | 0 | 000301_1872 |
@@ -239,6 +231,14 @@ Showing 50 report rows of 1123 total classes. JSON carries 1000 top classes. tru
 | CommandFullwidth | ［＃「二七頁」は「伊耶那岐の命と伊耶那美の命」の「身禊」］ | 2 | 2 | 0 | 001518_51731 |
 | CommandFullwidth | ［＃「二四頁」は「伊耶那岐の命と伊耶那美の命」の「黄泉の國」］ | 2 | 2 | 0 | 001518_51731 |
 | CommandFullwidth | ［＃「五七頁」は「天照らす大御神と大國主の神」の「國讓り」］ | 2 | 2 | 0 | 001518_51731 |
+| CommandFullwidth | ［＃「五六頁」は「天照らす大御神と大國主の神」の「國讓り」］ | 2 | 2 | 0 | 001518_51731 |
+| CommandFullwidth | ［＃「井」は○付き文字］ | 2 | 2 | 0 | 000311_1972 |
+| CommandFullwidth | ［＃「住友　第一」は枠囲み］ | 2 | 2 | 0 | 000311_4212 |
+| CommandFullwidth | ［＃「印」は○付き文字］ | 2 | 2 | 0 | 000096_1115, 000096_2100 |
+| CommandFullwidth | ［＃「四二頁」は「大國主の神」の「根の堅州國」］ | 2 | 2 | 0 | 001518_51731 |
+| CommandFullwidth | ［＃「序にかえて」全体、天より２字下げ］ | 2 | 2 | 0 | 000311_2025 |
+| CommandFullwidth | ［＃「桑原隲蔵全集」］ | 2 | 2 | 0 | 000372_3666, 000372_3667 |
+| CommandFullwidth | ［＃「權次」と「權六」は横並びになっている］ | 2 | 2 | 0 | 000082_1309 |
 
 ## Decode Failures
 

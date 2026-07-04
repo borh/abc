@@ -5,7 +5,7 @@
 - source_authority_gate: `SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED`
 - note: this is not a passing representability gate; durable representability claims remain blocked until strict_errors is empty.
 - strict_errors:
-  - 1676 unallowlisted source markers
+  - 1469 unallowlisted source markers
 
 ## Scope
 
@@ -16,14 +16,14 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 - works_scanned: 17894
 - works_failed: 0
 - markers_total: 4324663
-- unknown_markers_total: 16546
-- unallowlisted_unknown_markers_total: 1676
+- unknown_markers_total: 16339
+- unallowlisted_unknown_markers_total: 1469
 - allowlisted_unknown_markers_total: 14870
 
 ## Representability
 
 - typed_occurrences: 4566724
-- raw_preserved_occurrences: 36301
+- raw_preserved_occurrences: 36666
 - out_of_body_occurrences: 950
 - unsupported_occurrences: 13920
 - needs_research_occurrences: 0
@@ -53,6 +53,7 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | gaiji.un_embed | 38 | 144 | 000019_4376, 000025_kantou, 000038_323, 000040_1326, 000040_737 |
 | gaiji.unicode_codepoint | 631 | 3719 | 000008_47357, 000008_47386, 000020_55103, 000022_42254, 000023_1698 |
 | gaiji_ruby.inline_base | 2799 | 13451 | 000005_5, 000006_1869, 000006_3310, 000008_1083, 000008_47357 |
+| glyph.variant_note | 118 | 365 | 000012_10, 000026_55782, 000040_1326, 000040_380, 000042_2345 |
 | heading.basic | 3695 | 80582 | 000005_53194, 000006_58819, 000008_1083, 000008_47357, 000008_47386 |
 | heading.dogyo | 142 | 11839 | 000011_899, 000058_59060, 000067_1790, 000067_4869, 000081_1058 |
 | heading.mado | 6 | 1680 | 000255_47342, 000296_1864, 000961_4820, 001402_49946, 001404_49966 |
@@ -116,9 +117,6 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | 000009_45340 | 246 | CommandFullwidth | ［＃図６入る］ | 図６入る |
 | 000009_45340 | 248 | CommandFullwidth | ［＃図７入る］ | 図７入る |
 | 000009_45340 | 337 | CommandFullwidth | ［＃図８入る］ | 図８入る |
-| 000012_10 | 32 | CommandFullwidth | ［＃一字下げ忘れか？200-14］ | 一字下げ忘れか？200-14 |
-| 000012_10 | 64 | CommandFullwidth | ［＃一字下げ忘れか？207-4］ | 一字下げ忘れか？207-4 |
-| 000012_10 | 85 | CommandFullwidth | ［＃一字下げ忘れか？211-6］ | 一字下げ忘れか？211-6 |
 | 000012_223 | 11 | CommandFullwidth | ［＃「み」余分か、それとも「見」か？］ | 「み」余分か、それとも「見」か？ |
 | 000012_223 | 21 | CommandFullwidth | ［＃「み」余分か、それとも「見」か？］ | 「み」余分か、それとも「見」か？ |
 | 000019_4376 | 96 | CommandFullwidth | ［＃「”」は下付き］ | 「”」は下付き |
@@ -178,65 +176,68 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | 000038_336 | 138 | CommandFullwidth | ［＃「霙」の誤り？、400-7］ | 「霙」の誤り？、400-7 |
 | 000040_380 | 41 | CommandFullwidth | ［＃「３」は「√」の記号の中に入っている］ | 「３」は「√」の記号の中に入っている |
 | 000040_380 | 35 | CommandFullwidth | ［＃「３」は「√」の記号の中に入っている］ | 「３」は「√」の記号の中に入っている |
-| 000042_2345 | 37 | CommandFullwidth | ［＃「1/4πDt」は分数］ | 「1/4πDt」は分数 |
-| 000042_2345 | 37 | CommandFullwidth | ［＃「2」は上付き小文字、「r2/4Dt」は分数、「-r2/4Dt」は「e」の上付き］ | 「2」は上付き小文字、「r2/4Dt」は分数、「-r2/4Dt」は「e」の上付き |
+| 000042_2345 | 41 | CommandFullwidth | ［＃「-λt」は「e」の上付き］ | 「-λt」は「e」の上付き |
+| 000042_2345 | 45 | CommandFullwidth | ［＃「-(r2/4Dt+λt)」は「e」の上付き］ | 「-(r2/4Dt+λt)」は「e」の上付き |
+| 000042_2345 | 85 | CommandFullwidth | ［＃「v」は下線（_）付き、181-表組2行目］ | 「v」は下線（_）付き、181-表組2行目 |
+| 000042_2345 | 89 | CommandFullwidth | ［＃「t」は下点付き、182-6］ | 「t」は下点付き、182-6 |
+| 000042_2345 | 94 | CommandFullwidth | ［＃アラビア数字はすべて下付き小文字］ | アラビア数字はすべて下付き小文字 |
 
 ## Unknown Source Marker Classes
 
-Showing 50 report rows of 1288 total classes. JSON carries 1000 top classes. truncated: true
+Showing 50 report rows of 1174 total classes. JSON carries 1000 top classes. truncated: true
 
 | kind | raw | occurrences | unallowlisted | allowlisted | samples |
 |---|---|---:|---:|---:|---|
 | MalformedAccentNotation | 〔 | 56 | 56 | 0 | 000026_219, 000034_55507, 000081_4416, 000081_50764, 000091_522 |
-| CommandFullwidth | ［＃「ル」は上に「⌒」付き］ | 9 | 9 | 0 | 000564_52368 |
-| CommandFullwidth | ［＃「?!」は一字］ | 7 | 7 | 0 | 000125_1320 |
 | CommandFullwidth | ［＃「地付き］ | 7 | 7 | 0 | 000150_46617 |
-| CommandFullwidth | ［＃一つ目の「e」は「´」付き］ | 7 | 7 | 0 | 000129_2522 |
-| CommandFullwidth | ［＃ηに帯気、ωに曲アクセント］ | 6 | 6 | 0 | 000065_393 |
-| CommandFullwidth | ［＃「2」は指数］ | 6 | 6 | 0 | 000096_2110 |
 | CommandFullwidth | ［＃劇場名］ | 6 | 6 | 0 | 000311_46245, 000311_46246, 000311_46248 |
 | CommandFullwidth | ［＃左にルビ付き］ | 6 | 6 | 0 | 000933_47550, 001930_58400, 001932_59114 |
 | MalformedCommand | ［＃ | 6 | 6 | 0 | 000081_4461, 000106_2415, 000121_1754, 000148_798, 000331_2663 |
-| CommandFullwidth | ［＃ 最後の「e」は「´」付き］ | 5 | 5 | 0 | 000129_2522 |
-| CommandFullwidth | ［＃「e」はアクサン（´）付き］ | 5 | 5 | 0 | 000129_2547, 000301_1872 |
 | CommandFullwidth | ［＃「”」は下付き］ | 5 | 5 | 0 | 000019_4376, 000129_688, 000136_42754 |
-| CommandFullwidth | ［＃「√」の中に「５」］ | 5 | 5 | 0 | 001569_59194 |
-| CommandFullwidth | ［＃「♂」は矢印が下向き］ | 5 | 5 | 0 | 000081_45631 |
 | CommandFullwidth | ［＃「阿」は一段階小さな文字］ | 5 | 5 | 0 | 000081_47027 |
 | CommandFullwidth | ［＃これより手紙文、１字下げ］ | 5 | 5 | 0 | 000280_1706 |
 | CommandFullwidth | ［＃ホテル名］ | 5 | 5 | 0 | 000311_46245, 000311_46247 |
 | CommandFullwidth | ［＃未完］ | 5 | 5 | 0 | 000311_1983, 000311_2879, 000311_3023, 000311_3027, 000311_3080 |
 | CommandFullwidth | ［＃直線は中央に配置］ | 5 | 5 | 0 | 000129_2298 |
-| CommandFullwidth | ［＃ 一つ目の「e」は「´」付き］ | 4 | 4 | 0 | 000129_2522 |
 | CommandFullwidth | ［＃「〃」は上部に出ている］ | 4 | 4 | 0 | 000305_1896 |
 | CommandFullwidth | ［＃「ちへ」の右に「）」］ | 4 | 4 | 0 | 000232_60242 |
 | CommandFullwidth | ［＃「エ」は小さい「ヱ」］ | 4 | 4 | 0 | 000124_658 |
-| CommandFullwidth | ［＃「リ」は上に「⌒」付き］ | 4 | 4 | 0 | 000564_52368 |
 | CommandFullwidth | ［＃「競吟」は上部に出ている］ | 4 | 4 | 0 | 000305_1896 |
 | CommandFullwidth | ［＃「（１）」は注釈番号］ | 4 | 4 | 0 | 000042_2347, 000042_2354 |
 | CommandFullwidth | ［＃お手伝いさん］ | 4 | 4 | 0 | 000160_1255, 000311_46244, 000311_4833 |
 | CommandFullwidth | ［＃右寄せ］ | 4 | 4 | 0 | 000025_1144 |
 | CommandFullwidth | ［＃夫人］ | 4 | 4 | 0 | 000160_1255 |
 | CommandFullwidth | ［＃引用文終わり］ | 4 | 4 | 0 | 000034_233 |
-| CommandFullwidth | ［＃最後の「e」は「´」付き］ | 4 | 4 | 0 | 000129_2522 |
-| CommandFullwidth | ［＃εに帯気。ιに鋭アクセント］ | 3 | 3 | 0 | 000065_393 |
-| CommandFullwidth | ［＃ηに鋭アクセント］ | 3 | 3 | 0 | 000065_393 |
-| CommandFullwidth | ［＃οに鋭アクセント。σはファイナルシグマ］ | 3 | 3 | 0 | 000065_393 |
-| CommandFullwidth | ［＃「1/14」は分数］ | 3 | 3 | 0 | 000042_2345 |
-| CommandFullwidth | ［＃「1/4」は分数］ | 3 | 3 | 0 | 000042_2345, 000183_45359 |
-| CommandFullwidth | ［＃「2」は上付き小文字、「1/142」は分数］ | 3 | 3 | 0 | 000042_2345 |
-| CommandFullwidth | ［＃「3」は上付き小文字、「1/143」は分数］ | 3 | 3 | 0 | 000042_2345 |
-| CommandFullwidth | ［＃「o」はウムラウト（¨）付き］ | 3 | 3 | 0 | 000182_946, 000301_1872 |
 | CommandFullwidth | ［＃「x2」、「y2」、「x2」はそれぞれ縦中横、すべての「2」は上付き小書き］ | 3 | 3 | 0 | 000148_1102 |
-| CommandFullwidth | ［＃「√」の中に「６」］ | 3 | 3 | 0 | 001569_59194 |
 | CommandFullwidth | ［＃「うどん」と「きそば」は２列に並ぶ］ | 3 | 3 | 0 | 000311_4205, 000311_4206 |
 | CommandFullwidth | ［＃「せり吟」は上部に出ている］ | 3 | 3 | 0 | 000305_1896 |
 | CommandFullwidth | ［＃「レ」は返り点］ | 3 | 3 | 0 | 000284_2609 |
 | CommandFullwidth | ［＃「一六八頁」は「安康天皇」の「市の邊の押齒の王」］ | 3 | 3 | 0 | 001518_51731 |
-| CommandFullwidth | ［＃「Ｏ」は覆面の英字です。］ | 3 | 3 | 0 | 000160_43532, 000160_43533 |
 | CommandFullwidth | ［＃「｝（同時に）」は前２行の中央、下に］ | 3 | 3 | 0 | 000827_3411 |
 | CommandFullwidth | ［＃ここから引用文、３字下げ］ | 3 | 3 | 0 | 000034_233 |
 | CommandFullwidth | ［＃ここで字下げ、枠囲み終わり］ | 3 | 3 | 0 | 000311_2726, 000933_18403 |
+| CommandFullwidth | ［＃ここで字下げ、横組み終わり］ | 3 | 3 | 0 | 000160_1255 |
+| CommandFullwidth | ［＃ここで字下げ、罫囲み終わり］ | 3 | 3 | 0 | 000125_45231, 000283_3226, 000283_4343 |
+| CommandFullwidth | ［＃ここで１段階小さな文字終わり］ | 3 | 3 | 0 | 000258_62443, 000923_47850 |
+| CommandFullwidth | ［＃この行ここまで相対的に字が小さい、ここからは下揃え、下から３字上げ］ | 3 | 3 | 0 | 000280_1706 |
+| CommandFullwidth | ［＃アラビア数字はすべて下付き小文字］ | 3 | 3 | 0 | 000042_2345 |
+| CommandFullwidth | ［＃スカーフ］ | 3 | 3 | 0 | 000311_46246, 000311_46247 |
+| CommandFullwidth | ［＃ルビの「しふ」は初出では「しう」］ | 3 | 3 | 0 | 000885_51307 |
+| CommandFullwidth | ［＃三男］ | 3 | 3 | 0 | 000160_1255 |
+| CommandFullwidth | ［＃以下の括弧内割注］ | 3 | 3 | 0 | 000165_2392 |
+| CommandFullwidth | ［＃天より３２字下げて地より３字上げで］ | 3 | 3 | 0 | 000182_946 |
+| CommandFullwidth | ［＃小見出し文字］ | 3 | 3 | 0 | 000096_1115 |
+| CommandFullwidth | ［＃小説家］ | 3 | 3 | 0 | 000160_1255 |
+| CommandFullwidth | ［＃次男］ | 3 | 3 | 0 | 000160_1255 |
+| CommandFullwidth | ［＃見出し文字］ | 3 | 3 | 0 | 000096_1115 |
+| CommandFullwidth | ［＃長女］ | 3 | 3 | 0 | 000160_1255 |
+| CommandFullwidth | ［＃長男］ | 3 | 3 | 0 | 000160_1255 |
+| CommandFullwidth | ［＃「1」はすべて下付き小文字］ | 2 | 2 | 0 | 000042_2345 |
+| CommandFullwidth | ［＃「IV」はローマ数字の４］ | 2 | 2 | 0 | 000301_1872 |
+| CommandFullwidth | ［＃「“」は下付き］ | 2 | 2 | 0 | 000129_688 |
+| CommandFullwidth | ［＃「※」は「たけかんむり＋隻」、17-8］ | 2 | 2 | 0 | 000051_361 |
+| CommandFullwidth | ［＃「※」は「つつみがまえ（勹）」＋「夕」で、読みは「そうそう」67-6］ | 2 | 2 | 0 | 000074_431 |
+| CommandFullwidth | ［＃「」内の「レ」は返り点］ | 2 | 2 | 0 | 000301_1872 |
 
 ## Decode Failures
 

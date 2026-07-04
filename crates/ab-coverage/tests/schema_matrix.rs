@@ -881,6 +881,41 @@ fn source_inventory_classifies_dotted_letter_variants() {
 }
 
 #[test]
+fn source_inventory_classifies_glyph_variant_notes() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = [
+        "［＃「ル」は上に「⌒」付き］",
+        "［＃一つ目の「e」は「´」付き］",
+        "［＃「e」はアクサン（´）付き］",
+        "［＃ηに帯気、ωに曲アクセント］",
+        "［＃最初のαに平息、３文字目のαに鋭アクセント、σはファイナルシグマ］",
+        "［＃「?!」は一字］",
+        "［＃「2」は指数］",
+        "［＃「1/4」は分数］",
+        "［＃「√」の中に「５」］",
+        "［＃「♂」は矢印が下向き］",
+        "［＃「Ｏ」は覆面の英字です。］",
+        "［＃返り点の「二」の右横に縦棒あり］",
+    ]
+    .join("\n");
+    let summary = inventory_document("fixture", &source, &patterns);
+
+    assert_eq!(
+        summary.unknown_examples,
+        [],
+        "known glyph-variant source notes should not remain unknown"
+    );
+    assert_eq!(
+        summary
+            .row_counts
+            .get("glyph.variant_note")
+            .map(|count| count.occurrences),
+        Some(12)
+    );
+}
+
+#[test]
 fn source_inventory_classifies_page_center_layout_variants() {
     let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
     let patterns = patterns_from_rows(matrix.rows());

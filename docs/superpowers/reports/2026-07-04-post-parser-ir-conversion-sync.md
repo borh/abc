@@ -132,12 +132,18 @@ Committed measurement:
 
 Current result: 57 selected rows materialized through parser-IR and ABC TEI, 0
 materialization failures, 5 rows skipped for missing/nonmaterializable evidence.
-Paragraph deltas are 5 exact, 45 over-split, and 7 under-split. Normalized
-body-base-text relation, after skipping notes/ruby `rp`/`rt`, is 3 equal, 1
-generated-contains-TEI-EAJ, and 53 different. This makes the next Level 3
-blocker a measured paragraph segmentation plus TEI-EAJ text-policy/content
-alignment problem, not a parser-IR schema-validity or source-note-placement
-problem.
+Paragraph deltas are 5 exact, 45 over-split, and 7 under-split. Strict
+normalized body-base-text relation, after skipping notes/ruby `rp`/`rt`, is 3
+equal, 1 generated-contains-TEI-EAJ, and 53 different.
+
+The generated-TEI audit now also classifies alternate text surfaces. Best
+surface-match buckets are 3 base-equal, 1 ruby-expanded-equal, 19
+ruby-expanded-parenless-equal, 1 base-drop-parentheticals-equal, 5
+ruby-expanded-parenless generated-contains-TEI-EAJ, 2 ruby-expanded-parenless
+TEI-EAJ-contains-generated, and 26 still different. This makes the next Level 3
+blocker a measured paragraph segmentation plus narrower TEI-EAJ text-policy and
+content-alignment problem, not a parser-IR schema-validity or
+source-note-placement problem.
 
 Adapter-version matching is exact. A future adapter-version tuple requires a
 new measured conversion-audit entry rather than wildcard or prefix registry

@@ -92,10 +92,13 @@ def text_of(node: ET.Element | None) -> str:
     return "".join(node.itertext())
 
 
-def base_text_of(node: ET.Element | None) -> str:
+def base_text_of(
+    node: ET.Element | None,
+    skipped: set[str] | None = None,
+) -> str:
     if node is None:
         return ""
-    skipped = {"note", "rp", "rt"}
+    skipped = skipped or {"note", "rp", "rt"}
     parts: list[str] = []
 
     def walk(element: ET.Element) -> None:
@@ -118,7 +121,15 @@ def normalize_body_text(text: str) -> str:
     return re.sub(r"\s+", "", text)
 
 
-def body_text_comparison(generated_text: str, tei_eaj_text: str) -> dict[str, Any]:
+def strip_japanese_parentheses(text: str) -> str:
+    return text.replace("（", "").replace("）", "")
+
+
+def drop_japanese_parenthetical_groups(text: str) -> str:
+    return re.sub(r"（[^）]*）", "", text)
+
+
+def compare_text_surface(generated_text: str, tei_eaj_text: str) -> dict[str, Any]:
     generated = normalize_body_text(generated_text)
     tei_eaj = normalize_body_text(tei_eaj_text)
     if generated == tei_eaj:
@@ -152,6 +163,63 @@ def body_text_comparison(generated_text: str, tei_eaj_text: str) -> dict[str, An
     }
 
 
+def surface_relation(generated_text: str, tei_eaj_text: str) -> dict[str, Any]:
+    comparison = compare_text_surface(generated_text, tei_eaj_text)
+    return {
+        "relation": comparison["body_base_text_relation"],
+        "generated_length": comparison["generated_body_base_text_length"],
+        "tei_eaj_length": comparison["tei_eaj_body_base_text_length"],
+        "length_delta": comparison["body_base_text_length_delta"],
+    }
+
+
+def best_body_text_match_bucket(surfaces: dict[str, dict[str, Any]]) -> str:
+    for surface in (
+        "base",
+        "ruby_expanded",
+        "ruby_expanded_parenless",
+        "base_drop_parentheticals",
+    ):
+        if surfaces[surface]["relation"] == "equal":
+            return f"{surface}_equal"
+    for surface in (
+        "ruby_expanded_parenless",
+        "ruby_expanded",
+        "base_drop_parentheticals",
+        "base",
+    ):
+        relation = surfaces[surface]["relation"]
+        if relation != "different":
+            return f"{surface}_{relation}"
+    return "different"
+
+
+def body_text_comparison(
+    generated_base_text: str,
+    tei_eaj_base_text: str,
+    generated_ruby_expanded_text: str,
+    tei_eaj_ruby_expanded_text: str,
+) -> dict[str, Any]:
+    base = compare_text_surface(generated_base_text, tei_eaj_base_text)
+    surfaces = {
+        "base": surface_relation(generated_base_text, tei_eaj_base_text),
+        "ruby_expanded": surface_relation(
+            generated_ruby_expanded_text, tei_eaj_ruby_expanded_text
+        ),
+        "ruby_expanded_parenless": surface_relation(
+            strip_japanese_parentheses(generated_ruby_expanded_text),
+            strip_japanese_parentheses(tei_eaj_ruby_expanded_text),
+        ),
+        "base_drop_parentheticals": surface_relation(
+            drop_japanese_parenthetical_groups(generated_base_text),
+            drop_japanese_parenthetical_groups(tei_eaj_base_text),
+        ),
+    }
+    base["surface_relations"] = surfaces
+    base["body_text_match_bucket"] = best_body_text_match_bucket(surfaces)
+    return base
+
+
 def tei_counts(path: pathlib.Path) -> dict[str, Any]:
     root = ET.parse(path).getroot()
     body = first_descendant(root, "body")
@@ -169,6 +237,7 @@ def tei_counts(path: pathlib.Path) -> dict[str, Any]:
         "back_source_note_count": len(back_source_notes),
         "body_text": text_of(body),
         "body_base_text": base_text_of(body),
+        "body_ruby_expanded_text": base_text_of(body, {"note", "rp"}),
         "back_text": text_of(back),
     }
 
@@ -300,7 +369,12 @@ def materialize_row(
     source_note_in_back = any(
         text in generated["back_text"] for text in non_empty_source_notes
     )
-    text = body_text_comparison(generated["body_base_text"], tei_eaj["body_base_text"])
+    text = body_text_comparison(
+        generated["body_base_text"],
+        tei_eaj["body_base_text"],
+        generated["body_ruby_expanded_text"],
+        tei_eaj["body_ruby_expanded_text"],
+    )
 
     generated_body_p = generated["body_p_count"]
     tei_eaj_body_p = tei_eaj["body_p_count"]
@@ -398,10 +472,22 @@ def render_markdown(summary: dict[str, Any]) -> str:
     lines.extend(
         [
             "",
+            "## Body Text Match Buckets",
+            "",
+            "| bucket | rows |",
+            "|---|---:|",
+        ]
+    )
+    for bucket, count in sorted(summary["body_text_match_buckets"].items()):
+        lines.append(f"| {bucket} | {count} |")
+
+    lines.extend(
+        [
+            "",
             "## Rows",
             "",
-            "| work_id | TEI-EAJ file | adapter | generated body p | TEI-EAJ body p | delta | bucket | body text | source note |",
-            "|---|---|---|---:|---:|---:|---|---|---|",
+            "| work_id | TEI-EAJ file | adapter | generated body p | TEI-EAJ body p | delta | bucket | base text | best text match | source note |",
+            "|---|---|---|---:|---:|---:|---|---|---|---|",
         ]
     )
     for row in summary["rows"]:
@@ -413,7 +499,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
                 else "not-back"
             )
         lines.append(
-            "| {work_id} | `{tei_eaj_file}` | {adapter} | {generated} | {tei_eaj} | {delta} | {bucket} | {body_text} | {source_note} |".format(
+            "| {work_id} | `{tei_eaj_file}` | {adapter} | {generated} | {tei_eaj} | {delta} | {bucket} | {body_text} | {body_text_match} | {source_note} |".format(
                 work_id=row.get("work_id"),
                 tei_eaj_file=row.get("tei_eaj_file"),
                 adapter=row["selected_aat"].get("adapter"),
@@ -422,6 +508,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
                 delta=row["deltas"]["body_p_count"],
                 bucket=row["classification"]["paragraph_delta_bucket"],
                 body_text=row.get("text", {}).get("body_base_text_relation"),
+                body_text_match=row.get("text", {}).get("body_text_match_bucket"),
                 source_note=source_note,
             )
         )
@@ -506,12 +593,17 @@ def main() -> int:
 
     buckets: dict[str, int] = {}
     body_text_buckets: dict[str, int] = {}
+    body_text_match_buckets: dict[str, int] = {}
     materialized = 0
     for row in rows:
         bucket = row.get("classification", {}).get("paragraph_delta_bucket", "unknown")
         buckets[bucket] = buckets.get(bucket, 0) + 1
         relation = row.get("text", {}).get("body_base_text_relation", "unknown")
         body_text_buckets[relation] = body_text_buckets.get(relation, 0) + 1
+        match_bucket = row.get("text", {}).get("body_text_match_bucket", "unknown")
+        body_text_match_buckets[match_bucket] = (
+            body_text_match_buckets.get(match_bucket, 0) + 1
+        )
         if row.get("materialization", {}).get("status") == "passed":
             materialized += 1
 
@@ -534,6 +626,7 @@ def main() -> int:
         },
         "paragraph_delta_buckets": buckets,
         "body_text_relation_buckets": body_text_buckets,
+        "body_text_match_buckets": body_text_match_buckets,
         "rows": rows,
         "skipped": skipped,
     }

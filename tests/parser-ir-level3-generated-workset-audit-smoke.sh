@@ -112,7 +112,11 @@ jq -e '.body_text_relation_buckets | type == "object"' "$out_dir/audit/summary.j
 jq -e '.rows[0].text.body_base_text_relation != null' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.rows[0].text.generated_body_base_text_length > 0' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.rows[0].text.tei_eaj_body_base_text_length > 0' "$out_dir/audit/summary.json" >/dev/null
+jq -e '.body_text_match_buckets | type == "object"' "$out_dir/audit/summary.json" >/dev/null
+jq -e '.rows[0].text.body_text_match_bucket != null' "$out_dir/audit/summary.json" >/dev/null
+jq -e '.rows[0].text.surface_relations.ruby_expanded_parenless.relation != null' "$out_dir/audit/summary.json" >/dev/null
 grep -n "Generated Parser-IR TEI vs TEI-EAJ Workset Audit" "$out_dir/audit/report.md"
 grep -n "Body Text Relation Buckets" "$out_dir/audit/report.md"
+grep -n "Body Text Match Buckets" "$out_dir/audit/report.md"
 
 echo "parser-IR Level 3 generated workset audit smoke ok: $out_dir/audit"

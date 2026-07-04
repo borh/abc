@@ -30,6 +30,15 @@
     "generated_contains_tei_eaj": 1,
     "equal": 3
   },
+  "body_text_match_buckets": {
+    "different": 26,
+    "ruby_expanded_parenless_equal": 19,
+    "ruby_expanded_parenless_generated_contains_tei_eaj": 5,
+    "ruby_expanded_parenless_tei_eaj_contains_generated": 2,
+    "ruby_expanded_equal": 1,
+    "base_equal": 3,
+    "base_drop_parentheticals_equal": 1
+  },
   "rows": [
     {
       "work_id": "1126",
@@ -79,7 +88,34 @@
           "offset": 0,
           "generated_preview": "森の中。三人の盗人が宝を争っている。宝とは一飛びに千里飛ぶ長靴、着れば姿の隠れるマントル、鉄でも",
           "tei_eaj_preview": "一森の中。三人の盗人ぬすびとが宝を争っている。宝とは一飛びに千里飛ぶ長靴ながぐつ、着れば姿の隠れ"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 6994,
+            "tei_eaj_length": 7659,
+            "length_delta": -665
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 7068,
+            "tei_eaj_length": 7659,
+            "length_delta": -591
+          },
+          "ruby_expanded_parenless": {
+            "relation": "different",
+            "generated_length": 6956,
+            "tei_eaj_length": 7255,
+            "length_delta": -299
+          },
+          "base_drop_parentheticals": {
+            "relation": "different",
+            "generated_length": 6415,
+            "tei_eaj_length": 6452,
+            "length_delta": -37
+          }
+        },
+        "body_text_match_bucket": "different"
       },
       "classification": {
         "paragraph_delta_bucket": "under_split",
@@ -135,7 +171,34 @@
           "offset": 5,
           "generated_preview": "戸棚の中。絵画、陶器、唐皮、更緲、牙彫、鋳金等種々の異国関係史料、処狭きまでに置き並べたるを見る",
           "tei_eaj_preview": "（ガラス）戸棚の中。絵画、陶器、唐皮（からかは）、更緲（さらさ）、牙彫（げぼり）、鋳金（ちうきん"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 2577,
+            "tei_eaj_length": 3261,
+            "length_delta": -684
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 3005,
+            "tei_eaj_length": 3261,
+            "length_delta": -256
+          },
+          "ruby_expanded_parenless": {
+            "relation": "different",
+            "generated_length": 2957,
+            "tei_eaj_length": 2959,
+            "length_delta": -2
+          },
+          "base_drop_parentheticals": {
+            "relation": "different",
+            "generated_length": 2351,
+            "tei_eaj_length": 2407,
+            "length_delta": -56
+          }
+        },
+        "body_text_match_bucket": "different"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -191,7 +254,34 @@
           "offset": 6,
           "generated_preview": "入長持聟入、取なんかの時に小石をぶつけるのはずいぶんらんぼうな事である。どうしたわけでこんな事を",
           "tei_eaj_preview": "娌入長持聟入、娌取なんかの時に小石をぶつけるのはずいぶんらんぼうな事である。どうしたわけでこんな"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 5111,
+            "tei_eaj_length": 5121,
+            "length_delta": -10
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 5119,
+            "tei_eaj_length": 5121,
+            "length_delta": -2
+          },
+          "ruby_expanded_parenless": {
+            "relation": "different",
+            "generated_length": 5117,
+            "tei_eaj_length": 5119,
+            "length_delta": -2
+          },
+          "base_drop_parentheticals": {
+            "relation": "different",
+            "generated_length": 5111,
+            "tei_eaj_length": 5115,
+            "length_delta": -4
+          }
+        },
+        "body_text_match_bucket": "different"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -247,7 +337,34 @@
           "offset": 172,
           "generated_preview": "も、ひ弱く、肉体は死んで、精神だけがふらふら飛んでいる様子を指して言っている言葉らしい。蜻蛉のか",
           "tei_eaj_preview": "（とんぼ）も、ひ弱く、肉体は死んで、精神だけがふらふら飛んでいる様子を指して言っている言葉らしい"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 1466,
+            "tei_eaj_length": 1517,
+            "length_delta": -51
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 1497,
+            "tei_eaj_length": 1517,
+            "length_delta": -20
+          },
+          "ruby_expanded_parenless": {
+            "relation": "equal",
+            "generated_length": 1497,
+            "tei_eaj_length": 1497,
+            "length_delta": 0
+          },
+          "base_drop_parentheticals": {
+            "relation": "equal",
+            "generated_length": 1466,
+            "tei_eaj_length": 1466,
+            "length_delta": 0
+          }
+        },
+        "body_text_match_bucket": "ruby_expanded_parenless_equal"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -303,7 +420,34 @@
           "offset": 158,
           "generated_preview": "していることは事実である。そうして、その不安の渦巻の回転する中心点はと言えばやはり近き将来に期待",
           "tei_eaj_preview": "（ようえい）していることは事実である。そうして、その不安の渦巻（うずまき）の回転する中心点はと言"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 7395,
+            "tei_eaj_length": 7770,
+            "length_delta": -375
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 7648,
+            "tei_eaj_length": 7770,
+            "length_delta": -122
+          },
+          "ruby_expanded_parenless": {
+            "relation": "different",
+            "generated_length": 7646,
+            "tei_eaj_length": 7648,
+            "length_delta": -2
+          },
+          "base_drop_parentheticals": {
+            "relation": "different",
+            "generated_length": 7381,
+            "tei_eaj_length": 7383,
+            "length_delta": -2
+          }
+        },
+        "body_text_match_bucket": "different"
       },
       "classification": {
         "paragraph_delta_bucket": "exact",
@@ -359,7 +503,34 @@
           "offset": 173,
           "generated_preview": "ぽけなものを置いても一向目に立たない。俳句に進歩はないでせう、唯變化するだけでせう。イクラ複雜に",
           "tei_eaj_preview": "（ちひ）ぽけなものを置いても一向目に立たない。俳句に進歩はないでせう、唯變化するだけでせう。イク"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 304,
+            "tei_eaj_length": 294,
+            "length_delta": 10
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 306,
+            "tei_eaj_length": 294,
+            "length_delta": 12
+          },
+          "ruby_expanded_parenless": {
+            "relation": "generated_contains_tei_eaj",
+            "generated_length": 306,
+            "tei_eaj_length": 292,
+            "length_delta": 14
+          },
+          "base_drop_parentheticals": {
+            "relation": "generated_contains_tei_eaj",
+            "generated_length": 304,
+            "tei_eaj_length": 290,
+            "length_delta": 14
+          }
+        },
+        "body_text_match_bucket": "ruby_expanded_parenless_generated_contains_tei_eaj"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -415,7 +586,34 @@
           "offset": 0,
           "generated_preview": "地震というものの概念は人々によってずいぶん著しくちがっている。理学者以外の世人にとっては、地震現",
           "tei_eaj_preview": "一地震の概念地震というものの概念は人々によってずいぶん著しくちがっている。理学者以外の世人にとっ"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 4985,
+            "tei_eaj_length": 5152,
+            "length_delta": -167
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 5098,
+            "tei_eaj_length": 5152,
+            "length_delta": -54
+          },
+          "ruby_expanded_parenless": {
+            "relation": "tei_eaj_contains_generated",
+            "generated_length": 5096,
+            "tei_eaj_length": 5102,
+            "length_delta": -6
+          },
+          "base_drop_parentheticals": {
+            "relation": "tei_eaj_contains_generated",
+            "generated_length": 4967,
+            "tei_eaj_length": 4973,
+            "length_delta": -6
+          }
+        },
+        "body_text_match_bucket": "ruby_expanded_parenless_tei_eaj_contains_generated"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -471,7 +669,34 @@
           "offset": 0,
           "generated_preview": "一文化年中のことであった。朝鮮の使節が来朝した。家斉将軍の思し召しによって当代の名家に屏風を描か",
           "tei_eaj_preview": "曠野（あれの）と湿潤（うるおい）なき地とは楽しみ、沙漠（さばく）は歓（よろこ）びて番紅（さふらん"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 8259,
+            "tei_eaj_length": 9793,
+            "length_delta": -1534
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 8711,
+            "tei_eaj_length": 9793,
+            "length_delta": -1082
+          },
+          "ruby_expanded_parenless": {
+            "relation": "different",
+            "generated_length": 8711,
+            "tei_eaj_length": 9405,
+            "length_delta": -694
+          },
+          "base_drop_parentheticals": {
+            "relation": "different",
+            "generated_length": 8259,
+            "tei_eaj_length": 8839,
+            "length_delta": -580
+          }
+        },
+        "body_text_match_bucket": "different"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -527,7 +752,34 @@
           "offset": 27,
           "generated_preview": "び奉り候。さて、「日本資本主義発達史講座」の件に関し、昨日編輯会議を開き、先日差上げたる私案及び",
           "tei_eaj_preview": "（よろこ）び奉（たてまつ）り候。さて、「日本資本主義発達史講座」の件に関し、昨日編輯会議を開き、"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 268,
+            "tei_eaj_length": 323,
+            "length_delta": -55
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 305,
+            "tei_eaj_length": 323,
+            "length_delta": -18
+          },
+          "ruby_expanded_parenless": {
+            "relation": "equal",
+            "generated_length": 305,
+            "tei_eaj_length": 305,
+            "length_delta": 0
+          },
+          "base_drop_parentheticals": {
+            "relation": "equal",
+            "generated_length": 268,
+            "tei_eaj_length": 268,
+            "length_delta": 0
+          }
+        },
+        "body_text_match_bucket": "ruby_expanded_parenless_equal"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -583,7 +835,34 @@
           "offset": 84,
           "generated_preview": "の電燈は微かにゆらいでねむさうにならび只公園のアーク燈だけ高い処でそらぞらしい気焔の波を上げてゐ",
           "tei_eaj_preview": "（もりをか）の電燈は微（かす）かにゆらいでねむさうにならび只（ただ）公園のアーク燈だけ高い処（と"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 1531,
+            "tei_eaj_length": 1723,
+            "length_delta": -192
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 1651,
+            "tei_eaj_length": 1723,
+            "length_delta": -72
+          },
+          "ruby_expanded_parenless": {
+            "relation": "different",
+            "generated_length": 1651,
+            "tei_eaj_length": 1641,
+            "length_delta": 10
+          },
+          "base_drop_parentheticals": {
+            "relation": "different",
+            "generated_length": 1531,
+            "tei_eaj_length": 1521,
+            "length_delta": 10
+          }
+        },
+        "body_text_match_bucket": "different"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -639,7 +918,34 @@
           "offset": 95,
           "generated_preview": "られる。坊やがねちやうと乳母車、日かげにそつといれられる。そしてふんはりふんはりと、もひとつ毛布",
           "tei_eaj_preview": "（ゆす）られる。坊やがねちやうと乳母車、日かげにそつといれられる。そしてふんはりふんはりと、もひ"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 150,
+            "tei_eaj_length": 154,
+            "length_delta": -4
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 152,
+            "tei_eaj_length": 154,
+            "length_delta": -2
+          },
+          "ruby_expanded_parenless": {
+            "relation": "equal",
+            "generated_length": 152,
+            "tei_eaj_length": 152,
+            "length_delta": 0
+          },
+          "base_drop_parentheticals": {
+            "relation": "equal",
+            "generated_length": 150,
+            "tei_eaj_length": 150,
+            "length_delta": 0
+          }
+        },
+        "body_text_match_bucket": "ruby_expanded_parenless_equal"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -695,7 +1001,34 @@
           "offset": 162,
           "generated_preview": "してゐたことがある。その時分でも押川春浪氏の冒険小説や何かよりもこの「水滸伝」だの「西遊記」だの",
           "tei_eaj_preview": "あんきしてゐたことがある。その時分でも押川春浪氏の冒険小説や何かよりもこの「水滸伝」だの「西遊記"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 965,
+            "tei_eaj_length": 974,
+            "length_delta": -9
+          },
+          "ruby_expanded": {
+            "relation": "equal",
+            "generated_length": 974,
+            "tei_eaj_length": 974,
+            "length_delta": 0
+          },
+          "ruby_expanded_parenless": {
+            "relation": "equal",
+            "generated_length": 974,
+            "tei_eaj_length": 974,
+            "length_delta": 0
+          },
+          "base_drop_parentheticals": {
+            "relation": "different",
+            "generated_length": 965,
+            "tei_eaj_length": 974,
+            "length_delta": -9
+          }
+        },
+        "body_text_match_bucket": "ruby_expanded_equal"
       },
       "classification": {
         "paragraph_delta_bucket": "exact",
@@ -751,7 +1084,34 @@
           "offset": 661,
           "generated_preview": "なく降らす時などは、心の腐るような気持になることがないではないけれど、一度春が訪れ出すと、その素",
           "tei_eaj_preview": "（とめど）なく降らす時などは、心の腐るような気持になることがないではないけれど、一度春が訪れ出す"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 2707,
+            "tei_eaj_length": 2700,
+            "length_delta": 7
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 2716,
+            "tei_eaj_length": 2700,
+            "length_delta": 16
+          },
+          "ruby_expanded_parenless": {
+            "relation": "different",
+            "generated_length": 2716,
+            "tei_eaj_length": 2690,
+            "length_delta": 26
+          },
+          "base_drop_parentheticals": {
+            "relation": "different",
+            "generated_length": 2707,
+            "tei_eaj_length": 2680,
+            "length_delta": 27
+          }
+        },
+        "body_text_match_bucket": "different"
       },
       "classification": {
         "paragraph_delta_bucket": "exact",
@@ -807,7 +1167,34 @@
           "offset": 0,
           "generated_preview": "［＃ページの左右中央］この書の体裁は悉く藤島武二先生の意匠に成れり表紙画みだれ髪の輪郭は恋愛の矢",
           "tei_eaj_preview": "この書の体裁は悉く藤島武二先生の意匠に成れり表紙画みだれ髪の輪郭は恋愛の矢のハートを射たるにて矢"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 11469,
+            "tei_eaj_length": 13638,
+            "length_delta": -2169
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 12721,
+            "tei_eaj_length": 13638,
+            "length_delta": -917
+          },
+          "ruby_expanded_parenless": {
+            "relation": "different",
+            "generated_length": 12707,
+            "tei_eaj_length": 12734,
+            "length_delta": -27
+          },
+          "base_drop_parentheticals": {
+            "relation": "different",
+            "generated_length": 11429,
+            "tei_eaj_length": 11456,
+            "length_delta": -27
+          }
+        },
+        "body_text_match_bucket": "different"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -863,7 +1250,34 @@
           "offset": 1,
           "generated_preview": "く、いなかから、出ていらした、おじいさんがめずらしいので、勇吉は、そのそばをはなれませんでした。",
           "tei_eaj_preview": "（とお）く、いなかから、出（で）ていらした、おじいさんがめずらしいので、勇吉（ゆうきち）は、その"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 3865,
+            "tei_eaj_length": 5141,
+            "length_delta": -1276
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 4545,
+            "tei_eaj_length": 5141,
+            "length_delta": -596
+          },
+          "ruby_expanded_parenless": {
+            "relation": "equal",
+            "generated_length": 4545,
+            "tei_eaj_length": 4545,
+            "length_delta": 0
+          },
+          "base_drop_parentheticals": {
+            "relation": "equal",
+            "generated_length": 3865,
+            "tei_eaj_length": 3865,
+            "length_delta": 0
+          }
+        },
+        "body_text_match_bucket": "ruby_expanded_parenless_equal"
       },
       "classification": {
         "paragraph_delta_bucket": "exact",
@@ -919,7 +1333,34 @@
           "offset": 0,
           "generated_preview": "〔月光の鉛のなかに〕宮沢賢治月光の鉛のなかにみどりなる犀は落ち臥し松の影これを覆へり",
           "tei_eaj_preview": "月光の鉛のなかにみどりなる犀は落ち臥し松の影これを覆へり"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "generated_contains_tei_eaj",
+            "generated_length": 42,
+            "tei_eaj_length": 28,
+            "length_delta": 14
+          },
+          "ruby_expanded": {
+            "relation": "generated_contains_tei_eaj",
+            "generated_length": 42,
+            "tei_eaj_length": 28,
+            "length_delta": 14
+          },
+          "ruby_expanded_parenless": {
+            "relation": "generated_contains_tei_eaj",
+            "generated_length": 42,
+            "tei_eaj_length": 28,
+            "length_delta": 14
+          },
+          "base_drop_parentheticals": {
+            "relation": "generated_contains_tei_eaj",
+            "generated_length": 42,
+            "tei_eaj_length": 28,
+            "length_delta": 14
+          }
+        },
+        "body_text_match_bucket": "ruby_expanded_parenless_generated_contains_tei_eaj"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -975,7 +1416,34 @@
           "offset": 23,
           "generated_preview": "にするどく光る、七重の氷雪、山路ふかみ、わがともがらは一列に、いためる心山峽たどる。しだいに四方",
           "tei_eaj_preview": "（いただき）にするどく光る、七重の氷雪、山路ふかみ、わがともがらは一列に、いためる心山峽（はざま"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 215,
+            "tei_eaj_length": 235,
+            "length_delta": -20
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 232,
+            "tei_eaj_length": 235,
+            "length_delta": -3
+          },
+          "ruby_expanded_parenless": {
+            "relation": "generated_contains_tei_eaj",
+            "generated_length": 232,
+            "tei_eaj_length": 223,
+            "length_delta": 9
+          },
+          "base_drop_parentheticals": {
+            "relation": "generated_contains_tei_eaj",
+            "generated_length": 215,
+            "tei_eaj_length": 206,
+            "length_delta": 9
+          }
+        },
+        "body_text_match_bucket": "ruby_expanded_parenless_generated_contains_tei_eaj"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -1031,7 +1499,34 @@
           "offset": 0,
           "generated_preview": "人物男女男の友人貧弱な洋室。柱はすべて、黒く太し。左側壁に一つの大きい窓。窓際に机、机の傍に煖炉",
           "tei_eaj_preview": "一（晩秋の、宵である。男机に凭りて書きものをしてゐる。女が入口より這入つて来る。——室チラケてゐ"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 4882,
+            "tei_eaj_length": 4696,
+            "length_delta": 186
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 4882,
+            "tei_eaj_length": 4696,
+            "length_delta": 186
+          },
+          "ruby_expanded_parenless": {
+            "relation": "different",
+            "generated_length": 4796,
+            "tei_eaj_length": 4596,
+            "length_delta": 200
+          },
+          "base_drop_parentheticals": {
+            "relation": "different",
+            "generated_length": 4028,
+            "tei_eaj_length": 3835,
+            "length_delta": 193
+          }
+        },
+        "body_text_match_bucket": "different"
       },
       "classification": {
         "paragraph_delta_bucket": "under_split",
@@ -1087,7 +1582,34 @@
           "offset": 1663,
           "generated_preview": "したことにもかうしたぐちを云ふやうになるのです。何卒私のこの下らなさをお笑ひ下さいまし。私はこん",
           "tei_eaj_preview": "（ちょっと）したことにもかうしたぐちを云ふやうになるのです。何卒私のこの下らなさをお笑ひ下さいま"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 1962,
+            "tei_eaj_length": 1968,
+            "length_delta": -6
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 1966,
+            "tei_eaj_length": 1968,
+            "length_delta": -2
+          },
+          "ruby_expanded_parenless": {
+            "relation": "equal",
+            "generated_length": 1962,
+            "tei_eaj_length": 1962,
+            "length_delta": 0
+          },
+          "base_drop_parentheticals": {
+            "relation": "equal",
+            "generated_length": 1951,
+            "tei_eaj_length": 1951,
+            "length_delta": 0
+          }
+        },
+        "body_text_match_bucket": "ruby_expanded_parenless_equal"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -1143,7 +1665,34 @@
           "offset": 101,
           "generated_preview": "の御飯をすまして、また書物にかぢりついてゐました処に、あなたのお手紙が来たのです。また少し会ひた",
           "tei_eaj_preview": "（ひる）の御飯をすまして、また書物にかぢりついてゐました処に、あなたのお手紙が来たのです。また少"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 1252,
+            "tei_eaj_length": 1272,
+            "length_delta": -20
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 1262,
+            "tei_eaj_length": 1272,
+            "length_delta": -10
+          },
+          "ruby_expanded_parenless": {
+            "relation": "equal",
+            "generated_length": 1258,
+            "tei_eaj_length": 1258,
+            "length_delta": 0
+          },
+          "base_drop_parentheticals": {
+            "relation": "equal",
+            "generated_length": 1235,
+            "tei_eaj_length": 1235,
+            "length_delta": 0
+          }
+        },
+        "body_text_match_bucket": "ruby_expanded_parenless_equal"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -1199,7 +1748,34 @@
           "offset": 0,
           "generated_preview": "宛先東京市麹町区三番町六四第一福四萬館発信地千葉県夷隅郡御宿上野屋旅館昨日のあらしがひどかつたの",
           "tei_eaj_preview": "昨日のあらしがひどかつたので、別荘の掃除が大変だと云つて、おひるから婆やがひまを貰ひたいと云ひだ"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 1173,
+            "tei_eaj_length": 1142,
+            "length_delta": 31
+          },
+          "ruby_expanded": {
+            "relation": "generated_contains_tei_eaj",
+            "generated_length": 1177,
+            "tei_eaj_length": 1142,
+            "length_delta": 35
+          },
+          "ruby_expanded_parenless": {
+            "relation": "generated_contains_tei_eaj",
+            "generated_length": 1175,
+            "tei_eaj_length": 1140,
+            "length_delta": 35
+          },
+          "base_drop_parentheticals": {
+            "relation": "different",
+            "generated_length": 1168,
+            "tei_eaj_length": 1137,
+            "length_delta": 31
+          }
+        },
+        "body_text_match_bucket": "ruby_expanded_parenless_generated_contains_tei_eaj"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -1255,7 +1831,34 @@
           "offset": 192,
           "generated_preview": "の人には、恋愛と云ふ事が何んであるか解つてゐないのです。あの人の恋愛観は、皆な書物の上のそれです",
           "tei_eaj_preview": "（あ）の人には、恋愛と云ふ事が何んであるか解つてゐないのです。あの人の恋愛観は、皆な書物の上のそ"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 2198,
+            "tei_eaj_length": 2222,
+            "length_delta": -24
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 2210,
+            "tei_eaj_length": 2222,
+            "length_delta": -12
+          },
+          "ruby_expanded_parenless": {
+            "relation": "equal",
+            "generated_length": 2208,
+            "tei_eaj_length": 2208,
+            "length_delta": 0
+          },
+          "base_drop_parentheticals": {
+            "relation": "equal",
+            "generated_length": 2193,
+            "tei_eaj_length": 2193,
+            "length_delta": 0
+          }
+        },
+        "body_text_match_bucket": "ruby_expanded_parenless_equal"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -1307,7 +1910,34 @@
         "generated_body_base_text_length": 613,
         "tei_eaj_body_base_text_length": 613,
         "body_base_text_length_delta": 0,
-        "body_base_text_first_diff": null
+        "body_base_text_first_diff": null,
+        "surface_relations": {
+          "base": {
+            "relation": "equal",
+            "generated_length": 613,
+            "tei_eaj_length": 613,
+            "length_delta": 0
+          },
+          "ruby_expanded": {
+            "relation": "equal",
+            "generated_length": 613,
+            "tei_eaj_length": 613,
+            "length_delta": 0
+          },
+          "ruby_expanded_parenless": {
+            "relation": "equal",
+            "generated_length": 613,
+            "tei_eaj_length": 613,
+            "length_delta": 0
+          },
+          "base_drop_parentheticals": {
+            "relation": "equal",
+            "generated_length": 613,
+            "tei_eaj_length": 613,
+            "length_delta": 0
+          }
+        },
+        "body_text_match_bucket": "base_equal"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -1363,7 +1993,34 @@
           "offset": 76,
           "generated_preview": "にゆくのが何んだかいやなので、帳場で話をして、それから室にはいると直ぐあの新聞を読んで、中央公論",
           "tei_eaj_preview": "（へや）にゆくのが何んだかいやなので、帳場で話をして、それから室にはいると直ぐあの新聞を読んで、"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 543,
+            "tei_eaj_length": 550,
+            "length_delta": -7
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 546,
+            "tei_eaj_length": 550,
+            "length_delta": -4
+          },
+          "ruby_expanded_parenless": {
+            "relation": "equal",
+            "generated_length": 542,
+            "tei_eaj_length": 542,
+            "length_delta": 0
+          },
+          "base_drop_parentheticals": {
+            "relation": "equal",
+            "generated_length": 534,
+            "tei_eaj_length": 534,
+            "length_delta": 0
+          }
+        },
+        "body_text_match_bucket": "ruby_expanded_parenless_equal"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -1419,7 +2076,34 @@
           "offset": 880,
           "generated_preview": "りに会ひたい気がします。あなたの一昨日のお話しのやうに、触れる処まで触れて見たい気がします。私も",
           "tei_eaj_preview": "（しき）りに会ひたい気がします。あなたの一昨日のお話しのやうに、触れる処まで触れて見たい気がしま"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 2215,
+            "tei_eaj_length": 2241,
+            "length_delta": -26
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 2229,
+            "tei_eaj_length": 2241,
+            "length_delta": -12
+          },
+          "ruby_expanded_parenless": {
+            "relation": "equal",
+            "generated_length": 2227,
+            "tei_eaj_length": 2227,
+            "length_delta": 0
+          },
+          "base_drop_parentheticals": {
+            "relation": "equal",
+            "generated_length": 2209,
+            "tei_eaj_length": 2209,
+            "length_delta": 0
+          }
+        },
+        "body_text_match_bucket": "ruby_expanded_parenless_equal"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -1475,7 +2159,34 @@
           "offset": 63,
           "generated_preview": "をお詫びして許して頂かうと思ひましたの。それで、幾度も幾度もあなたの処に行くのですけれど、何んだ",
           "tei_eaj_preview": "（わがまま）をお詫びして許して頂かうと思ひましたの。それで、幾度も幾度もあなたの処に行くのですけ"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 2390,
+            "tei_eaj_length": 2424,
+            "length_delta": -34
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 2410,
+            "tei_eaj_length": 2424,
+            "length_delta": -14
+          },
+          "ruby_expanded_parenless": {
+            "relation": "equal",
+            "generated_length": 2410,
+            "tei_eaj_length": 2410,
+            "length_delta": 0
+          },
+          "base_drop_parentheticals": {
+            "relation": "equal",
+            "generated_length": 2390,
+            "tei_eaj_length": 2390,
+            "length_delta": 0
+          }
+        },
+        "body_text_match_bucket": "ruby_expanded_parenless_equal"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -1531,7 +2242,34 @@
           "offset": 170,
           "generated_preview": "（資夫）さんのハガキと一緒に。会ひたい会ひたい、と云ふ私の気持がなぜそんなにあなたに響かないでせ",
           "tei_eaj_preview": "資夫（すけお）さんのハガキと一緒に。会ひたい会ひたい、と云ふ私の気持がなぜそんなにあなたに響かな"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 1128,
+            "tei_eaj_length": 1148,
+            "length_delta": -20
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 1140,
+            "tei_eaj_length": 1148,
+            "length_delta": -8
+          },
+          "ruby_expanded_parenless": {
+            "relation": "equal",
+            "generated_length": 1136,
+            "tei_eaj_length": 1136,
+            "length_delta": 0
+          },
+          "base_drop_parentheticals": {
+            "relation": "different",
+            "generated_length": 1119,
+            "tei_eaj_length": 1121,
+            "length_delta": -2
+          }
+        },
+        "body_text_match_bucket": "ruby_expanded_parenless_equal"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -1587,7 +2325,34 @@
           "offset": 179,
           "generated_preview": "く山の上にゐて、それから又ゆつくり歩いて帰つて来ました。ですけれど、帰る途中からまた体の工合が変",
           "tei_eaj_preview": "（しばら）く山の上にゐて、それから又ゆつくり歩いて帰つて来ました。ですけれど、帰る途中からまた体"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 1531,
+            "tei_eaj_length": 1567,
+            "length_delta": -36
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 1553,
+            "tei_eaj_length": 1567,
+            "length_delta": -14
+          },
+          "ruby_expanded_parenless": {
+            "relation": "equal",
+            "generated_length": 1551,
+            "tei_eaj_length": 1551,
+            "length_delta": 0
+          },
+          "base_drop_parentheticals": {
+            "relation": "different",
+            "generated_length": 1527,
+            "tei_eaj_length": 1528,
+            "length_delta": -1
+          }
+        },
+        "body_text_match_bucket": "ruby_expanded_parenless_equal"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -1643,7 +2408,34 @@
           "offset": 18,
           "generated_preview": "館発信地千葉県夷隅郡御宿上野屋旅館ゆふべ、つくと直ぐに手紙を書き出しましたけれど、腰が痛んで気持",
           "tei_eaj_preview": "（ふくしま）館発信地千葉県夷隅郡御宿上野屋旅館ゆふべ、つくと直ぐに手紙を書き出しましたけれど、腰"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 771,
+            "tei_eaj_length": 786,
+            "length_delta": -15
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 776,
+            "tei_eaj_length": 786,
+            "length_delta": -10
+          },
+          "ruby_expanded_parenless": {
+            "relation": "different",
+            "generated_length": 776,
+            "tei_eaj_length": 780,
+            "length_delta": -4
+          },
+          "base_drop_parentheticals": {
+            "relation": "equal",
+            "generated_length": 771,
+            "tei_eaj_length": 771,
+            "length_delta": 0
+          }
+        },
+        "body_text_match_bucket": "base_drop_parentheticals_equal"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -1699,7 +2491,34 @@
           "offset": 44,
           "generated_preview": "も外には出られません。本当にさびしい日です。けれど今日は、さつきあなたに手紙を書いた後、大変幸福",
           "tei_eaj_preview": "（ちょっと）も外には出られません。本当にさびしい日です。けれど今日は、さつきあなたに手紙を書いた"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 1066,
+            "tei_eaj_length": 1072,
+            "length_delta": -6
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 1070,
+            "tei_eaj_length": 1072,
+            "length_delta": -2
+          },
+          "ruby_expanded_parenless": {
+            "relation": "equal",
+            "generated_length": 1070,
+            "tei_eaj_length": 1070,
+            "length_delta": 0
+          },
+          "base_drop_parentheticals": {
+            "relation": "equal",
+            "generated_length": 1066,
+            "tei_eaj_length": 1066,
+            "length_delta": 0
+          }
+        },
+        "body_text_match_bucket": "ruby_expanded_parenless_equal"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -1755,7 +2574,34 @@
           "offset": 84,
           "generated_preview": "律次郎）さんが思ひがけなく見えてゐましたのにびつくりしました。あなたが電報を打つて下すつたのです",
           "tei_eaj_preview": "わけ）（律次郎）さんが思ひがけなく見えてゐましたのにびつくりしました。あなたが電報を打つて下すつ"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 1853,
+            "tei_eaj_length": 1882,
+            "length_delta": -29
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 1870,
+            "tei_eaj_length": 1882,
+            "length_delta": -12
+          },
+          "ruby_expanded_parenless": {
+            "relation": "equal",
+            "generated_length": 1866,
+            "tei_eaj_length": 1866,
+            "length_delta": 0
+          },
+          "base_drop_parentheticals": {
+            "relation": "equal",
+            "generated_length": 1843,
+            "tei_eaj_length": 1843,
+            "length_delta": 0
+          }
+        },
+        "body_text_match_bucket": "ruby_expanded_parenless_equal"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -1811,7 +2657,34 @@
           "offset": 65,
           "generated_preview": "てゐるの。だつて来ると早くからいぢめられてゐるんだもの、可哀さうぢやない？でもね、随分おとなしい",
           "tei_eaj_preview": "（しょげ）てゐるの。だつて来ると早くからいぢめられてゐるんだもの、可哀さうぢやない？でもね、随分"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 778,
+            "tei_eaj_length": 789,
+            "length_delta": -11
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 785,
+            "tei_eaj_length": 789,
+            "length_delta": -4
+          },
+          "ruby_expanded_parenless": {
+            "relation": "equal",
+            "generated_length": 785,
+            "tei_eaj_length": 785,
+            "length_delta": 0
+          },
+          "base_drop_parentheticals": {
+            "relation": "equal",
+            "generated_length": 778,
+            "tei_eaj_length": 778,
+            "length_delta": 0
+          }
+        },
+        "body_text_match_bucket": "ruby_expanded_parenless_equal"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -1867,7 +2740,34 @@
           "offset": 271,
           "generated_preview": "でゐられます。従妹から湯上りに着るのを二反送つてくれました。それを仕立てて着てゐればよろしうござ",
           "tei_eaj_preview": "（ひとえ）でゐられます。従妹から湯上りに着るのを二反送つてくれました。それを仕立てて着てゐればよ"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 1114,
+            "tei_eaj_length": 1122,
+            "length_delta": -8
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 1118,
+            "tei_eaj_length": 1122,
+            "length_delta": -4
+          },
+          "ruby_expanded_parenless": {
+            "relation": "equal",
+            "generated_length": 1116,
+            "tei_eaj_length": 1116,
+            "length_delta": 0
+          },
+          "base_drop_parentheticals": {
+            "relation": "equal",
+            "generated_length": 1108,
+            "tei_eaj_length": 1108,
+            "length_delta": 0
+          }
+        },
+        "body_text_match_bucket": "ruby_expanded_parenless_equal"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -1923,7 +2823,34 @@
           "offset": 46,
           "generated_preview": "に行つて、ひとりであの広い蚊帳のなかにすはつて手紙を書き続けようとしましたけれども、いろんな事を",
           "tei_eaj_preview": "（へや）に行つて、ひとりであの広い蚊帳（かや）のなかにすはつて手紙を書き続けようとしましたけれど"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 1480,
+            "tei_eaj_length": 1505,
+            "length_delta": -25
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 1491,
+            "tei_eaj_length": 1505,
+            "length_delta": -14
+          },
+          "ruby_expanded_parenless": {
+            "relation": "different",
+            "generated_length": 1489,
+            "tei_eaj_length": 1493,
+            "length_delta": -4
+          },
+          "base_drop_parentheticals": {
+            "relation": "different",
+            "generated_length": 1476,
+            "tei_eaj_length": 1480,
+            "length_delta": -4
+          }
+        },
+        "body_text_match_bucket": "different"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -1979,7 +2906,34 @@
           "offset": 0,
           "generated_preview": "宛先東京市麹町区三番町六四第一福四萬館発信地千葉県夷隅郡御宿上野屋旅館雑誌ありがたう御座いました",
           "tei_eaj_preview": "雑誌ありがたう御座いました。今皆よんで見ました。昨日からの不快が少し減じました。この位方々でやつ"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 1314,
+            "tei_eaj_length": 1257,
+            "length_delta": 57
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 1325,
+            "tei_eaj_length": 1257,
+            "length_delta": 68
+          },
+          "ruby_expanded_parenless": {
+            "relation": "different",
+            "generated_length": 1325,
+            "tei_eaj_length": 1257,
+            "length_delta": 68
+          },
+          "base_drop_parentheticals": {
+            "relation": "different",
+            "generated_length": 1314,
+            "tei_eaj_length": 1257,
+            "length_delta": 57
+          }
+        },
+        "body_text_match_bucket": "different"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -2035,7 +2989,34 @@
           "offset": 255,
           "generated_preview": "れてゐましたので何にも書けませんでした。そして今朝御手紙を拝見して私は本当にどうしていゝか分らな",
           "tei_eaj_preview": "（つか）れてゐましたので何にも書けませんでした。そして今朝御手紙を拝見して私は本当にどうしていゝ"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 5155,
+            "tei_eaj_length": 5211,
+            "length_delta": -56
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 5187,
+            "tei_eaj_length": 5211,
+            "length_delta": -24
+          },
+          "ruby_expanded_parenless": {
+            "relation": "equal",
+            "generated_length": 5185,
+            "tei_eaj_length": 5185,
+            "length_delta": 0
+          },
+          "base_drop_parentheticals": {
+            "relation": "equal",
+            "generated_length": 5084,
+            "tei_eaj_length": 5084,
+            "length_delta": 0
+          }
+        },
+        "body_text_match_bucket": "ruby_expanded_parenless_equal"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -2091,7 +3072,34 @@
           "offset": 76,
           "generated_preview": "と名づけました。そちらではもう松茸が出てゐるやうですが、こちらではまだ手に入りません。少々でよろ",
           "tei_eaj_preview": "（まこ）と名づけました。そちらではもう松茸が出てゐるやうですが、こちらではまだ手に入りません。少"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 192,
+            "tei_eaj_length": 196,
+            "length_delta": -4
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 194,
+            "tei_eaj_length": 196,
+            "length_delta": -2
+          },
+          "ruby_expanded_parenless": {
+            "relation": "equal",
+            "generated_length": 194,
+            "tei_eaj_length": 194,
+            "length_delta": 0
+          },
+          "base_drop_parentheticals": {
+            "relation": "equal",
+            "generated_length": 192,
+            "tei_eaj_length": 192,
+            "length_delta": 0
+          }
+        },
+        "body_text_match_bucket": "ruby_expanded_parenless_equal"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -2147,7 +3155,34 @@
           "offset": 101,
           "generated_preview": "と云ふことは今宿のうちでも代のうちでも知つてゐる筈、一寸きいてから来ればよかつた。うちからは四五",
           "tei_eaj_preview": "35.7097208139.7576139と云ふことは今宿（いまじゅく）のうちでも代（だい）のう"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 604,
+            "tei_eaj_length": 642,
+            "length_delta": -38
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 615,
+            "tei_eaj_length": 642,
+            "length_delta": -27
+          },
+          "ruby_expanded_parenless": {
+            "relation": "different",
+            "generated_length": 615,
+            "tei_eaj_length": 636,
+            "length_delta": -21
+          },
+          "base_drop_parentheticals": {
+            "relation": "different",
+            "generated_length": 604,
+            "tei_eaj_length": 625,
+            "length_delta": -21
+          }
+        },
+        "body_text_match_bucket": "different"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -2203,7 +3238,34 @@
           "offset": 3,
           "generated_preview": "の小町、几帳の陰に草紙を読んでいる。そこへ突然黄泉の使が現れる。黄泉の使は色の黒い若者。しかも耳",
           "tei_eaj_preview": "（おの）の小町（こまち）、几帳（きちょう）の陰に草紙（そうし）を読んでいる。そこへ突然黄泉（よみ"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 5919,
+            "tei_eaj_length": 6855,
+            "length_delta": -936
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 6494,
+            "tei_eaj_length": 6855,
+            "length_delta": -361
+          },
+          "ruby_expanded_parenless": {
+            "relation": "generated_contains_tei_eaj",
+            "generated_length": 6390,
+            "tei_eaj_length": 6383,
+            "length_delta": 7
+          },
+          "base_drop_parentheticals": {
+            "relation": "different",
+            "generated_length": 5471,
+            "tei_eaj_length": 5578,
+            "length_delta": -107
+          }
+        },
+        "body_text_match_bucket": "ruby_expanded_parenless_generated_contains_tei_eaj"
       },
       "classification": {
         "paragraph_delta_bucket": "under_split",
@@ -2259,7 +3321,34 @@
           "offset": 5,
           "generated_preview": "戸棚の中。絵画、陶器、唐皮、更緲、牙彫、鋳金等種々の異国関係史料、処狭きまでに置き並べたるを見る",
           "tei_eaj_preview": "（ガラス）戸棚の中。絵画、陶器、唐皮（からかは）、更緲（さらさ）、牙彫（げぼり）、鋳金（ちうきん"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 2577,
+            "tei_eaj_length": 3130,
+            "length_delta": -553
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 3005,
+            "tei_eaj_length": 3130,
+            "length_delta": -125
+          },
+          "ruby_expanded_parenless": {
+            "relation": "different",
+            "generated_length": 2957,
+            "tei_eaj_length": 2833,
+            "length_delta": 124
+          },
+          "base_drop_parentheticals": {
+            "relation": "different",
+            "generated_length": 2351,
+            "tei_eaj_length": 2301,
+            "length_delta": 50
+          }
+        },
+        "body_text_match_bucket": "different"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -2311,7 +3400,34 @@
         "generated_body_base_text_length": 9790,
         "tei_eaj_body_base_text_length": 9790,
         "body_base_text_length_delta": 0,
-        "body_base_text_first_diff": null
+        "body_base_text_first_diff": null,
+        "surface_relations": {
+          "base": {
+            "relation": "equal",
+            "generated_length": 9790,
+            "tei_eaj_length": 9790,
+            "length_delta": 0
+          },
+          "ruby_expanded": {
+            "relation": "equal",
+            "generated_length": 10039,
+            "tei_eaj_length": 10039,
+            "length_delta": 0
+          },
+          "ruby_expanded_parenless": {
+            "relation": "equal",
+            "generated_length": 10039,
+            "tei_eaj_length": 10039,
+            "length_delta": 0
+          },
+          "base_drop_parentheticals": {
+            "relation": "equal",
+            "generated_length": 9790,
+            "tei_eaj_length": 9790,
+            "length_delta": 0
+          }
+        },
+        "body_text_match_bucket": "base_equal"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -2363,7 +3479,34 @@
         "generated_body_base_text_length": 9790,
         "tei_eaj_body_base_text_length": 9790,
         "body_base_text_length_delta": 0,
-        "body_base_text_first_diff": null
+        "body_base_text_first_diff": null,
+        "surface_relations": {
+          "base": {
+            "relation": "equal",
+            "generated_length": 9790,
+            "tei_eaj_length": 9790,
+            "length_delta": 0
+          },
+          "ruby_expanded": {
+            "relation": "equal",
+            "generated_length": 10039,
+            "tei_eaj_length": 10039,
+            "length_delta": 0
+          },
+          "ruby_expanded_parenless": {
+            "relation": "equal",
+            "generated_length": 10039,
+            "tei_eaj_length": 10039,
+            "length_delta": 0
+          },
+          "base_drop_parentheticals": {
+            "relation": "equal",
+            "generated_length": 9790,
+            "tei_eaj_length": 9790,
+            "length_delta": 0
+          }
+        },
+        "body_text_match_bucket": "base_equal"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -2419,7 +3562,34 @@
           "offset": 3,
           "generated_preview": "は京都の高瀬川を上下する小舟である。徳川時代に京都の罪人が遠島を申し渡されると、本人の親類が牢屋",
           "tei_eaj_preview": "《たかせぶね》は京都の高瀬川《たかせがわ》を上下《じょうげ》する小舟である。徳川時代に京都の罪人"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 8723,
+            "tei_eaj_length": 9359,
+            "length_delta": -636
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 9153,
+            "tei_eaj_length": 9359,
+            "length_delta": -206
+          },
+          "ruby_expanded_parenless": {
+            "relation": "different",
+            "generated_length": 9153,
+            "tei_eaj_length": 9359,
+            "length_delta": -206
+          },
+          "base_drop_parentheticals": {
+            "relation": "different",
+            "generated_length": 8723,
+            "tei_eaj_length": 9359,
+            "length_delta": -636
+          }
+        },
+        "body_text_match_bucket": "different"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -2475,7 +3645,34 @@
           "offset": 0,
           "generated_preview": "阿片戦争（一八四〇―四二）で中国が開国した後は極東の一角日本を開けばこれで旧文明国を資本主義世界",
           "tei_eaj_preview": "中国制覇の足がかり阿片あへん戦争（一八四〇―四二）で中国が開国した後は極東の一角日本を開けばこれ"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 2162,
+            "tei_eaj_length": 2284,
+            "length_delta": -122
+          },
+          "ruby_expanded": {
+            "relation": "tei_eaj_contains_generated",
+            "generated_length": 2275,
+            "tei_eaj_length": 2284,
+            "length_delta": -9
+          },
+          "ruby_expanded_parenless": {
+            "relation": "tei_eaj_contains_generated",
+            "generated_length": 2273,
+            "tei_eaj_length": 2282,
+            "length_delta": -9
+          },
+          "base_drop_parentheticals": {
+            "relation": "different",
+            "generated_length": 2153,
+            "tei_eaj_length": 2275,
+            "length_delta": -122
+          }
+        },
+        "body_text_match_bucket": "ruby_expanded_parenless_tei_eaj_contains_generated"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -2531,7 +3728,34 @@
           "offset": 0,
           "generated_preview": "人物旅人子供三人Ａ無邪気な晴れ晴れしい抑揚のある声の児Ｂ実用的な平坦な動かない調子で話す児Ｃ考え",
           "tei_eaj_preview": "一場所小高い丘の上、四辺のからっと見はらせる所（講堂の段の上を丘に仮定時小夏の夕暮に近い午後Ｂ、"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 2929,
+            "tei_eaj_length": 2903,
+            "length_delta": 26
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 2933,
+            "tei_eaj_length": 2903,
+            "length_delta": 30
+          },
+          "ruby_expanded_parenless": {
+            "relation": "different",
+            "generated_length": 2917,
+            "tei_eaj_length": 2874,
+            "length_delta": 43
+          },
+          "base_drop_parentheticals": {
+            "relation": "different",
+            "generated_length": 2834,
+            "tei_eaj_length": 2754,
+            "length_delta": 80
+          }
+        },
+        "body_text_match_bucket": "different"
       },
       "classification": {
         "paragraph_delta_bucket": "under_split",
@@ -2587,7 +3811,34 @@
           "offset": 0,
           "generated_preview": "森の中。三人の盗人が宝を争っている。宝とは一飛びに千里飛ぶ長靴、着れば姿の隠れるマントル、鉄でも",
           "tei_eaj_preview": "一森の中。三人の盗人ぬすびとが宝を争っている。宝とは一飛びに千里飛ぶ長靴ながぐつ、着れば姿の隠れ"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 6994,
+            "tei_eaj_length": 7661,
+            "length_delta": -667
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 7068,
+            "tei_eaj_length": 7661,
+            "length_delta": -593
+          },
+          "ruby_expanded_parenless": {
+            "relation": "different",
+            "generated_length": 6956,
+            "tei_eaj_length": 7255,
+            "length_delta": -299
+          },
+          "base_drop_parentheticals": {
+            "relation": "different",
+            "generated_length": 6415,
+            "tei_eaj_length": 6444,
+            "length_delta": -29
+          }
+        },
+        "body_text_match_bucket": "different"
       },
       "classification": {
         "paragraph_delta_bucket": "under_split",
@@ -2643,7 +3894,34 @@
           "offset": 22,
           "generated_preview": "に仕様が無い。ただ、読者にお断りして置きたいのは、この作品が、沙翁の「ハムレット」の註釈書でもな",
           "tei_eaj_preview": "（ほか）に仕様が無い。ただ、読者にお断りして置きたいのは、この作品が、沙翁（さおう）の「ハムレッ"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 94215,
+            "tei_eaj_length": 96499,
+            "length_delta": -2284
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 96175,
+            "tei_eaj_length": 96499,
+            "length_delta": -324
+          },
+          "ruby_expanded_parenless": {
+            "relation": "different",
+            "generated_length": 96141,
+            "tei_eaj_length": 94989,
+            "length_delta": 1152
+          },
+          "base_drop_parentheticals": {
+            "relation": "different",
+            "generated_length": 94036,
+            "tei_eaj_length": 92915,
+            "length_delta": 1121
+          }
+        },
+        "body_text_match_bucket": "different"
       },
       "classification": {
         "paragraph_delta_bucket": "under_split",
@@ -2699,7 +3977,34 @@
           "offset": 0,
           "generated_preview": "一文化年中のことであった。朝鮮の使節が来朝した。家斉将軍の思し召しによって当代の名家に屏風を描か",
           "tei_eaj_preview": "曠野（あれの）と湿潤（うるおい）なき地とは楽しみ、沙漠（さばく）は歓（よろこ）びて番紅（さふらん"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 8259,
+            "tei_eaj_length": 9793,
+            "length_delta": -1534
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 8711,
+            "tei_eaj_length": 9793,
+            "length_delta": -1082
+          },
+          "ruby_expanded_parenless": {
+            "relation": "different",
+            "generated_length": 8711,
+            "tei_eaj_length": 9405,
+            "length_delta": -694
+          },
+          "base_drop_parentheticals": {
+            "relation": "different",
+            "generated_length": 8259,
+            "tei_eaj_length": 8839,
+            "length_delta": -580
+          }
+        },
+        "body_text_match_bucket": "different"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -2755,7 +4060,34 @@
           "offset": 333,
           "generated_preview": "―四）、エドムの刑罰（三四の五―一七）、並にイスラエルの復興（三五）の三部より成る。汝等もろもろ",
           "tei_eaj_preview": "—四）、エドムの刑罰（三四の五—一七）、並にイスラエルの復興（三五）の三部より成る。汝等もろもろ"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 3923,
+            "tei_eaj_length": 3896,
+            "length_delta": 27
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 3961,
+            "tei_eaj_length": 3896,
+            "length_delta": 65
+          },
+          "ruby_expanded_parenless": {
+            "relation": "different",
+            "generated_length": 3947,
+            "tei_eaj_length": 3886,
+            "length_delta": 61
+          },
+          "base_drop_parentheticals": {
+            "relation": "different",
+            "generated_length": 3862,
+            "tei_eaj_length": 3859,
+            "length_delta": 3
+          }
+        },
+        "body_text_match_bucket": "different"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -2811,7 +4143,34 @@
           "offset": 3,
           "generated_preview": "の小町、几帳の陰に草紙を読んでいる。そこへ突然黄泉の使が現れる。黄泉の使は色の黒い若者。しかも耳",
           "tei_eaj_preview": "（おの）の小町（こまち）、几帳（きちょう）の陰に草紙（そうし）を読んでいる。そこへ突然黄泉（よみ"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 5919,
+            "tei_eaj_length": 6864,
+            "length_delta": -945
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 6494,
+            "tei_eaj_length": 6864,
+            "length_delta": -370
+          },
+          "ruby_expanded_parenless": {
+            "relation": "equal",
+            "generated_length": 6390,
+            "tei_eaj_length": 6390,
+            "length_delta": 0
+          },
+          "base_drop_parentheticals": {
+            "relation": "different",
+            "generated_length": 5471,
+            "tei_eaj_length": 5578,
+            "length_delta": -107
+          }
+        },
+        "body_text_match_bucket": "ruby_expanded_parenless_equal"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -2867,7 +4226,34 @@
           "offset": 0,
           "generated_preview": "時。一九〇九年八月、十月。所。小王嶺、ウラジオストック、ボグラニチナヤ、蔡家溝、ハルビン。人。安",
           "tei_eaj_preview": "１一九〇九年――明治四十二年――八月下旬の暑い日。ウラジオストックの田舎、小王嶺の朝鮮人部落。部"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 48761,
+            "tei_eaj_length": 49086,
+            "length_delta": -325
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 48909,
+            "tei_eaj_length": 49086,
+            "length_delta": -177
+          },
+          "ruby_expanded_parenless": {
+            "relation": "different",
+            "generated_length": 48133,
+            "tei_eaj_length": 47954,
+            "length_delta": 179
+          },
+          "base_drop_parentheticals": {
+            "relation": "different",
+            "generated_length": 44965,
+            "tei_eaj_length": 44650,
+            "length_delta": 315
+          }
+        },
+        "body_text_match_bucket": "different"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -2923,7 +4309,34 @@
           "offset": 0,
           "generated_preview": "――曾て、哲人アビュレの故郷なるマドーラの町に、一人の魔法をよく使う女が住んでいた。彼女は自分が",
           "tei_eaj_preview": "三〇五明治三十九年一月一日午前零時―五時本郷區駒込千駄木町五十七番地より廣島市猿樂町鈴木三重吉へ"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 5688,
+            "tei_eaj_length": 993,
+            "length_delta": 4695
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 5748,
+            "tei_eaj_length": 993,
+            "length_delta": 4755
+          },
+          "ruby_expanded_parenless": {
+            "relation": "different",
+            "generated_length": 5746,
+            "tei_eaj_length": 993,
+            "length_delta": 4753
+          },
+          "base_drop_parentheticals": {
+            "relation": "different",
+            "generated_length": 5661,
+            "tei_eaj_length": 993,
+            "length_delta": 4668
+          }
+        },
+        "body_text_match_bucket": "different"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -2979,7 +4392,34 @@
           "offset": 0,
           "generated_preview": "十二月八日〔牛込区富久町一一二市ヶ谷刑務所の宮本顕治宛淀橋区上落合二ノ七四〇より（封書）〕第一信",
           "tei_eaj_preview": "これは何と不思議な心持でしょう。ずっと前から手紙をかくときのことをいろいろ考えていたのに、いざ書"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 14908,
+            "tei_eaj_length": 7662,
+            "length_delta": 7246
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 14974,
+            "tei_eaj_length": 7692,
+            "length_delta": 7282
+          },
+          "ruby_expanded_parenless": {
+            "relation": "different",
+            "generated_length": 14940,
+            "tei_eaj_length": 7680,
+            "length_delta": 7260
+          },
+          "base_drop_parentheticals": {
+            "relation": "different",
+            "generated_length": 14659,
+            "tei_eaj_length": 7541,
+            "length_delta": 7118
+          }
+        },
+        "body_text_match_bucket": "different"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -3035,7 +4475,34 @@
           "offset": 0,
           "generated_preview": "十二月八日〔牛込区富久町一一二市ヶ谷刑務所の宮本顕治宛淀橋区上落合二ノ七四〇より（封書）〕第一信",
           "tei_eaj_preview": "今日は。いかがですか。お体の工合、本の工合、その他いかがですか。きょうは、曇天ではあるが気候は暖"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 14908,
+            "tei_eaj_length": 4717,
+            "length_delta": 10191
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 14974,
+            "tei_eaj_length": 4737,
+            "length_delta": 10237
+          },
+          "ruby_expanded_parenless": {
+            "relation": "different",
+            "generated_length": 14940,
+            "tei_eaj_length": 4729,
+            "length_delta": 10211
+          },
+          "base_drop_parentheticals": {
+            "relation": "different",
+            "generated_length": 14659,
+            "tei_eaj_length": 4643,
+            "length_delta": 10016
+          }
+        },
+        "body_text_match_bucket": "different"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -3091,7 +4558,34 @@
           "offset": 3,
           "generated_preview": "八日〔牛込区富久町一一二市ヶ谷刑務所の宮本顕治宛淀橋区上落合二ノ七四〇より（封書）〕第一信。（不",
           "tei_eaj_preview": "二十六日からはじまる。今夜は火曜日の夜で、今の家に移ってから火曜日と金曜日の午後を人に会う日にき"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 14908,
+            "tei_eaj_length": 1365,
+            "length_delta": 13543
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 14974,
+            "tei_eaj_length": 1371,
+            "length_delta": 13603
+          },
+          "ruby_expanded_parenless": {
+            "relation": "different",
+            "generated_length": 14940,
+            "tei_eaj_length": 1369,
+            "length_delta": 13571
+          },
+          "base_drop_parentheticals": {
+            "relation": "different",
+            "generated_length": 14659,
+            "tei_eaj_length": 1348,
+            "length_delta": 13311
+          }
+        },
+        "body_text_match_bucket": "different"
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
@@ -3147,7 +4641,34 @@
           "offset": 0,
           "generated_preview": "時ある春の晴れた朝所花咲ける丘人物少年（十三歳位）少女（十一二歳）先生（小学教師）猟人（若き遊猟",
           "tei_eaj_preview": "第一景幕があくと、舞台裏から左（さ）の唱歌が、だんだん近づき、舞台下手から少年少女が歌いながら登"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 3137,
+            "tei_eaj_length": 3062,
+            "length_delta": 75
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 3226,
+            "tei_eaj_length": 3062,
+            "length_delta": 164
+          },
+          "ruby_expanded_parenless": {
+            "relation": "different",
+            "generated_length": 3206,
+            "tei_eaj_length": 2942,
+            "length_delta": 264
+          },
+          "base_drop_parentheticals": {
+            "relation": "different",
+            "generated_length": 3046,
+            "tei_eaj_length": 2780,
+            "length_delta": 266
+          }
+        },
+        "body_text_match_bucket": "different"
       },
       "classification": {
         "paragraph_delta_bucket": "under_split",
@@ -3203,7 +4724,34 @@
           "offset": 1055,
           "generated_preview": "。老人のてのひらは、女のようにやわらかであつた。講社から帰るのは、何時も夜が更けてからであつた。",
           "tei_eaj_preview": "老人のてのひらは、女のようにやわらかであつた。講社から帰るのは、何時も夜が更けてからであつた。山"
-        }
+        },
+        "surface_relations": {
+          "base": {
+            "relation": "different",
+            "generated_length": 1459,
+            "tei_eaj_length": 1458,
+            "length_delta": 1
+          },
+          "ruby_expanded": {
+            "relation": "different",
+            "generated_length": 1459,
+            "tei_eaj_length": 1458,
+            "length_delta": 1
+          },
+          "ruby_expanded_parenless": {
+            "relation": "different",
+            "generated_length": 1459,
+            "tei_eaj_length": 1458,
+            "length_delta": 1
+          },
+          "base_drop_parentheticals": {
+            "relation": "different",
+            "generated_length": 1459,
+            "tei_eaj_length": 1458,
+            "length_delta": 1
+          }
+        },
+        "body_text_match_bucket": "different"
       },
       "classification": {
         "paragraph_delta_bucket": "exact",

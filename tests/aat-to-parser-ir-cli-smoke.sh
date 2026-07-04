@@ -203,3 +203,68 @@ jq -e '.inputs[0].parser_ir.source_attribution_represented == false' "$out_dir/s
 jq -e '.inputs[0].verdict.residual_free == false' "$out_dir/structural-summary.json"
 jq -e 'any(.inputs[0].divergence.paragraph_structural_records[]; .rule_id == "S-10" and .count == 2)' "$out_dir/structural-summary.json"
 grep -n 'Melos Structural Probe' "$out_dir/structural-report.md"
+
+tei_aat_dir="$out_dir/tei-aat"
+mkdir -p "$tei_aat_dir"
+cp "$structural_aat" "$tei_aat_dir/000035_1567-fixture.json"
+tei_workset="$out_dir/tei-eaj-workset.json"
+cat > "$tei_workset" <<'JSON'
+{
+  "schema_version": "tei-eaj-aozora-workset-export-v1",
+  "summary": {
+    "tei_eaj_file_count": 1,
+    "tei_eaj_work_id_count": 1,
+    "abc_counterpart_count": 1,
+    "compared_file_count": 1,
+    "missing_counterpart_count": 0,
+    "no_work_id_count": 0,
+    "base_text_equal_count": 0,
+    "base_text_mismatch_count": 1,
+    "uncompared_file_count": 0
+  },
+  "tei_eaj_source": {"revision": "fixture", "root": "/fixture"},
+  "abc_inputs": {"counterparts": [], "tei_dirs": [], "tei_specs": []},
+  "candidate_work_ids": ["1567"],
+  "missing_abc_counterpart_work_ids": [],
+  "no_work_id_files": [],
+  "files": [{
+    "abc_body_base_text_length": 9806,
+    "abc_note_count": 1,
+    "abc_p_count": 1,
+    "abc_tei": "paper/demo-melos-real/tei.xml",
+    "base_text_equal": false,
+    "comparison_status": "compared",
+    "first_difference": null,
+    "level": "Level 4",
+    "state": "complete",
+    "tei_eaj_body_base_text_length": 9790,
+    "tei_eaj_file": "data/complete/tei_lib_lv4/1567_tei.xml",
+    "tei_eaj_note_count": 0,
+    "tei_eaj_p_count": 19,
+    "title": "走れメロス",
+    "work_id": "1567"
+  }]
+}
+JSON
+
+tei_args=(
+  tei-eaj-structural-expansion
+  --workset "$tei_workset"
+  --aat-dir "fixture=$tei_aat_dir"
+  --mapping "$repo_root/data/aat-to-parser-ir-mapping-v1.json"
+  --summary-json "$out_dir/tei-eaj-structural-summary.json"
+  --report-md "$out_dir/tei-eaj-structural-report.md"
+  --abc-root "$abc_root"
+)
+
+if [ -n "${AB_AAT_TO_PARSER_IR_BIN:-}" ]; then
+  "$AB_AAT_TO_PARSER_IR_BIN" "${tei_args[@]}"
+else
+  "${CARGO:-cargo}" "${cargo_args[@]}" run --package ab-aat-to-parser-ir -- "${tei_args[@]}"
+fi
+
+jq -e '.totals.tei_eaj_files == 1' "$out_dir/tei-eaj-structural-summary.json"
+jq -e '.totals.rows_with_aat_evidence == 1' "$out_dir/tei-eaj-structural-summary.json"
+jq -e '.totals.parser_ir_gap_rows == 1' "$out_dir/tei-eaj-structural-summary.json"
+jq -e '.rows[0].tei.tei_eaj_p_count == 19' "$out_dir/tei-eaj-structural-summary.json"
+grep -n 'TEI-EAJ Structural Expansion' "$out_dir/tei-eaj-structural-report.md"

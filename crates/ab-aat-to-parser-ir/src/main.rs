@@ -3,8 +3,9 @@ use std::path::PathBuf;
 use ab_aat_to_parser_ir::{
     ConversionOptions, MappingDocument, PreparedConverter, SchemaSet,
     structural_probe::{
-        StructuralProbeConfig, parse_input_spec, run_structural_probe,
-        write_structural_probe_reports,
+        StructuralProbeConfig, TeiEajStructuralExpansionConfig, parse_input_spec,
+        run_structural_probe, run_tei_eaj_structural_expansion, write_structural_probe_reports,
+        write_tei_eaj_expansion_reports,
     },
 };
 use anyhow::{Context, Result};
@@ -51,6 +52,20 @@ enum Command {
     StructuralProbe {
         #[arg(long = "aat", required = true)]
         aat_inputs: Vec<String>,
+        #[arg(long)]
+        mapping: PathBuf,
+        #[arg(long)]
+        summary_json: PathBuf,
+        #[arg(long)]
+        report_md: PathBuf,
+        #[arg(long)]
+        abc_root: Option<PathBuf>,
+    },
+    TeiEajStructuralExpansion {
+        #[arg(long)]
+        workset: PathBuf,
+        #[arg(long = "aat-dir", required = true)]
+        aat_dirs: Vec<String>,
         #[arg(long)]
         mapping: PathBuf,
         #[arg(long)]
@@ -145,6 +160,39 @@ fn main() -> Result<()> {
                 summary.totals.inputs,
                 summary.totals.conversions_succeeded,
                 summary.totals.conversions_failed
+            );
+        }
+        Command::TeiEajStructuralExpansion {
+            workset,
+            aat_dirs,
+            mapping,
+            summary_json,
+            report_md,
+            abc_root,
+        } => {
+            let repo_root = resolve_repo_root(&mapping)?;
+            let abc_root = abc_root
+                .or_else(|| std::env::var_os("AB_ABC_ROOT").map(PathBuf::from))
+                .unwrap_or_else(|| repo_root.join("data/abc-schemas"));
+            let aat_dirs = aat_dirs
+                .iter()
+                .map(|spec| parse_input_spec(spec))
+                .collect::<Result<Vec<_>>>()?;
+            let mapping = MappingDocument::from_path(&mapping)?;
+            let schemas = SchemaSet::load(&repo_root, &abc_root)?;
+            let summary = run_tei_eaj_structural_expansion(TeiEajStructuralExpansionConfig {
+                workset_path: workset,
+                aat_dirs,
+                mapping,
+                schemas,
+            })?;
+            write_tei_eaj_expansion_reports(&summary, &summary_json, &report_md)?;
+            eprintln!(
+                "expanded {} TEI-EAJ row(s): {} with AAT evidence, {} parser-IR gap row(s), {} evidence gap row(s)",
+                summary.rows.len(),
+                summary.totals.rows_with_aat_evidence,
+                summary.totals.parser_ir_gap_rows,
+                summary.totals.evidence_gap_rows
             );
         }
     }

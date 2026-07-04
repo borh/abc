@@ -632,6 +632,178 @@ fn structural_probe_detects_melos_level3_gap() {
 }
 
 #[test]
+fn tei_eaj_structural_expansion_classifies_parser_ir_and_evidence_gaps() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let temp = tempfile::tempdir().unwrap();
+    let aat_dir = temp.path().join("aat");
+    std::fs::create_dir_all(&aat_dir).unwrap();
+    let tei_root = temp.path().join("tei-eaj");
+    let tei_file = tei_root.join("data/complete/tei_lib_lv3/236_tei.xml");
+    std::fs::create_dir_all(tei_file.parent().unwrap()).unwrap();
+    std::fs::write(
+        &tei_file,
+        r#"<TEI><teiHeader><p>見出し</p><note>ヘッダ</note></teiHeader><text><body><p>一</p><p>二<note>注</note></p></body></text></TEI>"#,
+    )
+    .unwrap();
+    let aat_path = aat_dir.join("000035_1567-fixture.json");
+    let aat = json!({
+        "version": 1,
+        "work_id": "000035_1567",
+        "meta": base_meta(
+            "utf-8",
+            "sha256:5656565656565656565656565656565656565656565656565656565656565656",
+        ),
+        "blocks": [
+            {
+                "kind": "paragraph",
+                "content": [
+                    {"kind": "text", "value": "メロスは激怒した。"}
+                ]
+            },
+            {
+                "kind": "paragraph",
+                "content": [
+                    {"kind": "text", "value": "（古伝説と、シルレルの詩から。）"}
+                ]
+            }
+        ]
+    });
+    std::fs::write(&aat_path, serde_json::to_string_pretty(&aat).unwrap()).unwrap();
+
+    let workset_path = temp.path().join("tei-eaj-workset.json");
+    let workset = json!({
+        "schema_version": "tei-eaj-aozora-workset-export-v1",
+        "summary": {
+            "tei_eaj_file_count": 2,
+            "tei_eaj_work_id_count": 2,
+            "abc_counterpart_count": 1,
+            "compared_file_count": 1,
+            "missing_counterpart_count": 1,
+            "no_work_id_count": 0,
+            "base_text_equal_count": 0,
+            "base_text_mismatch_count": 1,
+            "uncompared_file_count": 1
+        },
+        "tei_eaj_source": {
+            "revision": "fixture-revision",
+            "root": tei_root.display().to_string()
+        },
+        "abc_inputs": {
+            "counterparts": [{"path": "paper/demo-melos-real/tei.xml", "work_id": "1567"}],
+            "tei_dirs": ["paper"],
+            "tei_specs": []
+        },
+        "candidate_work_ids": ["1567", "236"],
+        "missing_abc_counterpart_work_ids": ["236"],
+        "no_work_id_files": [],
+        "files": [
+            {
+                "abc_body_base_text_length": 9806,
+                "abc_note_count": 1,
+                "abc_p_count": 1,
+                "abc_tei": "paper/demo-melos-real/tei.xml",
+                "base_text_equal": false,
+                "comparison_status": "compared",
+                "first_difference": {
+                    "abc": "勇者は、ひどく赤面した。（古伝説と、シルレルの詩から。）",
+                    "index": 9790,
+                    "tei_eaj": "勇者は、ひどく赤面した。"
+                },
+                "level": "Level 4",
+                "state": "complete",
+                "tei_eaj_body_base_text_length": 9790,
+                "tei_eaj_file": "data/complete/tei_lib_lv4/1567_tei.xml",
+                "tei_eaj_note_count": 0,
+                "tei_eaj_p_count": 19,
+                "title": "走れメロス",
+                "work_id": "1567"
+            },
+            {
+                "abc_body_base_text_length": null,
+                "abc_note_count": null,
+                "abc_p_count": null,
+                "abc_tei": null,
+                "base_text_equal": null,
+                "comparison_status": "missing_abc_counterpart",
+                "first_difference": null,
+                "level": "Level 3",
+                "state": "complete",
+                "tei_eaj_body_base_text_length": 1517,
+                "tei_eaj_file": "data/complete/tei_lib_lv3/236_tei.xml",
+                "tei_eaj_note_count": null,
+                "tei_eaj_p_count": null,
+                "title": "ア、秋",
+                "work_id": "236"
+            }
+        ]
+    });
+    std::fs::write(
+        &workset_path,
+        serde_json::to_string_pretty(&workset).unwrap(),
+    )
+    .unwrap();
+
+    let summary = ab_aat_to_parser_ir::structural_probe::run_tei_eaj_structural_expansion(
+        ab_aat_to_parser_ir::structural_probe::TeiEajStructuralExpansionConfig {
+            workset_path,
+            aat_dirs: vec![
+                ab_aat_to_parser_ir::structural_probe::StructuralProbeInput {
+                    label: "fixture-adapter".to_owned(),
+                    path: aat_dir,
+                },
+            ],
+            mapping,
+            schemas,
+        },
+    )
+    .unwrap();
+
+    assert_eq!(
+        summary.workset.schema_version,
+        "tei-eaj-aozora-workset-export-v1"
+    );
+    assert_eq!(summary.totals.tei_eaj_files, 2);
+    assert_eq!(summary.totals.rows_with_aat_evidence, 1);
+    assert_eq!(summary.totals.parser_ir_gap_rows, 1);
+    assert_eq!(summary.totals.evidence_gap_rows, 1);
+
+    let melos = summary
+        .rows
+        .iter()
+        .find(|row| row.tei.work_id.as_deref() == Some("1567"))
+        .unwrap();
+    assert_eq!(melos.tei.tei_eaj_p_count, Some(19));
+    assert_eq!(melos.aat_inputs.len(), 1);
+    assert!(melos.classification.parser_ir_gap);
+    assert!(melos.classification.source_attribution_gap);
+    assert!(!melos.classification.evidence_gap);
+
+    let missing = summary
+        .rows
+        .iter()
+        .find(|row| row.tei.work_id.as_deref() == Some("236"))
+        .unwrap();
+    assert_eq!(missing.tei.tei_eaj_p_count, Some(2));
+    assert_eq!(missing.tei.tei_eaj_note_count, Some(1));
+    assert!(missing.aat_inputs.is_empty());
+    assert!(missing.classification.evidence_gap);
+    assert!(
+        missing
+            .classification
+            .notes
+            .iter()
+            .any(|note| note.contains("no AAT evidence"))
+    );
+
+    let markdown =
+        ab_aat_to_parser_ir::structural_probe::render_tei_eaj_expansion_markdown(&summary);
+    assert!(markdown.contains("# TEI-EAJ Structural Expansion"));
+    assert!(markdown.contains("| 1567 | 走れメロス | compared | 19 | 1 | 1 | true |"));
+    assert!(markdown.contains("parser-IR gap"));
+    assert!(markdown.contains("evidence gap"));
+}
+
+#[test]
 fn heading_visible_projection_records_measured_flattening_losses() {
     let (schemas, mapping) = schemas_and_mapping();
     let aat = json!({
@@ -938,4 +1110,109 @@ fn cli_default_roots_follow_mapping_path_not_current_directory() {
     assert!(status.success());
     assert!(parser_ir.is_file());
     assert!(divergence.is_file());
+}
+
+#[test]
+fn cli_tei_eaj_structural_expansion_writes_reports() {
+    let repo = repo_root();
+    let abc = abc_root(&repo);
+    let temp = tempfile::tempdir().unwrap();
+    let aat_dir = temp.path().join("aat");
+    std::fs::create_dir_all(&aat_dir).unwrap();
+    let workset = temp.path().join("workset.json");
+    let summary = temp.path().join("tei-summary.json");
+    let report = temp.path().join("tei-report.md");
+
+    std::fs::write(
+        aat_dir.join("000035_1567-fixture.json"),
+        r#"{
+  "version": 1,
+  "work_id": "000035_1567",
+  "meta": {
+    "adapter": "fixture",
+    "adapter_version": "fixture 0.1.0",
+    "source_encoding": "utf-8",
+    "source_hash": "sha256:5656565656565656565656565656565656565656565656565656565656565656",
+    "parse_complete": true,
+    "warnings": []
+  },
+  "blocks": [
+    {"kind": "paragraph", "content": [{"kind": "text", "value": "メロスは激怒した。"}]},
+    {"kind": "paragraph", "content": [{"kind": "text", "value": "（古伝説と、シルレルの詩から。）"}]}
+  ]
+}"#,
+    )
+    .unwrap();
+    std::fs::write(
+        &workset,
+        r#"{
+  "schema_version": "tei-eaj-aozora-workset-export-v1",
+  "summary": {
+    "tei_eaj_file_count": 1,
+    "tei_eaj_work_id_count": 1,
+    "abc_counterpart_count": 1,
+    "compared_file_count": 1,
+    "missing_counterpart_count": 0,
+    "no_work_id_count": 0,
+    "base_text_equal_count": 0,
+    "base_text_mismatch_count": 1,
+    "uncompared_file_count": 0
+  },
+  "tei_eaj_source": {"revision": "fixture", "root": "/fixture"},
+  "abc_inputs": {"counterparts": [], "tei_dirs": [], "tei_specs": []},
+  "candidate_work_ids": ["1567"],
+  "missing_abc_counterpart_work_ids": [],
+  "no_work_id_files": [],
+  "files": [{
+    "abc_body_base_text_length": 9806,
+    "abc_note_count": 1,
+    "abc_p_count": 1,
+    "abc_tei": "paper/demo-melos-real/tei.xml",
+    "base_text_equal": false,
+    "comparison_status": "compared",
+    "first_difference": null,
+    "level": "Level 4",
+    "state": "complete",
+    "tei_eaj_body_base_text_length": 9790,
+    "tei_eaj_file": "data/complete/tei_lib_lv4/1567_tei.xml",
+    "tei_eaj_note_count": 0,
+    "tei_eaj_p_count": 19,
+    "title": "走れメロス",
+    "work_id": "1567"
+  }]
+}"#,
+    )
+    .unwrap();
+
+    let status = std::process::Command::new(env!("CARGO_BIN_EXE_ab-aat-to-parser-ir"))
+        .arg("tei-eaj-structural-expansion")
+        .arg("--workset")
+        .arg(&workset)
+        .arg("--aat-dir")
+        .arg(format!("fixture={}", aat_dir.display()))
+        .arg("--mapping")
+        .arg(repo.join("data/aat-to-parser-ir-mapping-v1.json"))
+        .arg("--summary-json")
+        .arg(&summary)
+        .arg("--report-md")
+        .arg(&report)
+        .arg("--abc-root")
+        .arg(abc)
+        .status()
+        .unwrap();
+
+    assert!(status.success());
+    let summary: Value = ab_aat_to_parser_ir::schema::read_json(&summary).unwrap();
+    assert_eq!(summary.pointer("/totals/tei_eaj_files"), Some(&json!(1)));
+    assert_eq!(
+        summary.pointer("/totals/parser_ir_gap_rows"),
+        Some(&json!(1))
+    );
+    assert_eq!(
+        summary.pointer("/rows/0/tei/tei_eaj_p_count"),
+        Some(&json!(19))
+    );
+    assert!(report.is_file());
+    let report_text = std::fs::read_to_string(&report).unwrap();
+    assert!(report_text.contains("TEI-EAJ Structural Expansion"));
 }

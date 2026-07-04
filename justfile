@@ -6,6 +6,7 @@ morph_warehouse_dir := env_var_or_default("AB_MORPH_WAREHOUSE_DIR", "/db/ab-vali
 morph_warehouse_aat_dir := env_var_or_default("AB_MORPH_WAREHOUSE_AAT_DIR", "/db/ab-validator/aat-corpus/aozora2html-aat/aozora2html-adapter")
 aozora2html_full_aat_dir := env_var_or_default("AB_AOZORA2HTML_AAT_DIR", ab_db_root + "/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter")
 aozora_epub3_full_aat_dir := env_var_or_default("AB_AOZORA_EPUB3_AAT_DIR", ab_db_root + "/aat-corpus/aozora-epub3-full-20260704T050652Z-300s/aat/aozora-epub3-adapter")
+tei_eaj_workset := env_var_or_default("AB_TEI_EAJ_WORKSET", repo_root + "/../abc/docs/handoffs/tei-eaj-aozora-workset-export.json")
 melos_aozora_rs_aat := env_var_or_default("AB_MELOS_AOZORA_RS_AAT", repo_root + "/scratch/morph-full-corpus/aats/aozora-rs-adapter/000035_1567-32ff5a089d67.json")
 melos_aozora2_aat := env_var_or_default("AB_MELOS_AOZORA2_AAT", ab_db_root + "/aat-corpus/aozora2-melos/aozora2-adapter/000035_1567-32ff5a089d67.json")
 melos_aozora2html_aat := env_var_or_default("AB_MELOS_AOZORA2HTML_AAT", aozora2html_full_aat_dir + "/000035_1567-32ff5a089d67.json")
@@ -176,6 +177,20 @@ melos-structural-probe JOBS="24" REPORT_MD="docs/superpowers/reports/2026-07-04-
 	if [ "${#args[@]}" -eq 0 ]; then echo "no Melos AAT inputs found" >&2; exit 2; fi; \
 	"{{repo_root}}/target/release/ab-aat-to-parser-ir" structural-probe \
 		"${args[@]}" \
+		--mapping "{{repo_root}}/data/aat-to-parser-ir-mapping-v1.json" \
+		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
+		--report-md "{{repo_root}}/{{REPORT_MD}}" \
+		--abc-root "{{repo_root}}/data/abc-schemas"
+
+tei-eaj-structural-expansion JOBS="24" REPORT_MD="docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.summary.json":
+	@test -f "{{tei_eaj_workset}}" || { echo "missing TEI-EAJ workset export: {{tei_eaj_workset}}" >&2; exit 2; }
+	@cargo build -p ab-aat-to-parser-ir --release --jobs "{{JOBS}}"
+	@"{{repo_root}}/target/release/ab-aat-to-parser-ir" tei-eaj-structural-expansion \
+		--workset "{{tei_eaj_workset}}" \
+		--aat-dir "aozora-rs={{repo_root}}/scratch/morph-full-corpus/aats/aozora-rs-adapter" \
+		--aat-dir "aozora2={{ab_db_root}}/aat-corpus/aozora2-melos/aozora2-adapter" \
+		--aat-dir "aozora2html={{aozora2html_full_aat_dir}}" \
+		--aat-dir "aozora-epub3={{aozora_epub3_full_aat_dir}}" \
 		--mapping "{{repo_root}}/data/aat-to-parser-ir-mapping-v1.json" \
 		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
 		--report-md "{{repo_root}}/{{REPORT_MD}}" \

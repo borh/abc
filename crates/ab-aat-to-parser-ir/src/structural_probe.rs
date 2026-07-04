@@ -5,7 +5,7 @@ use std::{
 };
 
 use anyhow::{Context, Result, bail};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::{ConversionOptions, MappingDocument, PreparedConverter, SchemaSet, schema::read_json};
@@ -23,11 +23,27 @@ pub struct StructuralProbeInput {
     pub path: PathBuf,
 }
 
+#[derive(Debug, Clone)]
+pub struct TeiEajStructuralExpansionConfig {
+    pub workset_path: PathBuf,
+    pub aat_dirs: Vec<StructuralProbeInput>,
+    pub mapping: MappingDocument,
+    pub schemas: SchemaSet,
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct StructuralProbeSummary {
     pub mapping: StructuralProbeMappingSummary,
     pub totals: StructuralProbeTotals,
     pub inputs: Vec<StructuralProbeInputSummary>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct TeiEajStructuralExpansionSummary {
+    pub mapping: StructuralProbeMappingSummary,
+    pub workset: TeiEajWorksetSummary,
+    pub totals: TeiEajExpansionTotals,
+    pub rows: Vec<TeiEajStructuralRowSummary>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -40,6 +56,18 @@ pub struct StructuralProbeMappingSummary {
     pub target_parser_ir_schema_hash: String,
 }
 
+#[derive(Debug, Clone, Serialize)]
+pub struct TeiEajWorksetSummary {
+    pub schema_version: String,
+    pub tei_eaj_source_revision: Option<String>,
+    pub tei_eaj_source_root: Option<String>,
+    pub tei_eaj_files: u64,
+    pub candidate_work_ids: u64,
+    pub compared_files: u64,
+    pub missing_abc_counterpart_work_ids: u64,
+    pub no_work_id_files: u64,
+}
+
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct StructuralProbeTotals {
     pub inputs: u64,
@@ -48,6 +76,20 @@ pub struct StructuralProbeTotals {
     pub paragraph_gap_inputs: u64,
     pub source_attribution_gap_inputs: u64,
     pub residual_free_inputs: u64,
+}
+
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct TeiEajExpansionTotals {
+    pub tei_eaj_files: u64,
+    pub candidate_work_ids: u64,
+    pub compared_files: u64,
+    pub missing_abc_counterpart_work_ids: u64,
+    pub no_work_id_files: u64,
+    pub rows_with_aat_evidence: u64,
+    pub parser_ir_gap_rows: u64,
+    pub adapter_gap_rows: u64,
+    pub source_attribution_gap_rows: u64,
+    pub evidence_gap_rows: u64,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -59,6 +101,38 @@ pub struct StructuralProbeInputSummary {
     pub parser_ir: ParserIrStructuralSummary,
     pub divergence: DivergenceProbeSummary,
     pub verdict: StructuralProbeVerdict,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct TeiEajStructuralRowSummary {
+    pub tei: TeiEajFileSummary,
+    pub aat_inputs: Vec<StructuralProbeInputSummary>,
+    pub classification: TeiEajGapClassification,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct TeiEajFileSummary {
+    pub work_id: Option<String>,
+    pub title: Option<String>,
+    pub tei_eaj_file: String,
+    pub level: Option<String>,
+    pub state: Option<String>,
+    pub comparison_status: String,
+    pub tei_eaj_p_count: Option<u64>,
+    pub tei_eaj_note_count: Option<u64>,
+    pub abc_p_count: Option<u64>,
+    pub abc_note_count: Option<u64>,
+    pub base_text_equal: Option<bool>,
+}
+
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct TeiEajGapClassification {
+    pub parser_ir_gap: bool,
+    pub adapter_gap: bool,
+    pub source_attribution_gap: bool,
+    pub evidence_gap: bool,
+    pub owners: Vec<String>,
+    pub notes: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -116,6 +190,57 @@ pub struct StructuralProbeVerdict {
     pub notes: Vec<String>,
 }
 
+#[derive(Debug, Deserialize)]
+struct TeiEajWorksetExport {
+    schema_version: String,
+    summary: TeiEajExportSummary,
+    #[serde(default)]
+    tei_eaj_source: Option<TeiEajSourceExport>,
+    #[serde(default)]
+    candidate_work_ids: Vec<String>,
+    #[serde(default)]
+    missing_abc_counterpart_work_ids: Vec<String>,
+    #[serde(default)]
+    no_work_id_files: Vec<String>,
+    #[serde(default)]
+    files: Vec<TeiEajFileExport>,
+}
+
+#[derive(Debug, Default, Deserialize)]
+struct TeiEajExportSummary {
+    #[serde(default)]
+    tei_eaj_file_count: u64,
+    #[serde(default)]
+    tei_eaj_work_id_count: u64,
+    #[serde(default)]
+    compared_file_count: u64,
+    #[serde(default)]
+    missing_counterpart_count: u64,
+    #[serde(default)]
+    no_work_id_count: u64,
+}
+
+#[derive(Debug, Deserialize)]
+struct TeiEajSourceExport {
+    revision: Option<String>,
+    root: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct TeiEajFileExport {
+    work_id: Option<String>,
+    title: Option<String>,
+    tei_eaj_file: String,
+    level: Option<String>,
+    state: Option<String>,
+    comparison_status: String,
+    tei_eaj_p_count: Option<u64>,
+    tei_eaj_note_count: Option<u64>,
+    abc_p_count: Option<u64>,
+    abc_note_count: Option<u64>,
+    base_text_equal: Option<bool>,
+}
+
 pub fn parse_input_spec(spec: &str) -> Result<StructuralProbeInput> {
     let Some((label, path)) = spec.split_once('=') else {
         bail!("--aat must be label=/path/to/input.aat.json, got {spec:?}");
@@ -149,39 +274,7 @@ pub fn run_structural_probe(config: StructuralProbeConfig) -> Result<StructuralP
 
     let mut inputs = Vec::new();
     for input in config.inputs {
-        let aat = read_json(&input.path)
-            .with_context(|| format!("failed to read AAT input {}", input.path.display()))?;
-        let aat_summary = summarize_aat(&aat);
-        let conversion = converter.convert(aat, ConversionOptions::default());
-        let (conversion_summary, parser_ir, divergence) = match conversion {
-            Ok(output) => (
-                ConversionProbeSummary {
-                    success: true,
-                    error: None,
-                },
-                summarize_parser_ir(&output.parser_ir),
-                summarize_divergence(&output.divergence_bundle),
-            ),
-            Err(error) => (
-                ConversionProbeSummary {
-                    success: false,
-                    error: Some(error.to_string()),
-                },
-                ParserIrStructuralSummary::default(),
-                DivergenceProbeSummary::default(),
-            ),
-        };
-        let verdict =
-            structural_verdict(&aat_summary, &conversion_summary, &parser_ir, &divergence);
-        inputs.push(StructuralProbeInputSummary {
-            label: input.label,
-            path: input.path.display().to_string(),
-            aat: aat_summary,
-            conversion: conversion_summary,
-            parser_ir,
-            divergence,
-            verdict,
-        });
+        inputs.push(summarize_structural_input(&converter, input)?);
     }
 
     let totals = summarize_totals(&inputs);
@@ -189,6 +282,94 @@ pub fn run_structural_probe(config: StructuralProbeConfig) -> Result<StructuralP
         mapping: mapping_summary,
         totals,
         inputs,
+    })
+}
+
+pub fn run_tei_eaj_structural_expansion(
+    config: TeiEajStructuralExpansionConfig,
+) -> Result<TeiEajStructuralExpansionSummary> {
+    let workset_value = read_json(&config.workset_path).with_context(|| {
+        format!(
+            "failed to read TEI-EAJ workset {}",
+            config.workset_path.display()
+        )
+    })?;
+    let workset: TeiEajWorksetExport =
+        serde_json::from_value(workset_value).with_context(|| {
+            format!(
+                "failed to parse TEI-EAJ workset {}",
+                config.workset_path.display()
+            )
+        })?;
+    let mapping_summary = mapping_summary(&config.mapping);
+    let converter = PreparedConverter::new(config.mapping, config.schemas)?;
+    let target_work_ids = workset
+        .files
+        .iter()
+        .filter_map(|row| row.work_id.clone())
+        .collect::<BTreeSet<_>>();
+    let aat_index = index_aat_dirs(&config.aat_dirs, &target_work_ids)?;
+
+    let mut rows = Vec::new();
+    let tei_eaj_source_root = workset
+        .tei_eaj_source
+        .as_ref()
+        .and_then(|source| source.root.as_deref());
+    for tei_row in workset.files {
+        let tei = tei_row.to_summary(tei_eaj_source_root);
+        let mut aat_inputs = Vec::new();
+        if let Some(work_id) = &tei.work_id
+            && let Some(inputs) = aat_index.get(work_id)
+        {
+            for input in inputs {
+                aat_inputs.push(summarize_structural_input(&converter, input.clone())?);
+            }
+        }
+        let classification = classify_tei_eaj_row(&tei, &aat_inputs);
+        rows.push(TeiEajStructuralRowSummary {
+            tei,
+            aat_inputs,
+            classification,
+        });
+    }
+
+    let workset_summary = TeiEajWorksetSummary {
+        schema_version: workset.schema_version,
+        tei_eaj_source_revision: workset
+            .tei_eaj_source
+            .as_ref()
+            .and_then(|source| source.revision.clone()),
+        tei_eaj_source_root: workset
+            .tei_eaj_source
+            .as_ref()
+            .and_then(|source| source.root.clone()),
+        tei_eaj_files: workset.summary.tei_eaj_file_count,
+        candidate_work_ids: workset
+            .candidate_work_ids
+            .len()
+            .try_into()
+            .unwrap_or(workset.summary.tei_eaj_work_id_count),
+        compared_files: workset.summary.compared_file_count,
+        missing_abc_counterpart_work_ids: workset
+            .missing_abc_counterpart_work_ids
+            .len()
+            .try_into()
+            .unwrap_or(workset.summary.missing_counterpart_count),
+        no_work_id_files: workset.summary.no_work_id_count.max(
+            workset
+                .no_work_id_files
+                .len()
+                .try_into()
+                .unwrap_or(u64::MAX),
+        ),
+    };
+    let totals = summarize_tei_eaj_totals(&workset_summary, &rows);
+
+    Ok(TeiEajStructuralExpansionSummary {
+        mapping: mapping_summary,
+        workset: workset_summary,
+        totals,
+        rows,
     })
 }
 
@@ -204,6 +385,124 @@ pub fn write_structural_probe_reports(
     fs::write(report_md, render_markdown(summary))
         .with_context(|| format!("failed to write {}", report_md.display()))?;
     Ok(())
+}
+
+pub fn write_tei_eaj_expansion_reports(
+    summary: &TeiEajStructuralExpansionSummary,
+    summary_json: &Path,
+    report_md: &Path,
+) -> Result<()> {
+    write_parent(summary_json)?;
+    write_parent(report_md)?;
+    fs::write(summary_json, serde_json::to_string_pretty(summary)? + "\n")
+        .with_context(|| format!("failed to write {}", summary_json.display()))?;
+    fs::write(report_md, render_tei_eaj_expansion_markdown(summary))
+        .with_context(|| format!("failed to write {}", report_md.display()))?;
+    Ok(())
+}
+
+pub fn render_tei_eaj_expansion_markdown(summary: &TeiEajStructuralExpansionSummary) -> String {
+    let mut out = String::new();
+    out.push_str("# TEI-EAJ Structural Expansion\n\n");
+    out.push_str("Measurement-only expansion over ABC's TEI-EAJ workset export. TEI-EAJ is comparison evidence; source inventory remains the authority for Aozora source constructs.\n\n");
+    out.push_str("## Mapping\n\n");
+    out.push_str(&format!(
+        "- mapping: `{}` `{}`\n",
+        summary.mapping.mapping_id, summary.mapping.mapping_version
+    ));
+    out.push_str(&format!(
+        "- mapping hash: `{}`\n",
+        summary.mapping.mapping_hash
+    ));
+    out.push_str(&format!(
+        "- parser-IR schema hash: `{}`\n\n",
+        summary.mapping.target_parser_ir_schema_hash
+    ));
+
+    out.push_str("## Workset\n\n");
+    out.push_str(&format!(
+        "- schema version: `{}`\n- TEI-EAJ files: {}\n- candidate work IDs: {}\n- compared files: {}\n- missing ABC counterpart work IDs: {}\n- no-work-ID files: {}\n",
+        summary.workset.schema_version,
+        summary.workset.tei_eaj_files,
+        summary.workset.candidate_work_ids,
+        summary.workset.compared_files,
+        summary.workset.missing_abc_counterpart_work_ids,
+        summary.workset.no_work_id_files
+    ));
+    if let Some(revision) = &summary.workset.tei_eaj_source_revision {
+        out.push_str(&format!("- TEI-EAJ revision: `{}`\n", md_code(revision)));
+    }
+    if let Some(root) = &summary.workset.tei_eaj_source_root {
+        out.push_str(&format!("- TEI-EAJ root: `{}`\n", md_code(root)));
+    }
+    out.push_str("- TEI p/note counts: ABC export values when present; otherwise counted from pinned TEI-EAJ XML files under the reported root.\n");
+
+    out.push_str("\n## Totals\n\n");
+    out.push_str(&format!(
+        "- rows with AAT evidence: {}\n- parser-IR gap rows: {}\n- adapter gap rows: {}\n- source-attribution gap rows: {}\n- evidence gap rows: {}\n\n",
+        summary.totals.rows_with_aat_evidence,
+        summary.totals.parser_ir_gap_rows,
+        summary.totals.adapter_gap_rows,
+        summary.totals.source_attribution_gap_rows,
+        summary.totals.evidence_gap_rows
+    ));
+
+    out.push_str("## Rows\n\n");
+    out.push_str("| work_id | title | status | TEI p | ABC p | AAT inputs | parser-IR gap | evidence gap | adapter gap | source attribution gap |\n");
+    out.push_str("|---|---|---|---:|---:|---:|---:|---:|---:|---:|\n");
+    for row in &summary.rows {
+        out.push_str(&format!(
+            "| {} | {} | {} | {} | {} | {} | {} | {} | {} | {} |\n",
+            md_cell(row.tei.work_id.as_deref().unwrap_or("unknown")),
+            md_cell(row.tei.title.as_deref().unwrap_or("unknown")),
+            md_cell(&row.tei.comparison_status),
+            display_optional_u64(row.tei.tei_eaj_p_count),
+            display_optional_u64(row.tei.abc_p_count),
+            row.aat_inputs.len(),
+            row.classification.parser_ir_gap,
+            row.classification.evidence_gap,
+            row.classification.adapter_gap,
+            row.classification.source_attribution_gap
+        ));
+    }
+
+    out.push_str("\n## Classification Notes\n\n");
+    for row in &summary.rows {
+        if row.classification.notes.is_empty() {
+            continue;
+        }
+        out.push_str(&format!(
+            "### {} {}\n\n",
+            row.tei.work_id.as_deref().unwrap_or("unknown"),
+            row.tei.title.as_deref().unwrap_or("")
+        ));
+        out.push_str(&format!("- TEI-EAJ file: `{}`\n", row.tei.tei_eaj_file));
+        if !row.classification.owners.is_empty() {
+            out.push_str(&format!(
+                "- owners: `{}`\n",
+                md_code(&row.classification.owners.join(", "))
+            ));
+        }
+        for note in &row.classification.notes {
+            out.push_str(&format!("- {}\n", note));
+        }
+        for input in &row.aat_inputs {
+            out.push_str(&format!(
+                "- AAT `{}`: paragraphs={}, final attribution={}, conversion={}\n",
+                md_code(&input.label),
+                input.aat.paragraph_blocks,
+                input.aat.final_source_attribution_candidate,
+                input.conversion.success
+            ));
+        }
+        out.push('\n');
+    }
+
+    out.push_str("## Interpretation\n\n");
+    out.push_str("- `parser-IR gap` means adapter/AAT evidence exposes structure that current parser-IR does not explicitly represent.\n");
+    out.push_str("- `adapter gap` means TEI-EAJ has multi-paragraph structure while at least one adapter AAT collapsed that row to zero or one paragraph.\n");
+    out.push_str("- `evidence gap` means this repo does not yet have enough AAT/TEI structural evidence for that row; it is not a parser-IR design conclusion.\n");
+    out
 }
 
 pub fn render_markdown(summary: &StructuralProbeSummary) -> String {
@@ -355,6 +654,270 @@ fn summarize_aat(aat: &Value) -> AatStructuralSummary {
         final_source_attribution_candidate,
         hints: hints.into_iter().collect(),
     }
+}
+
+fn mapping_summary(mapping: &MappingDocument) -> StructuralProbeMappingSummary {
+    StructuralProbeMappingSummary {
+        mapping_id: mapping.mapping_id.clone(),
+        mapping_version: mapping.mapping_version.clone(),
+        mapping_hash: mapping.document_hash.clone(),
+        mapping_schema_hash: mapping.mapping_schema_hash.clone(),
+        target_parser_ir_schema_id: mapping.target_parser_ir_schema_id.clone(),
+        target_parser_ir_schema_hash: mapping.target_parser_ir_schema_hash.clone(),
+    }
+}
+
+fn summarize_structural_input(
+    converter: &PreparedConverter,
+    input: StructuralProbeInput,
+) -> Result<StructuralProbeInputSummary> {
+    let aat = read_json(&input.path)
+        .with_context(|| format!("failed to read AAT input {}", input.path.display()))?;
+    let aat_summary = summarize_aat(&aat);
+    let conversion = converter.convert(aat, ConversionOptions::default());
+    let (conversion_summary, parser_ir, divergence) = match conversion {
+        Ok(output) => (
+            ConversionProbeSummary {
+                success: true,
+                error: None,
+            },
+            summarize_parser_ir(&output.parser_ir),
+            summarize_divergence(&output.divergence_bundle),
+        ),
+        Err(error) => (
+            ConversionProbeSummary {
+                success: false,
+                error: Some(error.to_string()),
+            },
+            ParserIrStructuralSummary::default(),
+            DivergenceProbeSummary::default(),
+        ),
+    };
+    let verdict = structural_verdict(&aat_summary, &conversion_summary, &parser_ir, &divergence);
+    Ok(StructuralProbeInputSummary {
+        label: input.label,
+        path: input.path.display().to_string(),
+        aat: aat_summary,
+        conversion: conversion_summary,
+        parser_ir,
+        divergence,
+        verdict,
+    })
+}
+
+fn index_aat_dirs(
+    dirs: &[StructuralProbeInput],
+    target_work_ids: &BTreeSet<String>,
+) -> Result<BTreeMap<String, Vec<StructuralProbeInput>>> {
+    let mut index: BTreeMap<String, Vec<StructuralProbeInput>> = BTreeMap::new();
+    for dir in dirs {
+        let entries = match fs::read_dir(&dir.path) {
+            Ok(entries) => entries,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => continue,
+            Err(error) => {
+                return Err(error)
+                    .with_context(|| format!("failed to read AAT dir {}", dir.path.display()));
+            }
+        };
+        for entry in entries {
+            let entry = entry.with_context(|| format!("failed to read {}", dir.path.display()))?;
+            let path = entry.path();
+            if !path.is_file() || path.extension().and_then(|ext| ext.to_str()) != Some("json") {
+                continue;
+            }
+            for work_id in work_ids_from_aat_path(&path) {
+                if target_work_ids.contains(&work_id) {
+                    index
+                        .entry(work_id.clone())
+                        .or_default()
+                        .push(StructuralProbeInput {
+                            label: format!("{}:{work_id}", dir.label),
+                            path: path.clone(),
+                        });
+                }
+            }
+        }
+    }
+    Ok(index)
+}
+
+fn work_ids_from_aat_path(path: &Path) -> Vec<String> {
+    let Some(stem) = path.file_stem().and_then(|stem| stem.to_str()) else {
+        return Vec::new();
+    };
+    let id_part = stem.split_once('-').map_or(stem, |(id, _)| id);
+    let mut candidates = BTreeSet::new();
+    candidates.insert(id_part.to_owned());
+    if let Some((_, suffix)) = id_part.rsplit_once('_') {
+        candidates.insert(suffix.to_owned());
+    }
+    candidates.into_iter().collect()
+}
+
+impl TeiEajFileExport {
+    fn to_summary(&self, tei_eaj_source_root: Option<&str>) -> TeiEajFileSummary {
+        let xml_counts = if self.tei_eaj_p_count.is_none() || self.tei_eaj_note_count.is_none() {
+            tei_counts_from_xml(tei_eaj_source_root, &self.tei_eaj_file)
+        } else {
+            None
+        };
+        TeiEajFileSummary {
+            work_id: self.work_id.clone(),
+            title: self.title.clone(),
+            tei_eaj_file: self.tei_eaj_file.clone(),
+            level: self.level.clone(),
+            state: self.state.clone(),
+            comparison_status: self.comparison_status.clone(),
+            tei_eaj_p_count: self
+                .tei_eaj_p_count
+                .or_else(|| xml_counts.map(|counts| counts.0)),
+            tei_eaj_note_count: self
+                .tei_eaj_note_count
+                .or_else(|| xml_counts.map(|counts| counts.1)),
+            abc_p_count: self.abc_p_count,
+            abc_note_count: self.abc_note_count,
+            base_text_equal: self.base_text_equal,
+        }
+    }
+}
+
+fn tei_counts_from_xml(
+    tei_eaj_source_root: Option<&str>,
+    tei_eaj_file: &str,
+) -> Option<(u64, u64)> {
+    let root = tei_eaj_source_root?;
+    let path = Path::new(root).join(tei_eaj_file);
+    let xml = fs::read_to_string(path).ok()?;
+    let body = tei_body_xml(&xml);
+    Some((
+        count_xml_element(body, "p"),
+        count_xml_element(body, "note"),
+    ))
+}
+
+fn tei_body_xml(xml: &str) -> &str {
+    let body_regex =
+        regex::Regex::new(r#"(?s)<(?:[A-Za-z_][A-Za-z0-9_.-]*:)?body(?:\s[^>]*)?>(.*?)</(?:[A-Za-z_][A-Za-z0-9_.-]*:)?body>"#)
+            .expect("static TEI body regex");
+    body_regex
+        .captures(xml)
+        .and_then(|captures| captures.get(1))
+        .map_or(xml, |body| body.as_str())
+}
+
+fn count_xml_element(xml: &str, local_name: &str) -> u64 {
+    let pattern = format!(
+        r#"<(?:[A-Za-z_][A-Za-z0-9_.-]*:)?{}(?:[\s>/])"#,
+        regex::escape(local_name)
+    );
+    regex::Regex::new(&pattern)
+        .expect("static XML element count regex")
+        .find_iter(xml)
+        .count()
+        .try_into()
+        .unwrap_or(u64::MAX)
+}
+
+fn classify_tei_eaj_row(
+    tei: &TeiEajFileSummary,
+    aat_inputs: &[StructuralProbeInputSummary],
+) -> TeiEajGapClassification {
+    let mut classification = TeiEajGapClassification::default();
+    if aat_inputs.is_empty() {
+        classification.evidence_gap = true;
+        classification
+            .notes
+            .push("no AAT evidence found for this TEI-EAJ work ID".to_owned());
+    }
+    if tei.tei_eaj_p_count.is_none() && tei.tei_eaj_note_count.is_none() {
+        classification.evidence_gap = true;
+        classification
+            .notes
+            .push("TEI-EAJ paragraph/note counts are absent in the ABC workset export".to_owned());
+    }
+
+    for input in aat_inputs {
+        if !input.conversion.success {
+            classification.evidence_gap = true;
+            classification.notes.push(format!(
+                "{} conversion failed; parser-IR representability is unmeasured for this adapter",
+                input.label
+            ));
+            continue;
+        }
+        if input.aat.paragraph_blocks > 0 && !input.parser_ir.paragraphs_represented {
+            classification.parser_ir_gap = true;
+            classification.notes.push(format!(
+                "{} preserves {} AAT paragraph block(s), but parser-IR has no explicit paragraph representation",
+                input.label, input.aat.paragraph_blocks
+            ));
+        }
+        if input.aat.final_source_attribution_candidate
+            && !input.parser_ir.source_attribution_represented
+        {
+            classification.parser_ir_gap = true;
+            classification.source_attribution_gap = true;
+            classification.notes.push(format!(
+                "{} exposes a final source-attribution candidate as visible text, but parser-IR has no source-attribution/source-note node",
+                input.label
+            ));
+        }
+        if tei.tei_eaj_p_count.is_some_and(|count| count > 1) && input.aat.paragraph_blocks <= 1 {
+            classification.adapter_gap = true;
+            classification.notes.push(format!(
+                "{} has {} TEI-EAJ paragraph(s), but {} AAT paragraph block(s) in {}",
+                tei.tei_eaj_file,
+                tei.tei_eaj_p_count.unwrap_or(0),
+                input.aat.paragraph_blocks,
+                input.label
+            ));
+        }
+    }
+
+    let mut owners = BTreeSet::new();
+    if classification.parser_ir_gap {
+        owners.insert("parser-ir".to_owned());
+    }
+    if classification.adapter_gap {
+        owners.insert("adapter".to_owned());
+    }
+    if classification.evidence_gap {
+        owners.insert("evidence".to_owned());
+    }
+    classification.owners = owners.into_iter().collect();
+    classification
+}
+
+fn summarize_tei_eaj_totals(
+    workset: &TeiEajWorksetSummary,
+    rows: &[TeiEajStructuralRowSummary],
+) -> TeiEajExpansionTotals {
+    let mut totals = TeiEajExpansionTotals {
+        tei_eaj_files: workset.tei_eaj_files,
+        candidate_work_ids: workset.candidate_work_ids,
+        compared_files: workset.compared_files,
+        missing_abc_counterpart_work_ids: workset.missing_abc_counterpart_work_ids,
+        no_work_id_files: workset.no_work_id_files,
+        ..TeiEajExpansionTotals::default()
+    };
+    for row in rows {
+        if !row.aat_inputs.is_empty() {
+            totals.rows_with_aat_evidence += 1;
+        }
+        if row.classification.parser_ir_gap {
+            totals.parser_ir_gap_rows += 1;
+        }
+        if row.classification.adapter_gap {
+            totals.adapter_gap_rows += 1;
+        }
+        if row.classification.source_attribution_gap {
+            totals.source_attribution_gap_rows += 1;
+        }
+        if row.classification.evidence_gap {
+            totals.evidence_gap_rows += 1;
+        }
+    }
+    totals
 }
 
 fn summarize_parser_ir(parser_ir: &Value) -> ParserIrStructuralSummary {
@@ -637,6 +1200,10 @@ fn md_cell(value: &str) -> String {
 
 fn md_code(value: &str) -> String {
     value.replace('`', "\\`")
+}
+
+fn display_optional_u64(value: Option<u64>) -> String {
+    value.map_or_else(|| "unknown".to_owned(), |value| value.to_string())
 }
 
 fn preview_text(value: &str, max_chars: usize) -> String {

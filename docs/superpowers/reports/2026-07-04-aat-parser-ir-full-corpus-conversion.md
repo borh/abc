@@ -1,16 +1,16 @@
 # Full-Corpus AAT Parser-IR Conversion Audit
 
-- generated_unix_seconds: `1783144145`
-- mapping: `https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe` `0.2.1`
-- mapping_hash: `sha256:b508665af72c237fc60f00b720f80db2b16148aa64b5d1cc723a2948ee576390`
+- generated_unix_seconds: `1783158583`
+- mapping: `https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe` `0.2.2`
+- mapping_hash: `sha256:17fb33db137f23ae30325558545ae364d21488d773aed733df1af012af6658c0`
 - mapping_schema_hash: `sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4`
-- target_parser_ir_schema_hash: `sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396`
+- target_parser_ir_schema_hash: `sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2`
 
 ## Totals
 
 | files_attempted | files_succeeded | files_failed | parser_ir_nodes | divergence_records | divergence_occurrences | elapsed_seconds |
 |---:|---:|---:|---:|---:|---:|---:|
-| 53427 | 53427 | 0 | 26914048 | 784485 | 55027637 | 16.785 |
+| 53427 | 53427 | 0 | 26907266 | 674102 | 42482637 | 23.303 |
 
 ## Inputs
 
@@ -24,32 +24,32 @@
 
 | corpus | attempted | succeeded | failed | parser_ir_nodes | divergence_occurrences |
 |---|---:|---:|---:|---:|---:|
-| aozora-epub3-adapter | 17844 | 17844 | 0 | 10670874 | 24679754 |
-| aozora-rs-adapter | 17894 | 17894 | 0 | 7828615 | 13211106 |
-| aozora2html-adapter | 17689 | 17689 | 0 | 8414559 | 17136777 |
+| aozora-epub3-adapter | 17844 | 17844 | 0 | 10670874 | 18314414 |
+| aozora-rs-adapter | 17894 | 17894 | 0 | 7821839 | 11926731 |
+| aozora2html-adapter | 17689 | 17689 | 0 | 8414553 | 12241492 |
 
 ## Divergence Categories
 
 | category | occurrences |
 |---|---:|
-| AMBIGUITY | 33909733 |
-| INVENTION | 10691975 |
-| LOSS | 3815460 |
-| STRUCTURAL | 6583005 |
+| AMBIGUITY | 27635551 |
+| INVENTION | 10688554 |
+| LOSS | 3815459 |
+| STRUCTURAL | 315609 |
 | UNSUPPORTED | 27464 |
 
 ## Compatibility Candidates
 
 | adapter | adapter_version | mapping_version | mapping_hash | files_succeeded | files_failed | rules_emitted | rules_missing | unsupported_occurrences |
 |---|---|---|---|---:|---:|---:|---:|---:|
-| aozora-epub3 | aozora-epub3-adapter 0.1.0 AozoraEpub3-JDK21-1.3.4-jdk21 | 0.2.1 | `sha256:b508665af72c237fc60f00b720f80db2b16148aa64b5d1cc723a2948ee576390` | 17844 | 0 | 64 | 66 | 13234 |
-| aozora-rs | aozora-rs-adapter 0.1.0 2b4e8d1 | 0.2.1 | `sha256:b508665af72c237fc60f00b720f80db2b16148aa64b5d1cc723a2948ee576390` | 17894 | 0 | 26 | 104 | 0 |
-| aozora2html | aozora2html-adapter 0.1.0 gem-3.0.1 | 0.2.1 | `sha256:b508665af72c237fc60f00b720f80db2b16148aa64b5d1cc723a2948ee576390` | 17689 | 0 | 115 | 15 | 14230 |
+| aozora-epub3 | aozora-epub3-adapter 0.1.0 AozoraEpub3-JDK21-1.3.4-jdk21 | 0.2.2 | `sha256:17fb33db137f23ae30325558545ae364d21488d773aed733df1af012af6658c0` | 17844 | 0 | 61 | 66 | 13234 |
+| aozora-rs | aozora-rs-adapter 0.1.0 2b4e8d1 | 0.2.2 | `sha256:17fb33db137f23ae30325558545ae364d21488d773aed733df1af012af6658c0` | 17894 | 0 | 25 | 102 | 0 |
+| aozora2html | aozora2html-adapter 0.1.0 gem-3.0.1 | 0.2.2 | `sha256:17fb33db137f23ae30325558545ae364d21488d773aed733df1af012af6658c0` | 17689 | 0 | 112 | 15 | 14230 |
 
 ## Rule Coverage
 
-- rules_total: `130`
-- rules_emitted: `130`
+- rules_total: `127`
+- rules_emitted: `127`
 - rules_missing: `0`
 
 | rule_id | category | files | occurrences |
@@ -57,7 +57,7 @@
 | A-01 | AMBIGUITY | 154 | 2531 |
 | A-02 | AMBIGUITY | 32 | 100 |
 | A-03 | AMBIGUITY | 18 | 20 |
-| A-04 | AMBIGUITY | 168 | 2265 |
+| A-04 | AMBIGUITY | 18 | 20 |
 | A-05 | AMBIGUITY | 6 | 17 |
 | A-06 | AMBIGUITY | 135 | 554 |
 | A-07 | AMBIGUITY | 453 | 1887 |
@@ -67,23 +67,23 @@
 | A-11 | AMBIGUITY | 66 | 411 |
 | A-12 | AMBIGUITY | 11 | 20 |
 | A-13 | AMBIGUITY | 6613 | 71397 |
-| A-14 | AMBIGUITY | 13604 | 490531 |
+| A-14 | AMBIGUITY | 6643 | 72174 |
 | A-15 | AMBIGUITY | 3 | 39 |
 | A-16 | AMBIGUITY | 49 | 345 |
 | A-17 | AMBIGUITY | 306 | 2194 |
 | A-18 | AMBIGUITY | 1 | 2 |
-| A-19 | AMBIGUITY | 9192 | 76049 |
-| A-20 | AMBIGUITY | 53139 | 25723554 |
-| A-21 | AMBIGUITY | 23401 | 431767 |
+| A-19 | AMBIGUITY | 9191 | 76048 |
+| A-20 | AMBIGUITY | 53134 | 25716760 |
+| A-21 | AMBIGUITY | 23399 | 431764 |
 | A-22 | AMBIGUITY | 3 | 4 |
 | A-23 | AMBIGUITY | 180 | 1328 |
 | A-24 | AMBIGUITY | 2 | 10 |
 | A-25 | AMBIGUITY | 1651 | 13394 |
-| A-26 | AMBIGUITY | 53293 | 6090018 |
+| A-26 | AMBIGUITY | 14933 | 243236 |
 | A-27 | AMBIGUITY | 5 | 5 |
 | A-28 | AMBIGUITY | 53427 | 53427 |
 | I-01 | INVENTION | 53427 | 53427 |
-| I-02 | INVENTION | 42482 | 9635075 |
+| I-02 | INVENTION | 42477 | 9631655 |
 | I-03 | INVENTION | 53427 | 53427 |
 | I-04 | INVENTION | 53427 | 53427 |
 | I-05 | INVENTION | 16563 | 265128 |
@@ -94,9 +94,9 @@
 | I-10 | INVENTION | 453 | 1887 |
 | I-11 | INVENTION | 110 | 777 |
 | I-12 | INVENTION | 484 | 3790 |
-| I-13 | INVENTION | 9192 | 76049 |
+| I-13 | INVENTION | 9191 | 76048 |
 | I-14 | INVENTION | 13616 | 229830 |
-| L-01 | LOSS | 9339 | 77936 |
+| L-01 | LOSS | 9338 | 77935 |
 | L-02 | LOSS | 5 | 20 |
 | L-03 | LOSS | 1 | 47 |
 | L-04 | LOSS | 1 | 47 |
@@ -153,16 +153,13 @@
 | L-55 | LOSS | 53427 | 53427 |
 | L-56 | LOSS | 32710 | 32710 |
 | S-01 | STRUCTURAL | 18 | 20 |
-| S-02 | STRUCTURAL | 154 | 2245 |
-| S-03 | STRUCTURAL | 6613 | 71397 |
-| S-04 | STRUCTURAL | 110 | 777 |
-| S-05 | STRUCTURAL | 70 | 132 |
-| S-06 | STRUCTURAL | 11604 | 418357 |
-| S-07 | STRUCTURAL | 1651 | 13394 |
-| S-08 | STRUCTURAL | 13616 | 229830 |
-| S-09 | STRUCTURAL | 34 | 58 |
-| S-10 | STRUCTURAL | 53139 | 5846794 |
-| S-11 | STRUCTURAL | 1 | 1 |
+| S-02 | STRUCTURAL | 6613 | 71397 |
+| S-03 | STRUCTURAL | 110 | 777 |
+| S-04 | STRUCTURAL | 70 | 132 |
+| S-05 | STRUCTURAL | 1651 | 13394 |
+| S-06 | STRUCTURAL | 13616 | 229830 |
+| S-07 | STRUCTURAL | 34 | 58 |
+| S-08 | STRUCTURAL | 1 | 1 |
 | U-01 | UNSUPPORTED | 12 | 93 |
 | U-02 | UNSUPPORTED | 3 | 9 |
 | U-03 | UNSUPPORTED | 2 | 3 |

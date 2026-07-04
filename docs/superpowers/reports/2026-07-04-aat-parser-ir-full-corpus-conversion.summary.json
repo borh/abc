@@ -1,14 +1,14 @@
 {
-  "generated_unix_seconds": 1783144145,
+  "generated_unix_seconds": 1783158583,
   "mapping": {
-    "path": "/home/bor/Projects/ab-validator/data/aat-to-parser-ir-mapping-v1.json",
+    "path": "/home/bor/Projects/ab-validator/.worktrees/parser-ir-evidence-refresh/data/aat-to-parser-ir-mapping-v1.json",
     "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
-    "mapping_version": "0.2.1",
-    "mapping_hash": "sha256:b508665af72c237fc60f00b720f80db2b16148aa64b5d1cc723a2948ee576390",
+    "mapping_version": "0.2.2",
+    "mapping_hash": "sha256:17fb33db137f23ae30325558545ae364d21488d773aed733df1af012af6658c0",
     "mapping_schema_hash": "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4",
     "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-    "target_parser_ir_schema_hash": "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396",
-    "rules_total": 130
+    "target_parser_ir_schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+    "rules_total": 127
   },
   "inputs": [
     {
@@ -31,10 +31,10 @@
     "files_attempted": 53427,
     "files_succeeded": 53427,
     "files_failed": 0,
-    "parser_ir_nodes": 26914048,
-    "divergence_records": 784485,
-    "divergence_occurrences": 55027637,
-    "elapsed_seconds": 16.785
+    "parser_ir_nodes": 26907266,
+    "divergence_records": 674102,
+    "divergence_occurrences": 42482637,
+    "elapsed_seconds": 23.303
   },
   "by_corpus": {
     "aozora-epub3-adapter": {
@@ -42,36 +42,36 @@
       "files_succeeded": 17844,
       "files_failed": 0,
       "parser_ir_nodes": 10670874,
-      "divergence_records": 243318,
-      "divergence_occurrences": 24679754
+      "divergence_records": 206149,
+      "divergence_occurrences": 18314414
     },
     "aozora-rs-adapter": {
       "files_attempted": 17894,
       "files_succeeded": 17894,
       "files_failed": 0,
-      "parser_ir_nodes": 7828615,
-      "divergence_records": 252251,
-      "divergence_occurrences": 13211106
+      "parser_ir_nodes": 7821839,
+      "divergence_records": 217665,
+      "divergence_occurrences": 11926731
     },
     "aozora2html-adapter": {
       "files_attempted": 17689,
       "files_succeeded": 17689,
       "files_failed": 0,
-      "parser_ir_nodes": 8414559,
-      "divergence_records": 288916,
-      "divergence_occurrences": 17136777
+      "parser_ir_nodes": 8414553,
+      "divergence_records": 250288,
+      "divergence_occurrences": 12241492
     }
   },
   "categories": {
-    "AMBIGUITY": 33909733,
-    "INVENTION": 10691975,
-    "LOSS": 3815460,
-    "STRUCTURAL": 6583005,
+    "AMBIGUITY": 27635551,
+    "INVENTION": 10688554,
+    "LOSS": 3815459,
+    "STRUCTURAL": 315609,
     "UNSUPPORTED": 27464
   },
   "rule_coverage": {
-    "rules_total": 130,
-    "rules_emitted": 130,
+    "rules_total": 127,
+    "rules_emitted": 127,
     "rules_missing": [],
     "rules_by_id": {
       "A-01": {
@@ -91,8 +91,8 @@
       },
       "A-04": {
         "category": "AMBIGUITY",
-        "files": 168,
-        "occurrences": 2265
+        "files": 18,
+        "occurrences": 20
       },
       "A-05": {
         "category": "AMBIGUITY",
@@ -141,8 +141,8 @@
       },
       "A-14": {
         "category": "AMBIGUITY",
-        "files": 13604,
-        "occurrences": 490531
+        "files": 6643,
+        "occurrences": 72174
       },
       "A-15": {
         "category": "AMBIGUITY",
@@ -166,18 +166,18 @@
       },
       "A-19": {
         "category": "AMBIGUITY",
-        "files": 9192,
-        "occurrences": 76049
+        "files": 9191,
+        "occurrences": 76048
       },
       "A-20": {
         "category": "AMBIGUITY",
-        "files": 53139,
-        "occurrences": 25723554
+        "files": 53134,
+        "occurrences": 25716760
       },
       "A-21": {
         "category": "AMBIGUITY",
-        "files": 23401,
-        "occurrences": 431767
+        "files": 23399,
+        "occurrences": 431764
       },
       "A-22": {
         "category": "AMBIGUITY",
@@ -201,8 +201,8 @@
       },
       "A-26": {
         "category": "AMBIGUITY",
-        "files": 53293,
-        "occurrences": 6090018
+        "files": 14933,
+        "occurrences": 243236
       },
       "A-27": {
         "category": "AMBIGUITY",
@@ -221,8 +221,8 @@
       },
       "I-02": {
         "category": "INVENTION",
-        "files": 42482,
-        "occurrences": 9635075
+        "files": 42477,
+        "occurrences": 9631655
       },
       "I-03": {
         "category": "INVENTION",
@@ -276,8 +276,8 @@
       },
       "I-13": {
         "category": "INVENTION",
-        "files": 9192,
-        "occurrences": 76049
+        "files": 9191,
+        "occurrences": 76048
       },
       "I-14": {
         "category": "INVENTION",
@@ -286,8 +286,8 @@
       },
       "L-01": {
         "category": "LOSS",
-        "files": 9339,
-        "occurrences": 77936
+        "files": 9338,
+        "occurrences": 77935
       },
       "L-02": {
         "category": "LOSS",
@@ -571,50 +571,35 @@
       },
       "S-02": {
         "category": "STRUCTURAL",
-        "files": 154,
-        "occurrences": 2245
-      },
-      "S-03": {
-        "category": "STRUCTURAL",
         "files": 6613,
         "occurrences": 71397
       },
-      "S-04": {
+      "S-03": {
         "category": "STRUCTURAL",
         "files": 110,
         "occurrences": 777
       },
-      "S-05": {
+      "S-04": {
         "category": "STRUCTURAL",
         "files": 70,
         "occurrences": 132
       },
-      "S-06": {
-        "category": "STRUCTURAL",
-        "files": 11604,
-        "occurrences": 418357
-      },
-      "S-07": {
+      "S-05": {
         "category": "STRUCTURAL",
         "files": 1651,
         "occurrences": 13394
       },
-      "S-08": {
+      "S-06": {
         "category": "STRUCTURAL",
         "files": 13616,
         "occurrences": 229830
       },
-      "S-09": {
+      "S-07": {
         "category": "STRUCTURAL",
         "files": 34,
         "occurrences": 58
       },
-      "S-10": {
-        "category": "STRUCTURAL",
-        "files": 53139,
-        "occurrences": 5846794
-      },
-      "S-11": {
+      "S-08": {
         "category": "STRUCTURAL",
         "files": 1,
         "occurrences": 1
@@ -732,11 +717,11 @@
       "aat_adapter": "aozora-epub3",
       "aat_adapter_version": "aozora-epub3-adapter 0.1.0 AozoraEpub3-JDK21-1.3.4-jdk21",
       "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
-      "mapping_version": "0.2.1",
-      "mapping_hash": "sha256:b508665af72c237fc60f00b720f80db2b16148aa64b5d1cc723a2948ee576390",
+      "mapping_version": "0.2.2",
+      "mapping_hash": "sha256:17fb33db137f23ae30325558545ae364d21488d773aed733df1af012af6658c0",
       "mapping_schema_hash": "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4",
       "parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-      "parser_ir_schema_hash": "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396",
+      "parser_ir_schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
       "evidence_scope": {
         "evidence_type": "conversion-audit",
         "adapter": "aozora-epub3",
@@ -746,10 +731,10 @@
         "files_succeeded": 17844,
         "files_failed": 0,
         "parser_ir_nodes": 10670874,
-        "divergence_records": 243318,
-        "divergence_occurrences": 24679754,
-        "rules_total": 130,
-        "rules_emitted": 64,
+        "divergence_records": 206149,
+        "divergence_occurrences": 18314414,
+        "rules_total": 127,
+        "rules_emitted": 61,
         "rules_missing": 66,
         "unsupported_occurrences": 13234
       },
@@ -760,11 +745,11 @@
       "aat_adapter": "aozora-rs",
       "aat_adapter_version": "aozora-rs-adapter 0.1.0 2b4e8d1",
       "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
-      "mapping_version": "0.2.1",
-      "mapping_hash": "sha256:b508665af72c237fc60f00b720f80db2b16148aa64b5d1cc723a2948ee576390",
+      "mapping_version": "0.2.2",
+      "mapping_hash": "sha256:17fb33db137f23ae30325558545ae364d21488d773aed733df1af012af6658c0",
       "mapping_schema_hash": "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4",
       "parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-      "parser_ir_schema_hash": "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396",
+      "parser_ir_schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
       "evidence_scope": {
         "evidence_type": "conversion-audit",
         "adapter": "aozora-rs",
@@ -773,12 +758,12 @@
         "files_scanned": 17894,
         "files_succeeded": 17894,
         "files_failed": 0,
-        "parser_ir_nodes": 7828615,
-        "divergence_records": 252251,
-        "divergence_occurrences": 13211106,
-        "rules_total": 130,
-        "rules_emitted": 26,
-        "rules_missing": 104,
+        "parser_ir_nodes": 7821839,
+        "divergence_records": 217665,
+        "divergence_occurrences": 11926731,
+        "rules_total": 127,
+        "rules_emitted": 25,
+        "rules_missing": 102,
         "unsupported_occurrences": 0
       },
       "compatibility": "lossy"
@@ -788,11 +773,11 @@
       "aat_adapter": "aozora2html",
       "aat_adapter_version": "aozora2html-adapter 0.1.0 gem-3.0.1",
       "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
-      "mapping_version": "0.2.1",
-      "mapping_hash": "sha256:b508665af72c237fc60f00b720f80db2b16148aa64b5d1cc723a2948ee576390",
+      "mapping_version": "0.2.2",
+      "mapping_hash": "sha256:17fb33db137f23ae30325558545ae364d21488d773aed733df1af012af6658c0",
       "mapping_schema_hash": "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4",
       "parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-      "parser_ir_schema_hash": "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396",
+      "parser_ir_schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
       "evidence_scope": {
         "evidence_type": "conversion-audit",
         "adapter": "aozora2html",
@@ -801,11 +786,11 @@
         "files_scanned": 17689,
         "files_succeeded": 17689,
         "files_failed": 0,
-        "parser_ir_nodes": 8414559,
-        "divergence_records": 288916,
-        "divergence_occurrences": 17136777,
-        "rules_total": 130,
-        "rules_emitted": 115,
+        "parser_ir_nodes": 8414553,
+        "divergence_records": 250288,
+        "divergence_occurrences": 12241492,
+        "rules_total": 127,
+        "rules_emitted": 112,
         "rules_missing": 15,
         "unsupported_occurrences": 14230
       },

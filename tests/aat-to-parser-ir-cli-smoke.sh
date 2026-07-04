@@ -205,7 +205,7 @@ jq -e '.inputs[0].parser_ir.paragraphs_represented == true' "$out_dir/structural
 jq -e '.inputs[0].parser_ir.source_attribution_represented == true' "$out_dir/structural-summary.json"
 jq -e '.inputs[0].verdict.residual_free == true' "$out_dir/structural-summary.json"
 jq -e '.inputs[0].divergence.paragraph_structural_records == []' "$out_dir/structural-summary.json"
-grep -n 'Melos Structural Probe' "$out_dir/structural-report.md"
+grep -n 'AAT Structural Probe' "$out_dir/structural-report.md"
 
 tei_aat_dir="$out_dir/tei-aat"
 mkdir -p "$tei_aat_dir"

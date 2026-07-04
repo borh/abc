@@ -18,15 +18,17 @@ ab-validator has consumed that contract:
 - `blocks[].paragraph` no longer appears as `STRUCTURAL` loss,
 - `ab-aat-to-parser-ir` now emits top-level `paragraphs[]` rows for AAT
   paragraph blocks,
-- final top-level Melos-style source attribution emits a `source-note` node and
+- final top-level source attribution emits a `source-note` node and
   a `role = "source-note"` paragraph row.
 
-The current fixture-level structural probe now reports zero parser-IR gap rows
-when adapter/AAT evidence has paragraph structure and a final source attribution
-candidate. Full-corpus conversion audit and ABC compatibility admission against
-the new hash remain the next measurement step.
+The refreshed full-corpus conversion audit reports 53,427 successful
+conversions and zero conversion failures against mapping `0.2.2`. The refreshed
+whole-repository TEI-EAJ/aozora_tei structural expansion reports 62 TEI-EAJ
+rows, 55 rows with AAT evidence, zero parser-IR gap rows, 17 adapter gap rows,
+and 7 evidence gap rows. ABC compatibility admission against the new hash
+remains the next cross-repo step.
 
-## Original Message For ABC
+## Original Message For ABC (Historical)
 
 ab-validator's current evidence says parser-IR cannot yet honestly claim Level 3 paragraph/source-note structure. The gap is now a parser-IR protocol gap, not just a parser measurement gap.
 
@@ -52,17 +54,17 @@ The hard renderer step should be specified as a two-path TEI renderer:
 
 ## Pre-Delta Evidence
 
-- `docs/superpowers/reports/2026-07-04-melos-structural-probe.md`
-  - 4 adapters measured for Melos.
-  - 4 parser-IR paragraph gaps.
-  - 4 source-attribution gaps.
-- `docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.md`
-  - 62 TEI-EAJ rows scanned.
-  - 55 rows with AAT evidence.
-  - 55 parser-IR gap rows.
-  - 17 adapter gap rows.
-  - 2 source-attribution gap rows.
+- The pre-delta whole-repository TEI-EAJ/aozora_tei structural expansion run
+  reported:
+  - 62 TEI-EAJ rows scanned,
+  - 55 rows with AAT evidence,
+  - 55 parser-IR gap rows,
+  - 17 adapter gap rows,
+  - 2 source-attribution gap rows,
   - 7 evidence gap rows.
+  The current refreshed report at
+  `docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.md`
+  supersedes those counts.
 - pre-delta `data/aat-to-parser-ir-mapping-v1.json`
   - `S-10` records `blocks[].paragraph` as `STRUCTURAL` loss.
 - pre-delta `data/abc-schemas/schemas/parser-ir.schema.json`
@@ -131,5 +133,6 @@ After ABC lands the schema:
 - [x] sync `data/abc-schemas/schemas/parser-ir.schema.json`,
 - [x] regenerate mapping against the new schema hash,
 - [x] update `ab-aat-to-parser-ir` to emit `paragraphs[]` and `source-note`,
-- [ ] rerun the full conversion audit, Melos structural probe, and TEI-EAJ
-  structural expansion against local full-corpus inputs.
+- [x] rerun the full conversion audit against local full-corpus inputs,
+- [x] replace the Melos-only structural probe with the whole
+  TEI-EAJ/aozora_tei structural expansion against local full-corpus inputs.

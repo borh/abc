@@ -508,7 +508,7 @@ pub fn render_tei_eaj_expansion_markdown(summary: &TeiEajStructuralExpansionSumm
 
 pub fn render_markdown(summary: &StructuralProbeSummary) -> String {
     let mut out = String::new();
-    out.push_str("# Melos Structural Probe\n\n");
+    out.push_str("# AAT Structural Probe\n\n");
     out.push_str("Measurement-only probe for paragraph segmentation and final source-attribution representation in current parser-IR.\n\n");
     out.push_str("## Mapping\n\n");
     out.push_str(&format!(
@@ -841,6 +841,23 @@ fn classify_tei_eaj_row(
             .push("TEI-EAJ paragraph/note counts are absent in the ABC workset export".to_owned());
     }
 
+    let paragraph_claim_present = aat_inputs
+        .iter()
+        .any(|input| input.conversion.success && input.aat.paragraph_blocks > 0);
+    let paragraph_represented = aat_inputs.iter().any(|input| {
+        input.conversion.success
+            && input.aat.paragraph_blocks > 0
+            && input.parser_ir.paragraphs_represented
+    });
+    let source_attribution_claim_present = aat_inputs
+        .iter()
+        .any(|input| input.conversion.success && input.aat.final_source_attribution_candidate);
+    let source_attribution_represented = aat_inputs.iter().any(|input| {
+        input.conversion.success
+            && input.aat.final_source_attribution_candidate
+            && input.parser_ir.source_attribution_represented
+    });
+
     for input in aat_inputs {
         if !input.conversion.success {
             classification.evidence_gap = true;
@@ -849,23 +866,6 @@ fn classify_tei_eaj_row(
                 input.label
             ));
             continue;
-        }
-        if input.aat.paragraph_blocks > 0 && !input.parser_ir.paragraphs_represented {
-            classification.parser_ir_gap = true;
-            classification.notes.push(format!(
-                "{} preserves {} AAT paragraph block(s), but parser-IR has no explicit paragraphs[] representation",
-                input.label, input.aat.paragraph_blocks
-            ));
-        }
-        if input.aat.final_source_attribution_candidate
-            && !input.parser_ir.source_attribution_represented
-        {
-            classification.parser_ir_gap = true;
-            classification.source_attribution_gap = true;
-            classification.notes.push(format!(
-                "{} exposes a final source-attribution candidate as visible text, but parser-IR has no source-attribution/source-note node",
-                input.label
-            ));
         }
         if tei.tei_eaj_p_count.is_some_and(|count| count > 1) && input.aat.paragraph_blocks <= 1 {
             classification.adapter_gap = true;
@@ -877,6 +877,22 @@ fn classify_tei_eaj_row(
                 input.label
             ));
         }
+    }
+
+    if paragraph_claim_present && !paragraph_represented {
+        classification.parser_ir_gap = true;
+        classification.notes.push(
+            "AAT evidence preserves paragraph blocks, but no successful parser-IR output contains paragraphs[] rows"
+                .to_owned(),
+        );
+    }
+    if source_attribution_claim_present && !source_attribution_represented {
+        classification.parser_ir_gap = true;
+        classification.source_attribution_gap = true;
+        classification.notes.push(
+            "AAT evidence exposes a final source-attribution candidate, but no successful parser-IR output contains a source-note node"
+                .to_owned(),
+        );
     }
 
     let mut owners = BTreeSet::new();

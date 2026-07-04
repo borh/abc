@@ -5,7 +5,7 @@
 - source_authority_gate: `SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED`
 - note: this is not a passing representability gate; durable representability claims remain blocked until strict_errors is empty.
 - strict_errors:
-  - 1388 unallowlisted source markers
+  - 1382 unallowlisted source markers
 
 ## Scope
 
@@ -16,13 +16,13 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 - works_scanned: 17894
 - works_failed: 0
 - markers_total: 4324663
-- unknown_markers_total: 16258
-- unallowlisted_unknown_markers_total: 1388
+- unknown_markers_total: 16252
+- unallowlisted_unknown_markers_total: 1382
 - allowlisted_unknown_markers_total: 14870
 
 ## Representability
 
-- typed_occurrences: 4566724
+- typed_occurrences: 4566730
 - raw_preserved_occurrences: 36835
 - out_of_body_occurrences: 950
 - unsupported_occurrences: 13920
@@ -72,7 +72,7 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | layout.yokogumi | 413 | 3663 | 000019_59374, 000026_50239, 000026_55717, 000026_55732, 000026_55738 |
 | reference.frontref | 682 | 3920 | 000006_46659, 000012_2585, 000012_4316, 000022_197, 000026_46578 |
 | ruby.basic | 14321 | 3608407 | 000005_5, 000005_53194, 000005_55215, 000005_55216, 000005_55217 |
-| ruby.placement_directional | 31 | 312 | 000034_1213, 000050_3581, 000129_694, 000146_49258, 000146_50202 |
+| ruby.placement_directional | 31 | 318 | 000034_1213, 000050_3581, 000129_694, 000146_49258, 000146_50202 |
 | source.note_label | 76 | 169 | 000037_319, 000067_59327, 000083_43270, 000106_52391, 000106_56857 |
 | structure.table | 5 | 32 | 000042_2345, 000042_2348, 000096_2100, 000311_3466, 001149_45455 |
 | warichu.basic | 361 | 6601 | 000005_53194, 000006_1868, 000006_1869, 000034_519, 000038_42202 |
@@ -185,13 +185,12 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 
 ## Unknown Source Marker Classes
 
-Showing 50 report rows of 1124 total classes. JSON carries 1000 top classes. truncated: true
+Showing 50 report rows of 1123 total classes. JSON carries 1000 top classes. truncated: true
 
 | kind | raw | occurrences | unallowlisted | allowlisted | samples |
 |---|---|---:|---:|---:|---|
 | MalformedAccentNotation | 〔 | 56 | 56 | 0 | 000026_219, 000034_55507, 000081_4416, 000081_50764, 000091_522 |
 | CommandFullwidth | ［＃「地付き］ | 7 | 7 | 0 | 000150_46617 |
-| CommandFullwidth | ［＃左にルビ付き］ | 6 | 6 | 0 | 000933_47550, 001930_58400, 001932_59114 |
 | MalformedCommand | ［＃ | 6 | 6 | 0 | 000081_4461, 000106_2415, 000121_1754, 000148_798, 000331_2663 |
 | CommandFullwidth | ［＃「”」は下付き］ | 5 | 5 | 0 | 000019_4376, 000129_688, 000136_42754 |
 | CommandFullwidth | ［＃「阿」は一段階小さな文字］ | 5 | 5 | 0 | 000081_47027 |
@@ -239,6 +238,7 @@ Showing 50 report rows of 1124 total classes. JSON carries 1000 top classes. tru
 | CommandFullwidth | ［＃「九四頁」は「崇神天皇」の「將軍の派遣」］ | 2 | 2 | 0 | 001518_51731 |
 | CommandFullwidth | ［＃「二七頁」は「伊耶那岐の命と伊耶那美の命」の「身禊」］ | 2 | 2 | 0 | 001518_51731 |
 | CommandFullwidth | ［＃「二四頁」は「伊耶那岐の命と伊耶那美の命」の「黄泉の國」］ | 2 | 2 | 0 | 001518_51731 |
+| CommandFullwidth | ［＃「五七頁」は「天照らす大御神と大國主の神」の「國讓り」］ | 2 | 2 | 0 | 001518_51731 |
 
 ## Decode Failures
 

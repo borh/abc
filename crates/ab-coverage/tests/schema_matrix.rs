@@ -656,6 +656,27 @@ fn structural_inline_rows_have_typed_representability() {
 }
 
 #[test]
+fn source_inventory_classifies_shorthand_directional_ruby() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = "［＃左にルビ付き］";
+    let summary = inventory_document("fixture", source, &patterns);
+
+    assert_eq!(
+        summary.unknown_examples,
+        [],
+        "shorthand left-ruby source marker should not remain unknown"
+    );
+    assert_eq!(
+        summary
+            .row_counts
+            .get("ruby.placement_directional")
+            .map(|count| count.occurrences),
+        Some(1)
+    );
+}
+
+#[test]
 fn kanbun_and_reference_rows_have_typed_representability() {
     let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
     for (row_id, expected_node, expected_projection) in [

@@ -3,8 +3,8 @@
   "works_scanned": 17894,
   "works_failed": 0,
   "markers_total": 4324663,
-  "unknown_markers_total": 16258,
-  "unallowlisted_unknown_markers_total": 1388,
+  "unknown_markers_total": 16252,
+  "unallowlisted_unknown_markers_total": 1382,
   "allowlisted_unknown_markers_total": 14870,
   "rows": {
     "accent.dotted_letter": {
@@ -447,7 +447,7 @@
     },
     "ruby.placement_directional": {
       "works_with_marker": 31,
-      "occurrences": 312,
+      "occurrences": 318,
       "sample_works": [
         "000034_1213",
         "000050_3581",
@@ -497,7 +497,7 @@
       ]
     }
   },
-  "unknown_classes_total": 1124,
+  "unknown_classes_total": 1123,
   "unknown_classes_truncated": true,
   "unknown_classes": [
     {
@@ -524,19 +524,6 @@
       "unallowlisted_occurrences": 7,
       "sample_works": [
         "000150_46617"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃左にルビ付き］",
-      "body": "左にルビ付き",
-      "occurrences": 6,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 6,
-      "sample_works": [
-        "000933_47550",
-        "001930_58400",
-        "001932_59114"
       ]
     },
     {
@@ -11550,6 +11537,17 @@
       "sample_works": [
         "000311_46246"
       ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃灯火管制。夜間、敵機の来襲に備えて、灯りを遮ったり落としたりすこと］",
+      "body": "灯火管制。夜間、敵機の来襲に備えて、灯りを遮ったり落としたりすこと",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000160_1255"
+      ]
     }
   ],
   "unknown_examples": [
@@ -12256,14 +12254,14 @@
   ],
   "decode_failures": [],
   "representability": {
-    "typed_occurrences": 4566724,
+    "typed_occurrences": 4566730,
     "raw_preserved_occurrences": 36835,
     "out_of_body_occurrences": 950,
     "unsupported_occurrences": 13920,
     "needs_research_occurrences": 0
   },
   "strict_errors": [
-    "1388 unallowlisted source markers"
+    "1382 unallowlisted source markers"
   ],
   "inputs": {
     "matrix": "/home/bor/Projects/ab-validator/data/aozora-syntax-coverage.toml",

@@ -30,6 +30,11 @@ logical boundaries. Query packs may index both `abc/...` and `ab-validator/...`
 component paths in one workspace, but the source of identity remains the
 canonical files and hashes rather than the generated database.
 
+Monorepo naming and component labels are tracked in
+`docs/handoffs/monorepo-component-boundaries.md`. The first query-pack schema
+should carry logical component/path columns in addition to physical file paths;
+it should not bake in a repo-wide `abc` to `soranoha` rename.
+
 ## Problem
 
 ABC has two related but distinct query needs:
@@ -78,6 +83,7 @@ their hashes.
 |---|---|
 | Canonical file | A hash-addressed source, manifest, report, or publication artifact that remains valid without a database. |
 | Query pack | A generated, disposable index over canonical files. It can be deleted and rebuilt. |
+| Logical component path | Stable workspace-relative path such as `abc/...` or `ab-validator/...`, independent of the current local checkout layout. |
 | Coordinate lookup | Queries by work ID, person ID, content hash, artifact ID, source snapshot hash, adapter/version, schema hash, or output kind. |
 | Upstream evolution | Changes across Aozora git refs, including generated record changes and drift candidates. |
 | Artifact evolution | Derivation chains among source snapshots, parser-IR, TEI, plaintext, tokenization, reports, and manifests. |
@@ -250,6 +256,8 @@ Before accepting a Query Runtime ADR:
 1. Add a non-production query-pack probe that flattens a larger
    `aozora-history-audit --scan-history` report plus all current paper/demo
    manifests.
+   Include `logical_component` and `logical_path` fields as described in
+   `docs/handoffs/monorepo-component-boundaries.md`.
 2. Compare SQLite and DuckDB on:
    - import time,
    - database size,

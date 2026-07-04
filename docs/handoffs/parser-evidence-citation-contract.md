@@ -27,6 +27,11 @@ The first machine-readable index for that policy is
 `nix run .#validate-design-bundle` and keeps report hashes next to their
 logical component paths.
 
+Monorepo component and naming policy is tracked in
+`docs/handoffs/monorepo-component-boundaries.md`. A future Soranoha rename must
+not change evidence identity semantics unless a separate rename/vocabulary ADR
+also defines aliasing for historical paths, rule IDs, and vocabulary IRIs.
+
 ## Current Evidence
 
 | Evidence | Logical path | SHA-256 | What ABC may cite |

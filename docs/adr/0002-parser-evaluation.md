@@ -43,7 +43,10 @@ Monorepo note: future repository consolidation should remove only the physical
 checkout boundary, not the logical producer/consumer boundary. The provisional
 machine-readable index `data/parser-evidence-citations.edn` therefore records
 logical workspace-relative evidence paths plus report hashes, while current
-`../ab-validator` paths remain temporary locators.
+`../ab-validator` paths remain temporary locators. Monorepo naming and
+component labels are tracked in
+`docs/handoffs/monorepo-component-boundaries.md`; they do not imply an accepted
+`abc` namespace or vocabulary rename.
 
 Mapping transition note: ABC now admits mapping version `0.2.1` as a separate
 conversion-compatibility identity with fresh producer report hashes and exact

@@ -149,6 +149,11 @@ The stable handoff is file-based. ABC does not require `../ab-validator` during
 `validate-design-bundle`; it validates checked fixtures and materializes
 accepted bundles locally.
 
+The planned monorepo migration removes this physical checkout boundary, not the
+logical producer/consumer roles. Monorepo naming and component labels are
+tracked in `docs/handoffs/monorepo-component-boundaries.md`; they do not imply
+an accepted `abc` namespace or vocabulary rename.
+
 AAT JSON is the normative adapter-side contract. Parser-IR is the ABC
 publication-side contract. The two are deliberately distinct and bridged by a
 producer-owned mapping document plus ABC compatibility registry. Compatibility

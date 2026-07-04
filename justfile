@@ -109,6 +109,9 @@ aat-to-parser-ir-flake-smoke:
 	@system="$(nix eval --impure --raw --expr builtins.currentSystem)"; \
 	nix build "{{repo_root}}#checks.$system.aat-to-parser-ir-smoke" --print-build-logs
 
+parser-performance-smoke:
+	@bash tests/parser-performance-measure-smoke.sh
+
 aat-to-parser-ir-full-audit JOBS="24" REPORT_MD="docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.summary.json" COMPAT_EDN="docs/superpowers/reports/2026-07-04-aat-parser-ir-compatibility-candidates.edn":
 	@cargo build -p ab-aat-to-parser-ir --release --jobs "{{JOBS}}"
 	@"{{repo_root}}/target/release/ab-aat-to-parser-ir" audit-corpus \

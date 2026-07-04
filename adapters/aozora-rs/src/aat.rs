@@ -457,12 +457,26 @@ fn push_text(content: &mut Vec<Inline>, value: &str) {
     ));
 }
 
+fn block_content_mut(block: &mut Block) -> Option<&mut Vec<Inline>> {
+    match block {
+        Block::Paragraph { content }
+        | Block::Heading { content, .. }
+        | Block::Jisage { content, .. }
+        | Block::CaptionBlock { content }
+        | Block::Warichu { content }
+        | Block::Figure { content, .. } => Some(content),
+        Block::Break { .. } => None,
+    }
+}
+
 fn strip_cross_node_commands(blocks: &mut [Block]) {
     for block in blocks {
         let mut command_depth = 0usize;
         let mut pending_split_marker = false;
-        for child in ab_ir::block_content_mut(block) {
-            strip_commands_in_inline(child, &mut command_depth, &mut pending_split_marker);
+        if let Some(content) = block_content_mut(block) {
+            for child in content {
+                strip_commands_in_inline(child, &mut command_depth, &mut pending_split_marker);
+            }
         }
     }
 }
@@ -639,7 +653,9 @@ fn append_source_annotation_supplements_with_events<'a>(
     let Some(first_block) = blocks.first_mut() else {
         return;
     };
-    let content = ab_ir::block_content_mut(first_block);
+    let Some(content) = block_content_mut(first_block) else {
+        return;
+    };
     let mut ruby_supplements = Vec::new();
     let mut projected_prefix = String::new();
     let mut last_gaiji_end = None;
@@ -750,7 +766,9 @@ fn append_legacy_source_annotation_supplements(
     let Some(first_block) = blocks.first_mut() else {
         return;
     };
-    let content = ab_ir::block_content_mut(first_block);
+    let Some(content) = block_content_mut(first_block) else {
+        return;
+    };
     append_ruby_supplements(
         content,
         markers.ruby_readings.iter().map(|marker| marker.value),

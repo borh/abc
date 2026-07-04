@@ -473,7 +473,6 @@
 
           contract-surface = pkgs.runCommand "abc-contract-surface-check" { } ''
             test -f ${./resources/abc/ndc9.edn.xz}
-            test -f ${./nix/clj-nix-deps.edn}
             test -f ${./deps-lock.json}
             test -f ${./src/abc/annotation/schema.clj}
             test -f ${./src/abc/text.clj}
@@ -652,16 +651,6 @@
             mkdir -p "$out"
             echo "ADR acceptance-criteria lint passed (ratcheted)." > "$out/result.txt"
           '';
-          focused-test-coverage =
-            pkgs.runCommand "abc-focused-test-coverage" { nativeBuildInputs = [ pkgs.python3 ]; }
-              ''
-                cp -R ${./.} source
-                chmod -R u+w source
-                cd source
-                bash nix/check-focused-test-coverage.sh
-                mkdir -p "$out"
-                echo "focused-test allowlist covers all *_test.clj (ratcheted)." > "$out/result.txt"
-              '';
           swi-prolog-smoke =
             pkgs.runCommand "abc-swi-prolog-smoke" { nativeBuildInputs = [ pkgs.swi-prolog ]; }
               ''

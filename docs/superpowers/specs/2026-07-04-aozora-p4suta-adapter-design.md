@@ -1,12 +1,14 @@
 # aozora (P4suta) Adapter Design
 
 **Date:** 2026-07-04
-**Status:** Design spec / provisional — produced via `hammock-driven-design`;
-routed from `architecture-triage`. Pending `rich-hickey-review` once
-direction is confirmed; pending `deepening-review` once the adapter exists.
+**Status:** Design spec / provisional — produced via `hammock-driven-design`,
+routed from `architecture-triage`. `rich-hickey-review` folded into this
+revision (see response table and §4.4, §4.5, §4.6, §9–§12); `deepening-review`
+remains queued until the adapter exists (§8 caveat noted).
 **Scope:** Add a fifth adapter, `aozora`, wrapping the P4suta `aozora` Rust
-parser (`references/parsers/aozora`, v0.4.1) at the same tier as `aozora2`
-and `aozora-rs`.
+parser (`references/parsers/aozora`; the workspace manifest reads `version
+= "0.4.1"` but the checkout HEAD is 235 commits past the `v0.4.1` tag — see
+U4 for the pin) at the same tier as `aozora2` and `aozora-rs`.
 **Prerequisite reading:**
 - `docs/superpowers/specs/2026-07-03-mapping-and-adapter-boundary-decision.md`
   (AAT JSON is the normative adapter contract; `ab-ir` is not).
@@ -366,6 +368,7 @@ HTML as if both were upstream-faithful.
 
 These do not change the seam decision (settled in §2). They must be
 resolved during implementation, before the smoke / fidelity gates pass.
+Each is restated with its **falsifier** in §12.
 
 - **U1 — Feature coverage characterization.** Run the adapter against the
   TEI-EAJ all-work structural-probe workset once those Aozora counterparts

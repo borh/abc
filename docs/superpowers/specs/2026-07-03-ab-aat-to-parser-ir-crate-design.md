@@ -1,7 +1,7 @@
 # ab-aat-to-parser-ir Crate Design
 
 Date: 2026-07-03
-Status: proposed after protocol corrections
+Status: implemented with identity compatibility hardening
 
 ## Problem
 
@@ -27,17 +27,19 @@ protocol issues:
 - span synthesis and several mapping pointers were not represented honestly in
   the then-current mapping artifact.
 
-Those protocol issues are now resolved by the `0.1.1` mapping protocol
-correction artifact. This crate remains a deep module candidate, and the next
-implementation must consume the corrected artifact rather than reopening the
-mapping policy.
+Those protocol issues were resolved by the `0.1.1` mapping protocol correction
+artifact. The current `0.2.0` mapping adds measured producer-identity
+projection into parser-IR `derived_from` and keeps ABC as the compatibility
+registry owner.
 
 ## Review Corrections
 
 Protocol correction status: `data/aat-to-parser-ir-mapping-v1.json` now carries
-`mapping_version = 0.1.1`, includes measured aozora2html `UNSUPPORTED`
-warigaki evidence, uses `abc-legacy-json-c14n-v0`, and validates against the
-local AAT pointer contract.
+`mapping_version = 0.2.0`, includes measured aozora2html `UNSUPPORTED`
+warigaki evidence, projects `version`, `meta.adapter`, and
+`meta.adapter_version` into parser-IR `derived_from`, uses
+`abc-legacy-json-c14n-v0`, and validates against the local AAT pointer
+contract.
 
 Resolved blockers:
 
@@ -79,7 +81,7 @@ Evidence:
   required spans on every node.
 - Observed: ABC owns a per-entry divergence record schema at
   `../abc/schemas/aat-parser-ir-divergence.schema.json`.
-- Observed: The corrected generated mapping has 118 measured folded rule
+- Observed: The corrected generated mapping has 116 measured folded rule
   buckets across aozora-rs plus current aozora2html evidence. The aozora-rs-only
   gate still has zero `UNSUPPORTED` files.
 - Observed: aozora2html can emit warigaki, and parser-IR has no warigaki node.
@@ -115,7 +117,8 @@ crate implementation against the corrected mapping artifact.
 
 - Do not make `ab-ir` the adapter or parser-IR contract.
 - Do not hand-copy the old 27-rule synthesized table.
-- Do not start manifest identity or ABC compatibility-registry hardening here.
+- Do not create a compatibility registry in ab-validator; ABC owns registry
+  admission and exact adapter-version matching.
 - Do not add AAT v2 vocabulary.
 - Do not repair aozora2html timeout/protocol/parse-incomplete buckets in this
   crate.
@@ -196,7 +199,7 @@ Proposed bundle shape:
   "work_id": "000000_00000",
   "mapping": {
     "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
-    "mapping_version": "0.1.1",
+    "mapping_version": "0.2.0",
     "mapping_schema_hash": "sha256:..."
   },
   "target": {
@@ -414,13 +417,13 @@ Top-level fields:
 
 Important crux:
 
-The current generated mapping records `meta.adapter` and
-`meta.adapter_version` as `LOSS`, even though the current ABC parser-IR schema
-has optional `derived_from`. To avoid silently changing the measured mapping,
-v1 should keep the parser-IR document aligned with the generated mapping and
-put adapter/mapping provenance in the divergence bundle. If ABC wants
-`derived_from` populated, regenerate the mapping artifact first and make that a
-measured policy change.
+Mapping version `0.2.0` projects AAT producer identity into parser-IR
+`derived_from`: `version` -> `aat_version`, `meta.adapter` -> `aat_adapter`,
+and `meta.adapter_version` -> `aat_adapter_version`. The mapping document also
+contributes `mapping_id`, `mapping_version`, and `mapping_schema_hash`.
+`mapping_hash` is deliberately not serialized inside parser-IR; ABC combines
+`derived_from` with manifest input `mapping_hash` and admits exact
+adapter-version tuples in `data/aat-parser-ir-compatibility.edn`.
 
 ## Node Projection Policy
 
@@ -543,26 +546,17 @@ Smoke tests:
   against ABC schema, and the bundle against the local bundle schema.
 - It asserts no old 27-rule table is referenced.
 
-## Next Route
+## Current Implementation
 
-The next work may be the `crates/ab-aat-to-parser-ir` implementation plan using
-the corrected `data/aat-to-parser-ir-mapping-v1.json` artifact.
-
-After those corrections, the six-slice implementation plan is:
-
-1. Crate scaffold and mapping/schema preflight.
-2. Bundle schema and divergence record aggregation.
-3. Minimal text/ruby/gaiji conversion.
-4. Style, heading, block flattening, warnings, source encoding, and source hash
-   ambiguity.
-5. Warigaki/kunten behavior according to the corrected mapping.
-6. CLI smoke and final verification.
+`crates/ab-aat-to-parser-ir` implements the corrected mapping artifact as a
+deep module boundary: callers provide AAT JSON and a mapping document; the crate
+returns schema-valid parser-IR plus a divergence bundle. The implementation
+refuses unmeasured divergence buckets by default, validates parser-IR and
+divergence records against the ABC schemas, and exposes a corpus audit that
+publishes per-adapter compatibility candidates.
 
 ## Incubation Notes
 
-The `derived_from` field remains a separate measured-policy question. Parser-IR
-can carry adapter and mapping provenance, but the current measured mapping says
-those AAT metadata fields are lost. The conservative v1 choice is to keep
-parser-IR aligned with the generated mapping and put provenance in the
-divergence bundle. A future measured mapping revision can move some of that
-provenance into `derived_from`.
+Adapter-version matching is exact. Any new `meta.adapter_version` tuple requires
+a fresh measured conversion-audit entry in ABC's compatibility registry; do not
+add wildcard, prefix, or directory-label matching.

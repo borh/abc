@@ -21,7 +21,9 @@ parser-IR protocol blocker.
 
 - Converter crate: `crates/ab-aat-to-parser-ir`
 - Mapping artifact: `data/aat-to-parser-ir-mapping-v1.json`
-- Mapping version: `0.1.1`
+- Mapping version: `0.2.0`
+- Mapping hash:
+  `sha256:68b0868b25f3b072a47d781099178bf2a31e4b16c561814f5e13e3801714d089`
 - Mapping schema hash:
   `sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4`
 - Target parser-IR schema hash:
@@ -37,16 +39,41 @@ parser-IR protocol blocker.
 | files succeeded | 35,583 |
 | files failed | 0 |
 | parser-IR nodes | 16,243,174 |
-| divergence records | 612,333 |
-| divergence occurrences | 30,419,049 |
-| mapping rules total | 118 |
-| mapping rules emitted | 118 |
+| divergence records | 541,167 |
+| divergence occurrences | 30,347,883 |
+| mapping rules total | 116 |
+| mapping rules emitted | 116 |
 | mapping rules missing | 0 |
 
 | Corpus | Files | Result |
 |---|---:|---|
 | aozora-rs-adapter | 17,894 | 17,894 succeeded, 0 failed |
 | aozora2html-adapter | 17,689 | 17,689 succeeded, 0 failed |
+
+## Identity and Compatibility
+
+Parser-IR outputs now carry `derived_from` with AAT producer identity and mapping
+identity:
+
+- `aat_version`, `aat_adapter`, and `aat_adapter_version` come from the AAT
+  document.
+- `mapping_id`, `mapping_version`, and `mapping_schema_hash` come from the
+  mapping document.
+- `mapping_hash` remains outside parser-IR and is supplied as a manifest input
+  for ABC compatibility validation.
+
+The full audit generated two ABC registry candidates in
+`docs/superpowers/reports/2026-07-04-aat-parser-ir-compatibility-candidates.edn`.
+ABC admitted those measured entries in commit `4cb15df`:
+
+| adapter | adapter_version | files_succeeded | rules_emitted | rules_missing | unsupported_occurrences |
+|---|---|---:|---:|---:|---:|
+| aozora-rs | aozora-rs-adapter 0.1.0 2b4e8d1 | 17,894 | 26 | 90 | 0 |
+| aozora2html | aozora2html-adapter 0.1.0 gem-3.0.1 | 17,689 | 115 | 1 | 14,230 |
+
+Adapter-version matching is exact. A future adapter-version tuple requires a
+new measured conversion-audit entry rather than wildcard or prefix registry
+matching.
 
 ## Release Surface
 
@@ -56,7 +83,7 @@ The converter is exposed as:
 - Flake package/app: `.#ab-aat-to-parser-ir`
 - Flake check: `checks.<system>.aat-to-parser-ir-smoke`
 - Just smoke target: `just aat-to-parser-ir-smoke`
-- Just full-audit target: `just aat-to-parser-ir-full-audit JOBS=24`
+- Just full-audit target: `just aat-to-parser-ir-full-audit 24`
 
 The crate-specific usage notes live in `crates/ab-aat-to-parser-ir/README.md`.
 

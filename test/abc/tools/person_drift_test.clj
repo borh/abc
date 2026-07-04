@@ -36,6 +36,31 @@
 (defn base-split []
   (drift/materialize-event-id (base-split-without-id)))
 
+;; ADR 0020: a merge has >= 2 predecessors (prov.used) and exactly 1
+;; successor (was_generated_by). Mirror of base-split for the merge direction.
+(defn base-merge-without-id []
+  {"schema_id" drift/event-schema-id
+   "schema_hash" (manifest/schema-hash drift/event-schema-path)
+   "drift_event_type" "merge"
+   "date" "2026-04-30"
+   "participants" [{"snapshot_id" "pre-000001"
+                    "person_id" "000001"
+                    "person_record_hash" (example-hash "11")}
+                   {"snapshot_id" "pre-000002"
+                    "person_id" "000002"
+                    "person_record_hash" (example-hash "12")}
+                   {"snapshot_id" "post-000003"
+                    "person_id" "000003"
+                    "person_record_hash" (example-hash "13")}]
+   "evidence" ["https://example.org/abc/drift-evidence/fictional-merge-2026"]
+   "prov" {"used" ["pre-000001" "pre-000002"]
+           "was_generated_by" ["post-000003"]
+           "qualified_association" {"agent" "https://w3id.org/abc/agents/editorial-board"
+                                    "had_role" "abc:DriftEditor"}}})
+
+(defn base-merge []
+  (drift/materialize-event-id (base-merge-without-id)))
+
 (defn index-for [person-id event-id]
   {"schema_id" drift/index-schema-id
    "schema_hash" (manifest/schema-hash drift/index-schema-path)
@@ -64,6 +89,64 @@
                                     (files/read-json drift/event-schema-path)
                                     bad)]
                    (throw (ex-info "expected schema failure" {:errors errors})))))))
+
+;; ADR 0020 cardinality invariant, bound to the real schema artifact
+;; (replaces the vacuous r3-drift-cardinality.smt2 — see
+;; docs/handoffs/formal-verification-assessment-critique.md §7.3). A split
+;; has exactly 1 predecessor (prov.used) and >= 2 successors
+;; (was_generated_by); a merge has >= 2 predecessors and exactly 1
+;; successor. Each of the six violation modes below must be rejected by
+;; schemas/person-drift-event.schema.json. Unlike the SMT file, this test
+;; reads the real schema, so a regression that widens a minItems/maxItems
+;; bound flips the verdict to failure.
+(defn- reject-cardinality-violation [label event]
+  (let [errors (schema/validation-errors
+                (files/read-json drift/event-schema-path)
+                event)]
+    (when (nil? errors)
+      (throw (ex-info (str "expected schema to reject " label)
+                      {:event event})))
+    errors))
+
+(deftest event-schema-rejects-split-with-zero-predecessors-test
+  ;; split needs exactly 1 predecessor; 0 violates used maxItems-ish
+  (reject-cardinality-violation "split with 0 predecessors"
+                                (assoc-in (base-split) ["prov" "used"] [])))
+
+(deftest event-schema-rejects-split-with-two-predecessors-test
+  ;; split needs exactly 1 predecessor; 2 violates used maxItems
+  (reject-cardinality-violation "split with 2 predecessors"
+                                (assoc-in (base-split)
+                                          ["prov" "used"]
+                                          ["pre-000001" "pre-000002"])))
+
+(deftest event-schema-rejects-split-with-one-successor-test
+  ;; split needs >= 2 successors; 1 violates was_generated_by minItems
+  (reject-cardinality-violation "split with 1 successor"
+                                (assoc-in (base-split)
+                                          ["prov" "was_generated_by"]
+                                          ["post-abc-000000000001"])))
+
+(deftest event-schema-rejects-merge-with-one-predecessor-test
+  ;; merge needs >= 2 predecessors; 1 violates used minItems
+  (reject-cardinality-violation "merge with 1 predecessor"
+                                (assoc-in (base-merge)
+                                          ["prov" "used"]
+                                          ["pre-000001"])))
+
+(deftest event-schema-rejects-merge-with-zero-successors-test
+  ;; merge needs exactly 1 successor; 0 violates was_generated_by minItems
+  (reject-cardinality-violation "merge with 0 successors"
+                                (assoc-in (base-merge)
+                                          ["prov" "was_generated_by"]
+                                          [])))
+
+(deftest event-schema-rejects-merge-with-two-successors-test
+  ;; merge needs exactly 1 successor; 2 violates was_generated_by maxItems
+  (reject-cardinality-violation "merge with 2 successors"
+                                (assoc-in (base-merge)
+                                          ["prov" "was_generated_by"]
+                                          ["post-000003" "post-000004"])))
 
 (deftest index-schema-accepts-valid-index-test
   (let [event-id (get (base-split) "drift_event_id")]

@@ -179,6 +179,46 @@ fn source_inventory_classifies_common_corpus_command_variants() {
 }
 
 #[test]
+fn source_inventory_classifies_next_high_volume_command_variants() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = [
+        "［＃行右小書き］",
+        "［＃行右小書き終わり］",
+        "［＃「＊」は行右小書き］",
+        "［＃横組み］",
+        "［＃ここで横組み終わり］",
+        "［＃ここから２６字詰め］",
+        "［＃ここで字詰め終わり］",
+        "［＃傍点終わり］",
+        "［＃傍線終わり］",
+        "〔欄外に〕",
+        "〔訳註〕",
+    ]
+    .join("\n");
+    let summary = inventory_document("fixture", &source, &patterns);
+
+    assert_eq!(
+        summary.unknown_examples,
+        [],
+        "known high-volume corpus marker variants should not remain unknown"
+    );
+    for row_id in [
+        "decoration.font_size",
+        "layout.yokogumi",
+        "indentation.jizume",
+        "decoration.boten",
+        "decoration.bousen",
+        "annotation.chuuki",
+    ] {
+        assert!(
+            summary.row_counts.contains_key(row_id),
+            "expected source inventory row {row_id}"
+        );
+    }
+}
+
+#[test]
 fn forbidden_combinations_rejected() {
     use std::collections::BTreeMap;
     let mut parsers = BTreeMap::new();

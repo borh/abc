@@ -3,8 +3,8 @@
   "works_scanned": 17894,
   "works_failed": 0,
   "markers_total": 4323915,
-  "unknown_markers_total": 15989,
-  "unallowlisted_unknown_markers_total": 1119,
+  "unknown_markers_total": 15663,
+  "unallowlisted_unknown_markers_total": 793,
   "allowlisted_unknown_markers_total": 14870,
   "rows": {
     "accent.dotted_letter": {
@@ -28,8 +28,8 @@
       ]
     },
     "annotation.chuuki": {
-      "works_with_marker": 5489,
-      "occurrences": 35101,
+      "works_with_marker": 5497,
+      "occurrences": 35250,
       "sample_works": [
         "000005_53194",
         "000006_1869",
@@ -127,8 +127,8 @@
       ]
     },
     "decoration.font_size": {
-      "works_with_marker": 1215,
-      "occurrences": 51467,
+      "works_with_marker": 1216,
+      "occurrences": 51471,
       "sample_works": [
         "000006_1869",
         "000008_58922",
@@ -171,14 +171,14 @@
       ]
     },
     "figure.image_inline": {
-      "works_with_marker": 504,
-      "occurrences": 5812,
+      "works_with_marker": 521,
+      "occurrences": 5860,
       "sample_works": [
         "000009_226",
+        "000009_45340",
         "000009_50711",
         "000009_50712",
-        "000009_50713",
-        "000009_50714"
+        "000009_50713"
       ]
     },
     "gaiji.jis_code": {
@@ -237,14 +237,14 @@
       ]
     },
     "glyph.variant_note": {
-      "works_with_marker": 1063,
-      "occurrences": 3123,
+      "works_with_marker": 1158,
+      "occurrences": 3950,
       "sample_works": [
+        "000008_1083",
         "000011_55301",
         "000011_889",
         "000011_899",
-        "000011_9",
-        "000012_10"
+        "000011_9"
       ]
     },
     "heading.basic": {
@@ -292,8 +292,8 @@
       ]
     },
     "indentation.burasage": {
-      "works_with_marker": 1209,
-      "occurrences": 13265,
+      "works_with_marker": 1216,
+      "occurrences": 13275,
       "sample_works": [
         "000006_3311",
         "000006_58819",
@@ -303,8 +303,8 @@
       ]
     },
     "indentation.chitsuki": {
-      "works_with_marker": 6251,
-      "occurrences": 20308,
+      "works_with_marker": 6255,
+      "occurrences": 20316,
       "sample_works": [
         "000006_1868",
         "000006_1869",
@@ -403,7 +403,7 @@
     },
     "layout.tcy": {
       "works_with_marker": 724,
-      "occurrences": 19787,
+      "occurrences": 19792,
       "sample_works": [
         "000014_728",
         "000020_2223",
@@ -457,14 +457,24 @@
       ]
     },
     "source.note_label": {
-      "works_with_marker": 95,
-      "occurrences": 199,
+      "works_with_marker": 419,
+      "occurrences": 985,
       "sample_works": [
-        "000034_56908",
-        "000037_319",
-        "000042_2347",
-        "000042_2354",
-        "000067_59327"
+        "000008_1083",
+        "000012_198",
+        "000013_542",
+        "000019_4376",
+        "000031_863"
+      ]
+    },
+    "source.page_reference": {
+      "works_with_marker": 4,
+      "occurrences": 51,
+      "sample_works": [
+        "000989_351",
+        "000989_352",
+        "000989_42687",
+        "001518_51731"
       ]
     },
     "structure.quote_block": {
@@ -507,8 +517,8 @@
       ]
     }
   },
-  "unknown_classes_total": 1014,
-  "unknown_classes_truncated": true,
+  "unknown_classes_total": 747,
+  "unknown_classes_truncated": false,
   "unknown_classes": [
     {
       "kind": "MalformedAccentNotation",
@@ -542,28 +552,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「x2」、「y2」、「x2」はそれぞれ縦中横、すべての「2」は上付き小書き］",
-      "body": "「x2」、「y2」、「x2」はそれぞれ縦中横、すべての「2」は上付き小書き",
-      "occurrences": 3,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 3,
-      "sample_works": [
-        "000148_1102"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「一六八頁」は「安康天皇」の「市の邊の押齒の王」］",
-      "body": "「一六八頁」は「安康天皇」の「市の邊の押齒の王」",
-      "occurrences": 3,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 3,
-      "sample_works": [
-        "001518_51731"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「｝（同時に）」は前２行の中央、下に］",
       "body": "「｝（同時に）」は前２行の中央、下に",
       "occurrences": 3,
@@ -586,172 +574,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃ルビの「しふ」は初出では「しう」］",
-      "body": "ルビの「しふ」は初出では「しう」",
-      "occurrences": 3,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 3,
-      "sample_works": [
-        "000885_51307"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「※」は「たけかんむり＋隻」、17-8］",
-      "body": "「※」は「たけかんむり＋隻」、17-8",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000051_361"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「※」は「つつみがまえ（勹）」＋「夕」で、読みは「そうそう」67-6］",
-      "body": "「※」は「つつみがまえ（勹）」＋「夕」で、読みは「そうそう」67-6",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000074_431"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「み」余分か、それとも「見」か？］",
-      "body": "「み」余分か、それとも「見」か？",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000012_223"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「一三九頁」は「應神天皇」の「天の日矛」］",
-      "body": "「一三九頁」は「應神天皇」の「天の日矛」",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "001518_51731"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「一八二頁」は「清寧天皇・顯宗天皇・仁賢天皇」の「志自牟の新室樂」］",
-      "body": "「一八二頁」は「清寧天皇・顯宗天皇・仁賢天皇」の「志自牟の新室樂」",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "001518_51731"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「三八頁」は「須佐の男の命」の「系譜」］",
-      "body": "「三八頁」は「須佐の男の命」の「系譜」",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "001518_51731"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「九〇頁」は「綏靖天皇以後八代」の「開化天皇」］",
-      "body": "「九〇頁」は「綏靖天皇以後八代」の「開化天皇」",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "001518_51731"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「九四頁」は「崇神天皇」の「將軍の派遣」］",
-      "body": "「九四頁」は「崇神天皇」の「將軍の派遣」",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "001518_51731"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「二七頁」は「伊耶那岐の命と伊耶那美の命」の「身禊」］",
-      "body": "「二七頁」は「伊耶那岐の命と伊耶那美の命」の「身禊」",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "001518_51731"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「二四頁」は「伊耶那岐の命と伊耶那美の命」の「黄泉の國」］",
-      "body": "「二四頁」は「伊耶那岐の命と伊耶那美の命」の「黄泉の國」",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "001518_51731"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「五七頁」は「天照らす大御神と大國主の神」の「國讓り」］",
-      "body": "「五七頁」は「天照らす大御神と大國主の神」の「國讓り」",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "001518_51731"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「五六頁」は「天照らす大御神と大國主の神」の「國讓り」］",
-      "body": "「五六頁」は「天照らす大御神と大國主の神」の「國讓り」",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "001518_51731"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「四二頁」は「大國主の神」の「根の堅州國」］",
-      "body": "「四二頁」は「大國主の神」の「根の堅州國」",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "001518_51731"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「桑原隲蔵全集」］",
-      "body": "「桑原隲蔵全集」",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000372_3666",
-        "000372_3667"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「直木」と「菊池」の中間に「手直り表」］",
       "body": "「直木」と「菊池」の中間に「手直り表」",
       "occurrences": 2,
@@ -759,17 +581,6 @@
       "unallowlisted_occurrences": 2,
       "sample_works": [
         "000083_3329"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「言」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「云」］",
-      "body": "「言」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「云」",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "001383_57416"
       ]
     },
     {
@@ -796,17 +607,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「！？」は１マスに横並び］",
-      "body": "「！？」は１マスに横並び",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000255_1405"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「３字下げ」］",
       "body": "「３字下げ」",
       "occurrences": 2,
@@ -829,18 +629,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃ここから改行１字下げ、折り返して２字下げ］",
-      "body": "ここから改行１字下げ、折り返して２字下げ",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_4238",
-        "001585_53485"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃この作品は表題と副題のみで、本文はありません。］",
       "body": "この作品は表題と副題のみで、本文はありません。",
       "occurrences": 2,
@@ -848,61 +636,6 @@
       "unallowlisted_occurrences": 2,
       "sample_works": [
         "000293_48490"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃この日付は行末に記す］",
-      "body": "この日付は行末に記す",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000074_431"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃この行はポイントを下げて、地より２字上げ］",
-      "body": "この行はポイントを下げて、地より２字上げ",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000256_1413"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃こ地付き］",
-      "body": "こ地付き",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000150_46616"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ゴーリキー］",
-      "body": "ゴーリキー",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_46240"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃トゥルビン家のありし日］",
-      "body": "トゥルビン家のありし日",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_46246"
       ]
     },
     {
@@ -929,54 +662,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃並木道］",
-      "body": "並木道",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_46246",
-        "000311_46247"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃中條太郎］",
-      "body": "中條太郎",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_46252",
-        "000311_46254"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃中條政恒］",
-      "body": "中條政恒",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_46243",
-        "000311_46247"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃中條精一郎］",
-      "body": "中條精一郎",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_46247",
-        "000311_4832"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃二つ目、三つ目の「？」は太字］",
       "body": "二つ目、三つ目の「？」は太字",
       "occurrences": 2,
@@ -995,51 +680,6 @@
       "unallowlisted_occurrences": 2,
       "sample_works": [
         "000301_1872"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃以下の文章は地付き］",
-      "body": "以下の文章は地付き",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000256_3331"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃倉知誠夫、倉知貞の夫］",
-      "body": "倉知誠夫、倉知貞の夫",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_46240"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃倉知貞］",
-      "body": "倉知貞",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_46237",
-        "000311_46242"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃初出時「…………………………………………………工夫するこった。」］",
-      "body": "初出時「…………………………………………………工夫するこった。」",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000008_1083"
       ]
     },
     {
@@ -1143,28 +783,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃創元社版では「破損」］",
-      "body": "創元社版では「破損」",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000008_1083"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃創元社版は「小船頭」］",
-      "body": "創元社版は「小船頭」",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000008_1083"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃労農赤色海軍］",
       "body": "労農赤色海軍",
       "occurrences": 2,
@@ -1189,29 +807,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃原文まま］",
-      "body": "原文まま",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000022_197"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃台詞はすべて、折り返し２行目から、天より１字下げ］",
-      "body": "台詞はすべて、折り返し２行目から、天より１字下げ",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000827_3406",
-        "000827_3411"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃吼えろ、支那］",
       "body": "吼えろ、支那",
       "occurrences": 2,
@@ -1220,52 +815,6 @@
       "sample_works": [
         "000311_46246",
         "000311_4834"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図形　□（四角）に内接する◆］",
-      "body": "図形　□（四角）に内接する◆",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000081_472"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図４、花の絵］",
-      "body": "図４、花の絵",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_33188",
-        "000311_33189"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図６入る］",
-      "body": "図６入る",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000009_45340"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃国男］",
-      "body": "国男",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_46237",
-        "000311_4833"
       ]
     },
     {
@@ -1303,88 +852,8 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃岩波文庫の注は、「マースールのカリフ」を著者の書き間違いとし、「アッバス朝二代のカリフがマンスール」であるとする］",
-      "body": "岩波文庫の注は、「マースールのカリフ」を著者の書き間違いとし、「アッバス朝二代のカリフがマンスール」であるとする",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000301_1872"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃岩波文庫の注は「翌三年十二月の誤り」とする］",
-      "body": "岩波文庫の注は「翌三年十二月の誤り」とする",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000301_1872"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃改行を挿入］",
-      "body": "改行を挿入",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000885_2549",
-        "000885_2550"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃数字は１字下げ、説明文は３字下げ］",
-      "body": "数字は１字下げ、説明文は３字下げ",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000106_2415"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃昼食］",
-      "body": "昼食",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_46246",
-        "000311_46248"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃本文の台詞部分は２行目から、その台詞の最後まで天より１字下げ。］",
-      "body": "本文の台詞部分は２行目から、その台詞の最後まで天より１字下げ。",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_2023",
-        "000311_2024"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃村田安］",
       "body": "村田安",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_46240"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃村田弥三太郎、荒木茂の父］",
-      "body": "村田弥三太郎、荒木茂の父",
       "occurrences": 2,
       "allowlisted_occurrences": 0,
       "unallowlisted_occurrences": 2,
@@ -1417,18 +886,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃欄外に「続千載集巻四、秋上、太政大臣。」の校注あり］",
-      "body": "欄外に「続千載集巻四、秋上、太政大臣。」の校注あり",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000989_352",
-        "000989_42687"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃次の段落には、天地左右にオモテケイ囲み］",
       "body": "次の段落には、天地左右にオモテケイ囲み",
       "occurrences": 2,
@@ -1436,30 +893,6 @@
       "unallowlisted_occurrences": 2,
       "sample_works": [
         "000160_876"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃母］",
-      "body": "母",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_46237",
-        "000311_46244"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃父］",
-      "body": "父",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_46241",
-        "000311_46247"
       ]
     },
     {
@@ -1472,28 +905,6 @@
       "sample_works": [
         "001271_60608",
         "001271_60609"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃甥］",
-      "body": "甥",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃英男の家庭教師］",
-      "body": "英男の家庭教師",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_46240"
       ]
     },
     {
@@ -1532,29 +943,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃（十一）は縦中横、「十一」は縦組み］",
-      "body": "（十一）は縦中横、「十一」は縦組み",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000311_33188",
-        "000311_33192"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃１回り大きな文字］",
-      "body": "１回り大きな文字",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000096_2117"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃１行目］",
       "body": "１行目",
       "occurrences": 2,
@@ -1562,17 +950,6 @@
       "unallowlisted_occurrences": 2,
       "sample_works": [
         "000311_3466"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃２回り大きな文字］",
-      "body": "２回り大きな文字",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "000096_2117"
       ]
     },
     {
@@ -2039,17 +1416,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「…」は初出では「…」］",
-      "body": "「…」は初出では「…」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000885_51307"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「□□」は２倍の長方形］",
       "body": "「□□」は２倍の長方形",
       "occurrences": 1,
@@ -2068,28 +1434,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000311_16003"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「、」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）では「。」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「、」］",
-      "body": "「、」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）では「。」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「、」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_56698"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「、」は以下の本では「。」。『鏡花全集　卷五』（岩波書店、昭和49年3月4日　第2刷發行）、『鏡花全集　巻四』（春陽堂、大正15年9月25日發行）、『湯島詣』（春陽堂文庫、春陽堂、昭和22年10月20日復刊第一版發行）。『湯島詣』（春陽堂、明治32年11月23日發行）では「、」］",
-      "body": "「、」は以下の本では「。」。『鏡花全集　卷五』（岩波書店、昭和49年3月4日　第2刷發行）、『鏡花全集　巻四』（春陽堂、大正15年9月25日發行）、『湯島詣』（春陽堂文庫、春陽堂、昭和22年10月20日復刊第一版發行）。『湯島詣』（春陽堂、明治32年11月23日發行）では「、」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000050_48399"
       ]
     },
     {
@@ -2193,28 +1537,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「あぢはひを」は初出では「あちはひを」］",
-      "body": "「あぢはひを」は初出では「あちはひを」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000885_51307"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「あてびとの」は初出では「あでびとの」］",
-      "body": "「あてびとの」は初出では「あでびとの」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000885_51307"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「あめとう」に欄外に校注、「アメリカ唐桟の略」］",
       "body": "「あめとう」に欄外に校注、「アメリカ唐桟の略」",
       "occurrences": 1,
@@ -2226,17 +1548,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「あるのかと」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「あるのかとも」］",
-      "body": "「あるのかと」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「あるのかとも」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57394"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「いつまでも」は筑摩版では「いつでも」］",
       "body": "「いつまでも」は筑摩版では「いつでも」",
       "occurrences": 1,
@@ -2244,28 +1555,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000031_863"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「いひぬ」は初出では「いいひぬ」］",
-      "body": "「いひぬ」は初出では「いいひぬ」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000885_51307"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「うちに」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「うち」］",
-      "body": "「うちに」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「うち」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57394"
       ]
     },
     {
@@ -2288,50 +1577,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000305_43618"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「えにしえにし」は初出では「ゑにしゑにし」］",
-      "body": "「えにしえにし」は初出では「ゑにしゑにし」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000885_51307"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「えにしは」は初出では「ゑにしは」］",
-      "body": "「えにしは」は初出では「ゑにしは」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000885_51307"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「おっとりとしたところ」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「おつとりしたところ」］",
-      "body": "「おっとりとしたところ」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「おつとりしたところ」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_56698"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「おほつづみ」は初出では「おほづつみ」］",
-      "body": "「おほつづみ」は初出では「おほづつみ」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000885_51307"
       ]
     },
     {
@@ -2369,17 +1614,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「お粥が」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）では「お粥を」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「お粥が」］",
-      "body": "「お粥が」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）では「お粥を」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「お粥が」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57394"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「お茶」にルビ］",
       "body": "「お茶」にルビ",
       "occurrences": 1,
@@ -2402,61 +1636,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「かづきなれず」は初出では「かつぎなれず」］",
-      "body": "「かづきなれず」は初出では「かつぎなれず」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000885_51307"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「かづきぬ」は初出では「かつぎぬ」］",
-      "body": "「かづきぬ」は初出では「かつぎぬ」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000885_51307"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「かづくきぬに」は初出では「かつぐきぬに」］",
-      "body": "「かづくきぬに」は初出では「かつぐきぬに」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000885_51307"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「かどうか」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「のかどうか」］",
-      "body": "「かどうか」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「のかどうか」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_56698"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「が」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）では「も」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「が」］",
-      "body": "「が」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）では「も」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「が」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57416"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「けし」の傍点］",
       "body": "「けし」の傍点",
       "occurrences": 1,
@@ -2468,50 +1647,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「ことは」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「ことを」］",
-      "body": "「ことは」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「ことを」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_56698"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「ございますので」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）では「ございますもので」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「ございますので」］",
-      "body": "「ございますので」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）では「ございますもので」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「ございますので」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57394"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「している」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「してゐ、」］",
-      "body": "「している」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「してゐ、」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57416"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「してはりますねんもん」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「したはりますねんもん」］",
-      "body": "「してはりますねんもん」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「したはりますねんもん」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_56698"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「しぶしぶ」は傍点］",
       "body": "「しぶしぶ」は傍点",
       "occurrences": 1,
@@ -2519,28 +1654,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "001579_53947"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「しもうてて、」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「しまうてゝ」（読点無し）］",
-      "body": "「しもうてて、」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「しまうてゝ」（読点無し）",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57394"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「しやはらへんねん」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「しやはれへんねん」］",
-      "body": "「しやはらへんねん」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「しやはれへんねん」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_56698"
       ]
     },
     {
@@ -2589,17 +1702,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「だなあ」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「だな」］",
-      "body": "「だなあ」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「だな」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57416"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「て」は筑摩版では「ても」］",
       "body": "「て」は筑摩版では「ても」",
       "occurrences": 1,
@@ -2618,50 +1720,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000989_1490"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「です。」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「です、」］",
-      "body": "「です。」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「です、」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57416"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「と」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「を」］",
-      "body": "「と」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「を」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57416"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「と」は以下の本では「と、」。『鏡花全集　卷五』（岩波書店、昭和49年3月4日　第2刷發行）、『鏡花全集　巻四』（春陽堂、大正15年9月25日發行）、『湯島詣』（春陽堂文庫、春陽堂、昭和22年10月20日復刊第一版發行）。『湯島詣』（春陽堂、明治32年11月23日發行）では「と」］",
-      "body": "「と」は以下の本では「と、」。『鏡花全集　卷五』（岩波書店、昭和49年3月4日　第2刷發行）、『鏡花全集　巻四』（春陽堂、大正15年9月25日發行）、『湯島詣』（春陽堂文庫、春陽堂、昭和22年10月20日復刊第一版發行）。『湯島詣』（春陽堂、明治32年11月23日發行）では「と」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000050_48399"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「とがめあり」は初出では「とがぬあり」］",
-      "body": "「とがめあり」は初出では「とがぬあり」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000885_51307"
       ]
     },
     {
@@ -2721,39 +1779,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「ないので」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「しないので」］",
-      "body": "「ないので」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「しないので」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57394"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「なく」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「なくて」］",
-      "body": "「なく」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「なくて」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57416"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「なつかしき」は初出では「なつかしぎ」］",
-      "body": "「なつかしき」は初出では「なつかしぎ」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000885_51307"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「なる」は筑摩版では「る」］",
       "body": "「なる」は筑摩版では「る」",
       "occurrences": 1,
@@ -2761,17 +1786,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000031_863"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「に」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）では「を」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「に」］",
-      "body": "「に」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）では「を」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「に」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57416"
       ]
     },
     {
@@ -2809,17 +1823,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「はなちしは」は初出では「はなしは」］",
-      "body": "「はなちしは」は初出では「はなしは」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000885_51307"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「ひと」は傍点］",
       "body": "「ひと」は傍点",
       "occurrences": 1,
@@ -2842,28 +1845,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「みじか夜」は初出では「みぢか夜」］",
-      "body": "「みじか夜」は初出では「みぢか夜」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000885_51307"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「やろうけど」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「やろけど」］",
-      "body": "「やろうけど」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「やろけど」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57394"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「や闇吹き入れるにまぶれて白し」は、「夕顏」と「三日の月」の間に挟まれるような形でポイントを下げて２行で］",
       "body": "「や闇吹き入れるにまぶれて白し」は、「夕顏」と「三日の月」の間に挟まれるような形でポイントを下げて２行で",
       "occurrences": 1,
@@ -2871,61 +1852,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000305_1896"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「よまず」は初出では「よます」］",
-      "body": "「よまず」は初出では「よます」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000885_51307"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「らしいですよ」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「らしいんですよ」］",
-      "body": "「らしいですよ」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「らしいんですよ」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_56698"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「わがはだに」は初出では「やははだに」］",
-      "body": "「わがはだに」は初出では「やははだに」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000885_51307"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「を」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「に」］",
-      "body": "「を」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「に」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57416"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「をととなり」は初出では「をとこなり」］",
-      "body": "「をととなり」は初出では「をとこなり」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000885_51307"
       ]
     },
     {
@@ -3018,17 +1944,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「シランカホシテヰマス」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「シランカホヲシテヰマス」］",
-      "body": "「シランカホシテヰマス」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「シランカホヲシテヰマス」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_56698"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「ジップ」は桃源社版では「ジッブ」］",
       "body": "「ジップ」は桃源社版では「ジッブ」",
       "occurrences": 1,
@@ -3084,28 +1999,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「ペータアさんは」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「ペータアさんは、」］",
-      "body": "「ペータアさんは」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「ペータアさんは、」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57416"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「ポケット」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「ポッケット」］",
-      "body": "「ポケット」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「ポッケット」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_56698"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「マリニヨリの」は本文では「マリニョリの」］",
       "body": "「マリニヨリの」は本文では「マリニョリの」",
       "occurrences": 1,
@@ -3139,39 +2032,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「一〇二頁」は「垂仁天皇」の「本牟智和氣の御子」］",
-      "body": "「一〇二頁」は「垂仁天皇」の「本牟智和氣の御子」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001518_51731"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「一〇四頁」は「垂仁天皇」の「丹波の四女王」］",
-      "body": "「一〇四頁」は「垂仁天皇」の「丹波の四女王」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001518_51731"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「一〇四頁」は「垂仁天皇」の「時じくの香の木の實」］",
-      "body": "「一〇四頁」は「垂仁天皇」の「時じくの香の木の實」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001518_51731"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「一」は「□」囲み］",
       "body": "「一」は「□」囲み",
       "occurrences": 1,
@@ -3190,50 +2050,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000051_830"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「一一一頁」は「景行天皇・成務天皇」の「倭建の命の東征」］",
-      "body": "「一一一頁」は「景行天皇・成務天皇」の「倭建の命の東征」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001518_51731"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「一三三頁」は「應神天皇」の「國主歌」］",
-      "body": "「一三三頁」は「應神天皇」の「國主歌」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001518_51731"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「一九頁」は「伊耶那岐の命と伊耶那美の命」の「島々の生成」］",
-      "body": "「一九頁」は「伊耶那岐の命と伊耶那美の命」の「島々の生成」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001518_51731"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「一二〇頁」は「仲哀天皇」の「神功皇后」］",
-      "body": "「一二〇頁」は「仲哀天皇」の「神功皇后」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001518_51731"
       ]
     },
     {
@@ -3282,17 +2098,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「一八五頁」は「清寧天皇・顯宗天皇・仁賢天皇」の「顯宗天皇」］",
-      "body": "「一八五頁」は「清寧天皇・顯宗天皇・仁賢天皇」の「顯宗天皇」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001518_51731"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「一六三・七」の両側に傍線］",
       "body": "「一六三・七」の両側に傍線",
       "occurrences": 1,
@@ -3337,28 +2142,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「七六頁」は「神武天皇」の「熊野より大和へ」］",
-      "body": "「七六頁」は「神武天皇」の「熊野より大和へ」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001518_51731"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「七四頁」は「神武天皇」の「熊野より大和へ」］",
-      "body": "「七四頁」は「神武天皇」の「熊野より大和へ」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001518_51731"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「七夕」「真つすぐな街」は自由律俳句］",
       "body": "「七夕」「真つすぐな街」は自由律俳句",
       "occurrences": 1,
@@ -3366,17 +2149,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000124_651"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「三〇頁」は「天照らす大神と須佐の男の命」の「誓約」］",
-      "body": "「三〇頁」は「天照らす大神と須佐の男の命」の「誓約」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001518_51731"
       ]
     },
     {
@@ -3392,61 +2164,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「三三頁」は「天照らす大神と須佐の男の命」の「天の岩戸」］",
-      "body": "「三三頁」は「天照らす大神と須佐の男の命」の「天の岩戸」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001518_51731"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「三九頁」は「大國主の神」の「菟と鰐」］",
-      "body": "「三九頁」は「大國主の神」の「菟と鰐」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001518_51731"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「三二頁」は「天照らす大神と須佐の男の命」の「天の岩戸」］",
-      "body": "「三二頁」は「天照らす大神と須佐の男の命」の「天の岩戸」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001518_51731"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「三五頁」は「須佐の男の命」の「穀物の種」］",
-      "body": "「三五頁」は「須佐の男の命」の「穀物の種」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001518_51731"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「三五頁」は「須佐の男の神」の「穀物の種」］",
-      "body": "「三五頁」は「須佐の男の神」の「穀物の種」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001518_51731"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「三六六ページ」は「清寧天皇・顯宗天皇・仁賢天皇」の「シジムの新築祝い」］",
       "body": "「三六六ページ」は「清寧天皇・顯宗天皇・仁賢天皇」の「シジムの新築祝い」",
       "occurrences": 1,
@@ -3454,17 +2171,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "001518_51732"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「三味は太鼓」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「三味太鼓」］",
-      "body": "「三味は太鼓」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「三味太鼓」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57416"
       ]
     },
     {
@@ -3487,39 +2193,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000124_654"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「上げて」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）では「挙げて」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「擧げて」］",
-      "body": "「上げて」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）では「挙げて」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「擧げて」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57416"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「上さま」は「母」と「父」の二行の中央］",
-      "body": "「上さま」は「母」と「父」の二行の中央",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000276_46482"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「下さいと」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「下さい」］",
-      "body": "「下さいと」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「下さい」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57394"
       ]
     },
     {
@@ -3601,39 +2274,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「九二頁」は「崇神天皇」の「美和の大物主」］",
-      "body": "「九二頁」は「崇神天皇」の「美和の大物主」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001518_51731"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「九八頁」は「垂仁天皇」の「沙本毘古の叛亂」］",
-      "body": "「九八頁」は「垂仁天皇」の「沙本毘古の叛亂」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001518_51731"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「九谷」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）では「久谷」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「九谷」］",
-      "body": "「九谷」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）では「久谷」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「九谷」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_56698"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「亀井勝一郎」はゴチック］",
       "body": "「亀井勝一郎」はゴチック",
       "occurrences": 1,
@@ -3656,17 +2296,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「二〇頁」は「伊耶那岐の命と伊耶那美の命」の「島々の生成」］",
-      "body": "「二〇頁」は「伊耶那岐の命と伊耶那美の命」の「島々の生成」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001518_51731"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「二」は「□」囲み］",
       "body": "「二」は「□」囲み",
       "occurrences": 1,
@@ -3685,105 +2314,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "001518_51732"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「二二頁」は「伊耶那岐の命と伊耶那美の命」の「神々の生成」］",
-      "body": "「二二頁」は「伊耶那岐の命と伊耶那美の命」の「神々の生成」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001518_51731"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「二五頁」は「伊耶那岐の命と伊耶那美の命」の「黄泉の國」］",
-      "body": "「二五頁」は「伊耶那岐の命と伊耶那美の命」の「黄泉の國」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001518_51731"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「二尺に足らぬ」は初出では「二尺足らぬ」］",
-      "body": "「二尺に足らぬ」は初出では「二尺足らぬ」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000885_51307"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「云」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「言」］",
-      "body": "「云」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「言」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57394"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「云い方が、」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「云ひ方が」（読点無し）］",
-      "body": "「云い方が、」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「云ひ方が」（読点無し）",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57394"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「云うには」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「云ふのには」］",
-      "body": "「云うには」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「云ふのには」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57394"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「云っている」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「云つてゐた」］",
-      "body": "「云っている」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「云つてゐた」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57416"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「五二頁」は「大國主の神」の「大年の神の系譜」］",
-      "body": "「五二頁」は「大國主の神」の「大年の神の系譜」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001518_51731"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「五六頁」は「天照らす大御神と大國主の神」の「天若日子」］",
-      "body": "「五六頁」は「天照らす大御神と大國主の神」の「天若日子」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001518_51731"
       ]
     },
     {
@@ -3821,17 +2351,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「今の寛永寺なのです。」の誤り？］",
-      "body": "「今の寛永寺なのです。」の誤り？",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000111_586"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「今は」は筑摩版では「今」］",
       "body": "「今は」は筑摩版では「今」",
       "occurrences": 1,
@@ -3839,17 +2358,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000031_863"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「仕事部屋に」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「仕事部屋へ」］",
-      "body": "「仕事部屋に」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「仕事部屋へ」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57416"
       ]
     },
     {
@@ -3898,28 +2406,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「偶」は「隅」の誤りか］",
-      "body": "「偶」は「隅」の誤りか",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000284_3339"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「僕達」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「僕等」］",
-      "body": "「僕達」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「僕等」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_56698"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「入場料」から「七円」まで大文字、ゴシック体。「＝＝」は二倍二重ダーシ］",
       "body": "「入場料」から「七円」まで大文字、ゴシック体。「＝＝」は二倍二重ダーシ",
       "occurrences": 1,
@@ -3960,50 +2446,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000124_654"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「出なかった」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）では「でなかつた」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「出なかつた」］",
-      "body": "「出なかった」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）では「でなかつた」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「出なかつた」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57416"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「別のこと」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「別なこと」］",
-      "body": "「別のこと」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「別なこと」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57394"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「別状」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）では「別条」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「別條」］",
-      "body": "「別状」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）では「別条」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「別條」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57416"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「刺繍」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）では「剌繍」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「刺繍」］",
-      "body": "「刺繍」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）では「剌繍」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「刺繍」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57416"
       ]
     },
     {
@@ -4081,28 +2523,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000096_2100"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「卯の花を」は初出では「卯の衣を」］",
-      "body": "「卯の花を」は初出では「卯の衣を」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000885_51307"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「口が」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「口の」］",
-      "body": "「口が」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「口の」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57416"
       ]
     },
     {
@@ -4195,39 +2615,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「四五頁」は「大國主の神」の「八千矛の神の歌物語」］",
-      "body": "「四五頁」は「大國主の神」の「八千矛の神の歌物語」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001518_51731"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「四四頁」は「大國主の神」の「八千矛の神の歌物語」］",
-      "body": "「四四頁」は「大國主の神」の「八千矛の神の歌物語」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001518_51731"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「在生中」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「存生中」］",
-      "body": "「在生中」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「存生中」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57416"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「地底の蜃気楼」のルビ］",
       "body": "「地底の蜃気楼」のルビ",
       "occurrences": 1,
@@ -4246,28 +2633,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000305_1896"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「外はない。（改行）―――が、」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「外はない。―――（改行）が、」］",
-      "body": "「外はない。（改行）―――が、」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「外はない。―――（改行）が、」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57416"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「夢よと」は初出では「声よと」］",
-      "body": "「夢よと」は初出では「声よと」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000885_51307"
       ]
     },
     {
@@ -4338,17 +2703,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「奈良のホテル」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「奈良ホテル」］",
-      "body": "「奈良のホテル」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「奈良ホテル」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57394"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「奥深く」は筑摩版では「奥深く広く」］",
       "body": "「奥深く」は筑摩版では「奥深く広く」",
       "occurrences": 1,
@@ -4367,28 +2721,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000126_669"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「女夫巾着」に欄外に校注、「せなかあわせにくッついている巾著」］",
-      "body": "「女夫巾着」に欄外に校注、「せなかあわせにくッついている巾著」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000989_354"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「始終」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）では「終始」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「始終」］",
-      "body": "「始終」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）では「終始」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「始終」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57416"
       ]
     },
     {
@@ -4690,17 +3022,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「必死」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「決死」］",
-      "body": "「必死」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「決死」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57416"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「志賀政治局追放せず」に波線］",
       "body": "「志賀政治局追放せず」に波線",
       "occurrences": 1,
@@ -4719,17 +3040,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000124_654"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「悪夢」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「夢魔」］",
-      "body": "「悪夢」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「夢魔」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57416"
       ]
     },
     {
@@ -4756,17 +3066,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「愛創石」は「受劍石」の誤りか］",
-      "body": "「愛創石」は「受劍石」の誤りか",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001054_4990"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「我黒ノ句ニ　名月に後むいたるかゝし哉」は「名月やうしろむいたる石佛」の下にポイントを下げて２行で］",
       "body": "「我黒ノ句ニ　名月に後むいたるかゝし哉」は「名月やうしろむいたる石佛」の下にポイントを下げて２行で",
       "occurrences": 1,
@@ -4774,17 +3073,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000305_1896"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「手段」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）では「手術」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「手段」］",
-      "body": "「手段」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）では「手術」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「手段」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57416"
       ]
     },
     {
@@ -4807,17 +3095,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000726_4533"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「打って」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「搏つて」］",
-      "body": "「打って」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「搏つて」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57416"
       ]
     },
     {
@@ -4910,28 +3187,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「日焦け」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）では「日焦げ」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「日焦け」］",
-      "body": "「日焦け」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）では「日焦げ」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「日焦け」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57416"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「景色」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）では「景気」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「景色」］",
-      "body": "「景色」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）では「景気」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「景色」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57394"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「曉臺ノ句　風早し二つにわれてむら千鳥」は「帆柱や二つにわれてむら千鳥」の下にポイントを下げて２行で］",
       "body": "「曉臺ノ句　風早し二つにわれてむら千鳥」は「帆柱や二つにわれてむら千鳥」の下にポイントを下げて２行で",
       "occurrences": 1,
@@ -4972,17 +3227,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000169_1273"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「李青蓮」は初出では「李春蓮」］",
-      "body": "「李青蓮」は初出では「李春蓮」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000885_51307"
       ]
     },
     {
@@ -5042,17 +3286,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「桑原隲藏全集　第一卷　東洋史説苑」］",
-      "body": "「桑原隲藏全集　第一卷　東洋史説苑」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000372_3667"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「森山啓」はゴチック］",
       "body": "「森山啓」はゴチック",
       "occurrences": 1,
@@ -5082,17 +3315,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000148_799"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「様子を」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）では「様子」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「樣子」］",
-      "body": "「様子を」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）では「様子」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「樣子」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57394"
       ]
     },
     {
@@ -5148,28 +3370,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000124_654"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「気軽」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）では「気楽」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「氣樂」］",
-      "body": "「気軽」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）では「気楽」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「氣樂」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57394"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「水くみ」は初出では「水くむ」］",
-      "body": "「水くみ」は初出では「水くむ」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000885_51307"
       ]
     },
     {
@@ -5273,17 +3473,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「父親」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「親父」］",
-      "body": "「父親」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「親父」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_56698"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「牙ふりたてる岩ふみはづす」は、「猪の」と「吹雪哉」の間に挟まれるような形でポイントを下げて２行で］",
       "body": "「牙ふりたてる岩ふみはづす」は、「猪の」と「吹雪哉」の間に挟まれるような形でポイントを下げて２行で",
       "occurrences": 1,
@@ -5328,39 +3517,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「男かはゆし」は初出では「男かわゆし」］",
-      "body": "「男かはゆし」は初出では「男かわゆし」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000885_51307"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「畳敷」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）では「畳数」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「疊數」］",
-      "body": "「畳敷」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）では「畳数」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「疊數」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_56698"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「病など」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「病などが」］",
-      "body": "「病など」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「病などが」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_56698"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「百合子」は手書き文字］",
       "body": "「百合子」は手書き文字",
       "occurrences": 1,
@@ -5383,17 +3539,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「矮小」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）では「矯小」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「矮小」］",
-      "body": "「矮小」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）では「矯小」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「矮小」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57394"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「石川達三」はゴチック］",
       "body": "「石川達三」はゴチック",
       "occurrences": 1,
@@ -5401,17 +3546,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000124_654"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「神に」は初出では「袖に」］",
-      "body": "「神に」は初出では「袖に」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000885_51307"
       ]
     },
     {
@@ -5548,17 +3682,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「細緒」は初出では「細う」］",
-      "body": "「細緒」は初出では「細う」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000885_51307"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「繰返し」にルビ］",
       "body": "「繰返し」にルビ",
       "occurrences": 1,
@@ -5566,17 +3689,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000126_669"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「考えへん」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「考へん」］",
-      "body": "「考えへん」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「考へん」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_56698"
       ]
     },
     {
@@ -5702,17 +3814,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「袖こむらさき」は初出では「袖ぞむらさき」］",
-      "body": "「袖こむらさき」は初出では「袖ぞむらさき」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000885_51307"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「複」の文字の下から２字下げ、横組み右揃えで］",
       "body": "「複」の文字の下から２字下げ、横組み右揃えで",
       "occurrences": 1,
@@ -5720,28 +3821,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「西銀座」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）では「酉銀座」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「西銀座」］",
-      "body": "「西銀座」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）では「酉銀座」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「西銀座」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57416"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「親愛なる」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「親愛な」］",
-      "body": "「親愛なる」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「親愛な」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57416"
       ]
     },
     {
@@ -5764,17 +3843,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000250_18353"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「議論」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「論議」］",
-      "body": "「議論」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「論議」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_56698"
       ]
     },
     {
@@ -5834,17 +3902,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「道はないやろ」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「道ないやろ」］",
-      "body": "「道はないやろ」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「道ないやろ」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57394"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「道徳・モラル」の「・」を除く部分に傍点］",
       "body": "「道徳・モラル」の「・」を除く部分に傍点",
       "occurrences": 1,
@@ -5889,17 +3946,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「鑿の」は初出では「斧の」］",
-      "body": "「鑿の」は初出では「斧の」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000885_51307"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「長谷川如是閑」はゴチック］",
       "body": "「長谷川如是閑」はゴチック",
       "occurrences": 1,
@@ -5918,17 +3964,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000052_5058"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「霙」の誤り？、400-7］",
-      "body": "「霙」の誤り？、400-7",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000038_336"
       ]
     },
     {
@@ -5973,17 +4008,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000311_33191"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「風に」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「風が」］",
-      "body": "「風に」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「風が」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57394"
       ]
     },
     {
@@ -6094,17 +4118,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000305_1896"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「（父君の日に）」はポイントを下げる］",
-      "body": "「（父君の日に）」はポイントを下げる",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000885_2165"
       ]
     },
     {
@@ -6490,28 +4503,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000212_4839"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから改行２字下げ、折り返して４字下げ］",
-      "body": "ここから改行２字下げ、折り返して４字下げ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001266_56695"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから改行２字下げ、折り返して８字下げ］",
-      "body": "ここから改行２字下げ、折り返して８字下げ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000906_42400"
       ]
     },
     {
@@ -7495,116 +5486,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃ルビの「いってん」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「いてん」］",
-      "body": "ルビの「いってん」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「いてん」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_56698"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ルビの「えいごふ」は初出では「えうごふ」］",
-      "body": "ルビの「えいごふ」は初出では「えうごふ」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000885_51307"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ルビの「えんじいろ」は初出では「ゑんじいろ」］",
-      "body": "ルビの「えんじいろ」は初出では「ゑんじいろ」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000885_51307"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ルビの「おおぎ」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）では「あおぎ」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「あをぎ」］",
-      "body": "ルビの「おおぎ」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）では「あおぎ」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「あをぎ」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57416"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ルビの「こつづみ」は初出では「こづつみ」］",
-      "body": "ルビの「こつづみ」は初出では「こづつみ」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000885_51307"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ルビの「じ」は初出では「ぢ」］",
-      "body": "ルビの「じ」は初出では「ぢ」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000885_51307"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ルビの「つづみびやうし」は初出では「つつみびやうし」］",
-      "body": "ルビの「つづみびやうし」は初出では「つつみびやうし」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000885_51307"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ルビの「とは」は初出では「とせ」］",
-      "body": "ルビの「とは」は初出では「とせ」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000885_51307"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ルビの「にう」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）では「にゆう」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「にふ」］",
-      "body": "ルビの「にう」は、『谷崎潤一郎全集　第二十巻』（中央公論新社2015年7月10日初版発行）では「にゆう」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「にふ」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_57394"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ルビの「にう」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）では「にゆう」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「にふ」］",
-      "body": "ルビの「にう」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）では「にゆう」、『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「にふ」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001383_56698"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃ルビは「？符」に掛かる］",
       "body": "ルビは「？符」に掛かる",
       "occurrences": 1,
@@ -7693,17 +5574,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃下島孝吉、百合子の大叔父］",
-      "body": "下島孝吉、百合子の大叔父",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46236"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃中山正直、本田道之の弟］",
       "body": "中山正直、本田道之の弟",
       "occurrences": 1,
@@ -7755,116 +5625,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000311_46244"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃中村武羅夫］",
-      "body": "中村武羅夫",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46247"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃中條咲枝］",
-      "body": "中條咲枝",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46252"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃中條国男］",
-      "body": "中條国男",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46254"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃中條家の女中］",
-      "body": "中條家の女中",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46235"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃中條彌栄、中條家四女］",
-      "body": "中條彌栄、中條家四女",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46239"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃中條泰子］",
-      "body": "中條泰子",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46254"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃中條義男、中條家四男］",
-      "body": "中條義男、中條家四男",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46235"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃中條葭江］",
-      "body": "中條葭江",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_4832"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃中條運、父方の祖母］",
-      "body": "中條運、父方の祖母",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46235"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃中條運］",
-      "body": "中條運",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_4833"
       ]
     },
     {
@@ -8067,39 +5827,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃俊夫の妻］",
-      "body": "俊夫の妻",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46252"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃倉知俊夫、咲枝の兄］",
-      "body": "倉知俊夫、咲枝の兄",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46252"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃倉知緑郎］",
-      "body": "倉知緑郎",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46251"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃党員証］",
       "body": "党員証",
       "occurrences": 1,
@@ -8250,17 +5977,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000096_1115"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃前夫、荒木茂］",
-      "body": "前夫、荒木茂",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46249"
       ]
     },
     {
@@ -8474,61 +6190,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃図10、花瓶に活けられた花の絵］",
-      "body": "図10、花瓶に活けられた花の絵",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_33188"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図11、インク壺の絵］",
-      "body": "図11、インク壺の絵",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_33188"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図12、看板の絵。二等辺三角形の下に縦線］",
-      "body": "図12、看板の絵。二等辺三角形の下に縦線",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_33188"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図13、唇の絵］",
-      "body": "図13、唇の絵",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_33188"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図14、顔の絵］",
-      "body": "図14、顔の絵",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_33188"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃図「ソヴェト選挙系統」入る、P516］",
       "body": "図「ソヴェト選挙系統」入る、P516",
       "occurrences": 1,
@@ -8551,182 +6212,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃図１、「工場内の見取り図」］",
-      "body": "図１、「工場内の見取り図」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_4212"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図１、中世にヨーロッパで用いられた地図］",
-      "body": "図１、中世にヨーロッパで用いられた地図",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000372_4314"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図１、大畜］",
-      "body": "図１、大畜",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000372_4708"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図１、家の間取り図。凸形の間取り。左が「台所」、上が「茶の間」と「ヌレエン（濡れ縁）」、右が部屋と「縁側」（濡れ縁と縁側がＬ状になっている）、中央に廊下と階段。］",
-      "body": "図１、家の間取り図。凸形の間取り。左が「台所」、上が「茶の間」と「ヌレエン（濡れ縁）」、右が部屋と「縁側」（濡れ縁と縁側がＬ状になっている）、中央に廊下と階段。",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_33190"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図１、家の間取り］",
-      "body": "図１、家の間取り",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_4171"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図１、油つぼの絵］",
-      "body": "図１、油つぼの絵",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_33192"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図１、湿度・気温・気圧曲線］",
-      "body": "図１、湿度・気温・気圧曲線",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000160_1233"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図１、眼底の図、二点］",
-      "body": "図１、眼底の図、二点",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_33191"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図１、知的生活の構造］",
-      "body": "図１、知的生活の構造",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000025_1144"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図１、祝い箸の絵］",
-      "body": "図１、祝い箸の絵",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_33188"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図１、絵「四つの棟」］",
-      "body": "図１、絵「四つの棟」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_4222"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図１、絵「黄金虫。頭に「朱と金」の文字、胴に数本の縦縞と「縞」の文字」］",
-      "body": "図１、絵「黄金虫。頭に「朱と金」の文字、胴に数本の縦縞と「縞」の文字」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_4207"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図１、縦書き手書きで「文芸評論集」。その周りに２重に雲形の線］",
-      "body": "図１、縦書き手書きで「文芸評論集」。その周りに２重に雲形の線",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_33186"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図１、花マルのようなマーク］",
-      "body": "図１、花マルのようなマーク",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_33189"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図１、諸国使者の着席順序］",
-      "body": "図１、諸国使者の着席順序",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000372_2612"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図１入る］",
-      "body": "図１入る",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000009_45340"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃図１～図３は、右から続く一葉］",
       "body": "図１～図３は、右から続く一葉",
       "occurrences": 1,
@@ -8734,226 +6219,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000866_3039"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図２、「のり」に丸囲みの手書き文字。「り」は小さく頭の部分が「の」の下隙間に入る］",
-      "body": "図２、「のり」に丸囲みの手書き文字。「り」は小さく頭の部分が「の」の下隙間に入る",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_33186"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図２、「本館見取り図」］",
-      "body": "図２、「本館見取り図」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_4212"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図２、手書き右下がりの三角］",
-      "body": "図２、手書き右下がりの三角",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_33190"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図２、絵「欄間の硝子の形」］",
-      "body": "図２、絵「欄間の硝子の形」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_4222"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図２、花マルのようなマーク］",
-      "body": "図２、花マルのようなマーク",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_33189"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図２入る］",
-      "body": "図２入る",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000009_45340"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図３、右手前に煙突、煙突には三角の屋根、左奥には家の屋根の左端を描いた絵］",
-      "body": "図３、右手前に煙突、煙突には三角の屋根、左奥には家の屋根の左端を描いた絵",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_33188"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図３、草の絵］",
-      "body": "図３、草の絵",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_33189"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図３入る］",
-      "body": "図３入る",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000009_45340"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図４入る］",
-      "body": "図４入る",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000009_45340"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図５、手書き縦線５本］",
-      "body": "図５、手書き縦線５本",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_33189"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図５、花の絵］",
-      "body": "図５、花の絵",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_33188"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図５入る］",
-      "body": "図５入る",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000009_45340"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図６、手書き縦線４本］",
-      "body": "図６、手書き縦線４本",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_33189"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図６、花の絵］",
-      "body": "図６、花の絵",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_33188"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図７、花の絵］",
-      "body": "図７、花の絵",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_33188"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図７入る］",
-      "body": "図７入る",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000009_45340"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図８、花の絵］",
-      "body": "図８、花の絵",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_33188"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図８入る］",
-      "body": "図８入る",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000009_45340"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図９、花の絵］",
-      "body": "図９、花の絵",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_33188"
       ]
     },
     {
@@ -9068,17 +6333,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃大瀧潤家、叔母（父の妹）鷹子の夫］",
-      "body": "大瀧潤家、叔母（父の妹）鷹子の夫",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46235"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃大瀧菊子］",
       "body": "大瀧菊子",
       "occurrences": 1,
@@ -9141,17 +6395,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃夫、荒木茂］",
-      "body": "夫、荒木茂",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46239"
       ]
     },
     {
@@ -9273,17 +6516,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000311_46246"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃宮本美代、顕治の母］",
-      "body": "宮本美代、顕治の母",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46255"
       ]
     },
     {
@@ -9449,28 +6681,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000311_4833"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃岩波文庫の注は「noxa deditio という表現はなく noxae deditio ないし noxae datio」とする］",
-      "body": "岩波文庫の注は「noxa deditio という表現はなく noxae deditio ないし noxae datio」とする",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000301_1872"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃岩波文庫の注は「noxa deditioという表現はなくnoxae deditioないしnoxae datio」とする］",
-      "body": "岩波文庫の注は「noxa deditioという表現はなくnoxae deditioないしnoxae datio」とする",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000301_1872"
       ]
     },
     {
@@ -9691,17 +6901,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000311_46248"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃文意から「曉」は「堯」の誤り？］",
-      "body": "文意から「曉」は「堯」の誤り？",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000866_2653"
       ]
     },
     {
@@ -9937,17 +7136,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃本田龍助、百合子の大叔父］",
-      "body": "本田龍助、百合子の大叔父",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_4833"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃本間久子］",
       "body": "本間久子",
       "occurrences": 1,
@@ -9955,17 +7143,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000311_46252"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃村田一夫、夫荒木茂の異母弟］",
-      "body": "村田一夫、夫荒木茂の異母弟",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46239"
       ]
     },
     {
@@ -10032,17 +7209,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃欄外に「玉葉集巻十八、雑五、従三位爲子」の校注あり］",
-      "body": "欄外に「玉葉集巻十八、雑五、従三位爲子」の校注あり",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000989_351"
       ]
     },
     {
@@ -10131,17 +7297,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000311_46246"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃母葭江の妹］",
-      "body": "母葭江の妹",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46243"
       ]
     },
     {
@@ -10241,17 +7396,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000311_4833"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃湯浅善吉、湯浅芳子の父］",
-      "body": "湯浅善吉、湯浅芳子の父",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46245"
       ]
     },
     {
@@ -10432,17 +7576,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃石橋和訓夫婦］",
-      "body": "石橋和訓夫婦",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46244"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃社会民主党の右翼少数派、ボルシェビキ（左翼多数派）と対立］",
       "body": "社会民主党の右翼少数派、ボルシェビキ（左翼多数派）と対立",
       "occurrences": 1,
@@ -10450,17 +7583,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000311_46248"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃祖母運の家の隣人］",
-      "body": "祖母運の家の隣人",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46236"
       ]
     },
     {
@@ -10729,17 +7851,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃荒木茂、宮本百合子の最初の夫］",
-      "body": "荒木茂、宮本百合子の最初の夫",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46238"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃萩原喜一郎、隣家］",
       "body": "萩原喜一郎、隣家",
       "occurrences": 1,
@@ -10806,39 +7917,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃西村一彰、母葭江の兄］",
-      "body": "西村一彰、母葭江の兄",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46236"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃西村千賀子、母方の祖母］",
-      "body": "西村千賀子、母方の祖母",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46235"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃西村茂樹、母方の祖父、倫理学者］",
-      "body": "西村茂樹、母方の祖父、倫理学者",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46235"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃覚え書き、ノート］",
       "body": "覚え書き、ノート",
       "occurrences": 1,
@@ -10861,17 +7939,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃誠之尋常小学校、百合子の母校］",
-      "body": "誠之尋常小学校、百合子の母校",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46237"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃読みは「つね」］",
       "body": "読みは「つね」",
       "occurrences": 1,
@@ -10890,17 +7957,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃豊竹昇之助、女義太夫］",
-      "body": "豊竹昇之助、女義太夫",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46244"
       ]
     },
     {
@@ -11540,6 +8596,176 @@
       "sample_works": [
         "000154_4287"
       ]
+    },
+    {
+      "kind": "EditorialNoteBottomTextCorrection",
+      "raw": "」は底本では「三十をすぎた。不良老年の癖に、」となっていますが、底本第五巻月報の「訂正」にしたがって変更しました。\r\n入力：八巻美恵\r\n校正：浜野　智\r\n2006年3月1日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
+      "body": "」は底本では「三十をすぎた。不良老年の癖に、」となっていますが、底本第五巻月報の「訂正」にしたがって変更しました。\r\n入力：八巻美恵\r\n校正：浜野　智\r\n2006年3月1日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000124_46195"
+      ]
+    },
+    {
+      "kind": "EditorialNoteBottomTextCorrection",
+      "raw": "」は底本では「主人」の前で改行し、「主人例によって」の段落が天付きになっていましたが、「くらしっく時代小説10　国枝史郎集」にならって改行を取りました。\r\n※底本には以下に挙げるように誤植が疑われる箇所がありましたが、「くらしっく時代小説10　国枝史郎集」でも同様で正しい形を判定することに困難を感じたので底本通りとし、ママ注記を付けました。\r\n○たじろいた所：「たじろいだ」の誤植か。\r\n※「綺麗」と「奇麗」の混在は底本通りにしました。\r\n※底本は、物を数える際や地名などに用いる「ヶ」（区点番号5-86）を、大振りにつくっています。\r\n入力：ロクス・ソルス\r\n校正：門田裕志、小林繁雄\r\n2004年12月13日作成\r\n2009年2月27日修正\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
+      "body": "」は底本では「主人」の前で改行し、「主人例によって」の段落が天付きになっていましたが、「くらしっく時代小説10　国枝史郎集」にならって改行を取りました。\r\n※底本には以下に挙げるように誤植が疑われる箇所がありましたが、「くらしっく時代小説10　国枝史郎集」でも同様で正しい形を判定することに困難を感じたので底本通りとし、ママ注記を付けました。\r\n○たじろいた所：「たじろいだ」の誤植か。\r\n※「綺麗」と「奇麗」の混在は底本通りにしました。\r\n※底本は、物を数える際や地名などに用いる「ヶ」（区点番号5-86）を、大振りにつくっています。\r\n入力：ロクス・ソルス\r\n校正：門田裕志、小林繁雄\r\n2004年12月13日作成\r\n2009年2月27日修正\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000255_43625"
+      ]
+    },
+    {
+      "kind": "EditorialNoteBottomTextCorrection",
+      "raw": "」は底本では「旦邦」でしたが、親本を参照して直しました。\r\n入力：Hiroshi_O\r\n校正：門田裕志、小林繁雄\r\n2003年8月3日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
+      "body": "」は底本では「旦邦」でしたが、親本を参照して直しました。\r\n入力：Hiroshi_O\r\n校正：門田裕志、小林繁雄\r\n2003年8月3日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000154_1655"
+      ]
+    },
+    {
+      "kind": "EditorialNoteBottomTextCorrection",
+      "raw": "」は底本では「杜陽ら」でしたが、親本を参照して直しました。\r\n入力：Hiroshi_O\r\n校正：門田裕志、小林繁雄\r\n2003年8月3日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
+      "body": "」は底本では「杜陽ら」でしたが、親本を参照して直しました。\r\n入力：Hiroshi_O\r\n校正：門田裕志、小林繁雄\r\n2003年8月3日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000154_1643"
+      ]
+    },
+    {
+      "kind": "EditorialNoteBottomTextCorrection",
+      "raw": "」は底本では「機會主義者」の左側に注記されています。\r\n入力：桑田康正\r\n校正：小林繁雄\r\n2005年1月20日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
+      "body": "」は底本では「機會主義者」の左側に注記されています。\r\n入力：桑田康正\r\n校正：小林繁雄\r\n2005年1月20日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000119_43813"
+      ]
+    },
+    {
+      "kind": "EditorialNoteBottomTextCorrection",
+      "raw": "」は底本では「湃」のつくりの4本の横棒が3本です。\r\n※「體」は底本では「體」のへんの「「」が「人」です（281ページの中見出しを除く）。\r\n※「折々の記」六興出版社、1953（昭和28）年12月25日初版発行のものは戦後の随筆を収録したもので、本編は「窓辺雑草」「草思堂随筆」からテーマ別に抜粋収録したものです。\r\n入力：川山隆\r\n校正：トレンドイースト\r\n2013年10月6日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
+      "body": "」は底本では「湃」のつくりの4本の横棒が3本です。\r\n※「體」は底本では「體」のへんの「「」が「人」です（281ページの中見出しを除く）。\r\n※「折々の記」六興出版社、1953（昭和28）年12月25日初版発行のものは戦後の随筆を収録したもので、本編は「窓辺雑草」「草思堂随筆」からテーマ別に抜粋収録したものです。\r\n入力：川山隆\r\n校正：トレンドイースト\r\n2013年10月6日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "001562_55316"
+      ]
+    },
+    {
+      "kind": "EditorialNoteBottomTextCorrection",
+      "raw": "」は底本では「語して」でしたが、親本を参照して直しました。\r\n入力：Hiroshi_O\r\n校正：門田裕志、小林繁雄\r\n2003年7月24日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
+      "body": "」は底本では「語して」でしたが、親本を参照して直しました。\r\n入力：Hiroshi_O\r\n校正：門田裕志、小林繁雄\r\n2003年7月24日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000154_4475"
+      ]
+    },
+    {
+      "kind": "EditorialNoteBottomTextCorrection",
+      "raw": "」は底本では「［Ａ］",
+      "body": "」は底本では「［Ａ］",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "001402_49946"
+      ]
+    },
+    {
+      "kind": "MalformedGaiji",
+      "raw": "※［＃",
+      "body": "※［＃",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "000271_1556"
+      ]
+    },
+    {
+      "kind": "MalformedImplicitRuby",
+      "raw": "《",
+      "body": "《",
+      "occurrences": 1,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 1,
+      "sample_works": [
+        "JISTABLE"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃］",
+      "body": "",
+      "occurrences": 13920,
+      "allowlisted_occurrences": 13920,
+      "unallowlisted_occurrences": 0,
+      "sample_works": [
+        "000005_5",
+        "000005_53194",
+        "000006_1868",
+        "000006_1869",
+        "000006_3310"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃…］",
+      "body": "…",
+      "occurrences": 465,
+      "allowlisted_occurrences": 465,
+      "unallowlisted_occurrences": 0,
+      "sample_works": [
+        "000038_1408",
+        "000042_1694",
+        "000050_3581",
+        "000051_1436",
+        "000051_1452"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃本文終わり］",
+      "body": "本文終わり",
+      "occurrences": 243,
+      "allowlisted_occurrences": 243,
+      "unallowlisted_occurrences": 0,
+      "sample_works": [
+        "000009_226",
+        "000009_50711",
+        "000009_50712",
+        "000009_50713",
+        "000009_50714"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃（…）］",
+      "body": "（…）",
+      "occurrences": 242,
+      "allowlisted_occurrences": 242,
+      "unallowlisted_occurrences": 0,
+      "sample_works": [
+        "000026_50238",
+        "000026_50242",
+        "000026_50259",
+        "000026_51893",
+        "000026_55774"
+      ]
     }
   ],
   "unknown_examples": [
@@ -11577,13 +8803,6 @@
       "kind": "CommandFullwidth",
       "raw": "［＃初出時「貧乏人同士みんなして……………………。」］",
       "body": "初出時「貧乏人同士みんなして……………………。」"
-    },
-    {
-      "work_id": "000008_1083",
-      "line": 259,
-      "kind": "CommandFullwidth",
-      "raw": "［＃初出時「…………………………………………………工夫するこった。」］",
-      "body": "初出時「…………………………………………………工夫するこった。」"
     },
     {
       "work_id": "000008_1083",
@@ -11629,20 +8848,6 @@
     },
     {
       "work_id": "000008_1083",
-      "line": 267,
-      "kind": "CommandFullwidth",
-      "raw": "［＃創元社版は「小船頭」］",
-      "body": "創元社版は「小船頭」"
-    },
-    {
-      "work_id": "000008_1083",
-      "line": 268,
-      "kind": "CommandFullwidth",
-      "raw": "［＃創元社版では「破損」］",
-      "body": "創元社版では「破損」"
-    },
-    {
-      "work_id": "000008_1083",
       "line": 260,
       "kind": "CommandFullwidth",
       "raw": "［＃初出時「………………………行ぐ奴からさかしまに……………やるまでよ！」］",
@@ -11661,13 +8866,6 @@
       "kind": "CommandFullwidth",
       "raw": "［＃初出時「貧乏人同士みんなして……………………。」］",
       "body": "初出時「貧乏人同士みんなして……………………。」"
-    },
-    {
-      "work_id": "000008_1083",
-      "line": 263,
-      "kind": "CommandFullwidth",
-      "raw": "［＃初出時「…………………………………………………工夫するこった。」］",
-      "body": "初出時「…………………………………………………工夫するこった。」"
     },
     {
       "work_id": "000008_1083",
@@ -11712,116 +8910,11 @@
       "body": "初出時「こないだみてえに折角かたまって………も」"
     },
     {
-      "work_id": "000008_1083",
-      "line": 271,
-      "kind": "CommandFullwidth",
-      "raw": "［＃創元社版は「小船頭」］",
-      "body": "創元社版は「小船頭」"
-    },
-    {
-      "work_id": "000008_1083",
-      "line": 272,
-      "kind": "CommandFullwidth",
-      "raw": "［＃創元社版では「破損」］",
-      "body": "創元社版では「破損」"
-    },
-    {
       "work_id": "000009_43522",
       "line": 71,
       "kind": "CommandFullwidth",
       "raw": "［＃「弟」は誤訳で本当は「兄」］",
       "body": "「弟」は誤訳で本当は「兄」"
-    },
-    {
-      "work_id": "000009_45340",
-      "line": 58,
-      "kind": "CommandFullwidth",
-      "raw": "［＃図１入る］",
-      "body": "図１入る"
-    },
-    {
-      "work_id": "000009_45340",
-      "line": 95,
-      "kind": "CommandFullwidth",
-      "raw": "［＃図２入る］",
-      "body": "図２入る"
-    },
-    {
-      "work_id": "000009_45340",
-      "line": 99,
-      "kind": "CommandFullwidth",
-      "raw": "［＃図３入る］",
-      "body": "図３入る"
-    },
-    {
-      "work_id": "000009_45340",
-      "line": 108,
-      "kind": "CommandFullwidth",
-      "raw": "［＃図４入る］",
-      "body": "図４入る"
-    },
-    {
-      "work_id": "000009_45340",
-      "line": 127,
-      "kind": "CommandFullwidth",
-      "raw": "［＃図５入る］",
-      "body": "図５入る"
-    },
-    {
-      "work_id": "000009_45340",
-      "line": 246,
-      "kind": "CommandFullwidth",
-      "raw": "［＃図６入る］",
-      "body": "図６入る"
-    },
-    {
-      "work_id": "000009_45340",
-      "line": 246,
-      "kind": "CommandFullwidth",
-      "raw": "［＃図６入る］",
-      "body": "図６入る"
-    },
-    {
-      "work_id": "000009_45340",
-      "line": 248,
-      "kind": "CommandFullwidth",
-      "raw": "［＃図７入る］",
-      "body": "図７入る"
-    },
-    {
-      "work_id": "000009_45340",
-      "line": 337,
-      "kind": "CommandFullwidth",
-      "raw": "［＃図８入る］",
-      "body": "図８入る"
-    },
-    {
-      "work_id": "000012_223",
-      "line": 11,
-      "kind": "CommandFullwidth",
-      "raw": "［＃「み」余分か、それとも「見」か？］",
-      "body": "「み」余分か、それとも「見」か？"
-    },
-    {
-      "work_id": "000012_223",
-      "line": 21,
-      "kind": "CommandFullwidth",
-      "raw": "［＃「み」余分か、それとも「見」か？］",
-      "body": "「み」余分か、それとも「見」か？"
-    },
-    {
-      "work_id": "000022_197",
-      "line": 55,
-      "kind": "CommandFullwidth",
-      "raw": "［＃原文まま］",
-      "body": "原文まま"
-    },
-    {
-      "work_id": "000022_197",
-      "line": 48,
-      "kind": "CommandFullwidth",
-      "raw": "［＃原文まま］",
-      "body": "原文まま"
     },
     {
       "work_id": "000025_1144",
@@ -11843,13 +8936,6 @@
       "kind": "CommandFullwidth",
       "raw": "［＃以下の２つの英文はすべてイタリック文字、横書き］",
       "body": "以下の２つの英文はすべてイタリック文字、横書き"
-    },
-    {
-      "work_id": "000025_1144",
-      "line": 220,
-      "kind": "CommandFullwidth",
-      "raw": "［＃図１、知的生活の構造］",
-      "body": "図１、知的生活の構造"
     },
     {
       "work_id": "000026_50241",
@@ -12020,13 +9106,6 @@
       "body": "岩波文庫版では「殺され」"
     },
     {
-      "work_id": "000038_336",
-      "line": 138,
-      "kind": "CommandFullwidth",
-      "raw": "［＃「霙」の誤り？、400-7］",
-      "body": "「霙」の誤り？、400-7"
-    },
-    {
       "work_id": "000042_2345",
       "line": 41,
       "kind": "CommandFullwidth",
@@ -12160,39 +9239,11 @@
       "body": "句点が抜けていると考えられる"
     },
     {
-      "work_id": "000050_48399",
-      "line": 484,
-      "kind": "CommandFullwidth",
-      "raw": "［＃「、」は以下の本では「。」。『鏡花全集　卷五』（岩波書店、昭和49年3月4日　第2刷發行）、『鏡花全集　巻四』（春陽堂、大正15年9月25日發行）、『湯島詣』（春陽堂文庫、春陽堂、昭和22年10月20日復刊第一版發行）。『湯島詣』（春陽堂、明治32年11月23日發行）では「、」］",
-      "body": "「、」は以下の本では「。」。『鏡花全集　卷五』（岩波書店、昭和49年3月4日　第2刷發行）、『鏡花全集　巻四』（春陽堂、大正15年9月25日發行）、『湯島詣』（春陽堂文庫、春陽堂、昭和22年10月20日復刊第一版發行）。『湯島詣』（春陽堂、明治32年11月23日發行）では「、」"
-    },
-    {
-      "work_id": "000050_48399",
-      "line": 1070,
-      "kind": "CommandFullwidth",
-      "raw": "［＃「と」は以下の本では「と、」。『鏡花全集　卷五』（岩波書店、昭和49年3月4日　第2刷發行）、『鏡花全集　巻四』（春陽堂、大正15年9月25日發行）、『湯島詣』（春陽堂文庫、春陽堂、昭和22年10月20日復刊第一版發行）。『湯島詣』（春陽堂、明治32年11月23日發行）では「と」］",
-      "body": "「と」は以下の本では「と、」。『鏡花全集　卷五』（岩波書店、昭和49年3月4日　第2刷發行）、『鏡花全集　巻四』（春陽堂、大正15年9月25日發行）、『湯島詣』（春陽堂文庫、春陽堂、昭和22年10月20日復刊第一版發行）。『湯島詣』（春陽堂、明治32年11月23日發行）では「と」"
-    },
-    {
       "work_id": "000051_3508",
       "line": 148,
       "kind": "CommandFullwidth",
       "raw": "［＃以下地付き］",
       "body": "以下地付き"
-    },
-    {
-      "work_id": "000051_361",
-      "line": 15,
-      "kind": "CommandFullwidth",
-      "raw": "［＃「※」は「たけかんむり＋隻」、17-8］",
-      "body": "「※」は「たけかんむり＋隻」、17-8"
-    },
-    {
-      "work_id": "000051_361",
-      "line": 9,
-      "kind": "CommandFullwidth",
-      "raw": "［＃「※」は「たけかんむり＋隻」、17-8］",
-      "body": "「※」は「たけかんむり＋隻」、17-8"
     },
     {
       "work_id": "000051_3611",
@@ -12242,18 +9293,193 @@
       "kind": "CommandFullwidth",
       "raw": "［＃ここには室生犀星の詩が引用されている］",
       "body": "ここには室生犀星の詩が引用されている"
+    },
+    {
+      "work_id": "000067_1790",
+      "line": 398,
+      "kind": "CommandFullwidth",
+      "raw": "［＃初出の『四季』第四號・昭和十年二月號では「孤獨を愛する人にとつて」となっている］",
+      "body": "初出の『四季』第四號・昭和十年二月號では「孤獨を愛する人にとつて」となっている"
+    },
+    {
+      "work_id": "000072_864",
+      "line": 15,
+      "kind": "CommandFullwidth",
+      "raw": "［＃場面設定の表題、及び「Ｔ」で始まる最初の行以外は、１文字下げた位置で頭を揃える］",
+      "body": "場面設定の表題、及び「Ｔ」で始まる最初の行以外は、１文字下げた位置で頭を揃える"
+    },
+    {
+      "work_id": "000072_864",
+      "line": 18,
+      "kind": "CommandFullwidth",
+      "raw": "［＃場面設定の表題、及び「Ｔ」で始まる最初の行以外は、１文字下げた位置で頭を揃える］",
+      "body": "場面設定の表題、及び「Ｔ」で始まる最初の行以外は、１文字下げた位置で頭を揃える"
+    },
+    {
+      "work_id": "000072_864",
+      "line": 19,
+      "kind": "CommandFullwidth",
+      "raw": "［＃（Ｆ・Ｏ）は下揃え］",
+      "body": "（Ｆ・Ｏ）は下揃え"
+    },
+    {
+      "work_id": "000072_864",
+      "line": 461,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「拝観料」は罫で囲む］",
+      "body": "「拝観料」は罫で囲む"
+    },
+    {
+      "work_id": "000081_43733",
+      "line": 28,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「一」は「□」囲み］",
+      "body": "「一」は「□」囲み"
+    },
+    {
+      "work_id": "000081_43733",
+      "line": 29,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「二」は「□」囲み］",
+      "body": "「二」は「□」囲み"
+    },
+    {
+      "work_id": "000081_43733",
+      "line": 30,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「三」は「□」囲み］",
+      "body": "「三」は「□」囲み"
+    },
+    {
+      "work_id": "000081_43733",
+      "line": 35,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「四」は「□」囲み］",
+      "body": "「四」は「□」囲み"
+    },
+    {
+      "work_id": "000081_43733",
+      "line": 44,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「１」は「□」囲み］",
+      "body": "「１」は「□」囲み"
+    },
+    {
+      "work_id": "000081_43733",
+      "line": 50,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「２」は「□」囲み］",
+      "body": "「２」は「□」囲み"
+    },
+    {
+      "work_id": "000081_43733",
+      "line": 56,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「３」は「□」囲み］",
+      "body": "「３」は「□」囲み"
+    },
+    {
+      "work_id": "000081_43733",
+      "line": 62,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「４」は「□」囲み］",
+      "body": "「４」は「□」囲み"
+    },
+    {
+      "work_id": "000081_43733",
+      "line": 68,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「５」は「□」囲み］",
+      "body": "「５」は「□」囲み"
+    },
+    {
+      "work_id": "000081_43733",
+      "line": 74,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「６」は「□」囲み］",
+      "body": "「６」は「□」囲み"
+    },
+    {
+      "work_id": "000081_43733",
+      "line": 81,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「７」は「□」囲み］",
+      "body": "「７」は「□」囲み"
+    },
+    {
+      "work_id": "000081_43733",
+      "line": 87,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「８」は「□」囲み］",
+      "body": "「８」は「□」囲み"
+    },
+    {
+      "work_id": "000081_43733",
+      "line": 93,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「９」は「□」囲み］",
+      "body": "「９」は「□」囲み"
+    },
+    {
+      "work_id": "000081_4461",
+      "line": 10,
+      "kind": "MalformedCommand",
+      "raw": "［＃",
+      "body": "［＃"
+    },
+    {
+      "work_id": "000081_45631",
+      "line": 75,
+      "kind": "CommandFullwidth",
+      "raw": "［＃１段目］",
+      "body": "１段目"
+    },
+    {
+      "work_id": "000081_45631",
+      "line": 84,
+      "kind": "CommandFullwidth",
+      "raw": "［＃２段目］",
+      "body": "２段目"
+    },
+    {
+      "work_id": "000082_1026",
+      "line": 143,
+      "kind": "CommandFullwidth",
+      "raw": "［＃旺文社文庫版「なんぼ土産にするとかって」］",
+      "body": "旺文社文庫版「なんぼ土産にするとかって」"
+    },
+    {
+      "work_id": "000082_1118",
+      "line": 188,
+      "kind": "CommandFullwidth",
+      "raw": "［＃旺文社文庫版「たなばたに供えるらしい麦麺」］",
+      "body": "旺文社文庫版「たなばたに供えるらしい麦麺」"
+    },
+    {
+      "work_id": "000082_992",
+      "line": 175,
+      "kind": "CommandFullwidth",
+      "raw": "［＃旺文社文庫版「四郎兵衛もおとなしく答えた。」］",
+      "body": "旺文社文庫版「四郎兵衛もおとなしく答えた。」"
+    },
+    {
+      "work_id": "000082_992",
+      "line": 176,
+      "kind": "CommandFullwidth",
+      "raw": "［＃旺文社文庫版「小博奕を打っているやくざ野郎」］",
+      "body": "旺文社文庫版「小博奕を打っているやくざ野郎」"
     }
   ],
   "decode_failures": [],
   "representability": {
-    "typed_occurrences": 4566192,
-    "raw_preserved_occurrences": 39697,
+    "typed_occurrences": 4566267,
+    "raw_preserved_occurrences": 41510,
     "out_of_body_occurrences": 950,
     "unsupported_occurrences": 13920,
     "needs_research_occurrences": 0
   },
   "strict_errors": [
-    "1119 unallowlisted source markers"
+    "793 unallowlisted source markers"
   ],
   "inputs": {
     "matrix": "/home/bor/Projects/ab-validator/data/aozora-syntax-coverage.toml",

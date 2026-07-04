@@ -459,6 +459,13 @@ fn source_inventory_classifies_annotation_editor_notes() {
         "［＃本文中、伏せ字は「＊」で表した。］",
         "［＃底本２字伏字］",
         "［＃図が入るが省略。底本44ページ］",
+        "［＃ルビの「しふ」は初出では「しう」］",
+        "［＃「み」余分か、それとも「見」か？］",
+        "［＃「言」は、『谷崎潤一郎全集　第十九巻』（中央公論新社2015年6月10日初版発行）と『谷崎潤一郎全集　第十五卷』（中央公論社1968年1月25日発行）では「云」］",
+        "［＃創元社版では「破損」］",
+        "［＃岩波文庫の注は「翌三年十二月の誤り」とする］",
+        "［＃改行を挿入］",
+        "［＃原文まま］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -473,7 +480,34 @@ fn source_inventory_classifies_annotation_editor_notes() {
             .row_counts
             .get("annotation.chuuki")
             .map(|count| count.occurrences),
-        Some(16)
+        Some(23)
+    );
+}
+
+#[test]
+fn source_inventory_classifies_source_page_reference_notes() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = [
+        "［＃「一六八頁」は「安康天皇」の「市の邊の押齒の王」］",
+        "［＃「一三九頁」は「應神天皇」の「天の日矛」］",
+        "［＃「二七頁」は「伊耶那岐の命と伊耶那美の命」の「身禊」］",
+        "［＃欄外に「続千載集巻四、秋上、太政大臣。」の校注あり］",
+    ]
+    .join("\n");
+    let summary = inventory_document("fixture", &source, &patterns);
+
+    assert_eq!(
+        summary.unknown_examples,
+        [],
+        "known source page/cross-reference notes should not remain unknown"
+    );
+    assert_eq!(
+        summary
+            .row_counts
+            .get("source.page_reference")
+            .map(|count| count.occurrences),
+        Some(4)
     );
 }
 
@@ -821,6 +855,10 @@ fn source_inventory_classifies_chitsuki_alignment_corpus_variants() {
         "［＃２１字下げ、地より２字あきで］",
         "［＃地付き、地より３字アキ］",
         "［＃地付きで］",
+        "［＃こ地付き］",
+        "［＃以下の文章は地付き］",
+        "［＃この日付は行末に記す］",
+        "［＃この行はポイントを下げて、地より２字上げ］",
         "［＃「地付き］",
         "［＃右寄せ］",
         "［＃地より２字上がり］",
@@ -843,7 +881,7 @@ fn source_inventory_classifies_chitsuki_alignment_corpus_variants() {
             .row_counts
             .get("indentation.chitsuki")
             .map(|count| count.occurrences),
-        Some(13)
+        Some(17)
     );
 }
 
@@ -902,6 +940,8 @@ fn source_inventory_classifies_font_size_subscript_variants() {
         "［＃ここで１段階小さな文字終わり］",
         "［＃「（「ギヨオテ傳」）」は１段階小さな文字］",
         "［＃「Ａｎ」はそれぞれ縦中横、数字は上付き小書き］",
+        "［＃１回り大きな文字］",
+        "［＃２回り大きな文字］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -916,7 +956,7 @@ fn source_inventory_classifies_font_size_subscript_variants() {
             .row_counts
             .get("decoration.font_size")
             .map(|count| count.occurrences),
-        Some(13)
+        Some(15)
     );
 }
 
@@ -974,6 +1014,9 @@ fn source_inventory_classifies_glyph_variant_notes() {
         "［＃「印」は○付き文字］",
         "［＃「焔」の火へんを炎にしたうえで、へんとつくりをいれかえた字、焔の正字と同字］",
         "［＃「３」は「√」の記号の中に入っている］",
+        "［＃「※」は「たけかんむり＋隻」、17-8］",
+        "［＃「※」は「つつみがまえ（勹）」＋「夕」で、読みは「そうそう」67-6］",
+        "［＃「！？」は１マスに横並び］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -988,7 +1031,7 @@ fn source_inventory_classifies_glyph_variant_notes() {
             .row_counts
             .get("glyph.variant_note")
             .map(|count| count.occurrences),
-        Some(19)
+        Some(22)
     );
 }
 
@@ -1008,6 +1051,16 @@ fn source_inventory_classifies_source_note_labels() {
         "［＃スカーフ］",
         "［＃未完］",
         "［＃「（１）」は注釈番号］",
+        "［＃中條太郎］",
+        "［＃倉知誠夫、倉知貞の夫］",
+        "［＃英男の家庭教師］",
+        "［＃母］",
+        "［＃甥］",
+        "［＃ゴーリキー］",
+        "［＃トゥルビン家のありし日］",
+        "［＃並木道］",
+        "［＃昼食］",
+        "［＃国男］",
     ]
     .join("\n");
     let summary = inventory_document("fixture", &source, &patterns);
@@ -1022,7 +1075,7 @@ fn source_inventory_classifies_source_note_labels() {
             .row_counts
             .get("source.note_label")
             .map(|count| count.occurrences),
-        Some(11)
+        Some(21)
     );
 }
 
@@ -1092,6 +1145,35 @@ fn source_inventory_classifies_tail_positioning_and_caption_variants() {
 }
 
 #[test]
+fn source_inventory_classifies_dialogue_indent_and_figure_variants() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = [
+        "［＃ここから改行１字下げ、折り返して２字下げ］",
+        "［＃台詞はすべて、折り返し２行目から、天より１字下げ］",
+        "［＃本文の台詞部分は２行目から、その台詞の最後まで天より１字下げ。］",
+        "［＃数字は１字下げ、説明文は３字下げ］",
+        "［＃図形　□（四角）に内接する◆］",
+        "［＃図４、花の絵］",
+        "［＃図６入る］",
+    ]
+    .join("\n");
+    let summary = inventory_document("fixture", &source, &patterns);
+
+    assert_eq!(
+        summary.unknown_examples,
+        [],
+        "known dialogue-indent and figure source variants should not remain unknown"
+    );
+    for row_id in ["indentation.burasage", "figure.image_inline"] {
+        assert!(
+            summary.row_counts.contains_key(row_id),
+            "expected source inventory row {row_id}"
+        );
+    }
+}
+
+#[test]
 fn source_inventory_classifies_page_center_layout_variants() {
     let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
     let patterns = patterns_from_rows(matrix.rows());
@@ -1144,6 +1226,8 @@ fn source_inventory_classifies_layout_and_inline_style_corpus_variants() {
         "［＃左に傍線終わり］",
         "［＃（一）は縦中横］",
         "［＃「Ａｎ」はそれぞれ縦中横、数字は上付き小書き］",
+        "［＃「x2」、「y2」、「x2」はそれぞれ縦中横、すべての「2」は上付き小書き］",
+        "［＃（十一）は縦中横、「十一」は縦組み］",
         "［＃「田島校長＝０」は横書き］",
         "［＃「Ａ＋Ａ×Ｂ：Ｂ＋Ｂ×Ａ」は横書き］",
         "［＃横書き、「誰」はアクセント（∨）付き］",
@@ -1160,7 +1244,7 @@ fn source_inventory_classifies_layout_and_inline_style_corpus_variants() {
         ("indentation.burasage", 2),
         ("decoration.font_size", 4),
         ("decoration.bousen", 2),
-        ("layout.tcy", 2),
+        ("layout.tcy", 4),
         ("layout.yokogumi", 3),
     ] {
         assert_eq!(

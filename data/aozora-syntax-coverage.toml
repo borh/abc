@@ -896,7 +896,7 @@ category = "inline_annotation"
 feature_keys = ["editor_note"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html.rb"]
 source_examples = ["「base」の「annotation」の注記", "「text」の注記付き"]
-source_patterns = ['「[^」]+」の「[^」]+」の注記', '「[^」]+」の注記付き', '〔[^〕]+〕', '［＃[^］]*(底本|ママ|誤植|誤記|欠落|欠如|脱落|脱字|省略|伏字|伏せ字|註|注記)[^］]*］', '［＃ルビは「[^」]+」にかかる］', '［＃入力者注\([０-９0-9]+\)］', '［ルビの「[^」]+」は底本では「[^」]+」］']
+source_patterns = ['「[^」]+」の「[^」]+」の注記', '「[^」]+」の注記付き', '〔[^〕]+〕', '［＃[^］]*(底本|ママ|誤植|誤記|誤り|欠落|欠如|脱落|脱字|省略|伏字|伏せ字|註|注記|初出では|余分か|全集|創元社版|岩波文庫の注|改行を挿入|原文まま)[^］]*］', '［＃ルビは「[^」]+」にかかる］', '［＃入力者注\([０-９0-9]+\)］', '［ルビの「[^」]+」は底本では「[^」]+」］']
 ir_nodes = []
 aat_nodes = ["ruby"]
 tei_projection = "note or ruby"
@@ -1024,7 +1024,7 @@ category = "source_annotation"
 feature_keys = ["source_note", "source_label", "role_label"]
 reference_sources = ["docs/superpowers/specs/2026-07-04-parser-ir-level3-structure-delta.md", "docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
 source_examples = ["［＃劇場名］", "［＃長男］", "［＃探偵小説家、生理学者。本名は、林髞］"]
-source_patterns = ['［＃[^］]*(劇場名|ホテル名|お手伝いさん|夫人|スカーフ|小説家|生理学者|長男|次男|三男|長女|次女|三女|従弟|従妹|未完|注釈番号)[^］]*］']
+source_patterns = ['［＃[^］]*(劇場名|ホテル名|お手伝いさん|夫人|スカーフ|小説家|生理学者|長男|次男|三男|長女|次女|三女|従弟|従妹|家庭教師|父|母|甥|夫|ゴーリキー|トゥルビン家のありし日|並木道|昼食|国男|未完|注釈番号)[^］]*］', '［＃(中條|倉知)[^］]*］']
 ir_nodes = ["source-note"]
 aat_nodes = ["raw"]
 tei_projection = "note type=source-label or typed role/name markup after editorial enrichment"
@@ -1078,6 +1078,70 @@ notes = "No typed source-label AAT projection has been measured."
 works_with_feature = 0
 total_occurrences = 0
 detector_id = "source_note_label"
+coverage_basis = "not_run"
+sample_works = []
+
+[[syntax]]
+id = "source.page_reference"
+priority = 2
+category = "source_annotation"
+feature_keys = ["source_note", "page_reference", "cross_reference"]
+reference_sources = ["docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
+source_examples = ["［＃「一三九頁」は「應神天皇」の「天の日矛」］", "［＃欄外に「続千載集巻四、秋上、太政大臣。」の校注あり］"]
+source_patterns = ['［＃「[一二三四五六七八九〇０-９0-9]+頁」は「[^」]+」の「[^」]+」］', '［＃欄外に「[^」]+」の校注あり］']
+ir_nodes = ["source-note"]
+aat_nodes = ["raw"]
+tei_projection = "note type=source-reference or ref after editorial enrichment"
+plaintext_projection = "source_note_or_drop_from_body_base_text"
+comparison_projection = "source_note_or_drop_from_body_base_text"
+validation_properties = ["source_reference_preservation"]
+adapter_expectations = ["preserve source page/cross-reference note or surface text"]
+oracle_cases = []
+status = "not_modeled"
+status_reason = "Aozora corpus contains source notes that point to page/work locations. They are TEI-representable as notes or refs, but v1 only guarantees source-derived raw preservation."
+
+[syntax.representability]
+source_inventory_row = "source.page_reference"
+status = "raw_preserved"
+aat_nodes = ["raw"]
+raw_fallback = true
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "The source-authority gate records page/cross-reference notes as raw-preserved source-note material. Turning them into typed TEI refs is downstream editorial enrichment."
+
+[syntax.parsers.aozora2]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes page/cross-reference notes; parser-specific typed behavior remains to be measured."
+
+[syntax.parsers.aozora-rs]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes page/cross-reference notes; parser-specific typed behavior remains to be measured."
+
+[syntax.parsers.aozora2html]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes page/cross-reference notes; parser-specific typed behavior remains to be measured."
+
+[syntax.adapters.aozora2]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed page-reference AAT projection has been measured."
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed page-reference AAT projection has been measured."
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed page-reference AAT projection has been measured."
+
+[syntax.corpus_prevalence]
+works_with_feature = 0
+total_occurrences = 0
+detector_id = "source_page_reference"
 coverage_basis = "not_run"
 sample_works = []
 
@@ -1336,7 +1400,7 @@ category = "glyph"
 feature_keys = ["glyph_variant", "diacritic", "fraction", "script_glyph"]
 reference_sources = ["references/aozorabunko/rules/kijyunn.html", "P4suta/aozora-notation-spec@b60665fd50b596c967254f99b61f418495656fef:src/notation/script-glyphs.md", "P4suta/aozora-notation-spec@b60665fd50b596c967254f99b61f418495656fef:src/notation/fraction.md"]
 source_examples = ["［＃「e」はアクサン（´）付き］", "［＃「?!」は一字］", "［＃「1/4」は分数］"]
-source_patterns = ['［＃[^］]*(「[^」]+」|[A-Za-zΑ-ωα-ωηωεισοψ])[^］]*(上に「[^」]+」付き|下に「[^」]+」付き|「[^」]+」付き|アクサン|ウムラウト|帯気|曲アクセント|鋭アクセント|平息|ファイナルシグマ)[^］]*］', '［＃[^］]*(一字|指数|分数|覆面の英字|矢印が下向き|右横に縦棒あり|の中に「[^」]+」|右に「[^」]+」|小さい「[^」]+」|ローマ数字|○付き文字|正字と同字|記号の中に入っている)[^］]*］']
+source_patterns = ['［＃[^］]*(「[^」]+」|[A-Za-zΑ-ωα-ωηωεισοψ])[^］]*(上に「[^」]+」付き|下に「[^」]+」付き|「[^」]+」付き|アクサン|ウムラウト|帯気|曲アクセント|鋭アクセント|平息|ファイナルシグマ)[^］]*］', '［＃[^］]*(一字|指数|分数|覆面の英字|矢印が下向き|右横に縦棒あり|の中に「[^」]+」|右に「[^」]+」|小さい「[^」]+」|ローマ数字|○付き文字|正字と同字|記号の中に入っている|「※」は|１マスに横並び)[^］]*］']
 ir_nodes = []
 aat_nodes = ["raw"]
 tei_projection = "note type=glyph or g with charDecl"
@@ -2104,6 +2168,7 @@ source_patterns = [
   '［＃「[^\n]+」は[大中小]?[０-９0-9一二三四五六七八九十]+段階(小さ|大き)な文字］',
   '［＃「[^」]+」は上部に出ている］',
   '［＃ここで[大中小]?[０-９0-9一二三四五六七八九十]+段階(小さ|大き)な文字終わり］',
+  '［＃[０-９0-9一二三四五六七八九十]+回り大きな文字］',
   '［＃[大中小]文字］',
   '［＃大文字、太字］',
   '小さい活字',
@@ -2429,7 +2494,7 @@ category = "layout"
 feature_keys = ["chitsuki"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/chitsuki.rb"]
 source_examples = ["［＃ここから地付き］", "［＃ここから2字上げ］", "［＃この行地付き］"]
-source_patterns = ['［＃(ここから|この行)?(地付き|右寄せ|[０-９0-9]+字上げ)］', '［＃「地付き］', '［＃(ここから)?地から[０-９0-9]+字上げ］', '［＃地より[０-９0-9]+字(上げ|上がり)］', '［＃ここで(地付き|字上げ)終わり］', '［＃下げて、?地より[０-９0-9]+字あきで］', '［＃[０-９0-9]+字下げ、地より[０-９0-9]+字あきで］', '［＃地付き、地より[０-９0-9]+字(アキ|あき)］', '［＃地付きで］', '［＃下げて地付きで］', '［＃地寄せ］', '［＃この行は行末より[０-９0-9]+字上がり］', '［＃(「[^\n]+」は)?文末より[０-９0-9]+字上げ揃え］']
+source_patterns = ['［＃(ここから|この行)?(地付き|右寄せ|[０-９0-9]+字上げ)］', '［＃「地付き］', '［＃こ地付き］', '［＃(ここから)?地から[０-９0-9]+字上げ］', '［＃地より[０-９0-9]+字(上げ|上がり)］', '［＃ここで(地付き|字上げ)終わり］', '［＃下げて、?地より[０-９0-9]+字あきで］', '［＃[０-９0-9]+字下げ、地より[０-９0-9]+字あきで］', '［＃地付き、地より[０-９0-9]+字(アキ|あき)］', '［＃地付きで］', '［＃下げて地付きで］', '［＃地寄せ］', '［＃以下の文章は地付き］', '［＃この日付は行末に記す］', '［＃この行はポイントを下げて、地より[０-９0-9]+字上げ］', '［＃この行は行末より[０-９0-9]+字上がり］', '［＃(「[^\n]+」は)?文末より[０-９0-9]+字上げ揃え］']
 ir_nodes = ["Block::Layout"]
 aat_nodes = ["style"]
 tei_projection = "p rend=chitsuki"
@@ -2557,7 +2622,7 @@ category = "layout"
 feature_keys = ["jisage_block"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html.rb"]
 source_examples = ["［＃ここから折り返して2字下げ、4字下げ］"]
-source_patterns = ['［＃ここから折り返して[０-９0-9]+字下げ', '［＃ここから[０-９0-9]+字下げ、折り返して[０-９0-9]+字下げ］', '［＃(ここから)?(改行)?天付き、折り返して[０-９0-9]+字下げ］']
+source_patterns = ['［＃ここから折り返して[０-９0-9]+字下げ', '［＃ここから[０-９0-9]+字下げ、折り返して[０-９0-9]+字下げ］', '［＃ここから改行[０-９0-9]+字下げ、折り返して[０-９0-9]+字下げ］', '［＃(ここから)?(改行)?天付き、折り返して[０-９0-9]+字下げ］', '［＃台詞はすべて、折り返し[０-９0-9]+行目から、天より[０-９0-9]+字下げ］', '［＃本文の台詞部分は[０-９0-9]+行目から、その台詞の最後まで天より[０-９0-9]+字下げ。］', '［＃数字は[０-９0-9]+字下げ、説明文は[０-９0-9]+字下げ］']
 ir_nodes = ["Block::Layout"]
 aat_nodes = ["style"]
 tei_projection = "p rend=burasage"
@@ -2685,7 +2750,7 @@ category = "layout"
 feature_keys = ["tcy"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/dir.rb"]
 source_examples = ["「12」の縦中横", "［＃ここから縦中横］"]
-source_patterns = ['「[^」]+」(の|は)縦中横', '［＃(ここから)?縦中横］', '［＃(ここで)?縦中横終わり］', '［＃「[^」]+」は横一列］', '［＃「[^」]+」はそれぞれ縦中横[^］]*］', '［＃（[^\n]+）は縦中横］']
+source_patterns = ['「[^」]+」(の|は)縦中横', '［＃(ここから)?縦中横］', '［＃(ここで)?縦中横終わり］', '［＃「[^」]+」は横一列］', '［＃「[^」]+」はそれぞれ縦中横[^］]*］', '［＃「[^」]+」(?:、「[^」]+」)+はそれぞれ縦中横[^］]*］', '［＃（[^\n]+）は縦中横］', '［＃（[^\n]+）は縦中横、「[^」]+」は縦組み］']
 ir_nodes = ["Inline::Style", "Block::Style"]
 aat_nodes = ["tcy"]
 tei_projection = "hi rend=tcy"
@@ -3133,7 +3198,7 @@ category = "media"
 feature_keys = ["image"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/img.rb"]
 source_examples = ["alt（fig001.png、横600×縦400）入る"]
-source_patterns = ['[^（\n]*（fig[^）]*\.(png|jpg|jpeg|gif)[^）]*）入る']
+source_patterns = ['[^（\n]*（fig[^）]*\.(png|jpg|jpeg|gif)[^）]*）入る', '［＃図[０-９0-9]+(、[^］]+|入る)］', '［＃図形[^］]+］']
 ir_nodes = ["Block::Figure"]
 aat_nodes = ["figure"]
 tei_projection = "figure/graphic"

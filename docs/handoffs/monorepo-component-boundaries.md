@@ -70,6 +70,30 @@ The physical paths may become `monorepo/ab-validator/...` and `monorepo/abc/...`
 but evidence records should continue using logical workspace-relative component
 paths such as `ab-validator/docs/superpowers/reports/...`.
 
+## External Upstream Sources
+
+The upstream `aozorabunko/aozorabunko` repository is not a first-party monorepo
+component. Treat it as an external canonical source identified by source
+coordinates, not by a checked-in package path.
+
+Recommended source coordinate fields:
+
+| Field | Meaning |
+|---|---|
+| `source_component` | Stable external source label, e.g. `aozorabunko`. |
+| `remote_url` | Upstream repository URL, e.g. `https://github.com/aozorabunko/aozorabunko`. |
+| `git_ref` | Commit, tag, or branch name used as an input coordinate; committed artifacts should prefer commits. |
+| `tree_hash` / `blob_hash` | Git object identity when the producing tool can record it. |
+| `logical_path` | Source-relative path such as `aozorabunko/index_pages/list_person_all_extended_utf8.zip`. |
+| `content_hash` | Hash of the extracted ZIP, source text, or other consumed source bytes. |
+| `physical_path` | Optional local locator for reruns, such as `/home/bor/Dependencies/aozorabunko`; not durable identity. |
+
+Do not make the upstream Aozora repository a normal first-party monorepo
+package, and do not make the design-bundle gate depend on network access or a
+mutable local checkout. History probes and after-upstream audits may require a
+local mirror or worktree, but their outputs should record source coordinates
+and hashes so the query pack can be regenerated from explicit inputs.
+
 ## Rename ADR Requirements
 
 A future Soranoha rename is a separate high-blast-radius ADR. It must decide:
@@ -94,8 +118,13 @@ Generated query packs should include both:
 - physical path columns for local files; and
 - logical component/path columns for durable identity and citations.
 
+For external upstream sources, query packs should also include source-coordinate
+columns such as `source_component`, `remote_url`, `git_ref`, `logical_path`,
+and `content_hash`.
+
 That makes the query pack resilient to monorepo path changes and avoids
-treating a local database or physical checkout layout as the source of truth.
+treating a local database, local mirror path, or physical checkout layout as
+the source of truth.
 
 ## Next Work
 
@@ -105,5 +134,7 @@ treating a local database or physical checkout layout as the source of truth.
    logical path, temporary current locator, hash, component, and evidence class.
 3. Extend the first generated query-pack prototype with `logical_component` and
    `logical_path` fields.
-4. Only open a Soranoha rename ADR after the monorepo migration and parser-IR
+4. Extend upstream-history and source-snapshot outputs with external source
+   coordinate fields where they are missing.
+5. Only open a Soranoha rename ADR after the monorepo migration and parser-IR
    Level 3 evidence work stop moving.

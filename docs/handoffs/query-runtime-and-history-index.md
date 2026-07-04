@@ -8,9 +8,10 @@ Date: 2026-07-04
 XTDB v1 has been removed from ABC's runtime dependency surface. That cleanup
 does not decide ABC's query runtime.
 
-ABC should keep canonical truth in ordinary versioned files:
+ABC should keep canonical truth in ordinary versioned files and explicit source
+coordinates:
 
-- upstream Aozora git refs,
+- upstream Aozora git refs plus source path/content hashes,
 - source corpus snapshots,
 - artifact manifests,
 - parser-IR, TEI, plaintext, tokenization, and report artifacts,
@@ -34,6 +35,13 @@ Monorepo naming and component labels are tracked in
 `docs/handoffs/monorepo-component-boundaries.md`. The first query-pack schema
 should carry logical component/path columns in addition to physical file paths;
 it should not bake in a repo-wide `abc` to `soranoha` rename.
+
+The upstream `aozorabunko/aozorabunko` repository is an external canonical
+source, not a first-party monorepo component. Query packs should identify it by
+source coordinates such as `source_component = "aozorabunko"`, `remote_url`,
+`git_ref`, source-relative `logical_path`, Git object hashes when available,
+and consumed-byte `content_hash`. Local paths such as
+`/home/bor/Dependencies/aozorabunko` are rerun locators only.
 
 ## Problem
 
@@ -59,13 +67,17 @@ their hashes.
 - Do not force analytical token/fidelity facts, provenance graph traversal,
   and coordinate lookup through one storage engine.
 - Do not make the paper demo depend on a mutable local database.
+- Do not make the main design-bundle gate require network access or a mutable
+  upstream `aozorabunko` checkout.
 
 ## Current Evidence
 
 - `abc.tools.aozora-history-audit` already extracts upstream Aozora ZIP files
   at git refs, ingests previous/current snapshots, validates the current
   corpus, and emits JSON reports. Its `--scan-history` mode walks adjacent
-  commits that changed the configured CSV ZIP path.
+  commits that changed the configured CSV ZIP path. It currently takes a local
+  `--aozora-repo` path, which should remain a locator rather than a durable
+  identity field.
 - The paper demo already has a source corpus snapshot and per-artifact
   manifests under `paper/demo-*-real/`.
 - TEI generation already lives in the parser-IR publication-rendering layer:
@@ -82,6 +94,7 @@ their hashes.
 | Term | Meaning |
 |---|---|
 | Canonical file | A hash-addressed source, manifest, report, or publication artifact that remains valid without a database. |
+| External upstream source coordinate | Identity tuple for third-party inputs, e.g. source component, remote URL, git ref, source-relative path, Git object hash when available, and consumed-byte content hash. |
 | Query pack | A generated, disposable index over canonical files. It can be deleted and rebuilt. |
 | Logical component path | Stable workspace-relative path such as `abc/...` or `ab-validator/...`, independent of the current local checkout layout. |
 | Coordinate lookup | Queries by work ID, person ID, content hash, artifact ID, source snapshot hash, adapter/version, schema hash, or output kind. |
@@ -138,6 +151,9 @@ This probe is disposable. Artifacts live under `/tmp/abc-query-runtime-probe`.
 Fresh bounded history scan:
 
 ```sh
+# In a monorepo, pass an explicit local mirror/worktree path or equivalent
+# config. The path is a rerun locator; report/query-pack rows should store
+# upstream source coordinates and hashes.
 nix run .#aozora-history-audit -- \
   --aozora-repo /home/bor/Dependencies/aozorabunko \
   --scan-history \
@@ -216,11 +232,15 @@ manifest-first model while allowing multiple query engines where each fits.
    - `artifact_manifests`
    - later: `artifact_edges`, `parser_adapter_evidence`,
      `tokenization_regions`
-4. Use SQLite first for coordinate/history lookup if the first production-like
+4. Include upstream source-coordinate columns in history/source tables:
+   `source_component`, `remote_url`, `git_ref`, source-relative
+   `logical_path`, Git object hashes when available, `content_hash`, and
+   optional local `physical_path`.
+5. Use SQLite first for coordinate/history lookup if the first production-like
    query pack remains row-oriented and small.
-5. Use DuckDB/Parquet for analytical facts, especially tokenization,
+6. Use DuckDB/Parquet for analytical facts, especially tokenization,
    parser-fidelity, and corpus-scale report tables.
-6. Keep RDF/PROV-O as a publication/provenance view. Promote SPARQL only when
+7. Keep RDF/PROV-O as a publication/provenance view. Promote SPARQL only when
    graph traversal is a concrete workflow.
 
 ## Falsifiers
@@ -257,7 +277,8 @@ Before accepting a Query Runtime ADR:
    `aozora-history-audit --scan-history` report plus all current paper/demo
    manifests.
    Include `logical_component` and `logical_path` fields as described in
-   `docs/handoffs/monorepo-component-boundaries.md`.
+   `docs/handoffs/monorepo-component-boundaries.md`, plus upstream
+   source-coordinate fields for Aozora inputs.
 2. Compare SQLite and DuckDB on:
    - import time,
    - database size,

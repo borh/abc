@@ -405,6 +405,9 @@ fn scan_next_marker(txt: &str, offset: usize, line: usize) -> Option<RawMarker<'
     }
     if rest.starts_with('｜') {
         let base_start = offset + '｜'.len_utf8();
+        if starts_with_ruby_marker_legend_delimiter(txt, base_start) {
+            return None;
+        }
         if let Some((base_end, reading_start, reading_end, marker_end)) =
             explicit_ruby_bounds(txt, base_start)
         {
@@ -490,6 +493,10 @@ fn scan_next_marker(txt: &str, offset: usize, line: usize) -> Option<RawMarker<'
     }
 
     None
+}
+
+fn starts_with_ruby_marker_legend_delimiter(txt: &str, offset: usize) -> bool {
+    txt[offset..].starts_with(['：', '；'])
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -1257,6 +1264,20 @@ mod tests {
         assert_eq!(markers[5].raw, "《");
         assert_eq!(markers[6].kind, SourceMarkerKind::MalformedAccentNotation);
         assert_eq!(markers[6].raw, "〔");
+    }
+
+    #[test]
+    fn source_markers_ignore_ruby_marker_legend_bars() {
+        let markers = source_markers(
+            "｜：ルビの付く文字列の始まりを特定する記号\n｜；ルビの付く文字列の始まりを特定する記号",
+        );
+
+        assert!(
+            markers
+                .iter()
+                .all(|marker| marker.kind != SourceMarkerKind::MalformedRuby),
+            "legend delimiter bars are literal boilerplate, not malformed ruby markers: {markers:?}"
+        );
     }
 
     #[test]

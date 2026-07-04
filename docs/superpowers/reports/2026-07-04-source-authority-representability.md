@@ -34,7 +34,7 @@
   - source inventory row reference.frontref has occurrences but no representability table
   - source inventory row ruby.placement_directional has occurrences but no representability table
   - source inventory row warigaki.parenthetical has occurrences but no representability table
-  - 30950 unallowlisted source markers
+  - 21873 unallowlisted source markers
 
 ## Scope
 
@@ -44,9 +44,9 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 
 - works_scanned: 17894
 - works_failed: 0
-- markers_total: 4335091
-- unknown_markers_total: 44870
-- unallowlisted_unknown_markers_total: 30950
+- markers_total: 4326014
+- unknown_markers_total: 35793
+- unallowlisted_unknown_markers_total: 21873
 - allowlisted_unknown_markers_total: 13920
 
 ## Representability
@@ -105,11 +105,7 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 
 | work_id | line | kind | raw | body |
 |---|---:|---|---|---|
-| 000005_5 | 11 | MalformedRuby | ｜ | ｜ |
-| 000005_53194 | 11 | MalformedRuby | ｜ | ｜ |
 | 000005_53194 | 652 | CommandFullwidth | ［＃「……』」は底本では「……」」］ | 「……』」は底本では「……」」 |
-| 000006_1868 | 10 | MalformedRuby | ｜ | ｜ |
-| 000006_1869 | 10 | MalformedRuby | ｜ | ｜ |
 | 000006_1869 | 917 | CommandFullwidth | ［＃「引」は小書き右寄せ］ | 「引」は小書き右寄せ |
 | 000006_1869 | 993 | CommandFullwidth | ［＃「引」は小書き右寄せ］ | 「引」は小書き右寄せ |
 | 000006_1869 | 993 | CommandFullwidth | ［＃「引」は小書き右寄せ］ | 「引」は小書き右寄せ |
@@ -118,14 +114,8 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | 000006_1869 | 1558 | CommandFullwidth | ［＃「引」は小書き右寄せ］ | 「引」は小書き右寄せ |
 | 000006_1869 | 1559 | CommandFullwidth | ［＃「引」は小書き右寄せ］ | 「引」は小書き右寄せ |
 | 000006_1869 | 1559 | CommandFullwidth | ［＃「引」は小書き右寄せ］ | 「引」は小書き右寄せ |
-| 000006_3310 | 10 | MalformedRuby | ｜ | ｜ |
 | 000006_3310 | 316 | CommandFullwidth | ［＃「涕」はママ］ | 「涕」はママ |
-| 000006_382 | 10 | MalformedRuby | ｜ | ｜ |
-| 000006_383 | 10 | MalformedRuby | ｜ | ｜ |
-| 000006_384 | 10 | MalformedRuby | ｜ | ｜ |
 | 000006_4627 | 37 | CommandFullwidth | ［＃「齷齪」は底本では「齷齦」］ | 「齷齪」は底本では「齷齦」 |
-| 000006_46659 | 10 | MalformedRuby | ｜ | ｜ |
-| 000006_58819 | 10 | MalformedRuby | ｜ | ｜ |
 | 000008_1083 | 11 | CommandFullwidth | ［＃底本は「俵」を「依」と誤植］ | 底本は「俵」を「依」と誤植 |
 | 000008_1083 | 66 | CommandFullwidth | ［＃底本は改行天付き］ | 底本は改行天付き |
 | 000008_1083 | 92 | CommandFullwidth | ［＃底本は「俵」を「依」と誤植］ | 底本は「俵」を「依」と誤植 |
@@ -163,10 +153,6 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | 000008_1083 | 269 | CommandFullwidth | ［＃初出時「こないだみてえに折角かたまって………も」］ | 初出時「こないだみてえに折角かたまって………も」 |
 | 000008_1083 | 271 | CommandFullwidth | ［＃創元社版は「小船頭」］ | 創元社版は「小船頭」 |
 | 000008_1083 | 272 | CommandFullwidth | ［＃創元社版では「破損」］ | 創元社版では「破損」 |
-| 000008_18327 | 10 | MalformedRuby | ｜ | ｜ |
-| 000008_2688 | 10 | MalformedRuby | ｜ | ｜ |
-| 000008_407 | 10 | MalformedRuby | ｜ | ｜ |
-| 000008_47357 | 10 | MalformedRuby | ｜ | ｜ |
 | 000008_47357 | 68 | CommandFullwidth | ［＃「そのうち」は底本では「そのち」］ | 「そのうち」は底本では「そのち」 |
 | 000008_47357 | 237 | CommandFullwidth | ［＃「知らなかつた。」は底本では「知らなかた。」］ | 「知らなかつた。」は底本では「知らなかた。」 |
 | 000008_47357 | 367 | CommandFullwidth | ［＃「』」は、底本では「」」］ | 「』」は、底本では「」」 |
@@ -179,15 +165,12 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | 000008_47357 | 1221 | CommandFullwidth | ［＃「やがて、」は底本では「やがて　」］ | 「やがて、」は底本では「やがて　」 |
 | 000008_47357 | 1268 | CommandFullwidth | ［＃「あらうか？　さうして人々は」は底本では「あらうか？さうして人々は」］ | 「あらうか？　さうして人々は」は底本では「あらうか？さうして人々は」 |
 | 000008_47357 | 1376 | CommandFullwidth | ［＃「そして、」は底本では「そして。」］ | 「そして、」は底本では「そして。」 |
-| 000008_47361 | 10 | MalformedRuby | ｜ | ｜ |
 | 000008_47361 | 101 | CommandFullwidth | ［＃「無理矢理に」は底本では「無理失理に」］ | 「無理矢理に」は底本では「無理失理に」 |
 | 000008_47361 | 158 | CommandFullwidth | ［＃「ときから」は底本では「とから」］ | 「ときから」は底本では「とから」 |
 | 000008_47374 | 73 | CommandFullwidth | ［＃「奎吾に」は底本では「奎吉に」］ | 「奎吾に」は底本では「奎吉に」 |
 | 000008_47382 | 74 | CommandFullwidth | ［＃「視覺を」は底本では「視角を」］ | 「視覺を」は底本では「視角を」 |
 | 000008_47382 | 85 | CommandFullwidth | ［＃「表情の」は底本では「衣情の」］ | 「表情の」は底本では「衣情の」 |
 | 000008_47383 | 134 | CommandFullwidth | ［＃「持ち得ず」は底本では「待ち得ず」］ | 「持ち得ず」は底本では「待ち得ず」 |
-| 000008_47384 | 10 | MalformedRuby | ｜ | ｜ |
-| 000008_47386 | 10 | MalformedRuby | ｜ | ｜ |
 | 000008_47386 | 83 | CommandFullwidth | ［＃「讀み上げる」は底本では「讀め上げる」］ | 「讀み上げる」は底本では「讀め上げる」 |
 | 000008_47386 | 128 | CommandFullwidth | ［＃「石黒を」は底本では「石黒は」］ | 「石黒を」は底本では「石黒は」 |
 | 000008_47386 | 135 | CommandFullwidth | ［＃「時々」は底本では「時時」］ | 「時々」は底本では「時時」 |
@@ -205,6 +188,23 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | 000008_47386 | 1819 | CommandFullwidth | ［＃「シヤヴエル」は底本では「シヤヴェル」］ | 「シヤヴエル」は底本では「シヤヴェル」 |
 | 000008_47386 | 1869 | CommandFullwidth | ［＃「急ぎはじめた」は底本では「急きはじめた」］ | 「急ぎはじめた」は底本では「急きはじめた」 |
 | 000008_47386 | 2039 | CommandFullwidth | ［＃「佗しい」は底本では「侘しい」］ | 「佗しい」は底本では「侘しい」 |
+| 000008_47386 | 2093 | CommandFullwidth | ［＃「曖昧で」は底本では「曖眛で」］ | 「曖昧で」は底本では「曖眛で」 |
+| 000008_47386 | 2100 | CommandFullwidth | ［＃「あるし……。」は底本では「あるし……」］ | 「あるし……。」は底本では「あるし……」 |
+| 000008_47386 | 2133 | CommandFullwidth | ［＃「微笑までが」は底本では「徴笑までが」］ | 「微笑までが」は底本では「徴笑までが」 |
+| 000008_47386 | 2156 | CommandFullwidth | ［＃「帶びてゐる」は底本では「味びてゐる」］ | 「帶びてゐる」は底本では「味びてゐる」 |
+| 000008_47386 | 2215 | CommandFullwidth | ［＃「子供の」は底本では「小供の」］ | 「子供の」は底本では「小供の」 |
+| 000008_47386 | 2326 | CommandFullwidth | ［＃「出て來て、」は底本では「出て來て」］ | 「出て來て、」は底本では「出て來て」 |
+| 000008_58922 | 20 | MalformedRuby | ｜ | ｜ |
+| 000008_58922 | 20 | MalformedRuby | ｜ | ｜ |
+| 000009_226 | 314 | CommandFullwidth | ［＃本文終わり］ | 本文終わり |
+| 000009_42929 | 16 | CommandFullwidth | ［＃「」」は底本では欠落］ | 「」」は底本では欠落 |
+| 000009_42929 | 53 | CommandFullwidth | ［＃「」」は底本では欠落］ | 「」」は底本では欠落 |
+| 000009_42929 | 60 | CommandFullwidth | ［＃「に」は底本では「た」］ | 「に」は底本では「た」 |
+| 000009_42929 | 93 | CommandFullwidth | ［＃「「」は底本では一文後にある］ | 「「」は底本では一文後にある |
+| 000009_42929 | 114 | CommandFullwidth | ［＃空白は底本では「「」］ | 空白は底本では「「」 |
+| 000009_42929 | 114 | CommandFullwidth | ［＃「。」は底本では「」」］ | 「。」は底本では「」」 |
+| 000009_42929 | 174 | CommandFullwidth | ［＃「、」は底本では欠落］ | 「、」は底本では欠落 |
+| 000009_42929 | 306 | CommandFullwidth | ［＃「プ」は底本では「ブ」］ | 「プ」は底本では「ブ」 |
 
 ## Unknown Source Marker Classes
 
@@ -212,8 +212,8 @@ Showing 50 report rows of 14343 total classes. JSON carries 1000 top classes. tr
 
 | kind | raw | occurrences | unallowlisted | allowlisted | samples |
 |---|---|---:|---:|---:|---|
-| MalformedRuby | ｜ | 9658 | 9658 | 0 | 000005_5, 000005_53194, 000006_1868, 000006_1869, 000006_3310 |
 | AccentNotation | 〔〕 | 770 | 770 | 0 | 000020_745, 000026_50241, 000026_50245, 000026_50255, 000026_51891 |
+| MalformedRuby | ｜ | 581 | 581 | 0 | 000008_58922, 000009_43028, 000034_519, 000040_47288, 000067_395 |
 | CommandFullwidth | ［＃…］ | 465 | 465 | 0 | 000038_1408, 000042_1694, 000050_3581, 000051_1436, 000051_1452 |
 | CommandFullwidth | ［＃本文終わり］ | 243 | 243 | 0 | 000009_226, 000009_50711, 000009_50712, 000009_50713, 000009_50714 |
 | CommandFullwidth | ［＃（…）］ | 242 | 242 | 0 | 000026_50238, 000026_50242, 000026_50259, 000026_51893, 000026_55774 |

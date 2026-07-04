@@ -2,9 +2,9 @@
   "gate_status": "SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED",
   "works_scanned": 17894,
   "works_failed": 0,
-  "markers_total": 4335091,
-  "unknown_markers_total": 44870,
-  "unallowlisted_unknown_markers_total": 30950,
+  "markers_total": 4326014,
+  "unknown_markers_total": 35793,
+  "unallowlisted_unknown_markers_total": 21873,
   "allowlisted_unknown_markers_total": 13920,
   "rows": {
     "annotation.bouki": {
@@ -433,21 +433,6 @@
   "unknown_classes_truncated": true,
   "unknown_classes": [
     {
-      "kind": "MalformedRuby",
-      "raw": "｜",
-      "body": "｜",
-      "occurrences": 9658,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 9658,
-      "sample_works": [
-        "000005_5",
-        "000005_53194",
-        "000006_1868",
-        "000006_1869",
-        "000006_3310"
-      ]
-    },
-    {
       "kind": "AccentNotation",
       "raw": "〔〕",
       "body": "",
@@ -460,6 +445,21 @@
         "000026_50245",
         "000026_50255",
         "000026_51891"
+      ]
+    },
+    {
+      "kind": "MalformedRuby",
+      "raw": "｜",
+      "body": "｜",
+      "occurrences": 581,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 581,
+      "sample_works": [
+        "000008_58922",
+        "000009_43028",
+        "000034_519",
+        "000040_47288",
+        "000067_395"
       ]
     },
     {
@@ -12038,39 +12038,11 @@
   ],
   "unknown_examples": [
     {
-      "work_id": "000005_5",
-      "line": 11,
-      "kind": "MalformedRuby",
-      "raw": "｜",
-      "body": "｜"
-    },
-    {
-      "work_id": "000005_53194",
-      "line": 11,
-      "kind": "MalformedRuby",
-      "raw": "｜",
-      "body": "｜"
-    },
-    {
       "work_id": "000005_53194",
       "line": 652,
       "kind": "CommandFullwidth",
       "raw": "［＃「……』」は底本では「……」」］",
       "body": "「……』」は底本では「……」」"
-    },
-    {
-      "work_id": "000006_1868",
-      "line": 10,
-      "kind": "MalformedRuby",
-      "raw": "｜",
-      "body": "｜"
-    },
-    {
-      "work_id": "000006_1869",
-      "line": 10,
-      "kind": "MalformedRuby",
-      "raw": "｜",
-      "body": "｜"
     },
     {
       "work_id": "000006_1869",
@@ -12130,38 +12102,10 @@
     },
     {
       "work_id": "000006_3310",
-      "line": 10,
-      "kind": "MalformedRuby",
-      "raw": "｜",
-      "body": "｜"
-    },
-    {
-      "work_id": "000006_3310",
       "line": 316,
       "kind": "CommandFullwidth",
       "raw": "［＃「涕」はママ］",
       "body": "「涕」はママ"
-    },
-    {
-      "work_id": "000006_382",
-      "line": 10,
-      "kind": "MalformedRuby",
-      "raw": "｜",
-      "body": "｜"
-    },
-    {
-      "work_id": "000006_383",
-      "line": 10,
-      "kind": "MalformedRuby",
-      "raw": "｜",
-      "body": "｜"
-    },
-    {
-      "work_id": "000006_384",
-      "line": 10,
-      "kind": "MalformedRuby",
-      "raw": "｜",
-      "body": "｜"
     },
     {
       "work_id": "000006_4627",
@@ -12169,20 +12113,6 @@
       "kind": "CommandFullwidth",
       "raw": "［＃「齷齪」は底本では「齷齦」］",
       "body": "「齷齪」は底本では「齷齦」"
-    },
-    {
-      "work_id": "000006_46659",
-      "line": 10,
-      "kind": "MalformedRuby",
-      "raw": "｜",
-      "body": "｜"
-    },
-    {
-      "work_id": "000006_58819",
-      "line": 10,
-      "kind": "MalformedRuby",
-      "raw": "｜",
-      "body": "｜"
     },
     {
       "work_id": "000008_1083",
@@ -12444,34 +12374,6 @@
       "body": "創元社版では「破損」"
     },
     {
-      "work_id": "000008_18327",
-      "line": 10,
-      "kind": "MalformedRuby",
-      "raw": "｜",
-      "body": "｜"
-    },
-    {
-      "work_id": "000008_2688",
-      "line": 10,
-      "kind": "MalformedRuby",
-      "raw": "｜",
-      "body": "｜"
-    },
-    {
-      "work_id": "000008_407",
-      "line": 10,
-      "kind": "MalformedRuby",
-      "raw": "｜",
-      "body": "｜"
-    },
-    {
-      "work_id": "000008_47357",
-      "line": 10,
-      "kind": "MalformedRuby",
-      "raw": "｜",
-      "body": "｜"
-    },
-    {
       "work_id": "000008_47357",
       "line": 68,
       "kind": "CommandFullwidth",
@@ -12557,13 +12459,6 @@
     },
     {
       "work_id": "000008_47361",
-      "line": 10,
-      "kind": "MalformedRuby",
-      "raw": "｜",
-      "body": "｜"
-    },
-    {
-      "work_id": "000008_47361",
       "line": 101,
       "kind": "CommandFullwidth",
       "raw": "［＃「無理矢理に」は底本では「無理失理に」］",
@@ -12603,20 +12498,6 @@
       "kind": "CommandFullwidth",
       "raw": "［＃「持ち得ず」は底本では「待ち得ず」］",
       "body": "「持ち得ず」は底本では「待ち得ず」"
-    },
-    {
-      "work_id": "000008_47384",
-      "line": 10,
-      "kind": "MalformedRuby",
-      "raw": "｜",
-      "body": "｜"
-    },
-    {
-      "work_id": "000008_47386",
-      "line": 10,
-      "kind": "MalformedRuby",
-      "raw": "｜",
-      "body": "｜"
     },
     {
       "work_id": "000008_47386",
@@ -12736,6 +12617,125 @@
       "kind": "CommandFullwidth",
       "raw": "［＃「佗しい」は底本では「侘しい」］",
       "body": "「佗しい」は底本では「侘しい」"
+    },
+    {
+      "work_id": "000008_47386",
+      "line": 2093,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「曖昧で」は底本では「曖眛で」］",
+      "body": "「曖昧で」は底本では「曖眛で」"
+    },
+    {
+      "work_id": "000008_47386",
+      "line": 2100,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「あるし……。」は底本では「あるし……」］",
+      "body": "「あるし……。」は底本では「あるし……」"
+    },
+    {
+      "work_id": "000008_47386",
+      "line": 2133,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「微笑までが」は底本では「徴笑までが」］",
+      "body": "「微笑までが」は底本では「徴笑までが」"
+    },
+    {
+      "work_id": "000008_47386",
+      "line": 2156,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「帶びてゐる」は底本では「味びてゐる」］",
+      "body": "「帶びてゐる」は底本では「味びてゐる」"
+    },
+    {
+      "work_id": "000008_47386",
+      "line": 2215,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「子供の」は底本では「小供の」］",
+      "body": "「子供の」は底本では「小供の」"
+    },
+    {
+      "work_id": "000008_47386",
+      "line": 2326,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「出て來て、」は底本では「出て來て」］",
+      "body": "「出て來て、」は底本では「出て來て」"
+    },
+    {
+      "work_id": "000008_58922",
+      "line": 20,
+      "kind": "MalformedRuby",
+      "raw": "｜",
+      "body": "｜"
+    },
+    {
+      "work_id": "000008_58922",
+      "line": 20,
+      "kind": "MalformedRuby",
+      "raw": "｜",
+      "body": "｜"
+    },
+    {
+      "work_id": "000009_226",
+      "line": 314,
+      "kind": "CommandFullwidth",
+      "raw": "［＃本文終わり］",
+      "body": "本文終わり"
+    },
+    {
+      "work_id": "000009_42929",
+      "line": 16,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「」」は底本では欠落］",
+      "body": "「」」は底本では欠落"
+    },
+    {
+      "work_id": "000009_42929",
+      "line": 53,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「」」は底本では欠落］",
+      "body": "「」」は底本では欠落"
+    },
+    {
+      "work_id": "000009_42929",
+      "line": 60,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「に」は底本では「た」］",
+      "body": "「に」は底本では「た」"
+    },
+    {
+      "work_id": "000009_42929",
+      "line": 93,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「「」は底本では一文後にある］",
+      "body": "「「」は底本では一文後にある"
+    },
+    {
+      "work_id": "000009_42929",
+      "line": 114,
+      "kind": "CommandFullwidth",
+      "raw": "［＃空白は底本では「「」］",
+      "body": "空白は底本では「「」"
+    },
+    {
+      "work_id": "000009_42929",
+      "line": 114,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「。」は底本では「」」］",
+      "body": "「。」は底本では「」」"
+    },
+    {
+      "work_id": "000009_42929",
+      "line": 174,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「、」は底本では欠落］",
+      "body": "「、」は底本では欠落"
+    },
+    {
+      "work_id": "000009_42929",
+      "line": 306,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「プ」は底本では「ブ」］",
+      "body": "「プ」は底本では「ブ」"
     }
   ],
   "decode_failures": [],
@@ -12776,7 +12776,7 @@
     "source inventory row reference.frontref has occurrences but no representability table",
     "source inventory row ruby.placement_directional has occurrences but no representability table",
     "source inventory row warigaki.parenthetical has occurrences but no representability table",
-    "30950 unallowlisted source markers"
+    "21873 unallowlisted source markers"
   ],
   "inputs": {
     "matrix": "/home/bor/Projects/ab-validator/data/aozora-syntax-coverage.toml",

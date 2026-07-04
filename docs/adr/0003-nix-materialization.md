@@ -11,6 +11,16 @@ Still Draft. ABC exposes Nix apps and checks for the v0 toolchain, but the
 bounded-workset policy and cost-envelope acceptance criteria have not been
 measured and accepted for smoke-corpus materialization.
 
+2026-07-04 evidence note: `docs/handoffs/measurement-probes-2026-07-04.md`
+records a synthetic evaluator-only probe for 100/1,000/5,000 selected works.
+Per-work derivations, 100-work batches, and a single requested-set/CAS-style
+derivation all stayed under the 30-second / 2-GB envelope on a local
+workstation; only the per-work shape showed visible evaluator growth. This
+keeps bounded Nix materialization viable, but it does not satisfy this ADR's
+acceptance criteria because it does not measure real manifests, cold builds,
+incremental rebuilds, failure-sidecar attribution, source snapshot costs, or
+the recorded CI runner.
+
 ## Context
 
 Nix is attractive for deterministic builds, pinned toolchains, and cacheable

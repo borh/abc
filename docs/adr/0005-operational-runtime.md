@@ -11,6 +11,14 @@ Still Draft. The v0 file/CLI surface, run-summary schema, and local validation
 gate exist, but the broader operational runtime choices, full-corpus storage
 evaluation, and distributed publication policy remain undecided.
 
+2026-07-04 evidence note: `docs/handoffs/measurement-probes-2026-07-04.md`
+keeps bounded Nix materialization viable but does not decide storage packing,
+query runtime, API/service shape, retention policy, or multi-host publication.
+The split proposed in `docs/handoffs/bounded-workset-index-design.md` remains
+the recommended next ADR shape: separate reproducibility materialization from
+operational orchestration, storage/packing, query runtime, API/service, and
+retention/archive decisions.
+
 ## Context
 
 ABC may eventually use Rust parsers, JVM validation, RDF tooling, Nix, query

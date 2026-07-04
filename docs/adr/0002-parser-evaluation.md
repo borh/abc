@@ -12,6 +12,14 @@ owns the downstream publication consumer contract: parser-IR can be validated,
 materialized, and rendered to publication artifacts without executing parser
 candidates locally.
 
+2026-07-04 evidence note: ab-validator reports now show corpus-clean
+AAT-to-parser-IR conversion for the admitted aozora-rs and aozora2html
+adapter/version tuples and mapping hash. See
+`docs/handoffs/measurement-probes-2026-07-04.md`. That evidence supports the
+parser-IR boundary, but this ADR remains Draft until ABC decides how to cite
+ab-validator's measured parser-candidate reports as parser-selection evidence
+rather than only downstream conversion evidence.
+
 ## Context
 
 ABC should not assume the parser is greenfield. Candidate implementations

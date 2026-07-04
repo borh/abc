@@ -5,6 +5,11 @@
 > "the external incremental index should be the default design bias"; this report
 > treats that assertion as a hypothesis to be tested, not a closed decision.
 > Incubation is recommended before a direction is adopted.
+>
+> 2026-07-04 update: the first evaluator-only 100/1,000/5,000-work probe is
+> recorded in `docs/handoffs/measurement-probes-2026-07-04.md`. It keeps
+> Alternatives A, B, and C alive, but it does not satisfy the cold-build,
+> incremental rebuild, failure-sidecar, or CI-runner acceptance criteria.
 
 ## 1. Problem Statement
 
@@ -189,16 +194,19 @@ For each alternative, the single decisive throwaway test is:
 
 ## 4. Unknowns That Must Be Resolved Before Deciding
 
-None of the following are measured in the repository yet; they are the load-bearing
-unknowns:
+These remain load-bearing unknowns. Some now have directional evidence, but
+none have final acceptance measurements in ABC:
 
 - Real parser wall-clock time and peak RSS on representative subsets. ADR 0002
-  calls for these measurements but candidate reports do not exist yet —
+  calls for these measurements; measured reports now live in ab-validator, but
+  ABC still needs to decide how to cite them as parser-selection evidence —
   `docs/adr/0002-parser-evaluation.md:54-58`.
 - TEI render time and output size per work; tokenized output size per work —
   `docs/high-level-architecture-note.md:758-759`.
 - Nix evaluation time and peak memory for a one-derivation-per-work layout
-  versus a batch layout on 100/1,000/5,000-work subsets —
+  versus a batch/requested-set layout on 100/1,000/5,000-work subsets has a
+  first synthetic measurement, but still needs representative manifest,
+  cold-build, incremental-rebuild, and CI-runner measurements —
   `docs/adr/0003-nix-materialization.md:52-53`,
   `docs/high-level-architecture-note.md:774-776`.
 - Whether work manifests are cheap enough to pass into Nix at evaluation time
@@ -287,7 +295,9 @@ generic builder driven by an external manifest.
      `requested-set.json` and a pinned source snapshot, returning only the
      requested artifacts. The external index writes `requested-set.json`.
 3. Measure:
-   - `nix eval` wall time and peak evaluator memory for 100/1,000/5,000 works.
+   - `nix eval` wall time and peak evaluator memory for 100/1,000/5,000 works
+     against representative manifests. The 2026-07-04 synthetic baseline is
+     recorded in `docs/handoffs/measurement-probes-2026-07-04.md`.
    - Cold `nix build` time.
    - Incremental `nix build` time after changing exactly one input work.
    - Number of derivations evaluated.

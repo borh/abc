@@ -1,9 +1,16 @@
 # ABC-Owned Authoritative Aozora Marker Registry — Provisional Design
 
 > **PROVISIONAL — Hammock-Driven Design artifact. Do not implement until the
-> open questions in §7 are resolved and the prototype in §8 has been run.**
+> open questions in §7 are resolved and the registry file/drift policy is
+> accepted.**
 > This document frames decisions; it does not pick a final format, location,
 > or generator implementation.
+>
+> 2026-07-04 update: the 13-page draft-registry extraction probe is recorded in
+> `docs/handoffs/measurement-probes-2026-07-04.md`. It produced 614 marker
+> occurrences, 355 distinct raw markers, and 262 normalized templates. The
+> remaining decision is curation/governance and file/drift shape, not whether
+> the manual pages can be harvested.
 
 ## 1. Problem statement
 
@@ -147,10 +154,24 @@ annotation/*.html?) is **already done** — see evidence §1. Result: YES, every
 page has clean headings carrying sub-families; markers are mechanically
 extractable.
 
-**Next prototype (if proceeding):** generate a draft registry from all 13
-pages with `description = NEEDS_REVIEW`, then measure how many entries need
-human curation. If <20% need description authoring, the generate-then-curate
-model is maintainable.
+**Next prototype status:** completed as a measurement probe, not as production
+code. See `docs/handoffs/measurement-probes-2026-07-04.md`.
+
+Results:
+
+- 13 pages harvested from the live `https://www.aozora.gr.jp/annotation/`
+  index.
+- 614 marker occurrences.
+- 355 distinct raw marker strings.
+- 262 normalized marker templates.
+- 231 singleton normalized templates and 31 multi-example templates.
+
+The generate-then-curate model is mechanically maintainable. The open question
+is policy: whether descriptions may remain `NEEDS_REVIEW` in an initial
+registry. If descriptions must be complete before promotion, all 262 normalized
+entries need description review or authoring; if they can remain deferred, the
+first manual pass can focus on the 54 raw-marker heuristic bucket plus
+observed-only corpus constructs.
 
 **What would kill the approach now:** if the family/sub-family heading
 structure broke for >1 page (it didn't — verified all 13), or if parametric

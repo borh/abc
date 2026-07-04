@@ -120,28 +120,37 @@ still export ordinary manifest files.
 
 ## Bounded Workset Materialization
 
-`docs/handoffs/bounded-workset-index-design.md` remains provisional. The
-current options are:
+`docs/handoffs/bounded-workset-index-design.md` remains provisional. A first
+synthetic evaluator-only probe is recorded in
+`docs/handoffs/measurement-probes-2026-07-04.md`: per-work derivations, 100-work
+batches, and one requested-set/CAS-style derivation all stayed under the
+30-second / 2-GB envelope at 5,000 selected works on a local workstation, but
+only the per-work shape showed evaluator growth. The current options are:
 
 - on-demand derivation generation for selected work manifests,
 - batch-by-author/card/release with external subset selection,
 - content-addressed store plus manifest index without a Nix attrset matrix,
 - DVC-style stage graph with Nix only as a pinned runtime provider.
 
-Promotion trigger: disposable probes measure 100, 1,000, and 5,000 work
-subsets for evaluation wall time, peak memory, cold build time, incremental
-single-work rebuild behavior, derivation count, and per-work failure
-attribution. ADR 0003 can then be accepted or revised.
+Promotion trigger: the remaining disposable probe measures representative
+manifests, cold build time, incremental single-work rebuild behavior,
+derivation count, and per-work failure attribution on the recorded CI runner
+class. ADR 0003 can then be accepted or revised.
 
 ## Authoritative Aozora Marker Registry
 
 `docs/handoffs/authoritative-registry-design.md` remains provisional. The
-manual annotation pages appear mechanically parseable, but the next question is
-curation cost for descriptions and observed-only constructs.
+13-page extraction probe in
+`docs/handoffs/measurement-probes-2026-07-04.md` confirms that the manual pages
+are mechanically harvestable: 614 marker occurrences collapse to 355 raw marker
+strings and 262 normalized templates.
 
-Promotion trigger: a draft registry is generated from all 13 annotation pages
-with `description = NEEDS_REVIEW`, the remaining human-curation percentage is
-measured, and an ADR accepts the file format/location and drift gate.
+Promotion trigger: an ADR accepts the file format/location, drift gate,
+description-review policy, and observed-only corpus governance. If descriptions
+must be complete before promotion, all 262 normalized templates need review or
+authoring; if `NEEDS_REVIEW` is allowed initially, the first manual pass can
+focus on the 54 raw-marker heuristic bucket plus observed-only corpus
+constructs.
 
 ## Release Security
 

@@ -11,6 +11,7 @@ use ab_coverage::{
 };
 use anyhow::{Context, Result, bail};
 use clap::Parser;
+use rayon::prelude::*;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 
@@ -111,6 +112,18 @@ struct CompiledAllowRule {
     raw_pattern: Option<Regex>,
 }
 
+enum WorkInventoryResult {
+    Scanned {
+        work_id: String,
+        summary: ab_coverage::source_inventory::SourceInventorySummary,
+    },
+    Failed {
+        work_id: String,
+        indexed_path: String,
+        error: String,
+    },
+}
+
 fn main() -> Result<()> {
     let cli = Cli::parse();
     if let Some(jobs) = cli.jobs {
@@ -147,52 +160,53 @@ fn main() -> Result<()> {
     let mut unknown_work_ids = BTreeSet::new();
     let mut strict_errors = Vec::new();
 
-    for work_id in &work_ids {
-        let Some(indexed_path) = index.get(work_id) else {
-            output.works_failed += 1;
-            output.decode_failures.push(DecodeFailure {
-                work_id: work_id.clone(),
-                indexed_path: String::new(),
-                error: "work id missing from index".to_owned(),
-            });
-            continue;
-        };
-        let work = match read_source_work(&cli.corpus, work_id, indexed_path) {
-            Ok(work) => work,
-            Err(err) => {
+    let work_results = work_ids
+        .par_iter()
+        .map(|work_id| scan_work(work_id, &cli.corpus, &index, &patterns))
+        .collect::<Vec<_>>();
+
+    for result in work_results {
+        match result {
+            WorkInventoryResult::Scanned { work_id, summary } => {
+                output.works_scanned += 1;
+                output.markers_total += summary.markers_total;
+                for (row_id, count) in summary.row_counts {
+                    let row = output.rows.entry(row_id).or_default();
+                    row.occurrences += count.occurrences;
+                    row.works_with_marker += 1;
+                    if row.sample_works.len() < 5 && !row.sample_works.contains(&work_id) {
+                        row.sample_works.push(work_id.clone());
+                    }
+                }
+
+                for example in summary.unknown_examples {
+                    output.unknown_markers_total += 1;
+                    unknown_work_ids.insert(work_id.clone());
+                    if let Some(rule) = matching_allowlist_rule(&example, &allowlist) {
+                        output.allowlisted_unknown_markers_total += 1;
+                        observe_allowlisted_representability(
+                            &mut output.representability,
+                            &rule.rule,
+                        );
+                    } else {
+                        output.unallowlisted_unknown_markers_total += 1;
+                        if output.unknown_examples.len() < 100 {
+                            output.unknown_examples.push(example);
+                        }
+                    }
+                }
+            }
+            WorkInventoryResult::Failed {
+                work_id,
+                indexed_path,
+                error,
+            } => {
                 output.works_failed += 1;
                 output.decode_failures.push(DecodeFailure {
-                    work_id: work_id.clone(),
-                    indexed_path: indexed_path.clone(),
-                    error: format!("{err:#}"),
+                    work_id,
+                    indexed_path,
+                    error,
                 });
-                continue;
-            }
-        };
-
-        output.works_scanned += 1;
-        let summary = inventory_document(work_id, &work.decoded.text, &patterns);
-        output.markers_total += summary.markers_total;
-        for (row_id, count) in summary.row_counts {
-            let row = output.rows.entry(row_id).or_default();
-            row.occurrences += count.occurrences;
-            row.works_with_marker += 1;
-            if row.sample_works.len() < 5 && !row.sample_works.contains(work_id) {
-                row.sample_works.push(work_id.clone());
-            }
-        }
-
-        for example in summary.unknown_examples {
-            output.unknown_markers_total += 1;
-            unknown_work_ids.insert(work_id.clone());
-            if let Some(rule) = matching_allowlist_rule(&example, &allowlist) {
-                output.allowlisted_unknown_markers_total += 1;
-                observe_allowlisted_representability(&mut output.representability, &rule.rule);
-            } else {
-                output.unallowlisted_unknown_markers_total += 1;
-                if output.unknown_examples.len() < 100 {
-                    output.unknown_examples.push(example);
-                }
             }
         }
     }
@@ -226,6 +240,32 @@ fn main() -> Result<()> {
     }
 
     Ok(())
+}
+
+fn scan_work(
+    work_id: &str,
+    corpus: &Path,
+    index: &BTreeMap<String, String>,
+    patterns: &[ab_coverage::source_inventory::SourceInventoryPattern],
+) -> WorkInventoryResult {
+    let Some(indexed_path) = index.get(work_id) else {
+        return WorkInventoryResult::Failed {
+            work_id: work_id.to_owned(),
+            indexed_path: String::new(),
+            error: "work id missing from index".to_owned(),
+        };
+    };
+    match read_source_work(corpus, work_id, indexed_path) {
+        Ok(work) => WorkInventoryResult::Scanned {
+            work_id: work_id.to_owned(),
+            summary: inventory_document(work_id, &work.decoded.text, patterns),
+        },
+        Err(err) => WorkInventoryResult::Failed {
+            work_id: work_id.to_owned(),
+            indexed_path: indexed_path.clone(),
+            error: format!("{err:#}"),
+        },
+    }
 }
 
 fn load_work_ids(path: Option<&Path>, index: &BTreeMap<String, String>) -> Result<Vec<String>> {

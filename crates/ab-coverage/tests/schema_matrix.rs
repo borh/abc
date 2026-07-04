@@ -273,6 +273,54 @@ fn decoration_font_size_has_typed_representability() {
 }
 
 #[test]
+fn source_inventory_classifies_tcy_block_markers() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = [
+        "［＃縦中横］",
+        "［＃縦中横終わり］",
+        "［＃ここで縦中横終わり］",
+    ]
+    .join("\n");
+    let summary = inventory_document("fixture", &source, &patterns);
+
+    assert_eq!(
+        summary.unknown_examples,
+        [],
+        "known tcy block corpus variants should not remain unknown"
+    );
+    assert_eq!(
+        summary
+            .row_counts
+            .get("layout.tcy")
+            .map(|count| count.occurrences),
+        Some(3)
+    );
+}
+
+#[test]
+fn layout_tcy_has_typed_representability() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let row = matrix
+        .rows()
+        .iter()
+        .find(|row| row.id == "layout.tcy")
+        .expect("layout.tcy row");
+    let representability = row
+        .representability
+        .as_ref()
+        .expect("layout.tcy needs a reviewed representability cell");
+
+    assert_eq!(representability.status, RepresentabilityStatus::Typed);
+    assert!(representability.raw_fallback);
+    assert!(representability.aat_nodes.iter().any(|node| node == "tcy"));
+    assert!(
+        row.tei_projection.contains("tcy"),
+        "tcy source markers need a TEI projection preserving the tcy layout intent"
+    );
+}
+
+#[test]
 fn forbidden_combinations_rejected() {
     use std::collections::BTreeMap;
     let mut parsers = BTreeMap::new();

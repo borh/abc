@@ -3,8 +3,8 @@
   "works_scanned": 17894,
   "works_failed": 0,
   "markers_total": 4335091,
-  "unknown_markers_total": 45200,
-  "unallowlisted_unknown_markers_total": 31280,
+  "unknown_markers_total": 44870,
+  "unallowlisted_unknown_markers_total": 30950,
   "allowlisted_unknown_markers_total": 13920,
   "rows": {
     "annotation.bouki": {
@@ -356,8 +356,8 @@
       ]
     },
     "layout.tcy": {
-      "works_with_marker": 704,
-      "occurrences": 19416,
+      "works_with_marker": 715,
+      "occurrences": 19746,
       "sample_works": [
         "000014_728",
         "000020_2223",
@@ -429,7 +429,7 @@
       ]
     }
   },
-  "unknown_classes_total": 14345,
+  "unknown_classes_total": 14343,
   "unknown_classes_truncated": true,
   "unknown_classes": [
     {
@@ -570,36 +570,6 @@
       "unallowlisted_occurrences": 178,
       "sample_works": [
         "000321_2169"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃縦中横終わり］",
-      "body": "縦中横終わり",
-      "occurrences": 165,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 165,
-      "sample_works": [
-        "000061_377",
-        "000081_47029",
-        "000081_60685",
-        "000094_2525",
-        "000226_1150"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃縦中横］",
-      "body": "縦中横",
-      "occurrences": 165,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 165,
-      "sample_works": [
-        "000061_377",
-        "000081_47029",
-        "000081_60685",
-        "000094_2525",
-        "000226_1150"
       ]
     },
     {
@@ -12042,6 +12012,28 @@
         "000906_42396",
         "000906_42398"
       ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃「入」は底本では「人」］",
+      "body": "「入」は底本では「人」",
+      "occurrences": 2,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 2,
+      "sample_works": [
+        "000042_42264"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃「全」にばつ傍点］",
+      "body": "「全」にばつ傍点",
+      "occurrences": 2,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 2,
+      "sample_works": [
+        "001655_54264"
+      ]
     }
   ],
   "unknown_examples": [
@@ -12748,7 +12740,7 @@
   ],
   "decode_failures": [],
   "representability": {
-    "typed_occurrences": 3834230,
+    "typed_occurrences": 3853976,
     "raw_preserved_occurrences": 0,
     "out_of_body_occurrences": 0,
     "unsupported_occurrences": 13920,
@@ -12780,12 +12772,11 @@
     "source inventory row iteration.kunoji has occurrences but no representability table",
     "source inventory row kunten.kaeriten has occurrences but no representability table",
     "source inventory row kunten.okurigana has occurrences but no representability table",
-    "source inventory row layout.tcy has occurrences but no representability table",
     "source inventory row layout.yokogumi has occurrences but no representability table",
     "source inventory row reference.frontref has occurrences but no representability table",
     "source inventory row ruby.placement_directional has occurrences but no representability table",
     "source inventory row warigaki.parenthetical has occurrences but no representability table",
-    "31280 unallowlisted source markers"
+    "30950 unallowlisted source markers"
   ],
   "inputs": {
     "matrix": "/home/bor/Projects/ab-validator/data/aozora-syntax-coverage.toml",

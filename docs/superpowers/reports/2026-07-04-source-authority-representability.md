@@ -30,12 +30,11 @@
   - source inventory row iteration.kunoji has occurrences but no representability table
   - source inventory row kunten.kaeriten has occurrences but no representability table
   - source inventory row kunten.okurigana has occurrences but no representability table
-  - source inventory row layout.tcy has occurrences but no representability table
   - source inventory row layout.yokogumi has occurrences but no representability table
   - source inventory row reference.frontref has occurrences but no representability table
   - source inventory row ruby.placement_directional has occurrences but no representability table
   - source inventory row warigaki.parenthetical has occurrences but no representability table
-  - 31280 unallowlisted source markers
+  - 30950 unallowlisted source markers
 
 ## Scope
 
@@ -46,13 +45,13 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 - works_scanned: 17894
 - works_failed: 0
 - markers_total: 4335091
-- unknown_markers_total: 45200
-- unallowlisted_unknown_markers_total: 31280
+- unknown_markers_total: 44870
+- unallowlisted_unknown_markers_total: 30950
 - allowlisted_unknown_markers_total: 13920
 
 ## Representability
 
-- typed_occurrences: 3834230
+- typed_occurrences: 3853976
 - raw_preserved_occurrences: 0
 - out_of_body_occurrences: 0
 - unsupported_occurrences: 13920
@@ -94,7 +93,7 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | iteration.kunoji | 1125 | 10700 | 000006_58810, 000006_58819, 000008_47357, 000012_1092, 000012_24448 |
 | kunten.kaeriten | 488 | 28082 | 000006_1869, 000038_1408, 000042_1694, 000050_3581, 000051_1436 |
 | kunten.okurigana | 256 | 6562 | 000026_50238, 000026_50242, 000026_50259, 000026_51893, 000026_55774 |
-| layout.tcy | 704 | 19416 | 000014_728, 000020_2223, 000020_46404, 000023_55306, 000023_55324 |
+| layout.tcy | 715 | 19746 | 000014_728, 000020_2223, 000020_46404, 000023_55306, 000023_55324 |
 | layout.yokogumi | 403 | 3549 | 000019_59374, 000026_55717, 000026_55732, 000026_55738, 000034_519 |
 | reference.frontref | 682 | 3920 | 000006_46659, 000012_2585, 000012_4316, 000022_197, 000026_46578 |
 | ruby.basic | 14321 | 3608407 | 000005_5, 000005_53194, 000005_55215, 000005_55216, 000005_55217 |
@@ -209,7 +208,7 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 
 ## Unknown Source Marker Classes
 
-Showing 50 report rows of 14345 total classes. JSON carries 1000 top classes. truncated: true
+Showing 50 report rows of 14343 total classes. JSON carries 1000 top classes. truncated: true
 
 | kind | raw | occurrences | unallowlisted | allowlisted | samples |
 |---|---|---:|---:|---:|---|
@@ -223,8 +222,6 @@ Showing 50 report rows of 14345 total classes. JSON carries 1000 top classes. tr
 | CommandFullwidth | ［＃ここで太字終わり］ | 184 | 184 | 0 | 000026_55916, 000035_52380, 000072_54444, 000096_2117, 000113_4325 |
 | CommandFullwidth | ［＃ここから３字下げ、１行２０字組みで］ | 178 | 178 | 0 | 000321_2169 |
 | CommandFullwidth | ［＃ここで字下げ、２０字組み終わり］ | 178 | 178 | 0 | 000321_2169 |
-| CommandFullwidth | ［＃縦中横終わり］ | 165 | 165 | 0 | 000061_377, 000081_47029, 000081_60685, 000094_2525, 000226_1150 |
-| CommandFullwidth | ［＃縦中横］ | 165 | 165 | 0 | 000061_377, 000081_47029, 000081_60685, 000094_2525, 000226_1150 |
 | CommandFullwidth | ［＃天から２字下げ］ | 116 | 116 | 0 | 000051_3330, 000067_2843, 000074_3565, 000076_448, 000082_43090 |
 | CommandFullwidth | ［＃天から３字下げ］ | 89 | 89 | 0 | 000025_202, 000025_216, 000074_3565, 000081_1935, 000082_49529 |
 | CommandFullwidth | ［＃ここから２字下げ、２２字詰め］ | 73 | 73 | 0 | 000885_2560 |
@@ -263,6 +260,8 @@ Showing 50 report rows of 14345 total classes. JSON carries 1000 top classes. tr
 | CommandFullwidth | ［＃ここから２段組み］ | 17 | 17 | 0 | 000061_377, 000311_46235, 000885_2557, 000908_51734, 001021_50117 |
 | CommandFullwidth | ［＃入力者注(5)］ | 17 | 17 | 0 | 000137_733 |
 | CommandFullwidth | ［＃「ツァー」に×傍点］ | 16 | 16 | 0 | 000311_3149 |
+| CommandFullwidth | ［＃「革命」にばつ傍点］ | 16 | 16 | 0 | 001311_53951, 001422_50296, 001471_55570, 001618_54002, 001627_54064 |
+| CommandFullwidth | ［＃「独裁」に×傍点］ | 15 | 15 | 0 | 000311_3149 |
 
 ## Decode Failures
 

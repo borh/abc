@@ -2232,7 +2232,7 @@ category = "layout"
 feature_keys = ["tcy"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/dir.rb"]
 source_examples = ["「12」の縦中横", "［＃ここから縦中横］"]
-source_patterns = ['「[^」]+」(の|は)縦中横', '［＃ここから縦中横］']
+source_patterns = ['「[^」]+」(の|は)縦中横', '［＃(ここから)?縦中横］', '［＃(ここで)?縦中横終わり］']
 ir_nodes = ["Inline::Style", "Block::Style"]
 aat_nodes = ["tcy"]
 tei_projection = "hi rend=tcy"
@@ -2280,6 +2280,14 @@ total_occurrences = 542
 detector_id = "layout_tcy"
 coverage_basis = "full_corpus"
 sample_works = ["000150_46616", "000879_21", "002265_62126", "001506_52459", "002265_62462"]
+
+[syntax.representability]
+source_inventory_row = "layout.tcy"
+status = "typed"
+aat_nodes = ["tcy"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:126"
+notes = "AAT has a typed tcy inline container; parser-IR currently flattens to emphasis/text with divergence, while TEI projection preserves the layout intent as hi rend=tcy."
 
 [[syntax]]
 id = "warigaki.parenthetical"

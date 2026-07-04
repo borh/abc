@@ -439,11 +439,11 @@ sample_works = ["001025_50909", "000294_1858", "001670_55342", "001562_33224", "
 
 [syntax.representability]
 source_inventory_row = "indentation.basic"
-status = "needs_research"
-aat_nodes = []
+status = "typed"
+aat_nodes = ["jisage_block", "style"]
 raw_fallback = true
-evidence = "docs/superpowers/plans/2026-07-04-source-authority-representability-gate.md"
-notes = "Priority-1 indentation combines block and one-line forms; typed versus raw preservation needs source-inventory review."
+evidence = "docs/aat-contract.md:104"
+notes = "Priority-1 indentation is an aggregate over block indent, one-line indent, chitsuki, jizume, and burasage; AAT has typed jisage_block/style forms when adapters preserve them, with raw fallback for lossy adapters."
 
 [[syntax]]
 id = "warichu.basic"
@@ -1912,7 +1912,7 @@ category = "layout"
 feature_keys = ["jisage_block"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/jisage.rb", "references/parsers/aozora2html/lib/aozora2html/tag/multiline_jisage.rb"]
 source_examples = ["［＃ここから2字下げ］", "［＃ここで2字下げ終わり］"]
-source_patterns = ['［＃ここから[０-９0-9]+字下げ］', '［＃ここで([０-９0-9]+字|字)?下げ終わり］']
+source_patterns = ['［＃ここから[０-９0-9]+字下げ］', '［＃ここから[０-９0-9]+字下げ、１行[０-９0-9]+字組みで］', '［＃ここから[０-９0-9]+字下げ、[０-９0-9]+字詰め］', '［＃ここで([０-９0-9]+字|字)?下げ終わり］', '［＃ここで字下げ、[０-９0-9]+字組み終わり］']
 ir_nodes = ["Block::Layout"]
 aat_nodes = ["jisage_block"]
 tei_projection = "p rend=jisage"
@@ -1961,6 +1961,14 @@ detector_id = "indentation_jisage_block"
 coverage_basis = "full_corpus"
 sample_works = ["000294_1858", "001310_51839", "001025_50909", "001310_51838", "001310_51837"]
 
+[syntax.representability]
+source_inventory_row = "indentation.jisage_block"
+status = "typed"
+aat_nodes = ["jisage_block", "style"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:104"
+notes = "Block-scoped jisage maps to AAT jisage_block when preserved; style fallback covers parsers that flatten indentation but keep layout intent."
+
 [[syntax]]
 id = "indentation.jisage_oneline"
 priority = 2
@@ -1968,7 +1976,7 @@ category = "layout"
 feature_keys = ["jisage_line"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/oneline_jisage.rb"]
 source_examples = ["［＃この行2字下げ］"]
-source_patterns = ['［＃この行[０-９0-9]+字下げ］']
+source_patterns = ['［＃この行[０-９0-9]+字下げ］', '［＃天から[０-９0-9]+字下げ］']
 ir_nodes = ["Block::Layout"]
 aat_nodes = ["style"]
 tei_projection = "lb rend=jisage"
@@ -2016,6 +2024,14 @@ total_occurrences = 2
 detector_id = "indentation_jisage_oneline"
 coverage_basis = "full_corpus"
 sample_works = ["000284_2227"]
+
+[syntax.representability]
+source_inventory_row = "indentation.jisage_oneline"
+status = "typed"
+aat_nodes = ["style"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:124"
+notes = "One-line jisage can be preserved as a style/layout scope with TEI line-level rend metadata; raw fallback covers adapters that do not emit a dedicated line-indent node."
 
 [[syntax]]
 id = "indentation.chitsuki"
@@ -2073,6 +2089,14 @@ detector_id = "indentation_chitsuki"
 coverage_basis = "full_corpus"
 sample_works = ["001025_50909", "000740_49078", "000150_46615", "000150_46616", "000150_46617"]
 
+[syntax.representability]
+source_inventory_row = "indentation.chitsuki"
+status = "typed"
+aat_nodes = ["style"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:124"
+notes = "Chitsuki/right-alignment is representable as typed style/layout intent in AAT and TEI rend metadata when adapters preserve it."
+
 [[syntax]]
 id = "indentation.jizume"
 priority = 2
@@ -2080,7 +2104,7 @@ category = "layout"
 feature_keys = ["jisage_block"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html/tag/jizume.rb"]
 source_examples = ["［＃ここから字詰め4］", "［＃ここで字詰め終わり］"]
-source_patterns = ['［＃ここから[０-９0-9]+字詰め］', '［＃ここから字詰め[０-９0-9]+］', '［＃ここで字詰め終わり］']
+source_patterns = ['［＃ここから[０-９0-9]+字詰め］', '［＃ここから字詰め[０-９0-9]+］', '［＃ここから[０-９0-9]+字下げ、１行[０-９0-9]+字組みで］', '［＃ここから[０-９0-9]+字下げ、[０-９0-9]+字詰め］', '［＃ここで字詰め終わり］', '［＃ここで字下げ、[０-９0-9]+字組み終わり］']
 ir_nodes = ["Block::Layout"]
 aat_nodes = ["style"]
 tei_projection = "p rend=jizume"
@@ -2129,6 +2153,14 @@ detector_id = "indentation_jizume"
 coverage_basis = "full_corpus"
 sample_works = []
 
+[syntax.representability]
+source_inventory_row = "indentation.jizume"
+status = "typed"
+aat_nodes = ["style"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:124"
+notes = "Jizume/fixed-width layout is representable as typed style/layout intent with TEI rend metadata; raw fallback covers adapters that currently drop width details."
+
 [[syntax]]
 id = "indentation.burasage"
 priority = 2
@@ -2136,7 +2168,7 @@ category = "layout"
 feature_keys = ["jisage_block"]
 reference_sources = ["references/parsers/aozora2html/lib/aozora2html.rb"]
 source_examples = ["［＃ここから折り返して2字下げ、4字下げ］"]
-source_patterns = ['［＃ここから折り返して[０-９0-9]+字下げ', '［＃ここから[０-９0-9]+字下げ、折り返して[０-９0-9]+字下げ］', '［＃ここから改行天付き、折り返して[０-９0-9]+字下げ］']
+source_patterns = ['［＃ここから折り返して[０-９0-9]+字下げ', '［＃ここから[０-９0-9]+字下げ、折り返して[０-９0-9]+字下げ］', '［＃(ここから)?改行天付き、折り返して[０-９0-9]+字下げ］']
 ir_nodes = ["Block::Layout"]
 aat_nodes = ["style"]
 tei_projection = "p rend=burasage"
@@ -2184,6 +2216,14 @@ total_occurrences = 5233
 detector_id = "indentation_burasage"
 coverage_basis = "full_corpus"
 sample_works = ["001099_46996", "001097_43785", "001402_49940", "001848_59607", "001848_59608"]
+
+[syntax.representability]
+source_inventory_row = "indentation.burasage"
+status = "typed"
+aat_nodes = ["style"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:124"
+notes = "Hanging-indent layout is representable as typed style/layout intent with TEI rend metadata; raw fallback covers adapters that lose the magnitude pair."
 
 [[syntax]]
 id = "layout.yokogumi"

@@ -219,6 +219,75 @@ fn source_inventory_classifies_next_high_volume_command_variants() {
 }
 
 #[test]
+fn source_inventory_classifies_indentation_corpus_variants() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = [
+        "［＃改行天付き、折り返して１字下げ］",
+        "［＃ここから３字下げ、１行２０字組みで］",
+        "［＃ここで字下げ、２０字組み終わり］",
+        "［＃天から２字下げ］",
+        "［＃ここから２字下げ、２２字詰め］",
+    ]
+    .join("\n");
+    let summary = inventory_document("fixture", &source, &patterns);
+
+    assert_eq!(
+        summary.unknown_examples,
+        [],
+        "known indentation corpus variants should not remain unknown"
+    );
+    for row_id in [
+        "indentation.burasage",
+        "indentation.jisage_block",
+        "indentation.jisage_oneline",
+        "indentation.jizume",
+    ] {
+        assert!(
+            summary.row_counts.contains_key(row_id),
+            "expected source inventory row {row_id}"
+        );
+    }
+}
+
+#[test]
+fn indentation_rows_have_typed_representability() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    for (row_id, node, projection) in [
+        ("indentation.basic", "jisage_block", "rend"),
+        ("indentation.jisage_block", "jisage_block", "jisage"),
+        ("indentation.jisage_oneline", "style", "jisage"),
+        ("indentation.chitsuki", "style", "chitsuki"),
+        ("indentation.jizume", "style", "jizume"),
+        ("indentation.burasage", "style", "burasage"),
+    ] {
+        let row = matrix
+            .rows()
+            .iter()
+            .find(|row| row.id == row_id)
+            .unwrap_or_else(|| panic!("{row_id} row"));
+        let representability = row
+            .representability
+            .as_ref()
+            .unwrap_or_else(|| panic!("{row_id} needs a reviewed representability cell"));
+
+        assert_eq!(representability.status, RepresentabilityStatus::Typed);
+        assert!(representability.raw_fallback);
+        assert!(
+            representability
+                .aat_nodes
+                .iter()
+                .any(|candidate| candidate == node),
+            "{row_id} should preserve {node} when adapters/parser expose it"
+        );
+        assert!(
+            row.tei_projection.contains(projection),
+            "{row_id} needs a TEI projection preserving {projection}"
+        );
+    }
+}
+
+#[test]
 fn source_inventory_classifies_font_size_subscript_variants() {
     let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
     let patterns = patterns_from_rows(matrix.rows());

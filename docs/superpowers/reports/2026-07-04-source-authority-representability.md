@@ -19,12 +19,6 @@
   - source inventory row gaiji.unicode_codepoint has occurrences but no representability table
   - source inventory row heading.dogyo has occurrences but no representability table
   - source inventory row heading.mado has occurrences but no representability table
-  - source inventory row indentation.basic has representability.status = needs_research
-  - source inventory row indentation.burasage has occurrences but no representability table
-  - source inventory row indentation.chitsuki has occurrences but no representability table
-  - source inventory row indentation.jisage_block has occurrences but no representability table
-  - source inventory row indentation.jisage_oneline has occurrences but no representability table
-  - source inventory row indentation.jizume has occurrences but no representability table
   - source inventory row iteration.kunoji has occurrences but no representability table
   - source inventory row kunten.kaeriten has occurrences but no representability table
   - source inventory row kunten.okurigana has occurrences but no representability table
@@ -32,7 +26,7 @@
   - source inventory row reference.frontref has occurrences but no representability table
   - source inventory row ruby.placement_directional has occurrences but no representability table
   - source inventory row warigaki.parenthetical has occurrences but no representability table
-  - 20643 unallowlisted source markers
+  - 19687 unallowlisted source markers
 
 ## Scope
 
@@ -43,17 +37,17 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 - works_scanned: 17894
 - works_failed: 0
 - markers_total: 4325244
-- unknown_markers_total: 34563
-- unallowlisted_unknown_markers_total: 20643
+- unknown_markers_total: 33607
+- unallowlisted_unknown_markers_total: 19687
 - allowlisted_unknown_markers_total: 13920
 
 ## Representability
 
-- typed_occurrences: 3859525
+- typed_occurrences: 4120173
 - raw_preserved_occurrences: 0
 - out_of_body_occurrences: 0
 - unsupported_occurrences: 13920
-- needs_research_occurrences: 291889
+- needs_research_occurrences: 157495
 
 ## Rows
 
@@ -83,11 +77,11 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 | heading.dogyo | 142 | 11839 | 000011_899, 000058_59060, 000067_1790, 000067_4869, 000081_1058 |
 | heading.mado | 6 | 1680 | 000255_47342, 000296_1864, 000961_4820, 001402_49946, 001404_49966 |
 | indentation.basic | 8169 | 134394 | 000005_5, 000005_53194, 000006_1868, 000006_1869, 000006_3310 |
-| indentation.burasage | 1200 | 13048 | 000006_3311, 000006_58819, 000008_47386, 000009_55881, 000019_4376 |
+| indentation.burasage | 1203 | 13236 | 000006_3311, 000006_58819, 000008_47386, 000009_55881, 000019_4376 |
 | indentation.chitsuki | 6171 | 20073 | 000006_1868, 000006_1869, 000006_3310, 000006_3311, 000006_382 |
-| indentation.jisage_block | 4599 | 88936 | 000005_5, 000005_53194, 000006_1868, 000006_1869, 000006_3310 |
-| indentation.jisage_oneline | 1 | 2 | 000284_2227 |
-| indentation.jizume | 231 | 2747 | 000026_55781, 000034_55507, 000040_47289, 000050_48400, 000055_56499 |
+| indentation.jisage_block | 4599 | 89428 | 000005_5, 000005_53194, 000006_1868, 000006_1869, 000006_3310 |
+| indentation.jisage_oneline | 121 | 278 | 000025_202, 000025_216, 000035_235, 000035_266, 000038_42207 |
+| indentation.jizume | 242 | 3239 | 000026_55781, 000034_55507, 000040_47289, 000050_48400, 000055_56499 |
 | iteration.kunoji | 1125 | 10700 | 000006_58810, 000006_58819, 000008_47357, 000012_1092, 000012_24448 |
 | kunten.kaeriten | 488 | 28082 | 000006_1869, 000038_1408, 000042_1694, 000050_3581, 000051_1436 |
 | kunten.okurigana | 256 | 6562 | 000026_50238, 000026_50242, 000026_50259, 000026_51893, 000026_55774 |
@@ -206,7 +200,7 @@ This is a source-markup authority gate: every reached explicit Aozora Bunko mark
 
 ## Unknown Source Marker Classes
 
-Showing 50 report rows of 14337 total classes. JSON carries 1000 top classes. truncated: true
+Showing 50 report rows of 14307 total classes. JSON carries 1000 top classes. truncated: true
 
 | kind | raw | occurrences | unallowlisted | allowlisted | samples |
 |---|---|---:|---:|---:|---|
@@ -214,19 +208,12 @@ Showing 50 report rows of 14337 total classes. JSON carries 1000 top classes. tr
 | CommandFullwidth | ［＃…］ | 465 | 465 | 0 | 000038_1408, 000042_1694, 000050_3581, 000051_1436, 000051_1452 |
 | CommandFullwidth | ［＃本文終わり］ | 243 | 243 | 0 | 000009_226, 000009_50711, 000009_50712, 000009_50713, 000009_50714 |
 | CommandFullwidth | ［＃（…）］ | 242 | 242 | 0 | 000026_50238, 000026_50242, 000026_50259, 000026_51893, 000026_55774 |
-| CommandFullwidth | ［＃改行天付き、折り返して１字下げ］ | 187 | 187 | 0 | 000272_1805, 001154_51829, 001726_56089 |
-| CommandFullwidth | ［＃ここから３字下げ、１行２０字組みで］ | 178 | 178 | 0 | 000321_2169 |
-| CommandFullwidth | ［＃ここで字下げ、２０字組み終わり］ | 178 | 178 | 0 | 000321_2169 |
-| CommandFullwidth | ［＃天から２字下げ］ | 116 | 116 | 0 | 000051_3330, 000067_2843, 000074_3565, 000076_448, 000082_43090 |
-| CommandFullwidth | ［＃天から３字下げ］ | 89 | 89 | 0 | 000025_202, 000025_216, 000074_3565, 000081_1935, 000082_49529 |
-| CommandFullwidth | ［＃ここから２字下げ、２２字詰め］ | 73 | 73 | 0 | 000885_2560 |
 | MalformedAccentNotation | 〔 | 56 | 56 | 0 | 000026_219, 000034_55507, 000081_4416, 000081_50764, 000091_522 |
 | CommandFullwidth | ［＃「、」は底本では「。」］ | 48 | 48 | 0 | 000019_42380, 000019_42382, 000019_42383, 000019_42384, 000019_42385 |
 | CommandFullwidth | ［＃ここから２字下げ、小さい活字］ | 48 | 48 | 0 | 000051_4620 |
 | CommandFullwidth | ［＃ここで字下げ終わり、小さい活字も終わり］ | 48 | 48 | 0 | 000051_4620 |
 | CommandFullwidth | ［＃ここで地付き終わり］ | 42 | 42 | 0 | 000067_859, 000072_54444, 000082_43042, 000082_43050, 000106_59473 |
 | CommandFullwidth | ［＃「ん」は小書き］ | 40 | 40 | 0 | 000081_1940, 000081_4415, 000081_4416, 000081_4424, 000081_4441 |
-| CommandFullwidth | ［＃天から４字下げ］ | 37 | 37 | 0 | 000050_45755, 000051_47086, 000081_46600, 000081_48221, 000083_1090 |
 | CommandFullwidth | ［＃ルビは「悪魔の尿溜」にかかる］ | 34 | 34 | 0 | 000125_1320 |
 | CommandFullwidth | ［＃ここで字上げ終わり］ | 33 | 33 | 0 | 000035_1586, 000081_1935, 000082_49526, 000083_1090, 000096_2093 |
 | CommandFullwidth | ［＃ルビは「天母生上の雲湖」にかかる］ | 32 | 32 | 0 | 000125_665 |
@@ -240,7 +227,6 @@ Showing 50 report rows of 14337 total classes. JSON carries 1000 top classes. tr
 | CommandFullwidth | ［＃白三角傍点終わり］ | 21 | 21 | 0 | 000034_56908 |
 | CommandFullwidth | ［＃白三角傍点］ | 21 | 21 | 0 | 000034_56908 |
 | CommandFullwidth | ［＃ここから２字下げ、ゴシック体］ | 20 | 20 | 0 | 000035_307 |
-| CommandFullwidth | ［＃ここから２字下げ、２０字詰め］ | 20 | 20 | 0 | 000885_2560 |
 | CommandFullwidth | ［＃ゴシック体］ | 20 | 20 | 0 | 000096_1115, 000096_2100, 000311_2018, 000311_2023, 000311_2024 |
 | CommandFullwidth | ［＃二重傍線終わり］ | 20 | 20 | 0 | 000279_1704, 001257_60357, 001509_51405 |
 | CommandFullwidth | ［＃「〃」は横組み］ | 18 | 18 | 0 | 000281_3595, 000281_3598 |
@@ -248,7 +234,6 @@ Showing 50 report rows of 14337 total classes. JSON carries 1000 top classes. tr
 | CommandFullwidth | ［＃大文字］ | 18 | 18 | 0 | 000096_2100 |
 | CommandFullwidth | ［＃「。」は底本では欠落］ | 17 | 17 | 0 | 000009_43523, 000019_42382, 000294_1858, 001048_45381, 001090_42307 |
 | CommandFullwidth | ［＃「？！」は横一列］ | 17 | 17 | 0 | 000125_665 |
-| CommandFullwidth | ［＃ここから１字下げ、２３字詰め］ | 17 | 17 | 0 | 000885_2560 |
 | CommandFullwidth | ［＃ここから２段組み］ | 17 | 17 | 0 | 000061_377, 000311_46235, 000885_2557, 000908_51734, 001021_50117 |
 | CommandFullwidth | ［＃入力者注(5)］ | 17 | 17 | 0 | 000137_733 |
 | CommandFullwidth | ［＃「ツァー」に×傍点］ | 16 | 16 | 0 | 000311_3149 |
@@ -260,6 +245,15 @@ Showing 50 report rows of 14337 total classes. JSON carries 1000 top classes. tr
 | CommandFullwidth | ［＃「〃　〃」は横組み］ | 14 | 14 | 0 | 000281_3598 |
 | CommandFullwidth | ［＃「な」は小書き］ | 14 | 14 | 0 | 000081_4424 |
 | CommandFullwidth | ［＃「十三人」に白三角傍点］ | 14 | 14 | 0 | 000183_52746 |
+| CommandFullwidth | ［＃「詫び」は底本では「詑び」と誤植］ | 14 | 14 | 0 | 000111_1479, 000111_565, 000111_566 |
+| CommandFullwidth | ［＃ここで段組み終わり］ | 14 | 14 | 0 | 000061_377, 000096_2100, 000311_46235, 000885_2557, 000908_51734 |
+| CommandFullwidth | ［＃「「」は底本では欠落］ | 13 | 13 | 0 | 000019_42380, 000019_42385, 000022_4873, 001090_42307, 001123_42940 |
+| CommandFullwidth | ［＃「ガ」は小書き］ | 13 | 13 | 0 | 000311_2013, 000311_3141, 000311_3155, 000311_3845, 000311_3850 |
+| CommandFullwidth | ［＃「天皇」に×傍点］ | 13 | 13 | 0 | 000311_2850, 000311_3149 |
+| CommandFullwidth | ［＃中文字］ | 13 | 13 | 0 | 000096_2100 |
+| CommandFullwidth | ［＃地より１字上げ］ | 13 | 13 | 0 | 000035_1578, 000216_2518, 000284_2609, 000286_1758, 000885_2165 |
+| CommandFullwidth | ［＃大文字、太字］ | 13 | 13 | 0 | 000096_2100 |
+| CommandFullwidth | ［＃mは上ドット付き］ | 12 | 12 | 0 | 001096_43672 |
 
 ## Decode Failures
 

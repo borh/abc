@@ -3,8 +3,8 @@
   "works_scanned": 17894,
   "works_failed": 0,
   "markers_total": 4325244,
-  "unknown_markers_total": 34563,
-  "unallowlisted_unknown_markers_total": 20643,
+  "unknown_markers_total": 33607,
+  "unallowlisted_unknown_markers_total": 19687,
   "allowlisted_unknown_markers_total": 13920,
   "rows": {
     "annotation.bouki": {
@@ -272,8 +272,8 @@
       ]
     },
     "indentation.burasage": {
-      "works_with_marker": 1200,
-      "occurrences": 13048,
+      "works_with_marker": 1203,
+      "occurrences": 13236,
       "sample_works": [
         "000006_3311",
         "000006_58819",
@@ -295,7 +295,7 @@
     },
     "indentation.jisage_block": {
       "works_with_marker": 4599,
-      "occurrences": 88936,
+      "occurrences": 89428,
       "sample_works": [
         "000005_5",
         "000005_53194",
@@ -305,15 +305,19 @@
       ]
     },
     "indentation.jisage_oneline": {
-      "works_with_marker": 1,
-      "occurrences": 2,
+      "works_with_marker": 121,
+      "occurrences": 278,
       "sample_works": [
-        "000284_2227"
+        "000025_202",
+        "000025_216",
+        "000035_235",
+        "000035_266",
+        "000038_42207"
       ]
     },
     "indentation.jizume": {
-      "works_with_marker": 231,
-      "occurrences": 2747,
+      "works_with_marker": 242,
+      "occurrences": 3239,
       "sample_works": [
         "000026_55781",
         "000034_55507",
@@ -429,7 +433,7 @@
       ]
     }
   },
-  "unknown_classes_total": 14337,
+  "unknown_classes_total": 14307,
   "unknown_classes_truncated": true,
   "unknown_classes": [
     {
@@ -490,82 +494,6 @@
         "000026_50259",
         "000026_51893",
         "000026_55774"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃改行天付き、折り返して１字下げ］",
-      "body": "改行天付き、折り返して１字下げ",
-      "occurrences": 187,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 187,
-      "sample_works": [
-        "000272_1805",
-        "001154_51829",
-        "001726_56089"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから３字下げ、１行２０字組みで］",
-      "body": "ここから３字下げ、１行２０字組みで",
-      "occurrences": 178,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 178,
-      "sample_works": [
-        "000321_2169"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここで字下げ、２０字組み終わり］",
-      "body": "ここで字下げ、２０字組み終わり",
-      "occurrences": 178,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 178,
-      "sample_works": [
-        "000321_2169"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃天から２字下げ］",
-      "body": "天から２字下げ",
-      "occurrences": 116,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 116,
-      "sample_works": [
-        "000051_3330",
-        "000067_2843",
-        "000074_3565",
-        "000076_448",
-        "000082_43090"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃天から３字下げ］",
-      "body": "天から３字下げ",
-      "occurrences": 89,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 89,
-      "sample_works": [
-        "000025_202",
-        "000025_216",
-        "000074_3565",
-        "000081_1935",
-        "000082_49529"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから２字下げ、２２字詰め］",
-      "body": "ここから２字下げ、２２字詰め",
-      "occurrences": 73,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 73,
-      "sample_works": [
-        "000885_2560"
       ]
     },
     {
@@ -648,21 +576,6 @@
         "000081_4416",
         "000081_4424",
         "000081_4441"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃天から４字下げ］",
-      "body": "天から４字下げ",
-      "occurrences": 37,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 37,
-      "sample_works": [
-        "000050_45755",
-        "000051_47086",
-        "000081_46600",
-        "000081_48221",
-        "000083_1090"
       ]
     },
     {
@@ -834,17 +747,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃ここから２字下げ、２０字詰め］",
-      "body": "ここから２字下げ、２０字詰め",
-      "occurrences": 20,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 20,
-      "sample_works": [
-        "000885_2560"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃ゴシック体］",
       "body": "ゴシック体",
       "occurrences": 20,
@@ -931,17 +833,6 @@
       "unallowlisted_occurrences": 17,
       "sample_works": [
         "000125_665"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから１字下げ、２３字詰め］",
-      "body": "ここから１字下げ、２３字詰め",
-      "occurrences": 17,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 17,
-      "sample_works": [
-        "000885_2560"
       ]
     },
     {
@@ -1091,17 +982,6 @@
         "000111_1479",
         "000111_565",
         "000111_566"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから８字下げ、１８字詰め］",
-      "body": "ここから８字下げ、１８字詰め",
-      "occurrences": 14,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 14,
-      "sample_works": [
-        "000305_42171"
       ]
     },
     {
@@ -2012,21 +1892,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃天から１字下げ］",
-      "body": "天から１字下げ",
-      "occurrences": 7,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 7,
-      "sample_works": [
-        "000038_42207",
-        "000081_1935",
-        "000111_589",
-        "000125_1317",
-        "000933_45499"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃底本では「西ケ輪」］",
       "body": "底本では「西ケ輪」",
       "occurrences": 7,
@@ -2390,21 +2255,6 @@
         "000023_1698",
         "000160_1255",
         "000885_2559"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃天から５字下げ］",
-      "body": "天から５字下げ",
-      "occurrences": 6,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 6,
-      "sample_works": [
-        "000081_43737",
-        "000207_372",
-        "000262_48074",
-        "000304_46409",
-        "001197_45280"
       ]
     },
     {
@@ -2888,19 +2738,6 @@
       "unallowlisted_occurrences": 5,
       "sample_works": [
         "000038_1410"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃天から７字下げ］",
-      "body": "天から７字下げ",
-      "occurrences": 5,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 5,
-      "sample_works": [
-        "000035_235",
-        "000035_266",
-        "000096_2121"
       ]
     },
     {
@@ -5752,31 +5589,6 @@
       "sample_works": [
         "000118_2952",
         "000158_2949"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃天から１７字下げ］",
-      "body": "天から１７字下げ",
-      "occurrences": 3,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 3,
-      "sample_works": [
-        "000304_46409",
-        "001096_43672"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃天から６字下げ］",
-      "body": "天から６字下げ",
-      "occurrences": 3,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 3,
-      "sample_works": [
-        "000081_1935",
-        "000082_49526",
-        "001224_46070"
       ]
     },
     {
@@ -12010,6 +11822,171 @@
       "sample_works": [
         "001311_49706"
       ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃「六」ゴシック体］",
+      "body": "「六」ゴシック体",
+      "occurrences": 2,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 2,
+      "sample_works": [
+        "000125_666"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃「六十二万石」はママ］",
+      "body": "「六十二万石」はママ",
+      "occurrences": 2,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 2,
+      "sample_works": [
+        "000255_1405"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃「共産」にばつ傍点］",
+      "body": "「共産」にばつ傍点",
+      "occurrences": 2,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 2,
+      "sample_works": [
+        "001627_54065"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃「共産党」にばつ傍点］",
+      "body": "「共産党」にばつ傍点",
+      "occurrences": 2,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 2,
+      "sample_works": [
+        "001308_49287"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃「典」は底本では「繼」］",
+      "body": "「典」は底本では「繼」",
+      "occurrences": 2,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 2,
+      "sample_works": [
+        "000989_2614"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃「内的視力」に白三角傍点］",
+      "body": "「内的視力」に白三角傍点",
+      "occurrences": 2,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 2,
+      "sample_works": [
+        "000137_733"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃「写真貼」はママ］",
+      "body": "「写真貼」はママ",
+      "occurrences": 2,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 2,
+      "sample_works": [
+        "001246_46515"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃「冬付録」は底本では「秋付録」］",
+      "body": "「冬付録」は底本では「秋付録」",
+      "occurrences": 2,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 2,
+      "sample_works": [
+        "000810_52355"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃「冷酒」は底本では「冷配」と誤記］",
+      "body": "「冷酒」は底本では「冷配」と誤記",
+      "occurrences": 2,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 2,
+      "sample_works": [
+        "000136_828"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃「凡でが」はママ］",
+      "body": "「凡でが」はママ",
+      "occurrences": 2,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 2,
+      "sample_works": [
+        "000118_57445"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃「出渡」はママ］",
+      "body": "「出渡」はママ",
+      "occurrences": 2,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 2,
+      "sample_works": [
+        "001180_46294"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃「分らなかった」は底本では「分らなかった、」］",
+      "body": "「分らなかった」は底本では「分らなかった、」",
+      "occurrences": 2,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 2,
+      "sample_works": [
+        "001399_50130"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃「分析表」は底本では「分拆表」］",
+      "body": "「分析表」は底本では「分拆表」",
+      "occurrences": 2,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 2,
+      "sample_works": [
+        "000810_52355"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃「切つて」は底本では「切つ」と誤記］",
+      "body": "「切つて」は底本では「切つ」と誤記",
+      "occurrences": 2,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 2,
+      "sample_works": [
+        "000136_828"
+      ]
+    },
+    {
+      "kind": "CommandFullwidth",
+      "raw": "［＃「切つて」は底本では「切つ」］",
+      "body": "「切つて」は底本では「切つ」",
+      "occurrences": 2,
+      "allowlisted_occurrences": 0,
+      "unallowlisted_occurrences": 2,
+      "sample_works": [
+        "000291_24360"
+      ]
     }
   ],
   "unknown_examples": [
@@ -12716,11 +12693,11 @@
   ],
   "decode_failures": [],
   "representability": {
-    "typed_occurrences": 3859525,
+    "typed_occurrences": 4120173,
     "raw_preserved_occurrences": 0,
     "out_of_body_occurrences": 0,
     "unsupported_occurrences": 13920,
-    "needs_research_occurrences": 291889
+    "needs_research_occurrences": 157495
   },
   "strict_errors": [
     "source inventory row annotation.bouki has occurrences but no representability table",
@@ -12737,12 +12714,6 @@
     "source inventory row gaiji.unicode_codepoint has occurrences but no representability table",
     "source inventory row heading.dogyo has occurrences but no representability table",
     "source inventory row heading.mado has occurrences but no representability table",
-    "source inventory row indentation.basic has representability.status = needs_research",
-    "source inventory row indentation.burasage has occurrences but no representability table",
-    "source inventory row indentation.chitsuki has occurrences but no representability table",
-    "source inventory row indentation.jisage_block has occurrences but no representability table",
-    "source inventory row indentation.jisage_oneline has occurrences but no representability table",
-    "source inventory row indentation.jizume has occurrences but no representability table",
     "source inventory row iteration.kunoji has occurrences but no representability table",
     "source inventory row kunten.kaeriten has occurrences but no representability table",
     "source inventory row kunten.okurigana has occurrences but no representability table",
@@ -12750,7 +12721,7 @@
     "source inventory row reference.frontref has occurrences but no representability table",
     "source inventory row ruby.placement_directional has occurrences but no representability table",
     "source inventory row warigaki.parenthetical has occurrences but no representability table",
-    "20643 unallowlisted source markers"
+    "19687 unallowlisted source markers"
   ],
   "inputs": {
     "matrix": "/home/bor/Projects/ab-validator/data/aozora-syntax-coverage.toml",

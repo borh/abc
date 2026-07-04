@@ -63,6 +63,7 @@ Recommended shape:
     {
       "id": "p000000",
       "span": { "start": 0, "end": 24, "coordinate_system": "decoded_utf8" },
+      "span_source": "direct",
       "node_range": { "start": 0, "end": 1 },
       "role": "body",
       "source_pointer": "blocks[0]",
@@ -77,7 +78,8 @@ Recommended shape:
 Fields:
 
 - `id`: document-local paragraph identity, generated in parser order as `p000000`, `p000001`, ...
-- `span`: same decoded-UTF8 span object used by nodes. If no AAT/source span exists, synthesize from the first/last child node offsets and record an `AMBIGUITY` divergence entry.
+- `span`: `$ref` to the same `#/$defs/span` schema used by nodes. If no AAT/source span exists, derive it from the first/last child node offsets when possible, otherwise synthesize a zero-width decoded-UTF8 span and record an `AMBIGUITY` divergence entry in the ab-validator divergence bundle.
+- `span_source`: enum `direct`, `derived`, `synthesized`, `unknown`. This describes the paragraph span only; it does not replace `classification`, which describes the paragraph boundary/source classification.
 - `node_range`: half-open range into `nodes[]`, `{start, end}`. `end` is exclusive.
 - `role`: enum `body`, `source-note`, `unknown`.
 - `source_pointer`: AAT/source pointer string when known, otherwise `null`.
@@ -88,6 +90,7 @@ Invariants that JSON Schema cannot fully express and ABC validation should enfor
 - Every paragraph ID is unique.
 - `0 <= node_range.start <= node_range.end <= nodes.length`.
 - Paragraph ranges are monotonic and non-overlapping in v1.
+- Nested AAT blocks are flattened into sequential paragraph rows in v1. Do not model parent/child paragraph nesting until ABC has a concrete renderer need for it.
 - A paragraph with `role = "source-note"` contains at least one `source-note` node or has a `classification` other than `direct` with a diagnostic explaining the downgrade.
 - Existing parser-IR without `paragraphs` remains schema-valid, but cannot satisfy a Level 3 admission gate.
 
@@ -121,10 +124,36 @@ Fields:
 - `classification`: enum `direct`, `heuristic`, `unknown`.
 - `source_pointer`: AAT/source pointer string when known, otherwise `null`.
 
+The `source-note` schema must follow the existing node pattern and set `additionalProperties: false`.
+
 This is intentionally separate from `editor-note`:
 
 - `editor-note` represents Aozora/editorial annotation notes already recognized as note-like parser facts.
 - `source-note` represents producer-side source metadata such as final attribution that affects body base-text comparison and TEI placement.
+
+## Renderer Integration
+
+The TEI renderer should use a two-path strategy:
+
+1. If `paragraphs[]` is absent, use the current flat `nodes[]` rendering path unchanged for backward compatibility.
+2. If `paragraphs[]` is present, switch at the top of rendering to a paragraph-table-driven path:
+   - validate paragraph ranges before rendering,
+   - iterate `paragraphs[]` in order,
+   - slice `nodes[]` by each paragraph's half-open `node_range`,
+   - reuse the existing node dispatch to render nodes inside each slice,
+   - render `role = "body"` paragraphs as TEI body `<p>` elements,
+   - render `role = "source-note"` paragraphs according to the contained `source-note.placement`.
+
+Do not braid paragraph boundary decisions into the existing flat reduce loop. The old path remains the non-Level-3 fallback; the new path owns Level 3 paragraph behavior.
+
+`source-note.placement` is not decorative:
+
+- `placement = "back"` renders as a source note in TEI back matter, for example a `<note type="source">` under a back division.
+- `placement = "body"` renders as an inline or local source note at the paragraph position.
+- `placement = "front"` renders in front matter.
+- `placement = "unknown"` must choose an explicit renderer policy and record a diagnostic; it must not silently emit ordinary body text.
+
+Plaintext rendering must also be explicit. The default plaintext publication renderer should render body paragraphs as body text and append `placement = "back"` source notes after the body separated from body paragraphs. Body-base-text comparison must ignore `source-note` nodes rather than relying on the plaintext renderer as a base-text extractor.
 
 ## Rejected Alternatives
 
@@ -163,6 +192,17 @@ After ABC accepts the schema:
 - Source-note detection should emit a divergence entry keyed to the source/AAT pointer and parser-IR `source-note`, so the heuristic is auditable.
 - Compatibility registry entries in ABC must be keyed to the new parser-IR schema hash and mapping hash.
 
+## Schema Hash And Registry Rotation
+
+This follows the ADR 0024 rotation precedent:
+
+- Adding `paragraphs[]` and `source-note` changes the parser-IR schema hash.
+- Existing ABC compatibility registry entries keyed to the old parser-IR schema hash remain valid for old-schema documents.
+- New Level 3 compatibility entries must be added only after ab-validator provides measured evidence against the new parser-IR schema hash and the regenerated mapping hash.
+- ABC should keep an old-shape parser-IR fixture to prove backward schema compatibility and add a separate Level 3 fixture with populated `paragraphs[]` and `source-note`.
+- ABC design-bundle validation should validate both old-shape compatibility and new-shape Level 3 fixtures.
+- ABC manifest construction must read `parser_ir.schema_hash` from the parser-IR document when constructing identity-bearing manifests. The schema hash is identity-bearing, so old-schema and new-schema parser-IR documents correctly produce different artifact identities.
+
 ## Admission Gates
 
 ABC-side gates:
@@ -172,6 +212,7 @@ ABC-side gates:
 - Schema-derived renderer coverage fails until plaintext and TEI policies cover `source-note`.
 - TEI renderer uses `paragraphs[]` when present and falls back to current behavior only for non-Level-3 documents.
 - Melos parser-IR fixture can render TEI body paragraphs without pretending the final source attribution is body base text.
+- Any ABC manifest or admission record that claims Level 3 for prose fails validation if parser-IR lacks populated `paragraphs[]`.
 
 ab-validator-side gates after ABC schema lands:
 

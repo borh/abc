@@ -28,21 +28,32 @@
   - [ ] a source-note paragraph with `role = "source-note"`.
 - [ ] Modify `../abc/schemas/parser-ir.schema.json` to add:
   - [ ] optional top-level `paragraphs`,
-  - [ ] a `paragraph` definition with `id`, `span`, `node_range`, `role`, `source_pointer`, and `classification`,
-  - [ ] a `nodeRange` definition with integer `start` and `end`,
-  - [ ] a `source-note` node definition with `text`, `note_type`, `placement`, `classification`, and `source_pointer`.
+  - [ ] a `paragraph` definition with `id`, `span`, `span_source`, `node_range`, `role`, `source_pointer`, and `classification`,
+  - [ ] `paragraph.span` as a `$ref` to the existing `#/$defs/span`,
+  - [ ] a `nodeRange` schema definition used by the JSON property `node_range`, with integer `start` and `end`,
+  - [ ] a `source-note` node definition with `text`, `note_type`, `placement`, `classification`, and `source_pointer`,
+  - [ ] `additionalProperties: false` on `source-note`, matching existing node definitions.
 - [ ] Add ABC validator checks that JSON Schema cannot express:
   - [ ] paragraph IDs are unique,
   - [ ] `0 <= node_range.start <= node_range.end <= nodes.length`,
   - [ ] paragraph ranges are monotonic and non-overlapping in v1,
+  - [ ] nested AAT blocks flatten to sequential paragraph rows in v1,
   - [ ] `role = "source-note"` paragraphs contain a `source-note` node or carry a diagnostic downgrade.
+- [ ] Verify ABC manifest construction reads `parser_ir.schema_hash` from the parser-IR document rather than assuming a single current parser-IR schema hash.
 - [ ] Run the ABC schema validation command used by `nix run .#validate-design-bundle`.
 
 ## Task 2: ABC Renderer Policy
 
 - [ ] Extend ABC renderer coverage so `source-note` fails coverage until every renderer has an explicit policy.
-- [ ] Update plaintext rendering to make the source-note treatment explicit.
-- [ ] Update TEI rendering to use `paragraphs[]` when present and to keep source attribution out of body base text.
+- [ ] Update plaintext rendering so body paragraphs remain body text and `placement = "back"` source notes are appended after the body rather than silently folded into body base text.
+- [ ] Update TEI rendering with a two-path strategy:
+  - [ ] if `paragraphs[]` is absent, keep the current flat `nodes[]` reduce path unchanged,
+  - [ ] if `paragraphs[]` is present, branch at render entry to a paragraph-table-driven path,
+  - [ ] validate paragraph ranges before rendering,
+  - [ ] iterate `paragraphs[]` in order and slice `nodes[]` by each half-open `node_range`,
+  - [ ] reuse existing node dispatch for nodes inside each slice,
+  - [ ] render `role = "body"` paragraphs as TEI body `<p>` elements,
+  - [ ] route `source-note` by `placement`: `back` to TEI back matter, `body` inline/local, `front` front matter, `unknown` through an explicit diagnostic policy.
 - [ ] Add a Melos-sized ABC fixture with:
   - [ ] two body paragraphs,
   - [ ] one final source attribution,
@@ -53,13 +64,19 @@
 ## Task 3: ABC Registry And Handoff
 
 - [ ] Regenerate the parser-IR schema hash after the ABC schema change.
+- [ ] Follow the ADR 0024 schema-rotation precedent:
+  - [ ] keep existing compatibility registry entries valid for old-schema documents,
+  - [ ] add new Level 3 entries only after ab-validator provides evidence against the new parser-IR schema hash and mapping hash,
+  - [ ] validate both an old-shape parser-IR fixture and a new Level 3 fixture in the design bundle.
 - [ ] Update ABC compatibility policy so Level 3 paragraph evidence requires the new parser-IR schema hash.
 - [ ] Add or update ABC registry tests that reject Level 3 claims made against the old schema hash.
+- [ ] Add or update ABC admission validation so prose Level 3 claims fail when parser-IR lacks populated `paragraphs[]`.
 - [ ] Write an ABC handoff containing:
   - [ ] the new parser-IR schema hash,
   - [ ] the updated fixture path,
   - [ ] renderer policy notes,
   - [ ] the compatibility registry expectation.
+- [ ] Put the ABC-side handoff under `../abc/docs/handoffs/` with a matching Level 3 naming convention.
 - [ ] Push the ABC commit before starting ab-validator converter changes.
 
 ## Task 4: ab-validator Schema Sync
@@ -80,8 +97,9 @@ tests/aat-parser-ir-mapping-policy-smoke.sh
 - [ ] Regenerate mapping from executable mapper rules against the new parser-IR schema.
 - [ ] Assert `blocks[].paragraph` no longer appears as `STRUCTURAL` loss in `data/aat-to-parser-ir-mapping-v1.json`.
 - [ ] Update `ab-aat-to-parser-ir` to emit `paragraphs[]` for AAT paragraph blocks.
-- [ ] Update paragraph emission to compute half-open node ranges over the flat `nodes[]` stream.
-- [ ] Emit synthesized paragraph spans with an `AMBIGUITY` divergence entry when source/AAT spans are missing.
+- [ ] Compute paragraph ranges by capturing the current node index before mapping a paragraph block, emitting that block's child nodes, then appending the paragraph row with `{start, end}` after the block is complete.
+- [ ] Emit `span_source = "direct"` for source-backed spans, `span_source = "derived"` for spans computed from child node spans, and `span_source = "synthesized"` for zero-width fallback spans.
+- [ ] Emit an `AMBIGUITY` divergence entry when paragraph spans are not direct.
 - [ ] Add source-attribution classification for the Melos final attribution as `classification = "heuristic"` unless source inventory provides a direct marker.
 - [ ] Emit `source-note` nodes and source-note paragraph rows for classified source attribution.
 - [ ] Add unit tests for:

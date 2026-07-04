@@ -21,12 +21,19 @@
 (assert (! (>= succ_count 0) :named d2_succ_nonneg))
 
 ; --- ADR 0020 cardinality rules (the invariant) ---
+; BEGIN-INVARIANTS
+;   The assertions below are the invariant P under test. The
+;   adr-invariants-vacuity Nix check strips this block and requires Z3 to
+;   report `sat` for the remaining (axioms + counterexample) — i.e. the
+;   counterexample must be reachable once P is removed. See
+;   docs/handoffs/formal-verification-assessment-critique.md §6.
 (assert (! (=> (= event_type split)
                (and (= pred_count 1) (>= succ_count 2)))
            :named dr_split_cardinality))
 (assert (! (=> (= event_type merge)
                (and (>= pred_count 2) (= succ_count 1)))
            :named dr_merge_cardinality))
+; END-INVARIANTS
 
 ; --- Counterexample we seek: a valid event whose counts violate its rule. ---
 (assert (! (or

@@ -496,6 +496,52 @@
                 mkdir -p "$out"
                 echo "ADR 0020 drift-event cardinality invariants verified (Z3 reports unsat)." > "$out/result.txt"
               '';
+
+          # Mutation-vacuity guardrail. For each committed invariant .smt2,
+          # strip the `; BEGIN-INVARIANTS ... ; END-INVARIANTS` block (the
+          # stipulated invariant P) and require Z3 to report `sat` on the
+          # remainder (axioms + counterexample ¬P). If the stripped fragment
+          # is still `unsat`, the counterexample is unreachable for reasons
+          # orthogonal to P — the original `unsat` was vacuous (P did no work).
+          #
+          # Scope (stated honestly): this catches mode-A vacuity
+          # (self-refuting / axiom-refuted counterexamples) only. It does NOT
+          # catch mode-B vacuity (invariant stipulated as P ∧ ¬P tautology),
+          # which is the actual defect of the current R1/R2/R3 files — all
+          # three pass this check. Mode-B requires binding P to the real
+          # schema/code; see
+          # docs/handoffs/formal-verification-assessment-critique.md §5–§7.
+          adr-invariants-vacuity =
+            pkgs.runCommand "abc-adr-invariants-vacuity" { nativeBuildInputs = [ pkgs.z3 ]; }
+              ''
+                set -euo pipefail
+                for spec in ${./docs/adr/r1-reproducibility-conflict.smt2} ${./docs/adr/r2-non-circularity.smt2} ${./docs/adr/r3-drift-cardinality.smt2}; do
+                  if ! grep -q '; BEGIN-INVARIANTS' "$spec" || ! grep -q '; END-INVARIANTS' "$spec"; then
+                    echo "adr-invariants-vacuity: $spec is missing ; BEGIN/END-INVARIANTS delimiters." >&2
+                    echo "Every invariant assertion must be inside a delimited block so this" >&2
+                    echo "check can strip it. See formal-verification-assessment-critique.md §6." >&2
+                    exit 1
+                  fi
+                  stripped="$(sed '/; BEGIN-INVARIANTS/,/; END-INVARIANTS/d' "$spec")"
+                  if ! printf '%s\n' "$stripped" | grep -q '(check-sat)'; then
+                    echo "adr-invariants-vacuity: $spec has no (check-sat) after stripping the invariant block." >&2
+                    exit 1
+                  fi
+                  result="$(printf '%s\n' "$stripped" | z3 -in)"
+                  case "$result" in
+                    sat) ;;
+                    *)
+                      echo "adr-invariants-vacuity FAILED for $spec:" >&2
+                      echo "  After stripping the invariant block, Z3 reported '$result' (expected sat)." >&2
+                      echo "  The counterexample is unreachable without the invariant — the original" >&2
+                      echo "  unsat did not depend on P. See formal-verification-assessment-critique.md §5." >&2
+                      exit 1
+                      ;;
+                  esac
+                done
+                mkdir -p "$out"
+                echo "ADR invariant vacuity guardrail passed: each counterexample is reachable when P is stripped (mode-A)." > "$out/result.txt"
+              '';
         }
       );
 

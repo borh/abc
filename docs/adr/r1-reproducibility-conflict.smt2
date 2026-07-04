@@ -30,12 +30,19 @@
 (assert (! (not (= m1_content_hash m2_content_hash))
            :named r1_content_differs))
 ; ADR 0001 acceptance: under those three conditions, release_valid MUST be false.
+; BEGIN-INVARIANTS
+;   The assertion below is the invariant P under test. The adr-invariants-vacuity
+;   Nix check strips this block and requires Z3 to report `sat` for the
+;   remaining (axioms + counterexample) — i.e. the counterexample must be
+;   reachable once P is removed. See
+;   docs/handoffs/formal-verification-assessment-critique.md §6.
 (assert (! (= release_valid
               (not (and (= m1_artifact_id m2_artifact_id)
                         (= m1_status success)
                         (= m2_status success)
                         (not (= m1_content_hash m2_content_hash)))))
            :named r1_conflict_implies_invalid))
+; END-INVARIANTS
 ; Counterexample we seek: release stays valid despite the conflict.
 (assert (! release_valid
            :named r1_counterexample_release_valid))

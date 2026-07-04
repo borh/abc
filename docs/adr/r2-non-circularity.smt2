@@ -32,11 +32,18 @@
 (assert (! (not (= artifact_id_value ""))
             :named r2_artifact_id_nonempty))
 ; R2 invariant: artifact_id_value is distinct from every identity field.
+; BEGIN-INVARIANTS
+;   The assertion below is the invariant P under test. The adr-invariants-vacuity
+;   Nix check strips this block and requires Z3 to report `sat` for the
+;   remaining (axioms + counterexample) — i.e. the counterexample must be
+;   reachable once P is removed. See
+;   docs/handoffs/formal-verification-assessment-critique.md §6.
 (assert (! (distinct artifact_id_value
                      f_schema f_corpus f_work f_metadata
                      f_parser_build f_parser_cfg f_parser_ir f_tei_profile
                      f_tok_build f_tok_dict f_analysis f_output_spec)
            :named r2_artifact_id_distinct_from_fields))
+; END-INVARIANTS
 ; Counterexample we seek: at least one identity field equals artifact_id_value
 ; anyway (i.e. the invariant can be violated while distinct holds).
 (assert (! (or (= f_schema       artifact_id_value)

@@ -9,9 +9,10 @@ Date: 2026-07-04
 The `crates/ab-aat-to-parser-ir` converter has consumed the July 3
 `CLI_READY_WITH_LOWER_BOUND_CAVEAT` gate, the July 4 `aozora-epub3` adapter
 measurement, and the Level 3 parser-IR schema rotation. It now converts all
-three measured local AAT corpora into ABC parser-IR with zero conversion
-failures, full measured rule coverage, and release-smoke coverage through
-Cargo and the shell smoke.
+four measured local AAT inputs into ABC parser-IR with zero conversion failures,
+full measured rule coverage, and release-smoke coverage through Cargo and the
+shell smoke. Three inputs are full-corpus adapter runs; `aozora2` is currently a
+Melos-scoped adapter input.
 
 This sync supersedes the "Next Gate" section in
 `docs/superpowers/reports/2026-07-03-post-measurement-abc-sync.md`. The residual
@@ -29,19 +30,19 @@ parser-IR protocol blocker.
   `sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4`
 - Target parser-IR schema hash:
   `sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2`
-- Full-corpus audit:
+- Conversion audit:
   `docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.md`
 - Summary JSON:
   `docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.summary.json`
 
 | Metric | Value |
 |---|---:|
-| files attempted | 53,427 |
-| files succeeded | 53,427 |
+| files attempted | 53,428 |
+| files succeeded | 53,428 |
 | files failed | 0 |
-| parser-IR nodes | 26,907,266 |
-| divergence records | 674,102 |
-| divergence occurrences | 42,482,637 |
+| parser-IR nodes | 26,907,268 |
+| divergence records | 674,111 |
+| divergence occurrences | 42,482,734 |
 | mapping rules total | 127 |
 | mapping rules emitted | 127 |
 | mapping rules missing | 0 |
@@ -49,6 +50,7 @@ parser-IR protocol blocker.
 | Corpus | Files | Result |
 |---|---:|---|
 | aozora-rs-adapter | 17,894 | 17,894 succeeded, 0 failed |
+| aozora2-adapter | 1 | 1 succeeded, 0 failed |
 | aozora2html-adapter | 17,689 | 17,689 succeeded, 0 failed |
 | aozora-epub3-adapter | 17,844 | 17,844 succeeded, 0 failed |
 
@@ -64,15 +66,16 @@ identity:
 - `mapping_hash` remains outside parser-IR and is supplied as a manifest input
   for ABC compatibility validation.
 
-The full audit generated three ABC registry candidates in
+The audit generated four ABC registry candidates in
 `docs/superpowers/reports/2026-07-04-aat-parser-ir-compatibility-candidates.edn`.
 ABC admitted the earlier `0.2.0` two-adapter entries in commit `4cb15df`; the
-`0.2.2` candidates below still need ABC registry admission:
+four `0.2.2` candidates below are admitted in local ABC commit `59731aa`:
 
 | adapter | adapter_version | files_succeeded | rules_emitted | rules_missing | unsupported_occurrences |
 |---|---|---:|---:|---:|---:|
 | aozora-epub3 | aozora-epub3-adapter 0.1.0 AozoraEpub3-JDK21-1.3.4-jdk21 | 17,844 | 61 | 66 | 13,234 |
 | aozora-rs | aozora-rs-adapter 0.1.0 2b4e8d1 | 17,894 | 25 | 102 | 0 |
+| aozora2 | aozora2-adapter 0.1.0 aozora-core-0.7.1 | 1 | 9 | 118 | 0 |
 | aozora2html | aozora2html-adapter 0.1.0 gem-3.0.1 | 17,689 | 112 | 15 | 14,230 |
 
 ## TEI-EAJ Structural Comparison
@@ -100,6 +103,18 @@ is adapter/evidence coverage: materialize missing ABC counterparts and improve
 adapter paragraph/source-note preservation where TEI-EAJ exposes richer
 structure than a specific adapter AAT.
 
+Generated TEI is now smoke-tested against a TEI-EAJ comparison row with:
+
+```sh
+just parser-ir-level3-melos-eaj-compare-smoke
+```
+
+The current Melos `aozora2html` path materializes ABC TEI that validates and
+routes the final source attribution to `<back><note type="source-attribution">`.
+The remaining measured gap is paragraph segmentation fidelity: generated TEI
+has 74 body paragraphs for `data/complete/tei_lib_lv4/1567_tei.xml`, while
+TEI-EAJ has 17 body paragraphs and 19 total `p` elements in the workset count.
+
 Adapter-version matching is exact. A future adapter-version tuple requires a
 new measured conversion-audit entry rather than wildcard or prefix registry
 matching.
@@ -123,14 +138,17 @@ The converter is exposed as:
 - Flake check: `checks.<system>.aat-to-parser-ir-smoke`
 - Just smoke target: `just aat-to-parser-ir-smoke`
 - Just full-audit target: `just aat-to-parser-ir-full-audit 24`
+- Just Level 3 TEI-EAJ comparison target:
+  `just parser-ir-level3-melos-eaj-compare-smoke`
 
 The crate-specific usage notes live in `crates/ab-aat-to-parser-ir/README.md`.
 
 ## Next Work
 
-Proceed with ABC admission and residual adapter/evidence characterization:
+Proceed with residual adapter/evidence characterization:
 
-- ask ABC to admit the three `0.2.2` conversion-audit candidates,
+- carry the local ABC `0.2.2` compatibility admission (`59731aa`) wherever the
+  ABC registry is synced,
 - keep the whole TEI-EAJ/aozora_tei structural expansion as the Level 3
   comparison artifact instead of the Melos-only probe,
 - use `docs/superpowers/reports/2026-07-04-tei-eaj-structural-gap-analysis.md`

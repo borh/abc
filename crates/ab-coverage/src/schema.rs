@@ -1,6 +1,6 @@
-use std::fmt;
+use std::{collections::BTreeSet, fmt};
 
-use crate::matrix::{CoverageMatrix, Recognition, Row, RowAatFidelity};
+use crate::matrix::{CoverageMatrix, Recognition, RepresentabilityStatus, Row, RowAatFidelity};
 
 /// Knobs for `SchemaValidator::validate`.
 #[derive(Debug, Clone, Copy)]
@@ -49,14 +49,24 @@ impl SchemaValidator {
     #[must_use]
     pub fn validate(matrix: &CoverageMatrix, opts: ValidationOptions) -> Vec<RowError> {
         let mut errors = Vec::new();
+        let row_ids = matrix
+            .rows()
+            .iter()
+            .map(|row| row.id.as_str())
+            .collect::<BTreeSet<_>>();
         for row in matrix.rows() {
-            validate_row(row, opts, &mut errors);
+            validate_row(row, opts, &row_ids, &mut errors);
         }
         errors
     }
 }
 
-fn validate_row(row: &Row, opts: ValidationOptions, errors: &mut Vec<RowError>) {
+fn validate_row(
+    row: &Row,
+    opts: ValidationOptions,
+    row_ids: &BTreeSet<&str>,
+    errors: &mut Vec<RowError>,
+) {
     if row.id.is_empty() {
         errors.push(RowError {
             row_id: "<missing id>".into(),
@@ -121,6 +131,46 @@ fn validate_row(row: &Row, opts: ValidationOptions, errors: &mut Vec<RowError>) 
                 prev.sample_works.len()
             ),
         });
+    }
+
+    validate_representability(row, row_ids, errors);
+}
+
+fn validate_representability(row: &Row, row_ids: &BTreeSet<&str>, errors: &mut Vec<RowError>) {
+    let Some(cell) = &row.representability else {
+        return;
+    };
+
+    if cell.source_inventory_row.is_empty() {
+        errors.push(RowError {
+            row_id: row.id.clone(),
+            message: "representability.source_inventory_row must be non-empty".into(),
+        });
+    } else if !row_ids.contains(cell.source_inventory_row.as_str()) {
+        errors.push(RowError {
+            row_id: row.id.clone(),
+            message: format!(
+                "representability.source_inventory_row = \"{}\" does not name an existing matrix row id",
+                cell.source_inventory_row
+            ),
+        });
+    }
+
+    match cell.status {
+        RepresentabilityStatus::Typed if cell.aat_nodes.is_empty() => {
+            errors.push(RowError {
+                row_id: row.id.clone(),
+                message: "representability.status = \"typed\" requires non-empty representability.aat_nodes".into(),
+            });
+        }
+        RepresentabilityStatus::Unsupported if cell.raw_fallback => {
+            errors.push(RowError {
+                row_id: row.id.clone(),
+                message: "representability.status = \"unsupported\" requires raw_fallback = false"
+                    .into(),
+            });
+        }
+        _ => {}
     }
 }
 

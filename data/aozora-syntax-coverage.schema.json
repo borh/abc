@@ -65,6 +65,7 @@
           "description": "Open-keyed map of adapter id to AdapterCell. Adding an adapter is purely additive.",
           "additionalProperties": { "$ref": "#/$defs/AdapterCell" }
         },
+        "representability": { "$ref": "#/$defs/RepresentabilityCell" },
         "corpus_prevalence": { "$ref": "#/$defs/CorpusPrevalence" }
       },
       "additionalProperties": false
@@ -111,6 +112,36 @@
         "evidence": {
           "type": "string",
           "description": "Optional <file>:<line> pointer in the adapter source or a fixture path."
+        },
+        "notes": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "RepresentabilityStatus": {
+      "type": "string",
+      "enum": [
+        "typed",
+        "raw_preserved",
+        "out_of_body",
+        "unsupported",
+        "needs_research"
+      ]
+    },
+    "RepresentabilityCell": {
+      "type": "object",
+      "required": ["source_inventory_row", "status", "raw_fallback"],
+      "properties": {
+        "source_inventory_row": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Matrix row id used by the source inventory for this source marker class."
+        },
+        "status": { "$ref": "#/$defs/RepresentabilityStatus" },
+        "aat_nodes": { "type": "array", "items": { "type": "string" } },
+        "raw_fallback": { "type": "boolean" },
+        "evidence": {
+          "type": "string",
+          "description": "Pointer to the contract, plan, report, or source proving the representability decision."
         },
         "notes": { "type": "string" }
       },

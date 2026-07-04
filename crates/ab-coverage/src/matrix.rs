@@ -58,6 +58,8 @@ pub struct Row {
     pub parsers: BTreeMap<String, ParserCell>,
     #[serde(default)]
     pub adapters: BTreeMap<String, AdapterCell>,
+    #[serde(default)]
+    pub representability: Option<RepresentabilityCell>,
     pub corpus_prevalence: Option<CorpusPrevalence>,
 }
 
@@ -144,6 +146,43 @@ impl RowAatFidelity {
             RowAatFidelity::Synthesised => "synthesised",
             RowAatFidelity::NotApplicable => "not_applicable",
             RowAatFidelity::Unknown => "unknown",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+#[serde(deny_unknown_fields)]
+pub struct RepresentabilityCell {
+    pub source_inventory_row: String,
+    pub status: RepresentabilityStatus,
+    #[serde(default)]
+    pub aat_nodes: Vec<String>,
+    pub raw_fallback: bool,
+    #[serde(default)]
+    pub evidence: String,
+    #[serde(default)]
+    pub notes: String,
+}
+
+#[derive(Debug, Clone, Copy, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum RepresentabilityStatus {
+    Typed,
+    RawPreserved,
+    OutOfBody,
+    Unsupported,
+    NeedsResearch,
+}
+
+impl RepresentabilityStatus {
+    #[must_use]
+    pub fn as_str(self) -> &'static str {
+        match self {
+            RepresentabilityStatus::Typed => "typed",
+            RepresentabilityStatus::RawPreserved => "raw_preserved",
+            RepresentabilityStatus::OutOfBody => "out_of_body",
+            RepresentabilityStatus::Unsupported => "unsupported",
+            RepresentabilityStatus::NeedsResearch => "needs_research",
         }
     }
 }

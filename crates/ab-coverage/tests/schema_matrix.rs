@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use ab_coverage::matrix::RepresentabilityStatus;
 use ab_coverage::{
     AdapterCell, CorpusPrevalence, CoverageBasis, CoverageMatrix, ParserCell, Recognition,
     RowAatFidelity, RowError, SchemaValidator, ValidationOptions,
@@ -170,6 +171,7 @@ fn forbidden_combinations_rejected() {
         status_reason: String::new(),
         parsers,
         adapters,
+        representability: None,
         corpus_prevalence: Some(CorpusPrevalence {
             works_with_feature: 0,
             total_occurrences: 0,
@@ -193,6 +195,251 @@ fn forbidden_combinations_rejected() {
     );
 }
 
+#[test]
+fn schema_matrix_parses_representability_cell() {
+    let matrix = matrix_from_toml_str(
+        "representability-parse",
+        r#"
+[[syntax]]
+id = "fixture.typed"
+priority = 1
+category = "fixture"
+feature_keys = []
+reference_sources = []
+source_examples = []
+source_patterns = []
+ir_nodes = []
+aat_nodes = ["ruby"]
+tei_projection = ""
+plaintext_projection = ""
+comparison_projection = ""
+validation_properties = []
+adapter_expectations = []
+status = "needs_research"
+status_reason = "fixture"
+
+[syntax.representability]
+source_inventory_row = "fixture.typed"
+status = "typed"
+aat_nodes = ["ruby"]
+raw_fallback = true
+evidence = "fixture"
+notes = "fixture"
+"#,
+    );
+
+    assert_eq!(matrix.rows()[0].id, "fixture.typed");
+    let representability = matrix.rows()[0]
+        .representability
+        .as_ref()
+        .expect("representability cell");
+    assert_eq!(representability.source_inventory_row, "fixture.typed");
+    assert_eq!(representability.status, RepresentabilityStatus::Typed);
+    assert_eq!(representability.aat_nodes, ["ruby"]);
+    assert!(representability.raw_fallback);
+    assert_eq!(representability.evidence, "fixture");
+    assert_eq!(representability.notes, "fixture");
+}
+
+#[test]
+fn schema_matrix_rejects_typed_representability_without_aat_nodes() {
+    let matrix = matrix_from_toml_str(
+        "representability-typed-without-aat",
+        r#"
+[[syntax]]
+id = "fixture.typed_without_aat"
+priority = 1
+category = "fixture"
+feature_keys = []
+reference_sources = []
+source_examples = []
+source_patterns = []
+ir_nodes = []
+aat_nodes = []
+tei_projection = ""
+plaintext_projection = ""
+comparison_projection = ""
+validation_properties = []
+adapter_expectations = []
+status = "needs_research"
+status_reason = "fixture"
+
+[syntax.representability]
+source_inventory_row = "fixture.typed_without_aat"
+status = "typed"
+aat_nodes = []
+raw_fallback = true
+"#,
+    );
+    let errors = SchemaValidator::validate(&matrix, ValidationOptions::lenient());
+
+    assert!(
+        errors
+            .iter()
+            .any(|e| e.message.contains("typed") && e.message.contains("aat_nodes")),
+        "expected typed/aat_nodes error, got: {:?}",
+        errors
+    );
+}
+
+#[test]
+fn schema_matrix_rejects_unsupported_representability_with_raw_fallback() {
+    let matrix = matrix_from_toml_str(
+        "representability-unsupported-raw-fallback",
+        r#"
+[[syntax]]
+id = "fixture.unsupported"
+priority = 1
+category = "fixture"
+feature_keys = []
+reference_sources = []
+source_examples = []
+source_patterns = []
+ir_nodes = []
+aat_nodes = []
+tei_projection = ""
+plaintext_projection = ""
+comparison_projection = ""
+validation_properties = []
+adapter_expectations = []
+status = "needs_research"
+status_reason = "fixture"
+
+[syntax.representability]
+source_inventory_row = "fixture.unsupported"
+status = "unsupported"
+raw_fallback = true
+"#,
+    );
+    let errors = SchemaValidator::validate(&matrix, ValidationOptions::lenient());
+
+    assert!(
+        errors.iter().any(|e| e.message.contains("raw_fallback")),
+        "expected unsupported/raw_fallback error, got: {:?}",
+        errors
+    );
+}
+
+#[test]
+fn schema_matrix_rejects_empty_source_inventory_row() {
+    let matrix = matrix_from_toml_str(
+        "representability-empty-source-row",
+        r#"
+[[syntax]]
+id = "fixture.empty_source_row"
+priority = 1
+category = "fixture"
+feature_keys = []
+reference_sources = []
+source_examples = []
+source_patterns = []
+ir_nodes = []
+aat_nodes = []
+tei_projection = ""
+plaintext_projection = ""
+comparison_projection = ""
+validation_properties = []
+adapter_expectations = []
+status = "needs_research"
+status_reason = "fixture"
+
+[syntax.representability]
+source_inventory_row = ""
+status = "needs_research"
+raw_fallback = true
+"#,
+    );
+    let errors = SchemaValidator::validate(&matrix, ValidationOptions::lenient());
+
+    assert!(
+        errors
+            .iter()
+            .any(|e| e.message.contains("source_inventory_row")),
+        "expected source_inventory_row error, got: {:?}",
+        errors
+    );
+}
+
+#[test]
+fn schema_matrix_rejects_unknown_source_inventory_row() {
+    let matrix = matrix_from_toml_str(
+        "representability-unknown-source-row",
+        r#"
+[[syntax]]
+id = "fixture.unknown_source_row"
+priority = 1
+category = "fixture"
+feature_keys = []
+reference_sources = []
+source_examples = []
+source_patterns = []
+ir_nodes = []
+aat_nodes = []
+tei_projection = ""
+plaintext_projection = ""
+comparison_projection = ""
+validation_properties = []
+adapter_expectations = []
+status = "needs_research"
+status_reason = "fixture"
+
+[syntax.representability]
+source_inventory_row = "fixture.missing"
+status = "needs_research"
+raw_fallback = true
+"#,
+    );
+    let errors = SchemaValidator::validate(&matrix, ValidationOptions::lenient());
+
+    assert!(
+        errors.iter().any(|e| e.message.contains("fixture.missing")),
+        "expected missing source row error, got: {:?}",
+        errors
+    );
+}
+
+#[test]
+fn schema_matrix_does_not_infer_representability_from_corpus_prevalence() {
+    let matrix = matrix_from_toml_str(
+        "representability-no-prevalence-inference",
+        r#"
+[[syntax]]
+id = "fixture.prevalent_without_representability"
+priority = 1
+category = "fixture"
+feature_keys = []
+reference_sources = []
+source_examples = []
+source_patterns = []
+ir_nodes = []
+aat_nodes = []
+tei_projection = ""
+plaintext_projection = ""
+comparison_projection = ""
+validation_properties = []
+adapter_expectations = []
+status = "needs_research"
+status_reason = "fixture"
+
+[syntax.corpus_prevalence]
+works_with_feature = 1
+total_occurrences = 42
+detector_id = "fixture_prevalent_without_representability"
+coverage_basis = "full_corpus"
+sample_works = ["work"]
+"#,
+    );
+    let errors = SchemaValidator::validate(&matrix, ValidationOptions::lenient());
+
+    assert!(
+        errors
+            .iter()
+            .all(|e| !e.message.contains("representability")),
+        "corpus_prevalence must not imply representability requirements, got: {:?}",
+        errors
+    );
+}
+
 fn make_matrix(rows: Vec<ab_coverage::matrix::Row>) -> CoverageMatrix {
     // Round-trip through TOML to avoid exposing private constructors.
     let mut buf = String::new();
@@ -201,6 +448,17 @@ fn make_matrix(rows: Vec<ab_coverage::matrix::Row>) -> CoverageMatrix {
     }
     let path = std::env::temp_dir().join(format!("ab-coverage-test-{}.toml", std::process::id()));
     std::fs::write(&path, buf).unwrap();
+    let matrix = CoverageMatrix::from_toml(&path).unwrap();
+    let _ = std::fs::remove_file(&path);
+    matrix
+}
+
+fn matrix_from_toml_str(name: &str, toml: &str) -> CoverageMatrix {
+    let path = std::env::temp_dir().join(format!(
+        "ab-coverage-test-{}-{name}.toml",
+        std::process::id()
+    ));
+    std::fs::write(&path, toml).unwrap();
     let matrix = CoverageMatrix::from_toml(&path).unwrap();
     let _ = std::fs::remove_file(&path);
     matrix
@@ -246,6 +504,18 @@ fn serialize_row(row: &ab_coverage::matrix::Row) -> String {
             "aat_fidelity = \"{}\"\n",
             cell.aat_fidelity.as_str()
         ));
+        out.push_str(&format!("evidence = {:?}\n", cell.evidence));
+        out.push_str(&format!("notes = {:?}\n", cell.notes));
+    }
+    if let Some(cell) = &row.representability {
+        out.push_str("\n[syntax.representability]\n");
+        out.push_str(&format!(
+            "source_inventory_row = {:?}\n",
+            cell.source_inventory_row
+        ));
+        out.push_str(&format!("status = {:?}\n", cell.status.as_str()));
+        out.push_str(&format!("aat_nodes = {:?}\n", cell.aat_nodes));
+        out.push_str(&format!("raw_fallback = {}\n", cell.raw_fallback));
         out.push_str(&format!("evidence = {:?}\n", cell.evidence));
         out.push_str(&format!("notes = {:?}\n", cell.notes));
     }

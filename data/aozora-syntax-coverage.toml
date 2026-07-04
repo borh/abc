@@ -29,6 +29,14 @@
 #     coverage_basis     = full_corpus | stratified_sample | not_run
 #     sample_works       = ["<work_id>", ...]   # up to 5
 #
+#   [syntax.representability]
+#     source_inventory_row = "<row_id>"
+#     status               = typed | raw_preserved | out_of_body | unsupported | needs_research
+#     aat_nodes            = ["<aat_kind>", ...]
+#     raw_fallback         = true | false
+#     evidence             = "<file>:<line>"
+#     notes                = "..."
+#
 # Adding a new parser/adapter is purely additive: append a new
 # [syntax.parsers.<id>] / [syntax.adapters.<id>] sub-table per row.
 #
@@ -99,6 +107,14 @@ detector_id = "ruby_basic"
 coverage_basis = "full_corpus"
 sample_works = ["001529_50685", "000118_1745", "000148_56923", "001562_56145", "000077_1323"]
 
+[syntax.representability]
+source_inventory_row = "ruby.basic"
+status = "typed"
+aat_nodes = ["ruby"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:119"
+notes = "AAT has a typed ruby node; raw fallback remains available for malformed or unsupported source variants."
+
 [[syntax]]
 id = "gaiji.marker"
 priority = 1
@@ -156,6 +172,14 @@ total_occurrences = 189770
 detector_id = "gaiji_marker"
 coverage_basis = "full_corpus"
 sample_works = ["JISTABLE", "000311_2012", "000129_2084", "001161_43624", "001161_48122"]
+
+[syntax.representability]
+source_inventory_row = "gaiji.marker"
+status = "typed"
+aat_nodes = ["gaiji"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:120"
+notes = "AAT has a typed gaiji node; raw fallback covers unresolved marker forms and adapter gaps."
 
 [[syntax]]
 id = "gaiji_ruby.inline_base"
@@ -215,6 +239,14 @@ detector_id = "gaiji_ruby_inline_base"
 coverage_basis = "full_corpus"
 sample_works = ["000129_2084", "001930_58400", "001562_52417", "001562_56146", "000019_4376"]
 
+[syntax.representability]
+source_inventory_row = "gaiji_ruby.inline_base"
+status = "typed"
+aat_nodes = ["gaiji", "ruby"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:119; docs/aat-contract.md:120"
+notes = "The source construct can be represented by typed gaiji plus ruby nodes; raw fallback covers unresolved bases."
+
 [[syntax]]
 id = "heading.basic"
 priority = 1
@@ -272,6 +304,14 @@ total_occurrences = 76796
 detector_id = "heading_basic"
 coverage_basis = "full_corpus"
 sample_works = ["001562_33224", "001097_43785", "000286_49178", "001558_52688", "000910_60326"]
+
+[syntax.representability]
+source_inventory_row = "heading.basic"
+status = "typed"
+aat_nodes = ["heading"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:103"
+notes = "AAT has a typed heading block; raw fallback covers unsupported heading marker variants."
 
 [[syntax]]
 id = "emphasis.basic"
@@ -331,6 +371,14 @@ detector_id = "emphasis_basic"
 coverage_basis = "full_corpus"
 sample_works = ["000281_3597", "001161_43624", "001670_55342", "000281_3598", "000281_3595"]
 
+[syntax.representability]
+source_inventory_row = "emphasis.basic"
+status = "needs_research"
+aat_nodes = []
+raw_fallback = true
+evidence = "docs/superpowers/plans/2026-07-04-source-authority-representability-gate.md"
+notes = "Priority-1 emphasis spans several style variants; source-inventory classification still needs review before a typed claim."
+
 [[syntax]]
 id = "indentation.basic"
 priority = 1
@@ -388,6 +436,14 @@ total_occurrences = 133045
 detector_id = "indentation_basic"
 coverage_basis = "full_corpus"
 sample_works = ["001025_50909", "000294_1858", "001670_55342", "001562_33224", "001674_54899"]
+
+[syntax.representability]
+source_inventory_row = "indentation.basic"
+status = "needs_research"
+aat_nodes = []
+raw_fallback = true
+evidence = "docs/superpowers/plans/2026-07-04-source-authority-representability-gate.md"
+notes = "Priority-1 indentation combines block and one-line forms; typed versus raw preservation needs source-inventory review."
 
 [[syntax]]
 id = "warichu.basic"
@@ -447,6 +503,14 @@ detector_id = "warichu_basic"
 coverage_basis = "full_corpus"
 sample_works = ["001930_58400", "001094_42603", "001930_58401", "000125_1317", "001395_49905"]
 
+[syntax.representability]
+source_inventory_row = "warichu.basic"
+status = "typed"
+aat_nodes = ["warigaki", "style"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:130"
+notes = "AAT has a typed warigaki node and existing style fallback for warichu; raw fallback remains for unrecoverable forms."
+
 [[syntax]]
 id = "figure.image_caption"
 priority = 1
@@ -505,6 +569,14 @@ detector_id = "figure_image_caption"
 coverage_basis = "full_corpus"
 sample_works = ["001764_55990", "001185_45210", "001574_52529", "001054_18371", "001492_51194"]
 
+[syntax.representability]
+source_inventory_row = "figure.image_caption"
+status = "typed"
+aat_nodes = ["figure", "caption"]
+raw_fallback = true
+evidence = "docs/aat-contract.md:122; docs/aat-contract.md:129"
+notes = "This matrix uses a combined priority-1 image/caption row; AAT has typed figure and caption nodes."
+
 [[syntax]]
 id = "break.page_line"
 priority = 1
@@ -562,6 +634,14 @@ total_occurrences = 7804
 detector_id = "break_page_line"
 coverage_basis = "full_corpus"
 sample_works = ["000042_1684", "001529_546", "001670_55342", "001693_55317", "000081_47027"]
+
+[syntax.representability]
+source_inventory_row = "break.page_line"
+status = "needs_research"
+aat_nodes = []
+raw_fallback = true
+evidence = "docs/superpowers/plans/2026-07-04-source-authority-representability-gate.md"
+notes = "Priority-1 page and line break markers need source-authority review before choosing typed metadata versus raw preservation."
 
 # =============================================================================
 # Priority 2 rows (added 2026-04-28; sourced from references/parsers/aozora2html

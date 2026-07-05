@@ -402,7 +402,7 @@ Select sentences by **set-cover over top-ranked pattern_ids**: greedily pick sen
 - Anomaly channel with simple deterministic per-region score (W_COV defaults to 5.0; tuned in §Calibration Plan)
 - `--filter lexical-only` defined as a Unicode GC predicate over `char_start..char_end` (§`--filter lexical-only` Definition)
 - `pattern_id` canonicalization function added to `ab-warehouse` (reuses the existing JCS hashing discipline) with a golden test covering bijection, analyzer-pair sorting, and NFC normalization
-- Granularity harmonization *tagging* (not the harmonization itself): the run records `granularity_profile = "none"` in the `score_version` block so v1-without-harmonization scores are honestly labeled
+- Granularity harmonization *tagging* (not the harmonization itself): the run records `granularity_profile = "none"` in the `score_version` block so v1-without-harmonization scores are honestly labeled *(historical: Phase 2 replaced the fixed tag with a derived granularity-class composition — see the Phase 2 status note)*
 - Golden tests for output ordering and JSON shape
 
 ### Phase 2: Granularity Harmonization (within-v1, scores stabilizing)

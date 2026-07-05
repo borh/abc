@@ -29,7 +29,7 @@ Mechanical scope, stated honestly: ~25 construction sites across `ab-morph-diff`
 `--jobs 0` currently means "caller decides" and the justfile substitutes `$(nproc)`. New semantics, implemented in `ab-morph-run` (not the justfile):
 
 ```
-auto_jobs = clamp(1, nproc, floor(MemAvailable_bytes × 0.7 / per_job_bytes))
+auto_jobs = clamp(1, nproc, floor((MemAvailable × 0.7 − fixed_overhead) / per_job_bytes))
 per_job_bytes = base_per_job + analyzer_count × per_analyzer_increment
 ```
 
@@ -41,12 +41,12 @@ An explicit `--jobs N` is honored unchanged but logs a warning when `N` exceeds 
 
 ### 3. Run-owned staging under the warehouse directory
 
-The shard temp root moves from `std::env::temp_dir().join("ab-morph-run-warehouse-<pid>-<nanos>")` to `<warehouse_dir>/.staging/<run_id>/`:
+The shard temp root moves from `std::env::temp_dir().join("ab-morph-run-warehouse-<pid>-<nanos>")` to `<warehouse_dir>/.staging/shards-<run_id>/`:
 
 - Ownership is visible: the transient data lives inside the warehouse it is building; no tmp-cleanup routine (human or automated) has any business there.
 - Same filesystem as `runs/`, so the final `fs::rename` publish stays atomic and cheap (this was already true only by convention — TMPDIR happened to be on /db; now it is true by construction, and the `TMPDIR=`/`TMP=`/`TEMP=` exports drop out of the justfile recipe).
 - A `pid` marker file is written at root creation. At startup, `analyze-aat` scans `<warehouse_dir>/.staging/` and removes any entry whose recorded PID is dead. **Liveness = `/proc/<pid>` exists AND `/proc/<pid>/cmdline` contains `ab-morph-run`** — the cmdline check closes the PID-reuse hole (a recycled PID belonging to an unrelated process no longer blocks cleanup). Residual risk (PID recycled *to another ab-morph-run*) is accepted: the wrongly-skipped orphan is caught by the next startup scan after that process exits, and `just morph-warehouse-clean` remains the manual escape hatch.
-- Collision rule unchanged: a live `.staging/<run_id>/` with a live PID for the same `run_id` is a hard error ("run already in progress").
+- Collision rule unchanged: a live `.staging/shards-<run_id>/` with a live PID for the same `run_id` is a hard error ("run already in progress").
 - **Atomic publish boundary (verified in code):** `finalize_staging_run` publishes via a single `fs::rename(staging_dir → runs/<run_id>)` of the whole run directory — a consumer that sees `runs/<run_id>` sees every table at once, never a partial run. This guarantee is what same-filesystem staging preserves by construction.
 
 ### 4. Error behavior
@@ -55,15 +55,15 @@ The shard temp root moves from `std::env::temp_dir().join("ab-morph-run-warehous
 |---|---|
 | `MemAvailable` unreadable, zero, or unparseable | auto-jobs falls back to `max(1, min(nproc / 4, 8))` with a logged warning |
 | Explicit `--jobs` exceeds budget | honored; warning logged with budget arithmetic |
-| `.staging/<run_id>` exists with live PID | hard error, exit 1 |
-| `.staging/<other>` with dead PID | removed at startup, logged |
+| `.staging/shards-<run_id>` exists with live PID | hard error, exit 1 |
+| `.staging/shards-<other>` with dead PID | removed at startup, logged |
 | earlyoom pressure mid-run | out of scope to prevent entirely; auto-jobs budget (70% of MemAvailable) is the mitigation |
 
 ## Test Plan
 
 - Unit: auto-jobs arithmetic (budget clamps at 1 and nproc; per-analyzer scaling; `MemAvailable` zero/unparseable/absent → fallback formula; machines where the budget exceeds nproc; the explicit-`--jobs`-over-budget warning path), orphan-staging cleanup (fake marker: dead PID, live PID + matching cmdline, live PID + foreign cmdline), collision hard error.
 - Existing suites: `ab-morph-diff` + `ab-morph-run --features test-analyzer` (152 tests) exercise `source_text` consumers extensively and gate the `Arc<str>` change.
-- The tiny-corpus end-to-end (3 AAT files, warehouse mode) verifies staging appears under `.staging/<run_id>/` and vanishes after publish.
+- The tiny-corpus end-to-end (3 AAT files, warehouse mode) verifies staging appears under `.staging/shards-<run_id>/` and vanishes after publish.
 
 ## Validation (full scale)
 
@@ -80,6 +80,6 @@ One full-corpus run with the new pipeline at `--jobs 0`:
 |---|---|---|
 | 1 | `Arc<str>` model change over borrowing rework | Minimal ripple; precedent exists; removes the dominant memory multiplier |
 | 2 | Auto-jobs in the binary, not the justfile | The binary knows analyzer count and reads MemAvailable at the moment it matters; recipes stay dumb |
-| 3 | Staging under `<warehouse_dir>/.staging/<run_id>/` | Ownership visible; atomic publish by construction; enables safe orphan cleanup |
+| 3 | Staging under `<warehouse_dir>/.staging/shards-<run_id>/` | Ownership visible; atomic publish by construction; enables safe orphan cleanup |
 | 4 | PID-marker + cmdline liveness for orphan cleanup | Cheap, no daemon, no lockfile protocol; the cmdline check closes the PID-reuse hole; residual same-binary recycling accepted (next scan / manual clean) |
 | 5 | §3.5 batch sweep, §3.15 work-stealing, resumability deferred | Owner chose "reliability + easy speed"; the deferred items need dedicated measurement windows |

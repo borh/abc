@@ -1617,6 +1617,36 @@ mod tests {
     }
 
     #[test]
+    fn warehouse_mode_rejects_shards_prefixed_run_id() {
+        let dir = temp_dir("warehouse-rejects-shards-run-id");
+        let aat_dir = dir.join("aats");
+        let warehouse_dir = dir.join("warehouse");
+        fs::create_dir_all(&aat_dir).unwrap();
+        fs::write(
+            aat_dir.join("source-a.json"),
+            tiny_aat("work-a").replace("吾輩は猫である。", "今日"),
+        )
+        .unwrap();
+
+        let err = run_analyze_aat_warehouse(
+            None,
+            Some(&aat_dir),
+            &["test:single".to_owned(), "test:split".to_owned()],
+            &warehouse_dir,
+            "shards-run-a",
+            1,
+            WarehouseProfile::Full,
+        )
+        .unwrap_err();
+        assert!(
+            err.to_string().contains(r#"must not start with "shards-""#),
+            "{err}"
+        );
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
     fn partitions_inputs_by_size_to_balance_worker_load() {
         let dir = temp_dir("partition-sizes");
         fs::create_dir_all(&dir).unwrap();

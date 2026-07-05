@@ -623,7 +623,7 @@ Record here:
 | 16 | 28,978,108 | 8:53.63 | (least squares over all 3 points) | +7.7% |
 | 32 | 39,760,908 | 8:40.32 | intercept 13,147,661 kB ≈ 12.5 GiB (shared dicts) | −2.2% |
 
-Measured 2026-07-06 on the 2,000-source random subset (seed 42; subset mean 163,545 B / p95 751,488 B vs corpus mean 169,475 B / p95 674,536 B — within 15%, no re-draw). Middle point +7.7% off the line (< 20%) → linear fit used. Split per the rule: `PER_ANALYZER_BYTES` = 859,500 kB ÷ 4 ≈ 209.8 MiB → 210 MiB; residual 0 → `BASE_PER_JOB_BYTES` = 64 MiB floor. per_job(4 analyzers) = 904 MiB; on this box (MemAvailable ≈ 72 GiB) auto-jobs = 57 by memory → clamped to nproc 32, predicted peak ≈ 12.5 + 32 × 0.82 ≈ 38.8 GiB (measured 37.9 GiB at J=32).
+Measured 2026-07-06 on the 2,000-source random subset (seed 42; subset mean 163,545 B / p95 751,488 B vs corpus mean 169,475 B / p95 674,536 B — within 15%, no re-draw). Middle point +7.7% off the line (< 20%) → linear fit used. Split per the rule: `PER_ANALYZER_BYTES` = 859,500 kB ÷ 4 ≈ 209.8 MiB → 210 MiB; residual 0 → `BASE_PER_JOB_BYTES` = 64 MiB floor. per_job(4 analyzers) = 904 MiB; on this box (MemAvailable ≈ 72 GiB) auto-jobs = 57 by memory (with the fix-4b overhead subtraction the memory-derived value is ~42 on that box; clamped outcome (32) unchanged) → clamped to nproc 32, predicted peak ≈ 12.5 + 32 × 0.82 ≈ 38.8 GiB (measured 37.9 GiB at J=32).
 
 Update the two constants in `auto_jobs.rs`, extend their doc comments with the fit numbers and date, and adjust the `budget_scales_with_memory_and_analyzers` test's expected value to the new constants (recompute the expected jobs by hand in the test comment).
 

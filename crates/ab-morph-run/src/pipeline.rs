@@ -181,6 +181,9 @@ pub(crate) fn run_analyze_aat_warehouse_impl(
     if analyzer_ids.is_empty() {
         bail!("provide at least one --analyzer");
     }
+    if run_id.starts_with(STAGING_SHARD_PREFIX) {
+        bail!(r#"run_id must not start with "shards-" (reserved for shard staging)"#);
+    }
     let jobs = crate::auto_jobs::resolve_jobs(jobs, analyzer_ids.len());
     let inputs = discover_aat_inputs(aat, aat_dir)?;
     let input_mode = if aat.is_some() { "aat" } else { "aat_dir" };
@@ -1588,6 +1591,12 @@ fn shard_staging_root(warehouse_dir: &Path, run_id: &str) -> PathBuf {
 /// A staging owner is alive iff its PID exists and its cmdline names this
 /// binary — the cmdline check closes the PID-reuse hole (an unrelated process
 /// that recycled the PID does not block cleanup).
+///
+/// Any error reading `/proc/<pid>/cmdline` (including a permissions error, not
+/// just "no such process") is treated as dead. On default Linux configs (no
+/// `hidepid` mount option restricting `/proc` visibility), an unreadable
+/// cmdline is effectively equivalent to ESRCH — the process is gone — so this
+/// is a reasonable default rather than a conservative approximation.
 fn staging_owner_alive(pid: u32, cmdline_needle: &str) -> bool {
     match std::fs::read(format!("/proc/{pid}/cmdline")) {
         Ok(bytes) => String::from_utf8_lossy(&bytes).contains(cmdline_needle),
@@ -1622,12 +1631,18 @@ fn cleanup_orphaned_shard_staging_with_needle(warehouse_dir: &Path, needle: &str
                 "removing orphaned shard staging {} (owner dead or marker missing)",
                 entry.path().display()
             );
-            fs::remove_dir_all(entry.path()).with_context(|| {
-                format!(
-                    "failed to remove orphaned shard staging {}",
+            let is_file = entry.file_type().is_ok_and(|ft| ft.is_file());
+            let result = if is_file {
+                fs::remove_file(entry.path())
+            } else {
+                fs::remove_dir_all(entry.path())
+            };
+            if let Err(e) = result {
+                eprintln!(
+                    "warning: failed to remove orphaned shard staging {}: {e}",
                     entry.path().display()
-                )
-            })?;
+                );
+            }
         }
     }
     Ok(())
@@ -1648,8 +1663,22 @@ fn claim_shard_staging_with_needle(shard_root: &Path, needle: &str) -> Result<()
         fs::remove_dir_all(shard_root)
             .with_context(|| format!("failed to replace dead staging {}", shard_root.display()))?;
     }
-    fs::create_dir_all(shard_root)
-        .with_context(|| format!("failed to create {}", shard_root.display()))?;
+    if let Some(parent) = shard_root.parent() {
+        fs::create_dir_all(parent)
+            .with_context(|| format!("failed to create {}", parent.display()))?;
+    }
+    // Atomic claim: create_dir (not create_dir_all) on the final component so a
+    // concurrent claimant racing us on the same shard_root loses with
+    // AlreadyExists rather than both succeeding.
+    if let Err(e) = fs::create_dir(shard_root) {
+        if e.kind() == std::io::ErrorKind::AlreadyExists {
+            bail!(
+                "warehouse run already in progress: {} is claimed by a live process",
+                shard_root.display()
+            );
+        }
+        return Err(e).with_context(|| format!("failed to create {}", shard_root.display()));
+    }
     fs::write(shard_root.join("pid"), std::process::id().to_string())
         .with_context(|| format!("failed to write pid marker in {}", shard_root.display()))?;
     Ok(())

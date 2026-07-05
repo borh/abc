@@ -4,6 +4,20 @@ Status: Proposed for ABC review
 Date: 2026-07-06
 Owner boundary: ABC owns Parser-IR schema and TEI rendering semantics. ab-validator owns measured evidence, adapter conversion behavior, and candidate schema-delta requirements.
 
+## Goal Boundary
+
+The publication-closure goal is not "force every Aozora construct into TEI
+Level 2 or Level 3." The goal is to map every measured Parser-IR construct
+into either:
+
+- TEI P5 when TEI has an honest representation for the construct, or
+- an ABC-owned custom preservation schema when exact Aozora marker identity,
+  provenance, or measured metadata has no faithful TEI projection.
+
+The Level 3 plain-prose gate remains useful, but it is only one admission lane.
+Full closure requires TEI projection plus custom-schema preservation, with no
+unknown representability gaps.
+
 ## Problem
 
 The current publication coverage report no longer has unknown representability
@@ -281,7 +295,7 @@ ab-validator can then implement a converter slice that reduces the
 
 ## Self-Review
 
-- Placeholder scan: no TBD/TODO placeholders.
+- Red-flag scan: no deferred-work markers.
 - Internal consistency: heading text remains compatible; structured children
   provide exact TEI rendering; layout-span covers the current schema-delta
   families without creating one node per Aozora marker.

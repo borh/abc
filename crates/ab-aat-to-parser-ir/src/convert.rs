@@ -374,7 +374,32 @@ fn map_block(
             }
         }
         "quote_block" | "caption_block" => {
-            bail!("unsupported block kind without measured v1 divergence rule: {kind}");
+            if recorder.has_rule("STRUCTURAL", Some(structural_pointer.as_str()), None) {
+                recorder.record(
+                    "STRUCTURAL",
+                    Some(structural_pointer.as_str()),
+                    None,
+                    None,
+                    None,
+                )?;
+            }
+            for (index, child) in block["children"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .enumerate()
+            {
+                current = map_block(
+                    child,
+                    nodes,
+                    paragraphs,
+                    recorder,
+                    current,
+                    &format!("{path}.children[{index}]"),
+                    None,
+                    false,
+                )?;
+            }
         }
         other => bail!("unsupported block kind: {other}"),
     }

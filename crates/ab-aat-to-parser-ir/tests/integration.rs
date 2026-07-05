@@ -1471,6 +1471,60 @@ fn heading_visible_projection_records_measured_flattening_losses() {
 }
 
 #[test]
+fn recovers_caption_and_quote_block_children_without_fatal_divergence() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let aat = json!({
+        "version": 1,
+        "work_id": "block-recovery",
+        "meta": base_meta(
+            "utf-8",
+            "sha256:3434343434343434343434343434343434343434343434343434343434343434",
+        ),
+        "blocks": [
+            {
+                "kind": "caption_block",
+                "children": [{
+                    "kind": "paragraph",
+                    "content": [{"kind": "text", "value": "Caption text"}]
+                }]
+            },
+            {
+                "kind": "quote_block",
+                "children": [{
+                    "kind": "paragraph",
+                    "content": [{"kind": "text", "value": "Quote text"}]
+                }]
+            }
+        ]
+    });
+
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: ConversionOptions::default(),
+    })
+    .unwrap();
+
+    let text_nodes: Vec<&str> = output
+        .parser_ir
+        .pointer("/nodes")
+        .and_then(Value::as_array)
+        .unwrap()
+        .iter()
+        .filter_map(|node| node["text"].as_str())
+        .collect();
+    assert_eq!(text_nodes, vec!["Caption text", "Quote text"]);
+    assert!(has_divergence_record(
+        &output,
+        "STRUCTURAL",
+        "blocks[].caption_block",
+        None
+    ));
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
+#[test]
 fn unmeasured_inline_kind_refuses_by_default() {
     let (schemas, mapping) = schemas_and_mapping();
     let aat = json!({
@@ -1618,7 +1672,7 @@ fn cli_audit_corpus_reports_successes_and_failures() {
     "parse_complete": true,
     "warnings": []
   },
-  "blocks": [{"kind": "quote_block", "children": [{"kind": "paragraph", "content": [{"kind": "text", "value": "Q"}]}]}]
+  "blocks": [{"kind": "paragraph", "content": [{"kind": "x-local-fixture", "value": "Q"}]}]
 }"#,
     )
     .unwrap();

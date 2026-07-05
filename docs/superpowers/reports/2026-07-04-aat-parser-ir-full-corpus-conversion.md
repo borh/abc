@@ -1,6 +1,6 @@
 # AAT Parser-IR Conversion Audit
 
-- generated_unix_seconds: `1783242025`
+- generated_unix_seconds: `1783244944`
 - mapping: `https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe` `0.2.3`
 - mapping_hash: `sha256:9812e1cc0d956143e61cdd9d0a5bccaa3ec301c7984279230107c23919936e8b`
 - mapping_schema_hash: `sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4`
@@ -10,7 +10,7 @@
 
 | files_attempted | files_succeeded | files_failed | parser_ir_nodes | divergence_records | divergence_occurrences | elapsed_seconds |
 |---:|---:|---:|---:|---:|---:|---:|
-| 89169 | 67904 | 21265 | 28890539 | 804766 | 46686087 | 28.145 |
+| 89169 | 67906 | 21263 | 28890549 | 804793 | 46686120 | 29.158 |
 
 ## Inputs
 
@@ -29,18 +29,18 @@
 | aozora-adapter | 17886 | 996 | 16890 | 996 | 5996 |
 | aozora-epub3-adapter | 17844 | 17844 | 0 | 10600649 | 18103739 |
 | aozora-rs-adapter | 17894 | 17894 | 0 | 7821839 | 11926731 |
-| aozora2-adapter | 17856 | 13481 | 4375 | 2136482 | 4669333 |
+| aozora2-adapter | 17856 | 13483 | 4373 | 2136492 | 4669366 |
 | aozora2html-adapter | 17689 | 17689 | 0 | 8330573 | 11980288 |
 
 ## Divergence Categories
 
 | category | occurrences |
 |---|---:|
-| AMBIGUITY | 29709237 |
-| INVENTION | 11587700 |
-| LOSS | 5185173 |
-| STRUCTURAL | 172976 |
-| UNSUPPORTED | 31001 |
+| AMBIGUITY | 29709249 |
+| INVENTION | 11587710 |
+| LOSS | 5185181 |
+| STRUCTURAL | 172978 |
+| UNSUPPORTED | 31002 |
 
 ## Compatibility Candidates
 
@@ -49,14 +49,14 @@
 | aozora | aozora-adapter 0.1.0 aozora 0.4.1 | 0.2.3 | `sha256:9812e1cc0d956143e61cdd9d0a5bccaa3ec301c7984279230107c23919936e8b` | 996 | 16890 | 8 | 706 | 0 |
 | aozora-epub3 | aozora-epub3-adapter 0.1.0 AozoraEpub3-JDK21-1.3.4-jdk21 | 0.2.3 | `sha256:9812e1cc0d956143e61cdd9d0a5bccaa3ec301c7984279230107c23919936e8b` | 17844 | 0 | 61 | 653 | 13234 |
 | aozora-rs | aozora-rs-adapter 0.1.0 2b4e8d1 | 0.2.3 | `sha256:9812e1cc0d956143e61cdd9d0a5bccaa3ec301c7984279230107c23919936e8b` | 17894 | 0 | 25 | 689 | 0 |
-| aozora2 | aozora2-adapter 0.1.0 aozora-core-0.7.1 | 0.2.3 | `sha256:9812e1cc0d956143e61cdd9d0a5bccaa3ec301c7984279230107c23919936e8b` | 13481 | 4375 | 266 | 448 | 3537 |
+| aozora2 | aozora2-adapter 0.1.0 aozora-core-0.7.1 | 0.2.3 | `sha256:9812e1cc0d956143e61cdd9d0a5bccaa3ec301c7984279230107c23919936e8b` | 13483 | 4373 | 267 | 447 | 3538 |
 | aozora2html | aozora2html-adapter 0.1.0 gem-3.0.1 | 0.2.3 | `sha256:9812e1cc0d956143e61cdd9d0a5bccaa3ec301c7984279230107c23919936e8b` | 17689 | 0 | 112 | 602 | 14230 |
 
 ## Rule Coverage
 
 - rules_total: `714`
-- rules_emitted: `307`
-- rules_missing: `407`
+- rules_emitted: `308`
+- rules_missing: `406`
 
 | rule_id | category | files | occurrences |
 |---|---|---:|---:|
@@ -75,7 +75,7 @@
 | A-102 | AMBIGUITY | 0 | 0 |
 | A-103 | AMBIGUITY | 995 | 3917 |
 | A-104 | AMBIGUITY | 10309 | 80489 |
-| A-105 | AMBIGUITY | 66539 | 27118063 |
+| A-105 | AMBIGUITY | 66541 | 27118071 |
 | A-106 | AMBIGUITY | 30460 | 459261 |
 | A-107 | AMBIGUITY | 3 | 4 |
 | A-108 | AMBIGUITY | 0 | 0 |
@@ -97,7 +97,7 @@
 | A-122 | AMBIGUITY | 3472 | 29508 |
 | A-123 | AMBIGUITY | 10192 | 105927 |
 | A-124 | AMBIGUITY | 5 | 5 |
-| A-125 | AMBIGUITY | 67904 | 67904 |
+| A-125 | AMBIGUITY | 67906 | 67906 |
 | A-126 | AMBIGUITY | 0 | 0 |
 | A-13 | AMBIGUITY | 0 | 0 |
 | A-14 | AMBIGUITY | 0 | 0 |
@@ -115,7 +115,7 @@
 | A-26 | AMBIGUITY | 3 | 3 |
 | A-27 | AMBIGUITY | 102 | 256 |
 | A-28 | AMBIGUITY | 565 | 2190 |
-| A-29 | AMBIGUITY | 13493 | 903080 |
+| A-29 | AMBIGUITY | 13495 | 903082 |
 | A-30 | AMBIGUITY | 5025 | 77844 |
 | A-31 | AMBIGUITY | 2 | 2 |
 | A-32 | AMBIGUITY | 0 | 0 |
@@ -186,13 +186,13 @@
 | A-97 | AMBIGUITY | 1026 | 17785 |
 | A-98 | AMBIGUITY | 0 | 0 |
 | A-99 | AMBIGUITY | 0 | 0 |
-| I-01 | INVENTION | 67904 | 67904 |
+| I-01 | INVENTION | 67906 | 67906 |
 | I-02 | INVENTION | 50244 | 10625277 |
-| I-03 | INVENTION | 67904 | 67904 |
-| I-04 | INVENTION | 67904 | 67904 |
+| I-03 | INVENTION | 67906 | 67906 |
+| I-04 | INVENTION | 67906 | 67906 |
 | I-05 | INVENTION | 16566 | 265138 |
 | I-06 | INVENTION | 16566 | 265138 |
-| I-07 | INVENTION | 67904 | 67904 |
+| I-07 | INVENTION | 67906 | 67906 |
 | I-08 | INVENTION | 0 | 0 |
 | I-09 | INVENTION | 1 | 47 |
 | I-10 | INVENTION | 0 | 0 |
@@ -208,7 +208,7 @@
 | I-20 | INVENTION | 32 | 55 |
 | I-21 | INVENTION | 325 | 1444 |
 | I-22 | INVENTION | 0 | 0 |
-| I-23 | INVENTION | 564 | 3943 |
+| I-23 | INVENTION | 566 | 3945 |
 | I-24 | INVENTION | 10309 | 80489 |
 | I-25 | INVENTION | 0 | 0 |
 | I-26 | INVENTION | 7 | 10 |
@@ -557,9 +557,9 @@
 | L-401 | LOSS | 1 | 1 |
 | L-402 | LOSS | 0 | 0 |
 | L-403 | LOSS | 133 | 678 |
-| L-404 | LOSS | 564 | 3943 |
-| L-405 | LOSS | 499 | 3783 |
-| L-406 | LOSS | 499 | 3783 |
+| L-404 | LOSS | 566 | 3945 |
+| L-405 | LOSS | 501 | 3785 |
+| L-406 | LOSS | 501 | 3785 |
 | L-407 | LOSS | 3634 | 19357 |
 | L-408 | LOSS | 24093 | 3996557 |
 | L-409 | LOSS | 0 | 0 |
@@ -661,7 +661,7 @@
 | L-496 | LOSS | 15 | 116 |
 | L-497 | LOSS | 3472 | 29508 |
 | L-498 | LOSS | 17894 | 17894 |
-| L-499 | LOSS | 67904 | 67904 |
+| L-499 | LOSS | 67906 | 67906 |
 | L-50 | LOSS | 0 | 0 |
 | L-500 | LOSS | 32710 | 32710 |
 | L-51 | LOSS | 0 | 0 |
@@ -713,7 +713,7 @@
 | L-97 | LOSS | 0 | 0 |
 | L-98 | LOSS | 0 | 0 |
 | L-99 | LOSS | 0 | 0 |
-| S-01 | STRUCTURAL | 0 | 0 |
+| S-01 | STRUCTURAL | 2 | 2 |
 | S-02 | STRUCTURAL | 18 | 20 |
 | S-03 | STRUCTURAL | 6619 | 71403 |
 | S-04 | STRUCTURAL | 15 | 15 |
@@ -759,7 +759,7 @@
 | U-34 | UNSUPPORTED | 49 | 214 |
 | U-35 | UNSUPPORTED | 0 | 0 |
 | U-36 | UNSUPPORTED | 0 | 0 |
-| U-37 | UNSUPPORTED | 992 | 7868 |
+| U-37 | UNSUPPORTED | 993 | 7869 |
 | U-38 | UNSUPPORTED | 48 | 161 |
 | U-39 | UNSUPPORTED | 0 | 0 |
 | U-40 | UNSUPPORTED | 635 | 10852 |
@@ -779,11 +779,10 @@
 
 | count | message | samples |
 |---:|---|---|
-| 20954 | unsupported inline kind: raw | aozora2-adapter:000005_53194-ebb0cbaf64b3.json<br>aozora2-adapter:000006_1869-62320f0f4474.json<br>aozora2-adapter:000006_4627-ded0d23b15b9.json<br>aozora2-adapter:000008_1083-bf767c36e951.json<br>aozora2-adapter:000008_47357-6b9c19f6420d.json |
+| 20958 | unsupported inline kind: raw | aozora2-adapter:000005_53194-ebb0cbaf64b3.json<br>aozora2-adapter:000006_1869-62320f0f4474.json<br>aozora2-adapter:000006_4627-ded0d23b15b9.json<br>aozora2-adapter:000008_1083-bf767c36e951.json<br>aozora2-adapter:000008_47357-6b9c19f6420d.json |
 | 138 | unsupported inline kind: accent | aozora2-adapter:000026_50245-e840465144a2.json<br>aozora2-adapter:000027_523-e22ef286b8e7.json<br>aozora2-adapter:000035_2277-b04f7f121e1a.json<br>aozora2-adapter:000042_2469-3372cea4b938.json<br>aozora2-adapter:000061_510-7c87649c3a47.json |
 | 129 | unsupported inline kind in source attribution projection: accent | aozora2-adapter:000020_745-bce191ee0ece.json<br>aozora2-adapter:000026_50241-af65ef658680.json<br>aozora2-adapter:000026_55717-3ba0b0630fd5.json<br>aozora2-adapter:000042_1682-4401cf92d836.json<br>aozora2-adapter:000042_2453-83567d45101e.json |
 | 32 | unsupported inline kind in visible projection: accent | aozora2-adapter:000026_55732-e162f2f7263b.json<br>aozora2-adapter:000026_55739-075fc7322e7b.json<br>aozora2-adapter:000042_42768-2a6afe487bf8.json<br>aozora2-adapter:000065_393-58fae23a2747.json<br>aozora2-adapter:000065_393-bb9331cf0b9e.json |
-| 6 | unsupported block kind without measured v1 divergence rule: caption_block | aozora2-adapter:000058_57440-fd9d6f0c6c51.json<br>aozora2-adapter:000448_55729-f621cbdeea07.json<br>aozora2-adapter:001569_61447-b0864851f689.json<br>aozora2-adapter:001569_61475-04a2661c46aa.json<br>aozora2-adapter:001569_61512-bf3b6dffe2f0.json |
 | 5 | unsupported inline kind in source attribution projection: yokogumi | aozora2-adapter:000026_50239-f4c2d8bb9024.json<br>aozora2-adapter:000035_312-cb6505044b26.json<br>aozora2-adapter:000035_313-586a212e52ce.json<br>aozora2-adapter:000311_2029-716e98653b00.json<br>aozora2-adapter:001166_43826-0b22f1c3dae6.json |
 | 1 | unsupported inline kind: yokogumi | aozora2-adapter:001569_57279-a4f95b2004e3.json |
 

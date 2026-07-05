@@ -1,5 +1,5 @@
 {
-  "generated_unix_seconds": 1783242025,
+  "generated_unix_seconds": 1783244944,
   "mapping": {
     "path": "/home/bor/Projects/ab-validator/data/aat-to-parser-ir-mapping-v1.json",
     "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
@@ -39,12 +39,12 @@
   ],
   "totals": {
     "files_attempted": 89169,
-    "files_succeeded": 67904,
-    "files_failed": 21265,
-    "parser_ir_nodes": 28890539,
-    "divergence_records": 804766,
-    "divergence_occurrences": 46686087,
-    "elapsed_seconds": 28.145
+    "files_succeeded": 67906,
+    "files_failed": 21263,
+    "parser_ir_nodes": 28890549,
+    "divergence_records": 804793,
+    "divergence_occurrences": 46686120,
+    "elapsed_seconds": 29.158
   },
   "by_corpus": {
     "aozora-adapter": {
@@ -73,11 +73,11 @@
     },
     "aozora2-adapter": {
       "files_attempted": 17856,
-      "files_succeeded": 13481,
-      "files_failed": 4375,
-      "parser_ir_nodes": 2136482,
-      "divergence_records": 145381,
-      "divergence_occurrences": 4669333
+      "files_succeeded": 13483,
+      "files_failed": 4373,
+      "parser_ir_nodes": 2136492,
+      "divergence_records": 145408,
+      "divergence_occurrences": 4669366
     },
     "aozora2html-adapter": {
       "files_attempted": 17689,
@@ -89,15 +89,15 @@
     }
   },
   "categories": {
-    "AMBIGUITY": 29709237,
-    "INVENTION": 11587700,
-    "LOSS": 5185173,
-    "STRUCTURAL": 172976,
-    "UNSUPPORTED": 31001
+    "AMBIGUITY": 29709249,
+    "INVENTION": 11587710,
+    "LOSS": 5185181,
+    "STRUCTURAL": 172978,
+    "UNSUPPORTED": 31002
   },
   "rule_coverage": {
     "rules_total": 714,
-    "rules_emitted": 307,
+    "rules_emitted": 308,
     "rules_missing": [
       "A-01",
       "A-02",
@@ -484,7 +484,6 @@
       "L-97",
       "L-98",
       "L-99",
-      "S-01",
       "U-02",
       "U-04",
       "U-09",
@@ -585,8 +584,8 @@
       },
       "A-105": {
         "category": "AMBIGUITY",
-        "files": 66539,
-        "occurrences": 27118063
+        "files": 66541,
+        "occurrences": 27118071
       },
       "A-106": {
         "category": "AMBIGUITY",
@@ -695,8 +694,8 @@
       },
       "A-125": {
         "category": "AMBIGUITY",
-        "files": 67904,
-        "occurrences": 67904
+        "files": 67906,
+        "occurrences": 67906
       },
       "A-126": {
         "category": "AMBIGUITY",
@@ -785,8 +784,8 @@
       },
       "A-29": {
         "category": "AMBIGUITY",
-        "files": 13493,
-        "occurrences": 903080
+        "files": 13495,
+        "occurrences": 903082
       },
       "A-30": {
         "category": "AMBIGUITY",
@@ -1140,8 +1139,8 @@
       },
       "I-01": {
         "category": "INVENTION",
-        "files": 67904,
-        "occurrences": 67904
+        "files": 67906,
+        "occurrences": 67906
       },
       "I-02": {
         "category": "INVENTION",
@@ -1150,13 +1149,13 @@
       },
       "I-03": {
         "category": "INVENTION",
-        "files": 67904,
-        "occurrences": 67904
+        "files": 67906,
+        "occurrences": 67906
       },
       "I-04": {
         "category": "INVENTION",
-        "files": 67904,
-        "occurrences": 67904
+        "files": 67906,
+        "occurrences": 67906
       },
       "I-05": {
         "category": "INVENTION",
@@ -1170,8 +1169,8 @@
       },
       "I-07": {
         "category": "INVENTION",
-        "files": 67904,
-        "occurrences": 67904
+        "files": 67906,
+        "occurrences": 67906
       },
       "I-08": {
         "category": "INVENTION",
@@ -1250,8 +1249,8 @@
       },
       "I-23": {
         "category": "INVENTION",
-        "files": 564,
-        "occurrences": 3943
+        "files": 566,
+        "occurrences": 3945
       },
       "I-24": {
         "category": "INVENTION",
@@ -2995,18 +2994,18 @@
       },
       "L-404": {
         "category": "LOSS",
-        "files": 564,
-        "occurrences": 3943
+        "files": 566,
+        "occurrences": 3945
       },
       "L-405": {
         "category": "LOSS",
-        "files": 499,
-        "occurrences": 3783
+        "files": 501,
+        "occurrences": 3785
       },
       "L-406": {
         "category": "LOSS",
-        "files": 499,
-        "occurrences": 3783
+        "files": 501,
+        "occurrences": 3785
       },
       "L-407": {
         "category": "LOSS",
@@ -3515,8 +3514,8 @@
       },
       "L-499": {
         "category": "LOSS",
-        "files": 67904,
-        "occurrences": 67904
+        "files": 67906,
+        "occurrences": 67906
       },
       "L-50": {
         "category": "LOSS",
@@ -3775,8 +3774,8 @@
       },
       "S-01": {
         "category": "STRUCTURAL",
-        "files": 0,
-        "occurrences": 0
+        "files": 2,
+        "occurrences": 2
       },
       "S-02": {
         "category": "STRUCTURAL",
@@ -4005,8 +4004,8 @@
       },
       "U-37": {
         "category": "UNSUPPORTED",
-        "files": 992,
-        "occurrences": 7868
+        "files": 993,
+        "occurrences": 7869
       },
       "U-38": {
         "category": "UNSUPPORTED",
@@ -4181,15 +4180,15 @@
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1",
         "corpus": "aozora2-adapter",
         "files_scanned": 17856,
-        "files_succeeded": 13481,
-        "files_failed": 4375,
-        "parser_ir_nodes": 2136482,
-        "divergence_records": 145381,
-        "divergence_occurrences": 4669333,
+        "files_succeeded": 13483,
+        "files_failed": 4373,
+        "parser_ir_nodes": 2136492,
+        "divergence_records": 145408,
+        "divergence_occurrences": 4669366,
         "rules_total": 714,
-        "rules_emitted": 266,
-        "rules_missing": 448,
-        "unsupported_occurrences": 3537
+        "rules_emitted": 267,
+        "rules_missing": 447,
+        "unsupported_occurrences": 3538
       },
       "compatibility": "lossy"
     },
@@ -4225,7 +4224,7 @@
   "top_errors": [
     {
       "message": "unsupported inline kind: raw",
-      "count": 20954,
+      "count": 20958,
       "samples": [
         {
           "corpus": "aozora2-adapter",
@@ -4324,32 +4323,6 @@
         {
           "corpus": "aozora2-adapter",
           "path": "000065_393-bb9331cf0b9e.json"
-        }
-      ]
-    },
-    {
-      "message": "unsupported block kind without measured v1 divergence rule: caption_block",
-      "count": 6,
-      "samples": [
-        {
-          "corpus": "aozora2-adapter",
-          "path": "000058_57440-fd9d6f0c6c51.json"
-        },
-        {
-          "corpus": "aozora2-adapter",
-          "path": "000448_55729-f621cbdeea07.json"
-        },
-        {
-          "corpus": "aozora2-adapter",
-          "path": "001569_61447-b0864851f689.json"
-        },
-        {
-          "corpus": "aozora2-adapter",
-          "path": "001569_61475-04a2661c46aa.json"
-        },
-        {
-          "corpus": "aozora2-adapter",
-          "path": "001569_61512-bf3b6dffe2f0.json"
         }
       ]
     },

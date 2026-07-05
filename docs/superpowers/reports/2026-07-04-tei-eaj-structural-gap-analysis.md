@@ -168,7 +168,7 @@ The current admission policy is now specified in `docs/superpowers/specs/2026-07
      structure is Level 3 or deferred,
    - Level 4 enrichment: keep named entities and `said`-style markup outside
      parser compatibility unless ABC promotes them.
-3. Source-authority scanner issues are closed for the current corpus snapshot. Future scanner or corpus changes must rerun `just source-authority-representability-gate`, but this is no longer a current Level 3 blocker.
+3. Source-authority strict errors are closed for the current corpus snapshot. Future scanner or corpus changes must rerun `just source-authority-representability-gate`, but this is no longer a current Level 3 blocker.
 4. Fix adapter fidelity in this order:
    - `aozora-rs` collapse rows,
    - `aozora2` workset coverage or explicit Melos-only scope,

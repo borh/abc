@@ -7,6 +7,7 @@ This report classifies measured parser-IR generated TEI evidence into profile-aw
 - source_authority_gate: `SOURCE_AUTHORITY_GATE_PASS`
 - parser_ir_infrastructure_verdict: `LEVEL3_IR_INFRASTRUCTURE_READY`
 - plain_prose_verdict: `LEVEL3_PLAIN_PROSE_BLOCKED_ADAPTER_FIDELITY_AND_TEXT_POLICY`
+- plain_prose_workset_verdict: `LEVEL3_PLAIN_PROSE_WORKSET_BLOCKED`
 - blocking_owners: `adapter, policy`
 - mapping_hash: `sha256:feaab2d246fd17d79dc979012893400e0f5faacc0df04e260bee4f2b129299bf`
 
@@ -31,6 +32,34 @@ This report classifies measured parser-IR generated TEI evidence into profile-aw
 | rows_total | 135 |
 | rows_passed | 19 |
 | rows_failed | 116 |
+
+## Plain Prose Workset Admission
+
+- admission_unit: `tei_eaj_work_file_with_any_passing_parser_candidate`
+- verdict: `LEVEL3_PLAIN_PROSE_WORKSET_BLOCKED`
+- blocking_owners: `adapter, policy`
+
+| metric | value |
+|---|---:|
+| work_files_total | 27 |
+| work_files_passed | 18 |
+| work_files_failed | 9 |
+
+### Passing Candidates By Adapter
+
+| adapter | work files |
+|---|---:|
+| aozora-epub3 | 1 |
+| aozora-rs | 3 |
+| aozora2 | 14 |
+| aozora2html | 1 |
+
+### Workset Failures By Owner
+
+| owner | work files |
+|---|---:|
+| adapter | 9 |
+| policy | 9 |
 
 ### Failures By Owner
 

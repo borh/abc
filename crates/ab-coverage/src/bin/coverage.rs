@@ -7,7 +7,8 @@
 //!   --corpus    corpus root (default: references/aozorabunko)
 //!   --work-ids  optional JSON file with a list of work_id strings; default
 //!               is "all works in --index"
-//!   --parsers   comma-separated parser ids (default: aozora2,aozora-rs,aozora2html)
+//!   --parsers   comma-separated parser ids
+//!               (default: aozora2,aozora-rs,aozora2html,aozora-epub3,aozora)
 //!   --cache-root  default target/parser-cache
 //!   --no-cache  disable read+write of the parser cache
 //!   --jobs      rayon thread count (default: cores)
@@ -40,7 +41,10 @@ struct Cli {
     corpus: PathBuf,
     #[arg(long)]
     work_ids: Option<PathBuf>,
-    #[arg(long, default_value = "aozora2,aozora-rs,aozora2html")]
+    #[arg(
+        long,
+        default_value = "aozora2,aozora-rs,aozora2html,aozora-epub3,aozora"
+    )]
     parsers: String,
     #[arg(long, default_value = "target/parser-cache")]
     cache_root: PathBuf,

@@ -5,18 +5,18 @@ use std::{
 
 fn adapter_bin() -> PathBuf {
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-    path.push("target/release/aozora-adapter");
+    path.push("target/debug/aozora-adapter");
     if !path.exists() {
         path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        path.push("target/debug/aozora-adapter");
+        path.push("target/release/aozora-adapter");
     }
     path
 }
 
-fn run_aat(source: &str) -> serde_json::Value {
+fn run_mode(source: &str, mode: &str) -> Vec<u8> {
     let mut child = Command::new(adapter_bin())
         .arg("--mode")
-        .arg("aat")
+        .arg(mode)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .spawn()
@@ -36,7 +36,19 @@ fn run_aat(source: &str) -> serde_json::Value {
         "adapter failed: {}",
         String::from_utf8_lossy(&output.stderr)
     );
-    serde_json::from_slice(&output.stdout).expect("AAT JSON")
+    output.stdout
+}
+
+fn run_aat(source: &str) -> serde_json::Value {
+    serde_json::from_slice(&run_mode(source, "aat")).expect("AAT JSON")
+}
+
+fn paragraph_content(aat: &serde_json::Value) -> Vec<&serde_json::Value> {
+    aat["blocks"][0]["content"]
+        .as_array()
+        .expect("paragraph content")
+        .iter()
+        .collect()
 }
 
 #[test]
@@ -88,4 +100,59 @@ fn emits_schema_valid_aat_for_core_constructs() {
     let schema: serde_json::Value = serde_json::from_str(&schema_text).unwrap();
     let validator = jsonschema::validator_for(&schema).unwrap();
     validator.validate(&aat).expect("schema-valid AAT");
+}
+
+#[test]
+fn preserves_visible_text_around_gaiji_in_source_order() {
+    let aat = run_aat("耳朶を※［＃「口＋世」、U+546D］えて");
+    let content = paragraph_content(&aat);
+    let kinds = content
+        .iter()
+        .map(|node| node["kind"].as_str().unwrap())
+        .collect::<Vec<_>>();
+
+    assert_eq!(kinds, ["text", "gaiji", "text"]);
+    assert_eq!(content[0]["value"], "耳朶を");
+    assert_eq!(content[2]["value"], "えて");
+}
+
+#[test]
+fn preserves_visible_text_after_ruby_in_source_order() {
+    let aat = run_aat("｜青梅《おうめ》後");
+    let content = paragraph_content(&aat);
+    let kinds = content
+        .iter()
+        .map(|node| node["kind"].as_str().unwrap())
+        .collect::<Vec<_>>();
+
+    assert_eq!(kinds, ["ruby", "text"]);
+    assert_eq!(content[0]["base"], "青梅");
+    assert_eq!(content[0]["reading"], "おうめ");
+    assert_eq!(content[1]["value"], "後");
+}
+
+#[test]
+fn preserves_visible_text_around_ruby_in_source_order() {
+    let aat = run_aat("前｜青梅《おうめ》後");
+    let content = paragraph_content(&aat);
+    let kinds = content
+        .iter()
+        .map(|node| node["kind"].as_str().unwrap())
+        .collect::<Vec<_>>();
+
+    assert_eq!(kinds, ["text", "ruby", "text"]);
+    assert_eq!(content[0]["value"], "前");
+    assert_eq!(content[1]["base"], "青梅");
+    assert_eq!(content[1]["reading"], "おうめ");
+    assert_eq!(content[2]["value"], "後");
+}
+
+#[test]
+fn html_mode_delegates_to_upstream_renderer() {
+    let stdout = run_mode("｜青梅《おうめ》後", "html");
+    let html = String::from_utf8(stdout).expect("html utf-8");
+
+    assert!(html.contains("<ruby>青梅"));
+    assert!(html.contains("<rt>おうめ</rt>"));
+    assert!(html.contains("後"));
 }

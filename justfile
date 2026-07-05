@@ -153,6 +153,47 @@ aat-to-parser-ir-flake-smoke:
 parser-performance-smoke:
 	@bash tests/parser-performance-measure-smoke.sh
 
+parser-performance-all-parsers:
+	@index="${INDEX:-}"; \
+	corpus="${CORPUS:-{{repo_root}}/references/aozorabunko}"; \
+	out_dir="${OUT_DIR:-{{ab_db_root}}/parser-performance/all-parsers-$(date -u +%Y%m%dT%H%M%SZ)}"; \
+	work_ids="${WORK_IDS:-}"; \
+	sample="${SAMPLE:-20}"; \
+	limit_s="${LIMIT_S:-300}"; \
+	stage_split_sample="${STAGE_SPLIT_SAMPLE:-5}"; \
+	jobs="${JOBS:-24}"; \
+	test -n "$index" || { echo "INDEX=/path/to/index.json is required" >&2; exit 2; }; \
+	aozora_pkg="$(nix --option post-build-hook "" build --no-link --print-out-paths '{{repo_root}}#reference-aozora')"; \
+	aozora2html_pkg="$(nix --option post-build-hook "" build --no-link --print-out-paths '{{repo_root}}#reference-aozora2html')"; \
+	epub3_jar="${AB_AOZORAEPUB3_JAR:-{{repo_root}}/references/parsers/AozoraEpub3-JDK21/build/libs/AozoraEpub3.jar}"; \
+	test -f "$epub3_jar" || { echo "AozoraEpub3.jar not found: $epub3_jar" >&2; echo "build it with: (cd {{repo_root}}/references/parsers/AozoraEpub3-JDK21 && ./gradlew jar), or set AB_AOZORAEPUB3_JAR" >&2; exit 2; }; \
+	aozora_pkg_q="$(python3 -c 'import shlex, sys; print(shlex.quote(sys.argv[1]))' "$aozora_pkg")"; \
+	epub3_jar_q="$(python3 -c 'import shlex, sys; print(shlex.quote(sys.argv[1]))' "$epub3_jar")"; \
+	cargo build --manifest-path "{{repo_root}}/adapters/aozora2/Cargo.toml" --release --jobs "$jobs"; \
+	cargo build --manifest-path "{{repo_root}}/adapters/aozora-rs/Cargo.toml" --release --jobs "$jobs"; \
+	cargo build --manifest-path "{{repo_root}}/adapters/aozora2html/Cargo.toml" --release --jobs "$jobs"; \
+	cargo build --manifest-path "{{repo_root}}/adapters/aozora-epub3/Cargo.toml" --release --jobs "$jobs"; \
+	cargo build --manifest-path "{{repo_root}}/adapters/aozora/Cargo.toml" --release --jobs "$jobs"; \
+	work_args=(); if [ -n "$work_ids" ]; then work_args=(--work-ids "$work_ids"); fi; \
+	python3 "{{repo_root}}/reports/aat-fidelity/measure-parser-performance.py" \
+		--index "$index" \
+		--corpus "$corpus" \
+		--out-dir "$out_dir" \
+		"${work_args[@]}" \
+		--sample "$sample" \
+		--limit-s "$limit_s" \
+		--adapter "aozora2={{repo_root}}/adapters/aozora2/target/release/aozora2-adapter --mode aat" \
+		--adapter "aozora-rs={{repo_root}}/adapters/aozora-rs/target/release/aozora-rs-adapter --mode aat" \
+		--adapter "aozora2html={{repo_root}}/adapters/aozora2html/aozora2html-adapter --mode aat" \
+		--adapter "aozora-epub3=env AB_AOZORAEPUB3_JAR=$epub3_jar_q {{repo_root}}/adapters/aozora-epub3/aozora-epub3-adapter --mode aat" \
+		--adapter "aozora=env AB_AOZORA_BIN=$aozora_pkg_q/bin/aozora {{repo_root}}/adapters/aozora/target/release/aozora-adapter --mode aat" \
+		--aozora2html-label aozora2html \
+		--aozora2html-bin "$aozora2html_pkg/bin/aozora2html" \
+		--aozora2html-gem-home "$aozora2html_pkg/lib/ruby/gems" \
+		--mapper-bin "{{repo_root}}/adapters/aozora2html/target/release/aozora2html-adapter" \
+		--stage-split-sample "$stage_split_sample"; \
+	echo "parser performance measurement: $out_dir/results.json"
+
 source-inventory-smoke:
 	@bash "{{repo_root}}/tests/source-inventory-smoke.sh"
 

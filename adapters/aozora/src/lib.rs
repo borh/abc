@@ -28,7 +28,7 @@ struct Envelope<T> {
     data: Vec<T>,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone, Copy)]
 struct Span {
     start: usize,
     end: usize,
@@ -123,6 +123,16 @@ fn build_aat(
             "content": inline_content(decoded, nodes, &gaiji_by_start)
         })]
     };
+    let mut warnings = diagnostics
+        .iter()
+        .map(diagnostic_warning)
+        .collect::<Vec<_>>();
+    if !nodes.is_empty() {
+        warnings.push(json!({
+            "message": "aozora upstream spans are byte offsets; line_start and line_end are synthesized as 1",
+            "line": 1
+        }));
+    }
     json!({
         "version": 1,
         "work_id": "stdin",
@@ -133,7 +143,7 @@ fn build_aat(
             "source_encoding": decoded.encoding,
             "source_hash": decoded.source_hash,
             "parse_complete": diagnostics.iter().all(|d| d.severity.as_deref() != Some("error")),
-            "warnings": diagnostics.iter().map(diagnostic_warning).collect::<Vec<_>>()
+            "warnings": warnings
         }
     })
 }
@@ -160,7 +170,14 @@ fn inline_content(
     gaiji_by_start: &BTreeMap<usize, AozoraGaiji>,
 ) -> Vec<Value> {
     let mut content = Vec::new();
-    for node in nodes {
+    let mut ordered = nodes.iter().collect::<Vec<_>>();
+    ordered.sort_by_key(|node| (node.span.start, node.span.end));
+
+    let mut cursor = 0_usize;
+    for node in ordered {
+        if node.span.start > cursor {
+            push_source_gap(&mut content, decoded, cursor, node.span.start);
+        }
         match node.kind.as_str() {
             "ruby" => content.push(ruby_node(decoded, node)),
             "gaiji" => content.push(gaiji_node(decoded, node, gaiji_by_start)),
@@ -178,6 +195,10 @@ fn inline_content(
             })),
             _ => content.push(raw_node(decoded, node, node.kind.as_str())),
         }
+        cursor = cursor.max(node.span.end);
+    }
+    if cursor < decoded.text.len() {
+        push_source_gap(&mut content, decoded, cursor, decoded.text.len());
     }
     if decoded.text.contains("［＃改ページ］")
         && !content
@@ -193,6 +214,41 @@ fn inline_content(
         }));
     }
     content
+}
+
+fn push_source_gap(content: &mut Vec<Value>, decoded: &DecodedSource, start: usize, end: usize) {
+    let Some(source) = decoded.text.get(start..end) else {
+        return;
+    };
+    if source.is_empty() || source == "｜" {
+        return;
+    }
+    let span = Span { start, end };
+    if contains_aozora_markup(source) {
+        content.push(json!({
+            "kind": "raw",
+            "source": source,
+            "x-provenance": "source-derived",
+            "x-source-marker-kind": "unparsed-source-gap",
+            "span": span_json(&span)
+        }));
+    } else {
+        content.push(json!({
+            "kind": "text",
+            "value": source,
+            "span": span_json(&span)
+        }));
+    }
+}
+
+fn contains_aozora_markup(source: &str) -> bool {
+    source.contains('※')
+        || source.contains("［＃")
+        || source.contains("[#")
+        || source.contains('《')
+        || source.contains('》')
+        || source.contains('〔')
+        || source.contains('〕')
 }
 
 fn ruby_node(decoded: &DecodedSource, node: &AozoraNode) -> Value {

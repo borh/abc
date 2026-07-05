@@ -5,6 +5,8 @@
 - Added parser id `aozora` as a fifth adapter lane.
 - Added pinned references for `P4suta/aozora` and `P4suta/aozora-notation-spec`.
 - Added `aozora-adapter` with schema-valid AAT smoke coverage.
+- Fixed the adapter to preserve plain visible source gaps around upstream
+  annotation spans as `text` nodes, instead of emitting only annotation nodes.
 - Added notation-spec comparator reports kept separate from local AAT oracle.
 - Added flake checks for the adapter smoke and notation-spec comparator smoke.
 
@@ -13,6 +15,7 @@
 - `cargo test --manifest-path adapters/aozora/Cargo.toml`
 - `cargo test -p ab-coverage --jobs 24`
 - `just aozora-smoke`
+- `just parser-performance-smoke`
 - `just aozora-notation-spec-comparator-smoke`
 - `nix --option post-build-hook "" build .#checks.$system.aozora-smoke --print-build-logs`
 - `nix --option post-build-hook "" build .#checks.$system.aozora-notation-spec-comparator-smoke --print-build-logs`
@@ -33,9 +36,16 @@ The three upstream `aozora` failures are diagnostic-shape mismatches for `pua_co
 1. Run full `aozora` AAT corpus:
    `just aozora-aat-full "" 24 300s`
 2. Add the resulting AAT dir to `AB_AOZORA_AAT_DIR`.
-3. Run `just aat-to-parser-ir-full-audit JOBS=24`.
-4. Run `just tei-eaj-structural-expansion JOBS=24`.
-5. Run parser performance measurement with all five parser lanes.
+3. Run `just aat-to-parser-ir-full-audit 24`.
+4. Run `just tei-eaj-structural-expansion 24`.
+5. Run parser performance measurement with all five parser lanes:
+   `INDEX=/path/to/index.json SAMPLE=20 LIMIT_S=300 JOBS=24 just parser-performance-all-parsers`.
+   This recipe requires a built AozoraEpub3 jar, or `AB_AOZORAEPUB3_JAR`.
+
+The coverage-matrix strict-key gate remains on the original hand-classified
+parser cells until the matrix is deliberately reclassified for `aozora-epub3`
+and `aozora`; prevalence and performance measurement paths now include all
+five parser adapters.
 
 ## Trust Boundary
 

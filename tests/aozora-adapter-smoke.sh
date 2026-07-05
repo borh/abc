@@ -12,6 +12,10 @@ test -x "$adapter"
 printf '｜青梅《おうめ》\n' | "$adapter" --mode aat > "$out_dir/aat.json"
 jq -e '.meta.adapter == "aozora" and .meta.parse_complete == true and (.blocks | length >= 1)' "$out_dir/aat.json" >/dev/null
 
+printf '耳朶を※［＃「口＋世」、U+546D］えて' | "$adapter" --mode aat > "$out_dir/source-order.json"
+jq -e '.blocks[0].content | map(.kind) == ["text", "gaiji", "text"]' "$out_dir/source-order.json" >/dev/null
+jq -e '.blocks[0].content[0].value == "耳朶を" and .blocks[0].content[2].value == "えて"' "$out_dir/source-order.json" >/dev/null
+
 python_jsonschema=(python3)
 if ! python3 - <<'PY' >/dev/null 2>&1
 import jsonschema

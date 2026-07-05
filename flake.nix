@@ -1065,6 +1065,7 @@
           ab-aat-to-parser-ir = abAatToParserIr;
           reference-aozora2 = referenceAozora2;
           reference-aozora-rs = referenceAozoraRs;
+          reference-aozora2html = aozora2htmlParser;
           reference-aozora = referenceAozora;
           reference-aozora-notation-spec = referenceAozoraNotationSpec;
           reference-aozora-parser-js = referenceAozoraParserJs;

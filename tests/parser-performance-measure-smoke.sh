@@ -100,18 +100,23 @@ python3 "$repo_root/reports/aat-fidelity/measure-parser-performance.py" \
   --sample 1 \
   --limit-s 5 \
   --time-bin "$tmp/fake-time" \
-  --adapter parser-a="$tmp/fake-adapter-a --mode aat" \
-  --adapter parser-b="$tmp/fake-adapter-b --mode aat" \
-  --aozora2html-label parser-b \
+  --adapter aozora2="$tmp/fake-adapter-a --mode aat" \
+  --adapter aozora-rs="$tmp/fake-adapter-a --mode aat" \
+  --adapter aozora2html="$tmp/fake-adapter-b --mode aat" \
+  --adapter aozora-epub3="$tmp/fake-adapter-a --mode aat" \
+  --adapter aozora="$tmp/fake-adapter-a --mode aat" \
+  --aozora2html-label aozora2html \
   --aozora2html-bin "$tmp/fake-parser" \
   --mapper-bin "$tmp/fake-mapper" \
   --stage-split-sample 1
 
 jq -e '.selected_works | length == 1' "$out/results.json"
-jq -e '.adapters | length == 2' "$out/results.json"
-jq -e '.measurements | map(select(.stage == "full_adapter")) | length == 2' "$out/results.json"
-jq -e '.measurements[] | select(.adapter == "parser-a" and .stage == "full_adapter") | .status == "ok" and .wall_s == 2.34 and .user_s == 1.23 and .sys_s == 0.45 and .max_rss_kb == 45678' "$out/results.json"
-jq -e '.measurements[] | select(.adapter == "parser-b" and .stage == "full_adapter") | .status == "ok"' "$out/results.json"
-jq -e '.measurements[] | select(.adapter == "parser-b" and .stage == "ruby_parser") | .status == "ok"' "$out/results.json"
-jq -e '.measurements[] | select(.adapter == "parser-b" and .stage == "rust_mapper") | .status == "ok"' "$out/results.json"
+jq -e '.adapters | length == 5' "$out/results.json"
+jq -e '.adapters | map(.label) == ["aozora2", "aozora-rs", "aozora2html", "aozora-epub3", "aozora"]' "$out/results.json"
+jq -e '.measurements | map(select(.stage == "full_adapter")) | length == 5' "$out/results.json"
+jq -e '.measurements[] | select(.adapter == "aozora2" and .stage == "full_adapter") | .status == "ok" and .wall_s == 2.34 and .user_s == 1.23 and .sys_s == 0.45 and .max_rss_kb == 45678' "$out/results.json"
+jq -e '.measurements[] | select(.adapter == "aozora" and .stage == "full_adapter") | .status == "ok"' "$out/results.json"
+jq -e '.measurements[] | select(.adapter == "aozora2html" and .stage == "full_adapter") | .status == "ok"' "$out/results.json"
+jq -e '.measurements[] | select(.adapter == "aozora2html" and .stage == "ruby_parser") | .status == "ok"' "$out/results.json"
+jq -e '.measurements[] | select(.adapter == "aozora2html" and .stage == "rust_mapper") | .status == "ok"' "$out/results.json"
 test -s "$out/summary.md"

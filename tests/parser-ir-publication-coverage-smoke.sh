@@ -133,6 +133,12 @@ jq -e '.node_coverage.by_node_type.text.class == "tei_exact"' "$summary_json" >/
 jq -e '.node_coverage.by_node_type.ruby.class == "tei_exact"' "$summary_json" >/dev/null
 jq -e '.node_coverage.by_node_type.warigaki.class == "tei_plus_abc_extension"' "$summary_json" >/dev/null
 jq -e '.node_coverage.by_node_type."raw-source".class == "tei_policy_projection"' "$summary_json" >/dev/null
+jq -e '.node_coverage.counts_by_class.tei_exact == 2' "$summary_json" >/dev/null
+jq -e '.node_coverage.counts_by_class.tei_plus_abc_extension == 1' "$summary_json" >/dev/null
+jq -e '.node_coverage.counts_by_class.tei_policy_projection == 1' "$summary_json" >/dev/null
+jq -e '.source_construct_coverage.counts_by_class.tei_exact == 1' "$summary_json" >/dev/null
+jq -e '.source_construct_coverage.counts_by_class.tei_plus_abc_extension == 1' "$summary_json" >/dev/null
+jq -e '.source_construct_coverage.counts_by_class.unsupported_gap == 1' "$summary_json" >/dev/null
 jq -e '.unsupported_gaps.count == 1' "$summary_json" >/dev/null
 jq -e '.unsupported_gaps.items[0].aat_pointer == "blocks[].content[].raw"' "$summary_json" >/dev/null
 jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_UNSUPPORTED_GAPS"' "$summary_json" >/dev/null

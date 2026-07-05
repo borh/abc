@@ -1,5 +1,6 @@
 (ns abc.tools.materialize-publication-test
   (:require [abc.tools.files :as files]
+            [abc.tools.json :as abc-json]
             [abc.tools.materialize-publication :as materialize]
             [abc.tools.parser-ir-publication-policy :as policy]
             [abc.tools.schema :as schema]
@@ -106,6 +107,50 @@
         (is (= (policy/policy-hash "data/parser-ir-publication-policy-v0.json")
                (get-in plaintext-manifest
                        ["manifest_identity_object" "output_format_spec_hash"]))))
+      (finally
+        (delete-tree! out-dir)))))
+
+(deftest materialize-publication-batch-test
+  (let [out-dir (temp-dir "abc-materialize-publication-batch")
+        batch-file (io/file out-dir "batch.json")
+        summary-file (io/file out-dir "summary.json")
+        out-a (io/file out-dir "a")
+        out-b (io/file out-dir "b")]
+    (try
+      (abc-json/write-deterministic-json-file!
+       batch-file
+       {"jobs" [{"id" "a"
+                 "parser_ir_path" "examples/v0/example-work/parser-ir.json"
+                 "source_manifest_path" "examples/v0/example-work/source.manifest.json"
+                 "metadata_record_path" "examples/v0/example-work/metadata-record.json"
+                 "persons_dir" "examples/v0/example-persons"
+                 "output_dir" (str out-a)
+                 "generated_at" generated-at}
+                {"id" "b"
+                 "parser_ir_path" "examples/v0/example-work/parser-ir.json"
+                 "source_manifest_path" "examples/v0/example-work/source.manifest.json"
+                 "metadata_record_path" "examples/v0/example-work/metadata-record.json"
+                 "persons_dir" "examples/v0/example-persons"
+                 "output_dir" (str out-b)
+                 "generated_at" generated-at}]})
+      (let [summary (materialize/materialize-publications-batch!
+                     {:batch-path (str batch-file)
+                      :summary-path (str summary-file)
+                      :jobs 2})]
+        (is (= {"jobs_total" 2
+                "jobs_succeeded" 2
+                "jobs_failed" 0
+                "jobs_concurrency" 2}
+               (select-keys summary ["jobs_total" "jobs_succeeded" "jobs_failed" "jobs_concurrency"])))
+        (is (= ["a" "b"] (mapv #(get % "id") (get summary "jobs"))))
+        (is (= ["passed" "passed"] (mapv #(get % "status") (get summary "jobs"))))
+        (is (= summary (files/read-json summary-file)))
+        (doseq [dir [out-a out-b]]
+          (is (.exists (io/file dir "plain.txt")))
+          (is (.exists (io/file dir "tei.xml")))
+          (is (= "passed"
+                 (get (files/read-json (io/file dir "tei-validation-result.json"))
+                      "status")))))
       (finally
         (delete-tree! out-dir)))))
 

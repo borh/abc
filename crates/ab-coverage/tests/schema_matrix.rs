@@ -1607,6 +1607,252 @@ fn source_inventory_classifies_source_authority_remaining_command_batch() {
 }
 
 #[test]
+fn source_inventory_classifies_residual_source_label_provenance_batch() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = [
+        "［＃中野鈴子］",
+        "［＃党員証］",
+        "［＃公職追放］",
+        "［＃共同印刷］",
+        "［＃共産主義者（女）］",
+        "［＃共産党員］",
+        "［＃共産党的］",
+        "［＃前衛］",
+        "［＃加藤シヅエ］",
+        "［＃十月革命］",
+        "［＃南京虫］",
+        "［＃原阿佐緒］",
+        "［＃反宗教］",
+        "［＃国際婦人デー］",
+        "［＃土曜集会］",
+        "［＃堺利彦］",
+        "［＃大杉栄］",
+        "［＃大森咲江］",
+        "［＃天皇の諮問機関、枢密院の異称］",
+        "［＃宮本百合子の作品「赤い貨車」のナースチャのモデル］",
+        "［＃宮本美代］",
+        "［＃宮部金吾］",
+        "［＃小売店］",
+        "［＃少年団員］",
+        "［＃少年団］",
+        "［＃帝国主義］",
+        "［＃戦争終結の詔勅を放送］",
+        "［＃戦時下食糧統制の一環として配給された、外食券を利用する食堂。現金があっても、券がなければ食べられなかった］",
+        "［＃新興宗教、璽宇教教祖璽光尊、幹部の元横綱双葉山、棋士呉清源ら、食糧管理法違犯により二十一日に逮捕］",
+        "［＃日本プロレタリア・エスペランチスト同盟］",
+        "［＃日本プロレタリア美術家同盟］",
+        "［＃映画館名］",
+        "［＃映画］",
+        "［＃東久邇宮稔彦首相］",
+        "［＃東京高等師範学校］",
+        "［＃横須賀鎮守府。鎮守府は、海軍の根拠地に置かれた機関］",
+        "［＃武者小路実篤のペンネーム］",
+        "［＃河原崎長十郎］",
+        "［＃海野の別ペンネーム］",
+        "［＃社会民主党の右翼少数派、ボルシェビキ（左翼多数派）と対立］",
+        "［＃第一次世界大戦の休戦記念日］",
+        "［＃第八十六通常議会］",
+        "［＃統一労働総同盟］",
+        "［＃金融緊急措置令。新円発行、旧円預金は封鎖］",
+        "［＃降伏文書の調印式場として使われた］",
+        "［＃青鞜］",
+    ]
+    .join("\n");
+    let summary = inventory_document("fixture", &source, &patterns);
+
+    assert_eq!(
+        summary.unknown_examples,
+        [],
+        "residual source-label and provenance notes should remain raw-preserved, not unknown"
+    );
+    assert_eq!(
+        summary
+            .row_counts
+            .get("source.reviewed_residual_command")
+            .map(|count| count.occurrences),
+        Some(46)
+    );
+}
+
+#[test]
+fn source_inventory_classifies_residual_source_label_name_batch() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = [
+        "［＃休息の家］",
+        "［＃古本屋名］",
+        "［＃同志］",
+        "［＃呉昌碩］",
+        "［＃喜重郎］",
+        "［＃埋橋久子の友人、壺井栄ではない］",
+        "［＃変わり者］",
+        "［＃夕食］",
+        "［＃大瀧菊子］",
+        "［＃大熊信行］",
+        "［＃娘婿の永田徹郎海軍大尉］",
+        "［＃宇陀児］",
+        "［＃官僚主義］",
+        "［＃宣伝ビラ］",
+        "［＃寿江］",
+        "［＃射撃］",
+        "［＃小杉放庵］",
+        "［＃岡田シヅ］",
+        "［＃庭園］",
+        "［＃感情の陰謀］",
+        "［＃憤怒］",
+        "［＃戯曲「赤藍色の島」］",
+        "［＃手塚英孝、てっちゃん］",
+        "［＃手塚英孝］",
+        "［＃改訂］",
+        "［＃旅行案内書］",
+        "［＃映画館名、「穂」］",
+        "［＃晴彦］",
+        "［＃朝永良太］",
+        "［＃朝永］",
+        "［＃木村毅］",
+        "［＃本田道之］",
+        "［＃本間久子］",
+        "［＃根津嘉一郎］",
+        "［＃正男］",
+        "［＃殺虫剤名］",
+        "［＃江井、中條家の運転手］",
+        "［＃洋装店］",
+        "［＃洗面器］",
+        "［＃流血］",
+        "［＃湯浅アサ］",
+        "［＃湯浅善吉］",
+        "［＃湯浅芳子］",
+        "［＃湯浅誠三郎］",
+        "［＃湯浅貞雄］",
+        "［＃湿布］",
+        "［＃準］",
+        "［＃演説、報告］",
+        "［＃熱狂的］",
+        "［＃現代詩への夕べ］",
+        "［＃田村俊子］",
+        "［＃百合子の実家］",
+        "［＃百合子の愛称］",
+        "［＃神沢フミ］",
+        "［＃神近市子］",
+        "［＃福地源一郎］",
+        "［＃窪川稲子の家のお手伝い］",
+        "［＃竹内栖鳳］",
+        "［＃竹村書房］",
+    ]
+    .join("\n");
+    let summary = inventory_document("fixture", &source, &patterns);
+
+    assert_eq!(
+        summary.unknown_examples,
+        [],
+        "residual source-label/name notes should remain raw-preserved, not unknown"
+    );
+    assert_eq!(
+        summary
+            .row_counts
+            .get("source.reviewed_residual_command")
+            .map(|count| count.occurrences),
+        Some(59)
+    );
+}
+
+#[test]
+fn source_inventory_classifies_final_reviewed_residual_command_batch() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = [
+        "［＃「ヤンに傍点］",
+        "［＃ここで字下げ終わり」］",
+        "［＃波罫線］",
+        "［＃「七夕」「真つすぐな街」は自由律俳句］",
+        "［＃「郷－即のへん」、232-1］",
+        "［＃萩原喜一郎、隣家］",
+        "［＃灯火管制。夜間、敵機の来襲に備えて、灯りを遮ったり落としたりすこと］",
+        "［＃用もないのに廊下をうろつき回ること］",
+        "［＃引用、終わり］",
+        "［＃口語自由詩で、民衆の現実を描こうとした、「民衆派」の詩人］",
+        "［＃移動演劇隊桜隊。広島滞在中、原爆に遭う］",
+        "［＃葵］",
+        "［＃美治郎］",
+        "［＃超国家主義団体］",
+        "［＃謙］",
+        "［＃高太郎］",
+        "［＃以降の「――」で始まる通信文の2行目以降は2字下げ］",
+        "［＃１９字下げて］",
+        "［＃括弧内は「染付」と「赤繪」の二行になっている］",
+        "［＃「諸国における富の分配」の図表のこと］",
+        "［＃原文は括弧「〔〕」を使うが、他の所と一致させるため改める］",
+        "［＃（）内の文字全てに傍点、ただし読点をのぞく］",
+        "［＃ここに「下ニ詳ナリ」という注意書きが入る］",
+        "［＃罫線の部分は、「｛」「｝」で括る］",
+        "［＃闇汁の図］",
+        "［＃便箋右上に花飾り付きのページ数］",
+        "［＃ここで字下げ、横書き終わり］",
+        "［＃３つの「｛」は１つに繋がる］",
+        "［＃黒田鵬心］",
+        "［＃野上豊一郎］",
+        "［＃貞の末息子］",
+        "［＃網野菊］",
+        "［＃長谷川如是閑］",
+        "［＃青山杉作］",
+        "［＃「検察官」］",
+        "［＃ロマン・キム］",
+        "［＃赤いけし］",
+        "［＃通りの名］",
+        "［＃「ココ」は手描きの切符の下部の線に結ばれている］",
+        "［＃覚え書き、ノート］",
+        "［＃〇・四一キログラム］",
+        "［＃食後の休息時間］",
+        "［＃正しくは「All Quiet on the Western Front」］",
+        "［＃血の日曜日］",
+        "［＃集団農場］",
+        "［＃風呂］",
+        "［＃風俗、生活様式］",
+        "［＃蓄音機］",
+        "［＃トーキー］",
+        "［＃野上彌生子］",
+        "［＃貴志（康一）］",
+        "［＃スフ］",
+        "［＃厳寒］",
+        "［＃里見勝蔵］",
+        "［＃レールが鳴り響く］",
+        "［＃この読点不適当］",
+        "［＃ここで字下げ終わり　］",
+        "［＃上部欄外に「じうもんじカ」］",
+        "［＃「嘘の効用」］",
+        "［＃（ハヾ）］",
+        "［＃（止（波））］",
+        "［＃「｝一八〇」はこの後の５行にわたる］",
+        "［＃第九章冒頭部分（五六）のこと］",
+        "［＃第六章第九段落目以降のこと］",
+        "［＃第二章後ろから数えて三段落目のこと］",
+        "［＃第二章（二五）の最後の段落のこと］",
+        "［＃第二章（二四）のこと］",
+        "［＃第一章第五節（二〇）のこと］",
+        "［＃（ルヽ）］",
+        "［＃（ルヽ）］",
+        "［＃「［Ａ］のようにも」は底本では「［Ａ］ようにも」］",
+        "［＃金馬と小金馬の対談がここにはいる。］",
+    ]
+    .join("\n");
+    let summary = inventory_document("fixture", &source, &patterns);
+
+    assert_eq!(
+        summary.unknown_examples,
+        [],
+        "final reviewed residual commands should remain raw-preserved, not unknown"
+    );
+    assert_eq!(
+        summary
+            .row_counts
+            .get("source.reviewed_residual_command")
+            .map(|count| count.occurrences),
+        Some(72)
+    );
+}
+
+#[test]
 fn source_inventory_classifies_tail_positioning_and_caption_variants() {
     let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
     let patterns = patterns_from_rows(matrix.rows());

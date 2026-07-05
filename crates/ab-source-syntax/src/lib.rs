@@ -901,6 +901,20 @@ fn command_end_on_same_line(text: &str, content_start: usize, end_marker: char) 
                 continue;
             }
         }
+        if end_marker == '］' && rest.starts_with('［') {
+            let nested_start = offset + '［'.len_utf8();
+            if let Some(end) = marker_end_on_same_line(text, nested_start, '］') {
+                offset = end + '］'.len_utf8();
+                continue;
+            }
+        }
+        if end_marker == ']' && rest.starts_with('[') {
+            let nested_start = offset + 1;
+            if let Some(end) = marker_end_on_same_line(text, nested_start, ']') {
+                offset = end + 1;
+                continue;
+            }
+        }
 
         let ch = rest.chars().next().expect("non-empty rest has a char");
         if ch == end_marker {
@@ -1259,6 +1273,20 @@ mod tests {
             SourceMarkerKind::SegmentBoundaryTerminalProvenance
         );
         assert_eq!(markers[4].raw, "［＃地付き］（fixture）");
+    }
+
+    #[test]
+    fn source_markers_keep_literal_fullwidth_brackets_inside_commands() {
+        let text = "［＃「［Ａ］のようにも」は底本では「［Ａ］ようにも」］";
+        let markers = source_markers(text);
+
+        assert_eq!(markers.len(), 1);
+        assert_eq!(markers[0].kind, SourceMarkerKind::CommandFullwidth);
+        assert_eq!(markers[0].raw, text);
+        assert_eq!(
+            markers[0].body,
+            "「［Ａ］のようにも」は底本では「［Ａ］ようにも」"
+        );
     }
 
     #[test]

@@ -96,7 +96,7 @@ In `test/abc/tools/validate_design_bundle_test.clj`, after `parser-ir-schema-acc
 Run:
 
 ```bash
-clojure -M:test:kaocha --focus 'abc.tools.validate-design-bundle-test/parser-ir-schema-accepts-paragraph-layout-test'
+bin/kaocha --focus 'abc.tools.validate-design-bundle-test/parser-ir-schema-accepts-paragraph-layout-test'
 ```
 
 Expected: the focused test fails because `paragraph` currently has `additionalProperties: false` and does not allow `layout`.
@@ -136,7 +136,7 @@ Add this sibling definition after `$defs.nodeRange`:
 Run:
 
 ```bash
-clojure -M:test:kaocha --focus 'abc.tools.validate-design-bundle-test/parser-ir-schema-accepts-paragraph-layout-test'
+bin/kaocha --focus 'abc.tools.validate-design-bundle-test/parser-ir-schema-accepts-paragraph-layout-test'
 ```
 
 Expected: the focused test passes.
@@ -215,7 +215,7 @@ In `test/abc/tools/parser_ir_tei_test.clj`, after `paragraph-table-renders-body-
 Run:
 
 ```bash
-clojure -M:test:kaocha --focus 'abc.tools.parser-ir-tei-test/paragraph-layout-renders-as-tei-rend-test'
+bin/kaocha --focus 'abc.tools.parser-ir-tei-test/paragraph-layout-renders-as-tei-rend-test'
 ```
 
 Expected: the focused test fails because paragraphs currently render as `[:p "text"]` with no attributes.
@@ -286,7 +286,7 @@ Change `render-paragraph-row` so body and unknown paragraphs set attributes befo
 Run:
 
 ```bash
-clojure -M:test:kaocha --focus 'abc.tools.parser-ir-tei-test/paragraph-layout-renders-as-tei-rend-test'
+bin/kaocha --focus 'abc.tools.parser-ir-tei-test/paragraph-layout-renders-as-tei-rend-test'
 ```
 
 Expected: the focused test passes.
@@ -296,7 +296,7 @@ Expected: the focused test passes.
 Run:
 
 ```bash
-clojure -M:test:kaocha --focus 'abc.tools.parser-ir-tei-test'
+bin/kaocha --focus 'abc.tools.parser-ir-tei-test'
 ```
 
 Expected: all parser-IR TEI renderer tests pass.
@@ -349,7 +349,7 @@ In `test/abc/tools/parser_ir_plaintext_test.clj`, after `source-note-back-matter
 Run:
 
 ```bash
-clojure -M:test:kaocha --focus 'abc.tools.parser-ir-plaintext-test/paragraph-layout-does-not-enter-plaintext-test'
+bin/kaocha --focus 'abc.tools.parser-ir-plaintext-test/paragraph-layout-does-not-enter-plaintext-test'
 ```
 
 Expected: the focused test passes. If it fails, fix only plaintext metadata leakage; do not render layout markers into plain text.
@@ -375,7 +375,7 @@ registry entries for the new parser-IR schema hash.
 Run:
 
 ```bash
-clojure -M:test:kaocha --focus 'abc.tools.validate-design-bundle-test/parser-ir-schema-accepts-paragraph-layout-test' --focus 'abc.tools.parser-ir-tei-test/paragraph-layout-renders-as-tei-rend-test' --focus 'abc.tools.parser-ir-plaintext-test/paragraph-layout-does-not-enter-plaintext-test'
+bin/kaocha --focus 'abc.tools.validate-design-bundle-test/parser-ir-schema-accepts-paragraph-layout-test' --focus 'abc.tools.parser-ir-tei-test/paragraph-layout-renders-as-tei-rend-test' --focus 'abc.tools.parser-ir-plaintext-test/paragraph-layout-does-not-enter-plaintext-test'
 ```
 
 Expected: all three focused tests pass.
@@ -385,7 +385,7 @@ Expected: all three focused tests pass.
 Run:
 
 ```bash
-clojure -M:test:kaocha --focus 'abc.tools.validate-design-bundle-test' --focus 'abc.tools.parser-ir-tei-test' --focus 'abc.tools.parser-ir-plaintext-test' --focus 'abc.tools.materialize-publication-test'
+bin/kaocha --focus 'abc.tools.validate-design-bundle-test' --focus 'abc.tools.parser-ir-tei-test' --focus 'abc.tools.parser-ir-plaintext-test' --focus 'abc.tools.materialize-publication-test'
 ```
 
 Expected: all focused namespaces pass.
@@ -413,7 +413,7 @@ Run:
 
 ```bash
 git diff --check
-clojure -M:test:kaocha --focus 'abc.tools.validate-design-bundle-test' --focus 'abc.tools.parser-ir-tei-test' --focus 'abc.tools.parser-ir-plaintext-test' --focus 'abc.tools.materialize-publication-test'
+bin/kaocha --focus 'abc.tools.validate-design-bundle-test' --focus 'abc.tools.parser-ir-tei-test' --focus 'abc.tools.parser-ir-plaintext-test' --focus 'abc.tools.materialize-publication-test'
 clojure -M:abc/validate-design-bundle
 ```
 

@@ -28,7 +28,8 @@
    [taoensso.telemere :as tel]))
 
 (def legacy-parser-ir-schema-hashes
-  #{"sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"})
+  #{"sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"
+    "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d"})
 
 (defn accepted-parser-ir-schema-hashes []
   (conj legacy-parser-ir-schema-hashes

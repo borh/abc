@@ -108,6 +108,27 @@
         "end": { "type": "integer", "minimum": 0 }
       }
     },
+    "paragraphLayout": {
+      "type": "object",
+      "required": ["kind", "source"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["jisage", "burasage", "chitsuki", "jizume", "line-jisage"]
+        },
+        "source": {
+          "type": "string",
+          "enum": ["aat-block", "aat-style", "source-derived", "heuristic"]
+        },
+        "indent": { "type": "integer", "minimum": 0 },
+        "first_line_indent": { "type": "integer", "minimum": 0 },
+        "continuation_indent": { "type": "integer", "minimum": 0 },
+        "align": { "type": "string", "enum": ["right"] },
+        "offset_from_end": { "type": "integer", "minimum": 0 },
+        "width": { "type": "integer", "minimum": 0 }
+      }
+    },
     "paragraph": {
       "type": "object",
       "required": ["id", "span", "span_source", "node_range", "role", "source_pointer", "classification"],
@@ -119,7 +140,8 @@
         "node_range": { "$ref": "#/$defs/nodeRange" },
         "role": { "type": "string", "enum": ["body", "source-note", "unknown"] },
         "source_pointer": { "type": ["string", "null"] },
-        "classification": { "type": "string", "enum": ["direct", "heuristic", "unknown"] }
+        "classification": { "type": "string", "enum": ["direct", "heuristic", "unknown"] },
+        "layout": { "$ref": "#/$defs/paragraphLayout" }
       }
     },
     "textNode": {

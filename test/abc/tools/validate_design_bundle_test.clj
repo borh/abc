@@ -50,7 +50,7 @@
   "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396")
 
 (def ^:private current-parser-ir-schema-hash
-  "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d")
+  "sha256:87560244b6d3e25bc231ed352b03b95e8931484df7dc18abe26f91a94c52f4a3")
 
 (def ^:private parser-ir-schema-hash
   legacy-parser-ir-schema-hash)
@@ -279,6 +279,50 @@
                                     "role" "source-note"
                                     "source_pointer" "blocks[78]"
                                     "classification" "heuristic"}]
+                     "warnings" []
+                     "errors" []}]
+      (is (nil? (validate/validation-errors schema parser-ir))))))
+
+(deftest parser-ir-schema-accepts-paragraph-layout-test
+  (testing "paragraph rows may carry Aozora layout metadata for TEI paragraph rendering"
+    (let [schema (files/read-json "schemas/parser-ir.schema.json")
+          parser-ir {"schema_id" "https://w3id.org/abc/schemas/parser-ir.schema.json"
+                     "schema_hash" current-parser-ir-schema-hash
+                     "source" {"work_content_hash" (files/example-hash "01")
+                               "encoding" "Shift_JIS"
+                               "normalization" "source"}
+                     "nodes" [{"type" "text"
+                               "span" {"start" 0 "end" 6
+                                       "coordinate_system" "decoded_utf8"}
+                               "text" "台詞"}
+                              {"type" "text"
+                               "span" {"start" 6 "end" 36
+                                       "coordinate_system" "decoded_utf8"}
+                               "text" "（大正十一年十二月）"}]
+                     "paragraphs" [{"id" "p000000"
+                                    "span" {"start" 0 "end" 6
+                                            "coordinate_system" "decoded_utf8"}
+                                    "span_source" "direct"
+                                    "node_range" {"start" 0 "end" 1}
+                                    "role" "body"
+                                    "source_pointer" "blocks[0]"
+                                    "classification" "direct"
+                                    "layout" {"kind" "burasage"
+                                              "first_line_indent" 0
+                                              "continuation_indent" 1
+                                              "source" "aat-style"}}
+                                   {"id" "p000001"
+                                    "span" {"start" 6 "end" 36
+                                            "coordinate_system" "decoded_utf8"}
+                                    "span_source" "direct"
+                                    "node_range" {"start" 1 "end" 2}
+                                    "role" "body"
+                                    "source_pointer" "blocks[1]"
+                                    "classification" "direct"
+                                    "layout" {"kind" "chitsuki"
+                                              "align" "right"
+                                              "offset_from_end" 1
+                                              "source" "aat-style"}}]
                      "warnings" []
                      "errors" []}]
       (is (nil? (validate/validation-errors schema parser-ir))))))

@@ -1,5 +1,5 @@
 {
-  "generated_unix_seconds": 1783245775,
+  "generated_unix_seconds": 1783246241,
   "mapping": {
     "path": "/home/bor/Projects/ab-validator/data/aat-to-parser-ir-mapping-v1.json",
     "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
@@ -39,21 +39,21 @@
   ],
   "totals": {
     "files_attempted": 89169,
-    "files_succeeded": 67906,
-    "files_failed": 21263,
-    "parser_ir_nodes": 28890549,
-    "divergence_records": 804793,
-    "divergence_occurrences": 46686120,
-    "elapsed_seconds": 30.261
+    "files_succeeded": 88698,
+    "files_failed": 471,
+    "parser_ir_nodes": 32957092,
+    "divergence_records": 1030352,
+    "divergence_occurrences": 58212289,
+    "elapsed_seconds": 32.165
   },
   "by_corpus": {
     "aozora-adapter": {
       "files_attempted": 17886,
-      "files_succeeded": 996,
-      "files_failed": 16890,
-      "parser_ir_nodes": 996,
-      "divergence_records": 5982,
-      "divergence_occurrences": 5996
+      "files_succeeded": 17886,
+      "files_failed": 0,
+      "parser_ir_nodes": 988246,
+      "divergence_records": 161319,
+      "divergence_occurrences": 5100160
     },
     "aozora-epub3-adapter": {
       "files_attempted": 17844,
@@ -73,11 +73,11 @@
     },
     "aozora2-adapter": {
       "files_attempted": 17856,
-      "files_succeeded": 13483,
-      "files_failed": 4373,
-      "parser_ir_nodes": 2136492,
-      "divergence_records": 145408,
-      "divergence_occurrences": 4669366
+      "files_succeeded": 17385,
+      "files_failed": 471,
+      "parser_ir_nodes": 5215785,
+      "divergence_records": 215630,
+      "divergence_occurrences": 11101371
     },
     "aozora2html-adapter": {
       "files_attempted": 17689,
@@ -91,17 +91,17 @@
   "raw_nodes": {
     "nodes_total": 4800218,
     "files_with_raw": 21917,
-    "fatal_direct_failures": 20958,
+    "fatal_direct_failures": 0,
     "by_corpus": {
       "aozora-adapter": {
         "nodes_total": 4727752,
         "files_with_raw": 16890,
-        "fatal_direct_failures": 16890
+        "fatal_direct_failures": 0
       },
       "aozora2-adapter": {
         "nodes_total": 69507,
         "files_with_raw": 4768,
-        "fatal_direct_failures": 4068
+        "fatal_direct_failures": 0
       },
       "aozora2html-adapter": {
         "nodes_total": 2959,
@@ -331,172 +331,79 @@
     ]
   },
   "categories": {
-    "AMBIGUITY": 29709249,
-    "INVENTION": 11587710,
-    "LOSS": 5185181,
-    "STRUCTURAL": 172978,
-    "UNSUPPORTED": 31002
+    "AMBIGUITY": 32959970,
+    "INVENTION": 13324689,
+    "LOSS": 6892156,
+    "STRUCTURAL": 221920,
+    "UNSUPPORTED": 4813554
   },
   "rule_coverage": {
     "rules_total": 714,
-    "rules_emitted": 308,
+    "rules_emitted": 565,
     "rules_missing": [
       "A-01",
       "A-02",
-      "A-03",
-      "A-04",
-      "A-07",
       "A-10",
-      "A-100",
-      "A-102",
       "A-108",
       "A-11",
-      "A-112",
-      "A-113",
-      "A-114",
-      "A-115",
-      "A-116",
-      "A-12",
       "A-121",
       "A-126",
       "A-13",
       "A-14",
       "A-15",
       "A-16",
-      "A-17",
-      "A-18",
-      "A-19",
-      "A-20",
-      "A-32",
-      "A-33",
-      "A-35",
       "A-39",
       "A-40",
-      "A-41",
-      "A-42",
-      "A-43",
-      "A-44",
-      "A-45",
-      "A-46",
-      "A-47",
-      "A-48",
-      "A-49",
-      "A-50",
-      "A-51",
       "A-52",
-      "A-53",
-      "A-54",
-      "A-56",
       "A-58",
       "A-59",
       "A-60",
-      "A-61",
       "A-62",
-      "A-64",
       "A-68",
       "A-69",
       "A-70",
-      "A-71",
-      "A-75",
-      "A-78",
       "A-90",
       "A-98",
-      "A-99",
       "I-08",
-      "I-10",
       "I-11",
       "I-12",
-      "I-16",
       "I-18",
       "I-19",
-      "I-22",
       "I-25",
       "L-02",
-      "L-08",
       "L-10",
-      "L-100",
-      "L-101",
-      "L-102",
-      "L-103",
       "L-104",
-      "L-105",
       "L-106",
-      "L-107",
       "L-108",
-      "L-109",
-      "L-110",
       "L-111",
-      "L-112",
-      "L-113",
       "L-114",
-      "L-115",
-      "L-116",
       "L-117",
-      "L-118",
-      "L-119",
       "L-120",
-      "L-121",
-      "L-122",
       "L-123",
-      "L-124",
-      "L-125",
       "L-126",
-      "L-127",
-      "L-128",
       "L-129",
-      "L-130",
-      "L-131",
       "L-132",
-      "L-133",
-      "L-134",
       "L-135",
-      "L-136",
-      "L-137",
       "L-138",
-      "L-139",
-      "L-140",
       "L-141",
-      "L-142",
-      "L-143",
       "L-144",
-      "L-145",
       "L-146",
-      "L-147",
-      "L-148",
       "L-149",
       "L-15",
-      "L-150",
-      "L-151",
       "L-152",
-      "L-153",
-      "L-154",
       "L-155",
-      "L-156",
-      "L-157",
-      "L-158",
-      "L-159",
       "L-16",
       "L-160",
-      "L-161",
-      "L-162",
       "L-163",
-      "L-164",
-      "L-165",
       "L-166",
-      "L-168",
-      "L-169",
       "L-17",
-      "L-171",
       "L-178",
       "L-18",
       "L-184",
-      "L-185",
       "L-186",
       "L-187",
       "L-188",
-      "L-19",
       "L-199",
-      "L-20",
       "L-200",
       "L-201",
       "L-202",
@@ -507,7 +414,6 @@
       "L-207",
       "L-208",
       "L-209",
-      "L-21",
       "L-210",
       "L-211",
       "L-212",
@@ -516,99 +422,21 @@
       "L-215",
       "L-216",
       "L-217",
-      "L-218",
-      "L-219",
-      "L-22",
-      "L-220",
-      "L-221",
-      "L-222",
-      "L-223",
-      "L-224",
-      "L-225",
-      "L-226",
-      "L-227",
-      "L-228",
-      "L-229",
-      "L-23",
-      "L-230",
-      "L-231",
-      "L-232",
-      "L-233",
-      "L-234",
-      "L-235",
-      "L-236",
-      "L-237",
-      "L-238",
-      "L-239",
-      "L-24",
-      "L-240",
-      "L-241",
-      "L-242",
-      "L-243",
-      "L-244",
-      "L-245",
-      "L-246",
-      "L-247",
-      "L-248",
-      "L-249",
-      "L-25",
-      "L-250",
-      "L-251",
-      "L-252",
-      "L-26",
-      "L-265",
-      "L-27",
-      "L-277",
-      "L-28",
       "L-283",
       "L-285",
       "L-287",
       "L-289",
-      "L-29",
-      "L-299",
-      "L-30",
       "L-304",
-      "L-307",
-      "L-308",
-      "L-31",
-      "L-319",
-      "L-32",
-      "L-320",
-      "L-322",
-      "L-327",
-      "L-33",
-      "L-331",
-      "L-332",
       "L-336",
-      "L-338",
-      "L-339",
-      "L-34",
-      "L-343",
-      "L-344",
-      "L-35",
       "L-352",
-      "L-357",
-      "L-36",
       "L-360",
-      "L-365",
-      "L-37",
-      "L-370",
-      "L-373",
-      "L-376",
-      "L-379",
-      "L-38",
       "L-382",
-      "L-39",
       "L-398",
       "L-399",
-      "L-40",
       "L-400",
       "L-402",
       "L-409",
-      "L-41",
       "L-410",
-      "L-411",
-      "L-412",
       "L-413",
       "L-414",
       "L-415",
@@ -616,7 +444,6 @@
       "L-417",
       "L-418",
       "L-419",
-      "L-42",
       "L-420",
       "L-421",
       "L-422",
@@ -627,7 +454,6 @@
       "L-427",
       "L-428",
       "L-429",
-      "L-43",
       "L-430",
       "L-431",
       "L-432",
@@ -638,7 +464,6 @@
       "L-437",
       "L-438",
       "L-439",
-      "L-44",
       "L-440",
       "L-441",
       "L-442",
@@ -649,7 +474,6 @@
       "L-447",
       "L-448",
       "L-449",
-      "L-45",
       "L-450",
       "L-451",
       "L-452",
@@ -657,96 +481,15 @@
       "L-454",
       "L-455",
       "L-456",
-      "L-457",
-      "L-458",
-      "L-459",
-      "L-46",
-      "L-460",
-      "L-461",
-      "L-463",
-      "L-466",
-      "L-467",
-      "L-469",
-      "L-47",
       "L-473",
-      "L-48",
       "L-484",
       "L-485",
       "L-487",
       "L-488",
-      "L-49",
-      "L-490",
-      "L-50",
-      "L-51",
-      "L-52",
-      "L-53",
-      "L-54",
-      "L-55",
-      "L-56",
-      "L-57",
-      "L-58",
-      "L-59",
-      "L-60",
-      "L-61",
-      "L-62",
-      "L-63",
-      "L-64",
-      "L-65",
-      "L-66",
-      "L-67",
-      "L-68",
-      "L-69",
-      "L-70",
-      "L-71",
-      "L-72",
-      "L-73",
-      "L-74",
-      "L-75",
-      "L-76",
-      "L-77",
-      "L-78",
-      "L-79",
-      "L-80",
-      "L-81",
-      "L-82",
-      "L-83",
-      "L-84",
-      "L-85",
-      "L-86",
-      "L-87",
-      "L-88",
-      "L-89",
-      "L-90",
-      "L-91",
-      "L-92",
-      "L-93",
-      "L-94",
-      "L-95",
-      "L-96",
-      "L-97",
-      "L-98",
-      "L-99",
-      "U-02",
-      "U-04",
-      "U-09",
-      "U-13",
       "U-16",
-      "U-21",
-      "U-23",
-      "U-30",
-      "U-31",
       "U-33",
-      "U-35",
       "U-36",
-      "U-39",
-      "U-42",
-      "U-43",
-      "U-44",
-      "U-45",
-      "U-46",
-      "U-47",
-      "U-48",
-      "U-49"
+      "U-43"
     ],
     "rules_by_id": {
       "A-01": {
@@ -761,38 +504,38 @@
       },
       "A-03": {
         "category": "AMBIGUITY",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 4
       },
       "A-04": {
         "category": "AMBIGUITY",
-        "files": 0,
-        "occurrences": 0
+        "files": 2,
+        "occurrences": 7
       },
       "A-05": {
         "category": "AMBIGUITY",
-        "files": 165,
-        "occurrences": 2567
+        "files": 195,
+        "occurrences": 2703
       },
       "A-06": {
         "category": "AMBIGUITY",
-        "files": 37,
-        "occurrences": 111
+        "files": 45,
+        "occurrences": 128
       },
       "A-07": {
         "category": "AMBIGUITY",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 14
       },
       "A-08": {
         "category": "AMBIGUITY",
-        "files": 18,
-        "occurrences": 20
+        "files": 19,
+        "occurrences": 21
       },
       "A-09": {
         "category": "AMBIGUITY",
-        "files": 18,
-        "occurrences": 20
+        "files": 19,
+        "occurrences": 21
       },
       "A-10": {
         "category": "AMBIGUITY",
@@ -801,38 +544,38 @@
       },
       "A-100": {
         "category": "AMBIGUITY",
-        "files": 0,
-        "occurrences": 0
+        "files": 6,
+        "occurrences": 9
       },
       "A-101": {
         "category": "AMBIGUITY",
-        "files": 12,
-        "occurrences": 27
+        "files": 74,
+        "occurrences": 615
       },
       "A-102": {
         "category": "AMBIGUITY",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "A-103": {
         "category": "AMBIGUITY",
-        "files": 995,
-        "occurrences": 3917
+        "files": 2080,
+        "occurrences": 10877
       },
       "A-104": {
         "category": "AMBIGUITY",
-        "files": 10309,
-        "occurrences": 80489
+        "files": 11501,
+        "occurrences": 88477
       },
       "A-105": {
         "category": "AMBIGUITY",
-        "files": 66541,
-        "occurrences": 27118071
+        "files": 70437,
+        "occurrences": 28571108
       },
       "A-106": {
         "category": "AMBIGUITY",
-        "files": 30460,
-        "occurrences": 459261
+        "files": 32655,
+        "occurrences": 496847
       },
       "A-107": {
         "category": "AMBIGUITY",
@@ -846,8 +589,8 @@
       },
       "A-109": {
         "category": "AMBIGUITY",
-        "files": 4,
-        "occurrences": 6
+        "files": 10,
+        "occurrences": 13
       },
       "A-11": {
         "category": "AMBIGUITY",
@@ -856,63 +599,63 @@
       },
       "A-110": {
         "category": "AMBIGUITY",
-        "files": 7,
-        "occurrences": 10
+        "files": 14,
+        "occurrences": 20
       },
       "A-111": {
         "category": "AMBIGUITY",
-        "files": 227,
-        "occurrences": 1491
+        "files": 326,
+        "occurrences": 2306
       },
       "A-112": {
         "category": "AMBIGUITY",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 7
       },
       "A-113": {
         "category": "AMBIGUITY",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "A-114": {
         "category": "AMBIGUITY",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "A-115": {
-        "category": "AMBIGUITY",
-        "files": 0,
-        "occurrences": 0
-      },
-      "A-116": {
-        "category": "AMBIGUITY",
-        "files": 0,
-        "occurrences": 0
-      },
-      "A-117": {
         "category": "AMBIGUITY",
         "files": 2,
         "occurrences": 2
       },
+      "A-116": {
+        "category": "AMBIGUITY",
+        "files": 2,
+        "occurrences": 2
+      },
+      "A-117": {
+        "category": "AMBIGUITY",
+        "files": 7,
+        "occurrences": 10
+      },
       "A-118": {
         "category": "AMBIGUITY",
-        "files": 5,
-        "occurrences": 78
+        "files": 24,
+        "occurrences": 154
       },
       "A-119": {
         "category": "AMBIGUITY",
-        "files": 14,
-        "occurrences": 220
+        "files": 162,
+        "occurrences": 2564
       },
       "A-12": {
         "category": "AMBIGUITY",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "A-120": {
         "category": "AMBIGUITY",
-        "files": 3,
-        "occurrences": 13
+        "files": 23,
+        "occurrences": 213
       },
       "A-121": {
         "category": "AMBIGUITY",
@@ -921,23 +664,23 @@
       },
       "A-122": {
         "category": "AMBIGUITY",
-        "files": 3472,
-        "occurrences": 29508
+        "files": 5150,
+        "occurrences": 78174
       },
       "A-123": {
         "category": "AMBIGUITY",
-        "files": 10192,
-        "occurrences": 105927
+        "files": 11877,
+        "occurrences": 154644
       },
       "A-124": {
         "category": "AMBIGUITY",
-        "files": 5,
-        "occurrences": 5
+        "files": 7,
+        "occurrences": 7
       },
       "A-125": {
         "category": "AMBIGUITY",
-        "files": 67906,
-        "occurrences": 67906
+        "files": 88698,
+        "occurrences": 88698
       },
       "A-126": {
         "category": "AMBIGUITY",
@@ -966,73 +709,73 @@
       },
       "A-17": {
         "category": "AMBIGUITY",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "A-18": {
         "category": "AMBIGUITY",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "A-19": {
         "category": "AMBIGUITY",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "A-20": {
         "category": "AMBIGUITY",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "A-21": {
         "category": "AMBIGUITY",
-        "files": 7,
-        "occurrences": 18
+        "files": 12,
+        "occurrences": 35
       },
       "A-22": {
-        "category": "AMBIGUITY",
-        "files": 1,
-        "occurrences": 1
-      },
-      "A-23": {
-        "category": "AMBIGUITY",
-        "files": 138,
-        "occurrences": 559
-      },
-      "A-24": {
-        "category": "AMBIGUITY",
-        "files": 1,
-        "occurrences": 1
-      },
-      "A-25": {
-        "category": "AMBIGUITY",
-        "files": 22,
-        "occurrences": 58
-      },
-      "A-26": {
         "category": "AMBIGUITY",
         "files": 3,
         "occurrences": 3
       },
+      "A-23": {
+        "category": "AMBIGUITY",
+        "files": 151,
+        "occurrences": 595
+      },
+      "A-24": {
+        "category": "AMBIGUITY",
+        "files": 3,
+        "occurrences": 3
+      },
+      "A-25": {
+        "category": "AMBIGUITY",
+        "files": 92,
+        "occurrences": 2148
+      },
+      "A-26": {
+        "category": "AMBIGUITY",
+        "files": 27,
+        "occurrences": 34
+      },
       "A-27": {
         "category": "AMBIGUITY",
-        "files": 102,
-        "occurrences": 256
+        "files": 312,
+        "occurrences": 1016
       },
       "A-28": {
         "category": "AMBIGUITY",
-        "files": 565,
-        "occurrences": 2190
+        "files": 800,
+        "occurrences": 3093
       },
       "A-29": {
         "category": "AMBIGUITY",
-        "files": 13495,
-        "occurrences": 903082
+        "files": 15327,
+        "occurrences": 1019895
       },
       "A-30": {
         "category": "AMBIGUITY",
-        "files": 5025,
-        "occurrences": 77844
+        "files": 5412,
+        "occurrences": 81168
       },
       "A-31": {
         "category": "AMBIGUITY",
@@ -1041,23 +784,23 @@
       },
       "A-32": {
         "category": "AMBIGUITY",
-        "files": 0,
-        "occurrences": 0
+        "files": 5,
+        "occurrences": 9
       },
       "A-33": {
         "category": "AMBIGUITY",
-        "files": 0,
-        "occurrences": 0
+        "files": 5,
+        "occurrences": 10
       },
       "A-34": {
         "category": "AMBIGUITY",
-        "files": 87,
-        "occurrences": 578
+        "files": 134,
+        "occurrences": 933
       },
       "A-35": {
         "category": "AMBIGUITY",
-        "files": 0,
-        "occurrences": 0
+        "files": 2,
+        "occurrences": 5
       },
       "A-36": {
         "category": "AMBIGUITY",
@@ -1066,13 +809,13 @@
       },
       "A-37": {
         "category": "AMBIGUITY",
-        "files": 6619,
-        "occurrences": 71403
+        "files": 6632,
+        "occurrences": 71441
       },
       "A-38": {
         "category": "AMBIGUITY",
-        "files": 6622,
-        "occurrences": 71423
+        "files": 6635,
+        "occurrences": 71461
       },
       "A-39": {
         "category": "AMBIGUITY",
@@ -1086,58 +829,58 @@
       },
       "A-41": {
         "category": "AMBIGUITY",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 4
       },
       "A-42": {
         "category": "AMBIGUITY",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "A-43": {
         "category": "AMBIGUITY",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "A-44": {
         "category": "AMBIGUITY",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "A-45": {
         "category": "AMBIGUITY",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 2
       },
       "A-46": {
         "category": "AMBIGUITY",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 4
       },
       "A-47": {
         "category": "AMBIGUITY",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "A-48": {
         "category": "AMBIGUITY",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "A-49": {
         "category": "AMBIGUITY",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 5
       },
       "A-50": {
         "category": "AMBIGUITY",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "A-51": {
         "category": "AMBIGUITY",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "A-52": {
         "category": "AMBIGUITY",
@@ -1146,13 +889,13 @@
       },
       "A-53": {
         "category": "AMBIGUITY",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 2
       },
       "A-54": {
         "category": "AMBIGUITY",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "A-55": {
         "category": "AMBIGUITY",
@@ -1161,8 +904,8 @@
       },
       "A-56": {
         "category": "AMBIGUITY",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "A-57": {
         "category": "AMBIGUITY",
@@ -1186,8 +929,8 @@
       },
       "A-61": {
         "category": "AMBIGUITY",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "A-62": {
         "category": "AMBIGUITY",
@@ -1201,8 +944,8 @@
       },
       "A-64": {
         "category": "AMBIGUITY",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "A-65": {
         "category": "AMBIGUITY",
@@ -1211,8 +954,8 @@
       },
       "A-66": {
         "category": "AMBIGUITY",
-        "files": 1,
-        "occurrences": 6
+        "files": 2,
+        "occurrences": 7
       },
       "A-67": {
         "category": "AMBIGUITY",
@@ -1236,33 +979,33 @@
       },
       "A-71": {
         "category": "AMBIGUITY",
-        "files": 0,
-        "occurrences": 0
+        "files": 2,
+        "occurrences": 2
       },
       "A-72": {
         "category": "AMBIGUITY",
-        "files": 1,
-        "occurrences": 1
+        "files": 4,
+        "occurrences": 6
       },
       "A-73": {
         "category": "AMBIGUITY",
-        "files": 1,
-        "occurrences": 2
+        "files": 3,
+        "occurrences": 4
       },
       "A-74": {
         "category": "AMBIGUITY",
-        "files": 1,
-        "occurrences": 2
+        "files": 2,
+        "occurrences": 5
       },
       "A-75": {
         "category": "AMBIGUITY",
-        "files": 0,
-        "occurrences": 0
+        "files": 2,
+        "occurrences": 3
       },
       "A-76": {
         "category": "AMBIGUITY",
-        "files": 1,
-        "occurrences": 1
+        "files": 3,
+        "occurrences": 9
       },
       "A-77": {
         "category": "AMBIGUITY",
@@ -1271,63 +1014,63 @@
       },
       "A-78": {
         "category": "AMBIGUITY",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "A-79": {
         "category": "AMBIGUITY",
-        "files": 1,
-        "occurrences": 1
+        "files": 4,
+        "occurrences": 8
       },
       "A-80": {
         "category": "AMBIGUITY",
-        "files": 1,
-        "occurrences": 1
+        "files": 5,
+        "occurrences": 10
       },
       "A-81": {
         "category": "AMBIGUITY",
-        "files": 1,
-        "occurrences": 2
+        "files": 2,
+        "occurrences": 4
       },
       "A-82": {
         "category": "AMBIGUITY",
-        "files": 2,
-        "occurrences": 15
+        "files": 7,
+        "occurrences": 26
       },
       "A-83": {
         "category": "AMBIGUITY",
-        "files": 4,
-        "occurrences": 15
+        "files": 8,
+        "occurrences": 20
       },
       "A-84": {
         "category": "AMBIGUITY",
-        "files": 2,
-        "occurrences": 5
+        "files": 7,
+        "occurrences": 15
       },
       "A-85": {
-        "category": "AMBIGUITY",
-        "files": 1,
-        "occurrences": 1
-      },
-      "A-86": {
         "category": "AMBIGUITY",
         "files": 5,
         "occurrences": 11
       },
+      "A-86": {
+        "category": "AMBIGUITY",
+        "files": 11,
+        "occurrences": 24
+      },
       "A-87": {
         "category": "AMBIGUITY",
-        "files": 6,
-        "occurrences": 10
+        "files": 13,
+        "occurrences": 24
       },
       "A-88": {
         "category": "AMBIGUITY",
-        "files": 13,
-        "occurrences": 25
+        "files": 24,
+        "occurrences": 44
       },
       "A-89": {
         "category": "AMBIGUITY",
-        "files": 26,
-        "occurrences": 47
+        "files": 43,
+        "occurrences": 129
       },
       "A-90": {
         "category": "AMBIGUITY",
@@ -1336,38 +1079,38 @@
       },
       "A-91": {
         "category": "AMBIGUITY",
-        "files": 31,
-        "occurrences": 94
+        "files": 63,
+        "occurrences": 175
       },
       "A-92": {
         "category": "AMBIGUITY",
-        "files": 138,
-        "occurrences": 547
+        "files": 218,
+        "occurrences": 1010
       },
       "A-93": {
         "category": "AMBIGUITY",
-        "files": 299,
-        "occurrences": 1306
+        "files": 818,
+        "occurrences": 7041
       },
       "A-94": {
         "category": "AMBIGUITY",
-        "files": 882,
-        "occurrences": 4517
+        "files": 1055,
+        "occurrences": 5531
       },
       "A-95": {
         "category": "AMBIGUITY",
-        "files": 325,
-        "occurrences": 1444
+        "files": 888,
+        "occurrences": 7862
       },
       "A-96": {
         "category": "AMBIGUITY",
-        "files": 2107,
-        "occurrences": 686303
+        "files": 3768,
+        "occurrences": 2142992
       },
       "A-97": {
         "category": "AMBIGUITY",
-        "files": 1026,
-        "occurrences": 17785
+        "files": 2036,
+        "occurrences": 45426
       },
       "A-98": {
         "category": "AMBIGUITY",
@@ -1376,43 +1119,43 @@
       },
       "A-99": {
         "category": "AMBIGUITY",
-        "files": 0,
-        "occurrences": 0
+        "files": 5,
+        "occurrences": 8
       },
       "I-01": {
         "category": "INVENTION",
-        "files": 67906,
-        "occurrences": 67906
+        "files": 88698,
+        "occurrences": 88698
       },
       "I-02": {
         "category": "INVENTION",
-        "files": 50244,
-        "occurrences": 10625277
+        "files": 57266,
+        "occurrences": 12029483
       },
       "I-03": {
         "category": "INVENTION",
-        "files": 67906,
-        "occurrences": 67906
+        "files": 88698,
+        "occurrences": 88698
       },
       "I-04": {
         "category": "INVENTION",
-        "files": 67906,
-        "occurrences": 67906
+        "files": 88698,
+        "occurrences": 88698
       },
       "I-05": {
         "category": "INVENTION",
-        "files": 16566,
-        "occurrences": 265138
+        "files": 33144,
+        "occurrences": 381066
       },
       "I-06": {
         "category": "INVENTION",
-        "files": 16566,
-        "occurrences": 265138
+        "files": 33144,
+        "occurrences": 381066
       },
       "I-07": {
         "category": "INVENTION",
-        "files": 67906,
-        "occurrences": 67906
+        "files": 88698,
+        "occurrences": 88698
       },
       "I-08": {
         "category": "INVENTION",
@@ -1426,8 +1169,8 @@
       },
       "I-10": {
         "category": "INVENTION",
-        "files": 0,
-        "occurrences": 0
+        "files": 2,
+        "occurrences": 7
       },
       "I-11": {
         "category": "INVENTION",
@@ -1441,23 +1184,23 @@
       },
       "I-13": {
         "category": "INVENTION",
-        "files": 1,
-        "occurrences": 1
+        "files": 3,
+        "occurrences": 3
       },
       "I-14": {
         "category": "INVENTION",
-        "files": 31,
-        "occurrences": 561
+        "files": 42,
+        "occurrences": 587
       },
       "I-15": {
         "category": "INVENTION",
-        "files": 565,
-        "occurrences": 2190
+        "files": 800,
+        "occurrences": 3093
       },
       "I-16": {
         "category": "INVENTION",
-        "files": 0,
-        "occurrences": 0
+        "files": 5,
+        "occurrences": 10
       },
       "I-17": {
         "category": "INVENTION",
@@ -1476,28 +1219,28 @@
       },
       "I-20": {
         "category": "INVENTION",
-        "files": 32,
-        "occurrences": 55
+        "files": 127,
+        "occurrences": 683
       },
       "I-21": {
         "category": "INVENTION",
-        "files": 325,
-        "occurrences": 1444
+        "files": 888,
+        "occurrences": 7862
       },
       "I-22": {
         "category": "INVENTION",
-        "files": 0,
-        "occurrences": 0
+        "files": 6,
+        "occurrences": 9
       },
       "I-23": {
         "category": "INVENTION",
-        "files": 566,
-        "occurrences": 3945
+        "files": 757,
+        "occurrences": 5643
       },
       "I-24": {
         "category": "INVENTION",
-        "files": 10309,
-        "occurrences": 80489
+        "files": 11501,
+        "occurrences": 88477
       },
       "I-25": {
         "category": "INVENTION",
@@ -1506,18 +1249,18 @@
       },
       "I-26": {
         "category": "INVENTION",
-        "files": 7,
-        "occurrences": 10
+        "files": 14,
+        "occurrences": 20
       },
       "I-27": {
         "category": "INVENTION",
-        "files": 6671,
-        "occurrences": 71776
+        "files": 6704,
+        "occurrences": 71826
       },
       "L-01": {
         "category": "LOSS",
-        "files": 10756,
-        "occurrences": 84134
+        "files": 12328,
+        "occurrences": 99481
       },
       "L-02": {
         "category": "LOSS",
@@ -1531,8 +1274,8 @@
       },
       "L-04": {
         "category": "LOSS",
-        "files": 5,
-        "occurrences": 20
+        "files": 7,
+        "occurrences": 24
       },
       "L-05": {
         "category": "LOSS",
@@ -1551,13 +1294,13 @@
       },
       "L-08": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 3
       },
       "L-09": {
         "category": "LOSS",
-        "files": 20,
-        "occurrences": 76
+        "files": 25,
+        "occurrences": 96
       },
       "L-10": {
         "category": "LOSS",
@@ -1566,23 +1309,23 @@
       },
       "L-100": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-101": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-102": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-103": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-104": {
         "category": "LOSS",
@@ -1591,8 +1334,8 @@
       },
       "L-105": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-106": {
         "category": "LOSS",
@@ -1601,8 +1344,8 @@
       },
       "L-107": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-108": {
         "category": "LOSS",
@@ -1611,8 +1354,8 @@
       },
       "L-109": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-11": {
         "category": "LOSS",
@@ -1621,8 +1364,8 @@
       },
       "L-110": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-111": {
         "category": "LOSS",
@@ -1631,13 +1374,13 @@
       },
       "L-112": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 2
       },
       "L-113": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-114": {
         "category": "LOSS",
@@ -1646,13 +1389,13 @@
       },
       "L-115": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 2
       },
       "L-116": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-117": {
         "category": "LOSS",
@@ -1661,13 +1404,13 @@
       },
       "L-118": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 4
       },
       "L-119": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-12": {
         "category": "LOSS",
@@ -1681,13 +1424,13 @@
       },
       "L-121": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-122": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-123": {
         "category": "LOSS",
@@ -1696,13 +1439,13 @@
       },
       "L-124": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-125": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-126": {
         "category": "LOSS",
@@ -1711,13 +1454,13 @@
       },
       "L-127": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-128": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-129": {
         "category": "LOSS",
@@ -1731,13 +1474,13 @@
       },
       "L-130": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 2
       },
       "L-131": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-132": {
         "category": "LOSS",
@@ -1746,13 +1489,13 @@
       },
       "L-133": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-134": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-135": {
         "category": "LOSS",
@@ -1761,13 +1504,13 @@
       },
       "L-136": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-137": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-138": {
         "category": "LOSS",
@@ -1776,18 +1519,18 @@
       },
       "L-139": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 2,
+        "occurrences": 4
       },
       "L-14": {
         "category": "LOSS",
-        "files": 18,
-        "occurrences": 20
+        "files": 19,
+        "occurrences": 21
       },
       "L-140": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-141": {
         "category": "LOSS",
@@ -1796,13 +1539,13 @@
       },
       "L-142": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 2,
+        "occurrences": 4
       },
       "L-143": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-144": {
         "category": "LOSS",
@@ -1811,8 +1554,8 @@
       },
       "L-145": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-146": {
         "category": "LOSS",
@@ -1821,13 +1564,13 @@
       },
       "L-147": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 2,
+        "occurrences": 5
       },
       "L-148": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-149": {
         "category": "LOSS",
@@ -1841,13 +1584,13 @@
       },
       "L-150": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 2,
+        "occurrences": 5
       },
       "L-151": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-152": {
         "category": "LOSS",
@@ -1856,13 +1599,13 @@
       },
       "L-153": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 2,
+        "occurrences": 2
       },
       "L-154": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-155": {
         "category": "LOSS",
@@ -1871,23 +1614,23 @@
       },
       "L-156": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-157": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-158": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 2,
+        "occurrences": 5
       },
       "L-159": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-16": {
         "category": "LOSS",
@@ -1901,13 +1644,13 @@
       },
       "L-161": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 2,
+        "occurrences": 2
       },
       "L-162": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-163": {
         "category": "LOSS",
@@ -1916,13 +1659,13 @@
       },
       "L-164": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 6,
+        "occurrences": 28
       },
       "L-165": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-166": {
         "category": "LOSS",
@@ -1931,18 +1674,18 @@
       },
       "L-167": {
         "category": "LOSS",
-        "files": 2,
-        "occurrences": 2
+        "files": 13,
+        "occurrences": 140
       },
       "L-168": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-169": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 3,
+        "occurrences": 7
       },
       "L-17": {
         "category": "LOSS",
@@ -1951,43 +1694,43 @@
       },
       "L-170": {
         "category": "LOSS",
-        "files": 6,
-        "occurrences": 25
+        "files": 29,
+        "occurrences": 162
       },
       "L-171": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-172": {
         "category": "LOSS",
         "files": 1,
         "occurrences": 1
       },
+      "L-172": {
+        "category": "LOSS",
+        "files": 8,
+        "occurrences": 14
+      },
       "L-173": {
         "category": "LOSS",
-        "files": 37,
-        "occurrences": 100
+        "files": 85,
+        "occurrences": 560
       },
       "L-174": {
         "category": "LOSS",
-        "files": 2,
-        "occurrences": 2
+        "files": 3,
+        "occurrences": 3
       },
       "L-175": {
         "category": "LOSS",
-        "files": 141,
-        "occurrences": 780
+        "files": 161,
+        "occurrences": 2788
       },
       "L-176": {
         "category": "LOSS",
-        "files": 5,
-        "occurrences": 15
+        "files": 26,
+        "occurrences": 925
       },
       "L-177": {
         "category": "LOSS",
-        "files": 434,
-        "occurrences": 4103
+        "files": 550,
+        "occurrences": 5540
       },
       "L-178": {
         "category": "LOSS",
@@ -1996,8 +1739,8 @@
       },
       "L-179": {
         "category": "LOSS",
-        "files": 31,
-        "occurrences": 561
+        "files": 42,
+        "occurrences": 587
       },
       "L-18": {
         "category": "LOSS",
@@ -2006,23 +1749,23 @@
       },
       "L-180": {
         "category": "LOSS",
-        "files": 25,
-        "occurrences": 555
+        "files": 34,
+        "occurrences": 579
       },
       "L-181": {
         "category": "LOSS",
-        "files": 25,
-        "occurrences": 555
+        "files": 34,
+        "occurrences": 579
       },
       "L-182": {
         "category": "LOSS",
-        "files": 443,
-        "occurrences": 1760
+        "files": 475,
+        "occurrences": 1857
       },
       "L-183": {
         "category": "LOSS",
-        "files": 3840,
-        "occurrences": 131469
+        "files": 4913,
+        "occurrences": 174977
       },
       "L-184": {
         "category": "LOSS",
@@ -2031,8 +1774,8 @@
       },
       "L-185": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 11
       },
       "L-186": {
         "category": "LOSS",
@@ -2056,8 +1799,8 @@
       },
       "L-19": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-190": {
         "category": "LOSS",
@@ -2071,13 +1814,13 @@
       },
       "L-192": {
         "category": "LOSS",
-        "files": 22,
-        "occurrences": 117
+        "files": 23,
+        "occurrences": 118
       },
       "L-193": {
         "category": "LOSS",
-        "files": 22,
-        "occurrences": 117
+        "files": 23,
+        "occurrences": 118
       },
       "L-194": {
         "category": "LOSS",
@@ -2101,8 +1844,8 @@
       },
       "L-198": {
         "category": "LOSS",
-        "files": 6619,
-        "occurrences": 71403
+        "files": 6632,
+        "occurrences": 71441
       },
       "L-199": {
         "category": "LOSS",
@@ -2111,8 +1854,8 @@
       },
       "L-20": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-200": {
         "category": "LOSS",
@@ -2166,8 +1909,8 @@
       },
       "L-21": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-210": {
         "category": "LOSS",
@@ -2211,363 +1954,363 @@
       },
       "L-218": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 2
       },
       "L-219": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 2,
+        "occurrences": 10
       },
       "L-22": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-220": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-221": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-222": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-223": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-224": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-225": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-226": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-227": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-228": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-229": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-23": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-230": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-231": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-232": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-233": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-234": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-235": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-236": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-237": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-238": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-239": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-24": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-240": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-241": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-242": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-243": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-244": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-245": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-246": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-247": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-248": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-249": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-25": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-250": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-251": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-252": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-253": {
-        "category": "LOSS",
-        "files": 1,
-        "occurrences": 1
-      },
-      "L-254": {
-        "category": "LOSS",
-        "files": 1,
-        "occurrences": 8
-      },
-      "L-255": {
-        "category": "LOSS",
-        "files": 1,
-        "occurrences": 7
-      },
-      "L-256": {
-        "category": "LOSS",
-        "files": 1,
-        "occurrences": 14
-      },
-      "L-257": {
-        "category": "LOSS",
-        "files": 1,
-        "occurrences": 9
-      },
-      "L-258": {
-        "category": "LOSS",
-        "files": 1,
-        "occurrences": 1
-      },
-      "L-259": {
-        "category": "LOSS",
-        "files": 1,
-        "occurrences": 4
-      },
-      "L-26": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-260": {
-        "category": "LOSS",
-        "files": 1,
-        "occurrences": 4
-      },
-      "L-261": {
-        "category": "LOSS",
-        "files": 1,
-        "occurrences": 1
-      },
-      "L-262": {
-        "category": "LOSS",
-        "files": 1,
-        "occurrences": 4
-      },
-      "L-263": {
-        "category": "LOSS",
-        "files": 1,
-        "occurrences": 1
-      },
-      "L-264": {
-        "category": "LOSS",
-        "files": 1,
-        "occurrences": 1
-      },
-      "L-265": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-266": {
-        "category": "LOSS",
-        "files": 1,
-        "occurrences": 6
-      },
-      "L-267": {
-        "category": "LOSS",
-        "files": 1,
-        "occurrences": 2
-      },
-      "L-268": {
-        "category": "LOSS",
-        "files": 1,
-        "occurrences": 2
-      },
-      "L-269": {
-        "category": "LOSS",
-        "files": 1,
-        "occurrences": 2
-      },
-      "L-27": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-270": {
-        "category": "LOSS",
-        "files": 1,
-        "occurrences": 4
-      },
-      "L-271": {
-        "category": "LOSS",
-        "files": 1,
-        "occurrences": 1
-      },
-      "L-272": {
-        "category": "LOSS",
-        "files": 1,
-        "occurrences": 1
-      },
-      "L-273": {
-        "category": "LOSS",
-        "files": 1,
-        "occurrences": 2
-      },
-      "L-274": {
-        "category": "LOSS",
-        "files": 1,
-        "occurrences": 5
-      },
-      "L-275": {
-        "category": "LOSS",
-        "files": 1,
-        "occurrences": 7
-      },
-      "L-276": {
-        "category": "LOSS",
-        "files": 1,
-        "occurrences": 2
-      },
-      "L-277": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-278": {
-        "category": "LOSS",
-        "files": 1,
-        "occurrences": 2
-      },
-      "L-279": {
-        "category": "LOSS",
-        "files": 1,
-        "occurrences": 2
-      },
-      "L-28": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-280": {
         "category": "LOSS",
         "files": 1,
         "occurrences": 3
       },
-      "L-281": {
+      "L-221": {
+        "category": "LOSS",
+        "files": 2,
+        "occurrences": 2
+      },
+      "L-222": {
+        "category": "LOSS",
+        "files": 2,
+        "occurrences": 3
+      },
+      "L-223": {
+        "category": "LOSS",
+        "files": 2,
+        "occurrences": 3
+      },
+      "L-224": {
+        "category": "LOSS",
+        "files": 2,
+        "occurrences": 3
+      },
+      "L-225": {
+        "category": "LOSS",
+        "files": 2,
+        "occurrences": 3
+      },
+      "L-226": {
+        "category": "LOSS",
+        "files": 1,
+        "occurrences": 7
+      },
+      "L-227": {
+        "category": "LOSS",
+        "files": 1,
+        "occurrences": 2
+      },
+      "L-228": {
+        "category": "LOSS",
+        "files": 1,
+        "occurrences": 2
+      },
+      "L-229": {
+        "category": "LOSS",
+        "files": 1,
+        "occurrences": 3
+      },
+      "L-23": {
+        "category": "LOSS",
+        "files": 1,
+        "occurrences": 1
+      },
+      "L-230": {
+        "category": "LOSS",
+        "files": 1,
+        "occurrences": 1
+      },
+      "L-231": {
+        "category": "LOSS",
+        "files": 2,
+        "occurrences": 9
+      },
+      "L-232": {
+        "category": "LOSS",
+        "files": 1,
+        "occurrences": 6
+      },
+      "L-233": {
+        "category": "LOSS",
+        "files": 1,
+        "occurrences": 2
+      },
+      "L-234": {
+        "category": "LOSS",
+        "files": 2,
+        "occurrences": 5
+      },
+      "L-235": {
+        "category": "LOSS",
+        "files": 2,
+        "occurrences": 3
+      },
+      "L-236": {
+        "category": "LOSS",
+        "files": 1,
+        "occurrences": 3
+      },
+      "L-237": {
+        "category": "LOSS",
+        "files": 2,
+        "occurrences": 7
+      },
+      "L-238": {
+        "category": "LOSS",
+        "files": 1,
+        "occurrences": 2
+      },
+      "L-239": {
+        "category": "LOSS",
+        "files": 2,
+        "occurrences": 5
+      },
+      "L-24": {
+        "category": "LOSS",
+        "files": 1,
+        "occurrences": 1
+      },
+      "L-240": {
+        "category": "LOSS",
+        "files": 1,
+        "occurrences": 3
+      },
+      "L-241": {
+        "category": "LOSS",
+        "files": 2,
+        "occurrences": 9
+      },
+      "L-242": {
+        "category": "LOSS",
+        "files": 1,
+        "occurrences": 8
+      },
+      "L-243": {
+        "category": "LOSS",
+        "files": 1,
+        "occurrences": 4
+      },
+      "L-244": {
         "category": "LOSS",
         "files": 2,
         "occurrences": 6
       },
-      "L-282": {
+      "L-245": {
+        "category": "LOSS",
+        "files": 2,
+        "occurrences": 3
+      },
+      "L-246": {
+        "category": "LOSS",
+        "files": 1,
+        "occurrences": 12
+      },
+      "L-247": {
+        "category": "LOSS",
+        "files": 2,
+        "occurrences": 5
+      },
+      "L-248": {
+        "category": "LOSS",
+        "files": 2,
+        "occurrences": 4
+      },
+      "L-249": {
+        "category": "LOSS",
+        "files": 1,
+        "occurrences": 1
+      },
+      "L-25": {
+        "category": "LOSS",
+        "files": 1,
+        "occurrences": 1
+      },
+      "L-250": {
+        "category": "LOSS",
+        "files": 1,
+        "occurrences": 2
+      },
+      "L-251": {
+        "category": "LOSS",
+        "files": 2,
+        "occurrences": 5
+      },
+      "L-252": {
         "category": "LOSS",
         "files": 2,
         "occurrences": 9
+      },
+      "L-253": {
+        "category": "LOSS",
+        "files": 2,
+        "occurrences": 4
+      },
+      "L-254": {
+        "category": "LOSS",
+        "files": 2,
+        "occurrences": 19
+      },
+      "L-255": {
+        "category": "LOSS",
+        "files": 2,
+        "occurrences": 12
+      },
+      "L-256": {
+        "category": "LOSS",
+        "files": 2,
+        "occurrences": 20
+      },
+      "L-257": {
+        "category": "LOSS",
+        "files": 2,
+        "occurrences": 13
+      },
+      "L-258": {
+        "category": "LOSS",
+        "files": 3,
+        "occurrences": 14
+      },
+      "L-259": {
+        "category": "LOSS",
+        "files": 2,
+        "occurrences": 11
+      },
+      "L-26": {
+        "category": "LOSS",
+        "files": 1,
+        "occurrences": 1
+      },
+      "L-260": {
+        "category": "LOSS",
+        "files": 3,
+        "occurrences": 14
+      },
+      "L-261": {
+        "category": "LOSS",
+        "files": 3,
+        "occurrences": 6
+      },
+      "L-262": {
+        "category": "LOSS",
+        "files": 3,
+        "occurrences": 10
+      },
+      "L-263": {
+        "category": "LOSS",
+        "files": 3,
+        "occurrences": 8
+      },
+      "L-264": {
+        "category": "LOSS",
+        "files": 3,
+        "occurrences": 11
+      },
+      "L-265": {
+        "category": "LOSS",
+        "files": 2,
+        "occurrences": 21
+      },
+      "L-266": {
+        "category": "LOSS",
+        "files": 3,
+        "occurrences": 13
+      },
+      "L-267": {
+        "category": "LOSS",
+        "files": 2,
+        "occurrences": 8
+      },
+      "L-268": {
+        "category": "LOSS",
+        "files": 2,
+        "occurrences": 5
+      },
+      "L-269": {
+        "category": "LOSS",
+        "files": 3,
+        "occurrences": 14
+      },
+      "L-27": {
+        "category": "LOSS",
+        "files": 1,
+        "occurrences": 1
+      },
+      "L-270": {
+        "category": "LOSS",
+        "files": 2,
+        "occurrences": 8
+      },
+      "L-271": {
+        "category": "LOSS",
+        "files": 3,
+        "occurrences": 7
+      },
+      "L-272": {
+        "category": "LOSS",
+        "files": 2,
+        "occurrences": 7
+      },
+      "L-273": {
+        "category": "LOSS",
+        "files": 3,
+        "occurrences": 7
+      },
+      "L-274": {
+        "category": "LOSS",
+        "files": 3,
+        "occurrences": 15
+      },
+      "L-275": {
+        "category": "LOSS",
+        "files": 3,
+        "occurrences": 13
+      },
+      "L-276": {
+        "category": "LOSS",
+        "files": 3,
+        "occurrences": 10
+      },
+      "L-277": {
+        "category": "LOSS",
+        "files": 2,
+        "occurrences": 17
+      },
+      "L-278": {
+        "category": "LOSS",
+        "files": 3,
+        "occurrences": 5
+      },
+      "L-279": {
+        "category": "LOSS",
+        "files": 3,
+        "occurrences": 11
+      },
+      "L-28": {
+        "category": "LOSS",
+        "files": 1,
+        "occurrences": 1
+      },
+      "L-280": {
+        "category": "LOSS",
+        "files": 4,
+        "occurrences": 19
+      },
+      "L-281": {
+        "category": "LOSS",
+        "files": 5,
+        "occurrences": 17
+      },
+      "L-282": {
+        "category": "LOSS",
+        "files": 5,
+        "occurrences": 22
       },
       "L-283": {
         "category": "LOSS",
@@ -2576,8 +2319,8 @@
       },
       "L-284": {
         "category": "LOSS",
-        "files": 2,
-        "occurrences": 5
+        "files": 5,
+        "occurrences": 23
       },
       "L-285": {
         "category": "LOSS",
@@ -2586,8 +2329,8 @@
       },
       "L-286": {
         "category": "LOSS",
-        "files": 2,
-        "occurrences": 10
+        "files": 5,
+        "occurrences": 26
       },
       "L-287": {
         "category": "LOSS",
@@ -2596,8 +2339,8 @@
       },
       "L-288": {
         "category": "LOSS",
-        "files": 2,
-        "occurrences": 7
+        "files": 4,
+        "occurrences": 16
       },
       "L-289": {
         "category": "LOSS",
@@ -2606,43 +2349,43 @@
       },
       "L-29": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-290": {
         "category": "LOSS",
-        "files": 2,
-        "occurrences": 7
+        "files": 5,
+        "occurrences": 16
       },
       "L-291": {
         "category": "LOSS",
-        "files": 2,
-        "occurrences": 14
+        "files": 4,
+        "occurrences": 23
       },
       "L-292": {
         "category": "LOSS",
-        "files": 2,
-        "occurrences": 12
+        "files": 5,
+        "occurrences": 31
       },
       "L-293": {
         "category": "LOSS",
-        "files": 1,
-        "occurrences": 12
+        "files": 4,
+        "occurrences": 31
       },
       "L-294": {
         "category": "LOSS",
-        "files": 2,
-        "occurrences": 6
+        "files": 5,
+        "occurrences": 24
       },
       "L-295": {
         "category": "LOSS",
-        "files": 2,
-        "occurrences": 4
+        "files": 5,
+        "occurrences": 21
       },
       "L-296": {
         "category": "LOSS",
-        "files": 2,
-        "occurrences": 8
+        "files": 5,
+        "occurrences": 18
       },
       "L-297": {
         "category": "LOSS",
@@ -2651,38 +2394,38 @@
       },
       "L-298": {
         "category": "LOSS",
-        "files": 2,
-        "occurrences": 5
+        "files": 5,
+        "occurrences": 22
       },
       "L-299": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-30": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-300": {
         "category": "LOSS",
-        "files": 2,
-        "occurrences": 5
+        "files": 5,
+        "occurrences": 26
       },
       "L-301": {
         "category": "LOSS",
-        "files": 1,
-        "occurrences": 3
+        "files": 3,
+        "occurrences": 24
       },
       "L-302": {
         "category": "LOSS",
-        "files": 2,
-        "occurrences": 5
+        "files": 6,
+        "occurrences": 26
       },
       "L-303": {
         "category": "LOSS",
-        "files": 1,
-        "occurrences": 3
+        "files": 4,
+        "occurrences": 26
       },
       "L-304": {
         "category": "LOSS",
@@ -2691,173 +2434,173 @@
       },
       "L-305": {
         "category": "LOSS",
-        "files": 2,
-        "occurrences": 8
+        "files": 6,
+        "occurrences": 33
       },
       "L-306": {
         "category": "LOSS",
-        "files": 1,
-        "occurrences": 10
+        "files": 3,
+        "occurrences": 37
       },
       "L-307": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 2
       },
       "L-308": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 4
       },
       "L-309": {
         "category": "LOSS",
-        "files": 2,
-        "occurrences": 5
+        "files": 6,
+        "occurrences": 29
       },
       "L-31": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-310": {
         "category": "LOSS",
-        "files": 2,
-        "occurrences": 16
+        "files": 6,
+        "occurrences": 43
       },
       "L-311": {
         "category": "LOSS",
-        "files": 2,
-        "occurrences": 5
+        "files": 6,
+        "occurrences": 46
       },
       "L-312": {
         "category": "LOSS",
-        "files": 2,
-        "occurrences": 21
+        "files": 5,
+        "occurrences": 67
       },
       "L-313": {
         "category": "LOSS",
-        "files": 2,
-        "occurrences": 3
+        "files": 6,
+        "occurrences": 38
       },
       "L-314": {
         "category": "LOSS",
-        "files": 2,
-        "occurrences": 7
+        "files": 4,
+        "occurrences": 39
       },
       "L-315": {
         "category": "LOSS",
-        "files": 2,
-        "occurrences": 9
+        "files": 6,
+        "occurrences": 32
       },
       "L-316": {
         "category": "LOSS",
-        "files": 2,
-        "occurrences": 4
+        "files": 5,
+        "occurrences": 40
       },
       "L-317": {
         "category": "LOSS",
-        "files": 3,
-        "occurrences": 9
+        "files": 7,
+        "occurrences": 54
       },
       "L-318": {
         "category": "LOSS",
-        "files": 3,
-        "occurrences": 6
+        "files": 6,
+        "occurrences": 30
       },
       "L-319": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 2
       },
       "L-32": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-320": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-321": {
-        "category": "LOSS",
-        "files": 2,
-        "occurrences": 8
-      },
-      "L-322": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-323": {
-        "category": "LOSS",
-        "files": 1,
-        "occurrences": 14
-      },
-      "L-324": {
-        "category": "LOSS",
-        "files": 2,
-        "occurrences": 7
-      },
-      "L-325": {
         "category": "LOSS",
         "files": 1,
         "occurrences": 4
       },
+      "L-321": {
+        "category": "LOSS",
+        "files": 6,
+        "occurrences": 56
+      },
+      "L-322": {
+        "category": "LOSS",
+        "files": 1,
+        "occurrences": 1
+      },
+      "L-323": {
+        "category": "LOSS",
+        "files": 5,
+        "occurrences": 72
+      },
+      "L-324": {
+        "category": "LOSS",
+        "files": 6,
+        "occurrences": 61
+      },
+      "L-325": {
+        "category": "LOSS",
+        "files": 5,
+        "occurrences": 149
+      },
       "L-326": {
         "category": "LOSS",
-        "files": 3,
-        "occurrences": 12
+        "files": 7,
+        "occurrences": 85
       },
       "L-327": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-328": {
         "category": "LOSS",
-        "files": 3,
-        "occurrences": 6
+        "files": 5,
+        "occurrences": 51
       },
       "L-329": {
         "category": "LOSS",
-        "files": 2,
-        "occurrences": 3
+        "files": 6,
+        "occurrences": 69
       },
       "L-33": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-330": {
         "category": "LOSS",
-        "files": 3,
-        "occurrences": 7
+        "files": 7,
+        "occurrences": 81
       },
       "L-331": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 2
       },
       "L-332": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 4
       },
       "L-333": {
         "category": "LOSS",
-        "files": 2,
-        "occurrences": 19
+        "files": 6,
+        "occurrences": 103
       },
       "L-334": {
         "category": "LOSS",
-        "files": 3,
-        "occurrences": 31
+        "files": 7,
+        "occurrences": 92
       },
       "L-335": {
         "category": "LOSS",
-        "files": 3,
-        "occurrences": 24
+        "files": 7,
+        "occurrences": 97
       },
       "L-336": {
         "category": "LOSS",
@@ -2866,53 +2609,53 @@
       },
       "L-337": {
         "category": "LOSS",
-        "files": 2,
-        "occurrences": 34
+        "files": 7,
+        "occurrences": 112
       },
       "L-338": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 2
       },
       "L-339": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 4
       },
       "L-34": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-340": {
         "category": "LOSS",
-        "files": 2,
-        "occurrences": 20
+        "files": 7,
+        "occurrences": 115
       },
       "L-341": {
         "category": "LOSS",
-        "files": 3,
-        "occurrences": 41
+        "files": 7,
+        "occurrences": 125
       },
       "L-342": {
         "category": "LOSS",
-        "files": 2,
-        "occurrences": 35
+        "files": 7,
+        "occurrences": 167
       },
       "L-343": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 2
       },
       "L-344": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 2,
+        "occurrences": 5
       },
       "L-345": {
         "category": "LOSS",
-        "files": 4,
-        "occurrences": 36
+        "files": 10,
+        "occurrences": 142
       },
       "L-346": {
         "category": "LOSS",
@@ -2921,23 +2664,23 @@
       },
       "L-347": {
         "category": "LOSS",
-        "files": 4,
-        "occurrences": 36
+        "files": 9,
+        "occurrences": 147
       },
       "L-348": {
         "category": "LOSS",
-        "files": 1,
-        "occurrences": 2
+        "files": 2,
+        "occurrences": 3
       },
       "L-349": {
         "category": "LOSS",
-        "files": 5,
-        "occurrences": 124
+        "files": 10,
+        "occurrences": 253
       },
       "L-35": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-350": {
         "category": "LOSS",
@@ -2946,8 +2689,8 @@
       },
       "L-351": {
         "category": "LOSS",
-        "files": 5,
-        "occurrences": 46
+        "files": 11,
+        "occurrences": 170
       },
       "L-352": {
         "category": "LOSS",
@@ -2961,38 +2704,38 @@
       },
       "L-354": {
         "category": "LOSS",
-        "files": 5,
-        "occurrences": 28
+        "files": 14,
+        "occurrences": 182
       },
       "L-355": {
         "category": "LOSS",
-        "files": 4,
-        "occurrences": 5
+        "files": 5,
+        "occurrences": 6
       },
       "L-356": {
         "category": "LOSS",
-        "files": 5,
-        "occurrences": 41
+        "files": 12,
+        "occurrences": 262
       },
       "L-357": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-358": {
         "category": "LOSS",
         "files": 1,
         "occurrences": 2
       },
+      "L-358": {
+        "category": "LOSS",
+        "files": 2,
+        "occurrences": 6
+      },
       "L-359": {
         "category": "LOSS",
-        "files": 6,
-        "occurrences": 208
+        "files": 13,
+        "occurrences": 406
       },
       "L-36": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-360": {
         "category": "LOSS",
@@ -3001,118 +2744,118 @@
       },
       "L-361": {
         "category": "LOSS",
-        "files": 2,
-        "occurrences": 3
+        "files": 5,
+        "occurrences": 12
       },
       "L-362": {
         "category": "LOSS",
-        "files": 8,
-        "occurrences": 296
+        "files": 19,
+        "occurrences": 1612
       },
       "L-363": {
         "category": "LOSS",
-        "files": 2,
-        "occurrences": 3
+        "files": 4,
+        "occurrences": 7
       },
       "L-364": {
         "category": "LOSS",
-        "files": 10,
-        "occurrences": 288
+        "files": 24,
+        "occurrences": 580
       },
       "L-365": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 2
       },
       "L-366": {
         "category": "LOSS",
-        "files": 3,
-        "occurrences": 4
+        "files": 9,
+        "occurrences": 18
       },
       "L-367": {
         "category": "LOSS",
-        "files": 18,
-        "occurrences": 397
+        "files": 35,
+        "occurrences": 1036
       },
       "L-368": {
         "category": "LOSS",
-        "files": 2,
-        "occurrences": 3
+        "files": 5,
+        "occurrences": 11
       },
       "L-369": {
         "category": "LOSS",
-        "files": 24,
-        "occurrences": 510
+        "files": 48,
+        "occurrences": 995
       },
       "L-37": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-370": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 2,
+        "occurrences": 2
       },
       "L-371": {
         "category": "LOSS",
-        "files": 2,
-        "occurrences": 3
+        "files": 7,
+        "occurrences": 55
       },
       "L-372": {
         "category": "LOSS",
-        "files": 27,
-        "occurrences": 332
+        "files": 56,
+        "occurrences": 1143
       },
       "L-373": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 2,
+        "occurrences": 2
       },
       "L-374": {
         "category": "LOSS",
-        "files": 3,
-        "occurrences": 9
+        "files": 10,
+        "occurrences": 55
       },
       "L-375": {
         "category": "LOSS",
-        "files": 38,
-        "occurrences": 852
+        "files": 69,
+        "occurrences": 1486
       },
       "L-376": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 5,
+        "occurrences": 9
       },
       "L-377": {
         "category": "LOSS",
-        "files": 5,
-        "occurrences": 7
+        "files": 21,
+        "occurrences": 53
       },
       "L-378": {
         "category": "LOSS",
-        "files": 53,
-        "occurrences": 722
+        "files": 95,
+        "occurrences": 1969
       },
       "L-379": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 3,
+        "occurrences": 10
       },
       "L-38": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-380": {
         "category": "LOSS",
-        "files": 9,
-        "occurrences": 12
+        "files": 31,
+        "occurrences": 84
       },
       "L-381": {
         "category": "LOSS",
-        "files": 85,
-        "occurrences": 1246
+        "files": 165,
+        "occurrences": 4331
       },
       "L-382": {
         "category": "LOSS",
@@ -3121,83 +2864,83 @@
       },
       "L-383": {
         "category": "LOSS",
-        "files": 2,
-        "occurrences": 7
+        "files": 10,
+        "occurrences": 26
       },
       "L-384": {
         "category": "LOSS",
-        "files": 16,
-        "occurrences": 33
+        "files": 54,
+        "occurrences": 242
       },
       "L-385": {
         "category": "LOSS",
-        "files": 149,
-        "occurrences": 2856
+        "files": 265,
+        "occurrences": 6503
       },
       "L-386": {
         "category": "LOSS",
-        "files": 6,
-        "occurrences": 15
+        "files": 23,
+        "occurrences": 93
       },
       "L-387": {
         "category": "LOSS",
-        "files": 73,
-        "occurrences": 278
+        "files": 173,
+        "occurrences": 800
       },
       "L-388": {
         "category": "LOSS",
-        "files": 409,
-        "occurrences": 19330
+        "files": 718,
+        "occurrences": 37706
       },
       "L-389": {
         "category": "LOSS",
-        "files": 46,
-        "occurrences": 90
+        "files": 109,
+        "occurrences": 663
       },
       "L-39": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 2
       },
       "L-390": {
         "category": "LOSS",
-        "files": 13,
-        "occurrences": 29
+        "files": 35,
+        "occurrences": 143
       },
       "L-391": {
         "category": "LOSS",
-        "files": 32,
-        "occurrences": 55
+        "files": 127,
+        "occurrences": 683
       },
       "L-392": {
         "category": "LOSS",
-        "files": 31,
-        "occurrences": 54
+        "files": 126,
+        "occurrences": 682
       },
       "L-393": {
         "category": "LOSS",
-        "files": 31,
-        "occurrences": 54
+        "files": 126,
+        "occurrences": 682
       },
       "L-394": {
         "category": "LOSS",
-        "files": 22,
-        "occurrences": 72
+        "files": 92,
+        "occurrences": 344
       },
       "L-395": {
         "category": "LOSS",
-        "files": 585,
-        "occurrences": 3086
+        "files": 805,
+        "occurrences": 4187
       },
       "L-396": {
         "category": "LOSS",
-        "files": 1734,
-        "occurrences": 318875
+        "files": 3100,
+        "occurrences": 996054
       },
       "L-397": {
         "category": "LOSS",
-        "files": 4270,
-        "occurrences": 314518
+        "files": 4918,
+        "occurrences": 367100
       },
       "L-398": {
         "category": "LOSS",
@@ -3211,8 +2954,8 @@
       },
       "L-40": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-400": {
         "category": "LOSS",
@@ -3221,8 +2964,8 @@
       },
       "L-401": {
         "category": "LOSS",
-        "files": 1,
-        "occurrences": 1
+        "files": 2,
+        "occurrences": 6
       },
       "L-402": {
         "category": "LOSS",
@@ -3231,33 +2974,33 @@
       },
       "L-403": {
         "category": "LOSS",
-        "files": 133,
-        "occurrences": 678
+        "files": 153,
+        "occurrences": 731
       },
       "L-404": {
         "category": "LOSS",
-        "files": 566,
-        "occurrences": 3945
+        "files": 757,
+        "occurrences": 5643
       },
       "L-405": {
         "category": "LOSS",
-        "files": 501,
-        "occurrences": 3785
+        "files": 668,
+        "occurrences": 5409
       },
       "L-406": {
         "category": "LOSS",
-        "files": 501,
-        "occurrences": 3785
+        "files": 668,
+        "occurrences": 5409
       },
       "L-407": {
         "category": "LOSS",
-        "files": 3634,
-        "occurrences": 19357
+        "files": 3838,
+        "occurrences": 19995
       },
       "L-408": {
         "category": "LOSS",
-        "files": 24093,
-        "occurrences": 3996557
+        "files": 27267,
+        "occurrences": 4646312
       },
       "L-409": {
         "category": "LOSS",
@@ -3266,8 +3009,8 @@
       },
       "L-41": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 2
       },
       "L-410": {
         "category": "LOSS",
@@ -3276,13 +3019,13 @@
       },
       "L-411": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 2
       },
       "L-412": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 2,
+        "occurrences": 6
       },
       "L-413": {
         "category": "LOSS",
@@ -3321,8 +3064,8 @@
       },
       "L-42": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-420": {
         "category": "LOSS",
@@ -3376,8 +3119,8 @@
       },
       "L-43": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-430": {
         "category": "LOSS",
@@ -3431,8 +3174,8 @@
       },
       "L-44": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-440": {
         "category": "LOSS",
@@ -3486,8 +3229,8 @@
       },
       "L-45": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-450": {
         "category": "LOSS",
@@ -3526,93 +3269,93 @@
       },
       "L-457": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 8
       },
       "L-458": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-459": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 7
       },
       "L-46": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-460": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-461": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-462": {
-        "category": "LOSS",
-        "files": 1,
-        "occurrences": 1
-      },
-      "L-463": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-464": {
-        "category": "LOSS",
-        "files": 1,
-        "occurrences": 1
-      },
-      "L-465": {
-        "category": "LOSS",
-        "files": 1,
-        "occurrences": 1
-      },
-      "L-466": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-467": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-468": {
-        "category": "LOSS",
-        "files": 2,
-        "occurrences": 3
-      },
-      "L-469": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-47": {
-        "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
-      },
-      "L-470": {
         "category": "LOSS",
         "files": 1,
         "occurrences": 2
       },
-      "L-471": {
+      "L-460": {
         "category": "LOSS",
         "files": 1,
         "occurrences": 1
       },
-      "L-472": {
+      "L-461": {
+        "category": "LOSS",
+        "files": 3,
+        "occurrences": 10
+      },
+      "L-462": {
+        "category": "LOSS",
+        "files": 2,
+        "occurrences": 2
+      },
+      "L-463": {
+        "category": "LOSS",
+        "files": 3,
+        "occurrences": 8
+      },
+      "L-464": {
+        "category": "LOSS",
+        "files": 5,
+        "occurrences": 21
+      },
+      "L-465": {
+        "category": "LOSS",
+        "files": 2,
+        "occurrences": 2
+      },
+      "L-466": {
+        "category": "LOSS",
+        "files": 4,
+        "occurrences": 42
+      },
+      "L-467": {
         "category": "LOSS",
         "files": 1,
+        "occurrences": 1
+      },
+      "L-468": {
+        "category": "LOSS",
+        "files": 8,
+        "occurrences": 27
+      },
+      "L-469": {
+        "category": "LOSS",
+        "files": 4,
+        "occurrences": 4
+      },
+      "L-47": {
+        "category": "LOSS",
+        "files": 1,
+        "occurrences": 1
+      },
+      "L-470": {
+        "category": "LOSS",
+        "files": 7,
+        "occurrences": 18
+      },
+      "L-471": {
+        "category": "LOSS",
+        "files": 2,
         "occurrences": 3
+      },
+      "L-472": {
+        "category": "LOSS",
+        "files": 10,
+        "occurrences": 38
       },
       "L-473": {
         "category": "LOSS",
@@ -3621,58 +3364,58 @@
       },
       "L-474": {
         "category": "LOSS",
-        "files": 2,
-        "occurrences": 4
+        "files": 9,
+        "occurrences": 12
       },
       "L-475": {
         "category": "LOSS",
-        "files": 2,
-        "occurrences": 5
+        "files": 15,
+        "occurrences": 89
       },
       "L-476": {
         "category": "LOSS",
-        "files": 2,
-        "occurrences": 2
+        "files": 28,
+        "occurrences": 56
       },
       "L-477": {
         "category": "LOSS",
-        "files": 4,
-        "occurrences": 44
+        "files": 36,
+        "occurrences": 704
       },
       "L-478": {
         "category": "LOSS",
-        "files": 3,
-        "occurrences": 10
+        "files": 4,
+        "occurrences": 11
       },
       "L-479": {
         "category": "LOSS",
-        "files": 11,
-        "occurrences": 25
+        "files": 67,
+        "occurrences": 231
       },
       "L-48": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-480": {
         "category": "LOSS",
-        "files": 14,
-        "occurrences": 2976
+        "files": 77,
+        "occurrences": 6700
       },
       "L-481": {
         "category": "LOSS",
-        "files": 5,
-        "occurrences": 13
+        "files": 31,
+        "occurrences": 144
       },
       "L-482": {
         "category": "LOSS",
-        "files": 38,
-        "occurrences": 354
+        "files": 346,
+        "occurrences": 6210
       },
       "L-483": {
         "category": "LOSS",
-        "files": 41,
-        "occurrences": 25594
+        "files": 376,
+        "occurrences": 124199
       },
       "L-484": {
         "category": "LOSS",
@@ -3686,8 +3429,8 @@
       },
       "L-486": {
         "category": "LOSS",
-        "files": 1,
-        "occurrences": 9
+        "files": 8,
+        "occurrences": 20
       },
       "L-487": {
         "category": "LOSS",
@@ -3701,53 +3444,53 @@
       },
       "L-489": {
         "category": "LOSS",
-        "files": 3,
-        "occurrences": 13
+        "files": 23,
+        "occurrences": 213
       },
       "L-49": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-490": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-491": {
         "category": "LOSS",
-        "files": 4,
-        "occurrences": 27
+        "files": 61,
+        "occurrences": 1586
       },
       "L-492": {
         "category": "LOSS",
-        "files": 4,
-        "occurrences": 27
+        "files": 61,
+        "occurrences": 1586
       },
       "L-493": {
         "category": "LOSS",
-        "files": 150,
-        "occurrences": 2867
+        "files": 394,
+        "occurrences": 17022
       },
       "L-494": {
         "category": "LOSS",
-        "files": 150,
-        "occurrences": 2867
+        "files": 394,
+        "occurrences": 17022
       },
       "L-495": {
         "category": "LOSS",
-        "files": 64,
-        "occurrences": 373
+        "files": 505,
+        "occurrences": 7804
       },
       "L-496": {
         "category": "LOSS",
-        "files": 15,
-        "occurrences": 116
+        "files": 36,
+        "occurrences": 603
       },
       "L-497": {
         "category": "LOSS",
-        "files": 3472,
-        "occurrences": 29508
+        "files": 5150,
+        "occurrences": 78174
       },
       "L-498": {
         "category": "LOSS",
@@ -3756,13 +3499,13 @@
       },
       "L-499": {
         "category": "LOSS",
-        "files": 67906,
-        "occurrences": 67906
+        "files": 88698,
+        "occurrences": 88698
       },
       "L-50": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-500": {
         "category": "LOSS",
@@ -3771,263 +3514,263 @@
       },
       "L-51": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-52": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-53": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-54": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-55": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-56": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-57": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-58": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-59": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 2
       },
       "L-60": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-61": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-62": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 3
       },
       "L-63": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-64": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-65": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-66": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-67": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-68": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-69": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 2
       },
       "L-70": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-71": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-72": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-73": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-74": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-75": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 2
       },
       "L-76": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-77": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-78": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-79": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-80": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 2,
+        "occurrences": 3
       },
       "L-81": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-82": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-83": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-84": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-85": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-86": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-87": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 2
       },
       "L-88": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-89": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-90": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-91": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-92": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-93": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-94": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-95": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-96": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-97": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 2
       },
       "L-98": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "L-99": {
         "category": "LOSS",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "S-01": {
         "category": "STRUCTURAL",
-        "files": 2,
-        "occurrences": 2
+        "files": 18,
+        "occurrences": 72
       },
       "S-02": {
         "category": "STRUCTURAL",
-        "files": 18,
-        "occurrences": 20
+        "files": 19,
+        "occurrences": 21
       },
       "S-03": {
         "category": "STRUCTURAL",
-        "files": 6619,
-        "occurrences": 71403
+        "files": 6632,
+        "occurrences": 71441
       },
       "S-04": {
         "category": "STRUCTURAL",
@@ -4036,43 +3779,43 @@
       },
       "S-05": {
         "category": "STRUCTURAL",
-        "files": 76,
-        "occurrences": 148
+        "files": 89,
+        "occurrences": 173
       },
       "S-06": {
         "category": "STRUCTURAL",
-        "files": 3,
-        "occurrences": 4
+        "files": 14,
+        "occurrences": 18
       },
       "S-07": {
         "category": "STRUCTURAL",
-        "files": 3472,
-        "occurrences": 29508
+        "files": 5150,
+        "occurrences": 78174
       },
       "S-08": {
         "category": "STRUCTURAL",
-        "files": 6671,
-        "occurrences": 71776
+        "files": 6704,
+        "occurrences": 71826
       },
       "S-09": {
         "category": "STRUCTURAL",
-        "files": 45,
-        "occurrences": 82
+        "files": 65,
+        "occurrences": 112
       },
       "S-10": {
         "category": "STRUCTURAL",
-        "files": 13,
-        "occurrences": 20
+        "files": 40,
+        "occurrences": 68
       },
       "U-01": {
         "category": "UNSUPPORTED",
-        "files": 12,
-        "occurrences": 93
+        "files": 14,
+        "occurrences": 95
       },
       "U-02": {
         "category": "UNSUPPORTED",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "U-03": {
         "category": "UNSUPPORTED",
@@ -4081,8 +3824,8 @@
       },
       "U-04": {
         "category": "UNSUPPORTED",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 14
       },
       "U-05": {
         "category": "UNSUPPORTED",
@@ -4096,48 +3839,48 @@
       },
       "U-07": {
         "category": "UNSUPPORTED",
-        "files": 1,
-        "occurrences": 2
+        "files": 3,
+        "occurrences": 4
       },
       "U-08": {
         "category": "UNSUPPORTED",
-        "files": 2,
-        "occurrences": 2
+        "files": 11,
+        "occurrences": 14
       },
       "U-09": {
         "category": "UNSUPPORTED",
-        "files": 0,
-        "occurrences": 0
+        "files": 4,
+        "occurrences": 11
       },
       "U-10": {
         "category": "UNSUPPORTED",
-        "files": 9,
-        "occurrences": 56
+        "files": 10,
+        "occurrences": 57
       },
       "U-11": {
         "category": "UNSUPPORTED",
-        "files": 426,
-        "occurrences": 6000
+        "files": 596,
+        "occurrences": 9603
       },
       "U-12": {
         "category": "UNSUPPORTED",
-        "files": 30,
-        "occurrences": 165
+        "files": 33,
+        "occurrences": 169
       },
       "U-13": {
         "category": "UNSUPPORTED",
-        "files": 0,
-        "occurrences": 0
+        "files": 260,
+        "occurrences": 880
       },
       "U-14": {
         "category": "UNSUPPORTED",
-        "files": 172,
-        "occurrences": 2804
+        "files": 214,
+        "occurrences": 3026
       },
       "U-15": {
         "category": "UNSUPPORTED",
-        "files": 87,
-        "occurrences": 574
+        "files": 134,
+        "occurrences": 882
       },
       "U-16": {
         "category": "UNSUPPORTED",
@@ -4151,13 +3894,13 @@
       },
       "U-18": {
         "category": "UNSUPPORTED",
-        "files": 76,
-        "occurrences": 148
+        "files": 89,
+        "occurrences": 173
       },
       "U-19": {
         "category": "UNSUPPORTED",
-        "files": 3,
-        "occurrences": 4
+        "files": 14,
+        "occurrences": 18
       },
       "U-20": {
         "category": "UNSUPPORTED",
@@ -4166,8 +3909,8 @@
       },
       "U-21": {
         "category": "UNSUPPORTED",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "U-22": {
         "category": "UNSUPPORTED",
@@ -4176,8 +3919,8 @@
       },
       "U-23": {
         "category": "UNSUPPORTED",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 2
       },
       "U-24": {
         "category": "UNSUPPORTED",
@@ -4186,43 +3929,43 @@
       },
       "U-25": {
         "category": "UNSUPPORTED",
-        "files": 1,
-        "occurrences": 4
+        "files": 2,
+        "occurrences": 6
       },
       "U-26": {
         "category": "UNSUPPORTED",
-        "files": 7,
-        "occurrences": 13
+        "files": 9,
+        "occurrences": 16
       },
       "U-27": {
         "category": "UNSUPPORTED",
-        "files": 1,
-        "occurrences": 1
+        "files": 3,
+        "occurrences": 4
       },
       "U-28": {
         "category": "UNSUPPORTED",
-        "files": 10,
-        "occurrences": 28
+        "files": 20,
+        "occurrences": 82
       },
       "U-29": {
         "category": "UNSUPPORTED",
-        "files": 29,
-        "occurrences": 106
+        "files": 93,
+        "occurrences": 570
       },
       "U-30": {
         "category": "UNSUPPORTED",
-        "files": 0,
-        "occurrences": 0
+        "files": 9,
+        "occurrences": 11
       },
       "U-31": {
         "category": "UNSUPPORTED",
-        "files": 0,
-        "occurrences": 0
+        "files": 1099,
+        "occurrences": 7903
       },
       "U-32": {
         "category": "UNSUPPORTED",
-        "files": 43,
-        "occurrences": 270
+        "files": 141,
+        "occurrences": 1093
       },
       "U-33": {
         "category": "UNSUPPORTED",
@@ -4231,13 +3974,13 @@
       },
       "U-34": {
         "category": "UNSUPPORTED",
-        "files": 49,
-        "occurrences": 214
+        "files": 124,
+        "occurrences": 806
       },
       "U-35": {
         "category": "UNSUPPORTED",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "U-36": {
         "category": "UNSUPPORTED",
@@ -4246,33 +3989,33 @@
       },
       "U-37": {
         "category": "UNSUPPORTED",
-        "files": 993,
-        "occurrences": 7869
+        "files": 1309,
+        "occurrences": 13986
       },
       "U-38": {
         "category": "UNSUPPORTED",
-        "files": 48,
-        "occurrences": 161
+        "files": 61,
+        "occurrences": 238
       },
       "U-39": {
         "category": "UNSUPPORTED",
-        "files": 0,
-        "occurrences": 0
+        "files": 20039,
+        "occurrences": 4758328
       },
       "U-40": {
         "category": "UNSUPPORTED",
-        "files": 635,
-        "occurrences": 10852
+        "files": 832,
+        "occurrences": 13066
       },
       "U-41": {
         "category": "UNSUPPORTED",
-        "files": 227,
-        "occurrences": 1457
+        "files": 326,
+        "occurrences": 2122
       },
       "U-42": {
         "category": "UNSUPPORTED",
-        "files": 0,
-        "occurrences": 0
+        "files": 6,
+        "occurrences": 6
       },
       "U-43": {
         "category": "UNSUPPORTED",
@@ -4281,43 +4024,43 @@
       },
       "U-44": {
         "category": "UNSUPPORTED",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 2
       },
       "U-45": {
         "category": "UNSUPPORTED",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 3
       },
       "U-46": {
         "category": "UNSUPPORTED",
-        "files": 0,
-        "occurrences": 0
+        "files": 1,
+        "occurrences": 1
       },
       "U-47": {
         "category": "UNSUPPORTED",
-        "files": 0,
-        "occurrences": 0
+        "files": 5,
+        "occurrences": 7
       },
       "U-48": {
         "category": "UNSUPPORTED",
-        "files": 0,
-        "occurrences": 0
+        "files": 14,
+        "occurrences": 52
       },
       "U-49": {
         "category": "UNSUPPORTED",
-        "files": 0,
-        "occurrences": 0
+        "files": 6,
+        "occurrences": 44
       },
       "U-50": {
         "category": "UNSUPPORTED",
-        "files": 45,
-        "occurrences": 82
+        "files": 65,
+        "occurrences": 112
       },
       "U-51": {
         "category": "UNSUPPORTED",
-        "files": 13,
-        "occurrences": 20
+        "files": 40,
+        "occurrences": 68
       }
     }
   },
@@ -4338,15 +4081,15 @@
         "adapter_version": "aozora-adapter 0.1.0 aozora 0.4.1",
         "corpus": "aozora-adapter",
         "files_scanned": 17886,
-        "files_succeeded": 996,
-        "files_failed": 16890,
-        "parser_ir_nodes": 996,
-        "divergence_records": 5982,
-        "divergence_occurrences": 5996,
+        "files_succeeded": 17886,
+        "files_failed": 0,
+        "parser_ir_nodes": 988246,
+        "divergence_records": 161319,
+        "divergence_occurrences": 5100160,
         "rules_total": 714,
-        "rules_emitted": 8,
-        "rules_missing": 706,
-        "unsupported_occurrences": 0
+        "rules_emitted": 16,
+        "rules_missing": 698,
+        "unsupported_occurrences": 4727752
       },
       "compatibility": "lossy"
     },
@@ -4422,15 +4165,15 @@
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1",
         "corpus": "aozora2-adapter",
         "files_scanned": 17856,
-        "files_succeeded": 13483,
-        "files_failed": 4373,
-        "parser_ir_nodes": 2136492,
-        "divergence_records": 145408,
-        "divergence_occurrences": 4669366,
+        "files_succeeded": 17385,
+        "files_failed": 471,
+        "parser_ir_nodes": 5215785,
+        "divergence_records": 215630,
+        "divergence_occurrences": 11101371,
         "rules_total": 714,
-        "rules_emitted": 267,
-        "rules_missing": 447,
-        "unsupported_occurrences": 3538
+        "rules_emitted": 537,
+        "rules_missing": 177,
+        "unsupported_occurrences": 58338
       },
       "compatibility": "lossy"
     },
@@ -4465,34 +4208,8 @@
   ],
   "top_errors": [
     {
-      "message": "unsupported inline kind: raw",
-      "count": 20958,
-      "samples": [
-        {
-          "corpus": "aozora2-adapter",
-          "path": "000005_53194-ebb0cbaf64b3.json"
-        },
-        {
-          "corpus": "aozora2-adapter",
-          "path": "000006_1869-62320f0f4474.json"
-        },
-        {
-          "corpus": "aozora2-adapter",
-          "path": "000006_4627-ded0d23b15b9.json"
-        },
-        {
-          "corpus": "aozora2-adapter",
-          "path": "000008_1083-bf767c36e951.json"
-        },
-        {
-          "corpus": "aozora2-adapter",
-          "path": "000008_47357-6b9c19f6420d.json"
-        }
-      ]
-    },
-    {
       "message": "unsupported inline kind: accent",
-      "count": 138,
+      "count": 261,
       "samples": [
         {
           "corpus": "aozora2-adapter",
@@ -4500,25 +4217,25 @@
         },
         {
           "corpus": "aozora2-adapter",
+          "path": "000026_894-a581b59ea241.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
           "path": "000027_523-e22ef286b8e7.json"
         },
         {
           "corpus": "aozora2-adapter",
+          "path": "000034_55507-30a9658433b4.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
           "path": "000035_2277-b04f7f121e1a.json"
-        },
-        {
-          "corpus": "aozora2-adapter",
-          "path": "000042_2469-3372cea4b938.json"
-        },
-        {
-          "corpus": "aozora2-adapter",
-          "path": "000061_510-7c87649c3a47.json"
         }
       ]
     },
     {
       "message": "unsupported inline kind in source attribution projection: accent",
-      "count": 129,
+      "count": 140,
       "samples": [
         {
           "corpus": "aozora2-adapter",
@@ -4544,7 +4261,7 @@
     },
     {
       "message": "unsupported inline kind in visible projection: accent",
-      "count": 32,
+      "count": 52,
       "samples": [
         {
           "corpus": "aozora2-adapter",
@@ -4560,11 +4277,37 @@
         },
         {
           "corpus": "aozora2-adapter",
-          "path": "000065_393-58fae23a2747.json"
+          "path": "000061_377-7004ce5c0169.json"
         },
         {
           "corpus": "aozora2-adapter",
-          "path": "000065_393-bb9331cf0b9e.json"
+          "path": "000065_393-58fae23a2747.json"
+        }
+      ]
+    },
+    {
+      "message": "unsupported inline kind: yokogumi",
+      "count": 11,
+      "samples": [
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000067_2843-cc347e7bd424.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000094_56515-42626c61203a.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000214_1668-baebe662c2db.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000311_4206-efc960698f44.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000311_46240-7d0812519452.json"
         }
       ]
     },
@@ -4595,12 +4338,16 @@
       ]
     },
     {
-      "message": "unsupported inline kind: yokogumi",
-      "count": 1,
+      "message": "unsupported inline kind in visible projection: yokogumi",
+      "count": 2,
       "samples": [
         {
           "corpus": "aozora2-adapter",
-          "path": "001569_57279-a4f95b2004e3.json"
+          "path": "000042_1684-e38fc64b1764.json"
+        },
+        {
+          "corpus": "aozora2-adapter",
+          "path": "000311_46252-97497fc2f6c8.json"
         }
       ]
     }
@@ -4608,253 +4355,253 @@
   "failure_samples": [
     {
       "corpus": "aozora2-adapter",
-      "path": "000005_53194-ebb0cbaf64b3.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000020_745-bce191ee0ece.json",
+      "message": "unsupported inline kind in source attribution projection: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000006_1869-62320f0f4474.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000026_50239-f4c2d8bb9024.json",
+      "message": "unsupported inline kind in source attribution projection: yokogumi"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000006_4627-ded0d23b15b9.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000026_50241-af65ef658680.json",
+      "message": "unsupported inline kind in source attribution projection: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000008_1083-bf767c36e951.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000026_50245-e840465144a2.json",
+      "message": "unsupported inline kind: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000008_47357-6b9c19f6420d.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000026_55717-3ba0b0630fd5.json",
+      "message": "unsupported inline kind in source attribution projection: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000008_47374-9c929d4f4d67.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000026_55732-e162f2f7263b.json",
+      "message": "unsupported inline kind in visible projection: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000008_47386-49ed3c33666b.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000026_55739-075fc7322e7b.json",
+      "message": "unsupported inline kind in visible projection: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000009_226-7771d96568b3.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000026_894-a581b59ea241.json",
+      "message": "unsupported inline kind: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000009_42929-f0f7ff036246.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000027_523-e22ef286b8e7.json",
+      "message": "unsupported inline kind: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000009_43028-cc484d1dc264.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000034_55507-30a9658433b4.json",
+      "message": "unsupported inline kind: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000009_43056-80425d7b6392.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000035_2277-b04f7f121e1a.json",
+      "message": "unsupported inline kind: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000009_43497-4d15dc523f93.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000035_312-cb6505044b26.json",
+      "message": "unsupported inline kind in source attribution projection: yokogumi"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000009_43498-84246c6d4982.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000035_313-586a212e52ce.json",
+      "message": "unsupported inline kind in source attribution projection: yokogumi"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000009_43522-19039e8f33b5.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000042_1682-4401cf92d836.json",
+      "message": "unsupported inline kind in source attribution projection: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000009_43523-08e4293be7fb.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000042_1684-e38fc64b1764.json",
+      "message": "unsupported inline kind in visible projection: yokogumi"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000009_43524-08e343a3961f.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000042_2345-3b616fdc4dbd.json",
+      "message": "unsupported inline kind: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000009_45340-06021e5a5cc7.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000042_2347-efd9d60e8bbb.json",
+      "message": "unsupported inline kind: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000009_50711-f70596fd94c9.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000042_2348-607f0940a36f.json",
+      "message": "unsupported inline kind: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000009_50712-3bd98c23f17b.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000042_2453-83567d45101e.json",
+      "message": "unsupported inline kind in source attribution projection: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000009_50713-8c9159c8c915.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000042_2469-3372cea4b938.json",
+      "message": "unsupported inline kind: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000009_50714-588859399991.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000042_2471-5b8c4993357f.json",
+      "message": "unsupported inline kind: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000009_50715-0bd4eab2b77d.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000042_2473-16aee6fa0807.json",
+      "message": "unsupported inline kind in source attribution projection: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000009_50716-4a0d93059ac8.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000042_42768-2a6afe487bf8.json",
+      "message": "unsupported inline kind in visible projection: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000009_50717-0eeb5853dc3a.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000042_43075-419384138fba.json",
+      "message": "unsupported inline kind in source attribution projection: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000009_50718-3bd33a2d1f82.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000042_43082-bffc5116ebfb.json",
+      "message": "unsupported inline kind in source attribution projection: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000009_54910-42cf7cd96173.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000042_43083-6b85760e219c.json",
+      "message": "unsupported inline kind: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000009_54911-2cb75e442e4d.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000042_43252-8fbc53aead66.json",
+      "message": "unsupported inline kind in source attribution projection: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000009_54912-7ebf88db448d.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000042_43534-ac52138d9d11.json",
+      "message": "unsupported inline kind in source attribution projection: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000009_54913-d76c2d5a30f2.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000061_377-7004ce5c0169.json",
+      "message": "unsupported inline kind in visible projection: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000009_54914-e26a90bf5379.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000061_510-7c87649c3a47.json",
+      "message": "unsupported inline kind: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000009_54915-01f287655c90.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000065_393-58fae23a2747.json",
+      "message": "unsupported inline kind in visible projection: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000009_55881-f4df11665cda.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000065_393-89dcd8df28e2.json",
+      "message": "unsupported inline kind: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000009_55882-1cadf9cd2bfd.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000065_393-bb9331cf0b9e.json",
+      "message": "unsupported inline kind in visible projection: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000009_57322-eb1ac8e18a2d.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000067_2843-cc347e7bd424.json",
+      "message": "unsupported inline kind: yokogumi"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000009_61393-46f69ce5ba94.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000075_4250-7e32f80f0150.json",
+      "message": "unsupported inline kind: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000009_61394-7bfd13580c25.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000075_47960-ad2f47ffff6b.json",
+      "message": "unsupported inline kind in source attribution projection: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000009_8-5db3c281b807.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000075_47964-2dcfbb083de1.json",
+      "message": "unsupported inline kind: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000011_55301-915f23ca52bf.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000075_47967-46eddbff13c0.json",
+      "message": "unsupported inline kind in source attribution projection: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000011_889-8a691eba9355.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000076_45641-e69c2d20d152.json",
+      "message": "unsupported inline kind: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000011_899-bc8b5148d0e0.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000081_4467-349d5986b896.json",
+      "message": "unsupported inline kind in source attribution projection: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000012_1092-1c3a5aac467e.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000081_45631-62e9b96079cd.json",
+      "message": "unsupported inline kind: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000012_24448-32312eb2c779.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000081_47027-a6a7780bf470.json",
+      "message": "unsupported inline kind in visible projection: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000012_33200-32660f9eb979.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000093_52936-58dc3d1ed8db.json",
+      "message": "unsupported inline kind in source attribution projection: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000012_48628-4fde87720d42.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000093_52937-f4e1e873e23a.json",
+      "message": "unsupported inline kind: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000014_12-e0352951f32f.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000094_1871-1c6066e3f979.json",
+      "message": "unsupported inline kind: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000014_728-af8280acaa59.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000094_2076-9e2654647a23.json",
+      "message": "unsupported inline kind: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000019_194-5219b1146dad.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000094_2523-1126d46db94f.json",
+      "message": "unsupported inline kind: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000019_42379-2c7b3481e08a.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000094_2524-adac834e2d72.json",
+      "message": "unsupported inline kind in source attribution projection: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000019_42380-e06a90ced089.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000094_2525-9c05271ce1b8.json",
+      "message": "unsupported inline kind: accent"
     },
     {
       "corpus": "aozora2-adapter",
-      "path": "000019_42381-e359d7f661b1.json",
-      "message": "unsupported inline kind: raw"
+      "path": "000094_42338-a56311a7fceb.json",
+      "message": "unsupported inline kind in visible projection: accent"
     }
   ]
 }

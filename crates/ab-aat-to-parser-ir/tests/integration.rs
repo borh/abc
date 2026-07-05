@@ -516,6 +516,82 @@ fn projects_source_derived_line_break_inline_to_line_break_node() {
 }
 
 #[test]
+fn recovers_direct_raw_without_rendering_parser_residue_as_body_text() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let aat = json!({
+        "version": 1,
+        "work_id": "direct-raw-recovery",
+        "meta": base_meta(
+            "utf-8",
+            "sha256:9191919191919191919191919191919191919191919191919191919191919191",
+        ),
+        "blocks": [
+            {
+                "kind": "paragraph",
+                "content": [
+                    {"kind": "raw", "source": "改頁", "x-provenance": "source-derived"}
+                ]
+            },
+            {
+                "kind": "paragraph",
+                "content": [
+                    {"kind": "raw", "source": "「姿が」は底本では「艇が」", "x-provenance": "source-derived"}
+                ]
+            },
+            {
+                "kind": "paragraph",
+                "content": [
+                    {"kind": "raw", "source": "BlockStart(Yokogumi)", "x-provenance": "parser-derived"}
+                ]
+            }
+        ]
+    });
+
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: ConversionOptions::default(),
+    })
+    .unwrap();
+
+    assert_eq!(
+        output
+            .parser_ir
+            .pointer("/nodes")
+            .and_then(Value::as_array)
+            .unwrap(),
+        &vec![
+            json!({
+                "type": "page-break",
+                "span": {"start": 0, "end": 0, "line": null, "column": null, "coordinate_system": "decoded_utf8"},
+                "marker": "page",
+                "page_number": null,
+            }),
+            json!({
+                "type": "editor-note",
+                "span": {"start": 0, "end": 0, "line": null, "column": null, "coordinate_system": "decoded_utf8"},
+                "note": {
+                    "raw": "「姿が」は底本では「艇が」",
+                    "category": "misc"
+                }
+            }),
+        ]
+    );
+    assert_eq!(
+        output.parser_ir.pointer("/paragraphs/2/node_range"),
+        Some(&json!({"start": 2, "end": 2}))
+    );
+    assert!(has_divergence_record(
+        &output,
+        "UNSUPPORTED",
+        "blocks[].content[].raw",
+        None
+    ));
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
+#[test]
 fn projects_burasage_style_wrapper_to_paragraph_layout() {
     let (schemas, mapping) = schemas_and_mapping();
     let aat = json!({
@@ -1249,15 +1325,12 @@ fn tei_eaj_structural_expansion_classifies_parser_ir_and_evidence_gaps() {
         .unwrap();
     assert_eq!(melos.tei.tei_eaj_p_count, Some(19));
     assert_eq!(melos.aat_inputs.len(), 3);
-    assert!(melos.aat_inputs.iter().any(|input| {
-        input.label == "failing-adapter:1567"
-            && !input.conversion.success
-            && input
-                .conversion
-                .error
-                .as_deref()
-                .is_some_and(|error| error.contains("unsupported inline kind: raw"))
-    }));
+    assert!(
+        melos
+            .aat_inputs
+            .iter()
+            .any(|input| { input.label == "failing-adapter:1567" && input.conversion.success })
+    );
     assert!(!melos.classification.parser_ir_gap);
     assert!(!melos.classification.source_attribution_gap);
     assert!(melos.classification.adapter_gap);
@@ -1797,8 +1870,8 @@ fn cli_audit_corpus_reports_raw_node_provenance_inventory() {
     assert!(status.success());
     let summary: Value = ab_aat_to_parser_ir::schema::read_json(&summary).unwrap();
     assert_eq!(summary.pointer("/totals/files_attempted"), Some(&json!(2)));
-    assert_eq!(summary.pointer("/totals/files_succeeded"), Some(&json!(1)));
-    assert_eq!(summary.pointer("/totals/files_failed"), Some(&json!(1)));
+    assert_eq!(summary.pointer("/totals/files_succeeded"), Some(&json!(2)));
+    assert_eq!(summary.pointer("/totals/files_failed"), Some(&json!(0)));
     assert_eq!(summary.pointer("/raw_nodes/nodes_total"), Some(&json!(2)));
     assert_eq!(
         summary.pointer("/raw_nodes/files_with_raw"),
@@ -1806,7 +1879,7 @@ fn cli_audit_corpus_reports_raw_node_provenance_inventory() {
     );
     assert_eq!(
         summary.pointer("/raw_nodes/fatal_direct_failures"),
-        Some(&json!(1))
+        Some(&json!(0))
     );
     assert_eq!(
         summary.pointer("/raw_nodes/inferred_provenance/source-derived"),

@@ -758,6 +758,7 @@ fn map_inline_to_nodes(
         }
         "warigaki" => map_warigaki_to_nodes(node, nodes, recorder, offset, path),
         "figure" => map_figure_to_node(node, nodes, recorder, offset, path),
+        "raw" => map_raw_to_nodes(node, nodes, recorder, offset, path),
         "font_size" | "tcy" | "keigakomi" | "caption" => {
             let kind = node["kind"].as_str().unwrap_or("");
             let pointer = format!("{path}.{kind}");
@@ -786,6 +787,81 @@ fn map_inline_to_nodes(
         }
         other => bail!("unsupported inline kind: {other}"),
     }
+}
+
+fn map_raw_to_nodes(
+    node: &Value,
+    nodes: &mut Vec<Value>,
+    recorder: &mut DivergenceRecorder,
+    offset: u64,
+    path: &str,
+) -> Result<u64> {
+    let raw_pointer = format!("{path}.raw");
+    if !recorder.has_rule("UNSUPPORTED", Some(raw_pointer.as_str()), None) {
+        bail!("unmeasured raw divergence at {raw_pointer}");
+    }
+    recorder.record(
+        "UNSUPPORTED",
+        Some(raw_pointer.as_str()),
+        None,
+        node.get("source").cloned(),
+        None,
+    )?;
+
+    let source = node.get("source").and_then(Value::as_str).unwrap_or("");
+    match raw_recovery_class(node, source) {
+        RawRecoveryClass::PageBreak => {
+            let span = map_span(node.get("span"), offset, offset, recorder, path)?;
+            nodes.push(json!({
+                "type": "page-break",
+                "span": span,
+                "marker": "page",
+                "page_number": null,
+            }));
+        }
+        RawRecoveryClass::SourceNote => {
+            let span = map_span(node.get("span"), offset, offset, recorder, path)?;
+            nodes.push(json!({
+                "type": "editor-note",
+                "span": span,
+                "note": {
+                    "raw": source,
+                    "category": "misc",
+                },
+            }));
+        }
+        RawRecoveryClass::ParserResidue => {}
+    }
+    Ok(offset)
+}
+
+#[derive(Debug, Clone, Copy)]
+enum RawRecoveryClass {
+    PageBreak,
+    SourceNote,
+    ParserResidue,
+}
+
+fn raw_recovery_class(node: &Value, source: &str) -> RawRecoveryClass {
+    let provenance = node.get("x-provenance").and_then(Value::as_str);
+    let trimmed = source.trim();
+    if provenance == Some("parser-derived") || is_parser_raw_residue(trimmed) {
+        return RawRecoveryClass::ParserResidue;
+    }
+    if matches!(trimmed, "改頁" | "改ページ") {
+        RawRecoveryClass::PageBreak
+    } else {
+        RawRecoveryClass::SourceNote
+    }
+}
+
+fn is_parser_raw_residue(value: &str) -> bool {
+    value.is_empty()
+        || (value.starts_with('<') && value.ends_with('>'))
+        || value.starts_with("BlockStart(")
+        || value.starts_with("BlockEnd(")
+        || value.starts_with("InlineStart(")
+        || value.starts_with("InlineEnd(")
 }
 
 fn is_source_derived_line_break_text(node: &Value) -> bool {

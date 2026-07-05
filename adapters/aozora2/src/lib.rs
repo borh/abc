@@ -166,12 +166,12 @@ impl BlockFrame {
         if self.content.is_empty() {
             return;
         }
-        self.children.push(json!({
-            "kind": "heading",
-            "level": midashi_level_number(level),
-            "style": midashi_style_name(style),
-            "content": std::mem::take(&mut self.content)
-        }));
+        push_headings_with_page_breaks(
+            &mut self.children,
+            level,
+            style,
+            std::mem::take(&mut self.content),
+        );
     }
 
     fn wrap_content_in_line_style(
@@ -196,7 +196,7 @@ impl BlockFrame {
         self.content.push(style);
     }
 
-    fn into_block(mut self) -> serde_json::Value {
+    fn into_blocks(mut self) -> Vec<serde_json::Value> {
         self.flush_paragraph();
         let block_type = self.block_type.expect("non-root block frame");
         if let Some(kind) = block_kind(block_type) {
@@ -205,7 +205,7 @@ impl BlockFrame {
                 "children": self.children
             });
             apply_block_params(&mut block, block_type, &self.params);
-            block
+            vec![block]
         } else if let Some(style_type) = style_block_type(block_type) {
             let mut style = json!({
                 "kind": "style",
@@ -213,27 +213,21 @@ impl BlockFrame {
                 "content": inline_content_from_blocks(self.children)
             });
             apply_style_params(&mut style, style_type, &self.params);
-            json!({
-                "kind": "paragraph",
-                "content": [style]
-            })
+            paragraph_blocks_from_inline_nodes(vec![style])
         } else if inline_scope_block_type(block_type) {
             let inline = inline_scope_block(block_type, &self.params, self.children)
                 .expect("inline scope block");
-            json!({
-                "kind": "paragraph",
-                "content": [inline]
-            })
+            paragraph_blocks_from_inline_nodes(vec![inline])
         } else {
             let mut content = vec![raw_json(format!("BlockStart({block_type:?})"))];
             for child in self.children {
                 content.push(child);
             }
             content.push(raw_json(format!("BlockEnd({block_type:?})")));
-            json!({
+            vec![json!({
                 "kind": "paragraph",
                 "content": content
-            })
+            })]
         }
     }
 }
@@ -279,8 +273,12 @@ fn aozora_nodes_to_aat_blocks(nodes: &[Node]) -> Vec<serde_json::Value> {
                         .and_then(|frame| frame.block_type)
                         .is_some_and(|start| block_end_matches(start, *block_type))
                 {
-                    let block = stack.pop().expect("block frame").into_block();
-                    stack.last_mut().expect("parent frame").children.push(block);
+                    let blocks = stack.pop().expect("block frame").into_blocks();
+                    stack
+                        .last_mut()
+                        .expect("parent frame")
+                        .children
+                        .extend(blocks);
                 } else {
                     append_raw_to_current_frame(&mut stack, format!("BlockEnd({block_type:?})"));
                 }
@@ -479,6 +477,10 @@ fn inline_content_from_blocks(blocks: Vec<serde_json::Value>) -> Vec<serde_json:
     let mut content = Vec::new();
     for block in blocks {
         if block.get("kind").and_then(serde_json::Value::as_str) == Some("paragraph")
+            && block.get("x-break-kind").and_then(Value::as_str) == Some("page")
+        {
+            content.push(json!({"kind": "_page_break"}));
+        } else if block.get("kind").and_then(serde_json::Value::as_str) == Some("paragraph")
             && let Some(items) = block.get("content").and_then(serde_json::Value::as_array)
         {
             content.extend(items.iter().cloned());
@@ -488,25 +490,55 @@ fn inline_content_from_blocks(blocks: Vec<serde_json::Value>) -> Vec<serde_json:
     content
 }
 
+fn paragraph_blocks_from_inline_nodes(content: Vec<Value>) -> Vec<Value> {
+    let mut blocks = Vec::new();
+    push_paragraphs_with_page_breaks(&mut blocks, content);
+    blocks
+}
+
+fn push_headings_with_page_breaks(
+    children: &mut Vec<Value>,
+    level: MidashiLevel,
+    style: MidashiStyle,
+    content: Vec<Value>,
+) {
+    let mut heading_content = Vec::new();
+    for node in content {
+        for fragment in split_inline_node_on_page_breaks(node) {
+            match fragment {
+                InlineFragment::Node(node) => heading_content.push(node),
+                InlineFragment::PageBreak => {
+                    push_heading(children, level, style, &mut heading_content);
+                    push_page_break_block(children);
+                }
+            }
+        }
+    }
+    push_heading(children, level, style, &mut heading_content);
+}
+
+fn push_heading(
+    children: &mut Vec<Value>,
+    level: MidashiLevel,
+    style: MidashiStyle,
+    content: &mut Vec<Value>,
+) {
+    trim_content_boundary_line_breaks(content);
+    if content.is_empty() {
+        return;
+    }
+    children.push(json!({
+        "kind": "heading",
+        "level": midashi_level_number(level),
+        "style": midashi_style_name(style),
+        "content": std::mem::take(content)
+    }));
+}
+
 fn push_paragraphs_with_page_breaks(children: &mut Vec<Value>, content: Vec<Value>) {
     let mut paragraph = Vec::new();
     for node in content {
-        if node.get("kind").and_then(Value::as_str) == Some("_page_break") {
-            trim_content_boundary_line_breaks(&mut paragraph);
-            if !paragraph.is_empty() {
-                children.push(json!({
-                    "kind": "paragraph",
-                    "content": std::mem::take(&mut paragraph)
-                }));
-            }
-            children.push(json!({
-                "kind": "paragraph",
-                "content": [],
-                "x-break-kind": "page"
-            }));
-        } else {
-            paragraph.push(node);
-        }
+        push_inline_with_page_breaks(children, &mut paragraph, node);
     }
     trim_content_boundary_line_breaks(&mut paragraph);
     if !paragraph.is_empty() {
@@ -515,6 +547,120 @@ fn push_paragraphs_with_page_breaks(children: &mut Vec<Value>, content: Vec<Valu
             "content": paragraph
         }));
     }
+}
+
+fn push_inline_with_page_breaks(
+    children: &mut Vec<Value>,
+    paragraph: &mut Vec<Value>,
+    node: Value,
+) {
+    for fragment in split_inline_node_on_page_breaks(node) {
+        match fragment {
+            InlineFragment::Node(node) => paragraph.push(node),
+            InlineFragment::PageBreak => push_page_break_paragraph(children, paragraph),
+        }
+    }
+}
+
+enum InlineFragment {
+    Node(Value),
+    PageBreak,
+}
+
+fn split_inline_node_on_page_breaks(node: Value) -> Vec<InlineFragment> {
+    if is_page_break_marker(&node) {
+        return vec![InlineFragment::PageBreak];
+    }
+
+    if node.get("kind").and_then(Value::as_str) == Some("ruby")
+        && let Some(items) = node.get("base_content").and_then(Value::as_array).cloned()
+    {
+        let (saw_page_break, fragments) = split_inline_items_on_page_breaks(items);
+        if saw_page_break {
+            return fragments;
+        }
+    }
+
+    let Some(items) = node.get("content").and_then(Value::as_array).cloned() else {
+        return vec![InlineFragment::Node(node)];
+    };
+
+    let mut fragments = Vec::new();
+    let mut segment = Vec::new();
+    let mut saw_page_break = false;
+
+    for child in items {
+        for fragment in split_inline_node_on_page_breaks(child) {
+            match fragment {
+                InlineFragment::Node(node) => segment.push(node),
+                InlineFragment::PageBreak => {
+                    saw_page_break = true;
+                    push_wrapped_content_fragment(&mut fragments, &node, &mut segment);
+                    fragments.push(InlineFragment::PageBreak);
+                }
+            }
+        }
+    }
+
+    if saw_page_break {
+        push_wrapped_content_fragment(&mut fragments, &node, &mut segment);
+        fragments
+    } else {
+        vec![InlineFragment::Node(node)]
+    }
+}
+
+fn split_inline_items_on_page_breaks(items: Vec<Value>) -> (bool, Vec<InlineFragment>) {
+    let mut fragments = Vec::new();
+    let mut saw_page_break = false;
+    for child in items {
+        for fragment in split_inline_node_on_page_breaks(child) {
+            if matches!(fragment, InlineFragment::PageBreak) {
+                saw_page_break = true;
+            }
+            fragments.push(fragment);
+        }
+    }
+    (saw_page_break, fragments)
+}
+
+fn push_wrapped_content_fragment(
+    fragments: &mut Vec<InlineFragment>,
+    wrapper: &Value,
+    segment: &mut Vec<Value>,
+) {
+    trim_content_boundary_line_breaks(segment);
+    if segment.is_empty() {
+        return;
+    }
+    let mut wrapped = wrapper.clone();
+    if let Some(object) = wrapped.as_object_mut() {
+        object.insert("content".to_owned(), Value::Array(std::mem::take(segment)));
+        fragments.push(InlineFragment::Node(wrapped));
+    }
+}
+
+fn is_page_break_marker(node: &Value) -> bool {
+    node.get("kind").and_then(Value::as_str) == Some("_page_break")
+}
+
+fn push_page_break_paragraph(children: &mut Vec<Value>, paragraph: &mut Vec<Value>) {
+    trim_content_boundary_line_breaks(paragraph);
+    if !paragraph.is_empty() {
+        children.push(json!({
+            "kind": "paragraph",
+            "content": std::mem::take(paragraph)
+        }));
+    }
+    push_page_break_block(children);
+}
+
+fn push_page_break_block(children: &mut Vec<Value>) {
+    children.push(json!({
+        "kind": "paragraph",
+        "content": [],
+        "x-break-kind": "page"
+    }));
 }
 
 fn normalize_inline_content(content: &mut Vec<Value>) {
@@ -1513,6 +1659,130 @@ mod tests {
     }
 
     #[test]
+    fn build_aat_splits_page_break_after_line_jisage_style() {
+        let decoded = DecodedSource {
+            text: "字下げ行［＃この行2字下げ］\n［＃改ページ］\n次".to_owned(),
+            encoding: "utf-8",
+            source_hash: "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+                .to_owned(),
+        };
+
+        let aat = build_aat(&decoded);
+        let blocks = aat["blocks"].as_array().expect("blocks");
+
+        assert_eq!(blocks[0]["content"][0]["kind"], "style");
+        assert_eq!(blocks[0]["content"][0]["style_type"], "jisage_line");
+        assert_eq!(blocks[0]["content"][0]["content"][0]["value"], "字下げ行");
+        assert_eq!(blocks[1]["kind"], "paragraph");
+        assert_eq!(blocks[1]["x-break-kind"], "page");
+        assert_eq!(blocks[2]["content"][0]["value"], "次");
+        assert!(
+            !serde_json::to_string(&aat)
+                .unwrap()
+                .contains(r#""_page_break""#)
+        );
+    }
+
+    #[test]
+    fn page_break_splitter_splits_nested_style_content() {
+        let mut children = Vec::new();
+        push_paragraphs_with_page_breaks(
+            &mut children,
+            vec![json!({
+                "kind": "style",
+                "style_type": "jisage_line",
+                "x-indent": 3,
+                "content": [
+                    { "kind": "text", "value": "前" },
+                    { "kind": "_page_break" }
+                ]
+            })],
+        );
+
+        assert_eq!(children[0]["content"][0]["kind"], "style");
+        assert_eq!(children[0]["content"][0]["content"][0]["value"], "前");
+        assert_eq!(children[1]["kind"], "paragraph");
+        assert_eq!(children[1]["x-break-kind"], "page");
+        assert!(
+            !serde_json::to_string(&children)
+                .unwrap()
+                .contains(r#""_page_break""#)
+        );
+    }
+
+    #[test]
+    fn page_break_splitter_splits_deeply_nested_style_content() {
+        let mut children = Vec::new();
+        push_paragraphs_with_page_breaks(
+            &mut children,
+            vec![json!({
+                "kind": "style",
+                "style_type": "chitsuki",
+                "x-align": "right",
+                "x-width": 2,
+                "content": [
+                    { "kind": "text", "value": "前" },
+                    {
+                        "kind": "style",
+                        "style_type": "boten",
+                        "x-boten-kind": "sesame",
+                        "content": [
+                            { "kind": "text", "value": "傍点" },
+                            { "kind": "_page_break" }
+                        ]
+                    },
+                    { "kind": "text", "value": "後" }
+                ]
+            })],
+        );
+
+        assert_eq!(children[0]["content"][0]["kind"], "style");
+        assert_eq!(children[0]["content"][0]["style_type"], "chitsuki");
+        assert_eq!(
+            children[0]["content"][0]["content"][1]["content"][0]["value"],
+            "傍点"
+        );
+        assert_eq!(children[1]["kind"], "paragraph");
+        assert_eq!(children[1]["x-break-kind"], "page");
+        assert_eq!(children[2]["content"][0]["content"][0]["value"], "後");
+        assert!(
+            !serde_json::to_string(&children)
+                .unwrap()
+                .contains(r#""_page_break""#)
+        );
+    }
+
+    #[test]
+    fn page_break_splitter_projects_ruby_base_content_across_page_break() {
+        let mut children = Vec::new();
+        push_paragraphs_with_page_breaks(
+            &mut children,
+            vec![json!({
+                "kind": "ruby",
+                "base": "前後",
+                "reading": "ぜんご",
+                "direction": "right",
+                "base_content": [
+                    { "kind": "text", "value": "前" },
+                    { "kind": "_page_break" },
+                    { "kind": "text", "value": "後" }
+                ],
+                "reading_content": [{ "kind": "text", "value": "ぜんご" }]
+            })],
+        );
+
+        assert_eq!(children[0]["content"][0]["value"], "前");
+        assert_eq!(children[1]["kind"], "paragraph");
+        assert_eq!(children[1]["x-break-kind"], "page");
+        assert_eq!(children[2]["content"][0]["value"], "後");
+        assert!(
+            !serde_json::to_string(&children)
+                .unwrap()
+                .contains(r#""_page_break""#)
+        );
+    }
+
+    #[test]
     fn build_aat_reconstructs_line_chitsuki_as_style() {
         let decoded = DecodedSource {
             text: "右寄せ［＃この行地付き］".to_owned(),
@@ -1546,6 +1816,53 @@ mod tests {
         assert_eq!(style["style_type"], "jizume");
         assert_eq!(style["x-width"], 4);
         assert_eq!(style["content"][0]["value"], "本文");
+    }
+
+    #[test]
+    fn build_aat_splits_page_break_inside_style_block_scope() {
+        let decoded = DecodedSource {
+            text: "［＃ここから字詰め4］\n前\n［＃改ページ］\n後\n［＃ここで字詰め終わり］"
+                .to_owned(),
+            encoding: "utf-8",
+            source_hash: "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+                .to_owned(),
+        };
+
+        let aat = build_aat(&decoded);
+        let blocks = aat["blocks"].as_array().expect("blocks");
+
+        assert_eq!(blocks[0]["content"][0]["style_type"], "jizume");
+        assert_eq!(blocks[0]["content"][0]["content"][0]["value"], "前");
+        assert_eq!(blocks[1]["kind"], "paragraph");
+        assert_eq!(blocks[1]["x-break-kind"], "page");
+        assert_eq!(blocks[2]["content"][0]["style_type"], "jizume");
+        assert_eq!(blocks[2]["content"][0]["content"][0]["value"], "後");
+        assert!(
+            !serde_json::to_string(&aat)
+                .unwrap()
+                .contains(r#""_page_break""#)
+        );
+    }
+
+    #[test]
+    fn heading_flush_moves_page_break_marker_after_heading() {
+        let mut frame = BlockFrame::root();
+        frame
+            .content
+            .push(json!({"kind": "text", "value": "見出し"}));
+        frame.content.push(json!({"kind": "_page_break"}));
+
+        frame.flush_heading(MidashiLevel::Naka, MidashiStyle::default());
+
+        assert_eq!(frame.children[0]["kind"], "heading");
+        assert_eq!(frame.children[0]["content"][0]["value"], "見出し");
+        assert_eq!(frame.children[1]["kind"], "paragraph");
+        assert_eq!(frame.children[1]["x-break-kind"], "page");
+        assert!(
+            !serde_json::to_string(&frame.children)
+                .unwrap()
+                .contains(r#""_page_break""#)
+        );
     }
 
     #[test]

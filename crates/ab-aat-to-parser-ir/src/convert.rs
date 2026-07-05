@@ -102,6 +102,7 @@ fn convert_preflighted(
             &mut recorder,
             offset,
             &format!("blocks[{block_index}]"),
+            None,
             block_index + 1 == top_level_block_count,
         )?;
     }
@@ -142,6 +143,7 @@ fn map_block(
     recorder: &mut DivergenceRecorder,
     offset: u64,
     path: &str,
+    inherited_layout: Option<Value>,
     is_final_top_level: bool,
 ) -> Result<u64> {
     let kind = block["kind"].as_str().unwrap_or("unknown");
@@ -161,7 +163,9 @@ fn map_block(
             }
 
             let layout_wrapper = paragraph_layout_wrapper(block);
-            let layout = layout_wrapper.and_then(paragraph_layout_from_style);
+            let layout = layout_wrapper
+                .and_then(paragraph_layout_from_style)
+                .or(inherited_layout);
             let paragraph_content = layout_wrapper
                 .and_then(|wrapper| wrapper.get("content"))
                 .or_else(|| block.get("content"));
@@ -281,42 +285,59 @@ fn map_block(
             current = end;
         }
         "jisage_block" => {
-            recorder.record(
-                "STRUCTURAL",
-                Some(structural_pointer.as_str()),
-                None,
-                None,
-                None,
-            )?;
-            recorder.record(
-                "INVENTION",
-                Some(structural_pointer.as_str()),
-                Some("indentation"),
-                None,
-                Some(json!(1)),
-            )?;
-            let span = map_span(block.get("span"), current, current, recorder, path)?;
-            nodes.push(json!({
-                "type": "indentation",
-                "span": span,
-                "depth": 1,
-                "text": null,
-            }));
-            for (index, child) in block["children"]
-                .as_array()
-                .into_iter()
-                .flatten()
-                .enumerate()
+            let children: Vec<&Value> =
+                block["children"].as_array().into_iter().flatten().collect();
+            if children
+                .iter()
+                .all(|child| child.get("kind").and_then(Value::as_str) == Some("paragraph"))
             {
-                current = map_block(
-                    child,
-                    nodes,
-                    paragraphs,
-                    recorder,
-                    current,
-                    &format!("{path}.children[{index}]"),
-                    false,
+                let layout = paragraph_layout_from_jisage_block(block);
+                for (index, child) in children.into_iter().enumerate() {
+                    current = map_block(
+                        child,
+                        nodes,
+                        paragraphs,
+                        recorder,
+                        current,
+                        &format!("{path}.children[{index}]"),
+                        Some(layout.clone()),
+                        false,
+                    )?;
+                }
+            } else {
+                recorder.record(
+                    "STRUCTURAL",
+                    Some(structural_pointer.as_str()),
+                    None,
+                    None,
+                    None,
                 )?;
+                recorder.record(
+                    "INVENTION",
+                    Some(structural_pointer.as_str()),
+                    Some("indentation"),
+                    None,
+                    Some(json!(1)),
+                )?;
+                let span = map_span(block.get("span"), current, current, recorder, path)?;
+                nodes.push(json!({
+                    "type": "indentation",
+                    "span": span,
+                    "depth": 1,
+                    "text": null,
+                }));
+                for (index, child) in children.into_iter().enumerate() {
+                    current = map_block(
+                        child,
+                        nodes,
+                        paragraphs,
+                        recorder,
+                        current,
+                        &format!("{path}.children[{index}]"),
+                        None,
+                        false,
+                    )?;
+                }
             }
         }
         "keigakomi_block" | "yokogumi_block" => {
@@ -347,6 +368,7 @@ fn map_block(
                     recorder,
                     current,
                     &format!("{path}.children[{index}]"),
+                    None,
                     false,
                 )?;
             }
@@ -423,6 +445,14 @@ fn paragraph_layout_from_style(node: &Value) -> Option<Value> {
         })),
         _ => None,
     }
+}
+
+fn paragraph_layout_from_jisage_block(block: &Value) -> Value {
+    json!({
+        "kind": "jisage",
+        "source": "aat-block",
+        "indent": block.get("x-indent").and_then(Value::as_u64).unwrap_or(1),
+    })
 }
 
 fn paragraph_span(

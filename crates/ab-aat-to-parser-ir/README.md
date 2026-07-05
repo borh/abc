@@ -43,7 +43,7 @@ is `checks.<system>.aat-to-parser-ir-smoke`.
 
 - Mapping version: `0.2.3`
 - Mapping hash:
-  `sha256:7f63631ff3730ba49f0690b5953ca6267014b0c16f170dc6dee75ac4f22d2cda`
+  `sha256:9812e1cc0d956143e61cdd9d0a5bccaa3ec301c7984279230107c23919936e8b`
 - Mapping schema hash:
   `sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4`
 - Parser-IR schema hash:

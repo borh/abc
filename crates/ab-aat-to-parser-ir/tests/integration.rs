@@ -128,7 +128,7 @@ fn mapping_preflight_accepts_checked_in_v2_artifact() {
     let index = mapping.preflight(&schemas).unwrap();
 
     assert_eq!(mapping.mapping_version, "0.2.3");
-    assert_eq!(mapping.transform_rule_descriptions.len(), 127);
+    assert_eq!(mapping.transform_rule_descriptions.len(), 714);
     assert!(
         !mapping
             .transform_rule_descriptions
@@ -340,7 +340,17 @@ fn converts_text_ruby_gaiji_and_validates_parser_ir() {
             .and_then(Value::as_str),
         Some("body")
     );
-    assert!(output.emitted_rule_ids.contains("A-18"));
+    assert!(
+        output
+            .divergence_bundle
+            .pointer("/records")
+            .and_then(Value::as_array)
+            .unwrap()
+            .iter()
+            .any(|record| record["category"] == "AMBIGUITY"
+                && record["aat_pointer"] == "blocks[].content[].gaiji.jis_code"
+                && record["parser_ir_pointer"] == "gaiji.reference")
+    );
     assert!(
         !output
             .divergence_bundle
@@ -634,6 +644,69 @@ fn projects_chitsuki_style_wrapper_to_paragraph_layout() {
             .unwrap()
             .iter()
             .any(|node| node["type"] == "emphasis" && node["style"] == "chitsuki")
+    );
+
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
+#[test]
+fn projects_jisage_block_wrapped_paragraph_to_paragraph_layout() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let aat = json!({
+        "version": 1,
+        "work_id": "jisage-layout",
+        "meta": base_meta(
+            "utf-8",
+            "sha256:1212121212121212121212121212121212121212121212121212121212121212",
+        ),
+        "blocks": [{
+            "kind": "jisage_block",
+            "x-indent": 4,
+            "children": [{
+                "kind": "paragraph",
+                "content": [{"kind": "text", "value": "字下げ"}]
+            }]
+        }]
+    });
+
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: ConversionOptions::default(),
+    })
+    .unwrap();
+
+    assert_eq!(
+        output.parser_ir.pointer("/paragraphs/0/layout"),
+        Some(&json!({
+            "kind": "jisage",
+            "source": "aat-block",
+            "indent": 4
+        }))
+    );
+    assert_eq!(
+        output
+            .parser_ir
+            .pointer("/nodes/0/type")
+            .and_then(Value::as_str),
+        Some("text")
+    );
+    assert_eq!(
+        output
+            .parser_ir
+            .pointer("/nodes/0/text")
+            .and_then(Value::as_str),
+        Some("字下げ")
+    );
+    assert!(
+        !output
+            .parser_ir
+            .pointer("/nodes")
+            .and_then(Value::as_array)
+            .unwrap()
+            .iter()
+            .any(|node| node["type"] == "indentation")
     );
 
     validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();

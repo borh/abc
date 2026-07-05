@@ -1,4 +1,9 @@
-use std::{collections::BTreeMap, fs, path::Path, sync::OnceLock};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    fs,
+    path::Path,
+    sync::OnceLock,
+};
 
 use anyhow::{Context, Result, bail};
 use regex::Regex;
@@ -141,6 +146,18 @@ mod tests {
         assert!(mapping.document_hash.starts_with("sha256:"));
         assert_eq!(mapping.document_hash.len(), "sha256:".len() + 64);
     }
+
+    #[test]
+    fn aat_pointer_checker_accepts_deep_recursive_inline_paths() {
+        let schema = read_json(&repo_root().join("data/aat-schema.json")).expect("schema reads");
+        let mut pointer = "blocks[]".to_owned();
+        for _ in 0..80 {
+            pointer.push_str(".content[]");
+        }
+        pointer.push_str(".gaiji.resolved");
+
+        assert!(aat_pointer_exists(&schema, &pointer));
+    }
 }
 
 impl MappingIndex {
@@ -198,7 +215,7 @@ fn aat_pointer_exists(schema: &Value, pointer: &str) -> bool {
         return true;
     }
     let segments: Vec<&str> = pointer.split('.').collect();
-    path_exists(schema, schema, &segments, 0, 0)
+    path_exists(schema, schema, &segments, 0, BTreeSet::new())
 }
 
 fn path_exists(
@@ -206,26 +223,32 @@ fn path_exists(
     node: &Value,
     segments: &[&str],
     index: usize,
-    depth: usize,
+    seen: BTreeSet<(usize, usize)>,
 ) -> bool {
     if index == segments.len() {
         return true;
     }
-    if depth > 64 {
+
+    let node = deref(schema, node);
+    let key = (node as *const Value as usize, index);
+    if seen.contains(&key) {
         return false;
     }
-    let node = deref(schema, node);
+    let mut seen = seen;
+    seen.insert(key);
+
     if let Some(branches) = node.get("oneOf").and_then(Value::as_array) {
         let segment = segments[index].trim_end_matches("[]");
         for branch in branches {
             let resolved = deref(schema, branch);
             for kind in kind_values(resolved) {
-                if segment == kind && path_exists(schema, resolved, segments, index + 1, depth + 1)
+                if segment == kind
+                    && path_exists(schema, resolved, segments, index + 1, seen.clone())
                 {
                     return true;
                 }
             }
-            if path_exists(schema, resolved, segments, index, depth + 1) {
+            if path_exists(schema, resolved, segments, index, seen.clone()) {
                 return true;
             }
         }
@@ -234,7 +257,7 @@ fn path_exists(
     for keyword in ["allOf", "anyOf"] {
         if let Some(branches) = node.get(keyword).and_then(Value::as_array) {
             for branch in branches {
-                if path_exists(schema, branch, segments, index, depth + 1) {
+                if path_exists(schema, branch, segments, index, seen.clone()) {
                     return true;
                 }
             }
@@ -242,24 +265,30 @@ fn path_exists(
         }
     }
     if node.get("type").and_then(Value::as_str) == Some("array") {
-        return node
-            .get("items")
-            .is_some_and(|items| path_exists(schema, items, segments, index, depth + 1));
+        return false;
     }
     if node.get("type").and_then(Value::as_str) == Some("object")
         || node.get("properties").is_some()
     {
         let segment = segments[index];
+        if kind_values(node).iter().any(|kind| kind == segment) {
+            return path_exists(schema, node, segments, index + 1, seen);
+        }
+
         let is_array = segment.ends_with("[]");
         let name = segment.trim_end_matches("[]");
         if let Some(child) = node.pointer(&format!("/properties/{name}")) {
             let child = deref(schema, child);
             if is_array {
                 return child.get("items").is_some_and(|items| {
-                    path_exists(schema, items, segments, index + 1, depth + 1)
+                    child.get("type").and_then(Value::as_str) == Some("array")
+                        && path_exists(schema, items, segments, index + 1, seen)
                 });
             }
-            return path_exists(schema, child, segments, index + 1, depth + 1);
+            if child.get("type").and_then(Value::as_str) == Some("array") {
+                return index + 1 == segments.len();
+            }
+            return path_exists(schema, child, segments, index + 1, seen);
         }
     }
     false

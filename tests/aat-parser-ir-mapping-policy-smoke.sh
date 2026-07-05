@@ -208,3 +208,52 @@ assert any(
 nested_spans = [node["span"] for node in nested_nodes]
 assert any(span["end"] > span["start"] for span in nested_spans), nested_spans
 PY
+
+layout_dir="$out_dir/layout-only-aat"
+mkdir -p "$layout_dir"
+cat > "$layout_dir/layout.json" <<'JSON'
+{
+  "version": 1,
+  "work_id": "layout-only",
+  "meta": {
+    "adapter": "fixture",
+    "adapter_version": "fixture 0.1.0",
+    "source_encoding": "utf-8",
+    "source_hash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+    "parse_complete": true,
+    "warnings": []
+  },
+  "blocks": [
+    {
+      "kind": "jisage_block",
+      "x-indent": 4,
+      "children": [
+        {
+          "kind": "paragraph",
+          "content": [
+            {
+              "kind": "style",
+              "style_type": "burasage",
+              "x-indent-first": 0,
+              "x-indent-rest": 1,
+              "content": [{ "kind": "text", "value": "甲" }]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+JSON
+
+uv run --isolated --no-project --with 'jsonschema>=4.0' \
+  "$repo_root/reports/aat-fidelity/aat_parser_ir_mapping/generate.py" \
+  --aat-dir "$layout_dir" \
+  --abc-root "$abc_root" \
+  --mapping-version 0.2.3 \
+  --out "$out_dir/layout-only.mapping.json" \
+  --summary-json "$out_dir/layout-only.summary.json"
+
+jq -e 'all(.transform_rule_descriptions[]; .aat_pointer != "blocks[].jisage_block")' "$out_dir/layout-only.mapping.json"
+jq -e 'all(.transform_rule_descriptions[]; .parser_ir_pointer != "indentation")' "$out_dir/layout-only.mapping.json"
+jq -e 'all(.transform_rule_descriptions[]; .parser_ir_pointer != "emphasis")' "$out_dir/layout-only.mapping.json"

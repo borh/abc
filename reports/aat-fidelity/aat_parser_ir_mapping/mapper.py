@@ -272,9 +272,31 @@ def map_inline(node, offset, ledger_list, path):
     return None, span_end(span, offset)
 
 
+def is_paragraph_layout_style(node):
+    if node.get("kind") != "style":
+        return False
+    style_type = node.get("style_type")
+    if style_type == "burasage":
+        return node.get("x-indent-first") is not None and node.get("x-indent-rest") is not None
+    if style_type == "chitsuki":
+        return node.get("x-offset") is not None and node.get("x-align", "right") == "right"
+    if style_type in ("jisage", "line-jisage", "jisage_line"):
+        return node.get("x-indent") is not None
+    if style_type == "jizume":
+        return node.get("x-width") is not None
+    return False
+
+
+def paragraph_only_jisage_block(block):
+    if block.get("kind") != "jisage_block":
+        return False
+    children = block.get("children", [])
+    return bool(children) and all(child.get("kind") == "paragraph" for child in children)
+
+
 def map_block(block, nodes, ledger_list, offset, path):
     kind = block.get("kind")
-    if kind != "paragraph":
+    if kind != "paragraph" and not paragraph_only_jisage_block(block):
         # Non-paragraph block boundaries are still not first-class parser-IR
         # structures. Paragraphs are represented by top-level paragraphs[].
         ledger_list.append(ledger("STRUCTURAL", f"{path}.{kind}",
@@ -310,8 +332,15 @@ def map_block(block, nodes, ledger_list, offset, path):
         offset = span_end(block.get("span"), fallback_end)
 
     elif kind == "paragraph":
-        for i, child in enumerate(block.get("content", [])):
-            cpath = f"{path}.content[{i}]"
+        content = block.get("content", [])
+        path_prefix = f"{path}.content"
+        if (len(content) == 1
+                and isinstance(content[0], dict)
+                and is_paragraph_layout_style(content[0])):
+            content = content[0].get("content", [])
+            path_prefix = f"{path}.content[0].content"
+        for i, child in enumerate(content):
+            cpath = f"{path_prefix}[{i}]"
             if child.get("kind") == "warigaki":
                 ledger_list.append(ledger("UNSUPPORTED", f"{cpath}.warigaki",
                                           "(none)", "parser-IR has no warigaki node; upper/lower flattened to text nodes, split-line structure lost"))
@@ -334,7 +363,9 @@ def map_block(block, nodes, ledger_list, offset, path):
     elif kind in ("jisage_block", "quote_block", "keigakomi_block",
                   "yokogumi_block", "caption_block"):
         # Emit a best-effort parser-IR node for the block kind, then recurse children.
-        if kind == "jisage_block":
+        if kind == "jisage_block" and paragraph_only_jisage_block(block):
+            pass
+        elif kind == "jisage_block":
             ledger_list.append(ledger("INVENTION", f"{path}.jisage_block",
                                       "indentation", "mapped to indentation node; depth unknown -> defaulted 1"))
             fallback_end = offset

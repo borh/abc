@@ -1,43 +1,46 @@
 {
-  "files_scanned": 53427,
+  "files_scanned": 89169,
   "files_failed_to_parse": 0,
-  "files_with_unsupported": 1630,
-  "files_with_warigaki": 243,
-  "total_blocks_scanned": 6090077,
-  "total_inline_nodes_scanned": 30842160,
-  "total_parser_ir_nodes_emitted": 26888713,
-  "total_ledger_entries": 42467495,
+  "files_with_unsupported": 23564,
+  "files_with_warigaki": 560,
+  "total_blocks_scanned": 6384313,
+  "total_inline_nodes_scanned": 49412371,
+  "total_parser_ir_nodes_emitted": 32793931,
+  "total_ledger_entries": 61600541,
   "category_counts": {
-    "LOSS": 3815445,
-    "AMBIGUITY": 27617002,
-    "INVENTION": 10691975,
-    "UNSUPPORTED": 27464,
-    "STRUCTURAL": 315609
+    "LOSS": 9593256,
+    "AMBIGUITY": 33464788,
+    "INVENTION": 13474742,
+    "UNSUPPORTED": 4836371,
+    "STRUCTURAL": 231384
   },
   "block_kind_counts": {
-    "paragraph": 5846794,
-    "heading": 13394,
-    "jisage_block": 229830,
-    "keigakomi_block": 58,
-    "yokogumi_block": 1
+    "paragraph": 6030849,
+    "heading": 87024,
+    "jisage_block": 265920,
+    "keigakomi_block": 113,
+    "yokogumi_block": 119,
+    "caption_block": 288
   },
   "inline_kind_counts": {
-    "text": 20507601,
-    "ruby": 9686031,
-    "gaiji": 91915,
-    "style": 520415,
-    "warigaki": 1938,
-    "font_size": 12796,
-    "figure": 4416,
-    "raw": 2959,
-    "keigakomi": 420,
-    "caption": 64,
-    "tcy": 13605
+    "text": 30822016,
+    "ruby": 12795869,
+    "gaiji": 143238,
+    "style": 770883,
+    "warigaki": 4792,
+    "font_size": 29740,
+    "figure": 9604,
+    "raw": 4800218,
+    "keigakomi": 551,
+    "caption": 65,
+    "tcy": 30681,
+    "accent": 4613,
+    "yokogumi": 101
   },
-  "generated_mapping_rules": 127,
-  "mapping_version": "0.2.2",
+  "generated_mapping_rules": 714,
+  "mapping_version": "0.2.3",
   "mapping_schema_hash": "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4",
-  "target_parser_ir_schema_hash": "sha256:90c9c46c1e3048cf2559733d4ee7f3e37827756e2527548ba981f023a1232fa2",
+  "target_parser_ir_schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
   "identity_projection": {
     "parser_ir_pointer": "derived_from",
     "aat_pointers": [
@@ -55,7 +58,9 @@
   "aat_dirs": [
     "/home/bor/Projects/ab-validator/scratch/morph-full-corpus/aats/aozora-rs-adapter",
     "/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter",
-    "/db/ab-validator/aat-corpus/aozora-epub3-full-20260704T050652Z-300s/aat/aozora-epub3-adapter"
+    "/db/ab-validator/aat-corpus/aozora-epub3-full-20260704T050652Z-300s/aat/aozora-epub3-adapter",
+    "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter",
+    "/db/ab-validator/aat-corpus/aozora-full-20260705T015007Z/aat/aozora-adapter"
   ],
   "mapping_path": "data/aat-to-parser-ir-mapping-v1.json"
 }

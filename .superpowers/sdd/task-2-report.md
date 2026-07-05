@@ -32,3 +32,18 @@ The strict invocation exits with status 2, as expected for a missing target scri
 
 ### Concerns
 - The full assertion block after strict execution cannot be exercised until `reports/parser-ir/plain-prose-source-delta.py` exists (expected for Task 3).
+
+## Fix pass (post-review)
+
+### Reviewer Blocker fixes applied
+- Updated expected parser coverage assertion:
+  - from: `.parser_evidence_coverage.missing_parsers == []`
+  - to: `.parser_evidence_coverage.missing_parsers == ["aozora"]`
+- Added an explicit multi-owner row assertion:
+  - `jq -e '[.rows[] | select(((.blocking_owners|index("adapter")) and (.blocking_owners|index("evidence")))] | length >= 1' "$summary_json"`
+
+### Re-run test evidence
+- `bash -n tests/parser-ir-plain-prose-source-delta-smoke.sh` (pass)
+- `./tests/parser-ir-plain-prose-source-delta-smoke.sh` (still RED as expected; target script still absent)
+  - `python3 "$repo_root/reports/parser-ir/plain-prose-source-delta.py"` strict mode fails with non-zero status before assertions can complete.
+  - Smoke exits with failure as intended for Task 2 pre-Task-3 state.

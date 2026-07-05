@@ -99,6 +99,18 @@
         { "$ref": "#/$defs/sourceNoteNode" }
       ]
     },
+    "inlineNode": {
+      "oneOf": [
+        { "$ref": "#/$defs/textNode" },
+        { "$ref": "#/$defs/rubyNode" },
+        { "$ref": "#/$defs/gaijiNode" },
+        { "$ref": "#/$defs/editorNoteNode" },
+        { "$ref": "#/$defs/emphasisNode" },
+        { "$ref": "#/$defs/imageNode" },
+        { "$ref": "#/$defs/pageBreakNode" },
+        { "$ref": "#/$defs/lineBreakNode" }
+      ]
+    },
     "nodeRange": {
       "type": "object",
       "required": ["start", "end"],
@@ -271,11 +283,19 @@
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["type", "span", "text", "style"],
+          "required": ["type", "span", "style"],
+          "anyOf": [
+            { "required": ["text"] },
+            { "required": ["inline_children"] }
+          ],
           "properties": {
             "type": { "const": "emphasis" },
             "span": { "$ref": "#/$defs/span" },
             "text": { "type": "string" },
+            "inline_children": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/inlineNode" }
+            },
             "style": { "type": "string" }
           }
         }

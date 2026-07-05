@@ -4,6 +4,7 @@
             [abc.tools.malli :as am]
             [abc.tools.manifest-to-rdf :as manifest-to-rdf]
             [abc.tools.parser-evidence :as parser-evidence]
+            [abc.tools.schema :as schema]
             [abc.tools.shacl :as shacl]
             [abc.tools.validate-design-bundle :as validate]
             [clojure.test :refer [deftest is testing use-fixtures]]))
@@ -392,6 +393,43 @@
                      "warnings" []
                      "errors" []}]
       (is (seq (validate/validation-errors schema parser-ir))))))
+
+(deftest parser-ir-schema-accepts-emphasis-inline-children-test
+  (testing "emphasis can carry recursive inline children while retaining legacy text"
+    (let [schema (files/read-json "schemas/parser-ir.schema.json")
+          parser-ir {"schema_id" "https://w3id.org/abc/schemas/parser-ir.schema.json"
+                     "schema_hash" current-parser-ir-schema-hash
+                     "source" {"work_content_hash" "sha256:0000000000000000000000000000000000000000000000000000000000000002"
+                               "encoding" "Shift_JIS"
+                               "normalization" "source"}
+                     "nodes" [{"type" "emphasis"
+                               "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                               "style" "bold"
+                               "text" "東京"
+                               "inline_children" [{"type" "ruby"
+                                                   "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                                                   "ruby" {"base" "東京"
+                                                           "reading" "とうきょう"
+                                                           "scope" "explicit"
+                                                           "direction" "right"}}]}]
+                     "warnings" []
+                     "errors" []}]
+      (is (nil? (schema/validation-errors schema parser-ir))))))
+
+(deftest parser-ir-schema-rejects-empty-emphasis-test
+  (testing "emphasis must carry either legacy text or structured inline children"
+    (let [schema (files/read-json "schemas/parser-ir.schema.json")
+          parser-ir {"schema_id" "https://w3id.org/abc/schemas/parser-ir.schema.json"
+                     "schema_hash" current-parser-ir-schema-hash
+                     "source" {"work_content_hash" "sha256:0000000000000000000000000000000000000000000000000000000000000002"
+                               "encoding" "Shift_JIS"
+                               "normalization" "source"}
+                     "nodes" [{"type" "emphasis"
+                               "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                               "style" "bold"}]
+                     "warnings" []
+                     "errors" []}]
+      (is (seq (schema/validation-errors schema parser-ir))))))
 
 (def ^:private level3-parser-ir-fixture
   {"nodes" [{"type" "text"

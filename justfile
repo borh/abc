@@ -286,6 +286,15 @@ aozora2html-aat-full DIR="" JOBS="0" TIMEOUT="180s" REPORT_ID="" WORK_IDS="" FEA
 	if [ -n "{{FEATURES}}" ]; then args+=(--features "{{FEATURES}}"); fi; \
 	"{{repo_root}}/reports/aat-fidelity/run-aozora2html-aat-full.sh" "${args[@]}"
 
+aozora-aat-full DIR="" JOBS="0" TIMEOUT="300s" REPORT_ID="" WORK_IDS="" FEATURES="":
+	@run_dir="{{DIR}}"; if [ -z "$run_dir" ]; then run_dir="{{ab_db_root}}/aat-corpus/aozora-full-$(date -u +%Y%m%dT%H%M%SZ)"; fi; \
+	jobs="{{JOBS}}"; if [ "$jobs" = "0" ]; then jobs="$(nproc)"; fi; \
+	report_id="{{REPORT_ID}}"; if [ -z "$report_id" ]; then report_id="aozora-full-$(date -u +%F)"; fi; \
+	args=(--out-dir "$run_dir" --jobs "$jobs" --timeout "{{TIMEOUT}}" --report-id "$report_id" --force); \
+	if [ -n "{{WORK_IDS}}" ]; then args+=(--work-ids "{{WORK_IDS}}"); fi; \
+	if [ -n "{{FEATURES}}" ]; then args+=(--features "{{FEATURES}}"); fi; \
+	"{{repo_root}}/reports/aat-fidelity/run-aozora-aat-full.sh" "${args[@]}"
+
 aozora-epub3-aat-full DIR="" JOBS="0" TIMEOUT="300s" REPORT_ID="" WORK_IDS="" FEATURES="":
 	@run_dir="{{DIR}}"; if [ -z "$run_dir" ]; then run_dir="{{ab_db_root}}/aat-corpus/aozora-epub3-full-$(date -u +%Y%m%dT%H%M%SZ)"; fi; \
 	jobs="{{JOBS}}"; if [ "$jobs" = "0" ]; then jobs="$(nproc)"; fi; \

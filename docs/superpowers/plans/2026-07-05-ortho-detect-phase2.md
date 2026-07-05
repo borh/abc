@@ -90,7 +90,7 @@ Read `reports/ortho-detect/2026-07-05-sudachi-baseline.md` §"Post-implementatio
 - [ ] **Step 4: Confirm sibling tooling is reachable**
 
 ```bash
-ls ../aozora-corpus-generator/src/aozora_corpus_generator/aozora.py   # Python heuristic
+ls /home/bor/Projects/aozora-corpus-generator/src/aozora_corpus_generator/aozora.py   # Python heuristic
 which bb clojure python3                                              # gold harness toolchain
 ```
 
@@ -347,7 +347,7 @@ compare_nway_with_source_text are both consistent."
 - Create: `data/ortho-gold/sentences.jsonl` (generated)
 
 **Interfaces:**
-- Consumes: `../aozora-corpus-generator/Aozora-Bunko-Fiction-Selection-2022-05-30/Plain/` (plain-text Aozora works)
+- Consumes: `/home/bor/Projects/aozora-corpus-generator/Aozora-Bunko-Fiction-Selection-2022-05-30/Plain/` (plain-text Aozora works)
 - Produces: `data/ortho-gold/sentences.jsonl` — one record per candidate sentence: `{work_id, sentence, byte_offset, char_offset, label, features, dict_version}`
 
 **Why:** Phase 2 ML needs a gold set. Real human annotation is the documented finishing input; this task bootstraps labels from the Python heuristic (the same one Phase 1 ported) so the ML pipeline can run end-to-end. The bias is explicit: a model trained on these labels can at best equal the heuristic; it cannot exceed it on the labeled distribution.
@@ -397,7 +397,7 @@ compare_nway_with_source_text are both consistent."
 
 (defn -main [& args]
   (let [plain-dir (or (System/getenv "AOZORA_FICTION_PLAIN")
-                      "../aozora-corpus-generator/Aozora-Bunko-Fiction-Selection-2022-05-30/Plain")
+                      "/home/bor/Projects/aozora-corpus-generator/Aozora-Bunko-Fiction-Selection-2022-05-30/Plain")
         out-path (or (first args) "data/ortho-gold/candidates.jsonl")]
     (doseq [^java.io.File f (file-seq (io/file plain-dir))
             :when (and (.isFile f) (str/ends-with? (.getName f) ".txt"))]
@@ -424,7 +424,7 @@ Rewrite `candidates.clj` as orchestrator:
 
 (def plain-dir
   (or (System/getenv "AOZORA_FICTION_PLAIN")
-      "../aozora-corpus-generator/Aozora-Bunko-Fiction-Selection-2022-05-30/Plain"))
+      "/home/bor/Projects/aozora-corpus-generator/Aozora-Bunko-Fiction-Selection-2022-05-30/Plain"))
 
 (def out-path
   (or (first *command-line-args*) "data/ortho-gold/candidates.jsonl"))
@@ -472,13 +472,12 @@ import sys
 from pathlib import Path
 
 # Import the canonical heuristic from the sibling repo.
-sys.path.insert(0, str(Path(__file__).resolve().parents[3]
-                       / "aozora-corpus-generator" / "src"))
+sys.path.insert(0, str(Path("/home/bor/Projects/aozora-corpus-generator") / "src"))
 try:
     from aozora_corpus_generator.aozora import is_katakana_sentence  # type: ignore
 except Exception as exc:  # pragma: no cover
     sys.exit(f"could not import aozora-corpus-generator heuristic: {exc}\n"
-             f"(expected at $REPO/../aozora-corpus-generator/src/aozora_corpus_generator/aozora.py)")
+             f"(expected at $REPO//home/bor/Projects/aozora-corpus-generator/src/aozora_corpus_generator/aozora.py)")
 # The heuristic calls MeCab for oov_count/proper_noun; we stub tokens to
 # the Branch-B reality (oov_count=0 always, no proper-noun filter) so the
 # bootstrap is self-contained and does not require a MeCab install.

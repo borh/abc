@@ -23,6 +23,7 @@
       "aozora": 57
     },
     "missing_parsers": [],
+    "qualified_rows": 285,
     "plain_prose_delta_verdict": "FIVE_PARSER_EVIDENCE_COMPLETE"
   },
   "parser_ir_schema": {
@@ -109,45 +110,225 @@
     },
     "unsupported": []
   },
+  "field_coverage": {
+    "by_field": {
+      "gaiji.raw_marker": {
+        "class": "tei_policy_projection",
+        "target": "TEI g/charDecl raw-marker preservation policy",
+        "kind": "node_field",
+        "defined_in_schema": true,
+        "schema_paths": [
+          "#/$defs/gaijiNode/properties/gaiji/properties/raw_marker"
+        ]
+      },
+      "gaiji.reference": {
+        "class": "tei_exact",
+        "target": "TEI g/charDecl reference linkage",
+        "kind": "node_field",
+        "defined_in_schema": true,
+        "schema_paths": [
+          "#/$defs/gaijiNode/properties/gaiji/properties/reference"
+        ]
+      },
+      "gaiji.unicode": {
+        "class": "tei_exact",
+        "target": "TEI g/charDecl Unicode value",
+        "kind": "node_field",
+        "defined_in_schema": true,
+        "schema_paths": [
+          "#/$defs/gaijiNode/properties/gaiji/properties/unicode"
+        ]
+      },
+      "gaiji.resolved": {
+        "class": "tei_plus_abc_extension",
+        "target": "TEI visible glyph plus ABC resolution-status preservation",
+        "kind": "node_field",
+        "defined_in_schema": true,
+        "schema_paths": [
+          "#/$defs/gaijiNode/properties/gaiji/properties/resolved"
+        ]
+      },
+      "ruby.base": {
+        "class": "tei_exact",
+        "target": "TEI ruby base text",
+        "kind": "node_field",
+        "defined_in_schema": true,
+        "schema_paths": [
+          "#/$defs/rubyNode/properties/ruby/properties/base"
+        ]
+      },
+      "ruby.reading": {
+        "class": "tei_exact",
+        "target": "TEI ruby reading text",
+        "kind": "node_field",
+        "defined_in_schema": true,
+        "schema_paths": [
+          "#/$defs/rubyNode/properties/ruby/properties/reading"
+        ]
+      },
+      "ruby.direction": {
+        "class": "tei_policy_projection",
+        "target": "TEI ruby placement policy for left/right readings",
+        "kind": "node_field",
+        "defined_in_schema": true,
+        "schema_paths": [
+          "#/$defs/rubyNode/properties/ruby/properties/direction"
+        ]
+      },
+      "heading.level": {
+        "class": "tei_policy_projection",
+        "target": "TEI section/head level policy",
+        "kind": "node_field",
+        "defined_in_schema": true,
+        "schema_paths": [
+          "#/$defs/headingNode/properties/level"
+        ]
+      },
+      "emphasis.inline_children": {
+        "class": "tei_policy_projection",
+        "target": "TEI hi content with nested inline children policy",
+        "kind": "node_field",
+        "defined_in_schema": true,
+        "schema_paths": [
+          "#/$defs/emphasisNode/properties/inline_children"
+        ]
+      },
+      "paragraph.layout": {
+        "class": "tei_policy_projection",
+        "target": "TEI p@rend paragraph layout policy",
+        "kind": "paragraph_field",
+        "defined_in_schema": true,
+        "schema_paths": [
+          "#/$defs/paragraph/properties/layout"
+        ]
+      },
+      "paragraph.node_range": {
+        "class": "custom_sidecar",
+        "target": "ABC sidecar node-range traceability",
+        "kind": "paragraph_field",
+        "defined_in_schema": true,
+        "schema_paths": [
+          "#/$defs/paragraph/properties/node_range"
+        ]
+      },
+      "paragraph.role": {
+        "class": "tei_policy_projection",
+        "target": "TEI paragraph routing/body-vs-note role policy",
+        "kind": "paragraph_field",
+        "defined_in_schema": true,
+        "schema_paths": [
+          "#/$defs/paragraph/properties/role"
+        ]
+      },
+      "source-note.placement": {
+        "class": "tei_policy_projection",
+        "target": "TEI front/body/back source-note routing",
+        "kind": "node_field",
+        "defined_in_schema": true,
+        "schema_paths": [
+          "#/$defs/sourceNoteNode/properties/placement"
+        ]
+      },
+      "source-note.classification": {
+        "class": "custom_sidecar",
+        "target": "ABC sidecar source-note provenance classification",
+        "kind": "node_field",
+        "defined_in_schema": true,
+        "schema_paths": [
+          "#/$defs/sourceNoteNode/properties/classification"
+        ]
+      },
+      "caption.target": {
+        "class": "tei_policy_projection",
+        "target": "TEI caption-to-figure association policy",
+        "kind": "node_field",
+        "defined_in_schema": true,
+        "schema_paths": [
+          "#/$defs/captionNode/properties/target"
+        ]
+      },
+      "quote.marker_type": {
+        "class": "tei_policy_projection",
+        "target": "TEI quote/cit marker interpretation policy",
+        "kind": "node_field",
+        "defined_in_schema": true,
+        "schema_paths": [
+          "#/$defs/quoteNode/properties/marker_type"
+        ]
+      },
+      "mapping.identity": {
+        "class": "custom_sidecar",
+        "target": "ABC sidecar mapping id/version/hash linkage",
+        "kind": "contract_field"
+      },
+      "divergence.records": {
+        "class": "custom_sidecar",
+        "target": "ABC sidecar divergence record set",
+        "kind": "contract_field"
+      },
+      "source.pointer": {
+        "class": "custom_sidecar",
+        "target": "ABC sidecar source pointer linkage",
+        "kind": "contract_field",
+        "defined_in_schema": true,
+        "schema_paths": [
+          "#/$defs/paragraph/properties/source_pointer",
+          "#/$defs/sourceNoteNode/properties/source_pointer"
+        ]
+      }
+    },
+    "counts_by_class": {
+      "tei_exact": 4,
+      "tei_policy_projection": 9,
+      "tei_plus_abc_extension": 1,
+      "custom_sidecar": 5
+    },
+    "unsupported": []
+  },
   "source_construct_coverage": {
     "by_construct": {
       "accent": {
         "class": "tei_plus_abc_extension",
-        "rules": 43,
+        "rules": 33,
         "categories": {
-          "AMBIGUITY": 5,
-          "INVENTION": 5,
           "LOSS": 33
         },
         "examples": [
           {
-            "rule_id": "A-02",
-            "aat_pointer": "blocks[].children[].children[].content[].accent",
-            "parser_ir_pointer": "emphasis",
-            "category": "AMBIGUITY"
+            "rule_id": "L-02",
+            "aat_pointer": "blocks[].children[].children[].content[].accent.name",
+            "parser_ir_pointer": null,
+            "category": "LOSS"
           },
           {
-            "rule_id": "A-10",
-            "aat_pointer": "blocks[].children[].content[].accent",
-            "parser_ir_pointer": "emphasis",
-            "category": "AMBIGUITY"
+            "rule_id": "L-15",
+            "aat_pointer": "blocks[].children[].content[].accent.name",
+            "parser_ir_pointer": null,
+            "category": "LOSS"
           },
           {
-            "rule_id": "A-11",
+            "rule_id": "L-16",
             "aat_pointer": "blocks[].children[].content[].content[].accent",
-            "parser_ir_pointer": "emphasis",
-            "category": "AMBIGUITY"
+            "parser_ir_pointer": "(emphasis.text)",
+            "category": "LOSS"
           }
         ]
       },
       "caption": {
-        "class": "unsupported_gap",
-        "rules": 4,
+        "class": "tei_policy_projection",
+        "rules": 5,
         "categories": {
+          "AMBIGUITY": 1,
           "LOSS": 2,
           "UNSUPPORTED": 2
         },
         "examples": [
+          {
+            "rule_id": "A-01",
+            "aat_pointer": "blocks[].caption_block",
+            "parser_ir_pointer": "caption",
+            "category": "AMBIGUITY"
+          },
           {
             "rule_id": "L-390",
             "aat_pointer": "blocks[].content[].content[].figure.caption",
@@ -159,29 +340,16 @@
             "aat_pointer": "blocks[].content[].figure.caption",
             "parser_ir_pointer": null,
             "category": "LOSS"
-          },
-          {
-            "rule_id": "U-05",
-            "aat_pointer": "blocks[].children[].content[].caption",
-            "parser_ir_pointer": "emphasis(?)",
-            "category": "UNSUPPORTED"
           }
         ]
       },
       "caption_block": {
         "class": "tei_policy_projection",
-        "rules": 2,
+        "rules": 1,
         "categories": {
-          "AMBIGUITY": 1,
           "STRUCTURAL": 1
         },
         "examples": [
-          {
-            "rule_id": "A-01",
-            "aat_pointer": "blocks[].caption_block",
-            "parser_ir_pointer": "caption",
-            "category": "AMBIGUITY"
-          },
           {
             "rule_id": "S-01",
             "aat_pointer": "blocks[].caption_block",
@@ -190,11 +358,53 @@
           }
         ]
       },
-      "css_class": {
+      "emphasis": {
         "class": "unsupported_gap",
-        "rules": 4,
+        "rules": 14,
         "categories": {
-          "LOSS": 4
+          "AMBIGUITY": 14
+        },
+        "examples": [
+          {
+            "rule_id": "A-02",
+            "aat_pointer": "blocks[].children[].children[].content[].accent",
+            "parser_ir_pointer": "emphasis",
+            "category": "AMBIGUITY"
+          },
+          {
+            "rule_id": "A-06",
+            "aat_pointer": "blocks[].children[].children[].content[].style",
+            "parser_ir_pointer": "emphasis",
+            "category": "AMBIGUITY"
+          },
+          {
+            "rule_id": "A-10",
+            "aat_pointer": "blocks[].children[].content[].accent",
+            "parser_ir_pointer": "emphasis",
+            "category": "AMBIGUITY"
+          }
+        ]
+      },
+      "encoding": {
+        "class": "unsupported_gap",
+        "rules": 1,
+        "categories": {
+          "AMBIGUITY": 1
+        },
+        "examples": [
+          {
+            "rule_id": "A-124",
+            "aat_pointer": "meta.source_encoding",
+            "parser_ir_pointer": "source.encoding",
+            "category": "AMBIGUITY"
+          }
+        ]
+      },
+      "figure": {
+        "class": "unsupported_gap",
+        "rules": 83,
+        "categories": {
+          "LOSS": 83
         },
         "examples": [
           {
@@ -204,97 +414,16 @@
             "category": "LOSS"
           },
           {
-            "rule_id": "L-179",
-            "aat_pointer": "blocks[].children[].content[].figure.css_class",
+            "rule_id": "L-06",
+            "aat_pointer": "blocks[].children[].children[].content[].figure.height",
             "parser_ir_pointer": null,
             "category": "LOSS"
           },
           {
-            "rule_id": "L-391",
-            "aat_pointer": "blocks[].content[].content[].figure.css_class",
+            "rule_id": "L-07",
+            "aat_pointer": "blocks[].children[].children[].content[].figure.width",
             "parser_ir_pointer": null,
             "category": "LOSS"
-          }
-        ]
-      },
-      "description": {
-        "class": "unsupported_gap",
-        "rules": 5,
-        "categories": {
-          "INVENTION": 5
-        },
-        "examples": [
-          {
-            "rule_id": "I-10",
-            "aat_pointer": "blocks[].children[].children[].content[].gaiji.description",
-            "parser_ir_pointer": "gaiji.raw_marker",
-            "category": "INVENTION"
-          },
-          {
-            "rule_id": "I-13",
-            "aat_pointer": "blocks[].children[].content[].content[].gaiji.description",
-            "parser_ir_pointer": "gaiji.raw_marker",
-            "category": "INVENTION"
-          },
-          {
-            "rule_id": "I-15",
-            "aat_pointer": "blocks[].children[].content[].gaiji.description",
-            "parser_ir_pointer": "gaiji.raw_marker",
-            "category": "INVENTION"
-          }
-        ]
-      },
-      "figure": {
-        "class": "unsupported_gap",
-        "rules": 71,
-        "categories": {
-          "LOSS": 71
-        },
-        "examples": [
-          {
-            "rule_id": "L-72",
-            "aat_pointer": "blocks[].children[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].figure",
-            "parser_ir_pointer": "(emphasis.text)",
-            "category": "LOSS"
-          },
-          {
-            "rule_id": "L-74",
-            "aat_pointer": "blocks[].children[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].figure",
-            "parser_ir_pointer": "(emphasis.text)",
-            "category": "LOSS"
-          },
-          {
-            "rule_id": "L-76",
-            "aat_pointer": "blocks[].children[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].figure",
-            "parser_ir_pointer": "(emphasis.text)",
-            "category": "LOSS"
-          }
-        ]
-      },
-      "filename": {
-        "class": "unsupported_gap",
-        "rules": 4,
-        "categories": {
-          "INVENTION": 4
-        },
-        "examples": [
-          {
-            "rule_id": "I-09",
-            "aat_pointer": "blocks[].children[].children[].content[].figure.filename",
-            "parser_ir_pointer": "image.src",
-            "category": "INVENTION"
-          },
-          {
-            "rule_id": "I-14",
-            "aat_pointer": "blocks[].children[].content[].figure.filename",
-            "parser_ir_pointer": "image.src",
-            "category": "INVENTION"
-          },
-          {
-            "rule_id": "I-20",
-            "aat_pointer": "blocks[].content[].content[].figure.filename",
-            "parser_ir_pointer": "image.src",
-            "category": "INVENTION"
           }
         ]
       },
@@ -401,66 +530,38 @@
           }
         ]
       },
-      "height": {
-        "class": "unsupported_gap",
+      "image": {
+        "class": "tei_exact",
         "rules": 4,
         "categories": {
-          "LOSS": 4
+          "INVENTION": 4
         },
         "examples": [
           {
-            "rule_id": "L-06",
-            "aat_pointer": "blocks[].children[].children[].content[].figure.height",
-            "parser_ir_pointer": null,
-            "category": "LOSS"
+            "rule_id": "I-09",
+            "aat_pointer": "blocks[].children[].children[].content[].figure.filename",
+            "parser_ir_pointer": "image.src",
+            "category": "INVENTION"
           },
           {
-            "rule_id": "L-180",
-            "aat_pointer": "blocks[].children[].content[].figure.height",
-            "parser_ir_pointer": null,
-            "category": "LOSS"
+            "rule_id": "I-14",
+            "aat_pointer": "blocks[].children[].content[].figure.filename",
+            "parser_ir_pointer": "image.src",
+            "category": "INVENTION"
           },
           {
-            "rule_id": "L-392",
-            "aat_pointer": "blocks[].content[].content[].figure.height",
-            "parser_ir_pointer": null,
-            "category": "LOSS"
+            "rule_id": "I-20",
+            "aat_pointer": "blocks[].content[].content[].figure.filename",
+            "parser_ir_pointer": "image.src",
+            "category": "INVENTION"
           }
         ]
       },
-      "jis_code": {
+      "indentation": {
         "class": "unsupported_gap",
-        "rules": 5,
+        "rules": 2,
         "categories": {
-          "AMBIGUITY": 5
-        },
-        "examples": [
-          {
-            "rule_id": "A-03",
-            "aat_pointer": "blocks[].children[].children[].content[].gaiji.jis_code",
-            "parser_ir_pointer": "gaiji.reference",
-            "category": "AMBIGUITY"
-          },
-          {
-            "rule_id": "A-22",
-            "aat_pointer": "blocks[].children[].content[].content[].gaiji.jis_code",
-            "parser_ir_pointer": "gaiji.reference",
-            "category": "AMBIGUITY"
-          },
-          {
-            "rule_id": "A-27",
-            "aat_pointer": "blocks[].children[].content[].gaiji.jis_code",
-            "parser_ir_pointer": "gaiji.reference",
-            "category": "AMBIGUITY"
-          }
-        ]
-      },
-      "jisage_block": {
-        "class": "unsupported_gap",
-        "rules": 4,
-        "categories": {
-          "INVENTION": 2,
-          "STRUCTURAL": 2
+          "INVENTION": 2
         },
         "examples": [
           {
@@ -474,10 +575,25 @@
             "aat_pointer": "blocks[].jisage_block",
             "parser_ir_pointer": "indentation",
             "category": "INVENTION"
-          },
+          }
+        ]
+      },
+      "jisage_block": {
+        "class": "unsupported_gap",
+        "rules": 2,
+        "categories": {
+          "STRUCTURAL": 2
+        },
+        "examples": [
           {
             "rule_id": "S-04",
             "aat_pointer": "blocks[].children[].jisage_block",
+            "parser_ir_pointer": null,
+            "category": "STRUCTURAL"
+          },
+          {
+            "rule_id": "S-08",
+            "aat_pointer": "blocks[].jisage_block",
             "parser_ir_pointer": null,
             "category": "STRUCTURAL"
           }
@@ -512,7 +628,7 @@
         ]
       },
       "keigakomi_block": {
-        "class": "unsupported_gap",
+        "class": "tei_policy_projection",
         "rules": 4,
         "categories": {
           "STRUCTURAL": 2,
@@ -596,6 +712,21 @@
           }
         ]
       },
+      "normalization": {
+        "class": "unsupported_gap",
+        "rules": 1,
+        "categories": {
+          "INVENTION": 1
+        },
+        "examples": [
+          {
+            "rule_id": "I-03",
+            "aat_pointer": null,
+            "parser_ir_pointer": "source.normalization",
+            "category": "INVENTION"
+          }
+        ]
+      },
       "parse_complete": {
         "class": "unsupported_gap",
         "rules": 1,
@@ -612,7 +743,7 @@
         ]
       },
       "raw": {
-        "class": "unsupported_gap",
+        "class": "tei_policy_projection",
         "rules": 78,
         "categories": {
           "LOSS": 73,
@@ -639,13 +770,74 @@
           }
         ]
       },
+      "raw_marker": {
+        "class": "unsupported_gap",
+        "rules": 8,
+        "categories": {
+          "INVENTION": 8
+        },
+        "examples": [
+          {
+            "rule_id": "I-10",
+            "aat_pointer": "blocks[].children[].children[].content[].gaiji.description",
+            "parser_ir_pointer": "gaiji.raw_marker",
+            "category": "INVENTION"
+          },
+          {
+            "rule_id": "I-13",
+            "aat_pointer": "blocks[].children[].content[].content[].gaiji.description",
+            "parser_ir_pointer": "gaiji.raw_marker",
+            "category": "INVENTION"
+          },
+          {
+            "rule_id": "I-15",
+            "aat_pointer": "blocks[].children[].content[].gaiji.description",
+            "parser_ir_pointer": "gaiji.raw_marker",
+            "category": "INVENTION"
+          }
+        ]
+      },
+      "reference": {
+        "class": "unsupported_gap",
+        "rules": 8,
+        "categories": {
+          "AMBIGUITY": 8
+        },
+        "examples": [
+          {
+            "rule_id": "A-03",
+            "aat_pointer": "blocks[].children[].children[].content[].gaiji.jis_code",
+            "parser_ir_pointer": "gaiji.reference",
+            "category": "AMBIGUITY"
+          },
+          {
+            "rule_id": "A-22",
+            "aat_pointer": "blocks[].children[].content[].content[].gaiji.jis_code",
+            "parser_ir_pointer": "gaiji.reference",
+            "category": "AMBIGUITY"
+          },
+          {
+            "rule_id": "A-27",
+            "aat_pointer": "blocks[].children[].content[].gaiji.jis_code",
+            "parser_ir_pointer": "gaiji.reference",
+            "category": "AMBIGUITY"
+          }
+        ]
+      },
       "ruby": {
         "class": "tei_exact",
-        "rules": 279,
+        "rules": 280,
         "categories": {
+          "INVENTION": 1,
           "LOSS": 279
         },
         "examples": [
+          {
+            "rule_id": "I-02",
+            "aat_pointer": null,
+            "parser_ir_pointer": "ruby.scope",
+            "category": "INVENTION"
+          },
           {
             "rule_id": "L-03",
             "aat_pointer": "blocks[].children[].children[].content[].content[].content[].ruby.reading",
@@ -656,12 +848,6 @@
             "rule_id": "L-04",
             "aat_pointer": "blocks[].children[].children[].content[].content[].ruby.reading",
             "parser_ir_pointer": "(emphasis.text)",
-            "category": "LOSS"
-          },
-          {
-            "rule_id": "L-09",
-            "aat_pointer": "blocks[].children[].children[].content[].ruby.base_content",
-            "parser_ir_pointer": null,
             "category": "LOSS"
           }
         ]
@@ -681,41 +867,26 @@
           }
         ]
       },
-      "source_encoding": {
+      "source_path": {
         "class": "unsupported_gap",
         "rules": 1,
         "categories": {
-          "AMBIGUITY": 1
+          "INVENTION": 1
         },
         "examples": [
           {
-            "rule_id": "A-124",
-            "aat_pointer": "meta.source_encoding",
-            "parser_ir_pointer": "source.encoding",
-            "category": "AMBIGUITY"
-          }
-        ]
-      },
-      "source_hash": {
-        "class": "unsupported_gap",
-        "rules": 1,
-        "categories": {
-          "AMBIGUITY": 1
-        },
-        "examples": [
-          {
-            "rule_id": "A-125",
-            "aat_pointer": "meta.source_hash",
-            "parser_ir_pointer": "source.work_content_hash",
-            "category": "AMBIGUITY"
+            "rule_id": "I-04",
+            "aat_pointer": null,
+            "parser_ir_pointer": "source.source_path",
+            "category": "INVENTION"
           }
         ]
       },
       "span": {
         "class": "unsupported_gap",
-        "rules": 8,
+        "rules": 14,
         "categories": {
-          "AMBIGUITY": 8
+          "AMBIGUITY": 14
         },
         "examples": [
           {
@@ -725,14 +896,14 @@
             "category": "AMBIGUITY"
           },
           {
-            "rule_id": "A-09",
-            "aat_pointer": "blocks[].children[].children[].span",
+            "rule_id": "A-07",
+            "aat_pointer": "blocks[].children[].children[].content[].warigaki.upper[].span",
             "parser_ir_pointer": "span",
             "category": "AMBIGUITY"
           },
           {
-            "rule_id": "A-25",
-            "aat_pointer": "blocks[].children[].content[].content[].span",
+            "rule_id": "A-09",
+            "aat_pointer": "blocks[].children[].children[].span",
             "parser_ir_pointer": "span",
             "category": "AMBIGUITY"
           }
@@ -740,29 +911,29 @@
       },
       "style": {
         "class": "unsupported_gap",
-        "rules": 11,
+        "rules": 12,
         "categories": {
-          "AMBIGUITY": 5,
+          "INVENTION": 6,
           "LOSS": 6
         },
         "examples": [
           {
-            "rule_id": "A-06",
-            "aat_pointer": "blocks[].children[].children[].content[].style",
-            "parser_ir_pointer": "emphasis",
-            "category": "AMBIGUITY"
+            "rule_id": "I-08",
+            "aat_pointer": "blocks[].children[].children[].content[].accent.code",
+            "parser_ir_pointer": "emphasis.style",
+            "category": "INVENTION"
           },
           {
-            "rule_id": "A-26",
-            "aat_pointer": "blocks[].children[].content[].content[].style",
-            "parser_ir_pointer": "emphasis",
-            "category": "AMBIGUITY"
+            "rule_id": "I-11",
+            "aat_pointer": "blocks[].children[].content[].accent.code",
+            "parser_ir_pointer": "emphasis.style",
+            "category": "INVENTION"
           },
           {
-            "rule_id": "A-30",
-            "aat_pointer": "blocks[].children[].content[].style",
-            "parser_ir_pointer": "emphasis",
-            "category": "AMBIGUITY"
+            "rule_id": "I-12",
+            "aat_pointer": "blocks[].children[].content[].content[].accent.code",
+            "parser_ir_pointer": "emphasis.style",
+            "category": "INVENTION"
           }
         ]
       },
@@ -794,12 +965,26 @@
           }
         ]
       },
+      "unicode": {
+        "class": "unsupported_gap",
+        "rules": 1,
+        "categories": {
+          "LOSS": 1
+        },
+        "examples": [
+          {
+            "rule_id": "L-01",
+            "aat_pointer": null,
+            "parser_ir_pointer": "gaiji.unicode",
+            "category": "LOSS"
+          }
+        ]
+      },
       "unknown": {
         "class": "unsupported_gap",
-        "rules": 8,
+        "rules": 4,
         "categories": {
-          "INVENTION": 7,
-          "LOSS": 1
+          "INVENTION": 4
         },
         "examples": [
           {
@@ -809,15 +994,15 @@
             "category": "INVENTION"
           },
           {
-            "rule_id": "I-02",
+            "rule_id": "I-05",
             "aat_pointer": null,
-            "parser_ir_pointer": "ruby.scope",
+            "parser_ir_pointer": "warnings[].code",
             "category": "INVENTION"
           },
           {
-            "rule_id": "I-03",
+            "rule_id": "I-06",
             "aat_pointer": null,
-            "parser_ir_pointer": "source.normalization",
+            "parser_ir_pointer": "warnings[].severity",
             "category": "INVENTION"
           }
         ]
@@ -850,59 +1035,45 @@
         ]
       },
       "warigaki": {
-        "class": "unsupported_gap",
-        "rules": 50,
+        "class": "tei_plus_abc_extension",
+        "rules": 33,
         "categories": {
-          "AMBIGUITY": 13,
-          "INVENTION": 4,
           "LOSS": 8,
           "UNSUPPORTED": 25
         },
         "examples": [
           {
-            "rule_id": "A-07",
-            "aat_pointer": "blocks[].children[].children[].content[].warigaki.upper[].span",
-            "parser_ir_pointer": "span",
-            "category": "AMBIGUITY"
+            "rule_id": "L-185",
+            "aat_pointer": "blocks[].children[].content[].warigaki.upper[].ruby.base_content",
+            "parser_ir_pointer": null,
+            "category": "LOSS"
           },
           {
-            "rule_id": "A-31",
-            "aat_pointer": "blocks[].children[].content[].warigaki.lower[].span",
-            "parser_ir_pointer": "span",
-            "category": "AMBIGUITY"
+            "rule_id": "L-186",
+            "aat_pointer": "blocks[].children[].content[].warigaki.upper[].ruby.reading_content",
+            "parser_ir_pointer": null,
+            "category": "LOSS"
           },
           {
-            "rule_id": "A-32",
-            "aat_pointer": "blocks[].children[].content[].warigaki.upper[].gaiji.jis_code",
-            "parser_ir_pointer": "gaiji.reference",
-            "category": "AMBIGUITY"
+            "rule_id": "L-401",
+            "aat_pointer": "blocks[].content[].content[].warigaki.upper[].ruby.base_content",
+            "parser_ir_pointer": null,
+            "category": "LOSS"
           }
         ]
       },
-      "width": {
+      "work_content_hash": {
         "class": "unsupported_gap",
-        "rules": 4,
+        "rules": 1,
         "categories": {
-          "LOSS": 4
+          "AMBIGUITY": 1
         },
         "examples": [
           {
-            "rule_id": "L-07",
-            "aat_pointer": "blocks[].children[].children[].content[].figure.width",
-            "parser_ir_pointer": null,
-            "category": "LOSS"
-          },
-          {
-            "rule_id": "L-181",
-            "aat_pointer": "blocks[].children[].content[].figure.width",
-            "parser_ir_pointer": null,
-            "category": "LOSS"
-          },
-          {
-            "rule_id": "L-393",
-            "aat_pointer": "blocks[].content[].content[].figure.width",
-            "parser_ir_pointer": null,
-            "category": "LOSS"
+            "rule_id": "A-125",
+            "aat_pointer": "meta.source_hash",
+            "parser_ir_pointer": "source.work_content_hash",
+            "category": "AMBIGUITY"
           }
         ]
       },
@@ -934,7 +1105,7 @@
         ]
       },
       "yokogumi_block": {
-        "class": "unsupported_gap",
+        "class": "tei_policy_projection",
         "rules": 4,
         "categories": {
           "STRUCTURAL": 2,
@@ -963,12 +1134,19 @@
       }
     },
     "counts_by_class": {
-      "tei_exact": 2,
-      "tei_policy_projection": 1,
-      "tei_plus_abc_extension": 1,
-      "unsupported_gap": 30
+      "tei_exact": 3,
+      "tei_policy_projection": 5,
+      "tei_plus_abc_extension": 2,
+      "unsupported_gap": 26
     },
     "unsupported": [
+      {
+        "rule_id": "A-02",
+        "aat_pointer": "blocks[].children[].children[].content[].accent",
+        "parser_ir_pointer": "emphasis",
+        "category": "AMBIGUITY",
+        "owner": "parser_ir_schema"
+      },
       {
         "rule_id": "A-03",
         "aat_pointer": "blocks[].children[].children[].content[].gaiji.jis_code",
@@ -991,6 +1169,13 @@
         "owner": "parser_ir_schema"
       },
       {
+        "rule_id": "A-07",
+        "aat_pointer": "blocks[].children[].children[].content[].warigaki.upper[].span",
+        "parser_ir_pointer": "span",
+        "category": "AMBIGUITY",
+        "owner": "parser_ir_schema"
+      },
+      {
         "rule_id": "A-08",
         "aat_pointer": "blocks[].children[].children[].heading.level",
         "parser_ir_pointer": "heading.level",
@@ -1001,6 +1186,20 @@
         "rule_id": "A-09",
         "aat_pointer": "blocks[].children[].children[].span",
         "parser_ir_pointer": "span",
+        "category": "AMBIGUITY",
+        "owner": "parser_ir_schema"
+      },
+      {
+        "rule_id": "A-10",
+        "aat_pointer": "blocks[].children[].content[].accent",
+        "parser_ir_pointer": "emphasis",
+        "category": "AMBIGUITY",
+        "owner": "parser_ir_schema"
+      },
+      {
+        "rule_id": "A-11",
+        "aat_pointer": "blocks[].children[].content[].content[].accent",
+        "parser_ir_pointer": "emphasis",
         "category": "AMBIGUITY",
         "owner": "parser_ir_schema"
       },
@@ -1047,6 +1246,34 @@
         "owner": "parser_ir_schema"
       },
       {
+        "rule_id": "A-31",
+        "aat_pointer": "blocks[].children[].content[].warigaki.lower[].span",
+        "parser_ir_pointer": "span",
+        "category": "AMBIGUITY",
+        "owner": "parser_ir_schema"
+      },
+      {
+        "rule_id": "A-32",
+        "aat_pointer": "blocks[].children[].content[].warigaki.upper[].gaiji.jis_code",
+        "parser_ir_pointer": "gaiji.reference",
+        "category": "AMBIGUITY",
+        "owner": "parser_ir_schema"
+      },
+      {
+        "rule_id": "A-34",
+        "aat_pointer": "blocks[].children[].content[].warigaki.upper[].span",
+        "parser_ir_pointer": "span",
+        "category": "AMBIGUITY",
+        "owner": "parser_ir_schema"
+      },
+      {
+        "rule_id": "A-35",
+        "aat_pointer": "blocks[].children[].content[].warigaki.upper[].style",
+        "parser_ir_pointer": "emphasis",
+        "category": "AMBIGUITY",
+        "owner": "parser_ir_schema"
+      },
+      {
         "rule_id": "A-37",
         "aat_pointer": "blocks[].children[].heading.level",
         "parser_ir_pointer": "heading.level",
@@ -1057,6 +1284,20 @@
         "rule_id": "A-38",
         "aat_pointer": "blocks[].children[].span",
         "parser_ir_pointer": "span",
+        "category": "AMBIGUITY",
+        "owner": "parser_ir_schema"
+      },
+      {
+        "rule_id": "A-39",
+        "aat_pointer": "blocks[].content[].accent",
+        "parser_ir_pointer": "emphasis",
+        "category": "AMBIGUITY",
+        "owner": "parser_ir_schema"
+      },
+      {
+        "rule_id": "A-40",
+        "aat_pointer": "blocks[].content[].content[].accent",
+        "parser_ir_pointer": "emphasis",
         "category": "AMBIGUITY",
         "owner": "parser_ir_schema"
       },
@@ -1082,6 +1323,27 @@
         "owner": "parser_ir_schema"
       },
       {
+        "rule_id": "A-99",
+        "aat_pointer": "blocks[].content[].content[].warigaki.upper[].gaiji.jis_code",
+        "parser_ir_pointer": "gaiji.reference",
+        "category": "AMBIGUITY",
+        "owner": "parser_ir_schema"
+      },
+      {
+        "rule_id": "A-101",
+        "aat_pointer": "blocks[].content[].content[].warigaki.upper[].span",
+        "parser_ir_pointer": "span",
+        "category": "AMBIGUITY",
+        "owner": "parser_ir_schema"
+      },
+      {
+        "rule_id": "A-102",
+        "aat_pointer": "blocks[].content[].content[].warigaki.upper[].style",
+        "parser_ir_pointer": "emphasis",
+        "category": "AMBIGUITY",
+        "owner": "parser_ir_schema"
+      },
+      {
         "rule_id": "A-103",
         "aat_pointer": "blocks[].content[].gaiji.jis_code",
         "parser_ir_pointer": "gaiji.reference",
@@ -1098,6 +1360,41 @@
       {
         "rule_id": "A-106",
         "aat_pointer": "blocks[].content[].style",
+        "parser_ir_pointer": "emphasis",
+        "category": "AMBIGUITY",
+        "owner": "parser_ir_schema"
+      },
+      {
+        "rule_id": "A-107",
+        "aat_pointer": "blocks[].content[].warigaki.lower[].span",
+        "parser_ir_pointer": "span",
+        "category": "AMBIGUITY",
+        "owner": "parser_ir_schema"
+      },
+      {
+        "rule_id": "A-108",
+        "aat_pointer": "blocks[].content[].warigaki.upper[].accent",
+        "parser_ir_pointer": "emphasis",
+        "category": "AMBIGUITY",
+        "owner": "parser_ir_schema"
+      },
+      {
+        "rule_id": "A-109",
+        "aat_pointer": "blocks[].content[].warigaki.upper[].gaiji.jis_code",
+        "parser_ir_pointer": "gaiji.reference",
+        "category": "AMBIGUITY",
+        "owner": "parser_ir_schema"
+      },
+      {
+        "rule_id": "A-111",
+        "aat_pointer": "blocks[].content[].warigaki.upper[].span",
+        "parser_ir_pointer": "span",
+        "category": "AMBIGUITY",
+        "owner": "parser_ir_schema"
+      },
+      {
+        "rule_id": "A-112",
+        "aat_pointer": "blocks[].content[].warigaki.upper[].style",
         "parser_ir_pointer": "emphasis",
         "category": "AMBIGUITY",
         "owner": "parser_ir_schema"
@@ -1145,13 +1442,6 @@
         "owner": "parser_ir_schema"
       },
       {
-        "rule_id": "I-02",
-        "aat_pointer": null,
-        "parser_ir_pointer": "ruby.scope",
-        "category": "INVENTION",
-        "owner": "parser_ir_schema"
-      },
-      {
         "rule_id": "I-03",
         "aat_pointer": null,
         "parser_ir_pointer": "source.normalization",
@@ -1187,9 +1477,9 @@
         "owner": "parser_ir_schema"
       },
       {
-        "rule_id": "I-09",
-        "aat_pointer": "blocks[].children[].children[].content[].figure.filename",
-        "parser_ir_pointer": "image.src",
+        "rule_id": "I-08",
+        "aat_pointer": "blocks[].children[].children[].content[].accent.code",
+        "parser_ir_pointer": "emphasis.style",
         "category": "INVENTION",
         "owner": "parser_ir_schema"
       },
@@ -1201,6 +1491,20 @@
         "owner": "parser_ir_schema"
       },
       {
+        "rule_id": "I-11",
+        "aat_pointer": "blocks[].children[].content[].accent.code",
+        "parser_ir_pointer": "emphasis.style",
+        "category": "INVENTION",
+        "owner": "parser_ir_schema"
+      },
+      {
+        "rule_id": "I-12",
+        "aat_pointer": "blocks[].children[].content[].content[].accent.code",
+        "parser_ir_pointer": "emphasis.style",
+        "category": "INVENTION",
+        "owner": "parser_ir_schema"
+      },
+      {
         "rule_id": "I-13",
         "aat_pointer": "blocks[].children[].content[].content[].gaiji.description",
         "parser_ir_pointer": "gaiji.raw_marker",
@@ -1208,15 +1512,15 @@
         "owner": "parser_ir_schema"
       },
       {
-        "rule_id": "I-14",
-        "aat_pointer": "blocks[].children[].content[].figure.filename",
-        "parser_ir_pointer": "image.src",
+        "rule_id": "I-15",
+        "aat_pointer": "blocks[].children[].content[].gaiji.description",
+        "parser_ir_pointer": "gaiji.raw_marker",
         "category": "INVENTION",
         "owner": "parser_ir_schema"
       },
       {
-        "rule_id": "I-15",
-        "aat_pointer": "blocks[].children[].content[].gaiji.description",
+        "rule_id": "I-16",
+        "aat_pointer": "blocks[].children[].content[].warigaki.upper[].gaiji.description",
         "parser_ir_pointer": "gaiji.raw_marker",
         "category": "INVENTION",
         "owner": "parser_ir_schema"
@@ -1229,9 +1533,16 @@
         "owner": "parser_ir_schema"
       },
       {
-        "rule_id": "I-20",
-        "aat_pointer": "blocks[].content[].content[].figure.filename",
-        "parser_ir_pointer": "image.src",
+        "rule_id": "I-18",
+        "aat_pointer": "blocks[].content[].accent.code",
+        "parser_ir_pointer": "emphasis.style",
+        "category": "INVENTION",
+        "owner": "parser_ir_schema"
+      },
+      {
+        "rule_id": "I-19",
+        "aat_pointer": "blocks[].content[].content[].accent.code",
+        "parser_ir_pointer": "emphasis.style",
         "category": "INVENTION",
         "owner": "parser_ir_schema"
       },
@@ -1243,15 +1554,29 @@
         "owner": "parser_ir_schema"
       },
       {
-        "rule_id": "I-23",
-        "aat_pointer": "blocks[].content[].figure.filename",
-        "parser_ir_pointer": "image.src",
+        "rule_id": "I-22",
+        "aat_pointer": "blocks[].content[].content[].warigaki.upper[].gaiji.description",
+        "parser_ir_pointer": "gaiji.raw_marker",
         "category": "INVENTION",
         "owner": "parser_ir_schema"
       },
       {
         "rule_id": "I-24",
         "aat_pointer": "blocks[].content[].gaiji.description",
+        "parser_ir_pointer": "gaiji.raw_marker",
+        "category": "INVENTION",
+        "owner": "parser_ir_schema"
+      },
+      {
+        "rule_id": "I-25",
+        "aat_pointer": "blocks[].content[].warigaki.upper[].accent.code",
+        "parser_ir_pointer": "emphasis.style",
+        "category": "INVENTION",
+        "owner": "parser_ir_schema"
+      },
+      {
+        "rule_id": "I-26",
+        "aat_pointer": "blocks[].content[].warigaki.upper[].gaiji.description",
         "parser_ir_pointer": "gaiji.raw_marker",
         "category": "INVENTION",
         "owner": "parser_ir_schema"
@@ -1845,13 +2170,6 @@
         "owner": "parser_ir_schema"
       },
       {
-        "rule_id": "L-390",
-        "aat_pointer": "blocks[].content[].content[].figure.caption",
-        "parser_ir_pointer": null,
-        "category": "LOSS",
-        "owner": "parser_ir_schema"
-      },
-      {
         "rule_id": "L-391",
         "aat_pointer": "blocks[].content[].content[].figure.css_class",
         "parser_ir_pointer": null,
@@ -1875,13 +2193,6 @@
       {
         "rule_id": "L-394",
         "aat_pointer": "blocks[].content[].content[].gaiji.unresolved_reason",
-        "parser_ir_pointer": null,
-        "category": "LOSS",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "L-403",
-        "aat_pointer": "blocks[].content[].figure.caption",
         "parser_ir_pointer": null,
         "category": "LOSS",
         "owner": "parser_ir_schema"
@@ -2055,13 +2366,6 @@
         "owner": "parser_ir_schema"
       },
       {
-        "rule_id": "U-02",
-        "aat_pointer": "blocks[].children[].children[].content[].raw",
-        "parser_ir_pointer": null,
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
         "rule_id": "U-03",
         "aat_pointer": "blocks[].children[].children[].content[].tcy",
         "parser_ir_pointer": "emphasis(?)",
@@ -2069,51 +2373,9 @@
         "owner": "parser_ir_schema"
       },
       {
-        "rule_id": "U-04",
-        "aat_pointer": "blocks[].children[].children[].content[].warigaki",
-        "parser_ir_pointer": null,
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-05",
-        "aat_pointer": "blocks[].children[].content[].caption",
-        "parser_ir_pointer": "emphasis(?)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-06",
-        "aat_pointer": "blocks[].children[].content[].content[].content[].content[].warigaki",
-        "parser_ir_pointer": "(emphasis.text)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-07",
-        "aat_pointer": "blocks[].children[].content[].content[].content[].warigaki",
-        "parser_ir_pointer": "(emphasis.text)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
         "rule_id": "U-08",
         "aat_pointer": "blocks[].children[].content[].content[].font_size",
         "parser_ir_pointer": "emphasis(?)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-09",
-        "aat_pointer": "blocks[].children[].content[].content[].raw",
-        "parser_ir_pointer": null,
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-10",
-        "aat_pointer": "blocks[].children[].content[].content[].warigaki",
-        "parser_ir_pointer": "(emphasis.text)",
         "category": "UNSUPPORTED",
         "owner": "parser_ir_schema"
       },
@@ -2132,13 +2394,6 @@
         "owner": "parser_ir_schema"
       },
       {
-        "rule_id": "U-13",
-        "aat_pointer": "blocks[].children[].content[].raw",
-        "parser_ir_pointer": null,
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
         "rule_id": "U-14",
         "aat_pointer": "blocks[].children[].content[].tcy",
         "parser_ir_pointer": "emphasis(?)",
@@ -2146,100 +2401,9 @@
         "owner": "parser_ir_schema"
       },
       {
-        "rule_id": "U-15",
-        "aat_pointer": "blocks[].children[].content[].warigaki",
-        "parser_ir_pointer": null,
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
         "rule_id": "U-16",
         "aat_pointer": "blocks[].children[].content[].yokogumi",
         "parser_ir_pointer": "emphasis(?)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-17",
-        "aat_pointer": "blocks[].children[].heading.content[].warigaki",
-        "parser_ir_pointer": "(emphasis.text)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-18",
-        "aat_pointer": "blocks[].children[].keigakomi_block",
-        "parser_ir_pointer": null,
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-19",
-        "aat_pointer": "blocks[].children[].yokogumi_block",
-        "parser_ir_pointer": null,
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-20",
-        "aat_pointer": "blocks[].content[].caption",
-        "parser_ir_pointer": "emphasis(?)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-21",
-        "aat_pointer": "blocks[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].warigaki",
-        "parser_ir_pointer": "(emphasis.text)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-22",
-        "aat_pointer": "blocks[].content[].content[].content[].content[].content[].content[].content[].content[].content[].warigaki",
-        "parser_ir_pointer": "(emphasis.text)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-23",
-        "aat_pointer": "blocks[].content[].content[].content[].content[].content[].content[].content[].content[].warigaki",
-        "parser_ir_pointer": "(emphasis.text)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-24",
-        "aat_pointer": "blocks[].content[].content[].content[].content[].content[].content[].content[].warigaki",
-        "parser_ir_pointer": "(emphasis.text)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-25",
-        "aat_pointer": "blocks[].content[].content[].content[].content[].content[].content[].warigaki",
-        "parser_ir_pointer": "(emphasis.text)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-26",
-        "aat_pointer": "blocks[].content[].content[].content[].content[].content[].warigaki",
-        "parser_ir_pointer": "(emphasis.text)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-27",
-        "aat_pointer": "blocks[].content[].content[].content[].content[].warigaki",
-        "parser_ir_pointer": "(emphasis.text)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-28",
-        "aat_pointer": "blocks[].content[].content[].content[].warigaki",
-        "parser_ir_pointer": "(emphasis.text)",
         "category": "UNSUPPORTED",
         "owner": "parser_ir_schema"
       },
@@ -2258,37 +2422,9 @@
         "owner": "parser_ir_schema"
       },
       {
-        "rule_id": "U-31",
-        "aat_pointer": "blocks[].content[].content[].raw",
-        "parser_ir_pointer": null,
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
         "rule_id": "U-32",
         "aat_pointer": "blocks[].content[].content[].tcy",
         "parser_ir_pointer": "emphasis(?)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-33",
-        "aat_pointer": "blocks[].content[].content[].warigaki",
-        "parser_ir_pointer": "(emphasis.text)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-34",
-        "aat_pointer": "blocks[].content[].content[].warigaki",
-        "parser_ir_pointer": null,
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-35",
-        "aat_pointer": "blocks[].content[].content[].warigaki.upper[].raw",
-        "parser_ir_pointer": null,
         "category": "UNSUPPORTED",
         "owner": "parser_ir_schema"
       },
@@ -2314,13 +2450,6 @@
         "owner": "parser_ir_schema"
       },
       {
-        "rule_id": "U-39",
-        "aat_pointer": "blocks[].content[].raw",
-        "parser_ir_pointer": null,
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
         "rule_id": "U-40",
         "aat_pointer": "blocks[].content[].tcy",
         "parser_ir_pointer": "emphasis(?)",
@@ -2328,87 +2457,24 @@
         "owner": "parser_ir_schema"
       },
       {
-        "rule_id": "U-41",
-        "aat_pointer": "blocks[].content[].warigaki",
-        "parser_ir_pointer": null,
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-42",
-        "aat_pointer": "blocks[].content[].warigaki.upper[].raw",
-        "parser_ir_pointer": null,
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
         "rule_id": "U-43",
         "aat_pointer": "blocks[].content[].yokogumi",
         "parser_ir_pointer": "emphasis(?)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-44",
-        "aat_pointer": "blocks[].heading.content[].content[].content[].content[].content[].content[].warigaki",
-        "parser_ir_pointer": "(emphasis.text)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-45",
-        "aat_pointer": "blocks[].heading.content[].content[].content[].content[].content[].warigaki",
-        "parser_ir_pointer": "(emphasis.text)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-46",
-        "aat_pointer": "blocks[].heading.content[].content[].content[].content[].warigaki",
-        "parser_ir_pointer": "(emphasis.text)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-47",
-        "aat_pointer": "blocks[].heading.content[].content[].content[].warigaki",
-        "parser_ir_pointer": "(emphasis.text)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-48",
-        "aat_pointer": "blocks[].heading.content[].content[].warigaki",
-        "parser_ir_pointer": "(emphasis.text)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-49",
-        "aat_pointer": "blocks[].heading.content[].warigaki",
-        "parser_ir_pointer": "(emphasis.text)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-50",
-        "aat_pointer": "blocks[].keigakomi_block",
-        "parser_ir_pointer": null,
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-51",
-        "aat_pointer": "blocks[].yokogumi_block",
-        "parser_ir_pointer": null,
         "category": "UNSUPPORTED",
         "owner": "parser_ir_schema"
       }
     ]
   },
   "unsupported_gaps": {
-    "count": 205,
+    "count": 189,
     "items": [
+      {
+        "rule_id": "A-02",
+        "aat_pointer": "blocks[].children[].children[].content[].accent",
+        "parser_ir_pointer": "emphasis",
+        "category": "AMBIGUITY",
+        "owner": "parser_ir_schema"
+      },
       {
         "rule_id": "A-03",
         "aat_pointer": "blocks[].children[].children[].content[].gaiji.jis_code",
@@ -2431,6 +2497,13 @@
         "owner": "parser_ir_schema"
       },
       {
+        "rule_id": "A-07",
+        "aat_pointer": "blocks[].children[].children[].content[].warigaki.upper[].span",
+        "parser_ir_pointer": "span",
+        "category": "AMBIGUITY",
+        "owner": "parser_ir_schema"
+      },
+      {
         "rule_id": "A-08",
         "aat_pointer": "blocks[].children[].children[].heading.level",
         "parser_ir_pointer": "heading.level",
@@ -2441,6 +2514,20 @@
         "rule_id": "A-09",
         "aat_pointer": "blocks[].children[].children[].span",
         "parser_ir_pointer": "span",
+        "category": "AMBIGUITY",
+        "owner": "parser_ir_schema"
+      },
+      {
+        "rule_id": "A-10",
+        "aat_pointer": "blocks[].children[].content[].accent",
+        "parser_ir_pointer": "emphasis",
+        "category": "AMBIGUITY",
+        "owner": "parser_ir_schema"
+      },
+      {
+        "rule_id": "A-11",
+        "aat_pointer": "blocks[].children[].content[].content[].accent",
+        "parser_ir_pointer": "emphasis",
         "category": "AMBIGUITY",
         "owner": "parser_ir_schema"
       },
@@ -2487,6 +2574,34 @@
         "owner": "parser_ir_schema"
       },
       {
+        "rule_id": "A-31",
+        "aat_pointer": "blocks[].children[].content[].warigaki.lower[].span",
+        "parser_ir_pointer": "span",
+        "category": "AMBIGUITY",
+        "owner": "parser_ir_schema"
+      },
+      {
+        "rule_id": "A-32",
+        "aat_pointer": "blocks[].children[].content[].warigaki.upper[].gaiji.jis_code",
+        "parser_ir_pointer": "gaiji.reference",
+        "category": "AMBIGUITY",
+        "owner": "parser_ir_schema"
+      },
+      {
+        "rule_id": "A-34",
+        "aat_pointer": "blocks[].children[].content[].warigaki.upper[].span",
+        "parser_ir_pointer": "span",
+        "category": "AMBIGUITY",
+        "owner": "parser_ir_schema"
+      },
+      {
+        "rule_id": "A-35",
+        "aat_pointer": "blocks[].children[].content[].warigaki.upper[].style",
+        "parser_ir_pointer": "emphasis",
+        "category": "AMBIGUITY",
+        "owner": "parser_ir_schema"
+      },
+      {
         "rule_id": "A-37",
         "aat_pointer": "blocks[].children[].heading.level",
         "parser_ir_pointer": "heading.level",
@@ -2497,6 +2612,20 @@
         "rule_id": "A-38",
         "aat_pointer": "blocks[].children[].span",
         "parser_ir_pointer": "span",
+        "category": "AMBIGUITY",
+        "owner": "parser_ir_schema"
+      },
+      {
+        "rule_id": "A-39",
+        "aat_pointer": "blocks[].content[].accent",
+        "parser_ir_pointer": "emphasis",
+        "category": "AMBIGUITY",
+        "owner": "parser_ir_schema"
+      },
+      {
+        "rule_id": "A-40",
+        "aat_pointer": "blocks[].content[].content[].accent",
+        "parser_ir_pointer": "emphasis",
         "category": "AMBIGUITY",
         "owner": "parser_ir_schema"
       },
@@ -2522,6 +2651,27 @@
         "owner": "parser_ir_schema"
       },
       {
+        "rule_id": "A-99",
+        "aat_pointer": "blocks[].content[].content[].warigaki.upper[].gaiji.jis_code",
+        "parser_ir_pointer": "gaiji.reference",
+        "category": "AMBIGUITY",
+        "owner": "parser_ir_schema"
+      },
+      {
+        "rule_id": "A-101",
+        "aat_pointer": "blocks[].content[].content[].warigaki.upper[].span",
+        "parser_ir_pointer": "span",
+        "category": "AMBIGUITY",
+        "owner": "parser_ir_schema"
+      },
+      {
+        "rule_id": "A-102",
+        "aat_pointer": "blocks[].content[].content[].warigaki.upper[].style",
+        "parser_ir_pointer": "emphasis",
+        "category": "AMBIGUITY",
+        "owner": "parser_ir_schema"
+      },
+      {
         "rule_id": "A-103",
         "aat_pointer": "blocks[].content[].gaiji.jis_code",
         "parser_ir_pointer": "gaiji.reference",
@@ -2538,6 +2688,41 @@
       {
         "rule_id": "A-106",
         "aat_pointer": "blocks[].content[].style",
+        "parser_ir_pointer": "emphasis",
+        "category": "AMBIGUITY",
+        "owner": "parser_ir_schema"
+      },
+      {
+        "rule_id": "A-107",
+        "aat_pointer": "blocks[].content[].warigaki.lower[].span",
+        "parser_ir_pointer": "span",
+        "category": "AMBIGUITY",
+        "owner": "parser_ir_schema"
+      },
+      {
+        "rule_id": "A-108",
+        "aat_pointer": "blocks[].content[].warigaki.upper[].accent",
+        "parser_ir_pointer": "emphasis",
+        "category": "AMBIGUITY",
+        "owner": "parser_ir_schema"
+      },
+      {
+        "rule_id": "A-109",
+        "aat_pointer": "blocks[].content[].warigaki.upper[].gaiji.jis_code",
+        "parser_ir_pointer": "gaiji.reference",
+        "category": "AMBIGUITY",
+        "owner": "parser_ir_schema"
+      },
+      {
+        "rule_id": "A-111",
+        "aat_pointer": "blocks[].content[].warigaki.upper[].span",
+        "parser_ir_pointer": "span",
+        "category": "AMBIGUITY",
+        "owner": "parser_ir_schema"
+      },
+      {
+        "rule_id": "A-112",
+        "aat_pointer": "blocks[].content[].warigaki.upper[].style",
         "parser_ir_pointer": "emphasis",
         "category": "AMBIGUITY",
         "owner": "parser_ir_schema"
@@ -2585,13 +2770,6 @@
         "owner": "parser_ir_schema"
       },
       {
-        "rule_id": "I-02",
-        "aat_pointer": null,
-        "parser_ir_pointer": "ruby.scope",
-        "category": "INVENTION",
-        "owner": "parser_ir_schema"
-      },
-      {
         "rule_id": "I-03",
         "aat_pointer": null,
         "parser_ir_pointer": "source.normalization",
@@ -2627,9 +2805,9 @@
         "owner": "parser_ir_schema"
       },
       {
-        "rule_id": "I-09",
-        "aat_pointer": "blocks[].children[].children[].content[].figure.filename",
-        "parser_ir_pointer": "image.src",
+        "rule_id": "I-08",
+        "aat_pointer": "blocks[].children[].children[].content[].accent.code",
+        "parser_ir_pointer": "emphasis.style",
         "category": "INVENTION",
         "owner": "parser_ir_schema"
       },
@@ -2641,6 +2819,20 @@
         "owner": "parser_ir_schema"
       },
       {
+        "rule_id": "I-11",
+        "aat_pointer": "blocks[].children[].content[].accent.code",
+        "parser_ir_pointer": "emphasis.style",
+        "category": "INVENTION",
+        "owner": "parser_ir_schema"
+      },
+      {
+        "rule_id": "I-12",
+        "aat_pointer": "blocks[].children[].content[].content[].accent.code",
+        "parser_ir_pointer": "emphasis.style",
+        "category": "INVENTION",
+        "owner": "parser_ir_schema"
+      },
+      {
         "rule_id": "I-13",
         "aat_pointer": "blocks[].children[].content[].content[].gaiji.description",
         "parser_ir_pointer": "gaiji.raw_marker",
@@ -2648,15 +2840,15 @@
         "owner": "parser_ir_schema"
       },
       {
-        "rule_id": "I-14",
-        "aat_pointer": "blocks[].children[].content[].figure.filename",
-        "parser_ir_pointer": "image.src",
+        "rule_id": "I-15",
+        "aat_pointer": "blocks[].children[].content[].gaiji.description",
+        "parser_ir_pointer": "gaiji.raw_marker",
         "category": "INVENTION",
         "owner": "parser_ir_schema"
       },
       {
-        "rule_id": "I-15",
-        "aat_pointer": "blocks[].children[].content[].gaiji.description",
+        "rule_id": "I-16",
+        "aat_pointer": "blocks[].children[].content[].warigaki.upper[].gaiji.description",
         "parser_ir_pointer": "gaiji.raw_marker",
         "category": "INVENTION",
         "owner": "parser_ir_schema"
@@ -2669,9 +2861,16 @@
         "owner": "parser_ir_schema"
       },
       {
-        "rule_id": "I-20",
-        "aat_pointer": "blocks[].content[].content[].figure.filename",
-        "parser_ir_pointer": "image.src",
+        "rule_id": "I-18",
+        "aat_pointer": "blocks[].content[].accent.code",
+        "parser_ir_pointer": "emphasis.style",
+        "category": "INVENTION",
+        "owner": "parser_ir_schema"
+      },
+      {
+        "rule_id": "I-19",
+        "aat_pointer": "blocks[].content[].content[].accent.code",
+        "parser_ir_pointer": "emphasis.style",
         "category": "INVENTION",
         "owner": "parser_ir_schema"
       },
@@ -2683,15 +2882,29 @@
         "owner": "parser_ir_schema"
       },
       {
-        "rule_id": "I-23",
-        "aat_pointer": "blocks[].content[].figure.filename",
-        "parser_ir_pointer": "image.src",
+        "rule_id": "I-22",
+        "aat_pointer": "blocks[].content[].content[].warigaki.upper[].gaiji.description",
+        "parser_ir_pointer": "gaiji.raw_marker",
         "category": "INVENTION",
         "owner": "parser_ir_schema"
       },
       {
         "rule_id": "I-24",
         "aat_pointer": "blocks[].content[].gaiji.description",
+        "parser_ir_pointer": "gaiji.raw_marker",
+        "category": "INVENTION",
+        "owner": "parser_ir_schema"
+      },
+      {
+        "rule_id": "I-25",
+        "aat_pointer": "blocks[].content[].warigaki.upper[].accent.code",
+        "parser_ir_pointer": "emphasis.style",
+        "category": "INVENTION",
+        "owner": "parser_ir_schema"
+      },
+      {
+        "rule_id": "I-26",
+        "aat_pointer": "blocks[].content[].warigaki.upper[].gaiji.description",
         "parser_ir_pointer": "gaiji.raw_marker",
         "category": "INVENTION",
         "owner": "parser_ir_schema"
@@ -3285,13 +3498,6 @@
         "owner": "parser_ir_schema"
       },
       {
-        "rule_id": "L-390",
-        "aat_pointer": "blocks[].content[].content[].figure.caption",
-        "parser_ir_pointer": null,
-        "category": "LOSS",
-        "owner": "parser_ir_schema"
-      },
-      {
         "rule_id": "L-391",
         "aat_pointer": "blocks[].content[].content[].figure.css_class",
         "parser_ir_pointer": null,
@@ -3315,13 +3521,6 @@
       {
         "rule_id": "L-394",
         "aat_pointer": "blocks[].content[].content[].gaiji.unresolved_reason",
-        "parser_ir_pointer": null,
-        "category": "LOSS",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "L-403",
-        "aat_pointer": "blocks[].content[].figure.caption",
         "parser_ir_pointer": null,
         "category": "LOSS",
         "owner": "parser_ir_schema"
@@ -3495,13 +3694,6 @@
         "owner": "parser_ir_schema"
       },
       {
-        "rule_id": "U-02",
-        "aat_pointer": "blocks[].children[].children[].content[].raw",
-        "parser_ir_pointer": null,
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
         "rule_id": "U-03",
         "aat_pointer": "blocks[].children[].children[].content[].tcy",
         "parser_ir_pointer": "emphasis(?)",
@@ -3509,51 +3701,9 @@
         "owner": "parser_ir_schema"
       },
       {
-        "rule_id": "U-04",
-        "aat_pointer": "blocks[].children[].children[].content[].warigaki",
-        "parser_ir_pointer": null,
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-05",
-        "aat_pointer": "blocks[].children[].content[].caption",
-        "parser_ir_pointer": "emphasis(?)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-06",
-        "aat_pointer": "blocks[].children[].content[].content[].content[].content[].warigaki",
-        "parser_ir_pointer": "(emphasis.text)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-07",
-        "aat_pointer": "blocks[].children[].content[].content[].content[].warigaki",
-        "parser_ir_pointer": "(emphasis.text)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
         "rule_id": "U-08",
         "aat_pointer": "blocks[].children[].content[].content[].font_size",
         "parser_ir_pointer": "emphasis(?)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-09",
-        "aat_pointer": "blocks[].children[].content[].content[].raw",
-        "parser_ir_pointer": null,
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-10",
-        "aat_pointer": "blocks[].children[].content[].content[].warigaki",
-        "parser_ir_pointer": "(emphasis.text)",
         "category": "UNSUPPORTED",
         "owner": "parser_ir_schema"
       },
@@ -3572,13 +3722,6 @@
         "owner": "parser_ir_schema"
       },
       {
-        "rule_id": "U-13",
-        "aat_pointer": "blocks[].children[].content[].raw",
-        "parser_ir_pointer": null,
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
         "rule_id": "U-14",
         "aat_pointer": "blocks[].children[].content[].tcy",
         "parser_ir_pointer": "emphasis(?)",
@@ -3586,100 +3729,9 @@
         "owner": "parser_ir_schema"
       },
       {
-        "rule_id": "U-15",
-        "aat_pointer": "blocks[].children[].content[].warigaki",
-        "parser_ir_pointer": null,
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
         "rule_id": "U-16",
         "aat_pointer": "blocks[].children[].content[].yokogumi",
         "parser_ir_pointer": "emphasis(?)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-17",
-        "aat_pointer": "blocks[].children[].heading.content[].warigaki",
-        "parser_ir_pointer": "(emphasis.text)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-18",
-        "aat_pointer": "blocks[].children[].keigakomi_block",
-        "parser_ir_pointer": null,
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-19",
-        "aat_pointer": "blocks[].children[].yokogumi_block",
-        "parser_ir_pointer": null,
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-20",
-        "aat_pointer": "blocks[].content[].caption",
-        "parser_ir_pointer": "emphasis(?)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-21",
-        "aat_pointer": "blocks[].content[].content[].content[].content[].content[].content[].content[].content[].content[].content[].warigaki",
-        "parser_ir_pointer": "(emphasis.text)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-22",
-        "aat_pointer": "blocks[].content[].content[].content[].content[].content[].content[].content[].content[].content[].warigaki",
-        "parser_ir_pointer": "(emphasis.text)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-23",
-        "aat_pointer": "blocks[].content[].content[].content[].content[].content[].content[].content[].content[].warigaki",
-        "parser_ir_pointer": "(emphasis.text)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-24",
-        "aat_pointer": "blocks[].content[].content[].content[].content[].content[].content[].content[].warigaki",
-        "parser_ir_pointer": "(emphasis.text)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-25",
-        "aat_pointer": "blocks[].content[].content[].content[].content[].content[].content[].warigaki",
-        "parser_ir_pointer": "(emphasis.text)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-26",
-        "aat_pointer": "blocks[].content[].content[].content[].content[].content[].warigaki",
-        "parser_ir_pointer": "(emphasis.text)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-27",
-        "aat_pointer": "blocks[].content[].content[].content[].content[].warigaki",
-        "parser_ir_pointer": "(emphasis.text)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-28",
-        "aat_pointer": "blocks[].content[].content[].content[].warigaki",
-        "parser_ir_pointer": "(emphasis.text)",
         "category": "UNSUPPORTED",
         "owner": "parser_ir_schema"
       },
@@ -3698,37 +3750,9 @@
         "owner": "parser_ir_schema"
       },
       {
-        "rule_id": "U-31",
-        "aat_pointer": "blocks[].content[].content[].raw",
-        "parser_ir_pointer": null,
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
         "rule_id": "U-32",
         "aat_pointer": "blocks[].content[].content[].tcy",
         "parser_ir_pointer": "emphasis(?)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-33",
-        "aat_pointer": "blocks[].content[].content[].warigaki",
-        "parser_ir_pointer": "(emphasis.text)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-34",
-        "aat_pointer": "blocks[].content[].content[].warigaki",
-        "parser_ir_pointer": null,
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-35",
-        "aat_pointer": "blocks[].content[].content[].warigaki.upper[].raw",
-        "parser_ir_pointer": null,
         "category": "UNSUPPORTED",
         "owner": "parser_ir_schema"
       },
@@ -3754,13 +3778,6 @@
         "owner": "parser_ir_schema"
       },
       {
-        "rule_id": "U-39",
-        "aat_pointer": "blocks[].content[].raw",
-        "parser_ir_pointer": null,
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
         "rule_id": "U-40",
         "aat_pointer": "blocks[].content[].tcy",
         "parser_ir_pointer": "emphasis(?)",
@@ -3768,79 +3785,9 @@
         "owner": "parser_ir_schema"
       },
       {
-        "rule_id": "U-41",
-        "aat_pointer": "blocks[].content[].warigaki",
-        "parser_ir_pointer": null,
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-42",
-        "aat_pointer": "blocks[].content[].warigaki.upper[].raw",
-        "parser_ir_pointer": null,
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
         "rule_id": "U-43",
         "aat_pointer": "blocks[].content[].yokogumi",
         "parser_ir_pointer": "emphasis(?)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-44",
-        "aat_pointer": "blocks[].heading.content[].content[].content[].content[].content[].content[].warigaki",
-        "parser_ir_pointer": "(emphasis.text)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-45",
-        "aat_pointer": "blocks[].heading.content[].content[].content[].content[].content[].warigaki",
-        "parser_ir_pointer": "(emphasis.text)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-46",
-        "aat_pointer": "blocks[].heading.content[].content[].content[].content[].warigaki",
-        "parser_ir_pointer": "(emphasis.text)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-47",
-        "aat_pointer": "blocks[].heading.content[].content[].content[].warigaki",
-        "parser_ir_pointer": "(emphasis.text)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-48",
-        "aat_pointer": "blocks[].heading.content[].content[].warigaki",
-        "parser_ir_pointer": "(emphasis.text)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-49",
-        "aat_pointer": "blocks[].heading.content[].warigaki",
-        "parser_ir_pointer": "(emphasis.text)",
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-50",
-        "aat_pointer": "blocks[].keigakomi_block",
-        "parser_ir_pointer": null,
-        "category": "UNSUPPORTED",
-        "owner": "parser_ir_schema"
-      },
-      {
-        "rule_id": "U-51",
-        "aat_pointer": "blocks[].yokogumi_block",
-        "parser_ir_pointer": null,
         "category": "UNSUPPORTED",
         "owner": "parser_ir_schema"
       }

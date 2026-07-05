@@ -7,12 +7,12 @@ import argparse
 import hashlib
 import json
 import pathlib
+import re
 from collections import Counter
 from typing import Any
 
 SCHEMA_VERSION = "ir-publication-coverage-v1"
 REQUIRED_PARSERS = ("aozora2html", "aozora-epub3", "aozora-rs", "aozora2", "aozora")
-REQUIRED_CUSTOM_CONTRACT_ID = "https://w3id.org/abc/schemas/ir-publication-preservation-v1.json"
 PLAINTEXT_POLICY = {
     "plaintext_surface": "visible_body_text",
     "metadata_policy": "exclude_ruby_readings_layout_source_notes_custom_records_warnings_and_provenance",
@@ -35,6 +35,8 @@ NODE_COVERAGE_CLASSES = {
     "raw-source": "tei_policy_projection",
 }
 CONSTRUCT_COVERAGE_CLASSES = {
+    "caption": "tei_policy_projection",
+    "image": "tei_exact",
     "ruby": "tei_exact",
     "raw": "tei_policy_projection",
     "warigaki": "tei_plus_abc_extension",
@@ -45,9 +47,129 @@ CONSTRUCT_COVERAGE_CLASSES = {
     "yokogumi_block": "tei_policy_projection",
     "gaiji.resolved": "tei_exact",
 }
+FIELD_COVERAGE_SPECS = {
+    "gaiji.raw_marker": {
+        "class": "tei_policy_projection",
+        "target": "TEI g/charDecl raw-marker preservation policy",
+        "kind": "node_field",
+        "schema_locators": [("gaijiNode", ("gaiji", "raw_marker"))],
+    },
+    "gaiji.reference": {
+        "class": "tei_exact",
+        "target": "TEI g/charDecl reference linkage",
+        "kind": "node_field",
+        "schema_locators": [("gaijiNode", ("gaiji", "reference"))],
+    },
+    "gaiji.unicode": {
+        "class": "tei_exact",
+        "target": "TEI g/charDecl Unicode value",
+        "kind": "node_field",
+        "schema_locators": [("gaijiNode", ("gaiji", "unicode"))],
+    },
+    "gaiji.resolved": {
+        "class": "tei_plus_abc_extension",
+        "target": "TEI visible glyph plus ABC resolution-status preservation",
+        "kind": "node_field",
+        "schema_locators": [("gaijiNode", ("gaiji", "resolved"))],
+    },
+    "ruby.base": {
+        "class": "tei_exact",
+        "target": "TEI ruby base text",
+        "kind": "node_field",
+        "schema_locators": [("rubyNode", ("ruby", "base"))],
+    },
+    "ruby.reading": {
+        "class": "tei_exact",
+        "target": "TEI ruby reading text",
+        "kind": "node_field",
+        "schema_locators": [("rubyNode", ("ruby", "reading"))],
+    },
+    "ruby.direction": {
+        "class": "tei_policy_projection",
+        "target": "TEI ruby placement policy for left/right readings",
+        "kind": "node_field",
+        "schema_locators": [("rubyNode", ("ruby", "direction"))],
+    },
+    "heading.level": {
+        "class": "tei_policy_projection",
+        "target": "TEI section/head level policy",
+        "kind": "node_field",
+        "schema_locators": [("headingNode", ("level",))],
+    },
+    "emphasis.inline_children": {
+        "class": "tei_policy_projection",
+        "target": "TEI hi content with nested inline children policy",
+        "kind": "node_field",
+        "schema_locators": [("emphasisNode", ("inline_children",))],
+    },
+    "paragraph.layout": {
+        "class": "tei_policy_projection",
+        "target": "TEI p@rend paragraph layout policy",
+        "kind": "paragraph_field",
+        "schema_locators": [("paragraph", ("layout",))],
+    },
+    "paragraph.node_range": {
+        "class": "custom_sidecar",
+        "target": "ABC sidecar node-range traceability",
+        "kind": "paragraph_field",
+        "schema_locators": [("paragraph", ("node_range",))],
+    },
+    "paragraph.role": {
+        "class": "tei_policy_projection",
+        "target": "TEI paragraph routing/body-vs-note role policy",
+        "kind": "paragraph_field",
+        "schema_locators": [("paragraph", ("role",))],
+    },
+    "source-note.placement": {
+        "class": "tei_policy_projection",
+        "target": "TEI front/body/back source-note routing",
+        "kind": "node_field",
+        "schema_locators": [("sourceNoteNode", ("placement",))],
+    },
+    "source-note.classification": {
+        "class": "custom_sidecar",
+        "target": "ABC sidecar source-note provenance classification",
+        "kind": "node_field",
+        "schema_locators": [("sourceNoteNode", ("classification",))],
+    },
+    "caption.target": {
+        "class": "tei_policy_projection",
+        "target": "TEI caption-to-figure association policy",
+        "kind": "node_field",
+        "schema_locators": [("captionNode", ("target",))],
+    },
+    "quote.marker_type": {
+        "class": "tei_policy_projection",
+        "target": "TEI quote/cit marker interpretation policy",
+        "kind": "node_field",
+        "schema_locators": [("quoteNode", ("marker_type",))],
+    },
+    "mapping.identity": {
+        "class": "custom_sidecar",
+        "target": "ABC sidecar mapping id/version/hash linkage",
+        "kind": "contract_field",
+    },
+    "divergence.records": {
+        "class": "custom_sidecar",
+        "target": "ABC sidecar divergence record set",
+        "kind": "contract_field",
+    },
+    "source.pointer": {
+        "class": "custom_sidecar",
+        "target": "ABC sidecar source pointer linkage",
+        "kind": "contract_field",
+        "schema_locators": [
+            ("paragraph", ("source_pointer",)),
+            ("sourceNoteNode", ("source_pointer",)),
+        ],
+    },
+}
 KNOWN_COMPOUND_CONSTRUCTS = ("gaiji.resolved",)
 KNOWN_CONSTRUCT_SEGMENTS = (
     "caption_block",
+    "caption",
+    "image",
+    "figure",
     "quote_block",
     "keigakomi_block",
     "yokogumi_block",
@@ -55,19 +177,6 @@ KNOWN_CONSTRUCT_SEGMENTS = (
     "accent",
     "raw",
     "ruby",
-)
-REQUIRED_CUSTOM_CONTRACT_PROPERTIES = (
-    "schema_id",
-    "schema_version",
-    "parser_ir_schema_id",
-    "parser_ir_schema_hash",
-    "tei_profile_id",
-    "tei_profile_hash",
-    "source",
-    "producer",
-    "mapping",
-    "coverage",
-    "records",
 )
 CONSTRUCT_CLASS_PRIORITY = {
     "unsupported_gap": 0,
@@ -85,6 +194,7 @@ CLASS_ORDER = (
     "plaintext_only",
     "unsupported_gap",
 )
+DIRECT_POINTER_PATTERN = re.compile(r"^[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*$")
 
 
 def extract_node_types(schema: dict[str, Any]) -> list[str]:
@@ -120,6 +230,33 @@ def extract_node_types(schema: dict[str, Any]) -> list[str]:
 def count_by_class(items: dict[str, dict[str, Any]]) -> dict[str, int]:
     counts: Counter[str] = Counter(item["class"] for item in items.values())
     return {name: counts.get(name, 0) for name in CLASS_ORDER if counts.get(name, 0)}
+
+
+def merged_properties(schema_node: dict[str, Any]) -> dict[str, Any]:
+    properties: dict[str, Any] = {}
+    for all_of in schema_node.get("allOf", []):
+        if isinstance(all_of, dict):
+            properties.update(all_of.get("properties", {}))
+    properties.update(schema_node.get("properties", {}))
+    return properties
+
+
+def schema_locator_exists(schema: dict[str, Any], def_name: str, segments: tuple[str, ...]) -> bool:
+    current = schema.get("$defs", {}).get(def_name)
+    if not isinstance(current, dict):
+        return False
+
+    properties = merged_properties(current)
+    for segment in segments:
+        current = properties.get(segment)
+        if not isinstance(current, dict):
+            return False
+        properties = current.get("properties", {})
+    return True
+
+
+def format_schema_locator(def_name: str, segments: tuple[str, ...]) -> str:
+    return "#/$defs/" + "/properties/".join((def_name, *segments))
 
 
 def node_target(node_type: str, coverage_class: str) -> str:
@@ -162,6 +299,35 @@ def node_coverage_from_schema(schema: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def field_coverage_from_schema(schema: dict[str, Any]) -> dict[str, Any]:
+    by_field: dict[str, dict[str, Any]] = {}
+    unsupported: list[dict[str, Any]] = []
+    for field_name, spec in FIELD_COVERAGE_SPECS.items():
+        locators = spec.get("schema_locators", [])
+        entry = {
+            "class": spec["class"],
+            "target": spec["target"],
+            "kind": spec["kind"],
+        }
+        if locators:
+            entry["defined_in_schema"] = any(
+                schema_locator_exists(schema, def_name, segments)
+                for def_name, segments in locators
+            )
+            entry["schema_paths"] = [
+                format_schema_locator(def_name, segments)
+                for def_name, segments in locators
+            ]
+        by_field[field_name] = entry
+        if spec["class"] == "unsupported_gap":
+            unsupported.append({"field": field_name, "owner": "parser_ir_schema"})
+    return {
+        "by_field": by_field,
+        "counts_by_class": count_by_class(by_field),
+        "unsupported": unsupported,
+    }
+
+
 def construct_from_pointer(pointer: str | None) -> str:
     if not pointer:
         return "unknown"
@@ -175,6 +341,24 @@ def construct_from_pointer(pointer: str | None) -> str:
         if token in segments:
             return token
     return segments[-1] if segments else "unknown"
+
+
+def normalize_direct_pointer(pointer: Any) -> str | None:
+    if not isinstance(pointer, str):
+        return None
+    candidate = pointer.strip()
+    if not DIRECT_POINTER_PATTERN.fullmatch(candidate):
+        return None
+    return candidate
+
+
+def construct_from_rule(rule: dict[str, Any]) -> str:
+    parser_pointer = normalize_direct_pointer(rule.get("parser_ir_pointer"))
+    if parser_pointer is not None:
+        construct = construct_from_pointer(parser_pointer)
+        if construct != "unknown":
+            return construct
+    return construct_from_pointer(rule.get("aat_pointer"))
 
 
 def _more_conservative_class(current_class: str | None, candidate_class: str) -> str:
@@ -192,10 +376,10 @@ def source_construct_coverage(mapping: dict[str, Any]) -> dict[str, Any]:
     unsupported: list[dict[str, Any]] = []
     for rule in mapping.get("transform_rule_descriptions", []):
         aat_pointer = rule.get("aat_pointer")
-        construct = construct_from_pointer(aat_pointer)
+        construct = construct_from_rule(rule)
         category = str(rule.get("category") or "unknown")
         coverage_class = CONSTRUCT_COVERAGE_CLASSES.get(construct)
-        if category == "UNSUPPORTED":
+        if category == "UNSUPPORTED" and coverage_class is None:
             coverage_class = "unsupported_gap"
         if coverage_class is None:
             coverage_class = "unsupported_gap"
@@ -255,18 +439,46 @@ def source_authority_passed(source: dict[str, Any]) -> bool:
 
 def parser_evidence_coverage(matrix: dict[str, Any], source_delta: dict[str, Any]) -> dict[str, Any]:
     observed = Counter()
+    qualified_rows = 0
     for row in matrix.get("rows", []):
         adapter = row.get("selected_aat", {}).get("adapter")
-        if adapter:
-            observed[adapter] += 1
+        parser_ir = row.get("parser_ir", {})
+        materialization = row.get("materialization")
+        if not adapter:
+            continue
+        if not isinstance(parser_ir.get("schema_hash"), str) or not parser_ir.get("schema_hash"):
+            continue
+        node_count = parser_ir.get("nodes")
+        if isinstance(node_count, bool) or not isinstance(node_count, (int, float)):
+            continue
+        if isinstance(materialization, dict) and materialization.get("status") != "passed":
+            continue
+        observed[adapter] += 1
+        qualified_rows += 1
     delta_coverage = source_delta.get("parser_evidence_coverage", {})
-    missing = sorted(parser for parser in REQUIRED_PARSERS if observed.get(parser, 0) == 0)
-    verdict = "FIVE_PARSER_EVIDENCE_COMPLETE" if not missing else "FIVE_PARSER_EVIDENCE_INCOMPLETE"
+    delta_missing = {
+        parser
+        for parser in delta_coverage.get("missing_parsers", [])
+        if isinstance(parser, str) and parser in REQUIRED_PARSERS
+    }
+    missing = sorted(
+        {
+            *(parser for parser in REQUIRED_PARSERS if observed.get(parser, 0) == 0),
+            *delta_missing,
+        }
+    )
+    delta_verdict = delta_coverage.get("verdict")
+    verdict = (
+        "FIVE_PARSER_EVIDENCE_COMPLETE"
+        if not missing and delta_verdict != "FIVE_PARSER_EVIDENCE_INCOMPLETE"
+        else "FIVE_PARSER_EVIDENCE_INCOMPLETE"
+    )
     return {
         "verdict": verdict,
         "required_parsers": list(REQUIRED_PARSERS),
         "observed_rows_by_parser": {parser: observed.get(parser, 0) for parser in REQUIRED_PARSERS},
         "missing_parsers": missing,
+        "qualified_rows": qualified_rows,
         "plain_prose_delta_verdict": delta_coverage.get("verdict"),
     }
 
@@ -282,7 +494,7 @@ def custom_contract_block(custom_contract_schema: pathlib.Path | None) -> dict[s
 
     try:
         contract = load_json(custom_contract_schema)
-    except (json.JSONDecodeError, OSError):
+    except json.JSONDecodeError:
         return {
             "verdict": "CUSTOM_CONTRACT_INVALID",
             "schema_id": None,
@@ -290,47 +502,26 @@ def custom_contract_block(custom_contract_schema: pathlib.Path | None) -> dict[s
             "path": str(custom_contract_schema),
             "message": "ABC custom preservation contract is not valid JSON.",
         }
-
-    if not isinstance(contract, dict):
+    except OSError:
         return {
-            "verdict": "CUSTOM_CONTRACT_INVALID",
+            "verdict": "CUSTOM_CONTRACT_MISSING",
             "schema_id": None,
             "schema_version": None,
             "path": str(custom_contract_schema),
-            "message": "ABC custom preservation contract does not have the required top-level object structure.",
+            "message": "ABC custom preservation contract path was supplied but could not be read.",
         }
 
-    contract_id = contract.get("schema_id")
-    if contract_id is None:
-        contract_id = contract.get("$id")
-    if contract_id != REQUIRED_CUSTOM_CONTRACT_ID:
-        return {
-            "verdict": "CUSTOM_CONTRACT_INVALID",
-            "schema_id": contract.get("schema_id"),
-            "schema_version": contract.get("schema_version"),
-            "path": str(custom_contract_schema),
-            "message": "ABC custom preservation contract does not identify the required contract schema.",
-        }
-
-    missing_properties = [
-        name
-        for name in REQUIRED_CUSTOM_CONTRACT_PROPERTIES
-        if contract.get(name) is None
-    ]
-    if missing_properties:
-        return {
-            "verdict": "CUSTOM_CONTRACT_INVALID",
-            "schema_id": contract_id,
-            "schema_version": contract.get("schema_version"),
-            "path": str(custom_contract_schema),
-            "message": "ABC custom preservation contract is missing required top-level properties.",
-            "missing_properties": missing_properties,
-        }
+    contract_id = None
+    contract_version = None
+    if isinstance(contract, dict):
+        contract_id = contract.get("schema_id") or contract.get("$id")
+        contract_version = contract.get("schema_version")
     return {
-        "verdict": "CUSTOM_CONTRACT_PRESENT",
+        "verdict": "CUSTOM_CONTRACT_CANDIDATE_PROVIDED",
         "schema_id": contract_id,
-        "schema_version": contract.get("schema_version"),
+        "schema_version": contract_version,
         "path": str(custom_contract_schema),
+        "message": "Readable contract candidate recorded as evidence only; ABC-owned integration must confirm the publication contract before admission can unblock.",
     }
 
 
@@ -346,9 +537,14 @@ def mapping_block(mapping: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def unsupported_gaps(node_coverage: dict[str, Any], construct_coverage: dict[str, Any]) -> dict[str, Any]:
+def unsupported_gaps(
+    node_coverage: dict[str, Any],
+    field_coverage: dict[str, Any],
+    construct_coverage: dict[str, Any],
+) -> dict[str, Any]:
     items = []
     items.extend(node_coverage.get("unsupported", []))
+    items.extend(field_coverage.get("unsupported", []))
     items.extend(construct_coverage.get("unsupported", []))
     return {"count": len(items), "items": items}
 
@@ -365,7 +561,7 @@ def publication_verdict(
         return "IR_PUBLICATION_COVERAGE_BLOCKED_INCOMPLETE_PARSER_EVIDENCE"
     if gaps.get("count", 0) > 0:
         return "IR_PUBLICATION_COVERAGE_BLOCKED_UNSUPPORTED_GAPS"
-    if custom_contract.get("verdict") != "CUSTOM_CONTRACT_PRESENT":
+    if custom_contract.get("verdict") != "CUSTOM_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION":
         return "IR_PUBLICATION_COVERAGE_BLOCKED_CUSTOM_CONTRACT_MISSING"
     return "IR_PUBLICATION_COVERAGE_COMPLETE"
 
@@ -379,10 +575,11 @@ def build_summary(
     custom_contract_schema: pathlib.Path | None,
 ) -> dict[str, Any]:
     node_coverage = node_coverage_from_schema(parser_schema)
+    field_coverage = field_coverage_from_schema(parser_schema)
     construct_coverage = source_construct_coverage(mapping)
     evidence = parser_evidence_coverage(matrix, source_delta)
     custom_contract = custom_contract_block(custom_contract_schema)
-    gaps = unsupported_gaps(node_coverage, construct_coverage)
+    gaps = unsupported_gaps(node_coverage, field_coverage, construct_coverage)
     source_passed = source_authority_passed(source)
     return {
         "schema_version": SCHEMA_VERSION,
@@ -400,6 +597,7 @@ def build_summary(
         "custom_contract": custom_contract,
         "mapping": mapping_block(mapping),
         "node_coverage": node_coverage,
+        "field_coverage": field_coverage,
         "source_construct_coverage": construct_coverage,
         "unsupported_gaps": gaps,
         "tei_eaj_calibration": {
@@ -414,6 +612,7 @@ def build_summary(
 
 def render_markdown(summary: dict[str, Any]) -> str:
     node_counts = summary["node_coverage"]["counts_by_class"]
+    field_counts = summary["field_coverage"]["counts_by_class"]
     construct_counts = summary["source_construct_coverage"]["counts_by_class"]
     gaps = summary["unsupported_gaps"]
     lines = [
@@ -428,6 +627,12 @@ def render_markdown(summary: dict[str, Any]) -> str:
     ]
     for name, count in node_counts.items():
         lines.append(f"| `{name}` | {count} |")
+    lines.extend(["", "## Field Coverage", "", "| Class | Field facts |", "|---|---:|"])
+    for name, count in field_counts.items():
+        lines.append(f"| `{name}` | {count} |")
+    lines.extend(["", "| Field | Class | Target |", "|---|---|---|"])
+    for field_name, entry in summary["field_coverage"]["by_field"].items():
+        lines.append(f"| `{field_name}` | `{entry['class']}` | {entry['target']} |")
     lines.extend(["", "## Source Construct Coverage", "", "| Class | Constructs |", "|---|---:|"])
     for name, count in construct_counts.items():
         lines.append(f"| `{name}` | {count} |")

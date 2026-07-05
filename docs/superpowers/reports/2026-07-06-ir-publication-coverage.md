@@ -9,39 +9,70 @@ Verdict: `IR_PUBLICATION_COVERAGE_BLOCKED_UNSUPPORTED_GAPS`
 | `tei_exact` | 7 |
 | `tei_policy_projection` | 6 |
 
+## Field Coverage
+
+| Class | Field facts |
+|---|---:|
+| `tei_exact` | 4 |
+| `tei_policy_projection` | 9 |
+| `tei_plus_abc_extension` | 1 |
+| `custom_sidecar` | 5 |
+
+| Field | Class | Target |
+|---|---|---|
+| `gaiji.raw_marker` | `tei_policy_projection` | TEI g/charDecl raw-marker preservation policy |
+| `gaiji.reference` | `tei_exact` | TEI g/charDecl reference linkage |
+| `gaiji.unicode` | `tei_exact` | TEI g/charDecl Unicode value |
+| `gaiji.resolved` | `tei_plus_abc_extension` | TEI visible glyph plus ABC resolution-status preservation |
+| `ruby.base` | `tei_exact` | TEI ruby base text |
+| `ruby.reading` | `tei_exact` | TEI ruby reading text |
+| `ruby.direction` | `tei_policy_projection` | TEI ruby placement policy for left/right readings |
+| `heading.level` | `tei_policy_projection` | TEI section/head level policy |
+| `emphasis.inline_children` | `tei_policy_projection` | TEI hi content with nested inline children policy |
+| `paragraph.layout` | `tei_policy_projection` | TEI p@rend paragraph layout policy |
+| `paragraph.node_range` | `custom_sidecar` | ABC sidecar node-range traceability |
+| `paragraph.role` | `tei_policy_projection` | TEI paragraph routing/body-vs-note role policy |
+| `source-note.placement` | `tei_policy_projection` | TEI front/body/back source-note routing |
+| `source-note.classification` | `custom_sidecar` | ABC sidecar source-note provenance classification |
+| `caption.target` | `tei_policy_projection` | TEI caption-to-figure association policy |
+| `quote.marker_type` | `tei_policy_projection` | TEI quote/cit marker interpretation policy |
+| `mapping.identity` | `custom_sidecar` | ABC sidecar mapping id/version/hash linkage |
+| `divergence.records` | `custom_sidecar` | ABC sidecar divergence record set |
+| `source.pointer` | `custom_sidecar` | ABC sidecar source pointer linkage |
+
 ## Source Construct Coverage
 
 | Class | Constructs |
 |---|---:|
-| `tei_exact` | 2 |
-| `tei_policy_projection` | 1 |
-| `tei_plus_abc_extension` | 1 |
-| `unsupported_gap` | 30 |
+| `tei_exact` | 3 |
+| `tei_policy_projection` | 5 |
+| `tei_plus_abc_extension` | 2 |
+| `unsupported_gap` | 26 |
 
 ## Unsupported gaps
 
-Count: 205
+Count: 189
 
+- `blocks[].children[].children[].content[].accent` owner `parser_ir_schema`
 - `blocks[].children[].children[].content[].gaiji.jis_code` owner `parser_ir_schema`
 - `blocks[].children[].children[].content[].span` owner `parser_ir_schema`
 - `blocks[].children[].children[].content[].style` owner `parser_ir_schema`
+- `blocks[].children[].children[].content[].warigaki.upper[].span` owner `parser_ir_schema`
 - `blocks[].children[].children[].heading.level` owner `parser_ir_schema`
 - `blocks[].children[].children[].span` owner `parser_ir_schema`
+- `blocks[].children[].content[].accent` owner `parser_ir_schema`
+- `blocks[].children[].content[].content[].accent` owner `parser_ir_schema`
 - `blocks[].children[].content[].content[].gaiji.jis_code` owner `parser_ir_schema`
 - `blocks[].children[].content[].content[].span` owner `parser_ir_schema`
 - `blocks[].children[].content[].content[].style` owner `parser_ir_schema`
 - `blocks[].children[].content[].gaiji.jis_code` owner `parser_ir_schema`
 - `blocks[].children[].content[].span` owner `parser_ir_schema`
 - `blocks[].children[].content[].style` owner `parser_ir_schema`
+- `blocks[].children[].content[].warigaki.lower[].span` owner `parser_ir_schema`
+- `blocks[].children[].content[].warigaki.upper[].gaiji.jis_code` owner `parser_ir_schema`
+- `blocks[].children[].content[].warigaki.upper[].span` owner `parser_ir_schema`
+- `blocks[].children[].content[].warigaki.upper[].style` owner `parser_ir_schema`
 - `blocks[].children[].heading.level` owner `parser_ir_schema`
-- `blocks[].children[].span` owner `parser_ir_schema`
-- `blocks[].content[].content[].gaiji.jis_code` owner `parser_ir_schema`
-- `blocks[].content[].content[].span` owner `parser_ir_schema`
-- `blocks[].content[].content[].style` owner `parser_ir_schema`
-- `blocks[].content[].gaiji.jis_code` owner `parser_ir_schema`
-- `blocks[].content[].span` owner `parser_ir_schema`
-- `blocks[].content[].style` owner `parser_ir_schema`
-- `blocks[].heading.level` owner `parser_ir_schema`
 
 ## Plaintext Policy
 

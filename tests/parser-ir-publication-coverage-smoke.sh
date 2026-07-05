@@ -15,6 +15,8 @@ report_md="$out_dir/coverage.md"
 supported_mapping="$out_dir/mapping-supported.json"
 supported_summary_json="$out_dir/coverage-supported.summary.json"
 supported_report_md="$out_dir/coverage-supported.md"
+candidate_summary_json="$out_dir/coverage-candidate.summary.json"
+candidate_report_md="$out_dir/coverage-candidate.md"
 unknown_mapping="$out_dir/mapping-unknown-pointer.json"
 unknown_summary_json="$out_dir/coverage-unknown-pointer.summary.json"
 unknown_report_md="$out_dir/coverage-unknown-pointer.md"
@@ -22,6 +24,10 @@ valid_custom_contract="$out_dir/custom-contract.valid.json"
 invalid_custom_contract="$out_dir/custom-contract.invalid.json"
 invalid_contract_summary_json="$out_dir/coverage-invalid-contract.summary.json"
 invalid_contract_report_md="$out_dir/coverage-invalid-contract.md"
+incomplete_matrix_summary="$out_dir/matrix-summary-incomplete.json"
+incomplete_source_delta="$out_dir/source-delta-incomplete.summary.json"
+incomplete_summary_json="$out_dir/coverage-incomplete.summary.json"
+incomplete_report_md="$out_dir/coverage-incomplete.md"
 
 cat > "$parser_schema" <<'JSON'
 {
@@ -58,6 +64,20 @@ cat > "$mapping" <<'JSON'
       "aat_pointer": "blocks[].content[].ruby.direction",
       "parser_ir_pointer": "ruby.direction",
       "description": "ruby direction projects to parser-IR"
+    },
+    {
+      "rule_id": "I-02",
+      "category": "INVENTION",
+      "aat_pointer": "blocks[].content[].figure.filename",
+      "parser_ir_pointer": "image.src",
+      "description": "figure filename projects to parser-IR image source"
+    },
+    {
+      "rule_id": "L-03",
+      "category": "LOSS",
+      "aat_pointer": "blocks[].content[].figure.caption",
+      "parser_ir_pointer": null,
+      "description": "figure caption can be emitted as caption policy projection"
     },
     {
       "rule_id": "U-01",
@@ -127,27 +147,13 @@ JSON
 
 cat > "$valid_custom_contract" <<'JSON'
 {
-  "schema_id": "https://w3id.org/abc/schemas/ir-publication-preservation-v1.json",
-  "schema_version": "2026.07.06",
-  "parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-  "parser_ir_schema_hash": "sha256:fixture-parser-ir",
-  "tei_profile_id": "https://w3id.org/abc/schemas/tei.xml",
-  "tei_profile_hash": "sha256:fixture-tei-profile",
-  "source": {"type":"publication_source"},
-  "producer": {"name":"fixture"},
-  "mapping": {"id":"https://w3id.org/abc/mappings/fixture"},
-  "coverage": {"verdict":"CUSTOM_CONTRACT_PRESENT"},
+  "$id": "https://example.org/abc/custom-contract-candidate.json",
+  "schema_version": "candidate-0.0.1",
   "records": []
 }
 JSON
 
-cat > "$invalid_custom_contract" <<'JSON'
-{
-  "$id": "https://w3id.org/abc/schemas/ir-publication-preservation-v1.json",
-  "schema_id": "https://w3id.org/abc/schemas/ir-publication-preservation-v1.json",
-  "schema_version": "2026.07.06"
-}
-JSON
+printf '%s\n' '{ invalid json' > "$invalid_custom_contract"
 
 python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
   --parser-ir-schema "$parser_schema" \
@@ -163,6 +169,10 @@ jq -e '.source_authority_gate.gate_status == "SOURCE_AUTHORITY_GATE_PASS"' "$sum
 jq -e '.parser_evidence_coverage.verdict == "FIVE_PARSER_EVIDENCE_COMPLETE"' "$summary_json" >/dev/null
 jq -e '.plaintext_policy.metadata_policy == "exclude_ruby_readings_layout_source_notes_custom_records_warnings_and_provenance"' "$summary_json" >/dev/null
 jq -e '.custom_contract.verdict == "CUSTOM_CONTRACT_MISSING"' "$summary_json" >/dev/null
+jq -e '.field_coverage.by_field."gaiji.raw_marker".class == "tei_policy_projection"' "$summary_json" >/dev/null
+jq -e '.field_coverage.by_field."paragraph.layout".class == "tei_policy_projection"' "$summary_json" >/dev/null
+jq -e '.field_coverage.by_field."mapping.identity".class == "custom_sidecar"' "$summary_json" >/dev/null
+jq -e '.field_coverage.by_field."source.pointer".class == "custom_sidecar"' "$summary_json" >/dev/null
 jq -e '.node_coverage.by_node_type.text.class == "tei_exact"' "$summary_json" >/dev/null
 jq -e '.node_coverage.by_node_type.ruby.class == "tei_exact"' "$summary_json" >/dev/null
 jq -e '.node_coverage.by_node_type.warigaki.class == "tei_plus_abc_extension"' "$summary_json" >/dev/null
@@ -170,13 +180,18 @@ jq -e '.node_coverage.by_node_type."raw-source".class == "tei_policy_projection"
 jq -e '.node_coverage.counts_by_class.tei_exact == 2' "$summary_json" >/dev/null
 jq -e '.node_coverage.counts_by_class.tei_plus_abc_extension == 1' "$summary_json" >/dev/null
 jq -e '.node_coverage.counts_by_class.tei_policy_projection == 1' "$summary_json" >/dev/null
-jq -e '.source_construct_coverage.counts_by_class.tei_exact == 1' "$summary_json" >/dev/null
+jq -e '.source_construct_coverage.by_construct.image.class == "tei_exact"' "$summary_json" >/dev/null
+jq -e '.source_construct_coverage.by_construct.caption.class == "tei_policy_projection"' "$summary_json" >/dev/null
+jq -e '.source_construct_coverage.counts_by_class.tei_exact == 2' "$summary_json" >/dev/null
+jq -e '.source_construct_coverage.counts_by_class.tei_policy_projection == 1' "$summary_json" >/dev/null
 jq -e '.source_construct_coverage.counts_by_class.tei_plus_abc_extension == 1' "$summary_json" >/dev/null
 jq -e '.source_construct_coverage.counts_by_class.unsupported_gap == 1' "$summary_json" >/dev/null
 jq -e '.unsupported_gaps.count == 1' "$summary_json" >/dev/null
 jq -e '.unsupported_gaps.items[0].aat_pointer == "blocks[].content[].raw_material"' "$summary_json" >/dev/null
+jq -e '([.unsupported_gaps.items[] | select(.aat_pointer == "blocks[].content[].figure.caption" or .aat_pointer == "blocks[].content[].figure.filename")] | length) == 0' "$summary_json" >/dev/null
 jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_UNSUPPORTED_GAPS"' "$summary_json" >/dev/null
 rg -n "IR Publication Coverage" "$report_md" >/dev/null
+rg -n "Field Coverage" "$report_md" >/dev/null
 rg -n "Unsupported gaps" "$report_md" >/dev/null
 
 jq 'del(.transform_rule_descriptions[] | select(.category == "UNSUPPORTED"))' "$mapping" > "$supported_mapping"
@@ -192,6 +207,20 @@ python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
 
 jq -e '.unsupported_gaps.count == 0' "$supported_summary_json" >/dev/null
 jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_CUSTOM_CONTRACT_MISSING"' "$supported_summary_json" >/dev/null
+
+python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
+  --parser-ir-schema "$parser_schema" \
+  --mapping "$supported_mapping" \
+  --source-summary "$source_summary" \
+  --matrix-summary "$matrix_summary" \
+  --source-delta-summary "$source_delta" \
+  --custom-contract-schema "$valid_custom_contract" \
+  --summary-json "$candidate_summary_json" \
+  --report-md "$candidate_report_md"
+
+jq -e '.custom_contract.verdict == "CUSTOM_CONTRACT_CANDIDATE_PROVIDED"' "$candidate_summary_json" >/dev/null
+jq -e '.custom_contract.schema_id == "https://example.org/abc/custom-contract-candidate.json"' "$candidate_summary_json" >/dev/null
+jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_CUSTOM_CONTRACT_MISSING"' "$candidate_summary_json" >/dev/null
 
 cat > "$unknown_mapping" <<'JSON'
 {
@@ -238,5 +267,44 @@ python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
   --report-md "$invalid_contract_report_md"
 
 jq -e '.custom_contract.verdict == "CUSTOM_CONTRACT_INVALID"' "$invalid_contract_summary_json" >/dev/null
-jq -e '.custom_contract.schema_id == "https://w3id.org/abc/schemas/ir-publication-preservation-v1.json"' "$invalid_contract_summary_json" >/dev/null
 jq -e '.verdict != "IR_PUBLICATION_COVERAGE_COMPLETE"' "$invalid_contract_summary_json" >/dev/null
+
+jq '
+  .rows |= map(
+    if .selected_aat.adapter == "aozora"
+    then .parser_ir.nodes = "not-numeric" | .materialization.status = "failed"
+    else .
+    end
+  )
+' "$matrix_summary" > "$incomplete_matrix_summary"
+
+cat > "$incomplete_source_delta" <<'JSON'
+{
+  "schema_version": "plain-prose-source-delta-v1",
+  "parser_evidence_coverage": {
+    "verdict": "FIVE_PARSER_EVIDENCE_INCOMPLETE",
+    "observed_rows_by_parser": {
+      "aozora2html": 1,
+      "aozora-epub3": 1,
+      "aozora-rs": 1,
+      "aozora2": 1,
+      "aozora": 0
+    },
+    "missing_parsers": ["aozora"]
+  }
+}
+JSON
+
+python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
+  --parser-ir-schema "$parser_schema" \
+  --mapping "$supported_mapping" \
+  --source-summary "$source_summary" \
+  --matrix-summary "$incomplete_matrix_summary" \
+  --source-delta-summary "$incomplete_source_delta" \
+  --summary-json "$incomplete_summary_json" \
+  --report-md "$incomplete_report_md"
+
+jq -e '.parser_evidence_coverage.verdict == "FIVE_PARSER_EVIDENCE_INCOMPLETE"' "$incomplete_summary_json" >/dev/null
+jq -e '.parser_evidence_coverage.observed_rows_by_parser.aozora == 0' "$incomplete_summary_json" >/dev/null
+jq -e '.parser_evidence_coverage.missing_parsers == ["aozora"]' "$incomplete_summary_json" >/dev/null
+jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_INCOMPLETE_PARSER_EVIDENCE"' "$incomplete_summary_json" >/dev/null

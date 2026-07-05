@@ -19,7 +19,9 @@ ab-validator report:
 The report's complete verdict is intentionally blocked until:
 
 - unsupported gaps are empty, and
-- ABC supplies a custom contract schema identity to the report.
+- ABC ships an owned integration that confirms the custom publication contract;
+  a readable candidate path in ab-validator is recorded as evidence only and
+  does not unblock admission.
 
 Five parser inputs are required evidence:
 

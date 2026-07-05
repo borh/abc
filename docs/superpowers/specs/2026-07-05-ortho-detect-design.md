@@ -516,9 +516,23 @@ Before implementing Phase 1, verify the directional assumptions:
 
 2. **Coordinate invariant.** Morpheme `byte_span` and `char_span` are in
    original-document coordinates. `Analysis.source_text` is the normalized
-   text (what the analyzer saw). `Analysis.ortho_annotations` records what
+   text (what the analyzer saw) — *amended, see Phase 2 amendment below*.
+   `Analysis.ortho_annotations` records what
    was changed. `Analysis.ortho_offset_map` provides the coordinate bridge
    from normalized spans to original spans.
+
+   **Phase 2 amendment (post-Task-7.5):** when orthographic normalization is
+   active and `remap_spans` succeeds, `Analysis.source_text` is set to the
+   ORIGINAL text (not the normalized text), so that `source_text` is
+   consistent with the remapped `byte_span`/`char_span`/`surface` (all in
+   original-doc coords) and both `validate_analysis_against_source(analysis, &document.text)`
+   and `compare_nway_with_source_text(&analyses, &document.text)` validate.
+   When `remap_spans` fails (length-changing normalization that cannot be
+   cleanly remapped, e.g. a morpheme spanning part of a `ヴ→う゛` expansion),
+   `source_text` stays as the normalized text the analyzer produced
+   (consistent with the morphemes that remained in normalized coords), and
+   the per-morpheme failure is routed to `errors_writer` with
+   `stage: "ortho_remap"`.
 
 3. **Confidence is `Option<u8>` (0–100).** `None` = deterministic heuristic.
    Integer percentage preserves `Eq` on all annotation types.

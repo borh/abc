@@ -218,6 +218,7 @@ pub(crate) fn run_analyze_aat_warehouse_impl(
                     label: format!("warehouse:{run_id}"),
                     total: input_count,
                 }),
+                // TODO(phase2-followup): thread --ortho-detect through the parallel/warehouse/selected paths
                 ortho_detect: OrthoDetectMode::Off,
             },
         )?;
@@ -315,6 +316,7 @@ pub(crate) fn run_analyze_aat_selected_impl(
         None,
         None,
         None,
+        // TODO(phase2-followup): thread --ortho-detect through the parallel/warehouse/selected paths
         OrthoDetectMode::Off,
     )
 }
@@ -689,23 +691,28 @@ pub(crate) fn run_analyze_aat_serial(
             // invariant #2: byte_span, char_span, surface, source_text all
             // reference the original doc).
             if let Some(ref map) = offset_map_opt {
-                if let Err(e) = ab_morph_analyzers::span_builder::remap_spans(
+                match ab_morph_analyzers::span_builder::remap_spans(
                     &mut analysis,
                     map,
                     &document.text,
                 ) {
-                    // Route to errors_writer with a typed stage/code; do not crash.
-                    // The morphemes analyzed so far remain spanning normalized-text
-                    // coords (diagnostic, not a hard failure).
-                    if let Some(writer) = &mut errors_writer {
-                        write_ortho_remap_error(&mut **writer, &source_id, &e)?;
-                    } else {
-                        eprintln!(
-                            "ortho_remap error for {source_id}: {e}"
-                        );
+                    Ok(()) => {
+                        // Honor spec invariant #2: byte_span/char_span/surface now in
+                        // original-doc coords, so source_text must be the original.
+                        analysis.source_text = document.text.clone();
+                    }
+                    Err(e) => {
+                        // Morphemes remain in normalized coords. Leave source_text as
+                        // the normalized text the analyzer produced (consistent with
+                        // the morphemes). Route the error to errors_writer for
+                        // diagnosis.
+                        if let Some(writer) = &mut errors_writer {
+                            write_ortho_remap_error(&mut **writer, &source_id, &e)?;
+                        } else {
+                            eprintln!("ortho_remap error for {source_id}: {e}");
+                        }
                     }
                 }
-                analysis.source_text = document.text.clone();
             }
             analysis.ortho_annotations = annotations_opt.clone();
             analysis.ortho_offset_map = offset_map_opt.clone();
@@ -965,6 +972,7 @@ pub(crate) fn run_analyze_aat_warehouse_parallel(
                                 label: format!("warehouse-worker-{job_index}/shard-{shard_index}"),
                                 total: batch_len,
                             }),
+                            // TODO(phase2-followup): thread --ortho-detect through the parallel/warehouse/selected paths
                             ortho_detect: OrthoDetectMode::Off,
                         },
                     );
@@ -1280,6 +1288,7 @@ pub(crate) fn run_analyze_aat_parallel(
                         collect_string_stats,
                         warehouse: None,
                         progress: None,
+                        // TODO(phase2-followup): thread --ortho-detect through the parallel/warehouse/selected paths
                         ortho_detect: OrthoDetectMode::Off,
                     },
                 )?;

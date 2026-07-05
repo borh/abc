@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 pub enum OrthoMapError {
     /// The normalized byte range crosses an OffsetMap entry boundary where
     /// byte-length changed (e.g. ヴ→う゛). Callers must split the span first.
-    #[error("normalized range {range:?} crosses OffsetMap entry boundary at byte {boundary}")]
+    #[error("normalized range {range:?} cannot be remapped: it crosses an OffsetMap entry boundary (byte {boundary}) or is a sub-span of a length-changing entry (e.g. ヴ→う゛); split the span at annotation boundaries first")]
     CrossesBoundary {
         range: std::ops::Range<usize>,
         boundary: usize,

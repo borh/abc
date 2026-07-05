@@ -201,6 +201,22 @@ fn strips_aozora_header_legend_and_footer_from_aat_body() {
 }
 
 #[test]
+fn maps_source_heading_hint_to_heading_block() {
+    let aat = run_aat("一［＃「一」は中見出し］\n本文\n");
+    let blocks = aat["blocks"].as_array().expect("blocks");
+
+    assert_eq!(blocks.len(), 2);
+    assert_eq!(blocks[0]["kind"], "heading");
+    assert_eq!(blocks[0]["level"], 2);
+    assert_eq!(blocks[0]["style"], "normal");
+    assert_eq!(blocks[0]["content"][0]["kind"], "text");
+    assert_eq!(blocks[0]["content"][0]["value"], "一");
+    assert_eq!(blocks[1]["kind"], "paragraph");
+    assert_eq!(blocks[1]["content"][0]["kind"], "text");
+    assert_eq!(blocks[1]["content"][0]["value"], "本文\n");
+}
+
+#[test]
 fn normalizes_upstream_style_and_tcy_nodes_to_typed_aat() {
     let aat =
         run_aat("あた［＃「あた」に傍点］人物［＃「人物」は太字］昭和10［＃「10」は縦中横］年");

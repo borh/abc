@@ -198,10 +198,7 @@ fn build_aat(
     let blocks = if decoded.span_text.contains("［＃ここから2字下げ］") {
         build_jisage_fixture_blocks(decoded, nodes, &gaiji_by_start)
     } else {
-        vec![json!({
-            "kind": "paragraph",
-            "content": inline_content(decoded, nodes, &gaiji_by_start)
-        })]
+        blocks_from_inline_content(inline_content(decoded, nodes, &gaiji_by_start))
     };
     let mut warnings = diagnostics
         .iter()
@@ -242,6 +239,113 @@ fn build_jisage_fixture_blocks(
             "content": content
         }]
     })]
+}
+
+fn blocks_from_inline_content(content: Vec<Value>) -> Vec<Value> {
+    let mut blocks = Vec::new();
+    let mut paragraph = Vec::new();
+    let mut strip_next_leading_newline = false;
+
+    for mut node in content {
+        if strip_next_leading_newline {
+            strip_leading_newline(&mut node);
+            strip_next_leading_newline = false;
+            if node.get("kind").and_then(Value::as_str) == Some("text")
+                && node
+                    .get("value")
+                    .and_then(Value::as_str)
+                    .unwrap_or("")
+                    .is_empty()
+            {
+                continue;
+            }
+        }
+
+        if is_heading_hint_raw(&node)
+            && let Some(heading) = heading_block_from_hint(&mut paragraph, &node)
+        {
+            push_paragraph_if_not_empty(&mut blocks, std::mem::take(&mut paragraph));
+            blocks.push(heading);
+            strip_next_leading_newline = true;
+            continue;
+        }
+        paragraph.push(node);
+    }
+
+    push_paragraph_if_not_empty(&mut blocks, paragraph);
+    if blocks.is_empty() {
+        blocks.push(json!({"kind": "paragraph", "content": []}));
+    }
+    blocks
+}
+
+fn push_paragraph_if_not_empty(blocks: &mut Vec<Value>, content: Vec<Value>) {
+    if content.is_empty() {
+        return;
+    }
+    blocks.push(json!({
+        "kind": "paragraph",
+        "content": content
+    }));
+}
+
+fn is_heading_hint_raw(node: &Value) -> bool {
+    node.get("kind").and_then(Value::as_str) == Some("raw")
+        && node.get("x-source-marker-kind").and_then(Value::as_str) == Some("headingHint")
+}
+
+fn heading_block_from_hint(paragraph: &mut Vec<Value>, node: &Value) -> Option<Value> {
+    let source = node.get("source").and_then(Value::as_str)?;
+    let target = marker_target(source)?;
+    let level = heading_level(source);
+    let style = heading_style(source);
+    let text = paragraph.last()?;
+    if text.get("kind").and_then(Value::as_str) != Some("text")
+        || text.get("value").and_then(Value::as_str)? != target
+    {
+        return None;
+    }
+    let heading_text = paragraph.pop()?;
+    Some(json!({
+        "kind": "heading",
+        "level": level,
+        "style": style,
+        "content": [heading_text],
+        "x-provenance": "source-derived",
+    }))
+}
+
+fn heading_level(source: &str) -> u64 {
+    if source.contains('大') {
+        1
+    } else if source.contains('中') {
+        2
+    } else {
+        3
+    }
+}
+
+fn heading_style(source: &str) -> &'static str {
+    if source.contains("同行") {
+        "dogyo"
+    } else if source.contains('窓') {
+        "mado"
+    } else {
+        "normal"
+    }
+}
+
+fn strip_leading_newline(node: &mut Value) {
+    if node.get("kind").and_then(Value::as_str) != Some("text") {
+        return;
+    }
+    let Some(value) = node.get("value").and_then(Value::as_str) else {
+        return;
+    };
+    let stripped = value.strip_prefix('\n').unwrap_or(value).to_owned();
+    if let Some(obj) = node.as_object_mut() {
+        obj.insert("value".to_owned(), json!(stripped));
+    }
 }
 
 fn inline_content(

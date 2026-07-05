@@ -8,8 +8,8 @@ This report materializes ABC TEI from parser-IR, then compares the generated TEI
 |---|---:|
 | rows_attempted | 220 |
 | tei_eaj_rows_attempted | 57 |
-| materialization_succeeded | 216 |
-| materialization_failed | 4 |
+| materialization_succeeded | 220 |
+| materialization_failed | 0 |
 | rows_skipped | 5 |
 
 ## Paragraph Delta Buckets

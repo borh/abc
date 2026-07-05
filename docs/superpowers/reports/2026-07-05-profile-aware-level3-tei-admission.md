@@ -5,9 +5,9 @@ This report classifies measured parser-IR generated TEI evidence into profile-aw
 ## Verdict
 
 - source_authority_gate: `SOURCE_AUTHORITY_GATE_PASS`
-- parser_ir_infrastructure_verdict: `LEVEL3_IR_INFRASTRUCTURE_BLOCKED`
-- plain_prose_verdict: `LEVEL3_PLAIN_PROSE_BLOCKED_ADAPTER_FIDELITY_AND_TEXT_POLICY_AND_ABC_RENDERER`
-- blocking_owners: `adapter, policy, abc_renderer`
+- parser_ir_infrastructure_verdict: `LEVEL3_IR_INFRASTRUCTURE_READY`
+- plain_prose_verdict: `LEVEL3_PLAIN_PROSE_BLOCKED_ADAPTER_FIDELITY_AND_TEXT_POLICY`
+- blocking_owners: `adapter, policy`
 - mapping_hash: `sha256:9812e1cc0d956143e61cdd9d0a5bccaa3ec301c7984279230107c23919936e8b`
 
 ## Mapping
@@ -36,7 +36,6 @@ This report classifies measured parser-IR generated TEI evidence into profile-aw
 
 | owner | rows |
 |---|---:|
-| abc_renderer | 1 |
 | adapter | 82 |
 | policy | 103 |
 
@@ -88,7 +87,7 @@ This report classifies measured parser-IR generated TEI evidence into profile-aw
 | 15938 | aozora2html | adapter_over_segmented | different | adapter, policy | `data/complete/tei_lib_lv3/15938_tei.xml` |
 | 15938 | aozora-epub3 | adapter_over_segmented | different | adapter, policy | `data/complete/tei_lib_lv3/15938_tei.xml` |
 | 15938 | aozora-rs | adapter_over_segmented | different | adapter, policy | `data/complete/tei_lib_lv3/15938_tei.xml` |
-| 15938 | aozora2 | adapter_collapsed | different | abc_renderer, adapter, policy | `data/complete/tei_lib_lv3/15938_tei.xml` |
+| 15938 | aozora2 | adapter_collapsed | different | adapter, policy | `data/complete/tei_lib_lv3/15938_tei.xml` |
 | 236 | aozora2html | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/236_tei.xml` |
 | 236 | aozora-epub3 | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/236_tei.xml` |
 | 236 | aozora-rs | adapter_over_segmented | ruby_expanded_parenless_equal | adapter, policy | `data/complete/tei_lib_lv3/236_tei.xml` |

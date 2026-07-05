@@ -19,8 +19,8 @@
   "totals": {
     "rows_attempted": 220,
     "tei_eaj_rows_attempted": 57,
-    "materialization_succeeded": 216,
-    "materialization_failed": 4,
+    "materialization_succeeded": 220,
+    "materialization_failed": 0,
     "rows_skipped": 5
   },
   "paragraph_delta_buckets": {
@@ -1610,8 +1610,8 @@
         "hints_count": 0
       },
       "materialization": {
-        "status": "failed",
-        "findings_count": 1
+        "status": "passed",
+        "findings_count": 0
       },
       "parser_ir": {
         "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
@@ -4121,8 +4121,8 @@
         "hints_count": 1
       },
       "materialization": {
-        "status": "failed",
-        "findings_count": 1
+        "status": "passed",
+        "findings_count": 0
       },
       "parser_ir": {
         "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
@@ -23872,8 +23872,8 @@
         "hints_count": 1
       },
       "materialization": {
-        "status": "failed",
-        "findings_count": 1
+        "status": "passed",
+        "findings_count": 0
       },
       "parser_ir": {
         "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
@@ -25847,8 +25847,8 @@
         "hints_count": 0
       },
       "materialization": {
-        "status": "failed",
-        "findings_count": 1
+        "status": "passed",
+        "findings_count": 0
       },
       "parser_ir": {
         "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",

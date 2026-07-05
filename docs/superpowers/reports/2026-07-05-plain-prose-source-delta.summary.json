@@ -257,7 +257,7 @@
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
-        "materialization_status": "failed"
+        "materialization_status": "passed"
       },
       "reasons": [
         "paragraph origin is adapter_collapsed",

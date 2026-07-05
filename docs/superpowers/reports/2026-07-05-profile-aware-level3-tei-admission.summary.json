@@ -5,7 +5,7 @@
     "works_scanned": 17894,
     "unallowlisted_unknown_markers_total": 0
   },
-  "parser_ir_infrastructure_verdict": "LEVEL3_IR_INFRASTRUCTURE_BLOCKED",
+  "parser_ir_infrastructure_verdict": "LEVEL3_IR_INFRASTRUCTURE_READY",
   "plain_prose_admission": {
     "scope": "tei-eaj-generated-matrix plain_prose rows",
     "plaintext_policy": {
@@ -16,14 +16,12 @@
     "rows_total": 108,
     "rows_passed": 1,
     "rows_failed": 107,
-    "verdict": "LEVEL3_PLAIN_PROSE_BLOCKED_ADAPTER_FIDELITY_AND_TEXT_POLICY_AND_ABC_RENDERER",
+    "verdict": "LEVEL3_PLAIN_PROSE_BLOCKED_ADAPTER_FIDELITY_AND_TEXT_POLICY",
     "blocking_owners": [
       "adapter",
-      "policy",
-      "abc_renderer"
+      "policy"
     ],
     "failures_by_owner": {
-      "abc_renderer": 1,
       "adapter": 82,
       "policy": 103
     },
@@ -173,12 +171,10 @@
         "body_text_match_bucket": "different",
         "passed": false,
         "owners": [
-          "abc_renderer",
           "adapter",
           "policy"
         ],
         "reasons": [
-          "materialization did not pass",
           "paragraph origin is adapter_collapsed",
           "text policy required for different"
         ]

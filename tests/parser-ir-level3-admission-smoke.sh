@@ -22,6 +22,12 @@ foreign_mapping_file="$foreign_checkout_root/data/aat-to-parser-ir-mapping-v1.js
 foreign_matrix_summary="$out_dir/matrix-summary-foreign-mapping.json"
 foreign_summary_json="$out_dir/admission-foreign-mapping.summary.json"
 foreign_report_md="$out_dir/admission-foreign-mapping.md"
+unmapped_checkout_root="$out_dir/unmapped-checkout"
+unmapped_mapping_file="$unmapped_checkout_root/external/mapping.json"
+unmapped_matrix_summary="$out_dir/matrix-summary-unmapped-mapping.json"
+unmapped_summary_json="$out_dir/admission-unmapped-mapping.summary.json"
+unmapped_report_md="$out_dir/admission-unmapped-mapping.md"
+unmapped_stderr="$out_dir/admission-unmapped-mapping.stderr"
 
 cat > "$source_summary" <<'JSON'
 {
@@ -69,7 +75,7 @@ cat > "$matrix_summary" <<JSON
   "inputs": {
     "candidate_mode": "all",
     "structural_summary": "fixture-structural-summary.json",
-    "mapping": "$mapping_file"
+    "mapping": "mapping.json"
   },
   "totals": {
     "rows_attempted": 8,
@@ -276,6 +282,55 @@ jq -e --arg expected "$(jq -r '.mapping_id' "$repo_root/data/aat-to-parser-ir-ma
 jq -e --arg unexpected "https://example.invalid/not-the-current-checkout" \
   '.mapping.mapping_id != $unexpected' "$foreign_summary_json"
 
+mkdir -p "$(dirname "$unmapped_mapping_file")"
+cat > "$unmapped_mapping_file" <<'JSON'
+{
+  "mapping_id": "https://example.invalid/unmapped-external-path",
+  "mapping_version": "1.0.0",
+  "mapping_schema_hash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+  "target_parser_ir_schema_id": "https://example.invalid/schemas/unmapped-parser-ir.schema.json",
+  "target_parser_ir_schema_hash": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+  "transform_rule_descriptions": [
+    {
+      "rule_id": "unmapped-rule",
+      "description": "should fail before load"
+    }
+  ]
+}
+JSON
+
+cat > "$unmapped_matrix_summary" <<JSON
+{
+  "schema_version": "tei-eaj-generated-comparison-v1",
+  "inputs": {
+    "candidate_mode": "all",
+    "structural_summary": "fixture-structural-summary.json",
+    "mapping": "$unmapped_mapping_file"
+  },
+  "totals": {
+    "rows_attempted": 0,
+    "tei_eaj_rows_attempted": 0,
+    "materialization_succeeded": 0,
+    "materialization_failed": 0,
+    "rows_skipped": 0
+  },
+  "skipped": [],
+  "rows": []
+}
+JSON
+
+if python3 "$repo_root/reports/parser-ir/level3-admission.py" \
+  --matrix-summary "$unmapped_matrix_summary" \
+  --source-summary "$source_summary" \
+  --summary-json "$unmapped_summary_json" \
+  --report-md "$unmapped_report_md" \
+  2>"$unmapped_stderr"; then
+  echo "expected unrewriteable external mapping path to fail" >&2
+  exit 1
+fi
+
+rg -n 'current checkout|cannot remap|mapping path' "$unmapped_stderr"
+
 invalid_matrix_summary="$out_dir/matrix-summary-invalid-mapping.json"
 cat > "$invalid_matrix_summary" <<JSON
 {
@@ -283,7 +338,7 @@ cat > "$invalid_matrix_summary" <<JSON
   "inputs": {
     "candidate_mode": "all",
     "structural_summary": "fixture-structural-summary.json",
-    "mapping": "$invalid_mapping_file"
+    "mapping": "mapping-invalid.json"
   },
   "totals": {
     "rows_attempted": 0,

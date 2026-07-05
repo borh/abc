@@ -102,7 +102,10 @@ def resolve_mapping_path(
             candidate = repo_root / suffix
             if candidate.exists():
                 return candidate.resolve()
-        return path
+        raise SystemExit(
+            "absolute mapping path is outside the current checkout and cannot be remapped "
+            f"into it: {path}"
+        )
 
     return (repo_root / relative).resolve()
 

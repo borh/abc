@@ -1,6 +1,6 @@
 # AAT Parser-IR Conversion Audit
 
-- generated_unix_seconds: `1783174070`
+- generated_unix_seconds: `1783217050`
 - mapping: `https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe` `0.2.3`
 - mapping_hash: `sha256:21791c841557ced968464b38e42971e22830edb0efdb0be6faf285761532f770`
 - mapping_schema_hash: `sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4`
@@ -10,7 +10,7 @@
 
 | files_attempted | files_succeeded | files_failed | parser_ir_nodes | divergence_records | divergence_occurrences | elapsed_seconds |
 |---:|---:|---:|---:|---:|---:|---:|
-| 71301 | 67415 | 3886 | 28494053 | 829660 | 46816666 | 22.834 |
+| 89187 | 68411 | 20776 | 28495049 | 835642 | 46822662 | 27.019 |
 
 ## Inputs
 
@@ -20,11 +20,13 @@
 | aozora2-adapter | 17874 | `/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter` |
 | aozora2html-adapter | 17689 | `/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter` |
 | aozora-epub3-adapter | 17844 | `/db/ab-validator/aat-corpus/aozora-epub3-full-20260704T050652Z-300s/aat/aozora-epub3-adapter` |
+| aozora-adapter | 17886 | `/db/ab-validator/aat-corpus/aozora-full-20260705T015007Z/aat/aozora-adapter` |
 
 ## Corpus Results
 
 | corpus | attempted | succeeded | failed | parser_ir_nodes | divergence_occurrences |
 |---|---:|---:|---:|---:|---:|
+| aozora-adapter | 17886 | 996 | 16890 | 996 | 5996 |
 | aozora-epub3-adapter | 17844 | 17844 | 0 | 10670874 | 18314414 |
 | aozora-rs-adapter | 17894 | 17894 | 0 | 7821839 | 11926731 |
 | aozora2-adapter | 17874 | 13988 | 3886 | 1582155 | 4329397 |
@@ -34,9 +36,9 @@
 
 | category | occurrences |
 |---|---:|
-| AMBIGUITY | 29335276 |
-| INVENTION | 11473725 |
-| LOSS | 5622535 |
+| AMBIGUITY | 29336272 |
+| INVENTION | 11477729 |
+| LOSS | 5623531 |
 | STRUCTURAL | 352862 |
 | UNSUPPORTED | 32268 |
 
@@ -44,6 +46,7 @@
 
 | adapter | adapter_version | mapping_version | mapping_hash | files_succeeded | files_failed | rules_emitted | rules_missing | unsupported_occurrences |
 |---|---|---|---|---:|---:|---:|---:|---:|
+| aozora | aozora-adapter 0.1.0 aozora 0.4.1 | 0.2.3 | `sha256:21791c841557ced968464b38e42971e22830edb0efdb0be6faf285761532f770` | 996 | 16890 | 8 | 119 | 0 |
 | aozora-epub3 | aozora-epub3-adapter 0.1.0 AozoraEpub3-JDK21-1.3.4-jdk21 | 0.2.3 | `sha256:21791c841557ced968464b38e42971e22830edb0efdb0be6faf285761532f770` | 17844 | 0 | 61 | 66 | 13234 |
 | aozora-rs | aozora-rs-adapter 0.1.0 2b4e8d1 | 0.2.3 | `sha256:21791c841557ced968464b38e42971e22830edb0efdb0be6faf285761532f770` | 17894 | 0 | 25 | 102 | 0 |
 | aozora2 | aozora2-adapter 0.1.0 aozora-core-0.7.1 | 0.2.3 | `sha256:21791c841557ced968464b38e42971e22830edb0efdb0be6faf285761532f770` | 13988 | 3886 | 89 | 38 | 4804 |
@@ -84,14 +87,14 @@
 | A-25 | AMBIGUITY | 4012 | 41715 |
 | A-26 | AMBIGUITY | 18836 | 285038 |
 | A-27 | AMBIGUITY | 5 | 5 |
-| A-28 | AMBIGUITY | 67415 | 67415 |
-| I-01 | INVENTION | 67415 | 67415 |
+| A-28 | AMBIGUITY | 68411 | 68411 |
+| I-01 | INVENTION | 68411 | 68411 |
 | I-02 | INVENTION | 50249 | 10347033 |
-| I-03 | INVENTION | 67415 | 67415 |
-| I-04 | INVENTION | 67415 | 67415 |
-| I-05 | INVENTION | 16563 | 265128 |
-| I-06 | INVENTION | 16563 | 265128 |
-| I-07 | INVENTION | 67415 | 67415 |
+| I-03 | INVENTION | 68411 | 68411 |
+| I-04 | INVENTION | 68411 | 68411 |
+| I-05 | INVENTION | 16566 | 265138 |
+| I-06 | INVENTION | 16566 | 265138 |
+| I-07 | INVENTION | 68411 | 68411 |
 | I-08 | INVENTION | 1 | 47 |
 | I-09 | INVENTION | 31 | 561 |
 | I-10 | INVENTION | 579 | 2232 |
@@ -153,7 +156,7 @@
 | L-52 | LOSS | 17 | 131 |
 | L-53 | LOSS | 4012 | 41715 |
 | L-54 | LOSS | 17894 | 17894 |
-| L-55 | LOSS | 67415 | 67415 |
+| L-55 | LOSS | 68411 | 68411 |
 | L-56 | LOSS | 32710 | 32710 |
 | S-01 | STRUCTURAL | 18 | 20 |
 | S-02 | STRUCTURAL | 6620 | 71404 |
@@ -189,7 +192,7 @@
 
 | count | message | samples |
 |---:|---|---|
-| 2990 | unsupported inline kind: raw | aozora2-adapter:000006_1869-62320f0f4474.json<br>aozora2-adapter:000006_4627-ded0d23b15b9.json<br>aozora2-adapter:000008_1083-bf767c36e951.json<br>aozora2-adapter:000008_47374-9c929d4f4d67.json<br>aozora2-adapter:000008_47386-49ed3c33666b.json |
+| 19880 | unsupported inline kind: raw | aozora2-adapter:000006_1869-62320f0f4474.json<br>aozora2-adapter:000006_4627-ded0d23b15b9.json<br>aozora2-adapter:000008_1083-bf767c36e951.json<br>aozora2-adapter:000008_47374-9c929d4f4d67.json<br>aozora2-adapter:000008_47386-49ed3c33666b.json |
 | 128 | unsupported inline kind in source attribution projection: accent | aozora2-adapter:000020_745-bce191ee0ece.json<br>aozora2-adapter:000026_50241-af65ef658680.json<br>aozora2-adapter:000026_55717-3ba0b0630fd5.json<br>aozora2-adapter:000042_1682-4401cf92d836.json<br>aozora2-adapter:000042_2453-83567d45101e.json |
 | 94 | unsupported inline kind: accent | aozora2-adapter:000026_50245-e840465144a2.json<br>aozora2-adapter:000027_523-e22ef286b8e7.json<br>aozora2-adapter:000035_2277-b04f7f121e1a.json<br>aozora2-adapter:000075_4250-7e32f80f0150.json<br>aozora2-adapter:000076_45641-e69c2d20d152.json |
 | 58 | unsupported inline kind in visible projection: accent | aozora2-adapter:000026_55732-e162f2f7263b.json<br>aozora2-adapter:000026_55739-075fc7322e7b.json<br>aozora2-adapter:000042_2469-3372cea4b938.json<br>aozora2-adapter:000042_42768-2a6afe487bf8.json<br>aozora2-adapter:000065_393-58fae23a2747.json |

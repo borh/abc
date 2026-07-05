@@ -909,10 +909,13 @@ fn classify_tei_eaj_row(
             && input.aat.final_source_attribution_candidate
             && input.parser_ir.source_attribution_represented
     });
+    let any_successful_conversion = aat_inputs.iter().any(|input| input.conversion.success);
 
     for input in aat_inputs {
         if !input.conversion.success {
-            classification.evidence_gap = true;
+            if !any_successful_conversion {
+                classification.evidence_gap = true;
+            }
             classification.notes.push(format!(
                 "{} conversion failed; parser-IR representability is unmeasured for this adapter",
                 input.label

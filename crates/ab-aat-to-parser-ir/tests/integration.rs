@@ -849,8 +849,10 @@ fn tei_eaj_structural_expansion_classifies_parser_ir_and_evidence_gaps() {
     let temp = tempfile::tempdir().unwrap();
     let aat_dir = temp.path().join("aat");
     let mixed_aat_dir = temp.path().join("mixed-aat");
+    let failing_aat_dir = temp.path().join("failing-aat");
     std::fs::create_dir_all(&aat_dir).unwrap();
     std::fs::create_dir_all(&mixed_aat_dir).unwrap();
+    std::fs::create_dir_all(&failing_aat_dir).unwrap();
     let tei_root = temp.path().join("tei-eaj");
     let tei_file = tei_root.join("data/complete/tei_lib_lv3/236_tei.xml");
     std::fs::create_dir_all(tei_file.parent().unwrap()).unwrap();
@@ -903,6 +905,28 @@ fn tei_eaj_structural_expansion_classifies_parser_ir_and_evidence_gaps() {
     std::fs::write(
         &mixed_aat_path,
         serde_json::to_string_pretty(&mixed_aat).unwrap(),
+    )
+    .unwrap();
+    let failing_aat_path = failing_aat_dir.join("000035_1567-failing-fixture.json");
+    let failing_aat = json!({
+        "version": 1,
+        "work_id": "000035_1567",
+        "meta": base_meta(
+            "utf-8",
+            "sha256:5959595959595959595959595959595959595959595959595959595959595959",
+        ),
+        "blocks": [
+            {
+                "kind": "paragraph",
+                "content": [
+                    {"kind": "raw", "source": "unmapped parser residue"}
+                ]
+            }
+        ]
+    });
+    std::fs::write(
+        &failing_aat_path,
+        serde_json::to_string_pretty(&failing_aat).unwrap(),
     )
     .unwrap();
 
@@ -991,6 +1015,10 @@ fn tei_eaj_structural_expansion_classifies_parser_ir_and_evidence_gaps() {
                     label: "mixed-adapter".to_owned(),
                     path: mixed_aat_dir,
                 },
+                ab_aat_to_parser_ir::structural_probe::StructuralProbeInput {
+                    label: "failing-adapter".to_owned(),
+                    path: failing_aat_dir,
+                },
             ],
             mapping,
             schemas,
@@ -1013,7 +1041,16 @@ fn tei_eaj_structural_expansion_classifies_parser_ir_and_evidence_gaps() {
         .find(|row| row.tei.work_id.as_deref() == Some("1567"))
         .unwrap();
     assert_eq!(melos.tei.tei_eaj_p_count, Some(19));
-    assert_eq!(melos.aat_inputs.len(), 2);
+    assert_eq!(melos.aat_inputs.len(), 3);
+    assert!(melos.aat_inputs.iter().any(|input| {
+        input.label == "failing-adapter:1567"
+            && !input.conversion.success
+            && input
+                .conversion
+                .error
+                .as_deref()
+                .is_some_and(|error| error.contains("unsupported inline kind: raw"))
+    }));
     assert!(!melos.classification.parser_ir_gap);
     assert!(!melos.classification.source_attribution_gap);
     assert!(melos.classification.adapter_gap);
@@ -1039,7 +1076,7 @@ fn tei_eaj_structural_expansion_classifies_parser_ir_and_evidence_gaps() {
     let markdown =
         ab_aat_to_parser_ir::structural_probe::render_tei_eaj_expansion_markdown(&summary);
     assert!(markdown.contains("# TEI-EAJ Structural Expansion"));
-    assert!(markdown.contains("| 1567 | 走れメロス | compared | 19 | 1 | 2 | false |"));
+    assert!(markdown.contains("| 1567 | 走れメロス | compared | 19 | 1 | 3 | false |"));
     assert!(markdown.contains("parser-IR gap"));
     assert!(markdown.contains("evidence gap"));
 }

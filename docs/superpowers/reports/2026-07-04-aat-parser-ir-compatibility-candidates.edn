@@ -1,5 +1,29 @@
 {:entries
  [{:aat_version 1
+  :aat_adapter "aozora"
+  :aat_adapter_version "aozora-adapter 0.1.0 aozora 0.4.1"
+  :mapping_id "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe"
+  :mapping_version "0.2.3"
+  :mapping_hash "sha256:21791c841557ced968464b38e42971e22830edb0efdb0be6faf285761532f770"
+  :mapping_schema_hash "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4"
+  :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
+  :parser_ir_schema_hash "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d"
+  :evidence_scope {:evidence_type :conversion-audit
+                   :adapter "aozora"
+                   :adapter_version "aozora-adapter 0.1.0 aozora 0.4.1"
+                   :corpus "aozora-adapter"
+                   :files_scanned 17886
+                   :files_succeeded 996
+                   :files_failed 16890
+                   :parser_ir_nodes 996
+                   :divergence_records 5982
+                   :divergence_occurrences 5996
+                   :rules_total 127
+                   :rules_emitted 8
+                   :rules_missing 119
+                   :unsupported_occurrences 0}
+  :compatibility "lossy"}
+{:aat_version 1
   :aat_adapter "aozora-epub3"
   :aat_adapter_version "aozora-epub3-adapter 0.1.0 AozoraEpub3-JDK21-1.3.4-jdk21"
   :mapping_id "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe"

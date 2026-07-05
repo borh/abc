@@ -192,9 +192,35 @@ JOIN rarity_rollup USING ({join_key})"
 /// `duckdb_settings_sql` pins 16GB/4 threads, which OOMs on the
 /// full-corpus feature aggregation; this workload gets a larger,
 /// env-overridable budget (`AB_DUCKDB_MEMORY_LIMIT`, `AB_DUCKDB_THREADS`).
+///
+/// The default budget is sized against *currently available* memory, not
+/// total RAM: hosts running `earlyoom -m10` SIGTERM any process once
+/// MemAvailable drops under 10%, so the budget leaves that watermark plus
+/// slack untouched (observed: a fixed 48GB default got duckdb killed on a
+/// 93GB box with 33GB already in use).
+fn default_memory_limit_gb() -> u64 {
+    let available_kb = std::fs::read_to_string("/proc/meminfo")
+        .ok()
+        .and_then(|meminfo| {
+            meminfo.lines().find_map(|line| {
+                line.strip_prefix("MemAvailable:")?
+                    .trim()
+                    .split(' ')
+                    .next()?
+                    .parse::<u64>()
+                    .ok()
+            })
+        })
+        .unwrap_or(16 * 1024 * 1024);
+    // Keep 40% of available memory (min 8GB) free for the OS, other
+    // processes, and the earlyoom watermark; clamp to a sane range.
+    let available_gb = available_kb / 1024 / 1024;
+    (available_gb * 6 / 10).clamp(8, 48)
+}
+
 fn interesting_settings_sql(run_dir: &Path) -> String {
-    let memory_limit =
-        std::env::var("AB_DUCKDB_MEMORY_LIMIT").unwrap_or_else(|_| "48GB".to_owned());
+    let memory_limit = std::env::var("AB_DUCKDB_MEMORY_LIMIT")
+        .unwrap_or_else(|_| format!("{}GB", default_memory_limit_gb()));
     let threads = std::env::var("AB_DUCKDB_THREADS").unwrap_or_else(|_| "8".to_owned());
     format!(
         "SET temp_directory = {};\nSET threads = {};\nSET preserve_insertion_order = false;\nSET memory_limit = {};",

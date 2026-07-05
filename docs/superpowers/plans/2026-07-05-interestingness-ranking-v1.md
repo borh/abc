@@ -1,6 +1,6 @@
 # Interestingness Ranking v1 (RRF Ranker) Implementation Plan
 
-> **Superseded detail (Phase 2, 2026-07-05):** this plan's fixed `granularity_profile: "none"` output contract is historical. The field is now derived from `run_analyzers.parquet` with three tokens (`"none"`, `"sudachi-mode-A-aligned"`, `"no-sudachi"`) — see the spec's Phase 2 status note.
+> **Superseded detail (Phase 2, 2026-07-05):** this plan's fixed `granularity_profile: "none"` output contract is historical. The field is now derived from `run_analyzers.parquet` as a NINJAL granularity-class composition (`"suw"`, `"muw"`, `"luw"` deduped and joined with `"+"`, e.g. `"suw"`, `"suw+luw"`, `"suw+muw+luw"`) — see the spec's Phase 2 status note.
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 

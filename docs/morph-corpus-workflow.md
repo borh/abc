@@ -144,9 +144,9 @@ target/release/ab-morph-run summarize-warehouse-errors \
 # On full-corpus warehouses this uses the DuckDB CLI automatically (--engine auto);
 # --feature-profile core restricts feature patterns to pos1..pos4 and is much cheaper.
 # The analyzer set of the run being summarized determines its score_version
-# granularity_profile ("none" for the vibrato+sudachi-a+sudachi-c set used above);
-# to produce a run in the "sudachi-mode-A-aligned" comparability class instead,
-# generate it with `just morph-warehouse-run-harmonized` (vibrato + sudachi-a only).
+# granularity_profile ("suw+luw" for the vibrato+sudachi-a+sudachi-c set used above);
+# to produce a run in the "suw" (granularity-noise-free) comparability class
+# instead, generate it with `just morph-warehouse-run-suw` (vibrato + sudachi-a only).
 # See docs/superpowers/specs/2026-07-05-interestingness-ranking-design.md.
 target/release/ab-morph-run summarize-warehouse-interesting \
   --run-dir /db/ab-validator/morph-warehouse/runs/full-2026-05-03 \

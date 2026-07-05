@@ -616,6 +616,28 @@ the `OrthoTokenizer` trait, `ortho_compat.rs`, the double-dictionary-load,
 and the `oov_count`/`proper_noun_char_ratio` features can all be
 **deleted**. The trait seam exists to make that deletion local.
 
+**Phase 2 outcome (2026-07-05) — deletion DEFERRED, condition not yet
+met.** The Task 6 ablation confirmed character-only IS the only viable
+feature set in v1 (Branch B: `TokenFeatures` are dead — Vibrato
+`LexType::Unknown` never fires on katakana prose because Unidic-CWJ has
+dictionary entries). By the ablation's narrow reading, the deletion
+condition is met. HOWEVER, Task 9's human-labeled probe (50 sentences)
+showed `HeuristicV1` recall = **0.636 against human labels — BELOW the
+spec's 0.85 floor** — because the `katakana_ratio > 0.5` cascade gate
+rejects kanji-heavy pre-war prose. The ML detector, the would-be
+replacement, has only been trained on bootstrap labels (Task 6, train
+accuracy 0.906 against the biased Python-cascade labels) and on a
+50-sentence human probe (Task 9). It has NOT cleared the recall floor
+against a real 200–500-sentence human gold set. Therefore the
+deletion is **deferred until**: (a) a human-annotated gold set of
+≥200 sentences exists, (b) the ML detector retrained on it clears
+recall ≥ 0.85, AND (c) `--ortho-detect ml` is promoted from
+EXPERIMENTAL to default. Until then the heuristic path (which uses
+`OrthoTokenizer` for its proper-noun guard) must remain. The dead
+`oov_count`/`oov_ratio` features and config fields are deletable now
+(they are unused by both detectors); the proper-noun guard and the
+trait seam are not.
+
 ## Open Questions
 
 1. **Precision delta vs. Python baseline.** The v1 heuristic faithfully ports

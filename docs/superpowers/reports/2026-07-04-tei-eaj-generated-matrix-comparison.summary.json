@@ -20,8 +20,8 @@
   "totals": {
     "rows_attempted": 285,
     "tei_eaj_rows_attempted": 57,
-    "materialization_succeeded": 283,
-    "materialization_failed": 2,
+    "materialization_succeeded": 285,
+    "materialization_failed": 0,
     "rows_skipped": 5
   },
   "paragraph_delta_buckets": {
@@ -33,7 +33,7 @@
   "paragraph_origin_buckets": {
     "adapter_under_segmented": 14,
     "adapter_collapsed": 67,
-    "empty_body_paragraph_range": 10,
+    "converter_paragraph_mismatch": 10,
     "adapter_over_segmented": 127,
     "aligned": 60,
     "page_break_projection": 3,
@@ -66,7 +66,7 @@
     "drama": {
       "adapter_under_segmented": 7,
       "adapter_collapsed": 21,
-      "empty_body_paragraph_range": 7,
+      "converter_paragraph_mismatch": 7,
       "adapter_over_segmented": 12,
       "aligned": 1,
       "page_break_projection": 2
@@ -75,7 +75,7 @@
       "adapter_over_segmented": 75,
       "aligned": 47,
       "adapter_collapsed": 10,
-      "empty_body_paragraph_range": 2,
+      "converter_paragraph_mismatch": 2,
       "adapter_under_segmented": 1
     },
     "front_back_matter": {
@@ -101,7 +101,7 @@
       "adapter_collapsed": 4,
       "adapter_under_segmented": 1,
       "page_break_projection": 1,
-      "empty_body_paragraph_range": 1
+      "converter_paragraph_mismatch": 1
     }
   },
   "adapter_paragraph_origin_by_tei_eaj_profile": {
@@ -186,7 +186,7 @@
     },
     "aozora2": {
       "drama": {
-        "empty_body_paragraph_range": 7,
+        "converter_paragraph_mismatch": 7,
         "adapter_collapsed": 3
       },
       "plain_prose": {
@@ -210,7 +210,7 @@
       },
       "verse": {
         "adapter_under_segmented": 1,
-        "empty_body_paragraph_range": 1
+        "converter_paragraph_mismatch": 1
       }
     },
     "aozora": {
@@ -219,7 +219,7 @@
       },
       "plain_prose": {
         "aligned": 21,
-        "empty_body_paragraph_range": 2,
+        "converter_paragraph_mismatch": 2,
         "adapter_collapsed": 4
       },
       "front_back_matter": {
@@ -286,7 +286,7 @@
       "adapter_over_segmented": 35
     },
     "aozora2": {
-      "empty_body_paragraph_range": 8,
+      "converter_paragraph_mismatch": 8,
       "aligned": 19,
       "adapter_collapsed": 19,
       "adapter_under_segmented": 7,
@@ -295,7 +295,7 @@
     "aozora": {
       "adapter_collapsed": 32,
       "aligned": 23,
-      "empty_body_paragraph_range": 2
+      "converter_paragraph_mismatch": 2
     }
   },
   "adapter_body_text_match_buckets": {
@@ -382,12 +382,16 @@
       },
       "generated_tei": {
         "body_p_count": 30,
+        "body_p_count_raw": 30,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 169,
+        "body_p_count_raw": 169,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -520,12 +524,16 @@
       },
       "generated_tei": {
         "body_p_count": 154,
+        "body_p_count_raw": 154,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 169,
+        "body_p_count_raw": 169,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -656,12 +664,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 169,
+        "body_p_count_raw": 169,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -777,15 +789,15 @@
       "parser_ir": {
         "schema_hash": "sha256:a1fcd348bf396d8d4e6f30ffb928b76b3802b594ea773ed6fa9e1dac52edf712",
         "nodes": 339,
-        "paragraph_count": 52,
+        "paragraph_count": 28,
         "source_note_count": 0
       },
       "paragraph_rendering": {
-        "total_ranges": 52,
+        "total_ranges": 28,
         "page_break_nodes": 0,
-        "body_ranges": 52,
+        "body_ranges": 28,
         "source_note_ranges": 0,
-        "empty_body_ranges": 24,
+        "empty_body_ranges": 0,
         "structural_only_body_ranges": 0,
         "body_ranges_with_inline_content": 28,
         "source_note_back_ranges": 0,
@@ -794,12 +806,16 @@
       },
       "generated_tei": {
         "body_p_count": 28,
+        "body_p_count_raw": 28,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 169,
+        "body_p_count_raw": 169,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -835,8 +851,8 @@
       },
       "deltas": {
         "body_p_count": -141,
-        "generated_vs_parser_ir_body_p_count": -24,
-        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": -24,
         "aat_paragraph_blocks_vs_tei_eaj_body_p_count": -117,
         "body_note_count": 0,
         "back_source_note_count": 0
@@ -881,7 +897,7 @@
       },
       "classification": {
         "paragraph_delta_bucket": "under_split",
-        "paragraph_origin_bucket": "empty_body_paragraph_range",
+        "paragraph_origin_bucket": "converter_paragraph_mismatch",
         "source_note_body_excluded": false,
         "source_note_back_present": false
       }
@@ -930,12 +946,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 10,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 169,
+        "body_p_count_raw": 169,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -1066,12 +1086,16 @@
       },
       "generated_tei": {
         "body_p_count": 62,
+        "body_p_count_raw": 62,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -1190,12 +1214,16 @@
       },
       "generated_tei": {
         "body_p_count": 62,
+        "body_p_count_raw": 62,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -1314,12 +1342,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -1438,12 +1470,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -1562,12 +1598,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 13,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -1686,12 +1726,16 @@
       },
       "generated_tei": {
         "body_p_count": 8,
+        "body_p_count_raw": 8,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 6,
+        "body_p_count_raw": 6,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -1811,12 +1855,16 @@
       },
       "generated_tei": {
         "body_p_count": 8,
+        "body_p_count_raw": 8,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 6,
+        "body_p_count_raw": 6,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -1936,12 +1984,16 @@
       },
       "generated_tei": {
         "body_p_count": 15,
+        "body_p_count_raw": 15,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 6,
+        "body_p_count_raw": 6,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -2061,12 +2113,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 6,
+        "body_p_count_raw": 6,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -2163,21 +2219,21 @@
         "hints_count": 0
       },
       "materialization": {
-        "status": "failed",
-        "findings_count": 1
+        "status": "passed",
+        "findings_count": 0
       },
       "parser_ir": {
         "schema_hash": "sha256:a1fcd348bf396d8d4e6f30ffb928b76b3802b594ea773ed6fa9e1dac52edf712",
         "nodes": 0,
-        "paragraph_count": 1,
+        "paragraph_count": 0,
         "source_note_count": 0
       },
       "paragraph_rendering": {
-        "total_ranges": 1,
+        "total_ranges": 0,
         "page_break_nodes": 0,
-        "body_ranges": 1,
+        "body_ranges": 0,
         "source_note_ranges": 0,
-        "empty_body_ranges": 1,
+        "empty_body_ranges": 0,
         "structural_only_body_ranges": 0,
         "body_ranges_with_inline_content": 0,
         "source_note_back_ranges": 0,
@@ -2186,12 +2242,16 @@
       },
       "generated_tei": {
         "body_p_count": 0,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 1,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 6,
+        "body_p_count_raw": 6,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -2216,8 +2276,8 @@
       },
       "deltas": {
         "body_p_count": -6,
-        "generated_vs_parser_ir_body_p_count": -1,
-        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": -1,
         "aat_paragraph_blocks_vs_tei_eaj_body_p_count": -5,
         "body_note_count": 0,
         "back_source_note_count": 0
@@ -2262,7 +2322,7 @@
       },
       "classification": {
         "paragraph_delta_bucket": "under_split",
-        "paragraph_origin_bucket": "empty_body_paragraph_range",
+        "paragraph_origin_bucket": "converter_paragraph_mismatch",
         "source_note_body_excluded": false,
         "source_note_back_present": false
       }
@@ -2311,12 +2371,16 @@
       },
       "generated_tei": {
         "body_p_count": 29,
+        "body_p_count_raw": 29,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -2435,12 +2499,16 @@
       },
       "generated_tei": {
         "body_p_count": 29,
+        "body_p_count_raw": 29,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -2559,12 +2627,16 @@
       },
       "generated_tei": {
         "body_p_count": 33,
+        "body_p_count_raw": 33,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -2683,12 +2755,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -2807,12 +2883,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 5,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -2931,12 +3011,16 @@
       },
       "generated_tei": {
         "body_p_count": 28,
+        "body_p_count_raw": 28,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 28,
+        "body_p_count_raw": 28,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -3054,12 +3138,16 @@
       },
       "generated_tei": {
         "body_p_count": 28,
+        "body_p_count_raw": 28,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 28,
+        "body_p_count_raw": 28,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -3177,12 +3265,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 28,
+        "body_p_count_raw": 28,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -3300,12 +3392,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 28,
+        "body_p_count_raw": 28,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -3423,12 +3519,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 16,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 28,
+        "body_p_count_raw": 28,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -3546,12 +3646,16 @@
       },
       "generated_tei": {
         "body_p_count": 4,
+        "body_p_count_raw": 4,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 3,
+        "body_p_count_raw": 3,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -3673,12 +3777,16 @@
       },
       "generated_tei": {
         "body_p_count": 4,
+        "body_p_count_raw": 4,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 3,
+        "body_p_count_raw": 3,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -3800,12 +3908,16 @@
       },
       "generated_tei": {
         "body_p_count": 8,
+        "body_p_count_raw": 8,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 3,
+        "body_p_count_raw": 3,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -3927,12 +4039,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 3,
+        "body_p_count_raw": 3,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -4054,12 +4170,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 3,
+        "body_p_count_raw": 3,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -4183,12 +4303,16 @@
       },
       "generated_tei": {
         "body_p_count": 32,
+        "body_p_count_raw": 32,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 30,
+        "body_p_count_raw": 30,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -4310,12 +4434,16 @@
       },
       "generated_tei": {
         "body_p_count": 33,
+        "body_p_count_raw": 33,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 30,
+        "body_p_count_raw": 30,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -4436,12 +4564,16 @@
       },
       "generated_tei": {
         "body_p_count": 40,
+        "body_p_count_raw": 40,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 30,
+        "body_p_count_raw": 30,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -4562,12 +4694,16 @@
       },
       "generated_tei": {
         "body_p_count": 4,
+        "body_p_count_raw": 4,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 30,
+        "body_p_count_raw": 30,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -4687,12 +4823,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 30,
+        "body_p_count_raw": 30,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -4812,12 +4952,16 @@
       },
       "generated_tei": {
         "body_p_count": 186,
+        "body_p_count_raw": 186,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 26,
+        "body_p_count_raw": 26,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -4940,12 +5084,16 @@
       },
       "generated_tei": {
         "body_p_count": 186,
+        "body_p_count_raw": 186,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 26,
+        "body_p_count_raw": 26,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -5068,12 +5216,16 @@
       },
       "generated_tei": {
         "body_p_count": 202,
+        "body_p_count_raw": 202,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 26,
+        "body_p_count_raw": 26,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -5196,12 +5348,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 26,
+        "body_p_count_raw": 26,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -5324,12 +5480,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 26,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 26,
+        "body_p_count_raw": 26,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -5452,12 +5612,16 @@
       },
       "generated_tei": {
         "body_p_count": 6,
+        "body_p_count_raw": 6,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 2,
+        "body_p_count_raw": 2,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -5580,12 +5744,16 @@
       },
       "generated_tei": {
         "body_p_count": 12,
+        "body_p_count_raw": 12,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 2,
+        "body_p_count_raw": 2,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -5708,12 +5876,16 @@
       },
       "generated_tei": {
         "body_p_count": 12,
+        "body_p_count_raw": 12,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 2,
+        "body_p_count_raw": 2,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -5836,12 +6008,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 2,
+        "body_p_count_raw": 2,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -5964,12 +6140,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 6,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 2,
+        "body_p_count_raw": 2,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -6093,12 +6273,16 @@
       },
       "generated_tei": {
         "body_p_count": 26,
+        "body_p_count_raw": 26,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 17,
+        "body_p_count_raw": 17,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -6222,12 +6406,16 @@
       },
       "generated_tei": {
         "body_p_count": 26,
+        "body_p_count_raw": 26,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 17,
+        "body_p_count_raw": 17,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -6350,12 +6538,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 17,
+        "body_p_count_raw": 17,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -6479,12 +6671,16 @@
       },
       "generated_tei": {
         "body_p_count": 3,
+        "body_p_count_raw": 3,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 17,
+        "body_p_count_raw": 17,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -6607,12 +6803,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 17,
+        "body_p_count_raw": 17,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -6735,12 +6935,16 @@
       },
       "generated_tei": {
         "body_p_count": 18,
+        "body_p_count_raw": 18,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 6,
+        "body_p_count_raw": 6,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -6859,12 +7063,16 @@
       },
       "generated_tei": {
         "body_p_count": 18,
+        "body_p_count_raw": 18,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 6,
+        "body_p_count_raw": 6,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -6983,12 +7191,16 @@
       },
       "generated_tei": {
         "body_p_count": 27,
+        "body_p_count_raw": 27,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 6,
+        "body_p_count_raw": 6,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -7107,12 +7319,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 6,
+        "body_p_count_raw": 6,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -7208,21 +7424,21 @@
         "hints_count": 0
       },
       "materialization": {
-        "status": "failed",
-        "findings_count": 1
+        "status": "passed",
+        "findings_count": 0
       },
       "parser_ir": {
         "schema_hash": "sha256:a1fcd348bf396d8d4e6f30ffb928b76b3802b594ea773ed6fa9e1dac52edf712",
         "nodes": 0,
-        "paragraph_count": 1,
+        "paragraph_count": 0,
         "source_note_count": 0
       },
       "paragraph_rendering": {
-        "total_ranges": 1,
+        "total_ranges": 0,
         "page_break_nodes": 0,
-        "body_ranges": 1,
+        "body_ranges": 0,
         "source_note_ranges": 0,
-        "empty_body_ranges": 1,
+        "empty_body_ranges": 0,
         "structural_only_body_ranges": 0,
         "body_ranges_with_inline_content": 0,
         "source_note_back_ranges": 0,
@@ -7231,12 +7447,16 @@
       },
       "generated_tei": {
         "body_p_count": 0,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 1,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 6,
+        "body_p_count_raw": 6,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -7260,8 +7480,8 @@
       },
       "deltas": {
         "body_p_count": -6,
-        "generated_vs_parser_ir_body_p_count": -1,
-        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": -1,
         "aat_paragraph_blocks_vs_tei_eaj_body_p_count": -5,
         "body_note_count": 0,
         "back_source_note_count": 0
@@ -7306,7 +7526,7 @@
       },
       "classification": {
         "paragraph_delta_bucket": "under_split",
-        "paragraph_origin_bucket": "empty_body_paragraph_range",
+        "paragraph_origin_bucket": "converter_paragraph_mismatch",
         "source_note_body_excluded": false,
         "source_note_back_present": false
       }
@@ -7355,12 +7575,16 @@
       },
       "generated_tei": {
         "body_p_count": 5,
+        "body_p_count_raw": 5,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 5,
+        "body_p_count_raw": 5,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -7478,12 +7702,16 @@
       },
       "generated_tei": {
         "body_p_count": 5,
+        "body_p_count_raw": 5,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 5,
+        "body_p_count_raw": 5,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -7601,12 +7829,16 @@
       },
       "generated_tei": {
         "body_p_count": 9,
+        "body_p_count_raw": 9,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 5,
+        "body_p_count_raw": 5,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -7724,12 +7956,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 5,
+        "body_p_count_raw": 5,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -7847,12 +8083,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 5,
+        "body_p_count_raw": 5,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -7970,12 +8210,16 @@
       },
       "generated_tei": {
         "body_p_count": 8,
+        "body_p_count_raw": 8,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 8,
+        "body_p_count_raw": 8,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 3,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -8096,12 +8340,16 @@
       },
       "generated_tei": {
         "body_p_count": 8,
+        "body_p_count_raw": 8,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 8,
+        "body_p_count_raw": 8,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 3,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -8222,12 +8470,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 8,
+        "body_p_count_raw": 8,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 3,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -8348,12 +8600,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 8,
+        "body_p_count_raw": 8,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 3,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -8474,12 +8730,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 2,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 8,
+        "body_p_count_raw": 8,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 3,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -8602,12 +8862,16 @@
       },
       "generated_tei": {
         "body_p_count": 406,
+        "body_p_count_raw": 406,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 7,
+        "body_p_count_raw": 7,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -8732,12 +8996,16 @@
       },
       "generated_tei": {
         "body_p_count": 400,
+        "body_p_count_raw": 400,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 7,
+        "body_p_count_raw": 7,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -8860,12 +9128,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 7,
+        "body_p_count_raw": 7,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -8973,15 +9245,15 @@
       "parser_ir": {
         "schema_hash": "sha256:a1fcd348bf396d8d4e6f30ffb928b76b3802b594ea773ed6fa9e1dac52edf712",
         "nodes": 937,
-        "paragraph_count": 14,
+        "paragraph_count": 8,
         "source_note_count": 0
       },
       "paragraph_rendering": {
-        "total_ranges": 14,
+        "total_ranges": 8,
         "page_break_nodes": 0,
-        "body_ranges": 14,
+        "body_ranges": 8,
         "source_note_ranges": 0,
-        "empty_body_ranges": 6,
+        "empty_body_ranges": 0,
         "structural_only_body_ranges": 0,
         "body_ranges_with_inline_content": 8,
         "source_note_back_ranges": 0,
@@ -8990,12 +9262,16 @@
       },
       "generated_tei": {
         "body_p_count": 8,
+        "body_p_count_raw": 8,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 37,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 7,
+        "body_p_count_raw": 7,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -9023,8 +9299,8 @@
       },
       "deltas": {
         "body_p_count": 1,
-        "generated_vs_parser_ir_body_p_count": -6,
-        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": -6,
         "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 7,
         "body_note_count": 37,
         "back_source_note_count": 0
@@ -9069,7 +9345,7 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
-        "paragraph_origin_bucket": "empty_body_paragraph_range",
+        "paragraph_origin_bucket": "converter_paragraph_mismatch",
         "source_note_body_excluded": false,
         "source_note_back_present": false
       }
@@ -9118,12 +9394,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 27,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 7,
+        "body_p_count_raw": 7,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -9246,12 +9526,16 @@
       },
       "generated_tei": {
         "body_p_count": 76,
+        "body_p_count_raw": 76,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 76,
+        "body_p_count_raw": 76,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -9374,12 +9658,16 @@
       },
       "generated_tei": {
         "body_p_count": 76,
+        "body_p_count_raw": 76,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 76,
+        "body_p_count_raw": 76,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -9502,12 +9790,16 @@
       },
       "generated_tei": {
         "body_p_count": 80,
+        "body_p_count_raw": 80,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 76,
+        "body_p_count_raw": 76,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -9630,12 +9922,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 76,
+        "body_p_count_raw": 76,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -9758,12 +10054,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 47,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 76,
+        "body_p_count_raw": 76,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -9886,12 +10186,16 @@
       },
       "generated_tei": {
         "body_p_count": 5,
+        "body_p_count_raw": 5,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -10010,12 +10314,16 @@
       },
       "generated_tei": {
         "body_p_count": 3,
+        "body_p_count_raw": 3,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -10130,12 +10438,16 @@
       },
       "generated_tei": {
         "body_p_count": 7,
+        "body_p_count_raw": 7,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -10250,12 +10562,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -10374,12 +10690,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -10499,12 +10819,16 @@
       },
       "generated_tei": {
         "body_p_count": 20,
+        "body_p_count_raw": 20,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -10626,12 +10950,16 @@
       },
       "generated_tei": {
         "body_p_count": 20,
+        "body_p_count_raw": 20,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -10752,12 +11080,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -10878,12 +11210,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -11004,12 +11340,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 2,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -11132,12 +11472,16 @@
       },
       "generated_tei": {
         "body_p_count": 16,
+        "body_p_count_raw": 16,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 126,
+        "body_p_count_raw": 126,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -11271,12 +11615,16 @@
       },
       "generated_tei": {
         "body_p_count": 127,
+        "body_p_count_raw": 127,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 126,
+        "body_p_count_raw": 126,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -11408,12 +11756,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 126,
+        "body_p_count_raw": 126,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -11530,15 +11882,15 @@
       "parser_ir": {
         "schema_hash": "sha256:a1fcd348bf396d8d4e6f30ffb928b76b3802b594ea773ed6fa9e1dac52edf712",
         "nodes": 15,
-        "paragraph_count": 10,
+        "paragraph_count": 7,
         "source_note_count": 0
       },
       "paragraph_rendering": {
-        "total_ranges": 10,
+        "total_ranges": 7,
         "page_break_nodes": 0,
-        "body_ranges": 10,
+        "body_ranges": 7,
         "source_note_ranges": 0,
-        "empty_body_ranges": 3,
+        "empty_body_ranges": 0,
         "structural_only_body_ranges": 0,
         "body_ranges_with_inline_content": 7,
         "source_note_back_ranges": 0,
@@ -11547,12 +11899,16 @@
       },
       "generated_tei": {
         "body_p_count": 7,
+        "body_p_count_raw": 7,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 126,
+        "body_p_count_raw": 126,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -11589,8 +11945,8 @@
       },
       "deltas": {
         "body_p_count": -119,
-        "generated_vs_parser_ir_body_p_count": -3,
-        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": -3,
         "aat_paragraph_blocks_vs_tei_eaj_body_p_count": -116,
         "body_note_count": 0,
         "back_source_note_count": 0
@@ -11635,7 +11991,7 @@
       },
       "classification": {
         "paragraph_delta_bucket": "under_split",
-        "paragraph_origin_bucket": "empty_body_paragraph_range",
+        "paragraph_origin_bucket": "converter_paragraph_mismatch",
         "source_note_body_excluded": false,
         "source_note_back_present": false
       }
@@ -11684,12 +12040,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 3,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 126,
+        "body_p_count_raw": 126,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -11821,12 +12181,16 @@
       },
       "generated_tei": {
         "body_p_count": 8,
+        "body_p_count_raw": 8,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -11947,12 +12311,16 @@
       },
       "generated_tei": {
         "body_p_count": 9,
+        "body_p_count_raw": 9,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -12073,12 +12441,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -12199,12 +12571,16 @@
       },
       "generated_tei": {
         "body_p_count": 3,
+        "body_p_count_raw": 3,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -12325,12 +12701,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 2,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -12451,12 +12831,16 @@
       },
       "generated_tei": {
         "body_p_count": 9,
+        "body_p_count_raw": 9,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -12577,12 +12961,16 @@
       },
       "generated_tei": {
         "body_p_count": 10,
+        "body_p_count_raw": 10,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -12703,12 +13091,16 @@
       },
       "generated_tei": {
         "body_p_count": 16,
+        "body_p_count_raw": 16,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -12829,12 +13221,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -12955,12 +13351,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 2,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -13081,12 +13481,16 @@
       },
       "generated_tei": {
         "body_p_count": 9,
+        "body_p_count_raw": 9,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 8,
+        "body_p_count_raw": 8,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -13206,12 +13610,16 @@
       },
       "generated_tei": {
         "body_p_count": 10,
+        "body_p_count_raw": 10,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 8,
+        "body_p_count_raw": 8,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -13331,12 +13739,16 @@
       },
       "generated_tei": {
         "body_p_count": 17,
+        "body_p_count_raw": 17,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 8,
+        "body_p_count_raw": 8,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -13456,12 +13868,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 8,
+        "body_p_count_raw": 8,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -13581,12 +13997,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 8,
+        "body_p_count_raw": 8,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -13706,12 +14126,16 @@
       },
       "generated_tei": {
         "body_p_count": 13,
+        "body_p_count_raw": 13,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -13832,12 +14256,16 @@
       },
       "generated_tei": {
         "body_p_count": 14,
+        "body_p_count_raw": 14,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -13958,12 +14386,16 @@
       },
       "generated_tei": {
         "body_p_count": 20,
+        "body_p_count_raw": 20,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -14084,12 +14516,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -14210,12 +14646,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -14336,12 +14776,16 @@
       },
       "generated_tei": {
         "body_p_count": 7,
+        "body_p_count_raw": 7,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -14458,12 +14902,16 @@
       },
       "generated_tei": {
         "body_p_count": 8,
+        "body_p_count_raw": 8,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -14584,12 +15032,16 @@
       },
       "generated_tei": {
         "body_p_count": 14,
+        "body_p_count_raw": 14,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -14706,12 +15158,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -14828,12 +15284,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -14954,12 +15414,16 @@
       },
       "generated_tei": {
         "body_p_count": 5,
+        "body_p_count_raw": 5,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -15080,12 +15544,16 @@
       },
       "generated_tei": {
         "body_p_count": 6,
+        "body_p_count_raw": 6,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -15206,12 +15674,16 @@
       },
       "generated_tei": {
         "body_p_count": 12,
+        "body_p_count_raw": 12,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -15332,12 +15804,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -15458,12 +15934,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 3,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -15584,12 +16064,16 @@
       },
       "generated_tei": {
         "body_p_count": 11,
+        "body_p_count_raw": 11,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -15710,12 +16194,16 @@
       },
       "generated_tei": {
         "body_p_count": 12,
+        "body_p_count_raw": 12,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -15836,12 +16324,16 @@
       },
       "generated_tei": {
         "body_p_count": 18,
+        "body_p_count_raw": 18,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -15962,12 +16454,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -16088,12 +16584,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 2,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -16214,12 +16714,16 @@
       },
       "generated_tei": {
         "body_p_count": 13,
+        "body_p_count_raw": 13,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -16340,12 +16844,16 @@
       },
       "generated_tei": {
         "body_p_count": 14,
+        "body_p_count_raw": 14,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -16466,12 +16974,16 @@
       },
       "generated_tei": {
         "body_p_count": 20,
+        "body_p_count_raw": 20,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -16592,12 +17104,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -16718,12 +17234,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 4,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -16844,12 +17364,16 @@
       },
       "generated_tei": {
         "body_p_count": 10,
+        "body_p_count_raw": 10,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -16970,12 +17494,16 @@
       },
       "generated_tei": {
         "body_p_count": 11,
+        "body_p_count_raw": 11,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -17096,12 +17624,16 @@
       },
       "generated_tei": {
         "body_p_count": 17,
+        "body_p_count_raw": 17,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -17222,12 +17754,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -17348,12 +17884,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 4,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -17474,12 +18014,16 @@
       },
       "generated_tei": {
         "body_p_count": 10,
+        "body_p_count_raw": 10,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -17600,12 +18144,16 @@
       },
       "generated_tei": {
         "body_p_count": 11,
+        "body_p_count_raw": 11,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -17726,12 +18274,16 @@
       },
       "generated_tei": {
         "body_p_count": 17,
+        "body_p_count_raw": 17,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -17852,12 +18404,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -17978,12 +18534,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -18104,12 +18664,16 @@
       },
       "generated_tei": {
         "body_p_count": 6,
+        "body_p_count_raw": 6,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -18230,12 +18794,16 @@
       },
       "generated_tei": {
         "body_p_count": 10,
+        "body_p_count_raw": 10,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -18356,12 +18924,16 @@
       },
       "generated_tei": {
         "body_p_count": 13,
+        "body_p_count_raw": 13,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -18482,12 +19054,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -18608,12 +19184,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -18734,12 +19314,16 @@
       },
       "generated_tei": {
         "body_p_count": 7,
+        "body_p_count_raw": 7,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -18860,12 +19444,16 @@
       },
       "generated_tei": {
         "body_p_count": 8,
+        "body_p_count_raw": 8,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -18986,12 +19574,16 @@
       },
       "generated_tei": {
         "body_p_count": 14,
+        "body_p_count_raw": 14,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -19112,12 +19704,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -19238,12 +19834,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -19364,12 +19964,16 @@
       },
       "generated_tei": {
         "body_p_count": 11,
+        "body_p_count_raw": 11,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -19490,12 +20094,16 @@
       },
       "generated_tei": {
         "body_p_count": 12,
+        "body_p_count_raw": 12,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -19616,12 +20224,16 @@
       },
       "generated_tei": {
         "body_p_count": 18,
+        "body_p_count_raw": 18,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -19742,12 +20354,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -19868,12 +20484,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 6,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -19994,12 +20614,16 @@
       },
       "generated_tei": {
         "body_p_count": 6,
+        "body_p_count_raw": 6,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -20120,12 +20744,16 @@
       },
       "generated_tei": {
         "body_p_count": 7,
+        "body_p_count_raw": 7,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -20246,12 +20874,16 @@
       },
       "generated_tei": {
         "body_p_count": 13,
+        "body_p_count_raw": 13,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -20372,12 +21004,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -20498,12 +21134,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -20624,12 +21264,16 @@
       },
       "generated_tei": {
         "body_p_count": 10,
+        "body_p_count_raw": 10,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -20750,12 +21394,16 @@
       },
       "generated_tei": {
         "body_p_count": 11,
+        "body_p_count_raw": 11,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -20876,12 +21524,16 @@
       },
       "generated_tei": {
         "body_p_count": 17,
+        "body_p_count_raw": 17,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -21002,12 +21654,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -21128,12 +21784,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 3,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -21254,12 +21914,16 @@
       },
       "generated_tei": {
         "body_p_count": 9,
+        "body_p_count_raw": 9,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -21380,12 +22044,16 @@
       },
       "generated_tei": {
         "body_p_count": 10,
+        "body_p_count_raw": 10,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -21506,12 +22174,16 @@
       },
       "generated_tei": {
         "body_p_count": 16,
+        "body_p_count_raw": 16,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -21632,12 +22304,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -21758,12 +22434,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -21885,12 +22565,16 @@
       },
       "generated_tei": {
         "body_p_count": 12,
+        "body_p_count_raw": 12,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -22011,12 +22695,16 @@
       },
       "generated_tei": {
         "body_p_count": 14,
+        "body_p_count_raw": 14,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -22136,12 +22824,16 @@
       },
       "generated_tei": {
         "body_p_count": 20,
+        "body_p_count_raw": 20,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -22261,12 +22953,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -22386,12 +23082,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 2,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -22512,12 +23212,16 @@
       },
       "generated_tei": {
         "body_p_count": 14,
+        "body_p_count_raw": 14,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -22639,12 +23343,16 @@
       },
       "generated_tei": {
         "body_p_count": 16,
+        "body_p_count_raw": 16,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -22765,12 +23473,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -22891,12 +23603,16 @@
       },
       "generated_tei": {
         "body_p_count": 2,
+        "body_p_count_raw": 2,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -23017,12 +23733,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 2,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -23144,12 +23864,16 @@
       },
       "generated_tei": {
         "body_p_count": 8,
+        "body_p_count_raw": 8,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -23271,12 +23995,16 @@
       },
       "generated_tei": {
         "body_p_count": 9,
+        "body_p_count_raw": 9,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -23397,12 +24125,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -23523,12 +24255,16 @@
       },
       "generated_tei": {
         "body_p_count": 2,
+        "body_p_count_raw": 2,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -23649,12 +24385,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -23776,12 +24516,16 @@
       },
       "generated_tei": {
         "body_p_count": 4,
+        "body_p_count_raw": 4,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -23904,12 +24648,16 @@
       },
       "generated_tei": {
         "body_p_count": 5,
+        "body_p_count_raw": 5,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -24031,12 +24779,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -24158,12 +24910,16 @@
       },
       "generated_tei": {
         "body_p_count": 2,
+        "body_p_count_raw": 2,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -24285,12 +25041,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 2,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -24412,12 +25172,16 @@
       },
       "generated_tei": {
         "body_p_count": 134,
+        "body_p_count_raw": 134,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 136,
+        "body_p_count_raw": 136,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -24548,12 +25312,16 @@
       },
       "generated_tei": {
         "body_p_count": 134,
+        "body_p_count_raw": 134,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 136,
+        "body_p_count_raw": 136,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -24684,12 +25452,16 @@
       },
       "generated_tei": {
         "body_p_count": 145,
+        "body_p_count_raw": 145,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 136,
+        "body_p_count_raw": 136,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -24820,12 +25592,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 136,
+        "body_p_count_raw": 136,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -24956,12 +25732,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 9,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 136,
+        "body_p_count_raw": 136,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -25092,12 +25872,16 @@
       },
       "generated_tei": {
         "body_p_count": 62,
+        "body_p_count_raw": 62,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 57,
+        "body_p_count_raw": 57,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -25228,12 +26012,16 @@
       },
       "generated_tei": {
         "body_p_count": 62,
+        "body_p_count_raw": 62,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 57,
+        "body_p_count_raw": 57,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -25364,12 +26152,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 57,
+        "body_p_count_raw": 57,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -25500,12 +26292,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 57,
+        "body_p_count_raw": 57,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -25636,12 +26432,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 13,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 57,
+        "body_p_count_raw": 57,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -25772,12 +26572,16 @@
       },
       "generated_tei": {
         "body_p_count": 74,
+        "body_p_count_raw": 74,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 1,
         "back_source_note_count": 1
       },
       "tei_eaj": {
         "body_p_count": 17,
+        "body_p_count_raw": 17,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -25903,12 +26707,16 @@
       },
       "generated_tei": {
         "body_p_count": 74,
+        "body_p_count_raw": 74,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 1,
         "back_source_note_count": 1
       },
       "tei_eaj": {
         "body_p_count": 17,
+        "body_p_count_raw": 17,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -26038,12 +26846,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 8,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 17,
+        "body_p_count_raw": 17,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -26173,12 +26985,16 @@
       },
       "generated_tei": {
         "body_p_count": 79,
+        "body_p_count_raw": 79,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 17,
+        "body_p_count_raw": 17,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -26308,12 +27124,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 17,
+        "body_p_count_raw": 17,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -26443,12 +27263,16 @@
       },
       "generated_tei": {
         "body_p_count": 74,
+        "body_p_count_raw": 74,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 1,
         "back_source_note_count": 1
       },
       "tei_eaj": {
         "body_p_count": 17,
+        "body_p_count_raw": 17,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -26572,12 +27396,16 @@
       },
       "generated_tei": {
         "body_p_count": 74,
+        "body_p_count_raw": 74,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 1,
         "back_source_note_count": 1
       },
       "tei_eaj": {
         "body_p_count": 17,
+        "body_p_count_raw": 17,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -26705,12 +27533,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 8,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 17,
+        "body_p_count_raw": 17,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -26838,12 +27670,16 @@
       },
       "generated_tei": {
         "body_p_count": 79,
+        "body_p_count_raw": 79,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 17,
+        "body_p_count_raw": 17,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -26971,12 +27807,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 17,
+        "body_p_count_raw": 17,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -27104,12 +27944,16 @@
       },
       "generated_tei": {
         "body_p_count": 39,
+        "body_p_count_raw": 39,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 4,
+        "body_p_count_raw": 4,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -27231,12 +28075,16 @@
       },
       "generated_tei": {
         "body_p_count": 39,
+        "body_p_count_raw": 39,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 4,
+        "body_p_count_raw": 4,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -27358,12 +28206,16 @@
       },
       "generated_tei": {
         "body_p_count": 43,
+        "body_p_count_raw": 43,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 4,
+        "body_p_count_raw": 4,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -27485,12 +28337,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 4,
+        "body_p_count_raw": 4,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -27612,12 +28468,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 45,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 4,
+        "body_p_count_raw": 4,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -27741,12 +28601,16 @@
       },
       "generated_tei": {
         "body_p_count": 15,
+        "body_p_count_raw": 15,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 12,
+        "body_p_count_raw": 12,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -27874,12 +28738,16 @@
       },
       "generated_tei": {
         "body_p_count": 12,
+        "body_p_count_raw": 12,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 12,
+        "body_p_count_raw": 12,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -28006,12 +28874,16 @@
       },
       "generated_tei": {
         "body_p_count": 23,
+        "body_p_count_raw": 23,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 12,
+        "body_p_count_raw": 12,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -28138,12 +29010,16 @@
       },
       "generated_tei": {
         "body_p_count": 4,
+        "body_p_count_raw": 4,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 12,
+        "body_p_count_raw": 12,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -28269,12 +29145,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 4,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 12,
+        "body_p_count_raw": 12,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -28401,12 +29281,16 @@
       },
       "generated_tei": {
         "body_p_count": 61,
+        "body_p_count_raw": 61,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 110,
+        "body_p_count_raw": 110,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -28544,12 +29428,16 @@
       },
       "generated_tei": {
         "body_p_count": 148,
+        "body_p_count_raw": 148,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 110,
+        "body_p_count_raw": 110,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -28686,12 +29574,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 110,
+        "body_p_count_raw": 110,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -28812,15 +29704,15 @@
       "parser_ir": {
         "schema_hash": "sha256:a1fcd348bf396d8d4e6f30ffb928b76b3802b594ea773ed6fa9e1dac52edf712",
         "nodes": 42,
-        "paragraph_count": 39,
+        "paragraph_count": 28,
         "source_note_count": 0
       },
       "paragraph_rendering": {
-        "total_ranges": 39,
+        "total_ranges": 28,
         "page_break_nodes": 0,
-        "body_ranges": 39,
+        "body_ranges": 28,
         "source_note_ranges": 0,
-        "empty_body_ranges": 11,
+        "empty_body_ranges": 0,
         "structural_only_body_ranges": 0,
         "body_ranges_with_inline_content": 28,
         "source_note_back_ranges": 0,
@@ -28829,12 +29721,16 @@
       },
       "generated_tei": {
         "body_p_count": 28,
+        "body_p_count_raw": 28,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 110,
+        "body_p_count_raw": 110,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -28876,8 +29772,8 @@
       },
       "deltas": {
         "body_p_count": -82,
-        "generated_vs_parser_ir_body_p_count": -11,
-        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": -11,
         "aat_paragraph_blocks_vs_tei_eaj_body_p_count": -71,
         "body_note_count": 0,
         "back_source_note_count": 0
@@ -28922,7 +29818,7 @@
       },
       "classification": {
         "paragraph_delta_bucket": "under_split",
-        "paragraph_origin_bucket": "empty_body_paragraph_range",
+        "paragraph_origin_bucket": "converter_paragraph_mismatch",
         "source_note_body_excluded": false,
         "source_note_back_present": false
       }
@@ -28971,12 +29867,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 110,
+        "body_p_count_raw": 110,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -29115,12 +30015,16 @@
       },
       "generated_tei": {
         "body_p_count": 30,
+        "body_p_count_raw": 30,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 154,
+        "body_p_count_raw": 154,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -29252,12 +30156,16 @@
       },
       "generated_tei": {
         "body_p_count": 154,
+        "body_p_count_raw": 154,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 154,
+        "body_p_count_raw": 154,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -29387,12 +30295,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 154,
+        "body_p_count_raw": 154,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -29507,15 +30419,15 @@
       "parser_ir": {
         "schema_hash": "sha256:a1fcd348bf396d8d4e6f30ffb928b76b3802b594ea773ed6fa9e1dac52edf712",
         "nodes": 339,
-        "paragraph_count": 52,
+        "paragraph_count": 28,
         "source_note_count": 0
       },
       "paragraph_rendering": {
-        "total_ranges": 52,
+        "total_ranges": 28,
         "page_break_nodes": 0,
-        "body_ranges": 52,
+        "body_ranges": 28,
         "source_note_ranges": 0,
-        "empty_body_ranges": 24,
+        "empty_body_ranges": 0,
         "structural_only_body_ranges": 0,
         "body_ranges_with_inline_content": 28,
         "source_note_back_ranges": 0,
@@ -29524,12 +30436,16 @@
       },
       "generated_tei": {
         "body_p_count": 28,
+        "body_p_count_raw": 28,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 154,
+        "body_p_count_raw": 154,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -29564,8 +30480,8 @@
       },
       "deltas": {
         "body_p_count": -126,
-        "generated_vs_parser_ir_body_p_count": -24,
-        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": -24,
         "aat_paragraph_blocks_vs_tei_eaj_body_p_count": -102,
         "body_note_count": 0,
         "back_source_note_count": 0
@@ -29610,7 +30526,7 @@
       },
       "classification": {
         "paragraph_delta_bucket": "under_split",
-        "paragraph_origin_bucket": "empty_body_paragraph_range",
+        "paragraph_origin_bucket": "converter_paragraph_mismatch",
         "source_note_body_excluded": false,
         "source_note_back_present": false
       }
@@ -29659,12 +30575,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 10,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 154,
+        "body_p_count_raw": 154,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -29795,12 +30715,16 @@
       },
       "generated_tei": {
         "body_p_count": 466,
+        "body_p_count_raw": 466,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 496,
+        "body_p_count_raw": 496,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -29937,12 +30861,16 @@
       },
       "generated_tei": {
         "body_p_count": 529,
+        "body_p_count_raw": 529,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 496,
+        "body_p_count_raw": 496,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -30078,12 +31006,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 496,
+        "body_p_count_raw": 496,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -30203,15 +31135,15 @@
       "parser_ir": {
         "schema_hash": "sha256:a1fcd348bf396d8d4e6f30ffb928b76b3802b594ea773ed6fa9e1dac52edf712",
         "nodes": 1059,
-        "paragraph_count": 7,
+        "paragraph_count": 6,
         "source_note_count": 0
       },
       "paragraph_rendering": {
-        "total_ranges": 7,
+        "total_ranges": 6,
         "page_break_nodes": 0,
-        "body_ranges": 7,
+        "body_ranges": 6,
         "source_note_ranges": 0,
-        "empty_body_ranges": 1,
+        "empty_body_ranges": 0,
         "structural_only_body_ranges": 0,
         "body_ranges_with_inline_content": 6,
         "source_note_back_ranges": 0,
@@ -30220,12 +31152,16 @@
       },
       "generated_tei": {
         "body_p_count": 6,
+        "body_p_count_raw": 6,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 496,
+        "body_p_count_raw": 496,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -30266,8 +31202,8 @@
       },
       "deltas": {
         "body_p_count": -490,
-        "generated_vs_parser_ir_body_p_count": -1,
-        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": -1,
         "aat_paragraph_blocks_vs_tei_eaj_body_p_count": -489,
         "body_note_count": 0,
         "back_source_note_count": 0
@@ -30312,7 +31248,7 @@
       },
       "classification": {
         "paragraph_delta_bucket": "under_split",
-        "paragraph_origin_bucket": "empty_body_paragraph_range",
+        "paragraph_origin_bucket": "converter_paragraph_mismatch",
         "source_note_body_excluded": false,
         "source_note_back_present": false
       }
@@ -30361,12 +31297,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 70,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 496,
+        "body_p_count_raw": 496,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -30502,12 +31442,16 @@
       },
       "generated_tei": {
         "body_p_count": 186,
+        "body_p_count_raw": 186,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 26,
+        "body_p_count_raw": 26,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -30630,12 +31574,16 @@
       },
       "generated_tei": {
         "body_p_count": 186,
+        "body_p_count_raw": 186,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 26,
+        "body_p_count_raw": 26,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -30758,12 +31706,16 @@
       },
       "generated_tei": {
         "body_p_count": 202,
+        "body_p_count_raw": 202,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 26,
+        "body_p_count_raw": 26,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -30886,12 +31838,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 26,
+        "body_p_count_raw": 26,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -31014,12 +31970,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 26,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 26,
+        "body_p_count_raw": 26,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -31143,12 +32103,16 @@
       },
       "generated_tei": {
         "body_p_count": 27,
+        "body_p_count_raw": 27,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 18,
+        "body_p_count_raw": 18,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -31272,12 +32236,16 @@
       },
       "generated_tei": {
         "body_p_count": 27,
+        "body_p_count_raw": 27,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 18,
+        "body_p_count_raw": 18,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -31400,12 +32368,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 18,
+        "body_p_count_raw": 18,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -31529,12 +32501,16 @@
       },
       "generated_tei": {
         "body_p_count": 5,
+        "body_p_count_raw": 5,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 18,
+        "body_p_count_raw": 18,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -31657,12 +32633,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 3,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 18,
+        "body_p_count_raw": 18,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -31785,12 +32765,16 @@
       },
       "generated_tei": {
         "body_p_count": 134,
+        "body_p_count_raw": 134,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 123,
+        "body_p_count_raw": 123,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -31918,12 +32902,16 @@
       },
       "generated_tei": {
         "body_p_count": 134,
+        "body_p_count_raw": 134,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 123,
+        "body_p_count_raw": 123,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -32051,12 +33039,16 @@
       },
       "generated_tei": {
         "body_p_count": 145,
+        "body_p_count_raw": 145,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 123,
+        "body_p_count_raw": 123,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -32184,12 +33176,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 123,
+        "body_p_count_raw": 123,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -32317,12 +33313,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 9,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 123,
+        "body_p_count_raw": 123,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -32451,12 +33451,16 @@
       },
       "generated_tei": {
         "body_p_count": 450,
+        "body_p_count_raw": 450,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 29,
+        "body_p_count_raw": 29,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -32588,12 +33592,16 @@
       },
       "generated_tei": {
         "body_p_count": 880,
+        "body_p_count_raw": 880,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 29,
+        "body_p_count_raw": 29,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -32724,12 +33732,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 29,
+        "body_p_count_raw": 29,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -32844,15 +33856,15 @@
       "parser_ir": {
         "schema_hash": "sha256:a1fcd348bf396d8d4e6f30ffb928b76b3802b594ea773ed6fa9e1dac52edf712",
         "nodes": 738,
-        "paragraph_count": 336,
+        "paragraph_count": 331,
         "source_note_count": 0
       },
       "paragraph_rendering": {
-        "total_ranges": 336,
+        "total_ranges": 331,
         "page_break_nodes": 0,
-        "body_ranges": 336,
+        "body_ranges": 331,
         "source_note_ranges": 0,
-        "empty_body_ranges": 5,
+        "empty_body_ranges": 0,
         "structural_only_body_ranges": 0,
         "body_ranges_with_inline_content": 331,
         "source_note_back_ranges": 0,
@@ -32861,12 +33873,16 @@
       },
       "generated_tei": {
         "body_p_count": 331,
+        "body_p_count_raw": 331,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 29,
+        "body_p_count_raw": 29,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -32902,8 +33918,8 @@
       },
       "deltas": {
         "body_p_count": 302,
-        "generated_vs_parser_ir_body_p_count": -5,
-        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": -5,
         "aat_paragraph_blocks_vs_tei_eaj_body_p_count": 307,
         "body_note_count": 1,
         "back_source_note_count": 0
@@ -32948,7 +33964,7 @@
       },
       "classification": {
         "paragraph_delta_bucket": "over_split",
-        "paragraph_origin_bucket": "empty_body_paragraph_range",
+        "paragraph_origin_bucket": "converter_paragraph_mismatch",
         "source_note_body_excluded": false,
         "source_note_back_present": false
       }
@@ -32997,12 +34013,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 35,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 29,
+        "body_p_count_raw": 29,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -33133,12 +34153,16 @@
       },
       "generated_tei": {
         "body_p_count": 77,
+        "body_p_count_raw": 77,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 3,
+        "body_p_count_raw": 3,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -33263,12 +34287,16 @@
       },
       "generated_tei": {
         "body_p_count": 77,
+        "body_p_count_raw": 77,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 3,
+        "body_p_count_raw": 3,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -33393,12 +34421,16 @@
       },
       "generated_tei": {
         "body_p_count": 82,
+        "body_p_count_raw": 82,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 3,
+        "body_p_count_raw": 3,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -33523,12 +34555,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 3,
+        "body_p_count_raw": 3,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -33653,12 +34689,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 2,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 3,
+        "body_p_count_raw": 3,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -33784,12 +34824,16 @@
       },
       "generated_tei": {
         "body_p_count": 74,
+        "body_p_count_raw": 74,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 24,
+        "body_p_count_raw": 24,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 20,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -33910,12 +34954,16 @@
       },
       "generated_tei": {
         "body_p_count": 74,
+        "body_p_count_raw": 74,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 24,
+        "body_p_count_raw": 24,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 20,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -34035,12 +35083,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 24,
+        "body_p_count_raw": 24,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 20,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -34161,12 +35213,16 @@
       },
       "generated_tei": {
         "body_p_count": 6,
+        "body_p_count_raw": 6,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 24,
+        "body_p_count_raw": 24,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 20,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -34286,12 +35342,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 5,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 24,
+        "body_p_count_raw": 24,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 20,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -34412,12 +35472,16 @@
       },
       "generated_tei": {
         "body_p_count": 74,
+        "body_p_count_raw": 74,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 13,
+        "body_p_count_raw": 13,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 2,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -34538,12 +35602,16 @@
       },
       "generated_tei": {
         "body_p_count": 74,
+        "body_p_count_raw": 74,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 13,
+        "body_p_count_raw": 13,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 2,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -34663,12 +35731,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 13,
+        "body_p_count_raw": 13,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 2,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -34789,12 +35861,16 @@
       },
       "generated_tei": {
         "body_p_count": 6,
+        "body_p_count_raw": 6,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 13,
+        "body_p_count_raw": 13,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 2,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -34914,12 +35990,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 5,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 13,
+        "body_p_count_raw": 13,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 2,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -35040,12 +36120,16 @@
       },
       "generated_tei": {
         "body_p_count": 74,
+        "body_p_count_raw": 74,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 8,
+        "body_p_count_raw": 8,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -35166,12 +36250,16 @@
       },
       "generated_tei": {
         "body_p_count": 74,
+        "body_p_count_raw": 74,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 8,
+        "body_p_count_raw": 8,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -35291,12 +36379,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 8,
+        "body_p_count_raw": 8,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -35417,12 +36509,16 @@
       },
       "generated_tei": {
         "body_p_count": 6,
+        "body_p_count_raw": 6,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 8,
+        "body_p_count_raw": 8,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -35542,12 +36638,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 5,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 8,
+        "body_p_count_raw": 8,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 1,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -35668,12 +36768,16 @@
       },
       "generated_tei": {
         "body_p_count": 72,
+        "body_p_count_raw": 72,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 89,
+        "body_p_count_raw": 89,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -35806,12 +36910,16 @@
       },
       "generated_tei": {
         "body_p_count": 145,
+        "body_p_count_raw": 145,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 89,
+        "body_p_count_raw": 89,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -35943,12 +37051,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 89,
+        "body_p_count_raw": 89,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -36064,15 +37176,15 @@
       "parser_ir": {
         "schema_hash": "sha256:a1fcd348bf396d8d4e6f30ffb928b76b3802b594ea773ed6fa9e1dac52edf712",
         "nodes": 175,
-        "paragraph_count": 65,
+        "paragraph_count": 43,
         "source_note_count": 0
       },
       "paragraph_rendering": {
-        "total_ranges": 65,
+        "total_ranges": 43,
         "page_break_nodes": 0,
-        "body_ranges": 65,
+        "body_ranges": 43,
         "source_note_ranges": 0,
-        "empty_body_ranges": 22,
+        "empty_body_ranges": 0,
         "structural_only_body_ranges": 0,
         "body_ranges_with_inline_content": 43,
         "source_note_back_ranges": 0,
@@ -36081,12 +37193,16 @@
       },
       "generated_tei": {
         "body_p_count": 43,
+        "body_p_count_raw": 43,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 89,
+        "body_p_count_raw": 89,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -36123,8 +37239,8 @@
       },
       "deltas": {
         "body_p_count": -46,
-        "generated_vs_parser_ir_body_p_count": -22,
-        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": 0,
+        "generated_vs_parser_ir_body_p_count": 0,
+        "parser_ir_paragraph_count_vs_aat_paragraph_blocks": -22,
         "aat_paragraph_blocks_vs_tei_eaj_body_p_count": -24,
         "body_note_count": 0,
         "back_source_note_count": 0
@@ -36169,7 +37285,7 @@
       },
       "classification": {
         "paragraph_delta_bucket": "under_split",
-        "paragraph_origin_bucket": "empty_body_paragraph_range",
+        "paragraph_origin_bucket": "converter_paragraph_mismatch",
         "source_note_body_excluded": false,
         "source_note_back_present": false
       }
@@ -36218,12 +37334,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 10,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 89,
+        "body_p_count_raw": 89,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -36355,12 +37475,16 @@
       },
       "generated_tei": {
         "body_p_count": 15,
+        "body_p_count_raw": 15,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 15,
+        "body_p_count_raw": 15,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -36483,12 +37607,16 @@
       },
       "generated_tei": {
         "body_p_count": 15,
+        "body_p_count_raw": 15,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 15,
+        "body_p_count_raw": 15,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -36611,12 +37739,16 @@
       },
       "generated_tei": {
         "body_p_count": 19,
+        "body_p_count_raw": 19,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 15,
+        "body_p_count_raw": 15,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -36739,12 +37871,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 15,
+        "body_p_count_raw": 15,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,
@@ -36867,12 +38003,16 @@
       },
       "generated_tei": {
         "body_p_count": 1,
+        "body_p_count_raw": 1,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0
       },
       "tei_eaj": {
         "body_p_count": 15,
+        "body_p_count_raw": 15,
+        "body_missing_gap_p_count": 0,
         "body_note_count": 0,
         "back_note_count": 0,
         "back_source_note_count": 0,

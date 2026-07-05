@@ -5,7 +5,7 @@
     "works_scanned": 17894,
     "unallowlisted_unknown_markers_total": 0
   },
-  "parser_ir_infrastructure_verdict": "LEVEL3_IR_INFRASTRUCTURE_BLOCKED",
+  "parser_ir_infrastructure_verdict": "LEVEL3_IR_INFRASTRUCTURE_READY",
   "plain_prose_admission": {
     "scope": "tei-eaj-generated-matrix plain_prose rows",
     "plaintext_policy": {
@@ -16,17 +16,15 @@
     "rows_total": 135,
     "rows_passed": 1,
     "rows_failed": 134,
-    "verdict": "LEVEL3_PLAIN_PROSE_BLOCKED_ADAPTER_FIDELITY_AND_TEXT_POLICY_AND_EVIDENCE_AND_ABC_RENDERER",
+    "verdict": "LEVEL3_PLAIN_PROSE_BLOCKED_ADAPTER_FIDELITY_AND_TEXT_POLICY_AND_PARSER_IR",
     "blocking_owners": [
       "adapter",
       "policy",
-      "evidence",
-      "abc_renderer"
+      "parser_ir"
     ],
     "failures_by_owner": {
-      "abc_renderer": 2,
       "adapter": 86,
-      "evidence": 2,
+      "parser_ir": 2,
       "policy": 130
     },
     "failures_by_adapter": {
@@ -49,7 +47,7 @@
       "adapter_over_segmented": 75,
       "adapter_under_segmented": 1,
       "aligned": 47,
-      "empty_body_paragraph_range": 2
+      "converter_paragraph_mismatch": 2
     },
     "failed_rows": [
       {
@@ -204,17 +202,15 @@
         "title": "元禄時代小説第一巻「本朝二十不孝」ぬきほ（言文一致訳）",
         "tei_eaj_file": "data/complete/tei_lib_lv3/15938_tei.xml",
         "adapter": "aozora",
-        "paragraph_origin_bucket": "empty_body_paragraph_range",
+        "paragraph_origin_bucket": "converter_paragraph_mismatch",
         "body_text_match_bucket": "different",
         "passed": false,
         "owners": [
-          "abc_renderer",
-          "evidence",
+          "parser_ir",
           "policy"
         ],
         "reasons": [
-          "materialization did not pass",
-          "unknown paragraph origin: empty_body_paragraph_range",
+          "parser-IR paragraph mismatch: converter_paragraph_mismatch",
           "text policy required for different"
         ]
       },
@@ -538,17 +534,15 @@
         "title": "乳母車",
         "tei_eaj_file": "data/complete/tei_lib_lv3/45093_tei.xml",
         "adapter": "aozora",
-        "paragraph_origin_bucket": "empty_body_paragraph_range",
+        "paragraph_origin_bucket": "converter_paragraph_mismatch",
         "body_text_match_bucket": "different",
         "passed": false,
         "owners": [
-          "abc_renderer",
-          "evidence",
+          "parser_ir",
           "policy"
         ],
         "reasons": [
-          "materialization did not pass",
-          "unknown paragraph origin: empty_body_paragraph_range",
+          "parser-IR paragraph mismatch: converter_paragraph_mismatch",
           "text policy required for different"
         ]
       },

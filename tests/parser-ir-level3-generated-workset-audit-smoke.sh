@@ -25,6 +25,45 @@ cat > "$tei_root/data/complete/tei_lib_lv3/fixture_tei.xml" <<'XML'
 </TEI>
 XML
 
+cat > "$tei_root/data/complete/tei_lib_lv3/empty_tei.xml" <<'XML'
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+  <text>
+    <body>
+      <p>欠落していない本文。</p>
+      <p>二段落。</p>
+    </body>
+  </text>
+</TEI>
+XML
+
+cat > "$out_dir/empty-raw.aat.json" <<'JSON'
+{
+  "version": 1,
+  "work_id": "empty-raw",
+  "meta": {
+    "adapter": "aozora",
+    "adapter_version": "fixture",
+    "parse_complete": true,
+    "source_encoding": "windows-31j",
+    "source_hash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+    "warnings": []
+  },
+  "blocks": [
+    {
+      "kind": "paragraph",
+      "content": [
+        {
+          "kind": "raw",
+          "source": "",
+          "x-provenance": "parser-derived"
+        }
+      ]
+    }
+  ]
+}
+JSON
+
 cat > "$out_dir/workset.json" <<JSON
 {
   "schema_version": "tei-eaj-aozora-workset-export-v1",
@@ -37,6 +76,16 @@ cat > "$out_dir/workset.json" <<JSON
       "work_id": "fixture",
       "title": "Fixture",
       "tei_eaj_file": "data/complete/tei_lib_lv3/fixture_tei.xml",
+      "level": "Level 3",
+      "state": "complete",
+      "comparison_status": "missing_abc_counterpart",
+      "tei_eaj_p_count": 2,
+      "tei_eaj_note_count": 0
+    },
+    {
+      "work_id": "empty",
+      "title": "Empty Fixture",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/empty_tei.xml",
       "level": "Level 3",
       "state": "complete",
       "comparison_status": "missing_abc_counterpart",
@@ -108,6 +157,43 @@ cat > "$out_dir/structural-summary.json" <<JSON
           }
         }
       ]
+    },
+    {
+      "tei": {
+        "work_id": "empty",
+        "title": "Empty Fixture",
+        "tei_eaj_file": "data/complete/tei_lib_lv3/empty_tei.xml",
+        "level": "Level 3",
+        "tei_eaj_p_count": 2,
+        "tei_eaj_note_count": 0
+      },
+      "classification": {
+        "kind": "parser_ir_level3_representable"
+      },
+      "aat_inputs": [
+        {
+          "label": "aozora:empty",
+          "path": "$out_dir/empty-raw.aat.json",
+          "aat": {
+            "adapter": "aozora",
+            "adapter_version": "fixture",
+            "paragraph_blocks": 1,
+            "final_source_attribution_candidate": false
+          },
+          "conversion": {
+            "success": true,
+            "error": null
+          },
+          "parser_ir": {
+            "paragraph_count": 0,
+            "paragraphs_represented": false,
+            "source_attribution_represented": false
+          },
+          "verdict": {
+            "residual_free": true
+          }
+        }
+      ]
     }
   ]
 }
@@ -125,14 +211,15 @@ python3 "$repo_root/reports/parser-ir/tei-eaj-generated-compare.py" \
   --out-dir "$out_dir/audit" \
   --candidate-mode all \
   --jobs 2 \
-  --max-rows 1
+  --max-rows 0
 
 jq -e '.inputs.candidate_mode == "all"' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.inputs.jobs == 2' "$out_dir/audit/summary.json" >/dev/null
-jq -e '.totals.rows_attempted == 2' "$out_dir/audit/summary.json" >/dev/null
-jq -e '.totals.tei_eaj_rows_attempted == 1' "$out_dir/audit/summary.json" >/dev/null
-jq -e '.totals.materialization_succeeded == 2' "$out_dir/audit/summary.json" >/dev/null
-jq -e '([.rows[].selected_aat.adapter] | unique | length) == 2' "$out_dir/audit/summary.json" >/dev/null
+jq -e '.totals.rows_attempted == 3' "$out_dir/audit/summary.json" >/dev/null
+jq -e '.totals.tei_eaj_rows_attempted == 2' "$out_dir/audit/summary.json" >/dev/null
+jq -e '.totals.materialization_succeeded == 3' "$out_dir/audit/summary.json" >/dev/null
+jq -e '([.rows[].selected_aat.adapter] | unique | length) == 3' "$out_dir/audit/summary.json" >/dev/null
+jq -e '[.rows[] | select(.selected_aat.adapter == "aozora" and .parser_ir.nodes == 0 and .parser_ir.paragraph_count == 0 and .generated_tei.body_missing_gap_p_count == 1 and .generated_tei.body_p_count == 0 and .materialization.status == "passed" and .classification.paragraph_origin_bucket == "converter_paragraph_mismatch")] | length == 1' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.rows[0].generated_tei.body_p_count >= 1' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.rows[0].tei_eaj.body_p_count == 2' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.rows[0].tei_eaj.structure_profile == "plain_prose"' "$out_dir/audit/summary.json" >/dev/null
@@ -148,15 +235,19 @@ jq -e '.rows[0].paragraph_rendering.source_note_back_ranges != null' "$out_dir/a
 jq -e '.rows[0].deltas.generated_vs_parser_ir_body_p_count != null' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.rows[0].deltas.aat_paragraph_blocks_vs_tei_eaj_body_p_count != null' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.paragraph_origin_buckets | type == "object"' "$out_dir/audit/summary.json" >/dev/null
-jq -e '.tei_eaj_structure_profile_buckets.plain_prose == 2' "$out_dir/audit/summary.json" >/dev/null
+jq -e '.tei_eaj_structure_profile_buckets.plain_prose == 3' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.paragraph_origin_by_tei_eaj_profile.plain_prose | type == "object"' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.adapter_paragraph_origin_buckets.aozora2html | type == "object"' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.adapter_paragraph_origin_buckets["aozora-rs"] | type == "object"' "$out_dir/audit/summary.json" >/dev/null
+jq -e '.adapter_paragraph_origin_buckets.aozora | type == "object"' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.adapter_paragraph_delta_buckets.aozora2html | type == "object"' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.adapter_paragraph_delta_buckets["aozora-rs"] | type == "object"' "$out_dir/audit/summary.json" >/dev/null
+jq -e '.adapter_paragraph_delta_buckets.aozora | type == "object"' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.adapter_body_text_match_buckets.aozora2html | type == "object"' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.adapter_body_text_match_buckets["aozora-rs"] | type == "object"' "$out_dir/audit/summary.json" >/dev/null
+jq -e '.adapter_body_text_match_buckets.aozora | type == "object"' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.body_text_relation_buckets | type == "object"' "$out_dir/audit/summary.json" >/dev/null
+! grep -q '\.worktrees/' "$out_dir/audit/summary.json"
 jq -e '.rows[0].text.body_base_text_relation != null' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.rows[0].text.generated_body_base_text_length > 0' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.rows[0].text.tei_eaj_body_base_text_length > 0' "$out_dir/audit/summary.json" >/dev/null

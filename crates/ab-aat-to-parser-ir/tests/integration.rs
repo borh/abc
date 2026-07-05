@@ -579,8 +579,13 @@ fn recovers_direct_raw_without_rendering_parser_residue_as_body_text() {
         ]
     );
     assert_eq!(
-        output.parser_ir.pointer("/paragraphs/2/node_range"),
-        Some(&json!({"start": 2, "end": 2}))
+        output
+            .parser_ir
+            .pointer("/paragraphs")
+            .and_then(Value::as_array)
+            .map(Vec::len),
+        Some(2),
+        "parser-derived raw residue must not create an empty body paragraph range"
     );
     assert!(has_divergence_record(
         &output,

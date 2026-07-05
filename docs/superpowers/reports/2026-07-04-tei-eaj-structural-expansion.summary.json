@@ -131,7 +131,7 @@
               "ruby": 151,
               "text": 181
             },
-            "paragraph_count": 52,
+            "paragraph_count": 28,
             "paragraphs_represented": true,
             "source_attribution_represented": false
           },
@@ -863,8 +863,8 @@
           "parser_ir": {
             "node_count": 0,
             "node_kinds": {},
-            "paragraph_count": 1,
-            "paragraphs_represented": true,
+            "paragraph_count": 0,
+            "paragraphs_represented": false,
             "source_attribution_represented": false
           },
           "divergence": {
@@ -878,10 +878,12 @@
             "paragraph_structural_records": []
           },
           "verdict": {
-            "paragraphs_represented_in_parser_ir": true,
+            "paragraphs_represented_in_parser_ir": false,
             "source_attribution_represented_in_parser_ir": true,
-            "residual_free": true,
-            "notes": []
+            "residual_free": false,
+            "notes": [
+              "AAT preserved 1 paragraph block(s), but parser-IR has no explicit paragraphs[] row"
+            ]
           }
         }
       ],
@@ -3178,8 +3180,8 @@
           "parser_ir": {
             "node_count": 0,
             "node_kinds": {},
-            "paragraph_count": 1,
-            "paragraphs_represented": true,
+            "paragraph_count": 0,
+            "paragraphs_represented": false,
             "source_attribution_represented": false
           },
           "divergence": {
@@ -3193,10 +3195,12 @@
             "paragraph_structural_records": []
           },
           "verdict": {
-            "paragraphs_represented_in_parser_ir": true,
+            "paragraphs_represented_in_parser_ir": false,
             "source_attribution_represented_in_parser_ir": true,
-            "residual_free": true,
-            "notes": []
+            "residual_free": false,
+            "notes": [
+              "AAT preserved 1 paragraph block(s), but parser-IR has no explicit paragraphs[] row"
+            ]
           }
         }
       ],
@@ -3893,7 +3897,7 @@
               "ruby": 445,
               "text": 449
             },
-            "paragraph_count": 14,
+            "paragraph_count": 8,
             "paragraphs_represented": true,
             "source_attribution_represented": false
           },
@@ -5028,7 +5032,7 @@
               "heading": 2,
               "text": 9
             },
-            "paragraph_count": 10,
+            "paragraph_count": 7,
             "paragraphs_represented": true,
             "source_attribution_represented": false
           },
@@ -12799,7 +12803,7 @@
               "ruby": 7,
               "text": 32
             },
-            "paragraph_count": 39,
+            "paragraph_count": 28,
             "paragraphs_represented": true,
             "source_attribution_represented": false
           },
@@ -13181,7 +13185,7 @@
               "ruby": 151,
               "text": 181
             },
-            "paragraph_count": 52,
+            "paragraph_count": 28,
             "paragraphs_represented": true,
             "source_attribution_represented": false
           },
@@ -13484,7 +13488,7 @@
               "ruby": 526,
               "text": 532
             },
-            "paragraph_count": 7,
+            "paragraph_count": 6,
             "paragraphs_represented": true,
             "source_attribution_represented": false
           },
@@ -14657,7 +14661,7 @@
               "ruby": 196,
               "text": 528
             },
-            "paragraph_count": 336,
+            "paragraph_count": 331,
             "paragraphs_represented": true,
             "source_attribution_represented": false
           },
@@ -16106,7 +16110,7 @@
               "ruby": 66,
               "text": 109
             },
-            "paragraph_count": 65,
+            "paragraph_count": 43,
             "paragraphs_represented": true,
             "source_attribution_represented": false
           },

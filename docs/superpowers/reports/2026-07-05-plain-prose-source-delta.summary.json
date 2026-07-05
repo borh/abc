@@ -47,18 +47,20 @@
   "classification_counts": {
     "adapter_paragraph_bug": 86,
     "evidence_gap": 5,
+    "parser_ir_projection_bug": 2,
     "ruby_metadata_not_plaintext": 64,
-    "source_text_policy_required": 66,
-    "tei_eaj_editorial_segmentation": 2
+    "source_text_policy_required": 66
   },
   "blocking_owners": [
     "adapter",
     "evidence",
-    "policy"
+    "policy",
+    "parser_ir"
   ],
   "blocking_owner_counts": {
     "adapter": 86,
     "evidence": 5,
+    "parser_ir": 2,
     "policy": 130
   },
   "rows": [
@@ -294,21 +296,22 @@
       "level": null,
       "state": null,
       "adapter": "aozora",
-      "paragraph_origin_bucket": "empty_body_paragraph_range",
+      "paragraph_origin_bucket": "converter_paragraph_mismatch",
       "body_text_match_bucket": "different",
       "classifications": [
-        "tei_eaj_editorial_segmentation",
+        "parser_ir_projection_bug",
         "source_text_policy_required"
       ],
       "blocking_owners": [
-        "policy"
+        "policy",
+        "parser_ir"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
-        "materialization_status": "failed"
+        "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph segmentation requires profile policy: empty_body_paragraph_range",
+        "parser-IR projection mismatch: converter_paragraph_mismatch",
         "text policy required for different"
       ]
     },
@@ -801,21 +804,22 @@
       "level": null,
       "state": null,
       "adapter": "aozora",
-      "paragraph_origin_bucket": "empty_body_paragraph_range",
+      "paragraph_origin_bucket": "converter_paragraph_mismatch",
       "body_text_match_bucket": "different",
       "classifications": [
-        "tei_eaj_editorial_segmentation",
+        "parser_ir_projection_bug",
         "source_text_policy_required"
       ],
       "blocking_owners": [
-        "policy"
+        "policy",
+        "parser_ir"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
-        "materialization_status": "failed"
+        "materialization_status": "passed"
       },
       "reasons": [
-        "paragraph segmentation requires profile policy: empty_body_paragraph_range",
+        "parser-IR projection mismatch: converter_paragraph_mismatch",
         "text policy required for different"
       ]
     },

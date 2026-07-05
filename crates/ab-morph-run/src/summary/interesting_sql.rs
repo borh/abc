@@ -24,7 +24,7 @@ use super::interesting::{
 };
 use super::pattern_id::pattern_id;
 use super::summary_body::{
-    NwayPatternKey, duckdb_settings_sql, duckdb_table_path_literal, read_warehouse_parquet_file,
+    NwayPatternKey, duckdb_table_path_literal, read_warehouse_parquet_file,
     run_duckdb_statement, sql_literal,
 };
 use crate::nway::{NwayFeatureScopeRow, NwayFeatureValueGroupRow, NwaySegmentationGroupRow};
@@ -123,21 +123,88 @@ fn rarity_sql(run_dir: &Path, rarity: &RarityConfig) -> (String, String) {
     }
 }
 
-fn pattern_aggregates_sql(max_region_examples: usize) -> String {
+/// Per-pattern rollup over an occurrence CTE (`src`), keyed by
+/// `key_cols`. Distinct counts and bounded sample lists are computed from
+/// pre-deduplicated subqueries: grouped `list(...)`/`count(DISTINCT ...)`
+/// states over raw occurrence rows blew the DuckDB memory limit on the
+/// full corpus (162M feature-pattern occurrences), while `min_by(.., n)`
+/// keeps a bounded per-group heap and `quantile_disc` holds one integer
+/// per occurrence.
+/// `carry_cols` may contain NULLs (e.g. `scope_position`); `join_key`
+/// must be non-null columns only — SQL joins never match NULL = NULL, so
+/// joining rollups on nullable scope columns silently dropped every
+/// whole-region feature pattern.
+fn pattern_rollup_sql(
+    src: &str,
+    carry_cols: &str,
+    join_key: &str,
+    max_region_examples: usize,
+) -> String {
+    let carry_prefix = if carry_cols.is_empty() {
+        String::new()
+    } else {
+        format!("{carry_cols}, ")
+    };
     format!(
-        r"CAST(count(*) AS UBIGINT) AS examples,
-    CAST(count(DISTINCT source_id) AS UBIGINT) AS source_count,
-    CAST(count(DISTINCT text_id) AS UBIGINT) AS text_count,
-    CAST(count(DISTINCT rarity_key) AS UBIGINT) AS rarity_count,
-    CAST(sum(CASE WHEN has_coverage_mismatch THEN 1 ELSE 0 END) AS UBIGINT) AS coverage_regions,
-    CAST(quantile_disc(char_end - char_start, 0.9) AS DOUBLE) AS span_p90,
-    CAST(to_json(list_slice(list_sort(list_distinct(list(source_id))), 1, 5)) AS VARCHAR) AS sample_source_ids,
-    CAST(to_json(list_slice(list_sort(list_distinct(list(text_id))), 1, 5)) AS VARCHAR) AS sample_text_ids,
-    CAST(to_json(min_by(
-        struct_pack(source_id := source_id, text_id := text_id, region_index := region_index,
-                    char_start := char_start, char_end := char_end),
-        struct_pack(s := source_id, t := text_id, r := region_index),
-        {max_region_examples})) AS VARCHAR) AS region_examples"
+        r"stats AS (
+    SELECT {carry_prefix}{join_key},
+        CAST(count(*) AS UBIGINT) AS examples,
+        CAST(sum(CASE WHEN has_coverage_mismatch THEN 1 ELSE 0 END) AS UBIGINT) AS coverage_regions,
+        CAST(quantile_disc(char_end - char_start, 0.9) AS DOUBLE) AS span_p90,
+        CAST(to_json(min_by(
+            struct_pack(source_id := source_id, text_id := text_id, region_index := region_index,
+                        char_start := char_start, char_end := char_end),
+            struct_pack(s := source_id, t := text_id, r := region_index),
+            {max_region_examples})) AS VARCHAR) AS region_examples
+    FROM {src}
+    GROUP BY {carry_prefix}{join_key}
+),
+source_rollup AS (
+    SELECT {join_key},
+        CAST(count(*) AS UBIGINT) AS source_count,
+        CAST(to_json(list_slice(list_sort(list(source_id)), 1, 5)) AS VARCHAR) AS sample_source_ids
+    FROM (SELECT DISTINCT {join_key}, source_id FROM {src})
+    GROUP BY {join_key}
+),
+text_rollup AS (
+    SELECT {join_key},
+        CAST(count(*) AS UBIGINT) AS text_count,
+        CAST(to_json(list_slice(list_sort(list(text_id)), 1, 5)) AS VARCHAR) AS sample_text_ids
+    FROM (SELECT DISTINCT {join_key}, text_id FROM {src})
+    GROUP BY {join_key}
+),
+rarity_rollup AS (
+    SELECT {join_key}, CAST(count(*) AS UBIGINT) AS rarity_count
+    FROM (SELECT DISTINCT {join_key}, rarity_key FROM {src})
+    GROUP BY {join_key}
+)
+SELECT {carry_prefix}{join_key},
+    examples, source_count, text_count, rarity_count, coverage_regions, span_p90,
+    sample_source_ids, sample_text_ids, region_examples
+FROM stats
+JOIN source_rollup USING ({join_key})
+JOIN text_rollup USING ({join_key})
+JOIN rarity_rollup USING ({join_key})"
+    )
+}
+
+/// DuckDB settings for the interestingness engine. The shared
+/// `duckdb_settings_sql` pins 16GB/4 threads, which OOMs on the
+/// full-corpus feature aggregation; this workload gets a larger,
+/// env-overridable budget (`AB_DUCKDB_MEMORY_LIMIT`, `AB_DUCKDB_THREADS`).
+fn interesting_settings_sql(run_dir: &Path) -> String {
+    let memory_limit =
+        std::env::var("AB_DUCKDB_MEMORY_LIMIT").unwrap_or_else(|_| "48GB".to_owned());
+    let threads = std::env::var("AB_DUCKDB_THREADS").unwrap_or_else(|_| "8".to_owned());
+    format!(
+        "SET temp_directory = {};\nSET threads = {};\nSET preserve_insertion_order = false;\nSET memory_limit = {};",
+        sql_literal(
+            &super::summary_body::duckdb_temp_dir(run_dir)
+                .display()
+                .to_string()
+        ),
+        threads,
+        sql_literal(&memory_limit),
     )
 }
 
@@ -217,7 +284,7 @@ fn seg_coverage_query(
         "(r.has_segmentation_disagreement OR r.has_coverage_mismatch)",
     );
     let region_sig = region_sig_cte(analyzers, "TRUE");
-    let aggregates = pattern_aggregates_sql(max_region_examples);
+    let rollup = pattern_rollup_sql("kind_source", "", "kind, sig", max_region_examples);
     format!(
         r"WITH {base},
 {region_sig},
@@ -237,11 +304,8 @@ kind_source AS (
     JOIN base_regions b USING (source_id, text_id, region_index)
     {works_join}
     WHERE b.has_coverage_mismatch
-)
-SELECT kind, sig,
-    {aggregates}
-FROM kind_source
-GROUP BY kind, sig"
+),
+{rollup}"
     )
 }
 
@@ -258,23 +322,28 @@ fn feature_query(
 ) -> String {
     let base = base_regions_cte(regions, analyzers, filter, "r.has_feature_disagreement");
     let groups = feature_groups_cte(features, &feature_key_predicate(profile));
-    let aggregates = pattern_aggregates_sql(max_region_examples);
+    let rollup = pattern_rollup_sql(
+        "feature_source",
+        "feature_key, scope_type, scope_position, scope_surface, sig",
+        "pattern_key",
+        max_region_examples,
+    );
     format!(
         r"WITH {base},
 {groups},
 feature_source AS (
     SELECT g.feature_key, g.scope_type, g.scope_position, g.scope_surface, g.sig,
+           g.feature_key || chr(31) || g.scope_type || chr(31) ||
+               coalesce(CAST(g.scope_position AS VARCHAR), '') || chr(31) ||
+               coalesce(g.scope_surface, '') || chr(31) || g.sig AS pattern_key,
            b.source_id, b.text_id, b.region_index, b.char_start, b.char_end,
            b.has_coverage_mismatch, {rarity_key} AS rarity_key
     FROM feature_groups g
     JOIN base_regions b USING (source_id, text_id, region_index)
     {works_join}
     WHERE g.value_count > 1
-)
-SELECT feature_key, scope_type, scope_position, scope_surface, sig,
-    {aggregates}
-FROM feature_source
-GROUP BY feature_key, scope_type, scope_position, scope_surface, sig"
+),
+{rollup}"
     )
 }
 
@@ -500,7 +569,7 @@ pub(super) fn collect_patterns_duckdb(
     );
     let sql = format!(
         "{settings}\nCOPY ({seg_body}) TO {seg_out} (FORMAT PARQUET, COMPRESSION ZSTD);\nCOPY ({feat_body}) TO {feat_out} (FORMAT PARQUET, COMPRESSION ZSTD);",
-        settings = duckdb_settings_sql(run_dir),
+        settings = interesting_settings_sql(run_dir),
         seg_out = sql_literal(&seg_out.display().to_string()),
         feat_out = sql_literal(&feat_out.display().to_string()),
     );
@@ -666,7 +735,7 @@ LIMIT {limit}",
     );
     let sql = format!(
         "{settings}\nCOPY ({body}) TO {out} (FORMAT PARQUET, COMPRESSION ZSTD);",
-        settings = duckdb_settings_sql(run_dir),
+        settings = interesting_settings_sql(run_dir),
         out = sql_literal(&out.display().to_string()),
     );
     if !run_duckdb_statement(run_dir, sql, "interestingness anomaly channel")? {

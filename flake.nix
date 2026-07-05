@@ -893,6 +893,31 @@
               touch "$out"
             '';
 
+        plainProseSourceDeltaSmokeCheck =
+          pkgs.runCommand "parser-ir-plain-prose-source-delta-smoke-check"
+            {
+              nativeBuildInputs = [
+                pkgs.bash
+                pkgs.jq
+                pkgs.python3
+                pkgs.ripgrep
+              ];
+            }
+            ''
+              work_dir="$(mktemp -d)"
+              cp -R "${source}" "$work_dir/source"
+              chmod -R +w "$work_dir/source"
+              cd "$work_dir/source"
+
+              export TMPDIR="$work_dir/tmp"
+              mkdir -p "$TMPDIR"
+              export HOME="$work_dir/home"
+              mkdir -p "$HOME"
+
+              bash tests/parser-ir-plain-prose-source-delta-smoke.sh
+              touch "$out"
+            '';
+
         taxonomyDriftCheck =
           pkgs.runCommand "taxonomy-drift-check"
             {
@@ -1145,6 +1170,7 @@
           adapter-fidelity-notes-schema-smoke = adapterFidelityNotesSchemaSmokeCheck;
           taxonomy-drift = taxonomyDriftCheck;
           parser-ir-level3-admission-smoke = level3AdmissionSmokeCheck;
+          parser-ir-plain-prose-source-delta-smoke = plainProseSourceDeltaSmokeCheck;
           aat-to-parser-ir-smoke = abAatToParserIrCheck;
           source-inventory-smoke = sourceInventorySmokeCheck;
           source-representability-gate = sourceRepresentabilityGateCheck;

@@ -286,6 +286,20 @@ parser-ir-level3-admission-report MATRIX_SUMMARY="docs/superpowers/reports/2026-
 		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
 		--report-md "{{repo_root}}/{{REPORT_MD}}"
 
+parser-ir-plain-prose-source-delta-smoke:
+	@bash "{{repo_root}}/tests/parser-ir-plain-prose-source-delta-smoke.sh"
+
+parser-ir-plain-prose-source-delta-report ADMISSION_SUMMARY="docs/superpowers/reports/2026-07-05-profile-aware-level3-tei-admission.summary.json" MATRIX_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.summary.json" STRUCTURAL_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.summary.json" SOURCE_SUMMARY="docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json" MAPPING="data/aat-to-parser-ir-mapping-v1.json" REPORT_MD="docs/superpowers/reports/2026-07-05-plain-prose-source-delta.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-05-plain-prose-source-delta.summary.json":
+	@python3 "{{repo_root}}/reports/parser-ir/plain-prose-source-delta.py" \
+		--admission-summary "{{repo_root}}/{{ADMISSION_SUMMARY}}" \
+		--matrix-summary "{{repo_root}}/{{MATRIX_SUMMARY}}" \
+		--structural-summary "{{repo_root}}/{{STRUCTURAL_SUMMARY}}" \
+		--source-summary "{{repo_root}}/{{SOURCE_SUMMARY}}" \
+		--mapping "{{repo_root}}/{{MAPPING}}" \
+		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
+		--report-md "{{repo_root}}/{{REPORT_MD}}" \
+		--allow-missing-parser-evidence
+
 tei-eaj-structural-expansion JOBS="24" REPORT_MD="docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.summary.json":
 	@test -f "{{tei_eaj_workset}}" || { echo "missing TEI-EAJ workset export: {{tei_eaj_workset}}" >&2; exit 2; }
 	@cargo build -p ab-aat-to-parser-ir --release --jobs "{{JOBS}}"

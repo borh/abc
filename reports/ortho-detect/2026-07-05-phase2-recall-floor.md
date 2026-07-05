@@ -32,7 +32,7 @@ before shipping; that measurement is deferred to Task 9.
 
 ## Results
 
-### Post-fix (after the port-fidelity fix in commit HASH)
+### Post-fix (after the port-fidelity fix in commit `fd6d97a`)
 
 The `repeated_bigram_pattern_ratio` feature was rewritten to faithfully
 port the Python heuristic's `len(re.findall(r"(..)ッ?\1", text))`

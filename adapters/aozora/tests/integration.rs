@@ -168,6 +168,26 @@ fn slices_constructs_in_upstream_sanitized_coordinate_space() {
 }
 
 #[test]
+fn normalizes_upstream_style_and_tcy_nodes_to_typed_aat() {
+    let aat =
+        run_aat("あた［＃「あた」に傍点］人物［＃「人物」は太字］昭和10［＃「10」は縦中横］年");
+    let content = paragraph_content(&aat);
+    let kinds = content
+        .iter()
+        .map(|node| node["kind"].as_str().unwrap())
+        .collect::<Vec<_>>();
+
+    assert_eq!(kinds, ["style", "style", "text", "tcy", "text"]);
+    assert_eq!(content[0]["style_type"], "bouten");
+    assert_eq!(content[0]["content"][0]["value"], "あた");
+    assert_eq!(content[1]["style_type"], "bold");
+    assert_eq!(content[1]["content"][0]["value"], "人物");
+    assert_eq!(content[2]["value"], "昭和");
+    assert_eq!(content[3]["content"][0]["value"], "10");
+    assert_eq!(content[4]["value"], "年");
+}
+
+#[test]
 fn html_mode_delegates_to_upstream_renderer() {
     let stdout = run_mode("｜青梅《おうめ》後", "html");
     let html = String::from_utf8(stdout).expect("html utf-8");

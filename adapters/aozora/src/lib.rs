@@ -192,6 +192,13 @@ fn inline_content(
         match node.kind.as_str() {
             "ruby" => content.push(ruby_node(decoded, node)),
             "gaiji" => content.push(gaiji_node(decoded, node, gaiji_by_start)),
+            "bouten" => content.push(style_node(decoded, node, "bouten")),
+            "emphasis" => content.push(style_node(
+                decoded,
+                node,
+                emphasis_style_type(decoded, node),
+            )),
+            "combineUpright" => content.push(tcy_node(decoded, node)),
             "kaeriten" => content.push(raw_node(decoded, node, "kaeriten")),
             "directive" if source_slice(&decoded.span_text, &node.span).contains("返り点") => {
                 content.push(raw_node(decoded, node, "kaeriten"));
@@ -295,6 +302,43 @@ fn gaiji_node(
         "x-codepoint": gaiji.codepoint,
         "span": span_json(&node.span)
     })
+}
+
+fn style_node(decoded: &DecodedSource, node: &AozoraNode, style_type: &str) -> Value {
+    let source = source_slice(&decoded.span_text, &node.span);
+    let text = marker_target(source).unwrap_or(source);
+    json!({
+        "kind": "style",
+        "style_type": style_type,
+        "content": [{"kind": "text", "value": text}],
+        "span": span_json(&node.span)
+    })
+}
+
+fn tcy_node(decoded: &DecodedSource, node: &AozoraNode) -> Value {
+    let source = source_slice(&decoded.span_text, &node.span);
+    let text = marker_target(source).unwrap_or(source);
+    json!({
+        "kind": "tcy",
+        "content": [{"kind": "text", "value": text}],
+        "span": span_json(&node.span)
+    })
+}
+
+fn emphasis_style_type(decoded: &DecodedSource, node: &AozoraNode) -> &'static str {
+    let source = source_slice(&decoded.span_text, &node.span);
+    if source.contains("太字") {
+        "bold"
+    } else {
+        "emphasis"
+    }
+}
+
+fn marker_target(source: &str) -> Option<&str> {
+    let start = source.find("［＃「")? + "［＃「".len();
+    let rest = &source[start..];
+    let end = rest.find('」')?;
+    Some(&rest[..end])
 }
 
 fn raw_node(decoded: &DecodedSource, node: &AozoraNode, marker_kind: &str) -> Value {

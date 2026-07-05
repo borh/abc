@@ -91,6 +91,8 @@ fn byte_span_to_char_span(char_map: &CharByteMap, byte_span: Range<usize>) -> Op
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+
     use crate::{Analysis, FeatureMap, MorphDiffError, Morpheme};
 
     use super::validate_analysis;
@@ -110,7 +112,7 @@ mod tests {
         Analysis {
             analyzer: "a".to_owned(),
             text_id: "t".to_owned(),
-            source_text: "今日はabc".to_owned(),
+            source_text: Arc::from("今日はabc"),
             morphemes,
             warnings: Vec::new(),
             ortho_annotations: None,

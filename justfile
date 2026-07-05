@@ -549,7 +549,6 @@ morph-warehouse-run-suw profile="full" aat_dir=morph_warehouse_aat_dir run_id=""
 # store paths are alive; self-heals dictionary/compiled/ symlinks after nix GC).
 morph-warehouse-run-with-analyzers profile="full" aat_dir=morph_warehouse_aat_dir analyzers="vibrato sudachi-a sudachi-c" run_id="" jobs="0": dictionary-build-all
 	@jobs="{{jobs}}"; \
-	if [ "$jobs" = "0" ]; then jobs="$(nproc)"; fi; \
 	run_id="{{run_id}}"; \
 	if [ -z "$run_id" ]; then run_id="{{profile}}-$(date -u +%F_%H%M%S)-jobs${jobs}"; fi; \
 	args=() ; \
@@ -557,9 +556,6 @@ morph-warehouse-run-with-analyzers profile="full" aat_dir=morph_warehouse_aat_di
 	  args+=(--analyzer "$analyzer"); \
 	done; \
 	AB_SUDACHI_DICT="$(nix build .#sudachi-dictionary-full --no-link --print-out-paths)/share/sudachi/system.dic" \
-	TMPDIR="{{ab_db_root}}/tmp" \
-	TMP="{{ab_db_root}}/tmp" \
-	TEMP="{{ab_db_root}}/tmp" \
 	cargo run --release -p ab-morph-run -- analyze-aat \
 		--aat-dir "{{aat_dir}}" \
 		"${args[@]}" \

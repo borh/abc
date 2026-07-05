@@ -109,9 +109,7 @@ pub(crate) fn run_analyze_aat_with_nway_impl(
     if analyzer_ids.is_empty() {
         bail!("provide at least one --analyzer");
     }
-    if jobs == 0 {
-        bail!("--jobs must be at least 1");
-    }
+    let jobs = crate::auto_jobs::resolve_jobs(jobs, analyzer_ids.len());
     let inputs = discover_aat_inputs(aat, aat_dir)?;
     let input_mode = if aat.is_some() { "aat" } else { "aat_dir" };
     let input_path = aat
@@ -177,15 +175,16 @@ pub(crate) fn run_analyze_aat_warehouse_impl(
     jobs: usize,
     warehouse_profile: WarehouseProfile,
 ) -> Result<()> {
-    if jobs == 0 {
-        bail!("--jobs must be greater than zero");
-    }
     if aat.is_none() == aat_dir.is_none() {
         bail!("provide exactly one of --aat or --aat-dir");
     }
     if analyzer_ids.is_empty() {
         bail!("provide at least one --analyzer");
     }
+    if run_id.starts_with(STAGING_SHARD_PREFIX) {
+        bail!(r#"run_id must not start with "shards-" (reserved for shard staging)"#);
+    }
+    let jobs = crate::auto_jobs::resolve_jobs(jobs, analyzer_ids.len());
     let inputs = discover_aat_inputs(aat, aat_dir)?;
     let input_mode = if aat.is_some() { "aat" } else { "aat_dir" };
     let input_path = aat
@@ -676,6 +675,11 @@ pub(crate) fn run_analyze_aat_serial(
             source_format: document.source_format,
             text: normalized_text,
         };
+        // One allocation per document, shared by every per-analyzer Analysis.
+        let shared_normalized: Arc<str> = Arc::from(norm_doc.text.as_str());
+        // The original text is only needed when ortho remap can fire.
+        let shared_original: Option<Arc<str>> =
+            offset_map_opt.is_some().then(|| Arc::from(document.text.as_str()));
         let mut analyses = Vec::new();
 
         for analyzer in analyzers {
@@ -718,6 +722,8 @@ pub(crate) fn run_analyze_aat_serial(
                     return Err(error);
                 }
             };
+            // Drop the analyzer's own text copy; share the per-document allocation.
+            analysis.source_text = Arc::clone(&shared_normalized);
             // Remap morpheme byte_spans / char_spans / surfaces from normalized
             // coords to original-doc coords, and attach the ortho provenance to
             // the analysis. `source_text` is set to the original document text so
@@ -734,7 +740,11 @@ pub(crate) fn run_analyze_aat_serial(
                     Ok(()) => {
                         // Honor spec invariant #2: byte_span/char_span/surface now in
                         // original-doc coords, so source_text must be the original.
-                        analysis.source_text = document.text.clone();
+                        analysis.source_text = Arc::clone(
+                            shared_original
+                                .as_ref()
+                                .expect("offset_map_opt is Some in this arm"),
+                        );
                     }
                     Err(e) => {
                         // Morphemes remain in normalized coords. Leave source_text as
@@ -759,7 +769,9 @@ pub(crate) fn run_analyze_aat_serial(
                 write_analysis_row(&mut **writer, options.output_profile, &source_id, &analysis)?;
             }
             if options.output_profile == OutputProfile::Compact && options.warehouse.is_none() {
-                analysis.source_text.clear();
+                // Drop this analysis's handle to the shared text; other analyses'
+                // clones of the same Arc are unaffected.
+                analysis.source_text = Arc::from("");
             }
             analyses.push(analysis);
         }
@@ -783,7 +795,9 @@ pub(crate) fn run_analyze_aat_serial(
                 .collect::<Vec<_>>();
             writer.append_analyses(&analysis_rows)?;
             for analysis in &mut analyses {
-                analysis.source_text.clear();
+                // Drop this analysis's handle to the shared text; other analyses'
+                // clones of the same Arc are unaffected.
+                analysis.source_text = Arc::from("");
             }
             for analysis in &analyses {
                 for start in
@@ -948,14 +962,9 @@ pub(crate) fn run_analyze_aat_warehouse_parallel(
     let total_inputs = inputs.len();
     let large_lanes = bounded_large_lane_count(options.jobs);
     let queue = Arc::new(Mutex::new(WarehouseWorkQueue::new(inputs, large_lanes)));
-    let temp_root = std::env::temp_dir().join(format!(
-        "ab-morph-run-warehouse-{}-{}",
-        std::process::id(),
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_nanos()
-    ));
+    cleanup_orphaned_shard_staging(&options.warehouse_dir)?;
+    let temp_root = shard_staging_root(&options.warehouse_dir, &options.run_id);
+    claim_shard_staging(&temp_root)?;
     let shard_warehouse_dir = temp_root.join("warehouse");
     fs::create_dir_all(&shard_warehouse_dir)
         .with_context(|| format!("failed to create {}", shard_warehouse_dir.display()))?;
@@ -1568,4 +1577,180 @@ fn merge_shard_files<'a>(
     }
     output.flush()?;
     Ok(())
+}
+
+const STAGING_SHARD_PREFIX: &str = "shards-";
+const STAGING_OWNER_NEEDLE: &str = "ab-morph-run";
+
+fn shard_staging_root(warehouse_dir: &Path, run_id: &str) -> PathBuf {
+    warehouse_dir
+        .join(".staging")
+        .join(format!("{STAGING_SHARD_PREFIX}{run_id}"))
+}
+
+/// A staging owner is alive iff its PID exists and its cmdline names this
+/// binary — the cmdline check closes the PID-reuse hole (an unrelated process
+/// that recycled the PID does not block cleanup).
+///
+/// Any error reading `/proc/<pid>/cmdline` (including a permissions error, not
+/// just "no such process") is treated as dead. On default Linux configs (no
+/// `hidepid` mount option restricting `/proc` visibility), an unreadable
+/// cmdline is effectively equivalent to ESRCH — the process is gone — so this
+/// is a reasonable default rather than a conservative approximation.
+fn staging_owner_alive(pid: u32, cmdline_needle: &str) -> bool {
+    match std::fs::read(format!("/proc/{pid}/cmdline")) {
+        Ok(bytes) => String::from_utf8_lossy(&bytes).contains(cmdline_needle),
+        Err(_) => false,
+    }
+}
+
+fn staging_entry_owner(entry: &Path) -> Option<u32> {
+    std::fs::read_to_string(entry.join("pid"))
+        .ok()?
+        .trim()
+        .parse()
+        .ok()
+}
+
+fn cleanup_orphaned_shard_staging_with_needle(warehouse_dir: &Path, needle: &str) -> Result<()> {
+    let staging_root = warehouse_dir.join(".staging");
+    if !staging_root.exists() {
+        return Ok(());
+    }
+    for entry in fs::read_dir(&staging_root)? {
+        let entry = entry?;
+        let name = entry.file_name();
+        let Some(name) = name.to_str() else { continue };
+        if !name.starts_with(STAGING_SHARD_PREFIX) {
+            continue; // merge-owned staging ({run_id}.{pid}) has its own cleanup
+        }
+        let alive = staging_entry_owner(&entry.path())
+            .is_some_and(|pid| staging_owner_alive(pid, needle));
+        if !alive {
+            eprintln!(
+                "removing orphaned shard staging {} (owner dead or marker missing)",
+                entry.path().display()
+            );
+            let is_file = entry.file_type().is_ok_and(|ft| ft.is_file());
+            let result = if is_file {
+                fs::remove_file(entry.path())
+            } else {
+                fs::remove_dir_all(entry.path())
+            };
+            if let Err(e) = result {
+                eprintln!(
+                    "warning: failed to remove orphaned shard staging {}: {e}",
+                    entry.path().display()
+                );
+            }
+        }
+    }
+    Ok(())
+}
+
+fn cleanup_orphaned_shard_staging(warehouse_dir: &Path) -> Result<()> {
+    cleanup_orphaned_shard_staging_with_needle(warehouse_dir, STAGING_OWNER_NEEDLE)
+}
+
+fn claim_shard_staging_with_needle(shard_root: &Path, needle: &str) -> Result<()> {
+    if shard_root.exists() {
+        if staging_entry_owner(shard_root).is_some_and(|pid| staging_owner_alive(pid, needle)) {
+            bail!(
+                "warehouse run already in progress: {} is claimed by a live process",
+                shard_root.display()
+            );
+        }
+        fs::remove_dir_all(shard_root)
+            .with_context(|| format!("failed to replace dead staging {}", shard_root.display()))?;
+    }
+    if let Some(parent) = shard_root.parent() {
+        fs::create_dir_all(parent)
+            .with_context(|| format!("failed to create {}", parent.display()))?;
+    }
+    // Atomic claim: create_dir (not create_dir_all) on the final component so a
+    // concurrent claimant racing us on the same shard_root loses with
+    // AlreadyExists rather than both succeeding.
+    if let Err(e) = fs::create_dir(shard_root) {
+        if e.kind() == std::io::ErrorKind::AlreadyExists {
+            bail!(
+                "warehouse run already in progress: {} is claimed by a live process",
+                shard_root.display()
+            );
+        }
+        return Err(e).with_context(|| format!("failed to create {}", shard_root.display()));
+    }
+    fs::write(shard_root.join("pid"), std::process::id().to_string())
+        .with_context(|| format!("failed to write pid marker in {}", shard_root.display()))?;
+    Ok(())
+}
+
+fn claim_shard_staging(shard_root: &Path) -> Result<()> {
+    claim_shard_staging_with_needle(shard_root, STAGING_OWNER_NEEDLE)
+}
+
+#[cfg(test)]
+mod staging_guard_tests {
+    use super::*;
+
+    #[test]
+    fn staging_owner_liveness_checks_pid_and_cmdline() {
+        // Dead PID: far beyond pid_max.
+        assert!(!staging_owner_alive(999_999_999, "ab-morph-run"));
+        // Live PID, foreign cmdline: PID 1 is init/systemd, never ab-morph-run.
+        assert!(!staging_owner_alive(1, "ab-morph-run"));
+        // Live PID, matching cmdline: this very test process, matched against
+        // its own binary name.
+        let me = std::process::id();
+        let exe = std::env::current_exe().unwrap();
+        let needle = exe.file_name().unwrap().to_str().unwrap().to_owned();
+        assert!(staging_owner_alive(me, &needle));
+    }
+
+    #[test]
+    fn orphaned_shard_staging_is_removed_and_live_is_kept() {
+        let root = std::env::temp_dir().join(format!("staging-test-{}", std::process::id()));
+        let staging = root.join(".staging");
+        // Orphan: dead PID marker.
+        let dead = staging.join("shards-old-run");
+        std::fs::create_dir_all(&dead).unwrap();
+        std::fs::write(dead.join("pid"), "999999999").unwrap();
+        // Live: this process's PID (cmdline needle in production is "ab-morph-run";
+        // the cleanup fn takes the needle as a parameter so this test can pass its
+        // own binary name).
+        let live = staging.join("shards-live-run");
+        std::fs::create_dir_all(&live).unwrap();
+        std::fs::write(live.join("pid"), std::process::id().to_string()).unwrap();
+        // Merge-owned staging entry (no shards- prefix): must never be touched.
+        let merge = staging.join("some-run.12345");
+        std::fs::create_dir_all(&merge).unwrap();
+
+        let exe = std::env::current_exe().unwrap();
+        let needle = exe.file_name().unwrap().to_str().unwrap().to_owned();
+        cleanup_orphaned_shard_staging_with_needle(&root, &needle).unwrap();
+
+        assert!(!dead.exists(), "dead-PID orphan must be removed");
+        assert!(live.exists(), "live staging must be kept");
+        assert!(merge.exists(), "merge-owned staging must not be touched");
+        std::fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[test]
+    fn claim_errors_on_live_collision_and_replaces_dead() {
+        let root = std::env::temp_dir().join(format!("claim-test-{}", std::process::id()));
+        let shard_root = root.join(".staging").join("shards-run-x");
+        // Dead prior claim → replaced silently.
+        std::fs::create_dir_all(&shard_root).unwrap();
+        std::fs::write(shard_root.join("pid"), "999999999").unwrap();
+        claim_shard_staging_with_needle(&shard_root, "no-such-needle").unwrap();
+        assert_eq!(
+            std::fs::read_to_string(shard_root.join("pid")).unwrap(),
+            std::process::id().to_string()
+        );
+        // Live claim (our own PID, matched by our own binary name) → collision error.
+        let exe = std::env::current_exe().unwrap();
+        let needle = exe.file_name().unwrap().to_str().unwrap().to_owned();
+        let err = claim_shard_staging_with_needle(&shard_root, &needle).unwrap_err();
+        assert!(err.to_string().contains("already in progress"), "{err}");
+        std::fs::remove_dir_all(&root).unwrap();
+    }
 }

@@ -1,3 +1,4 @@
+mod auto_jobs;
 mod compact;
 mod nway;
 mod options;
@@ -1104,7 +1105,7 @@ fn test_analysis(kind: TestAnalyzerKind, document: &PlainTextDocument) -> Analys
             TestAnalyzerKind::Split => "test:split".to_owned(),
         },
         text_id: document.text_id.clone(),
-        source_text: document.text.clone(),
+        source_text: Arc::from(document.text.as_str()),
         morphemes,
         warnings: Vec::new(),
         ortho_annotations: None,
@@ -1162,7 +1163,10 @@ mod tests {
     }
 
     #[test]
-    fn rejects_zero_jobs() {
+    fn zero_jobs_resolves_to_auto_instead_of_erroring() {
+        // `--jobs 0` now means "auto" (memory-aware resolution), so it no
+        // longer bails on the jobs check; the run proceeds to the next
+        // validation step (a missing --aat file, here) instead.
         let err = run_analyze_aat(
             Some(Path::new("a.json")),
             None,
@@ -1178,7 +1182,7 @@ mod tests {
             None,
         )
         .unwrap_err();
-        assert!(err.to_string().contains("at least 1"));
+        assert!(err.to_string().contains("--aat must point to a regular file"));
     }
 
     #[test]
@@ -1613,6 +1617,36 @@ mod tests {
     }
 
     #[test]
+    fn warehouse_mode_rejects_shards_prefixed_run_id() {
+        let dir = temp_dir("warehouse-rejects-shards-run-id");
+        let aat_dir = dir.join("aats");
+        let warehouse_dir = dir.join("warehouse");
+        fs::create_dir_all(&aat_dir).unwrap();
+        fs::write(
+            aat_dir.join("source-a.json"),
+            tiny_aat("work-a").replace("吾輩は猫である。", "今日"),
+        )
+        .unwrap();
+
+        let err = run_analyze_aat_warehouse(
+            None,
+            Some(&aat_dir),
+            &["test:single".to_owned(), "test:split".to_owned()],
+            &warehouse_dir,
+            "shards-run-a",
+            1,
+            WarehouseProfile::Full,
+        )
+        .unwrap_err();
+        assert!(
+            err.to_string().contains(r#"must not start with "shards-""#),
+            "{err}"
+        );
+
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
     fn partitions_inputs_by_size_to_balance_worker_load() {
         let dir = temp_dir("partition-sizes");
         fs::create_dir_all(&dir).unwrap();
@@ -1955,7 +1989,7 @@ mod tests {
         let analysis = Analysis {
             analyzer: "fixture".to_owned(),
             text_id: "t1".to_owned(),
-            source_text: "日日".to_owned(),
+            source_text: Arc::from("日日"),
             morphemes: vec![
                 Morpheme {
                     surface: "日".to_owned(),
@@ -2078,7 +2112,7 @@ mod tests {
         Analysis {
             analyzer: analyzer.to_owned(),
             text_id: "t1".to_owned(),
-            source_text: "今日".to_owned(),
+            source_text: Arc::from("今日"),
             morphemes: vec![Morpheme {
                 surface: "今日".to_owned(),
                 byte_span: 0..6,

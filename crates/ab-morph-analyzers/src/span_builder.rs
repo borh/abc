@@ -1,4 +1,5 @@
 use std::ops::Range;
+use std::sync::Arc;
 
 use ab_morph_diff::{Analysis, AnalyzerId, CharByteMap, FeatureMap, Morpheme, TextId};
 
@@ -24,7 +25,7 @@ pub(crate) fn build_analysis_from_tokens(
     Ok(Analysis {
         analyzer,
         text_id,
-        source_text,
+        source_text: Arc::from(source_text),
         morphemes,
         warnings: Vec::new(),
         ortho_annotations: None,

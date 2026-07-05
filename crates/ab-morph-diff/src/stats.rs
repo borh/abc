@@ -179,6 +179,7 @@ fn ratio(numerator: usize, denominator: usize) -> Option<f64> {
 #[cfg(test)]
 mod tests {
     use std::collections::{BTreeMap, BTreeSet};
+    use std::sync::Arc;
 
     use crate::{
         AlignedMorpheme, Analysis, CoverageMismatch, CoverageMismatchKind, FeatureDiff, FeatureMap,
@@ -211,7 +212,7 @@ mod tests {
         Analysis {
             analyzer: "a".to_owned(),
             text_id: "t".to_owned(),
-            source_text: source.to_owned(),
+            source_text: Arc::from(source),
             morphemes: parts
                 .iter()
                 .map(|(surface, start, end)| m(source, surface, *start, *end))
@@ -265,7 +266,7 @@ mod tests {
         let from = Analysis {
             analyzer: "a".to_owned(),
             text_id: "t".to_owned(),
-            source_text: source.to_owned(),
+            source_text: Arc::from(source),
             morphemes: vec![m(source, "\n　", 0, 2), m(source, "今日", 2, 4)],
             warnings: Vec::new(),
             ortho_annotations: None,
@@ -274,7 +275,7 @@ mod tests {
         let to = Analysis {
             analyzer: "b".to_owned(),
             text_id: "t".to_owned(),
-            source_text: source.to_owned(),
+            source_text: Arc::from(source),
             morphemes: vec![
                 m(source, "\n", 0, 1),
                 m(source, "　", 1, 2),
@@ -315,7 +316,7 @@ mod tests {
         let from = Analysis {
             analyzer: "a".to_owned(),
             text_id: "t".to_owned(),
-            source_text: source.to_owned(),
+            source_text: Arc::from(source),
             morphemes: vec![m(source, "\n", 0, 1), m(source, "今日", 1, 3)],
             warnings: Vec::new(),
             ortho_annotations: None,
@@ -324,7 +325,7 @@ mod tests {
         let to = Analysis {
             analyzer: "b".to_owned(),
             text_id: "t".to_owned(),
-            source_text: source.to_owned(),
+            source_text: Arc::from(source),
             morphemes: vec![m(source, "\n", 0, 1), m(source, "今日", 1, 3)],
             warnings: Vec::new(),
             ortho_annotations: None,

@@ -121,7 +121,7 @@ pub struct Morpheme {
 pub struct Analysis {
     pub analyzer: AnalyzerId,
     pub text_id: TextId,
-    pub source_text: String,
+    pub source_text: Arc<str>,
     pub morphemes: Vec<Morpheme>,
     pub warnings: Vec<AnalyzerWarning>,
     /// Orthographic normalizations applied before tokenization.

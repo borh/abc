@@ -145,7 +145,7 @@ impl MorphAnalyzer for SudachiAnalyzer {
         Ok(Analysis {
             analyzer: self.analyzer_id.clone(),
             text_id: document.text_id.clone(),
-            source_text: document.text.clone(),
+            source_text: Arc::from(document.text.as_str()),
             morphemes: all_morphemes,
             warnings,
             ortho_annotations: None,
@@ -372,7 +372,7 @@ mod tests {
             let analyzer = SudachiAnalyzer::from_dictionary_path(mode, &dictionary_path).unwrap();
             let analysis = analyzer.analyze(&doc).unwrap();
             assert_eq!(analysis.text_id, "smoke");
-            assert_eq!(analysis.source_text, doc.text);
+            assert_eq!(analysis.source_text.as_ref(), doc.text.as_str());
             assert!(!analysis.morphemes.is_empty());
         }
     }

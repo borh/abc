@@ -154,6 +154,8 @@ pub fn visit_nway_regions_with_source_text(
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+
     use crate::{
         Analysis, ChangedValue, FeatureMap, MorphDiffError, Morpheme, Region, SegmentationKind,
         compare_pair, compare_pair_with_source_text,
@@ -189,7 +191,7 @@ mod tests {
         Analysis {
             analyzer: analyzer.to_owned(),
             text_id: text_id.to_owned(),
-            source_text: source.to_owned(),
+            source_text: Arc::from(source),
             morphemes,
             warnings: Vec::new(),
             ortho_annotations: None,
@@ -235,8 +237,8 @@ mod tests {
                 m(source, "日", 1, 2, features(&[])),
             ],
         );
-        from.source_text.clear();
-        to.source_text.clear();
+        from.source_text = Arc::from("");
+        to.source_text = Arc::from("");
 
         let comparison = compare_pair_with_source_text(&from, &to, source, &[]).unwrap();
 

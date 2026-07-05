@@ -281,7 +281,7 @@ mod tests {
         let analysis = analyzer.analyze(&doc).unwrap();
         assert_eq!(analysis.analyzer, "vibrato:unidic-cwj-202512");
         assert_eq!(analysis.text_id, "smoke");
-        assert_eq!(analysis.source_text, doc.text);
+        assert_eq!(analysis.source_text.as_ref(), doc.text.as_str());
         assert!(!analysis.morphemes.is_empty());
     }
 

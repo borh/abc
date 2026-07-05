@@ -248,6 +248,8 @@ fn surfaces(analysis: &Analysis, indices: Range<usize>) -> Vec<String> {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+
     use crate::{
         Analysis, CompactExampleKind, FeatureMap, Morpheme, compare_pair,
         compare_pair_compact_with_source_text,
@@ -287,7 +289,7 @@ mod tests {
         Analysis {
             analyzer: analyzer.to_owned(),
             text_id: "t".to_owned(),
-            source_text: source.to_owned(),
+            source_text: Arc::from(source),
             morphemes: morphemes.into_iter().collect(),
             warnings: Vec::new(),
             ortho_annotations: None,

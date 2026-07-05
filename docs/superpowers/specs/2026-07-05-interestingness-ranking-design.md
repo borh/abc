@@ -360,7 +360,7 @@ When v2 sidecar tables are present, additional signals join the RRF:
 
 Before comparison, Sudachi is run in the mode matching UniDic short units (or all modes are compared simultaneously). A disagreement persisting at every granularity level is real; one vanishing at mode C is policy. This preprocessing step (`ab-morph-analyzers/src/sudachi.rs` — `SudachiMode` enum controls split level) runs during the analysis pass and reduces policy-noise disagreements before ranking.
 
-**Cross-version scoring note (F1):** harmonization changes *which disagreements exist*, so v1-without-harmonization and v2-with-harmonization produce different RRF scores on the same patterns even with identical signal sets. The `signal_profile` field does **not** catch this (same signals, different underlying data). To preserve cross-version comparability, the `score_version` block carries `granularity_profile` (e.g., `"none"` for v1-without-harmonization, `"sudachi-mode-A-aligned"` after). Consumers comparing two runs MUST check `granularity_profile` matches, same as `signal_profile`. The cleanest path is to land granularity harmonization in **Phase 1**, before any v1 score is locked — see §Implementation Phases, where harmonization is moved to the v1 boundary accordingly.
+**Cross-version scoring note (F1):** harmonization changes *which disagreements exist*, so v1-without-harmonization and v2-with-harmonization produce different RRF scores on the same patterns even with identical signal sets. The `signal_profile` field does **not** catch this (same signals, different underlying data). To preserve cross-version comparability, the `score_version` block carries `granularity_profile` (e.g., `"suw+luw"` for a mixed-granularity comparison, `"suw"` after harmonizing to a single class). Consumers comparing two runs MUST check `granularity_profile` matches, same as `signal_profile`. The cleanest path is to land granularity harmonization in **Phase 1**, before any v1 score is locked — see §Implementation Phases, where harmonization is moved to the v1 boundary accordingly.
 
 ## Aozora Oracles
 
@@ -407,7 +407,7 @@ Select sentences by **set-cover over top-ranked pattern_ids**: greedily pick sen
 
 ### Phase 2: Granularity Harmonization (within-v1, scores stabilizing)
 
-Moved here from its previous "Phase 2 after v1" position because harmonization changes *which disagreements exist* and therefore changes RRF scores even with the same signal set. To keep v1 scores stable across the v1-without→v1-with transition, harmonization must land before any v1 score is locked. If harmonization slips past v1 locking, v1 scores are explicitly labeled `granularity_profile = "none"` and a later locked set carries `granularity_profile = "sudachi-mode-A-aligned"` — the two are non-comparable and consumers are warned.
+Moved here from its previous "Phase 2 after v1" position because harmonization changes *which disagreements exist* and therefore changes RRF scores even with the same signal set. To keep v1 scores stable across the v1-without→v1-with transition, harmonization must land before any v1 score is locked. If harmonization slips past v1 locking, v1 scores are explicitly labeled with the multi-class `granularity_profile` (e.g. `"suw+luw"`) they were actually computed on, and a later harmonized set carries the single-class `"suw"` — the two are non-comparable and consumers are warned.
 
 - Preprocessing step in the analysis pass (`ab-morph-run/src/pipeline.rs`)
 - Sudachi mode-matching configuration
@@ -415,18 +415,21 @@ Moved here from its previous "Phase 2 after v1" position because harmonization c
 
 **Status (2026-07-05): implemented**, with two deviations from the letter above:
 
-1. `granularity_profile` is *derived at summarize time* from `run_analyzers.parquet` (`analyzer_family`/`analyzer_arg`), not stored as a new run-metadata column. This keeps `run_analyzers.parquet` the single source of truth, avoids a schema change within v1, and is retroactively correct for every existing warehouse — including ones run with the mixed `sudachi-a sudachi-c` set, which correctly derive to `"none"`.
-2. There is no new pipeline preprocessing step. The Sudachi mode-matching configuration this phase called for already exists as the `sudachi-a` analyzer spec; harmonization is an analyzer-set choice at run time, not a new code path. That choice is now canonicalized as the `morph-warehouse-run-harmonized` justfile recipe (vibrato + sudachi-a only).
+1. `granularity_profile` is *derived at summarize time* from `run_analyzers.parquet` (`analyzer_family`/`analyzer_arg`), not stored as a new run-metadata column. This keeps `run_analyzers.parquet` the single source of truth, avoids a schema change within v1, and is retroactively correct for every existing warehouse — including ones run with the mixed `sudachi-a sudachi-c` set, which correctly derive to `"suw+luw"`.
+2. There is no new pipeline preprocessing step. The Sudachi mode-matching configuration this phase called for already exists as the `sudachi-a` analyzer spec; harmonization is an analyzer-set choice at run time, not a new code path. That choice is now canonicalized as the `morph-warehouse-run-suw` justfile recipe (vibrato + the novel-register vibrato dictionary + sudachi-a only, all 短単位/SUW).
 
-The derivation (see `granularity_profile_token` in `ab-morph-run/src/summary/interesting.rs`), keyed on the Sudachi analyzers present in a run's `run_analyzers` rows:
+**Vocabulary revised 2026-07-05 after owner review:** the original three-token enumeration described just above (one token per harmonization state) was judged very confusing and replaced with the NINJAL granularity-class composition below; no persisted artifact ever used the original tokens.
 
-| Sudachi analyzers present | `granularity_profile` |
+The derivation (see `granularity_profile_token` in `ab-morph-run/src/summary/interesting.rs`) classifies each `run_analyzers` row into a segmentation granularity class — `suw` (短単位 / Short Unit Word), `muw` (中単位 / Middle Unit Word), or `luw` (長単位 / Long Unit Word) — and joins the deduped classes present, in canonical order `suw < muw < luw`, with `"+"`:
+
+| Analyzers present (by class) | `granularity_profile` |
 | --- | --- |
-| none | `"no-sudachi"` |
-| exactly `sudachi-a` | `"sudachi-mode-A-aligned"` |
-| any other mode, or a mix of modes | `"none"` |
+| vibrato (any dictionary) and/or vaporetto only, or Sudachi mode A only | `"suw"` |
+| Sudachi mode B only | `"muw"` |
+| Sudachi mode C only, or Sudachi mode A + mode C | `"suw+luw"` |
+| Sudachi modes A + B + C | `"suw+muw+luw"` |
 
-`"no-sudachi"` is new relative to §Score Versioning's original two-token enumeration (`"none"`, `"sudachi-mode-A-aligned"`): it marks runs with no Sudachi analyzer as their own comparability class rather than conflating them with either the harmonized or the deliberately-mixed case.
+A single-class profile (`"suw"`) means no granularity-policy noise is possible; a multi-class profile means granularity-policy disagreements are present in the run by design.
 
 ### Phase 3: `projection_spans.parquet`
 
@@ -645,7 +648,7 @@ Any change to default weights, normalization, tie-breaking, RRF k-constant, `λ_
 
 - `signal_profile`: which signals were active. Scores are comparable only within the same profile.
 - `rarity_basis`: `"work"` (dedup via `aozora_works`) or `"source"` (fallback when `aozora_works` absent). Cross-basis comparison is forbidden.
-- `granularity_profile`: harmonization state — `"none"` (no harmonization), `"sudachi-mode-A-aligned"`, `"no-sudachi"`, etc. A run scored on un-harmonized data is not comparable to one scored on harmonized data even with the same `signal_profile`.
+- `granularity_profile`: NINJAL granularity-class composition — deduped segmentation granularity classes (`"suw"`, `"muw"`, `"luw"`) present in the run's analyzers, sorted `suw < muw < luw` and joined with `"+"` (e.g. `"suw"`, `"suw+luw"`, `"suw+muw+luw"`). A run scored on a multi-class comparison is not comparable to one scored on a single-class comparison even with the same `signal_profile`.
 - `cause_classification_profile`: `"sudachi-only"`, `"all-analyzers"`, or `"absent"`. Records the vibrato-lattice asymmetry (Decision 15).
 - `literal_context_policy`: `"literal"` or `"hash-only"`. Records the per-run licensing gate (Decision 4).
 - `surprise`: `"present"` or `"absent"`. Records whether the surprise signal's producer was available (Decision 12); avoids the silent-degradation failure mode.

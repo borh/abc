@@ -41,6 +41,18 @@
               "image" 1 "caption" 1 "quote" 1 "source-note" 1}
              (:node_counts result))))))
 
+(deftest empty-body-renders-explicit-gap-test
+  (testing "empty parser-IR bodies render valid TEI without inventing text"
+    (let [result (parser-ir-tei/render {"nodes" []
+                                        "paragraphs" []})]
+      (is (= [:text
+              [:body
+               [:p
+                [:gap {:reason "missing"}]]]]
+             (:body result)))
+      (is (empty? (:node_counts result)))
+      (is (empty? (:omitted result))))))
+
 (deftest line-break-renders-as-tei-lb-test
   (testing "explicit source line breaks project to the TEI P5 lb milestone"
     (let [result (parser-ir-tei/render

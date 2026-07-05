@@ -288,13 +288,16 @@
   (into [:div {:type "source"}] notes))
 
 (defn- tei-text [result]
-  (into [:text]
-        (concat
-         (when (seq (:front-notes result))
-           [[:front (tei-source-div (:front-notes result))]])
-         [(into [:body] (:body-children result))]
-         (when (seq (:back-notes result))
-           [[:back (tei-source-div (:back-notes result))]]))))
+  (let [body-children (if (seq (:body-children result))
+                        (:body-children result)
+                        [[:p [:gap {:reason "missing"}]]])]
+    (into [:text]
+          (concat
+           (when (seq (:front-notes result))
+             [[:front (tei-source-div (:front-notes result))]])
+           [(into [:body] body-children)]
+           (when (seq (:back-notes result))
+             [[:back (tei-source-div (:back-notes result))]])))))
 
 (defn- finalize-result [result]
   (let [result (-> result

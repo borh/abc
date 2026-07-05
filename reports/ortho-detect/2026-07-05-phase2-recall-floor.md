@@ -32,8 +32,35 @@ before shipping; that measurement is deferred to Task 9.
 
 ## Results
 
+### Post-fix (after the port-fidelity fix in commit HASH)
+
+The `repeated_bigram_pattern_ratio` feature was rewritten to faithfully
+port the Python heuristic's `len(re.findall(r"(..)ッ?\1", text))`
+(immediate ABAB echoes, optionally ッ-separated) instead of the broader
+"distinct bigrams appearing >=2 times anywhere" definition. This
+eliminated all 24 false `repeated-bigram-pattern` rejections. Recall now
+**exceeds the spec's 0.85 floor**.
+
 ```
-=== Recall-floor report ===
+=== Recall-floor report (post-fix) ===
+n: 457 gold_pos: 228 gold_neg: 229
+tp: 210 fn: 18 fp: 0 tn: 229
+recall: 0.9210526315789473
+precision: 1.0
+f1: 0.958904109589041
+```
+
+- **recall = 0.9211** (210 / 228 gold-accept correctly accepted)
+- **precision = 1.0** (0 false positives)
+- **18 disagreements remain** — 17 proper-noun-guard (expected, by design:
+  the Python bootstrap disables the guard, Rust enables it) + 1
+  char-run-repeat (marginal numeric edge). All are expected and documented
+  below. The port is now faithful on the character-cascade gates.
+
+### Pre-fix (historical — the initial measurement)
+
+```
+=== Recall-floor report (pre-fix) ===
 n: 457 gold_pos: 228 gold_neg: 229
 tp: 186 fn: 42 fp: 0 tn: 229
 recall: 0.8157894736842105
@@ -54,7 +81,7 @@ cascade (using the public `extract_char_features` + `OrthoTokenizer` API):
 
 | Rejection reason             | Count | Notes |
 |------------------------------|------:|-------|
-| `repeated-bigram-pattern`    |    24 | Port-fidelity divergence (see below) |
+| `repeated-bigram-pattern`    |    24 | Port-fidelity divergence (FIXED — see post-fix above) |
 | `proper-noun-guard`           |    17 | Expected: Python disables the guard, Rust enables it |
 | `char-run-repeat`             |     1 | Marginal |
 | **Total**                    | **42** | |

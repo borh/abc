@@ -32,6 +32,7 @@ pub struct AuditSummary {
     inputs: Vec<InputSummary>,
     totals: AuditTotals,
     by_corpus: BTreeMap<String, CorpusTotals>,
+    raw_nodes: RawNodeSummary,
     categories: BTreeMap<String, u64>,
     rule_coverage: RuleCoverage,
     compatibility_candidates: Vec<CompatibilityCandidate>,
@@ -56,6 +57,36 @@ struct InputSummary {
     label: String,
     aat_dir: String,
     files: u64,
+}
+
+#[derive(Debug, Default, Serialize)]
+struct RawNodeSummary {
+    nodes_total: u64,
+    files_with_raw: u64,
+    fatal_direct_failures: u64,
+    by_corpus: BTreeMap<String, RawCorpusStats>,
+    inferred_provenance: BTreeMap<String, u64>,
+    source_marker_kinds: BTreeMap<String, u64>,
+    source_classes: BTreeMap<String, u64>,
+    samples: Vec<RawNodeSample>,
+}
+
+#[derive(Debug, Default, Serialize)]
+struct RawCorpusStats {
+    nodes_total: u64,
+    files_with_raw: u64,
+    fatal_direct_failures: u64,
+}
+
+#[derive(Debug, Clone, Serialize)]
+struct RawNodeSample {
+    corpus: String,
+    path: String,
+    pointer: String,
+    inferred_provenance: String,
+    source_class: String,
+    source_marker_kind: Option<String>,
+    source_preview: String,
 }
 
 #[derive(Debug, Default, Serialize)]
@@ -160,6 +191,24 @@ struct FailureSample {
     message: String,
 }
 
+#[derive(Debug, Default)]
+struct FileRawStats {
+    nodes_total: u64,
+    inferred_provenance: BTreeMap<String, u64>,
+    source_marker_kinds: BTreeMap<String, u64>,
+    source_classes: BTreeMap<String, u64>,
+    observations: Vec<RawNodeObservation>,
+}
+
+#[derive(Debug)]
+struct RawNodeObservation {
+    pointer: String,
+    inferred_provenance: String,
+    source_class: String,
+    source_marker_kind: Option<String>,
+    source_preview: String,
+}
+
 #[derive(Debug, Clone)]
 struct AuditFile {
     corpus: String,
@@ -188,6 +237,7 @@ enum FileOutcome {
 struct AuditFileResult {
     corpus: String,
     relative_path: String,
+    raw_nodes: FileRawStats,
     outcome: FileOutcome,
 }
 
@@ -333,25 +383,163 @@ fn audit_file(
         .unwrap_or(&file.path)
         .display()
         .to_string();
-    let outcome = match read_json(&file.path).and_then(|aat| {
-        converter.convert(
-            aat,
-            ConversionOptions {
-                validate_input_aat: true,
-                validate_output_parser_ir: true,
+    let (raw_nodes, outcome) = match read_json(&file.path) {
+        Ok(aat) => {
+            let raw_nodes = summarize_raw_nodes(&aat);
+            let outcome = match converter.convert(
+                aat,
+                ConversionOptions {
+                    validate_input_aat: true,
+                    validate_output_parser_ir: true,
+                },
+            ) {
+                Ok(output) => FileOutcome::Success(summarize_output(&output, mapping_hash)),
+                Err(error) => FileOutcome::Failure {
+                    message: format!("{error:#}"),
+                },
+            };
+            (raw_nodes, outcome)
+        }
+        Err(error) => (
+            FileRawStats::default(),
+            FileOutcome::Failure {
+                message: format!("{error:#}"),
             },
-        )
-    }) {
-        Ok(output) => FileOutcome::Success(summarize_output(&output, mapping_hash)),
-        Err(error) => FileOutcome::Failure {
-            message: format!("{error:#}"),
-        },
+        ),
     };
     AuditFileResult {
         corpus: file.corpus.clone(),
         relative_path,
+        raw_nodes,
         outcome,
     }
+}
+
+fn summarize_raw_nodes(aat: &Value) -> FileRawStats {
+    let mut stats = FileRawStats::default();
+    collect_raw_nodes(aat, "$", &mut stats);
+    stats
+}
+
+fn collect_raw_nodes(value: &Value, pointer: &str, stats: &mut FileRawStats) {
+    match value {
+        Value::Object(object) => {
+            if object.get("kind").and_then(Value::as_str) == Some("raw") {
+                record_raw_node(value, pointer, stats);
+            }
+            for (key, child) in object {
+                collect_raw_nodes(child, &format!("{pointer}.{key}"), stats);
+            }
+        }
+        Value::Array(items) => {
+            for (index, child) in items.iter().enumerate() {
+                collect_raw_nodes(child, &format!("{pointer}[{index}]"), stats);
+            }
+        }
+        _ => {}
+    }
+}
+
+fn record_raw_node(node: &Value, pointer: &str, stats: &mut FileRawStats) {
+    let source = node.get("source").and_then(Value::as_str).unwrap_or("");
+    let inferred_provenance = infer_raw_provenance(node, source);
+    let source_class = classify_raw_source(source);
+    let source_marker_kind = node
+        .get("x-source-marker-kind")
+        .and_then(Value::as_str)
+        .filter(|value| !value.is_empty())
+        .map(ToOwned::to_owned);
+    stats.nodes_total += 1;
+    *stats
+        .inferred_provenance
+        .entry(inferred_provenance.clone())
+        .or_insert(0) += 1;
+    *stats
+        .source_classes
+        .entry(source_class.clone())
+        .or_insert(0) += 1;
+    if let Some(kind) = &source_marker_kind {
+        *stats.source_marker_kinds.entry(kind.clone()).or_insert(0) += 1;
+    }
+    if stats.observations.len() < 10 {
+        stats.observations.push(RawNodeObservation {
+            pointer: pointer.to_owned(),
+            inferred_provenance,
+            source_class,
+            source_marker_kind,
+            source_preview: source_preview(source),
+        });
+    }
+}
+
+fn infer_raw_provenance(node: &Value, source: &str) -> String {
+    if let Some(provenance) = node
+        .get("x-provenance")
+        .and_then(Value::as_str)
+        .filter(|value| !value.is_empty())
+    {
+        return provenance.to_owned();
+    }
+    match classify_raw_source(source).as_str() {
+        "empty" | "html-fragment" | "parser-token" => "parser-derived".to_owned(),
+        _ => "source-derived".to_owned(),
+    }
+}
+
+fn classify_raw_source(source: &str) -> String {
+    let trimmed = source.trim();
+    if trimmed.is_empty() {
+        "empty"
+    } else if is_html_fragment(trimmed) {
+        "html-fragment"
+    } else if is_parser_token(trimmed) {
+        "parser-token"
+    } else if is_aozora_command(trimmed) {
+        "aozora-command"
+    } else if is_aozora_marker_text(trimmed) {
+        "aozora-marker"
+    } else if trimmed.contains("底本では") || trimmed.contains("入力者注") {
+        "editorial-note"
+    } else {
+        "text"
+    }
+    .to_owned()
+}
+
+fn is_html_fragment(value: &str) -> bool {
+    value.starts_with('<') && value.ends_with('>')
+}
+
+fn is_parser_token(value: &str) -> bool {
+    value.starts_with("BlockStart(")
+        || value.starts_with("BlockEnd(")
+        || value.starts_with("InlineStart(")
+        || value.starts_with("InlineEnd(")
+}
+
+fn is_aozora_command(value: &str) -> bool {
+    matches!(
+        value,
+        "改頁" | "改丁" | "改段" | "改見開き" | "改行" | "改ページ"
+    )
+}
+
+fn is_aozora_marker_text(value: &str) -> bool {
+    value.contains("［＃")
+        || value.contains("[#")
+        || value.starts_with('※')
+        || value.starts_with('｜')
+        || value.starts_with('《')
+        || value.starts_with('〔')
+}
+
+fn source_preview(source: &str) -> String {
+    let normalized = source.split_whitespace().collect::<Vec<_>>().join(" ");
+    let mut preview = normalized.chars().take(80).collect::<String>();
+    if normalized.chars().count() > 80 {
+        preview.push_str("...");
+    }
+    preview
 }
 
 fn summarize_output(
@@ -429,6 +617,51 @@ fn summarize_output(
     }
 }
 
+fn merge_raw_file_stats(
+    summary: &mut RawNodeSummary,
+    corpus: &str,
+    path: &str,
+    file_stats: &FileRawStats,
+) {
+    if file_stats.nodes_total == 0 {
+        return;
+    }
+    summary.nodes_total += file_stats.nodes_total;
+    summary.files_with_raw += 1;
+    let corpus_stats = summary.by_corpus.entry(corpus.to_owned()).or_default();
+    corpus_stats.nodes_total += file_stats.nodes_total;
+    corpus_stats.files_with_raw += 1;
+    for (provenance, count) in &file_stats.inferred_provenance {
+        *summary
+            .inferred_provenance
+            .entry(provenance.clone())
+            .or_insert(0) += count;
+    }
+    for (kind, count) in &file_stats.source_marker_kinds {
+        *summary.source_marker_kinds.entry(kind.clone()).or_insert(0) += count;
+    }
+    for (source_class, count) in &file_stats.source_classes {
+        *summary
+            .source_classes
+            .entry(source_class.clone())
+            .or_insert(0) += count;
+    }
+    for observation in &file_stats.observations {
+        if summary.samples.len() >= 20 {
+            break;
+        }
+        summary.samples.push(RawNodeSample {
+            corpus: corpus.to_owned(),
+            path: path.to_owned(),
+            pointer: observation.pointer.clone(),
+            inferred_provenance: observation.inferred_provenance.clone(),
+            source_class: observation.source_class.clone(),
+            source_marker_kind: observation.source_marker_kind.clone(),
+            source_preview: observation.source_preview.clone(),
+        });
+    }
+}
+
 fn summarize(
     config: &CorpusAuditConfig,
     mapping: MappingDocument,
@@ -441,6 +674,7 @@ fn summarize(
         ..AuditTotals::default()
     };
     let mut by_corpus = BTreeMap::<String, CorpusTotals>::new();
+    let mut raw_nodes = RawNodeSummary::default();
     let mut categories = BTreeMap::<String, u64>::new();
     let rules_total = mapping.transform_rule_descriptions.len() as u64;
     let mut rules_by_id = mapping
@@ -465,9 +699,17 @@ fn summarize(
     let mut identities_by_corpus = BTreeMap::<String, BTreeSet<CompatibilityIdentity>>::new();
 
     for result in results {
+        let corpus_label = result.corpus.clone();
+        let relative_path = result.relative_path.clone();
         totals.files_attempted += 1;
         let corpus_totals = by_corpus.entry(result.corpus.clone()).or_default();
         corpus_totals.files_attempted += 1;
+        merge_raw_file_stats(
+            &mut raw_nodes,
+            &corpus_label,
+            &relative_path,
+            &result.raw_nodes,
+        );
         match result.outcome {
             FileOutcome::Success(success) => {
                 totals.files_succeeded += 1;
@@ -525,6 +767,14 @@ fn summarize(
             FileOutcome::Failure { message } => {
                 totals.files_failed += 1;
                 corpus_totals.files_failed += 1;
+                if message == "unsupported inline kind: raw" {
+                    raw_nodes.fatal_direct_failures += 1;
+                    raw_nodes
+                        .by_corpus
+                        .entry(corpus_label)
+                        .or_default()
+                        .fatal_direct_failures += 1;
+                }
                 let sample = FileSample {
                     corpus: result.corpus.clone(),
                     path: result.relative_path.clone(),
@@ -637,6 +887,7 @@ fn summarize(
             .collect(),
         totals,
         by_corpus,
+        raw_nodes,
         categories,
         rule_coverage: RuleCoverage {
             rules_total: rules_by_id.len() as u64,
@@ -744,6 +995,59 @@ fn render_report(summary: &AuditSummary) -> String {
         ));
     }
     out.push('\n');
+
+    out.push_str("## Raw Nodes\n\n");
+    out.push_str(&format!(
+        "- nodes_total: `{}`\n- files_with_raw: `{}`\n- fatal_direct_failures: `{}`\n\n",
+        summary.raw_nodes.nodes_total,
+        summary.raw_nodes.files_with_raw,
+        summary.raw_nodes.fatal_direct_failures
+    ));
+    if !summary.raw_nodes.by_corpus.is_empty() {
+        out.push_str("| corpus | nodes_total | files_with_raw | fatal_direct_failures |\n");
+        out.push_str("|---|---:|---:|---:|\n");
+        for (corpus, stats) in &summary.raw_nodes.by_corpus {
+            out.push_str(&format!(
+                "| {} | {} | {} | {} |\n",
+                table_cell(corpus),
+                stats.nodes_total,
+                stats.files_with_raw,
+                stats.fatal_direct_failures
+            ));
+        }
+        out.push('\n');
+    }
+    if !summary.raw_nodes.inferred_provenance.is_empty() {
+        out.push_str("| inferred_provenance | nodes |\n|---|---:|\n");
+        for (provenance, count) in &summary.raw_nodes.inferred_provenance {
+            out.push_str(&format!("| {} | {} |\n", table_cell(provenance), count));
+        }
+        out.push('\n');
+    }
+    if !summary.raw_nodes.source_classes.is_empty() {
+        out.push_str("| source_class | nodes |\n|---|---:|\n");
+        for (source_class, count) in &summary.raw_nodes.source_classes {
+            out.push_str(&format!("| {} | {} |\n", table_cell(source_class), count));
+        }
+        out.push('\n');
+    }
+    if !summary.raw_nodes.samples.is_empty() {
+        out.push_str("| corpus | path | pointer | provenance | class | source_marker_kind | source_preview |\n");
+        out.push_str("|---|---|---|---|---|---|---|\n");
+        for sample in &summary.raw_nodes.samples {
+            out.push_str(&format!(
+                "| {} | `{}` | `{}` | {} | {} | {} | {} |\n",
+                table_cell(&sample.corpus),
+                sample.path,
+                sample.pointer,
+                table_cell(&sample.inferred_provenance),
+                table_cell(&sample.source_class),
+                table_cell(sample.source_marker_kind.as_deref().unwrap_or("")),
+                table_cell(&sample.source_preview)
+            ));
+        }
+        out.push('\n');
+    }
 
     out.push_str("## Divergence Categories\n\n");
     out.push_str("| category | occurrences |\n|---|---:|\n");

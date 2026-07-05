@@ -1726,6 +1726,119 @@ fn cli_audit_corpus_reports_successes_and_failures() {
 }
 
 #[test]
+fn cli_audit_corpus_reports_raw_node_provenance_inventory() {
+    let repo = repo_root();
+    let abc = abc_root(&repo);
+    let temp = tempfile::tempdir().unwrap();
+    let aat_dir = temp.path().join("aat");
+    std::fs::create_dir_all(&aat_dir).unwrap();
+    let summary = temp.path().join("summary.json");
+    let report = temp.path().join("report.md");
+
+    std::fs::write(
+        aat_dir.join("direct-raw.aat.json"),
+        r#"{
+  "version": 1,
+  "work_id": "audit-direct-raw",
+  "meta": {
+    "adapter": "fixture",
+    "adapter_version": "fixture 0.1.0",
+    "source_encoding": "utf-8",
+    "source_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "parse_complete": true,
+    "warnings": []
+  },
+  "blocks": [{"kind": "paragraph", "content": [{"kind": "raw", "source": "改頁"}]}]
+}"#,
+    )
+    .unwrap();
+    std::fs::write(
+        aat_dir.join("projected-raw.aat.json"),
+        r#"{
+  "version": 1,
+  "work_id": "audit-projected-raw",
+  "meta": {
+    "adapter": "fixture",
+    "adapter_version": "fixture 0.1.0",
+    "source_encoding": "utf-8",
+    "source_hash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+    "parse_complete": true,
+    "warnings": []
+  },
+  "blocks": [
+    {
+      "kind": "paragraph",
+      "content": [
+        {"kind": "style", "style_type": "bold", "content": [{"kind": "raw", "source": "<br/>"}]}
+      ]
+    }
+  ]
+}"#,
+    )
+    .unwrap();
+
+    let status = std::process::Command::new(env!("CARGO_BIN_EXE_ab-aat-to-parser-ir"))
+        .arg("audit-corpus")
+        .arg("--aat-dir")
+        .arg(&aat_dir)
+        .arg("--mapping")
+        .arg(repo.join("data/aat-to-parser-ir-mapping-v1.json"))
+        .arg("--summary-json")
+        .arg(&summary)
+        .arg("--report-md")
+        .arg(&report)
+        .arg("--jobs")
+        .arg("2")
+        .arg("--abc-root")
+        .arg(abc)
+        .status()
+        .unwrap();
+
+    assert!(status.success());
+    let summary: Value = ab_aat_to_parser_ir::schema::read_json(&summary).unwrap();
+    assert_eq!(summary.pointer("/totals/files_attempted"), Some(&json!(2)));
+    assert_eq!(summary.pointer("/totals/files_succeeded"), Some(&json!(1)));
+    assert_eq!(summary.pointer("/totals/files_failed"), Some(&json!(1)));
+    assert_eq!(summary.pointer("/raw_nodes/nodes_total"), Some(&json!(2)));
+    assert_eq!(
+        summary.pointer("/raw_nodes/files_with_raw"),
+        Some(&json!(2))
+    );
+    assert_eq!(
+        summary.pointer("/raw_nodes/fatal_direct_failures"),
+        Some(&json!(1))
+    );
+    assert_eq!(
+        summary.pointer("/raw_nodes/inferred_provenance/source-derived"),
+        Some(&json!(1))
+    );
+    assert_eq!(
+        summary.pointer("/raw_nodes/inferred_provenance/parser-derived"),
+        Some(&json!(1))
+    );
+    assert_eq!(
+        summary.pointer("/raw_nodes/source_classes/aozora-command"),
+        Some(&json!(1))
+    );
+    assert_eq!(
+        summary.pointer("/raw_nodes/source_classes/html-fragment"),
+        Some(&json!(1))
+    );
+    assert_eq!(
+        summary.pointer("/raw_nodes/by_corpus/aat/nodes_total"),
+        Some(&json!(2))
+    );
+    assert_eq!(
+        summary
+            .pointer("/raw_nodes/samples/0/source_preview")
+            .and_then(Value::as_str),
+        Some("改頁")
+    );
+    let report_text = std::fs::read_to_string(&report).unwrap();
+    assert!(report_text.contains("## Raw Nodes"));
+}
+
+#[test]
 fn cli_default_roots_follow_mapping_path_not_current_directory() {
     let repo = repo_root();
     let temp = tempfile::tempdir().unwrap();

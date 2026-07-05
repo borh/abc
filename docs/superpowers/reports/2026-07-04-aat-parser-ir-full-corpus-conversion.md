@@ -1,6 +1,6 @@
 # AAT Parser-IR Conversion Audit
 
-- generated_unix_seconds: `1783244944`
+- generated_unix_seconds: `1783245775`
 - mapping: `https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe` `0.2.3`
 - mapping_hash: `sha256:9812e1cc0d956143e61cdd9d0a5bccaa3ec301c7984279230107c23919936e8b`
 - mapping_schema_hash: `sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4`
@@ -10,7 +10,7 @@
 
 | files_attempted | files_succeeded | files_failed | parser_ir_nodes | divergence_records | divergence_occurrences | elapsed_seconds |
 |---:|---:|---:|---:|---:|---:|---:|
-| 89169 | 67906 | 21263 | 28890549 | 804793 | 46686120 | 29.158 |
+| 89169 | 67906 | 21263 | 28890549 | 804793 | 46686120 | 30.261 |
 
 ## Inputs
 
@@ -31,6 +31,56 @@
 | aozora-rs-adapter | 17894 | 17894 | 0 | 7821839 | 11926731 |
 | aozora2-adapter | 17856 | 13483 | 4373 | 2136492 | 4669366 |
 | aozora2html-adapter | 17689 | 17689 | 0 | 8330573 | 11980288 |
+
+## Raw Nodes
+
+- nodes_total: `4800218`
+- files_with_raw: `21917`
+- fatal_direct_failures: `20958`
+
+| corpus | nodes_total | files_with_raw | fatal_direct_failures |
+|---|---:|---:|---:|
+| aozora-adapter | 4727752 | 16890 | 16890 |
+| aozora2-adapter | 69507 | 4768 | 4068 |
+| aozora2html-adapter | 2959 | 259 | 0 |
+
+| inferred_provenance | nodes |
+|---|---:|
+| parser-derived | 4282492 |
+| source-derived | 517726 |
+
+| source_class | nodes |
+|---|---:|
+| aozora-command | 1886 |
+| aozora-marker | 195397 |
+| editorial-note | 8591 |
+| empty | 2989698 |
+| html-fragment | 2960 |
+| parser-token | 51093 |
+| text | 1550593 |
+
+| corpus | path | pointer | provenance | class | source_marker_kind | source_preview |
+|---|---|---|---|---|---|---|
+| aozora2-adapter | `000005_53194-ebb0cbaf64b3.json` | `$.blocks[0].content[0].content[0].content[0]` | source-derived | text |  | ページの左右中央 |
+| aozora2-adapter | `000005_53194-ebb0cbaf64b3.json` | `$.blocks[0].content[0].content[4]` | source-derived | aozora-command |  | 改丁 |
+| aozora2-adapter | `000005_53194-ebb0cbaf64b3.json` | `$.blocks[44].content[0].content[261]` | source-derived | editorial-note |  | 「……』」は底本では「……」」 |
+| aozora2-adapter | `000006_1869-62320f0f4474.json` | `$.blocks[8].content[423].base_content[1]` | source-derived | text |  | 「引」は小書き右寄せ |
+| aozora2-adapter | `000006_1869-62320f0f4474.json` | `$.blocks[10].content[4170]` | source-derived | aozora-command |  | 改丁 |
+| aozora2-adapter | `000006_1869-62320f0f4474.json` | `$.blocks[10].content[5133]` | source-derived | editorial-note |  | 「狼狽《あわ》てて」は底本では「狼狙《あわ》てて」 |
+| aozora2-adapter | `000006_1869-62320f0f4474.json` | `$.blocks[12].content[1311]` | source-derived | text |  | 「引」は小書き右寄せ |
+| aozora2-adapter | `000006_1869-62320f0f4474.json` | `$.blocks[16].content[179]` | source-derived | text |  | 「引」は小書き右寄せ |
+| aozora2-adapter | `000006_1869-62320f0f4474.json` | `$.blocks[16].content[182]` | source-derived | text |  | 「引」は小書き右寄せ |
+| aozora2-adapter | `000006_1869-62320f0f4474.json` | `$.blocks[16].content[1403]` | source-derived | aozora-command |  | 改丁 |
+| aozora2-adapter | `000006_1869-62320f0f4474.json` | `$.blocks[18].content[1275]` | source-derived | text |  | 「引」は小書き右寄せ |
+| aozora2-adapter | `000006_1869-62320f0f4474.json` | `$.blocks[18].content[1277]` | source-derived | text |  | 「引」は小書き右寄せ |
+| aozora2-adapter | `000006_1869-62320f0f4474.json` | `$.blocks[18].content[1279]` | source-derived | text |  | 「引」は小書き右寄せ |
+| aozora2-adapter | `000006_3310-49cd8c085df4.json` | `$.blocks[2].content[0].content[434]` | source-derived | text |  | 「涕」はママ |
+| aozora2-adapter | `000006_4627-ded0d23b15b9.json` | `$.blocks[0].content[7]` | source-derived | editorial-note |  | 「齷齪」は底本では「齷齦」 |
+| aozora2-adapter | `000008_1083-2ea128250d0d.json` | `$.blocks[0].content[0].content[23]` | source-derived | text |  | 底本は改行天付き |
+| aozora2-adapter | `000008_1083-2ea128250d0d.json` | `$.blocks[0].content[0].content[35]` | source-derived | text |  | 底本は「俵」を「依」と誤植 |
+| aozora2-adapter | `000008_1083-2ea128250d0d.json` | `$.blocks[0].content[0].content[37]` | source-derived | text |  | 底本は「ただまま」を「ただま」と誤植 |
+| aozora2-adapter | `000008_1083-2ea128250d0d.json` | `$.blocks[0].content[0].content[45]` | source-derived | editorial-note |  | 底本ではここのみ「莚」。他は「筵」 |
+| aozora2-adapter | `000008_1083-2ea128250d0d.json` | `$.blocks[0].content[0].content[53]` | source-derived | editorial-note |  | 「仁王立ちになった」は底本では「仁王立ち」と誤植 |
 
 ## Divergence Categories
 

@@ -1,5 +1,5 @@
 {
-  "generated_unix_seconds": 1783244944,
+  "generated_unix_seconds": 1783245775,
   "mapping": {
     "path": "/home/bor/Projects/ab-validator/data/aat-to-parser-ir-mapping-v1.json",
     "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
@@ -44,7 +44,7 @@
     "parser_ir_nodes": 28890549,
     "divergence_records": 804793,
     "divergence_occurrences": 46686120,
-    "elapsed_seconds": 29.158
+    "elapsed_seconds": 30.261
   },
   "by_corpus": {
     "aozora-adapter": {
@@ -87,6 +87,248 @@
       "divergence_records": 240212,
       "divergence_occurrences": 11980288
     }
+  },
+  "raw_nodes": {
+    "nodes_total": 4800218,
+    "files_with_raw": 21917,
+    "fatal_direct_failures": 20958,
+    "by_corpus": {
+      "aozora-adapter": {
+        "nodes_total": 4727752,
+        "files_with_raw": 16890,
+        "fatal_direct_failures": 16890
+      },
+      "aozora2-adapter": {
+        "nodes_total": 69507,
+        "files_with_raw": 4768,
+        "fatal_direct_failures": 4068
+      },
+      "aozora2html-adapter": {
+        "nodes_total": 2959,
+        "files_with_raw": 259,
+        "fatal_direct_failures": 0
+      }
+    },
+    "inferred_provenance": {
+      "parser-derived": 4282492,
+      "source-derived": 517726
+    },
+    "source_marker_kinds": {
+      "alignEnd": 20096,
+      "angleQuote": 93,
+      "bodyEnd": 243,
+      "bouten": 153165,
+      "center": 812,
+      "combineUpright": 18836,
+      "containerClose": 77689,
+      "containerOpen": 91690,
+      "directive": 36538,
+      "emphasis": 26198,
+      "forcedBreak": 156,
+      "gaiji": 48110,
+      "headingHint": 67801,
+      "illustration": 5814,
+      "indent": 81847,
+      "kaeriten": 34927,
+      "lineBold": 29,
+      "lineFontSize": 46,
+      "marginNote": 4014,
+      "pageBreak": 7202,
+      "ruby": 3551302,
+      "sectionBreak": 1831,
+      "unparsed-source-gap": 499313
+    },
+    "source_classes": {
+      "aozora-command": 1886,
+      "aozora-marker": 195397,
+      "editorial-note": 8591,
+      "empty": 2989698,
+      "html-fragment": 2960,
+      "parser-token": 51093,
+      "text": 1550593
+    },
+    "samples": [
+      {
+        "corpus": "aozora2-adapter",
+        "path": "000005_53194-ebb0cbaf64b3.json",
+        "pointer": "$.blocks[0].content[0].content[0].content[0]",
+        "inferred_provenance": "source-derived",
+        "source_class": "text",
+        "source_marker_kind": null,
+        "source_preview": "ページの左右中央"
+      },
+      {
+        "corpus": "aozora2-adapter",
+        "path": "000005_53194-ebb0cbaf64b3.json",
+        "pointer": "$.blocks[0].content[0].content[4]",
+        "inferred_provenance": "source-derived",
+        "source_class": "aozora-command",
+        "source_marker_kind": null,
+        "source_preview": "改丁"
+      },
+      {
+        "corpus": "aozora2-adapter",
+        "path": "000005_53194-ebb0cbaf64b3.json",
+        "pointer": "$.blocks[44].content[0].content[261]",
+        "inferred_provenance": "source-derived",
+        "source_class": "editorial-note",
+        "source_marker_kind": null,
+        "source_preview": "「……』」は底本では「……」」"
+      },
+      {
+        "corpus": "aozora2-adapter",
+        "path": "000006_1869-62320f0f4474.json",
+        "pointer": "$.blocks[8].content[423].base_content[1]",
+        "inferred_provenance": "source-derived",
+        "source_class": "text",
+        "source_marker_kind": null,
+        "source_preview": "「引」は小書き右寄せ"
+      },
+      {
+        "corpus": "aozora2-adapter",
+        "path": "000006_1869-62320f0f4474.json",
+        "pointer": "$.blocks[10].content[4170]",
+        "inferred_provenance": "source-derived",
+        "source_class": "aozora-command",
+        "source_marker_kind": null,
+        "source_preview": "改丁"
+      },
+      {
+        "corpus": "aozora2-adapter",
+        "path": "000006_1869-62320f0f4474.json",
+        "pointer": "$.blocks[10].content[5133]",
+        "inferred_provenance": "source-derived",
+        "source_class": "editorial-note",
+        "source_marker_kind": null,
+        "source_preview": "「狼狽《あわ》てて」は底本では「狼狙《あわ》てて」"
+      },
+      {
+        "corpus": "aozora2-adapter",
+        "path": "000006_1869-62320f0f4474.json",
+        "pointer": "$.blocks[12].content[1311]",
+        "inferred_provenance": "source-derived",
+        "source_class": "text",
+        "source_marker_kind": null,
+        "source_preview": "「引」は小書き右寄せ"
+      },
+      {
+        "corpus": "aozora2-adapter",
+        "path": "000006_1869-62320f0f4474.json",
+        "pointer": "$.blocks[16].content[179]",
+        "inferred_provenance": "source-derived",
+        "source_class": "text",
+        "source_marker_kind": null,
+        "source_preview": "「引」は小書き右寄せ"
+      },
+      {
+        "corpus": "aozora2-adapter",
+        "path": "000006_1869-62320f0f4474.json",
+        "pointer": "$.blocks[16].content[182]",
+        "inferred_provenance": "source-derived",
+        "source_class": "text",
+        "source_marker_kind": null,
+        "source_preview": "「引」は小書き右寄せ"
+      },
+      {
+        "corpus": "aozora2-adapter",
+        "path": "000006_1869-62320f0f4474.json",
+        "pointer": "$.blocks[16].content[1403]",
+        "inferred_provenance": "source-derived",
+        "source_class": "aozora-command",
+        "source_marker_kind": null,
+        "source_preview": "改丁"
+      },
+      {
+        "corpus": "aozora2-adapter",
+        "path": "000006_1869-62320f0f4474.json",
+        "pointer": "$.blocks[18].content[1275]",
+        "inferred_provenance": "source-derived",
+        "source_class": "text",
+        "source_marker_kind": null,
+        "source_preview": "「引」は小書き右寄せ"
+      },
+      {
+        "corpus": "aozora2-adapter",
+        "path": "000006_1869-62320f0f4474.json",
+        "pointer": "$.blocks[18].content[1277]",
+        "inferred_provenance": "source-derived",
+        "source_class": "text",
+        "source_marker_kind": null,
+        "source_preview": "「引」は小書き右寄せ"
+      },
+      {
+        "corpus": "aozora2-adapter",
+        "path": "000006_1869-62320f0f4474.json",
+        "pointer": "$.blocks[18].content[1279]",
+        "inferred_provenance": "source-derived",
+        "source_class": "text",
+        "source_marker_kind": null,
+        "source_preview": "「引」は小書き右寄せ"
+      },
+      {
+        "corpus": "aozora2-adapter",
+        "path": "000006_3310-49cd8c085df4.json",
+        "pointer": "$.blocks[2].content[0].content[434]",
+        "inferred_provenance": "source-derived",
+        "source_class": "text",
+        "source_marker_kind": null,
+        "source_preview": "「涕」はママ"
+      },
+      {
+        "corpus": "aozora2-adapter",
+        "path": "000006_4627-ded0d23b15b9.json",
+        "pointer": "$.blocks[0].content[7]",
+        "inferred_provenance": "source-derived",
+        "source_class": "editorial-note",
+        "source_marker_kind": null,
+        "source_preview": "「齷齪」は底本では「齷齦」"
+      },
+      {
+        "corpus": "aozora2-adapter",
+        "path": "000008_1083-2ea128250d0d.json",
+        "pointer": "$.blocks[0].content[0].content[23]",
+        "inferred_provenance": "source-derived",
+        "source_class": "text",
+        "source_marker_kind": null,
+        "source_preview": "底本は改行天付き"
+      },
+      {
+        "corpus": "aozora2-adapter",
+        "path": "000008_1083-2ea128250d0d.json",
+        "pointer": "$.blocks[0].content[0].content[35]",
+        "inferred_provenance": "source-derived",
+        "source_class": "text",
+        "source_marker_kind": null,
+        "source_preview": "底本は「俵」を「依」と誤植"
+      },
+      {
+        "corpus": "aozora2-adapter",
+        "path": "000008_1083-2ea128250d0d.json",
+        "pointer": "$.blocks[0].content[0].content[37]",
+        "inferred_provenance": "source-derived",
+        "source_class": "text",
+        "source_marker_kind": null,
+        "source_preview": "底本は「ただまま」を「ただま」と誤植"
+      },
+      {
+        "corpus": "aozora2-adapter",
+        "path": "000008_1083-2ea128250d0d.json",
+        "pointer": "$.blocks[0].content[0].content[45]",
+        "inferred_provenance": "source-derived",
+        "source_class": "editorial-note",
+        "source_marker_kind": null,
+        "source_preview": "底本ではここのみ「莚」。他は「筵」"
+      },
+      {
+        "corpus": "aozora2-adapter",
+        "path": "000008_1083-2ea128250d0d.json",
+        "pointer": "$.blocks[0].content[0].content[53]",
+        "inferred_provenance": "source-derived",
+        "source_class": "editorial-note",
+        "source_marker_kind": null,
+        "source_preview": "「仁王立ちになった」は底本では「仁王立ち」と誤植"
+      }
+    ]
   },
   "categories": {
     "AMBIGUITY": 29709249,

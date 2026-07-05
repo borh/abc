@@ -463,6 +463,7 @@ fn compact_kind(kind: CompactExampleKind) -> &'static str {
 #[cfg(test)]
 mod tests {
     use std::collections::BTreeMap;
+    use std::sync::Arc;
 
     use ab_morph_diff::{
         Analysis, ChangedValue, Comparison, ComparisonStats, FeatureDiff, FeatureMap, Morpheme,
@@ -490,7 +491,7 @@ mod tests {
         let analysis = Analysis {
             analyzer: "vibrato".to_owned(),
             text_id: "t1".to_owned(),
-            source_text: "今日".to_owned(),
+            source_text: Arc::from("今日"),
             morphemes: vec![Morpheme {
                 surface: "今日".to_owned(),
                 byte_span: 0..6,
@@ -736,7 +737,7 @@ mod tests {
         Analysis {
             analyzer: analyzer.to_owned(),
             text_id: "t1".to_owned(),
-            source_text: "今日は晴れです。".to_owned(),
+            source_text: Arc::from("今日は晴れです。"),
             morphemes: vec![Morpheme {
                 surface: "今日".to_owned(),
                 byte_span: 0..6,
@@ -757,7 +758,7 @@ mod tests {
         Analysis {
             analyzer: analyzer.to_owned(),
             text_id: "t1".to_owned(),
-            source_text: source_text.to_owned(),
+            source_text: Arc::from(source_text),
             morphemes,
             warnings: Vec::new(),
             ortho_annotations: None,

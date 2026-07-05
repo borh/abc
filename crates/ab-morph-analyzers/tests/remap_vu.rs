@@ -5,6 +5,8 @@
 //! `char_span`, AND `surface` must refer to the ORIGINAL source text — not
 //! the normalized view that was actually tokenized.
 
+use std::sync::Arc;
+
 use ab_morph_analyzers::span_builder::remap_spans;
 use ab_morph_diff::{Analysis, FeatureMap, Morpheme};
 use ab_ortho_detect::{
@@ -28,7 +30,7 @@ fn make_analysis(norm_source: String, morphemes: Vec<Morpheme>) -> Analysis {
     Analysis {
         analyzer: "test".to_owned(),
         text_id: "t".to_owned(),
-        source_text: norm_source,
+        source_text: Arc::from(norm_source),
         morphemes,
         warnings: Vec::new(),
         ortho_annotations: None,

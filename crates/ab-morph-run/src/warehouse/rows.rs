@@ -317,6 +317,7 @@ fn byte_span_from_char_span(
 #[cfg(test)]
 mod tests {
     use std::ops::Range;
+    use std::sync::Arc;
 
     use ab_morph_diff::{Analysis, FeatureMap, Morpheme};
 
@@ -327,7 +328,7 @@ mod tests {
         let analysis = Analysis {
             text_id: "work-a".to_owned(),
             analyzer: "vibrato:unidic".to_owned(),
-            source_text: "今日".to_owned(),
+            source_text: Arc::from("今日"),
             morphemes: vec![m(
                 "今日",
                 0..6,
@@ -514,7 +515,7 @@ mod tests {
         Analysis {
             text_id: text_id.to_owned(),
             analyzer: analyzer.to_owned(),
-            source_text: source_text.to_owned(),
+            source_text: Arc::from(source_text),
             morphemes,
             warnings: Vec::new(),
             ortho_annotations: None,

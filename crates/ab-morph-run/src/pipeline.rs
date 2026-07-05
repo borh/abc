@@ -676,6 +676,11 @@ pub(crate) fn run_analyze_aat_serial(
             source_format: document.source_format,
             text: normalized_text,
         };
+        // One allocation per document, shared by every per-analyzer Analysis.
+        let shared_normalized: Arc<str> = Arc::from(norm_doc.text.as_str());
+        // The original text is only needed when ortho remap can fire.
+        let shared_original: Option<Arc<str>> =
+            offset_map_opt.is_some().then(|| Arc::from(document.text.as_str()));
         let mut analyses = Vec::new();
 
         for analyzer in analyzers {
@@ -718,6 +723,8 @@ pub(crate) fn run_analyze_aat_serial(
                     return Err(error);
                 }
             };
+            // Drop the analyzer's own text copy; share the per-document allocation.
+            analysis.source_text = Arc::clone(&shared_normalized);
             // Remap morpheme byte_spans / char_spans / surfaces from normalized
             // coords to original-doc coords, and attach the ortho provenance to
             // the analysis. `source_text` is set to the original document text so
@@ -734,7 +741,11 @@ pub(crate) fn run_analyze_aat_serial(
                     Ok(()) => {
                         // Honor spec invariant #2: byte_span/char_span/surface now in
                         // original-doc coords, so source_text must be the original.
-                        analysis.source_text = document.text.clone();
+                        analysis.source_text = Arc::clone(
+                            shared_original
+                                .as_ref()
+                                .expect("offset_map_opt is Some in this arm"),
+                        );
                     }
                     Err(e) => {
                         // Morphemes remain in normalized coords. Leave source_text as
@@ -759,7 +770,9 @@ pub(crate) fn run_analyze_aat_serial(
                 write_analysis_row(&mut **writer, options.output_profile, &source_id, &analysis)?;
             }
             if options.output_profile == OutputProfile::Compact && options.warehouse.is_none() {
-                analysis.source_text.clear();
+                // Drop this analysis's handle to the shared text; other analyses'
+                // clones of the same Arc are unaffected.
+                analysis.source_text = Arc::from("");
             }
             analyses.push(analysis);
         }
@@ -783,7 +796,9 @@ pub(crate) fn run_analyze_aat_serial(
                 .collect::<Vec<_>>();
             writer.append_analyses(&analysis_rows)?;
             for analysis in &mut analyses {
-                analysis.source_text.clear();
+                // Drop this analysis's handle to the shared text; other analyses'
+                // clones of the same Arc are unaffected.
+                analysis.source_text = Arc::from("");
             }
             for analysis in &analyses {
                 for start in

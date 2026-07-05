@@ -93,6 +93,8 @@ fn segmentation_kind(from_count: usize, to_count: usize) -> SegmentationKind {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+
     use crate::{
         Analysis, CoverageMismatch, CoverageMismatchKind, FeatureMap, Morpheme, Region,
         SegmentationDiff, SegmentationKind,
@@ -123,7 +125,7 @@ mod tests {
         Analysis {
             analyzer: analyzer.to_owned(),
             text_id: "t".to_owned(),
-            source_text: source.to_owned(),
+            source_text: Arc::from(source),
             morphemes,
             warnings: Vec::new(),
             ortho_annotations: None,

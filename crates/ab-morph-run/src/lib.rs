@@ -1104,7 +1104,7 @@ fn test_analysis(kind: TestAnalyzerKind, document: &PlainTextDocument) -> Analys
             TestAnalyzerKind::Split => "test:split".to_owned(),
         },
         text_id: document.text_id.clone(),
-        source_text: document.text.clone(),
+        source_text: Arc::from(document.text.as_str()),
         morphemes,
         warnings: Vec::new(),
         ortho_annotations: None,
@@ -1955,7 +1955,7 @@ mod tests {
         let analysis = Analysis {
             analyzer: "fixture".to_owned(),
             text_id: "t1".to_owned(),
-            source_text: "日日".to_owned(),
+            source_text: Arc::from("日日"),
             morphemes: vec![
                 Morpheme {
                     surface: "日".to_owned(),
@@ -2078,7 +2078,7 @@ mod tests {
         Analysis {
             analyzer: analyzer.to_owned(),
             text_id: "t1".to_owned(),
-            source_text: "今日".to_owned(),
+            source_text: Arc::from("今日"),
             morphemes: vec![Morpheme {
                 surface: "今日".to_owned(),
                 byte_span: 0..6,

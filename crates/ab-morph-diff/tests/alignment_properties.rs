@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use ab_morph_diff::{Analysis, FeatureMap, Morpheme, Region, compare_pair};
 use proptest::prelude::*;
 
@@ -26,7 +28,7 @@ fn analysis(analyzer: &str, text: &str, cuts: &[usize]) -> Analysis {
     Analysis {
         analyzer: analyzer.to_owned(),
         text_id: "t".to_owned(),
-        source_text: text.to_owned(),
+        source_text: Arc::from(text),
         morphemes,
         warnings: Vec::new(),
         ortho_annotations: None,

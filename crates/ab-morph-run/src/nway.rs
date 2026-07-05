@@ -388,6 +388,8 @@ fn excerpt(source_text: &str, span: &Range<usize>) -> String {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+
     use ab_morph_diff::{Analysis, FeatureMap, Morpheme, compare_nway_with_source_text};
 
     use super::*;
@@ -426,7 +428,7 @@ mod tests {
         Analysis {
             analyzer: analyzer.to_owned(),
             text_id: "text-a".to_owned(),
-            source_text: source.to_owned(),
+            source_text: Arc::from(source),
             morphemes,
             warnings: Vec::new(),
             ortho_annotations: None,

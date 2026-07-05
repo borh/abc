@@ -1,4 +1,5 @@
 use std::hint::black_box;
+use std::sync::Arc;
 
 use ab_morph_diff::{Analysis, FeatureMap, Morpheme, compare_pair_compact_with_source_text};
 use criterion::{Criterion, criterion_group, criterion_main};
@@ -42,7 +43,7 @@ fn analysis(analyzer: &str, source: &str, split_today: bool) -> Analysis {
     Analysis {
         analyzer: analyzer.to_owned(),
         text_id: "bench".to_owned(),
-        source_text: source.to_owned(),
+        source_text: Arc::from(source),
         morphemes,
         warnings: Vec::new(),
         ortho_annotations: None,

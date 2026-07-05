@@ -94,6 +94,8 @@ pub(crate) fn visit_feature_pairs(
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+
     use crate::{
         AlignedMorpheme, Analysis, ChangedValue, FeatureMap, Morpheme, Region, SegmentationDiff,
         SegmentationKind,
@@ -112,7 +114,7 @@ mod tests {
         Analysis {
             analyzer: analyzer.to_owned(),
             text_id: "t".to_owned(),
-            source_text: "今日".to_owned(),
+            source_text: Arc::from("今日"),
             morphemes: vec![Morpheme {
                 surface: "今日".to_owned(),
                 byte_span: 0..6,

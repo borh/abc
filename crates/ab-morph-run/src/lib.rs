@@ -1903,6 +1903,7 @@ mod tests {
             None,
             None,
             Some(&stats_path),
+            crate::OrthoDetectMode::Off,
         )
         .unwrap();
 

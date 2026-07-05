@@ -74,9 +74,29 @@ enum Command {
         progress: bool,
         #[arg(long)]
         progress_interval_seconds: Option<u64>,
-        #[arg(long, value_enum, default_value_t = ab_morph_run::OrthoDetectMode::Off)]
+        #[arg(
+            long,
+            value_enum,
+            default_value_t = ab_morph_run::OrthoDetectMode::Off,
+            help = "Orthographic-detection layer for pre-war Japanese text (kata→hira normalization).
+
+[off] No normalization (default).
+[heuristic] v1 char-cascade detector. NOTE: against a 50-sentence human probe,
+recall is 0.636 — BELOW the spec's 0.85 floor — because the katakana_ratio > 0.5
+gate rejects kanji-heavy prose. See reports/ortho-detect/2026-07-05-phase2-human-recall.md.
+[ml] EXPERIMENTAL: logistic-regression detector on character features.
+Requires --ortho-ml-model. The only in-repo models are trained on bootstrap
+labels (port-fidelity surrogate, NOT real-world recall); model_hash proves byte
+identity only, not training provenance. Do not trust for production trench-work
+without retraining on a human-annotated gold set."
+        )]
         ortho_detect: ab_morph_run::OrthoDetectMode,
-        #[arg(long = "ortho-ml-model", value_name = "PATH")]
+        #[arg(
+            long = "ortho-ml-model",
+            value_name = "PATH",
+            help = "Path to a trained ML model file (bincode MlModel). Required for --ortho-detect=ml.
+The model carries no training-provenance metadata; verify its source before trusting output."
+        )]
         ortho_ml_model: Option<PathBuf>,
     },
     SummarizeWarehouseNway {

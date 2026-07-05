@@ -380,6 +380,13 @@ pub struct AatProjection {
     /// byte ranges. External to the Block/Inline tree — does not mutate IR nodes.
     /// Per spec §"IR/AAT mode": ruby bases and gaiji-resolved text in the
     /// visible-text projection may contain katakana and will be normalized.
+    ///
+    /// # Phase 2 status — RESERVED, no producer yet
+    /// The ab-ir pipeline does NOT currently populate this field from the
+    /// incoming AAT (it is `None` at all construction sites). It is reserved
+    /// for a future TEI/XML renderer that will consume `ortho_choices()` to
+    /// emit `<choice><orig>…</orig><reg>…</reg></choice>`. Wiring the producer
+    /// is a separate sub-project (no TEI renderer exists in the workspace).
     pub ortho_normalizations:
         Option<Vec<ab_ortho_detect::OrthoAnnotation>>,
 }

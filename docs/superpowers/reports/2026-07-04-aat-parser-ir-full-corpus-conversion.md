@@ -1,16 +1,16 @@
 # AAT Parser-IR Conversion Audit
 
-- generated_unix_seconds: `1783246708`
+- generated_unix_seconds: `1783250977`
 - mapping: `https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe` `0.2.3`
-- mapping_hash: `sha256:9812e1cc0d956143e61cdd9d0a5bccaa3ec301c7984279230107c23919936e8b`
+- mapping_hash: `sha256:13734117384aede0ee484cbda1b44b29c96007a17f238a21788f567f7da8ea06`
 - mapping_schema_hash: `sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4`
-- target_parser_ir_schema_hash: `sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913`
+- target_parser_ir_schema_hash: `sha256:da916a3a92f64d985cb98f9b2ddc7f562e660fd0c3dbe0c902392d3764b0158a`
 
 ## Totals
 
 | files_attempted | files_succeeded | files_failed | parser_ir_nodes | divergence_records | divergence_occurrences | elapsed_seconds |
 |---:|---:|---:|---:|---:|---:|---:|
-| 89169 | 89169 | 0 | 33359611 | 1042024 | 59048388 | 32.104 |
+| 89169 | 89169 | 0 | 33359611 | 1042024 | 59048388 | 76.956 |
 
 ## Inputs
 
@@ -96,11 +96,11 @@
 
 | adapter | adapter_version | mapping_version | mapping_hash | files_succeeded | files_failed | rules_emitted | rules_missing | unsupported_occurrences |
 |---|---|---|---|---:|---:|---:|---:|---:|
-| aozora | aozora-adapter 0.1.0 aozora 0.4.1 | 0.2.3 | `sha256:9812e1cc0d956143e61cdd9d0a5bccaa3ec301c7984279230107c23919936e8b` | 17886 | 0 | 16 | 698 | 4727752 |
-| aozora-epub3 | aozora-epub3-adapter 0.1.0 AozoraEpub3-JDK21-1.3.4-jdk21 | 0.2.3 | `sha256:9812e1cc0d956143e61cdd9d0a5bccaa3ec301c7984279230107c23919936e8b` | 17844 | 0 | 61 | 653 | 13234 |
-| aozora-rs | aozora-rs-adapter 0.1.0 2b4e8d1 | 0.2.3 | `sha256:9812e1cc0d956143e61cdd9d0a5bccaa3ec301c7984279230107c23919936e8b` | 17894 | 0 | 25 | 689 | 0 |
-| aozora2 | aozora2-adapter 0.1.0 aozora-core-0.7.1 | 0.2.3 | `sha256:9812e1cc0d956143e61cdd9d0a5bccaa3ec301c7984279230107c23919936e8b` | 17856 | 0 | 670 | 44 | 81154 |
-| aozora2html | aozora2html-adapter 0.1.0 gem-3.0.1 | 0.2.3 | `sha256:9812e1cc0d956143e61cdd9d0a5bccaa3ec301c7984279230107c23919936e8b` | 17689 | 0 | 112 | 602 | 14230 |
+| aozora | aozora-adapter 0.1.0 aozora 0.4.1 | 0.2.3 | `sha256:13734117384aede0ee484cbda1b44b29c96007a17f238a21788f567f7da8ea06` | 17886 | 0 | 16 | 698 | 4727752 |
+| aozora-epub3 | aozora-epub3-adapter 0.1.0 AozoraEpub3-JDK21-1.3.4-jdk21 | 0.2.3 | `sha256:13734117384aede0ee484cbda1b44b29c96007a17f238a21788f567f7da8ea06` | 17844 | 0 | 61 | 653 | 13234 |
+| aozora-rs | aozora-rs-adapter 0.1.0 2b4e8d1 | 0.2.3 | `sha256:13734117384aede0ee484cbda1b44b29c96007a17f238a21788f567f7da8ea06` | 17894 | 0 | 25 | 689 | 0 |
+| aozora2 | aozora2-adapter 0.1.0 aozora-core-0.7.1 | 0.2.3 | `sha256:13734117384aede0ee484cbda1b44b29c96007a17f238a21788f567f7da8ea06` | 17856 | 0 | 670 | 44 | 81154 |
+| aozora2html | aozora2html-adapter 0.1.0 gem-3.0.1 | 0.2.3 | `sha256:13734117384aede0ee484cbda1b44b29c96007a17f238a21788f567f7da8ea06` | 17689 | 0 | 112 | 602 | 14230 |
 
 ## Rule Coverage
 

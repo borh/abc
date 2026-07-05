@@ -175,7 +175,7 @@ jq -e '.classification_counts.source_note_metadata_excluded == 1' "$summary_json
 jq -e '.classification_counts.source_text_policy_required == 1' "$summary_json"
 jq -e '.classification_counts.missing_parser_evidence == 2' "$summary_json"
 jq -e '.blocking_owners == ["adapter", "evidence", "policy"]' "$summary_json"
-jq -e '[.rows[] | select(((.blocking_owners|index("adapter")) and (.blocking_owners|index("evidence")))] | length >= 1' "$summary_json"
+jq -e '[.rows[] | select((.blocking_owners | index("adapter")) and (.blocking_owners | index("evidence")))] | length >= 1' "$summary_json"
 jq -e '[.rows[] | select(.classifications | index("ruby_metadata_not_plaintext"))] | length == 1' "$summary_json"
 jq -e '[.rows[] | select(.classifications | index("source_note_metadata_excluded"))] | length == 1' "$summary_json"
 jq -e '[.rows[] | select(.blocking_owners == ["evidence"])] | length == 1' "$summary_json"

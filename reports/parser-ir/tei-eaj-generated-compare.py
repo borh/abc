@@ -46,6 +46,15 @@ TEI_STRUCTURE_TAGS = (
 )
 
 
+REQUIRED_PARSERS = (
+    "aozora2html",
+    "aozora-epub3",
+    "aozora-rs",
+    "aozora2",
+    "aozora",
+)
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--workset", required=True, type=pathlib.Path)
@@ -59,7 +68,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--tei-eaj-file", action="append", default=[])
     parser.add_argument(
         "--adapter-preference",
-        default="aozora2html,aozora-epub3,aozora-rs,aozora2",
+        default=",".join(REQUIRED_PARSERS),
         help="Comma-separated adapter preference for candidate AAT selection.",
     )
     parser.add_argument(

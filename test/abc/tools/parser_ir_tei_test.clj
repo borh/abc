@@ -261,6 +261,20 @@
       (is (= ["gaiji-b" "gaiji-a"]
              (mapv :xml-id (:char_declarations result)))))))
 
+(deftest gaiji-jis-reference-mints-xml-safe-id-test
+  (testing "Aozora JIS references are preserved semantically but minted as XML-safe char ids"
+    (let [parser-ir {"nodes" [{"type" "gaiji"
+                               "span" {"start" 10 "end" 20}
+                               "gaiji" {"raw_marker" "※［＃二の字点、1-2-22］"
+                                        "reference" "1-2-22"
+                                        "resolved" false}}]}
+          result (parser-ir-tei/render parser-ir)]
+      (is (= [{:xml-id "gaiji-1-2-22"
+               :raw-marker "※［＃二の字点、1-2-22］"}]
+             (:char_declarations result)))
+      (is (some #(= [:g {:ref "#gaiji-1-2-22"}] %)
+                (hiccup-nodes (:body result)))))))
+
 (deftest gaiji-without-reference-declaration-contract-test
   (testing "gaiji without reference generates a span-derived id and preserves the raw marker"
     (let [parser-ir {"nodes" [{"type" "gaiji"

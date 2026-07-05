@@ -65,11 +65,26 @@
 (defn- count-node [acc node-type]
   (update acc :node_counts update node-type (fnil inc 0)))
 
+(def ^:private xml-safe-id-pattern #"^[A-Za-z_][A-Za-z0-9_.-]*$")
+
+(defn- fallback-gaiji-id [span]
+  (str "gaiji-" (get span "start") "-" (get span "end")))
+
+(defn- sanitize-gaiji-reference-id [reference]
+  (when-let [reference (some-> reference
+                               (string/replace #"^#" "")
+                               string/trim
+                               (string/replace #"[^A-Za-z0-9_.-]+" "-")
+                               (string/replace #"-+" "-")
+                               (string/replace #"^-|-$" ""))]
+    (when (seq reference)
+      (if (re-matches xml-safe-id-pattern reference)
+        reference
+        (str "gaiji-" reference)))))
+
 (defn- normalize-gaiji-id [reference span]
-  (let [reference (some-> reference
-                          (string/replace #"^#" ""))]
-    (or reference
-        (str "gaiji-" (get span "start") "-" (get span "end")))))
+  (or (sanitize-gaiji-reference-id reference)
+      (fallback-gaiji-id span)))
 
 (defn- register-char-declaration [acc declaration]
   (if (contains? (:char-declaration-ids acc) (:xml-id declaration))

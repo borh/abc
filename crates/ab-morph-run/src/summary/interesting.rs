@@ -25,7 +25,7 @@ use serde::Serialize;
 use unicode_properties::{GeneralCategoryGroup, UnicodeGeneralCategory};
 
 use super::interesting_sql;
-use super::pattern_id::{PATTERN_ID_VERSION, pattern_id};
+use super::pattern_id::{PATTERN_ID_VERSION, pattern_digest, pattern_id_from_digest};
 use super::summary_body::{
     NwayPatternKey, WarehouseRegionAnalyzerFact, WarehouseRegionFlags, WarehouseRegionKey,
     canonicalize_segmentation_groups, nway_pattern_display, read_warehouse_feature_diffs,
@@ -235,13 +235,30 @@ fn impact_weight(feature_key: &str) -> f64 {
 }
 
 /// Nearest-rank 90th percentile of an unsorted, non-empty sample. Matches
-/// DuckDB `quantile_disc(x, 0.9)` so both engines agree exactly.
+/// DuckDB `quantile_disc(x, 0.9)` so both engines agree exactly. Test
+/// oracle for [`percentile_90_histogram`], which production code uses.
+#[cfg(test)]
 fn percentile_90(lengths: &[u64]) -> f64 {
     let mut sorted = lengths.to_vec();
     sorted.sort_unstable();
     let n = sorted.len();
     let rank = (0.9 * n as f64).ceil() as usize;
     sorted[rank.max(1) - 1] as f64
+}
+
+/// Nearest-rank p90 over a length histogram — same result as
+/// [`percentile_90`] on the expanded multiset, without storing it.
+fn percentile_90_histogram(histogram: &BTreeMap<u32, u32>) -> f64 {
+    let total: u64 = histogram.values().map(|count| u64::from(*count)).sum();
+    let rank = (0.9 * total as f64).ceil().max(1.0) as u64;
+    let mut cumulative = 0u64;
+    for (length, count) in histogram {
+        cumulative += u64::from(*count);
+        if cumulative >= rank {
+            return f64::from(*length);
+        }
+    }
+    0.0
 }
 
 /// The `λ_missing` rank-floor policy: an applicable signal with missing
@@ -381,15 +398,41 @@ pub(super) struct RarityConfig {
     pub(super) total: usize,
 }
 
+/// String interner for source/text/rarity ids: full-corpus accumulation
+/// holds tens of millions of patterns, so per-pattern sets store u32
+/// symbols instead of cloned strings (a 55GB-RSS lesson).
+#[derive(Default)]
+struct Interner {
+    ids: std::collections::HashMap<String, u32>,
+    values: Vec<String>,
+}
+
+impl Interner {
+    fn intern(&mut self, value: &str) -> u32 {
+        if let Some(id) = self.ids.get(value) {
+            return *id;
+        }
+        let id = self.values.len() as u32;
+        self.ids.insert(value.to_owned(), id);
+        self.values.push(value.to_owned());
+        id
+    }
+
+    fn resolve(&self, id: u32) -> &str {
+        &self.values[id as usize]
+    }
+}
+
 #[derive(Debug, Default)]
 struct PatternAccum {
     examples: usize,
-    source_ids: BTreeSet<String>,
-    text_ids: BTreeSet<String>,
-    rarity_keys: BTreeSet<String>,
+    source_ids: BTreeSet<u32>,
+    text_ids: BTreeSet<u32>,
+    rarity_keys: BTreeSet<u32>,
     coverage_region_count: usize,
-    span_lengths: Vec<u64>,
-    region_examples: Vec<RegionExampleOut>,
+    /// Char-length histogram; p90 is nearest-rank over the multiset.
+    span_lengths: BTreeMap<u32, u32>,
+    region_examples: Vec<(u32, u32, u64, u64, u64)>,
 }
 
 /// One pattern occurrence, engine-agnostic. Both the in-memory engine and
@@ -408,9 +451,12 @@ pub(super) struct RegionOccurrence<'a> {
 
 #[derive(Default)]
 pub(super) struct PatternAccumulator {
-    index_of: BTreeMap<NwayPatternKey, usize>,
-    keys: Vec<(NwayPatternKey, PatternKind)>,
+    /// Patterns indexed by raw content digest — storing the key again as a
+    /// map key doubles key memory at full-corpus scale.
+    index_of: std::collections::HashMap<[u8; 32], usize>,
+    keys: Vec<(NwayPatternKey, PatternKind, [u8; 32])>,
     accums: Vec<PatternAccum>,
+    interner: Interner,
 }
 
 impl PatternAccumulator {
@@ -422,68 +468,82 @@ impl PatternAccumulator {
         occurrence: &RegionOccurrence<'_>,
         max_region_examples: usize,
     ) -> usize {
+        let digest = pattern_digest(&key);
         let next_index = self.accums.len();
-        let index = *self.index_of.entry(key.clone()).or_insert(next_index);
+        let index = *self.index_of.entry(digest).or_insert(next_index);
         if index == next_index {
-            self.keys.push((key, kind));
+            self.keys.push((key, kind, digest));
             self.accums.push(PatternAccum::default());
         }
+        let source_id = self.interner.intern(occurrence.source_id);
+        let text_id = self.interner.intern(occurrence.text_id);
+        let rarity_key = self.interner.intern(occurrence.rarity_key);
         let accum = &mut self.accums[index];
         accum.examples += 1;
-        if !accum.source_ids.contains(occurrence.source_id) {
-            accum.source_ids.insert(occurrence.source_id.to_owned());
-        }
-        if !accum.text_ids.contains(occurrence.text_id) {
-            accum.text_ids.insert(occurrence.text_id.to_owned());
-        }
-        if !accum.rarity_keys.contains(occurrence.rarity_key) {
-            accum.rarity_keys.insert(occurrence.rarity_key.to_owned());
-        }
+        accum.source_ids.insert(source_id);
+        accum.text_ids.insert(text_id);
+        accum.rarity_keys.insert(rarity_key);
         if occurrence.has_coverage_mismatch {
             accum.coverage_region_count += 1;
         }
-        accum
-            .span_lengths
-            .push(occurrence.char_end - occurrence.char_start);
+        let length = u32::try_from(occurrence.char_end - occurrence.char_start).unwrap_or(u32::MAX);
+        *accum.span_lengths.entry(length).or_insert(0) += 1;
         if accum.region_examples.len() < max_region_examples {
-            accum.region_examples.push(RegionExampleOut {
-                source_id: occurrence.source_id.to_owned(),
-                text_id: occurrence.text_id.to_owned(),
-                region_index: occurrence.region_index,
-                char_start: occurrence.char_start,
-                char_end: occurrence.char_end,
-            });
+            accum.region_examples.push((
+                source_id,
+                text_id,
+                occurrence.region_index,
+                occurrence.char_start,
+                occurrence.char_end,
+            ));
         }
         index
     }
 
     pub(super) fn finalize(self) -> Vec<PatternStats> {
+        let interner = self.interner;
+        let sorted_samples = |ids: &BTreeSet<u32>| {
+            let mut values = ids
+                .iter()
+                .map(|id| interner.resolve(*id))
+                .collect::<Vec<_>>();
+            values.sort_unstable();
+            values
+                .into_iter()
+                .take(MAX_SAMPLE_IDS)
+                .map(str::to_owned)
+                .collect::<Vec<_>>()
+        };
         self.keys
             .into_iter()
             .zip(self.accums)
-            .map(|((key, kind), accum)| PatternStats {
-                pattern_id: pattern_id(&key),
+            .map(|((key, kind, digest), accum)| PatternStats {
+                pattern_id: pattern_id_from_digest(&digest),
                 key,
                 kind,
                 examples: accum.examples,
                 source_count: accum.source_ids.len(),
                 text_count: accum.text_ids.len(),
-                sample_source_ids: accum
-                    .source_ids
-                    .iter()
-                    .take(MAX_SAMPLE_IDS)
-                    .cloned()
-                    .collect(),
-                sample_text_ids: accum
-                    .text_ids
-                    .iter()
-                    .take(MAX_SAMPLE_IDS)
-                    .cloned()
-                    .collect(),
+                sample_source_ids: sorted_samples(&accum.source_ids),
+                sample_text_ids: sorted_samples(&accum.text_ids),
                 rarity_count: accum.rarity_keys.len(),
                 coverage_region_count: accum.coverage_region_count,
-                span_p90: percentile_90(&accum.span_lengths),
-                region_examples: accum.region_examples,
+                span_p90: percentile_90_histogram(&accum.span_lengths),
+                region_examples: accum
+                    .region_examples
+                    .into_iter()
+                    .map(
+                        |(source_id, text_id, region_index, char_start, char_end)| {
+                            RegionExampleOut {
+                                source_id: interner.resolve(source_id).to_owned(),
+                                text_id: interner.resolve(text_id).to_owned(),
+                                region_index,
+                                char_start,
+                                char_end,
+                            }
+                        },
+                    )
+                    .collect(),
                 sql_signature: None,
             })
             .collect()
@@ -1701,6 +1761,18 @@ mod tests {
             let term_a = rrf_term(Some(a), 0.0);
             let term_b = rrf_term(Some(b), 0.0);
             prop_assert_eq!(a < b, term_a > term_b);
+        }
+
+        /// The histogram p90 equals the expanded-multiset p90 exactly.
+        #[test]
+        fn histogram_percentile_matches_slice(
+            lengths in proptest::collection::vec(0u64..5_000, 1..80),
+        ) {
+            let mut histogram = BTreeMap::new();
+            for length in &lengths {
+                *histogram.entry(*length as u32).or_insert(0u32) += 1;
+            }
+            prop_assert_eq!(percentile_90_histogram(&histogram), percentile_90(&lengths));
         }
 
         /// percentile_90 returns an element of the sample and is monotone

@@ -114,6 +114,25 @@ pub(crate) fn pattern_id(key: &NwayPatternKey) -> String {
     hash_string_sequence(&canonical_parts(key))
 }
 
+/// Raw digest variant for digest-keyed maps: full-corpus accumulation
+/// holds tens of millions of patterns, and 32 raw bytes beat a 71-byte
+/// hex string (and beat cloning the whole key, which is what an
+/// `index_of: BTreeMap<NwayPatternKey, _>` costs).
+pub(crate) fn pattern_digest(key: &NwayPatternKey) -> [u8; 32] {
+    ab_diff_utils::hash_string_sequence_raw(&canonical_parts(key))
+}
+
+/// `"sha256:<hex>"` from a raw digest; matches [`pattern_id`] output.
+pub(crate) fn pattern_id_from_digest(digest: &[u8; 32]) -> String {
+    use std::fmt::Write;
+    let mut out = String::with_capacity(7 + 64);
+    out.push_str("sha256:");
+    for byte in digest {
+        let _ = write!(out, "{byte:02x}");
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -202,6 +221,16 @@ mod tests {
             pattern_id(&key),
             "sha256:3ba48f4844619d68d4e390f5c027c0f0628dc4b9a629ff6097b3d3514eb153f8"
         );
+    }
+
+    #[test]
+    fn digest_path_matches_string_path() {
+        let key = feature_key(
+            "pos1",
+            NwayFeatureScopeRow::WholeRegion,
+            vec![(Some("x"), vec!["a"]), (Some("y"), vec!["b"])],
+        );
+        assert_eq!(pattern_id(&key), pattern_id_from_digest(&pattern_digest(&key)));
     }
 
     #[test]

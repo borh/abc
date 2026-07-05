@@ -34,9 +34,10 @@
   "paragraph_origin_buckets": {
     "adapter_under_segmented": 14,
     "adapter_collapsed": 67,
-    "converter_paragraph_mismatch": 10,
+    "converter_paragraph_mismatch": 8,
     "adapter_over_segmented": 127,
     "aligned": 60,
+    "adapter_raw_only": 2,
     "page_break_projection": 3,
     "source_note_back_routing": 4
   },
@@ -76,7 +77,7 @@
       "adapter_over_segmented": 75,
       "aligned": 47,
       "adapter_collapsed": 10,
-      "converter_paragraph_mismatch": 2,
+      "adapter_raw_only": 2,
       "adapter_under_segmented": 1
     },
     "front_back_matter": {
@@ -220,7 +221,7 @@
       },
       "plain_prose": {
         "aligned": 21,
-        "converter_paragraph_mismatch": 2,
+        "adapter_raw_only": 2,
         "adapter_collapsed": 4
       },
       "front_back_matter": {
@@ -296,7 +297,7 @@
     "aozora": {
       "adapter_collapsed": 32,
       "aligned": 23,
-      "converter_paragraph_mismatch": 2
+      "adapter_raw_only": 2
     }
   },
   "adapter_body_text_match_buckets": {
@@ -357,7 +358,14 @@
         "paragraph_blocks": 30,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 6
+        "hints_count": 6,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -515,7 +523,14 @@
         "paragraph_blocks": 154,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -671,7 +686,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -829,7 +851,14 @@
         "paragraph_blocks": 52,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 24,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 24,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -985,7 +1014,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 205,
+        "raw_nodes_empty_source": 155,
+        "raw_nodes_with_source": 50,
+        "parser_derived_raw_nodes": 195,
+        "source_derived_raw_nodes": 10,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -1142,7 +1178,14 @@
         "paragraph_blocks": 62,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 4
+        "hints_count": 4,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -1286,7 +1329,14 @@
         "paragraph_blocks": 62,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -1430,7 +1480,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -1574,7 +1631,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 5,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 5,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -1718,7 +1782,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 149,
+        "raw_nodes_empty_source": 105,
+        "raw_nodes_with_source": 44,
+        "parser_derived_raw_nodes": 136,
+        "source_derived_raw_nodes": 13,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -1863,7 +1934,14 @@
         "paragraph_blocks": 8,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -2008,7 +2086,14 @@
         "paragraph_blocks": 8,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -2153,7 +2238,14 @@
         "paragraph_blocks": 15,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -2298,7 +2390,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -2443,7 +2542,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": null,
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 8,
+        "raw_nodes_empty_source": 6,
+        "raw_nodes_with_source": 2,
+        "parser_derived_raw_nodes": 8,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 1,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -2559,7 +2665,7 @@
       },
       "classification": {
         "paragraph_delta_bucket": "under_split",
-        "paragraph_origin_bucket": "converter_paragraph_mismatch",
+        "paragraph_origin_bucket": "adapter_raw_only",
         "source_note_body_excluded": false,
         "source_note_back_present": false
       }
@@ -2582,7 +2688,14 @@
         "paragraph_blocks": 29,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -2726,7 +2839,14 @@
         "paragraph_blocks": 29,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -2870,7 +2990,14 @@
         "paragraph_blocks": 33,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -3014,7 +3141,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -3158,7 +3292,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": null,
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 16,
+        "raw_nodes_empty_source": 4,
+        "raw_nodes_with_source": 12,
+        "parser_derived_raw_nodes": 11,
+        "source_derived_raw_nodes": 5,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -3297,7 +3438,14 @@
         "paragraph_blocks": 28,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 4
+        "hints_count": 4,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -3440,7 +3588,14 @@
         "paragraph_blocks": 28,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -3583,7 +3738,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -3726,7 +3888,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 1,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 1,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -3869,7 +4038,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 81,
+        "raw_nodes_empty_source": 39,
+        "raw_nodes_with_source": 42,
+        "parser_derived_raw_nodes": 65,
+        "source_derived_raw_nodes": 16,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -4013,7 +4189,14 @@
         "paragraph_blocks": 4,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 3
+        "hints_count": 3,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -4160,7 +4343,14 @@
         "paragraph_blocks": 4,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -4307,7 +4497,14 @@
         "paragraph_blocks": 8,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -4454,7 +4651,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -4601,7 +4805,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 6,
+        "raw_nodes_empty_source": 5,
+        "raw_nodes_with_source": 1,
+        "parser_derived_raw_nodes": 5,
+        "source_derived_raw_nodes": 1,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -4745,7 +4956,14 @@
         "paragraph_blocks": 32,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 7
+        "hints_count": 7,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -4892,7 +5110,14 @@
         "paragraph_blocks": 33,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -5038,7 +5263,14 @@
         "paragraph_blocks": 40,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 2
+        "hints_count": 2,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -5184,7 +5416,14 @@
         "paragraph_blocks": 4,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 3
+        "hints_count": 3,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -5329,7 +5568,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 40,
+        "raw_nodes_empty_source": 30,
+        "raw_nodes_with_source": 10,
+        "parser_derived_raw_nodes": 39,
+        "source_derived_raw_nodes": 1,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -5469,7 +5715,14 @@
         "paragraph_blocks": 186,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -5617,7 +5870,14 @@
         "paragraph_blocks": 186,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -5765,7 +6025,14 @@
         "paragraph_blocks": 202,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -5913,7 +6180,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -6061,7 +6335,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 188,
+        "raw_nodes_empty_source": 103,
+        "raw_nodes_with_source": 85,
+        "parser_derived_raw_nodes": 162,
+        "source_derived_raw_nodes": 26,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -6204,7 +6485,14 @@
         "paragraph_blocks": 6,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 3
+        "hints_count": 3,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -6352,7 +6640,14 @@
         "paragraph_blocks": 12,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -6500,7 +6795,14 @@
         "paragraph_blocks": 12,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -6648,7 +6950,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -6796,7 +7105,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 21,
+        "raw_nodes_empty_source": 8,
+        "raw_nodes_with_source": 13,
+        "parser_derived_raw_nodes": 15,
+        "source_derived_raw_nodes": 6,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -6940,7 +7256,14 @@
         "paragraph_blocks": 26,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -7089,7 +7412,14 @@
         "paragraph_blocks": 26,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -7237,7 +7567,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -7386,7 +7723,14 @@
         "paragraph_blocks": 3,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 1,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 1,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -7535,7 +7879,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 49,
+        "raw_nodes_empty_source": 37,
+        "raw_nodes_with_source": 12,
+        "parser_derived_raw_nodes": 48,
+        "source_derived_raw_nodes": 1,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -7678,7 +8029,14 @@
         "paragraph_blocks": 18,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -7822,7 +8180,14 @@
         "paragraph_blocks": 18,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -7966,7 +8331,14 @@
         "paragraph_blocks": 27,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -8110,7 +8482,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -8254,7 +8633,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": null,
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 2,
+        "raw_nodes_empty_source": 2,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 2,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 1,
+        "raw_only_empty_parser_residue_blocks": 1
       },
       "materialization": {
         "status": "passed",
@@ -8369,7 +8755,7 @@
       },
       "classification": {
         "paragraph_delta_bucket": "under_split",
-        "paragraph_origin_bucket": "converter_paragraph_mismatch",
+        "paragraph_origin_bucket": "adapter_raw_only",
         "source_note_body_excluded": false,
         "source_note_back_present": false
       }
@@ -8392,7 +8778,14 @@
         "paragraph_blocks": 5,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -8535,7 +8928,14 @@
         "paragraph_blocks": 5,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -8678,7 +9078,14 @@
         "paragraph_blocks": 9,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -8821,7 +9228,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -8964,7 +9378,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": null,
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 8,
+        "raw_nodes_empty_source": 5,
+        "raw_nodes_with_source": 3,
+        "parser_derived_raw_nodes": 7,
+        "source_derived_raw_nodes": 1,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -9102,7 +9523,14 @@
         "paragraph_blocks": 8,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -9248,7 +9676,14 @@
         "paragraph_blocks": 8,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -9394,7 +9829,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -9540,7 +9982,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 1,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 1,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -9687,7 +10136,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": null,
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 12,
+        "raw_nodes_empty_source": 9,
+        "raw_nodes_with_source": 3,
+        "parser_derived_raw_nodes": 10,
+        "source_derived_raw_nodes": 2,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -9830,7 +10286,14 @@
         "paragraph_blocks": 412,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 7
+        "hints_count": 7,
+        "raw_nodes_total": 1,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 1,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -9980,7 +10443,14 @@
         "paragraph_blocks": 400,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -10128,7 +10598,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -10278,7 +10755,14 @@
         "paragraph_blocks": 14,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 2
+        "hints_count": 2,
+        "raw_nodes_total": 37,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 37,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -10427,7 +10911,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 534,
+        "raw_nodes_empty_source": 377,
+        "raw_nodes_with_source": 157,
+        "parser_derived_raw_nodes": 507,
+        "source_derived_raw_nodes": 27,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -10576,7 +11067,14 @@
         "paragraph_blocks": 76,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -10724,7 +11222,14 @@
         "paragraph_blocks": 76,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -10872,7 +11377,14 @@
         "paragraph_blocks": 80,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -11020,7 +11532,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -11168,7 +11687,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 349,
+        "raw_nodes_empty_source": 204,
+        "raw_nodes_with_source": 145,
+        "parser_derived_raw_nodes": 302,
+        "source_derived_raw_nodes": 47,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -11311,7 +11837,14 @@
         "paragraph_blocks": 5,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -11449,7 +11982,14 @@
         "paragraph_blocks": 3,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -11583,7 +12123,14 @@
         "paragraph_blocks": 7,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -11717,7 +12264,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -11855,7 +12409,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": null,
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 1,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 1,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 1,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -11995,7 +12556,14 @@
         "paragraph_blocks": 20,
         "final_block_kind": "jisage_block",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -12142,7 +12710,14 @@
         "paragraph_blocks": 20,
         "final_block_kind": "jisage_block",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -12288,7 +12863,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -12434,7 +13016,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -12580,7 +13169,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": null,
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 13,
+        "raw_nodes_empty_source": 10,
+        "raw_nodes_with_source": 3,
+        "parser_derived_raw_nodes": 11,
+        "source_derived_raw_nodes": 2,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -12723,7 +13319,14 @@
         "paragraph_blocks": 16,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 7
+        "hints_count": 7,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -12882,7 +13485,14 @@
         "paragraph_blocks": 127,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -13039,7 +13649,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -13198,7 +13815,14 @@
         "paragraph_blocks": 10,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 3
+        "hints_count": 3,
+        "raw_nodes_total": 3,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 3,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -13355,7 +13979,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": null,
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 36,
+        "raw_nodes_empty_source": 25,
+        "raw_nodes_with_source": 11,
+        "parser_derived_raw_nodes": 33,
+        "source_derived_raw_nodes": 3,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -13507,7 +14138,14 @@
         "paragraph_blocks": 8,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 3
+        "hints_count": 3,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -13653,7 +14291,14 @@
         "paragraph_blocks": 9,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -13799,7 +14444,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -13945,7 +14597,14 @@
         "paragraph_blocks": 3,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -14091,7 +14750,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": null,
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 13,
+        "raw_nodes_empty_source": 8,
+        "raw_nodes_with_source": 5,
+        "parser_derived_raw_nodes": 11,
+        "source_derived_raw_nodes": 2,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -14232,7 +14898,14 @@
         "paragraph_blocks": 9,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 3
+        "hints_count": 3,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -14378,7 +15051,14 @@
         "paragraph_blocks": 10,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -14524,7 +15204,14 @@
         "paragraph_blocks": 16,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 2
+        "hints_count": 2,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -14670,7 +15357,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -14816,7 +15510,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": null,
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 13,
+        "raw_nodes_empty_source": 8,
+        "raw_nodes_with_source": 5,
+        "parser_derived_raw_nodes": 11,
+        "source_derived_raw_nodes": 2,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -14957,7 +15658,14 @@
         "paragraph_blocks": 9,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 3
+        "hints_count": 3,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -15102,7 +15810,14 @@
         "paragraph_blocks": 10,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -15247,7 +15962,14 @@
         "paragraph_blocks": 17,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 2
+        "hints_count": 2,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -15392,7 +16114,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -15537,7 +16266,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": null,
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 9,
+        "raw_nodes_empty_source": 6,
+        "raw_nodes_with_source": 3,
+        "parser_derived_raw_nodes": 8,
+        "source_derived_raw_nodes": 1,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -15677,7 +16413,14 @@
         "paragraph_blocks": 13,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 4
+        "hints_count": 4,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -15823,7 +16566,14 @@
         "paragraph_blocks": 14,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -15969,7 +16719,14 @@
         "paragraph_blocks": 20,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 3
+        "hints_count": 3,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -16115,7 +16872,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 2
+        "hints_count": 2,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -16261,7 +17025,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": null,
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 14,
+        "raw_nodes_empty_source": 11,
+        "raw_nodes_with_source": 3,
+        "parser_derived_raw_nodes": 13,
+        "source_derived_raw_nodes": 1,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -16402,7 +17173,14 @@
         "paragraph_blocks": 7,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 3
+        "hints_count": 3,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -16538,7 +17316,14 @@
         "paragraph_blocks": 8,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -16678,7 +17463,14 @@
         "paragraph_blocks": 14,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 2
+        "hints_count": 2,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -16814,7 +17606,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -16950,7 +17749,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 5,
+        "raw_nodes_empty_source": 5,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 5,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -17090,7 +17896,14 @@
         "paragraph_blocks": 5,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 3
+        "hints_count": 3,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -17236,7 +18049,14 @@
         "paragraph_blocks": 6,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -17382,7 +18202,14 @@
         "paragraph_blocks": 12,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 2
+        "hints_count": 2,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -17528,7 +18355,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -17674,7 +18508,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": null,
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 11,
+        "raw_nodes_empty_source": 5,
+        "raw_nodes_with_source": 6,
+        "parser_derived_raw_nodes": 8,
+        "source_derived_raw_nodes": 3,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -17815,7 +18656,14 @@
         "paragraph_blocks": 11,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 3
+        "hints_count": 3,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -17961,7 +18809,14 @@
         "paragraph_blocks": 12,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -18107,7 +18962,14 @@
         "paragraph_blocks": 18,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 2
+        "hints_count": 2,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -18253,7 +19115,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -18399,7 +19268,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": null,
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 14,
+        "raw_nodes_empty_source": 10,
+        "raw_nodes_with_source": 4,
+        "parser_derived_raw_nodes": 12,
+        "source_derived_raw_nodes": 2,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -18540,7 +19416,14 @@
         "paragraph_blocks": 13,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 4
+        "hints_count": 4,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -18686,7 +19569,14 @@
         "paragraph_blocks": 14,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -18832,7 +19722,14 @@
         "paragraph_blocks": 20,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 3
+        "hints_count": 3,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -18978,7 +19875,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 2
+        "hints_count": 2,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -19124,7 +20028,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": null,
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 18,
+        "raw_nodes_empty_source": 9,
+        "raw_nodes_with_source": 9,
+        "parser_derived_raw_nodes": 14,
+        "source_derived_raw_nodes": 4,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -19265,7 +20176,14 @@
         "paragraph_blocks": 10,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 3
+        "hints_count": 3,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -19411,7 +20329,14 @@
         "paragraph_blocks": 11,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -19557,7 +20482,14 @@
         "paragraph_blocks": 17,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 2
+        "hints_count": 2,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -19703,7 +20635,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -19849,7 +20788,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": null,
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 15,
+        "raw_nodes_empty_source": 7,
+        "raw_nodes_with_source": 8,
+        "parser_derived_raw_nodes": 11,
+        "source_derived_raw_nodes": 4,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -19990,7 +20936,14 @@
         "paragraph_blocks": 10,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 3
+        "hints_count": 3,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -20136,7 +21089,14 @@
         "paragraph_blocks": 11,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -20282,7 +21242,14 @@
         "paragraph_blocks": 17,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 2
+        "hints_count": 2,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -20428,7 +21395,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -20574,7 +21548,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": null,
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 14,
+        "raw_nodes_empty_source": 11,
+        "raw_nodes_with_source": 3,
+        "parser_derived_raw_nodes": 13,
+        "source_derived_raw_nodes": 1,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -20715,7 +21696,14 @@
         "paragraph_blocks": 6,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 3
+        "hints_count": 3,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -20861,7 +21849,14 @@
         "paragraph_blocks": 10,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -21007,7 +22002,14 @@
         "paragraph_blocks": 13,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 2
+        "hints_count": 2,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -21153,7 +22155,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -21299,7 +22308,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": null,
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 11,
+        "raw_nodes_empty_source": 9,
+        "raw_nodes_with_source": 2,
+        "parser_derived_raw_nodes": 10,
+        "source_derived_raw_nodes": 1,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -21440,7 +22456,14 @@
         "paragraph_blocks": 7,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 3
+        "hints_count": 3,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -21586,7 +22609,14 @@
         "paragraph_blocks": 8,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -21732,7 +22762,14 @@
         "paragraph_blocks": 14,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 2
+        "hints_count": 2,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -21878,7 +22915,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -22024,7 +23068,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": null,
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 8,
+        "raw_nodes_empty_source": 6,
+        "raw_nodes_with_source": 2,
+        "parser_derived_raw_nodes": 7,
+        "source_derived_raw_nodes": 1,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -22165,7 +23216,14 @@
         "paragraph_blocks": 11,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 4
+        "hints_count": 4,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -22311,7 +23369,14 @@
         "paragraph_blocks": 12,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -22457,7 +23522,14 @@
         "paragraph_blocks": 18,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 3
+        "hints_count": 3,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -22603,7 +23675,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 2
+        "hints_count": 2,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -22749,7 +23828,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": null,
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 19,
+        "raw_nodes_empty_source": 7,
+        "raw_nodes_with_source": 12,
+        "parser_derived_raw_nodes": 13,
+        "source_derived_raw_nodes": 6,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -22890,7 +23976,14 @@
         "paragraph_blocks": 6,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 3
+        "hints_count": 3,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -23036,7 +24129,14 @@
         "paragraph_blocks": 7,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -23182,7 +24282,14 @@
         "paragraph_blocks": 13,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 2
+        "hints_count": 2,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -23328,7 +24435,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -23474,7 +24588,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": null,
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 9,
+        "raw_nodes_empty_source": 7,
+        "raw_nodes_with_source": 2,
+        "parser_derived_raw_nodes": 8,
+        "source_derived_raw_nodes": 1,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -23615,7 +24736,14 @@
         "paragraph_blocks": 10,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 3
+        "hints_count": 3,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -23761,7 +24889,14 @@
         "paragraph_blocks": 11,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -23907,7 +25042,14 @@
         "paragraph_blocks": 17,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 2
+        "hints_count": 2,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -24053,7 +25195,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -24199,7 +25348,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": null,
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 11,
+        "raw_nodes_empty_source": 5,
+        "raw_nodes_with_source": 6,
+        "parser_derived_raw_nodes": 8,
+        "source_derived_raw_nodes": 3,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -24340,7 +25496,14 @@
         "paragraph_blocks": 9,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 3
+        "hints_count": 3,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -24486,7 +25649,14 @@
         "paragraph_blocks": 10,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -24632,7 +25802,14 @@
         "paragraph_blocks": 16,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 2
+        "hints_count": 2,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -24778,7 +25955,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -24924,7 +26108,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": null,
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 12,
+        "raw_nodes_empty_source": 9,
+        "raw_nodes_with_source": 3,
+        "parser_derived_raw_nodes": 11,
+        "source_derived_raw_nodes": 1,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -25066,7 +26257,14 @@
         "paragraph_blocks": 12,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 3
+        "hints_count": 3,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -25212,7 +26410,14 @@
         "paragraph_blocks": 14,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -25357,7 +26562,14 @@
         "paragraph_blocks": 20,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 3
+        "hints_count": 3,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -25502,7 +26714,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 2
+        "hints_count": 2,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -25647,7 +26866,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 15,
+        "raw_nodes_empty_source": 10,
+        "raw_nodes_with_source": 5,
+        "parser_derived_raw_nodes": 13,
+        "source_derived_raw_nodes": 2,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -25788,7 +27014,14 @@
         "paragraph_blocks": 14,
         "final_block_kind": "jisage_block",
         "final_source_attribution_candidate": false,
-        "hints_count": 3
+        "hints_count": 3,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -25935,7 +27168,14 @@
         "paragraph_blocks": 16,
         "final_block_kind": "jisage_block",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -26081,7 +27321,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -26227,7 +27474,14 @@
         "paragraph_blocks": 2,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 2
+        "hints_count": 2,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -26373,7 +27627,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": null,
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 24,
+        "raw_nodes_empty_source": 17,
+        "raw_nodes_with_source": 7,
+        "parser_derived_raw_nodes": 22,
+        "source_derived_raw_nodes": 2,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -26515,7 +27776,14 @@
         "paragraph_blocks": 8,
         "final_block_kind": "jisage_block",
         "final_source_attribution_candidate": false,
-        "hints_count": 3
+        "hints_count": 3,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -26662,7 +27930,14 @@
         "paragraph_blocks": 9,
         "final_block_kind": "jisage_block",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -26808,7 +28083,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -26954,7 +28236,14 @@
         "paragraph_blocks": 2,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 2
+        "hints_count": 2,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -27100,7 +28389,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": null,
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 12,
+        "raw_nodes_empty_source": 9,
+        "raw_nodes_with_source": 3,
+        "parser_derived_raw_nodes": 11,
+        "source_derived_raw_nodes": 1,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -27242,7 +28538,14 @@
         "paragraph_blocks": 4,
         "final_block_kind": "jisage_block",
         "final_source_attribution_candidate": false,
-        "hints_count": 3
+        "hints_count": 3,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -27390,7 +28693,14 @@
         "paragraph_blocks": 5,
         "final_block_kind": "jisage_block",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -27537,7 +28847,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -27684,7 +29001,14 @@
         "paragraph_blocks": 2,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 2
+        "hints_count": 2,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -27831,7 +29155,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": null,
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 14,
+        "raw_nodes_empty_source": 11,
+        "raw_nodes_with_source": 3,
+        "parser_derived_raw_nodes": 12,
+        "source_derived_raw_nodes": 2,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -27973,7 +29304,14 @@
         "paragraph_blocks": 134,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 4
+        "hints_count": 4,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -28129,7 +29467,14 @@
         "paragraph_blocks": 134,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -28285,7 +29630,14 @@
         "paragraph_blocks": 145,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -28441,7 +29793,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 1,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 1,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -28597,7 +29956,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 202,
+        "raw_nodes_empty_source": 153,
+        "raw_nodes_with_source": 49,
+        "parser_derived_raw_nodes": 193,
+        "source_derived_raw_nodes": 9,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -28748,7 +30114,14 @@
         "paragraph_blocks": 62,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 4
+        "hints_count": 4,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -28904,7 +30277,14 @@
         "paragraph_blocks": 62,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -29060,7 +30440,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -29216,7 +30603,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 5,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 5,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -29372,7 +30766,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 149,
+        "raw_nodes_empty_source": 105,
+        "raw_nodes_with_source": 44,
+        "parser_derived_raw_nodes": 136,
+        "source_derived_raw_nodes": 13,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -29529,7 +30930,14 @@
         "paragraph_blocks": 75,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": true,
-        "hints_count": 3
+        "hints_count": 3,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -29688,7 +31096,14 @@
         "paragraph_blocks": 75,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": true,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -29851,7 +31266,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 101,
+        "raw_nodes_empty_source": 75,
+        "raw_nodes_with_source": 26,
+        "parser_derived_raw_nodes": 93,
+        "source_derived_raw_nodes": 8,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -30007,7 +31429,14 @@
         "paragraph_blocks": 79,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": true,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -30168,7 +31597,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": true,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -30329,7 +31765,14 @@
         "paragraph_blocks": 75,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": true,
-        "hints_count": 3
+        "hints_count": 3,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -30486,7 +31929,14 @@
         "paragraph_blocks": 75,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": true,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -30647,7 +32097,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 101,
+        "raw_nodes_empty_source": 75,
+        "raw_nodes_with_source": 26,
+        "parser_derived_raw_nodes": 93,
+        "source_derived_raw_nodes": 8,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -30801,7 +32258,14 @@
         "paragraph_blocks": 79,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": true,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -30960,7 +32424,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": true,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -31119,7 +32590,14 @@
         "paragraph_blocks": 39,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -31266,7 +32744,14 @@
         "paragraph_blocks": 39,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -31413,7 +32898,14 @@
         "paragraph_blocks": 43,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -31560,7 +33052,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -31707,7 +33206,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 168,
+        "raw_nodes_empty_source": 66,
+        "raw_nodes_with_source": 102,
+        "parser_derived_raw_nodes": 123,
+        "source_derived_raw_nodes": 45,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -31857,7 +33363,14 @@
         "paragraph_blocks": 15,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 3
+        "hints_count": 3,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -32010,7 +33523,14 @@
         "paragraph_blocks": 12,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -32162,7 +33682,14 @@
         "paragraph_blocks": 23,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -32314,7 +33841,14 @@
         "paragraph_blocks": 4,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -32465,7 +33999,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 35,
+        "raw_nodes_empty_source": 22,
+        "raw_nodes_with_source": 13,
+        "parser_derived_raw_nodes": 31,
+        "source_derived_raw_nodes": 4,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -32618,7 +34159,14 @@
         "paragraph_blocks": 61,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 4
+        "hints_count": 4,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -32781,7 +34329,14 @@
         "paragraph_blocks": 148,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -32943,7 +34498,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -33106,7 +34668,14 @@
         "paragraph_blocks": 39,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 11,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 11,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -33268,7 +34837,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 52,
+        "raw_nodes_empty_source": 48,
+        "raw_nodes_with_source": 4,
+        "parser_derived_raw_nodes": 51,
+        "source_derived_raw_nodes": 1,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -33427,7 +35003,14 @@
         "paragraph_blocks": 30,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 6
+        "hints_count": 6,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -33584,7 +35167,14 @@
         "paragraph_blocks": 154,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -33739,7 +35329,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -33896,7 +35493,14 @@
         "paragraph_blocks": 52,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 24,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 24,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -34051,7 +35655,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 205,
+        "raw_nodes_empty_source": 155,
+        "raw_nodes_with_source": 50,
+        "parser_derived_raw_nodes": 195,
+        "source_derived_raw_nodes": 10,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -34208,7 +35819,14 @@
         "paragraph_blocks": 467,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 3
+        "hints_count": 3,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -34370,7 +35988,14 @@
         "paragraph_blocks": 529,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -34531,7 +36156,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -34693,7 +36325,14 @@
         "paragraph_blocks": 7,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 2
+        "hints_count": 2,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -34854,7 +36493,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 827,
+        "raw_nodes_empty_source": 558,
+        "raw_nodes_with_source": 269,
+        "parser_derived_raw_nodes": 757,
+        "source_derived_raw_nodes": 70,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -35016,7 +36662,14 @@
         "paragraph_blocks": 186,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -35164,7 +36817,14 @@
         "paragraph_blocks": 186,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -35312,7 +36972,14 @@
         "paragraph_blocks": 202,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -35460,7 +37127,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -35608,7 +37282,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 188,
+        "raw_nodes_empty_source": 103,
+        "raw_nodes_with_source": 85,
+        "parser_derived_raw_nodes": 162,
+        "source_derived_raw_nodes": 26,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -35752,7 +37433,14 @@
         "paragraph_blocks": 27,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 3
+        "hints_count": 3,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -35901,7 +37589,14 @@
         "paragraph_blocks": 27,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -36049,7 +37744,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -36198,7 +37900,14 @@
         "paragraph_blocks": 5,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -36346,7 +38055,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 27,
+        "raw_nodes_empty_source": 19,
+        "raw_nodes_with_source": 8,
+        "parser_derived_raw_nodes": 24,
+        "source_derived_raw_nodes": 3,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -36489,7 +38205,14 @@
         "paragraph_blocks": 134,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 4
+        "hints_count": 4,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -36642,7 +38365,14 @@
         "paragraph_blocks": 134,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -36795,7 +38525,14 @@
         "paragraph_blocks": 145,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -36948,7 +38685,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 1,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 1,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -37101,7 +38845,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 202,
+        "raw_nodes_empty_source": 153,
+        "raw_nodes_with_source": 49,
+        "parser_derived_raw_nodes": 193,
+        "source_derived_raw_nodes": 9,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -37250,7 +39001,14 @@
         "paragraph_blocks": 450,
         "final_block_kind": "jisage_block",
         "final_source_attribution_candidate": false,
-        "hints_count": 5
+        "hints_count": 5,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -37407,7 +39165,14 @@
         "paragraph_blocks": 880,
         "final_block_kind": "jisage_block",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -37563,7 +39328,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -37720,7 +39492,14 @@
         "paragraph_blocks": 336,
         "final_block_kind": "jisage_block",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 6,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 6,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -37877,7 +39656,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 730,
+        "raw_nodes_empty_source": 534,
+        "raw_nodes_with_source": 196,
+        "parser_derived_raw_nodes": 695,
+        "source_derived_raw_nodes": 35,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -38028,7 +39814,14 @@
         "paragraph_blocks": 77,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -38178,7 +39971,14 @@
         "paragraph_blocks": 77,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -38328,7 +40128,14 @@
         "paragraph_blocks": 82,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -38478,7 +40285,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -38628,7 +40442,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": null,
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 23,
+        "raw_nodes_empty_source": 17,
+        "raw_nodes_with_source": 6,
+        "parser_derived_raw_nodes": 21,
+        "source_derived_raw_nodes": 2,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -38774,7 +40595,14 @@
         "paragraph_blocks": 74,
         "final_block_kind": "jisage_block",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -38926,7 +40754,14 @@
         "paragraph_blocks": 74,
         "final_block_kind": "jisage_block",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -39077,7 +40912,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -39229,7 +41071,14 @@
         "paragraph_blocks": 6,
         "final_block_kind": "jisage_block",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -39380,7 +41229,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": null,
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 41,
+        "raw_nodes_empty_source": 26,
+        "raw_nodes_with_source": 15,
+        "parser_derived_raw_nodes": 36,
+        "source_derived_raw_nodes": 5,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -39527,7 +41383,14 @@
         "paragraph_blocks": 74,
         "final_block_kind": "jisage_block",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -39679,7 +41542,14 @@
         "paragraph_blocks": 74,
         "final_block_kind": "jisage_block",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -39830,7 +41700,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -39982,7 +41859,14 @@
         "paragraph_blocks": 6,
         "final_block_kind": "jisage_block",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -40133,7 +42017,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": null,
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 41,
+        "raw_nodes_empty_source": 26,
+        "raw_nodes_with_source": 15,
+        "parser_derived_raw_nodes": 36,
+        "source_derived_raw_nodes": 5,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -40280,7 +42171,14 @@
         "paragraph_blocks": 74,
         "final_block_kind": "jisage_block",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -40432,7 +42330,14 @@
         "paragraph_blocks": 74,
         "final_block_kind": "jisage_block",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -40583,7 +42488,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -40735,7 +42647,14 @@
         "paragraph_blocks": 6,
         "final_block_kind": "jisage_block",
         "final_source_attribution_candidate": false,
-        "hints_count": 1
+        "hints_count": 1,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -40886,7 +42805,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": null,
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 41,
+        "raw_nodes_empty_source": 26,
+        "raw_nodes_with_source": 15,
+        "parser_derived_raw_nodes": 36,
+        "source_derived_raw_nodes": 5,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -41033,7 +42959,14 @@
         "paragraph_blocks": 74,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 3
+        "hints_count": 3,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -41191,7 +43124,14 @@
         "paragraph_blocks": 145,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -41348,7 +43288,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -41506,7 +43453,14 @@
         "paragraph_blocks": 65,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 20,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 20,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -41663,7 +43617,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 137,
+        "raw_nodes_empty_source": 101,
+        "raw_nodes_with_source": 36,
+        "parser_derived_raw_nodes": 127,
+        "source_derived_raw_nodes": 10,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -41815,7 +43776,14 @@
         "paragraph_blocks": 15,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -41957,7 +43925,14 @@
         "paragraph_blocks": 15,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -42099,7 +44074,14 @@
         "paragraph_blocks": 19,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -42241,7 +44223,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",
@@ -42383,7 +44372,14 @@
         "paragraph_blocks": 1,
         "final_block_kind": "paragraph",
         "final_source_attribution_candidate": false,
-        "hints_count": 0
+        "hints_count": 0,
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0
       },
       "materialization": {
         "status": "passed",

@@ -238,6 +238,16 @@ cat > "$matrix_summary" <<'JSON'
       "generated_tei": {"body_tag_counts": {}, "document_tag_counts": {}},
       "classification": {"paragraph_origin_bucket": "aligned", "source_note_body_excluded": false},
       "text": {"body_text_match_bucket": "ruby_expanded_equal"}
+    },
+    {
+      "work_id": "w2",
+      "title": "Raw only adapter residue",
+      "tei_eaj_file": "data/plain/w2.xml",
+      "selected_aat": {"adapter": "aozora"},
+      "materialization": {"status": "passed"},
+      "tei_eaj": {"structure_profile": "plain_prose"},
+      "classification": {"paragraph_origin_bucket": "adapter_raw_only", "source_note_body_excluded": false},
+      "text": {"body_text_match_bucket": "different"}
     }
   ],
   "skipped": [
@@ -291,10 +301,10 @@ jq -e '.source_authority_gate.gate_status == "SOURCE_AUTHORITY_GATE_PASS"' "$sum
 jq -e '.parser_evidence_coverage.row_entries_missing_required_parser_evidence == 0' "$summary_json"
 jq -e '.parser_evidence_coverage.work_files_missing_required_parser_evidence == 0' "$summary_json"
 jq -e '.parser_evidence_coverage.rows_missing_required_parser_evidence == 0' "$summary_json"
-jq -e '.classification_counts.adapter_paragraph_bug == 1' "$summary_json"
+jq -e '.classification_counts.adapter_paragraph_bug == 2' "$summary_json"
 jq -e '.classification_counts.ruby_metadata_not_plaintext == 1' "$summary_json"
 jq -e '.classification_counts.source_note_metadata_excluded == 1' "$summary_json"
-jq -e '.classification_counts.source_text_policy_required == 1' "$summary_json"
+jq -e '.classification_counts.source_text_policy_required == 2' "$summary_json"
 jq -e '(.classification_counts | has("missing_parser_evidence")) | not' "$summary_json"
 jq -e '.classification_counts.evidence_gap == 1' "$summary_json"
 jq -e '.blocking_owners == ["adapter", "evidence", "policy"]' "$summary_json"
@@ -303,6 +313,7 @@ jq -e '[.rows[] | select(.classifications | index("ruby_metadata_not_plaintext")
 jq -e '[.rows[] | select(.work_id == "w1" and .adapter == "aozora-epub3" and (.classifications == []) and (.blocking_owners == []))] | length == 1' "$summary_json"
 jq -e '[.rows[] | select(.work_id == "w2" and .adapter == "aozora-epub3" and (.classifications | index("ruby_metadata_not_plaintext")))] | length == 1' "$summary_json"
 jq -e '[.rows[] | select(.classifications | index("source_note_metadata_excluded"))] | length == 1' "$summary_json"
+jq -e '[.rows[] | select(.work_id == "w2" and .adapter == "aozora" and (.classifications | index("adapter_paragraph_bug")) and (.blocking_owners | index("adapter")) and (.blocking_owners | index("policy")))] | length == 1' "$summary_json"
 jq -e '[.rows[] | select(.classifications == ["missing_parser_evidence"] and .blocking_owners == ["evidence"])] | length == 0' "$summary_json"
 jq -e '[.rows[] | select((.classifications | index("adapter_paragraph_bug")) and (.classifications | index("missing_parser_evidence")))] | length == 0' "$summary_json"
 jq -e '[.rows[] | select(.adapter == "missing" and (.classifications == ["evidence_gap"]) and (.evidence.skip_reason == "no_materializable_aat") and (.title == "Skipped fixture row") and (.level == "Level 3") and (.state == "draft"))] | length == 1' "$summary_json"
@@ -319,9 +330,9 @@ python3 "$repo_root/reports/parser-ir/plain-prose-source-delta.py" \
   --allow-missing-parser-evidence
 
 jq -e '.source_authority_gate.gate_status == "SOURCE_AUTHORITY_GATE_FAIL"' "$failing_summary_json"
-jq -e '[.rows[] | select(.classifications | index("evidence_gap"))] | length == 7' "$failing_summary_json"
-jq -e '[.rows[] | select(.blocking_owners | index("evidence"))] | length == 7' "$failing_summary_json"
-jq -e '[.rows[] | select(any(.reasons[]; . == "source authority gate did not pass"))] | length == 7' "$failing_summary_json"
+jq -e '[.rows[] | select(.classifications | index("evidence_gap"))] | length == 8' "$failing_summary_json"
+jq -e '[.rows[] | select(.blocking_owners | index("evidence"))] | length == 8' "$failing_summary_json"
+jq -e '[.rows[] | select(any(.reasons[]; . == "source authority gate did not pass"))] | length == 8' "$failing_summary_json"
 
 rg -n 'FIVE_PARSER_EVIDENCE_COMPLETE' "$report_md"
 rg -n 'ruby_metadata_not_plaintext' "$report_md"

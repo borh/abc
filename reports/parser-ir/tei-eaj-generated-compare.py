@@ -454,6 +454,7 @@ def nullable_delta(left: int | None, right: int | None) -> int | None:
 def paragraph_origin_bucket(
     *,
     aat_paragraph_blocks: int | None,
+    aat_raw_only_parser_residue_blocks: int | None,
     parser_ir_paragraphs: int | None,
     generated_body_p: int | None,
     tei_eaj_body_p: int | None,
@@ -482,6 +483,12 @@ def paragraph_origin_bucket(
         and parser_ir_paragraphs is not None
         and aat_paragraph_blocks != parser_ir_paragraphs
     ):
+        if (
+            parser_ir_paragraphs == 0
+            and aat_raw_only_parser_residue_blocks is not None
+            and aat_raw_only_parser_residue_blocks == aat_paragraph_blocks
+        ):
+            return "adapter_raw_only"
         rendering = paragraph_rendering or {}
         if (
             aat_paragraph_blocks > parser_ir_paragraphs
@@ -563,7 +570,62 @@ def paragraph_rendering_summary(parser_ir: dict[str, Any]) -> dict[str, Any]:
     return summary
 
 
-def aat_summary(candidate: dict[str, Any]) -> dict[str, Any]:
+def is_parser_raw_node(node: Any) -> bool:
+    return (
+        isinstance(node, dict)
+        and node.get("kind") == "raw"
+        and node.get("x-provenance") == "parser-derived"
+    )
+
+
+def collect_raw_stats(value: Any, stats: dict[str, int]) -> None:
+    if isinstance(value, dict):
+        if value.get("kind") == "raw":
+            stats["raw_nodes_total"] += 1
+            source = value.get("source")
+            if isinstance(source, str) and source:
+                stats["raw_nodes_with_source"] += 1
+            else:
+                stats["raw_nodes_empty_source"] += 1
+            provenance = value.get("x-provenance")
+            if provenance == "parser-derived":
+                stats["parser_derived_raw_nodes"] += 1
+            elif provenance == "source-derived":
+                stats["source_derived_raw_nodes"] += 1
+        for child in value.values():
+            collect_raw_stats(child, stats)
+    elif isinstance(value, list):
+        for child in value:
+            collect_raw_stats(child, stats)
+
+
+def raw_stats(aat_doc: dict[str, Any]) -> dict[str, int]:
+    stats = {
+        "raw_nodes_total": 0,
+        "raw_nodes_empty_source": 0,
+        "raw_nodes_with_source": 0,
+        "parser_derived_raw_nodes": 0,
+        "source_derived_raw_nodes": 0,
+        "raw_only_parser_residue_blocks": 0,
+        "raw_only_empty_parser_residue_blocks": 0,
+    }
+    collect_raw_stats(aat_doc, stats)
+    for block in aat_doc.get("blocks", []):
+        if not isinstance(block, dict) or block.get("kind") != "paragraph":
+            continue
+        content = block.get("content")
+        if (
+            isinstance(content, list)
+            and content
+            and all(is_parser_raw_node(node) for node in content)
+        ):
+            stats["raw_only_parser_residue_blocks"] += 1
+            if all(node.get("source", "") == "" for node in content):
+                stats["raw_only_empty_parser_residue_blocks"] += 1
+    return stats
+
+
+def aat_summary(candidate: dict[str, Any], aat_doc: dict[str, Any]) -> dict[str, Any]:
     aat = candidate.get("aat", {})
     return {
         "block_count": aat.get("block_count"),
@@ -574,7 +636,7 @@ def aat_summary(candidate: dict[str, Any]) -> dict[str, Any]:
             "final_source_attribution_candidate"
         ),
         "hints_count": len(aat.get("hints", [])),
-    }
+    } | raw_stats(aat_doc)
 
 
 def run_checked(command: list[str], *, cwd: pathlib.Path | None = None) -> None:
@@ -678,6 +740,7 @@ def build_materialized_row(
     parser_ir_path: pathlib.Path,
     publication_dir: pathlib.Path,
 ) -> dict[str, Any]:
+    aat_doc = load_json(pathlib.Path(candidate["path"]))
     parser_ir = load_json(parser_ir_path)
     validation = load_json(publication_dir / "tei-validation-result.json")
     generated = tei_counts(publication_dir / "tei.xml")
@@ -703,11 +766,12 @@ def build_materialized_row(
 
     generated_body_p = generated["body_p_count"]
     tei_eaj_body_p = tei_eaj["body_p_count"]
-    aat = aat_summary(candidate)
+    aat = aat_summary(candidate, aat_doc)
     parser_ir_paragraph_count = len(parser_ir.get("paragraphs", []))
     paragraph_rendering = paragraph_rendering_summary(parser_ir)
     paragraph_origin = paragraph_origin_bucket(
         aat_paragraph_blocks=aat["paragraph_blocks"],
+        aat_raw_only_parser_residue_blocks=aat["raw_only_parser_residue_blocks"],
         parser_ir_paragraphs=parser_ir_paragraph_count,
         generated_body_p=generated_body_p,
         tei_eaj_body_p=tei_eaj_body_p,

@@ -45,22 +45,19 @@
     "works_total": 32
   },
   "classification_counts": {
-    "adapter_paragraph_bug": 86,
+    "adapter_paragraph_bug": 88,
     "evidence_gap": 5,
-    "parser_ir_projection_bug": 2,
     "ruby_metadata_not_plaintext": 6,
     "source_text_policy_required": 66
   },
   "blocking_owners": [
     "adapter",
     "evidence",
-    "policy",
-    "parser_ir"
+    "policy"
   ],
   "blocking_owner_counts": {
-    "adapter": 86,
+    "adapter": 88,
     "evidence": 5,
-    "parser_ir": 2,
     "policy": 72
   },
   "rows": [
@@ -296,22 +293,22 @@
       "level": null,
       "state": null,
       "adapter": "aozora",
-      "paragraph_origin_bucket": "converter_paragraph_mismatch",
+      "paragraph_origin_bucket": "adapter_raw_only",
       "body_text_match_bucket": "different",
       "classifications": [
-        "parser_ir_projection_bug",
+        "adapter_paragraph_bug",
         "source_text_policy_required"
       ],
       "blocking_owners": [
-        "policy",
-        "parser_ir"
+        "adapter",
+        "policy"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "parser-IR projection mismatch: converter_paragraph_mismatch",
+        "paragraph origin is adapter_raw_only",
         "text policy required for different"
       ]
     },
@@ -780,22 +777,22 @@
       "level": null,
       "state": null,
       "adapter": "aozora",
-      "paragraph_origin_bucket": "converter_paragraph_mismatch",
+      "paragraph_origin_bucket": "adapter_raw_only",
       "body_text_match_bucket": "different",
       "classifications": [
-        "parser_ir_projection_bug",
+        "adapter_paragraph_bug",
         "source_text_policy_required"
       ],
       "blocking_owners": [
-        "policy",
-        "parser_ir"
+        "adapter",
+        "policy"
       ],
       "evidence": {
         "missing_required_parsers_for_row": [],
         "materialization_status": "passed"
       },
       "reasons": [
-        "parser-IR projection mismatch: converter_paragraph_mismatch",
+        "paragraph origin is adapter_raw_only",
         "text policy required for different"
       ]
     },

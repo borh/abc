@@ -16,6 +16,7 @@ ADAPTER_PARAGRAPH_FAILURES = {
     "adapter_over_segmented",
     "adapter_under_segmented",
     "adapter_collapsed",
+    "adapter_raw_only",
 }
 PARSER_IR_FAILURES = {"converter_paragraph_mismatch"}
 ABC_RENDERER_FAILURES = {"renderer_paragraph_mismatch"}

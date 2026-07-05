@@ -16,15 +16,13 @@
     "rows_total": 135,
     "rows_passed": 19,
     "rows_failed": 116,
-    "verdict": "LEVEL3_PLAIN_PROSE_BLOCKED_ADAPTER_FIDELITY_AND_TEXT_POLICY_AND_PARSER_IR",
+    "verdict": "LEVEL3_PLAIN_PROSE_BLOCKED_ADAPTER_FIDELITY_AND_TEXT_POLICY",
     "blocking_owners": [
       "adapter",
-      "policy",
-      "parser_ir"
+      "policy"
     ],
     "failures_by_owner": {
-      "adapter": 86,
-      "parser_ir": 2,
+      "adapter": 88,
       "policy": 72
     },
     "failures_by_adapter": {
@@ -45,9 +43,9 @@
     "paragraph_origin_buckets": {
       "adapter_collapsed": 10,
       "adapter_over_segmented": 75,
+      "adapter_raw_only": 2,
       "adapter_under_segmented": 1,
-      "aligned": 47,
-      "converter_paragraph_mismatch": 2
+      "aligned": 47
     },
     "failed_rows": [
       {
@@ -202,15 +200,15 @@
         "title": "元禄時代小説第一巻「本朝二十不孝」ぬきほ（言文一致訳）",
         "tei_eaj_file": "data/complete/tei_lib_lv3/15938_tei.xml",
         "adapter": "aozora",
-        "paragraph_origin_bucket": "converter_paragraph_mismatch",
+        "paragraph_origin_bucket": "adapter_raw_only",
         "body_text_match_bucket": "different",
         "passed": false,
         "owners": [
-          "parser_ir",
+          "adapter",
           "policy"
         ],
         "reasons": [
-          "parser-IR paragraph mismatch: converter_paragraph_mismatch",
+          "paragraph origin is adapter_raw_only",
           "text policy required for different"
         ]
       },
@@ -507,15 +505,15 @@
         "title": "乳母車",
         "tei_eaj_file": "data/complete/tei_lib_lv3/45093_tei.xml",
         "adapter": "aozora",
-        "paragraph_origin_bucket": "converter_paragraph_mismatch",
+        "paragraph_origin_bucket": "adapter_raw_only",
         "body_text_match_bucket": "different",
         "passed": false,
         "owners": [
-          "parser_ir",
+          "adapter",
           "policy"
         ],
         "reasons": [
-          "parser-IR paragraph mismatch: converter_paragraph_mismatch",
+          "paragraph origin is adapter_raw_only",
           "text policy required for different"
         ]
       },

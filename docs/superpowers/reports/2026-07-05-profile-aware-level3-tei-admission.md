@@ -6,8 +6,8 @@ This report classifies measured parser-IR generated TEI evidence into profile-aw
 
 - source_authority_gate: `SOURCE_AUTHORITY_GATE_PASS`
 - parser_ir_infrastructure_verdict: `LEVEL3_IR_INFRASTRUCTURE_READY`
-- plain_prose_verdict: `LEVEL3_PLAIN_PROSE_BLOCKED_ADAPTER_FIDELITY_AND_TEXT_POLICY_AND_PARSER_IR`
-- blocking_owners: `adapter, policy, parser_ir`
+- plain_prose_verdict: `LEVEL3_PLAIN_PROSE_BLOCKED_ADAPTER_FIDELITY_AND_TEXT_POLICY`
+- blocking_owners: `adapter, policy`
 - mapping_hash: `sha256:feaab2d246fd17d79dc979012893400e0f5faacc0df04e260bee4f2b129299bf`
 
 ## Mapping
@@ -36,8 +36,7 @@ This report classifies measured parser-IR generated TEI evidence into profile-aw
 
 | owner | rows |
 |---|---:|
-| adapter | 86 |
-| parser_ir | 2 |
+| adapter | 88 |
 | policy | 72 |
 
 ### Paragraph Origin Buckets
@@ -46,9 +45,9 @@ This report classifies measured parser-IR generated TEI evidence into profile-aw
 |---|---:|
 | adapter_collapsed | 10 |
 | adapter_over_segmented | 75 |
+| adapter_raw_only | 2 |
 | adapter_under_segmented | 1 |
 | aligned | 47 |
-| converter_paragraph_mismatch | 2 |
 
 ### Text Policy Buckets
 
@@ -90,7 +89,7 @@ This report classifies measured parser-IR generated TEI evidence into profile-aw
 | 15938 | aozora-epub3 | adapter_over_segmented | different | adapter, policy | `data/complete/tei_lib_lv3/15938_tei.xml` |
 | 15938 | aozora-rs | adapter_over_segmented | different | adapter, policy | `data/complete/tei_lib_lv3/15938_tei.xml` |
 | 15938 | aozora2 | adapter_collapsed | different | adapter, policy | `data/complete/tei_lib_lv3/15938_tei.xml` |
-| 15938 | aozora | converter_paragraph_mismatch | different | parser_ir, policy | `data/complete/tei_lib_lv3/15938_tei.xml` |
+| 15938 | aozora | adapter_raw_only | different | adapter, policy | `data/complete/tei_lib_lv3/15938_tei.xml` |
 | 236 | aozora2html | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/236_tei.xml` |
 | 236 | aozora-epub3 | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/236_tei.xml` |
 | 236 | aozora-rs | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/236_tei.xml` |
@@ -109,7 +108,7 @@ This report classifies measured parser-IR generated TEI evidence into profile-aw
 | 45093 | aozora-epub3 | adapter_over_segmented | different | adapter, policy | `data/complete/tei_lib_lv3/45093_tei.xml` |
 | 45093 | aozora-rs | adapter_over_segmented | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/45093_tei.xml` |
 | 45093 | aozora2 | adapter_collapsed | ruby_expanded_parenless_equal | adapter | `data/complete/tei_lib_lv3/45093_tei.xml` |
-| 45093 | aozora | converter_paragraph_mismatch | different | parser_ir, policy | `data/complete/tei_lib_lv3/45093_tei.xml` |
+| 45093 | aozora | adapter_raw_only | different | adapter, policy | `data/complete/tei_lib_lv3/45093_tei.xml` |
 | 4872 | aozora-rs | adapter_over_segmented | ruby_expanded_equal | adapter | `data/complete/tei_lib_lv3/4872_tei.xml` |
 | 4872 | aozora2 | adapter_collapsed | ruby_expanded_equal | adapter | `data/complete/tei_lib_lv3/4872_tei.xml` |
 | 4872 | aozora | adapter_collapsed | different | adapter, policy | `data/complete/tei_lib_lv3/4872_tei.xml` |

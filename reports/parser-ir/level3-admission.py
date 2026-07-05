@@ -16,6 +16,7 @@ ADAPTER_PARAGRAPH_FAILURES = {
     "adapter_over_segmented",
     "adapter_under_segmented",
     "adapter_collapsed",
+    "adapter_raw_only",
 }
 POLICY_PARAGRAPH_FAILURES = {"page_break_projection", "unknown"}
 PARSER_IR_FAILURES = {"converter_paragraph_mismatch"}

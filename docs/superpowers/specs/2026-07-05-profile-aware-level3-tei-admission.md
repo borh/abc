@@ -48,6 +48,7 @@ The next decision must define which profile surfaces are Level 3 parser compatib
 - Do not make paragraph-count parity the universal gate.
 - Do not require adapters to reproduce TEI-EAJ editorial segmentation for profiles whose TEI structure is not source-marked in Aozora.
 - Do not add parser-IR schema features here. The schema delta is separate; this spec defines admission policy over the measured outputs.
+- Do not treat ruby readings, source notes, provenance, or other metadata as plaintext output. Plaintext admission uses body base text only.
 
 ## Decision
 
@@ -111,9 +112,9 @@ A parser input passes `LEVEL3_PLAIN_PROSE_ADMITTED` for a declared evidence scop
 
 5. Text policy is declared and satisfied.
    - `base_equal` passes.
-   - `ruby_expanded_equal` may pass if the ABC comparison policy explicitly chooses ruby-expanded body text for that gate.
-   - `ruby_expanded_parenless_equal` may pass only under an explicit ruby-plus-parenthetical normalization policy owned by ABC.
-   - `base_drop_parentheticals_equal` may pass only when the dropped parenthetical is classified as source-note/source-attribution policy, not as a blanket deletion rule.
+   - `ruby_expanded_equal` is diagnostic only and does not pass plaintext admission. Plaintext must not include ruby readings.
+   - `ruby_expanded_parenless_equal` is diagnostic only and does not pass plaintext admission. Plaintext must not include ruby readings or comparison-only parenthesis normalization.
+   - `base_drop_parentheticals_equal` may pass only when the dropped parenthetical is represented as source-note/source-attribution metadata and is excluded from plaintext by that typed policy. It must not become a blanket deletion rule.
    - `generated_contains_tei_eaj`, `tei_eaj_contains_generated`, and `different` fail until a narrower source-text policy or adapter bug classification explains them.
 
 The gate must report failures by owner:
@@ -218,6 +219,12 @@ Required `plain_prose_admission` fields:
 - `failures_by_adapter`
 - `text_policy_buckets`
 - `paragraph_origin_buckets`
+
+Plaintext policy fields:
+
+- `plaintext_surface = "body_base_text"`
+- `ruby_expanded_surfaces = "diagnostic_only"`
+- `metadata_policy = "exclude_typed_metadata_from_plaintext"`
 
 Recommended verdict values:
 

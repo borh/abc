@@ -1,6 +1,7 @@
 mod chunking;
 mod error;
 mod features;
+mod ortho_compat;
 mod span_builder;
 pub mod sudachi;
 pub mod vaporetto;

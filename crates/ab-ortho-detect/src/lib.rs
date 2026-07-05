@@ -1,10 +1,38 @@
 pub mod types;
 pub mod script;
 pub mod features;
+pub mod heuristic;
 
 pub use types::{
     OffsetMap, OrthoAnnotation, OrthoDetectorId, OrthoNormalization,
 };
+
+use ab_plaintext::SentenceSpan;
+
+/// Minimal per-token summary returned by [`OrthoTokenizer`].
+/// The detector only needs surface text and the `pos2` feature;
+/// everything else is discarded to keep the boundary narrow.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OrthoToken {
+    pub surface: String,
+    /// Unidic `pos2` field, e.g. `"固有名詞"`. `None` if absent (`*`/empty).
+    pub pos2: Option<String>,
+}
+
+/// Abstract first-pass tokenizer used by [`HeuristicV1`] for the
+/// proper-noun guard. Defined here so `ab-ortho-detect` does not depend
+/// on any concrete analyzer crate; adapters implement this in their own
+/// crates (e.g. `ab-morph-analyzers` impls it for `VibratoAnalyzer`).
+pub trait OrthoTokenizer: Send + Sync {
+    /// Tokenize `text` and return `(surface, pos2)` for each morpheme.
+    fn tokenize(&self, text: &str) -> Vec<OrthoToken>;
+}
+
+/// The detection trait. Decoupled from normalization application.
+pub trait OrthoDetector: Send + Sync {
+    fn detector_id(&self) -> OrthoDetectorId;
+    fn detect(&self, sentences: &[SentenceSpan<'_>]) -> Vec<OrthoAnnotation>;
+}
 
 /// Apply annotations to produce a normalized text view and an OffsetMap.
 /// Annotations must be sorted by source_byte_range and non-overlapping.

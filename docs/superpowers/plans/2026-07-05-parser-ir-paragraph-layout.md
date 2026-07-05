@@ -414,14 +414,14 @@ Run:
 ```bash
 git diff --check
 ABC_TEI_SCHEMA_SKIP=1 bin/kaocha --focus 'abc.tools.validate-design-bundle-test' --focus 'abc.tools.parser-ir-tei-test' --focus 'abc.tools.parser-ir-plaintext-test' --focus 'abc.tools.materialize-publication-test'
-clojure -M:abc/validate-design-bundle
+nix run .#validate-design-bundle
 ```
 
 Expected:
 
 - `git diff --check` prints nothing and exits 0.
 - Focused Kaocha run passes.
-- `clojure -M:abc/validate-design-bundle` passes with no parser-IR schema validation, publication, or compatibility errors.
+- `nix run .#validate-design-bundle` passes with no parser-IR schema validation, publication, or compatibility errors.
 
 ## Self-Review
 

@@ -59,6 +59,26 @@ fn temp_output_path(run_dir: &Path, label: &str) -> PathBuf {
     ))
 }
 
+/// Removes `interesting-*.parquet` intermediates left behind by earlier
+/// crashed or killed invocations (this process only deletes its own
+/// outputs on success).
+fn remove_stale_temp_outputs(run_dir: &Path) {
+    let prefix = format!("interesting-{}-", std::process::id());
+    let Ok(entries) = fs::read_dir(super::summary_body::duckdb_temp_dir(run_dir)) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let name = entry.file_name();
+        let Some(name) = name.to_str() else { continue };
+        if name.starts_with("interesting-")
+            && name.ends_with(".parquet")
+            && !name.starts_with(&prefix)
+        {
+            let _ = fs::remove_file(entry.path());
+        }
+    }
+}
+
 /// `base_regions` CTE body: region flags with the text filter applied.
 /// Under `lexical-only`, punctuation-only regions are excluded via the
 /// analyzers' concatenated surfaces (LEFT JOIN so regions with no analyzer
@@ -617,6 +637,7 @@ pub(super) fn collect_patterns_duckdb(
     let features = duckdb_table_path_literal(run_dir, WarehouseTable::NwayFeatureDiffs);
     let (works_join, rarity_key) = rarity_sql(run_dir, rarity);
 
+    remove_stale_temp_outputs(run_dir);
     let Some(feature_keys) = discover_feature_keys(run_dir, &features, options.feature_profile)?
     else {
         return Ok(None);

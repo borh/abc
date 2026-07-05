@@ -413,6 +413,21 @@ Moved here from its previous "Phase 2 after v1" position because harmonization c
 - Sudachi mode-matching configuration
 - Stored as run metadata, exposed in `score_version` block as `granularity_profile`
 
+**Status (2026-07-05): implemented**, with two deviations from the letter above:
+
+1. `granularity_profile` is *derived at summarize time* from `run_analyzers.parquet` (`analyzer_family`/`analyzer_arg`), not stored as a new run-metadata column. This keeps `run_analyzers.parquet` the single source of truth, avoids a schema change within v1, and is retroactively correct for every existing warehouse — including ones run with the mixed `sudachi-a sudachi-c` set, which correctly derive to `"none"`.
+2. There is no new pipeline preprocessing step. The Sudachi mode-matching configuration this phase called for already exists as the `sudachi-a` analyzer spec; harmonization is an analyzer-set choice at run time, not a new code path. That choice is now canonicalized as the `morph-warehouse-run-harmonized` justfile recipe (vibrato + sudachi-a only).
+
+The derivation (see `granularity_profile_token` in `ab-morph-run/src/summary/interesting.rs`), keyed on the Sudachi analyzers present in a run's `run_analyzers` rows:
+
+| Sudachi analyzers present | `granularity_profile` |
+| --- | --- |
+| none | `"no-sudachi"` |
+| exactly `sudachi-a` | `"sudachi-mode-A-aligned"` |
+| any other mode, or a mix of modes | `"none"` |
+
+`"no-sudachi"` is new relative to §Score Versioning's original two-token enumeration (`"none"`, `"sudachi-mode-A-aligned"`): it marks runs with no Sudachi analyzer as their own comparability class rather than conflating them with either the harmonized or the deliberately-mixed case.
+
 ### Phase 3: `projection_spans.parquet`
 
 - Extend `ab-plaintext/src/aat.rs` visible_text_projection to optionally emit span mappings
@@ -630,7 +645,7 @@ Any change to default weights, normalization, tie-breaking, RRF k-constant, `λ_
 
 - `signal_profile`: which signals were active. Scores are comparable only within the same profile.
 - `rarity_basis`: `"work"` (dedup via `aozora_works`) or `"source"` (fallback when `aozora_works` absent). Cross-basis comparison is forbidden.
-- `granularity_profile`: harmonization state — `"none"` (no harmonization), `"sudachi-mode-A-aligned"`, etc. A run scored on un-harmonized data is not comparable to one scored on harmonized data even with the same `signal_profile`.
+- `granularity_profile`: harmonization state — `"none"` (no harmonization), `"sudachi-mode-A-aligned"`, `"no-sudachi"`, etc. A run scored on un-harmonized data is not comparable to one scored on harmonized data even with the same `signal_profile`.
 - `cause_classification_profile`: `"sudachi-only"`, `"all-analyzers"`, or `"absent"`. Records the vibrato-lattice asymmetry (Decision 15).
 - `literal_context_policy`: `"literal"` or `"hash-only"`. Records the per-run licensing gate (Decision 4).
 - `surprise`: `"present"` or `"absent"`. Records whether the surprise signal's producer was available (Decision 12); avoids the silent-degradation failure mode.

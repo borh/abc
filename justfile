@@ -85,7 +85,12 @@ aozora-notation-spec-comparison VECTORS="" REPORT_MD="docs/superpowers/reports/2
 	cargo build --manifest-path "{{repo_root}}/adapters/aozora/Cargo.toml" --release; \
 	python3 "{{repo_root}}/reports/parser-conformance/run-aozora-notation-spec.py" \
 		--vectors-dir "$vectors" \
-		--adapter "aozora=$aozora_bin inspect" \
+		--adapter "aozora=inspect:$aozora_bin inspect" \
+		--adapter "ab-aozora=aat:{{repo_root}}/adapters/aozora/target/release/aozora-adapter --mode aat" \
+		--adapter "aozora2=aat:{{repo_root}}/adapters/aozora2/target/release/aozora2-adapter --mode aat" \
+		--adapter "aozora2html=aat:{{repo_root}}/adapters/aozora2html/aozora2html-adapter --mode aat" \
+		--adapter "aozora-rs=aat:{{repo_root}}/adapters/aozora-rs/target/release/aozora-rs-adapter --mode aat" \
+		--adapter "aozora-epub3=aat:{{repo_root}}/adapters/aozora-epub3/aozora-epub3-adapter --mode aat" \
 		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
 		--report-md "{{repo_root}}/{{REPORT_MD}}"
 

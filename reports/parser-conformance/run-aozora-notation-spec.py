@@ -13,6 +13,7 @@ from typing import Any
 @dataclass
 class Adapter:
     label: str
+    mode: str
     command: list[str]
 
 
@@ -28,10 +29,13 @@ class Row:
 
 
 def parse_adapter(spec: str) -> Adapter:
-    label, sep, command = spec.partition("=")
-    if not sep or not label or not command:
-        raise SystemExit(f"--adapter must be label=command, got {spec!r}")
-    return Adapter(label=label, command=shlex.split(command))
+    label, sep, rest = spec.partition("=")
+    if not sep or not label or not rest:
+        raise SystemExit(f"--adapter must be label=mode:command, got {spec!r}")
+    mode, mode_sep, command = rest.partition(":")
+    if not mode_sep or mode not in {"inspect", "aat"} or not command:
+        raise SystemExit(f"--adapter mode must be inspect or aat, got {spec!r}")
+    return Adapter(label=label, mode=mode, command=shlex.split(command))
 
 
 def load_vectors(vectors_dir: Path) -> list[dict[str, Any]]:
@@ -77,6 +81,12 @@ def compare_projection(
     if expected is None:
         return
     if projection == "serialize":
+        return
+    if adapter.mode == "aat":
+        warnings.append(
+            f"{projection} comparison skipped: "
+            f"AAT adapter does not expose aozora inspect {projection}"
+        )
         return
     if projection not in {"nodes", "pairs", "diagnostics"}:
         warnings.append(f"{projection} comparison skipped: unsupported projection")

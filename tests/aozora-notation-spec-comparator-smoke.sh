@@ -70,16 +70,26 @@ esac
 SH
 chmod +x "$tmp/fake-aozora"
 
+cat > "$tmp/fake-aat-adapter" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+cat >/dev/null
+printf '{"version":1,"meta":{"adapter":"fake-aat","parse_complete":true},"blocks":[{"kind":"paragraph","content":[{"kind":"ruby","base":"青梅","reading":"おうめ"}]}]}\n'
+SH
+chmod +x "$tmp/fake-aat-adapter"
+
 python3 "$repo_root/reports/parser-conformance/run-aozora-notation-spec.py" \
   --vectors-dir "$tmp/vectors" \
-  --adapter "fake=$tmp/fake-aozora inspect" \
+  --adapter "fake=inspect:$tmp/fake-aozora inspect" \
+  --adapter "fake-aat=aat:$tmp/fake-aat-adapter --mode aat" \
   --summary-json "$tmp/summary.json" \
   --report-md "$tmp/report.md"
 
 jq -e '.totals.vectors == 2' "$tmp/summary.json"
-jq -e '.totals.adapters == 1' "$tmp/summary.json"
-jq -e '.totals.rows == 2' "$tmp/summary.json"
+jq -e '.totals.adapters == 2' "$tmp/summary.json"
+jq -e '.totals.rows == 4' "$tmp/summary.json"
 jq -e '.rows[] | select(.vector == "ruby_explicit" and .adapter == "fake") | .status == "pass"' "$tmp/summary.json"
+jq -e '.rows[] | select(.vector == "ruby_explicit" and .adapter == "fake-aat") | .status == "warning"' "$tmp/summary.json"
 jq -e '.rows[] | select(.vector == "unsupported_shape" and .adapter == "fake") | .status == "warning"' "$tmp/summary.json"
 rg -n 'ruby_explicit' "$tmp/report.md"
 rg -n 'unsupported_shape' "$tmp/report.md"

@@ -15,7 +15,10 @@ use crate::{AnalyzerError, MorphAnalyzer};
 
 const VIBRATO_CHUNK_BYTES: usize = 32_000;
 const DEFAULT_VIBRATO_DICTIONARY: &str = "unidic-cwj-202512";
-const VIBRATO_DICTIONARY_SEARCH_PATHS: [&str; 2] = ["compiled", "optimized"];
+// Nix-built dictionaries only: `just dictionary-build-*` symlinks flake outputs
+// into dictionary/compiled/. No other directory is consulted, so a stale
+// hand-built artifact can never shadow the nix package.
+const VIBRATO_DICTIONARY_SEARCH_PATHS: [&str; 1] = ["compiled"];
 const ZSTD_DICTIONARY_LOAD_LOCK_RETRIES: usize = 600;
 const ZSTD_DICTIONARY_LOAD_LOCK_SLEEP: Duration = Duration::from_millis(50);
 static ZSTD_DICTIONARY_LOAD_LOCK: Mutex<()> = Mutex::new(());
@@ -144,8 +147,9 @@ fn resolve_dictionary_path_from_basename(name: &str) -> Result<PathBuf, Analyzer
     Err(AnalyzerError::DictionaryLoad {
         analyzer: format!("vibrato:{name}"),
         message: format!(
-            "could not resolve Vibrato dictionary `{name}` in dictionary/{}/ or dictionary/{}/ directories",
-            VIBRATO_DICTIONARY_SEARCH_PATHS[0], VIBRATO_DICTIONARY_SEARCH_PATHS[1],
+            "could not resolve Vibrato dictionary `{name}` in the dictionary/{}/ directory \
+             (nix-built; run `just dictionary-build-all` to (re)link the flake outputs)",
+            VIBRATO_DICTIONARY_SEARCH_PATHS[0],
         ),
     })
 }

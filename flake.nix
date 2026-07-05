@@ -161,6 +161,16 @@
             meta.description = "Materialize parser-IR publication plaintext and TEI artifacts";
           };
 
+          materialize-publications-batch = {
+            type = "app";
+            program = toString (
+              pkgs.writeShellScript "abc-materialize-publications-batch" ''
+                exec ${pkgs.clojure}/bin/clojure -M:abc/materialize-publication "$@"
+              ''
+            );
+            meta.description = "Materialize parser-IR publication plaintext and TEI artifacts from a batch JSON";
+          };
+
           materialize-source-snapshot = {
             type = "app";
             program = toString (

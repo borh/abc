@@ -294,6 +294,21 @@ fn maps_hanging_indent_container_to_burasage_style() {
 }
 
 #[test]
+fn maps_align_end_marker_to_chitsuki_style() {
+    let aat = run_aat("［＃地から１字上げ］（大正十一年十二月）\n");
+    let content = paragraph_content(&aat);
+
+    assert_eq!(content.len(), 1);
+    assert_eq!(content[0]["kind"], "style");
+    assert_eq!(content[0]["style_type"], "chitsuki");
+    assert_eq!(content[0]["x-align"], "right");
+    assert_eq!(content[0]["x-offset"], 1);
+    assert_eq!(content[0]["content"][0]["value"], "（大正十一年十二月）\n");
+    let text = serde_json::to_string(&aat).unwrap();
+    assert!(!text.contains(r#""x-source-marker-kind":"alignEnd""#));
+}
+
+#[test]
 fn normalizes_upstream_style_and_tcy_nodes_to_typed_aat() {
     let aat =
         run_aat("あた［＃「あた」に傍点］人物［＃「人物」は太字］昭和10［＃「10」は縦中横］年");

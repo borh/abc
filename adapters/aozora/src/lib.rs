@@ -244,6 +244,17 @@ fn blocks_from_inline_content(content: Vec<Value>) -> Vec<Value> {
             }
         }
 
+        if let Some(offset) = align_end_offset(&node) {
+            let boundary = find_next_raw_boundary(&content, index + 1);
+            if boundary > index + 1 {
+                push_paragraph_if_not_empty(&mut blocks, std::mem::take(&mut paragraph));
+                let inner = content[index + 1..boundary].to_vec();
+                push_chitsuki_paragraph(&mut blocks, offset, inner);
+                index = boundary;
+                continue;
+            }
+        }
+
         if let Some((first, rest)) = burasage_container_indent(&node) {
             if let Some(close_index) = find_matching_jisage_close(&content, index + 1) {
                 push_paragraph_if_not_empty(&mut blocks, std::mem::take(&mut paragraph));
@@ -320,6 +331,33 @@ fn push_paragraph_if_not_empty(blocks: &mut Vec<Value>, content: Vec<Value>) {
         "kind": "paragraph",
         "content": content
     }));
+}
+
+fn push_chitsuki_paragraph(blocks: &mut Vec<Value>, offset: u64, content: Vec<Value>) {
+    blocks.push(json!({
+        "kind": "paragraph",
+        "content": [{
+            "kind": "style",
+            "style_type": "chitsuki",
+            "content": content,
+            "x-align": "right",
+            "x-offset": offset,
+            "x-provenance": "source-derived"
+        }]
+    }));
+}
+
+fn align_end_offset(node: &Value) -> Option<u64> {
+    if node.get("kind").and_then(Value::as_str) != Some("raw")
+        || node.get("x-source-marker-kind").and_then(Value::as_str) != Some("alignEnd")
+    {
+        return None;
+    }
+    let source = node.get("source").and_then(Value::as_str)?;
+    if source.contains("地付き") {
+        return Some(0);
+    }
+    parse_aozora_number_before(source, "字上げ")
 }
 
 fn push_burasage_paragraph(blocks: &mut Vec<Value>, first: u64, rest: u64, content: Vec<Value>) {
@@ -402,6 +440,14 @@ fn find_next_container_boundary(content: &[Value], start: usize) -> usize {
     content[start..]
         .iter()
         .position(is_container_marker_raw)
+        .map(|offset| start + offset)
+        .unwrap_or(content.len())
+}
+
+fn find_next_raw_boundary(content: &[Value], start: usize) -> usize {
+    content[start..]
+        .iter()
+        .position(|node| node.get("kind").and_then(Value::as_str) == Some("raw"))
         .map(|offset| start + offset)
         .unwrap_or(content.len())
 }

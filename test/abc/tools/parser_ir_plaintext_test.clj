@@ -82,6 +82,33 @@
                                       "continuation_indent" 1
                                       "source" "aat-style"}}]})))))
 
+(deftest emphasis-inline-children-render-visible-plaintext-test
+  (testing "plaintext uses inline children but omits ruby readings and metadata"
+    (is (= "東京X内"
+           (plaintext/render-string
+            {"nodes" [{"type" "emphasis"
+                       "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                       "style" "bold"
+                       "text" "fallback"
+                       "inline_children" [{"type" "ruby"
+                                           "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                                           "ruby" {"base" "東京"
+                                                   "reading" "とうきょう"
+                                                   "scope" "explicit"}}
+                                          {"type" "gaiji"
+                                           "span" {"start" 2 "end" 3 "coordinate_system" "decoded_utf8"}
+                                           "gaiji" {"raw_marker" "※［＃x］"
+                                                    "unicode" "X"
+                                                    "resolved" true}}
+                                          {"type" "editor-note"
+                                           "span" {"start" 3 "end" 4 "coordinate_system" "decoded_utf8"}
+                                           "note" {"raw" "［＃注］"
+                                                   "category" "misc"}}
+                                          {"type" "emphasis"
+                                           "span" {"start" 4 "end" 5 "coordinate_system" "decoded_utf8"}
+                                           "style" "inner"
+                                           "text" "内"}]}]})))))
+
 (deftest render-omits-empty-or-missing-policy-metadata-test
   (testing "plaintext omits policy-required metadata when node payload is empty or missing"
     (is (= {:text ""

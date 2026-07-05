@@ -103,93 +103,142 @@
       (contains? gaiji "raw_marker")
       (assoc :raw-marker (get gaiji "raw_marker")))))
 
-(defn- render-text-node [acc node]
-  (append-inline acc (get node "text")))
+(declare render-node)
 
-(defn- render-ruby-node [acc node]
-  (let [ruby (get node "ruby")]
-    (if (and (present-text? (get ruby "base"))
-             (present-text? (get ruby "reading")))
-      (let [attrs (cond-> {:type "furigana"}
-                    (get ruby "direction")
-                    (assoc :rend (get ruby "direction")))]
-        (append-inline acc
-                       [:ruby attrs
-                        [:rb (get ruby "base")]
-                        [:rt (get ruby "reading")]]))
-      (mark-omitted acc "ruby"))))
+(def ^:private max-inline-depth 64)
 
-(defn- render-gaiji-node [acc node]
-  (let [declaration (gaiji-declaration node)]
-    (-> acc
-        (register-char-declaration declaration)
-        (append-inline [:g {:ref (str "#" (:xml-id declaration))}]))))
+(defn- render-inline-children [acc children depth]
+  (if (>= depth max-inline-depth)
+    (mark-omitted acc "emphasis-inline-depth")
+    (reduce (fn [state child]
+              (-> state
+                  (count-node (get child "type"))
+                  (render-node child (inc depth))))
+            acc
+            children)))
 
-(defn- render-editor-note-node [acc node]
-  (let [note (get node "note")]
-    (append-inline acc
-                   [:note {:type (get note "category")}
-                    (get note "raw")])))
+(defn- render-text-node
+  ([acc node] (render-text-node acc node 0))
+  ([acc node _depth]
+   (append-inline acc (get node "text"))))
 
-(defn- render-emphasis-node [acc node]
-  (append-inline acc
-                 [:hi {:rend (get node "style")}
-                  (get node "text")]))
+(defn- render-ruby-node
+  ([acc node] (render-ruby-node acc node 0))
+  ([acc node _depth]
+   (let [ruby (get node "ruby")]
+     (if (and (present-text? (get ruby "base"))
+              (present-text? (get ruby "reading")))
+       (let [attrs (cond-> {:type "furigana"}
+                     (get ruby "direction")
+                     (assoc :rend (get ruby "direction")))]
+         (append-inline acc
+                        [:ruby attrs
+                         [:rb (get ruby "base")]
+                         [:rt (get ruby "reading")]]))
+       (mark-omitted acc "ruby")))))
 
-(defn- render-heading-node [acc node]
-  (-> acc
-      flush-paragraph
-      flush-division
-      (update :current-division conj
-              [:head {:n (str (get node "level"))}
-               (get node "text")])))
+(defn- render-gaiji-node
+  ([acc node] (render-gaiji-node acc node 0))
+  ([acc node _depth]
+   (let [declaration (gaiji-declaration node)]
+     (-> acc
+         (register-char-declaration declaration)
+         (append-inline [:g {:ref (str "#" (:xml-id declaration))}])))))
 
-(defn- render-indentation-node [acc node]
-  (if (present-text? (get node "text"))
-    (append-inline acc
-                   [:seg {:type "indentation"
-                          :n (str (get node "depth"))}
-                    (get node "text")])
-    (mark-omitted acc "indentation")))
+(defn- render-editor-note-node
+  ([acc node] (render-editor-note-node acc node 0))
+  ([acc node _depth]
+   (let [note (get node "note")]
+     (append-inline acc
+                    [:note {:type (get note "category")}
+                     (get note "raw")]))))
 
-(defn- render-page-break-node [acc node]
-  (append-block acc
-                (cond-> [:pb]
-                  (some? (get node "page_number"))
-                  (conj {:n (get node "page_number")}))))
+(defn- render-emphasis-node
+  ([acc node] (render-emphasis-node acc node 0))
+  ([acc node depth]
+   (let [children (seq (get node "inline_children"))]
+     (if children
+       (let [before-count (count (:current-paragraph acc))
+             rendered (render-inline-children acc children depth)
+             inline-fragment (subvec (vec (:current-paragraph rendered)) before-count)]
+         (assoc rendered
+                :current-paragraph
+                (conj (subvec (vec (:current-paragraph acc)) 0 before-count)
+                      (into [:hi {:rend (get node "style")}] inline-fragment))))
+       (append-inline acc
+                      [:hi {:rend (get node "style")}
+                       (get node "text")])))))
 
-(defn- render-line-break-node [acc _node]
-  (append-inline acc [:lb]))
+(defn- render-heading-node
+  ([acc node] (render-heading-node acc node 0))
+  ([acc node _depth]
+   (-> acc
+       flush-paragraph
+       flush-division
+       (update :current-division conj
+               [:head {:n (str (get node "level"))}
+                (get node "text")]))))
 
-(defn- render-image-node [acc node]
-  (append-block acc
-                (cond-> [:figure
-                         [:graphic {:url (get node "src")}]]
-                  (present-text? (get node "alt"))
-                  (conj [:figDesc (get node "alt")]))))
+(defn- render-indentation-node
+  ([acc node] (render-indentation-node acc node 0))
+  ([acc node _depth]
+   (if (present-text? (get node "text"))
+     (append-inline acc
+                    [:seg {:type "indentation"
+                           :n (str (get node "depth"))}
+                     (get node "text")])
+     (mark-omitted acc "indentation"))))
 
-(defn- render-caption-node [acc node]
-  (append-block acc [:figDesc (get node "text")]))
+(defn- render-page-break-node
+  ([acc node] (render-page-break-node acc node 0))
+  ([acc node _depth]
+   (append-block acc
+                 (cond-> [:pb]
+                   (some? (get node "page_number"))
+                   (conj {:n (get node "page_number")})))))
 
-(defn- render-quote-node [acc node]
-  (if (present-text? (get node "text"))
-    (append-inline acc [:quote (get node "text")])
-    (mark-omitted acc "quote")))
+(defn- render-line-break-node
+  ([acc node] (render-line-break-node acc node 0))
+  ([acc _node _depth]
+   (append-inline acc [:lb])))
 
-(defn- render-source-note-node [acc node]
-  (if-not (present-text? (get node "text"))
-    (mark-omitted acc "source-note")
-    (case (get node "placement")
-      "front" (-> acc
+(defn- render-image-node
+  ([acc node] (render-image-node acc node 0))
+  ([acc node _depth]
+   (append-block acc
+                 (cond-> [:figure
+                          [:graphic {:url (get node "src")}]]
+                   (present-text? (get node "alt"))
+                   (conj [:figDesc (get node "alt")])))))
+
+(defn- render-caption-node
+  ([acc node] (render-caption-node acc node 0))
+  ([acc node _depth]
+   (append-block acc [:figDesc (get node "text")])))
+
+(defn- render-quote-node
+  ([acc node] (render-quote-node acc node 0))
+  ([acc node _depth]
+   (if (present-text? (get node "text"))
+     (append-inline acc [:quote (get node "text")])
+     (mark-omitted acc "quote"))))
+
+(defn- render-source-note-node
+  ([acc node] (render-source-note-node acc node 0))
+  ([acc node _depth]
+   (if-not (present-text? (get node "text"))
+     (mark-omitted acc "source-note")
+     (case (get node "placement")
+       "front" (-> acc
+                   flush-paragraph
+                   flush-division
+                   (update :front-notes conj (source-note-hiccup node)))
+       "body" (append-inline acc (source-note-hiccup node))
+       "back" (-> acc
                   flush-paragraph
                   flush-division
-                  (update :front-notes conj (source-note-hiccup node)))
-      "body" (append-inline acc (source-note-hiccup node))
-      "back" (-> acc
-                 flush-paragraph
-                 flush-division
-                 (update :back-notes conj (source-note-hiccup node)))
-      (mark-omitted acc "source-note"))))
+                  (update :back-notes conj (source-note-hiccup node)))
+       (mark-omitted acc "source-note")))))
 
 (def ^:private node-renderers
   {"text" render-text-node
@@ -206,12 +255,14 @@
    "quote" render-quote-node
    "source-note" render-source-note-node})
 
-(defn- render-node [acc node]
-  (let [node-type (get node "type")]
-    (if-let [render-node-fn (get node-renderers node-type)]
-      (render-node-fn acc node)
-      (throw (ex-info "Unsupported TEI parser-IR node type"
-                      {:node-type node-type})))))
+(defn- render-node
+  ([acc node] (render-node acc node 0))
+  ([acc node depth]
+   (let [node-type (get node "type")]
+     (if-let [render-node-fn (get node-renderers node-type)]
+       (render-node-fn acc node depth)
+       (throw (ex-info "Unsupported TEI parser-IR node type"
+                       {:node-type node-type}))))))
 
 (defn- initial-acc []
   {:body-children []

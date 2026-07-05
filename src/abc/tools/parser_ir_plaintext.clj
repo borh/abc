@@ -15,57 +15,97 @@
     (update acc key conj node-text)
     acc))
 
-(defn- render-text-node [acc node]
-  (append-text acc (get node "text")))
+(declare render-node)
 
-(defn- render-ruby-node [acc node]
-  (append-text acc (get-in node ["ruby" "base"])))
+(def ^:private max-inline-depth 64)
 
-(defn- render-gaiji-node [acc node]
-  (append-text acc (or (get-in node ["gaiji" "unicode"])
-                       (get-in node ["gaiji" "raw_marker"]))))
+(defn- render-inline-children [acc children depth]
+  (if (>= depth max-inline-depth)
+    (mark-omitted acc "emphasis-inline-depth")
+    (reduce (fn [state child]
+              (render-node state child (inc depth)))
+            acc
+            children)))
 
-(defn- render-editor-note-node [acc _node]
-  (mark-omitted acc "editor-note"))
+(defn- render-text-node
+  ([acc node] (render-text-node acc node 0))
+  ([acc node _depth]
+   (append-text acc (get node "text"))))
 
-(defn- render-emphasis-node [acc node]
-  (append-text acc (get node "text")))
+(defn- render-ruby-node
+  ([acc node] (render-ruby-node acc node 0))
+  ([acc node _depth]
+   (append-text acc (get-in node ["ruby" "base"]))))
 
-(defn- render-heading-node [acc node]
-  (append-text acc (str "\n" (or (get node "text") "") "\n")))
+(defn- render-gaiji-node
+  ([acc node] (render-gaiji-node acc node 0))
+  ([acc node _depth]
+   (append-text acc (or (get-in node ["gaiji" "unicode"])
+                        (get-in node ["gaiji" "raw_marker"])))))
 
-(defn- render-indentation-node [acc node]
-  (if (present-text? (get node "text"))
-    (append-text acc (get node "text"))
-    (mark-omitted acc "indentation")))
+(defn- render-editor-note-node
+  ([acc node] (render-editor-note-node acc node 0))
+  ([acc _node _depth]
+   (mark-omitted acc "editor-note")))
 
-(defn- render-page-break-node [acc _node]
-  (append-text acc "\n"))
+(defn- render-emphasis-node
+  ([acc node] (render-emphasis-node acc node 0))
+  ([acc node depth]
+   (if-let [children (seq (get node "inline_children"))]
+     (render-inline-children acc children depth)
+     (append-text acc (get node "text")))))
 
-(defn- render-line-break-node [acc _node]
-  (append-text acc "\n"))
+(defn- render-heading-node
+  ([acc node] (render-heading-node acc node 0))
+  ([acc node _depth]
+   (append-text acc (str "\n" (or (get node "text") "") "\n"))))
 
-(defn- render-image-node [acc node]
-  (if (present-text? (get node "alt"))
-    (append-text acc (get node "alt"))
-    (mark-omitted acc "image")))
+(defn- render-indentation-node
+  ([acc node] (render-indentation-node acc node 0))
+  ([acc node _depth]
+   (if (present-text? (get node "text"))
+     (append-text acc (get node "text"))
+     (mark-omitted acc "indentation"))))
 
-(defn- render-caption-node [acc node]
-  (append-text acc (get node "text")))
+(defn- render-page-break-node
+  ([acc node] (render-page-break-node acc node 0))
+  ([acc _node _depth]
+   (append-text acc "\n")))
 
-(defn- render-quote-node [acc node]
-  (if (present-text? (get node "text"))
-    (append-text acc (get node "text"))
-    (mark-omitted acc "quote")))
+(defn- render-line-break-node
+  ([acc node] (render-line-break-node acc node 0))
+  ([acc _node _depth]
+   (append-text acc "\n")))
 
-(defn- render-source-note-node [acc node]
-  (if-not (present-text? (get node "text"))
-    (mark-omitted acc "source-note")
-    (case (get node "placement")
-      "front" (append-separated-note acc :front_notes (get node "text"))
-      "body" (append-text acc (get node "text"))
-      "back" (append-separated-note acc :source_notes (get node "text"))
-      (mark-omitted acc "source-note"))))
+(defn- render-image-node
+  ([acc node] (render-image-node acc node 0))
+  ([acc node _depth]
+   (if (present-text? (get node "alt"))
+     (append-text acc (get node "alt"))
+     (mark-omitted acc "image"))))
+
+(defn- render-caption-node
+  ([acc node] (render-caption-node acc node 0))
+  ([acc node _depth]
+   (append-text acc (get node "text"))))
+
+(defn- render-quote-node
+  ([acc node] (render-quote-node acc node 0))
+  ([acc node _depth]
+   (if (present-text? (get node "text"))
+     (append-text acc (get node "text"))
+     (mark-omitted acc "quote"))))
+
+(defn- render-source-note-node
+  ([acc node] (render-source-note-node acc node 0))
+  ([acc node _depth]
+   (if-not (present-text? (get node "text"))
+     (mark-omitted acc "source-note")
+     (case (get node "placement")
+       "front" (append-separated-note acc :front_notes (get node "text"))
+       "body" (append-text acc (get node "text"))
+       "back" (append-separated-note acc :source_notes (get node "text"))
+       (mark-omitted acc "source-note")))))
 
 (def ^:private node-renderers
   {"text" render-text-node
@@ -82,12 +122,14 @@
    "quote" render-quote-node
    "source-note" render-source-note-node})
 
-(defn- render-node [acc node]
-  (let [node-type (get node "type")
-        acc (update acc :node_counts update node-type (fnil inc 0))]
-    (if-let [render-node-fn (get node-renderers node-type)]
-      (render-node-fn acc node)
-      acc)))
+(defn- render-node
+  ([acc node] (render-node acc node 0))
+  ([acc node depth]
+   (let [node-type (get node "type")
+         acc (update acc :node_counts update node-type (fnil inc 0))]
+     (if-let [render-node-fn (get node-renderers node-type)]
+       (render-node-fn acc node depth)
+       acc))))
 
 (defn render [parser-ir]
   (let [{:keys [text front_notes source_notes node_counts omitted]}

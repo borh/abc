@@ -58,6 +58,39 @@
       (is (= {"text" 2 "line-break" 1} (:node_counts result)))
       (is (empty? (:omitted result))))))
 
+(deftest emphasis-inline-children-render-nested-tei-test
+  (testing "emphasis inline_children render nested hi and ruby nodes"
+    (let [result (parser-ir-tei/render
+                  {"nodes" [{"type" "emphasis"
+                             "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                             "style" "bold"
+                             "text" "東京"
+                             "inline_children" [{"type" "ruby"
+                                                 "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                                                 "ruby" {"base" "東京"
+                                                         "reading" "とうきょう"
+                                                         "scope" "explicit"
+                                                         "direction" "right"}}]}
+                            {"type" "emphasis"
+                             "span" {"start" 2 "end" 4 "coordinate_system" "decoded_utf8"}
+                             "style" "outer"
+                             "text" "内"
+                             "inline_children" [{"type" "emphasis"
+                                                 "span" {"start" 2 "end" 4 "coordinate_system" "decoded_utf8"}
+                                                 "style" "inner"
+                                                 "text" "内"}]}]})
+          paragraph (some #(when (= :p (first %)) %) (hiccup-nodes (:body result)))]
+      (is (= [:p
+              [:hi {:rend "bold"}
+               [:ruby {:type "furigana" :rend "right"}
+                [:rb "東京"]
+                [:rt "とうきょう"]]]
+              [:hi {:rend "outer"}
+               [:hi {:rend "inner"} "内"]]]
+             paragraph))
+      (is (= {"emphasis" 3 "ruby" 1} (:node_counts result)))
+      (is (empty? (:omitted result))))))
+
 (def ^:private level3-parser-ir
   {"schema_id" "https://w3id.org/abc/schemas/parser-ir.schema.json"
    "schema_hash" "sha256:0000000000000000000000000000000000000000000000000000000000000001"

@@ -195,11 +195,7 @@ fn build_aat(
         .iter()
         .map(|entry| (entry.span.start, entry.clone()))
         .collect::<BTreeMap<_, _>>();
-    let blocks = if decoded.span_text.contains("［＃ここから2字下げ］") {
-        build_jisage_fixture_blocks(decoded, nodes, &gaiji_by_start)
-    } else {
-        blocks_from_inline_content(inline_content(decoded, nodes, &gaiji_by_start))
-    };
+    let blocks = blocks_from_inline_content(inline_content(decoded, nodes, &gaiji_by_start));
     let mut warnings = diagnostics
         .iter()
         .map(diagnostic_warning)
@@ -225,28 +221,14 @@ fn build_aat(
     })
 }
 
-fn build_jisage_fixture_blocks(
-    decoded: &DecodedSource,
-    nodes: &[AozoraNode],
-    gaiji_by_start: &BTreeMap<usize, AozoraGaiji>,
-) -> Vec<Value> {
-    let content = inline_content(decoded, nodes, gaiji_by_start);
-    vec![json!({
-        "kind": "jisage_block",
-        "x-indent": 2,
-        "children": [{
-            "kind": "paragraph",
-            "content": content
-        }]
-    })]
-}
-
 fn blocks_from_inline_content(content: Vec<Value>) -> Vec<Value> {
     let mut blocks = Vec::new();
     let mut paragraph = Vec::new();
     let mut strip_next_leading_newline = false;
+    let mut index = 0;
 
-    for mut node in content {
+    while index < content.len() {
+        let mut node = content[index].clone();
         if strip_next_leading_newline {
             strip_leading_newline(&mut node);
             strip_next_leading_newline = false;
@@ -261,15 +243,33 @@ fn blocks_from_inline_content(content: Vec<Value>) -> Vec<Value> {
             }
         }
 
+        if let Some(indent) = jisage_container_indent(&node)
+            && let Some(close_index) = find_matching_jisage_close(&content, index + 1)
+        {
+            push_paragraph_if_not_empty(&mut blocks, std::mem::take(&mut paragraph));
+            let mut inner = content[index + 1..close_index].to_vec();
+            strip_boundary_newlines(&mut inner);
+            blocks.push(json!({
+                "kind": "jisage_block",
+                "x-indent": indent,
+                "children": blocks_from_inline_content(inner)
+            }));
+            strip_next_leading_newline = true;
+            index = close_index + 1;
+            continue;
+        }
+
         if is_heading_hint_raw(&node)
             && let Some(heading) = heading_block_from_hint(&mut paragraph, &node)
         {
             push_paragraph_if_not_empty(&mut blocks, std::mem::take(&mut paragraph));
             blocks.push(heading);
             strip_next_leading_newline = true;
+            index += 1;
             continue;
         }
         paragraph.push(node);
+        index += 1;
     }
 
     push_paragraph_if_not_empty(&mut blocks, paragraph);
@@ -287,6 +287,121 @@ fn push_paragraph_if_not_empty(blocks: &mut Vec<Value>, content: Vec<Value>) {
         "kind": "paragraph",
         "content": content
     }));
+}
+
+fn jisage_container_indent(node: &Value) -> Option<u64> {
+    if node.get("kind").and_then(Value::as_str) != Some("raw")
+        || node.get("x-source-marker-kind").and_then(Value::as_str) != Some("containerOpen")
+    {
+        return None;
+    }
+    let source = node.get("source").and_then(Value::as_str)?;
+    if !source.contains("字下げ") {
+        return None;
+    }
+    Some(parse_aozora_number_before(source, "字下げ").unwrap_or(1))
+}
+
+fn find_matching_jisage_close(content: &[Value], start: usize) -> Option<usize> {
+    let mut nested = 0_u64;
+    for (offset, node) in content[start..].iter().enumerate() {
+        if jisage_container_indent(node).is_some() {
+            nested += 1;
+            continue;
+        }
+        if is_jisage_container_close(node) {
+            if nested == 0 {
+                return Some(start + offset);
+            }
+            nested -= 1;
+        }
+    }
+    None
+}
+
+fn is_jisage_container_close(node: &Value) -> bool {
+    node.get("kind").and_then(Value::as_str) == Some("raw")
+        && node.get("x-source-marker-kind").and_then(Value::as_str) == Some("containerClose")
+        && node
+            .get("source")
+            .and_then(Value::as_str)
+            .is_some_and(|source| source.contains("字下げ"))
+}
+
+fn parse_aozora_number_before(source: &str, needle: &str) -> Option<u64> {
+    let prefix = source.split_once(needle)?.0;
+    let mut digits = String::new();
+    for ch in prefix.chars().rev() {
+        if let Some(digit) = aozora_digit(ch) {
+            digits.insert(0, digit);
+        } else if !digits.is_empty() {
+            break;
+        }
+    }
+    if !digits.is_empty() {
+        return digits.parse().ok();
+    }
+    parse_kanji_number_before(prefix)
+}
+
+fn aozora_digit(ch: char) -> Option<char> {
+    match ch {
+        '0'..='9' => Some(ch),
+        '０'..='９' => char::from_digit(ch as u32 - '０' as u32, 10),
+        _ => None,
+    }
+}
+
+fn parse_kanji_number_before(prefix: &str) -> Option<u64> {
+    let mut run = prefix
+        .chars()
+        .rev()
+        .take_while(|ch| kanji_digit_value(*ch).is_some() || *ch == '十')
+        .collect::<Vec<_>>();
+    if run.is_empty() {
+        return None;
+    }
+    run.reverse();
+    let run = run.into_iter().collect::<String>();
+    if let Some((tens, ones)) = run.split_once('十') {
+        let tens = if tens.is_empty() {
+            1
+        } else {
+            tens.chars().next().and_then(kanji_digit_value)?
+        };
+        let ones = if ones.is_empty() {
+            0
+        } else {
+            ones.chars().next().and_then(kanji_digit_value)?
+        };
+        Some(tens * 10 + ones)
+    } else {
+        run.chars().next().and_then(kanji_digit_value)
+    }
+}
+
+fn kanji_digit_value(ch: char) -> Option<u64> {
+    match ch {
+        '一' => Some(1),
+        '二' => Some(2),
+        '三' => Some(3),
+        '四' => Some(4),
+        '五' => Some(5),
+        '六' => Some(6),
+        '七' => Some(7),
+        '八' => Some(8),
+        '九' => Some(9),
+        _ => None,
+    }
+}
+
+fn strip_boundary_newlines(nodes: &mut [Value]) {
+    if let Some(first) = nodes.first_mut() {
+        strip_leading_newline(first);
+    }
+    if let Some(last) = nodes.last_mut() {
+        strip_trailing_newline(last);
+    }
 }
 
 fn is_heading_hint_raw(node: &Value) -> bool {
@@ -343,6 +458,19 @@ fn strip_leading_newline(node: &mut Value) {
         return;
     };
     let stripped = value.strip_prefix('\n').unwrap_or(value).to_owned();
+    if let Some(obj) = node.as_object_mut() {
+        obj.insert("value".to_owned(), json!(stripped));
+    }
+}
+
+fn strip_trailing_newline(node: &mut Value) {
+    if node.get("kind").and_then(Value::as_str) != Some("text") {
+        return;
+    }
+    let Some(value) = node.get("value").and_then(Value::as_str) else {
+        return;
+    };
+    let stripped = value.strip_suffix('\n').unwrap_or(value).to_owned();
     if let Some(obj) = node.as_object_mut() {
         obj.insert("value".to_owned(), json!(stripped));
     }

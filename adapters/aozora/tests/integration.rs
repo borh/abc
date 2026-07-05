@@ -217,6 +217,24 @@ fn maps_source_heading_hint_to_heading_block() {
 }
 
 #[test]
+fn maps_paired_jisage_container_to_block() {
+    let aat = run_aat("［＃ここから２字下げ］\n字下げ本文\n［＃ここで字下げ終わり］\n後\n");
+    let blocks = aat["blocks"].as_array().expect("blocks");
+
+    assert_eq!(blocks.len(), 2);
+    assert_eq!(blocks[0]["kind"], "jisage_block");
+    assert_eq!(blocks[0]["x-indent"], 2);
+    assert_eq!(blocks[0]["children"][0]["kind"], "paragraph");
+    assert_eq!(blocks[0]["children"][0]["content"][0]["kind"], "text");
+    assert_eq!(
+        blocks[0]["children"][0]["content"][0]["value"],
+        "字下げ本文"
+    );
+    assert_eq!(blocks[1]["kind"], "paragraph");
+    assert_eq!(blocks[1]["content"][0]["value"], "後\n");
+}
+
+#[test]
 fn normalizes_upstream_style_and_tcy_nodes_to_typed_aat() {
     let aat =
         run_aat("あた［＃「あた」に傍点］人物［＃「人物」は太字］昭和10［＃「10」は縦中横］年");

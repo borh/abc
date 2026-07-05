@@ -36,6 +36,17 @@ OWNER_ORDER = {
     "parser_ir": 3,
     "abc_renderer": 4,
 }
+SOURCE_AUTHORITY_GATE_FIELDS = (
+    "gate_status",
+    "works_scanned",
+    "works_failed",
+    "markers_total",
+    "unknown_markers_total",
+    "unallowlisted_unknown_markers_total",
+    "allowlisted_unknown_markers_total",
+    "strict_errors",
+    "decode_failures",
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -133,7 +144,11 @@ def structural_rows_by_file(structural: dict[str, Any]) -> dict[str, dict[str, A
 def load_source_authority_gate(
     admission: dict[str, Any], source: dict[str, Any]
 ) -> tuple[dict[str, Any], bool, str | None]:
-    source_gate = source.get("source_authority_gate") if isinstance(source.get("source_authority_gate"), dict) else source
+    source_gate = (
+        source.get("source_authority_gate")
+        if isinstance(source.get("source_authority_gate"), dict)
+        else source
+    )
     if not isinstance(source_gate, dict):
         source_gate = {}
     if not source_gate:
@@ -141,11 +156,16 @@ def load_source_authority_gate(
         if isinstance(admission_gate, dict):
             source_gate = admission_gate
 
-    gate_status = source_gate.get("gate_status")
-    unknown_total = source_gate.get("unallowlisted_unknown_markers_total")
+    concise_gate = {
+        field: source_gate.get(field)
+        for field in SOURCE_AUTHORITY_GATE_FIELDS
+        if field in source_gate
+    }
+    gate_status = concise_gate.get("gate_status")
+    unknown_total = concise_gate.get("unallowlisted_unknown_markers_total")
     gate_failed = gate_status != "SOURCE_AUTHORITY_GATE_PASS" or unknown_total not in (0, "0")
     reason = "source authority gate did not pass" if gate_failed else None
-    return source_gate, gate_failed, reason
+    return concise_gate, gate_failed, reason
 
 
 def classify_text(row: dict[str, Any]) -> tuple[list[str], set[str], list[str]]:

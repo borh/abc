@@ -217,7 +217,7 @@ enum Command {
         #[arg(
             long,
             value_enum,
-            default_value_t = ab_morph_run::WarehouseFeatureProfile::Raw
+            default_value_t = ab_morph_run::WarehouseFeatureProfile::Core
         )]
         feature_profile: ab_morph_run::WarehouseFeatureProfile,
         #[arg(long)]
@@ -1637,7 +1637,7 @@ mod tests {
         assert_eq!(engine, ab_morph_run::InterestingEngine::Auto);
         assert_eq!(
             feature_profile,
-            ab_morph_run::WarehouseFeatureProfile::Raw
+            ab_morph_run::WarehouseFeatureProfile::Core
         );
 
         assert_eq!(

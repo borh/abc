@@ -86,7 +86,7 @@ impl Default for WarehouseInterestingOptions {
             explain: None,
             max_region_examples: 5,
             engine: InterestingEngine::Auto,
-            feature_profile: WarehouseFeatureProfile::Raw,
+            feature_profile: WarehouseFeatureProfile::Core,
         }
     }
 }
@@ -246,10 +246,11 @@ fn percentile_90(lengths: &[u64]) -> f64 {
     sorted[rank.max(1) - 1] as f64
 }
 
-/// Nearest-rank p90 over a length histogram — same result as
-/// [`percentile_90`] on the expanded multiset, without storing it.
-fn percentile_90_histogram(histogram: &BTreeMap<u32, u32>) -> f64 {
-    let total: u64 = histogram.values().map(|count| u64::from(*count)).sum();
+/// Nearest-rank p90 over a sorted `(length, count)` histogram — same
+/// result as [`percentile_90`] on the expanded multiset, without storing
+/// it.
+fn percentile_90_histogram(histogram: &[(u32, u32)]) -> f64 {
+    let total: u64 = histogram.iter().map(|(_, count)| u64::from(*count)).sum();
     let rank = (0.9 * total as f64).ceil().max(1.0) as u64;
     let mut cumulative = 0u64;
     for (length, count) in histogram {
@@ -423,16 +424,44 @@ impl Interner {
     }
 }
 
+/// Sorted-unique u32 set. `BTreeSet<u32>` allocates a ~150-byte node
+/// even for a singleton; at tens of millions of patterns those nodes were
+/// most of a 55GB RSS. Sorted Vec inserts are O(n) shifts only for new
+/// distinct values, bounded by real cardinalities (<= source count).
+#[derive(Debug, Default)]
+struct SortedSet(Vec<u32>);
+
+impl SortedSet {
+    fn insert(&mut self, value: u32) {
+        if let Err(position) = self.0.binary_search(&value) {
+            self.0.insert(position, value);
+        }
+    }
+
+    fn len(&self) -> usize {
+        self.0.len()
+    }
+}
+
 #[derive(Debug, Default)]
 struct PatternAccum {
     examples: usize,
-    source_ids: BTreeSet<u32>,
-    text_ids: BTreeSet<u32>,
-    rarity_keys: BTreeSet<u32>,
+    source_ids: SortedSet,
+    text_ids: SortedSet,
+    rarity_keys: SortedSet,
     coverage_region_count: usize,
-    /// Char-length histogram; p90 is nearest-rank over the multiset.
-    span_lengths: BTreeMap<u32, u32>,
+    /// (length, count) pairs, sorted by length; p90 is nearest-rank.
+    span_lengths: Vec<(u32, u32)>,
     region_examples: Vec<(u32, u32, u64, u64, u64)>,
+}
+
+impl PatternAccum {
+    fn push_span(&mut self, length: u32) {
+        match self.span_lengths.binary_search_by_key(&length, |(len, _)| *len) {
+            Ok(position) => self.span_lengths[position].1 += 1,
+            Err(position) => self.span_lengths.insert(position, (length, 1)),
+        }
+    }
 }
 
 /// One pattern occurrence, engine-agnostic. Both the in-memory engine and
@@ -487,7 +516,7 @@ impl PatternAccumulator {
             accum.coverage_region_count += 1;
         }
         let length = u32::try_from(occurrence.char_end - occurrence.char_start).unwrap_or(u32::MAX);
-        *accum.span_lengths.entry(length).or_insert(0) += 1;
+        accum.push_span(length);
         if accum.region_examples.len() < max_region_examples {
             accum.region_examples.push((
                 source_id,
@@ -502,8 +531,9 @@ impl PatternAccumulator {
 
     pub(super) fn finalize(self) -> Vec<PatternStats> {
         let interner = self.interner;
-        let sorted_samples = |ids: &BTreeSet<u32>| {
+        let sorted_samples = |ids: &SortedSet| {
             let mut values = ids
+                .0
                 .iter()
                 .map(|id| interner.resolve(*id))
                 .collect::<Vec<_>>();
@@ -1676,7 +1706,7 @@ mod tests {
                 ..Default::default()
             },
             WarehouseInterestingOptions {
-                feature_profile: WarehouseFeatureProfile::Core,
+                feature_profile: WarehouseFeatureProfile::Raw,
                 anomalies: 3,
                 ..Default::default()
             },
@@ -1772,6 +1802,7 @@ mod tests {
             for length in &lengths {
                 *histogram.entry(*length as u32).or_insert(0u32) += 1;
             }
+            let histogram = histogram.into_iter().collect::<Vec<_>>();
             prop_assert_eq!(percentile_90_histogram(&histogram), percentile_90(&lengths));
         }
 

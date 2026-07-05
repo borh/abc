@@ -22,7 +22,7 @@ Design for item 1 of the 2026-07-06 handoff (`docs/superpowers/plans/2026-07-06-
 | 2 | No `SCHEMA_VERSION` bump; defer to Phase 3 (`projection_spans`) | Readers probe the sidecar by presence and degrade honestly — the shipped "v2-forward probe" contract. Amend governing-spec Decision 3: the bump lands with the first *analysis-pass-produced* sidecar; post-hoc imported, presence-probed sidecars are version-neutral. No mutation of the canonical run's `runs.parquet`; no `sql.rs` change now |
 | 3 | Schema-drift gate = pinned constant | The importer compiles in the schema hash it was written against (`sha256:692dfa…`). Every record's declared `metadata_record_schema_hash` must equal it; mismatch → hard error naming expected and observed hashes. An ABC schema change updates the constant and the field mapping together in one reviewed change. No JCS implementation needed in Rust |
 | 4 | Run-scoped import (per-run sidecar) | Readers probe `<run_dir>/aozora_works.parquet`; rows exactly cover the run's sources; re-import per run is seconds |
-| 5 | `work_id` = ABC card id verbatim; `rarity_basis = "work"` keeps ABC's meaning of "work" | Governing-spec Decision 10 (imported projection, no invented identity). Paired-edition merging is an ABC-owned identity problem; if ABC ever models edition clusters, that arrives as a **new** basis value (e.g. `"work_cluster"`), never a silent semantic change under `"work"` |
+| 5 | `work_id` = ABC card id verbatim; `rarity_basis = "work"` keeps ABC's meaning of "work"; paired 旧字/新字 editions **deliberately count as distinct works** | Governing-spec Decision 10 (imported projection, no invented identity). Owner decision 2026-07-06: both editions are retained as distinct analysis targets — they may pair better with different tokenizers/era-appropriate dictionaries, and they feed the paired-edition metamorphic tests. Any future merge happens at the TEI-edition level (token variants, ABC/ab side) and would not change rarity semantics; if an edition-cluster identity ever does arrive, it comes as a **new** basis value, never a silent semantic change under `"work"` |
 | 6 | Unmappable sources are skipped with a warning; zero-mapped import is a hard error | Readers fall back to `source_id` as the rarity key for unmapped sources, so skipping is honest. A present-but-empty sidecar would yield `rarity_basis = "work"` with `total_work_count = 0` and degenerate IDF — refuse to create one |
 | 7 | Run-dir immutability gains one sanctioned exception: presence-probed sidecar files, written atomically | Import is post-hoc by design. Atomic tmp+rename in the run dir prevents torn reads; refuse-overwrite without `--force`; every summary output already records `rarity_basis`, so downstream artifacts name which world they saw |
 | 8 | Provenance = pinned schema hash + `metadata_record_retrieved_at` (import-invocation time) | Content changes under an unchanged schema are distinguishable only by timestamp. Accepted: the projection is cheap to regenerate, never hand-edited, and the reproducibility claim is "re-derivable from ABC" |
@@ -84,7 +84,7 @@ Expected canonical-run outcome: 17,883 rows (17,885 − 2 skipped), 17,596 disti
 
 ## Governing-spec amendments (part of implementation)
 
-1. §Aozora-Specific Corpus Handling / Deduplication and the §Per-Signal rarity note: replace the paired-edition justification with the measured semantics above (multi-file cards merged; paired editions are separate cards; serials are correctly separate; future ABC edition clustering arrives as a new basis value).
+1. §Aozora-Specific Corpus Handling / Deduplication and the §Per-Signal rarity note: replace the paired-edition justification with the measured semantics above (multi-file cards merged; paired editions are separate cards and deliberately count as distinct works per owner decision 2026-07-06 — distinct tokenizer/dictionary pairings, metamorphic-test fodder; serials are correctly separate).
 2. §Cross-Repo Dependency: resolve the `(TBD: …)` import-step note with the actual CLI and the `out/corpus/works/<work_id>.json` layout.
 3. Decision 3: amend to "bump at first analysis-pass-produced sidecar (Phase 3); post-hoc imported presence-probed sidecars are version-neutral".
 4. §Error Behavior: add the zero-mapped-import hard-error row.
@@ -100,7 +100,7 @@ All tests run as `cargo test -p ab-morph-run --features test-analyzer` (bare inv
 
 ## Non-goals
 
-- Paired-edition (旧字/新字) merging — requires an ABC-side edition-cluster concept; tracked as the `work_cluster` note in Decision 5.
+- Paired-edition (旧字/新字) merging — explicitly not wanted for rarity (Decision 5): editions are distinct analysis targets; the merge story is a possible future single TEI edition with token-level variants, outside this repo's rarity counting.
 - Importing `persons/` (person registry stays ABC-owned; display strings computed at query time if ever needed).
 - `genre` population, `SCHEMA_VERSION` bump, `sql.rs` reader-max relaxation (Phase 3).
 - Any change to ranking behavior beyond the rarity basis flip.

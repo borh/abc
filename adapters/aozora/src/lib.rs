@@ -239,24 +239,38 @@ fn blocks_from_inline_content(content: Vec<Value>) -> Vec<Value> {
                     .unwrap_or("")
                     .is_empty()
             {
+                index += 1;
                 continue;
             }
         }
 
-        if let Some(indent) = jisage_container_indent(&node)
-            && let Some(close_index) = find_matching_jisage_close(&content, index + 1)
-        {
-            push_paragraph_if_not_empty(&mut blocks, std::mem::take(&mut paragraph));
-            let mut inner = content[index + 1..close_index].to_vec();
-            strip_boundary_newlines(&mut inner);
-            blocks.push(json!({
-                "kind": "jisage_block",
-                "x-indent": indent,
-                "children": blocks_from_inline_content(inner)
-            }));
-            strip_next_leading_newline = true;
-            index = close_index + 1;
-            continue;
+        if let Some(indent) = jisage_container_indent(&node) {
+            if let Some(close_index) = find_matching_jisage_close(&content, index + 1) {
+                push_paragraph_if_not_empty(&mut blocks, std::mem::take(&mut paragraph));
+                let mut inner = content[index + 1..close_index].to_vec();
+                strip_boundary_newlines(&mut inner);
+                blocks.push(json!({
+                    "kind": "jisage_block",
+                    "x-indent": indent,
+                    "children": blocks_from_inline_content(inner)
+                }));
+                strip_next_leading_newline = true;
+                index = close_index + 1;
+                continue;
+            }
+            let boundary = find_next_container_boundary(&content, index + 1);
+            if boundary > index + 1 {
+                push_paragraph_if_not_empty(&mut blocks, std::mem::take(&mut paragraph));
+                let mut inner = content[index + 1..boundary].to_vec();
+                strip_boundary_newlines(&mut inner);
+                blocks.push(json!({
+                    "kind": "jisage_block",
+                    "x-indent": indent,
+                    "children": blocks_from_inline_content(inner)
+                }));
+                index = boundary;
+                continue;
+            }
         }
 
         if is_heading_hint_raw(&node)
@@ -296,27 +310,56 @@ fn jisage_container_indent(node: &Value) -> Option<u64> {
         return None;
     }
     let source = node.get("source").and_then(Value::as_str)?;
-    if !source.contains("字下げ") {
+    simple_jisage_open_indent(source)
+}
+
+fn simple_jisage_open_indent(source: &str) -> Option<u64> {
+    let marker = source.trim();
+    if !marker.starts_with("［＃ここから") || !marker.ends_with('］') {
         return None;
     }
-    Some(parse_aozora_number_before(source, "字下げ").unwrap_or(1))
+    if marker.contains('、') || marker.contains("改行") || marker.contains("折り返して") {
+        return None;
+    }
+    let (_, after_indent) = marker.split_once("字下げ")?;
+    if after_indent != "］" {
+        return None;
+    }
+    Some(parse_aozora_number_before(marker, "字下げ").unwrap_or(1))
 }
 
 fn find_matching_jisage_close(content: &[Value], start: usize) -> Option<usize> {
-    let mut nested = 0_u64;
     for (offset, node) in content[start..].iter().enumerate() {
-        if jisage_container_indent(node).is_some() {
-            nested += 1;
-            continue;
+        if is_container_open_raw(node) {
+            return None;
         }
         if is_jisage_container_close(node) {
-            if nested == 0 {
-                return Some(start + offset);
-            }
-            nested -= 1;
+            return Some(start + offset);
         }
     }
     None
+}
+
+fn find_next_container_boundary(content: &[Value], start: usize) -> usize {
+    content[start..]
+        .iter()
+        .position(is_container_marker_raw)
+        .map(|offset| start + offset)
+        .unwrap_or(content.len())
+}
+
+fn is_container_marker_raw(node: &Value) -> bool {
+    is_container_open_raw(node)
+        || node.get("kind").and_then(Value::as_str) == Some("raw")
+            && node
+                .get("x-source-marker-kind")
+                .and_then(Value::as_str)
+                .is_some_and(|kind| kind == "containerClose")
+}
+
+fn is_container_open_raw(node: &Value) -> bool {
+    node.get("kind").and_then(Value::as_str) == Some("raw")
+        && node.get("x-source-marker-kind").and_then(Value::as_str) == Some("containerOpen")
 }
 
 fn is_jisage_container_close(node: &Value) -> bool {

@@ -250,6 +250,27 @@ fn maps_paired_jisage_container_to_block() {
 }
 
 #[test]
+fn maps_unclosed_simple_jisage_until_next_container_marker() {
+    let aat = run_aat(
+        "［＃ここから１字下げ］\n地の文\n［＃ここから改行天付き、折り返して１字下げ］\n台詞\n",
+    );
+    let blocks = aat["blocks"].as_array().expect("blocks");
+
+    assert_eq!(blocks.len(), 2);
+    assert_eq!(blocks[0]["kind"], "jisage_block");
+    assert_eq!(blocks[0]["x-indent"], 1);
+    assert_eq!(blocks[0]["children"][0]["kind"], "paragraph");
+    assert_eq!(blocks[0]["children"][0]["content"][0]["value"], "地の文");
+    assert_eq!(blocks[1]["kind"], "paragraph");
+    assert_eq!(
+        blocks[1]["content"][0]["source"],
+        "［＃ここから改行天付き、折り返して１字下げ］"
+    );
+    let text = serde_json::to_string(&aat).unwrap();
+    assert!(!text.contains(r#""source":"［＃ここから１字下げ］""#));
+}
+
+#[test]
 fn normalizes_upstream_style_and_tcy_nodes_to_typed_aat() {
     let aat =
         run_aat("あた［＃「あた」に傍点］人物［＃「人物」は太字］昭和10［＃「10」は縦中横］年");

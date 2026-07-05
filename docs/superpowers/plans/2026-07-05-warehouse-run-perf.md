@@ -686,3 +686,8 @@ Append the measured auto-jobs value, wall-clock, peak RSS, and the verification 
 - Spec coverage: §1 Arc → Task 1; §2 auto-jobs + calibration procedure → Tasks 2+4; §3 staging/orphans/collision/atomicity (publish path untouched — atomicity is preserved by construction since `.staging` and `runs/` share the warehouse dir) → Task 3; Validation incl. failure procedure → Task 5; Error-behavior table rows → Task 2 step 3 (fallback), Task 3 steps 1-3 (collision, orphan), warning path → Task 2.
 - Deliberate scope notes: the non-warehouse JSONL parallel path keeps `std::env::temp_dir()` (out of spec scope, stated in Task 3 step 4); `PlainTextDocument.text` stays `String` (one copy per document is not the multiplier; spec targets the per-analysis clone).
 - Type consistency: `resolve_jobs(requested, analyzer_count)` used in Task 2 steps 3-4; `claim_shard_staging`/`cleanup_orphaned_shard_staging` names match between Task 3 steps 1, 3, and 4.
+
+## Task 5 validation record (2026-07-06)
+
+- **Attempt 1 (FAILED SAFELY):** auto-jobs resolved 32 (nproc-clamped; MemAvailable 60.4 GiB, per-job 0.9 GiB, fixed-overhead 12.5 GiB). earlyoom SIGTERM at 51:22 elapsed, peak RSS 57,501,132 kB — the subset-fitted slope under-predicted the full corpus (its large-document tail; corpus max file 4.6× subset max), confirming Task 4 concern (2). Canonical warehouse untouched (two-phase staging held); orphaned `shards-*` staging left for the next run's sweep to reclaim.
+- **Recalibration (worst-point rule):** slope from the censored full-corpus measurement = (57.5 − 12.5 GiB)/32 ≈ 1.41 GiB/job, still climbing at kill → budget 1.5 GiB/job → `PER_ANALYZER_BYTES` 210 → 384 MiB. On this box auto-jobs now resolves ~19.

@@ -19,15 +19,20 @@ const MEM_FRACTION_DEN: u64 = 10;
 /// analyzers (see `PER_ANALYZER_BYTES`), leaving a zero residual, so this
 /// floor is the plan's 64 MiB minimum.
 const BASE_PER_JOB_BYTES: u64 = 64 * 1024 * 1024;
-/// Additional bytes per analyzer per job. Calibrated 2026-07-06 (Task 4
-/// sweep, above): fitted slope 859,500 kB/job ÷ 4 analyzers = ~209.8 MiB,
-/// rounded up to 210 MiB. Middle sweep point sat +7.7% off the line
-/// (< 20%), so the linear fit stands. The fit's ~12.5 GiB intercept is
+/// Additional bytes per analyzer per job. Recalibrated 2026-07-06 from the
+/// FULL-CORPUS validation run after the subset fit under-predicted: the
+/// subset sweep's slope (859,500 kB/job ÷ 4 ≈ 210 MiB) missed the corpus's
+/// large-document tail (corpus max file is 4.6× the subset max), and the
+/// jobs=32 full run was earlyoom-killed at 57,501,132 kB peak RSS —
+/// worst measured slope (57.5 GiB − 12.5 GiB intercept) / 32 jobs ≈
+/// 1.41 GiB/job, still climbing at kill time. Per the plan's worst-point
+/// rule, budget from 1.5 GiB/job (margin above the censored measurement):
+/// 1.5 GiB ÷ 4 analyzers = 384 MiB. The fit's ~12.5 GiB intercept is
 /// budgeted separately as `FIXED_OVERHEAD_BYTES` below (controller-approved
 /// deviation from the original per-job-only formula, 2026-07-06): on hosts
 /// with under ~20 GiB MemAvailable the intercept alone would exceed the 70%
 /// budget, and the original formula ignored it, risking OOM.
-const PER_ANALYZER_BYTES: u64 = 210 * 1024 * 1024;
+const PER_ANALYZER_BYTES: u64 = 384 * 1024 * 1024;
 /// Fixed memory overhead independent of job count — shared dictionary
 /// allocations (vibrato cwj+novel, sudachi). Fitted intercept from the
 /// 2026-07-06 subset sweep: 13,147,661 kB.
@@ -108,17 +113,19 @@ mod tests {
 
     #[test]
     fn budget_scales_with_memory_and_analyzers() {
-        // Calibrated constants (2026-07-06 sweep): base 64 MiB, 210 MiB/analyzer,
-        // fixed overhead 13,147,661 kB = 13,463,204,864 B.
-        // 64 GiB available → raw budget = 68,719,476,736 / 10 × 7 = 48,103,633,711 B;
+        // Recalibrated constants (2026-07-06 full-corpus worst point): base
+        // 64 MiB, 384 MiB/analyzer, fixed overhead 13,147,661 kB =
+        // 13,463,204,864 B.
+        // 64 GiB available → raw budget = 68,719,476,736 / 10 × 7 = 48,103,633,715 B
+        // (u64: 68,719,476,736 / 10 = 6,871,947,673; × 7 = 48,103,633,711);
         // minus fixed overhead: 48,103,633,711 − 13,463,204,864 = 34,640,428,847 B.
-        // 4 analyzers → per_job = 64 + 4×210 = 904 MiB = 947,912,704 B;
-        // 34,640,428,847 / 947,912,704 = 36.54 → 36 jobs (< nproc 64, budget binds).
+        // 4 analyzers → per_job = 64 + 4×384 = 1600 MiB = 1,677,721,600 B;
+        // 34,640,428,847 / 1,677,721,600 = 20.6 → 20 jobs (< nproc 64, budget binds).
         let mem = 64 * GIB;
-        assert_eq!(auto_jobs(64, Some(mem), 4), 36);
-        // 8 analyzers under the same memory → per_job = 64 + 8×210 = 1744 MiB
-        // = 1,828,716,544 B; 34,640,428,847 / 1,828,716,544 = 18.94 → 18 jobs.
-        assert_eq!(auto_jobs(64, Some(mem), 8), 18);
+        assert_eq!(auto_jobs(64, Some(mem), 4), 20);
+        // 8 analyzers under the same memory → per_job = 64 + 8×384 = 3136 MiB
+        // = 3,288,334,336 B; 34,640,428,847 / 3,288,334,336 = 10.5 → 10 jobs.
+        assert_eq!(auto_jobs(64, Some(mem), 8), 10);
     }
 
     #[test]

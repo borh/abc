@@ -13,6 +13,8 @@ from typing import Any
 
 SCHEMA_VERSION = "ir-publication-coverage-v1"
 REQUIRED_PARSERS = ("aozora2html", "aozora-epub3", "aozora-rs", "aozora2", "aozora")
+ABC_PRESERVATION_SCHEMA_ID = "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
+ABC_PRESERVATION_SCHEMA_VERSION = "0.1.0"
 PLAINTEXT_POLICY = {
     "plaintext_surface": "visible_body_text",
     "metadata_policy": "exclude_ruby_readings_layout_source_notes_custom_records_warnings_and_provenance",
@@ -724,7 +726,18 @@ def custom_contract_block(custom_contract_schema: pathlib.Path | None) -> dict[s
     contract_version = None
     if isinstance(contract, dict):
         contract_id = contract.get("schema_id") or contract.get("$id")
-        contract_version = contract.get("schema_version")
+        contract_version = (
+            contract.get("schema_version")
+            or contract.get("properties", {}).get("schema_version", {}).get("const")
+        )
+    if contract_id == ABC_PRESERVATION_SCHEMA_ID and contract_version == ABC_PRESERVATION_SCHEMA_VERSION:
+        return {
+            "verdict": "CUSTOM_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION",
+            "schema_id": contract_id,
+            "schema_version": contract_version,
+            "path": str(custom_contract_schema),
+            "message": "ABC-owned parser-IR publication preservation schema is available and admits custom-sidecar publication facts.",
+        }
     return {
         "verdict": "CUSTOM_CONTRACT_CANDIDATE_PROVIDED",
         "schema_id": contract_id,
@@ -866,16 +879,27 @@ def classify_closure_gap(item: dict[str, Any]) -> dict[str, Any] | None:
     }
 
 
-def closure_gaps(gaps: dict[str, Any]) -> dict[str, Any]:
+def closure_gaps(gaps: dict[str, Any], custom_contract: dict[str, Any]) -> dict[str, Any]:
     classified: list[dict[str, Any]] = []
+    admitted_by_custom_contract: list[dict[str, Any]] = []
     true_unsupported: list[dict[str, Any]] = []
+    custom_contract_confirmed = custom_contract.get("verdict") == "CUSTOM_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION"
     for item in gaps.get("items", []):
         closure_item = classify_closure_gap(item)
         if closure_item is None:
             true_unsupported.append({**item, "closure_family": None, "closure_lane": "unsupported_gap"})
+        elif custom_contract_confirmed and closure_item.get("closure_lane") == "custom_sidecar":
+            admitted_by_custom_contract.append(
+                {**closure_item, "admitted_by": custom_contract.get("schema_id")}
+            )
         else:
             classified.append(closure_item)
     return {
+        "admitted_by_custom_contract": {
+            "count": len(admitted_by_custom_contract),
+            "counts_by_family": count_values(admitted_by_custom_contract, "closure_family"),
+            "items": admitted_by_custom_contract,
+        },
         "classified_but_not_admitted": {
             "count": len(classified),
             "counts_by_family": count_values(classified, "closure_family"),
@@ -928,7 +952,7 @@ def build_summary(
     evidence = parser_evidence_coverage(matrix, source_delta)
     custom_contract = custom_contract_block(custom_contract_schema)
     gaps = unsupported_gaps(node_coverage, field_coverage, diagnostics, construct_coverage)
-    closures = closure_gaps(gaps)
+    closures = closure_gaps(gaps, custom_contract)
     source_passed = source_authority_passed(source)
     return {
         "schema_version": SCHEMA_VERSION,
@@ -1009,9 +1033,16 @@ def render_markdown(summary: dict[str, Any]) -> str:
         "",
         "## Closure Gaps",
         "",
+        f"Admitted by custom contract: {closures['admitted_by_custom_contract']['count']}",
+        "",
         f"Classified but not admitted: {closures['classified_but_not_admitted']['count']}",
         "",
     ])
+    if closures["admitted_by_custom_contract"].get("counts_by_family"):
+        lines.extend(["| Admitted family | Count |", "|---|---:|"])
+        for family, count in closures["admitted_by_custom_contract"]["counts_by_family"].items():
+            lines.append(f"| `{family}` | {count} |")
+        lines.append("")
     if closures["classified_but_not_admitted"].get("counts_by_family"):
         lines.extend(["| Family | Count |", "|---|---:|"])
         for family, count in closures["classified_but_not_admitted"]["counts_by_family"].items():

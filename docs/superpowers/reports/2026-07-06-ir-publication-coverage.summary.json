@@ -51,10 +51,11 @@
     "calibration": "tei_eaj_calibration_only"
   },
   "custom_contract": {
-    "verdict": "CUSTOM_CONTRACT_MISSING",
-    "schema_id": null,
-    "schema_version": null,
-    "message": "ABC custom preservation contract has not been supplied to this report."
+    "verdict": "CUSTOM_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION",
+    "schema_id": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json",
+    "schema_version": "0.1.0",
+    "path": "/home/bor/Projects/ab-validator/data/abc-schemas/schemas/parser-ir-publication-preservation.schema.json",
+    "message": "ABC-owned parser-IR publication preservation schema is available and admits custom-sidecar publication facts."
   },
   "mapping": {
     "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
@@ -3742,25 +3743,464 @@
     ]
   },
   "closure_gaps": {
+    "admitted_by_custom_contract": {
+      "count": 31,
+      "counts_by_family": {
+        "gaiji_unresolved_reason": 6,
+        "provenance_metrics": 3,
+        "source_identity": 5,
+        "span_coordinates": 17
+      },
+      "items": [
+        {
+          "rule_id": "A-05",
+          "aat_pointer": "blocks[].children[].children[].content[].span",
+          "parser_ir_pointer": "span",
+          "category": "AMBIGUITY",
+          "owner": "policy",
+          "observed_occurrences": 2912,
+          "prevalence_source": "rule_description",
+          "closure_family": "span_coordinates",
+          "closure_lane": "custom_sidecar",
+          "closure_owner": "custom_schema",
+          "admission_gate": "ABC custom contract preserves span coordinates or explicit IR pointer span records.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
+        },
+        {
+          "rule_id": "A-07",
+          "aat_pointer": "blocks[].children[].children[].content[].warigaki.upper[].span",
+          "parser_ir_pointer": "span",
+          "category": "AMBIGUITY",
+          "owner": "policy",
+          "observed_occurrences": 14,
+          "prevalence_source": "rule_description",
+          "closure_family": "span_coordinates",
+          "closure_lane": "custom_sidecar",
+          "closure_owner": "custom_schema",
+          "admission_gate": "ABC custom contract preserves span coordinates or explicit IR pointer span records.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
+        },
+        {
+          "rule_id": "A-08",
+          "aat_pointer": "blocks[].children[].children[].heading.content[].span",
+          "parser_ir_pointer": "span",
+          "category": "AMBIGUITY",
+          "owner": "policy",
+          "observed_occurrences": 23,
+          "prevalence_source": "rule_description",
+          "closure_family": "span_coordinates",
+          "closure_lane": "custom_sidecar",
+          "closure_owner": "custom_schema",
+          "admission_gate": "ABC custom contract preserves span coordinates or explicit IR pointer span records.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
+        },
+        {
+          "rule_id": "A-11",
+          "aat_pointer": "blocks[].children[].children[].span",
+          "parser_ir_pointer": "span",
+          "category": "AMBIGUITY",
+          "owner": "policy",
+          "observed_occurrences": 21,
+          "prevalence_source": "rule_description",
+          "closure_family": "span_coordinates",
+          "closure_lane": "custom_sidecar",
+          "closure_owner": "custom_schema",
+          "admission_gate": "ABC custom contract preserves span coordinates or explicit IR pointer span records.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
+        },
+        {
+          "rule_id": "A-23",
+          "aat_pointer": "blocks[].children[].content[].content[].span",
+          "parser_ir_pointer": "span",
+          "category": "AMBIGUITY",
+          "owner": "policy",
+          "observed_occurrences": 2387,
+          "prevalence_source": "rule_description",
+          "closure_family": "span_coordinates",
+          "closure_lane": "custom_sidecar",
+          "closure_owner": "custom_schema",
+          "admission_gate": "ABC custom contract preserves span coordinates or explicit IR pointer span records.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
+        },
+        {
+          "rule_id": "A-27",
+          "aat_pointer": "blocks[].children[].content[].span",
+          "parser_ir_pointer": "span",
+          "category": "AMBIGUITY",
+          "owner": "policy",
+          "observed_occurrences": 1042167,
+          "prevalence_source": "rule_description",
+          "closure_family": "span_coordinates",
+          "closure_lane": "custom_sidecar",
+          "closure_owner": "custom_schema",
+          "admission_gate": "ABC custom contract preserves span coordinates or explicit IR pointer span records.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
+        },
+        {
+          "rule_id": "A-29",
+          "aat_pointer": "blocks[].children[].content[].warigaki.lower[].span",
+          "parser_ir_pointer": "span",
+          "category": "AMBIGUITY",
+          "owner": "policy",
+          "observed_occurrences": 2,
+          "prevalence_source": "rule_description",
+          "closure_family": "span_coordinates",
+          "closure_lane": "custom_sidecar",
+          "closure_owner": "custom_schema",
+          "admission_gate": "ABC custom contract preserves span coordinates or explicit IR pointer span records.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
+        },
+        {
+          "rule_id": "A-32",
+          "aat_pointer": "blocks[].children[].content[].warigaki.upper[].span",
+          "parser_ir_pointer": "span",
+          "category": "AMBIGUITY",
+          "owner": "policy",
+          "observed_occurrences": 989,
+          "prevalence_source": "rule_description",
+          "closure_family": "span_coordinates",
+          "closure_lane": "custom_sidecar",
+          "closure_owner": "custom_schema",
+          "admission_gate": "ABC custom contract preserves span coordinates or explicit IR pointer span records.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
+        },
+        {
+          "rule_id": "A-36",
+          "aat_pointer": "blocks[].children[].heading.content[].span",
+          "parser_ir_pointer": "span",
+          "category": "AMBIGUITY",
+          "owner": "policy",
+          "observed_occurrences": 80160,
+          "prevalence_source": "rule_description",
+          "closure_family": "span_coordinates",
+          "closure_lane": "custom_sidecar",
+          "closure_owner": "custom_schema",
+          "admission_gate": "ABC custom contract preserves span coordinates or explicit IR pointer span records.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
+        },
+        {
+          "rule_id": "A-39",
+          "aat_pointer": "blocks[].children[].span",
+          "parser_ir_pointer": "span",
+          "category": "AMBIGUITY",
+          "owner": "policy",
+          "observed_occurrences": 71477,
+          "prevalence_source": "rule_description",
+          "closure_family": "span_coordinates",
+          "closure_lane": "custom_sidecar",
+          "closure_owner": "custom_schema",
+          "admission_gate": "ABC custom contract preserves span coordinates or explicit IR pointer span records.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
+        },
+        {
+          "rule_id": "A-97",
+          "aat_pointer": "blocks[].content[].content[].span",
+          "parser_ir_pointer": "span",
+          "category": "AMBIGUITY",
+          "owner": "policy",
+          "observed_occurrences": 2300598,
+          "prevalence_source": "rule_description",
+          "closure_family": "span_coordinates",
+          "closure_lane": "custom_sidecar",
+          "closure_owner": "custom_schema",
+          "admission_gate": "ABC custom contract preserves span coordinates or explicit IR pointer span records.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
+        },
+        {
+          "rule_id": "A-102",
+          "aat_pointer": "blocks[].content[].content[].warigaki.upper[].span",
+          "parser_ir_pointer": "span",
+          "category": "AMBIGUITY",
+          "owner": "policy",
+          "observed_occurrences": 896,
+          "prevalence_source": "rule_description",
+          "closure_family": "span_coordinates",
+          "closure_lane": "custom_sidecar",
+          "closure_owner": "custom_schema",
+          "admission_gate": "ABC custom contract preserves span coordinates or explicit IR pointer span records.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
+        },
+        {
+          "rule_id": "A-106",
+          "aat_pointer": "blocks[].content[].span",
+          "parser_ir_pointer": "span",
+          "category": "AMBIGUITY",
+          "owner": "policy",
+          "observed_occurrences": 28775383,
+          "prevalence_source": "rule_description",
+          "closure_family": "span_coordinates",
+          "closure_lane": "custom_sidecar",
+          "closure_owner": "custom_schema",
+          "admission_gate": "ABC custom contract preserves span coordinates or explicit IR pointer span records.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
+        },
+        {
+          "rule_id": "A-108",
+          "aat_pointer": "blocks[].content[].warigaki.lower[].span",
+          "parser_ir_pointer": "span",
+          "category": "AMBIGUITY",
+          "owner": "policy",
+          "observed_occurrences": 4,
+          "prevalence_source": "rule_description",
+          "closure_family": "span_coordinates",
+          "closure_lane": "custom_sidecar",
+          "closure_owner": "custom_schema",
+          "admission_gate": "ABC custom contract preserves span coordinates or explicit IR pointer span records.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
+        },
+        {
+          "rule_id": "A-112",
+          "aat_pointer": "blocks[].content[].warigaki.upper[].span",
+          "parser_ir_pointer": "span",
+          "category": "AMBIGUITY",
+          "owner": "policy",
+          "observed_occurrences": 2393,
+          "prevalence_source": "rule_description",
+          "closure_family": "span_coordinates",
+          "closure_lane": "custom_sidecar",
+          "closure_owner": "custom_schema",
+          "admission_gate": "ABC custom contract preserves span coordinates or explicit IR pointer span records.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
+        },
+        {
+          "rule_id": "A-124",
+          "aat_pointer": "blocks[].heading.content[].span",
+          "parser_ir_pointer": "span",
+          "category": "AMBIGUITY",
+          "owner": "policy",
+          "observed_occurrences": 130274,
+          "prevalence_source": "rule_description",
+          "closure_family": "span_coordinates",
+          "closure_lane": "custom_sidecar",
+          "closure_owner": "custom_schema",
+          "admission_gate": "ABC custom contract preserves span coordinates or explicit IR pointer span records.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
+        },
+        {
+          "rule_id": "A-128",
+          "aat_pointer": "blocks[].span",
+          "parser_ir_pointer": "span",
+          "category": "AMBIGUITY",
+          "owner": "policy",
+          "observed_occurrences": 159139,
+          "prevalence_source": "rule_description",
+          "closure_family": "span_coordinates",
+          "closure_lane": "custom_sidecar",
+          "closure_owner": "custom_schema",
+          "admission_gate": "ABC custom contract preserves span coordinates or explicit IR pointer span records.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
+        },
+        {
+          "rule_id": "A-129",
+          "aat_pointer": "meta.source_encoding",
+          "parser_ir_pointer": "source.encoding",
+          "category": "AMBIGUITY",
+          "owner": "policy",
+          "observed_occurrences": 7,
+          "prevalence_source": "rule_description",
+          "closure_family": "source_identity",
+          "closure_lane": "custom_sidecar",
+          "closure_owner": "custom_schema",
+          "admission_gate": "ABC custom contract and manifest linkage preserve source identity and normalization fields.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
+        },
+        {
+          "rule_id": "A-130",
+          "aat_pointer": "meta.source_hash",
+          "parser_ir_pointer": "source.work_content_hash",
+          "category": "AMBIGUITY",
+          "owner": "policy",
+          "observed_occurrences": 89169,
+          "prevalence_source": "rule_description",
+          "closure_family": "source_identity",
+          "closure_lane": "custom_sidecar",
+          "closure_owner": "custom_schema",
+          "admission_gate": "ABC custom contract and manifest linkage preserve source identity and normalization fields.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
+        },
+        {
+          "rule_id": "I-03",
+          "aat_pointer": null,
+          "parser_ir_pointer": "source.normalization",
+          "category": "INVENTION",
+          "owner": "policy",
+          "observed_occurrences": 89169,
+          "prevalence_source": "rule_description",
+          "closure_family": "source_identity",
+          "closure_lane": "custom_sidecar",
+          "closure_owner": "custom_schema",
+          "admission_gate": "ABC custom contract and manifest linkage preserve source identity and normalization fields.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
+        },
+        {
+          "rule_id": "I-04",
+          "aat_pointer": null,
+          "parser_ir_pointer": "source.source_path",
+          "category": "INVENTION",
+          "owner": "policy",
+          "observed_occurrences": 89169,
+          "prevalence_source": "rule_description",
+          "closure_family": "source_identity",
+          "closure_lane": "custom_sidecar",
+          "closure_owner": "custom_schema",
+          "admission_gate": "ABC custom contract and manifest linkage preserve source identity and normalization fields.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
+        },
+        {
+          "rule_id": "I-07",
+          "aat_pointer": null,
+          "parser_ir_pointer": "schema_id/schema_hash",
+          "category": "INVENTION",
+          "owner": "policy",
+          "observed_occurrences": 89169,
+          "prevalence_source": "rule_description",
+          "closure_family": "source_identity",
+          "closure_lane": "custom_sidecar",
+          "closure_owner": "custom_schema",
+          "admission_gate": "ABC custom contract and manifest linkage preserve source identity and normalization fields.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
+        },
+        {
+          "rule_id": "L-08",
+          "aat_pointer": "blocks[].children[].children[].content[].gaiji.unresolved_reason",
+          "parser_ir_pointer": null,
+          "category": "LOSS",
+          "owner": "custom_schema",
+          "observed_occurrences": 3,
+          "prevalence_source": "rule_description",
+          "closure_family": "gaiji_unresolved_reason",
+          "closure_lane": "custom_sidecar",
+          "closure_owner": "custom_schema",
+          "admission_gate": "ABC custom contract preserves gaiji resolution diagnostics.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
+        },
+        {
+          "rule_id": "L-158",
+          "aat_pointer": "blocks[].children[].content[].gaiji.unresolved_reason",
+          "parser_ir_pointer": null,
+          "category": "LOSS",
+          "owner": "custom_schema",
+          "observed_occurrences": 1874,
+          "prevalence_source": "rule_description",
+          "closure_family": "gaiji_unresolved_reason",
+          "closure_lane": "custom_sidecar",
+          "closure_owner": "custom_schema",
+          "admission_gate": "ABC custom contract preserves gaiji resolution diagnostics.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
+        },
+        {
+          "rule_id": "L-167",
+          "aat_pointer": "blocks[].children[].heading.content[].gaiji.unresolved_reason",
+          "parser_ir_pointer": null,
+          "category": "LOSS",
+          "owner": "custom_schema",
+          "observed_occurrences": 20,
+          "prevalence_source": "rule_description",
+          "closure_family": "gaiji_unresolved_reason",
+          "closure_lane": "custom_sidecar",
+          "closure_owner": "custom_schema",
+          "admission_gate": "ABC custom contract preserves gaiji resolution diagnostics.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
+        },
+        {
+          "rule_id": "L-366",
+          "aat_pointer": "blocks[].content[].content[].gaiji.unresolved_reason",
+          "parser_ir_pointer": null,
+          "category": "LOSS",
+          "owner": "custom_schema",
+          "observed_occurrences": 428,
+          "prevalence_source": "rule_description",
+          "closure_family": "gaiji_unresolved_reason",
+          "closure_lane": "custom_sidecar",
+          "closure_owner": "custom_schema",
+          "admission_gate": "ABC custom contract preserves gaiji resolution diagnostics.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
+        },
+        {
+          "rule_id": "L-379",
+          "aat_pointer": "blocks[].content[].gaiji.unresolved_reason",
+          "parser_ir_pointer": null,
+          "category": "LOSS",
+          "owner": "custom_schema",
+          "observed_occurrences": 20140,
+          "prevalence_source": "rule_description",
+          "closure_family": "gaiji_unresolved_reason",
+          "closure_lane": "custom_sidecar",
+          "closure_owner": "custom_schema",
+          "admission_gate": "ABC custom contract preserves gaiji resolution diagnostics.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
+        },
+        {
+          "rule_id": "L-461",
+          "aat_pointer": "blocks[].heading.content[].gaiji.unresolved_reason",
+          "parser_ir_pointer": null,
+          "category": "LOSS",
+          "owner": "custom_schema",
+          "observed_occurrences": 13,
+          "prevalence_source": "rule_description",
+          "closure_family": "gaiji_unresolved_reason",
+          "closure_lane": "custom_sidecar",
+          "closure_owner": "custom_schema",
+          "admission_gate": "ABC custom contract preserves gaiji resolution diagnostics.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
+        },
+        {
+          "rule_id": "L-465",
+          "aat_pointer": "meta.metrics",
+          "parser_ir_pointer": null,
+          "category": "LOSS",
+          "owner": "custom_schema",
+          "observed_occurrences": 17894,
+          "prevalence_source": "rule_description",
+          "closure_family": "provenance_metrics",
+          "closure_lane": "custom_sidecar",
+          "closure_owner": "custom_schema",
+          "admission_gate": "ABC custom contract includes producer metrics or superseding validation/admission verdicts.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
+        },
+        {
+          "rule_id": "L-466",
+          "aat_pointer": "meta.parse_complete",
+          "parser_ir_pointer": null,
+          "category": "LOSS",
+          "owner": "custom_schema",
+          "observed_occurrences": 89169,
+          "prevalence_source": "rule_description",
+          "closure_family": "provenance_metrics",
+          "closure_lane": "custom_sidecar",
+          "closure_owner": "custom_schema",
+          "admission_gate": "ABC custom contract includes producer metrics or superseding validation/admission verdicts.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
+        },
+        {
+          "rule_id": "L-467",
+          "aat_pointer": "meta.semantic_summary",
+          "parser_ir_pointer": null,
+          "category": "LOSS",
+          "owner": "custom_schema",
+          "observed_occurrences": 32710,
+          "prevalence_source": "rule_description",
+          "closure_family": "provenance_metrics",
+          "closure_lane": "custom_sidecar",
+          "closure_owner": "custom_schema",
+          "admission_gate": "ABC custom contract includes producer metrics or superseding validation/admission verdicts.",
+          "admitted_by": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
+        }
+      ]
+    },
     "classified_but_not_admitted": {
-      "count": 151,
+      "count": 120,
       "counts_by_family": {
         "accent": 14,
         "figure_metadata": 85,
-        "gaiji_unresolved_reason": 6,
         "heading_jisage_structure": 7,
-        "provenance_metrics": 3,
-        "source_identity": 5,
-        "span_coordinates": 17,
         "style_rendition": 14
       },
       "counts_by_lane": {
-        "custom_sidecar": 31,
         "tei_plus_abc_extension": 14,
         "tei_policy_projection": 106
       },
       "counts_by_owner": {
-        "custom_schema": 31,
         "policy": 120
       },
       "items": [
@@ -3778,19 +4218,6 @@
           "admission_gate": "ABC TEI profile declares accent rendition vocabulary and custom contract preserves original accent code."
         },
         {
-          "rule_id": "A-05",
-          "aat_pointer": "blocks[].children[].children[].content[].span",
-          "parser_ir_pointer": "span",
-          "category": "AMBIGUITY",
-          "owner": "policy",
-          "observed_occurrences": 2912,
-          "prevalence_source": "rule_description",
-          "closure_family": "span_coordinates",
-          "closure_lane": "custom_sidecar",
-          "closure_owner": "custom_schema",
-          "admission_gate": "ABC custom contract preserves span coordinates or explicit IR pointer span records."
-        },
-        {
           "rule_id": "A-06",
           "aat_pointer": "blocks[].children[].children[].content[].style",
           "parser_ir_pointer": "emphasis",
@@ -3804,32 +4231,6 @@
           "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed."
         },
         {
-          "rule_id": "A-07",
-          "aat_pointer": "blocks[].children[].children[].content[].warigaki.upper[].span",
-          "parser_ir_pointer": "span",
-          "category": "AMBIGUITY",
-          "owner": "policy",
-          "observed_occurrences": 14,
-          "prevalence_source": "rule_description",
-          "closure_family": "span_coordinates",
-          "closure_lane": "custom_sidecar",
-          "closure_owner": "custom_schema",
-          "admission_gate": "ABC custom contract preserves span coordinates or explicit IR pointer span records."
-        },
-        {
-          "rule_id": "A-08",
-          "aat_pointer": "blocks[].children[].children[].heading.content[].span",
-          "parser_ir_pointer": "span",
-          "category": "AMBIGUITY",
-          "owner": "policy",
-          "observed_occurrences": 23,
-          "prevalence_source": "rule_description",
-          "closure_family": "span_coordinates",
-          "closure_lane": "custom_sidecar",
-          "closure_owner": "custom_schema",
-          "admission_gate": "ABC custom contract preserves span coordinates or explicit IR pointer span records."
-        },
-        {
           "rule_id": "A-09",
           "aat_pointer": "blocks[].children[].children[].heading.content[].style",
           "parser_ir_pointer": "emphasis",
@@ -3841,19 +4242,6 @@
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
           "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed."
-        },
-        {
-          "rule_id": "A-11",
-          "aat_pointer": "blocks[].children[].children[].span",
-          "parser_ir_pointer": "span",
-          "category": "AMBIGUITY",
-          "owner": "policy",
-          "observed_occurrences": 21,
-          "prevalence_source": "rule_description",
-          "closure_family": "span_coordinates",
-          "closure_lane": "custom_sidecar",
-          "closure_owner": "custom_schema",
-          "admission_gate": "ABC custom contract preserves span coordinates or explicit IR pointer span records."
         },
         {
           "rule_id": "A-12",
@@ -3882,19 +4270,6 @@
           "admission_gate": "ABC TEI profile declares accent rendition vocabulary and custom contract preserves original accent code."
         },
         {
-          "rule_id": "A-23",
-          "aat_pointer": "blocks[].children[].content[].content[].span",
-          "parser_ir_pointer": "span",
-          "category": "AMBIGUITY",
-          "owner": "policy",
-          "observed_occurrences": 2387,
-          "prevalence_source": "rule_description",
-          "closure_family": "span_coordinates",
-          "closure_lane": "custom_sidecar",
-          "closure_owner": "custom_schema",
-          "admission_gate": "ABC custom contract preserves span coordinates or explicit IR pointer span records."
-        },
-        {
           "rule_id": "A-24",
           "aat_pointer": "blocks[].children[].content[].content[].style",
           "parser_ir_pointer": "emphasis",
@@ -3906,19 +4281,6 @@
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
           "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed."
-        },
-        {
-          "rule_id": "A-27",
-          "aat_pointer": "blocks[].children[].content[].span",
-          "parser_ir_pointer": "span",
-          "category": "AMBIGUITY",
-          "owner": "policy",
-          "observed_occurrences": 1042167,
-          "prevalence_source": "rule_description",
-          "closure_family": "span_coordinates",
-          "closure_lane": "custom_sidecar",
-          "closure_owner": "custom_schema",
-          "admission_gate": "ABC custom contract preserves span coordinates or explicit IR pointer span records."
         },
         {
           "rule_id": "A-28",
@@ -3934,32 +4296,6 @@
           "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed."
         },
         {
-          "rule_id": "A-29",
-          "aat_pointer": "blocks[].children[].content[].warigaki.lower[].span",
-          "parser_ir_pointer": "span",
-          "category": "AMBIGUITY",
-          "owner": "policy",
-          "observed_occurrences": 2,
-          "prevalence_source": "rule_description",
-          "closure_family": "span_coordinates",
-          "closure_lane": "custom_sidecar",
-          "closure_owner": "custom_schema",
-          "admission_gate": "ABC custom contract preserves span coordinates or explicit IR pointer span records."
-        },
-        {
-          "rule_id": "A-32",
-          "aat_pointer": "blocks[].children[].content[].warigaki.upper[].span",
-          "parser_ir_pointer": "span",
-          "category": "AMBIGUITY",
-          "owner": "policy",
-          "observed_occurrences": 989,
-          "prevalence_source": "rule_description",
-          "closure_family": "span_coordinates",
-          "closure_lane": "custom_sidecar",
-          "closure_owner": "custom_schema",
-          "admission_gate": "ABC custom contract preserves span coordinates or explicit IR pointer span records."
-        },
-        {
           "rule_id": "A-33",
           "aat_pointer": "blocks[].children[].content[].warigaki.upper[].style",
           "parser_ir_pointer": "emphasis",
@@ -3973,19 +4309,6 @@
           "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed."
         },
         {
-          "rule_id": "A-36",
-          "aat_pointer": "blocks[].children[].heading.content[].span",
-          "parser_ir_pointer": "span",
-          "category": "AMBIGUITY",
-          "owner": "policy",
-          "observed_occurrences": 80160,
-          "prevalence_source": "rule_description",
-          "closure_family": "span_coordinates",
-          "closure_lane": "custom_sidecar",
-          "closure_owner": "custom_schema",
-          "admission_gate": "ABC custom contract preserves span coordinates or explicit IR pointer span records."
-        },
-        {
           "rule_id": "A-37",
           "aat_pointer": "blocks[].children[].heading.content[].style",
           "parser_ir_pointer": "emphasis",
@@ -3997,19 +4320,6 @@
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
           "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed."
-        },
-        {
-          "rule_id": "A-39",
-          "aat_pointer": "blocks[].children[].span",
-          "parser_ir_pointer": "span",
-          "category": "AMBIGUITY",
-          "owner": "policy",
-          "observed_occurrences": 71477,
-          "prevalence_source": "rule_description",
-          "closure_family": "span_coordinates",
-          "closure_lane": "custom_sidecar",
-          "closure_owner": "custom_schema",
-          "admission_gate": "ABC custom contract preserves span coordinates or explicit IR pointer span records."
         },
         {
           "rule_id": "A-40",
@@ -4038,19 +4348,6 @@
           "admission_gate": "ABC TEI profile declares accent rendition vocabulary and custom contract preserves original accent code."
         },
         {
-          "rule_id": "A-97",
-          "aat_pointer": "blocks[].content[].content[].span",
-          "parser_ir_pointer": "span",
-          "category": "AMBIGUITY",
-          "owner": "policy",
-          "observed_occurrences": 2300598,
-          "prevalence_source": "rule_description",
-          "closure_family": "span_coordinates",
-          "closure_lane": "custom_sidecar",
-          "closure_owner": "custom_schema",
-          "admission_gate": "ABC custom contract preserves span coordinates or explicit IR pointer span records."
-        },
-        {
           "rule_id": "A-98",
           "aat_pointer": "blocks[].content[].content[].style",
           "parser_ir_pointer": "emphasis",
@@ -4062,19 +4359,6 @@
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
           "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed."
-        },
-        {
-          "rule_id": "A-102",
-          "aat_pointer": "blocks[].content[].content[].warigaki.upper[].span",
-          "parser_ir_pointer": "span",
-          "category": "AMBIGUITY",
-          "owner": "policy",
-          "observed_occurrences": 896,
-          "prevalence_source": "rule_description",
-          "closure_family": "span_coordinates",
-          "closure_lane": "custom_sidecar",
-          "closure_owner": "custom_schema",
-          "admission_gate": "ABC custom contract preserves span coordinates or explicit IR pointer span records."
         },
         {
           "rule_id": "A-103",
@@ -4090,19 +4374,6 @@
           "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed."
         },
         {
-          "rule_id": "A-106",
-          "aat_pointer": "blocks[].content[].span",
-          "parser_ir_pointer": "span",
-          "category": "AMBIGUITY",
-          "owner": "policy",
-          "observed_occurrences": 28775383,
-          "prevalence_source": "rule_description",
-          "closure_family": "span_coordinates",
-          "closure_lane": "custom_sidecar",
-          "closure_owner": "custom_schema",
-          "admission_gate": "ABC custom contract preserves span coordinates or explicit IR pointer span records."
-        },
-        {
           "rule_id": "A-107",
           "aat_pointer": "blocks[].content[].style",
           "parser_ir_pointer": "emphasis",
@@ -4116,19 +4387,6 @@
           "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed."
         },
         {
-          "rule_id": "A-108",
-          "aat_pointer": "blocks[].content[].warigaki.lower[].span",
-          "parser_ir_pointer": "span",
-          "category": "AMBIGUITY",
-          "owner": "policy",
-          "observed_occurrences": 4,
-          "prevalence_source": "rule_description",
-          "closure_family": "span_coordinates",
-          "closure_lane": "custom_sidecar",
-          "closure_owner": "custom_schema",
-          "admission_gate": "ABC custom contract preserves span coordinates or explicit IR pointer span records."
-        },
-        {
           "rule_id": "A-109",
           "aat_pointer": "blocks[].content[].warigaki.upper[].accent",
           "parser_ir_pointer": "emphasis",
@@ -4140,19 +4398,6 @@
           "closure_lane": "tei_plus_abc_extension",
           "closure_owner": "policy",
           "admission_gate": "ABC TEI profile declares accent rendition vocabulary and custom contract preserves original accent code."
-        },
-        {
-          "rule_id": "A-112",
-          "aat_pointer": "blocks[].content[].warigaki.upper[].span",
-          "parser_ir_pointer": "span",
-          "category": "AMBIGUITY",
-          "owner": "policy",
-          "observed_occurrences": 2393,
-          "prevalence_source": "rule_description",
-          "closure_family": "span_coordinates",
-          "closure_lane": "custom_sidecar",
-          "closure_owner": "custom_schema",
-          "admission_gate": "ABC custom contract preserves span coordinates or explicit IR pointer span records."
         },
         {
           "rule_id": "A-113",
@@ -4181,19 +4426,6 @@
           "admission_gate": "ABC TEI profile declares accent rendition vocabulary and custom contract preserves original accent code."
         },
         {
-          "rule_id": "A-124",
-          "aat_pointer": "blocks[].heading.content[].span",
-          "parser_ir_pointer": "span",
-          "category": "AMBIGUITY",
-          "owner": "policy",
-          "observed_occurrences": 130274,
-          "prevalence_source": "rule_description",
-          "closure_family": "span_coordinates",
-          "closure_lane": "custom_sidecar",
-          "closure_owner": "custom_schema",
-          "admission_gate": "ABC custom contract preserves span coordinates or explicit IR pointer span records."
-        },
-        {
           "rule_id": "A-125",
           "aat_pointer": "blocks[].heading.content[].style",
           "parser_ir_pointer": "emphasis",
@@ -4205,84 +4437,6 @@
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
           "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed."
-        },
-        {
-          "rule_id": "A-128",
-          "aat_pointer": "blocks[].span",
-          "parser_ir_pointer": "span",
-          "category": "AMBIGUITY",
-          "owner": "policy",
-          "observed_occurrences": 159139,
-          "prevalence_source": "rule_description",
-          "closure_family": "span_coordinates",
-          "closure_lane": "custom_sidecar",
-          "closure_owner": "custom_schema",
-          "admission_gate": "ABC custom contract preserves span coordinates or explicit IR pointer span records."
-        },
-        {
-          "rule_id": "A-129",
-          "aat_pointer": "meta.source_encoding",
-          "parser_ir_pointer": "source.encoding",
-          "category": "AMBIGUITY",
-          "owner": "policy",
-          "observed_occurrences": 7,
-          "prevalence_source": "rule_description",
-          "closure_family": "source_identity",
-          "closure_lane": "custom_sidecar",
-          "closure_owner": "custom_schema",
-          "admission_gate": "ABC custom contract and manifest linkage preserve source identity and normalization fields."
-        },
-        {
-          "rule_id": "A-130",
-          "aat_pointer": "meta.source_hash",
-          "parser_ir_pointer": "source.work_content_hash",
-          "category": "AMBIGUITY",
-          "owner": "policy",
-          "observed_occurrences": 89169,
-          "prevalence_source": "rule_description",
-          "closure_family": "source_identity",
-          "closure_lane": "custom_sidecar",
-          "closure_owner": "custom_schema",
-          "admission_gate": "ABC custom contract and manifest linkage preserve source identity and normalization fields."
-        },
-        {
-          "rule_id": "I-03",
-          "aat_pointer": null,
-          "parser_ir_pointer": "source.normalization",
-          "category": "INVENTION",
-          "owner": "policy",
-          "observed_occurrences": 89169,
-          "prevalence_source": "rule_description",
-          "closure_family": "source_identity",
-          "closure_lane": "custom_sidecar",
-          "closure_owner": "custom_schema",
-          "admission_gate": "ABC custom contract and manifest linkage preserve source identity and normalization fields."
-        },
-        {
-          "rule_id": "I-04",
-          "aat_pointer": null,
-          "parser_ir_pointer": "source.source_path",
-          "category": "INVENTION",
-          "owner": "policy",
-          "observed_occurrences": 89169,
-          "prevalence_source": "rule_description",
-          "closure_family": "source_identity",
-          "closure_lane": "custom_sidecar",
-          "closure_owner": "custom_schema",
-          "admission_gate": "ABC custom contract and manifest linkage preserve source identity and normalization fields."
-        },
-        {
-          "rule_id": "I-07",
-          "aat_pointer": null,
-          "parser_ir_pointer": "schema_id/schema_hash",
-          "category": "INVENTION",
-          "owner": "policy",
-          "observed_occurrences": 89169,
-          "prevalence_source": "rule_description",
-          "closure_family": "source_identity",
-          "closure_lane": "custom_sidecar",
-          "closure_owner": "custom_schema",
-          "admission_gate": "ABC custom contract and manifest linkage preserve source identity and normalization fields."
         },
         {
           "rule_id": "I-08",
@@ -4439,19 +4593,6 @@
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
           "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
-        },
-        {
-          "rule_id": "L-08",
-          "aat_pointer": "blocks[].children[].children[].content[].gaiji.unresolved_reason",
-          "parser_ir_pointer": null,
-          "category": "LOSS",
-          "owner": "custom_schema",
-          "observed_occurrences": 3,
-          "prevalence_source": "rule_description",
-          "closure_family": "gaiji_unresolved_reason",
-          "closure_lane": "custom_sidecar",
-          "closure_owner": "custom_schema",
-          "admission_gate": "ABC custom contract preserves gaiji resolution diagnostics."
         },
         {
           "rule_id": "L-12",
@@ -5104,19 +5245,6 @@
           "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
         },
         {
-          "rule_id": "L-158",
-          "aat_pointer": "blocks[].children[].content[].gaiji.unresolved_reason",
-          "parser_ir_pointer": null,
-          "category": "LOSS",
-          "owner": "custom_schema",
-          "observed_occurrences": 1874,
-          "prevalence_source": "rule_description",
-          "closure_family": "gaiji_unresolved_reason",
-          "closure_lane": "custom_sidecar",
-          "closure_owner": "custom_schema",
-          "admission_gate": "ABC custom contract preserves gaiji resolution diagnostics."
-        },
-        {
           "rule_id": "L-164",
           "aat_pointer": "blocks[].children[].heading.content[].figure.css_class",
           "parser_ir_pointer": null,
@@ -5154,19 +5282,6 @@
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
           "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
-        },
-        {
-          "rule_id": "L-167",
-          "aat_pointer": "blocks[].children[].heading.content[].gaiji.unresolved_reason",
-          "parser_ir_pointer": null,
-          "category": "LOSS",
-          "owner": "custom_schema",
-          "observed_occurrences": 20,
-          "prevalence_source": "rule_description",
-          "closure_family": "gaiji_unresolved_reason",
-          "closure_lane": "custom_sidecar",
-          "closure_owner": "custom_schema",
-          "admission_gate": "ABC custom contract preserves gaiji resolution diagnostics."
         },
         {
           "rule_id": "L-170",
@@ -5455,19 +5570,6 @@
           "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
         },
         {
-          "rule_id": "L-366",
-          "aat_pointer": "blocks[].content[].content[].gaiji.unresolved_reason",
-          "parser_ir_pointer": null,
-          "category": "LOSS",
-          "owner": "custom_schema",
-          "observed_occurrences": 428,
-          "prevalence_source": "rule_description",
-          "closure_family": "gaiji_unresolved_reason",
-          "closure_lane": "custom_sidecar",
-          "closure_owner": "custom_schema",
-          "admission_gate": "ABC custom contract preserves gaiji resolution diagnostics."
-        },
-        {
           "rule_id": "L-376",
           "aat_pointer": "blocks[].content[].figure.css_class",
           "parser_ir_pointer": null,
@@ -5505,19 +5607,6 @@
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
           "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
-        },
-        {
-          "rule_id": "L-379",
-          "aat_pointer": "blocks[].content[].gaiji.unresolved_reason",
-          "parser_ir_pointer": null,
-          "category": "LOSS",
-          "owner": "custom_schema",
-          "observed_occurrences": 20140,
-          "prevalence_source": "rule_description",
-          "closure_family": "gaiji_unresolved_reason",
-          "closure_lane": "custom_sidecar",
-          "closure_owner": "custom_schema",
-          "admission_gate": "ABC custom contract preserves gaiji resolution diagnostics."
         },
         {
           "rule_id": "L-444",
@@ -5598,19 +5687,6 @@
           "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact."
         },
         {
-          "rule_id": "L-461",
-          "aat_pointer": "blocks[].heading.content[].gaiji.unresolved_reason",
-          "parser_ir_pointer": null,
-          "category": "LOSS",
-          "owner": "custom_schema",
-          "observed_occurrences": 13,
-          "prevalence_source": "rule_description",
-          "closure_family": "gaiji_unresolved_reason",
-          "closure_lane": "custom_sidecar",
-          "closure_owner": "custom_schema",
-          "admission_gate": "ABC custom contract preserves gaiji resolution diagnostics."
-        },
-        {
           "rule_id": "L-464",
           "aat_pointer": "blocks[].heading.style",
           "parser_ir_pointer": null,
@@ -5622,45 +5698,6 @@
           "closure_lane": "tei_policy_projection",
           "closure_owner": "policy",
           "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed."
-        },
-        {
-          "rule_id": "L-465",
-          "aat_pointer": "meta.metrics",
-          "parser_ir_pointer": null,
-          "category": "LOSS",
-          "owner": "custom_schema",
-          "observed_occurrences": 17894,
-          "prevalence_source": "rule_description",
-          "closure_family": "provenance_metrics",
-          "closure_lane": "custom_sidecar",
-          "closure_owner": "custom_schema",
-          "admission_gate": "ABC custom contract includes producer metrics or superseding validation/admission verdicts."
-        },
-        {
-          "rule_id": "L-466",
-          "aat_pointer": "meta.parse_complete",
-          "parser_ir_pointer": null,
-          "category": "LOSS",
-          "owner": "custom_schema",
-          "observed_occurrences": 89169,
-          "prevalence_source": "rule_description",
-          "closure_family": "provenance_metrics",
-          "closure_lane": "custom_sidecar",
-          "closure_owner": "custom_schema",
-          "admission_gate": "ABC custom contract includes producer metrics or superseding validation/admission verdicts."
-        },
-        {
-          "rule_id": "L-467",
-          "aat_pointer": "meta.semantic_summary",
-          "parser_ir_pointer": null,
-          "category": "LOSS",
-          "owner": "custom_schema",
-          "observed_occurrences": 32710,
-          "prevalence_source": "rule_description",
-          "closure_family": "provenance_metrics",
-          "closure_lane": "custom_sidecar",
-          "closure_owner": "custom_schema",
-          "admission_gate": "ABC custom contract includes producer metrics or superseding validation/admission verdicts."
         },
         {
           "rule_id": "S-02",

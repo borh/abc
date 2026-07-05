@@ -101,17 +101,22 @@ Count: 151
 
 ## Closure Gaps
 
-Classified but not admitted: 151
+Admitted by custom contract: 31
+
+Classified but not admitted: 120
+
+| Admitted family | Count |
+|---|---:|
+| `gaiji_unresolved_reason` | 6 |
+| `provenance_metrics` | 3 |
+| `source_identity` | 5 |
+| `span_coordinates` | 17 |
 
 | Family | Count |
 |---|---:|
 | `accent` | 14 |
 | `figure_metadata` | 85 |
-| `gaiji_unresolved_reason` | 6 |
 | `heading_jisage_structure` | 7 |
-| `provenance_metrics` | 3 |
-| `source_identity` | 5 |
-| `span_coordinates` | 17 |
 | `style_rendition` | 14 |
 
 True unsupported gaps: 0

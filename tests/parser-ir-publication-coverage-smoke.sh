@@ -24,6 +24,7 @@ owner_mapping="$out_dir/mapping-owner-categories.json"
 owner_summary_json="$out_dir/coverage-owner-categories.summary.json"
 owner_report_md="$out_dir/coverage-owner-categories.md"
 valid_custom_contract="$out_dir/custom-contract.valid.json"
+confirmed_custom_contract="$out_dir/custom-contract.confirmed.json"
 invalid_custom_contract="$out_dir/custom-contract.invalid.json"
 invalid_contract_summary_json="$out_dir/coverage-invalid-contract.summary.json"
 invalid_contract_report_md="$out_dir/coverage-invalid-contract.md"
@@ -224,6 +225,14 @@ cat > "$valid_custom_contract" <<'JSON'
 }
 JSON
 
+cat > "$confirmed_custom_contract" <<'JSON'
+{
+  "$id": "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json",
+  "schema_version": "0.1.0",
+  "title": "ABC Parser-IR Publication Preservation Sidecar"
+}
+JSON
+
 printf '%s\n' '{ invalid json' > "$invalid_custom_contract"
 
 python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
@@ -310,6 +319,23 @@ python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
 
 jq -e '.custom_contract.verdict == "CUSTOM_CONTRACT_CANDIDATE_PROVIDED"' "$candidate_summary_json" >/dev/null
 jq -e '.custom_contract.schema_id == "https://example.org/abc/custom-contract-candidate.json"' "$candidate_summary_json" >/dev/null
+jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_CLASSIFIED_GAPS"' "$candidate_summary_json" >/dev/null
+
+python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
+  --parser-ir-schema "$parser_schema" \
+  --mapping "$supported_mapping" \
+  --source-summary "$source_summary" \
+  --matrix-summary "$matrix_summary" \
+  --source-delta-summary "$source_delta" \
+  --custom-contract-schema "$confirmed_custom_contract" \
+  --summary-json "$candidate_summary_json" \
+  --report-md "$candidate_report_md"
+
+jq -e '.custom_contract.verdict == "CUSTOM_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION"' "$candidate_summary_json" >/dev/null
+jq -e '.closure_gaps.admitted_by_custom_contract.count == 1' "$candidate_summary_json" >/dev/null
+jq -e '.closure_gaps.admitted_by_custom_contract.counts_by_family.span_coordinates == 1' "$candidate_summary_json" >/dev/null
+jq -e '.closure_gaps.classified_but_not_admitted.count == 6' "$candidate_summary_json" >/dev/null
+jq -e '([.closure_gaps.classified_but_not_admitted.items[] | select(.closure_family == "span_coordinates")] | length) == 0' "$candidate_summary_json" >/dev/null
 jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_CLASSIFIED_GAPS"' "$candidate_summary_json" >/dev/null
 
 cat > "$unknown_mapping" <<'JSON'

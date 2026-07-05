@@ -108,6 +108,66 @@
         "end": { "type": "integer", "minimum": 0 }
       }
     },
+    "paragraphLayout": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["kind", "source", "indent"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "jisage" },
+            "source": { "$ref": "#/$defs/paragraphLayoutSource" },
+            "indent": { "type": "integer", "minimum": 0 }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "source", "first_line_indent", "continuation_indent"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "burasage" },
+            "source": { "$ref": "#/$defs/paragraphLayoutSource" },
+            "first_line_indent": { "type": "integer", "minimum": 0 },
+            "continuation_indent": { "type": "integer", "minimum": 0 }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "source", "align", "offset_from_end"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "chitsuki" },
+            "source": { "$ref": "#/$defs/paragraphLayoutSource" },
+            "align": { "type": "string", "enum": ["right"] },
+            "offset_from_end": { "type": "integer", "minimum": 0 }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "source", "width"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "jizume" },
+            "source": { "$ref": "#/$defs/paragraphLayoutSource" },
+            "width": { "type": "integer", "minimum": 0 }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "source", "indent"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "line-jisage" },
+            "source": { "$ref": "#/$defs/paragraphLayoutSource" },
+            "indent": { "type": "integer", "minimum": 0 }
+          }
+        }
+      ]
+    },
+    "paragraphLayoutSource": {
+      "type": "string",
+      "enum": ["aat-block", "aat-style", "source-derived", "heuristic"]
+    },
     "paragraph": {
       "type": "object",
       "required": ["id", "span", "span_source", "node_range", "role", "source_pointer", "classification"],
@@ -119,7 +179,8 @@
         "node_range": { "$ref": "#/$defs/nodeRange" },
         "role": { "type": "string", "enum": ["body", "source-note", "unknown"] },
         "source_pointer": { "type": ["string", "null"] },
-        "classification": { "type": "string", "enum": ["direct", "heuristic", "unknown"] }
+        "classification": { "type": "string", "enum": ["direct", "heuristic", "unknown"] },
+        "layout": { "$ref": "#/$defs/paragraphLayout" }
       }
     },
     "textNode": {

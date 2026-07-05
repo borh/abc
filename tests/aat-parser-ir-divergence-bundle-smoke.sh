@@ -22,7 +22,7 @@ cat > "$bundle" <<'JSON'
   },
   "target": {
     "parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-    "parser_ir_schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d"
+    "parser_ir_schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913"
   },
   "aat": {
     "version": 1,

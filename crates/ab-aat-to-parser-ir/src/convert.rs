@@ -160,10 +160,20 @@ fn map_block(
                 return Ok(current);
             }
 
+            let layout_wrapper = paragraph_layout_wrapper(block);
+            let layout = layout_wrapper.and_then(paragraph_layout_from_style);
+            let paragraph_content = layout_wrapper
+                .and_then(|wrapper| wrapper.get("content"))
+                .or_else(|| block.get("content"));
+            let paragraph_content_path = if layout_wrapper.is_some() {
+                format!("{path}.content[0].content")
+            } else {
+                format!("{path}.content")
+            };
             let paragraph_id = format!("p{:06}", paragraphs.len());
             let node_start = nodes.len();
             let source_note_text = if is_final_top_level {
-                source_attribution_text(block)?
+                source_attribution_text(paragraph_content)?
             } else {
                 None
             };
@@ -171,9 +181,9 @@ fn map_block(
             let classification;
             if source_note_text.is_some() {
                 let text = visible_content_text(
-                    block.get("content"),
+                    paragraph_content,
                     recorder,
-                    &format!("{path}.content"),
+                    &paragraph_content_path,
                     Some("source-note.text"),
                 )?;
                 let end = current + utf8_len(&text);
@@ -192,11 +202,11 @@ fn map_block(
                 classification = "heuristic";
             } else {
                 current = map_inline_content(
-                    block.get("content"),
+                    paragraph_content,
                     nodes,
                     recorder,
                     current,
-                    &format!("{path}.content"),
+                    &paragraph_content_path,
                 )?;
                 role = "body";
                 classification = "direct";
@@ -210,7 +220,7 @@ fn map_block(
                 offset,
                 current,
             )?;
-            paragraphs.push(json!({
+            let mut paragraph = json!({
                 "id": paragraph_id,
                 "span": span,
                 "span_source": span_source,
@@ -221,7 +231,14 @@ fn map_block(
                 "role": role,
                 "source_pointer": path,
                 "classification": classification,
-            }));
+            });
+            if let Some(layout) = layout {
+                paragraph
+                    .as_object_mut()
+                    .expect("paragraph JSON object")
+                    .insert("layout".to_owned(), layout);
+            }
+            paragraphs.push(paragraph);
         }
         "heading" => {
             recorder.record(
@@ -351,6 +368,63 @@ fn is_source_derived_page_break(block: &Value) -> bool {
             .is_some_and(Vec::is_empty)
 }
 
+fn paragraph_layout_wrapper(block: &Value) -> Option<&Value> {
+    let content = block.get("content")?.as_array()?;
+    if content.len() != 1 {
+        return None;
+    }
+    let wrapper = &content[0];
+    if wrapper.get("kind").and_then(Value::as_str) == Some("style")
+        && paragraph_layout_from_style(wrapper).is_some()
+    {
+        Some(wrapper)
+    } else {
+        None
+    }
+}
+
+fn paragraph_layout_from_style(node: &Value) -> Option<Value> {
+    match node.get("style_type").and_then(Value::as_str)? {
+        "burasage" => Some(json!({
+            "kind": "burasage",
+            "source": "aat-style",
+            "first_line_indent": node.get("x-indent-first")?.as_u64()?,
+            "continuation_indent": node.get("x-indent-rest")?.as_u64()?,
+        })),
+        "chitsuki" => {
+            let align = node
+                .get("x-align")
+                .and_then(Value::as_str)
+                .unwrap_or("right");
+            if align != "right" {
+                return None;
+            }
+            Some(json!({
+                "kind": "chitsuki",
+                "source": "aat-style",
+                "align": align,
+                "offset_from_end": node.get("x-offset")?.as_u64()?,
+            }))
+        }
+        "jisage" => Some(json!({
+            "kind": "jisage",
+            "source": "aat-style",
+            "indent": node.get("x-indent")?.as_u64()?,
+        })),
+        "jizume" => Some(json!({
+            "kind": "jizume",
+            "source": "aat-style",
+            "width": node.get("x-width")?.as_u64()?,
+        })),
+        "line-jisage" | "jisage_line" => Some(json!({
+            "kind": "line-jisage",
+            "source": "aat-style",
+            "indent": node.get("x-indent")?.as_u64()?,
+        })),
+        _ => None,
+    }
+}
+
 fn paragraph_span(
     block_span: Option<&Value>,
     nodes: &[Value],
@@ -410,8 +484,8 @@ fn paragraph_span(
     ))
 }
 
-fn source_attribution_text(block: &Value) -> Result<Option<String>> {
-    let text = plain_visible_content_text(block.get("content"))?;
+fn source_attribution_text(content: Option<&Value>) -> Result<Option<String>> {
+    let text = plain_visible_content_text(content)?;
     if is_source_attribution_text(&text) {
         Ok(Some(text))
     } else {

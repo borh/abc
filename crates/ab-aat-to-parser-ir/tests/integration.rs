@@ -72,7 +72,7 @@ fn legacy_schema_hashes_match_mapping_artifact() {
     );
     assert_eq!(
         schema_hash(&schemas.parser_ir_schema).unwrap(),
-        "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d"
+        "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913"
     );
 }
 
@@ -500,6 +500,140 @@ fn projects_source_derived_line_break_inline_to_line_break_node() {
     assert_eq!(
         output.parser_ir.pointer("/paragraphs/0/node_range"),
         Some(&json!({"start":0,"end":3}))
+    );
+
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
+#[test]
+fn projects_burasage_style_wrapper_to_paragraph_layout() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let aat = json!({
+        "version": 1,
+        "work_id": "burasage-layout",
+        "meta": base_meta(
+            "utf-8",
+            "sha256:1212121212121212121212121212121212121212121212121212121212121212",
+        ),
+        "blocks": [{
+            "kind": "paragraph",
+            "content": [{
+                "kind": "style",
+                "style_type": "burasage",
+                "x-indent-first": 0,
+                "x-indent-rest": 1,
+                "x-provenance": "source-derived",
+                "content": [{"kind": "text", "value": "本文"}]
+            }]
+        }]
+    });
+
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: ConversionOptions::default(),
+    })
+    .unwrap();
+
+    assert_eq!(
+        output.parser_ir.pointer("/paragraphs/0/layout"),
+        Some(&json!({
+            "kind": "burasage",
+            "source": "aat-style",
+            "first_line_indent": 0,
+            "continuation_indent": 1
+        }))
+    );
+    assert_eq!(
+        output
+            .parser_ir
+            .pointer("/nodes/0/type")
+            .and_then(Value::as_str),
+        Some("text")
+    );
+    assert_eq!(
+        output
+            .parser_ir
+            .pointer("/nodes/0/text")
+            .and_then(Value::as_str),
+        Some("本文")
+    );
+    assert!(
+        !output
+            .parser_ir
+            .pointer("/nodes")
+            .and_then(Value::as_array)
+            .unwrap()
+            .iter()
+            .any(|node| node["type"] == "emphasis" && node["style"] == "burasage")
+    );
+
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
+#[test]
+fn projects_chitsuki_style_wrapper_to_paragraph_layout() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let aat = json!({
+        "version": 1,
+        "work_id": "chitsuki-layout",
+        "meta": base_meta(
+            "utf-8",
+            "sha256:1212121212121212121212121212121212121212121212121212121212121212",
+        ),
+        "blocks": [{
+            "kind": "paragraph",
+            "content": [{
+                "kind": "style",
+                "style_type": "chitsuki",
+                "x-align": "right",
+                "x-offset": 1,
+                "x-provenance": "source-derived",
+                "content": [{"kind": "text", "value": "了"}]
+            }]
+        }]
+    });
+
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: ConversionOptions::default(),
+    })
+    .unwrap();
+
+    assert_eq!(
+        output.parser_ir.pointer("/paragraphs/0/layout"),
+        Some(&json!({
+            "kind": "chitsuki",
+            "source": "aat-style",
+            "align": "right",
+            "offset_from_end": 1
+        }))
+    );
+    assert_eq!(
+        output
+            .parser_ir
+            .pointer("/nodes/0/type")
+            .and_then(Value::as_str),
+        Some("text")
+    );
+    assert_eq!(
+        output
+            .parser_ir
+            .pointer("/nodes/0/text")
+            .and_then(Value::as_str),
+        Some("了")
+    );
+    assert!(
+        !output
+            .parser_ir
+            .pointer("/nodes")
+            .and_then(Value::as_array)
+            .unwrap()
+            .iter()
+            .any(|node| node["type"] == "emphasis" && node["style"] == "chitsuki")
     );
 
     validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();

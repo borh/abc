@@ -107,6 +107,18 @@ def load_json(path: pathlib.Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def logical_report_path(path: pathlib.Path) -> str:
+    text = str(path)
+    marker = "/.worktrees/"
+    if marker not in text:
+        return text
+    repo_root, rest = text.split(marker, 1)
+    parts = rest.split("/", 1)
+    if len(parts) == 1:
+        return repo_root
+    return f"{repo_root}/{parts[1]}"
+
+
 def local_name(tag: str) -> str:
     if "}" in tag:
         return tag.rsplit("}", 1)[1]
@@ -306,12 +318,29 @@ def body_text_comparison(
     return base
 
 
+def is_missing_body_gap_paragraph(element: ET.Element) -> bool:
+    children = list(element)
+    return (
+        (element.text or "").strip() == ""
+        and len(children) == 1
+        and local_name(children[0].tag) == "gap"
+        and children[0].attrib.get("reason") == "missing"
+        and (children[0].tail or "").strip() == ""
+    )
+
+
 def tei_counts(path: pathlib.Path) -> dict[str, Any]:
     root = ET.parse(path).getroot()
     body = first_descendant(root, "body")
     back = first_descendant(root, "back")
     document_tag_counts = selected_tag_counts(tag_counts(root))
     body_tag_counts = selected_tag_counts(tag_counts(body))
+    body_paragraphs = descendants(body, "p")
+    missing_body_gap_paragraphs = [
+        paragraph
+        for paragraph in body_paragraphs
+        if is_missing_body_gap_paragraph(paragraph)
+    ]
     body_notes = descendants(body, "note")
     back_notes = descendants(back, "note")
     back_source_notes = [
@@ -324,7 +353,9 @@ def tei_counts(path: pathlib.Path) -> dict[str, Any]:
     )
     return {
         "path": str(path),
-        "body_p_count": len(descendants(body, "p")),
+        "body_p_count": len(body_paragraphs) - len(missing_body_gap_paragraphs),
+        "body_p_count_raw": len(body_paragraphs),
+        "body_missing_gap_p_count": len(missing_body_gap_paragraphs),
         "body_note_count": len(body_notes),
         "back_note_count": len(back_notes),
         "back_source_note_count": len(back_source_notes),
@@ -361,8 +392,6 @@ def materializable_candidates(
     candidates = []
     for candidate in row.get("aat_inputs", []):
         if not candidate.get("conversion", {}).get("success"):
-            continue
-        if not candidate.get("parser_ir", {}).get("paragraphs_represented"):
             continue
         path = pathlib.Path(candidate.get("path", ""))
         if not path.is_file():
@@ -640,12 +669,16 @@ def materialize_row(
         "paragraph_rendering": paragraph_rendering,
         "generated_tei": {
             "body_p_count": generated_body_p,
+            "body_p_count_raw": generated["body_p_count_raw"],
+            "body_missing_gap_p_count": generated["body_missing_gap_p_count"],
             "body_note_count": generated["body_note_count"],
             "back_note_count": generated["back_note_count"],
             "back_source_note_count": generated["back_source_note_count"],
         },
         "tei_eaj": {
             "body_p_count": tei_eaj_body_p,
+            "body_p_count_raw": tei_eaj["body_p_count_raw"],
+            "body_missing_gap_p_count": tei_eaj["body_missing_gap_p_count"],
             "body_note_count": tei_eaj["body_note_count"],
             "back_note_count": tei_eaj["back_note_count"],
             "back_source_note_count": tei_eaj["back_source_note_count"],
@@ -1059,10 +1092,10 @@ def main() -> int:
     summary = {
         "schema_version": "tei-eaj-generated-comparison-v1",
         "inputs": {
-            "workset": str(args.workset),
-            "structural_summary": str(args.structural_summary),
-            "mapping": str(args.mapping),
-            "abc_root": str(args.abc_root),
+            "workset": logical_report_path(args.workset),
+            "structural_summary": logical_report_path(args.structural_summary),
+            "mapping": logical_report_path(args.mapping),
+            "abc_root": logical_report_path(args.abc_root),
             "adapter_preference": list(preference.keys()),
             "candidate_mode": args.candidate_mode,
             "jobs": jobs,

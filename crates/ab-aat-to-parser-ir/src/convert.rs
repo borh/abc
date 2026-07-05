@@ -224,6 +224,9 @@ fn map_block(
                 classification = "direct";
             }
             let node_end = nodes.len();
+            if role == "body" && node_start == node_end {
+                return Ok(current);
+            }
             let (span, span_source) = paragraph_span(
                 block.get("span"),
                 nodes,

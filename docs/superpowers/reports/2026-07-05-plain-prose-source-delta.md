@@ -5,7 +5,7 @@ This report diagnoses plain-prose Level 3 blockers. It is not a Level 3 admissio
 ## Verdict
 
 - parser_evidence_coverage: `FIVE_PARSER_EVIDENCE_COMPLETE`
-- blocking_owners: `adapter, evidence, policy`
+- blocking_owners: `adapter, evidence, policy, parser_ir`
 - mapping_id: `https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe`
 - mapping_version: `0.2.3`
 
@@ -23,9 +23,9 @@ This report diagnoses plain-prose Level 3 blockers. It is not a Level 3 admissio
 |---|---:|
 | adapter_paragraph_bug | 86 |
 | evidence_gap | 5 |
+| parser_ir_projection_bug | 2 |
 | ruby_metadata_not_plaintext | 64 |
 | source_text_policy_required | 66 |
-| tei_eaj_editorial_segmentation | 2 |
 
 ## Rows
 
@@ -40,7 +40,7 @@ This report diagnoses plain-prose Level 3 blockers. It is not a Level 3 admissio
 | 15938 | aozora-epub3 | adapter_paragraph_bug, source_text_policy_required | adapter, policy | `data/complete/tei_lib_lv3/15938_tei.xml` |
 | 15938 | aozora-rs | adapter_paragraph_bug, source_text_policy_required | adapter, policy | `data/complete/tei_lib_lv3/15938_tei.xml` |
 | 15938 | aozora2 | adapter_paragraph_bug, source_text_policy_required | adapter, policy | `data/complete/tei_lib_lv3/15938_tei.xml` |
-| 15938 | aozora | tei_eaj_editorial_segmentation, source_text_policy_required | policy | `data/complete/tei_lib_lv3/15938_tei.xml` |
+| 15938 | aozora | parser_ir_projection_bug, source_text_policy_required | policy, parser_ir | `data/complete/tei_lib_lv3/15938_tei.xml` |
 | 236 | aozora2html | adapter_paragraph_bug, ruby_metadata_not_plaintext | adapter, policy | `data/complete/tei_lib_lv3/236_tei.xml` |
 | 236 | aozora-epub3 | adapter_paragraph_bug, ruby_metadata_not_plaintext | adapter, policy | `data/complete/tei_lib_lv3/236_tei.xml` |
 | 236 | aozora-rs | adapter_paragraph_bug, ruby_metadata_not_plaintext | adapter, policy | `data/complete/tei_lib_lv3/236_tei.xml` |
@@ -60,7 +60,7 @@ This report diagnoses plain-prose Level 3 blockers. It is not a Level 3 admissio
 | 45093 | aozora-epub3 | adapter_paragraph_bug, source_text_policy_required | adapter, policy | `data/complete/tei_lib_lv3/45093_tei.xml` |
 | 45093 | aozora-rs | adapter_paragraph_bug, ruby_metadata_not_plaintext | adapter, policy | `data/complete/tei_lib_lv3/45093_tei.xml` |
 | 45093 | aozora2 | adapter_paragraph_bug, ruby_metadata_not_plaintext | adapter, policy | `data/complete/tei_lib_lv3/45093_tei.xml` |
-| 45093 | aozora | tei_eaj_editorial_segmentation, source_text_policy_required | policy | `data/complete/tei_lib_lv3/45093_tei.xml` |
+| 45093 | aozora | parser_ir_projection_bug, source_text_policy_required | policy, parser_ir | `data/complete/tei_lib_lv3/45093_tei.xml` |
 | 4872 | aozora2html | ruby_metadata_not_plaintext | policy | `data/complete/tei_lib_lv3/4872_tei.xml` |
 | 4872 | aozora-epub3 | ruby_metadata_not_plaintext | policy | `data/complete/tei_lib_lv3/4872_tei.xml` |
 | 4872 | aozora-rs | adapter_paragraph_bug, ruby_metadata_not_plaintext | adapter, policy | `data/complete/tei_lib_lv3/4872_tei.xml` |

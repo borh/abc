@@ -57,13 +57,7 @@ pub struct Analysis {
 }
 ```
 
-If `Analysis` derives `Serialize`/`Deserialize`, add the `rc` feature to serde in `crates/ab-morph-diff/Cargo.toml` (and in any other crate whose derive now fails):
-
-```toml
-serde = { version = "1", features = ["derive", "rc"] }
-```
-
-(match the existing version spec / workspace-dependency style — if serde is a workspace dependency, add the feature in the workspace `Cargo.toml` instead).
+Serde note: the workspace `Cargo.toml` (line 65) already declares `serde = { version = "1.0", features = ["derive", "rc"] }`, so `Arc<str>` serialization works for every crate inheriting via `serde = { workspace = true }`. Only if a member crate pins its own serde features without `rc` (the compiler will say so) add `rc` there.
 
 - [ ] **Step 2: Let the compiler enumerate every construction site**
 
@@ -80,27 +74,42 @@ source_text: "今日".to_owned(),             source_text: Arc::from("今日"),
 
 Comparisons and reads (`&analysis.source_text`, `.len()`, `.chars()`, slicing) compile unchanged via deref; where a `&String` was expected, `analysis.source_text.as_ref()` yields `&str`. Do NOT restructure any call site beyond the minimal conversion.
 
-- [ ] **Step 3: Share one Arc per document in the pipeline**
+- [ ] **Step 3: Share one Arc per document in the pipeline — BOTH texts**
 
-In `crates/ab-morph-run/src/pipeline.rs`, above the `for analyzer in analyzers` loop (the `norm_doc` construction at ~line 674), add:
+Critical context (this is THE step that delivers the memory win; everything else in this task is mechanical): the existing `analysis.source_text = document.text.clone()` at ~line 737 fires **only in the ortho-remap-success arm** of `if let Some(ref map) = offset_map_opt`. Warehouse runs have ortho detection off, so that arm never runs and each analyzer-constructed `Analysis` keeps its own copy of the normalized text. Sharing must therefore cover the normalized text on every analysis, not just the original text on remap.
 
-```rust
-let shared_source_text: Arc<str> = Arc::from(document.text.as_str());
-```
-
-and change ~line 737 from `analysis.source_text = document.text.clone();` to:
+In `crates/ab-morph-run/src/pipeline.rs`, in `run_analyze_aat_serial`, immediately **after** the `norm_doc` construction (`let norm_doc = ab_plaintext::PlainTextDocument { ... }`, ~line 674 pre-change — `normalized_text` has been moved into `norm_doc.text` by then, so build the Arc from the struct field):
 
 ```rust
-analysis.source_text = Arc::clone(&shared_source_text);
+// One allocation per document, shared by every per-analyzer Analysis.
+let shared_normalized: Arc<str> = Arc::from(norm_doc.text.as_str());
+// The original text is only needed when ortho remap can fire.
+let shared_original: Option<Arc<str>> =
+    offset_map_opt.is_some().then(|| Arc::from(document.text.as_str()));
 ```
 
-(`Arc` is already imported in pipeline.rs.) This is THE change that collapses per-analysis copies to one allocation per document — everything else in this task is mechanical.
+Inside the `for analyzer in analyzers` loop, immediately after the successful `analyzer.analyze(&norm_doc)` match arm binds `let mut analysis = ...`, add:
+
+```rust
+// Drop the analyzer's own text copy; share the per-document allocation.
+analysis.source_text = Arc::clone(&shared_normalized);
+```
+
+And in the remap-success arm, change `analysis.source_text = document.text.clone();` to:
+
+```rust
+analysis.source_text = Arc::clone(
+    shared_original.as_ref().expect("offset_map_opt is Some in this arm"),
+);
+```
+
+(`Arc` is already imported in pipeline.rs.) Net effect per document: one `shared_normalized` allocation (plus one `shared_original` when ortho fired) regardless of analyzer count; each analyzer's internal copy is dropped the moment its analysis returns.
 
 - [ ] **Step 4: Workspace green**
 
-Run: `cargo test -p ab-morph-diff && cargo test -p ab-morph-analyzers && cargo test -p ab-morph-run --features test-analyzer && cargo test -p aozora2html -p aozora-epub3 2>/dev/null; cargo clippy --workspace --all-targets --features ab-morph-run/test-analyzer 2>&1 | tail -1`
+Run: `cargo test -p ab-morph-diff && cargo test -p ab-morph-analyzers && cargo test -p ab-morph-run --features test-analyzer && cargo test -p aozora2html-adapter -p aozora-epub3-adapter && cargo clippy --workspace --all-targets --features ab-morph-run/test-analyzer 2>&1 | tail -1`
 
-Expected: all suites pass (ab-morph-run: 127 lib + 28 bin), clippy clean. If clippy flags `.as_str()` redundancy or similar in your conversions, fix as suggested.
+Expected: all suites pass (ab-morph-run baseline: 127 lib + 28 bin; the trailing `Doc-tests ... 0 passed` line is the empty doctest target, not a failed run), clippy clean. If clippy flags `.as_str()` redundancy or similar in your conversions, fix as suggested.
 
 - [ ] **Step 5: Commit**
 
@@ -296,7 +305,7 @@ with:
 - [ ] **Step 5: Run tests**
 
 Run: `cargo test -p ab-morph-run --features test-analyzer && cargo clippy -p ab-morph-run --features test-analyzer --all-targets 2>&1 | tail -1`
-Expected: all pass (127+6 lib + 28 bin), clippy clean.
+Expected: all pass (baseline 127 lib + 28 bin plus the 6 new auto_jobs tests), clippy clean. The trailing Doc-tests line reporting 0 tests is the empty doctest target, not a silent failure.
 
 - [ ] **Step 6: justfile passes 0 through**
 
@@ -313,7 +322,7 @@ and replace with:
 	@jobs="{{jobs}}"; \
 ```
 
-Verify: `just -n morph-warehouse-run-with-analyzers | grep -o '\-\-jobs "[^"]*"'` shows `--jobs "$jobs"` and no `nproc` substitution remains in the recipe (`grep -n nproc justfile` shows no hit inside this recipe).
+Verify: `just -n morph-warehouse-run-with-analyzers | grep -c nproc` prints `0` (scoped to this recipe's expansion — `nproc` legitimately appears in unrelated recipes elsewhere in the justfile).
 
 - [ ] **Step 7: Commit**
 
@@ -572,13 +581,23 @@ git add -A && git commit -m "feat(morph-run): run-owned shard staging with PID+c
 - Consumes: Tasks 1-3 merged into the working branch; real dictionaries (worktree symlink gotcha in Global Constraints).
 - Produces: calibrated `BASE_PER_JOB_BYTES` / `PER_ANALYZER_BYTES` with the fit recorded in the constant doc comments and in this plan file (fill in the table below).
 
-- [ ] **Step 1: Build a ~2,000-source subset**
+- [ ] **Step 1: Build a ~2,000-source subset and check representativeness**
+
+Random sample (not `head` — lexical prefix correlates with catalog order, not size), then verify the size distribution matches the corpus, since large documents dominate per-job memory:
 
 ```bash
+CORPUS=/db/ab-validator/aat-corpus/aozora2html-aat/aozora2html-adapter
 SUBSET=/db/ab-validator/tmp/calib-aat && mkdir -p "$SUBSET"
-ls /db/ab-validator/aat-corpus/aozora2html-aat/aozora2html-adapter | head -2000 \
-  | xargs -I{} ln -s /db/ab-validator/aat-corpus/aozora2html-aat/aozora2html-adapter/{} "$SUBSET"/
+ls "$CORPUS" | shuf --random-source=<(yes 42) -n 2000 \
+  | xargs -I{} ln -s "$CORPUS"/{} "$SUBSET"/
+# Representativeness: mean and p95 file size, subset vs corpus — must agree within ~15%.
+for d in "$SUBSET" "$CORPUS"; do
+  find -L "$d" -name '*.json' -printf '%s\n' | sort -n \
+    | awk -v d="$d" '{a[NR]=$1; s+=$1} END {printf "%s mean=%.0f p95=%d max=%d\n", d, s/NR, a[int(NR*0.95)], a[NR]}'
+done
 ```
+
+If the subset's mean or p95 is >15% below the corpus's, re-draw with a different seed or stratify (append the corpus's 50 largest files to the subset) — under-sampling large documents under-calibrates the budget.
 
 - [ ] **Step 2: Sweep jobs 4 / 16 / 32 with peak-RSS capture**
 

@@ -43,7 +43,13 @@ PLAINTEXT_POLICY = {
     "ruby_expanded_surfaces": "admit_exact_structural_equivalence_only",
     "metadata_policy": "exclude_typed_metadata_from_plaintext",
 }
-LANE_POLICY_REQUIRED = {"drama", "verse", "notes", "front_back_matter"}
+LANE_POLICY_REQUIRED = {
+    "drama",
+    "verse",
+    "lineated_text",
+    "notes",
+    "front_back_matter",
+}
 LANE_OUT_OF_SCOPE = {"lv4_enrichment"}
 REQUIRED_MAPPING_FIELDS = (
     "mapping_id",
@@ -469,6 +475,8 @@ def profile_label(profile: str) -> str:
         return "Level 4 enrichment"
     if profile == "front_back_matter":
         return "Front/back matter"
+    if profile == "lineated_text":
+        return "Lineated text"
     if profile == "source_note_back_routing":
         return "Source note back routing"
     return profile.replace("_", " ").title()

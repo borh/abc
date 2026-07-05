@@ -189,6 +189,8 @@ def tei_structure_profiles(
         profiles.append("drama")
     if any(body_counts.get(tag, 0) for tag in ("l", "lg")):
         profiles.append("verse")
+    elif line_break_dominant(body_counts):
+        profiles.append("lineated_text")
     if any(
         body_counts.get(tag, 0)
         for tag in ("said", "persName", "placeName", "roleName", "rs")
@@ -199,6 +201,12 @@ def tei_structure_profiles(
     if document_counts.get("front", 0) or document_counts.get("back", 0):
         profiles.append("front_back_matter")
     return profiles or ["plain_prose"]
+
+
+def line_break_dominant(body_counts: dict[str, int]) -> bool:
+    lb_count = body_counts.get("lb", 0)
+    paragraph_count = body_counts.get("p", 0)
+    return lb_count >= 2 and lb_count >= max(2, paragraph_count * 2)
 
 
 def text_of(node: ET.Element | None) -> str:

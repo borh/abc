@@ -58,10 +58,11 @@
   },
   "tei_eaj_structure_profile_buckets": {
     "drama": 50,
-    "plain_prose": 135,
-    "front_back_matter": 10,
+    "lineated_text": 120,
+    "plain_prose": 30,
+    "front_back_matter": 5,
     "notes": 35,
-    "lv4_enrichment": 45,
+    "lv4_enrichment": 35,
     "verse": 10
   },
   "paragraph_origin_by_tei_eaj_profile": {
@@ -73,17 +74,22 @@
       "aligned": 1,
       "page_break_projection": 2
     },
+    "lineated_text": {
+      "adapter_over_segmented": 70,
+      "aligned": 46,
+      "adapter_collapsed": 3,
+      "adapter_raw_only": 1
+    },
     "plain_prose": {
-      "adapter_over_segmented": 75,
-      "aligned": 47,
-      "adapter_collapsed": 10,
-      "adapter_raw_only": 2,
+      "adapter_over_segmented": 13,
+      "adapter_collapsed": 9,
+      "adapter_raw_only": 1,
+      "aligned": 6,
       "adapter_under_segmented": 1
     },
     "front_back_matter": {
-      "adapter_over_segmented": 5,
-      "adapter_collapsed": 2,
-      "aligned": 3
+      "adapter_over_segmented": 3,
+      "adapter_collapsed": 2
     },
     "notes": {
       "adapter_over_segmented": 14,
@@ -92,9 +98,9 @@
       "adapter_under_segmented": 4
     },
     "lv4_enrichment": {
-      "adapter_over_segmented": 18,
-      "adapter_collapsed": 15,
-      "aligned": 7,
+      "adapter_over_segmented": 12,
+      "adapter_collapsed": 13,
+      "aligned": 5,
       "source_note_back_routing": 4,
       "adapter_under_segmented": 1
     },
@@ -113,19 +119,22 @@
         "adapter_over_segmented": 3,
         "page_break_projection": 2
       },
+      "lineated_text": {
+        "adapter_over_segmented": 24
+      },
       "plain_prose": {
-        "adapter_over_segmented": 25,
+        "adapter_over_segmented": 4,
         "aligned": 2
       },
       "front_back_matter": {
-        "adapter_over_segmented": 2
+        "adapter_over_segmented": 1
       },
       "notes": {
         "adapter_over_segmented": 6,
         "aligned": 1
       },
       "lv4_enrichment": {
-        "adapter_over_segmented": 5,
+        "adapter_over_segmented": 3,
         "aligned": 2,
         "source_note_back_routing": 2
       },
@@ -140,19 +149,22 @@
         "adapter_over_segmented": 7,
         "aligned": 1
       },
+      "lineated_text": {
+        "adapter_over_segmented": 24
+      },
       "plain_prose": {
-        "adapter_over_segmented": 25,
+        "adapter_over_segmented": 4,
         "aligned": 2
       },
       "front_back_matter": {
-        "adapter_over_segmented": 2
+        "adapter_over_segmented": 1
       },
       "notes": {
         "adapter_over_segmented": 6,
         "aligned": 1
       },
       "lv4_enrichment": {
-        "adapter_over_segmented": 4,
+        "adapter_over_segmented": 2,
         "aligned": 3,
         "source_note_back_routing": 2
       },
@@ -165,22 +177,23 @@
         "adapter_collapsed": 8,
         "adapter_over_segmented": 2
       },
+      "lineated_text": {
+        "aligned": 6,
+        "adapter_over_segmented": 18
+      },
       "plain_prose": {
-        "aligned": 4,
-        "adapter_over_segmented": 22,
+        "adapter_over_segmented": 5,
         "adapter_collapsed": 1
       },
       "front_back_matter": {
-        "adapter_over_segmented": 1,
-        "aligned": 1
+        "adapter_over_segmented": 1
       },
       "notes": {
         "adapter_over_segmented": 2,
         "adapter_collapsed": 5
       },
       "lv4_enrichment": {
-        "adapter_over_segmented": 8,
-        "aligned": 1
+        "adapter_over_segmented": 7
       },
       "verse": {
         "adapter_collapsed": 2
@@ -191,23 +204,25 @@
         "converter_paragraph_mismatch": 7,
         "adapter_collapsed": 3
       },
-      "plain_prose": {
+      "lineated_text": {
         "aligned": 18,
-        "adapter_collapsed": 5,
+        "adapter_collapsed": 2,
+        "adapter_over_segmented": 4
+      },
+      "plain_prose": {
+        "adapter_collapsed": 4,
         "adapter_under_segmented": 1,
-        "adapter_over_segmented": 3
+        "aligned": 1
       },
       "front_back_matter": {
-        "adapter_collapsed": 1,
-        "aligned": 1
+        "adapter_collapsed": 1
       },
       "notes": {
         "adapter_collapsed": 3,
         "adapter_under_segmented": 4
       },
       "lv4_enrichment": {
-        "adapter_collapsed": 7,
-        "adapter_over_segmented": 1,
+        "adapter_collapsed": 6,
         "adapter_under_segmented": 1
       },
       "verse": {
@@ -219,21 +234,24 @@
       "drama": {
         "adapter_collapsed": 10
       },
+      "lineated_text": {
+        "aligned": 22,
+        "adapter_raw_only": 1,
+        "adapter_collapsed": 1
+      },
       "plain_prose": {
-        "aligned": 21,
-        "adapter_raw_only": 2,
-        "adapter_collapsed": 4
+        "adapter_raw_only": 1,
+        "adapter_collapsed": 4,
+        "aligned": 1
       },
       "front_back_matter": {
-        "adapter_collapsed": 1,
-        "aligned": 1
+        "adapter_collapsed": 1
       },
       "notes": {
         "adapter_collapsed": 7
       },
       "lv4_enrichment": {
-        "adapter_collapsed": 8,
-        "aligned": 1
+        "adapter_collapsed": 7
       },
       "verse": {
         "adapter_collapsed": 2
@@ -1251,9 +1269,9 @@
           "note": 1,
           "lb": 75
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -1402,9 +1420,9 @@
           "note": 1,
           "lb": 75
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -1553,9 +1571,9 @@
           "note": 1,
           "lb": 75
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -1704,9 +1722,9 @@
           "note": 1,
           "lb": 75
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -1856,9 +1874,9 @@
           "note": 1,
           "lb": 75
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -2761,9 +2779,9 @@
           "note": 1,
           "lb": 39
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -2912,9 +2930,9 @@
           "note": 1,
           "lb": 39
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -3063,9 +3081,9 @@
           "note": 1,
           "lb": 39
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -3214,9 +3232,9 @@
           "note": 1,
           "lb": 39
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -3360,9 +3378,9 @@
           "note": 1,
           "lb": 39
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -8102,9 +8120,9 @@
           "note": 1,
           "lb": 28
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 6,
         "workset_note_count": 0
@@ -8253,9 +8271,9 @@
           "note": 1,
           "lb": 28
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 6,
         "workset_note_count": 0
@@ -8404,9 +8422,9 @@
           "note": 1,
           "lb": 28
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 6,
         "workset_note_count": 0
@@ -8555,9 +8573,9 @@
           "note": 1,
           "lb": 28
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 6,
         "workset_note_count": 0
@@ -8700,9 +8718,9 @@
           "note": 1,
           "lb": 28
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 6,
         "workset_note_count": 0
@@ -11904,9 +11922,9 @@
           "note": 1,
           "lb": 11
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -12049,9 +12067,9 @@
           "note": 1,
           "lb": 11
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -12190,9 +12208,9 @@
           "note": 1,
           "lb": 11
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -12331,9 +12349,9 @@
           "note": 1,
           "lb": 11
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -12477,9 +12495,9 @@
           "note": 1,
           "lb": 11
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -12631,8 +12649,9 @@
           "note": 1,
           "lb": 36
         },
-        "structure_profile": "front_back_matter",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
+          "lineated_text",
           "front_back_matter"
         ],
         "workset_p_count": 1,
@@ -12785,8 +12804,9 @@
           "note": 1,
           "lb": 36
         },
-        "structure_profile": "front_back_matter",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
+          "lineated_text",
           "front_back_matter"
         ],
         "workset_p_count": 1,
@@ -12938,8 +12958,9 @@
           "note": 1,
           "lb": 36
         },
-        "structure_profile": "front_back_matter",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
+          "lineated_text",
           "front_back_matter"
         ],
         "workset_p_count": 1,
@@ -13091,8 +13112,9 @@
           "note": 1,
           "lb": 36
         },
-        "structure_profile": "front_back_matter",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
+          "lineated_text",
           "front_back_matter"
         ],
         "workset_p_count": 1,
@@ -13239,8 +13261,9 @@
           "note": 1,
           "lb": 36
         },
-        "structure_profile": "front_back_matter",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
+          "lineated_text",
           "front_back_matter"
         ],
         "workset_p_count": 1,
@@ -14213,9 +14236,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -14366,9 +14389,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -14519,9 +14542,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -14672,9 +14695,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -14820,9 +14843,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -14973,9 +14996,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -15126,9 +15149,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -15279,9 +15302,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -15432,9 +15455,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -15580,9 +15603,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -16488,9 +16511,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -16641,9 +16664,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -16794,9 +16817,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -16947,9 +16970,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -17095,9 +17118,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -17242,9 +17265,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -17385,9 +17408,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -17532,9 +17555,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -17675,9 +17698,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -17818,9 +17841,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -17971,9 +17994,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -18124,9 +18147,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -18277,9 +18300,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -18430,9 +18453,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -18578,9 +18601,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -18731,9 +18754,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -18884,9 +18907,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -19037,9 +19060,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -19190,9 +19213,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -19338,9 +19361,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -19491,9 +19514,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -19644,9 +19667,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -19797,9 +19820,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -19950,9 +19973,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -20098,9 +20121,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -20251,9 +20274,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -20404,9 +20427,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -20557,9 +20580,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -20710,9 +20733,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -20858,9 +20881,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -21011,9 +21034,9 @@
           "persName": 1,
           "placeName": 3
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -21164,9 +21187,9 @@
           "persName": 1,
           "placeName": 3
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -21317,9 +21340,9 @@
           "persName": 1,
           "placeName": 3
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -21470,9 +21493,9 @@
           "persName": 1,
           "placeName": 3
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -21618,9 +21641,9 @@
           "persName": 1,
           "placeName": 3
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -21771,9 +21794,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -21924,9 +21947,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -22077,9 +22100,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -22230,9 +22253,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -22378,9 +22401,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -22531,9 +22554,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -22684,9 +22707,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -22837,9 +22860,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -22990,9 +23013,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -23138,9 +23161,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -23291,9 +23314,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -23444,9 +23467,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -23597,9 +23620,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -23750,9 +23773,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -23898,9 +23921,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -24051,9 +24074,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -24204,9 +24227,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -24357,9 +24380,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -24510,9 +24533,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -24658,9 +24681,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -24811,9 +24834,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -24964,9 +24987,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -25117,9 +25140,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -25270,9 +25293,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -25418,9 +25441,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -25571,9 +25594,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -25724,9 +25747,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -25877,9 +25900,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -26030,9 +26053,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -26178,9 +26201,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -27089,9 +27112,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -27243,9 +27266,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -27396,9 +27419,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -27549,9 +27572,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -27697,9 +27720,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -27851,9 +27874,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -28005,9 +28028,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -28158,9 +28181,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -28311,9 +28334,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -28459,9 +28482,9 @@
           "persName": 2,
           "placeName": 2
         },
-        "structure_profile": "plain_prose",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
-          "plain_prose"
+          "lineated_text"
         ],
         "workset_p_count": 1,
         "workset_note_count": 0
@@ -28614,8 +28637,9 @@
           "persName": 2,
           "placeName": 3
         },
-        "structure_profile": "lv4_enrichment",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
+          "lineated_text",
           "lv4_enrichment"
         ],
         "workset_p_count": 1,
@@ -28769,8 +28793,9 @@
           "persName": 2,
           "placeName": 3
         },
-        "structure_profile": "lv4_enrichment",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
+          "lineated_text",
           "lv4_enrichment"
         ],
         "workset_p_count": 1,
@@ -28923,8 +28948,9 @@
           "persName": 2,
           "placeName": 3
         },
-        "structure_profile": "lv4_enrichment",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
+          "lineated_text",
           "lv4_enrichment"
         ],
         "workset_p_count": 1,
@@ -29077,8 +29103,9 @@
           "persName": 2,
           "placeName": 3
         },
-        "structure_profile": "lv4_enrichment",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
+          "lineated_text",
           "lv4_enrichment"
         ],
         "workset_p_count": 1,
@@ -29226,8 +29253,9 @@
           "persName": 2,
           "placeName": 3
         },
-        "structure_profile": "lv4_enrichment",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
+          "lineated_text",
           "lv4_enrichment"
         ],
         "workset_p_count": 1,
@@ -39088,6 +39116,7 @@
         "structure_profile": "drama",
         "structure_profiles": [
           "drama",
+          "lineated_text",
           "front_back_matter"
         ],
         "workset_p_count": 29,
@@ -39252,6 +39281,7 @@
         "structure_profile": "drama",
         "structure_profiles": [
           "drama",
+          "lineated_text",
           "front_back_matter"
         ],
         "workset_p_count": 29,
@@ -39415,6 +39445,7 @@
         "structure_profile": "drama",
         "structure_profiles": [
           "drama",
+          "lineated_text",
           "front_back_matter"
         ],
         "workset_p_count": 29,
@@ -39580,6 +39611,7 @@
         "structure_profile": "drama",
         "structure_profiles": [
           "drama",
+          "lineated_text",
           "front_back_matter"
         ],
         "workset_p_count": 29,
@@ -39738,6 +39770,7 @@
         "structure_profile": "drama",
         "structure_profiles": [
           "drama",
+          "lineated_text",
           "front_back_matter"
         ],
         "workset_p_count": 29,
@@ -39893,8 +39926,9 @@
           "persName": 3,
           "placeName": 4
         },
-        "structure_profile": "lv4_enrichment",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
+          "lineated_text",
           "lv4_enrichment"
         ],
         "workset_p_count": 3,
@@ -40050,8 +40084,9 @@
           "persName": 3,
           "placeName": 4
         },
-        "structure_profile": "lv4_enrichment",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
+          "lineated_text",
           "lv4_enrichment"
         ],
         "workset_p_count": 3,
@@ -40207,8 +40242,9 @@
           "persName": 3,
           "placeName": 4
         },
-        "structure_profile": "lv4_enrichment",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
+          "lineated_text",
           "lv4_enrichment"
         ],
         "workset_p_count": 3,
@@ -40364,8 +40400,9 @@
           "persName": 3,
           "placeName": 4
         },
-        "structure_profile": "lv4_enrichment",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
+          "lineated_text",
           "lv4_enrichment"
         ],
         "workset_p_count": 3,
@@ -40516,8 +40553,9 @@
           "persName": 3,
           "placeName": 4
         },
-        "structure_profile": "lv4_enrichment",
+        "structure_profile": "lineated_text",
         "structure_profiles": [
+          "lineated_text",
           "lv4_enrichment"
         ],
         "workset_p_count": 3,

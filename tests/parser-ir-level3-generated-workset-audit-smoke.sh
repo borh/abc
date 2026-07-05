@@ -37,6 +37,17 @@ cat > "$tei_root/data/complete/tei_lib_lv3/empty_tei.xml" <<'XML'
 </TEI>
 XML
 
+cat > "$tei_root/data/complete/tei_lib_lv3/lb_verse_tei.xml" <<'XML'
+<?xml version="1.0" encoding="UTF-8"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+  <text>
+    <body>
+      <p>一行目<lb/>二行目<lb/>三行目<lb/>四行目</p>
+    </body>
+  </text>
+</TEI>
+XML
+
 cat > "$out_dir/empty-raw.aat.json" <<'JSON'
 {
   "version": 1,
@@ -90,6 +101,16 @@ cat > "$out_dir/workset.json" <<JSON
       "state": "complete",
       "comparison_status": "missing_abc_counterpart",
       "tei_eaj_p_count": 2,
+      "tei_eaj_note_count": 0
+    },
+    {
+      "work_id": "lb-verse",
+      "title": "Line Break Verse Fixture",
+      "tei_eaj_file": "data/complete/tei_lib_lv3/lb_verse_tei.xml",
+      "level": "Level 3",
+      "state": "complete",
+      "comparison_status": "missing_abc_counterpart",
+      "tei_eaj_p_count": 1,
       "tei_eaj_note_count": 0
     }
   ]
@@ -194,6 +215,43 @@ cat > "$out_dir/structural-summary.json" <<JSON
           }
         }
       ]
+    },
+    {
+      "tei": {
+        "work_id": "lb-verse",
+        "title": "Line Break Verse Fixture",
+        "tei_eaj_file": "data/complete/tei_lib_lv3/lb_verse_tei.xml",
+        "level": "Level 3",
+        "tei_eaj_p_count": 1,
+        "tei_eaj_note_count": 0
+      },
+      "classification": {
+        "kind": "parser_ir_level3_representable"
+      },
+      "aat_inputs": [
+        {
+          "label": "aozora-rs:lb-verse",
+          "path": "$repo_root/tests/fixtures/aat-parser-ir/real-aozora-rs-sample.aat.json",
+          "aat": {
+            "adapter": "aozora-rs",
+            "adapter_version": "fixture",
+            "paragraph_blocks": 1,
+            "final_source_attribution_candidate": false
+          },
+          "conversion": {
+            "success": true,
+            "error": null
+          },
+          "parser_ir": {
+            "paragraph_count": 1,
+            "paragraphs_represented": true,
+            "source_attribution_represented": false
+          },
+          "verdict": {
+            "residual_free": true
+          }
+        }
+      ]
     }
   ]
 }
@@ -215,12 +273,12 @@ python3 "$repo_root/reports/parser-ir/tei-eaj-generated-compare.py" \
 
 jq -e '.inputs.candidate_mode == "all"' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.inputs.jobs == 2' "$out_dir/audit/summary.json" >/dev/null
-jq -e '.totals.rows_attempted == 3' "$out_dir/audit/summary.json" >/dev/null
-jq -e '.totals.tei_eaj_rows_attempted == 2' "$out_dir/audit/summary.json" >/dev/null
-jq -e '.totals.materialization_succeeded == 3' "$out_dir/audit/summary.json" >/dev/null
+jq -e '.totals.rows_attempted == 4' "$out_dir/audit/summary.json" >/dev/null
+jq -e '.totals.tei_eaj_rows_attempted == 3' "$out_dir/audit/summary.json" >/dev/null
+jq -e '.totals.materialization_succeeded == 4' "$out_dir/audit/summary.json" >/dev/null
 jq -e '([.rows[].selected_aat.adapter] | unique | length) == 3' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.inputs.materialization_mode == "batch"' "$out_dir/audit/summary.json" >/dev/null
-jq -e '.jobs_total == 3 and .jobs_succeeded == 3 and .jobs_concurrency == 2' "$out_dir/audit/materialization-summary.json" >/dev/null
+jq -e '.jobs_total == 4 and .jobs_succeeded == 4 and .jobs_concurrency == 2' "$out_dir/audit/materialization-summary.json" >/dev/null
 test -s "$out_dir/audit/materialization-batch.json"
 jq -e '[.rows[] | select(.selected_aat.adapter == "aozora" and .aat.raw_nodes_total == 1 and .aat.raw_only_parser_residue_blocks == 1 and .parser_ir.nodes == 0 and .parser_ir.paragraph_count == 0 and .generated_tei.body_missing_gap_p_count == 1 and .generated_tei.body_p_count == 0 and .materialization.status == "passed" and .classification.paragraph_origin_bucket == "adapter_raw_only")] | length == 1' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.rows[0].generated_tei.body_p_count >= 1' "$out_dir/audit/summary.json" >/dev/null
@@ -240,6 +298,8 @@ jq -e '.rows[0].deltas.generated_vs_parser_ir_body_p_count != null' "$out_dir/au
 jq -e '.rows[0].deltas.aat_paragraph_blocks_vs_tei_eaj_body_p_count != null' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.paragraph_origin_buckets | type == "object"' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.tei_eaj_structure_profile_buckets.plain_prose == 3' "$out_dir/audit/summary.json" >/dev/null
+jq -e '.tei_eaj_structure_profile_buckets.lineated_text == 1' "$out_dir/audit/summary.json" >/dev/null
+jq -e '[.rows[] | select(.work_id == "lb-verse" and .tei_eaj.structure_profile == "lineated_text" and (.tei_eaj.structure_profiles == ["lineated_text"]))] | length == 1' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.paragraph_origin_by_tei_eaj_profile.plain_prose | type == "object"' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.adapter_paragraph_origin_buckets.aozora2html | type == "object"' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.adapter_paragraph_origin_buckets["aozora-rs"] | type == "object"' "$out_dir/audit/summary.json" >/dev/null

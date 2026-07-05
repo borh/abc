@@ -84,6 +84,22 @@
         "type": "github"
       }
     },
+    "reference-aozora-notation-spec-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1782996881,
+        "narHash": "sha256-/Zs3OqKkyw+cUQDldW+tMBs26F6GZZ0yfPAszyvXz50=",
+        "owner": "P4suta",
+        "repo": "aozora-notation-spec",
+        "rev": "b60665fd50b596c967254f99b61f418495656fef",
+        "type": "github"
+      },
+      "original": {
+        "owner": "P4suta",
+        "repo": "aozora-notation-spec",
+        "type": "github"
+      }
+    },
     "reference-aozora-parser-js-src": {
       "flake": false,
       "locked": {
@@ -113,6 +129,22 @@
       "original": {
         "owner": "kinoko0518",
         "repo": "aozora-rs",
+        "type": "github"
+      }
+    },
+    "reference-aozora-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1783113030,
+        "narHash": "sha256-361j+iuMv9Ep5P2XMQ90qTh5M5S8jqPImy2qGn8GXtE=",
+        "owner": "P4suta",
+        "repo": "aozora",
+        "rev": "5df2cfa55a96da3ac74943ab56611b0134ec8076",
+        "type": "github"
+      },
+      "original": {
+        "owner": "P4suta",
+        "repo": "aozora",
         "type": "github"
       }
     },
@@ -155,8 +187,10 @@
         "mecab-dic-converter-src": "mecab-dic-converter-src",
         "nixpkgs": "nixpkgs",
         "reference-aozora-epub3-src": "reference-aozora-epub3-src",
+        "reference-aozora-notation-spec-src": "reference-aozora-notation-spec-src",
         "reference-aozora-parser-js-src": "reference-aozora-parser-js-src",
         "reference-aozora-rs-src": "reference-aozora-rs-src",
+        "reference-aozora-src": "reference-aozora-src",
         "reference-aozora2-src": "reference-aozora2-src",
         "reference-aozorabunko-extractor-src": "reference-aozorabunko-extractor-src",
         "rust-overlay": "rust-overlay"

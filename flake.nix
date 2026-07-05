@@ -21,6 +21,16 @@
       flake = false;
     };
 
+    reference-aozora-src = {
+      url = "github:P4suta/aozora";
+      flake = false;
+    };
+
+    reference-aozora-notation-spec-src = {
+      url = "github:P4suta/aozora-notation-spec";
+      flake = false;
+    };
+
     reference-aozora-parser-js-src = {
       url = "github:cognitom/aozora-parser.js";
       flake = false;
@@ -53,8 +63,10 @@
       self,
       nixpkgs,
       reference-aozora-epub3-src,
+      reference-aozora-notation-spec-src,
       reference-aozora-parser-js-src,
       reference-aozora-rs-src,
+      reference-aozora-src,
       reference-aozora2-src,
       reference-aozorabunko-extractor-src,
       aozorabunko-src,
@@ -159,6 +171,37 @@
           ];
           doCheck = false;
         };
+
+        referenceAozora = buildRustReference {
+          name = "reference-aozora";
+          src = reference-aozora-src;
+          lockFile = reference-aozora-src + "/Cargo.lock";
+          cargoBuildFlags = [
+            "--package"
+            "aozora-cli"
+          ];
+          cargoTestFlags = [
+            "--package"
+            "aozora"
+            "--package"
+            "aozora-cli"
+          ];
+          doCheck = false;
+        };
+
+        referenceAozoraNotationSpec =
+          pkgs.runCommand "reference-aozora-notation-spec"
+            {
+              src = cleanProjectSource reference-aozora-notation-spec-src;
+            }
+            ''
+              mkdir -p "$out"
+              cp -R "$src"/. "$out"/
+              test -f "$out/conformance/schema/vector.schema.json"
+              test -d "$out/conformance/vectors"
+              test -f "$out/conformance/RUNNER.md"
+              test -f "$out/src/grammar/aozora.abnf"
+            '';
 
         referenceAozoraParserJs = pkgs.stdenvNoCC.mkDerivation {
           pname = "reference-aozora-parser-js";
@@ -497,6 +540,21 @@
           test -f ${reference-aozorabunko-extractor-src}/Gemfile.lock
           touch "$out"
         '';
+
+        referenceAozoraMetadataCheck =
+          pkgs.runCommand "reference-aozora-metadata-check"
+            {
+              nativeBuildInputs = [
+                pkgs.bash
+                pkgs.ripgrep
+              ];
+            }
+            ''
+              export AB_REFERENCE_AOZORA="${referenceAozora}"
+              export AB_REFERENCE_AOZORA_NOTATION_SPEC="${referenceAozoraNotationSpec}"
+              bash "${source}/tests/reference-aozora-metadata-smoke.sh"
+              touch "$out"
+            '';
 
         referenceParserShell = pkgs.mkShell {
           packages = devTools ++ [
@@ -959,6 +1017,8 @@
           ab-aat-to-parser-ir = abAatToParserIr;
           reference-aozora2 = referenceAozora2;
           reference-aozora-rs = referenceAozoraRs;
+          reference-aozora = referenceAozora;
+          reference-aozora-notation-spec = referenceAozoraNotationSpec;
           reference-aozora-parser-js = referenceAozoraParserJs;
           reference-aozorabunko-extractor = referenceAozorabunkoExtractor;
           reference-aozora-epub3 = referenceAozoraEpub3;
@@ -998,6 +1058,9 @@
           ab-validator = workspaceCheck;
           reference-aozora2 = referenceAozora2;
           reference-aozora-rs = referenceAozoraRs;
+          reference-aozora = referenceAozora;
+          reference-aozora-notation-spec = referenceAozoraNotationSpec;
+          reference-aozora-metadata = referenceAozoraMetadataCheck;
           reference-parser-metadata = nonRustReferenceMetadata;
           aat-oracle-data-schema-smoke = aatOracleDataSchemaSmokeCheck;
           aozora2html-rust-parity = aozora2htmlRustParityCheck;

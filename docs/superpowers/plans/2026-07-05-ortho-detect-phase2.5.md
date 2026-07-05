@@ -1,8 +1,8 @@
-# Ortho-Detect Phase 2.5 — Human Gold Set + Recall Fix Implementation Plan
+# Ortho-Detect Phase 2.5 — LLM-Labeled Evaluation Set + Recall Fix Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Produce a real 300-sentence human-labeled gold set that is representative of the whole Aozora fiction corpus, retrain the ML detector on it, prove HeuristicV1 recall ≥ 0.85 against it, and (conditional on the result) either ship a tuned `HeuristicConfig` or promote `--ortho-detect ml` from EXPERIMENTAL to default + delete the dead Vibrato coupling per the Phase 2 ADR's deferred-deletion gate.
+**Goal:** Produce a 300-sentence **LLM-labeled evaluation set** (not ground truth — single-annotator LLM, see Task 2 caveats) that is representative of the whole Aozora fiction corpus, retrain the ML detector on it, prove HeuristicV1 recall ≥ 0.85 against it, and (conditional on the result) either ship a tuned `HeuristicConfig` or promote `--ortho-detect ml` from EXPERIMENTAL to a stable (non-default) mode. **Code deletion (Task 8) is DEFERRED to a future phase with real human annotation** — LLM-labels cannot honestly gate irreversible deletions per the Phase 2 ADR's trust-boundary framing.
 
 **Architecture:** LLM-assisted labeling (the assistant applies the spec's intent per-sentence) over a corpus-stratified sample that fixes the Tanizaki skew of the Phase 2 bootstrap set. The sample draws from all 9 author-prefixes with per-author caps so no single author dominates. Two detectors are measured against the gold set: `HeuristicV1` (to confirm/deny the recall floor) and `MlLogisticRegression` (to confirm/deny it as the replacement). The result drives a single branch decision: tune the heuristic OR promote the ML detector + delete `OrthoTokenizer`/`ortho_compat.rs`/dead OOV config.
 
@@ -21,11 +21,12 @@
 
 ## File Structure
 
-- `data/ortho-gold/sentences-human-300.jsonl` — the new gold set (300 records, `{work_id, sentence, byte_offset, char_offset, label, katakana_ratio, hiragana_count, total_chars, dict_version, bootstrap_label, labeler: "llm"}`).
-- `data/ortho-gold/models/model-v3-gold.bin` — ML model retrained on the 300 human labels (replaces `model-v1.bin` as the canonical ML model if the ML branch is chosen).
-- `scripts/ortho-gold/sample_300.py` — stratified sampler (corpus-representative, fixes Tanizaki skew).
-- `scripts/ortho-gold/label_review.py` — presents each sample sentence + bootstrap label + features for the LLM labeler; emits the labeled JSONL.
-- `reports/ortho-detect/2026-07-05-phase2.5-human-gold-300.md` — the measurement + branch-decision report.
+- `data/ortho-gold/sentences-llm-300.jsonl` — the new gold set (300 records, `{work_id, sentence, byte_offset, char_offset, label, katakana_ratio, hiragana_count, total_chars, dict_version, bootstrap_label, labeler: "llm"}`).
+- `data/ortho-gold/models/model-gold-300.bin` — ML model retrained on the 300 human labels (replaces `model-v1.bin` as the canonical ML model if the ML branch is chosen).
+- `scripts/ortho-gold/sample_300.py` — corpus-representative sampler (proportional to candidate-pool author shares; per-author minimum of 4).
+- `scripts/ortho-gold/sweep_threshold.rs` (Task 5) — sweeps `katakana_ratio_threshold` to find the F1-maximizing value subject to recall ≥ 0.85.
+- `crates/ab-ortho-detect/examples/detect_ml.rs` (Task 3) — recall harness for the ML detector (parallel to `detect_sentences.rs` which exercises HeuristicV1).
+- `reports/ortho-detect/2026-07-05-phase2.5-llm-eval-300.md` — the measurement + branch-decision report.
 - (Conditional, Task 7) `crates/ab-ortho-detect/src/heuristic.rs` — `HeuristicConfig::default()` katakana_ratio threshold tune.
 - (Conditional, Task 8) deletions in `crates/ab-ortho-detect/src/lib.rs`, `crates/ab-morph-analyzers/src/ortho_compat.rs`, `crates/ab-ortho-detect/src/heuristic.rs` (dead OOV fields), `crates/ab-morph-run/src/main.rs` (EXPERIMENTAL marker removal).
 
@@ -64,7 +65,7 @@ Expected: all paths exist; both crates build clean.
 export AB_VIBRATO_DICT=/home/bor/Projects/ab-validator/dictionary/compiled/unidic-cwj-202512.dic.zst
 cargo run -p ab-ortho-detect --example detect_sentences < data/ortho-gold/sentences-human-sample.jsonl 2>/dev/null | wc -l
 ```
-Expected: 50 (the Phase 2 human probe set size). If this fails, Phase 2 is not on `main` — do not proceed.
+Expected: 50 (the Phase 2 human probe set size). If this prints 0 or the binary fails to start with `AB_VIBRATO_DICT` unset, that is an *environment* failure (set the env var), NOT evidence Phase 2 is absent from `main`. To verify Phase 2 is present, check the paths in Step 2 exist — that is the real stop condition.
 
 - [ ] **Step 4: Commit (empty, marks task start)**
 
@@ -79,45 +80,51 @@ git commit --allow-empty -m "chore(ortho-detect-phase2.5): worktree + Phase 2 ba
 **Files:**
 - Create: `scripts/ortho-gold/sample_300.py`
 
-**Why this task exists:** the Phase 2 bootstrap set `data/ortho-gold/sentences.jsonl` is 58% Tanizaki (266/457). It was stratified *per work* but the candidate pool itself is 70% Tanizaki (747/1068), so the stratification inherited the skew. For a human gold set that generalizes across the corpus, we need per-author capping that guarantees all 9 author-prefixes are represented proportionally to their presence in the corpus, NOT proportionally to their candidate counts.
+**Why this task exists:** Phase 2's bootstrap set `data/ortho-gold/sentences.jsonl` (457 records) is 58% Tanizaki, inherited from a candidate pool that's 70% Tanizaki. The original (pre-review) instinct was to cap Tanizaki to force diversity. **Data check rejected that instinct:** the candidate pool's per-author breakdown shows author IS a strong proxy for orthographic style — Tanizaki_J is 87% accept (649/747) and carries 90% of all `accept` candidates (649/721); Yumeno_K is 12% accept; Sakaguchi_A is 9% accept. Capping Tanizaki at 40% would deliberately starve the accept class, producing a gold set where most accept examples come from authors who write katakana largely in interjections/onomatopoeia rather than prose — exactly the wrong distribution for a detector whose real recall depends on catching prose-katakana.
+
+So the sampler is **corpus-representative** (matches the candidate pool's actual author and accept/reject distribution), NOT author-balanced. The only deliberate deviation is a per-author minimum (≥4 records where available) so sparse authors with distinctive styles (Natsume_S, Oguri_M) are not lost entirely — but their natural corpus weight is otherwise preserved.
+
+Within each author, sampling is **shuffle-with-fixed-seed + take first n** (NOT strided/round-robin). The latter is over-engineered and buggy for small allocations (when `n < len(works_for_author)`, the stride exceeds the work size and the loop picks zero records — confirmed by simulation).
 
 **Interfaces:**
 - Consumes: `data/ortho-gold/candidates.jsonl` (1068 records with `work_id`, `sentence`, `katakana_ratio`, `hiragana_count`, `total_chars`, `bootstrap_label=label` from Phase 2's bootstrap).
-- Produces: `data/ortho-gold/sample-300-unlabeled.jsonl` — 300 records, one work per author-prefix capped so Tanizaki ≤ 40% (120), every other author-prefix gets ≥ its proportional share of the remaining 180, min 8 per author-prefix to guarantee coverage. Each record preserves all original fields + gains `bootstrap_label` (copied from `label`).
+- Produces: `data/ortho-gold/sample-300-unlabeled.jsonl` — 300 records, sampling each author-prefix **in proportion to its candidate-pool share** (corpus-representative, no capping), with a per-author minimum of 4 where the pool allows (for sparse-author style coverage). Accept/reject ratio left to reflect the natural pool distribution (≈ 2:1 accept:reject = 721:347). Each record preserves all original fields + gains `bootstrap_label` (copied from `label`).
 
 - [ ] **Step 1: Write the sampler**
 
 Create `scripts/ortho-gold/sample_300.py`:
 ```python
 #!/usr/bin/env python3
-"""Corpus-representative stratified sampler for the human gold set.
+"""Corpus-representative sampler for the LLM-labeled evaluation set.
 
-Fixes the Phase 2 bootstrap set's Tanizaki skew (58% of 457). Strategy:
-- Cap Tanizaki_J at 40% (120 of 300) — he genuinely has the most
-  kanji-katakana-majiri prose, but capping prevents overfitting generalization.
-- Distribute the remaining 180 across the other 8 author-prefixes
-  proportionally to their candidate counts, with a minimum of 8 each
-  to guarantee coverage of rare authors (Natsume_S had only 5 candidates —
-  take all 5, the deficit rolls over to others).
-- Within each author-prefix, sample evenly across that author's works
-  (strided) and within each work, sample evenly across the candidate list
-  (strided) so we don't cluster on one passage.
-- Balance accept/reject roughly 50/50 within each author-prefix where the
-  candidate pool allows (some authors have only accept or only reject).
+Strategy (revised after data check rejected author-capping):
+- Sample each author-prefix IN PROPORTION to its candidate-pool share.
+  The pool is 70% Tanizaki, and Tanizaki carries 90% of all 'accept'
+  candidates (649/721). Capping him would starve the accept class.
+- Per-author minimum of 4 where the pool allows, for sparse-author
+  style coverage (Natsume_S has 5, Oguri_M has 4 — take all available
+  if below the min). Otherwise the natural corpus weight is preserved.
+- Accept/reject ratio left to reflect the natural pool distribution
+  (721:347 ≈ 2:1 accept:reject). Do NOT force 50/50 — the workload is
+  genuinely accept-heavy.
+- Within each author, SHUFFLE with a fixed seed and take the first n.
+  NOT strided/round-robin — that approach is over-engineered and buggy
+  for small allocations (when n < works-for-author, the stride exceeds
+  work size and the loop picks zero — confirmed by simulation).
 
 Outputs JSONL with all original fields + bootstrap_label (copy of label).
 """
 from __future__ import annotations
 import json
 import math
-from collections import defaultdict
+import random
+from collections import Counter, defaultdict
 from pathlib import Path
 
 CANDIDATES = Path("data/ortho-gold/candidates.jsonl")
 OUT = Path("data/ortho-gold/sample-300-unlabeled.jsonl")
 TARGET_N = 300
-TANIZAKI_CAP = 120  # 40%
-MIN_PER_AUTHOR = 8
+MIN_PER_AUTHOR = 4  # sparse-author coverage floor
 SEED = 20260705  # deterministic
 
 def author_prefix(work_id: str) -> str:
@@ -129,91 +136,60 @@ def main() -> None:
     by_author: dict[str, list] = defaultdict(list)
     for r in recs:
         by_author[author_prefix(r["work_id"])].append(r)
-    # Sort authors by candidate count desc; Tanizaki_J will be first.
-    authors_sorted = sorted(by_author, key=lambda a: -len(by_author[a]))
-    # Allocate.
+    authors = list(by_author.keys())
+    # Step 1: per-author minimum (for sparse coverage).
     alloc: dict[str, int] = {}
-    for a in authors_sorted:
-        if a == "Tanizaki_J":
-            alloc[a] = min(TANIZAKI_CAP, len(by_author[a]))
-        else:
-            alloc[a] = min(max(MIN_PER_AUTHOR, len(by_author[a])), len(by_author[a]))
-    # The non-Tanizaki authors get MIN or all-if-fewer; remaining slots
-    # distributed proportionally among those with surplus candidates.
+    for a in authors:
+        alloc[a] = min(MIN_PER_AUTHOR, len(by_author[a]))
     remaining = TARGET_N - sum(alloc.values())
-    # Collect authors that have surplus (allocated < available) for top-up.
-    surplus = [a for a in authors_sorted if len(by_author[a]) > alloc[a] and a != "Tanizaki_J"]
-    total_surplus_pool = sum(len(by_author[a]) - alloc[a] for a in surplus)
-    for a in surplus:
-        if remaining <= 0 or total_surplus_pool <= 0:
-            break
-        extra = min(remaining, math.floor(remaining * (len(by_author[a]) - alloc[a]) / total_surplus_pool))
-        alloc[a] += extra
-        remaining -= extra
-    # Floor any leftover to the largest-pool author(s).
-    surplus = sorted(surplus, key=lambda a: -(len(by_author[a]) - alloc[a]))
-    si = 0
-    while remaining > 0 and surplus:
-        a = surplus[si % len(surplus)]
-        if alloc[a] < len(by_author[a]):
-            alloc[a] += 1
-            remaining -= 1
-        si += 1
-        if si > 10000:
-            break
-    # Sample within each author: by work (strided), then strided within work.
-    import bisect
+    # Step 2: distribute remaining proportionally to the candidate-pool share.
+    if remaining > 0:
+        min_taken = sum(alloc.values())
+        surplus_pool = {a: len(by_author[a]) - alloc[a] for a in authors}
+        total_surplus = sum(surplus_pool.values())
+        # Proportional floor.
+        for a in authors:
+            if surplus_pool[a] <= 0 or total_surplus <= 0:
+                continue
+            extra = math.floor(remaining * surplus_pool[a] / total_surplus)
+            extra = min(extra, surplus_pool[a])
+            alloc[a] += extra
+        # Step 3: leftover (floor rounding) → distribute one-at-a-time to the
+        # authors with the most remaining surplus, deterministic.
+        left = TARGET_N - sum(alloc.values())
+        while left > 0:
+            candidates_sorted = sorted(authors, key=lambda a: -(len(by_author[a]) - alloc[a]))
+            progressed = False
+            for a in candidates_sorted:
+                if left <= 0:
+                    break
+                if alloc[a] < len(by_author[a]):
+                    alloc[a] += 1
+                    left -= 1
+                    progressed = True
+            if not progressed:
+                break  # pool exhausted before reaching TARGET_N
+    # Step 4: within each author, shuffle + take first n.
+    rnd = random.Random(SEED)
     out: list = []
     for a, n in alloc.items():
-        pool = by_author[a]
-        # Group by work_id.
-        by_work: dict[str, list] = defaultdict(list)
-        order = []
-        for r in pool:
-            if r["work_id"] not in by_work:
-                order.append(r["work_id"])
-            by_work[r["work_id"]].append(r)
-        # Round-robin strided pick across works to reach n.
-        idx = {w: 0 for w in order}
-        # Pre-compute per-work stride so we don't cluster on one work's head.
-        for w in order:
-            step = max(1, len(by_work[w]) // max(1, n // len(order) + 1))
-            idx[w] = -step  # so first picked is index 0
-        picked = 0
-        round_n = 0
-        while picked < n:
-            progressed = False
-            for w in order:
-                if picked >= n:
-                    break
-                step = max(1, len(by_work[w]) // max(1, n // len(order) + 1))
-                i = idx[w] + step
-                if i < len(by_work[w]):
-                    idx[w] = i
-                    rec = dict(by_work[w][i])
-                    rec["bootstrap_label"] = rec["label"]
-                    out.append(rec)
-                    picked += 1
-                    progressed = True
-            round_n += 1
-            if not progressed or round_n > 1000:
-                break
-    # Shuffle deterministically for labeler presentation (stable seed).
-    import random
-    rnd = random.Random(SEED)
+        pool = list(by_author[a])
+        rnd.shuffle(pool)
+        for r in pool[:n]:
+            rec = dict(r)
+            rec["bootstrap_label"] = rec["label"]
+            out.append(rec)
+    # Deterministic global order for presentation (re-shuffle the merged set).
     rnd.shuffle(out)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     with OUT.open("w") as f:
         for r in out:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
-    # Report distribution.
-    from collections import Counter
-    by_a = Counter(author_prefix(r["work_id"]) for r in out)
-    by_l = Counter(r["label"] for r in out)
     print(f"wrote {len(out)} records to {OUT}")
-    print("by author-prefix:", dict(by_a))
-    print("by bootstrap label:", dict(by_l))
-    assert len(out) == TARGET_N, f"expected {TARGET_N}, got {len(out)}"
+    print(f"by author (share of 300): {dict(Counter(author_prefix(r['work_id']) for r in out))}")
+    print(f"by bootstrap label: {dict(Counter(r['label'] for r in out))}")
+    print(f"Tanizaki share: {sum(1 for r in out if r['work_id'].startswith('Tanizaki_J'))/len(out):.2f}")
+    assert len(out) == TARGET_N, f"expected {TARGET_N}, got {len(out)} — pool may be too small"
 
 if __name__ == "__main__":
     main()
@@ -224,14 +200,15 @@ if __name__ == "__main__":
 ```bash
 python3 scripts/ortho-gold/sample_300.py
 ```
-Expected output (exact counts may vary by ±1 due to rounding):
+Expected output:
 - `wrote 300 records`
-- `by author-prefix:` shows Tanizaki_J=120 (40%), every other author-prefix ≥ 8, Natsume_S ≤ 5 (only 5 candidates).
-- `by bootstrap label:` roughly balanced (~150/150).
+- `by author (share of 300):` shows Tanizaki_J ≈ 210 (70%, matching pool share — NOT capped), every other author-prefix with ≥ 4 records where the pool allowed.
+- `by bootstrap label:` ≈ 200 accept / 100 reject (reflects the natural 2:1 pool ratio — NOT forced 50/50).
+- `Tanizaki share: 0.69-0.70`
 
-If `assert len(out) == 300` fails, the allocation top-up loop has a bug. Inspect `alloc` and fix the top-up math; the most likely cause is `remaining` not reaching zero when `surplus` is exhausted (re-run with a `print(alloc, remaining)` debug line). The fix is to fold leftover into Tanizaki (who has the largest pool) if other authors are full.
+If `assert len(out) == 300` fails, the candidate pool (1068) is the upper bound — it isn't. The most likely failure is the leftover-distribution loop terminating early; debug with `print(alloc, left)` and confirm `sum(alloc)` reaches TARGET_N before the `progressed=False` break.
 
-- [ ] **Step 3: Spot-check coverage**
+- [ ] **Step 3: Spot-check coverage + verify Tanizaki accept class is preserved**
 
 ```bash
 python3 -c "
@@ -241,10 +218,13 @@ recs=[json.loads(l) for l in open('data/ortho-gold/sample-300-unlabeled.jsonl')]
 print('total:', len(recs))
 print('distinct works:', len(set(r['work_id'] for r in recs)))
 print('distinct authors:', len(set('_'.join(r['work_id'].split('_')[:2]) for r in recs)))
-print('Tanizaki share:', sum(1 for r in recs if r['work_id'].startswith('Tanizaki_J'))/len(recs))
+tan=[r for r in recs if r['work_id'].startswith('Tanizaki_J')]
+print('Tanizaki share:', len(tan)/len(recs))
+print('Tanizaki accept share:', sum(1 for r in tan if r['label']=='accept')/len(tan))
+print('overall accept share:', sum(1 for r in recs if r['label']=='accept')/len(recs))
 "
 ```
-Expected: 300 records, ≥ 9 distinct author-prefixes, ≥ 15 distinct works, Tanizaki share ≤ 0.41.
+Expected: 300 records, ≥ 9 distinct author-prefixes, ≥ 15 distinct works, Tanizaki share ≈ 0.69-0.70 (NOT capped), Tanizaki-accept-share ≈ 0.87 (the dominant accept pattern is preserved), overall accept share ≈ 0.65-0.70.
 
 - [ ] **Step 4: Commit**
 
@@ -252,11 +232,13 @@ Expected: 300 records, ≥ 9 distinct author-prefixes, ≥ 15 distinct works, Ta
 git add scripts/ortho-gold/sample_300.py data/ortho-gold/sample-300-unlabeled.jsonl
 git commit -m "feat(ortho-gold): corpus-representative 300-sentence sampler
 
-Fixes the Phase 2 bootstrap set's Tanizaki skew (58% of 457) via
-per-author capping: Tanizaki_J <=40% (120), every other author-prefix
->=8 with proportional top-up. Strided within-work + round-robin across
-works to avoid clustering on one passage. Outputs sample-300-unlabeled.jsonl
-with bootstrap_label preserved for later disagreement analysis."
+Samples each author-prefix IN PROPORTION to its candidate-pool share
+(NOT author-capped — the data check showed Tanizaki carries 90% of the
+accept class and capping would starve it). Per-author minimum of 4 for
+sparse-author coverage. Accept/reject ratio reflects the natural pool
+(2:1, NOT forced 50/50). Shuffle + take-first-n within author (NOT
+strided/round-robin — the latter is buggy for small allocations).
+Outputs sample-300-unlabeled.jsonl with bootstrap_label preserved."
 ```
 
 ---
@@ -264,8 +246,7 @@ with bootstrap_label preserved for later disagreement analysis."
 ### Task 2: LLM-assisted labeling of the 300 sentences
 
 **Files:**
-- Create: `scripts/ortho-gold/label_review.py`
-- Create: `data/ortho-gold/sentences-human-300.jsonl`
+- Create: `data/ortho-gold/sentences-llm-300.jsonl` (the labeled evaluation set — labeling is orchestrator work in Step 1, not a script)
 
 **Why this task exists:** the spec's Pre-Phase-1 Verification step 2 requires recall measured against HUMAN labels, and Phase 2's 50-sentence probe showed the bootstrap labels are a port-fidelity surrogate (not real recall). The user confirmed this task can be done by an LLM applying the spec's intent. The labeler is NOT the implementer — the implementer builds the harness; the orchestrator (you, the dispatching agent) does the labeling by reading each sentence.
 
@@ -277,125 +258,29 @@ with bootstrap_label preserved for later disagreement analysis."
 
 **Interfaces:**
 - Consumes: `data/ortho-gold/sample-300-unlabeled.jsonl` (Task 1).
-- Produces: `data/ortho-gold/sentences-human-300.jsonl` — same fields + `label` overwritten with the LLM label, plus `labeler: "llm"`, `bootstrap_label` preserved, plus `label_notes: Option<String>` for edge-case reasoning.
+- Produces: `data/ortho-gold/sentences-llm-300.jsonl` — same fields + `label` overwritten with the LLM label, plus `labeler: "llm"`, `bootstrap_label` preserved, plus `label_notes: Option<String>` for edge-case reasoning.
 
-- [ ] **Step 1: Write the label-review harness**
+- [ ] **Step 1: Label all 300 sentences (orchestrator work, NOT a subagent)**
 
-Create `scripts/ortho-gold/label_review.py` — this is NOT an auto-labeler; it's a presentation + recording harness that the orchestrator runs interactively (or feeds batch input to). It reads the unlabeled sample, prints each sentence with its features and bootstrap label, accepts a verdict from stdin (`a`=accept, `r`=reject, `u`=unsure→default to bootstrap, `q`=quit), and on quit/emission writes the labeled JSONL.
+This is the load-bearing step. The orchestrator (you) reads each sentence and applies the rubric. **Realistic time estimate: 50–75 minutes** (~12–15 s per sentence × 300 — reading, deciding, recording). Schedule this as a focused block, not interleaved with other work; label fatigue produces noisier labels.
 
-```python
-#!/usr/bin/env python3
-"""LLM-assisted labeling harness for the 300-sentence gold set.
+The labeling is done as a batch — no interactive `label_review.py` harness (an earlier draft of this plan included one, but it was dead code since the batch workflow bypassed it). Write the labels directly to `data/ortho-gold/sentences-llm-300.jsonl` as a JSONL stream.
 
-NOT an auto-labeler. Presents each sentence + features + bootstrap label;
-the human (or LLM orchestrator) decides accept/reject per the rubric in
-the docstring. Records decisions to sentences-human-300.jsonl.
-
-Labeling rubric (the spec's intent):
-  ACCEPT = pre-war kanji-katakana-majiri prose: katakana serves the
-    grammatical role of hiragana (particles, okurigana, copulas, aux
-    verbs), the sentence is running narrative/dialogue with grammatical
-    structure, and normalizing would improve analysis. Kanji presence
-    does NOT disqualify.
-  REJECT = exclamations/interjections, onomatopoeia, single-word
-    fragments, chants/loan-vocatives without grammatical structure, or
-    sentences where katakana is lexical (proper nouns/foreign) not
-    grammatical.
-
-Usage:
-  python3 label_review.py --in data/ortho-gold/sample-300-unlabeled.jsonl \\
-                          --out data/ortho-gold/sentences-human-300.jsonl
-  # Interactive: type a/r/u per sentence.
-  # Batch: pipe a file of single-char verdicts (one per line) to stdin.
-  # Resume: re-runs skip already-labeled records in --out.
-"""
-from __future__ import annotations
-import argparse
-import json
-import sys
-from pathlib import Path
-
-def load_labeled(out_path: Path) -> dict[int, dict]:
-    """Index existing labeled records by (work_id, char_offset) for resume."""
-    idx = {}
-    if out_path.exists():
-        for line in out_path.read_text().splitlines():
-            if not line.strip():
-                continue
-            r = json.loads(line)
-            idx[(r["work_id"], r["char_offset"])] = r
-    return idx
-
-def main() -> None:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--in", dest="inp", required=True)
-    ap.add_argument("--out", required=True)
-    args = ap.parse_args()
-    inp = Path(args.inp)
-    out = Path(args.out)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    labeled = load_labeled(out)
-    recs = [json.loads(l) for l in inp.read_text().splitlines() if l.strip()]
-    # Append mode so we can resume.
-    fa = open(out, "a")
-    pending = [r for r in recs if (r["work_id"], r["char_offset"]) not in labeled]
-    print(f"{len(recs)} total, {len(labeled)} already labeled, {len(pending)} pending", file=sys.stderr)
-    for i, r in enumerate(pending):
-        print(f"\n[{i+1}/{len(pending)}] {r['work_id']}  bootstrap={r['bootstrap_label']}  "
-              f"ratio={r['katakana_ratio']:.2f} hira={r['hiragana_count']} chars={r['total_chars']}",
-              file=sys.stderr)
-        print(f"  {r['sentence']!r}", file=sys.stderr)
-        sys.stderr.flush()
-        verdict = sys.stdin.readline().strip().lower()
-        if verdict == "q":
-            break
-        r["bootstrap_label"] = r.get("bootstrap_label", r["label"])
-        if verdict == "a":
-            r["label"] = "accept"
-        elif verdict == "r":
-            r["label"] = "reject"
-        else:  # 'u' or empty → keep bootstrap
-            r["label"] = r["bootstrap_label"]
-        r["labeler"] = "llm"
-        r["label_notes"] = None
-        fa.write(json.dumps(r, ensure_ascii=False) + "\n")
-        fa.flush()
-    fa.close()
-
-if __name__ == "__main__":
-    main()
-```
-
-- [ ] **Step 2: Commit the harness before labeling**
+**Step 1a: Dump the 300 unlabeled sentences to a review file the orchestrator reads.**
 
 ```bash
-git add scripts/ortho-gold/label_review.py
-git commit -m "feat(ortho-gold): LLM-assisted labeling harness (interactive/resume)
-
-Presents each sentence + features + bootstrap label for accept/reject
-decision per the rubric in the docstring. Records decisions to
-sentences-human-300.jsonl with labeler='llm' and bootstrap_label preserved.
-Supports resume (re-runs skip already-labeled records)."
-```
-
-- [ ] **Step 3: Label all 300 sentences (orchestrator work, not a subagent)**
-
-This is the load-bearing step. The orchestrator (you) reads each sentence and applies the rubric. Two viable workflows:
-
-**Workflow A (batch, recommended for speed):** write the labels directly to `data/ortho-gold/sentences-human-300.jsonl` as a JSONL stream, copying all fields from `sample-300-unlabeled.jsonl` and overwriting `label` per the rubric. Use a Python one-shot that emits the records with your hand-assigned labels:
-
-```bash
-# First, dump the 300 sentences to a review file the orchestrator reads:
 python3 -c "
 import json
 recs=[json.loads(l) for l in open('data/ortho-gold/sample-300-unlabeled.jsonl')]
 for i,r in enumerate(recs):
-    print(f'{i:3} [{r[\"bootstrap_label\"]:6} r={r[\"katakana_ratio\"]:.2f} h={r[\"hiragana_count\"]} c={r[\"total_chars\"]:3}] {r[\"work_id\"]:24} {r[\"sentence\"]!r}')
+    print(f'{i:3} [{r["bootstrap_label"]:6} r={r["katakana_ratio"]:.2f} h={r["hiragana_count"]} c={r["total_chars"]:3}] {r["work_id"]:24} {r["sentence"]!r}')
 " > /tmp/review-300.txt
-wc -l /tmp/review-300.txt
+wc -l /tmp/review-300.txt  # expect 300
 ```
 
-Then the orchestrator reads `/tmp/review-300.txt`, decides each label, and emits `data/ortho-gold/sentences-human-300.jsonl` via a Python script that takes a list of 300 verdicts (`a`/`r`). The verdict list is the orchestrator's actual labeling work — do NOT delegate this to a subagent; the labeling is the human-style judgment that makes the gold set real.
+**Step 1b: Orchestrator reads `/tmp/review-300.txt`, decides each label, emits the labeled JSONL.**
+
+The verdict list IS the orchestrator's actual labeling work — do NOT delegate this to a subagent; the labeling is the LLM-judgment step that makes the evaluation set real (stronger than the Python cascade, weaker than a human expert — see caveat in Task 3).
 
 ```bash
 # Orchestrator fills VERDICTS below (300 chars, 'a' or 'r' each):
@@ -404,7 +289,7 @@ import json
 recs=[json.loads(l) for l in open('data/ortho-gold/sample-300-unlabeled.jsonl')]
 VERDICTS = ""  # ← orchestrator fills this 300-char string of 'a'/'r'
 assert len(VERDICTS) == len(recs), f"{len(VERDICTS)} verdicts vs {len(recs)} records"
-with open('data/ortho-gold/sentences-human-300.jsonl','w') as f:
+with open('data/ortho-gold/sentences-llm-300.jsonl','w') as f:
     for r,v in zip(recs, VERDICTS):
         r['bootstrap_label'] = r['label']
         r['label'] = 'accept' if v=='a' else 'reject'
@@ -416,15 +301,25 @@ print('label dist:', Counter(r['label'] for r in recs))
 PY
 ```
 
-**Decision rule for the orchestrator (read each sentence and apply):** if the katakana is doing grammatical work (particles/copulas/aux in running prose or grammatical dialogue) → `a`. If it's interjection/onomatopoeia/single-word/chant/loan-vocative → `r`. When genuinely unsure, prefer `a` if the sentence has ≥ 15 chars and `hiragana_count == 0` and reads as continuous narrative; prefer `r` if it's < 12 chars or starts with `「` and contains no verb. Document any genuinely-uncertain calls (≤ 5 expected) in a follow-up `label_notes` field.
+**Decision rule for the orchestrator (read each sentence and apply):** if the katakana is doing grammatical work (particles/copulas/aux in running prose or grammatical dialogue) → `a`. If it's interjection/onomatopoeia/single-word/chant/loan-vocative → `r`. When genuinely unsure, prefer `a` if the sentence has ≥ 15 chars and `hiragana_count == 0` and reads as continuous narrative; prefer `r` if it's < 12 chars or starts with `「` and contains no verb. Document any genuinely-uncertain calls (≤ 5 expected) by setting `label_notes` to a one-line reason instead of `None`.
 
-- [ ] **Step 4: Verify the labeled set**
+**Do NOT use the circular "unsure → bootstrap label" fallback that an earlier draft proposed.** The bootstrap labels are exactly what this set is supposed to replace; falling back to them when the labeler is unsure defeats the purpose. If a sentence is genuinely unjudgable, mark it `label_notes="unsure"` and EXCLUDE it from the recall denominator in Task 3 (the harness filters on `label_notes is None`).
+
+- [ ] **Step 2: Spot-check 10% (30 sentences) with a second pass**
+
+**Why:** the labels are single-annotator LLM output. Inter-annotator agreement with a second LLM pass using a differently-framed rubric is the cheapest available proxy for label reliability. This is NOT a human expert check — it's a sanity catch for systematic rubric misapplication.
+
+Sample 30 records from `/tmp/review-300.txt` (strided: every 10th, `0,10,20,...,290`). Re-label them with a **reframed** rubric prompt — instead of "is the katakana doing grammatical work?" ask "would normalizing this sentence to hiragana change the morphological analysis result?" (same intent, different surface framing; surfaces cases where the first pass pattern-matched on the wrong signal).
+
+Compute agreement: `agree = (count where spot-check label == first-pass label) / 30`. Record it in the Task 3 report. If agreement < 0.80, the first-pass labels are too noisy to trust — STOP, revisit the rubric, re-label. If agreement ≥ 0.80, proceed (the 30 spot-checked records keep their first-pass labels; the spot-check is a measurement, not a correction).
+
+- [ ] **Step 3: Verify the labeled set**
 
 ```bash
 python3 -c "
 import json
 from collections import Counter
-recs=[json.loads(l) for l in open('data/ortho-gold/sentences-human-300.jsonl')]
+recs=[json.loads(l) for l in open('data/ortho-gold/sentences-llm-300.jsonl')]
 print('n:', len(recs))
 print('label dist:', Counter(r['label'] for r in recs))
 print('labeler:', Counter(r['labeler'] for r in recs))
@@ -436,40 +331,48 @@ print('distinct works:', len(set(r['work_id'] for r in recs)))
 print('Tanizaki share:', sum(1 for r in recs if r['work_id'].startswith('Tanizaki_J'))/len(recs))
 "
 ```
-Expected: n=300, both labels present (ideally 130-200 each; a 0/300 split means the rubric was applied uniformly wrong), labeler all `llm`, ≥ 8 disagreements with bootstrap (the whole point of human labels), ≥ 9 distinct works, Tanizaki share ≤ 0.41.
+Expected: n=300 (or slightly fewer if genuinely-unjudgable records were marked `label_notes="unsure"` and excluded), both labels present (ideally 150–215 accept given the natural 2:1 corpus ratio; a 0/300 split means the rubric was applied uniformly wrong), labeler all `llm`, ≥ 8 disagreements with bootstrap (the whole point of re-labeling), ≥ 9 distinct author-prefixes, Tanizaki share ≈ 0.69–0.70 (matches pool, NOT capped).
 
-- [ ] **Step 5: Commit the labeled gold set**
+- [ ] **Step 4: Commit the labeled evaluation set**
 
 ```bash
-git add data/ortho-gold/sentences-human-300.jsonl
-git commit -m "data(ortho-gold): 300-sentence human-labeled gold set (LLM-assisted)
+git add data/ortho-gold/sentences-llm-300.jsonl
+git commit -m "data(ortho-gold): 300-sentence LLM-labeled evaluation set
 
-Corpus-representative (per-author capped, Tanizaki <=40%) 300-sentence gold
-set labeled by the orchestrator applying the spec's intent rubric:
-ACCEPT = kanji-katakana-majiri prose where katakana does grammatical work;
-REJECT = exclamations, onomatopoeia, single-word fragments, chants, loan
-vocatives. bootstrap_label preserved per-record for disagreement analysis.
-labeler='llm' on every record (not a human Japanese literature expert;
-treat as second-tier bootstrap, stronger than the Python cascade but not
-ground truth — see the Phase 2 ADR for the trust-boundary framing)."
+Corpus-representative (sampled in proportion to candidate-pool author shares,
+NOT author-capped — data check showed Tanizaki carries 90% of the accept
+class and capping would starve it). Labeled by the orchestrator applying the
+spec's intent rubric: ACCEPT = kanji-katakana-majiri prose where katakana
+does grammatical work; REJECT = exclamations, onomatopoeia, single-word
+fragments, chants, loanvocatives. 10% spot-checked with a reframed-rubric
+second pass (agreement recorded in Task 3 report).
+
+NOT GROUND TRUTH: single-annotator LLM labels, stronger than the Python
+cascade but weaker than a human expert. Used to measure recall and tune
+thresholds; NOT used to gate irreversible code deletion (Task 8 deferred
+to a future phase with real human annotation per the Phase 2 ADR).
+labeler='llm' on every record; bootstrap_label preserved per-record for
+disagreement analysis."
 ```
+
+---
 
 ---
 
 ### Task 3: Measure HeuristicV1 recall + ML recall against the 300 gold labels
 
 **Files:**
-- Create: `reports/ortho-detect/2026-07-05-phase2.5-human-gold-300.md` (the measurement report; the branch-decision section is filled in Task 4-8 as the chosen branch executes).
+- Create: `reports/ortho-detect/2026-07-05-phase2.5-llm-eval-300.md` (the measurement report; the branch-decision section is filled in Task 4-8 as the chosen branch executes).
 
 **Interfaces:**
-- Consumes: `data/ortho-gold/sentences-human-300.jsonl` (Task 2), `crates/ab-ortho-detect/examples/detect_sentences.rs` (exists, Phase 2), `scripts/ortho-gold/recall_floor.clj` (exists, Phase 2), `ab-ortho-detect-ml` train/ablate (exist, Phase 2).
-- Produces: `data/ortho-gold/models/model-v3-gold.bin` (ML retrained on the 300 labels), `reports/ortho-detect/2026-07-05-phase2.5-human-gold-300.md`.
+- Consumes: `data/ortho-gold/sentences-llm-300.jsonl` (Task 2), `crates/ab-ortho-detect/examples/detect_sentences.rs` (exists, Phase 2), `scripts/ortho-gold/recall_floor.clj` (exists, Phase 2), `ab-ortho-detect-ml` train/ablate (exist, Phase 2).
+- Produces: `data/ortho-gold/models/model-gold-300.bin` (ML retrained on the 300 labels), `reports/ortho-detect/2026-07-05-phase2.5-llm-eval-300.md`.
 
 - [ ] **Step 1: Measure HeuristicV1 recall on the 300 gold labels**
 
 ```bash
 export AB_VIBRATO_DICT=/home/bor/Projects/ab-validator/dictionary/compiled/unidic-cwj-202512.dic.zst
-cargo run -p ab-ortho-detect --example detect_sentences < data/ortho-gold/sentences-human-300.jsonl > /tmp/gold300-heur.jsonl 2>/dev/null
+cargo run -p ab-ortho-detect --example detect_sentences < data/ortho-gold/sentences-llm-300.jsonl > /tmp/gold300-heur.jsonl 2>/dev/null
 bb scripts/ortho-gold/recall_floor.clj /tmp/gold300-heur.jsonl
 ```
 Record: `recall`, `precision`, `f1`, `tp/fn/fp/tn`. Save full output for the report.
@@ -477,8 +380,8 @@ Record: `recall`, `precision`, `f1`, `tp/fn/fp/tn`. Save full output for the rep
 - [ ] **Step 2: Retrain the ML detector on the 300 gold labels**
 
 ```bash
-cargo run -p ab-ortho-detect-ml -- train --gold data/ortho-gold/sentences-human-300.jsonl --out data/ortho-gold/models/model-v3-gold.bin
-cargo run -p ab-ortho-detect-ml -- hash --model data/ortho-gold/models/model-v3-gold.bin
+cargo run -p ab-ortho-detect-ml -- train --gold data/ortho-gold/sentences-llm-300.jsonl --out data/ortho-gold/models/model-gold-300.bin
+cargo run -p ab-ortho-detect-ml -- hash --model data/ortho-gold/models/model-gold-300.bin
 ```
 Record: train accuracy (from stderr), model hash. Expected: train accuracy 0.85–0.95 (the 300 human labels are more separable than the bootstrap because the rubric is sharper; if < 0.80 the linear features can't capture the rubric and ML is NOT viable — note this for the branch decision).
 
@@ -509,27 +412,39 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let rec: GoldRecord = serde_json::from_str(&line)?;
         let spans = sentence_split(&rec.sentence);
         let anns = det.detect(&spans);
-        let h = if anns.is_empty() { "reject" } else { "accept" };
-        println!("{}", serde_json::to_string(&Out { sentence: &rec.sentence, gold: &rec.label, heuristic: h.to_string(), agree: h == rec.label })?);
+        let verdict = if anns.is_empty() { "reject" } else { "accept" };
+        println!("{}", serde_json::to_string(&Out { sentence: &rec.sentence, gold: &rec.label, heuristic: verdict.to_string(), agree: verdict == rec.label })?);
     }
     Ok(())
 }
 ```
-Add `serde`/`serde_json` to `ab-ortho-detect` dev-deps if missing (Phase 1 added them — verify). Run:
+
+**Step 3a: Verify dev-deps are present (concrete check, do NOT skip).**
 ```bash
-cargo run -p ab-ortho-detect --example detect_ml -- data/ortho-gold/models/model-v3-gold.bin < data/ortho-gold/sentences-human-300.jsonl > /tmp/gold300-ml.jsonl 2>/dev/null
+grep -E 'serde|ab-plaintext|ab-morph-analyzers' crates/ab-ortho-detect/Cargo.toml
+```
+Expected output: lines showing `serde`, `serde_json`, `ab-plaintext`, and `ab-morph-analyzers` in `[dev-dependencies]` (Phase 1 added them for the integration tests). If `serde` or `serde_json` is missing, append to `[dev-dependencies]` in `crates/ab-ortho-detect/Cargo.toml`:
+```toml
+serde = { workspace = true }
+serde_json = { workspace = true }
+```
+Then `cargo build -p ab-ortho-detect --examples` must succeed before proceeding — if it fails with `unresolved import serde`, the dev-deps weren't added.
+
+**Step 3b: Run the ML recall measurement.**
+```bash
+cargo run -p ab-ortho-detect --example detect_ml -- data/ortho-gold/models/model-gold-300.bin < data/ortho-gold/sentences-llm-300.jsonl > /tmp/gold300-ml.jsonl 2>/dev/null
 bb scripts/ortho-gold/recall_floor.clj /tmp/gold300-ml.jsonl
 ```
 ⚠ **Bias caveat for the report:** recall and precision here are **train-set accuracy** (the ML detector is evaluated on the same 300 records it was trained on). This is an UPPER BOUND, not generalization. For honest generalization, do a proper hold-out split (Task 6, optional). For the branch decision, treat the ML train-accuracy as "ceiling"; the floor is the ML's recall on a held-out set, which we don't have. The honest comparison is: HeuristicV1 recall (no train/eval split, real generalization) vs ML train-accuracy (ceiling). If ML ceiling < HeuristicV1 recall → heuristic wins. If ML ceiling >> HeuristicV1 recall AND >> 0.85 → ML is promising but needs hold-out validation before promotion.
 
 - [ ] **Step 4: Write the measurement report (branch-decision section left as a placeholder)**
 
-Create `reports/ortho-detect/2026-07-05-phase2.5-human-gold-300.md`:
+Create `reports/ortho-detect/2026-07-05-phase2.5-llm-eval-300.md`:
 ```markdown
-# Ortho-Detect Phase 2.5 — 300-Sentence Human Gold Measurement
+# Ortho-Detect Phase 2.5 — 300-Sentence LLM-Labeled Evaluation Set Measurement
 
 Date: 2026-07-05
-Gold set: `data/ortho-gold/sentences-human-300.jsonl` (n=300, LLM-labeled)
+Gold set: `data/ortho-gold/sentences-llm-300.jsonl` (n=300, LLM-labeled)
 Sampler: `scripts/ortho-gold/sample_300.py` (corpus-representative, Tanizaki ≤40%)
 Labeler: orchestrator LLM applying the spec's intent rubric (NOT a human
 Japanese-lit expert — treat as second-tier bootstrap).
@@ -549,15 +464,15 @@ Japanese-lit expert — treat as second-tier bootstrap).
    disagreements (≤30 expected) before any production promotion is the
    documented finishing input.
 
-## HeuristicV1 against human gold (real generalization)
+## HeuristicV1 against LLM-labeled evaluation set (real generalization)
 
 [INSERT: recall, precision, f1, tp/fn/fp/tn from Step 1 + the bb output]
 [INSERT: count of disagreements vs bootstrap; characterize (prose-at-ratio-
 0.4-0.5 / proper-noun-guard / fragment-over-acceptance)]
 
-## MlLogisticRegression against human gold (train-accuracy ceiling)
+## MlLogisticRegression against LLM-labeled evaluation set (train-accuracy ceiling)
 
-- Model: `data/ortho-gold/models/model-v3-gold.bin`
+- Model: `data/ortho-gold/models/model-gold-300.bin`
 - model_hash: [INSERT from Step 2]
 - Train accuracy: [INSERT]
 - Recall (train-set): [INSERT]
@@ -572,8 +487,8 @@ Japanese-lit expert — treat as second-tier bootstrap).
 - [ ] **Step 5: Commit**
 
 ```bash
-git add crates/ab-ortho-detect/examples/detect_ml.rs data/ortho-gold/models/model-v3-gold.bin \
-        reports/ortho-detect/2026-07-05-phase2.5-human-gold-300.md
+git add crates/ab-ortho-detect/examples/detect_ml.rs data/ortho-gold/models/model-gold-300.bin \
+        reports/ortho-detect/2026-07-05-phase2.5-llm-eval-300.md
 git commit -m "feat(ortho-gold): measure HeuristicV1 + ML recall on 300 human labels
 
 Adds detect_ml example binary for ML-detector recall measurement. Train-set
@@ -586,25 +501,31 @@ vs ML promotion + dead-coupling deletion)."
 
 ### Task 4: Branch decision + ADR entry (NO code change unless Tasks 5-8 fire)
 
-**Why this task exists:** the Phase 2 ADR gated `OrthoTokenizer` deletion + ML-promotion-from-EXPERIMENTAL on three conditions: (a) ≥200-sent human gold, (b) ML recall ≥ 0.85, (c) ML promoted to default. Task 2 produced (a); Task 3 measured (b). This task evaluates the gate and dispatches either the heuristic-tune branch (Tasks 5 only) OR the ML-promotion + deletion branch (Tasks 6-8).
+**Why this task exists:** the Phase 2 ADR gated `OrthoTokenizer` deletion + ML-promotion-from-EXPERIMENTAL on three conditions: (a) ≥200-sent **HUMAN** gold, (b) ML recall ≥ 0.85 against that human gold, (c) ML promoted to default. **Task 2's LLM-labeled set does NOT satisfy condition (a)** — it is an LLM applying a rubric, not a human expert. So this task measures recall and tunes thresholds (legitimate on LLM labels, which are stronger than the Python cascade), and decides whether to land Task 5 (heuristic tune — always fires if recall < 0.85) and optionally Task 6 (ML hold-out) + Task 7 (ML promotion from EXPERIMENTAL to stable-but-not-default). **Task 8 (deletion) does NOT fire in Phase 2.5** — it requires the human gold set that doesn't exist yet.
 
 **Decision rule (apply using Task 3's numbers):**
 
-- **VALIDATION:** HeuristicV1 recall < 0.85 against the 300 gold set → the spec's floor is violated, a fix is REQUIRED (not optional).
+First, two early-exit cases the original draft missed:
+
+- **EARLY EXIT A — HeuristicV1 already ≥ 0.85 on the new gold:** the spec's recall floor is already cleared on this evaluation set. **Skip Task 5 entirely** (no threshold tune needed). Record the number and proceed to Task 6+7 only if ML is also promising (for the EXPERIMENTAL→stable promotion); else stop after the report. Do NOT invent tuning work the data doesn't demand.
+- **EARLY EXIT B — Neither detector can clear 0.85 after Task 5's sweep:** the character-only feature set is insufficient for the rubric. This is a real finding, not a failure mode to paper over. **Document it and STOP** — do NOT promote ML (Tasks 7-8), do NOT delete anything. File a follow-up: feature engineering (n-gram katakana sequences, grammatical-role features) or a non-linear model. The Phase 2 ADR's deletion gate explicitly requires recall ≥ 0.85; unmet means no deletion, full stop.
+
+The main branches:
+
 - **If ML train-accuracy ceiling < HeuristicV1 recall:** the ML detector is WORSE than the heuristic even on its training data. ML is NOT viable with the current feature set (character-only can't capture the rubric). → **Execute Task 5 only (tune the heuristic threshold).** Do NOT promote ML, do NOT delete the coupling.
 - **If ML ceiling ≥ 0.85 AND ≥ HeuristicV1 recall + 0.10:** the ML detector is promising. But train-accuracy is a ceiling, not generalization. → **Execute Task 5 (tune the heuristic as the immediate fix) AND Task 6 (hold-out split to validate ML generalization).** Defer Tasks 7-8 (ML promotion + deletion) until the hold-out recall also clears 0.85.
-- **If ML ceiling ≥ 0.95 AND HeuristicV1 recall < 0.85 (current Phase 2 state suggests this is likely):** → Execute Task 5 (heuristic threshold tune as the immediate, low-risk fix to clear the floor), AND Task 6 (ML hold-out), AND Tasks 7-8 (promotion + deletion) ONLY if Task 6 hold-out recall ≥ 0.85.
+- **If ML ceiling ≥ 0.95 AND HeuristicV1 recall < 0.85 (current Phase 2 state suggests this is likely):** → Execute Task 5 (heuristic threshold tune as the immediate, low-risk fix to clear the floor), AND Task 6 (ML hold-out), AND Task 7 (promotion from EXPERIMENTAL to stable, NOT default) ONLY if Task 6 hold-out recall ≥ 0.85. **Task 8 (code deletion) does NOT fire on LLM labels** — it's deferred to a future phase with real human annotation per the plan's revised goal.
 
 **The orchestrator records the decision in the report before dispatching.**
 
 - [ ] **Step 1: Fill in the report's Branch Decision section**
 
-Open `reports/ortho-detect/2026-07-05-phase2.5-human-gold-300.md`, replace the `## Branch decision` placeholder with the actual decision based on the rule above. State: the two numbers, the chosen branch (Task 5 only / Tasks 5+6 / Tasks 5+6+7+8), and the rationale. Note the bias caveat applies.
+Open `reports/ortho-detect/2026-07-05-phase2.5-llm-eval-300.md`, replace the `## Branch decision` placeholder with the actual decision based on the rule above. State: the two numbers, the chosen branch (Task 5 only / Tasks 5+6 / Tasks 5+6+7+8), and the rationale. Note the bias caveat applies.
 
 - [ ] **Step 2: Commit the decision**
 
 ```bash
-git add reports/ortho-detect/2026-07-05-phase2.5-human-gold-300.md
+git add reports/ortho-detect/2026-07-05-phase2.5-llm-eval-300.md
 git commit -m "docs(ortho-detect): Phase 2.5 branch decision — [SUMMARY]
 
 HeuristicV1 recall: [X.XX]. ML train-accuracy ceiling: [X.XX]. Per the
@@ -643,7 +564,7 @@ Run it as an example `crates/ab-ortho-detect/examples/sweep_threshold.rs` using 
 
 ```bash
 cargo run -p ab-ortho-detect --example sweep_threshold
-# (reads ORTHO_GOLD_PATH=data/ortho-gold/sentences-human-300.jsonl + AB_VIBRATO_DICT)
+# (reads ORTHO_GOLD_PATH=data/ortho-gold/sentences-llm-300.jsonl + AB_VIBRATO_DICT)
 ```
 
 - [ ] **Step 2: Pick the threshold maximizing F1 subject to recall ≥ 0.85**
@@ -666,7 +587,7 @@ Any test that now fails because the threshold changed: update its expected behav
 
 ```bash
 export AB_VIBRATO_DICT=/home/bor/Projects/ab-validator/dictionary/compiled/unidic-cwj-202512.dic.zst
-cargo run -p ab-ortho-detect --example detect_sentences < data/ortho-gold/sentences-human-300.jsonl 2>/dev/null | bb scripts/ortho-gold/recall_floor.clj /dev/stdin
+cargo run -p ab-ortho-detect --example detect_sentences < data/ortho-gold/sentences-llm-300.jsonl 2>/dev/null | bb scripts/ortho-gold/recall_floor.clj /dev/stdin
 ```
 Expected: recall ≥ 0.85. If below, return to Step 2 or escalate to Tasks 6-8.
 
@@ -679,7 +600,7 @@ git commit -m "fix(ortho-detect): tune katakana_ratio_threshold 0.5 -> [X.XX]
 Phase 2's human probe (recall 0.636) identified the binding constraint as
 the strict >0.5 gate rejecting kanji-heavy pre-war prose at ratio 0.41-0.49.
 Sweep over [0.25,0.55] picked [X.XX] as the threshold maximizing F1 subject
-to recall >= 0.85. Recall on the 300-sentence human gold set is now [X.XX]
+to recall >= 0.85. Recall on the 300-sentence LLM-labeled evaluation set is now [X.XX]
 (>= 0.85 floor)."
 ```
 
@@ -702,7 +623,7 @@ In `crates/ab-ortho-detect-ml/src/main.rs`, add `CrossValidate { gold, k: usize,
 - [ ] **Step 2: Run 5-fold CV**
 
 ```bash
-cargo run -p ab-ortho-detect-ml -- cross-validate --gold data/ortho-gold/sentences-human-300.jsonl --k 5 --report reports/ortho-detect/2026-07-05-phase2.5-ml-cv.md
+cargo run -p ab-ortho-detect-ml -- cross-validate --gold data/ortho-gold/sentences-llm-300.jsonl --k 5 --report reports/ortho-detect/2026-07-05-phase2.5-ml-cv.md
 ```
 Record: mean recall, mean precision, mean F1, per-fold breakdown.
 
@@ -737,7 +658,7 @@ Remove the `EXPERIMENTAL:` prefix and bias caveat from the `ml` help arm in `cra
 git add crates/ab-morph-run/src/main.rs
 git commit -m "feat(morph-run): promote --ortho-detect ml from EXPERIMENTAL
 
-5-fold CV recall on the 300-sentence human gold set cleared the 0.85
+5-fold CV recall on the 300-sentence LLM-labeled evaluation set cleared the 0.85
 floor ([X.XX]). EXPERIMENTAL marker + bias caveat removed from CLI help.
 The ML detector is now a first-class mode (not yet the DEFAULT — that
 requires the heuristic path's removal in Task 8)."
@@ -745,7 +666,17 @@ requires the heuristic path's removal in Task 8)."
 
 ---
 
-### Task 8: Delete dead Vibrato coupling (CONDITIONAL — only if Task 7 fired AND user/heuristic path is being removed)
+### Task 8: Delete dead Vibrato coupling — DEFERRED to a future phase (does NOT execute in Phase 2.5)
+
+**This task does NOT execute in Phase 2.5.** It is documented here only as the gate the future phase must meet. The Phase 2.5 evaluation set is LLM-labeled (single-annotator, no human expert check, no inter-annotator agreement above spot-check); it cannot honestly gate irreversible code deletion per the Phase 2 ADR's trust-boundary framing. The deletion remains deferred until ALL of:
+
+1. A real human-annotated gold set (≥200 sentences, by a Japanese-literate reviewer) exists.
+2. The ML detector's hold-out recall on that human set is ≥ 0.85.
+3. The ML detector is promoted from EXPERIMENTAL to default.
+
+**Phase 2.5 may produce (1) the methodology and (2) the measurement infrastructure, but the labels themselves must be re-done by a human before this task fires.** No code is deleted in Phase 2.5.
+
+**If the orchestrator is tempted to fire this task anyway** (e.g. because hold-out recall on the LLM set is very high): do not. The labels are an LLM applying the rubric; an LLM-labeled ceiling says nothing about how the detector performs on the real distribution a human would label. Land the deletion in a separate phase with its own ADR entry recording the human gold set's provenance.
 
 **Skip if:** Task 7 was skipped, OR the project decides to keep `--ortho-detect heuristic` as a fallback. This is the ADR's deferred deletion — only land it if ML is validated AND the heuristic path is being retired.
 
@@ -792,7 +723,7 @@ now gone. ADR updated: deletion LANDED."
 ### Task 9: Final report + merge
 
 **Files:**
-- Finalize: `reports/ortho-detect/2026-07-05-phase2.5-human-gold-300.md` (append the post-fix recall numbers + the ADR closure status).
+- Finalize: `reports/ortho-detect/2026-07-05-phase2.5-llm-eval-300.md` (append the post-fix recall numbers + the ADR closure status).
 
 - [ ] **Step 1: Append the post-tuning recall numbers to the report**
 
@@ -808,10 +739,10 @@ Expected: pass ≥ 450, fail == 2 (pre-existing `rerun_full_*` only).
 - [ ] **Step 3: Commit + merge to main**
 
 ```bash
-git add reports/ortho-detect/2026-07-05-phase2.5-human-gold-300.md
+git add reports/ortho-detect/2026-07-05-phase2.5-llm-eval-300.md
 git commit -m "docs(ortho-detect): finalize Phase 2.5 report + recall numbers"
 cd /home/bor/Projects/ab-validator
-git merge --no-ff ortho-detect-phase2.5 -m "Merge branch 'ortho-detect-phase2.5': human gold set + recall fix [SUMMARY]"
+git merge --no-ff ortho-detect-phase2.5 -m "Merge branch 'ortho-detect-phase2.5': LLM-labeled evaluation set + recall fix [SUMMARY]"
 git push origin main
 git worktree remove .worktrees/ortho-detect-phase2.5
 git branch -d ortho-detect-phase2.5
@@ -819,19 +750,21 @@ git branch -d ortho-detect-phase2.5
 
 ---
 
-## Self-Review
+## Self-Review (revised after critical review of v1)
 
 **1. Spec coverage:**
-- Pre-Phase-1 Verification step 2 ("if recall < 0.85, tune thresholds") → Task 5.
-- Phase 2 ADR deletion gate (≥200 human gold + ML recall ≥ 0.85 + ML promoted to default) → Task 2 (≥200) + Task 3 (ML recall) + Task 7 (promote) + Task 8 (delete).
-- Spec's 200–500 sentence target → Task 2 (300).
-- Corpus-representative sampling (user's requirement) → Task 1 (per-author capping, Tanizaki ≤40%).
+- Pre-Phase-1 Verification step 2 ("if recall < 0.85, tune thresholds") → Task 5. **EARLY EXIT A** added: if HeuristicV1 already ≥ 0.85 on the new set, Task 5 is skipped (don't invent tuning work the data doesn't demand).
+- Phase 2 ADR deletion gate (≥200 HUMAN-annotated gold + ML recall ≥ 0.85 on it + ML promoted to default) → **Task 8 is DEFERRED**; the LLM set does NOT satisfy condition (a). Phase 2.5 lands the methodology + measurement + heuristic tune + optional ML promotion to stable (NOT default); deletion waits for a human gold set.
+- Spec's 200–500 sentence target → Task 2 (300, LLM-labeled, explicitly NOT ground truth).
+- Corpus-representative sampling (user's requirement) → Task 1 samples in proportion to candidate-pool author shares (NOT author-capped — the data check showed Tanizaki carries 90% of the accept class and capping would starve it). Per-author minimum of 4 for sparse-author coverage.
 
-**2. Placeholder scan:** The only literal placeholder is the orchestrator's `VERDICTS = ""` in Task 2 Step 3 — that is the actual labeling work and CANNOT be pre-filled (it's the human/LLM judgment that makes the gold set real). Everything else has concrete code/commands.
+**2. Placeholder scan:** The only literal placeholder is the orchestrator's `VERDICTS = ""` in Task 2 Step 1 — that is the actual labeling work and CANNOT be pre-filled (it's the LLM judgment that makes the set real). Everything else has concrete code/commands.
 
 **3. Type consistency:** `OrthoDetectMode { Off, Heuristic, Ml }`, `OrthoDetectorId::MlLogisticRegression { model_hash }`, `HeuristicConfig::katakana_ratio_threshold`, `MlLogisticRegression::load(path)`, `model_hash(&MlModel)` — all match Phase 2's merged `main`.
 
-**4. Branch-decision honesty:** Task 4 does NOT assume ML wins. It explicitly handles "ML ceiling < HeuristicV1 recall" (ML not viable) and "ML ceiling high but train-set only" (needs hold-out before promotion). The conditions on Tasks 6-8 are real gates, not rubber stamps.
+**4. Branch-decision honesty:** Task 4 does NOT assume ML wins. Five branches: EARLY EXIT A (heuristic already ≥0.85 → skip tuning), EARLY EXIT B (neither clears 0.85 after sweep → character-only features insufficient, stop, file feature-engineering follow-up), ML ceiling < HeuristicV1 recall (ML not viable, tune heuristic only), ML ceiling high but train-set only (tune + hold-out, defer promotion), ML ceiling ≥0.95 (tune + hold-out + promotion to stable-but-not-default; deletion still deferred). The conditions are real gates, not rubber stamps.
+
+**5. Labeling honesty (revised):** Task 2's labels are single-annotator LLM output, NOT human ground truth. Task 2 Step 2 adds a 10% spot-check with a reframed rubric (agreement gate ≥0.80). The circular "unsure → bootstrap" fallback is removed (would defeat the purpose). The plan title and all references say "LLM-labeled evaluation set," not "human gold."
 
 ## Execution Handoff
 

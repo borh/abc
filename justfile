@@ -9,6 +9,7 @@ aozora_rs_full_aat_dir := env_var_or_default("AB_AOZORA_RS_AAT_DIR", repo_storag
 aozora2_full_aat_dir := env_var_or_default("AB_AOZORA2_AAT_DIR", ab_db_root + "/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter")
 aozora2html_full_aat_dir := env_var_or_default("AB_AOZORA2HTML_AAT_DIR", ab_db_root + "/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter")
 aozora_epub3_full_aat_dir := env_var_or_default("AB_AOZORA_EPUB3_AAT_DIR", ab_db_root + "/aat-corpus/aozora-epub3-full-20260704T050652Z-300s/aat/aozora-epub3-adapter")
+aozora_full_aat_dir := env_var_or_default("AB_AOZORA_AAT_DIR", ab_db_root + "/aat-corpus/aozora-full-20260705T000000Z/aat/aozora-adapter")
 tei_eaj_workset := env_var_or_default("AB_TEI_EAJ_WORKSET", repo_storage_root + "/../abc/docs/handoffs/tei-eaj-aozora-workset-export.json")
 aozora2html_flake := repo_root + "#aozora2html"
 vibrato_dictionary_root := repo_root + "/dictionary"
@@ -65,6 +66,15 @@ aozora2html-rust-test:
 
 aozora2html-rust-parity:
 	@nix run "{{repo_root}}#aozora2html-rust-parity"
+
+aozora-build PROFILE="release":
+	@cargo build --manifest-path "{{repo_root}}/adapters/aozora/Cargo.toml" --{{PROFILE}}
+
+aozora-test:
+	@AB_AOZORA_BIN="${AB_AOZORA_BIN:-aozora}" cargo test --manifest-path "{{repo_root}}/adapters/aozora/Cargo.toml"
+
+aozora-smoke: aozora-build
+	@bash "{{repo_root}}/tests/aozora-adapter-smoke.sh"
 
 aat-schema-smoke-suite:
 	@nix run "{{repo_root}}#aat-oracle-data-schema-smoke"
@@ -150,6 +160,7 @@ aat-to-parser-ir-full-audit JOBS="24" REPORT_MD="docs/superpowers/reports/2026-0
 		--aat-dir "{{aozora2_full_aat_dir}}" \
 		--aat-dir "{{aozora2html_full_aat_dir}}" \
 		--aat-dir "{{aozora_epub3_full_aat_dir}}" \
+		--aat-dir "{{aozora_full_aat_dir}}" \
 		--mapping "{{repo_root}}/data/aat-to-parser-ir-mapping-v1.json" \
 		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
 		--report-md "{{repo_root}}/{{REPORT_MD}}" \
@@ -207,6 +218,7 @@ tei-eaj-structural-expansion JOBS="24" REPORT_MD="docs/superpowers/reports/2026-
 		--aat-dir "aozora2={{aozora2_full_aat_dir}}" \
 		--aat-dir "aozora2html={{aozora2html_full_aat_dir}}" \
 		--aat-dir "aozora-epub3={{aozora_epub3_full_aat_dir}}" \
+		--aat-dir "aozora={{aozora_full_aat_dir}}" \
 		--mapping "{{repo_root}}/data/aat-to-parser-ir-mapping-v1.json" \
 		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
 		--report-md "{{repo_root}}/{{REPORT_MD}}" \

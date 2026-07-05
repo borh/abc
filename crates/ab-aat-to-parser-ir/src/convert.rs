@@ -85,6 +85,7 @@ fn convert_preflighted(
     let mut recorder = DivergenceRecorder::new(index);
     let mut nodes = Vec::new();
     let mut paragraphs = Vec::new();
+    let mut synthetic_warnings = Vec::new();
     let mut offset = 0_u64;
 
     let blocks: Vec<&Value> = aat
@@ -100,6 +101,7 @@ fn convert_preflighted(
             &mut nodes,
             &mut paragraphs,
             &mut recorder,
+            &mut synthetic_warnings,
             offset,
             &format!("blocks[{block_index}]"),
             None,
@@ -109,7 +111,11 @@ fn convert_preflighted(
 
     let source = map_source(&aat, &mut recorder)?;
     recorder.record("INVENTION", None, Some("schema_id/schema_hash"), None, None)?;
-    let warnings = map_warnings(&aat, &mut recorder)?;
+    let mut warnings = map_warnings(&aat, &mut recorder)?;
+    warnings
+        .as_array_mut()
+        .expect("warnings array")
+        .append(&mut synthetic_warnings);
     recorder.record("INVENTION", None, Some("errors[]"), None, None)?;
 
     let parser_ir = json!({
@@ -141,6 +147,7 @@ fn map_block(
     nodes: &mut Vec<Value>,
     paragraphs: &mut Vec<Value>,
     recorder: &mut DivergenceRecorder,
+    synthetic_warnings: &mut Vec<Value>,
     offset: u64,
     path: &str,
     inherited_layout: Option<Value>,
@@ -209,6 +216,7 @@ fn map_block(
                     paragraph_content,
                     nodes,
                     recorder,
+                    synthetic_warnings,
                     current,
                     &paragraph_content_path,
                 )?;
@@ -298,6 +306,7 @@ fn map_block(
                         nodes,
                         paragraphs,
                         recorder,
+                        synthetic_warnings,
                         current,
                         &format!("{path}.children[{index}]"),
                         Some(layout.clone()),
@@ -332,6 +341,7 @@ fn map_block(
                         nodes,
                         paragraphs,
                         recorder,
+                        synthetic_warnings,
                         current,
                         &format!("{path}.children[{index}]"),
                         None,
@@ -366,6 +376,7 @@ fn map_block(
                     nodes,
                     paragraphs,
                     recorder,
+                    synthetic_warnings,
                     current,
                     &format!("{path}.children[{index}]"),
                     None,
@@ -394,6 +405,7 @@ fn map_block(
                     nodes,
                     paragraphs,
                     recorder,
+                    synthetic_warnings,
                     current,
                     &format!("{path}.children[{index}]"),
                     None,
@@ -593,6 +605,7 @@ fn map_inline_content(
     content: Option<&Value>,
     nodes: &mut Vec<Value>,
     recorder: &mut DivergenceRecorder,
+    synthetic_warnings: &mut Vec<Value>,
     offset: u64,
     path: &str,
 ) -> Result<u64> {
@@ -603,8 +616,14 @@ fn map_inline_content(
         .flatten()
         .enumerate()
     {
-        current =
-            map_inline_to_nodes(child, nodes, recorder, current, &format!("{path}[{index}]"))?;
+        current = map_inline_to_nodes(
+            child,
+            nodes,
+            recorder,
+            synthetic_warnings,
+            current,
+            &format!("{path}[{index}]"),
+        )?;
     }
     Ok(current)
 }
@@ -613,6 +632,7 @@ fn map_inline_to_nodes(
     node: &Value,
     nodes: &mut Vec<Value>,
     recorder: &mut DivergenceRecorder,
+    synthetic_warnings: &mut Vec<Value>,
     offset: u64,
     path: &str,
 ) -> Result<u64> {
@@ -669,6 +689,7 @@ fn map_inline_to_nodes(
                 .unwrap_or("");
             let end = offset + utf8_len(visible);
             let span = map_span(node.get("span"), offset, end, recorder, path)?;
+            let unicode = node.get("resolved").cloned().unwrap_or(Value::Null);
             let description_pointer = format!("{path}.gaiji.description");
             recorder.record(
                 "INVENTION",
@@ -717,14 +738,16 @@ fn map_inline_to_nodes(
                     None,
                 )?;
             }
-            recorder.record("LOSS", None, Some("gaiji.unicode"), None, Some(Value::Null))?;
+            if unicode.is_null() {
+                recorder.record("LOSS", None, Some("gaiji.unicode"), None, Some(Value::Null))?;
+            }
             nodes.push(json!({
                 "type": "gaiji",
                 "span": span,
                 "gaiji": {
                     "raw_marker": node["description"].as_str().unwrap_or(""),
                     "reference": node.get("jis_code").cloned().unwrap_or(Value::Null),
-                    "unicode": null,
+                    "unicode": unicode,
                     "ivs": null,
                     "image_or_glyph_fallback": null,
                     "resolved": node.get("resolved").is_some_and(|value| !value.is_null())
@@ -749,8 +772,14 @@ fn map_inline_to_nodes(
             )?;
             let end = offset + utf8_len(&text);
             let span = map_span(node.get("span"), offset, end, recorder, path)?;
-            let inline_children =
-                inline_children_nodes(node.get("content"), offset, &format!("{path}.content"), 0)?;
+            let inline_children = inline_children_nodes(
+                node.get("content"),
+                recorder,
+                synthetic_warnings,
+                offset,
+                &format!("{path}.content"),
+                0,
+            )?;
             nodes.push(json!({
                 "type": "emphasis",
                 "span": span,
@@ -761,7 +790,9 @@ fn map_inline_to_nodes(
             Ok(end)
         }
         "accent" => map_accent_to_node(node, nodes, recorder, offset, path),
-        "warigaki" => map_warigaki_to_nodes(node, nodes, recorder, offset, path),
+        "warigaki" => {
+            map_warigaki_to_nodes(node, nodes, recorder, synthetic_warnings, offset, path)
+        }
         "figure" => map_figure_to_node(node, nodes, recorder, offset, path),
         "raw" => map_raw_to_nodes(node, nodes, recorder, offset, path),
         "font_size" | "tcy" | "keigakomi" | "caption" | "yokogumi" => {
@@ -782,8 +813,14 @@ fn map_inline_to_nodes(
             )?;
             let end = offset + utf8_len(&text);
             let span = map_span(node.get("span"), offset, end, recorder, path)?;
-            let inline_children =
-                inline_children_nodes(node.get("content"), offset, &format!("{path}.content"), 0)?;
+            let inline_children = inline_children_nodes(
+                node.get("content"),
+                recorder,
+                synthetic_warnings,
+                offset,
+                &format!("{path}.content"),
+                0,
+            )?;
             nodes.push(json!({
                 "type": "emphasis",
                 "span": span,
@@ -799,6 +836,8 @@ fn map_inline_to_nodes(
 
 fn inline_children_nodes(
     content: Option<&Value>,
+    recorder: &mut DivergenceRecorder,
+    synthetic_warnings: &mut Vec<Value>,
     offset: u64,
     path: &str,
     depth: usize,
@@ -814,6 +853,8 @@ fn inline_children_nodes(
         current = inline_child_node(
             child,
             &mut nodes,
+            recorder,
+            synthetic_warnings,
             current,
             &format!("{path}[{index}]"),
             depth,
@@ -825,11 +866,28 @@ fn inline_children_nodes(
 fn inline_child_node(
     node: &Value,
     nodes: &mut Vec<Value>,
+    recorder: &mut DivergenceRecorder,
+    synthetic_warnings: &mut Vec<Value>,
     offset: u64,
     path: &str,
     depth: usize,
 ) -> Result<u64> {
     if depth >= 64 {
+        synthetic_warnings.push(inline_children_depth_limit_warning(path));
+        recorder.record(
+            "INVENTION",
+            None,
+            Some("warnings[].severity"),
+            None,
+            Some(json!("warning")),
+        )?;
+        recorder.record(
+            "INVENTION",
+            None,
+            Some("warnings[].code"),
+            None,
+            Some(json!("INLINE_CHILDREN_DEPTH_LIMIT")),
+        )?;
         return push_unrecorded_text_node(&plain_visible_inline_text(node)?, nodes, offset);
     }
 
@@ -867,7 +925,7 @@ fn inline_child_node(
                 "gaiji": {
                     "raw_marker": node["description"].as_str().unwrap_or(""),
                     "reference": node.get("jis_code").cloned().unwrap_or(Value::Null),
-                    "unicode": null,
+                    "unicode": node.get("resolved").cloned().unwrap_or(Value::Null),
                     "ivs": null,
                     "image_or_glyph_fallback": null,
                     "resolved": node.get("resolved").is_some_and(|value| !value.is_null())
@@ -880,6 +938,8 @@ fn inline_child_node(
             let end = offset + utf8_len(&text);
             let inline_children = inline_children_nodes(
                 node.get("content"),
+                recorder,
+                synthetic_warnings,
                 offset,
                 &format!("{path}.content"),
                 depth + 1,
@@ -910,6 +970,8 @@ fn inline_child_node(
             let end = offset + utf8_len(&text);
             let inline_children = inline_children_nodes(
                 node.get("content"),
+                recorder,
+                synthetic_warnings,
                 offset,
                 &format!("{path}.content"),
                 depth + 1,
@@ -926,6 +988,8 @@ fn inline_child_node(
         "warigaki" => {
             let upper = inline_children_nodes(
                 node.get("upper"),
+                recorder,
+                synthetic_warnings,
                 offset,
                 &format!("{path}.warigaki.upper"),
                 depth + 1,
@@ -934,6 +998,8 @@ fn inline_child_node(
             let lower_offset = offset + utf8_len(&upper_text);
             let lower = inline_children_nodes(
                 node.get("lower"),
+                recorder,
+                synthetic_warnings,
                 lower_offset,
                 &format!("{path}.warigaki.lower"),
                 depth + 1,
@@ -945,14 +1011,7 @@ fn inline_child_node(
         }
         "figure" => {
             let alt = node["alt"].as_str().unwrap_or("");
-            let end = offset + utf8_len(alt);
-            nodes.push(json!({
-                "type": "image",
-                "span": synthetic_span(offset, offset),
-                "src": node["filename"].as_str().unwrap_or(""),
-                "alt": node.get("alt").cloned().unwrap_or(Value::Null),
-            }));
-            Ok(end)
+            push_unrecorded_text_node(alt, nodes, offset)
         }
         "raw" => Ok(offset),
         other => bail!("unsupported inline kind in inline_children projection at {path}: {other}"),
@@ -1259,6 +1318,7 @@ fn map_warigaki_to_nodes(
     node: &Value,
     nodes: &mut Vec<Value>,
     recorder: &mut DivergenceRecorder,
+    synthetic_warnings: &mut Vec<Value>,
     offset: u64,
     path: &str,
 ) -> Result<u64> {
@@ -1276,6 +1336,7 @@ fn map_warigaki_to_nodes(
         node.get("upper"),
         nodes,
         recorder,
+        synthetic_warnings,
         current,
         &format!("{path}.warigaki.upper"),
     )?;
@@ -1283,9 +1344,21 @@ fn map_warigaki_to_nodes(
         node.get("lower"),
         nodes,
         recorder,
+        synthetic_warnings,
         current,
         &format!("{path}.warigaki.lower"),
     )
+}
+
+fn inline_children_depth_limit_warning(path: &str) -> Value {
+    json!({
+        "severity": "warning",
+        "code": "INLINE_CHILDREN_DEPTH_LIMIT",
+        "message": format!("inline_children depth limit 64 reached at {path}; flattened visible text"),
+        "span": null,
+        "construct": path,
+        "recovery": "Flattened nested inline content to visible text."
+    })
 }
 
 fn visible_content_text(

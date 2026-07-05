@@ -106,8 +106,6 @@
         { "$ref": "#/$defs/gaijiNode" },
         { "$ref": "#/$defs/editorNoteNode" },
         { "$ref": "#/$defs/emphasisNode" },
-        { "$ref": "#/$defs/imageNode" },
-        { "$ref": "#/$defs/pageBreakNode" },
         { "$ref": "#/$defs/lineBreakNode" }
       ]
     },

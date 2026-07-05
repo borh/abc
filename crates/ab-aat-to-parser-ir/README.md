@@ -43,11 +43,11 @@ is `checks.<system>.aat-to-parser-ir-smoke`.
 
 - Mapping version: `0.2.3`
 - Mapping hash:
-  `sha256:9812e1cc0d956143e61cdd9d0a5bccaa3ec301c7984279230107c23919936e8b`
+  `sha256:feaab2d246fd17d79dc979012893400e0f5faacc0df04e260bee4f2b129299bf`
 - Mapping schema hash:
   `sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4`
 - Parser-IR schema hash:
-  `sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913`
+  `sha256:a1fcd348bf396d8d4e6f30ffb928b76b3802b594ea773ed6fa9e1dac52edf712`
 - Latest full-corpus conversion audit:
   `docs/superpowers/reports/2026-07-04-aat-parser-ir-full-corpus-conversion.md`
 

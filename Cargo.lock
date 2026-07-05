@@ -195,6 +195,7 @@ dependencies = [
 name = "ab-ortho-detect"
 version = "0.1.0"
 dependencies = [
+ "ab-morph-analyzers",
  "ab-plaintext",
  "regex",
  "serde",

@@ -10,4 +10,6 @@ ab-plaintext = { workspace = true }
 regex = { workspace = true }
 
 [dev-dependencies]
+ab-plaintext = { workspace = true }
+ab-morph-analyzers = { workspace = true }
 serde_json = { workspace = true }

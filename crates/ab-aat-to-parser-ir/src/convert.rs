@@ -279,11 +279,14 @@ fn map_block(
                 block.get("style").cloned(),
                 None,
             )?;
-            let text = visible_content_text(
+            let text = plain_visible_content_text(block.get("content"))?;
+            let inline_children = inline_children_nodes(
                 block.get("content"),
                 recorder,
+                synthetic_warnings,
+                current,
                 &format!("{path}.heading.content"),
-                Some("(emphasis.text)"),
+                0,
             )?;
             let end = current + utf8_len(&text);
             let span = map_span(block.get("span"), current, end, recorder, path)?;
@@ -291,6 +294,7 @@ fn map_block(
                 "type": "heading",
                 "span": span,
                 "text": text,
+                "inline_children": inline_children,
                 "level": block.get("level").and_then(Value::as_u64).unwrap_or(1),
             }));
             current = end;
@@ -798,7 +802,10 @@ fn map_inline_to_nodes(
         }
         "figure" => map_figure_to_node(node, nodes, recorder, offset, path),
         "raw" => map_raw_to_nodes(node, nodes, recorder, offset, path),
-        "font_size" | "tcy" | "keigakomi" | "caption" | "yokogumi" => {
+        "font_size" | "tcy" | "keigakomi" | "yokogumi" => {
+            map_layout_span_to_node(node, nodes, recorder, synthetic_warnings, offset, path, 0)
+        }
+        "caption" => {
             let kind = node["kind"].as_str().unwrap_or("");
             let pointer = format!("{path}.{kind}");
             recorder.record(
@@ -835,6 +842,65 @@ fn map_inline_to_nodes(
         }
         other => bail!("unsupported inline kind: {other}"),
     }
+}
+
+fn layout_scope(node: &Value) -> Result<Value> {
+    match node["kind"].as_str().unwrap_or("") {
+        "font_size" => Ok(json!({
+            "kind": "font-size",
+            "source": "aat-inline",
+            "size_type": node["size_type"].as_str().unwrap_or("unknown"),
+            "level": node["level"].as_u64().unwrap_or(0),
+        })),
+        "tcy" => Ok(json!({
+            "kind": "tcy",
+            "source": "aat-inline",
+            "marker": node.get("marker").and_then(Value::as_str),
+        })),
+        "keigakomi" => Ok(json!({
+            "kind": "keigakomi",
+            "source": "aat-inline",
+            "border": node.get("border").and_then(Value::as_str),
+            "marker": node.get("marker").and_then(Value::as_str),
+        })),
+        "yokogumi" => Ok(json!({
+            "kind": "yokogumi",
+            "source": "aat-inline",
+            "direction": "horizontal",
+            "marker": node.get("marker").and_then(Value::as_str),
+        })),
+        other => bail!("unsupported layout-span kind: {other}"),
+    }
+}
+
+fn map_layout_span_to_node(
+    node: &Value,
+    nodes: &mut Vec<Value>,
+    recorder: &mut DivergenceRecorder,
+    synthetic_warnings: &mut Vec<Value>,
+    offset: u64,
+    path: &str,
+    depth: usize,
+) -> Result<u64> {
+    let text = plain_visible_content_text(node.get("content"))?;
+    let end = offset + utf8_len(&text);
+    let span = map_span(node.get("span"), offset, end, recorder, path)?;
+    let inline_children = inline_children_nodes(
+        node.get("content"),
+        recorder,
+        synthetic_warnings,
+        offset,
+        &format!("{path}.content"),
+        depth + 1,
+    )?;
+    nodes.push(json!({
+        "type": "layout-span",
+        "span": span,
+        "text": text,
+        "inline_children": inline_children,
+        "layout": layout_scope(node)?,
+    }));
+    Ok(end)
 }
 
 fn inline_children_nodes(
@@ -967,7 +1033,27 @@ fn inline_child_node(
             }));
             Ok(end)
         }
-        "font_size" | "tcy" | "keigakomi" | "caption" | "yokogumi" => {
+        "font_size" | "tcy" | "keigakomi" | "yokogumi" => {
+            let text = plain_visible_content_text(node.get("content"))?;
+            let end = offset + utf8_len(&text);
+            let inline_children = inline_children_nodes(
+                node.get("content"),
+                recorder,
+                synthetic_warnings,
+                offset,
+                &format!("{path}.content"),
+                depth + 1,
+            )?;
+            nodes.push(json!({
+                "type": "layout-span",
+                "span": synthetic_span(offset, end),
+                "text": text,
+                "inline_children": inline_children,
+                "layout": layout_scope(node)?,
+            }));
+            Ok(end)
+        }
+        "caption" => {
             let kind = node["kind"].as_str().unwrap_or("");
             let text = plain_visible_content_text(node.get("content"))?;
             let end = offset + utf8_len(&text);
@@ -989,6 +1075,15 @@ fn inline_child_node(
             Ok(end)
         }
         "warigaki" => {
+            let warigaki_pointer = format!("{path}.warigaki");
+            let target = warigaki_target(recorder, &warigaki_pointer)?;
+            recorder.record(
+                "UNSUPPORTED",
+                Some(warigaki_pointer.as_str()),
+                target,
+                Some(json!("warigaki")),
+                None,
+            )?;
             let upper = inline_children_nodes(
                 node.get("upper"),
                 recorder,
@@ -1454,7 +1549,7 @@ fn visible_inline_text(
             }
             Ok(accent_text(node))
         }
-        "style" | "font_size" | "tcy" | "keigakomi" | "caption" | "yokogumi" => {
+        "style" | "caption" => {
             let kind = node["kind"].as_str().unwrap_or("");
             let container_pointer = format!("{path}.{kind}");
             record_measured_loss(
@@ -1470,6 +1565,12 @@ fn visible_inline_text(
                 target_pointer,
             )
         }
+        "font_size" | "tcy" | "keigakomi" | "yokogumi" => visible_content_text(
+            node.get("content"),
+            recorder,
+            &format!("{path}.content"),
+            target_pointer,
+        ),
         "warigaki" => {
             let warigaki_pointer = format!("{path}.warigaki");
             let target = match warigaki_target(recorder, &warigaki_pointer) {

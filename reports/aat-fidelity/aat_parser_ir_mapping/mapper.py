@@ -27,7 +27,7 @@ import json, re, sys
 # Hardcoded ABC parser-IR target identity (INVENTION: producer must pinch
 # ABC's schema_hash; AAT carries no such identifier).
 PARSER_IR_SCHEMA_ID = "https://w3id.org/abc/schemas/parser-ir.schema.json"
-PARSER_IR_SCHEMA_HASH = "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396"
+PARSER_IR_SCHEMA_HASH = "sha256:c081f2365e2159e6e608733c4eb4e6fdf1fa80203ccd3d5e1f2afc533da8d411"
 
 ENC_MAP = {
     "utf-8": "UTF-8",
@@ -130,6 +130,58 @@ def text_projection(node, ledger_list, path):
     ledger_list.append(ledger("LOSS", f"{path}.{kind}",
                               "(emphasis.text)", f"style text projection dropped inline kind '{kind}'"))
     return ""
+
+
+def plain_text_projection(node):
+    """Visible text projection for compatibility text fields when structure survives elsewhere."""
+    kind = node.get("kind")
+    if kind == "text":
+        return node.get("value", "")
+    if kind == "ruby":
+        return node.get("base", "")
+    if kind == "gaiji":
+        return node.get("resolved") or node.get("description", "")
+    if kind == "accent":
+        return node.get("resolved") or node.get("name", "")
+    if kind in ("style", "font_size", "tcy", "keigakomi", "yokogumi", "caption"):
+        return "".join(plain_text_projection(child) for child in node.get("content", []))
+    if kind == "warigaki":
+        return "".join(
+            plain_text_projection(child)
+            for group in ("upper", "lower")
+            for child in node.get(group, [])
+        )
+    if kind == "figure":
+        return node.get("alt", "")
+    return ""
+
+
+def layout_scope(node):
+    kind = node.get("kind")
+    if kind == "font_size":
+        return {
+            "kind": "font-size",
+            "source": "aat-inline",
+            "size_type": node.get("size_type", "unknown"),
+            "level": node.get("level", 0),
+        }
+    if kind == "tcy":
+        return {"kind": "tcy", "source": "aat-inline", "marker": node.get("marker")}
+    if kind == "keigakomi":
+        return {
+            "kind": "keigakomi",
+            "source": "aat-inline",
+            "border": node.get("border"),
+            "marker": node.get("marker"),
+        }
+    if kind == "yokogumi":
+        return {
+            "kind": "yokogumi",
+            "source": "aat-inline",
+            "direction": "horizontal",
+            "marker": node.get("marker"),
+        }
+    return None
 
 
 def map_inline(node, offset, ledger_list, path):
@@ -261,8 +313,18 @@ def map_inline(node, offset, ledger_list, path):
             "style": node.get("style_type", ""),
         }, span_end(span, fallback_end)
 
-    # inline_container kinds: font_size, tcy, keigakomi, yokogumi, caption
-    if kind in ("font_size", "tcy", "keigakomi", "yokogumi", "caption"):
+    if kind in ("font_size", "tcy", "keigakomi", "yokogumi"):
+        projected_text = plain_text_projection(node)
+        fallback_end = offset + utf8_len(projected_text)
+        pir_span = map_span(span, offset, fallback_end, ledger_list, path)
+        return {
+            "type": "layout-span",
+            "span": pir_span,
+            "text": projected_text,
+            "layout": layout_scope(node),
+        }, span_end(span, fallback_end)
+
+    if kind == "caption":
         ledger_list.append(ledger("UNSUPPORTED", f"{path}.{kind}",
                                   "emphasis(?)", f"inline_container kind '{kind}' has no first-class parser-IR node; only emphasis.text/style exist"))
         return None, span_end(span, offset + utf8_len(text_projection(node, ledger_list, path)))
@@ -303,17 +365,18 @@ def map_block(block, nodes, ledger_list, offset, path):
                                   "(none)", f"block container of kind '{kind}' has no parser-IR node; boundary + span + style lost, only inlines emitted"))
 
     if kind == "heading":
-        # parser-IR heading: single text string + level. AAT heading has content[] inlines.
-        # Concatenate inline text projections; nested ruby/gaiji inside heading lost.
+        # parser-IR heading keeps a visible text projection and structured inline_children.
         parts = []
+        inline_children = []
+        child_offset = offset
         for i, child in enumerate(block.get("content", [])):
-            if child.get("kind") == "text":
-                parts.append(child.get("value", ""))
-            else:
-                if child.get("kind") != "warigaki":
-                    ledger_list.append(ledger("LOSS", f"{path}.heading.content[{i}].{child.get('kind')}",
-                                              "(none)", "non-text inline inside heading flattened to text projection; structure lost"))
+            if child.get("kind") == "warigaki":
                 parts.append(text_projection(child, ledger_list, f"{path}.heading.content[{i}]"))
+            else:
+                parts.append(plain_text_projection(child))
+            mapped, child_offset = map_inline(child, child_offset, ledger_list, f"{path}.heading.content[{i}]")
+            if mapped is not None:
+                inline_children.append(mapped)
         level = block.get("level", 1)
         # AAT level max 3, parser-IR max 6 -> fits, but range divergence recorded.
         ledger_list.append(ledger("AMBIGUITY", f"{path}.heading.level",
@@ -327,6 +390,7 @@ def map_block(block, nodes, ledger_list, offset, path):
             "type": "heading",
             "span": map_span(block.get("span"), offset, fallback_end, ledger_list, path),
             "text": heading_text,
+            "inline_children": inline_children,
             "level": level,
         })
         offset = span_end(block.get("span"), fallback_end)

@@ -31,6 +31,7 @@ NODE_COVERAGE_CLASSES = {
     "caption": "tei_policy_projection",
     "quote": "tei_policy_projection",
     "source-note": "tei_policy_projection",
+    "layout-span": "tei_policy_projection",
     "warigaki": "tei_plus_abc_extension",
     "raw-source": "tei_policy_projection",
 }

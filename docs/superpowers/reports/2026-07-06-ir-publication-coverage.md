@@ -7,7 +7,7 @@ Verdict: `IR_PUBLICATION_COVERAGE_BLOCKED_CLASSIFIED_GAPS`
 | Class | Node types |
 |---|---:|
 | `tei_exact` | 7 |
-| `tei_policy_projection` | 6 |
+| `tei_policy_projection` | 7 |
 
 ## Field Coverage
 
@@ -66,23 +66,24 @@ Verdict: `IR_PUBLICATION_COVERAGE_BLOCKED_CLASSIFIED_GAPS`
 | `tei_exact` | 3 |
 | `tei_policy_projection` | 5 |
 | `tei_plus_abc_extension` | 2 |
-| `unsupported_gap` | 21 |
+| `unsupported_gap` | 16 |
 
 ## Unsupported gaps
 
-Count: 165
+Count: 151
 
 | Owner | Count |
 |---|---:|
 | `aat_to_parser_ir_converter` | 5 |
-| `custom_schema` | 104 |
-| `parser_ir_schema` | 15 |
-| `policy` | 41 |
+| `custom_schema` | 97 |
+| `policy` | 49 |
 
 - `blocks[].children[].children[].content[].accent` owner `policy`
 - `blocks[].children[].children[].content[].span` owner `policy`
 - `blocks[].children[].children[].content[].style` owner `policy`
 - `blocks[].children[].children[].content[].warigaki.upper[].span` owner `policy`
+- `blocks[].children[].children[].heading.content[].span` owner `policy`
+- `blocks[].children[].children[].heading.content[].style` owner `policy`
 - `blocks[].children[].children[].span` owner `policy`
 - `blocks[].children[].content[].accent` owner `policy`
 - `blocks[].children[].content[].content[].accent` owner `policy`
@@ -93,29 +94,24 @@ Count: 165
 - `blocks[].children[].content[].warigaki.lower[].span` owner `policy`
 - `blocks[].children[].content[].warigaki.upper[].span` owner `policy`
 - `blocks[].children[].content[].warigaki.upper[].style` owner `policy`
+- `blocks[].children[].heading.content[].span` owner `policy`
+- `blocks[].children[].heading.content[].style` owner `policy`
 - `blocks[].children[].span` owner `policy`
 - `blocks[].content[].accent` owner `policy`
-- `blocks[].content[].content[].accent` owner `policy`
-- `blocks[].content[].content[].span` owner `policy`
-- `blocks[].content[].content[].style` owner `policy`
-- `blocks[].content[].content[].warigaki.upper[].span` owner `policy`
 
 ## Closure Gaps
 
-Classified but not admitted: 165
+Classified but not admitted: 151
 
 | Family | Count |
 |---|---:|
-| `accent` | 12 |
-| `figure_metadata` | 83 |
-| `font_tcy` | 13 |
-| `gaiji_unresolved_reason` | 4 |
-| `heading_inline_content` | 2 |
+| `accent` | 14 |
+| `figure_metadata` | 85 |
+| `gaiji_unresolved_reason` | 6 |
 | `heading_jisage_structure` | 7 |
-| `keigakomi_yokogumi` | 8 |
 | `provenance_metrics` | 3 |
 | `source_identity` | 5 |
-| `span_coordinates` | 14 |
+| `span_coordinates` | 17 |
 | `style_rendition` | 14 |
 
 True unsupported gaps: 0

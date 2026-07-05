@@ -13,4 +13,4 @@ printf '%s\n' "$out"
 printf '%s\n' "$out" | rg -F \
   "$abc_root/schemas/aat-parser-ir-mapping.schema.json	sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4"
 printf '%s\n' "$out" | rg -F \
-  "$abc_root/schemas/parser-ir.schema.json	sha256:a1fcd348bf396d8d4e6f30ffb928b76b3802b594ea773ed6fa9e1dac52edf712"
+  "$abc_root/schemas/parser-ir.schema.json	sha256:c081f2365e2159e6e608733c4eb4e6fdf1fa80203ccd3d5e1f2afc533da8d411"

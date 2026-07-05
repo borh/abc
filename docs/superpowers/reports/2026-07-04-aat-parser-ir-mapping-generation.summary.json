@@ -1,17 +1,17 @@
 {
   "files_scanned": 89169,
   "files_failed_to_parse": 0,
-  "files_with_unsupported": 23564,
+  "files_with_unsupported": 21589,
   "files_with_warigaki": 560,
   "total_blocks_scanned": 6384313,
   "total_inline_nodes_scanned": 49412371,
-  "total_parser_ir_nodes_emitted": 32793931,
-  "total_ledger_entries": 61600541,
+  "total_parser_ir_nodes_emitted": 32847316,
+  "total_ledger_entries": 61814683,
   "category_counts": {
-    "LOSS": 9593256,
-    "AMBIGUITY": 33464788,
-    "INVENTION": 13474742,
-    "UNSUPPORTED": 4836371,
+    "LOSS": 9562288,
+    "AMBIGUITY": 33737817,
+    "INVENTION": 13498385,
+    "UNSUPPORTED": 4784809,
     "STRUCTURAL": 231384
   },
   "block_kind_counts": {
@@ -37,10 +37,10 @@
     "accent": 4613,
     "yokogumi": 101
   },
-  "generated_mapping_rules": 714,
+  "generated_mapping_rules": 680,
   "mapping_version": "0.2.3",
   "mapping_schema_hash": "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4",
-  "target_parser_ir_schema_hash": "sha256:a1fcd348bf396d8d4e6f30ffb928b76b3802b594ea773ed6fa9e1dac52edf712",
+  "target_parser_ir_schema_hash": "sha256:c081f2365e2159e6e608733c4eb4e6fdf1fa80203ccd3d5e1f2afc533da8d411",
   "identity_projection": {
     "parser_ir_pointer": "derived_from",
     "aat_pointers": [
@@ -62,5 +62,5 @@
     "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter",
     "/db/ab-validator/aat-corpus/aozora-full-20260705T015007Z/aat/aozora-adapter"
   ],
-  "mapping_path": "data/aat-to-parser-ir-mapping-v1.json"
+  "mapping_path": "/db/ab-validator/aat-fidelity/aat-parser-ir-mapping-smoke/mapping.json"
 }

@@ -45,12 +45,14 @@ cat > "$parser_schema" <<'JSON'
         {"$ref": "#/$defs/textNode"},
         {"$ref": "#/$defs/rubyNode"},
         {"$ref": "#/$defs/warigakiNode"},
+        {"$ref": "#/$defs/layoutSpanNode"},
         {"$ref": "#/$defs/rawSourceNode"}
       ]
     },
     "textNode": {"properties": {"type": {"const": "text"}}},
     "rubyNode": {"properties": {"type": {"const": "ruby"}}},
     "warigakiNode": {"properties": {"type": {"const": "warigaki"}}},
+    "layoutSpanNode": {"properties": {"type": {"const": "layout-span"}}},
     "rawSourceNode": {"properties": {"type": {"const": "raw-source"}}}
   }
 }
@@ -248,11 +250,12 @@ jq -e '.diagnostic_coverage.by_field."warnings[].code".class == "custom_sidecar"
 jq -e '.diagnostic_coverage.by_field."errors[].span".class == "custom_sidecar"' "$summary_json" >/dev/null
 jq -e '.node_coverage.by_node_type.text.class == "tei_exact"' "$summary_json" >/dev/null
 jq -e '.node_coverage.by_node_type.ruby.class == "tei_exact"' "$summary_json" >/dev/null
+jq -e '.node_coverage.by_node_type."layout-span".class == "tei_policy_projection"' "$summary_json" >/dev/null
 jq -e '.node_coverage.by_node_type.warigaki.class == "tei_plus_abc_extension"' "$summary_json" >/dev/null
 jq -e '.node_coverage.by_node_type."raw-source".class == "tei_policy_projection"' "$summary_json" >/dev/null
 jq -e '.node_coverage.counts_by_class.tei_exact == 2' "$summary_json" >/dev/null
 jq -e '.node_coverage.counts_by_class.tei_plus_abc_extension == 1' "$summary_json" >/dev/null
-jq -e '.node_coverage.counts_by_class.tei_policy_projection == 1' "$summary_json" >/dev/null
+jq -e '.node_coverage.counts_by_class.tei_policy_projection == 2' "$summary_json" >/dev/null
 jq -e '.source_construct_coverage.by_construct.image.class == "tei_exact"' "$summary_json" >/dev/null
 jq -e '.source_construct_coverage.by_construct.caption.class == "tei_policy_projection"' "$summary_json" >/dev/null
 jq -e '.source_construct_coverage.counts_by_class.tei_exact == 1' "$summary_json" >/dev/null

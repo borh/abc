@@ -8,26 +8,26 @@ Date: 2026-07-03
 |---|---:|
 | files scanned | 89169 |
 | files failed to parse | 0 |
-| files with UNSUPPORTED | 23564 |
+| files with UNSUPPORTED | 21589 |
 | files with warigaki | 560 |
-| total parser-IR nodes emitted | 32793931 |
-| total ledger entries | 61600541 |
-| generated mapping rules | 714 |
+| total parser-IR nodes emitted | 32847316 |
+| total ledger entries | 61814683 |
+| generated mapping rules | 680 |
 
 ## Category Counts
 
 | Category | Count |
 |---|---:|
-| LOSS | 9593256 |
-| AMBIGUITY | 33464788 |
-| INVENTION | 13474742 |
-| UNSUPPORTED | 4836371 |
+| LOSS | 9562288 |
+| AMBIGUITY | 33737817 |
+| INVENTION | 13498385 |
+| UNSUPPORTED | 4784809 |
 | STRUCTURAL | 231384 |
 
 ## Schema Hashes
 
 - mapping schema hash: `sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4`
-- target parser-IR schema hash: `sha256:a1fcd348bf396d8d4e6f30ffb928b76b3802b594ea773ed6fa9e1dac52edf712`
+- target parser-IR schema hash: `sha256:c081f2365e2159e6e608733c4eb4e6fdf1fa80203ccd3d5e1f2afc533da8d411`
 
 ## Identity Projection
 

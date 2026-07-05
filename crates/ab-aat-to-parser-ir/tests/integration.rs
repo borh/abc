@@ -72,7 +72,7 @@ fn legacy_schema_hashes_match_mapping_artifact() {
     );
     assert_eq!(
         schema_hash(&schemas.parser_ir_schema).unwrap(),
-        "sha256:a1fcd348bf396d8d4e6f30ffb928b76b3802b594ea773ed6fa9e1dac52edf712"
+        "sha256:c081f2365e2159e6e608733c4eb4e6fdf1fa80203ccd3d5e1f2afc533da8d411"
     );
 }
 
@@ -128,7 +128,7 @@ fn mapping_preflight_accepts_checked_in_v2_artifact() {
     let index = mapping.preflight(&schemas).unwrap();
 
     assert_eq!(mapping.mapping_version, "0.2.3");
-    assert_eq!(mapping.transform_rule_descriptions.len(), 714);
+    assert_eq!(mapping.transform_rule_descriptions.len(), 680);
     assert!(
         !mapping
             .transform_rule_descriptions
@@ -684,7 +684,7 @@ fn recovers_accent_and_inline_yokogumi_without_fatal_conversion() {
     assert_eq!(
         output.parser_ir.pointer("/nodes/1"),
         Some(&json!({
-            "type": "emphasis",
+            "type": "layout-span",
             "span": {"start": 2, "end": 5, "line": null, "column": null, "coordinate_system": "decoded_utf8"},
             "text": "ABC",
             "inline_children": [{
@@ -692,7 +692,7 @@ fn recovers_accent_and_inline_yokogumi_without_fatal_conversion() {
                 "span": {"start": 2, "end": 5, "line": null, "column": null, "coordinate_system": "decoded_utf8"},
                 "text": "ABC"
             }],
-            "style": "yokogumi",
+            "layout": {"kind": "yokogumi", "source": "aat-inline", "direction": "horizontal", "marker": null},
         }))
     );
     assert_eq!(
@@ -725,12 +725,15 @@ fn recovers_accent_and_inline_yokogumi_without_fatal_conversion() {
         "blocks[].content[].accent.name",
         None
     ));
-    assert!(has_divergence_record(
-        &output,
-        "UNSUPPORTED",
-        "blocks[].content[].yokogumi",
-        Some("emphasis(?)")
-    ));
+    assert!(
+        !has_divergence_record(
+            &output,
+            "UNSUPPORTED",
+            "blocks[].content[].yokogumi",
+            Some("emphasis(?)")
+        ),
+        "inline yokogumi should be represented as layout-span after schema delta"
+    );
     validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
 }
 
@@ -1076,7 +1079,7 @@ fn measured_policy_projects_style_heading_warning_and_warigaki() {
         &output,
         "UNSUPPORTED",
         "blocks[].children[].heading.content[].warigaki",
-        Some("(emphasis.text)")
+        None
     ));
     assert!(has_divergence_record(
         &output,
@@ -1253,7 +1256,9 @@ fn preserves_nested_inline_container_children() {
         Some(&json!("12"))
     );
     assert_eq!(
-        output.parser_ir.pointer("/nodes/0/inline_children/0/style"),
+        output
+            .parser_ir
+            .pointer("/nodes/0/inline_children/0/layout/kind"),
         Some(&json!("tcy"))
     );
     assert_eq!(
@@ -1370,7 +1375,8 @@ fn measured_policy_flattens_epub3_tcy_and_block_containers() {
         .unwrap()
         .iter()
         .filter_map(|node| {
-            if node["type"] == "text" || node["type"] == "emphasis" {
+            if node["type"] == "text" || node["type"] == "emphasis" || node["type"] == "layout-span"
+            {
                 node["text"].as_str()
             } else {
                 None
@@ -1380,7 +1386,7 @@ fn measured_policy_flattens_epub3_tcy_and_block_containers() {
     assert_eq!(projected_text, "第10章横組");
 
     assert!(
-        output
+        !output
             .divergence_bundle
             .pointer("/records")
             .and_then(Value::as_array)
@@ -1392,7 +1398,7 @@ fn measured_policy_flattens_epub3_tcy_and_block_containers() {
                         .as_str()
                         .is_some_and(|pointer| pointer.contains("tcy"))
             }),
-        "expected measured tcy unsupported divergence"
+        "inline tcy should be represented as layout-span after schema delta"
     );
     assert!(
         output
@@ -1836,7 +1842,7 @@ fn tei_eaj_structural_expansion_maps_tei_file_ids_to_aozora_work_ids() {
 }
 
 #[test]
-fn heading_visible_projection_records_measured_flattening_losses() {
+fn heading_preserves_structured_inline_children() {
     let (schemas, mapping) = schemas_and_mapping();
     let aat = json!({
         "version": 1,
@@ -1874,38 +1880,112 @@ fn heading_visible_projection_records_measured_flattening_losses() {
     })
     .unwrap();
 
-    for (category, aat_pointer, parser_ir_pointer) in [
-        (
-            "LOSS",
-            "blocks[].children[].heading.content[].font_size",
-            None,
-        ),
-        ("LOSS", "blocks[].children[].heading.content[].gaiji", None),
-        (
-            "LOSS",
-            "blocks[].children[].heading.content[].raw",
-            Some("(emphasis.text)"),
-        ),
-        ("LOSS", "blocks[].children[].heading.content[].raw", None),
-        ("LOSS", "blocks[].children[].heading.content[].ruby", None),
-        (
-            "LOSS",
-            "blocks[].children[].heading.content[].ruby.reading",
-            Some("(emphasis.text)"),
-        ),
-        ("LOSS", "blocks[].children[].heading.content[].style", None),
-    ] {
-        assert!(
-            has_divergence_record(&output, category, aat_pointer, parser_ir_pointer),
-            "missing measured heading flattening divergence {category} {aat_pointer:?} {parser_ir_pointer:?}"
-        );
-    }
     let heading = output
         .parser_ir
         .pointer("/nodes/1")
         .expect("heading node should follow indentation node");
     assert_eq!(heading["type"], "heading");
     assert_eq!(heading["text"], "FGRS");
+    assert_eq!(
+        heading.pointer("/inline_children/0/type"),
+        Some(&json!("layout-span"))
+    );
+    assert_eq!(
+        heading.pointer("/inline_children/0/layout/kind"),
+        Some(&json!("font-size"))
+    );
+    assert_eq!(
+        heading.pointer("/inline_children/1/type"),
+        Some(&json!("gaiji"))
+    );
+    assert_eq!(
+        heading.pointer("/inline_children/2/type"),
+        Some(&json!("ruby"))
+    );
+    assert_eq!(
+        heading.pointer("/inline_children/3/type"),
+        Some(&json!("emphasis"))
+    );
+    assert!(
+        !has_divergence_record(
+            &output,
+            "LOSS",
+            "blocks[].children[].heading.content[].font_size",
+            None,
+        ),
+        "font_size inside heading should be represented after schema delta"
+    );
+    assert!(
+        !has_divergence_record(
+            &output,
+            "LOSS",
+            "blocks[].children[].heading.content[].ruby",
+            None,
+        ),
+        "ruby inside heading should be represented after schema delta"
+    );
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
+#[test]
+fn converts_inline_layout_scopes_to_layout_span() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let aat = json!({
+        "version": 1,
+        "work_id": "layout-span-conversion",
+        "meta": base_meta(
+            "utf-8",
+            "sha256:dadadadadadadadadadadadadadadadadadadadadadadadadadadadadadadada",
+        ),
+        "blocks": [{
+            "kind": "paragraph",
+            "content": [
+                {"kind": "font_size", "size_type": "large", "level": 1, "content": [{"kind": "text", "value": "大"}]},
+                {"kind": "tcy", "content": [{"kind": "text", "value": "12"}]},
+                {"kind": "keigakomi", "content": [{"kind": "text", "value": "囲"}]},
+                {"kind": "yokogumi", "content": [{"kind": "text", "value": "横"}]}
+            ]
+        }]
+    });
+
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: ConversionOptions::default(),
+    })
+    .unwrap();
+
+    let kinds: Vec<_> = output.parser_ir["nodes"]
+        .as_array()
+        .expect("nodes")
+        .iter()
+        .map(|node| node.pointer("/layout/kind").and_then(Value::as_str))
+        .collect();
+    assert_eq!(
+        kinds,
+        vec![
+            Some("font-size"),
+            Some("tcy"),
+            Some("keigakomi"),
+            Some("yokogumi")
+        ]
+    );
+    assert_eq!(
+        output.parser_ir.pointer("/nodes/0/layout/size_type"),
+        Some(&json!("large"))
+    );
+    assert_eq!(
+        output.parser_ir.pointer("/nodes/0/layout/level"),
+        Some(&json!(1))
+    );
+    assert!(
+        output.parser_ir["nodes"]
+            .as_array()
+            .expect("nodes")
+            .iter()
+            .all(|node| node["type"] == "layout-span")
+    );
     validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
 }
 

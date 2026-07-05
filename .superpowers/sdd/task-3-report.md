@@ -49,7 +49,7 @@
 
 ## Commit
 
-- `606463a`
+- `d387792`
 
 ## Self Review
 
@@ -62,3 +62,19 @@
 ## Concerns
 
 - None.
+
+## Post-Review Fixes
+
+- Replaced `construct_from_pointer` substring matching with segment-aware matching:
+  - normalizes `[]` suffixes on path segments
+  - matches exact construct segments and exact compound tokens (including `gaiji.resolved`) only
+  - prevents `raw_material` from being classified as `raw`
+- Hardened `custom_contract_block` so `CUSTOM_CONTRACT_INVALID` now requires:
+  - top-level contract schema `https://w3id.org/abc/schemas/ir-publication-preservation-v1.json`
+  - presence of all required top-level fields:
+    `schema_id`, `schema_version`, `parser_ir_schema_id`, `parser_ir_schema_hash`,
+    `tei_profile_id`, `tei_profile_hash`, `source`, `producer`, `mapping`, `coverage`,
+    and `records`
+- Extended smoke coverage to assert `blocks[].content[].raw_material` is captured as an
+  unsupported gap, and that a JSON file with only matching id (`schema_id`) is
+  `CUSTOM_CONTRACT_INVALID`.

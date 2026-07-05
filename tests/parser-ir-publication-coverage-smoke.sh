@@ -62,7 +62,7 @@ cat > "$mapping" <<'JSON'
     {
       "rule_id": "U-01",
       "category": "UNSUPPORTED",
-      "aat_pointer": "blocks[].content[].raw",
+      "aat_pointer": "blocks[].content[].raw_material",
       "parser_ir_pointer": "(none)",
       "description": "fixture unsupported raw source"
     },
@@ -127,14 +127,24 @@ JSON
 
 cat > "$valid_custom_contract" <<'JSON'
 {
-  "$id": "https://w3id.org/abc/schemas/ir-publication-preservation-v1.json",
-  "schema_version": "2026.07.06"
+  "schema_id": "https://w3id.org/abc/schemas/ir-publication-preservation-v1.json",
+  "schema_version": "2026.07.06",
+  "parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
+  "parser_ir_schema_hash": "sha256:fixture-parser-ir",
+  "tei_profile_id": "https://w3id.org/abc/schemas/tei.xml",
+  "tei_profile_hash": "sha256:fixture-tei-profile",
+  "source": {"type":"publication_source"},
+  "producer": {"name":"fixture"},
+  "mapping": {"id":"https://w3id.org/abc/mappings/fixture"},
+  "coverage": {"verdict":"CUSTOM_CONTRACT_PRESENT"},
+  "records": []
 }
 JSON
 
 cat > "$invalid_custom_contract" <<'JSON'
 {
-  "schema_id": "urn:example:invalid-contract",
+  "$id": "https://w3id.org/abc/schemas/ir-publication-preservation-v1.json",
+  "schema_id": "https://w3id.org/abc/schemas/ir-publication-preservation-v1.json",
   "schema_version": "2026.07.06"
 }
 JSON
@@ -164,7 +174,7 @@ jq -e '.source_construct_coverage.counts_by_class.tei_exact == 1' "$summary_json
 jq -e '.source_construct_coverage.counts_by_class.tei_plus_abc_extension == 1' "$summary_json" >/dev/null
 jq -e '.source_construct_coverage.counts_by_class.unsupported_gap == 1' "$summary_json" >/dev/null
 jq -e '.unsupported_gaps.count == 1' "$summary_json" >/dev/null
-jq -e '.unsupported_gaps.items[0].aat_pointer == "blocks[].content[].raw"' "$summary_json" >/dev/null
+jq -e '.unsupported_gaps.items[0].aat_pointer == "blocks[].content[].raw_material"' "$summary_json" >/dev/null
 jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_UNSUPPORTED_GAPS"' "$summary_json" >/dev/null
 rg -n "IR Publication Coverage" "$report_md" >/dev/null
 rg -n "Unsupported gaps" "$report_md" >/dev/null
@@ -228,5 +238,5 @@ python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
   --report-md "$invalid_contract_report_md"
 
 jq -e '.custom_contract.verdict == "CUSTOM_CONTRACT_INVALID"' "$invalid_contract_summary_json" >/dev/null
-jq -e '.custom_contract.schema_id == "urn:example:invalid-contract"' "$invalid_contract_summary_json" >/dev/null
+jq -e '.custom_contract.schema_id == "https://w3id.org/abc/schemas/ir-publication-preservation-v1.json"' "$invalid_contract_summary_json" >/dev/null
 jq -e '.verdict != "IR_PUBLICATION_COVERAGE_COMPLETE"' "$invalid_contract_summary_json" >/dev/null

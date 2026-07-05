@@ -45,6 +45,30 @@ CONSTRUCT_COVERAGE_CLASSES = {
     "yokogumi_block": "tei_policy_projection",
     "gaiji.resolved": "tei_exact",
 }
+KNOWN_COMPOUND_CONSTRUCTS = ("gaiji.resolved",)
+KNOWN_CONSTRUCT_SEGMENTS = (
+    "caption_block",
+    "quote_block",
+    "keigakomi_block",
+    "yokogumi_block",
+    "warigaki",
+    "accent",
+    "raw",
+    "ruby",
+)
+REQUIRED_CUSTOM_CONTRACT_PROPERTIES = (
+    "schema_id",
+    "schema_version",
+    "parser_ir_schema_id",
+    "parser_ir_schema_hash",
+    "tei_profile_id",
+    "tei_profile_hash",
+    "source",
+    "producer",
+    "mapping",
+    "coverage",
+    "records",
+)
 CONSTRUCT_CLASS_PRIORITY = {
     "unsupported_gap": 0,
     "tei_plus_abc_extension": 1,
@@ -141,21 +165,16 @@ def node_coverage_from_schema(schema: dict[str, Any]) -> dict[str, Any]:
 def construct_from_pointer(pointer: str | None) -> str:
     if not pointer:
         return "unknown"
-    for token in (
-        "caption_block",
-        "quote_block",
-        "keigakomi_block",
-        "yokogumi_block",
-        "warigaki",
-        "gaiji.resolved",
-        "accent",
-        "raw",
-    ):
-        if token in pointer:
+    segments = [segment[:-2] if segment.endswith("[]") else segment for segment in pointer.split(".")]
+    for token in KNOWN_COMPOUND_CONSTRUCTS:
+        parts = token.split(".")
+        for start in range(len(segments) - len(parts) + 1):
+            if segments[start : start + len(parts)] == parts:
+                return token
+    for token in KNOWN_CONSTRUCT_SEGMENTS:
+        if token in segments:
             return token
-    if ".ruby" in pointer or "ruby." in pointer:
-        return "ruby"
-    return pointer.rsplit(".", 1)[-1].replace("[]", "")
+    return segments[-1] if segments else "unknown"
 
 
 def _more_conservative_class(current_class: str | None, candidate_class: str) -> str:
@@ -263,7 +282,7 @@ def custom_contract_block(custom_contract_schema: pathlib.Path | None) -> dict[s
 
     try:
         contract = load_json(custom_contract_schema)
-    except json.JSONDecodeError:
+    except (json.JSONDecodeError, OSError):
         return {
             "verdict": "CUSTOM_CONTRACT_INVALID",
             "schema_id": None,
@@ -272,14 +291,40 @@ def custom_contract_block(custom_contract_schema: pathlib.Path | None) -> dict[s
             "message": "ABC custom preservation contract is not valid JSON.",
         }
 
-    contract_id = contract.get("$id") or contract.get("schema_id")
+    if not isinstance(contract, dict):
+        return {
+            "verdict": "CUSTOM_CONTRACT_INVALID",
+            "schema_id": None,
+            "schema_version": None,
+            "path": str(custom_contract_schema),
+            "message": "ABC custom preservation contract does not have the required top-level object structure.",
+        }
+
+    contract_id = contract.get("schema_id")
+    if contract_id is None:
+        contract_id = contract.get("$id")
     if contract_id != REQUIRED_CUSTOM_CONTRACT_ID:
+        return {
+            "verdict": "CUSTOM_CONTRACT_INVALID",
+            "schema_id": contract.get("schema_id"),
+            "schema_version": contract.get("schema_version"),
+            "path": str(custom_contract_schema),
+            "message": "ABC custom preservation contract does not identify the required contract schema.",
+        }
+
+    missing_properties = [
+        name
+        for name in REQUIRED_CUSTOM_CONTRACT_PROPERTIES
+        if contract.get(name) is None
+    ]
+    if missing_properties:
         return {
             "verdict": "CUSTOM_CONTRACT_INVALID",
             "schema_id": contract_id,
             "schema_version": contract.get("schema_version"),
             "path": str(custom_contract_schema),
-            "message": "ABC custom preservation contract does not identify the required contract schema.",
+            "message": "ABC custom preservation contract is missing required top-level properties.",
+            "missing_properties": missing_properties,
         }
     return {
         "verdict": "CUSTOM_CONTRACT_PRESENT",

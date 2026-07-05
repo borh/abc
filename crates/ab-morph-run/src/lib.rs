@@ -862,6 +862,36 @@ fn write_error_row<W: Write + ?Sized>(writer: &mut W, row: &RunErrorRow) -> Resu
     write_jsonl_row(writer, row)
 }
 
+/// Serialize an [`OrthoMapError`] from `remap_spans` as a `RunErrorRow`-shaped
+/// JSONL row, so ortho remap failures are routed to the same errors output as
+/// analyzer failures instead of crashing the pipeline.
+fn write_ortho_remap_error<W: Write + ?Sized>(
+    writer: &mut W,
+    source_id: &str,
+    e: &ab_ortho_detect::OrthoMapError,
+) -> Result<()> {
+    let (code, msg) = match e {
+        ab_ortho_detect::OrthoMapError::CrossesBoundary { range, boundary } => (
+            "crosses_boundary",
+            format!("range {range:?} crosses boundary at byte {boundary}"),
+        ),
+        ab_ortho_detect::OrthoMapError::UncoveredOffset { offset } => {
+            ("uncovered_offset", format!("offset {offset} not covered"))
+        }
+    };
+    write_error_row(
+        writer,
+        &RunErrorRow {
+            input_path: String::new(),
+            source_id: Some(source_id.to_owned()),
+            text_id: None,
+            analyzer: None,
+            stage: "ortho_remap".to_owned(),
+            error: format!("{code}: {msg}"),
+        },
+    )
+}
+
 fn write_analysis_row<W: Write + ?Sized>(
     writer: &mut W,
     output_profile: OutputProfile,

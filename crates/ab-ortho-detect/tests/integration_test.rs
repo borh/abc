@@ -45,7 +45,7 @@ fn offset_map_correct_for_full_sentence() {
     let (normalized, map) = ortho_normalize(original, &annotations);
     assert_eq!(normalized, "名前はまだ無い");
     // Identity-length entry → full-range query returns 0..21.
-    assert_eq!(map.to_original(0..21), 0..21);
+    assert_eq!(map.to_original(0..21).unwrap(), 0..21);
 }
 
 #[test]
@@ -62,9 +62,9 @@ fn offset_map_preserves_unchanged_prefix() {
     let (normalized, map) = ortho_normalize(original, &annotations);
     assert_eq!(normalized, "吾輩は猫である。名前はまだ無い");
     // Unchanged prefix (bytes 0..24) maps identity.
-    assert_eq!(map.to_original(0..24), 0..24);
+    assert_eq!(map.to_original(0..24).unwrap(), 0..24);
     // Annotation suffix (normalized bytes 24..45) maps to original bytes 24..45.
-    assert_eq!(map.to_original(24..45), 24..45);
+    assert_eq!(map.to_original(24..45).unwrap(), 24..45);
 }
 
 #[test]

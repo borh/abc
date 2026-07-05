@@ -681,10 +681,31 @@ pub(crate) fn run_analyze_aat_serial(
                     return Err(error);
                 }
             };
-            // Remap morpheme byte_spans from normalized coords to original-doc coords,
-            // and attach the ortho provenance to the analysis.
+            // Remap morpheme byte_spans / char_spans / surfaces from normalized
+            // coords to original-doc coords, and attach the ortho provenance to
+            // the analysis. `source_text` is set to the original document text so
+            // that downstream `compare_pair` / `compare_pair_with_source_text`
+            // / `compare_nway_with_source_text` are all consistent (spec
+            // invariant #2: byte_span, char_span, surface, source_text all
+            // reference the original doc).
             if let Some(ref map) = offset_map_opt {
-                ab_morph_analyzers::span_builder::remap_spans(&mut analysis, map);
+                if let Err(e) = ab_morph_analyzers::span_builder::remap_spans(
+                    &mut analysis,
+                    map,
+                    &document.text,
+                ) {
+                    // Route to errors_writer with a typed stage/code; do not crash.
+                    // The morphemes analyzed so far remain spanning normalized-text
+                    // coords (diagnostic, not a hard failure).
+                    if let Some(writer) = &mut errors_writer {
+                        write_ortho_remap_error(&mut **writer, &source_id, &e)?;
+                    } else {
+                        eprintln!(
+                            "ortho_remap error for {source_id}: {e}"
+                        );
+                    }
+                }
+                analysis.source_text = document.text.clone();
             }
             analysis.ortho_annotations = annotations_opt.clone();
             analysis.ortho_offset_map = offset_map_opt.clone();

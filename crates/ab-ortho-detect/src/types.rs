@@ -2,6 +2,21 @@ use std::ops::Range;
 
 use serde::{Deserialize, Serialize};
 
+/// Errors returned by [`OffsetMap::to_original`].
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub enum OrthoMapError {
+    /// The normalized byte range crosses an OffsetMap entry boundary where
+    /// byte-length changed (e.g. ヴ→う゛). Callers must split the span first.
+    #[error("normalized range {range:?} crosses OffsetMap entry boundary at byte {boundary}")]
+    CrossesBoundary {
+        range: std::ops::Range<usize>,
+        boundary: usize,
+    },
+    /// The normalized byte offset is not covered by any OffsetMap entry.
+    #[error("normalized offset {offset} not covered by any OffsetMap entry")]
+    UncoveredOffset { offset: usize },
+}
+
 /// What kind of normalization was applied.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum OrthoNormalization {
@@ -59,66 +74,75 @@ impl OffsetMap {
     /// Map a byte range in normalized text to the corresponding range in
     /// original text.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// Panics if `norm_range` crosses an entry boundary where byte-length
-    /// changed (e.g., ヴ→う゛). Callers must split spans at annotation
-    /// boundaries before calling this method.
-    #[must_use]
-    pub fn to_original(&self, norm_range: Range<usize>) -> Range<usize> {
+    /// Returns [`OrthoMapError::CrossesBoundary`] if `norm_range` crosses an
+    /// entry boundary where byte-length changed (e.g., ヴ→う゛) — callers
+    /// must split the span at annotation boundaries first.
+    /// Returns [`OrthoMapError::UncoveredOffset`] if either endpoint is not
+    /// covered by any entry.
+    pub fn to_original(
+        &self,
+        norm_range: Range<usize>,
+    ) -> Result<Range<usize>, OrthoMapError> {
         if self.entries.is_empty() {
-            return norm_range;
+            return Ok(norm_range);
         }
 
-        let start_entry = self
-            .entries
-            .iter()
-            .find(|&&(noff, _, nlen, _)| {
-                norm_range.start >= noff && norm_range.start < noff + nlen
-            })
-            .unwrap_or_else(|| {
-                panic!(
-                    "normalized offset {} not covered by any OffsetMap entry",
-                    norm_range.start
-                )
-            });
+        let start_entry = self.entries.iter().find(|&&(noff, _, nlen, _)| {
+            norm_range.start >= noff && norm_range.start < noff + nlen
+        });
+        let start_entry = match start_entry {
+            Some(e) => e,
+            None => {
+                return Err(OrthoMapError::UncoveredOffset {
+                    offset: norm_range.start,
+                })
+            }
+        };
 
-        let end_entry = self
-            .entries
-            .iter()
-            .find(|&&(noff, _, nlen, _)| {
-                norm_range.end > noff && norm_range.end <= noff + nlen
-            })
-            .unwrap_or_else(|| {
-                panic!(
-                    "normalized offset {} not covered by any OffsetMap entry",
-                    norm_range.end
-                )
-            });
+        let end_entry = self.entries.iter().find(|&&(noff, _, nlen, _)| {
+            norm_range.end > noff && norm_range.end <= noff + nlen
+        });
+        let end_entry = match end_entry {
+            Some(e) => e,
+            None => {
+                return Err(OrthoMapError::UncoveredOffset {
+                    offset: norm_range.end,
+                })
+            }
+        };
 
-        assert_eq!(
-            start_entry, end_entry,
-            "norm_range {:?} crosses OffsetMap entry boundary; split span first",
-            norm_range
-        );
+        if start_entry != end_entry {
+            // `start_entry.2` is the normalized length of the start entry;
+            // together with its normalized offset it identifies where the
+            // caller must split the span.
+            let boundary = start_entry.0 + start_entry.2;
+            return Err(OrthoMapError::CrossesBoundary {
+                range: norm_range,
+                boundary,
+            });
+        }
 
         let &(noff, ooff, nlen, olen) = start_entry;
         let delta = norm_range.start - noff;
         let norm_len = norm_range.end - norm_range.start;
         let orig_start = ooff + delta;
-        // Sub-ranges are only valid within identity entries (nlen == olen);
-        // for entries where byte-length changed, callers must query the
-        // full entry range.
-        let orig_len = if norm_len == nlen {
-            olen
-        } else {
-            assert_eq!(
-                nlen, olen,
-                "cannot map sub-range of OffsetMap entry with differing byte lengths"
-            );
-            norm_len
-        };
-        orig_start..orig_start + orig_len
+        if nlen == olen {
+            // Identity entry: any sub-range maps 1:1 by byte offset.
+            return Ok(orig_start..orig_start + norm_len);
+        }
+        // Length-changing entry (e.g. ヴ→う゛). Only a span that exactly
+        // covers the entry has a clean original-doc equivalent; sub-spans
+        // straddle a char boundary that was collapsed/expanded by the
+        // normalization and cannot be remapped as a byte range.
+        if norm_range.start == noff && norm_range.end == noff + nlen {
+            return Ok(ooff..ooff + olen);
+        }
+        Err(OrthoMapError::CrossesBoundary {
+            range: norm_range,
+            boundary: noff + nlen,
+        })
     }
 
     #[must_use]
@@ -158,7 +182,7 @@ mod tests {
     #[test]
     fn offset_map_empty_is_identity() {
         let map = OffsetMap::empty();
-        assert_eq!(map.to_original(10..20), 10..20);
+        assert_eq!(map.to_original(10..20).unwrap(), 10..20);
     }
 
     #[test]
@@ -167,7 +191,7 @@ mod tests {
         let map = OffsetMap {
             entries: vec![(0, 0, 6, 6), (6, 6, 6, 3)],
         };
-        assert_eq!(map.to_original(0..6), 0..6);
+        assert_eq!(map.to_original(0..6).unwrap(), 0..6);
     }
 
     #[test]
@@ -176,25 +200,25 @@ mod tests {
         let map = OffsetMap {
             entries: vec![(0, 0, 6, 6), (6, 6, 6, 3)],
         };
-        assert_eq!(map.to_original(6..12), 6..9);
+        assert_eq!(map.to_original(6..12).unwrap(), 6..9);
     }
 
     #[test]
-    #[should_panic(expected = "crosses OffsetMap entry boundary")]
-    fn offset_map_panics_on_cross_entry_span() {
+    fn offset_map_errors_on_cross_entry_span() {
         let map = OffsetMap {
             entries: vec![(0, 0, 6, 6), (6, 6, 6, 3)],
         };
-        let _ = map.to_original(3..9); // crosses the 0..6 / 6..12 boundary
+        let err = map.to_original(3..9).unwrap_err(); // crosses the 0..6 / 6..12 boundary
+        assert!(matches!(err, OrthoMapError::CrossesBoundary { .. }));
     }
 
     #[test]
-    #[should_panic(expected = "not covered by any OffsetMap entry")]
-    fn offset_map_panics_on_uncovered_offset() {
+    fn offset_map_errors_on_uncovered_offset() {
         let map = OffsetMap {
             entries: vec![(0, 0, 6, 6)],
         };
-        let _ = map.to_original(10..15);
+        let err = map.to_original(10..15).unwrap_err();
+        assert!(matches!(err, OrthoMapError::UncoveredOffset { .. }));
     }
 
     #[test]

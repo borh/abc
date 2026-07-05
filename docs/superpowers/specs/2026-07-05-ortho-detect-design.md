@@ -550,6 +550,58 @@ Before implementing Phase 1, verify the directional assumptions:
     little-endian f32 format (not a debug-format string), ensuring
     reproducibility across serialization formats.
 
+## ADR — Phase 1 implementation reconciles this spec's internal contradiction
+
+**Status:** Accepted (folded into the spec after Phase 1 merged on
+2026-07-05). Supersedes the contradictory statements below.
+
+**Contradiction being resolved.** §Architecture says "`ab-ortho-detect`
+has **zero workspace dependencies** except the standard library and
+`serde`." §Resolved Decision #5 says "`ab-ortho-detect` depends on
+`ab-plaintext` (for `SentenceSpan`), `ab-morph-analyzers` (for Vibrato
+first pass), and `ab-morph-diff` (for `FeatureMap`)." These cannot both
+hold. Additionally, the Phase 1 plan's Task 4 (as specified) would have
+created a cyclic package dependency
+(`ab-morph-analyzers ← ab-morph-diff ← ab-ortho-detect ← ab-morph-analyzers`).
+
+**Decision.** The §Architecture statement is canonical: `ab-ortho-detect`
+is a near-leaf crate. Concretely, the dependency graph is:
+
+```
+ab-plaintext  ←  ab-ortho-detect   (SentenceSpan lives in ab-plaintext)
+ab-ortho-detect  ←  ab-morph-analyzers  (VibratoAnalyzer: OrthoTokenizer impl)
+ab-ortho-detect  ←  ab-morph-diff       (Analysis carries ortho provenance)
+ab-ortho-detect  ←  ab-morph-run        (pipeline wiring)
+```
+
+`ab-ortho-detect` depends only on `ab-plaintext` (plus `serde`, `regex`).
+It does **not** depend on `ab-morph-analyzers` or `ab-morph-diff`. The
+Vibrato first-pass coupling is inverted via a trait seam:
+
+- `pub trait OrthoTokenizer: Send + Sync` is defined in `ab-ortho-detect`
+  (returns `Vec<OrthoToken { surface, pos2 }>` per `&str`).
+- `HeuristicV1::new(tokenizer: Arc<dyn OrthoTokenizer>, config)` takes
+  the trait object, not a concrete `VibratoAnalyzer`.
+- `impl OrthoTokenizer for VibratoAnalyzer` lives in
+  `ab-morph-analyzers/src/ortho_compat.rs` (which already depends on
+  `ab-ortho-detect`).
+
+This breaks the cycle and matches the architecture statement. Decision #5
+is amended accordingly: the listed workspace deps are the *effective*
+runtime edges, achieved via the trait inversion, not direct Cargo edges.
+
+**`SentenceSpan` location.** Lives in `ab-plaintext`, not
+`ab-ortho-detect/src/types.rs` as the §Architecture file-map suggested.
+This is forced by the leaf decision: the shared type must live in the
+crate that does not depend on `ab-ortho-detect`. The §Architecture file
+map is amended.
+
+**Consequence for Phase 2 ML ablation.** If the character-only ablation
+(spec Decision #9) shows character-only matches full-feature performance,
+the `OrthoTokenizer` trait, `ortho_compat.rs`, the double-dictionary-load,
+and the `oov_count`/`proper_noun_char_ratio` features can all be
+**deleted**. The trait seam exists to make that deletion local.
+
 ## Open Questions
 
 1. **Precision delta vs. Python baseline.** The v1 heuristic faithfully ports

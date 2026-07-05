@@ -76,6 +76,8 @@ enum Command {
         progress_interval_seconds: Option<u64>,
         #[arg(long, value_enum, default_value_t = ab_morph_run::OrthoDetectMode::Off)]
         ortho_detect: ab_morph_run::OrthoDetectMode,
+        #[arg(long = "ortho-ml-model", value_name = "PATH")]
+        ortho_ml_model: Option<PathBuf>,
     },
     SummarizeWarehouseNway {
         #[arg(long)]
@@ -323,8 +325,12 @@ fn main() -> Result<()> {
             progress,
             progress_interval_seconds,
             ortho_detect,
+            ortho_ml_model,
         } => {
             validate_warehouse_cli(warehouse_dir.as_ref(), run_id.as_deref(), resume, jobs)?;
+            if ortho_detect == ab_morph_run::OrthoDetectMode::Ml && ortho_ml_model.is_none() {
+                bail!("--ortho-ml-model PATH is required when --ortho-detect=ml");
+            }
             if let Some(warehouse_dir) = warehouse_dir {
                 return ab_morph_run::run_analyze_aat_warehouse(
                     aat.as_deref(),
@@ -386,6 +392,7 @@ fn main() -> Result<()> {
                 max_nway_examples_per_text,
                 string_stats_output.as_deref(),
                 ortho_detect,
+                ortho_ml_model,
             );
             if let Some(stop) = progress_stop {
                 stop.stop();

@@ -126,6 +126,7 @@ pub fn run_analyze_aat_with_nway(
     max_nway_examples_per_text: Option<usize>,
     string_stats_output: Option<&Path>,
     ortho_detect: OrthoDetectMode,
+    ortho_ml_model: Option<PathBuf>,
 ) -> Result<()> {
     pipeline::run_analyze_aat_with_nway(
         aat,
@@ -145,6 +146,7 @@ pub fn run_analyze_aat_with_nway(
         max_nway_examples_per_text,
         string_stats_output,
         ortho_detect,
+        ortho_ml_model,
     )
 }
 
@@ -1934,6 +1936,7 @@ mod tests {
             None,
             Some(&stats_path),
             crate::OrthoDetectMode::Off,
+            None,
         )
         .unwrap();
 

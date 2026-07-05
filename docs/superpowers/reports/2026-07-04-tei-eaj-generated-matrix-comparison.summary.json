@@ -13,6 +13,7 @@
       "aozora"
     ],
     "candidate_mode": "all",
+    "materialization_mode": "batch",
     "jobs": 24,
     "max_rows": 0,
     "tei_eaj_file_filter": []

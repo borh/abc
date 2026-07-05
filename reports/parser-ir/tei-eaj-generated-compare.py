@@ -85,6 +85,12 @@ def parse_args() -> argparse.Namespace:
         help="Number of TEI materialization jobs to run concurrently.",
     )
     parser.add_argument(
+        "--materialization-mode",
+        choices=["batch", "per-row"],
+        default="batch",
+        help="Use one ABC batch materializer process, or the legacy process-per-row path.",
+    )
+    parser.add_argument(
         "--metadata-record",
         default="examples/v0/example-work/metadata-record.json",
         type=pathlib.Path,
@@ -105,6 +111,14 @@ def parse_args() -> argparse.Namespace:
 
 def load_json(path: pathlib.Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def write_json(path: pathlib.Path, value: Any) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
+        encoding="utf-8",
+    )
 
 
 def logical_report_path(path: pathlib.Path) -> str:
@@ -564,24 +578,20 @@ def run_checked(command: list[str], *, cwd: pathlib.Path | None = None) -> None:
     subprocess.run(command, cwd=cwd, check=True)
 
 
-def materialize_row(
+def convert_task_outputs(
     args: argparse.Namespace,
-    row: dict[str, Any],
-    candidate: dict[str, Any],
-    tei_eaj_path: pathlib.Path,
-    row_dir: pathlib.Path,
-) -> dict[str, Any]:
-    parser_ir_path = row_dir / "parser-ir.json"
-    divergence_path = row_dir / "divergence.json"
-    publication_dir = row_dir / "publication"
+    task: dict[str, Any],
+) -> dict[str, pathlib.Path]:
+    parser_ir_path = task["row_dir"] / "parser-ir.json"
+    divergence_path = task["row_dir"] / "divergence.json"
+    publication_dir = task["row_dir"] / "publication"
     publication_dir.mkdir(parents=True, exist_ok=True)
-
     run_checked(
         [
             str(args.converter_bin),
             "convert",
             "--aat",
-            str(candidate["path"]),
+            str(task["candidate"]["path"]),
             "--mapping",
             str(args.mapping),
             "--parser-ir-out",
@@ -592,7 +602,18 @@ def materialize_row(
             str(args.abc_schema_root),
         ]
     )
+    return {
+        "parser_ir_path": parser_ir_path,
+        "divergence_path": divergence_path,
+        "publication_dir": publication_dir,
+    }
 
+
+def materialize_single_publication(
+    args: argparse.Namespace,
+    parser_ir_path: pathlib.Path,
+    publication_dir: pathlib.Path,
+) -> None:
     run_checked(
         [
             "clojure",
@@ -609,6 +630,51 @@ def materialize_row(
         cwd=args.abc_root,
     )
 
+
+def materialize_batch(
+    args: argparse.Namespace,
+    tasks: list[dict[str, Any]],
+) -> None:
+    batch_path = args.out_dir / "materialization-batch.json"
+    summary_path = args.out_dir / "materialization-summary.json"
+    write_json(
+        batch_path,
+        {
+            "jobs": [
+                {
+                    "id": str(task["task_index"]),
+                    "parser_ir_path": str(task["parser_ir_path"]),
+                    "metadata_record_path": str(args.metadata_record),
+                    "persons_dir": str(args.persons_dir),
+                    "source_manifest_path": str(args.source_manifest),
+                    "output_dir": str(task["publication_dir"]),
+                    "generated_at": args.generated_at,
+                }
+                for task in tasks
+            ]
+        },
+    )
+    run_checked(
+        [
+            "clojure",
+            "-M:abc/materialize-publications-batch",
+            str(batch_path),
+            "--summary",
+            str(summary_path),
+            "--jobs",
+            str(max(1, args.jobs)),
+        ],
+        cwd=args.abc_root,
+    )
+
+
+def build_materialized_row(
+    row: dict[str, Any],
+    candidate: dict[str, Any],
+    tei_eaj_path: pathlib.Path,
+    parser_ir_path: pathlib.Path,
+    publication_dir: pathlib.Path,
+) -> dict[str, Any]:
     parser_ir = load_json(parser_ir_path)
     validation = load_json(publication_dir / "tei-validation-result.json")
     generated = tei_counts(publication_dir / "tei.xml")
@@ -718,7 +784,7 @@ def materialize_row(
     }
 
 
-def failed_materialization_row(
+def failed_task_row(
     row: dict[str, Any],
     candidate: dict[str, Any],
     tei_file: str,
@@ -742,6 +808,29 @@ def failed_materialization_row(
     }
 
 
+def materialize_row(
+    args: argparse.Namespace,
+    row: dict[str, Any],
+    candidate: dict[str, Any],
+    tei_eaj_path: pathlib.Path,
+    row_dir: pathlib.Path,
+) -> dict[str, Any]:
+    task = {"candidate": candidate, "row_dir": row_dir}
+    outputs = convert_task_outputs(args, task)
+    materialize_single_publication(
+        args,
+        outputs["parser_ir_path"],
+        outputs["publication_dir"],
+    )
+    return build_materialized_row(
+        row,
+        candidate,
+        tei_eaj_path,
+        outputs["parser_ir_path"],
+        outputs["publication_dir"],
+    )
+
+
 def materialize_task(args: argparse.Namespace, task: dict[str, Any]) -> dict[str, Any]:
     try:
         result = materialize_row(
@@ -752,7 +841,7 @@ def materialize_task(args: argparse.Namespace, task: dict[str, Any]) -> dict[str
             task["row_dir"],
         )
     except subprocess.CalledProcessError as error:
-        result = failed_materialization_row(
+        result = failed_task_row(
             task["row"],
             task["candidate"],
             task["tei_file"],
@@ -760,6 +849,53 @@ def materialize_task(args: argparse.Namespace, task: dict[str, Any]) -> dict[str
         )
     result["_task_index"] = task["task_index"]
     return result
+
+
+def convert_task(args: argparse.Namespace, task: dict[str, Any]) -> dict[str, Any]:
+    try:
+        outputs = convert_task_outputs(args, task)
+        result = {**task, **outputs, "conversion_failed": False}
+    except subprocess.CalledProcessError as error:
+        row = failed_task_row(
+            task["row"],
+            task["candidate"],
+            task["tei_file"],
+            error,
+        )
+        row["_task_index"] = task["task_index"]
+        result = {**task, "conversion_failed": True, "failed_row": row}
+    return result
+
+
+def run_batch_tasks(
+    args: argparse.Namespace,
+    tasks: list[dict[str, Any]],
+    jobs: int,
+) -> list[dict[str, Any]]:
+    if jobs == 1:
+        converted = [convert_task(args, task) for task in tasks]
+    else:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=jobs) as executor:
+            futures = [executor.submit(convert_task, args, task) for task in tasks]
+            converted = [
+                future.result() for future in concurrent.futures.as_completed(futures)
+            ]
+
+    rows = [task["failed_row"] for task in converted if task.get("conversion_failed")]
+    materializable = [task for task in converted if not task.get("conversion_failed")]
+    if materializable:
+        materialize_batch(args, materializable)
+        for task in materializable:
+            row = build_materialized_row(
+                task["row"],
+                task["candidate"],
+                task["tei_eaj_path"],
+                task["parser_ir_path"],
+                task["publication_dir"],
+            )
+            row["_task_index"] = task["task_index"]
+            rows.append(row)
+    return rows
 
 
 def increment_bucket(
@@ -1031,7 +1167,9 @@ def main() -> int:
                 }
             )
 
-    if jobs == 1:
+    if args.materialization_mode == "batch":
+        rows = run_batch_tasks(args, tasks, jobs)
+    elif jobs == 1:
         rows = [materialize_task(args, task) for task in tasks]
     else:
         with concurrent.futures.ThreadPoolExecutor(max_workers=jobs) as executor:
@@ -1039,7 +1177,7 @@ def main() -> int:
             rows = [
                 future.result() for future in concurrent.futures.as_completed(futures)
             ]
-        rows.sort(key=lambda row: row["_task_index"])
+    rows.sort(key=lambda row: row["_task_index"])
     for row in rows:
         row.pop("_task_index", None)
 
@@ -1098,6 +1236,7 @@ def main() -> int:
             "abc_root": logical_report_path(args.abc_root),
             "adapter_preference": list(preference.keys()),
             "candidate_mode": args.candidate_mode,
+            "materialization_mode": args.materialization_mode,
             "jobs": jobs,
             "max_rows": args.max_rows,
             "tei_eaj_file_filter": args.tei_eaj_file,

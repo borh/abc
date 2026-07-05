@@ -219,6 +219,9 @@ jq -e '.totals.rows_attempted == 3' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.totals.tei_eaj_rows_attempted == 2' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.totals.materialization_succeeded == 3' "$out_dir/audit/summary.json" >/dev/null
 jq -e '([.rows[].selected_aat.adapter] | unique | length) == 3' "$out_dir/audit/summary.json" >/dev/null
+jq -e '.inputs.materialization_mode == "batch"' "$out_dir/audit/summary.json" >/dev/null
+jq -e '.jobs_total == 3 and .jobs_succeeded == 3 and .jobs_concurrency == 2' "$out_dir/audit/materialization-summary.json" >/dev/null
+test -s "$out_dir/audit/materialization-batch.json"
 jq -e '[.rows[] | select(.selected_aat.adapter == "aozora" and .parser_ir.nodes == 0 and .parser_ir.paragraph_count == 0 and .generated_tei.body_missing_gap_p_count == 1 and .generated_tei.body_p_count == 0 and .materialization.status == "passed" and .classification.paragraph_origin_bucket == "converter_paragraph_mismatch")] | length == 1' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.rows[0].generated_tei.body_p_count >= 1' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.rows[0].tei_eaj.body_p_count == 2' "$out_dir/audit/summary.json" >/dev/null

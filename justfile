@@ -76,8 +76,16 @@ aozora-test:
 aozora-smoke: aozora-build
 	@bash "{{repo_root}}/tests/aozora-adapter-smoke.sh"
 
+aozora-flake-smoke:
+	@system="$(nix eval --impure --raw --expr builtins.currentSystem)"; \
+	nix build "{{repo_root}}#checks.$system.aozora-smoke" --print-build-logs
+
 aozora-notation-spec-comparator-smoke:
 	@bash "{{repo_root}}/tests/aozora-notation-spec-comparator-smoke.sh"
+
+aozora-notation-spec-comparator-flake-smoke:
+	@system="$(nix eval --impure --raw --expr builtins.currentSystem)"; \
+	nix build "{{repo_root}}#checks.$system.aozora-notation-spec-comparator-smoke" --print-build-logs
 
 aozora-notation-spec-comparison VECTORS="" REPORT_MD="docs/superpowers/reports/2026-07-05-aozora-notation-spec-comparison.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-05-aozora-notation-spec-comparison.summary.json":
 	@vectors="{{VECTORS}}"; if [ -z "$vectors" ]; then vectors="$(nix build --no-link --print-out-paths '{{repo_root}}#reference-aozora-notation-spec')/conformance/vectors"; fi; \

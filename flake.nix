@@ -441,6 +441,10 @@
           lockFile = ./adapters/aozora2html/Cargo.lock;
         };
 
+        aozoraCargoDeps = rustPlatform.importCargoLock {
+          lockFile = ./adapters/aozora/Cargo.lock;
+        };
+
         # Vendored crate deps for the excluded aozora-epub3 adapter crate, so
         # the smoke check can build the mapper fully offline in the Nix store.
         aozoraEpub3CargoDeps = rustPlatform.importCargoLock {
@@ -960,6 +964,50 @@
               touch "$out"
             '';
 
+        aozoraAdapterSmokeCheck =
+          pkgs.runCommand "aozora-adapter-smoke-check"
+            {
+              nativeBuildInputs = [
+                rustToolchain
+                pkgs.bash
+                pkgs.jq
+                pkgs.python3
+                pkgs.ripgrep
+                pkgs.python3Packages.jsonschema
+              ];
+            }
+            ''
+              work_dir="$TMPDIR/work"
+              cp -R ${source} "$work_dir"
+              chmod -R u+w "$work_dir"
+              export AB_AOZORA_BIN="${referenceAozora}/bin/aozora"
+              cargo --config "source.crates-io.replace-with='vendored-sources'" \
+                --config "source.vendored-sources.directory='${aozoraCargoDeps}'" \
+                build --manifest-path "$work_dir/adapters/aozora/Cargo.toml" --release --offline
+              bash "$work_dir/tests/aozora-adapter-smoke.sh"
+              touch "$out"
+            '';
+
+        aozoraNotationSpecComparatorSmokeCheck =
+          pkgs.runCommand "aozora-notation-spec-comparator-smoke-check"
+            {
+              nativeBuildInputs = [
+                pkgs.bash
+                pkgs.jq
+                pkgs.python3
+                pkgs.ripgrep
+              ];
+            }
+            ''
+              work_dir="$TMPDIR/work"
+              cp -R ${source} "$work_dir"
+              chmod -R u+w "$work_dir"
+              substituteInPlace "$work_dir/tests/aozora-notation-spec-comparator-smoke.sh" \
+                --replace-fail '#!/usr/bin/env bash' '#!${pkgs.bash}/bin/bash'
+              bash "$work_dir/tests/aozora-notation-spec-comparator-smoke.sh"
+              touch "$out"
+            '';
+
         # Reproducible adapter check: build the mapper fully offline from the
         # vendored cargo deps and validate fixture-driven AAT against
         # data/aat-schema.json. This checks the Rust mapper only -- the
@@ -1064,6 +1112,8 @@
           reference-parser-metadata = nonRustReferenceMetadata;
           aat-oracle-data-schema-smoke = aatOracleDataSchemaSmokeCheck;
           aozora2html-rust-parity = aozora2htmlRustParityCheck;
+          aozora-smoke = aozoraAdapterSmokeCheck;
+          aozora-notation-spec-comparator-smoke = aozoraNotationSpecComparatorSmokeCheck;
           aozora-epub3-smoke = aozoraEpub3SmokeCheck;
           adapter-fidelity-notes-schema-smoke = adapterFidelityNotesSchemaSmokeCheck;
           taxonomy-drift = taxonomyDriftCheck;

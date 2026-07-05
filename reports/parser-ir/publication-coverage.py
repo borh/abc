@@ -232,6 +232,15 @@ def count_by_class(items: dict[str, dict[str, Any]]) -> dict[str, int]:
     return {name: counts.get(name, 0) for name in CLASS_ORDER if counts.get(name, 0)}
 
 
+def count_values(items: list[dict[str, Any]], key: str) -> dict[str, int]:
+    counts: Counter[str] = Counter()
+    for item in items:
+        value = item.get(key)
+        if isinstance(value, str) and value:
+            counts[value] += 1
+    return dict(sorted(counts.items()))
+
+
 def merged_properties(schema_node: dict[str, Any]) -> dict[str, Any]:
     properties: dict[str, Any] = {}
     for all_of in schema_node.get("allOf", []):
@@ -371,6 +380,18 @@ def _more_conservative_class(current_class: str | None, candidate_class: str) ->
     return current_class if current_rank <= candidate_rank else candidate_class
 
 
+def unsupported_owner(rule: dict[str, Any], construct: str) -> str:
+    del construct
+    category = str(rule.get("category") or "").upper()
+    owners = {
+        "UNSUPPORTED": "parser_ir_schema",
+        "LOSS": "custom_schema",
+        "STRUCTURAL": "aat_to_parser_ir_converter",
+        "AMBIGUITY": "policy",
+    }
+    return owners.get(category, "evidence")
+
+
 def source_construct_coverage(mapping: dict[str, Any]) -> dict[str, Any]:
     by_construct: dict[str, dict[str, Any]] = {}
     unsupported: list[dict[str, Any]] = []
@@ -412,7 +433,7 @@ def source_construct_coverage(mapping: dict[str, Any]) -> dict[str, Any]:
                     "aat_pointer": aat_pointer,
                     "parser_ir_pointer": rule.get("parser_ir_pointer"),
                     "category": category,
-                    "owner": "parser_ir_schema",
+                    "owner": unsupported_owner(rule, construct),
                 }
             )
     return {
@@ -537,6 +558,31 @@ def mapping_block(mapping: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def parser_ir_schema_hash(parser_schema: dict[str, Any], mapping: dict[str, Any]) -> Any:
+    return (
+        mapping.get("target_parser_ir_schema_hash")
+        or parser_schema.get("properties", {}).get("schema_hash", {}).get("const")
+    )
+
+
+def summary_scope(
+    parser_schema: dict[str, Any],
+    mapping: dict[str, Any],
+    source: dict[str, Any],
+    matrix: dict[str, Any],
+) -> dict[str, Any]:
+    return {
+        "kind": "ir_publication_coverage",
+        "source_authority_works_scanned": source.get("works_scanned"),
+        "required_parsers": list(REQUIRED_PARSERS),
+        "matrix_rows_attempted": matrix.get("totals", {}).get("rows_attempted"),
+        "mapping_id": mapping.get("mapping_id"),
+        "mapping_version": mapping.get("mapping_version"),
+        "parser_ir_schema_hash": parser_ir_schema_hash(parser_schema, mapping),
+        "custom_contract_required": True,
+    }
+
+
 def unsupported_gaps(
     node_coverage: dict[str, Any],
     field_coverage: dict[str, Any],
@@ -546,7 +592,11 @@ def unsupported_gaps(
     items.extend(node_coverage.get("unsupported", []))
     items.extend(field_coverage.get("unsupported", []))
     items.extend(construct_coverage.get("unsupported", []))
-    return {"count": len(items), "items": items}
+    return {
+        "count": len(items),
+        "counts_by_owner": count_values(items, "owner"),
+        "items": items,
+    }
 
 
 def publication_verdict(
@@ -583,12 +633,13 @@ def build_summary(
     source_passed = source_authority_passed(source)
     return {
         "schema_version": SCHEMA_VERSION,
+        "scope": summary_scope(parser_schema, mapping, source, matrix),
         "verdict": publication_verdict(source_passed, evidence, custom_contract, gaps),
         "source_authority_gate": source_authority_gate(source),
         "parser_evidence_coverage": evidence,
         "parser_ir_schema": {
             "schema_id": parser_schema.get("$id"),
-            "schema_hash": mapping.get("target_parser_ir_schema_hash") or parser_schema.get("properties", {}).get("schema_hash", {}).get("const"),
+            "schema_hash": parser_ir_schema_hash(parser_schema, mapping),
         },
         "tei_profile": {
             "role": "primary_publication_xml",
@@ -637,6 +688,11 @@ def render_markdown(summary: dict[str, Any]) -> str:
     for name, count in construct_counts.items():
         lines.append(f"| `{name}` | {count} |")
     lines.extend(["", "## Unsupported gaps", "", f"Count: {gaps['count']}", ""])
+    if gaps.get("counts_by_owner"):
+        lines.extend(["| Owner | Count |", "|---|---:|"])
+        for owner, count in gaps["counts_by_owner"].items():
+            lines.append(f"| `{owner}` | {count} |")
+        lines.append("")
     for item in gaps["items"][:20]:
         label = item.get("aat_pointer") or item.get("node_type")
         lines.append(f"- `{label}` owner `{item.get('owner')}`")

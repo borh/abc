@@ -53,26 +53,34 @@ Verdict: `IR_PUBLICATION_COVERAGE_BLOCKED_UNSUPPORTED_GAPS`
 
 Count: 189
 
-- `blocks[].children[].children[].content[].accent` owner `parser_ir_schema`
-- `blocks[].children[].children[].content[].gaiji.jis_code` owner `parser_ir_schema`
-- `blocks[].children[].children[].content[].span` owner `parser_ir_schema`
-- `blocks[].children[].children[].content[].style` owner `parser_ir_schema`
-- `blocks[].children[].children[].content[].warigaki.upper[].span` owner `parser_ir_schema`
-- `blocks[].children[].children[].heading.level` owner `parser_ir_schema`
-- `blocks[].children[].children[].span` owner `parser_ir_schema`
-- `blocks[].children[].content[].accent` owner `parser_ir_schema`
-- `blocks[].children[].content[].content[].accent` owner `parser_ir_schema`
-- `blocks[].children[].content[].content[].gaiji.jis_code` owner `parser_ir_schema`
-- `blocks[].children[].content[].content[].span` owner `parser_ir_schema`
-- `blocks[].children[].content[].content[].style` owner `parser_ir_schema`
-- `blocks[].children[].content[].gaiji.jis_code` owner `parser_ir_schema`
-- `blocks[].children[].content[].span` owner `parser_ir_schema`
-- `blocks[].children[].content[].style` owner `parser_ir_schema`
-- `blocks[].children[].content[].warigaki.lower[].span` owner `parser_ir_schema`
-- `blocks[].children[].content[].warigaki.upper[].gaiji.jis_code` owner `parser_ir_schema`
-- `blocks[].children[].content[].warigaki.upper[].span` owner `parser_ir_schema`
-- `blocks[].children[].content[].warigaki.upper[].style` owner `parser_ir_schema`
-- `blocks[].children[].heading.level` owner `parser_ir_schema`
+| Owner | Count |
+|---|---:|
+| `aat_to_parser_ir_converter` | 5 |
+| `custom_schema` | 105 |
+| `evidence` | 22 |
+| `parser_ir_schema` | 15 |
+| `policy` | 42 |
+
+- `blocks[].children[].children[].content[].accent` owner `policy`
+- `blocks[].children[].children[].content[].gaiji.jis_code` owner `policy`
+- `blocks[].children[].children[].content[].span` owner `policy`
+- `blocks[].children[].children[].content[].style` owner `policy`
+- `blocks[].children[].children[].content[].warigaki.upper[].span` owner `policy`
+- `blocks[].children[].children[].heading.level` owner `policy`
+- `blocks[].children[].children[].span` owner `policy`
+- `blocks[].children[].content[].accent` owner `policy`
+- `blocks[].children[].content[].content[].accent` owner `policy`
+- `blocks[].children[].content[].content[].gaiji.jis_code` owner `policy`
+- `blocks[].children[].content[].content[].span` owner `policy`
+- `blocks[].children[].content[].content[].style` owner `policy`
+- `blocks[].children[].content[].gaiji.jis_code` owner `policy`
+- `blocks[].children[].content[].span` owner `policy`
+- `blocks[].children[].content[].style` owner `policy`
+- `blocks[].children[].content[].warigaki.lower[].span` owner `policy`
+- `blocks[].children[].content[].warigaki.upper[].gaiji.jis_code` owner `policy`
+- `blocks[].children[].content[].warigaki.upper[].span` owner `policy`
+- `blocks[].children[].content[].warigaki.upper[].style` owner `policy`
+- `blocks[].children[].heading.level` owner `policy`
 
 ## Plaintext Policy
 

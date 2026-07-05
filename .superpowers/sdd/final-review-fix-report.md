@@ -6,3 +6,11 @@
 - Reduced local custom-contract policy: readable JSON is now `CUSTOM_CONTRACT_CANDIDATE_PROVIDED` evidence only, invalid JSON remains `CUSTOM_CONTRACT_INVALID`, and the headline verdict stays blocked on missing ABC-owned contract integration.
 - Regenerated `docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json` and `docs/superpowers/reports/2026-07-06-ir-publication-coverage.md`.
 - Updated the ABC handoff to state that a supplied contract candidate path does not unblock admission.
+
+## 2026-07-06 IR Publication Coverage final re-review fixes
+
+- Added required top-level `scope` to the JSON summary with reproducibility boundary fields: `kind`, `source_authority_works_scanned`, `required_parsers`, `matrix_rows_attempted`, `mapping_id`, `mapping_version`, `parser_ir_schema_hash`, and `custom_contract_required`.
+- Tightened the smoke harness to assert `.scope.kind == "ir_publication_coverage"` and to require the five active parsers under `.scope.required_parsers`.
+- Replaced the hardcoded source-construct unsupported owner with `unsupported_owner(rule, construct)`, mapping categories to owners as requested: `UNSUPPORTED -> parser_ir_schema`, `LOSS -> custom_schema`, `STRUCTURAL -> aat_to_parser_ir_converter`, `AMBIGUITY -> policy`, fallback `-> evidence`.
+- Added unsupported ownership coverage in the smoke test with explicit fixture rules for each owner category and regenerated `docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json` plus `docs/superpowers/reports/2026-07-06-ir-publication-coverage.md`.
+- The regenerated summary now reports `unsupported_gaps.counts_by_owner`, confirming owners are no longer forced to a single constant.

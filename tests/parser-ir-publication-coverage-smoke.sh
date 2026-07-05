@@ -20,6 +20,9 @@ candidate_report_md="$out_dir/coverage-candidate.md"
 unknown_mapping="$out_dir/mapping-unknown-pointer.json"
 unknown_summary_json="$out_dir/coverage-unknown-pointer.summary.json"
 unknown_report_md="$out_dir/coverage-unknown-pointer.md"
+owner_mapping="$out_dir/mapping-owner-categories.json"
+owner_summary_json="$out_dir/coverage-owner-categories.summary.json"
+owner_report_md="$out_dir/coverage-owner-categories.md"
 valid_custom_contract="$out_dir/custom-contract.valid.json"
 invalid_custom_contract="$out_dir/custom-contract.invalid.json"
 invalid_contract_summary_json="$out_dir/coverage-invalid-contract.summary.json"
@@ -165,6 +168,8 @@ python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
   --report-md "$report_md"
 
 jq -e '.schema_version == "ir-publication-coverage-v1"' "$summary_json" >/dev/null
+jq -e '.scope.kind == "ir_publication_coverage"' "$summary_json" >/dev/null
+jq -e '.scope.required_parsers == ["aozora2html", "aozora-epub3", "aozora-rs", "aozora2", "aozora"]' "$summary_json" >/dev/null
 jq -e '.source_authority_gate.gate_status == "SOURCE_AUTHORITY_GATE_PASS"' "$summary_json" >/dev/null
 jq -e '.parser_evidence_coverage.verdict == "FIVE_PARSER_EVIDENCE_COMPLETE"' "$summary_json" >/dev/null
 jq -e '.plaintext_policy.metadata_policy == "exclude_ruby_readings_layout_source_notes_custom_records_warnings_and_provenance"' "$summary_json" >/dev/null
@@ -253,8 +258,72 @@ python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
 
 jq -e '.unsupported_gaps.count == 1' "$unknown_summary_json" >/dev/null
 jq -e '.unsupported_gaps.items[0].aat_pointer == "blocks[].content[].mystery_marker"' "$unknown_summary_json" >/dev/null
-jq -e '.unsupported_gaps.items[0].owner == "parser_ir_schema"' "$unknown_summary_json" >/dev/null
+jq -e '.unsupported_gaps.items[0].owner == "policy"' "$unknown_summary_json" >/dev/null
 jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_UNSUPPORTED_GAPS"' "$unknown_summary_json" >/dev/null
+
+cat > "$owner_mapping" <<'JSON'
+{
+  "mapping_id": "https://w3id.org/abc/mappings/fixture-owner-categories",
+  "mapping_version": "0.2.4",
+  "mapping_schema_hash": "sha256:owner-category-fixture",
+  "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
+  "target_parser_ir_schema_hash": "sha256:fixture-parser-ir",
+  "transform_rule_descriptions": [
+    {
+      "rule_id": "U-99",
+      "category": "UNSUPPORTED",
+      "aat_pointer": "blocks[].content[].owner_unsupported",
+      "parser_ir_pointer": "unknown_unsupported",
+      "description": "unsupported category owner fixture"
+    },
+    {
+      "rule_id": "L-99",
+      "category": "LOSS",
+      "aat_pointer": "blocks[].content[].owner_loss",
+      "parser_ir_pointer": "unknown_loss",
+      "description": "loss category owner fixture"
+    },
+    {
+      "rule_id": "S-99",
+      "category": "STRUCTURAL",
+      "aat_pointer": "blocks[].content[].owner_structural",
+      "parser_ir_pointer": "unknown_structural",
+      "description": "structural category owner fixture"
+    },
+    {
+      "rule_id": "A-99",
+      "category": "AMBIGUITY",
+      "aat_pointer": "blocks[].content[].owner_ambiguity",
+      "parser_ir_pointer": "unknown_ambiguity",
+      "description": "ambiguity category owner fixture"
+    },
+    {
+      "rule_id": "X-99",
+      "category": "SOMETHING_NEW",
+      "aat_pointer": "blocks[].content[].owner_unknown",
+      "parser_ir_pointer": "unknown_other",
+      "description": "unknown category owner fixture"
+    }
+  ]
+}
+JSON
+
+python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
+  --parser-ir-schema "$parser_schema" \
+  --mapping "$owner_mapping" \
+  --source-summary "$source_summary" \
+  --matrix-summary "$matrix_summary" \
+  --source-delta-summary "$source_delta" \
+  --custom-contract-schema "$valid_custom_contract" \
+  --summary-json "$owner_summary_json" \
+  --report-md "$owner_report_md"
+
+jq -e '.unsupported_gaps.count == 5' "$owner_summary_json" >/dev/null
+jq -e '.unsupported_gaps.items[] | select(.rule_id == "U-99") | .owner == "parser_ir_schema"' "$owner_summary_json" >/dev/null
+jq -e '.unsupported_gaps.items[] | select(.rule_id == "L-99") | .owner == "custom_schema"' "$owner_summary_json" >/dev/null
+jq -e '.unsupported_gaps.items[] | select(.rule_id == "S-99") | .owner == "aat_to_parser_ir_converter"' "$owner_summary_json" >/dev/null
+jq -e '.unsupported_gaps.items[] | select(.rule_id == "A-99") | .owner == "policy"' "$owner_summary_json" >/dev/null
+jq -e '.unsupported_gaps.items[] | select(.rule_id == "X-99") | .owner == "evidence"' "$owner_summary_json" >/dev/null
 
 python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
   --parser-ir-schema "$parser_schema" \

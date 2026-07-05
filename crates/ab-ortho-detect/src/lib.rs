@@ -2,6 +2,7 @@ pub mod types;
 pub mod script;
 pub mod features;
 pub mod heuristic;
+pub mod ml;
 
 pub use types::{
     OffsetMap, OrthoAnnotation, OrthoDetectorId, OrthoMapError, OrthoNormalization,

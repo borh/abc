@@ -21,9 +21,11 @@ POLICY_PARAGRAPH_FAILURES = {"page_break_projection", "unknown"}
 PARSER_IR_FAILURES = {"converter_paragraph_mismatch"}
 ABC_RENDERER_FAILURES = {"renderer_paragraph_mismatch"}
 PASSING_TEXT_BUCKETS = {"base_equal"}
-POLICY_TEXT_BUCKETS = {
+EXACT_RUBY_EQUIVALENCE_TEXT_BUCKETS = {
     "ruby_expanded_equal",
     "ruby_expanded_parenless_equal",
+}
+POLICY_TEXT_BUCKETS = {
     "base_drop_parentheticals_equal",
     "ruby_expanded_parenless_generated_contains_tei_eaj",
     "ruby_expanded_generated_contains_tei_eaj",
@@ -37,7 +39,7 @@ POLICY_TEXT_BUCKETS = {
 }
 PLAINTEXT_POLICY = {
     "plaintext_surface": "body_base_text",
-    "ruby_expanded_surfaces": "diagnostic_only",
+    "ruby_expanded_surfaces": "admit_exact_structural_equivalence_only",
     "metadata_policy": "exclude_typed_metadata_from_plaintext",
 }
 LANE_POLICY_REQUIRED = {"drama", "verse", "notes", "front_back_matter"}
@@ -195,6 +197,33 @@ def row_text_bucket(row: dict[str, Any]) -> str:
     return row.get("text", {}).get("body_text_match_bucket") or "unknown"
 
 
+def generated_tag_count(row: dict[str, Any], tag: str) -> int:
+    generated = row.get("generated_tei")
+    if not isinstance(generated, dict):
+        return 0
+    total = 0
+    for field in ("body_tag_counts", "document_tag_counts"):
+        counts = generated.get(field)
+        if isinstance(counts, dict):
+            value = counts.get(tag)
+            if isinstance(value, int):
+                total += value
+    return total
+
+
+def generated_has_ruby_structure(row: dict[str, Any]) -> bool:
+    return generated_tag_count(row, "ruby") > 0
+
+
+def text_bucket_passes(row: dict[str, Any], text_bucket: str) -> bool:
+    if text_bucket in PASSING_TEXT_BUCKETS:
+        return True
+    return (
+        text_bucket in EXACT_RUBY_EQUIVALENCE_TEXT_BUCKETS
+        and generated_has_ruby_structure(row)
+    )
+
+
 def row_materialization_ok(row: dict[str, Any]) -> bool:
     return row.get("materialization", {}).get("status") == "passed"
 
@@ -231,9 +260,9 @@ def classify_plain_prose_row(row: dict[str, Any], source_passed: bool) -> dict[s
         owners.add("evidence")
         reasons.append(f"unknown paragraph origin: {origin}")
 
-    if text_bucket in PASSING_TEXT_BUCKETS:
+    if text_bucket_passes(row, text_bucket):
         pass
-    elif text_bucket in POLICY_TEXT_BUCKETS:
+    elif text_bucket in POLICY_TEXT_BUCKETS or text_bucket in EXACT_RUBY_EQUIVALENCE_TEXT_BUCKETS:
         owners.add("policy")
         reasons.append(f"text policy required for {text_bucket}")
     else:

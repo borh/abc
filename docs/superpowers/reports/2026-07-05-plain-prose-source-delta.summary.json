@@ -338,7 +338,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -364,7 +364,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -390,7 +390,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -413,7 +413,7 @@
         "materialization_status": "passed"
       },
       "reasons": [
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -586,7 +586,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -716,7 +716,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -768,7 +768,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -794,7 +794,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_collapsed",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -843,7 +843,7 @@
         "materialization_status": "passed"
       },
       "reasons": [
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -866,7 +866,7 @@
         "materialization_status": "passed"
       },
       "reasons": [
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -892,7 +892,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -918,7 +918,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_collapsed",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -970,7 +970,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -1039,7 +1039,7 @@
         "materialization_status": "passed"
       },
       "reasons": [
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -1088,7 +1088,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -1137,7 +1137,7 @@
         "materialization_status": "passed"
       },
       "reasons": [
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -1163,7 +1163,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -1212,7 +1212,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -1264,7 +1264,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -1287,7 +1287,7 @@
         "materialization_status": "passed"
       },
       "reasons": [
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -1336,7 +1336,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -1388,7 +1388,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -1414,7 +1414,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_collapsed",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -1466,7 +1466,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -1518,7 +1518,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -1541,7 +1541,7 @@
         "materialization_status": "passed"
       },
       "reasons": [
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -1702,7 +1702,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -1754,7 +1754,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -1777,7 +1777,7 @@
         "materialization_status": "passed"
       },
       "reasons": [
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -1826,7 +1826,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -1852,7 +1852,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -1878,7 +1878,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -1901,7 +1901,7 @@
         "materialization_status": "passed"
       },
       "reasons": [
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -1950,7 +1950,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -2002,7 +2002,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -2025,7 +2025,7 @@
         "materialization_status": "passed"
       },
       "reasons": [
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -2074,7 +2074,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -2126,7 +2126,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -2149,7 +2149,7 @@
         "materialization_status": "passed"
       },
       "reasons": [
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -2198,7 +2198,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -2250,7 +2250,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -2273,7 +2273,7 @@
         "materialization_status": "passed"
       },
       "reasons": [
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -2322,7 +2322,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -2374,7 +2374,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -2397,7 +2397,7 @@
         "materialization_status": "passed"
       },
       "reasons": [
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -2446,7 +2446,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -2498,7 +2498,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -2521,7 +2521,7 @@
         "materialization_status": "passed"
       },
       "reasons": [
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -2570,7 +2570,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -2622,7 +2622,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -2645,7 +2645,7 @@
         "materialization_status": "passed"
       },
       "reasons": [
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -2694,7 +2694,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -2746,7 +2746,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -2769,7 +2769,7 @@
         "materialization_status": "passed"
       },
       "reasons": [
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -2818,7 +2818,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -2870,7 +2870,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -2893,7 +2893,7 @@
         "materialization_status": "passed"
       },
       "reasons": [
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -3190,7 +3190,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -3239,7 +3239,7 @@
         "materialization_status": "passed"
       },
       "reasons": [
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -3265,7 +3265,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -3314,7 +3314,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -3340,7 +3340,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -3363,7 +3363,7 @@
         "materialization_status": "passed"
       },
       "reasons": [
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {
@@ -3389,7 +3389,7 @@
       },
       "reasons": [
         "paragraph origin is adapter_over_segmented",
-        "ruby-expanded surfaces are diagnostic only, not plaintext"
+        "ruby-expanded surfaces require generated ruby structure for admission"
       ]
     },
     {

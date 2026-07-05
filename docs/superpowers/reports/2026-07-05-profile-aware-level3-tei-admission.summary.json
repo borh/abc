@@ -10,7 +10,7 @@
     "scope": "tei-eaj-generated-matrix plain_prose rows",
     "plaintext_policy": {
       "plaintext_surface": "body_base_text",
-      "ruby_expanded_surfaces": "diagnostic_only",
+      "ruby_expanded_surfaces": "admit_exact_structural_equivalence_only",
       "metadata_policy": "exclude_typed_metadata_from_plaintext"
     },
     "rows_total": 135,
@@ -2297,7 +2297,7 @@
     "workset": "/home/bor/Projects/ab-validator/../abc/docs/handoffs/tei-eaj-aozora-workset-export.json",
     "structural_summary": "/home/bor/Projects/ab-validator/docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.summary.json",
     "mapping": "/home/bor/Projects/ab-validator/data/aat-to-parser-ir-mapping-v1.json",
-    "abc_root": "/home/bor/Projects/abc",
+    "abc_root": "/home/bor/Projects/ab-validator/../abc",
     "adapter_preference": [
       "aozora2html",
       "aozora-epub3",

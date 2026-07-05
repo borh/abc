@@ -740,6 +740,8 @@ def build_materialized_row(
             "body_note_count": generated["body_note_count"],
             "back_note_count": generated["back_note_count"],
             "back_source_note_count": generated["back_source_note_count"],
+            "body_tag_counts": generated["body_tag_counts"],
+            "document_tag_counts": generated["document_tag_counts"],
         },
         "tei_eaj": {
             "body_p_count": tei_eaj_body_p,

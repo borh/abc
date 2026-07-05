@@ -20,12 +20,14 @@ ADAPTER_PARAGRAPH_FAILURES = {
 PARSER_IR_FAILURES = {"converter_paragraph_mismatch"}
 ABC_RENDERER_FAILURES = {"renderer_paragraph_mismatch"}
 RUBY_TEXT_BUCKETS = {
-    "ruby_expanded_equal",
-    "ruby_expanded_parenless_equal",
     "ruby_expanded_generated_contains_tei_eaj",
     "ruby_expanded_parenless_generated_contains_tei_eaj",
     "ruby_expanded_tei_eaj_contains_generated",
     "ruby_expanded_parenless_tei_eaj_contains_generated",
+}
+EXACT_RUBY_EQUIVALENCE_TEXT_BUCKETS = {
+    "ruby_expanded_equal",
+    "ruby_expanded_parenless_equal",
 }
 SOURCE_NOTE_TEXT_BUCKETS = {"base_drop_parentheticals_equal"}
 PASSING_TEXT_BUCKETS = {"base_equal"}
@@ -120,6 +122,24 @@ def work_file_key(row: dict[str, Any]) -> tuple[str, str]:
     return (str(row.get("work_id") or "unknown"), str(row.get("tei_eaj_file") or "unknown"))
 
 
+def generated_tag_count(row: dict[str, Any], tag: str) -> int:
+    generated = row.get("generated_tei")
+    if not isinstance(generated, dict):
+        return 0
+    total = 0
+    for field in ("body_tag_counts", "document_tag_counts"):
+        counts = generated.get(field)
+        if isinstance(counts, dict):
+            value = counts.get(tag)
+            if isinstance(value, int):
+                total += value
+    return total
+
+
+def generated_has_ruby_structure(row: dict[str, Any]) -> bool:
+    return generated_tag_count(row, "ruby") > 0
+
+
 def sorted_owners(owners: set[str]) -> list[str]:
     return sorted(owners, key=lambda owner: (OWNER_ORDER.get(owner, 99), owner))
 
@@ -196,16 +216,19 @@ def classify_text(row: dict[str, Any]) -> tuple[list[str], set[str], list[str]]:
     owners: set[str] = set()
     reasons: list[str] = []
 
-    if bucket in PASSING_TEXT_BUCKETS:
+    if bucket in PASSING_TEXT_BUCKETS or (
+        bucket in EXACT_RUBY_EQUIVALENCE_TEXT_BUCKETS
+        and generated_has_ruby_structure(row)
+    ):
         return classifications, owners, reasons
     if source_note_excluded or bucket in SOURCE_NOTE_TEXT_BUCKETS:
         classifications.append("source_note_metadata_excluded")
         owners.add("policy")
         reasons.append("source-note or parenthetical source attribution belongs outside body plaintext")
-    elif bucket in RUBY_TEXT_BUCKETS:
+    elif bucket in RUBY_TEXT_BUCKETS or bucket in EXACT_RUBY_EQUIVALENCE_TEXT_BUCKETS:
         classifications.append("ruby_metadata_not_plaintext")
         owners.add("policy")
-        reasons.append("ruby-expanded surfaces are diagnostic only, not plaintext")
+        reasons.append("ruby-expanded surfaces require generated ruby structure for admission")
     else:
         classifications.append("source_text_policy_required")
         owners.add("policy")

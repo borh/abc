@@ -23,7 +23,7 @@ This report classifies measured parser-IR generated TEI evidence into profile-aw
 ## Plain Prose Admission
 
 - plaintext_surface: `body_base_text`
-- ruby_expanded_surfaces: `diagnostic_only`
+- ruby_expanded_surfaces: `admit_exact_structural_equivalence_only`
 - metadata_policy: `exclude_typed_metadata_from_plaintext`
 
 | metric | value |

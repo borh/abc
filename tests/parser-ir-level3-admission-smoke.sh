@@ -78,9 +78,9 @@ cat > "$matrix_summary" <<JSON
     "mapping": "mapping.json"
   },
   "totals": {
-    "rows_attempted": 8,
-    "tei_eaj_rows_attempted": 7,
-    "materialization_succeeded": 8,
+    "rows_attempted": 9,
+    "tei_eaj_rows_attempted": 8,
+    "materialization_succeeded": 9,
     "materialization_failed": 0,
     "rows_skipped": 1
   },
@@ -125,6 +125,18 @@ cat > "$matrix_summary" <<JSON
       "selected_aat": {"adapter": "aozora-epub3", "adapter_version": "fixture"},
       "materialization": {"status": "passed"},
       "tei_eaj": {"structure_profile": "plain_prose"},
+      "generated_tei": {"body_tag_counts": {"ruby": 1}, "document_tag_counts": {"ruby": 1}},
+      "classification": {"paragraph_origin_bucket": "aligned"},
+      "text": {"body_text_match_bucket": "ruby_expanded_equal"}
+    },
+    {
+      "work_id": "plain-ruby-no-structure",
+      "title": "Plain ruby no structure",
+      "tei_eaj_file": "data/plain-ruby-no-structure.xml",
+      "selected_aat": {"adapter": "aozora-epub3", "adapter_version": "fixture"},
+      "materialization": {"status": "passed"},
+      "tei_eaj": {"structure_profile": "plain_prose"},
+      "generated_tei": {"body_tag_counts": {}, "document_tag_counts": {}},
       "classification": {"paragraph_origin_bucket": "aligned"},
       "text": {"body_text_match_bucket": "ruby_expanded_equal"}
     },
@@ -216,18 +228,20 @@ jq -e '.mapping.mapping_schema_hash == "sha256:38ec7f0e5affb10329b550a091cd3a6fb
 jq -e '.mapping.target_parser_ir_schema_id == "https://w3id.org/abc/schemas/parser-ir.schema.json"' "$summary_json"
 jq -e '.mapping.target_parser_ir_schema_hash == "sha256:a1fcd348bf396d8d4e6f30ffb928b76b3802b594ea773ed6fa9e1dac52edf712"' "$summary_json"
 jq -e '.mapping.generated_mapping_rules == 1' "$summary_json"
-jq -e '.plain_prose_admission.rows_total == 5' "$summary_json"
-jq -e '.plain_prose_admission.rows_passed == 2' "$summary_json"
+jq -e '.plain_prose_admission.rows_total == 6' "$summary_json"
+jq -e '.plain_prose_admission.rows_passed == 3' "$summary_json"
 jq -e '.plain_prose_admission.rows_failed == 3' "$summary_json"
 jq -e '.plain_prose_admission.verdict == "LEVEL3_PLAIN_PROSE_BLOCKED_ADAPTER_FIDELITY_AND_TEXT_POLICY"' "$summary_json"
 jq -e '.plain_prose_admission.blocking_owners == ["adapter", "policy"]' "$summary_json"
 jq -e '.plain_prose_admission.failures_by_owner.adapter == 1' "$summary_json"
 jq -e '.plain_prose_admission.failures_by_owner.policy == 2' "$summary_json"
 jq -e '.plain_prose_admission.failures_by_adapter["aozora-rs"] == 1' "$summary_json"
+jq -e '[.plain_prose_admission.failed_rows[] | select(.work_id == "plain-text-policy")] | length == 0' "$summary_json"
+jq -e '[.plain_prose_admission.failed_rows[] | select(.work_id == "plain-ruby-no-structure" and (.owners == ["policy"]))] | length == 1' "$summary_json"
 jq -e '.plain_prose_admission.paragraph_origin_buckets.source_note_back_routing == 1' "$summary_json"
 jq -e '.plain_prose_admission.paragraph_origin_buckets.page_break_projection == 1' "$summary_json"
 jq -e '.plain_prose_admission.plaintext_policy.plaintext_surface == "body_base_text"' "$summary_json"
-jq -e '.plain_prose_admission.plaintext_policy.ruby_expanded_surfaces == "diagnostic_only"' "$summary_json"
+jq -e '.plain_prose_admission.plaintext_policy.ruby_expanded_surfaces == "admit_exact_structural_equivalence_only"' "$summary_json"
 jq -e '.plain_prose_admission.plaintext_policy.metadata_policy == "exclude_typed_metadata_from_plaintext"' "$summary_json"
 jq -e '.profile_lanes.drama.verdict == "LANE_POLICY_REQUIRED"' "$summary_json"
 jq -e '.profile_lanes.verse.verdict == "LANE_POLICY_REQUIRED"' "$summary_json"
@@ -244,12 +258,12 @@ python3 "$repo_root/reports/parser-ir/level3-admission.py" \
   --report-md "$failing_report_md"
 
 jq -e '.source_authority_gate.gate_status == "SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED"' "$failing_summary_json"
-jq -e '.plain_prose_admission.rows_total == 5' "$failing_summary_json"
+jq -e '.plain_prose_admission.rows_total == 6' "$failing_summary_json"
 jq -e '.plain_prose_admission.rows_passed == 0' "$failing_summary_json"
-jq -e '.plain_prose_admission.rows_failed == 5' "$failing_summary_json"
+jq -e '.plain_prose_admission.rows_failed == 6' "$failing_summary_json"
 jq -e '.plain_prose_admission.verdict == "LEVEL3_PLAIN_PROSE_BLOCKED_ADAPTER_FIDELITY_AND_TEXT_POLICY_AND_EVIDENCE"' "$failing_summary_json"
 jq -e '.plain_prose_admission.blocking_owners == ["adapter", "policy", "evidence"]' "$failing_summary_json"
-jq -e '.plain_prose_admission.failures_by_owner.evidence == 5' "$failing_summary_json"
+jq -e '.plain_prose_admission.failures_by_owner.evidence == 6' "$failing_summary_json"
 
 cat > "$foreign_matrix_summary" <<JSON
 {

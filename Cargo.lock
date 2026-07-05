@@ -131,6 +131,7 @@ name = "ab-morph-analyzers"
 version = "0.1.0"
 dependencies = [
  "ab-morph-diff",
+ "ab-ortho-detect",
  "ab-plaintext",
  "rkyv",
  "serde",
@@ -144,6 +145,7 @@ dependencies = [
 name = "ab-morph-diff"
 version = "0.1.0"
 dependencies = [
+ "ab-ortho-detect",
  "criterion",
  "proptest",
  "serde",
@@ -157,6 +159,7 @@ dependencies = [
  "ab-diff-utils",
  "ab-morph-analyzers",
  "ab-morph-diff",
+ "ab-ortho-detect",
  "ab-plaintext",
  "ab-warehouse",
  "anyhow",
@@ -186,6 +189,17 @@ dependencies = [
  "serde",
  "serde_json",
  "toml",
+]
+
+[[package]]
+name = "ab-ortho-detect"
+version = "0.1.0"
+dependencies = [
+ "ab-morph-analyzers",
+ "ab-plaintext",
+ "regex",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

@@ -498,6 +498,8 @@ mod tests {
                 features: FeatureMap::new(),
             }],
             warnings: Vec::new(),
+            ortho_annotations: None,
+            ortho_offset_map: None,
         };
         let comparison = Comparison {
             text_id: "t1".to_owned(),
@@ -742,6 +744,8 @@ mod tests {
                 features: FeatureMap::new(),
             }],
             warnings: Vec::new(),
+            ortho_annotations: None,
+            ortho_offset_map: None,
         }
     }
 
@@ -756,6 +760,8 @@ mod tests {
             source_text: source_text.to_owned(),
             morphemes,
             warnings: Vec::new(),
+            ortho_annotations: None,
+            ortho_offset_map: None,
         }
     }
 

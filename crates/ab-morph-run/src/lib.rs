@@ -17,12 +17,13 @@ use std::sync::{Arc, Mutex};
 use ab_morph_analyzers::{
     MorphAnalyzer, SudachiAnalyzer, SudachiMode, VaporettoAnalyzer, VibratoAnalyzer,
 };
+use ab_ortho_detect::OrthoDetector;
 use ab_morph_diff::{
     Analysis, Comparison, MorphDiffError, compare_pair, compare_pair_compact_with_source_text,
 };
 use ab_plaintext::{PlainTextDocument, from_aat_value};
 use anyhow::{Context, Result, bail};
-pub use options::{OutputProfile, WarehouseProfile};
+pub use options::{OrthoDetectMode, OutputProfile, WarehouseProfile};
 use options::{SerialProgress, SerialRunOptions, WarehouseParallelOptions, WarehouseRunOptions};
 use output::{open_output_writer, read_jsonl_or_zst_to_string};
 use serde::Serialize;
@@ -124,6 +125,7 @@ pub fn run_analyze_aat_with_nway(
     nway_pattern_counts_output: Option<&Path>,
     max_nway_examples_per_text: Option<usize>,
     string_stats_output: Option<&Path>,
+    ortho_detect: OrthoDetectMode,
 ) -> Result<()> {
     pipeline::run_analyze_aat_with_nway(
         aat,
@@ -142,6 +144,7 @@ pub fn run_analyze_aat_with_nway(
         nway_pattern_counts_output,
         max_nway_examples_per_text,
         string_stats_output,
+        ortho_detect,
     )
 }
 
@@ -1072,6 +1075,8 @@ fn test_analysis(kind: TestAnalyzerKind, document: &PlainTextDocument) -> Analys
         source_text: document.text.clone(),
         morphemes,
         warnings: Vec::new(),
+        ortho_annotations: None,
+        ortho_offset_map: None,
     }
 }
 
@@ -1898,6 +1903,7 @@ mod tests {
             None,
             None,
             Some(&stats_path),
+            crate::OrthoDetectMode::Off,
         )
         .unwrap();
 
@@ -1942,6 +1948,8 @@ mod tests {
                 },
             ],
             warnings: Vec::new(),
+            ortho_annotations: None,
+            ortho_offset_map: None,
         };
 
         let mut report = StringStatsReport::default();
@@ -2045,6 +2053,8 @@ mod tests {
                 features: FeatureMap::new(),
             }],
             warnings: Vec::new(),
+            ortho_annotations: None,
+            ortho_offset_map: None,
         }
     }
 

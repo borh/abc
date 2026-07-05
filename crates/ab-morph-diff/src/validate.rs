@@ -113,6 +113,8 @@ mod tests {
             source_text: "今日はabc".to_owned(),
             morphemes,
             warnings: Vec::new(),
+            ortho_annotations: None,
+            ortho_offset_map: None,
         }
     }
 

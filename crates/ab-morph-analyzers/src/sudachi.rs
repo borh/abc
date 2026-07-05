@@ -148,6 +148,8 @@ impl MorphAnalyzer for SudachiAnalyzer {
             source_text: document.text.clone(),
             morphemes: all_morphemes,
             warnings,
+            ortho_annotations: None,
+            ortho_offset_map: None,
         })
     }
 }

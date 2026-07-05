@@ -29,6 +29,8 @@ fn analysis(analyzer: &str, text: &str, cuts: &[usize]) -> Analysis {
         source_text: text.to_owned(),
         morphemes,
         warnings: Vec::new(),
+        ortho_annotations: None,
+        ortho_offset_map: None,
     }
 }
 

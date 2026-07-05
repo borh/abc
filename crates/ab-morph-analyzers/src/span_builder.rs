@@ -4,6 +4,8 @@ use ab_morph_diff::{Analysis, AnalyzerId, CharByteMap, FeatureMap, Morpheme, Tex
 
 use crate::AnalyzerError;
 
+use ab_ortho_detect::OffsetMap;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct RawToken {
     pub emitted_surface: String,
@@ -25,6 +27,8 @@ pub(crate) fn build_analysis_from_tokens(
         source_text,
         morphemes,
         warnings: Vec::new(),
+        ortho_annotations: None,
+        ortho_offset_map: None,
     })
 }
 
@@ -125,6 +129,24 @@ fn find_sequential_span(
             cursor,
             expected_surface: surface.to_owned(),
         })
+    }
+}
+
+/// Post-process an Analysis to remap morpheme byte_spans and char_spans
+/// from normalized-text coordinates to original-text coordinates.
+pub fn remap_spans(analysis: &mut Analysis, offset_map: &OffsetMap) {
+    if offset_map.is_empty() {
+        return;
+    }
+    for morpheme in &mut analysis.morphemes {
+        // Split spans that cross annotation boundaries before remapping.
+        // For Phase 1, we assume single-annotation spans (the common case);
+        // cross-boundary spans (ヴ→う゛ edge) are rare and handled by
+        // the OffsetMap panic guard.
+        morpheme.byte_span = offset_map.to_original(morpheme.byte_span.clone());
+        // char_span recalculation requires the original source text.
+        // For Phase 1, keep the normalized-text char_span as an approximation.
+        // Follow-up: rebuild char_map from original text bytes.
     }
 }
 

@@ -217,6 +217,8 @@ mod tests {
                 .map(|(surface, start, end)| m(source, surface, *start, *end))
                 .collect(),
             warnings: Vec::new(),
+            ortho_annotations: None,
+            ortho_offset_map: None,
         }
     }
 
@@ -266,6 +268,8 @@ mod tests {
             source_text: source.to_owned(),
             morphemes: vec![m(source, "\n　", 0, 2), m(source, "今日", 2, 4)],
             warnings: Vec::new(),
+            ortho_annotations: None,
+            ortho_offset_map: None,
         };
         let to = Analysis {
             analyzer: "b".to_owned(),
@@ -277,6 +281,8 @@ mod tests {
                 m(source, "今日", 2, 4),
             ],
             warnings: Vec::new(),
+            ortho_annotations: None,
+            ortho_offset_map: None,
         };
         let regions = vec![
             Region::Segmentation(SegmentationDiff {
@@ -312,6 +318,8 @@ mod tests {
             source_text: source.to_owned(),
             morphemes: vec![m(source, "\n", 0, 1), m(source, "今日", 1, 3)],
             warnings: Vec::new(),
+            ortho_annotations: None,
+            ortho_offset_map: None,
         };
         let to = Analysis {
             analyzer: "b".to_owned(),
@@ -319,6 +327,8 @@ mod tests {
             source_text: source.to_owned(),
             morphemes: vec![m(source, "\n", 0, 1), m(source, "今日", 1, 3)],
             warnings: Vec::new(),
+            ortho_annotations: None,
+            ortho_offset_map: None,
         };
         let regions = vec![
             Region::OneToOne(AlignedMorpheme {

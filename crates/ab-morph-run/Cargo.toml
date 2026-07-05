@@ -13,6 +13,7 @@ categories = ["text-processing"]
 ab-diff-utils.workspace = true
 ab-morph-analyzers.workspace = true
 ab-morph-diff.workspace = true
+ab-ortho-detect.workspace = true
 ab-plaintext.workspace = true
 ab-warehouse.workspace = true
 anyhow.workspace = true

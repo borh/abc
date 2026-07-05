@@ -335,6 +335,8 @@ mod tests {
                 [("pos1", Some("名詞")), ("lemma", Some("今日"))],
             )],
             warnings: Vec::new(),
+            ortho_annotations: None,
+            ortho_offset_map: None,
         };
 
         assert_eq!(
@@ -515,6 +517,8 @@ mod tests {
             source_text: source_text.to_owned(),
             morphemes,
             warnings: Vec::new(),
+            ortho_annotations: None,
+            ortho_offset_map: None,
         }
     }
 }

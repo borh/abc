@@ -120,6 +120,8 @@ mod tests {
                 features,
             }],
             warnings: Vec::new(),
+            ortho_annotations: None,
+            ortho_offset_map: None,
         }
     }
 

@@ -86,6 +86,34 @@ cat > "$mapping" <<'JSON'
       "description": "figure caption can be emitted as caption policy projection"
     },
     {
+      "rule_id": "A-04",
+      "category": "AMBIGUITY",
+      "aat_pointer": "blocks[].content[].span",
+      "parser_ir_pointer": "span",
+      "description": "Observed 10 occurrences; span coordinates need preservation"
+    },
+    {
+      "rule_id": "A-05",
+      "category": "AMBIGUITY",
+      "aat_pointer": "blocks[].content[].style",
+      "parser_ir_pointer": "emphasis",
+      "description": "Observed 11 occurrences; style projects through TEI policy"
+    },
+    {
+      "rule_id": "L-04",
+      "category": "LOSS",
+      "aat_pointer": "blocks[].content[].figure.width",
+      "parser_ir_pointer": null,
+      "description": "Observed 12 occurrences; figure width projects through TEI policy"
+    },
+    {
+      "rule_id": "L-05",
+      "category": "LOSS",
+      "aat_pointer": "blocks[].heading.content[].tcy",
+      "parser_ir_pointer": null,
+      "description": "Observed 13 occurrences; tcy needs schema and profile admission"
+    },
+    {
       "rule_id": "U-01",
       "category": "UNSUPPORTED",
       "aat_pointer": "blocks[].content[].raw_material",
@@ -209,13 +237,19 @@ jq -e '.source_construct_coverage.by_construct.caption.class == "tei_policy_proj
 jq -e '.source_construct_coverage.counts_by_class.tei_exact == 1' "$summary_json" >/dev/null
 jq -e '.source_construct_coverage.counts_by_class.tei_policy_projection == 1' "$summary_json" >/dev/null
 jq -e '.source_construct_coverage.counts_by_class.tei_plus_abc_extension == 1' "$summary_json" >/dev/null
-jq -e '.source_construct_coverage.counts_by_class.unsupported_gap == 1' "$summary_json" >/dev/null
-jq -e '.unsupported_gaps.count == 1' "$summary_json" >/dev/null
-jq -e '.unsupported_gaps.items[0].aat_pointer == "blocks[].content[].raw_material"' "$summary_json" >/dev/null
-jq -e '.unsupported_gaps.items[0].observed_occurrences == 288' "$summary_json" >/dev/null
-jq -e '.unsupported_gaps.items[0].prevalence_source == "rule_description"' "$summary_json" >/dev/null
+jq -e '.source_construct_coverage.counts_by_class.unsupported_gap == 5' "$summary_json" >/dev/null
+jq -e '.unsupported_gaps.count == 5' "$summary_json" >/dev/null
+jq -e '.unsupported_gaps.items[] | select(.aat_pointer == "blocks[].content[].raw_material") | .observed_occurrences == 288' "$summary_json" >/dev/null
+jq -e '.unsupported_gaps.items[] | select(.aat_pointer == "blocks[].content[].raw_material") | .prevalence_source == "rule_description"' "$summary_json" >/dev/null
 jq -e '([.unsupported_gaps.items[] | select(.aat_pointer == "blocks[].content[].figure.caption" or .aat_pointer == "blocks[].content[].figure.filename")] | length) == 0' "$summary_json" >/dev/null
 jq -e '([.unsupported_gaps.items[] | select(.parser_ir_pointer == "heading.level" or .parser_ir_pointer == "gaiji.raw_marker")] | length) == 0' "$summary_json" >/dev/null
+jq -e '.closure_gaps.classified_but_not_admitted.count == 4' "$summary_json" >/dev/null
+jq -e '.closure_gaps.true_unsupported_gaps.count == 1' "$summary_json" >/dev/null
+jq -e '.closure_gaps.classified_but_not_admitted.items[] | select(.closure_family == "figure_metadata") | .closure_lane == "tei_policy_projection"' "$summary_json" >/dev/null
+jq -e '.closure_gaps.classified_but_not_admitted.items[] | select(.closure_family == "style_rendition") | .closure_lane == "tei_policy_projection"' "$summary_json" >/dev/null
+jq -e '.closure_gaps.classified_but_not_admitted.items[] | select(.closure_family == "span_coordinates") | .closure_lane == "custom_sidecar"' "$summary_json" >/dev/null
+jq -e '.closure_gaps.classified_but_not_admitted.items[] | select(.aat_pointer == "blocks[].heading.content[].tcy") | .closure_family == "font_tcy" and .closure_lane == "parser_ir_schema_delta"' "$summary_json" >/dev/null
+jq -e '.closure_gaps.true_unsupported_gaps.items[0].closure_family == null' "$summary_json" >/dev/null
 jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_UNSUPPORTED_GAPS"' "$summary_json" >/dev/null
 rg -n "IR Publication Coverage" "$report_md" >/dev/null
 rg -n "Field Coverage" "$report_md" >/dev/null
@@ -232,8 +266,10 @@ python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
   --summary-json "$supported_summary_json" \
   --report-md "$supported_report_md"
 
-jq -e '.unsupported_gaps.count == 0' "$supported_summary_json" >/dev/null
-jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_CUSTOM_CONTRACT_MISSING"' "$supported_summary_json" >/dev/null
+jq -e '.unsupported_gaps.count == 4' "$supported_summary_json" >/dev/null
+jq -e '.closure_gaps.classified_but_not_admitted.count == 4' "$supported_summary_json" >/dev/null
+jq -e '.closure_gaps.true_unsupported_gaps.count == 0' "$supported_summary_json" >/dev/null
+jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_CLASSIFIED_GAPS"' "$supported_summary_json" >/dev/null
 
 python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
   --parser-ir-schema "$parser_schema" \
@@ -247,7 +283,7 @@ python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
 
 jq -e '.custom_contract.verdict == "CUSTOM_CONTRACT_CANDIDATE_PROVIDED"' "$candidate_summary_json" >/dev/null
 jq -e '.custom_contract.schema_id == "https://example.org/abc/custom-contract-candidate.json"' "$candidate_summary_json" >/dev/null
-jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_CUSTOM_CONTRACT_MISSING"' "$candidate_summary_json" >/dev/null
+jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_CLASSIFIED_GAPS"' "$candidate_summary_json" >/dev/null
 
 cat > "$unknown_mapping" <<'JSON'
 {
@@ -283,6 +319,8 @@ jq -e '.unsupported_gaps.items[0].aat_pointer == "blocks[].content[].mystery_mar
 jq -e '.unsupported_gaps.items[0].owner == "policy"' "$unknown_summary_json" >/dev/null
 jq -e '.unsupported_gaps.items[0].observed_occurrences == null' "$unknown_summary_json" >/dev/null
 jq -e '.unsupported_gaps.items[0].prevalence_source == "unavailable"' "$unknown_summary_json" >/dev/null
+jq -e '.closure_gaps.true_unsupported_gaps.count == 1' "$unknown_summary_json" >/dev/null
+jq -e '.closure_gaps.true_unsupported_gaps.items[0].closure_family == null' "$unknown_summary_json" >/dev/null
 jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_UNSUPPORTED_GAPS"' "$unknown_summary_json" >/dev/null
 
 cat > "$owner_mapping" <<'JSON'

@@ -1,6 +1,6 @@
 # IR Publication Coverage
 
-Verdict: `IR_PUBLICATION_COVERAGE_BLOCKED_UNSUPPORTED_GAPS`
+Verdict: `IR_PUBLICATION_COVERAGE_BLOCKED_CLASSIFIED_GAPS`
 
 ## Node Coverage
 
@@ -99,6 +99,25 @@ Count: 165
 - `blocks[].content[].content[].span` owner `policy`
 - `blocks[].content[].content[].style` owner `policy`
 - `blocks[].content[].content[].warigaki.upper[].span` owner `policy`
+
+## Closure Gaps
+
+Classified but not admitted: 165
+
+| Family | Count |
+|---|---:|
+| `accent` | 12 |
+| `figure_metadata` | 83 |
+| `font_tcy` | 13 |
+| `gaiji_unresolved_reason` | 4 |
+| `heading_jisage_structure` | 9 |
+| `keigakomi_yokogumi` | 8 |
+| `provenance_metrics` | 3 |
+| `source_identity` | 5 |
+| `span_coordinates` | 14 |
+| `style_rendition` | 14 |
+
+True unsupported gaps: 0
 
 ## Plaintext Policy
 

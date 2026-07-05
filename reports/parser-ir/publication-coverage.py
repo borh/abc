@@ -249,6 +249,58 @@ CLASS_ORDER = (
 DIRECT_POINTER_PATTERN = re.compile(r"^[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*$")
 OBSERVED_OCCURRENCES_PATTERN = re.compile(r"\bObserved\s+(\d+)\s+occurrences\b", re.IGNORECASE)
 CUSTOM_SCHEMA_OWNER = "custom_schema"
+CLOSURE_FAMILIES = {
+    "span_coordinates": {
+        "closure_lane": "custom_sidecar",
+        "owner": CUSTOM_SCHEMA_OWNER,
+        "admission_gate": "ABC custom contract preserves span coordinates or explicit IR pointer span records.",
+    },
+    "style_rendition": {
+        "closure_lane": "tei_policy_projection",
+        "owner": "policy",
+        "admission_gate": "ABC TEI profile declares style/rendition vocabulary and sidecar preserves exact source marker where needed.",
+    },
+    "accent": {
+        "closure_lane": "tei_plus_abc_extension",
+        "owner": "policy",
+        "admission_gate": "ABC TEI profile declares accent rendition vocabulary and custom contract preserves original accent code.",
+    },
+    "source_identity": {
+        "closure_lane": "custom_sidecar",
+        "owner": CUSTOM_SCHEMA_OWNER,
+        "admission_gate": "ABC custom contract and manifest linkage preserve source identity and normalization fields.",
+    },
+    "provenance_metrics": {
+        "closure_lane": "custom_sidecar",
+        "owner": CUSTOM_SCHEMA_OWNER,
+        "admission_gate": "ABC custom contract includes producer metrics or superseding validation/admission verdicts.",
+    },
+    "figure_metadata": {
+        "closure_lane": "tei_policy_projection",
+        "owner": "policy",
+        "admission_gate": "ABC TEI profile maps figure dimensions/classes and custom contract preserves exact source class when TEI rend is not exact.",
+    },
+    "gaiji_unresolved_reason": {
+        "closure_lane": "custom_sidecar",
+        "owner": CUSTOM_SCHEMA_OWNER,
+        "admission_gate": "ABC custom contract preserves gaiji resolution diagnostics.",
+    },
+    "heading_jisage_structure": {
+        "closure_lane": "aat_to_parser_ir_converter_delta",
+        "owner": "aat_to_parser_ir_converter",
+        "admission_gate": "Converter emits paragraph/layout/heading facts consistently for heading and jisage structures.",
+    },
+    "font_tcy": {
+        "closure_lane": "parser_ir_schema_delta",
+        "owner": "parser_ir_schema",
+        "admission_gate": "Parser-IR schema represents font_size and tcy, ABC profile declares rendition values, and custom contract preserves marker identity.",
+    },
+    "keigakomi_yokogumi": {
+        "closure_lane": "parser_ir_schema_delta",
+        "owner": "parser_ir_schema",
+        "admission_gate": "Parser-IR schema represents inline/block layout containers and ABC profile names keigakomi/yokogumi TEI vocabulary.",
+    },
+}
 
 
 def extract_node_types(schema: dict[str, Any]) -> list[str]:
@@ -752,16 +804,100 @@ def unsupported_gaps(
     }
 
 
+def gap_pointer(item: dict[str, Any]) -> str:
+    return str(
+        item.get("aat_pointer")
+        or item.get("parser_ir_pointer")
+        or item.get("node_type")
+        or item.get("field")
+        or ""
+    )
+
+
+def closure_family_for_pointer(pointer: str) -> str | None:
+    if pointer.endswith(".span") or ".span." in pointer:
+        return "span_coordinates"
+    if pointer.endswith(".style"):
+        return "style_rendition"
+    if ".accent" in pointer or pointer.endswith(".accent"):
+        return "accent"
+    if pointer in {
+        "meta.source_encoding",
+        "meta.source_hash",
+        "source.normalization",
+        "source.source_path",
+        "schema_id/schema_hash",
+    }:
+        return "source_identity"
+    if pointer in {"meta.metrics", "meta.parse_complete", "meta.semantic_summary"}:
+        return "provenance_metrics"
+    if ".figure." in pointer or pointer.endswith(".figure"):
+        return "figure_metadata"
+    if pointer.endswith(".gaiji.unresolved_reason"):
+        return "gaiji_unresolved_reason"
+    if pointer.endswith(".font_size") or pointer.endswith(".tcy"):
+        return "font_tcy"
+    if pointer.endswith(".keigakomi") or pointer.endswith(".yokogumi"):
+        return "keigakomi_yokogumi"
+    if pointer.endswith(".heading") or pointer.endswith(".jisage_block") or ".heading." in pointer:
+        return "heading_jisage_structure"
+    return None
+
+
+def classify_closure_gap(item: dict[str, Any]) -> dict[str, Any] | None:
+    family = closure_family_for_pointer(gap_pointer(item))
+    if family is None:
+        return None
+    spec = CLOSURE_FAMILIES[family]
+    return {
+        **item,
+        "closure_family": family,
+        "closure_lane": spec["closure_lane"],
+        "closure_owner": spec["owner"],
+        "admission_gate": spec["admission_gate"],
+    }
+
+
+def closure_gaps(gaps: dict[str, Any]) -> dict[str, Any]:
+    classified: list[dict[str, Any]] = []
+    true_unsupported: list[dict[str, Any]] = []
+    for item in gaps.get("items", []):
+        closure_item = classify_closure_gap(item)
+        if closure_item is None:
+            true_unsupported.append({**item, "closure_family": None, "closure_lane": "unsupported_gap"})
+        else:
+            classified.append(closure_item)
+    return {
+        "classified_but_not_admitted": {
+            "count": len(classified),
+            "counts_by_family": count_values(classified, "closure_family"),
+            "counts_by_lane": count_values(classified, "closure_lane"),
+            "counts_by_owner": count_values(classified, "closure_owner"),
+            "items": classified,
+        },
+        "true_unsupported_gaps": {
+            "count": len(true_unsupported),
+            "counts_by_owner": count_values(true_unsupported, "owner"),
+            "items": true_unsupported,
+        },
+    }
+
+
 def publication_verdict(
     source_passed: bool,
     evidence: dict[str, Any],
     custom_contract: dict[str, Any],
     gaps: dict[str, Any],
+    closures: dict[str, Any],
 ) -> str:
     if not source_passed:
         return "IR_PUBLICATION_COVERAGE_BLOCKED_SOURCE_AUTHORITY"
     if evidence.get("verdict") != "FIVE_PARSER_EVIDENCE_COMPLETE":
         return "IR_PUBLICATION_COVERAGE_BLOCKED_INCOMPLETE_PARSER_EVIDENCE"
+    if closures["true_unsupported_gaps"].get("count", 0) > 0:
+        return "IR_PUBLICATION_COVERAGE_BLOCKED_UNSUPPORTED_GAPS"
+    if closures["classified_but_not_admitted"].get("count", 0) > 0:
+        return "IR_PUBLICATION_COVERAGE_BLOCKED_CLASSIFIED_GAPS"
     if gaps.get("count", 0) > 0:
         return "IR_PUBLICATION_COVERAGE_BLOCKED_UNSUPPORTED_GAPS"
     if custom_contract.get("verdict") != "CUSTOM_CONTRACT_CONFIRMED_BY_ABC_INTEGRATION":
@@ -784,11 +920,12 @@ def build_summary(
     evidence = parser_evidence_coverage(matrix, source_delta)
     custom_contract = custom_contract_block(custom_contract_schema)
     gaps = unsupported_gaps(node_coverage, field_coverage, diagnostics, construct_coverage)
+    closures = closure_gaps(gaps)
     source_passed = source_authority_passed(source)
     return {
         "schema_version": SCHEMA_VERSION,
         "scope": summary_scope(parser_schema, mapping, source, matrix),
-        "verdict": publication_verdict(source_passed, evidence, custom_contract, gaps),
+        "verdict": publication_verdict(source_passed, evidence, custom_contract, gaps, closures),
         "source_authority_gate": source_authority_gate(source),
         "parser_evidence_coverage": evidence,
         "parser_ir_schema": {
@@ -806,6 +943,7 @@ def build_summary(
         "diagnostic_coverage": diagnostics,
         "source_construct_coverage": construct_coverage,
         "unsupported_gaps": gaps,
+        "closure_gaps": closures,
         "tei_eaj_calibration": {
             "matrix_schema_version": matrix.get("schema_version"),
             "rows_attempted": matrix.get("totals", {}).get("rows_attempted"),
@@ -822,6 +960,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
     diagnostic_counts = summary["diagnostic_coverage"]["counts_by_class"]
     construct_counts = summary["source_construct_coverage"]["counts_by_class"]
     gaps = summary["unsupported_gaps"]
+    closures = summary["closure_gaps"]
     lines = [
         "# IR Publication Coverage",
         "",
@@ -859,6 +998,19 @@ def render_markdown(summary: dict[str, Any]) -> str:
         label = item.get("aat_pointer") or item.get("node_type")
         lines.append(f"- `{label}` owner `{item.get('owner')}`")
     lines.extend([
+        "",
+        "## Closure Gaps",
+        "",
+        f"Classified but not admitted: {closures['classified_but_not_admitted']['count']}",
+        "",
+    ])
+    if closures["classified_but_not_admitted"].get("counts_by_family"):
+        lines.extend(["| Family | Count |", "|---|---:|"])
+        for family, count in closures["classified_but_not_admitted"]["counts_by_family"].items():
+            lines.append(f"| `{family}` | {count} |")
+        lines.append("")
+    lines.extend([
+        f"True unsupported gaps: {closures['true_unsupported_gaps']['count']}",
         "",
         "## Plaintext Policy",
         "",

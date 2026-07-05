@@ -22,7 +22,8 @@ Current measured report:
   - `aat_to_parser_ir_converter`: 5
 
 Those 165 gaps are not 165 independent design problems. They collapse into ten
-families:
+non-overlapping classifier families after more-specific layout/style families
+are matched before broad heading/jisage structure:
 
 | Family | Gap rows | Current owner/category shape | Measured occurrence sum |
 |---|---:|---|---:|
@@ -33,7 +34,7 @@ families:
 | provenance metrics | 3 | `custom_schema` / `LOSS` | 139,773 |
 | figure metadata | 83 | `custom_schema` / `LOSS` | 25,433 |
 | gaiji unresolved reason | 4 | `custom_schema` / `LOSS` | 22,445 |
-| heading/jisage structure | 28 | policy/custom/converter mix | 472,923 |
+| heading/jisage structure | 9 | policy/custom/converter mix | 303,045 |
 | font size / tcy | 13 | custom/schema mix | 54,043 |
 | keigakomi / yokogumi | 8 | custom/schema mix | 517 |
 

@@ -57,7 +57,7 @@
   "sha256:da916a3a92f64d985cb98f9b2ddc7f562e660fd0c3dbe0c902392d3764b0158a")
 
 (def ^:private current-parser-ir-schema-hash
-  "sha256:a1fcd348bf396d8d4e6f30ffb928b76b3802b594ea773ed6fa9e1dac52edf712")
+  "sha256:c081f2365e2159e6e608733c4eb4e6fdf1fa80203ccd3d5e1f2afc533da8d411")
 
 (def ^:private parser-ir-schema-hash
   legacy-parser-ir-schema-hash)
@@ -437,6 +437,74 @@
                      "warnings" []
                      "errors" []}]
       (is (nil? (schema/validation-errors schema parser-ir))))))
+
+(deftest parser-ir-schema-accepts-heading-inline-children-test
+  (testing "heading nodes preserve structured inline content while retaining text"
+    (let [schema (files/read-json "schemas/parser-ir.schema.json")
+          parser-ir {"schema_id" "https://w3id.org/abc/schemas/parser-ir.schema.json"
+                     "schema_hash" current-parser-ir-schema-hash
+                     "source" {"work_content_hash" "sha256:0000000000000000000000000000000000000000000000000000000000000002"
+                               "encoding" "Shift_JIS"
+                               "normalization" "source"}
+                     "nodes" [{"type" "heading"
+                               "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                               "text" "東京"
+                               "level" 2
+                               "inline_children" [{"type" "ruby"
+                                                   "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                                                   "ruby" {"base" "東京"
+                                                           "reading" "とうきょう"
+                                                           "scope" "explicit"
+                                                           "direction" "right"}}]}]
+                     "warnings" []
+                     "errors" []}]
+      (is (nil? (schema/validation-errors schema parser-ir))))))
+
+(deftest parser-ir-schema-accepts-layout-span-test
+  (testing "layout-span is a typed inline publication-layout scope"
+    (let [schema (files/read-json "schemas/parser-ir.schema.json")
+          parser-ir {"schema_id" "https://w3id.org/abc/schemas/parser-ir.schema.json"
+                     "schema_hash" current-parser-ir-schema-hash
+                     "source" {"work_content_hash" "sha256:0000000000000000000000000000000000000000000000000000000000000002"
+                               "encoding" "Shift_JIS"
+                               "normalization" "source"}
+                     "nodes" [{"type" "layout-span"
+                               "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                               "text" "12"
+                               "inline_children" [{"type" "text"
+                                                   "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                                                   "text" "12"}]
+                               "layout" {"kind" "tcy"
+                                         "source" "aat-inline"
+                                         "marker" "縦中横"}}
+                              {"type" "emphasis"
+                               "span" {"start" 2 "end" 3 "coordinate_system" "decoded_utf8"}
+                               "style" "bold"
+                               "inline_children" [{"type" "layout-span"
+                                                   "span" {"start" 2 "end" 3 "coordinate_system" "decoded_utf8"}
+                                                   "text" "横"
+                                                   "layout" {"kind" "yokogumi"
+                                                             "source" "aat-inline"
+                                                             "direction" "horizontal"}}]}]
+                     "warnings" []
+                     "errors" []}]
+      (is (nil? (schema/validation-errors schema parser-ir))))))
+
+(deftest parser-ir-schema-rejects-invalid-layout-span-test
+  (testing "layout-span requires typed layout metadata"
+    (let [schema (files/read-json "schemas/parser-ir.schema.json")
+          parser-ir {"schema_id" "https://w3id.org/abc/schemas/parser-ir.schema.json"
+                     "schema_hash" current-parser-ir-schema-hash
+                     "source" {"work_content_hash" "sha256:0000000000000000000000000000000000000000000000000000000000000002"
+                               "encoding" "Shift_JIS"
+                               "normalization" "source"}
+                     "nodes" [{"type" "layout-span"
+                               "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                               "text" "12"
+                               "layout" {"source" "aat-inline"}}]
+                     "warnings" []
+                     "errors" []}]
+      (is (seq (schema/validation-errors schema parser-ir))))))
 
 (deftest parser-ir-schema-rejects-empty-emphasis-test
   (testing "emphasis must carry either legacy text or structured inline children"

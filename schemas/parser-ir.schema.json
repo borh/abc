@@ -89,6 +89,7 @@
         { "$ref": "#/$defs/gaijiNode" },
         { "$ref": "#/$defs/editorNoteNode" },
         { "$ref": "#/$defs/emphasisNode" },
+        { "$ref": "#/$defs/layoutSpanNode" },
         { "$ref": "#/$defs/headingNode" },
         { "$ref": "#/$defs/indentationNode" },
         { "$ref": "#/$defs/pageBreakNode" },
@@ -106,6 +107,7 @@
         { "$ref": "#/$defs/gaijiNode" },
         { "$ref": "#/$defs/editorNoteNode" },
         { "$ref": "#/$defs/emphasisNode" },
+        { "$ref": "#/$defs/layoutSpanNode" },
         { "$ref": "#/$defs/lineBreakNode" }
       ]
     },
@@ -177,6 +179,58 @@
     "paragraphLayoutSource": {
       "type": "string",
       "enum": ["aat-block", "aat-style", "source-derived", "heuristic"]
+    },
+    "layoutScopeSource": {
+      "type": "string",
+      "enum": ["aat-inline", "aat-block", "source-derived", "heuristic"]
+    },
+    "layoutScope": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["kind", "source", "size_type", "level"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "font-size" },
+            "source": { "$ref": "#/$defs/layoutScopeSource" },
+            "size_type": { "type": "string" },
+            "level": { "type": "integer", "minimum": 0 },
+            "marker": { "type": ["string", "null"] }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "source"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "tcy" },
+            "source": { "$ref": "#/$defs/layoutScopeSource" },
+            "marker": { "type": ["string", "null"] }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "source"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "keigakomi" },
+            "source": { "$ref": "#/$defs/layoutScopeSource" },
+            "border": { "type": ["string", "null"] },
+            "marker": { "type": ["string", "null"] }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "source", "direction"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "yokogumi" },
+            "source": { "$ref": "#/$defs/layoutScopeSource" },
+            "direction": { "type": "string", "enum": ["horizontal"] },
+            "marker": { "type": ["string", "null"] }
+          }
+        }
+      ]
     },
     "paragraph": {
       "type": "object",
@@ -299,6 +353,26 @@
         }
       ]
     },
+    "layoutSpanNode": {
+      "allOf": [
+        { "$ref": "#/$defs/baseNode" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["type", "span", "text", "layout"],
+          "properties": {
+            "type": { "const": "layout-span" },
+            "span": { "$ref": "#/$defs/span" },
+            "text": { "type": "string" },
+            "inline_children": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/inlineNode" }
+            },
+            "layout": { "$ref": "#/$defs/layoutScope" }
+          }
+        }
+      ]
+    },
     "headingNode": {
       "allOf": [
         { "$ref": "#/$defs/baseNode" },
@@ -310,6 +384,10 @@
             "type": { "const": "heading" },
             "span": { "$ref": "#/$defs/span" },
             "text": { "type": "string" },
+            "inline_children": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/inlineNode" }
+            },
             "level": { "type": "integer", "minimum": 1, "maximum": 6 }
           }
         }

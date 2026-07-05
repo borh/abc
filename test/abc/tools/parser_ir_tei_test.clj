@@ -103,6 +103,55 @@
       (is (= {"emphasis" 3 "ruby" 1} (:node_counts result)))
       (is (empty? (:omitted result))))))
 
+(deftest heading-inline-children-render-inside-head-test
+  (testing "heading inline_children render structured TEI inside head"
+    (let [result (parser-ir-tei/render
+                  {"nodes" [{"type" "heading"
+                             "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                             "text" "東京"
+                             "level" 2
+                             "inline_children" [{"type" "ruby"
+                                                 "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                                                 "ruby" {"base" "東京"
+                                                         "reading" "とうきょう"
+                                                         "scope" "explicit"
+                                                         "direction" "right"}}]}]})
+          head (some #(when (= :head (first %)) %) (hiccup-nodes (:body result)))]
+      (is (= [:head {:n "2"}
+              [:ruby {:type "furigana" :rend "right"}
+               [:rb "東京"]
+               [:rt "とうきょう"]]]
+             head))
+      (is (= {"heading" 1 "ruby" 1} (:node_counts result)))
+      (is (empty? (:omitted result))))))
+
+(deftest layout-span-renders-profile-rend-test
+  (testing "layout-span projects typed layout facts to TEI rend"
+    (let [result (parser-ir-tei/render
+                  {"nodes" [{"type" "layout-span"
+                             "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                             "text" "12"
+                             "inline_children" [{"type" "text"
+                                                 "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                                                 "text" "12"}]
+                             "layout" {"kind" "tcy"
+                                       "source" "aat-inline"
+                                       "marker" "縦中横"}}
+                            {"type" "layout-span"
+                             "span" {"start" 2 "end" 3 "coordinate_system" "decoded_utf8"}
+                             "text" "大"
+                             "layout" {"kind" "font-size"
+                                       "source" "aat-inline"
+                                       "size_type" "large"
+                                       "level" 1}}]})
+          paragraph (some #(when (= :p (first %)) %) (hiccup-nodes (:body result)))]
+      (is (= [:p
+              [:hi {:rend "abc:tcy marker(縦中横)"} "12"]
+              [:hi {:rend "abc:font-size type(large) level(1)"} "大"]]
+             paragraph))
+      (is (= {"layout-span" 2 "text" 1} (:node_counts result)))
+      (is (empty? (:omitted result))))))
+
 (def ^:private level3-parser-ir
   {"schema_id" "https://w3id.org/abc/schemas/parser-ir.schema.json"
    "schema_hash" "sha256:0000000000000000000000000000000000000000000000000000000000000001"

@@ -70,6 +70,16 @@
        (render-inline-children acc children depth))
      (append-text acc (get node "text")))))
 
+(defn- render-layout-span-node
+  ([acc node] (render-layout-span-node acc node 0))
+  ([acc node depth]
+   (if-let [children (seq (get node "inline_children"))]
+     (if (and (present-text? (get node "text"))
+              (inline-children-need-visible-text-fallback? children))
+       (append-text acc (get node "text"))
+       (render-inline-children acc children depth))
+     (append-text acc (get node "text")))))
+
 (defn- render-heading-node
   ([acc node] (render-heading-node acc node 0))
   ([acc node _depth]
@@ -128,6 +138,7 @@
    "gaiji" render-gaiji-node
    "editor-note" render-editor-note-node
    "emphasis" render-emphasis-node
+   "layout-span" render-layout-span-node
    "heading" render-heading-node
    "indentation" render-indentation-node
    "page-break" render-page-break-node

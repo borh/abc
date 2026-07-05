@@ -123,6 +123,43 @@
                                                     "unicode" nil
                                                     "resolved" true}}]}]})))))
 
+(deftest layout-span-plaintext-renders-visible-text-only-test
+  (testing "layout-span metadata does not enter plaintext"
+    (is (= "12大"
+           (plaintext/render-string
+            {"nodes" [{"type" "layout-span"
+                       "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                       "text" "fallback"
+                       "inline_children" [{"type" "ruby"
+                                           "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                                           "ruby" {"base" "12"
+                                                   "reading" "じゅうに"
+                                                   "scope" "explicit"}}]
+                       "layout" {"kind" "tcy"
+                                 "source" "aat-inline"
+                                 "marker" "縦中横"}}
+                      {"type" "layout-span"
+                       "span" {"start" 2 "end" 3 "coordinate_system" "decoded_utf8"}
+                       "text" "大"
+                       "layout" {"kind" "font-size"
+                                 "source" "aat-inline"
+                                 "size_type" "large"
+                                 "level" 1}}]})))))
+
+(deftest heading-inline-children-do-not-change-plaintext-test
+  (testing "heading plaintext uses required visible text field"
+    (is (= "\n東京\n"
+           (plaintext/render-string
+            {"nodes" [{"type" "heading"
+                       "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                       "text" "東京"
+                       "level" 2
+                       "inline_children" [{"type" "ruby"
+                                           "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                                           "ruby" {"base" "東京"
+                                                   "reading" "とうきょう"
+                                                   "scope" "explicit"}}]}]})))))
+
 (deftest render-omits-empty-or-missing-policy-metadata-test
   (testing "plaintext omits policy-required metadata when node payload is empty or missing"
     (is (= {:text ""

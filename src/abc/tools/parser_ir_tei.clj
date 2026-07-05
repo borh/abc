@@ -33,6 +33,21 @@
                     (str "line-jisage indent(" indent ")"))
     nil))
 
+(defn- inline-layout-rend [layout]
+  (case (get layout "kind")
+    "font-size" (let [size-type (get layout "size_type")
+                      level (get layout "level")]
+                  (when (and size-type (some? level))
+                    (str "abc:font-size type(" size-type ") level(" level ")")))
+    "tcy" (if-let [marker (get layout "marker")]
+            (str "abc:tcy marker(" marker ")")
+            "abc:tcy")
+    "keigakomi" (if-let [border (get layout "border")]
+                  (str "abc:keigakomi border(" border ")")
+                  "abc:keigakomi")
+    "yokogumi" "abc:yokogumi direction(horizontal)"
+    nil))
+
 (defn- paragraph-attrs [paragraph]
   (when-let [rend (some-> (get paragraph "layout") layout-rend)]
     {:rend rend}))
@@ -153,31 +168,54 @@
                     [:note {:type (get note "category")}
                      (get note "raw")]))))
 
+(defn- render-inline-wrapper [acc children text depth wrapper]
+  (if (seq children)
+    (let [before-count (count (:current-paragraph acc))
+          rendered (render-inline-children acc children depth)
+          inline-fragment (subvec (vec (:current-paragraph rendered)) before-count)]
+      (assoc rendered
+             :current-paragraph
+             (conj (subvec (vec (:current-paragraph acc)) 0 before-count)
+                   (into wrapper inline-fragment))))
+    (append-inline acc (conj wrapper text))))
+
 (defn- render-emphasis-node
   ([acc node] (render-emphasis-node acc node 0))
   ([acc node depth]
-   (let [children (seq (get node "inline_children"))]
-     (if children
-       (let [before-count (count (:current-paragraph acc))
-             rendered (render-inline-children acc children depth)
-             inline-fragment (subvec (vec (:current-paragraph rendered)) before-count)]
-         (assoc rendered
-                :current-paragraph
-                (conj (subvec (vec (:current-paragraph acc)) 0 before-count)
-                      (into [:hi {:rend (get node "style")}] inline-fragment))))
-       (append-inline acc
-                      [:hi {:rend (get node "style")}
-                       (get node "text")])))))
+   (render-inline-wrapper acc
+                          (seq (get node "inline_children"))
+                          (get node "text")
+                          depth
+                          [:hi {:rend (get node "style")}])))
+
+(defn- render-layout-span-node
+  ([acc node] (render-layout-span-node acc node 0))
+  ([acc node depth]
+   (if-let [rend (some-> (get node "layout") inline-layout-rend)]
+     (render-inline-wrapper acc
+                            (seq (get node "inline_children"))
+                            (get node "text")
+                            depth
+                            [:hi {:rend rend}])
+     (mark-omitted acc "layout-span"))))
 
 (defn- render-heading-node
   ([acc node] (render-heading-node acc node 0))
-  ([acc node _depth]
-   (-> acc
-       flush-paragraph
-       flush-division
-       (update :current-division conj
+  ([acc node depth]
+   (let [children (seq (get node "inline_children"))
+         base (-> acc flush-paragraph flush-division)]
+     (if children
+       (let [scratch (assoc base :current-paragraph [])
+             rendered (render-inline-children scratch children depth)
+             head-fragment (:current-paragraph rendered)]
+         (-> rendered
+             (assoc :current-paragraph [])
+             (update :current-division conj
+                     (into [:head {:n (str (get node "level"))}]
+                           head-fragment))))
+       (update base :current-division conj
                [:head {:n (str (get node "level"))}
-                (get node "text")]))))
+                (get node "text")])))))
 
 (defn- render-indentation-node
   ([acc node] (render-indentation-node acc node 0))
@@ -246,6 +284,7 @@
    "gaiji" render-gaiji-node
    "editor-note" render-editor-note-node
    "emphasis" render-emphasis-node
+   "layout-span" render-layout-span-node
    "heading" render-heading-node
    "indentation" render-indentation-node
    "page-break" render-page-break-node

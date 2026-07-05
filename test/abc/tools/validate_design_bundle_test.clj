@@ -54,7 +54,7 @@
   "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d")
 
 (def ^:private current-parser-ir-schema-hash
-  "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913")
+  "sha256:da916a3a92f64d985cb98f9b2ddc7f562e660fd0c3dbe0c902392d3764b0158a")
 
 (def ^:private parser-ir-schema-hash
   legacy-parser-ir-schema-hash)
@@ -406,6 +406,25 @@
                                "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
                                "style" "bold"
                                "text" "東京"
+                               "inline_children" [{"type" "ruby"
+                                                   "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                                                   "ruby" {"base" "東京"
+                                                           "reading" "とうきょう"
+                                                           "scope" "explicit"
+                                                           "direction" "right"}}]}]
+                     "warnings" []
+                     "errors" []}]
+      (is (nil? (schema/validation-errors schema parser-ir)))))
+  (testing "emphasis can carry structured inline children without legacy text"
+    (let [schema (files/read-json "schemas/parser-ir.schema.json")
+          parser-ir {"schema_id" "https://w3id.org/abc/schemas/parser-ir.schema.json"
+                     "schema_hash" current-parser-ir-schema-hash
+                     "source" {"work_content_hash" "sha256:0000000000000000000000000000000000000000000000000000000000000002"
+                               "encoding" "Shift_JIS"
+                               "normalization" "source"}
+                     "nodes" [{"type" "emphasis"
+                               "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
+                               "style" "bold"
                                "inline_children" [{"type" "ruby"
                                                    "span" {"start" 0 "end" 2 "coordinate_system" "decoded_utf8"}
                                                    "ruby" {"base" "東京"

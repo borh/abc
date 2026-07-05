@@ -516,13 +516,20 @@ scratch-keep-recent KEEP_N='1':
 	  echo "rm $path"; rm -rf "$path"; \
 	done
 
+# Default comparison set: cwj vibrato (general modern UniDic), the
+# period-correct 近現代口語小説 novel-register vibrato dictionary (many times
+# more period-correct than cwj for Aozora texts), and Sudachi modes A + C —
+# so summarize-warehouse-interesting reports granularity_profile=suw+luw.
+# Expanding further: adding sudachi-b is possible but less interesting; if
+# added, vibrato:unidic-qkana-202512 should be added too (owner guidance).
 morph-warehouse-run profile="full" aat_dir="{{morph_warehouse_aat_dir}}" run_id="" jobs="0":
-	@just morph-warehouse-run-with-analyzers "{{profile}}" "{{aat_dir}}" "vibrato sudachi-a sudachi-c" "{{run_id}}" "{{jobs}}"
+	@just morph-warehouse-run-with-analyzers "{{profile}}" "{{aat_dir}}" "vibrato vibrato:unidic-novel-202512 sudachi-a sudachi-c" "{{run_id}}" "{{jobs}}"
 
-# Harmonized run: all Sudachi analyzers at mode A (UniDic short units), so
-# summarize-warehouse-interesting labels it granularity_profile=sudachi-mode-A-aligned.
-morph-warehouse-run-harmonized profile="full" aat_dir="{{morph_warehouse_aat_dir}}" run_id="" jobs="0":
-	@just morph-warehouse-run-with-analyzers "{{profile}}" "{{aat_dir}}" "vibrato sudachi-a" "{{run_id}}" "{{jobs}}"
+# SUW-only run: every analyzer is 短単位 (Short Unit Word), so
+# summarize-warehouse-interesting labels it granularity_profile=suw — use for
+# granularity-noise-free scoring runs.
+morph-warehouse-run-suw profile="full" aat_dir="{{morph_warehouse_aat_dir}}" run_id="" jobs="0":
+	@just morph-warehouse-run-with-analyzers "{{profile}}" "{{aat_dir}}" "vibrato vibrato:unidic-novel-202512 sudachi-a" "{{run_id}}" "{{jobs}}"
 
 morph-warehouse-run-with-analyzers profile="full" aat_dir="{{morph_warehouse_aat_dir}}" analyzers="vibrato sudachi-a sudachi-c" run_id="" jobs="0":
 	@jobs="{{jobs}}"; \

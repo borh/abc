@@ -536,13 +536,17 @@ scratch-keep-recent KEEP_N='1':
 # so summarize-warehouse-interesting reports granularity_profile=suw+luw.
 # Expanding further: adding sudachi-b is possible but less interesting; if
 # added, vibrato:unidic-qkana-202512 should be added too (owner guidance).
-morph-warehouse-run profile="full" aat_dir=morph_warehouse_aat_dir run_id="" jobs="0":
+# jobs=8 default: measured wall-clock optimum region — full-corpus RSS is dominated
+# by the large-document tail regardless of jobs (jobs=19: 60 min @ 65.6 GB peak;
+# jobs=10: 42 min), so high job counts cost page cache more than they buy in
+# parallelism. --jobs 0 still means memory-aware auto in the binary.
+morph-warehouse-run profile="full" aat_dir=morph_warehouse_aat_dir run_id="" jobs="8":
 	@just morph-warehouse-run-with-analyzers "{{profile}}" "{{aat_dir}}" "vibrato vibrato:unidic-novel-202512 sudachi-a sudachi-c" "{{run_id}}" "{{jobs}}"
 
 # SUW-only run: every analyzer is 短単位 (Short Unit Word), so
 # summarize-warehouse-interesting labels it granularity_profile=suw — use for
 # granularity-noise-free scoring runs.
-morph-warehouse-run-suw profile="full" aat_dir=morph_warehouse_aat_dir run_id="" jobs="0":
+morph-warehouse-run-suw profile="full" aat_dir=morph_warehouse_aat_dir run_id="" jobs="8":
 	@just morph-warehouse-run-with-analyzers "{{profile}}" "{{aat_dir}}" "vibrato vibrato:unidic-novel-202512 sudachi-a" "{{run_id}}" "{{jobs}}"
 
 # Dictionaries are nix-only: rebuild/relink flake outputs first (no-op when the

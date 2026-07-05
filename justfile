@@ -519,6 +519,11 @@ scratch-keep-recent KEEP_N='1':
 morph-warehouse-run profile="full" aat_dir="{{morph_warehouse_aat_dir}}" run_id="" jobs="0":
 	@just morph-warehouse-run-with-analyzers "{{profile}}" "{{aat_dir}}" "vibrato sudachi-a sudachi-c" "{{run_id}}" "{{jobs}}"
 
+# Harmonized run: all Sudachi analyzers at mode A (UniDic short units), so
+# summarize-warehouse-interesting labels it granularity_profile=sudachi-mode-A-aligned.
+morph-warehouse-run-harmonized profile="full" aat_dir="{{morph_warehouse_aat_dir}}" run_id="" jobs="0":
+	@just morph-warehouse-run-with-analyzers "{{profile}}" "{{aat_dir}}" "vibrato sudachi-a" "{{run_id}}" "{{jobs}}"
+
 morph-warehouse-run-with-analyzers profile="full" aat_dir="{{morph_warehouse_aat_dir}}" analyzers="vibrato sudachi-a sudachi-c" run_id="" jobs="0":
 	@jobs="{{jobs}}"; \
 	if [ "$jobs" = "0" ]; then jobs="$(nproc)"; fi; \

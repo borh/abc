@@ -5,8 +5,8 @@ Measurement-only expansion over ABC's TEI-EAJ workset export. TEI-EAJ is compari
 ## Mapping
 
 - mapping: `https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe` `0.2.3`
-- mapping hash: `sha256:21791c841557ced968464b38e42971e22830edb0efdb0be6faf285761532f770`
-- parser-IR schema hash: `sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d`
+- mapping hash: `sha256:9812e1cc0d956143e61cdd9d0a5bccaa3ec301c7984279230107c23919936e8b`
+- parser-IR schema hash: `sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913`
 
 ## Workset
 
@@ -259,7 +259,7 @@ Measurement-only expansion over ABC's TEI-EAJ workset export. TEI-EAJ is compari
 - aozora2:51307 conversion failed; parser-IR representability is unmeasured for this adapter
 - aozora:51307 conversion failed; parser-IR representability is unmeasured for this adapter
 - AAT `aozora-rs:51307`: paragraphs=1, final attribution=false, conversion=true
-- AAT `aozora2:51307`: paragraphs=9, final attribution=false, conversion=false
+- AAT `aozora2:51307`: paragraphs=14, final attribution=false, conversion=false
 - AAT `aozora2html:51307`: paragraphs=412, final attribution=false, conversion=true
 - AAT `aozora-epub3:51307`: paragraphs=400, final attribution=false, conversion=true
 - AAT `aozora:51307`: paragraphs=1, final attribution=false, conversion=false

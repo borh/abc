@@ -1,23 +1,23 @@
 # AAT Parser-IR Conversion Audit
 
-- generated_unix_seconds: `1783217050`
+- generated_unix_seconds: `1783242025`
 - mapping: `https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe` `0.2.3`
-- mapping_hash: `sha256:21791c841557ced968464b38e42971e22830edb0efdb0be6faf285761532f770`
+- mapping_hash: `sha256:9812e1cc0d956143e61cdd9d0a5bccaa3ec301c7984279230107c23919936e8b`
 - mapping_schema_hash: `sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4`
-- target_parser_ir_schema_hash: `sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d`
+- target_parser_ir_schema_hash: `sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913`
 
 ## Totals
 
 | files_attempted | files_succeeded | files_failed | parser_ir_nodes | divergence_records | divergence_occurrences | elapsed_seconds |
 |---:|---:|---:|---:|---:|---:|---:|
-| 89187 | 68411 | 20776 | 28495049 | 835642 | 46822662 | 27.019 |
+| 89169 | 67904 | 21265 | 28890539 | 804766 | 46686087 | 28.145 |
 
 ## Inputs
 
 | label | files | aat_dir |
 |---|---:|---|
 | aozora-rs-adapter | 17894 | `/home/bor/Projects/ab-validator/scratch/morph-full-corpus/aats/aozora-rs-adapter` |
-| aozora2-adapter | 17874 | `/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter` |
+| aozora2-adapter | 17856 | `/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter` |
 | aozora2html-adapter | 17689 | `/db/ab-validator/aat-corpus/aozora2html-full-20260703T020301Z/aat/aozora2html-adapter` |
 | aozora-epub3-adapter | 17844 | `/db/ab-validator/aat-corpus/aozora-epub3-full-20260704T050652Z-300s/aat/aozora-epub3-adapter` |
 | aozora-adapter | 17886 | `/db/ab-validator/aat-corpus/aozora-full-20260705T015007Z/aat/aozora-adapter` |
@@ -27,199 +27,775 @@
 | corpus | attempted | succeeded | failed | parser_ir_nodes | divergence_occurrences |
 |---|---:|---:|---:|---:|---:|
 | aozora-adapter | 17886 | 996 | 16890 | 996 | 5996 |
-| aozora-epub3-adapter | 17844 | 17844 | 0 | 10670874 | 18314414 |
+| aozora-epub3-adapter | 17844 | 17844 | 0 | 10600649 | 18103739 |
 | aozora-rs-adapter | 17894 | 17894 | 0 | 7821839 | 11926731 |
-| aozora2-adapter | 17874 | 13988 | 3886 | 1582155 | 4329397 |
-| aozora2html-adapter | 17689 | 17689 | 0 | 8419185 | 12246124 |
+| aozora2-adapter | 17856 | 13481 | 4375 | 2136482 | 4669333 |
+| aozora2html-adapter | 17689 | 17689 | 0 | 8330573 | 11980288 |
 
 ## Divergence Categories
 
 | category | occurrences |
 |---|---:|
-| AMBIGUITY | 29336272 |
-| INVENTION | 11477729 |
-| LOSS | 5623531 |
-| STRUCTURAL | 352862 |
-| UNSUPPORTED | 32268 |
+| AMBIGUITY | 29709237 |
+| INVENTION | 11587700 |
+| LOSS | 5185173 |
+| STRUCTURAL | 172976 |
+| UNSUPPORTED | 31001 |
 
 ## Compatibility Candidates
 
 | adapter | adapter_version | mapping_version | mapping_hash | files_succeeded | files_failed | rules_emitted | rules_missing | unsupported_occurrences |
 |---|---|---|---|---:|---:|---:|---:|---:|
-| aozora | aozora-adapter 0.1.0 aozora 0.4.1 | 0.2.3 | `sha256:21791c841557ced968464b38e42971e22830edb0efdb0be6faf285761532f770` | 996 | 16890 | 8 | 119 | 0 |
-| aozora-epub3 | aozora-epub3-adapter 0.1.0 AozoraEpub3-JDK21-1.3.4-jdk21 | 0.2.3 | `sha256:21791c841557ced968464b38e42971e22830edb0efdb0be6faf285761532f770` | 17844 | 0 | 61 | 66 | 13234 |
-| aozora-rs | aozora-rs-adapter 0.1.0 2b4e8d1 | 0.2.3 | `sha256:21791c841557ced968464b38e42971e22830edb0efdb0be6faf285761532f770` | 17894 | 0 | 25 | 102 | 0 |
-| aozora2 | aozora2-adapter 0.1.0 aozora-core-0.7.1 | 0.2.3 | `sha256:21791c841557ced968464b38e42971e22830edb0efdb0be6faf285761532f770` | 13988 | 3886 | 89 | 38 | 4804 |
-| aozora2html | aozora2html-adapter 0.1.0 gem-3.0.1 | 0.2.3 | `sha256:21791c841557ced968464b38e42971e22830edb0efdb0be6faf285761532f770` | 17689 | 0 | 112 | 15 | 14230 |
+| aozora | aozora-adapter 0.1.0 aozora 0.4.1 | 0.2.3 | `sha256:9812e1cc0d956143e61cdd9d0a5bccaa3ec301c7984279230107c23919936e8b` | 996 | 16890 | 8 | 706 | 0 |
+| aozora-epub3 | aozora-epub3-adapter 0.1.0 AozoraEpub3-JDK21-1.3.4-jdk21 | 0.2.3 | `sha256:9812e1cc0d956143e61cdd9d0a5bccaa3ec301c7984279230107c23919936e8b` | 17844 | 0 | 61 | 653 | 13234 |
+| aozora-rs | aozora-rs-adapter 0.1.0 2b4e8d1 | 0.2.3 | `sha256:9812e1cc0d956143e61cdd9d0a5bccaa3ec301c7984279230107c23919936e8b` | 17894 | 0 | 25 | 689 | 0 |
+| aozora2 | aozora2-adapter 0.1.0 aozora-core-0.7.1 | 0.2.3 | `sha256:9812e1cc0d956143e61cdd9d0a5bccaa3ec301c7984279230107c23919936e8b` | 13481 | 4375 | 266 | 448 | 3537 |
+| aozora2html | aozora2html-adapter 0.1.0 gem-3.0.1 | 0.2.3 | `sha256:9812e1cc0d956143e61cdd9d0a5bccaa3ec301c7984279230107c23919936e8b` | 17689 | 0 | 112 | 602 | 14230 |
 
 ## Rule Coverage
 
-- rules_total: `127`
-- rules_emitted: `127`
-- rules_missing: `0`
+- rules_total: `714`
+- rules_emitted: `307`
+- rules_missing: `407`
 
 | rule_id | category | files | occurrences |
 |---|---|---:|---:|
-| A-01 | AMBIGUITY | 165 | 2567 |
-| A-02 | AMBIGUITY | 38 | 112 |
-| A-03 | AMBIGUITY | 18 | 20 |
-| A-04 | AMBIGUITY | 18 | 20 |
-| A-05 | AMBIGUITY | 7 | 18 |
-| A-06 | AMBIGUITY | 143 | 566 |
-| A-07 | AMBIGUITY | 579 | 2232 |
-| A-08 | AMBIGUITY | 13649 | 910469 |
-| A-09 | AMBIGUITY | 5096 | 77976 |
-| A-10 | AMBIGUITY | 2 | 2 |
-| A-11 | AMBIGUITY | 85 | 551 |
-| A-12 | AMBIGUITY | 11 | 20 |
-| A-13 | AMBIGUITY | 6620 | 71404 |
-| A-14 | AMBIGUITY | 6656 | 72191 |
-| A-15 | AMBIGUITY | 30 | 85 |
-| A-16 | AMBIGUITY | 137 | 563 |
-| A-17 | AMBIGUITY | 1389 | 9403 |
-| A-18 | AMBIGUITY | 1041 | 3955 |
-| A-19 | AMBIGUITY | 10362 | 80528 |
-| A-20 | AMBIGUITY | 67114 | 27221781 |
-| A-21 | AMBIGUITY | 32044 | 485189 |
-| A-22 | AMBIGUITY | 3 | 4 |
-| A-23 | AMBIGUITY | 221 | 1430 |
-| A-24 | AMBIGUITY | 4 | 17 |
-| A-25 | AMBIGUITY | 4012 | 41715 |
-| A-26 | AMBIGUITY | 18836 | 285038 |
-| A-27 | AMBIGUITY | 5 | 5 |
-| A-28 | AMBIGUITY | 68411 | 68411 |
-| I-01 | INVENTION | 68411 | 68411 |
-| I-02 | INVENTION | 50249 | 10347033 |
-| I-03 | INVENTION | 68411 | 68411 |
-| I-04 | INVENTION | 68411 | 68411 |
+| A-01 | AMBIGUITY | 0 | 0 |
+| A-02 | AMBIGUITY | 0 | 0 |
+| A-03 | AMBIGUITY | 0 | 0 |
+| A-04 | AMBIGUITY | 0 | 0 |
+| A-05 | AMBIGUITY | 165 | 2567 |
+| A-06 | AMBIGUITY | 37 | 111 |
+| A-07 | AMBIGUITY | 0 | 0 |
+| A-08 | AMBIGUITY | 18 | 20 |
+| A-09 | AMBIGUITY | 18 | 20 |
+| A-10 | AMBIGUITY | 0 | 0 |
+| A-100 | AMBIGUITY | 0 | 0 |
+| A-101 | AMBIGUITY | 12 | 27 |
+| A-102 | AMBIGUITY | 0 | 0 |
+| A-103 | AMBIGUITY | 995 | 3917 |
+| A-104 | AMBIGUITY | 10309 | 80489 |
+| A-105 | AMBIGUITY | 66539 | 27118063 |
+| A-106 | AMBIGUITY | 30460 | 459261 |
+| A-107 | AMBIGUITY | 3 | 4 |
+| A-108 | AMBIGUITY | 0 | 0 |
+| A-109 | AMBIGUITY | 4 | 6 |
+| A-11 | AMBIGUITY | 0 | 0 |
+| A-110 | AMBIGUITY | 7 | 10 |
+| A-111 | AMBIGUITY | 227 | 1491 |
+| A-112 | AMBIGUITY | 0 | 0 |
+| A-113 | AMBIGUITY | 0 | 0 |
+| A-114 | AMBIGUITY | 0 | 0 |
+| A-115 | AMBIGUITY | 0 | 0 |
+| A-116 | AMBIGUITY | 0 | 0 |
+| A-117 | AMBIGUITY | 2 | 2 |
+| A-118 | AMBIGUITY | 5 | 78 |
+| A-119 | AMBIGUITY | 14 | 220 |
+| A-12 | AMBIGUITY | 0 | 0 |
+| A-120 | AMBIGUITY | 3 | 13 |
+| A-121 | AMBIGUITY | 0 | 0 |
+| A-122 | AMBIGUITY | 3472 | 29508 |
+| A-123 | AMBIGUITY | 10192 | 105927 |
+| A-124 | AMBIGUITY | 5 | 5 |
+| A-125 | AMBIGUITY | 67904 | 67904 |
+| A-126 | AMBIGUITY | 0 | 0 |
+| A-13 | AMBIGUITY | 0 | 0 |
+| A-14 | AMBIGUITY | 0 | 0 |
+| A-15 | AMBIGUITY | 0 | 0 |
+| A-16 | AMBIGUITY | 0 | 0 |
+| A-17 | AMBIGUITY | 0 | 0 |
+| A-18 | AMBIGUITY | 0 | 0 |
+| A-19 | AMBIGUITY | 0 | 0 |
+| A-20 | AMBIGUITY | 0 | 0 |
+| A-21 | AMBIGUITY | 7 | 18 |
+| A-22 | AMBIGUITY | 1 | 1 |
+| A-23 | AMBIGUITY | 138 | 559 |
+| A-24 | AMBIGUITY | 1 | 1 |
+| A-25 | AMBIGUITY | 22 | 58 |
+| A-26 | AMBIGUITY | 3 | 3 |
+| A-27 | AMBIGUITY | 102 | 256 |
+| A-28 | AMBIGUITY | 565 | 2190 |
+| A-29 | AMBIGUITY | 13493 | 903080 |
+| A-30 | AMBIGUITY | 5025 | 77844 |
+| A-31 | AMBIGUITY | 2 | 2 |
+| A-32 | AMBIGUITY | 0 | 0 |
+| A-33 | AMBIGUITY | 0 | 0 |
+| A-34 | AMBIGUITY | 87 | 578 |
+| A-35 | AMBIGUITY | 0 | 0 |
+| A-36 | AMBIGUITY | 11 | 20 |
+| A-37 | AMBIGUITY | 6619 | 71403 |
+| A-38 | AMBIGUITY | 6622 | 71423 |
+| A-39 | AMBIGUITY | 0 | 0 |
+| A-40 | AMBIGUITY | 0 | 0 |
+| A-41 | AMBIGUITY | 0 | 0 |
+| A-42 | AMBIGUITY | 0 | 0 |
+| A-43 | AMBIGUITY | 0 | 0 |
+| A-44 | AMBIGUITY | 0 | 0 |
+| A-45 | AMBIGUITY | 0 | 0 |
+| A-46 | AMBIGUITY | 0 | 0 |
+| A-47 | AMBIGUITY | 0 | 0 |
+| A-48 | AMBIGUITY | 0 | 0 |
+| A-49 | AMBIGUITY | 0 | 0 |
+| A-50 | AMBIGUITY | 0 | 0 |
+| A-51 | AMBIGUITY | 0 | 0 |
+| A-52 | AMBIGUITY | 0 | 0 |
+| A-53 | AMBIGUITY | 0 | 0 |
+| A-54 | AMBIGUITY | 0 | 0 |
+| A-55 | AMBIGUITY | 1 | 1 |
+| A-56 | AMBIGUITY | 0 | 0 |
+| A-57 | AMBIGUITY | 1 | 1 |
+| A-58 | AMBIGUITY | 0 | 0 |
+| A-59 | AMBIGUITY | 0 | 0 |
+| A-60 | AMBIGUITY | 0 | 0 |
+| A-61 | AMBIGUITY | 0 | 0 |
+| A-62 | AMBIGUITY | 0 | 0 |
+| A-63 | AMBIGUITY | 1 | 8 |
+| A-64 | AMBIGUITY | 0 | 0 |
+| A-65 | AMBIGUITY | 1 | 2 |
+| A-66 | AMBIGUITY | 1 | 6 |
+| A-67 | AMBIGUITY | 2 | 3 |
+| A-68 | AMBIGUITY | 0 | 0 |
+| A-69 | AMBIGUITY | 0 | 0 |
+| A-70 | AMBIGUITY | 0 | 0 |
+| A-71 | AMBIGUITY | 0 | 0 |
+| A-72 | AMBIGUITY | 1 | 1 |
+| A-73 | AMBIGUITY | 1 | 2 |
+| A-74 | AMBIGUITY | 1 | 2 |
+| A-75 | AMBIGUITY | 0 | 0 |
+| A-76 | AMBIGUITY | 1 | 1 |
+| A-77 | AMBIGUITY | 1 | 2 |
+| A-78 | AMBIGUITY | 0 | 0 |
+| A-79 | AMBIGUITY | 1 | 1 |
+| A-80 | AMBIGUITY | 1 | 1 |
+| A-81 | AMBIGUITY | 1 | 2 |
+| A-82 | AMBIGUITY | 2 | 15 |
+| A-83 | AMBIGUITY | 4 | 15 |
+| A-84 | AMBIGUITY | 2 | 5 |
+| A-85 | AMBIGUITY | 1 | 1 |
+| A-86 | AMBIGUITY | 5 | 11 |
+| A-87 | AMBIGUITY | 6 | 10 |
+| A-88 | AMBIGUITY | 13 | 25 |
+| A-89 | AMBIGUITY | 26 | 47 |
+| A-90 | AMBIGUITY | 0 | 0 |
+| A-91 | AMBIGUITY | 31 | 94 |
+| A-92 | AMBIGUITY | 138 | 547 |
+| A-93 | AMBIGUITY | 299 | 1306 |
+| A-94 | AMBIGUITY | 882 | 4517 |
+| A-95 | AMBIGUITY | 325 | 1444 |
+| A-96 | AMBIGUITY | 2107 | 686303 |
+| A-97 | AMBIGUITY | 1026 | 17785 |
+| A-98 | AMBIGUITY | 0 | 0 |
+| A-99 | AMBIGUITY | 0 | 0 |
+| I-01 | INVENTION | 67904 | 67904 |
+| I-02 | INVENTION | 50244 | 10625277 |
+| I-03 | INVENTION | 67904 | 67904 |
+| I-04 | INVENTION | 67904 | 67904 |
 | I-05 | INVENTION | 16566 | 265138 |
 | I-06 | INVENTION | 16566 | 265138 |
-| I-07 | INVENTION | 68411 | 68411 |
-| I-08 | INVENTION | 1 | 47 |
-| I-09 | INVENTION | 31 | 561 |
-| I-10 | INVENTION | 579 | 2232 |
-| I-11 | INVENTION | 115 | 782 |
-| I-12 | INVENTION | 567 | 3945 |
-| I-13 | INVENTION | 10362 | 80528 |
-| I-14 | INVENTION | 15647 | 238681 |
-| L-01 | LOSS | 10571 | 82760 |
-| L-02 | LOSS | 5 | 20 |
-| L-03 | LOSS | 1 | 47 |
-| L-04 | LOSS | 1 | 47 |
+| I-07 | INVENTION | 67904 | 67904 |
+| I-08 | INVENTION | 0 | 0 |
+| I-09 | INVENTION | 1 | 47 |
+| I-10 | INVENTION | 0 | 0 |
+| I-11 | INVENTION | 0 | 0 |
+| I-12 | INVENTION | 0 | 0 |
+| I-13 | INVENTION | 1 | 1 |
+| I-14 | INVENTION | 31 | 561 |
+| I-15 | INVENTION | 565 | 2190 |
+| I-16 | INVENTION | 0 | 0 |
+| I-17 | INVENTION | 15 | 15 |
+| I-18 | INVENTION | 0 | 0 |
+| I-19 | INVENTION | 0 | 0 |
+| I-20 | INVENTION | 32 | 55 |
+| I-21 | INVENTION | 325 | 1444 |
+| I-22 | INVENTION | 0 | 0 |
+| I-23 | INVENTION | 564 | 3943 |
+| I-24 | INVENTION | 10309 | 80489 |
+| I-25 | INVENTION | 0 | 0 |
+| I-26 | INVENTION | 7 | 10 |
+| I-27 | INVENTION | 6671 | 71776 |
+| L-01 | LOSS | 10756 | 84134 |
+| L-02 | LOSS | 0 | 0 |
+| L-03 | LOSS | 1 | 10 |
+| L-04 | LOSS | 5 | 20 |
 | L-05 | LOSS | 1 | 47 |
-| L-06 | LOSS | 20 | 76 |
-| L-07 | LOSS | 1 | 1 |
-| L-08 | LOSS | 1 | 1 |
-| L-09 | LOSS | 1 | 1 |
-| L-10 | LOSS | 18 | 20 |
-| L-11 | LOSS | 3 | 31 |
-| L-12 | LOSS | 8 | 41 |
-| L-13 | LOSS | 2 | 2 |
-| L-14 | LOSS | 41 | 217 |
-| L-15 | LOSS | 2 | 2 |
-| L-16 | LOSS | 146 | 1617 |
-| L-17 | LOSS | 458 | 4751 |
-| L-18 | LOSS | 31 | 561 |
-| L-19 | LOSS | 25 | 555 |
-| L-20 | LOSS | 25 | 555 |
-| L-21 | LOSS | 445 | 1762 |
-| L-22 | LOSS | 3924 | 134076 |
-| L-23 | LOSS | 6 | 9 |
-| L-24 | LOSS | 11 | 20 |
-| L-25 | LOSS | 1 | 1 |
-| L-26 | LOSS | 22 | 117 |
-| L-27 | LOSS | 22 | 117 |
-| L-28 | LOSS | 518 | 5987 |
-| L-29 | LOSS | 518 | 5987 |
-| L-30 | LOSS | 47 | 103 |
-| L-31 | LOSS | 58 | 481 |
-| L-32 | LOSS | 6620 | 71404 |
-| L-33 | LOSS | 78 | 1377 |
-| L-34 | LOSS | 143 | 2707 |
-| L-35 | LOSS | 72 | 275 |
-| L-36 | LOSS | 437 | 20691 |
-| L-37 | LOSS | 94 | 202 |
-| L-38 | LOSS | 1176 | 4964 |
-| L-39 | LOSS | 6202 | 1046749 |
-| L-40 | LOSS | 135 | 682 |
-| L-41 | LOSS | 567 | 3945 |
-| L-42 | LOSS | 502 | 3785 |
-| L-43 | LOSS | 502 | 3785 |
-| L-44 | LOSS | 3639 | 19360 |
-| L-45 | LOSS | 24504 | 4034597 |
-| L-46 | LOSS | 4 | 17 |
-| L-47 | LOSS | 5 | 32 |
-| L-48 | LOSS | 5 | 32 |
-| L-49 | LOSS | 213 | 3811 |
-| L-50 | LOSS | 213 | 3811 |
-| L-51 | LOSS | 86 | 432 |
-| L-52 | LOSS | 17 | 131 |
-| L-53 | LOSS | 4012 | 41715 |
-| L-54 | LOSS | 17894 | 17894 |
-| L-55 | LOSS | 68411 | 68411 |
-| L-56 | LOSS | 32710 | 32710 |
-| S-01 | STRUCTURAL | 18 | 20 |
-| S-02 | STRUCTURAL | 6620 | 71404 |
-| S-03 | STRUCTURAL | 115 | 782 |
-| S-04 | STRUCTURAL | 76 | 148 |
-| S-05 | STRUCTURAL | 4012 | 41715 |
-| S-06 | STRUCTURAL | 15647 | 238681 |
-| S-07 | STRUCTURAL | 49 | 90 |
-| S-08 | STRUCTURAL | 15 | 22 |
+| L-06 | LOSS | 1 | 47 |
+| L-07 | LOSS | 1 | 47 |
+| L-08 | LOSS | 0 | 0 |
+| L-09 | LOSS | 20 | 76 |
+| L-10 | LOSS | 0 | 0 |
+| L-100 | LOSS | 0 | 0 |
+| L-101 | LOSS | 0 | 0 |
+| L-102 | LOSS | 0 | 0 |
+| L-103 | LOSS | 0 | 0 |
+| L-104 | LOSS | 0 | 0 |
+| L-105 | LOSS | 0 | 0 |
+| L-106 | LOSS | 0 | 0 |
+| L-107 | LOSS | 0 | 0 |
+| L-108 | LOSS | 0 | 0 |
+| L-109 | LOSS | 0 | 0 |
+| L-11 | LOSS | 1 | 1 |
+| L-110 | LOSS | 0 | 0 |
+| L-111 | LOSS | 0 | 0 |
+| L-112 | LOSS | 0 | 0 |
+| L-113 | LOSS | 0 | 0 |
+| L-114 | LOSS | 0 | 0 |
+| L-115 | LOSS | 0 | 0 |
+| L-116 | LOSS | 0 | 0 |
+| L-117 | LOSS | 0 | 0 |
+| L-118 | LOSS | 0 | 0 |
+| L-119 | LOSS | 0 | 0 |
+| L-12 | LOSS | 1 | 1 |
+| L-120 | LOSS | 0 | 0 |
+| L-121 | LOSS | 0 | 0 |
+| L-122 | LOSS | 0 | 0 |
+| L-123 | LOSS | 0 | 0 |
+| L-124 | LOSS | 0 | 0 |
+| L-125 | LOSS | 0 | 0 |
+| L-126 | LOSS | 0 | 0 |
+| L-127 | LOSS | 0 | 0 |
+| L-128 | LOSS | 0 | 0 |
+| L-129 | LOSS | 0 | 0 |
+| L-13 | LOSS | 1 | 1 |
+| L-130 | LOSS | 0 | 0 |
+| L-131 | LOSS | 0 | 0 |
+| L-132 | LOSS | 0 | 0 |
+| L-133 | LOSS | 0 | 0 |
+| L-134 | LOSS | 0 | 0 |
+| L-135 | LOSS | 0 | 0 |
+| L-136 | LOSS | 0 | 0 |
+| L-137 | LOSS | 0 | 0 |
+| L-138 | LOSS | 0 | 0 |
+| L-139 | LOSS | 0 | 0 |
+| L-14 | LOSS | 18 | 20 |
+| L-140 | LOSS | 0 | 0 |
+| L-141 | LOSS | 0 | 0 |
+| L-142 | LOSS | 0 | 0 |
+| L-143 | LOSS | 0 | 0 |
+| L-144 | LOSS | 0 | 0 |
+| L-145 | LOSS | 0 | 0 |
+| L-146 | LOSS | 0 | 0 |
+| L-147 | LOSS | 0 | 0 |
+| L-148 | LOSS | 0 | 0 |
+| L-149 | LOSS | 0 | 0 |
+| L-15 | LOSS | 0 | 0 |
+| L-150 | LOSS | 0 | 0 |
+| L-151 | LOSS | 0 | 0 |
+| L-152 | LOSS | 0 | 0 |
+| L-153 | LOSS | 0 | 0 |
+| L-154 | LOSS | 0 | 0 |
+| L-155 | LOSS | 0 | 0 |
+| L-156 | LOSS | 0 | 0 |
+| L-157 | LOSS | 0 | 0 |
+| L-158 | LOSS | 0 | 0 |
+| L-159 | LOSS | 0 | 0 |
+| L-16 | LOSS | 0 | 0 |
+| L-160 | LOSS | 0 | 0 |
+| L-161 | LOSS | 0 | 0 |
+| L-162 | LOSS | 0 | 0 |
+| L-163 | LOSS | 0 | 0 |
+| L-164 | LOSS | 0 | 0 |
+| L-165 | LOSS | 0 | 0 |
+| L-166 | LOSS | 0 | 0 |
+| L-167 | LOSS | 2 | 2 |
+| L-168 | LOSS | 0 | 0 |
+| L-169 | LOSS | 0 | 0 |
+| L-17 | LOSS | 0 | 0 |
+| L-170 | LOSS | 6 | 25 |
+| L-171 | LOSS | 0 | 0 |
+| L-172 | LOSS | 1 | 1 |
+| L-173 | LOSS | 37 | 100 |
+| L-174 | LOSS | 2 | 2 |
+| L-175 | LOSS | 141 | 780 |
+| L-176 | LOSS | 5 | 15 |
+| L-177 | LOSS | 434 | 4103 |
+| L-178 | LOSS | 0 | 0 |
+| L-179 | LOSS | 31 | 561 |
+| L-18 | LOSS | 0 | 0 |
+| L-180 | LOSS | 25 | 555 |
+| L-181 | LOSS | 25 | 555 |
+| L-182 | LOSS | 443 | 1760 |
+| L-183 | LOSS | 3840 | 131469 |
+| L-184 | LOSS | 0 | 0 |
+| L-185 | LOSS | 0 | 0 |
+| L-186 | LOSS | 0 | 0 |
+| L-187 | LOSS | 0 | 0 |
+| L-188 | LOSS | 0 | 0 |
+| L-189 | LOSS | 6 | 9 |
+| L-19 | LOSS | 0 | 0 |
+| L-190 | LOSS | 11 | 20 |
+| L-191 | LOSS | 1 | 1 |
+| L-192 | LOSS | 22 | 117 |
+| L-193 | LOSS | 22 | 117 |
+| L-194 | LOSS | 518 | 5987 |
+| L-195 | LOSS | 518 | 5987 |
+| L-196 | LOSS | 47 | 103 |
+| L-197 | LOSS | 58 | 481 |
+| L-198 | LOSS | 6619 | 71403 |
+| L-199 | LOSS | 0 | 0 |
+| L-20 | LOSS | 0 | 0 |
+| L-200 | LOSS | 0 | 0 |
+| L-201 | LOSS | 0 | 0 |
+| L-202 | LOSS | 0 | 0 |
+| L-203 | LOSS | 0 | 0 |
+| L-204 | LOSS | 0 | 0 |
+| L-205 | LOSS | 0 | 0 |
+| L-206 | LOSS | 0 | 0 |
+| L-207 | LOSS | 0 | 0 |
+| L-208 | LOSS | 0 | 0 |
+| L-209 | LOSS | 0 | 0 |
+| L-21 | LOSS | 0 | 0 |
+| L-210 | LOSS | 0 | 0 |
+| L-211 | LOSS | 0 | 0 |
+| L-212 | LOSS | 0 | 0 |
+| L-213 | LOSS | 0 | 0 |
+| L-214 | LOSS | 0 | 0 |
+| L-215 | LOSS | 0 | 0 |
+| L-216 | LOSS | 0 | 0 |
+| L-217 | LOSS | 0 | 0 |
+| L-218 | LOSS | 0 | 0 |
+| L-219 | LOSS | 0 | 0 |
+| L-22 | LOSS | 0 | 0 |
+| L-220 | LOSS | 0 | 0 |
+| L-221 | LOSS | 0 | 0 |
+| L-222 | LOSS | 0 | 0 |
+| L-223 | LOSS | 0 | 0 |
+| L-224 | LOSS | 0 | 0 |
+| L-225 | LOSS | 0 | 0 |
+| L-226 | LOSS | 0 | 0 |
+| L-227 | LOSS | 0 | 0 |
+| L-228 | LOSS | 0 | 0 |
+| L-229 | LOSS | 0 | 0 |
+| L-23 | LOSS | 0 | 0 |
+| L-230 | LOSS | 0 | 0 |
+| L-231 | LOSS | 0 | 0 |
+| L-232 | LOSS | 0 | 0 |
+| L-233 | LOSS | 0 | 0 |
+| L-234 | LOSS | 0 | 0 |
+| L-235 | LOSS | 0 | 0 |
+| L-236 | LOSS | 0 | 0 |
+| L-237 | LOSS | 0 | 0 |
+| L-238 | LOSS | 0 | 0 |
+| L-239 | LOSS | 0 | 0 |
+| L-24 | LOSS | 0 | 0 |
+| L-240 | LOSS | 0 | 0 |
+| L-241 | LOSS | 0 | 0 |
+| L-242 | LOSS | 0 | 0 |
+| L-243 | LOSS | 0 | 0 |
+| L-244 | LOSS | 0 | 0 |
+| L-245 | LOSS | 0 | 0 |
+| L-246 | LOSS | 0 | 0 |
+| L-247 | LOSS | 0 | 0 |
+| L-248 | LOSS | 0 | 0 |
+| L-249 | LOSS | 0 | 0 |
+| L-25 | LOSS | 0 | 0 |
+| L-250 | LOSS | 0 | 0 |
+| L-251 | LOSS | 0 | 0 |
+| L-252 | LOSS | 0 | 0 |
+| L-253 | LOSS | 1 | 1 |
+| L-254 | LOSS | 1 | 8 |
+| L-255 | LOSS | 1 | 7 |
+| L-256 | LOSS | 1 | 14 |
+| L-257 | LOSS | 1 | 9 |
+| L-258 | LOSS | 1 | 1 |
+| L-259 | LOSS | 1 | 4 |
+| L-26 | LOSS | 0 | 0 |
+| L-260 | LOSS | 1 | 4 |
+| L-261 | LOSS | 1 | 1 |
+| L-262 | LOSS | 1 | 4 |
+| L-263 | LOSS | 1 | 1 |
+| L-264 | LOSS | 1 | 1 |
+| L-265 | LOSS | 0 | 0 |
+| L-266 | LOSS | 1 | 6 |
+| L-267 | LOSS | 1 | 2 |
+| L-268 | LOSS | 1 | 2 |
+| L-269 | LOSS | 1 | 2 |
+| L-27 | LOSS | 0 | 0 |
+| L-270 | LOSS | 1 | 4 |
+| L-271 | LOSS | 1 | 1 |
+| L-272 | LOSS | 1 | 1 |
+| L-273 | LOSS | 1 | 2 |
+| L-274 | LOSS | 1 | 5 |
+| L-275 | LOSS | 1 | 7 |
+| L-276 | LOSS | 1 | 2 |
+| L-277 | LOSS | 0 | 0 |
+| L-278 | LOSS | 1 | 2 |
+| L-279 | LOSS | 1 | 2 |
+| L-28 | LOSS | 0 | 0 |
+| L-280 | LOSS | 1 | 3 |
+| L-281 | LOSS | 2 | 6 |
+| L-282 | LOSS | 2 | 9 |
+| L-283 | LOSS | 0 | 0 |
+| L-284 | LOSS | 2 | 5 |
+| L-285 | LOSS | 0 | 0 |
+| L-286 | LOSS | 2 | 10 |
+| L-287 | LOSS | 0 | 0 |
+| L-288 | LOSS | 2 | 7 |
+| L-289 | LOSS | 0 | 0 |
+| L-29 | LOSS | 0 | 0 |
+| L-290 | LOSS | 2 | 7 |
+| L-291 | LOSS | 2 | 14 |
+| L-292 | LOSS | 2 | 12 |
+| L-293 | LOSS | 1 | 12 |
+| L-294 | LOSS | 2 | 6 |
+| L-295 | LOSS | 2 | 4 |
+| L-296 | LOSS | 2 | 8 |
+| L-297 | LOSS | 1 | 1 |
+| L-298 | LOSS | 2 | 5 |
+| L-299 | LOSS | 0 | 0 |
+| L-30 | LOSS | 0 | 0 |
+| L-300 | LOSS | 2 | 5 |
+| L-301 | LOSS | 1 | 3 |
+| L-302 | LOSS | 2 | 5 |
+| L-303 | LOSS | 1 | 3 |
+| L-304 | LOSS | 0 | 0 |
+| L-305 | LOSS | 2 | 8 |
+| L-306 | LOSS | 1 | 10 |
+| L-307 | LOSS | 0 | 0 |
+| L-308 | LOSS | 0 | 0 |
+| L-309 | LOSS | 2 | 5 |
+| L-31 | LOSS | 0 | 0 |
+| L-310 | LOSS | 2 | 16 |
+| L-311 | LOSS | 2 | 5 |
+| L-312 | LOSS | 2 | 21 |
+| L-313 | LOSS | 2 | 3 |
+| L-314 | LOSS | 2 | 7 |
+| L-315 | LOSS | 2 | 9 |
+| L-316 | LOSS | 2 | 4 |
+| L-317 | LOSS | 3 | 9 |
+| L-318 | LOSS | 3 | 6 |
+| L-319 | LOSS | 0 | 0 |
+| L-32 | LOSS | 0 | 0 |
+| L-320 | LOSS | 0 | 0 |
+| L-321 | LOSS | 2 | 8 |
+| L-322 | LOSS | 0 | 0 |
+| L-323 | LOSS | 1 | 14 |
+| L-324 | LOSS | 2 | 7 |
+| L-325 | LOSS | 1 | 4 |
+| L-326 | LOSS | 3 | 12 |
+| L-327 | LOSS | 0 | 0 |
+| L-328 | LOSS | 3 | 6 |
+| L-329 | LOSS | 2 | 3 |
+| L-33 | LOSS | 0 | 0 |
+| L-330 | LOSS | 3 | 7 |
+| L-331 | LOSS | 0 | 0 |
+| L-332 | LOSS | 0 | 0 |
+| L-333 | LOSS | 2 | 19 |
+| L-334 | LOSS | 3 | 31 |
+| L-335 | LOSS | 3 | 24 |
+| L-336 | LOSS | 0 | 0 |
+| L-337 | LOSS | 2 | 34 |
+| L-338 | LOSS | 0 | 0 |
+| L-339 | LOSS | 0 | 0 |
+| L-34 | LOSS | 0 | 0 |
+| L-340 | LOSS | 2 | 20 |
+| L-341 | LOSS | 3 | 41 |
+| L-342 | LOSS | 2 | 35 |
+| L-343 | LOSS | 0 | 0 |
+| L-344 | LOSS | 0 | 0 |
+| L-345 | LOSS | 4 | 36 |
+| L-346 | LOSS | 1 | 2 |
+| L-347 | LOSS | 4 | 36 |
+| L-348 | LOSS | 1 | 2 |
+| L-349 | LOSS | 5 | 124 |
+| L-35 | LOSS | 0 | 0 |
+| L-350 | LOSS | 2 | 3 |
+| L-351 | LOSS | 5 | 46 |
+| L-352 | LOSS | 0 | 0 |
+| L-353 | LOSS | 1 | 2 |
+| L-354 | LOSS | 5 | 28 |
+| L-355 | LOSS | 4 | 5 |
+| L-356 | LOSS | 5 | 41 |
+| L-357 | LOSS | 0 | 0 |
+| L-358 | LOSS | 1 | 2 |
+| L-359 | LOSS | 6 | 208 |
+| L-36 | LOSS | 0 | 0 |
+| L-360 | LOSS | 0 | 0 |
+| L-361 | LOSS | 2 | 3 |
+| L-362 | LOSS | 8 | 296 |
+| L-363 | LOSS | 2 | 3 |
+| L-364 | LOSS | 10 | 288 |
+| L-365 | LOSS | 0 | 0 |
+| L-366 | LOSS | 3 | 4 |
+| L-367 | LOSS | 18 | 397 |
+| L-368 | LOSS | 2 | 3 |
+| L-369 | LOSS | 24 | 510 |
+| L-37 | LOSS | 0 | 0 |
+| L-370 | LOSS | 0 | 0 |
+| L-371 | LOSS | 2 | 3 |
+| L-372 | LOSS | 27 | 332 |
+| L-373 | LOSS | 0 | 0 |
+| L-374 | LOSS | 3 | 9 |
+| L-375 | LOSS | 38 | 852 |
+| L-376 | LOSS | 0 | 0 |
+| L-377 | LOSS | 5 | 7 |
+| L-378 | LOSS | 53 | 722 |
+| L-379 | LOSS | 0 | 0 |
+| L-38 | LOSS | 0 | 0 |
+| L-380 | LOSS | 9 | 12 |
+| L-381 | LOSS | 85 | 1246 |
+| L-382 | LOSS | 0 | 0 |
+| L-383 | LOSS | 2 | 7 |
+| L-384 | LOSS | 16 | 33 |
+| L-385 | LOSS | 149 | 2856 |
+| L-386 | LOSS | 6 | 15 |
+| L-387 | LOSS | 73 | 278 |
+| L-388 | LOSS | 409 | 19330 |
+| L-389 | LOSS | 46 | 90 |
+| L-39 | LOSS | 0 | 0 |
+| L-390 | LOSS | 13 | 29 |
+| L-391 | LOSS | 32 | 55 |
+| L-392 | LOSS | 31 | 54 |
+| L-393 | LOSS | 31 | 54 |
+| L-394 | LOSS | 22 | 72 |
+| L-395 | LOSS | 585 | 3086 |
+| L-396 | LOSS | 1734 | 318875 |
+| L-397 | LOSS | 4270 | 314518 |
+| L-398 | LOSS | 0 | 0 |
+| L-399 | LOSS | 0 | 0 |
+| L-40 | LOSS | 0 | 0 |
+| L-400 | LOSS | 0 | 0 |
+| L-401 | LOSS | 1 | 1 |
+| L-402 | LOSS | 0 | 0 |
+| L-403 | LOSS | 133 | 678 |
+| L-404 | LOSS | 564 | 3943 |
+| L-405 | LOSS | 499 | 3783 |
+| L-406 | LOSS | 499 | 3783 |
+| L-407 | LOSS | 3634 | 19357 |
+| L-408 | LOSS | 24093 | 3996557 |
+| L-409 | LOSS | 0 | 0 |
+| L-41 | LOSS | 0 | 0 |
+| L-410 | LOSS | 0 | 0 |
+| L-411 | LOSS | 0 | 0 |
+| L-412 | LOSS | 0 | 0 |
+| L-413 | LOSS | 0 | 0 |
+| L-414 | LOSS | 0 | 0 |
+| L-415 | LOSS | 0 | 0 |
+| L-416 | LOSS | 0 | 0 |
+| L-417 | LOSS | 0 | 0 |
+| L-418 | LOSS | 0 | 0 |
+| L-419 | LOSS | 0 | 0 |
+| L-42 | LOSS | 0 | 0 |
+| L-420 | LOSS | 0 | 0 |
+| L-421 | LOSS | 0 | 0 |
+| L-422 | LOSS | 0 | 0 |
+| L-423 | LOSS | 0 | 0 |
+| L-424 | LOSS | 0 | 0 |
+| L-425 | LOSS | 0 | 0 |
+| L-426 | LOSS | 0 | 0 |
+| L-427 | LOSS | 0 | 0 |
+| L-428 | LOSS | 0 | 0 |
+| L-429 | LOSS | 0 | 0 |
+| L-43 | LOSS | 0 | 0 |
+| L-430 | LOSS | 0 | 0 |
+| L-431 | LOSS | 0 | 0 |
+| L-432 | LOSS | 0 | 0 |
+| L-433 | LOSS | 0 | 0 |
+| L-434 | LOSS | 0 | 0 |
+| L-435 | LOSS | 0 | 0 |
+| L-436 | LOSS | 0 | 0 |
+| L-437 | LOSS | 0 | 0 |
+| L-438 | LOSS | 0 | 0 |
+| L-439 | LOSS | 0 | 0 |
+| L-44 | LOSS | 0 | 0 |
+| L-440 | LOSS | 0 | 0 |
+| L-441 | LOSS | 0 | 0 |
+| L-442 | LOSS | 0 | 0 |
+| L-443 | LOSS | 0 | 0 |
+| L-444 | LOSS | 0 | 0 |
+| L-445 | LOSS | 0 | 0 |
+| L-446 | LOSS | 0 | 0 |
+| L-447 | LOSS | 0 | 0 |
+| L-448 | LOSS | 0 | 0 |
+| L-449 | LOSS | 0 | 0 |
+| L-45 | LOSS | 0 | 0 |
+| L-450 | LOSS | 0 | 0 |
+| L-451 | LOSS | 0 | 0 |
+| L-452 | LOSS | 0 | 0 |
+| L-453 | LOSS | 0 | 0 |
+| L-454 | LOSS | 0 | 0 |
+| L-455 | LOSS | 0 | 0 |
+| L-456 | LOSS | 0 | 0 |
+| L-457 | LOSS | 0 | 0 |
+| L-458 | LOSS | 0 | 0 |
+| L-459 | LOSS | 0 | 0 |
+| L-46 | LOSS | 0 | 0 |
+| L-460 | LOSS | 0 | 0 |
+| L-461 | LOSS | 0 | 0 |
+| L-462 | LOSS | 1 | 1 |
+| L-463 | LOSS | 0 | 0 |
+| L-464 | LOSS | 1 | 1 |
+| L-465 | LOSS | 1 | 1 |
+| L-466 | LOSS | 0 | 0 |
+| L-467 | LOSS | 0 | 0 |
+| L-468 | LOSS | 2 | 3 |
+| L-469 | LOSS | 0 | 0 |
+| L-47 | LOSS | 0 | 0 |
+| L-470 | LOSS | 1 | 2 |
+| L-471 | LOSS | 1 | 1 |
+| L-472 | LOSS | 1 | 3 |
+| L-473 | LOSS | 0 | 0 |
+| L-474 | LOSS | 2 | 4 |
+| L-475 | LOSS | 2 | 5 |
+| L-476 | LOSS | 2 | 2 |
+| L-477 | LOSS | 4 | 44 |
+| L-478 | LOSS | 3 | 10 |
+| L-479 | LOSS | 11 | 25 |
+| L-48 | LOSS | 0 | 0 |
+| L-480 | LOSS | 14 | 2976 |
+| L-481 | LOSS | 5 | 13 |
+| L-482 | LOSS | 38 | 354 |
+| L-483 | LOSS | 41 | 25594 |
+| L-484 | LOSS | 0 | 0 |
+| L-485 | LOSS | 0 | 0 |
+| L-486 | LOSS | 1 | 9 |
+| L-487 | LOSS | 0 | 0 |
+| L-488 | LOSS | 0 | 0 |
+| L-489 | LOSS | 3 | 13 |
+| L-49 | LOSS | 0 | 0 |
+| L-490 | LOSS | 0 | 0 |
+| L-491 | LOSS | 4 | 27 |
+| L-492 | LOSS | 4 | 27 |
+| L-493 | LOSS | 150 | 2867 |
+| L-494 | LOSS | 150 | 2867 |
+| L-495 | LOSS | 64 | 373 |
+| L-496 | LOSS | 15 | 116 |
+| L-497 | LOSS | 3472 | 29508 |
+| L-498 | LOSS | 17894 | 17894 |
+| L-499 | LOSS | 67904 | 67904 |
+| L-50 | LOSS | 0 | 0 |
+| L-500 | LOSS | 32710 | 32710 |
+| L-51 | LOSS | 0 | 0 |
+| L-52 | LOSS | 0 | 0 |
+| L-53 | LOSS | 0 | 0 |
+| L-54 | LOSS | 0 | 0 |
+| L-55 | LOSS | 0 | 0 |
+| L-56 | LOSS | 0 | 0 |
+| L-57 | LOSS | 0 | 0 |
+| L-58 | LOSS | 0 | 0 |
+| L-59 | LOSS | 0 | 0 |
+| L-60 | LOSS | 0 | 0 |
+| L-61 | LOSS | 0 | 0 |
+| L-62 | LOSS | 0 | 0 |
+| L-63 | LOSS | 0 | 0 |
+| L-64 | LOSS | 0 | 0 |
+| L-65 | LOSS | 0 | 0 |
+| L-66 | LOSS | 0 | 0 |
+| L-67 | LOSS | 0 | 0 |
+| L-68 | LOSS | 0 | 0 |
+| L-69 | LOSS | 0 | 0 |
+| L-70 | LOSS | 0 | 0 |
+| L-71 | LOSS | 0 | 0 |
+| L-72 | LOSS | 0 | 0 |
+| L-73 | LOSS | 0 | 0 |
+| L-74 | LOSS | 0 | 0 |
+| L-75 | LOSS | 0 | 0 |
+| L-76 | LOSS | 0 | 0 |
+| L-77 | LOSS | 0 | 0 |
+| L-78 | LOSS | 0 | 0 |
+| L-79 | LOSS | 0 | 0 |
+| L-80 | LOSS | 0 | 0 |
+| L-81 | LOSS | 0 | 0 |
+| L-82 | LOSS | 0 | 0 |
+| L-83 | LOSS | 0 | 0 |
+| L-84 | LOSS | 0 | 0 |
+| L-85 | LOSS | 0 | 0 |
+| L-86 | LOSS | 0 | 0 |
+| L-87 | LOSS | 0 | 0 |
+| L-88 | LOSS | 0 | 0 |
+| L-89 | LOSS | 0 | 0 |
+| L-90 | LOSS | 0 | 0 |
+| L-91 | LOSS | 0 | 0 |
+| L-92 | LOSS | 0 | 0 |
+| L-93 | LOSS | 0 | 0 |
+| L-94 | LOSS | 0 | 0 |
+| L-95 | LOSS | 0 | 0 |
+| L-96 | LOSS | 0 | 0 |
+| L-97 | LOSS | 0 | 0 |
+| L-98 | LOSS | 0 | 0 |
+| L-99 | LOSS | 0 | 0 |
+| S-01 | STRUCTURAL | 0 | 0 |
+| S-02 | STRUCTURAL | 18 | 20 |
+| S-03 | STRUCTURAL | 6619 | 71403 |
+| S-04 | STRUCTURAL | 15 | 15 |
+| S-05 | STRUCTURAL | 76 | 148 |
+| S-06 | STRUCTURAL | 3 | 4 |
+| S-07 | STRUCTURAL | 3472 | 29508 |
+| S-08 | STRUCTURAL | 6671 | 71776 |
+| S-09 | STRUCTURAL | 45 | 82 |
+| S-10 | STRUCTURAL | 13 | 20 |
 | U-01 | UNSUPPORTED | 12 | 93 |
-| U-02 | UNSUPPORTED | 3 | 9 |
-| U-03 | UNSUPPORTED | 2 | 3 |
-| U-04 | UNSUPPORTED | 1 | 1 |
-| U-05 | UNSUPPORTED | 1 | 2 |
-| U-06 | UNSUPPORTED | 9 | 56 |
-| U-07 | UNSUPPORTED | 433 | 7744 |
-| U-08 | UNSUPPORTED | 30 | 165 |
-| U-09 | UNSUPPORTED | 175 | 2889 |
-| U-10 | UNSUPPORTED | 85 | 547 |
-| U-11 | UNSUPPORTED | 1 | 1 |
-| U-12 | UNSUPPORTED | 76 | 148 |
-| U-13 | UNSUPPORTED | 8 | 61 |
-| U-14 | UNSUPPORTED | 10 | 28 |
-| U-15 | UNSUPPORTED | 60 | 252 |
-| U-16 | UNSUPPORTED | 1016 | 7711 |
-| U-17 | UNSUPPORTED | 48 | 161 |
-| U-18 | UNSUPPORTED | 638 | 10871 |
-| U-19 | UNSUPPORTED | 221 | 1414 |
-| U-20 | UNSUPPORTED | 49 | 90 |
-| U-21 | UNSUPPORTED | 15 | 22 |
+| U-02 | UNSUPPORTED | 0 | 0 |
+| U-03 | UNSUPPORTED | 3 | 9 |
+| U-04 | UNSUPPORTED | 0 | 0 |
+| U-05 | UNSUPPORTED | 2 | 3 |
+| U-06 | UNSUPPORTED | 1 | 1 |
+| U-07 | UNSUPPORTED | 1 | 2 |
+| U-08 | UNSUPPORTED | 2 | 2 |
+| U-09 | UNSUPPORTED | 0 | 0 |
+| U-10 | UNSUPPORTED | 9 | 56 |
+| U-11 | UNSUPPORTED | 426 | 6000 |
+| U-12 | UNSUPPORTED | 30 | 165 |
+| U-13 | UNSUPPORTED | 0 | 0 |
+| U-14 | UNSUPPORTED | 172 | 2804 |
+| U-15 | UNSUPPORTED | 87 | 574 |
+| U-16 | UNSUPPORTED | 0 | 0 |
+| U-17 | UNSUPPORTED | 1 | 1 |
+| U-18 | UNSUPPORTED | 76 | 148 |
+| U-19 | UNSUPPORTED | 3 | 4 |
+| U-20 | UNSUPPORTED | 8 | 61 |
+| U-21 | UNSUPPORTED | 0 | 0 |
+| U-22 | UNSUPPORTED | 1 | 1 |
+| U-23 | UNSUPPORTED | 0 | 0 |
+| U-24 | UNSUPPORTED | 1 | 1 |
+| U-25 | UNSUPPORTED | 1 | 4 |
+| U-26 | UNSUPPORTED | 7 | 13 |
+| U-27 | UNSUPPORTED | 1 | 1 |
+| U-28 | UNSUPPORTED | 10 | 28 |
+| U-29 | UNSUPPORTED | 29 | 106 |
+| U-30 | UNSUPPORTED | 0 | 0 |
+| U-31 | UNSUPPORTED | 0 | 0 |
+| U-32 | UNSUPPORTED | 43 | 270 |
+| U-33 | UNSUPPORTED | 0 | 0 |
+| U-34 | UNSUPPORTED | 49 | 214 |
+| U-35 | UNSUPPORTED | 0 | 0 |
+| U-36 | UNSUPPORTED | 0 | 0 |
+| U-37 | UNSUPPORTED | 992 | 7868 |
+| U-38 | UNSUPPORTED | 48 | 161 |
+| U-39 | UNSUPPORTED | 0 | 0 |
+| U-40 | UNSUPPORTED | 635 | 10852 |
+| U-41 | UNSUPPORTED | 227 | 1457 |
+| U-42 | UNSUPPORTED | 0 | 0 |
+| U-43 | UNSUPPORTED | 0 | 0 |
+| U-44 | UNSUPPORTED | 0 | 0 |
+| U-45 | UNSUPPORTED | 0 | 0 |
+| U-46 | UNSUPPORTED | 0 | 0 |
+| U-47 | UNSUPPORTED | 0 | 0 |
+| U-48 | UNSUPPORTED | 0 | 0 |
+| U-49 | UNSUPPORTED | 0 | 0 |
+| U-50 | UNSUPPORTED | 45 | 82 |
+| U-51 | UNSUPPORTED | 13 | 20 |
 
 ## Top Errors
 
 | count | message | samples |
 |---:|---|---|
-| 19880 | unsupported inline kind: raw | aozora2-adapter:000006_1869-62320f0f4474.json<br>aozora2-adapter:000006_4627-ded0d23b15b9.json<br>aozora2-adapter:000008_1083-bf767c36e951.json<br>aozora2-adapter:000008_47374-9c929d4f4d67.json<br>aozora2-adapter:000008_47386-49ed3c33666b.json |
-| 128 | unsupported inline kind in source attribution projection: accent | aozora2-adapter:000020_745-bce191ee0ece.json<br>aozora2-adapter:000026_50241-af65ef658680.json<br>aozora2-adapter:000026_55717-3ba0b0630fd5.json<br>aozora2-adapter:000042_1682-4401cf92d836.json<br>aozora2-adapter:000042_2453-83567d45101e.json |
-| 94 | unsupported inline kind: accent | aozora2-adapter:000026_50245-e840465144a2.json<br>aozora2-adapter:000027_523-e22ef286b8e7.json<br>aozora2-adapter:000035_2277-b04f7f121e1a.json<br>aozora2-adapter:000075_4250-7e32f80f0150.json<br>aozora2-adapter:000076_45641-e69c2d20d152.json |
-| 58 | unsupported inline kind in visible projection: accent | aozora2-adapter:000026_55732-e162f2f7263b.json<br>aozora2-adapter:000026_55739-075fc7322e7b.json<br>aozora2-adapter:000042_2469-3372cea4b938.json<br>aozora2-adapter:000042_42768-2a6afe487bf8.json<br>aozora2-adapter:000065_393-58fae23a2747.json |
-| 13 | AAT schema validation failed at /blocks/2: {"content":[{"content":[{"kind":"_page_break"}],"kind":"style","style_type":"jisage_line","x-indent":3}],"kind":"paragraph"} is not valid under any of the schemas listed in the 'oneOf' keyword | aozora2-adapter:000026_894-a581b59ea241.json<br>aozora2-adapter:001154_52085-360b82b3a358.json<br>aozora2-adapter:001393_55880-9b509ae4d8b4.json<br>aozora2-adapter:001506_52459-848d36385487.json<br>aozora2-adapter:001558_52689-086e5fee8352.json |
-| 10 | unmeasured divergence: category=STRUCTURAL aat_pointer=blocks[].children[].yokogumi_block parser_ir_pointer=null | aozora2-adapter:000051_4331-6b7b2b7c90f8.json<br>aozora2-adapter:000146_49621-4ef3deeff66d.json<br>aozora2-adapter:000169_2582-42f9d81b9f9d.json<br>aozora2-adapter:000183_45359-2e59fb5fc00d.json<br>aozora2-adapter:000183_45375-4a04a61ec324.json |
-| 9 | AAT schema validation failed at /blocks/2: {"content":[{"content":[{"kind":"_page_break"}],"kind":"style","style_type":"jisage_line","x-indent":5}],"kind":"paragraph"} is not valid under any of the schemas listed in the 'oneOf' keyword | aozora2-adapter:000035_58054-a105276ee66f.json<br>aozora2-adapter:000050_4561-0de58b79c513.json<br>aozora2-adapter:000050_50110-652f7ebc7d8c.json<br>aozora2-adapter:000888_33205-f9e1e3877a72.json<br>aozora2-adapter:001154_46989-8739dbd7f687.json |
-| 9 | unsupported block kind without measured v1 divergence rule: caption_block | aozora2-adapter:000058_57440-fd9d6f0c6c51.json<br>aozora2-adapter:000448_55729-f621cbdeea07.json<br>aozora2-adapter:001492_51195-3f9f5beb37de.json<br>aozora2-adapter:001548_52232-2a72fadd0e1a.json<br>aozora2-adapter:001569_61447-b0864851f689.json |
-| 8 | AAT schema validation failed at /blocks/1: {"content":[{"content":[{"kind":"_page_break"}],"kind":"style","style_type":"jisage_line","x-indent":5}],"kind":"paragraph"} is not valid under any of the schemas listed in the 'oneOf' keyword | aozora2-adapter:000050_50102-1de4c2efe644.json<br>aozora2-adapter:000067_641-a1edf2acd386.json<br>aozora2-adapter:000922_47099-0bee13490cf7.json<br>aozora2-adapter:001021_50119-245447465457.json<br>aozora2-adapter:001154_52302-68551bde3692.json |
-| 8 | AAT schema validation failed at /blocks/2: {"content":[{"content":[{"kind":"_page_break"}],"kind":"style","style_type":"jisage_line","x-indent":4}],"kind":"paragraph"} is not valid under any of the schemas listed in the 'oneOf' keyword | aozora2-adapter:000074_56504-7f54f210c27e.json<br>aozora2-adapter:000082_49527-a2aee4bea75e.json<br>aozora2-adapter:000082_49544-ff9c3e9f69a9.json<br>aozora2-adapter:001154_44302-97fc55b16b97.json<br>aozora2-adapter:001157_49845-0034c188a7b3.json |
-| 8 | AAT schema validation failed at /blocks/2: {"content":[{"content":[{"kind":"_page_break"}],"kind":"style","style_type":"jisage_line","x-indent":7}],"kind":"paragraph"} is not valid under any of the schemas listed in the 'oneOf' keyword | aozora2-adapter:000050_48392-bf3de88905a8.json<br>aozora2-adapter:000050_48400-bc422b70ed02.json<br>aozora2-adapter:001154_44778-0a45df29c1f8.json<br>aozora2-adapter:001154_44781-0533e4f594e2.json<br>aozora2-adapter:001154_44783-bcea154679be.json |
-| 8 | unmeasured divergence: category=INVENTION aat_pointer=blocks[].content[].warigaki.upper[].gaiji.description parser_ir_pointer=gaiji.raw_marker | aozora2-adapter:001127_43836-11b94a10d99f.json<br>aozora2-adapter:001127_50702-a825bbf9a742.json<br>aozora2-adapter:001127_50703-cf0b89035b2f.json<br>aozora2-adapter:001341_54185-da3fab9bb441.json<br>aozora2-adapter:001344_50580-beb3c54d871d.json |
-| 6 | AAT schema validation failed at /blocks/2: {"content":[{"content":[{"kind":"_page_break"}],"kind":"style","style_type":"jisage_line","x-indent":2}],"kind":"paragraph"} is not valid under any of the schemas listed in the 'oneOf' keyword | aozora2-adapter:000106_52354-8507b23f79f0.json<br>aozora2-adapter:000106_52370-2f5f475180bd.json<br>aozora2-adapter:000106_53493-2641a2391907.json<br>aozora2-adapter:001097_49825-a45c90aa56eb.json<br>aozora2-adapter:001154_44774-b3bb879b388f.json |
-| 6 | AAT schema validation failed at /blocks/3: {"content":[{"content":[{"kind":"_page_break"}],"kind":"style","style_type":"jisage_line","x-indent":2}],"kind":"paragraph"} is not valid under any of the schemas listed in the 'oneOf' keyword | aozora2-adapter:000067_1789-aae6d58f40b1.json<br>aozora2-adapter:000106_52353-1686b97a0729.json<br>aozora2-adapter:001726_56081-ef6c814ac72c.json<br>aozora2-adapter:001726_56083-53e23043ce07.json<br>aozora2-adapter:001726_56085-92cdb1e940fb.json |
-| 6 | unmeasured divergence: category=UNSUPPORTED aat_pointer=blocks[].content[].content[].content[].content[].content[].warigaki parser_ir_pointer=(emphasis.text) | aozora2-adapter:000908_51428-a7c512660dad.json<br>aozora2-adapter:000908_51431-19532976e120.json<br>aozora2-adapter:000908_51854-29c5ef4dbc51.json<br>aozora2-adapter:000908_51929-aeed627205bb.json<br>aozora2-adapter:000908_51941-e63f547d8fcd.json |
-| 6 | unmeasured divergence: category=UNSUPPORTED aat_pointer=blocks[].heading.content[].warigaki parser_ir_pointer=(emphasis.text) | aozora2-adapter:001524_51918-13454376355b.json<br>aozora2-adapter:001524_51919-e5443561ac8a.json<br>aozora2-adapter:001524_51920-84deac9a013f.json<br>aozora2-adapter:001524_51921-f8d3ac01c1ac.json<br>aozora2-adapter:001524_51922-f7eb17bb77fa.json |
+| 20954 | unsupported inline kind: raw | aozora2-adapter:000005_53194-ebb0cbaf64b3.json<br>aozora2-adapter:000006_1869-62320f0f4474.json<br>aozora2-adapter:000006_4627-ded0d23b15b9.json<br>aozora2-adapter:000008_1083-bf767c36e951.json<br>aozora2-adapter:000008_47357-6b9c19f6420d.json |
+| 138 | unsupported inline kind: accent | aozora2-adapter:000026_50245-e840465144a2.json<br>aozora2-adapter:000027_523-e22ef286b8e7.json<br>aozora2-adapter:000035_2277-b04f7f121e1a.json<br>aozora2-adapter:000042_2469-3372cea4b938.json<br>aozora2-adapter:000061_510-7c87649c3a47.json |
+| 129 | unsupported inline kind in source attribution projection: accent | aozora2-adapter:000020_745-bce191ee0ece.json<br>aozora2-adapter:000026_50241-af65ef658680.json<br>aozora2-adapter:000026_55717-3ba0b0630fd5.json<br>aozora2-adapter:000042_1682-4401cf92d836.json<br>aozora2-adapter:000042_2453-83567d45101e.json |
+| 32 | unsupported inline kind in visible projection: accent | aozora2-adapter:000026_55732-e162f2f7263b.json<br>aozora2-adapter:000026_55739-075fc7322e7b.json<br>aozora2-adapter:000042_42768-2a6afe487bf8.json<br>aozora2-adapter:000065_393-58fae23a2747.json<br>aozora2-adapter:000065_393-bb9331cf0b9e.json |
+| 6 | unsupported block kind without measured v1 divergence rule: caption_block | aozora2-adapter:000058_57440-fd9d6f0c6c51.json<br>aozora2-adapter:000448_55729-f621cbdeea07.json<br>aozora2-adapter:001569_61447-b0864851f689.json<br>aozora2-adapter:001569_61475-04a2661c46aa.json<br>aozora2-adapter:001569_61512-bf3b6dffe2f0.json |
 | 5 | unsupported inline kind in source attribution projection: yokogumi | aozora2-adapter:000026_50239-f4c2d8bb9024.json<br>aozora2-adapter:000035_312-cb6505044b26.json<br>aozora2-adapter:000035_313-586a212e52ce.json<br>aozora2-adapter:000311_2029-716e98653b00.json<br>aozora2-adapter:001166_43826-0b22f1c3dae6.json |
-| 4 | AAT schema validation failed at /blocks/2: {"content":[{"content":[{"kind":"_page_break"}],"kind":"style","style_type":"jisage_line","x-indent":1}],"kind":"paragraph"} is not valid under any of the schemas listed in the 'oneOf' keyword | aozora2-adapter:000072_408-22fa0af57a9f.json<br>aozora2-adapter:000885_51307-d71bdc6627be.json<br>aozora2-adapter:001529_546-84eef7ac6431.json<br>aozora2-adapter:001848_59608-b08264acd57e.json |
-| 4 | AAT schema validation failed at /blocks/3: {"content":[{"content":[{"kind":"_page_break"}],"kind":"style","style_type":"jisage_line","x-indent":7}],"kind":"paragraph"} is not valid under any of the schemas listed in the 'oneOf' keyword | aozora2-adapter:001154_51828-a65dede5c37f.json<br>aozora2-adapter:001154_51835-9d7dca0d3ea8.json<br>aozora2-adapter:001154_52089-e25eaa61c9e2.json<br>aozora2-adapter:001154_52309-c1af2773bb57.json |
-| 4 | unmeasured divergence: category=UNSUPPORTED aat_pointer=blocks[].heading.content[].content[].warigaki parser_ir_pointer=(emphasis.text) | aozora2-adapter:001469_50753-073c7b7fdf12.json<br>aozora2-adapter:001511_51407-45fdbda89a25.json<br>aozora2-adapter:001835_57257-98b8083a41b2.json<br>aozora2-adapter:001995_59048-ce70ab1d8c49.json |
+| 1 | unsupported inline kind: yokogumi | aozora2-adapter:001569_57279-a4f95b2004e3.json |
 
 ## Failure Samples
 
 | corpus | path | message |
 |---|---|---|
+| aozora2-adapter | `000005_53194-ebb0cbaf64b3.json` | unsupported inline kind: raw |
 | aozora2-adapter | `000006_1869-62320f0f4474.json` | unsupported inline kind: raw |
 | aozora2-adapter | `000006_4627-ded0d23b15b9.json` | unsupported inline kind: raw |
 | aozora2-adapter | `000008_1083-bf767c36e951.json` | unsupported inline kind: raw |
+| aozora2-adapter | `000008_47357-6b9c19f6420d.json` | unsupported inline kind: raw |
 | aozora2-adapter | `000008_47374-9c929d4f4d67.json` | unsupported inline kind: raw |
 | aozora2-adapter | `000008_47386-49ed3c33666b.json` | unsupported inline kind: raw |
 | aozora2-adapter | `000009_226-7771d96568b3.json` | unsupported inline kind: raw |
@@ -254,16 +830,14 @@
 | aozora2-adapter | `000009_8-5db3c281b807.json` | unsupported inline kind: raw |
 | aozora2-adapter | `000011_55301-915f23ca52bf.json` | unsupported inline kind: raw |
 | aozora2-adapter | `000011_889-8a691eba9355.json` | unsupported inline kind: raw |
-| aozora2-adapter | `000011_899-bc8b5148d0e0.json` | AAT schema validation failed at /blocks/1: {"content":[{"content":[{"kind":"text","value":"優しき歌　"},{"description":"ローマ数字1、1-13-21","jis_code":"1-13-21","kind":"gaiji","resolved":"Ⅰ","unresolved_reason":null},{"kind":"raw","source":"BlockEnd(Midashi)"},{"base":"風信子","base_content":[{"kind":"text","value":"風信子"}],"direction":"right","kind":"ruby","reading":"ヒヤシンス","reading_content":[{"kind":"text","value":"ヒヤシンス"}]},{"kind":"text","value":"叢書　第四篇\r\n\r\n"},{"kind":"_page_break"}],"kind":"style","style_type":"jisage_line","x-indent":1}],"kind":"paragraph"} is not valid under any of the schemas listed in the 'oneOf' keyword |
+| aozora2-adapter | `000011_899-bc8b5148d0e0.json` | unsupported inline kind: raw |
 | aozora2-adapter | `000012_1092-1c3a5aac467e.json` | unsupported inline kind: raw |
 | aozora2-adapter | `000012_24448-32312eb2c779.json` | unsupported inline kind: raw |
 | aozora2-adapter | `000012_33200-32660f9eb979.json` | unsupported inline kind: raw |
 | aozora2-adapter | `000012_48628-4fde87720d42.json` | unsupported inline kind: raw |
-| aozora2-adapter | `000013_11-62419a345fca.json` | AAT schema validation failed at /blocks/1: {"content":[{"content":[{"kind":"text","value":"　私は、友が無くては、耐へられぬのです。しかし、私には、ありません。この貧しい詩を、これを、読んでくださる方の胸へ捧げます。そして、私を、あなたの友にしてください。\r\n"},{"kind":"_page_break"}],"kind":"style","style_type":"jisage_line","x-indent":2}],"kind":"paragraph"} is not valid under any of the schemas listed in the 'oneOf' keyword |
 | aozora2-adapter | `000014_12-e0352951f32f.json` | unsupported inline kind: raw |
 | aozora2-adapter | `000014_728-af8280acaa59.json` | unsupported inline kind: raw |
 | aozora2-adapter | `000019_194-5219b1146dad.json` | unsupported inline kind: raw |
 | aozora2-adapter | `000019_42379-2c7b3481e08a.json` | unsupported inline kind: raw |
 | aozora2-adapter | `000019_42380-e06a90ced089.json` | unsupported inline kind: raw |
 | aozora2-adapter | `000019_42381-e359d7f661b1.json` | unsupported inline kind: raw |
-| aozora2-adapter | `000019_42382-c81f40a971a8.json` | unsupported inline kind: raw |

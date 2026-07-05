@@ -333,8 +333,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 380,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 364,
         "paragraph_count": 30,
         "source_note_count": 0
       },
@@ -471,8 +471,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 492,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 465,
         "paragraph_count": 154,
         "source_note_count": 0
       },
@@ -607,7 +607,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 310,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -743,7 +743,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 317,
         "paragraph_count": 62,
         "source_note_count": 0
@@ -867,7 +867,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 302,
         "paragraph_count": 62,
         "source_note_count": 0
@@ -991,7 +991,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 248,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -1096,7 +1096,7 @@
       "tei_eaj_file": "data/complete/tei_lib_lv3/15099_tei.xml",
       "selected_aat": {
         "label": "aozora2:15099",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000879_104-1eebd42c07d1.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000879_104-1eebd42c07d1.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -1115,7 +1115,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 2,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -1239,7 +1239,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 16,
         "paragraph_count": 8,
         "source_note_count": 0
@@ -1364,7 +1364,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 10,
         "paragraph_count": 8,
         "source_note_count": 0
@@ -1489,7 +1489,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 23,
         "paragraph_count": 15,
         "source_note_count": 0
@@ -1595,7 +1595,7 @@
       "tei_eaj_file": "data/complete/tei_lib_lv3/15938_tei.xml",
       "selected_aat": {
         "label": "aozora2:15938",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/001216_15938-072aebb8aaac.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/001216_15938-072aebb8aaac.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -1614,7 +1614,7 @@
         "findings_count": 1
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 9,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -1739,7 +1739,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 49,
         "paragraph_count": 29,
         "source_note_count": 0
@@ -1863,7 +1863,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 49,
         "paragraph_count": 29,
         "source_note_count": 0
@@ -1987,7 +1987,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 53,
         "paragraph_count": 33,
         "source_note_count": 0
@@ -2092,7 +2092,7 @@
       "tei_eaj_file": "data/complete/tei_lib_lv3/236_tei.xml",
       "selected_aat": {
         "label": "aozora2:236",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000035_236-fcca4599ee8c.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000035_236-fcca4599ee8c.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -2111,7 +2111,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 21,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -2235,7 +2235,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 152,
         "paragraph_count": 28,
         "source_note_count": 0
@@ -2358,7 +2358,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 150,
         "paragraph_count": 28,
         "source_note_count": 0
@@ -2481,7 +2481,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 121,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -2585,7 +2585,7 @@
       "tei_eaj_file": "data/complete/tei_lib_lv3/2509_tei.xml",
       "selected_aat": {
         "label": "aozora2:2509",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000042_2509-e7c32f5f6938.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000042_2509-e7c32f5f6938.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -2604,7 +2604,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 2,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -2727,7 +2727,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 8,
         "paragraph_count": 4,
         "source_note_count": 0
@@ -2854,7 +2854,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 6,
         "paragraph_count": 4,
         "source_note_count": 0
@@ -2981,7 +2981,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 10,
         "paragraph_count": 8,
         "source_note_count": 0
@@ -3089,7 +3089,7 @@
       "tei_eaj_file": "data/complete/tei_lib_lv3/42320_tei.xml",
       "selected_aat": {
         "label": "aozora2:42320",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000148_42320-de4903f7e13c.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000148_42320-de4903f7e13c.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -3108,7 +3108,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 2,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -3237,8 +3237,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 89,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 86,
         "paragraph_count": 32,
         "source_note_count": 0
       },
@@ -3364,7 +3364,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 89,
         "paragraph_count": 33,
         "source_note_count": 0
@@ -3490,7 +3490,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 95,
         "paragraph_count": 40,
         "source_note_count": 0
@@ -3596,7 +3596,7 @@
       "tei_eaj_file": "data/complete/tei_lib_lv3/43077_tei.xml",
       "selected_aat": {
         "label": "aozora2:43077",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000042_43077-63de64d77122.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000042_43077-63de64d77122.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -3616,8 +3616,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 9,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 49,
         "paragraph_count": 4,
         "source_note_count": 0
       },
@@ -3690,15 +3690,15 @@
           },
           "ruby_expanded": {
             "relation": "different",
-            "generated_length": 4970,
+            "generated_length": 5057,
             "tei_eaj_length": 5152,
-            "length_delta": -182
+            "length_delta": -95
           },
           "ruby_expanded_parenless": {
             "relation": "different",
-            "generated_length": 4968,
+            "generated_length": 5055,
             "tei_eaj_length": 5102,
-            "length_delta": -134
+            "length_delta": -47
           },
           "base_drop_parentheticals": {
             "relation": "different",
@@ -3741,7 +3741,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 497,
         "paragraph_count": 186,
         "source_note_count": 0
@@ -3869,7 +3869,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 490,
         "paragraph_count": 186,
         "source_note_count": 0
@@ -3997,7 +3997,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 512,
         "paragraph_count": 202,
         "source_note_count": 0
@@ -4106,7 +4106,7 @@
       "tei_eaj_file": "data/complete/tei_lib_lv3/43563_tei.xml",
       "selected_aat": {
         "label": "aozora2:43563",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000255_43563-77090d11e36e.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000255_43563-77090d11e36e.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -4125,7 +4125,7 @@
         "findings_count": 1
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 312,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -4253,7 +4253,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 28,
         "paragraph_count": 6,
         "source_note_count": 0
@@ -4381,7 +4381,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 26,
         "paragraph_count": 12,
         "source_note_count": 0
@@ -4509,7 +4509,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 31,
         "paragraph_count": 12,
         "source_note_count": 0
@@ -4618,7 +4618,7 @@
       "tei_eaj_file": "data/complete/tei_lib_lv3/4411_tei.xml",
       "selected_aat": {
         "label": "aozora2:4411",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000287_4411-78854b2fc44c.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000287_4411-78854b2fc44c.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -4637,7 +4637,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 2,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -4766,8 +4766,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 111,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 110,
         "paragraph_count": 26,
         "source_note_count": 0
       },
@@ -4895,8 +4895,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 111,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 110,
         "paragraph_count": 26,
         "source_note_count": 0
       },
@@ -5023,7 +5023,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 83,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -5151,7 +5151,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 20,
         "paragraph_count": 18,
         "source_note_count": 0
@@ -5275,7 +5275,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 20,
         "paragraph_count": 18,
         "source_note_count": 0
@@ -5399,7 +5399,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 29,
         "paragraph_count": 27,
         "source_note_count": 0
@@ -5504,7 +5504,7 @@
       "tei_eaj_file": "data/complete/tei_lib_lv3/45093_tei.xml",
       "selected_aat": {
         "label": "aozora2:45093",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000121_45093-a53841cd43b0.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000121_45093-a53841cd43b0.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -5523,7 +5523,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 3,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -5647,7 +5647,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 13,
         "paragraph_count": 5,
         "source_note_count": 0
@@ -5770,7 +5770,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 13,
         "paragraph_count": 5,
         "source_note_count": 0
@@ -5893,7 +5893,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 17,
         "paragraph_count": 9,
         "source_note_count": 0
@@ -5997,7 +5997,7 @@
       "tei_eaj_file": "data/complete/tei_lib_lv3/4872_tei.xml",
       "selected_aat": {
         "label": "aozora2:4872",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000879_4872-3da7771d8346.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000879_4872-3da7771d8346.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -6016,7 +6016,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 9,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -6139,7 +6139,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 22,
         "paragraph_count": 8,
         "source_note_count": 0
@@ -6265,7 +6265,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 18,
         "paragraph_count": 8,
         "source_note_count": 0
@@ -6391,7 +6391,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 13,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -6519,8 +6519,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 1322,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 1316,
         "paragraph_count": 406,
         "source_note_count": 0
       },
@@ -6649,8 +6649,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 1195,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 1194,
         "paragraph_count": 400,
         "source_note_count": 0
       },
@@ -6777,7 +6777,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 868,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -6905,7 +6905,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 667,
         "paragraph_count": 76,
         "source_note_count": 0
@@ -7033,7 +7033,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 662,
         "paragraph_count": 76,
         "source_note_count": 0
@@ -7161,7 +7161,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 671,
         "paragraph_count": 80,
         "source_note_count": 0
@@ -7270,7 +7270,7 @@
       "tei_eaj_file": "data/complete/tei_lib_lv3/51520_tei.xml",
       "selected_aat": {
         "label": "aozora2:51520",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/001475_51520-2dee741cd556.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/001475_51520-2dee741cd556.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -7289,7 +7289,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 591,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -7417,7 +7417,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 5,
         "paragraph_count": 5,
         "source_note_count": 0
@@ -7541,7 +7541,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 3,
         "paragraph_count": 3,
         "source_note_count": 0
@@ -7661,7 +7661,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 7,
         "paragraph_count": 7,
         "source_note_count": 0
@@ -7762,7 +7762,7 @@
       "tei_eaj_file": "data/complete/tei_lib_lv3/53386_tei.xml",
       "selected_aat": {
         "label": "aozora2:53386",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000081_53386-bed1991cc09b.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000081_53386-bed1991cc09b.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -7781,7 +7781,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 1,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -7906,8 +7906,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 33,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 32,
         "paragraph_count": 20,
         "source_note_count": 0
       },
@@ -8033,8 +8033,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 32,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 31,
         "paragraph_count": 20,
         "source_note_count": 0
       },
@@ -8159,7 +8159,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 13,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -8266,7 +8266,7 @@
       "tei_eaj_file": "data/complete/tei_lib_lv3/53617_tei.xml",
       "selected_aat": {
         "label": "aozora2:53617",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000067_53617-860fa3126c73.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000067_53617-860fa3126c73.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -8285,7 +8285,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 2,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -8413,8 +8413,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 260,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 252,
         "paragraph_count": 16,
         "source_note_count": 0
       },
@@ -8552,8 +8552,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 160,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 151,
         "paragraph_count": 127,
         "source_note_count": 0
       },
@@ -8689,7 +8689,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 17,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -8826,7 +8826,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 12,
         "paragraph_count": 8,
         "source_note_count": 0
@@ -8952,7 +8952,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 11,
         "paragraph_count": 9,
         "source_note_count": 0
@@ -9078,7 +9078,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 3,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -9185,7 +9185,7 @@
       "tei_eaj_file": "data/complete/tei_lib_lv3/56996_tei.xml",
       "selected_aat": {
         "label": "aozora2:56996",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000416_56996-c1cc77ec50de.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000416_56996-c1cc77ec50de.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -9204,7 +9204,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 3,
         "paragraph_count": 3,
         "source_note_count": 0
@@ -9330,7 +9330,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 25,
         "paragraph_count": 9,
         "source_note_count": 0
@@ -9456,7 +9456,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 20,
         "paragraph_count": 10,
         "source_note_count": 0
@@ -9582,7 +9582,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 26,
         "paragraph_count": 16,
         "source_note_count": 0
@@ -9689,7 +9689,7 @@
       "tei_eaj_file": "data/complete/tei_lib_lv3/56998_tei.xml",
       "selected_aat": {
         "label": "aozora2:56998",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000416_56998-2027aaa76365.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000416_56998-2027aaa76365.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -9708,7 +9708,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 2,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -9834,7 +9834,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 19,
         "paragraph_count": 9,
         "source_note_count": 0
@@ -9959,7 +9959,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 14,
         "paragraph_count": 10,
         "source_note_count": 0
@@ -10084,7 +10084,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 21,
         "paragraph_count": 17,
         "source_note_count": 0
@@ -10190,7 +10190,7 @@
       "tei_eaj_file": "data/complete/tei_lib_lv3/56999_tei.xml",
       "selected_aat": {
         "label": "aozora2:56999",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000416_56999-f7880fe16da7.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000416_56999-f7880fe16da7.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -10209,7 +10209,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 2,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -10334,7 +10334,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 33,
         "paragraph_count": 13,
         "source_note_count": 0
@@ -10460,7 +10460,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 28,
         "paragraph_count": 14,
         "source_note_count": 0
@@ -10586,7 +10586,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 34,
         "paragraph_count": 20,
         "source_note_count": 0
@@ -10693,7 +10693,7 @@
       "tei_eaj_file": "data/complete/tei_lib_lv3/57001_tei.xml",
       "selected_aat": {
         "label": "aozora2:57001",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000416_57001-50f98274141f.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000416_57001-50f98274141f.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -10712,7 +10712,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 2,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -10838,7 +10838,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 13,
         "paragraph_count": 7,
         "source_note_count": 0
@@ -10960,7 +10960,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 8,
         "paragraph_count": 8,
         "source_note_count": 0
@@ -11086,7 +11086,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 14,
         "paragraph_count": 14,
         "source_note_count": 0
@@ -11189,7 +11189,7 @@
       "tei_eaj_file": "data/complete/tei_lib_lv3/57002_tei.xml",
       "selected_aat": {
         "label": "aozora2:57002",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000416_57002-5849bfe19515.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000416_57002-5849bfe19515.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -11208,7 +11208,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 2,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -11330,7 +11330,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 15,
         "paragraph_count": 5,
         "source_note_count": 0
@@ -11456,7 +11456,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 10,
         "paragraph_count": 6,
         "source_note_count": 0
@@ -11582,7 +11582,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 16,
         "paragraph_count": 12,
         "source_note_count": 0
@@ -11689,7 +11689,7 @@
       "tei_eaj_file": "data/complete/tei_lib_lv3/57003_tei.xml",
       "selected_aat": {
         "label": "aozora2:57003",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000416_57003-9ed614ebc5cf.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000416_57003-9ed614ebc5cf.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -11708,7 +11708,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 2,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -11834,7 +11834,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 29,
         "paragraph_count": 11,
         "source_note_count": 0
@@ -11960,7 +11960,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 24,
         "paragraph_count": 12,
         "source_note_count": 0
@@ -12086,7 +12086,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 30,
         "paragraph_count": 18,
         "source_note_count": 0
@@ -12193,7 +12193,7 @@
       "tei_eaj_file": "data/complete/tei_lib_lv3/57004_tei.xml",
       "selected_aat": {
         "label": "aozora2:57004",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000416_57004-700e1e687044.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000416_57004-700e1e687044.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -12212,7 +12212,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 2,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -12338,7 +12338,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 35,
         "paragraph_count": 13,
         "source_note_count": 0
@@ -12464,7 +12464,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 30,
         "paragraph_count": 14,
         "source_note_count": 0
@@ -12590,7 +12590,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 36,
         "paragraph_count": 20,
         "source_note_count": 0
@@ -12697,7 +12697,7 @@
       "tei_eaj_file": "data/complete/tei_lib_lv3/57005_tei.xml",
       "selected_aat": {
         "label": "aozora2:57005",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000416_57005-52c78f31f48c.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000416_57005-52c78f31f48c.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -12716,7 +12716,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 2,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -12842,7 +12842,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 26,
         "paragraph_count": 10,
         "source_note_count": 0
@@ -12968,7 +12968,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 21,
         "paragraph_count": 11,
         "source_note_count": 0
@@ -13094,7 +13094,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 27,
         "paragraph_count": 17,
         "source_note_count": 0
@@ -13201,7 +13201,7 @@
       "tei_eaj_file": "data/complete/tei_lib_lv3/57006_tei.xml",
       "selected_aat": {
         "label": "aozora2:57006",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000416_57006-270bcef7bd2f.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000416_57006-270bcef7bd2f.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -13220,7 +13220,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 2,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -13346,7 +13346,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 30,
         "paragraph_count": 10,
         "source_note_count": 0
@@ -13472,7 +13472,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 25,
         "paragraph_count": 11,
         "source_note_count": 0
@@ -13598,7 +13598,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 31,
         "paragraph_count": 17,
         "source_note_count": 0
@@ -13705,7 +13705,7 @@
       "tei_eaj_file": "data/complete/tei_lib_lv3/57037_tei.xml",
       "selected_aat": {
         "label": "aozora2:57037",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000416_57037-e4beced6f287.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000416_57037-e4beced6f287.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -13724,7 +13724,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 2,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -13850,7 +13850,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 16,
         "paragraph_count": 6,
         "source_note_count": 0
@@ -13976,7 +13976,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 14,
         "paragraph_count": 10,
         "source_note_count": 0
@@ -14102,7 +14102,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 17,
         "paragraph_count": 13,
         "source_note_count": 0
@@ -14209,7 +14209,7 @@
       "tei_eaj_file": "data/complete/tei_lib_lv3/57038_tei.xml",
       "selected_aat": {
         "label": "aozora2:57038",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000416_57038-85d5e6a94550.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000416_57038-85d5e6a94550.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -14228,7 +14228,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 2,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -14354,7 +14354,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 15,
         "paragraph_count": 7,
         "source_note_count": 0
@@ -14480,7 +14480,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 10,
         "paragraph_count": 8,
         "source_note_count": 0
@@ -14606,7 +14606,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 16,
         "paragraph_count": 14,
         "source_note_count": 0
@@ -14713,7 +14713,7 @@
       "tei_eaj_file": "data/complete/tei_lib_lv3/57039_tei.xml",
       "selected_aat": {
         "label": "aozora2:57039",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000416_57039-4e811a6546ec.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000416_57039-4e811a6546ec.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -14732,7 +14732,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 2,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -14858,7 +14858,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 31,
         "paragraph_count": 11,
         "source_note_count": 0
@@ -14984,7 +14984,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 26,
         "paragraph_count": 12,
         "source_note_count": 0
@@ -15110,7 +15110,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 32,
         "paragraph_count": 18,
         "source_note_count": 0
@@ -15217,7 +15217,7 @@
       "tei_eaj_file": "data/complete/tei_lib_lv3/57040_tei.xml",
       "selected_aat": {
         "label": "aozora2:57040",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000416_57040-954b0fdf4c5a.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000416_57040-954b0fdf4c5a.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -15236,7 +15236,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 2,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -15362,7 +15362,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 16,
         "paragraph_count": 6,
         "source_note_count": 0
@@ -15488,7 +15488,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 11,
         "paragraph_count": 7,
         "source_note_count": 0
@@ -15614,7 +15614,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 17,
         "paragraph_count": 13,
         "source_note_count": 0
@@ -15721,7 +15721,7 @@
       "tei_eaj_file": "data/complete/tei_lib_lv3/57041_tei.xml",
       "selected_aat": {
         "label": "aozora2:57041",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000416_57041-35497cca8a87.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000416_57041-35497cca8a87.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -15740,7 +15740,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 2,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -15866,7 +15866,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 20,
         "paragraph_count": 10,
         "source_note_count": 0
@@ -15992,7 +15992,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 15,
         "paragraph_count": 11,
         "source_note_count": 0
@@ -16118,7 +16118,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 21,
         "paragraph_count": 17,
         "source_note_count": 0
@@ -16225,7 +16225,7 @@
       "tei_eaj_file": "data/complete/tei_lib_lv3/57042_tei.xml",
       "selected_aat": {
         "label": "aozora2:57042",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000416_57042-7da306ecbf7f.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000416_57042-7da306ecbf7f.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -16244,7 +16244,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 2,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -16370,7 +16370,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 25,
         "paragraph_count": 9,
         "source_note_count": 0
@@ -16496,7 +16496,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 20,
         "paragraph_count": 10,
         "source_note_count": 0
@@ -16622,7 +16622,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 26,
         "paragraph_count": 16,
         "source_note_count": 0
@@ -16729,7 +16729,7 @@
       "tei_eaj_file": "data/complete/tei_lib_lv3/57043_tei.xml",
       "selected_aat": {
         "label": "aozora2:57043",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000416_57043-ae8c56c30897.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000416_57043-ae8c56c30897.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -16748,7 +16748,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 2,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -16875,8 +16875,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 30,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 28,
         "paragraph_count": 12,
         "source_note_count": 0
       },
@@ -17001,8 +17001,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 22,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 20,
         "paragraph_count": 14,
         "source_note_count": 0
       },
@@ -17126,7 +17126,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 26,
         "paragraph_count": 20,
         "source_note_count": 0
@@ -17232,7 +17232,7 @@
       "tei_eaj_file": "data/complete/tei_lib_lv3/57044_tei.xml",
       "selected_aat": {
         "label": "aozora2:57044",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000416_57044-257ead63b5d7.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000416_57044-257ead63b5d7.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -17251,7 +17251,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 2,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -17377,8 +17377,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 41,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 39,
         "paragraph_count": 14,
         "source_note_count": 0
       },
@@ -17504,8 +17504,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 41,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 39,
         "paragraph_count": 16,
         "source_note_count": 0
       },
@@ -17630,7 +17630,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 25,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -17737,7 +17737,7 @@
       "tei_eaj_file": "data/complete/tei_lib_lv3/57046_tei.xml",
       "selected_aat": {
         "label": "aozora2:57046",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000416_57046-b29dabcbcc48.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000416_57046-b29dabcbcc48.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -17756,7 +17756,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 3,
         "paragraph_count": 2,
         "source_note_count": 0
@@ -17883,8 +17883,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 13,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 12,
         "paragraph_count": 8,
         "source_note_count": 0
       },
@@ -18010,8 +18010,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 12,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 11,
         "paragraph_count": 9,
         "source_note_count": 0
       },
@@ -18136,7 +18136,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 3,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -18243,7 +18243,7 @@
       "tei_eaj_file": "data/complete/tei_lib_lv3/57047_tei.xml",
       "selected_aat": {
         "label": "aozora2:57047",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000416_57047-31cb641c5a23.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000416_57047-31cb641c5a23.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -18262,7 +18262,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 3,
         "paragraph_count": 2,
         "source_note_count": 0
@@ -18389,8 +18389,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 13,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 12,
         "paragraph_count": 4,
         "source_note_count": 0
       },
@@ -18517,8 +18517,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 12,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 11,
         "paragraph_count": 5,
         "source_note_count": 0
       },
@@ -18644,7 +18644,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 7,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -18752,7 +18752,7 @@
       "tei_eaj_file": "data/complete/tei_lib_lv3/57048_tei.xml",
       "selected_aat": {
         "label": "aozora2:57048",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000416_57048-85e00484d743.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000416_57048-85e00484d743.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -18771,7 +18771,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 3,
         "paragraph_count": 2,
         "source_note_count": 0
@@ -18898,7 +18898,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 506,
         "paragraph_count": 134,
         "source_note_count": 0
@@ -19034,7 +19034,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 502,
         "paragraph_count": 134,
         "source_note_count": 0
@@ -19170,7 +19170,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 515,
         "paragraph_count": 145,
         "source_note_count": 0
@@ -19287,7 +19287,7 @@
       "tei_eaj_file": "data/complete/tei_lib_lv3/86_tei.xml",
       "selected_aat": {
         "label": "aozora2:86",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000879_86-700a96bab280.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000879_86-700a96bab280.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -19306,7 +19306,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 2,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -19442,7 +19442,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 317,
         "paragraph_count": 62,
         "source_note_count": 0
@@ -19578,7 +19578,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 302,
         "paragraph_count": 62,
         "source_note_count": 0
@@ -19714,7 +19714,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 248,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -19831,7 +19831,7 @@
       "tei_eaj_file": "data/complete/tei_lib_lv4/104_15099.xml",
       "selected_aat": {
         "label": "aozora2:15099",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000879_104-1eebd42c07d1.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000879_104-1eebd42c07d1.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -19850,7 +19850,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 2,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -19986,7 +19986,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 251,
         "paragraph_count": 75,
         "source_note_count": 1
@@ -20117,7 +20117,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 251,
         "paragraph_count": 75,
         "source_note_count": 1
@@ -20252,7 +20252,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 255,
         "paragraph_count": 79,
         "source_note_count": 0
@@ -20368,7 +20368,7 @@
       "tei_eaj_file": "data/complete/tei_lib_lv4/1567_header_updated.xml",
       "selected_aat": {
         "label": "aozora2:1567",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000035_1567-32ff5a089d67.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000035_1567-32ff5a089d67.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -20387,7 +20387,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 2,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -20522,7 +20522,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 251,
         "paragraph_count": 75,
         "source_note_count": 1
@@ -20651,7 +20651,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 251,
         "paragraph_count": 75,
         "source_note_count": 1
@@ -20784,7 +20784,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 255,
         "paragraph_count": 79,
         "source_note_count": 0
@@ -20898,7 +20898,7 @@
       "tei_eaj_file": "data/complete/tei_lib_lv4/1567_tei.xml",
       "selected_aat": {
         "label": "aozora2:1567",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000035_1567-32ff5a089d67.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000035_1567-32ff5a089d67.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -20917,7 +20917,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 2,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -21050,7 +21050,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 285,
         "paragraph_count": 39,
         "source_note_count": 0
@@ -21177,7 +21177,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 285,
         "paragraph_count": 39,
         "source_note_count": 0
@@ -21304,7 +21304,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 289,
         "paragraph_count": 43,
         "source_note_count": 0
@@ -21412,7 +21412,7 @@
       "tei_eaj_file": "data/complete/tei_lib_lv4/45245_tei.xml",
       "selected_aat": {
         "label": "aozora2:45245",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000129_45245-57a2c88a17df.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000129_45245-57a2c88a17df.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -21431,7 +21431,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 246,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -21560,8 +21560,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 64,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 61,
         "paragraph_count": 15,
         "source_note_count": 0
       },
@@ -21693,7 +21693,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 64,
         "paragraph_count": 12,
         "source_note_count": 0
@@ -21825,7 +21825,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 71,
         "paragraph_count": 23,
         "source_note_count": 0
@@ -21937,7 +21937,7 @@
       "tei_eaj_file": "data/complete/tei_lib_lv4/50362_tei.xml",
       "selected_aat": {
         "label": "aozora2:50362",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/001263_50362-00333f142617.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/001263_50362-00333f142617.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -21957,8 +21957,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 10,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 51,
         "paragraph_count": 4,
         "source_note_count": 0
       },
@@ -22037,15 +22037,15 @@
           },
           "ruby_expanded": {
             "relation": "different",
-            "generated_length": 2149,
+            "generated_length": 2258,
             "tei_eaj_length": 2284,
-            "length_delta": -135
+            "length_delta": -26
           },
           "ruby_expanded_parenless": {
             "relation": "different",
-            "generated_length": 2147,
+            "generated_length": 2256,
             "tei_eaj_length": 2282,
-            "length_delta": -135
+            "length_delta": -26
           },
           "base_drop_parentheticals": {
             "relation": "different",
@@ -22089,8 +22089,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 273,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 259,
         "paragraph_count": 61,
         "source_note_count": 0
       },
@@ -22232,8 +22232,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 189,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 165,
         "paragraph_count": 148,
         "source_note_count": 0
       },
@@ -22374,7 +22374,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 15,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -22518,8 +22518,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 380,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 364,
         "paragraph_count": 30,
         "source_note_count": 0
       },
@@ -22655,8 +22655,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 492,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 465,
         "paragraph_count": 154,
         "source_note_count": 0
       },
@@ -22790,7 +22790,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 310,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -22926,8 +22926,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 2079,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 2077,
         "paragraph_count": 466,
         "source_note_count": 0
       },
@@ -23068,8 +23068,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 2021,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 2018,
         "paragraph_count": 529,
         "source_note_count": 0
       },
@@ -23209,7 +23209,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 1494,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -23331,7 +23331,7 @@
       "tei_eaj_file": "data/draft/tei_lib_lv3/1576_tei.xml",
       "selected_aat": {
         "label": "aozora2:1576",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000035_1576-8b6c528b582b.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000035_1576-8b6c528b582b.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -23351,8 +23351,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 1019,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 1059,
         "paragraph_count": 7,
         "source_note_count": 0
       },
@@ -23441,15 +23441,15 @@
           },
           "ruby_expanded": {
             "relation": "different",
-            "generated_length": 95534,
+            "generated_length": 95583,
             "tei_eaj_length": 96499,
-            "length_delta": -965
+            "length_delta": -916
           },
           "ruby_expanded_parenless": {
             "relation": "different",
-            "generated_length": 95500,
+            "generated_length": 95549,
             "tei_eaj_length": 94989,
-            "length_delta": 511
+            "length_delta": 560
           },
           "base_drop_parentheticals": {
             "relation": "different",
@@ -23492,7 +23492,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 497,
         "paragraph_count": 186,
         "source_note_count": 0
@@ -23620,7 +23620,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 490,
         "paragraph_count": 186,
         "source_note_count": 0
@@ -23748,7 +23748,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 512,
         "paragraph_count": 202,
         "source_note_count": 0
@@ -23857,7 +23857,7 @@
       "tei_eaj_file": "data/draft/tei_lib_lv3/43563_tei.xml",
       "selected_aat": {
         "label": "aozora2:43563",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000255_43563-77090d11e36e.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000255_43563-77090d11e36e.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -23876,7 +23876,7 @@
         "findings_count": 1
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 312,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -24005,8 +24005,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 59,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 57,
         "paragraph_count": 27,
         "source_note_count": 0
       },
@@ -24134,8 +24134,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 56,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 54,
         "paragraph_count": 27,
         "source_note_count": 0
       },
@@ -24262,7 +24262,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 29,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -24371,7 +24371,7 @@
       "tei_eaj_file": "data/draft/tei_lib_lv3/52208_tei.xml",
       "selected_aat": {
         "label": "aozora2:52208",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/001538_52208-9d9b0d97e03f.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/001538_52208-9d9b0d97e03f.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -24391,8 +24391,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 20,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 18,
         "paragraph_count": 5,
         "source_note_count": 0
       },
@@ -24519,7 +24519,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 506,
         "paragraph_count": 134,
         "source_note_count": 0
@@ -24652,7 +24652,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 502,
         "paragraph_count": 134,
         "source_note_count": 0
@@ -24785,7 +24785,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 515,
         "paragraph_count": 145,
         "source_note_count": 0
@@ -24899,7 +24899,7 @@
       "tei_eaj_file": "data/draft/tei_lib_lv3/86_tei.xml",
       "selected_aat": {
         "label": "aozora2:86",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000879_86-700a96bab280.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000879_86-700a96bab280.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -24918,7 +24918,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 2,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -25052,8 +25052,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 1884,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 1716,
         "paragraph_count": 450,
         "source_note_count": 0
       },
@@ -25189,8 +25189,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 1598,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 1281,
         "paragraph_count": 880,
         "source_note_count": 0
       },
@@ -25325,7 +25325,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 400,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -25461,7 +25461,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 113,
         "paragraph_count": 77,
         "source_note_count": 0
@@ -25591,7 +25591,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 111,
         "paragraph_count": 77,
         "source_note_count": 0
@@ -25721,7 +25721,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 118,
         "paragraph_count": 82,
         "source_note_count": 0
@@ -25832,7 +25832,7 @@
       "tei_eaj_file": "data/draft/tei_lib_lv4/2571_tei.xml",
       "selected_aat": {
         "label": "aozora2:2571",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000020_2571-d579d65b2d9f.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000020_2571-d579d65b2d9f.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -25851,7 +25851,7 @@
         "findings_count": 1
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 37,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -25982,8 +25982,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 131,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 128,
         "paragraph_count": 74,
         "source_note_count": 0
       },
@@ -26108,8 +26108,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 129,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 126,
         "paragraph_count": 74,
         "source_note_count": 0
       },
@@ -26233,7 +26233,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 43,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -26339,7 +26339,7 @@
       "tei_eaj_file": "data/draft/tei_lib_lv4/4244-1_tei.xml",
       "selected_aat": {
         "label": "aozora2:4244",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000311_4244-cf9a5aa050ee.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000311_4244-cf9a5aa050ee.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -26359,8 +26359,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 63,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 60,
         "paragraph_count": 6,
         "source_note_count": 0
       },
@@ -26485,8 +26485,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 131,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 128,
         "paragraph_count": 74,
         "source_note_count": 0
       },
@@ -26611,8 +26611,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 129,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 126,
         "paragraph_count": 74,
         "source_note_count": 0
       },
@@ -26736,7 +26736,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 43,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -26842,7 +26842,7 @@
       "tei_eaj_file": "data/draft/tei_lib_lv4/4244-3_tei.xml",
       "selected_aat": {
         "label": "aozora2:4244",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000311_4244-cf9a5aa050ee.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000311_4244-cf9a5aa050ee.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -26862,8 +26862,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 63,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 60,
         "paragraph_count": 6,
         "source_note_count": 0
       },
@@ -26988,8 +26988,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 131,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 128,
         "paragraph_count": 74,
         "source_note_count": 0
       },
@@ -27114,8 +27114,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 129,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 126,
         "paragraph_count": 74,
         "source_note_count": 0
       },
@@ -27239,7 +27239,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 43,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -27345,7 +27345,7 @@
       "tei_eaj_file": "data/draft/tei_lib_lv4/4244-4_tei.xml",
       "selected_aat": {
         "label": "aozora2:4244",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/000311_4244-cf9a5aa050ee.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/000311_4244-cf9a5aa050ee.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -27365,8 +27365,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 63,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 60,
         "paragraph_count": 6,
         "source_note_count": 0
       },
@@ -27491,8 +27491,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 335,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 316,
         "paragraph_count": 72,
         "source_note_count": 0
       },
@@ -27629,8 +27629,8 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
-        "nodes": 313,
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
+        "nodes": 276,
         "paragraph_count": 145,
         "source_note_count": 0
       },
@@ -27766,7 +27766,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 133,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -27903,7 +27903,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 15,
         "paragraph_count": 15,
         "source_note_count": 0
@@ -28031,7 +28031,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 15,
         "paragraph_count": 15,
         "source_note_count": 0
@@ -28159,7 +28159,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 19,
         "paragraph_count": 19,
         "source_note_count": 0
@@ -28268,7 +28268,7 @@
       "tei_eaj_file": "data/draft/tei_lib_lv4/54457_tei.xml",
       "selected_aat": {
         "label": "aozora2:54457",
-        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260704T132955Z/aat/aozora2-adapter/001668_54457-49c91f8ee388.json",
+        "path": "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter/001668_54457-49c91f8ee388.json",
         "adapter": "aozora2",
         "adapter_version": "aozora2-adapter 0.1.0 aozora-core-0.7.1"
       },
@@ -28287,7 +28287,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 1,
         "paragraph_count": 1,
         "source_note_count": 0
@@ -28396,9 +28396,9 @@
       "tei_eaj_file": "data/draft/tei_lib_lv4/54457_tei.xml",
       "selected_aat": {
         "label": "aozora:54457",
-        "path": "/db/ab-validator/aat-corpus/aozora-tei-eaj-sanitized-20260705T030000Z/aat/aozora-adapter/001668_54457-49c91f8ee388.json",
+        "path": "/db/ab-validator/aat-corpus/aozora-full-20260705T015007Z/aat/aozora-adapter/001668_54457-49c91f8ee388.json",
         "adapter": "aozora",
-        "adapter_version": "aozora-adapter 0.1.0 aozora 0.4.1-dev+g5df2cfa"
+        "adapter_version": "aozora-adapter 0.1.0 aozora 0.4.1"
       },
       "aat": {
         "block_count": 1,
@@ -28415,7 +28415,7 @@
         "findings_count": 0
       },
       "parser_ir": {
-        "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+        "schema_hash": "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913",
         "nodes": 1,
         "paragraph_count": 1,
         "source_note_count": 0

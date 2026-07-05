@@ -55,13 +55,16 @@
       (let [result (materialize-example! out-file)
             plain-file (io/file out-file "plain.txt")
             tei-file (io/file out-file "tei.xml")
+            preservation-file (io/file out-file "preservation.json")
             plaintext-manifest-file (io/file out-file "plaintext.manifest.json")
             tei-manifest-file (io/file out-file "tei.manifest.json")
             tei-validation-result-file (io/file out-file "tei-validation-result.json")
             manifest-schema (files/read-json "schemas/manifest.schema.json")
+            preservation-schema (files/read-json "schemas/parser-ir-publication-preservation.schema.json")
             validation-result-schema (files/read-json "schemas/tei-validation-result.schema.json")
             plaintext-manifest (files/read-json plaintext-manifest-file)
             tei-manifest (files/read-json tei-manifest-file)
+            preservation (files/read-json preservation-file)
             tei-validation-result (files/read-json tei-validation-result-file)
             source-manifest (files/read-json "examples/v0/example-work/source.manifest.json")
             source-corpus-hash (get-in source-manifest
@@ -69,12 +72,14 @@
                                         "corpus_snapshot_hash"])]
         (is (= {:plaintext plain-file
                 :tei tei-file
+                :preservation preservation-file
                 :plaintext-manifest plaintext-manifest-file
                 :tei-manifest tei-manifest-file
                 :tei-validation-result tei-validation-result-file}
                result))
         (doseq [file [plain-file tei-file plaintext-manifest-file
-                      tei-manifest-file tei-validation-result-file]]
+                      tei-manifest-file tei-validation-result-file
+                      preservation-file]]
           (is (.exists file) (str file " should exist")))
         (is (string/includes? (slurp plain-file) "吾輩猫"))
         (is (re-find #"<(?:[A-Za-z0-9_-]+:)?ruby(?:\s|>)"
@@ -91,11 +96,23 @@
           (is (string/ends-with? plain-text "\n\n（古伝説と、シルレルの詩から。）")))
         (is (nil? (schema/validation-errors manifest-schema plaintext-manifest)))
         (is (nil? (schema/validation-errors manifest-schema tei-manifest)))
+        (is (nil? (schema/validation-errors preservation-schema preservation)))
         (is (nil? (schema/validation-errors
                    validation-result-schema
                    tei-validation-result)))
+        (is (= "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json"
+               (get preservation "schema_id")))
+        (is (= "0.1.0" (get preservation "schema_version")))
+        (is (= source-corpus-hash
+               (get-in preservation ["source" "corpus_snapshot_hash"])))
+        (is (pos? (get-in preservation ["coverage" "record_count"])))
+        (is (some #(= "paragraph.node_range" (get % "construct"))
+                  (get preservation "records")))
         (is (= "plaintext" (get plaintext-manifest "artifact_kind")))
         (is (= "tei" (get tei-manifest "artifact_kind")))
+        (is (some #(and (= "preservation" (get % "role"))
+                        (= "preservation.json" (get % "path_hint")))
+                  (get tei-manifest "sidecars")))
         (is (= "passed" (get tei-validation-result "status")))
         (is (= "passed" (get tei-manifest "validation_status")))
         (is (= source-corpus-hash
@@ -162,6 +179,7 @@
       (materialize-example! out-dir-b)
       (doseq [name ["plain.txt"
                     "tei.xml"
+                    "preservation.json"
                     "plaintext.manifest.json"
                     "tei.manifest.json"
                     "tei-validation-result.json"]]

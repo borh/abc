@@ -276,6 +276,7 @@
         aat-parser-ir-mapping-schema (files/read-json "schemas/aat-parser-ir-mapping.schema.json")
         aat-parser-ir-divergence-schema (files/read-json "schemas/aat-parser-ir-divergence.schema.json")
         aat-parser-ir-divergence-bundle-schema (files/read-json "schemas/aat-parser-ir-divergence-bundle.schema.json")
+        parser-ir-publication-preservation-schema (files/read-json "schemas/parser-ir-publication-preservation.schema.json")
         tei-validation-result-schema (files/read-json "schemas/tei-validation-result.schema.json")
         iiif-applicability-schema (files/read-json "schemas/iiif-applicability.schema.json")
         person-drift-event-schema (files/read-json "schemas/person-drift-event.schema.json")
@@ -289,6 +290,7 @@
                            ["schemas/aat-parser-ir-mapping.schema.json" aat-parser-ir-mapping-schema]
                            ["schemas/aat-parser-ir-divergence.schema.json" aat-parser-ir-divergence-schema]
                            ["schemas/aat-parser-ir-divergence-bundle.schema.json" aat-parser-ir-divergence-bundle-schema]
+                           ["schemas/parser-ir-publication-preservation.schema.json" parser-ir-publication-preservation-schema]
                            ["schemas/tei-validation-result.schema.json" tei-validation-result-schema]
                            ["schemas/iiif-applicability.schema.json" iiif-applicability-schema]
                            ["schemas/person-drift-event.schema.json" person-drift-event-schema]
@@ -677,9 +679,11 @@
 
 (defn validate-publication-output! [publication-output]
   (let [manifest-schema (files/read-json "schemas/manifest.schema.json")
+        preservation-schema (files/read-json "schemas/parser-ir-publication-preservation.schema.json")
         validation-result-schema (files/read-json "schemas/tei-validation-result.schema.json")
         plain-file (:plaintext publication-output)
         tei-file (:tei publication-output)
+        preservation-file (:preservation publication-output)
         validation-result-file (:tei-validation-result publication-output)]
     (when-not (and (.exists plain-file) (pos? (.length plain-file)))
       (throw (ex-info "parser-IR publication plain.txt must exist and be non-empty"
@@ -697,6 +701,7 @@
     (doseq [manifest-file [(:plaintext-manifest publication-output)
                            (:tei-manifest publication-output)]]
       (validate-json! manifest-schema manifest-file))
+    (validate-json! preservation-schema preservation-file)
     (validate-json! validation-result-schema validation-result-file)))
 
 ;; Spec format: "<severity>: <focus> <path> — <message> (<label>)".

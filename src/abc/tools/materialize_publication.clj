@@ -21,6 +21,9 @@
 (def tei-odd-path "schemas/tei-profile.odd")
 (def tei-rng-path "schemas/tei-profile.rng")
 (def tei-schematron-path "schemas/tei-profile.sch")
+(def preservation-schema-path "schemas/parser-ir-publication-preservation.schema.json")
+(def preservation-schema-id "https://w3id.org/abc/schemas/parser-ir-publication-preservation.schema.json")
+(def preservation-schema-version "0.1.0")
 
 (defn- write-string-file! [file value]
   (io/make-parents file)
@@ -186,6 +189,161 @@
 (defn- compact-hashes [& values]
   (vec (keep identity values)))
 
+(defn- json-pointer [path]
+  (str "/" (string/join "/" (map str path))))
+
+(defn- preservation-record [index {:keys [ir-pointer tei-pointer construct
+                                          source-pointer source-inventory-row
+                                          message value]}]
+  {"record_id" (format "r%06d" index)
+   "ir_pointer" ir-pointer
+   "tei_pointer" tei-pointer
+   "class" "custom_sidecar"
+   "construct" construct
+   "source_pointer" source-pointer
+   "source_inventory_row" source-inventory-row
+   "message" message
+   "count" 1
+   "first_path" ir-pointer
+   "value" value})
+
+(defn- span-records [collection-name values]
+  (mapcat
+   (fn [index value]
+     (let [span (get value "span")]
+       (when (map? span)
+         [{:ir-pointer (json-pointer [collection-name index "span"])
+           :tei-pointer nil
+           :construct "span_coordinates"
+           :source-pointer (get value "source_pointer")
+           :source-inventory-row nil
+           :message "Parser-IR span coordinates are preserved outside TEI publication XML."
+           :value (pr-str span)}])))
+   (range)
+   values))
+
+(defn- paragraph-preservation-records [paragraphs]
+  (apply concat
+         (map-indexed
+          (fn [index paragraph]
+            (concat
+             (when-let [node-range (get paragraph "node_range")]
+               [{:ir-pointer (json-pointer ["paragraphs" index "node_range"])
+                 :tei-pointer nil
+                 :construct "paragraph.node_range"
+                 :source-pointer (get paragraph "source_pointer")
+                 :source-inventory-row nil
+                 :message "Paragraph node ranges are ABC traceability data, not TEI publication text."
+                 :value (pr-str node-range)}])
+             (when-let [source-pointer (get paragraph "source_pointer")]
+               [{:ir-pointer (json-pointer ["paragraphs" index "source_pointer"])
+                 :tei-pointer nil
+                 :construct "paragraph.source_pointer"
+                 :source-pointer source-pointer
+                 :source-inventory-row nil
+                 :message "Paragraph source pointers preserve source-authority traceability."
+                 :value source-pointer}])
+             (when (= "source-note" (get paragraph "role"))
+               [{:ir-pointer (json-pointer ["paragraphs" index "classification"])
+                 :tei-pointer nil
+                 :construct "source_note.classification"
+                 :source-pointer (get paragraph "source_pointer")
+                 :source-inventory-row nil
+                 :message "Source-note classification records whether routing was direct or heuristic."
+                 :value (get paragraph "classification")}])))
+          paragraphs)))
+
+(defn- source-identity-records [parser-ir]
+  (let [source (get parser-ir "source")]
+    (for [field ["work_content_hash" "source_path" "encoding" "normalization"]
+          :when (contains? source field)]
+      {:ir-pointer (json-pointer ["source" field])
+       :tei-pointer nil
+       :construct "source_identity"
+       :source-pointer nil
+       :source-inventory-row nil
+       :message "Parser-IR source identity is preserved in the ABC preservation sidecar and manifests."
+       :value (get source field)})))
+
+(defn- mapping-identity-records [parser-ir]
+  (when-let [derived-from (get parser-ir "derived_from")]
+    (for [field ["mapping_id" "mapping_version" "mapping_schema_hash"]
+          :when (contains? derived-from field)]
+      {:ir-pointer (json-pointer ["derived_from" field])
+       :tei-pointer nil
+       :construct "mapping_identity"
+       :source-pointer nil
+       :source-inventory-row nil
+       :message "AAT-to-parser-IR mapping identity is preserved outside TEI publication XML."
+       :value (get derived-from field)})))
+
+(defn- diagnostic-records [parser-ir]
+  (mapcat
+   (fn [collection-name]
+     (map-indexed
+      (fn [index diagnostic]
+        {:ir-pointer (json-pointer [collection-name index])
+         :tei-pointer nil
+         :construct "diagnostic"
+         :source-pointer nil
+         :source-inventory-row nil
+         :message "Parser-IR diagnostics are preservation evidence, not TEI body text."
+         :value (get diagnostic "code")})
+      (get parser-ir collection-name [])))
+   ["warnings" "errors"]))
+
+(defn- gaiji-records [parser-ir]
+  (keep-indexed
+   (fn [index node]
+     (when (= "gaiji" (get node "type"))
+       {:ir-pointer (json-pointer ["nodes" index "gaiji" "resolved"])
+        :tei-pointer nil
+        :construct "gaiji_resolution"
+        :source-pointer nil
+        :source-inventory-row nil
+        :message "Gaiji resolution status and diagnostics are preserved outside TEI publication XML."
+        :value (get-in node ["gaiji" "resolved"])}))
+   (get parser-ir "nodes" [])))
+
+(defn- preservation-records [parser-ir]
+  (let [raw-records (vec
+                     (concat
+                      (source-identity-records parser-ir)
+                      (mapping-identity-records parser-ir)
+                      (span-records "nodes" (get parser-ir "nodes" []))
+                      (span-records "paragraphs" (get parser-ir "paragraphs" []))
+                      (paragraph-preservation-records (get parser-ir "paragraphs" []))
+                      (diagnostic-records parser-ir)
+                      (gaiji-records parser-ir)))]
+    (mapv preservation-record (range) raw-records)))
+
+(defn publication-preservation
+  [{:keys [parser-ir source-manifest generated-at]}]
+  (let [records (preservation-records parser-ir)
+        derived-from (get parser-ir "derived_from")]
+    {"schema_id" preservation-schema-id
+     "schema_version" preservation-schema-version
+     "schema_hash" (manifest/schema-hash preservation-schema-path)
+     "parser_ir" {"schema_id" (get parser-ir "schema_id")
+                  "schema_hash" (get parser-ir "schema_hash")
+                  "work_id" (get parser-ir "work_id")}
+     "tei" {"profile_id" "abc-tei-profile-v0"
+            "profile_hash" (profile-hash)}
+     "source" {"corpus_snapshot_hash" (corpus-snapshot-hash source-manifest)
+               "work_content_hash" (get-in parser-ir ["source" "work_content_hash"])
+               "source_path" (get-in parser-ir ["source" "source_path"])
+               "encoding" (get-in parser-ir ["source" "encoding"])
+               "normalization" (get-in parser-ir ["source" "normalization"])}
+     "producer" {"agent" "abc.tools.materialize-publication"
+                 "generated_at" generated-at}
+     "mapping" (when derived-from
+                 {"mapping_id" (get derived-from "mapping_id")
+                  "mapping_version" (get derived-from "mapping_version")
+                  "mapping_schema_hash" (get derived-from "mapping_schema_hash")})
+     "coverage" {"record_count" (count records)
+                 "classes" ["custom_sidecar"]}
+     "records" records}))
+
 (defn- artifact-manifest
   [{:keys [artifact-kind validation-status identity-object content-file
            media-type path-hint sidecars generated-at activity-id notes used]}]
@@ -230,7 +388,7 @@
 
 (defn tei-manifest
   [{:keys [tei-file validation-result-file validation-result
-           parser-ir metadata-record source-manifest generated-at]}]
+           preservation-file parser-ir metadata-record source-manifest generated-at]}]
   (let [inputs (manifest-inputs parser-ir metadata-record source-manifest)
         tei-profile-hash (profile-hash)
         identity-object (publication-identity-object
@@ -247,7 +405,11 @@
       :sidecars [{"role" "validation-result"
                   "hash" (file-hash validation-result-file)
                   "media_type" "application/json"
-                  "path_hint" "tei-validation-result.json"}]
+                  "path_hint" "tei-validation-result.json"}
+                 {"role" "preservation"
+                  "hash" (file-hash preservation-file)
+                  "media_type" "application/json"
+                  "path_hint" "preservation.json"}]
       :generated-at generated-at
       :activity-id "https://w3id.org/abc/activity/materialize-parser-ir-tei"
       :used (compact-hashes (get inputs "corpus_snapshot_hash")
@@ -273,6 +435,7 @@
                        :char-declarations (:char_declarations tei-result)))
         plain-file (io/file output-dir "plain.txt")
         tei-file (io/file output-dir "tei.xml")
+        preservation-file (io/file output-dir "preservation.json")
         plaintext-manifest-file (io/file output-dir "plaintext.manifest.json")
         tei-manifest-file (io/file output-dir "tei.manifest.json")
         tei-validation-result-file (io/file output-dir "tei-validation-result.json")]
@@ -280,6 +443,11 @@
     (write-string-file! tei-file
                         (tei-header/hiccup->xml-string
                          (tei-document header (:body tei-result))))
+    (manifest/write-json-file!
+     preservation-file
+     (publication-preservation {:parser-ir parser-ir
+                                :source-manifest source-manifest
+                                :generated-at generated-at}))
     (let [validation-result (tei-validation-result tei-file)]
       (manifest/write-json-file! tei-validation-result-file validation-result)
       (manifest/write-json-file!
@@ -294,12 +462,14 @@
        (tei-manifest {:tei-file tei-file
                       :validation-result-file tei-validation-result-file
                       :validation-result validation-result
+                      :preservation-file preservation-file
                       :parser-ir parser-ir
                       :metadata-record metadata-record
                       :source-manifest source-manifest
                       :generated-at generated-at})))
     {:plaintext plain-file
      :tei tei-file
+     :preservation preservation-file
      :plaintext-manifest plaintext-manifest-file
      :tei-manifest tei-manifest-file
      :tei-validation-result tei-validation-result-file}))
@@ -327,6 +497,7 @@
          "output_dir" (str output-dir)
          "plain_text" (str (:plaintext result))
          "tei" (str (:tei result))
+         "preservation" (str (:preservation result))
          "tei_validation_result" (str (:tei-validation-result result))
          "findings_count" (count (get validation "findings" []))})
       (catch Throwable t

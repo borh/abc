@@ -11,7 +11,7 @@ Files:
 - `source.manifest.json`: source artifact manifest for a work extracted from a
   corpus snapshot.
 - `parser-ir.json`: parser IR fixture covering text, ruby, gaiji, editor note,
-  and heading nodes.
+  source note, heading nodes, and Level 3 paragraph ranges.
 - `warnings.jsonl`: warning sidecar fixture.
 - `plain.txt`: parser-IR-driven plaintext publication fixture.
 - `tei.xml`: parser-IR-driven TEI publication fixture.
@@ -39,9 +39,10 @@ TEI validation-result sidecar are validated by the design-bundle gate from a
 temporary materializer output directory; they are not checked into this fixture
 directory in the tracer bullet.
 
-Coverage note: this example exercises 5 of 11 current parser-IR node types
-(`text`, `ruby`, `gaiji`, `editor-note`, `heading`). Synthetic renderer tests
-exercise the full current node-policy set.
+Coverage note: this example exercises 6 of 12 current parser-IR node types
+(`text`, `ruby`, `gaiji`, `editor-note`, `source-note`, `heading`) and the
+top-level `paragraphs[]` range table. Synthetic renderer tests exercise the
+full current node-policy set.
 
 Selection criteria for the real work:
 

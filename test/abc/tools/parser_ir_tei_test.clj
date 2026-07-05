@@ -155,11 +155,12 @@
   (testing "headings after paragraph content keep source order by starting a later div"
     (let [result (parser-ir-tei/render
                   (files/read-json "examples/v0/example-work/parser-ir.json"))
-          [_ [body-node first-child second-child]] (:body result)]
+          [_ [body-node first-child second-child third-child]] (:body result)]
       (is (= :body body-node))
       (is (= :p (first first-child)))
-      (is (= :div (first second-child)))
-      (is (= :head (first (second second-child)))))))
+      (is (= :p (first second-child)))
+      (is (= :div (first third-child)))
+      (is (= :head (first (second third-child)))))))
 
 (deftest char-declaration-order-test
   (testing "char declarations are first-appearance ordered and deduplicated"

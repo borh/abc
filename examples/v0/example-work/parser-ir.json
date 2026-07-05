@@ -1,6 +1,6 @@
 {
   "schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
-  "schema_hash": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+  "schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
   "source": {
     "work_content_hash": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
     "source_path": "cards/000000/files/example.txt",
@@ -43,10 +43,62 @@
       }
     },
     {
+      "type": "text",
+      "span": { "start": 24, "end": 31, "line": 3, "column": 1, "coordinate_system": "decoded_utf8" },
+      "text": "第二段"
+    },
+    {
+      "type": "source-note",
+      "span": { "start": 31, "end": 51, "line": 4, "column": 1, "coordinate_system": "decoded_utf8" },
+      "text": "（古伝説と、シルレルの詩から。）",
+      "note_type": "source-attribution",
+      "placement": "back",
+      "classification": "heuristic",
+      "source_pointer": "blocks[2]"
+    },
+    {
       "type": "heading",
-      "span": { "start": 24, "end": 28, "line": 3, "column": 1 },
+      "span": { "start": 51, "end": 55, "line": 5, "column": 1 },
       "text": "一",
       "level": 1
+    }
+  ],
+  "paragraphs": [
+    {
+      "id": "p000000",
+      "span": { "start": 0, "end": 24, "coordinate_system": "decoded_utf8" },
+      "span_source": "direct",
+      "node_range": { "start": 0, "end": 4 },
+      "role": "body",
+      "source_pointer": "blocks[0]",
+      "classification": "direct"
+    },
+    {
+      "id": "p000001",
+      "span": { "start": 24, "end": 31, "coordinate_system": "decoded_utf8" },
+      "span_source": "direct",
+      "node_range": { "start": 4, "end": 5 },
+      "role": "body",
+      "source_pointer": "blocks[1]",
+      "classification": "direct"
+    },
+    {
+      "id": "p000002",
+      "span": { "start": 31, "end": 51, "coordinate_system": "decoded_utf8" },
+      "span_source": "direct",
+      "node_range": { "start": 5, "end": 6 },
+      "role": "source-note",
+      "source_pointer": "blocks[2]",
+      "classification": "heuristic"
+    },
+    {
+      "id": "p000003",
+      "span": { "start": 51, "end": 55, "coordinate_system": "decoded_utf8" },
+      "span_source": "direct",
+      "node_range": { "start": 6, "end": 7 },
+      "role": "body",
+      "source_pointer": "blocks[3]",
+      "classification": "direct"
     }
   ],
   "warnings": [

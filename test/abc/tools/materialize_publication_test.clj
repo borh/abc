@@ -28,6 +28,13 @@
     :output-dir out-dir
     :generated-at generated-at}))
 
+(defn- tei-element-body [tei local-name]
+  (second
+   (re-find (re-pattern (str "(?s)<(?:[A-Za-z0-9_-]+:)?" local-name
+                             "(?:\\s[^>]*)?>(.*?)</(?:[A-Za-z0-9_-]+:)?"
+                             local-name ">"))
+            tei)))
+
 (deftest manifest-schema-accepts-plaintext-artifact-kind-test
   (let [manifest-schema (files/read-json "schemas/manifest.schema.json")
         example-manifest (files/read-json "examples/v0/example-work/manifest.json")]
@@ -71,6 +78,16 @@
         (is (string/includes? (slurp plain-file) "吾輩猫"))
         (is (re-find #"<(?:[A-Za-z0-9_-]+:)?ruby(?:\s|>)"
                      (slurp tei-file)))
+        (let [plain-text (slurp plain-file)
+              tei-text (slurp tei-file)
+              body-text (tei-element-body tei-text "body")
+              back-text (tei-element-body tei-text "back")]
+          (is (= 2 (count (re-seq #"<(?:[A-Za-z0-9_-]+:)?p(?:\s|>)"
+                                  body-text))))
+          (is (not (string/includes? body-text "（古伝説と、シルレルの詩から。）")))
+          (is (string/includes? back-text "type=\"source-attribution\""))
+          (is (string/includes? back-text "（古伝説と、シルレルの詩から。）"))
+          (is (string/ends-with? plain-text "\n\n（古伝説と、シルレルの詩から。）")))
         (is (nil? (schema/validation-errors manifest-schema plaintext-manifest)))
         (is (nil? (schema/validation-errors manifest-schema tei-manifest)))
         (is (nil? (schema/validation-errors

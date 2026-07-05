@@ -15,6 +15,13 @@ report_md="$out_dir/coverage.md"
 supported_mapping="$out_dir/mapping-supported.json"
 supported_summary_json="$out_dir/coverage-supported.summary.json"
 supported_report_md="$out_dir/coverage-supported.md"
+unknown_mapping="$out_dir/mapping-unknown-pointer.json"
+unknown_summary_json="$out_dir/coverage-unknown-pointer.summary.json"
+unknown_report_md="$out_dir/coverage-unknown-pointer.md"
+valid_custom_contract="$out_dir/custom-contract.valid.json"
+invalid_custom_contract="$out_dir/custom-contract.invalid.json"
+invalid_contract_summary_json="$out_dir/coverage-invalid-contract.summary.json"
+invalid_contract_report_md="$out_dir/coverage-invalid-contract.md"
 
 cat > "$parser_schema" <<'JSON'
 {
@@ -118,6 +125,20 @@ cat > "$source_delta" <<'JSON'
 }
 JSON
 
+cat > "$valid_custom_contract" <<'JSON'
+{
+  "$id": "https://w3id.org/abc/schemas/ir-publication-preservation-v1.json",
+  "schema_version": "2026.07.06"
+}
+JSON
+
+cat > "$invalid_custom_contract" <<'JSON'
+{
+  "schema_id": "urn:example:invalid-contract",
+  "schema_version": "2026.07.06"
+}
+JSON
+
 python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
   --parser-ir-schema "$parser_schema" \
   --mapping "$mapping" \
@@ -161,3 +182,51 @@ python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
 
 jq -e '.unsupported_gaps.count == 0' "$supported_summary_json" >/dev/null
 jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_CUSTOM_CONTRACT_MISSING"' "$supported_summary_json" >/dev/null
+
+cat > "$unknown_mapping" <<'JSON'
+{
+  "mapping_id": "https://w3id.org/abc/mappings/fixture-unknown",
+  "mapping_version": "0.2.3",
+  "mapping_schema_hash": "sha256:38e7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4",
+  "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
+  "target_parser_ir_schema_hash": "sha256:fixture-parser-ir",
+  "transform_rule_descriptions": [
+    {
+      "rule_id": "X-01",
+      "category": "AMBIGUITY",
+      "aat_pointer": "blocks[].content[].mystery_marker",
+      "parser_ir_pointer": "parser.unknown",
+      "description": "fixture unknown source construct"
+    }
+  ]
+}
+JSON
+
+python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
+  --parser-ir-schema "$parser_schema" \
+  --mapping "$unknown_mapping" \
+  --source-summary "$source_summary" \
+  --matrix-summary "$matrix_summary" \
+  --source-delta-summary "$source_delta" \
+  --custom-contract-schema "$valid_custom_contract" \
+  --summary-json "$unknown_summary_json" \
+  --report-md "$unknown_report_md"
+
+jq -e '.unsupported_gaps.count == 1' "$unknown_summary_json" >/dev/null
+jq -e '.unsupported_gaps.items[0].aat_pointer == "blocks[].content[].mystery_marker"' "$unknown_summary_json" >/dev/null
+jq -e '.unsupported_gaps.items[0].owner == "parser_ir_schema"' "$unknown_summary_json" >/dev/null
+jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_UNSUPPORTED_GAPS"' "$unknown_summary_json" >/dev/null
+
+python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
+  --parser-ir-schema "$parser_schema" \
+  --mapping "$supported_mapping" \
+  --source-summary "$source_summary" \
+  --matrix-summary "$matrix_summary" \
+  --source-delta-summary "$source_delta" \
+  --custom-contract-schema "$invalid_custom_contract" \
+  --summary-json "$invalid_contract_summary_json" \
+  --report-md "$invalid_contract_report_md"
+
+jq -e '.custom_contract.verdict == "CUSTOM_CONTRACT_INVALID"' "$invalid_contract_summary_json" >/dev/null
+jq -e '.custom_contract.schema_id == "urn:example:invalid-contract"' "$invalid_contract_summary_json" >/dev/null
+jq -e '.verdict != "IR_PUBLICATION_COVERAGE_COMPLETE"' "$invalid_contract_summary_json" >/dev/null

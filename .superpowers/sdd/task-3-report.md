@@ -32,6 +32,15 @@
 - Extended smoke script with a second fixture run proving
   `IR_PUBLICATION_COVERAGE_BLOCKED_CUSTOM_CONTRACT_MISSING` when unsupported
   gaps are absent.
+- Added defensive handling in `custom_contract_block` for invalid contract JSON and a
+  required contract identifier check, emitting `CUSTOM_CONTRACT_INVALID` unless
+  the contract ID matches `https://w3id.org/abc/schemas/ir-publication-preservation-v1.json`.
+- Updated `source_construct_coverage` so unknown/unclassified AAT pointers are
+  classified as `unsupported_gap` and included with explicit owners in unsupported items.
+- Added smoke coverage for:
+  - unknown AAT pointer producing an `unsupported_gap`, and
+  - valid/invalid custom contract payloads so invalid contracts do not reach
+    `IR_PUBLICATION_COVERAGE_COMPLETE`.
 
 ## Tests Run
 
@@ -40,7 +49,7 @@
 
 ## Commit
 
-- `6af5985`
+- `606463a`
 
 ## Self Review
 

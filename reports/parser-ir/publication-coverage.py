@@ -12,6 +12,7 @@ from typing import Any
 
 SCHEMA_VERSION = "ir-publication-coverage-v1"
 REQUIRED_PARSERS = ("aozora2html", "aozora-epub3", "aozora-rs", "aozora2", "aozora")
+REQUIRED_CUSTOM_CONTRACT_ID = "https://w3id.org/abc/schemas/ir-publication-preservation-v1.json"
 PLAINTEXT_POLICY = {
     "plaintext_surface": "visible_body_text",
     "metadata_policy": "exclude_ruby_readings_layout_source_notes_custom_records_warnings_and_provenance",
@@ -178,7 +179,7 @@ def source_construct_coverage(mapping: dict[str, Any]) -> dict[str, Any]:
         if category == "UNSUPPORTED":
             coverage_class = "unsupported_gap"
         if coverage_class is None:
-            coverage_class = "tei_policy_projection"
+            coverage_class = "unsupported_gap"
 
         if construct not in by_construct:
             by_construct[construct] = {
@@ -259,10 +260,30 @@ def custom_contract_block(custom_contract_schema: pathlib.Path | None) -> dict[s
             "schema_version": None,
             "message": "ABC custom preservation contract has not been supplied to this report.",
         }
-    contract = load_json(custom_contract_schema)
+
+    try:
+        contract = load_json(custom_contract_schema)
+    except json.JSONDecodeError:
+        return {
+            "verdict": "CUSTOM_CONTRACT_INVALID",
+            "schema_id": None,
+            "schema_version": None,
+            "path": str(custom_contract_schema),
+            "message": "ABC custom preservation contract is not valid JSON.",
+        }
+
+    contract_id = contract.get("$id") or contract.get("schema_id")
+    if contract_id != REQUIRED_CUSTOM_CONTRACT_ID:
+        return {
+            "verdict": "CUSTOM_CONTRACT_INVALID",
+            "schema_id": contract_id,
+            "schema_version": contract.get("schema_version"),
+            "path": str(custom_contract_schema),
+            "message": "ABC custom preservation contract does not identify the required contract schema.",
+        }
     return {
         "verdict": "CUSTOM_CONTRACT_PRESENT",
-        "schema_id": contract.get("$id") or contract.get("schema_id"),
+        "schema_id": contract_id,
         "schema_version": contract.get("schema_version"),
         "path": str(custom_contract_schema),
     }

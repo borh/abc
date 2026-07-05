@@ -12,6 +12,7 @@ use crate::warehouse::schema::{RunAnalyzerRow, WarehousePaths, WarehouseTable};
 pub enum OrthoDetectMode {
     Off,
     Heuristic,
+    Ml,
 }
 
 /// Controls how analysis and comparison output rows are serialized.
@@ -94,6 +95,8 @@ pub(crate) struct SerialRunOptions<'a> {
     pub(crate) warehouse: Option<WarehouseRunOptions>,
     pub(crate) progress: Option<SerialProgress>,
     pub(crate) ortho_detect: OrthoDetectMode,
+    /// Path to a trained ML model file (bincode). Required when `ortho_detect == Ml`.
+    pub(crate) ortho_ml_model: Option<std::path::PathBuf>,
 }
 
 #[derive(Debug, Clone)]

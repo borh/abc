@@ -10,6 +10,7 @@ members = [
     "crates/ab-diff-utils",
     "crates/ab-morph-diff",
     "crates/ab-ortho-detect",
+    "crates/ab-ortho-detect-ml",
     "crates/ab-plaintext",
     "crates/ab-morph-analyzers",
     "crates/ab-morph-run",
@@ -57,6 +58,10 @@ jsonschema = "0.46"
 rayon = "1.10"
 regex = "1.10"
 rustc-hash = "2"
+linfa-logistic = "0.8"
+ndarray = "0.16"
+linfa = "0.8"
+bincode = "1"
 serde = { version = "1.0", features = ["derive", "rc"] }
 serde_json = { version = "1.0", features = ["unbounded_depth"] }
 serde_stacker = "0.1"
@@ -66,6 +71,7 @@ tempfile = "3"
 tl = "0.7"
 toml = "1.1.2"
 toml_edit = "0.22"
+thiserror = "2"
 unicode-normalization = "0.1"
 unicode-properties = "0.1"
 proptest = "1.5"

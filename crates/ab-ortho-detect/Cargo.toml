@@ -8,6 +8,9 @@ license.workspace = true
 serde = { workspace = true, features = ["derive"] }
 ab-plaintext = { workspace = true }
 regex = { workspace = true }
+thiserror = { workspace = true }
+sha2 = { workspace = true }
+bincode = { workspace = true }
 
 [dev-dependencies]
 ab-plaintext = { workspace = true }

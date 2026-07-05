@@ -35,6 +35,7 @@ pub(crate) fn run_analyze_aat(
         None,
         None,
         OrthoDetectMode::Off,
+        None,
     )
 }
 
@@ -57,6 +58,7 @@ pub(crate) fn run_analyze_aat_with_nway(
     max_nway_examples_per_text: Option<usize>,
     string_stats_output: Option<&Path>,
     ortho_detect: OrthoDetectMode,
+    ortho_ml_model: Option<PathBuf>,
 ) -> Result<()> {
     run_analyze_aat_with_nway_impl(
         aat,
@@ -76,6 +78,7 @@ pub(crate) fn run_analyze_aat_with_nway(
         max_nway_examples_per_text,
         string_stats_output,
         ortho_detect,
+        ortho_ml_model,
     )
 }
 
@@ -98,6 +101,7 @@ pub(crate) fn run_analyze_aat_with_nway_impl(
     max_nway_examples_per_text: Option<usize>,
     string_stats_output: Option<&Path>,
     ortho_detect: OrthoDetectMode,
+    ortho_ml_model: Option<PathBuf>,
 ) -> Result<()> {
     if aat.is_none() == aat_dir.is_none() {
         bail!("provide exactly one of --aat or --aat-dir");
@@ -133,6 +137,7 @@ pub(crate) fn run_analyze_aat_with_nway_impl(
         max_nway_examples_per_text,
         string_stats_output,
         ortho_detect,
+        ortho_ml_model,
     )
 }
 
@@ -218,7 +223,9 @@ pub(crate) fn run_analyze_aat_warehouse_impl(
                     label: format!("warehouse:{run_id}"),
                     total: input_count,
                 }),
+                // TODO(phase2-followup): thread --ortho-detect through the parallel/warehouse/selected paths
                 ortho_detect: OrthoDetectMode::Off,
+                ortho_ml_model: None,
             },
         )?;
     } else {
@@ -315,7 +322,9 @@ pub(crate) fn run_analyze_aat_selected_impl(
         None,
         None,
         None,
+        // TODO(phase2-followup): thread --ortho-detect through the parallel/warehouse/selected paths
         OrthoDetectMode::Off,
+        None,
     )
 }
 
@@ -339,6 +348,7 @@ pub(crate) fn run_analyze_aat_inputs(
     max_nway_examples_per_text: Option<usize>,
     string_stats_output: Option<&Path>,
     ortho_detect: OrthoDetectMode,
+    ortho_ml_model: Option<PathBuf>,
 ) -> Result<()> {
     if analyzer_ids.is_empty() {
         bail!("provide at least one --analyzer");
@@ -400,6 +410,7 @@ pub(crate) fn run_analyze_aat_inputs(
                 warehouse: None,
                 progress: None,
                 ortho_detect,
+                ortho_ml_model,
             },
         )?
     };
@@ -493,6 +504,58 @@ pub(crate) fn run_analyze_aat_serial(
     let mut warehouse_error_count = 0u64;
     let mut string_stats = StringStatsReport::default();
     let progress = options.progress.clone();
+
+    // Construct the ortho detector ONCE per pipeline invocation.
+    // Both `Heuristic` and `Ml` end up as `Arc<dyn OrthoDetector>` so the
+    // per-document detection dispatch is uniform (the Phase 1 inlined
+    // `HeuristicV1` special-case is removed).
+    let detector: Option<Arc<dyn OrthoDetector>> = match options.ortho_detect {
+        OrthoDetectMode::Off => None,
+        OrthoDetectMode::Heuristic => {
+            let vibrato = match ab_morph_analyzers::VibratoAnalyzer::unidic_cwj_default() {
+                Ok(v) => Arc::new(v) as Arc<dyn ab_ortho_detect::OrthoTokenizer>,
+                Err(error) => {
+                    if let Some(writer) = &mut errors_writer {
+                        write_error_row(
+                            &mut **writer,
+                            &RunErrorRow {
+                                input_path: String::new(),
+                                source_id: None,
+                                text_id: None,
+                                analyzer: None,
+                                stage: "ortho_detect_load".to_owned(),
+                                error: error.to_string(),
+                            },
+                        )?;
+                    } else {
+                        eprintln!("ab-morph-run: failed to load Vibrato for ortho detection: {error}");
+                    }
+                    return Err(error.into());
+                }
+            };
+            Some(Arc::new(
+                ab_ortho_detect::heuristic::HeuristicV1::new(
+                    vibrato,
+                    ab_ortho_detect::heuristic::HeuristicConfig::default(),
+                ),
+            ))
+        }
+        OrthoDetectMode::Ml => {
+            let path = options.ortho_ml_model.as_ref().ok_or_else(|| {
+                anyhow::anyhow!(
+                    "--ortho-ml-model is required for --ortho-detect=ml (this should have been caught at CLI parse)"
+                )
+            })?;
+            let model = ab_ortho_detect::ml::MlLogisticRegression::load(path).map_err(|e| {
+                anyhow::anyhow!(
+                    "failed to load ML model from {}: {}",
+                    path.display(),
+                    e
+                )
+            })?;
+            Some(Arc::new(model))
+        }
+    };
 
     for (input_index, input) in inputs.into_iter().enumerate() {
         let input_path = input.display().to_string();
@@ -588,46 +651,20 @@ pub(crate) fn run_analyze_aat_serial(
             }
         };
         // Orthographic normalization (katakana→hiragana) for pre-war text.
-        // Construct the detection Vibrato ONCE per pipeline invocation (not per document).
-        // NOTE(phase1): a dedicated VibratoAnalyzer instance is loaded even if
-        // one is already in `analyzers` — reusing it would require exposing the
-        // private LoadedAnalyzer enum. Acceptable for an evaluation harness.
+        // Detection dispatch is polymorphic: the detector (heuristic or ML) was
+        // constructed once above behind `Arc<dyn OrthoDetector>`.
         let (normalized_text, offset_map_opt, annotations_opt): (
             String,
             Option<ab_ortho_detect::OffsetMap>,
             Option<Vec<ab_ortho_detect::OrthoAnnotation>>,
-        ) = if options.ortho_detect == crate::OrthoDetectMode::Heuristic {
-            let vibrato = match ab_morph_analyzers::VibratoAnalyzer::unidic_cwj_default() {
-                Ok(v) => std::sync::Arc::new(v) as std::sync::Arc<dyn ab_ortho_detect::OrthoTokenizer>,
-                Err(error) => {
-                    if let Some(writer) = &mut errors_writer {
-                        write_error_row(
-                            &mut **writer,
-                            &RunErrorRow {
-                                input_path: input_path.clone(),
-                                source_id: Some(source_id.clone()),
-                                text_id: None,
-                                analyzer: None,
-                                stage: "ortho_detect_load".to_owned(),
-                                error: error.to_string(),
-                            },
-                        )?;
-                        continue;
-                    } else {
-                        return Err(error.into());
-                    }
-                }
-            };
-            let detector = ab_ortho_detect::heuristic::HeuristicV1::new(
-                vibrato,
-                ab_ortho_detect::heuristic::HeuristicConfig::default(),
-            );
+        ) = if let Some(ref det) = detector {
             let sentences = ab_plaintext::sentence_split(&document.text);
-            let annotations = detector.detect(&sentences);
+            let annotations = det.detect(&sentences);
             if annotations.is_empty() {
                 (document.text.clone(), None, None)
             } else {
-                let (norm_text, map) = ab_ortho_detect::ortho_normalize(&document.text, &annotations);
+                let (norm_text, map) =
+                    ab_ortho_detect::ortho_normalize(&document.text, &annotations);
                 (norm_text, Some(map), Some(annotations))
             }
         } else {
@@ -681,10 +718,36 @@ pub(crate) fn run_analyze_aat_serial(
                     return Err(error);
                 }
             };
-            // Remap morpheme byte_spans from normalized coords to original-doc coords,
-            // and attach the ortho provenance to the analysis.
+            // Remap morpheme byte_spans / char_spans / surfaces from normalized
+            // coords to original-doc coords, and attach the ortho provenance to
+            // the analysis. `source_text` is set to the original document text so
+            // that downstream `compare_pair` / `compare_pair_with_source_text`
+            // / `compare_nway_with_source_text` are all consistent (spec
+            // invariant #2: byte_span, char_span, surface, source_text all
+            // reference the original doc).
             if let Some(ref map) = offset_map_opt {
-                ab_morph_analyzers::span_builder::remap_spans(&mut analysis, map);
+                match ab_morph_analyzers::span_builder::remap_spans(
+                    &mut analysis,
+                    map,
+                    &document.text,
+                ) {
+                    Ok(()) => {
+                        // Honor spec invariant #2: byte_span/char_span/surface now in
+                        // original-doc coords, so source_text must be the original.
+                        analysis.source_text = document.text.clone();
+                    }
+                    Err(e) => {
+                        // Morphemes remain in normalized coords. Leave source_text as
+                        // the normalized text the analyzer produced (consistent with
+                        // the morphemes). Route the error to errors_writer for
+                        // diagnosis.
+                        if let Some(writer) = &mut errors_writer {
+                            write_ortho_remap_error(&mut **writer, &source_id, &e)?;
+                        } else {
+                            eprintln!("ortho_remap error for {source_id}: {e}");
+                        }
+                    }
+                }
             }
             analysis.ortho_annotations = annotations_opt.clone();
             analysis.ortho_offset_map = offset_map_opt.clone();
@@ -944,7 +1007,9 @@ pub(crate) fn run_analyze_aat_warehouse_parallel(
                                 label: format!("warehouse-worker-{job_index}/shard-{shard_index}"),
                                 total: batch_len,
                             }),
+                            // TODO(phase2-followup): thread --ortho-detect through the parallel/warehouse/selected paths
                             ortho_detect: OrthoDetectMode::Off,
+                            ortho_ml_model: None,
                         },
                     );
                     complete_warehouse_work_batch(&queue, batch_is_large);
@@ -1259,7 +1324,9 @@ pub(crate) fn run_analyze_aat_parallel(
                         collect_string_stats,
                         warehouse: None,
                         progress: None,
+                        // TODO(phase2-followup): thread --ortho-detect through the parallel/warehouse/selected paths
                         ortho_detect: OrthoDetectMode::Off,
+                        ortho_ml_model: None,
                     },
                 )?;
                 Ok(ShardOutput {

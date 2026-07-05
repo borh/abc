@@ -91,16 +91,12 @@ pub fn extract_char_features(text: &str) -> CharFeatures {
         runs
     };
 
-    // Repeated bigram pattern ratio: count of distinct bigrams that appear ≥2 times
-    let repeated_bigram_pattern_count = if total_chars >= 2 {
-        let mut bigram_counts = std::collections::HashMap::new();
-        for window in chars.windows(2) {
-            *bigram_counts.entry((window[0], window[1])).or_insert(0usize) += 1;
-        }
-        bigram_counts.values().filter(|&&c| c >= 2).count()
-    } else {
-        0
-    };
+    // Repeated bigram pattern ratio: count of IMMEDIATE ABAB echoes
+    // (optionally ッ-separated). Faithful port of the Python heuristic's
+    // `len(re.findall(r"(..)ッ?\1", text))` — NOT "distinct bigrams appearing
+    // >=2 times anywhere" (the earlier Rust definition was broader and caused
+    // false rejections; see reports/ortho-detect/2026-07-05-phase2-recall-floor.md).
+    let repeated_bigram_pattern_count = count_immediate_bigram_echoes(&chars);
 
     // Does the sentence end in katakana?
     let katakana_at_end = chars.last().is_some_and(|ch| is_katakana(*ch));
@@ -146,6 +142,72 @@ fn is_kanji(ch: char) -> bool {
         || ('\u{3400}'..='\u{4DBF}').contains(&ch) // CJK Ext-A
 }
 
+/// Count immediate ABAB-style bigram echoes (optionally ッ-separated), faithful
+/// to the Python heuristic's `len(re.findall(r"(..)ッ?\1", text))`.
+///
+/// A match at position `i` is: chars[i..i+2] == chars[i+2..i+4] (no separator)
+/// OR chars[i+2] == 'ッ' AND chars[i..i+2] == chars[i+3..i+5] (ッ-separated).
+/// Matches are non-overlapping (advance past a match); this mirrors Python's
+/// `re.findall` leftmost-non-overlapping semantics.
+fn count_immediate_bigram_echoes(chars: &[char]) -> usize {
+    let n = chars.len();
+    if n < 4 {
+        return 0;
+    }
+    let mut count = 0usize;
+    let mut i = 0usize;
+    while i + 4 <= n {
+        let ab = (chars[i], chars[i + 1]);
+        // No separator: AB AB (positions i, i+2).
+        if i + 4 <= n && ab == (chars[i + 2], chars[i + 3]) {
+            count += 1;
+            i += 4;
+            continue;
+        }
+        // ッ separator: AB ッ AB (positions i, i+2, i+3).
+        if i + 5 <= n && chars[i + 2] == 'ッ' && ab == (chars[i + 3], chars[i + 4]) {
+            count += 1;
+            i += 5;
+            continue;
+        }
+        i += 1;
+    }
+    count
+}
+
+/// Canonical feature vector order used by the ML trainer + runtime classifier.
+/// The model's weight vector indexes match this order. DO NOT reorder without
+/// retraining + rehashing (spec Decision #10 partitions the model hash by
+/// this exact order).
+pub const FEATURE_NAMES: &[&str] = &[
+    "total_chars",
+    "hiragana_ratio",
+    "katakana_ratio",
+    "kanji_ratio",
+    "unique_char_ratio",
+    "max_bigram_repeat_ratio",
+    "char_run_repeat_ratio",
+    "repeated_bigram_pattern_ratio",
+    "katakana_at_sentence_end",
+];
+
+/// Project `CharFeatures` into the canonical ML feature vector.
+/// `katakana_at_sentence_end` (bool) becomes 0.0/1.0 so the vector is `f64`-uniform.
+#[must_use]
+pub fn features_to_vector(f: &CharFeatures) -> Vec<f64> {
+    vec![
+        f.total_chars as f64,
+        f.hiragana_ratio,
+        f.katakana_ratio,
+        f.kanji_ratio,
+        f.unique_char_ratio,
+        f.max_bigram_repeat_ratio,
+        f.char_run_repeat_ratio,
+        f.repeated_bigram_pattern_ratio,
+        if f.katakana_at_sentence_end { 1.0 } else { 0.0 },
+    ]
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -182,8 +244,36 @@ mod tests {
 
     #[test]
     fn detects_bigram_patterns() {
+        // "ABABAB" — immediate ABAB echoes at positions 0 and 2.
         let f = extract_char_features("ABABAB");
         assert!(f.repeated_bigram_pattern_ratio > 0.0);
+    }
+
+    #[test]
+    fn immediate_bigram_echo_counts_abab() {
+        // ABAB = 1 echo (positions 0..2 == 2..4).
+        let chars: Vec<char> = "ABAB".chars().collect();
+        assert_eq!(count_immediate_bigram_echoes(&chars), 1);
+        // ABABAB = 1 non-overlapping echo (advance by 4 after the first match).
+        let chars: Vec<char> = "ABABAB".chars().collect();
+        assert_eq!(count_immediate_bigram_echoes(&chars), 1);
+    }
+
+    #[test]
+    fn immediate_bigram_echo_counts_tsu_separated() {
+        // ABッAB = 1 ッ-separated echo.
+        let chars: Vec<char> = "ABッAB".chars().collect();
+        assert_eq!(count_immediate_bigram_echoes(&chars), 1);
+    }
+
+    #[test]
+    fn immediate_bigram_echo_zero_for_non_repeating() {
+        // ABXY — different bigrams, no immediate echo.
+        let chars: Vec<char> = "ABXY".chars().collect();
+        assert_eq!(count_immediate_bigram_echoes(&chars), 0);
+        // AB AB with separator 、 (not ッ) — does NOT match.
+        let chars2: Vec<char> = "AB、AB".chars().collect();
+        assert_eq!(count_immediate_bigram_echoes(&chars2), 0);
     }
 
     #[test]
@@ -196,5 +286,28 @@ mod tests {
     fn katakana_not_at_end() {
         let f = extract_char_features("ダという猫");
         assert!(!f.katakana_at_sentence_end);
+    }
+
+    #[test]
+    fn feature_vector_length_matches_names() {
+        let f = extract_char_features("アアアア");
+        assert_eq!(FEATURE_NAMES.len(), features_to_vector(&f).len());
+    }
+
+    #[test]
+    fn boolean_feature_is_zero_or_one() {
+        // "猫ダ" ends in katakana (ダ) → katakana_at_sentence_end == true.
+        let f = extract_char_features("猫ダ");
+        let v = features_to_vector(&f);
+        let idx = FEATURE_NAMES
+            .iter()
+            .position(|n| *n == "katakana_at_sentence_end")
+            .unwrap();
+        assert!((v[idx] - 1.0).abs() < 1e-9);
+
+        // "ダという猫" ends in kanji (猫) → false.
+        let f2 = extract_char_features("ダという猫");
+        let v2 = features_to_vector(&f2);
+        assert!((v2[idx] - 0.0).abs() < 1e-9);
     }
 }

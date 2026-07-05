@@ -376,6 +376,45 @@ pub struct ProvenanceCounts {
 pub struct AatProjection {
     pub blocks: Vec<serde_json::Value>,
     pub warnings: Vec<ProjectionWarning>,
+    /// Orthographic normalizations applied to visible text, with original-text
+    /// byte ranges. External to the Block/Inline tree — does not mutate IR nodes.
+    /// Per spec §"IR/AAT mode": ruby bases and gaiji-resolved text in the
+    /// visible-text projection may contain katakana and will be normalized.
+    ///
+    /// # Phase 2 status — RESERVED, no producer yet
+    /// The ab-ir pipeline does NOT currently populate this field from the
+    /// incoming AAT (it is `None` at all construction sites). It is reserved
+    /// for a future TEI/XML renderer that will consume `ortho_choices()` to
+    /// emit `<choice><orig>…</orig><reg>…</reg></choice>`. Wiring the producer
+    /// is a separate sub-project (no TEI renderer exists in the workspace).
+    pub ortho_normalizations:
+        Option<Vec<ab_ortho_detect::OrthoAnnotation>>,
+}
+
+impl AatProjection {
+    /// Render the ortho annotations as JSON `<choice>` elements (one per
+    /// annotation): `{"choice": {"orig": <orig>, "reg": <reg>}}`. `<orig>` is
+    /// sourced from `original_visible_text` at the annotation's
+    /// `source_byte_range`; `<reg>` is the annotation's `normalized_text`.
+    /// A future TEI XML renderer consumes this projection to emit
+    /// `<choice><orig>…</orig><reg>…</reg></choice>`.
+    ///
+    /// Returns an empty vector when `ortho_normalizations` is `None` or empty.
+    #[must_use]
+    pub fn ortho_choices(&self, original_visible_text: &str) -> Vec<serde_json::Value> {
+        let Some(anns) = &self.ortho_normalizations else {
+            return Vec::new();
+        };
+        anns.iter()
+            .map(|a| {
+                let orig = original_visible_text
+                    .get(a.source_byte_range.clone())
+                    .unwrap_or("")
+                    .to_string();
+                json!({"choice": {"orig": orig, "reg": a.normalized_text}})
+            })
+            .collect()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -669,7 +708,11 @@ pub fn blocks_to_aat_projection(blocks: &[Block]) -> AatProjection {
             }),
         })
         .collect();
-    AatProjection { blocks, warnings }
+    AatProjection {
+        blocks,
+        warnings,
+        ortho_normalizations: None,
+    }
 }
 
 #[must_use]
@@ -1556,5 +1599,58 @@ mod tests {
 
         assert_eq!(json[0]["content"][0]["x-provenance"], "source_supplement");
         assert_eq!(provenance_counts(&blocks).source_supplement, 1);
+    }
+}
+
+#[cfg(test)]
+mod ortho_tests {
+    use super::*;
+    use ab_ortho_detect::{OrthoAnnotation, OrthoNormalization};
+    use std::ops::Range;
+
+    fn ann(start: usize, end: usize, norm: &str) -> OrthoAnnotation {
+        OrthoAnnotation {
+            source_byte_range: start..end,
+            normalized_text: norm.to_string(),
+            kind: OrthoNormalization::ScriptKatakanaToHiragana,
+            confidence: Some(95),
+        }
+    }
+
+    #[test]
+    fn aat_projection_with_ortho_derives_eq() {
+        let a = AatProjection {
+            blocks: vec![],
+            warnings: vec![],
+            ortho_normalizations: Some(vec![ann(0, 9, "吾輩は猫である")]),
+        };
+        // Eq must hold (OrthoAnnotation derives Eq; confidence is Option<u8>).
+        assert_eq!(a, a.clone());
+    }
+
+    #[test]
+    fn ortho_choices_extracts_orig_from_visible_text() {
+        // "吾輩ハ猫デアル" = 7 CJK chars × 3 bytes = 21 bytes.
+        // Annotation source_byte_range spans the whole string (0..21);
+        // normalized = "吾輩は猫である".
+        let proj = AatProjection {
+            blocks: vec![],
+            warnings: vec![],
+            ortho_normalizations: Some(vec![ann(0, 21, "吾輩は猫である")]),
+        };
+        let choices = proj.ortho_choices("吾輩ハ猫デアル");
+        assert_eq!(choices.len(), 1);
+        assert_eq!(choices[0]["choice"]["orig"], "吾輩ハ猫デアル");
+        assert_eq!(choices[0]["choice"]["reg"], "吾輩は猫である");
+    }
+
+    #[test]
+    fn ortho_choices_empty_when_none() {
+        let proj = AatProjection {
+            blocks: vec![],
+            warnings: vec![],
+            ortho_normalizations: None,
+        };
+        assert!(proj.ortho_choices("any text").is_empty());
     }
 }

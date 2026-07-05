@@ -10,6 +10,7 @@ keywords = ["japanese", "text-processing", "parser", "ast"]
 categories = ["text-processing"]
 
 [dependencies]
+ab-ortho-detect = { workspace = true }
 ab-plaintext = { workspace = true }
 serde.workspace = true
 serde_json.workspace = true

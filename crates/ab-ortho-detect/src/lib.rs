@@ -2,9 +2,10 @@ pub mod types;
 pub mod script;
 pub mod features;
 pub mod heuristic;
+pub mod ml;
 
 pub use types::{
-    OffsetMap, OrthoAnnotation, OrthoDetectorId, OrthoNormalization,
+    OffsetMap, OrthoAnnotation, OrthoDetectorId, OrthoMapError, OrthoNormalization,
 };
 
 use ab_plaintext::SentenceSpan;
@@ -108,7 +109,7 @@ mod tests {
         let original = "吾輩ハ猫デアル";
         let (text, map) = ortho_normalize(original, &annotations);
         assert_eq!(text, "吾輩は猫である");
-        assert_eq!(map.to_original(0..text.len()), 0..original.len());
+        assert_eq!(map.to_original(0..text.len()).unwrap(), 0..original.len());
     }
 
     #[test]
@@ -125,7 +126,7 @@ mod tests {
         let original = "今日ヴ";
         let (text, map) = ortho_normalize(original, &annotations);
         assert_eq!(text, "今日う゛");
-        assert_eq!(map.to_original(0..6), 0..6);
-        assert_eq!(map.to_original(6..12), 6..9);
+        assert_eq!(map.to_original(0..6).unwrap(), 0..6);
+        assert_eq!(map.to_original(6..12).unwrap(), 6..9);
     }
 }

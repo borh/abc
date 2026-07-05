@@ -4,7 +4,7 @@ use ab_morph_diff::{Analysis, AnalyzerId, CharByteMap, FeatureMap, Morpheme, Tex
 
 use crate::AnalyzerError;
 
-use ab_ortho_detect::OffsetMap;
+use ab_ortho_detect::{OffsetMap, OrthoMapError};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct RawToken {
@@ -132,22 +132,77 @@ fn find_sequential_span(
     }
 }
 
-/// Post-process an Analysis to remap morpheme byte_spans and char_spans
-/// from normalized-text coordinates to original-text coordinates.
-pub fn remap_spans(analysis: &mut Analysis, offset_map: &OffsetMap) {
+/// Post-process an Analysis to remap morpheme `byte_span`, `char_span`, and
+/// `surface` from normalized-text coordinates to original-text coordinates.
+///
+/// This honors the Phase 2 spec invariant #2: after remapping, `byte_span`,
+/// `char_span`, and `surface` of every morpheme refer to the ORIGINAL source
+/// text (the same text the analyzer's caller will validate against), not the
+/// normalized view that was actually tokenized.
+///
+/// # Errors
+///
+/// Returns [`OrthoMapError::CrossesBoundary`] if a morpheme span crosses an
+/// annotation boundary where byte-length changed. The pipeline routes this to
+/// `errors_writer`; the morpheme is left in normalized coords for that case
+/// (diagnostic, not a crash). Returns [`OrthoMapError::UncoveredOffset`] if a
+/// morpheme byte offset does not map to any entry — this should not happen for
+/// well-formed inputs and is treated as a hard diagnostic.
+pub fn remap_spans(
+    analysis: &mut Analysis,
+    offset_map: &OffsetMap,
+    original_source_text: &str,
+) -> Result<(), OrthoMapError> {
     if offset_map.is_empty() {
-        return;
+        return Ok(());
     }
+    let char_map = CharByteMap::new(original_source_text);
+    let mut first_err: Option<OrthoMapError> = None;
     for morpheme in &mut analysis.morphemes {
-        // Split spans that cross annotation boundaries before remapping.
-        // For Phase 1, we assume single-annotation spans (the common case);
-        // cross-boundary spans (ヴ→う゛ edge) are rare and handled by
-        // the OffsetMap panic guard.
-        morpheme.byte_span = offset_map.to_original(morpheme.byte_span.clone());
-        // char_span recalculation requires the original source text.
-        // For Phase 1, keep the normalized-text char_span as an approximation.
-        // Follow-up: rebuild char_map from original text bytes.
+        match offset_map.to_original(morpheme.byte_span.clone()) {
+            Ok(remapped) => {
+                morpheme.byte_span = remapped.clone();
+                // Rebuild surface from the ORIGINAL text at the remapped range so
+                // the morpheme reports the original-doc substring rather than the
+                // normalized-text substring (e.g. "ヴ" instead of "う゛").
+                if original_source_text.is_char_boundary(remapped.start)
+                    && original_source_text.is_char_boundary(remapped.end)
+                    && remapped.end <= original_source_text.len()
+                {
+                    morpheme.surface = original_source_text[remapped.clone()].to_owned();
+                }
+                // Rebuild char_span from the original text's char map so it is
+                // expressed in original-doc char coordinates.
+                if let Some(cs) = char_byte_to_char_span(&char_map, remapped) {
+                    morpheme.char_span = cs;
+                }
+            }
+            Err(e) => {
+                // Leave this morpheme in normalized coords. Record the first
+                // error so the caller knows the Analysis is partial.
+                if first_err.is_none() {
+                    first_err = Some(e);
+                }
+            }
+        }
     }
+    match first_err {
+        Some(e) => Err(e),
+        None => Ok(()),
+    }
+}
+
+fn char_byte_to_char_span(
+    char_map: &CharByteMap,
+    byte_span: Range<usize>,
+) -> Option<Range<usize>> {
+    if byte_span.start > byte_span.end {
+        return None;
+    }
+    Some(
+        char_map.char_count_at_byte(byte_span.start)
+            ..char_map.char_count_at_byte(byte_span.end),
+    )
 }
 
 #[cfg(test)]

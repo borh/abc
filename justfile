@@ -541,9 +541,6 @@ morph-warehouse-run-with-analyzers profile="full" aat_dir=morph_warehouse_aat_di
 	  args+=(--analyzer "$analyzer"); \
 	done; \
 	AB_SUDACHI_DICT="$(nix build .#sudachi-dictionary-full --no-link --print-out-paths)/share/sudachi/system.dic" \
-	TMPDIR="{{ab_db_root}}/tmp" \
-	TMP="{{ab_db_root}}/tmp" \
-	TEMP="{{ab_db_root}}/tmp" \
 	cargo run --release -p ab-morph-run -- analyze-aat \
 		--aat-dir "{{aat_dir}}" \
 		"${args[@]}" \

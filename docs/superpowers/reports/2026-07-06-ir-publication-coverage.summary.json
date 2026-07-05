@@ -4130,7 +4130,8 @@
         "figure_metadata": 83,
         "font_tcy": 13,
         "gaiji_unresolved_reason": 4,
-        "heading_jisage_structure": 9,
+        "heading_inline_content": 2,
+        "heading_jisage_structure": 7,
         "keigakomi_yokogumi": 8,
         "provenance_metrics": 3,
         "source_identity": 5,
@@ -4138,17 +4139,15 @@
         "style_rendition": 14
       },
       "counts_by_lane": {
-        "aat_to_parser_ir_converter_delta": 9,
         "custom_sidecar": 26,
-        "parser_ir_schema_delta": 21,
+        "parser_ir_schema_delta": 23,
         "tei_plus_abc_extension": 12,
-        "tei_policy_projection": 97
+        "tei_policy_projection": 104
       },
       "counts_by_owner": {
-        "aat_to_parser_ir_converter": 9,
         "custom_schema": 26,
-        "parser_ir_schema": 21,
-        "policy": 109
+        "parser_ir_schema": 23,
+        "policy": 116
       },
       "items": [
         {
@@ -4628,9 +4627,9 @@
           "observed_occurrences": 16,
           "prevalence_source": "rule_description",
           "closure_family": "heading_jisage_structure",
-          "closure_lane": "aat_to_parser_ir_converter_delta",
-          "closure_owner": "aat_to_parser_ir_converter",
-          "admission_gate": "Converter emits paragraph/layout/heading facts consistently for heading and jisage structures."
+          "closure_lane": "tei_policy_projection",
+          "closure_owner": "policy",
+          "admission_gate": "ABC TEI profile and renderer policy admit parser-IR heading, indentation, and paragraph layout projection for heading and jisage structures."
         },
         {
           "rule_id": "I-18",
@@ -4680,9 +4679,9 @@
           "observed_occurrences": 72115,
           "prevalence_source": "rule_description",
           "closure_family": "heading_jisage_structure",
-          "closure_lane": "aat_to_parser_ir_converter_delta",
-          "closure_owner": "aat_to_parser_ir_converter",
-          "admission_gate": "Converter emits paragraph/layout/heading facts consistently for heading and jisage structures."
+          "closure_lane": "tei_policy_projection",
+          "closure_owner": "policy",
+          "admission_gate": "ABC TEI profile and renderer policy admit parser-IR heading, indentation, and paragraph layout projection for heading and jisage structures."
         },
         {
           "rule_id": "L-05",
@@ -5459,10 +5458,10 @@
           "owner": "custom_schema",
           "observed_occurrences": 28,
           "prevalence_source": "rule_description",
-          "closure_family": "heading_jisage_structure",
-          "closure_lane": "aat_to_parser_ir_converter_delta",
-          "closure_owner": "aat_to_parser_ir_converter",
-          "admission_gate": "Converter emits paragraph/layout/heading facts consistently for heading and jisage structures."
+          "closure_family": "heading_inline_content",
+          "closure_lane": "parser_ir_schema_delta",
+          "closure_owner": "parser_ir_schema",
+          "admission_gate": "Parser-IR schema represents inline children inside headings so gaiji/ruby/style facts in head text can be preserved exactly."
         },
         {
           "rule_id": "L-191",
@@ -5940,10 +5939,10 @@
           "owner": "custom_schema",
           "observed_occurrences": 249,
           "prevalence_source": "rule_description",
-          "closure_family": "heading_jisage_structure",
-          "closure_lane": "aat_to_parser_ir_converter_delta",
-          "closure_owner": "aat_to_parser_ir_converter",
-          "admission_gate": "Converter emits paragraph/layout/heading facts consistently for heading and jisage structures."
+          "closure_family": "heading_inline_content",
+          "closure_lane": "parser_ir_schema_delta",
+          "closure_owner": "parser_ir_schema",
+          "admission_gate": "Parser-IR schema represents inline children inside headings so gaiji/ruby/style facts in head text can be preserved exactly."
         },
         {
           "rule_id": "L-490",
@@ -6045,9 +6044,9 @@
           "observed_occurrences": 21,
           "prevalence_source": "rule_description",
           "closure_family": "heading_jisage_structure",
-          "closure_lane": "aat_to_parser_ir_converter_delta",
-          "closure_owner": "aat_to_parser_ir_converter",
-          "admission_gate": "Converter emits paragraph/layout/heading facts consistently for heading and jisage structures."
+          "closure_lane": "tei_policy_projection",
+          "closure_owner": "policy",
+          "admission_gate": "ABC TEI profile and renderer policy admit parser-IR heading, indentation, and paragraph layout projection for heading and jisage structures."
         },
         {
           "rule_id": "S-03",
@@ -6058,9 +6057,9 @@
           "observed_occurrences": 71461,
           "prevalence_source": "rule_description",
           "closure_family": "heading_jisage_structure",
-          "closure_lane": "aat_to_parser_ir_converter_delta",
-          "closure_owner": "aat_to_parser_ir_converter",
-          "admission_gate": "Converter emits paragraph/layout/heading facts consistently for heading and jisage structures."
+          "closure_lane": "tei_policy_projection",
+          "closure_owner": "policy",
+          "admission_gate": "ABC TEI profile and renderer policy admit parser-IR heading, indentation, and paragraph layout projection for heading and jisage structures."
         },
         {
           "rule_id": "S-04",
@@ -6071,9 +6070,9 @@
           "observed_occurrences": 16,
           "prevalence_source": "rule_description",
           "closure_family": "heading_jisage_structure",
-          "closure_lane": "aat_to_parser_ir_converter_delta",
-          "closure_owner": "aat_to_parser_ir_converter",
-          "admission_gate": "Converter emits paragraph/layout/heading facts consistently for heading and jisage structures."
+          "closure_lane": "tei_policy_projection",
+          "closure_owner": "policy",
+          "admission_gate": "ABC TEI profile and renderer policy admit parser-IR heading, indentation, and paragraph layout projection for heading and jisage structures."
         },
         {
           "rule_id": "S-07",
@@ -6084,9 +6083,9 @@
           "observed_occurrences": 87024,
           "prevalence_source": "rule_description",
           "closure_family": "heading_jisage_structure",
-          "closure_lane": "aat_to_parser_ir_converter_delta",
-          "closure_owner": "aat_to_parser_ir_converter",
-          "admission_gate": "Converter emits paragraph/layout/heading facts consistently for heading and jisage structures."
+          "closure_lane": "tei_policy_projection",
+          "closure_owner": "policy",
+          "admission_gate": "ABC TEI profile and renderer policy admit parser-IR heading, indentation, and paragraph layout projection for heading and jisage structures."
         },
         {
           "rule_id": "S-08",
@@ -6097,9 +6096,9 @@
           "observed_occurrences": 72115,
           "prevalence_source": "rule_description",
           "closure_family": "heading_jisage_structure",
-          "closure_lane": "aat_to_parser_ir_converter_delta",
-          "closure_owner": "aat_to_parser_ir_converter",
-          "admission_gate": "Converter emits paragraph/layout/heading facts consistently for heading and jisage structures."
+          "closure_lane": "tei_policy_projection",
+          "closure_owner": "policy",
+          "admission_gate": "ABC TEI profile and renderer policy admit parser-IR heading, indentation, and paragraph layout projection for heading and jisage structures."
         },
         {
           "rule_id": "U-01",

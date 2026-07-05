@@ -110,7 +110,8 @@ Classified but not admitted: 165
 | `figure_metadata` | 83 |
 | `font_tcy` | 13 |
 | `gaiji_unresolved_reason` | 4 |
-| `heading_jisage_structure` | 9 |
+| `heading_inline_content` | 2 |
+| `heading_jisage_structure` | 7 |
 | `keigakomi_yokogumi` | 8 |
 | `provenance_metrics` | 3 |
 | `source_identity` | 5 |

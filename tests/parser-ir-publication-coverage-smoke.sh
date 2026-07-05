@@ -114,6 +114,27 @@ cat > "$mapping" <<'JSON'
       "description": "Observed 13 occurrences; tcy needs schema and profile admission"
     },
     {
+      "rule_id": "S-02",
+      "category": "STRUCTURAL",
+      "aat_pointer": "blocks[].heading",
+      "parser_ir_pointer": null,
+      "description": "Observed 14 occurrences; heading structure is represented by parser-IR heading and TEI head policy"
+    },
+    {
+      "rule_id": "S-03",
+      "category": "STRUCTURAL",
+      "aat_pointer": "blocks[].jisage_block",
+      "parser_ir_pointer": null,
+      "description": "Observed 15 occurrences; jisage structure is represented by paragraph layout or indentation policy"
+    },
+    {
+      "rule_id": "L-06",
+      "category": "LOSS",
+      "aat_pointer": "blocks[].heading.content[].gaiji",
+      "parser_ir_pointer": null,
+      "description": "Observed 16 occurrences; heading inline gaiji needs heading inline-content schema support"
+    },
+    {
       "rule_id": "U-01",
       "category": "UNSUPPORTED",
       "aat_pointer": "blocks[].content[].raw_material",
@@ -237,18 +258,21 @@ jq -e '.source_construct_coverage.by_construct.caption.class == "tei_policy_proj
 jq -e '.source_construct_coverage.counts_by_class.tei_exact == 1' "$summary_json" >/dev/null
 jq -e '.source_construct_coverage.counts_by_class.tei_policy_projection == 1' "$summary_json" >/dev/null
 jq -e '.source_construct_coverage.counts_by_class.tei_plus_abc_extension == 1' "$summary_json" >/dev/null
-jq -e '.source_construct_coverage.counts_by_class.unsupported_gap == 5' "$summary_json" >/dev/null
-jq -e '.unsupported_gaps.count == 5' "$summary_json" >/dev/null
+jq -e '.source_construct_coverage.counts_by_class.unsupported_gap == 8' "$summary_json" >/dev/null
+jq -e '.unsupported_gaps.count == 8' "$summary_json" >/dev/null
 jq -e '.unsupported_gaps.items[] | select(.aat_pointer == "blocks[].content[].raw_material") | .observed_occurrences == 288' "$summary_json" >/dev/null
 jq -e '.unsupported_gaps.items[] | select(.aat_pointer == "blocks[].content[].raw_material") | .prevalence_source == "rule_description"' "$summary_json" >/dev/null
 jq -e '([.unsupported_gaps.items[] | select(.aat_pointer == "blocks[].content[].figure.caption" or .aat_pointer == "blocks[].content[].figure.filename")] | length) == 0' "$summary_json" >/dev/null
 jq -e '([.unsupported_gaps.items[] | select(.parser_ir_pointer == "heading.level" or .parser_ir_pointer == "gaiji.raw_marker")] | length) == 0' "$summary_json" >/dev/null
-jq -e '.closure_gaps.classified_but_not_admitted.count == 4' "$summary_json" >/dev/null
+jq -e '.closure_gaps.classified_but_not_admitted.count == 7' "$summary_json" >/dev/null
 jq -e '.closure_gaps.true_unsupported_gaps.count == 1' "$summary_json" >/dev/null
 jq -e '.closure_gaps.classified_but_not_admitted.items[] | select(.closure_family == "figure_metadata") | .closure_lane == "tei_policy_projection"' "$summary_json" >/dev/null
 jq -e '.closure_gaps.classified_but_not_admitted.items[] | select(.closure_family == "style_rendition") | .closure_lane == "tei_policy_projection"' "$summary_json" >/dev/null
 jq -e '.closure_gaps.classified_but_not_admitted.items[] | select(.closure_family == "span_coordinates") | .closure_lane == "custom_sidecar"' "$summary_json" >/dev/null
 jq -e '.closure_gaps.classified_but_not_admitted.items[] | select(.aat_pointer == "blocks[].heading.content[].tcy") | .closure_family == "font_tcy" and .closure_lane == "parser_ir_schema_delta"' "$summary_json" >/dev/null
+jq -e '.closure_gaps.classified_but_not_admitted.items[] | select(.aat_pointer == "blocks[].heading") | .closure_family == "heading_jisage_structure" and .closure_lane == "tei_policy_projection"' "$summary_json" >/dev/null
+jq -e '.closure_gaps.classified_but_not_admitted.items[] | select(.aat_pointer == "blocks[].jisage_block") | .closure_family == "heading_jisage_structure" and .closure_lane == "tei_policy_projection"' "$summary_json" >/dev/null
+jq -e '.closure_gaps.classified_but_not_admitted.items[] | select(.aat_pointer == "blocks[].heading.content[].gaiji") | .closure_family == "heading_inline_content" and .closure_lane == "parser_ir_schema_delta"' "$summary_json" >/dev/null
 jq -e '.closure_gaps.true_unsupported_gaps.items[0].closure_family == null' "$summary_json" >/dev/null
 jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_UNSUPPORTED_GAPS"' "$summary_json" >/dev/null
 rg -n "IR Publication Coverage" "$report_md" >/dev/null
@@ -266,8 +290,8 @@ python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
   --summary-json "$supported_summary_json" \
   --report-md "$supported_report_md"
 
-jq -e '.unsupported_gaps.count == 4' "$supported_summary_json" >/dev/null
-jq -e '.closure_gaps.classified_but_not_admitted.count == 4' "$supported_summary_json" >/dev/null
+jq -e '.unsupported_gaps.count == 7' "$supported_summary_json" >/dev/null
+jq -e '.closure_gaps.classified_but_not_admitted.count == 7' "$supported_summary_json" >/dev/null
 jq -e '.closure_gaps.true_unsupported_gaps.count == 0' "$supported_summary_json" >/dev/null
 jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_CLASSIFIED_GAPS"' "$supported_summary_json" >/dev/null
 

@@ -286,9 +286,14 @@ CLOSURE_FAMILIES = {
         "admission_gate": "ABC custom contract preserves gaiji resolution diagnostics.",
     },
     "heading_jisage_structure": {
-        "closure_lane": "aat_to_parser_ir_converter_delta",
-        "owner": "aat_to_parser_ir_converter",
-        "admission_gate": "Converter emits paragraph/layout/heading facts consistently for heading and jisage structures.",
+        "closure_lane": "tei_policy_projection",
+        "owner": "policy",
+        "admission_gate": "ABC TEI profile and renderer policy admit parser-IR heading, indentation, and paragraph layout projection for heading and jisage structures.",
+    },
+    "heading_inline_content": {
+        "closure_lane": "parser_ir_schema_delta",
+        "owner": "parser_ir_schema",
+        "admission_gate": "Parser-IR schema represents inline children inside headings so gaiji/ruby/style facts in head text can be preserved exactly.",
     },
     "font_tcy": {
         "closure_lane": "parser_ir_schema_delta",
@@ -835,6 +840,8 @@ def closure_family_for_pointer(pointer: str) -> str | None:
         return "figure_metadata"
     if pointer.endswith(".gaiji.unresolved_reason"):
         return "gaiji_unresolved_reason"
+    if ".heading.content[].gaiji" in pointer:
+        return "heading_inline_content"
     if pointer.endswith(".font_size") or pointer.endswith(".tcy"):
         return "font_tcy"
     if pointer.endswith(".keigakomi") or pointer.endswith(".yokogumi"):

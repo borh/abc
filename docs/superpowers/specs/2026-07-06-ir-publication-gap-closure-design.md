@@ -21,7 +21,7 @@ Current measured report:
   - `parser_ir_schema`: 15
   - `aat_to_parser_ir_converter`: 5
 
-Those 165 gaps are not 165 independent design problems. They collapse into ten
+Those 165 gaps are not 165 independent design problems. They collapse into eleven
 non-overlapping classifier families after more-specific layout/style families
 are matched before broad heading/jisage structure:
 
@@ -34,7 +34,8 @@ are matched before broad heading/jisage structure:
 | provenance metrics | 3 | `custom_schema` / `LOSS` | 139,773 |
 | figure metadata | 83 | `custom_schema` / `LOSS` | 25,433 |
 | gaiji unresolved reason | 4 | `custom_schema` / `LOSS` | 22,445 |
-| heading/jisage structure | 9 | policy/custom/converter mix | 303,045 |
+| heading/jisage structure | 7 | policy/converter structural bookkeeping | 303,045 |
+| heading inline content | 2 | `custom_schema` / `LOSS` | 277 |
 | font size / tcy | 13 | custom/schema mix | 54,043 |
 | keigakomi / yokogumi | 8 | custom/schema mix | 517 |
 
@@ -221,29 +222,47 @@ Admission gate:
 
 Current shape:
 
-- 28 unsupported rows
-- Includes heading style loss, heading structural rows, and jisage structural
-  rows.
+- 7 unsupported rows after heading inline content is split out.
+- Includes heading structural rows and jisage structural rows.
 
 Decision:
 
 - Heading structure: `tei_policy_projection`
   - Target: TEI `div/head`, with heading level policy.
-- Heading style: `tei_policy_projection` plus `custom_sidecar` for exact source
-  style when needed.
 - Jisage: `tei_policy_projection`
   - Target: paragraph or division `@rend` indentation policy.
-- Converter-owned structural rows: `aat_to_parser_ir_converter_delta` until
-  converter emits paragraph/layout/heading facts consistently.
 
 Admission gate:
 
 - Existing `paragraph.layout` and heading-level policy are applied to source
   rows currently reported as unsupported.
-- Converter emits Parser-IR paragraph/layout rows for jisage and heading
-  structure where the schema can already represent them.
+- ABC TEI profile and renderer policy explicitly admit parser-IR `heading`,
+  `indentation`, and paragraph `layout` as the representation of heading and
+  jisage source structure.
 
-### 9. Font Size / TCY
+### 9. Heading Inline Content
+
+Current shape:
+
+- 2 unsupported rows
+- `heading.content[].gaiji`
+
+Decision:
+
+- Class: `parser_ir_schema_delta`
+- Target: heading inline-child support in Parser-IR.
+- Rationale: the converter can emit a heading node, but the current heading
+  schema stores only flat text. Exact TEI for gaiji/ruby/style inside headings
+  needs heading inline children, not just converter bookkeeping.
+
+Admission gate:
+
+- Parser-IR heading schema supports inline children or an equivalent structured
+  heading-content representation.
+- ABC TEI renderer maps structured heading content into `head` without losing
+  gaiji/ruby/style facts.
+
+### 10. Font Size / TCY
 
 Current shape:
 
@@ -265,7 +284,7 @@ Admission gate:
 - ABC TEI profile declares concrete rendering values.
 - Custom contract preserves original marker identity for `tcy`.
 
-### 10. Keigakomi / Yokogumi
+### 11. Keigakomi / Yokogumi
 
 Current shape:
 
@@ -314,7 +333,8 @@ Required classifier additions:
   - producer metrics pointers -> `provenance_metrics`
   - figure subfields and deep figure paths -> `figure_metadata`
   - `gaiji.unresolved_reason` -> `gaiji_unresolved_reason`
-  - heading and jisage rows -> `heading_jisage_structure`
+  - heading and jisage structural rows -> `heading_jisage_structure`
+  - heading inline gaiji rows -> `heading_inline_content`
   - `font_size` and `tcy` rows -> `font_tcy`
   - `keigakomi` and `yokogumi` rows -> `keigakomi_yokogumi`
 
@@ -364,10 +384,10 @@ ABC-side follow-up should define:
 
 This design is ready for implementation when:
 
-1. The ten current unsupported families are all represented in the coverage
+1. The eleven current unsupported families are all represented in the coverage
    classifier.
 2. The report exposes family-level closure lanes and admission gates.
-3. No row remains `true_unsupported_gap` unless it falls outside the ten known
+3. No row remains `true_unsupported_gap` unless it falls outside the eleven known
    families.
 4. The top-level verdict still blocks completion while ABC custom contract,
    Parser-IR schema deltas, or converter deltas are missing.

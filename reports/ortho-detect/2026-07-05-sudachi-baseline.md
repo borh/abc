@@ -84,3 +84,58 @@ errors:
   "implicit default artifact names are no longer provided". The plan's
   `--output-dir`-only commands in Tasks 0/8 must use `--analyses-output`
   instead.
+
+## Post-implementation review — known Phase 1 limitations (deferred per plan)
+
+A Rich-Hickey-style design review after Tasks 1-9 surfaced one severity-Blocker
+issue that the plan explicitly defers (dependency graph lists "Task 7.5
+char_span fix — depends on Task 7"). Recording it here so it is not lost:
+
+### Coordinate coherence of remapped `Analysis` (deferred to Task 7.5)
+
+`span_builder::remap_spans` rewrites `morpheme.byte_span` to ORIGINAL-text
+coordinates but leaves `morpheme.surface` and `morpheme.char_span` in
+NORMALIZED-text coordinates. After remap, `analysis.source_text` is the
+normalized text while `byte_span` points into the original.
+
+- **Length-preserving normalizations (the common case: ハ→は, ガ→が, …)**:
+  original and normalized text have identical byte lengths and byte ranges,
+  so `validate_analysis_against_source` (called by `compare_pair`) recomputes
+  `surface` and `char_span` consistently and validation passes. Verified
+  empirically with a 2-analyzer (`vibrato` + `sudachi-c`) smoke test on the
+  pilot: `compare_pair` produced 66 regions, 0 coverage mismatches, 0 errors.
+- **Length-changing normalizations (`ヴ→う゛`, rare in pre-war katakana
+  prose)**: byte ranges SHIFT, so `source_text[byte_span] != surface` and
+  `char_span` diverges → `SurfaceMismatch`/`CharSpanMismatch` errors, or
+  `OffsetMap::to_original` PANICS on cross-boundary spans.
+
+The plan's Task 7 comments explicitly accept this: "char_span recalculation
+requires the original source text. For Phase 1, keep the normalized-text
+char_span as an approximation. Follow-up: rebuild char_map from original text
+bytes." The plan's dependency graph names this follow-up "Task 7.5".
+
+**Task 7.5 (follow-up, NOT in this Phase 1 scope):** give `remap_spans` the
+original source text and rebuild each morpheme coherently:
+`surface = original[remapped_byte_span]`, `char_span =
+char_map.char_count_at_byte(...)`, `analysis.source_text = original`. For
+sub-token splits crossing a length-changing entry, return an error rather
+than panicking. Convert `OffsetMap::to_original` from panic to `Result` so
+pipeline failures route to `errors_writer` with a typed stage/code.
+
+### Other review findings (lower severity)
+
+- **Double dictionary load** (Important): the pipeline constructs a fresh
+  `VibratoAnalyzer` for detection even when `--analyzer vibrato` is also
+  passed. Phase 1 accepts this (plan note). Follow-up: reuse the
+  already-loaded analyzer as `Arc<dyn OrthoTokenizer>`.
+- **`ab-morph-diff → ab-ortho-detect` edge** (Important): `Analysis` now
+  stores typed `OrthoAnnotation`/`OffsetMap`, coupling the core diff model
+  to the detector crate. Acceptable for Phase 1; revisit if the diff model
+  churns.
+- **Dead OOV config** (Strong suggestion): `HeuristicConfig.oov_ratio_threshold`
+  and `TokenFeatures.oov_count`/`oov_ratio` are hardcoded to 0/0.0 (Branch B).
+  Retained for config parity with the spec; remove if OOV guarding is not
+  implemented.
+- **`OrthoTokenizer` swallows tokenization errors** (Strong suggestion):
+  `ortho_compat.rs` returns `Vec::new()` on `Err`. Consider returning
+  `Result` so detection failures are observable.

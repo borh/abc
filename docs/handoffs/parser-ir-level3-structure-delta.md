@@ -17,7 +17,7 @@ ABC now accepts the parser-IR structure needed for the first Level 3 paragraph/s
 
 Older parser-IR schema hashes remain accepted for legacy ab-validator compatibility fixtures. The current schema hash is:
 
-`sha256:87560244b6d3e25bc231ed352b03b95e8931484df7dc18abe26f91a94c52f4a3`
+`sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913`
 
 ## Renderer Policy
 
@@ -58,7 +58,7 @@ There is still no manifest/admission field that formally claims "Level 3". When 
 Next ab-validator work:
 
 1. Sync `schemas/parser-ir.schema.json` into `data/abc-schemas/schemas/parser-ir.schema.json`.
-2. Update schema hash expectations to `sha256:87560244b6d3e25bc231ed352b03b95e8931484df7dc18abe26f91a94c52f4a3`.
+2. Update schema hash expectations to `sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913`.
 3. Regenerate mapping from measured mapper rules against the new parser-IR schema.
 4. Update `ab-aat-to-parser-ir` to emit:
    - `paragraphs[]` for AAT paragraph blocks,

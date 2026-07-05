@@ -153,6 +153,51 @@
       (is (= {"text" 2} (:node_counts result)))
       (is (empty? (:omitted result))))))
 
+(deftest paragraph-layout-renders-every-supported-rend-token-test
+  (testing "each supported paragraph layout kind has a deterministic TEI rend token"
+    (let [parser-ir {"nodes" [{"type" "text" "span" {"start" 0 "end" 1} "text" "一"}
+                              {"type" "text" "span" {"start" 1 "end" 2} "text" "二"}
+                              {"type" "text" "span" {"start" 2 "end" 3} "text" "三"}]
+                     "paragraphs" [{"id" "p000000"
+                                    "span" {"start" 0 "end" 1 "coordinate_system" "decoded_utf8"}
+                                    "span_source" "direct"
+                                    "node_range" {"start" 0 "end" 1}
+                                    "role" "body"
+                                    "source_pointer" "blocks[0]"
+                                    "classification" "direct"
+                                    "layout" {"kind" "jisage"
+                                              "indent" 2
+                                              "source" "aat-block"}}
+                                   {"id" "p000001"
+                                    "span" {"start" 1 "end" 2 "coordinate_system" "decoded_utf8"}
+                                    "span_source" "direct"
+                                    "node_range" {"start" 1 "end" 2}
+                                    "role" "body"
+                                    "source_pointer" "blocks[1]"
+                                    "classification" "direct"
+                                    "layout" {"kind" "jizume"
+                                              "width" 20
+                                              "source" "source-derived"}}
+                                   {"id" "p000002"
+                                    "span" {"start" 2 "end" 3 "coordinate_system" "decoded_utf8"}
+                                    "span_source" "direct"
+                                    "node_range" {"start" 2 "end" 3}
+                                    "role" "body"
+                                    "source_pointer" "blocks[2]"
+                                    "classification" "direct"
+                                    "layout" {"kind" "line-jisage"
+                                              "indent" 3
+                                              "source" "source-derived"}}]}
+          result (parser-ir-tei/render parser-ir)]
+      (is (= [:text
+              [:body
+               [:p {:rend "jisage indent(2)"} "一"]
+               [:p {:rend "jizume width(20)"} "二"]
+               [:p {:rend "line-jisage indent(3)"} "三"]]]
+             (:body result)))
+      (is (= {"text" 3} (:node_counts result)))
+      (is (empty? (:omitted result))))))
+
 (deftest gaiji-reference-declaration-contract-test
   (testing "fixture gaiji.reference is preserved as ref and charDecl id"
     (let [result (parser-ir-tei/render

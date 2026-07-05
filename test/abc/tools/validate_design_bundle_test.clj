@@ -53,7 +53,7 @@
   "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d")
 
 (def ^:private current-parser-ir-schema-hash
-  "sha256:87560244b6d3e25bc231ed352b03b95e8931484df7dc18abe26f91a94c52f4a3")
+  "sha256:d98eb9684e7a88f5b62693dd582e28f14834ff85011dc7297e7b41516f7be913")
 
 (def ^:private parser-ir-schema-hash
   legacy-parser-ir-schema-hash)
@@ -333,6 +333,65 @@
                      "warnings" []
                      "errors" []}]
       (is (nil? (validate/validation-errors schema parser-ir))))))
+
+(deftest parser-ir-schema-accepts-all-paragraph-layout-kinds-test
+  (testing "every supported layout kind carries enough payload for deterministic TEI p@rend"
+    (let [schema (files/read-json "schemas/parser-ir.schema.json")
+          parser-ir {"schema_id" "https://w3id.org/abc/schemas/parser-ir.schema.json"
+                     "schema_hash" current-parser-ir-schema-hash
+                     "source" {"work_content_hash" (files/example-hash "01")
+                               "encoding" "Shift_JIS"
+                               "normalization" "source"}
+                     "nodes" [{"type" "text"
+                               "span" {"start" 0 "end" 6
+                                       "coordinate_system" "decoded_utf8"}
+                               "text" "台詞"}]
+                     "paragraphs" [{"id" "p000000"
+                                    "span" {"start" 0 "end" 6
+                                            "coordinate_system" "decoded_utf8"}
+                                    "span_source" "direct"
+                                    "node_range" {"start" 0 "end" 1}
+                                    "role" "body"
+                                    "source_pointer" "blocks[0]"
+                                    "classification" "direct"}]
+                     "warnings" []
+                     "errors" []}
+          layouts [{"kind" "jisage" "indent" 2 "source" "aat-block"}
+                   {"kind" "burasage" "first_line_indent" 0 "continuation_indent" 1 "source" "aat-style"}
+                   {"kind" "chitsuki" "align" "right" "offset_from_end" 1 "source" "aat-style"}
+                   {"kind" "jizume" "width" 20 "source" "source-derived"}
+                   {"kind" "line-jisage" "indent" 3 "source" "source-derived"}]]
+      (doseq [layout layouts]
+        (is (nil? (validate/validation-errors
+                   schema
+                   (assoc-in parser-ir ["paragraphs" 0 "layout"] layout)))
+            (str "schema should accept complete " (get layout "kind") " layout"))))))
+
+(deftest parser-ir-schema-rejects-incomplete-paragraph-layout-test
+  (testing "layout kind-specific payload is required so TEI p@rend projection cannot silently disappear"
+    (let [schema (files/read-json "schemas/parser-ir.schema.json")
+          parser-ir {"schema_id" "https://w3id.org/abc/schemas/parser-ir.schema.json"
+                     "schema_hash" current-parser-ir-schema-hash
+                     "source" {"work_content_hash" (files/example-hash "01")
+                               "encoding" "Shift_JIS"
+                               "normalization" "source"}
+                     "nodes" [{"type" "text"
+                               "span" {"start" 0 "end" 6
+                                       "coordinate_system" "decoded_utf8"}
+                               "text" "台詞"}]
+                     "paragraphs" [{"id" "p000000"
+                                    "span" {"start" 0 "end" 6
+                                            "coordinate_system" "decoded_utf8"}
+                                    "span_source" "direct"
+                                    "node_range" {"start" 0 "end" 1}
+                                    "role" "body"
+                                    "source_pointer" "blocks[0]"
+                                    "classification" "direct"
+                                    "layout" {"kind" "jisage"
+                                              "source" "aat-style"}}]
+                     "warnings" []
+                     "errors" []}]
+      (is (seq (validate/validation-errors schema parser-ir))))))
 
 (def ^:private level3-parser-ir-fixture
   {"nodes" [{"type" "text"

@@ -28,13 +28,27 @@ pub fn hash_json(value: &Value) -> anyhow::Result<String> {
 /// unambiguous.
 #[must_use]
 pub fn hash_string_sequence(values: &[String]) -> String {
+    let digest = hash_string_sequence_raw(values);
+    let mut out = String::with_capacity(7 + 64);
+    out.push_str("sha256:");
+    for byte in digest {
+        use std::fmt::Write;
+        let _ = write!(out, "{byte:02x}");
+    }
+    out
+}
+
+/// Raw 32-byte digest variant of [`hash_string_sequence`], for callers
+/// that key maps by digest without paying for hex strings.
+#[must_use]
+pub fn hash_string_sequence_raw(values: &[String]) -> [u8; 32] {
     let mut hasher = Sha256::new();
     for value in values {
         let len = value.len() as u32;
         hasher.update(len.to_le_bytes());
         hasher.update(value.as_bytes());
     }
-    format!("sha256:{:x}", hasher.finalize())
+    hasher.finalize().into()
 }
 
 #[cfg(test)]

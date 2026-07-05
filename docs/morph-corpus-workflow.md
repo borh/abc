@@ -138,6 +138,23 @@ target/release/ab-morph-run summarize-warehouse-errors \
   --run-dir /db/ab-validator/morph-warehouse/runs/triage-2026-05-03 \
   --group-by error-code \
   --limit 50
+
+# Ranked triage: RRF interestingness ranking over feature/segmentation/coverage
+# patterns with per-signal --explain decomposition and an anomaly channel.
+# On full-corpus warehouses this uses the DuckDB CLI automatically (--engine auto);
+# --feature-profile core restricts feature patterns to pos1..pos4 and is much cheaper.
+# See docs/superpowers/specs/2026-07-05-interestingness-ranking-design.md.
+target/release/ab-morph-run summarize-warehouse-interesting \
+  --run-dir /db/ab-validator/morph-warehouse/runs/full-2026-05-03 \
+  --limit 50 \
+  --anomalies 10 \
+  --filter lexical-only \
+  --format json \
+  --output scratch/interesting-full-2026-05-03.json
+
+target/release/ab-morph-run summarize-warehouse-interesting \
+  --run-dir /db/ab-validator/morph-warehouse/runs/full-2026-05-03 \
+  --explain 'sha256:<pattern_id from the ranked output>'
 ```
 
 The existing JSONL compatibility mode remains for targeted debugging, with explicit output paths required when using `--output-dir`; it is not the canonical comprehensive store.

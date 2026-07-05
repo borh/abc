@@ -3,8 +3,8 @@
   "works_scanned": 17894,
   "works_failed": 0,
   "markers_total": 4323915,
-  "unknown_markers_total": 15125,
-  "unallowlisted_unknown_markers_total": 241,
+  "unknown_markers_total": 15062,
+  "unallowlisted_unknown_markers_total": 178,
   "allowlisted_unknown_markers_total": 14884,
   "rows": {
     "accent.dotted_letter": {
@@ -28,8 +28,8 @@
       ]
     },
     "annotation.chuuki": {
-      "works_with_marker": 5508,
-      "occurrences": 35359,
+      "works_with_marker": 5513,
+      "occurrences": 35373,
       "sample_works": [
         "000005_53194",
         "000006_1869",
@@ -498,6 +498,17 @@
         "001518_51731"
       ]
     },
+    "source.reviewed_residual_command": {
+      "works_with_marker": 92,
+      "occurrences": 310,
+      "sample_works": [
+        "000048_358",
+        "000051_1441",
+        "000051_1442",
+        "000051_1448",
+        "000051_3538"
+      ]
+    },
     "structure.quote_block": {
       "works_with_marker": 6,
       "occurrences": 21,
@@ -539,21 +550,9 @@
       ]
     }
   },
-  "unknown_classes_total": 247,
+  "unknown_classes_total": 185,
   "unknown_classes_truncated": false,
   "unknown_classes": [
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃現代語訳「さびしい林の中の草の庵にひとり坐して暁をむかえると、折から仏・法・僧の三宝を唱える一羽の鳥の声を聞いた。一羽の鳥ですらすでに三宝を唱える声があるのだから、これを聞く自分にも、これに応じて仏心を発揮する心がある。有情の鳥声・人心、非情の行雲・流水、すべてこの山にあるものは法身如来の仏徳を開顕して悟りの境地に入っている」］",
-      "body": "現代語訳「さびしい林の中の草の庵にひとり坐して暁をむかえると、折から仏・法・僧の三宝を唱える一羽の鳥の声を聞いた。一羽の鳥ですらすでに三宝を唱える声があるのだから、これを聞く自分にも、これに応じて仏心を発揮する心がある。有情の鳥声・人心、非情の行雲・流水、すべてこの山にあるものは法身如来の仏徳を開顕して悟りの境地に入っている」",
-      "occurrences": 2,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 2,
-      "sample_works": [
-        "001271_60608",
-        "001271_60609"
-      ]
-    },
     {
       "kind": "CommandFullwidth",
       "raw": "［＃（ルヽ）］",
@@ -622,17 +621,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃「才助」は枠囲い］",
-      "body": "「才助」は枠囲い",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000726_4533"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃「検察官」］",
       "body": "「検察官」",
       "occurrences": 1,
@@ -640,39 +628,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000311_46245"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「甚四郎」は枠囲い］",
-      "body": "「甚四郎」は枠囲い",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000726_4533"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「私の二十五日」全体にかかるルビ］",
-      "body": "「私の二十五日」全体にかかるルビ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000148_798"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「第二十章　必死の努力」は中中見出し］",
-      "body": "「第二十章　必死の努力」は中中見出し",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "002043_59605"
       ]
     },
     {
@@ -695,39 +650,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000148_1104"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「（一）」は自注］",
-      "body": "「（一）」は自注",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000284_2665"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「＊」は注釈記号。欄外に「釜の製造元」の注］",
-      "body": "「＊」は注釈記号。欄外に「釜の製造元」の注",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000989_52244"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃「＋」は点線丸囲み］",
-      "body": "「＋」は点線丸囲み",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000933_47195"
       ]
     },
     {
@@ -765,39 +687,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃ここからページ下部縦組み］",
-      "body": "ここからページ下部縦組み",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000250_18353"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから紙幣の文字の訳文］",
-      "body": "ここから紙幣の文字の訳文",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001094_42601"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから罫仕切り、----で挾まれた部分が一つの仕切り内］",
-      "body": "ここから罫仕切り、----で挾まれた部分が一つの仕切り内",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_4212"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃ここで字下げ、横書き終わり］",
       "body": "ここで字下げ、横書き終わり",
       "occurrences": 1,
@@ -831,28 +720,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃ここで罫仕切り終わり］",
-      "body": "ここで罫仕切り終わり",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_4212"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここで訳文終わり］",
-      "body": "ここで訳文終わり",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001094_42601"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃ここに「下ニ詳ナリ」という注意書きが入る］",
       "body": "ここに「下ニ詳ナリ」という注意書きが入る",
       "occurrences": 1,
@@ -860,39 +727,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000301_1872"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃この行は下に横組みで］",
-      "body": "この行は下に横組みで",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_4212"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃この行は枠の上に横書き］",
-      "body": "この行は枠の上に横書き",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_4212"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃この行は枠囲み］",
-      "body": "この行は枠囲み",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_4208"
       ]
     },
     {
@@ -930,17 +764,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃ページ下部縦組み終わり］",
-      "body": "ページ下部縦組み終わり",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000250_18353"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃レールが鳴り響く］",
       "body": "レールが鳴り響く",
       "occurrences": 1,
@@ -963,17 +786,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃一九四二（昭和十七）年一月から五月にかけて、海野は海軍報道班文学挺身隊員として従軍］",
-      "body": "一九四二（昭和十七）年一月から五月にかけて、海野は海軍報道班文学挺身隊員として従軍",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃上部欄外に「じうもんじカ」］",
       "body": "上部欄外に「じうもんじカ」",
       "occurrences": 1,
@@ -981,17 +793,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000908_51396"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃中文字、ゴシック体］",
-      "body": "中文字、ゴシック体",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000096_2100"
       ]
     },
     {
@@ -1106,61 +907,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃列項目名は２段組、１段目］",
-      "body": "列項目名は２段組、１段目",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_3466"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃列項目名２段目は１段目をそれぞれ２分割］",
-      "body": "列項目名２段目は１段目をそれぞれ２分割",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_3466"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃前の行とは0.5行アキ、「犯人の第三告白」はゴシック体］",
-      "body": "前の行とは0.5行アキ、「犯人の第三告白」はゴシック体",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000096_1115"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃前の行とは0.5行アキ、「犯人の第二告白」はゴシック体］",
-      "body": "前の行とは0.5行アキ、「犯人の第二告白」はゴシック体",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000096_1115"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃前妻のたか子は、一九二六（大正十五）年に結核で死亡。看病に当たった海野も感染し、いったんは回復したが、一九四二（昭和十七）年に海軍報道班員として南方に派遣された際、再発していた］",
-      "body": "前妻のたか子は、一九二六（大正十五）年に結核で死亡。看病に当たった海野も感染し、いったんは回復したが、一九四二（昭和十七）年に海軍報道班員として南方に派遣された際、再発していた",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃前衛］",
       "body": "前衛",
       "occurrences": 1,
@@ -1201,17 +947,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000311_46248"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃印刷不鮮明、87-14］",
-      "body": "印刷不鮮明、87-14",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000048_358"
       ]
     },
     {
@@ -1282,17 +1017,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃右図の解説文終わり］",
-      "body": "右図の解説文終わり",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000250_18353"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃同志］",
       "body": "同志",
       "occurrences": 1,
@@ -1322,17 +1046,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃図「ロシア社会主義連邦ソヴェト共和国中央及地方機関ノ交互関係」P524、「我国之国家機構図」P525］",
-      "body": "図「ロシア社会主義連邦ソヴェト共和国中央及地方機関ノ交互関係」P524、「我国之国家機構図」P525",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_3149"
       ]
     },
     {
@@ -1612,17 +1325,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃左図の解説文終わり］",
-      "body": "左図の解説文終わり",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000250_18353"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃帝国主義］",
       "body": "帝国主義",
       "occurrences": 1,
@@ -1843,17 +1545,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃朝日新聞社カメラマン。一九四二（昭和十七）年に海野が海軍報道班員として従軍した際、共にラバウルに］",
-      "body": "朝日新聞社カメラマン。一九四二（昭和十七）年に海野が海軍報道班員として従軍した際、共にラバウルに",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃朝永良太］",
       "body": "朝永良太",
       "occurrences": 1,
@@ -1920,17 +1611,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃東京都世田谷区若林町］",
-      "body": "東京都世田谷区若林町",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃東京高等師範学校］",
       "body": "東京高等師範学校",
       "occurrences": 1,
@@ -1960,17 +1640,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃次行は三字下げ、九字空き地付きで］",
-      "body": "次行は三字下げ、九字空き地付きで",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000331_2613"
       ]
     },
     {
@@ -2085,17 +1754,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃海軍報道班文学挺身隊］",
-      "body": "海軍報道班文学挺身隊",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000160_1255"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃海野の別ペンネーム］",
       "body": "海野の別ペンネーム",
       "occurrences": 1,
@@ -2169,17 +1827,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000311_46248"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃満蒙開拓移民の指導などに当たった、明治―昭和期の農本主義者］",
-      "body": "満蒙開拓移民の指導などに当たった、明治―昭和期の農本主義者",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000160_1255"
       ]
     },
     {
@@ -2290,17 +1937,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000311_46248"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃神奈川県国府津の海岸に中條家の別荘があった］",
-      "body": "神奈川県国府津の海岸に中條家の別荘があった",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_4833"
       ]
     },
     {
@@ -2514,17 +2150,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃船名「香取丸」］",
-      "body": "船名「香取丸」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46247"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃萩原喜一郎、隣家］",
       "body": "萩原喜一郎、隣家",
       "occurrences": 1,
@@ -2569,28 +2194,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃行末から１字上で地付き］",
-      "body": "行末から１字上で地付き",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000989_348"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃行項目名のタイトル］",
-      "body": "行項目名のタイトル",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_3466"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃覚え書き、ノート］",
       "body": "覚え書き、ノート",
       "occurrences": 1,
@@ -2598,17 +2201,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000311_46247"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃読みは「つね」］",
-      "body": "読みは「つね」",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000169_1273"
       ]
     },
     {
@@ -2800,17 +2392,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃項目名］",
-      "body": "項目名",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_3466"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃風俗、生活様式］",
       "body": "風俗、生活様式",
       "occurrences": 1,
@@ -2840,17 +2421,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000311_46247"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃食料品店名］",
-      "body": "食料品店名",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000311_46246"
       ]
     },
     {
@@ -2888,72 +2458,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃（一）は自注］",
-      "body": "（一）は自注",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000284_2226"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃（三）は自注］",
-      "body": "（三）は自注",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000284_2226"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃（二）は自注］",
-      "body": "（二）は自注",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000284_2226"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃（五）は自注］",
-      "body": "（五）は自注",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000284_2226"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃（六）は自注］",
-      "body": "（六）は自注",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000284_2226"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃（四）は自注］",
-      "body": "（四）は自注",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000284_2226"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃（止（波））］",
       "body": "（止（波））",
       "occurrences": 1,
@@ -2976,17 +2480,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃１字アキか改行か判然せず］",
-      "body": "１字アキか改行か判然せず",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000879_145"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃１９字下げて］",
       "body": "１９字下げて",
       "occurrences": 1,
@@ -3005,171 +2498,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000311_4212"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ＪＲとなった国電の旧称］",
-      "body": "ＪＲとなった国電の旧称",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000160_1255"
-      ]
-    },
-    {
-      "kind": "EditorialNoteBottomTextCorrection",
-      "raw": "」はママ注記としました。「大丈夫で」には原文の意味もあるので注記はつけていません。\r\n入力：砂場清隆\r\n校正：えにしだ\r\n2019年10月28日作成\r\n2020年3月19日修正\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（https://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
-      "body": "」はママ注記としました。「大丈夫で」には原文の意味もあるので注記はつけていません。\r\n入力：砂場清隆\r\n校正：えにしだ\r\n2019年10月28日作成\r\n2020年3月19日修正\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（https://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001257_53680"
-      ]
-    },
-    {
-      "kind": "EditorialNoteBottomTextCorrection",
-      "raw": "」はママ］",
-      "body": "」はママ］",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001529_50685"
-      ]
-    },
-    {
-      "kind": "EditorialNoteBottomTextCorrection",
-      "raw": "」は底本では「amiticiae」］",
-      "body": "」は底本では「amiticiae」］",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000148_789"
-      ]
-    },
-    {
-      "kind": "EditorialNoteBottomTextCorrection",
-      "raw": "」は底本では「　ルミ」と誤植］",
-      "body": "」は底本では「　ルミ」と誤植］",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000236_4300"
-      ]
-    },
-    {
-      "kind": "EditorialNoteBottomTextCorrection",
-      "raw": "」は底本では「すいぶん」でしたが、親本を参照して直しました。\r\n入力：Hiroshi_O\r\n校正：門田裕志、小林繁雄\r\n2003年8月3日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
-      "body": "」は底本では「すいぶん」でしたが、親本を参照して直しました。\r\n入力：Hiroshi_O\r\n校正：門田裕志、小林繁雄\r\n2003年8月3日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000154_1640"
-      ]
-    },
-    {
-      "kind": "EditorialNoteBottomTextCorrection",
-      "raw": "」は底本では「それそれ」でしたが、親本を参照して直しました。\r\n入力：鈴木厚司\r\n校正：多羅尾伴内\r\n2003年8月27日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
-      "body": "」は底本では「それそれ」でしたが、親本を参照して直しました。\r\n入力：鈴木厚司\r\n校正：多羅尾伴内\r\n2003年8月27日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000154_4287"
-      ]
-    },
-    {
-      "kind": "EditorialNoteBottomTextCorrection",
-      "raw": "」は底本では「三十をすぎた。不良老年の癖に、」となっていますが、底本第五巻月報の「訂正」にしたがって変更しました。\r\n入力：八巻美恵\r\n校正：浜野　智\r\n2006年3月1日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
-      "body": "」は底本では「三十をすぎた。不良老年の癖に、」となっていますが、底本第五巻月報の「訂正」にしたがって変更しました。\r\n入力：八巻美恵\r\n校正：浜野　智\r\n2006年3月1日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000124_46195"
-      ]
-    },
-    {
-      "kind": "EditorialNoteBottomTextCorrection",
-      "raw": "」は底本では「主人」の前で改行し、「主人例によって」の段落が天付きになっていましたが、「くらしっく時代小説10　国枝史郎集」にならって改行を取りました。\r\n※底本には以下に挙げるように誤植が疑われる箇所がありましたが、「くらしっく時代小説10　国枝史郎集」でも同様で正しい形を判定することに困難を感じたので底本通りとし、ママ注記を付けました。\r\n○たじろいた所：「たじろいだ」の誤植か。\r\n※「綺麗」と「奇麗」の混在は底本通りにしました。\r\n※底本は、物を数える際や地名などに用いる「ヶ」（区点番号5-86）を、大振りにつくっています。\r\n入力：ロクス・ソルス\r\n校正：門田裕志、小林繁雄\r\n2004年12月13日作成\r\n2009年2月27日修正\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
-      "body": "」は底本では「主人」の前で改行し、「主人例によって」の段落が天付きになっていましたが、「くらしっく時代小説10　国枝史郎集」にならって改行を取りました。\r\n※底本には以下に挙げるように誤植が疑われる箇所がありましたが、「くらしっく時代小説10　国枝史郎集」でも同様で正しい形を判定することに困難を感じたので底本通りとし、ママ注記を付けました。\r\n○たじろいた所：「たじろいだ」の誤植か。\r\n※「綺麗」と「奇麗」の混在は底本通りにしました。\r\n※底本は、物を数える際や地名などに用いる「ヶ」（区点番号5-86）を、大振りにつくっています。\r\n入力：ロクス・ソルス\r\n校正：門田裕志、小林繁雄\r\n2004年12月13日作成\r\n2009年2月27日修正\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000255_43625"
-      ]
-    },
-    {
-      "kind": "EditorialNoteBottomTextCorrection",
-      "raw": "」は底本では「旦邦」でしたが、親本を参照して直しました。\r\n入力：Hiroshi_O\r\n校正：門田裕志、小林繁雄\r\n2003年8月3日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
-      "body": "」は底本では「旦邦」でしたが、親本を参照して直しました。\r\n入力：Hiroshi_O\r\n校正：門田裕志、小林繁雄\r\n2003年8月3日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000154_1655"
-      ]
-    },
-    {
-      "kind": "EditorialNoteBottomTextCorrection",
-      "raw": "」は底本では「杜陽ら」でしたが、親本を参照して直しました。\r\n入力：Hiroshi_O\r\n校正：門田裕志、小林繁雄\r\n2003年8月3日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
-      "body": "」は底本では「杜陽ら」でしたが、親本を参照して直しました。\r\n入力：Hiroshi_O\r\n校正：門田裕志、小林繁雄\r\n2003年8月3日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000154_1643"
-      ]
-    },
-    {
-      "kind": "EditorialNoteBottomTextCorrection",
-      "raw": "」は底本では「機會主義者」の左側に注記されています。\r\n入力：桑田康正\r\n校正：小林繁雄\r\n2005年1月20日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
-      "body": "」は底本では「機會主義者」の左側に注記されています。\r\n入力：桑田康正\r\n校正：小林繁雄\r\n2005年1月20日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000119_43813"
-      ]
-    },
-    {
-      "kind": "EditorialNoteBottomTextCorrection",
-      "raw": "」は底本では「湃」のつくりの4本の横棒が3本です。\r\n※「體」は底本では「體」のへんの「「」が「人」です（281ページの中見出しを除く）。\r\n※「折々の記」六興出版社、1953（昭和28）年12月25日初版発行のものは戦後の随筆を収録したもので、本編は「窓辺雑草」「草思堂随筆」からテーマ別に抜粋収録したものです。\r\n入力：川山隆\r\n校正：トレンドイースト\r\n2013年10月6日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
-      "body": "」は底本では「湃」のつくりの4本の横棒が3本です。\r\n※「體」は底本では「體」のへんの「「」が「人」です（281ページの中見出しを除く）。\r\n※「折々の記」六興出版社、1953（昭和28）年12月25日初版発行のものは戦後の随筆を収録したもので、本編は「窓辺雑草」「草思堂随筆」からテーマ別に抜粋収録したものです。\r\n入力：川山隆\r\n校正：トレンドイースト\r\n2013年10月6日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001562_55316"
-      ]
-    },
-    {
-      "kind": "EditorialNoteBottomTextCorrection",
-      "raw": "」は底本では「語して」でしたが、親本を参照して直しました。\r\n入力：Hiroshi_O\r\n校正：門田裕志、小林繁雄\r\n2003年7月24日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
-      "body": "」は底本では「語して」でしたが、親本を参照して直しました。\r\n入力：Hiroshi_O\r\n校正：門田裕志、小林繁雄\r\n2003年7月24日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000154_4475"
-      ]
-    },
-    {
-      "kind": "EditorialNoteBottomTextCorrection",
-      "raw": "」は底本では「［Ａ］",
-      "body": "」は底本では「［Ａ］",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "001402_49946"
       ]
     },
     {
@@ -3294,13 +2622,6 @@
       "body": "「ヤンに傍点"
     },
     {
-      "work_id": "000048_358",
-      "line": 45,
-      "kind": "CommandFullwidth",
-      "raw": "［＃印刷不鮮明、87-14］",
-      "body": "印刷不鮮明、87-14"
-    },
-    {
       "work_id": "000083_1362",
       "line": 61,
       "kind": "CommandFullwidth",
@@ -3308,46 +2629,11 @@
       "body": "ここで字下げ終わり」"
     },
     {
-      "work_id": "000096_1115",
-      "line": 461,
-      "kind": "CommandFullwidth",
-      "raw": "［＃前の行とは0.5行アキ、「犯人の第二告白」はゴシック体］",
-      "body": "前の行とは0.5行アキ、「犯人の第二告白」はゴシック体"
-    },
-    {
-      "work_id": "000096_1115",
-      "line": 469,
-      "kind": "CommandFullwidth",
-      "raw": "［＃前の行とは0.5行アキ、「犯人の第三告白」はゴシック体］",
-      "body": "前の行とは0.5行アキ、「犯人の第三告白」はゴシック体"
-    },
-    {
-      "work_id": "000096_2100",
-      "line": 1190,
-      "kind": "CommandFullwidth",
-      "raw": "［＃中文字、ゴシック体］",
-      "body": "中文字、ゴシック体"
-    },
-    {
       "work_id": "000096_2117",
       "line": 35,
       "kind": "CommandFullwidth",
       "raw": "［＃波罫線］",
       "body": "波罫線"
-    },
-    {
-      "work_id": "000119_43813",
-      "line": 279,
-      "kind": "EditorialNoteBottomTextCorrection",
-      "raw": "」は底本では「機會主義者」の左側に注記されています。\r\n入力：桑田康正\r\n校正：小林繁雄\r\n2005年1月20日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
-      "body": "」は底本では「機會主義者」の左側に注記されています。\r\n入力：桑田康正\r\n校正：小林繁雄\r\n2005年1月20日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n"
-    },
-    {
-      "work_id": "000124_46195",
-      "line": 96,
-      "kind": "EditorialNoteBottomTextCorrection",
-      "raw": "」は底本では「三十をすぎた。不良老年の癖に、」となっていますが、底本第五巻月報の「訂正」にしたがって変更しました。\r\n入力：八巻美恵\r\n校正：浜野　智\r\n2006年3月1日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
-      "body": "」は底本では「三十をすぎた。不良老年の癖に、」となっていますが、底本第五巻月報の「訂正」にしたがって変更しました。\r\n入力：八巻美恵\r\n校正：浜野　智\r\n2006年3月1日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n"
     },
     {
       "work_id": "000124_651",
@@ -3364,67 +2650,11 @@
       "body": "「郷－即のへん」、232-1"
     },
     {
-      "work_id": "000148_789",
-      "line": 1980,
-      "kind": "EditorialNoteBottomTextCorrection",
-      "raw": "」は底本では「amiticiae」］",
-      "body": "」は底本では「amiticiae」］"
-    },
-    {
-      "work_id": "000148_798",
-      "line": 20,
-      "kind": "CommandFullwidth",
-      "raw": "［＃「私の二十五日」全体にかかるルビ］",
-      "body": "「私の二十五日」全体にかかるルビ"
-    },
-    {
-      "work_id": "000154_1640",
-      "line": 139,
-      "kind": "EditorialNoteBottomTextCorrection",
-      "raw": "」は底本では「すいぶん」でしたが、親本を参照して直しました。\r\n入力：Hiroshi_O\r\n校正：門田裕志、小林繁雄\r\n2003年8月3日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
-      "body": "」は底本では「すいぶん」でしたが、親本を参照して直しました。\r\n入力：Hiroshi_O\r\n校正：門田裕志、小林繁雄\r\n2003年8月3日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n"
-    },
-    {
-      "work_id": "000154_1643",
-      "line": 145,
-      "kind": "EditorialNoteBottomTextCorrection",
-      "raw": "」は底本では「杜陽ら」でしたが、親本を参照して直しました。\r\n入力：Hiroshi_O\r\n校正：門田裕志、小林繁雄\r\n2003年8月3日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
-      "body": "」は底本では「杜陽ら」でしたが、親本を参照して直しました。\r\n入力：Hiroshi_O\r\n校正：門田裕志、小林繁雄\r\n2003年8月3日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n"
-    },
-    {
-      "work_id": "000154_1655",
-      "line": 96,
-      "kind": "EditorialNoteBottomTextCorrection",
-      "raw": "」は底本では「旦邦」でしたが、親本を参照して直しました。\r\n入力：Hiroshi_O\r\n校正：門田裕志、小林繁雄\r\n2003年8月3日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
-      "body": "」は底本では「旦邦」でしたが、親本を参照して直しました。\r\n入力：Hiroshi_O\r\n校正：門田裕志、小林繁雄\r\n2003年8月3日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n"
-    },
-    {
-      "work_id": "000154_4287",
-      "line": 68,
-      "kind": "EditorialNoteBottomTextCorrection",
-      "raw": "」は底本では「それそれ」でしたが、親本を参照して直しました。\r\n入力：鈴木厚司\r\n校正：多羅尾伴内\r\n2003年8月27日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
-      "body": "」は底本では「それそれ」でしたが、親本を参照して直しました。\r\n入力：鈴木厚司\r\n校正：多羅尾伴内\r\n2003年8月27日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n"
-    },
-    {
-      "work_id": "000154_4475",
-      "line": 105,
-      "kind": "EditorialNoteBottomTextCorrection",
-      "raw": "」は底本では「語して」でしたが、親本を参照して直しました。\r\n入力：Hiroshi_O\r\n校正：門田裕志、小林繁雄\r\n2003年7月24日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
-      "body": "」は底本では「語して」でしたが、親本を参照して直しました。\r\n入力：Hiroshi_O\r\n校正：門田裕志、小林繁雄\r\n2003年7月24日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n"
-    },
-    {
       "work_id": "000160_1255",
       "line": 45,
       "kind": "CommandFullwidth",
       "raw": "［＃萩原喜一郎、隣家］",
       "body": "萩原喜一郎、隣家"
-    },
-    {
-      "work_id": "000160_1255",
-      "line": 55,
-      "kind": "CommandFullwidth",
-      "raw": "［＃東京都世田谷区若林町］",
-      "body": "東京都世田谷区若林町"
     },
     {
       "work_id": "000160_1255",
@@ -3439,20 +2669,6 @@
       "kind": "CommandFullwidth",
       "raw": "［＃第八十六通常議会］",
       "body": "第八十六通常議会"
-    },
-    {
-      "work_id": "000160_1255",
-      "line": 185,
-      "kind": "CommandFullwidth",
-      "raw": "［＃朝日新聞社カメラマン。一九四二（昭和十七）年に海野が海軍報道班員として従軍した際、共にラバウルに］",
-      "body": "朝日新聞社カメラマン。一九四二（昭和十七）年に海野が海軍報道班員として従軍した際、共にラバウルに"
-    },
-    {
-      "work_id": "000160_1255",
-      "line": 258,
-      "kind": "CommandFullwidth",
-      "raw": "［＃ＪＲとなった国電の旧称］",
-      "body": "ＪＲとなった国電の旧称"
     },
     {
       "work_id": "000160_1255",
@@ -3491,24 +2707,10 @@
     },
     {
       "work_id": "000160_1255",
-      "line": 748,
-      "kind": "CommandFullwidth",
-      "raw": "［＃一九四二（昭和十七）年一月から五月にかけて、海野は海軍報道班文学挺身隊員として従軍］",
-      "body": "一九四二（昭和十七）年一月から五月にかけて、海野は海軍報道班文学挺身隊員として従軍"
-    },
-    {
-      "work_id": "000160_1255",
       "line": 755,
       "kind": "CommandFullwidth",
       "raw": "［＃用もないのに廊下をうろつき回ること］",
       "body": "用もないのに廊下をうろつき回ること"
-    },
-    {
-      "work_id": "000160_1255",
-      "line": 765,
-      "kind": "CommandFullwidth",
-      "raw": "［＃満蒙開拓移民の指導などに当たった、明治―昭和期の農本主義者］",
-      "body": "満蒙開拓移民の指導などに当たった、明治―昭和期の農本主義者"
     },
     {
       "work_id": "000160_1255",
@@ -3523,13 +2725,6 @@
       "kind": "CommandFullwidth",
       "raw": "［＃朝永良太］",
       "body": "朝永良太"
-    },
-    {
-      "work_id": "000160_1255",
-      "line": 1017,
-      "kind": "CommandFullwidth",
-      "raw": "［＃海軍報道班文学挺身隊］",
-      "body": "海軍報道班文学挺身隊"
     },
     {
       "work_id": "000160_1255",
@@ -3645,13 +2840,6 @@
     },
     {
       "work_id": "000160_1255",
-      "line": 1460,
-      "kind": "CommandFullwidth",
-      "raw": "［＃前妻のたか子は、一九二六（大正十五）年に結核で死亡。看病に当たった海野も感染し、いったんは回復したが、一九四二（昭和十七）年に海軍報道班員として南方に派遣された際、再発していた］",
-      "body": "前妻のたか子は、一九二六（大正十五）年に結核で死亡。看病に当たった海野も感染し、いったんは回復したが、一九四二（昭和十七）年に海軍報道班員として南方に派遣された際、再発していた"
-    },
-    {
-      "work_id": "000160_1255",
       "line": 1479,
       "kind": "CommandFullwidth",
       "raw": "［＃海野の別ペンネーム］",
@@ -3686,25 +2874,11 @@
       "body": "以降の「――」で始まる通信文の2行目以降は2字下げ"
     },
     {
-      "work_id": "000169_1273",
-      "line": 684,
-      "kind": "CommandFullwidth",
-      "raw": "［＃読みは「つね」］",
-      "body": "読みは「つね」"
-    },
-    {
       "work_id": "000182_946",
       "line": 24,
       "kind": "CommandFullwidth",
       "raw": "［＃１９字下げて］",
       "body": "１９字下げて"
-    },
-    {
-      "work_id": "000236_4300",
-      "line": 130,
-      "kind": "EditorialNoteBottomTextCorrection",
-      "raw": "」は底本では「　ルミ」と誤植］",
-      "body": "」は底本では「　ルミ」と誤植］"
     },
     {
       "work_id": "000243_1328",
@@ -3721,34 +2895,6 @@
       "body": "「諸国における富の分配」の図表のこと"
     },
     {
-      "work_id": "000250_18353",
-      "line": 444,
-      "kind": "CommandFullwidth",
-      "raw": "［＃左図の解説文終わり］",
-      "body": "左図の解説文終わり"
-    },
-    {
-      "work_id": "000250_18353",
-      "line": 447,
-      "kind": "CommandFullwidth",
-      "raw": "［＃右図の解説文終わり］",
-      "body": "右図の解説文終わり"
-    },
-    {
-      "work_id": "000250_18353",
-      "line": 951,
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここからページ下部縦組み］",
-      "body": "ここからページ下部縦組み"
-    },
-    {
-      "work_id": "000250_18353",
-      "line": 955,
-      "kind": "CommandFullwidth",
-      "raw": "［＃ページ下部縦組み終わり］",
-      "body": "ページ下部縦組み終わり"
-    },
-    {
       "work_id": "000250_4644",
       "line": 281,
       "kind": "CommandFullwidth",
@@ -3756,67 +2902,11 @@
       "body": "原文は括弧「〔〕」を使うが、他の所と一致させるため改める"
     },
     {
-      "work_id": "000255_43625",
-      "line": 438,
-      "kind": "EditorialNoteBottomTextCorrection",
-      "raw": "」は底本では「主人」の前で改行し、「主人例によって」の段落が天付きになっていましたが、「くらしっく時代小説10　国枝史郎集」にならって改行を取りました。\r\n※底本には以下に挙げるように誤植が疑われる箇所がありましたが、「くらしっく時代小説10　国枝史郎集」でも同様で正しい形を判定することに困難を感じたので底本通りとし、ママ注記を付けました。\r\n○たじろいた所：「たじろいだ」の誤植か。\r\n※「綺麗」と「奇麗」の混在は底本通りにしました。\r\n※底本は、物を数える際や地名などに用いる「ヶ」（区点番号5-86）を、大振りにつくっています。\r\n入力：ロクス・ソルス\r\n校正：門田裕志、小林繁雄\r\n2004年12月13日作成\r\n2009年2月27日修正\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
-      "body": "」は底本では「主人」の前で改行し、「主人例によって」の段落が天付きになっていましたが、「くらしっく時代小説10　国枝史郎集」にならって改行を取りました。\r\n※底本には以下に挙げるように誤植が疑われる箇所がありましたが、「くらしっく時代小説10　国枝史郎集」でも同様で正しい形を判定することに困難を感じたので底本通りとし、ママ注記を付けました。\r\n○たじろいた所：「たじろいだ」の誤植か。\r\n※「綺麗」と「奇麗」の混在は底本通りにしました。\r\n※底本は、物を数える際や地名などに用いる「ヶ」（区点番号5-86）を、大振りにつくっています。\r\n入力：ロクス・ソルス\r\n校正：門田裕志、小林繁雄\r\n2004年12月13日作成\r\n2009年2月27日修正\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n"
-    },
-    {
       "work_id": "000256_2590",
       "line": 384,
       "kind": "CommandFullwidth",
       "raw": "［＃（）内の文字全てに傍点、ただし読点をのぞく］",
       "body": "（）内の文字全てに傍点、ただし読点をのぞく"
-    },
-    {
-      "work_id": "000284_2226",
-      "line": 13,
-      "kind": "CommandFullwidth",
-      "raw": "［＃（一）は自注］",
-      "body": "（一）は自注"
-    },
-    {
-      "work_id": "000284_2226",
-      "line": 13,
-      "kind": "CommandFullwidth",
-      "raw": "［＃（二）は自注］",
-      "body": "（二）は自注"
-    },
-    {
-      "work_id": "000284_2226",
-      "line": 13,
-      "kind": "CommandFullwidth",
-      "raw": "［＃（三）は自注］",
-      "body": "（三）は自注"
-    },
-    {
-      "work_id": "000284_2226",
-      "line": 14,
-      "kind": "CommandFullwidth",
-      "raw": "［＃（四）は自注］",
-      "body": "（四）は自注"
-    },
-    {
-      "work_id": "000284_2226",
-      "line": 15,
-      "kind": "CommandFullwidth",
-      "raw": "［＃（五）は自注］",
-      "body": "（五）は自注"
-    },
-    {
-      "work_id": "000284_2226",
-      "line": 15,
-      "kind": "CommandFullwidth",
-      "raw": "［＃（六）は自注］",
-      "body": "（六）は自注"
-    },
-    {
-      "work_id": "000284_2665",
-      "line": 38,
-      "kind": "CommandFullwidth",
-      "raw": "［＃「（一）」は自注］",
-      "body": "「（一）」は自注"
     },
     {
       "work_id": "000301_1872",
@@ -3840,13 +2930,6 @@
       "body": "闇汁の図"
     },
     {
-      "work_id": "000311_3149",
-      "line": 247,
-      "kind": "CommandFullwidth",
-      "raw": "［＃図「ロシア社会主義連邦ソヴェト共和国中央及地方機関ノ交互関係」P524、「我国之国家機構図」P525］",
-      "body": "図「ロシア社会主義連邦ソヴェト共和国中央及地方機関ノ交互関係」P524、「我国之国家機構図」P525"
-    },
-    {
       "work_id": "000311_33188",
       "line": 815,
       "kind": "CommandFullwidth",
@@ -3861,74 +2944,11 @@
       "body": "ここで字下げ、横書き終わり"
     },
     {
-      "work_id": "000311_3466",
-      "line": 81,
-      "kind": "CommandFullwidth",
-      "raw": "［＃行項目名のタイトル］",
-      "body": "行項目名のタイトル"
-    },
-    {
-      "work_id": "000311_3466",
-      "line": 82,
-      "kind": "CommandFullwidth",
-      "raw": "［＃列項目名は２段組、１段目］",
-      "body": "列項目名は２段組、１段目"
-    },
-    {
-      "work_id": "000311_3466",
-      "line": 83,
-      "kind": "CommandFullwidth",
-      "raw": "［＃列項目名２段目は１段目をそれぞれ２分割］",
-      "body": "列項目名２段目は１段目をそれぞれ２分割"
-    },
-    {
-      "work_id": "000311_3466",
-      "line": 97,
-      "kind": "CommandFullwidth",
-      "raw": "［＃項目名］",
-      "body": "項目名"
-    },
-    {
-      "work_id": "000311_4208",
-      "line": 29,
-      "kind": "CommandFullwidth",
-      "raw": "［＃この行は枠囲み］",
-      "body": "この行は枠囲み"
-    },
-    {
-      "work_id": "000311_4212",
-      "line": 82,
-      "kind": "CommandFullwidth",
-      "raw": "［＃この行は下に横組みで］",
-      "body": "この行は下に横組みで"
-    },
-    {
-      "work_id": "000311_4212",
-      "line": 98,
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここから罫仕切り、----で挾まれた部分が一つの仕切り内］",
-      "body": "ここから罫仕切り、----で挾まれた部分が一つの仕切り内"
-    },
-    {
-      "work_id": "000311_4212",
-      "line": 100,
-      "kind": "CommandFullwidth",
-      "raw": "［＃この行は枠の上に横書き］",
-      "body": "この行は枠の上に横書き"
-    },
-    {
       "work_id": "000311_4212",
       "line": 106,
       "kind": "CommandFullwidth",
       "raw": "［＃３つの「｛」は１つに繋がる］",
       "body": "３つの「｛」は１つに繋がる"
-    },
-    {
-      "work_id": "000311_4212",
-      "line": 137,
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここで罫仕切り終わり］",
-      "body": "ここで罫仕切り終わり"
     },
     {
       "work_id": "000311_46236",
@@ -3985,18 +3005,326 @@
       "kind": "CommandFullwidth",
       "raw": "［＃福地源一郎］",
       "body": "福地源一郎"
+    },
+    {
+      "work_id": "000311_46241",
+      "line": 1226,
+      "kind": "CommandFullwidth",
+      "raw": "［＃加藤シヅエ］",
+      "body": "加藤シヅエ"
+    },
+    {
+      "work_id": "000311_46242",
+      "line": 192,
+      "kind": "CommandFullwidth",
+      "raw": "［＃神近市子］",
+      "body": "神近市子"
+    },
+    {
+      "work_id": "000311_46242",
+      "line": 192,
+      "kind": "CommandFullwidth",
+      "raw": "［＃大杉栄］",
+      "body": "大杉栄"
+    },
+    {
+      "work_id": "000311_46242",
+      "line": 325,
+      "kind": "CommandFullwidth",
+      "raw": "［＃堺利彦］",
+      "body": "堺利彦"
+    },
+    {
+      "work_id": "000311_46242",
+      "line": 737,
+      "kind": "CommandFullwidth",
+      "raw": "［＃野上豊一郎］",
+      "body": "野上豊一郎"
+    },
+    {
+      "work_id": "000311_46242",
+      "line": 883,
+      "kind": "CommandFullwidth",
+      "raw": "［＃貞の末息子］",
+      "body": "貞の末息子"
+    },
+    {
+      "work_id": "000311_46243",
+      "line": 524,
+      "kind": "CommandFullwidth",
+      "raw": "［＃湯浅芳子］",
+      "body": "湯浅芳子"
+    },
+    {
+      "work_id": "000311_46243",
+      "line": 577,
+      "kind": "CommandFullwidth",
+      "raw": "［＃江井、中條家の運転手］",
+      "body": "江井、中條家の運転手"
+    },
+    {
+      "work_id": "000311_46243",
+      "line": 821,
+      "kind": "CommandFullwidth",
+      "raw": "［＃網野菊］",
+      "body": "網野菊"
+    },
+    {
+      "work_id": "000311_46244",
+      "line": 73,
+      "kind": "CommandFullwidth",
+      "raw": "［＃呉昌碩］",
+      "body": "呉昌碩"
+    },
+    {
+      "work_id": "000311_46244",
+      "line": 81,
+      "kind": "CommandFullwidth",
+      "raw": "［＃長谷川如是閑］",
+      "body": "長谷川如是閑"
+    },
+    {
+      "work_id": "000311_46244",
+      "line": 124,
+      "kind": "CommandFullwidth",
+      "raw": "［＃宮部金吾］",
+      "body": "宮部金吾"
+    },
+    {
+      "work_id": "000311_46244",
+      "line": 327,
+      "kind": "CommandFullwidth",
+      "raw": "［＃原阿佐緒］",
+      "body": "原阿佐緒"
+    },
+    {
+      "work_id": "000311_46244",
+      "line": 358,
+      "kind": "CommandFullwidth",
+      "raw": "［＃青山杉作］",
+      "body": "青山杉作"
+    },
+    {
+      "work_id": "000311_46244",
+      "line": 373,
+      "kind": "CommandFullwidth",
+      "raw": "［＃洋装店］",
+      "body": "洋装店"
+    },
+    {
+      "work_id": "000311_46245",
+      "line": 1121,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「検察官」］",
+      "body": "「検察官」"
+    },
+    {
+      "work_id": "000311_46245",
+      "line": 1151,
+      "kind": "CommandFullwidth",
+      "raw": "［＃映画館名］",
+      "body": "映画館名"
+    },
+    {
+      "work_id": "000311_46246",
+      "line": 22,
+      "kind": "CommandFullwidth",
+      "raw": "［＃十月革命］",
+      "body": "十月革命"
+    },
+    {
+      "work_id": "000311_46246",
+      "line": 81,
+      "kind": "CommandFullwidth",
+      "raw": "［＃土曜集会］",
+      "body": "土曜集会"
+    },
+    {
+      "work_id": "000311_46246",
+      "line": 516,
+      "kind": "CommandFullwidth",
+      "raw": "［＃ロマン・キム］",
+      "body": "ロマン・キム"
+    },
+    {
+      "work_id": "000311_46246",
+      "line": 550,
+      "kind": "CommandFullwidth",
+      "raw": "［＃青鞜］",
+      "body": "青鞜"
+    },
+    {
+      "work_id": "000311_46246",
+      "line": 573,
+      "kind": "CommandFullwidth",
+      "raw": "［＃少年団員］",
+      "body": "少年団員"
+    },
+    {
+      "work_id": "000311_46246",
+      "line": 710,
+      "kind": "CommandFullwidth",
+      "raw": "［＃同志］",
+      "body": "同志"
+    },
+    {
+      "work_id": "000311_46246",
+      "line": 793,
+      "kind": "CommandFullwidth",
+      "raw": "［＃宮本百合子の作品「赤い貨車」のナースチャのモデル］",
+      "body": "宮本百合子の作品「赤い貨車」のナースチャのモデル"
+    },
+    {
+      "work_id": "000311_46246",
+      "line": 957,
+      "kind": "CommandFullwidth",
+      "raw": "［＃映画］",
+      "body": "映画"
+    },
+    {
+      "work_id": "000311_46246",
+      "line": 1042,
+      "kind": "CommandFullwidth",
+      "raw": "［＃共産党員］",
+      "body": "共産党員"
+    },
+    {
+      "work_id": "000311_46246",
+      "line": 1048,
+      "kind": "CommandFullwidth",
+      "raw": "［＃演説、報告］",
+      "body": "演説、報告"
+    },
+    {
+      "work_id": "000311_46246",
+      "line": 1054,
+      "kind": "CommandFullwidth",
+      "raw": "［＃赤いけし］",
+      "body": "赤いけし"
+    },
+    {
+      "work_id": "000311_46246",
+      "line": 1091,
+      "kind": "CommandFullwidth",
+      "raw": "［＃河原崎長十郎］",
+      "body": "河原崎長十郎"
+    },
+    {
+      "work_id": "000311_46246",
+      "line": 1167,
+      "kind": "CommandFullwidth",
+      "raw": "［＃通りの名］",
+      "body": "通りの名"
+    },
+    {
+      "work_id": "000311_46246",
+      "line": 1301,
+      "kind": "CommandFullwidth",
+      "raw": "［＃洗面器］",
+      "body": "洗面器"
+    },
+    {
+      "work_id": "000311_46246",
+      "line": 1353,
+      "kind": "CommandFullwidth",
+      "raw": "［＃共産主義者（女）］",
+      "body": "共産主義者（女）"
+    },
+    {
+      "work_id": "000311_46246",
+      "line": 1385,
+      "kind": "CommandFullwidth",
+      "raw": "［＃映画館名、「穂」］",
+      "body": "映画館名、「穂」"
+    },
+    {
+      "work_id": "000311_46246",
+      "line": 1454,
+      "kind": "CommandFullwidth",
+      "raw": "［＃戯曲「赤藍色の島」］",
+      "body": "戯曲「赤藍色の島」"
+    },
+    {
+      "work_id": "000311_46246",
+      "line": 1461,
+      "kind": "CommandFullwidth",
+      "raw": "［＃殺虫剤名］",
+      "body": "殺虫剤名"
+    },
+    {
+      "work_id": "000311_46246",
+      "line": 1498,
+      "kind": "CommandFullwidth",
+      "raw": "［＃「ココ」は手描きの切符の下部の線に結ばれている］",
+      "body": "「ココ」は手描きの切符の下部の線に結ばれている"
+    },
+    {
+      "work_id": "000311_46247",
+      "line": 138,
+      "kind": "CommandFullwidth",
+      "raw": "［＃覚え書き、ノート］",
+      "body": "覚え書き、ノート"
+    },
+    {
+      "work_id": "000311_46247",
+      "line": 544,
+      "kind": "CommandFullwidth",
+      "raw": "［＃〇・四一キログラム］",
+      "body": "〇・四一キログラム"
+    },
+    {
+      "work_id": "000311_46247",
+      "line": 566,
+      "kind": "CommandFullwidth",
+      "raw": "［＃反宗教］",
+      "body": "反宗教"
+    },
+    {
+      "work_id": "000311_46247",
+      "line": 573,
+      "kind": "CommandFullwidth",
+      "raw": "［＃休息の家］",
+      "body": "休息の家"
+    },
+    {
+      "work_id": "000311_46247",
+      "line": 573,
+      "kind": "CommandFullwidth",
+      "raw": "［＃食後の休息時間］",
+      "body": "食後の休息時間"
+    },
+    {
+      "work_id": "000311_46247",
+      "line": 600,
+      "kind": "CommandFullwidth",
+      "raw": "［＃旅行案内書］",
+      "body": "旅行案内書"
+    },
+    {
+      "work_id": "000311_46247",
+      "line": 662,
+      "kind": "CommandFullwidth",
+      "raw": "［＃根津嘉一郎］",
+      "body": "根津嘉一郎"
+    },
+    {
+      "work_id": "000311_46247",
+      "line": 1221,
+      "kind": "CommandFullwidth",
+      "raw": "［＃木村毅］",
+      "body": "木村毅"
     }
   ],
   "decode_failures": [],
   "representability": {
     "typed_occurrences": 4570068,
-    "raw_preserved_occurrences": 45767,
+    "raw_preserved_occurrences": 46091,
     "out_of_body_occurrences": 950,
     "unsupported_occurrences": 13934,
     "needs_research_occurrences": 0
   },
   "strict_errors": [
-    "241 unallowlisted source markers"
+    "178 unallowlisted source markers"
   ],
   "inputs": {
     "matrix": "/home/bor/Projects/ab-validator/data/aozora-syntax-coverage.toml",

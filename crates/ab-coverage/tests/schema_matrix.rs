@@ -1546,6 +1546,67 @@ fn source_inventory_classifies_residual_source_label_name_notes() {
 }
 
 #[test]
+fn source_inventory_classifies_source_authority_remaining_command_batch() {
+    let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
+    let patterns = patterns_from_rows(matrix.rows());
+    let source = [
+        "［＃ここからページ下部縦組み］",
+        "［＃ページ下部縦組み終わり］",
+        "［＃ここから罫仕切り、----で挾まれた部分が一つの仕切り内］",
+        "［＃ここで罫仕切り終わり］",
+        "［＃ここから紙幣の文字の訳文］",
+        "［＃ここで訳文終わり］",
+        "［＃この行は下に横組みで］",
+        "［＃この行は枠の上に横書き］",
+        "［＃この行は枠囲み］",
+        "［＃「才助」は枠囲い］",
+        "［＃「＋」は点線丸囲み］",
+        "［＃「第二十章　必死の努力」は中中見出し］",
+        "［＃中文字、ゴシック体］",
+        "［＃前の行とは0.5行アキ、「犯人の第二告白」はゴシック体］",
+        "［＃列項目名は２段組、１段目］",
+        "［＃列項目名２段目は１段目をそれぞれ２分割］",
+        "［＃右図の解説文終わり］",
+        "［＃左図の解説文終わり］",
+        "［＃図「ロシア社会主義連邦ソヴェト共和国中央及地方機関ノ交互関係」P524、「我国之国家機構図」P525］",
+        "［＃次行は三字下げ、九字空き地付きで］",
+        "［＃行末から１字上で地付き］",
+        "［＃「私の二十五日」全体にかかるルビ］",
+        "［＃「（一）」は自注］",
+        "［＃「＊」は注釈記号。欄外に「釜の製造元」の注］",
+        "［＃印刷不鮮明、87-14］",
+        "［＃読みは「つね」］",
+        "［＃現代語訳「さびしい林の中の草の庵にひとり坐して暁をむかえると、折から仏・法・僧の三宝を唱える一羽の鳥の声を聞いた。」］",
+        "［＃一九四二（昭和十七）年一月から五月にかけて、海野は海軍報道班文学挺身隊員として従軍］",
+        "［＃朝日新聞社カメラマン。一九四二（昭和十七）年に海野が海軍報道班員として従軍した際、共にラバウルに］",
+        "［＃満蒙開拓移民の指導などに当たった、明治―昭和期の農本主義者］",
+        "［＃神奈川県国府津の海岸に中條家の別荘があった］",
+        "［＃東京都世田谷区若林町］",
+        "［＃ＪＲとなった国電の旧称］",
+        "［＃項目名］",
+        "［＃食料品店名］",
+        "［＃船名「香取丸」］",
+        "［＃（一）は自注］",
+        "［＃１字アキか改行か判然せず］",
+    ]
+    .join("\n");
+    let summary = inventory_document("fixture", &source, &patterns);
+
+    assert_eq!(
+        summary.unknown_examples,
+        [],
+        "remaining reviewed command families should not stay outside the source-authority gate"
+    );
+    assert_eq!(
+        summary
+            .row_counts
+            .get("source.reviewed_residual_command")
+            .map(|count| count.occurrences),
+        Some(38)
+    );
+}
+
+#[test]
 fn source_inventory_classifies_tail_positioning_and_caption_variants() {
     let matrix = CoverageMatrix::from_toml(&matrix_path()).expect("load matrix");
     let patterns = patterns_from_rows(matrix.rows());

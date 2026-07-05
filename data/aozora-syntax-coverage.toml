@@ -1146,6 +1146,89 @@ coverage_basis = "not_run"
 sample_works = []
 
 [[syntax]]
+id = "source.reviewed_residual_command"
+priority = 3
+category = "source_annotation"
+feature_keys = ["source_note", "layout_note", "residual_command"]
+reference_sources = ["docs/superpowers/reports/2026-07-04-source-authority-representability.md"]
+source_examples = ["［＃ここから紙幣の文字の訳文］", "［＃「（一）」は自注］", "［＃現代語訳「...」］"]
+source_patterns = [
+  '［＃ここからページ下部縦組み］',
+  '［＃ページ下部縦組み終わり］',
+  '［＃ここから罫仕切り[^］]*］',
+  '［＃ここで罫仕切り終わり］',
+  '［＃ここから[^］]*訳文］',
+  '［＃ここで訳文終わり］',
+  '［＃この行は[^］]*(横組み|横書き|枠囲み)[^］]*］',
+  '［＃「[^」]+」は(枠囲い|点線丸囲み|自注)］',
+  '［＃「[^」]+」全体にかかるルビ］',
+  '［＃「[^」]+」は中中見出し］',
+  '［＃中文字、ゴシック体］',
+  '［＃前の行とは0\.5行アキ、「[^」]+」はゴシック体］',
+  '［＃列項目名[^］]*］',
+  '［＃[左右]図の解説文終わり］',
+  '［＃図「[^］]+］',
+  '［＃次行は[^］]+］',
+  '［＃行末から[^］]+］',
+  '［＃[^］]*(自注|注釈記号|不鮮明|読みは|現代語訳|旧称|従軍|報道班|カメラマン|農本主義者|別荘|世田谷区|項目名|食料品店名|船名|判然せず)[^］]*］',
+]
+ir_nodes = ["source-note"]
+aat_nodes = ["raw"]
+tei_projection = "note type=source-marker or rendition-specific TEI after typed vocabulary follow-up"
+plaintext_projection = "source_note_or_drop_from_body_base_text"
+comparison_projection = "source_note_or_drop_from_body_base_text"
+validation_properties = ["source_marker_preservation"]
+adapter_expectations = ["preserve reviewed residual command marker or surface text"]
+oracle_cases = []
+status = "not_modeled"
+status_reason = "The source-authority gate reached residual fullwidth commands that are TEI-representable but not yet assigned to a typed AAT/parser-IR vocabulary. This reviewed row keeps them raw-preserved without re-enabling the catch-all editor-note row."
+
+[syntax.representability]
+source_inventory_row = "source.reviewed_residual_command"
+status = "raw_preserved"
+aat_nodes = ["raw"]
+raw_fallback = true
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "These markers are reviewed source-side residual commands. TEI can carry them as source notes today; richer typed rendition or structural projection remains a follow-up per marker family."
+
+[syntax.parsers.aozora2]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes these residual commands; parser-specific typed behavior remains to be measured."
+
+[syntax.parsers.aozora-rs]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes these residual commands; parser-specific typed behavior remains to be measured."
+
+[syntax.parsers.aozora2html]
+recognition = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "Source inventory observes these residual commands; parser-specific typed behavior remains to be measured."
+
+[syntax.adapters.aozora2]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed residual-command AAT projection has been measured."
+
+[syntax.adapters.aozora-rs]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed residual-command AAT projection has been measured."
+
+[syntax.adapters.aozora2html]
+aat_fidelity = "unknown"
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+notes = "No typed residual-command AAT projection has been measured."
+
+[syntax.corpus_prevalence]
+works_with_feature = 0
+total_occurrences = 0
+detector_id = "source_reviewed_residual_command"
+coverage_basis = "not_run"
+sample_works = []
+
+[[syntax]]
 id = "source.page_reference"
 priority = 2
 category = "source_annotation"

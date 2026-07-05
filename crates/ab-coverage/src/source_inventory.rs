@@ -79,6 +79,9 @@ pub fn inventory_document(
                 SourceMarkerKind::GaijiFullwidth | SourceMarkerKind::GaijiAscii => {
                     add_default_match(&mut matched, patterns, "gaiji.marker");
                 }
+                SourceMarkerKind::EditorialNoteBottomTextCorrection => {
+                    add_default_match(&mut matched, patterns, "annotation.chuuki");
+                }
                 _ => {}
             }
         }
@@ -261,6 +264,29 @@ mod tests {
             example.kind == "SegmentBoundaryTerminalProvenance"
                 && example.raw == "［＃地付き］（fixture）"
         }));
+    }
+
+    #[test]
+    fn bottom_text_correction_notes_default_to_annotation_row() {
+        let patterns = vec![
+            pattern("annotation.chuuki", vec![]),
+            pattern("ruby.basic", vec![]),
+        ];
+        let summary = inventory_document(
+            "w1",
+            "豌豆《ゑんどう》「豌豆」は底本では「跣豆」］の大さ",
+            &patterns,
+        );
+
+        assert_eq!(summary.markers_total, 2);
+        assert_eq!(summary.unknown_examples, []);
+        assert_eq!(
+            summary
+                .row_counts
+                .get("annotation.chuuki")
+                .map(|count| count.occurrences),
+            Some(1)
+        );
     }
 
     fn pattern(row_id: &str, source_patterns: Vec<&str>) -> SourceInventoryPattern {

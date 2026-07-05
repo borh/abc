@@ -78,9 +78,9 @@ cat > "$matrix_summary" <<JSON
     "mapping": "mapping.json"
   },
   "totals": {
-    "rows_attempted": 10,
-    "tei_eaj_rows_attempted": 9,
-    "materialization_succeeded": 10,
+    "rows_attempted": 12,
+    "tei_eaj_rows_attempted": 11,
+    "materialization_succeeded": 12,
     "materialization_failed": 0,
     "rows_skipped": 1
   },
@@ -93,6 +93,26 @@ cat > "$matrix_summary" <<JSON
       "title": "Plain pass",
       "tei_eaj_file": "data/plain-pass.xml",
       "selected_aat": {"adapter": "aozora2html", "adapter_version": "fixture"},
+      "materialization": {"status": "passed"},
+      "tei_eaj": {"structure_profile": "plain_prose"},
+      "classification": {"paragraph_origin_bucket": "aligned"},
+      "text": {"body_text_match_bucket": "base_equal"}
+    },
+    {
+      "work_id": "plain-mixed",
+      "title": "Plain mixed parser candidates",
+      "tei_eaj_file": "data/plain-mixed.xml",
+      "selected_aat": {"adapter": "aozora-rs", "adapter_version": "fixture"},
+      "materialization": {"status": "passed"},
+      "tei_eaj": {"structure_profile": "plain_prose"},
+      "classification": {"paragraph_origin_bucket": "adapter_over_segmented"},
+      "text": {"body_text_match_bucket": "base_equal"}
+    },
+    {
+      "work_id": "plain-mixed",
+      "title": "Plain mixed parser candidates",
+      "tei_eaj_file": "data/plain-mixed.xml",
+      "selected_aat": {"adapter": "aozora2", "adapter_version": "fixture"},
       "materialization": {"status": "passed"},
       "tei_eaj": {"structure_profile": "plain_prose"},
       "classification": {"paragraph_origin_bucket": "aligned"},
@@ -238,16 +258,25 @@ jq -e '.mapping.mapping_schema_hash == "sha256:38ec7f0e5affb10329b550a091cd3a6fb
 jq -e '.mapping.target_parser_ir_schema_id == "https://w3id.org/abc/schemas/parser-ir.schema.json"' "$summary_json"
 jq -e '.mapping.target_parser_ir_schema_hash == "sha256:a1fcd348bf396d8d4e6f30ffb928b76b3802b594ea773ed6fa9e1dac52edf712"' "$summary_json"
 jq -e '.mapping.generated_mapping_rules == 1' "$summary_json"
-jq -e '.plain_prose_admission.rows_total == 7' "$summary_json"
-jq -e '.plain_prose_admission.rows_passed == 3' "$summary_json"
-jq -e '.plain_prose_admission.rows_failed == 4' "$summary_json"
+jq -e '.plain_prose_admission.rows_total == 9' "$summary_json"
+jq -e '.plain_prose_admission.rows_passed == 4' "$summary_json"
+jq -e '.plain_prose_admission.rows_failed == 5' "$summary_json"
 jq -e '.plain_prose_admission.verdict == "LEVEL3_PLAIN_PROSE_BLOCKED_ADAPTER_FIDELITY_AND_TEXT_POLICY"' "$summary_json"
 jq -e '.plain_prose_admission.blocking_owners == ["adapter", "policy"]' "$summary_json"
-jq -e '.plain_prose_admission.failures_by_owner.adapter == 2' "$summary_json"
+jq -e '.plain_prose_admission.failures_by_owner.adapter == 3' "$summary_json"
 jq -e '.plain_prose_admission.failures_by_owner.policy == 3' "$summary_json"
-jq -e '.plain_prose_admission.failures_by_adapter["aozora-rs"] == 1' "$summary_json"
+jq -e '.plain_prose_admission.failures_by_adapter["aozora-rs"] == 2' "$summary_json"
 jq -e '.plain_prose_admission.failures_by_adapter.aozora == 1' "$summary_json"
+jq -e '.plain_prose_workset_admission.scope == "tei-eaj-generated-matrix plain_prose work files"' "$summary_json"
+jq -e '.plain_prose_workset_admission.work_files_total == 8' "$summary_json"
+jq -e '.plain_prose_workset_admission.work_files_passed == 4' "$summary_json"
+jq -e '.plain_prose_workset_admission.work_files_failed == 4' "$summary_json"
+jq -e '.plain_prose_workset_admission.verdict == "LEVEL3_PLAIN_PROSE_WORKSET_BLOCKED"' "$summary_json"
+jq -e '.plain_prose_workset_admission.passing_candidates_by_adapter.aozora2 == 1' "$summary_json"
+jq -e '[.plain_prose_workset_admission.failed_work_files[] | select(.work_id == "plain-mixed")] | length == 0' "$summary_json"
+jq -e '[.plain_prose_workset_admission.failed_work_files[] | select(.work_id == "plain-over")] | length == 1' "$summary_json"
 jq -e '[.plain_prose_admission.failed_rows[] | select(.work_id == "plain-text-policy")] | length == 0' "$summary_json"
+jq -e '[.plain_prose_admission.failed_rows[] | select(.work_id == "plain-mixed" and .adapter == "aozora-rs")] | length == 1' "$summary_json"
 jq -e '[.plain_prose_admission.failed_rows[] | select(.work_id == "plain-ruby-no-structure" and (.owners == ["policy"]))] | length == 1' "$summary_json"
 jq -e '[.plain_prose_admission.failed_rows[] | select(.work_id == "plain-raw-only" and (.owners == ["adapter", "policy"]))] | length == 1' "$summary_json"
 jq -e '.plain_prose_admission.paragraph_origin_buckets.source_note_back_routing == 1' "$summary_json"
@@ -271,12 +300,16 @@ python3 "$repo_root/reports/parser-ir/level3-admission.py" \
   --report-md "$failing_report_md"
 
 jq -e '.source_authority_gate.gate_status == "SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED"' "$failing_summary_json"
-jq -e '.plain_prose_admission.rows_total == 7' "$failing_summary_json"
+jq -e '.plain_prose_admission.rows_total == 9' "$failing_summary_json"
 jq -e '.plain_prose_admission.rows_passed == 0' "$failing_summary_json"
-jq -e '.plain_prose_admission.rows_failed == 7' "$failing_summary_json"
+jq -e '.plain_prose_admission.rows_failed == 9' "$failing_summary_json"
 jq -e '.plain_prose_admission.verdict == "LEVEL3_PLAIN_PROSE_BLOCKED_ADAPTER_FIDELITY_AND_TEXT_POLICY_AND_EVIDENCE"' "$failing_summary_json"
 jq -e '.plain_prose_admission.blocking_owners == ["adapter", "policy", "evidence"]' "$failing_summary_json"
-jq -e '.plain_prose_admission.failures_by_owner.evidence == 7' "$failing_summary_json"
+jq -e '.plain_prose_admission.failures_by_owner.evidence == 9' "$failing_summary_json"
+jq -e '.plain_prose_workset_admission.work_files_total == 8' "$failing_summary_json"
+jq -e '.plain_prose_workset_admission.work_files_passed == 0' "$failing_summary_json"
+jq -e '.plain_prose_workset_admission.work_files_failed == 8' "$failing_summary_json"
+jq -e '.plain_prose_workset_admission.verdict == "LEVEL3_PLAIN_PROSE_WORKSET_BLOCKED"' "$failing_summary_json"
 
 cat > "$foreign_matrix_summary" <<JSON
 {

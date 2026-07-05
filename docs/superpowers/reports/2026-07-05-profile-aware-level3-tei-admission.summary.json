@@ -1878,6 +1878,862 @@
       }
     ]
   },
+  "plain_prose_workset_admission": {
+    "scope": "tei-eaj-generated-matrix plain_prose work files",
+    "admission_unit": "tei_eaj_work_file_with_any_passing_parser_candidate",
+    "work_files_total": 27,
+    "work_files_passed": 18,
+    "work_files_failed": 9,
+    "verdict": "LEVEL3_PLAIN_PROSE_WORKSET_BLOCKED",
+    "blocking_owners": [
+      "adapter",
+      "policy"
+    ],
+    "failures_by_owner": {
+      "adapter": 9,
+      "policy": 9
+    },
+    "passing_candidates_by_adapter": {
+      "aozora-epub3": 1,
+      "aozora-rs": 3,
+      "aozora2": 14,
+      "aozora2html": 1
+    },
+    "failed_work_files": [
+      {
+        "work_id": "15099",
+        "title": "長崎小品",
+        "tei_eaj_file": "data/complete/tei_lib_lv3/15099_tei.xml",
+        "owners": [
+          "adapter",
+          "policy"
+        ],
+        "candidates": [
+          {
+            "work_id": "15099",
+            "title": "長崎小品",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/15099_tei.xml",
+            "adapter": "aozora2html",
+            "paragraph_origin_bucket": "adapter_over_segmented",
+            "body_text_match_bucket": "different",
+            "passed": false,
+            "owners": [
+              "adapter",
+              "policy"
+            ],
+            "reasons": [
+              "paragraph origin is adapter_over_segmented",
+              "text policy required for different"
+            ]
+          },
+          {
+            "work_id": "15099",
+            "title": "長崎小品",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/15099_tei.xml",
+            "adapter": "aozora-epub3",
+            "paragraph_origin_bucket": "adapter_over_segmented",
+            "body_text_match_bucket": "different",
+            "passed": false,
+            "owners": [
+              "adapter",
+              "policy"
+            ],
+            "reasons": [
+              "paragraph origin is adapter_over_segmented",
+              "text policy required for different"
+            ]
+          },
+          {
+            "work_id": "15099",
+            "title": "長崎小品",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/15099_tei.xml",
+            "adapter": "aozora-rs",
+            "paragraph_origin_bucket": "aligned",
+            "body_text_match_bucket": "different",
+            "passed": false,
+            "owners": [
+              "policy"
+            ],
+            "reasons": [
+              "text policy required for different"
+            ]
+          },
+          {
+            "work_id": "15099",
+            "title": "長崎小品",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/15099_tei.xml",
+            "adapter": "aozora2",
+            "paragraph_origin_bucket": "aligned",
+            "body_text_match_bucket": "different",
+            "passed": false,
+            "owners": [
+              "policy"
+            ],
+            "reasons": [
+              "text policy required for different"
+            ]
+          },
+          {
+            "work_id": "15099",
+            "title": "長崎小品",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/15099_tei.xml",
+            "adapter": "aozora",
+            "paragraph_origin_bucket": "aligned",
+            "body_text_match_bucket": "different",
+            "passed": false,
+            "owners": [
+              "policy"
+            ],
+            "reasons": [
+              "text policy required for different"
+            ]
+          }
+        ]
+      },
+      {
+        "work_id": "15938",
+        "title": "元禄時代小説第一巻「本朝二十不孝」ぬきほ（言文一致訳）",
+        "tei_eaj_file": "data/complete/tei_lib_lv3/15938_tei.xml",
+        "owners": [
+          "adapter",
+          "policy"
+        ],
+        "candidates": [
+          {
+            "work_id": "15938",
+            "title": "元禄時代小説第一巻「本朝二十不孝」ぬきほ（言文一致訳）",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/15938_tei.xml",
+            "adapter": "aozora2html",
+            "paragraph_origin_bucket": "adapter_over_segmented",
+            "body_text_match_bucket": "different",
+            "passed": false,
+            "owners": [
+              "adapter",
+              "policy"
+            ],
+            "reasons": [
+              "paragraph origin is adapter_over_segmented",
+              "text policy required for different"
+            ]
+          },
+          {
+            "work_id": "15938",
+            "title": "元禄時代小説第一巻「本朝二十不孝」ぬきほ（言文一致訳）",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/15938_tei.xml",
+            "adapter": "aozora-epub3",
+            "paragraph_origin_bucket": "adapter_over_segmented",
+            "body_text_match_bucket": "different",
+            "passed": false,
+            "owners": [
+              "adapter",
+              "policy"
+            ],
+            "reasons": [
+              "paragraph origin is adapter_over_segmented",
+              "text policy required for different"
+            ]
+          },
+          {
+            "work_id": "15938",
+            "title": "元禄時代小説第一巻「本朝二十不孝」ぬきほ（言文一致訳）",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/15938_tei.xml",
+            "adapter": "aozora-rs",
+            "paragraph_origin_bucket": "adapter_over_segmented",
+            "body_text_match_bucket": "different",
+            "passed": false,
+            "owners": [
+              "adapter",
+              "policy"
+            ],
+            "reasons": [
+              "paragraph origin is adapter_over_segmented",
+              "text policy required for different"
+            ]
+          },
+          {
+            "work_id": "15938",
+            "title": "元禄時代小説第一巻「本朝二十不孝」ぬきほ（言文一致訳）",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/15938_tei.xml",
+            "adapter": "aozora2",
+            "paragraph_origin_bucket": "adapter_collapsed",
+            "body_text_match_bucket": "different",
+            "passed": false,
+            "owners": [
+              "adapter",
+              "policy"
+            ],
+            "reasons": [
+              "paragraph origin is adapter_collapsed",
+              "text policy required for different"
+            ]
+          },
+          {
+            "work_id": "15938",
+            "title": "元禄時代小説第一巻「本朝二十不孝」ぬきほ（言文一致訳）",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/15938_tei.xml",
+            "adapter": "aozora",
+            "paragraph_origin_bucket": "adapter_raw_only",
+            "body_text_match_bucket": "different",
+            "passed": false,
+            "owners": [
+              "adapter",
+              "policy"
+            ],
+            "reasons": [
+              "paragraph origin is adapter_raw_only",
+              "text policy required for different"
+            ]
+          }
+        ]
+      },
+      {
+        "work_id": "2509",
+        "title": "天災と国防",
+        "tei_eaj_file": "data/complete/tei_lib_lv3/2509_tei.xml",
+        "owners": [
+          "adapter",
+          "policy"
+        ],
+        "candidates": [
+          {
+            "work_id": "2509",
+            "title": "天災と国防",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/2509_tei.xml",
+            "adapter": "aozora2html",
+            "paragraph_origin_bucket": "aligned",
+            "body_text_match_bucket": "different",
+            "passed": false,
+            "owners": [
+              "policy"
+            ],
+            "reasons": [
+              "text policy required for different"
+            ]
+          },
+          {
+            "work_id": "2509",
+            "title": "天災と国防",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/2509_tei.xml",
+            "adapter": "aozora-epub3",
+            "paragraph_origin_bucket": "aligned",
+            "body_text_match_bucket": "different",
+            "passed": false,
+            "owners": [
+              "policy"
+            ],
+            "reasons": [
+              "text policy required for different"
+            ]
+          },
+          {
+            "work_id": "2509",
+            "title": "天災と国防",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/2509_tei.xml",
+            "adapter": "aozora-rs",
+            "paragraph_origin_bucket": "adapter_collapsed",
+            "body_text_match_bucket": "different",
+            "passed": false,
+            "owners": [
+              "adapter",
+              "policy"
+            ],
+            "reasons": [
+              "paragraph origin is adapter_collapsed",
+              "text policy required for different"
+            ]
+          },
+          {
+            "work_id": "2509",
+            "title": "天災と国防",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/2509_tei.xml",
+            "adapter": "aozora2",
+            "paragraph_origin_bucket": "adapter_collapsed",
+            "body_text_match_bucket": "different",
+            "passed": false,
+            "owners": [
+              "adapter",
+              "policy"
+            ],
+            "reasons": [
+              "paragraph origin is adapter_collapsed",
+              "text policy required for different"
+            ]
+          },
+          {
+            "work_id": "2509",
+            "title": "天災と国防",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/2509_tei.xml",
+            "adapter": "aozora",
+            "paragraph_origin_bucket": "adapter_collapsed",
+            "body_text_match_bucket": "different",
+            "passed": false,
+            "owners": [
+              "adapter",
+              "policy"
+            ],
+            "reasons": [
+              "paragraph origin is adapter_collapsed",
+              "text policy required for different"
+            ]
+          }
+        ]
+      },
+      {
+        "work_id": "43077",
+        "title": "地震雑感",
+        "tei_eaj_file": "data/complete/tei_lib_lv3/43077_tei.xml",
+        "owners": [
+          "adapter",
+          "policy"
+        ],
+        "candidates": [
+          {
+            "work_id": "43077",
+            "title": "地震雑感",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/43077_tei.xml",
+            "adapter": "aozora2html",
+            "paragraph_origin_bucket": "adapter_over_segmented",
+            "body_text_match_bucket": "ruby_expanded_parenless_tei_eaj_contains_generated",
+            "passed": false,
+            "owners": [
+              "adapter",
+              "policy"
+            ],
+            "reasons": [
+              "paragraph origin is adapter_over_segmented",
+              "text policy required for ruby_expanded_parenless_tei_eaj_contains_generated"
+            ]
+          },
+          {
+            "work_id": "43077",
+            "title": "地震雑感",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/43077_tei.xml",
+            "adapter": "aozora-epub3",
+            "paragraph_origin_bucket": "adapter_over_segmented",
+            "body_text_match_bucket": "different",
+            "passed": false,
+            "owners": [
+              "adapter",
+              "policy"
+            ],
+            "reasons": [
+              "paragraph origin is adapter_over_segmented",
+              "text policy required for different"
+            ]
+          },
+          {
+            "work_id": "43077",
+            "title": "地震雑感",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/43077_tei.xml",
+            "adapter": "aozora-rs",
+            "paragraph_origin_bucket": "adapter_over_segmented",
+            "body_text_match_bucket": "different",
+            "passed": false,
+            "owners": [
+              "adapter",
+              "policy"
+            ],
+            "reasons": [
+              "paragraph origin is adapter_over_segmented",
+              "text policy required for different"
+            ]
+          },
+          {
+            "work_id": "43077",
+            "title": "地震雑感",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/43077_tei.xml",
+            "adapter": "aozora2",
+            "paragraph_origin_bucket": "adapter_under_segmented",
+            "body_text_match_bucket": "different",
+            "passed": false,
+            "owners": [
+              "adapter",
+              "policy"
+            ],
+            "reasons": [
+              "paragraph origin is adapter_under_segmented",
+              "text policy required for different"
+            ]
+          },
+          {
+            "work_id": "43077",
+            "title": "地震雑感",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/43077_tei.xml",
+            "adapter": "aozora",
+            "paragraph_origin_bucket": "adapter_collapsed",
+            "body_text_match_bucket": "different",
+            "passed": false,
+            "owners": [
+              "adapter",
+              "policy"
+            ],
+            "reasons": [
+              "paragraph origin is adapter_collapsed",
+              "text policy required for different"
+            ]
+          }
+        ]
+      },
+      {
+        "work_id": "45093",
+        "title": "乳母車",
+        "tei_eaj_file": "data/complete/tei_lib_lv3/45093_tei.xml",
+        "owners": [
+          "adapter",
+          "policy"
+        ],
+        "candidates": [
+          {
+            "work_id": "45093",
+            "title": "乳母車",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/45093_tei.xml",
+            "adapter": "aozora2html",
+            "paragraph_origin_bucket": "adapter_over_segmented",
+            "body_text_match_bucket": "ruby_expanded_parenless_equal",
+            "passed": false,
+            "owners": [
+              "adapter"
+            ],
+            "reasons": [
+              "paragraph origin is adapter_over_segmented"
+            ]
+          },
+          {
+            "work_id": "45093",
+            "title": "乳母車",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/45093_tei.xml",
+            "adapter": "aozora-epub3",
+            "paragraph_origin_bucket": "adapter_over_segmented",
+            "body_text_match_bucket": "different",
+            "passed": false,
+            "owners": [
+              "adapter",
+              "policy"
+            ],
+            "reasons": [
+              "paragraph origin is adapter_over_segmented",
+              "text policy required for different"
+            ]
+          },
+          {
+            "work_id": "45093",
+            "title": "乳母車",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/45093_tei.xml",
+            "adapter": "aozora-rs",
+            "paragraph_origin_bucket": "adapter_over_segmented",
+            "body_text_match_bucket": "ruby_expanded_parenless_equal",
+            "passed": false,
+            "owners": [
+              "adapter"
+            ],
+            "reasons": [
+              "paragraph origin is adapter_over_segmented"
+            ]
+          },
+          {
+            "work_id": "45093",
+            "title": "乳母車",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/45093_tei.xml",
+            "adapter": "aozora2",
+            "paragraph_origin_bucket": "adapter_collapsed",
+            "body_text_match_bucket": "ruby_expanded_parenless_equal",
+            "passed": false,
+            "owners": [
+              "adapter"
+            ],
+            "reasons": [
+              "paragraph origin is adapter_collapsed"
+            ]
+          },
+          {
+            "work_id": "45093",
+            "title": "乳母車",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/45093_tei.xml",
+            "adapter": "aozora",
+            "paragraph_origin_bucket": "adapter_raw_only",
+            "body_text_match_bucket": "different",
+            "passed": false,
+            "owners": [
+              "adapter",
+              "policy"
+            ],
+            "reasons": [
+              "paragraph origin is adapter_raw_only",
+              "text policy required for different"
+            ]
+          }
+        ]
+      },
+      {
+        "work_id": "53386",
+        "title": "〔月光の鉛のなかに〕",
+        "tei_eaj_file": "data/complete/tei_lib_lv3/53386_tei.xml",
+        "owners": [
+          "adapter",
+          "policy"
+        ],
+        "candidates": [
+          {
+            "work_id": "53386",
+            "title": "〔月光の鉛のなかに〕",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/53386_tei.xml",
+            "adapter": "aozora2html",
+            "paragraph_origin_bucket": "adapter_over_segmented",
+            "body_text_match_bucket": "ruby_expanded_parenless_generated_contains_tei_eaj",
+            "passed": false,
+            "owners": [
+              "adapter",
+              "policy"
+            ],
+            "reasons": [
+              "paragraph origin is adapter_over_segmented",
+              "text policy required for ruby_expanded_parenless_generated_contains_tei_eaj"
+            ]
+          },
+          {
+            "work_id": "53386",
+            "title": "〔月光の鉛のなかに〕",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/53386_tei.xml",
+            "adapter": "aozora-epub3",
+            "paragraph_origin_bucket": "adapter_over_segmented",
+            "body_text_match_bucket": "base_equal",
+            "passed": false,
+            "owners": [
+              "adapter"
+            ],
+            "reasons": [
+              "paragraph origin is adapter_over_segmented"
+            ]
+          },
+          {
+            "work_id": "53386",
+            "title": "〔月光の鉛のなかに〕",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/53386_tei.xml",
+            "adapter": "aozora-rs",
+            "paragraph_origin_bucket": "adapter_over_segmented",
+            "body_text_match_bucket": "base_equal",
+            "passed": false,
+            "owners": [
+              "adapter"
+            ],
+            "reasons": [
+              "paragraph origin is adapter_over_segmented"
+            ]
+          },
+          {
+            "work_id": "53386",
+            "title": "〔月光の鉛のなかに〕",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/53386_tei.xml",
+            "adapter": "aozora2",
+            "paragraph_origin_bucket": "aligned",
+            "body_text_match_bucket": "ruby_expanded_parenless_generated_contains_tei_eaj",
+            "passed": false,
+            "owners": [
+              "policy"
+            ],
+            "reasons": [
+              "text policy required for ruby_expanded_parenless_generated_contains_tei_eaj"
+            ]
+          },
+          {
+            "work_id": "53386",
+            "title": "〔月光の鉛のなかに〕",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/53386_tei.xml",
+            "adapter": "aozora",
+            "paragraph_origin_bucket": "aligned",
+            "body_text_match_bucket": "different",
+            "passed": false,
+            "owners": [
+              "policy"
+            ],
+            "reasons": [
+              "text policy required for different"
+            ]
+          }
+        ]
+      },
+      {
+        "work_id": "56999",
+        "title": "書簡 大杉栄宛",
+        "tei_eaj_file": "data/complete/tei_lib_lv3/56999_tei.xml",
+        "owners": [
+          "adapter",
+          "policy"
+        ],
+        "candidates": [
+          {
+            "work_id": "56999",
+            "title": "書簡 大杉栄宛",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/56999_tei.xml",
+            "adapter": "aozora2html",
+            "paragraph_origin_bucket": "adapter_over_segmented",
+            "body_text_match_bucket": "ruby_expanded_parenless_generated_contains_tei_eaj",
+            "passed": false,
+            "owners": [
+              "adapter",
+              "policy"
+            ],
+            "reasons": [
+              "paragraph origin is adapter_over_segmented",
+              "text policy required for ruby_expanded_parenless_generated_contains_tei_eaj"
+            ]
+          },
+          {
+            "work_id": "56999",
+            "title": "書簡 大杉栄宛",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/56999_tei.xml",
+            "adapter": "aozora-epub3",
+            "paragraph_origin_bucket": "adapter_over_segmented",
+            "body_text_match_bucket": "different",
+            "passed": false,
+            "owners": [
+              "adapter",
+              "policy"
+            ],
+            "reasons": [
+              "paragraph origin is adapter_over_segmented",
+              "text policy required for different"
+            ]
+          },
+          {
+            "work_id": "56999",
+            "title": "書簡 大杉栄宛",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/56999_tei.xml",
+            "adapter": "aozora-rs",
+            "paragraph_origin_bucket": "adapter_over_segmented",
+            "body_text_match_bucket": "ruby_expanded_parenless_generated_contains_tei_eaj",
+            "passed": false,
+            "owners": [
+              "adapter",
+              "policy"
+            ],
+            "reasons": [
+              "paragraph origin is adapter_over_segmented",
+              "text policy required for ruby_expanded_parenless_generated_contains_tei_eaj"
+            ]
+          },
+          {
+            "work_id": "56999",
+            "title": "書簡 大杉栄宛",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/56999_tei.xml",
+            "adapter": "aozora2",
+            "paragraph_origin_bucket": "adapter_collapsed",
+            "body_text_match_bucket": "ruby_expanded_parenless_generated_contains_tei_eaj",
+            "passed": false,
+            "owners": [
+              "adapter",
+              "policy"
+            ],
+            "reasons": [
+              "paragraph origin is adapter_collapsed",
+              "text policy required for ruby_expanded_parenless_generated_contains_tei_eaj"
+            ]
+          },
+          {
+            "work_id": "56999",
+            "title": "書簡 大杉栄宛",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/56999_tei.xml",
+            "adapter": "aozora",
+            "paragraph_origin_bucket": "adapter_collapsed",
+            "body_text_match_bucket": "different",
+            "passed": false,
+            "owners": [
+              "adapter",
+              "policy"
+            ],
+            "reasons": [
+              "paragraph origin is adapter_collapsed",
+              "text policy required for different"
+            ]
+          }
+        ]
+      },
+      {
+        "work_id": "57043",
+        "title": "書簡 大杉栄宛",
+        "tei_eaj_file": "data/complete/tei_lib_lv3/57043_tei.xml",
+        "owners": [
+          "adapter",
+          "policy"
+        ],
+        "candidates": [
+          {
+            "work_id": "57043",
+            "title": "書簡 大杉栄宛",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/57043_tei.xml",
+            "adapter": "aozora2html",
+            "paragraph_origin_bucket": "adapter_over_segmented",
+            "body_text_match_bucket": "different",
+            "passed": false,
+            "owners": [
+              "adapter",
+              "policy"
+            ],
+            "reasons": [
+              "paragraph origin is adapter_over_segmented",
+              "text policy required for different"
+            ]
+          },
+          {
+            "work_id": "57043",
+            "title": "書簡 大杉栄宛",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/57043_tei.xml",
+            "adapter": "aozora-epub3",
+            "paragraph_origin_bucket": "adapter_over_segmented",
+            "body_text_match_bucket": "different",
+            "passed": false,
+            "owners": [
+              "adapter",
+              "policy"
+            ],
+            "reasons": [
+              "paragraph origin is adapter_over_segmented",
+              "text policy required for different"
+            ]
+          },
+          {
+            "work_id": "57043",
+            "title": "書簡 大杉栄宛",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/57043_tei.xml",
+            "adapter": "aozora-rs",
+            "paragraph_origin_bucket": "adapter_over_segmented",
+            "body_text_match_bucket": "different",
+            "passed": false,
+            "owners": [
+              "adapter",
+              "policy"
+            ],
+            "reasons": [
+              "paragraph origin is adapter_over_segmented",
+              "text policy required for different"
+            ]
+          },
+          {
+            "work_id": "57043",
+            "title": "書簡 大杉栄宛",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/57043_tei.xml",
+            "adapter": "aozora2",
+            "paragraph_origin_bucket": "aligned",
+            "body_text_match_bucket": "different",
+            "passed": false,
+            "owners": [
+              "policy"
+            ],
+            "reasons": [
+              "text policy required for different"
+            ]
+          },
+          {
+            "work_id": "57043",
+            "title": "書簡 大杉栄宛",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/57043_tei.xml",
+            "adapter": "aozora",
+            "paragraph_origin_bucket": "aligned",
+            "body_text_match_bucket": "different",
+            "passed": false,
+            "owners": [
+              "policy"
+            ],
+            "reasons": [
+              "text policy required for different"
+            ]
+          }
+        ]
+      },
+      {
+        "work_id": "57044",
+        "title": "書簡 大杉栄宛",
+        "tei_eaj_file": "data/complete/tei_lib_lv3/57044_tei.xml",
+        "owners": [
+          "adapter",
+          "policy"
+        ],
+        "candidates": [
+          {
+            "work_id": "57044",
+            "title": "書簡 大杉栄宛",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/57044_tei.xml",
+            "adapter": "aozora2html",
+            "paragraph_origin_bucket": "adapter_over_segmented",
+            "body_text_match_bucket": "different",
+            "passed": false,
+            "owners": [
+              "adapter",
+              "policy"
+            ],
+            "reasons": [
+              "paragraph origin is adapter_over_segmented",
+              "text policy required for different"
+            ]
+          },
+          {
+            "work_id": "57044",
+            "title": "書簡 大杉栄宛",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/57044_tei.xml",
+            "adapter": "aozora-epub3",
+            "paragraph_origin_bucket": "adapter_over_segmented",
+            "body_text_match_bucket": "different",
+            "passed": false,
+            "owners": [
+              "adapter",
+              "policy"
+            ],
+            "reasons": [
+              "paragraph origin is adapter_over_segmented",
+              "text policy required for different"
+            ]
+          },
+          {
+            "work_id": "57044",
+            "title": "書簡 大杉栄宛",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/57044_tei.xml",
+            "adapter": "aozora-rs",
+            "paragraph_origin_bucket": "adapter_over_segmented",
+            "body_text_match_bucket": "different",
+            "passed": false,
+            "owners": [
+              "adapter",
+              "policy"
+            ],
+            "reasons": [
+              "paragraph origin is adapter_over_segmented",
+              "text policy required for different"
+            ]
+          },
+          {
+            "work_id": "57044",
+            "title": "書簡 大杉栄宛",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/57044_tei.xml",
+            "adapter": "aozora2",
+            "paragraph_origin_bucket": "aligned",
+            "body_text_match_bucket": "different",
+            "passed": false,
+            "owners": [
+              "policy"
+            ],
+            "reasons": [
+              "text policy required for different"
+            ]
+          },
+          {
+            "work_id": "57044",
+            "title": "書簡 大杉栄宛",
+            "tei_eaj_file": "data/complete/tei_lib_lv3/57044_tei.xml",
+            "adapter": "aozora",
+            "paragraph_origin_bucket": "aligned",
+            "body_text_match_bucket": "different",
+            "passed": false,
+            "owners": [
+              "policy"
+            ],
+            "reasons": [
+              "text policy required for different"
+            ]
+          }
+        ]
+      }
+    ]
+  },
   "profile_lanes": {
     "drama": {
       "rows": 50,

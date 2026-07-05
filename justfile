@@ -299,6 +299,21 @@ parser-ir-plain-prose-source-delta-report ADMISSION_SUMMARY="docs/superpowers/re
 		--report-md "{{repo_root}}/{{REPORT_MD}}" \
 		--allow-missing-parser-evidence
 
+parser-ir-publication-coverage-smoke:
+	@bash "{{repo_root}}/tests/parser-ir-publication-coverage-smoke.sh"
+
+parser-ir-publication-coverage-report PARSER_IR_SCHEMA="data/abc-schemas/schemas/parser-ir.schema.json" MAPPING="data/aat-to-parser-ir-mapping-v1.json" MATRIX_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-generated-matrix-comparison.summary.json" SOURCE_SUMMARY="docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json" SOURCE_DELTA_SUMMARY="docs/superpowers/reports/2026-07-05-plain-prose-source-delta.summary.json" REPORT_MD="docs/superpowers/reports/2026-07-06-ir-publication-coverage.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-06-ir-publication-coverage.summary.json" CUSTOM_CONTRACT_SCHEMA="":
+	@args=(); if [ -n "{{CUSTOM_CONTRACT_SCHEMA}}" ]; then args+=(--custom-contract-schema "{{repo_root}}/{{CUSTOM_CONTRACT_SCHEMA}}"); fi; \
+	python3 "{{repo_root}}/reports/parser-ir/publication-coverage.py" \
+		--parser-ir-schema "{{repo_root}}/{{PARSER_IR_SCHEMA}}" \
+		--mapping "{{repo_root}}/{{MAPPING}}" \
+		--source-summary "{{repo_root}}/{{SOURCE_SUMMARY}}" \
+		--matrix-summary "{{repo_root}}/{{MATRIX_SUMMARY}}" \
+		--source-delta-summary "{{repo_root}}/{{SOURCE_DELTA_SUMMARY}}" \
+		--summary-json "{{repo_root}}/{{SUMMARY_JSON}}" \
+		--report-md "{{repo_root}}/{{REPORT_MD}}" \
+		"${args[@]}"
+
 tei-eaj-structural-expansion JOBS="24" REPORT_MD="docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.md" SUMMARY_JSON="docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.summary.json":
 	@test -f "{{tei_eaj_workset}}" || { echo "missing TEI-EAJ workset export: {{tei_eaj_workset}}" >&2; exit 2; }
 	@cargo build -p ab-aat-to-parser-ir --release --jobs "{{JOBS}}"

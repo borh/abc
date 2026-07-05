@@ -62,5 +62,5 @@
     "/db/ab-validator/aat-corpus/aozora2-full-20260705T083650Z-layout-fix5/aat/aozora2-adapter",
     "/db/ab-validator/aat-corpus/aozora-full-20260705T015007Z/aat/aozora-adapter"
   ],
-  "mapping_path": "/home/bor/Projects/ab-validator/.worktrees/parser-ir-emphasis-inline-children/data/aat-to-parser-ir-mapping-v1.json"
+  "mapping_path": "data/aat-to-parser-ir-mapping-v1.json"
 }

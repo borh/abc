@@ -31,6 +31,9 @@ incomplete_matrix_summary="$out_dir/matrix-summary-incomplete.json"
 incomplete_source_delta="$out_dir/source-delta-incomplete.summary.json"
 incomplete_summary_json="$out_dir/coverage-incomplete.summary.json"
 incomplete_report_md="$out_dir/coverage-incomplete.md"
+unknown_node_schema="$out_dir/parser-ir-unknown-node.schema.json"
+unknown_node_summary_json="$out_dir/coverage-unknown-node.summary.json"
+unknown_node_report_md="$out_dir/coverage-unknown-node.md"
 
 cat > "$parser_schema" <<'JSON'
 {
@@ -178,6 +181,8 @@ jq -e '.field_coverage.by_field."gaiji.raw_marker".class == "tei_policy_projecti
 jq -e '.field_coverage.by_field."paragraph.layout".class == "tei_policy_projection"' "$summary_json" >/dev/null
 jq -e '.field_coverage.by_field."mapping.identity".class == "custom_sidecar"' "$summary_json" >/dev/null
 jq -e '.field_coverage.by_field."source.pointer".class == "custom_sidecar"' "$summary_json" >/dev/null
+jq -e '.diagnostic_coverage.by_field."warnings[].code".class == "custom_sidecar"' "$summary_json" >/dev/null
+jq -e '.diagnostic_coverage.by_field."errors[].span".class == "custom_sidecar"' "$summary_json" >/dev/null
 jq -e '.node_coverage.by_node_type.text.class == "tei_exact"' "$summary_json" >/dev/null
 jq -e '.node_coverage.by_node_type.ruby.class == "tei_exact"' "$summary_json" >/dev/null
 jq -e '.node_coverage.by_node_type.warigaki.class == "tei_plus_abc_extension"' "$summary_json" >/dev/null
@@ -377,3 +382,33 @@ jq -e '.parser_evidence_coverage.verdict == "FIVE_PARSER_EVIDENCE_INCOMPLETE"' "
 jq -e '.parser_evidence_coverage.observed_rows_by_parser.aozora == 0' "$incomplete_summary_json" >/dev/null
 jq -e '.parser_evidence_coverage.missing_parsers == ["aozora"]' "$incomplete_summary_json" >/dev/null
 jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_INCOMPLETE_PARSER_EVIDENCE"' "$incomplete_summary_json" >/dev/null
+
+cat > "$unknown_node_schema" <<'JSON'
+{
+  "$id": "https://w3id.org/abc/schemas/parser-ir-unknown-node.schema.json",
+  "properties": {"schema_hash": {"const": "sha256:fixture-parser-ir-unknown-node"}},
+  "$defs": {
+    "node": {
+      "oneOf": [
+        {"$ref": "#/$defs/textNode"},
+        {"$ref": "#/$defs/mysteryNode"}
+      ]
+    },
+    "textNode": {"properties": {"type": {"const": "text"}}},
+    "mysteryNode": {"properties": {"type": {"const": "mystery-node"}}}
+  }
+}
+JSON
+
+python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
+  --parser-ir-schema "$unknown_node_schema" \
+  --mapping "$supported_mapping" \
+  --source-summary "$source_summary" \
+  --matrix-summary "$matrix_summary" \
+  --source-delta-summary "$source_delta" \
+  --custom-contract-schema "$valid_custom_contract" \
+  --summary-json "$unknown_node_summary_json" \
+  --report-md "$unknown_node_report_md"
+
+jq -e '.node_coverage.by_node_type."mystery-node".class == "unsupported_gap"' "$unknown_node_summary_json" >/dev/null
+jq -e '.node_coverage.unsupported[0].owner == "custom_schema"' "$unknown_node_summary_json" >/dev/null

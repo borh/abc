@@ -40,6 +40,25 @@ Verdict: `IR_PUBLICATION_COVERAGE_BLOCKED_UNSUPPORTED_GAPS`
 | `divergence.records` | `custom_sidecar` | ABC sidecar divergence record set |
 | `source.pointer` | `custom_sidecar` | ABC sidecar source pointer linkage |
 
+## Diagnostic Coverage
+
+| Class | Diagnostic facts |
+|---|---:|
+| `custom_sidecar` | 10 |
+
+| Diagnostic field | Class | Target |
+|---|---|---|
+| `warnings[]` | `custom_sidecar` | ABC sidecar warning record collection |
+| `warnings[].code` | `custom_sidecar` | ABC sidecar warning code preservation |
+| `warnings[].severity` | `custom_sidecar` | ABC sidecar warning severity preservation |
+| `warnings[].message` | `custom_sidecar` | ABC sidecar warning message preservation |
+| `warnings[].span` | `custom_sidecar` | ABC sidecar warning span preservation |
+| `errors[]` | `custom_sidecar` | ABC sidecar error record collection |
+| `errors[].code` | `custom_sidecar` | ABC sidecar error code preservation |
+| `errors[].severity` | `custom_sidecar` | ABC sidecar error severity preservation |
+| `errors[].message` | `custom_sidecar` | ABC sidecar error message preservation |
+| `errors[].span` | `custom_sidecar` | ABC sidecar error span preservation |
+
 ## Source Construct Coverage
 
 | Class | Constructs |
@@ -47,19 +66,19 @@ Verdict: `IR_PUBLICATION_COVERAGE_BLOCKED_UNSUPPORTED_GAPS`
 | `tei_exact` | 3 |
 | `tei_policy_projection` | 5 |
 | `tei_plus_abc_extension` | 2 |
-| `unsupported_gap` | 26 |
+| `unsupported_gap` | 25 |
 
 ## Unsupported gaps
 
-Count: 189
+Count: 185
 
 | Owner | Count |
 |---|---:|
 | `aat_to_parser_ir_converter` | 5 |
 | `custom_schema` | 105 |
-| `evidence` | 22 |
+| `evidence` | 19 |
 | `parser_ir_schema` | 15 |
-| `policy` | 42 |
+| `policy` | 41 |
 
 - `blocks[].children[].children[].content[].accent` owner `policy`
 - `blocks[].children[].children[].content[].gaiji.jis_code` owner `policy`

@@ -164,6 +164,58 @@ FIELD_COVERAGE_SPECS = {
         ],
     },
 }
+DIAGNOSTIC_COVERAGE_SPECS = {
+    "warnings[]": {
+        "class": "custom_sidecar",
+        "target": "ABC sidecar warning record collection",
+        "kind": "diagnostic_collection",
+    },
+    "warnings[].code": {
+        "class": "custom_sidecar",
+        "target": "ABC sidecar warning code preservation",
+        "kind": "diagnostic_field",
+    },
+    "warnings[].severity": {
+        "class": "custom_sidecar",
+        "target": "ABC sidecar warning severity preservation",
+        "kind": "diagnostic_field",
+    },
+    "warnings[].message": {
+        "class": "custom_sidecar",
+        "target": "ABC sidecar warning message preservation",
+        "kind": "diagnostic_field",
+    },
+    "warnings[].span": {
+        "class": "custom_sidecar",
+        "target": "ABC sidecar warning span preservation",
+        "kind": "diagnostic_field",
+    },
+    "errors[]": {
+        "class": "custom_sidecar",
+        "target": "ABC sidecar error record collection",
+        "kind": "diagnostic_collection",
+    },
+    "errors[].code": {
+        "class": "custom_sidecar",
+        "target": "ABC sidecar error code preservation",
+        "kind": "diagnostic_field",
+    },
+    "errors[].severity": {
+        "class": "custom_sidecar",
+        "target": "ABC sidecar error severity preservation",
+        "kind": "diagnostic_field",
+    },
+    "errors[].message": {
+        "class": "custom_sidecar",
+        "target": "ABC sidecar error message preservation",
+        "kind": "diagnostic_field",
+    },
+    "errors[].span": {
+        "class": "custom_sidecar",
+        "target": "ABC sidecar error span preservation",
+        "kind": "diagnostic_field",
+    },
+}
 KNOWN_COMPOUND_CONSTRUCTS = ("gaiji.resolved",)
 KNOWN_CONSTRUCT_SEGMENTS = (
     "caption_block",
@@ -195,6 +247,7 @@ CLASS_ORDER = (
     "unsupported_gap",
 )
 DIRECT_POINTER_PATTERN = re.compile(r"^[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)*$")
+CUSTOM_SCHEMA_OWNER = "custom_schema"
 
 
 def extract_node_types(schema: dict[str, Any]) -> list[str]:
@@ -300,7 +353,7 @@ def node_coverage_from_schema(schema: dict[str, Any]) -> dict[str, Any]:
         }
         by_node_type[node_type] = entry
         if coverage_class == "unsupported_gap":
-            unsupported.append({"node_type": node_type, "owner": "abc_custom_schema"})
+            unsupported.append({"node_type": node_type, "owner": CUSTOM_SCHEMA_OWNER})
     return {
         "by_node_type": by_node_type,
         "counts_by_class": count_by_class(by_node_type),
@@ -329,7 +382,56 @@ def field_coverage_from_schema(schema: dict[str, Any]) -> dict[str, Any]:
             ]
         by_field[field_name] = entry
         if spec["class"] == "unsupported_gap":
-            unsupported.append({"field": field_name, "owner": "parser_ir_schema"})
+            unsupported.append({"field": field_name, "owner": CUSTOM_SCHEMA_OWNER})
+    return {
+        "by_field": by_field,
+        "counts_by_class": count_by_class(by_field),
+        "unsupported": unsupported,
+    }
+
+
+def diagnostic_field_key(pointer: Any) -> str | None:
+    if not isinstance(pointer, str):
+        return None
+    candidate = pointer.strip()
+    if candidate in DIAGNOSTIC_COVERAGE_SPECS:
+        return candidate
+    for prefix in ("warnings[].span", "errors[].span"):
+        if candidate == prefix or candidate.startswith(prefix + "."):
+            return prefix
+    return None
+
+
+def diagnostic_coverage(mapping: dict[str, Any]) -> dict[str, Any]:
+    by_field: dict[str, dict[str, Any]] = {}
+    unsupported: list[dict[str, Any]] = []
+    for field_name, spec in DIAGNOSTIC_COVERAGE_SPECS.items():
+        by_field[field_name] = {
+            "class": spec["class"],
+            "target": spec["target"],
+            "kind": spec["kind"],
+            "mapped_rules": 0,
+            "examples": [],
+        }
+        if spec["class"] == "unsupported_gap":
+            unsupported.append({"field": field_name, "owner": CUSTOM_SCHEMA_OWNER})
+
+    for rule in mapping.get("transform_rule_descriptions", []):
+        field_name = diagnostic_field_key(rule.get("parser_ir_pointer"))
+        if field_name is None:
+            continue
+        entry = by_field[field_name]
+        entry["mapped_rules"] += 1
+        if len(entry["examples"]) < 3:
+            entry["examples"].append(
+                {
+                    "rule_id": rule.get("rule_id"),
+                    "aat_pointer": rule.get("aat_pointer"),
+                    "parser_ir_pointer": rule.get("parser_ir_pointer"),
+                    "category": rule.get("category"),
+                }
+            )
+
     return {
         "by_field": by_field,
         "counts_by_class": count_by_class(by_field),
@@ -385,7 +487,7 @@ def unsupported_owner(rule: dict[str, Any], construct: str) -> str:
     category = str(rule.get("category") or "").upper()
     owners = {
         "UNSUPPORTED": "parser_ir_schema",
-        "LOSS": "custom_schema",
+        "LOSS": CUSTOM_SCHEMA_OWNER,
         "STRUCTURAL": "aat_to_parser_ir_converter",
         "AMBIGUITY": "policy",
     }
@@ -396,6 +498,8 @@ def source_construct_coverage(mapping: dict[str, Any]) -> dict[str, Any]:
     by_construct: dict[str, dict[str, Any]] = {}
     unsupported: list[dict[str, Any]] = []
     for rule in mapping.get("transform_rule_descriptions", []):
+        if diagnostic_field_key(rule.get("parser_ir_pointer")) is not None:
+            continue
         aat_pointer = rule.get("aat_pointer")
         construct = construct_from_rule(rule)
         category = str(rule.get("category") or "unknown")
@@ -586,11 +690,13 @@ def summary_scope(
 def unsupported_gaps(
     node_coverage: dict[str, Any],
     field_coverage: dict[str, Any],
+    diagnostic_coverage: dict[str, Any],
     construct_coverage: dict[str, Any],
 ) -> dict[str, Any]:
     items = []
     items.extend(node_coverage.get("unsupported", []))
     items.extend(field_coverage.get("unsupported", []))
+    items.extend(diagnostic_coverage.get("unsupported", []))
     items.extend(construct_coverage.get("unsupported", []))
     return {
         "count": len(items),
@@ -626,10 +732,11 @@ def build_summary(
 ) -> dict[str, Any]:
     node_coverage = node_coverage_from_schema(parser_schema)
     field_coverage = field_coverage_from_schema(parser_schema)
+    diagnostics = diagnostic_coverage(mapping)
     construct_coverage = source_construct_coverage(mapping)
     evidence = parser_evidence_coverage(matrix, source_delta)
     custom_contract = custom_contract_block(custom_contract_schema)
-    gaps = unsupported_gaps(node_coverage, field_coverage, construct_coverage)
+    gaps = unsupported_gaps(node_coverage, field_coverage, diagnostics, construct_coverage)
     source_passed = source_authority_passed(source)
     return {
         "schema_version": SCHEMA_VERSION,
@@ -649,6 +756,7 @@ def build_summary(
         "mapping": mapping_block(mapping),
         "node_coverage": node_coverage,
         "field_coverage": field_coverage,
+        "diagnostic_coverage": diagnostics,
         "source_construct_coverage": construct_coverage,
         "unsupported_gaps": gaps,
         "tei_eaj_calibration": {
@@ -664,6 +772,7 @@ def build_summary(
 def render_markdown(summary: dict[str, Any]) -> str:
     node_counts = summary["node_coverage"]["counts_by_class"]
     field_counts = summary["field_coverage"]["counts_by_class"]
+    diagnostic_counts = summary["diagnostic_coverage"]["counts_by_class"]
     construct_counts = summary["source_construct_coverage"]["counts_by_class"]
     gaps = summary["unsupported_gaps"]
     lines = [
@@ -683,6 +792,12 @@ def render_markdown(summary: dict[str, Any]) -> str:
         lines.append(f"| `{name}` | {count} |")
     lines.extend(["", "| Field | Class | Target |", "|---|---|---|"])
     for field_name, entry in summary["field_coverage"]["by_field"].items():
+        lines.append(f"| `{field_name}` | `{entry['class']}` | {entry['target']} |")
+    lines.extend(["", "## Diagnostic Coverage", "", "| Class | Diagnostic facts |", "|---|---:|"])
+    for name, count in diagnostic_counts.items():
+        lines.append(f"| `{name}` | {count} |")
+    lines.extend(["", "| Diagnostic field | Class | Target |", "|---|---|---|"])
+    for field_name, entry in summary["diagnostic_coverage"]["by_field"].items():
         lines.append(f"| `{field_name}` | `{entry['class']}` | {entry['target']} |")
     lines.extend(["", "## Source Construct Coverage", "", "| Class | Constructs |", "|---|---:|"])
     for name, count in construct_counts.items():

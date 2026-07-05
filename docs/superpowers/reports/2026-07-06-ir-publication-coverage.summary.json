@@ -301,6 +301,112 @@
     },
     "unsupported": []
   },
+  "diagnostic_coverage": {
+    "by_field": {
+      "warnings[]": {
+        "class": "custom_sidecar",
+        "target": "ABC sidecar warning record collection",
+        "kind": "diagnostic_collection",
+        "mapped_rules": 0,
+        "examples": []
+      },
+      "warnings[].code": {
+        "class": "custom_sidecar",
+        "target": "ABC sidecar warning code preservation",
+        "kind": "diagnostic_field",
+        "mapped_rules": 1,
+        "examples": [
+          {
+            "rule_id": "I-05",
+            "aat_pointer": null,
+            "parser_ir_pointer": "warnings[].code",
+            "category": "INVENTION"
+          }
+        ]
+      },
+      "warnings[].severity": {
+        "class": "custom_sidecar",
+        "target": "ABC sidecar warning severity preservation",
+        "kind": "diagnostic_field",
+        "mapped_rules": 1,
+        "examples": [
+          {
+            "rule_id": "I-06",
+            "aat_pointer": null,
+            "parser_ir_pointer": "warnings[].severity",
+            "category": "INVENTION"
+          }
+        ]
+      },
+      "warnings[].message": {
+        "class": "custom_sidecar",
+        "target": "ABC sidecar warning message preservation",
+        "kind": "diagnostic_field",
+        "mapped_rules": 0,
+        "examples": []
+      },
+      "warnings[].span": {
+        "class": "custom_sidecar",
+        "target": "ABC sidecar warning span preservation",
+        "kind": "diagnostic_field",
+        "mapped_rules": 1,
+        "examples": [
+          {
+            "rule_id": "A-126",
+            "aat_pointer": "meta.warnings[].line",
+            "parser_ir_pointer": "warnings[].span.line",
+            "category": "AMBIGUITY"
+          }
+        ]
+      },
+      "errors[]": {
+        "class": "custom_sidecar",
+        "target": "ABC sidecar error record collection",
+        "kind": "diagnostic_collection",
+        "mapped_rules": 1,
+        "examples": [
+          {
+            "rule_id": "I-01",
+            "aat_pointer": null,
+            "parser_ir_pointer": "errors[]",
+            "category": "INVENTION"
+          }
+        ]
+      },
+      "errors[].code": {
+        "class": "custom_sidecar",
+        "target": "ABC sidecar error code preservation",
+        "kind": "diagnostic_field",
+        "mapped_rules": 0,
+        "examples": []
+      },
+      "errors[].severity": {
+        "class": "custom_sidecar",
+        "target": "ABC sidecar error severity preservation",
+        "kind": "diagnostic_field",
+        "mapped_rules": 0,
+        "examples": []
+      },
+      "errors[].message": {
+        "class": "custom_sidecar",
+        "target": "ABC sidecar error message preservation",
+        "kind": "diagnostic_field",
+        "mapped_rules": 0,
+        "examples": []
+      },
+      "errors[].span": {
+        "class": "custom_sidecar",
+        "target": "ABC sidecar error span preservation",
+        "kind": "diagnostic_field",
+        "mapped_rules": 0,
+        "examples": []
+      }
+    },
+    "counts_by_class": {
+      "custom_sidecar": 10
+    },
+    "unsupported": []
+  },
   "source_construct_coverage": {
     "by_construct": {
       "accent": {
@@ -698,21 +804,6 @@
           }
         ]
       },
-      "line": {
-        "class": "unsupported_gap",
-        "rules": 1,
-        "categories": {
-          "AMBIGUITY": 1
-        },
-        "examples": [
-          {
-            "rule_id": "A-126",
-            "aat_pointer": "meta.warnings[].line",
-            "parser_ir_pointer": "warnings[].span.line",
-            "category": "AMBIGUITY"
-          }
-        ]
-      },
       "metrics": {
         "class": "unsupported_gap",
         "rules": 1,
@@ -998,27 +1089,15 @@
       },
       "unknown": {
         "class": "unsupported_gap",
-        "rules": 4,
+        "rules": 1,
         "categories": {
-          "INVENTION": 4
+          "INVENTION": 1
         },
         "examples": [
           {
-            "rule_id": "I-01",
+            "rule_id": "I-07",
             "aat_pointer": null,
-            "parser_ir_pointer": "errors[]",
-            "category": "INVENTION"
-          },
-          {
-            "rule_id": "I-05",
-            "aat_pointer": null,
-            "parser_ir_pointer": "warnings[].code",
-            "category": "INVENTION"
-          },
-          {
-            "rule_id": "I-06",
-            "aat_pointer": null,
-            "parser_ir_pointer": "warnings[].severity",
+            "parser_ir_pointer": "schema_id/schema_hash",
             "category": "INVENTION"
           }
         ]
@@ -1153,7 +1232,7 @@
       "tei_exact": 3,
       "tei_policy_projection": 5,
       "tei_plus_abc_extension": 2,
-      "unsupported_gap": 26
+      "unsupported_gap": 25
     },
     "unsupported": [
       {
@@ -1444,20 +1523,6 @@
         "owner": "policy"
       },
       {
-        "rule_id": "A-126",
-        "aat_pointer": "meta.warnings[].line",
-        "parser_ir_pointer": "warnings[].span.line",
-        "category": "AMBIGUITY",
-        "owner": "policy"
-      },
-      {
-        "rule_id": "I-01",
-        "aat_pointer": null,
-        "parser_ir_pointer": "errors[]",
-        "category": "INVENTION",
-        "owner": "evidence"
-      },
-      {
         "rule_id": "I-03",
         "aat_pointer": null,
         "parser_ir_pointer": "source.normalization",
@@ -1468,20 +1533,6 @@
         "rule_id": "I-04",
         "aat_pointer": null,
         "parser_ir_pointer": "source.source_path",
-        "category": "INVENTION",
-        "owner": "evidence"
-      },
-      {
-        "rule_id": "I-05",
-        "aat_pointer": null,
-        "parser_ir_pointer": "warnings[].code",
-        "category": "INVENTION",
-        "owner": "evidence"
-      },
-      {
-        "rule_id": "I-06",
-        "aat_pointer": null,
-        "parser_ir_pointer": "warnings[].severity",
         "category": "INVENTION",
         "owner": "evidence"
       },
@@ -2482,13 +2533,13 @@
     ]
   },
   "unsupported_gaps": {
-    "count": 189,
+    "count": 185,
     "counts_by_owner": {
       "aat_to_parser_ir_converter": 5,
       "custom_schema": 105,
-      "evidence": 22,
+      "evidence": 19,
       "parser_ir_schema": 15,
-      "policy": 42
+      "policy": 41
     },
     "items": [
       {
@@ -2779,20 +2830,6 @@
         "owner": "policy"
       },
       {
-        "rule_id": "A-126",
-        "aat_pointer": "meta.warnings[].line",
-        "parser_ir_pointer": "warnings[].span.line",
-        "category": "AMBIGUITY",
-        "owner": "policy"
-      },
-      {
-        "rule_id": "I-01",
-        "aat_pointer": null,
-        "parser_ir_pointer": "errors[]",
-        "category": "INVENTION",
-        "owner": "evidence"
-      },
-      {
         "rule_id": "I-03",
         "aat_pointer": null,
         "parser_ir_pointer": "source.normalization",
@@ -2803,20 +2840,6 @@
         "rule_id": "I-04",
         "aat_pointer": null,
         "parser_ir_pointer": "source.source_path",
-        "category": "INVENTION",
-        "owner": "evidence"
-      },
-      {
-        "rule_id": "I-05",
-        "aat_pointer": null,
-        "parser_ir_pointer": "warnings[].code",
-        "category": "INVENTION",
-        "owner": "evidence"
-      },
-      {
-        "rule_id": "I-06",
-        "aat_pointer": null,
-        "parser_ir_pointer": "warnings[].severity",
         "category": "INVENTION",
         "owner": "evidence"
       },

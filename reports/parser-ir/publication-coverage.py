@@ -34,6 +34,7 @@ NODE_COVERAGE_CLASSES = {
     "raw-source": "tei_policy_projection",
 }
 CONSTRUCT_COVERAGE_CLASSES = {
+    "ruby": "tei_exact",
     "raw": "tei_policy_projection",
     "warigaki": "tei_plus_abc_extension",
     "accent": "tei_plus_abc_extension",
@@ -42,6 +43,14 @@ CONSTRUCT_COVERAGE_CLASSES = {
     "keigakomi_block": "tei_policy_projection",
     "yokogumi_block": "tei_policy_projection",
     "gaiji.resolved": "tei_exact",
+}
+CONSTRUCT_CLASS_PRIORITY = {
+    "unsupported_gap": 0,
+    "tei_plus_abc_extension": 1,
+    "custom_sidecar": 2,
+    "tei_policy_projection": 3,
+    "plaintext_only": 4,
+    "tei_exact": 5,
 }
 CLASS_ORDER = (
     "tei_exact",
@@ -148,6 +157,16 @@ def construct_from_pointer(pointer: str | None) -> str:
     return pointer.rsplit(".", 1)[-1].replace("[]", "")
 
 
+def _more_conservative_class(current_class: str | None, candidate_class: str) -> str:
+    if current_class is None:
+        return candidate_class
+
+    # Lower rank is more conservative / higher priority.
+    current_rank = CONSTRUCT_CLASS_PRIORITY.get(current_class, len(CONSTRUCT_CLASS_PRIORITY) + 1)
+    candidate_rank = CONSTRUCT_CLASS_PRIORITY.get(candidate_class, len(CONSTRUCT_CLASS_PRIORITY) + 1)
+    return current_class if current_rank <= candidate_rank else candidate_class
+
+
 def source_construct_coverage(mapping: dict[str, Any]) -> dict[str, Any]:
     by_construct: dict[str, dict[str, Any]] = {}
     unsupported: list[dict[str, Any]] = []
@@ -160,15 +179,17 @@ def source_construct_coverage(mapping: dict[str, Any]) -> dict[str, Any]:
             coverage_class = "unsupported_gap"
         if coverage_class is None:
             coverage_class = "tei_policy_projection"
-        entry = by_construct.setdefault(
-            construct,
-            {
+
+        if construct not in by_construct:
+            by_construct[construct] = {
                 "class": coverage_class,
                 "rules": 0,
                 "categories": {},
                 "examples": [],
-            },
-        )
+            }
+
+        entry = by_construct[construct]
+        entry["class"] = _more_conservative_class(entry["class"], coverage_class)
         entry["rules"] += 1
         entry["categories"][category] = entry["categories"].get(category, 0) + 1
         if len(entry["examples"]) < 3:

@@ -146,6 +146,39 @@ fn is_kanji(ch: char) -> bool {
         || ('\u{3400}'..='\u{4DBF}').contains(&ch) // CJK Ext-A
 }
 
+/// Canonical feature vector order used by the ML trainer + runtime classifier.
+/// The model's weight vector indexes match this order. DO NOT reorder without
+/// retraining + rehashing (spec Decision #10 partitions the model hash by
+/// this exact order).
+pub const FEATURE_NAMES: &[&str] = &[
+    "total_chars",
+    "hiragana_ratio",
+    "katakana_ratio",
+    "kanji_ratio",
+    "unique_char_ratio",
+    "max_bigram_repeat_ratio",
+    "char_run_repeat_ratio",
+    "repeated_bigram_pattern_ratio",
+    "katakana_at_sentence_end",
+];
+
+/// Project `CharFeatures` into the canonical ML feature vector.
+/// `katakana_at_sentence_end` (bool) becomes 0.0/1.0 so the vector is `f64`-uniform.
+#[must_use]
+pub fn features_to_vector(f: &CharFeatures) -> Vec<f64> {
+    vec![
+        f.total_chars as f64,
+        f.hiragana_ratio,
+        f.katakana_ratio,
+        f.kanji_ratio,
+        f.unique_char_ratio,
+        f.max_bigram_repeat_ratio,
+        f.char_run_repeat_ratio,
+        f.repeated_bigram_pattern_ratio,
+        if f.katakana_at_sentence_end { 1.0 } else { 0.0 },
+    ]
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -196,5 +229,28 @@ mod tests {
     fn katakana_not_at_end() {
         let f = extract_char_features("ダという猫");
         assert!(!f.katakana_at_sentence_end);
+    }
+
+    #[test]
+    fn feature_vector_length_matches_names() {
+        let f = extract_char_features("アアアア");
+        assert_eq!(FEATURE_NAMES.len(), features_to_vector(&f).len());
+    }
+
+    #[test]
+    fn boolean_feature_is_zero_or_one() {
+        // "猫ダ" ends in katakana (ダ) → katakana_at_sentence_end == true.
+        let f = extract_char_features("猫ダ");
+        let v = features_to_vector(&f);
+        let idx = FEATURE_NAMES
+            .iter()
+            .position(|n| *n == "katakana_at_sentence_end")
+            .unwrap();
+        assert!((v[idx] - 1.0).abs() < 1e-9);
+
+        // "ダという猫" ends in kanji (猫) → false.
+        let f2 = extract_char_features("ダという猫");
+        let v2 = features_to_vector(&f2);
+        assert!((v2[idx] - 0.0).abs() < 1e-9);
     }
 }

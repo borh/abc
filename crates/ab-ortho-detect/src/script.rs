@@ -17,9 +17,8 @@
 #[must_use]
 pub fn kata_to_hira(text: &str) -> String {
     let mut out = String::with_capacity(text.len());
-    let mut chars = text.chars().peekable();
 
-    while let Some(ch) = chars.next() {
+    for ch in text.chars() {
         match ch {
             // ヴ → う゛ (two characters for dictionary compatibility)
             // Must precede the range arm: U+30F4 is inside U+30A1–U+30F6.

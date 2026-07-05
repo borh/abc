@@ -262,12 +262,35 @@ fn maps_unclosed_simple_jisage_until_next_container_marker() {
     assert_eq!(blocks[0]["children"][0]["kind"], "paragraph");
     assert_eq!(blocks[0]["children"][0]["content"][0]["value"], "地の文");
     assert_eq!(blocks[1]["kind"], "paragraph");
-    assert_eq!(
-        blocks[1]["content"][0]["source"],
-        "［＃ここから改行天付き、折り返して１字下げ］"
-    );
+    assert_eq!(blocks[1]["content"][0]["kind"], "style");
+    assert_eq!(blocks[1]["content"][0]["style_type"], "burasage");
+    assert_eq!(blocks[1]["content"][0]["x-indent-first"], 0);
+    assert_eq!(blocks[1]["content"][0]["x-indent-rest"], 1);
+    assert_eq!(blocks[1]["content"][0]["content"][0]["value"], "台詞");
     let text = serde_json::to_string(&aat).unwrap();
     assert!(!text.contains(r#""source":"［＃ここから１字下げ］""#));
+    assert!(!text.contains(r#""source":"［＃ここから改行天付き、折り返して１字下げ］""#));
+}
+
+#[test]
+fn maps_hanging_indent_container_to_burasage_style() {
+    let aat = run_aat(
+        "［＃ここから改行天付き、折り返して１字下げ］\n台詞\n［＃ここで字下げ終わり］\n後\n",
+    );
+    let blocks = aat["blocks"].as_array().expect("blocks");
+
+    assert_eq!(blocks.len(), 2);
+    assert_eq!(blocks[0]["kind"], "paragraph");
+    assert_eq!(blocks[0]["content"][0]["kind"], "style");
+    assert_eq!(blocks[0]["content"][0]["style_type"], "burasage");
+    assert_eq!(blocks[0]["content"][0]["x-indent-first"], 0);
+    assert_eq!(blocks[0]["content"][0]["x-indent-rest"], 1);
+    assert_eq!(blocks[0]["content"][0]["content"][0]["value"], "台詞");
+    assert_eq!(blocks[1]["kind"], "paragraph");
+    assert_eq!(blocks[1]["content"][0]["value"], "後\n");
+    let text = serde_json::to_string(&aat).unwrap();
+    assert!(!text.contains(r#""x-source-marker-kind":"containerOpen""#));
+    assert!(!text.contains(r#""x-source-marker-kind":"containerClose""#));
 }
 
 #[test]

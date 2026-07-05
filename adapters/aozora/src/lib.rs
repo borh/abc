@@ -244,7 +244,26 @@ fn blocks_from_inline_content(content: Vec<Value>) -> Vec<Value> {
             }
         }
 
-        if let Some(indent) = jisage_container_indent(&node) {
+        if let Some((first, rest)) = burasage_container_indent(&node) {
+            if let Some(close_index) = find_matching_jisage_close(&content, index + 1) {
+                push_paragraph_if_not_empty(&mut blocks, std::mem::take(&mut paragraph));
+                let mut inner = content[index + 1..close_index].to_vec();
+                strip_boundary_newlines(&mut inner);
+                push_burasage_paragraph(&mut blocks, first, rest, inner);
+                strip_next_leading_newline = true;
+                index = close_index + 1;
+                continue;
+            }
+            let boundary = find_next_container_boundary(&content, index + 1);
+            if boundary > index + 1 {
+                push_paragraph_if_not_empty(&mut blocks, std::mem::take(&mut paragraph));
+                let mut inner = content[index + 1..boundary].to_vec();
+                strip_boundary_newlines(&mut inner);
+                push_burasage_paragraph(&mut blocks, first, rest, inner);
+                index = boundary;
+                continue;
+            }
+        } else if let Some(indent) = jisage_container_indent(&node) {
             if let Some(close_index) = find_matching_jisage_close(&content, index + 1) {
                 push_paragraph_if_not_empty(&mut blocks, std::mem::take(&mut paragraph));
                 let mut inner = content[index + 1..close_index].to_vec();
@@ -301,6 +320,45 @@ fn push_paragraph_if_not_empty(blocks: &mut Vec<Value>, content: Vec<Value>) {
         "kind": "paragraph",
         "content": content
     }));
+}
+
+fn push_burasage_paragraph(blocks: &mut Vec<Value>, first: u64, rest: u64, content: Vec<Value>) {
+    blocks.push(json!({
+        "kind": "paragraph",
+        "content": [{
+            "kind": "style",
+            "style_type": "burasage",
+            "content": content,
+            "x-indent-first": first,
+            "x-indent-rest": rest,
+            "x-provenance": "source-derived"
+        }]
+    }));
+}
+
+fn burasage_container_indent(node: &Value) -> Option<(u64, u64)> {
+    if node.get("kind").and_then(Value::as_str) != Some("raw")
+        || node.get("x-source-marker-kind").and_then(Value::as_str) != Some("containerOpen")
+    {
+        return None;
+    }
+    let source = node.get("source").and_then(Value::as_str)?;
+    burasage_open_indent(source)
+}
+
+fn burasage_open_indent(source: &str) -> Option<(u64, u64)> {
+    let marker = source.trim();
+    if !marker.starts_with("［＃ここから") || !marker.ends_with('］') {
+        return None;
+    }
+    let (first_part, rest_part) = marker.split_once("折り返して")?;
+    let rest = parse_aozora_number_before(rest_part, "字下げ")?;
+    let first = if first_part.contains("天付き") {
+        0
+    } else {
+        parse_aozora_number_before(first_part, "字下げ").unwrap_or(0)
+    };
+    Some((first, rest))
 }
 
 fn jisage_container_indent(node: &Value) -> Option<u64> {

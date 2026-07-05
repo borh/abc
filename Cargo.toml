@@ -9,6 +9,7 @@ members = [
     "crates/ab-coverage",
     "crates/ab-diff-utils",
     "crates/ab-morph-diff",
+    "crates/ab-ortho-detect",
     "crates/ab-plaintext",
     "crates/ab-morph-analyzers",
     "crates/ab-morph-run",
@@ -37,6 +38,7 @@ arrow-array = "56"
 arrow-schema = "56"
 ab-diff-utils = { path = "crates/ab-diff-utils" }
 ab-morph-diff = { path = "crates/ab-morph-diff" }
+ab-ortho-detect = { path = "crates/ab-ortho-detect" }
 ab-plaintext = { path = "crates/ab-plaintext" }
 ab-morph-analyzers = { path = "crates/ab-morph-analyzers" }
 ab-morph-run = { path = "crates/ab-morph-run" }

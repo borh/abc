@@ -18,7 +18,7 @@ Updated the two Level 3 narrative reports to remove stale source-authority failu
 - Verified stale claims existed with the brief's `rg` probe before editing.
 - Ran the stale-claim verification probe after editing; it returned no matches and exited 1 as expected.
 - Committed the change set:
-  - `8bae6ce` - `docs(parser-ir): refresh level3 blocker narrative`
+  - `722c5be` - `docs(parser-ir): restore strict-errors wording`
 
 ## Files Changed
 
@@ -33,7 +33,7 @@ Updated the two Level 3 narrative reports to remove stale source-authority failu
 
 ## Concerns
 
-- The brief's suggested replacement for the source-authority strict-errors blocker would have triggered the required verification `rg` probe, so I used equivalent wording that preserves the meaning while keeping the stale-claim check clean.
+None.
 
 ## Review Fix
 
@@ -47,4 +47,4 @@ rg -n "SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED|source-authority representa
 
 Output: no matches, exit 1.
 
-Commit: `8bae6ce` was superseded by the new fix commit below.
+Commit: `722c5be` - `docs(parser-ir): restore strict-errors wording`

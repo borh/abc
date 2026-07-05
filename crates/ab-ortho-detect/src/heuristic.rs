@@ -28,7 +28,7 @@ impl Default for HeuristicConfig {
             min_total_chars: 8,
             short_sentence_max_chars: 10,
             long_sentence_min_chars: 100,
-            katakana_ratio_threshold: 0.5,
+            katakana_ratio_threshold: 0.40,
             oov_ratio_threshold: 0.2,
             proper_noun_char_ratio_threshold: 0.3,
             unique_char_ratio_min: 0.5,
@@ -226,7 +226,7 @@ mod tests {
     fn config_defaults_match_spec() {
         let config = HeuristicConfig::default();
         assert_eq!(config.min_total_chars, 8);
-        assert_eq!(config.katakana_ratio_threshold, 0.5);
+        assert_eq!(config.katakana_ratio_threshold, 0.40);
         assert_eq!(config.oov_ratio_threshold, 0.2);
         assert_eq!(config.proper_noun_char_ratio_threshold, 0.3);
     }

@@ -12,6 +12,9 @@ matrix_summary="$out_dir/matrix-summary.json"
 source_delta="$out_dir/source-delta.summary.json"
 summary_json="$out_dir/coverage.summary.json"
 report_md="$out_dir/coverage.md"
+supported_mapping="$out_dir/mapping-supported.json"
+supported_summary_json="$out_dir/coverage-supported.summary.json"
+supported_report_md="$out_dir/coverage-supported.md"
 
 cat > "$parser_schema" <<'JSON'
 {
@@ -144,3 +147,17 @@ jq -e '.unsupported_gaps.items[0].aat_pointer == "blocks[].content[].raw"' "$sum
 jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_UNSUPPORTED_GAPS"' "$summary_json" >/dev/null
 rg -n "IR Publication Coverage" "$report_md" >/dev/null
 rg -n "Unsupported gaps" "$report_md" >/dev/null
+
+jq 'del(.transform_rule_descriptions[] | select(.category == "UNSUPPORTED"))' "$mapping" > "$supported_mapping"
+
+python3 "$repo_root/reports/parser-ir/publication-coverage.py" \
+  --parser-ir-schema "$parser_schema" \
+  --mapping "$supported_mapping" \
+  --source-summary "$source_summary" \
+  --matrix-summary "$matrix_summary" \
+  --source-delta-summary "$source_delta" \
+  --summary-json "$supported_summary_json" \
+  --report-md "$supported_report_md"
+
+jq -e '.unsupported_gaps.count == 0' "$supported_summary_json" >/dev/null
+jq -e '.verdict == "IR_PUBLICATION_COVERAGE_BLOCKED_CUSTOM_CONTRACT_MISSING"' "$supported_summary_json" >/dev/null

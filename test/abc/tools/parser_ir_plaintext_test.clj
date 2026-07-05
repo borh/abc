@@ -109,6 +109,20 @@
                                            "style" "inner"
                                            "text" "内"}]}]})))))
 
+(deftest emphasis-inline-children-gaiji-falls-back-to-visible-text-test
+  (testing "plaintext does not surface raw gaiji markers when emphasis carries visible text"
+    (is (= "G"
+           (plaintext/render-string
+            {"nodes" [{"type" "emphasis"
+                       "span" {"start" 0 "end" 1 "coordinate_system" "decoded_utf8"}
+                       "style" "bold"
+                       "text" "G"
+                       "inline_children" [{"type" "gaiji"
+                                           "span" {"start" 0 "end" 1 "coordinate_system" "decoded_utf8"}
+                                           "gaiji" {"raw_marker" "※［＃gaiji-G］"
+                                                    "unicode" nil
+                                                    "resolved" true}}]}]})))))
+
 (deftest render-omits-empty-or-missing-policy-metadata-test
   (testing "plaintext omits policy-required metadata when node payload is empty or missing"
     (is (= {:text ""

@@ -42,7 +42,7 @@
   "sha256:b508665af72c237fc60f00b720f80db2b16148aa64b5d1cc723a2948ee576390")
 
 (def ^:private v4-mapping-hash
-  "sha256:21791c841557ced968464b38e42971e22830edb0efdb0be6faf285761532f770")
+  "sha256:13734117384aede0ee484cbda1b44b29c96007a17f238a21788f567f7da8ea06")
 
 (def ^:private mapping-schema-hash
   "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4")
@@ -51,10 +51,10 @@
   "sha256:41c43f0c88a66c31ae4fbf9b9eeb04de92756082acaaaa1c2e21f1a5bf74a396")
 
 (def ^:private latest-admitted-parser-ir-schema-hash
-  "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d")
+  "sha256:da916a3a92f64d985cb98f9b2ddc7f562e660fd0c3dbe0c902392d3764b0158a")
 
 (def ^:private current-parser-ir-schema-hash
-  "sha256:da916a3a92f64d985cb98f9b2ddc7f562e660fd0c3dbe0c902392d3764b0158a")
+  "sha256:a1fcd348bf396d8d4e6f30ffb928b76b3802b594ea773ed6fa9e1dac52edf712")
 
 (def ^:private parser-ir-schema-hash
   legacy-parser-ir-schema-hash)
@@ -449,6 +449,76 @@
                      "warnings" []
                      "errors" []}]
       (is (seq (schema/validation-errors schema parser-ir))))))
+
+(deftest parser-ir-schema-accepts-inline-only-emphasis-children-test
+  (testing "emphasis inline_children stay restricted to inline-safe node types"
+    (let [schema (files/read-json "schemas/parser-ir.schema.json")
+          parser-ir {"schema_id" "https://w3id.org/abc/schemas/parser-ir.schema.json"
+                     "schema_hash" current-parser-ir-schema-hash
+                     "source" {"work_content_hash" "sha256:0000000000000000000000000000000000000000000000000000000000000002"
+                               "encoding" "Shift_JIS"
+                               "normalization" "source"}
+                     "nodes" [{"type" "emphasis"
+                               "span" {"start" 0 "end" 4 "coordinate_system" "decoded_utf8"}
+                               "style" "bold"
+                               "text" "AGB\n"
+                               "inline_children" [{"type" "text"
+                                                   "span" {"start" 0 "end" 1 "coordinate_system" "decoded_utf8"}
+                                                   "text" "A"}
+                                                  {"type" "ruby"
+                                                   "span" {"start" 1 "end" 2 "coordinate_system" "decoded_utf8"}
+                                                   "ruby" {"base" "東"
+                                                           "reading" "ひがし"
+                                                           "scope" "explicit"
+                                                           "direction" "right"}}
+                                                  {"type" "gaiji"
+                                                   "span" {"start" 2 "end" 3 "coordinate_system" "decoded_utf8"}
+                                                   "gaiji" {"raw_marker" "※［＃g］"
+                                                            "unicode" "G"
+                                                            "reference" nil
+                                                            "ivs" nil
+                                                            "image_or_glyph_fallback" nil
+                                                            "resolved" true}}
+                                                  {"type" "editor-note"
+                                                   "span" {"start" 3 "end" 3 "coordinate_system" "decoded_utf8"}
+                                                   "note" {"raw" "［＃注］"
+                                                           "category" "misc"}}
+                                                  {"type" "emphasis"
+                                                   "span" {"start" 3 "end" 4 "coordinate_system" "decoded_utf8"}
+                                                   "style" "inner"
+                                                   "text" "B"}
+                                                  {"type" "line-break"
+                                                   "span" {"start" 4 "end" 4 "coordinate_system" "decoded_utf8"}
+                                                   "marker" "［＃改行］"}]}]
+                     "warnings" []
+                     "errors" []}]
+      (is (nil? (schema/validation-errors schema parser-ir))))))
+
+(deftest parser-ir-schema-rejects-block-nodes-inside-inline-children-test
+  (testing "emphasis inline_children reject page-break and image nodes"
+    (let [schema (files/read-json "schemas/parser-ir.schema.json")
+          base {"schema_id" "https://w3id.org/abc/schemas/parser-ir.schema.json"
+                "schema_hash" current-parser-ir-schema-hash
+                "source" {"work_content_hash" "sha256:0000000000000000000000000000000000000000000000000000000000000002"
+                          "encoding" "Shift_JIS"
+                          "normalization" "source"}
+                "warnings" []
+                "errors" []}]
+      (doseq [inline-child [{"type" "page-break"
+                             "span" {"start" 0 "end" 0 "coordinate_system" "decoded_utf8"}
+                             "marker" "［＃改ページ］"}
+                            {"type" "image"
+                             "span" {"start" 0 "end" 0 "coordinate_system" "decoded_utf8"}
+                             "src" "fig.png"
+                             "alt" "図"}]]
+        (is (seq (schema/validation-errors
+                  schema
+                  (assoc base
+                         "nodes" [{"type" "emphasis"
+                                   "span" {"start" 0 "end" 1 "coordinate_system" "decoded_utf8"}
+                                   "style" "bold"
+                                   "text" "x"
+                                   "inline_children" [inline-child]}]))))))))
 
 (def ^:private level3-parser-ir-fixture
   {"nodes" [{"type" "text"

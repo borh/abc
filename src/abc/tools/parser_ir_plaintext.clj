@@ -43,6 +43,18 @@
    (append-text acc (or (get-in node ["gaiji" "unicode"])
                         (get-in node ["gaiji" "raw_marker"])))))
 
+(defn- inline-children-need-visible-text-fallback? [children]
+  (boolean
+   (some (fn [child]
+           (let [node-type (get child "type")]
+             (or (and (= "gaiji" node-type)
+                      (true? (get-in child ["gaiji" "resolved"]))
+                      (nil? (get-in child ["gaiji" "unicode"])))
+                 (and (= "emphasis" node-type)
+                      (inline-children-need-visible-text-fallback?
+                       (get child "inline_children"))))))
+         children)))
+
 (defn- render-editor-note-node
   ([acc node] (render-editor-note-node acc node 0))
   ([acc _node _depth]
@@ -52,7 +64,10 @@
   ([acc node] (render-emphasis-node acc node 0))
   ([acc node depth]
    (if-let [children (seq (get node "inline_children"))]
-     (render-inline-children acc children depth)
+     (if (and (present-text? (get node "text"))
+              (inline-children-need-visible-text-fallback? children))
+       (append-text acc (get node "text"))
+       (render-inline-children acc children depth))
      (append-text acc (get node "text")))))
 
 (defn- render-heading-node

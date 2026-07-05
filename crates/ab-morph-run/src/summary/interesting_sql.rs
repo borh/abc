@@ -316,17 +316,18 @@ fn discover_feature_keys(
     Ok(Some(keys))
 }
 
-/// Feature keys aggregated per duckdb invocation. The raw-profile
-/// aggregation over every key at once spilled past the temp disk (108GiB)
-/// on the full corpus: per-region signature groups across ~37 UniDic keys
-/// are simply too wide. Batching bounds the spill; results are identical
-/// because patterns never span feature keys.
+/// Feature keys aggregated per duckdb invocation. Even the fixed-state
+/// stage query spills the external sort to disk; on the full corpus a
+/// 6-key batch overflowed the ~110GiB free temp volume, while one key at
+/// a time peaks around 50GB. Results are identical across batch sizes
+/// because patterns never span feature keys; raise via
+/// AB_INTERESTING_FEATURE_KEY_BATCH on hosts with more disk.
 fn feature_key_batch_size() -> usize {
     std::env::var("AB_INTERESTING_FEATURE_KEY_BATCH")
         .ok()
         .and_then(|value| value.parse().ok())
         .filter(|batch: &usize| *batch > 0)
-        .unwrap_or(6)
+        .unwrap_or(1)
 }
 
 fn seg_coverage_query(
@@ -375,15 +376,12 @@ kind_source AS (
 /// groups. Grouped `list(...)`/ordered aggregates cannot spill in DuckDB
 /// and OOM'd on the full corpus (~162M feature regions); `bool_or` states
 /// and `ORDER BY` both go to disk cleanly.
-#[allow(clippy::too_many_arguments)]
 fn feature_stage_query(
     regions: &str,
     analyzers: &str,
     features: &str,
     filter: InterestingTextFilter,
     feature_predicate: &str,
-    works_join: &str,
-    rarity_key: &str,
     analyzer_ids: &[String],
 ) -> String {
     let base = base_regions_cte(regions, analyzers, filter, "r.has_feature_disagreement");
@@ -403,12 +401,10 @@ fn feature_stage_query(
 SELECT f.feature_key, f.scope_type, f.scope_position, f.scope_surface,
        f.source_id, f.text_id, f.region_index,
        b.char_start, b.char_end, b.has_coverage_mismatch,
-       {rarity_key} AS rarity_key,
        f.feature_value,
        {analyzer_flags}
 FROM read_parquet({features}) f
 JOIN base_regions b USING (source_id, text_id, region_index)
-{works_join}
 WHERE {feature_predicate}
 GROUP BY ALL
 ORDER BY f.feature_key, f.scope_type, f.scope_position, f.scope_surface,
@@ -551,7 +547,6 @@ struct FeatureGroup {
     char_start: u64,
     char_end: u64,
     has_coverage_mismatch: bool,
-    rarity_key: String,
     values: Vec<(Option<String>, Vec<String>)>,
 }
 
@@ -596,7 +591,6 @@ impl FeatureGroup {
                 char_start: self.char_start,
                 char_end: self.char_end,
                 has_coverage_mismatch: self.has_coverage_mismatch,
-                rarity_key: self.rarity_key,
             },
         )))
     }
@@ -609,7 +603,6 @@ struct FeatureOccurrence {
     char_start: u64,
     char_end: u64,
     has_coverage_mismatch: bool,
-    rarity_key: String,
 }
 
 struct FeatureStageRowRef<'a> {
@@ -642,7 +635,6 @@ fn stream_feature_stage(
         let char_starts = column::<UInt64Array>(&batch, "char_start")?;
         let char_ends = column::<UInt64Array>(&batch, "char_end")?;
         let coverage = column::<BooleanArray>(&batch, "has_coverage_mismatch")?;
-        let rarity_keys = column::<StringArray>(&batch, "rarity_key")?;
         let feature_values = column::<StringArray>(&batch, "feature_value")?;
         let analyzer_flags = analyzer_ids
             .iter()
@@ -681,7 +673,6 @@ fn stream_feature_stage(
                     char_start: char_starts.value(row),
                     char_end: char_ends.value(row),
                     has_coverage_mismatch: coverage.value(row),
-                    rarity_key: rarity_keys.value(row).to_owned(),
                     values: Vec::new(),
                 });
             }
@@ -752,13 +743,6 @@ fn write_region_exclusions(
     Ok(())
 }
 
-pub(super) struct DuckdbCollected {
-    pub(super) patterns: Vec<PatternStats>,
-    /// Sorted feature-stage parquet files, retained until the anomaly
-    /// channel's exclusion pass has consumed them.
-    pub(super) feature_stage_files: Vec<PathBuf>,
-}
-
 /// Collects pattern statistics via the DuckDB CLI. Returns `None` when no
 /// `duckdb` binary is available (callers fall back to the in-memory
 /// engine).
@@ -767,7 +751,7 @@ pub(super) fn collect_patterns_duckdb(
     options: &WarehouseInterestingOptions,
     rarity: &RarityConfig,
     analyzer_ids: &std::collections::BTreeSet<String>,
-) -> Result<Option<DuckdbCollected>> {
+) -> Result<Option<Vec<PatternStats>>> {
     let regions = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegions);
     let analyzers = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegionAnalyzers);
     let features = duckdb_table_path_literal(run_dir, WarehouseTable::NwayFeatureDiffs);
@@ -801,7 +785,7 @@ pub(super) fn collect_patterns_duckdb(
     let _ = fs::remove_file(&seg_out);
 
     let mut accumulator = PatternAccumulator::default();
-    let mut feature_stage_files = Vec::new();
+    let work_by_source = rarity.work_by_source.as_ref();
     for (index, batch_keys) in feature_keys.chunks(feature_key_batch_size()).enumerate() {
         let feat_out = temp_output_path(run_dir, &format!("feat-{index}"));
         let feat_body = feature_stage_query(
@@ -810,8 +794,6 @@ pub(super) fn collect_patterns_duckdb(
             &features,
             options.filter,
             &feature_key_in_predicate(batch_keys),
-            &works_join,
-            &rarity_key,
             &analyzer_ids,
         );
         let sql = format!(
@@ -823,6 +805,9 @@ pub(super) fn collect_patterns_duckdb(
             return Ok(None);
         }
         stream_feature_stage(&feat_out, &analyzer_ids, &mut |key, occurrence| {
+            let rarity_key = work_by_source
+                .and_then(|map| map.get(&occurrence.source_id))
+                .map_or(occurrence.source_id.as_str(), String::as_str);
             accumulator.record(
                 key,
                 PatternKind::Feature,
@@ -833,13 +818,13 @@ pub(super) fn collect_patterns_duckdb(
                     char_start: occurrence.char_start,
                     char_end: occurrence.char_end,
                     has_coverage_mismatch: occurrence.has_coverage_mismatch,
-                    rarity_key: &occurrence.rarity_key,
+                    rarity_key,
                 },
                 options.max_region_examples,
             );
             Ok(())
         })?;
-        feature_stage_files.push(feat_out);
+        let _ = fs::remove_file(&feat_out);
     }
     patterns.extend(accumulator.finalize());
 
@@ -847,10 +832,7 @@ pub(super) fn collect_patterns_duckdb(
     // order (ranking re-sorts, but rank tie-breaks read pattern order via
     // pattern_id, and the path-equality test compares full summaries).
     patterns.sort_by(|left, right| left.pattern_id.cmp(&right.pattern_id));
-    Ok(Some(DuckdbCollected {
-        patterns,
-        feature_stage_files,
-    }))
+    Ok(Some(patterns))
 }
 
 /// Computes the anomaly channel via DuckDB: disagreement regions passing
@@ -860,7 +842,6 @@ pub(super) fn anomalies_duckdb(
     run_dir: &Path,
     options: &WarehouseInterestingOptions,
     top: &[&PatternStats],
-    feature_stage_files: &[PathBuf],
     analyzer_ids: &std::collections::BTreeSet<String>,
 ) -> Result<Vec<AnomalyRow>> {
     if options.anomalies == 0 {
@@ -868,6 +849,7 @@ pub(super) fn anomalies_duckdb(
     }
     let regions = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegions);
     let analyzers = duckdb_table_path_literal(run_dir, WarehouseTable::NwayRegionAnalyzers);
+    let features = duckdb_table_path_literal(run_dir, WarehouseTable::NwayFeatureDiffs);
 
     let mut seg_sigs = BTreeSet::new();
     let mut cov_sigs = BTreeSet::new();
@@ -890,28 +872,47 @@ pub(super) fn anomalies_duckdb(
         }
     }
 
-    // Top-feature-pattern regions: re-stream the sorted stage files (kept
-    // from collection) and write the matching region keys to an exclusion
-    // parquet for the anti-join. Analyzer ids are irrelevant here — group
-    // keys are rebuilt from the same rows, so pass the stage's analyzer
-    // flags through unchanged.
+    // Top-feature-pattern regions: re-run the sorted stage query for just
+    // the top patterns' feature keys (a handful at most), stream it to
+    // find every region owning a top pattern, and write those region keys
+    // to an exclusion parquet for the anti-join.
     let feature_exclusion_path = if top_feature_keys.is_empty() {
         None
     } else {
+        let key_names = top_feature_keys
+            .iter()
+            .filter_map(|key| key.feature_key.clone())
+            .collect::<Vec<_>>();
         let analyzer_ids = analyzer_ids.iter().cloned().collect::<Vec<_>>();
-        let mut excluded = BTreeSet::new();
-        for path in feature_stage_files {
-            stream_feature_stage(path, &analyzer_ids, &mut |key, occurrence| {
-                if top_feature_keys.contains(&key) {
-                    excluded.insert((
-                        occurrence.source_id,
-                        occurrence.text_id,
-                        occurrence.region_index,
-                    ));
-                }
-                Ok(())
-            })?;
+        let stage_out = temp_output_path(run_dir, "top-feature-stage");
+        let stage_body = feature_stage_query(
+            &regions,
+            &analyzers,
+            &features,
+            options.filter,
+            &feature_key_in_predicate(&key_names),
+            &analyzer_ids,
+        );
+        let sql = format!(
+            "{settings}\nCOPY ({stage_body}) TO {stage_out} (FORMAT PARQUET, COMPRESSION ZSTD);",
+            settings = interesting_settings_sql(run_dir),
+            stage_out = sql_literal(&stage_out.display().to_string()),
+        );
+        if !run_duckdb_statement(run_dir, sql, "interestingness anomaly feature exclusion")? {
+            anyhow::bail!("duckdb binary disappeared between pattern and anomaly queries");
         }
+        let mut excluded = BTreeSet::new();
+        stream_feature_stage(&stage_out, &analyzer_ids, &mut |key, occurrence| {
+            if top_feature_keys.contains(&key) {
+                excluded.insert((
+                    occurrence.source_id,
+                    occurrence.text_id,
+                    occurrence.region_index,
+                ));
+            }
+            Ok(())
+        })?;
+        let _ = fs::remove_file(&stage_out);
         let path = temp_output_path(run_dir, "feature-exclusions");
         write_region_exclusions(&path, &excluded)?;
         Some(path)

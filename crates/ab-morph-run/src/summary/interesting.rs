@@ -496,12 +496,9 @@ enum AnomalySource {
         region_flags: BTreeMap<WarehouseRegionKey, WarehouseRegionFlags>,
         punctuation_only: BTreeSet<WarehouseRegionKey>,
     },
-    /// DuckDB engine: anomalies are computed by a follow-up query once the
-    /// top pattern set is known. Carries the sorted feature-stage parquet
-    /// files retained for the top-pattern region exclusion pass.
-    Deferred {
-        feature_stage_files: Vec<std::path::PathBuf>,
-    },
+    /// DuckDB engine: anomalies are computed by follow-up queries once
+    /// the top pattern set is known.
+    Deferred,
 }
 
 struct Collected {
@@ -996,11 +993,9 @@ pub fn summarize_warehouse_interesting(
         InterestingEngine::InMemory => collect_in_memory(run_dir, &options, &rarity)?,
         InterestingEngine::Duckdb | InterestingEngine::Auto => {
             match interesting_sql::collect_patterns_duckdb(run_dir, &options, &rarity, &analyzer_ids)? {
-                Some(collected) => Collected {
-                    patterns: collected.patterns,
-                    anomaly_source: AnomalySource::Deferred {
-                        feature_stage_files: collected.feature_stage_files,
-                    },
+                Some(patterns) => Collected {
+                    patterns,
+                    anomaly_source: AnomalySource::Deferred,
                 },
                 None if options.engine == InterestingEngine::Duckdb => {
                     bail!(
@@ -1017,14 +1012,6 @@ pub fn summarize_warehouse_interesting(
     let order = ranked_order(&collected.patterns, &scores);
 
     if let Some(explain_id) = &options.explain {
-        if let AnomalySource::Deferred {
-            feature_stage_files,
-        } = &collected.anomaly_source
-        {
-            for path in feature_stage_files {
-                let _ = std::fs::remove_file(path);
-            }
-        }
         let index = collected
             .patterns
             .iter()
@@ -1061,24 +1048,12 @@ pub fn summarize_warehouse_interesting(
             &top_set,
             options.anomalies,
         ),
-        AnomalySource::Deferred {
-            feature_stage_files,
-        } => {
+        AnomalySource::Deferred => {
             let top_stats = top
                 .iter()
                 .map(|index| &collected.patterns[*index])
                 .collect::<Vec<_>>();
-            let anomalies = interesting_sql::anomalies_duckdb(
-                run_dir,
-                &options,
-                &top_stats,
-                feature_stage_files,
-                &analyzer_ids,
-            );
-            for path in feature_stage_files {
-                let _ = std::fs::remove_file(path);
-            }
-            anomalies?
+            interesting_sql::anomalies_duckdb(run_dir, &options, &top_stats, &analyzer_ids)?
         }
     };
 

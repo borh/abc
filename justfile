@@ -2,6 +2,7 @@ set shell := ["bash", "-euo", "pipefail", "-c"]
 
 repo_root := `pwd`
 repo_storage_root := `git rev-parse --path-format=absolute --git-common-dir | xargs dirname`
+abc_repo_root := env_var_or_default("AB_ABC_ROOT", repo_root + "/../abc")
 ab_db_root := env_var_or_default("AB_DB_ROOT", "/db/ab-validator")
 morph_warehouse_dir := env_var_or_default("AB_MORPH_WAREHOUSE_DIR", "/db/ab-validator/morph-warehouse")
 morph_warehouse_aat_dir := env_var_or_default("AB_MORPH_WAREHOUSE_AAT_DIR", "/db/ab-validator/aat-corpus/aozora2html-aat/aozora2html-adapter")
@@ -249,7 +250,7 @@ parser-ir-level3-melos-eaj-compare-smoke AAT="" TEI_EAJ_FILE="data/complete/tei_
 parser-ir-level3-generated-workset-audit-smoke:
 	@bash "{{repo_root}}/tests/parser-ir-level3-generated-workset-audit-smoke.sh"
 
-parser-ir-level3-tei-eaj-generated-audit MAX_ROWS="0" OUT_DIR="" STRUCTURAL_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.summary.json":
+parser-ir-level3-tei-eaj-generated-audit MAX_ROWS="0" OUT_DIR="" STRUCTURAL_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.summary.json" JOBS="24":
 	@cargo build -p ab-aat-to-parser-ir --release
 	@out_dir="{{OUT_DIR}}"; if [ -z "$out_dir" ]; then out_dir="{{ab_db_root}}/parser-ir/tei-eaj-generated-comparison"; fi; \
 	python3 "{{repo_root}}/reports/parser-ir/tei-eaj-generated-compare.py" \
@@ -257,12 +258,13 @@ parser-ir-level3-tei-eaj-generated-audit MAX_ROWS="0" OUT_DIR="" STRUCTURAL_SUMM
 		--structural-summary "{{repo_root}}/{{STRUCTURAL_SUMMARY}}" \
 		--mapping "{{repo_root}}/data/aat-to-parser-ir-mapping-v1.json" \
 		--converter-bin "{{repo_root}}/target/release/ab-aat-to-parser-ir" \
-		--abc-root "{{repo_root}}/../abc" \
+		--abc-root "{{abc_repo_root}}" \
 		--abc-schema-root "{{repo_root}}/data/abc-schemas" \
 		--out-dir "$out_dir" \
+		--jobs "{{JOBS}}" \
 		--max-rows "{{MAX_ROWS}}"
 
-parser-ir-level3-tei-eaj-generated-matrix-audit MAX_ROWS="0" OUT_DIR="" STRUCTURAL_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.summary.json":
+parser-ir-level3-tei-eaj-generated-matrix-audit MAX_ROWS="0" OUT_DIR="" STRUCTURAL_SUMMARY="docs/superpowers/reports/2026-07-04-tei-eaj-structural-expansion.summary.json" JOBS="24":
 	@cargo build -p ab-aat-to-parser-ir --release
 	@out_dir="{{OUT_DIR}}"; if [ -z "$out_dir" ]; then out_dir="{{ab_db_root}}/parser-ir/tei-eaj-generated-matrix-comparison"; fi; \
 	python3 "{{repo_root}}/reports/parser-ir/tei-eaj-generated-compare.py" \
@@ -270,10 +272,11 @@ parser-ir-level3-tei-eaj-generated-matrix-audit MAX_ROWS="0" OUT_DIR="" STRUCTUR
 		--structural-summary "{{repo_root}}/{{STRUCTURAL_SUMMARY}}" \
 		--mapping "{{repo_root}}/data/aat-to-parser-ir-mapping-v1.json" \
 		--converter-bin "{{repo_root}}/target/release/ab-aat-to-parser-ir" \
-		--abc-root "{{repo_root}}/../abc" \
+		--abc-root "{{abc_repo_root}}" \
 		--abc-schema-root "{{repo_root}}/data/abc-schemas" \
 		--out-dir "$out_dir" \
 		--candidate-mode all \
+		--jobs "{{JOBS}}" \
 		--max-rows "{{MAX_ROWS}}"
 
 parser-ir-level3-admission-smoke:

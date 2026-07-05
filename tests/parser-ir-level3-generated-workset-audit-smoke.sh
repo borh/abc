@@ -124,9 +124,11 @@ python3 "$repo_root/reports/parser-ir/tei-eaj-generated-compare.py" \
   --abc-schema-root "$repo_root/data/abc-schemas" \
   --out-dir "$out_dir/audit" \
   --candidate-mode all \
+  --jobs 2 \
   --max-rows 1
 
 jq -e '.inputs.candidate_mode == "all"' "$out_dir/audit/summary.json" >/dev/null
+jq -e '.inputs.jobs == 2' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.totals.rows_attempted == 2' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.totals.tei_eaj_rows_attempted == 1' "$out_dir/audit/summary.json" >/dev/null
 jq -e '.totals.materialization_succeeded == 2' "$out_dir/audit/summary.json" >/dev/null

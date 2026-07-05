@@ -10,6 +10,7 @@ evidence, not treated as process failures.
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import json
 import pathlib
 import re
@@ -76,6 +77,12 @@ def parse_args() -> argparse.Namespace:
         choices=["selected", "all"],
         default="selected",
         help="Materialize only the preferred AAT candidate, or all materializable candidates per TEI-EAJ row.",
+    )
+    parser.add_argument(
+        "--jobs",
+        default=1,
+        type=int,
+        help="Number of TEI materialization jobs to run concurrently.",
     )
     parser.add_argument(
         "--metadata-record",
@@ -678,6 +685,50 @@ def materialize_row(
     }
 
 
+def failed_materialization_row(
+    row: dict[str, Any],
+    candidate: dict[str, Any],
+    tei_file: str,
+    error: subprocess.CalledProcessError,
+) -> dict[str, Any]:
+    return {
+        "work_id": row.get("tei", {}).get("work_id"),
+        "tei_eaj_file": tei_file,
+        "selected_aat": {
+            "label": candidate.get("label"),
+            "path": candidate.get("path"),
+            "adapter": candidate.get("aat", {}).get("adapter"),
+            "adapter_version": candidate.get("aat", {}).get("adapter_version"),
+        },
+        "aat": aat_summary(candidate),
+        "materialization": {
+            "status": "failed",
+            "returncode": error.returncode,
+        },
+        "classification": {"paragraph_delta_bucket": "materialization_failed"},
+    }
+
+
+def materialize_task(args: argparse.Namespace, task: dict[str, Any]) -> dict[str, Any]:
+    try:
+        result = materialize_row(
+            args,
+            task["row"],
+            task["candidate"],
+            task["tei_eaj_path"],
+            task["row_dir"],
+        )
+    except subprocess.CalledProcessError as error:
+        result = failed_materialization_row(
+            task["row"],
+            task["candidate"],
+            task["tei_file"],
+            error,
+        )
+    result["_task_index"] = task["task_index"]
+    return result
+
+
 def increment_bucket(
     buckets: dict[str, int],
     bucket: str,
@@ -896,7 +947,9 @@ def main() -> int:
     workset_files = {row["tei_eaj_file"]: row for row in workset.get("files", [])}
     rows = []
     skipped = []
+    tasks = []
     tei_eaj_rows_attempted = 0
+    jobs = max(1, args.jobs)
 
     for row in structural.get("rows", []):
         tei_file = row_key(row)
@@ -934,31 +987,28 @@ def main() -> int:
                 )
             )
             row_dir.mkdir(parents=True, exist_ok=True)
-            try:
-                rows.append(materialize_row(args, row, candidate, tei_eaj_path, row_dir))
-            except subprocess.CalledProcessError as error:
-                rows.append(
-                    {
-                        "work_id": row.get("tei", {}).get("work_id"),
-                        "tei_eaj_file": tei_file,
-                    "selected_aat": {
-                        "label": candidate.get("label"),
-                        "path": candidate.get("path"),
-                        "adapter": candidate.get("aat", {}).get("adapter"),
-                            "adapter_version": candidate.get("aat", {}).get(
-                                "adapter_version"
-                            ),
-                        },
-                        "aat": aat_summary(candidate),
-                        "materialization": {
-                            "status": "failed",
-                            "returncode": error.returncode,
-                        },
-                        "classification": {
-                            "paragraph_delta_bucket": "materialization_failed"
-                        },
-                    }
-                )
+            tasks.append(
+                {
+                    "task_index": len(tasks),
+                    "row": row,
+                    "candidate": candidate,
+                    "tei_file": tei_file,
+                    "tei_eaj_path": tei_eaj_path,
+                    "row_dir": row_dir,
+                }
+            )
+
+    if jobs == 1:
+        rows = [materialize_task(args, task) for task in tasks]
+    else:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=jobs) as executor:
+            futures = [executor.submit(materialize_task, args, task) for task in tasks]
+            rows = [
+                future.result() for future in concurrent.futures.as_completed(futures)
+            ]
+        rows.sort(key=lambda row: row["_task_index"])
+    for row in rows:
+        row.pop("_task_index", None)
 
     buckets: dict[str, int] = {}
     paragraph_origin_buckets: dict[str, int] = {}
@@ -1015,6 +1065,7 @@ def main() -> int:
             "abc_root": str(args.abc_root),
             "adapter_preference": list(preference.keys()),
             "candidate_mode": args.candidate_mode,
+            "jobs": jobs,
             "max_rows": args.max_rows,
             "tei_eaj_file_filter": args.tei_eaj_file,
         },

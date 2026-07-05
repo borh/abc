@@ -81,14 +81,15 @@ enum Command {
             help = "Orthographic-detection layer for pre-war Japanese text (kata→hira normalization).
 
 [off] No normalization (default).
-[heuristic] v1 char-cascade detector. NOTE: against a 50-sentence human probe,
-recall is 0.636 — BELOW the spec's 0.85 floor — because the katakana_ratio > 0.5
-gate rejects kanji-heavy prose. See reports/ortho-detect/2026-07-05-phase2-human-recall.md.
-[ml] EXPERIMENTAL: logistic-regression detector on character features.
-Requires --ortho-ml-model. The only in-repo models are trained on bootstrap
-labels (port-fidelity surrogate, NOT real-world recall); model_hash proves byte
-identity only, not training provenance. Do not trust for production trench-work
-without retraining on a human-annotated gold set."
+[heuristic] v1 char-cascade detector. Default threshold 0.40 (tuned Phase 2.5);
+recall 0.939 on a 300-sentence LLM-labeled evaluation set (>= 0.85 floor).
+See reports/ortho-detect/2026-07-05-phase2.5-llm-eval-300.md.
+[ml] Logistic-regression detector on character features. Stable (not default):
+5-fold CV mean recall 0.959 on the 300-record LLM-labeled set. Requires
+--ortho-ml-model. CAVEAT: the validation set is LLM-labeled (single-annotator,
+not human ground truth); real-world recall on unseen authors/eras is unverified.
+model_hash proves byte identity only, not training provenance. Do not promote
+to default or delete the heuristic path without a human-annotated gold set."
         )]
         ortho_detect: ab_morph_run::OrthoDetectMode,
         #[arg(

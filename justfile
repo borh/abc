@@ -16,10 +16,6 @@ vibrato_dictionary_root := repo_root + "/dictionary"
 vibrato_unidic_sources := vibrato_dictionary_root + "/unidic-sources"
 vibrato_compiled_dir := vibrato_dictionary_root + "/compiled"
 vibrato_optimized_dir := vibrato_dictionary_root + "/optimized"
-vibrato_rkyv_dir := env_var_or_default(
-    "VIBRATO_RKYV_DIR",
-    repo_root + "/../vibrato-pipe/third-party/vibrato-rkyv",
-)
 
 default:
 	@just --list
@@ -522,16 +518,18 @@ scratch-keep-recent KEEP_N='1':
 # so summarize-warehouse-interesting reports granularity_profile=suw+luw.
 # Expanding further: adding sudachi-b is possible but less interesting; if
 # added, vibrato:unidic-qkana-202512 should be added too (owner guidance).
-morph-warehouse-run profile="full" aat_dir="{{morph_warehouse_aat_dir}}" run_id="" jobs="0":
+morph-warehouse-run profile="full" aat_dir=morph_warehouse_aat_dir run_id="" jobs="0":
 	@just morph-warehouse-run-with-analyzers "{{profile}}" "{{aat_dir}}" "vibrato vibrato:unidic-novel-202512 sudachi-a sudachi-c" "{{run_id}}" "{{jobs}}"
 
 # SUW-only run: every analyzer is 短単位 (Short Unit Word), so
 # summarize-warehouse-interesting labels it granularity_profile=suw — use for
 # granularity-noise-free scoring runs.
-morph-warehouse-run-suw profile="full" aat_dir="{{morph_warehouse_aat_dir}}" run_id="" jobs="0":
+morph-warehouse-run-suw profile="full" aat_dir=morph_warehouse_aat_dir run_id="" jobs="0":
 	@just morph-warehouse-run-with-analyzers "{{profile}}" "{{aat_dir}}" "vibrato vibrato:unidic-novel-202512 sudachi-a" "{{run_id}}" "{{jobs}}"
 
-morph-warehouse-run-with-analyzers profile="full" aat_dir="{{morph_warehouse_aat_dir}}" analyzers="vibrato sudachi-a sudachi-c" run_id="" jobs="0":
+# Dictionaries are nix-only: rebuild/relink flake outputs first (no-op when the
+# store paths are alive; self-heals dictionary/compiled/ symlinks after nix GC).
+morph-warehouse-run-with-analyzers profile="full" aat_dir=morph_warehouse_aat_dir analyzers="vibrato sudachi-a sudachi-c" run_id="" jobs="0": dictionary-build-all
 	@jobs="{{jobs}}"; \
 	if [ "$jobs" = "0" ]; then jobs="$(nproc)"; fi; \
 	run_id="{{run_id}}"; \
@@ -540,7 +538,7 @@ morph-warehouse-run-with-analyzers profile="full" aat_dir="{{morph_warehouse_aat
 	for analyzer in {{analyzers}}; do \
 	  args+=(--analyzer "$analyzer"); \
 	done; \
-	AB_SUDACHI_DICT="$(nix path-info .#sudachi-dictionary-full)/share/sudachi/system.dic" \
+	AB_SUDACHI_DICT="$(nix build .#sudachi-dictionary-full --no-link --print-out-paths)/share/sudachi/system.dic" \
 	TMPDIR="{{ab_db_root}}/tmp" \
 	TMP="{{ab_db_root}}/tmp" \
 	TEMP="{{ab_db_root}}/tmp" \
@@ -552,18 +550,20 @@ morph-warehouse-run-with-analyzers profile="full" aat_dir="{{morph_warehouse_aat
 		--warehouse-profile "{{profile}}" \
 		--jobs "$jobs"
 
-morph-warehouse-run-full aat_dir="{{morph_warehouse_aat_dir}}" run_id="" jobs="0":
+morph-warehouse-run-full aat_dir=morph_warehouse_aat_dir run_id="" jobs="0":
 	@just morph-warehouse-run full "{{aat_dir}}" "{{run_id}}" "{{jobs}}"
 
-morph-warehouse-run-triage aat_dir="{{morph_warehouse_aat_dir}}" run_id="" jobs="0":
+morph-warehouse-run-triage aat_dir=morph_warehouse_aat_dir run_id="" jobs="0":
 	@just morph-warehouse-run triage "{{aat_dir}}" "{{run_id}}" "{{jobs}}"
 
-morph-warehouse-recreate profile="full" aat_dir="{{morph_warehouse_aat_dir}}" run_id="" jobs="0":
+morph-warehouse-recreate profile="full" aat_dir=morph_warehouse_aat_dir run_id="" jobs="0":
 	@just morph-warehouse-clean
 	@just morph-warehouse-run "{{profile}}" "{{aat_dir}}" "{{run_id}}" "{{jobs}}"
 
+# Vibrato dictionaries are nix-only and live solely in dictionary/compiled/
+# (flake-output symlinks maintained by dictionary-build-*).
 morph-available-vibrato-dictionaries:
-	@for dir in "{{repo_root}}/dictionary/compiled" "{{repo_root}}/dictionary/optimized"; do \
+	@for dir in "{{repo_root}}/dictionary/compiled"; do \
 	  for path in \
 	    "$dir"/*.dic "$dir"/*.dic.zst \
 	    "$dir"/*.model "$dir"/*.model.zst \
@@ -639,7 +639,7 @@ morph-vaporetto-dictionary-status:
 	@echo "  Refresh legacy conversion (same artifact set): just morph-vaporetto-dictionary-transmute-legacy"
 	@echo "  Build all (Vaporetto first then legacy conversions): just morph-vaporetto-dictionaries-rebuild-all"
 
-morph-warehouse-run-all-vibrato-dictionaries profile="full" aat_dir="{{morph_warehouse_aat_dir}}" run_id_prefix="" jobs="0":
+morph-warehouse-run-all-vibrato-dictionaries profile="full" aat_dir=morph_warehouse_aat_dir run_id_prefix="" jobs="0":
 	@jobs="{{jobs}}"; \
 	if [ "$jobs" = "0" ]; then jobs="$(nproc)"; fi; \
 	run_id_prefix="{{run_id_prefix}}"; \
@@ -648,7 +648,7 @@ morph-warehouse-run-all-vibrato-dictionaries profile="full" aat_dir="{{morph_war
 	  just morph-warehouse-run-with-analyzers "{{profile}}" "{{aat_dir}}" "vibrato:${dict} sudachi-a sudachi-c" "${run_id_prefix}-${dict}" "{{jobs}}"; \
 	done
 
-morph-warehouse-run-all-vaporetto-dictionaries profile="full" aat_dir="{{morph_warehouse_aat_dir}}" run_id_prefix="" jobs="0":
+morph-warehouse-run-all-vaporetto-dictionaries profile="full" aat_dir=morph_warehouse_aat_dir run_id_prefix="" jobs="0":
 	@jobs="{{jobs}}"; \
 	if [ "$jobs" = "0" ]; then jobs="$(nproc)"; fi; \
 	run_id_prefix="{{run_id_prefix}}"; \
@@ -669,7 +669,7 @@ ab-validator-clean-warehouse-dry-run:
 	@just clean-db-full-dry-run
 	@just morph-warehouse-clean-dry-run
 
-ab-validator-recreate-warehouse-run profile="full" aat_dir="{{morph_warehouse_aat_dir}}" run_id="" jobs="0" build_report="0" report_limit="50":
+ab-validator-recreate-warehouse-run profile="full" aat_dir=morph_warehouse_aat_dir run_id="" jobs="0" build_report="0" report_limit="50":
 	@jobs="{{jobs}}"; \
 	if [ "$jobs" = "0" ]; then jobs="$(nproc)"; fi; \
 	run_id="{{run_id}}"; \
@@ -717,226 +717,52 @@ morph-warehouse-build-latest-report PROFILE="full" LIMIT="50":
 
 dictionary-build-cwj:
 	@nix build .#vibrato-dict-cwj --no-link --print-out-paths | while read -r out; do \
-		for dict in "$$out"/share/vibrato/*.dic.zst; do \
-			[ -f "$$dict" ] || continue; \
-			ln -sf "$$dict" "{{vibrato_compiled_dir}}/$$(basename "$$dict")"; \
-			echo "  linked $$(basename "$$dict")"; \
+		for dict in "$out"/share/vibrato/*.dic.zst; do \
+			[ -f "$dict" ] || continue; \
+			ln -sf "$dict" "{{vibrato_compiled_dir}}/$(basename "$dict")"; \
+			echo "  linked $(basename "$dict")"; \
 		done; \
 	done
 
 dictionary-build-csj:
 	@nix build .#vibrato-dict-csj --no-link --print-out-paths | while read -r out; do \
-		for dict in "$$out"/share/vibrato/*.dic.zst; do \
-			[ -f "$$dict" ] || continue; \
-			ln -sf "$$dict" "{{vibrato_compiled_dir}}/$$(basename "$$dict")"; \
-			echo "  linked $$(basename "$$dict")"; \
+		for dict in "$out"/share/vibrato/*.dic.zst; do \
+			[ -f "$dict" ] || continue; \
+			ln -sf "$dict" "{{vibrato_compiled_dir}}/$(basename "$dict")"; \
+			echo "  linked $(basename "$dict")"; \
 		done; \
 	done
 
 dictionary-build-novel:
 	@nix build .#vibrato-dict-novel --no-link --print-out-paths | while read -r out; do \
-		for dict in "$$out"/share/vibrato/*.dic.zst; do \
-			[ -f "$$dict" ] || continue; \
-			ln -sf "$$dict" "{{vibrato_compiled_dir}}/$$(basename "$$dict")"; \
-			echo "  linked $$(basename "$$dict")"; \
+		for dict in "$out"/share/vibrato/*.dic.zst; do \
+			[ -f "$dict" ] || continue; \
+			ln -sf "$dict" "{{vibrato_compiled_dir}}/$(basename "$dict")"; \
+			echo "  linked $(basename "$dict")"; \
 		done; \
 	done
 
 dictionary-build-qkana:
 	@nix build .#vibrato-dict-qkana --no-link --print-out-paths | while read -r out; do \
-		for dict in "$$out"/share/vibrato/*.dic.zst; do \
-			[ -f "$$dict" ] || continue; \
-			ln -sf "$$dict" "{{vibrato_compiled_dir}}/$$(basename "$$dict")"; \
-			echo "  linked $$(basename "$$dict")"; \
+		for dict in "$out"/share/vibrato/*.dic.zst; do \
+			[ -f "$dict" ] || continue; \
+			ln -sf "$dict" "{{vibrato_compiled_dir}}/$(basename "$dict")"; \
+			echo "  linked $(basename "$dict")"; \
 		done; \
 	done
 
 dictionary-build-kindai-bungo:
 	@nix build .#vibrato-dict-kindai-bungo --no-link --print-out-paths | while read -r out; do \
-		for dict in "$$out"/share/vibrato/*.dic.zst; do \
-			[ -f "$$dict" ] || continue; \
-			ln -sf "$$dict" "{{vibrato_compiled_dir}}/$$(basename "$$dict")"; \
-			echo "  linked $$(basename "$$dict")"; \
+		for dict in "$out"/share/vibrato/*.dic.zst; do \
+			[ -f "$dict" ] || continue; \
+			ln -sf "$dict" "{{vibrato_compiled_dir}}/$(basename "$dict")"; \
+			echo "  linked $(basename "$dict")"; \
 		done; \
 	done
 
 # Build all available vibrato dictionaries and link them.
 dictionary-build-all: dictionary-build-cwj dictionary-build-csj dictionary-build-novel dictionary-build-qkana dictionary-build-kindai-bungo
 	@echo "All vibrato dictionaries built and linked."
-
-morph-vibrato-dictionary-status:
-	@printf "Available dictionary source snapshots:\n"
-	@if [ -d "{{repo_root}}/dictionary/unidic-sources" ]; then \
-		find "{{repo_root}}/dictionary/unidic-sources" -maxdepth 1 -mindepth 1 -type d -printf '  sources/%f\n' | sort; \
-	else \
-		echo "  (missing) {{repo_root}}/dictionary/unidic-sources"; \
-	fi
-	@echo "\nDictionary tooling (in project):"
-	@echo "  VERSION            = 202512"
-	@echo "  RKYV compiler path = {{vibrato_rkyv_dir}}"
-	@echo "  Source root        = {{vibrato_unidic_sources}}"
-	@echo "  Compiled output    = {{vibrato_compiled_dir}}"
-	@echo "  Optimized output   = {{vibrato_optimized_dir}}"
-	@echo "  Legacy loader      = vibrato-rkyv legacy format support enabled"
-	@printf "\nCompilation artifacts:\n"
-	@for dir in compiled optimized; do \
-		if [ -d "{{repo_root}}/dictionary/$dir" ]; then \
-			echo "  $dir/"; \
-			for path in \
-				"{{repo_root}}/dictionary/$dir"/*.dic "{{repo_root}}/dictionary/$dir"/*.dic.zst \
-				"{{repo_root}}/dictionary/$dir"/*.model "{{repo_root}}/dictionary/$dir"/*.model.zst \
-				"{{repo_root}}/dictionary/$dir"/*.bin "{{repo_root}}/dictionary/$dir"/*.bin.zst; do \
-				[ -e "$path" ] || continue; \
-				echo "    $(basename "$path")"; \
-			done | sort; \
-	else \
-		echo "  (missing) {{repo_root}}/dictionary/$dir"; \
-		fi; \
-	done
-	@printf "\nBuild command references:\n"
-	@echo "  Compile source-ready dictionaries: just morph-vibrato-dictionary-build-source-ready"
-	@echo "  Transmute legacy sys.dic binaries: just morph-vibrato-dictionary-transmute-legacy"
-	@echo "  Build all (source + legacy):      just morph-vibrato-dictionaries-rebuild-all"
-
-morph-vibrato-dictionary-build-source-ready VERSION="202512":
-	@set -euo pipefail
-	@if [ ! -d "{{vibrato_unidic_sources}}" ]; then \
-		echo "missing source directory: {{vibrato_unidic_sources}}"; \
-		exit 1; \
-	fi
-	@if [ ! -d "{{vibrato_rkyv_dir}}" ]; then \
-		echo "missing vibrato-rkyv workspace: {{vibrato_rkyv_dir}}"; \
-		echo "set VIBRATO_RKYV_DIR or clone and build third-party/vibrato-rkyv"; \
-		exit 1; \
-	fi
-	@mkdir -p "{{vibrato_compiled_dir}}" "{{vibrato_optimized_dir}}"
-	@for src in "{{vibrato_unidic_sources}}"/*; do \
-		[ -d "$src" ] || continue; \
-		name="$(basename "$src")"; \
-		lex="$(find "$src" -name lex.csv -type f | head -n 1)"; \
-		matrix="$(find "$src" -name matrix.def -type f | head -n 1)"; \
-		char="$(find "$src" -name char.def -type f | head -n 1)"; \
-		unk="$(find "$src" -name unk.def -type f | head -n 1)"; \
-		compiled="{{vibrato_compiled_dir}}/${name}-{{VERSION}}.dic.zst"; \
-		optimized="{{vibrato_optimized_dir}}/${name}-{{VERSION}}.dic.zst"; \
-		if [ -z "$lex" ] || [ -z "$matrix" ] || [ -z "$char" ] || [ -z "$unk" ]; then \
-			echo "SKIP ${name} (source files missing)"; \
-			continue; \
-		fi; \
-		if [ -f "$compiled" ]; then \
-			echo "OK ${name} already compiled"; \
-		else \
-			echo "BUILD ${name} -> ${compiled}"; \
-			( \
-				cd "{{vibrato_rkyv_dir}}" && \
-				cargo run --release -p compiler -- build \
-					--lexicon-in "$lex" \
-					--matrix-in "$matrix" \
-					--char-in "$char" \
-					--unk-in "$unk" \
-					--sysdic-out "$compiled" \
-			); \
-		fi; \
-		if [ ! -f "$optimized" ]; then \
-			ln -sf "$(realpath --relative-to={{vibrato_optimized_dir}} "$compiled")" "$optimized"; \
-			echo "WIRE ${name} -> ${optimized}"; \
-		fi; \
-	done
-
-morph-vibrato-dictionary-transmute-legacy VERSION="202512":
-	@set -euo pipefail
-	@if [ ! -d "{{vibrato_unidic_sources}}" ]; then \
-		echo "missing source directory: {{vibrato_unidic_sources}}"; \
-		exit 1; \
-	fi
-	@if [ ! -d "{{vibrato_rkyv_dir}}" ]; then \
-		echo "missing vibrato-rkyv workspace: {{vibrato_rkyv_dir}}"; \
-		echo "set VIBRATO_RKYV_DIR or clone and build third-party/vibrato-rkyv"; \
-		exit 1; \
-	fi
-	@mkdir -p "{{vibrato_compiled_dir}}" "{{vibrato_optimized_dir}}"
-	@for src in "{{vibrato_unidic_sources}}"/*; do \
-		[ -d "$src" ] || continue; \
-		name="$(basename "$src")"; \
-		sysdic_zst="$(find "$src" -maxdepth 1 -name 'sys.dic.zst' -type f | head -n 1)"; \
-		sysdic="$(find "$src" -maxdepth 1 -name sys.dic -type f | head -n 1)"; \
-		compiled_transmuted="{{vibrato_compiled_dir}}/${name}-{{VERSION}}.dic.zst"; \
-		compiled_direct="{{vibrato_compiled_dir}}/${name}-{{VERSION}}.dic"; \
-		optimized_transmuted="{{vibrato_optimized_dir}}/${name}-{{VERSION}}.dic.zst"; \
-		optimized_direct="{{vibrato_optimized_dir}}/${name}-{{VERSION}}.dic"; \
-		staging_dir="$(mktemp -d /tmp/vibrato-transmute-XXXXXX)"; \
-		if [ -f "$sysdic_zst" ]; then \
-			fallback_source="$sysdic_zst"; \
-			fallback_compiled="${compiled_transmuted}"; \
-			fallback_optimized="$optimized_transmuted"; \
-			echo "TRANS ${name} :: ${sysdic_zst} -> rkyv (legacy zstd sysdic)"; \
-		elif [ -f "$sysdic" ]; then \
-			fallback_source="$sysdic"; \
-			fallback_compiled="$compiled_direct"; \
-			fallback_optimized="$optimized_direct"; \
-			echo "TRANS ${name} :: ${sysdic} -> rkyv"; \
-		else \
-			echo "SKIP ${name} (no sys.dic)"; \
-			rm -rf "$staging_dir"; \
-			continue; \
-		fi; \
-		if [ -f "$compiled_transmuted" ] || [ -f "$compiled_direct" ]; then \
-			echo "OK ${name} already has converted dictionary"; \
-			rm -rf "$staging_dir"; \
-			continue; \
-		fi; \
-		if [ "$sysdic_zst" = "$fallback_source" ]; then \
-			zstd -d --stdout "$fallback_source" > "$staging_dir/system.dic"; \
-		else \
-			cp "$fallback_source" "$staging_dir/system.dic"; \
-		fi; \
-		if ( \
-			cd "{{vibrato_rkyv_dir}}" && \
-			cargo run --release -p compiler -- transmute \
-				-o "$staging_dir" \
-				"$(realpath "$staging_dir/system.dic")" \
-		); then \
-			echo "OK ${name} transmuted to rkyv"; \
-			if [ -f "$staging_dir/system.dic.zst" ]; then \
-				mv "$staging_dir/system.dic.zst" "$compiled_transmuted"; \
-				compiled_path="$compiled_transmuted"; \
-				optimized_path="$optimized_transmuted"; \
-			elif [ -f "$staging_dir/system.dic" ]; then \
-				zstd -f "$staging_dir/system.dic" -o "$compiled_transmuted"; \
-				compiled_path="$compiled_transmuted"; \
-				optimized_path="$optimized_transmuted"; \
-			else \
-				echo "WARN ${name} transmute completed without dictionary output; using direct legacy wire"; \
-				compiled_path="$fallback_compiled"; \
-				optimized_path="$fallback_optimized"; \
-			fi; \
-		else \
-			echo "WARN ${name} (transmute compatibility error)"; \
-			compiled_path="$fallback_compiled"; \
-			optimized_path="$fallback_optimized"; \
-			ln -sf "$(realpath "$fallback_source")" "$compiled_path"; \
-		fi; \
-		if [ ! -e "$compiled_path" ]; then \
-			echo "FAIL ${name} did not produce compiled artifact"; \
-			rm -rf "$staging_dir"; \
-			continue; \
-		fi; \
-		if [ ! -f "$optimized_path" ]; then \
-			ln -sf "$(realpath --relative-to={{vibrato_optimized_dir}} "$compiled_path")" "$optimized_path"; \
-			echo "WIRE ${name} -> ${optimized_path}"; \
-		fi; \
-		rm -rf "$staging_dir"; \
-		if [ -f "$compiled_transmuted" ]; then \
-			echo "DONE ${name} (${compiled_transmuted})"; \
-		else \
-			echo "DONE ${name} (direct legacy: ${compiled_path})"; \
-		fi; \
-	done
-
-morph-vibrato-dictionaries-rebuild-all VERSION="202512":
-	@just morph-vibrato-dictionary-build-source-ready "{{VERSION}}"
-	@just morph-vibrato-dictionary-transmute-legacy "{{VERSION}}"
-	@echo "VIBRATO DICTIONARY REBUILD COMPLETE"
 
 morph-vaporetto-dictionary-build-source-ready VERSION="202512":
 	@set -euo pipefail
@@ -1051,57 +877,6 @@ morph-vaporetto-dictionary-audit:
 			optimized="missing"; \
 		fi; \
 		printf '%s,%s,%s,%s,%s,%s\n' "$name" "$source_artifact" "$source_path" "$versioned_compiled" "$optimized" "$notes"; \
-	done | sort
-
-morph-vibrato-dictionary-audit:
-	@if [ ! -d "{{repo_root}}/dictionary/unidic-sources" ]; then \
-		echo "missing: {{repo_root}}/dictionary/unidic-sources"; \
-		exit 1; \
-	fi
-	@printf "dictionary,status,versioned_compiled,optimized,notes\n"
-	@for src in "{{repo_root}}/dictionary/unidic-sources"/*; do \
-		[ -d "$src" ] || continue; \
-		name="$(basename "$src")"; \
-		lex="$(find "$src" -name lex.csv -type f | head -n 1)"; \
-		matrix="$(find "$src" -name matrix.def -type f | head -n 1)"; \
-		char="$(find "$src" -name char.def -type f | head -n 1)"; \
-		unk="$(find "$src" -name unk.def -type f | head -n 1)"; \
-		sysdic="$(find "$src" -maxdepth 1 -name 'sys.dic' -o -name 'sys.dic.zst' -type f | head -n 1)"; \
-		if [ -n "$lex" ] && [ -n "$matrix" ] && [ -n "$char" ] && [ -n "$unk" ]; then \
-			status="compile-ready"; \
-			notes="source has lex/matrix/char/unk"; \
-		elif [ -n "$sysdic" ]; then \
-			status="legacy-direct"; \
-			notes="source has sys.dic/sys.dic.zst"; \
-		else \
-			status="missing-source"; \
-			notes="missing lex|matrix|char|unk and sys.dic"; \
-		fi; \
-		compiled_versioned="{{repo_root}}/dictionary/compiled/${name}-202512.dic.zst"; \
-		compiled_compact="{{repo_root}}/dictionary/compiled/${name}.dic.zst"; \
-		optimized_versioned="{{repo_root}}/dictionary/optimized/${name}-202512.dic.zst"; \
-		optimized_alias="{{repo_root}}/dictionary/optimized/${name}.dic.zst"; \
-		compiled_legacy="{{repo_root}}/dictionary/compiled/${name}-202512.dic"; \
-		optimized_legacy="{{repo_root}}/dictionary/optimized/${name}-202512.dic"; \
-		if [ -f "$compiled_versioned" ]; then \
-			versioned_compiled="present"; \
-		elif [ -f "$compiled_legacy" ]; then \
-			versioned_compiled="present-legacy"; \
-		elif [ -f "$compiled_compact" ]; then \
-			versioned_compiled="compact-legacy"; \
-		else \
-			versioned_compiled="missing"; \
-		fi; \
-		if [ -f "$optimized_versioned" ]; then \
-			optimized="present-202512"; \
-		elif [ -f "$optimized_legacy" ]; then \
-			optimized="present-legacy-202512"; \
-		elif [ -f "$optimized_alias" ]; then \
-			optimized="present-alias"; \
-		else \
-			optimized="missing"; \
-		fi; \
-		printf '%s,%s,%s,%s,%s\n' "$name" "$status" "$versioned_compiled" "$optimized" "$notes"; \
 	done | sort
 
 # ---- aozora-epub3 adapter ---------------------------------------------------

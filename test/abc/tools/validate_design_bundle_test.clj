@@ -44,6 +44,9 @@
 (def ^:private v4-mapping-hash
   "sha256:13734117384aede0ee484cbda1b44b29c96007a17f238a21788f567f7da8ea06")
 
+(def ^:private v5-mapping-hash
+  "sha256:feaab2d246fd17d79dc979012893400e0f5faacc0df04e260bee4f2b129299bf")
+
 (def ^:private mapping-schema-hash
   "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4")
 
@@ -1026,6 +1029,22 @@
       (is (true? (compat/compatible? registry v4-rs-compat-query)))
       (is (true? (compat/compatible? registry v4-aozora2-compat-query)))
       (is (true? (compat/compatible? registry v4-html-compat-query)))
+      (doseq [[adapter adapter-version] [["aozora" "aozora-adapter 0.1.0 aozora 0.4.1"]
+                                         ["aozora-epub3" "aozora-epub3-adapter 0.1.0 AozoraEpub3-JDK21-1.3.4-jdk21"]
+                                         ["aozora-rs" "aozora-rs-adapter 0.1.0 2b4e8d1"]
+                                         ["aozora2" "aozora2-adapter 0.1.0 aozora-core-0.7.1"]
+                                         ["aozora2html" "aozora2html-adapter 0.1.0 gem-3.0.1"]]]
+        (is (true? (compat/compatible?
+                    registry
+                    {:aat_version 1
+                     :aat_adapter adapter
+                     :aat_adapter_version adapter-version
+                     :mapping_id "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe"
+                     :mapping_version "0.2.3"
+                     :mapping_hash v5-mapping-hash
+                     :mapping_schema_hash mapping-schema-hash
+                     :parser_ir_schema_id "https://w3id.org/abc/schemas/parser-ir.schema.json"
+                     :parser_ir_schema_hash current-parser-ir-schema-hash}))))
       (let [entry-for (fn [adapter adapter-version]
                         (->> (:entries registry)
                              (filter #(and (= adapter (:aat_adapter %))

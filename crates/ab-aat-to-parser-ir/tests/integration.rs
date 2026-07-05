@@ -592,6 +592,139 @@ fn recovers_direct_raw_without_rendering_parser_residue_as_body_text() {
 }
 
 #[test]
+fn recovers_accent_and_inline_yokogumi_without_fatal_conversion() {
+    let (schemas, mapping) = schemas_and_mapping();
+    let aat = json!({
+        "version": 1,
+        "work_id": "accent-yokogumi-recovery",
+        "meta": base_meta(
+            "utf-8",
+            "sha256:9292929292929292929292929292929292929292929292929292929292929292",
+        ),
+        "blocks": [
+            {
+                "kind": "paragraph",
+                "content": [
+                    {
+                        "kind": "accent",
+                        "code": "1-09-63",
+                        "name": "アキュートアクセント付きE小文字",
+                        "resolved": "é"
+                    },
+                    {
+                        "kind": "yokogumi",
+                        "content": [
+                            {"kind": "text", "value": "ABC"}
+                        ]
+                    },
+                    {
+                        "kind": "style",
+                        "style_type": "bold",
+                        "content": [
+                            {
+                                "kind": "accent",
+                                "code": "1-09-78",
+                                "name": "グレーブアクセント付きU小文字",
+                                "resolved": "ù"
+                            },
+                            {
+                                "kind": "yokogumi",
+                                "content": [
+                                    {"kind": "text", "value": "12"}
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "kind": "paragraph",
+                "content": [
+                    {"kind": "text", "value": "（"},
+                    {
+                        "kind": "accent",
+                        "code": "1-09-63",
+                        "name": "アキュートアクセント付きE小文字",
+                        "resolved": "é"
+                    },
+                    {
+                        "kind": "yokogumi",
+                        "content": [
+                            {"kind": "text", "value": "ABC"}
+                        ]
+                    },
+                    {"kind": "text", "value": "から。）"}
+                ]
+            }
+        ]
+    });
+
+    let output = ab_aat_to_parser_ir::convert(ConversionRequest {
+        aat,
+        mapping,
+        schemas: schemas.clone(),
+        options: ConversionOptions::default(),
+    })
+    .unwrap();
+
+    assert_eq!(
+        output.parser_ir.pointer("/nodes/0"),
+        Some(&json!({
+            "type": "emphasis",
+            "span": {"start": 0, "end": 2, "line": null, "column": null, "coordinate_system": "decoded_utf8"},
+            "text": "é",
+            "style": "1-09-63",
+        }))
+    );
+    assert_eq!(
+        output.parser_ir.pointer("/nodes/1"),
+        Some(&json!({
+            "type": "emphasis",
+            "span": {"start": 2, "end": 5, "line": null, "column": null, "coordinate_system": "decoded_utf8"},
+            "text": "ABC",
+            "style": "yokogumi",
+        }))
+    );
+    assert_eq!(
+        output.parser_ir.pointer("/nodes/2/text"),
+        Some(&json!("ù12"))
+    );
+    assert_eq!(
+        output.parser_ir.pointer("/nodes/3/type"),
+        Some(&json!("source-note"))
+    );
+    assert_eq!(
+        output.parser_ir.pointer("/nodes/3/text"),
+        Some(&json!("（éABCから。）"))
+    );
+    assert!(has_divergence_record(
+        &output,
+        "AMBIGUITY",
+        "blocks[].content[].accent",
+        Some("emphasis")
+    ));
+    assert!(has_divergence_record(
+        &output,
+        "INVENTION",
+        "blocks[].content[].accent.code",
+        Some("emphasis.style")
+    ));
+    assert!(has_divergence_record(
+        &output,
+        "LOSS",
+        "blocks[].content[].accent.name",
+        None
+    ));
+    assert!(has_divergence_record(
+        &output,
+        "UNSUPPORTED",
+        "blocks[].content[].yokogumi",
+        Some("emphasis(?)")
+    ));
+    validate_value(&schemas.parser_ir_schema, &output.parser_ir, "parser-IR").unwrap();
+}
+
+#[test]
 fn projects_burasage_style_wrapper_to_paragraph_layout() {
     let (schemas, mapping) = schemas_and_mapping();
     let aat = json!({

@@ -43,6 +43,17 @@ After direct raw recovery, the regenerated five-parser audit is:
 | files with raw | 21,917 |
 | fatal direct raw failures | 0 |
 
+After accent and inline-yokogumi recovery, the regenerated five-parser audit is:
+
+| metric | value |
+|---|---:|
+| files_attempted | 89,169 |
+| files_succeeded | 89,169 |
+| files_failed | 0 |
+| raw nodes | 4,800,218 |
+| files with raw | 21,917 |
+| fatal direct raw failures | 0 |
+
 ## Raw Nodes By Adapter
 
 | adapter | raw nodes | files with raw | baseline fatal direct failures | post-recovery fatal direct failures |
@@ -97,10 +108,10 @@ The measurement confirms the report's warning: raw recovery cannot be a single
 - `aozora2html` `<br/>` raw nodes remain nonfatal and are still treated as
   parser residue by the direct raw recovery policy.
 
-## Current Remaining Conversion Failures
+## Closed Conversion Failures
 
-The remaining 471 conversion failures are all in `aozora2-adapter` and are no
-longer raw-related:
+After direct raw recovery, 471 conversion failures remained in
+`aozora2-adapter`:
 
 | error | files |
 |---|---:|
@@ -111,29 +122,46 @@ longer raw-related:
 | unsupported inline kind in source attribution projection: yokogumi | 5 |
 | unsupported inline kind in visible projection: yokogumi | 2 |
 
+Those are now recovered by measured v1 mapping rules:
+
+- Direct `accent` nodes emit parser-IR `emphasis` with `text = resolved` and
+  `style = code`, while recording the measured `AMBIGUITY` / `INVENTION` /
+  `LOSS` rules for accent structure, code, and name.
+- `accent` inside visible-text projections returns the resolved character and
+  records the measured `LOSS` rule where the projection target has no accent
+  structure.
+- Inline `yokogumi` uses the existing generic inline-container recovery path:
+  parser-IR `emphasis` with `style = "yokogumi"` and measured `UNSUPPORTED`
+  divergence.
+- Source-attribution projection and visible projection now handle both kinds,
+  so neither path can still fail on these observed inline nodes.
+
+The conversion gate is therefore closed: `top_errors == []` and all five
+adapters have `files_failed == 0` in the regenerated audit.
+
 ## Goal Incorporation
 
 `/tmp/tei-node-coverage-gaps-report.md` is now part of the active "Full TEI 2/3
-generation via IR" goal. The raw crash blocker is closed, but the goal remains
-open until the remaining TEI node-coverage gaps are either represented in
-parser-IR or explicitly admitted as policy-scoped Level 4/enrichment work.
+generation via IR" goal. The fatal conversion blockers are closed, but the goal
+remains open until the remaining TEI node-coverage gaps are either represented
+in parser-IR or explicitly admitted as policy-scoped Level 4/enrichment work.
 
 The incorporated backlog is:
 
 1. P1: measure emphasis nesting depth, then migrate parser-IR `emphasis` to
    support inline children. This resolves nested emphasis identity and ruby
    reading loss inside emphasis.
-2. P2: measure accent code taxonomy, then add a converter/schema/rendering
-   policy for `accent` using TEI `<hi>` with CSS `text-emphasis-style` as the
-   Level 3 default.
+2. P2: measure accent code taxonomy, then replace free-form accent codes in
+   `emphasis.style` with a documented converter/schema/rendering policy using
+   TEI `<hi>` with CSS `text-emphasis-style` as the Level 3 default.
 3. P2: add first-class `warigaki` representation and render it as
    `<note place="inline" rend="割注">` with `<lb/>` split, following the
    jpn_classical guideline.
 4. P2: align `gaiji.resolved` with source semantics by accepting string/null
    alongside the legacy boolean during schema migration.
 5. P3: define unified `@rend` / `<rendition>` vocabulary for inline containers,
-   including TCY and inline yokogumi, and recover the remaining `yokogumi`
-   conversion failures.
+   including TCY and inline yokogumi. Conversion recovery is done; TEI
+   vocabulary and ODD declaration are still open.
 6. P3: decide block-container TEI mapping for keigakomi/yokogumi/jisage mixed
    cases, defaulting to `<div type="...">` where the structure is block-level.
 7. P3: keep caption/quote pass-through measured, and only add semantic
@@ -142,8 +170,9 @@ The incorporated backlog is:
 
 ## Next Work
 
-1. Commit this raw recovery slice after verification.
+1. Commit the raw/accent/yokogumi conversion recovery slice after verification.
 2. Start the emphasis inline-children measurement/schema plan; it is the
    highest-leverage remaining Parser IR gap by occurrence count.
-3. In parallel, prepare the accent taxonomy measurement because it is now the
-   dominant remaining conversion failure class.
+3. Prepare the accent taxonomy measurement as the next semantic recovery step;
+   conversion no longer fails, but the current `style = code` projection is a
+   measured compatibility bridge, not the final TEI vocabulary.

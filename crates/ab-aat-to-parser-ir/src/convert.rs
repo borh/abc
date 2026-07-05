@@ -574,7 +574,8 @@ fn plain_visible_inline_text(node: &Value) -> Result<String> {
             .or_else(|| node["description"].as_str())
             .unwrap_or("")
             .to_owned()),
-        "style" | "font_size" | "tcy" | "keigakomi" | "caption" => {
+        "accent" => Ok(node["resolved"].as_str().unwrap_or("").to_owned()),
+        "style" | "font_size" | "tcy" | "keigakomi" | "caption" | "yokogumi" => {
             plain_visible_content_text(node.get("content"))
         }
         "warigaki" => {
@@ -756,10 +757,11 @@ fn map_inline_to_nodes(
             }));
             Ok(end)
         }
+        "accent" => map_accent_to_node(node, nodes, recorder, offset, path),
         "warigaki" => map_warigaki_to_nodes(node, nodes, recorder, offset, path),
         "figure" => map_figure_to_node(node, nodes, recorder, offset, path),
         "raw" => map_raw_to_nodes(node, nodes, recorder, offset, path),
-        "font_size" | "tcy" | "keigakomi" | "caption" => {
+        "font_size" | "tcy" | "keigakomi" | "caption" | "yokogumi" => {
             let kind = node["kind"].as_str().unwrap_or("");
             let pointer = format!("{path}.{kind}");
             recorder.record(
@@ -787,6 +789,72 @@ fn map_inline_to_nodes(
         }
         other => bail!("unsupported inline kind: {other}"),
     }
+}
+
+fn map_accent_to_node(
+    node: &Value,
+    nodes: &mut Vec<Value>,
+    recorder: &mut DivergenceRecorder,
+    offset: u64,
+    path: &str,
+) -> Result<u64> {
+    let accent_pointer = format!("{path}.accent");
+    recorder.record(
+        "AMBIGUITY",
+        Some(accent_pointer.as_str()),
+        Some("emphasis"),
+        node.get("name").cloned(),
+        None,
+    )?;
+
+    let code_pointer = format!("{path}.accent.code");
+    if node.get("code").is_some_and(|value| !value.is_null())
+        && recorder.has_rule(
+            "INVENTION",
+            Some(code_pointer.as_str()),
+            Some("emphasis.style"),
+        )
+    {
+        recorder.record(
+            "INVENTION",
+            Some(code_pointer.as_str()),
+            Some("emphasis.style"),
+            node.get("code").cloned(),
+            node.get("code").cloned(),
+        )?;
+    }
+
+    let name_pointer = format!("{path}.accent.name");
+    if node.get("name").is_some_and(|value| !value.is_null())
+        && recorder.has_rule("LOSS", Some(name_pointer.as_str()), None)
+    {
+        recorder.record(
+            "LOSS",
+            Some(name_pointer.as_str()),
+            None,
+            node.get("name").cloned(),
+            None,
+        )?;
+    }
+
+    let text = accent_text(node);
+    let end = offset + utf8_len(&text);
+    let span = map_span(node.get("span"), offset, end, recorder, path)?;
+    nodes.push(json!({
+        "type": "emphasis",
+        "span": span,
+        "text": text,
+        "style": accent_style(node),
+    }));
+    Ok(end)
+}
+
+fn accent_text(node: &Value) -> String {
+    node["resolved"].as_str().unwrap_or("").to_owned()
+}
+
+fn accent_style(node: &Value) -> String {
+    node["code"].as_str().unwrap_or("accent").to_owned()
 }
 
 fn map_raw_to_nodes(
@@ -1081,7 +1149,22 @@ fn visible_inline_text(
                 .unwrap_or("")
                 .to_owned())
         }
-        "style" | "font_size" | "tcy" | "keigakomi" | "caption" => {
+        "accent" => {
+            let accent_pointer = format!("{path}.accent");
+            if let Some(target) = target_pointer {
+                if recorder.has_rule("LOSS", Some(accent_pointer.as_str()), Some(target)) {
+                    recorder.record(
+                        "LOSS",
+                        Some(accent_pointer.as_str()),
+                        Some(target),
+                        node.get("name").cloned(),
+                        None,
+                    )?;
+                }
+            }
+            Ok(accent_text(node))
+        }
+        "style" | "font_size" | "tcy" | "keigakomi" | "caption" | "yokogumi" => {
             let kind = node["kind"].as_str().unwrap_or("");
             let container_pointer = format!("{path}.{kind}");
             record_measured_loss(

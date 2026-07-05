@@ -85,15 +85,15 @@
                    :adapter_version "aozora2-adapter 0.1.0 aozora-core-0.7.1"
                    :corpus "aozora2-adapter"
                    :files_scanned 17856
-                   :files_succeeded 17385
-                   :files_failed 471
-                   :parser_ir_nodes 5215785
-                   :divergence_records 215630
-                   :divergence_occurrences 11101371
+                   :files_succeeded 17856
+                   :files_failed 0
+                   :parser_ir_nodes 5618304
+                   :divergence_records 227302
+                   :divergence_occurrences 11937470
                    :rules_total 714
-                   :rules_emitted 537
-                   :rules_missing 177
-                   :unsupported_occurrences 58338}
+                   :rules_emitted 670
+                   :rules_missing 44
+                   :unsupported_occurrences 81154}
   :compatibility "lossy"}
 {:aat_version 1
   :aat_adapter "aozora2html"

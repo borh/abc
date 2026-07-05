@@ -1,6 +1,6 @@
 # AAT Parser-IR Conversion Audit
 
-- generated_unix_seconds: `1783246241`
+- generated_unix_seconds: `1783246708`
 - mapping: `https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe` `0.2.3`
 - mapping_hash: `sha256:9812e1cc0d956143e61cdd9d0a5bccaa3ec301c7984279230107c23919936e8b`
 - mapping_schema_hash: `sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4`
@@ -10,7 +10,7 @@
 
 | files_attempted | files_succeeded | files_failed | parser_ir_nodes | divergence_records | divergence_occurrences | elapsed_seconds |
 |---:|---:|---:|---:|---:|---:|---:|
-| 89169 | 88698 | 471 | 32957092 | 1030352 | 58212289 | 32.165 |
+| 89169 | 89169 | 0 | 33359611 | 1042024 | 59048388 | 32.104 |
 
 ## Inputs
 
@@ -29,7 +29,7 @@
 | aozora-adapter | 17886 | 17886 | 0 | 988246 | 5100160 |
 | aozora-epub3-adapter | 17844 | 17844 | 0 | 10600649 | 18103739 |
 | aozora-rs-adapter | 17894 | 17894 | 0 | 7821839 | 11926731 |
-| aozora2-adapter | 17856 | 17385 | 471 | 5215785 | 11101371 |
+| aozora2-adapter | 17856 | 17856 | 0 | 5618304 | 11937470 |
 | aozora2html-adapter | 17689 | 17689 | 0 | 8330573 | 11980288 |
 
 ## Raw Nodes
@@ -86,11 +86,11 @@
 
 | category | occurrences |
 |---|---:|
-| AMBIGUITY | 32959970 |
-| INVENTION | 13324689 |
-| LOSS | 6892156 |
-| STRUCTURAL | 221920 |
-| UNSUPPORTED | 4813554 |
+| AMBIGUITY | 33414901 |
+| INVENTION | 13471065 |
+| LOSS | 7094923 |
+| STRUCTURAL | 231129 |
+| UNSUPPORTED | 4836370 |
 
 ## Compatibility Candidates
 
@@ -99,84 +99,84 @@
 | aozora | aozora-adapter 0.1.0 aozora 0.4.1 | 0.2.3 | `sha256:9812e1cc0d956143e61cdd9d0a5bccaa3ec301c7984279230107c23919936e8b` | 17886 | 0 | 16 | 698 | 4727752 |
 | aozora-epub3 | aozora-epub3-adapter 0.1.0 AozoraEpub3-JDK21-1.3.4-jdk21 | 0.2.3 | `sha256:9812e1cc0d956143e61cdd9d0a5bccaa3ec301c7984279230107c23919936e8b` | 17844 | 0 | 61 | 653 | 13234 |
 | aozora-rs | aozora-rs-adapter 0.1.0 2b4e8d1 | 0.2.3 | `sha256:9812e1cc0d956143e61cdd9d0a5bccaa3ec301c7984279230107c23919936e8b` | 17894 | 0 | 25 | 689 | 0 |
-| aozora2 | aozora2-adapter 0.1.0 aozora-core-0.7.1 | 0.2.3 | `sha256:9812e1cc0d956143e61cdd9d0a5bccaa3ec301c7984279230107c23919936e8b` | 17385 | 471 | 537 | 177 | 58338 |
+| aozora2 | aozora2-adapter 0.1.0 aozora-core-0.7.1 | 0.2.3 | `sha256:9812e1cc0d956143e61cdd9d0a5bccaa3ec301c7984279230107c23919936e8b` | 17856 | 0 | 670 | 44 | 81154 |
 | aozora2html | aozora2html-adapter 0.1.0 gem-3.0.1 | 0.2.3 | `sha256:9812e1cc0d956143e61cdd9d0a5bccaa3ec301c7984279230107c23919936e8b` | 17689 | 0 | 112 | 602 | 14230 |
 
 ## Rule Coverage
 
 - rules_total: `714`
-- rules_emitted: `565`
-- rules_missing: `149`
+- rules_emitted: `692`
+- rules_missing: `22`
 
 | rule_id | category | files | occurrences |
 |---|---|---:|---:|
 | A-01 | AMBIGUITY | 0 | 0 |
-| A-02 | AMBIGUITY | 0 | 0 |
+| A-02 | AMBIGUITY | 9 | 59 |
 | A-03 | AMBIGUITY | 1 | 4 |
 | A-04 | AMBIGUITY | 2 | 7 |
-| A-05 | AMBIGUITY | 195 | 2703 |
-| A-06 | AMBIGUITY | 45 | 128 |
+| A-05 | AMBIGUITY | 216 | 2920 |
+| A-06 | AMBIGUITY | 47 | 130 |
 | A-07 | AMBIGUITY | 1 | 14 |
 | A-08 | AMBIGUITY | 19 | 21 |
 | A-09 | AMBIGUITY | 19 | 21 |
-| A-10 | AMBIGUITY | 0 | 0 |
-| A-100 | AMBIGUITY | 6 | 9 |
-| A-101 | AMBIGUITY | 74 | 615 |
+| A-10 | AMBIGUITY | 87 | 670 |
+| A-100 | AMBIGUITY | 7 | 10 |
+| A-101 | AMBIGUITY | 85 | 903 |
 | A-102 | AMBIGUITY | 1 | 1 |
-| A-103 | AMBIGUITY | 2080 | 10877 |
-| A-104 | AMBIGUITY | 11501 | 88477 |
-| A-105 | AMBIGUITY | 70437 | 28571108 |
-| A-106 | AMBIGUITY | 32655 | 496847 |
+| A-103 | AMBIGUITY | 2263 | 13590 |
+| A-104 | AMBIGUITY | 11700 | 91590 |
+| A-105 | AMBIGUITY | 70902 | 28778226 |
+| A-106 | AMBIGUITY | 32996 | 514947 |
 | A-107 | AMBIGUITY | 3 | 4 |
-| A-108 | AMBIGUITY | 0 | 0 |
-| A-109 | AMBIGUITY | 10 | 13 |
-| A-11 | AMBIGUITY | 0 | 0 |
-| A-110 | AMBIGUITY | 14 | 20 |
-| A-111 | AMBIGUITY | 326 | 2306 |
+| A-108 | AMBIGUITY | 1 | 4 |
+| A-109 | AMBIGUITY | 11 | 14 |
+| A-11 | AMBIGUITY | 3 | 76 |
+| A-110 | AMBIGUITY | 15 | 21 |
+| A-111 | AMBIGUITY | 347 | 2537 |
 | A-112 | AMBIGUITY | 1 | 7 |
-| A-113 | AMBIGUITY | 1 | 1 |
-| A-114 | AMBIGUITY | 1 | 1 |
+| A-113 | AMBIGUITY | 2 | 6 |
+| A-114 | AMBIGUITY | 2 | 2 |
 | A-115 | AMBIGUITY | 2 | 2 |
-| A-116 | AMBIGUITY | 2 | 2 |
-| A-117 | AMBIGUITY | 7 | 10 |
-| A-118 | AMBIGUITY | 24 | 154 |
-| A-119 | AMBIGUITY | 162 | 2564 |
+| A-116 | AMBIGUITY | 4 | 5 |
+| A-117 | AMBIGUITY | 10 | 16 |
+| A-118 | AMBIGUITY | 28 | 176 |
+| A-119 | AMBIGUITY | 189 | 2819 |
 | A-12 | AMBIGUITY | 1 | 1 |
-| A-120 | AMBIGUITY | 23 | 213 |
+| A-120 | AMBIGUITY | 26 | 249 |
 | A-121 | AMBIGUITY | 0 | 0 |
-| A-122 | AMBIGUITY | 5150 | 78174 |
-| A-123 | AMBIGUITY | 11877 | 154644 |
+| A-122 | AMBIGUITY | 5348 | 87024 |
+| A-123 | AMBIGUITY | 12080 | 163529 |
 | A-124 | AMBIGUITY | 7 | 7 |
-| A-125 | AMBIGUITY | 88698 | 88698 |
+| A-125 | AMBIGUITY | 89169 | 89169 |
 | A-126 | AMBIGUITY | 0 | 0 |
-| A-13 | AMBIGUITY | 0 | 0 |
-| A-14 | AMBIGUITY | 0 | 0 |
-| A-15 | AMBIGUITY | 0 | 0 |
-| A-16 | AMBIGUITY | 0 | 0 |
+| A-13 | AMBIGUITY | 1 | 2 |
+| A-14 | AMBIGUITY | 1 | 2 |
+| A-15 | AMBIGUITY | 1 | 2 |
+| A-16 | AMBIGUITY | 1 | 2 |
 | A-17 | AMBIGUITY | 1 | 1 |
 | A-18 | AMBIGUITY | 1 | 1 |
-| A-19 | AMBIGUITY | 1 | 1 |
+| A-19 | AMBIGUITY | 2 | 3 |
 | A-20 | AMBIGUITY | 1 | 1 |
-| A-21 | AMBIGUITY | 12 | 35 |
-| A-22 | AMBIGUITY | 3 | 3 |
-| A-23 | AMBIGUITY | 151 | 595 |
-| A-24 | AMBIGUITY | 3 | 3 |
-| A-25 | AMBIGUITY | 92 | 2148 |
-| A-26 | AMBIGUITY | 27 | 34 |
-| A-27 | AMBIGUITY | 312 | 1016 |
-| A-28 | AMBIGUITY | 800 | 3093 |
-| A-29 | AMBIGUITY | 15327 | 1019895 |
-| A-30 | AMBIGUITY | 5412 | 81168 |
+| A-21 | AMBIGUITY | 13 | 37 |
+| A-22 | AMBIGUITY | 5 | 27 |
+| A-23 | AMBIGUITY | 158 | 633 |
+| A-24 | AMBIGUITY | 5 | 27 |
+| A-25 | AMBIGUITY | 108 | 2395 |
+| A-26 | AMBIGUITY | 36 | 49 |
+| A-27 | AMBIGUITY | 361 | 1266 |
+| A-28 | AMBIGUITY | 854 | 3416 |
+| A-29 | AMBIGUITY | 15602 | 1042752 |
+| A-30 | AMBIGUITY | 5501 | 82608 |
 | A-31 | AMBIGUITY | 2 | 2 |
 | A-32 | AMBIGUITY | 5 | 9 |
 | A-33 | AMBIGUITY | 5 | 10 |
-| A-34 | AMBIGUITY | 134 | 933 |
+| A-34 | AMBIGUITY | 142 | 1007 |
 | A-35 | AMBIGUITY | 2 | 5 |
-| A-36 | AMBIGUITY | 11 | 20 |
-| A-37 | AMBIGUITY | 6632 | 71441 |
-| A-38 | AMBIGUITY | 6635 | 71461 |
-| A-39 | AMBIGUITY | 0 | 0 |
-| A-40 | AMBIGUITY | 0 | 0 |
+| A-36 | AMBIGUITY | 12 | 28 |
+| A-37 | AMBIGUITY | 6634 | 71461 |
+| A-38 | AMBIGUITY | 6637 | 71481 |
+| A-39 | AMBIGUITY | 257 | 1493 |
+| A-40 | AMBIGUITY | 122 | 1016 |
 | A-41 | AMBIGUITY | 1 | 4 |
 | A-42 | AMBIGUITY | 1 | 1 |
 | A-43 | AMBIGUITY | 1 | 1 |
@@ -188,220 +188,220 @@
 | A-49 | AMBIGUITY | 1 | 5 |
 | A-50 | AMBIGUITY | 1 | 1 |
 | A-51 | AMBIGUITY | 1 | 1 |
-| A-52 | AMBIGUITY | 0 | 0 |
+| A-52 | AMBIGUITY | 1 | 1 |
 | A-53 | AMBIGUITY | 1 | 2 |
 | A-54 | AMBIGUITY | 1 | 1 |
 | A-55 | AMBIGUITY | 1 | 1 |
-| A-56 | AMBIGUITY | 1 | 1 |
-| A-57 | AMBIGUITY | 1 | 1 |
-| A-58 | AMBIGUITY | 0 | 0 |
-| A-59 | AMBIGUITY | 0 | 0 |
-| A-60 | AMBIGUITY | 0 | 0 |
+| A-56 | AMBIGUITY | 2 | 2 |
+| A-57 | AMBIGUITY | 2 | 2 |
+| A-58 | AMBIGUITY | 1 | 1 |
+| A-59 | AMBIGUITY | 1 | 1 |
+| A-60 | AMBIGUITY | 1 | 1 |
 | A-61 | AMBIGUITY | 1 | 1 |
-| A-62 | AMBIGUITY | 0 | 0 |
+| A-62 | AMBIGUITY | 1 | 1 |
 | A-63 | AMBIGUITY | 1 | 8 |
 | A-64 | AMBIGUITY | 1 | 1 |
-| A-65 | AMBIGUITY | 1 | 2 |
+| A-65 | AMBIGUITY | 2 | 3 |
 | A-66 | AMBIGUITY | 2 | 7 |
 | A-67 | AMBIGUITY | 2 | 3 |
-| A-68 | AMBIGUITY | 0 | 0 |
-| A-69 | AMBIGUITY | 0 | 0 |
-| A-70 | AMBIGUITY | 0 | 0 |
-| A-71 | AMBIGUITY | 2 | 2 |
-| A-72 | AMBIGUITY | 4 | 6 |
-| A-73 | AMBIGUITY | 3 | 4 |
-| A-74 | AMBIGUITY | 2 | 5 |
-| A-75 | AMBIGUITY | 2 | 3 |
-| A-76 | AMBIGUITY | 3 | 9 |
-| A-77 | AMBIGUITY | 1 | 2 |
-| A-78 | AMBIGUITY | 1 | 1 |
-| A-79 | AMBIGUITY | 4 | 8 |
-| A-80 | AMBIGUITY | 5 | 10 |
-| A-81 | AMBIGUITY | 2 | 4 |
-| A-82 | AMBIGUITY | 7 | 26 |
-| A-83 | AMBIGUITY | 8 | 20 |
-| A-84 | AMBIGUITY | 7 | 15 |
-| A-85 | AMBIGUITY | 5 | 11 |
-| A-86 | AMBIGUITY | 11 | 24 |
-| A-87 | AMBIGUITY | 13 | 24 |
-| A-88 | AMBIGUITY | 24 | 44 |
-| A-89 | AMBIGUITY | 43 | 129 |
+| A-68 | AMBIGUITY | 1 | 1 |
+| A-69 | AMBIGUITY | 1 | 1 |
+| A-70 | AMBIGUITY | 1 | 2 |
+| A-71 | AMBIGUITY | 3 | 4 |
+| A-72 | AMBIGUITY | 5 | 7 |
+| A-73 | AMBIGUITY | 4 | 5 |
+| A-74 | AMBIGUITY | 4 | 7 |
+| A-75 | AMBIGUITY | 4 | 5 |
+| A-76 | AMBIGUITY | 4 | 10 |
+| A-77 | AMBIGUITY | 2 | 3 |
+| A-78 | AMBIGUITY | 2 | 2 |
+| A-79 | AMBIGUITY | 6 | 13 |
+| A-80 | AMBIGUITY | 7 | 12 |
+| A-81 | AMBIGUITY | 4 | 9 |
+| A-82 | AMBIGUITY | 8 | 29 |
+| A-83 | AMBIGUITY | 11 | 24 |
+| A-84 | AMBIGUITY | 8 | 16 |
+| A-85 | AMBIGUITY | 6 | 12 |
+| A-86 | AMBIGUITY | 17 | 34 |
+| A-87 | AMBIGUITY | 21 | 59 |
+| A-88 | AMBIGUITY | 34 | 86 |
+| A-89 | AMBIGUITY | 57 | 162 |
 | A-90 | AMBIGUITY | 0 | 0 |
-| A-91 | AMBIGUITY | 63 | 175 |
-| A-92 | AMBIGUITY | 218 | 1010 |
-| A-93 | AMBIGUITY | 818 | 7041 |
-| A-94 | AMBIGUITY | 1055 | 5531 |
-| A-95 | AMBIGUITY | 888 | 7862 |
-| A-96 | AMBIGUITY | 3768 | 2142992 |
-| A-97 | AMBIGUITY | 2036 | 45426 |
+| A-91 | AMBIGUITY | 83 | 238 |
+| A-92 | AMBIGUITY | 257 | 1309 |
+| A-93 | AMBIGUITY | 915 | 8391 |
+| A-94 | AMBIGUITY | 1121 | 5771 |
+| A-95 | AMBIGUITY | 989 | 9487 |
+| A-96 | AMBIGUITY | 3992 | 2305574 |
+| A-97 | AMBIGUITY | 2181 | 55044 |
 | A-98 | AMBIGUITY | 0 | 0 |
-| A-99 | AMBIGUITY | 5 | 8 |
-| I-01 | INVENTION | 88698 | 88698 |
-| I-02 | INVENTION | 57266 | 12029483 |
-| I-03 | INVENTION | 88698 | 88698 |
-| I-04 | INVENTION | 88698 | 88698 |
+| A-99 | AMBIGUITY | 6 | 9 |
+| I-01 | INVENTION | 89169 | 89169 |
+| I-02 | INVENTION | 57632 | 12164302 |
+| I-03 | INVENTION | 89169 | 89169 |
+| I-04 | INVENTION | 89169 | 89169 |
 | I-05 | INVENTION | 33144 | 381066 |
 | I-06 | INVENTION | 33144 | 381066 |
-| I-07 | INVENTION | 88698 | 88698 |
-| I-08 | INVENTION | 0 | 0 |
+| I-07 | INVENTION | 89169 | 89169 |
+| I-08 | INVENTION | 9 | 59 |
 | I-09 | INVENTION | 1 | 47 |
 | I-10 | INVENTION | 2 | 7 |
-| I-11 | INVENTION | 0 | 0 |
-| I-12 | INVENTION | 0 | 0 |
-| I-13 | INVENTION | 3 | 3 |
-| I-14 | INVENTION | 42 | 587 |
-| I-15 | INVENTION | 800 | 3093 |
+| I-11 | INVENTION | 87 | 670 |
+| I-12 | INVENTION | 3 | 76 |
+| I-13 | INVENTION | 5 | 27 |
+| I-14 | INVENTION | 47 | 599 |
+| I-15 | INVENTION | 854 | 3416 |
 | I-16 | INVENTION | 5 | 10 |
 | I-17 | INVENTION | 15 | 15 |
-| I-18 | INVENTION | 0 | 0 |
-| I-19 | INVENTION | 0 | 0 |
-| I-20 | INVENTION | 127 | 683 |
-| I-21 | INVENTION | 888 | 7862 |
-| I-22 | INVENTION | 6 | 9 |
-| I-23 | INVENTION | 757 | 5643 |
-| I-24 | INVENTION | 11501 | 88477 |
-| I-25 | INVENTION | 0 | 0 |
-| I-26 | INVENTION | 14 | 20 |
-| I-27 | INVENTION | 6704 | 71826 |
-| L-01 | LOSS | 12328 | 99481 |
-| L-02 | LOSS | 0 | 0 |
+| I-18 | INVENTION | 257 | 1493 |
+| I-19 | INVENTION | 122 | 1016 |
+| I-20 | INVENTION | 150 | 1034 |
+| I-21 | INVENTION | 989 | 9487 |
+| I-22 | INVENTION | 7 | 10 |
+| I-23 | INVENTION | 800 | 6513 |
+| I-24 | INVENTION | 11700 | 91590 |
+| I-25 | INVENTION | 1 | 4 |
+| I-26 | INVENTION | 15 | 21 |
+| I-27 | INVENTION | 6723 | 71861 |
+| L-01 | LOSS | 12569 | 104568 |
+| L-02 | LOSS | 9 | 59 |
 | L-03 | LOSS | 1 | 10 |
 | L-04 | LOSS | 7 | 24 |
 | L-05 | LOSS | 1 | 47 |
 | L-06 | LOSS | 1 | 47 |
 | L-07 | LOSS | 1 | 47 |
 | L-08 | LOSS | 1 | 3 |
-| L-09 | LOSS | 25 | 96 |
+| L-09 | LOSS | 27 | 113 |
 | L-10 | LOSS | 0 | 0 |
 | L-100 | LOSS | 1 | 1 |
 | L-101 | LOSS | 1 | 1 |
 | L-102 | LOSS | 1 | 1 |
 | L-103 | LOSS | 1 | 1 |
-| L-104 | LOSS | 0 | 0 |
+| L-104 | LOSS | 1 | 4 |
 | L-105 | LOSS | 1 | 1 |
-| L-106 | LOSS | 0 | 0 |
+| L-106 | LOSS | 1 | 8 |
 | L-107 | LOSS | 1 | 1 |
-| L-108 | LOSS | 0 | 0 |
+| L-108 | LOSS | 1 | 10 |
 | L-109 | LOSS | 1 | 1 |
 | L-11 | LOSS | 1 | 1 |
 | L-110 | LOSS | 1 | 1 |
-| L-111 | LOSS | 0 | 0 |
+| L-111 | LOSS | 1 | 10 |
 | L-112 | LOSS | 1 | 2 |
 | L-113 | LOSS | 1 | 1 |
-| L-114 | LOSS | 0 | 0 |
+| L-114 | LOSS | 1 | 8 |
 | L-115 | LOSS | 1 | 2 |
 | L-116 | LOSS | 1 | 1 |
-| L-117 | LOSS | 0 | 0 |
+| L-117 | LOSS | 1 | 8 |
 | L-118 | LOSS | 1 | 4 |
 | L-119 | LOSS | 1 | 1 |
 | L-12 | LOSS | 1 | 1 |
-| L-120 | LOSS | 0 | 0 |
+| L-120 | LOSS | 1 | 10 |
 | L-121 | LOSS | 1 | 1 |
 | L-122 | LOSS | 1 | 1 |
-| L-123 | LOSS | 0 | 0 |
+| L-123 | LOSS | 1 | 8 |
 | L-124 | LOSS | 1 | 1 |
 | L-125 | LOSS | 1 | 1 |
-| L-126 | LOSS | 0 | 0 |
+| L-126 | LOSS | 1 | 10 |
 | L-127 | LOSS | 1 | 1 |
 | L-128 | LOSS | 1 | 1 |
-| L-129 | LOSS | 0 | 0 |
+| L-129 | LOSS | 1 | 4 |
 | L-13 | LOSS | 1 | 1 |
-| L-130 | LOSS | 1 | 2 |
+| L-130 | LOSS | 2 | 3 |
 | L-131 | LOSS | 1 | 1 |
-| L-132 | LOSS | 0 | 0 |
+| L-132 | LOSS | 1 | 10 |
 | L-133 | LOSS | 1 | 1 |
 | L-134 | LOSS | 1 | 1 |
-| L-135 | LOSS | 0 | 0 |
+| L-135 | LOSS | 1 | 10 |
 | L-136 | LOSS | 1 | 1 |
 | L-137 | LOSS | 1 | 1 |
-| L-138 | LOSS | 0 | 0 |
+| L-138 | LOSS | 1 | 24 |
 | L-139 | LOSS | 2 | 4 |
 | L-14 | LOSS | 19 | 21 |
 | L-140 | LOSS | 1 | 1 |
-| L-141 | LOSS | 0 | 0 |
+| L-141 | LOSS | 1 | 22 |
 | L-142 | LOSS | 2 | 4 |
 | L-143 | LOSS | 1 | 1 |
-| L-144 | LOSS | 0 | 0 |
+| L-144 | LOSS | 1 | 10 |
 | L-145 | LOSS | 1 | 1 |
-| L-146 | LOSS | 0 | 0 |
+| L-146 | LOSS | 1 | 44 |
 | L-147 | LOSS | 2 | 5 |
 | L-148 | LOSS | 1 | 1 |
-| L-149 | LOSS | 0 | 0 |
-| L-15 | LOSS | 0 | 0 |
+| L-149 | LOSS | 1 | 46 |
+| L-15 | LOSS | 87 | 670 |
 | L-150 | LOSS | 2 | 5 |
 | L-151 | LOSS | 1 | 1 |
-| L-152 | LOSS | 0 | 0 |
+| L-152 | LOSS | 1 | 50 |
 | L-153 | LOSS | 2 | 2 |
 | L-154 | LOSS | 1 | 1 |
-| L-155 | LOSS | 0 | 0 |
+| L-155 | LOSS | 1 | 72 |
 | L-156 | LOSS | 1 | 1 |
-| L-157 | LOSS | 1 | 1 |
-| L-158 | LOSS | 2 | 5 |
+| L-157 | LOSS | 2 | 99 |
+| L-158 | LOSS | 3 | 6 |
 | L-159 | LOSS | 1 | 1 |
-| L-16 | LOSS | 0 | 0 |
-| L-160 | LOSS | 0 | 0 |
+| L-16 | LOSS | 8 | 63 |
+| L-160 | LOSS | 1 | 86 |
 | L-161 | LOSS | 2 | 2 |
 | L-162 | LOSS | 1 | 1 |
-| L-163 | LOSS | 0 | 0 |
-| L-164 | LOSS | 6 | 28 |
+| L-163 | LOSS | 1 | 104 |
+| L-164 | LOSS | 7 | 31 |
 | L-165 | LOSS | 1 | 1 |
-| L-166 | LOSS | 0 | 0 |
-| L-167 | LOSS | 13 | 140 |
+| L-166 | LOSS | 1 | 238 |
+| L-167 | LOSS | 15 | 212 |
 | L-168 | LOSS | 1 | 1 |
-| L-169 | LOSS | 3 | 7 |
-| L-17 | LOSS | 0 | 0 |
-| L-170 | LOSS | 29 | 162 |
+| L-169 | LOSS | 4 | 240 |
+| L-17 | LOSS | 3 | 76 |
+| L-170 | LOSS | 32 | 273 |
 | L-171 | LOSS | 1 | 1 |
-| L-172 | LOSS | 8 | 14 |
-| L-173 | LOSS | 85 | 560 |
+| L-172 | LOSS | 9 | 382 |
+| L-173 | LOSS | 95 | 640 |
 | L-174 | LOSS | 3 | 3 |
-| L-175 | LOSS | 161 | 2788 |
-| L-176 | LOSS | 26 | 925 |
-| L-177 | LOSS | 550 | 5540 |
+| L-175 | LOSS | 171 | 3182 |
+| L-176 | LOSS | 28 | 927 |
+| L-177 | LOSS | 572 | 5994 |
 | L-178 | LOSS | 0 | 0 |
-| L-179 | LOSS | 42 | 587 |
-| L-18 | LOSS | 0 | 0 |
-| L-180 | LOSS | 34 | 579 |
-| L-181 | LOSS | 34 | 579 |
-| L-182 | LOSS | 475 | 1857 |
-| L-183 | LOSS | 4913 | 174977 |
+| L-179 | LOSS | 47 | 599 |
+| L-18 | LOSS | 4 | 8 |
+| L-180 | LOSS | 37 | 583 |
+| L-181 | LOSS | 37 | 583 |
+| L-182 | LOSS | 484 | 1874 |
+| L-183 | LOSS | 5063 | 180230 |
 | L-184 | LOSS | 0 | 0 |
-| L-185 | LOSS | 1 | 11 |
+| L-185 | LOSS | 2 | 12 |
 | L-186 | LOSS | 0 | 0 |
-| L-187 | LOSS | 0 | 0 |
+| L-187 | LOSS | 1 | 4 |
 | L-188 | LOSS | 0 | 0 |
 | L-189 | LOSS | 6 | 9 |
 | L-19 | LOSS | 1 | 1 |
-| L-190 | LOSS | 11 | 20 |
+| L-190 | LOSS | 12 | 28 |
 | L-191 | LOSS | 1 | 1 |
-| L-192 | LOSS | 23 | 118 |
-| L-193 | LOSS | 23 | 118 |
-| L-194 | LOSS | 518 | 5987 |
-| L-195 | LOSS | 518 | 5987 |
+| L-192 | LOSS | 24 | 156 |
+| L-193 | LOSS | 24 | 156 |
+| L-194 | LOSS | 519 | 6008 |
+| L-195 | LOSS | 519 | 6008 |
 | L-196 | LOSS | 47 | 103 |
-| L-197 | LOSS | 58 | 481 |
-| L-198 | LOSS | 6632 | 71441 |
-| L-199 | LOSS | 0 | 0 |
+| L-197 | LOSS | 59 | 490 |
+| L-198 | LOSS | 6634 | 71461 |
+| L-199 | LOSS | 257 | 1493 |
 | L-20 | LOSS | 1 | 1 |
-| L-200 | LOSS | 0 | 0 |
-| L-201 | LOSS | 0 | 0 |
-| L-202 | LOSS | 0 | 0 |
-| L-203 | LOSS | 0 | 0 |
-| L-204 | LOSS | 0 | 0 |
-| L-205 | LOSS | 0 | 0 |
-| L-206 | LOSS | 0 | 0 |
-| L-207 | LOSS | 0 | 0 |
-| L-208 | LOSS | 0 | 0 |
-| L-209 | LOSS | 0 | 0 |
+| L-200 | LOSS | 86 | 308 |
+| L-201 | LOSS | 122 | 1016 |
+| L-202 | LOSS | 27 | 373 |
+| L-203 | LOSS | 5 | 36 |
+| L-204 | LOSS | 7 | 12 |
+| L-205 | LOSS | 1 | 1 |
+| L-206 | LOSS | 4 | 12 |
+| L-207 | LOSS | 2 | 3 |
+| L-208 | LOSS | 3 | 14 |
+| L-209 | LOSS | 1 | 1 |
 | L-21 | LOSS | 1 | 1 |
-| L-210 | LOSS | 0 | 0 |
-| L-211 | LOSS | 0 | 0 |
-| L-212 | LOSS | 0 | 0 |
-| L-213 | LOSS | 0 | 0 |
-| L-214 | LOSS | 0 | 0 |
-| L-215 | LOSS | 0 | 0 |
-| L-216 | LOSS | 0 | 0 |
-| L-217 | LOSS | 0 | 0 |
+| L-210 | LOSS | 1 | 1 |
+| L-211 | LOSS | 1 | 1 |
+| L-212 | LOSS | 1 | 3 |
+| L-213 | LOSS | 1 | 2 |
+| L-214 | LOSS | 1 | 1 |
+| L-215 | LOSS | 1 | 1 |
+| L-216 | LOSS | 1 | 2 |
+| L-217 | LOSS | 1 | 1 |
 | L-218 | LOSS | 1 | 2 |
 | L-219 | LOSS | 2 | 10 |
 | L-22 | LOSS | 1 | 1 |
@@ -460,11 +460,11 @@
 | L-268 | LOSS | 2 | 5 |
 | L-269 | LOSS | 3 | 14 |
 | L-27 | LOSS | 1 | 1 |
-| L-270 | LOSS | 2 | 8 |
-| L-271 | LOSS | 3 | 7 |
-| L-272 | LOSS | 2 | 7 |
-| L-273 | LOSS | 3 | 7 |
-| L-274 | LOSS | 3 | 15 |
+| L-270 | LOSS | 3 | 9 |
+| L-271 | LOSS | 4 | 10 |
+| L-272 | LOSS | 3 | 8 |
+| L-273 | LOSS | 4 | 9 |
+| L-274 | LOSS | 4 | 17 |
 | L-275 | LOSS | 3 | 13 |
 | L-276 | LOSS | 3 | 10 |
 | L-277 | LOSS | 2 | 17 |
@@ -472,246 +472,246 @@
 | L-279 | LOSS | 3 | 11 |
 | L-28 | LOSS | 1 | 1 |
 | L-280 | LOSS | 4 | 19 |
-| L-281 | LOSS | 5 | 17 |
+| L-281 | LOSS | 6 | 19 |
 | L-282 | LOSS | 5 | 22 |
-| L-283 | LOSS | 0 | 0 |
+| L-283 | LOSS | 1 | 1 |
 | L-284 | LOSS | 5 | 23 |
-| L-285 | LOSS | 0 | 0 |
-| L-286 | LOSS | 5 | 26 |
-| L-287 | LOSS | 0 | 0 |
-| L-288 | LOSS | 4 | 16 |
-| L-289 | LOSS | 0 | 0 |
+| L-285 | LOSS | 1 | 1 |
+| L-286 | LOSS | 6 | 39 |
+| L-287 | LOSS | 1 | 1 |
+| L-288 | LOSS | 6 | 28 |
+| L-289 | LOSS | 1 | 2 |
 | L-29 | LOSS | 1 | 1 |
-| L-290 | LOSS | 5 | 16 |
-| L-291 | LOSS | 4 | 23 |
-| L-292 | LOSS | 5 | 31 |
-| L-293 | LOSS | 4 | 31 |
-| L-294 | LOSS | 5 | 24 |
-| L-295 | LOSS | 5 | 21 |
-| L-296 | LOSS | 5 | 18 |
+| L-290 | LOSS | 8 | 26 |
+| L-291 | LOSS | 6 | 28 |
+| L-292 | LOSS | 6 | 32 |
+| L-293 | LOSS | 6 | 41 |
+| L-294 | LOSS | 7 | 29 |
+| L-295 | LOSS | 8 | 31 |
+| L-296 | LOSS | 7 | 28 |
 | L-297 | LOSS | 1 | 1 |
-| L-298 | LOSS | 5 | 22 |
+| L-298 | LOSS | 7 | 37 |
 | L-299 | LOSS | 1 | 1 |
 | L-30 | LOSS | 1 | 1 |
-| L-300 | LOSS | 5 | 26 |
-| L-301 | LOSS | 3 | 24 |
-| L-302 | LOSS | 6 | 26 |
-| L-303 | LOSS | 4 | 26 |
-| L-304 | LOSS | 0 | 0 |
-| L-305 | LOSS | 6 | 33 |
-| L-306 | LOSS | 3 | 37 |
+| L-300 | LOSS | 7 | 54 |
+| L-301 | LOSS | 5 | 40 |
+| L-302 | LOSS | 8 | 36 |
+| L-303 | LOSS | 6 | 39 |
+| L-304 | LOSS | 1 | 1 |
+| L-305 | LOSS | 9 | 46 |
+| L-306 | LOSS | 6 | 47 |
 | L-307 | LOSS | 1 | 2 |
 | L-308 | LOSS | 1 | 4 |
-| L-309 | LOSS | 6 | 29 |
+| L-309 | LOSS | 10 | 46 |
 | L-31 | LOSS | 1 | 1 |
-| L-310 | LOSS | 6 | 43 |
-| L-311 | LOSS | 6 | 46 |
-| L-312 | LOSS | 5 | 67 |
-| L-313 | LOSS | 6 | 38 |
-| L-314 | LOSS | 4 | 39 |
-| L-315 | LOSS | 6 | 32 |
-| L-316 | LOSS | 5 | 40 |
-| L-317 | LOSS | 7 | 54 |
-| L-318 | LOSS | 6 | 30 |
+| L-310 | LOSS | 10 | 62 |
+| L-311 | LOSS | 10 | 56 |
+| L-312 | LOSS | 8 | 85 |
+| L-313 | LOSS | 10 | 50 |
+| L-314 | LOSS | 7 | 44 |
+| L-315 | LOSS | 10 | 49 |
+| L-316 | LOSS | 9 | 54 |
+| L-317 | LOSS | 10 | 73 |
+| L-318 | LOSS | 10 | 39 |
 | L-319 | LOSS | 1 | 2 |
 | L-32 | LOSS | 1 | 1 |
 | L-320 | LOSS | 1 | 4 |
-| L-321 | LOSS | 6 | 56 |
+| L-321 | LOSS | 8 | 64 |
 | L-322 | LOSS | 1 | 1 |
-| L-323 | LOSS | 5 | 72 |
-| L-324 | LOSS | 6 | 61 |
-| L-325 | LOSS | 5 | 149 |
-| L-326 | LOSS | 7 | 85 |
+| L-323 | LOSS | 8 | 81 |
+| L-324 | LOSS | 9 | 73 |
+| L-325 | LOSS | 9 | 157 |
+| L-326 | LOSS | 9 | 99 |
 | L-327 | LOSS | 1 | 1 |
-| L-328 | LOSS | 5 | 51 |
-| L-329 | LOSS | 6 | 69 |
+| L-328 | LOSS | 9 | 71 |
+| L-329 | LOSS | 7 | 73 |
 | L-33 | LOSS | 1 | 1 |
-| L-330 | LOSS | 7 | 81 |
+| L-330 | LOSS | 10 | 92 |
 | L-331 | LOSS | 1 | 2 |
 | L-332 | LOSS | 1 | 4 |
-| L-333 | LOSS | 6 | 103 |
-| L-334 | LOSS | 7 | 92 |
-| L-335 | LOSS | 7 | 97 |
-| L-336 | LOSS | 0 | 0 |
-| L-337 | LOSS | 7 | 112 |
+| L-333 | LOSS | 10 | 116 |
+| L-334 | LOSS | 8 | 94 |
+| L-335 | LOSS | 11 | 112 |
+| L-336 | LOSS | 1 | 1 |
+| L-337 | LOSS | 10 | 125 |
 | L-338 | LOSS | 1 | 2 |
 | L-339 | LOSS | 1 | 4 |
 | L-34 | LOSS | 1 | 1 |
-| L-340 | LOSS | 7 | 115 |
-| L-341 | LOSS | 7 | 125 |
-| L-342 | LOSS | 7 | 167 |
-| L-343 | LOSS | 1 | 2 |
+| L-340 | LOSS | 10 | 128 |
+| L-341 | LOSS | 11 | 144 |
+| L-342 | LOSS | 11 | 193 |
+| L-343 | LOSS | 2 | 3 |
 | L-344 | LOSS | 2 | 5 |
-| L-345 | LOSS | 10 | 142 |
+| L-345 | LOSS | 14 | 178 |
 | L-346 | LOSS | 1 | 2 |
-| L-347 | LOSS | 9 | 147 |
-| L-348 | LOSS | 2 | 3 |
-| L-349 | LOSS | 10 | 253 |
+| L-347 | LOSS | 13 | 157 |
+| L-348 | LOSS | 3 | 5 |
+| L-349 | LOSS | 15 | 349 |
 | L-35 | LOSS | 1 | 1 |
-| L-350 | LOSS | 2 | 3 |
-| L-351 | LOSS | 11 | 170 |
-| L-352 | LOSS | 0 | 0 |
-| L-353 | LOSS | 1 | 2 |
-| L-354 | LOSS | 14 | 182 |
+| L-350 | LOSS | 3 | 4 |
+| L-351 | LOSS | 16 | 228 |
+| L-352 | LOSS | 1 | 1 |
+| L-353 | LOSS | 2 | 8 |
+| L-354 | LOSS | 20 | 238 |
 | L-355 | LOSS | 5 | 6 |
-| L-356 | LOSS | 12 | 262 |
+| L-356 | LOSS | 18 | 383 |
 | L-357 | LOSS | 1 | 2 |
-| L-358 | LOSS | 2 | 6 |
-| L-359 | LOSS | 13 | 406 |
+| L-358 | LOSS | 3 | 7 |
+| L-359 | LOSS | 18 | 516 |
 | L-36 | LOSS | 1 | 1 |
-| L-360 | LOSS | 0 | 0 |
+| L-360 | LOSS | 1 | 1 |
 | L-361 | LOSS | 5 | 12 |
-| L-362 | LOSS | 19 | 1612 |
+| L-362 | LOSS | 24 | 1689 |
 | L-363 | LOSS | 4 | 7 |
-| L-364 | LOSS | 24 | 580 |
+| L-364 | LOSS | 29 | 799 |
 | L-365 | LOSS | 1 | 2 |
 | L-366 | LOSS | 9 | 18 |
-| L-367 | LOSS | 35 | 1036 |
-| L-368 | LOSS | 5 | 11 |
-| L-369 | LOSS | 48 | 995 |
+| L-367 | LOSS | 41 | 1241 |
+| L-368 | LOSS | 7 | 17 |
+| L-369 | LOSS | 55 | 1199 |
 | L-37 | LOSS | 1 | 1 |
-| L-370 | LOSS | 2 | 2 |
-| L-371 | LOSS | 7 | 55 |
-| L-372 | LOSS | 56 | 1143 |
+| L-370 | LOSS | 3 | 3 |
+| L-371 | LOSS | 9 | 67 |
+| L-372 | LOSS | 66 | 1571 |
 | L-373 | LOSS | 2 | 2 |
-| L-374 | LOSS | 10 | 55 |
-| L-375 | LOSS | 69 | 1486 |
+| L-374 | LOSS | 15 | 80 |
+| L-375 | LOSS | 86 | 2203 |
 | L-376 | LOSS | 5 | 9 |
-| L-377 | LOSS | 21 | 53 |
-| L-378 | LOSS | 95 | 1969 |
+| L-377 | LOSS | 28 | 69 |
+| L-378 | LOSS | 113 | 3048 |
 | L-379 | LOSS | 3 | 10 |
 | L-38 | LOSS | 1 | 1 |
-| L-380 | LOSS | 31 | 84 |
-| L-381 | LOSS | 165 | 4331 |
+| L-380 | LOSS | 40 | 113 |
+| L-381 | LOSS | 192 | 5527 |
 | L-382 | LOSS | 0 | 0 |
-| L-383 | LOSS | 10 | 26 |
-| L-384 | LOSS | 54 | 242 |
-| L-385 | LOSS | 265 | 6503 |
-| L-386 | LOSS | 23 | 93 |
-| L-387 | LOSS | 173 | 800 |
-| L-388 | LOSS | 718 | 37706 |
-| L-389 | LOSS | 109 | 663 |
+| L-383 | LOSS | 11 | 28 |
+| L-384 | LOSS | 66 | 289 |
+| L-385 | LOSS | 304 | 8501 |
+| L-386 | LOSS | 27 | 100 |
+| L-387 | LOSS | 208 | 1158 |
+| L-388 | LOSS | 793 | 42513 |
+| L-389 | LOSS | 115 | 690 |
 | L-39 | LOSS | 1 | 2 |
-| L-390 | LOSS | 35 | 143 |
-| L-391 | LOSS | 127 | 683 |
-| L-392 | LOSS | 126 | 682 |
-| L-393 | LOSS | 126 | 682 |
-| L-394 | LOSS | 92 | 344 |
-| L-395 | LOSS | 805 | 4187 |
-| L-396 | LOSS | 3100 | 996054 |
-| L-397 | LOSS | 4918 | 367100 |
+| L-390 | LOSS | 39 | 164 |
+| L-391 | LOSS | 150 | 1034 |
+| L-392 | LOSS | 149 | 1033 |
+| L-393 | LOSS | 149 | 1033 |
+| L-394 | LOSS | 112 | 428 |
+| L-395 | LOSS | 863 | 5207 |
+| L-396 | LOSS | 3257 | 1059500 |
+| L-397 | LOSS | 5069 | 376355 |
 | L-398 | LOSS | 0 | 0 |
 | L-399 | LOSS | 0 | 0 |
 | L-40 | LOSS | 1 | 1 |
 | L-400 | LOSS | 0 | 0 |
 | L-401 | LOSS | 2 | 6 |
 | L-402 | LOSS | 0 | 0 |
-| L-403 | LOSS | 153 | 731 |
-| L-404 | LOSS | 757 | 5643 |
-| L-405 | LOSS | 668 | 5409 |
-| L-406 | LOSS | 668 | 5409 |
-| L-407 | LOSS | 3838 | 19995 |
-| L-408 | LOSS | 27267 | 4646312 |
+| L-403 | LOSS | 157 | 737 |
+| L-404 | LOSS | 800 | 6513 |
+| L-405 | LOSS | 705 | 6259 |
+| L-406 | LOSS | 705 | 6259 |
+| L-407 | LOSS | 3876 | 20140 |
+| L-408 | LOSS | 27604 | 4712411 |
 | L-409 | LOSS | 0 | 0 |
 | L-41 | LOSS | 1 | 2 |
-| L-410 | LOSS | 0 | 0 |
+| L-410 | LOSS | 1 | 4 |
 | L-411 | LOSS | 1 | 2 |
-| L-412 | LOSS | 2 | 6 |
+| L-412 | LOSS | 3 | 7 |
 | L-413 | LOSS | 0 | 0 |
-| L-414 | LOSS | 0 | 0 |
+| L-414 | LOSS | 3 | 33 |
 | L-415 | LOSS | 0 | 0 |
-| L-416 | LOSS | 0 | 0 |
-| L-417 | LOSS | 0 | 0 |
-| L-418 | LOSS | 0 | 0 |
-| L-419 | LOSS | 0 | 0 |
+| L-416 | LOSS | 19 | 203 |
+| L-417 | LOSS | 2 | 2 |
+| L-418 | LOSS | 1 | 1 |
+| L-419 | LOSS | 1 | 2 |
 | L-42 | LOSS | 1 | 1 |
-| L-420 | LOSS | 0 | 0 |
-| L-421 | LOSS | 0 | 0 |
-| L-422 | LOSS | 0 | 0 |
-| L-423 | LOSS | 0 | 0 |
-| L-424 | LOSS | 0 | 0 |
-| L-425 | LOSS | 0 | 0 |
-| L-426 | LOSS | 0 | 0 |
-| L-427 | LOSS | 0 | 0 |
-| L-428 | LOSS | 0 | 0 |
-| L-429 | LOSS | 0 | 0 |
+| L-420 | LOSS | 1 | 2 |
+| L-421 | LOSS | 1 | 1 |
+| L-422 | LOSS | 1 | 6 |
+| L-423 | LOSS | 1 | 1 |
+| L-424 | LOSS | 1 | 2 |
+| L-425 | LOSS | 1 | 1 |
+| L-426 | LOSS | 1 | 1 |
+| L-427 | LOSS | 1 | 1 |
+| L-428 | LOSS | 1 | 1 |
+| L-429 | LOSS | 1 | 1 |
 | L-43 | LOSS | 1 | 1 |
-| L-430 | LOSS | 0 | 0 |
-| L-431 | LOSS | 0 | 0 |
-| L-432 | LOSS | 0 | 0 |
-| L-433 | LOSS | 0 | 0 |
-| L-434 | LOSS | 0 | 0 |
-| L-435 | LOSS | 0 | 0 |
-| L-436 | LOSS | 0 | 0 |
-| L-437 | LOSS | 0 | 0 |
-| L-438 | LOSS | 0 | 0 |
-| L-439 | LOSS | 0 | 0 |
+| L-430 | LOSS | 1 | 1 |
+| L-431 | LOSS | 1 | 1 |
+| L-432 | LOSS | 1 | 2 |
+| L-433 | LOSS | 1 | 1 |
+| L-434 | LOSS | 1 | 1 |
+| L-435 | LOSS | 1 | 1 |
+| L-436 | LOSS | 1 | 1 |
+| L-437 | LOSS | 1 | 2 |
+| L-438 | LOSS | 1 | 1 |
+| L-439 | LOSS | 1 | 2 |
 | L-44 | LOSS | 1 | 1 |
-| L-440 | LOSS | 0 | 0 |
-| L-441 | LOSS | 0 | 0 |
-| L-442 | LOSS | 0 | 0 |
-| L-443 | LOSS | 0 | 0 |
-| L-444 | LOSS | 0 | 0 |
-| L-445 | LOSS | 0 | 0 |
-| L-446 | LOSS | 0 | 0 |
-| L-447 | LOSS | 0 | 0 |
-| L-448 | LOSS | 0 | 0 |
-| L-449 | LOSS | 0 | 0 |
+| L-440 | LOSS | 1 | 1 |
+| L-441 | LOSS | 1 | 1 |
+| L-442 | LOSS | 1 | 1 |
+| L-443 | LOSS | 1 | 1 |
+| L-444 | LOSS | 1 | 1 |
+| L-445 | LOSS | 1 | 1 |
+| L-446 | LOSS | 1 | 1 |
+| L-447 | LOSS | 1 | 1 |
+| L-448 | LOSS | 1 | 3 |
+| L-449 | LOSS | 1 | 1 |
 | L-45 | LOSS | 1 | 1 |
-| L-450 | LOSS | 0 | 0 |
-| L-451 | LOSS | 0 | 0 |
-| L-452 | LOSS | 0 | 0 |
-| L-453 | LOSS | 0 | 0 |
-| L-454 | LOSS | 0 | 0 |
-| L-455 | LOSS | 0 | 0 |
-| L-456 | LOSS | 0 | 0 |
+| L-450 | LOSS | 1 | 2 |
+| L-451 | LOSS | 1 | 1 |
+| L-452 | LOSS | 1 | 1 |
+| L-453 | LOSS | 1 | 4 |
+| L-454 | LOSS | 1 | 5 |
+| L-455 | LOSS | 1 | 2 |
+| L-456 | LOSS | 1 | 1 |
 | L-457 | LOSS | 1 | 8 |
-| L-458 | LOSS | 1 | 1 |
-| L-459 | LOSS | 1 | 7 |
+| L-458 | LOSS | 2 | 2 |
+| L-459 | LOSS | 2 | 8 |
 | L-46 | LOSS | 1 | 2 |
 | L-460 | LOSS | 1 | 1 |
 | L-461 | LOSS | 3 | 10 |
 | L-462 | LOSS | 2 | 2 |
 | L-463 | LOSS | 3 | 8 |
-| L-464 | LOSS | 5 | 21 |
+| L-464 | LOSS | 6 | 22 |
 | L-465 | LOSS | 2 | 2 |
 | L-466 | LOSS | 4 | 42 |
-| L-467 | LOSS | 1 | 1 |
+| L-467 | LOSS | 2 | 2 |
 | L-468 | LOSS | 8 | 27 |
 | L-469 | LOSS | 4 | 4 |
 | L-47 | LOSS | 1 | 1 |
-| L-470 | LOSS | 7 | 18 |
-| L-471 | LOSS | 2 | 3 |
+| L-470 | LOSS | 8 | 19 |
+| L-471 | LOSS | 3 | 5 |
 | L-472 | LOSS | 10 | 38 |
-| L-473 | LOSS | 0 | 0 |
-| L-474 | LOSS | 9 | 12 |
-| L-475 | LOSS | 15 | 89 |
-| L-476 | LOSS | 28 | 56 |
-| L-477 | LOSS | 36 | 704 |
+| L-473 | LOSS | 1 | 1 |
+| L-474 | LOSS | 12 | 15 |
+| L-475 | LOSS | 19 | 132 |
+| L-476 | LOSS | 33 | 64 |
+| L-477 | LOSS | 40 | 734 |
 | L-478 | LOSS | 4 | 11 |
-| L-479 | LOSS | 67 | 231 |
+| L-479 | LOSS | 74 | 283 |
 | L-48 | LOSS | 1 | 1 |
-| L-480 | LOSS | 77 | 6700 |
-| L-481 | LOSS | 31 | 144 |
-| L-482 | LOSS | 346 | 6210 |
-| L-483 | LOSS | 376 | 124199 |
+| L-480 | LOSS | 86 | 6984 |
+| L-481 | LOSS | 36 | 453 |
+| L-482 | LOSS | 378 | 8422 |
+| L-483 | LOSS | 411 | 138302 |
 | L-484 | LOSS | 0 | 0 |
 | L-485 | LOSS | 0 | 0 |
-| L-486 | LOSS | 8 | 20 |
+| L-486 | LOSS | 10 | 32 |
 | L-487 | LOSS | 0 | 0 |
-| L-488 | LOSS | 0 | 0 |
-| L-489 | LOSS | 23 | 213 |
+| L-488 | LOSS | 2 | 2 |
+| L-489 | LOSS | 26 | 249 |
 | L-49 | LOSS | 1 | 1 |
 | L-490 | LOSS | 1 | 1 |
-| L-491 | LOSS | 61 | 1586 |
-| L-492 | LOSS | 61 | 1586 |
-| L-493 | LOSS | 394 | 17022 |
-| L-494 | LOSS | 394 | 17022 |
-| L-495 | LOSS | 505 | 7804 |
-| L-496 | LOSS | 36 | 603 |
-| L-497 | LOSS | 5150 | 78174 |
+| L-491 | LOSS | 71 | 1673 |
+| L-492 | LOSS | 71 | 1673 |
+| L-493 | LOSS | 418 | 17288 |
+| L-494 | LOSS | 418 | 17288 |
+| L-495 | LOSS | 559 | 9558 |
+| L-496 | LOSS | 44 | 674 |
+| L-497 | LOSS | 5348 | 87024 |
 | L-498 | LOSS | 17894 | 17894 |
-| L-499 | LOSS | 88698 | 88698 |
+| L-499 | LOSS | 89169 | 89169 |
 | L-50 | LOSS | 1 | 1 |
 | L-500 | LOSS | 32710 | 32710 |
 | L-51 | LOSS | 1 | 1 |
@@ -763,130 +763,72 @@
 | L-97 | LOSS | 1 | 2 |
 | L-98 | LOSS | 1 | 1 |
 | L-99 | LOSS | 1 | 1 |
-| S-01 | STRUCTURAL | 18 | 72 |
+| S-01 | STRUCTURAL | 26 | 288 |
 | S-02 | STRUCTURAL | 19 | 21 |
-| S-03 | STRUCTURAL | 6632 | 71441 |
+| S-03 | STRUCTURAL | 6634 | 71461 |
 | S-04 | STRUCTURAL | 15 | 15 |
-| S-05 | STRUCTURAL | 89 | 173 |
-| S-06 | STRUCTURAL | 14 | 18 |
-| S-07 | STRUCTURAL | 5150 | 78174 |
-| S-08 | STRUCTURAL | 6704 | 71826 |
-| S-09 | STRUCTURAL | 65 | 112 |
-| S-10 | STRUCTURAL | 40 | 68 |
-| U-01 | UNSUPPORTED | 14 | 95 |
-| U-02 | UNSUPPORTED | 1 | 1 |
-| U-03 | UNSUPPORTED | 3 | 9 |
+| S-05 | STRUCTURAL | 91 | 175 |
+| S-06 | STRUCTURAL | 31 | 52 |
+| S-07 | STRUCTURAL | 5348 | 87024 |
+| S-08 | STRUCTURAL | 6723 | 71861 |
+| S-09 | STRUCTURAL | 66 | 113 |
+| S-10 | STRUCTURAL | 61 | 119 |
+| U-01 | UNSUPPORTED | 15 | 96 |
+| U-02 | UNSUPPORTED | 6 | 22 |
+| U-03 | UNSUPPORTED | 4 | 10 |
 | U-04 | UNSUPPORTED | 1 | 14 |
 | U-05 | UNSUPPORTED | 2 | 3 |
 | U-06 | UNSUPPORTED | 1 | 1 |
 | U-07 | UNSUPPORTED | 3 | 4 |
-| U-08 | UNSUPPORTED | 11 | 14 |
-| U-09 | UNSUPPORTED | 4 | 11 |
-| U-10 | UNSUPPORTED | 10 | 57 |
-| U-11 | UNSUPPORTED | 596 | 9603 |
-| U-12 | UNSUPPORTED | 33 | 169 |
-| U-13 | UNSUPPORTED | 260 | 880 |
-| U-14 | UNSUPPORTED | 214 | 3026 |
-| U-15 | UNSUPPORTED | 134 | 882 |
-| U-16 | UNSUPPORTED | 0 | 0 |
+| U-08 | UNSUPPORTED | 13 | 16 |
+| U-09 | UNSUPPORTED | 5 | 14 |
+| U-10 | UNSUPPORTED | 11 | 73 |
+| U-11 | UNSUPPORTED | 620 | 10841 |
+| U-12 | UNSUPPORTED | 34 | 178 |
+| U-13 | UNSUPPORTED | 321 | 1293 |
+| U-14 | UNSUPPORTED | 234 | 4064 |
+| U-15 | UNSUPPORTED | 142 | 955 |
+| U-16 | UNSUPPORTED | 3 | 7 |
 | U-17 | UNSUPPORTED | 1 | 1 |
-| U-18 | UNSUPPORTED | 89 | 173 |
-| U-19 | UNSUPPORTED | 14 | 18 |
+| U-18 | UNSUPPORTED | 91 | 175 |
+| U-19 | UNSUPPORTED | 31 | 52 |
 | U-20 | UNSUPPORTED | 8 | 61 |
 | U-21 | UNSUPPORTED | 1 | 1 |
 | U-22 | UNSUPPORTED | 1 | 1 |
 | U-23 | UNSUPPORTED | 1 | 2 |
 | U-24 | UNSUPPORTED | 1 | 1 |
-| U-25 | UNSUPPORTED | 2 | 6 |
-| U-26 | UNSUPPORTED | 9 | 16 |
-| U-27 | UNSUPPORTED | 3 | 4 |
-| U-28 | UNSUPPORTED | 20 | 82 |
-| U-29 | UNSUPPORTED | 93 | 570 |
+| U-25 | UNSUPPORTED | 3 | 7 |
+| U-26 | UNSUPPORTED | 10 | 17 |
+| U-27 | UNSUPPORTED | 5 | 13 |
+| U-28 | UNSUPPORTED | 23 | 97 |
+| U-29 | UNSUPPORTED | 105 | 680 |
 | U-30 | UNSUPPORTED | 9 | 11 |
-| U-31 | UNSUPPORTED | 1099 | 7903 |
-| U-32 | UNSUPPORTED | 141 | 1093 |
+| U-31 | UNSUPPORTED | 1227 | 11143 |
+| U-32 | UNSUPPORTED | 186 | 2010 |
 | U-33 | UNSUPPORTED | 0 | 0 |
-| U-34 | UNSUPPORTED | 124 | 806 |
-| U-35 | UNSUPPORTED | 1 | 1 |
-| U-36 | UNSUPPORTED | 0 | 0 |
-| U-37 | UNSUPPORTED | 1309 | 13986 |
+| U-34 | UNSUPPORTED | 139 | 1134 |
+| U-35 | UNSUPPORTED | 2 | 3 |
+| U-36 | UNSUPPORTED | 9 | 25 |
+| U-37 | UNSUPPORTED | 1350 | 16783 |
 | U-38 | UNSUPPORTED | 61 | 238 |
-| U-39 | UNSUPPORTED | 20039 | 4758328 |
-| U-40 | UNSUPPORTED | 832 | 13066 |
-| U-41 | UNSUPPORTED | 326 | 2122 |
-| U-42 | UNSUPPORTED | 6 | 6 |
-| U-43 | UNSUPPORTED | 0 | 0 |
+| U-39 | UNSUPPORTED | 20284 | 4765187 |
+| U-40 | UNSUPPORTED | 893 | 18367 |
+| U-41 | UNSUPPORTED | 347 | 2321 |
+| U-42 | UNSUPPORTED | 8 | 9 |
+| U-43 | UNSUPPORTED | 11 | 58 |
 | U-44 | UNSUPPORTED | 1 | 2 |
 | U-45 | UNSUPPORTED | 1 | 3 |
 | U-46 | UNSUPPORTED | 1 | 1 |
 | U-47 | UNSUPPORTED | 5 | 7 |
-| U-48 | UNSUPPORTED | 14 | 52 |
-| U-49 | UNSUPPORTED | 6 | 44 |
-| U-50 | UNSUPPORTED | 65 | 112 |
-| U-51 | UNSUPPORTED | 40 | 68 |
+| U-48 | UNSUPPORTED | 15 | 90 |
+| U-49 | UNSUPPORTED | 7 | 47 |
+| U-50 | UNSUPPORTED | 66 | 113 |
+| U-51 | UNSUPPORTED | 61 | 119 |
 
 ## Top Errors
 
-| count | message | samples |
-|---:|---|---|
-| 261 | unsupported inline kind: accent | aozora2-adapter:000026_50245-e840465144a2.json<br>aozora2-adapter:000026_894-a581b59ea241.json<br>aozora2-adapter:000027_523-e22ef286b8e7.json<br>aozora2-adapter:000034_55507-30a9658433b4.json<br>aozora2-adapter:000035_2277-b04f7f121e1a.json |
-| 140 | unsupported inline kind in source attribution projection: accent | aozora2-adapter:000020_745-bce191ee0ece.json<br>aozora2-adapter:000026_50241-af65ef658680.json<br>aozora2-adapter:000026_55717-3ba0b0630fd5.json<br>aozora2-adapter:000042_1682-4401cf92d836.json<br>aozora2-adapter:000042_2453-83567d45101e.json |
-| 52 | unsupported inline kind in visible projection: accent | aozora2-adapter:000026_55732-e162f2f7263b.json<br>aozora2-adapter:000026_55739-075fc7322e7b.json<br>aozora2-adapter:000042_42768-2a6afe487bf8.json<br>aozora2-adapter:000061_377-7004ce5c0169.json<br>aozora2-adapter:000065_393-58fae23a2747.json |
-| 11 | unsupported inline kind: yokogumi | aozora2-adapter:000067_2843-cc347e7bd424.json<br>aozora2-adapter:000094_56515-42626c61203a.json<br>aozora2-adapter:000214_1668-baebe662c2db.json<br>aozora2-adapter:000311_4206-efc960698f44.json<br>aozora2-adapter:000311_46240-7d0812519452.json |
-| 5 | unsupported inline kind in source attribution projection: yokogumi | aozora2-adapter:000026_50239-f4c2d8bb9024.json<br>aozora2-adapter:000035_312-cb6505044b26.json<br>aozora2-adapter:000035_313-586a212e52ce.json<br>aozora2-adapter:000311_2029-716e98653b00.json<br>aozora2-adapter:001166_43826-0b22f1c3dae6.json |
-| 2 | unsupported inline kind in visible projection: yokogumi | aozora2-adapter:000042_1684-e38fc64b1764.json<br>aozora2-adapter:000311_46252-97497fc2f6c8.json |
+No conversion failures were observed.
 
 ## Failure Samples
 
-| corpus | path | message |
-|---|---|---|
-| aozora2-adapter | `000020_745-bce191ee0ece.json` | unsupported inline kind in source attribution projection: accent |
-| aozora2-adapter | `000026_50239-f4c2d8bb9024.json` | unsupported inline kind in source attribution projection: yokogumi |
-| aozora2-adapter | `000026_50241-af65ef658680.json` | unsupported inline kind in source attribution projection: accent |
-| aozora2-adapter | `000026_50245-e840465144a2.json` | unsupported inline kind: accent |
-| aozora2-adapter | `000026_55717-3ba0b0630fd5.json` | unsupported inline kind in source attribution projection: accent |
-| aozora2-adapter | `000026_55732-e162f2f7263b.json` | unsupported inline kind in visible projection: accent |
-| aozora2-adapter | `000026_55739-075fc7322e7b.json` | unsupported inline kind in visible projection: accent |
-| aozora2-adapter | `000026_894-a581b59ea241.json` | unsupported inline kind: accent |
-| aozora2-adapter | `000027_523-e22ef286b8e7.json` | unsupported inline kind: accent |
-| aozora2-adapter | `000034_55507-30a9658433b4.json` | unsupported inline kind: accent |
-| aozora2-adapter | `000035_2277-b04f7f121e1a.json` | unsupported inline kind: accent |
-| aozora2-adapter | `000035_312-cb6505044b26.json` | unsupported inline kind in source attribution projection: yokogumi |
-| aozora2-adapter | `000035_313-586a212e52ce.json` | unsupported inline kind in source attribution projection: yokogumi |
-| aozora2-adapter | `000042_1682-4401cf92d836.json` | unsupported inline kind in source attribution projection: accent |
-| aozora2-adapter | `000042_1684-e38fc64b1764.json` | unsupported inline kind in visible projection: yokogumi |
-| aozora2-adapter | `000042_2345-3b616fdc4dbd.json` | unsupported inline kind: accent |
-| aozora2-adapter | `000042_2347-efd9d60e8bbb.json` | unsupported inline kind: accent |
-| aozora2-adapter | `000042_2348-607f0940a36f.json` | unsupported inline kind: accent |
-| aozora2-adapter | `000042_2453-83567d45101e.json` | unsupported inline kind in source attribution projection: accent |
-| aozora2-adapter | `000042_2469-3372cea4b938.json` | unsupported inline kind: accent |
-| aozora2-adapter | `000042_2471-5b8c4993357f.json` | unsupported inline kind: accent |
-| aozora2-adapter | `000042_2473-16aee6fa0807.json` | unsupported inline kind in source attribution projection: accent |
-| aozora2-adapter | `000042_42768-2a6afe487bf8.json` | unsupported inline kind in visible projection: accent |
-| aozora2-adapter | `000042_43075-419384138fba.json` | unsupported inline kind in source attribution projection: accent |
-| aozora2-adapter | `000042_43082-bffc5116ebfb.json` | unsupported inline kind in source attribution projection: accent |
-| aozora2-adapter | `000042_43083-6b85760e219c.json` | unsupported inline kind: accent |
-| aozora2-adapter | `000042_43252-8fbc53aead66.json` | unsupported inline kind in source attribution projection: accent |
-| aozora2-adapter | `000042_43534-ac52138d9d11.json` | unsupported inline kind in source attribution projection: accent |
-| aozora2-adapter | `000061_377-7004ce5c0169.json` | unsupported inline kind in visible projection: accent |
-| aozora2-adapter | `000061_510-7c87649c3a47.json` | unsupported inline kind: accent |
-| aozora2-adapter | `000065_393-58fae23a2747.json` | unsupported inline kind in visible projection: accent |
-| aozora2-adapter | `000065_393-89dcd8df28e2.json` | unsupported inline kind: accent |
-| aozora2-adapter | `000065_393-bb9331cf0b9e.json` | unsupported inline kind in visible projection: accent |
-| aozora2-adapter | `000067_2843-cc347e7bd424.json` | unsupported inline kind: yokogumi |
-| aozora2-adapter | `000075_4250-7e32f80f0150.json` | unsupported inline kind: accent |
-| aozora2-adapter | `000075_47960-ad2f47ffff6b.json` | unsupported inline kind in source attribution projection: accent |
-| aozora2-adapter | `000075_47964-2dcfbb083de1.json` | unsupported inline kind: accent |
-| aozora2-adapter | `000075_47967-46eddbff13c0.json` | unsupported inline kind in source attribution projection: accent |
-| aozora2-adapter | `000076_45641-e69c2d20d152.json` | unsupported inline kind: accent |
-| aozora2-adapter | `000081_4467-349d5986b896.json` | unsupported inline kind in source attribution projection: accent |
-| aozora2-adapter | `000081_45631-62e9b96079cd.json` | unsupported inline kind: accent |
-| aozora2-adapter | `000081_47027-a6a7780bf470.json` | unsupported inline kind in visible projection: accent |
-| aozora2-adapter | `000093_52936-58dc3d1ed8db.json` | unsupported inline kind in source attribution projection: accent |
-| aozora2-adapter | `000093_52937-f4e1e873e23a.json` | unsupported inline kind: accent |
-| aozora2-adapter | `000094_1871-1c6066e3f979.json` | unsupported inline kind: accent |
-| aozora2-adapter | `000094_2076-9e2654647a23.json` | unsupported inline kind: accent |
-| aozora2-adapter | `000094_2523-1126d46db94f.json` | unsupported inline kind: accent |
-| aozora2-adapter | `000094_2524-adac834e2d72.json` | unsupported inline kind in source attribution projection: accent |
-| aozora2-adapter | `000094_2525-9c05271ce1b8.json` | unsupported inline kind: accent |
-| aozora2-adapter | `000094_42338-a56311a7fceb.json` | unsupported inline kind in visible projection: accent |
+No conversion failure samples.

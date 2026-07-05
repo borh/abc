@@ -121,6 +121,7 @@ dependencies = [
 name = "ab-ir"
 version = "0.1.0"
 dependencies = [
+ "ab-ortho-detect",
  "ab-plaintext",
  "serde",
  "serde_json",

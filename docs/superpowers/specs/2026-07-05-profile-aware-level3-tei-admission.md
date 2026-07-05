@@ -125,6 +125,8 @@ The gate must report failures by owner:
 - `policy`: the row needs a profile/text policy decision before it can be judged.
 - `evidence`: the row has no source/AAT evidence or no durable work identity.
 
+The headline plain-prose verdict must not hide independent blocker classes. When more than one owner blocks admission, the summary must also emit `blocking_owners` and either use a composite verdict or otherwise make every blocking owner visible in the first screen of the report.
+
 ## Separate Policy Lanes
 
 ### Drama
@@ -215,10 +217,21 @@ Required `plain_prose_admission` fields:
 - `rows_passed`
 - `rows_failed`
 - `verdict`
+- `blocking_owners`
 - `failures_by_owner`
 - `failures_by_adapter`
 - `text_policy_buckets`
 - `paragraph_origin_buckets`
+
+Required `mapping` fields:
+
+- `mapping_id`
+- `mapping_version`
+- `mapping_hash`
+- `mapping_schema_hash`
+- `target_parser_ir_schema_id`
+- `target_parser_ir_schema_hash`
+- `generated_mapping_rules`
 
 Plaintext policy fields:
 
@@ -232,6 +245,8 @@ Recommended verdict values:
 - `LEVEL3_PLAIN_PROSE_BLOCKED_ADAPTER_FIDELITY`
 - `LEVEL3_PLAIN_PROSE_BLOCKED_TEXT_POLICY`
 - `LEVEL3_PLAIN_PROSE_BLOCKED_EVIDENCE`
+- `LEVEL3_PLAIN_PROSE_BLOCKED_ADAPTER_FIDELITY_AND_TEXT_POLICY`
+- `LEVEL3_PLAIN_PROSE_BLOCKED_ADAPTER_FIDELITY_AND_TEXT_POLICY_AND_EVIDENCE`
 - `LEVEL3_PLAIN_PROSE_NOT_EVALUATED`
 
 Required lane verdicts:

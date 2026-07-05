@@ -4,7 +4,7 @@
 
 **Goal:** Build a profile-aware Level 3 TEI admission report that separates parser-IR infrastructure readiness from plain-prose adapter admission and routes drama, verse, notes, front/back matter, and Level 4 enrichment into policy lanes.
 
-**Architecture:** Add a deterministic Python classifier over the existing generated-TEI matrix summary and source-authority summary. Do not rematerialize TEI in this gate; consume the already-measured matrix report, emit a new JSON/Markdown admission report, and wire a fixture smoke plus just/Nix gates.
+**Architecture:** Add a deterministic Python classifier over the existing generated-TEI matrix summary, source-authority summary, and the mapping file referenced by the matrix input. Do not rematerialize TEI in this gate; consume already-measured evidence, emit a new JSON/Markdown admission report, and wire a fixture smoke plus just/Nix gates.
 
 **Tech Stack:** Python 3 standard library, Bash smoke tests, `jq`, existing `justfile`, existing `flake.nix` runCommand checks, existing reports under `docs/superpowers/reports/`.
 
@@ -26,7 +26,7 @@
 ## File Structure
 
 - Create `reports/parser-ir/level3-admission.py`
-  - Pure report classifier. Consumes generated matrix JSON plus source-authority summary JSON. Emits admission JSON and Markdown.
+  - Pure report classifier. Consumes generated matrix JSON plus source-authority summary JSON, loads `inputs.mapping`, computes the mapping document hash, and emits admission JSON and Markdown.
 - Create `tests/parser-ir-level3-admission-smoke.sh`
   - Fixture-only smoke. Writes tiny source/matrix summaries to a temp dir and asserts gate behavior with `jq`/`rg`.
 - Modify `justfile`
@@ -69,11 +69,13 @@
     - `totals.rows_attempted`
     - `totals.materialization_succeeded`
     - `totals.materialization_failed`
+    - `inputs.mapping`
     - `skipped[]`
 - Produces:
   - CLI: `python3 reports/parser-ir/level3-admission.py --matrix-summary MATRIX --source-summary SOURCE --summary-json OUT.json --report-md OUT.md`
-  - Function: `build_summary(matrix: dict[str, Any], source: dict[str, Any]) -> dict[str, Any]`
+  - Function: `build_summary(matrix: dict[str, Any], source: dict[str, Any], mapping: dict[str, Any], mapping_hash: str) -> dict[str, Any]`
   - JSON top-level fields from the spec: `schema_version`, `source_authority_gate`, `parser_ir_infrastructure_verdict`, `plain_prose_admission`, `profile_lanes`, `evidence_gaps`, `mapping`, `inputs`.
+  - `mapping` must include `mapping_id`, `mapping_version`, `mapping_hash`, `mapping_schema_hash`, `target_parser_ir_schema_id`, `target_parser_ir_schema_hash`, and `generated_mapping_rules`.
 
 - [ ] **Step 1: Write the failing smoke test**
 
@@ -88,9 +90,13 @@ out_dir="$(mktemp -d "${TMPDIR:-/tmp}/ab-level3-admission-smoke.XXXXXX")"
 trap 'rm -rf "$out_dir"' EXIT
 
 source_summary="$out_dir/source-summary.json"
+failing_source_summary="$out_dir/source-summary-failing.json"
 matrix_summary="$out_dir/matrix-summary.json"
+mapping_file="$out_dir/mapping.json"
 summary_json="$out_dir/admission.summary.json"
 report_md="$out_dir/admission.md"
+failing_summary_json="$out_dir/admission-source-fail.summary.json"
+failing_report_md="$out_dir/admission-source-fail.md"
 
 cat > "$source_summary" <<'JSON'
 {
@@ -100,19 +106,45 @@ cat > "$source_summary" <<'JSON'
 }
 JSON
 
-cat > "$matrix_summary" <<'JSON'
+cat > "$failing_source_summary" <<'JSON'
 {
-  "schema_version": "tei-eaj-generated-matrix-comparison-v1",
-  "mapping": {
-    "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
-    "mapping_version": "0.2.3",
-    "mapping_hash": "sha256:21791c841557ced968464b38e42971e22830edb0efdb0be6faf285761532f770",
-    "mapping_schema_hash": "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4",
-    "target_parser_ir_schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d"
-  },
+  "gate_status": "SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED",
+  "works_scanned": 17894,
+  "unallowlisted_unknown_markers_total": 2
+}
+JSON
+
+cat > "$mapping_file" <<'JSON'
+{
+  "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
+  "mapping_version": "0.2.3",
+  "mapping_schema_hash": "sha256:38ec7f0e5affb10329b550a091cd3a6fb5a25e26fd469dfe9f8249970cf9adb4",
+  "source_aat_version": 1,
+  "target_parser_ir_schema_id": "https://w3id.org/abc/schemas/parser-ir.schema.json",
+  "target_parser_ir_schema_hash": "sha256:8e56871965e647e40ade08fd9dd580a3516d33905be17957cc79750bd42ea64d",
+  "transform_rule_descriptions": [
+    {
+      "rule_id": "A-01",
+      "category": "AMBIGUITY",
+      "aat_pointer": "blocks[].content[].ruby.direction",
+      "parser_ir_pointer": "ruby.placement",
+      "action": "project",
+      "description": "fixture rule"
+    }
+  ],
+  "loss_taxonomy": {
+    "AMBIGUITY": {"description": "fixture", "default_action": "drop-sidecar", "records_sidecar": true}
+  }
+}
+JSON
+
+cat > "$matrix_summary" <<JSON
+{
+  "schema_version": "tei-eaj-generated-comparison-v1",
   "inputs": {
     "candidate_mode": "all",
-    "structural_summary": "fixture-structural-summary.json"
+    "structural_summary": "fixture-structural-summary.json",
+    "mapping": "$mapping_file"
   },
   "totals": {
     "rows_attempted": 8,
@@ -218,10 +250,15 @@ python3 "$repo_root/reports/parser-ir/level3-admission.py" \
 jq -e '.schema_version == "profile-aware-level3-tei-admission-v1"' "$summary_json"
 jq -e '.source_authority_gate.gate_status == "SOURCE_AUTHORITY_GATE_PASS"' "$summary_json"
 jq -e '.parser_ir_infrastructure_verdict == "LEVEL3_IR_INFRASTRUCTURE_READY"' "$summary_json"
+jq -e '.mapping.mapping_id == "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe"' "$summary_json"
+jq -e '.mapping.mapping_version == "0.2.3"' "$summary_json"
+jq -e '.mapping.mapping_hash | test("^sha256:[0-9a-f]{64}$")' "$summary_json"
+jq -e '.mapping.generated_mapping_rules == 1' "$summary_json"
 jq -e '.plain_prose_admission.rows_total == 5' "$summary_json"
 jq -e '.plain_prose_admission.rows_passed == 2' "$summary_json"
 jq -e '.plain_prose_admission.rows_failed == 3' "$summary_json"
-jq -e '.plain_prose_admission.verdict == "LEVEL3_PLAIN_PROSE_BLOCKED_ADAPTER_FIDELITY"' "$summary_json"
+jq -e '.plain_prose_admission.verdict == "LEVEL3_PLAIN_PROSE_BLOCKED_ADAPTER_FIDELITY_AND_TEXT_POLICY"' "$summary_json"
+jq -e '.plain_prose_admission.blocking_owners == ["adapter", "policy"]' "$summary_json"
 jq -e '.plain_prose_admission.failures_by_owner.adapter == 1' "$summary_json"
 jq -e '.plain_prose_admission.failures_by_owner.policy == 2' "$summary_json"
 jq -e '.plain_prose_admission.failures_by_adapter["aozora-rs"] == 1' "$summary_json"
@@ -234,9 +271,23 @@ jq -e '.profile_lanes.drama.verdict == "LANE_POLICY_REQUIRED"' "$summary_json"
 jq -e '.profile_lanes.verse.verdict == "LANE_POLICY_REQUIRED"' "$summary_json"
 jq -e '.profile_lanes.lv4_enrichment.verdict == "LANE_OUT_OF_SCOPE_FOR_LEVEL3"' "$summary_json"
 jq -e '.evidence_gaps.rows == 1' "$summary_json"
-rg -n 'LEVEL3_PLAIN_PROSE_BLOCKED_ADAPTER_FIDELITY' "$report_md"
+rg -n 'LEVEL3_PLAIN_PROSE_BLOCKED_ADAPTER_FIDELITY_AND_TEXT_POLICY' "$report_md"
 rg -n 'Drama' "$report_md"
 rg -n 'Level 4 enrichment' "$report_md"
+
+python3 "$repo_root/reports/parser-ir/level3-admission.py" \
+  --matrix-summary "$matrix_summary" \
+  --source-summary "$failing_source_summary" \
+  --summary-json "$failing_summary_json" \
+  --report-md "$failing_report_md"
+
+jq -e '.source_authority_gate.gate_status == "SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED"' "$failing_summary_json"
+jq -e '.plain_prose_admission.rows_total == 5' "$failing_summary_json"
+jq -e '.plain_prose_admission.rows_passed == 0' "$failing_summary_json"
+jq -e '.plain_prose_admission.rows_failed == 5' "$failing_summary_json"
+jq -e '.plain_prose_admission.verdict == "LEVEL3_PLAIN_PROSE_BLOCKED_ADAPTER_FIDELITY_AND_TEXT_POLICY_AND_EVIDENCE"' "$failing_summary_json"
+jq -e '.plain_prose_admission.blocking_owners == ["adapter", "policy", "evidence"]' "$failing_summary_json"
+jq -e '.plain_prose_admission.failures_by_owner.evidence == 5' "$failing_summary_json"
 ```
 
 Make it executable:
@@ -272,7 +323,8 @@ from __future__ import annotations
 import argparse
 import json
 import pathlib
-from collections import Counter, defaultdict
+import hashlib
+from collections import Counter
 from typing import Any
 
 SCHEMA_VERSION = "profile-aware-level3-tei-admission-v1"
@@ -322,6 +374,26 @@ def load_json(path: pathlib.Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def canonical_json(value: object) -> str:
+    return json.dumps(
+        value,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).replace("/", "\\/")
+
+
+def document_hash(value: object) -> str:
+    return "sha256:" + hashlib.sha256(canonical_json(value).encode("utf-8")).hexdigest()
+
+
+def resolve_path(raw: str, base_dir: pathlib.Path) -> pathlib.Path:
+    path = pathlib.Path(raw)
+    if path.is_absolute():
+        return path
+    return (base_dir / path).resolve()
+
+
 def write_json(path: pathlib.Path, value: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -347,6 +419,18 @@ def source_authority_passed(source: dict[str, Any]) -> bool:
         source.get("gate_status") == "SOURCE_AUTHORITY_GATE_PASS"
         and source.get("unallowlisted_unknown_markers_total") == 0
     )
+
+
+def build_mapping_block(mapping: dict[str, Any], mapping_hash: str) -> dict[str, Any]:
+    return {
+        "mapping_id": mapping.get("mapping_id"),
+        "mapping_version": mapping.get("mapping_version"),
+        "mapping_hash": mapping_hash,
+        "mapping_schema_hash": mapping.get("mapping_schema_hash"),
+        "target_parser_ir_schema_id": mapping.get("target_parser_ir_schema_id"),
+        "target_parser_ir_schema_hash": mapping.get("target_parser_ir_schema_hash"),
+        "generated_mapping_rules": len(mapping.get("transform_rule_descriptions", [])),
+    }
 
 
 def parser_ir_infrastructure_verdict(matrix: dict[str, Any]) -> str:
@@ -376,11 +460,15 @@ def row_materialization_ok(row: dict[str, Any]) -> bool:
     return row.get("materialization", {}).get("status") == "passed"
 
 
-def classify_plain_prose_row(row: dict[str, Any]) -> dict[str, Any]:
+def classify_plain_prose_row(row: dict[str, Any], source_passed: bool) -> dict[str, Any]:
     owners: set[str] = set()
     reasons: list[str] = []
     origin = row_paragraph_origin(row)
     text_bucket = row_text_bucket(row)
+
+    if not source_passed:
+        owners.add("evidence")
+        reasons.append("source authority gate did not pass")
 
     if not row_materialization_ok(row):
         owners.add("abc_renderer")
@@ -436,18 +524,43 @@ def verdict_from_failures(
         return "LEVEL3_PLAIN_PROSE_NOT_EVALUATED"
     if rows_failed == 0:
         return "LEVEL3_PLAIN_PROSE_ADMITTED"
-    if failures_by_owner.get("adapter", 0):
+    blocking_owners = sorted(failures_by_owner, key=owner_sort_key)
+    if blocking_owners == ["adapter"]:
         return "LEVEL3_PLAIN_PROSE_BLOCKED_ADAPTER_FIDELITY"
-    if failures_by_owner.get("policy", 0):
+    if blocking_owners == ["policy"]:
         return "LEVEL3_PLAIN_PROSE_BLOCKED_TEXT_POLICY"
-    if failures_by_owner.get("evidence", 0):
+    if blocking_owners == ["evidence"]:
         return "LEVEL3_PLAIN_PROSE_BLOCKED_EVIDENCE"
-    return "LEVEL3_PLAIN_PROSE_NOT_EVALUATED"
+    labels = "_AND_".join(OWNER_VERDICT_LABELS[owner] for owner in blocking_owners)
+    return f"LEVEL3_PLAIN_PROSE_BLOCKED_{labels}"
 
 
-def build_plain_prose_admission(rows: list[dict[str, Any]]) -> dict[str, Any]:
+OWNER_ORDER = {
+    "adapter": 0,
+    "policy": 1,
+    "evidence": 2,
+    "parser_ir": 3,
+    "abc_renderer": 4,
+}
+OWNER_VERDICT_LABELS = {
+    "adapter": "ADAPTER_FIDELITY",
+    "policy": "TEXT_POLICY",
+    "evidence": "EVIDENCE",
+    "parser_ir": "PARSER_IR",
+    "abc_renderer": "ABC_RENDERER",
+}
+
+
+def owner_sort_key(owner: str) -> tuple[int, str]:
+    return (OWNER_ORDER.get(owner, 99), owner)
+
+
+def build_plain_prose_admission(
+    rows: list[dict[str, Any]],
+    source_passed: bool,
+) -> dict[str, Any]:
     classified = [
-        classify_plain_prose_row(row)
+        classify_plain_prose_row(row, source_passed)
         for row in rows
         if row_profile(row) == "plain_prose"
     ]
@@ -466,6 +579,7 @@ def build_plain_prose_admission(rows: list[dict[str, Any]]) -> dict[str, Any]:
 
     rows_failed = sum(1 for item in classified if not item["passed"])
     rows_passed = len(classified) - rows_failed
+    blocking_owners = sorted(failures_by_owner, key=owner_sort_key)
     return {
         "scope": "tei-eaj-generated-matrix plain_prose rows",
         "plaintext_policy": PLAINTEXT_POLICY,
@@ -473,6 +587,7 @@ def build_plain_prose_admission(rows: list[dict[str, Any]]) -> dict[str, Any]:
         "rows_passed": rows_passed,
         "rows_failed": rows_failed,
         "verdict": verdict_from_failures(len(classified), rows_failed, failures_by_owner),
+        "blocking_owners": blocking_owners,
         "failures_by_owner": dict(sorted(failures_by_owner.items())),
         "failures_by_adapter": dict(sorted(failures_by_adapter.items())),
         "text_policy_buckets": dict(sorted(text_policy_buckets.items())),
@@ -512,15 +627,14 @@ def build_evidence_gaps(matrix: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def build_summary(matrix: dict[str, Any], source: dict[str, Any]) -> dict[str, Any]:
+def build_summary(
+    matrix: dict[str, Any],
+    source: dict[str, Any],
+    mapping: dict[str, Any],
+    mapping_hash: str,
+) -> dict[str, Any]:
     rows = matrix.get("rows", [])
-    plain_prose = build_plain_prose_admission(rows)
-    if not source_authority_passed(source):
-        plain_prose["verdict"] = "LEVEL3_PLAIN_PROSE_BLOCKED_EVIDENCE"
-        plain_prose.setdefault("failures_by_owner", {})
-        plain_prose["failures_by_owner"]["evidence"] = (
-            plain_prose["failures_by_owner"].get("evidence", 0) + plain_prose["rows_total"]
-        )
+    plain_prose = build_plain_prose_admission(rows, source_authority_passed(source))
     return {
         "schema_version": SCHEMA_VERSION,
         "source_authority_gate": source_authority_gate(source),
@@ -528,7 +642,7 @@ def build_summary(matrix: dict[str, Any], source: dict[str, Any]) -> dict[str, A
         "plain_prose_admission": plain_prose,
         "profile_lanes": build_profile_lanes(rows),
         "evidence_gaps": build_evidence_gaps(matrix),
-        "mapping": matrix.get("mapping", {}),
+        "mapping": build_mapping_block(mapping, mapping_hash),
         "inputs": matrix.get("inputs", {}),
     }
 
@@ -545,6 +659,8 @@ def render_markdown(summary: dict[str, Any]) -> str:
         f"- source_authority_gate: `{summary['source_authority_gate'].get('gate_status')}`",
         f"- parser_ir_infrastructure_verdict: `{summary['parser_ir_infrastructure_verdict']}`",
         f"- plain_prose_verdict: `{plain['verdict']}`",
+        f"- blocking_owners: `{', '.join(plain['blocking_owners']) or 'none'}`",
+        f"- mapping_hash: `{summary['mapping']['mapping_hash']}`",
         "",
         "## Plain Prose Admission",
         "",
@@ -612,7 +728,12 @@ def main() -> int:
     args = parse_args()
     matrix = load_json(args.matrix_summary)
     source = load_json(args.source_summary)
-    summary = build_summary(matrix, source)
+    mapping_input = matrix.get("inputs", {}).get("mapping")
+    if not mapping_input:
+        raise SystemExit("matrix summary missing inputs.mapping")
+    mapping_path = resolve_path(mapping_input, args.matrix_summary.parent)
+    mapping = load_json(mapping_path)
+    summary = build_summary(matrix, source, mapping, document_hash(mapping))
     write_json(args.summary_json, summary)
     write_text(args.report_md, render_markdown(summary))
     return 0
@@ -660,6 +781,7 @@ git commit -m "test(parser-ir): add profile-aware level3 admission smoke"
 - Produces:
   - Recipe: `just parser-ir-level3-admission-smoke`
   - Recipe: `just parser-ir-level3-admission-report MATRIX_SUMMARY SOURCE_SUMMARY REPORT_MD SUMMARY_JSON`
+  - The report recipe relies on `MATRIX_SUMMARY.inputs.mapping` to locate and hash the mapping file; do not add a separate stale mapping-summary input.
 
 - [ ] **Step 1: Add failing just-target smoke expectation**
 
@@ -824,7 +946,7 @@ git commit -m "build(parser-ir): gate level3 admission smoke"
   - `docs/superpowers/reports/2026-07-04-source-authority-representability.summary.json`
   - `docs/superpowers/reports/2026-07-05-profile-aware-level3-tei-admission.summary.json`
 - Produces:
-  - Updated prose that no longer lists source-authority as failing.
+  - Updated prose that no longer lists source-authority as failing or treats source-authority as a current blocker.
   - References to the profile-aware admission report as the current Level 3 gate artifact.
 
 - [ ] **Step 1: Verify stale claims exist**
@@ -832,10 +954,10 @@ git commit -m "build(parser-ir): gate level3 admission smoke"
 Run:
 
 ```bash
-rg -n "SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED|source-authority representability is still failing|260 unallowlisted|current run is failing" docs/superpowers/reports/2026-07-04-post-parser-ir-conversion-sync.md docs/superpowers/reports/2026-07-04-tei-eaj-structural-gap-analysis.md
+rg -n "SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED|source-authority representability is still failing|260 unallowlisted|current run is failing|PARSER_IR_LEVEL3_REPRESENTABLE_WITH_ADAPTER_AND_SOURCE_AUTHORITY_GAPS|strict error|strict errors" docs/superpowers/reports/2026-07-04-post-parser-ir-conversion-sync.md docs/superpowers/reports/2026-07-04-tei-eaj-structural-gap-analysis.md
 ```
 
-Expected: finds stale source-authority failure claims.
+Expected: finds stale source-authority failure claims and the transitional gap-analysis verdict.
 
 - [ ] **Step 2: Update `2026-07-04-post-parser-ir-conversion-sync.md`**
 
@@ -874,12 +996,30 @@ Then add this paragraph after the blocker list:
 The current admission policy is now specified in `docs/superpowers/specs/2026-07-05-profile-aware-level3-tei-admission.md` and measured in `docs/superpowers/reports/2026-07-05-profile-aware-level3-tei-admission.md`. That report separates `LEVEL3_IR_INFRASTRUCTURE_READY` from `LEVEL3_PLAIN_PROSE_ADMITTED` so parser-IR capability and adapter admission are not conflated.
 ```
 
+If the report headline contains:
+
+```text
+PARSER_IR_LEVEL3_REPRESENTABLE_WITH_ADAPTER_AND_SOURCE_AUTHORITY_GAPS
+```
+
+replace that verdict with:
+
+```text
+PARSER_IR_LEVEL3_INFRASTRUCTURE_READY_PROFILE_ADMISSION_REQUIRED
+```
+
+If blocker 3 refers to source-authority strict errors as a current blocker, replace it with:
+
+```markdown
+3. Source-authority strict errors are closed for the current corpus snapshot. Future scanner or corpus changes must rerun `just source-authority-representability-gate`, but this is no longer a current Level 3 blocker.
+```
+
 - [ ] **Step 4: Verify stale claims are gone**
 
 Run:
 
 ```bash
-rg -n "SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED|source-authority representability is still failing|260 unallowlisted|current run is failing" docs/superpowers/reports/2026-07-04-post-parser-ir-conversion-sync.md docs/superpowers/reports/2026-07-04-tei-eaj-structural-gap-analysis.md
+rg -n "SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED|source-authority representability is still failing|260 unallowlisted|current run is failing|PARSER_IR_LEVEL3_REPRESENTABLE_WITH_ADAPTER_AND_SOURCE_AUTHORITY_GAPS" docs/superpowers/reports/2026-07-04-post-parser-ir-conversion-sync.md docs/superpowers/reports/2026-07-04-tei-eaj-structural-gap-analysis.md
 ```
 
 Expected: no output, exit 1.
@@ -928,6 +1068,9 @@ jq -e '
   .schema_version == "profile-aware-level3-tei-admission-v1"
   and .source_authority_gate.gate_status == "SOURCE_AUTHORITY_GATE_PASS"
   and .parser_ir_infrastructure_verdict == "LEVEL3_IR_INFRASTRUCTURE_READY"
+  and (.mapping.mapping_id | type == "string")
+  and (.mapping.mapping_hash | test("^sha256:[0-9a-f]{64}$"))
+  and (.plain_prose_admission.blocking_owners | type == "array")
   and .plain_prose_admission.plaintext_policy.plaintext_surface == "body_base_text"
   and .plain_prose_admission.plaintext_policy.ruby_expanded_surfaces == "diagnostic_only"
   and (.plain_prose_admission.rows_total > 0)
@@ -946,14 +1089,13 @@ nix --option post-build-hook '' build ".#checks.$system.parser-ir-level3-admissi
 
 Expected: exits 0.
 
-- [ ] **Step 5: Run formatting and whitespace checks**
+- [ ] **Step 5: Run whitespace checks**
 
 ```bash
-cargo fmt --all --check
 git diff --check
 ```
 
-Expected: both exit 0.
+Expected: exits 0. Do not run `cargo fmt --all --check` for this plan; this change touches Python, Bash, Nix, Markdown, and generated JSON only, and unrelated Rust formatting must not gate this work.
 
 - [ ] **Step 6: Inspect worktree**
 
@@ -982,8 +1124,8 @@ If Step 2 produced no diff, do not create an empty commit.
 
 ## Self-Review
 
-- Spec coverage: The plan implements the spec's report contract, plain-prose hard gate, profile lanes, evidence gaps, and stale source-authority narrative cleanup.
+- Spec coverage: The plan implements the spec's report contract, including non-empty mapping provenance loaded from the real mapping file, plain-prose hard gate, profile lanes, evidence gaps, and stale source-authority narrative cleanup.
 - Placeholder scan: No unresolved placeholder tokens or vague validation/error-handling instructions remain.
-- Type consistency: The plan consistently uses `build_summary(matrix, source)`, `profile_lanes`, `plain_prose_admission`, `source_authority_gate`, and `parser_ir_infrastructure_verdict`.
+- Type consistency: The plan consistently uses `build_summary(matrix, source, mapping, mapping_hash)`, `profile_lanes`, `plain_prose_admission`, `source_authority_gate`, `parser_ir_infrastructure_verdict`, and `blocking_owners`.
 - Scope control: The plan does not modify parser-IR schema, ABC registry, adapter parsers, or TEI materialization logic. It classifies existing measured evidence.
 - Gate honesty: The plan does not claim `LEVEL3_PLAIN_PROSE_ADMITTED` unless the measured plain-prose rows pass. The expected current broad-adapter result remains blocked by adapter fidelity and/or text policy.

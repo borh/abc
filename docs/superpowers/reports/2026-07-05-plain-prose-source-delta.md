@@ -22,6 +22,7 @@ This report diagnoses plain-prose Level 3 blockers. It is not a Level 3 admissio
 | classification | rows |
 |---|---:|
 | adapter_paragraph_bug | 73 |
+| evidence_gap | 5 |
 | missing_parser_evidence | 81 |
 | ruby_metadata_not_plaintext | 42 |
 | source_note_metadata_excluded | 2 |
@@ -112,3 +113,8 @@ This report diagnoses plain-prose Level 3 blockers. It is not a Level 3 admissio
 | 57047 | aozora2html | missing_parser_evidence, adapter_paragraph_bug, ruby_metadata_not_plaintext | adapter, evidence, policy | `data/complete/tei_lib_lv3/57047_tei.xml` |
 | 57047 | aozora-epub3 | missing_parser_evidence, adapter_paragraph_bug, ruby_metadata_not_plaintext | adapter, evidence, policy | `data/complete/tei_lib_lv3/57047_tei.xml` |
 | 57047 | aozora-rs | missing_parser_evidence, ruby_metadata_not_plaintext | evidence, policy | `data/complete/tei_lib_lv3/57047_tei.xml` |
+| None | missing | evidence_gap | evidence | `data/draft/tei_lib_lv2/01.xml` |
+| None | missing | evidence_gap | evidence | `data/draft/tei_lib_lv2/02.xml` |
+| None | missing | evidence_gap | evidence | `data/draft/tei_lib_lv2/yosano_genji_kiritsubo_ids.xml` |
+| None | missing | evidence_gap | evidence | `data/etc/Curriculum vitae of Wakugawa Pēchin, Jitchaku Village.xml` |
+| None | missing | evidence_gap | evidence | `data/etc/校異源氏物語_header更新版.xml` |

@@ -18,12 +18,695 @@
       "aozora2",
       "aozora"
     ],
-    "rows_missing_required_parser_evidence": 27
+    "row_entries_missing_required_parser_evidence": 81,
+    "work_files_missing_required_parser_evidence": 27,
+    "rows_missing_required_parser_evidence": 81
   },
   "source_authority_gate": {
     "gate_status": "SOURCE_AUTHORITY_GATE_PASS",
     "works_scanned": 17894,
-    "unallowlisted_unknown_markers_total": 0
+    "works_failed": 0,
+    "markers_total": 4323915,
+    "unknown_markers_total": 14886,
+    "unallowlisted_unknown_markers_total": 0,
+    "allowlisted_unknown_markers_total": 14886,
+    "rows": {
+      "accent.dotted_letter": {
+        "works_with_marker": 3,
+        "occurrences": 93,
+        "sample_works": [
+          "001096_42686",
+          "001096_43554",
+          "001096_43672"
+        ]
+      },
+      "annotation.bouki": {
+        "works_with_marker": 12,
+        "occurrences": 127,
+        "sample_works": [
+          "000031_2846",
+          "000037_2848",
+          "000156_2699",
+          "000219_2932",
+          "000287_3061"
+        ]
+      },
+      "annotation.chuuki": {
+        "works_with_marker": 5513,
+        "occurrences": 35371,
+        "sample_works": [
+          "000005_53194",
+          "000006_1869",
+          "000006_3310",
+          "000006_4627",
+          "000006_46659"
+        ]
+      },
+      "annotation.layout_note": {
+        "works_with_marker": 8,
+        "occurrences": 19,
+        "sample_works": [
+          "000072_864",
+          "000083_3329",
+          "000259_3554",
+          "000305_1896",
+          "000311_2018"
+        ]
+      },
+      "break.line_explicit": {
+        "works_with_marker": 47,
+        "occurrences": 161,
+        "sample_works": [
+          "000075_4250",
+          "000081_47027",
+          "000083_46289",
+          "000106_56858",
+          "000106_57905"
+        ]
+      },
+      "break.page_line": {
+        "works_with_marker": 943,
+        "occurrences": 9229,
+        "sample_works": [
+          "000005_53194",
+          "000006_1869",
+          "000009_55881",
+          "000011_889",
+          "000011_899"
+        ]
+      },
+      "caption.block": {
+        "works_with_marker": 48,
+        "occurrences": 1726,
+        "sample_works": [
+          "000058_57440",
+          "000091_50354",
+          "000125_1321",
+          "000165_49567",
+          "000226_1150"
+        ]
+      },
+      "caption.inline": {
+        "works_with_marker": 143,
+        "occurrences": 2397,
+        "sample_works": [
+          "000014_728",
+          "000058_57440",
+          "000067_1768",
+          "000067_1788",
+          "000067_1789"
+        ]
+      },
+      "decoration.bold_italic": {
+        "works_with_marker": 319,
+        "occurrences": 8830,
+        "sample_works": [
+          "000020_4487",
+          "000020_46404",
+          "000025_1144",
+          "000025_56503",
+          "000026_50241"
+        ]
+      },
+      "decoration.boten": {
+        "works_with_marker": 6236,
+        "occurrences": 129086,
+        "sample_works": [
+          "000005_53194",
+          "000006_382",
+          "000006_383",
+          "000006_58819",
+          "000008_1083"
+        ]
+      },
+      "decoration.bousen": {
+        "works_with_marker": 327,
+        "occurrences": 18127,
+        "sample_works": [
+          "000006_1869",
+          "000013_11",
+          "000019_4376",
+          "000034_55507",
+          "000038_1408"
+        ]
+      },
+      "decoration.direction_override": {
+        "works_with_marker": 6,
+        "occurrences": 65,
+        "sample_works": [
+          "000096_935",
+          "000866_3039",
+          "001094_42603",
+          "001242_46444",
+          "001467_50733"
+        ]
+      },
+      "decoration.font_size": {
+        "works_with_marker": 1223,
+        "occurrences": 51508,
+        "sample_works": [
+          "000006_1869",
+          "000008_58922",
+          "000011_899",
+          "000019_4376",
+          "000019_58861"
+        ]
+      },
+      "decoration.keigakomi": {
+        "works_with_marker": 157,
+        "occurrences": 717,
+        "sample_works": [
+          "000043_341",
+          "000063_385",
+          "000067_1789",
+          "000072_408",
+          "000072_864"
+        ]
+      },
+      "decoration.typeface": {
+        "works_with_marker": 3,
+        "occurrences": 6,
+        "sample_works": [
+          "000212_4839",
+          "000311_33191",
+          "001917_61172"
+        ]
+      },
+      "emphasis.basic": {
+        "works_with_marker": 6576,
+        "occurrences": 157494,
+        "sample_works": [
+          "000005_53194",
+          "000006_1869",
+          "000006_382",
+          "000006_383",
+          "000006_58819"
+        ]
+      },
+      "figure.image_caption": {
+        "works_with_marker": 103,
+        "occurrences": 1777,
+        "sample_works": [
+          "000019_42378",
+          "000019_42379",
+          "000019_42380",
+          "000019_42381",
+          "000019_42382"
+        ]
+      },
+      "figure.image_inline": {
+        "works_with_marker": 531,
+        "occurrences": 5877,
+        "sample_works": [
+          "000009_226",
+          "000009_45340",
+          "000009_50711",
+          "000009_50712",
+          "000009_50713"
+        ]
+      },
+      "gaiji.jis_code": {
+        "works_with_marker": 5772,
+        "occurrences": 55322,
+        "sample_works": [
+          "000005_5",
+          "000006_1869",
+          "000006_3310",
+          "000006_383",
+          "000006_384"
+        ]
+      },
+      "gaiji.marker": {
+        "works_with_marker": 5931,
+        "occurrences": 62355,
+        "sample_works": [
+          "000005_5",
+          "000006_1868",
+          "000006_1869",
+          "000006_3310",
+          "000006_383"
+        ]
+      },
+      "gaiji.un_embed": {
+        "works_with_marker": 38,
+        "occurrences": 144,
+        "sample_works": [
+          "000019_4376",
+          "000025_kantou",
+          "000038_323",
+          "000040_1326",
+          "000040_737"
+        ]
+      },
+      "gaiji.unicode_codepoint": {
+        "works_with_marker": 631,
+        "occurrences": 3714,
+        "sample_works": [
+          "000008_47357",
+          "000008_47386",
+          "000020_55103",
+          "000022_42254",
+          "000023_1698"
+        ]
+      },
+      "gaiji_ruby.inline_base": {
+        "works_with_marker": 2799,
+        "occurrences": 13450,
+        "sample_works": [
+          "000005_5",
+          "000006_1869",
+          "000006_3310",
+          "000008_1083",
+          "000008_47357"
+        ]
+      },
+      "glyph.variant_note": {
+        "works_with_marker": 1954,
+        "occurrences": 7634,
+        "sample_works": [
+          "000006_1869",
+          "000008_1083",
+          "000008_47386",
+          "000011_55301",
+          "000011_889"
+        ]
+      },
+      "heading.basic": {
+        "works_with_marker": 3696,
+        "occurrences": 80592,
+        "sample_works": [
+          "000005_53194",
+          "000006_58819",
+          "000008_1083",
+          "000008_47357",
+          "000008_47386"
+        ]
+      },
+      "heading.dogyo": {
+        "works_with_marker": 142,
+        "occurrences": 11839,
+        "sample_works": [
+          "000011_899",
+          "000058_59060",
+          "000067_1790",
+          "000067_4869",
+          "000081_1058"
+        ]
+      },
+      "heading.mado": {
+        "works_with_marker": 6,
+        "occurrences": 1680,
+        "sample_works": [
+          "000255_47342",
+          "000296_1864",
+          "000961_4820",
+          "001402_49946",
+          "001404_49966"
+        ]
+      },
+      "indentation.basic": {
+        "works_with_marker": 8169,
+        "occurrences": 134393,
+        "sample_works": [
+          "000005_5",
+          "000005_53194",
+          "000006_1868",
+          "000006_1869",
+          "000006_3310"
+        ]
+      },
+      "indentation.burasage": {
+        "works_with_marker": 1217,
+        "occurrences": 13278,
+        "sample_works": [
+          "000006_3311",
+          "000006_58819",
+          "000008_47386",
+          "000009_55881",
+          "000019_4376"
+        ]
+      },
+      "indentation.chitsuki": {
+        "works_with_marker": 6276,
+        "occurrences": 20358,
+        "sample_works": [
+          "000006_1868",
+          "000006_1869",
+          "000006_3310",
+          "000006_3311",
+          "000006_382"
+        ]
+      },
+      "indentation.jisage_block": {
+        "works_with_marker": 4607,
+        "occurrences": 94993,
+        "sample_works": [
+          "000005_5",
+          "000005_53194",
+          "000006_1868",
+          "000006_1869",
+          "000006_3310"
+        ]
+      },
+      "indentation.jisage_oneline": {
+        "works_with_marker": 122,
+        "occurrences": 279,
+        "sample_works": [
+          "000025_202",
+          "000025_216",
+          "000035_235",
+          "000035_266",
+          "000038_42207"
+        ]
+      },
+      "indentation.jizume": {
+        "works_with_marker": 242,
+        "occurrences": 3239,
+        "sample_works": [
+          "000026_55781",
+          "000034_55507",
+          "000040_47289",
+          "000050_48400",
+          "000055_56499"
+        ]
+      },
+      "iteration.kunoji": {
+        "works_with_marker": 1125,
+        "occurrences": 10701,
+        "sample_works": [
+          "000006_58810",
+          "000006_58819",
+          "000008_47357",
+          "000012_1092",
+          "000012_24448"
+        ]
+      },
+      "kunten.kaeriten": {
+        "works_with_marker": 490,
+        "occurrences": 27987,
+        "sample_works": [
+          "000006_1869",
+          "000038_1408",
+          "000042_1694",
+          "000050_3581",
+          "000051_1436"
+        ]
+      },
+      "kunten.okurigana": {
+        "works_with_marker": 256,
+        "occurrences": 6562,
+        "sample_works": [
+          "000026_50238",
+          "000026_50242",
+          "000026_50259",
+          "000026_51893",
+          "000026_55774"
+        ]
+      },
+      "layout.center_page": {
+        "works_with_marker": 263,
+        "occurrences": 885,
+        "sample_works": [
+          "000005_53194",
+          "000009_55881",
+          "000011_899",
+          "000025_47220",
+          "000026_219"
+        ]
+      },
+      "layout.multicolumn": {
+        "works_with_marker": 26,
+        "occurrences": 73,
+        "sample_works": [
+          "000035_1566",
+          "000042_2471",
+          "000061_377",
+          "000081_45631",
+          "000082_1309"
+        ]
+      },
+      "layout.tcy": {
+        "works_with_marker": 725,
+        "occurrences": 19794,
+        "sample_works": [
+          "000014_728",
+          "000020_2223",
+          "000020_46404",
+          "000023_55306",
+          "000023_55324"
+        ]
+      },
+      "layout.yokogumi": {
+        "works_with_marker": 423,
+        "occurrences": 3690,
+        "sample_works": [
+          "000019_59374",
+          "000025_1144",
+          "000026_50239",
+          "000026_55717",
+          "000026_55732"
+        ]
+      },
+      "reference.frontref": {
+        "works_with_marker": 683,
+        "occurrences": 3921,
+        "sample_works": [
+          "000006_46659",
+          "000012_2585",
+          "000012_4316",
+          "000022_197",
+          "000026_46578"
+        ]
+      },
+      "ruby.basic": {
+        "works_with_marker": 14321,
+        "occurrences": 3607926,
+        "sample_works": [
+          "000005_5",
+          "000005_53194",
+          "000005_55215",
+          "000005_55216",
+          "000005_55217"
+        ]
+      },
+      "ruby.placement_directional": {
+        "works_with_marker": 31,
+        "occurrences": 318,
+        "sample_works": [
+          "000034_1213",
+          "000050_3581",
+          "000129_694",
+          "000146_49258",
+          "000146_50202"
+        ]
+      },
+      "source.note_label": {
+        "works_with_marker": 531,
+        "occurrences": 1381,
+        "sample_works": [
+          "000008_1083",
+          "000012_198",
+          "000013_542",
+          "000019_4376",
+          "000026_50239"
+        ]
+      },
+      "source.page_reference": {
+        "works_with_marker": 6,
+        "occurrences": 58,
+        "sample_works": [
+          "000160_875",
+          "000989_351",
+          "000989_352",
+          "000989_42687",
+          "001518_51731"
+        ]
+      },
+      "source.reviewed_residual_command": {
+        "works_with_marker": 189,
+        "occurrences": 603,
+        "sample_works": [
+          "000008_1083",
+          "000026_55776",
+          "000048_358",
+          "000051_1441",
+          "000051_1442"
+        ]
+      },
+      "structure.quote_block": {
+        "works_with_marker": 6,
+        "occurrences": 21,
+        "sample_works": [
+          "000034_233",
+          "000035_296",
+          "000137_733",
+          "000280_1706",
+          "000989_351"
+        ]
+      },
+      "structure.table": {
+        "works_with_marker": 7,
+        "occurrences": 46,
+        "sample_works": [
+          "000042_2345",
+          "000042_2348",
+          "000042_2449",
+          "000096_2100",
+          "000311_2745"
+        ]
+      },
+      "warichu.basic": {
+        "works_with_marker": 362,
+        "occurrences": 6605,
+        "sample_works": [
+          "000005_53194",
+          "000006_1868",
+          "000006_1869",
+          "000034_519",
+          "000038_42202"
+        ]
+      },
+      "warigaki.parenthetical": {
+        "works_with_marker": 1,
+        "occurrences": 2,
+        "sample_works": [
+          "000034_519"
+        ]
+      }
+    },
+    "unknown_classes_total": 8,
+    "unknown_classes_truncated": false,
+    "unknown_classes": [
+      {
+        "kind": "CommandFullwidth",
+        "raw": "［＃］",
+        "body": "",
+        "occurrences": 13920,
+        "allowlisted_occurrences": 13920,
+        "unallowlisted_occurrences": 0,
+        "sample_works": [
+          "000005_5",
+          "000005_53194",
+          "000006_1868",
+          "000006_1869",
+          "000006_3310"
+        ]
+      },
+      {
+        "kind": "CommandFullwidth",
+        "raw": "［＃…］",
+        "body": "…",
+        "occurrences": 465,
+        "allowlisted_occurrences": 465,
+        "unallowlisted_occurrences": 0,
+        "sample_works": [
+          "000038_1408",
+          "000042_1694",
+          "000050_3581",
+          "000051_1436",
+          "000051_1452"
+        ]
+      },
+      {
+        "kind": "CommandFullwidth",
+        "raw": "［＃本文終わり］",
+        "body": "本文終わり",
+        "occurrences": 243,
+        "allowlisted_occurrences": 243,
+        "unallowlisted_occurrences": 0,
+        "sample_works": [
+          "000009_226",
+          "000009_50711",
+          "000009_50712",
+          "000009_50713",
+          "000009_50714"
+        ]
+      },
+      {
+        "kind": "CommandFullwidth",
+        "raw": "［＃（…）］",
+        "body": "（…）",
+        "occurrences": 242,
+        "allowlisted_occurrences": 242,
+        "unallowlisted_occurrences": 0,
+        "sample_works": [
+          "000026_50238",
+          "000026_50242",
+          "000026_50259",
+          "000026_51893",
+          "000026_55774"
+        ]
+      },
+      {
+        "kind": "MalformedCommand",
+        "raw": "［＃",
+        "body": "［＃",
+        "occurrences": 8,
+        "allowlisted_occurrences": 8,
+        "unallowlisted_occurrences": 0,
+        "sample_works": [
+          "000081_4461",
+          "000106_2415",
+          "000121_1754",
+          "000124_662",
+          "000148_798"
+        ]
+      },
+      {
+        "kind": "MalformedAccentNotation",
+        "raw": "〔",
+        "body": "〔",
+        "occurrences": 6,
+        "allowlisted_occurrences": 6,
+        "unallowlisted_occurrences": 0,
+        "sample_works": [
+          "000091_522",
+          "000311_16002",
+          "001341_60380",
+          "001341_60385",
+          "001404_49966"
+        ]
+      },
+      {
+        "kind": "MalformedGaiji",
+        "raw": "※［＃",
+        "body": "※［＃",
+        "occurrences": 1,
+        "allowlisted_occurrences": 1,
+        "unallowlisted_occurrences": 0,
+        "sample_works": [
+          "000271_1556"
+        ]
+      },
+      {
+        "kind": "MalformedImplicitRuby",
+        "raw": "《",
+        "body": "《",
+        "occurrences": 1,
+        "allowlisted_occurrences": 1,
+        "unallowlisted_occurrences": 0,
+        "sample_works": [
+          "JISTABLE"
+        ]
+      }
+    ],
+    "unknown_examples": [],
+    "decode_failures": [],
+    "representability": {
+      "typed_occurrences": 4570071,
+      "raw_preserved_occurrences": 46382,
+      "out_of_body_occurrences": 950,
+      "unsupported_occurrences": 13936,
+      "needs_research_occurrences": 0
+    },
+    "strict_errors": [],
+    "inputs": {
+      "matrix": "/home/bor/Projects/ab-validator/data/aozora-syntax-coverage.toml",
+      "index": "scratch/ab-index.json",
+      "corpus": "/home/bor/Dependencies/aozorabunko",
+      "allowlist": "/home/bor/Projects/ab-validator/data/aozora-source-inventory-allowlist.toml",
+      "work_ids": null
+    }
   },
   "mapping": {
     "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
@@ -34,11 +717,12 @@
     "generated_mapping_rules": 127
   },
   "plain_prose_scope": {
-    "rows_total": 81,
-    "works_total": 27
+    "rows_total": 86,
+    "works_total": 32
   },
   "classification_counts": {
     "adapter_paragraph_bug": 73,
+    "evidence_gap": 5,
     "missing_parser_evidence": 81,
     "ruby_metadata_not_plaintext": 42,
     "source_note_metadata_excluded": 2,
@@ -51,7 +735,7 @@
   ],
   "blocking_owner_counts": {
     "adapter": 73,
-    "evidence": 81,
+    "evidence": 86,
     "policy": 77
   },
   "rows": [
@@ -59,6 +743,8 @@
       "work_id": "15099",
       "title": "長崎小品",
       "tei_eaj_file": "data/complete/tei_lib_lv3/15099_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora2html",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
@@ -89,6 +775,8 @@
       "work_id": "15099",
       "title": "長崎小品",
       "tei_eaj_file": "data/complete/tei_lib_lv3/15099_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-epub3",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
@@ -119,6 +807,8 @@
       "work_id": "15099",
       "title": "長崎小品",
       "tei_eaj_file": "data/complete/tei_lib_lv3/15099_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-rs",
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "different",
@@ -146,6 +836,8 @@
       "work_id": "15938",
       "title": "元禄時代小説第一巻「本朝二十不孝」ぬきほ（言文一致訳）",
       "tei_eaj_file": "data/complete/tei_lib_lv3/15938_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora2html",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
@@ -176,6 +868,8 @@
       "work_id": "15938",
       "title": "元禄時代小説第一巻「本朝二十不孝」ぬきほ（言文一致訳）",
       "tei_eaj_file": "data/complete/tei_lib_lv3/15938_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-epub3",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
@@ -206,6 +900,8 @@
       "work_id": "15938",
       "title": "元禄時代小説第一巻「本朝二十不孝」ぬきほ（言文一致訳）",
       "tei_eaj_file": "data/complete/tei_lib_lv3/15938_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-rs",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
@@ -236,6 +932,8 @@
       "work_id": "236",
       "title": "ア、秋",
       "tei_eaj_file": "data/complete/tei_lib_lv3/236_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora2html",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
@@ -266,6 +964,8 @@
       "work_id": "236",
       "title": "ア、秋",
       "tei_eaj_file": "data/complete/tei_lib_lv3/236_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-epub3",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
@@ -296,6 +996,8 @@
       "work_id": "236",
       "title": "ア、秋",
       "tei_eaj_file": "data/complete/tei_lib_lv3/236_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-rs",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
@@ -326,6 +1028,8 @@
       "work_id": "2509",
       "title": "天災と国防",
       "tei_eaj_file": "data/complete/tei_lib_lv3/2509_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora2html",
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "different",
@@ -353,6 +1057,8 @@
       "work_id": "2509",
       "title": "天災と国防",
       "tei_eaj_file": "data/complete/tei_lib_lv3/2509_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-epub3",
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "different",
@@ -380,6 +1086,8 @@
       "work_id": "2509",
       "title": "天災と国防",
       "tei_eaj_file": "data/complete/tei_lib_lv3/2509_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-rs",
       "paragraph_origin_bucket": "adapter_collapsed",
       "body_text_match_bucket": "different",
@@ -410,6 +1118,8 @@
       "work_id": "43077",
       "title": "地震雑感",
       "tei_eaj_file": "data/complete/tei_lib_lv3/43077_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora2html",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_tei_eaj_contains_generated",
@@ -440,6 +1150,8 @@
       "work_id": "43077",
       "title": "地震雑感",
       "tei_eaj_file": "data/complete/tei_lib_lv3/43077_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-epub3",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
@@ -470,6 +1182,8 @@
       "work_id": "43077",
       "title": "地震雑感",
       "tei_eaj_file": "data/complete/tei_lib_lv3/43077_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-rs",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
@@ -500,6 +1214,8 @@
       "work_id": "45093",
       "title": "乳母車",
       "tei_eaj_file": "data/complete/tei_lib_lv3/45093_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora2html",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
@@ -530,6 +1246,8 @@
       "work_id": "45093",
       "title": "乳母車",
       "tei_eaj_file": "data/complete/tei_lib_lv3/45093_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-epub3",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
@@ -560,6 +1278,8 @@
       "work_id": "45093",
       "title": "乳母車",
       "tei_eaj_file": "data/complete/tei_lib_lv3/45093_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-rs",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
@@ -590,6 +1310,8 @@
       "work_id": "4872",
       "title": "愛読書の印象",
       "tei_eaj_file": "data/complete/tei_lib_lv3/4872_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora2html",
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "ruby_expanded_equal",
@@ -617,6 +1339,8 @@
       "work_id": "4872",
       "title": "愛読書の印象",
       "tei_eaj_file": "data/complete/tei_lib_lv3/4872_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-epub3",
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "ruby_expanded_equal",
@@ -644,6 +1368,8 @@
       "work_id": "4872",
       "title": "愛読書の印象",
       "tei_eaj_file": "data/complete/tei_lib_lv3/4872_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-rs",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_equal",
@@ -674,6 +1400,8 @@
       "work_id": "53386",
       "title": "〔月光の鉛のなかに〕",
       "tei_eaj_file": "data/complete/tei_lib_lv3/53386_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora2html",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_generated_contains_tei_eaj",
@@ -704,6 +1432,8 @@
       "work_id": "53386",
       "title": "〔月光の鉛のなかに〕",
       "tei_eaj_file": "data/complete/tei_lib_lv3/53386_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-epub3",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "base_equal",
@@ -731,6 +1461,8 @@
       "work_id": "53386",
       "title": "〔月光の鉛のなかに〕",
       "tei_eaj_file": "data/complete/tei_lib_lv3/53386_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-rs",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "base_equal",
@@ -758,6 +1490,8 @@
       "work_id": "56996",
       "title": "書簡 山田邦子宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/56996_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora2html",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
@@ -788,6 +1522,8 @@
       "work_id": "56996",
       "title": "書簡 山田邦子宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/56996_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-epub3",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
@@ -818,6 +1554,8 @@
       "work_id": "56996",
       "title": "書簡 山田邦子宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/56996_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-rs",
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
@@ -845,6 +1583,8 @@
       "work_id": "56998",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/56998_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora2html",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
@@ -875,6 +1615,8 @@
       "work_id": "56998",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/56998_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-epub3",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
@@ -905,6 +1647,8 @@
       "work_id": "56998",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/56998_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-rs",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
@@ -935,6 +1679,8 @@
       "work_id": "56999",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/56999_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora2html",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_generated_contains_tei_eaj",
@@ -965,6 +1711,8 @@
       "work_id": "56999",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/56999_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-epub3",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
@@ -995,6 +1743,8 @@
       "work_id": "56999",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/56999_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-rs",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_generated_contains_tei_eaj",
@@ -1025,6 +1775,8 @@
       "work_id": "57001",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57001_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora2html",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
@@ -1055,6 +1807,8 @@
       "work_id": "57001",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57001_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-epub3",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
@@ -1085,6 +1839,8 @@
       "work_id": "57001",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57001_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-rs",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
@@ -1115,6 +1871,8 @@
       "work_id": "57002",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57002_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora2html",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "base_equal",
@@ -1142,6 +1900,8 @@
       "work_id": "57002",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57002_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-epub3",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
@@ -1172,6 +1932,8 @@
       "work_id": "57002",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57002_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-rs",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "base_equal",
@@ -1199,6 +1961,8 @@
       "work_id": "57003",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57003_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora2html",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
@@ -1229,6 +1993,8 @@
       "work_id": "57003",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57003_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-epub3",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
@@ -1259,6 +2025,8 @@
       "work_id": "57003",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57003_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-rs",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
@@ -1289,6 +2057,8 @@
       "work_id": "57004",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57004_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora2html",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
@@ -1319,6 +2089,8 @@
       "work_id": "57004",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57004_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-epub3",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
@@ -1349,6 +2121,8 @@
       "work_id": "57004",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57004_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-rs",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
@@ -1379,6 +2153,8 @@
       "work_id": "57005",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57005_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora2html",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
@@ -1409,6 +2185,8 @@
       "work_id": "57005",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57005_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-epub3",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
@@ -1439,6 +2217,8 @@
       "work_id": "57005",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57005_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-rs",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
@@ -1469,6 +2249,8 @@
       "work_id": "57006",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57006_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora2html",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
@@ -1499,6 +2281,8 @@
       "work_id": "57006",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57006_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-epub3",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
@@ -1529,6 +2313,8 @@
       "work_id": "57006",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57006_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-rs",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
@@ -1559,6 +2345,8 @@
       "work_id": "57037",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57037_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora2html",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
@@ -1589,6 +2377,8 @@
       "work_id": "57037",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57037_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-epub3",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
@@ -1619,6 +2409,8 @@
       "work_id": "57037",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57037_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-rs",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
@@ -1649,6 +2441,8 @@
       "work_id": "57038",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57038_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora2html",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "base_drop_parentheticals_equal",
@@ -1679,6 +2473,8 @@
       "work_id": "57038",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57038_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-epub3",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
@@ -1709,6 +2505,8 @@
       "work_id": "57038",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57038_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-rs",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "base_drop_parentheticals_equal",
@@ -1739,6 +2537,8 @@
       "work_id": "57039",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57039_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora2html",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
@@ -1769,6 +2569,8 @@
       "work_id": "57039",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57039_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-epub3",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
@@ -1799,6 +2601,8 @@
       "work_id": "57039",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57039_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-rs",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
@@ -1829,6 +2633,8 @@
       "work_id": "57040",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57040_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora2html",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
@@ -1859,6 +2665,8 @@
       "work_id": "57040",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57040_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-epub3",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
@@ -1889,6 +2697,8 @@
       "work_id": "57040",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57040_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-rs",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
@@ -1919,6 +2729,8 @@
       "work_id": "57041",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57041_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora2html",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
@@ -1949,6 +2761,8 @@
       "work_id": "57041",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57041_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-epub3",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
@@ -1979,6 +2793,8 @@
       "work_id": "57041",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57041_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-rs",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
@@ -2009,6 +2825,8 @@
       "work_id": "57042",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57042_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora2html",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
@@ -2039,6 +2857,8 @@
       "work_id": "57042",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57042_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-epub3",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
@@ -2069,6 +2889,8 @@
       "work_id": "57042",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57042_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-rs",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
@@ -2099,6 +2921,8 @@
       "work_id": "57043",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57043_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora2html",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
@@ -2129,6 +2953,8 @@
       "work_id": "57043",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57043_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-epub3",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
@@ -2159,6 +2985,8 @@
       "work_id": "57043",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57043_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-rs",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
@@ -2189,6 +3017,8 @@
       "work_id": "57044",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57044_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora2html",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
@@ -2219,6 +3049,8 @@
       "work_id": "57044",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57044_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-epub3",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
@@ -2249,6 +3081,8 @@
       "work_id": "57044",
       "title": "書簡 大杉栄宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57044_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-rs",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
@@ -2279,6 +3113,8 @@
       "work_id": "57046",
       "title": "書簡 木村荘太宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57046_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora2html",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
@@ -2309,6 +3145,8 @@
       "work_id": "57046",
       "title": "書簡 木村荘太宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57046_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-epub3",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "different",
@@ -2339,6 +3177,8 @@
       "work_id": "57046",
       "title": "書簡 木村荘太宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57046_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-rs",
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
@@ -2366,6 +3206,8 @@
       "work_id": "57047",
       "title": "書簡 武部ツタ宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57047_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora2html",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
@@ -2396,6 +3238,8 @@
       "work_id": "57047",
       "title": "書簡 武部ツタ宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57047_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-epub3",
       "paragraph_origin_bucket": "adapter_over_segmented",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
@@ -2426,6 +3270,8 @@
       "work_id": "57047",
       "title": "書簡 武部ツタ宛",
       "tei_eaj_file": "data/complete/tei_lib_lv3/57047_tei.xml",
+      "level": null,
+      "state": null,
       "adapter": "aozora-rs",
       "paragraph_origin_bucket": "aligned",
       "body_text_match_bucket": "ruby_expanded_parenless_equal",
@@ -2447,6 +3293,136 @@
       "reasons": [
         "missing required parser evidence: aozora2, aozora",
         "ruby-expanded surfaces are diagnostic only, not plaintext"
+      ]
+    },
+    {
+      "work_id": null,
+      "title": "源氏物語 第1冊",
+      "tei_eaj_file": "data/draft/tei_lib_lv2/01.xml",
+      "level": "Level 2",
+      "state": "draft",
+      "adapter": "missing",
+      "paragraph_origin_bucket": "not_evaluated",
+      "body_text_match_bucket": "not_evaluated",
+      "classifications": [
+        "evidence_gap"
+      ],
+      "blocking_owners": [
+        "evidence"
+      ],
+      "evidence": {
+        "skip_reason": "no_materializable_aat",
+        "classification_notes": [
+          "no AAT evidence found for this TEI-EAJ work ID"
+        ]
+      },
+      "reasons": [
+        "skipped matrix entry: no_materializable_aat",
+        "no AAT evidence found for this TEI-EAJ work ID"
+      ]
+    },
+    {
+      "work_id": null,
+      "title": "源氏物語 第2冊",
+      "tei_eaj_file": "data/draft/tei_lib_lv2/02.xml",
+      "level": "Level 2",
+      "state": "draft",
+      "adapter": "missing",
+      "paragraph_origin_bucket": "not_evaluated",
+      "body_text_match_bucket": "not_evaluated",
+      "classifications": [
+        "evidence_gap"
+      ],
+      "blocking_owners": [
+        "evidence"
+      ],
+      "evidence": {
+        "skip_reason": "no_materializable_aat",
+        "classification_notes": [
+          "no AAT evidence found for this TEI-EAJ work ID"
+        ]
+      },
+      "reasons": [
+        "skipped matrix entry: no_materializable_aat",
+        "no AAT evidence found for this TEI-EAJ work ID"
+      ]
+    },
+    {
+      "work_id": null,
+      "title": "Title",
+      "tei_eaj_file": "data/draft/tei_lib_lv2/yosano_genji_kiritsubo_ids.xml",
+      "level": "Level 2",
+      "state": "draft",
+      "adapter": "missing",
+      "paragraph_origin_bucket": "not_evaluated",
+      "body_text_match_bucket": "not_evaluated",
+      "classifications": [
+        "evidence_gap"
+      ],
+      "blocking_owners": [
+        "evidence"
+      ],
+      "evidence": {
+        "skip_reason": "no_materializable_aat",
+        "classification_notes": [
+          "no AAT evidence found for this TEI-EAJ work ID"
+        ]
+      },
+      "reasons": [
+        "skipped matrix entry: no_materializable_aat",
+        "no AAT evidence found for this TEI-EAJ work ID"
+      ]
+    },
+    {
+      "work_id": null,
+      "title": "勢理客村湧川親雲上勤職書",
+      "tei_eaj_file": "data/etc/Curriculum vitae of Wakugawa Pēchin, Jitchaku Village.xml",
+      "level": null,
+      "state": "etc",
+      "adapter": "missing",
+      "paragraph_origin_bucket": "not_evaluated",
+      "body_text_match_bucket": "not_evaluated",
+      "classifications": [
+        "evidence_gap"
+      ],
+      "blocking_owners": [
+        "evidence"
+      ],
+      "evidence": {
+        "skip_reason": "no_materializable_aat",
+        "classification_notes": [
+          "no AAT evidence found for this TEI-EAJ work ID"
+        ]
+      },
+      "reasons": [
+        "skipped matrix entry: no_materializable_aat",
+        "no AAT evidence found for this TEI-EAJ work ID"
+      ]
+    },
+    {
+      "work_id": null,
+      "title": "校異源氏物語・きりつぼ",
+      "tei_eaj_file": "data/etc/校異源氏物語_header更新版.xml",
+      "level": null,
+      "state": "etc",
+      "adapter": "missing",
+      "paragraph_origin_bucket": "not_evaluated",
+      "body_text_match_bucket": "not_evaluated",
+      "classifications": [
+        "evidence_gap"
+      ],
+      "blocking_owners": [
+        "evidence"
+      ],
+      "evidence": {
+        "skip_reason": "no_materializable_aat",
+        "classification_notes": [
+          "no AAT evidence found for this TEI-EAJ work ID"
+        ]
+      },
+      "reasons": [
+        "skipped matrix entry: no_materializable_aat",
+        "no AAT evidence found for this TEI-EAJ work ID"
       ]
     }
   ]

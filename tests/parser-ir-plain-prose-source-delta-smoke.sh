@@ -9,18 +9,29 @@ admission_summary="$out_dir/admission.summary.json"
 matrix_summary="$out_dir/matrix.summary.json"
 structural_summary="$out_dir/structural.summary.json"
 source_summary="$out_dir/source.summary.json"
+failing_source_summary="$out_dir/source-failing.summary.json"
 mapping_file="$out_dir/mapping.json"
 summary_json="$out_dir/plain-prose-delta.summary.json"
 report_md="$out_dir/plain-prose-delta.md"
 strict_summary_json="$out_dir/plain-prose-delta-strict.summary.json"
 strict_report_md="$out_dir/plain-prose-delta-strict.md"
 strict_stderr="$out_dir/plain-prose-delta-strict.stderr"
+failing_summary_json="$out_dir/plain-prose-delta-source-failing.summary.json"
+failing_report_md="$out_dir/plain-prose-delta-source-failing.md"
 
 cat > "$source_summary" <<'JSON'
 {
   "gate_status": "SOURCE_AUTHORITY_GATE_PASS",
   "works_scanned": 17894,
   "unallowlisted_unknown_markers_total": 0
+}
+JSON
+
+cat > "$failing_source_summary" <<'JSON'
+{
+  "gate_status": "SOURCE_AUTHORITY_GATE_FAIL",
+  "works_scanned": 17894,
+  "unallowlisted_unknown_markers_total": 2
 }
 JSON
 
@@ -67,7 +78,22 @@ JSON
 cat > "$structural_summary" <<'JSON'
 {
   "schema_version": "tei-eaj-structural-expansion-v1",
-  "rows": []
+  "rows": [
+    {
+      "tei": {
+        "work_id": "w3",
+        "title": "Skipped fixture row",
+        "tei_eaj_file": "data/plain/no-id.xml",
+        "level": "Level 3",
+        "state": "draft"
+      },
+      "classification": {
+        "notes": [
+          "fixture structural note for skipped row"
+        ]
+      }
+    }
+  ]
 }
 JSON
 
@@ -168,18 +194,39 @@ jq -e '.required_parsers == ["aozora2html", "aozora-epub3", "aozora-rs", "aozora
 jq -e '.mapping.mapping_id == "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe"' "$summary_json"
 jq -e '.parser_evidence_coverage.verdict == "FIVE_PARSER_EVIDENCE_INCOMPLETE"' "$summary_json"
 jq -e '.parser_evidence_coverage.missing_parsers == ["aozora"]' "$summary_json"
-jq -e '.parser_evidence_coverage.rows_missing_required_parser_evidence == 2' "$summary_json"
+jq -e '.source_authority_gate.gate_status == "SOURCE_AUTHORITY_GATE_PASS"' "$summary_json"
+jq -e '.parser_evidence_coverage.row_entries_missing_required_parser_evidence == 5' "$summary_json"
+jq -e '.parser_evidence_coverage.work_files_missing_required_parser_evidence == 2' "$summary_json"
+jq -e '.parser_evidence_coverage.rows_missing_required_parser_evidence == 5' "$summary_json"
 jq -e '.classification_counts.adapter_paragraph_bug == 1' "$summary_json"
 jq -e '.classification_counts.ruby_metadata_not_plaintext == 1' "$summary_json"
 jq -e '.classification_counts.source_note_metadata_excluded == 1' "$summary_json"
 jq -e '.classification_counts.source_text_policy_required == 1' "$summary_json"
 jq -e '.classification_counts.missing_parser_evidence == 5' "$summary_json"
+jq -e '.classification_counts.evidence_gap == 1' "$summary_json"
 jq -e '.blocking_owners == ["adapter", "evidence", "policy"]' "$summary_json"
 jq -e '[.rows[] | select((.blocking_owners | index("adapter")) and (.blocking_owners | index("evidence")))] | length >= 1' "$summary_json"
 jq -e '[.rows[] | select(.classifications | index("ruby_metadata_not_plaintext"))] | length == 1' "$summary_json"
 jq -e '[.rows[] | select(.classifications | index("source_note_metadata_excluded"))] | length == 1' "$summary_json"
-jq -e '[.rows[] | select(.blocking_owners == ["evidence"])] | length == 1' "$summary_json"
+jq -e '[.rows[] | select(.classifications == ["missing_parser_evidence"] and .blocking_owners == ["evidence"])] | length == 1' "$summary_json"
 jq -e '[.rows[] | select((.classifications | index("adapter_paragraph_bug")) and (.classifications | index("missing_parser_evidence")))] | length == 1' "$summary_json"
+jq -e '[.rows[] | select(.adapter == "missing" and (.classifications == ["evidence_gap"]) and (.evidence.skip_reason == "no_materializable_aat") and (.title == "Skipped fixture row") and (.level == "Level 3") and (.state == "draft"))] | length == 1' "$summary_json"
+jq -e '[.rows[] | select(.adapter == "missing")] | length == 1' "$summary_json"
+
+python3 "$repo_root/reports/parser-ir/plain-prose-source-delta.py" \
+  --admission-summary "$admission_summary" \
+  --matrix-summary "$matrix_summary" \
+  --structural-summary "$structural_summary" \
+  --source-summary "$failing_source_summary" \
+  --mapping "$mapping_file" \
+  --summary-json "$failing_summary_json" \
+  --report-md "$failing_report_md" \
+  --allow-missing-parser-evidence
+
+jq -e '.source_authority_gate.gate_status == "SOURCE_AUTHORITY_GATE_FAIL"' "$failing_summary_json"
+jq -e '[.rows[] | select(.classifications | index("evidence_gap"))] | length == 6' "$failing_summary_json"
+jq -e '[.rows[] | select(.blocking_owners | index("evidence"))] | length == 6' "$failing_summary_json"
+jq -e '[.rows[] | select(any(.reasons[]; . == "source authority gate did not pass"))] | length == 6' "$failing_summary_json"
 
 rg -n 'FIVE_PARSER_EVIDENCE_INCOMPLETE' "$report_md"
 rg -n 'ruby_metadata_not_plaintext' "$report_md"

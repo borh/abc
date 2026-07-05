@@ -105,8 +105,47 @@ def row_key(row: dict[str, Any]) -> tuple[str, str]:
     return (str(row.get("work_id") or "unknown"), str(row.get("tei_eaj_file") or "unknown"))
 
 
+def work_file_key(row: dict[str, Any]) -> tuple[str, str]:
+    return (str(row.get("work_id") or "unknown"), str(row.get("tei_eaj_file") or "unknown"))
+
+
 def sorted_owners(owners: set[str]) -> list[str]:
     return sorted(owners, key=lambda owner: (OWNER_ORDER.get(owner, 99), owner))
+
+
+def structural_rows_by_file(structural: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    rows = structural.get("rows", [])
+    if not isinstance(rows, list):
+        return {}
+    by_file: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        tei = row.get("tei")
+        if not isinstance(tei, dict):
+            continue
+        tei_eaj_file = tei.get("tei_eaj_file")
+        if tei_eaj_file:
+            by_file[str(tei_eaj_file)] = row
+    return by_file
+
+
+def load_source_authority_gate(
+    admission: dict[str, Any], source: dict[str, Any]
+) -> tuple[dict[str, Any], bool, str | None]:
+    source_gate = source.get("source_authority_gate") if isinstance(source.get("source_authority_gate"), dict) else source
+    if not isinstance(source_gate, dict):
+        source_gate = {}
+    if not source_gate:
+        admission_gate = admission.get("source_authority_gate")
+        if isinstance(admission_gate, dict):
+            source_gate = admission_gate
+
+    gate_status = source_gate.get("gate_status")
+    unknown_total = source_gate.get("unallowlisted_unknown_markers_total")
+    gate_failed = gate_status != "SOURCE_AUTHORITY_GATE_PASS" or unknown_total not in (0, "0")
+    reason = "source authority gate did not pass" if gate_failed else None
+    return source_gate, gate_failed, reason
 
 
 def classify_text(row: dict[str, Any]) -> tuple[list[str], set[str], list[str]]:
@@ -173,6 +212,8 @@ def classify_row(row: dict[str, Any], missing_for_row: list[str]) -> dict[str, A
         "work_id": row.get("work_id"),
         "title": row.get("title"),
         "tei_eaj_file": row.get("tei_eaj_file"),
+        "level": row.get("level"),
+        "state": row.get("state"),
         "adapter": row_adapter(row),
         "paragraph_origin_bucket": origin,
         "body_text_match_bucket": text_bucket,
@@ -184,6 +225,70 @@ def classify_row(row: dict[str, Any], missing_for_row: list[str]) -> dict[str, A
         },
         "reasons": reasons,
     }
+
+
+def classify_skipped_row(
+    skipped: dict[str, Any], structural_row: dict[str, Any] | None
+) -> dict[str, Any]:
+    tei = structural_row.get("tei") if isinstance(structural_row, dict) else {}
+    classification = structural_row.get("classification") if isinstance(structural_row, dict) else {}
+    notes = classification.get("notes") if isinstance(classification, dict) else None
+    skip_reason = skipped.get("reason") or "unknown"
+    reasons = [f"skipped matrix entry: {skip_reason}"]
+    if isinstance(notes, list):
+        reasons.extend(str(note) for note in notes if note)
+
+    return {
+        "work_id": tei.get("work_id"),
+        "title": tei.get("title"),
+        "tei_eaj_file": skipped.get("tei_eaj_file"),
+        "level": tei.get("level"),
+        "state": tei.get("state"),
+        "adapter": "missing",
+        "paragraph_origin_bucket": "not_evaluated",
+        "body_text_match_bucket": "not_evaluated",
+        "classifications": ["evidence_gap"],
+        "blocking_owners": ["evidence"],
+        "evidence": {
+            "skip_reason": skip_reason,
+            "classification_notes": notes if isinstance(notes, list) else [],
+        },
+        "reasons": reasons,
+    }
+
+
+def apply_source_authority_gate(
+    rows: list[dict[str, Any]], gate_failed: bool, reason: str | None
+) -> list[dict[str, Any]]:
+    if not gate_failed or not reason:
+        return rows
+
+    updated: list[dict[str, Any]] = []
+    for row in rows:
+        classifications = list(row.get("classifications", []))
+        if "evidence_gap" not in classifications:
+            classifications.append("evidence_gap")
+
+        owners = set(row.get("blocking_owners", []))
+        owners.add("evidence")
+
+        reasons = list(row.get("reasons", []))
+        if reason not in reasons:
+            reasons.append(reason)
+
+        evidence = dict(row.get("evidence", {}))
+        evidence["source_authority_gate_reason"] = reason
+
+        updated.append(
+            {
+                **row,
+                "classifications": classifications,
+                "blocking_owners": sorted_owners(owners),
+                "evidence": evidence,
+                "reasons": reasons,
+            }
+        )
+    return updated
 
 
 def parser_evidence_coverage(
@@ -199,16 +304,19 @@ def parser_evidence_coverage(
         key: [parser for parser in REQUIRED_PARSERS if parser not in adapters]
         for key, adapters in adapters_by_row.items()
     }
-    rows_missing = sum(1 for missing in missing_by_row.values() if missing)
+    work_files_missing = sum(1 for missing in missing_by_row.values() if missing)
+    row_entries_missing = sum(1 for row in rows if missing_by_row.get(row_key(row)))
     verdict = "FIVE_PARSER_EVIDENCE_COMPLETE"
-    if missing_global or rows_missing:
+    if missing_global or row_entries_missing:
         verdict = "FIVE_PARSER_EVIDENCE_INCOMPLETE"
     return (
         {
             "verdict": verdict,
             "observed_rows_by_parser": dict(sorted(observed_rows_by_parser.items())),
             "missing_parsers": missing_global,
-            "rows_missing_required_parser_evidence": rows_missing,
+            "row_entries_missing_required_parser_evidence": row_entries_missing,
+            "work_files_missing_required_parser_evidence": work_files_missing,
+            "rows_missing_required_parser_evidence": row_entries_missing,
         },
         missing_by_row,
     )
@@ -222,25 +330,38 @@ def build_summary(
     mapping: dict[str, Any],
     allow_missing_parser_evidence: bool,
 ) -> dict[str, Any]:
-    del structural
+    structural_by_file = structural_rows_by_file(structural)
+    source_authority_gate, source_gate_failed, source_gate_reason = load_source_authority_gate(
+        admission, source
+    )
     plain_rows = [row for row in matrix.get("rows", []) if row_profile(row) == "plain_prose"]
     coverage, missing_by_row = parser_evidence_coverage(plain_rows)
     if coverage["verdict"] != "FIVE_PARSER_EVIDENCE_COMPLETE" and not allow_missing_parser_evidence:
         raise SystemExit("missing parser evidence; rerun with --allow-missing-parser-evidence for exploratory report")
-    classified = [classify_row(row, missing_by_row.get(row_key(row), [])) for row in plain_rows]
+    classified_rows = [classify_row(row, missing_by_row.get(row_key(row), [])) for row in plain_rows]
+    skipped_rows = [
+        classify_skipped_row(skipped, structural_by_file.get(str(skipped.get("tei_eaj_file") or "")))
+        for skipped in matrix.get("skipped", [])
+        if isinstance(skipped, dict)
+    ]
+    classified = apply_source_authority_gate(
+        classified_rows + skipped_rows,
+        source_gate_failed,
+        source_gate_reason,
+    )
     classification_counts = Counter(
         classification for row in classified for classification in row["classifications"]
     )
     owner_counts = Counter(owner for row in classified for owner in row["blocking_owners"])
-    works = {row_key(row) for row in plain_rows}
+    works = {work_file_key(row) for row in classified}
     return {
         "schema_version": SCHEMA_VERSION,
         "required_parsers": list(REQUIRED_PARSERS),
         "parser_evidence_coverage": coverage,
-        "source_authority_gate": admission.get("source_authority_gate") or source,
+        "source_authority_gate": source_authority_gate,
         "mapping": require_mapping(admission, mapping),
         "plain_prose_scope": {
-            "rows_total": len(plain_rows),
+            "rows_total": len(classified),
             "works_total": len(works),
         },
         "classification_counts": dict(sorted(classification_counts.items())),

@@ -168,6 +168,39 @@ fn slices_constructs_in_upstream_sanitized_coordinate_space() {
 }
 
 #[test]
+fn strips_aozora_header_legend_and_footer_from_aat_body() {
+    let source = [
+        "三つの宝",
+        "芥川龍之介",
+        "",
+        "-------------------------------------------------------",
+        "【テキスト中に現れる記号について】",
+        "",
+        "《》：ルビ",
+        "（例）青梅《おうめ》",
+        "-------------------------------------------------------",
+        "",
+        "本文｜青梅《おうめ》後",
+        "",
+        "底本：テスト",
+        "入力：テスト",
+    ]
+    .join("\n");
+    let aat = run_aat(&source);
+    let content = paragraph_content(&aat);
+    let kinds = content
+        .iter()
+        .map(|node| node["kind"].as_str().unwrap())
+        .collect::<Vec<_>>();
+
+    assert_eq!(kinds, ["text", "ruby", "text"]);
+    assert_eq!(content[0]["value"], "本文");
+    assert_eq!(content[1]["base"], "青梅");
+    assert_eq!(content[1]["reading"], "おうめ");
+    assert_eq!(content[2]["value"], "後");
+}
+
+#[test]
 fn normalizes_upstream_style_and_tcy_nodes_to_typed_aat() {
     let aat =
         run_aat("あた［＃「あた」に傍点］人物［＃「人物」は太字］昭和10［＃「10」は縦中横］年");

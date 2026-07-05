@@ -65,7 +65,7 @@ pub fn decode_source_bytes(bytes: &[u8]) -> Result<DecodedSource> {
     let source_hash = format!("sha256:{}", hex_sha256(bytes));
     if bytes.starts_with(&[0xef, 0xbb, 0xbf]) {
         let text = std::str::from_utf8(&bytes[3..])?.to_owned();
-        let span_text = sanitize_aozora_source(&text).text.into_owned();
+        let span_text = sanitize_for_aat(&text);
         return Ok(DecodedSource {
             text,
             span_text,
@@ -75,7 +75,7 @@ pub fn decode_source_bytes(bytes: &[u8]) -> Result<DecodedSource> {
     }
     if let Ok(text) = std::str::from_utf8(bytes) {
         let text = text.to_owned();
-        let span_text = sanitize_aozora_source(&text).text.into_owned();
+        let span_text = sanitize_for_aat(&text);
         return Ok(DecodedSource {
             text,
             span_text,
@@ -85,7 +85,7 @@ pub fn decode_source_bytes(bytes: &[u8]) -> Result<DecodedSource> {
     }
     let (cow, _, had_errors) = SHIFT_JIS.decode(bytes);
     let text = cow.into_owned();
-    let span_text = sanitize_aozora_source(&text).text.into_owned();
+    let span_text = sanitize_for_aat(&text);
     Ok(DecodedSource {
         text,
         span_text,
@@ -95,6 +95,75 @@ pub fn decode_source_bytes(bytes: &[u8]) -> Result<DecodedSource> {
             "windows-31j"
         },
         source_hash,
+    })
+}
+
+fn sanitize_for_aat(text: &str) -> String {
+    let sanitized = sanitize_aozora_source(text).text.into_owned();
+    aozora_body_text(&sanitized).to_owned()
+}
+
+fn aozora_body_text(source: &str) -> &str {
+    let mut separators = Vec::new();
+    let mut start = 0_usize;
+    for line in source.split_inclusive('\n') {
+        let end = start + line.len();
+        if is_aozora_separator(line) {
+            separators.push((start, end));
+        }
+        start = end;
+    }
+
+    let mut body_start = 0_usize;
+    if separators.len() >= 2 {
+        let legend = &source[separators[0].1..separators[1].0];
+        if legend.contains("テキスト中に現れる記号について") || legend.contains("《》：ルビ")
+        {
+            body_start = skip_blank_lines(source, separators[1].1);
+        }
+    }
+
+    let mut body_end = source.len();
+    for (line_start, line) in lines_from(source, body_start) {
+        if line.trim_start().starts_with("底本：") {
+            body_end = trim_trailing_blank_lines(source, line_start);
+            break;
+        }
+    }
+
+    &source[body_start..body_end]
+}
+
+fn is_aozora_separator(line: &str) -> bool {
+    let trimmed = line.trim();
+    trimmed.len() >= 10 && trimmed.chars().all(|ch| ch == '-')
+}
+
+fn skip_blank_lines(source: &str, mut offset: usize) -> usize {
+    while let Some(line) = source[offset..].split_inclusive('\n').next() {
+        if !line.trim().is_empty() {
+            break;
+        }
+        offset += line.len();
+        if offset >= source.len() {
+            break;
+        }
+    }
+    offset
+}
+
+fn trim_trailing_blank_lines(source: &str, offset: usize) -> usize {
+    source[..offset]
+        .trim_end_matches(|ch| ch == '\n' || ch == '\r')
+        .len()
+}
+
+fn lines_from(source: &str, offset: usize) -> impl Iterator<Item = (usize, &str)> {
+    let mut cursor = offset;
+    source[offset..].split_inclusive('\n').map(move |line| {
+        let start = cursor;
+        cursor += line.len();
+        (start, line)
     })
 }
 

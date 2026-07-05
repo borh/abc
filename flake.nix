@@ -849,6 +849,7 @@
               nativeBuildInputs = [
                 sourceInventoryBin
                 pkgs.jq
+                pkgs.ripgrep
               ];
             }
             ''

@@ -18,7 +18,7 @@ cat > "$out_dir/corpus/cards/000001/files/1.txt" <<'TXT'
 TXT
 
 cat > "$out_dir/corpus/cards/000002/files/2.txt" <<'TXT'
-［＃未知の注記］
+［＃fixture-unreviewed-marker］
 TXT
 
 cat > "$out_dir/index.json" <<'JSON'
@@ -46,8 +46,8 @@ jq -e '.allowlisted_unknown_markers_total == 0' "$out_dir/source-inventory.json"
 jq -e '.gate_status == "SOURCE_AUTHORITY_GATE_FAILING_REVIEW_REQUIRED"' "$out_dir/source-inventory.json"
 jq -e '.unknown_classes_total == 1' "$out_dir/source-inventory.json"
 jq -e '.unknown_classes_truncated == false' "$out_dir/source-inventory.json"
-jq -e 'any(.unknown_examples[]; .kind == "CommandFullwidth" and .raw == "［＃未知の注記］")' "$out_dir/source-inventory.json"
-jq -e 'any(.unknown_classes[]; .kind == "CommandFullwidth" and .raw == "［＃未知の注記］" and .unallowlisted_occurrences == 1)' "$out_dir/source-inventory.json"
+jq -e 'any(.unknown_examples[]; .kind == "CommandFullwidth" and .raw == "［＃fixture-unreviewed-marker］")' "$out_dir/source-inventory.json"
+jq -e 'any(.unknown_classes[]; .kind == "CommandFullwidth" and .raw == "［＃fixture-unreviewed-marker］" and .unallowlisted_occurrences == 1)' "$out_dir/source-inventory.json"
 jq -e '.rows["ruby.basic"].occurrences >= 1' "$out_dir/source-inventory.json"
 jq -e '.rows["gaiji.marker"].occurrences >= 1' "$out_dir/source-inventory.json"
 jq -e '.rows["layout.yokogumi"].occurrences >= 1' "$out_dir/source-inventory.json"

@@ -3,9 +3,9 @@
   "works_scanned": 17894,
   "works_failed": 0,
   "markers_total": 4323915,
-  "unknown_markers_total": 15130,
-  "unallowlisted_unknown_markers_total": 260,
-  "allowlisted_unknown_markers_total": 14870,
+  "unknown_markers_total": 15125,
+  "unallowlisted_unknown_markers_total": 241,
+  "allowlisted_unknown_markers_total": 14884,
   "rows": {
     "accent.dotted_letter": {
       "works_with_marker": 3,
@@ -29,7 +29,7 @@
     },
     "annotation.chuuki": {
       "works_with_marker": 5508,
-      "occurrences": 35358,
+      "occurrences": 35359,
       "sample_works": [
         "000005_53194",
         "000006_1869",
@@ -335,7 +335,7 @@
     },
     "indentation.jisage_block": {
       "works_with_marker": 4607,
-      "occurrences": 94991,
+      "occurrences": 94993,
       "sample_works": [
         "000005_5",
         "000005_53194",
@@ -412,7 +412,7 @@
     },
     "layout.multicolumn": {
       "works_with_marker": 26,
-      "occurrences": 72,
+      "occurrences": 73,
       "sample_works": [
         "000035_1566",
         "000042_2471",
@@ -500,7 +500,7 @@
     },
     "structure.quote_block": {
       "works_with_marker": 6,
-      "occurrences": 20,
+      "occurrences": 21,
       "sample_works": [
         "000034_233",
         "000035_296",
@@ -539,39 +539,9 @@
       ]
     }
   },
-  "unknown_classes_total": 252,
+  "unknown_classes_total": 247,
   "unknown_classes_truncated": false,
   "unknown_classes": [
-    {
-      "kind": "MalformedAccentNotation",
-      "raw": "〔",
-      "body": "〔",
-      "occurrences": 6,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 6,
-      "sample_works": [
-        "000091_522",
-        "000311_16002",
-        "001341_60380",
-        "001341_60385",
-        "001404_49966"
-      ]
-    },
-    {
-      "kind": "MalformedCommand",
-      "raw": "［＃",
-      "body": "［＃",
-      "occurrences": 6,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 6,
-      "sample_works": [
-        "000081_4461",
-        "000106_2415",
-        "000121_1754",
-        "000148_798",
-        "000331_2663"
-      ]
-    },
     {
       "kind": "CommandFullwidth",
       "raw": "［＃現代語訳「さびしい林の中の草の庵にひとり坐して暁をむかえると、折から仏・法・僧の三宝を唱える一羽の鳥の声を聞いた。一羽の鳥ですらすでに三宝を唱える声があるのだから、これを聞く自分にも、これに応じて仏心を発揮する心がある。有情の鳥声・人心、非情の行雲・流水、すべてこの山にあるものは法身如来の仏徳を開顕して悟りの境地に入っている」］",
@@ -828,28 +798,6 @@
     },
     {
       "kind": "CommandFullwidth",
-      "raw": "［＃ここか３字下げ］",
-      "body": "ここか３字下げ",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000305_42171"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここで地下げ終わり］",
-      "body": "ここで地下げ終わり",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000162_4649"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
       "raw": "［＃ここで字下げ、横書き終わり］",
       "body": "ここで字下げ、横書き終わり",
       "occurrences": 1,
@@ -879,28 +827,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000083_1362"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここで引用文終わり］",
-      "body": "ここで引用文終わり",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000989_351"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここで段組、罫囲み終わり］",
-      "body": "ここで段組、罫囲み終わり",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000308_46589"
       ]
     },
     {
@@ -1011,17 +937,6 @@
       "unallowlisted_occurrences": 1,
       "sample_works": [
         "000250_18353"
-      ]
-    },
-    {
-      "kind": "CommandFullwidth",
-      "raw": "［＃ルビは「？符」に掛かる］",
-      "body": "ルビは「？符」に掛かる",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000096_2117"
       ]
     },
     {
@@ -3258,28 +3173,6 @@
       ]
     },
     {
-      "kind": "MalformedGaiji",
-      "raw": "※［＃",
-      "body": "※［＃",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "000271_1556"
-      ]
-    },
-    {
-      "kind": "MalformedImplicitRuby",
-      "raw": "《",
-      "body": "《",
-      "occurrences": 1,
-      "allowlisted_occurrences": 0,
-      "unallowlisted_occurrences": 1,
-      "sample_works": [
-        "JISTABLE"
-      ]
-    },
-    {
       "kind": "CommandFullwidth",
       "raw": "［＃］",
       "body": "",
@@ -3338,6 +3231,58 @@
         "000026_51893",
         "000026_55774"
       ]
+    },
+    {
+      "kind": "MalformedAccentNotation",
+      "raw": "〔",
+      "body": "〔",
+      "occurrences": 6,
+      "allowlisted_occurrences": 6,
+      "unallowlisted_occurrences": 0,
+      "sample_works": [
+        "000091_522",
+        "000311_16002",
+        "001341_60380",
+        "001341_60385",
+        "001404_49966"
+      ]
+    },
+    {
+      "kind": "MalformedCommand",
+      "raw": "［＃",
+      "body": "［＃",
+      "occurrences": 6,
+      "allowlisted_occurrences": 6,
+      "unallowlisted_occurrences": 0,
+      "sample_works": [
+        "000081_4461",
+        "000106_2415",
+        "000121_1754",
+        "000148_798",
+        "000331_2663"
+      ]
+    },
+    {
+      "kind": "MalformedGaiji",
+      "raw": "※［＃",
+      "body": "※［＃",
+      "occurrences": 1,
+      "allowlisted_occurrences": 1,
+      "unallowlisted_occurrences": 0,
+      "sample_works": [
+        "000271_1556"
+      ]
+    },
+    {
+      "kind": "MalformedImplicitRuby",
+      "raw": "《",
+      "body": "《",
+      "occurrences": 1,
+      "allowlisted_occurrences": 1,
+      "unallowlisted_occurrences": 0,
+      "sample_works": [
+        "JISTABLE"
+      ]
     }
   ],
   "unknown_examples": [
@@ -3356,32 +3301,11 @@
       "body": "印刷不鮮明、87-14"
     },
     {
-      "work_id": "000081_4461",
-      "line": 10,
-      "kind": "MalformedCommand",
-      "raw": "［＃",
-      "body": "［＃"
-    },
-    {
       "work_id": "000083_1362",
       "line": 61,
       "kind": "CommandFullwidth",
       "raw": "［＃ここで字下げ終わり」］",
       "body": "ここで字下げ終わり」"
-    },
-    {
-      "work_id": "000091_522",
-      "line": 2522,
-      "kind": "MalformedAccentNotation",
-      "raw": "〔",
-      "body": "〔"
-    },
-    {
-      "work_id": "000091_522",
-      "line": 2524,
-      "kind": "MalformedAccentNotation",
-      "raw": "〔",
-      "body": "〔"
     },
     {
       "work_id": "000096_1115",
@@ -3412,32 +3336,11 @@
       "body": "波罫線"
     },
     {
-      "work_id": "000096_2117",
-      "line": 639,
-      "kind": "CommandFullwidth",
-      "raw": "［＃ルビは「？符」に掛かる］",
-      "body": "ルビは「？符」に掛かる"
-    },
-    {
-      "work_id": "000106_2415",
-      "line": 391,
-      "kind": "MalformedCommand",
-      "raw": "［＃",
-      "body": "［＃"
-    },
-    {
       "work_id": "000119_43813",
       "line": 279,
       "kind": "EditorialNoteBottomTextCorrection",
       "raw": "」は底本では「機會主義者」の左側に注記されています。\r\n入力：桑田康正\r\n校正：小林繁雄\r\n2005年1月20日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n",
       "body": "」は底本では「機會主義者」の左側に注記されています。\r\n入力：桑田康正\r\n校正：小林繁雄\r\n2005年1月20日作成\r\n青空文庫作成ファイル：\r\nこのファイルは、インターネットの図書館、青空文庫（http://www.aozora.gr.jp/）で作られました。入力、校正、制作にあたったのは、ボランティアの皆さんです。\r\n"
-    },
-    {
-      "work_id": "000121_1754",
-      "line": 174,
-      "kind": "MalformedCommand",
-      "raw": "［＃",
-      "body": "［＃"
     },
     {
       "work_id": "000124_46195",
@@ -3466,13 +3369,6 @@
       "kind": "EditorialNoteBottomTextCorrection",
       "raw": "」は底本では「amiticiae」］",
       "body": "」は底本では「amiticiae」］"
-    },
-    {
-      "work_id": "000148_798",
-      "line": 14,
-      "kind": "MalformedCommand",
-      "raw": "［＃",
-      "body": "［＃"
     },
     {
       "work_id": "000148_798",
@@ -3790,13 +3686,6 @@
       "body": "以降の「――」で始まる通信文の2行目以降は2字下げ"
     },
     {
-      "work_id": "000162_4649",
-      "line": 143,
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここで地下げ終わり］",
-      "body": "ここで地下げ終わり"
-    },
-    {
       "work_id": "000169_1273",
       "line": 684,
       "kind": "CommandFullwidth",
@@ -3881,13 +3770,6 @@
       "body": "（）内の文字全てに傍点、ただし読点をのぞく"
     },
     {
-      "work_id": "000271_1556",
-      "line": 137,
-      "kind": "MalformedGaiji",
-      "raw": "※［＃",
-      "body": "※［＃"
-    },
-    {
       "work_id": "000284_2226",
       "line": 13,
       "kind": "CommandFullwidth",
@@ -3951,32 +3833,11 @@
       "body": "罫線の部分は、「｛」「｝」で括る"
     },
     {
-      "work_id": "000305_42171",
-      "line": 42,
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここか３字下げ］",
-      "body": "ここか３字下げ"
-    },
-    {
       "work_id": "000305_43618",
       "line": 15,
       "kind": "CommandFullwidth",
       "raw": "［＃闇汁の図］",
       "body": "闇汁の図"
-    },
-    {
-      "work_id": "000308_46589",
-      "line": 99,
-      "kind": "CommandFullwidth",
-      "raw": "［＃ここで段組、罫囲み終わり］",
-      "body": "ここで段組、罫囲み終わり"
-    },
-    {
-      "work_id": "000311_16002",
-      "line": 185,
-      "kind": "MalformedAccentNotation",
-      "raw": "〔",
-      "body": "〔"
     },
     {
       "work_id": "000311_3149",
@@ -4040,18 +3901,102 @@
       "kind": "CommandFullwidth",
       "raw": "［＃この行は下に横組みで］",
       "body": "この行は下に横組みで"
+    },
+    {
+      "work_id": "000311_4212",
+      "line": 98,
+      "kind": "CommandFullwidth",
+      "raw": "［＃ここから罫仕切り、----で挾まれた部分が一つの仕切り内］",
+      "body": "ここから罫仕切り、----で挾まれた部分が一つの仕切り内"
+    },
+    {
+      "work_id": "000311_4212",
+      "line": 100,
+      "kind": "CommandFullwidth",
+      "raw": "［＃この行は枠の上に横書き］",
+      "body": "この行は枠の上に横書き"
+    },
+    {
+      "work_id": "000311_4212",
+      "line": 106,
+      "kind": "CommandFullwidth",
+      "raw": "［＃３つの「｛」は１つに繋がる］",
+      "body": "３つの「｛」は１つに繋がる"
+    },
+    {
+      "work_id": "000311_4212",
+      "line": 137,
+      "kind": "CommandFullwidth",
+      "raw": "［＃ここで罫仕切り終わり］",
+      "body": "ここで罫仕切り終わり"
+    },
+    {
+      "work_id": "000311_46236",
+      "line": 303,
+      "kind": "CommandFullwidth",
+      "raw": "［＃寿江］",
+      "body": "寿江"
+    },
+    {
+      "work_id": "000311_46236",
+      "line": 1384,
+      "kind": "CommandFullwidth",
+      "raw": "［＃本田道之］",
+      "body": "本田道之"
+    },
+    {
+      "work_id": "000311_46236",
+      "line": 1474,
+      "kind": "CommandFullwidth",
+      "raw": "［＃黒田鵬心］",
+      "body": "黒田鵬心"
+    },
+    {
+      "work_id": "000311_46236",
+      "line": 1734,
+      "kind": "CommandFullwidth",
+      "raw": "［＃小杉放庵］",
+      "body": "小杉放庵"
+    },
+    {
+      "work_id": "000311_46239",
+      "line": 34,
+      "kind": "CommandFullwidth",
+      "raw": "［＃武者小路実篤のペンネーム］",
+      "body": "武者小路実篤のペンネーム"
+    },
+    {
+      "work_id": "000311_46239",
+      "line": 141,
+      "kind": "CommandFullwidth",
+      "raw": "［＃大瀧菊子］",
+      "body": "大瀧菊子"
+    },
+    {
+      "work_id": "000311_46239",
+      "line": 264,
+      "kind": "CommandFullwidth",
+      "raw": "［＃百合子の実家］",
+      "body": "百合子の実家"
+    },
+    {
+      "work_id": "000311_46241",
+      "line": 1029,
+      "kind": "CommandFullwidth",
+      "raw": "［＃福地源一郎］",
+      "body": "福地源一郎"
     }
   ],
   "decode_failures": [],
   "representability": {
-    "typed_occurrences": 4570066,
-    "raw_preserved_occurrences": 45764,
+    "typed_occurrences": 4570068,
+    "raw_preserved_occurrences": 45767,
     "out_of_body_occurrences": 950,
-    "unsupported_occurrences": 13920,
+    "unsupported_occurrences": 13934,
     "needs_research_occurrences": 0
   },
   "strict_errors": [
-    "260 unallowlisted source markers"
+    "241 unallowlisted source markers"
   ],
   "inputs": {
     "matrix": "/home/bor/Projects/ab-validator/data/aozora-syntax-coverage.toml",

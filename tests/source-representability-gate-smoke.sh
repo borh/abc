@@ -13,6 +13,10 @@ fi
 
 cat > "$out_dir/corpus/pass/cards/000001/files/1.txt" <<'TXT'
 吾輩《わがはい》
+［＃ここで引用文終わり］
+［＃ここで段組、罫囲み終わり］
+［＃ここか３字下げ］
+［＃ルビは「？符」に掛かる］
 ［＃］：入力者注　主に外字の説明や、傍点の位置の指定
 [#fixture raw preserved]
 TXT
@@ -57,6 +61,10 @@ jq -e '.representability.raw_preserved_occurrences >= 1' "$out_dir/pass.json"
 jq -e '.representability.unsupported_occurrences >= 1' "$out_dir/pass.json"
 jq -e '.allowlisted_unknown_markers_total >= 2' "$out_dir/pass.json"
 jq -e '.unallowlisted_unknown_markers_total == 0' "$out_dir/pass.json"
+jq -e '.rows["structure.quote_block"].occurrences >= 1' "$out_dir/pass.json"
+jq -e '.rows["layout.multicolumn"].occurrences >= 1' "$out_dir/pass.json"
+jq -e '.rows["indentation.jisage_block"].occurrences >= 1' "$out_dir/pass.json"
+jq -e '.rows["annotation.chuuki"].occurrences >= 1' "$out_dir/pass.json"
 jq -e '.gate_status == "SOURCE_AUTHORITY_GATE_PASS"' "$out_dir/pass.json"
 rg -n "source-markup authority gate|Semantic TEI enrichment" "$out_dir/pass.md"
 

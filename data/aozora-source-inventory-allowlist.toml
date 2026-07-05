@@ -42,3 +42,35 @@ raw_pattern = "^［＃本文終わり］$"
 scope = "out_of_body"
 reason = "The marker separates body text from bibliographic/provenance metadata and is not itself body AAT."
 evidence = "scratch/ab-index.json:000009_226"
+
+[[allow]]
+id = "malformed-fullwidth-command-start"
+kind = "MalformedCommand"
+raw_pattern = "^［＃$"
+scope = "malformed_noise"
+reason = "The shared source scanner reached an unterminated fullwidth command start in corpus text; it is retained as reviewed malformed source noise, not a representable Aozora feature."
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+
+[[allow]]
+id = "malformed-fullwidth-gaiji-start"
+kind = "MalformedGaiji"
+raw_pattern = "^※［＃$"
+scope = "malformed_noise"
+reason = "The shared source scanner reached an unterminated gaiji command start in corpus text; it is retained as reviewed malformed source noise, not a representable Aozora feature."
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+
+[[allow]]
+id = "malformed-implicit-ruby-start"
+kind = "MalformedImplicitRuby"
+raw_pattern = "^《$"
+scope = "malformed_noise"
+reason = "The shared source scanner reached an unterminated implicit ruby start in corpus text; it is retained as reviewed malformed source noise, not a representable Aozora feature."
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"
+
+[[allow]]
+id = "malformed-accent-notation-start"
+kind = "MalformedAccentNotation"
+raw_pattern = "^〔$"
+scope = "malformed_noise"
+reason = "The shared source scanner reached an unterminated accent-notation start in corpus text; it is retained as reviewed malformed source noise, not a representable Aozora feature."
+evidence = "docs/superpowers/reports/2026-07-04-source-authority-representability.md"

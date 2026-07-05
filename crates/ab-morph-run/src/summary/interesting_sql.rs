@@ -281,18 +281,62 @@ feature_groups AS (
     )
 }
 
-fn feature_key_predicate(profile: WarehouseFeatureProfile) -> String {
-    match profile {
-        WarehouseFeatureProfile::Core => {
-            let keys = crate::summary::WAREHOUSE_CORE_FEATURE_KEYS
+fn feature_key_in_predicate(keys: &[String]) -> String {
+    let list = keys
+        .iter()
+        .map(|key| sql_literal(key))
+        .collect::<Vec<_>>()
+        .join(", ");
+    format!("f.feature_key IN ({list})")
+}
+
+/// The feature keys to aggregate: the fixed core set for `core`, the
+/// data's distinct keys (one cheap single-column scan) for `raw`. Returns
+/// `None` when no duckdb binary is available.
+fn discover_feature_keys(
+    run_dir: &Path,
+    features: &str,
+    profile: WarehouseFeatureProfile,
+) -> Result<Option<Vec<String>>> {
+    if profile == WarehouseFeatureProfile::Core {
+        return Ok(Some(
+            crate::summary::WAREHOUSE_CORE_FEATURE_KEYS
                 .iter()
-                .map(|key| sql_literal(key))
-                .collect::<Vec<_>>()
-                .join(", ");
-            format!("f.feature_key IN ({keys})")
-        }
-        _ => "TRUE".to_owned(),
+                .map(|key| (*key).to_owned())
+                .collect(),
+        ));
     }
+    let out = temp_output_path(run_dir, "feature-keys");
+    let sql = format!(
+        "{settings}\nCOPY (SELECT DISTINCT feature_key FROM read_parquet({features}) ORDER BY feature_key) TO {out} (FORMAT PARQUET, COMPRESSION ZSTD);",
+        settings = interesting_settings_sql(run_dir),
+        out = sql_literal(&out.display().to_string()),
+    );
+    if !run_duckdb_statement(run_dir, sql, "interestingness feature key discovery")? {
+        return Ok(None);
+    }
+    let mut keys = Vec::new();
+    for batch in read_warehouse_parquet_file(&out)? {
+        let column = column::<StringArray>(&batch, "feature_key")?;
+        for row in 0..batch.num_rows() {
+            keys.push(column.value(row).to_owned());
+        }
+    }
+    let _ = fs::remove_file(&out);
+    Ok(Some(keys))
+}
+
+/// Feature keys aggregated per duckdb invocation. The raw-profile
+/// aggregation over every key at once spilled past the temp disk (108GiB)
+/// on the full corpus: per-region signature groups across ~37 UniDic keys
+/// are simply too wide. Batching bounds the spill; results are identical
+/// because patterns never span feature keys.
+fn feature_key_batch_size() -> usize {
+    std::env::var("AB_INTERESTING_FEATURE_KEY_BATCH")
+        .ok()
+        .and_then(|value| value.parse().ok())
+        .filter(|batch: &usize| *batch > 0)
+        .unwrap_or(6)
 }
 
 fn seg_coverage_query(
@@ -341,13 +385,13 @@ fn feature_query(
     analyzers: &str,
     features: &str,
     filter: InterestingTextFilter,
-    profile: WarehouseFeatureProfile,
+    feature_predicate: &str,
     works_join: &str,
     rarity_key: &str,
     max_region_examples: usize,
 ) -> String {
     let base = base_regions_cte(regions, analyzers, filter, "r.has_feature_disagreement");
-    let groups = feature_groups_cte(features, &feature_key_predicate(profile));
+    let groups = feature_groups_cte(features, feature_predicate);
     let rollup = pattern_rollup_sql(
         "feature_source",
         "feature_key, scope_type, scope_position, scope_surface, sig",
@@ -573,8 +617,12 @@ pub(super) fn collect_patterns_duckdb(
     let features = duckdb_table_path_literal(run_dir, WarehouseTable::NwayFeatureDiffs);
     let (works_join, rarity_key) = rarity_sql(run_dir, rarity);
 
+    let Some(feature_keys) = discover_feature_keys(run_dir, &features, options.feature_profile)?
+    else {
+        return Ok(None);
+    };
+
     let seg_out = temp_output_path(run_dir, "seg");
-    let feat_out = temp_output_path(run_dir, "feat");
     let seg_body = seg_coverage_query(
         &regions,
         &analyzers,
@@ -583,30 +631,40 @@ pub(super) fn collect_patterns_duckdb(
         &rarity_key,
         options.max_region_examples,
     );
-    let feat_body = feature_query(
-        &regions,
-        &analyzers,
-        &features,
-        options.filter,
-        options.feature_profile,
-        &works_join,
-        &rarity_key,
-        options.max_region_examples,
-    );
     let sql = format!(
-        "{settings}\nCOPY ({seg_body}) TO {seg_out} (FORMAT PARQUET, COMPRESSION ZSTD);\nCOPY ({feat_body}) TO {feat_out} (FORMAT PARQUET, COMPRESSION ZSTD);",
+        "{settings}\nCOPY ({seg_body}) TO {seg_out} (FORMAT PARQUET, COMPRESSION ZSTD);",
         settings = interesting_settings_sql(run_dir),
         seg_out = sql_literal(&seg_out.display().to_string()),
-        feat_out = sql_literal(&feat_out.display().to_string()),
     );
     if !run_duckdb_statement(run_dir, sql, "interestingness pattern aggregation")? {
         return Ok(None);
     }
-
     let mut patterns = parse_seg_coverage_rows(&read_warehouse_parquet_file(&seg_out)?)?;
-    patterns.extend(parse_feature_rows(&read_warehouse_parquet_file(&feat_out)?)?);
     let _ = fs::remove_file(&seg_out);
-    let _ = fs::remove_file(&feat_out);
+
+    for (index, batch_keys) in feature_keys.chunks(feature_key_batch_size()).enumerate() {
+        let feat_out = temp_output_path(run_dir, &format!("feat-{index}"));
+        let feat_body = feature_query(
+            &regions,
+            &analyzers,
+            &features,
+            options.filter,
+            &feature_key_in_predicate(batch_keys),
+            &works_join,
+            &rarity_key,
+            options.max_region_examples,
+        );
+        let sql = format!(
+            "{settings}\nCOPY ({feat_body}) TO {feat_out} (FORMAT PARQUET, COMPRESSION ZSTD);",
+            settings = interesting_settings_sql(run_dir),
+            feat_out = sql_literal(&feat_out.display().to_string()),
+        );
+        if !run_duckdb_statement(run_dir, sql, "interestingness feature aggregation")? {
+            return Ok(None);
+        }
+        patterns.extend(parse_feature_rows(&read_warehouse_parquet_file(&feat_out)?)?);
+        let _ = fs::remove_file(&feat_out);
+    }
 
     // Deterministic pattern order regardless of DuckDB's group emission
     // order (ranking re-sorts, but rank tie-breaks read pattern order via

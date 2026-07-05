@@ -56,9 +56,12 @@ types.
 
 ABC uses the TEI-EAJ `aozora_tei` Level 2-5 vocabulary when discussing TEI
 depth. The current publication renderer is a source-preserving Level 2-oriented
-renderer with native TEI ruby and validation gates; it must not be described as
-Level 3 for prose works until parser-IR carries paragraph boundaries and source
-attribution/source-note blocks as producer-preserved structure.
+renderer with native TEI ruby and validation gates; generated Aozora ruby uses
+`type="furigana"` as the default jpn_classical-aligned heuristic while parser-IR
+remains the place to distinguish future non-furigana ruby classes. The renderer
+must not be described as Level 3 for prose works until parser-IR carries
+paragraph boundaries and source attribution/source-note blocks as
+producer-preserved structure.
 
 Japanese TEI markup-style decisions should cite the TEI-EAJ Japanese Guidelines
 wiki (`https://github.com/TEI-EAJ/jp_guidelines/wiki`) when they depend on

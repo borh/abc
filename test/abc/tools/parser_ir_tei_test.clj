@@ -220,7 +220,7 @@
                                      "direction" "right"}}]})
           ruby-node (some #(when (= :ruby (first %)) %)
                           (hiccup-nodes (:body result)))]
-      (is (= [:ruby {:rend "right"} [:rb "下人"] [:rt "げにん"]]
+      (is (= [:ruby {:type "furigana" :rend "right"} [:rb "下人"] [:rt "げにん"]]
              ruby-node))
       (is (not (contains? (second ruby-node) :place))))))
 

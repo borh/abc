@@ -24,7 +24,7 @@
       "output_format": "TEI P5 XML body hiccup rendered under the ABC TEI profile",
       "node_policies": {
         "text": "paragraph inline text",
-        "ruby": "ruby rb/rt with optional direction place",
+        "ruby": "ruby type=furigana rb/rt with optional direction rend; furigana is the default Aozora heuristic",
         "gaiji": "g ref resolves to charDecl",
         "editor-note": "note",
         "emphasis": "hi",

@@ -54,7 +54,11 @@
           <p>
             Aozora ruby must preserve base text, reading, source span, and
             whether the base scope was explicit, inferred, grouped, mid-word, or
-            ambiguous in the parser IR. Aozora gaiji output must preserve the
+            ambiguous in the parser IR. Generated TEI uses `ruby @type =
+            "furigana"` as the default Aozora publication heuristic, matching
+            the TEI-EAJ jpn_classical convention, while preserving parser IR as
+            the place where future non-furigana ruby classifications can be
+            represented explicitly. Aozora gaiji output must preserve the
             original marker and link to the resolution policy used to choose
             Unicode, IVS, glyph, or unresolved fallback output.
           </p>
@@ -80,7 +84,7 @@
         <!-- Element/attribute constraints and documentation anchors -->
         <elementSpec ident="ruby" mode="change" module="core">
           <remarks>
-            <p>Ruby is represented with native TEI `ruby`, `rb`, and `rt` elements.</p>
+            <p>Ruby is represented with native TEI `ruby`, `rb`, and `rt` elements. Generated Aozora ruby carries `@type="furigana"` by default, with optional `@rend` preserving parser IR ruby direction.</p>
           </remarks>
         </elementSpec>
         <elementSpec ident="g" mode="change" module="gaiji">

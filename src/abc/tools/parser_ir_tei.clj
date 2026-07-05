@@ -110,13 +110,13 @@
   (let [ruby (get node "ruby")]
     (if (and (present-text? (get ruby "base"))
              (present-text? (get ruby "reading")))
-      (append-inline acc
-                     (cond-> [:ruby]
-                       (get ruby "direction")
-                       (conj {:rend (get ruby "direction")})
-                       true
-                       (conj [:rb (get ruby "base")]
-                             [:rt (get ruby "reading")])))
+      (let [attrs (cond-> {:type "furigana"}
+                    (get ruby "direction")
+                    (assoc :rend (get ruby "direction")))]
+        (append-inline acc
+                       [:ruby attrs
+                        [:rb (get ruby "base")]
+                        [:rt (get ruby "reading")]]))
       (mark-omitted acc "ruby"))))
 
 (defn- render-gaiji-node [acc node]

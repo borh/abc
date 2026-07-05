@@ -12,10 +12,21 @@ pub(crate) const GIB: u64 = 1024 * 1024 * 1024;
 /// page cache churn, and concurrent processes).
 const MEM_FRACTION_NUM: u64 = 7;
 const MEM_FRACTION_DEN: u64 = 10;
-/// Placeholder until Task 4 calibration (see plan): fixed per-job overhead.
-const BASE_PER_JOB_BYTES: u64 = 100 * 1024 * 1024;
-/// Placeholder until Task 4 calibration: additional bytes per analyzer per job.
-const PER_ANALYZER_BYTES: u64 = 512 * 1024 * 1024;
+/// Fixed per-job overhead. Calibrated 2026-07-06 by the Task 4 subset sweep
+/// (2,000-source random sample, 4 analyzers, jobs 4/16/32; peak RSS
+/// 15,397,980 / 28,978,108 / 39,760,908 kB). Least-squares slope was
+/// 859,500 kB/job (~839 MiB); the fit attributes the whole slope to
+/// analyzers (see `PER_ANALYZER_BYTES`), leaving a zero residual, so this
+/// floor is the plan's 64 MiB minimum.
+const BASE_PER_JOB_BYTES: u64 = 64 * 1024 * 1024;
+/// Additional bytes per analyzer per job. Calibrated 2026-07-06 (Task 4
+/// sweep, above): fitted slope 859,500 kB/job ÷ 4 analyzers = ~209.8 MiB,
+/// rounded up to 210 MiB. Middle sweep point sat +7.7% off the line
+/// (< 20%), so the linear fit stands. The fit's 12.5 GiB intercept
+/// (shared dictionaries, loaded once) is deliberately unbudgeted: at the
+/// nproc clamp (32 jobs) the predicted peak is ~38.8 GiB, well inside the
+/// 70% budget on this machine's typical MemAvailable.
+const PER_ANALYZER_BYTES: u64 = 210 * 1024 * 1024;
 
 fn per_job_bytes(analyzer_count: usize) -> u64 {
     BASE_PER_JOB_BYTES + analyzer_count as u64 * PER_ANALYZER_BYTES
@@ -91,10 +102,15 @@ mod tests {
 
     #[test]
     fn budget_scales_with_memory_and_analyzers() {
-        // 64 GiB available, 4 analyzers → per_job = 0.1 + 4×0.5 = 2.1 GiB;
-        // 0.7 × 64 / 2.1 = 21.3 → 21 jobs, clamped to nproc 32 → 21.
-        let mem = 64 * GIB;
-        assert_eq!(auto_jobs(32, Some(mem), 4), 21);
+        // Calibrated constants (2026-07-06 sweep): base 64 MiB, 210 MiB/analyzer.
+        // 4 analyzers → per_job = 64 + 4×210 = 904 MiB = 947,912,704 B.
+        // 16 GiB available → budget = 17,179,869,184 / 10 × 7 = 12,025,908,426 B;
+        // 12,025,908,426 / 947,912,704 = 12.69 → 12 jobs (< nproc 32, budget binds).
+        let mem = 16 * GIB;
+        assert_eq!(auto_jobs(32, Some(mem), 4), 12);
+        // 8 analyzers under the same memory → per_job = 64 + 8×210 = 1744 MiB
+        // = 1,828,716,544 B; 12,025,908,426 / 1,828,716,544 = 6.58 → 6 jobs.
+        assert_eq!(auto_jobs(32, Some(mem), 8), 6);
     }
 
     #[test]

@@ -1,7 +1,7 @@
 {
   "generated_unix_seconds": 1783253892,
   "mapping": {
-    "path": "/home/bor/Projects/ab-validator/.worktrees/parser-ir-emphasis-inline-children/data/aat-to-parser-ir-mapping-v1.json",
+    "path": "/home/bor/Projects/ab-validator/data/aat-to-parser-ir-mapping-v1.json",
     "mapping_id": "https://w3id.org/abc/mappings/aat-v1-to-parser-ir-v1/generated-probe",
     "mapping_version": "0.2.3",
     "mapping_hash": "sha256:feaab2d246fd17d79dc979012893400e0f5faacc0df04e260bee4f2b129299bf",

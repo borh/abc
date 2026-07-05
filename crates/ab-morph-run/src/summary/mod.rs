@@ -1,5 +1,6 @@
 mod compact;
 mod nway;
+mod pattern_id;
 mod patterns;
 mod summary_body;
 mod types;

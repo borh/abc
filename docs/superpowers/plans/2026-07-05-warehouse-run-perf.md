@@ -627,6 +627,8 @@ Measured 2026-07-06 on the 2,000-source random subset (seed 42; subset mean 163,
 
 Update the two constants in `auto_jobs.rs`, extend their doc comments with the fit numbers and date, and adjust the `budget_scales_with_memory_and_analyzers` test's expected value to the new constants (recompute the expected jobs by hand in the test comment).
 
+Follow-up (2026-07-06, task 4b): the 13,147,661 kB intercept above is large enough (~12.5 GiB) that hosts with under ~20 GiB MemAvailable could have their whole 70% budget consumed by it, so the formula was amended to budget it explicitly — see the design spec §2 update — rather than leaving it unbudgeted as this step originally did.
+
 - [ ] **Step 4: Tests still green; commit**
 
 ```bash

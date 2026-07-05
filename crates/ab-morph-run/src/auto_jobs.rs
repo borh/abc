@@ -22,11 +22,16 @@ const BASE_PER_JOB_BYTES: u64 = 64 * 1024 * 1024;
 /// Additional bytes per analyzer per job. Calibrated 2026-07-06 (Task 4
 /// sweep, above): fitted slope 859,500 kB/job ÷ 4 analyzers = ~209.8 MiB,
 /// rounded up to 210 MiB. Middle sweep point sat +7.7% off the line
-/// (< 20%), so the linear fit stands. The fit's 12.5 GiB intercept
-/// (shared dictionaries, loaded once) is deliberately unbudgeted: at the
-/// nproc clamp (32 jobs) the predicted peak is ~38.8 GiB, well inside the
-/// 70% budget on this machine's typical MemAvailable.
+/// (< 20%), so the linear fit stands. The fit's ~12.5 GiB intercept is
+/// budgeted separately as `FIXED_OVERHEAD_BYTES` below (controller-approved
+/// deviation from the original per-job-only formula, 2026-07-06): on hosts
+/// with under ~20 GiB MemAvailable the intercept alone would exceed the 70%
+/// budget, and the original formula ignored it, risking OOM.
 const PER_ANALYZER_BYTES: u64 = 210 * 1024 * 1024;
+/// Fixed memory overhead independent of job count — shared dictionary
+/// allocations (vibrato cwj+novel, sudachi). Fitted intercept from the
+/// 2026-07-06 subset sweep: 13,147,661 kB.
+const FIXED_OVERHEAD_BYTES: u64 = 13_147_661 * 1024;
 
 fn per_job_bytes(analyzer_count: usize) -> u64 {
     BASE_PER_JOB_BYTES + analyzer_count as u64 * PER_ANALYZER_BYTES
@@ -39,7 +44,7 @@ fn fallback_jobs(nproc: usize) -> usize {
 pub(crate) fn auto_jobs(nproc: usize, mem_available_bytes: Option<u64>, analyzer_count: usize) -> usize {
     match mem_available_bytes {
         Some(mem) if mem > 0 => {
-            let budget = mem / MEM_FRACTION_DEN * MEM_FRACTION_NUM;
+            let budget = (mem / MEM_FRACTION_DEN * MEM_FRACTION_NUM).saturating_sub(FIXED_OVERHEAD_BYTES);
             let by_memory = (budget / per_job_bytes(analyzer_count)) as usize;
             by_memory.clamp(1, nproc)
         }
@@ -77,9 +82,10 @@ pub(crate) fn resolve_jobs(requested: usize, analyzer_count: usize) -> usize {
     let jobs = resolve_requested(requested, nproc, mem, analyzer_count);
     match (requested, mem) {
         (0, Some(m)) => eprintln!(
-            "auto-jobs: {jobs} (nproc={nproc}, MemAvailable={:.1} GiB, {analyzer_count} analyzers, per-job={:.1} GiB, 70% budget)",
+            "auto-jobs: {jobs} (nproc={nproc}, MemAvailable={:.1} GiB, {analyzer_count} analyzers, per-job={:.1} GiB, 70% budget, fixed-overhead={:.1} GiB)",
             m as f64 / GIB as f64,
             per_job_bytes(analyzer_count) as f64 / GIB as f64,
+            FIXED_OVERHEAD_BYTES as f64 / GIB as f64,
         ),
         (0, None) => eprintln!("auto-jobs: {jobs} (MemAvailable unreadable; fallback max(1, min(nproc/4, 8)) with nproc={nproc})"),
         (n, Some(m)) => {
@@ -102,15 +108,32 @@ mod tests {
 
     #[test]
     fn budget_scales_with_memory_and_analyzers() {
-        // Calibrated constants (2026-07-06 sweep): base 64 MiB, 210 MiB/analyzer.
-        // 4 analyzers → per_job = 64 + 4×210 = 904 MiB = 947,912,704 B.
-        // 16 GiB available → budget = 17,179,869,184 / 10 × 7 = 12,025,908,426 B;
-        // 12,025,908,426 / 947,912,704 = 12.69 → 12 jobs (< nproc 32, budget binds).
-        let mem = 16 * GIB;
-        assert_eq!(auto_jobs(32, Some(mem), 4), 12);
+        // Calibrated constants (2026-07-06 sweep): base 64 MiB, 210 MiB/analyzer,
+        // fixed overhead 13,147,661 kB = 13,463,204,864 B.
+        // 64 GiB available → raw budget = 68,719,476,736 / 10 × 7 = 48,103,633,711 B;
+        // minus fixed overhead: 48,103,633,711 − 13,463,204,864 = 34,640,428,847 B.
+        // 4 analyzers → per_job = 64 + 4×210 = 904 MiB = 947,912,704 B;
+        // 34,640,428,847 / 947,912,704 = 36.54 → 36 jobs (< nproc 64, budget binds).
+        let mem = 64 * GIB;
+        assert_eq!(auto_jobs(64, Some(mem), 4), 36);
         // 8 analyzers under the same memory → per_job = 64 + 8×210 = 1744 MiB
-        // = 1,828,716,544 B; 12,025,908,426 / 1,828,716,544 = 6.58 → 6 jobs.
-        assert_eq!(auto_jobs(32, Some(mem), 8), 6);
+        // = 1,828,716,544 B; 34,640,428,847 / 1,828,716,544 = 18.94 → 18 jobs.
+        assert_eq!(auto_jobs(64, Some(mem), 8), 18);
+    }
+
+    #[test]
+    fn constrained_memory_clamps_to_one_job() {
+        // Safety property (this is the fix): on hosts under ~20 GiB
+        // MemAvailable, the fixed dictionary overhead alone can exceed the
+        // 70% budget, so the post-overhead budget must saturate to 0 rather
+        // than underflow, yielding by_memory = 0 → clamp(1, nproc) = 1.
+        // 16 GiB available → raw budget = 17,179,869,184 / 10 × 7 =
+        // 12,025,908,426 B, which is less than the 13,463,204,864 B fixed
+        // overhead, so budget.saturating_sub(overhead) = 0 regardless of
+        // analyzer count.
+        let mem = 16 * GIB;
+        assert_eq!(auto_jobs(32, Some(mem), 4), 1);
+        assert_eq!(auto_jobs(32, Some(mem), 8), 1);
     }
 
     #[test]

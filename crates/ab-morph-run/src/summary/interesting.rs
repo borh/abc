@@ -673,6 +673,21 @@ fn read_distinct_column(
     Ok(values)
 }
 
+/// Reads `(analyzer_arg, analyzer_family)` for every `run_analyzers` row
+/// (columns 2 and 3; see `RunAnalyzerRow` field order in
+/// `ab-warehouse::schema`), the input to [`granularity_profile_token`].
+fn read_analyzer_arg_family(run_dir: &Path) -> Result<Vec<(String, String)>> {
+    let mut pairs = Vec::new();
+    for batch in read_warehouse_table(run_dir, WarehouseTable::RunAnalyzers)? {
+        let args = string_column(&batch, 2)?;
+        let families = string_column(&batch, 3)?;
+        for row in 0..batch.num_rows() {
+            pairs.push((args.value(row).to_owned(), families.value(row).to_owned()));
+        }
+    }
+    Ok(pairs)
+}
+
 /// Optional v2-forward probe: when `aozora_works.parquet` is present the
 /// rarity signal deduplicates by `work_id` (spec §Per-Signal Definitions).
 /// Column lookup is by name so this reader does not depend on a column
@@ -1018,7 +1033,42 @@ fn feature_profile_name(profile: WarehouseFeatureProfile) -> &'static str {
     }
 }
 
-fn score_version_block(rarity_basis: &str, profile: WarehouseFeatureProfile) -> ScoreVersionBlock {
+/// Derives the run's Sudachi granularity-harmonization state from its
+/// `run_analyzers` rows (spec §Granularity Harmonization). Derived at
+/// summarize time from `run_analyzers.parquet` metadata rather than stored
+/// as a new warehouse column: a single source of truth, no schema change
+/// within v1, and retroactively correct for every existing warehouse.
+///
+/// Sudachi mode A (`sudachi-a`) is approximately UniDic short-unit
+/// granularity — the same granularity as vibrato/vaporetto — so a run whose
+/// only Sudachi analyzers are mode A carries no Sudachi granularity-policy
+/// noise: `"sudachi-mode-A-aligned"`. Any mode B or C analyzer, or a mix of
+/// Sudachi modes, is a deliberate multi-granularity comparison and is left
+/// unharmonized: `"none"`. Runs with no Sudachi analyzer at all are a
+/// distinct data-generating process (no Sudachi granularity noise, but also
+/// no Sudachi) and get their own token, `"no-sudachi"`, never silently
+/// conflated with either of the above. Cross-run comparability on this
+/// field is exact string match. Extending the analyzer roster with a new
+/// non-short-unit, non-Sudachi analyzer family requires extending this
+/// table.
+fn granularity_profile_token(analyzer_arg_family: &[(String, String)]) -> &'static str {
+    let sudachi_args: BTreeSet<&str> = analyzer_arg_family
+        .iter()
+        .filter(|(_, family)| family == "sudachi")
+        .map(|(arg, _)| arg.as_str())
+        .collect();
+    match sudachi_args.len() {
+        0 => "no-sudachi",
+        1 if sudachi_args.contains("sudachi-a") => "sudachi-mode-A-aligned",
+        _ => "none",
+    }
+}
+
+fn score_version_block(
+    rarity_basis: &str,
+    profile: WarehouseFeatureProfile,
+    granularity_profile: &str,
+) -> ScoreVersionBlock {
     ScoreVersionBlock {
         score_version: SCORE_VERSION,
         pattern_id_version: PATTERN_ID_VERSION,
@@ -1031,7 +1081,7 @@ fn score_version_block(rarity_basis: &str, profile: WarehouseFeatureProfile) -> 
             .collect(),
         feature_profile: feature_profile_name(profile).to_owned(),
         rarity_basis: rarity_basis.to_owned(),
-        granularity_profile: "none".to_owned(),
+        granularity_profile: granularity_profile.to_owned(),
         cause_classification_profile: "absent".to_owned(),
         literal_context_policy: None,
         surprise: "absent".to_owned(),
@@ -1068,10 +1118,18 @@ pub fn summarize_warehouse_interesting(
             analyzer_ids.len()
         );
     }
+    // Derived once and reused for every emitted score_version block (both
+    // engines, the empty-run early return, and --explain) so it is always
+    // the honest value, never a hardcode.
+    let granularity_profile = granularity_profile_token(&read_analyzer_arg_family(run_dir)?);
     let source_ids = read_distinct_column(run_dir, WarehouseTable::Sources, 1)?;
     if source_ids.is_empty() {
         return Ok(InterestingSummary {
-            score_version: score_version_block("source", options.feature_profile),
+            score_version: score_version_block(
+                "source",
+                options.feature_profile,
+                granularity_profile,
+            ),
             run_id,
             rows: Vec::new(),
             anomalies: Vec::new(),
@@ -1108,7 +1166,11 @@ pub fn summarize_warehouse_interesting(
             .position(|stats| stats.pattern_id == *explain_id)
             .with_context(|| format!("unknown pattern_id {explain_id}"))?;
         return Ok(InterestingSummary {
-            score_version: score_version_block(rarity.basis, options.feature_profile),
+            score_version: score_version_block(
+                rarity.basis,
+                options.feature_profile,
+                granularity_profile,
+            ),
             run_id,
             rows: vec![build_row(&collected.patterns[index], &scores[index])],
             anomalies: Vec::new(),
@@ -1148,7 +1210,11 @@ pub fn summarize_warehouse_interesting(
     };
 
     Ok(InterestingSummary {
-        score_version: score_version_block(rarity.basis, options.feature_profile),
+        score_version: score_version_block(
+            rarity.basis,
+            options.feature_profile,
+            granularity_profile,
+        ),
         run_id,
         rows,
         anomalies,
@@ -1242,6 +1308,19 @@ mod tests {
             analyzer_id: analyzer_id.to_owned(),
             analyzer_arg: analyzer_id.to_owned(),
             analyzer_family: analyzer_id.to_owned(),
+        }
+    }
+
+    /// Unlike [`analyzer_row`], sets `analyzer_family` to the real
+    /// `"sudachi"` family value (production `analyzer_row` conflates id,
+    /// arg, and family, which never happens for real Sudachi rows) so
+    /// fixtures can exercise the granularity-profile derivation honestly.
+    fn sudachi_analyzer_row(mode_arg: &str) -> RunAnalyzerRow {
+        RunAnalyzerRow {
+            run_id: RUN.to_owned(),
+            analyzer_id: mode_arg.to_owned(),
+            analyzer_arg: mode_arg.to_owned(),
+            analyzer_family: "sudachi".to_owned(),
         }
     }
 
@@ -1415,7 +1494,11 @@ mod tests {
         assert!(kinds.contains(&("coverage".to_owned(), 1)));
         assert!(kinds.contains(&("feature".to_owned(), 1)));
         assert_eq!(summary.score_version.rarity_basis, "source");
-        assert_eq!(summary.score_version.granularity_profile, "none");
+        // write_fixture's analyzer rows carry no true `analyzer_family ==
+        // "sudachi"` row (the naive `analyzer_row` helper sets family to
+        // the id, e.g. "sudachi-a", not "sudachi") so this is the
+        // no-Sudachi-analyzer case, not a mixed-mode one.
+        assert_eq!(summary.score_version.granularity_profile, "no-sudachi");
         // Coverage pattern admitted with a single surface group.
         let coverage = summary.rows.iter().find(|row| row.kind == "coverage").unwrap();
         assert_eq!(coverage.region_examples.len(), 1);
@@ -1529,6 +1612,9 @@ mod tests {
         .unwrap();
         assert_eq!(explained.rows.len(), 1);
         assert!(explained.anomalies.is_empty());
+        // The --explain path must carry the derived profile too, never the
+        // old hardcode.
+        assert_eq!(explained.score_version.granularity_profile, "no-sudachi");
         let row = &explained.rows[0];
         assert_eq!(row.pattern_id, wanted.pattern_id);
         assert_eq!(
@@ -1606,6 +1692,51 @@ mod tests {
         assert!(summary.rows.is_empty());
         assert!(summary.anomalies.is_empty());
         assert_eq!(summary.score_version.rarity_basis, "source");
+        // The empty-run early return must emit the derived profile too,
+        // never the old hardcode.
+        assert_eq!(summary.score_version.granularity_profile, "no-sudachi");
+    }
+
+    #[test]
+    fn empty_run_reports_sudachi_mode_a_aligned_profile() {
+        let root = tempfile::tempdir().unwrap();
+        let paths = WarehousePaths::new(root.path(), RUN);
+        let mut writer = WarehouseWriter::create(paths.clone()).unwrap();
+        writer.append_runs(&[run_row(SCHEMA_VERSION, 0, 2)]).unwrap();
+        writer
+            .append_run_analyzers(&[sudachi_analyzer_row("sudachi-a"), analyzer_row("vibrato")])
+            .unwrap();
+        writer.finalize().unwrap();
+        let summary = summarize_warehouse_interesting(
+            &paths.final_dir,
+            WarehouseInterestingOptions::default(),
+        )
+        .unwrap();
+        assert_eq!(
+            summary.score_version.granularity_profile,
+            "sudachi-mode-A-aligned"
+        );
+    }
+
+    #[test]
+    fn empty_run_reports_none_profile_for_mixed_sudachi_modes() {
+        let root = tempfile::tempdir().unwrap();
+        let paths = WarehousePaths::new(root.path(), RUN);
+        let mut writer = WarehouseWriter::create(paths.clone()).unwrap();
+        writer.append_runs(&[run_row(SCHEMA_VERSION, 0, 2)]).unwrap();
+        writer
+            .append_run_analyzers(&[
+                sudachi_analyzer_row("sudachi-a"),
+                sudachi_analyzer_row("sudachi-c"),
+            ])
+            .unwrap();
+        writer.finalize().unwrap();
+        let summary = summarize_warehouse_interesting(
+            &paths.final_dir,
+            WarehouseInterestingOptions::default(),
+        )
+        .unwrap();
+        assert_eq!(summary.score_version.granularity_profile, "none");
     }
 
     #[test]
@@ -1740,6 +1871,66 @@ mod tests {
         let fused = fuse(&[Some(1), None, Some(2)], 3, lambda);
         let expected = (1.0 / 61.0 + lambda + 1.0 / 62.0) / 3.0;
         assert!((fused - expected).abs() < 1e-12);
+    }
+
+    /// (analyzer_arg, analyzer_family) pair builder for
+    /// [`granularity_profile_token`] tests.
+    fn af(arg: &str, family: &str) -> (String, String) {
+        (arg.to_owned(), family.to_owned())
+    }
+
+    #[test]
+    fn granularity_profile_no_sudachi_rows_is_no_sudachi() {
+        assert_eq!(granularity_profile_token(&[]), "no-sudachi");
+        assert_eq!(
+            granularity_profile_token(&[af("vibrato", "vibrato"), af("vaporetto", "vaporetto")]),
+            "no-sudachi"
+        );
+    }
+
+    #[test]
+    fn granularity_profile_sudachi_mode_a_only_is_aligned() {
+        assert_eq!(
+            granularity_profile_token(&[af("sudachi-a", "sudachi")]),
+            "sudachi-mode-A-aligned"
+        );
+        // A non-sudachi analyzer alongside mode A adds no Sudachi noise.
+        assert_eq!(
+            granularity_profile_token(&[af("sudachi-a", "sudachi"), af("vibrato", "vibrato")]),
+            "sudachi-mode-A-aligned"
+        );
+    }
+
+    #[test]
+    fn granularity_profile_sudachi_mode_b_or_c_is_none() {
+        assert_eq!(
+            granularity_profile_token(&[af("sudachi-b", "sudachi")]),
+            "none"
+        );
+        assert_eq!(
+            granularity_profile_token(&[af("sudachi-c", "sudachi")]),
+            "none"
+        );
+        assert_eq!(
+            granularity_profile_token(&[af("sudachi-c", "sudachi"), af("vaporetto", "vaporetto")]),
+            "none"
+        );
+    }
+
+    #[test]
+    fn granularity_profile_mixed_sudachi_modes_is_none() {
+        assert_eq!(
+            granularity_profile_token(&[af("sudachi-a", "sudachi"), af("sudachi-c", "sudachi")]),
+            "none"
+        );
+        assert_eq!(
+            granularity_profile_token(&[
+                af("sudachi-a", "sudachi"),
+                af("sudachi-b", "sudachi"),
+                af("sudachi-c", "sudachi"),
+            ]),
+            "none"
+        );
     }
 
     proptest! {
